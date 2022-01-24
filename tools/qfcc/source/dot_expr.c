@@ -655,6 +655,15 @@ print_with (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_args (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"...\\n%d\"];\n", indent, "", e,
+			   e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -682,6 +691,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_return] = print_return,
 		[ex_adjstk] = print_adjstk,
 		[ex_with] = print_with,
+		[ex_args] = print_args,
 	};
 	int         indent = level * 2 + 2;
 

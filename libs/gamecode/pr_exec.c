@@ -495,7 +495,7 @@ PR_SetupParams (progs_t *pr, int num_params, int min_alignment)
 	}
 	*pr->globals.stack = stack;
 	pr->pr_params[0] = pr->pr_globals + stack;
-	num_params = min (num_params, PR_MAX_PARAMS);
+	num_params = max (num_params, PR_MAX_PARAMS);
 	for (int i = 1; i < num_params; i++) {
 		pr->pr_params[i] = pr->pr_params[0] + i * 4;
 	}

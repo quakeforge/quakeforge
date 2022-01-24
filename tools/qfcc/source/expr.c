@@ -274,6 +274,8 @@ get_type (expr_t *e)
 			break;
 		case ex_assign:
 			return get_type (e->e.assign.dst);
+		case ex_args:
+			return &type_va_list;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -525,6 +527,10 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->e.with.with = copy_expr (e->e.with.with);
 			return n;
+		case ex_args:
+			n = new_expr ();
+			*n = *e;
+			return n;
 		case ex_count:
 			break;
 	}
@@ -722,6 +728,14 @@ new_nil_expr (void)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_nil;
+	return e;
+}
+
+expr_t *
+new_args_expr (void)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_args;
 	return e;
 }
 
@@ -1709,6 +1723,7 @@ has_function_call (expr_t *e)
 		case ex_memset:
 		case ex_adjstk:
 		case ex_with:
+		case ex_args:
 			return 0;
 		case ex_count:
 			break;
@@ -1803,6 +1818,7 @@ unary_expr (int op, expr_t *e)
 				case ex_return:
 				case ex_adjstk:
 				case ex_with:
+				case ex_args:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '-') {
@@ -1907,6 +1923,7 @@ unary_expr (int op, expr_t *e)
 				case ex_return:
 				case ex_adjstk:
 				case ex_with:
+				case ex_args:
 					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
@@ -1989,6 +2006,7 @@ unary_expr (int op, expr_t *e)
 				case ex_return:
 				case ex_adjstk:
 				case ex_with:
+				case ex_args:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
@@ -2048,12 +2066,13 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
 	expr_t     *p;
-	int         arg_count = 0, parm_count = 0;
+	int         arg_count = 0, param_count = 0;
 	int         i;
 	expr_t     *args = 0, **a = &args;
 	type_t     *arg_types[PR_MAX_PARAMS];
 	expr_t     *arg_exprs[PR_MAX_PARAMS][2];
 	int         arg_expr_count = 0;
+	int         emit_args = 0;
 	expr_t     *assign;
 	expr_t     *call;
 	expr_t     *err = 0;
@@ -2074,7 +2093,8 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = -ftype->t.func.num_params - 1;
+		param_count = -ftype->t.func.num_params - 1;
+		emit_args = 1;
 	} else if (ftype->t.func.num_params >= 0) {
 		if (arg_count > ftype->t.func.num_params) {
 			return error (fexpr, "too many arguments");
@@ -2084,13 +2104,14 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = ftype->t.func.num_params;
+		param_count = ftype->t.func.num_params;
 	}
+	// params is reversed (a, b, c) -> c, b, a
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t;
 
 		if (e->type == ex_compound) {
-			if (i < parm_count) {
+			if (i < param_count) {
 				t = ftype->t.func.param_types[i];
 			} else {
 				return error (e, "cannot pass compound initializer "
@@ -2109,7 +2130,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		if (type_size (t) > type_size (&type_param))
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
-		if (i < parm_count) {
+		if (i < param_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->t.func.param_types[i]);
 			if (e->type == ex_bool)
@@ -2154,7 +2175,13 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 
 	call = expr_file_line (new_block_expr (), fexpr);
 	call->e.block.is_call = 1;
+	// args is built in reverse order so it matches params
 	for (p = params, i = 0; p; p = p->next, i++) {
+		if (emit_args && arg_count - i == param_count) {
+			emit_args = 0;
+			*a = new_args_expr ();
+			a = &(*a)->next;
+		}
 		expr_t     *e = p;
 		if (e->type == ex_compound) {
 			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
@@ -2173,6 +2200,11 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			*a = expr_file_line (cast_expr (arg_types[i], convert_vector (e)),
 								 e);
 		}
+		a = &(*a)->next;
+	}
+	if (emit_args) {
+		emit_args = 0;
+		*a = new_args_expr ();
 		a = &(*a)->next;
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {

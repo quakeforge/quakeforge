@@ -1026,10 +1026,19 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	statement_t *s;
 
 	// function arguments are in reverse order
-	for (a = args; a; a = a->next)
+	for (a = args; a; a = a->next) {
+		if (a->type == ex_args) {
+			// v6p uses callN and pr_argc
+			continue;
+		}
 		count++;
+	}
 	ind = count;
 	for (a = args; a; a = a->next) {
+		if (a->type == ex_args) {
+			// v6p uses callN and pr_argc
+			continue;
+		}
 		ind--;
 		param = new_param_expr (get_type (a), ind);
 		if (count && options.code.progsversion != PROG_ID_VERSION && ind < 2) {
@@ -1091,8 +1100,11 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	defspace_t *arg_space = current_func->arguments;
 	expr_t     *func = call->e.branch.target;
 	expr_t     *args = call->e.branch.args;
+	expr_t     *args_va_list = 0;	// .args (...) parameter
+	expr_t     *args_params = 0;	// first arg in ...
 	operand_t  *use = 0;
 	operand_t  *kill = 0;
+	int         num_params = 0;
 
 	defspace_reset (arg_space);
 
@@ -1111,9 +1123,21 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		def->offset = defspace_alloc_aligned_highwater (arg_space, size,
 														alignment);
 		def->type = arg_type;
-		expr_t     *assign = assign_expr (new_def_expr (def), a);
-		expr_file_line (assign, call);
-		sblock = statement_slist (sblock, assign);
+		def->reg = current_func->temp_reg;
+		expr_t     *def_expr = expr_file_line (new_def_expr (def), call);
+		if (a->type == ex_args) {
+			args_va_list = def_expr;
+		} else {
+			if (args_va_list && !args_params) {
+				args_params = def_expr;
+			}
+			if (args_va_list) {
+				num_params++;
+			}
+			expr_t     *assign = assign_expr (def_expr, a);
+			expr_file_line (assign, call);
+			sblock = statement_slist (sblock, assign);
+		}
 
 		// The call both uses and kills the arguments: use is obvious, but kill
 		// is because the callee has direct access to them and might modify
@@ -1125,6 +1149,31 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		use = u;
 		k->next = kill;
 		kill = k;
+	}
+	if (args_va_list) {
+		expr_t     *assign;
+		expr_t     *count;
+		expr_t     *list;
+		expr_t     *args_count = field_expr (args_va_list,
+											 new_name_expr ("count"));
+		expr_t     *args_list = field_expr (args_va_list,
+											new_name_expr ("list"));
+		expr_file_line (args_count, call);
+		expr_file_line (args_list, call);
+
+		count = new_short_expr (num_params);
+		assign = assign_expr (args_count, count);
+		expr_file_line (assign, call);
+		sblock = statement_slist (sblock, assign);
+
+		if (args_params) {
+			list = address_expr (args_params, 0, &type_param);
+		} else {
+			list = new_nil_expr ();
+		}
+		assign = assign_expr (args_list, list);
+		expr_file_line (assign, call);
+		sblock = statement_slist (sblock, assign);
 	}
 	statement_t *s = new_statement (st_func, "call", call);
 	sblock = statement_subexpr (sblock, func, &s->opa);

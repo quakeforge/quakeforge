@@ -488,6 +488,14 @@ expr_t *new_temp_def_expr (const struct type_s *type);
 */
 expr_t *new_nil_expr (void);
 
+/** Create a new args expression node
+
+	Marker between real parameters and those passed through ...
+
+	\return			The new args expression node.
+*/
+expr_t *new_args_expr (void);
+
 /** Create a new value expression node.
 
 	\param value	The value to put in the expression node.
@@ -725,6 +733,7 @@ void convert_name (expr_t *e);
 expr_t *convert_vector (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
+expr_t *prepend_expr (expr_t *block, expr_t *e);
 
 expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);

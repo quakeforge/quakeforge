@@ -486,33 +486,15 @@ check_function (symbol_t *fsym)
 }
 
 static void
-build_scope (symbol_t *fsym, symtab_t *parent)
+build_v6p_scope (symbol_t *fsym)
 {
 	int         i;
 	param_t    *p;
 	symbol_t   *args = 0;
 	symbol_t   *param;
-	symtab_t   *parameters;
-	symtab_t   *locals;
+	symtab_t   *parameters = fsym->s.func->parameters;
+	symtab_t   *locals = fsym->s.func->locals;
 
-	check_function (fsym);
-
-	fsym->s.func->label_scope = new_symtab (0, stab_local);
-
-	parameters = new_symtab (parent, stab_local);
-	parameters->space = defspace_new (ds_virtual);
-	fsym->s.func->parameters = parameters;
-
-	locals = new_symtab (parameters, stab_local);
-	locals->space = defspace_new (ds_virtual);
-	fsym->s.func->locals = locals;
-
-	if (!fsym->s.func) {
-		internal_error (0, "function %s not defined", fsym->name);
-	}
-	if (!is_func (fsym->s.func->type)) {
-		internal_error (0, "function type %s not a funciton", fsym->name);
-	}
 	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, 0, parameters->space, sc_param, locals);
@@ -538,6 +520,78 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			initialize_def (param, 0, parameters->space, sc_param, locals);
 			i++;
 		}
+	}
+}
+
+static void
+create_param (symtab_t *parameters, symbol_t *param)
+{
+	defspace_t *space = parameters->space;
+	def_t      *def = new_def (param->name, 0, space, sc_param);
+	int         size = type_size (param->type);
+	int         alignment = param->type->alignment;
+	if (alignment < 4) {
+		alignment = 4;
+	}
+	def->offset = defspace_alloc_aligned_highwater (space, size, alignment);
+	def->type = param->type;
+	param->s.def = def;
+	param->sy_type = sy_var;
+	symtab_addsymbol (parameters, param);
+}
+
+static void
+build_rua_scope (symbol_t *fsym)
+{
+	for (param_t *p = fsym->params; p; p = p->next) {
+		symbol_t   *param;
+		if (!p->selector && !p->type && !p->name) {
+			// ellipsis marker
+			param = new_symbol_type (".args", &type_va_list);
+		} else {
+			if (!p->type) {
+				continue;					// non-param selector
+			}
+			if (!p->name) {
+				error (0, "parameter name omitted");
+				p->name = save_string ("");
+			}
+			param = new_symbol_type (p->name, p->type);
+		}
+		create_param (fsym->s.func->parameters, param);
+		param->s.def->reg = fsym->s.func->temp_reg;;
+	}
+}
+
+static void
+build_scope (symbol_t *fsym, symtab_t *parent)
+{
+	symtab_t   *parameters;
+	symtab_t   *locals;
+
+	if (!fsym->s.func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (fsym->s.func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
+
+	check_function (fsym);
+
+	fsym->s.func->label_scope = new_symtab (0, stab_local);
+
+	parameters = new_symtab (parent, stab_local);
+	parameters->space = defspace_new (ds_virtual);
+	fsym->s.func->parameters = parameters;
+
+	locals = new_symtab (parameters, stab_local);
+	locals->space = defspace_new (ds_virtual);
+	fsym->s.func->locals = locals;
+
+	if (options.code.progsversion == PROG_VERSION) {
+		build_rua_scope (fsym);
+	} else {
+		build_v6p_scope (fsym);
 	}
 }
 

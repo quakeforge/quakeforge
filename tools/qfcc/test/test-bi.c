@@ -55,6 +55,19 @@ bi_printf (progs_t *pr)
 	else
 		dstring_clear (dstr);
 
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 1);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
+
 	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
 	if (dstr->str)
 		fputs (dstr->str, stdout);

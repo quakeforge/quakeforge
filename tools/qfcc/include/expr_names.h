@@ -61,5 +61,6 @@ EX_EXPR(branch)		///< branch expression  (::ex_branch_t)
 EX_EXPR(return)		///< return expression  (::ex_return_t)
 EX_EXPR(adjstk)		///< stack adjust expression  (::ex_adjstk_t)
 EX_EXPR(with)		///< with expression  (::ex_with_t)
+EX_EXPR(args)		///< @args marker in parameter list. no data
 
 ///@}
