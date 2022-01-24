@@ -458,12 +458,45 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 static void
 check_stack_pointer (progs_t *pr, pr_ptr_t stack, int size)
 {
+	if (stack & 3) {
+		PR_RunError (pr, "Progs stack not aligned");
+	}
 	if (stack < pr->stack_bottom) {
 		PR_RunError (pr, "Progs stack overflow");
 	}
 	if (stack > pr->globals_size - size) {
 		PR_RunError (pr, "Progs stack underflow");
 	}
+}
+
+VISIBLE pr_type_t *
+PR_SetupParams (progs_t *pr, int num_params, int min_alignment)
+{
+	if (pr->progs->version < PROG_VERSION) {
+		if (num_params > PR_MAX_PARAMS) {
+			PR_Error (pr, "attempt to settup more than %d params",
+					  PR_MAX_PARAMS);
+		}
+		pr->pr_params[0] = pr->pr_real_params[0];
+		pr->pr_params[1] = pr->pr_real_params[1];
+		return pr->pr_real_params[0];
+	}
+	int         offset = num_params * 4;
+	if (min_alignment < 4) {
+		min_alignment = 4;
+	}
+	pr_ptr_t    mask = ~(min_alignment - 1);
+	pr_ptr_t    stack = (*pr->globals.stack - offset) & mask;
+	if (pr_boundscheck->int_val) {
+		check_stack_pointer (pr, stack, 0);
+	}
+	*pr->globals.stack = stack;
+	pr->pr_params[0] = pr->pr_globals + stack;
+	num_params = min (num_params, PR_MAX_PARAMS);
+	for (int i = 1; i < num_params; i++) {
+		pr->pr_params[i] = pr->pr_params[0] + i * 4;
+	}
+	return pr->pr_params[0];
 }
 
 static inline void

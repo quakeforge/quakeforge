@@ -82,15 +82,13 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRI
 	\warning Failure to use this macro before assigning to the P_* macros can
 	cause corruption of the VM data due to "register" based calling. Can be
 	safely ignored for parameterless functions, or forwarding parameters
-	though a builtin.
+	though a builtin. However, it is ok (and encouraged) to call
+	PR_SetupParams instead, as this macro calls PR_SetupParams with
+	PR_MAX_PARAMS and 1 for the alignment.
 
 	\hideinitializer
 */
-#define PR_RESET_PARAMS(pr)							\
-	do {											\
-		(pr)->pr_params[0] = (pr)->pr_real_params[0];	\
-		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
-	} while (0)
+#define PR_RESET_PARAMS(pr)	PR_SetupParams (pr, PR_MAX_PARAMS, 1)
 
 /**	\name Detouring Function Calls
 
@@ -154,6 +152,38 @@ void PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params);
 	\param pr		pointer to ::progs_t VM struct
 */
 void PR_PushFrame (progs_t *pr);
+
+/** Reserve space on the data stack and set up the param pointers.
+
+	For v6p progs, this only sets up the param pointers as v6p progs do not
+	have a data stack.
+
+	For Ruamoko progs, space for at least \a num_params (each being 4 words)
+	is created on the stack, with a minimum alignment of min_alignment words,
+	or 4, whichever is larger.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param num_params Number of parameter slots needed for the function call.
+					Each slot is 4 words. dvec4 and lvec4 parameters require
+					8 words and must be 8-word aligned. dvec3 and lvec3
+					also require 8 words due to the minimum 4 word alignment,
+					but have no alignment requirements themselves. Be sure to
+					take this into account in size calculations.
+	\param min_alignment Minimum number of words to which the stack will be
+					aligned. Must be a power of two. Note that when passing
+					dvec4 or lvec4 parameters, they have a hardware-enforced
+					requirement of 8 word alignment. This means that for
+					something like (int, lvec4), there will be an unused
+					parameter slot between the int and the lvec4.
+					Ignored for v6p progs.
+	\return 		Pointer to the base of the created parameter area. For
+					v6p progs, this is just .param_0, but for Ruamoko progs
+					this will be the current top of the the data stack after
+					adjustment for the parameter space.
+	\note Attempting to pass more than PR_MAX_PARAMS parameters to v6p progs
+	is a hard error.
+*/
+pr_type_t *PR_SetupParams (progs_t *pr, int num_params, int min_alignment);
 
 /** Pop an execution frame from the VM stack. Restores execution state. Also
 	frees any temporary strings allocated in this frame (via
