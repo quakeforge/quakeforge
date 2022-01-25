@@ -2468,7 +2468,7 @@ incop_expr (int op, expr_t *e, int postop)
 		append_expr (block, assign_expr (t2, binary_expr (op, t1, one)));
 		res = copy_expr (e);
 		if (res->type == ex_uexpr && res->e.expr.op == '.')
-			res = pointer_expr (address_expr (res, 0, 0));
+			res = deref_pointer_expr (address_expr (res, 0, 0));
 		append_expr (block, assign_expr (res, t2));
 		block->e.block.result = t1;
 		return block;
@@ -2531,7 +2531,7 @@ array_expr (expr_t *array, expr_t *index)
 }
 
 expr_t *
-pointer_expr (expr_t *pointer)
+deref_pointer_expr (expr_t *pointer)
 {
 	type_t     *pointer_type = get_type (pointer);
 

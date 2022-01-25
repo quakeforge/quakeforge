@@ -1560,7 +1560,7 @@ unary_expr
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
 	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
 	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
-	| '*' cast_expr %prec UNARY	{ $$ = pointer_expr ($2); }
+	| '*' cast_expr %prec UNARY	{ $$ = deref_pointer_expr ($2); }
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
 	| SIZEOF '(' abstract_decl ')'	%prec HYPERUNARY
 		{
