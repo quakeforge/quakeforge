@@ -1483,7 +1483,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
-	if (t1->type == ev_entity) {
+	if (is_entity (t1)) {
 		symbol_t   *field = 0;
 
 		if (e2->type == ex_symbol)
@@ -1503,7 +1503,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e;
 			}
 		}
-	} else if (t1->type == ev_ptr) {
+	} else if (is_ptr (t1)) {
 		if (is_struct (t1->t.fldptr.type)) {
 			symbol_t   *field;
 
@@ -1529,8 +1529,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_address_expr (ivar->type, e1, e2);
 			return unary_expr ('.', e);
 		}
-	} else if (t1->type == ev_vector || t1->type == ev_quaternion
-			   || is_struct (t1)) {
+	} else if (is_vector (t1) || is_quaternion (t1) || is_struct (t1)) {
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
