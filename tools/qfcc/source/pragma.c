@@ -107,6 +107,24 @@ set_bug (pragma_arg_t *args)
 	}
 }
 
+static void
+set_warn (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing warn flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!strcmp (flag, "error")) {
+		options.warnings.promote = true;
+	} else if (!strcmp (flag, "!error")) {
+		options.warnings.promote = false;
+	}
+	if (args->next) {
+		warning (0, "pragma warn: ignoring extra arguments");
+	}
+}
+
 void
 pragma_process ()
 {
@@ -123,6 +141,8 @@ pragma_process ()
 		set_traditional (0);
 	} else if (!strcmp (id, "bug")) {
 		set_bug (pragma_args->next);
+	} else if (!strcmp (id, "warn")) {
+		set_warn (pragma_args->next);
 	} else {
 		warning (0, "unknown pragma: '%s'", id);
 	}

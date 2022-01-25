@@ -1,3 +1,5 @@
+#pragma warn error
+
 double a;
 int b;
 int main ()
