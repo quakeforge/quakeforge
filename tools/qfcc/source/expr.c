@@ -1160,6 +1160,9 @@ expr_int (expr_t *e)
 	if (e->type == ex_value && e->e.value->lltype == ev_int) {
 		return e->e.value->v.int_val;
 	}
+	if (e->type == ex_value && e->e.value->lltype == ev_short) {
+		return e->e.value->v.short_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_int
 			|| is_enum (e->e.symbol->type))) {
