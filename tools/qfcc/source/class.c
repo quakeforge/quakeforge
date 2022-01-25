@@ -1555,7 +1555,7 @@ class_finish_module (void)
 	init_sym = new_symbol_type (".ctor", &type_func);
 	init_sym = function_symbol (init_sym, 0, 1);
 
-	module_expr = address_expr (new_symbol_expr (module_sym), 0, 0);
+	module_expr = address_expr (new_symbol_expr (module_sym), 0);
 
 	init_expr = new_block_expr ();
 	append_expr (init_expr,

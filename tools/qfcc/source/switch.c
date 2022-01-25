@@ -343,7 +343,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		table_init = new_compound_init ();
 		for (i = 0; i <= high - low; i++) {
 			tree->labels[i]->e.label.used++;
-			label = address_expr (tree->labels[i], 0, 0);
+			label = address_expr (tree->labels[i], 0);
 			append_element (table_init, new_element (label, 0));
 		}
 		table_sym = new_symbol_type (table_name,

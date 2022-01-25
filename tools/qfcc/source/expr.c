@@ -1304,7 +1304,10 @@ expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
 	if (expr->type == ex_alias) {
-		return new_offset_alias_expr (type, expr, 0);
+		if (expr->e.alias.offset) {
+			return new_offset_alias_expr (type, expr, 0);
+		}
+		expr = expr->e.alias.expr;
 	}
 
 	expr_t     *alias = new_expr ();
@@ -1527,10 +1530,10 @@ field_expr (expr_t *e1, expr_t *e2)
 			ivar = class_find_ivar (class, protected, sym->name);
 			if (!ivar)
 				return new_error_expr ();
-			e2->type = ex_value;
-			e2->e.value = new_short_val (ivar->s.offset);
-			e = new_address_expr (ivar->type, e1, e2);
-			return unary_expr ('.', e);
+			expr_t     *offset = new_short_expr (ivar->s.offset);
+			e1 = offset_pointer_expr (e1, offset);
+			e1 = cast_expr (pointer_type (ivar->type), e1);
+			return unary_expr ('.', e1);
 		}
 	} else if (is_vector (t1) || is_quaternion (t1) || is_struct (t1)) {
 		symbol_t   *field;
@@ -1564,10 +1567,10 @@ field_expr (expr_t *e1, expr_t *e2)
 			return field_expr (e1, e2);
 		} else {
 			if (e1->type == ex_uexpr && e1->e.expr.op == '.') {
-				e2->type = ex_value;
-				e2->e.value = new_short_val (field->s.offset);
-				e = address_expr (e1, e2, field->type);
-				return unary_expr ('.', e);
+				expr_t     *offset = new_short_expr (field->s.offset);
+				e1 = offset_pointer_expr (e1->e.expr.e1, offset);
+				e1 = cast_expr (pointer_type (field->type), e1);
+				return unary_expr ('.', e1);
 			} else {
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
@@ -2470,7 +2473,7 @@ incop_expr (int op, expr_t *e, int postop)
 		append_expr (block, assign_expr (t2, binary_expr (op, t1, one)));
 		res = copy_expr (e);
 		if (res->type == ex_uexpr && res->e.expr.op == '.')
-			res = deref_pointer_expr (address_expr (res, 0, 0));
+			res = deref_pointer_expr (address_expr (res, 0));
 		append_expr (block, assign_expr (res, t2));
 		block->e.block.result = t1;
 		return block;
@@ -2487,6 +2490,7 @@ array_expr (expr_t *array, expr_t *index)
 	expr_t     *scale;
 	expr_t     *offset;
 	expr_t     *base;
+	expr_t     *ptr;
 	expr_t     *e;
 	int         ind = 0;
 
@@ -2495,7 +2499,7 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (array_type->type != ev_ptr && !is_array (array_type))
+	if (!is_ptr (array_type) && !is_array (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
 		return error (index, "invalid array index type");
@@ -2503,7 +2507,8 @@ array_expr (expr_t *array, expr_t *index)
 		ind = expr_short (index);
 	if (is_int_val (index))
 		ind = expr_int (index);
-	if (array_type->t.func.num_params
+	if (is_array (array_type)
+		&& array_type->t.array.size
 		&& is_constant (index)
 		&& (ind < array_type->t.array.base
 			|| ind - array_type->t.array.base >= array_type->t.array.size))
@@ -2517,18 +2522,21 @@ array_expr (expr_t *array, expr_t *index)
 		ind = expr_short (index);
 	if (is_int_val (index))
 		ind = expr_int (index);
-	if ((is_constant (index) && ind < 32768 && ind >= -32768))
-		index = new_short_expr (ind);
 	if (is_array (array_type)) {
-		e = address_expr (array, index, array_type->t.array.type);
-	} else {
-		if (!is_short_val (index) || expr_short (index)) {
-			e = new_address_expr (array_type->t.array.type, array, index);
+		type_t     *element_type = array_type->t.array.type;
+		if (array->type == ex_uexpr && array->e.expr.op == '.') {
+			ptr = array->e.expr.e1;
 		} else {
-			e = array;
+			expr_t     *alias = new_offset_alias_expr (element_type, array, 0);
+			ptr = new_address_expr (element_type, alias, 0);
 		}
+	} else {
+		ptr = array;
 	}
-	e = unary_expr ('.', e);
+	ptr = offset_pointer_expr (ptr, index);
+	ptr = cast_expr (pointer_type (array_type->t.array.type), ptr);
+
+	e = unary_expr ('.', ptr);
 	return e;
 }
 
@@ -2545,7 +2553,28 @@ deref_pointer_expr (expr_t *pointer)
 }
 
 expr_t *
-address_expr (expr_t *e1, expr_t *e2, type_t *t)
+offset_pointer_expr (expr_t *pointer, expr_t *offset)
+{
+	type_t     *ptr_type = get_type (pointer);
+	if (!is_ptr (ptr_type)) {
+		internal_error (pointer, "not a pointer");
+	}
+	if (!is_integral (get_type (offset))) {
+		internal_error (offset, "pointer offset is not an integer type");
+	}
+	expr_t     *ptr;
+	if (pointer->type == ex_alias && !pointer->e.alias.offset
+		&& is_integral (get_type (pointer->e.alias.expr))) {
+		ptr = pointer->e.alias.expr;
+	} else {
+		ptr = cast_expr (&type_int, pointer);
+	}
+	ptr = binary_expr ('+', ptr, offset);
+	return cast_expr (ptr_type, ptr);
+}
+
+expr_t *
+address_expr (expr_t *e1, type_t *t)
 {
 	expr_t     *e;
 
@@ -2561,6 +2590,12 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.def;
 				type_t     *type = def->type;
 
+				//FIXME this test should be in statements.c
+				if (options.code.progsversion == PROG_VERSION
+					&& (def->local || def->param)) {
+					e = new_address_expr (t, e1, 0);
+					return e;
+				}
 				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
@@ -2576,6 +2611,13 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			if (e1->e.symbol->sy_type == sy_var) {
 				def_t      *def = e1->e.symbol->s.def;
 				type_t     *type = def->type;
+
+				//FIXME this test should be in statements.c
+				if (options.code.progsversion == PROG_VERSION
+					&& (def->local || def->param)) {
+					e = new_address_expr (t, e1, 0);
+					return e;
+				}
 
 				if (is_array (type)) {
 					e = e1;
@@ -2614,38 +2656,9 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			if (!t) {
 				t = e1->e.alias.type;
 			}
-			if (e1->e.alias.offset) {
-				if (e2) {
-					e2 = binary_expr ('+', e1->e.alias.offset, e2);
-				} else {
-					e2 = e1->e.alias.offset;
-				}
-			}
-			return address_expr (e1->e.alias.expr, e2, t);
+			return new_address_expr (t, e1, 0);
 		default:
 			return error (e1, "invalid type for unary &");
-	}
-	if (e2) {
-		if (e2->type == ex_error)
-			return e2;
-		if (is_pointer_val (e) && is_integral_val (e2)) {
-			int         base = e->e.value->v.pointer.val;
-			int         offset = expr_integral (e2);
-			def_t      *def = e->e.value->v.pointer.def;
-			e->e.value = new_pointer_val (base + offset, t, def, 0);
-		} else {
-			expr_t     *offset = 0;
-			if (e->type == ex_address) {
-				offset = e->e.address.offset;
-				e1 = e->e.address.lvalue;
-			} else {
-				e1 = e;
-			}
-			if (offset) {
-				e2 = binary_expr ('+', offset, e2);
-			}
-			e = new_address_expr (t, e1, e2);
-		}
 	}
 	return e;
 }
@@ -2928,7 +2941,7 @@ cast_expr (type_t *dstType, expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
-		return address_expr (e, 0, dstType->t.fldptr.type);
+		return address_expr (e, dstType->t.fldptr.type);
 	}
 	if (is_constant (e) && is_scalar (dstType) && is_scalar (srcType)) {
 		ex_value_t *val = 0;

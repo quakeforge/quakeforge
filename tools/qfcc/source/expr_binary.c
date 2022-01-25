@@ -638,7 +638,6 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 static expr_t *
 pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 {
-	expr_t     *e;
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
 	expr_t     *ptr;
@@ -663,16 +662,17 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
 	} else if (is_ptr (t1)) {
 		offset = cast_expr (&type_int, e2);
-		ptr = cast_expr (&type_int, e1);
+		ptr = e1;
 		ptype = t1;
 	} else if (is_ptr (t2)) {
 		offset = cast_expr (&type_int, e1);
-		ptr = cast_expr (&type_int, e2);
+		ptr = e2;
 		ptype = t2;
 	}
+	// op is known to be + or -
 	psize = new_int_expr (type_size (ptype->t.fldptr.type));
-	e = binary_expr (op, ptr, binary_expr ('*', offset, psize));
-	return cast_expr (ptype, e);
+	offset = unary_expr (op, binary_expr ('*', offset, psize));
+	return offset_pointer_expr (ptr, offset);
 }
 
 static expr_t *

@@ -727,10 +727,20 @@ static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
+	expr_t      *lvalue = e->e.address.lvalue;
+	expr_t      *offset = e->e.address.offset;
+
+	if (lvalue->type == ex_alias && offset && is_constant (offset)) {
+		lvalue = new_offset_alias_expr (lvalue->e.alias.type,
+										lvalue->e.alias.expr,
+										expr_int (offset));
+		offset = 0;
+	}
+
 	s = new_statement (st_expr, "lea", e);
-	sblock = statement_subexpr (sblock, e->e.address.lvalue, &s->opa);
-	if (e->e.address.offset) {
-		sblock = statement_subexpr (sblock, e->e.address.offset, &s->opb);
+	sblock = statement_subexpr (sblock, lvalue, &s->opa);
+	if (offset) {
+		sblock = statement_subexpr (sblock, offset, &s->opb);
 	}
 	s->opc = temp_operand (e->e.address.type, e);
 	sblock_add_statement (sblock, s);
@@ -836,7 +846,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 	} else {
 		if (is_indirect (src_expr)) {
-			src_expr = expr_file_line (address_expr (src_expr, 0, 0), e);
+			src_expr = expr_file_line (address_expr (src_expr, 0), e);
 			need_ptr = 1;
 		}
 		if (!src) {
@@ -860,7 +870,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		// dst_expr and/or src_expr are dereferenced pointers, so need to
 		// un-dereference dst_expr to get the pointer and switch to movep
 		// or memsetp instructions.
-		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
+		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		need_ptr = 1;
 	}
 	sblock = statement_subexpr (sblock, dst_expr, &dst);
@@ -945,7 +955,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to un-dereference it
 		// to get the pointer and switch to storep instructions.
-		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
+		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		opcode = "store";
 		if (dst_expr->type == ex_address && dst_expr->e.address.offset
 			&& !is_const_ptr (dst_expr->e.address.lvalue)) {
@@ -1167,7 +1177,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		sblock = statement_slist (sblock, assign);
 
 		if (args_params) {
-			list = address_expr (args_params, 0, &type_param);
+			list = address_expr (args_params, &type_param);
 		} else {
 			list = new_nil_expr ();
 		}
@@ -1258,8 +1268,10 @@ statement_return (sblock_t *sblock, expr_t *e)
 	s = new_statement (st_func, opcode, e);
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->e.retrn.ret_val) {
-			s->opa = return_operand (get_type (e->e.retrn.ret_val), e);
-			sblock = statement_subexpr (sblock, e->e.retrn.ret_val, &s->opa);
+			expr_t     *ret_val = e->e.retrn.ret_val;
+			type_t     *ret_type = get_type (ret_val);
+			s->opa = return_operand (ret_type, e);
+			sblock = statement_subexpr (sblock, ret_val, &s->opa);
 		}
 	} else {
 		if (e->e.retrn.ret_val) {
@@ -1316,6 +1328,28 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 	return s;
 }
 
+static statement_t *
+movep_statement (operand_t *dst, operand_t *src, type_t *type, expr_t *e)
+{
+	operand_t  *dst_addr = operand_address (dst, e);
+	statement_t *s = new_statement (st_ptrmove, "movep", e);
+	s->opa = src;
+	//FIXME large types
+	s->opb = short_operand (type_size (type), e);
+	s->opc = dst_addr;
+	return s;
+}
+
+static statement_t *
+load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
+{
+	statement_t *s = new_statement (st_expr, "load", e);
+	s->opa = ptr;
+	s->opb = offs;
+	s->opc = op;
+	return s;
+}
+
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
@@ -1337,26 +1371,13 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		if (!*op)
 			*op = temp_operand (type, e);
 		if (low_level_type (type) == ev_void) {
-			operand_t  *src_addr;
-			operand_t  *dst_addr;
-
 			s = lea_statement (ptr, offs, e);
-			src_addr = s->opc;
 			sblock_add_statement (sblock, s);
 
-			dst_addr = operand_address (*op, e);
-
-			s = new_statement (st_ptrmove, "movep", deref);
-			s->opa = src_addr;
-			//FIXME large types
-			s->opb = short_operand (type_size (type), e);
-			s->opc = dst_addr;
+			s = movep_statement (*op, s->opc, type, deref);
 			sblock_add_statement (sblock, s);
 		} else {
-			s = new_statement (st_expr, "load", deref);
-			s->opa = ptr;
-			s->opb = offs;
-			s->opc = *op;
+			s = load_statement (ptr, offs, *op, deref);
 			sblock_add_statement (sblock, s);
 		}
 	} else if (e->type == ex_value && e->e.value->lltype == ev_ptr) {
@@ -1370,11 +1391,13 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		sblock = statement_subexpr (sblock, e, &ptr);
 		if (!*op)
 			*op = temp_operand (type, e);
-		s = new_statement (st_expr, "load", deref);
-		s->opa = ptr;
-		s->opb = short_operand (0, e);
-		s->opc = *op;
-		sblock_add_statement (sblock, s);
+		if (low_level_type (type) == ev_void) {
+			s = movep_statement (*op, ptr, type, deref);
+			sblock_add_statement (sblock, s);
+		} else {
+			s = load_statement (ptr, short_operand (0, e), *op, deref);
+			sblock_add_statement (sblock, s);
+		}
 	}
 	return sblock;
 }

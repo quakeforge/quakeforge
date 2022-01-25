@@ -1183,7 +1183,13 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			internal_error (s->expr, "not a statement");
 		case st_expr:
 			flow_add_op_var (def, s->opc, 0);
-			flow_add_op_var (use, s->opa, 1);
+			if (strcmp (s->opcode, "lea") == 0) {
+				if (s->opb) {
+					flow_add_op_var (use, s->opa, 1);
+				}
+			} else {
+				flow_add_op_var (use, s->opa, 1);
+			}
 			if (s->opb)
 				flow_add_op_var (use, s->opb, 1);
 			if (operands) {

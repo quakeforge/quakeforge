@@ -172,7 +172,7 @@ super_expr (class_type_t *class_type)
 					 field_expr (e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
-	e = address_expr (super, 0, 0);
+	e = address_expr (super, 0);
 	super_block->e.block.result = e;
 	return super_block;
 }
