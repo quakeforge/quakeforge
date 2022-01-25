@@ -406,6 +406,7 @@ print_return (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	int         indent = level * 2 + 2;
 
 	if (e->e.retrn.ret_val) {
+		_print_expr (dstr, e->e.retrn.ret_val, level, id, next);
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 				   e->e.retrn.ret_val);
 	}
@@ -418,6 +419,7 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
+	_print_expr (dstr, e->e.expr.e1, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   get_op_string (e->e.expr.op), e->line);
