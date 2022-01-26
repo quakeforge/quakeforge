@@ -403,11 +403,14 @@ void
 opcode_print_statement (pr_uint_t addr, dstatement_t *st)
 {
 	const char *mnemonic;
+	// this is ok because v6p has < 300 instructions
+	int         st_op = st->op & 0x1ff;
+
 	if (options.code.progsversion < PROG_VERSION) {
-		mnemonic = v6p_opcode_map[st->op].opname;
+		mnemonic = v6p_opcode_map[st_op].opname;
 	} else {
-		mnemonic = pr_opcodes[st->op].mnemonic;
+		mnemonic = pr_opcodes[st_op].mnemonic;
 	}
 	printf ("%04x (%03x)%-8s %04x %04x %04x\n",
-			addr, st->op & 0x1ff, mnemonic, st->a, st->b, st->c);
+			addr, st_op & 0x1ff, mnemonic, st->a, st->b, st->c);
 }
