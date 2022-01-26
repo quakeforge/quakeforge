@@ -95,13 +95,10 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 static int
-align_size (int size)
+align_size (int size, int align)
 {
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	size += sizeof (void*) - 1;
-	size &= ~(sizeof (void*) - 1);
+	size += align - 1;
+	size &= ~(align - 1);
 	return size;
 }
 
@@ -117,6 +114,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr_def_t   *xdefs_def = 0;
 	ddef_t     *global_ddefs;
 	ddef_t     *field_ddefs;
+	// absolute minimum alignment is 4 bytes
+	int         alignment = sizeof (void *);
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -163,6 +162,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 					  PROG_VERSION & 0xfff);
 		}
 	}
+	if (progs.version == PROG_VERSION) {
+		// ensure SIMD types can be aligned (qfcc will align them within
+		// the progs memory map, so the engine needs to ensure the progs memory
+		// is aligned)
+		alignment = __alignof__(pr_lvec4_t);
+	}
 
 	// Some compilers (eg, FTE) put extra data between the header and the
 	// strings section. What's worse, they de-align the data.
@@ -173,17 +178,14 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->progs_size = size + offset_tweak;
 	Sys_MaskPrintf (SYS_dev, "Programs occupy %iK.\n", size / 1024);
 
-	pr->progs_size = align_size (pr->progs_size);
-	pr->zone_size = align_size (pr->zone_size);
-	pr->stack_size = align_size (pr->stack_size);
+	pr->progs_size = align_size (pr->progs_size, alignment);
+	pr->zone_size = align_size (pr->zone_size, alignment);
+	pr->stack_size = align_size (pr->stack_size, alignment);
 
 	// size of edict asked for by progs, but at least 1
 	pr->pr_edict_size = max (1, progs.entityfields);
-	// round off to next highest multiple of 4 words
-	// this ensures that progs that try to align vectors and quaternions
-	// get what they want
-	pr->pr_edict_size += (4 - 1);
-	pr->pr_edict_size &= ~(4 - 1);
+	// edict size is in words
+	pr->pr_edict_size = align_size (pr->pr_edict_size, alignment / 4);
 	pr->pr_edict_area_size = pr->max_edicts * pr->pr_edict_size;
 
 	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
