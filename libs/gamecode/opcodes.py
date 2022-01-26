@@ -254,10 +254,10 @@ mathops_formats = {
 memset_formats = {
     "opcode": "OP_MEMSET_{op_memset[oo].upper()}",
     "mnemonic": "memset.{op_memset[oo]}",
-    "opname": "memset",
+    "opname": "memset{op_memset[oo]}",
     "format": "{memset_fmt[oo]}",
     "widths": "{memset_widths[oo]}",
-    "types": "ev_int, ev_void, ev_void",
+    "types": "{memset_types[oo]}",
     "args": {
         "op_memset": ["i", "p", "pi", None],
         "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
@@ -267,23 +267,34 @@ memset_formats = {
             "1, 0, 1",
             None,
         ],
+        "memset_types": [
+            "ev_void, ev_short, ev_void",
+            "ev_ptr, ev_int, ev_ptr",
+            "ev_ptr, ev_short, ev_ptr",
+        ],
     },
 }
 move_formats = {
     "opcode": "OP_MOVE_{op_move[oo].upper()}",
-    "mnemonic": "memset.{op_move[oo]}",
-    "opname": "memset",
+    "mnemonic": "move.{op_move[oo]}",
+    "opname": "move{suff_move[oo]}",
     "format": "{move_fmt[oo]}",
     "widths": "{move_widths[oo]}",
-    "types": "ev_int, ev_void, ev_void",
+    "types": "{move_types[oo]}",
     "args": {
         "op_move": ["i", "p", "pi", None],
+        "suff_move": ["", "p", "p", None],
         "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
         "move_widths": [
             "-1, 0, -1",
             "1, 1, 1",
             "1, 0, 1",
             None,
+        ],
+        "move_types": [
+            "ev_void, ev_short, ev_void",
+            "ev_ptr, ev_int, ev_ptr",
+            "ev_ptr, ev_short, ev_ptr",
         ],
     },
 }
