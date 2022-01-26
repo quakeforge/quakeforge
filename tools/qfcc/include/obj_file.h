@@ -249,14 +249,14 @@ typedef struct qfo_reloc_s {
 typedef struct qfo_mspace_s {
 	qfos_type_t type;
 	qfo_def_t  *defs;
-	unsigned    num_defs;
+	pr_uint_t   num_defs;
 	union {
 		dstatement_t *code;
 		pr_type_t  *data;
 		char       *strings;
 	};
-	unsigned    data_size;
-	unsigned    id;
+	pr_uint_t   data_size;
+	pr_uint_t   id;
 } qfo_mspace_t;
 
 /** In-memory representation of a QFO object file.
@@ -265,16 +265,16 @@ typedef struct qfo_s {
 	pr_uint_t   progs_version;	///< version of compatible VM
 	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
-	unsigned    num_spaces;
+	pr_uint_t   num_spaces;
 	qfo_reloc_t *relocs;
-	unsigned    num_relocs;			// includes num_loose_relocs
+	pr_uint_t   num_relocs;			// includes num_loose_relocs
 	qfo_def_t  *defs;
-	unsigned    num_defs;
+	pr_uint_t   num_defs;
 	qfo_func_t *funcs;
-	unsigned    num_funcs;
+	pr_uint_t   num_funcs;
 	pr_lineno_t *lines;
-	unsigned    num_lines;
-	unsigned    num_loose_relocs;	// included in num_relocs
+	pr_uint_t   num_lines;
+	pr_uint_t   num_loose_relocs;	// included in num_relocs
 } qfo_t;
 
 enum {
@@ -500,7 +500,7 @@ qfo_t *qfo_new (void);
 */
 void qfo_delete (qfo_t *qfo);
 
-__attribute__((const)) int qfo_log2 (unsigned x);
+__attribute__((const)) int qfo_log2 (pr_uint_t x);
 
 ///@}
 

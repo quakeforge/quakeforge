@@ -918,7 +918,7 @@ align_globals_size (unsigned size)
 }
 
 static int
-qfo_def_compare (const void *i1, const void *i2, void *d)
+qfo_def_offset_compare (const void *i1, const void *i2, void *d)
 {
 	__auto_type defs = (const qfo_def_t *) d;
 	unsigned    ind1 = *(unsigned *) i1;
@@ -928,10 +928,79 @@ qfo_def_compare (const void *i1, const void *i2, void *d)
 	return def1->offset - def2->offset;
 }
 
+static pr_uint_t
+qfo_count_locals (const qfo_t *qfo, pr_uint_t *big_locals)
+{
+	if (options.code.progsversion == PROG_VERSION) {
+		// Ruamoko progs keep their locals on the stack rather than a
+		// "protected" area in the globals
+		*big_locals = 0;
+		return 0;
+	}
+
+	pr_uint_t   locals_size = 0;
+	for (pr_uint_t i = qfo_num_spaces; i < qfo->num_spaces; i++) {
+		if (options.code.local_merging) {
+			if (locals_size < qfo->spaces[i].data_size) {
+				locals_size = qfo->spaces[i].data_size;
+				*big_locals = i;
+			}
+		} else {
+			locals_size += align_globals_size (qfo->spaces[i].data_size);
+		}
+	}
+	return locals_size;
+}
+
+typedef struct globals_info_s {
+	pr_uint_t   locals_start;
+	pr_uint_t   locals_size;
+	pr_uint_t   big_locals;
+	pr_uint_t   near_data_size;
+	pr_uint_t   type_encodings_start;
+	pr_uint_t   xdefs_start;
+	pr_uint_t   xdefs_size;
+	pr_uint_t   globals_size;
+} globals_info_t;
+
+
+static globals_info_t
+qfo_count_globals (qfo_t *qfo, dprograms_t *progs, int word_align)
+{
+	globals_info_t info = {};
+	info.globals_size = qfo->spaces[qfo_near_data_space].data_size;
+	info.globals_size = RUP (info.globals_size, word_align);
+
+	info.locals_start = info.globals_size;
+	info.locals_size = qfo_count_locals (qfo, &info.big_locals);
+	info.globals_size += info.locals_size;
+	info.near_data_size = info.globals_size;
+
+	info.globals_size = RUP (info.globals_size, word_align);
+	info.globals_size += qfo->spaces[qfo_far_data_space].data_size;
+
+	info.type_encodings_start = info.globals_size;
+	info.globals_size += qfo->spaces[qfo_type_space].data_size;
+	info.globals_size = RUP (info.globals_size, type_xdef.alignment);
+
+	info.xdefs_start = info.globals_size;
+	info.xdefs_size = progs->globaldefs.count + progs->fielddefs.count;
+	info.xdefs_size *= type_size (&type_xdef);
+	info.globals_size += info.xdefs_size;
+
+	return info;
+}
+
+static pr_uint_t
+qfo_next_offset (pr_chunk_t chunk, pr_uint_t size, pr_uint_t align)
+{
+	size *= chunk.count;
+	return RUP (chunk.offset + size, align);
+}
+
 dprograms_t *
 qfo_to_progs (qfo_t *in_qfo, int *size)
 {
-	byte       *data;
 	char       *strings;
 	dstatement_t *statements;
 	dfunction_t *functions;
@@ -946,18 +1015,22 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	qfo_def_t  *types_def = 0;
 	qfo_def_t  *xdefs_def = 0;
 	unsigned    i, j;
-	unsigned    near_data_size = 0;
-	unsigned    locals_size = 0;
-	int         locals_start;
-	int         type_encodings_start;
-	int         xdefs_start;
-	unsigned    big_locals = 0;
 	int         big_func = 0;
 	pr_xdefs_t *xdefs = 0;
 	xdef_t     *xdef;
 	unsigned   *def_indices;
 	unsigned   *far_def_indices;
 	unsigned   *field_def_indices;
+
+	// id progs were aligned to only 4 bytes, but 8 is much more reasonable
+	pr_uint_t   byte_align = 8;
+	if (options.code.progsversion == PROG_VERSION) {
+		byte_align = __alignof__ (pr_lvec4_t);
+	} else if (options.code.progsversion == PROG_V6P_VERSION) {
+		byte_align = 16;
+	}
+	pr_uint_t   word_align = byte_align / sizeof (pr_int_t);
+
 
 	qfo_t      *qfo = alloca (sizeof (qfo_t)
 							  + in_qfo->num_spaces * sizeof (qfo_mspace_t));
@@ -970,53 +1043,52 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	*size = RUP (sizeof (dprograms_t), 16);
 	progs = calloc (1, *size);
 	progs->version = options.code.progsversion;
+	// crc is set in qfcc.c if enabled
+
+	// these are in order in which they usually appear in the file rather
+	// than the order they appear in the struct, though with the offsets
+	// it doesn't matter too much. However, as people expect a certain
+	// layout, ti does matter enough to preserve the traditional file order.
+	progs->strings.offset = *size;
+	progs->strings.count = qfo->spaces[qfo_strings_space].data_size;
+
+	progs->statements.offset = qfo_next_offset (progs->strings,
+												sizeof (char),
+												byte_align);
 	progs->statements.count = qfo->spaces[qfo_code_space].data_size;
+
+	progs->functions.offset = qfo_next_offset (progs->statements,
+											   sizeof (dstatement_t),
+											   byte_align);
+	progs->functions.count = qfo->num_funcs + 1;
+
+	progs->globaldefs.offset = qfo_next_offset (progs->functions,
+												sizeof (dfunction_t),
+												byte_align);
 	progs->globaldefs.count = qfo->spaces[qfo_near_data_space].num_defs;
 	//ddef offsets are 16 bits so the ddef ofs will likely be invalid
 	//thus it will be forced invalid and the true offset written to the
 	//.xdefs array in the progs file
 	progs->globaldefs.count += qfo->spaces[qfo_far_data_space].num_defs;
+
+	progs->fielddefs.offset = qfo_next_offset (progs->globaldefs,
+											   sizeof (ddef_t),
+											   byte_align);
 	progs->fielddefs.count = qfo->spaces[qfo_entity_space].num_defs;
-	progs->functions.count = qfo->num_funcs + 1;
-	progs->strings.count = qfo->spaces[qfo_strings_space].data_size;
-	progs->globals.count = qfo->spaces[qfo_near_data_space].data_size;
-	progs->globals.count = align_globals_size (progs->globals.count);
-	locals_start = progs->globals.count;
-	if (options.code.progsversion < PROG_VERSION) {
-		for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
-			if (options.code.local_merging) {
-				if (locals_size < qfo->spaces[i].data_size) {
-					locals_size = qfo->spaces[i].data_size;
-					big_locals = i;
-				}
-			} else {
-				locals_size += align_globals_size (qfo->spaces[i].data_size);
-			}
-		}
-	}
-	progs->globals.count += locals_size;
-	near_data_size = progs->globals.count;
-	progs->globals.count = RUP (progs->globals.count, 16 / sizeof (pr_type_t));
-	progs->globals.count += qfo->spaces[qfo_far_data_space].data_size;
-	type_encodings_start = progs->globals.count;
-	progs->globals.count += qfo->spaces[qfo_type_space].data_size;
-	progs->globals.count = RUP (progs->globals.count, type_xdef.alignment);
-	xdefs_start = progs->globals.count;
-	progs->globals.count += progs->globaldefs.count * type_size (&type_xdef);
-	progs->globals.count += progs->fielddefs.count * type_size (&type_xdef);
+
+	progs->globals.offset = qfo_next_offset (progs->fielddefs,
+											 sizeof (ddef_t),
+											 byte_align);
+	globals_info_t globals_info = qfo_count_globals (qfo, progs, word_align);
+	progs->globals.count = globals_info.globals_size;
+
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
 	// qfo_debug_space does not go in the progs file
-	*size += progs->statements.count * sizeof (dstatement_t);
-	*size += progs->globaldefs.count * sizeof (ddef_t);
-	*size += progs->fielddefs.count * sizeof (ddef_t);
-	*size += progs->functions.count * sizeof (dfunction_t);
-	*size += RUP (progs->strings.count * sizeof (char), 16);
-	*size += progs->globals.count * sizeof (pr_type_t);
+
+	*size = qfo_next_offset (progs->globals, sizeof (pr_type_t), 1);
 
 	progs = realloc (progs, *size);
-	data = (byte *) progs;
 	memset (progs + 1, 0, *size - sizeof (dprograms_t));
-	data += RUP (sizeof (dprograms_t), 16);
 
 	def_indices = alloca ((progs->globaldefs.count + progs->fielddefs.count)
 						  * sizeof (*def_indices));
@@ -1032,42 +1104,27 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		field_def_indices[i] = i;
 	}
 	qsort_r (def_indices, qfo->spaces[qfo_near_data_space].num_defs,
-			 sizeof (unsigned), qfo_def_compare,
+			 sizeof (unsigned), qfo_def_offset_compare,
 			 qfo->spaces[qfo_near_data_space].defs);
 	qsort_r (far_def_indices, qfo->spaces[qfo_far_data_space].num_defs,
-			 sizeof (unsigned), qfo_def_compare,
+			 sizeof (unsigned), qfo_def_offset_compare,
 			 qfo->spaces[qfo_far_data_space].defs);
 	qsort_r (field_def_indices, qfo->spaces[qfo_entity_space].num_defs,
-			 sizeof (unsigned), qfo_def_compare,
+			 sizeof (unsigned), qfo_def_offset_compare,
 			 qfo->spaces[qfo_entity_space].defs);
 
-	progs->strings.offset = data - (byte *) progs;
-	strings = (char *) data;
-	data += RUP (progs->strings.count * sizeof (char), 16);
-
-	progs->statements.offset = data - (byte *) progs;
-	statements = (dstatement_t *) data;
-	data += progs->statements.count * sizeof (dstatement_t);
-
-	progs->functions.offset = data - (byte *) progs;
-	functions = (dfunction_t *) data;
+#define qfo_block(t,b) (t *) ((byte *) progs + progs->b.offset)
+	strings = qfo_block (char, strings);
+	statements = qfo_block (dstatement_t, statements);
+	functions = qfo_block (dfunction_t, functions);
 	functions++;	// skip over null function
-	data += progs->functions.count * sizeof (dfunction_t);
-
-	progs->globaldefs.offset = data - (byte *) progs;
-	globaldefs = (ddef_t *) data;
-	data += progs->globaldefs.count * sizeof (ddef_t);
-
-	progs->fielddefs.offset = data - (byte *) progs;
-	fielddefs = (ddef_t *) (globaldefs + progs->globaldefs.count);
-	data += progs->fielddefs.count * sizeof (ddef_t);
-
-	progs->globals.offset = data - (byte *) progs;
-	globals = (pr_type_t*) data;
-	locals = globals + locals_start;
-	far_data = globals + near_data_size;
-	type_data = globals + type_encodings_start;
-	xdef_data = globals + xdefs_start;
+	globaldefs = qfo_block (ddef_t, globaldefs);
+	fielddefs = qfo_block (ddef_t, fielddefs);
+	globals = qfo_block (pr_type_t, globals);
+	locals = globals + globals_info.locals_start;
+	far_data = globals + globals_info.near_data_size;
+	type_data = globals + globals_info.type_encodings_start;
+	xdef_data = globals + globals_info.xdefs_start;
 
 	memcpy (strings, qfo->spaces[qfo_strings_space].strings,
 			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
@@ -1084,13 +1141,13 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 
 		df->first_statement = qf->code;
 		if (options.code.progsversion < PROG_VERSION) {
-			df->parm_start = locals_start;
+			df->parm_start = globals_info.locals_start;
 			df->locals = space->data_size;
 			// finalize the offsets of the local defs
 			for (j = 0; j < space->num_defs; j++)
-				space->defs[j].offset += locals_start;
+				space->defs[j].offset += globals_info.locals_start;
 			if (!options.code.local_merging)
-				locals_start += align_globals_size (df->locals);
+				globals_info.locals_start += align_globals_size (df->locals);
 		}
 		df->profile = 0;
 		df->name = qf->name;
@@ -1120,7 +1177,7 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_type_space].num_defs; i++) {
-		qfo->spaces[qfo_type_space].defs[i].offset += type_encodings_start;
+		qfo->spaces[qfo_type_space].defs[i].offset += globals_info.type_encodings_start;
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
@@ -1134,7 +1191,7 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
 	qfo->spaces[qfo_near_data_space].data = globals;
 	// clear locals data
-	memset (locals, 0, locals_size * sizeof (pr_type_t));
+	memset (locals, 0, globals_info.locals_size * sizeof (pr_type_t));
 	// copy far data
 	memcpy (far_data, qfo->spaces[qfo_far_data_space].data,
 			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
@@ -1148,30 +1205,30 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	if (types_def) {
 		qfot_type_encodings_t *encodings;
 		encodings = (qfot_type_encodings_t *) &globals[types_def->offset];
-		encodings->types = type_encodings_start;
+		encodings->types = globals_info.type_encodings_start;
 		encodings->size = qfo->spaces[qfo_type_space].data_size;
 	}
 	if (xdefs_def) {
 		xdefs = (pr_xdefs_t *) &globals[xdefs_def->offset];
 		xdef = (xdef_t *) xdef_data;
-		xdefs->xdefs = xdefs_start;
+		xdefs->xdefs = globals_info.xdefs_start;
 		xdefs->num_xdefs = progs->globaldefs.count + progs->fielddefs.count;
 		for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs;
 			 i++, xdef++) {
 			qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
-			xdef->type = def->type + type_encodings_start;
+			xdef->type = def->type + globals_info.type_encodings_start;
 			xdef->ofs = def->offset;
 		}
 		for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs;
 			 i++, xdef++) {
 			qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + i;
-			xdef->type = def->type + type_encodings_start;
+			xdef->type = def->type + globals_info.type_encodings_start;
 			xdef->ofs = def->offset;
 		}
 		for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs;
 			 i++, xdef++) {
 			qfo_def_t  *def =  qfo->spaces[qfo_entity_space].defs + i;
-			xdef->type = def->type + type_encodings_start;
+			xdef->type = def->type + globals_info.type_encodings_start;
 			xdef->ofs = def->offset;
 		}
 	}
@@ -1183,7 +1240,7 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		qfo_func_t *qf = qfo->funcs + i;
 		qfo_mspace_t *space = qfo->spaces + qf->locals_space;
 
-		if (qf->locals_space == big_locals)
+		if (qf->locals_space == globals_info.big_locals)
 			big_func = i;
 		for (j = 0; j < space->num_defs; j++)
 			space->defs[j].offset -= df->parm_start;
@@ -1199,8 +1256,9 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		printf ("%6i global defs\n", progs->globaldefs.count);
 		printf ("%6i field defs\n", progs->fielddefs.count);
 		printf ("%6i globals\n", progs->globals.count);
-		printf ("    %6i near globals\n", near_data_size);
-		printf ("        %6i locals size%s\n", locals_size, big_function);
+		printf ("    %6i near globals\n", globals_info.near_data_size);
+		printf ("        %6i locals size%s\n",
+				globals_info.locals_size, big_function);
 		printf ("    %6i far globals\n",
 				qfo->spaces[qfo_far_data_space].data_size);
 		printf ("    %6i type globals\n",
