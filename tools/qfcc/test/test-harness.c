@@ -120,10 +120,14 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 	return sym;
 }
 
+#define ALIGN 32
+
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+	intptr_t    mem = (intptr_t) malloc (size + ALIGN);
+	mem = (mem + ALIGN - 1) & ~(ALIGN - 1);
+	return (void *) mem;
 }
 
 static void
