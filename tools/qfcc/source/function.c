@@ -729,17 +729,32 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 	}
 	function_t *func = fsym->s.func;
 	if (options.code.progsversion == PROG_VERSION) {
+		/* Create a function entry block to set up the stack frame and add the
+		 * actual function code to that block. This ensure that the adjstk and
+		 * with statements always come first, regardless of what ideas the
+		 * optimizer gets.
+		 */
 		expr_t     *e;
-		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
-		e->file = func->def->file;
-		e->line = func->def->line;
-		prepend_expr (statements, e);
+		expr_t     *entry = new_block_expr ();
+		entry->file = func->def->file;
+		entry->line = func->def->line;
 
 		e = new_adjstk_expr (0, 0);
 		e->file = func->def->file;
 		e->line = func->def->line;
-		prepend_expr (statements, e);
+		append_expr (entry, e);
 
+		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
+		e->file = func->def->file;
+		e->line = func->def->line;
+		append_expr (entry, e);
+
+		append_expr (entry, statements);
+		statements = entry;
+
+		/* Mark all local defs as using the base register used for stack
+		 * references.
+		 */
 		func->temp_reg = LOCALS_REG;
 		for (def_t *def = func->locals->space->defs; def; def = def->next) {
 			if (def->local || def->param) {
