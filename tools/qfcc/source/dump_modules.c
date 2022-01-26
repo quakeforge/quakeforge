@@ -277,7 +277,7 @@ dump_modules (progs_t *pr)
 {
 	unsigned int i;
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		pr_def_t   *def = &pr->pr_globaldefs[i];
 		const char *name = "<invalid_string>";
 

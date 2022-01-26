@@ -552,27 +552,21 @@ typedef struct pr_va_list_s {
 #define	PROG_V6P_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
 #define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,010)
 
+typedef struct pr_chunk_s {
+	pr_uint_t   offset;
+	pr_uint_t   count;
+} pr_chunk_t;
+
 typedef struct dprograms_s {
 	pr_uint_t   version;
-	pr_uint_t   crc;			// check of header file
+	pr_uint_t   crc;		// checksum of header file
 
-	pr_uint_t   ofs_statements;
-	pr_uint_t   numstatements;	// statement 0 is an error
-
-	pr_uint_t   ofs_globaldefs;
-	pr_uint_t   numglobaldefs;
-
-	pr_uint_t   ofs_fielddefs;
-	pr_uint_t   numfielddefs;
-
-	pr_uint_t   ofs_functions;
-	pr_uint_t   numfunctions;	// function 0 is an empty
-
-	pr_uint_t   ofs_strings;
-	pr_uint_t   numstrings;		// first string is a null string
-
-	pr_uint_t   ofs_globals;
-	pr_uint_t   numglobals;
+	pr_chunk_t  statements;	// statement 0 is an error
+	pr_chunk_t  globaldefs;
+	pr_chunk_t  fielddefs;
+	pr_chunk_t  functions;	// function 0 is an empty
+	pr_chunk_t  strings;	// first string is a null string, count is bytes
+	pr_chunk_t  globals;
 
 	pr_uint_t   entityfields;
 } dprograms_t;

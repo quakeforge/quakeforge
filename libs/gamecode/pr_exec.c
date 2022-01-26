@@ -1459,7 +1459,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_JUMP_v6p:
 				if (pr_boundscheck->int_val
-					&& (OPA(uint) >= pr->progs->numstatements)) {
+					&& (OPA(uint) >= pr->progs->statements.count)) {
 					PR_RunError (pr, "Invalid jump destination");
 				}
 				pr->pr_xstatement = OPA(uint) - 1;	// offset the st++
@@ -1473,7 +1473,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				pointer = ptr->int_var;
 				if (pr_boundscheck->int_val
-					&& (pointer >= pr->progs->numstatements)) {
+					&& (pointer >= pr->progs->statements.count)) {
 					PR_RunError (pr, "Invalid jump destination");
 				}
 				pr->pr_xstatement = pointer - 1;			// offset the st++
@@ -1874,7 +1874,7 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 			jump_offs = OPA(ptr) + OPB(int);
 			break;
 	}
-	if (pr_boundscheck->int_val && jump_offs >= pr->progs->numstatements) {
+	if (pr_boundscheck->int_val && jump_offs >= pr->progs->statements.count) {
 		PR_RunError (pr, "out of bounds: %x", jump_offs);
 	}
 	return jump_offs - 1;	// for st++

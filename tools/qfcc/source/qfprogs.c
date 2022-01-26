@@ -293,7 +293,7 @@ load_progs (const char *name)
 		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
-	for (i = 0; i < pr.progs->numfunctions; i++) {
+	for (i = 0; i < pr.progs->functions.count; i++) {
 		// don't bother with builtins
 		if (pr.pr_functions[i].first_statement > 0)
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);

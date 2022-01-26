@@ -549,12 +549,12 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 	res->debug_data = (pr_type_t*)((char*)debug + debug->debug_data);
 
 	size_t      size;
-	size = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
+	size = pr->progs->functions.count * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, size);
-	size = pr->progs->numfunctions * sizeof (pr_func_t);
+	size = pr->progs->functions.count * sizeof (pr_func_t);
 	res->sorted_functions = pr->allocate_progs_mem (pr, size);
 
-	for (pr_uint_t i = 0; i < pr->progs->numfunctions; i++) {
+	for (pr_uint_t i = 0; i < pr->progs->functions.count; i++) {
 		res->auxfunction_map[i] = 0;
 		res->sorted_functions[i] = i;
 	}
@@ -575,7 +575,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 		res->auxfunction_map[res->auxfunctions[i].function] =
 			&res->auxfunctions[i];
 	}
-	qsort_r (res->sorted_functions, pr->progs->numfunctions,
+	qsort_r (res->sorted_functions, pr->progs->functions.count,
 			 sizeof (pr_func_t), func_compare_sort, res);
 
 	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
@@ -733,7 +733,7 @@ VISIBLE pr_auxfunction_t *
 PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	if (!res->debug || func >= pr->progs->numfunctions) {
+	if (!res->debug || func >= pr->progs->functions.count) {
 		return 0;
 	}
 	return res->auxfunction_map[func];
@@ -841,7 +841,7 @@ PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line)
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	func_key_t  key = { file, line };
 	pr_func_t  *f = fbsearch_r (&key, res->sorted_functions,
-								pr->progs->numfunctions, sizeof (pr_func_t),
+								pr->progs->functions.count, sizeof (pr_func_t),
 								func_compare_search, res);
 	if (!f) {
 		return 0;
@@ -878,7 +878,7 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 	pr_auxfunction_t *f;
 
 	f = PR_Get_Lineno_Func (pr, lineno);
-	if (f->function >= (unsigned) pr->progs->numfunctions)
+	if (f->function >= (unsigned) pr->progs->functions.count)
 		return 0;
 	return PR_GetString(pr, pr->pr_functions[f->function].file);
 }
@@ -1113,7 +1113,7 @@ pr_debug_find_def (progs_t *pr, pr_ptr_t *ofs)
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
 
-	if (*ofs >= pr->progs->numglobals) {
+	if (*ofs >= pr->progs->globals.count) {
 		return 0;
 	}
 	if (pr_debug->int_val && res->debug) {
@@ -1306,7 +1306,7 @@ pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
 
-	if (value->func_var >= pr->progs->numfunctions) {
+	if (value->func_var >= pr->progs->functions.count) {
 		dasprintf (dstr, "INVALID:%d", value->func_var);
 	} else if (!value->func_var) {
 		dstring_appendstr (dstr, "NULL");
@@ -1652,7 +1652,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						str = global_string (&data, opval, optype,
 											 contents & 1);
 						func = G_FUNCTION (pr, opval);
-						if (func < pr->progs->numfunctions) {
+						if (func < pr->progs->functions.count) {
 							call_func = pr->pr_functions + func;
 						}
 						break;
@@ -1790,7 +1790,7 @@ PR_Profile (progs_t * pr)
 	do {
 		max = 0;
 		best = NULL;
-		for (i = 0; i < pr->progs->numfunctions; i++) {
+		for (i = 0; i < pr->progs->functions.count; i++) {
 			bf = &pr->function_table[i];
 			if (bf->profile > max) {
 				max = bf->profile;
@@ -1862,7 +1862,7 @@ ED_Print (progs_t *pr, edict_t *ed, const char *fieldname)
 		}
 		return;
 	}
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
+	for (i = 0; i < pr->progs->fielddefs.count; i++) {
 		d = &pr->pr_fielddefs[i];
 		if (!d->name)					// null field def (probably 1st)
 			continue;

@@ -79,7 +79,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 
 	comment = " invalid offset";
 
-	if (offset < pr->progs->numglobals) {
+	if (offset < pr->progs->globals.count) {
 		comment = "";
 		switch (def->type & ~DEF_SAVEGLOBAL) {
 			case ev_void:
@@ -91,7 +91,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				// dynamically allocated, thus a negative string index should
 				// never appear in compiled code
 				if (string < 0
-					|| (pr_uint_t) string >= pr->progs->numstrings) {
+					|| (pr_uint_t) string >= pr->progs->strings.count) {
 					str = "invalid string offset";
 					comment = va (0, " %d %s", string, str);
 				} else {
@@ -120,7 +120,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				{
 					pr_func_t   func = G_FUNCTION (pr, offset);
 					int         start;
-					if (func < pr->progs->numfunctions) {
+					if (func < pr->progs->functions.count) {
 						start = pr->pr_functions[func].first_statement;
 						if (start > 0)
 							comment = va (0, " %d @ %x", func, start);
@@ -165,12 +165,12 @@ dump_globals (progs_t *pr)
 	pr_def_t   *global_defs = pr->pr_globaldefs;
 
 	if (sorted) {
-		global_defs = malloc (pr->progs->numglobaldefs * sizeof (ddef_t));
+		global_defs = malloc (pr->progs->globaldefs.count * sizeof (ddef_t));
 		memcpy (global_defs, pr->pr_globaldefs,
-				pr->progs->numglobaldefs * sizeof (ddef_t));
-		qsort (global_defs, pr->progs->numglobaldefs, sizeof (ddef_t), cmp);
+				pr->progs->globaldefs.count * sizeof (ddef_t));
+		qsort (global_defs, pr->progs->globaldefs.count, sizeof (ddef_t), cmp);
 	}
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		pr_def_t   *def = &global_defs[i];
 		dump_def (pr, def, 0);
 	}
@@ -185,7 +185,7 @@ dump_fields (progs_t *pr)
 	int         offset;
 	const char *comment;
 
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
+	for (i = 0; i < pr->progs->fielddefs.count; i++) {
 		pr_def_t   *def = &pr->pr_fielddefs[i];
 
 		name = PR_GetString (pr, def->name);
@@ -248,7 +248,7 @@ dump_functions (progs_t *pr)
 		type_encodings = encodings_def->ofs;
 	}
 
-	for (i = 0; i < pr->progs->numfunctions; i++) {
+	for (i = 0; i < pr->progs->functions.count; i++) {
 		dfunction_t *func = &pr->pr_functions[i];
 
 		name = PR_GetString (pr, func->name);

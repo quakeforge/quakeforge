@@ -78,7 +78,7 @@ dump_string_block (const char *strblock, size_t size)
 void
 dump_strings (progs_t *pr)
 {
-	dump_string_block (pr->pr_strings, pr->progs->numstrings);
+	dump_string_block (pr->pr_strings, pr->progs->strings.count);
 }
 
 void

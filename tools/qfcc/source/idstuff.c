@@ -212,9 +212,9 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 					 "\n\ntypedef struct\n{\tint\tpad[%i];\n",
 			 RESERVED_OFS);
 
-	strings = (char *) progs + progs->ofs_strings;
-	for (i = 0; i < progs->numglobaldefs; i++) {
-		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
+	strings = (char *) progs + progs->strings.offset;
+	for (i = 0; i < progs->globaldefs.count; i++) {
+		def = (ddef_t *) ((char *) progs + progs->globaldefs.offset) + i;
 		name = strings + def->name;
 		if (!strcmp (name, "end_sys_globals"))
 			break;
@@ -251,8 +251,8 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 
 	// print all fields
 	dasprintf (dstr, "typedef struct\n{\n");
-	for (i = 0, j = 0; i < progs->numglobaldefs; i++) {
-		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
+	for (i = 0, j = 0; i < progs->globaldefs.count; i++) {
+		def = (ddef_t *) ((char *) progs + progs->globaldefs.offset) + i;
 		name = strings + def->name;
 		if (!strcmp (name, "end_sys_fields"))
 			break;
@@ -264,7 +264,7 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 		if (!strcmp (name, ".imm"))
 			continue;
 
-		fdef = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + j++;
+		fdef = (ddef_t *) ((char *) progs + progs->fielddefs.offset) + j++;
 		if (fdef->name != def->name)
 			internal_error (0, "def and field order messup");
 

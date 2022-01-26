@@ -63,7 +63,7 @@ disassemble_progs (progs_t *pr)
 {
 	unsigned int i;
 
-	for (i = 0; i < pr->progs->numstatements; i++) {
+	for (i = 0; i < pr->progs->statements.count; i++) {
 		dfunction_t *desc = func_find (i);
 
 		if (desc) {

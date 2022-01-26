@@ -1493,7 +1493,7 @@ check_branch (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op, short offse
 	pr_int_t    address = st - pr->pr_statements;
 
 	address += offset;
-	if (address < 0 || (pr_uint_t) address >= pr->progs->numstatements)
+	if (address < 0 || (pr_uint_t) address >= pr->progs->statements.count)
 		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)",
 				  (long)(st - pr->pr_statements), op->opname);
 }
@@ -1534,8 +1534,8 @@ check_global (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op, etype_t typ
 			break;
 		default:
 			if (operand + (unsigned) pr_type_size[type]
-				> pr->progs->numglobals) {
-				if (operand >= pr->progs->numglobals
+				> pr->progs->globals.count) {
+				if (operand >= pr->progs->globals.count
 					|| !is_vector_parameter_store (pr, st, operand)) {
 					msg = "out of bounds global index";
 					goto error;
@@ -1579,7 +1579,7 @@ check_global_size (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op,
 				   unsigned short size, unsigned short operand)
 {
 	const char *msg;
-	if (operand + size > pr->progs->numglobals) {
+	if (operand + size > pr->progs->globals.count) {
 		msg = "out of bounds global index";
 		goto error;
 	}
@@ -1611,7 +1611,7 @@ PR_Check_v6p_Opcodes (progs_t *pr)
 	// the only problem is that it slows progs load a little, but it's the only
 	// way to check for qccx' evil
 	if (0 && !pr_boundscheck->int_val) {
-		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
+		for (i = 0, st = pr->pr_statements; i < pr->progs->statements.count;
 			 st++, i++) {
 			pr_opcode_v6p_e st_op = st->op;
 			op = PR_v6p_Opcode (st_op);
@@ -1632,7 +1632,7 @@ PR_Check_v6p_Opcodes (progs_t *pr)
 			}
 		}
 	} else {
-		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
+		for (i = 0, st = pr->pr_statements; i < pr->progs->statements.count;
 			 st++, i++) {
 			pr_opcode_v6p_e st_op = st->op;
 			op = PR_v6p_Opcode (st_op);

@@ -118,7 +118,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 	pr_type_t  *v;
 
 	if (!ed->free) {
-		for (i = 0; i < pr->progs->numfielddefs; i++) {
+		for (i = 0; i < pr->progs->fielddefs.count; i++) {
 			pr_def_t   *d = &pr->pr_fielddefs[i];
 
 			name = PR_GetString (pr, d->name);
@@ -162,7 +162,7 @@ ED_GlobalsDict (progs_t *pr)
 	pr_def_t   *def;
 	int         type;
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		def = &pr->pr_globaldefs[i];
 		type = def->type;
 		if (!(def->type & DEF_SAVEGLOBAL))

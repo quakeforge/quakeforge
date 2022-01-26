@@ -171,7 +171,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	// Some compilers (eg, FTE) put extra data between the header and the
 	// strings section. What's worse, they de-align the data.
-	offset_tweak = progs.ofs_strings % sizeof (pr_int_t);
+	offset_tweak = progs.strings.offset % sizeof (pr_int_t);
 	offset_tweak = (sizeof (pr_int_t) - offset_tweak) % sizeof (pr_int_t);
 
 	// size of progs themselves
@@ -216,14 +216,14 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr->zone = (memzone_t *) heap;
 	}
 
-	pr->pr_functions = (dfunction_t *) (base + pr->progs->ofs_functions);
-	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
+	pr->pr_functions = (dfunction_t *) (base + pr->progs->functions.offset);
+	pr->pr_strings = (char *) base + pr->progs->strings.offset;
 	pr->pr_stringsize = (heap - base) + pr->zone_size;
-	global_ddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
-	field_ddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
-	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
+	global_ddefs = (ddef_t *) (base + pr->progs->globaldefs.offset);
+	field_ddefs = (ddef_t *) (base + pr->progs->fielddefs.offset);
+	pr->pr_statements = (dstatement_t *) (base + pr->progs->statements.offset);
 
-	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
+	pr->pr_globals = (pr_type_t *) (base + pr->progs->globals.offset);
 	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
 	pr->stack_bottom = pr->stack - pr->pr_globals;
 	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
@@ -241,14 +241,14 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	Hash_FlushTable (pr->field_hash);
 
 // byte swap the lumps
-	for (i = 0; i < pr->progs->numstatements; i++) {
+	for (i = 0; i < pr->progs->statements.count; i++) {
 		pr->pr_statements[i].op = LittleShort (pr->pr_statements[i].op);
 		pr->pr_statements[i].a = LittleShort (pr->pr_statements[i].a);
 		pr->pr_statements[i].b = LittleShort (pr->pr_statements[i].b);
 		pr->pr_statements[i].c = LittleShort (pr->pr_statements[i].c);
 	}
 
-	for (i = 0; i < pr->progs->numfunctions; i++) {
+	for (i = 0; i < pr->progs->functions.count; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =
@@ -265,9 +265,9 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->pr_globaldefs) {
 		free (pr->pr_globaldefs);
 	}
-	pr->pr_globaldefs = calloc (pr->progs->numglobaldefs, sizeof (pr_def_t));
+	pr->pr_globaldefs = calloc (pr->progs->globaldefs.count, sizeof (pr_def_t));
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		pr_ushort_t safe_type = global_ddefs[i].type & ~DEF_SAVEGLOBAL;
 		global_ddefs[i].type = LittleShort (global_ddefs[i].type);
 		global_ddefs[i].ofs = LittleShort (global_ddefs[i].ofs);
@@ -283,8 +283,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->pr_fielddefs) {
 		free (pr->pr_fielddefs);
 	}
-	pr->pr_fielddefs = calloc (pr->progs->numfielddefs, sizeof (pr_def_t));
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
+	pr->pr_fielddefs = calloc (pr->progs->fielddefs.count, sizeof (pr_def_t));
+	for (i = 0; i < pr->progs->fielddefs.count; i++) {
 		field_ddefs[i].type = LittleShort (field_ddefs[i].type);
 		if (field_ddefs[i].type & DEF_SAVEGLOBAL)
 			PR_Error (pr, "PR_LoadProgs: DEF_SAVEGLOBAL on field def %zd", i);
@@ -297,7 +297,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 
-	for (i = 0; i < pr->progs->numglobals; i++)
+	for (i = 0; i < pr->progs->globals.count; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 
 	xdefs_def = PR_FindGlobal (pr, ".xdefs");
@@ -305,23 +305,23 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr_xdefs_t *xdefs = &G_STRUCT (pr, pr_xdefs_t, xdefs_def->ofs);
 		xdef_t     *xdef = &G_STRUCT (pr, xdef_t, xdefs->xdefs);
 		pr_def_t   *def;
-		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->globaldefs.count;
 			 i++, xdef++, def++) {
 			def->ofs = xdef->ofs;
 			def->type_encoding = xdef->type;
 		}
-		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->fielddefs.count;
 			 i++, xdef++, def++) {
 			def->ofs = xdef->ofs;
 			def->type_encoding = xdef->type;
 		}
 	} else {
 		pr_def_t   *def;
-		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->globaldefs.count;
 			 i++, def++) {
 			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
 		}
-		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->fielddefs.count;
 			 i++, def++) {
 			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
 		}
@@ -369,7 +369,7 @@ pr_run_ctors (progs_t *pr)
 	pr_uint_t   fnum;
 	dfunction_t *func;
 
-	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
+	for (fnum = 0; fnum < pr->progs->functions.count; fnum++) {
 		func = pr->pr_functions + fnum;
 		if (strequal (PR_GetString (pr, func->name), ".ctor"))
 			PR_ExecuteProgram (pr, fnum);

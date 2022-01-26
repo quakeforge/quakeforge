@@ -234,7 +234,7 @@ PR_LoadStrings (progs_t *pr)
 {
 	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");
 
-	char   *end = pr->pr_strings + pr->progs->numstrings;
+	char   *end = pr->pr_strings + pr->progs->strings.count;
 	char   *str = pr->pr_strings;
 	int		count = 0;
 

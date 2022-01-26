@@ -71,13 +71,13 @@ PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pr_ptr_t offset)
 pr_def_t *
 PR_GlobalAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
-	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->numglobaldefs, ofs);
+	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->globaldefs.count, ofs);
 }
 
 VISIBLE pr_def_t *
 PR_FieldAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
-	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->numfielddefs, ofs);
+	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->fielddefs.count, ofs);
 }
 
 VISIBLE pr_def_t *

@@ -132,7 +132,7 @@ setup_test (test_t *test)
 		}
 	}
 
-	test_progs.numstatements = test->num_statements + 1;
+	test_progs.statements.count = test->num_statements + 1;
 	test_pr.pr_statements
 		= malloc ((test->num_statements + 1) * sizeof (dstatement_t));
 	memcpy (test_pr.pr_statements, test->statements,

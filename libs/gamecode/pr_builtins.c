@@ -188,10 +188,10 @@ PR_RelocateBuiltins (progs_t *pr)
 
 	if (pr->function_table)
 		free (pr->function_table);
-	pr->function_table = calloc (pr->progs->numfunctions,
+	pr->function_table = calloc (pr->progs->functions.count,
 								 sizeof (bfunction_t));
 
-	for (i = 1; i < pr->progs->numfunctions; i++) {
+	for (i = 1; i < pr->progs->functions.count; i++) {
 		desc = pr->pr_functions + i;
 		func = pr->function_table + i;
 

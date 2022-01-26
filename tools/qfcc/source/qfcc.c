@@ -212,20 +212,20 @@ WriteProgs (dprograms_t *progs, int size)
 	pr_type_t  *globals;
 
 #define P(t,o) ((t *)((char *)progs + progs->o))
-	statements = P (dstatement_t, ofs_statements);
-	functions = P (dfunction_t, ofs_functions);
-	globaldefs = P (ddef_t, ofs_globaldefs);
-	fielddefs = P (ddef_t, ofs_fielddefs);
-	globals = P (pr_type_t, ofs_globals);
+	statements = P (dstatement_t, statements.offset);
+	functions = P (dfunction_t, functions.offset);
+	globaldefs = P (ddef_t, globaldefs.offset);
+	fielddefs = P (ddef_t, fielddefs.offset);
+	globals = P (pr_type_t, globals.offset);
 #undef P
 
-	for (i = 0; i < progs->numstatements; i++) {
+	for (i = 0; i < progs->statements.count; i++) {
 		statements[i].op = LittleShort (statements[i].op);
 		statements[i].a = LittleShort (statements[i].a);
 		statements[i].b = LittleShort (statements[i].b);
 		statements[i].c = LittleShort (statements[i].c);
 	}
-	for (i = 0; i < (unsigned) progs->numfunctions; i++) {
+	for (i = 0; i < (unsigned) progs->functions.count; i++) {
 		dfunction_t *func = functions + i;
 		func->first_statement = LittleLong (func->first_statement);
 		func->parm_start = LittleLong (func->parm_start);
@@ -235,17 +235,17 @@ WriteProgs (dprograms_t *progs, int size)
 		func->file = LittleLong (func->file);
 		func->numparms = LittleLong (func->numparms);
 	}
-	for (i = 0; i < progs->numglobaldefs; i++) {
+	for (i = 0; i < progs->globaldefs.count; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
 		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
 		globaldefs[i].name = LittleLong (globaldefs[i].name);
 	}
-	for (i = 0; i < progs->numfielddefs; i++) {
+	for (i = 0; i < progs->fielddefs.count; i++) {
 		fielddefs[i].type = LittleShort (fielddefs[i].type);
 		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
 		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
-	for (i = 0; i < progs->numglobals; i++)
+	for (i = 0; i < progs->globals.count; i++)
 		globals[i].int_var = LittleLong (globals[i].int_var);
 
 	if (!(h = Qopen (options.output_file, "wb")))

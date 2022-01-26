@@ -221,7 +221,7 @@ qdb_set_breakpoint (progs_t *pr)
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 
-	if (staddr >= tpr->progs->numstatements) {
+	if (staddr >= tpr->progs->statements.count) {
 		R_INT (pr) = -1;
 		return;
 	}
@@ -239,7 +239,7 @@ qdb_clear_breakpoint (progs_t *pr)
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 
-	if (staddr >= tpr->progs->numstatements) {
+	if (staddr >= tpr->progs->statements.count) {
 		R_INT (pr) = -1;
 		return;
 	}
@@ -555,7 +555,7 @@ qdb_get_function (progs_t *pr)
 	pr_uint_t   fnum = P_INT (pr, 1);
 	dfunction_t *func = tpr->pr_functions + fnum;
 
-	if (fnum >= tpr->progs->numfunctions) {
+	if (fnum >= tpr->progs->functions.count) {
 		func = 0;
 	}
 	return_function (pr, func);
@@ -591,7 +591,7 @@ qdb_find_auxfunction (progs_t *pr)
 	pr_uint_t   fnum = func - tpr->pr_functions;
 	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
 
-	if (fnum >= tpr->progs->numfunctions) {
+	if (fnum >= tpr->progs->functions.count) {
 		func = 0;
 	}
 	return_auxfunction (pr, auxfunc);
