@@ -1253,6 +1253,70 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+addressing_mode (sblock_t *sblock, expr_t *ref,
+				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
+{
+	if (is_indirect (ref)) {
+		// ref is known to be either ex_expr or ex_uexpr, with '.' for
+		// the operator
+		if (ref->type == ex_expr) {
+			internal_error (ref, "not implemented");
+		} else if (ref->type == ex_uexpr) {
+			ref = ref->e.expr.e1;
+			if (!is_ptr (get_type (ref))) {
+				internal_error (ref, "expected pointer in ref");
+			}
+			if (ref->type != ex_alias || ref->e.alias.offset) {
+				// probably just a pointer
+				sblock = statement_subexpr (sblock, ref, base);
+				*offset = short_operand (0, ref);
+				*mode = 2;	// mode C: ptr + constant index
+			} else {
+				// alias with no offset
+				if (!is_integral (get_type (ref->e.alias.expr))) {
+					internal_error (ref, "expected integer expr in ref");
+				}
+				expr_t     *intptr = ref->e.alias.expr;
+				if (intptr->type != ex_expr
+					|| (intptr->e.expr.op != '+'
+						&& intptr->e.expr.op != '-')) {
+					// treat ref as simple pointer
+					sblock = statement_subexpr (sblock, ref, base);
+					*offset = short_operand (0, ref);
+					*mode = 2;	// mode C: ptr + constant index
+				} else {
+					expr_t     *ptr = intptr->e.expr.e1;
+					expr_t     *offs = intptr->e.expr.e2;
+					int         const_offs;
+					// move the +/- to the offset
+					offs = unary_expr (intptr->e.expr.op, offs);
+					// make the base a pointer again
+					ptr = new_alias_expr (ref->e.alias.type, ptr);
+					sblock = statement_subexpr (sblock, ptr, base);
+					if (is_constant (offs)
+						&& (const_offs = expr_int (offs)) < 32768
+						&& const_offs >= -32768) {
+						*mode = 2;
+						*offset = short_operand (const_offs, ref);
+					} else {
+						*mode = 3;
+						sblock = statement_subexpr (sblock, offs, offset);
+					}
+				}
+			}
+		} else {
+			internal_error (ref, "unexpected expression type for indirect: %s",
+							expr_names[ref->type]);
+		}
+	} else {
+		sblock = statement_subexpr (sblock, ref, base);
+		*offset = short_operand (0, ref);
+		*mode = 0;
+	}
+	return sblock;
+}
+
+static sblock_t *
 statement_return (sblock_t *sblock, expr_t *e)
 {
 	const char *opcode;
@@ -1277,16 +1341,15 @@ statement_return (sblock_t *sblock, expr_t *e)
 		if (e->e.retrn.ret_val) {
 			expr_t     *ret_val = e->e.retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
-			if (is_indirect (ret_val)) {
-			} else {
-				sblock = statement_subexpr (sblock, ret_val, &s->opa);
-				s->opb = short_operand (0, e);
-				s->opc = short_operand (type_size (ret_type) - 1, e);
-			}
+			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
+			pr_ushort_t mode = 0;
+			sblock = addressing_mode (sblock, ret_val, &s->opa, &s->opb, &mode);
+			ret_crtl |= mode << 5;
+			s->opc = short_operand (ret_crtl, e);
 		} else {
 			s->opa = short_operand (0, e);
 			s->opb = short_operand (0, e);
-			s->opc = short_operand (-1, e);
+			s->opc = short_operand (-1, e);	// void return
 		}
 	}
 	sblock_add_statement (sblock, s);
