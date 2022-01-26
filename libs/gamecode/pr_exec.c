@@ -1821,39 +1821,6 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 }
 
 static pr_type_t *
-pr_return_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
-{
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	pr_ptr_t    mm_offs = 0;
-
-	switch (mm_ind) {
-		case 0:
-			// regular global access
-			mm_offs = op_a - pr->pr_globals;
-			break;
-		case 1:
-			// simple pointer dereference: *a
-			mm_offs = OPA(ptr);
-			break;
-		case 2:
-			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(ptr) + (short) st->b;
-			break;
-		case 3:
-			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(ptr) + OPB(int);
-			break;
-		case 4:
-			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(entity) + OPB(field);
-			break;
-	}
-	return pr->pr_globals + mm_offs;
-}
-
-static pr_type_t *
 pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
@@ -3184,7 +3151,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_RETURN:
 				int         ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if (st->c != 0xffff) {
-					mm = pr_return_mode (pr, st, st->c >> 5);
+					mm = pr_address_mode (pr, st, st->c >> 5);
 					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
 				}
 				pr->pr_xfunction->profile += profile - startprofile;
