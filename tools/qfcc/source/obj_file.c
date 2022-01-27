@@ -573,6 +573,13 @@ qfo_read (QFile *file)
 		free (data);
 		return 0;
 	}
+	// qfprogs leaves progsversion as 0
+	if (options.code.progsversion
+		&& header->progs_version != options.code.progsversion) {
+		fprintf (stderr, "qfo file target VM does not match current target\n");
+		free (data);
+		return 0;
+	}
 	qfo = calloc (1, sizeof (qfo_t));
 
 	qfo->num_spaces = LittleLong (header->num_spaces);

@@ -169,7 +169,7 @@ tools_qfcc_test_chewed_return_dat_SOURCES=tools/qfcc/test/chewed-return.r
 chewed_return_obj=$(tools_qfcc_test_chewed_return_dat_SOURCES:.r=.o)
 chewed_return_dep=$(call qcautodep,$(tools_qfcc_test_chewed_return_dat_SOURCES))
 tools/qfcc/test/chewed-return.dat$(EXEEXT): $(chewed_return_obj) $(QFCC_DEP)
-	$(V_QFCCLD)$(QLINK) -o $@ $(chewed_return_obj)
+	$(V_QFCCLD)$(QLINK) -Ctarget=v6 -o $@ $(chewed_return_obj)
 tools/qfcc/test/chewed-return.run: $(qfcc_test_run_deps)
 	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
 include $(chewed_return_dep) # am--include-marker
