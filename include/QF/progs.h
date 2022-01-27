@@ -1254,12 +1254,12 @@ typedef struct {
 */
 typedef struct {
 	pr_int_t    first_statement;
-	pr_int_t    numparms;
+	pr_int_t    numparams;
 	union {
 		struct {
-			dparmsize_t parm_size[PR_MAX_PARAMS];
+			dparmsize_t param_size[PR_MAX_PARAMS];
 			dfunction_t *descriptor;
-			pr_uint_t   parm_start;
+			pr_uint_t   params_start;
 			pr_uint_t   locals;
 			pr_uint_t   profile;
 		};

@@ -522,12 +522,12 @@ return_function (progs_t *pr, dfunction_t *func)
 		__auto_type f
 			= (qdb_function_t *) PR_Zone_Malloc (pr, sizeof (qdb_function_t));
 		f->staddr = func->first_statement;
-		f->local_data = func->parm_start;
+		f->local_data = func->params_start;
 		f->local_size = func->locals;
 		f->profile = func->profile;
 		f->name = func->name;
 		f->file = func->file;
-		f->num_params = func->numparms;
+		f->num_params = func->numparams;
 		R_POINTER (pr) = PR_SetPointer (pr, f);
 	}
 }

@@ -193,9 +193,9 @@ PR_PopFrame (progs_t *pr)
 }
 
 static __attribute__((pure)) long
-align_offset (long offset, dparmsize_t parmsize)
+align_offset (long offset, dparmsize_t paramsize)
 {
-	int         mask = (1 << parmsize.alignment) - 1;
+	int         mask = (1 << paramsize.alignment) - 1;
 	return (offset + mask) & ~mask;
 }
 
@@ -237,39 +237,39 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		return;
 	}
 
-	if (f->numparms > 0) {
-		paramofs = f->parm_start;
-		for (i = 0; i < f->numparms; i++) {
-			paramofs = align_offset (paramofs, f->parm_size[i]);
+	if (f->numparams > 0) {
+		paramofs = f->params_start;
+		for (i = 0; i < f->numparams; i++) {
+			paramofs = align_offset (paramofs, f->param_size[i]);
 			dstParams[i] = pr->pr_globals + paramofs;
-			paramofs += f->parm_size[i].size;
+			paramofs += f->param_size[i].size;
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
-							f->parm_size[i].size);
+							f->param_size[i].size);
 				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
-	} else if (f->numparms < 0) {
-		paramofs = f->parm_start + 2;	// argc and argv
-		for (i = 0; i < -f->numparms - 1; i++) {
-			paramofs = align_offset (paramofs, f->parm_size[i]);
+	} else if (f->numparams < 0) {
+		paramofs = f->params_start + 2;	// argc and argv
+		for (i = 0; i < -f->numparams - 1; i++) {
+			paramofs = align_offset (paramofs, f->param_size[i]);
 			dstParams[i] = pr->pr_globals + paramofs;
-			paramofs += f->parm_size[i].size;
+			paramofs += f->param_size[i].size;
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
-							f->parm_size[i].size);
+							f->param_size[i].size);
 				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
-		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
-		paramofs = align_offset (paramofs, parmsize );
+		dparmsize_t paramsize = { pr->pr_param_size, pr->pr_param_alignment };
+		paramofs = align_offset (paramofs, paramsize );
 		if (i < PR_MAX_PARAMS) {
 			dstParams[i] = pr->pr_globals + paramofs;
 		}
 		for (; i < pr->pr_argc; i++) {
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
-							parmsize.size);
+							paramsize.size);
 				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
@@ -280,27 +280,28 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		PR_RunError (pr, "PR_EnterFunction: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
-			&pr->pr_globals[f->parm_start],
+			&pr->pr_globals[f->params_start],
 			sizeof (pr_type_t) * f->locals);
 	pr->localstack_used += f->locals;
 
 	if (pr_deadbeef_locals->int_val) {
-		for (pr_uint_t i = f->parm_start; i < f->parm_start + f->locals; i++) {
+		for (pr_uint_t i = f->params_start;
+			 i < f->params_start + f->locals; i++) {
 			pr->pr_globals[i].int_var = 0xdeadbeef;
 		}
 	}
 
 	// copy parameters
-	if (f->numparms >= 0) {
-		for (i = 0; i < f->numparms; i++) {
-			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
+	if (f->numparams >= 0) {
+		for (i = 0; i < f->numparams; i++) {
+			copy_param (dstParams[i], pr->pr_params[i], f->param_size[i].size);
 		}
 	} else {
 		int         copy_args;
-		pr_type_t  *argc = &pr->pr_globals[f->parm_start + 0];
-		pr_type_t  *argv = &pr->pr_globals[f->parm_start + 1];
-		for (i = 0; i < -f->numparms - 1; i++) {
-			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
+		pr_type_t  *argc = &pr->pr_globals[f->params_start + 0];
+		pr_type_t  *argv = &pr->pr_globals[f->params_start + 1];
+		for (i = 0; i < -f->numparams - 1; i++) {
+			copy_param (dstParams[i], pr->pr_params[i], f->param_size[i].size);
 		}
 		copy_args = pr->pr_argc - i;
 		argc->int_var = copy_args;
@@ -338,7 +339,7 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 	if (pr->localstack_used < 0)
 		PR_RunError (pr, "PR_LeaveFunction: locals stack underflow");
 
-	memcpy (&pr->pr_globals[f->parm_start],
+	memcpy (&pr->pr_globals[f->params_start],
 			&pr->localstack[pr->localstack_used],
 			sizeof (pr_type_t) * f->locals);
 }

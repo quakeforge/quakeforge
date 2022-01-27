@@ -259,15 +259,15 @@ dump_functions (progs_t *pr)
 		else
 			comment = va (0, " = #%d", -start);
 
-		printf ("%-5d %s%s: %d (", i, name, comment, func->numparms);
-		if (func->numparms < 0)
-			count = -func->numparms - 1;
+		printf ("%-5d %s%s: %d (", i, name, comment, func->numparams);
+		if (func->numparams < 0)
+			count = -func->numparams - 1;
 		else
-			count = func->numparms;
+			count = func->numparams;
 		for (j = 0; j < count; j++)
-			printf (" %d:%d", func->parm_size[j].alignment,
-					func->parm_size[j].size);
-		printf (") %d @ %x", func->locals, func->parm_start);
+			printf (" %d:%d", func->param_size[j].alignment,
+					func->param_size[j].size);
+		printf (") %d @ %x", func->locals, func->params_start);
 		puts ("");
 		if (type_encodings) {
 			pr_auxfunction_t *aux = PR_Debug_MappedAuxFunction (pr, i);
@@ -476,7 +476,8 @@ qfo_functions (qfo_t *qfo)
 			printf (" @ %x", func->code);
 		else
 			printf (" = #%d", -func->code);
-		printf (" loc: %d\n", func->locals_space);
+		printf (" loc: %d params: %d\n",
+				func->locals_space, func->params_start);
 		if (func->locals_space) {
 			locals = &qfo->spaces[func->locals_space];
 			printf ("%*s%d %p %d %p %d %d\n", 16, "", locals->type,

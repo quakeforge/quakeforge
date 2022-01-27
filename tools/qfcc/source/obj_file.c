@@ -791,13 +791,13 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 }
 
 static __attribute__((pure)) dparmsize_t
-get_parmsize (qfo_t *qfo, pr_ptr_t type)
+get_paramsize (qfo_t *qfo, pr_ptr_t type)
 {
-	dparmsize_t parmsize = {
+	dparmsize_t paramsize = {
 		get_type_size (qfo, type),
 		get_type_alignment_log (qfo, type),
 	};
-	return parmsize;
+	return paramsize;
 }
 
 static void
@@ -816,11 +816,11 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	}
 	if (type->meta != ty_basic || type->type != ev_func)
 		return;
-	df->numparms = num_params = type->func.num_params;
+	df->numparams = num_params = type->func.num_params;
 	if (num_params < 0)
 		num_params = ~num_params;
 	for (i = 0; i < num_params; i++) {
-		df->parm_size[i] = get_parmsize (qfo, type->func.param_types[i]);
+		df->param_size[i] = get_paramsize (qfo, type->func.param_types[i]);
 	}
 }
 
@@ -1140,9 +1140,9 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		qfo_mspace_t *space = qfo->spaces + qf->locals_space;
 
 		df->first_statement = qf->code;
+		df->locals = space->data_size;
 		if (options.code.progsversion < PROG_VERSION) {
-			df->parm_start = globals_info.locals_start;
-			df->locals = space->data_size;
+			df->params_start = globals_info.locals_start;
 			// finalize the offsets of the local defs
 			for (j = 0; j < space->num_defs; j++)
 				space->defs[j].offset += globals_info.locals_start;
@@ -1243,7 +1243,7 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		if (qf->locals_space == globals_info.big_locals)
 			big_func = i;
 		for (j = 0; j < space->num_defs; j++)
-			space->defs[j].offset -= df->parm_start;
+			space->defs[j].offset -= df->params_start;
 	}
 
 	if (options.verbosity >= 0) {

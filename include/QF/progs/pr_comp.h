@@ -513,16 +513,16 @@ typedef struct dparmsize_s {
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
-	pr_uint_t   parm_start;			// beginning of locals data space
-	pr_uint_t   locals;				// total ints of parms + locals
+	pr_uint_t   params_start;		// beginning of locals data space
+	pr_uint_t   locals;				// total ints of params + locals
 
 	pr_uint_t   profile;			// runtime
 
 	pr_string_t name;				// source function name
 	pr_string_t file;				// source file defined in
 
-	pr_int_t    numparms;			// -ve is varargs (1s comp of real count)
-	dparmsize_t parm_size[PR_MAX_PARAMS];
+	pr_int_t    numparams;			// -ve is varargs (1s comp of real count)
+	dparmsize_t param_size[PR_MAX_PARAMS];
 } dfunction_t;
 
 typedef union pr_type_u {

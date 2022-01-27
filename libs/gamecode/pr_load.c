@@ -251,12 +251,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	for (i = 0; i < pr->progs->functions.count; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
-		pr->pr_functions[i].parm_start =
-			LittleLong (pr->pr_functions[i].parm_start);
+		pr->pr_functions[i].params_start =
+			LittleLong (pr->pr_functions[i].params_start);
 		pr->pr_functions[i].name = LittleLong (pr->pr_functions[i].name);
 		pr->pr_functions[i].file = LittleLong (pr->pr_functions[i].file);
-		pr->pr_functions[i].numparms =
-			LittleLong (pr->pr_functions[i].numparms);
+		pr->pr_functions[i].numparams =
+			LittleLong (pr->pr_functions[i].numparams);
 		pr->pr_functions[i].locals = LittleLong (pr->pr_functions[i].locals);
 		if (pr->pr_functions[i].name)
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);

@@ -914,7 +914,7 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 }
 
 pr_def_t *
-PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
+PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned param)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t    i;
@@ -928,12 +928,12 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	if (!func)
 		return 0;
 
-	num_params = func->numparms;
+	num_params = func->numparams;
 	if (num_params < 0) {
 		num_params = ~num_params;	// one's compliment
 		param_offs = 1;	// skip over @args def
 	}
-	if (parm >= (unsigned) num_params)
+	if (param >= (unsigned) num_params)
 		return 0;
 
 	aux_func = res->auxfunction_map[func - pr->pr_functions];
@@ -942,7 +942,7 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 
 	for (i = 0; i < aux_func->num_locals; i++) {
 		ddef = &res->local_defs[aux_func->local_defs + param_offs + i];
-		if (!parm--)
+		if (!param--)
 			break;
 	}
 	return ddef;
@@ -987,7 +987,7 @@ PR_Get_Local_Def (progs_t *pr, pr_ptr_t *offset)
 	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
-	offs -= func->parm_start;
+	offs -= func->params_start;
 	if (offs >= func->locals)
 		return 0;
 	if ((def =  PR_SearchDefs (res->local_defs + aux_func->local_defs,
@@ -1531,7 +1531,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	const char *fmt;
 	const char *mnemonic;
 	dfunction_t *call_func = 0;
-	pr_def_t   *parm_def = 0;
+	pr_def_t   *param_def = 0;
 	pr_auxfunction_t *aux_func = 0;
 	pr_debug_data_t data;
 	etype_t     op_type[3];
@@ -1603,16 +1603,16 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			} else {
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
-				unsigned    parm_ind = 0;
+				unsigned    param_ind = 0;
 				pr_uint_t   opval;
 				qfot_type_t *optype = &res->void_type;
 				pr_func_t   func;
 
 				if (mode == 'P') {
 					opchar = fmt[3];
-					parm_ind = fmt[2] - '0';
+					param_ind = fmt[2] - '0';
 					fmt++;				// P has one extra item
-					if (parm_ind >= PR_MAX_PARAMS)
+					if (param_ind >= PR_MAX_PARAMS)
 						goto err;
 				}
 
@@ -1631,7 +1631,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'x':
 						if (mode == 'P') {
-							opval = pr->pr_real_params[parm_ind]
+							opval = pr->pr_real_params[param_ind]
 									- pr->pr_globals;
 							break;
 						}
@@ -1657,10 +1657,10 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						}
 						break;
 					case 'P':
-						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
+						param_def = PR_Get_Param_Def (pr, call_func, param_ind);
 						optype = &res->void_type;
-						if (parm_def) {
-							optype = get_type (res, parm_def->type_encoding);
+						if (param_def) {
+							optype = get_type (res, param_def->type_encoding);
 						}
 						str = global_string (&data, opval, optype,
 											 contents & 1);
@@ -1690,12 +1690,12 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						{
 							edict_t    *ed = 0;
 							opval = pr->pr_globals[s->a].entity_var;
-							parm_ind = pr->pr_globals[s->b].uint_var;
-							if (parm_ind < pr->progs->entityfields
+							param_ind = pr->pr_globals[s->b].uint_var;
+							if (param_ind < pr->progs->entityfields
 								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {
 								ed = PROG_TO_EDICT (pr, opval);
-								opval = &E_fld(ed, parm_ind) - pr->pr_globals;
+								opval = &E_fld(ed, param_ind) - pr->pr_globals;
 							}
 							if (!ed) {
 								str = "bad entity.field";

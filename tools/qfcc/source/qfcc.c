@@ -228,12 +228,12 @@ WriteProgs (dprograms_t *progs, int size)
 	for (i = 0; i < (unsigned) progs->functions.count; i++) {
 		dfunction_t *func = functions + i;
 		func->first_statement = LittleLong (func->first_statement);
-		func->parm_start = LittleLong (func->parm_start);
+		func->params_start = LittleLong (func->params_start);
 		func->locals = LittleLong (func->locals);
 		func->profile = LittleLong (func->profile);
 		func->name = LittleLong (func->name);
 		func->file = LittleLong (func->file);
-		func->numparms = LittleLong (func->numparms);
+		func->numparams = LittleLong (func->numparams);
 	}
 	for (i = 0; i < progs->globaldefs.count; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
