@@ -773,6 +773,8 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		// first
 		defspace_t *space = defspace_new (ds_virtual);
 
+		func->params_start = 0;
+
 		merge_spaces (space, func->parameters->space, 1);
 		func->parameters->space = space;
 
@@ -790,15 +792,19 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		merge_spaces (space, func->locals->space, 4);
 		func->locals->space = space;
 
-		// allocate 0 words to force alignment
-		defspace_alloc_aligned_highwater (space, 0, 4);
+		// allocate 0 words to force alignment and get the address
+		func->params_start = defspace_alloc_aligned_highwater (space, 0, 4);
 
 		dstatement_t *st = &pr.code->code[func->code];
 		if (st->op == OP_ADJSTK) {
-			st->b = -space->size;
+			st->b = -func->params_start;
 		}
 		merge_spaces (space, func->parameters->space, 4);
 		func->parameters->space = space;
+
+		// force the alignment again so the full stack slot is counted when
+		// the final parameter is smaller than 4 words
+		defspace_alloc_aligned_highwater (space, 0, 4);
 	}
 	return fsym->s.func;
 }

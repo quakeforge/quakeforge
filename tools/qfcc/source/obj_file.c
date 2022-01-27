@@ -314,6 +314,7 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 		q->line_info = f->line_info;
 		q->relocs = *relocs - qfo->relocs;
 		q->num_relocs = qfo_encode_relocs (f->refs, relocs, q - qfo->funcs);
+		q->params_start = f->params_start;
 	}
 }
 
@@ -530,6 +531,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 		funcs[i].line_info = LittleLong (qfo->funcs[i].line_info);
 		funcs[i].relocs = LittleLong (qfo->funcs[i].relocs);
 		funcs[i].num_relocs = LittleLong (qfo->funcs[i].num_relocs);
+		funcs[i].params_start = LittleLong (qfo->funcs[i].params_start);
 	}
 	for (i = 0; i < qfo->num_lines; i++) {
 		lines[i].fa.addr = LittleLong (qfo->lines[i].fa.addr);
@@ -1148,6 +1150,9 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 				space->defs[j].offset += globals_info.locals_start;
 			if (!options.code.local_merging)
 				globals_info.locals_start += align_globals_size (df->locals);
+		} else {
+			// relative to start of locals for Ruamoko progs
+			df->params_start = qf->params_start;
 		}
 		df->profile = 0;
 		df->name = qf->name;

@@ -65,7 +65,7 @@ typedef struct function_s {
 	int                 code;		///< first statement
 	int                 function_num;
 	int                 line_info;
-	int                 local_defs;
+	int                 params_start;///< relative to locals space. 0 for v6p
 	pr_string_t         s_file;		///< source file with definition
 	pr_string_t         s_name;		///< name of function in output
 	const struct type_s *type;		///< function's type without aliases

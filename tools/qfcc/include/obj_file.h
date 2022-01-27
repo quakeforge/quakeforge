@@ -211,7 +211,9 @@ typedef struct qfo_func_s {
 	pr_uint_t   relocs;			///< Index to first ::qfo_reloc_t reloc record.
 	pr_uint_t   num_relocs;		///< Number of reloc records.
 	//@}
-	pr_int_t    reserved[2];
+	pr_uint_t   params_start;	///< locals_space relative start of parameters
+								///< always 0 for v6/v6p progs
+	pr_int_t    reserved;
 } qfo_func_t;
 
 /** Evil source of many headaches. The whole reason I've started writing this
