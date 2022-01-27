@@ -463,7 +463,7 @@ return_formats = {
     "mnemonic": "return",
     "opname": "return",
     "widths": "-1, -1, 0",    # width specified by st->c
-    "format": "FIXME",
+    "format": "%Mc5",
     "types": "ev_void, ev_void, ev_void",
 }
 vecops_formats = {

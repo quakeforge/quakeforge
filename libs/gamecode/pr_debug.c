@@ -1629,6 +1629,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    param_ind = 0;
+				pr_uint_t   shift = 0;
 				pr_uint_t   opval;
 				qfot_type_t *optype = &res->void_type;
 				pr_func_t   func;
@@ -1639,6 +1640,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					fmt++;				// P has one extra item
 					if (param_ind >= PR_MAX_PARAMS)
 						goto err;
+				}
+				if (mode == 'M' || mode == 'm') {
+					if (!isxdigit (fmt[3])) {
+						goto err;
+					}
+					shift = fmt[3];
+					shift = (shift & 0xf)
+							+ (((shift & 0x40) >> 3) | ((shift & 0x40) >> 5));
+					fmt++; // M/m have one extra item
 				}
 
 				switch (opchar) {
@@ -1730,6 +1740,34 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 												 contents & 1);
 							str = dsprintf (res->dva, "$%x $%x %s",
 											s->a, s->b, str);
+						}
+						break;
+					case 'M':
+					case 'm':
+						{
+							pr_ptr_t    ptr = 0;
+							pr_int_t    offs = 0;
+							switch ((opval >> shift) & 3) {
+								case 0:
+									ptr = s->a + PR_BASE (pr, s, A);
+									break;
+								case 1:
+									break;
+								case 2:
+									ptr = s->a + PR_BASE (pr, s, A);
+									ptr = G_POINTER (pr, ptr);
+									offs = (short) s->b;
+									break;
+								case 3:
+									ptr = s->a + PR_BASE (pr, s, A);
+									ptr = G_POINTER (pr, ptr);
+									offs = s->b + PR_BASE (pr, s, B);
+									offs = G_INT (pr, offs);
+									break;
+							}
+							ptr += offs;
+							str = global_string (&data, ptr, optype,
+												 mode == 'M');
 						}
 						break;
 					default:

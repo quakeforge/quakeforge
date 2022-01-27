@@ -54,10 +54,19 @@
 // F  function (must come before any P)
 // R  return value
 // E  entity + field (%Eab)
+// M  addressing mode, contents
+// m  addressing mode, no contents
+//      takes operand (a,b,c,o (opcode)) and right shift(hex). always masked
+//        by 3
+//      %Mc5 -> contents, operand c, shift right 5 bits
+//      %mo2 -> no contents, opcode, shift right 2 bits
+//      %mo0 -> no contents, opcode, no shift
+//      always uses a and b for the address calculation (Ruamoko convention))
 //
 // a  operand a
 // b  operand b
 // c  operand c
+// o  opcode
 // x  place holder for P (padding)
 // 0-7 parameter index (for P)
 VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
