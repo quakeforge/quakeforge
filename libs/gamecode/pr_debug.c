@@ -989,7 +989,19 @@ PR_Get_Local_Def (progs_t *pr, pr_ptr_t *offset)
 	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
-	offs -= func->params_start;
+
+	pr_ptr_t    locals_start;
+	if (pr->progs->version == PROG_VERSION) {
+		if (pr->pr_depth) {
+			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
+			locals_start = frame->stack_ptr - func->params_start;
+		} else {
+			locals_start = 0;	//FIXME ? when disassembling in qfprogs
+		}
+	} else {
+		locals_start = func->params_start;
+	}
+	offs -= locals_start;
 	if (offs >= func->locals)
 		return 0;
 	if ((def =  PR_SearchDefs (res->local_defs + aux_func->local_defs,
@@ -1115,11 +1127,11 @@ pr_debug_find_def (progs_t *pr, pr_ptr_t *ofs)
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
 
-	if (*ofs >= pr->progs->globals.count) {
-		return 0;
-	}
 	if (pr_debug->int_val && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
+	}
+	if (*ofs >= pr->progs->globals.count) {
+		return 0;
 	}
 	if (!def) {
 		def = PR_GlobalAtOfs (pr, *ofs);
@@ -1630,6 +1642,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    param_ind = 0;
 				pr_uint_t   shift = 0;
+				pr_uint_t   opreg;
 				pr_uint_t   opval;
 				qfot_type_t *optype = &res->void_type;
 				pr_func_t   func;
@@ -1653,16 +1666,23 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 
 				switch (opchar) {
 					case 'a':
+						opreg = PR_BASE_IND (s->op, A);
 						opval = s->a;
 						optype = res->type_encodings[op_type[0]];
 						break;
 					case 'b':
+						opreg = PR_BASE_IND (s->op, B);
 						opval = s->b;
 						optype = res->type_encodings[op_type[1]];
 						break;
 					case 'c':
+						opreg = PR_BASE_IND (s->op, C);
 						opval = s->c;
 						optype = res->type_encodings[op_type[2]];
+						break;
+					case 'o':
+						opreg = 0;
+						opval = s->op;
 						break;
 					case 'x':
 						if (mode == 'P') {
@@ -1670,6 +1690,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 									- pr->pr_globals;
 							break;
 						}
+						goto err;
 					default:
 						goto err;
 				}
@@ -1701,14 +1722,17 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 											 contents & 1);
 						break;
 					case 'V':
+						opval += pr->pr_bases[opreg];
 						str = global_string (&data, opval, ev_void,
 											 contents & 1);
 						break;
 					case 'G':
+						opval += pr->pr_bases[opreg];
 						str = global_string (&data, opval, optype,
 											 contents & 1);
 						break;
 					case 'g':
+						opval += pr->pr_bases[opreg];
 						str = global_string (&data, opval, optype, 0);
 						break;
 					case 's':
