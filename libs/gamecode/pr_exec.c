@@ -233,7 +233,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr->pr_xfunction = f;
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
-	if (!f->locals) {
+	if (pr->progs->version == PROG_VERSION) {
 		return;
 	}
 
@@ -332,6 +332,10 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 							PR_GetString (pr, rf->descriptor->name));
 			}
 		}
+	}
+
+	if (pr->progs->version == PROG_VERSION) {
+		return;
 	}
 
 	// restore locals from the stack
