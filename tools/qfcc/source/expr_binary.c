@@ -40,7 +40,7 @@
 
 typedef struct {
 	int         op;
-	type_t     *type;
+	type_t     *result_type;
 	type_t     *a_cast;
 	type_t     *b_cast;
 	expr_t     *(*process)(int op, expr_t *e1, expr_t *e2);
@@ -952,7 +952,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return fold_constants (e);
 
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = expr_type->type;
+	e->e.expr.type = expr_type->result_type;
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			e->e.expr.type = &type_float;
