@@ -54,6 +54,7 @@
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "QF/progs/pr_debug.h"
@@ -91,6 +92,7 @@ typedef struct prdeb_resources_s {
 	dstring_t  *dva;
 	dstring_t  *line;
 	dstring_t  *dstr;
+	va_ctx_t   *va;
 	const char *debugfile;
 	pr_debug_header_t *debug;
 	pr_auxfunction_t *auxfunctions;
@@ -1522,6 +1524,18 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 	}
 }
 
+static const char *
+print_raw_op (progs_t *pr, pr_ushort_t op, pr_ushort_t base_ind,
+			  etype_t op_type, int op_width)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	const char *width = va (res->va, "%d", op_width);
+	return va (res->va, "%d:%04x<%08x>%s:%-8s",
+				base_ind, op, op + pr->pr_bases[base_ind],
+				op_width > 0 ? width : op_width < 0 ? "X" : "?",
+				pr_type_name[op_type]);
+}
+
 VISIBLE void
 PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
@@ -1585,12 +1599,23 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 
 	dasprintf (res->line, "%04x ", addr);
 	if (pr_debug->int_val > 2) {
-		dasprintf (res->line,
-					"%03x %04x(%8s)[%d] %04x(%8s)[%d] %04x(%8s)[%d]\t",
-					s->op,
-					s->a, pr_type_name[op_type[0]], op_width[0],
-					s->b, pr_type_name[op_type[1]], op_width[1],
-					s->c, pr_type_name[op_type[2]], op_width[2]);
+		if (pr->progs->version < PROG_VERSION) {
+			dasprintf (res->line,
+						"%03x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+						s->op,
+						s->a, pr_type_name[op_type[0]],
+						s->b, pr_type_name[op_type[1]],
+						s->c, pr_type_name[op_type[2]]);
+		} else {
+			dasprintf (res->line, "%04x %s %s %s\t",
+						s->op,
+						print_raw_op (pr, s->a, PR_BASE_IND (s->op, A),
+									  op_type[0], op_width[0]),
+						print_raw_op (pr, s->b, PR_BASE_IND (s->op, B),
+									  op_type[0], op_width[0]),
+						print_raw_op (pr, s->c, PR_BASE_IND (s->op, C),
+									  op_type[0], op_width[0]));
+		}
 	}
 
 	dasprintf (res->line, "%s ", mnemonic);
@@ -1895,6 +1920,7 @@ PR_Debug_Init (progs_t *pr)
 	res->dva = dstring_newstr ();
 	res->line = dstring_newstr ();
 	res->dstr = dstring_newstr ();
+	res->va = va_create_context (8);
 
 	res->void_type.meta = ty_basic;
 	res->void_type.size = 4;
