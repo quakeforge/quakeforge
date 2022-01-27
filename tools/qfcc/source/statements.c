@@ -452,7 +452,11 @@ return_operand (type_t *type, expr_t *expr)
 	symbol_t   *return_symbol;
 	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
 								 sc_extern);
-	return def_operand (return_symbol->s.def, type, expr);
+	if (!return_symbol->table) {
+		symtab_addsymbol (pr.symtab, return_symbol);
+	}
+	def_t      *return_def = return_symbol->s.def;
+	return def_operand (alias_def (return_def, type, 0), 0, expr);
 }
 
 operand_t *
