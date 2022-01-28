@@ -2549,7 +2549,7 @@ deref_pointer_expr (expr_t *pointer)
 		return pointer;
 	if (pointer_type->type != ev_ptr)
 		return error (pointer, "not a pointer");
-	return array_expr (pointer, new_int_expr (0));
+	return unary_expr ('.', pointer);
 }
 
 expr_t *
