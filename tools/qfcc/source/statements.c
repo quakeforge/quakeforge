@@ -1432,52 +1432,39 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
-	type_t     *type = deref->e.expr.type;
-	expr_t     *e;
+	type_t     *load_type = deref->e.expr.type;
+	expr_t     *ptr_expr = deref->e.expr.e1;
+	operand_t  *base = 0;
+	operand_t  *offset = 0;
+	pr_ushort_t mode;
 
-	e = deref->e.expr.e1;
-	if (e->type == ex_address && !e->e.address.offset
-		&& e->e.address.lvalue->type == ex_symbol) {
-		if (e->e.expr.e1->e.symbol->sy_type != sy_var)
-			internal_error (e, "address of non-var");
-		*op = def_operand (e->e.expr.e1->e.symbol->s.def, type, e);
-	} else if (e->type == ex_address && e->e.address.offset) {
-		statement_t *s;
-		operand_t  *ptr = 0;
-		operand_t  *offs = 0;
-		sblock = statement_subexpr (sblock, e->e.address.lvalue, &ptr);
-		sblock = statement_subexpr (sblock, e->e.address.offset, &offs);
-		if (!*op)
-			*op = temp_operand (type, e);
-		if (low_level_type (type) == ev_void) {
-			s = lea_statement (ptr, offs, e);
-			sblock_add_statement (sblock, s);
+	sblock = addressing_mode (sblock, deref, &base, &offset, &mode);
 
-			s = movep_statement (*op, s->opc, type, deref);
-			sblock_add_statement (sblock, s);
-		} else {
-			s = load_statement (ptr, offs, *op, deref);
-			sblock_add_statement (sblock, s);
-		}
-	} else if (e->type == ex_value && e->e.value->lltype == ev_ptr) {
-		ex_pointer_t *ptr = &e->e.value->v.pointer;
-		*op = def_operand (alias_def (ptr->def, ptr->type, ptr->val),
-						   ptr->type, e);
-	} else {
-		statement_t *s;
-		operand_t  *ptr = 0;
-
-		sblock = statement_subexpr (sblock, e, &ptr);
-		if (!*op)
-			*op = temp_operand (type, e);
-		if (low_level_type (type) == ev_void) {
-			s = movep_statement (*op, ptr, type, deref);
-			sblock_add_statement (sblock, s);
-		} else {
-			s = load_statement (ptr, short_operand (0, e), *op, deref);
-			sblock_add_statement (sblock, s);
-		}
+	switch (mode) {
+		case 1://entity.field
+		case 2://const indexed pointer
+		case 3://var indexed pointer
+			break;
+		default:
+			internal_error (deref, "unexpected addressing mode: %d", mode);
 	}
+
+	if (!*op) {
+		*op = temp_operand (load_type, deref);
+	}
+
+	statement_t *s;
+	if (low_level_type (load_type) == ev_void) {
+		s = lea_statement (base, offset, ptr_expr);
+		sblock_add_statement (sblock, s);
+
+		s = movep_statement (*op, s->opc, load_type, deref);
+		sblock_add_statement (sblock, s);
+	} else {
+		s = load_statement (base, offset, *op, deref);
+		sblock_add_statement (sblock, s);
+	}
+
 	return sblock;
 }
 
