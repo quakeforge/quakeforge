@@ -1309,6 +1309,12 @@ new_alias_expr (type_t *type, expr_t *expr)
 		}
 		expr = expr->e.alias.expr;
 	}
+	// this can happen when constant folding an offset pointer results in
+	// a noop due to the offset being 0 and thus casting back to the original
+	// type
+	if (type == get_type (expr)) {
+		return expr;
+	}
 
 	expr_t     *alias = new_expr ();
 	alias->type = ex_alias;
