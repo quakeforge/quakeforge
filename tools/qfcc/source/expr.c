@@ -1517,10 +1517,10 @@ field_expr (expr_t *e1, expr_t *e2)
 			if (!field)
 				return e1;
 
-			e2->type = ex_value;
-			e2->e.value = new_short_val (field->s.offset);
-			e = new_address_expr (field->type, e1, e2);
-			return unary_expr ('.', e);
+			expr_t     *offset = new_short_expr (field->s.offset);
+			e1 = offset_pointer_expr (e1, offset);
+			e1 = cast_expr (pointer_type (field->type), e1);
+			return unary_expr ('.', e1);
 		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
