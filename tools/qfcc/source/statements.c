@@ -1257,6 +1257,58 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
+				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
+{
+	if (!is_ptr (get_type (ref))) {
+		internal_error (ref, "expected pointer in ref");
+	}
+	if (ref->type != ex_alias || ref->e.alias.offset) {
+		// probably just a pointer
+		sblock = statement_subexpr (sblock, ref, base);
+		*offset = short_operand (0, ref);
+		*mode = 2;	// mode C: ptr + constant index
+	} else if (is_ptr (get_type (ref->e.alias.expr))) {
+		// cast of one pointer type to another
+		return ptr_addressing_mode (sblock, ref->e.alias.expr, base, offset,
+									mode);
+	} else {
+		// alias with no offset
+		if (!is_integral (get_type (ref->e.alias.expr))) {
+			internal_error (ref, "expected integer expr in ref");
+		}
+		expr_t     *intptr = ref->e.alias.expr;
+		if (intptr->type != ex_expr
+			|| (intptr->e.expr.op != '+'
+				&& intptr->e.expr.op != '-')) {
+			// treat ref as simple pointer
+			sblock = statement_subexpr (sblock, ref, base);
+			*offset = short_operand (0, ref);
+			*mode = 2;	// mode C: ptr + constant index
+		} else {
+			expr_t     *ptr = intptr->e.expr.e1;
+			expr_t     *offs = intptr->e.expr.e2;
+			int         const_offs;
+			// move the +/- to the offset
+			offs = unary_expr (intptr->e.expr.op, offs);
+			// make the base a pointer again
+			ptr = new_alias_expr (ref->e.alias.type, ptr);
+			sblock = statement_subexpr (sblock, ptr, base);
+			if (is_constant (offs)
+				&& (const_offs = expr_int (offs)) < 32768
+				&& const_offs >= -32768) {
+				*mode = 2;
+				*offset = short_operand (const_offs, ref);
+			} else {
+				*mode = 3;
+				sblock = statement_subexpr (sblock, offs, offset);
+			}
+		}
+	}
+	return sblock;
+}
+
+static sblock_t *
 addressing_mode (sblock_t *sblock, expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
 {
@@ -1266,48 +1318,8 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 		if (ref->type == ex_expr) {
 			internal_error (ref, "not implemented");
 		} else if (ref->type == ex_uexpr) {
-			ref = ref->e.expr.e1;
-			if (!is_ptr (get_type (ref))) {
-				internal_error (ref, "expected pointer in ref");
-			}
-			if (ref->type != ex_alias || ref->e.alias.offset) {
-				// probably just a pointer
-				sblock = statement_subexpr (sblock, ref, base);
-				*offset = short_operand (0, ref);
-				*mode = 2;	// mode C: ptr + constant index
-			} else {
-				// alias with no offset
-				if (!is_integral (get_type (ref->e.alias.expr))) {
-					internal_error (ref, "expected integer expr in ref");
-				}
-				expr_t     *intptr = ref->e.alias.expr;
-				if (intptr->type != ex_expr
-					|| (intptr->e.expr.op != '+'
-						&& intptr->e.expr.op != '-')) {
-					// treat ref as simple pointer
-					sblock = statement_subexpr (sblock, ref, base);
-					*offset = short_operand (0, ref);
-					*mode = 2;	// mode C: ptr + constant index
-				} else {
-					expr_t     *ptr = intptr->e.expr.e1;
-					expr_t     *offs = intptr->e.expr.e2;
-					int         const_offs;
-					// move the +/- to the offset
-					offs = unary_expr (intptr->e.expr.op, offs);
-					// make the base a pointer again
-					ptr = new_alias_expr (ref->e.alias.type, ptr);
-					sblock = statement_subexpr (sblock, ptr, base);
-					if (is_constant (offs)
-						&& (const_offs = expr_int (offs)) < 32768
-						&& const_offs >= -32768) {
-						*mode = 2;
-						*offset = short_operand (const_offs, ref);
-					} else {
-						*mode = 3;
-						sblock = statement_subexpr (sblock, offs, offset);
-					}
-				}
-			}
+			sblock = ptr_addressing_mode (sblock, ref->e.expr.e1, base, offset,
+										  mode);
 		} else {
 			internal_error (ref, "unexpected expression type for indirect: %s",
 							expr_names[ref->type]);
