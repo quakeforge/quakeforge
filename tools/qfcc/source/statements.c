@@ -793,17 +793,6 @@ operand_address (operand_t *reference, expr_t *e)
 }
 
 static __attribute__((pure)) int
-is_const_ptr (expr_t *e)
-{
-	if ((e->type != ex_value || e->e.value->lltype != ev_ptr)
-		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
-			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-		return 0;
-	}
-	return 1;
-}
-
-static __attribute__((pure)) int
 is_indirect (expr_t *e)
 {
 	if ((e->type == ex_expr || e->type == ex_uexpr)
@@ -812,6 +801,10 @@ is_indirect (expr_t *e)
 	}
 	return 0;
 }
+
+static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
+								  operand_t **base, operand_t **offset,
+								  pr_ushort_t *mode);
 
 static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
@@ -916,6 +909,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
+	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
 	st_type_t   type;
 
@@ -957,26 +951,10 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 
 	if (0) {
 dereference_dst:
-		// dst_expr is a dereferenced pointer, so need to un-dereference it
-		// to get the pointer and switch to storep instructions.
-		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
+		// dst_expr is a dereferenced pointer, so need to get its addressing
+		// parameters (base and offset) and switch to storep instructions.
+		sblock = addressing_mode (sblock, dst_expr, &dst, &ofs, &mode);
 		opcode = "store";
-		if (dst_expr->type == ex_address && dst_expr->e.address.offset
-			&& !is_const_ptr (dst_expr->e.address.lvalue)) {
-			sblock = statement_subexpr (sblock,
-										dst_expr->e.address.lvalue, &dst);
-			sblock = statement_subexpr (sblock,
-										dst_expr->e.address.offset, &ofs);
-		} else {
-			sblock = statement_subexpr (sblock, dst_expr, &dst);
-			if (options.code.progsversion < PROG_VERSION) {
-				// v6 and v6p stores don't need an index
-				ofs = 0;
-			} else {
-				// ruamoko stores do need an index
-				ofs = short_operand (0, e);
-			}
-		}
 		type = st_ptrassign;
 	}
 	if (op) {
@@ -987,6 +965,10 @@ dereference_dst:
 	}
 
 	if (is_entity (dst->type) && ofs && is_field (ofs->type)) {
+		// need to get a pointer type, entity.field expressions do not provide
+		// one directly. FIXME it was probably a mistake extracting the operand
+		// type from the statement expression in dags
+		dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
 		s = new_statement (st_expr, "lea", dst_expr);
 		s->opa = dst;
 		s->opb = ofs;
@@ -1316,7 +1298,16 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 		// ref is known to be either ex_expr or ex_uexpr, with '.' for
 		// the operator
 		if (ref->type == ex_expr) {
-			internal_error (ref, "not implemented");
+			expr_t     *ent_expr = ref->e.expr.e1;
+			expr_t     *fld_expr = ref->e.expr.e2;
+			if (!is_entity (get_type (ent_expr))
+				|| !is_field (get_type (fld_expr))) {
+				print_expr (ref);
+				internal_error (ref, "expected entity.field");
+			}
+			sblock = statement_subexpr (sblock, ent_expr, base);
+			sblock = statement_subexpr (sblock, fld_expr, offset);
+			*mode = 1;//entity.field
 		} else if (ref->type == ex_uexpr) {
 			sblock = ptr_addressing_mode (sblock, ref->e.expr.e1, base, offset,
 										  mode);
