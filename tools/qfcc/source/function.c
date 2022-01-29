@@ -724,8 +724,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		return 0;
 	build_function (fsym);
 	if (state_expr) {
-		state_expr->next = statements;
-		statements = state_expr;
+		prepend_expr (statements, state_expr);
 	}
 	function_t *func = fsym->s.func;
 	if (options.code.progsversion == PROG_VERSION) {
