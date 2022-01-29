@@ -394,7 +394,7 @@ stated_formats = {
     "opname": "state",
     "format": "{state_fmt[c]}",
     "widths": "1, 1, {c}",
-    "types": "ev_float, ev_func, {state_types[c]}",
+    "types": "ev_int, ev_func, {state_types[c]}",
     "args": {
         "state": ["dt", "dtt"],
         "state_fmt": ["%Ga, %Gb", "%Ga, %Gb, %Gc"],
