@@ -48,6 +48,7 @@ typedef struct {
 
 static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
 static expr_t *pointer_compare (int op, expr_t *e1, expr_t *e2);
+static expr_t *func_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 
@@ -172,8 +173,8 @@ static expr_type_t field_field[] = {
 };
 
 static expr_type_t func_func[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{EQ,	0, 0, 0, func_compare},
+	{NE,	0, 0, 0, func_compare},
 	{0, 0}
 };
 
@@ -691,6 +692,21 @@ pointer_compare (int op, expr_t *e1, expr_t *e2)
 	} else {
 		e = new_binary_expr (op, cast_expr (&type_int, e1),
 							 cast_expr (&type_int, e2));
+	}
+	e->e.expr.type = &type_int;
+	return e;
+}
+
+static expr_t *
+func_compare (int op, expr_t *e1, expr_t *e2)
+{
+	expr_t     *e;
+
+	if (options.code.progsversion < PROG_VERSION) {
+		e = new_binary_expr (op, e1, e2);
+	} else {
+		e = new_binary_expr (op, new_alias_expr (&type_int, e1),
+							 new_alias_expr (&type_int, e2));
 	}
 	e->e.expr.type = &type_int;
 	return e;
