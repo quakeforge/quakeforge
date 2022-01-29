@@ -686,7 +686,12 @@ pointer_compare (int op, expr_t *e1, expr_t *e2)
 		return error (e2, "cannot use %s on pointers of different types",
 					  get_op_string (op));
 	}
-	e = new_binary_expr (op, e1, e2);
+	if (options.code.progsversion < PROG_VERSION) {
+		e = new_binary_expr (op, e1, e2);
+	} else {
+		e = new_binary_expr (op, cast_expr (&type_int, e1),
+							 cast_expr (&type_int, e2));
+	}
 	e->e.expr.type = &type_int;
 	return e;
 }
