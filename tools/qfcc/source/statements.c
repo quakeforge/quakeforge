@@ -827,6 +827,9 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	const char *opcode;
 	int         need_ptr = 0;
 	st_type_t   type = st_move;
+	operand_t  *use = 0;
+	operand_t  *def = 0;
+	operand_t  *kill = 0;
 
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
@@ -859,6 +862,11 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 			*op = src;
 		}
 		if (is_indirect (dst_expr)) {
+			if (is_variable (src_expr)) {
+				// FIXME this probably needs to be more agressive
+				// shouldn't emit code...
+				sblock = statement_subexpr (sblock, src_expr, &use);
+			}
 			src = operand_address (src, src_expr);
 			need_ptr = 1;
 		}
@@ -867,6 +875,12 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		// dst_expr and/or src_expr are dereferenced pointers, so need to
 		// un-dereference dst_expr to get the pointer and switch to movep
 		// or memsetp instructions.
+		if (is_variable (dst_expr)) {
+			// FIXME this probably needs to be more agressive
+			// shouldn't emit code...
+			sblock = statement_subexpr (sblock, dst_expr, &def);
+			sblock = statement_subexpr (sblock, dst_expr, &kill);
+		}
 		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		need_ptr = 1;
 	}
@@ -895,6 +909,9 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
+	s->use = use;
+	s->def = def;
+	s->kill = kill;
 	sblock_add_statement (sblock, s);
 	return sblock;
 }

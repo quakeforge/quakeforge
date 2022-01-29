@@ -957,6 +957,20 @@ is_constant (expr_t *e)
 }
 
 int
+is_variable (expr_t *e)
+{
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
+	}
+	if (e->type == ex_def
+		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var)
+		|| e->type == ex_temp) {
+		return 1;
+	}
+	return 0;
+}
+
+int
 is_selector (expr_t *e)
 {
 	return e->type == ex_selector;

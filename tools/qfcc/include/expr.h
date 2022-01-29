@@ -629,6 +629,14 @@ int expr_integral (expr_t *e) __attribute__((pure));
 */
 int is_constant (expr_t *e) __attribute__((pure));
 
+/** Check if the expression refers to a variable.
+
+	\param e		The expression to check.
+	\return			True if the expression refers to a variable (def
+					expression, var symbol expression, or temp expression).
+*/
+int is_variable (expr_t *e) __attribute__((pure));
+
 /** Check if the expression refers to a selector
 
 	\param e		The expression to check.
