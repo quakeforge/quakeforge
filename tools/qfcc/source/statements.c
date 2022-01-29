@@ -964,7 +964,8 @@ dereference_dst:
 		return sblock;
 	}
 
-	if (is_entity (dst->type) && ofs && is_field (ofs->type)) {
+	if (options.code.progsversion < PROG_VERSION
+		&& is_entity (dst->type) && ofs && is_field (ofs->type)) {
 		// need to get a pointer type, entity.field expressions do not provide
 		// one directly. FIXME it was probably a mistake extracting the operand
 		// type from the statement expression in dags
