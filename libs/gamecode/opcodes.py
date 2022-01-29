@@ -254,12 +254,13 @@ mathops_formats = {
 memset_formats = {
     "opcode": "OP_MEMSET_{op_memset[oo].upper()}",
     "mnemonic": "memset.{op_memset[oo]}",
-    "opname": "memset{op_memset[oo]}",
+    "opname": "memset{suff_memset[oo]}",
     "format": "{memset_fmt[oo]}",
     "widths": "{memset_widths[oo]}",
     "types": "{memset_types[oo]}",
     "args": {
         "op_memset": ["i", "p", "pi", None],
+        "suff_memset": ["", "p", "p", None],
         "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
         "memset_widths": [
             "1, 0, -1",
@@ -268,9 +269,9 @@ memset_formats = {
             None,
         ],
         "memset_types": [
-            "ev_void, ev_short, ev_void",
-            "ev_ptr, ev_int, ev_ptr",
-            "ev_ptr, ev_short, ev_ptr",
+            "ev_int, ev_short, ev_void",
+            "ev_int, ev_int, ev_ptr",
+            "ev_int, ev_short, ev_ptr",
         ],
     },
 }
