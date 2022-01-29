@@ -1951,7 +1951,9 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_address:
 				case ex_assign:
-					{
+					if (options.code.progsversion == PROG_VERSION) {
+						return binary_expr (EQ, e, new_nil_expr ());
+					} else {
 						expr_t     *n = new_unary_expr (op, e);
 
 						if (options.code.progsversion > PROG_ID_VERSION)
