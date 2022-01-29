@@ -1096,7 +1096,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	}
 	defspace_t *arg_space = current_func->arguments;
 	expr_t     *func = call->e.branch.target;
-	expr_t     *args = call->e.branch.args;
+	expr_t    **args = 0;
 	expr_t     *args_va_list = 0;	// .args (...) parameter
 	expr_t     *args_params = 0;	// first arg in ...
 	operand_t  *use = 0;
@@ -1105,9 +1105,20 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 
 	defspace_reset (arg_space);
 
-	args = reverse_expr_list (args);
+	int         num_args = 0;
+	for (expr_t *a = call->e.branch.args; a; a = a->next) {
+		num_args++;
+	}
+	if (num_args) {
+		int         i = num_args;
+		args = alloca (num_args * sizeof (expr_t *));
+		for (expr_t *a = call->e.branch.args; a; a = a->next) {
+			args[--i] = a;
+		}
+	}
 	int         arg_num = 0;
-	for (expr_t *a = args; a; a = a->next) {
+	for (int i = 0; i < num_args; i++) {
+		expr_t     *a = args[i];
 		const char *arg_name = va (0, ".arg%d", arg_num++);
 		def_t      *def = new_def (arg_name, 0, current_func->arguments,
 								   sc_local);
