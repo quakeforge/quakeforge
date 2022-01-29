@@ -80,6 +80,18 @@ cmp_result_expr (int result)
 	}
 }
 
+static int
+is_addsub (int op)
+{
+	return op == '+' || op == '-';
+}
+
+static int
+inv_addsub (int op)
+{
+	return op == '+' ? '-' : '+';
+}
+
 static expr_t *
 do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
@@ -819,6 +831,60 @@ do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && isval2 && val2 == 0)
 		return e1;
 
+	if (!isval1) {
+		if (e1->type == ex_expr) {
+			// at most one of the two sub-expressions is constant otherwise
+			// e1 would be a constant
+			if (is_constant (e1->e.expr.e1)) {
+				if ((op == '*' && e1->e.expr.op == '*')
+					|| (is_addsub (op) && is_addsub (e1->e.expr.op))) {
+					expr_t     *c = binary_expr (op, e1->e.expr.e1, e2);
+					e = binary_expr (e1->e.expr.op, c, e1->e.expr.e2);
+				}
+			} else if (is_constant (e1->e.expr.e2)) {
+				if ((op == '*' && e1->e.expr.op == '*')
+					|| (is_addsub (op) && e1->e.expr.op == '+')) {
+					expr_t     *c = binary_expr (op, e1->e.expr.e2, e2);
+					e = binary_expr (e1->e.expr.op, e1->e.expr.e1, c);
+				} else if (is_addsub (op) && e1->e.expr.op == '-') {
+					// must ivert op
+					expr_t     *c = binary_expr (inv_addsub (op),
+												 e1->e.expr.e2, e2);
+					e = binary_expr (e1->e.expr.op, e1->e.expr.e1, c);
+				}
+			}
+		}
+		return e;
+	} else if (!isval2) {
+		if (e2->type == ex_expr) {
+			// at most one of the two sub-expressions is constant otherwise
+			// e2 would be a constant
+			if (is_constant (e2->e.expr.e1)) {
+				if ((op == '*' && e2->e.expr.op == '*')
+					|| (op == '+' && is_addsub (e2->e.expr.op))) {
+					expr_t     *c = binary_expr (op, e1, e2->e.expr.e1);
+					e = binary_expr (e2->e.expr.op, c, e2->e.expr.e2);
+				} else if (op == '-' && is_addsub (e2->e.expr.op)) {
+					expr_t     *c = binary_expr (op, e1, e2->e.expr.e1);
+					c = fold_constants (c);
+					e = binary_expr (inv_addsub (e2->e.expr.op),
+									 c, e2->e.expr.e2);
+				}
+			} else if (is_constant (e2->e.expr.e2)) {
+				if ((op == '*' && e2->e.expr.op == '*')
+					|| (op == '+' && is_addsub (e2->e.expr.op))) {
+					expr_t     *c = binary_expr (e2->e.expr.op,
+												 e1, e2->e.expr.e2);
+					e = binary_expr (op, c, e2->e.expr.e1);
+				} else if (op == '-' && is_addsub (e2->e.expr.op)) {
+					expr_t     *c = binary_expr (inv_addsub (e2->e.expr.op),
+												 e1, e2->e.expr.e2);
+					e = binary_expr (op, c, e2->e.expr.e1);
+				}
+			}
+		}
+		return e;
+	}
 	if (!isval1 || !isval2)
 		return e;
 
