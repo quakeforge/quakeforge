@@ -1548,6 +1548,9 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	opcode = convert_op (e->e.expr.op);
 	if (!opcode)
 		internal_error (e, "ice ice baby");
+	if (strcmp (opcode, "ne") == 0 && is_string (get_type (e->e.expr.e1))) {
+		opcode = "cmp";
+	}
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 	sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);

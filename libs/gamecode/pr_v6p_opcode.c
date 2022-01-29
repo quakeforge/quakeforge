@@ -236,7 +236,7 @@ VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
 	 ev_quaternion, ev_quaternion, ev_int,
 	 PROG_V6P_VERSION,
 	},
-	[OP_NE_S_v6p] = {"ne", "ne.s",
+	[OP_NE_S_v6p] = {"cmp", "ne.s",
 	 ev_string, ev_string, ev_int,
 	 PROG_ID_VERSION,
 	},
