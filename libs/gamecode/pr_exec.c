@@ -1867,8 +1867,8 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 			jump_offs = jump_offs + (short) st->a;
 			break;
 		case 1:
-			// simple pointer dereference: *a
-			jump_offs = OPA(ptr);
+			// variable indexed array: a + *b (only +ve)
+			jump_offs = (op_a + OPB(uint))->uint_var;
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)

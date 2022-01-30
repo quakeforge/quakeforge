@@ -19,7 +19,7 @@ static dstatement_t jump_A_statements[] = {
 };
 
 static dstatement_t jump_B_statements[] = {
-	{ OP(0, 0, 0, OP_JUMP_B),  3, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_B),  1, 2, 0 },
 	{ OP(0, 0, 0, OP_BREAK),   0, 0, 0 },
 	{ OP(0, 0, 0, OP_LEA_A),   1, 0, 0 },
 	{ OP(0, 0, 0, OP_LEA_A),   1, 0, 4 },

@@ -204,11 +204,11 @@ jump_formats = {
         "jump_fmt": branch_fmt,
         "jump_types": [
             "ev_short, ev_invalid, ev_invalid",
-            "ev_ptr, ev_invalid, ev_invalid",
+            "ev_void, ev_int, ev_invalid",
             "ev_ptr, ev_short, ev_invalid",
             "ev_ptr, ev_int, ev_invalid",
         ],
-        "jump_widths": [ "0, 0", "1, 0", "1, 0", "1, 1" ]
+        "jump_widths": [ "0, 0", "1, 1", "1, 0", "1, 1" ]
     },
 }
 lea_formats = {
