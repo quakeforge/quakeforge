@@ -1794,28 +1794,13 @@ typedef void (*type_view_func) (struct qfot_type_s *type, pr_type_t *value,
 	the entire contents of the data.
 */
 typedef struct type_view_s {
-	type_view_func void_view;
-	type_view_func string_view;
-	type_view_func float_view;
-	type_view_func vector_view;
-	type_view_func entity_view;
-	type_view_func field_view;
-	type_view_func func_view;
-	type_view_func pointer_view;
-	type_view_func quat_view;
-	type_view_func int_view;
-	type_view_func uint_view;
-	type_view_func short_view;
-	type_view_func double_view;
-	type_view_func long_view;
-	type_view_func ulong_view;
-	type_view_func ushort_view;
-
 	type_view_func struct_view;
 	type_view_func union_view;
 	type_view_func enum_view;
 	type_view_func array_view;
 	type_view_func class_view;
+#define EV_TYPE(type) type_view_func type##_view;
+#include "QF/progs/pr_type_names.h"
 } type_view_t;
 
 void PR_Debug_Init (progs_t *pr);

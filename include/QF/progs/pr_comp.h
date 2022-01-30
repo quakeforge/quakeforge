@@ -43,17 +43,29 @@ typedef uint16_t  pr_ushort_t        __attribute__((aligned(2)));;
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
 
 PR_VEC_TYPE (pr_int_t, pr_ivec2_t, 2);
+typedef pr_int_t pr_ivec3_t[3];
 PR_VEC_TYPE (pr_int_t, pr_ivec4_t, 4);
+
 PR_VEC_TYPE (pr_uint_t, pr_uivec2_t, 2);
+typedef pr_uint_t pr_uivec3_t[3];
 PR_VEC_TYPE (pr_uint_t, pr_uivec4_t, 4);
+
 PR_VEC_TYPE (float, pr_vec2_t, 2);
+typedef pr_float_t pr_vec3_t[3];
 PR_VEC_TYPE (float, pr_vec4_t, 4);
+
 PR_VEC_TYPE (pr_long_t, pr_lvec2_t, 2);
+typedef pr_long_t pr_lvec3_t[3];
 PR_VEC_TYPE (pr_long_t, pr_lvec4_t, 4);
+
 PR_VEC_TYPE (pr_ulong_t, pr_ulvec2_t, 2);
+typedef pr_ulong_t pr_ulvec3_t[3];
 PR_VEC_TYPE (pr_ulong_t, pr_ulvec4_t, 4);
+
 PR_VEC_TYPE (double, pr_dvec2_t, 2);
+typedef pr_double_t pr_dvec3_t[3];
 PR_VEC_TYPE (double, pr_dvec4_t, 4);
+
 
 #define EV_TYPE(type) ev_##type,
 typedef enum {
@@ -62,7 +74,7 @@ typedef enum {
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
-#define PR_SIZEOF(type) (sizeof (pr_##type##_t) / sizeof (pr_int_t))
+#define PR_SIZEOF(type) (sizeof (pr_##type##_t) / (sizeof (pr_int_t)))
 #define PR_ALIGNOF(type) (__alignof__ (pr_##type##_t) / __alignof__ (pr_int_t))
 
 extern const pr_ushort_t pr_type_size[ev_type_count];

@@ -59,6 +59,7 @@
 
 #include "QF/progs/pr_debug.h"
 #include "QF/progs/pr_type.h"
+#include "QF/simd/types.h"
 
 #include "compat.h"
 
@@ -121,38 +122,6 @@ cvar_t         *pr_source_path;
 static char    *source_path_string;
 static char   **source_paths;
 
-static void pr_debug_void_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_string_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_float_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_vector_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_entity_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_field_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_func_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_quat_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_int_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_uint_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_short_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_double_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_long_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
-static void pr_debug_ushort_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
 static void pr_debug_struct_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_union_view (qfot_type_t *type, pr_type_t *value,
@@ -163,29 +132,20 @@ static void pr_debug_array_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_class_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
+#define EV_TYPE(t) \
+	static void pr_debug_##t##_view (qfot_type_t *type, pr_type_t *value, \
+									 void *_data);
+#include "QF/progs/pr_type_names.h"
 
 static type_view_t raw_type_view = {
-	pr_debug_void_view,
-	pr_debug_string_view,
-	pr_debug_float_view,
-	pr_debug_vector_view,
-	pr_debug_entity_view,
-	pr_debug_field_view,
-	pr_debug_func_view,
-	pr_debug_pointer_view,
-	pr_debug_quat_view,
-	pr_debug_int_view,
-	pr_debug_uint_view,
-	pr_debug_short_view,
-	pr_debug_double_view,
-	pr_debug_long_view,
-	pr_debug_ulong_view,
-	pr_debug_ushort_view,
 	pr_debug_struct_view,
 	pr_debug_union_view,
 	pr_debug_enum_view,
 	pr_debug_array_view,
 	pr_debug_class_view,
+#define EV_TYPE(t) \
+	pr_debug_##t##_view,
+#include "QF/progs/pr_type_names.h"
 };
 
 static const char *
@@ -1040,60 +1000,18 @@ PR_DumpState (progs_t *pr)
 
 #define ISDENORM(x) ((x) && !((x) & 0x7f800000))
 
-static const char *
+static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
 		case ty_basic:
 			switch (type->type) {
-				case ev_void:
-					raw_type_view.void_view (type, value, data);
+#define EV_TYPE(t) \
+				case ev_##t: \
+					raw_type_view.t##_view (type, value, data); \
 					break;
-				case ev_string:
-					raw_type_view.string_view (type, value, data);
-					break;
-				case ev_float:
-					raw_type_view.float_view (type, value, data);
-					break;
-				case ev_vector:
-					raw_type_view.vector_view (type, value, data);
-					break;
-				case ev_entity:
-					raw_type_view.entity_view (type, value, data);
-					break;
-				case ev_field:
-					raw_type_view.field_view (type, value, data);
-					break;
-				case ev_func:
-					raw_type_view.func_view (type, value, data);
-					break;
-				case ev_ptr:
-					raw_type_view.pointer_view (type, value, data);
-					break;
-				case ev_quaternion:
-					raw_type_view.quat_view (type, value, data);
-					break;
-				case ev_int:
-					raw_type_view.int_view (type, value, data);
-					break;
-				case ev_uint:
-					raw_type_view.uint_view (type, value, data);
-					break;
-				case ev_short:
-					raw_type_view.short_view (type, value, data);
-					break;
-				case ev_double:
-					raw_type_view.double_view (type, value, data);
-					break;
-				case ev_long:
-					raw_type_view.long_view (type, value, data);
-					break;
-				case ev_ulong:
-					raw_type_view.ulong_view (type, value, data);
-					break;
-				case ev_ushort:
-					raw_type_view.ushort_view (type, value, data);
-					break;
+#include "QF/progs/pr_type_names.h"
+
 				case ev_invalid:
 				case ev_type_count:
 					dstring_appendstr (data->dstr, "<?""?>");
@@ -1116,9 +1034,9 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 			break;
 		case ty_alias://XXX
 			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
-			return value_string (data, type, value);
+			value_string (data, type, value);
+			break;
 	}
-	return data->dstr->str;
 }
 
 static pr_def_t *
@@ -1331,7 +1249,7 @@ pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
-pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_debug_ptr_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
@@ -1353,7 +1271,7 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
-pr_debug_quat_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_debug_quaternion_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;

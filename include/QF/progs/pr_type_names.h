@@ -45,6 +45,6 @@ EV_TYPE(short)			// value is embedded in the opcode
 EV_TYPE(double)
 EV_TYPE(long)
 EV_TYPE(ulong)
-EV_TYPE(ushort)
+EV_TYPE(ushort)			// value is embedded in the opcode
 
 #undef EV_TYPE
