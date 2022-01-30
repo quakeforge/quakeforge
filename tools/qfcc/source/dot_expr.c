@@ -90,6 +90,8 @@ get_op_string (int op)
 		case SHR:	return ">>";
 		case '.':	return ".";
 		case 'C':	return "<cast>";
+		case CROSS:	return "@cross";
+		case DOT:	return "@dot";
 		default:
 			return "unknown";
 	}

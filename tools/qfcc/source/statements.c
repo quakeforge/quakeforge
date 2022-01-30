@@ -604,6 +604,8 @@ convert_op (int op)
 		case SHL:	return "shl";
 		case SHR:	return "shr";
 		case '.':	return "load";
+		case CROSS:	return "cross";
+		case DOT:	return "dot";
 		default:
 			return 0;
 	}
@@ -1567,6 +1569,14 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		internal_error (e, "ice ice baby");
 	if (strcmp (opcode, "ne") == 0 && is_string (get_type (e->e.expr.e1))) {
 		opcode = "cmp";
+	}
+	if (strcmp (opcode, "dot") == 0) {
+		if (is_vector (get_type (e->e.expr.e1))) {
+			opcode = "vdot";
+		}
+		if (is_quaternion (get_type (e->e.expr.e1))) {
+			opcode = "qdot";
+		}
 	}
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);

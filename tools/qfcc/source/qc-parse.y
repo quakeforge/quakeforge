@@ -139,6 +139,7 @@ int yylex (void);
 %left			SHL SHR
 %left			'+' '-'
 %left			'*' '/' '%' MOD
+%left           CROSS DOT
 %right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY
 %left			'.' '(' '['
@@ -1621,6 +1622,8 @@ expr
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
+	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
+	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
 	;
 
 texpr

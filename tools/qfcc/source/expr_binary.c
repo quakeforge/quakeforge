@@ -52,6 +52,7 @@ static expr_t *func_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
+static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -145,7 +146,9 @@ static expr_type_t vector_float[] = {
 static expr_type_t vector_vector[] = {
 	{'+',	&type_vector},
 	{'-',	&type_vector},
-	{'*',	&type_float},
+	{DOT,	&type_vector},
+	{CROSS,	&type_vector},
+	{'*',	0, 0, 0, vector_multiply},
 	{EQ,	0, 0, 0, vector_compare},
 	{NE,	0, 0, 0, vector_compare},
 	{0, 0}
@@ -736,6 +739,20 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 	expr_t     *e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = &type_ivec3;
 	return new_horizontal_expr (hop, e, &type_int);
+}
+
+static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2)
+{
+	expr_t     *e = new_binary_expr ('*', e1, e2);
+	if (options.code.progsversion < PROG_VERSION) {
+		// vector * vector is dot product in v6 progs (ick)
+		e->e.expr.type = &type_float;
+	} else {
+		// component-wise multiplication
+		e->e.expr.type = &type_vector;
+	}
+
+	return e;
 }
 
 static expr_t *
