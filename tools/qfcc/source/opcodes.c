@@ -230,8 +230,30 @@ v6p_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	return op;
 }
 
-static etype_t
-operand_type (operand_t *op)
+static const char *unsigned_demote_ops[] = {
+	"add",
+	"bitand",
+	"bitnot",
+	"bitor",
+	"bitxor",
+	"eq",
+	"ifnz",
+	"ifz",
+	"mul",
+	"ne",
+	"sub",
+};
+
+static int
+ud_compare (const void *_a, const void *_b)
+{
+	const char *a = _a;
+	const char *b = *(const char **)_b;
+	return strcmp (a, b);
+}
+
+static etype_t __attribute__((pure))
+operand_type (const operand_t *op, const char *name)
 {
 	if (!op) {
 		return ev_invalid;
@@ -239,6 +261,20 @@ operand_type (operand_t *op)
 	etype_t     type = low_level_type (op->type);
 	if (type == ev_vector || type == ev_quaternion) {
 		return ev_float;
+	}
+	if (type == ev_uint || type == ev_ulong) {
+		if (bsearch (name, unsigned_demote_ops,
+					 sizeof (unsigned_demote_ops)
+						/ sizeof (unsigned_demote_ops[0]),
+					 sizeof (unsigned_demote_ops[0]),
+					 ud_compare)) {
+			if (type == ev_uint) {
+				type = ev_int;
+			}
+			if (type == ev_ulong) {
+				type = ev_long;
+			}
+		}
 	}
 	return type;
 }
@@ -266,9 +302,9 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	opcode_t    search_op = {
 		.opname = name,
 		.types = {
-			operand_type (op_a),
-			operand_type (op_b),
-			operand_type (op_c),
+			operand_type (op_a, name),
+			operand_type (op_b, name),
+			operand_type (op_c, name),
 		},
 		.widths = {
 			operand_width (op_a),
