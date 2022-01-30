@@ -231,8 +231,6 @@ dag_node (operand_t *op)
 		if (def->daglabel)
 			node = def->daglabel->dagnode;
 	} else if (op->op_type == op_temp) {
-		while (op->tempop.alias)
-			op = op->tempop.alias;
 		if (op->tempop.daglabel)
 			node = op->tempop.daglabel->dagnode;
 	} else if (op->op_type == op_value) {
