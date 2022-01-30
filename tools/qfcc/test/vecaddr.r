@@ -17,7 +17,8 @@ float foo (vector _v, float _z)
 	vector v = _v;
 	float  z = _z;
 	_v = nil;
-	_z = _z - _z;
+	_z = 0;
+	forcelive (_z);
 	forcelive (z);
 	return (v dot *(vector*)(&v.y))X;
 }
