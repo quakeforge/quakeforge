@@ -138,7 +138,7 @@ int yylex (void);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD
+%left			'*' '/' '%' MOD SCALE
 %left           CROSS DOT
 %right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY

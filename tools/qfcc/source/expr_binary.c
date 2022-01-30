@@ -53,6 +53,7 @@ static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2);
+static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -89,7 +90,7 @@ static expr_type_t float_float[] = {
 };
 
 static expr_type_t float_vector[] = {
-	{'*',	&type_vector},
+	{'*',	.process = vector_scale },
 	{0, 0}
 };
 
@@ -138,7 +139,7 @@ static expr_type_t float_double[] = {
 };
 
 static expr_type_t vector_float[] = {
-	{'*',	&type_vector},
+	{'*',	.process = vector_scale },
 	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
@@ -752,6 +753,21 @@ static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_vector;
 	}
 
+	return e;
+}
+
+static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2)
+{
+	// Ensure the expression is always vector * scalar. The operation is
+	// always commutative, and the Ruamoko ISA supports only vector * scalar
+	// (though v6 does support scalar * vector, one less if).
+	if (is_scalar (get_type (e1))) {
+		expr_t     *t = e1;
+		e1 = e2;
+		e2 = t;
+	}
+	expr_t     *e = new_binary_expr (SCALE, e1, e2);
+	e->e.expr.type = get_type (e1);
 	return e;
 }
 

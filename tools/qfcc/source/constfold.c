@@ -446,7 +446,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *v1, *v2;
 	vec3_t      v, float_vec;
-	static int  valid[] = {'+', '-', '*', EQ, NE, 0};
+	static int  valid[] = {'+', '-', '*', SCALE, EQ, NE, 0};
 	expr_t     *t;
 
 	if (!is_vector(get_type (e1))) {
@@ -460,7 +460,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (!is_vector(get_type (e2))) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
-		if (op != '*' && op != '/')
+		if (op != SCALE && op != '/')
 			return error (e1, "invalid operator for vector");
 	} else {
 		if (!valid_op (op, valid))
