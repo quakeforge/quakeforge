@@ -513,6 +513,12 @@ static const char *ty_meta_names[] = {
 	"ty_alias",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
+const int vector_types =  (1 << ev_float)
+						| (1 << ev_int)
+						| (1 << ev_uint)
+						| (1 << ev_double)
+						| (1 << ev_long)
+						| (1 << ev_ulong);
 
 static void
 dump_qfo_types (qfo_t *qfo, int base_address)
@@ -563,6 +569,9 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				} else if (type->type == ev_ptr
 						   || type->type == ev_field) {
 					printf (" %4x", type->fldptr.aux_type);
+				} else if ((1 << type->type) & vector_types
+						   && type->basic.width > 1) {
+					printf ("[%d]", type->basic.width);
 				}
 				printf ("\n");
 				break;

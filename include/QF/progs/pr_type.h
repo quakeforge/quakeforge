@@ -62,6 +62,12 @@ typedef struct qfot_fldptr_s {
 	pr_ptr_t    aux_type;			///< referenced type
 } qfot_fldptr_t;
 
+typedef struct qfot_basic_s {
+	etype_t     type;				///< integral and fp scalar types
+	pr_int_t    width;				///< components in vector (1 for vector or
+									///< quaternion)
+} qfot_basic_t;
+
 typedef struct qfot_func_s {
 	etype_t     type;				///< always ev_func
 	pr_ptr_t    return_type;		///< return type of the function
@@ -106,6 +112,7 @@ typedef struct qfot_type_s {
 	pr_string_t encoding;			///< Objective-QC encoding
 	union {
 		etype_t     type;			///< ty_basic: etype_t
+		qfot_basic_t basic;			///< ty_basic: int/float/double/long etc
 		qfot_fldptr_t fldptr;		///< ty_basic, ev_ptr/ev_field
 		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum

@@ -829,10 +829,18 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "*");
 					return;
 				case ev_double:
-					dasprintf (encoding, "d");
+					if (type->width > 1) {
+						dasprintf (encoding, "d%d", type->width);
+					} else {
+						dasprintf (encoding, "d");
+					}
 					return;
 				case ev_float:
-					dasprintf (encoding, "f");
+					if (type->width > 1) {
+						dasprintf (encoding, "f%d", type->width);
+					} else {
+						dasprintf (encoding, "f");
+					}
 					return;
 				case ev_vector:
 					dasprintf (encoding, "V");
@@ -870,16 +878,32 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "Q");
 					return;
 				case ev_int:
-					dasprintf (encoding, "i");
+					if (type->width > 1) {
+						dasprintf (encoding, "i%d", type->width);
+					} else {
+						dasprintf (encoding, "i");
+					}
 					return;
 				case ev_uint:
-					dasprintf (encoding, "I");
+					if (type->width > 1) {
+						dasprintf (encoding, "I%d", type->width);
+					} else {
+						dasprintf (encoding, "I");
+					}
 					return;
 				case ev_long:
-					dasprintf (encoding, "l");
+					if (type->width > 1) {
+						dasprintf (encoding, "l%d", type->width);
+					} else {
+						dasprintf (encoding, "l");
+					}
 					return;
 				case ev_ulong:
-					dasprintf (encoding, "L");
+					if (type->width > 1) {
+						dasprintf (encoding, "L%d", type->width);
+					} else {
+						dasprintf (encoding, "L");
+					}
 					return;
 				case ev_short:
 					dasprintf (encoding, "s");

@@ -152,9 +152,10 @@ qfo_encode_basic (type_t *type, defspace_t *space)
 	else if (type->type == ev_ptr || type->type == ev_field)
 		return qfo_encode_fldptr (type, space);
 
-	def = qfo_new_encoding (type, sizeof (enc->type), space);
+	def = qfo_new_encoding (type, sizeof (enc->basic), space);
 	enc = D_POINTER (qfot_type_t, def);
-	enc->type = type->type;
+	enc->basic.type = type->type;
+	enc->basic.width = type->width;
 	return def;
 }
 
