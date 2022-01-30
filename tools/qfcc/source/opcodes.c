@@ -230,11 +230,31 @@ v6p_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	return op;
 }
 
+static etype_t
+operand_type (operand_t *op)
+{
+	if (!op) {
+		return ev_invalid;
+	}
+	etype_t     type = low_level_type (op->type);
+	if (type == ev_vector || type == ev_quaternion) {
+		return ev_float;
+	}
+	return type;
+}
+
 static int
 operand_width (operand_t *op)
 {
 	if (!op) {
 		return 0;
+	}
+	etype_t     type = low_level_type (op->type);
+	if (type == ev_vector) {
+		return 3;
+	}
+	if (type == ev_quaternion) {
+		return 4;
 	}
 	return op->width;
 }
@@ -246,9 +266,9 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	opcode_t    search_op = {
 		.opname = name,
 		.types = {
-			op_a ? low_level_type (op_a->type) : ev_invalid,
-			op_b ? low_level_type (op_b->type) : ev_invalid,
-			op_c ? low_level_type (op_c->type) : ev_invalid,
+			operand_type (op_a),
+			operand_type (op_b),
+			operand_type (op_c),
 		},
 		.widths = {
 			operand_width (op_a),

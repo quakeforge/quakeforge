@@ -60,6 +60,9 @@ typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
 	int         alignment;	///< required alignment for instances
+	int         width;		///< components in vector types, otherwise 1
+							///< vector and quaternion are 1 (separate from
+							///< vec3 and vec4)
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
@@ -98,6 +101,11 @@ typedef struct {
 
 #define EV_TYPE(type) extern type_t type_##type;
 #include "QF/progs/pr_type_names.h"
+
+extern type_t type_ivec3;
+extern type_t type_ivec4;
+extern type_t type_vec3;
+extern type_t type_vec4;
 
 extern	type_t	type_invalid;
 extern	type_t	type_floatfield;
@@ -158,6 +166,7 @@ const char *type_get_encoding (const type_t *type);
 int is_enum (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
+int is_nonscalar (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));

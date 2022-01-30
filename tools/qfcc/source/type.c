@@ -65,6 +65,8 @@
 		.type = ev_##t, \
 		.name = #t, \
 		.alignment = PR_ALIGNOF(t), \
+		.width = __builtin_choose_expr (ev_##t == ev_short \
+									 || ev_##t == ev_ushort, 0, 1), \
 		.meta = ty_basic, \
 		{{ __builtin_choose_expr (ev_##t == ev_field \
 							   || ev_##t == ev_func \
@@ -72,7 +74,23 @@
 	};
 #include "QF/progs/pr_type_names.h"
 
-type_t      type_invalid = { ev_invalid, "invalid" };
+type_t      type_invalid = {
+	.type = ev_invalid,
+	.name = "invalid",
+};
+
+#define VTYPE(t, b) \
+	type_t type_##t = { \
+		.type = ev_##b, \
+		.name = #t, \
+		.alignment = PR_ALIGNOF(t), \
+		.width = PR_SIZEOF(t) / PR_SIZEOF (b), \
+		.meta = ty_basic, \
+	};
+VTYPE(ivec3, int)
+VTYPE(ivec4, int)
+VTYPE(vec3, float)
+VTYPE(vec4, float)
 
 type_t     *type_nil;
 type_t     *type_default;
@@ -80,17 +98,49 @@ type_t     *type_long_int;
 type_t     *type_ulong_uint;
 
 // these will be built up further
-type_t      type_va_list = { ev_invalid, 0, 0, ty_struct };
-type_t      type_param = { ev_invalid, 0, 0, ty_struct };
-type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
-type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
-									ty_struct };
-type_t      type_xdef = { ev_invalid, "@xdef", 0, ty_struct };
-type_t      type_xdef_pointer = { ev_ptr, 0, 1, ty_basic, {{&type_xdef}} };
-type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
+type_t      type_va_list = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_param = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_zero = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_type_encodings = {
+	.type = ev_invalid,
+	.name = "@type_encodings",
+	.meta = ty_struct,
+};
+type_t      type_xdef = {
+	.type = ev_invalid,
+	.name = "@xdef",
+	.meta = ty_struct,
+};
+type_t      type_xdef_pointer = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_xdef}},
+};
+type_t      type_xdefs = {
+	.type = ev_invalid,
+	.name = "@xdefs",
+	.meta = ty_struct,
+};
 
-type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
-								{{&type_float}} };
+type_t      type_floatfield = {
+	.type = ev_field,
+	.name = ".float",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_float}},
+};
 
 #define EV_TYPE(type) &type_##type,
 type_t     *ev_types[ev_type_count] = {
@@ -280,10 +330,12 @@ append_type (type_t *type, type_t *new)
 					case ev_ptr:
 						t = &(*t)->t.fldptr.type;
 						type->alignment = 1;
+						type->width = 1;
 						break;
 					case ev_func:
 						t = &(*t)->t.func.type;
 						type->alignment = 1;
+						type->width = 1;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -293,6 +345,7 @@ append_type (type_t *type, type_t *new)
 			case ty_array:
 				t = &(*t)->t.array.type;
 				type->alignment = new->alignment;
+				type->width = new->width;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -339,7 +392,7 @@ types_same (type_t *a, type_t *b)
 							return 0;
 					return 1;
 				default:		// other types don't have aux data
-					return 1;
+					return a->width == b->width;
 			}
 			break;
 		case ty_struct:
@@ -447,6 +500,7 @@ field_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_field;
 	new->alignment = 1;
+	new->width = 1;
 	if (aux) {
 		new = find_type (append_type (new, aux));
 	}
@@ -465,6 +519,7 @@ pointer_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_ptr;
 	new->alignment = 1;
+	new->width = 1;
 	if (aux) {
 		new = find_type (append_type (new, aux));
 	}
@@ -485,6 +540,7 @@ array_type (type_t *aux, int size)
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
+		new->width = aux->width;
 	}
 	new->t.array.size = size;
 	if (aux) {
@@ -506,6 +562,7 @@ based_array_type (type_t *aux, int base, int top)
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
+		new->width = aux->width;
 	}
 	new->meta = ty_array;
 	new->t.array.type = aux;
@@ -523,6 +580,7 @@ alias_type (type_t *type, type_t *alias_chain, const char *name)
 	alias->meta = ty_alias;
 	alias->type = type->type;
 	alias->alignment = type->alignment;
+	alias->width = type->width;
 	if (type == alias_chain && type->meta == ty_alias) {
 		// typedef of a type that contains a typedef somewhere
 		// grab the alias-free branch for type
@@ -868,6 +926,23 @@ int
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
+	if (is_short (type) || is_ushort (type)) {
+		// shorts have width 0
+		return 1;
+	}
+	if (type->width != 1) {
+		return 0;
+	}
+	return is_float (type) || is_integral (type) || is_double (type);
+}
+
+int
+is_nonscalar (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->width < 2) {
+		return 0;
+	}
 	return is_float (type) || is_integral (type) || is_double (type);
 }
 
@@ -875,9 +950,11 @@ int
 is_math (const type_t *type)
 {
 	type = unalias_type (type);
-	etype_t     t = type->type;
 
-	return t == ev_vector || t == ev_quaternion || is_scalar (type);
+	if (is_vector (type) || is_quaternion (type)) {
+		return 1;
+	}
+	return is_scalar (type) || is_nonscalar (type);
 }
 
 int
@@ -981,7 +1058,7 @@ type_size (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_basic:
-			return pr_type_size[type->type];
+			return pr_type_size[type->type] * type->width;
 		case ty_struct:
 		case ty_union:
 			if (!type->t.symtab)
@@ -1015,10 +1092,13 @@ type_width (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_basic:
-			if (type->type == ev_ushort || type->type == ev_short) {
-				return 0;
+			if (type->type == ev_vector) {
+				return 3;
 			}
-			return 1;	//FIXME vector should be 3
+			if (type->type == ev_quaternion) {
+				return 4;
+			}
+			return type->width;
 		case ty_struct:
 		case ty_union:
 			return 1;
@@ -1050,11 +1130,21 @@ chain_basic_types (void)
 	chain_type (&type_ptr);
 	chain_type (&type_floatfield);
 	if (!options.traditional) {
+		if (options.code.progsversion == PROG_VERSION) {
+			type_quaternion.alignment = 4;
+		}
 		chain_type (&type_quaternion);
 		chain_type (&type_int);
 		chain_type (&type_uint);
 		chain_type (&type_short);
 		chain_type (&type_double);
+
+		if (options.code.progsversion == PROG_VERSION) {
+			chain_type (&type_ivec3);
+			chain_type (&type_ivec4);
+			chain_type (&type_vec3);
+			chain_type (&type_vec4);
+		}
 	}
 }
 

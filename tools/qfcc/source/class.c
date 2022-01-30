@@ -71,33 +71,114 @@ static hashtab_t *static_instances;
 static hashtab_t *static_instance_classes;
 
 // these will be built up further
-type_t      type_selector = { ev_invalid, 0, 0, ty_struct};
-type_t      type_SEL = { ev_ptr, "SEL", 1, ty_basic, {{&type_selector}}};
-type_t     *IMP_params[] = {&type_id, &type_SEL};
-type_t      type_IMP = { ev_func, "IMP", 1, ty_basic,
-						 {{&type_id, -3, IMP_params}}};
-type_t      type_super = { ev_invalid, 0, 0 };
-type_t      type_SuperPtr = { ev_ptr, 0, 1, ty_basic, {{&type_super}}};
-type_t     *supermsg_params[] = {&type_SuperPtr, &type_SEL};
-type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_basic,
-							  {{&type_id, -3, supermsg_params}}};
-type_t      type_method = { ev_invalid, 0, 0, ty_struct };
-type_t      type_method_description = { ev_invalid, 0, 0, ty_struct };
-type_t      type_category = { ev_invalid, 0, 0, ty_struct};
-type_t      type_ivar = { ev_invalid, 0, 0, ty_struct};
-type_t      type_module = { ev_invalid, 0, 0, ty_struct};
-type_t      type_moduleptr = { ev_ptr, 0, 1, ty_basic, {{&type_module}}};
-type_t     *obj_exec_class_params[] = { &type_moduleptr };
-type_t      type_exec_class = { ev_func, 0, 1, ty_basic,
-								{{&type_void, 1, obj_exec_class_params}}};
+type_t      type_selector = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_SEL = {
+	.type = ev_ptr,
+	.name = "SEL",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_selector}},
+};
+type_t     *IMP_params[] = { &type_id, &type_SEL };
+type_t      type_IMP = {
+	.type = ev_func,
+	.name = "IMP",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_id, -3, IMP_params}},
+};
+type_t      type_super = {
+	.type = ev_invalid,
+};
+type_t      type_SuperPtr = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_super}},
+};
+type_t     *supermsg_params[] = { &type_SuperPtr, &type_SEL };
+type_t      type_supermsg = {
+	.type = ev_func,
+	.name = ".supermsg",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_id, -3, supermsg_params}},
+};
+type_t      type_method = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_method_description = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_category = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_ivar = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_module = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_moduleptr = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_module}},
+};
+type_t     *obj_exec_class_params[] = {
+	&type_moduleptr,
+};
+type_t      type_exec_class = {
+	.type = ev_func,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_void, 1, obj_exec_class_params}},
+};
 // the cast of 1 in the init is to ensure pointers to incomplete types
 // are never misidentified as id. It will be set to the correct value
 // when the obj system is initialized.
-type_t      type_object = {ev_invalid, 0, 0, ty_struct, {{(type_t *)1}}};
-type_t      type_id = { ev_ptr, "id", 1, ty_basic, {{&type_object}}};
-type_t      type_class = { ev_invalid, 0, 0, ty_struct};
-type_t      type_Class = { ev_ptr, 0, 1, ty_basic, {{&type_class}}};
-type_t      type_protocol = { ev_invalid, 0, 0, ty_struct};
+type_t      type_object = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+	{{(type_t *)1}},
+};
+type_t      type_id = {
+	.type = ev_ptr,
+	.name = "id",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_object}},
+};
+type_t      type_class = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_Class = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_class}},
+};
+type_t      type_protocol = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
 
 int         obj_initialized = 0;
 

@@ -194,6 +194,8 @@ start_enum (symbol_t *sym)
 		sym = find_enum (0);
 	}
 	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
+	sym->type->alignment = 1;
+	sym->type->width = 1;
 	return sym->type->t.symtab;
 }
 
@@ -207,7 +209,6 @@ finish_enum (symbol_t *sym)
 
 	enum_type = sym->type = find_type (sym->type);
 	enum_tab = enum_type->t.symtab;
-	enum_type->alignment = 1;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
 		name->type = sym->type;

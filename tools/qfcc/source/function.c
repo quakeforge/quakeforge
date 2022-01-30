@@ -185,6 +185,7 @@ parse_params (type_t *type, param_t *parms)
 	new = new_type ();
 	new->type = ev_func;
 	new->alignment = 1;
+	new->width = 1;
 	new->t.func.type = type;
 	new->t.func.num_params = 0;
 
