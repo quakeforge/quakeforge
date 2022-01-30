@@ -29,6 +29,7 @@
 #define __QF_simd_types_h
 
 #include <stdint.h>
+#include <inttypes.h>
 
 #define VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
@@ -84,13 +85,9 @@ VEC_TYPE (float, vec4f_t, 4);
 VEC_TYPE (int, vec4i_t, 4);
 
 #define VEC2D_FMT "[%.17g, %.17g]"
-#define VEC2L_FMT "[%ld, %ld]"
+#define VEC2L_FMT "[%"PRIi64", %"PRIi64"]"
 #define VEC4D_FMT "[%.17g, %.17g, %.17g, %.17g]"
-#if __WORDSIZE == 64
-#define VEC4L_FMT "[%ld, %ld, %ld, %ld]"
-#else
-#define VEC4L_FMT "[%lld, %lld, %lld, %lld]"
-#endif
+#define VEC4L_FMT "[%"PRIi64", %"PRIi64", %"PRIi64", %"PRIi64"]"
 #define VEC2F_FMT "[%.9g, %.9g]"
 #define VEC2I_FMT "[%d, %d]"
 #define VEC4F_FMT "[%.9g, %.9g, %.9g, %.9g]"
