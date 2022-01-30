@@ -51,6 +51,7 @@ static expr_t *pointer_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *func_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
+static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -145,8 +146,8 @@ static expr_type_t vector_vector[] = {
 	{'+',	&type_vector},
 	{'-',	&type_vector},
 	{'*',	&type_float},
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{EQ,	0, 0, 0, vector_compare},
+	{NE,	0, 0, 0, vector_compare},
 	{0, 0}
 };
 
@@ -719,6 +720,22 @@ inverse_multiply (int op, expr_t *e1, expr_t *e2)
 	// one would mean the engine would have to do 1/f every time
 	expr_t     *one = new_float_expr (1);
 	return binary_expr ('*', e1, binary_expr ('/', one, e2));
+}
+
+static expr_t *
+vector_compare (int op, expr_t *e1, expr_t *e2)
+{
+	if (options.code.progsversion < PROG_VERSION) {
+		expr_t     *e = new_binary_expr (op, e1, e2);
+		e->e.expr.type = &type_int;
+		return e;
+	}
+	int         hop = op == EQ ? '&' : '|';
+	e1 = new_alias_expr (&type_vec3, e1);
+	e2 = new_alias_expr (&type_vec3, e2);
+	expr_t     *e = new_binary_expr (op, e1, e2);
+	e->e.expr.type = &type_ivec3;
+	return new_horizontal_expr (hop, e, &type_int);
 }
 
 static expr_t *

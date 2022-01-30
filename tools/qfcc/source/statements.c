@@ -1667,6 +1667,59 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	const char *opcode = "hops";
+	statement_t *s;
+	int         hop;
+	type_t     *res_type = e->e.hop.type;
+	type_t     *vec_type = get_type (e->e.hop.vec);
+
+	switch (e->e.hop.op) {
+		case '&':
+			hop = 0;
+			break;
+		case '|':
+			hop = 1;
+			break;
+		case '^':
+			hop = 2;
+			break;
+		case '+':
+			if (is_integral (vec_type)) {
+				hop = 3;
+			} else {
+				hop = 7;
+			}
+			break;
+		case NAND:
+			hop = 4;
+			break;
+		case NOR:
+			hop = 5;
+			break;
+		case XNOR:
+			hop = 6;
+			break;
+		default:
+			internal_error (e, "invalid horizontal op");
+	}
+	hop |= (type_width (vec_type) - 1) << 3;
+	hop |= (pr_type_size[vec_type->type] - 1) << 5;
+
+	s = new_statement (st_expr, opcode, e);
+	sblock = statement_subexpr (sblock, e->e.hop.vec, &s->opa);
+	s->opb = short_operand (hop, e);
+	if (!*op) {
+		*op = temp_operand (res_type, e);
+	}
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
+	return sblock;
+}
+
+static sblock_t *
 expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->e.def, e->e.def->type, e);
@@ -1826,6 +1879,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_block] = expr_block,
 		[ex_expr] = expr_expr,
 		[ex_uexpr] = expr_uexpr,
+		[ex_horizontal] = expr_horizontal,
 		[ex_def] = expr_def,
 		[ex_symbol] = expr_symbol,
 		[ex_temp] = expr_temp,
@@ -1844,7 +1898,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 	}
 
 	if (e->type >= ex_count)
-		internal_error (e, "bad sub-expression type");
+		internal_error (e, "bad sub-expression type: %d", e->type);
 	if (!sfuncs[e->type])
 		internal_error (e, "unexpected sub-expression type: %s",
 						expr_names[e->type]);

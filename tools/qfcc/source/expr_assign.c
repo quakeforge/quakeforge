@@ -141,6 +141,7 @@ is_lvalue (const expr_t *expr)
 		case ex_adjstk:
 		case ex_with:
 		case ex_args:
+		case ex_horizontal:
 			break;
 		case ex_count:
 			internal_error (expr, "invalid expression");

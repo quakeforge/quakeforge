@@ -249,6 +249,12 @@ typedef struct {
 	struct expr_s *with;		///< value to load
 } ex_with_t;
 
+typedef struct {
+	int         op;				///< operation to perform
+	struct expr_s *vec;			///< vector expression on which to operate
+	struct type_s *type;		///< result type
+} ex_horizontal_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -283,6 +289,7 @@ typedef struct expr_s {
 		ex_adjstk_t adjstk;				///< stack adjust param
 		ex_with_t   with;				///< with expr param
 		struct type_s *nil;				///< type for nil if known
+		ex_horizontal_t hop;			///< horizontal vector operation
 	} e;
 } expr_t;
 
@@ -432,7 +439,7 @@ void build_element_chain (element_chain_t *element_chain,
 						  expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
 
-/**	Create a new binary expression node node.
+/**	Create a new binary expression node.
 
 	If either \a e1 or \a e2 are error expressions, then that expression will
 	be returned instead of a new binary expression.
@@ -446,7 +453,7 @@ void free_element_chain (element_chain_t *element_chain);
 */
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 
-/**	Create a new unary expression node node.
+/**	Create a new unary expression node.
 
 	If \a e1 is an error expression, then it will be returned instead of a
 	new unary expression.
@@ -457,6 +464,19 @@ expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 					is not an error expression, otherwise \a e1.
 */
 expr_t *new_unary_expr (int op, expr_t *e1);
+
+/**	Create a new horizontal vector operantion node.
+
+	If \a vec is an error expression, then it will be returned instead of a
+	new unary expression.
+
+	\param op		The op-code of the horizontal operation.
+	\param vec		The expression (must be a vector type) on which to operate.
+	\param type     The result type (must be scalar type)
+	\return			The new unary expression node (::ex_expr_t) if \a e1
+					is not an error expression, otherwise \a e1.
+*/
+expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 

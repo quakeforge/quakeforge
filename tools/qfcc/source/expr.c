@@ -276,6 +276,8 @@ get_type (expr_t *e)
 			return get_type (e->e.assign.dst);
 		case ex_args:
 			return &type_va_list;
+		case ex_horizontal:
+			return e->e.hop.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -531,6 +533,11 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			return n;
+		case ex_horizontal:
+			n = new_expr ();
+			*n = *e;
+			e->e.hop.vec = copy_expr (e->e.hop.vec);
+			return n;
 		case ex_count:
 			break;
 	}
@@ -692,6 +699,28 @@ new_unary_expr (int op, expr_t *e1)
 	e->type = ex_uexpr;
 	e->e.expr.op = op;
 	e->e.expr.e1 = e1;
+	return e;
+}
+
+expr_t *
+new_horizontal_expr (int op, expr_t *vec, type_t *type)
+{
+	type_t     *vec_type = get_type (vec);
+	if (!vec_type) {
+		return vec;
+	}
+	if (!is_math (vec_type) || is_scalar (vec_type)) {
+		internal_error (vec, "horizontal operand not a vector type");
+	}
+	if (!is_scalar (type)) {
+		internal_error (vec, "horizontal result not a scalar type");
+	}
+
+	expr_t     *e = new_expr ();
+	e->type = ex_horizontal;
+	e->e.hop.op = op;
+	e->e.hop.vec = vec;
+	e->e.hop.type = type;
 	return e;
 }
 
@@ -1733,6 +1762,8 @@ has_function_call (expr_t *e)
 			return has_function_call (e->e.branch.test);
 		case ex_return:
 			return has_function_call (e->e.retrn.ret_val);
+		case ex_horizontal:
+			return has_function_call (e->e.hop.vec);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1873,6 +1904,7 @@ unary_expr (int op, expr_t *e)
 				case ex_vector:
 				case ex_alias:
 				case ex_assign:
+				case ex_horizontal:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1965,6 +1997,7 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_address:
 				case ex_assign:
+				case ex_horizontal:
 					if (options.code.progsversion == PROG_VERSION) {
 						return binary_expr (EQ, e, new_nil_expr ());
 					} else {
@@ -2053,6 +2086,7 @@ unary_expr (int op, expr_t *e)
 				case ex_vector:
 				case ex_alias:
 				case ex_assign:
+				case ex_horizontal:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_int_expr (-1);

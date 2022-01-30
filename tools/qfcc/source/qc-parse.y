@@ -133,6 +133,7 @@ int yylex (void);
 %left			'&'
 %left			EQ NE
 %left			LT GT GE LE
+%token			NAND NOR XNOR
 // end of tokens common between qc and qp
 
 %left			SHL SHR
