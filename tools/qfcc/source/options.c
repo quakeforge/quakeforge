@@ -713,8 +713,13 @@ DecodeArgs (int argc, char **argv)
 		options.code.progsversion = PROG_V6P_VERSION;
 	if (!options.traditional) {
 		options.advanced = true;
-		add_cpp_def ("-D__RUAMOKO__=1");
-		add_cpp_def ("-D__RAUMOKO__=1");
+		if (options.code.progsversion < PROG_VERSION) {
+			add_cpp_def ("-D__RUAMOKO__=1");
+			add_cpp_def ("-D__RAUMOKO__=1");
+		} else {
+			add_cpp_def ("-D__RUAMOKO__=2");
+			add_cpp_def ("-D__RAUMOKO__=2");
+		}
 		if (options.code.ifstring == (qboolean) -1)
 			options.code.ifstring = false;
 		if (options.code.short_circuit == (qboolean) -1)
