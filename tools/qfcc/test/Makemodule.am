@@ -54,6 +54,7 @@ test_progs_dat=\
 	tools/qfcc/test/structptr.dat \
 	tools/qfcc/test/structstruct.dat \
 	tools/qfcc/test/swap.dat \
+	tools/qfcc/test/temp-component.dat \
 	tools/qfcc/test/triangle.dat \
 	tools/qfcc/test/twice-called.dat \
 	tools/qfcc/test/typedef.dat \
@@ -617,6 +618,16 @@ tools/qfcc/test/swap.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(swap_dep) # am--include-marker
 r_depfiles_remade += $(swap_dep)
+
+tools_qfcc_test_temp_component_dat_SOURCES=tools/qfcc/test/temp-component.r
+temp_component_obj=$(tools_qfcc_test_temp_component_dat_SOURCES:.r=.o)
+temp_component_dep=$(call qcautodep,$(tools_qfcc_test_temp_component_dat_SOURCES))
+tools/qfcc/test/temp-component.dat$(EXEEXT): $(temp_component_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(temp_component_obj)
+tools/qfcc/test/temp-component.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(temp_component_dep) # am--include-marker
+r_depfiles_remade += $(temp_component_dep)
 
 tools_qfcc_test_triangle_dat_SOURCES=tools/qfcc/test/triangle.r
 triangle_obj=$(tools_qfcc_test_triangle_dat_SOURCES:.r=.o)
