@@ -625,7 +625,7 @@ statement_is_goto (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strcmp (s->opcode, "jump");
+	return !strcmp (s->opcode, "jump") && !s->opb;
 }
 
 int
@@ -633,7 +633,7 @@ statement_is_jumpb (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strcmp (s->opcode, "jumpb");
+	return !strcmp (s->opcode, "jump") && s->opb;
 }
 
 int
@@ -1251,7 +1251,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	}
 	if (e->e.branch.type == pr_branch_jump) {
 		if (e->e.branch.index) {
-			s = new_statement (st_flow, "jumpb", e);
+			s = new_statement (st_flow, "jump", e);
 			sblock = statement_subexpr (sblock, e->e.branch.target, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.branch.index, &s->opb);
 		} else {

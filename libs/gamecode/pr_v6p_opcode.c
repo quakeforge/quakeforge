@@ -957,7 +957,7 @@ VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
 	 PROG_V6P_VERSION,
 	 "%Ga",
 	},
-	[OP_JUMPB_v6p] = {"jumpb", "jumpb",
+	[OP_JUMPB_v6p] = {"jump", "jump",
 	 ev_void, ev_int, ev_invalid,
 	 PROG_V6P_VERSION,
 	 "%Ga[%Gb]",
