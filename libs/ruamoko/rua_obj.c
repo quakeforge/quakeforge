@@ -1536,6 +1536,9 @@ rua_obj_msgSend (progs_t *pr)
 		R_INT (pr) = P_INT (pr, 0);
 		return;
 	}
+	if (P_UINT (pr, 0) >= pr->globals_size) {
+		PR_RunError (pr, "invalid self: %x", P_UINT (pr, 0));
+	}
 	if (!_cmd)
 		PR_RunError (pr, "null selector");
 	imp = obj_msg_lookup (probj, self, _cmd);
