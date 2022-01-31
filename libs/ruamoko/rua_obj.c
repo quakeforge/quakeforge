@@ -1565,7 +1565,9 @@ rua_obj_msgSend_super (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 	}
-	pr->pr_params[0] = pr->pr_real_params[0];
+	if (pr->progs->version < PROG_VERSION) {
+		pr->pr_params[0] = pr->pr_real_params[0];
+	}
 	P_POINTER (pr, 0) = super->self;
 	PR_CallFunction (pr, imp, pr->pr_return);
 }
