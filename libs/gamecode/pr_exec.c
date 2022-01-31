@@ -457,6 +457,8 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 		f->func (pr);
 		if (builtin_depth == pr->pr_depth) {
 			pr->pr_return = saved_return;
+		} else if (builtin_depth < pr->pr_depth) {
+			pr->pr_stack[builtin_depth].return_ptr = saved_return;
 		}
 		return 0;
 	} else {
