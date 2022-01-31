@@ -95,48 +95,59 @@ static const char *
 bi_get_key (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gk);
-	return PR_GetString (ht->pr, R_STRING (ht->pr));
+	pr_string_t string = R_STRING (ht->pr);
+	PR_PopFrame (ht->pr);
+	return PR_GetString (ht->pr, string);
 }
 
 static uintptr_t
 bi_get_hash (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gh);
-	return R_INT (ht->pr);
+	int         hash = R_INT (ht->pr);
+	PR_PopFrame (ht->pr);
+	return hash;
 }
 
 static int
 bi_compare (const void *key1, const void *key2, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key1);
 	P_INT (ht->pr, 1) = (intptr_t) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
 	ht->pr->pr_argc = 3;
 	PR_ExecuteProgram (ht->pr, ht->cmp);
-	return R_INT (ht->pr);
+	int         cmp = R_INT (ht->pr);
+	PR_PopFrame (ht->pr);
+	return cmp;
 }
 
 static void
 bi_free (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->f);
+	PR_PopFrame (ht->pr);
 }
 
 static void
