@@ -320,14 +320,6 @@ push_formats = {
         "push_types": address_types,
     },
 }
-pushregs_formats = {
-    "opcode": "OP_PUSHREGS",
-    "mnemonic": "pushregs",
-    "opname": "pushregs",
-    "widths": "0, 0, 0",
-    "types": "ev_invalid, ev_invalid, ev_invalid",
-    "format": None,
-}
 pop_formats = {
     "opcode": "OP_POP_{op_mode[mm]}_{ss+1}",
     "mnemonic": "pop",
@@ -340,14 +332,6 @@ pop_formats = {
         "pop_fmt": store_fmt,
         "pop_types": address_types,
     },
-}
-popregs_formats = {
-    "opcode": "OP_POPREGS",
-    "mnemonic": "popregs",
-    "opname": "popregs",
-    "widths": "0, 0, 0",
-    "format": None,
-    "types": "ev_invalid, ev_invalid, ev_invalid",
 }
 scale_formats = {
     "opcode": "OP_SCALE_{scale_type[t]}_{ss+1}",
@@ -530,9 +514,7 @@ group_map = {
     "move":     move_formats,
     "noop":     noop_formats,
     "push":     push_formats,
-    "pushregs": pushregs_formats,
     "pop":      pop_formats,
-    "popregs":  popregs_formats,
     "scale":    scale_formats,
     "shiftops": shiftops_formats,
     "statef":   statef_formats,
