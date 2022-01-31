@@ -452,9 +452,12 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 						PR_GetString (pr, f->descriptor->name), f->func);
 		}
 		pr_type_t  *saved_return = pr->pr_return;
+		int         builtin_depth = pr->pr_depth;
 		pr->pr_return = return_ptr;
 		f->func (pr);
-		pr->pr_return = saved_return;
+		if (builtin_depth == pr->pr_depth) {
+			pr->pr_return = saved_return;
+		}
 		return 0;
 	} else {
 		PR_EnterFunction (pr, f);
