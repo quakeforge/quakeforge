@@ -77,10 +77,12 @@ BOOL (id object) object_is_meta_class = #0;
 
 @end
 
+typedef void arIMP(id, SEL, id);
+
 @static BOOL allocDebug;
 @static Class autoreleaseClass;
 @static SEL autoreleaseSelector;
-@static IMP autoreleaseIMP;
+@static arIMP autoreleaseIMP;
 
 @implementation Object
 
@@ -89,7 +91,7 @@ BOOL (id object) object_is_meta_class = #0;
 	//allocDebug = localinfo ("AllocDebug");
 	autoreleaseClass = [AutoreleasePool class];
 	autoreleaseSelector = @selector(addObject:);
-	autoreleaseIMP = [autoreleaseClass methodForSelector: autoreleaseSelector];
+	autoreleaseIMP = (arIMP)[autoreleaseClass methodForSelector: autoreleaseSelector];
 	return;
 }
 
