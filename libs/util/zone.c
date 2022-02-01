@@ -202,8 +202,6 @@ Z_Malloc (memzone_t *zone, size_t size)
 {
 	void	*buf;
 
-	if (!developer || developer->int_val & SYS_dev)
-		Z_CheckHeap (zone);	// DEBUG
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf) {
 		const char *msg;
@@ -223,6 +221,9 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	int         extra;
 	int         requested_size = size;
 	memblock_t *start, *rover, *new, *base;
+
+	if (!developer || developer->int_val & SYS_dev)
+		Z_CheckHeap (zone);	// DEBUG
 
 	if (!tag) {
 		if (zone->error)
@@ -289,6 +290,9 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 
 	if (!ptr)
 		return Z_Malloc (zone, size);
+
+	if (!developer || developer->int_val & SYS_dev)
+		Z_CheckHeap (zone);	// DEBUG
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
