@@ -30,6 +30,7 @@ test_progs_dat=\
 	tools/qfcc/test/func-static.dat \
 	tools/qfcc/test/gcd.dat \
 	tools/qfcc/test/infloop.dat \
+	tools/qfcc/test/iterfunc.dat \
 	tools/qfcc/test/ivar-struct-return.dat \
 	tools/qfcc/test/link_order.dat \
 	tools/qfcc/test/lost-use.dat \
@@ -378,6 +379,16 @@ tools/qfcc/test/infloop.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(infloop_dep) # am--include-marker
 r_depfiles_remade += $(infloop_dep)
+
+tools_qfcc_test_iterfunc_dat_SOURCES=tools/qfcc/test/iterfunc.r
+iterfunc_obj=$(tools_qfcc_test_iterfunc_dat_SOURCES:.r=.o)
+iterfunc_dep=$(call qcautodep,$(tools_qfcc_test_iterfunc_dat_SOURCES))
+tools/qfcc/test/iterfunc.dat$(EXEEXT): $(iterfunc_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(iterfunc_obj)
+tools/qfcc/test/iterfunc.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(iterfunc_dep) # am--include-marker
+r_depfiles_remade += $(iterfunc_dep)
 
 tools_qfcc_test_ivar_struct_return_dat_SOURCES=tools/qfcc/test/ivar-struct-return.r
 ivar_struct_return_obj=$(tools_qfcc_test_ivar_struct_return_dat_SOURCES:.r=.o)
