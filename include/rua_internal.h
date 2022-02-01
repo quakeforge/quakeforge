@@ -33,6 +33,9 @@
 
 #include "QF/quakeio.h"
 
+struct progs_s;
+struct dstring_s;
+
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
 void RUA_Cmd_Init (struct progs_s *pr, int secure);
 void RUA_Cvar_Init (struct progs_s *pr, int secure);
@@ -48,6 +51,8 @@ void RUA_Stdlib_Init (struct progs_s *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
 void RUA_QFile_Init (struct progs_s *pr, int secure);
 void RUA_QFS_Init (struct progs_s *pr, int secure);
+
+void RUA_Sprintf (struct progs_s *pr, struct dstring_s *dstr);
 
 int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 QFile *QFile_GetFile (struct progs_s *pr, int handle);

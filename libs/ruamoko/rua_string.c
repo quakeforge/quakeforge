@@ -60,16 +60,36 @@ bi_strlen (progs_t *pr)
 	R_INT (pr) = strlen(s);
 }
 
-static void
-bi_sprintf (progs_t *pr)
+void
+RUA_Sprintf (progs_t *pr, dstring_t *dstr)
 {
 	const char *fmt = P_GSTRING (pr, 0);
 	int         count = pr->pr_argc - 1;
 	pr_type_t **args = pr->pr_params + 1;
+
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 1);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
+
+	PR_Sprintf (pr, dstr, "bi_sprintf", fmt, count, args);
+}
+
+static void
+bi_sprintf (progs_t *pr)
+{
 	dstring_t  *dstr;
 
 	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "bi_sprintf", fmt, count, args);
+	RUA_Sprintf (pr, dstr);
 	RETURN_STRING (pr, dstr->str);
 	dstring_delete (dstr);
 }
