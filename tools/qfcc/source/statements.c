@@ -808,6 +808,8 @@ is_indirect (expr_t *e)
 static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
 								  operand_t **base, operand_t **offset,
 								  pr_ushort_t *mode);
+static statement_t *lea_statement (operand_t *pointer, operand_t *offset,
+								   expr_t *e);
 
 static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
@@ -870,7 +872,13 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 				// shouldn't emit code...
 				sblock = statement_subexpr (sblock, src_expr, &use);
 			}
-			src = operand_address (src, src_expr);
+			if (options.code.progsversion == PROG_VERSION) {
+				s = lea_statement (src, 0, src_expr);
+				sblock_add_statement (sblock, s);
+				src = s->opc;
+			} else {
+				src = operand_address (src, src_expr);
+			}
 			need_ptr = 1;
 		}
 	}
