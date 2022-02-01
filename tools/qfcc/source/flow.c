@@ -1290,6 +1290,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				flow_add_op_var (def, s->opc, 0);
 				// don't want old argument processing
 				calln = -1;
+				if (operands && s->opc->op_type != op_value) {
+					operands[0] = s->opc;
+				}
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';

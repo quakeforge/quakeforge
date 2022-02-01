@@ -1136,6 +1136,43 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 }
 
 static operand_t *
+generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var = 0;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	if (dagnode->children[1]) {
+		operands[1] = make_operand (dag, block, dagnode, 1);
+	}
+	dst = operands[0];
+	for (var_iter = set_first (dagnode->identifiers); var_iter;
+		 var_iter = set_next (var_iter)) {
+		if (var) {
+			internal_error (var->expr, "more than one return value for call");
+		}
+		var = dag->labels[var_iter->element];
+		operands[2] = var->op;
+		dst = operands[2];
+		st = build_statement ("call", operands, var->expr);
+		sblock_add_statement (block, st);
+	}
+	if (var_iter) {
+		set_del_iter (var_iter);
+	}
+	if (!var) {
+		// void call or return value ignored, still have to call
+		operands[2] = make_operand (dag, block, dagnode, 2);
+		st = build_statement ("call", operands, dagnode->label->expr);
+		sblock_add_statement (block, st);
+	}
+	return dst;
+}
+
+static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 					  set_iter_t *var_iter, type_t *type)
 {
@@ -1222,8 +1259,13 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		case st_ptrmemset:
 			dst = generate_memsetps (dag, block, dagnode);
 			break;
-		case st_state:
 		case st_func:
+			if (!strcmp (dagnode->label->opcode, "call")) {
+				dst = generate_call (dag, block, dagnode);
+				break;
+			}
+			// fallthrough
+		case st_state:
 			for (i = 0; i < 3; i++)
 				if (dagnode->children[i])
 					operands[i] = make_operand (dag, block, dagnode, i);
