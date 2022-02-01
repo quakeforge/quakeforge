@@ -1,3 +1,7 @@
+#if !defined(__RUAMOKO__) || __RUAMOKO__ < 2
+#  define test_traditional
+#endif
+
 void printf (string ftm, ...) = #0;
 
 float snafu (float a, float b)
@@ -21,6 +25,7 @@ double dmodulo (double a, double b)
 	return a %% b;
 }
 
+#ifdef test_traditional
 #pragma traditional
 float foo (float a, float b)
 {
@@ -45,6 +50,7 @@ float baz (float a, float b)
 	return c;
 }
 #pragma advanced
+#endif
 
 @overload int
 test (string name, string op, int (func)(int a, int b), int a, int b, int c)
@@ -53,10 +59,12 @@ test (string name, string op, int (func)(int a, int b), int a, int b, int c)
 
 	ret = func (a, b);
 	if (ret != c) {
+#ifdef test_traditional
 		if (func == baz)
 			printf ("%s: (%d + %d) %% (%d - %d): %d != %d\n",
 					name, a, b, a, b, ret, c);
 		else
+#endif
 			printf ("%s: %d %s %d: %d != %d\n",
 					name, a, op, b, ret, c);
 		return 1;
@@ -72,10 +80,12 @@ test (string name, string op, float (func)(float a, float b),
 
 	ret = func (a, b);
 	if (ret != c) {
+#ifdef test_traditional
 		if (func == baz)
 			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
 					name, a, b, a, b, ret, c);
 		else
+#endif
 			printf ("%s: %g %s %g: %g != %g\n",
 					name, a, op, b, ret, c);
 		return 1;
@@ -91,42 +101,55 @@ test (string name, string op, double (func)(double a, double b),
 
 	ret = func (a, b);
 	if (ret != c) {
+#ifdef test_traditional
 		if (func == baz)
 			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
 					name, a, b, a, b, ret, c);
 		else
+#endif
 			printf ("%s: %g %s %g: %g != %g\n",
 					name, a, op, b, ret, c);
 		return 1;
 	}
 	return 0;
 }
+#ifdef test_traditional
+typedef float restype;
+#else
+typedef int restype;
+#endif
 
-float main (void)
+restype main (void)
 {
-	float res = 0;
+	restype res = 0;
+#ifdef test_traditional
 	res |= test ("foo", "%", foo, 5, 3, 2);
 	res |= test ("bar", "%", bar, 5, 3, 2);
 	res |= test ("baz", "%", baz, 5, 3, 0);
+#endif
 	res |= test ("snafu", "%", snafu, 5, 3, 2);
-
+#ifdef test_traditional
 	res |= test ("foo", "%", foo, -5, 3, -2);
 	res |= test ("bar", "%", bar, -5, 3, -2);
 	res |= test ("baz", "%", baz, -5, 3, -2);
+#endif
 	res |= test ("snafu", "%", snafu, -5, 3, -2);
-
+#ifdef test_traditional
 	res |= test ("foo", "%", foo, 5, -3, 2);
 	res |= test ("bar", "%", bar, 5, -3, 2);
 	res |= test ("baz", "%", baz, 5, -3, 2);
+#endif
 	res |= test ("snafu", "%", snafu, 5, -3, 2);
-
+#ifdef test_traditional
 	res |= test ("foo", "%", foo, -5, -3, -2);
 	res |= test ("bar", "%", bar, -5, -3, -2);
 	res |= test ("baz", "%", baz, -5, -3, 0);
+#endif
 	res |= test ("snafu", "%", snafu, -5, -3, -2);
-
+#ifdef test_traditional
 	res |= test ("foo", "%", foo, 5, 3.5, 1.5);
 	res |= test ("foo", "%", foo, -5, 3.5, -1.5);
+#endif
 	res |= test ("snafu", "%", snafu, 5, 3.5, 1.5);
 	res |= test ("snafu", "%", snafu, -5, 3.5, -1.5);
 
