@@ -351,7 +351,7 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 VISIBLE void
 PR_BoundsCheckSize (progs_t *pr, pr_ptr_t addr, unsigned size)
 {
-	if (addr < (pr_ptr_t) (pr->pr_return - pr->pr_globals))
+	if (addr < pr->null_size)
 		PR_RunError (pr, "null pointer access");
 	if (addr >= pr->globals_size
 		|| size > (unsigned) (pr->globals_size - addr))

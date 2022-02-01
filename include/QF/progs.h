@@ -1942,7 +1942,8 @@ struct progs_s {
 	pr_def_t   *pr_fielddefs;
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
-	unsigned    globals_size;
+	pr_uint_t   globals_size;
+	pr_uint_t   null_size;		///< size of block considered null page
 	pr_uivec4_t pr_bases;		///< base registers (index in opcode)
 	///@}
 

@@ -142,6 +142,7 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_alignment = G_INT (pr, def->ofs);
 	}
+	pr->null_size = pr->pr_return - pr->pr_globals;
 	memcpy (pr->pr_real_params, pr->pr_params, sizeof (pr->pr_params));
 	if (!pr->globals.ftime) {//FIXME double time
 		if ((def = PR_FindGlobal (pr, "time")))
