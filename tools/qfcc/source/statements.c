@@ -873,6 +873,13 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 				sblock = statement_subexpr (sblock, src_expr, &use);
 			}
 			if (options.code.progsversion == PROG_VERSION) {
+				// FIXME it was probably a mistake extracting the operand
+				// type from the statement expression in dags. Also, can't
+				// use address_expr() because src_expr may be a function call
+				// and unary_expr doesn't like that
+				src_expr = expr_file_line (
+						new_address_expr (get_type (src_expr), src_expr, 0),
+										  src_expr);
 				s = lea_statement (src, 0, src_expr);
 				sblock_add_statement (sblock, s);
 				src = s->opc;
