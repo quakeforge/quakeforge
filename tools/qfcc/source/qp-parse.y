@@ -164,6 +164,32 @@ build_dotmain (symbol_t *program)
 	build_code_function (dotmain, 0, code);
 }
 
+static symbol_t *
+function_value (function_t *func)
+{
+	symbol_t   *ret = 0;
+	if (func->type->t.func.type) {
+		ret = symtab_lookup (func->locals, ".ret");
+		if (!ret || ret->table != func->locals) {
+			ret = new_symbol_type (".ret", func->type->t.func.type);
+			initialize_def (ret, 0, func->locals->space, sc_local,
+							func->locals);
+		}
+	}
+	return ret;
+}
+
+static expr_t *
+function_return (function_t *func)
+{
+	symbol_t   *ret = function_value (func);
+	expr_t     *ret_val = 0;
+	if (ret) {
+		ret_val = new_symbol_expr (ret);
+	}
+	return ret_val;
+}
+
 %}
 
 %%
@@ -270,10 +296,11 @@ subprogram_declaration
 										   current_storage);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
+			function_value (current_func);
 		}
 	  declarations compound_statement ';'
 		{
-			append_expr ($5, new_return_expr (0));
+			append_expr ($5, new_return_expr (function_return (current_func)));
 			build_code_function ($1, 0, $5);
 			current_symtab = current_func->parameters->parent;
 			current_storage = $<storage>3;
@@ -376,8 +403,18 @@ statement
 	: variable ASSIGNOP expression
 		{
 			$$ = $1;
-			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
-				$$ = new_ret_expr ($$->e.symbol->type->t.func.type);
+			if ($$->type == ex_symbol && $$->e.symbol->sy_type == sy_func) {
+				if ($$->e.symbol->s.func != current_func) {
+					$$ = error ($$, "cannot assign to other function");
+				} else {
+					symbol_t   *ret = function_value (current_func);
+					if (!ret) {
+						$$ = error ($$, "cannot assign to procedure");
+					} else {
+						$$ = new_symbol_expr (ret);
+					}
+				}
+			}
 			$$ = assign_expr ($$, $3);
 		}
 	| procedure_statement
@@ -398,7 +435,7 @@ statement
 		}
 	| RETURN
 		{
-			$$ = return_expr (current_func, 0);
+			$$ = return_expr (current_func, function_return (current_func));
 		}
 	;
 
