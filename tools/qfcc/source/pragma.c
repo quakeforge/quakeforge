@@ -125,6 +125,24 @@ set_warn (pragma_arg_t *args)
 	}
 }
 
+static void
+set_optimize (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing warn flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!strcmp (flag, "on") || !strcmp (flag, "!off")) {
+		options.code.optimize = true;
+	} else if (!strcmp (flag, "!on") || !strcmp (flag, "off")) {
+		options.code.optimize = false;
+	}
+	if (args->next) {
+		warning (0, "pragma optimize: ignoring extra arguments");
+	}
+}
+
 void
 pragma_process ()
 {
@@ -143,6 +161,8 @@ pragma_process ()
 		set_bug (pragma_args->next);
 	} else if (!strcmp (id, "warn")) {
 		set_warn (pragma_args->next);
+	} else if (!strcmp (id, "optimize")) {
+		set_optimize (pragma_args->next);
 	} else {
 		warning (0, "unknown pragma: '%s'", id);
 	}
