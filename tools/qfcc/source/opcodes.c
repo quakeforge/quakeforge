@@ -315,8 +315,11 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	// lot of instructions, but this mapping scheme leaves a lot to be desired.
 	const char *opname_a = "";
 	const char *opname_c = "";
-	if (!strcmp (name, "load") || !strcmp (name, "store")
-		|| !strcmp (name, "assign")) {
+	etype_t     type;
+	if ((!strcmp (name, "load") || !strcmp (name, "store")
+		 || !strcmp (name, "assign"))
+		&& ((type = low_level_type (op_c->type)) == ev_long
+			|| type == ev_ulong || type == ev_double)) {
 		opname_c = name;
 		if (!strcmp (name, "assign")) {
 			opname_a = name;
