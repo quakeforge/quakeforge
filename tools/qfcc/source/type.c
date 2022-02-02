@@ -381,7 +381,8 @@ types_same (type_t *a, type_t *b)
 						return 0;
 				case ev_func:
 					if (a->t.func.type != b->t.func.type
-						|| a->t.func.num_params != b->t.func.num_params)
+						|| a->t.func.num_params != b->t.func.num_params
+						|| a->t.func.no_va_list != b->t.func.no_va_list)
 						return 0;
 					count = a->t.func.num_params;
 					if (count < 0)

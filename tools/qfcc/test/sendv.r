@@ -54,5 +54,5 @@ main ()
 }
 @end
 
-id (id receiver, SEL op, ...) obj_msgSend = #0;
+@attribute(no_va_list) id (id receiver, SEL op, ...) obj_msgSend = #0;
 void __obj_exec_class (struct obj_module *msg) = #0;

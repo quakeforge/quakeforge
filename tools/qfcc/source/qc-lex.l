@@ -367,7 +367,6 @@ static keyword_t at_keywords[] = {
 	{"extern",		EXTERN	},
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
-	{"nosave",		NOSAVE	},
 	{"not",			NOT		},
 };
 
@@ -391,7 +390,7 @@ static keyword_t qf_keywords[] = {
 	{"@dot",		DOT,	0	},
 };
 
-// These keywors are always available. Other than @system and @overload, they
+// These keywors are always available. Other than the @ keywords, they
 // form traditional QuakeC.
 static keyword_t keywords[] = {
 	{"void",		TYPE,		&type_void	},
@@ -407,6 +406,7 @@ static keyword_t keywords[] = {
 	{"else",		ELSE,		0			},
 	{"@system",		SYSTEM,		0			},
 	{"@overload",	OVERLOAD,	0			},
+	{"@attribute",  ATTRIBUTE,	0			},
 };
 
 static const char *

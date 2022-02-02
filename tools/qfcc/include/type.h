@@ -39,6 +39,7 @@ typedef struct ty_func_s {
 	struct type_s *type;
 	int         num_params;
 	struct type_s **param_types;
+	int         no_va_list;		///< don't inject va_list for ... function
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
@@ -97,6 +98,7 @@ typedef struct {
 	unsigned    is_typedef:1;
 	unsigned    is_overload:1;
 	unsigned    nosave:1;
+	unsigned    no_va_list:1;
 } specifier_t;
 
 #define EV_TYPE(type) extern type_t type_##type;

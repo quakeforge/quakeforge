@@ -90,7 +90,7 @@ type_t      type_IMP = {
 	.alignment = 1,
 	.width = 1,
 	.meta = ty_basic,
-	{{&type_id, -3, IMP_params}},
+	{{&type_id, -3, IMP_params, 1}},
 };
 type_t      type_super = {
 	.type = ev_invalid,
