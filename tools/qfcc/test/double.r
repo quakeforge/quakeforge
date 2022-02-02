@@ -11,7 +11,7 @@ test_format ()
 {
 	int         fail = 0;
 	type_pun.d = M_PI;
-	printf ("%g %08x%08x\n", type_pun.d, type_pun.i[1], type_pun.i[0]);
+	printf ("%.17g %08x%08x\n", type_pun.d, type_pun.i[1], type_pun.i[0]);
 	// this will fail on big-endian systems
 	fail = type_pun.i[0] != 0x54442d18 || type_pun.i[1] != 0x400921fb;
 	return fail;

@@ -280,7 +280,7 @@ operand_type (const operand_t *op, const char *name)
 }
 
 static int
-operand_width (operand_t *op)
+operand_width (const char *opname, operand_t *op)
 {
 	if (!op) {
 		return 0;
@@ -292,6 +292,14 @@ operand_width (operand_t *op)
 	if (type == ev_quaternion) {
 		return 4;
 	}
+	// FIXME see FIXME in rua_opcode_find
+	if ((type == ev_long || type == ev_ulong || type == ev_double)
+		&& (!strcmp (opname, "load") || !strcmp (opname, "store")
+			|| !strcmp (opname, "assign"))) {
+		if (op->width < 3) {
+			return op->width * 2;
+		}
+	}
 	return op->width;
 }
 
@@ -299,6 +307,35 @@ static opcode_t *
 rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)
 {
+	// FIXME this is a bit of an ugly hack to map 64-bit load and store/assign
+	// instructions: 1 and 2 component instructions become 2 and 4 components
+	// using the 32-bit instructions, while 3 and 4 remain unchanged but use
+	// the 64-bit versions of the instructs (of which there are only 3 and 4
+	// component versions). That bit of fun can't be helped without wasting a
+	// lot of instructions, but this mapping scheme leaves a lot to be desired.
+	const char *opname_a = "";
+	const char *opname_c = "";
+	if (!strcmp (name, "load") || !strcmp (name, "store")
+		|| !strcmp (name, "assign")) {
+		opname_c = name;
+		if (!strcmp (name, "assign")) {
+			opname_a = name;
+			if (op_c->width > 2) {
+				name = "assign64";
+			}
+		}
+		if (!strcmp (name, "load")) {
+			if (op_c->width > 2) {
+				name = "load64";
+			}
+		}
+		if (!strcmp (name, "store")) {
+			if (op_c->width > 2) {
+				name = "store64";
+			}
+		}
+	}
+
 	opcode_t    search_op = {
 		.opname = name,
 		.types = {
@@ -307,9 +344,9 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			operand_type (op_c, name),
 		},
 		.widths = {
-			operand_width (op_a),
-			operand_width (op_b),
-			operand_width (op_c),
+			operand_width (opname_a, op_a),
+			operand_width ("", op_b),
+			operand_width (opname_c, op_c),
 		},
 	};
 	opcode_t   *op;
