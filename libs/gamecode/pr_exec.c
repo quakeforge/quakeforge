@@ -2978,6 +2978,32 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1110
 			OP_cmp(LE, <=);
 			// 0 1111
+			case OP_LOAD64_B_3:
+			case OP_LOAD64_C_3:
+			case OP_LOAD64_D_3:
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD64_B_3 + 1));
+				VectorCopy (&MM(long), &OPC(long));
+				break;
+			case OP_STORE64_A_3:
+			case OP_STORE64_B_3:
+			case OP_STORE64_C_3:
+			case OP_STORE64_D_3:
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_3));
+				VectorCopy (&OPC(long), &MM(long));
+				break;
+			case OP_LOAD64_B_4:
+			case OP_LOAD64_C_4:
+			case OP_LOAD64_D_4:
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD64_B_4 + 1));
+				OPC(lvec4) = MM(lvec4);
+				break;
+			case OP_STORE64_A_4:
+			case OP_STORE64_B_4:
+			case OP_STORE64_C_4:
+			case OP_STORE64_D_4:
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_4));
+				MM(lvec4) = OPC(lvec4);
+				break;
 			// spare
 
 #define OP_op_1(OP, T, t, op) \

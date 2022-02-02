@@ -9,7 +9,9 @@ bitmap_txt = """
 0 0000 0001 adjstk
 0 0000 0010 constant
 0 1011 nnnn
-0 1111 nnnn
+0 1111 s0mm load64
+0 1111 s1mm store64
+0 1111 n000
 
 1 0ooo ttss mathops
 1 011r tuss shiftops
@@ -211,6 +213,20 @@ jump_formats = {
         "jump_widths": [ "0, 0", "1, 1", "1, 0", "1, 1" ]
     },
 }
+load64_formats = {
+    "opcode": "OP_LOAD64_{op_mode[mm]}_{s+3}",
+    "mnemonic": "load64",
+    "opname": "load64",
+    "format": "{load_fmt[mm]}, %gc",
+    "widths": "{load_widths[s+2][mm]}, {s+3}",
+    "types": "{load_types[mm]}, ev_void",
+    "args": {
+        "op_mode": address_mode,
+        "load_fmt": load_fmt,
+        "load_types": address_types,
+        "load_widths": address_widths,
+    },
+}
 lea_formats = {
     "opcode": "OP_LEA_{op_mode[mm]}",
     "mnemonic": "lea",
@@ -401,6 +417,21 @@ store_formats = {
         "store_widths": address_widths,
     },
 }
+store64_formats = {
+    "opcode": "OP_STORE64_{op_mode[mm]}_{s+3}",
+    "mnemonic": "{store_op[mm]}64",
+    "opname": "{store_op[mm]}64",
+    "format": "%Gc, {store_fmt[mm]}",
+    "widths": "{store_widths[s+2][mm]}, {s+3}",
+    "types": "{store_types[mm]}, ev_void",
+    "args": {
+        "op_mode": address_mode,
+        "store_fmt": store_fmt,
+        "store_op": ["assign", "store", "store", "store"],
+        "store_types": address_types,
+        "store_widths": address_widths,
+    },
+}
 string_formats = {
     "opcode": "OP_{op_str[o*4+oo].upper()}_S",
     "mnemonic": "{op_str[o*4+oo]}.s",
@@ -509,6 +540,7 @@ group_map = {
     "jump":     jump_formats,
     "lea":      lea_formats,
     "load":     load_formats,
+    "load64":   load64_formats,
     "mathops":  mathops_formats,
     "memset":   memset_formats,
     "move":     move_formats,
@@ -520,6 +552,7 @@ group_map = {
     "statef":   statef_formats,
     "stated":   stated_formats,
     "store":    store_formats,
+    "store64":  store64_formats,
     "string":   string_formats,
     "swizzle":  swizzle_formats,
     "return":   return_formats,

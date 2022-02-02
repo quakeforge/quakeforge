@@ -17,12 +17,14 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-jump \
 	libs/gamecode/test/test-lea \
 	libs/gamecode/test/test-load \
+	libs/gamecode/test/test-load64 \
 	libs/gamecode/test/test-long \
 	libs/gamecode/test/test-mem \
 	libs/gamecode/test/test-scale \
 	libs/gamecode/test/test-stack \
 	libs/gamecode/test/test-state \
 	libs/gamecode/test/test-store \
+	libs/gamecode/test/test-store64 \
 	libs/gamecode/test/test-string \
 	libs/gamecode/test/test-swizzle \
 	libs/gamecode/test/test-unsigned \
@@ -129,6 +131,11 @@ libs_gamecode_test_test_load_SOURCES= \
 libs_gamecode_test_test_load_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_load_DEPENDENCIES=	$(test_gamecode_libs)
 
+libs_gamecode_test_test_load64_SOURCES= \
+	libs/gamecode/test/test-load64.c
+libs_gamecode_test_test_load64_LDADD=		$(test_gamecode_libs)
+libs_gamecode_test_test_load64_DEPENDENCIES=$(test_gamecode_libs)
+
 libs_gamecode_test_test_long_SOURCES= \
 	libs/gamecode/test/test-long.c
 libs_gamecode_test_test_long_LDADD=			$(test_gamecode_libs)
@@ -157,6 +164,11 @@ libs_gamecode_test_test_store_SOURCES= \
 	libs/gamecode/test/test-store.c
 libs_gamecode_test_test_store_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_store_DEPENDENCIES=		$(test_gamecode_libs)
+
+libs_gamecode_test_test_store64_SOURCES= \
+	libs/gamecode/test/test-store64.c
+libs_gamecode_test_test_store64_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_store64_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_string_SOURCES= \
 	libs/gamecode/test/test-string.c
