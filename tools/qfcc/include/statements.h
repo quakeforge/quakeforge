@@ -102,6 +102,7 @@ typedef enum {
 	st_state,		///< state (a, b); or state (a, b, c)
 	st_func,		///< call, rcall or return/done
 	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
+	st_address,		///< lea
 } st_type_t;
 
 typedef struct statement_s {

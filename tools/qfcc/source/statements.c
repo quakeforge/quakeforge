@@ -87,6 +87,7 @@ const char *st_type_names[] = {
 	"st_state",
 	"st_func",
 	"st_flow",
+	"st_address",
 };
 
 const char *
@@ -744,7 +745,7 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 		offset = 0;
 	}
 
-	s = new_statement (st_expr, "lea", e);
+	s = new_statement (st_address, "lea", e);
 	sblock = statement_subexpr (sblock, lvalue, &s->opa);
 	if (offset) {
 		sblock = statement_subexpr (sblock, offset, &s->opb);
@@ -1005,7 +1006,7 @@ dereference_dst:
 		// one directly. FIXME it was probably a mistake extracting the operand
 		// type from the statement expression in dags
 		dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
-		s = new_statement (st_expr, "lea", dst_expr);
+		s = new_statement (st_address, "lea", dst_expr);
 		s->opa = dst;
 		s->opb = ofs;
 		s->opc = temp_operand (&type_ptr, dst_expr);
@@ -1438,7 +1439,7 @@ statement_with (sblock_t *sblock, expr_t *e)
 static statement_t *
 lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 {
-	statement_t *s = new_statement (st_expr, "lea", e);
+	statement_t *s = new_statement (st_address, "lea", e);
 	s->opa = pointer;
 	s->opb = offset;
 	s->opc = temp_operand (&type_ptr, e);

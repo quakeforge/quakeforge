@@ -282,8 +282,11 @@ dag_make_children (dag_t *dag, statement_t *s,
 		dagnode_t  *node = dag_node (operands[i + 1]);
 		dagnode_t  *killer = 0;
 
-		if (node && node->killed) {
+		if (node && (node->killed || s->type == st_address)) {
 			// If the node has been killed, then a new node is needed
+			// taking the address of a variable effectively kills the node it's
+			// attached to. FIXME should this be for only when the variable is
+			// in the attached identifiers list and is not the node's label?
 			killer = node->killed;
 			node = 0;
 		}
@@ -1214,6 +1217,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
+		case st_address:
 		case st_expr:
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
