@@ -1532,8 +1532,9 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	type = e->e.alias.type;
 	sblock = statement_subexpr (sblock, e->e.alias.expr, &aop);
 	if (type_compatible (aop->type, type)) {
-		//FIXME type_compatible??? shouldn't that be type_size ==?
 		if (offset) {
+			//For types to be compatible, they must be the same size, thus this
+			//seemingly mismatched error
 			internal_error (e, "offset alias of same size type");
 		}
 		*op = aop;
