@@ -68,8 +68,7 @@ test_progs_dat=\
 	tools/qfcc/test/while.dat \
 	tools/qfcc/test/zerolinker.dat
 
-fail_progs_dat=\
-	tools/qfcc/test/return-postop.dat
+fail_progs_dat=
 
 test_build_errors=\
 	tools/qfcc/test/classarray.r \
