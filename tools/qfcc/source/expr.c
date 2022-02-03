@@ -1346,6 +1346,12 @@ is_pointer_val (expr_t *e)
 expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
+	if (is_ptr (type) && expr->type == ex_address) {
+		// avoid aliasing a pointer to a pointer (redundant)
+		expr = copy_expr (expr);
+		expr->e.address.type = type;
+		return expr;
+	}
 	if (expr->type == ex_alias) {
 		if (expr->e.alias.offset) {
 			return new_offset_alias_expr (type, expr, 0);
