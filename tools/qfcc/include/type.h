@@ -104,10 +104,8 @@ typedef struct {
 #define EV_TYPE(type) extern type_t type_##type;
 #include "QF/progs/pr_type_names.h"
 
-extern type_t type_ivec3;
-extern type_t type_ivec4;
-extern type_t type_vec3;
-extern type_t type_vec4;
+#define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
+#include "tools/qfcc/include/vec_types.h"
 
 extern	type_t	type_invalid;
 extern	type_t	type_floatfield;
@@ -167,6 +165,7 @@ const char *type_get_encoding (const type_t *type);
 
 int is_enum (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
+int is_real (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
 int is_nonscalar (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));

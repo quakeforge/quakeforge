@@ -82,6 +82,31 @@ new_compound_init (void)
 	return c;
 }
 
+static element_t *
+build_array_element_chain(element_chain_t *element_chain,
+						  int array_size, type_t *array_type,
+						  element_t *ele,
+						  int base_offset)
+{
+	for (int i = 0; i < array_size; i++) {
+		int         offset = base_offset + i * type_size (array_type);
+		if (ele && ele->expr && ele->expr->type == ex_compound) {
+			build_element_chain (element_chain, array_type,
+								 ele->expr, offset);
+		} else {
+			element_t  *element = new_element (0, 0);
+			element->type = array_type;
+			element->offset = offset;
+			element->expr = ele ? ele->expr : 0;	// null -> nil
+			append_init_element (element_chain, element);
+		}
+		if (ele) {
+			ele = ele->next;
+		}
+	}
+	return ele;
+}
+
 void
 build_element_chain (element_chain_t *element_chain, const type_t *type,
 					 expr_t *eles, int base_offset)
@@ -93,25 +118,9 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	if (is_array (type)) {
 		type_t     *array_type = type->t.array.type;
 		int         array_size = type->t.array.size;
-		int         i;
-
-		for (i = 0; i < array_size; i++) {
-			int         offset = base_offset + i * type_size (array_type);
-			if (ele && ele->expr && ele->expr->type == ex_compound) {
-				build_element_chain (element_chain, array_type,
-									 ele->expr, offset);
-			} else {
-				element_t  *element = new_element (0, 0);
-				element->type = array_type;
-				element->offset = offset;
-				element->expr = ele ? ele->expr : 0;	// null -> nil
-				append_init_element (element_chain, element);
-			}
-			if (ele) {
-				ele = ele->next;
-			}
-		}
-	} else if (is_struct (type) || is_vector (type) || is_quaternion (type)) {
+		ele = build_array_element_chain (element_chain, array_size, array_type,
+									     ele, base_offset);
+	} else if (is_struct (type) || (is_nonscalar (type) && type->t.symtab)) {
 		symtab_t   *symtab = type->t.symtab;
 		symbol_t   *field;
 
@@ -135,6 +144,12 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 				ele = ele->next;
 			}
 		}
+	} else if (is_nonscalar (type)) {
+		// vector type with unnamed components
+		int         vec_width = type_width (type);
+		type_t     *vec_type = ev_types[type->type];
+		ele = build_array_element_chain (element_chain, vec_width, vec_type,
+									     ele, base_offset);
 	} else {
 		error (eles, "invalid initializer");
 	}

@@ -311,6 +311,13 @@ typedef struct {
 	type_t     *type;
 } keyword_t;
 
+// These keywords are part of the Ruamoko language and require the QuakeForge
+// Ruamoko VM.
+static keyword_t rua_keywords[] = {
+#define VEC_TYPE(type_name, base_type) { #type_name, TYPE, &type_##type_name },
+#include "tools/qfcc/include/vec_types.h"
+};
+
 // These keywords are all part of the Ruamoko (Objective-QC) language.
 // The first time any one of them is encountered, the class system will be
 // initialized.
@@ -450,6 +457,7 @@ keyword_or_id (char *token)
 	static hashtab_t *qf_keyword_tab;
 	static hashtab_t *at_keyword_tab;
 	static hashtab_t *obj_keyword_tab;
+	static hashtab_t *rua_keyword_tab;
 
 	keyword_t  *keyword = 0;
 	symbol_t   *sym;
@@ -461,6 +469,7 @@ keyword_or_id (char *token)
 		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		rua_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
 		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
 
@@ -472,12 +481,19 @@ keyword_or_id (char *token)
 			Hash_Add (at_keyword_tab, &at_keywords[i]);
 		for (i = 0; i < NUMKEYS(obj_keywords); i++)
 			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
+		for (i = 0; i < NUMKEYS(rua_keywords); i++)
+			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
 	}
 	if (options.traditional < 1) {
-		keyword = Hash_Find (obj_keyword_tab, token);
-		if (keyword) {
-			if (!obj_initialized)
-				class_init ();
+		if (options.code.progsversion == PROG_VERSION) {
+			keyword = Hash_Find (rua_keyword_tab, token);
+		}
+		if (!keyword) {
+			keyword = Hash_Find (obj_keyword_tab, token);
+			if (keyword) {
+				if (!obj_initialized)
+					class_init ();
+			}
 		}
 		if (!keyword)
 			keyword = Hash_Find (qf_keyword_tab, token);

@@ -1005,6 +1005,16 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return invalid_binary_expr(op, e1, e2);
 	if (et2 >= ev_type_count || !binary_expr_types[et1][et2])
 		return invalid_binary_expr(op, e1, e2);
+
+	if ((t1->width > 1 || t2->width > 1)) {
+		if (t1 != t2) {
+			return invalid_binary_expr (op, e1, e2);
+		}
+		e = new_binary_expr (op, e1, e2);
+		e->e.expr.type = t1;
+		return e;
+	}
+
 	expr_type = binary_expr_types[et1][et2];
 	while (expr_type->op && expr_type->op != op)
 		expr_type++;

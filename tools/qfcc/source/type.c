@@ -79,18 +79,15 @@ type_t      type_invalid = {
 	.name = "invalid",
 };
 
-#define VTYPE(t, b) \
-	type_t type_##t = { \
-		.type = ev_##b, \
-		.name = #t, \
-		.alignment = PR_ALIGNOF(t), \
-		.width = PR_SIZEOF(t) / PR_SIZEOF (b), \
+#define VEC_TYPE(type_name, base_type) \
+	type_t type_##type_name = { \
+		.type = ev_##base_type, \
+		.name = #type_name, \
+		.alignment = PR_ALIGNOF(type_name), \
+		.width = PR_SIZEOF(type_name) / PR_SIZEOF (base_type), \
 		.meta = ty_basic, \
 	};
-VTYPE(ivec3, int)
-VTYPE(ivec4, int)
-VTYPE(vec3, float)
-VTYPE(vec4, float)
+#include "tools/qfcc/include/vec_types.h"
 
 type_t     *type_nil;
 type_t     *type_default;
@@ -948,6 +945,13 @@ is_integral (const type_t *type)
 }
 
 int
+is_real (const type_t *type)
+{
+	type = unalias_type (type);
+	return is_float (type) || is_double (type);
+}
+
+int
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
@@ -958,7 +962,7 @@ is_scalar (const type_t *type)
 	if (type->width != 1) {
 		return 0;
 	}
-	return is_float (type) || is_integral (type) || is_double (type);
+	return is_real (type) || is_integral (type);
 }
 
 int
@@ -968,7 +972,7 @@ is_nonscalar (const type_t *type)
 	if (type->width < 2) {
 		return 0;
 	}
-	return is_float (type) || is_integral (type) || is_double (type);
+	return is_real (type) || is_integral (type);
 }
 
 int
@@ -1144,20 +1148,21 @@ type_width (const type_t *type)
 static void
 chain_basic_types (void)
 {
+	type_entity.t.symtab = pr.entity_fields;
+	if (options.code.progsversion == PROG_VERSION) {
+		type_quaternion.alignment = 4;
+	}
+
 	chain_type (&type_void);
 	chain_type (&type_string);
 	chain_type (&type_float);
 	chain_type (&type_vector);
-	type_entity.t.symtab = pr.entity_fields;
 	chain_type (&type_entity);
 	chain_type (&type_field);
 	chain_type (&type_func);
 	chain_type (&type_ptr);
 	chain_type (&type_floatfield);
 	if (!options.traditional) {
-		if (options.code.progsversion == PROG_VERSION) {
-			type_quaternion.alignment = 4;
-		}
 		chain_type (&type_quaternion);
 		chain_type (&type_int);
 		chain_type (&type_uint);
@@ -1165,10 +1170,11 @@ chain_basic_types (void)
 		chain_type (&type_double);
 
 		if (options.code.progsversion == PROG_VERSION) {
-			chain_type (&type_ivec3);
-			chain_type (&type_ivec4);
-			chain_type (&type_vec3);
-			chain_type (&type_vec4);
+			chain_type (&type_long);
+			chain_type (&type_ulong);
+			chain_type (&type_ushort);
+#define VEC_TYPE(name, type) chain_type (&type_##name);
+#include "tools/qfcc/include/vec_types.h"
 		}
 	}
 }

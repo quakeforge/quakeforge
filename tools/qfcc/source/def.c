@@ -584,7 +584,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	if (init->type == ex_error)
 		return;
 	if ((is_array (sym->type) || is_struct (sym->type)
-		 || is_vector(sym->type) || is_quaternion(sym->type))
+		 || is_nonscalar (sym->type))
 		&& ((init->type == ex_compound)
 			|| init->type == ex_nil)) {
 		init_elements (sym->s.def, init);

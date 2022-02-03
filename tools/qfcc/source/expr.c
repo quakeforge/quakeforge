@@ -2549,6 +2549,7 @@ array_expr (expr_t *array, expr_t *index)
 {
 	type_t     *array_type = get_type (array);
 	type_t     *index_type = get_type (index);
+	type_t     *ele_type;
 	expr_t     *scale;
 	expr_t     *offset;
 	expr_t     *base;
@@ -2561,7 +2562,8 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (!is_ptr (array_type) && !is_array (array_type))
+	if (!is_ptr (array_type) && !is_array (array_type)
+		&& !is_nonscalar (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
 		return error (index, "invalid array index type");
@@ -2573,11 +2575,26 @@ array_expr (expr_t *array, expr_t *index)
 		&& array_type->t.array.size
 		&& is_constant (index)
 		&& (ind < array_type->t.array.base
-			|| ind - array_type->t.array.base >= array_type->t.array.size))
-			return error (index, "array index out of bounds");
-	scale = new_int_expr (type_size (array_type->t.array.type));
+			|| ind - array_type->t.array.base >= array_type->t.array.size)) {
+		return error (index, "array index out of bounds");
+	}
+	if (is_nonscalar (array_type)
+		&& is_constant (index)
+		&& (ind < 0 || ind >= array_type->width)) {
+		return error (index, "array index out of bounds");
+	}
+	if (is_array (array_type)) {
+		ele_type = array_type->t.array.type;
+		base = new_int_expr (array_type->t.array.base);
+	} else if (is_ptr (array_type)) {
+		ele_type = array_type->t.fldptr.type;
+		base = new_int_expr (0);
+	} else {
+		ele_type = ev_types[array_type->type];
+		base = new_int_expr (0);
+	}
+	scale = new_int_expr (type_size (ele_type));
 	index = binary_expr ('*', index, scale);
-	base = new_int_expr (array_type->t.array.base);
 	offset = binary_expr ('*', base, scale);
 	index = binary_expr ('-', index, offset);
 	if (is_short_val (index))
@@ -2585,18 +2602,20 @@ array_expr (expr_t *array, expr_t *index)
 	if (is_int_val (index))
 		ind = expr_int (index);
 	if (is_array (array_type)) {
-		type_t     *element_type = array_type->t.array.type;
 		if (array->type == ex_uexpr && array->e.expr.op == '.') {
 			ptr = array->e.expr.e1;
 		} else {
-			expr_t     *alias = new_offset_alias_expr (element_type, array, 0);
-			ptr = new_address_expr (element_type, alias, 0);
+			expr_t     *alias = new_offset_alias_expr (ele_type, array, 0);
+			ptr = new_address_expr (ele_type, alias, 0);
 		}
+	} else if (is_nonscalar (array_type)) {
+		expr_t     *alias = new_offset_alias_expr (ele_type, array, 0);
+		ptr = new_address_expr (ele_type, alias, 0);
 	} else {
 		ptr = array;
 	}
 	ptr = offset_pointer_expr (ptr, index);
-	ptr = cast_expr (pointer_type (array_type->t.array.type), ptr);
+	ptr = cast_expr (pointer_type (ele_type), ptr);
 
 	e = unary_expr ('.', ptr);
 	return e;
