@@ -947,7 +947,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *ofs = 0;
 	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
-	st_type_t   type;
+	st_type_t   type = st_assign;
 
 	if (src_expr->type == ex_assign) {
 		sblock = statement_subexpr (sblock, src_expr, &src);
@@ -983,15 +983,18 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, src_expr, &src);
 		}
 	}
-	type = st_assign;
 
 	if (0) {
 dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to get its addressing
 		// parameters (base and offset) and switch to storep instructions.
 		sblock = addressing_mode (sblock, dst_expr, &dst, &ofs, &mode);
-		opcode = "store";
-		type = st_ptrassign;
+		if (mode != 0) {
+			opcode = "store";
+			type = st_ptrassign;
+		} else {
+			ofs = 0;
+		}
 	}
 	if (op) {
 		*op = src;
@@ -1290,11 +1293,45 @@ static sblock_t *
 ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
 {
-	if (!is_ptr (get_type (ref))) {
+	type_t     *type = get_type (ref);
+	if (!is_ptr (type)) {
 		internal_error (ref, "expected pointer in ref");
 	}
-	if (ref->type != ex_alias || ref->e.alias.offset) {
+	if (ref->type == ex_address
+		&& (!ref->e.address.offset || is_constant (ref->e.address.offset))
+		&& ref->e.address.lvalue->type == ex_alias
+		&& (!ref->e.address.lvalue->e.alias.offset
+			|| is_constant (ref->e.address.lvalue->e.alias.offset))) {
+		expr_t     *lvalue = ref->e.address.lvalue;
+		expr_t     *offs = ref->e.address.offset;
+		expr_t     *alias;
+		if (lvalue->e.alias.offset) {
+			if (offs) {
+				offs = binary_expr ('+', offs, lvalue->e.alias.offset);
+			} else {
+				offs = lvalue->e.alias.offset;
+			}
+		}
+		type = type->t.fldptr.type;
+		if (offs) {
+			expr_t     *lv = lvalue->e.alias.expr;
+			type_t     *lvtype = get_type (lv);
+			int         o = expr_int (offs);
+			if (o < 0 || o + type_size (type) > type_size (lvtype)) {
+				// not a valid offset for the type, which technically should
+				// be an error, but there may be legitimate reasons for doing
+				// such pointer shenanigans
+				goto just_a_pointer;
+			}
+			alias = new_offset_alias_expr (type, lv, expr_int (offs));
+		} else {
+			alias = new_alias_expr (type, lvalue->e.alias.expr);
+		}
+		expr_file_line (alias, ref);
+		return addressing_mode (sblock, alias, base, offset, mode);
+	} else if (ref->type != ex_alias || ref->e.alias.offset) {
 		// probably just a pointer
+just_a_pointer:
 		sblock = statement_subexpr (sblock, ref, base);
 		*offset = short_operand (0, ref);
 		*mode = 2;	// mode C: ptr + constant index
@@ -1468,6 +1505,15 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 	return s;
 }
 
+static statement_t *
+assign_statement (operand_t *dst, operand_t *src, expr_t *e)
+{
+	statement_t *s = new_statement (st_assign, "assign", e);
+	s->opa = dst;
+	s->opc = src;
+	return s;
+}
+
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
@@ -1476,10 +1522,21 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 	operand_t  *base = 0;
 	operand_t  *offset = 0;
 	pr_ushort_t mode;
+	statement_t *s;
 
 	sblock = addressing_mode (sblock, deref, &base, &offset, &mode);
 
+	if (!*op) {
+		*op = temp_operand (load_type, deref);
+	}
+
 	switch (mode) {
+		case 0://direct def access
+			// FIXME should check that offset is 0, but currently,
+			// addressing_mode always sets offset to 0 for mode 0
+			s = assign_statement (*op, base, deref);
+			sblock_add_statement (sblock, s);
+			return sblock;
 		case 1://entity.field
 		case 2://const indexed pointer
 		case 3://var indexed pointer
@@ -1488,11 +1545,6 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			internal_error (deref, "unexpected addressing mode: %d", mode);
 	}
 
-	if (!*op) {
-		*op = temp_operand (load_type, deref);
-	}
-
-	statement_t *s;
 	if (low_level_type (load_type) == ev_void) {
 		s = lea_statement (base, offset, ptr_expr);
 		sblock_add_statement (sblock, s);
