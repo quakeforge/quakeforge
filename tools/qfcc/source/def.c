@@ -209,7 +209,7 @@ temp_def (type_t *type)
 	int         size = type_size (type);
 	int         alignment = type->alignment;
 
-	if (size < 1 || size > 4) {
+	if (size < 1 || size > MAX_DEF_SIZE) {
 		internal_error (0, "%d invalid size for temp def", size);
 	}
 	if (alignment < 1) {

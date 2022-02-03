@@ -74,6 +74,9 @@ static hashtab_t *function_map;
 // standardized base register to use for all locals (arguments, local defs,
 // params)
 #define LOCALS_REG 1
+// keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
+// having to do shenanigans with mixed-alignment stack frames
+#define STACK_ALIGN 8
 
 static const char *
 ol_func_get_key (const void *_f, void *unused)
@@ -785,26 +788,27 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 
 		if (func->arguments) {
 			func->arguments->size = func->arguments->max_size;
-			merge_spaces (space, func->arguments, 4);
+			merge_spaces (space, func->arguments, STACK_ALIGN);
 			func->arguments = 0;
 		}
 
-		merge_spaces (space, func->locals->space, 4);
+		merge_spaces (space, func->locals->space, STACK_ALIGN);
 		func->locals->space = space;
 
 		// allocate 0 words to force alignment and get the address
-		func->params_start = defspace_alloc_aligned_highwater (space, 0, 4);
+		func->params_start = defspace_alloc_aligned_highwater (space, 0,
+															   STACK_ALIGN);
 
 		dstatement_t *st = &pr.code->code[func->code];
 		if (st->op == OP_ADJSTK) {
 			st->b = -func->params_start;
 		}
-		merge_spaces (space, func->parameters->space, 4);
+		merge_spaces (space, func->parameters->space, STACK_ALIGN);
 		func->parameters->space = space;
 
 		// force the alignment again so the full stack slot is counted when
-		// the final parameter is smaller than 4 words
-		defspace_alloc_aligned_highwater (space, 0, 4);
+		// the final parameter is smaller than STACK_ALIGN words
+		defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
 	}
 	return fsym->s.func;
 }

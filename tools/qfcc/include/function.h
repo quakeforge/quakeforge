@@ -41,6 +41,8 @@
 
 #include "def.h"
 
+#define MAX_DEF_SIZE ((int)PR_SIZEOF(lvec4))
+
 /** Represent an overloading of a function.
 
 	Every function, whether overloaded or not, has an entry in the overloaded
@@ -71,7 +73,7 @@ typedef struct function_s {
 	const struct type_s *type;		///< function's type without aliases
 	int                 temp_reg;	///< base register to use for temp defs
 	int                 temp_num;	///< number for next temp var
-	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
+	struct def_s       *temp_defs[MAX_DEF_SIZE];///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
 	struct symbol_s    *sym;		///< internal symbol for this function
 	/** \name Local data space
