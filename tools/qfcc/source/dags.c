@@ -450,7 +450,8 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 	if (n->type == st_func) {
 		const char *num_params = 0;
 		int         first_param = 0;
-		flowvar_t **flowvars = dag->flownode->graph->func->vars;
+		function_t *func = dag->flownode->graph->func;
+		flowvar_t **flowvars = func->vars;
 
 		if (!strncmp (n->label->opcode, "<RCALL", 6)) {
 			num_params = n->label->opcode + 6;
@@ -467,6 +468,17 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				}
 			}
 			label->live = 1;
+		}
+		// ensure all operantions on global variables are completed before
+		// the st_func statement executes
+		for (set_iter_t *g = set_first (func->global_vars); g;
+			 g = set_next (g)) {
+			flowvar_t  *var = flowvars[g->element];
+			dagnode_t  *gn = dag_node (var->op);
+			if (gn) {
+				set_add (n->edges, gn->number);
+				set_remove (gn->edges, n->number);
+			}
 		}
 		if (num_params && isdigit (*num_params)) {
 			for (i = first_param; i < *num_params - '0'; i++) {
