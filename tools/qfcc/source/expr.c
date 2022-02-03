@@ -2622,6 +2622,12 @@ offset_pointer_expr (expr_t *pointer, expr_t *offset)
 	if (pointer->type == ex_alias && !pointer->e.alias.offset
 		&& is_integral (get_type (pointer->e.alias.expr))) {
 		ptr = pointer->e.alias.expr;
+	} else if (pointer->type == ex_address && is_constant (offset)) {
+		if (pointer->e.address.offset) {
+			offset = binary_expr ('+', pointer->e.address.offset, offset);
+		}
+		pointer->e.address.offset = offset;
+		return pointer;
 	} else {
 		ptr = cast_expr (&type_int, pointer);
 	}
