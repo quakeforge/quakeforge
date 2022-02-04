@@ -969,6 +969,9 @@ int
 is_nonscalar (const type_t *type)
 {
 	type = unalias_type (type);
+	if (is_vector (type) || is_quaternion (type)) {
+		return 1;
+	}
 	if (type->width < 2) {
 		return 0;
 	}
