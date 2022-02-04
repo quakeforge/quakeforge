@@ -59,12 +59,27 @@ PF_VarString (progs_t *pr, int first)
 	char	   *out, *dst;
 	const char *src;
 	int			len, i;
+	int         argc = pr->pr_argc;
+	pr_type_t **argv = pr->pr_params;
 
-	for (len = 0, i = first; i < pr->pr_argc; i++)
-		len += strlen (P_GSTRING (pr, i));
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 0);
+		argc = va_list->count;
+		if (argc) {
+			argv = alloca (argc * sizeof (pr_type_t *));
+			for (int i = 0; i < argc; i++) {
+				argv[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			argv = 0;
+		}
+	}
+
+	for (len = 0, i = first; i < argc; i++)
+		len += strlen (PR_GetString (pr, argv[i]->string_var));
 	dst = out = Hunk_TempAlloc (0, len + 1);
-	for (i = first; i < pr->pr_argc; i++) {
-		src = P_GSTRING (pr, i);
+	for (i = first; i < argc; i++) {
+		src = PR_GetString (pr, argv[i]->string_var);
 		while (*src)
 			*dst++ = *src++;
 	}
