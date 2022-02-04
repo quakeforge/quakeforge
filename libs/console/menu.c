@@ -594,6 +594,7 @@ Menu_Init (void)
 
 	menu_pr_state.max_edicts = 0;
 	menu_pr_state.zone_size = 1024 * 1024;
+	menu_pr_state.stack_size = 64 * 1024;
 
 	PR_Init (&menu_pr_state);
 

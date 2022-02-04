@@ -60,6 +60,7 @@ sv_data_t sv_data[MAX_EDICTS];
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
+cvar_t     *sv_progs_stack;
 cvar_t     *sv_progs_ext;
 cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
@@ -560,6 +561,7 @@ SV_LoadProgs (void)
 
 	sv_pr_state.max_edicts = MAX_EDICTS;
 	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	sv_pr_state.stack_size = sv_progs_stack->int_val * 1024;
 	sv.edicts = sv_edicts;
 
 	PR_LoadProgs (&sv_pr_state, progs_name);
@@ -614,6 +616,8 @@ SV_Progs_Init_Cvars (void)
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
 							  "size of the zone for progs in kB");
+	sv_progs_stack = Cvar_Get ("sv_progs_stack", "64", CVAR_NONE, NULL,
+							  "size of the stack for progs in kB");
 	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
 							 "extention mapping to use: "
 							 "none, id, qf, qwe, ktpro, cpqw");
