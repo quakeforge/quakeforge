@@ -1787,11 +1787,17 @@ PR_StackTrace (progs_t *pr)
 VISIBLE void
 PR_Profile (progs_t * pr)
 {
-	pr_uint_t   max, num, i;
+	pr_ulong_t  max, num, i;
+	pr_ulong_t  total;
 	dfunction_t *f;
 	bfunction_t *best, *bf;
 
 	num = 0;
+	total = 0;
+	for (i = 0; i < pr->progs->functions.count; i++) {
+		bf = &pr->function_table[i];
+		total += bf->profile;
+	}
 	do {
 		max = 0;
 		best = NULL;
@@ -1805,13 +1811,15 @@ PR_Profile (progs_t * pr)
 		if (best) {
 			if (num < 10) {
 				f = pr->pr_functions + (best - pr->function_table);
-				Sys_Printf ("%7i %s\n", best->profile,
-							PR_GetString (pr, f->name));
+				Sys_Printf ("%7"PRIu64" %s%s\n", best->profile,
+							PR_GetString (pr, f->name),
+							f->first_statement < 0 ? " (builtin)" : "");
 			}
 			num++;
 			best->profile = 0;
 		}
 	} while (best);
+	Sys_Printf ("total: %7"PRIu64"\n", total);
 }
 
 static void
