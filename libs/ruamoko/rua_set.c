@@ -220,110 +220,176 @@ bi_set_delete (progs_t *pr)
 }
 
 static void
+rua_set_add (progs_t *pr, pr_int_t setid, pr_uint_t element)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	set_add (set->set, element);
+}
+
+static void
 bi_set_add (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	set_add (set->set, P_UINT (pr, 1));
+	rua_set_add (pr, P_INT (pr, 0), P_UINT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_remove (progs_t *pr, pr_int_t setid, pr_uint_t element)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	set_remove (set->set, element);
 }
 
 static void
 bi_set_remove (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	set_remove (set->set, P_UINT (pr, 1));
+	rua_set_remove (pr, P_INT (pr, 0), P_UINT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_invert (progs_t *pr, pr_int_t setid)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	set_invert (set->set);
 }
 
 static void
 bi_set_invert (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	set_invert (set->set);
+	rua_set_invert (pr, P_INT (pr, 0));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_union (progs_t *pr, pr_int_t dstid, pr_int_t srcid)
+{
+	bi_set_t   *dst = get_set (pr, __FUNCTION__, dstid);
+	bi_set_t   *src = get_set (pr, __FUNCTION__, srcid);
+
+	set_union (dst->set, src->set);
 }
 
 static void
 bi_set_union (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
-
-	set_union (set1->set, set2->set);
+	rua_set_union (pr, P_INT (pr, 0), P_INT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_intersection (progs_t *pr, pr_int_t dstid, pr_int_t srcid)
+{
+	bi_set_t   *dst = get_set (pr, __FUNCTION__, dstid);
+	bi_set_t   *src = get_set (pr, __FUNCTION__, srcid);
+
+	set_intersection (dst->set, src->set);
 }
 
 static void
 bi_set_intersection (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
-
-	set_intersection (set1->set, set2->set);
+	rua_set_intersection (pr, P_INT (pr, 0), P_INT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_difference (progs_t *pr, pr_int_t dstid, pr_int_t srcid)
+{
+	bi_set_t   *dst = get_set (pr, __FUNCTION__, dstid);
+	bi_set_t   *src = get_set (pr, __FUNCTION__, srcid);
+
+	set_difference (dst->set, src->set);
 }
 
 static void
 bi_set_difference (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
-
-	set_difference (set1->set, set2->set);
+	rua_set_difference (pr, P_INT (pr, 0), P_INT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_reverse_difference (progs_t *pr, pr_int_t dstid, pr_int_t srcid)
+{
+	bi_set_t   *dst = get_set (pr, __FUNCTION__, dstid);
+	bi_set_t   *src = get_set (pr, __FUNCTION__, srcid);
+
+	set_reverse_difference (dst->set, src->set);
 }
 
 static void
 bi_set_reverse_difference (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
-
-	set_reverse_difference (set1->set, set2->set);
+	rua_set_reverse_difference (pr, P_INT (pr, 0), P_INT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_assign (progs_t *pr, pr_int_t dstid, pr_int_t srcid)
+{
+	bi_set_t   *dst = get_set (pr, __FUNCTION__, dstid);
+	bi_set_t   *src = get_set (pr, __FUNCTION__, srcid);
+
+	set_assign (dst->set, src->set);
 }
 
 static void
 bi_set_assign (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
-
-	set_assign (set1->set, set2->set);
+	rua_set_assign (pr, P_INT (pr, 0), P_INT (pr, 1));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_empty (progs_t *pr, pr_int_t setid)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	set_empty (set->set);
 }
 
 static void
 bi_set_empty (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	set_empty (set->set);
+	rua_set_empty (pr, P_INT (pr, 0));
 	R_INT (pr) = P_INT (pr, 0);
+}
+
+static void
+rua_set_everything (progs_t *pr, pr_int_t setid)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	set_everything (set->set);
 }
 
 static void
 bi_set_everything (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	set_everything (set->set);
+	rua_set_everything (pr, P_INT (pr, 0));
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
-bi_set_is_empty (progs_t *pr)
+rua_set_is_empty (progs_t *pr, pr_int_t setid)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
 
 	R_INT (pr) = set_is_empty (set->set);
 }
 
 static void
-bi_set_is_everything (progs_t *pr)
+bi_set_is_empty (progs_t *pr)
+{
+	rua_set_is_empty (pr, P_INT (pr, 0));
+}
+
+static void
+rua_set_is_everything (progs_t *pr, pr_int_t setid)
 {
 	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
 
@@ -331,55 +397,97 @@ bi_set_is_everything (progs_t *pr)
 }
 
 static void
-bi_set_is_disjoint (progs_t *pr)
+bi_set_is_everything (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
+	rua_set_is_everything (pr, P_INT (pr, 0));
+}
+
+static void
+rua_set_is_disjoint (progs_t *pr, pr_int_t sid1, pr_int_t sid2)
+{
+	bi_set_t   *set1 = get_set (pr, __FUNCTION__, sid1);
+	bi_set_t   *set2 = get_set (pr, __FUNCTION__, sid2);
 
 	R_INT (pr) = set_is_disjoint (set1->set, set2->set);
 }
 
 static void
-bi_set_is_intersecting (progs_t *pr)
+bi_set_is_disjoint (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
+	rua_set_is_disjoint (pr, P_INT (pr, 0), P_INT (pr, 1));
+}
+
+static void
+rua_set_is_intersecting (progs_t *pr, pr_int_t sid1, pr_int_t sid2)
+{
+	bi_set_t   *set1 = get_set (pr, __FUNCTION__, sid1);
+	bi_set_t   *set2 = get_set (pr, __FUNCTION__, sid2);
 
 	R_INT (pr) = set_is_intersecting (set1->set, set2->set);
 }
 
 static void
-bi_set_is_equivalent (progs_t *pr)
+bi_set_is_intersecting (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
+	rua_set_is_intersecting (pr, P_INT (pr, 0), P_INT (pr, 1));
+}
+
+static void
+rua_set_is_equivalent (progs_t *pr, pr_int_t sid1, pr_int_t sid2)
+{
+	bi_set_t   *set1 = get_set (pr, __FUNCTION__, sid1);
+	bi_set_t   *set2 = get_set (pr, __FUNCTION__, sid2);
 
 	R_INT (pr) = set_is_equivalent (set1->set, set2->set);
 }
 
 static void
+bi_set_is_equivalent (progs_t *pr)
+{
+	rua_set_is_equivalent (pr, P_INT (pr, 0), P_INT (pr, 1));
+}
+
+static void
+rua_set_is_subset (progs_t *pr, pr_int_t setid, pr_int_t subid)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+	bi_set_t   *sub = get_set (pr, __FUNCTION__, subid);
+
+	R_INT (pr) = set_is_subset (set->set, sub->set);
+}
+
+static void
 bi_set_is_subset (progs_t *pr)
 {
-	bi_set_t   *set1 = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-	bi_set_t   *set2 = get_set (pr, __FUNCTION__, P_INT (pr, 1));
+	rua_set_is_subset (pr, P_INT (pr, 0), P_INT (pr, 1));
+}
 
-	R_INT (pr) = set_is_subset (set1->set, set2->set);
+static void
+rua_set_is_member (progs_t *pr, pr_int_t setid, pr_uint_t element)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	R_INT (pr) = set_is_member (set->set, element);
 }
 
 static void
 bi_set_is_member (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
+	rua_set_is_member (pr, P_INT (pr, 0), P_UINT (pr, 1));
+}
 
-	R_INT (pr) = set_is_member (set->set, P_UINT (pr, 1));
+static void
+rua_set_count (progs_t *pr, pr_int_t setid)
+{
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
+
+	R_INT (pr) = set_count (set->set);
 }
 
 static void
 bi_set_count (progs_t *pr)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
-
-	R_INT (pr) = set_count (set->set);
+	rua_set_count (pr, P_INT (pr, 0));
 }
 
 static void
@@ -422,11 +530,17 @@ bi_set_next (progs_t *pr)
 }
 
 static void
-bi_set_as_string (progs_t *pr)
+rua_set_as_string (progs_t *pr, pr_int_t setid)
 {
-	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
+	bi_set_t   *set = get_set (pr, __FUNCTION__, setid);
 
 	RETURN_STRING (pr, set_as_string (set->set));
+}
+
+static void
+bi_set_as_string (progs_t *pr)
+{
+	rua_set_as_string (pr, P_INT (pr, 0));
 }
 
 static void
@@ -444,10 +558,7 @@ bi__i_Set__add_ (progs_t *pr)
 	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
 	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	P_INT (pr, 1) = P_INT (pr, 2);
-	bi_set_add (pr);
+	rua_set_add (pr, set_obj->set, P_UINT (pr, 2));
 	R_INT (pr) = set_ptr;
 }
 
@@ -457,10 +568,7 @@ bi__i_Set__remove_ (progs_t *pr)
 	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
 	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	P_INT (pr, 1) = P_INT (pr, 2);
-	bi_set_remove (pr);
+	rua_set_remove (pr, set_obj->set, P_UINT (pr, 2));
 	R_INT (pr) = set_ptr;
 }
 
@@ -470,9 +578,7 @@ bi__i_Set__invert (progs_t *pr)
 	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
 	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_invert (pr);
+	rua_set_invert (pr, set_obj->set);
 	R_INT (pr) = set_ptr;
 }
 
@@ -481,13 +587,9 @@ bi__i_Set__union_ (progs_t *pr)
 {
 	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
 	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
-	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = dst_obj->set;
-	P_INT (pr, 1) = src_obj->set;
-	bi_set_union (pr);
-	R_INT (pr) = dst_ptr;
+	rua_set_union (pr, dst_obj->set, src_obj->set);
 }
 
 static void
@@ -497,10 +599,7 @@ bi__i_Set__intersection_ (progs_t *pr)
 	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
 	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = dst_obj->set;
-	P_INT (pr, 1) = src_obj->set;
-	bi_set_intersection (pr);
+	rua_set_intersection (pr, dst_obj->set, src_obj->set);
 	R_INT (pr) = dst_ptr;
 }
 
@@ -511,10 +610,7 @@ bi__i_Set__difference_ (progs_t *pr)
 	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
 	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = dst_obj->set;
-	P_INT (pr, 1) = src_obj->set;
-	bi_set_difference (pr);
+	rua_set_difference (pr, dst_obj->set, src_obj->set);
 	R_INT (pr) = dst_ptr;
 }
 
@@ -525,10 +621,7 @@ bi__i_Set__reverse_difference_ (progs_t *pr)
 	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
 	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = dst_obj->set;
-	P_INT (pr, 1) = src_obj->set;
-	bi_set_reverse_difference (pr);
+	rua_set_reverse_difference (pr, dst_obj->set, src_obj->set);
 	R_INT (pr) = dst_ptr;
 }
 
@@ -539,10 +632,7 @@ bi__i_Set__assign_ (progs_t *pr)
 	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
 	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = dst_obj->set;
-	P_INT (pr, 1) = src_obj->set;
-	bi_set_assign (pr);
+	rua_set_assign (pr, dst_obj->set, src_obj->set);
 	R_INT (pr) = dst_ptr;
 }
 
@@ -552,9 +642,7 @@ bi__i_Set__empty (progs_t *pr)
 	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
 	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_empty (pr);
+	rua_set_empty (pr, set_obj->set);
 	R_INT (pr) = set_ptr;
 }
 
@@ -564,9 +652,7 @@ bi__i_Set__everything (progs_t *pr)
 	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
 	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_everything (pr);
+	rua_set_everything (pr, set_obj->set);
 	R_INT (pr) = set_ptr;
 }
 
@@ -575,9 +661,7 @@ bi__i_Set__is_empty (progs_t *pr)
 {
 	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_is_empty (pr);
+	rua_set_is_empty (pr, set_obj->set);
 }
 
 static void
@@ -585,9 +669,7 @@ bi__i_Set__is_everything (progs_t *pr)
 {
 	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_is_everything (pr);
+	rua_set_is_everything (pr, set_obj->set);
 }
 
 static void
@@ -596,10 +678,7 @@ bi__i_Set__is_disjoint_ (progs_t *pr)
 	pr_set_t    *s1_obj = &P_STRUCT (pr, pr_set_t, 0);
 	pr_set_t    *s2_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = s1_obj->set;
-	P_INT (pr, 1) = s2_obj->set;
-	bi_set_is_disjoint (pr);
+	rua_set_is_disjoint (pr, s1_obj->set, s2_obj->set);
 }
 
 static void
@@ -608,10 +687,7 @@ bi__i_Set__is_intersecting_ (progs_t *pr)
 	pr_set_t    *s1_obj = &P_STRUCT (pr, pr_set_t, 0);
 	pr_set_t    *s2_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = s1_obj->set;
-	P_INT (pr, 1) = s2_obj->set;
-	bi_set_is_intersecting (pr);
+	rua_set_is_intersecting (pr, s1_obj->set, s2_obj->set);
 }
 
 static void
@@ -620,22 +696,16 @@ bi__i_Set__is_equivalent_ (progs_t *pr)
 	pr_set_t    *s1_obj = &P_STRUCT (pr, pr_set_t, 0);
 	pr_set_t    *s2_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = s1_obj->set;
-	P_INT (pr, 1) = s2_obj->set;
-	bi_set_is_equivalent (pr);
+	rua_set_is_equivalent (pr, s1_obj->set, s2_obj->set);
 }
 
 static void
 bi__i_Set__is_subset_ (progs_t *pr)
 {
-	pr_set_t    *s1_obj = &P_STRUCT (pr, pr_set_t, 0);
-	pr_set_t    *s2_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
+	pr_set_t    *sub_obj = &P_STRUCT (pr, pr_set_t, 2);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = s1_obj->set;
-	P_INT (pr, 1) = s2_obj->set;
-	bi_set_is_subset (pr);
+	rua_set_is_subset (pr, set_obj->set, sub_obj->set);
 }
 
 static void
@@ -643,10 +713,7 @@ bi__i_Set__is_member_ (progs_t *pr)
 {
 	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	P_UINT (pr, 1) = P_UINT (pr, 2);
-	bi_set_is_member (pr);
+	rua_set_is_member (pr, set_obj->set, P_UINT (pr, 2));
 }
 
 static void
@@ -654,9 +721,7 @@ bi__i_Set__size (progs_t *pr)
 {
 	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_count (pr);
+	rua_set_count (pr, set_obj->set);
 }
 
 static void
@@ -664,9 +729,7 @@ bi__i_Set__as_string (progs_t *pr)
 {
 	pr_set_t    *set_obj = &P_STRUCT (pr, pr_set_t, 0);
 
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = set_obj->set;
-	bi_set_as_string (pr);
+	rua_set_as_string (pr, set_obj->set);
 }
 
 static void
