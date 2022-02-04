@@ -1218,6 +1218,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		} else {
 			list = new_nil_expr ();
 		}
+		expr_file_line (list, call);
 		assign = assign_expr (args_list, list);
 		expr_file_line (assign, call);
 		sblock = statement_slist (sblock, assign);
