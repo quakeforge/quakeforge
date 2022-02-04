@@ -258,7 +258,7 @@ static expr_type_t int_float[] = {
 };
 
 static expr_type_t int_vector[] = {
-	{'*',	&type_vector, &type_float, 0},
+	{'*',	&type_vector, &type_float, 0, vector_scale},
 	{0, 0}
 };
 

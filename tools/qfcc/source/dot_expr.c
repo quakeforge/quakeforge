@@ -75,6 +75,7 @@ get_op_string (int op)
 		case GE:	return ">=";
 		case LT:	return "<";
 		case GT:	return ">";
+		case '=':	return "=";
 		case '+':	return "+";
 		case '-':	return "-";
 		case '*':	return "*";
@@ -92,6 +93,7 @@ get_op_string (int op)
 		case 'C':	return "<cast>";
 		case CROSS:	return "@cross";
 		case DOT:	return "@dot";
+		case SCALE:	return "@scale";
 		default:
 			return "unknown";
 	}
