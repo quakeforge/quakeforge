@@ -142,7 +142,6 @@ usage (int status)
 	printf (
 "Options:\n"
 "        --advanced            Advanced Ruamoko mode\n"
-"                              default for separate compilation mode\n"
 "        --bug OPTION,...      Set bug options\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -c                        Only compile, don't link\n"
@@ -172,6 +171,10 @@ usage (int status)
 "                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -r, --relocatable         Incremental linking\n"
+"        --raumoko             Use both Ruamoko language features and the\n"
+"        --ruamoko             Ruamoko ISA, providing access to SIMD types\n"
+"                              and a stack for locals.\n"
+"                              default for separate compilation mode\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "        --traditional         Traditional QuakeC mode: implies v6only\n"
@@ -719,7 +722,7 @@ DecodeArgs (int argc, char **argv)
 			options.code.vector_components = true;
 	}
 	if (!options.code.progsversion)
-		options.code.progsversion = PROG_V6P_VERSION;
+		options.code.progsversion = PROG_VERSION;
 	if (!options.traditional) {
 		// avanced=2 requires the Ruamoko ISA
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
