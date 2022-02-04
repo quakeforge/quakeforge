@@ -69,6 +69,7 @@ enum {
 	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
+	OPT_RUAMOKO,
 	OPT_TRADITIONAL,
 	OPT_BUG,
 };
@@ -92,7 +93,9 @@ static struct option const long_options[] = {
 	{"progs-src", required_argument, 0, 'P'},
 	{"qccx-escapes", no_argument, 0, OPT_QCCX_ESCAPES},
 	{"quiet", no_argument, 0, 'q'},
+	{"raumoko", no_argument, 0, OPT_RUAMOKO},
 	{"relocatable", no_argument, 0, 'r'},
+	{"ruamoko", no_argument, 0, OPT_RUAMOKO},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
 	{"traditional", no_argument, 0, OPT_TRADITIONAL},
@@ -394,14 +397,20 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
-				options.advanced = false;
+				options.advanced = 0;
 				options.code.progsversion = PROG_ID_VERSION;
 				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
-				options.advanced = true;
+				options.advanced = 1;
 				options.code.progsversion = PROG_V6P_VERSION;
+				options.code.const_initializers = false;
+				break;
+			case OPT_RUAMOKO:
+				options.traditional = 0;
+				options.advanced = 2;
+				options.code.progsversion = PROG_VERSION;
 				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
@@ -693,7 +702,7 @@ DecodeArgs (int argc, char **argv)
 	if (saw_MD)
 		options.preprocess_only = 0;
 	if (!source_files && !options.advanced) {
-		// progs.src mode without --advanced implies --traditional
+		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
 		if (!options.traditional)
 			options.traditional = 2;
@@ -712,14 +721,10 @@ DecodeArgs (int argc, char **argv)
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_V6P_VERSION;
 	if (!options.traditional) {
-		options.advanced = true;
-		if (options.code.progsversion < PROG_VERSION) {
-			add_cpp_def ("-D__RUAMOKO__=1");
-			add_cpp_def ("-D__RAUMOKO__=1");
-		} else {
-			add_cpp_def ("-D__RUAMOKO__=2");
-			add_cpp_def ("-D__RAUMOKO__=2");
-		}
+		// avanced=2 requires the Ruamoko ISA
+		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
+		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
+		add_cpp_def (save_string (ruamoko));
 		if (options.code.ifstring == (qboolean) -1)
 			options.code.ifstring = false;
 		if (options.code.short_circuit == (qboolean) -1)
@@ -739,6 +744,13 @@ DecodeArgs (int argc, char **argv)
 	} else {
 		if (options.code.crc == (qboolean) -1)
 			options.code.crc = false;
+	}
+
+	if (options.traditional && options.advanced) {
+		fprintf (stderr,
+				 "%s: internal error: traditional and advanced twisted\n",
+				 this_program);
+		abort ();
 	}
 
 	// add the default paths

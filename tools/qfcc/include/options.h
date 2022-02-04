@@ -109,7 +109,7 @@ typedef struct {
 	qboolean		progdefs_h;		// generate progdefs.h
 	qboolean		qccx_escapes;	// use qccx escapes instead of standard C
 	int				traditional;	// behave more like qcc
-	qboolean		advanced;		// behold the power of Ruamoko
+	int				advanced;		// behold the power of Ruamoko
 	qboolean		compile;		// serparate compilation mode
 	qboolean		partial_link;	// partial linking
 	qboolean		preprocess_only;// run only cpp, don't compile
