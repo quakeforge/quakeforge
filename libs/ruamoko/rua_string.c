@@ -175,16 +175,9 @@ bi_str_clear (progs_t *pr)
 }
 
 static void
-bi_str_mid (progs_t *pr)
+str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 {
-	const char *str = P_GSTRING (pr, 0);
-	int         pos = P_INT (pr, 1);
-	int         end = P_INT (pr, 2);
-	int         size = strlen (str);
 	char       *temp;
-
-	if (pr->pr_argc == 2)
-		end = size;
 
 	R_STRING (pr) = 0;
 	if (pos < 0)
@@ -203,6 +196,27 @@ bi_str_mid (progs_t *pr)
 	strncpy (temp, str + pos, end - pos);
 	temp[end - pos] = 0;
 	RETURN_STRING (pr, temp);
+}
+
+static void
+bi_str_mid_2 (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, size, size);
+}
+
+static void
+bi_str_mid_3 (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         end = P_INT (pr, 2);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, end, size);
 }
 
 static void
@@ -316,8 +330,8 @@ static builtin_t builtins[] = {
 	bi(str_copy,    2, p(string), p(string)),
 	bi(str_cat,     2, p(string), p(string)),
 	bi(str_clear,   1, p(string)),
-	{"str_mid|*i",	bi_str_mid,		-1, 2, {p(string), p(int)}},
-	{"str_mid|*ii",	bi_str_mid,		-1, 3, {p(string), p(int), p(int)}},
+	{"str_mid|*i",	bi_str_mid_2,		-1, 2, {p(string), p(int)}},
+	{"str_mid|*ii",	bi_str_mid_3,		-1, 3, {p(string), p(int), p(int)}},
 	bi(str_str,     2, p(string), p(string)),
 	bi(str_char,    2, p(string), p(int)),
 	bi(str_quote,   1, p(string)),
