@@ -1430,6 +1430,11 @@ rua_obj_msg_sendv (progs_t *pr)
 	// replace them
 	count -= 2;
 	params += 2 * pr->pr_param_size;
+	pr_ptr_t    saved_stack = 0;
+	int         sendv_depth = pr->pr_depth;
+	if (pr->globals.stack) {
+		saved_stack = *pr->globals.stack;
+	}
 	PR_RESET_PARAMS (pr);
 	P_POINTER (pr, 0) = obj;
 	P_POINTER (pr, 1) = sel;
@@ -1437,7 +1442,15 @@ rua_obj_msg_sendv (progs_t *pr)
 		memcpy (&P_INT (pr, 2), params,
 				count * sizeof (pr_type_t) * pr->pr_param_size);
 	}
-	PR_CallFunction (pr, imp, pr->pr_return);
+	if (PR_CallFunction (pr, imp, pr->pr_return)) {
+		// the call is to a progs function so a frame was pushed, ensure
+		// the stack pointer is restored on return
+		// if there's no stack, then the following is effectively a noop
+		pr->pr_stack[sendv_depth].stack_ptr = saved_stack;
+	} else if (pr->globals.stack) {
+		// the call was to a builtin, restore the stack
+		*pr->globals.stack = saved_stack;
+	}
 }
 
 static void
