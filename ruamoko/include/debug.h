@@ -62,18 +62,18 @@
 /**
 	Print a string to the console if the "developer" Cvar is nonzero.
 */
-@extern void dprint (string str);
+@extern void dprint (.../*string str*/);
 
 /**
 	Abort (crash) the server. "str" is the message the server crashes with.
 */
-@extern void error (string str);
+@extern void error (.../*string str*/);
 
 /**
 	Prints info on the "self" ENTITY (not object), and error message "e".
 	The entity is freed.
 */
-@extern void objerror (string e);
+@extern void objerror (.../*string e*/);
 
 //\}
 #endif //__ruamoko_debug_h
