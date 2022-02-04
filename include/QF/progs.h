@@ -1255,13 +1255,13 @@ typedef struct {
 typedef struct {
 	pr_int_t    first_statement;
 	pr_int_t    numparams;
+	pr_ulong_t   profile;
 	union {
 		struct {
 			dparmsize_t param_size[PR_MAX_PARAMS];
 			dfunction_t *descriptor;
 			pr_uint_t   params_start;
 			pr_uint_t   locals;
-			pr_uint_t   profile;
 		};
 		struct {
 			// although Ruamoko progs support more than PR_MAX_PARAMS
