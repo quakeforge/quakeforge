@@ -2161,7 +2161,6 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				warning (fexpr, "too few arguments");
 		}
 		param_count = -ftype->t.func.num_params - 1;
-		emit_args = !ftype->t.func.no_va_list;
 	} else if (ftype->t.func.num_params >= 0) {
 		if (arg_count > ftype->t.func.num_params) {
 			return error (fexpr, "too many arguments");
@@ -2172,6 +2171,9 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				warning (fexpr, "too few arguments");
 		}
 		param_count = ftype->t.func.num_params;
+	}
+	if (ftype->t.func.num_params < 0) {
+		emit_args = !ftype->t.func.no_va_list;
 	}
 	// params is reversed (a, b, c) -> c, b, a
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
