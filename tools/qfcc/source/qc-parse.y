@@ -149,7 +149,8 @@ int yylex (void);
 %token	<symbol>	CLASS_NAME NAME
 %token	<expr>		VALUE STRING
 
-%token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
+%token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
+%token				RETURN AT_RETURN ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token				UNSIGNED SIGNED LONG SHORT
@@ -251,6 +252,8 @@ parse_attributes (attribute_t *attr_list)
 			spec.no_va_list = 1;
 		} else if (!strcmp (attr->name, "nosave")) {
 			spec.nosave = 1;
+		} else if (!strcmp (attr->name, "void_return")) {
+			spec.void_return = 1;
 		} else {
 			warning (0, "skipping unknown attribute '%s'", attr->name);
 		}
@@ -425,6 +428,7 @@ static void
 set_func_type_attrs (type_t *func, specifier_t spec)
 {
 	func->t.func.no_va_list = spec.no_va_list;
+	func->t.func.void_return = spec.void_return;
 }
 
 %}
@@ -1420,6 +1424,7 @@ statement
 	| local_def					{ $$ = $1; }
 	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
 	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
+	| AT_RETURN	expr ';'		{ $$ = at_return_expr (current_func, $2); }
 	| BREAK ';'
 		{
 			$$ = 0;

@@ -42,6 +42,7 @@ typedef struct ty_func_s {
 	union {
 		struct {
 			unsigned    no_va_list:1;///< don't inject va_list for ... function
+			unsigned    void_return:1;///< special handling for return value
 		};
 		unsigned    attribute_bits;
 	};
@@ -106,6 +107,7 @@ typedef struct {
 			unsigned    is_overload:1;
 			unsigned    nosave:1;
 			unsigned    no_va_list:1;
+			unsigned    void_return:1;
 		};
 		unsigned    spec_bits;
 	};

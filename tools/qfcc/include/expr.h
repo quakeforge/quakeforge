@@ -236,6 +236,7 @@ typedef struct {
 
 typedef struct {
 	struct expr_s *ret_val;
+	int         at_return;		///< return void_return call through void
 } ex_return_t;
 
 typedef struct {
@@ -244,7 +245,7 @@ typedef struct {
 } ex_adjstk_t;
 
 typedef struct {
-	short       mode;			///< currently must be 0
+	short       mode;
 	short       reg;			///< base register to load
 	struct expr_s *with;		///< value to load
 } ex_with_t;
@@ -791,6 +792,7 @@ expr_t *goto_expr (expr_t *label);
 expr_t *jump_table_expr (expr_t *table, expr_t *index);
 expr_t *call_expr (expr_t *func, expr_t *args, struct type_s *ret_type);
 expr_t *return_expr (struct function_s *f, expr_t *e);
+expr_t *at_return_expr (struct function_s *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);

@@ -1427,11 +1427,18 @@ statement_return (sblock_t *sblock, expr_t *e)
 		if (e->e.retrn.ret_val) {
 			expr_t     *ret_val = e->e.retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
-			s->opa = return_operand (ret_type, e);
+
+			// at_return is used for passing the result of a void_return
+			// function through void. v6 progs always use .return for the
+			// return value, so don't need to do anything special: just call
+			// the function and do a normal void return
+			if (!e->e.retrn.at_return) {
+				s->opa = return_operand (ret_type, e);
+			}
 			sblock = statement_subexpr (sblock, ret_val, &s->opa);
 		}
 	} else {
-		if (e->e.retrn.ret_val) {
+		if (!e->e.retrn.at_return && e->e.retrn.ret_val) {
 			expr_t     *ret_val = e->e.retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
@@ -1440,6 +1447,21 @@ statement_return (sblock_t *sblock, expr_t *e)
 			ret_crtl |= mode << 5;
 			s->opc = short_operand (ret_crtl, e);
 		} else {
+			if (e->e.retrn.at_return) {
+				expr_t     *call = e->e.retrn.ret_val;
+				if (!call || !is_function_call (call)) {
+					internal_error (e, "@return with no call");
+				}
+				// FIXME hard-coded reg, and assumes 3 is free
+				#define REG 3
+				expr_t     *with = new_with_expr (11, REG, new_short_expr (0));
+				def_t      *ret_ptr = new_def (0, 0, 0, sc_local);
+				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
+				ret_ptr->reg = REG;
+				expr_file_line (with, e);
+				sblock = statement_slist (sblock, with);
+				sblock = statement_subexpr (sblock, call, &ret_op);
+			}
 			s->opa = short_operand (0, e);
 			s->opb = short_operand (0, e);
 			s->opc = short_operand (-1, e);	// void return

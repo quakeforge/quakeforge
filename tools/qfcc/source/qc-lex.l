@@ -392,6 +392,7 @@ static keyword_t qf_keywords[] = {
 	{"@args",		ARGS,	0				},
 	{"@va_list",	TYPE,	&type_va_list	},
 	{"@param",		TYPE,	&type_param		},
+	{"@return",     AT_RETURN,	0	},
 
 	{"@cross",		CROSS,	0	},
 	{"@dot",		DOT,	0	},

@@ -2478,6 +2478,30 @@ return_expr (function_t *f, expr_t *e)
 }
 
 expr_t *
+at_return_expr (function_t *f, expr_t *e)
+{
+	const type_t *ret_type = unalias_type (f->type->t.func.type);
+
+	if (!is_void(ret_type)) {
+		return error (e, "use of @return in non-void function");
+	}
+	if (is_nil (e)) {
+		// int or pointer 0 seems reasonable
+		return new_return_expr (new_int_expr (0));
+	} else if (!is_function_call (e)) {
+		return error (e, "@return value not a function");
+	}
+	expr_t     *call_expr = e->e.block.result->e.branch.target;
+	const type_t *call_type = get_type (call_expr);
+	if (!is_func (call_type) && !call_type->t.func.void_return) {
+		return error (e, "@return function not void_return");
+	}
+	expr_t     *ret_expr = new_return_expr (e);
+	ret_expr->e.retrn.at_return = 1;
+	return ret_expr;
+}
+
+expr_t *
 conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 {
 	expr_t     *block = new_block_expr ();
