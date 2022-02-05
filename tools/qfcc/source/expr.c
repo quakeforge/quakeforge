@@ -1796,6 +1796,10 @@ has_function_call (expr_t *e)
 int
 is_function_call (expr_t *e)
 {
+	if (e->type != ex_block || !e->e.block.is_call) {
+		return 0;
+	}
+	e = e->e.block.result;
 	return e->type == ex_branch && e->e.branch.type == pr_branch_call;
 }
 
