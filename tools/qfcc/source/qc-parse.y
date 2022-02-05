@@ -290,13 +290,7 @@ spec_merge (specifier_t spec, specifier_t new)
 		}
 	}
 	spec.sym = new.sym;
-	spec.is_signed |= new.is_signed;
-	spec.is_unsigned |= new.is_unsigned;
-	spec.is_short |= new.is_short;
-	spec.is_long |= new.is_long;
-	spec.is_overload |= new.is_overload;
-	spec.nosave |= new.nosave;
-	spec.no_va_list |= new.no_va_list;
+	spec.spec_bits |= new.spec_bits;
 	return spec;
 }
 
