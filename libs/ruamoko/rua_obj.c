@@ -59,6 +59,37 @@
 
 #define always_inline inline __attribute__((__always_inline__))
 
+/* Macros to help with setting up to call a function, and cleaning up
+ * afterwards. The problem is that PR_CallFunction saves the CURRENT stack
+ * pointer, which has been adjusted by PR_SetupParams in order to push
+ * the function arguments.
+ *
+ * RUA_CALL_BEGIN and RUA_CALL_END must be used in pairs and this is enforced
+ * by the unbalanced {}s in the macros.
+ */
+#define RUA_CALL_BEGIN(pr, argc) \
+	{ \
+		pr_ptr_t    saved_stack = 0; \
+		int         call_depth = (pr)->pr_depth; \
+		if ((pr)->globals.stack) { \
+			saved_stack = *(pr)->globals.stack; \
+		} \
+		PR_SetupParams (pr, argc, 1); \
+		(pr)->pr_argc = argc;
+
+#define RUA_CALL_END(pr, imp) \
+		if (PR_CallFunction ((pr), (imp), (pr)->pr_return)) { \
+			/* the call is to a progs function so a frame was pushed,   */ \
+			/* ensure the stack pointer is restored on return           */ \
+			/* if there's no stack, then the following is effectively a */ \
+			/* noop                                                     */ \
+			(pr)->pr_stack[call_depth].stack_ptr = saved_stack; \
+		} else if ((pr)->globals.stack) { \
+			/* the call was to a builtin, restore the stack             */ \
+			*(pr)->globals.stack = saved_stack; \
+		} \
+	}
+
 typedef struct obj_list_s {
 	struct obj_list_s *next;
 	void       *data;
@@ -1271,39 +1302,45 @@ rua___obj_forward (progs_t *pr)
 	if (obj_reponds_to (probj, obj, fwd_sel)) {
 		imp = get_imp (probj, class, fwd_sel);
 		// forward:(SEL) sel :(@va_list) args
-		// args is full param list
-		//FIXME oh for a stack
-		size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
-		size_t      size = pr->pr_argc * parm_size;
-		pr_string_t args_block = PR_AllocTempBlock (pr, size);
+		// args is full param list as a va_list
+		pr_string_t args_block = 0;
+		int         argc;
+		pr_type_t  *argv;
+		if (pr->globals.stack) {
+			argv = pr->pr_params[0];
+			argc = 0;	//FIXME extract from sel
+		} else {
+			size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
+			size_t      size = pr->pr_argc * parm_size;
+			args_block = PR_AllocTempBlock (pr, size);
 
-		int         argc = pr->pr_argc;
-		__auto_type argv = (pr_type_t *) PR_GetString (pr, args_block);
-		// can't memcpy all params because 0 and 1 could be anywhere
-		memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
-		memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
-		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+			argc = pr->pr_argc;
+			argv = (pr_type_t *) PR_GetString (pr, args_block);
+			// can't memcpy all params because 0 and 1 could be anywhere
+			memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
+			memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
+			memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+		}
 
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 4);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, fwd_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
 		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
 		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
-		PR_PushTempString (pr, args_block);
-		PR_CallFunction (pr, imp, pr->pr_return);
+		if (args_block) {
+			PR_PushTempString (pr, args_block);
+		}
+		RUA_CALL_END (pr, imp);
 		return;
 	}
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "doesNotRecognize:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 3)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp, pr->pr_return);
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
@@ -1312,16 +1349,13 @@ rua___obj_forward (progs_t *pr)
 			  PR_GetString (pr, class->name),
 			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
 
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "error:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 3)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp, pr->pr_return);
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
@@ -1425,32 +1459,19 @@ rua_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, probj->selector_names[op->sel_id]));
 	}
 
-	pr->pr_argc = count;
+	RUA_CALL_BEGIN (pr, count)
 	// skip over the first two parameters because receiver and op will
 	// replace them
 	count -= 2;
 	params += 2 * pr->pr_param_size;
-	pr_ptr_t    saved_stack = 0;
-	int         sendv_depth = pr->pr_depth;
-	if (pr->globals.stack) {
-		saved_stack = *pr->globals.stack;
-	}
-	PR_RESET_PARAMS (pr);
+
 	P_POINTER (pr, 0) = obj;
 	P_POINTER (pr, 1) = sel;
 	if (count) {
 		memcpy (&P_INT (pr, 2), params,
 				count * sizeof (pr_type_t) * pr->pr_param_size);
 	}
-	if (PR_CallFunction (pr, imp, pr->pr_return)) {
-		// the call is to a progs function so a frame was pushed, ensure
-		// the stack pointer is restored on return
-		// if there's no stack, then the following is effectively a noop
-		pr->pr_stack[sendv_depth].stack_ptr = saved_stack;
-	} else if (pr->globals.stack) {
-		// the call was to a builtin, restore the stack
-		*pr->globals.stack = saved_stack;
-	}
+	RUA_CALL_END (pr, imp)
 }
 
 static void
