@@ -1989,6 +1989,10 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			// reset
 			pr->pr_bases = (pr_uivec4_t) {};
 			return;
+		case 11:
+			// return pointer
+			*base = pr->pr_return - pr->pr_globals;
+			return;
 	}
 	PR_RunError (pr, "Invalid with index: %u", st->a);
 }
