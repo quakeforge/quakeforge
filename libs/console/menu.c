@@ -683,12 +683,14 @@ Menu_Draw (view_t *view)
 		int         ret;
 
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (!ret)
 			return;
@@ -718,11 +720,13 @@ Menu_Draw (view_t *view)
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 	} else {
 		r_funcs->Draw_Character (x + item->x, y + item->y,
@@ -751,6 +755,7 @@ menu_key_event (const IE_event_t *ie_event)
 		return 0;
 	if (menu->keyevent) {
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = key.code;
 		P_INT (&menu_pr_state, 1) = key.unicode;
@@ -758,6 +763,7 @@ menu_key_event (const IE_event_t *ie_event)
 		menu_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
 			return 1;
@@ -772,8 +778,8 @@ menu_key_event (const IE_event_t *ie_event)
 		P_INT (&menu_pr_state, 1) = key.code;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
-		PR_PopFrame (&menu_pr_state);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
 			return 1;

@@ -283,6 +283,7 @@ rua_listener_func (rua_in_cookie_t *cookie, const void *input)
 {
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
+	PR_RESET_PARAMS (pr);
 	P_POINTER (pr, 0) = cookie->data;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, input);//FIXME check input
 	pr->pr_argc = 2;

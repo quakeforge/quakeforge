@@ -72,12 +72,15 @@ rua_compare (const void *a, const void *b, void *_f)
 {
 	function_t *f = _f;
 
+	PR_PushFrame (f->pr);
 	PR_RESET_PARAMS (f->pr);
 	P_POINTER (f->pr, 0) = PR_SetPointer (f->pr, a);
 	P_POINTER (f->pr, 1) = PR_SetPointer (f->pr, b);
 	f->pr->pr_argc = 2;
 	PR_ExecuteProgram (f->pr, f->func);
-	return R_INT (f->pr);
+	int         cmp = R_INT (f->pr);
+	PR_PopFrame (f->pr);
+	return cmp;
 }
 
 static void

@@ -213,19 +213,29 @@ typedef struct sv_data_s {
 #define EDICT_FROM_AREA(l) (STRUCT_FROM_LINK(l,sv_data_t,area)->edict)
 
 static inline void
-sv_pr_touch (edict_t *self, edict_t *other)
+sv_pr_exec (edict_t *self, edict_t *other, pr_func_t func)
 {
 	pr_int_t    this;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
 	if ((this = sv_pr_state.fields.this) != -1) {
+		PR_PushFrame (&sv_pr_state);
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
 		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
 	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, touch));
+	PR_ExecuteProgram (&sv_pr_state, func);
+	if ((this = sv_pr_state.fields.this) != -1) {
+		PR_PopFrame (&sv_pr_state);
+	}
+}
+
+static inline void
+sv_pr_touch (edict_t *self, edict_t *other)
+{
+	sv_pr_exec (self, other, SVfunc (self, touch));
 }
 
 static inline void
@@ -236,33 +246,13 @@ sv_pr_use (edict_t *self, edict_t *other)
 static inline void
 sv_pr_think (edict_t *self)
 {
-	pr_int_t    this;
-
-	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
-	*sv_globals.other = 0;
-	if ((this = sv_pr_state.fields.this) != -1) {
-		PR_RESET_PARAMS (&sv_pr_state);
-		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = 0;
-	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, think));
+	sv_pr_exec (self, 0, SVfunc (self, think));
 }
 
 static inline void
 sv_pr_blocked (edict_t *self, edict_t *other)
 {
-	pr_int_t    this;
-
-	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
-	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
-	if ((this = sv_pr_state.fields.this) != -1) {
-		PR_RESET_PARAMS (&sv_pr_state);
-		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
-	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, blocked));
+	sv_pr_exec (self, other, SVfunc (self, blocked));
 }
 
 #endif // __sv_progs_h
