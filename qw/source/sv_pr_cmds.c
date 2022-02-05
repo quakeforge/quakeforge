@@ -2020,7 +2020,7 @@ static builtin_t builtins[] = {
 
 	bi(logfrag,         79, 2, p(entity), p(entity)),
 	bi(infokey,         80, 2, p(entity), p(string)),
-	bi(multicast,       81, 2, p(vector), p(float)),
+	bi(multicast,       82, 2, p(vector), p(float)),
 
 	bi(testentitypos,     QF 92, 1, p(entity)),
 	bi(hullpointcontents, QF 93, 2, p(entity), p(vector)),
