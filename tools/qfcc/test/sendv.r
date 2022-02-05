@@ -15,7 +15,7 @@ send (id obj, string cmd, string str)
 	params[0].pointer_val = obj;
 	params[1].pointer_val = sel;
 	params[2].string_val = str;
-	obj_msg_sendv (obj, sel, va_list);
+	@return obj_msg_sendv (obj, sel, va_list);
 }
 
 @interface Object   //just so the runtime doesn't complain
