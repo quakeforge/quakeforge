@@ -1910,6 +1910,12 @@ struct progs_s {
 	struct hashtab_s *field_hash;
 	///@}
 
+	/// \name type encodings
+	///@{
+	struct hashtab_s *type_hash;
+	pr_ptr_t    type_encodings;
+	///@}
+
 	/// \name load hooks
 	///@{
 	int         num_load_funcs;

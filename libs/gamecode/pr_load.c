@@ -46,6 +46,8 @@
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+#include "QF/progs/pr_type.h"
+
 #include "compat.h"
 
 VISIBLE cvar_t *pr_boundscheck;
@@ -67,6 +69,14 @@ var_get_key (const void *d, void *_pr)
 	progs_t *pr = (progs_t*)_pr;
 	pr_def_t *def = (pr_def_t*)d;
 	return PR_GetString (pr, def->name);
+}
+
+static const char *
+type_get_key (const void *t, void *_pr)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	__auto_type type = (qfot_type_t *) t;
+	return PR_GetString (pr, type->encoding);
 }
 
 static void
@@ -111,7 +121,6 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	dprograms_t progs;
 	byte       *base;
 	byte       *heap;
-	pr_def_t   *xdefs_def = 0;
 	ddef_t     *global_ddefs;
 	ddef_t     *field_ddefs;
 	// absolute minimum alignment is 4 bytes
@@ -239,6 +248,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	Hash_FlushTable (pr->function_hash);
 	Hash_FlushTable (pr->global_hash);
 	Hash_FlushTable (pr->field_hash);
+	Hash_FlushTable (pr->type_hash);
 
 // byte swap the lumps
 	for (i = 0; i < pr->progs->statements.count; i++) {
@@ -300,7 +310,22 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	for (i = 0; i < pr->progs->globals.count; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 
-	xdefs_def = PR_FindGlobal (pr, ".xdefs");
+	pr_def_t   *types_def = PR_FindGlobal (pr, ".type_encodings");
+	if (types_def) {
+		__auto_type encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+										   types_def->ofs);
+		pr->type_encodings = encodings->types;
+		qfot_type_t *type;
+		for (pr_ptr_t type_ptr = 4; type_ptr < encodings->size;
+			 type_ptr += type->size) {
+			type = &G_STRUCT (pr, qfot_type_t, pr->type_encodings + type_ptr);
+			Hash_Add (pr->type_hash, type);
+		}
+	} else {
+		pr->type_encodings = 0;
+	}
+
+	pr_def_t   *xdefs_def = PR_FindGlobal (pr, ".xdefs");
 	if (xdefs_def) {
 		pr_xdefs_t *xdefs = &G_STRUCT (pr, pr_xdefs_t, xdefs_def->ofs);
 		xdef_t     *xdef = &G_STRUCT (pr, xdef_t, xdefs->xdefs);
@@ -493,6 +518,8 @@ PR_Init (progs_t *pr)
 									 pr->hashlink_freelist);
 	pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
 									pr->hashlink_freelist);
+	pr->type_hash = Hash_NewTable (1021, type_get_key, 0, pr,
+								   pr->hashlink_freelist);
 }
 
 VISIBLE void
