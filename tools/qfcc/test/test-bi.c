@@ -54,7 +54,7 @@ bi_printf (progs_t *pr)
 		dstring_clear (dstr);
 	}
 
-	RUA_Sprintf (pr, dstr);
+	RUA_Sprintf (pr, dstr, "printf", 0);
 
 	if (dstr->str) {
 		fputs (dstr->str, stdout);

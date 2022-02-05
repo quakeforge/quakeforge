@@ -150,7 +150,7 @@ bi_printf (progs_t *pr)
 {
 	dstring_t  *dstr = dstring_new ();
 
-	RUA_Sprintf (pr, dstr);
+	RUA_Sprintf (pr, dstr, "printf", 0);
 	if (dstr->str) {
 		Sys_Printf ("%s", dstr->str);
 	}

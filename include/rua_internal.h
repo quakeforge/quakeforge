@@ -52,7 +52,9 @@ void RUA_String_Init (struct progs_s *pr, int secure);
 void RUA_QFile_Init (struct progs_s *pr, int secure);
 void RUA_QFS_Init (struct progs_s *pr, int secure);
 
-void RUA_Sprintf (struct progs_s *pr, struct dstring_s *dstr);
+// the variable args are assumed to come immediately after fmt_arg
+void RUA_Sprintf (struct progs_s *pr, struct dstring_s *dstr, const char *func,
+				  int fmt_arg);
 
 int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 QFile *QFile_GetFile (struct progs_s *pr, int handle);
