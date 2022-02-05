@@ -801,7 +801,12 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 
 		dstatement_t *st = &pr.code->code[func->code];
 		if (st->op == OP_ADJSTK) {
-			st->b = -func->params_start;
+			if (func->params_start) {
+				st->b = -func->params_start;
+			} else {
+				// skip over adjstk so a zero adjustment doesn't get executed
+				func->code += 1;
+			}
 		}
 		merge_spaces (space, func->parameters->space, STACK_ALIGN);
 		func->parameters->space = space;
