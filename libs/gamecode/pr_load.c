@@ -199,6 +199,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
 	mem_size += pr->progs_size + pr->zone_size + pr->stack_size;
+	// space for return buffer
+	mem_size += PR_MAX_RETURN * sizeof (pr_type_t);
 
 	// +1 for a nul terminator
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
@@ -240,6 +242,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->globals.stack && pr->stack_bottom) {
 		*pr->globals.stack = pr->globals_size;
 	}
+	pr->pr_return_buffer = pr->pr_globals + pr->globals_size;
 
 	if (pr->zone) {
 		PR_Zone_Init (pr);

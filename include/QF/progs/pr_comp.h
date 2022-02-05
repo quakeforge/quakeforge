@@ -522,6 +522,7 @@ typedef struct dparmsize_s {
 #define	DEF_SAVEGLOBAL	(1<<15)
 
 #define	PR_MAX_PARAMS	8
+#define PR_MAX_RETURN	32			// maximum size of return value
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
