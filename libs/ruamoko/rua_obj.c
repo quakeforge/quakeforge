@@ -53,6 +53,7 @@
 #include "QF/sys.h"
 
 #include "QF/progs/pr_obj.h"
+#include "QF/progs/pr_type.h"
 
 #include "compat.h"
 #include "rua_internal.h"
@@ -108,6 +109,7 @@ typedef struct probj_resources_s {
 	unsigned    selector_index_max;
 	obj_list  **selector_sels;
 	pr_string_t *selector_names;
+	pr_int_t   *selector_argc;
 	PR_RESMAP (dtable_t) dtables;
 	dtable_t   *dtable_list;
 	pr_func_t   obj_forward;
@@ -517,9 +519,12 @@ add_sel_name (probj_t *probj, const char *name)
 										size * sizeof (obj_list *));
 		probj->selector_names = realloc (probj->selector_names,
 										 size * sizeof (pr_string_t));
+		probj->selector_argc = realloc (probj->selector_argc,
+										size * sizeof (pr_int_t));
 		for (i = probj->selector_index_max; i < size; i++) {
 			probj->selector_sels[i] = 0;
 			probj->selector_names[i] = 0;
+			probj->selector_argc[i] = 0;
 		}
 		probj->selector_index_max = size;
 	}
@@ -572,6 +577,15 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 	l->data = sel;
 	l->next = probj->selector_sels[index];
 	probj->selector_sels[index] = l;
+
+	if (sel->sel_types && pr->type_encodings) {
+		const char *enc = PR_GetString (pr, sel->sel_types);
+		__auto_type type = (qfot_type_t *) Hash_Find (pr->type_hash, enc);
+		if (type->meta != ty_basic || type->type != ev_func) {
+			PR_RunError (pr, "selector type encoing is not a function");
+		}
+		probj->selector_argc[index] = type->func.num_params;
+	}
 
 	if (is_new)
 		Hash_Add (probj->selector_hash, (void *) index);
@@ -1308,7 +1322,15 @@ rua___obj_forward (progs_t *pr)
 		pr_type_t  *argv;
 		if (pr->globals.stack) {
 			argv = pr->pr_params[0];
-			argc = 0;	//FIXME extract from sel
+			argc = probj->selector_argc[sel->sel_id];
+			if (argc < 0) {
+				// -ve values indicate varargs functions and is the ones
+				// complement of the number of real parameters before the
+				// ellipsis. However, Ruamoko ISA progs pass va_list through
+				// ... so in the end, a -ve value indicates the total number
+				// of arguments (including va_list) passed to the function.
+				argc = -argc;
+			}
 		} else {
 			size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
 			size_t      size = pr->pr_argc * parm_size;
