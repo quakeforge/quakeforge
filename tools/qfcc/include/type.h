@@ -39,7 +39,12 @@ typedef struct ty_func_s {
 	struct type_s *type;
 	int         num_params;
 	struct type_s **param_types;
-	int         no_va_list;		///< don't inject va_list for ... function
+	union {
+		struct {
+			unsigned    no_va_list:1;///< don't inject va_list for ... function
+		};
+		unsigned    attribute_bits;
+	};
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
