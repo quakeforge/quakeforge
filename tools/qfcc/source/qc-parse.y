@@ -421,6 +421,12 @@ check_specifiers (specifier_t spec)
 	}
 }
 
+static void
+set_func_type_attrs (type_t *func, specifier_t spec)
+{
+	func->t.func.no_va_list = spec.no_va_list;
+}
+
 %}
 
 %expect 0
@@ -486,7 +492,7 @@ external_def
 			ret_type = *type;
 			*type = 0;
 			*type = parse_params (0, $2);
-			(*type)->t.func.no_va_list = $1.no_va_list;
+			set_func_type_attrs ((*type), $1);
 			$<spec>$.type = find_type (append_type ($1.type, ret_type));
 			if ($<spec>$.type->type != ev_field)
 				$<spec>$.params = $2;
@@ -527,7 +533,7 @@ function_body
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = default_type ($<spec>-1, sym);
 
-			sym->type->t.func.no_va_list = spec.no_va_list;
+			set_func_type_attrs (sym->type, spec);
 			sym->type = find_type (append_type (sym->type, spec.type));
 			$<symbol>$ = function_symbol (sym, spec.is_overload, 1);
 		}
@@ -551,7 +557,7 @@ function_body
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = default_type ($<spec>-1, sym);
 
-			sym->type->t.func.no_va_list = spec.no_va_list;
+			set_func_type_attrs (sym->type, spec);
 			sym->type = find_type (append_type (sym->type, spec.type));
 			sym = function_symbol (sym, spec.is_overload, 1);
 			build_builtin_function (sym, $3, 0, spec.storage);
@@ -600,7 +606,7 @@ external_decl
 	| function_decl
 		{
 			specifier_t spec = default_type ($<spec>0, $1);
-			$1->type->t.func.no_va_list = spec.no_va_list;
+			set_func_type_attrs ($1->type, spec);
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
@@ -1089,7 +1095,7 @@ qc_param_decl
 				 type = &(*type)->t.fldptr.type)
 				 ;
 			*type = parse_params (*type, $2);
-			(*type)->t.func.no_va_list = $1.no_va_list;
+			set_func_type_attrs ((*type), $1);
 			$3->type = find_type ($1.type);
 			if ($3->type->type != ev_field)
 				$3->params = $2;
@@ -1168,7 +1174,7 @@ local_decl_list
 				 type = &(*type)->t.fldptr.type)
 				 ;
 			*type = parse_params (*type, $1);
-			(*type)->t.func.no_va_list = spec.no_va_list;
+			set_func_type_attrs ((*type), spec);
 			spec.type = find_type (spec.type);
 			$<spec>$ = spec;
 		}
