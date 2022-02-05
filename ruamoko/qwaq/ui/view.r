@@ -264,12 +264,12 @@ updateScreenCursor (View *view)
 - (void) forward: (SEL) sel : (@va_list) args
 {
 	if (!textContext) {
-		return;
+		@return nil;
 	}
 	if (!__obj_responds_to (textContext, sel)) {
 		[self error: "no implementation for %s", sel_get_name (sel)];
 	}
-	obj_msg_sendv (textContext, sel, args);
+	@return obj_msg_sendv (textContext, sel, args);
 }
 
 - (void) refresh
