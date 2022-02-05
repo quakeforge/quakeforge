@@ -46,6 +46,8 @@
 #include "QF/ringbuffer.h"
 #include "QF/sys.h"
 
+#include "rua_internal.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/rect.h"
@@ -763,9 +765,6 @@ static void
 bi_syncprintf (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	int         string_id = qwaq_pipe_acquire_string (&res->commands);
 	dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 	int         command[] = { qwaq_cmd_syncprint, 0, string_id };
@@ -773,7 +772,7 @@ bi_syncprintf (progs_t *pr)
 	command[1] = CMD_SIZE(command);
 
 	dstring_clearstr (print_buffer);
-	PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+	RUA_Sprintf (pr, print_buffer, "syncprintf", 0);
 
 	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
@@ -1135,8 +1134,7 @@ bi_mvwaddstr (progs_t *pr)
 }
 
 static void
-qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
-				int count, pr_type_t **args)
+qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, int fmt_arg)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
@@ -1151,7 +1149,7 @@ qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+		RUA_Sprintf (pr, print_buffer, "mvwaddstr", fmt_arg);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1162,16 +1160,12 @@ bi_mvwprintf (progs_t *pr)
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
 
-	qwaq_mvwprintf (pr, window_id, x, y, fmt, count, args);
+	qwaq_mvwprintf (pr, window_id, x, y, 3);
 }
 
 static void
-qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
-			  int count, pr_type_t **args)
+qwaq_wprintf (progs_t *pr, int window_id, int fmt_arg)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
@@ -1186,7 +1180,7 @@ qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, count, args);
+		RUA_Sprintf (pr, print_buffer, "wprintf", fmt_arg);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1195,11 +1189,8 @@ static void
 bi_wprintf (progs_t *pr)
 {
 	int         window_id = P_INT (pr, 0);
-	const char *fmt = P_GSTRING (pr, 1);
-	int         count = pr->pr_argc - 2;
-	pr_type_t **args = pr->pr_params + 2;
 
-	qwaq_wprintf (pr, window_id, fmt, count, args);
+	qwaq_wprintf (pr, window_id, 1);
 }
 
 static void
@@ -1224,7 +1215,7 @@ qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+		PR_Sprintf (pr, print_buffer, "wvprintf", fmt, args->count, list);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1283,7 +1274,7 @@ qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+		PR_Sprintf (pr, print_buffer, "mvwvprintf", fmt, args->count, list);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1667,22 +1658,16 @@ bi__i_TextContext__mvprintf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
 
-	qwaq_mvwprintf (pr, window_id, pos->x, pos->y, fmt, count, args);
+	qwaq_mvwprintf (pr, window_id, pos->x, pos->y, 3);
 }
 
 static void
 bi__i_TextContext__printf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
-	const char *fmt = P_GSTRING (pr, 2);
-	int         count = pr->pr_argc - 3;
-	pr_type_t **args = pr->pr_params + 3;
 
-	qwaq_wprintf (pr, window_id, fmt, count, args);
+	qwaq_wprintf (pr, window_id, 2);
 }
 
 static void
