@@ -90,7 +90,7 @@
 
 -(void)respond: (void *) caller_data withObject:(void *)anObject
 {
-	[listeners makeObjectsPerformSelector: @selector (respond:)
+	[listeners makeObjectsPerformSelector: @selector (respond:withObject:)
 							   withObject: caller_data
 							   withObject: anObject];
 }
