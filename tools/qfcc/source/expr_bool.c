@@ -109,8 +109,9 @@ test_expr (expr_t *e)
 			}
 			return e;
 		case ev_float:
-			if (options.code.fast_float
-				|| options.code.progsversion == PROG_ID_VERSION) {
+			if (options.code.progsversion < PROG_VERSION
+				&& (options.code.fast_float
+					|| options.code.progsversion == PROG_ID_VERSION)) {
 				if (!is_float(type_default)) {
 					if (is_constant (e)) {
 						return cast_expr (type_default, e);
