@@ -31,7 +31,7 @@ bitmap_txt = """
 1 1110 c111 stated
 1 1111 00mm lea
 1 1111 01td vecops2
-1 1111 10nn
+1 1111 10oo fbitops
 1 1111 1100 convert (conversion mode in st->b)
 1 1111 1101 with (mode in st->a, value in st->b, reg in st->c)
 1 1111 1110
@@ -185,6 +185,24 @@ convert_formats = {
     "format": "%Ga %Cb %gc",
     "widths": "-1, 0, -1",
     "types": "ev_void, ev_short, ev_void",
+}
+fbitops_formats = {
+    "opcode": "OP_{op_fbit[oo].upper()}_F",
+    "mnemonic": "{op_fbit[oo]}.f",
+    "opname": "{op_fbit[oo]}",
+    "format": "{fbit_fmt[oo]}",
+    "widths": "1, 1, 1",
+    "types": "{fbit_types[0]}, {fbit_types[oo==3]}, {fbit_types[0]}",
+    "args": {
+        "op_fbit": ["bitand", "bitor", "bitxor", "bitnot"],
+        "fbit_types": ["ev_float", "ev_invalid"],
+        "fbit_fmt": [
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %gc",
+        ],
+    },
 }
 hops_formats = {
     "opcode": "OP_HOPS",
@@ -548,6 +566,7 @@ group_map = {
     "compare2": compare2_formats,
     "constant": constant_formats,
     "convert":  convert_formats,
+    "fbitops":  fbitops_formats,
     "hops":     hops_formats,
     "jump":     jump_formats,
     "lea":      lea_formats,

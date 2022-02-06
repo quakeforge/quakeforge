@@ -3467,7 +3467,18 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_V4QMUL_D:
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
-			//        10nn spare
+			case OP_BITAND_F:
+				OPC(float) = (int) OPA(float) & (int) OPB(float);
+				break;
+			case OP_BITOR_F:
+				OPC(float) = (int) OPA(float) | (int) OPB(float);
+				break;
+			case OP_BITXOR_F:
+				OPC(float) = (int) OPA(float) ^ (int) OPB(float);
+				break;
+			case OP_BITNOT_F:
+				OPC(float) = ~ (int) OPA(float);
+				break;
 			case OP_CONV:
 				switch (st->b) {
 #include "libs/gamecode/pr_convert.cinc"
