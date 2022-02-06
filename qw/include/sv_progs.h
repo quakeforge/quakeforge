@@ -229,7 +229,7 @@ sv_pr_exec (edict_t *self, edict_t *other, pr_func_t func)
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
+		P_INT (&sv_pr_state, 2) = other ? E_POINTER (other, this) : 0;
 	}
 	PR_ExecuteProgram (&sv_pr_state, func);
 	if ((this = sv_pr_state.fields.this) != -1) {
