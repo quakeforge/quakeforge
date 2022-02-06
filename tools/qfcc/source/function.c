@@ -675,6 +675,9 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		sym->s.func->def->nosave = 1;
 		add_function (sym->s.func);
 		reloc_def_func (sym->s.func, sym->s.func->def);
+
+		sym->s.func->def->file = pr.source_file;
+		sym->s.func->def->line = pr.source_line;
 	}
 	sym->s.func->code = pr.code->size;
 
