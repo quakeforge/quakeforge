@@ -160,7 +160,7 @@ static expr_type_t vector_vector[] = {
 #define vector_short vector_float
 
 static expr_type_t vector_double[] = {
-	{'*',	&type_vector},
+	{'*',	&type_vector, 0, &type_float, vector_scale},
 	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
@@ -488,7 +488,7 @@ static expr_type_t double_float[] = {
 };
 
 static expr_type_t double_vector[] = {
-	{'*',	&type_vector},
+	{'*',	&type_vector, &type_float, 0, vector_scale},
 	{0, 0}
 };
 
