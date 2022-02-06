@@ -521,6 +521,7 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_temp_entity:
 					i = MSG_ReadByte (&packet);
+					Net_LogPrintf (" type %d", i);
 					switch (i) {
 						case 0:
 						case 1:
