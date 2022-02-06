@@ -1027,7 +1027,7 @@ CL_ReadPackets (void)
 
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 0, 0);
+								 net_message->message->cursize, 0);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {
@@ -1863,7 +1863,7 @@ Host_Init (void)
 
 		for (i = 0; i < MAX_MODELS; i++)
 			sound_precache[i] = cl.sound_name[i];
-		Net_Log_Init (sound_precache);
+		Net_Log_Init (sound_precache, 0);
 	}
 	CL_HTTP_Init ();
 

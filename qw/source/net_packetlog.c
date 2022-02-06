@@ -166,6 +166,7 @@ static QFile      *Net_PacketLog;
 static const char **Net_sound_precache;
 static sizebuf_t   _packet;
 static qmsg_t      packet = {0, 0, &_packet};
+static int         is_server = 0;
 
 static int
 Net_LogStart (const char *fname)
@@ -224,7 +225,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 */
 void
-Log_Incoming_Packet (const byte *p, int len, int has_sequence, int is_server)
+Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -248,7 +249,7 @@ Log_Incoming_Packet (const byte *p, int len, int has_sequence, int is_server)
 }
 
 void
-Log_Outgoing_Packet (const byte *p, int len, int has_sequence, int is_server)
+Log_Outgoing_Packet (const byte *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -952,7 +953,7 @@ Analyze_Client_Packet (const byte * data, int len, int has_sequence)
 static void
 net_packet_log_f (int length, const void *data, netadr_t to)
 {
-	Log_Outgoing_Packet (data, length, 1, 1);
+	Log_Outgoing_Packet (data, length, 1);
 }
 
 static void
@@ -981,8 +982,9 @@ Net_PacketLog_Zap_f (void)
 }
 
 int
-Net_Log_Init (const char **sound_precache)
+Net_Log_Init (const char **sound_precache, int server)
 {
+	is_server = server;
 	Net_sound_precache = sound_precache;
 
 	_stdout = Qdopen (1, "wt");	// create a QFile of stdout
