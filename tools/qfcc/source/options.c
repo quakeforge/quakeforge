@@ -51,6 +51,9 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 const char *this_program;
 const char **source_files;
@@ -720,6 +723,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = false;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = true;
+		if (options.math.vector_mult == 0)
+			options.math.vector_mult = DOT;
 	}
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_VERSION;
@@ -736,6 +741,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = true;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
+		if (options.math.vector_mult == 0)
+			options.math.vector_mult = options.advanced == 1 ? DOT : '*';
 	} else {
 		options.code.promote_float = 0;
 	}

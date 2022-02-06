@@ -50,6 +50,10 @@ typedef struct {
 } code_options_t;
 
 typedef struct {
+	int         vector_mult;		// operation for vector * vector
+} math_options_t;
+
+typedef struct {
 	qboolean	promote;			// Promote warnings to errors
 	qboolean	cow;				// Warn on copy-on-write detection
 	qboolean	undefined_function;	// Warn on undefined function use
@@ -93,6 +97,7 @@ typedef struct {
 
 typedef struct {
 	code_options_t	code;			// Code generation options
+	math_options_t	math;			// Various math options
 	warn_options_t	warnings;		// Warning options
 	notice_options_t notices;		// Notice options
 	bug_options_t   bug;			// Bug options

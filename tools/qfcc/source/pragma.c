@@ -50,6 +50,8 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
 
+#include "tools/qfcc/source/qc-parse.h"
+
 typedef struct pragma_arg_s {
 	struct pragma_arg_s *next;
 	const char *arg;
@@ -139,7 +141,7 @@ static void
 set_optimize (pragma_arg_t *args)
 {
 	if (!args) {
-		warning (0, "missing warn flag");
+		warning (0, "missing optimize flag");
 		return;
 	}
 	const char *flag = args->arg;
@@ -150,6 +152,37 @@ set_optimize (pragma_arg_t *args)
 	}
 	if (args->next) {
 		warning (0, "pragma optimize: ignoring extra arguments");
+	}
+}
+
+static pragma_arg_t *
+set_vector_mult (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing vector_mult arg");
+		return args;
+	}
+	const char *op = args->arg;
+	if (!strcmp (op, "@dot")) {
+		options.math.vector_mult = DOT;
+	} else {
+		warning (0, "unknown vector_mult arg: %s", op);
+	}
+	return args->next;
+}
+
+static void
+set_math (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing math arg");
+		return;
+	}
+	while (args) {
+		const char *a = args->arg;
+		if (!strcmp (a, "vector_mult")) {
+			args = set_vector_mult (args->next);
+		}
 	}
 }
 
@@ -175,6 +208,8 @@ pragma_process ()
 		set_warn (pragma_args->next);
 	} else if (!strcmp (id, "optimize")) {
 		set_optimize (pragma_args->next);
+	} else if (!strcmp (id, "math")) {
+		set_math (pragma_args->next);
 	} else {
 		warning (0, "unknown pragma: '%s'", id);
 	}

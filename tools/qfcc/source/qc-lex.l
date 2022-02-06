@@ -284,6 +284,7 @@ STRING		\"(\\.|[^"\\])*\"
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
 <PRAGMA>{ID}		{ pragma_add_arg (yytext); }
+<PRAGMA>@{ID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
 						if (YY_START == PRAGMA) {
