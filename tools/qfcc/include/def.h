@@ -221,6 +221,9 @@ void free_temp_def (def_t *temp);
 */
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 
+void init_vector_components (struct symbol_s *vector_sym, int is_field,
+							 struct symtab_s *symtab);
+
 /** Initialize a def referenced by the given symbol.
 
 	The symbol is checked for redefinition. A symbol is considered to be

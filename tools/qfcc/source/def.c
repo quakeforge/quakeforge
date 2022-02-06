@@ -412,7 +412,7 @@ init_elements (struct def_s *def, expr_t *eles)
 	free_element_chain (&element_chain);
 }
 
-static void
+void
 init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 {
 	expr_t     *vector_expr;
