@@ -54,6 +54,7 @@ static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2);
+static expr_t *entity_compare (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -166,8 +167,8 @@ static expr_type_t vector_double[] = {
 };
 
 static expr_type_t entity_entity[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{EQ,	&type_int, 0, 0, entity_compare},
+	{NE,	&type_int, 0, 0, entity_compare},
 	{0, 0}
 };
 
@@ -808,6 +809,18 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
+	e->e.expr.type = &type_int;
+	return e;
+}
+
+static expr_t *
+entity_compare (int op, expr_t *e1, expr_t *e2)
+{
+	if (options.code.progsversion == PROG_VERSION) {
+		e1 = new_alias_expr (&type_int, e1);
+		e2 = new_alias_expr (&type_int, e2);
+	}
+	expr_t     *e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = &type_int;
 	return e;
 }
