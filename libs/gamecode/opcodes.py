@@ -8,7 +8,7 @@ bitmap_txt = """
 0 0000 0000 noop
 0 0000 0001 adjstk
 0 0000 0010 constant
-0 1011 nnnn
+0 1011 otss udivops
 0 1111 s0mm load64
 0 1111 s1mm store64
 0 1111 n000
@@ -483,6 +483,18 @@ return_formats = {
     "format": "%Mc5",
     "types": "ev_void, ev_void, ev_void",
 }
+udivops_formats = {
+    "opcode": "OP_{op_udiv[o].upper()}_{udiv_type[t]}_{ss+1}",
+    "mnemonic": "{op_udiv[o]}.{udiv_type[t]}",
+    "opname": "{op_udiv[o]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "{udiv_types[t]}, {udiv_types[t]}, {udiv_types[t]}",
+    "args": {
+        "op_udiv": ["div", "rem"],
+        "udiv_type": ['u', 'U'],
+        "udiv_types": ["ev_uint", "ev_ulong"],
+    },
+}
 vecops_formats = {
     "opcode": "OP_{op_vop[ooo].upper()}_{vop_type[t]}",
     "mnemonic": "{op_vop[ooo]}.{vop_type[t]}",
@@ -556,6 +568,7 @@ group_map = {
     "string":   string_formats,
     "swizzle":  swizzle_formats,
     "return":   return_formats,
+    "udivops":  udivops_formats,
     "vecops":   vecops_formats,
     "vecops2":  vecops2_formats,
     "with":     with_formats,

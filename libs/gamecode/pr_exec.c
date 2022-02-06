@@ -2974,8 +2974,33 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_cmp(LT, <);
 			// 0 1010
 			OP_cmp(GT, >);
+
+#define OP_op_1(OP, T, t, op) \
+			case OP_##OP##_##T##_1: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_2(OP, T, t, op) \
+			case OP_##OP##_##T##_2: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_3(OP, T, t, op) \
+			case OP_##OP##_##T##_3: \
+				VectorCompOp (&OPC(t), &OPA(t), op, &OPB(t)); \
+				break;
+#define OP_op_4(OP, T, t, op) \
+			case OP_##OP##_##T##_4: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_T(OP, T, t1, t2, t4, op) \
+			OP_op_1 (OP, T, t1, op); \
+			OP_op_2 (OP, T, t2, op); \
+			OP_op_3 (OP, T, t1, op); \
+			OP_op_4 (OP, T, t4, op)
 			// 0 1011
-			// spare
+			OP_op_T (DIV, u, uint, uivec2, uivec4, /);
+			OP_op_T (DIV, U, ulong, ulvec2, ulvec4, /);
+			OP_op_T (REM, u, uint, uivec2, uivec4, %);
+			OP_op_T (REM, U, ulong, ulvec2, ulvec4, %);
 			// 0 1100
 			OP_cmp(NE, !=);
 			// 0 1101
@@ -3011,27 +3036,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// spare
 
-#define OP_op_1(OP, T, t, op) \
-			case OP_##OP##_##T##_1: \
-				OPC(t) = (OPA(t) op OPB(t)); \
-				break
-#define OP_op_2(OP, T, t, op) \
-			case OP_##OP##_##T##_2: \
-				OPC(t) = (OPA(t) op OPB(t)); \
-				break
-#define OP_op_3(OP, T, t, op) \
-			case OP_##OP##_##T##_3: \
-				VectorCompOp (&OPC(t), &OPA(t), op, &OPB(t)); \
-				break;
-#define OP_op_4(OP, T, t, op) \
-			case OP_##OP##_##T##_4: \
-				OPC(t) = (OPA(t) op OPB(t)); \
-				break
-#define OP_op_T(OP, T, t1, t2, t4, op) \
-			OP_op_1 (OP, T, t1, op); \
-			OP_op_2 (OP, T, t2, op); \
-			OP_op_3 (OP, T, t1, op); \
-			OP_op_4 (OP, T, t4, op)
 #define OP_op(OP, op) \
 			OP_op_T (OP, I, int, ivec2, ivec4, op); \
 			OP_op_T (OP, F, float, vec2, vec4, op); \

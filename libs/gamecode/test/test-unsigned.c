@@ -2,6 +2,63 @@
 
 #include "QF/mathlib.h"
 
+static pr_uivec4_t uint_divop_init[] = {
+	{  5, -5,  5, -5},
+	{  3,  3, -3, -3},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+};
+
+static pr_uivec4_t uint_divop_expect[] = {
+	{  5,         -5,   5, -5},
+	{  3,          3,  -3, -3},
+	{  1, 0x55555553,   0,  0},
+	{  2,          2,   5, -5},
+};
+
+static dstatement_t uint_divop_1_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// init index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C), 32, -1, 32 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
+	{ OP(1, 1, 1, OP_DIV_u_1), 0, 4,  8 },
+	{ OP(1, 1, 1, OP_REM_u_1), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_JUMP_A), -6, 0,  0 },
+};
+
+static dstatement_t uint_divop_2_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C), 32, -2, 32 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
+	{ OP(1, 1, 1, OP_DIV_u_2), 0, 4,  8 },
+	{ OP(1, 1, 1, OP_REM_u_2), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_JUMP_A), -6, 0, 0 },
+};
+
+static dstatement_t uint_divop_3a_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_u_3), 0, 4,  8 },
+	{ OP(1, 1, 1, OP_DIV_u_1), 3, 7, 11 },
+	{ OP(1, 1, 1, OP_REM_u_3), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_REM_u_1), 3, 7, 15 },
+};
+
+static dstatement_t uint_divop_3b_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_u_1), 0, 4,  8 },
+	{ OP(1, 1, 1, OP_DIV_u_3), 1, 5,  9 },
+	{ OP(1, 1, 1, OP_REM_u_1), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_REM_u_3), 1, 5, 13 },
+};
+
+static dstatement_t uint_divop_4_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_u_4), 0, 4,  8 },
+	{ OP(1, 1, 1, OP_REM_u_4), 0, 4, 12 },
+};
+
 static pr_uivec4_t uint_cmpop_init[] = {
 	{  5, -5,  5, -5},
 	{  5,  5, -5, -5},
@@ -93,6 +150,63 @@ static dstatement_t uint_cmpop_4_statements[] = {
 	// no unsigned NE (redundant)
 	{ OP(1, 1, 1, OP_GE_u_4), 0, 4, 24 },
 	{ OP(1, 1, 1, OP_LE_u_4), 0, 4, 28 },
+};
+
+static pr_ulvec4_t ulong_divop_init[] = {
+	{  5, -5,  5, -5},
+	{  3,  3, -3, -3},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+};
+
+static pr_ulvec4_t ulong_divop_expect[] = {
+	{  5,                           -5,   5, -5},
+	{  3,                            3,  -3, -3},
+	{  1, UINT64_C(0x5555555555555553),   0,  0},
+	{  2,                            2,   5, -5},
+};
+
+static dstatement_t ulong_divop_1_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A), 8, 0, 64 },	// init index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C), 64, -2, 64 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 64 },
+	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 4, 64, 1 },
+	{ OP(1, 1, 1, OP_DIV_U_1), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_REM_U_1), 0, 8, 24 },
+	{ OP(1, 1, 1, OP_JUMP_A), -6, 0,  0 },
+};
+
+static dstatement_t ulong_divop_2_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A), 8, 0, 64 },	// init index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C), 64, -4, 64 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 64 },
+	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 4, 64, 1 },
+	{ OP(1, 1, 1, OP_DIV_U_2), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_REM_U_2), 0, 8, 24 },
+	{ OP(1, 1, 1, OP_JUMP_A), -6, 0, 0 },
+};
+
+static dstatement_t ulong_divop_3a_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_U_3), 0,  8, 16 },
+	{ OP(1, 1, 1, OP_DIV_U_1), 6, 14, 22 },
+	{ OP(1, 1, 1, OP_REM_U_3), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_REM_U_1), 6, 14, 30 },
+};
+
+static dstatement_t ulong_divop_3b_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_U_1), 0,  8, 16 },
+	{ OP(1, 1, 1, OP_DIV_U_3), 2, 10, 18 },
+	{ OP(1, 1, 1, OP_REM_U_1), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_REM_U_3), 2, 10, 26 },
+};
+
+static dstatement_t ulong_divop_4_statements[] = {
+	{ OP(1, 1, 1, OP_DIV_U_4), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_REM_U_4), 0, 8, 24 },
 };
 
 static pr_ulvec4_t ulong_cmpop_init[] = {
@@ -388,6 +502,51 @@ static dstatement_t ulong_shiftop_4_statements[] = {
 
 test_t tests[] = {
 	{
+		.desc = "uint divop 1",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(uint_divop_init,uint_divop_expect),
+		.num_statements = num_statements (uint_divop_1_statements),
+		.statements = uint_divop_1_statements,
+		.init_globals = (pr_int_t *) uint_divop_init,
+		.expect_globals = (pr_int_t *) uint_divop_expect,
+	},
+	{
+		.desc = "uint divop 2",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(uint_divop_init,uint_divop_expect),
+		.num_statements = num_statements (uint_divop_2_statements),
+		.statements = uint_divop_2_statements,
+		.init_globals = (pr_int_t *) uint_divop_init,
+		.expect_globals = (pr_int_t *) uint_divop_expect,
+	},
+	{
+		.desc = "uint divop 3a",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(uint_divop_init,uint_divop_expect),
+		.num_statements = num_statements (uint_divop_3a_statements),
+		.statements = uint_divop_3a_statements,
+		.init_globals = (pr_int_t *) uint_divop_init,
+		.expect_globals = (pr_int_t *) uint_divop_expect,
+	},
+	{
+		.desc = "uint divop 3b",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(uint_divop_init,uint_divop_expect),
+		.num_statements = num_statements (uint_divop_3b_statements),
+		.statements = uint_divop_3b_statements,
+		.init_globals = (pr_int_t *) uint_divop_init,
+		.expect_globals = (pr_int_t *) uint_divop_expect,
+	},
+	{
+		.desc = "uint divop 4",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(uint_divop_init,uint_divop_expect),
+		.num_statements = num_statements (uint_divop_4_statements),
+		.statements = uint_divop_4_statements,
+		.init_globals = (pr_int_t *) uint_divop_init,
+		.expect_globals = (pr_int_t *) uint_divop_expect,
+	},
+	{
 		.desc = "uint cmpop 1",
 		.extra_globals = 4 * 1,
 		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
@@ -431,6 +590,51 @@ test_t tests[] = {
 		.statements = uint_cmpop_4_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
 		.expect_globals = (pr_int_t *) uint_cmpop_expect,
+	},
+	{
+		.desc = "ulong divop 1",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(ulong_divop_init,ulong_divop_expect),
+		.num_statements = num_statements (ulong_divop_1_statements),
+		.statements = ulong_divop_1_statements,
+		.init_globals = (pr_int_t *) ulong_divop_init,
+		.expect_globals = (pr_int_t *) ulong_divop_expect,
+	},
+	{
+		.desc = "ulong divop 2",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(ulong_divop_init,ulong_divop_expect),
+		.num_statements = num_statements (ulong_divop_2_statements),
+		.statements = ulong_divop_2_statements,
+		.init_globals = (pr_int_t *) ulong_divop_init,
+		.expect_globals = (pr_int_t *) ulong_divop_expect,
+	},
+	{
+		.desc = "ulong divop 3a",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(ulong_divop_init,ulong_divop_expect),
+		.num_statements = num_statements (ulong_divop_3a_statements),
+		.statements = ulong_divop_3a_statements,
+		.init_globals = (pr_int_t *) ulong_divop_init,
+		.expect_globals = (pr_int_t *) ulong_divop_expect,
+	},
+	{
+		.desc = "ulong divop 3b",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(ulong_divop_init,ulong_divop_expect),
+		.num_statements = num_statements (ulong_divop_3b_statements),
+		.statements = ulong_divop_3b_statements,
+		.init_globals = (pr_int_t *) ulong_divop_init,
+		.expect_globals = (pr_int_t *) ulong_divop_expect,
+	},
+	{
+		.desc = "ulong divop 4",
+		.extra_globals = 4 * 1,
+		.num_globals = num_globals(ulong_divop_init,ulong_divop_expect),
+		.num_statements = num_statements (ulong_divop_4_statements),
+		.statements = ulong_divop_4_statements,
+		.init_globals = (pr_int_t *) ulong_divop_init,
+		.expect_globals = (pr_int_t *) ulong_divop_expect,
 	},
 	{
 		.desc = "ulong cmpop 1",
