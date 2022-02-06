@@ -1843,7 +1843,7 @@ extern struct cvar_s *pr_faultchecks;
 */
 ///@{
 
-char *PF_VarString (progs_t *pr, int first);
+char *PF_VarString (progs_t *pr, int first, int count);
 void PR_Cmds_Init (progs_t *pr);
 
 extern const char *pr_gametype;

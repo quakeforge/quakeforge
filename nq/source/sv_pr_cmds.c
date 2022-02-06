@@ -71,7 +71,7 @@ PF_error (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
@@ -95,7 +95,7 @@ PF_objerror (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
@@ -287,7 +287,7 @@ PF_bprint (progs_t *pr)
 {
 	const char *s;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	SV_BroadcastPrintf ("%s", s);
 }
 
@@ -307,7 +307,7 @@ PF_sprint (progs_t *pr)
 	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
 		Sys_Printf ("tried to sprint to a non-client\n");
@@ -336,7 +336,7 @@ PF_centerprint (progs_t *pr)
 	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
 		Sys_Printf ("tried to sprint to a non-client\n");

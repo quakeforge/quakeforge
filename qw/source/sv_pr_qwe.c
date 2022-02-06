@@ -190,7 +190,7 @@ PF_substr (progs_t *pr)
 static void
 PF_strcat (progs_t *pr)
 {
-	RETURN_STRING (pr, PF_VarString (pr, 0));
+	RETURN_STRING (pr, PF_VarString (pr, 0, pr->pr_argc));
 }
 
 /*
@@ -454,7 +454,7 @@ PF_log (progs_t *pr)
 	name = va (0, "%s/%s.log", qfs_gamedir->dir.def, P_GSTRING (pr, 0));
 	file = QFS_Open (name, "a");
 
-	text = PF_VarString (pr, 2);
+	text = PF_VarString (pr, 2, pr->pr_argc);
 	clean_text (text);
 
 	if (P_FLOAT (pr, 1))
@@ -475,7 +475,7 @@ PF_log (progs_t *pr)
 static void
 PF_conprint (progs_t *pr)
 {
-	Sys_Printf ("%s", PF_VarString (pr, 0));
+	Sys_Printf ("%s", PF_VarString (pr, 0, pr->pr_argc));
 }
 
 #define QWE (PR_RANGE_QWE << PR_RANGE_SHIFT) |

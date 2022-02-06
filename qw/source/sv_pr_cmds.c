@@ -73,7 +73,7 @@ PF_error (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
@@ -97,7 +97,7 @@ PF_objerror (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
@@ -222,7 +222,7 @@ PF_bprint (progs_t *pr)
 
 	level = P_FLOAT (pr, 0);
 
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 	SV_BroadcastPrintf (level, "%s", s);
 }
 
@@ -254,7 +254,7 @@ PF_sprint (progs_t *pr)
 	if (client->state == cs_server) //FIXME record to mvd?
 		return;
 
-	s = PF_VarString (pr, 2);
+	s = PF_VarString (pr, 2, 3);
 
 	SV_ClientPrintf (1, client, level, "%s", s);
 }
@@ -286,7 +286,7 @@ PF_centerprint (progs_t *pr)
 	if (cl->state == cs_server) //FIXME record to mvd?
 		return;
 
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint, 2 + strlen (s));
 	MSG_ReliableWrite_String (&cl->backbuf, s);
