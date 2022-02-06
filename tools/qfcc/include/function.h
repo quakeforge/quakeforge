@@ -36,10 +36,12 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 
 #include "def.h"
+
+#define MAX_DEF_SIZE ((int)PR_SIZEOF(lvec4))
 
 /** Represent an overloading of a function.
 
@@ -53,7 +55,7 @@ typedef struct overloaded_function_s {
 									///< encoding
 	const struct type_s *type;		///< type of this function
 	int         overloaded;			///< is this function overloaded
-	string_t    file;				///< source file of the function
+	pr_string_t file;				///< source file of the function
 	int         line;				///< source line of this function
 } overloaded_function_t;
 
@@ -65,21 +67,41 @@ typedef struct function_s {
 	int                 code;		///< first statement
 	int                 function_num;
 	int                 line_info;
-	int                 local_defs;
-	string_t            s_file;		///< source file with definition
-	string_t            s_name;		///< name of function in output
+	int                 params_start;///< relative to locals space. 0 for v6p
+	pr_string_t         s_file;		///< source file with definition
+	pr_string_t         s_name;		///< name of function in output
 	const struct type_s *type;		///< function's type without aliases
+	int                 temp_reg;	///< base register to use for temp defs
 	int                 temp_num;	///< number for next temp var
-	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
+	struct def_s       *temp_defs[MAX_DEF_SIZE];///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
 	struct symbol_s    *sym;		///< internal symbol for this function
-	/** Root scope symbol table of the function.
+	/** \name Local data space
 
-		Sub-scope symbol tables are not directly accessible, but all defs
-		created in the function's local data space are recorded in the root
-		scope symbol table's defspace.
+		The function parameters form the root scope for the function. Its
+		defspace is separate from the locals defspace so that it can be moved
+		to the beginning of locals space for v6 progs, and too the end (just
+		above the stack pointer on entry to the function) for Ruamoko progs.
+
+		The locals scope is a direct child of the parameters scope, and any
+		sub-scope symbol tables are not directly accessible, but all defs
+		other than function call arugments created in the function's local
+		data space are recorded in the root local scope symbol table's
+		defspace.
+
+		The arguments defspace is not used for v6 progs. It is used as a
+		highwater allocator for the arguments to all calls made by the
+		funciton, with the arguments to separate functions overlapping each
+		other.
+
+		Afther the function has been emitted, locals, arguments and possibly
+		parameters will be merged into the one defspace.
 	*/
-	struct symtab_s    *symtab;
+	///@{
+	struct symtab_s    *parameters;	///< Root scope symbol table
+	struct symtab_s    *locals;		///< Actual local variables
+	struct defspace_s  *arguments;	///< Space for called function arguments
+	///@}
 	struct symtab_s    *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;
@@ -146,7 +168,6 @@ function_t *build_code_function (struct symbol_s *fsym,
 function_t *build_builtin_function (struct symbol_s *sym,
 									struct expr_s *bi_val, int far,
 									enum storage_class_e storage);
-void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);

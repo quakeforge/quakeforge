@@ -56,12 +56,13 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"
@@ -125,8 +126,8 @@ static const char *short_options =
 	;
 
 static edict_t *edicts;
-static int      num_edicts;
-static int      reserved_edicts = 1;
+static pr_uint_t num_edicts;
+static pr_uint_t reserved_edicts = 1;
 static progs_t  pr;
 static qfo_t   *qfo;
 
@@ -292,7 +293,7 @@ load_progs (const char *name)
 		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
-	for (i = 0; i < pr.progs->numfunctions; i++) {
+	for (i = 0; i < pr.progs->functions.count; i++) {
 		// don't bother with builtins
 		if (pr.pr_functions[i].first_statement > 0)
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);

@@ -63,20 +63,21 @@ disassemble_progs (progs_t *pr)
 {
 	unsigned int i;
 
-	for (i = 0; i < pr->progs->numstatements; i++) {
+	for (i = 0; i < pr->progs->statements.count; i++) {
 		dfunction_t *desc = func_find (i);
 
 		if (desc) {
 			bfunction_t func;
 
 			func.first_statement = desc->first_statement;
-			func.parm_start = desc->parm_start;
+			func.params_start = desc->params_start;
 			func.locals = desc->locals;
-			func.numparms = desc->numparms;
-			memcpy (func.parm_size, desc->parm_size, sizeof (func.parm_size));
+			func.numparams = desc->numparams;
+			memcpy (func.param_size, desc->param_size,
+					sizeof (func.param_size));
 			func.descriptor = desc;
 
-			Sys_Printf ("%s:\n", PR_GetString (pr, desc->s_name));
+			Sys_Printf ("%s:\n", PR_GetString (pr, desc->name));
 			pr->pr_xfunction = &func;
 		}
 		PR_PrintStatement (pr, &pr->pr_statements[i], 2 | (verbosity > 1));

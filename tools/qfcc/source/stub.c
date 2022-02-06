@@ -32,7 +32,7 @@ pr_info_t pr;
 type_t type_Class;
 type_t type_SEL;
 type_t type_id;
-__attribute__((const)) string_t ReuseString (const char *str) {return 0;}
+__attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
 __attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}

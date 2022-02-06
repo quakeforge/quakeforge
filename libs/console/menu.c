@@ -67,12 +67,12 @@ typedef struct menu_item_s {
 	int         max_items;
 	int         cur_item;
 	int         x, y;
-	func_t      func;
-	func_t      cursor;
-	func_t      keyevent;
-	func_t      draw;
-	func_t      enter_hook;
-	func_t      leave_hook;
+	pr_func_t   func;
+	pr_func_t   cursor;
+	pr_func_t   keyevent;
+	pr_func_t   draw;
+	pr_func_t   enter_hook;
+	pr_func_t   leave_hook;
 	unsigned    fadescreen:1;
 	unsigned    allkeys:1;
 	const char *text;
@@ -85,16 +85,16 @@ static progs_t  menu_pr_state;
 static menu_item_t *menu;
 //static keydest_t menu_keydest;
 static hashtab_t *menu_hash;
-static func_t   menu_init;
-static func_t   menu_quit;
-static func_t   menu_draw_hud;
-static func_t   menu_pre;
-static func_t   menu_post;
+static pr_func_t menu_init;
+static pr_func_t menu_quit;
+static pr_func_t menu_draw_hud;
+static pr_func_t menu_pre;
+static pr_func_t menu_post;
 static const char *top_menu;
 
 typedef struct menu_func_s {
 	const char *name;
-	func_t     *func;
+	pr_func_t  *func;
 } menu_func_t;
 
 static menu_func_t menu_functions[] = {
@@ -129,12 +129,12 @@ menu_resolve_globals (progs_t *pr)
 		sym = menu_functions[i].name;
 		if (!(f = PR_FindFunction (pr, sym)))
 			goto error;
-		*menu_functions[i].func = (func_t) (f - menu_pr_state.pr_functions);
+		*menu_functions[i].func = (pr_func_t) (f - menu_pr_state.pr_functions);
 	}
 
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
-	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
+	menu_pr_state.globals.ftime = &G_FLOAT (pr, def->ofs);//FIXME double time
 	return 1;
 error:
 	Sys_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
@@ -315,7 +315,7 @@ bi_Menu_Item (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
-	func_t      func = P_FUNCTION (pr, 3);
+	pr_func_t   func = P_FUNCTION (pr, 3);
 	int         allkeys = P_INT (pr, 4);
 	menu_item_t *mi = calloc (sizeof (menu_item_t), 1);
 
@@ -331,7 +331,7 @@ bi_Menu_Item (progs_t *pr)
 static void
 bi_Menu_Cursor (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->cursor = func;
 }
@@ -339,7 +339,7 @@ bi_Menu_Cursor (progs_t *pr)
 static void
 bi_Menu_KeyEvent (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->keyevent = func;
 }
@@ -385,7 +385,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 static void
 bi_Menu_SetQuit (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu_quit = func;
 }
@@ -513,29 +513,33 @@ menu_load_file (progs_t *pr, const char *path, off_t *size)
 	return data;
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Menu_Begin",			bi_Menu_Begin,			-1},
-	{"Menu_FadeScreen",		bi_Menu_FadeScreen,		-1},
-	{"Menu_Draw",			bi_Menu_Draw,			-1},
-	{"Menu_EnterHook",		bi_Menu_EnterHook,		-1},
-	{"Menu_LeaveHook",		bi_Menu_LeaveHook,		-1},
-	{"Menu_Pic",			bi_Menu_Pic,			-1},
-	{"Menu_SubPic",			bi_Menu_SubPic,			-1},
-	{"Menu_CenterPic",		bi_Menu_CenterPic,		-1},
-	{"Menu_CenterSubPic",	bi_Menu_CenterSubPic,	-1},
-	{"Menu_Item",			bi_Menu_Item,			-1},
-	{"Menu_Cursor",			bi_Menu_Cursor,			-1},
-	{"Menu_KeyEvent",		bi_Menu_KeyEvent,		-1},
-	{"Menu_End",			bi_Menu_End,			-1},
-	{"Menu_TopMenu",		bi_Menu_TopMenu,		-1},
-	{"Menu_SelectMenu",		bi_Menu_SelectMenu,		-1},
-	{"Menu_SetQuit",		bi_Menu_SetQuit,		-1},
-	{"Menu_Quit",			bi_Menu_Quit,			-1},
-	{"Menu_GetIndex",		bi_Menu_GetIndex,		-1},
-	{"Menu_Next",			bi_Menu_Next,			-1},
-	{"Menu_Prev",			bi_Menu_Prev,			-1},
-	{"Menu_Enter",			bi_Menu_Enter,			-1},
-	{"Menu_Leave",		 	bi_Menu_Leave,			-1},
+	bi(Menu_Begin,        3, p(int), p(int), p(string)),
+	bi(Menu_FadeScreen,   1, p(int)),
+	bi(Menu_Draw,         2, p(int), p(int)),
+	bi(Menu_EnterHook,    1, p(func)),
+	bi(Menu_LeaveHook,    1, p(func)),
+	bi(Menu_Pic,          3, p(int), p(int), p(string)),
+	bi(Menu_SubPic,       7, p(int), p(int), p(string),
+	                         p(int), p(int), p(int), p(int)),
+	bi(Menu_CenterPic,    3, p(int), p(int), p(string)),
+	bi(Menu_CenterSubPic, 7, p(int), p(int), p(string),
+	                         p(int), p(int), p(int), p(int)),
+	bi(Menu_Item,         5, p(int), p(int), p(string), p(func), p(int)),
+	bi(Menu_Cursor,       1, p(func)),
+	bi(Menu_KeyEvent,     1, p(func)),
+	bi(Menu_End,          0),
+	bi(Menu_TopMenu,      1, p(string)),
+	bi(Menu_SelectMenu,   1, p(string)),
+	bi(Menu_SetQuit,      1, p(func)),
+	bi(Menu_Quit,         0),
+	bi(Menu_GetIndex,     0),
+	bi(Menu_Next,         0),
+	bi(Menu_Prev,         0),
+	bi(Menu_Enter,        0),
+	bi(Menu_Leave,        0),
 	{0},
 };
 
@@ -590,12 +594,13 @@ Menu_Init (void)
 
 	menu_pr_state.max_edicts = 0;
 	menu_pr_state.zone_size = 1024 * 1024;
+	menu_pr_state.stack_size = 64 * 1024;
 
 	PR_Init (&menu_pr_state);
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0, 0);
 
-	PR_RegisterBuiltins (&menu_pr_state, builtins);
+	PR_RegisterBuiltins (&menu_pr_state, builtins, 0);
 
 	RUA_Init (&menu_pr_state, 3);
 
@@ -672,18 +677,20 @@ Menu_Draw (view_t *view)
 	if (menu->fadescreen)
 		r_funcs->Draw_FadeScreen ();
 
-	*menu_pr_state.globals.time = *con_data.realtime;
+	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time
 
 	if (menu->draw) {
 		int         ret;
 
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (!ret)
 			return;
@@ -713,11 +720,13 @@ Menu_Draw (view_t *view)
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 	} else {
 		r_funcs->Draw_Character (x + item->x, y + item->y,
@@ -729,7 +738,7 @@ void
 Menu_Draw_Hud (view_t *view)
 {
 	run_menu_pre ();
-	*menu_pr_state.globals.time = *con_data.realtime;
+	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 	run_menu_post ();
@@ -746,6 +755,7 @@ menu_key_event (const IE_event_t *ie_event)
 		return 0;
 	if (menu->keyevent) {
 		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = key.code;
 		P_INT (&menu_pr_state, 1) = key.unicode;
@@ -753,6 +763,7 @@ menu_key_event (const IE_event_t *ie_event)
 		menu_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
 			return 1;
@@ -767,8 +778,8 @@ menu_key_event (const IE_event_t *ie_event)
 		P_INT (&menu_pr_state, 1) = key.code;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
-		PR_PopFrame (&menu_pr_state);
 		ret = R_INT (&menu_pr_state);
+		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
 			return 1;

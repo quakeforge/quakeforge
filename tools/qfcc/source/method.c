@@ -41,8 +41,9 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/pr_obj.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "tools/qfcc/include/qfcc.h"
 
@@ -486,12 +487,12 @@ get_selector (expr_t *sel)
 	if (sel->type == ex_selector) {
 		return sel->e.selector.sel;
 	}
-	if (sel->type != ex_expr && sel->e.expr.op != '&'
-		&& !is_SEL(sel->e.expr.type)) {
+	if (sel->type != ex_address && !sel->e.address.offset
+		&& !is_SEL(sel->e.address.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}
-	_sel.index = expr_short (sel->e.expr.e2);
+	_sel.index = expr_short (sel->e.address.offset);
 	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
@@ -532,7 +533,7 @@ emit_selectors (void)
 static void
 emit_methods_next (def_t *def, void *data, int index)
 {
-	if (!is_pointer(def->type))
+	if (!is_ptr(def->type))
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	D_INT (def) = 0;
 }
@@ -542,8 +543,8 @@ emit_methods_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -584,9 +585,9 @@ def_t *
 emit_methods (methodlist_t *methods, const char *name, int instance)
 {
 	static struct_def_t methods_struct[] = {
-		{"method_next",		&type_pointer, emit_methods_next},
-		{"method_count",	&type_integer, emit_methods_count},
-		{"method_list",		0,             emit_methods_list_item},
+		{"method_next",		&type_ptr, emit_methods_next},
+		{"method_count",	&type_int, emit_methods_count},
+		{"method_list",		0,         emit_methods_list_item},
 		{0, 0}
 	};
 	const char *type = instance ? "INSTANCE" : "CLASS";
@@ -621,8 +622,8 @@ emit_method_list_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -659,7 +660,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 						  int instance)
 {
 	static struct_def_t method_list_struct[] = {
-		{"count",       &type_integer, emit_method_list_count},
+		{"count",       &type_int,     emit_method_list_count},
 		{"method_list", 0,             emit_method_list_item},
 		{0, 0}
 	};
@@ -709,8 +710,8 @@ method_check_params (method_t *method, expr_t *args)
 	for (count = 0, a = args; a; a = a->next)
 		count++;
 
-	if (count > MAX_PARMS)
-		return error (args, "more than %d parameters", MAX_PARMS);
+	if (count > PR_MAX_PARAMS)
+		return error (args, "more than %d parameters", PR_MAX_PARAMS);
 
 	if (mtype->t.func.num_params >= 0)
 		param_count = mtype->t.func.num_params;
@@ -745,8 +746,8 @@ method_check_params (method_t *method, expr_t *args)
 				}
 			}
 		} else {
-			if (is_integer_val (e) && options.warnings.vararg_integer) {
-				warning (e, "passing integer consant into ... function");
+			if (is_int_val (e) && options.warnings.vararg_integer) {
+				warning (e, "passing int consant into ... function");
 			}
 		}
 	}

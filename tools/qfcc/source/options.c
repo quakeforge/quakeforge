@@ -42,14 +42,18 @@
 
 #include <getopt.h>
 
-#include "QF/pr_comp.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/linker.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 const char *this_program;
 const char **source_files;
@@ -68,6 +72,7 @@ enum {
 	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
+	OPT_RUAMOKO,
 	OPT_TRADITIONAL,
 	OPT_BUG,
 };
@@ -91,7 +96,9 @@ static struct option const long_options[] = {
 	{"progs-src", required_argument, 0, 'P'},
 	{"qccx-escapes", no_argument, 0, OPT_QCCX_ESCAPES},
 	{"quiet", no_argument, 0, 'q'},
+	{"raumoko", no_argument, 0, OPT_RUAMOKO},
 	{"relocatable", no_argument, 0, 'r'},
+	{"ruamoko", no_argument, 0, OPT_RUAMOKO},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
 	{"traditional", no_argument, 0, OPT_TRADITIONAL},
@@ -138,7 +145,6 @@ usage (int status)
 	printf (
 "Options:\n"
 "        --advanced            Advanced Ruamoko mode\n"
-"                              default for separate compilation mode\n"
 "        --bug OPTION,...      Set bug options\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -c                        Only compile, don't link\n"
@@ -168,6 +174,10 @@ usage (int status)
 "                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -r, --relocatable         Incremental linking\n"
+"        --raumoko             Use both Ruamoko language features and the\n"
+"        --ruamoko             Ruamoko ISA, providing access to SIMD types\n"
+"                              and a stack for locals.\n"
+"                              default for separate compilation mode\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "        --traditional         Traditional QuakeC mode: implies v6only\n"
@@ -207,8 +217,10 @@ code_usage (void)
 "                            passing\n"
 "                            vectors to functiosn.\n"
 "    [no-]vector-components  Create *_[xyz] symbols for vector variables.\n"
-"    [no-]v6only             Restrict output code to version 6 progs\n"
-"                            features.\n"
+"    target=v6|v6p|ruamoko   Generate code for the specified target VM\n"
+"                                v6       Standard Quake VM (qcc compatible)\n"
+"                                v6p     *QuakeForge extended v6 instructions\n"
+"                                ruamoko  QuakeForge SIMD instructions\n"
 "\n"
 "For details, see the qfcc(1) manual page\n"
 	);
@@ -391,13 +403,19 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
-				options.advanced = false;
+				options.advanced = 0;
 				options.code.progsversion = PROG_ID_VERSION;
 				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
-				options.advanced = true;
+				options.advanced = 1;
+				options.code.progsversion = PROG_V6P_VERSION;
+				options.code.const_initializers = false;
+				break;
+			case OPT_RUAMOKO:
+				options.traditional = 0;
+				options.advanced = 2;
 				options.code.progsversion = PROG_VERSION;
 				options.code.const_initializers = false;
 				break;
@@ -469,6 +487,19 @@ DecodeArgs (int argc, char **argv)
 					while (temp) {
 						qboolean    flag = true;
 
+						if (!(strncasecmp (temp, "target=", 7))) {
+							const char *tgt = temp + 7;
+							if (!strcasecmp (tgt, "v6")) {
+								options.code.progsversion = PROG_ID_VERSION;
+							} else if (!strcasecmp (tgt, "v6p")) {
+								options.code.progsversion = PROG_V6P_VERSION;
+							} else if (!strcasecmp (tgt, "ruamoko")) {
+								options.code.progsversion = PROG_VERSION;
+							} else {
+								fprintf (stderr, "unknown target: %s\n", tgt);
+								exit (1);
+							}
+						}
 						if (!strncasecmp (temp, "no-", 3)) {
 							flag = false;
 							temp += 3;
@@ -501,11 +532,6 @@ DecodeArgs (int argc, char **argv)
 							options.code.vector_calls = flag;
 						} else if (!(strcasecmp (temp, "vector-components"))) {
 							options.code.vector_components = flag;
-						} else if (!(strcasecmp (temp, "v6only"))) {
-							if (flag)
-								options.code.progsversion = PROG_ID_VERSION;
-							else
-								options.code.progsversion = PROG_VERSION;
 						} else if (!(strcasecmp (temp, "const-initializers"))) {
 							options.code.const_initializers = flag;
 						}
@@ -682,7 +708,7 @@ DecodeArgs (int argc, char **argv)
 	if (saw_MD)
 		options.preprocess_only = 0;
 	if (!source_files && !options.advanced) {
-		// progs.src mode without --advanced implies --traditional
+		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
 		if (!options.traditional)
 			options.traditional = 2;
@@ -697,13 +723,16 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = false;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = true;
+		if (options.math.vector_mult == 0)
+			options.math.vector_mult = DOT;
 	}
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_VERSION;
 	if (!options.traditional) {
-		options.advanced = true;
-		add_cpp_def ("-D__RUAMOKO__=1");
-		add_cpp_def ("-D__RAUMOKO__=1");
+		// avanced=2 requires the Ruamoko ISA
+		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
+		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
+		add_cpp_def (save_string (ruamoko));
 		if (options.code.ifstring == (qboolean) -1)
 			options.code.ifstring = false;
 		if (options.code.short_circuit == (qboolean) -1)
@@ -712,6 +741,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = true;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
+		if (options.math.vector_mult == 0)
+			options.math.vector_mult = options.advanced == 1 ? DOT : '*';
 	} else {
 		options.code.promote_float = 0;
 	}
@@ -723,6 +754,13 @@ DecodeArgs (int argc, char **argv)
 	} else {
 		if (options.code.crc == (qboolean) -1)
 			options.code.crc = false;
+	}
+
+	if (options.traditional && options.advanced) {
+		fprintf (stderr,
+				 "%s: internal error: traditional and advanced twisted\n",
+				 this_program);
+		abort ();
 	}
 
 	// add the default paths

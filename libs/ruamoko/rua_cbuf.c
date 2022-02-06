@@ -93,11 +93,14 @@ bi_cbuf_clear (progs_t *pr, void *data)
 {
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"Cbuf_AddText",		bi_Cbuf_AddText,		-1},
-	{"Cbuf_InsertText",		bi_Cbuf_InsertText,		-1},
-	{"Cbuf_Execute",		bi_Cbuf_Execute,		-1},
-	{"Cbuf_Execute_Sets",	bi_Cbuf_Execute_Sets,	-1},
+	bi(Cbuf_AddText,      1, p(string)),
+	bi(Cbuf_InsertText,   1, p(string)),
+	bi(Cbuf_Execute,      0),
+	bi(Cbuf_Execute_Sets, 0),
 	{0}
 };
 
@@ -106,7 +109,7 @@ RUA_Cbuf_Init (progs_t *pr, int secure)
 {
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
 	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }
 
 VISIBLE void

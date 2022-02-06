@@ -44,6 +44,7 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
@@ -112,6 +113,7 @@ int yylex (void);
 	struct methodlist_s *methodlist;
 	struct symbol_s *symbol;
 	struct symtab_s *symtab;
+	struct attribute_s *attribute;
 }
 
 // these tokens are common between qc and qp
@@ -132,12 +134,14 @@ int yylex (void);
 %left			'^'
 %left			'&'
 %left			EQ NE
-%left			LE GE LT GT
+%left			LT GT GE LE
+%token			NAND NOR XNOR
 // end of tokens common between qc and qp
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD
+%left			'*' '/' '%' MOD SCALE
+%left           CROSS DOT
 %right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY
 %left			'.' '(' '['
@@ -145,9 +149,11 @@ int yylex (void);
 %token	<symbol>	CLASS_NAME NAME
 %token	<expr>		VALUE STRING
 
-%token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
-%token				NIL IFBE IFB IFAE IFA GOTO SWITCH CASE DEFAULT ENUM
-%token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
+%token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
+%token				RETURN AT_RETURN ELLIPSIS
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM
+%token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
+%token				UNSIGNED SIGNED LONG SHORT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -158,6 +164,8 @@ int yylex (void);
 %type	<spec>		storage_class save_storage set_spec_storage
 %type	<spec>		type_specifier type_specifier_or_storage_class
 %type	<spec>		type
+
+%type	<attribute>	attribute_list attribute
 
 %type	<param>		function_params var_list param_declaration
 %type	<param>		qc_func_params qc_var_list qc_param_decl
@@ -236,6 +244,24 @@ make_spec (type_t *type, storage_class_t storage, int is_typedef,
 }
 
 static specifier_t
+parse_attributes (attribute_t *attr_list)
+{
+	specifier_t spec = {};
+	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
+		if (!strcmp (attr->name, "no_va_list")) {
+			spec.no_va_list = 1;
+		} else if (!strcmp (attr->name, "nosave")) {
+			spec.nosave = 1;
+		} else if (!strcmp (attr->name, "void_return")) {
+			spec.void_return = 1;
+		} else {
+			warning (0, "skipping unknown attribute '%s'", attr->name);
+		}
+	}
+	return spec;
+}
+
+static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
 	if (new.type) {
@@ -253,14 +279,80 @@ spec_merge (specifier_t spec, specifier_t new)
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
 	}
-	spec.is_overload |= new.is_overload;
-	spec.nosave |= new.nosave;
+	if ((new.is_unsigned && spec.is_signed)
+		|| (new.is_signed && spec.is_unsigned)) {
+		if (!spec.multi_type) {
+			error (0, "both signed and unsigned in declaration specifiers");
+			spec.multi_type = 1;
+		}
+	}
+	if ((new.is_long && spec.is_short) || (new.is_short && spec.is_long)) {
+		if (!spec.multi_store) {
+			error (0, "both long and short in declaration specifiers");
+			spec.multi_store = 1;
+		}
+	}
+	spec.sym = new.sym;
+	spec.spec_bits |= new.spec_bits;
 	return spec;
 }
 
 static specifier_t
 default_type (specifier_t spec, symbol_t *sym)
 {
+	if (spec.type) {
+		if (is_float (spec.type) && !spec.multi_type) {
+			// no modifieres allowed
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and float in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and float in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and float in declaration specifiers");
+			} else if (spec.is_long) {
+				spec.multi_type = 1;
+				error (0, "both long and float in declaration specifiers");
+			}
+		}
+		if (is_double (spec.type)) {
+			// long is allowed but ignored
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and double in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and double in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and double in declaration specifiers");
+			}
+		}
+		if (is_int (spec.type)) {
+			// signed and short are ignored
+			if (spec.is_unsigned && spec.is_long) {
+				spec.type = &type_ulong;
+			} else if (spec.is_long) {
+				spec.type = &type_long;
+			}
+		}
+	} else {
+		if (spec.is_long) {
+			if (spec.is_unsigned) {
+				spec.type = type_ulong_uint;
+			} else {
+				spec.type = type_long_int;
+			}
+		} else {
+			if (spec.is_unsigned) {
+				spec.type = &type_uint;
+			} else if (spec.is_signed || spec.is_short) {
+				spec.type = &type_int;
+			}
+		}
+	}
 	if (!spec.type) {
 		spec.type = type_default;
 		warning (0, "type defaults to '%s' in declaration of '%s'",
@@ -294,6 +386,49 @@ is_null_spec (specifier_t spec)
 {
 	static specifier_t null_spec;
 	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
+}
+
+static int
+use_type_name (specifier_t spec)
+{
+	spec.sym = new_symbol (spec.sym->name);
+	spec.sym->type = spec.type;
+	spec.sym->sy_type = sy_var;
+	symtab_addsymbol (current_symtab, spec.sym);
+	return !!spec.sym->table;
+}
+
+static void
+check_specifiers (specifier_t spec)
+{
+	if (!is_null_spec (spec)) {
+		if (!spec.type && !spec.sym) {
+			warning (0, "useless specifiers");
+		} else if (spec.type && !spec.sym) {
+			if (is_anonymous_struct (spec)){
+				warning (0, "unnamed struct/union that defines "
+						 "no instances");
+			} else if (!is_enum (spec.type) && !is_struct (spec.type)) {
+				warning (0, "useless type name in empty declaration");
+			}
+		} else if (!spec.type && spec.sym) {
+			bug (0, "wha? %p %p", spec.type, spec.sym);
+		} else {
+			// a type name (id, typedef, etc) was used as a variable name.
+			// this is allowed in C, so long as it's in a different scope
+			if (!use_type_name (spec)) {
+				error (0, "%s redeclared as different kind of symbol",
+					   spec.sym->name);
+			}
+		}
+	}
+}
+
+static void
+set_func_type_attrs (type_t *func, specifier_t spec)
+{
+	func->t.func.no_va_list = spec.no_va_list;
+	func->t.func.void_return = spec.void_return;
 }
 
 %}
@@ -346,22 +481,7 @@ external_def
 	: optional_specifiers external_decl_list ';' { }
 	| optional_specifiers ';'
 		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
+			check_specifiers ($1);
 		}
 	| optional_specifiers qc_func_params
 		{
@@ -376,6 +496,7 @@ external_def
 			ret_type = *type;
 			*type = 0;
 			*type = parse_params (0, $2);
+			set_func_type_attrs ((*type), $1);
 			$<spec>$.type = find_type (append_type ($1.type, ret_type));
 			if ($<spec>$.type->type != ev_field)
 				$<spec>$.params = $2;
@@ -414,18 +535,18 @@ function_body
 	: optional_state_expr
 		{
 			symbol_t   *sym = $<symbol>0;
+			specifier_t spec = default_type ($<spec>-1, sym);
 
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
+			set_func_type_attrs (sym->type, spec);
+			sym->type = find_type (append_type (sym->type, spec.type));
+			$<symbol>$ = function_symbol (sym, spec.is_overload, 1);
 		}
 	  save_storage
 		{
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
 										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement
@@ -438,12 +559,12 @@ function_body
 	| '=' '#' expr ';'
 		{
 			symbol_t   *sym = $<symbol>0;
+			specifier_t spec = default_type ($<spec>-1, sym);
 
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
-			build_builtin_function (sym, $3, 0, $<spec>-1.storage);
+			set_func_type_attrs (sym->type, spec);
+			sym->type = find_type (append_type (sym->type, spec.type));
+			sym = function_symbol (sym, spec.is_overload, 1);
+			build_builtin_function (sym, $3, 0, spec.storage);
 		}
 	;
 
@@ -463,7 +584,8 @@ external_decl
 				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, 0, current_symtab->space, spec.storage);
+				initialize_def ($1, 0, current_symtab->space, spec.storage,
+								current_symtab);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
@@ -479,7 +601,8 @@ external_decl
 				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, $2, current_symtab->space, spec.storage);
+				initialize_def ($1, $2, current_symtab->space, spec.storage,
+								current_symtab);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
@@ -487,6 +610,7 @@ external_decl
 	| function_decl
 		{
 			specifier_t spec = default_type ($<spec>0, $1);
+			set_func_type_attrs ($1->type, spec);
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
@@ -504,11 +628,28 @@ storage_class
 	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
 	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
 	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
-	| NOSAVE
+	| ATTRIBUTE '(' attribute_list ')'
 		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.nosave = 1;
+			$$ = parse_attributes ($3);
 		}
+	;
+
+attribute_list
+	: attribute
+	| attribute_list ',' attribute
+		{
+			if ($3) {
+				$3->next = $1;
+				$$ = $3;
+			} else {
+				$$ = $1;
+			}
+		}
+	;
+
+attribute
+	: NAME						{ $$ = new_attribute ($1->name, 0); }
+	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
 	;
 
 optional_specifiers
@@ -539,7 +680,9 @@ type
 			// deal with eg "int id"
 			$1.sym = $2.sym;
 
-			if (!$1.sym) {
+			if (!$1.sym && !$1.type) {
+				$1 = spec_merge ($1, $2);
+			} else if (!$1.sym) {
 				error (0, "two or more data types in declaration specifiers");
 			}
 			$$ = $1;
@@ -555,6 +698,26 @@ type_specifier
 	: TYPE
 		{
 			$$ = make_spec ($1, 0, 0, 0);
+		}
+	| UNSIGNED
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_unsigned = 1;
+		}
+	| SIGNED
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_signed = 1;
+		}
+	| LONG
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_long = 1;
+		}
+	| SHORT
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_short = 1;
 		}
 	| enum_specifier
 	| struct_specifier
@@ -732,11 +895,7 @@ struct_def
 			if ($1.sym && $1.sym->type != $1.type) {
 				// a type name (id, typedef, etc) was used as a field name.
 				// this is allowed in C
-				$1.sym = new_symbol ($1.sym->name);
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
+				if (!use_type_name ($1)) {
 					error (0, "duplicate field `%s'", $1.sym->name);
 				}
 			} else if (is_anonymous_struct ($1)) {
@@ -768,8 +927,7 @@ struct_decl_list
 struct_decl
 	: function_decl
 		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
+			$<spec>0 = default_type ($<spec>-0, $1);
 			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
@@ -780,8 +938,7 @@ struct_decl
 		}
 	| var_decl
 		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
+			$<spec>0 = default_type ($<spec>-0, $1);
 			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
@@ -900,24 +1057,31 @@ qc_var_list
 param_declaration
 	: type var_decl
 		{
-			if (!$1.type)
-				$1.type = type_default;
+			$1 = default_type ($1, $2);
 			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
-	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
+	| abstract_decl			{ $$ = new_param (0, $1->type, $1->name); }
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
 abstract_decl
 	: type abs_decl
 		{
+			// abs_decl's symbol is just a carrier for the type
+			if ($2->name) {
+				bug (0, "unexpected name in abs_decl");
+			}
+			if ($1.sym) {
+				$1.sym = new_symbol ($1.sym->name);
+				$1.sym->type = $2->type;
+				$2 = $1.sym;
+			}
 			$$ = $2;
-			if (!$1.type)
-				$1.type = type_default;
+			$1 = default_type ($1, $2);
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
-	| error		{ $$ = new_symbol (""); }
+	| error		{ $$ = new_symbol (0); }
 	;
 
 qc_param_decl
@@ -935,6 +1099,7 @@ qc_param_decl
 				 type = &(*type)->t.fldptr.type)
 				 ;
 			*type = parse_params (*type, $2);
+			set_func_type_attrs ((*type), $1);
 			$3->type = find_type ($1.type);
 			if ($3->type->type != ev_field)
 				$3->params = $2;
@@ -944,7 +1109,7 @@ qc_param_decl
 	;
 
 abs_decl
-	: /* empty */			{ $$ = new_symbol (""); }
+	: /* empty */			{ $$ = new_symbol (0); }
 	| '(' abs_decl ')' function_params
 		{
 			$$ = $2;
@@ -969,11 +1134,11 @@ abs_decl
 array_decl
 	: '[' expr ']'
 		{
-			if (!is_integer_val ($2) || expr_integer ($2) < 1) {
+			if (!is_int_val ($2) || expr_int ($2) < 1) {
 				error (0, "invalid array size");
 				$$ = 0;
 			} else {
-				$$ = expr_integer ($2);
+				$$ = expr_int ($2);
 			}
 		}
 	| '[' ']'					{ $$ = 0; }
@@ -1013,6 +1178,7 @@ local_decl_list
 				 type = &(*type)->t.fldptr.type)
 				 ;
 			*type = parse_params (*type, $1);
+			set_func_type_attrs ((*type), spec);
 			spec.type = find_type (spec.type);
 			$<spec>$ = spec;
 		}
@@ -1038,7 +1204,7 @@ decl
 			if (sc == sc_static)
 				space = pr.near_data;
 			$1->type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, $2, space, sc);
+			initialize_def ($1, $2, space, sc, current_symtab);
 			if ($1->s.def)
 				$1->s.def->nosave |= spec.nosave;
 		}
@@ -1100,11 +1266,12 @@ non_code_func
 			if (local_expr) {
 				symbol_t   *sym = $<symbol>0;
 				specifier_t spec = $<spec>-1;
-				initialize_def (sym, $2, current_symtab->space, spec.storage);
+				initialize_def (sym, $2, current_symtab->space, spec.storage,
+								current_symtab);
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			} else {
-				if (is_integer_val ($2) || is_float_val ($2)) {
+				if (is_int_val ($2) || is_float_val ($2)) {
 					error (0, "invalid function initializer."
 						   " did you forget #?");
 				} else {
@@ -1121,7 +1288,8 @@ non_code_func
 				if (sym->sy_type == sy_func)
 					make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
-				initialize_def (sym, 0, current_symtab->space, spec.storage);
+				initialize_def (sym, 0, current_symtab->space, spec.storage,
+								current_symtab);
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			}
@@ -1135,7 +1303,7 @@ code_func
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab, 0,
 										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement
@@ -1244,22 +1412,7 @@ local_def
 		}
 	| specifiers ';'
 		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
+			check_specifiers ($1);
 			$$ = 0;
 		}
 	;
@@ -1271,6 +1424,7 @@ statement
 	| local_def					{ $$ = $1; }
 	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
 	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
+	| AT_RETURN	expr ';'		{ $$ = at_return_expr (current_func, $2); }
 	| BREAK ';'
 		{
 			$$ = 0;
@@ -1425,7 +1579,8 @@ init_var_decl
 			specifier_t spec = $<spec>0;
 			$1->type = find_type (append_type ($1->type, spec.type));
 			$1->sy_type = sy_var;
-			initialize_def ($1, 0, current_symtab->space, spec.storage);
+			initialize_def ($1, 0, current_symtab->space, spec.storage,
+							current_symtab);
 			$$ = assign_expr (new_symbol_expr ($1), $2);
 		}
 	;
@@ -1455,8 +1610,8 @@ unary_expr
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
 	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
-	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
-	| '*' cast_expr %prec UNARY	{ $$ = pointer_expr ($2); }
+	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0); }
+	| '*' cast_expr %prec UNARY	{ $$ = deref_pointer_expr ($2); }
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
 	| SIZEOF '(' abstract_decl ')'	%prec HYPERUNARY
 		{
@@ -1516,6 +1671,8 @@ expr
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
+	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
+	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
 	;
 
 texpr
@@ -1967,10 +2124,10 @@ methoddef
 			current_func = begin_function (sym, nicename, ivar_scope, 1,
 										   sc_static);
 			class_finish_ivar_scope (current_class, ivar_scope,
-									 current_func->symtab);
+									 current_func->locals);
 			method->func = sym->s.func;
 			method->def = sym->s.func->def;
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement

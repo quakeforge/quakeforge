@@ -71,6 +71,13 @@ static function_t *functions_freelist;
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 
+// standardized base register to use for all locals (arguments, local defs,
+// params)
+#define LOCALS_REG 1
+// keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
+// having to do shenanigans with mixed-alignment stack frames
+#define STACK_ALIGN 8
+
 static const char *
 ol_func_get_key (const void *_f, void *unused)
 {
@@ -181,6 +188,7 @@ parse_params (type_t *type, param_t *parms)
 	new = new_type ();
 	new->type = ev_func;
 	new->alignment = 1;
+	new->width = 1;
 	new->t.func.type = type;
 	new->t.func.num_params = 0;
 
@@ -482,32 +490,18 @@ check_function (symbol_t *fsym)
 }
 
 static void
-build_scope (symbol_t *fsym, symtab_t *parent)
+build_v6p_scope (symbol_t *fsym)
 {
 	int         i;
 	param_t    *p;
 	symbol_t   *args = 0;
 	symbol_t   *param;
-	symtab_t   *symtab;
-	symtab_t   *cs = current_symtab;
+	symtab_t   *parameters = fsym->s.func->parameters;
+	symtab_t   *locals = fsym->s.func->locals;
 
-	check_function (fsym);
-
-	symtab = new_symtab (parent, stab_local);
-	fsym->s.func->symtab = symtab;
-	fsym->s.func->label_scope = new_symtab (0, stab_local);
-	symtab->space = defspace_new (ds_virtual);
-	current_symtab = symtab;
-
-	if (!fsym->s.func) {
-		internal_error (0, "function %s not defined", fsym->name);
-	}
-	if (!is_func (fsym->s.func->type)) {
-		internal_error (0, "function type %s not a funciton", fsym->name);
-	}
 	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, 0, symtab->space, sc_param);
+		initialize_def (args, 0, parameters->space, sc_param, locals);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -520,18 +514,91 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, 0, symtab->space, sc_param);
+		initialize_def (param, 0, parameters->space, sc_param, locals);
 		i++;
 	}
 
 	if (args) {
-		while (i < MAX_PARMS) {
+		while (i < PR_MAX_PARAMS) {
 			param = new_symbol_type (va (0, ".par%d", i), &type_param);
-			initialize_def (param, 0, symtab->space, sc_param);
+			initialize_def (param, 0, parameters->space, sc_param, locals);
 			i++;
 		}
 	}
-	current_symtab = cs;
+}
+
+static void
+create_param (symtab_t *parameters, symbol_t *param)
+{
+	defspace_t *space = parameters->space;
+	def_t      *def = new_def (param->name, 0, space, sc_param);
+	int         size = type_size (param->type);
+	int         alignment = param->type->alignment;
+	if (alignment < 4) {
+		alignment = 4;
+	}
+	def->offset = defspace_alloc_aligned_highwater (space, size, alignment);
+	def->type = param->type;
+	param->s.def = def;
+	param->sy_type = sy_var;
+	symtab_addsymbol (parameters, param);
+	if (is_vector(param->type) && options.code.vector_components)
+		init_vector_components (param, 0, parameters);
+}
+
+static void
+build_rua_scope (symbol_t *fsym)
+{
+	for (param_t *p = fsym->params; p; p = p->next) {
+		symbol_t   *param;
+		if (!p->selector && !p->type && !p->name) {
+			// ellipsis marker
+			param = new_symbol_type (".args", &type_va_list);
+		} else {
+			if (!p->type) {
+				continue;					// non-param selector
+			}
+			if (!p->name) {
+				error (0, "parameter name omitted");
+				p->name = save_string ("");
+			}
+			param = new_symbol_type (p->name, p->type);
+		}
+		create_param (fsym->s.func->parameters, param);
+		param->s.def->reg = fsym->s.func->temp_reg;;
+	}
+}
+
+static void
+build_scope (symbol_t *fsym, symtab_t *parent)
+{
+	symtab_t   *parameters;
+	symtab_t   *locals;
+
+	if (!fsym->s.func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (fsym->s.func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
+
+	check_function (fsym);
+
+	fsym->s.func->label_scope = new_symtab (0, stab_local);
+
+	parameters = new_symtab (parent, stab_local);
+	parameters->space = defspace_new (ds_virtual);
+	fsym->s.func->parameters = parameters;
+
+	locals = new_symtab (parameters, stab_local);
+	locals->space = defspace_new (ds_virtual);
+	fsym->s.func->locals = locals;
+
+	if (options.code.progsversion == PROG_VERSION) {
+		build_rua_scope (fsym);
+	} else {
+		build_v6p_scope (fsym);
+	}
 }
 
 function_t *
@@ -590,7 +657,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
-		sym = new_symbol_type (sym->name, &type_function);
+		sym = new_symbol_type (sym->name, &type_func);
 		sym = function_symbol (sym, 1, 1);
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
@@ -608,6 +675,9 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		sym->s.func->def->nosave = 1;
 		add_function (sym->s.func);
 		reloc_def_func (sym->s.func, sym->s.func->def);
+
+		sym->s.func->def->file = pr.source_file;
+		sym->s.func->def->line = pr.source_line;
 	}
 	sym->s.func->code = pr.code->size;
 
@@ -625,14 +695,35 @@ static void
 build_function (symbol_t *fsym)
 {
 	const type_t *func_type = fsym->s.func->type;
-	if (func_type->t.func.num_params > MAX_PARMS) {
+	if (func_type->t.func.num_params > PR_MAX_PARAMS) {
 		error (0, "too many params");
 	}
-	//	FIXME
-//	f->def->constant = 1;
-//	f->def->nosave = 1;
-//	f->def->initialized = 1;
-//	G_FUNCTION (f->def->ofs) = f->function_num;
+}
+
+static void
+merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
+{
+	int         offset;
+
+	for (def_t *def = src->defs; def; def = def->next) {
+		if (def->type->alignment > alignment) {
+			alignment = def->type->alignment;
+		}
+	}
+	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);
+	for (def_t *def = src->defs; def; def = def->next) {
+		def->offset += offset;
+		def->space = dst;
+	}
+
+	if (src->defs) {
+		*dst->def_tail = src->defs;
+		dst->def_tail = src->def_tail;
+		src->def_tail = &src->defs;
+		*src->def_tail = 0;
+	}
+
+	defspace_delete (src);
 }
 
 function_t *
@@ -642,11 +733,93 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		return 0;
 	build_function (fsym);
 	if (state_expr) {
-		state_expr->next = statements;
-		statements = state_expr;
+		prepend_expr (statements, state_expr);
 	}
-	emit_function (fsym->s.func, statements);
-	finish_function (fsym->s.func);
+	function_t *func = fsym->s.func;
+	if (options.code.progsversion == PROG_VERSION) {
+		/* Create a function entry block to set up the stack frame and add the
+		 * actual function code to that block. This ensure that the adjstk and
+		 * with statements always come first, regardless of what ideas the
+		 * optimizer gets.
+		 */
+		expr_t     *e;
+		expr_t     *entry = new_block_expr ();
+		entry->file = func->def->file;
+		entry->line = func->def->line;
+
+		e = new_adjstk_expr (0, 0);
+		e->file = func->def->file;
+		e->line = func->def->line;
+		append_expr (entry, e);
+
+		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
+		e->file = func->def->file;
+		e->line = func->def->line;
+		append_expr (entry, e);
+
+		append_expr (entry, statements);
+		statements = entry;
+
+		/* Mark all local defs as using the base register used for stack
+		 * references.
+		 */
+		func->temp_reg = LOCALS_REG;
+		for (def_t *def = func->locals->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
+		for (def_t *def = func->parameters->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
+	}
+	emit_function (func, statements);
+	if (options.code.progsversion < PROG_VERSION) {
+		// stitch parameter and locals data together with parameters coming
+		// first
+		defspace_t *space = defspace_new (ds_virtual);
+
+		func->params_start = 0;
+
+		merge_spaces (space, func->parameters->space, 1);
+		func->parameters->space = space;
+
+		merge_spaces (space, func->locals->space, 1);
+		func->locals->space = space;
+	} else {
+		defspace_t *space = defspace_new (ds_virtual);
+
+		if (func->arguments) {
+			func->arguments->size = func->arguments->max_size;
+			merge_spaces (space, func->arguments, STACK_ALIGN);
+			func->arguments = 0;
+		}
+
+		merge_spaces (space, func->locals->space, STACK_ALIGN);
+		func->locals->space = space;
+
+		// allocate 0 words to force alignment and get the address
+		func->params_start = defspace_alloc_aligned_highwater (space, 0,
+															   STACK_ALIGN);
+
+		dstatement_t *st = &pr.code->code[func->code];
+		if (st->op == OP_ADJSTK) {
+			if (func->params_start) {
+				st->b = -func->params_start;
+			} else {
+				// skip over adjstk so a zero adjustment doesn't get executed
+				func->code += 1;
+			}
+		}
+		merge_spaces (space, func->parameters->space, STACK_ALIGN);
+		func->parameters->space = space;
+
+		// force the alignment again so the full stack slot is counted when
+		// the final parameter is smaller than STACK_ALIGN words
+		defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
+	}
 	return fsym->s.func;
 }
 
@@ -665,7 +838,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
-	if (!is_integer_val (bi_val) && !is_float_val (bi_val)) {
+	if (!is_int_val (bi_val) && !is_float_val (bi_val)) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
@@ -681,8 +854,8 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 	sym->s.func->def->nosave = 1;
 	add_function (sym->s.func);
 
-	if (is_integer_val (bi_val))
-		bi = expr_integer (bi_val);
+	if (is_int_val (bi_val))
+		bi = expr_int (bi_val);
 	else
 		bi = expr_float (bi_val);
 	if (bi < 0) {
@@ -692,17 +865,12 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
 	build_function (sym);
-	finish_function (sym->s.func);
 
 	// for debug info
 	build_scope (sym, current_symtab);
-	sym->s.func->symtab->space->size = 0;
+	sym->s.func->parameters->space->size = 0;
+	sym->s.func->locals->space = sym->s.func->parameters->space;
 	return sym->s.func;
-}
-
-void
-finish_function (function_t *f)
-{
 }
 
 void

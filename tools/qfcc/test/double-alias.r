@@ -23,12 +23,12 @@ alias_printf (string fmt, ...)
 {
 	int         fail = 0;
 	// this will fail on big-endian systems
-	fail = (@args.list[2].integer_val != 0x54442d18
-			|| @args.list[1].integer_val != 0x400921fb);
-	printf ("%g %08x%08x\n",
-			@args.list[0].integer_val,
-			@args.list[2].integer_val,
-			@args.list[1].integer_val);
+	fail = (@args.list[2].int_val != 0x54442d18
+			|| @args.list[1].int_val != 0x400921fb);
+	printf ("%.17g %08x%08x\n",
+			@args.list[0].double_val,
+			@args.list[2].int_val,
+			@args.list[1].int_val);
 	return fail;
 }
 

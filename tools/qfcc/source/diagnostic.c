@@ -50,8 +50,8 @@ static void
 report_function (const expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
-	static string_t last_file;
-	string_t    file = pr.source_file;
+	static pr_string_t last_file;
+	pr_string_t file = pr.source_file;
 	srcline_t  *srcline;
 
 	if (e)
@@ -81,7 +81,7 @@ static __attribute__((format(PRINTF, 4, 0))) void
 format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 				const char *fmt, va_list args)
 {
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	int         line = pr.source_line;
 	const char *colon = fmt ? ": " : "";
 

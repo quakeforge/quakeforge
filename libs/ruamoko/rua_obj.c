@@ -48,15 +48,48 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/sys.h"
+
+#include "QF/progs/pr_obj.h"
+#include "QF/progs/pr_type.h"
 
 #include "compat.h"
 #include "rua_internal.h"
 
 #define always_inline inline __attribute__((__always_inline__))
+
+/* Macros to help with setting up to call a function, and cleaning up
+ * afterwards. The problem is that PR_CallFunction saves the CURRENT stack
+ * pointer, which has been adjusted by PR_SetupParams in order to push
+ * the function arguments.
+ *
+ * RUA_CALL_BEGIN and RUA_CALL_END must be used in pairs and this is enforced
+ * by the unbalanced {}s in the macros.
+ */
+#define RUA_CALL_BEGIN(pr, argc) \
+	{ \
+		pr_ptr_t    saved_stack = 0; \
+		int         call_depth = (pr)->pr_depth; \
+		if ((pr)->globals.stack) { \
+			saved_stack = *(pr)->globals.stack; \
+		} \
+		PR_SetupParams (pr, argc, 1); \
+		(pr)->pr_argc = argc;
+
+#define RUA_CALL_END(pr, imp) \
+		if (PR_CallFunction ((pr), (imp), (pr)->pr_return)) { \
+			/* the call is to a progs function so a frame was pushed,   */ \
+			/* ensure the stack pointer is restored on return           */ \
+			/* if there's no stack, then the following is effectively a */ \
+			/* noop                                                     */ \
+			(pr)->pr_stack[call_depth].stack_ptr = saved_stack; \
+		} else if ((pr)->globals.stack) { \
+			/* the call was to a builtin, restore the stack             */ \
+			*(pr)->globals.stack = saved_stack; \
+		} \
+	}
 
 typedef struct obj_list_s {
 	struct obj_list_s *next;
@@ -67,7 +100,7 @@ typedef struct dtable_s {
 	struct dtable_s *next;
 	struct dtable_s **prev;
 	size_t      size;
-	func_t     *imp;
+	pr_func_t  *imp;
 } dtable_t;
 
 typedef struct probj_resources_s {
@@ -75,10 +108,11 @@ typedef struct probj_resources_s {
 	unsigned    selector_index;
 	unsigned    selector_index_max;
 	obj_list  **selector_sels;
-	string_t   *selector_names;
+	pr_string_t *selector_names;
+	pr_int_t   *selector_argc;
 	PR_RESMAP (dtable_t) dtables;
 	dtable_t   *dtable_list;
-	func_t      obj_forward;
+	pr_func_t   obj_forward;
 	pr_sel_t   *forward_selector;
 	dstring_t  *msg;
 	hashtab_t  *selector_hash;
@@ -422,7 +456,7 @@ object_is_instance (probj_t *probj, pr_id_t *object)
 	return 0;
 }
 
-static string_t
+static pr_string_t
 object_get_class_name (probj_t *probj, pr_id_t *object)
 {
 	progs_t    *pr = probj->pr;
@@ -445,7 +479,7 @@ object_get_class_name (probj_t *probj, pr_id_t *object)
 //====================================================================
 
 static void
-finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
+finish_class (probj_t *probj, pr_class_t *class, pr_ptr_t object_ptr)
 {
 	progs_t    *pr = probj->pr;
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
@@ -462,7 +496,7 @@ finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
 		meta->super_class = val->class_pointer;
 		class->super_class = PR_SetPointer (pr, val);
 	} else {
-		pointer_t  *ml = &meta->methods;
+		pr_ptr_t   *ml = &meta->methods;
 		while (*ml)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
@@ -484,10 +518,13 @@ add_sel_name (probj_t *probj, const char *name)
 		probj->selector_sels = realloc (probj->selector_sels,
 										size * sizeof (obj_list *));
 		probj->selector_names = realloc (probj->selector_names,
-										 size * sizeof (string_t));
+										 size * sizeof (pr_string_t));
+		probj->selector_argc = realloc (probj->selector_argc,
+										size * sizeof (pr_int_t));
 		for (i = probj->selector_index_max; i < size; i++) {
 			probj->selector_sels[i] = 0;
 			probj->selector_names[i] = 0;
+			probj->selector_argc[i] = 0;
 		}
 		probj->selector_index_max = size;
 	}
@@ -540,6 +577,15 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 	l->data = sel;
 	l->next = probj->selector_sels[index];
 	probj->selector_sels[index] = l;
+
+	if (sel->sel_types && pr->type_encodings) {
+		const char *enc = PR_GetString (pr, sel->sel_types);
+		__auto_type type = (qfot_type_t *) Hash_Find (pr->type_hash, enc);
+		if (type->meta != ty_basic || type->type != ev_func) {
+			PR_RunError (pr, "selector type encoing is not a function");
+		}
+		probj->selector_argc[index] = type->func.num_params;
+	}
 
 	if (is_new)
 		Hash_Add (probj->selector_hash, (void *) index);
@@ -804,7 +850,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 	pr_sel_t   *sel;
 	int         i;
 	int         dev = developer->int_val;
-	string_t   *names;
+	pr_string_t *names;
 
 	if (dev & SYS_rua_msg) {
 		names = probj->selector_names;
@@ -935,7 +981,7 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 	dtable = dtable_new (probj);
 	class->dtable = dtable_index (probj, dtable);
 	dtable->size = probj->selector_index + 1;
-	dtable->imp = calloc (dtable->size, sizeof (func_t));
+	dtable->imp = calloc (dtable->size, sizeof (pr_func_t));
 	if (super) {
 		dtable_t   *super_dtable = get_dtable (probj, __FUNCTION__,
 											   super->dtable);
@@ -956,10 +1002,10 @@ obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
 	return get_dtable (probj, __FUNCTION__, class->dtable);
 }
 
-static func_t
+static pr_func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
-	func_t     imp = 0;
+	pr_func_t  imp = 0;
 
 	if (class->dtable) {
 		dtable_t   *dtable = get_dtable (probj, __FUNCTION__, class->dtable);
@@ -984,7 +1030,7 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	dtable_t   *dtable;
-	func_t      imp = 0;
+	pr_func_t   imp = 0;
 
 	class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
 	dtable = obj_check_dtable_installed (probj, class);
@@ -995,7 +1041,7 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 	return imp != 0;
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 {
 	progs_t    *pr = probj->pr;
@@ -1014,7 +1060,7 @@ obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 	return get_imp (probj, class, op);
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup_super (probj_t *probj, pr_super_t *super, pr_sel_t *op)
 {
 	progs_t    *pr = probj->pr;
@@ -1040,7 +1086,7 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 }
 
 static void
-dump_ivars (probj_t *probj, pointer_t _ivars)
+dump_ivars (probj_t *probj, pr_ptr_t _ivars)
 {
 	progs_t    *pr = probj->pr;
 	pr_ivar_list_t *ivars;
@@ -1062,8 +1108,8 @@ obj_init_statics (probj_t *probj)
 {
 	progs_t    *pr = probj->pr;
 	obj_list  **cell = &probj->uninitialized_statics;
-	pointer_t  *ptr;
-	pointer_t  *inst;
+	pr_ptr_t   *ptr;
+	pr_ptr_t   *inst;
 
 	Sys_MaskPrintf (SYS_rua_obj, "Initializing statics\n");
 	while (*cell) {
@@ -1109,7 +1155,7 @@ rua___obj_exec_class (progs_t *pr)
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
 	pr_sel_t   *sel;
-	pointer_t  *ptr;
+	pr_ptr_t   *ptr;
 	int         i;
 	obj_list  **cell;
 
@@ -1215,7 +1261,7 @@ rua___obj_exec_class (progs_t *pr)
 	if (*ptr) {
 		Sys_MaskPrintf (SYS_rua_obj, "Static instances lists: %x\n", *ptr);
 		probj->uninitialized_statics
-			= list_cons (&G_STRUCT (pr, pointer_t, *ptr),
+			= list_cons (&G_STRUCT (pr, pr_ptr_t, *ptr),
 						 probj->uninitialized_statics);
 	}
 	if (probj->uninitialized_statics) {
@@ -1259,7 +1305,7 @@ rua___obj_forward (progs_t *pr)
 	pr_sel_t   *fwd_sel = probj->forward_selector;
 	pr_sel_t   *err_sel;
 	pr_class_t *class =&G_STRUCT (pr, pr_class_t, obj->class_pointer);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!fwd_sel) {
 		//FIXME sel_register_typed_name is really not the way to go about
@@ -1270,39 +1316,53 @@ rua___obj_forward (progs_t *pr)
 	if (obj_reponds_to (probj, obj, fwd_sel)) {
 		imp = get_imp (probj, class, fwd_sel);
 		// forward:(SEL) sel :(@va_list) args
-		// args is full param list
-		//FIXME oh for a stack
-		size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
-		size_t      size = pr->pr_argc * parm_size;
-		string_t    args_block = PR_AllocTempBlock (pr, size);
+		// args is full param list as a va_list
+		pr_string_t args_block = 0;
+		int         argc;
+		pr_type_t  *argv;
+		if (pr->globals.stack) {
+			argv = pr->pr_params[0];
+			argc = probj->selector_argc[sel->sel_id];
+			if (argc < 0) {
+				// -ve values indicate varargs functions and is the ones
+				// complement of the number of real parameters before the
+				// ellipsis. However, Ruamoko ISA progs pass va_list through
+				// ... so in the end, a -ve value indicates the total number
+				// of arguments (including va_list) passed to the function.
+				argc = -argc;
+			}
+		} else {
+			size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
+			size_t      size = pr->pr_argc * parm_size;
+			args_block = PR_AllocTempBlock (pr, size);
 
-		int         argc = pr->pr_argc;
-		__auto_type argv = (pr_type_t *) PR_GetString (pr, args_block);
-		// can't memcpy all params because 0 and 1 could be anywhere
-		memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
-		memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
-		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+			argc = pr->pr_argc;
+			argv = (pr_type_t *) PR_GetString (pr, args_block);
+			// can't memcpy all params because 0 and 1 could be anywhere
+			memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
+			memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
+			memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+		}
 
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 4);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, fwd_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
 		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
 		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
-		PR_PushTempString (pr, args_block);
-		PR_CallFunction (pr, imp);
+		if (args_block) {
+			PR_PushTempString (pr, args_block);
+		}
+		RUA_CALL_END (pr, imp);
 		return;
 	}
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "doesNotRecognize:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 3)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
@@ -1311,16 +1371,13 @@ rua___obj_forward (progs_t *pr)
 			  PR_GetString (pr, class->name),
 			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
 
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "error:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 3)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
@@ -1371,7 +1428,7 @@ static void
 rua_obj_set_error_handler (progs_t *pr)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
-	//func_t      func = P_INT (pr, 0);
+	//pr_func_t   func = P_INT (pr, 0);
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -1401,17 +1458,17 @@ static void
 rua_obj_msg_sendv (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
-	pointer_t   obj = P_POINTER (pr, 0);
+	pr_ptr_t    obj = P_POINTER (pr, 0);
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	pointer_t   sel = P_POINTER (pr, 1);
+	pr_ptr_t    sel = P_POINTER (pr, 1);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp = obj_msg_lookup (probj, receiver, op);
+	pr_func_t   imp = obj_msg_lookup (probj, receiver, op);
 
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 2);
 	int         count = args->count;
 	pr_type_t  *params = G_GPOINTER (pr, args->list);
 
-	if (count < 2 || count > MAX_PARMS) {
+	if (count < 2 || count > PR_MAX_PARAMS) {
 		PR_RunError (pr, "bad args count in obj_msg_sendv: %d", count);
 	}
 	if (pr_boundscheck->int_val) {
@@ -1424,40 +1481,40 @@ rua_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, probj->selector_names[op->sel_id]));
 	}
 
-	pr->pr_argc = count;
+	RUA_CALL_BEGIN (pr, count)
 	// skip over the first two parameters because receiver and op will
 	// replace them
 	count -= 2;
 	params += 2 * pr->pr_param_size;
-	PR_RESET_PARAMS (pr);
+
 	P_POINTER (pr, 0) = obj;
 	P_POINTER (pr, 1) = sel;
 	if (count) {
 		memcpy (&P_INT (pr, 2), params,
 				count * sizeof (pr_type_t) * pr->pr_param_size);
 	}
-	PR_CallFunction (pr, imp);
+	RUA_CALL_END (pr, imp)
 }
 
 static void
 rua_obj_increment_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = ++(*--obj).integer_var;
+	R_INT (pr) = ++(*--obj).int_var;
 }
 
 static void
 rua_obj_decrement_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = --(*--obj).integer_var;
+	R_INT (pr) = --(*--obj).int_var;
 }
 
 static void
 rua_obj_get_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = (*--obj).integer_var;
+	R_INT (pr) = (*--obj).int_var;
 }
 
 static void
@@ -1529,11 +1586,14 @@ rua_obj_msgSend (progs_t *pr)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self) {
 		R_INT (pr) = P_INT (pr, 0);
 		return;
+	}
+	if (P_UINT (pr, 0) >= pr->globals_size) {
+		PR_RunError (pr, "invalid self: %x", P_UINT (pr, 0));
 	}
 	if (!_cmd)
 		PR_RunError (pr, "null selector");
@@ -1543,7 +1603,7 @@ rua_obj_msgSend (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
@@ -1552,7 +1612,7 @@ rua_obj_msgSend_super (progs_t *pr)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	imp = obj_msg_lookup_super (probj, super, _cmd);
 	if (!imp) {
@@ -1561,9 +1621,11 @@ rua_obj_msgSend_super (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 	}
-	pr->pr_params[0] = pr->pr_real_params[0];
+	if (pr->progs->version < PROG_VERSION) {
+		pr->pr_params[0] = pr->pr_real_params[0];
+	}
 	P_POINTER (pr, 0) = super->self;
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
@@ -1678,12 +1740,12 @@ rua_class_pose_as (progs_t *pr)
 {
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
-	pointer_t  *subclass;
+	pr_ptr_t   *subclass;
 
 	subclass = &superclass->subclass_list;
 	while (*subclass) {
 		pr_class_t *sub = &P_STRUCT (pr, pr_class_t, *subclass);
-		pointer_t   nextSub = sub->sibling_class;
+		pr_ptr_t    nextSub = sub->sibling_class;
 		if (sub != impostor) {
 			sub->sibling_class = impostor->subclass_list;
 			sub->super_class = P_POINTER (pr, 0);	// impostor
@@ -2077,73 +2139,76 @@ rua_PR_FindGlobal (progs_t *pr)
 
 //====================================================================
 
+#define bi(x,np,params...) {#x, rua_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t obj_methods [] = {
-	{"__obj_exec_class",			rua___obj_exec_class,			-1},
-	{"__obj_forward",				rua___obj_forward,				-1},
-	{"__obj_responds_to",			rua___obj_responds_to,			-1},
+	bi(__obj_exec_class,               1, p(ptr)),
+	bi(__obj_forward,                  -3, p(ptr), p(ptr)),
+	bi(__obj_responds_to,              2, p(ptr), p(ptr)),
 
-	{"obj_error",					rua_obj_error,					-1},
-	{"obj_verror",					rua_obj_verror,					-1},
-	{"obj_set_error_handler",		rua_obj_set_error_handler,		-1},
-	{"obj_msg_lookup",				rua_obj_msg_lookup,				-1},
-	{"obj_msg_lookup_super",		rua_obj_msg_lookup_super,		-1},
-	{"obj_msg_sendv",				rua_obj_msg_sendv,				-1},
-	{"obj_increment_retaincount",	rua_obj_increment_retaincount,	-1},
-	{"obj_decrement_retaincount",	rua_obj_decrement_retaincount,	-1},
-	{"obj_get_retaincount",			rua_obj_get_retaincount,		-1},
-	{"obj_malloc",					rua_obj_malloc,					-1},
-	{"obj_atomic_malloc",			rua_obj_atomic_malloc,			-1},
-	{"obj_valloc",					rua_obj_valloc,					-1},
-	{"obj_realloc",					rua_obj_realloc,				-1},
-	{"obj_calloc",					rua_obj_calloc,					-1},
-	{"obj_free",					rua_obj_free,					-1},
-	{"obj_get_uninstalled_dtable",	rua_obj_get_uninstalled_dtable,	-1},
-	{"obj_msgSend",					rua_obj_msgSend,				-1},
-	{"obj_msgSend_super",			rua_obj_msgSend_super,			-1},
+	bi(obj_error,                      -4, p(ptr), p(int), p(string)),
+	bi(obj_verror,                     4, p(ptr), p(int), p(string), P(1, 2)),
+	bi(obj_set_error_handler,          1, p(func)),
+	bi(obj_msg_lookup,                 2, p(ptr), p(ptr)),
+	bi(obj_msg_lookup_super,           2, p(ptr), p(ptr)),
+	bi(obj_msg_sendv,                  3, p(ptr), p(ptr), P(1, 2)),
+	bi(obj_increment_retaincount,      1, p(ptr)),
+	bi(obj_decrement_retaincount,      1, p(ptr)),
+	bi(obj_get_retaincount,            1, p(ptr)),
+	bi(obj_malloc,                     1, p(int)),
+	bi(obj_atomic_malloc,              1, p(int)),
+	bi(obj_valloc,                     1, p(int)),
+	bi(obj_realloc,                    2, p(ptr), p(int)),
+	bi(obj_calloc,                     2, p(int), p(int)),
+	bi(obj_free,                       1, p(ptr)),
+	bi(obj_get_uninstalled_dtable,     0),
+	bi(obj_msgSend,                    2, p(ptr), p(ptr)),//magic
+	bi(obj_msgSend_super,              2, p(ptr), p(ptr)),//magic
 
-	{"obj_get_class",				rua_obj_get_class,				-1},
-	{"obj_lookup_class",			rua_obj_lookup_class,			-1},
-	{"obj_next_class",				rua_obj_next_class,				-1},
+	bi(obj_get_class,                  1, p(string)),
+	bi(obj_lookup_class,               1, p(string)),
+	bi(obj_next_class,                 1, p(ptr)),
 
-	{"sel_get_name",				rua_sel_get_name,				-1},
-	{"sel_get_type",				rua_sel_get_type,				-1},
-	{"sel_get_uid",					rua_sel_get_uid,				-1},
-	{"sel_register_name",			rua_sel_register_name,			-1},
-	{"sel_is_mapped",				rua_sel_is_mapped,				-1},
+	bi(sel_get_name,                   1, p(ptr)),
+	bi(sel_get_type,                   1, p(ptr)),
+	bi(sel_get_uid,                    1, p(string)),
+	bi(sel_register_name,              1, p(string)),
+	bi(sel_is_mapped,                  1, p(ptr)),
 
-	{"class_get_class_method",		rua_class_get_class_method,		-1},
-	{"class_get_instance_method",	rua_class_get_instance_method,	-1},
-	{"class_pose_as",				rua_class_pose_as,				-1},
-	{"class_create_instance",		rua_class_create_instance,		-1},
-	{"class_get_class_name",		rua_class_get_class_name,		-1},
-	{"class_get_instance_size",		rua_class_get_instance_size,	-1},
-	{"class_get_meta_class",		rua_class_get_meta_class,		-1},
-	{"class_get_super_class",		rua_class_get_super_class,		-1},
-	{"class_get_version",			rua_class_get_version,			-1},
-	{"class_is_class",				rua_class_is_class,				-1},
-	{"class_is_meta_class",			rua_class_is_meta_class,		-1},
-	{"class_set_version",			rua_class_set_version,			-1},
-	{"class_get_gc_object_type",	rua_class_get_gc_object_type,	-1},
-	{"class_ivar_set_gcinvisible",	rua_class_ivar_set_gcinvisible,	-1},
+	bi(class_get_class_method,         2, p(ptr), p(ptr)),
+	bi(class_get_instance_method,      2, p(ptr), p(ptr)),
+	bi(class_pose_as,                  2, p(ptr), p(ptr)),
+	bi(class_create_instance,          1, p(ptr)),
+	bi(class_get_class_name,           1, p(ptr)),
+	bi(class_get_instance_size,        1, p(ptr)),
+	bi(class_get_meta_class,           1, p(ptr)),
+	bi(class_get_super_class,          1, p(ptr)),
+	bi(class_get_version,              1, p(ptr)),
+	bi(class_is_class,                 1, p(ptr)),
+	bi(class_is_meta_class,            1, p(ptr)),
+	bi(class_set_version,              2, p(ptr), p(int)),
+	bi(class_get_gc_object_type,       1, p(ptr)),
+	bi(class_ivar_set_gcinvisible,     3, p(ptr), p(string), p(int)),
 
-	{"method_get_imp",				rua_method_get_imp,				-1},
-	{"get_imp",						rua_get_imp,					-1},
+	bi(method_get_imp,                 1, p(ptr)),
+	bi(get_imp,                        1, p(ptr), p(ptr)),
 
-	{"object_copy",					rua_object_copy,				-1},
-	{"object_dispose",				rua_object_dispose,				-1},
-	{"object_get_class",			rua_object_get_class,			-1},
-	{"object_get_class_name",		rua_object_get_class_name,		-1},
-	{"object_get_meta_class",		rua_object_get_meta_class,		-1},
-	{"object_get_super_class",		rua_object_get_super_class,		-1},
-	{"object_is_class",				rua_object_is_class,			-1},
-	{"object_is_instance",			rua_object_is_instance,			-1},
-	{"object_is_meta_class",		rua_object_is_meta_class,		-1},
+	bi(object_copy,                    1, p(ptr)),
+	bi(object_dispose,                 1, p(ptr)),
+	bi(object_get_class,               1, p(ptr)),
+	bi(object_get_class_name,          1, p(ptr)),
+	bi(object_get_meta_class,          1, p(ptr)),
+	bi(object_get_super_class,         1, p(ptr)),
+	bi(object_is_class,                1, p(ptr)),
+	bi(object_is_instance,             1, p(ptr)),
+	bi(object_is_meta_class,           1, p(ptr)),
 
-	{"_i_Object__hash",				rua__i_Object__hash,			-1},
-	{"_i_Object_error_error_",		rua__i_Object_error_error_,		-1},
-	{"_c_Object__conformsToProtocol_", rua__c_Object__conformsToProtocol_, -1},
+	bi(_i_Object__hash,                2, p(ptr), p(ptr)),
+	bi(_i_Object_error_error_,         -4, p(ptr), p(ptr), p(string)),
+	bi(_c_Object__conformsToProtocol_, 3, p(ptr), p(ptr), p(ptr)),
 
-	{"PR_FindGlobal",				rua_PR_FindGlobal,				-1},//FIXME
+	bi(PR_FindGlobal,                  1, p(string)),//FIXME
 	{0}
 };
 
@@ -2156,7 +2221,7 @@ rua_init_finish (progs_t *pr)
 	class_list = (pr_class_t **) Hash_GetList (probj->classes);
 	if (*class_list) {
 		pr_class_t *object_class;
-		pointer_t   object_ptr;
+		pr_ptr_t    object_ptr;
 
 		object_class = Hash_Find (probj->classes, "Object");
 		if (object_class && !object_class->super_class)
@@ -2241,19 +2306,18 @@ RUA_Obj_Init (progs_t *pr, int secure)
 						 load_methods_compare);
 
 	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup);
-
-	PR_RegisterBuiltins (pr, obj_methods);
+	PR_RegisterBuiltins (pr, obj_methods, probj);
 
 	PR_AddLoadFunc (pr, rua_obj_init_runtime);
 }
 
-func_t
-RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
+pr_func_t
+RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);
 	pr_sel_t   *_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self)
 		return 0;

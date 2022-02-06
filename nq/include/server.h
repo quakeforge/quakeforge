@@ -44,8 +44,8 @@ extern progs_t sv_pr_state;
 
 typedef struct
 {
-	int			maxclients;
-	int			maxclientslimit;
+	unsigned    maxclients;
+	unsigned    maxclientslimit;
 	struct client_s	*clients;		// [maxclients]
 	void		(*phys_client) (struct edict_s *ent, int num);
 	int			serverflags;		// episode completion information
@@ -75,7 +75,7 @@ typedef struct
 	struct model_s	*models[MAX_MODELS];
 	const char	*sound_precache[MAX_SOUNDS];	// NULL terminated
 	const char	*lightstyles[MAX_LIGHTSTYLES];
-	int			num_edicts;
+	unsigned    num_edicts;
 	int			max_edicts;
 	edict_t		*edicts;			// can NOT be array indexed, because
 									// edict_t is variable sized, but can

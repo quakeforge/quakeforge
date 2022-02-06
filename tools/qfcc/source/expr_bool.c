@@ -94,10 +94,14 @@ test_expr (expr_t *e)
 				return new_alias_expr (type_default, e);
 			new = new_string_expr (0);
 			break;
-		case ev_uinteger:
-		case ev_integer:
+		case ev_long:
+		case ev_ulong:
+		case ev_ushort:
+			internal_error (e, "long not implemented");
+		case ev_uint:
+		case ev_int:
 		case ev_short:
-			if (!is_integer(type_default)) {
+			if (!is_int(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
 				}
@@ -105,8 +109,9 @@ test_expr (expr_t *e)
 			}
 			return e;
 		case ev_float:
-			if (options.code.fast_float
-				|| options.code.progsversion == PROG_ID_VERSION) {
+			if (options.code.progsversion < PROG_VERSION
+				&& (options.code.fast_float
+					|| options.code.progsversion == PROG_ID_VERSION)) {
 				if (!is_float(type_default)) {
 					if (is_constant (e)) {
 						return cast_expr (type_default, e);
@@ -129,9 +134,9 @@ test_expr (expr_t *e)
 			return new_alias_expr (type_default, e);
 		case ev_func:
 			return new_alias_expr (type_default, e);
-		case ev_pointer:
+		case ev_ptr:
 			return new_alias_expr (type_default, e);
-		case ev_quat:
+		case ev_quaternion:
 			new = new_quaternion_expr (zero);
 			break;
 		case ev_invalid:
@@ -162,12 +167,9 @@ backpatch (ex_list_t *list, expr_t *label)
 
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
-		if (e->type == ex_uexpr && e->e.expr.op == 'g')
-			e->e.expr.e1 = label;
-		else if (e->type == ex_expr && (e->e.expr.op == 'i'
-										|| e->e.expr.op == 'n'))
-			e->e.expr.e2 = label;
-		else {
+		if (e->type == ex_branch && e->e.branch.type < pr_branch_call) {
+			e->e.branch.target = label;
+		} else {
 			internal_error (e, 0);
 		}
 		label->e.label.used++;
@@ -246,16 +248,16 @@ convert_bool (expr_t *e, int block)
 {
 	expr_t     *b;
 
-	if (e->type == ex_expr && e->e.expr.op == '=') {
+	if (e->type == ex_assign) {
 		expr_t     *src;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		src = e->e.expr.e2;
+		src = e->e.assign.src;
 		if (src->type == ex_block) {
 			src = new_temp_def_expr (get_type (src));
-			e = new_binary_expr (e->e.expr.op, e->e.expr.e1,
-								 assign_expr (src, e->e.expr.e2));
+			e = new_assign_expr (e->e.assign.dst,
+								 assign_expr (src, e->e.assign.src));
 		}
 		b = convert_bool (src, 1);
 		if (b->type == ex_error)
@@ -285,8 +287,8 @@ convert_bool (expr_t *e, int block)
 			int         val;
 
 			b = goto_expr (0);
-			if (is_integer_val (e)) {
-				val = expr_integer (e);
+			if (is_int_val (e)) {
+				val = expr_int (e);
 			} else {
 				val = expr_float (e) != 0;
 			}
@@ -296,7 +298,7 @@ convert_bool (expr_t *e, int block)
 				e = new_bool_expr (0, make_list (b), b);
 		} else {
 			b = new_block_expr ();
-			append_expr (b, branch_expr ('i', e, 0));
+			append_expr (b, branch_expr (NE, e, 0));
 			append_expr (b, goto_expr (0));
 			e = new_bool_expr (make_list (b->e.block.head),
 							   make_list (b->e.block.head->next), b);

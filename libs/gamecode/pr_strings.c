@@ -164,7 +164,7 @@ free_string_ref (prstr_resources_t *res, strref_t *sr)
 	res->free_string_refs = sr;
 }
 
-static __attribute__((pure)) string_t
+static __attribute__((pure)) pr_string_t
 string_index (prstr_resources_t *res, strref_t *sr)
 {
 	long        o = (long) (sr - res->static_strings);
@@ -234,7 +234,7 @@ PR_LoadStrings (progs_t *pr)
 {
 	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");
 
-	char   *end = pr->pr_strings + pr->progs->numstrings;
+	char   *end = pr->pr_strings + pr->progs->strings.count;
 	char   *str = pr->pr_strings;
 	int		count = 0;
 
@@ -242,12 +242,15 @@ PR_LoadStrings (progs_t *pr)
 
 	while (str < end) {
 		count++;
-		if (*str == '@' && pr->progs->version == PROG_VERSION) {
+		if (*str == '@' && pr->progs->version == PROG_V6P_VERSION) {
 			if (!strcmp (str, "@float_promoted@")) {
 				pr->float_promoted = 1;
 			}
 		}
 		str += strlen (str) + 1;
+	}
+	if (pr->progs->version == PROG_VERSION) {
+		pr->float_promoted = 1;
 	}
 
 	res->ds_mem.alloc = pr_strings_alloc;
@@ -306,7 +309,7 @@ requeue_strref (prstr_resources_t *res, strref_t *sr)
 }
 
 static inline strref_t *
-get_strref (prstr_resources_t *res, string_t num)
+get_strref (prstr_resources_t *res, pr_string_t num)
 {
 	if (num < 0) {
 		strref_t   *ref;
@@ -325,7 +328,7 @@ get_strref (prstr_resources_t *res, string_t num)
 }
 
 static inline __attribute__((pure)) const char *
-get_string (progs_t *pr, string_t num)
+get_string (progs_t *pr, pr_string_t num)
 {
 	__auto_type res = pr->pr_string_resources;
 	if (num < 0) {
@@ -353,7 +356,7 @@ get_string (progs_t *pr, string_t num)
 }
 
 VISIBLE qboolean
-PR_StringValid (progs_t *pr, string_t num)
+PR_StringValid (progs_t *pr, pr_string_t num)
 {
 	if (num >= 0) {
 		return num < pr->pr_stringsize;
@@ -362,7 +365,7 @@ PR_StringValid (progs_t *pr, string_t num)
 }
 
 VISIBLE qboolean
-PR_StringMutable (progs_t *pr, string_t num)
+PR_StringMutable (progs_t *pr, pr_string_t num)
 {
 	strref_t   *sr;
 	if (num >= 0) {
@@ -373,7 +376,7 @@ PR_StringMutable (progs_t *pr, string_t num)
 }
 
 VISIBLE const char *
-PR_GetString (progs_t *pr, string_t num)
+PR_GetString (progs_t *pr, pr_string_t num)
 {
 	const char *str;
 
@@ -384,7 +387,7 @@ PR_GetString (progs_t *pr, string_t num)
 }
 
 VISIBLE dstring_t *
-PR_GetMutableString (progs_t *pr, string_t num)
+PR_GetMutableString (progs_t *pr, pr_string_t num)
 {
 	strref_t   *ref = get_strref (pr->pr_string_resources, num);
 	if (ref) {
@@ -421,7 +424,7 @@ pr_strdup (progs_t *pr, const char *s)
 	return new;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -440,7 +443,7 @@ PR_SetString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_FindString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -456,7 +459,7 @@ PR_FindString (progs_t *pr, const char *s)
 	return 0;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -496,7 +499,7 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-static inline string_t
+static inline pr_string_t
 pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 {
 	strref_t   *sr;
@@ -509,7 +512,7 @@ pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 	return string_index (res, sr);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_CatStrings (progs_t *pr, const char *a, const char *b)
 {
 	size_t      lena;
@@ -525,7 +528,7 @@ PR_CatStrings (progs_t *pr, const char *a, const char *b)
 	return pr_settempstring (pr, pr->pr_string_resources, c);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetTempString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -541,7 +544,7 @@ PR_SetTempString (progs_t *pr, const char *s)
 	return pr_settempstring (pr, res, pr_strdup (pr, s));
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_AllocTempBlock (progs_t *pr, size_t size)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -549,7 +552,7 @@ PR_AllocTempBlock (progs_t *pr, size_t size)
 }
 
 VISIBLE void
-PR_PushTempString (progs_t *pr, string_t num)
+PR_PushTempString (progs_t *pr, pr_string_t num)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *ref = get_strref (res, num);
@@ -569,7 +572,7 @@ PR_PushTempString (progs_t *pr, string_t num)
 	PR_Error (pr, "attempt to push stale temp string");
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetDynamicString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -589,7 +592,7 @@ PR_SetDynamicString (progs_t *pr, const char *s)
 }
 
 VISIBLE void
-PR_MakeTempString (progs_t *pr, string_t str)
+PR_MakeTempString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);
@@ -610,7 +613,7 @@ PR_MakeTempString (progs_t *pr, string_t str)
 	pr->pr_xtstr = sr;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_NewMutableString (progs_t *pr)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -621,7 +624,7 @@ PR_NewMutableString (progs_t *pr)
 }
 
 VISIBLE void
-PR_HoldString (progs_t *pr, string_t str)
+PR_HoldString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);
@@ -651,7 +654,7 @@ PR_HoldString (progs_t *pr, string_t str)
 }
 
 VISIBLE void
-PR_FreeString (progs_t *pr, string_t str)
+PR_FreeString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);

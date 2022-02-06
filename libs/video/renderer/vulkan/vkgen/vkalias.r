@@ -33,7 +33,7 @@
 	} else if ([alias class] == [Enum class]
 			   || [alias class] == [Struct class]) {
 		[alias addToQueue];
-	} else if (alias.type.meta == ty_basic && alias.type.type == ev_pointer) {
+	} else if (alias.type.meta == ty_basic && alias.type.type == ev_ptr) {
 		Type       *type = [Type findType:alias.type.fldptr.aux_type];
 		if (!type) {
 			// pointer to opaque struct. Probably

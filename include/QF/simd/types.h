@@ -29,8 +29,10 @@
 #define __QF_simd_types_h
 
 #include <stdint.h>
+#include <inttypes.h>
 
-#define VEC_TYPE(t,n) typedef t n __attribute__ ((vector_size (4*sizeof (t))))
+#define VEC_TYPE(t,n,s) \
+	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
 
 /** Three element vector type for interfacing with compact data.
  *
@@ -39,7 +41,9 @@
  */
 typedef double vec3d_t[3];
 
-#ifdef __AVX2__
+VEC_TYPE (double, vec2d_t, 2);
+VEC_TYPE (int64_t, vec2l_t, 2);
+
 /** Four element vector type for horizontal (AOS) vector data.
  *
  * This is used for both vectors (3D and 4D) and quaternions. 3D vectors
@@ -49,12 +53,11 @@ typedef double vec3d_t[3];
  * a single component from four vectors, or a single row/column (depending on
  * context) of an Nx4 or 4xN matrix.
  */
-VEC_TYPE (double, vec4d_t);
+VEC_TYPE (double, vec4d_t, 4);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (int64_t, vec4l_t);
-#endif
+VEC_TYPE (int64_t, vec4l_t, 4);
 
 /** Three element vector type for interfacing with compact data.
  *
@@ -62,6 +65,9 @@ VEC_TYPE (int64_t, vec4l_t);
  * using load_vec3f() and store_vec3f() respectively.
  */
 typedef float vec3f_t[3];
+
+VEC_TYPE (float, vec2f_t, 2);
+VEC_TYPE (int, vec2i_t, 2);
 
 /** Four element vector type for horizontal (AOS) vector data.
  *
@@ -72,20 +78,21 @@ typedef float vec3f_t[3];
  * a single component from four vectors, or a single row/column (depending on
  * context) of an Nx4 or 4xN matrix.
  */
-VEC_TYPE (float, vec4f_t);
+VEC_TYPE (float, vec4f_t, 4);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (int, vec4i_t);
+VEC_TYPE (int, vec4i_t, 4);
 
+#define VEC2D_FMT "[%.17g, %.17g]"
+#define VEC2L_FMT "[%"PRIi64", %"PRIi64"]"
 #define VEC4D_FMT "[%.17g, %.17g, %.17g, %.17g]"
-#if __WORDSIZE == 64
-#define VEC4L_FMT "[%ld, %ld, %ld, %ld]"
-#else
-#define VEC4L_FMT "[%lld, %lld, %lld, %lld]"
-#endif
+#define VEC4L_FMT "[%"PRIi64", %"PRIi64", %"PRIi64", %"PRIi64"]"
+#define VEC2F_FMT "[%.9g, %.9g]"
+#define VEC2I_FMT "[%d, %d]"
 #define VEC4F_FMT "[%.9g, %.9g, %.9g, %.9g]"
 #define VEC4I_FMT "[%d, %d, %d, %d]"
+#define VEC2_EXP(v) (v)[0], (v)[1]
 #define VEC4_EXP(v) (v)[0], (v)[1], (v)[2], (v)[3]
 
 #define MAT4_ROW(m, r) (m)[0][r], (m)[1][r], (m)[2][r], (m)[3][r]

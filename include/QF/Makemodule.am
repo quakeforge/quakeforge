@@ -43,10 +43,6 @@ include_qf = \
 	include/QF/plist.h \
 	include/QF/plugin.h \
 	include/QF/pqueue.h \
-	include/QF/pr_comp.h \
-	include/QF/pr_debug.h \
-	include/QF/pr_obj.h \
-	include/QF/pr_type.h \
 	include/QF/progs.h \
 	include/QF/pvsfile.h \
 	include/QF/qargs.h \
@@ -119,6 +115,7 @@ include_qf_input = \
 	include/QF/input/imt.h
 
 include_qf_math = \
+	include/QF/math/bitop.h \
 	include/QF/math/dual.h \
 	include/QF/math/half.h \
 	include/QF/math/matrix3.h \
@@ -135,6 +132,13 @@ include_qf_plugin = \
 	include/QF/plugin/snd_render.h \
 	include/QF/plugin/vid_render.h
 
+include_qf_progs = \
+	include/QF/progs/pr_comp.h \
+	include/QF/progs/pr_debug.h \
+	include/QF/progs/pr_obj.h \
+	include/QF/progs/pr_type.h \
+	include/QF/progs/pr_type_names.h
+
 include_qf_scene = \
 	include/QF/scene/entity.h \
 	include/QF/scene/hierarchy.h \
@@ -145,8 +149,12 @@ include_qf_scene = \
 include_qf_simd = \
 	include/QF/simd/mat4f.h \
 	include/QF/simd/types.h \
+	include/QF/simd/vec2d.h \
+	include/QF/simd/vec2f.h \
+	include/QF/simd/vec2i.h \
 	include/QF/simd/vec4d.h \
-	include/QF/simd/vec4f.h
+	include/QF/simd/vec4f.h \
+	include/QF/simd/vec4i.h
 
 include_qf_ui = \
 	include/QF/ui/inputline.h \
@@ -191,6 +199,7 @@ include_qf_vulkan = \
 
 # headers shared with ruamoko
 qfcc_include_qf = include/QF/input.h
+qfcc_include_qf_progs =	include/QF/progs/pr_type_names.h
 qfcc_include_qf_input = \
 	include/QF/input/binding.h \
 	include/QF/input/imt.h
@@ -218,8 +227,10 @@ qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
 ruamoko_qf_input_includedir = $(ruamoko_includedir)/QF/input
+ruamoko_qf_progs_includedir = $(ruamoko_includedir)/QF/progs
 ruamoko_qf_include_HEADERS = @qfac_qfcc_include_qf@
 ruamoko_qf_input_include_HEADERS = @qfac_qfcc_include_qf_input@
+ruamoko_qf_progs_include_HEADERS = @qfac_qfcc_include_qf_progs@
 
 EXTRA_HEADERS += \
 	$(include_qf) \
@@ -228,6 +239,7 @@ EXTRA_HEADERS += \
 	$(include_qf_input) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
+	$(include_qf_progs) \
 	$(include_qf_scene) \
 	$(include_qf_simd) \
 	$(include_qf_ui) \

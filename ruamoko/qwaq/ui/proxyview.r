@@ -10,9 +10,9 @@
 - (void) forward: (SEL) sel : (@va_list) args
 {
 	if (!view) {
-		return;
+		@return nil;
 	}
-	obj_msg_sendv (view, sel, args);
+	@return obj_msg_sendv (view, sel, args);
 }
 
 -initWithView:(View *) view

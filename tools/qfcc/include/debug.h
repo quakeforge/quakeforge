@@ -31,7 +31,7 @@
 #ifndef __debug_h
 #define __debug_h
 
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_debug.h"
 
 void line_info (char *text);
 pr_lineno_t *new_lineno (void);

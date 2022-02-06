@@ -131,9 +131,9 @@ STRING		\"(\\.|[^"\\])*\"
 						else
 							i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
-							qc_yylval.expr = new_integer_expr (i);//FIXME
+							qc_yylval.expr = new_int_expr (i);//FIXME
 						else
-							qc_yylval.expr = new_integer_expr (i);
+							qc_yylval.expr = new_int_expr (i);
 						return VALUE;
 					}
 
@@ -208,7 +208,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						qc_yylval.expr = new_integer_expr (*str);
+						qc_yylval.expr = new_int_expr (*str);
 						return VALUE;
 					}
 
@@ -269,7 +269,7 @@ STRING		\"(\\.|[^"\\])*\"
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qc_yylval.expr = new_integer_expr (ret);
+							qc_yylval.expr = new_int_expr (ret);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -284,6 +284,7 @@ STRING		\"(\\.|[^"\\])*\"
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
 <PRAGMA>{ID}		{ pragma_add_arg (yytext); }
+<PRAGMA>@{ID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
 						if (YY_START == PRAGMA) {
@@ -310,6 +311,13 @@ typedef struct {
 	int         value;
 	type_t     *type;
 } keyword_t;
+
+// These keywords are part of the Ruamoko language and require the QuakeForge
+// Ruamoko VM.
+static keyword_t rua_keywords[] = {
+#define VEC_TYPE(type_name, base_type) { #type_name, TYPE, &type_##type_name },
+#include "tools/qfcc/include/vec_types.h"
+};
 
 // These keywords are all part of the Ruamoko (Objective-QC) language.
 // The first time any one of them is encountered, the class system will be
@@ -367,7 +375,6 @@ static keyword_t at_keywords[] = {
 	{"extern",		EXTERN	},
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
-	{"nosave",		NOSAVE	},
 	{"not",			NOT		},
 };
 
@@ -376,16 +383,23 @@ static keyword_t at_keywords[] = {
 static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
 	{"double",		TYPE,	&type_double},
-	{"int",			TYPE,	&type_integer	},
-	{"unsigned",	TYPE,	&type_integer	},//FIXME
+	{"int",			TYPE,	&type_int	},
+	{"unsigned",	UNSIGNED,	0	},
+	{"signed",		SIGNED,	0	},
+	{"long",		LONG,	0	},
+	{"short",		SHORT,	0	},
 
-	{"@function",	TYPE,	&type_function	},
+	{"@function",	TYPE,	&type_func	},
 	{"@args",		ARGS,	0				},
 	{"@va_list",	TYPE,	&type_va_list	},
 	{"@param",		TYPE,	&type_param		},
+	{"@return",     AT_RETURN,	0	},
+
+	{"@cross",		CROSS,	0	},
+	{"@dot",		DOT,	0	},
 };
 
-// These keywors are always available. Other than @system and @overload, they
+// These keywors are always available. Other than the @ keywords, they
 // form traditional QuakeC.
 static keyword_t keywords[] = {
 	{"void",		TYPE,		&type_void	},
@@ -401,6 +415,7 @@ static keyword_t keywords[] = {
 	{"else",		ELSE,		0			},
 	{"@system",		SYSTEM,		0			},
 	{"@overload",	OVERLOAD,	0			},
+	{"@attribute",  ATTRIBUTE,	0			},
 };
 
 static const char *
@@ -419,6 +434,18 @@ process_keyword (keyword_t *keyword, const char *token)
 
 		sym = symtab_lookup (current_symtab, token);
 		qc_yylval.symbol = sym;
+		// the global id symbol is always just a name so attempts to redefine
+		// it globally can be caught and treated as an error, but it needs to
+		// be redefinable when in an enclosing scope.
+		if (sym->sy_type == sy_name) {
+			// this is the global id (object)
+			return OBJECT;
+		} else if (sym->sy_type == sy_type) {
+			// id has been redeclared via a typedef
+			return TYPE_NAME;
+		}
+		// id has been redelcared as a variable (hopefully)
+		return NAME;
 	} else {
 		qc_yylval.type = keyword->type;
 	}
@@ -432,6 +459,7 @@ keyword_or_id (char *token)
 	static hashtab_t *qf_keyword_tab;
 	static hashtab_t *at_keyword_tab;
 	static hashtab_t *obj_keyword_tab;
+	static hashtab_t *rua_keyword_tab;
 
 	keyword_t  *keyword = 0;
 	symbol_t   *sym;
@@ -443,6 +471,7 @@ keyword_or_id (char *token)
 		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		rua_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
 		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
 
@@ -454,12 +483,19 @@ keyword_or_id (char *token)
 			Hash_Add (at_keyword_tab, &at_keywords[i]);
 		for (i = 0; i < NUMKEYS(obj_keywords); i++)
 			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
+		for (i = 0; i < NUMKEYS(rua_keywords); i++)
+			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
 	}
 	if (options.traditional < 1) {
-		keyword = Hash_Find (obj_keyword_tab, token);
-		if (keyword) {
-			if (!obj_initialized)
-				class_init ();
+		if (options.code.progsversion == PROG_VERSION) {
+			keyword = Hash_Find (rua_keyword_tab, token);
+		}
+		if (!keyword) {
+			keyword = Hash_Find (obj_keyword_tab, token);
+			if (keyword) {
+				if (!obj_initialized)
+					class_init ();
+			}
 		}
 		if (!keyword)
 			keyword = Hash_Find (qf_keyword_tab, token);

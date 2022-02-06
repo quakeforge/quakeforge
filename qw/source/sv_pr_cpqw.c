@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "world.h"
 
 static struct {
-	func_t      ClientCommand;
+	pr_func_t   ClientCommand;
 } cpqw_funcs;
 
 /*
@@ -446,7 +446,7 @@ PF_putsaytime (progs_t *pr)
 static void
 PF_makestr (progs_t *pr)
 {
-	string_t    res = PR_NewMutableString (pr);
+	pr_string_t res = PR_NewMutableString (pr);
 	dstring_t  *dst = PR_GetMutableString (pr, res);
     const char *src = P_GSTRING (pr, 0);
 
@@ -729,7 +729,7 @@ PF_touchworld (progs_t *pr)
 #define TL_EVERYTHING		4	// scan for anything
 
 static void
-CPQW_traceline (progs_t *pr)
+PF_traceline (progs_t *pr)
 {
 	float      *v1, *v2;
 	edict_t    *ent;
@@ -774,29 +774,33 @@ CPQW_traceline (progs_t *pr)
 
 #define CPQW (PR_RANGE_CPQW << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {"CPCW:"#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"CPCW:traceline",		CPQW_traceline,		CPQW 16},
-	{"CPQW:getuid",			PF_getuid,			CPQW 83},
-	{"CPQW:strcat",			PF_strcat,			CPQW 84},
-	{"CPQW:padstr",			PF_padstr,			CPQW 85},
-	{"CPQW:colstr",			PF_colstr,			CPQW 86},
-	{"CPQW:strcasecmp",		PF_strcasecmp,		CPQW 87},
-	{"CPQW:strlen",			PF_strlen,			CPQW 88},
-	{"CPQW:getclient",		PF_getclient,		CPQW 89},
-	{"CPQW:mutedtime",		PF_mutedtime,		CPQW 90},
-	{"CPQW:validatefile",	PF_validatefile,	CPQW 91},
-	{"CPQW:putsaytime",		PF_putsaytime,		CPQW 92},
-	{"CPQW:makestr",		PF_makestr,			CPQW 93},
-	{"CPQW:delstr",			PF_delstr,			CPQW 94},
-	{"CPQW:getwave",		PF_getwave,			CPQW 95},
-	{"CPQW:clientsound",	PF_clientsound,		CPQW 96},
-	{"CPQW:touchworld",		PF_touchworld,		CPQW 97},
+	bi(traceline,       CPQW 16, 3, p(vector), p(vector), p(float)),
+	bi(getuid,          CPQW 83, 1, p(entity)),
+	bi(strcat,          CPQW 84, 2, p(string), p(string)),
+	bi(padstr,          CPQW 85, 2, p(string), p(float)),
+	bi(colstr,          CPQW 86, 2, p(string), p(float)),
+	bi(strcasecmp,      CPQW 87, 2, p(string), p(string)),
+	bi(strlen,          CPQW 88, 1, p(string)),
+	bi(getclient,       CPQW 89, 1, p(string)),
+	bi(mutedtime,       CPQW 90, 1, p(entity)),
+	bi(validatefile,    CPQW 91, 1, p(string)),
+	bi(putsaytime,      CPQW 92, 1, p(entity)),
+	bi(makestr,         CPQW 93, 1, p(string)),
+	bi(delstr,          CPQW 94, 1, p(string)),
+	bi(getwave,         CPQW 95, 7, p(float), p(float), p(float), p(float),
+                                    p(float), p(float), p(float)),
+	bi(clientsound,     CPQW 96, 1, p(entity)),
+	bi(touchworld,      CPQW 97, 0),
 	{0}
 };
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } cpqw_func_list[] = {
 	{"ClientCommand",	&cpqw_funcs.ClientCommand},
 	{"UserInfoChanged",	&sv_funcs.UserInfoChanged},
@@ -817,6 +821,7 @@ cpqw_user_cmd (void)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 
 		PR_PushFrame (pr);
+		PR_RESET_PARAMS (pr);
 		P_FLOAT (pr, 0) = argc;
 		for (i = 1; i < argc + 1; i++)
 			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
@@ -841,7 +846,7 @@ cpqw_load (progs_t *pr)
 
 		*cpqw_func_list[i].field = 0;
 		if (f)
-			*cpqw_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*cpqw_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 	ucmd_unknown = cpqw_user_cmd;
 	return 1;
@@ -850,6 +855,6 @@ cpqw_load (progs_t *pr)
 void
 SV_PR_CPQW_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 	PR_AddLoadFunc (pr, cpqw_load);
 }

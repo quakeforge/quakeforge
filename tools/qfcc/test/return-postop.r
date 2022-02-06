@@ -1,3 +1,4 @@
+#pragma optimize on
 #include "test-harness.h"
 
 int counter;

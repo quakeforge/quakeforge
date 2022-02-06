@@ -491,16 +491,13 @@ SV_Spawn_f (void *unused)
 static void
 SV_SpawnSpectator (void)
 {
-	int         i;
-	edict_t    *e;
-
 	VectorZero (SVvector (sv_player, origin));
 	VectorZero (SVvector (sv_player, view_ofs));
 	SVvector (sv_player, view_ofs)[2] = 22;
 
 	// search for an info_playerstart to spawn the spectator at
-	for (i = MAX_CLIENTS - 1; i < sv.num_edicts; i++) {
-		e = EDICT_NUM (&sv_pr_state, i);
+	for (unsigned i = MAX_CLIENTS - 1; i < sv.num_edicts; i++) {
+		edict_t    *e = EDICT_NUM (&sv_pr_state, i);
 		if (!strcmp (PR_GetString (&sv_pr_state, SVstring (e, classname)),
 					 "info_player_start")) {
 			VectorCopy (SVvector (e, origin), SVvector (sv_player, origin));
@@ -1335,7 +1332,7 @@ static void
 call_qc_hook (void *qc_hook)
 {
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, (func_t) (intptr_t) qc_hook);
+	PR_ExecuteProgram (&sv_pr_state, (pr_func_t) (intptr_t) qc_hook);
 }
 
 static const char *
@@ -1425,7 +1422,7 @@ SV_RemoveUserCommand (void *cmd)
 }
 
 static void
-PF_AddUserCommand (progs_t *pr)
+PF_SV_AddUserCommand (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	ucmd_t     *cmd;
@@ -1516,7 +1513,7 @@ static void
 AddLinksToPmove (areanode_t *node)
 {
 	edict_t    *check;
-	int         pl, i;
+	pr_uint_t   pl, i;
 	link_t     *l, *next;
 	physent_t  *pe;
 
@@ -1551,8 +1548,8 @@ AddLinksToPmove (areanode_t *node)
 			pe->info = NUM_FOR_EDICT (&sv_pr_state, check);
 
 			if (sv_fields.rotated_bbox != -1
-				&& SVinteger (check, rotated_bbox)) {
-				int h = SVinteger (check, rotated_bbox) - 1;
+				&& SVint (check, rotated_bbox)) {
+				int h = SVint (check, rotated_bbox) - 1;
 
 				pe->hull = pf_hull_list[h]->hulls[1];
 			} else {
@@ -2002,8 +1999,11 @@ SV_ExecuteClientMessage (client_t *cl)
 	}
 }
 
+#define bi(x,np,params...) {#x, PF_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"SV_AddUserCommand",	PF_AddUserCommand,	-1},
+	bi(SV_AddUserCommand, 3, p(string), p(func), p(int)),
 	{0}
 };
 
@@ -2012,7 +2012,7 @@ SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
-	PR_RegisterBuiltins (&sv_pr_state, builtins);
+	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly a player straightens out after "
 							 "strafing");

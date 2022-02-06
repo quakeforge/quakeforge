@@ -165,18 +165,21 @@ bi_Key_StringToKeynum (progs_t *pr)
 	R_INT (pr) = Key_StringToKeynum (keyname);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"Key_keydown",			bi_Key_keydown,		-1},
-	{"Key_SetBinding",		bi_Key_SetBinding,		-1},
-	{"Key_LookupBinding",	bi_Key_LookupBinding,	-1},
-	{"Key_CountBinding",	bi_Key_CountBinding,	-1},
-	{"Key_KeynumToString",	bi_Key_KeynumToString,	-1},
-	{"Key_StringToKeynum",	bi_Key_StringToKeynum,	-1},
+	bi(Key_keydown,        1, p(int)),
+	bi(Key_SetBinding,     3, p(string), p(int), p(string)),
+	bi(Key_LookupBinding,  3, p(string), p(int), p(string)),
+	bi(Key_CountBinding,   2, p(string), p(string)),
+	bi(Key_KeynumToString, 1, p(int)),
+	bi(Key_StringToKeynum, 1, p(string)),
 	{0}
 };
 
 void
 RUA_Key_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

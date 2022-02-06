@@ -44,7 +44,7 @@
 static const char param_str[] = ".param_0";
 
 pr_def_t *
-PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
+PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pr_ptr_t offset)
 {
 	// fuzzy bsearh
 	unsigned    left = 0;
@@ -69,15 +69,15 @@ PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
 }
 
 pr_def_t *
-PR_GlobalAtOfs (progs_t * pr, pointer_t ofs)
+PR_GlobalAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
-	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->numglobaldefs, ofs);
+	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->globaldefs.count, ofs);
 }
 
 VISIBLE pr_def_t *
-PR_FieldAtOfs (progs_t * pr, pointer_t ofs)
+PR_FieldAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
-	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->numfielddefs, ofs);
+	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->fielddefs.count, ofs);
 }
 
 VISIBLE pr_def_t *
@@ -129,7 +129,7 @@ PR_ResolveGlobals (progs_t *pr)
 		if (!(def = PR_FindGlobal (pr, sym = ".return")))
 			goto error;
 		pr->pr_return = &pr->pr_globals[def->ofs];
-		for (i = 0; i < MAX_PARMS; i++) {
+		for (i = 0; i < PR_MAX_PARAMS; i++) {
 			param_n[sizeof (param_str) - 2] = i + '0';
 			if (!(def = PR_FindGlobal (pr, sym = param_n)))
 				goto error;
@@ -142,15 +142,16 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_alignment = G_INT (pr, def->ofs);
 	}
+	pr->null_size = pr->pr_return - pr->pr_globals;
 	memcpy (pr->pr_real_params, pr->pr_params, sizeof (pr->pr_params));
-	if (!pr->globals.time) {
+	if (!pr->globals.ftime) {//FIXME double time
 		if ((def = PR_FindGlobal (pr, "time")))
-			pr->globals.time = &G_FLOAT (pr, def->ofs);
+			pr->globals.ftime = &G_FLOAT (pr, def->ofs);
 	}
 	if (!pr->globals.self) {
 		if ((def = PR_FindGlobal (pr, ".self"))
 			|| (def = PR_FindGlobal (pr, "self")))
-			pr->globals.self = &G_INT (pr, def->ofs);
+			pr->globals.self = &G_UINT (pr, def->ofs);
 	}
 	if (!pr->globals.stack) {
 		if ((def = PR_FindGlobal (pr, ".stack"))

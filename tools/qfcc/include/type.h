@@ -31,7 +31,7 @@
 #ifndef __type_h
 #define __type_h
 
-#include "QF/pr_type.h"
+#include "QF/progs/pr_type.h"
 
 #include "def.h"
 
@@ -39,6 +39,13 @@ typedef struct ty_func_s {
 	struct type_s *type;
 	int         num_params;
 	struct type_s **param_types;
+	union {
+		struct {
+			unsigned    no_va_list:1;///< don't inject va_list for ... function
+			unsigned    void_return:1;///< special handling for return value
+		};
+		unsigned    attribute_bits;
+	};
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
@@ -60,6 +67,9 @@ typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
 	int         alignment;	///< required alignment for instances
+	int         width;		///< components in vector types, otherwise 1
+							///< vector and quaternion are 1 (separate from
+							///< vec3 and vec4)
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
@@ -85,35 +95,37 @@ typedef struct {
 	struct param_s *params;
 	struct symbol_s *sym;	///< for dealing with "int id" etc
 	storage_class_t storage;
-	unsigned    multi_type:1;
-	unsigned    multi_store:1;
-	unsigned    is_signed:1;
-	unsigned    is_unsigned:1;
-	unsigned    is_short:1;
-	unsigned    is_long:1;
-	unsigned    is_typedef:1;
-	unsigned    is_overload:1;
-	unsigned    nosave:1;
+	union {
+		struct {
+			unsigned    multi_type:1;
+			unsigned    multi_store:1;
+			unsigned    is_signed:1;
+			unsigned    is_unsigned:1;
+			unsigned    is_short:1;
+			unsigned    is_long:1;
+			unsigned    is_typedef:1;
+			unsigned    is_overload:1;
+			unsigned    nosave:1;
+			unsigned    no_va_list:1;
+			unsigned    void_return:1;
+		};
+		unsigned    spec_bits;
+	};
 } specifier_t;
 
+#define EV_TYPE(type) extern type_t type_##type;
+#include "QF/progs/pr_type_names.h"
+
+#define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
+#include "tools/qfcc/include/vec_types.h"
+
 extern	type_t	type_invalid;
-extern	type_t	type_void;
-extern	type_t	type_string;
-extern	type_t	type_double;
-extern	type_t	type_float;
-extern	type_t	type_vector;
-extern	type_t	type_entity;
-extern	type_t	type_field;
-extern	type_t	type_function;
-extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
-extern	type_t	type_quaternion;
-extern	type_t	type_integer;
-extern	type_t	type_uinteger;
-extern	type_t	type_short;
 
 extern	type_t	*type_nil;		// for passing nil into ...
 extern	type_t	*type_default;	// default type (float or int)
+extern	type_t	*type_long_int;	// supported type for long
+extern	type_t	*type_ulong_uint;// supported type for ulong
 
 extern	type_t	type_va_list;
 extern	type_t	type_param;
@@ -159,30 +171,24 @@ void dump_dot_type (void *t, const char *filename);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
-int is_void (const type_t *type) __attribute__((pure));
+
+#define EV_TYPE(t) int is_##t (const type_t *type) __attribute__((pure));
+#include "QF/progs/pr_type_names.h"
+
 int is_enum (const type_t *type) __attribute__((pure));
-int is_integer (const type_t *type) __attribute__((pure));
-int is_uinteger (const type_t *type) __attribute__((pure));
-int is_short (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
-int is_double (const type_t *type) __attribute__((pure));
-int is_float (const type_t *type) __attribute__((pure));
+int is_real (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
-int is_vector (const type_t *type) __attribute__((pure));
-int is_quaternion (const type_t *type) __attribute__((pure));
+int is_nonscalar (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
-int is_pointer (const type_t *type) __attribute__((pure));
-int is_field (const type_t *type) __attribute__((pure));
-int is_entity (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));
-int is_func (const type_t *type) __attribute__((pure));
-int is_string (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
+int type_width (const type_t *type) __attribute__((pure));
 
 void init_types (void);
 void chain_initial_types (void);

@@ -5,7 +5,7 @@ call_progs_main (progs_t *pr, int argc, const char **argv)
 {
 	int         i;
 	dfunction_t *dfunc;
-	func_t      progs_main = 0;
+	pr_func_t   progs_main = 0;
 	string_t   *pr_argv;
 
 	if ((dfunc = PR_FindFunction (pr, "main"))) {

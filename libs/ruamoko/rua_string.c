@@ -60,16 +60,36 @@ bi_strlen (progs_t *pr)
 	R_INT (pr) = strlen(s);
 }
 
+void
+RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
+{
+	const char *fmt = P_GSTRING (pr, fmt_arg);
+	int         count = pr->pr_argc - (fmt_arg + 1);
+	pr_type_t **args = pr->pr_params + (fmt_arg + 1);
+
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, (fmt_arg + 1));
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
+
+	PR_Sprintf (pr, dstr, func, fmt, count, args);
+}
+
 static void
 bi_sprintf (progs_t *pr)
 {
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	dstring_t  *dstr;
 
 	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "bi_sprintf", fmt, count, args);
+	RUA_Sprintf (pr, dstr, "sprintf", 0);
 	RETURN_STRING (pr, dstr->str);
 	dstring_delete (dstr);
 }
@@ -108,7 +128,7 @@ bi_str_free (progs_t *pr)
 static void
 bi_str_hold (progs_t *pr)
 {
-	string_t    str = P_STRING (pr, 0);
+	pr_string_t str = P_STRING (pr, 0);
 	PR_HoldString (pr, str);
 	R_STRING (pr) = str;
 }
@@ -155,16 +175,9 @@ bi_str_clear (progs_t *pr)
 }
 
 static void
-bi_str_mid (progs_t *pr)
+str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 {
-	const char *str = P_GSTRING (pr, 0);
-	int         pos = P_INT (pr, 1);
-	int         end = P_INT (pr, 2);
-	int         size = strlen (str);
 	char       *temp;
-
-	if (pr->pr_argc == 2)
-		end = size;
 
 	R_STRING (pr) = 0;
 	if (pos < 0)
@@ -183,6 +196,27 @@ bi_str_mid (progs_t *pr)
 	strncpy (temp, str + pos, end - pos);
 	temp[end - pos] = 0;
 	RETURN_STRING (pr, temp);
+}
+
+static void
+bi_str_mid_2 (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, size, size);
+}
+
+static void
+bi_str_mid_3 (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         end = P_INT (pr, 2);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, end, size);
 }
 
 static void
@@ -281,30 +315,33 @@ bi_str_upper (progs_t *pr)
 	RETURN_STRING (pr, upper);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"strlen",		bi_strlen,		-1},
-	{"sprintf",		bi_sprintf,		-1},
-	{"vsprintf",	bi_vsprintf,	-1},
-	{"str_new",		bi_str_new,		-1},
-	{"str_free",	bi_str_free,	-1},
-	{"str_hold",	bi_str_hold,	-1},
-	{"str_valid",	bi_str_valid,	-1},
-	{"str_mutable",	bi_str_mutable,	-1},
-	{"str_copy",	bi_str_copy,	-1},
-	{"str_cat",		bi_str_cat,		-1},
-	{"str_clear",	bi_str_clear,	-1},
-	{"str_mid|*i",	bi_str_mid,		-1},
-	{"str_mid|*ii",	bi_str_mid,		-1},
-	{"str_str",		bi_str_str,		-1},
-	{"str_char",	bi_str_char,	-1},
-	{"str_quote",	bi_str_quote,	-1},
-	{"str_lower",	bi_str_lower,	-1},
-	{"str_upper",	bi_str_upper,	-1},
+	bi(strlen,      1, p(string)),
+	bi(sprintf,     -2, p(string)),
+	bi(vsprintf,    2, p(string), P(1, 2)),
+	bi(str_new,     0),
+	bi(str_free,    1, p(string)),
+	bi(str_hold,    1, p(string)),
+	bi(str_valid,   1, p(string)),
+	bi(str_mutable, 1, p(string)),
+	bi(str_copy,    2, p(string), p(string)),
+	bi(str_cat,     2, p(string), p(string)),
+	bi(str_clear,   1, p(string)),
+	{"str_mid|*i",	bi_str_mid_2,		-1, 2, {p(string), p(int)}},
+	{"str_mid|*ii",	bi_str_mid_3,		-1, 3, {p(string), p(int), p(int)}},
+	bi(str_str,     2, p(string), p(string)),
+	bi(str_char,    2, p(string), p(int)),
+	bi(str_quote,   1, p(string)),
+	bi(str_lower,   1, p(string)),
+	bi(str_upper,   1, p(string)),
 	{0}
 };
 
 void
 RUA_String_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

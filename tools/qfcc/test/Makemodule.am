@@ -16,6 +16,7 @@ test_progs_dat=\
 	tools/qfcc/test/chewed-return.dat \
 	tools/qfcc/test/comma-expr.dat \
 	tools/qfcc/test/compound.dat \
+	tools/qfcc/test/const-fold-int.dat \
 	tools/qfcc/test/deadbool.dat \
 	tools/qfcc/test/dealloc-nowarn.dat \
 	tools/qfcc/test/dealloc-nowarn2.dat \
@@ -29,8 +30,10 @@ test_progs_dat=\
 	tools/qfcc/test/func-static.dat \
 	tools/qfcc/test/gcd.dat \
 	tools/qfcc/test/infloop.dat \
+	tools/qfcc/test/iterfunc.dat \
 	tools/qfcc/test/ivar-struct-return.dat \
 	tools/qfcc/test/link_order.dat \
+	tools/qfcc/test/lost-use.dat \
 	tools/qfcc/test/methodparams.dat \
 	tools/qfcc/test/modulo.dat \
 	tools/qfcc/test/nilparamret.dat \
@@ -52,7 +55,9 @@ test_progs_dat=\
 	tools/qfcc/test/structptr.dat \
 	tools/qfcc/test/structstruct.dat \
 	tools/qfcc/test/swap.dat \
+	tools/qfcc/test/temp-component.dat \
 	tools/qfcc/test/triangle.dat \
+	tools/qfcc/test/twice-called.dat \
 	tools/qfcc/test/typedef.dat \
 	tools/qfcc/test/typelinker.dat \
 	tools/qfcc/test/unaryminus.dat \
@@ -99,6 +104,8 @@ check_PROGRAMS += \
 	tools/qfcc/test/test-harness \
 	$(test_progs_dat) \
 	$(test_bins)
+
+qfcc-tests: tools/qfcc/test/test-harness $(test_progs_dat) $(test_bins)
 
 tools_qfcc_test_test_defspace_SOURCES=		tools/qfcc/test/test-defspace.c $(test_defspace_src)
 tools_qfcc_test_test_defspace_LDADD=		$(QFCC_LIBS)
@@ -164,7 +171,7 @@ tools_qfcc_test_chewed_return_dat_SOURCES=tools/qfcc/test/chewed-return.r
 chewed_return_obj=$(tools_qfcc_test_chewed_return_dat_SOURCES:.r=.o)
 chewed_return_dep=$(call qcautodep,$(tools_qfcc_test_chewed_return_dat_SOURCES))
 tools/qfcc/test/chewed-return.dat$(EXEEXT): $(chewed_return_obj) $(QFCC_DEP)
-	$(V_QFCCLD)$(QLINK) -o $@ $(chewed_return_obj)
+	$(V_QFCCLD)$(QLINK) -Ctarget=v6 -o $@ $(chewed_return_obj)
 tools/qfcc/test/chewed-return.run: $(qfcc_test_run_deps)
 	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
 include $(chewed_return_dep) # am--include-marker
@@ -189,6 +196,16 @@ tools/qfcc/test/compound.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(compound_dep) # am--include-marker
 r_depfiles_remade += $(compound_dep)
+
+tools_qfcc_test_const_fold_int_dat_SOURCES=tools/qfcc/test/const-fold-int.r
+const_fold_int_obj=$(tools_qfcc_test_const_fold_int_dat_SOURCES:.r=.o)
+const_fold_int_dep=$(call qcautodep,$(tools_qfcc_test_const_fold_int_dat_SOURCES))
+tools/qfcc/test/const-fold-int.dat$(EXEEXT): $(const_fold_int_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(const_fold_int_obj)
+tools/qfcc/test/const-fold-int.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(const_fold_int_dep) # am--include-marker
+r_depfiles_remade += $(const_fold_int_dep)
 
 tools_qfcc_test_deadbool_dat_SOURCES=tools/qfcc/test/deadbool.r
 deadbool_obj=$(tools_qfcc_test_deadbool_dat_SOURCES:.r=.o)
@@ -362,6 +379,16 @@ tools/qfcc/test/infloop.run: $(qfcc_test_run_deps)
 include $(infloop_dep) # am--include-marker
 r_depfiles_remade += $(infloop_dep)
 
+tools_qfcc_test_iterfunc_dat_SOURCES=tools/qfcc/test/iterfunc.r
+iterfunc_obj=$(tools_qfcc_test_iterfunc_dat_SOURCES:.r=.o)
+iterfunc_dep=$(call qcautodep,$(tools_qfcc_test_iterfunc_dat_SOURCES))
+tools/qfcc/test/iterfunc.dat$(EXEEXT): $(iterfunc_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(iterfunc_obj)
+tools/qfcc/test/iterfunc.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(iterfunc_dep) # am--include-marker
+r_depfiles_remade += $(iterfunc_dep)
+
 tools_qfcc_test_ivar_struct_return_dat_SOURCES=tools/qfcc/test/ivar-struct-return.r
 ivar_struct_return_obj=$(tools_qfcc_test_ivar_struct_return_dat_SOURCES:.r=.o)
 ivar_struct_return_dep=$(call qcautodep,$(tools_qfcc_test_ivar_struct_return_dat_SOURCES))
@@ -381,6 +408,16 @@ tools/qfcc/test/link_order.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(link_order_dep) # am--include-marker
 r_depfiles_remade += $(link_order_dep)
+
+tools_qfcc_test_lost_use_dat_SOURCES=tools/qfcc/test/lost-use.r
+lost_use_obj=$(tools_qfcc_test_lost_use_dat_SOURCES:.r=.o)
+lost_use_dep=$(call qcautodep,$(tools_qfcc_test_lost_use_dat_SOURCES))
+tools/qfcc/test/lost-use.dat$(EXEEXT): $(lost_use_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(lost_use_obj)
+tools/qfcc/test/lost-use.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(lost_use_dep) # am--include-marker
+r_depfiles_remade += $(lost_use_dep)
 
 tools_qfcc_test_methodparams_dat_SOURCES=tools/qfcc/test/methodparams.r
 methodparams_obj=$(tools_qfcc_test_methodparams_dat_SOURCES:.r=.o)
@@ -592,6 +629,16 @@ tools/qfcc/test/swap.run: $(qfcc_test_run_deps)
 include $(swap_dep) # am--include-marker
 r_depfiles_remade += $(swap_dep)
 
+tools_qfcc_test_temp_component_dat_SOURCES=tools/qfcc/test/temp-component.r
+temp_component_obj=$(tools_qfcc_test_temp_component_dat_SOURCES:.r=.o)
+temp_component_dep=$(call qcautodep,$(tools_qfcc_test_temp_component_dat_SOURCES))
+tools/qfcc/test/temp-component.dat$(EXEEXT): $(temp_component_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(temp_component_obj)
+tools/qfcc/test/temp-component.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(temp_component_dep) # am--include-marker
+r_depfiles_remade += $(temp_component_dep)
+
 tools_qfcc_test_triangle_dat_SOURCES=tools/qfcc/test/triangle.r
 triangle_obj=$(tools_qfcc_test_triangle_dat_SOURCES:.r=.o)
 triangle_dep=$(call qcautodep,$(tools_qfcc_test_triangle_dat_SOURCES))
@@ -601,6 +648,16 @@ tools/qfcc/test/triangle.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@ 100000 100000 1.00005 50002.4961
 include $(triangle_dep) # am--include-marker
 r_depfiles_remade += $(triangle_dep)
+
+tools_qfcc_test_twice_called_dat_SOURCES=tools/qfcc/test/twice-called.r
+twice_called_obj=$(tools_qfcc_test_twice_called_dat_SOURCES:.r=.o)
+twice_called_dep=$(call qcautodep,$(tools_qfcc_test_twice_called_dat_SOURCES))
+tools/qfcc/test/twice-called.dat$(EXEEXT): $(twice_called_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(twice_called_obj)
+tools/qfcc/test/twice-called.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@ 100000 100000 1.00005 50002.4961
+include $(twice_called_dep) # am--include-marker
+r_depfiles_remade += $(twice_called_dep)
 
 tools_qfcc_test_typedef_dat_SOURCES=tools/qfcc/test/typedef.r
 typedef_obj=$(tools_qfcc_test_typedef_dat_SOURCES:.r=.o)

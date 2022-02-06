@@ -36,8 +36,8 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 #include "QF/quakeio.h"
 
 /** Identifier string for qfo object files (includes terminating nul)
@@ -49,7 +49,7 @@
 
 	\hideinitializer
 */
-#define QFO_VERSION 0x00001006
+#define QFO_VERSION 0x00001007
 
 /** Header block of QFO object files. The sections of the object file
 	come immediately after the header, and are always in the order given by
@@ -68,6 +68,8 @@ typedef struct qfo_header_s {
 	pr_uint_t   num_lines;		///< number of line records
 	pr_uint_t   num_loose_relocs;	///< number of loose relocation records
 								///< (included in num_relocs)
+	pr_uint_t   progs_version;	///< version of compatible VM
+	pr_uint_t   reserved[3];
 } qfo_header_t;
 
 typedef enum qfos_type_e {
@@ -95,16 +97,16 @@ typedef struct qfo_space_s {
 /** Representation of a def in the object file.
 */
 typedef struct qfo_def_s {
-	pointer_t   type;			///< offset in type space
-	string_t    name;			///< def name
-	pointer_t   offset;			///< def offset (address)
+	pr_ptr_t    type;			///< offset in type space
+	pr_string_t name;			///< def name
+	pr_ptr_t    offset;			///< def offset (address)
 
 	pr_uint_t   relocs;			///< index of first reloc record
 	pr_uint_t   num_relocs;		///< number of reloc records
 
 	pr_uint_t   flags;			///< \ref qfcc_qfo_QFOD "QFOD flags"
 
-	string_t    file;			///< source file name
+	pr_string_t file;			///< source file name
 	pr_uint_t   line;			///< source line number
 } qfo_def_t;
 ///@}
@@ -178,9 +180,9 @@ typedef struct qfo_def_s {
 /** Representation of a function in the object file.
 */
 typedef struct qfo_func_s {
-	string_t    name;			///< function name
-	pointer_t   type;			///< function type (in type data space)
-	string_t    file;			///< source file name
+	pr_string_t name;			///< function name
+	pr_ptr_t    type;			///< function type (in type data space)
+	pr_string_t file;			///< source file name
 	pr_uint_t   line;			///< source line number
 
 	/** \name Function code location.
@@ -209,7 +211,9 @@ typedef struct qfo_func_s {
 	pr_uint_t   relocs;			///< Index to first ::qfo_reloc_t reloc record.
 	pr_uint_t   num_relocs;		///< Number of reloc records.
 	//@}
-	pr_int_t    reserved[2];
+	pr_uint_t   params_start;	///< locals_space relative start of parameters
+								///< always 0 for v6/v6p progs
+	pr_int_t    reserved;
 } qfo_func_t;
 
 /** Evil source of many headaches. The whole reason I've started writing this
@@ -218,23 +222,21 @@ typedef struct qfo_func_s {
 		referenced relocs
 		unreferenced relocs
 
-	For \c ref_op_* relocation types, \c ofs is the code section address of the
-	statement that needs to be adjusted.
+	For \c ref_op_* relocation types, \c offset is the code section address
+	of the statement that needs to be adjusted.
 
-	For \c rel_def_* relocation types,
-	\c ofs refers to the data section address of the word that needs to be
-	adjusted.
+	For \c rel_def_* relocation types, \c offset refers to the data section
+	address of the word that needs to be adjusted.
 
-	For \c ref_*_def(_ofs) relocation types, \c def is the index of the
+	For \c ref_*_def(_ofs) relocation types, \c target is the index of the
 	referenced def.
 
-	For \c ref_*_op relocation types, \c def is the address of
-	the referenced statement.
+	For \c ref_*_op relocation types, \c target is the address of the
+	referenced statement.
 
-	For \c ref_*_string relocation types, \c def is
-	always 0.
+	For \c ref_*_string relocation types, \c target is always 0.
 
-	For \c ref_*_field(_ofs) relocation types, \c def is the index of
+	For \c ref_*_field(_ofs) relocation types, \c target is the index of
 	the referenced field def.
 */
 typedef struct qfo_reloc_s {
@@ -249,31 +251,32 @@ typedef struct qfo_reloc_s {
 typedef struct qfo_mspace_s {
 	qfos_type_t type;
 	qfo_def_t  *defs;
-	unsigned    num_defs;
+	pr_uint_t   num_defs;
 	union {
 		dstatement_t *code;
 		pr_type_t  *data;
 		char       *strings;
 	};
-	unsigned    data_size;
-	unsigned    id;
+	pr_uint_t   data_size;
+	pr_uint_t   id;
 } qfo_mspace_t;
 
 /** In-memory representation of a QFO object file.
 */
 typedef struct qfo_s {
+	pr_uint_t   progs_version;	///< version of compatible VM
 	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
-	unsigned    num_spaces;
+	pr_uint_t   num_spaces;
 	qfo_reloc_t *relocs;
-	unsigned    num_relocs;			// includes num_loose_relocs
+	pr_uint_t   num_relocs;			// includes num_loose_relocs
 	qfo_def_t  *defs;
-	unsigned    num_defs;
+	pr_uint_t   num_defs;
 	qfo_func_t *funcs;
-	unsigned    num_funcs;
+	pr_uint_t   num_funcs;
 	pr_lineno_t *lines;
-	unsigned    num_lines;
-	unsigned    num_loose_relocs;	// included in num_relocs
+	pr_uint_t   num_lines;
+	pr_uint_t   num_loose_relocs;	// included in num_relocs
 } qfo_t;
 
 enum {
@@ -333,10 +336,10 @@ enum {
 */
 #define	QFO_FLOAT(q, s, o)		QFO_var (q, s, float, o)
 
-/** Access a integer variable in the object file. Can be assigned to.
+/** Access a int variable in the object file. Can be assigned to.
 
 	\par QC type:
-		\c integer
+		\c int
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
@@ -344,7 +347,7 @@ enum {
 
 	\hideinitializer
 */
-#define	QFO_INT(q, s, o)		QFO_var (q, s, integer, o)
+#define	QFO_INT(q, s, o)		QFO_var (q, s, int, o)
 
 /** Access a vector variable in the object file. Can be assigned to.
 
@@ -366,7 +369,7 @@ enum {
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
-	\return string_t lvalue
+	\return pr_string_t lvalue
 
 	\hideinitializer
 */
@@ -419,7 +422,7 @@ enum {
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
-	\return func_t lvalue
+	\return pr_func_t lvalue
 
 	\hideinitializer
 */
@@ -437,7 +440,7 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_POINTER(q, s, t, o)	((t *)(char *)&QFO_var (q, s, integer, o))
+#define QFO_POINTER(q, s, t, o)	((t *)(char *)&QFO_var (q, s, int, o))
 
 /** Access a structure variable in the object file. Can be assigned to.
 
@@ -499,7 +502,7 @@ qfo_t *qfo_new (void);
 */
 void qfo_delete (qfo_t *qfo);
 
-__attribute__((const)) int qfo_log2 (unsigned x);
+__attribute__((const)) int qfo_log2 (pr_uint_t x);
 
 ///@}
 

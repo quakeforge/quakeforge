@@ -106,7 +106,7 @@ static void type_free (void *t, void *unused)
 	}
 	switch (type.meta) {
 		case ty_basic:
-			if (type.type == ev_pointer || type.type == ev_field) {
+			if (type.type == ev_ptr || type.type == ev_field) {
 				t = [TypeEncodings getType:(unsigned)type.fldptr.aux_type
 								fromTarget:target];
 				if (!t) {
@@ -221,7 +221,7 @@ error:
 			break;
 		case ty_enum:
 			// enums are ints
-			size = pr_type_size[ev_integer];
+			size = pr_type_size[ev_int];
 			break;
 		case ty_class:
 			//FIXME

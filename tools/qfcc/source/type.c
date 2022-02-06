@@ -60,56 +60,88 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-// simple types.  function types are dynamically allocated
-type_t      type_invalid = { ev_invalid, "invalid" };
-type_t      type_void = { ev_void, "void", 1 };
-type_t      type_string = { ev_string, "string", 1 };
-type_t      type_float = { ev_float, "float", 1 };
-type_t      type_vector = { ev_vector, "vector", 1 };
-type_t      type_entity = { ev_entity, "entity", 1 };
-type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
+#define EV_TYPE(t) \
+	type_t type_##t = { \
+		.type = ev_##t, \
+		.name = #t, \
+		.alignment = PR_ALIGNOF(t), \
+		.width = __builtin_choose_expr (ev_##t == ev_short \
+									 || ev_##t == ev_ushort, 0, 1), \
+		.meta = ty_basic, \
+		{{ __builtin_choose_expr (ev_##t == ev_field \
+							   || ev_##t == ev_func \
+							   || ev_##t == ev_ptr, &type_void, 0 ) }}, \
+	};
+#include "QF/progs/pr_type_names.h"
 
-// type_function is a void() function used for state defs
-type_t      type_function = { ev_func, "function", 1, ty_basic,
-								{{&type_void}} };
-type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
-								{{&type_void}} };
-type_t      type_quaternion = { ev_quat, "quaternion", 1 };
-type_t      type_integer = { ev_integer, "int", 1 };
-type_t      type_uinteger = { ev_uinteger, "uint", 1 };
-type_t      type_short = { ev_short, "short", 1 };
-type_t      type_double = { ev_double, "double", 2 };
+type_t      type_invalid = {
+	.type = ev_invalid,
+	.name = "invalid",
+};
+
+#define VEC_TYPE(type_name, base_type) \
+	type_t type_##type_name = { \
+		.type = ev_##base_type, \
+		.name = #type_name, \
+		.alignment = PR_ALIGNOF(type_name), \
+		.width = PR_SIZEOF(type_name) / PR_SIZEOF (base_type), \
+		.meta = ty_basic, \
+	};
+#include "tools/qfcc/include/vec_types.h"
 
 type_t     *type_nil;
 type_t     *type_default;
+type_t     *type_long_int;
+type_t     *type_ulong_uint;
 
 // these will be built up further
-type_t      type_va_list = { ev_invalid, 0, 0, ty_struct };
-type_t      type_param = { ev_invalid, 0, 0, ty_struct };
-type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
-type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
-									ty_struct };
-type_t      type_xdef = { ev_invalid, "@xdef", 0, ty_struct };
-type_t      type_xdef_pointer = { ev_pointer, 0, 1, ty_basic, {{&type_xdef}} };
-type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
+type_t      type_va_list = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_param = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_zero = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t      type_type_encodings = {
+	.type = ev_invalid,
+	.name = "@type_encodings",
+	.meta = ty_struct,
+};
+type_t      type_xdef = {
+	.type = ev_invalid,
+	.name = "@xdef",
+	.meta = ty_struct,
+};
+type_t      type_xdef_pointer = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_xdef}},
+};
+type_t      type_xdefs = {
+	.type = ev_invalid,
+	.name = "@xdefs",
+	.meta = ty_struct,
+};
 
-type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
-								{{&type_float}} };
+type_t      type_floatfield = {
+	.type = ev_field,
+	.name = ".float",
+	.alignment = 1,
+	.width = 1,
+	.meta = ty_basic,
+	{{&type_float}},
+};
 
+#define EV_TYPE(type) &type_##type,
 type_t     *ev_types[ev_type_count] = {
-	&type_void,
-	&type_string,
-	&type_float,
-	&type_vector,
-	&type_entity,
-	&type_field,
-	&type_function,
-	&type_pointer,
-	&type_quaternion,
-	&type_integer,
-	&type_uinteger,
-	&type_short,
-	&type_double,
+#include "QF/progs/pr_type_names.h"
 	&type_invalid,
 };
 
@@ -185,14 +217,17 @@ free_type (type_t *type)
 		case ev_vector:
 		case ev_entity:
 		case ev_type_count:
-		case ev_quat:
-		case ev_integer:
-		case ev_uinteger:
+		case ev_quaternion:
+		case ev_int:
+		case ev_uint:
+		case ev_long:
+		case ev_ulong:
 		case ev_short:
+		case ev_ushort:
 		case ev_double:
 			break;
 		case ev_field:
-		case ev_pointer:
+		case ev_ptr:
 			free_type (type->t.fldptr.type);
 			break;
 		case ev_func:
@@ -225,14 +260,17 @@ copy_chain (type_t *type, type_t *append)
 					case ev_vector:
 					case ev_entity:
 					case ev_type_count:
-					case ev_quat:
-					case ev_integer:
-					case ev_uinteger:
+					case ev_quaternion:
+					case ev_int:
+					case ev_uint:
+					case ev_long:
+					case ev_ulong:
 					case ev_short:
+					case ev_ushort:
 					case ev_double:
 						internal_error (0, "copy basic type");
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						n = &(*n)->t.fldptr.type;
 						type = type->t.fldptr.type;
 						break;
@@ -276,20 +314,25 @@ append_type (type_t *type, type_t *new)
 					case ev_vector:
 					case ev_entity:
 					case ev_type_count:
-					case ev_quat:
-					case ev_integer:
-					case ev_uinteger:
+					case ev_quaternion:
+					case ev_int:
+					case ev_uint:
+					case ev_long:
+					case ev_ulong:
 					case ev_short:
+					case ev_ushort:
 					case ev_double:
 						internal_error (0, "append to basic type");
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						t = &(*t)->t.fldptr.type;
 						type->alignment = 1;
+						type->width = 1;
 						break;
 					case ev_func:
 						t = &(*t)->t.func.type;
 						type->alignment = 1;
+						type->width = 1;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -299,6 +342,7 @@ append_type (type_t *type, type_t *new)
 			case ty_array:
 				t = &(*t)->t.array.type;
 				type->alignment = new->alignment;
+				type->width = new->width;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -329,12 +373,13 @@ types_same (type_t *a, type_t *b)
 		case ty_basic:
 			switch (a->type) {
 				case ev_field:
-				case ev_pointer:
+				case ev_ptr:
 					if (a->t.fldptr.type != b->t.fldptr.type)
 						return 0;
 				case ev_func:
 					if (a->t.func.type != b->t.func.type
-						|| a->t.func.num_params != b->t.func.num_params)
+						|| a->t.func.num_params != b->t.func.num_params
+						|| a->t.func.attribute_bits != b->t.func.attribute_bits)
 						return 0;
 					count = a->t.func.num_params;
 					if (count < 0)
@@ -345,7 +390,7 @@ types_same (type_t *a, type_t *b)
 							return 0;
 					return 1;
 				default:		// other types don't have aux data
-					return 1;
+					return a->width == b->width;
 			}
 			break;
 		case ty_struct:
@@ -395,7 +440,7 @@ find_type (type_t *type)
 			case ty_basic:
 				switch (type->type) {
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						type->t.fldptr.type = find_type (type->t.fldptr.type);
 						break;
 					case ev_func:
@@ -453,6 +498,7 @@ field_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_field;
 	new->alignment = 1;
+	new->width = 1;
 	if (aux) {
 		new = find_type (append_type (new, aux));
 	}
@@ -469,8 +515,9 @@ pointer_type (type_t *aux)
 		memset (&_new, 0, sizeof (_new));
 	else
 		new = new_type ();
-	new->type = ev_pointer;
+	new->type = ev_ptr;
 	new->alignment = 1;
+	new->width = 1;
 	if (aux) {
 		new = find_type (append_type (new, aux));
 	}
@@ -491,6 +538,7 @@ array_type (type_t *aux, int size)
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
+		new->width = aux->width;
 	}
 	new->t.array.size = size;
 	if (aux) {
@@ -512,6 +560,7 @@ based_array_type (type_t *aux, int base, int top)
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
+		new->width = aux->width;
 	}
 	new->meta = ty_array;
 	new->t.array.type = aux;
@@ -529,6 +578,7 @@ alias_type (type_t *type, type_t *alias_chain, const char *name)
 	alias->meta = ty_alias;
 	alias->type = type->type;
 	alias->alignment = type->alignment;
+	alias->width = type->width;
 	if (type == alias_chain && type->meta == ty_alias) {
 		// typedef of a type that contains a typedef somewhere
 		// grab the alias-free branch for type
@@ -562,7 +612,7 @@ unalias_type (const type_t *type)
 const type_t *
 dereference_type (const type_t *type)
 {
-	if (!is_pointer (type) && !is_field (type)) {
+	if (!is_ptr (type) && !is_field (type)) {
 		internal_error (0, "dereference non pointer/field type");
 	}
 	if (type->meta == ty_alias) {
@@ -633,7 +683,7 @@ print_type_str (dstring_t *str, const type_t *type)
 						dasprintf (str, ")");
 					}
 					return;
-				case ev_pointer:
+				case ev_ptr:
 					if (is_id (type)) {
 						dasprintf (str, "id");
 						if (type->t.fldptr.type->protos)
@@ -653,10 +703,13 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_float:
 				case ev_vector:
 				case ev_entity:
-				case ev_quat:
-				case ev_integer:
-				case ev_uinteger:
+				case ev_quaternion:
+				case ev_int:
+				case ev_uint:
+				case ev_long:
+				case ev_ulong:
 				case ev_short:
+				case ev_ushort:
 				case ev_double:
 					dasprintf (str, " %s", pr_type_name[type->type]);
 					return;
@@ -774,10 +827,18 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "*");
 					return;
 				case ev_double:
-					dasprintf (encoding, "d");
+					if (type->width > 1) {
+						dasprintf (encoding, "d%d", type->width);
+					} else {
+						dasprintf (encoding, "d");
+					}
 					return;
 				case ev_float:
-					dasprintf (encoding, "f");
+					if (type->width > 1) {
+						dasprintf (encoding, "f%d", type->width);
+					} else {
+						dasprintf (encoding, "f");
+					}
 					return;
 				case ev_vector:
 					dasprintf (encoding, "V");
@@ -794,7 +855,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 					encode_type (encoding, type->t.func.type);
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
-				case ev_pointer:
+				case ev_ptr:
 					if (is_id(type)) {
 						dasprintf (encoding, "@");
 						return;
@@ -811,17 +872,42 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "^");
 					encode_type (encoding, type);
 					return;
-				case ev_quat:
+				case ev_quaternion:
 					dasprintf (encoding, "Q");
 					return;
-				case ev_integer:
-					dasprintf (encoding, "i");
+				case ev_int:
+					if (type->width > 1) {
+						dasprintf (encoding, "i%d", type->width);
+					} else {
+						dasprintf (encoding, "i");
+					}
 					return;
-				case ev_uinteger:
-					dasprintf (encoding, "I");
+				case ev_uint:
+					if (type->width > 1) {
+						dasprintf (encoding, "I%d", type->width);
+					} else {
+						dasprintf (encoding, "I");
+					}
+					return;
+				case ev_long:
+					if (type->width > 1) {
+						dasprintf (encoding, "l%d", type->width);
+					} else {
+						dasprintf (encoding, "l");
+					}
+					return;
+				case ev_ulong:
+					if (type->width > 1) {
+						dasprintf (encoding, "L%d", type->width);
+					} else {
+						dasprintf (encoding, "L");
+					}
 					return;
 				case ev_short:
 					dasprintf (encoding, "s");
+					return;
+				case ev_ushort:
+					dasprintf (encoding, "S");
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -832,12 +918,13 @@ encode_type (dstring_t *encoding, const type_t *type)
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
-int
-is_void (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_void;
+#define EV_TYPE(t) \
+int is_##t (const type_t *type) \
+{ \
+	type = unalias_type (type); \
+	return type->type == ev_##t; \
 }
+#include "QF/progs/pr_type_names.h"
 
 int
 is_enum (const type_t *type)
@@ -849,89 +936,57 @@ is_enum (const type_t *type)
 }
 
 int
-is_integer (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_integer)
-		return 1;
-	return is_enum (type);
-}
-
-int
-is_uinteger (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_uinteger)
-		return 1;
-	return is_enum (type);
-}
-
-int
-is_short (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_short)
-		return 1;
-	return is_enum (type);
-}
-
-int
 is_integral (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_integer (type) || is_uinteger (type) || is_short (type))
+	if (is_int (type) || is_uint (type) || is_short (type))
 		return 1;
 	return is_enum (type);
 }
 
 int
-is_double (const type_t *type)
+is_real (const type_t *type)
 {
 	type = unalias_type (type);
-	return type->type == ev_double;
-}
-
-int
-is_float (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_float;
+	return is_float (type) || is_double (type);
 }
 
 int
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
-	return is_float (type) || is_integral (type) || is_double (type);
+	if (is_short (type) || is_ushort (type)) {
+		// shorts have width 0
+		return 1;
+	}
+	if (type->width != 1) {
+		return 0;
+	}
+	return is_real (type) || is_integral (type);
 }
 
 int
-is_vector (const type_t *type)
+is_nonscalar (const type_t *type)
 {
 	type = unalias_type (type);
-	return type->type == ev_vector;
-}
-
-int
-is_quaternion (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_quat;
+	if (is_vector (type) || is_quaternion (type)) {
+		return 1;
+	}
+	if (type->width < 2) {
+		return 0;
+	}
+	return is_real (type) || is_integral (type);
 }
 
 int
 is_math (const type_t *type)
 {
 	type = unalias_type (type);
-	etype_t     t = type->type;
 
-	return t == ev_vector || t == ev_quat || is_scalar (type);
+	if (is_vector (type) || is_quaternion (type)) {
+		return 1;
+	}
+	return is_scalar (type) || is_nonscalar (type);
 }
 
 int
@@ -940,33 +995,6 @@ is_struct (const type_t *type)
 	type = unalias_type (type);
 	if (type->type == ev_invalid
 		&& (type->meta == ty_struct || type->meta == ty_union))
-		return 1;
-	return 0;
-}
-
-int
-is_pointer (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_pointer)
-		return 1;
-	return 0;
-}
-
-int
-is_field (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_field)
-		return 1;
-	return 0;
-}
-
-int
-is_entity (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_entity)
 		return 1;
 	return 0;
 }
@@ -981,28 +1009,10 @@ is_array (const type_t *type)
 }
 
 int
-is_func (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_func)
-		return 1;
-	return 0;
-}
-
-int
 is_structural (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_struct (type) || is_array (type);
-}
-
-int
-is_string (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_string)
-		return 1;
-	return 0;
 }
 
 int
@@ -1018,7 +1028,7 @@ type_compatible (const type_t *dst, const type_t *src)
 	if (is_func (dst) && is_func (src)) {
 		return 1;
 	}
-	if (is_pointer (dst) && is_pointer (src)) {
+	if (is_ptr (dst) && is_ptr (src)) {
 		return 1;
 	}
 	return 0;
@@ -1038,12 +1048,12 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// pointer = array
-	if (is_pointer (dst) && is_array (src)) {
+	if (is_ptr (dst) && is_array (src)) {
 		if (dst->t.fldptr.type == src->t.array.type)
 			return 1;
 		return 0;
 	}
-	if (!is_pointer (dst) || !is_pointer (src))
+	if (!is_ptr (dst) || !is_ptr (src))
 		return is_scalar (dst) && is_scalar (src);
 
 	// pointer = pointer
@@ -1080,7 +1090,7 @@ type_size (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_basic:
-			return pr_type_size[type->type];
+			return pr_type_size[type->type] * type->width;
 		case ty_struct:
 		case ty_union:
 			if (!type->t.symtab)
@@ -1089,7 +1099,7 @@ type_size (const type_t *type)
 		case ty_enum:
 			if (!type->t.symtab)
 				return 0;
-			return type_size (&type_integer);
+			return type_size (&type_int);
 		case ty_array:
 			return type->t.array.size * type_size (type->t.array.type);
 		case ty_class:
@@ -1106,28 +1116,69 @@ type_size (const type_t *type)
 		case ty_alias:
 			return type_size (type->t.alias.aux_type);
 	}
-	return 0;
+	internal_error (0, "invalid type meta: %d", type->meta);
+}
+
+int
+type_width (const type_t *type)
+{
+	switch (type->meta) {
+		case ty_basic:
+			if (type->type == ev_vector) {
+				return 3;
+			}
+			if (type->type == ev_quaternion) {
+				return 4;
+			}
+			return type->width;
+		case ty_struct:
+		case ty_union:
+			return 1;
+		case ty_enum:
+			if (!type->t.symtab)
+				return 0;
+			return type_width (&type_int);
+		case ty_array:
+			return type_width (type->t.array.type);
+		case ty_class:
+			return 1;
+		case ty_alias:
+			return type_width (type->t.alias.aux_type);
+	}
+	internal_error (0, "invalid type meta: %d", type->meta);
 }
 
 static void
 chain_basic_types (void)
 {
+	type_entity.t.symtab = pr.entity_fields;
+	if (options.code.progsversion == PROG_VERSION) {
+		type_quaternion.alignment = 4;
+	}
+
 	chain_type (&type_void);
 	chain_type (&type_string);
 	chain_type (&type_float);
 	chain_type (&type_vector);
-	type_entity.t.symtab = pr.entity_fields;
 	chain_type (&type_entity);
 	chain_type (&type_field);
-	chain_type (&type_function);
-	chain_type (&type_pointer);
+	chain_type (&type_func);
+	chain_type (&type_ptr);
 	chain_type (&type_floatfield);
 	if (!options.traditional) {
 		chain_type (&type_quaternion);
-		chain_type (&type_integer);
-		chain_type (&type_uinteger);
+		chain_type (&type_int);
+		chain_type (&type_uint);
 		chain_type (&type_short);
 		chain_type (&type_double);
+
+		if (options.code.progsversion == PROG_VERSION) {
+			chain_type (&type_long);
+			chain_type (&type_ulong);
+			chain_type (&type_ushort);
+#define VEC_TYPE(name, type) chain_type (&type_##name);
+#include "tools/qfcc/include/vec_types.h"
+		}
 	}
 }
 
@@ -1158,13 +1209,13 @@ init_types (void)
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
-		{"func_val",         &type_function},
-		{"pointer_val",      &type_pointer},
+		{"func_val",         &type_func},
+		{"pointer_val",      &type_ptr},
 		{"vector_val",       &type_vector},
-		{"int_val",          &type_integer},
-		{"uint_val",         &type_uinteger},
-		{"integer_val",      &type_integer},
-		{"uinteger_val",     &type_uinteger},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
 		{0, 0}
@@ -1175,12 +1226,10 @@ init_types (void)
 		{"vector_val",       &type_vector},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
-		{"func_val",         &type_function},
-		{"pointer_val",      &type_pointer},
-		{"int_val",          &type_integer},
-		{"uint_val",         &type_uinteger},
-		{"integer_val",      &type_integer},
-		{"uinteger_val",     &type_uinteger},
+		{"func_val",         &type_func},
+		{"pointer_val",      &type_ptr},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
 		{0, 0}
@@ -1197,22 +1246,22 @@ init_types (void)
 		{0, 0}
 	};
 	static struct_def_t type_encoding_struct[] = {
-		{"types",	&type_pointer},
-		{"size",	&type_integer},
+		{"types",	&type_ptr},
+		{"size",	&type_uint},
 		{0, 0}
 	};
 	static struct_def_t xdef_struct[] = {
-		{"types",	&type_pointer},
-		{"offset",	&type_pointer},
+		{"types",	&type_ptr},
+		{"offset",	&type_ptr},
 		{0, 0}
 	};
 	static struct_def_t xdefs_struct[] = {
 		{"xdefs",	&type_xdef_pointer},
-		{"num_xdefs", &type_pointer},
+		{"num_xdefs", &type_uint},
 		{0, 0}
 	};
 	static struct_def_t va_list_struct[] = {
-		{"count", &type_integer},
+		{"count", &type_int},
 		{"list",  0},				// type will be filled in at runtime
 		{0, 0}
 	};
@@ -1220,7 +1269,15 @@ init_types (void)
 	chain_basic_types ();
 
 	type_nil = &type_quaternion;
-	type_default = &type_integer;
+	type_default = &type_int;
+	type_long_int = &type_long;
+	type_ulong_uint = &type_ulong;
+	if (options.code.progsversion < PROG_VERSION) {
+		// even v6p doesn't support long, and I don't feel like adding it
+		// use ruamoko :P
+		type_long_int = &type_int;
+		type_ulong_uint = &type_uint;
+	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.
@@ -1246,7 +1303,7 @@ init_types (void)
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
-	type_quaternion.type = ev_quat;
+	type_quaternion.type = ev_quaternion;
 	type_quaternion.meta = ty_basic;
 	{
 		symbol_t   *sym;

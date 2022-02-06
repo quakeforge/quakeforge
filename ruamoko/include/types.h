@@ -1,21 +1,9 @@
 #ifndef __types_h
 #define __types_h
 
+#define EV_TYPE(type) ev_##type,
 typedef enum {
-	ev_void,
-	ev_string,
-	ev_float,
-	ev_vector,
-	ev_entity,
-	ev_field,
-	ev_func,
-	ev_pointer,			// end of v6 types
-	ev_quat,
-	ev_integer,
-	ev_uinteger,
-	ev_short,			// value is embedded in the opcode
-	ev_double,
-
+#include <QF/progs/pr_type_names.h>
 	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types
 } etype_t;

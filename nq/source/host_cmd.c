@@ -78,7 +78,7 @@ Host_Status_f (void)
 	int         seconds;
 	int         minutes;
 	int         hours = 0;
-	int         j;
+	unsigned    j;
 	__attribute__((format(PRINTF, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
@@ -210,7 +210,7 @@ Host_Fly_f (void)
 static void
 Host_Ping_f (void)
 {
-	int         i, j;
+	unsigned    i, j;
 	float       total;
 	client_t   *client;
 
@@ -421,7 +421,7 @@ static plitem_t *
 entities_array (void)
 {
 	plitem_t   *entities = PL_NewArray ();
-	int         i;
+	pr_uint_t   i;
 
 	for (i = 0; i < sv.num_edicts; i++) {
 		PL_A_AddObject (entities,
@@ -517,7 +517,6 @@ Host_Savegame_f (void)
 	const char *save_name;
 	char       *save_text;
 	QFile      *f;
-	int         i;
 	char       *bup1, *bup2 = 0;
 
 
@@ -549,7 +548,7 @@ Host_Savegame_f (void)
 		return;
 	}
 
-	for (i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		if (svs.clients[i].active && (SVfloat (svs.clients[i].edict, health)
 									  <= 0)) {
 			Sys_Printf ("Can't savegame with a dead player\n");
@@ -562,7 +561,7 @@ Host_Savegame_f (void)
 	if (strcmp  (save_name, "quick") == 0) {
 		bup2 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, MAX_QUICK);
 		QFS_Remove (bup2);
-		for (i = MAX_QUICK - 1; i > 0; i--) {
+		for (int i = MAX_QUICK - 1; i > 0; i--) {
 			bup1 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, i);
 			QFS_Rename (bup1, bup2);
 			free (bup2);
@@ -783,7 +782,7 @@ Host_Say (qboolean teamonly)
 {
 	client_t   *client;
 	client_t   *save;
-	int         j;
+	unsigned    j;
 	char       *p;
 	char        text[64];
 	qboolean    fromServer = false;
@@ -817,7 +816,7 @@ Host_Say (qboolean teamonly)
 		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname->string);
 
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if ((int) strlen (p) > j)
+	if (strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);
@@ -854,7 +853,7 @@ Host_Tell_f (void)
 {
 	client_t   *client;
 	client_t   *save;
-	int         j;
+	unsigned    j;
 	char       *p;
 	char        text[64];
 
@@ -879,7 +878,7 @@ Host_Tell_f (void)
 	}
 	// check length & truncate if necessary
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if ((int) strlen (p) > j)
+	if (strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);
@@ -969,7 +968,7 @@ Host_PreSpawn_f (void)
 static void
 Host_Spawn_f (void)
 {
-	int         i;
+	unsigned    i;
 	client_t   *client;
 	edict_t    *ent;
 	float      *sendangles;
@@ -1099,7 +1098,7 @@ Host_Kick_f (void)
 	const char *who;
 	const char *message = NULL;
 	client_t   *save;
-	int         i;
+	unsigned    i;
 	qboolean    byNumber = false;
 
 	if (cmd_source == src_command) {
@@ -1115,7 +1114,7 @@ Host_Kick_f (void)
 
 	if (Cmd_Argc () > 2 && strcmp (Cmd_Argv (1), "#") == 0) {
 		i = atof (Cmd_Argv (2)) - 1;
-		if (i < 0 || i >= svs.maxclients)
+		if (i >= svs.maxclients)
 			return;
 		if (!svs.clients[i].active)
 			return;
@@ -1291,7 +1290,7 @@ Host_Give_f (void)
 static edict_t    *
 FindViewthing (void)
 {
-	int         i;
+	pr_uint_t   i;
 	edict_t    *e;
 
 	for (i = 0; i < sv.num_edicts; i++) {

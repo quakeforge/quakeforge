@@ -49,11 +49,11 @@ typedef struct bi_hashtab_s {
 	struct bi_hashtab_s **prev;
 	progs_t    *pr;
 	hashtab_t  *tab;
-	func_t      gk;
-	func_t      gh;
-	func_t      cmp;
-	func_t      f;
-	pointer_t   ud;
+	pr_func_t   gk;
+	pr_func_t   gh;
+	pr_func_t   cmp;
+	pr_func_t   f;
+	pr_ptr_t    ud;
 } bi_hashtab_t;
 
 typedef struct {
@@ -95,48 +95,59 @@ static const char *
 bi_get_key (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gk);
-	return PR_GetString (ht->pr, R_STRING (ht->pr));
+	pr_string_t string = R_STRING (ht->pr);
+	PR_PopFrame (ht->pr);
+	return PR_GetString (ht->pr, string);
 }
 
 static uintptr_t
 bi_get_hash (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gh);
-	return R_INT (ht->pr);
+	int         hash = R_INT (ht->pr);
+	PR_PopFrame (ht->pr);
+	return hash;
 }
 
 static int
 bi_compare (const void *key1, const void *key2, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key1);
 	P_INT (ht->pr, 1) = (intptr_t) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
 	ht->pr->pr_argc = 3;
 	PR_ExecuteProgram (ht->pr, ht->cmp);
-	return R_INT (ht->pr);
+	int         cmp = R_INT (ht->pr);
+	PR_PopFrame (ht->pr);
+	return cmp;
 }
 
 static void
 bi_free (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->f);
+	PR_PopFrame (ht->pr);
 }
 
 static void
@@ -259,7 +270,7 @@ bi_Hash_FindList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		pr_list[count++].int_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -278,7 +289,7 @@ bi_Hash_FindElementList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		pr_list[count++].int_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -334,7 +345,7 @@ bi_Hash_GetList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		pr_list[count++].int_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -359,24 +370,26 @@ bi_hash_clear (progs_t *pr, void *data)
 	table_reset (res);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Hash_NewTable",			bi_Hash_NewTable,			-1},
-	{"Hash_SetHashCompare",		bi_Hash_SetHashCompare,		-1},
-	{"Hash_DelTable",			bi_Hash_DelTable,			-1},
-	{"Hash_FlushTable",			bi_Hash_FlushTable,			-1},
-	{"Hash_Add",				bi_Hash_Add,				-1},
-	{"Hash_AddElement",			bi_Hash_AddElement,			-1},
-	{"Hash_Find",				bi_Hash_Find,				-1},
-	{"Hash_FindElement",		bi_Hash_FindElement,		-1},
-	{"Hash_FindList",			bi_Hash_FindList,			-1},
-	{"Hash_FindElementList",	bi_Hash_FindElementList,	-1},
-	{"Hash_Del",				bi_Hash_Del,				-1},
-	{"Hash_DelElement",			bi_Hash_DelElement,			-1},
-	{"Hash_Free",				bi_Hash_Free,				-1},
-	{"Hash_String",				bi_Hash_String,				-1},
-	{"Hash_Buffer",				bi_Hash_Buffer,				-1},
-	{"Hash_GetList",			bi_Hash_GetList,			-1},
-	{"Hash_Stats",				bi_Hash_Stats,				-1},
+	bi(Hash_NewTable,        4, p(int), p(func), p(func), p(ptr)),
+	bi(Hash_SetHashCompare,  3, p(ptr), p(func), p(func)),
+	bi(Hash_DelTable,        1, p(ptr)),
+	bi(Hash_FlushTable,      1, p(ptr)),
+	bi(Hash_Add,             2, p(ptr), p(ptr)),
+	bi(Hash_AddElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Find,            2, p(ptr), p(string)),
+	bi(Hash_FindElement,     2, p(ptr), p(ptr)),
+	bi(Hash_FindList,        2, p(ptr), p(string)),
+	bi(Hash_FindElementList, 2, p(ptr), p(ptr)),
+	bi(Hash_Del,             2, p(ptr), p(string)),
+	bi(Hash_DelElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Free,            2, p(ptr), p(ptr)),
+	bi(Hash_String,          1, p(string)),
+	bi(Hash_Buffer,          2, p(ptr), p(int)),
+	bi(Hash_GetList,         1, p(ptr)),
+	bi(Hash_Stats,           1, p(ptr)),
 	{0}
 };
 
@@ -387,5 +400,5 @@ RUA_Hash_Init (progs_t *pr, int secure)
 	res->tabs = 0;
 
 	PR_Resources_Register (pr, "Hash", res, bi_hash_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -41,7 +41,7 @@
 #include <ctype.h>
 
 #include "QF/alloc.h"
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
@@ -164,7 +164,7 @@ emit_basedir (def_t *def, void *data, int index)
 static void
 emit_num_files (def_t *def, void *data, int index)
 {
-	if (!is_integer (def->type)) {
+	if (!is_int (def->type)) {
 		internal_error (0, "%s: expected int def", __FUNCTION__);
 	}
 	D_INT (def) = pr.comp_files.size;
@@ -189,7 +189,7 @@ emit_compunit (const char *modname)
 	static struct_def_t compunit_struct[] = {
 		{"unit_name",	&type_string,	emit_unit_name},
 		{"basedir",		&type_string,	emit_basedir},
-		{"num_files",	&type_integer,	emit_num_files},
+		{"num_files",	&type_int,		emit_num_files},
 		{"files",		0,				emit_files_item},
 		{0, 0}
 	};

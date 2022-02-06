@@ -56,7 +56,7 @@
 
 typedef struct {
 	progs_t    *pr;
-	func_t      func;
+	pr_func_t   func;
 } function_t;
 
 static int
@@ -72,12 +72,15 @@ rua_compare (const void *a, const void *b, void *_f)
 {
 	function_t *f = _f;
 
+	PR_PushFrame (f->pr);
 	PR_RESET_PARAMS (f->pr);
 	P_POINTER (f->pr, 0) = PR_SetPointer (f->pr, a);
 	P_POINTER (f->pr, 1) = PR_SetPointer (f->pr, b);
 	f->pr->pr_argc = 2;
 	PR_ExecuteProgram (f->pr, f->func);
-	return R_INT (f->pr);
+	int         cmp = R_INT (f->pr);
+	PR_PopFrame (f->pr);
+	return cmp;
 }
 
 static void
@@ -87,7 +90,7 @@ bi_bsearch (progs_t *pr)
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
 	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 4);
+	pr_func_t   cmp = P_FUNCTION (pr, 4);
 	void       *p = 0;
 
 	if (!cmp) {
@@ -106,7 +109,7 @@ bi_fbsearch (progs_t *pr)
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
 	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 4);
+	pr_func_t   cmp = P_FUNCTION (pr, 4);
 	void       *p = 0;
 
 	if (!cmp) {
@@ -124,7 +127,7 @@ bi_qsort (progs_t *pr)
 	void       *array = P_GPOINTER (pr, 0);
 	size_t      nmemb = P_INT (pr, 1);
 	size_t      size = P_INT (pr, 2) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 3);
+	pr_func_t   cmp = P_FUNCTION (pr, 3);
 
 	if (!cmp) {
 		qsort (array, nmemb, size, int_compare);
@@ -156,17 +159,20 @@ bi_prefixsumf (progs_t *pr)
 	}
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"bsearch",			bi_bsearch,		-1},
-	{"fbsearch",		bi_fbsearch,	-1},
-	{"qsort",			bi_qsort,		-1},
-	{"prefixsum|^ii",	bi_prefixsumi,	-1},
-	{"prefixsum|^fi",	bi_prefixsumf,	-1},
+	bi(bsearch,  4, p(ptr), p(ptr), p(int), p(int), p(func)),
+	bi(fbsearch, 4, p(ptr), p(ptr), p(int), p(int), p(func)),
+	bi(qsort,    3, p(ptr), p(int), p(int), p(func)),
+	{"prefixsum|^ii",	bi_prefixsumi,	-1, 2, {p(ptr), p(int)}},
+	{"prefixsum|^fi",	bi_prefixsumf,	-1, 2, {p(ptr), p(int)}},
 	{0}
 };
 
 void
 RUA_Stdlib_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

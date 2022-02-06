@@ -77,7 +77,7 @@ static string get_type_key (void *type, void *unused)
 -(string) name
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "int";
 		}
 		return pr_type_name[type.type];
@@ -89,7 +89,7 @@ static string get_type_key (void *type, void *unused)
 -(void) addToQueue
 {
 	string name = [self name];
-	if (type.meta == ty_basic && type.type == ev_pointer) {
+	if (type.meta == ty_basic && type.type == ev_ptr) {
 		[[Type findType: type.fldptr.aux_type] addToQueue];
 	}
 }
@@ -123,7 +123,7 @@ static string get_type_key (void *type, void *unused)
 -(string) parseData
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "&cexpr_int";
 		}
 		return "&cexpr_" + pr_type_name[type.type];
@@ -134,7 +134,7 @@ static string get_type_key (void *type, void *unused)
 -(int) isPointer
 {
 	if ((type.meta == ty_basic || type.meta == ty_alias)
-		&& type.type == ev_pointer) {
+		&& type.type == ev_ptr) {
 		return 1;
 	}
 	return 0;
@@ -143,10 +143,10 @@ static string get_type_key (void *type, void *unused)
 -(Type *) dereference
 {
 	qfot_type_t *t = type;
-	if (t.meta == ty_alias && t.type == ev_pointer) {
+	if (t.meta == ty_alias && t.type == ev_ptr) {
 		t = type.alias.full_type;
 	}
-	if (t.meta == ty_basic && t.type == ev_pointer) {
+	if (t.meta == ty_basic && t.type == ev_ptr) {
 		t = type.fldptr.aux_type;
 	}
 	return [Type findType:t];

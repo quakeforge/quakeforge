@@ -112,18 +112,19 @@ is_lvalue (const expr_t *expr)
 			if (expr->e.expr.op == '.') {
 				return 1;
 			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
-			}
 			break;
+		case ex_alias:
+			return is_lvalue (expr->e.alias.expr);
+		case ex_address:
+			return 0;
+		case ex_assign:
+			return 0;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
 				return 1;
 			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
-			}
 			break;
+		case ex_branch:
 		case ex_memset:
 		case ex_compound:
 		case ex_state:
@@ -136,6 +137,11 @@ is_lvalue (const expr_t *expr)
 		case ex_value:
 		case ex_error:
 		case ex_selector:
+		case ex_return:
+		case ex_adjstk:
+		case ex_with:
+		case ex_args:
+		case ex_horizontal:
 			break;
 		case ex_count:
 			internal_error (expr, "invalid expression");
@@ -285,7 +291,6 @@ is_memset (expr_t *e)
 expr_t *
 assign_expr (expr_t *dst, expr_t *src)
 {
-	int         op = '=';
 	expr_t     *expr;
 	type_t     *dst_type, *src_type;
 
@@ -328,10 +333,10 @@ assign_expr (expr_t *dst, expr_t *src)
 		internal_error (src, "src_type broke in assign_expr");
 	}
 
-	if (is_pointer (dst_type) && is_array (src_type)) {
+	if (is_ptr (dst_type) && is_array (src_type)) {
 		// assigning an array to a pointer is the same as taking the address of
 		// the array but using the type of the array elements
-		src = address_expr (src, 0, src_type->t.fldptr.type);
+		src = address_expr (src, src_type->t.fldptr.type);
 		src_type = get_type (src);
 	}
 	if (src->type == ex_bool) {
@@ -357,7 +362,6 @@ assign_expr (expr_t *dst, expr_t *src)
 		convert_nil (src, dst_type);
 	}
 
-	expr = new_binary_expr (op, dst, src);
-	expr->e.expr.type = dst_type;
+	expr = new_assign_expr (dst, src);
 	return expr;
 }

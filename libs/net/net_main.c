@@ -78,7 +78,7 @@ PollProcedure slistPollProcedure = { NULL, 0.0, Slist_Poll };
 static sizebuf_t _net_message_message;
 static qmsg_t _net_message = { 0, 0, &_net_message_message };
 qmsg_t     *net_message = &_net_message;
-int         net_activeconnections = 0;
+unsigned    net_activeconnections = 0;
 
 int         messagesSent = 0;
 int         messagesReceived = 0;
@@ -197,7 +197,7 @@ NET_Listen_f (void)
 static void
 MaxPlayers_f (void)
 {
-	int         n;
+	unsigned    n;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("\"maxplayers\" is \"%u\"\n", svs.maxclients);
@@ -710,7 +710,7 @@ int
 NET_SendToAll (sizebuf_t *data, double blocktime)
 {
 	double      start;
-	int         i;
+	unsigned    i;
 	int         count = 0;
 	qboolean    state1[MAX_SCOREBOARD];	/* can we send */
 	qboolean    state2[MAX_SCOREBOARD];	/* did we send */

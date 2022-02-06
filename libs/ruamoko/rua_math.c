@@ -321,57 +321,59 @@ bi_atanh (progs_t *pr)
 	R_DOUBLE (pr) = log ((1 + y) / (1 - y)) / 2;
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"sin|f",	bi_sinf,	-1},
-	{"cos|f",	bi_cosf,	-1},
-	{"tan|f",	bi_tanf,	-1},
-	{"asin|f",	bi_asinf,	-1},
-	{"acos|f",	bi_acosf,	-1},
-	{"atan|f",	bi_atanf,	-1},
-	{"atan2|ff",bi_atan2f, 	-1},
-	{"exp|f",	bi_expf,	-1},
-	{"log|f",	bi_logf,	-1},
-	{"log2|f",	bi_log2f,	-1},
-	{"log10|f",	bi_log10f,	-1},
-	{"pow|ff",	bi_powf,	-1},
-	{"sqrt|f",	bi_sqrtf,	-1},
-	{"cbrt|f",	bi_cbrtf,	-1},
-	{"hypot|ff",bi_hypotf,	-1},
-	{"sinh|f",	bi_sinhf,	-1},
-	{"cosh|f",	bi_coshf,	-1},
-	{"tanh|f",	bi_tanhf,	-1},
-	{"asinh|f",	bi_asinhf,	-1},
-	{"acosh|f",	bi_acoshf,	-1},
-	{"atanh|f",	bi_atanhf,	-1},
-	{"floor|d",	bi_floor,	-1},	// float version in pr_cmds
-	{"ceil|d",	bi_ceil,	-1},	// float version in pr_cmds
-	{"fabs|d",	bi_fabs,	-1},	// float version in pr_cmds
-	{"sin|d",	bi_sin,		-1},
-	{"cos|d",	bi_cos,		-1},
-	{"tan|d",	bi_tan,		-1},
-	{"asin|d",	bi_asin,	-1},
-	{"acos|d",	bi_acos,	-1},
-	{"atan|d",	bi_atan,	-1},
-	{"atan2|dd",bi_atan2, 	-1},
-	{"exp|d",	bi_exp,		-1},
-	{"log|d",	bi_log,		-1},
-	{"log2|d",	bi_log2,	-1},
-	{"log10|d",	bi_log10,	-1},
-	{"pow|dd",	bi_pow,		-1},
-	{"sqrt|d",	bi_sqrt,	-1},
-	{"cbrt|d",	bi_cbrt,	-1},
-	{"hypot|dd",bi_hypot,	-1},
-	{"sinh|d",	bi_sinh,	-1},
-	{"cosh|d",	bi_cosh,	-1},
-	{"tanh|d",	bi_tanh,	-1},
-	{"asinh|d",	bi_asinh,	-1},
-	{"acosh|d",	bi_acosh,	-1},
-	{"atanh|d",	bi_atanh,	-1},
+	{"sin|f",	bi_sinf,	-1, 1, {p(float)}},
+	{"cos|f",	bi_cosf,	-1, 1, {p(float)}},
+	{"tan|f",	bi_tanf,	-1, 1, {p(float)}},
+	{"asin|f",	bi_asinf,	-1, 1, {p(float)}},
+	{"acos|f",	bi_acosf,	-1, 1, {p(float)}},
+	{"atan|f",	bi_atanf,	-1, 1, {p(float)}},
+	{"atan2|ff",bi_atan2f, 	-1, 2, {p(float), p(float)}},
+	{"exp|f",	bi_expf,	-1, 1, {p(float)}},
+	{"log|f",	bi_logf,	-1, 1, {p(float)}},
+	{"log2|f",	bi_log2f,	-1, 1, {p(float)}},
+	{"log10|f",	bi_log10f,	-1, 1, {p(float)}},
+	{"pow|ff",	bi_powf,	-1, 2, {p(float), p(float)}},
+	{"sqrt|f",	bi_sqrtf,	-1, 1, {p(float)}},
+	{"cbrt|f",	bi_cbrtf,	-1, 1, {p(float)}},
+	{"hypot|ff",bi_hypotf,	-1, 2, {p(float), p(float)}},
+	{"sinh|f",	bi_sinhf,	-1, 1, {p(float)}},
+	{"cosh|f",	bi_coshf,	-1, 1, {p(float)}},
+	{"tanh|f",	bi_tanhf,	-1, 1, {p(float)}},
+	{"asinh|f",	bi_asinhf,	-1, 1, {p(float)}},
+	{"acosh|f",	bi_acoshf,	-1, 1, {p(float)}},
+	{"atanh|f",	bi_atanhf,	-1, 1, {p(float)}},
+	{"floor|d",	bi_floor,	-1, 1, {p(double)}},	// float version in pr_cmds
+	{"ceil|d",	bi_ceil,	-1, 1, {p(double)}},	// float version in pr_cmds
+	{"fabs|d",	bi_fabs,	-1, 1, {p(double)}},	// float version in pr_cmds
+	{"sin|d",	bi_sin,		-1, 1, {p(double)}},
+	{"cos|d",	bi_cos,		-1, 1, {p(double)}},
+	{"tan|d",	bi_tan,		-1, 1, {p(double)}},
+	{"asin|d",	bi_asin,	-1, 1, {p(double)}},
+	{"acos|d",	bi_acos,	-1, 1, {p(double)}},
+	{"atan|d",	bi_atan,	-1, 1, {p(double)}},
+	{"atan2|dd",bi_atan2, 	-1, 2, {p(double), p(double)}},
+	{"exp|d",	bi_exp,		-1, 1, {p(double)}},
+	{"log|d",	bi_log,		-1, 1, {p(double)}},
+	{"log2|d",	bi_log2,	-1, 1, {p(double)}},
+	{"log10|d",	bi_log10,	-1, 1, {p(double)}},
+	{"pow|dd",	bi_pow,		-1, 2, {p(double), p(double)}},
+	{"sqrt|d",	bi_sqrt,	-1, 1, {p(double)}},
+	{"cbrt|d",	bi_cbrt,	-1, 1, {p(double)}},
+	{"hypot|dd",bi_hypot,	-1, 2, {p(double), p(double)}},
+	{"sinh|d",	bi_sinh,	-1, 1, {p(double)}},
+	{"cosh|d",	bi_cosh,	-1, 1, {p(double)}},
+	{"tanh|d",	bi_tanh,	-1, 1, {p(double)}},
+	{"asinh|d",	bi_asinh,	-1, 1, {p(double)}},
+	{"acosh|d",	bi_acosh,	-1, 1, {p(double)}},
+	{"atanh|d",	bi_atanh,	-1, 1, {p(double)}},
 	{0}
 };
 
 void
 RUA_Math_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

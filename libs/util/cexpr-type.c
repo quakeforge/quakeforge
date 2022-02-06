@@ -350,7 +350,7 @@ double_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 {
 	double      a = *(double *) val1->value;
 	double      b = *(double *) val2->value;
-	*(double *) result->value = a - b * truncf (a / b);
+	*(double *) result->value = a - b * trunc (a / b);
 }
 
 static void
@@ -364,7 +364,7 @@ double_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	// -5 mod -3 = -2
 	double      a = *(double *) val1->value;
 	double      b = *(double *) val2->value;
-	*(double *) result->value = a - b * floorf (a / b);
+	*(double *) result->value = a - b * floor (a / b);
 }
 
 CASTOP (double, int)
@@ -425,7 +425,7 @@ vector_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	vec4f_t     a = *(vec4f_t *) val1->value;
 	vec4f_t     b = *(vec4f_t *) val2->value;
 	__auto_type c = (vec4f_t *) result->value;
-	*c = a - b * vtruncf (a / b);
+	*c = a - b * vtrunc4f (a / b);
 }
 
 static void
@@ -440,7 +440,7 @@ vector_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	vec4f_t     a = *(vec4f_t *) val1->value;
 	vec4f_t     b = *(vec4f_t *) val2->value;
 	__auto_type c = (vec4f_t *) result->value;
-	*c = a - b * vfloorf (a / b);
+	*c = a - b * vfloor4f (a / b);
 }
 
 static void

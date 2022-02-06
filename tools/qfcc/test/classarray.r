@@ -1,3 +1,5 @@
+#pragma warn error
+
 @interface foo
 {
 	id isa;

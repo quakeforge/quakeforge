@@ -1,3 +1,6 @@
+#pragma warn error
+#pragma optimize on
+
 @interface Object
 {
 	Class		isa;

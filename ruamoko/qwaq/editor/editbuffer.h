@@ -77,11 +77,11 @@ typedef struct eb_color_s {
 @end
 #else//__QFCC__
 
-#include "QF/pr_obj.h"
+#include "QF/progs/pr_obj.h"
 
 typedef struct qwaq_editbuffer_s {
 	pr_id_t     isa;
-	pointer_t   buffer;
+	pr_ptr_t    buffer;
 } qwaq_editbuffer_t;
 
 #endif//!__QFCC__

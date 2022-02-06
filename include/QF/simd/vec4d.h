@@ -28,15 +28,15 @@
 #ifndef __QF_simd_vec4d_h
 #define __QF_simd_vec4d_h
 
-#ifdef __AVX2__
 #include <immintrin.h>
 
 #include "QF/simd/types.h"
+#include "QF/simd/vec2d.h"
 
-GNU89INLINE inline vec4d_t vsqrtd (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vceild (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vfloord (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vtruncd (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vsqrt4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vceil4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vfloor4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vtrunc4d (vec4d_t v) __attribute__((const));
 /** 3D vector cross product.
  *
  * The w (4th) component can be any value on input, and is guaranteed to be 0
@@ -96,6 +96,9 @@ GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
 GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
 GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
 GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
+GNU89INLINE inline vec4l_t loadvec3l (const int64_t *v3) __attribute__((pure));
+GNU89INLINE inline vec4l_t loadvec3l1 (const int64_t *v3) __attribute__((pure));
+GNU89INLINE inline void storevec3l (int64_t *v3, vec4l_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
 GNU89INLINE inline
@@ -103,9 +106,17 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vsqrtd (vec4d_t v)
+vsqrt4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vsqrt2d (xy);
+	zw = vsqrt2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_sqrt_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -114,9 +125,17 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vceild (vec4d_t v)
+vceil4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vceil2d (xy);
+	zw = vceil2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_ceil_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -125,9 +144,17 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vfloord (vec4d_t v)
+vfloor4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vfloor2d (xy);
+	zw = vfloor2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_floor_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -136,9 +163,17 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vtruncd (vec4d_t v)
+vtrunc4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vtrunc2d (xy);
+	zw = vtrunc2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -165,7 +200,11 @@ vec4d_t
 dotd (vec4d_t a, vec4d_t b)
 {
 	vec4d_t c = a * b;
+#ifndef __AVX__
+	c = (vec4d_t) { c[0] + c[1], c[0] + c[1], c[2] + c[3], c[2] + c[3] };
+#else
 	c = _mm256_hadd_pd (c, c);
+#endif
 	static const vec4l_t A = {2, 3, 0, 1};
 	c += __builtin_shuffle(c, A);
 	return c;
@@ -184,8 +223,7 @@ qmuld (vec4d_t a, vec4d_t b)
 	vec4d_t c = crossd (a, b) + a * b[3] + a[3] * b;
 	vec4d_t d = dotd (a, b);
 	// zero out the vector component of dot product so only the scalar remains
-	d = _mm256_permute2f128_pd (d, d, 0x18);
-	d = _mm256_permute4x64_pd (d, 0xc0);
+	d = (vec4d_t) { 0, 0, 0, d[3] };
 	return c - d;
 }
 
@@ -201,8 +239,12 @@ qvmuld (vec4d_t q, vec4d_t v)
 	double s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __AVX__
+	q = (vec4d_t) { q[0], q[1], q[2], 0 };
+#else
 	vec4d_t z = {};
 	q = _mm256_blend_pd (q, z, 0x08);
+#endif
 	vec4d_t c = crossd (q, v);
 	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4d_t qq = dotd (q, q);
@@ -223,8 +265,12 @@ vqmuld (vec4d_t v, vec4d_t q)
 	double s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __AVX__
+	q = (vec4d_t) { q[0], q[1], q[2], 0 };
+#else
 	vec4d_t z = {};
 	q = _mm256_blend_pd (q, z, 0x08);
+#endif
 	vec4d_t c = crossd (q, v);
 	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4d_t qq = dotd (q, q);
@@ -241,11 +287,11 @@ VISIBLE
 vec4d_t
 qrotd (vec4d_t a, vec4d_t b)
 {
-	vec4d_t ma = vsqrtd (dotd (a, a));
-	vec4d_t mb = vsqrtd (dotd (b, b));
+	vec4d_t ma = vsqrt4d (dotd (a, a));
+	vec4d_t mb = vsqrt4d (dotd (b, b));
 	vec4d_t den = 2 * ma * mb;
 	vec4d_t t = mb * a + ma * b;
-	vec4d_t mba_mab = vsqrtd (dotd (t, t));
+	vec4d_t mba_mab = vsqrt4d (dotd (t, t));
 	vec4d_t q = crossd (a, b) / mba_mab;
 	q[3] = (mba_mab / den)[0];
 	return q;
@@ -261,7 +307,7 @@ qconjd (vec4d_t q)
 {
 	const uint64_t sign = UINT64_C(1) << 63;
 	const vec4l_t neg = { sign, sign, sign, 0 };
-	return _mm256_xor_pd (q, (__m256d) neg);
+	return (vec4d_t) ((vec4l_t) q ^ neg);
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -293,6 +339,41 @@ storevec3d (double v3[3], vec4d_t v4)
 	v3[2] = v4[2];
 }
 
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
 #endif
+vec4l_t
+loadvec3l (const int64_t *v3)
+{
+	vec4l_t v4 = { v3[0], v3[1], v3[2], 0 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4l_t
+loadvec3l1 (const int64_t *v3)
+{
+	vec4l_t v4 = { v3[0], v3[1], v3[2], 1 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+storevec3l (int64_t *v3, vec4l_t v4)
+{
+	v3[0] = v4[0];
+	v3[1] = v4[1];
+	v3[2] = v4[2];
+}
 
 #endif//__QF_simd_vec4d_h

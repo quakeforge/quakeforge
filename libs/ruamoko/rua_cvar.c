@@ -232,18 +232,21 @@ bi_Cvar_Toggle (progs_t *pr)
 		Cvar_Set (var, var->int_val ? "0" : "1");
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"Cvar_MakeAlias",		bi_Cvar_MakeAlias,		-1},
-	{"Cvar_RemoveAlias",	bi_Cvar_RemoveAlias,	-1},
-	{"Cvar_SetFloat",		bi_Cvar_SetFloat,		-1},
-	{"Cvar_SetInteger",		bi_Cvar_SetInteger,		-1},
-	{"Cvar_SetVector",		bi_Cvar_SetVector,		-1},
-	{"Cvar_SetString",		bi_Cvar_SetString,		-1},
-	{"Cvar_GetFloat",		bi_Cvar_GetFloat,		-1},
-	{"Cvar_GetInteger",		bi_Cvar_GetInteger,		-1},
-	{"Cvar_GetVector",		bi_Cvar_GetVector,		-1},
-	{"Cvar_GetString",		bi_Cvar_GetString,		-1},
-	{"Cvar_Toggle",			bi_Cvar_Toggle,			-1},
+	bi(Cvar_MakeAlias,   2, p(string), p(string)),
+	bi(Cvar_RemoveAlias, 1, p(string)),
+	bi(Cvar_SetFloat,    2, p(string), p(float)),
+	bi(Cvar_SetInteger,  2, p(string), p(int)),
+	bi(Cvar_SetVector,   2, p(string), p(vector)),
+	bi(Cvar_SetString,   2, p(string), p(string)),
+	bi(Cvar_GetFloat,    1, p(string)),
+	bi(Cvar_GetInteger,  1, p(string)),
+	bi(Cvar_GetVector,   1, p(string)),
+	bi(Cvar_GetString,   1, p(string)),
+	bi(Cvar_Toggle,      1, p(string)),
 	{0}
 };
 
@@ -254,6 +257,5 @@ RUA_Cvar_Init (progs_t *pr, int secure)
 
 	res->aliases = 0;
 	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear);
-
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

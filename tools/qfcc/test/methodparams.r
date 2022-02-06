@@ -15,7 +15,7 @@ typedef struct { int x, y; } Point;
 	[textContext mvvprintf: pos, fmt, @args];
 }
 @end
-id obj_msgSend (id receiver, SEL op, ...) = #0;
+@attribute(no_va_list) id obj_msgSend (id receiver, SEL op, ...) = #0;
 void __obj_exec_class (struct obj_module *msg) = #0;
 @interface Object
 @end

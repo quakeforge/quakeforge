@@ -94,6 +94,7 @@ extern struct type_s type_object;
 extern struct type_s type_class;
 extern struct type_s type_Class;
 extern struct type_s type_protocol;
+extern struct type_s type_selector;
 extern struct type_s type_SEL;
 extern struct type_s type_IMP;
 extern struct type_s type_supermsg;

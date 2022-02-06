@@ -66,7 +66,7 @@ void print_type (qfot_type_t *type)
 		case ty_basic:
 			//printf (" %d", type.type);
 			switch (type.type) {
-				case ev_pointer:
+				case ev_ptr:
 				case ev_field:
 					//printf (" ");
 					print_type (type.fldptr.aux_type);

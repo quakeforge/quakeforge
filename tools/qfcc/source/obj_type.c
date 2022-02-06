@@ -65,7 +65,7 @@
 
 typedef def_t *(*encode_f) (type_t *type, defspace_t *space);
 
-static string_t
+static pr_string_t
 encoding_string (const char *string)
 {
 	int         str;
@@ -149,12 +149,13 @@ qfo_encode_basic (type_t *type, defspace_t *space)
 
 	if (type->type == ev_func)
 		return qfo_encode_func (type, space);
-	else if (type->type == ev_pointer || type->type == ev_field)
+	else if (type->type == ev_ptr || type->type == ev_field)
 		return qfo_encode_fldptr (type, space);
 
-	def = qfo_new_encoding (type, sizeof (enc->type), space);
+	def = qfo_new_encoding (type, sizeof (enc->basic), space);
 	enc = D_POINTER (qfot_type_t, def);
-	enc->type = type->type;
+	enc->basic.type = type->type;
+	enc->basic.width = type->width;
 	return def;
 }
 
@@ -214,7 +215,7 @@ qfo_encode_struct (type_t *type, defspace_t *space)
 		if (i == num_fields)
 			internal_error (0, "whoa, what happened?");
 		if (sym->sy_type == sy_const)
-			offset = sym->s.value->v.integer_val;
+			offset = sym->s.value->v.int_val;
 		else
 			offset = sym->s.offset;
 		ENC_DEF (strct->fields[i].type, field_types[i]);

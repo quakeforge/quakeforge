@@ -7,6 +7,7 @@ bin_PROGRAMS +=	@QFCC_TARGETS@
 bin_SCRIPTS += tools/qfcc/source/qfpreqcc
 
 qfcc_SOURCES = \
+	tools/qfcc/source/attribute.c \
 	tools/qfcc/source/class.c \
 	tools/qfcc/source/codespace.c \
 	tools/qfcc/source/constfold.c \

@@ -61,7 +61,7 @@ print_pointer (dstring_t *dstr, type_t *t, int level, int id)
 	dot_print_type (dstr, aux, level, id);
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, aux);
 	dasprintf (dstr, "%*st_%p [label=\"%c\"];\n", indent, "", t,
-			   t->type == ev_pointer ? '*' : '.');
+			   t->type == ev_ptr ? '*' : '.');
 }
 
 static void
@@ -118,7 +118,7 @@ print_function (dstring_t *dstr, type_t *t, int level, int id)
 static void
 print_basic (dstring_t *dstr, type_t *t, int level, int id)
 {
-	if (t->type == ev_pointer || t->type == ev_field) {
+	if (t->type == ev_ptr || t->type == ev_field) {
 		print_pointer (dstr, t, level, id);
 	} else if (t->type == ev_func) {
 		print_function (dstr, t, level, id);
@@ -169,7 +169,7 @@ print_struct (dstring_t *dstr, type_t *t, int level, int id)
 		int         val;
 		const char *port = "";
 		if (sym->sy_type == sy_const) {
-			val = sym->s.value->v.integer_val;
+			val = sym->s.value->v.int_val;
 		} else {
 			if (sym->sy_type != sy_var) {
 				continue;

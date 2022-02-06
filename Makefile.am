@@ -42,6 +42,7 @@ noinst_LTLIBRARIES =
 noinst_LIBRARIES =
 noinst_PROGRAMS =
 noinst_HEADERS =
+noinst_PYTHON =
 plugin_LTLIBRARIES =
 
 RANLIB=touch
@@ -109,6 +110,11 @@ SUFFIXES=.o .r .pas
 qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix .Qo,$(notdir $(basename $(basename $(1))))))
 r_depfiles_remade=
 pas_depfiles_remade=
+
+V_PY = $(V_PY_@AM_V@)
+V_PY_ = $(V_PY_@AM_DEFAULT_V@)
+V_PY_0 = @echo "  PY      " $@;
+V_PY_1 =
 
 V_GLSLANG = $(V_GLSLANG_@AM_V@)
 V_GLSLANG_ = $(V_GLSLANG_@AM_DEFAULT_V@)

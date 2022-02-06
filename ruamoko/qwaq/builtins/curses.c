@@ -46,6 +46,8 @@
 #include "QF/ringbuffer.h"
 #include "QF/sys.h"
 
+#include "rua_internal.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/rect.h"
@@ -763,9 +765,6 @@ static void
 bi_syncprintf (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	int         string_id = qwaq_pipe_acquire_string (&res->commands);
 	dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 	int         command[] = { qwaq_cmd_syncprint, 0, string_id };
@@ -773,13 +772,13 @@ bi_syncprintf (progs_t *pr)
 	command[1] = CMD_SIZE(command);
 
 	dstring_clearstr (print_buffer);
-	PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+	RUA_Sprintf (pr, print_buffer, "syncprintf", 0);
 
 	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 
 static void
-bi_newwin (progs_t *pr)
+bi_create_window (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         xpos = P_INT (pr, 0);
@@ -800,7 +799,7 @@ bi_newwin (progs_t *pr)
 }
 
 static void
-bi_delwin (progs_t *pr)
+bi_destroy_window (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         window_id = P_INT (pr, 0);
@@ -839,7 +838,7 @@ bi_getwrect (progs_t *pr)
 }
 
 static void
-bi_new_panel (progs_t *pr)
+bi_create_panel (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         window_id = P_INT (pr, 0);
@@ -870,7 +869,7 @@ panel_command (progs_t *pr, qwaq_commands cmd)
 }
 
 static void
-bi_del_panel (progs_t *pr)
+bi_destroy_panel (progs_t *pr)
 {
 	panel_command (pr, qwaq_cmd_del_panel);
 }
@@ -1135,8 +1134,7 @@ bi_mvwaddstr (progs_t *pr)
 }
 
 static void
-qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
-				int count, pr_type_t **args)
+qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, int fmt_arg)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
@@ -1151,7 +1149,7 @@ qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+		RUA_Sprintf (pr, print_buffer, "mvwaddstr", fmt_arg);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1162,16 +1160,12 @@ bi_mvwprintf (progs_t *pr)
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
 
-	qwaq_mvwprintf (pr, window_id, x, y, fmt, count, args);
+	qwaq_mvwprintf (pr, window_id, x, y, 3);
 }
 
 static void
-qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
-			  int count, pr_type_t **args)
+qwaq_wprintf (progs_t *pr, int window_id, int fmt_arg)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
@@ -1186,7 +1180,7 @@ qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, count, args);
+		RUA_Sprintf (pr, print_buffer, "wprintf", fmt_arg);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1195,11 +1189,8 @@ static void
 bi_wprintf (progs_t *pr)
 {
 	int         window_id = P_INT (pr, 0);
-	const char *fmt = P_GSTRING (pr, 1);
-	int         count = pr->pr_argc - 2;
-	pr_type_t **args = pr->pr_params + 2;
 
-	qwaq_wprintf (pr, window_id, fmt, count, args);
+	qwaq_wprintf (pr, window_id, 1);
 }
 
 static void
@@ -1224,7 +1215,7 @@ qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+		PR_Sprintf (pr, print_buffer, "wvprintf", fmt, args->count, list);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1283,7 +1274,7 @@ qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+		PR_Sprintf (pr, print_buffer, "mvwvprintf", fmt, args->count, list);
 
 		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
@@ -1604,26 +1595,26 @@ bi_initialize (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__is_initialized (progs_t *pr)
+bi__c_TextContext__is_initialized (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	R_INT (pr) = res->initialized;
 }
 
 static void
-bi_c_TextContext__max_colors (progs_t *pr)
+bi__c_TextContext__max_colors (progs_t *pr)
 {
 	bi_max_colors (pr);
 }
 
 static void
-bi_c_TextContext__max_color_pairs (progs_t *pr)
+bi__c_TextContext__max_color_pairs (progs_t *pr)
 {
 	bi_max_color_pairs (pr);
 }
 
 static void
-bi_c_TextContext__init_pair_ (progs_t *pr)
+bi__c_TextContext__init_pair_ (progs_t *pr)
 {
 	int         pair = P_INT (pr, 2);
 	int         f = P_INT (pr, 3);
@@ -1633,7 +1624,7 @@ bi_c_TextContext__init_pair_ (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__acs_char_ (progs_t *pr)
+bi__c_TextContext__acs_char_ (progs_t *pr)
 {
 	int         acs = P_INT (pr, 2);
 
@@ -1641,7 +1632,7 @@ bi_c_TextContext__acs_char_ (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__move_ (progs_t *pr)
+bi__c_TextContext__move_ (progs_t *pr)
 {
 	Point      *pos = &P_PACKED (pr, Point, 2);
 
@@ -1649,7 +1640,7 @@ bi_c_TextContext__move_ (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__curs_set_ (progs_t *pr)
+bi__c_TextContext__curs_set_ (progs_t *pr)
 {
 	int         visibility = P_INT (pr, 2);
 
@@ -1657,36 +1648,30 @@ bi_c_TextContext__curs_set_ (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__doupdate (progs_t *pr)
+bi__c_TextContext__doupdate (progs_t *pr)
 {
 	bi_doupdate (pr);
 }
 
 static void
-bi_i_TextContext__mvprintf_ (progs_t *pr)
+bi__i_TextContext__mvprintf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
 
-	qwaq_mvwprintf (pr, window_id, pos->x, pos->y, fmt, count, args);
+	qwaq_mvwprintf (pr, window_id, pos->x, pos->y, 3);
 }
 
 static void
-bi_i_TextContext__printf_ (progs_t *pr)
+bi__i_TextContext__printf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
-	const char *fmt = P_GSTRING (pr, 2);
-	int         count = pr->pr_argc - 3;
-	pr_type_t **args = pr->pr_params + 3;
 
-	qwaq_wprintf (pr, window_id, fmt, count, args);
+	qwaq_wprintf (pr, window_id, 2);
 }
 
 static void
-bi_i_TextContext__vprintf_ (progs_t *pr)
+bi__i_TextContext__vprintf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *fmt = P_GSTRING (pr, 2);
@@ -1696,7 +1681,7 @@ bi_i_TextContext__vprintf_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__addch_ (progs_t *pr)
+bi__i_TextContext__addch_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         ch = P_INT (pr, 2);
@@ -1705,7 +1690,7 @@ bi_i_TextContext__addch_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__addstr_ (progs_t *pr)
+bi__i_TextContext__addstr_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *str = P_GSTRING (pr, 2);
@@ -1714,7 +1699,7 @@ bi_i_TextContext__addstr_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__mvvprintf_ (progs_t *pr)
+bi__i_TextContext__mvvprintf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1725,7 +1710,7 @@ bi_i_TextContext__mvvprintf_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__resizeTo_ (progs_t *pr)
+bi__i_TextContext__resizeTo_ (progs_t *pr)
 {
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1738,14 +1723,14 @@ bi_i_TextContext__resizeTo_ (progs_t *pr)
 }
 
 static void
-bi_c_TextContext__refresh (progs_t *pr)
+bi__c_TextContext__refresh (progs_t *pr)
 {
 	qwaq_update_panels (pr);
 	qwaq_doupdate (pr);
 }
 
 static void
-bi_i_TextContext__refresh (progs_t *pr)
+bi__i_TextContext__refresh (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 
@@ -1757,7 +1742,7 @@ bi_i_TextContext__refresh (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__mvaddch_ (progs_t *pr)
+bi__i_TextContext__mvaddch_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1767,7 +1752,7 @@ bi_i_TextContext__mvaddch_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__mvaddstr_ (progs_t *pr)
+bi__i_TextContext__mvaddstr_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
@@ -1777,7 +1762,7 @@ bi_i_TextContext__mvaddstr_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__bkgd_ (progs_t *pr)
+bi__i_TextContext__bkgd_ (progs_t *pr)
 {
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1788,7 +1773,7 @@ bi_i_TextContext__bkgd_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__clear (progs_t *pr)
+bi__i_TextContext__clear (progs_t *pr)
 {
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1798,7 +1783,7 @@ bi_i_TextContext__clear (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__scrollok_ (progs_t *pr)
+bi__i_TextContext__scrollok_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         flag = P_INT (pr, 2);
@@ -1807,7 +1792,7 @@ bi_i_TextContext__scrollok_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__border_ (progs_t *pr)
+bi__i_TextContext__border_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	__auto_type sides = P_PACKED (pr, box_sides_t, 2);
@@ -1817,7 +1802,7 @@ bi_i_TextContext__border_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__mvhline_ (progs_t *pr)
+bi__i_TextContext__mvhline_ (progs_t *pr)
 {
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1829,7 +1814,7 @@ bi_i_TextContext__mvhline_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__mvvline_ (progs_t *pr)
+bi__i_TextContext__mvvline_ (progs_t *pr)
 {
 	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
 	int         window_id = self->window;
@@ -1854,74 +1839,95 @@ bi_curses_clear (progs_t *pr, void *data)
 	panel_reset (res);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"initialize",		bi_initialize,		-1},
-	{"syncprintf",		bi_syncprintf,		-1},
-	{"create_window",	bi_newwin,			-1},
-	{"destroy_window",	bi_delwin,			-1},
-	{"getwrect",		bi_getwrect,		-1},
-	{"create_panel",	bi_new_panel,		-1},
-	{"destroy_panel",	bi_del_panel,		-1},
-	{"hide_panel",		bi_hide_panel,		-1},
-	{"show_panel",		bi_show_panel,		-1},
-	{"top_panel",		bi_top_panel,		-1},
-	{"bottom_panel",	bi_bottom_panel,	-1},
-	{"move_panel",		bi_move_panel,		-1},
-	{"panel_window",	bi_panel_window,	-1},
-	{"replace_panel",	bi_replace_panel,	-1},
-	{"update_panels",	bi_update_panels,	-1},
-	{"doupdate",		bi_doupdate,		-1},
-	{"mvwprintf",		bi_mvwprintf,		-1},
-	{"wprintf",			bi_wprintf,			-1},
-	{"wvprintf",		bi_wvprintf,		-1},
-	{"mvwvprintf",		bi_mvwvprintf,		-1},
-	{"mvwaddch",		bi_mvwaddch,		-1},
-	{"waddch",			bi_waddch,			-1},
-	{"mvwaddstr",		bi_mvwaddstr,		-1},
-	{"waddstr",			bi_waddstr,			-1},
-	{"wrefresh",		bi_wrefresh,		-1},
-	{"max_colors",		bi_max_colors,		-1},
-	{"max_color_pairs",	bi_max_color_pairs,	-1},
-	{"init_pair",		bi_init_pair,		-1},
-	{"wbkgd",			bi_wbkgd,			-1},
-	{"werase",			bi_werase,			-1},
-	{"scrollok",		bi_scrollok,		-1},
-	{"wmove",			bi_wmove,			-1},
-	{"acs_char",		bi_acs_char,		-1},
-	{"move",			bi_move,			-1},
-	{"curs_set",		bi_curs_set,		-1},
-	{"wborder",			bi_wborder,			-1},
-	{"mvwblit_line",	bi_mvwblit_line,	-1},
-	{"wresize",			bi_wresize,			-1},
-	{"resizeterm",		bi_resizeterm,		-1},
-	{"mvwhline",		bi_mvwhline,		-1},
-	{"mvwvline",		bi_mvwvline,		-1},
+	bi(initialize,      0),
+	bi(syncprintf,      -2, p(string)),
+	bi(create_window,   4, p(int), p(int), p(int), p(int)),
+	bi(destroy_window,  1, p(ptr)),
+	bi(getwrect,        1, p(ptr)),
+	bi(create_panel,    1, p(ptr)),
+	bi(destroy_panel,   1, p(ptr)),
+	bi(hide_panel,      1, p(ptr)),
+	bi(show_panel,      1, p(ptr)),
+	bi(top_panel,       1, p(ptr)),
+	bi(bottom_panel,    1, p(ptr)),
+	bi(move_panel,      3, p(ptr), p(int), p(int)),
+	bi(panel_window,    1, p(ptr)),
+	bi(replace_panel,   2, p(ptr), p(ptr)),
+	bi(update_panels,   0),
+	bi(doupdate,        0),
+	bi(mvwprintf,       -5, p(ptr), p(int), p(int), p(string)),
+	bi(wprintf,         -3, p(ptr), p(string)),
+	bi(wvprintf,        3, p(ptr), p(string), P(1, 2)),
+	bi(mvwvprintf,      5, p(ptr), p(int), p(int), p(string), P(1, 2)),
+	bi(mvwaddch,        4, p(ptr), p(int), p(int), p(int)),
+	bi(waddch,          2, p(ptr), p(int)),
+	bi(mvwaddstr,       4, p(ptr), p(int), p(int), p(string)),
+	bi(waddstr,         2, p(ptr), p(string)),
+	bi(wrefresh,        1, p(ptr)),
+	bi(max_colors,      0),
+	bi(max_color_pairs, 0),
+	bi(init_pair,       3, p(int), p(int), p(int)),
+	bi(wbkgd,           2, p(ptr), p(int)),
+	bi(werase,          1, p(ptr)),
+	bi(scrollok,        2, p(ptr), p(int)),
+	bi(wmove,           3, p(ptr), p(int), p(int), p(int)),
+	bi(acs_char,        1, p(int)),
+	bi(move,            2, p(int), p(int)),
+	bi(curs_set,        1, p(int)),
+	bi(wborder,         3, p(ptr), P(1, 4), P(1, 4)),
+	bi(mvwblit_line,    5, p(ptr), p(int), p(int), p(ptr), p(int)),
+	bi(wresize,         3, p(ptr), p(int), p(int)),
+	bi(resizeterm,      2, p(int), p(int)),
+	bi(mvwhline,        5, p(ptr), p(int), p(int), p(int), p(int)),
+	bi(mvwvline,        5, p(ptr), p(int), p(int), p(int), p(int)),
 
-	{"_c_TextContext__is_initialized",	bi_c_TextContext__is_initialized,  -1},
-	{"_c_TextContext__max_colors",		bi_c_TextContext__max_colors,	   -1},
-	{"_c_TextContext__max_color_pairs",	bi_c_TextContext__max_color_pairs, -1},
-	{"_c_TextContext__init_pair_",		bi_c_TextContext__init_pair_,	   -1},
-	{"_c_TextContext__acs_char_",		bi_c_TextContext__acs_char_,	   -1},
-	{"_c_TextContext__move_",			bi_c_TextContext__move_,		   -1},
-	{"_c_TextContext__curs_set_",		bi_c_TextContext__curs_set_,	   -1},
-	{"_c_TextContext__doupdate",		bi_c_TextContext__doupdate,		   -1},
-	{"_i_TextContext__mvprintf_",		bi_i_TextContext__mvprintf_,	   -1},
-	{"_i_TextContext__printf_",			bi_i_TextContext__printf_,		   -1},
-	{"_i_TextContext__vprintf_",		bi_i_TextContext__vprintf_,		   -1},
-	{"_i_TextContext__addch_",			bi_i_TextContext__addch_,		   -1},
-	{"_i_TextContext__addstr_",			bi_i_TextContext__addstr_,		   -1},
-	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
-	{"_i_TextContext__resizeTo_",		bi_i_TextContext__resizeTo_,	   -1},
-	{"_c_TextContext__refresh",			bi_c_TextContext__refresh,		   -1},
-	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
-	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},
-	{"_i_TextContext__mvaddstr_",		bi_i_TextContext__mvaddstr_,	   -1},
-	{"_i_TextContext__bkgd_",			bi_i_TextContext__bkgd_,		   -1},
-	{"_i_TextContext__clear",			bi_i_TextContext__clear,		   -1},
-	{"_i_TextContext__scrollok_",		bi_i_TextContext__scrollok_,	   -1},
-	{"_i_TextContext__border_",			bi_i_TextContext__border_,		   -1},
-	{"_i_TextContext__mvhline_",		bi_i_TextContext__mvhline_,		   -1},
-	{"_i_TextContext__mvvline_",		bi_i_TextContext__mvvline_,		   -1},
+	bi(_c_TextContext__is_initialized,  2, p(ptr), p(ptr)),
+	bi(_c_TextContext__max_colors,      2, p(ptr), p(ptr)),
+	bi(_c_TextContext__max_color_pairs, 2, p(ptr), p(ptr)),
+	bi(_c_TextContext__init_pair_,      5, p(ptr), p(ptr),
+										p(int), p(int), p(int)),
+	bi(_c_TextContext__acs_char_,       3, p(ptr), p(ptr),
+										p(int)),
+	bi(_c_TextContext__move_,           3, p(ptr), p(ptr),
+										P(1, 2)),
+	bi(_c_TextContext__curs_set_,       3, p(ptr), p(ptr),
+										p(int)),
+	bi(_c_TextContext__doupdate,        2, p(ptr), p(ptr)),
+	bi(_i_TextContext__mvprintf_,       -5, p(ptr), p(ptr),
+										P(1, 2), p(string)),
+	bi(_i_TextContext__printf_,         -4, p(ptr), p(ptr),
+										p(string)),
+	bi(_i_TextContext__vprintf_,        4, p(ptr), p(ptr),
+										p(string), P(1, 2)),
+	bi(_i_TextContext__addch_,          3, p(ptr), p(ptr),
+										p(int)),
+	bi(_i_TextContext__addstr_,         3, p(ptr), p(ptr),
+										p(string)),
+	bi(_i_TextContext__mvvprintf_,      5, p(ptr), p(ptr),
+										P(1, 2), p(string), P(1, 2)),
+	bi(_i_TextContext__resizeTo_,       3, p(ptr), p(ptr),
+										P(1, 2)),
+	bi(_c_TextContext__refresh,         2, p(ptr), p(ptr)),
+	bi(_i_TextContext__refresh,         2, p(ptr), p(ptr)),
+	bi(_i_TextContext__mvaddch_,        4, p(ptr), p(ptr),
+										P(1, 2), p(int)),
+	bi(_i_TextContext__mvaddstr_,       4, p(ptr), p(ptr),
+										P(1, 2), p(string)),
+	bi(_i_TextContext__bkgd_,           3, p(ptr), p(ptr),
+										p(int)),
+	bi(_i_TextContext__clear,           2, p(ptr), p(ptr)),
+	bi(_i_TextContext__scrollok_,       3, p(ptr), p(ptr),
+										p(int)),
+	bi(_i_TextContext__border_,         4, p(ptr), p(ptr),
+										P(1, 4), P(1, 4)),
+	bi(_i_TextContext__mvhline_,        5, p(ptr), p(ptr),
+										P(1, 2), p(int), p(int)),
+	bi(_i_TextContext__mvvline_,        5, p(ptr), p(ptr),
+										P(1, 2), p(int), p(int)),
 
 	{0}
 };
@@ -1936,6 +1942,6 @@ BI_Curses_Init (progs_t *pr)
 	qwaq_init_pipe (&res->results);
 
 	PR_Resources_Register (pr, "curses", res, bi_curses_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 	Sys_RegisterShutdown (bi_shutdown, pr);
 }

@@ -50,7 +50,7 @@ typedef struct bi_cmd_s {
 	struct bi_cmd_s *next;
 	char       *name;
 	progs_t    *pr;
-	func_t      func;
+	pr_func_t   func;
 } bi_cmd_t;
 
 typedef struct {
@@ -90,7 +90,7 @@ bi_Cmd_AddCommand (progs_t *pr)
 	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
 	char       *name = strdup (P_GSTRING (pr, 0));
-	func_t      func = P_FUNCTION (pr, 1);
+	pr_func_t   func = P_FUNCTION (pr, 1);
 
 	if (!cmd || !name || !Cmd_AddCommand (name, bi_cmd_f, "CSQC command")) {
 		if (name)
@@ -145,11 +145,13 @@ bi_Cmd_Args (progs_t *pr)
 //Cmd_ExecuteString
 //Cmd_ForwardToServer
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Cmd_AddCommand",	bi_Cmd_AddCommand,	-1},
-	{"Cmd_Argc",		bi_Cmd_Argc,		-1},
-	{"Cmd_Argv",		bi_Cmd_Argv,		-1},
-	{"Cmd_Args",		bi_Cmd_Args,		-1},
+	bi(Cmd_AddCommand, 2, p(string), p(func)),
+	bi(Cmd_Argc,       0),
+	bi(Cmd_Argv,       1, p(int)),
+	bi(Cmd_Args,       1, p(int)),
 	{0}
 };
 
@@ -159,11 +161,11 @@ RUA_Cmd_Init (progs_t *pr, int secure)
 	cmd_resources_t *res = calloc (1, sizeof (cmd_resources_t));
 
 	res->cmds = 0;
-	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);
 
 	if (!bi_cmds)
 		bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0,
 								 pr->hashlink_freelist);
 
-	PR_RegisterBuiltins (pr, builtins);
+	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

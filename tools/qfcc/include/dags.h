@@ -35,7 +35,7 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #include "statements.h"
 

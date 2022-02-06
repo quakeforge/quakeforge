@@ -76,10 +76,10 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 			break;
 		case ev_func:
 			f = pr->pr_functions + val->func_var;
-			dsprintf (line, "%s", PR_GetString (pr, f->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, f->name));
 			break;
 		case ev_field:
-			def = PR_FieldAtOfs (pr, val->integer_var);
+			def = PR_FieldAtOfs (pr, val->int_var);
 			dsprintf (line, "%s", PR_GetString (pr, def->name));
 			break;
 		case ev_void:
@@ -88,13 +88,13 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 		case ev_float:
 			dsprintf (line, "%.9g", val->float_var);
 			break;
-		case ev_integer:
-			dsprintf (line, "%d", val->integer_var);
+		case ev_int:
+			dsprintf (line, "%d", val->int_var);
 			break;
 		case ev_vector:
 			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&val->vector_var));
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&val->quat_var));
 			break;
 		default:
@@ -118,7 +118,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 	pr_type_t  *v;
 
 	if (!ed->free) {
-		for (i = 0; i < pr->progs->numfielddefs; i++) {
+		for (i = 0; i < pr->progs->fielddefs.count; i++) {
 			pr_def_t   *d = &pr->pr_fielddefs[i];
 
 			name = PR_GetString (pr, d->name);
@@ -132,7 +132,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			// if the value is still all 0, skip the field
 			type = d->type & ~DEF_SAVEGLOBAL;
 			for (j = 0; j < pr_type_size[type]; j++)
-				if (v[j].integer_var)
+				if (v[j].int_var)
 					break;
 			if (j == pr_type_size[type])
 				continue;
@@ -162,7 +162,7 @@ ED_GlobalsDict (progs_t *pr)
 	pr_def_t   *def;
 	int         type;
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		def = &pr->pr_globaldefs[i];
 		type = def->type;
 		if (!(def->type & DEF_SAVEGLOBAL))
@@ -257,7 +257,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 				Sys_Printf ("Can't find field %s\n", s);
 				return false;
 			}
-			d->integer_var = G_INT (pr, def->ofs);
+			d->int_var = G_INT (pr, def->ofs);
 			break;
 
 		case ev_func:

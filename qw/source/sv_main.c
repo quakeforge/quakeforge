@@ -1747,7 +1747,7 @@ void
 SV_OutOfBand (netadr_t adr, unsigned length, byte *data)
 {
 	if (net_packetlog->int_val) {
-		Log_Outgoing_Packet (data, length, 0, 1);
+		Log_Outgoing_Packet (data, length, 0);
 	}
 	Netchan_OutOfBand (adr, length, data);
 }
@@ -1781,7 +1781,7 @@ SV_ReadPackets (void)
 	while (NET_GetPacket ()) {
 		if (net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 1, 1);
+								 net_message->message->cursize, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
@@ -2465,7 +2465,7 @@ SV_InitNet (void)
 	Netchan_Init ();
 	net_realtime = &realtime;
 
-	Net_Log_Init (sv.sound_precache);
+	Net_Log_Init (sv.sound_precache, 1);
 
 	svs.last_heartbeat = -99999;		// send immediately
 	sv_net_initialized = 1;

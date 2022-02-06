@@ -33,11 +33,11 @@
 
 #include "QF/simd/types.h"
 
-GNU89INLINE inline vec4f_t vabsf (vec4f_t v) __attribute__((const));
-GNU89INLINE inline vec4f_t vsqrtf (vec4f_t v) __attribute__((const));
-GNU89INLINE inline vec4f_t vceilf (vec4f_t v) __attribute__((const));
-GNU89INLINE inline vec4f_t vfloorf (vec4f_t v) __attribute__((const));
-GNU89INLINE inline vec4f_t vtruncf (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vabs4f (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vsqrt4f (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vceil4f (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vfloor4f (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vtrunc4f (vec4f_t v) __attribute__((const));
 /** 3D vector cross product.
  *
  * The w (4th) component can be any value on input, and is guaranteed to be 0
@@ -106,7 +106,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-vabsf (vec4f_t v)
+vabs4f (vec4f_t v)
 {
 	const uint32_t  nan = ~0u >> 1;
 	const vec4i_t   abs = { nan, nan, nan, nan };
@@ -119,7 +119,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-vsqrtf (vec4f_t v)
+vsqrt4f (vec4f_t v)
 {
 #ifndef __SSE__
 	vec4f_t     r = { sqrtf (v[0]), sqrtf (v[1]), sqrtf (v[2]), sqrtf (v[3]) };
@@ -135,7 +135,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-vceilf (vec4f_t v)
+vceil4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
 	return (vec4f_t) {
@@ -155,7 +155,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-vfloorf (vec4f_t v)
+vfloor4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
 	return (vec4f_t) {
@@ -175,7 +175,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-vtruncf (vec4f_t v)
+vtrunc4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
 	return (vec4f_t) {
@@ -296,11 +296,11 @@ VISIBLE
 vec4f_t
 qrotf (vec4f_t a, vec4f_t b)
 {
-	vec4f_t ma = vsqrtf (dotf (a, a));
-	vec4f_t mb = vsqrtf (dotf (b, b));
+	vec4f_t ma = vsqrt4f (dotf (a, a));
+	vec4f_t mb = vsqrt4f (dotf (b, b));
 	vec4f_t den = 2 * ma * mb;
 	vec4f_t t = mb * a + ma * b;
-	vec4f_t mba_mab = vsqrtf (dotf (t, t));
+	vec4f_t mba_mab = vsqrt4f (dotf (t, t));
 	vec4f_t q = crossf (a, b) / mba_mab;
 	q[3] = (mba_mab / den)[0];
 	return q;
@@ -388,7 +388,7 @@ VISIBLE
 vec4f_t
 normalf (vec4f_t v)
 {
-	return v / vsqrtf (dotf (v, v));
+	return v / vsqrt4f (dotf (v, v));
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -399,7 +399,7 @@ VISIBLE
 vec4f_t
 magnitudef (vec4f_t v)
 {
-	return vsqrtf (dotf (v, v));
+	return vsqrt4f (dotf (v, v));
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -411,7 +411,7 @@ vec4f_t
 magnitude3f (vec4f_t v)
 {
 	v[3] = 0;
-	return vsqrtf (dotf (v, v));
+	return vsqrt4f (dotf (v, v));
 }
 
 vec4f_t __attribute__((pure))

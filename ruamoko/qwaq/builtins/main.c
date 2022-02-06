@@ -53,6 +53,7 @@
 #include "QF/zone.h"
 
 #include "compat.h"
+#include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/debugger/debug.h"
@@ -119,7 +120,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+	return aligned_alloc (64, size);
 }
 
 static void
@@ -142,21 +143,14 @@ init_qf (void)
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
-
-	// Normally, this is done by PR_Init, but PR_Init is not called in the main
-	// thread. However, PR_Opcode_Init() is idempotent.
-	PR_Opcode_Init ();
 }
 
 static void
 bi_printf (progs_t *pr)
 {
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	dstring_t  *dstr = dstring_new ();
 
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
+	RUA_Sprintf (pr, dstr, "printf", 0);
 	if (dstr->str) {
 		Sys_Printf ("%s", dstr->str);
 	}
@@ -176,17 +170,19 @@ bi_traceoff (progs_t *pr)
 	pr->pr_trace = false;
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t common_builtins[] = {
-	{"printf",			bi_printf,		-1},
-	{"traceon",			bi_traceon,		-1},
-	{"traceoff",		bi_traceoff,	-1},
+	bi(printf,   -1, -2, p(string)),
+	bi(traceon,  -1, 0),
+	bi(traceoff, -1, 0),
 	{},
 };
 
 static void
 common_builtins_init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, common_builtins);
+	PR_RegisterBuiltins (pr, common_builtins, 0);
 }
 
 static void
@@ -230,7 +226,8 @@ load_progs (progs_t *pr, const char *name)
 	}
 	pr->progs_name = name;
 	pr->max_edicts = 1;
-	pr->zone_size = 1024*1024;
+	pr->zone_size = 2*1024*1024;
+	pr->stack_size = 64*1024;
 	PR_LoadProgsFile (pr, file, size);
 	Qclose (file);
 	if (!PR_RunLoadFuncs (pr))
@@ -243,7 +240,7 @@ spawn_progs (qwaq_thread_t *thread)
 {
 	dfunction_t *dfunc;
 	const char *name = 0;
-	string_t   *pr_argv;
+	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;
 	progs_t    *pr;
 

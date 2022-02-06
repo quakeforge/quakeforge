@@ -9,21 +9,21 @@ typedef enum {
 
 #ifdef __QFCC__
 
-#include <QF/pr_debug.h>
+#include <QF/progs/pr_debug.h>
 
 //FIXME finish unsigned in qfcc
 #ifndef umax
 #define umax 0x7fffffff
 #endif
 
-typedef string string_t;
+typedef string pr_string_t;
 
 #endif
 
 typedef struct qdb_event_s {
 	prdebug_t   what;
 	union {
-		string_t    message;
+		pr_string_t message;
 		unsigned    function;
 		int         exit_code;
 	};
@@ -32,7 +32,7 @@ typedef struct qdb_event_s {
 typedef struct qdb_state_s {
 	unsigned    staddr;
 	unsigned    func;
-	string_t    file;
+	pr_string_t file;
 	unsigned    line;
 } qdb_state_t;
 

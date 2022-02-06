@@ -351,7 +351,7 @@ SV_ConnectClient (int clientnum)
 void
 SV_CheckForNewClients (void)
 {
-	int         i;
+	unsigned    i;
 	struct qsocket_s *ret;
 
 	// check for new connections
@@ -443,7 +443,7 @@ SV_FatPVS (vec3_t org)
 static void
 SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 {
-	int         bits, e, i;
+	pr_uint_t   bits, e;
 	set_t      *pvs;
 	float       miss;
 	vec3_t      org;
@@ -489,7 +489,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		bits = 0;
 
 
-		for (i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++) {
 			miss = SVvector (ent, origin)[i] - baseline->origin[i];
 			if (miss < -0.1 || miss > 0.1)
 				bits |= U_ORIGIN1 << i;
@@ -603,7 +603,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 static void
 SV_CleanupEnts (void)
 {
-	int         e;
+	pr_uint_t   e;
 	edict_t    *ent;
 
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
@@ -826,7 +826,7 @@ SV_SendClientDatagram (client_t *client)
 static void
 SV_UpdateToReliableMessages (void)
 {
-	int         i, j;
+	unsigned    i, j;
 	client_t   *client;
 
 	// check for changes to be sent over the reliable streams
@@ -884,7 +884,7 @@ SV_SendNop (client_t *client)
 void
 SV_SendClientMessages (void)
 {
-	int         i;
+	unsigned    i;
 
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
@@ -964,7 +964,7 @@ SV_ModelIndex (const char *name)
 static void
 SV_CreateBaseline (void)
 {
-	int         entnum;
+	pr_uint_t   entnum;
 	edict_t    *svent;
 	entity_state_t *baseline;
 	int         bits;
@@ -1077,7 +1077,7 @@ SV_SendReconnect (void)
 void
 SV_SaveSpawnparms (void)
 {
-	int         i, j;
+	unsigned    i, j;
 
 	svs.serverflags = *sv_globals.serverflags;
 
@@ -1087,8 +1087,7 @@ SV_SaveSpawnparms (void)
 			continue;
 
 		// call the progs to get default spawn parms for the new client
-		*sv_globals.self =
-			EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
 			host_client->spawn_parms[j] = sv_globals.parms[j];
@@ -1161,7 +1160,7 @@ SV_SpawnServer (const char *server)
 
 	// leave slots at start for only clients
 	sv.num_edicts = svs.maxclients + 1;
-	for (int i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
 	}
@@ -1243,7 +1242,7 @@ SV_SpawnServer (const char *server)
 					sv.signon.cursize);
 
 	// send serverinfo to all connected clients
-	for (int i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		host_client = svs.clients + i;
 		if (host_client->active) {
 			SV_SendServerinfo (host_client);

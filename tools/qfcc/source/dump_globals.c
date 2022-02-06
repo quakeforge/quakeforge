@@ -65,7 +65,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 	const char *type;
 	pr_uint_t   offset;
 	const char *comment;
-	string_t    string;
+	pr_string_t string;
 	const char *str;
 	int         saveglobal;
 
@@ -79,19 +79,19 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 
 	comment = " invalid offset";
 
-	if (offset < pr->progs->numglobals) {
+	if (offset < pr->progs->globals.count) {
 		comment = "";
 		switch (def->type & ~DEF_SAVEGLOBAL) {
 			case ev_void:
 				break;
 			case ev_string:
 				string = G_INT (pr, offset);
-				// at runtime, strings can be negative (thus string_t is
+				// at runtime, strings can be negative (thus pr_string_t is
 				// signed), but negative strings means they have been
 				// dynamically allocated, thus a negative string index should
 				// never appear in compiled code
 				if (string < 0
-					|| (pr_uint_t) string >= pr->progs->numstrings) {
+					|| (pr_uint_t) string >= pr->progs->strings.count) {
 					str = "invalid string offset";
 					comment = va (0, " %d %s", string, str);
 				} else {
@@ -118,9 +118,9 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				break;
 			case ev_func:
 				{
-					func_t      func = G_FUNCTION (pr, offset);
+					pr_func_t   func = G_FUNCTION (pr, offset);
 					int         start;
-					if (func < pr->progs->numfunctions) {
+					if (func < pr->progs->functions.count) {
 						start = pr->pr_functions[func].first_statement;
 						if (start > 0)
 							comment = va (0, " %d @ %x", func, start);
@@ -131,17 +131,17 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 					}
 				}
 				break;
-			case ev_pointer:
+			case ev_ptr:
 				comment = va (0, " %x", G_INT (pr, offset));
 				break;
-			case ev_quat:
+			case ev_quaternion:
 				comment = va (0, " '%g %g %g %g'",
 							  G_QUAT (pr, offset)[0],
 							  G_QUAT (pr, offset)[1],
 							  G_QUAT (pr, offset)[2],
 							  G_QUAT (pr, offset)[3]);
 				break;
-			case ev_integer:
+			case ev_int:
 				comment = va (0, " %d", G_INT (pr, offset));
 				break;
 			case ev_short:
@@ -165,12 +165,12 @@ dump_globals (progs_t *pr)
 	pr_def_t   *global_defs = pr->pr_globaldefs;
 
 	if (sorted) {
-		global_defs = malloc (pr->progs->numglobaldefs * sizeof (ddef_t));
+		global_defs = malloc (pr->progs->globaldefs.count * sizeof (ddef_t));
 		memcpy (global_defs, pr->pr_globaldefs,
-				pr->progs->numglobaldefs * sizeof (ddef_t));
-		qsort (global_defs, pr->progs->numglobaldefs, sizeof (ddef_t), cmp);
+				pr->progs->globaldefs.count * sizeof (ddef_t));
+		qsort (global_defs, pr->progs->globaldefs.count, sizeof (ddef_t), cmp);
 	}
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		pr_def_t   *def = &global_defs[i];
 		dump_def (pr, def, 0);
 	}
@@ -185,7 +185,7 @@ dump_fields (progs_t *pr)
 	int         offset;
 	const char *comment;
 
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
+	for (i = 0; i < pr->progs->fielddefs.count; i++) {
 		pr_def_t   *def = &pr->pr_fielddefs[i];
 
 		name = PR_GetString (pr, def->name);
@@ -241,17 +241,17 @@ dump_functions (progs_t *pr)
 	int         start;
 	const char *comment;
 	pr_def_t   *encodings_def;
-	pointer_t type_encodings = 0;
+	pr_ptr_t    type_encodings = 0;
 
 	encodings_def = PR_FindGlobal (pr, ".type_encodings");
 	if (encodings_def) {
 		type_encodings = encodings_def->ofs;
 	}
 
-	for (i = 0; i < pr->progs->numfunctions; i++) {
+	for (i = 0; i < pr->progs->functions.count; i++) {
 		dfunction_t *func = &pr->pr_functions[i];
 
-		name = PR_GetString (pr, func->s_name);
+		name = PR_GetString (pr, func->name);
 
 		start = func->first_statement;
 		if (start > 0)
@@ -259,15 +259,15 @@ dump_functions (progs_t *pr)
 		else
 			comment = va (0, " = #%d", -start);
 
-		printf ("%-5d %s%s: %d (", i, name, comment, func->numparms);
-		if (func->numparms < 0)
-			count = -func->numparms - 1;
+		printf ("%-5d %s%s: %d (", i, name, comment, func->numparams);
+		if (func->numparams < 0)
+			count = -func->numparams - 1;
 		else
-			count = func->numparms;
+			count = func->numparams;
 		for (j = 0; j < count; j++)
-			printf (" %d:%d", func->parm_size[j].alignment,
-					func->parm_size[j].size);
-		printf (") %d @ %x", func->locals, func->parm_start);
+			printf (" %d:%d", func->param_size[j].alignment,
+					func->param_size[j].size);
+		printf (") %d @ %x", func->locals, func->params_start);
 		puts ("");
 		if (type_encodings) {
 			pr_auxfunction_t *aux = PR_Debug_MappedAuxFunction (pr, i);
@@ -275,7 +275,7 @@ dump_functions (progs_t *pr)
 				continue;
 			}
 			printf ("        %d %s:%d %d %d %d %x\n", aux->function,
-					PR_GetString (pr, func->s_file), aux->source_line,
+					PR_GetString (pr, func->file), aux->source_line,
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
 					aux->return_type);
@@ -327,7 +327,7 @@ qfo_globals (qfo_t *qfo)
 					QFO_TYPESTR (qfo, def->type));
 			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].data)
 				printf (" %d",
-						qfo->spaces[space].data[def->offset].integer_var);
+						qfo->spaces[space].data[def->offset].int_var);
 			puts ("");
 		}
 	}
@@ -476,7 +476,8 @@ qfo_functions (qfo_t *qfo)
 			printf (" @ %x", func->code);
 		else
 			printf (" = #%d", -func->code);
-		printf (" loc: %d\n", func->locals_space);
+		printf (" loc: %d params: %d\n",
+				func->locals_space, func->params_start);
 		if (func->locals_space) {
 			locals = &qfo->spaces[func->locals_space];
 			printf ("%*s%d %p %d %p %d %d\n", 16, "", locals->type,
@@ -512,11 +513,17 @@ static const char *ty_meta_names[] = {
 	"ty_alias",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
+const int vector_types =  (1 << ev_float)
+						| (1 << ev_int)
+						| (1 << ev_uint)
+						| (1 << ev_double)
+						| (1 << ev_long)
+						| (1 << ev_ulong);
 
 static void
 dump_qfo_types (qfo_t *qfo, int base_address)
 {
-	pointer_t   type_ptr;
+	pr_ptr_t    type_ptr;
 	qfot_type_t *type;
 	const char *meta;
 	int         i, count;
@@ -559,9 +566,12 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 						count = ~count;	//ones complement
 					for (i = 0; i < count; i++)
 						printf (" %x", type->func.param_types[i]);
-				} else if (type->type == ev_pointer
+				} else if (type->type == ev_ptr
 						   || type->type == ev_field) {
 					printf (" %4x", type->fldptr.aux_type);
+				} else if ((1 << type->type) & vector_types
+						   && type->basic.width > 1) {
+					printf ("[%d]", type->basic.width);
 				}
 				printf ("\n");
 				break;

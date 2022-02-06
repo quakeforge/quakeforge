@@ -212,41 +212,41 @@ WriteProgs (dprograms_t *progs, int size)
 	pr_type_t  *globals;
 
 #define P(t,o) ((t *)((char *)progs + progs->o))
-	statements = P (dstatement_t, ofs_statements);
-	functions = P (dfunction_t, ofs_functions);
-	globaldefs = P (ddef_t, ofs_globaldefs);
-	fielddefs = P (ddef_t, ofs_fielddefs);
-	globals = P (pr_type_t, ofs_globals);
+	statements = P (dstatement_t, statements.offset);
+	functions = P (dfunction_t, functions.offset);
+	globaldefs = P (ddef_t, globaldefs.offset);
+	fielddefs = P (ddef_t, fielddefs.offset);
+	globals = P (pr_type_t, globals.offset);
 #undef P
 
-	for (i = 0; i < progs->numstatements; i++) {
+	for (i = 0; i < progs->statements.count; i++) {
 		statements[i].op = LittleShort (statements[i].op);
 		statements[i].a = LittleShort (statements[i].a);
 		statements[i].b = LittleShort (statements[i].b);
 		statements[i].c = LittleShort (statements[i].c);
 	}
-	for (i = 0; i < (unsigned) progs->numfunctions; i++) {
+	for (i = 0; i < (unsigned) progs->functions.count; i++) {
 		dfunction_t *func = functions + i;
 		func->first_statement = LittleLong (func->first_statement);
-		func->parm_start = LittleLong (func->parm_start);
+		func->params_start = LittleLong (func->params_start);
 		func->locals = LittleLong (func->locals);
 		func->profile = LittleLong (func->profile);
-		func->s_name = LittleLong (func->s_name);
-		func->s_file = LittleLong (func->s_file);
-		func->numparms = LittleLong (func->numparms);
+		func->name = LittleLong (func->name);
+		func->file = LittleLong (func->file);
+		func->numparams = LittleLong (func->numparams);
 	}
-	for (i = 0; i < progs->numglobaldefs; i++) {
+	for (i = 0; i < progs->globaldefs.count; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
 		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
-		globaldefs[i].s_name = LittleLong (globaldefs[i].s_name);
+		globaldefs[i].name = LittleLong (globaldefs[i].name);
 	}
-	for (i = 0; i < progs->numfielddefs; i++) {
+	for (i = 0; i < progs->fielddefs.count; i++) {
 		fielddefs[i].type = LittleShort (fielddefs[i].type);
 		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
-		fielddefs[i].s_name = LittleLong (fielddefs[i].s_name);
+		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
-	for (i = 0; i < progs->numglobals; i++)
-		globals[i].integer_var = LittleLong (globals[i].integer_var);
+	for (i = 0; i < progs->globals.count; i++)
+		globals[i].int_var = LittleLong (globals[i].int_var);
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
@@ -307,7 +307,7 @@ WriteSym (pr_debug_header_t *sym, int size)
 		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
 	}
 	for (i = 0; i < sym->debug_data_size; i++) {
-		debug_data[i].integer_var = LittleLong (debug_data[i].integer_var);
+		debug_data[i].int_var = LittleLong (debug_data[i].int_var);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))
@@ -441,11 +441,15 @@ finish_link (void)
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		pr_int_t    param_size = type_size (&type_param);
 		pr_int_t    param_alignment = qfo_log2 (type_param.alignment);
-		linker_add_def (".param_size", &type_integer, flags,
+		linker_add_def (".param_size", &type_int, flags,
 						&param_size);
-		linker_add_def (".param_alignment", &type_integer, flags,
+		linker_add_def (".param_alignment", &type_int, flags,
 						&param_alignment);
 		linker_add_def (".xdefs", &type_xdefs, flags, 0);
+	}
+	if (options.code.progsversion == PROG_VERSION) {
+		int stk = (QFOD_GLOBAL | QFOD_INITIALIZED | QFOD_NOSAVE);
+		linker_add_def (".stack", &type_uint, stk, 0);
 	}
 
 	if (options.code.debug) {

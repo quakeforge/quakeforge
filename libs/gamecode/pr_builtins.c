@@ -95,14 +95,14 @@ bi_no_function (progs_t *pr)
 	// descriptor with a bad builtin number
 	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
 	dfunction_t *desc = pr->pr_functions + G_FUNCTION (pr, st->a);
-	const char *bi_name = PR_GetString (pr, desc->s_name);
+	const char *bi_name = PR_GetString (pr, desc->name);
 	int         ind = -desc->first_statement;
 
 	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
 }
 
 VISIBLE void
-PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
+PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data)
 {
 	builtin_t  *bi;
 	int         count;
@@ -135,21 +135,25 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	builtins = bi;
 
 	while (builtins->name) {
-		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN)
+		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN) {
 			PR_Error (pr, "bad builtin number: %s = #%d", builtins->name,
 					  builtins->binum);
+		}
 
-		if (builtins->binum < 0)
+		if (builtins->binum < 0) {
 			builtins->binum = builtin_next (pr);
+		}
 
 		if ((bi = Hash_Find (pr->builtin_hash, builtins->name))
-			|| (bi = Hash_FindElement (pr->builtin_num_hash, builtins)))
+			|| (bi = Hash_FindElement (pr->builtin_num_hash, builtins))) {
 			PR_Error (pr, "builtin %s = #%d already defined (%s = #%d)",
 					  builtins->name, builtins->binum,
 					  bi->name, bi->binum);
+		}
 
 		Hash_Add (pr->builtin_hash, builtins);
 		Hash_AddElement (pr->builtin_num_hash, builtins);
+		builtins->data = data;
 
 		builtins++;
 	}
@@ -184,24 +188,24 @@ PR_RelocateBuiltins (progs_t *pr)
 
 	if (pr->function_table)
 		free (pr->function_table);
-	pr->function_table = calloc (pr->progs->numfunctions,
+	pr->function_table = calloc (pr->progs->functions.count,
 								 sizeof (bfunction_t));
 
-	for (i = 1; i < pr->progs->numfunctions; i++) {
+	for (i = 1; i < pr->progs->functions.count; i++) {
 		desc = pr->pr_functions + i;
 		func = pr->function_table + i;
 
 		func->first_statement = desc->first_statement;
-		func->parm_start = desc->parm_start;
+		func->params_start = desc->params_start;
 		func->locals = desc->locals;
-		func->numparms = desc->numparms;
-		memcpy (func->parm_size, desc->parm_size, sizeof (func->parm_size));
+		func->numparams = desc->numparams;
+		memcpy (func->param_size, desc->param_size, sizeof (func->param_size));
 		func->descriptor = desc;
 
 		if (desc->first_statement > 0)
 			continue;
 
-		bi_name = PR_GetString (pr, desc->s_name);
+		bi_name = PR_GetString (pr, desc->name);
 
 		if (!desc->first_statement) {
 			bi = PR_FindBuiltin (pr, bi_name);
@@ -225,12 +229,15 @@ PR_RelocateBuiltins (progs_t *pr)
 							bi_name, -desc->first_statement);
 			proc = bi_no_function;
 		}
-		if (!desc->s_name && bi) {
-			desc->s_name = PR_SetString (pr, bi->name);
+		if (!desc->name && bi) {
+			desc->name = PR_SetString (pr, bi->name);
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 		}
 		func->first_statement = desc->first_statement;
 		func->func = proc;
+		if (bi) {
+			func->data = bi->data;
+		}
 	}
 	if (bad) {
 		Sys_Printf ("PR_RelocateBuiltins: %s: progs may not work due to "

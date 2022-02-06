@@ -444,28 +444,30 @@ plist_compare (const void *k1, const void *k2, void *unused)
 	return pl1->plitem == pl2->plitem;
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"PL_GetFromFile",				bi_PL_GetFromFile,				-1},
-	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
-	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
-	{"PL_Type",						bi_PL_Type,						-1},
-	{"PL_Line",						bi_PL_Line,						-1},
-	{"PL_String",					bi_PL_String,					-1},
-	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
-	{"PL_RemoveObjectForKey",		bi_PL_RemoveObjectForKey,		-1},
-	{"PL_ObjectAtIndex",			bi_PL_ObjectAtIndex,			-1},
-	{"PL_D_AllKeys",				bi_PL_D_AllKeys,				-1},
-	{"PL_D_NumKeys",				bi_PL_D_NumKeys,				-1},
-	{"PL_D_AddObject",				bi_PL_D_AddObject,				-1},
-	{"PL_A_AddObject",				bi_PL_A_AddObject,				-1},
-	{"PL_A_NumObjects",				bi_PL_A_NumObjects,				-1},
-	{"PL_A_InsertObjectAtIndex",	bi_PL_A_InsertObjectAtIndex,	-1},
-	{"PL_RemoveObjectAtIndex",		bi_PL_RemoveObjectAtIndex,		-1},
-	{"PL_NewDictionary",			bi_PL_NewDictionary,			-1},
-	{"PL_NewArray",					bi_PL_NewArray,					-1},
-	{"PL_NewData",					bi_PL_NewData,					-1},
-	{"PL_NewString",				bi_PL_NewString,				-1},
-	{"PL_Free",						bi_PL_Free,						-1},
+	bi(PL_GetFromFile,           1, p(ptr)),
+	bi(PL_GetPropertyList,       1, p(string)),
+	bi(PL_WritePropertyList,     1, p(ptr)),
+	bi(PL_Type,                  1, p(ptr)),
+	bi(PL_Line,                  1, p(ptr)),
+	bi(PL_String,                1, p(ptr)),
+	bi(PL_ObjectForKey,          2, p(ptr), p(string)),
+	bi(PL_RemoveObjectForKey,    2, p(ptr), p(string)),
+	bi(PL_ObjectAtIndex,         2, p(ptr), p(int)),
+	bi(PL_D_AllKeys,             1, p(ptr)),
+	bi(PL_D_NumKeys,             1, p(ptr)),
+	bi(PL_D_AddObject,           3, p(ptr), p(string), p(ptr)),
+	bi(PL_A_AddObject,           2, p(ptr), p(ptr)),
+	bi(PL_A_NumObjects,          1, p(ptr)),
+	bi(PL_A_InsertObjectAtIndex, 3, p(ptr), p(ptr), p(int)),
+	bi(PL_RemoveObjectAtIndex,   2, p(ptr), p(int)),
+	bi(PL_NewDictionary,         0),
+	bi(PL_NewArray,              0),
+	bi(PL_NewData,               2, p(ptr), p(int)),
+	bi(PL_NewString,             1, p(string)),
+	bi(PL_Free,                  1, p(ptr)),
 	{0}
 };
 
@@ -477,5 +479,5 @@ RUA_Plist_Init (progs_t *pr, int secure)
 	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

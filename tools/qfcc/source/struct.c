@@ -43,9 +43,10 @@
 
 #include <QF/dstring.h>
 #include <QF/hash.h>
-#include <QF/pr_obj.h>
 #include <QF/sys.h>
 #include <QF/va.h>
+
+#include <QF/progs/pr_obj.h>
 
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
@@ -171,7 +172,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	sym->type->t.symtab = symtab;
-	sym->type->alignment = alignment;
+	if (alignment > sym->type->alignment) {
+		sym->type->alignment = alignment;
+	}
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
 		sym->type->type_def = qfo_encode_type (sym->type, pr.type_data);
 	return sym;
@@ -191,6 +194,8 @@ start_enum (symbol_t *sym)
 		sym = find_enum (0);
 	}
 	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
+	sym->type->alignment = 1;
+	sym->type->width = 1;
 	return sym->type->t.symtab;
 }
 
@@ -204,7 +209,6 @@ finish_enum (symbol_t *sym)
 
 	enum_type = sym->type = find_type (sym->type);
 	enum_tab = enum_type->t.symtab;
-	enum_type->alignment = 1;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
 		name->type = sym->type;
@@ -232,17 +236,17 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.integer_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.int_val + 1;
 	if (val) {
 		convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
-		else if (!is_integer_val (val))
+		else if (!is_int_val (val))
 			error (val, "invalid initializer type");
 		else
-			value = expr_integer (val);
+			value = expr_int (val);
 	}
-	name->s.value = new_integer_val (value);
+	name->s.value = new_int_val (value);
 	symtab_addsymbol (enum_tab, name);
 }
 
@@ -260,12 +264,12 @@ enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->s.value->v.integer_val;
+		val = sym->s.value->v.int_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->s.value->v.integer_val;
+				v = one_sym->s.value->v.int_val;
 				if (val * val > v * v)
 					continue;
 			}

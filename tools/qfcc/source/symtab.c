@@ -75,7 +75,9 @@ new_symbol (const char *name)
 {
 	symbol_t   *symbol;
 	ALLOC (256, symbol_t, symbols, symbol);
-	symbol->name = save_string (name);
+	if (name) {
+		symbol->name = save_string (name);
+	}
 	return symbol;
 }
 

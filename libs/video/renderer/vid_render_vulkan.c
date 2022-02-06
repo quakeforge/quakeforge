@@ -147,6 +147,7 @@ vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		frame->framebuffer = rp->framebuffers->a[imageIndex];
 		rp->draw (rpFrame);
 	}
 
@@ -164,7 +165,6 @@ vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
 		if (rpFrame->renderpass) {
-			frame->framebuffer = rp->framebuffers->a[imageIndex];
 			renderPassInfo.framebuffer = frame->framebuffer,
 			renderPassInfo.renderPass = rp->renderpass;
 			renderPassInfo.clearValueCount = rp->clearValues->size;

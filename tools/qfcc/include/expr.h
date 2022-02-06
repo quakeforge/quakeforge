@@ -31,7 +31,7 @@
 #ifndef __expr_h
 #define __expr_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc
@@ -40,28 +40,12 @@
 
 /**	Type of the exression node in an expression tree.
 */
+#define EX_EXPR(expr) ex_##expr,
 typedef enum {
-	ex_error,		///< error expression. used to signal an error
-	ex_state,		///< state expression (::ex_state_t)
-	ex_bool,		///< short circuit boolean logic expression (::ex_bool_t)
-	ex_label,		///< goto/branch label (::ex_label_t)
-	ex_labelref,	///< label reference (::ex_labelref_t)
-	ex_block,		///< statement block expression (::ex_block_t)
-	ex_expr,		///< binary expression (::ex_expr_t)
-	ex_uexpr,		///< unary expression (::ex_expr_t)
-	ex_def,			///< non-temporary variable (::def_t)
-	ex_symbol,		///< non-temporary variable (::symbol_t)
-	ex_temp,		///< temporary variable (::ex_temp_t)
-	ex_vector,		///< "vector" expression (::ex_vector_t)
-	ex_selector,	///< selector expression (::ex_selector_t)
-
-	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
-	ex_value,		///< constant value (::ex_value_t)
-	ex_compound,	///< compound initializer
-	ex_memset,		///< memset needs three params...
-
+#include "tools/qfcc/include/expr_names.h"
 	ex_count,		///< number of valid expression types
 } expr_type;
+#undef EX_EXPR
 
 /**	Binary and unary expressions.
 
@@ -209,17 +193,68 @@ typedef struct ex_value_s {
 	union {
 		const char *string_val;			///< string constant
 		double      double_val;			///< double constant
+		int64_t     long_val;			///< signed 64-bit constant
+		uint64_t    ulong_val;			///< unsigned 64-bit constant
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant
 		ex_func_t   func_val;			///< function constant
 		ex_pointer_t pointer;			///< pointer constant
 		float       quaternion_val[4];	///< quaternion constant
-		int         integer_val;		///< integer constant
-		unsigned    uinteger_val;		///< unsigned integer constant
-		short       short_val;			///< short constant
+		int         int_val;			///< int constant
+		unsigned    uint_val;			///< unsigned int constant
+		int16_t     short_val;			///< short constant
+		uint16_t    ushort_val;			///< unsigned short constant
 	} v;
 } ex_value_t;
+
+typedef struct {
+	struct type_s *type;				///< type to view the expression
+	struct expr_s *expr;				///< the expression to alias
+	struct expr_s *offset;				///< offset for alias
+} ex_alias_t;
+
+typedef struct {
+	struct type_s *type;				///< pointer type
+	struct expr_s *lvalue;				///< the lvalue being addressed
+	struct expr_s *offset;				///< offset from the address
+} ex_address_t;
+
+typedef struct {
+	struct expr_s *dst;					///< destination of assignment
+	struct expr_s *src;					///< source of assignment
+} ex_assign_t;
+
+typedef struct {
+	pr_branch_e type;				///< type of branch
+	struct expr_s *target;			///< destination of branch
+	struct expr_s *index;			///< index for indirect branches
+	struct expr_s *test;			///< test expression (null for jump/call)
+	struct expr_s *args;			///< only for call
+	struct type_s *ret_type;		///< void for non-call
+} ex_branch_t;
+
+typedef struct {
+	struct expr_s *ret_val;
+	int         at_return;		///< return void_return call through void
+} ex_return_t;
+
+typedef struct {
+	short       mode;			///< currently must be 0
+	short       offset;			///< amount by which stack will be adjusted
+} ex_adjstk_t;
+
+typedef struct {
+	short       mode;
+	short       reg;			///< base register to load
+	struct expr_s *with;		///< value to load
+} ex_with_t;
+
+typedef struct {
+	int         op;				///< operation to perform
+	struct expr_s *vec;			///< vector expression on which to operate
+	struct type_s *type;		///< result type
+} ex_horizontal_t;
 
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
@@ -227,7 +262,7 @@ typedef struct expr_s {
 	struct expr_s *next;		///< the next expression in a block expression
 	expr_type   type;			///< the type of the result of this expression
 	int         line;			///< source line that generated this expression
-	string_t    file;			///< source file that generated this expression
+	pr_string_t file;			///< source file that generated this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    paren:1;		///< the expression is enclosed in ()
 	unsigned    rvalue:1;		///< the expression is on the right side of =
@@ -247,7 +282,15 @@ typedef struct expr_s {
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
+		ex_alias_t  alias;				///< alias expr params
+		ex_address_t address;			///< alias expr params
+		ex_assign_t assign;				///< assignment expr params
+		ex_branch_t branch;				///< branch expr params
+		ex_return_t retrn;				///< return expr params
+		ex_adjstk_t adjstk;				///< stack adjust param
+		ex_with_t   with;				///< with expr param
 		struct type_s *nil;				///< type for nil if known
+		ex_horizontal_t hop;			///< horizontal vector operation
 	} e;
 } expr_t;
 
@@ -397,7 +440,7 @@ void build_element_chain (element_chain_t *element_chain,
 						  expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
 
-/**	Create a new binary expression node node.
+/**	Create a new binary expression node.
 
 	If either \a e1 or \a e2 are error expressions, then that expression will
 	be returned instead of a new binary expression.
@@ -411,7 +454,7 @@ void free_element_chain (element_chain_t *element_chain);
 */
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 
-/**	Create a new unary expression node node.
+/**	Create a new unary expression node.
 
 	If \a e1 is an error expression, then it will be returned instead of a
 	new unary expression.
@@ -422,6 +465,19 @@ expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 					is not an error expression, otherwise \a e1.
 */
 expr_t *new_unary_expr (int op, expr_t *e1);
+
+/**	Create a new horizontal vector operantion node.
+
+	If \a vec is an error expression, then it will be returned instead of a
+	new unary expression.
+
+	\param op		The op-code of the horizontal operation.
+	\param vec		The expression (must be a vector type) on which to operate.
+	\param type     The result type (must be scalar type)
+	\return			The new unary expression node (::ex_expr_t) if \a e1
+					is not an error expression, otherwise \a e1.
+*/
+expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 
@@ -452,6 +508,14 @@ expr_t *new_temp_def_expr (const struct type_s *type);
 	\return			The new nil expression node.
 */
 expr_t *new_nil_expr (void);
+
+/** Create a new args expression node
+
+	Marker between real parameters and those passed through ...
+
+	\return			The new args expression node.
+*/
+expr_t *new_args_expr (void);
 
 /** Create a new value expression node.
 
@@ -550,23 +614,23 @@ expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 expr_t *new_quaternion_expr (const float *quaternion_val);
 const float *expr_quaternion (expr_t *e) __attribute__((pure));
 
-/** Create a new integer constant expression node.
+/** Create a new itn constant expression node.
 
-	\param integer_val	The integer constant being represented.
-	\return			The new integer constant expression node
-					(expr_t::e::integer_val).
+	\param int_val	The int constant being represented.
+	\return			The new int constant expression node
+					(expr_t::e::int_val).
 */
-expr_t *new_integer_expr (int integer_val);
-int expr_integer (expr_t *e) __attribute__((pure));
+expr_t *new_int_expr (int int_val);
+int expr_int (expr_t *e) __attribute__((pure));
 
-/** Create a new integer constant expression node.
+/** Create a new int constant expression node.
 
-	\param uinteger_val	The integer constant being represented.
-	\return			The new integer constant expression node
-					(expr_t::e::integer_val).
+	\param uint_val	The int constant being represented.
+	\return			The new int constant expression node
+					(expr_t::e::int_val).
 */
-expr_t *new_uinteger_expr (unsigned uinteger_val);
-unsigned expr_uinteger (expr_t *e) __attribute__((pure));
+expr_t *new_uint_expr (unsigned uint_val);
+unsigned expr_uint (expr_t *e) __attribute__((pure));
 
 /** Create a new short constant expression node.
 
@@ -585,6 +649,14 @@ int expr_integral (expr_t *e) __attribute__((pure));
 	\return			True if the expression is constant.
 */
 int is_constant (expr_t *e) __attribute__((pure));
+
+/** Check if the expression refers to a variable.
+
+	\param e		The expression to check.
+	\return			True if the expression refers to a variable (def
+					expression, var symbol expression, or temp expression).
+*/
+int is_variable (expr_t *e) __attribute__((pure));
 
 /** Check if the expression refers to a selector
 
@@ -625,14 +697,15 @@ int is_math_op (int op) __attribute__((const));
 int is_logic (int op) __attribute__((const));
 
 int has_function_call (expr_t *e) __attribute__((pure));
+int is_function_call (expr_t *e) __attribute__((pure));
 
 int is_nil (expr_t *e) __attribute__((pure));
 int is_string_val (expr_t *e) __attribute__((pure));
 int is_float_val (expr_t *e) __attribute__((pure));
 int is_vector_val (expr_t *e) __attribute__((pure));
 int is_quaternion_val (expr_t *e) __attribute__((pure));
-int is_integer_val (expr_t *e) __attribute__((pure));
-int is_uinteger_val (expr_t *e) __attribute__((pure));
+int is_int_val (expr_t *e) __attribute__((pure));
+int is_uint_val (expr_t *e) __attribute__((pure));
 int is_short_val (expr_t *e) __attribute__((pure));
 int is_integral_val (expr_t *e) __attribute__((pure));
 int is_pointer_val (expr_t *e) __attribute__((pure));
@@ -661,6 +734,13 @@ expr_t *new_ret_expr (struct type_s *type);
 expr_t *new_alias_expr (struct type_s *type, expr_t *expr);
 expr_t *new_offset_alias_expr (struct type_s *type, expr_t *expr, int offset);
 
+expr_t *new_address_expr (struct type_s *lvtype, expr_t *lvalue,
+						  expr_t *offset);
+expr_t *new_assign_expr (expr_t *dst, expr_t *src);
+expr_t *new_return_expr (expr_t *ret_val);
+expr_t *new_adjstk_expr (int mode, int offset);
+expr_t *new_with_expr (int mode, int reg, expr_t *val);
+
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
 
@@ -669,22 +749,6 @@ expr_t *new_offset_alias_expr (struct type_s *type, expr_t *expr, int offset);
 	\return			A new expression referencing the parameter slot.
 */
 expr_t *new_param_expr (struct type_s *type, int num);
-
-/**	Create an expression representing a block copy.
-
-	This is used for structure assignments.
-
-	\param e1		Destination of move.
-	\param e2		Source of move.
-	\param type		type giving size of move.
-	\param indirect	Move uses dereferenced pointers.
-	\return			A new expression representing the move.
-*/
-expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
-					   int indirect);
-
-expr_t *new_memset_expr (expr_t *dst, expr_t *val, struct type_s *type);
-
 
 /**	Convert a name to an expression of the appropriate type.
 
@@ -698,6 +762,7 @@ void convert_name (expr_t *e);
 expr_t *convert_vector (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
+expr_t *prepend_expr (expr_t *block, expr_t *e);
 
 expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
@@ -724,12 +789,16 @@ expr_t *function_expr (expr_t *e1, expr_t *e2);
 struct function_s;
 expr_t *branch_expr (int op, expr_t *test, expr_t *label);
 expr_t *goto_expr (expr_t *label);
+expr_t *jump_table_expr (expr_t *table, expr_t *index);
+expr_t *call_expr (expr_t *func, expr_t *args, struct type_s *ret_type);
 expr_t *return_expr (struct function_s *f, expr_t *e);
+expr_t *at_return_expr (struct function_s *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
-expr_t *pointer_expr (expr_t *pointer);
-expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
+expr_t *deref_pointer_expr (expr_t *pointer);
+expr_t *offset_pointer_expr (expr_t *pointer, expr_t *offset);
+expr_t *address_expr (expr_t *e1, struct type_s *t);
 expr_t *build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els,
 							expr_t *s2);
 expr_t *build_while_statement (int not, expr_t *test, expr_t *statement,

@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 #include "QF/darray.h"
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 /** \defgroup qfcc_general General functions
 	\ingroup qfcc
@@ -45,7 +45,7 @@
 typedef struct srcline_s srcline_t;
 struct srcline_s {
 	srcline_t  *next;
-	string_t    source_file;
+	pr_string_t source_file;
 	int         source_line;
 };
 
@@ -79,7 +79,7 @@ typedef struct pr_info_s {
 	struct symtab_s *entity_fields;
 
 	srcline_t      *srcline_stack;
-	string_t        source_file;
+	pr_string_t     source_file;
 	int             source_line;
 	int             error_count;
 
@@ -100,7 +100,7 @@ extern	pr_info_t	pr;
 #define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
 #define	D_DOUBLE(d)			(*(double *) ((d)->space->data + (d)->offset))
 #define	D_FLOAT(d)			D_var (float, d)
-#define	D_INT(d)			D_var (integer, d)
+#define	D_INT(d)			D_var (int, d)
 #define	D_VECTOR(d)			(&D_var (vector, d))
 #define	D_QUAT(d)			(&D_var (quat, d))
 #define	D_STRING(d)			D_var (string, d)

@@ -92,7 +92,6 @@ AC_ARG_ENABLE(simd,
 
 case "$enable_simd" in
 	no)
-		QF_CC_OPTION(-Wno-psabi)
 		simd=no
 		;;
 	sse|sse2|avx|avx2)
@@ -106,6 +105,13 @@ case "$enable_simd" in
 				break
 			fi
 		done
+		;;
+esac
+case "$simd" in
+	avx*)
+		;;
+	*)
+		QF_CC_OPTION(-Wno-psabi)
 		;;
 esac
 

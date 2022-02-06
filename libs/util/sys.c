@@ -431,7 +431,7 @@ Sys_LongTime (void)
 VISIBLE int64_t
 Sys_TimeBase (void)
 {
-	return __INT64_C (4294967296000000);
+	return INT64_C (4294967296000000);
 }
 
 VISIBLE double

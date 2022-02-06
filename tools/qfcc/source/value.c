@@ -60,7 +60,7 @@
 typedef struct {
 	def_t      *def;
 	union {
-		string_t    string_val;
+		pr_string_t string_val;
 		float       float_val;
 		float       vector_val[3];
 		int         entity_val;
@@ -68,7 +68,7 @@ typedef struct {
 		int         func_val;
 		ex_pointer_t pointer;
 		float       quaternion_val[4];
-		int         integer_val;
+		int         int_val;
 		double      double_val;
 	} i;
 } immediate_t;
@@ -224,22 +224,22 @@ new_quaternion_val (const float *quaternion_val)
 }
 
 ex_value_t *
-new_integer_val (int integer_val)
+new_int_val (int int_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	set_val_type (&val, &type_integer);
-	val.v.integer_val = integer_val;
+	set_val_type (&val, &type_int);
+	val.v.int_val = int_val;
 	return find_value (&val);
 }
 
 ex_value_t *
-new_uinteger_val (int uinteger_val)
+new_uint_val (int uint_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	set_val_type (&val, &type_uinteger);
-	val.v.uinteger_val = uinteger_val;
+	set_val_type (&val, &type_uint);
+	val.v.uint_val = uint_val;
 	return find_value (&val);
 }
 
@@ -262,7 +262,7 @@ new_nil_val (type_t *type)
 	if (val.lltype == ev_void) {
 		val.lltype = type_nil->type;
 	}
-	if (val.lltype == ev_pointer || val.lltype == ev_field )
+	if (val.lltype == ev_ptr || val.lltype == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
 	if (val.lltype == ev_func)
 		val.v.func_val.type = type;
@@ -277,7 +277,7 @@ static hashtab_t *field_imm_defs;
 static hashtab_t *func_imm_defs;
 static hashtab_t *pointer_imm_defs;
 static hashtab_t *quaternion_imm_defs;
-static hashtab_t *integer_imm_defs;
+static hashtab_t *int_imm_defs;
 static hashtab_t *double_imm_defs;
 
 static void
@@ -296,15 +296,15 @@ imm_get_hash (const void *_imm, void *_tab)
 		const char *str = pr.strings->strings + imm->i.string_val;
 		return str ? Hash_String (str) : 0;
 	} else if (tab == &float_imm_defs) {
-		return imm->i.integer_val;
+		return imm->i.int_val;
 	} else if (tab == &vector_imm_defs) {
 		return Hash_Buffer (&imm->i.vector_val, sizeof (&imm->i.vector_val));
 	} else if (tab == &entity_imm_defs) {
-		return imm->i.integer_val;
+		return imm->i.int_val;
 	} else if (tab == &field_imm_defs) {
 		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
 	} else if (tab == &func_imm_defs) {
-		return imm->i.integer_val;
+		return imm->i.int_val;
 	} else if (tab == &pointer_imm_defs) {
 		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
 	} else if (tab == &quaternion_imm_defs) {
@@ -312,8 +312,8 @@ imm_get_hash (const void *_imm, void *_tab)
 							sizeof (&imm->i.quaternion_val));
 	} else if (tab == &double_imm_defs) {
 		return Hash_Buffer (&imm->i.double_val, sizeof (&imm->i.double_val));
-	} else if (tab == &integer_imm_defs) {
-		return imm->i.integer_val;
+	} else if (tab == &int_imm_defs) {
+		return imm->i.int_val;
 	} else {
 		internal_error (0, 0);
 	}
@@ -348,8 +348,8 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 		return QuatCompare (imm1->i.quaternion_val, imm2->i.quaternion_val);
 	} else if (tab == &double_imm_defs) {
 		return imm1->i.double_val == imm2->i.double_val;
-	} else if (tab == &integer_imm_defs) {
-		return imm1->i.integer_val == imm2->i.integer_val;
+	} else if (tab == &int_imm_defs) {
+		return imm1->i.int_val == imm2->i.int_val;
 	} else {
 		internal_error (0, 0);
 	}
@@ -364,10 +364,10 @@ ReuseString (const char *str)
 static float
 value_as_float (ex_value_t *value)
 {
-	if (value->lltype == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->lltype == ev_integer)
-		return value->v.integer_val;
+	if (value->lltype == ev_uint)
+		return value->v.uint_val;
+	if (value->lltype == ev_int)
+		return value->v.int_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
 	if (value->lltype == ev_double)
@@ -380,10 +380,10 @@ value_as_float (ex_value_t *value)
 static double
 value_as_double (ex_value_t *value)
 {
-	if (value->lltype == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->lltype == ev_integer)
-		return value->v.integer_val;
+	if (value->lltype == ev_uint)
+		return value->v.uint_val;
+	if (value->lltype == ev_int)
+		return value->v.int_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
 	if (value->lltype == ev_double)
@@ -396,10 +396,10 @@ value_as_double (ex_value_t *value)
 static int
 value_as_int (ex_value_t *value)
 {
-	if (value->lltype == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->lltype == ev_integer)
-		return value->v.integer_val;
+	if (value->lltype == ev_uint)
+		return value->v.uint_val;
+	if (value->lltype == ev_int)
+		return value->v.int_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
 	if (value->lltype == ev_double)
@@ -412,10 +412,10 @@ value_as_int (ex_value_t *value)
 static unsigned
 value_as_uint (ex_value_t *value)
 {
-	if (value->lltype == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->lltype == ev_integer)
-		return value->v.integer_val;
+	if (value->lltype == ev_uint)
+		return value->v.uint_val;
+	if (value->lltype == ev_int)
+		return value->v.int_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
 	if (value->lltype == ev_double)
@@ -441,13 +441,13 @@ convert_value (ex_value_t *value, type_t *type)
 	} else if (type->type == ev_short) {
 		int         val = value_as_int (value);
 		return new_short_val (val);
-	} else if (type->type == ev_uinteger) {
+	} else if (type->type == ev_uint) {
 		unsigned    val = value_as_uint (value);
-		return new_uinteger_val (val);
+		return new_uint_val (val);
 	} else {
 		//FIXME handle enums separately?
 		int         val = value_as_int (value);
-		return new_integer_val (val);
+		return new_int_val (val);
 	}
 }
 
@@ -505,27 +505,27 @@ emit_value (ex_value_t *value, def_t *def)
 			break;
 		case ev_func:
 			tab = func_imm_defs;
-			type = &type_function;
+			type = &type_func;
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			tab = pointer_imm_defs;
-			type = &type_pointer;
+			type = &type_ptr;
 			break;
-		case ev_integer:
-		case ev_uinteger:
+		case ev_int:
+		case ev_uint:
 			if (!def || !is_float(def->type)) {
-				tab = integer_imm_defs;
-				type = &type_integer;
+				tab = int_imm_defs;
+				type = &type_int;
 				break;
 			}
-			val.v.float_val = val.v.integer_val;
+			val.v.float_val = val.v.int_val;
 			val.lltype = ev_float;
 		case ev_float:
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
 		case ev_string:
-			val.v.integer_val = ReuseString (val.v.string_val);
+			val.v.int_val = ReuseString (val.v.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -533,7 +533,7 @@ emit_value (ex_value_t *value, def_t *def)
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			tab = quaternion_imm_defs;
 			type = &type_quaternion;
 			break;
@@ -604,7 +604,7 @@ emit_value (ex_value_t *value, def_t *def)
 			if (val.v.pointer.def)
 				reloc_def_field_ofs (val.v.pointer.def, cn);
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			if (val.v.pointer.def) {
 				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
 							  val.v.pointer.def);
@@ -637,7 +637,7 @@ clear_immediates (void)
 		Hash_FlushTable (func_imm_defs);
 		Hash_FlushTable (pointer_imm_defs);
 		Hash_FlushTable (quaternion_imm_defs);
-		Hash_FlushTable (integer_imm_defs);
+		Hash_FlushTable (int_imm_defs);
 		Hash_FlushTable (double_imm_defs);
 	} else {
 		value_table = Hash_NewTable (16381, 0, 0, 0, 0);
@@ -675,9 +675,9 @@ clear_immediates (void)
 											 &quaternion_imm_defs, 0);
 		Hash_SetHashCompare (quaternion_imm_defs, imm_get_hash, imm_compare);
 
-		integer_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										  &integer_imm_defs, 0);
-		Hash_SetHashCompare (integer_imm_defs, imm_get_hash, imm_compare);
+		int_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										  &int_imm_defs, 0);
+		Hash_SetHashCompare (int_imm_defs, imm_get_hash, imm_compare);
 
 		double_imm_defs = Hash_NewTable (16381, 0, imm_free,
 										 &double_imm_defs, 0);
@@ -691,5 +691,5 @@ clear_immediates (void)
 	make_def_imm (def, float_imm_defs, &zero_val);
 	make_def_imm (def, entity_imm_defs, &zero_val);
 	make_def_imm (def, pointer_imm_defs, &zero_val);
-	make_def_imm (def, integer_imm_defs, &zero_val);
+	make_def_imm (def, int_imm_defs, &zero_val);
 }

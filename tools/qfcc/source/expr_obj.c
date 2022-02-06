@@ -112,8 +112,8 @@ selector_expr (keywordarg_t *selector)
 		reloc_def_def (sel_table->s.def, sel_sym->s.def);
 	}
 	sel_ref = new_symbol_expr (sel_sym);
-	sel_ref = new_binary_expr ('&', sel_ref, new_short_expr (index));
-	sel_ref->e.expr.type = &type_SEL;
+	sel_ref = new_address_expr (&type_selector, sel_ref,
+								new_short_expr (index));
 
 	expr_t     *sel = new_expr ();
 	sel->type = ex_selector;
@@ -156,7 +156,8 @@ super_expr (class_type_t *class_type)
 	sym = symtab_lookup (current_symtab, ".super");
 	if (!sym || sym->table != current_symtab) {
 		sym = new_symbol_type (".super", &type_super);
-		initialize_def (sym, 0, current_symtab->space, sc_local);
+		initialize_def (sym, 0, current_symtab->space, sc_local,
+						current_symtab);
 	}
 	super = new_symbol_expr (sym);
 
@@ -171,7 +172,7 @@ super_expr (class_type_t *class_type)
 					 field_expr (e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
-	e = address_expr (super, 0, 0);
+	e = address_expr (super, 0);
 	super_block->e.block.result = e;
 	return super_block;
 }
@@ -248,6 +249,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (call->type == ex_error)
 		return receiver;
 
-	call->e.block.result = new_ret_expr (return_type);
+	if (!is_function_call (call)) {
+		internal_error (call, "unexpected call expression type");
+	}
+	call->e.block.result->e.branch.ret_type = return_type;
 	return call;
 }

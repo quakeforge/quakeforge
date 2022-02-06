@@ -91,7 +91,7 @@ convert_name (expr_t *e)
 	}
 	if (!strcmp (sym->name, "__LINE__")
 		&& current_func) {
-		new = new_integer_expr (e->line);
+		new = new_int_expr (e->line);
 		goto convert;
 	}
 	if (!strcmp (sym->name, "__INFINITY__")
@@ -215,18 +215,26 @@ get_type (expr_t *e)
 	const type_t *type = 0;
 	convert_name (e);
 	switch (e->type) {
+		case ex_branch:
+			type = e->e.branch.ret_type;
+			break;
 		case ex_labelref:
+		case ex_adjstk:
+		case ex_with:
 			return &type_void;
 		case ex_memset:
 			return e->e.memset.type;
-		case ex_label:
 		case ex_error:
+			return 0;
+		case ex_return:
+			internal_error (e, "unexpected expression type");
+		case ex_label:
 		case ex_compound:
-			return 0;					// something went very wrong
+			return 0;
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return &type_float;
-			return &type_integer;
+			return &type_int;
 		case ex_nil:
 			if (e->e.nil) {
 				return e->e.nil;
@@ -258,6 +266,18 @@ get_type (expr_t *e)
 			return e->e.vector.type;
 		case ex_selector:
 			return &type_SEL;
+		case ex_alias:
+			type = e->e.alias.type;
+			break;
+		case ex_address:
+			type = e->e.address.type;
+			break;
+		case ex_assign:
+			return get_type (e->e.assign.dst);
+		case ex_args:
+			return &type_va_list;
+		case ex_horizontal:
+			return e->e.hop.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -315,7 +335,7 @@ cast_error (expr_t *e, type_t *t1, type_t *t2)
 	print_type_str (s1, t1);
 	print_type_str (s2, t2);
 
-	e =  error (e, "cannot cast from %s to %s", s1->str, s2->str);
+	e = error (e, "cannot cast from %s to %s", s1->str, s2->str);
 	dstring_delete (s1);
 	dstring_delete (s2);
 	return e;
@@ -468,6 +488,55 @@ copy_expr (expr_t *e)
 			n->e.memset.dst = copy_expr (e->e.memset.dst);
 			n->e.memset.val = copy_expr (e->e.memset.val);
 			n->e.memset.count = copy_expr (e->e.memset.count);
+			return n;
+		case ex_alias:
+			n = new_expr ();
+			*n = *e;
+			n->e.alias.expr = copy_expr (e->e.alias.expr);
+			n->e.alias.offset = copy_expr (e->e.alias.offset);
+			return n;
+		case ex_address:
+			n = new_expr ();
+			*n = *e;
+			n->e.address.lvalue = copy_expr (e->e.address.lvalue);
+			n->e.address.offset = copy_expr (e->e.address.offset);
+			return n;
+		case ex_assign:
+			n = new_expr ();
+			*n = *e;
+			n->e.assign.dst = copy_expr (e->e.assign.dst);
+			n->e.assign.src = copy_expr (e->e.assign.src);
+			return n;
+		case ex_branch:
+			n = new_expr ();
+			*n = *e;
+			n->e.branch.target = copy_expr (e->e.branch.target);
+			n->e.branch.index = copy_expr (e->e.branch.index);
+			n->e.branch.test = copy_expr (e->e.branch.test);
+			n->e.branch.args = copy_expr (e->e.branch.args);
+			return n;
+		case ex_return:
+			n = new_expr ();
+			*n = *e;
+			n->e.retrn.ret_val = copy_expr (e->e.retrn.ret_val);
+			return n;
+		case ex_adjstk:
+			n = new_expr ();
+			*n = *e;
+			return n;
+		case ex_with:
+			n = new_expr ();
+			*n = *e;
+			n->e.with.with = copy_expr (e->e.with.with);
+			return n;
+		case ex_args:
+			n = new_expr ();
+			*n = *e;
+			return n;
+		case ex_horizontal:
+			n = new_expr ();
+			*n = *e;
+			e->e.hop.vec = copy_expr (e->e.hop.vec);
 			return n;
 		case ex_count:
 			break;
@@ -634,6 +703,28 @@ new_unary_expr (int op, expr_t *e1)
 }
 
 expr_t *
+new_horizontal_expr (int op, expr_t *vec, type_t *type)
+{
+	type_t     *vec_type = get_type (vec);
+	if (!vec_type) {
+		return vec;
+	}
+	if (!is_math (vec_type) || is_scalar (vec_type)) {
+		internal_error (vec, "horizontal operand not a vector type");
+	}
+	if (!is_scalar (type)) {
+		internal_error (vec, "horizontal result not a scalar type");
+	}
+
+	expr_t     *e = new_expr ();
+	e->type = ex_horizontal;
+	e->e.hop.op = op;
+	e->e.hop.vec = vec;
+	e->e.hop.type = type;
+	return e;
+}
+
+expr_t *
 new_def_expr (def_t *def)
 {
 	expr_t     *e = new_expr ();
@@ -666,6 +757,14 @@ new_nil_expr (void)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_nil;
+	return e;
+}
+
+expr_t *
+new_args_expr (void)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_args;
 	return e;
 }
 
@@ -846,20 +945,20 @@ new_quaternion_expr (const float *quaternion_val)
 }
 
 expr_t *
-new_integer_expr (int integer_val)
+new_int_expr (int int_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value = new_integer_val (integer_val);
+	e->e.value = new_int_val (int_val);
 	return e;
 }
 
 expr_t *
-new_uinteger_expr (unsigned uinteger_val)
+new_uint_expr (unsigned uint_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value = new_uinteger_val (uinteger_val);
+	e->e.value = new_uint_val (uint_val);
 	return e;
 }
 
@@ -875,15 +974,28 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
-	while ((e->type == ex_uexpr || e->type == ex_expr)
-		   && e->e.expr.op == 'A') {
-		e = e->e.expr.e1;
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
 	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 			&& e->e.symbol->s.def->constant))
 		return 1;
+	return 0;
+}
+
+int
+is_variable (expr_t *e)
+{
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
+	}
+	if (e->type == ex_def
+		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var)
+		|| e->type == ex_temp) {
+		return 1;
+	}
 	return 0;
 }
 
@@ -1037,10 +1149,10 @@ is_quaternion_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->lltype == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quaternion)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_quat)
+		&& e->e.symbol->type->type == ev_quaternion)
 		return 1;
 	return 0;
 }
@@ -1050,25 +1162,25 @@ expr_quaternion (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return quat_origin;
-	if (e->type == ex_value && e->e.value->lltype == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quaternion)
 		return e->e.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_quat)
+		&& e->e.symbol->type->type == ev_quaternion)
 		return e->e.symbol->s.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
-		&& e->e.symbol->s.def->type->type == ev_quat)
+		&& e->e.symbol->s.def->type->type == ev_quaternion)
 		return D_QUAT (e->e.symbol->s.def);
 	internal_error (e, "not a quaternion constant");
 }
 
 int
-is_integer_val (expr_t *e)
+is_int_val (expr_t *e)
 {
 	if (e->type == ex_nil) {
 		return 1;
 	}
-	if (e->type == ex_value && e->e.value->lltype == ev_integer) {
+	if (e->type == ex_value && e->e.value->lltype == ev_int) {
 		return 1;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
@@ -1083,18 +1195,21 @@ is_integer_val (expr_t *e)
 }
 
 int
-expr_integer (expr_t *e)
+expr_int (expr_t *e)
 {
 	if (e->type == ex_nil) {
 		return 0;
 	}
-	if (e->type == ex_value && e->e.value->lltype == ev_integer) {
-		return e->e.value->v.integer_val;
+	if (e->type == ex_value && e->e.value->lltype == ev_int) {
+		return e->e.value->v.int_val;
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_short) {
+		return e->e.value->v.short_val;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& (e->e.symbol->type->type == ev_integer
+		&& (e->e.symbol->type->type == ev_int
 			|| is_enum (e->e.symbol->type))) {
-		return e->e.symbol->s.value->v.integer_val;
+		return e->e.symbol->s.value->v.int_val;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
@@ -1105,16 +1220,16 @@ expr_integer (expr_t *e)
 		&& is_integral (e->e.def->type)) {
 		return D_INT (e->e.def);
 	}
-	internal_error (e, "not an integer constant");
+	internal_error (e, "not an int constant");
 }
 
 int
-is_uinteger_val (expr_t *e)
+is_uint_val (expr_t *e)
 {
 	if (e->type == ex_nil) {
 		return 1;
 	}
-	if (e->type == ex_value && e->e.value->lltype == ev_uinteger) {
+	if (e->type == ex_value && e->e.value->lltype == ev_uint) {
 		return 1;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
@@ -1129,17 +1244,17 @@ is_uinteger_val (expr_t *e)
 }
 
 unsigned
-expr_uinteger (expr_t *e)
+expr_uint (expr_t *e)
 {
 	if (e->type == ex_nil) {
 		return 0;
 	}
-	if (e->type == ex_value && e->e.value->lltype == ev_uinteger) {
-		return e->e.value->v.uinteger_val;
+	if (e->type == ex_value && e->e.value->lltype == ev_uint) {
+		return e->e.value->v.uint_val;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_uinteger) {
-		return e->e.symbol->s.value->v.uinteger_val;
+		&& e->e.symbol->type->type == ev_uint) {
+		return e->e.symbol->s.value->v.uint_val;
 	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
@@ -1189,10 +1304,10 @@ int
 is_integral_val (expr_t *e)
 {
 	if (is_constant (e)) {
-		if (is_integer_val (e)) {
+		if (is_int_val (e)) {
 			return 1;
 		}
-		if (is_uinteger_val (e)) {
+		if (is_uint_val (e)) {
 			return 1;
 		}
 		if (is_short_val (e)) {
@@ -1206,11 +1321,11 @@ int
 expr_integral (expr_t *e)
 {
 	if (is_constant (e)) {
-		if (is_integer_val (e)) {
-			return expr_integer (e);
+		if (is_int_val (e)) {
+			return expr_int (e);
 		}
-		if (is_uinteger_val (e)) {
-			return expr_uinteger (e);
+		if (is_uint_val (e)) {
+			return expr_uint (e);
 		}
 		if (is_short_val (e)) {
 			return expr_short (e);
@@ -1222,7 +1337,7 @@ expr_integral (expr_t *e)
 int
 is_pointer_val (expr_t *e)
 {
-	if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
+	if (e->type == ex_value && e->e.value->lltype == ev_ptr) {
 		return 1;
 	}
 	return 0;
@@ -1231,15 +1346,29 @@ is_pointer_val (expr_t *e)
 expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
-	expr_t     *alias;
-
-	alias = new_unary_expr ('A', expr);
-	alias->e.expr.type = type;
-	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
-	//	bug (alias, "aliasing an alias expression");
-	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
-		return new_offset_alias_expr (type, expr, 0);
+	if (is_ptr (type) && expr->type == ex_address) {
+		// avoid aliasing a pointer to a pointer (redundant)
+		expr = copy_expr (expr);
+		expr->e.address.type = type;
+		return expr;
 	}
+	if (expr->type == ex_alias) {
+		if (expr->e.alias.offset) {
+			return new_offset_alias_expr (type, expr, 0);
+		}
+		expr = expr->e.alias.expr;
+	}
+	// this can happen when constant folding an offset pointer results in
+	// a noop due to the offset being 0 and thus casting back to the original
+	// type
+	if (type == get_type (expr)) {
+		return expr;
+	}
+
+	expr_t     *alias = new_expr ();
+	alias->type = ex_alias;
+	alias->e.alias.type = type;
+	alias->e.alias.expr = expr;
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
@@ -1248,21 +1377,78 @@ new_alias_expr (type_t *type, expr_t *expr)
 expr_t *
 new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
 {
-	expr_t     *alias;
-
-	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
-		expr_t     *ofs_expr = expr->e.expr.e2;
-		expr = expr->e.expr.e1;
+	if (expr->type == ex_alias && expr->e.alias.offset) {
+		expr_t     *ofs_expr = expr->e.alias.offset;
 		if (!is_constant (ofs_expr)) {
 			internal_error (ofs_expr, "non-constant offset for alias expr");
 		}
-		offset += expr_integer (ofs_expr);
+		offset += expr_int (ofs_expr);
+
+		if (expr->e.alias.expr->type == ex_alias) {
+			internal_error (expr, "alias expr of alias expr");
+		}
+		expr = expr->e.alias.expr;
 	}
-	alias = new_binary_expr ('A', expr, new_integer_expr (offset));
-	alias->e.expr.type = type;
+
+	expr_t     *alias = new_expr ();
+	alias->type = ex_alias;
+	alias->e.alias.type = type;
+	alias->e.alias.expr = expr;
+	alias->e.alias.offset = new_int_expr (offset);
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
+}
+
+expr_t *
+new_address_expr (type_t *lvtype, expr_t *lvalue, expr_t *offset)
+{
+	expr_t     *addr = new_expr ();
+	addr->type = ex_address;
+	addr->e.address.type = pointer_type (lvtype);
+	addr->e.address.lvalue = lvalue;
+	addr->e.address.offset = offset;
+	return addr;
+}
+
+expr_t *
+new_assign_expr (expr_t *dst, expr_t *src)
+{
+	expr_t     *addr = new_expr ();
+	addr->type = ex_assign;
+	addr->e.assign.dst = dst;
+	addr->e.assign.src = src;
+	return addr;
+}
+
+expr_t *
+new_return_expr (expr_t *ret_val)
+{
+	expr_t     *retrn = new_expr ();
+	retrn->type = ex_return;
+	retrn->e.retrn.ret_val = ret_val;
+	return retrn;
+}
+
+expr_t *
+new_adjstk_expr (int mode, int offset)
+{
+	expr_t     *adj = new_expr ();
+	adj->type = ex_adjstk;
+	adj->e.adjstk.mode = mode;
+	adj->e.adjstk.offset = offset;
+	return adj;
+}
+
+expr_t *
+new_with_expr (int mode, int reg, expr_t *val)
+{
+	expr_t     *with = new_expr ();
+	with->type = ex_with;
+	with->e.with.mode = mode;
+	with->e.with.reg = reg;
+	with->e.with.with = val;
+	return with;
 }
 
 static expr_t *
@@ -1291,33 +1477,6 @@ new_param_expr (type_t *type, int num)
 }
 
 expr_t *
-new_move_expr (expr_t *e1, expr_t *e2, type_t *type, int indirect)
-{
-	expr_t     *e = new_binary_expr (indirect ? 'M' : 'm', e1, e2);
-	e->e.expr.type = type;
-	return e;
-}
-
-expr_t *
-new_memset_expr (expr_t *dst, expr_t *val, type_t *type)
-{
-	expr_t     *e;
-	if (!is_pointer (get_type (dst))) {
-		return error (dst, "incorrect destination type for memset");
-	}
-	if (!is_scalar (get_type (val))) {
-		return error (val, "memset value must be a scalar");
-	}
-	e = new_expr ();
-	e->type = ex_memset;
-	e->e.memset.dst = dst;
-	e->e.memset.val = val;
-	e->e.memset.count = new_integer_expr (type_size (type));
-	e->e.memset.type = type;
-	return e;
-}
-
-expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)
@@ -1331,6 +1490,28 @@ append_expr (expr_t *block, expr_t *e)
 
 	*block->e.block.tail = e;
 	block->e.block.tail = &e->next;
+
+	return block;
+}
+
+expr_t *
+prepend_expr (expr_t *block, expr_t *e)
+{
+	if (block->type != ex_block)
+		internal_error (block, "not a block expression");
+
+	if (!e || e->type == ex_error)
+		return block;
+
+	if (e->next)
+		internal_error (e, "append_expr: expr loop detected");
+
+	e->next = block->e.block.head;
+	block->e.block.head = e;
+
+	if (block->e.block.tail == &block->e.block.head) {
+		block->e.block.tail = &e->next;
+	}
 
 	return block;
 }
@@ -1363,7 +1544,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
-	if (t1->type == ev_entity) {
+	if (is_entity (t1)) {
 		symbol_t   *field = 0;
 
 		if (e2->type == ex_symbol)
@@ -1383,7 +1564,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e;
 			}
 		}
-	} else if (t1->type == ev_pointer) {
+	} else if (is_ptr (t1)) {
 		if (is_struct (t1->t.fldptr.type)) {
 			symbol_t   *field;
 
@@ -1391,11 +1572,10 @@ field_expr (expr_t *e1, expr_t *e2)
 			if (!field)
 				return e1;
 
-			e2->type = ex_value;
-			e2->e.value = new_short_val (field->s.offset);
-			e = new_binary_expr ('&', e1, e2);
-			e->e.expr.type = pointer_type (field->type);
-			return unary_expr ('.', e);
+			expr_t     *offset = new_short_expr (field->s.offset);
+			e1 = offset_pointer_expr (e1, offset);
+			e1 = cast_expr (pointer_type (field->type), e1);
+			return unary_expr ('.', e1);
 		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
@@ -1405,14 +1585,12 @@ field_expr (expr_t *e1, expr_t *e2)
 			ivar = class_find_ivar (class, protected, sym->name);
 			if (!ivar)
 				return new_error_expr ();
-			e2->type = ex_value;
-			e2->e.value = new_short_val (ivar->s.offset);
-			e = new_binary_expr ('&', e1, e2);
-			e->e.expr.type = pointer_type (ivar->type);
-			return unary_expr ('.', e);
+			expr_t     *offset = new_short_expr (ivar->s.offset);
+			e1 = offset_pointer_expr (e1, offset);
+			e1 = cast_expr (pointer_type (ivar->type), e1);
+			return unary_expr ('.', e1);
 		}
-	} else if (t1->type == ev_vector || t1->type == ev_quat
-			   || is_struct (t1)) {
+	} else if (is_vector (t1) || is_quaternion (t1) || is_struct (t1)) {
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
@@ -1444,10 +1622,10 @@ field_expr (expr_t *e1, expr_t *e2)
 			return field_expr (e1, e2);
 		} else {
 			if (e1->type == ex_uexpr && e1->e.expr.op == '.') {
-				e2->type = ex_value;
-				e2->e.value = new_short_val (field->s.offset);
-				e = address_expr (e1, e2, field->type);
-				return unary_expr ('.', e);
+				expr_t     *offset = new_short_expr (field->s.offset);
+				e1 = offset_pointer_expr (e1->e.expr.e1, offset);
+				e1 = cast_expr (pointer_type (field->type), e1);
+				return unary_expr ('.', e1);
 			} else {
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
@@ -1470,14 +1648,14 @@ convert_from_bool (expr_t *e, type_t *type)
 	if (is_float (type)) {
 		one = new_float_expr (1);
 		zero = new_float_expr (0);
-	} else if (is_integer (type)) {
-		one = new_integer_expr (1);
-		zero = new_integer_expr (0);
+	} else if (is_int (type)) {
+		one = new_int_expr (1);
+		zero = new_int_expr (0);
 	} else if (is_enum (type) && enum_as_bool (type, &zero, &one)) {
 		// don't need to do anything
-	} else if (is_uinteger (type)) {
-		one = new_uinteger_expr (1);
-		zero = new_uinteger_expr (0);
+	} else if (is_uint (type)) {
+		one = new_uint_expr (1);
+		zero = new_uint_expr (0);
 	} else {
 		return error (e, "can't convert from bool value");
 	}
@@ -1494,7 +1672,7 @@ convert_from_bool (expr_t *e, type_t *type)
 void
 convert_int (expr_t *e)
 {
-	float       float_val = expr_integer (e);
+	float       float_val = expr_int (e);
 	e->type = ex_value;
 	e->e.value = new_float_val (float_val);
 }
@@ -1510,9 +1688,9 @@ convert_short (expr_t *e)
 void
 convert_short_int (expr_t *e)
 {
-	float       integer_val = expr_short (e);
+	float       int_val = expr_short (e);
 	e->type = ex_value;
-	e->e.value = new_integer_val (integer_val);
+	e->e.value = new_int_val (int_val);
 }
 
 void
@@ -1569,16 +1747,60 @@ has_function_call (expr_t *e)
 					return 1;
 			return 0;
 		case ex_expr:
-			if (e->e.expr.op == 'c')
-				return 1;
 			return (has_function_call (e->e.expr.e1)
 					|| has_function_call (e->e.expr.e2));
 		case ex_uexpr:
-			if (e->e.expr.op != 'g')
-				return has_function_call (e->e.expr.e1);
-		default:
+			return has_function_call (e->e.expr.e1);
+		case ex_alias:
+			return has_function_call (e->e.alias.expr);
+		case ex_address:
+			return has_function_call (e->e.address.lvalue);
+		case ex_assign:
+			return (has_function_call (e->e.assign.dst)
+					|| has_function_call (e->e.assign.src));
+		case ex_branch:
+			if (e->e.branch.type == pr_branch_call) {
+				return 1;
+			}
+			if (e->e.branch.type == pr_branch_jump) {
+				return 0;
+			}
+			return has_function_call (e->e.branch.test);
+		case ex_return:
+			return has_function_call (e->e.retrn.ret_val);
+		case ex_horizontal:
+			return has_function_call (e->e.hop.vec);
+		case ex_error:
+		case ex_state:
+		case ex_label:
+		case ex_labelref:
+		case ex_def:
+		case ex_symbol:
+		case ex_temp:
+		case ex_vector:
+		case ex_selector:
+		case ex_nil:
+		case ex_value:
+		case ex_compound:
+		case ex_memset:
+		case ex_adjstk:
+		case ex_with:
+		case ex_args:
 			return 0;
+		case ex_count:
+			break;
 	}
+	internal_error (e, "invalid expression type");
+}
+
+int
+is_function_call (expr_t *e)
+{
+	if (e->type != ex_block || !e->e.block.is_call) {
+		return 0;
+	}
+	e = e->e.block.result;
+	return e->type == ex_branch && e->e.branch.type == pr_branch_call;
 }
 
 expr_t *
@@ -1619,7 +1841,7 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 						internal_error (e, "type check failed!");
 					case ev_double:
 						new = new_double_expr (-expr_double (e));
@@ -1630,13 +1852,17 @@ unary_expr (int op, expr_t *e)
 					case ev_vector:
 						VectorNegate (expr_vector (e), v);
 						return new_vector_expr (v);
-					case ev_quat:
+					case ev_quaternion:
 						QuatNegate (expr_vector (e), q);
 						return new_vector_expr (q);
-					case ev_integer:
-						return new_integer_expr (-expr_integer (e));
-					case ev_uinteger:
-						return new_uinteger_expr (-expr_uinteger (e));
+					case ev_long:
+					case ev_ulong:
+					case ev_ushort:
+						internal_error (e, "long not implemented");
+					case ev_int:
+						return new_int_expr (-expr_int (e));
+					case ev_uint:
+						return new_uint_expr (-expr_uint (e));
 					case ev_short:
 						return new_short_expr (-expr_short (e));
 					case ev_invalid:
@@ -1655,7 +1881,11 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+				case ex_adjstk:
+				case ex_with:
+				case ex_args:
+					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '-') {
 						return e->e.expr.e1;
@@ -1676,10 +1906,15 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = get_type (e);
 						return n;
 					}
+				case ex_branch:
+					return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
 				case ex_vector:
+				case ex_alias:
+				case ex_assign:
+				case ex_horizontal:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1701,6 +1936,7 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_nil:
+				case ex_address:
 					return error (e, "invalid type for unary -");
 				case ex_count:
 					internal_error (e, "invalid expression");
@@ -1712,23 +1948,27 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 						internal_error (e, 0);
 					case ev_string:
 						s = expr_string (e);
-						return new_integer_expr (!s || !s[0]);
+						return new_int_expr (!s || !s[0]);
 					case ev_double:
-						return new_integer_expr (!expr_double (e));
+						return new_int_expr (!expr_double (e));
 					case ev_float:
-						return new_integer_expr (!expr_float (e));
+						return new_int_expr (!expr_float (e));
 					case ev_vector:
-						return new_integer_expr (!VectorIsZero (expr_vector (e)));
-					case ev_quat:
-						return new_integer_expr (!QuatIsZero (expr_quaternion (e)));
-					case ev_integer:
-						return new_integer_expr (!expr_integer (e));
-					case ev_uinteger:
-						return new_uinteger_expr (!expr_uinteger (e));
+						return new_int_expr (!VectorIsZero (expr_vector (e)));
+					case ev_quaternion:
+						return new_int_expr (!QuatIsZero (expr_quaternion (e)));
+					case ev_long:
+					case ev_ulong:
+					case ev_ushort:
+						internal_error (e, "long not implemented");
+					case ev_int:
+						return new_int_expr (!expr_int (e));
+					case ev_uint:
+						return new_uint_expr (!expr_uint (e));
 					case ev_short:
 						return new_short_expr (!expr_short (e));
 					case ev_invalid:
@@ -1747,7 +1987,11 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+				case ex_adjstk:
+				case ex_with:
+				case ex_args:
+					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
 										  e->e.bool.true_list, e);
@@ -1760,15 +2004,22 @@ unary_expr (int op, expr_t *e)
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:
-					{
+				case ex_alias:
+				case ex_address:
+				case ex_assign:
+				case ex_horizontal:
+					if (options.code.progsversion == PROG_VERSION) {
+						return binary_expr (EQ, e, new_nil_expr ());
+					} else {
 						expr_t     *n = new_unary_expr (op, e);
 
 						if (options.code.progsversion > PROG_ID_VERSION)
-							n->e.expr.type = &type_integer;
+							n->e.expr.type = &type_int;
 						else
 							n->e.expr.type = &type_float;
 						return n;
 					}
+				case ex_branch:
 				case ex_nil:
 					return error (e, "invalid type for unary !");
 				case ex_count:
@@ -1782,25 +2033,29 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 					case ev_vector:
 					case ev_double:
 						return error (e, "invalid type for unary ~");
 					case ev_float:
 						return new_float_expr (~(int) expr_float (e));
-					case ev_quat:
+					case ev_quaternion:
 						QuatConj (expr_vector (e), q);
 						return new_vector_expr (q);
-					case ev_integer:
-						return new_integer_expr (~expr_integer (e));
-					case ev_uinteger:
-						return new_uinteger_expr (~expr_uinteger (e));
+					case ev_long:
+					case ev_ulong:
+					case ev_ushort:
+						internal_error (e, "long not implemented");
+					case ev_int:
+						return new_int_expr (~expr_int (e));
+					case ev_uint:
+						return new_uint_expr (~expr_uint (e));
 					case ev_short:
 						return new_short_expr (~expr_short (e));
 					case ev_invalid:
 						t = get_type (e);
 						if (t->meta == ty_enum) {
-							return new_integer_expr (~expr_integer (e));
+							return new_int_expr (~expr_int (e));
 						}
 						break;
 					case ev_type_count:
@@ -1818,7 +2073,11 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+				case ex_adjstk:
+				case ex_with:
+				case ex_args:
+					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
 						return e->e.expr.e1;
@@ -1827,34 +2086,40 @@ unary_expr (int op, expr_t *e)
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary ~");
 					goto bitnot_expr;
+				case ex_branch:
+					return error (e, "invalid type for unary ~");
 				case ex_expr:
 				case ex_bool:
 				case ex_def:
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:
+				case ex_alias:
+				case ex_assign:
+				case ex_horizontal:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
-						expr_t     *n1 = new_integer_expr (-1);
+						expr_t     *n1 = new_int_expr (-1);
 						return binary_expr ('-', n1, e);
 					} else {
 						expr_t     *n = new_unary_expr (op, e);
 						type_t     *t = get_type (e);
 
-						if (!is_integer(t) && !is_float(t)
+						if (!is_int(t) && !is_float(t)
 							&& !is_quaternion(t))
 							return error (e, "invalid type for unary ~");
 						n->e.expr.type = t;
 						return n;
 					}
 				case ex_nil:
+				case ex_address:
 					return error (e, "invalid type for unary ~");
 				case ex_count:
 					internal_error (e, "invalid expression");
 			}
 			break;
 		case '.':
-			if (extract_type (e) != ev_pointer)
+			if (extract_type (e) != ev_ptr)
 				return error (e, "invalid type for unary .");
 			e = new_unary_expr ('.', e);
 			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
@@ -1872,12 +2137,13 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
 	expr_t     *p;
-	int         arg_count = 0, parm_count = 0;
+	int         arg_count = 0, param_count = 0;
 	int         i;
 	expr_t     *args = 0, **a = &args;
-	type_t     *arg_types[MAX_PARMS];
-	expr_t     *arg_exprs[MAX_PARMS][2];
+	type_t     *arg_types[PR_MAX_PARAMS];
+	expr_t     *arg_exprs[PR_MAX_PARAMS][2];
 	int         arg_expr_count = 0;
+	int         emit_args = 0;
 	expr_t     *assign;
 	expr_t     *call;
 	expr_t     *err = 0;
@@ -1888,8 +2154,8 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		arg_count++;
 	}
 
-	if (arg_count > MAX_PARMS) {
-		return error (fexpr, "more than %d parameters", MAX_PARMS);
+	if (arg_count > PR_MAX_PARAMS) {
+		return error (fexpr, "more than %d parameters", PR_MAX_PARAMS);
 	}
 	if (ftype->t.func.num_params < -1) {
 		if (-arg_count > ftype->t.func.num_params + 1) {
@@ -1898,7 +2164,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = -ftype->t.func.num_params - 1;
+		param_count = -ftype->t.func.num_params - 1;
 	} else if (ftype->t.func.num_params >= 0) {
 		if (arg_count > ftype->t.func.num_params) {
 			return error (fexpr, "too many arguments");
@@ -1908,13 +2174,17 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = ftype->t.func.num_params;
+		param_count = ftype->t.func.num_params;
 	}
+	if (ftype->t.func.num_params < 0) {
+		emit_args = !ftype->t.func.no_va_list;
+	}
+	// params is reversed (a, b, c) -> c, b, a
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t;
 
 		if (e->type == ex_compound) {
-			if (i < parm_count) {
+			if (i < param_count) {
 				t = ftype->t.func.param_types[i];
 			} else {
 				return error (e, "cannot pass compound initializer "
@@ -1933,7 +2203,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		if (type_size (t) > type_size (&type_param))
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
-		if (i < parm_count) {
+		if (i < param_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->t.func.param_types[i]);
 			if (e->type == ex_bool)
@@ -1950,7 +2220,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				convert_nil (e, t = type_nil);
 			if (e->type == ex_bool)
 				convert_from_bool (e, get_type (e));
-			if (is_integer_val (e)
+			if (is_int_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
 			if (options.code.promote_float) {
@@ -1968,8 +2238,8 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 					}
 				}
 			}
-			if (is_integer_val (e) && options.warnings.vararg_integer)
-				warning (e, "passing integer constant into ... function");
+			if (is_int_val (e) && options.warnings.vararg_integer)
+				warning (e, "passing int constant into ... function");
 		}
 		arg_types[arg_count - 1 - i] = t;
 	}
@@ -1978,7 +2248,13 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 
 	call = expr_file_line (new_block_expr (), fexpr);
 	call->e.block.is_call = 1;
+	// args is built in reverse order so it matches params
 	for (p = params, i = 0; p; p = p->next, i++) {
+		if (emit_args && arg_count - i == param_count) {
+			emit_args = 0;
+			*a = new_args_expr ();
+			a = &(*a)->next;
+		}
 		expr_t     *e = p;
 		if (e->type == ex_compound) {
 			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
@@ -1999,6 +2275,11 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		}
 		a = &(*a)->next;
 	}
+	if (emit_args) {
+		emit_args = 0;
+		*a = new_args_expr ();
+		a = &(*a)->next;
+	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
 		assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
 		append_expr (call, expr_file_line (assign, arg_exprs[i][0]));
@@ -2009,14 +2290,8 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	e = expr_file_line (new_binary_expr ('c', fexpr, args), fexpr);
-	e->e.expr.type = ftype->t.func.type;
-	append_expr (call, e);
-	if (!is_void(ftype->t.func.type)) {
-		call->e.block.result = new_ret_expr (ftype->t.func.type);
-	} else if (options.traditional) {
-		call->e.block.result = new_ret_expr (&type_float);
-	}
+	e = expr_file_line (call_expr (fexpr, args, ftype->t.func.type), fexpr);
+	call->e.block.result = e;
 	return call;
 }
 
@@ -2055,21 +2330,70 @@ function_expr (expr_t *fexpr, expr_t *params)
 expr_t *
 branch_expr (int op, expr_t *test, expr_t *label)
 {
-	if (label && label->type != ex_label)
+	// need to translated op due to precedence rules dictating the layout
+	// of the token ids
+	static pr_branch_e branch_type [] = {
+		pr_branch_eq,
+		pr_branch_ne,
+		pr_branch_lt,
+		pr_branch_gt,
+		pr_branch_le,
+		pr_branch_ge,
+	};
+	if (op < EQ || op > LE) {
+		internal_error (label, "invalid op: %d", op);
+	}
+	if (label && label->type != ex_label) {
 		internal_error (label, "not a label");
-	if (label)
+	}
+	if (label) {
 		label->e.label.used++;
-	return new_binary_expr (op, test, label);
+	}
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = branch_type[op - EQ];
+	branch->e.branch.target = label;
+	branch->e.branch.test = test;
+	return branch;
 }
 
 expr_t *
 goto_expr (expr_t *label)
 {
-	if (label && label->type != ex_label)
+	if (label && label->type != ex_label) {
 		internal_error (label, "not a label");
-	if (label)
+	}
+	if (label) {
 		label->e.label.used++;
-	return new_unary_expr ('g', label);
+	}
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_jump;
+	branch->e.branch.target = label;
+	return branch;
+}
+
+expr_t *
+jump_table_expr (expr_t *table, expr_t *index)
+{
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_jump;
+	branch->e.branch.target = table;//FIXME separate? all branch types can
+	branch->e.branch.index = index;
+	return branch;
+}
+
+expr_t *
+call_expr (expr_t *func, expr_t *args, type_t *ret_type)
+{
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_call;
+	branch->e.branch.target = func;
+	branch->e.branch.args = args;
+	branch->e.branch.ret_type = ret_type;
+	return branch;
 }
 
 expr_t *
@@ -2093,7 +2417,7 @@ return_expr (function_t *f, expr_t *e)
 		}
 		// the traditional check above may have set e
 		if (!e) {
-			return new_unary_expr ('r', 0);
+			return new_return_expr (0);
 		}
 	}
 
@@ -2115,7 +2439,7 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_bool) {
 		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
 	}
-	if (is_float(ret_type) && is_integer_val (e)) {
+	if (is_float(ret_type) && is_int_val (e)) {
 		convert_int (e);
 		t = &type_float;
 	}
@@ -2150,7 +2474,31 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_block) {
 		e->e.block.result->rvalue = 1;
 	}
-	return new_unary_expr ('r', e);
+	return new_return_expr (e);
+}
+
+expr_t *
+at_return_expr (function_t *f, expr_t *e)
+{
+	const type_t *ret_type = unalias_type (f->type->t.func.type);
+
+	if (!is_void(ret_type)) {
+		return error (e, "use of @return in non-void function");
+	}
+	if (is_nil (e)) {
+		// int or pointer 0 seems reasonable
+		return new_return_expr (new_int_expr (0));
+	} else if (!is_function_call (e)) {
+		return error (e, "@return value not a function");
+	}
+	expr_t     *call_expr = e->e.block.result->e.branch.target;
+	const type_t *call_type = get_type (call_expr);
+	if (!is_func (call_type) && !call_type->t.func.void_return) {
+		return error (e, "@return function not void_return");
+	}
+	expr_t     *ret_expr = new_return_expr (e);
+	ret_expr->e.retrn.at_return = 1;
+	return ret_expr;
 }
 
 expr_t *
@@ -2202,7 +2550,7 @@ incop_expr (int op, expr_t *e, int postop)
 	if (e->type == ex_error)
 		return e;
 
-	one = new_integer_expr (1);		// integer constants get auto-cast to float
+	one = new_int_expr (1);			// int constants get auto-cast to float
 	if (postop) {
 		expr_t     *t1, *t2;
 		type_t     *type = get_type (e);
@@ -2217,7 +2565,7 @@ incop_expr (int op, expr_t *e, int postop)
 		append_expr (block, assign_expr (t2, binary_expr (op, t1, one)));
 		res = copy_expr (e);
 		if (res->type == ex_uexpr && res->e.expr.op == '.')
-			res = pointer_expr (address_expr (res, 0, 0));
+			res = deref_pointer_expr (address_expr (res, 0));
 		append_expr (block, assign_expr (res, t2));
 		block->e.block.result = t1;
 		return block;
@@ -2231,9 +2579,11 @@ array_expr (expr_t *array, expr_t *index)
 {
 	type_t     *array_type = get_type (array);
 	type_t     *index_type = get_type (index);
+	type_t     *ele_type;
 	expr_t     *scale;
 	expr_t     *offset;
 	expr_t     *base;
+	expr_t     *ptr;
 	expr_t     *e;
 	int         ind = 0;
 
@@ -2242,59 +2592,106 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (array_type->type != ev_pointer && !is_array (array_type))
+	if (!is_ptr (array_type) && !is_array (array_type)
+		&& !is_nonscalar (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
 		return error (index, "invalid array index type");
 	if (is_short_val (index))
 		ind = expr_short (index);
-	if (is_integer_val (index))
-		ind = expr_integer (index);
-	if (array_type->t.func.num_params
+	if (is_int_val (index))
+		ind = expr_int (index);
+	if (is_array (array_type)
+		&& array_type->t.array.size
 		&& is_constant (index)
 		&& (ind < array_type->t.array.base
-			|| ind - array_type->t.array.base >= array_type->t.array.size))
-			return error (index, "array index out of bounds");
-	scale = new_integer_expr (type_size (array_type->t.array.type));
+			|| ind - array_type->t.array.base >= array_type->t.array.size)) {
+		return error (index, "array index out of bounds");
+	}
+	if (is_nonscalar (array_type)
+		&& is_constant (index)
+		&& (ind < 0 || ind >= array_type->width)) {
+		return error (index, "array index out of bounds");
+	}
+	if (is_array (array_type)) {
+		ele_type = array_type->t.array.type;
+		base = new_int_expr (array_type->t.array.base);
+	} else if (is_ptr (array_type)) {
+		ele_type = array_type->t.fldptr.type;
+		base = new_int_expr (0);
+	} else {
+		ele_type = ev_types[array_type->type];
+		base = new_int_expr (0);
+	}
+	scale = new_int_expr (type_size (ele_type));
 	index = binary_expr ('*', index, scale);
-	base = new_integer_expr (array_type->t.array.base);
 	offset = binary_expr ('*', base, scale);
 	index = binary_expr ('-', index, offset);
 	if (is_short_val (index))
 		ind = expr_short (index);
-	if (is_integer_val (index))
-		ind = expr_integer (index);
-	if ((is_constant (index) && ind < 32768 && ind >= -32768))
-		index = new_short_expr (ind);
+	if (is_int_val (index))
+		ind = expr_int (index);
 	if (is_array (array_type)) {
-		e = address_expr (array, index, array_type->t.array.type);
-	} else {
-		if (!is_short_val (index) || expr_short (index)) {
-			e = new_binary_expr ('&', array, index);
-			//e->e.expr.type = array_type->aux_type;
-			e->e.expr.type = array_type;
+		if (array->type == ex_uexpr && array->e.expr.op == '.') {
+			ptr = array->e.expr.e1;
 		} else {
-			e = array;
+			expr_t     *alias = new_offset_alias_expr (ele_type, array, 0);
+			ptr = new_address_expr (ele_type, alias, 0);
 		}
+	} else if (is_nonscalar (array_type)) {
+		expr_t     *alias = new_offset_alias_expr (ele_type, array, 0);
+		ptr = new_address_expr (ele_type, alias, 0);
+	} else {
+		ptr = array;
 	}
-	e = unary_expr ('.', e);
+	ptr = offset_pointer_expr (ptr, index);
+	ptr = cast_expr (pointer_type (ele_type), ptr);
+
+	e = unary_expr ('.', ptr);
 	return e;
 }
 
 expr_t *
-pointer_expr (expr_t *pointer)
+deref_pointer_expr (expr_t *pointer)
 {
 	type_t     *pointer_type = get_type (pointer);
 
 	if (pointer->type == ex_error)
 		return pointer;
-	if (pointer_type->type != ev_pointer)
+	if (pointer_type->type != ev_ptr)
 		return error (pointer, "not a pointer");
-	return array_expr (pointer, new_integer_expr (0));
+	return unary_expr ('.', pointer);
 }
 
 expr_t *
-address_expr (expr_t *e1, expr_t *e2, type_t *t)
+offset_pointer_expr (expr_t *pointer, expr_t *offset)
+{
+	type_t     *ptr_type = get_type (pointer);
+	if (!is_ptr (ptr_type)) {
+		internal_error (pointer, "not a pointer");
+	}
+	if (!is_integral (get_type (offset))) {
+		internal_error (offset, "pointer offset is not an integer type");
+	}
+	expr_t     *ptr;
+	if (pointer->type == ex_alias && !pointer->e.alias.offset
+		&& is_integral (get_type (pointer->e.alias.expr))) {
+		ptr = pointer->e.alias.expr;
+	} else if (pointer->type == ex_address && is_constant (offset)) {
+		if (pointer->e.address.offset) {
+			offset = binary_expr ('+', pointer->e.address.offset, offset);
+		}
+		pointer->e.address.offset = offset;
+		return pointer;
+	} else {
+		ptr = cast_expr (&type_int, pointer);
+	}
+	ptr = binary_expr ('+', ptr, offset);
+	return cast_expr (ptr_type, ptr);
+}
+
+expr_t *
+address_expr (expr_t *e1, type_t *t)
 {
 	expr_t     *e;
 
@@ -2310,6 +2707,12 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.def;
 				type_t     *type = def->type;
 
+				//FIXME this test should be in statements.c
+				if (options.code.progsversion == PROG_VERSION
+					&& (def->local || def->param)) {
+					e = new_address_expr (t, e1, 0);
+					return e;
+				}
 				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
@@ -2326,6 +2729,13 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.symbol->s.def;
 				type_t     *type = def->type;
 
+				//FIXME this test should be in statements.c
+				if (options.code.progsversion == PROG_VERSION
+					&& (def->local || def->param)) {
+					e = new_address_expr (t, e1, 0);
+					return e;
+				}
+
 				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
@@ -2340,76 +2750,32 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return error (e1, "invalid type for unary &");
 		case ex_expr:
 			if (e1->e.expr.op == '.') {
-				e = e1;
-				e->e.expr.op = '&';
-				e->e.expr.type = pointer_type (e->e.expr.type);
+				e = new_address_expr (e1->e.expr.type,
+									  e1->e.expr.e1, e1->e.expr.e2);
 				break;
-			}
-			if (e1->e.expr.op == 'm') {
-				// direct move, so obtain the address of the source
-				e = address_expr (e1->e.expr.e2, 0, t);
-				break;
-			}
-			if (e1->e.expr.op == 'M') {
-				// indirect move, so we already have the address of the source
-				e = e1->e.expr.e2;
-				break;
-			}
-			if (e1->e.expr.op == 'A') {
-				if (!t)
-					t = e1->e.expr.type;
-				if (e2) {
-					e2 = binary_expr ('+', e1->e.expr.e2, e2);
-				} else {
-					e2 = e1->e.expr.e2;
-				}
-				return address_expr (e1->e.expr.e1, e2, t);
 			}
 			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
 				e = e1->e.expr.e1;
 				if (e->type == ex_expr && e->e.expr.op == '.') {
-					e->e.expr.type = pointer_type (e->e.expr.type);
-					e->e.expr.op = '&';
+					e = new_address_expr (e->e.expr.type, e->e.expr.e1, e->e.expr.e2);
 				}
 				break;
-			}
-			if (e1->e.expr.op == 'A') {
-				if (!t)
-					t = e1->e.expr.type;
-				return address_expr (e1->e.expr.e1, e2, t);
 			}
 			return error (e1, "invalid type for unary &");
 		case ex_label:
 			return new_label_ref (&e1->e.label);
 		case ex_temp:
-			e = new_unary_expr ('&', e1);
-			e->e.expr.type = pointer_type (t);
+			e = new_address_expr (t, e1, 0);
 			break;
+		case ex_alias:
+			if (!t) {
+				t = e1->e.alias.type;
+			}
+			return new_address_expr (t, e1, 0);
 		default:
 			return error (e1, "invalid type for unary &");
-	}
-	if (e2) {
-		if (e2->type == ex_error)
-			return e2;
-		if (is_pointer_val (e) && is_integral_val (e2)) {
-			int         base = e->e.value->v.pointer.val;
-			int         offset = expr_integral (e2);
-			def_t      *def = e->e.value->v.pointer.def;
-			e->e.value = new_pointer_val (base + offset, t, def, 0);
-		} else {
-			if (!is_short_val (e2) || expr_short (e2)) {
-				if (e->type == ex_expr && e->e.expr.op == '&') {
-					e = new_binary_expr ('&', e->e.expr.e1,
-										 binary_expr ('+', e->e.expr.e2, e2));
-				} else {
-					e = new_binary_expr ('&', e, e2);
-				}
-			}
-			if (e->type == ex_expr || e->type == ex_uexpr)
-				e->e.expr.type = pointer_type (t);
-		}
 	}
 	return e;
 }
@@ -2418,7 +2784,7 @@ expr_t *
 build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *if_expr;
 	expr_t     *tl = new_label_expr ();
 	expr_t     *fl = new_label_expr ();
@@ -2477,7 +2843,7 @@ build_while_statement (int not, expr_t *test, expr_t *statement,
 					   expr_t *break_label, expr_t *continue_label)
 {
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *l1 = new_label_expr ();
 	expr_t     *l2 = break_label;
 	expr_t     *while_expr;
@@ -2517,7 +2883,7 @@ build_do_while_statement (expr_t *statement, int not, expr_t *test,
 {
 	expr_t *l1 = new_label_expr ();
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *do_while_expr;
 
 	if (!statement) {
@@ -2563,7 +2929,7 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 	expr_t     *l1 = 0;
 	expr_t     *t;
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *for_expr;
 
 	if (next)
@@ -2621,7 +2987,7 @@ build_state_expr (expr_t *e)
 	step = think->next;
 	if (think->type == ex_symbol)
 		think = think_expr (think->e.symbol);
-	if (is_integer_val (frame))
+	if (is_int_val (frame))
 		convert_int (frame);
 	if (!type_assignable (&type_float, get_type (frame)))
 		return error (frame, "invalid type for frame number");
@@ -2630,7 +2996,7 @@ build_state_expr (expr_t *e)
 	if (step) {
 		if (step->next)
 			return error (step->next, "too many state arguments");
-		if (is_integer_val (step))
+		if (is_int_val (step))
 			convert_int (step);
 		if (!type_assignable (&type_float, get_type (step)))
 			return error (step, "invalid type for step");
@@ -2652,7 +3018,7 @@ think_expr (symbol_t *think_sym)
 		&& sym->type->t.fldptr.type->type == ev_func) {
 		think_sym->type = sym->type->t.fldptr.type;
 	} else {
-		think_sym->type = &type_function;
+		think_sym->type = &type_func;
 	}
 	think_sym = function_symbol (think_sym, 0, 1);
 	make_function (think_sym, 0, current_symtab->space, current_storage);
@@ -2679,21 +3045,20 @@ cast_expr (type_t *dstType, expr_t *e)
 	if ((dstType == type_default && is_enum (srcType))
 		|| (is_enum (dstType) && srcType == type_default))
 		return e;
-	if ((is_pointer (dstType) && is_string (srcType))
-		|| (is_string (dstType) && is_pointer (srcType))) {
+	if ((is_ptr (dstType) && is_string (srcType))
+		|| (is_string (dstType) && is_ptr (srcType))) {
 		c = new_alias_expr (dstType, e);
 		return c;
 	}
-	if (!(is_pointer (dstType)
-		  && (is_pointer (srcType) || is_integral (srcType)
-			  || is_array (srcType)))
-		&& !(is_integral (dstType) && is_pointer (srcType))
+	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
+							   || is_array (srcType)))
+		&& !(is_integral (dstType) && is_ptr (srcType))
 		&& !(is_func (dstType) && is_func (srcType))
 		&& !(is_scalar (dstType) && is_scalar (srcType))) {
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
-		return address_expr (e, 0, dstType->t.fldptr.type);
+		return address_expr (e, dstType->t.fldptr.type);
 	}
 	if (is_constant (e) && is_scalar (dstType) && is_scalar (srcType)) {
 		ex_value_t *val = 0;
@@ -2710,7 +3075,7 @@ cast_expr (type_t *dstType, expr_t *e)
 			} else if (is_double (def->type)) {
 				val = new_double_val (D_DOUBLE (def));
 			} else if (is_integral (def->type)) {
-				val = new_integer_val (D_INT (def));
+				val = new_int_val (D_INT (def));
 			}
 		} else if (e->type == ex_value) {
 			val = e->e.value;
@@ -2756,7 +3121,9 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		internal_error (0, 0);
 	if (!type)
 		type = get_type (expr);
-	expr = new_integer_expr (type_size (type));
+	if (type) {
+		expr = new_int_expr (type_size (type));
+	}
 	return expr;
 }
 

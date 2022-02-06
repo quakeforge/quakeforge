@@ -609,7 +609,7 @@ flow_build_vars (function_t *func)
 
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
-	func->pseudo_addr = func->num_statements + func->symtab->space->size;
+	func->pseudo_addr = func->num_statements + func->locals->space->size;
 
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
@@ -1127,7 +1127,7 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 {
 	operand_t  *op = 0;
 
-	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_pointer) {
+	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_ptr) {
 		ex_pointer_t *ptr = &ptrop->value->v.pointer;
 		if (ptrop->value->v.pointer.def) {
 			def_t      *alias;
@@ -1149,9 +1149,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[FLOW_OPERANDS])
 {
 	int         i, start, calln = -1;
+	operand_t  *src_op = 0;
 	operand_t  *res_op = 0;
 	operand_t  *aux_op1 = 0;
 	operand_t  *aux_op2 = 0;
+	operand_t  *aux_op3 = 0;
 
 	if (use) {
 		set_empty (use);
@@ -1179,6 +1181,18 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	switch (s->type) {
 		case st_none:
 			internal_error (s->expr, "not a statement");
+		case st_address:
+			if (s->opb) {
+				flow_add_op_var (use, s->opa, 1);
+				flow_add_op_var (use, s->opb, 1);
+			}
+			flow_add_op_var (def, s->opc, 0);
+			if (operands) {
+				operands[0] = s->opc;
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+			}
+			break;
 		case st_expr:
 			flow_add_op_var (def, s->opc, 0);
 			flow_add_op_var (use, s->opa, 1);
@@ -1191,11 +1205,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opb, 0);
-			flow_add_op_var (use, s->opa, 1);
+			flow_add_op_var (def, s->opa, 0);
+			flow_add_op_var (use, s->opc, 1);
 			if (operands) {
-				operands[0] = s->opb;
-				operands[1] = s->opa;
+				operands[0] = s->opa;
+				operands[1] = s->opc;
 			}
 			break;
 		case st_ptrassign:
@@ -1205,23 +1219,28 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_ptrmemset:
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
-			if (!strcmp (s->opcode, "<MOVE>")
-				|| !strcmp (s->opcode, "<MEMSET>")) {
+			aux_op1 = s->opb;
+			if (!strcmp (s->opcode, "move")
+				|| !strcmp (s->opcode, "memset")) {
 				flow_add_op_var (def, s->opc, 0);
+				src_op = s->opa;
 				res_op = s->opc;
-			} else if (!strcmp (s->opcode, "<MOVEP>")) {
+			} else if (!strcmp (s->opcode, "movep")) {
 				flow_add_op_var (use, s->opc, 0);
-				aux_op2 = flow_analyze_pointer_operand (s->opa, use);
+				aux_op3 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
-				aux_op1 = s->opc;
-			} else if (!strcmp (s->opcode, "<MEMSETP>")) {
+				src_op = s->opa;
+				aux_op2 = s->opc;
+			} else if (!strcmp (s->opcode, "memsetp")) {
 				flow_add_op_var (use, s->opc, 0);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
-				aux_op1 = s->opc;
-			} else if (!strcmp (s->opcode, ".=")) {
+				src_op = s->opa;
+				aux_op2 = s->opc;
+			} else if (!strcmp (s->opcode, "store")) {
 				flow_add_op_var (use, s->opc, 1);
-				res_op = flow_analyze_pointer_operand (s->opb, def);
-				aux_op1 = s->opc;
+				res_op = flow_analyze_pointer_operand (s->opa, def);
+				src_op = s->opc;
+				aux_op2 = s->opa;
 			} else {
 				internal_error (s->expr, "unexpected opcode '%s' for %d",
 								s->opcode, s->type);
@@ -1231,10 +1250,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			if (operands) {
 				operands[0] = res_op;
-				operands[1] = s->opa;
-				operands[2] = s->opb;
-				operands[3] = aux_op1;
-				operands[4] = aux_op2;
+				operands[1] = src_op;
+				operands[2] = aux_op1;
+				operands[3] = aux_op2;
+				operands[4] = aux_op3;
 			}
 			break;
 		case st_state:
@@ -1250,19 +1269,41 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_func:
-			if (strcmp (s->opcode, "<RETURN>") == 0
-				|| strcmp (s->opcode, "<DONE>") == 0) {
-				flow_add_op_var (use, s->opa, 1);
-			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
+			if (statement_is_return (s)) {
+				if (s->opc) {
+					// ruamoko
+					// opc always short
+					short       ret_mode = s->opc->value->v.short_val;
+					// -1 is void
+					// FIXME size and addressing
+					if (ret_mode >= 0) {
+						flow_add_op_var (use, s->opa, 1);
+					}
+				} else {
+					// v6/v6p
+					if (s->opa) {
+						flow_add_op_var (use, s->opa, 1);
+					}
+				}
 				if (use) {
 					flow_add_op_var (use, &flow_params[0].op, 1);
 				}
 			}
-			if (strncmp (s->opcode, "<CALL", 5) == 0) {
+			if (strcmp (s->opcode, "call") == 0) {
+				// call uses opc to specify the destination of the return value
+				// parameter usage is taken care of by the statement's use
+				// list
+				flow_add_op_var (def, s->opc, 0);
+				// don't want old argument processing
+				calln = -1;
+				if (operands && s->opc->op_type != op_value) {
+					operands[0] = s->opc;
+				}
+			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa, 1);
-			} else if (strncmp (s->opcode, "<RCALL", 6) == 0) {
+			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
 				start = 2;
 				calln = s->opcode[6] - '0';
 				flow_add_op_var (use, s->opa, 1);
@@ -1296,14 +1337,21 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_flow:
-			if (strcmp (s->opcode, "<GOTO>") != 0) {
+			if (statement_is_goto (s)) {
+				// opa is just a label
+			} else if (statement_is_jumpb (s)) {
 				flow_add_op_var (use, s->opa, 1);
-				if (strcmp (s->opcode, "<JUMPB>") == 0)
-					flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opb, 1);
+			} else if (statement_is_cond (s)) {
+				flow_add_op_var (use, s->opc, 1);
+			} else {
+				internal_error (s->expr, "unexpected flow statement: %s",
+								s->opcode);
 			}
 			if (operands) {
 				operands[1] = s->opa;
 				operands[2] = s->opb;
+				operands[3] = s->opc;
 			}
 			break;
 	}

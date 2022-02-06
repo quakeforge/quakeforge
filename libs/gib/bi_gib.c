@@ -48,8 +48,8 @@
 typedef struct bi_gib_builtin_s {
 	struct bi_gib_builtin_s *next;
 	gib_builtin_t *builtin;
-	progs_t *pr;
-	func_t func;
+	progs_t    *pr;
+	pr_func_t   func;
 } bi_gib_builtin_t;
 
 typedef struct bi_gib_resources_s {
@@ -86,7 +86,7 @@ bi_gib_builtin_f (void)
 	pr_list = PR_Zone_Malloc (builtin->pr, GIB_Argc() * sizeof (pr_type_t));
 
 	for (i = 0; i < GIB_Argc(); i++)
-		pr_list[i].integer_var = PR_SetTempString (builtin->pr, GIB_Argv(i));
+		pr_list[i].int_var = PR_SetTempString (builtin->pr, GIB_Argv(i));
 
 	PR_RESET_PARAMS (builtin->pr);
 	P_INT (builtin->pr, 0) = GIB_Argc();
@@ -117,7 +117,7 @@ bi_GIB_Builtin_Add (progs_t *pr)
 	bi_gib_resources_t *res = PR_Resources_Find (pr, "GIB");
 	bi_gib_builtin_t   *builtin;
 	const char *name = P_GSTRING (pr, 0);
-	func_t      func = P_FUNCTION (pr, 1);
+	pr_func_t   func = P_FUNCTION (pr, 1);
 
 	if (GIB_Builtin_Exists (name)) {
 		R_INT (pr) = 0;
@@ -175,12 +175,15 @@ bi_GIB_Handle_Get (progs_t *pr)
 	//	R_INT (pr) = 0;
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"GIB_Builtin_Add",	bi_GIB_Builtin_Add,	-1},
-	{"GIB_Return",		bi_GIB_Return,		-1},
-	{"GIB_Handle_New",	bi_GIB_Handle_New,	-1},
-	{"GIB_Handle_Free",	bi_GIB_Handle_Free,	-1},
-	{"GIB_Handle_Get",	bi_GIB_Handle_Get,	-1},
+	bi(GIB_Builtin_Add, 2, p(string), p(func)),
+	bi(GIB_Return,      1, p(string)),
+	bi(GIB_Handle_New,  0),//FIXME
+	bi(GIB_Handle_Free, 0),//FIXME
+	bi(GIB_Handle_Get,  0),//FIXME
 	{0}
 };
 
@@ -190,11 +193,10 @@ GIB_Progs_Init (progs_t *pr)
 	bi_gib_resources_t *res = malloc (sizeof (bi_gib_resources_t));
 	res->builtins = 0;
 
-	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
-
 	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
 									 bi_gib_builtin_free, 0,
 									 pr->hashlink_freelist);
 
-	PR_RegisterBuiltins (pr, builtins);
+	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

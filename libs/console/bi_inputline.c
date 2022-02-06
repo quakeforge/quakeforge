@@ -49,8 +49,8 @@ typedef struct il_data_s {
 	struct il_data_s **prev;
 	inputline_t *line;
 	progs_t    *pr;
-	func_t      enter;		// enter key callback
-	pointer_t   data[2];	// allow two data params for the callback
+	pr_func_t   enter;		// enter key callback
+	pr_ptr_t    data[2];	// allow two data params for the callback
 	int         method;		// true if method rather than function
 } il_data_t;
 
@@ -302,21 +302,23 @@ bi_InputLine_Draw (progs_t *pr)
 	line->line->draw (line->line);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"InputLine_Create",		bi_InputLine_Create,		-1},
-	{"InputLine_SetPos",		bi_InputLine_SetPos,		-1},
-	{"InputLine_SetCursor",		bi_InputLine_SetCursor,		-1},
+	bi(InputLine_Create,           3, p(int), p(int), p(int)),
+	bi(InputLine_SetPos,           3, p(ptr), p(int), p(int)),
+	bi(InputLine_SetCursor,        2, p(ptr), p(int)),
 	{"InputLine_SetEnter|^{tag _inputline_t=}(v*^v)^v",
-								bi_InputLine_SetEnter,		-1},
+		bi_InputLine_SetEnter, -1, 3, {p(ptr), p(func), p(ptr)}},
 	{"InputLine_SetEnter|^{tag _inputline_t=}(@@:.)@:",
-								bi_InputLine_SetEnter,		-1},
-	{"InputLine_SetWidth",		bi_InputLine_SetWidth,		-1},
-	{"InputLine_SetText",		bi_InputLine_SetText,		-1},
-	{"InputLine_GetText",		bi_InputLine_GetText,		-1},
-	{"InputLine_Destroy",		bi_InputLine_Destroy,		-1},
-	{"InputLine_Clear",			bi_InputLine_Clear,			-1},
-	{"InputLine_Process",		bi_InputLine_Process,		-1},
-	{"InputLine_Draw",			bi_InputLine_Draw,			-1},
+		bi_InputLine_SetEnter, -1, 4, {p(ptr), p(func), p(ptr), p(ptr)}},
+	bi(InputLine_SetWidth,         2, p(ptr), p(int)),
+	bi(InputLine_SetText,          2, p(ptr), p(string)),
+	bi(InputLine_GetText,          1, p(ptr)),
+	bi(InputLine_Destroy,          1, p(ptr)),
+	bi(InputLine_Clear,            2, p(ptr), p(int)),
+	bi(InputLine_Process,          2, p(ptr), p(int)),
+	bi(InputLine_Draw,             1, p(ptr)),
 	{0}
 };
 
@@ -326,7 +328,7 @@ InputLine_Progs_Init (progs_t *pr)
 	il_resources_t *res = calloc (1, sizeof (il_resources_t));
 
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }
 
 VISIBLE void

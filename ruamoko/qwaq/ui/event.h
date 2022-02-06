@@ -74,8 +74,8 @@ typedef union qwaq_message_s {
 	void       *pointer_val;
 	string      string_val;
 #else
-	pointer_t   pointer_val;
-	string_t    string_val;
+	pr_ptr_t    pointer_val;
+	pr_string_t string_val;
 #endif
 } qwaq_message_t;
 

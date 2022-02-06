@@ -50,6 +50,10 @@ typedef struct {
 } code_options_t;
 
 typedef struct {
+	int         vector_mult;		// operation for vector * vector
+} math_options_t;
+
+typedef struct {
 	qboolean	promote;			// Promote warnings to errors
 	qboolean	cow;				// Warn on copy-on-write detection
 	qboolean	undefined_function;	// Warn on undefined function use
@@ -93,6 +97,7 @@ typedef struct {
 
 typedef struct {
 	code_options_t	code;			// Code generation options
+	math_options_t	math;			// Various math options
 	warn_options_t	warnings;		// Warning options
 	notice_options_t notices;		// Notice options
 	bug_options_t   bug;			// Bug options
@@ -109,7 +114,7 @@ typedef struct {
 	qboolean		progdefs_h;		// generate progdefs.h
 	qboolean		qccx_escapes;	// use qccx escapes instead of standard C
 	int				traditional;	// behave more like qcc
-	qboolean		advanced;		// behold the power of Ruamoko
+	int				advanced;		// behold the power of Ruamoko
 	qboolean		compile;		// serparate compilation mode
 	qboolean		partial_link;	// partial linking
 	qboolean		preprocess_only;// run only cpp, don't compile

@@ -40,7 +40,8 @@
 #include <stdlib.h>
 
 #include "QF/alloc.h"
-#include "QF/pr_comp.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/opcodes.h"
@@ -48,6 +49,8 @@
 #include "tools/qfcc/include/pragma.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct pragma_arg_s {
 	struct pragma_arg_s *next;
@@ -62,21 +65,31 @@ static void
 set_traditional (int traditional)
 {
 	switch (traditional) {
+		case -1:
+			options.traditional = 0;
+			options.advanced = 2;
+			options.code.progsversion = PROG_VERSION;
+			type_default = &type_int;
+			type_long_int = &type_long;
+			type_ulong_uint = &type_ulong;
+			break;
 		case 0:
 			options.traditional = 0;
-			options.advanced = true;
-			options.code.progsversion = PROG_VERSION;
-			type_default = &type_integer;
+			options.advanced = 1;
+			options.code.progsversion = PROG_V6P_VERSION;
+			type_default = &type_int;
+			type_long_int = &type_int;
+			type_ulong_uint = &type_uint;
 			break;
 		case 1:
 			options.traditional = 1;
-			options.advanced = false;
+			options.advanced = 0;
 			options.code.progsversion = PROG_ID_VERSION;
 			type_default = &type_float;
 			break;
 		case 2:
 			options.traditional = 2;
-			options.advanced = false;
+			options.advanced = 0;
 			options.code.progsversion = PROG_ID_VERSION;
 			type_default = &type_float;
 			break;
@@ -106,6 +119,73 @@ set_bug (pragma_arg_t *args)
 	}
 }
 
+static void
+set_warn (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing warn flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!strcmp (flag, "error")) {
+		options.warnings.promote = true;
+	} else if (!strcmp (flag, "!error")) {
+		options.warnings.promote = false;
+	}
+	if (args->next) {
+		warning (0, "pragma warn: ignoring extra arguments");
+	}
+}
+
+static void
+set_optimize (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing optimize flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!strcmp (flag, "on") || !strcmp (flag, "!off")) {
+		options.code.optimize = true;
+	} else if (!strcmp (flag, "!on") || !strcmp (flag, "off")) {
+		options.code.optimize = false;
+	}
+	if (args->next) {
+		warning (0, "pragma optimize: ignoring extra arguments");
+	}
+}
+
+static pragma_arg_t *
+set_vector_mult (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing vector_mult arg");
+		return args;
+	}
+	const char *op = args->arg;
+	if (!strcmp (op, "@dot")) {
+		options.math.vector_mult = DOT;
+	} else {
+		warning (0, "unknown vector_mult arg: %s", op);
+	}
+	return args->next;
+}
+
+static void
+set_math (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing math arg");
+		return;
+	}
+	while (args) {
+		const char *a = args->arg;
+		if (!strcmp (a, "vector_mult")) {
+			args = set_vector_mult (args->next);
+		}
+	}
+}
+
 void
 pragma_process ()
 {
@@ -120,8 +200,16 @@ pragma_process ()
 		set_traditional (1);
 	} else if (!strcmp (id, "advanced")) {
 		set_traditional (0);
+	} else if (!strcmp (id, "ruamoko") || !strcmp (id, "raumoko")) {
+		set_traditional (-1);
 	} else if (!strcmp (id, "bug")) {
 		set_bug (pragma_args->next);
+	} else if (!strcmp (id, "warn")) {
+		set_warn (pragma_args->next);
+	} else if (!strcmp (id, "optimize")) {
+		set_optimize (pragma_args->next);
+	} else if (!strcmp (id, "math")) {
+		set_math (pragma_args->next);
 	} else {
 		warning (0, "unknown pragma: '%s'", id);
 	}

@@ -60,12 +60,13 @@ sv_data_t sv_data[MAX_EDICTS];
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
+cvar_t     *sv_progs_stack;
 cvar_t     *sv_progs_ext;
 cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
 cvar_t     *sv_hide_version_info;
 
-static int reserved_edicts = MAX_CLIENTS;
+static pr_uint_t reserved_edicts = MAX_CLIENTS;
 
 static int sv_range;
 
@@ -352,7 +353,7 @@ static sv_def_t qw_opt_funcs[] = {
 };
 
 static sv_def_t qw_opt_fields[] = {
-	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_int,		0,	"rotated_bbox",		&sv_fields.rotated_bbox},
 	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"scale",			&sv_fields.scale},
 	{ev_float,		0,	"glow_size",		&sv_fields.glow_size},
@@ -372,12 +373,13 @@ set_address (sv_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_ushort:
 		case ev_invalid:
 		case ev_type_count:
 			break;
 		case ev_float:
 		case ev_vector:
-		case ev_quat:
+		case ev_quaternion:
 			*(float **)def->field = (float *) address;
 			break;
 		case ev_double:
@@ -387,10 +389,14 @@ set_address (sv_def_t *def, void *address)
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_pointer:
-		case ev_integer:
-		case ev_uinteger:
-			*(int **)def->field = (int *) address;
+		case ev_ptr:
+		case ev_int:
+		case ev_uint:
+			*(pr_int_t **)def->field = (pr_int_t *) address;
+			break;
+		case ev_long:
+		case ev_ulong:
+			*(pr_long_t **)def->field = (pr_long_t *) address;
 			break;
 	}
 }
@@ -426,13 +432,13 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 
 	if (mode == 2) {
 		for (; def->name; def++)
-			*(func_t *) def->field = G_FUNCTION (pr, def->offset);
+			*(pr_func_t *) def->field = G_FUNCTION (pr, def->offset);
 		return 1;
 	}
 	for (; def->name; def++) {
 		dfunc = PR_FindFunction (pr, def->name);
 		if (dfunc) {
-			*(func_t *) def->field = dfunc - pr->pr_functions;
+			*(pr_func_t *) def->field = dfunc - pr->pr_functions;
 		} else if (mode) {
 			PR_Undefined (pr, "function", def->name);
 			ret = 0;
@@ -489,7 +495,7 @@ resolve (progs_t *pr)
 	resolve_fields (pr, qw_opt_fields, 0);
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
-	sv_pr_state.globals.time = sv_globals.time;
+	sv_pr_state.globals.ftime = sv_globals.time;//FIXME double time
 	return ret;
 }
 
@@ -555,6 +561,7 @@ SV_LoadProgs (void)
 
 	sv_pr_state.max_edicts = MAX_EDICTS;
 	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	sv_pr_state.stack_size = sv_progs_stack->int_val * 1024;
 	sv.edicts = sv_edicts;
 
 	PR_LoadProgs (&sv_pr_state, progs_name);
@@ -609,6 +616,8 @@ SV_Progs_Init_Cvars (void)
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
 							  "size of the zone for progs in kB");
+	sv_progs_stack = Cvar_Get ("sv_progs_stack", "64", CVAR_NONE, NULL,
+							  "size of the stack for progs in kB");
 	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
 							 "extention mapping to use: "
 							 "none, id, qf, qwe, ktpro, cpqw");

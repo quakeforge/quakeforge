@@ -316,9 +316,11 @@ if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
 	qfac_qfcc_include_qf="\$(qfcc_include_qf)"
 	qfac_qfcc_include_qf_input="\$(qfcc_include_qf_input)"
+	qfac_qfcc_include_qf_progs="\$(qfcc_include_qf_progs)"
 fi
 QF_SUBST(qfac_qfcc_include_qf)
 QF_SUBST(qfac_qfcc_include_qf_input)
+QF_SUBST(qfac_qfcc_include_qf_progs)
 
 if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf="\$(include_qf)"

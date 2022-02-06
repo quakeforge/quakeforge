@@ -31,8 +31,8 @@
 #ifndef __def_h
 #define __def_h
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
@@ -40,6 +40,7 @@
 ///@{
 
 struct symbol_s;
+struct symtab_s;
 struct expr_s;
 
 /** Represent a memory location that holds a QuakeC/Ruamoko object.
@@ -60,6 +61,7 @@ typedef struct def_s {
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
+	int         reg;			///< base register index to access def
 
 	/** \name Def aliasing.
 		Aliasing a def provides a different view of the def providing access
@@ -98,7 +100,7 @@ typedef struct def_s {
 	unsigned    system:1;		///< system def
 	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
 
-	string_t    file;			///< declaring/defining source file
+	pr_string_t file;			///< declaring/defining source file
 	int         line;			///< declaring/defining source line
 
 	int         qfo_def;		///< index to def in qfo defs
@@ -219,6 +221,9 @@ void free_temp_def (def_t *temp);
 */
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 
+void init_vector_components (struct symbol_s *vector_sym, int is_field,
+							 struct symtab_s *symtab);
+
 /** Initialize a def referenced by the given symbol.
 
 	The symbol is checked for redefinition. A symbol is considered to be
@@ -241,10 +246,11 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 	\param init		If not null, the expressions to use to initialize the def.
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
+	\param symtab   The symbol table into which the def will be placed.
 */
 void initialize_def (struct symbol_s *sym,
 					 struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage);
+					 storage_class_t storage, struct symtab_s *symtab);
 
 /** Determine if two defs overlap.
 

@@ -48,7 +48,6 @@
 
 #define s05 0.70710678118654757
 
-#ifdef __AVX2__
 typedef  struct {
 	int         line;
 	vec4d_t   (*op) (vec4d_t a, vec4d_t b);
@@ -57,7 +56,6 @@ typedef  struct {
 	vec4d_t     expect;
 	vec4d_t     ulp_errors;
 } vec4d_test_t;
-#endif
 
 typedef  struct {
 	int         line;
@@ -94,41 +92,39 @@ typedef  struct {
 	mat4f_t     ulp_errors;
 } mq4f_test_t;
 
-#ifdef __AVX2__
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
-	return vtruncd (v);
+	return vtrunc4d (v);
 }
 
 static vec4d_t tvceild (vec4d_t v, vec4d_t ignore)
 {
-	return vceild (v);
+	return vceil4d (v);
 }
 
 static vec4d_t tvfloord (vec4d_t v, vec4d_t ignore)
 {
-	return vfloord (v);
+	return vfloor4d (v);
 }
 
 static vec4d_t tqconjd (vec4d_t v, vec4d_t ignore)
 {
 	return qconjd (v);
 }
-#endif
 
 static vec4f_t tvtruncf (vec4f_t v, vec4f_t ignore)
 {
-	return vtruncf (v);
+	return vtrunc4f (v);
 }
 
 static vec4f_t tvceilf (vec4f_t v, vec4f_t ignore)
 {
-	return vceilf (v);
+	return vceil4f (v);
 }
 
 static vec4f_t tvfloorf (vec4f_t v, vec4f_t ignore)
 {
-	return vfloorf (v);
+	return vfloor4f (v);
 }
 
 static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
@@ -138,12 +134,12 @@ static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
 
 static vec4f_t tvabsf (vec4f_t v, vec4f_t ignore)
 {
-	return vabsf (v);
+	return vabs4f (v);
 }
 
 static vec4f_t tvsqrtf (vec4f_t v, vec4f_t ignore)
 {
-	return vsqrtf (v);
+	return vsqrt4f (v);
 }
 
 static vec4f_t tmagnitudef (vec4f_t v, vec4f_t ignore)
@@ -158,7 +154,6 @@ static vec4f_t tmagnitude3f (vec4f_t v, vec4f_t ignore)
 
 #define T(t...) { __LINE__, t }
 
-#ifdef __AVX2__
 static vec4d_test_t vec4d_tests[] = {
 	// 3D dot products
 	T(dotd, right,   right,   one  ),
@@ -285,7 +280,6 @@ static vec4d_test_t vec4d_tests[] = {
 	T(tqconjd,  one, {}, { -1, -1, -1, 1 } ),
 };
 #define num_vec4d_tests (sizeof (vec4d_tests) / (sizeof (vec4d_tests[0])))
-#endif
 
 static vec4f_test_t vec4f_tests[] = {
 	// 3D dot products
@@ -487,7 +481,6 @@ static mq4f_test_t mq4f_tests[] = {
 };
 #define num_mq4f_tests (sizeof (mq4f_tests) / (sizeof (mq4f_tests[0])))
 
-#ifdef __AVX2__
 static int
 run_vec4d_tests (void)
 {
@@ -512,7 +505,6 @@ run_vec4d_tests (void)
 	}
 	return ret;
 }
-#endif
 
 static int
 run_vec4f_tests (void)
@@ -684,9 +676,7 @@ int
 main (void)
 {
 	int         ret = 0;
-#ifdef __AVX2__
 	ret |= run_vec4d_tests ();
-#endif
 	ret |= run_vec4f_tests ();
 	ret |= run_mat4f_tests ();
 	ret |= run_mv4f_tests ();

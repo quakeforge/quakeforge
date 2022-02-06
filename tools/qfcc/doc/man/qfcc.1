@@ -56,8 +56,10 @@ understand.
 
 .TP
 .B \-\-advanced
-Use advanced Ruamoko features.
-This is the default when using separate compilation.
+Use advanced Ruamoko language features limited to the v6p ISA. This
+provides access to structs, arrays, pointers, integers, quaternions,
+doubles and object-oriented features mostly compatible with Objective-C
+(ie, Objective-QuakeC). For access to SIMD vector types, see --ruamoko.
 
 .TP
 .B \-C, \-\-code OPTION,...
@@ -180,6 +182,15 @@ Incremental linking.
 Generate a larger object file from other object files and libraries.
 
 .TP
+.B \-\-raumoko, \-\-ruamoko
+In addition to the Ruamoko language features added by --advanced, this
+option provides access to SIMD vector types (and instructions), a data
+stack for local variables and parameters (allowing pointers to local
+variables to be passed to other functions!), and other features still
+under development.
+This is the default when using separate compilation.
+
+.TP
 .B \-S, \-\-save\-temps
 Do not delete temporary files.
 
@@ -190,7 +201,7 @@ Look for \*[progs.src] in \fBDIR\fP instead of the current directory.
 .TP
 .B \-\-traditional
 Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq.
-Also implies the \fBv6only\fP, \fBno-short-circuit\fP,
+Also implies the \fBtarget=v6\fP, \fBno-short-circuit\fP,
 \fBconst-initializers\fP and \fBno-local-merging\fP code generation options
 (see \fBCODE GENERATION OPTIONS\fP).
 This is the default when using \fBprogs.src\fP mode.
@@ -271,8 +282,8 @@ output file is \*(lqprogs.dat\*(rq, the symbol file will be
 .B fast\-float
 Use float values directly in \*(lqif\*(rq statements.
 Defaults to on.
-This option is always enabled when using version 6 progs (\fBv6only\fP is in
-effect).
+This option is always enabled when targeting  v6 progs (\fBtarget=v6\fP is
+in effect).
 
 .TP
 .B local-merging
@@ -289,8 +300,9 @@ Defaults to off for traditional mode, and on for advanced mode.
 .TP
 .B promote\-float
 Promote float when passed to a function that takes a variable number of
-arguements. Defaults to enabled for advanced code, is forced off for
-traditional or v6only code (mostly because such code does not have doubles).
+arguements. Defaults to enabled for advanced code (v6p or ruamoko), is forced
+off for traditional or v6 code (mostly because such code does not have
+doubles).
 
 .TP
 .B short\-circuit
@@ -329,18 +341,33 @@ Create extra symbols for accessing the components of a vector variable or
 field. For example, \fBvector vel\fP will also create \fBvel_x\fP,
 \fBvel_y\fP, and \fBvel_z\fP. Defaults to on for traditional code and off
 for advanced.
+.PP
+Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
 
 .TP
-.B v6only
-Restrict the compiler to produce only version 6 progs (original
-Quake/QuakeWorld) features.
+.B target=v6|v6p|ruamoko
+Specify the target for which the compiler is to produce code.
+.RS
+.TP
+.B v6
+Standard Quake VM (qcc compatible).
 This means that the compiled data file should be able to run on older servers,
 as long as you have not used any QuakeForge-specific built-in functions.
 Also disables compiler features (such as integers and string manipulation
 support) that require extensions.
-Defaults to on for traditional mode and off for advanced mode.
-.PP
-Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
+.TP
+.B v6p
+QuakeForge extended v6 instructions.
+This is not compatible with older servers, nor with most (any?) other Quake
+engines. It adds a variety of instructions and types, including integers,
+quaternions, pointers, doubles, structs, arrays and Objective-C style classes.
+.TP
+.B ruamoko
+QuakeForge SIMD and stack instructions.
+.RE
+Defaults to v6 for traditional mode, v6p for advanced mode, and ruamoko
+for Ruamoko mode (actually, trying to take Ruamoko's power after
+granting it may not end well).
 
 
 .SH "WARNING OPTIONS"
@@ -703,13 +730,13 @@ gold digits.
 \fB\-\-qccx\-escapes\fP has no effect on sequences that do not conflict.
 
 
-.SH TRADITIONAL VS ADVANCED
-Compared to \fBqcc\fP, \*[qfcc] has many advanced features and is much stricter
-about type checking.
+.SH TRADITIONAL VS ADVANCED VS RUAMOKO
+Compared to \fBqcc\fP, \*[qfcc] has many advanced features and is much
+stricter about type checking.
 \*[qfcc] also uses the same operator semantics and precedence rules as
 standard \fBC\fP.
-Unfortunately, this means that most older QuakeC code will not compile, or even
-worse, will compile incorrectly.
+Unfortunately, this means that most older QuakeC code will not compile,
+or even worse, will compile incorrectly.
 .P
 To address this situation, \*[qfcc] has a \*(lqtraditional\*(rq mode for
 compiling old progs.
@@ -717,20 +744,32 @@ This mode, enabled with \fB--traditional\fP or by default in \fBprogs.src\fP
 mode, removes the new keywords required by \*[qfcc]'s advanced features,
 converts new errors to warnings, some warnings to notices and inverts
 precedence order where required (eg, (!var & flag)).
-Traditional mode also affects several code generation options (as always, this
-can be overridden):
+Traditional mode also affects several code generation options (as
+always, this can be overridden):
 .IP \(bu 4
 code output is restricted to version 6 progs instructions
 .IP \(bu 4
 short circuit boolean logic is disabled
 .IP \(bu 4
-each function has a private area of data for its local variables (this wastes
-a lot of data space).
+each function has a private area of data for its local variables (this
+wastes a lot of data space).
 .P
-Advanced mode is simply \*[qfcc] in its natural state.
-Using \fB--advanced\fP, \*[qfcc] can be put in to advanced mode while using the
-\fBprogs.src\fP compilation mode.
+Advanced mode is \*[qfcc] in what was its natural state until the
+introduction of Ruamoko mode. Advanced mode adds several data types and
+Objective-C object oriented programming.
+Using \fB--advanced\fP, \*[qfcc] can be put in to advanced mode while
+using the \fBprogs.src\fP compilation mode.
+.P
+Ruamoko mode is \*[qfcc] in its natural state. On top of the features
+added by Advanced mode, Ruamoko mode adds SIMD types and instructions,
+and a data stack for locals and parameters.
 
+.SH RUAMOKO PROGRAMMING LANGUAGE
+Ruamoko evolved from the original QuakeC language, gaining standard C
+syntax and most features (the char type is not supported, and function
+pointers are a little weird (design bug?)), Objective-C object oriented
+extensions, and (with the Ruamoko ISA) SIMD vectors and the ability to
+pass pointers to local variables to other functions.
 
 .SH "FAQ"
 
@@ -740,6 +779,11 @@ In Maori mythology, Ruamoko is the youngest child of Ranginui, the
 Sky-father, and Papatuanuku, the Earth-mother.
 Ruamoko is the god of volcanoes and earthquakes.
 For more information, see the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
+
+.TP
+.B Why both Ruamoko and Raumoko?
+They are alternative spellings and pronunciations. Use whichever one you
+prefer.
 
 .TP
 .B qfcc hangs

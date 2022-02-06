@@ -215,7 +215,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	vec3_t      hullmins, hullmaxs, size;
 
 	if ((sv_fields.rotated_bbox != -1
-		 && SVinteger (ent, rotated_bbox))
+		 && SVint (ent, rotated_bbox))
 		|| SVfloat (ent, solid) == SOLID_BSP) {
 		VectorSubtract (maxs, mins, size);
 		if (size[0] < 3)
@@ -226,8 +226,8 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 			hull_index = 2;
 	}
 	if (sv_fields.rotated_bbox != -1
-		&& SVinteger (ent, rotated_bbox)) {
-		int h = SVinteger (ent, rotated_bbox) - 1;
+		&& SVint (ent, rotated_bbox)) {
+		int h = SVint (ent, rotated_bbox) - 1;
 		hull_list = pf_hull_list[h]->hulls;
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
@@ -818,11 +818,10 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 	edict_t    *touch;
 	link_t     *l, *next;
 	trace_t		trace;
-	int         i;
 
 	if (clip->type & MOVE_EVERYTHING) {
 		touch = NEXT_EDICT (&sv_pr_state, sv.edicts);
-		for (i = 1; i < sv.num_edicts; i++,
+		for (unsigned i = 1; i < sv.num_edicts; i++,
 			 touch = NEXT_EDICT (&sv_pr_state, touch)) {
 			if (clip->trace.allsolid)
 				return;
@@ -985,7 +984,6 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 edict_t *
 SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 {
-	int         e;
 	edict_t    *check;
 	hull_t     *hull;
 	vec3_t      boxmins, boxmaxs, offset;
@@ -1000,8 +998,8 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 	VectorAdd (origin, SVvector (ent, maxs), boxmaxs);
 
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state,
-															check)) {
+	for (unsigned e = 1; e < sv.num_edicts;
+		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
 		if (check == ent)

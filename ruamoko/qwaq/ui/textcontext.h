@@ -61,11 +61,11 @@
 
 #else
 
-#include "QF/pr_obj.h"
+#include "QF/progs/pr_obj.h"
 
 typedef struct qwaq_textcontext_s {
 	pr_id_t     isa;
-	pointer_t   window;
+	pr_ptr_t    window;
 	union {
 		Rect        rect;
 		struct {

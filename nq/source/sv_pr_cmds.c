@@ -71,9 +71,9 @@ PF_error (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
 
@@ -95,9 +95,9 @@ PF_objerror (progs_t *pr)
 	const char *s;
 	edict_t    *ed;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
 	ED_Free (pr, ed);
@@ -287,7 +287,7 @@ PF_bprint (progs_t *pr)
 {
 	const char *s;
 
-	s = PF_VarString (pr, 0);
+	s = PF_VarString (pr, 0, 1);
 	SV_BroadcastPrintf ("%s", s);
 }
 
@@ -304,10 +304,10 @@ PF_sprint (progs_t *pr)
 {
 	const char *s;
 	client_t   *client;
-	int         entnum;
+	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
 		Sys_Printf ("tried to sprint to a non-client\n");
@@ -333,10 +333,10 @@ PF_centerprint (progs_t *pr)
 {
 	const char *s;
 	client_t   *cl;
-	int         entnum;
+	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
-	s = PF_VarString (pr, 1);
+	s = PF_VarString (pr, 1, 2);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
 		Sys_Printf ("tried to sprint to a non-client\n");
@@ -542,11 +542,11 @@ PF_checkpos (progs_t *pr)
 
 static set_t *checkpvs;
 
-static int
-PF_newcheckclient (progs_t *pr, int check)
+static unsigned
+PF_newcheckclient (progs_t *pr, unsigned check)
 {
 	edict_t    *ent;
-	int         i;
+	unsigned    i;
 	mleaf_t    *leaf;
 	vec3_t      org;
 
@@ -656,7 +656,7 @@ PF_stuffcmd (progs_t *pr)
 {
 	const char *str;
 	client_t   *old;
-	int         entnum;
+	pr_uint_t   entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
 	if (entnum < 1 || entnum > svs.maxclients)
@@ -700,7 +700,7 @@ PF_findradius (progs_t *pr)
 	edict_t    *ent, *chain;
 	float       rsqr;
 	vec_t      *emins, *emaxs, *org;
-	int         i, j;
+	pr_uint_t   i;
 	vec3_t      eorg;
 
 	chain = (edict_t *) sv.edicts;
@@ -717,7 +717,7 @@ PF_findradius (progs_t *pr)
 			continue;
 		emins = SVvector (ent, absmin);
 		emaxs = SVvector (ent, absmax);
-		for (j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++)
 			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
 		if (DotProduct (eorg, eorg) > rsqr)
 			continue;
@@ -731,7 +731,7 @@ PF_findradius (progs_t *pr)
 
 // entity () spawn
 static void
-PF_Spawn (progs_t *pr)
+PF_spawn (progs_t *pr)
 {
 	edict_t    *ed;
 
@@ -741,7 +741,7 @@ PF_Spawn (progs_t *pr)
 
 // void (entity e) remove
 static void
-PF_Remove (progs_t *pr)
+PF_remove (progs_t *pr)
 {
 	edict_t    *ed;
 
@@ -798,6 +798,7 @@ PF_precache_file (progs_t *pr)
 	// precache_file is used only to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_file2 PF_precache_file
 
 // void (string s) precache_sound
 // string (string s) precache_sound2
@@ -808,6 +809,7 @@ PF_precache_sound (progs_t *pr)
 				 "precache_sound");
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_sound2 PF_precache_sound
 
 // void (string s) precache_model
 // string (string s) precache_model2
@@ -821,6 +823,7 @@ PF_precache_model (progs_t *pr)
 	sv.models[ind] = Mod_ForName (mod, true);
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_model2 PF_precache_model
 
 /*
 	PF_walkmove
@@ -903,7 +906,8 @@ PF_lightstyle (progs_t *pr)
 {
 	const char *val;
 	client_t   *cl;
-	int         style, j;
+	int         style;
+	unsigned    j;
 
 	style = P_FLOAT (pr, 0);
 	val = P_GSTRING (pr, 1);
@@ -960,7 +964,7 @@ PF_aim (progs_t *pr)
 	edict_t    *ent, *check, *bestent;
 	float       dist, bestdist, speed;
 	float      *mins, *maxs, *org;
-	int         i, j;
+	pr_uint_t   i;
 	trace_t     tr;
 	vec3_t      start, dir, end, bestdir;
 
@@ -1000,7 +1004,7 @@ PF_aim (progs_t *pr)
 		mins = SVvector (check, mins);
 		maxs = SVvector (check, maxs);
 		org = SVvector (check, origin);
-		for (j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++)
 			end[j] = org[j] + 0.5 * (mins[j] + maxs[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
@@ -1075,7 +1079,7 @@ PF_changeyaw (progs_t *pr)
 static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
-	int         entnum;
+	pr_uint_t   entnum;
 	int         dest;
 	edict_t    *ent;
 
@@ -1110,10 +1114,24 @@ static void
 PF_WriteBytes (progs_t *pr)
 {
 	int         i, p;
+	int         argc = pr->pr_argc - 1;
+	pr_type_t **argv = pr->pr_params + 1;
 	sizebuf_t  *msg = WriteDest (pr);
 
-	for (i = 1; i < pr->pr_argc; i++) {
-		p = P_FLOAT (pr, i);
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 1);
+		argc = va_list->count;
+		if (argc) {
+			argv = alloca (argc * sizeof (pr_type_t *));
+			for (int i = 0; i < argc; i++) {
+				argv[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			argv = 0;
+		}
+	}
+	for (i = 0; i < argc; i++) {
+		p = argv[i]->float_var;
 		MSG_WriteByte (msg, p);
 	}
 }
@@ -1256,7 +1274,7 @@ PF_setspawnparms (progs_t *pr)
 {
 	client_t   *client;
 	edict_t    *ent;
-	int         i;
+	unsigned    i;
 
 	ent = P_EDICT (pr, 0);
 	i = NUM_FOR_EDICT (pr, ent);
@@ -1473,78 +1491,83 @@ PF_checkextension (progs_t *pr)
 
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"makevectors",			PF_makevectors,			1},
-	{"setorigin",			PF_setorigin,			2},
-	{"setmodel",			PF_setmodel,			3},
-	{"setsize",				PF_setsize,				4},
+	bi(makevectors,      1, 1, p(vector)),
+	bi(setorigin,        2, 2, p(entity), p(vector)),
+	bi(setmodel,         3, 2, p(entity), p(string)),
+	bi(setsize,          4, 3, p(entity), p(vector), p(vector)),
 
-	{"sound",				PF_sound,				8},
+	bi(sound,            8, 3, p(entity), p(float), p(string)),
 
-	{"error",				PF_error,				10},
-	{"objerror",			PF_objerror,			11},
-	{"spawn",				PF_Spawn,				14},
-	{"remove",				PF_Remove,				15},
-	{"traceline",			PF_traceline,			16},
-	{"checkclient",			PF_checkclient,			17},
+	bi(error,           10, -1),	// (...)
+	bi(objerror,        11, -1),	// (...)
+	bi(spawn,           14, 0),		// (void)
+	bi(remove,          15, 1, p(entity)),
+	bi(traceline,       16, 3, p(vector), p(vector), p(float)),
+	bi(checkclient,     17, 0),		// (void)
 
-	{"precache_sound",		PF_precache_sound,		19},
-	{"precache_model",		PF_precache_model,		20},
-	{"stuffcmd",			PF_stuffcmd,			21},
-	{"findradius",			PF_findradius,			22},
-	{"bprint",				PF_bprint,				23},
-	{"sprint",				PF_sprint,				24},
+	bi(precache_sound,  19, 1, p(string)),
+	bi(precache_model,  20, 1, p(string)),
+	bi(stuffcmd,        21, 2, p(entity), p(string)),
+	bi(findradius,      22, 2, p(vector), p(float)),
+	bi(bprint,          23, -1), // (...)
+	bi(sprint,          24, -2, p(entity)), // (entity, string...)
 
-	{"walkmove",			PF_walkmove,			32},
+	bi(walkmove,        32, 2, p(float), p(float)),
 
-	{"droptofloor",			PF_droptofloor,			34},
-	{"lightstyle",			PF_lightstyle,			35},
+	bi(droptofloor,     34, 0),		// (void)
+	bi(lightstyle,      35, 2, p(float), p(string)),
 
-	{"checkbottom",			PF_checkbottom,			40},
-	{"pointcontents",		PF_pointcontents,		41},
+	bi(checkbottom,     40, 1, p(entity)),
+	bi(pointcontents,   41, 1, p(vector)),
 
-	{"aim",					PF_aim,					44},
+	bi(aim,             44, 2, p(entity), p(float)),
 
-	{"localcmd",			PF_localcmd,			46},
+	bi(localcmd,        46, 1, p(string)),
 
-	{"particle",			PF_particle,			48},
-	{"changeyaw",			PF_changeyaw,			49},
+	bi(particle,        48, 4, p(vector), p(vector), p(float), p(float)),
+	bi(changeyaw,       49, 0),		// (void)
 
-	{"writebyte",			PF_WriteByte,			52},
-	{"WriteBytes",			PF_WriteBytes,			-1},
-	{"writechar",			PF_WriteChar,			53},
-	{"writeshort",			PF_WriteShort,			54},
-	{"writelong",			PF_WriteLong,			55},
-	{"writecoord",			PF_WriteCoord,			56},
-	{"writeangle",			PF_WriteAngle,			57},
-	{"WriteCoordV",			PF_WriteCoordV,			-1},
-	{"WriteAngleV",			PF_WriteAngleV,			-1},
-	{"writestring",			PF_WriteString,			58},
-	{"writeentity",			PF_WriteEntity,			59},
+	bi(WriteByte,       52, 2, p(float), p(float)),
+	bi(WriteBytes,      -1, -2, p(float)),	// (float, float...)
+	bi(WriteChar,       53, 2, p(float), p(float)),
+	bi(WriteShort,      54, 2, p(float), p(float)),
+	bi(WriteLong,       55, 2, p(float), p(float)),
+	bi(WriteCoord,      56, 2, p(float), p(float)),
+	bi(WriteAngle,      57, 2, p(float), p(float)),
+	bi(WriteCoordV,     -1, 2, p(float), p(vector)),
+	bi(WriteAngleV,     -1, 2, p(float), p(vector)),
+	bi(WriteString,     58, 2, p(float), p(string)),
+	bi(WriteEntity,     59, 2, p(float), p(entity)),
+#define PF_movetogoal SV_MoveToGoal
+	bi(movetogoal,      67, 0),		// (void)
+#undef PF_movetogoal
+	bi(precache_file,   68, 1, p(string)),
+	bi(makestatic,      69, 1, p(entity)),
+	bi(changelevel,     70, 1, p(string)),
 
-	{"movetogoal",			SV_MoveToGoal,			67},
-	{"precache_file",		PF_precache_file,		68},
-	{"makestatic",			PF_makestatic,			69},
-	{"changelevel",			PF_changelevel,			70},
+	bi(centerprint,     73, -1), // (...)
+	bi(ambientsound,    74, 4, p(vector), p(string), p(float), p(float)),
+	bi(precache_model2, 75, 1, p(string)),
+	bi(precache_sound2, 76, 1, p(string)),
+	bi(precache_file2,  77, 1, p(string)),
+	bi(setspawnparms,   78, 1, p(entity)),
 
-	{"centerprint",			PF_centerprint,			73},
-	{"ambientsound",		PF_ambientsound,		74},
-	{"precache_model2",		PF_precache_model,		75},
-	{"precache_sound2",		PF_precache_sound,		76},
-	{"precache_file2",		PF_precache_file,		77},
-	{"setspawnparms",		PF_setspawnparms,		78},
-
-	{"testentitypos",		PF_testentitypos,		QF 92},
-	{"hullpointcontents",	PF_hullpointcontents,	QF 93},
-	{"getboxbounds",		PF_getboxbounds,		QF 94},
-	{"getboxhull",			PF_getboxhull,			QF 95},
-	{"freeboxhull",			PF_freeboxhull,			QF 96},
-	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
-	{"tracebox",			PF_tracebox,			QF 98},
-	{"checkextension",		PF_checkextension,		QF 99},
-
-	{"EntityParseFunction", ED_EntityParseFunction,	-1},
-
+	bi(testentitypos,     QF 92, 1, p(entity)),
+	bi(hullpointcontents, QF 93, 2, p(entity), p(vector)),
+	bi(getboxbounds,      QF 94, 2, p(int), p(int)),
+	bi(getboxhull,        QF 95, 0),		// (void)
+	bi(freeboxhull,       QF 96, 1, p(int)),
+	bi(rotate_bbox,       QF 97, 6, p(int), p(vector), p(vector), p(vector),
+									p(vector), p(vector)),
+	bi(tracebox,          QF 98, 6, p(vector), p(vector), p(vector), p(vector),
+									p(float), p(entity)),
+	bi(checkextension,    QF 99, -1, {}),	//FIXME correct params?
+#define PF_EntityParseFunction ED_EntityParseFunction
+	bi(EntityParseFunction, -1, 1, p(func)),
+#undef PF_EntityParseFunction
 	{0}
 };
 
@@ -1555,5 +1578,5 @@ SV_PR_Cmds_Init ()
 
 	PR_Cmds_Init (&sv_pr_state);
 
-	PR_RegisterBuiltins (&sv_pr_state, builtins);
+	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
 }

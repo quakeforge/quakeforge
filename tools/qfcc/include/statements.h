@@ -30,7 +30,7 @@
 #ifndef statement_h
 #define statement_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef enum {
 	op_def,
@@ -68,6 +68,7 @@ typedef struct operand_s {
 	op_type_e   op_type;
 	struct type_s *type;		///< possibly override def's/nil's type
 	int         size;			///< for structures
+	int         width;			///< for SIMD selection
 	struct expr_s *expr;		///< expression generating this operand
 	void       *return_addr;	///< who created this operand
 	union {
@@ -101,6 +102,7 @@ typedef enum {
 	st_state,		///< state (a, b); or state (a, b, c)
 	st_func,		///< call, rcall or return/done
 	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
+	st_address,		///< lea
 } st_type_t;
 
 typedef struct statement_s {
@@ -112,9 +114,9 @@ typedef struct statement_s {
 	operand_t  *opc;
 	struct expr_s *expr;		///< source expression for this statement
 	int         number;			///< number of this statement in function
-	operand_t  *use;			///< list of pseudo operands used
-	operand_t  *def;			///< list of pseudo operands defined
-	operand_t  *kill;			///< list of pseudo operands killed
+	operand_t  *use;			///< list of auxiliary operands used
+	operand_t  *def;			///< list of auxiliary operands defined
+	operand_t  *kill;			///< list of auxiliary operands killed
 } statement_t;
 
 typedef struct sblock_s {

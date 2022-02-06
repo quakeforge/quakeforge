@@ -245,7 +245,7 @@ defs_get_key (const void *_r, void *unused)
 int
 linker_add_string (const char *str)
 {
-	string_t    new;
+	pr_string_t new;
 	new = strpool_addstr (work_strings, str);
 	work->spaces[qfo_strings_space].strings = work_strings->strings;
 	work->spaces[qfo_strings_space].data_size = work_strings->size;
@@ -875,7 +875,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		// while we're at it, relocate all references in the type encoding
 		// space so the type encodings are always correct.
 		if (reloc->type == rel_def_string) {
-			string_t     str;
+			pr_string_t str;
 			str = linker_add_string (QFOSTR (qfo, reloc->target));
 			QFO_STRING (work, reloc->space, reloc->offset) = str;
 		} else if (reloc->type == rel_def_def || reloc->type == -1) {
@@ -1146,6 +1146,10 @@ linker_add_lib (const char *libname)
 
 			if (!qfo) {
 				linker_error ("error opening");
+				return 1;
+			}
+			if (qfo->progs_version != options.code.progsversion) {
+				linker_error ("qfo progs version does not match target");
 				return 1;
 			}
 

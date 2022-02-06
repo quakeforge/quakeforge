@@ -46,8 +46,8 @@
 typedef struct rua_in_cookie_s {
 	size_t      users;
 	progs_t    *pr;
-	func_t      func;
-	pointer_t   data;
+	pr_func_t   func;
+	pr_ptr_t    data;
 } rua_in_cookie_t;
 
 typedef struct input_resources_s {
@@ -193,7 +193,7 @@ bi_IN_GetButtonInfo (progs_t *pr)
 }
 
 static rua_in_cookie_t *
-make_cookie (progs_t *pr, func_t func, pointer_t data)
+make_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
 {
 	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {
@@ -212,7 +212,7 @@ make_cookie (progs_t *pr, func_t func, pointer_t data)
 }
 
 static rua_in_cookie_t *
-find_cookie (progs_t *pr, func_t func, pointer_t data)
+find_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
 {
 	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {
@@ -236,8 +236,8 @@ static void
 rua_add_axis_listener (progs_t *pr, axis_listener_t listener)
 {
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
-	func_t      func = P_FUNCTION (pr, 1);
-	func_t      data = P_POINTER (pr, 2);
+	pr_func_t   func = P_FUNCTION (pr, 1);
+	pr_func_t   data = P_POINTER (pr, 2);
 	rua_in_cookie_t *cookie = make_cookie (pr, func, data);
 	IN_AxisAddListener (axis, listener, cookie);
 }
@@ -246,8 +246,8 @@ static void
 rua_remove_axis_listener (progs_t *pr, axis_listener_t listener)
 {
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
-	func_t      func = P_FUNCTION (pr, 1);
-	func_t      data = P_POINTER (pr, 2);
+	pr_func_t   func = P_FUNCTION (pr, 1);
+	pr_func_t   data = P_POINTER (pr, 2);
 	rua_in_cookie_t *cookie = find_cookie (pr, func, data);
 	if (cookie) {
 		IN_AxisRemoveListener (axis, listener, cookie);
@@ -259,8 +259,8 @@ static void
 rua_add_button_listener (progs_t *pr, button_listener_t listener)
 {
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
-	func_t      func = P_FUNCTION (pr, 1);
-	func_t      data = P_POINTER (pr, 2);
+	pr_func_t   func = P_FUNCTION (pr, 1);
+	pr_func_t   data = P_POINTER (pr, 2);
 	rua_in_cookie_t *cookie = make_cookie (pr, func, data);
 	IN_ButtonAddListener (button, listener, cookie);
 }
@@ -269,8 +269,8 @@ static void
 rua_remove_button_listener (progs_t *pr, button_listener_t listener)
 {
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
-	func_t      func = P_FUNCTION (pr, 1);
-	func_t      data = P_POINTER (pr, 2);
+	pr_func_t   func = P_FUNCTION (pr, 1);
+	pr_func_t   data = P_POINTER (pr, 2);
 	rua_in_cookie_t *cookie = find_cookie (pr, func, data);
 	if (cookie) {
 		IN_ButtonRemoveListener (button, listener, cookie);
@@ -283,6 +283,7 @@ rua_listener_func (rua_in_cookie_t *cookie, const void *input)
 {
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
+	PR_RESET_PARAMS (pr);
 	P_POINTER (pr, 0) = cookie->data;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, input);//FIXME check input
 	pr->pr_argc = 2;
@@ -407,56 +408,58 @@ secured (progs_t *pr)
 	PR_RunError (pr, "Secured function called");
 }
 
-#define bi(x) {#x, secured, -1}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
+#define bi(x,np,params...) {#x, secured, -1, np, {params}}
 static builtin_t secure_builtins[] = {
-	bi(IN_CreateButton),
-	bi(IN_CreateAxis),
-	bi(IN_LoadConfig),
+	bi(IN_CreateButton, 2, p(string), p(string)),
+	bi(IN_CreateAxis,   2, p(string), p(string)),
+	bi(IN_LoadConfig,   1, p(ptr)),
 	{0}
 };
 
 #undef bi
-#define bi(x) {#x, bi_##x, -1}
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 static builtin_t insecure_builtins[] = {
-	bi(IN_CreateButton),
-	bi(IN_CreateAxis),
-	bi(IN_LoadConfig),
+	bi(IN_CreateButton, 2, p(string), p(string)),
+	bi(IN_CreateAxis,   2, p(string), p(string)),
+	bi(IN_LoadConfig,   1, p(ptr)),
 	{0}
 };
 static builtin_t builtins[] = {
-	bi(IN_FindDeviceId),
-	bi(IN_GetDeviceName),
-	bi(IN_GetDeviceId),
-	bi(IN_AxisInfo),
-	bi(IN_ButtonInfo),
-	bi(IN_GetAxisName),
-	bi(IN_GetButtonName),
-	bi(IN_GetAxisNumber),
-	bi(IN_GetButtonNumber),
-	bi(IN_ProcessEvents),
-	bi(IN_ClearStates),
-	bi(IN_GetAxisInfo),
-	bi(IN_GetButtonInfo),
+	bi(IN_FindDeviceId,     1, p(string)),
+	bi(IN_GetDeviceName,    1, p(int)),
+	bi(IN_GetDeviceId,      1, p(int)),
+	bi(IN_AxisInfo,         0), //FIXME
+	bi(IN_ButtonInfo,       0), //FIXME
+	bi(IN_GetAxisName,      2, p(int), p(int)),
+	bi(IN_GetButtonName,    2, p(int), p(int)),
+	bi(IN_GetAxisNumber,    2, p(int), p(string)),
+	bi(IN_GetButtonNumber,  2, p(int), p(string)),
+	bi(IN_ProcessEvents,    0),
+	bi(IN_ClearStates,      0),
+	bi(IN_GetAxisInfo,      3, p(int), p(int), p(ptr)),
+	bi(IN_GetButtonInfo,    3, p(int), p(int), p(ptr)),
 	{"IN_ButtonAddListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
-		rua_IN_ButtonAddListener_func, -1},
+		rua_IN_ButtonAddListener_func, -1,      3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonRemoveListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
-		rua_IN_ButtonRemoveListener_func, -1},
+		rua_IN_ButtonRemoveListener_func, -1,   3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisAddListener|^{tag in_axis_s=}^(v^v^{tag in_axis_s=})^v",
-		rua_IN_AxisAddListener_func, -1},
+		rua_IN_AxisAddListener_func, -1,        3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}^(v^v^{tag in_axis_s=})^v",
-		rua_IN_AxisRemoveListener_func, -1},
+		rua_IN_AxisRemoveListener_func, -1,     3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonAddListener|^{tag in_button_s=}(@@:.)@",
-		rua_IN_ButtonAddListener_method, -1},
+		rua_IN_ButtonAddListener_method, -1,    3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonRemoveListener|^{tag in_button_s=}(@@:.)@",
-		rua_IN_ButtonRemoveListener_method, -1},
+		rua_IN_ButtonRemoveListener_method, -1, 3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisAddListener|^{tag in_axis_s=}(@@:.)@",
-		rua_IN_AxisAddListener_method, -1},
+		rua_IN_AxisAddListener_method, -1,      3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}(@@:.)@",
-		rua_IN_AxisRemoveListener_method, -1},
+		rua_IN_AxisRemoveListener_method, -1,   3, {p(ptr), p(func), p(ptr)}},
 
-	bi(IMT_CreateContext),
-	bi(IMT_GetContext),
-	bi(IMT_SetContext),
+	bi(IMT_CreateContext,   1, p(string)),
+	bi(IMT_GetContext,      0),
+	bi(IMT_SetContext,      1, p(int)),
 
 	{0}
 };
@@ -495,17 +498,17 @@ void
 RUA_Input_Init (progs_t *pr, int secure)
 {
 	input_resources_t *res = calloc (sizeof (input_resources_t), 1);
-	PR_Resources_Register (pr, "input", res, bi_input_clear);
 
 	res->cookie_super = new_memsuper ();
 	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res,
 								  &res->hash_links);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
+	PR_Resources_Register (pr, "input", res, bi_input_clear);
 	if (secure & 2) {
-		PR_RegisterBuiltins (pr, secure_builtins);
+		PR_RegisterBuiltins (pr, secure_builtins, res);
 	} else {
-		PR_RegisterBuiltins (pr, insecure_builtins);
+		PR_RegisterBuiltins (pr, insecure_builtins, res);
 	}
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

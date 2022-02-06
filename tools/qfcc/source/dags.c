@@ -66,6 +66,8 @@ static dag_t *dags_freelist;
 
 static daglabel_t *daglabel_chain;
 
+static void dag_live_aliases(operand_t *op);
+
 static void
 flush_daglabels (void)
 {
@@ -229,8 +231,6 @@ dag_node (operand_t *op)
 		if (def->daglabel)
 			node = def->daglabel->dagnode;
 	} else if (op->op_type == op_temp) {
-		while (op->tempop.alias)
-			op = op->tempop.alias;
 		if (op->tempop.daglabel)
 			node = op->tempop.daglabel->dagnode;
 	} else if (op->op_type == op_value) {
@@ -282,8 +282,11 @@ dag_make_children (dag_t *dag, statement_t *s,
 		dagnode_t  *node = dag_node (operands[i + 1]);
 		dagnode_t  *killer = 0;
 
-		if (node && node->killed) {
+		if (node && (node->killed || s->type == st_address)) {
 			// If the node has been killed, then a new node is needed
+			// taking the address of a variable effectively kills the node it's
+			// attached to. FIXME should this be for only when the variable is
+			// in the attached identifiers list and is not the node's label?
 			killer = node->killed;
 			node = 0;
 		}
@@ -327,8 +330,8 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 
 	if (n->killed)
 		return 0;
-	if (!strcmp (op->opcode, ".")
-		&& n->label->opcode && !strcmp (n->label->opcode, ".="))
+	if (!strcmp (op->opcode, "load")
+		&& n->label->opcode && !strcmp (n->label->opcode, "store"))
 		return dagnode_deref_match (n, op, children);
 	if (n->label->opcode != op->opcode)
 		return 0;
@@ -406,7 +409,7 @@ dag_find_node (def_t *def, void *_daglabel)
 }
 
 static void
-dagnode_set_edges (dag_t *dag, dagnode_t *n)
+dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 {
 	int         i;
 
@@ -427,7 +430,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 					set_add (node->edges, n->number);
 				}
 				if (op->op_type == op_value
-					&& op->value->lltype == ev_pointer
+					&& op->value->lltype == ev_ptr
 					&& op->value->v.pointer.def) {
 					def_visit_all (op->value->v.pointer.def, 1,
 								   dagnode_def_set_edges_visit, n);
@@ -447,18 +450,29 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				set_add (n->edges, child->number);
 		}
 	}
+	for (operand_t *use = s->use; use; use = use->next) {
+		if (use->op_type == op_pseudo) {
+			continue;
+		}
+		daglabel_t *label = operand_label (dag, use);
+		label->live = 1;
+		dag_live_aliases (use);
+		set_add (n->edges, label->dagnode->number);
+	}
 	if (n->type == st_func) {
 		const char *num_params = 0;
 		int         first_param = 0;
 		function_t *func = dag->flownode->graph->func;
 		flowvar_t **flowvars = func->vars;
 
-		if (!strncmp (n->label->opcode, "<RCALL", 6)) {
+		if (!strcmp (n->label->opcode, "call")) {
+			// nothing to do
+		} else if (!strncmp (n->label->opcode, "rcall", 5)) {
 			num_params = n->label->opcode + 6;
 			first_param = 2;
-		} else if (!strncmp (n->label->opcode, "<CALL", 5)) {
+		} else if (!strncmp (n->label->opcode, "call", 4)) {
 			num_params = n->label->opcode + 5;
-		} else if (!strcmp (n->label->opcode, "<RETURN>")) {
+		} else if (!strcmp (n->label->opcode, "return") && n->children[0]) {
 			daglabel_t *label = n->children[0]->label;
 			if (!label->op) {
 				set_iter_t *lab_i;
@@ -817,6 +831,7 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
+	int         num_use = 0;
 	int         num_nodes;
 	int         num_lables;
 	set_t      *live_vars = set_new ();
@@ -825,18 +840,25 @@ dag_create (flownode_t *flownode)
 
 	// count the number of statements so the number of nodes and labels can be
 	// guessed
-	for (s = block->statements; s; s = s->next)
+	for (s = block->statements; s; s = s->next) {
 		num_statements++;
+		for (operand_t *use = s->use; use; use = use->next) {
+			if (use->op_type == op_pseudo) {
+				continue;
+			}
+			num_use++;
+		}
+	}
 
 	set_assign (live_vars, flownode->live_vars.out);
 
 	dag = new_dag ();
 	dag->flownode = flownode;
-	// at most FLOW_OPERANDS per statement
-	num_nodes = num_statements * FLOW_OPERANDS;
+	// at most FLOW_OPERANDS per statement + use
+	num_nodes = num_statements * FLOW_OPERANDS + num_use;
 	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
-	// at most FLOW_OPERANDS per statement, + return + params
-	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8);
+	// at most FLOW_OPERANDS per statement, + return + params + use
+	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_use;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
@@ -845,6 +867,15 @@ dag_create (flownode_t *flownode)
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
 		dag_make_leafs (dag, s, operands);
+		// make sure any auxiliary operands are given nodes, too
+		for (operand_t *use = s->use; use; use = use->next) {
+			if (use->op_type == op_pseudo) {
+				continue;
+			}
+			if (!dag_node (use)) {
+				leaf_node (dag, use, s->expr);
+			}
+		}
 	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
@@ -874,7 +905,7 @@ dag_create (flownode_t *flownode)
 				n->type = s->type;
 				n->label = op;
 				dagnode_add_children (dag, n, operands, children);
-				dagnode_set_edges (dag, n);
+				dagnode_set_edges (dag, n, s);
 				dagnode_set_reachable (dag, n);
 			}
 		}
@@ -1009,7 +1040,7 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		var = dag->labels[var_iter->element];
 		operands[2] = var->op;
 		dst = operands[2];
-		st = build_statement ("<MOVE>", operands, var->expr);
+		st = build_statement ("move", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
@@ -1031,7 +1062,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operands[1] = make_operand (dag, block, dagnode, 1);
 	if (dagnode->children[2]) {
 		operands[2] = make_operand (dag, block, dagnode, 2);
-		st = build_statement ("<MOVEP>", operands, dagnode->label->expr);
+		st = build_statement ("movep", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
 		if ((var_iter = set_first (dagnode->identifiers))) {
 			var = dag->labels[var_iter->element];
@@ -1051,7 +1082,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			}
 			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
 										 operands[1]->expr);
-			st = build_statement ("<MOVEP>", operands, var->expr);
+			st = build_statement ("movep", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
 	}
@@ -1075,7 +1106,7 @@ generate_memsets (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		var = dag->labels[var_iter->element];
 		operands[2] = var->op;
 		dst = operands[2];
-		st = build_statement ("<MEMSET>", operands, var->expr);
+		st = build_statement ("memset", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
@@ -1097,7 +1128,7 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operands[1] = make_operand (dag, block, dagnode, 1);
 	if (dagnode->children[2]) {
 		operands[2] = make_operand (dag, block, dagnode, 2);
-		st = build_statement ("<MEMSETP>", operands, dagnode->label->expr);
+		st = build_statement ("memsetp", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
 	} else {
 		for (var_iter = set_first (dagnode->identifiers); var_iter;
@@ -1112,9 +1143,46 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			}
 			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
 										 operands[1]->expr);
-			st = build_statement ("<MEMSETP>", operands, var->expr);
+			st = build_statement ("memsetp", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
+	}
+	return dst;
+}
+
+static operand_t *
+generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var = 0;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	if (dagnode->children[1]) {
+		operands[1] = make_operand (dag, block, dagnode, 1);
+	}
+	dst = operands[0];
+	for (var_iter = set_first (dagnode->identifiers); var_iter;
+		 var_iter = set_next (var_iter)) {
+		if (var) {
+			internal_error (var->expr, "more than one return value for call");
+		}
+		var = dag->labels[var_iter->element];
+		operands[2] = var->op;
+		dst = operands[2];
+		st = build_statement ("call", operands, var->expr);
+		sblock_add_statement (block, st);
+	}
+	if (var_iter) {
+		set_del_iter (var_iter);
+	}
+	if (!var) {
+		// void call or return value ignored, still have to call
+		operands[2] = make_operand (dag, block, dagnode, 2);
+		st = build_statement ("call", operands, dagnode->label->expr);
+		sblock_add_statement (block, st);
 	}
 	return dst;
 }
@@ -1128,14 +1196,14 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[0] = fix_op_type (src, type);
+	operands[2] = fix_op_type (src, type);
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->element];
-		operands[1] = fix_op_type (var->op, type);
+		operands[0] = fix_op_type (var->op, type);
 		if (!dst)
-			dst = operands[1];
+			dst = operands[0];
 
-		st = build_statement ("=", operands, var->expr);
+		st = build_statement ("assign", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
@@ -1161,6 +1229,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
+		case st_address:
 		case st_expr:
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
@@ -1184,15 +1253,15 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		case st_assign:
 			internal_error (0, "unexpected assignment node");
 		case st_ptrassign:
-			operands[0] = make_operand (dag, block, dagnode, 0);
-			operands[1] = make_operand (dag, block, dagnode, 1);
-			if (dagnode->children[2])
-				operands[2] = make_operand (dag, block, dagnode, 2);
+			operands[2] = make_operand (dag, block, dagnode, 0);
+			operands[0] = make_operand (dag, block, dagnode, 2);
+			if (dagnode->children[1])
+				operands[1] = make_operand (dag, block, dagnode, 1);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			// the source location is suitable for use in other nodes
-			dst = operands[0];
+			dst = operands[2];
 			break;
 		case st_move:
 			dst = generate_moves (dag, block, dagnode);
@@ -1206,8 +1275,13 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		case st_ptrmemset:
 			dst = generate_memsetps (dag, block, dagnode);
 			break;
-		case st_state:
 		case st_func:
+			if (!strcmp (dagnode->label->opcode, "call")) {
+				dst = generate_call (dag, block, dagnode);
+				break;
+			}
+			// fallthrough
+		case st_state:
 			for (i = 0; i < 3; i++)
 				if (dagnode->children[i])
 					operands[i] = make_operand (dag, block, dagnode, i);
@@ -1219,6 +1293,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
+			if (dagnode->children[2])
+				operands[2] = make_operand (dag, block, dagnode, 2);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);

@@ -323,7 +323,6 @@ void
 SV_BroadcastPrintf (const char *fmt, ...)
 {
 	static dstring_t *str;
-	int         i;
 	va_list     argptr;
 
 	if (!str)
@@ -333,7 +332,7 @@ SV_BroadcastPrintf (const char *fmt, ...)
 	dvsprintf (str, fmt, argptr);
 	va_end (argptr);
 
-	for (i = 0; i < svs.maxclients; i++)
+	for (unsigned i = 0; i < svs.maxclients; i++)
 		if (svs.clients[i].active && svs.clients[i].spawned) {
 			MSG_WriteByte (&svs.clients[i].message, svc_print);
 			MSG_WriteString (&svs.clients[i].message, str->str);
@@ -372,7 +371,8 @@ void
 SV_DropClient (qboolean crash)
 {
 	client_t   *client;
-	int         saveSelf, i;
+	unsigned    i;
+	pr_uint_t   saveSelf;
 
 	if (!crash) {
 		// send any final messages (don't check for errors)
@@ -386,8 +386,7 @@ SV_DropClient (qboolean crash)
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
 			saveSelf = *sv_globals.self;
-			*sv_globals.self =
-				EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
 			PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientDisconnect);
 			*sv_globals.self = saveSelf;
 		}
@@ -406,7 +405,8 @@ SV_DropClient (qboolean crash)
 	net_activeconnections--;
 
 	// send notification to all clients
-	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++) {
+	for (i = 0, client = svs.clients; i < svs.maxclients;
+		 i++, client++) {
 		if (!client->active)
 			continue;
 		MSG_WriteByte (&client->message, svc_updatename);
@@ -431,7 +431,7 @@ Host_ShutdownServer (qboolean crash)
 {
 	byte        message[4];
 	double      start;
-	int         count, i;
+	unsigned    count, i;
 	sizebuf_t   buf;
 
 	if (!sv.active)
@@ -711,7 +711,7 @@ Host_Frame (float time)
 {
 	double        time1, time2;
 	static double timetotal;
-	int           i, c, m;
+	int           c, m;
 	static int    timecount;
 
 	if (!serverprofile->int_val) {
@@ -733,7 +733,7 @@ Host_Frame (float time)
 	timecount = 0;
 	timetotal = 0;
 	c = 0;
-	for (i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		if (svs.clients[i].active)
 			c++;
 	}

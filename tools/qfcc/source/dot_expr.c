@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include <QF/dstring.h>
 #include <QF/mathlib.h>
@@ -54,25 +55,13 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
+#define EX_EXPR(expr) #expr,
 const char *expr_names[] =
 {
-	"error",
-	"state",
-	"bool",
-	"label",
-	"labelref",
-	"block",
-	"expr",
-	"uexpr",
-	"def",
-	"symbol",
-	"temp",
-	"vector",
-	"nil",
-	"value",
-	"compound",
-	"memset",
+#include "tools/qfcc/include/expr_names.h"
+	0
 };
+#undef EX_EXPR
 
 const char *
 get_op_string (int op)
@@ -101,20 +90,10 @@ get_op_string (int op)
 		case SHL:	return "<<";
 		case SHR:	return ">>";
 		case '.':	return ".";
-		case 'i':	return "<if>";
-		case 'n':	return "<ifnot>";
-		case IFBE:	return "<ifbe>";
-		case IFB:	return "<ifb>";
-		case IFAE:	return "<ifae>";
-		case IFA:	return "<ifa>";
-		case 'g':	return "<goto>";
-		case 'r':	return "<return>";
-		case 's':	return "<state>";
-		case 'c':	return "<call>";
-		case 'A':	return "<alias>";
 		case 'C':	return "<cast>";
-		case 'M':	return "<move>";
-		case 'm':	return "<move>";
+		case CROSS:	return "@cross";
+		case DOT:	return "@dot";
+		case SCALE:	return "@scale";
 		default:
 			return "unknown";
 	}
@@ -270,6 +249,113 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.expr.e1, level, id, next);
+	_print_expr (dstr, e->e.expr.e2, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"l\"];\n", indent, "", e,
+			   e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
+			   e->e.expr.e2);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), e->line);
+}
+
+static void
+print_alias (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.alias.expr, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"a\"];\n", indent, "", e,
+			   e->e.alias.expr);
+	if (e->e.alias.offset) {
+		_print_expr (dstr, e->e.alias.offset, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"o\"];\n", indent, "", e,
+				   e->e.alias.offset);
+	}
+
+	dstring_t  *typestr = dstring_newstr();
+	print_type_str (typestr, e->e.alias.type);
+	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
+			   "<alias>", typestr->str, e->line);
+	dstring_delete (typestr);
+}
+
+static void
+print_address (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.address.lvalue, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"&\"];\n", indent, "", e,
+			   e->e.address.lvalue);
+	if (e->e.address.offset) {
+		_print_expr (dstr, e->e.address.offset, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"+\"];\n", indent, "", e,
+				   e->e.address.offset);
+	}
+
+	dstring_t  *typestr = dstring_newstr();
+	print_type_str (typestr, e->e.address.type);
+	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
+			   "&", typestr->str, e->line);
+	dstring_delete (typestr);
+}
+
+static void
+print_assign (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.assign.dst, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"lval\"];\n", indent, "", e,
+			   e->e.assign.dst);
+	_print_expr (dstr, e->e.assign.src, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"rval\"];\n", indent, "", e,
+			   e->e.assign.src);
+
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "=", e->line);
+}
+
+static void
+print_conditional (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	static const char *condition[] = {
+		"ifz", "ifb", "ifa", 0, "ifnz", "ifnb", "ifna", 0
+	};
+
+	_print_expr (dstr, e->e.branch.test, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
+			   e->e.branch.test);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
+			   e->e.branch.target);
+	if (e->next) {
+		next = e->next;
+	}
+	if (next) {
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
+				   "style=dashed];\n", indent, "", e, next);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   condition [e->e.branch.type], e->line);
+}
+
+static void
+print_jump (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.branch.target, level, id, next);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "jump", e->line);
+}
+
+static void
 print_call (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -277,13 +363,13 @@ print_call (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	int         i, count;
 	expr_t    **args;
 
-	for (count = 0, p = e->e.expr.e2; p; p = p->next)
+	for (count = 0, p = e->e.branch.args; p; p = p->next)
 		count++;
 	args = alloca (count * sizeof (expr_t *));
-	for (i = 0, p = e->e.expr.e2; p; p = p->next, i++)
+	for (i = 0, p = e->e.branch.args; p; p = p->next, i++)
 		args[count - 1 - i] = p;
 
-	_print_expr (dstr, e->e.expr.e1, level, id, next);
+	_print_expr (dstr, e->e.branch.target, level, id, next);
 	dasprintf (dstr, "%*se_%p [label=\"<c>call", indent, "", e);
 	for (i = 0; i < count; i++)
 		dasprintf (dstr, "|<p%d>p%d", i, i);
@@ -293,68 +379,54 @@ print_call (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p:p%d -> e_%p;\n", indent + 2, "", e, i,
 				   args[i]);
 	}
-	dasprintf (dstr, "%*se_%p:c -> e_%p;\n", indent, "", e, e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p:c -> e_%p;\n", indent, "", e,
+			   e->e.branch.target);
 }
 
 static void
-print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+print_branch (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	switch (e->e.branch.type) {
+		case pr_branch_eq:
+		case pr_branch_lt:
+		case pr_branch_gt:
+		case pr_branch_ne:
+		case pr_branch_ge:
+		case pr_branch_le:
+			print_conditional (dstr, e, level, id, next);
+			break;
+		case pr_branch_jump:
+			print_jump (dstr, e, level, id, next);
+			break;
+		case pr_branch_call:
+			print_call (dstr, e, level, id, next);
+			break;
+	}
+}
+
+static void
+print_return (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.expr.op == 'c') {
-		print_call (dstr, e, level, id, next);
-		return;
-	} else if (e->e.expr.op == 'i' || e->e.expr.op == 'n'
-			   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
-			   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
-				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
-				   e->e.expr.e2);
-		if (e->next)
-			next = e->next;
-		if (next)
-			dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
-					   "style=dashed];\n", indent, "", e, next);
-	} else {
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
-		_print_expr (dstr, e->e.expr.e2, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"l\"];\n", indent, "", e,
-				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
-				   e->e.expr.e2);
+	if (e->e.retrn.ret_val) {
+		_print_expr (dstr, e->e.retrn.ret_val, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   e->e.retrn.ret_val);
 	}
-	if (e->e.expr.op == 'A') {
-		dstring_t  *typestr = dstring_newstr();
-		print_type_str (typestr, e->e.expr.type);
-		dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
-				   get_op_string (e->e.expr.op), typestr->str, e->line);
-		dstring_delete (typestr);
-	} else {
-		dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-				   get_op_string (e->e.expr.op), e->line);
-	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "return", e->line);
 }
 
 static void
 print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	dstring_t  *typestr = dstring_newstr();
 
-	if (e->e.expr.op != 'g' && e->e.expr.e1)
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
-	if (e->e.expr.op == 'A') {
-		dstring_copystr (typestr, "\\n");
-		print_type_str (typestr, e->e.expr.type);
-	}
-	if (e->e.expr.op != 'r' || e->e.expr.e1)
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
-				   e->e.expr.e1);
-	dasprintf (dstr, "%*se_%p [label=\"%s%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->e.expr.op), typestr->str, e->line);
-	dstring_delete (typestr);
+	_print_expr (dstr, e->e.expr.e1, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), e->line);
 }
 
 static void
@@ -474,14 +546,14 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 						e->e.value->v.vector_val[1],
 						e->e.value->v.vector_val[2]);
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			label = va (0, "'%g %g %g %g'",
 						e->e.value->v.quaternion_val[0],
 						e->e.value->v.quaternion_val[1],
 						e->e.value->v.quaternion_val[2],
 						e->e.value->v.quaternion_val[3]);
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			type = e->e.value->v.pointer.type;
 			dstring_clearstr(type_str);
 			if (type) {
@@ -507,19 +579,28 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 			}
 			break;
 		case ev_entity:
-			label = va (0, "ent %d", e->e.value->v.integer_val);
+			label = va (0, "ent %d", e->e.value->v.int_val);
 			break;
 		case ev_func:
-			label = va (0, "func %d", e->e.value->v.integer_val);
+			label = va (0, "func %d", e->e.value->v.int_val);
 			break;
-		case ev_integer:
-			label = va (0, "i %d", e->e.value->v.integer_val);
+		case ev_int:
+			label = va (0, "i %d", e->e.value->v.int_val);
 			break;
-		case ev_uinteger:
-			label = va (0, "u %u", e->e.value->v.uinteger_val);
+		case ev_uint:
+			label = va (0, "u %u", e->e.value->v.uint_val);
+			break;
+		case ev_long:
+			label = va (0, "i %"PRIi64, e->e.value->v.long_val);
+			break;
+		case ev_ulong:
+			label = va (0, "u %"PRIu64, e->e.value->v.ulong_val);
 			break;
 		case ev_short:
 			label = va (0, "s %d", e->e.value->v.short_val);
+			break;
+		case ev_ushort:
+			label = va (0, "us %d", e->e.value->v.ushort_val);
 			break;
 		case ev_void:
 			label = "<void>";
@@ -559,6 +640,36 @@ print_memset (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_adjstk (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"adjstk %d:%d\\n%d\"];\n", indent, "", e,
+			   e->e.adjstk.mode, e->e.adjstk.offset, e->line);
+}
+
+static void
+print_with (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *with = e->e.with.with;
+
+	_print_expr (dstr, with, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, with);
+	dasprintf (dstr, "%*se_%p [label=\"with %d:%d\\n%d\"];\n", indent, "", e,
+			   e->e.with.mode, e->e.with.reg, e->line);
+}
+
+static void
+print_args (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"...\\n%d\"];\n", indent, "", e,
+			   e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -579,6 +690,14 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_value] = print_value,
 		[ex_compound] = print_compound,
 		[ex_memset] = print_memset,
+		[ex_alias] = print_alias,
+		[ex_address] = print_address,
+		[ex_assign] = print_assign,
+		[ex_branch] = print_branch,
+		[ex_return] = print_return,
+		[ex_adjstk] = print_adjstk,
+		[ex_with] = print_with,
+		[ex_args] = print_args,
 	};
 	int         indent = level * 2 + 2;
 
@@ -590,9 +709,13 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		return;
 	e->printid = id;
 
-	if ((int) e->type < 0 || e->type > ex_memset || !print_funcs[e->type]) {
-		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
-				   indent, "", e, e->line);
+	if ((int) e->type < 0 || e->type >= ex_count || !print_funcs[e->type]) {
+		const char *type = va (0, "%d", e->type);
+		if (e->type >= 0 && e->type < ex_count) {
+			type = expr_names[e->type];
+		}
+		dasprintf (dstr, "%*se_%p [label=\"(bad expr type: %s)\\n%d\"];\n",
+				   indent, "", e, type, e->line);
 		return;
 	}
 	print_funcs[e->type] (dstr, e, level, id, next);
