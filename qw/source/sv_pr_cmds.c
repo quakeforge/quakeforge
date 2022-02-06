@@ -1117,11 +1117,24 @@ static void
 PF_WriteBytes (progs_t *pr)
 {
 	int         i, p;
-	int         count = pr->pr_argc - 1;
 	byte        buf[PR_MAX_PARAMS];
+	int         argc = pr->pr_argc - 1;
+	pr_type_t **argv = pr->pr_params + 1;
 
-	for (i = 0; i < count; i++) {
-		p = P_FLOAT (pr, i + 1);
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 1);
+		argc = va_list->count;
+		if (argc) {
+			argv = alloca (argc * sizeof (pr_type_t *));
+			for (int i = 0; i < argc; i++) {
+				argv[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			argv = 0;
+		}
+	}
+	for (i = 0; i < argc; i++) {
+		p = argv[i]->float_var;
 		buf[i] = p;
 	}
 
@@ -1129,17 +1142,17 @@ PF_WriteBytes (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			MSG_ReliableCheckBlock (&cl->backbuf, count);
-			MSG_ReliableWrite_SZ (&cl->backbuf, buf, count);
+			MSG_ReliableCheckBlock (&cl->backbuf, argc);
+			MSG_ReliableWrite_SZ (&cl->backbuf, buf, argc);
 		}
 		if (sv.recorders) {
 			sizebuf_t  *dbuf;
-			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, count);
-			SZ_Write (dbuf, buf, count);
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, argc);
+			SZ_Write (dbuf, buf, argc);
 		}
 	} else {
 		sizebuf_t  *msg = WriteDest (pr);
-		SZ_Write (msg, buf, count);
+		SZ_Write (msg, buf, argc);
 	}
 }
 
@@ -1840,7 +1853,8 @@ PF_SV_ClientNumber (progs_t *pr)
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
 
-	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server) {
+	if (entnum < 1 || entnum > MAX_CLIENTS
+		|| cl->state == cs_free || cl->state == cs_zombie) {
 		entnum = 0;	// nil entity
 	}
 	R_INT (pr) = entnum - 1;

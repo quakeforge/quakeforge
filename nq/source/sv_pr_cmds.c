@@ -1114,10 +1114,24 @@ static void
 PF_WriteBytes (progs_t *pr)
 {
 	int         i, p;
+	int         argc = pr->pr_argc - 1;
+	pr_type_t **argv = pr->pr_params + 1;
 	sizebuf_t  *msg = WriteDest (pr);
 
-	for (i = 1; i < pr->pr_argc; i++) {
-		p = P_FLOAT (pr, i);
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 1);
+		argc = va_list->count;
+		if (argc) {
+			argv = alloca (argc * sizeof (pr_type_t *));
+			for (int i = 0; i < argc; i++) {
+				argv[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			argv = 0;
+		}
+	}
+	for (i = 0; i < argc; i++) {
+		p = argv[i]->float_var;
 		MSG_WriteByte (msg, p);
 	}
 }
