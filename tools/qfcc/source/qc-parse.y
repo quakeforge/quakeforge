@@ -265,11 +265,16 @@ static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
 	if (new.type) {
-		if (spec.type && !spec.multi_type) {
+		// deal with "type <type_name>"
+		if (!spec.type || new.sym) {
+			spec.sym = new.sym;
+			if (!spec.type) {
+				spec.type = new.type;
+			}
+		} else if (!spec.multi_type) {
 			error (0, "two or more data types in declaration specifiers");
 			spec.multi_type = 1;
 		}
-		spec.type = new.type;
 	}
 	if (new.is_typedef || new.storage) {
 		if ((spec.is_typedef || spec.storage) && !spec.multi_store) {
@@ -677,15 +682,7 @@ type
 	: type_specifier
 	| type type_specifier
 		{
-			// deal with eg "int id"
-			$1.sym = $2.sym;
-
-			if (!$1.sym && !$1.type) {
-				$1 = spec_merge ($1, $2);
-			} else if (!$1.sym) {
-				error (0, "two or more data types in declaration specifiers");
-			}
-			$$ = $1;
+			$$ = spec_merge ($1, $2);
 		}
 	;
 
@@ -1410,7 +1407,7 @@ local_def
 			local_expr = 0;
 			(void) ($<spec>2);
 		}
-	| specifiers ';'
+	| specifiers opt_initializer ';'
 		{
 			check_specifiers ($1);
 			$$ = 0;
