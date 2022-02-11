@@ -361,6 +361,33 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 	return statement;
 }
 
+static void
+statement_add_use (statement_t *s, operand_t *use)
+{
+	if (use) {
+		use->next = s->use;
+		s->use = use;
+	}
+}
+
+static void
+statement_add_def (statement_t *s, operand_t *def)
+{
+	if (def) {
+		def->next = s->def;
+		s->def = def;
+	}
+}
+
+static void
+statement_add_kill (statement_t *s, operand_t *kill)
+{
+	if (kill) {
+		kill->next = s->kill;
+		s->kill = kill;
+	}
+}
+
 static pseudoop_t *
 new_pseudoop (const char *name)
 {
@@ -380,6 +407,18 @@ new_operand (op_type_e op, expr_t *expr, void *return_addr)
 	operand->expr = expr;
 	operand->return_addr = return_addr;
 	return operand;
+}
+
+static operand_t *
+copy_operand (operand_t *src)
+{
+	if (!src) {
+		return 0;
+	}
+	operand_t  *cpy = new_operand (src->op_type, src->expr, 0);
+	*cpy = *src;
+	cpy->return_addr = __builtin_return_address (0);
+	return cpy;
 }
 
 void
@@ -730,6 +769,8 @@ typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
 static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 									operand_t **op);
 static sblock_t *statement_slist (sblock_t *sblock, expr_t *e);
+static sblock_t *expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op);
+static sblock_t *expr_def (sblock_t *sblock, expr_t *e, operand_t **op);
 
 static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
@@ -808,7 +849,7 @@ is_indirect (expr_t *e)
 
 static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
 								  operand_t **base, operand_t **offset,
-								  pr_ushort_t *mode);
+								  pr_ushort_t *mode, operand_t **target);
 static statement_t *lea_statement (operand_t *pointer, operand_t *offset,
 								   expr_t *e);
 
@@ -945,6 +986,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
+	operand_t  *target = 0;
 	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
 	st_type_t   type = st_assign;
@@ -987,8 +1029,8 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (0) {
 dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to get its addressing
-		// parameters (base and offset) and switch to storep instructions.
-		sblock = addressing_mode (sblock, dst_expr, &dst, &ofs, &mode);
+		// parameters (base and offset) and switch to store instructions.
+		sblock = addressing_mode (sblock, dst_expr, &dst, &ofs, &mode, &target);
 		if (mode != 0) {
 			opcode = "store";
 			type = st_ptrassign;
@@ -1021,6 +1063,8 @@ dereference_dst:
 	s->opa = dst;
 	s->opb = ofs;
 	s->opc = src;
+	statement_add_def (s, copy_operand (target));
+	statement_add_kill (s, target);
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -1290,9 +1334,29 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	return sblock->next;
 }
 
+static operand_t *
+find_def_operand (expr_t *ref)
+{
+	operand_t  *op = 0;
+	if (ref->type == ex_alias) {
+		return find_def_operand (ref->e.alias.expr);
+	} else if (ref->type == ex_address) {
+		return find_def_operand (ref->e.address.lvalue);
+	} else if (ref->type == ex_symbol) {
+		expr_symbol (0, ref, &op);
+	} else if (ref->type == ex_def) {
+		expr_def (0, ref, &op);
+	} else {
+		internal_error (ref, "unexpected expr type: %s",
+						expr_names[ref->type]);
+	}
+	return op;
+}
+
 static sblock_t *
 ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
-				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
+				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
+				 operand_t **target)
 {
 	type_t     *type = get_type (ref);
 	if (!is_ptr (type)) {
@@ -1329,7 +1393,7 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 			alias = new_alias_expr (type, lvalue->e.alias.expr);
 		}
 		expr_file_line (alias, ref);
-		return addressing_mode (sblock, alias, base, offset, mode);
+		return addressing_mode (sblock, alias, base, offset, mode, target);
 	} else if (ref->type != ex_alias || ref->e.alias.offset) {
 		// probably just a pointer
 just_a_pointer:
@@ -1339,7 +1403,7 @@ just_a_pointer:
 	} else if (is_ptr (get_type (ref->e.alias.expr))) {
 		// cast of one pointer type to another
 		return ptr_addressing_mode (sblock, ref->e.alias.expr, base, offset,
-									mode);
+									mode, target);
 	} else {
 		// alias with no offset
 		if (!is_integral (get_type (ref->e.alias.expr))) {
@@ -1357,6 +1421,12 @@ just_a_pointer:
 			expr_t     *ptr = intptr->e.expr.e1;
 			expr_t     *offs = intptr->e.expr.e2;
 			int         const_offs;
+			if (target) {
+				if (ptr->type == ex_alias
+					&& is_ptr (get_type (ptr->e.alias.expr))) {
+					*target = find_def_operand (ptr->e.alias.expr);
+				}
+			}
 			// move the +/- to the offset
 			offs = unary_expr (intptr->e.expr.op, offs);
 			// make the base a pointer again
@@ -1378,7 +1448,8 @@ just_a_pointer:
 
 static sblock_t *
 addressing_mode (sblock_t *sblock, expr_t *ref,
-				 operand_t **base, operand_t **offset, pr_ushort_t *mode)
+				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
+				 operand_t **target)
 {
 	if (is_indirect (ref)) {
 		// ref is known to be either ex_expr or ex_uexpr, with '.' for
@@ -1396,7 +1467,7 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 			*mode = 1;//entity.field
 		} else if (ref->type == ex_uexpr) {
 			sblock = ptr_addressing_mode (sblock, ref->e.expr.e1, base, offset,
-										  mode);
+										  mode, target);
 		} else {
 			internal_error (ref, "unexpected expression type for indirect: %s",
 							expr_names[ref->type]);
@@ -1405,6 +1476,7 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 		sblock = statement_subexpr (sblock, ref, base);
 		*offset = short_operand (0, ref);
 		*mode = 0;
+		*target = 0;
 	}
 	return sblock;
 }
@@ -1441,11 +1513,14 @@ statement_return (sblock_t *sblock, expr_t *e)
 		if (!e->e.retrn.at_return && e->e.retrn.ret_val) {
 			expr_t     *ret_val = e->e.retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
+			operand_t  *target = 0;
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
 			pr_ushort_t mode = 0;
-			sblock = addressing_mode (sblock, ret_val, &s->opa, &s->opb, &mode);
+			sblock = addressing_mode (sblock, ret_val, &s->opa, &s->opb, &mode,
+									  &target);
 			ret_crtl |= mode << 5;
 			s->opc = short_operand (ret_crtl, e);
+			statement_add_use (s, target);
 		} else {
 			if (e->e.retrn.at_return) {
 				expr_t     *call = e->e.retrn.ret_val;
@@ -1544,10 +1619,11 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 	expr_t     *ptr_expr = deref->e.expr.e1;
 	operand_t  *base = 0;
 	operand_t  *offset = 0;
+	operand_t  *target = 0;
 	pr_ushort_t mode;
 	statement_t *s;
 
-	sblock = addressing_mode (sblock, deref, &base, &offset, &mode);
+	sblock = addressing_mode (sblock, deref, &base, &offset, &mode, &target);
 
 	if (!*op) {
 		*op = temp_operand (load_type, deref);
@@ -1559,6 +1635,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			// addressing_mode always sets offset to 0 for mode 0
 			s = assign_statement (*op, base, deref);
 			sblock_add_statement (sblock, s);
+			statement_add_use (s, target);
 			return sblock;
 		case 1://entity.field
 		case 2://const indexed pointer
@@ -1578,6 +1655,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		s = load_statement (base, offset, *op, deref);
 		sblock_add_statement (sblock, s);
 	}
+	statement_add_use (s, target);
 
 	return sblock;
 }
