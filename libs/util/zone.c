@@ -353,11 +353,20 @@ Z_Print (memzone_t *zone)
 			Sys_Printf ("ERROR: next block doesn't have proper back link\n");
 		if (!block->tag && !block->next->tag)
 			Sys_Printf ("ERROR: two consecutive free blocks\n");
-		if (block->tag
-			&& (*(int *) ((byte *) block + block->block_size - 4) != ZONEID))
-			Sys_Printf ("ERROR: memory trashed in block\n");
+		int     id = *(int *) ((byte *) block + block->block_size - 4);
+		if (block->tag && (id != ZONEID))
+			Sys_Printf ("ERROR: memory trashed in block %x != %x\n",
+						id, ZONEID);
 		fflush (stdout);
 	}
+}
+
+static void
+z_error (memzone_t *zone, const char *msg)
+{
+	if (zone->error)
+		zone->error (zone->data, msg);
+	Sys_Error ("%s", msg);
 }
 
 void
@@ -369,13 +378,24 @@ Z_CheckHeap (memzone_t *zone)
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit
 		if ((byte *) block + block->block_size != (byte *) block->next)
-			Sys_Error ("Z_CheckHeap: block size does not touch the next "
-					   "block\n");
+			z_error (zone,
+					 "Z_CheckHeap: block size does not touch the next block");
 		if (block->next->prev != block)
-			Sys_Error ("Z_CheckHeap: next block doesn't have proper back "
-					   "link\n");
+			z_error (zone,
+					 "Z_CheckHeap: next block doesn't have proper back link");
 		if (!block->tag && !block->next->tag)
-			Sys_Error ("Z_CheckHeap: two consecutive free blocks\n");
+			z_error (zone, "Z_CheckHeap: two consecutive free blocks");
+		if (block->id != ZONEID/* || block->id2 != ZONEID*/)
+			z_error (zone, "ERROR: block ids incorrect");
+		if ((byte *) block + block->block_size != (byte *) block->next)
+			z_error (zone, "ERROR: block size does not touch the next block");
+		if (block->next->prev != block)
+			z_error (zone, "ERROR: next block doesn't have proper back link");
+		if (!block->tag && !block->next->tag)
+			z_error (zone, "ERROR: two consecutive free blocks");
+		if (block->tag
+			&& (*(int *) ((byte *) block + block->block_size - 4) != ZONEID))
+			z_error (zone, "ERROR: memory trashed in block");
 	}
 }
 
