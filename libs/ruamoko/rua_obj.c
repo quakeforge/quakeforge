@@ -91,6 +91,9 @@
 		} \
 	}
 
+// number of selectors to allocate at once (to minimize memory waste)
+#define SELECTOR_BLOCK 64
+
 typedef struct obj_list_s {
 	struct obj_list_s *next;
 	void       *data;
@@ -107,6 +110,8 @@ typedef struct probj_resources_s {
 	progs_t    *pr;
 	unsigned    selector_index;
 	unsigned    selector_index_max;
+	pr_sel_t   *selector_block;
+	int         available_selectors;
 	obj_list  **selector_sels;
 	pr_string_t *selector_names;
 	pr_int_t   *selector_argc;
@@ -567,8 +572,14 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 		index = add_sel_name (probj, name);
 		is_new = 1;
 	}
-	if (!sel)
-		sel = PR_Zone_Malloc (pr, sizeof (pr_sel_t));
+	if (!sel) {
+		if (!probj->available_selectors) {
+			probj->available_selectors = SELECTOR_BLOCK;
+			sel = PR_Zone_Malloc (pr, SELECTOR_BLOCK*sizeof (pr_sel_t));
+			probj->selector_block = sel;
+		}
+		sel = &probj->selector_block[--probj->available_selectors];
+	}
 
 	sel->sel_id = index;
 	sel->sel_types = PR_SetString (pr, types);
@@ -2265,6 +2276,8 @@ rua_obj_cleanup (progs_t *pr, void *data)
 
 	Hash_FlushTable (probj->selector_hash);
 	probj->selector_index = 0;
+	probj->available_selectors = 0;
+	probj->selector_block = 0;
 	for (i = 0; i < probj->selector_index_max; i++) {
 		obj_list_free (probj->selector_sels[i]);
 		probj->selector_sels[i] = 0;
