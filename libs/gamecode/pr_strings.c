@@ -1132,8 +1132,9 @@ fmt_state_conversion (fmt_state_t *state)
 			state->fmt_count++;
 			fmt_append_item (state);
 			break;
+		case 'u':
 		case 'x':
-			// integer, hex notation
+			// integer, unsigned or hex notation
 			(*state->fi)->type = conv;
 			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
 
