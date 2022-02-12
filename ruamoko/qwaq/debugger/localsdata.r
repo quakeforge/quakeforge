@@ -33,7 +33,7 @@ free_defs (LocalsData *self)
 {
 	obj_free (self.defs);
 	self.defs = nil;
-	for (int i = 0; i < self.aux_func.num_locals; i++) {
+	for (int i = 0; i < self.num_user_defs; i++) {
 		[self.def_views[i] release];
 	}
 	obj_free (self.def_views);
@@ -74,17 +74,29 @@ free_defs (LocalsData *self)
 		data = obj_malloc (func.local_size);
 	}
 	aux_func = qdb_get_auxfunction (target, fnum);
+	num_user_defs = 0;
 	if (aux_func) {
 		defs = qdb_get_local_defs (target, fnum);
-		def_views = obj_malloc (aux_func.num_locals);
-		def_rows = obj_malloc (aux_func.num_locals + 1);
-		def_rows[0] = 0;
 		for (int i = 0; i < aux_func.num_locals; i++) {
-			def_views[i] = [[DefView withDef:defs[i] in:data target:target]
-							retain];
-			def_rows[i + 1] = [def_views[i] rows];
+			string def_name = qdb_get_string (target, defs[i].name);
+			if (str_mid (def_name, 0, 1) != ".") {
+				num_user_defs++;
+			}
 		}
-		prefixsum (def_rows, aux_func.num_locals + 1);
+		def_views = obj_malloc (num_user_defs);
+		def_rows = obj_malloc (num_user_defs + 1);
+		def_rows[0] = 0;
+		for (int i = 0, j = 0; i < aux_func.num_locals; i++) {
+			string def_name = qdb_get_string (target, defs[i].name);
+			if (str_mid (def_name, 0, 1) == ".") {
+				continue;
+			}
+			def_views[j] = [[DefView withDef:defs[i] in:data target:target]
+							retain];
+			def_rows[j + 1] = [def_views[j] rows];
+			j++;
+		}
+		prefixsum (def_rows, num_user_defs + 1);
 	}
 	[onRowCountChanged respond:self];
 	return self;
@@ -95,16 +107,16 @@ free_defs (LocalsData *self)
 	if (data && func.local_size && func.local_data) {
 		qdb_get_data (target, func.local_data, func.local_size, data);
 	}
-	int         rowCount = def_rows[aux_func.num_locals];
+	int         rowCount = def_rows[num_user_defs];
 	if (aux_func) {
 		def_rows[0] = 0;
-		for (int i = 0; i < aux_func.num_locals; i++) {
+		for (int i = 0; i < num_user_defs; i++) {
 			[def_views[i] fetchData];
 			def_rows[i + 1] = [def_views[i] rows];
 		}
-		prefixsum (def_rows, aux_func.num_locals + 1);
+		prefixsum (def_rows, num_user_defs + 1);
 	}
-	if (rowCount != def_rows[aux_func.num_locals]) {
+	if (rowCount != def_rows[num_user_defs]) {
 		[onRowCountChanged respond:self];
 	}
 	return self;
@@ -118,10 +130,10 @@ free_defs (LocalsData *self)
 -(int)numberOfRows:(TableView *)tableview
 {
 	if (aux_func) {
-		if (!aux_func.num_locals) {
+		if (!num_user_defs) {
 			return 0;
 		}
-		return def_rows[aux_func.num_locals];
+		return def_rows[num_user_defs];
 	} else if (func) {
 		return (func.local_size + 3) / 4;
 	}
@@ -133,7 +145,7 @@ free_defs (LocalsData *self)
 			   row:(int)row
 {
 	View      *view = nil;
-	int       *index = fbsearch (&row, def_rows, aux_func.num_locals, 1, nil);
+	int       *index = fbsearch (&row, def_rows, num_user_defs, 1, nil);
 
 	if (index) {
 		DefView    *dv = def_views[index - def_rows];

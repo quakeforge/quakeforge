@@ -17,6 +17,7 @@
 	qdb_function_t *func;
 	qdb_auxfunction_t *aux_func;
 	qdb_def_t  *defs;
+	int         num_user_defs;
 	DefView   **def_views;
 	int        *def_rows;
 	void       *data;
