@@ -98,6 +98,8 @@ qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target, unsigned fnum);
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
 unsigned qdb_get_source_line_addr(qdb_target_t target, string file,
 								  unsigned line);
+int qdb_has_data_stack (qdb_target_t target);
+unsigned qdb_get_frame_addr (qdb_target_t target);
 void traceon();
 void traceoff();
 

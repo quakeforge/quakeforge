@@ -12,6 +12,7 @@
 {
 	ListenerGroup *onRowCountChanged;
 	qdb_target_t target;
+	int         has_stack;
 	qfot_type_encodings_t target_encodings;
 	unsigned    current_fnum;
 	qdb_function_t *func;

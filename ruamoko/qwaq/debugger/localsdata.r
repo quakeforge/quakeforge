@@ -19,6 +19,8 @@
 	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
 				  &target_encodings);
 
+	self.has_stack = qdb_has_data_stack (target);
+
 	self.onRowCountChanged = [[ListenerGroup listener] retain];
 	return self;
 }
@@ -104,8 +106,18 @@ free_defs (LocalsData *self)
 
 -fetchData
 {
-	if (data && func.local_size && func.local_data) {
-		qdb_get_data (target, func.local_data, func.local_size, data);
+	if (data && func.local_size) {
+		unsigned    local_data = func.local_data;
+		if (has_stack) {
+			unsigned    stack_ptr = qdb_get_frame_addr (target);
+			local_data = 0;
+			if (stack_ptr) {
+				local_data = stack_ptr - func.local_data;
+			}
+		}
+		if (local_data) {
+			qdb_get_data (target, local_data, func.local_size, data);
+		}
 	}
 	int         rowCount = def_rows[num_user_defs];
 	if (aux_func) {

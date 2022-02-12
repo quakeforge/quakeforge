@@ -649,6 +649,35 @@ qdb_get_source_line_addr (progs_t *pr)
 	R_UINT (pr) = PR_FindSourceLineAddr (tpr, file, line);
 }
 
+static void
+qdb_has_data_stack (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+
+	R_INT (pr) = tpr->progs->version == PROG_VERSION;
+}
+
+static void
+qdb_get_frame_addr (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pr_ptr_t    handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+
+	R_UINT (pr) = 0;
+
+	if (tpr->progs->version == PROG_VERSION) {
+		if (tpr->pr_depth) {
+			prstack_t  *frame = tpr->pr_stack + tpr->pr_depth - 1;
+			R_UINT (pr) = frame->stack_ptr;
+		}
+	}
+}
+
 #define bi(x,np,params...) {#x, x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -675,6 +704,8 @@ static builtin_t builtins[] = {
 	bi(qdb_get_auxfunction,      2, p(int), p(uint)),
 	bi(qdb_get_local_defs,       2, p(int), p(uint)),
 	bi(qdb_get_source_line_addr, 3, p(int), p(string), p(uint)),
+	bi(qdb_has_data_stack,       1, p(int)),
+	bi(qdb_get_frame_addr,       1, p(int)),
 	{}
 };
 
