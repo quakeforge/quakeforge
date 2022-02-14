@@ -49,6 +49,7 @@ scene_t *Scene_NewScene (void);
 void Scene_DeleteScene (scene_t *scene);
 struct entity_s *Scene_CreateEntity (scene_t *scene);
 struct entity_s *Scene_GetEntity (scene_t *scene, int id) __attribute__((pure));
+struct transform_s *Scene_GetTransform (scene_t *scene, int id) __attribute__((pure));
 void Scene_DestroyEntity (scene_t *scene, struct entity_s *entity);
 void Scene_FreeAllEntities (scene_t *scene);
 

@@ -157,3 +157,10 @@ Scene_FreeAllEntities (scene_t *scene)
 	scene_resources_t *res = scene->resources;
 	PR_RESRESET (res->entities);
 }
+
+transform_t *
+Scene_GetTransform (scene_t *scene, int id)
+{
+	scene_resources_t *res = scene->resources;
+	return PR_RESGET (res->transforms, id);
+}
