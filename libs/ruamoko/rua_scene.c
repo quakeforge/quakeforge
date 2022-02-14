@@ -75,7 +75,7 @@ rua_scene_free (scene_resources_t *res, rua_scene_t *scene)
 	PR_RESFREE (res->scene_map, scene);
 }
 
-static rua_scene_t *
+static rua_scene_t * __attribute__((pure))
 rua__scene_get (scene_resources_t *res, int id, const char *name)
 {
 	rua_scene_t *scene = PR_RESGET (res->scene_map, id);
@@ -88,7 +88,7 @@ rua__scene_get (scene_resources_t *res, int id, const char *name)
 }
 #define rua_scene_get(res, id) rua__scene_get(res, id, __FUNCTION__)
 
-static entity_t *
+static entity_t * __attribute__((pure))
 rua__entity_get (progs_t *pr, rua_scene_t *scene, int id, const char *name)
 {
 	entity_t   *ent = Scene_GetEntity (scene->scene, id);
@@ -100,7 +100,7 @@ rua__entity_get (progs_t *pr, rua_scene_t *scene, int id, const char *name)
 }
 #define rua_entity_get(pr, scene, id) rua__entity_get(pr, scene, id, __FUNCTION__)
 
-static int
+static int __attribute__((pure))
 rua_scene_index (scene_resources_t *res, rua_scene_t *scene)
 {
 	return PR_RESINDEX (res->scene_map, scene);
