@@ -285,7 +285,7 @@ qboolean SV_movestep (edict_t *ent, const vec3_t move, qboolean relink);
 
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 
-void SV_MoveToGoal (progs_t *pr);
+void SV_MoveToGoal (progs_t *pr, void *data);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);

@@ -59,7 +59,7 @@ get_cbuf (progs_t *pr, int arg, const char *func)
 }
 
 static void
-bi_Cbuf_AddText (progs_t *pr)
+bi_Cbuf_AddText (progs_t *pr, void *data)
 {
 	const char *text = P_GSTRING (pr, 0);
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
@@ -67,7 +67,7 @@ bi_Cbuf_AddText (progs_t *pr)
 }
 
 static void
-bi_Cbuf_InsertText (progs_t *pr)
+bi_Cbuf_InsertText (progs_t *pr, void *data)
 {
 	const char *text = P_GSTRING (pr, 0);
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
@@ -75,14 +75,14 @@ bi_Cbuf_InsertText (progs_t *pr)
 }
 
 static void
-bi_Cbuf_Execute (progs_t *pr)
+bi_Cbuf_Execute (progs_t *pr, void *data)
 {
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_Execute (cbuf);
 }
 
 static void
-bi_Cbuf_Execute_Sets (progs_t *pr)
+bi_Cbuf_Execute_Sets (progs_t *pr, void *data)
 {
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_Execute_Sets (cbuf);

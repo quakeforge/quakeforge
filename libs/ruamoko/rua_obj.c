@@ -1160,7 +1160,7 @@ obj_init_statics (probj_t *probj)
 }
 
 static void
-rua___obj_exec_class (progs_t *pr)
+rua___obj_exec_class (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
@@ -1308,7 +1308,7 @@ rua___obj_exec_class (progs_t *pr)
 }
 
 static void
-rua___obj_forward (progs_t *pr)
+rua___obj_forward (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
@@ -1396,7 +1396,7 @@ rua___obj_forward (progs_t *pr)
 }
 
 static void
-rua___obj_responds_to (progs_t *pr)
+rua___obj_responds_to (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
@@ -1406,7 +1406,7 @@ rua___obj_responds_to (progs_t *pr)
 }
 
 static void
-rua_obj_error (progs_t *pr)
+rua_obj_error (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
@@ -1419,7 +1419,7 @@ rua_obj_error (progs_t *pr)
 }
 
 static void
-rua_obj_verror (progs_t *pr)
+rua_obj_verror (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
@@ -1436,7 +1436,7 @@ rua_obj_verror (progs_t *pr)
 }
 
 static void
-rua_obj_set_error_handler (progs_t *pr)
+rua_obj_set_error_handler (progs_t *pr, void *data)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
 	//pr_func_t   func = P_INT (pr, 0);
@@ -1446,7 +1446,7 @@ rua_obj_set_error_handler (progs_t *pr)
 }
 
 static void
-rua_obj_msg_lookup (progs_t *pr)
+rua_obj_msg_lookup (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
@@ -1456,7 +1456,7 @@ rua_obj_msg_lookup (progs_t *pr)
 }
 
 static void
-rua_obj_msg_lookup_super (progs_t *pr)
+rua_obj_msg_lookup_super (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
@@ -1466,7 +1466,7 @@ rua_obj_msg_lookup_super (progs_t *pr)
 }
 
 static void
-rua_obj_msg_sendv (progs_t *pr)
+rua_obj_msg_sendv (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_ptr_t    obj = P_POINTER (pr, 0);
@@ -1508,28 +1508,28 @@ rua_obj_msg_sendv (progs_t *pr)
 }
 
 static void
-rua_obj_increment_retaincount (progs_t *pr)
+rua_obj_increment_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = ++(*--obj).int_var;
 }
 
 static void
-rua_obj_decrement_retaincount (progs_t *pr)
+rua_obj_decrement_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = --(*--obj).int_var;
 }
 
 static void
-rua_obj_get_retaincount (progs_t *pr)
+rua_obj_get_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = (*--obj).int_var;
 }
 
 static void
-rua_obj_malloc (progs_t *pr)
+rua_obj_malloc (progs_t *pr, void *data)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -1538,7 +1538,7 @@ rua_obj_malloc (progs_t *pr)
 }
 
 static void
-rua_obj_atomic_malloc (progs_t *pr)
+rua_obj_atomic_malloc (progs_t *pr, void *data)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -1547,7 +1547,7 @@ rua_obj_atomic_malloc (progs_t *pr)
 }
 
 static void
-rua_obj_valloc (progs_t *pr)
+rua_obj_valloc (progs_t *pr, void *data)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -1556,7 +1556,7 @@ rua_obj_valloc (progs_t *pr)
 }
 
 static void
-rua_obj_realloc (progs_t *pr)
+rua_obj_realloc (progs_t *pr, void *data)
 {
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
@@ -1566,7 +1566,7 @@ rua_obj_realloc (progs_t *pr)
 }
 
 static void
-rua_obj_calloc (progs_t *pr)
+rua_obj_calloc (progs_t *pr, void *data)
 {
 	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -1576,7 +1576,7 @@ rua_obj_calloc (progs_t *pr)
 }
 
 static void
-rua_obj_free (progs_t *pr)
+rua_obj_free (progs_t *pr, void *data)
 {
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 
@@ -1584,7 +1584,7 @@ rua_obj_free (progs_t *pr)
 }
 
 static void
-rua_obj_get_uninstalled_dtable (progs_t *pr)
+rua_obj_get_uninstalled_dtable (progs_t *pr, void *data)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
@@ -1592,7 +1592,7 @@ rua_obj_get_uninstalled_dtable (progs_t *pr)
 }
 
 static void
-rua_obj_msgSend (progs_t *pr)
+rua_obj_msgSend (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
@@ -1618,7 +1618,7 @@ rua_obj_msgSend (progs_t *pr)
 }
 
 static void
-rua_obj_msgSend_super (progs_t *pr)
+rua_obj_msgSend_super (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
@@ -1640,7 +1640,7 @@ rua_obj_msgSend_super (progs_t *pr)
 }
 
 static void
-rua_obj_get_class (progs_t *pr)
+rua_obj_get_class (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
@@ -1653,7 +1653,7 @@ rua_obj_get_class (progs_t *pr)
 }
 
 static void
-rua_obj_lookup_class (progs_t *pr)
+rua_obj_lookup_class (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
@@ -1664,7 +1664,7 @@ rua_obj_lookup_class (progs_t *pr)
 }
 
 static void
-rua_obj_next_class (progs_t *pr)
+rua_obj_next_class (progs_t *pr, void *data)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
@@ -1674,7 +1674,7 @@ rua_obj_next_class (progs_t *pr)
 //====================================================================
 
 static void
-rua_sel_get_name (progs_t *pr)
+rua_sel_get_name (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
@@ -1686,7 +1686,7 @@ rua_sel_get_name (progs_t *pr)
 }
 
 static void
-rua_sel_get_type (progs_t *pr)
+rua_sel_get_type (progs_t *pr, void *data)
 {
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
@@ -1694,7 +1694,7 @@ rua_sel_get_type (progs_t *pr)
 }
 
 static void
-rua_sel_get_uid (progs_t *pr)
+rua_sel_get_uid (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
@@ -1703,7 +1703,7 @@ rua_sel_get_uid (progs_t *pr)
 }
 
 static void
-rua_sel_register_name (progs_t *pr)
+rua_sel_register_name (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
@@ -1712,7 +1712,7 @@ rua_sel_register_name (progs_t *pr)
 }
 
 static void
-rua_sel_is_mapped (progs_t *pr)
+rua_sel_is_mapped (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	// FIXME might correspond to a string
@@ -1723,7 +1723,7 @@ rua_sel_is_mapped (progs_t *pr)
 //====================================================================
 
 static void
-rua_class_get_class_method (progs_t *pr)
+rua_class_get_class_method (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
@@ -1735,7 +1735,7 @@ rua_class_get_class_method (progs_t *pr)
 }
 
 static void
-rua_class_get_instance_method (progs_t *pr)
+rua_class_get_instance_method (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
@@ -1747,7 +1747,7 @@ rua_class_get_instance_method (progs_t *pr)
 #define CLASSOF(x) (&G_STRUCT (pr, pr_class_t, (x)->class_pointer))
 
 static void
-rua_class_pose_as (progs_t *pr)
+rua_class_pose_as (progs_t *pr, void *data)
 {
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
@@ -1796,7 +1796,7 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 }
 
 static void
-rua_class_create_instance (progs_t *pr)
+rua_class_create_instance (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
@@ -1805,7 +1805,7 @@ rua_class_create_instance (progs_t *pr)
 }
 
 static void
-rua_class_get_class_name (progs_t *pr)
+rua_class_get_class_name (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
@@ -1813,49 +1813,49 @@ rua_class_get_class_name (progs_t *pr)
 }
 
 static void
-rua_class_get_instance_size (progs_t *pr)
+rua_class_get_instance_size (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
 }
 
 static void
-rua_class_get_meta_class (progs_t *pr)
+rua_class_get_meta_class (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
 }
 
 static void
-rua_class_get_super_class (progs_t *pr)
+rua_class_get_super_class (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
 }
 
 static void
-rua_class_get_version (progs_t *pr)
+rua_class_get_version (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->version : -1;
 }
 
 static void
-rua_class_is_class (progs_t *pr)
+rua_class_is_class (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class);
 }
 
 static void
-rua_class_is_meta_class (progs_t *pr)
+rua_class_is_meta_class (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISMETA (class);
 }
 
 static void
-rua_class_set_version (progs_t *pr)
+rua_class_set_version (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	if (PR_CLS_ISCLASS (class))
@@ -1863,14 +1863,14 @@ rua_class_set_version (progs_t *pr)
 }
 
 static void
-rua_class_get_gc_object_type (progs_t *pr)
+rua_class_get_gc_object_type (progs_t *pr, void *data)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
 }
 
 static void
-rua_class_ivar_set_gcinvisible (progs_t *pr)
+rua_class_ivar_set_gcinvisible (progs_t *pr, void *data)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
 	//pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
@@ -1883,7 +1883,7 @@ rua_class_ivar_set_gcinvisible (progs_t *pr)
 //====================================================================
 
 static void
-rua_method_get_imp (progs_t *pr)
+rua_method_get_imp (progs_t *pr, void *data)
 {
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
@@ -1891,7 +1891,7 @@ rua_method_get_imp (progs_t *pr)
 }
 
 static void
-rua_get_imp (progs_t *pr)
+rua_get_imp (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
@@ -1903,7 +1903,7 @@ rua_get_imp (progs_t *pr)
 //====================================================================
 
 static void
-rua_object_dispose (progs_t *pr)
+rua_object_dispose (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_type_t  *mem = (pr_type_t *) object;
@@ -1911,7 +1911,7 @@ rua_object_dispose (progs_t *pr)
 }
 
 static void
-rua_object_copy (progs_t *pr)
+rua_object_copy (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
@@ -1927,7 +1927,7 @@ rua_object_copy (progs_t *pr)
 }
 
 static void
-rua_object_get_class (progs_t *pr)
+rua_object_get_class (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -1947,7 +1947,7 @@ rua_object_get_class (progs_t *pr)
 }
 
 static void
-rua_object_get_super_class (progs_t *pr)
+rua_object_get_super_class (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -1967,7 +1967,7 @@ rua_object_get_super_class (progs_t *pr)
 }
 
 static void
-rua_object_get_meta_class (progs_t *pr)
+rua_object_get_meta_class (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -1987,7 +1987,7 @@ rua_object_get_meta_class (progs_t *pr)
 }
 
 static void
-rua_object_get_class_name (progs_t *pr)
+rua_object_get_class_name (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
@@ -1996,7 +1996,7 @@ rua_object_get_class_name (progs_t *pr)
 }
 
 static void
-rua_object_is_class (progs_t *pr)
+rua_object_is_class (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -2008,7 +2008,7 @@ rua_object_is_class (progs_t *pr)
 }
 
 static void
-rua_object_is_instance (progs_t *pr)
+rua_object_is_instance (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
@@ -2017,7 +2017,7 @@ rua_object_is_instance (progs_t *pr)
 }
 
 static void
-rua_object_is_meta_class (progs_t *pr)
+rua_object_is_meta_class (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -2031,13 +2031,13 @@ rua_object_is_meta_class (progs_t *pr)
 //====================================================================
 
 static void
-rua__i_Object__hash (progs_t *pr)
+rua__i_Object__hash (progs_t *pr, void *data)
 {
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
-rua__i_Object_error_error_ (progs_t *pr)
+rua__i_Object_error_error_ (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
@@ -2090,7 +2090,7 @@ obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 }
 
 static void
-rua__c_Object__conformsToProtocol_ (progs_t *pr)
+rua__c_Object__conformsToProtocol_ (progs_t *pr, void *data)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	// class points to _OBJ_CLASS_foo, and class->class_pointer points to
@@ -2137,7 +2137,7 @@ conforms:
 }
 
 static void
-rua_PR_FindGlobal (progs_t *pr)
+rua_PR_FindGlobal (progs_t *pr, void *data)
 {
 	const char *name = P_GSTRING (pr, 0);
 	pr_def_t   *def;
@@ -2346,15 +2346,15 @@ RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 }
 
 int
-RUA_obj_increment_retaincount (progs_t *pr)
+RUA_obj_increment_retaincount (progs_t *pr, void *data)
 {
-	rua_obj_increment_retaincount (pr);
+	rua_obj_increment_retaincount (pr, data);
 	return R_INT (pr);
 }
 
 int
-RUA_obj_decrement_retaincount (progs_t *pr)
+RUA_obj_decrement_retaincount (progs_t *pr, void *data)
 {
-	rua_obj_decrement_retaincount (pr);
+	rua_obj_decrement_retaincount (pr, data);
 	return R_INT (pr);
 }

@@ -151,9 +151,9 @@ bi_free (void *key, void *_ht)
 }
 
 static void
-bi_Hash_NewTable (progs_t *pr)
+bi_Hash_NewTable (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
+	__auto_type res = (hash_resources_t *) _res;
 	int         tsize = P_INT (pr, 0);
 	const char *(*gk)(const void*,void*);
 	void        (*f)(void*,void*);
@@ -178,9 +178,8 @@ bi_Hash_NewTable (progs_t *pr)
 }
 
 static bi_hashtab_t *
-get_table (progs_t *pr, const char *name, int index)
+get_table (progs_t *pr, hash_resources_t *res, const char *name, int index)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
 	bi_hashtab_t *ht = table_get (res, index);
 
 	if (!ht)
@@ -189,9 +188,10 @@ get_table (progs_t *pr, const char *name, int index)
 }
 
 static void
-bi_Hash_SetHashCompare (progs_t *pr)
+bi_Hash_SetHashCompare (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	uintptr_t   (*gh)(const void*,void*);
 	int         (*cmp)(const void*,const void*,void*);
 
@@ -203,10 +203,10 @@ bi_Hash_SetHashCompare (progs_t *pr)
 }
 
 static void
-bi_Hash_DelTable (progs_t *pr)
+bi_Hash_DelTable (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_DelTable (ht->tab);
 	*ht->prev = ht->next;
@@ -216,50 +216,56 @@ bi_Hash_DelTable (progs_t *pr)
 }
 
 static void
-bi_Hash_FlushTable (progs_t *pr)
+bi_Hash_FlushTable (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_FlushTable (ht->tab);
 }
 
 static void
-bi_Hash_Add (progs_t *pr)
+bi_Hash_Add (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = Hash_Add (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_AddElement (progs_t *pr)
+bi_Hash_AddElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = Hash_AddElement (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_Find (progs_t *pr)
+bi_Hash_Find (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_Find (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
-bi_Hash_FindElement (progs_t *pr)
+bi_Hash_FindElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_FindElement (ht->tab,
 										  (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_FindList (progs_t *pr)
+bi_Hash_FindList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -276,9 +282,10 @@ bi_Hash_FindList (progs_t *pr)
 }
 
 static void
-bi_Hash_FindElementList (progs_t *pr)
+bi_Hash_FindElementList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -295,46 +302,50 @@ bi_Hash_FindElementList (progs_t *pr)
 }
 
 static void
-bi_Hash_Del (progs_t *pr)
+bi_Hash_Del (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_Del (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
-bi_Hash_DelElement (progs_t *pr)
+bi_Hash_DelElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_DelElement (ht->tab,
 										 (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_Free (progs_t *pr)
+bi_Hash_Free (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_Free (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_String (progs_t *pr)
+bi_Hash_String (progs_t *pr, void *_res)
 {
 	R_INT (pr) = Hash_String (P_GSTRING (pr, 0));
 }
 
 static void
-bi_Hash_Buffer (progs_t *pr)
+bi_Hash_Buffer (progs_t *pr, void *_res)
 {
 	R_INT (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
 }
 
 static void
-bi_Hash_GetList (progs_t *pr)
+bi_Hash_GetList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -351,17 +362,18 @@ bi_Hash_GetList (progs_t *pr)
 }
 
 static void
-bi_Hash_Stats (progs_t *pr)
+bi_Hash_Stats (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_Stats (ht->tab);
 }
 
 static void
-bi_hash_clear (progs_t *pr, void *data)
+bi_hash_clear (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = (hash_resources_t *) data;
+	hash_resources_t *res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht;
 
 	for (ht = res->tabs; ht; ht = ht->next)

@@ -81,19 +81,17 @@ state_index (mtwist_resources_t *res, mtstate_t *state)
 }
 
 static void
-bi_mtwist_new (progs_t *pr)
+bi_mtwist_new (progs_t *pr, void *_res)
 {
-	mtwist_resources_t *res = PR_Resources_Find (pr, "Mersenne Twister");
-
+	mtwist_resources_t *res = (mtwist_resources_t *) _res;
 	mtstate_t  *mt = state_new (res);
 	mtwist_seed (mt, P_INT (pr, 0));
 	R_INT (pr) = state_index (res, mt);
 }
 
 static mtstate_t *
-get_state (progs_t *pr, const char *name, int index)
+get_state (progs_t *pr, mtwist_resources_t *res, const char *name, int index)
 {
-	mtwist_resources_t *res = PR_Resources_Find (pr, "Mersenne Twister");
 	mtstate_t *mt = state_get (res, index);
 
 	if (!mt)
@@ -103,45 +101,49 @@ get_state (progs_t *pr, const char *name, int index)
 }
 
 static void
-bi_mtwist_delete (progs_t *pr)
+bi_mtwist_delete (progs_t *pr, void *_res)
 {
-	mtwist_resources_t *res = PR_Resources_Find (pr, "Mersenne Twister");
-	mtstate_t  *mt = get_state (pr, __FUNCTION__, P_INT (pr, 0));
+	mtwist_resources_t *res = _res;
+	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	state_free (res, mt);
 }
 
 static void
-bi_mtwist_seed (progs_t *pr)
+bi_mtwist_seed (progs_t *pr, void *_res)
 {
-	mtstate_t  *mt = get_state (pr, __FUNCTION__, P_INT (pr, 0));
+	mtwist_resources_t *res = _res;
+	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	mtwist_seed (mt, P_INT (pr, 1));
 }
 
 static void
-bi_mtwist_rand (progs_t *pr)
+bi_mtwist_rand (progs_t *pr, void *_res)
 {
-	mtstate_t  *mt = get_state (pr, __FUNCTION__, P_INT (pr, 0));
+	mtwist_resources_t *res = _res;
+	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = mtwist_rand (mt);
 }
 
 static void
-bi_mtwist_rand_0_1 (progs_t *pr)
+bi_mtwist_rand_0_1 (progs_t *pr, void *_res)
 {
-	mtstate_t  *mt = get_state (pr, __FUNCTION__, P_INT (pr, 0));
+	mtwist_resources_t *res = _res;
+	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = mtwist_rand_0_1 (mt);
 }
 
 static void
-bi_mtwist_rand_m1_1 (progs_t *pr)
+bi_mtwist_rand_m1_1 (progs_t *pr, void *_res)
 {
-	mtstate_t  *mt = get_state (pr, __FUNCTION__, P_INT (pr, 0));
+	mtwist_resources_t *res = _res;
+	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = mtwist_rand_m1_1 (mt);
 }
 
 static void
-bi_mtwist_clear (progs_t *pr, void *data)
+bi_mtwist_clear (progs_t *pr, void *_res)
 {
-	mtwist_resources_t *res = (mtwist_resources_t *) data;
+	mtwist_resources_t *res = (mtwist_resources_t *) _res;
 	state_reset (res);
 }
 

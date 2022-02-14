@@ -44,8 +44,8 @@ pr_func_t RUA_Obj_msg_lookup (struct progs_s *pr, pr_ptr_t _self,
 void RUA_Game_Init (struct progs_s *pr, int secure);
 
 // self is expected in param 0
-int RUA_obj_increment_retaincount (struct progs_s *pr);
+int RUA_obj_increment_retaincount (struct progs_s *pr, void *data);
 // self is expected in param 0
-int RUA_obj_decrement_retaincount (struct progs_s *pr);
+int RUA_obj_decrement_retaincount (struct progs_s *pr, void *data);
 
 #endif//__QF_ruamoko_h

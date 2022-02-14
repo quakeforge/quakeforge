@@ -62,9 +62,9 @@ bi_alias_free (void *_a, void *unused)
 }
 
 static void
-bi_cvar_clear (progs_t *pr, void *data)
+bi_cvar_clear (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = (cvar_resources_t *) data;
+	cvar_resources_t *res = (cvar_resources_t *) _res;
 	bi_alias_t *alias;
 
 	while ((alias = res->aliases)) {
@@ -75,9 +75,9 @@ bi_cvar_clear (progs_t *pr, void *data)
 }
 
 static void
-bi_Cvar_MakeAlias (progs_t *pr)
+bi_Cvar_MakeAlias (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	const char *cvar_name = P_GSTRING (pr, 1);
 	cvar_t     *cvar = Cvar_FindVar (cvar_name);
@@ -99,9 +99,9 @@ bi_Cvar_MakeAlias (progs_t *pr)
 }
 
 static void
-bi_Cvar_RemoveAlias (progs_t *pr)
+bi_Cvar_RemoveAlias (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	bi_alias_t **a;
 
@@ -118,7 +118,7 @@ bi_Cvar_RemoveAlias (progs_t *pr)
 }
 
 static void
-bi_Cvar_SetString (progs_t *pr)
+bi_Cvar_SetString (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	const char *val = P_GSTRING (pr, 1);
@@ -131,7 +131,7 @@ bi_Cvar_SetString (progs_t *pr)
 }
 
 static void
-bi_Cvar_SetInteger (progs_t *pr)
+bi_Cvar_SetInteger (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	int         val = P_INT (pr, 1);
@@ -144,7 +144,7 @@ bi_Cvar_SetInteger (progs_t *pr)
 }
 
 static void
-bi_Cvar_SetFloat (progs_t *pr)
+bi_Cvar_SetFloat (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	float       val = P_FLOAT (pr, 1);
@@ -157,7 +157,7 @@ bi_Cvar_SetFloat (progs_t *pr)
 }
 
 static void
-bi_Cvar_SetVector (progs_t *pr)
+bi_Cvar_SetVector (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	float      *val = P_VECTOR (pr, 1);
@@ -170,7 +170,7 @@ bi_Cvar_SetVector (progs_t *pr)
 }
 
 static void
-bi_Cvar_GetString (progs_t *pr)
+bi_Cvar_GetString (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -184,7 +184,7 @@ bi_Cvar_GetString (progs_t *pr)
 }
 
 static void
-bi_Cvar_GetInteger (progs_t *pr)
+bi_Cvar_GetInteger (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -195,7 +195,7 @@ bi_Cvar_GetInteger (progs_t *pr)
 }
 
 static void
-bi_Cvar_GetFloat (progs_t *pr)
+bi_Cvar_GetFloat (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -206,7 +206,7 @@ bi_Cvar_GetFloat (progs_t *pr)
 }
 
 static void
-bi_Cvar_GetVector (progs_t *pr)
+bi_Cvar_GetVector (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -220,7 +220,7 @@ bi_Cvar_GetVector (progs_t *pr)
 }
 
 static void
-bi_Cvar_Toggle (progs_t *pr)
+bi_Cvar_Toggle (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var;

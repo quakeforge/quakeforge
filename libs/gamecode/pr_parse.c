@@ -532,7 +532,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 }
 
 VISIBLE void
-ED_EntityParseFunction (progs_t *pr)
+ED_EntityParseFunction (progs_t *pr, void *data)
 {
 	pr->edict_parse = P_FUNCTION (pr, 0);
 }

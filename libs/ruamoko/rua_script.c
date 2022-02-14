@@ -85,16 +85,16 @@ script_index (script_resources_t *res, rua_script_t *script)
 }
 
 static void
-bi_script_clear (progs_t *pr, void *data)
+bi_script_clear (progs_t *pr, void *_res)
 {
-	script_resources_t *res = (script_resources_t *) data;
+	script_resources_t *res = (script_resources_t *) _res;
 	script_reset (res);
 }
 
 static void
-bi_Script_New (progs_t *pr)
+bi_Script_New (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_new (res);
 
 	if (!script)
@@ -107,9 +107,9 @@ bi_Script_New (progs_t *pr)
 }
 
 static void
-bi_Script_Delete (progs_t *pr)
+bi_Script_Delete (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -119,9 +119,9 @@ bi_Script_Delete (progs_t *pr)
 }
 
 static void
-bi_Script_Start (progs_t *pr)
+bi_Script_Start (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -131,9 +131,9 @@ bi_Script_Start (progs_t *pr)
 }
 
 static void
-bi_Script_TokenAvailable (progs_t *pr)
+bi_Script_TokenAvailable (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -142,9 +142,9 @@ bi_Script_TokenAvailable (progs_t *pr)
 }
 
 static void
-bi_Script_GetToken (progs_t *pr)
+bi_Script_GetToken (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -153,9 +153,9 @@ bi_Script_GetToken (progs_t *pr)
 }
 
 static void
-bi_Script_UngetToken (progs_t *pr)
+bi_Script_UngetToken (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -164,9 +164,9 @@ bi_Script_UngetToken (progs_t *pr)
 }
 
 static void
-bi_Script_Error (progs_t *pr)
+bi_Script_Error (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)
@@ -176,9 +176,9 @@ bi_Script_Error (progs_t *pr)
 }
 
 static void
-bi_Script_NoQuoteLines (progs_t *pr)
+bi_Script_NoQuoteLines (progs_t *pr, void *_res)
 {
-	script_resources_t *res = PR_Resources_Find (pr, "Script");
+	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
 	if (!script)

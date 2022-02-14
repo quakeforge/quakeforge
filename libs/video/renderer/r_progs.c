@@ -108,9 +108,8 @@ qpic_index (draw_resources_t *res, qpic_res_t *qp)
 }
 
 static qpic_res_t *
-get_qpic (progs_t *pr, const char *name, int qpic_handle)
+get_qpic (progs_t *pr, draw_resources_t *res, const char *name, int qpic_handle)
 {
-	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
 	qpic_res_t *qp = qpic_get (res, qpic_handle);
 
 	if (!qp)
@@ -119,20 +118,20 @@ get_qpic (progs_t *pr, const char *name, int qpic_handle)
 }
 
 static void
-bi_Draw_FreePic (progs_t *pr)
+bi_Draw_FreePic (progs_t *pr, void *_res)
 {
-	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	draw_resources_t *res = _res;
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 0);
-	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 
 	PR_Zone_Free (pr, qp->bq);
 	qpic_free (res, qp);
 }
 
 static void
-bi_Draw_MakePic (progs_t *pr)
+bi_Draw_MakePic (progs_t *pr, void *_res)
 {
-	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	draw_resources_t *res = _res;
 	int         width = P_INT (pr, 0);
 	int         height = P_INT (pr, 1);
 	byte       *data = (byte *) P_GSTRING (pr, 2);
@@ -154,9 +153,9 @@ bi_Draw_MakePic (progs_t *pr)
 }
 
 static void
-bi_Draw_CachePic (progs_t *pr)
+bi_Draw_CachePic (progs_t *pr, void *_res)
 {
-	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	draw_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	int         alpha = P_INT (pr, 1);
 	qpic_t     *pic;
@@ -183,36 +182,39 @@ bi_Draw_CachePic (progs_t *pr)
 }
 
 static void
-bi_Draw_Pic (progs_t *pr)
+bi_Draw_Pic (progs_t *pr, void *_res)
 {
+	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
-	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
 	r_funcs->Draw_Pic (x, y, pic);
 }
 
 static void
-bi_Draw_Picf (progs_t *pr)
+bi_Draw_Picf (progs_t *pr, void *_res)
 {
+	draw_resources_t *res = _res;
 	float       x = P_FLOAT (pr, 0);
 	float       y = P_FLOAT (pr, 1);
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
-	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
 	r_funcs->Draw_Picf (x, y, pic);
 }
 
 static void
-bi_Draw_SubPic (progs_t *pr)
+bi_Draw_SubPic (progs_t *pr, void *_res)
 {
+	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
-	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
@@ -223,19 +225,20 @@ bi_Draw_SubPic (progs_t *pr)
 }
 
 static void
-bi_Draw_CenterPic (progs_t *pr)
+bi_Draw_CenterPic (progs_t *pr, void *_res)
 {
+	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
-	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
 	r_funcs->Draw_Pic (x - pic->width / 2, y, pic);
 }
 
 static void
-bi_Draw_Character (progs_t *pr)
+bi_Draw_Character (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -245,7 +248,7 @@ bi_Draw_Character (progs_t *pr)
 }
 
 static void
-bi_Draw_String (progs_t *pr)
+bi_Draw_String (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -255,7 +258,7 @@ bi_Draw_String (progs_t *pr)
 }
 
 static void
-bi_Draw_nString (progs_t *pr)
+bi_Draw_nString (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -266,7 +269,7 @@ bi_Draw_nString (progs_t *pr)
 }
 
 static void
-bi_Draw_AltString (progs_t *pr)
+bi_Draw_AltString (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -282,7 +285,7 @@ bi_Draw_AltString (progs_t *pr)
 	(only a wrapper function to original qf-api)
 */
 static void
-bi_Draw_Fill (progs_t *pr)
+bi_Draw_Fill (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -294,7 +297,7 @@ bi_Draw_Fill (progs_t *pr)
 }
 
 static void
-bi_Draw_Crosshair (progs_t *pr)
+bi_Draw_Crosshair (progs_t *pr, void *_res)
 {
 	int         ch = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
@@ -310,9 +313,9 @@ bi_draw_get_key (const void *p, void *unused)
 }
 
 static void
-bi_draw_clear (progs_t *pr, void *data)
+bi_draw_clear (progs_t *pr, void *_res)
 {
-	draw_resources_t *res = (draw_resources_t *) data;
+	draw_resources_t *res = (draw_resources_t *) _res;
 	qpic_res_t *qp;
 
 	for (qp = res->qpics; qp; qp = qp->next) {

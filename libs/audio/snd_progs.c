@@ -40,7 +40,7 @@
 #include "QF/sound.h"
 
 static void
-bi_S_LocalSound (progs_t *pr)
+bi_S_LocalSound (progs_t *pr, void *data)
 {
 	const char *sound = P_GSTRING (pr, 0);
 

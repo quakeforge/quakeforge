@@ -41,7 +41,7 @@
 #include "QF/zone.h"
 
 static void
-bi_Key_keydown (progs_t *pr)
+bi_Key_keydown (progs_t *pr, void *data)
 {
 #if 0
 	int         keynum  = P_INT (pr, 0);
@@ -55,7 +55,7 @@ bi_Key_keydown (progs_t *pr)
     QC-Function for set a binding
 */
 static void
-bi_Key_SetBinding (progs_t *pr)
+bi_Key_SetBinding (progs_t *pr, void *data)
 {
 #if 0
 	const char *imt_name  = P_GSTRING (pr, 0);
@@ -80,7 +80,7 @@ bi_Key_SetBinding (progs_t *pr)
     Perform a reverse-binding-lookup
 */
 static void
-bi_Key_LookupBinding (progs_t *pr)
+bi_Key_LookupBinding (progs_t *pr, void *data)
 {
 #if 0
 	const char *imt_name = P_GSTRING (pr, 0);
@@ -118,7 +118,7 @@ bi_Key_LookupBinding (progs_t *pr)
     Counts how often a binding is assigned to a key
 */
 static void
-bi_Key_CountBinding (progs_t *pr)
+bi_Key_CountBinding (progs_t *pr, void *data)
 {
 #if 0
 	const char *imt_name = P_GSTRING (pr, 0);
@@ -151,7 +151,7 @@ bi_Key_CountBinding (progs_t *pr)
     Convertes a keynum to a string
 */
 static void
-bi_Key_KeynumToString (progs_t *pr)
+bi_Key_KeynumToString (progs_t *pr, void *data)
 {
 	int	        keynum  = P_INT (pr, 0);
 
@@ -159,7 +159,7 @@ bi_Key_KeynumToString (progs_t *pr)
 }
 
 static void
-bi_Key_StringToKeynum (progs_t *pr)
+bi_Key_StringToKeynum (progs_t *pr, void *data)
 {
 	const char *keyname = P_GSTRING (pr, 0);
 	R_INT (pr) = Key_StringToKeynum (keyname);
@@ -179,7 +179,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_Key_Init (progs_t *pr)
+RUA_Key_Init (progs_t *pr, void *data)
 {
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

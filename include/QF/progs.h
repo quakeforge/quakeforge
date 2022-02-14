@@ -348,7 +348,7 @@ struct plitem_s *ED_ConvertToPlist (struct script_s *script, int nohack,
 									struct hashlink_s **hashlinks);
 struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
-void ED_EntityParseFunction (progs_t *pr);
+void ED_EntityParseFunction (progs_t *pr, void *data);
 
 #define PR_edicts(p)		(*(p)->pr_edicts)
 
@@ -1209,7 +1209,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 #define PR_RANGE_NONE	0xffff
 #define PR_AUTOBUILTIN	(PR_RANGE_AUTO << PR_RANGE_SHIFT)
 
-typedef void (*builtin_proc) (progs_t *pr);
+typedef void (*builtin_proc) (progs_t *pr, void *data);
 
 /** Create a static array of these and pass the array to PR_RegisterBuiltins()
 	to register the module's QC builtin functions.

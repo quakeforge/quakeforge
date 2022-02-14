@@ -52,7 +52,7 @@
 #include "rua_internal.h"
 
 static void
-bi_strlen (progs_t *pr)
+bi_strlen (progs_t *pr, void *data)
 {
 	const char	*s;
 
@@ -84,7 +84,7 @@ RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
 }
 
 static void
-bi_sprintf (progs_t *pr)
+bi_sprintf (progs_t *pr, void *data)
 {
 	dstring_t  *dstr;
 
@@ -95,7 +95,7 @@ bi_sprintf (progs_t *pr)
 }
 
 static void
-bi_vsprintf (progs_t *pr)
+bi_vsprintf (progs_t *pr, void *data)
 {
 	const char *fmt = P_GSTRING (pr, 0);
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
@@ -114,19 +114,19 @@ bi_vsprintf (progs_t *pr)
 }
 
 static void
-bi_str_new (progs_t *pr)
+bi_str_new (progs_t *pr, void *data)
 {
 	R_STRING (pr) = PR_NewMutableString (pr);
 }
 
 static void
-bi_str_free (progs_t *pr)
+bi_str_free (progs_t *pr, void *data)
 {
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_hold (progs_t *pr)
+bi_str_hold (progs_t *pr, void *data)
 {
 	pr_string_t str = P_STRING (pr, 0);
 	PR_HoldString (pr, str);
@@ -134,19 +134,19 @@ bi_str_hold (progs_t *pr)
 }
 
 static void
-bi_str_valid (progs_t *pr)
+bi_str_valid (progs_t *pr, void *data)
 {
 	R_INT (pr) = PR_StringValid (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_mutable (progs_t *pr)
+bi_str_mutable (progs_t *pr, void *data)
 {
 	R_INT (pr) = PR_StringMutable (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_copy (progs_t *pr)
+bi_str_copy (progs_t *pr, void *data)
 {
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
@@ -156,7 +156,7 @@ bi_str_copy (progs_t *pr)
 }
 
 static void
-bi_str_cat (progs_t *pr)
+bi_str_cat (progs_t *pr, void *data)
 {
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
@@ -166,7 +166,7 @@ bi_str_cat (progs_t *pr)
 }
 
 static void
-bi_str_clear (progs_t *pr)
+bi_str_clear (progs_t *pr, void *data)
 {
 	dstring_t  *str = P_DSTRING (pr, 0);
 
@@ -199,7 +199,7 @@ str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 }
 
 static void
-bi_str_mid_2 (progs_t *pr)
+bi_str_mid_2 (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	int         pos = P_INT (pr, 1);
@@ -209,7 +209,7 @@ bi_str_mid_2 (progs_t *pr)
 }
 
 static void
-bi_str_mid_3 (progs_t *pr)
+bi_str_mid_3 (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	int         pos = P_INT (pr, 1);
@@ -220,7 +220,7 @@ bi_str_mid_3 (progs_t *pr)
 }
 
 static void
-bi_str_str (progs_t *pr)
+bi_str_str (progs_t *pr, void *data)
 {
 	const char *haystack = P_GSTRING (pr, 0);
 	const char *needle = P_GSTRING (pr, 1);
@@ -233,7 +233,7 @@ bi_str_str (progs_t *pr)
 }
 
 static void
-bi_str_char (progs_t *pr)
+bi_str_char (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	int         ind = P_INT (pr, 1);
@@ -245,7 +245,7 @@ bi_str_char (progs_t *pr)
 }
 
 static void
-bi_str_quote (progs_t *pr)
+bi_str_quote (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	// can have up to 4 chars per char (a -> \x61)
@@ -284,7 +284,7 @@ bi_str_quote (progs_t *pr)
 }
 
 static void
-bi_str_lower (progs_t *pr)
+bi_str_lower (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	char       *lower = alloca (strlen (str) + 1);
@@ -300,7 +300,7 @@ bi_str_lower (progs_t *pr)
 }
 
 static void
-bi_str_upper (progs_t *pr)
+bi_str_upper (progs_t *pr, void *data)
 {
 	const char *str = P_GSTRING (pr, 0);
 	char       *upper = alloca (strlen (str) + 1);

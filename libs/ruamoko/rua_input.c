@@ -57,7 +57,7 @@ typedef struct input_resources_s {
 } input_resources_t;
 
 static void
-bi_IN_FindDeviceId (progs_t *pr)
+bi_IN_FindDeviceId (progs_t *pr, void *_res)
 {
 	const char *id = P_GSTRING (pr, 0);
 
@@ -65,7 +65,7 @@ bi_IN_FindDeviceId (progs_t *pr)
 }
 
 static void
-bi_IN_GetDeviceName (progs_t *pr)
+bi_IN_GetDeviceName (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 
@@ -73,7 +73,7 @@ bi_IN_GetDeviceName (progs_t *pr)
 }
 
 static void
-bi_IN_GetDeviceId (progs_t *pr)
+bi_IN_GetDeviceId (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 
@@ -81,17 +81,17 @@ bi_IN_GetDeviceId (progs_t *pr)
 }
 
 static void
-bi_IN_AxisInfo (progs_t *pr)
+bi_IN_AxisInfo (progs_t *pr, void *_res)
 {
 }
 
 static void
-bi_IN_ButtonInfo (progs_t *pr)
+bi_IN_ButtonInfo (progs_t *pr, void *_res)
 {
 }
 
 static void
-bi_IN_GetAxisName (progs_t *pr)
+bi_IN_GetAxisName (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	int	        axis  = P_INT (pr, 1);
@@ -100,7 +100,7 @@ bi_IN_GetAxisName (progs_t *pr)
 }
 
 static void
-bi_IN_GetButtonName (progs_t *pr)
+bi_IN_GetButtonName (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	int	        button  = P_INT (pr, 1);
@@ -109,7 +109,7 @@ bi_IN_GetButtonName (progs_t *pr)
 }
 
 static void
-bi_IN_GetAxisNumber (progs_t *pr)
+bi_IN_GetAxisNumber (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	const char *axis_name = P_GSTRING (pr, 1);
@@ -118,7 +118,7 @@ bi_IN_GetAxisNumber (progs_t *pr)
 }
 
 static void
-bi_IN_GetButtonNumber (progs_t *pr)
+bi_IN_GetButtonNumber (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	const char *button_name = P_GSTRING (pr, 1);
@@ -127,19 +127,19 @@ bi_IN_GetButtonNumber (progs_t *pr)
 }
 
 static void
-bi_IN_ProcessEvents (progs_t *pr)
+bi_IN_ProcessEvents (progs_t *pr, void *_res)
 {
 	IN_ProcessEvents ();
 }
 
 static void
-bi_IN_ClearStates (progs_t *pr)
+bi_IN_ClearStates (progs_t *pr, void *_res)
 {
 	IN_ClearStates ();
 }
 
 static void
-bi_IN_CreateButton (progs_t *pr)
+bi_IN_CreateButton (progs_t *pr, void *_res)
 {
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
@@ -151,7 +151,7 @@ bi_IN_CreateButton (progs_t *pr)
 }
 
 static void
-bi_IN_CreateAxis (progs_t *pr)
+bi_IN_CreateAxis (progs_t *pr, void *_res)
 {
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
@@ -163,7 +163,7 @@ bi_IN_CreateAxis (progs_t *pr)
 }
 
 static void
-bi_IN_GetAxisInfo (progs_t *pr)
+bi_IN_GetAxisInfo (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	int	        axis  = P_INT (pr, 1);
@@ -178,7 +178,7 @@ bi_IN_GetAxisInfo (progs_t *pr)
 }
 
 static void
-bi_IN_GetButtonInfo (progs_t *pr)
+bi_IN_GetButtonInfo (progs_t *pr, void *_res)
 {
 	int	        devid  = P_INT (pr, 0);
 	int	        button  = P_INT (pr, 1);
@@ -193,9 +193,8 @@ bi_IN_GetButtonInfo (progs_t *pr)
 }
 
 static rua_in_cookie_t *
-make_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
+make_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 {
-	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {
 		.func = func,
 		.data = data,
@@ -212,9 +211,8 @@ make_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
 }
 
 static rua_in_cookie_t *
-find_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
+find_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 {
-	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {
 		.func = func,
 		.data = data,
@@ -223,58 +221,61 @@ find_cookie (progs_t *pr, pr_func_t func, pr_ptr_t data)
 }
 
 static void
-release_cookie (progs_t *pr, rua_in_cookie_t *cookie)
+release_cookie (progs_t *pr, input_resources_t *res, rua_in_cookie_t *cookie)
 {
 	if (!--cookie->users) {
-		input_resources_t *res = PR_Resources_Find (pr, "input");
 		Hash_DelElement (res->cookies, cookie);
 		Hash_Free (res->cookies, cookie);
 	}
 }
 
 static void
-rua_add_axis_listener (progs_t *pr, axis_listener_t listener)
+rua_add_axis_listener (progs_t *pr, input_resources_t *res,
+					   axis_listener_t listener)
 {
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
-	rua_in_cookie_t *cookie = make_cookie (pr, func, data);
+	rua_in_cookie_t *cookie = make_cookie (pr, res, func, data);
 	IN_AxisAddListener (axis, listener, cookie);
 }
 
 static void
-rua_remove_axis_listener (progs_t *pr, axis_listener_t listener)
+rua_remove_axis_listener (progs_t *pr, input_resources_t *res,
+						  axis_listener_t listener)
 {
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
-	rua_in_cookie_t *cookie = find_cookie (pr, func, data);
+	rua_in_cookie_t *cookie = find_cookie (pr, res, func, data);
 	if (cookie) {
 		IN_AxisRemoveListener (axis, listener, cookie);
-		release_cookie (pr, cookie);
+		release_cookie (pr, res, cookie);
 	}
 }
 
 static void
-rua_add_button_listener (progs_t *pr, button_listener_t listener)
+rua_add_button_listener (progs_t *pr, input_resources_t *res,
+						 button_listener_t listener)
 {
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
-	rua_in_cookie_t *cookie = make_cookie (pr, func, data);
+	rua_in_cookie_t *cookie = make_cookie (pr, res, func, data);
 	IN_ButtonAddListener (button, listener, cookie);
 }
 
 static void
-rua_remove_button_listener (progs_t *pr, button_listener_t listener)
+rua_remove_button_listener (progs_t *pr, input_resources_t *res,
+							button_listener_t listener)
 {
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
-	rua_in_cookie_t *cookie = find_cookie (pr, func, data);
+	rua_in_cookie_t *cookie = find_cookie (pr, res, func, data);
 	if (cookie) {
 		IN_ButtonRemoveListener (button, listener, cookie);
-		release_cookie (pr, cookie);
+		release_cookie (pr, res, cookie);
 	}
 }
 
@@ -330,80 +331,88 @@ rua_button_listener_method (void *data, const in_button_t *button)
 }
 
 static void
-rua_IN_ButtonAddListener_func (progs_t *pr)
+rua_IN_ButtonAddListener_func (progs_t *pr, void *_res)
 {
-	rua_add_button_listener (pr, rua_button_listener_func);
+	input_resources_t *res = _res;
+	rua_add_button_listener (pr, res, rua_button_listener_func);
 }
 
 static void
-rua_IN_ButtonRemoveListener_func (progs_t *pr)
+rua_IN_ButtonRemoveListener_func (progs_t *pr, void *_res)
 {
-	rua_remove_button_listener (pr, rua_button_listener_func);
+	input_resources_t *res = _res;
+	rua_remove_button_listener (pr, res, rua_button_listener_func);
 }
 
 static void
-rua_IN_AxisAddListener_func (progs_t *pr)
+rua_IN_AxisAddListener_func (progs_t *pr, void *_res)
 {
-	rua_add_axis_listener (pr, rua_axis_listener_func);
+	input_resources_t *res = _res;
+	rua_add_axis_listener (pr, res, rua_axis_listener_func);
 }
 
 static void
-rua_IN_AxisRemoveListener_func (progs_t *pr)
+rua_IN_AxisRemoveListener_func (progs_t *pr, void *_res)
 {
-	rua_remove_axis_listener (pr, rua_axis_listener_func);
+	input_resources_t *res = _res;
+	rua_remove_axis_listener (pr, res, rua_axis_listener_func);
 }
 
 static void
-rua_IN_ButtonAddListener_method (progs_t *pr)
+rua_IN_ButtonAddListener_method (progs_t *pr, void *_res)
 {
-	rua_add_button_listener (pr, rua_button_listener_method);
+	input_resources_t *res = _res;
+	rua_add_button_listener (pr, res, rua_button_listener_method);
 }
 
 static void
-rua_IN_ButtonRemoveListener_method (progs_t *pr)
+rua_IN_ButtonRemoveListener_method (progs_t *pr, void *_res)
 {
-	rua_remove_button_listener (pr, rua_button_listener_method);
+	input_resources_t *res = _res;
+	rua_remove_button_listener (pr, res, rua_button_listener_method);
 }
 
 static void
-rua_IN_AxisAddListener_method (progs_t *pr)
+rua_IN_AxisAddListener_method (progs_t *pr, void *_res)
 {
-	rua_add_axis_listener (pr, rua_axis_listener_method);
+	input_resources_t *res = _res;
+	rua_add_axis_listener (pr, res, rua_axis_listener_method);
 }
 
 static void
-rua_IN_AxisRemoveListener_method (progs_t *pr)
+rua_IN_AxisRemoveListener_method (progs_t *pr, void *_res)
 {
-	rua_remove_axis_listener (pr, rua_axis_listener_method);
+	input_resources_t *res = _res;
+	rua_remove_axis_listener (pr, res, rua_axis_listener_method);
 }
 
 static void
-bi_IN_LoadConfig (progs_t *pr)
+bi_IN_LoadConfig (progs_t *pr, void *_res)
 {
 	IN_LoadConfig (Plist_GetItem (pr, P_INT (pr, 0)));
 }
 
 static void
-bi_IMT_CreateContext (progs_t *pr)
+bi_IMT_CreateContext (progs_t *pr, void *_res)
 {
 	const char *name = P_GSTRING (pr, 0);
 	R_INT (pr) = IMT_CreateContext (name);
 }
 
 static void
-bi_IMT_GetContext (progs_t *pr)
+bi_IMT_GetContext (progs_t *pr, void *_res)
 {
 	R_INT (pr) = IMT_GetContext ();
 }
 
 static void
-bi_IMT_SetContext (progs_t *pr)
+bi_IMT_SetContext (progs_t *pr, void *_res)
 {
 	IMT_SetContext (P_INT (pr, 0));
 }
 
 static void
-secured (progs_t *pr)
+secured (progs_t *pr, void *_res)
 {
 	PR_RunError (pr, "Secured function called");
 }

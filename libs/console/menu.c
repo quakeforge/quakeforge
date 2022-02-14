@@ -212,7 +212,7 @@ menu_pic (int x, int y, const char *name,
 }
 
 static void
-bi_Menu_Begin (progs_t *pr)
+bi_Menu_Begin (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -230,31 +230,31 @@ bi_Menu_Begin (progs_t *pr)
 }
 
 static void
-bi_Menu_FadeScreen (progs_t *pr)
+bi_Menu_FadeScreen (progs_t *pr, void *data)
 {
 	menu->fadescreen = P_INT (pr, 0);
 }
 
 static void
-bi_Menu_Draw (progs_t *pr)
+bi_Menu_Draw (progs_t *pr, void *data)
 {
 	menu->draw = P_FUNCTION (pr, 0);
 }
 
 static void
-bi_Menu_EnterHook (progs_t *pr)
+bi_Menu_EnterHook (progs_t *pr, void *data)
 {
 	menu->enter_hook = P_FUNCTION (pr, 0);
 }
 
 static void
-bi_Menu_LeaveHook (progs_t *pr)
+bi_Menu_LeaveHook (progs_t *pr, void *data)
 {
 	menu->leave_hook = P_FUNCTION (pr, 0);
 }
 
 static void
-bi_Menu_Pic (progs_t *pr)
+bi_Menu_Pic (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -264,7 +264,7 @@ bi_Menu_Pic (progs_t *pr)
 }
 
 static void
-bi_Menu_SubPic (progs_t *pr)
+bi_Menu_SubPic (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -278,7 +278,7 @@ bi_Menu_SubPic (progs_t *pr)
 }
 
 static void
-bi_Menu_CenterPic (progs_t *pr)
+bi_Menu_CenterPic (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -292,7 +292,7 @@ bi_Menu_CenterPic (progs_t *pr)
 }
 
 static void
-bi_Menu_CenterSubPic (progs_t *pr)
+bi_Menu_CenterSubPic (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -310,7 +310,7 @@ bi_Menu_CenterSubPic (progs_t *pr)
 }
 
 static void
-bi_Menu_Item (progs_t *pr)
+bi_Menu_Item (progs_t *pr, void *data)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -329,7 +329,7 @@ bi_Menu_Item (progs_t *pr)
 }
 
 static void
-bi_Menu_Cursor (progs_t *pr)
+bi_Menu_Cursor (progs_t *pr, void *data)
 {
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
@@ -337,7 +337,7 @@ bi_Menu_Cursor (progs_t *pr)
 }
 
 static void
-bi_Menu_KeyEvent (progs_t *pr)
+bi_Menu_KeyEvent (progs_t *pr, void *data)
 {
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
@@ -345,13 +345,13 @@ bi_Menu_KeyEvent (progs_t *pr)
 }
 
 static void
-bi_Menu_End (progs_t *pr)
+bi_Menu_End (progs_t *pr, void *data)
 {
 	menu = menu->parent;
 }
 
 static void
-bi_Menu_TopMenu (progs_t *pr)
+bi_Menu_TopMenu (progs_t *pr, void *data)
 {
 	const char *name = P_GSTRING (pr, 0);
 
@@ -361,7 +361,7 @@ bi_Menu_TopMenu (progs_t *pr)
 }
 
 static void
-bi_Menu_SelectMenu (progs_t *pr)
+bi_Menu_SelectMenu (progs_t *pr, void *data)
 {
 	const char *name = P_GSTRING (pr, 0);
 
@@ -383,7 +383,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 }
 
 static void
-bi_Menu_SetQuit (progs_t *pr)
+bi_Menu_SetQuit (progs_t *pr, void *data)
 {
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
@@ -391,7 +391,7 @@ bi_Menu_SetQuit (progs_t *pr)
 }
 
 static void
-bi_Menu_Quit (progs_t *pr)
+bi_Menu_Quit (progs_t *pr, void *data)
 {
 	if (con_data.quit)
 		con_data.quit ();
@@ -399,7 +399,7 @@ bi_Menu_Quit (progs_t *pr)
 }
 
 static void
-bi_Menu_GetIndex (progs_t *pr)
+bi_Menu_GetIndex (progs_t *pr, void *data)
 {
 	if (menu) {
 		R_INT (pr) = menu->cur_item;
@@ -409,21 +409,21 @@ bi_Menu_GetIndex (progs_t *pr)
 }
 
 static void
-bi_Menu_Next (progs_t *pr)
+bi_Menu_Next (progs_t *pr, void *data)
 {
 	menu->cur_item++;
 	menu->cur_item %= menu->num_items;
 }
 
 static void
-bi_Menu_Prev (progs_t *pr)
+bi_Menu_Prev (progs_t *pr, void *data)
 {
 	menu->cur_item += menu->num_items - 1;
 	menu->cur_item %= menu->num_items;
 }
 
 static void
-bi_Menu_Enter (progs_t *pr)
+bi_Menu_Enter (progs_t *pr, void *data)
 {
 	menu_item_t *item;
 
@@ -453,7 +453,7 @@ bi_Menu_Enter (progs_t *pr)
 }
 
 static void
-bi_Menu_Leave (progs_t *pr)
+bi_Menu_Leave (progs_t *pr, void *data)
 {
 	if (menu) {
 		if (menu->leave_hook) {
@@ -490,7 +490,7 @@ quit_f (void)
 		if (!ret)
 			return;
 	}
-	bi_Menu_Quit (&menu_pr_state);
+	bi_Menu_Quit (&menu_pr_state, 0);
 }
 
 static void *
@@ -795,15 +795,15 @@ menu_key_event (const IE_event_t *ie_event)
 			break;
 		case QFK_DOWN:
 //		case QFM_WHEEL_DOWN:
-			bi_Menu_Next (&menu_pr_state);
+			bi_Menu_Next (&menu_pr_state, 0);
 			break;
 		case QFK_UP:
 //		case QFM_WHEEL_UP:
-			bi_Menu_Prev (&menu_pr_state);
+			bi_Menu_Prev (&menu_pr_state, 0);
 			break;
 		case QFK_RETURN:
 //		case QFM_BUTTON1:
-			bi_Menu_Enter (&menu_pr_state);
+			bi_Menu_Enter (&menu_pr_state, 0);
 			break;
 		default:
 			break;

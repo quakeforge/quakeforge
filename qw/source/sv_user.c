@@ -1422,7 +1422,7 @@ SV_RemoveUserCommand (void *cmd)
 }
 
 static void
-PF_SV_AddUserCommand (progs_t *pr)
+PF_SV_AddUserCommand (progs_t *pr, void *data)
 {
 	const char *name = P_GSTRING (pr, 0);
 	ucmd_t     *cmd;

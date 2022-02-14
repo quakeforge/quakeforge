@@ -31,6 +31,6 @@
 #ifndef __sv_pr_cmds_h
 #define __sv_pr_cmds_h
 
-void PF_changeyaw (progs_t * pr);
+void PF_changeyaw (progs_t * pr, void *data);
 
 #endif // __sv_pr_cmds_h

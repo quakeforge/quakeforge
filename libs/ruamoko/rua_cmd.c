@@ -85,9 +85,9 @@ bi_cmd_f (void)
 }
 
 static void
-bi_Cmd_AddCommand (progs_t *pr)
+bi_Cmd_AddCommand (progs_t *pr, void *_res)
 {
-	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
+	__auto_type res = (cmd_resources_t *) _res;
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
 	char       *name = strdup (P_GSTRING (pr, 0));
 	pr_func_t   func = P_FUNCTION (pr, 1);
@@ -124,19 +124,19 @@ bi_cmd_clear (progs_t *pr, void *data)
 }
 
 static void
-bi_Cmd_Argc (progs_t *pr)
+bi_Cmd_Argc (progs_t *pr, void *data)
 {
 	R_INT (pr) = Cmd_Argc ();
 }
 
 static void
-bi_Cmd_Argv (progs_t *pr)
+bi_Cmd_Argv (progs_t *pr, void *data)
 {
 	RETURN_STRING (pr, Cmd_Argv (P_INT (pr, 0)));
 }
 
 static void
-bi_Cmd_Args (progs_t *pr)
+bi_Cmd_Args (progs_t *pr, void *data)
 {
 	RETURN_STRING (pr, Cmd_Args (P_INT (pr, 0)));
 }

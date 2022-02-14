@@ -575,11 +575,12 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 //===
 
 static void
-bi__i_EditBuffer__init (progs_t *pr)
+bi__i_EditBuffer__init (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
-	RUA_obj_increment_retaincount (pr);// [super init];
+	// [super init];
+	RUA_obj_increment_retaincount (pr, pr->pr_objective_resources);
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
 
@@ -591,11 +592,12 @@ bi__i_EditBuffer__init (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__initWithFile_ (progs_t *pr)
+bi__i_EditBuffer__initWithFile_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
-	RUA_obj_increment_retaincount (pr);// [super init];
+	// [super init];
+	RUA_obj_increment_retaincount (pr, pr->pr_objective_resources);
 	const char *filename = P_GSTRING (pr, 2);
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
@@ -610,9 +612,9 @@ bi__i_EditBuffer__initWithFile_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__dealloc (progs_t *pr)
+bi__i_EditBuffer__dealloc (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
 	int         buffer_id = self->buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
@@ -622,9 +624,9 @@ bi__i_EditBuffer__dealloc (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__nextChar_ (progs_t *pr)
+bi__i_EditBuffer__nextChar_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -633,9 +635,9 @@ bi__i_EditBuffer__nextChar_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__prevChar_ (progs_t *pr)
+bi__i_EditBuffer__prevChar_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -644,9 +646,9 @@ bi__i_EditBuffer__prevChar_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__nextNonSpace_ (progs_t *pr)
+bi__i_EditBuffer__nextNonSpace_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -655,9 +657,9 @@ bi__i_EditBuffer__nextNonSpace_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__prevNonSpace_ (progs_t *pr)
+bi__i_EditBuffer__prevNonSpace_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -666,9 +668,9 @@ bi__i_EditBuffer__prevNonSpace_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__isWord_ (progs_t *pr)
+bi__i_EditBuffer__isWord_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -677,9 +679,9 @@ bi__i_EditBuffer__isWord_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__nextWord_ (progs_t *pr)
+bi__i_EditBuffer__nextWord_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -688,9 +690,9 @@ bi__i_EditBuffer__nextWord_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__prevWord_ (progs_t *pr)
+bi__i_EditBuffer__prevWord_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -699,9 +701,9 @@ bi__i_EditBuffer__prevWord_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__nextLine_ (progs_t *pr)
+bi__i_EditBuffer__nextLine_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -710,9 +712,9 @@ bi__i_EditBuffer__nextLine_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__prevLine_ (progs_t *pr)
+bi__i_EditBuffer__prevLine_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -721,9 +723,9 @@ bi__i_EditBuffer__prevLine_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__nextLine__ (progs_t *pr)
+bi__i_EditBuffer__nextLine__ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -742,9 +744,9 @@ bi__i_EditBuffer__nextLine__ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__prevLine__ (progs_t *pr)
+bi__i_EditBuffer__prevLine__ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -757,9 +759,9 @@ bi__i_EditBuffer__prevLine__ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__charPos_at_ (progs_t *pr)
+bi__i_EditBuffer__charPos_at_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -770,9 +772,9 @@ bi__i_EditBuffer__charPos_at_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__charPtr_at_ (progs_t *pr)
+bi__i_EditBuffer__charPtr_at_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -783,9 +785,9 @@ bi__i_EditBuffer__charPtr_at_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getWord_ (progs_t *pr)
+bi__i_EditBuffer__getWord_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -797,9 +799,9 @@ bi__i_EditBuffer__getWord_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getLine_ (progs_t *pr)
+bi__i_EditBuffer__getLine_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -811,9 +813,9 @@ bi__i_EditBuffer__getLine_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getBOL_ (progs_t *pr)
+bi__i_EditBuffer__getBOL_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -822,9 +824,9 @@ bi__i_EditBuffer__getBOL_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getEOL_ (progs_t *pr)
+bi__i_EditBuffer__getEOL_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -833,9 +835,9 @@ bi__i_EditBuffer__getEOL_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getBOT (progs_t *pr)
+bi__i_EditBuffer__getBOT (progs_t *pr, void *_res)
 {
-	//qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	//qwaq_ebresources_t *res = _res;
 	//int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	//editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 
@@ -843,9 +845,9 @@ bi__i_EditBuffer__getBOT (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getEOT (progs_t *pr)
+bi__i_EditBuffer__getEOT (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 
@@ -853,9 +855,9 @@ bi__i_EditBuffer__getEOT (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__readString_ (progs_t *pr)
+bi__i_EditBuffer__readString_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	__auto_type selection = &P_PACKED (pr, eb_sel_t, 2);
@@ -868,9 +870,9 @@ bi__i_EditBuffer__readString_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__getChar_ (progs_t *pr)
+bi__i_EditBuffer__getChar_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
@@ -882,9 +884,9 @@ bi__i_EditBuffer__getChar_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__putChar_at_ (progs_t *pr)
+bi__i_EditBuffer__putChar_at_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	int         chr = P_UINT (pr, 2);
@@ -897,9 +899,9 @@ bi__i_EditBuffer__putChar_at_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__insertChar_at_ (progs_t *pr)
+bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	char        chr = P_UINT (pr, 2);
@@ -912,9 +914,9 @@ bi__i_EditBuffer__insertChar_at_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__countLines_ (progs_t *pr)
+bi__i_EditBuffer__countLines_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	__auto_type selection = &P_PACKED (pr, eb_sel_t, 2);
@@ -924,9 +926,9 @@ bi__i_EditBuffer__countLines_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__search_for_direction_ (progs_t *pr)
+bi__i_EditBuffer__search_for_direction_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	__auto_type selection = &P_PACKED (pr, eb_sel_t, 2);
@@ -938,9 +940,9 @@ bi__i_EditBuffer__search_for_direction_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr)
+bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	__auto_type selection = &P_PACKED (pr, eb_sel_t, 2);
@@ -952,9 +954,9 @@ bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr)
+bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    linePtr = P_UINT (pr, 2);
@@ -972,27 +974,27 @@ bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr)
 }
 
 static void
-bi__i_EditBuffer__modified (progs_t *pr)
+bi__i_EditBuffer__modified (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	R_INT (pr) = buffer->modified;
 }
 
 static void
-bi__i_EditBuffer__textSize (progs_t *pr)
+bi__i_EditBuffer__textSize (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	R_INT (pr) = buffer->txtbuffer->textSize;
 }
 
 static void
-bi__i_EditBuffer__saveFile_ (progs_t *pr)
+bi__i_EditBuffer__saveFile_ (progs_t *pr, void *_res)
 {
-	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	qwaq_ebresources_t *res = _res;
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	const char *filename = P_GSTRING (pr, 2);
@@ -1003,9 +1005,9 @@ bi__i_EditBuffer__saveFile_ (progs_t *pr)
 }
 
 static void
-qwaq_ebresources_clear (progs_t *pr, void *data)
+qwaq_ebresources_clear (progs_t *pr, void *_res)
 {
-	__auto_type res = (qwaq_ebresources_t *) data;
+	__auto_type res = (qwaq_ebresources_t *) _res;
 
 	for (editbuffer_t *buffer = res->buffer_list; buffer;
 		 buffer = buffer->next) {

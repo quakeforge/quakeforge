@@ -84,9 +84,9 @@ handle_index (qfile_resources_t *res, qfile_t *handle)
 }
 
 static void
-bi_qfile_clear (progs_t *pr, void *data)
+bi_qfile_clear (progs_t *pr, void *_res)
 {
-	qfile_resources_t *res = (qfile_resources_t *) data;
+	qfile_resources_t *res = (qfile_resources_t *) _res;
 	qfile_t    *handle;
 
 	for (handle = res->handles; handle; handle = handle->next)
@@ -121,13 +121,13 @@ QFile_AllocHandle (progs_t *pr, QFile *file)
 }
 
 static void
-secured (progs_t *pr)
+secured (progs_t *pr, void *_res)
 {
 	PR_RunError (pr, "Secured function called");
 }
 
 static void
-bi_Qrename (progs_t *pr)
+bi_Qrename (progs_t *pr, void *_res)
 {
 	const char *old = P_GSTRING (pr, 0);
 	const char *new = P_GSTRING (pr, 1);
@@ -136,7 +136,7 @@ bi_Qrename (progs_t *pr)
 }
 
 static void
-bi_Qremove (progs_t *pr)
+bi_Qremove (progs_t *pr, void *_res)
 {
 	const char *path = P_GSTRING (pr, 0);
 
@@ -144,9 +144,9 @@ bi_Qremove (progs_t *pr)
 }
 
 static void
-bi_Qopen (progs_t *pr)
+bi_Qopen (progs_t *pr, void *_res)
 {
-	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
+	__auto_type res = (qfile_resources_t *) _res;
 	const char *path = P_GSTRING (pr, 0);
 	const char *mode = P_GSTRING (pr, 1);
 	QFile      *file;
@@ -159,9 +159,8 @@ bi_Qopen (progs_t *pr)
 }
 
 static qfile_t *
-get_handle (progs_t *pr, const char *name, int handle)
+get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 {
-	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 	qfile_t    *h = handle_get (res, handle);
 
 	if (!h)
@@ -172,15 +171,16 @@ get_handle (progs_t *pr, const char *name, int handle)
 QFile *
 QFile_GetFile (progs_t *pr, int handle)
 {
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	return h->file;
 }
 
 static void
-bi_Qclose (progs_t *pr)
+bi_Qclose (progs_t *pr, void *_res)
 {
-	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = handle_get (res, handle);
 
@@ -194,10 +194,11 @@ bi_Qclose (progs_t *pr)
 }
 
 static void
-bi_Qgetline (progs_t *pr)
+bi_Qgetline (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	const char *s;
 
 	s = Qgetline (h->file);
@@ -208,11 +209,12 @@ bi_Qgetline (progs_t *pr)
 }
 
 static void
-bi_Qreadstring (progs_t *pr)
+bi_Qreadstring (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	int         len = P_INT (pr, 1);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	pr_string_t str = PR_NewMutableString (pr);
 	dstring_t  *dstr = PR_GetMutableString (pr, str);
 
@@ -235,10 +237,11 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 }
 
 static void
-bi_Qread (progs_t *pr)
+bi_Qread (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
@@ -247,10 +250,11 @@ bi_Qread (progs_t *pr)
 }
 
 static void
-bi_Qwrite (progs_t *pr)
+bi_Qwrite (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
@@ -259,20 +263,22 @@ bi_Qwrite (progs_t *pr)
 }
 
 static void
-bi_Qputs (progs_t *pr)
+bi_Qputs (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	const char *str = P_GSTRING (pr, 1);
 
 	R_INT (pr) = Qputs (h->file, str);
 }
 #if 0
 static void
-bi_Qgets (progs_t *pr)
+bi_Qgets (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
@@ -281,29 +287,32 @@ bi_Qgets (progs_t *pr)
 }
 #endif
 static void
-bi_Qgetc (progs_t *pr)
+bi_Qgetc (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	R_INT (pr) = Qgetc (h->file);
 }
 
 static void
-bi_Qputc (progs_t *pr)
+bi_Qputc (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	int         c = P_INT (pr, 1);
 
 	R_INT (pr) = Qputc (h->file, c);
 }
 
 static void
-bi_Qseek (progs_t *pr)
+bi_Qseek (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	int         offset = P_INT (pr, 1);
 	int         whence = P_INT (pr, 2);
 
@@ -311,37 +320,41 @@ bi_Qseek (progs_t *pr)
 }
 
 static void
-bi_Qtell (progs_t *pr)
+bi_Qtell (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	R_INT (pr) = Qtell (h->file);
 }
 
 static void
-bi_Qflush (progs_t *pr)
+bi_Qflush (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	R_INT (pr) = Qflush (h->file);
 }
 
 static void
-bi_Qeof (progs_t *pr)
+bi_Qeof (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	R_INT (pr) = Qeof (h->file);
 }
 
 static void
-bi_Qfilesize (progs_t *pr)
+bi_Qfilesize (progs_t *pr, void *_res)
 {
+	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
 	R_INT (pr) = Qfilesize (h->file);
 }

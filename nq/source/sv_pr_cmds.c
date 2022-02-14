@@ -66,7 +66,7 @@
 	// void (string e) error
 */
 static void
-PF_error (progs_t *pr)
+PF_error (progs_t *pr, void *data)
 {
 	const char *s;
 	edict_t    *ed;
@@ -90,7 +90,7 @@ PF_error (progs_t *pr)
 	// void (string e) objerror
 */
 static void
-PF_objerror (progs_t *pr)
+PF_objerror (progs_t *pr, void *data)
 {
 	const char *s;
 	edict_t    *ed;
@@ -112,7 +112,7 @@ PF_objerror (progs_t *pr)
 	void (vector angles) makevectors
 */
 static void
-PF_makevectors (progs_t *pr)
+PF_makevectors (progs_t *pr, void *data)
 {
 	AngleVectors (P_VECTOR (pr, 0), *sv_globals.v_forward,
 				  *sv_globals.v_right, *sv_globals.v_up);
@@ -131,7 +131,7 @@ PF_makevectors (progs_t *pr)
 	// void (entity e, vector o) setorigin
 */
 static void
-PF_setorigin (progs_t *pr)
+PF_setorigin (progs_t *pr, void *data)
 {
 	edict_t    *e;
 	float      *org;
@@ -221,7 +221,7 @@ SetMinMaxSize (progs_t *pr, edict_t *e, const vec3_t min, const vec3_t max,
 	// void (entity e, vector min, vector max) setsize
 */
 static void
-PF_setsize (progs_t *pr)
+PF_setsize (progs_t *pr, void *data)
 {
 	edict_t    *e;
 	float      *min, *max;
@@ -239,7 +239,7 @@ PF_setsize (progs_t *pr)
 	// void (entity e, string m) setmodel
 */
 static void
-PF_setmodel (progs_t *pr)
+PF_setmodel (progs_t *pr, void *data)
 {
 	edict_t    *e;
 	const char *m, **check;
@@ -283,7 +283,7 @@ PF_setmodel (progs_t *pr)
 	// void (string s) bprint
 */
 static void
-PF_bprint (progs_t *pr)
+PF_bprint (progs_t *pr, void *data)
 {
 	const char *s;
 
@@ -300,7 +300,7 @@ PF_bprint (progs_t *pr)
 	// void (entity client, string s) sprint
 */
 static void
-PF_sprint (progs_t *pr)
+PF_sprint (progs_t *pr, void *data)
 {
 	const char *s;
 	client_t   *client;
@@ -329,7 +329,7 @@ PF_sprint (progs_t *pr)
 	// void (...) centerprint
 */
 static void
-PF_centerprint (progs_t *pr)
+PF_centerprint (progs_t *pr, void *data)
 {
 	const char *s;
 	client_t   *cl;
@@ -351,7 +351,7 @@ PF_centerprint (progs_t *pr)
 
 // void (vector o, vector d, float color, float count) particle
 static void
-PF_particle (progs_t *pr)
+PF_particle (progs_t *pr, void *data)
 {
 	float      *org, *dir;
 	float       color;
@@ -369,7 +369,7 @@ PF_particle (progs_t *pr)
 	// void (vector pos, string samp, float vol, float atten) ambientsound
 */
 static void
-PF_ambientsound (progs_t *pr)
+PF_ambientsound (progs_t *pr, void *data)
 {
 	const char **check;
 	const char *samp;
@@ -425,7 +425,7 @@ PF_ambientsound (progs_t *pr)
 	// void (entity e, float chan, string samp) sound
 */
 static void
-PF_sound (progs_t *pr)
+PF_sound (progs_t *pr, void *data)
 {
 	const char *sample;
 	edict_t    *entity;
@@ -459,7 +459,7 @@ PF_sound (progs_t *pr)
 	// float (vector v1, vector v2, float tryents) traceline
 */
 static void
-PF_traceline (progs_t *pr)
+PF_traceline (progs_t *pr, void *data)
 {
 	float      *v1, *v2;
 	edict_t    *ent;
@@ -497,7 +497,7 @@ PF_traceline (progs_t *pr)
 	redundant.
 */
 static void
-PF_tracebox (progs_t *pr)
+PF_tracebox (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	float      *start, *end, *mins, *maxs;
@@ -536,7 +536,7 @@ PF_tracebox (progs_t *pr)
 	scalar checkpos (entity, vector)
 */
 static void __attribute__ ((used))
-PF_checkpos (progs_t *pr)
+PF_checkpos (progs_t *pr, void *data)
 {
 }
 
@@ -610,7 +610,7 @@ int         c_invis, c_notvis;
 	// entity () clientlist
 */
 static void
-PF_checkclient (progs_t *pr)
+PF_checkclient (progs_t *pr, void *data)
 {
 	edict_t    *ent, *self;
 	int         l;
@@ -652,7 +652,7 @@ PF_checkclient (progs_t *pr)
 	// void (entity client, string s) stuffcmd
 */
 static void
-PF_stuffcmd (progs_t *pr)
+PF_stuffcmd (progs_t *pr, void *data)
 {
 	const char *str;
 	client_t   *old;
@@ -678,7 +678,7 @@ PF_stuffcmd (progs_t *pr)
 	// void (string s) localcmd
 */
 static void
-PF_localcmd (progs_t *pr)
+PF_localcmd (progs_t *pr, void *data)
 {
 	const char       *str;
 
@@ -695,7 +695,7 @@ PF_localcmd (progs_t *pr)
 	// entity (vector org, float rad) findradius
 */
 static void
-PF_findradius (progs_t *pr)
+PF_findradius (progs_t *pr, void *data)
 {
 	edict_t    *ent, *chain;
 	float       rsqr;
@@ -731,7 +731,7 @@ PF_findradius (progs_t *pr)
 
 // entity () spawn
 static void
-PF_spawn (progs_t *pr)
+PF_spawn (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 
@@ -741,7 +741,7 @@ PF_spawn (progs_t *pr)
 
 // void (entity e) remove
 static void
-PF_remove (progs_t *pr)
+PF_remove (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 
@@ -793,7 +793,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 // string (string s) precache_file
 // string (string s) precache_file2
 static void
-PF_precache_file (progs_t *pr)
+PF_precache_file (progs_t *pr, void *data)
 {
 	// precache_file is used only to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
@@ -803,7 +803,7 @@ PF_precache_file (progs_t *pr)
 // void (string s) precache_sound
 // string (string s) precache_sound2
 static void
-PF_precache_sound (progs_t *pr)
+PF_precache_sound (progs_t *pr, void *data)
 {
 	do_precache (pr, sv.sound_precache, MAX_SOUNDS, P_GSTRING (pr, 0),
 				 "precache_sound");
@@ -814,7 +814,7 @@ PF_precache_sound (progs_t *pr)
 // void (string s) precache_model
 // string (string s) precache_model2
 static void
-PF_precache_model (progs_t *pr)
+PF_precache_model (progs_t *pr, void *data)
 {
 	int         ind;
 	const char *mod = P_GSTRING (pr, 0);
@@ -832,7 +832,7 @@ PF_precache_model (progs_t *pr)
 	// float (float yaw, float dist) walkmove
 */
 static void
-PF_walkmove (progs_t *pr)
+PF_walkmove (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	float       yaw, dist;
@@ -870,7 +870,7 @@ PF_walkmove (progs_t *pr)
 	// float () droptofloor
 */
 static void
-PF_droptofloor (progs_t *pr)
+PF_droptofloor (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	trace_t     trace;
@@ -902,7 +902,7 @@ PF_droptofloor (progs_t *pr)
 	// void (float style, string value) lightstyle
 */
 static void
-PF_lightstyle (progs_t *pr)
+PF_lightstyle (progs_t *pr, void *data)
 {
 	const char *val;
 	client_t   *cl;
@@ -929,7 +929,7 @@ PF_lightstyle (progs_t *pr)
 
 // float (entity e) checkbottom
 static void
-PF_checkbottom (progs_t *pr)
+PF_checkbottom (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 
@@ -940,7 +940,7 @@ PF_checkbottom (progs_t *pr)
 
 // float (vector v) pointcontents
 static void
-PF_pointcontents (progs_t *pr)
+PF_pointcontents (progs_t *pr, void *data)
 {
 	float      *v;
 
@@ -959,7 +959,7 @@ cvar_t     *sv_aim;
 	// vector (entity e, float speed) aim
 */
 static void
-PF_aim (progs_t *pr)
+PF_aim (progs_t *pr, void *data)
 {
 	edict_t    *ent, *check, *bestent;
 	float       dist, bestdist, speed;
@@ -1038,7 +1038,7 @@ PF_aim (progs_t *pr)
 	// void () ChangeYaw
 */
 void
-PF_changeyaw (progs_t *pr)
+PF_changeyaw (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	float       ideal, current, move, speed;
@@ -1111,7 +1111,7 @@ WriteDest (progs_t *pr)
 
 // void (float to, ...) WriteBytes
 static void
-PF_WriteBytes (progs_t *pr)
+PF_WriteBytes (progs_t *pr, void *data)
 {
 	int         i, p;
 	int         argc = pr->pr_argc - 1;
@@ -1138,49 +1138,49 @@ PF_WriteBytes (progs_t *pr)
 
 // void (float to, float f) WriteByte
 static void
-PF_WriteByte (progs_t *pr)
+PF_WriteByte (progs_t *pr, void *data)
 {
 	MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, float f) WriteChar
 static void
-PF_WriteChar (progs_t *pr)
+PF_WriteChar (progs_t *pr, void *data)
 {
 	MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, float f) WriteShort
 static void
-PF_WriteShort (progs_t *pr)
+PF_WriteShort (progs_t *pr, void *data)
 {
 	MSG_WriteShort (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, float f) WriteLong
 static void
-PF_WriteLong (progs_t *pr)
+PF_WriteLong (progs_t *pr, void *data)
 {
 	MSG_WriteLong (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, float f) WriteAngle
 static void
-PF_WriteAngle (progs_t *pr)
+PF_WriteAngle (progs_t *pr, void *data)
 {
 	MSG_WriteAngle (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, float f) WriteCoord
 static void
-PF_WriteCoord (progs_t *pr)
+PF_WriteCoord (progs_t *pr, void *data)
 {
 	MSG_WriteCoord (WriteDest (pr), P_FLOAT (pr, 1));
 }
 
 // void (float to, vector v) WriteAngleV
 static void
-PF_WriteAngleV (progs_t *pr)
+PF_WriteAngleV (progs_t *pr, void *data)
 {
 	float      *ang = P_VECTOR (pr, 1);
 
@@ -1189,7 +1189,7 @@ PF_WriteAngleV (progs_t *pr)
 
 // void (float to, vector v) WriteCoordV
 static void
-PF_WriteCoordV (progs_t *pr)
+PF_WriteCoordV (progs_t *pr, void *data)
 {
 	float      *coord = P_VECTOR (pr, 1);
 
@@ -1198,21 +1198,21 @@ PF_WriteCoordV (progs_t *pr)
 
 // void (float to, string s) WriteString
 static void
-PF_WriteString (progs_t *pr)
+PF_WriteString (progs_t *pr, void *data)
 {
 	MSG_WriteString (WriteDest (pr), P_GSTRING (pr, 1));
 }
 
 // void (float to, entity s) WriteEntity
 static void
-PF_WriteEntity (progs_t *pr)
+PF_WriteEntity (progs_t *pr, void *data)
 {
 	MSG_WriteShort (WriteDest (pr), P_EDICTNUM (pr, 1));
 }
 
 // void (entity e) makestatic
 static void
-PF_makestatic (progs_t *pr)
+PF_makestatic (progs_t *pr, void *data)
 {
 	const char *model;
 	edict_t    *ent;
@@ -1270,7 +1270,7 @@ nosend:
 
 // void (entity e) setspawnparms
 static void
-PF_setspawnparms (progs_t *pr)
+PF_setspawnparms (progs_t *pr, void *data)
 {
 	client_t   *client;
 	edict_t    *ent;
@@ -1290,7 +1290,7 @@ PF_setspawnparms (progs_t *pr)
 
 // void (string s) changelevel
 static void
-PF_changelevel (progs_t *pr)
+PF_changelevel (progs_t *pr, void *data)
 {
 	const char *s;
 
@@ -1305,7 +1305,7 @@ PF_changelevel (progs_t *pr)
 
 // entity (entity ent) testentitypos
 static void
-PF_testentitypos (progs_t *pr)
+PF_testentitypos (progs_t *pr, void *data)
 {
 	edict_t    *ent = P_EDICT (pr, 0);
 	ent = SV_TestEntityPosition (ent);
@@ -1317,7 +1317,7 @@ clip_hull_t *pf_hull_list[MAX_PF_HULLS];
 
 // integer (entity ent, vector point) hullpointcontents
 static void
-PF_hullpointcontents (progs_t *pr)
+PF_hullpointcontents (progs_t *pr, void *data)
 {
 	edict_t    *edict = P_EDICT (pr, 0);
 	float      *mins = P_VECTOR (pr, 1);
@@ -1333,7 +1333,7 @@ PF_hullpointcontents (progs_t *pr)
 
 // vector (integer hull, integer max) getboxbounds
 static void
-PF_getboxbounds (progs_t *pr)
+PF_getboxbounds (progs_t *pr, void *data)
 {
 	clip_hull_t *ch;
 	int         h = P_INT (pr, 0) - 1;
@@ -1350,7 +1350,7 @@ PF_getboxbounds (progs_t *pr)
 
 // integer () getboxhull
 static void
-PF_getboxhull (progs_t *pr)
+PF_getboxhull (progs_t *pr, void *data)
 {
 	clip_hull_t *ch = 0;
 	int         i;
@@ -1375,7 +1375,7 @@ PF_getboxhull (progs_t *pr)
 
 // void (integer hull) freeboxhull
 static void
-PF_freeboxhull (progs_t *pr)
+PF_freeboxhull (progs_t *pr, void *data)
 {
 	int         h = P_INT (pr, 0) - 1;
 	clip_hull_t *ch;
@@ -1405,7 +1405,7 @@ calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
 
 // void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
 static void
-PF_rotate_bbox (progs_t *pr)
+PF_rotate_bbox (progs_t *pr, void *data)
 {
 	clip_hull_t *ch;
 	float       l;
@@ -1484,7 +1484,7 @@ PF_rotate_bbox (progs_t *pr)
 
 // float () checkextension
 static void
-PF_checkextension (progs_t *pr)
+PF_checkextension (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = 0;			// FIXME: make this function actually useful
 }

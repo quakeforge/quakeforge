@@ -639,9 +639,9 @@ qwaq_input_shutdown (qwaq_input_resources_t *res)
 }
 
 static void
-bi_send_connected_devices (progs_t *pr)
+bi_send_connected_devices (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 
 	int         command[] = {
 					qwaq_cmd_send_connected_devices, 0,
@@ -652,9 +652,9 @@ bi_send_connected_devices (progs_t *pr)
 }
 
 static void
-bi_get_device_info (progs_t *pr)
+bi_get_device_info (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	int         devid = P_INT (pr, 0);
 
 	int         command[] = {
@@ -737,9 +737,9 @@ get_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 }
 
 static void
-bi_get_event (progs_t *pr)
+bi_get_event (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	qwaq_event_t *event = &P_STRUCT (pr, qwaq_event_t, 0);
 
 	R_INT (pr) = get_event (res, event);
@@ -854,9 +854,9 @@ qwaq_input_thread (qwaq_thread_t *thread)
 }
 
 static void
-bi_init_input (progs_t *pr)
+bi_init_input (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	qwaq_input_init (res);
 	res->initialized = 1;
 	create_thread (qwaq_input_thread, res);
@@ -880,9 +880,9 @@ static builtin_t builtins[] = {
 };
 
 static void
-bi_input_clear (progs_t *pr, void *data)
+bi_input_clear (progs_t *pr, void *_res)
 {
-	__auto_type res = (qwaq_input_resources_t *) data;
+	__auto_type res = (qwaq_input_resources_t *) _res;
 
 	if (res->initialized) {
 		qwaq_input_shutdown (res);

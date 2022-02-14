@@ -228,7 +228,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 	vec3_t      move, oldorigin;
 
 	SVfloat (ent, ideal_yaw) = yaw;
-	PF_changeyaw (&sv_pr_state);
+	PF_changeyaw (&sv_pr_state, 0);
 
 	yaw = yaw * M_PI * 2 / 360;
 	move[0] = cos (yaw) * dist;
@@ -345,7 +345,7 @@ SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 }
 
 void
-SV_MoveToGoal (progs_t *pr)
+SV_MoveToGoal (progs_t *pr, void *data)
 {
 	edict_t    *ent, *goal;
 	float       dist;

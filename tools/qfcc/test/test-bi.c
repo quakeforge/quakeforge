@@ -44,7 +44,7 @@
 #include "test-bi.h"
 
 static void
-bi_printf (progs_t *pr)
+bi_printf (progs_t *pr, void *data)
 {
 	static dstring_t *dstr;
 
@@ -62,26 +62,26 @@ bi_printf (progs_t *pr)
 }
 
 static void
-bi_errno (progs_t *pr)
+bi_errno (progs_t *pr, void *data)
 {
 	R_INT (pr) = errno;
 }
 
 static void
-bi_strerror (progs_t *pr)
+bi_strerror (progs_t *pr, void *data)
 {
 	int err = P_INT (pr, 0);
 	RETURN_STRING (pr, strerror (err));
 }
 
 static void
-bi_exit (progs_t *pr)
+bi_exit (progs_t *pr, void *data)
 {
 	exit (P_INT (pr, 0));
 }
 
 static void
-bi_spawn (progs_t *pr)
+bi_spawn (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 	ed = ED_Alloc (pr);
@@ -89,7 +89,7 @@ bi_spawn (progs_t *pr)
 }
 
 static void
-bi_remove (progs_t *pr)
+bi_remove (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 	ed = P_EDICT (pr, 0);

@@ -89,7 +89,7 @@ builtin_next (progs_t *pr)
 }
 
 static void
-bi_no_function (progs_t *pr)
+bi_no_function (progs_t *pr, void *data)
 {
 	// no need for checking: the /only/ way to get here is via a function
 	// descriptor with a bad builtin number

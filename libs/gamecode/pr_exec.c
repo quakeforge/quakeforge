@@ -454,7 +454,7 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 		pr_type_t  *saved_return = pr->pr_return;
 		int         builtin_depth = pr->pr_depth;
 		pr->pr_return = return_ptr;
-		f->func (pr);
+		f->func (pr, f->data);
 		f->profile++;	// to show number times the builtin is called
 		if (builtin_depth == pr->pr_depth) {
 			pr->pr_return = saved_return;

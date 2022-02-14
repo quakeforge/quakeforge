@@ -91,9 +91,9 @@ il_data_index (il_resources_t *res, il_data_t *line)
 }
 
 static void
-bi_il_clear (progs_t *pr, void *data)
+bi_il_clear (progs_t *pr, void *_res)
 {
-	il_resources_t *res = (il_resources_t *)data;
+	il_resources_t *res = (il_resources_t *)_res;
 	il_data_t  *line;
 
 	for (line = res->lines; line; line = line->next)
@@ -103,9 +103,8 @@ bi_il_clear (progs_t *pr, void *data)
 }
 
 static il_data_t *
-get_inputline (progs_t *pr, int arg, const char *func)
+get_inputline (progs_t *pr, il_resources_t *res, int arg, const char *func)
 {
-	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
 	il_data_t  *line = il_data_get (res, arg);
 
 	// line->prev will be null if the handle is unallocated
@@ -142,9 +141,9 @@ bi_inputline_enter (inputline_t *il)
 }
 
 static void
-bi_InputLine_Create (progs_t *pr)
+bi_InputLine_Create (progs_t *pr, void *_res)
 {
-	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
+	il_resources_t *res = _res;
 	il_data_t  *data;
 	inputline_t *line;
 	int         lines = P_INT (pr, 0);
@@ -182,26 +181,29 @@ bi_InputLine_Create (progs_t *pr)
 }
 
 static void
-bi_InputLine_SetPos (progs_t *pr)
+bi_InputLine_SetPos (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
 									  "InputLine_SetPos");
 	line->line->x = P_INT (pr, 1);
 	line->line->y = P_INT (pr, 2);
 }
 
 static void
-bi_InputLine_SetCursor (progs_t *pr)
+bi_InputLine_SetCursor (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
 									  "InputLine_SetCursor");
 	line->line->cursor = P_INT (pr, 1);
 }
 
 static void
-bi_InputLine_SetEnter (progs_t *pr)
+bi_InputLine_SetEnter (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
 									  "InputLine_SetEnter");
 
 	line->data[1] = 0;
@@ -221,9 +223,10 @@ bi_InputLine_SetEnter (progs_t *pr)
 }
 
 static void
-bi_InputLine_SetWidth (progs_t *pr)
+bi_InputLine_SetWidth (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
 									   "InputLine_SetWidth");
 	int         width = P_INT (pr, 1);
 
@@ -231,10 +234,11 @@ bi_InputLine_SetWidth (progs_t *pr)
 }
 
 static void
-bi_InputLine_Destroy (progs_t *pr)
+bi_InputLine_Destroy (progs_t *pr, void *_res)
 {
-	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Destroy");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_Destroy");
 
 	Con_DestroyInputLine (line->line);
 	*line->prev = line->next;
@@ -244,18 +248,22 @@ bi_InputLine_Destroy (progs_t *pr)
 }
 
 static void
-bi_InputLine_Clear (progs_t *pr)
+bi_InputLine_Clear (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Clear");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_Clear");
 	int         save = P_INT (pr, 1);
 
 	Con_ClearTyping (line->line, save);
 }
 
 static void
-bi_InputLine_Process (progs_t *pr)
+bi_InputLine_Process (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Process");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_Process");
 	int         ch = P_INT (pr, 1);
 
 	Con_ProcessInputLine (line->line, ch);
@@ -267,9 +275,11 @@ bi_InputLine_Process (progs_t *pr)
 	Sets the inputline to a specified text
 */
 static void
-bi_InputLine_SetText (progs_t *pr)
+bi_InputLine_SetText (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_SetText");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_SetText");
 	const char *str = P_GSTRING (pr, 1);
 	inputline_t *il = line->line;
 
@@ -286,18 +296,22 @@ bi_InputLine_SetText (progs_t *pr)
 	Gets the text from a inputline
 */
 static void
-bi_InputLine_GetText (progs_t *pr)
+bi_InputLine_GetText (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_GetText");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_GetText");
 	inputline_t *il = line->line;
 
 	RETURN_STRING(pr, il->lines[il->edit_line]+1);
 }
 
 static void
-bi_InputLine_Draw (progs_t *pr)
+bi_InputLine_Draw (progs_t *pr, void *_res)
 {
-	il_data_t  *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Draw");
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_Draw");
 
 	line->line->draw (line->line);
 }

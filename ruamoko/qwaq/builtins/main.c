@@ -146,7 +146,7 @@ init_qf (void)
 }
 
 static void
-bi_printf (progs_t *pr)
+bi_printf (progs_t *pr, void *_res)
 {
 	dstring_t  *dstr = dstring_new ();
 
@@ -158,14 +158,14 @@ bi_printf (progs_t *pr)
 }
 
 static void
-bi_traceon (progs_t *pr)
+bi_traceon (progs_t *pr, void *_res)
 {
 	pr->pr_trace = true;
 	pr->pr_trace_depth = pr->pr_depth;
 }
 
 static void
-bi_traceoff (progs_t *pr)
+bi_traceoff (progs_t *pr, void *_res)
 {
 	pr->pr_trace = false;
 }

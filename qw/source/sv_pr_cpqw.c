@@ -54,7 +54,7 @@ static struct {
 	float(entity client) getuid
 */
 static void
-PF_getuid (progs_t *pr)
+PF_getuid (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num;
@@ -76,7 +76,7 @@ PF_getuid (progs_t *pr)
 	string(string st1, string st2) strcat
 */
 static void
-PF_strcat (progs_t *pr)
+PF_strcat (progs_t *pr, void *data)
 {
 	const char *st1 = P_GSTRING (pr, 0);
 	const char *st2 = P_GSTRING (pr, 1);
@@ -90,7 +90,7 @@ PF_strcat (progs_t *pr)
 	string(string st, float len) padstr
 */
 static void
-PF_padstr (progs_t *pr)
+PF_padstr (progs_t *pr, void *data)
 {
 	const char *st;
 	size_t      i, padlen, givenlen;
@@ -133,7 +133,7 @@ PF_padstr (progs_t *pr)
 										// non-original charsets)
 
 static void
-PF_colstr (progs_t *pr)
+PF_colstr (progs_t *pr, void *data)
 {
 	const char *srcstr;
 	unsigned char *result;
@@ -226,7 +226,7 @@ PF_colstr (progs_t *pr)
 	float(string st1, string st2) strcasecmp
 */
 static void
-PF_strcasecmp (progs_t *pr)
+PF_strcasecmp (progs_t *pr, void *data)
 {
 	const char *st1;
 	const char *st2;
@@ -244,7 +244,7 @@ PF_strcasecmp (progs_t *pr)
 */
 
 static void
-PF_strlen (progs_t *pr)
+PF_strlen (progs_t *pr, void *data)
 {
 	const char *st;
 
@@ -313,7 +313,7 @@ KK_Match_Str2 (const char *substr)
 	entity(string st) getclient
 */
 static void
-PF_getclient (progs_t *pr)
+PF_getclient (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	const char *st;
@@ -353,7 +353,7 @@ float(entity client) mutedtime
 */
 
 static void
-PF_mutedtime (progs_t *pr)
+PF_mutedtime (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num;
@@ -382,7 +382,7 @@ float(string st) validatefile
 */
 
 static void
-PF_validatefile (progs_t *pr)
+PF_validatefile (progs_t *pr, void *data)
 {
 	float       retval;
 	QFile      *f;
@@ -410,7 +410,7 @@ PF_validatefile (progs_t *pr)
 extern int  fp_messages, fp_persecond, fp_secondsdead;
 
 static void
-PF_putsaytime (progs_t *pr)
+PF_putsaytime (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num, tmp;
@@ -444,7 +444,7 @@ PF_putsaytime (progs_t *pr)
 */
 
 static void
-PF_makestr (progs_t *pr)
+PF_makestr (progs_t *pr, void *data)
 {
 	pr_string_t res = PR_NewMutableString (pr);
 	dstring_t  *dst = PR_GetMutableString (pr, res);
@@ -461,7 +461,7 @@ PF_makestr (progs_t *pr)
 */
 
 static void
-PF_delstr (progs_t *pr)
+PF_delstr (progs_t *pr, void *data)
 {
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
@@ -548,7 +548,7 @@ GetLinearWave (float inputnum)
 #define GWAVE_USESHAPE    8
 
 static void
-PF_getwave (progs_t *pr)
+PF_getwave (progs_t *pr, void *data)
 {
 	float       retval, inputnum, minnum, maxnum, balance, offset, shape;
 	float       temp;
@@ -625,7 +625,7 @@ PF_getwave (progs_t *pr)
 */
 
 static void
-PF_clientsound (progs_t *pr)
+PF_clientsound (progs_t *pr, void *data)
 {
 	const char *sample;
 	int         channel;
@@ -700,7 +700,7 @@ PF_clientsound (progs_t *pr)
 */
 
 static void
-PF_touchworld (progs_t *pr)
+PF_touchworld (progs_t *pr, void *data)
 {
 	edict_t    *self;
 	pr_int_t    oself;
@@ -729,7 +729,7 @@ PF_touchworld (progs_t *pr)
 #define TL_EVERYTHING		4	// scan for anything
 
 static void
-PF_traceline (progs_t *pr)
+PF_traceline (progs_t *pr, void *data)
 {
 	float      *v1, *v2;
 	edict_t    *ent;

@@ -100,7 +100,7 @@ static SCR_Func bi_2dfuncs[] = {
 };
 
 static void
-bi_refresh (progs_t *pr)
+bi_refresh (progs_t *pr, void *_res)
 {
 	con_realtime = Sys_DoubleTime () - basetime;
 	con_frametime = con_realtime - old_conrealtime;
@@ -114,13 +114,13 @@ bi_refresh (progs_t *pr)
 }
 
 static void
-bi_refresh_2d (progs_t *pr)
+bi_refresh_2d (progs_t *pr, void *_res)
 {
 	qc2d = P_FUNCTION (pr, 0);
 }
 
 static void
-bi_shutdown (progs_t *pr)
+bi_shutdown (progs_t *pr, void *_res)
 {
 	Sys_Shutdown ();
 }

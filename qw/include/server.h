@@ -510,7 +510,7 @@ qboolean SV_movestep (struct edict_s *ent, const vec3_t move,
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 struct progs_s;
-void SV_MoveToGoal (struct progs_s *pr);
+void SV_MoveToGoal (struct progs_s *pr, void *data);
 
 void SV_SaveSpawnparms (void);
 

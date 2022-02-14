@@ -98,9 +98,9 @@ bi_gib_builtin_f (void)
 }
 
 static void
-bi_gib_builtin_clear (progs_t *progs, void *data)
+bi_gib_builtin_clear (progs_t *progs, void *_res)
 {
-	bi_gib_resources_t *res = (bi_gib_resources_t *) data;
+	bi_gib_resources_t *res = (bi_gib_resources_t *) _res;
 	bi_gib_builtin_t *cur;
 
 	while ((cur = res->builtins)) {
@@ -112,9 +112,9 @@ bi_gib_builtin_clear (progs_t *progs, void *data)
 }
 
 static void
-bi_GIB_Builtin_Add (progs_t *pr)
+bi_GIB_Builtin_Add (progs_t *pr, void *_res)
 {
-	bi_gib_resources_t *res = PR_Resources_Find (pr, "GIB");
+	bi_gib_resources_t *res = _res;
 	bi_gib_builtin_t   *builtin;
 	const char *name = P_GSTRING (pr, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
@@ -138,7 +138,7 @@ bi_GIB_Builtin_Add (progs_t *pr)
 }
 
 static void
-bi_GIB_Return (progs_t *pr)
+bi_GIB_Return (progs_t *pr, void *_res)
 {
 	const char *str = P_GSTRING(pr, 0);
 
@@ -148,7 +148,7 @@ bi_GIB_Return (progs_t *pr)
 }
 
 static void
-bi_GIB_Handle_New (progs_t *pr)
+bi_GIB_Handle_New (progs_t *pr, void *_res)
 {
 	//long *qcptr = malloc (sizeof (long));
 	//*qcptr = P_POINTER (pr, 0);
@@ -156,7 +156,7 @@ bi_GIB_Handle_New (progs_t *pr)
 }
 
 static void
-bi_GIB_Handle_Free (progs_t *pr)
+bi_GIB_Handle_Free (progs_t *pr, void *_res)
 {
 	//unsigned long int hand = P_INT (pr, 0);
 	//long *qcptr = GIB_Handle_Get (hand);
@@ -166,7 +166,7 @@ bi_GIB_Handle_Free (progs_t *pr)
 }
 
 static void
-bi_GIB_Handle_Get (progs_t *pr)
+bi_GIB_Handle_Get (progs_t *pr, void *_res)
 {
 	//long *hand = GIB_Handle_Get (P_INT (pr, 0));
 	//if (hand)

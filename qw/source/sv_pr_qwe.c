@@ -64,7 +64,7 @@ typedef struct {
 static qwe_funcs_t qwe_funcs;
 
 static void
-PF_executecmd (progs_t *pr)
+PF_executecmd (progs_t *pr, void *data)
 {
 	int         old_other, old_self;	// mod_consolecmd will be executed, so
 										// we need to store these
@@ -87,7 +87,7 @@ PF_executecmd (progs_t *pr)
 */
 
 static void
-PF_tokanize (progs_t *pr)
+PF_tokanize (progs_t *pr, void *data)
 {
 	const char *str;
 
@@ -105,7 +105,7 @@ PF_tokanize (progs_t *pr)
 */
 
 static void
-PF_argc (progs_t *pr)
+PF_argc (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) Cmd_Argc ();
 }
@@ -119,7 +119,7 @@ PF_argc (progs_t *pr)
 */
 
 static void
-PF_argv (progs_t *pr)
+PF_argv (progs_t *pr, void *data)
 {
 	int         num;
 
@@ -140,7 +140,7 @@ PF_argv (progs_t *pr)
 */
 
 static void
-PF_teamfield (progs_t *pr)
+PF_teamfield (progs_t *pr, void *data)
 {
 	sv_fields.team_str = P_INT (pr, 0);
 }
@@ -152,7 +152,7 @@ PF_teamfield (progs_t *pr)
 */
 
 static void
-PF_substr (progs_t *pr)
+PF_substr (progs_t *pr, void *data)
 {
 	const char *s;
 	char       *tmp;
@@ -188,7 +188,7 @@ PF_substr (progs_t *pr)
 */
 
 static void
-PF_strcat (progs_t *pr)
+PF_strcat (progs_t *pr, void *data)
 {
 	RETURN_STRING (pr, PF_VarString (pr, 0, pr->pr_argc));
 }
@@ -200,7 +200,7 @@ PF_strcat (progs_t *pr)
 */
 
 static void
-PF_strlen (progs_t *pr)
+PF_strlen (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) strlen (P_GSTRING (pr, 0));
 }
@@ -212,7 +212,7 @@ PF_strlen (progs_t *pr)
 */
 
 static void
-PF_str2byte (progs_t *pr)
+PF_str2byte (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) *P_GSTRING (pr, 0);
 }
@@ -224,7 +224,7 @@ PF_str2byte (progs_t *pr)
 */
 
 static void
-PF_str2short (progs_t *pr)
+PF_str2short (progs_t *pr, void *data)
 {
 	const byte *str = (byte *) P_GSTRING (pr, 0);
 
@@ -239,7 +239,7 @@ PF_str2short (progs_t *pr)
 	The new string will be at least as big as size, if given.
 */
 static void
-PF_newstr (progs_t *pr)
+PF_newstr (progs_t *pr, void *data)
 {
 	const char *s;
 	dstring_t  *dstr;
@@ -269,7 +269,7 @@ PF_newstr (progs_t *pr)
 */
 
 static void
-PF_freestr (progs_t *pr)
+PF_freestr (progs_t *pr, void *data)
 {
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
@@ -281,7 +281,7 @@ PF_freestr (progs_t *pr)
 */
 
 static void
-PF_readcmd (progs_t *pr)
+PF_readcmd (progs_t *pr, void *data)
 {
 	const char *s;
 	redirect_t  old;
@@ -311,7 +311,7 @@ PF_readcmd (progs_t *pr)
 */
 
 static void
-PF_redirectcmd (progs_t *pr)
+PF_redirectcmd (progs_t *pr, void *data)
 {
 	const char *s;
 	int         entnum;
@@ -334,7 +334,7 @@ PF_redirectcmd (progs_t *pr)
 }
 
 static void
-PF_calltimeofday (progs_t *pr)
+PF_calltimeofday (progs_t *pr, void *data)
 {
 	date_t      date;
 	dfunction_t *f;
@@ -368,7 +368,7 @@ PF_calltimeofday (progs_t *pr)
 */
 
 static void
-PF_forcedemoframe (progs_t *pr)
+PF_forcedemoframe (progs_t *pr, void *data)
 {
 	SVR_ForceFrame ();
 	if (P_FLOAT (pr, 0) == 1)
@@ -383,7 +383,7 @@ PF_forcedemoframe (progs_t *pr)
 */
 
 static void
-PF_strcpy (progs_t *pr)
+PF_strcpy (progs_t *pr, void *data)
 {
 	dstring_copystr (P_DSTRING (pr, 0), P_GSTRING (pr, 1));
 }
@@ -395,7 +395,7 @@ PF_strcpy (progs_t *pr)
 */
 
 static void
-PF_strncpy (progs_t *pr)
+PF_strncpy (progs_t *pr, void *data)
 {
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
@@ -414,7 +414,7 @@ PF_strncpy (progs_t *pr)
 */
 
 static void
-PF_strstr (progs_t *pr)
+PF_strstr (progs_t *pr, void *data)
 {
 	const char *str, *sub, *p;
 
@@ -445,7 +445,7 @@ clean_text (char *text)
 */
 
 static void
-PF_log (progs_t *pr)
+PF_log (progs_t *pr, void *data)
 {
 	const char *name;
 	char       *text;
@@ -473,7 +473,7 @@ PF_log (progs_t *pr)
 	PF_conprint
 */
 static void
-PF_conprint (progs_t *pr)
+PF_conprint (progs_t *pr, void *data)
 {
 	Sys_Printf ("%s", PF_VarString (pr, 0, pr->pr_argc));
 }

@@ -77,7 +77,7 @@ PF_VarString (progs_t *pr, int first, int argc)
 	vector (vector v) normalize
 */
 static void
-PF_normalize (progs_t *pr)
+PF_normalize (progs_t *pr, void *data)
 {
 	float		new;
 	float	   *value1;
@@ -105,7 +105,7 @@ PF_normalize (progs_t *pr)
 	float (vector v) vlen
 */
 static void
-PF_vlen (progs_t *pr)
+PF_vlen (progs_t *pr, void *data)
 {
 	float		new;
 	float	   *value1;
@@ -123,7 +123,7 @@ PF_vlen (progs_t *pr)
 	float (vector v) vectoyaw
 */
 static void
-PF_vectoyaw (progs_t *pr)
+PF_vectoyaw (progs_t *pr, void *data)
 {
 	float		yaw;
 	float	   *value1;
@@ -145,7 +145,7 @@ PF_vectoyaw (progs_t *pr)
 	vector (vector v) vectoangles
 */
 static void
-PF_vectoangles (progs_t *pr)
+PF_vectoangles (progs_t *pr, void *data)
 {
 	float		forward, pitch, yaw;
 	float	   *value1;
@@ -180,7 +180,7 @@ PF_vectoangles (progs_t *pr)
 	Returns a number from 0<= num < 1
 */
 static void
-PF_random (progs_t *pr)
+PF_random (progs_t *pr, void *data)
 {
 	float		num;
 
@@ -193,7 +193,7 @@ PF_random (progs_t *pr)
 	void () break
 */
 static void
-PF_break (progs_t *pr)
+PF_break (progs_t *pr, void *data)
 {
 	Sys_Printf ("break statement\n");
 	PR_DumpState (pr);
@@ -203,7 +203,7 @@ PF_break (progs_t *pr)
 	float (string s) cvar
 */
 static void
-PF_cvar (progs_t *pr)
+PF_cvar (progs_t *pr, void *data)
 {
 	const char		*str;
 
@@ -216,7 +216,7 @@ PF_cvar (progs_t *pr)
 	void (string var, string val) cvar_set
 */
 static void
-PF_cvar_set (progs_t *pr)
+PF_cvar_set (progs_t *pr, void *data)
 {
 	const char	*var_name, *val;
 	cvar_t		*var;
@@ -238,7 +238,7 @@ PF_cvar_set (progs_t *pr)
 	float (float f) fabs
 */
 static void
-PF_fabs (progs_t *pr)
+PF_fabs (progs_t *pr, void *data)
 {
 	float		v;
 
@@ -250,7 +250,7 @@ PF_fabs (progs_t *pr)
 	entity (entity start, .(...) fld, ... match) find
 */
 static void
-PF_find (progs_t *pr)
+PF_find (progs_t *pr, void *data)
 {
 	const char *s = 0, *t;	// ev_string
 	int			i;			// ev_vector
@@ -314,7 +314,7 @@ PF_find (progs_t *pr)
 	void () coredump
 */
 static void
-PF_coredump (progs_t *pr)
+PF_coredump (progs_t *pr, void *data)
 {
 	ED_PrintEdicts (pr, "");
 }
@@ -323,7 +323,7 @@ PF_coredump (progs_t *pr)
 	void () traceon
 */
 static void
-PF_traceon (progs_t *pr)
+PF_traceon (progs_t *pr, void *data)
 {
 	pr->pr_trace = true;
 	pr->pr_trace_depth = pr->pr_depth;
@@ -333,7 +333,7 @@ PF_traceon (progs_t *pr)
 	void () traceoff
 */
 static void
-PF_traceoff (progs_t *pr)
+PF_traceoff (progs_t *pr, void *data)
 {
 	pr->pr_trace = false;
 }
@@ -342,7 +342,7 @@ PF_traceoff (progs_t *pr)
 	void (entity e) eprint
 */
 static void
-PF_eprint (progs_t *pr)
+PF_eprint (progs_t *pr, void *data)
 {
 	ED_PrintNum (pr, P_EDICTNUM (pr, 0), 0);
 }
@@ -351,7 +351,7 @@ PF_eprint (progs_t *pr)
 	void (string s) dprint
 */
 static void
-PF_dprint (progs_t *pr)
+PF_dprint (progs_t *pr, void *data)
 {
 	Sys_Printf ("%s", PF_VarString (pr, 0, 1));
 }
@@ -360,7 +360,7 @@ PF_dprint (progs_t *pr)
 	float (float v) rint
 */
 static void
-PF_rint (progs_t *pr)
+PF_rint (progs_t *pr, void *data)
 {
 	float		f;
 
@@ -375,7 +375,7 @@ PF_rint (progs_t *pr)
 	float (float v) floor
 */
 static void
-PF_floor (progs_t *pr)
+PF_floor (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = floor (P_FLOAT (pr, 0));
 }
@@ -384,7 +384,7 @@ PF_floor (progs_t *pr)
 	float (float v) ceil
 */
 static void
-PF_ceil (progs_t *pr)
+PF_ceil (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = ceil (P_FLOAT (pr, 0));
 }
@@ -393,7 +393,7 @@ PF_ceil (progs_t *pr)
 	entity (entity e) nextent
 */
 static void
-PF_nextent (progs_t *pr)
+PF_nextent (progs_t *pr, void *data)
 {
 	pr_uint_t   i;
 	edict_t	   *ent;
@@ -424,7 +424,7 @@ PF_nextent (progs_t *pr)
 	int (float f) ftoi
 */
 static void
-PF_ftoi (progs_t *pr)
+PF_ftoi (progs_t *pr, void *data)
 {
 	R_INT (pr) = P_FLOAT (pr, 0);
 }
@@ -433,7 +433,7 @@ PF_ftoi (progs_t *pr)
 	string (float f) ftos
 */
 static void
-PF_ftos (progs_t *pr)
+PF_ftos (progs_t *pr, void *data)
 {
 	char	string[STRING_BUF];
 	int		i;
@@ -457,7 +457,7 @@ PF_ftos (progs_t *pr)
 	float (int i) itof
 */
 static void
-PF_itof (progs_t *pr)
+PF_itof (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = P_INT (pr, 0);
 }
@@ -466,7 +466,7 @@ PF_itof (progs_t *pr)
 	string (int i) itos
 */
 static void
-PF_itos (progs_t *pr)
+PF_itos (progs_t *pr, void *data)
 {
 	char string[STRING_BUF];
 
@@ -479,7 +479,7 @@ PF_itos (progs_t *pr)
 	float (string s) stof
 */
 static void
-PF_stof (progs_t *pr)
+PF_stof (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = atof (P_GSTRING (pr, 0));
 }
@@ -488,7 +488,7 @@ PF_stof (progs_t *pr)
 	int (string s) stoi
 */
 static void
-PF_stoi (progs_t *pr)
+PF_stoi (progs_t *pr, void *data)
 {
 	R_INT (pr) = atoi (P_GSTRING (pr, 0));
 }
@@ -497,7 +497,7 @@ PF_stoi (progs_t *pr)
 	vector (string s) stov
 */
 static void
-PF_stov (progs_t *pr)
+PF_stov (progs_t *pr, void *data)
 {
 	float v[3] = {0, 0, 0};
 
@@ -510,7 +510,7 @@ PF_stov (progs_t *pr)
 	string (vector v) vtos
 */
 static void
-PF_vtos (progs_t *pr)
+PF_vtos (progs_t *pr, void *data)
 {
 	char string[STRING_BUF * 3 + 5];
 
@@ -526,7 +526,7 @@ PF_vtos (progs_t *pr)
 	float (string char, string s) charcount
 */
 static void
-PF_charcount (progs_t *pr)
+PF_charcount (progs_t *pr, void *data)
 {
 	char		goal;
 	const char *s;
@@ -558,13 +558,13 @@ PF_charcount (progs_t *pr)
 	string () gametype
 */
 static void
-PF_gametype (progs_t *pr)
+PF_gametype (progs_t *pr, void *data)
 {
 	RETURN_STRING (pr, pr_gametype);
 }
 
 static void
-PF_PR_SetField (progs_t *pr)
+PF_PR_SetField (progs_t *pr, void *data)
 {
 	edict_t    *ent = P_EDICT (pr, 0);
 	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
@@ -576,7 +576,7 @@ PF_PR_SetField (progs_t *pr)
 }
 
 static void
-PF_PR_FindFunction (progs_t *pr)
+PF_PR_FindFunction (progs_t *pr, void *data)
 {
 	dfunction_t *func = PR_FindFunction (pr, P_GSTRING (pr, 0));
 	R_FUNCTION (pr) = 0;

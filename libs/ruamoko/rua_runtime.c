@@ -50,7 +50,7 @@
 #include "rua_internal.h"
 
 static void
-bi_va_copy (progs_t *pr)
+bi_va_copy (progs_t *pr, void *data)
 {
 	__auto_type src_args = (pr_va_list_t *) &P_POINTER (pr, 0);
 	__auto_type src_list = &G_STRUCT (pr, pr_type_t, src_args->list);

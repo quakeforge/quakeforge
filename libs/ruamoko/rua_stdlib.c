@@ -84,7 +84,7 @@ rua_compare (const void *a, const void *b, void *_f)
 }
 
 static void
-bi_bsearch (progs_t *pr)
+bi_bsearch (progs_t *pr, void *data)
 {
 	const void *key = P_GPOINTER (pr, 0);
 	const void *array = P_GPOINTER (pr, 1);
@@ -103,7 +103,7 @@ bi_bsearch (progs_t *pr)
 }
 
 static void
-bi_fbsearch (progs_t *pr)
+bi_fbsearch (progs_t *pr, void *data)
 {
 	const void *key = P_GPOINTER (pr, 0);
 	const void *array = P_GPOINTER (pr, 1);
@@ -122,7 +122,7 @@ bi_fbsearch (progs_t *pr)
 }
 
 static void
-bi_qsort (progs_t *pr)
+bi_qsort (progs_t *pr, void *data)
 {
 	void       *array = P_GPOINTER (pr, 0);
 	size_t      nmemb = P_INT (pr, 1);
@@ -138,7 +138,7 @@ bi_qsort (progs_t *pr)
 }
 
 static void
-bi_prefixsumi (progs_t *pr)
+bi_prefixsumi (progs_t *pr, void *data)
 {
 	int        *array = (int *) P_GPOINTER (pr, 0);
 	int         count = P_INT (pr, 1);
@@ -149,7 +149,7 @@ bi_prefixsumi (progs_t *pr)
 }
 
 static void
-bi_prefixsumf (progs_t *pr)
+bi_prefixsumf (progs_t *pr, void *data)
 {
 	float      *array = (float *) P_GPOINTER (pr, 0);
 	int         count = P_INT (pr, 1);
