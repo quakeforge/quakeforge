@@ -43,14 +43,16 @@
 
 typedef struct transform_s {
 	struct hierarchy_s *hierarchy;
+	struct scene_s *scene;	///< owning scene
 	uint32_t    index;	///< index in hierarchy
 	int32_t     id;		///< scene id
 } transform_t;
 
-transform_t *Transform_New (transform_t *parent);
+transform_t *Transform_New (struct scene_s *scene, transform_t *parent);
 /* Deletes all child transforms, and transform names */
 void Transform_Delete (transform_t *transform);
-transform_t *Transform_NewNamed (transform_t *parent, const char *name);
+transform_t *Transform_NewNamed (struct scene_s *scene, transform_t *parent,
+								 const char *name);
 uint32_t Transform_ChildCount (const transform_t *transform) __attribute__((pure));
 transform_t *Transform_GetChild (const transform_t *transform,
 								 uint32_t childIndex) __attribute__((pure));

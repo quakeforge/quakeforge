@@ -70,6 +70,7 @@ EXTRA_DIST += \
 	include/rua_internal.h \
 	include/sbar.h \
 	include/skin_stencil.h \
+	include/scn_internal.h \
 	include/snd_internal.h \
 	include/sv_console.h \
 	include/varrays.h \

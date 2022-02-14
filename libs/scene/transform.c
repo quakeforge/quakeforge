@@ -36,13 +36,19 @@
 #endif
 
 #include "QF/scene/hierarchy.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-transform_t *
-Transform_New (transform_t *parent)
-{
-	transform_t *transform = malloc (sizeof (transform_t));
+#include "scn_internal.h"
 
+transform_t *
+Transform_New (scene_t *scene, transform_t *parent)
+{
+	scene_resources_t *res = scene->resources;
+	transform_t *transform = PR_RESNEW_NC (res->transforms);
+
+	transform->scene = scene;
+	transform->id = PR_RESINDEX (res->transforms, transform);
 	if (parent) {
 		transform->hierarchy = parent->hierarchy;
 		transform->index = Hierarchy_InsertHierarchy (parent->hierarchy, 0,
@@ -68,9 +74,9 @@ Transform_Delete (transform_t *transform)
 }
 
 transform_t *
-Transform_NewNamed (transform_t *parent, const char *name)
+Transform_NewNamed (scene_t *scene, transform_t *parent, const char *name)
 {
-	transform_t *transform = Transform_New (parent);
+	transform_t *transform = Transform_New (scene, parent);
 	Transform_SetName (transform, name);
 	return transform;
 }

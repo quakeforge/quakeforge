@@ -42,9 +42,7 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-typedef struct scene_resources_s {
-	PR_RESMAP (entity_t) entities;
-} scene_resources_t;
+#include "scn_internal.h"
 
 scene_t *
 Scene_NewScene (void)
@@ -84,7 +82,7 @@ Scene_CreateEntity (scene_t *scene)
 	scene_resources_t *res = scene->resources;
 
 	entity_t   *ent = PR_RESNEW_NC (res->entities);
-	ent->transform = Transform_New (0);
+	ent->transform = Transform_New (scene, 0);
 	ent->id = PR_RESINDEX (res->entities, ent);
 
 	hierarchy_t *h = ent->transform->hierarchy;

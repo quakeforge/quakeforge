@@ -38,6 +38,8 @@
 #include "QF/scene/hierarchy.h"
 #include "QF/scene/transform.h"
 
+#include "scn_internal.h"
+
 #if defined(_WIN32) && !defined(_WIN64)
 // FIXME (maybe) this is a hack to make DARRAY arrrays 16-byte aligned on
 // 32-bit systems (in particular for this case, windows) as the vectors and
@@ -430,11 +432,12 @@ Hierarchy_New (size_t grow, int createRoot)
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
-	for (size_t i = 0; i < hierarchy->transform.size; i++) {
-		free (hierarchy->transform.a[i]);
-	}
-	for (size_t i = 0; i < hierarchy->name.size; i++) {
-		free (hierarchy->name.a[i]);
+	if (hierarchy->transform.size) {
+		scene_resources_t *res = hierarchy->transform.a[0]->scene->resources;
+
+		for (size_t i = 0; i < hierarchy->transform.size; i++) {
+			PR_RESFREE (res->transforms, hierarchy->transform.a[i]);
+		}
 	}
 	DARRAY_CLEAR (&hierarchy->transform);
 	DARRAY_CLEAR (&hierarchy->entity);
