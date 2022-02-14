@@ -329,6 +329,7 @@ if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf_input="\$(include_qf_input)"
 	qfac_include_qf_math="\$(include_qf_math)"
 	qfac_include_qf_plugin="\$(include_qf_plugin)"
+	qfac_include_qf_progs="\$(include_qf_progs)"
 	qfac_include_qf_scene="\$(include_qf_scene)"
 	qfac_include_qf_simd="\$(include_qf_simd)"
 	qfac_include_qf_ui="\$(include_qf_ui)"
@@ -340,6 +341,7 @@ QF_SUBST(qfac_include_qf_glsl)
 QF_SUBST(qfac_include_qf_input)
 QF_SUBST(qfac_include_qf_math)
 QF_SUBST(qfac_include_qf_plugin)
+QF_SUBST(qfac_include_qf_progs)
 QF_SUBST(qfac_include_qf_scene)
 QF_SUBST(qfac_include_qf_simd)
 QF_SUBST(qfac_include_qf_ui)

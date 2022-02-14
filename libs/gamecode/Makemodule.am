@@ -21,7 +21,7 @@ libs_gamecode_libQFgamecode_la_SOURCES= \
 	libs/gamecode/pr_v6p_opcode.c \
 	libs/gamecode/pr_zone.c
 
-noinst_PYTHON += $(opcodes_py)
+noinst_PYTHON += $(opcodes_py) $(convert_py) $(hops_py)
 
 opcodes_py = $(srcdir)/libs/gamecode/opcodes.py
 pr_opcode_cinc = $(top_builddir)/libs/gamecode/pr_opcode.cinc

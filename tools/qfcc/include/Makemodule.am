@@ -11,6 +11,7 @@ EXTRA_DIST += \
 	tools/qfcc/include/dot.h \
 	tools/qfcc/include/emit.h \
 	tools/qfcc/include/expr.h \
+	tools/qfcc/include/expr_names.h \
 	tools/qfcc/include/flow.h \
 	tools/qfcc/include/function.h \
 	tools/qfcc/include/grab.h \
@@ -32,4 +33,5 @@ EXTRA_DIST += \
 	tools/qfcc/include/switch.h \
 	tools/qfcc/include/symtab.h \
 	tools/qfcc/include/type.h \
-	tools/qfcc/include/value.h
+	tools/qfcc/include/value.h \
+	tools/qfcc/include/vec_types.h
