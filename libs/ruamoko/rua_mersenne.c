@@ -89,7 +89,7 @@ bi_mtwist_new (progs_t *pr, void *_res)
 	R_INT (pr) = state_index (res, mt);
 }
 
-static mtstate_t *
+static mtstate_t * __attribute__((pure))
 get_state (progs_t *pr, mtwist_resources_t *res, const char *name, int index)
 {
 	mtstate_t *mt = state_get (res, index);

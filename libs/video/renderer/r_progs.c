@@ -107,7 +107,7 @@ qpic_index (draw_resources_t *res, qpic_res_t *qp)
 	return PR_RESINDEX (res->qpic_map, qp);
 }
 
-static qpic_res_t *
+static qpic_res_t * __attribute__((pure))
 get_qpic (progs_t *pr, draw_resources_t *res, const char *name, int qpic_handle)
 {
 	qpic_res_t *qp = qpic_get (res, qpic_handle);

@@ -110,7 +110,7 @@ alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 	return msgbuf_index (res, msgbuf);
 }
 
-static msgbuf_t *
+static msgbuf_t * __attribute__((pure))
 get_msgbuf (progs_t *pr, msgbuf_resources_t *res, const char *name, int msgbuf)
 {
 	msgbuf_t   *mb = msgbuf_get (res, msgbuf);

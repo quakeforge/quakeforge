@@ -102,7 +102,7 @@ bi_il_clear (progs_t *pr, void *_res)
 	il_data_reset (res);
 }
 
-static il_data_t *
+static il_data_t * __attribute__((pure))
 get_inputline (progs_t *pr, il_resources_t *res, int arg, const char *func)
 {
 	il_data_t  *line = il_data_get (res, arg);

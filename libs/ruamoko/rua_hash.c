@@ -177,7 +177,7 @@ bi_Hash_NewTable (progs_t *pr, void *_res)
 	R_INT (pr) = table_index (res, ht);
 }
 
-static bi_hashtab_t *
+static bi_hashtab_t * __attribute__((pure))
 get_table (progs_t *pr, hash_resources_t *res, const char *name, int index)
 {
 	bi_hashtab_t *ht = table_get (res, index);
