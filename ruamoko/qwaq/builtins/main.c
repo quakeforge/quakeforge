@@ -113,6 +113,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	Qclose (file);
 	*_size = size;
 	return sym;
 }
