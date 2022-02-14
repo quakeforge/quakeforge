@@ -35,7 +35,7 @@ TESTS += $(libs_gamecode_tests)
 
 check_PROGRAMS += $(libs_gamecode_tests)
 
-EXTRA_DIST += head.c main.c
+EXTRA_DIST += libs/gamecode/test/head.c libs/gamecode/test/main.c
 
 test_gamecode_libs= \
 	libs/gamecode/libQFgamecode.la \
