@@ -41,7 +41,8 @@
 
 #include "def.h"
 
-#define MAX_DEF_SIZE ((int)PR_SIZEOF(lvec4))
+// The maximum size of a temp def, return value, or parameter value
+#define MAX_DEF_SIZE 32
 
 /** Represent an overloading of a function.
 
@@ -152,6 +153,7 @@ param_t *check_params (param_t *params);
 
 enum storage_class_e;
 struct defspace_s;
+int value_too_large (struct type_s *val_type) __attribute__((const));
 void make_function (struct symbol_s *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
 struct symbol_s *function_symbol (struct symbol_s *sym,
