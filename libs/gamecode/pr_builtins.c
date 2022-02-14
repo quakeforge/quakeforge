@@ -121,7 +121,7 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data)
 		bi->name = "invalid function";
 		bi->proc = bi_no_function;
 		bi->binum = builtin_next (pr);
-		pr->bi_no_function = bi->binum;
+		pr->bi_no_function = bi;
 		DARRAY_APPEND (pr->builtin_blocks, bi);
 		Hash_AddElement (pr->builtin_num_hash, bi);
 	}
@@ -212,9 +212,8 @@ PR_RelocateBuiltins (progs_t *pr)
 			if (!bi) {
 				Sys_Printf ("PR_RelocateBuiltins: %s: undefined builtin %s\n",
 							pr->progs_name, bi_name);
-				desc->first_statement = -pr->bi_no_function;
+				bi = pr->bi_no_function;
 				bad = 1;
-				continue;
 			}
 			desc->first_statement = -bi->binum;
 		}

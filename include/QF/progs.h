@@ -1898,7 +1898,7 @@ struct progs_s {
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	struct biblock_s *builtin_blocks;
-	pr_int_t    bi_no_function;
+	builtin_t  *bi_no_function;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
 	///@}
