@@ -81,7 +81,7 @@ void Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation);
 vec4f_t Transform_GetWorldScale (const transform_t *transform) __attribute__((pure));
 void Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 								  vec4f_t rotation, vec4f_t position);
-// NOTE: these use X: right, Y: forward, Z:up
+// NOTE: these use X: forward, -Y: right, Z:up
 // aslo, not guaranteed to be normalized or even orthogonal
 vec4f_t Transform_Forward (const transform_t *transform) __attribute__((pure));
 vec4f_t Transform_Right (const transform_t *transform) __attribute__((pure));
