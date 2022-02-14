@@ -37,4 +37,5 @@ libs_ruamoko_libQFruamoko_client_la_DEPENDENCIES= \
 libs_ruamoko_libQFruamoko_client_la_SOURCES= \
 	libs/ruamoko/rua_game_init.c \
 	libs/ruamoko/rua_input.c \
-	libs/ruamoko/rua_mersenne.c
+	libs/ruamoko/rua_mersenne.c \
+	libs/ruamoko/rua_scene.c
