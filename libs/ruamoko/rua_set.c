@@ -136,7 +136,7 @@ res_set_iter_index (set_resources_t *res, bi_set_iter_t *set_iter)
 	return PR_RESINDEX(res->set_iter_map, set_iter);
 }
 
-static bi_set_t *
+static bi_set_t * __attribute__((pure))
 get_set (progs_t *pr, set_resources_t *res, const char *name, int index)
 {
 	bi_set_t   *set = res_set_get (res, index);
@@ -146,7 +146,7 @@ get_set (progs_t *pr, set_resources_t *res, const char *name, int index)
 	return set;
 }
 
-static bi_set_iter_t *
+static bi_set_iter_t * __attribute__((pure))
 get_set_iter (progs_t *pr, set_resources_t *res, const char *name, int index)
 {
 	bi_set_iter_t   *set = res_set_iter_get (res, index);

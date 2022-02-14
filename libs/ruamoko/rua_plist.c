@@ -142,7 +142,7 @@ plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
 	plist_free (res, plist);
 }
 
-static always_inline bi_plist_t *
+static always_inline bi_plist_t * __attribute__((pure))
 get_plist (progs_t *pr, plist_resources_t *res, const char *name, int handle)
 {
 	bi_plist_t *plist = plist_get (res, handle);

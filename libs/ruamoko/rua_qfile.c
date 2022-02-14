@@ -158,7 +158,7 @@ bi_Qopen (progs_t *pr, void *_res)
 		Qclose (file);
 }
 
-static qfile_t *
+static qfile_t * __attribute__((pure))
 get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 {
 	qfile_t    *h = handle_get (res, handle);
