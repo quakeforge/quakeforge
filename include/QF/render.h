@@ -172,8 +172,8 @@ typedef struct renderer_s {
 
 typedef struct entity_s {
 	struct entity_s *next;
-
 	struct transform_s *transform;
+	int         id;		///< scene id
 	animation_t animation;
 	visibility_t visibility;
 	renderer_t  renderer;
