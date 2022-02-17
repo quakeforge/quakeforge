@@ -1546,7 +1546,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	}
 	if (bctx->skybox_tex) {
 		bctx->skybox_descriptor
-			= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
+			= Vulkan_CreateTextureDescriptor (ctx, bctx->skybox_tex,
 											  bctx->sampler);
 		Sys_MaskPrintf (SYS_vulkan, "Skybox %s loaded\n", sky);
 	}
