@@ -793,11 +793,11 @@
 					specializationInfo = {
 						mapEntries = (
 							// doSkyBox
-							{ size = 4; offset = 4; constantID = 0; },
+							{ size = 4; offset = 0; constantID = 0; },
 							// doSkySheet
-							{ size = 4; offset = 0; constantID = 1; },
+							{ size = 4; offset = 4; constantID = 1; },
 						);
-						data = "array(0, 1)";
+						data = "array(1, 0)";
 					};
 				},
 			);
