@@ -77,8 +77,8 @@ QFV_PerspectiveTan (mat4f_t proj, float fov, float aspect)
 	fard = r_farclip->value;
 
 	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
-	proj[1] = (vec4f_t) { 0, -f, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, fard / (neard - fard), -1 };
+	proj[1] = (vec4f_t) { 0, f, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, fard / (fard - neard), 1 };
 	proj[3] = (vec4f_t) { 0, 0, (neard * fard) / (neard - fard), 0 };
 }
 

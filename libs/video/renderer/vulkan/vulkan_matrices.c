@@ -64,11 +64,13 @@ static void
 setup_view (vulkan_ctx_t *ctx)
 {
 	mat4f_t     view;
+	// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
+	// z-forward, x-right, y-down.
 	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
-		{-1, 0,  0, 0},
-		{ 0, 1,  0, 0},
-		{ 0, 0,  0, 1},
+		{ 0, 0, 1, 0},
+		{-1, 0, 0, 0},
+		{ 0,-1, 0, 0},
+		{ 0, 0, 0, 1},
 	};
 	vec4f_t     offset = { 0, 0, 0, 1 };
 
