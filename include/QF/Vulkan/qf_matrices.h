@@ -68,6 +68,11 @@ typedef struct matrixctx_s {
 	struct qfv_stagebuf_s *stage;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
+
+	vec4f_t      sky_rotation[2];
+	vec4f_t      sky_velocity;
+	vec4f_t      sky_fix;
+	double       sky_time;
 } matrixctx_t;
 
 struct vulkan_ctx_s;
@@ -76,6 +81,7 @@ struct qfv_renderframe_s;
 void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx);
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
 void Vulkan_SetViewMatrix (struct vulkan_ctx_s *ctx, mat4f_t view);
+void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 
 void Vulkan_Matrix_Init (struct vulkan_ctx_s *ctx);

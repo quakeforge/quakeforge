@@ -413,13 +413,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bsppoly_t  *poly;
 	mod_brush_t *brush;
 
-	bctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
-	bctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
-	bctx->sky_rotation[1] = bctx->sky_rotation[0];
-	bctx->sky_velocity = (vec4f_t) { };
-	bctx->sky_velocity = qexpf (bctx->sky_velocity);
-	bctx->sky_time = vr_data.realtime;
-
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
@@ -948,30 +941,7 @@ turb_end (vulkan_ctx_t *ctx)
 
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTurb], ctx);
 }
-/*XXX
-static void
-spin (mat4f_t mat, bspctx_t *bctx)
-{
-	vec4f_t     q;
-	mat4f_t     m;
-	float       blend;
 
-	while (vr_data.realtime - bctx->sky_time > 1) {
-		bctx->sky_rotation[0] = bctx->sky_rotation[1];
-		bctx->sky_rotation[1] = qmulf (bctx->sky_velocity,
-									   bctx->sky_rotation[0]);
-		bctx->sky_time += 1;
-	}
-	blend = bound (0, (vr_data.realtime - bctx->sky_time), 1);
-
-	q = Blend (bctx->sky_rotation[0], bctx->sky_rotation[1], blend);
-	q = normalf (qmulf (bctx->sky_fix, q));
-	mat4fidentity (mat);
-	VectorNegate (r_origin, mat[3]);
-	mat4fquat (m, q);
-	mmulf (mat, m, mat);
-}
-*/
 static void
 sky_begin (qfv_renderframe_t *rFrame)
 {
@@ -980,8 +950,6 @@ sky_begin (qfv_renderframe_t *rFrame)
 
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
-
-	//XXX spin (ctx->matrices.sky_3d, bctx);
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 

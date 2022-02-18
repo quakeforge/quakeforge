@@ -86,6 +86,32 @@ setup_view (vulkan_ctx_t *ctx)
 	Vulkan_SetViewMatrix (ctx, view);
 }
 
+static void
+setup_sky (vulkan_ctx_t *ctx)
+{
+	__auto_type mctx = ctx->matrix_context;
+	vec4f_t     q;
+	mat4f_t     m;
+	float       blend;
+	mat4f_t     mat;
+
+	while (vr_data.realtime - mctx->sky_time > 1) {
+		mctx->sky_rotation[0] = mctx->sky_rotation[1];
+		mctx->sky_rotation[1] = qmulf (mctx->sky_velocity,
+									   mctx->sky_rotation[0]);
+		mctx->sky_time += 1;
+	}
+	blend = bound (0, (vr_data.realtime - mctx->sky_time), 1);
+
+	q = Blend (mctx->sky_rotation[0], mctx->sky_rotation[1], blend);
+	q = normalf (qmulf (mctx->sky_fix, q));
+	mat4fidentity (mat);
+	VectorNegate (r_origin, mat[3]);
+	mat4fquat (m, q);
+	mmulf (mat, m, mat);
+	Vulkan_SetSkyMatrix (ctx, mat);
+}
+
 void
 Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
 {
@@ -93,6 +119,17 @@ Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
 
 	if (memcmp (mctx->matrices.View, view, sizeof (mat4f_t))) {
 		memcpy (mctx->matrices.View, view, sizeof (mat4f_t));
+		mctx->dirty = mctx->frames.size;
+	}
+}
+
+void
+Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
+{
+	__auto_type mctx = ctx->matrix_context;
+
+	if (memcmp (mctx->matrices.Sky, sky, sizeof (mat4f_t))) {
+		memcpy (mctx->matrices.Sky, sky, sizeof (mat4f_t));
 		mctx->dirty = mctx->frames.size;
 	}
 }
@@ -108,6 +145,7 @@ Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
 	__auto_type mframe = &mctx->frames.a[ctx->curFrame];
 
 	setup_view (ctx);
+	setup_sky (ctx);
 
 	if (mctx->dirty <= 0) {
 		mctx->dirty = 0;
@@ -241,10 +279,18 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 	}
 	free (sets);
 
+	mctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
+	mctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
+	mctx->sky_rotation[1] = mctx->sky_rotation[0];
+	mctx->sky_velocity = (vec4f_t) { };
+	mctx->sky_velocity = qexpf (mctx->sky_velocity);
+	mctx->sky_time = vr_data.realtime;
+
 	mat4fidentity (mctx->matrices.Projection3d);
 	mat4fidentity (mctx->matrices.View);
 	mat4fidentity (mctx->matrices.Sky);
 	mat4fidentity (mctx->matrices.Projection2d);
+
 	mctx->dirty = mctx->frames.size;
 
 	mctx->stage = QFV_CreateStagingBuffer (device, "matrix",
