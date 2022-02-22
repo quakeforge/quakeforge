@@ -30,14 +30,15 @@
 
 #include <stdio.h>
 
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/render.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
 #include "client/state.h"
 #include "client/view.h"
 
@@ -160,6 +161,8 @@ typedef struct client_state_s {
 	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
 	viewstate_t viewstate;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
 // pitch drifting vars
 	float       idealpitch;
@@ -230,18 +233,6 @@ typedef struct client_state_s {
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_color;
 
-extern struct cvar_s	*cl_upspeed;
-extern struct cvar_s	*cl_forwardspeed;
-extern struct cvar_s	*cl_backspeed;
-extern struct cvar_s	*cl_sidespeed;
-
-extern struct cvar_s	*cl_movespeedkey;
-
-extern struct cvar_s	*cl_yawspeed;
-extern struct cvar_s	*cl_pitchspeed;
-
-extern struct cvar_s	*cl_anglespeedkey;
-
 extern struct cvar_s	*cl_autofire;
 
 extern struct cvar_s	*cl_shownet;
@@ -250,12 +241,6 @@ extern struct cvar_s	*cl_nolerp;
 extern struct cvar_s	*hud_sbar;
 
 extern struct cvar_s	*cl_pitchdriftspeed;
-extern struct cvar_s	*lookspring;
-
-extern struct cvar_s	*m_pitch;
-extern struct cvar_s	*m_yaw;
-extern struct cvar_s	*m_forward;
-extern struct cvar_s	*m_side;
 
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_writecfg;
@@ -297,8 +282,8 @@ void CL_NextDemo (void);
 
 
 // cl_input
-void CL_Input_Init (struct cbuf_s *cbuf);
-void CL_Input_Activate (void);
+void CL_Init_Input (struct cbuf_s *cbuf);
+void CL_Init_Input_Cvars (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
 
@@ -325,9 +310,6 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 
 
 // view
-void V_StartPitchDrift (void);
-void V_StopPitchDrift (void);
-
 void V_UpdatePalette (void);
 void V_Register (void);
 void V_ParseDamage (void);
@@ -338,12 +320,6 @@ void V_PrepBlend (void);
 void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
-
-extern in_button_t  in_left, in_right, in_forward, in_back;
-extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern in_button_t  in_use, in_jump, in_attack;
-extern in_button_t  in_up, in_down;
-extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
 
 extern	double			realtime;
 

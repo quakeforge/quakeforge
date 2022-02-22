@@ -50,7 +50,8 @@
 #include "client/effects.h"
 #include "client/temp_entities.h"
 
-#include "nq/include/chase.h"
+#include "client/chase.h"
+
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 #include "nq/include/host.h"

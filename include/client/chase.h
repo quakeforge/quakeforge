@@ -25,13 +25,18 @@
 
 */
 
-#ifndef __chase_h
-#define __chase_h
+#ifndef __client_chase_h
+#define __client_chase_h
+
+typedef struct chasestate_s {
+	struct model_s *worldmodel;
+	struct viewstate_s *viewstate;
+} chasestate_t;
 
 extern	struct cvar_s	*chase_active;
 
 void Chase_Init_Cvars (void);
 void Chase_Reset (void);
-void Chase_Update (void);
+void Chase_Update (chasestate_t *cs);
 
-#endif // __chase_h
+#endif // __client_chase_h

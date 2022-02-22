@@ -55,7 +55,6 @@
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
 
-#include "qw/include/chase.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_ents.h"
 #include "qw/include/cl_main.h"

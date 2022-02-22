@@ -58,7 +58,8 @@
 #include "buildnum.h"
 #include "compat.h"
 
-#include "nq/include/chase.h"
+#include "client/chase.h"
+
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 #include "nq/include/sv_progs.h"

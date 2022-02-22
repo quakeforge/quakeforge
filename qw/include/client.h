@@ -36,7 +36,9 @@
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
 #include "client/state.h"
 #include "client/view.h"
 
@@ -198,6 +200,8 @@ typedef struct client_state_s {
 // the client maintains its own idea of view angles, which are sent to the
 // server each frame.  And reset only at level change and teleport times
 	viewstate_t viewstate;
+	movestate_t movestate;
+	chasestate_t chasestate;
 // pitch drifting vars
 	float       idealpitch;
 	float       pitchvel;
@@ -275,18 +279,6 @@ extern	struct cvar_s	*cl_netgraph_height;
 extern	struct cvar_s	*cl_netgraph_alpha;
 extern	struct cvar_s	*cl_netgraph_box;
 
-extern	struct cvar_s	*cl_upspeed;
-extern	struct cvar_s	*cl_forwardspeed;
-extern	struct cvar_s	*cl_backspeed;
-extern	struct cvar_s	*cl_sidespeed;
-
-extern	struct cvar_s	*cl_movespeedkey;
-
-extern	struct cvar_s	*cl_yawspeed;
-extern	struct cvar_s	*cl_pitchspeed;
-
-extern	struct cvar_s	*cl_anglespeedkey;
-
 extern	struct cvar_s	*cl_draw_locs;
 extern	struct cvar_s	*cl_shownet;
 extern	struct cvar_s	*hud_sbar;
@@ -294,12 +286,6 @@ extern	struct cvar_s	*hud_sbar_separator;
 extern	struct cvar_s	*hud_swap;
 
 extern	struct cvar_s	*cl_pitchdriftspeed;
-extern	struct cvar_s	*lookspring;
-
-extern	struct cvar_s	*m_pitch;
-extern	struct cvar_s	*m_yaw;
-extern	struct cvar_s	*m_forward;
-extern	struct cvar_s	*m_side;
 
 extern	struct cvar_s	*cl_name;
 

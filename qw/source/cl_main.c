@@ -158,13 +158,6 @@ cvar_t     *cl_cshift_powerup;
 
 cvar_t     *cl_model_crcs;
 
-cvar_t     *lookspring;
-
-cvar_t     *m_pitch;
-cvar_t     *m_yaw;
-cvar_t     *m_forward;
-cvar_t     *m_side;
-
 cvar_t     *cl_predict_players;
 cvar_t     *cl_solid_players;
 
@@ -1172,7 +1165,7 @@ CL_SetState (cactive_t state)
 	}
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
 	if (state != old_state && state == ca_active) {
-		CL_Input_Activate ();
+		CL_Input_Activate (!cls.demoplayback);
 	}
 }
 
@@ -1211,7 +1204,7 @@ CL_Init (void)
 
 	Sbar_Init ();
 
-	CL_Input_Init ();
+	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
 	CL_Particles_Init ();
 	CL_TEnts_Init ();
@@ -1313,6 +1306,23 @@ cl_cmd_pkt_adr_f (cvar_t *var)
 }
 
 static void
+cl_pitchspeed_f (cvar_t *var)
+{
+	if ((cl.fpd & FPD_LIMIT_PITCH) && var->value > FPD_MAXPITCH) {
+		var->value = FPD_MAXPITCH;
+	}
+}
+
+static void
+cl_yawspeed_f (cvar_t *var)
+{
+	if ((cl.fpd & FPD_LIMIT_YAW) && var->value > FPD_MAXYAW) {
+		var->value = FPD_MAXYAW;
+	}
+}
+
+
+static void
 CL_Init_Cvars (void)
 {
 	VID_Init_Cvars ();
@@ -1321,13 +1331,16 @@ CL_Init_Cvars (void)
 	S_Init_Cvars ();
 
 	CL_Cam_Init_Cvars ();
-	CL_Input_Init_Cvars ();
+	CL_Init_Input_Cvars ();
 	CL_Prediction_Init_Cvars ();
 	CL_NetGraph_Init_Cvars ();
 	Game_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
+
+	cl_pitchspeed->callback = cl_pitchspeed_f;
+	cl_yawspeed->callback = cl_yawspeed_f;
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
@@ -1358,24 +1371,8 @@ CL_Init_Cvars (void)
 								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
 								  "Shift view colors for powerups");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
-								 "turn `run' speed multiplier");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
-							 "backward speed");
 	cl_fb_players = Cvar_Get ("cl_fb_players", "0", CVAR_ARCHIVE, NULL, "fullbrightness of player models. "
 							"server must allow (via fbskins serverinfo).");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-								"move `run' speed multiplier");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-							  "look up/down speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-							 "strafe speed");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-							"turning speed");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
 							"write config files?");
 	cl_draw_locs = Cvar_Get ("cl_draw_locs", "0", CVAR_NONE, NULL,
@@ -1388,16 +1385,6 @@ CL_Init_Cvars (void)
 						   "connection timeout (since last packet received)");
 	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
 							"display host processing times");
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
-						   "to center when moving and no mlook/klook");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
-						  "mouse forward/back speed");
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-						"mouse pitch (up/down) multipier");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
-					   "mouse strafe speed");
-	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
-					  "mouse yaw (left/right) multiplier");
 	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
 							  "remote control password");
 	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "

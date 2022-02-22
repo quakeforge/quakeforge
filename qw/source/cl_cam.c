@@ -48,7 +48,6 @@
 #include "compat.h"
 #include "sbar.h"
 
-#include "qw/include/chase.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_input.h"
 #include "qw/include/client.h"

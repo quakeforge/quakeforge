@@ -39,7 +39,7 @@
 
 #include "qw/bothdefs.h"
 
-#include "qw/include/chase.h"
+#include "client/chase.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_ents.h"
 #include "qw/include/cl_main.h"
@@ -701,7 +701,7 @@ V_CalcRefdef (void)
 	}
 
 	if (cl.chase && chase_active->int_val) {
-		Chase_Update ();
+		Chase_Update (&cl.chasestate);
 	}
 }
 
