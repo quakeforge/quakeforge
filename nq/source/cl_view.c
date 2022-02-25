@@ -579,8 +579,8 @@ V_CalcViewRoll (void)
 static void
 V_CalcIntermissionRefdef (void)
 {
-    // ent is the player model (visible when out of body)
-    entity_t   *ent = &cl_entities[cl.viewentity];
+	// ent is the player model (visible when out of body)
+	entity_t   *ent = &cl_entities[cl.viewentity];
 	entity_t   *view;
 	float       old;
     vec4f_t     origin = Transform_GetWorldPosition (ent->transform);

@@ -580,7 +580,8 @@ V_CalcViewRoll (void)
 static void
 V_CalcIntermissionRefdef (void)
 {
-    entity_t   *ent = &cl_entities[cl.viewentity];
+	// ent is the player model (visible when out of body)
+	entity_t   *ent = &cl_entities[cl.viewentity];
 	entity_t   *view;
 	float       old;
     vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
@@ -591,7 +592,6 @@ V_CalcIntermissionRefdef (void)
 
 	r_data->refdef->viewposition = origin;
 	r_data->refdef->viewrotation = rotation;
-	view->renderer.model = NULL;
 	view->renderer.model = NULL;
 
 	// always idle in intermission
@@ -716,7 +716,7 @@ DropPunchAngle (void)
 		cl.viewstate.punchangle = (vec4f_t) { 0, 0, 0, 1 };
 		return;
 	}
-	float		pc = punch[3];
+	float       pc = punch[3];
 	float       ds = 0.0871557427 * cl.viewstate.frametime;
 	float       dc = sqrt (1 - ds * ds);
 	float       s = ps * dc - pc * ds;
