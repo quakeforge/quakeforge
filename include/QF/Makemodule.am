@@ -140,6 +140,7 @@ include_qf_progs = \
 	include/QF/progs/pr_type_names.h
 
 include_qf_scene = \
+	include/QF/scene/camera.h \
 	include/QF/scene/entity.h \
 	include/QF/scene/hierarchy.h \
 	include/QF/scene/transform.h \
