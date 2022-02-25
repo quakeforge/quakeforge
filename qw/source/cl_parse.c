@@ -831,6 +831,8 @@ CL_ParseServerData (void)
 	}
 
 	cl.viewentity = cl.playernum + 1;
+	cl.viewstate.player_entity = &cl_entities[cl.viewentity];
+	cl.viewstate.bob_enabled = !cl.spectator;
 
 	// get the full level name
 	str = MSG_ReadString (net_message);
@@ -1216,7 +1218,7 @@ CL_ServerInfo (void)
 
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
-		cl.chase = atoi (value);
+		cl.viewstate.chase = atoi (value);
 	} else if (strequal (key, "cshifts")) {
 		cl.sv_cshifts = atoi (value);
 	} else if (strequal (key, "no_pogo_stick")) {
@@ -1260,6 +1262,8 @@ CL_SetStat (int stat, int value)
 	switch (stat) {
 		case STAT_ITEMS:
 			Sbar_Changed ();
+#define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
+			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
@@ -1270,6 +1274,7 @@ CL_SetStat (int stat, int value)
 			break;
 	}
 	cl.stats[stat] = value;
+	cl.viewstate.weapon_model = cl.model_precache[cl.stats[STAT_WEAPON]];
 }
 
 static void
@@ -1501,7 +1506,9 @@ CL_ParseServerMessage (void)
 			//   svc_particle
 
 			case svc_damage:
-				V_ParseDamage ();
+				V_ParseDamage (&cl.viewstate);
+				// put sbar face into pain frame
+				cl.faceanimtime = cl.time + 0.2;
 				break;
 
 			case svc_spawnstatic:

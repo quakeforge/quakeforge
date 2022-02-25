@@ -91,7 +91,7 @@ CL_BaseMove (usercmd_t *cmd)
 		return;
 	}
 	VectorCopy (cl.viewstate.angles, cl.movestate.angles);//FIXME
-	CL_Input_BuildMove (host_frametime, &cl.movestate);
+	CL_Input_BuildMove (host_frametime, &cl.movestate, &cl.viewstate);
 	VectorCopy (cl.movestate.angles, cl.viewstate.angles);//FIXME
 
 	memset (cmd, 0, sizeof (*cmd));

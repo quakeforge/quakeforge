@@ -57,8 +57,11 @@ typedef struct movestate_s {
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
+struct viewstate_s;
+
 void CL_OnFocusChange (void (*func) (int game));
-void CL_Input_BuildMove (float frametime, movestate_t *state);
+void CL_Input_BuildMove (float frametime, movestate_t *state,
+						 struct viewstate_s *vs);
 void CL_Input_Init (struct cbuf_s *cbuf);
 void CL_Input_Init_Cvars (void);
 void CL_Input_Activate (int in_game);

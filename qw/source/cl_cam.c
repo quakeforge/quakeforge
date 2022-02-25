@@ -116,7 +116,7 @@ vectoangles (vec3_t vec, vec3_t ang)
 qboolean
 Cam_DrawViewModel (void)
 {
-	if (cl.chase && chase_active->int_val)
+	if (cl.viewstate.chase && chase_active->int_val)
 		return false;
 
 	if (!cl.spectator)
@@ -132,7 +132,7 @@ qboolean
 Cam_DrawPlayer (int playernum)
 {
 	if (playernum == cl.playernum) {						// client player
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active->int_val == 0)
 			return false;
 		if (!cl.spectator)
 			return true;
@@ -141,7 +141,7 @@ Cam_DrawPlayer (int playernum)
 			return true;
 		if (cl.spectator && autocam && locked && spec_track == playernum)
 			return false;
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active->int_val == 0)
 			return true;
 	}
 	return false;

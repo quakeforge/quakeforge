@@ -213,7 +213,7 @@ cvar_t     *m_forward;
 cvar_t     *m_side;
 
 static void
-CL_AdjustAngles (float frametime, movestate_t *ms)
+CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 {
 	float       down, up;
 	float       pitchspeed, yawspeed;
@@ -235,7 +235,7 @@ CL_AdjustAngles (float frametime, movestate_t *ms)
 		delta[YAW] += yawspeed * IN_ButtonState (&in_left);
 	}
 	if (in_klook.state & inb_down) {
-		V_StopPitchDrift ();
+		V_StopPitchDrift (vs);
 		delta[PITCH] -= pitchspeed * IN_ButtonState (&in_forward);
 		delta[PITCH] += pitchspeed * IN_ButtonState (&in_back);
 	}
@@ -253,7 +253,7 @@ CL_AdjustAngles (float frametime, movestate_t *ms)
 	ms->angles += delta;
 
 	if (delta[PITCH]) {
-		V_StopPitchDrift ();
+		V_StopPitchDrift (vs);
 		ms->angles[PITCH] = bound (-70, ms->angles[PITCH], 80);
 	}
 	if (delta[ROLL]) {
@@ -340,13 +340,13 @@ CL_Legacy_Init (void)
 }
 
 void
-CL_Input_BuildMove (float frametime, movestate_t *state)
+CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 {
 	if (IN_ButtonReleased (&in_mlook) && !freelook && lookspring->int_val) {
-		V_StartPitchDrift ();
+		V_StartPitchDrift (vs);
 	}
 
-	CL_AdjustAngles (frametime, state);
+	CL_AdjustAngles (frametime, state, vs);
 
 	vec4f_t     move = {};
 
@@ -376,7 +376,7 @@ CL_Input_BuildMove (float frametime, movestate_t *state)
 	move[UP] -= IN_UpdateAxis (&viewdelta_position_up);
 
 	if (freelook)
-		V_StopPitchDrift ();
+		V_StopPitchDrift (vs);
 
 	//if (cl.chase
 	//	&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {

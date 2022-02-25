@@ -367,6 +367,8 @@ CL_ParseServerInfo (void)
 	}
 	cl.players = Hunk_AllocName (0, cl.maxclients * sizeof (*cl.players),
 								 "players");
+	cl.viewstate.voffs_enabled = cl.maxclients == 1;
+	cl.viewstate.bob_enabled = 1;
 	for (i = 0; i < cl.maxclients; i++) {
 		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
 		cl.players[i].name = Info_Key (cl.players[i].userinfo, "name");
@@ -653,14 +655,14 @@ CL_ParseClientdata (void)
 		bits |= MSG_ReadByte (net_message) << 24;
 
 	if (bits & SU_VIEWHEIGHT)
-		cl.viewheight = ((signed char) MSG_ReadByte (net_message));
+		cl.viewstate.height = ((signed char) MSG_ReadByte (net_message));
 	else
-		cl.viewheight = DEFAULT_VIEWHEIGHT;
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;
 
 	if (bits & SU_IDEALPITCH)
-		cl.idealpitch = ((signed char) MSG_ReadByte (net_message));
+		cl.viewstate.idealpitch = ((signed char) MSG_ReadByte (net_message));
 	else
-		cl.idealpitch = 0;
+		cl.viewstate.idealpitch = 0;
 
 	cl.frameVelocity[1] = cl.frameVelocity[0];
 	vec3_t      punchangle = { };
@@ -691,6 +693,8 @@ CL_ParseClientdata (void)
 			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
 				cl.item_gettime[j] = cl.time;
 		cl.stats[STAT_ITEMS] = i;
+#define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
+		cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS] & IT_POWER) >> 19;
 	}
 
 	cl.viewstate.onground = (bits & SU_ONGROUND) ? 0 : -1;
@@ -700,6 +704,7 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte (net_message);
 	else
 		cl.stats[STAT_WEAPONFRAME] = 0;
+	cl.viewstate.weaponframe = cl.stats[STAT_WEAPONFRAME];
 
 	if (bits & SU_ARMOR)
 		i = MSG_ReadByte (net_message);
@@ -717,6 +722,7 @@ CL_ParseClientdata (void)
 	if (cl.stats[STAT_WEAPON] != i) {
 		cl.stats[STAT_WEAPON] = i;
 		Sbar_Changed ();
+		cl.viewstate.weapon_model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	}
 
 	i = (short) MSG_ReadShort (net_message);
@@ -914,6 +920,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setview:
 				cl.viewentity = MSG_ReadShort (net_message);
+				cl.viewstate.player_entity = &cl_entities[cl.viewentity];
 				break;
 
 			case svc_sound:
@@ -1047,7 +1054,9 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_damage:
-				V_ParseDamage ();
+				V_ParseDamage (&cl.viewstate);
+				// put sbar face into pain frame
+				cl.faceanimtime = cl.time + 0.2;
 				break;
 
 			case svc_spawnstatic:

@@ -213,12 +213,14 @@ CL_ClearState (void)
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
-	cl.chase = 1;
+	cl.viewstate.chase = 1;
+	cl.viewstate.chasestate = &cl.chasestate;
 	cl.watervis = 1;
 	r_data->force_fullscreen = 0;
 	r_data->lightstyle = cl.lightstyle;
 
 	CL_Init_Entity (&cl.viewent);
+	cl.viewstate.weapon_entity = &cl.viewent;
 	r_data->view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
@@ -241,7 +243,7 @@ CL_StopCshifts (void)
 	int i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++)
-		cl.cshifts[i].percent = 0;
+		cl.viewstate.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
@@ -285,6 +287,7 @@ CL_Disconnect (void)
 
 	cl.worldmodel = NULL;
 	cl.intermission = 0;
+	cl.viewstate.intermission = 0;
 }
 
 void
@@ -435,6 +438,7 @@ CL_ReadFromServer (void)
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
 	cl.viewstate.frametime = host_frametime;
+	cl.viewstate.time = cl.time;
 
 	do {
 		ret = CL_GetMessage ();
@@ -496,6 +500,8 @@ CL_SetState (cactive_t state)
 {
 	cactive_t   old_state = cls.state;
 	cls.state = state;
+	cl.viewstate.active = cls.state == ca_active;
+	cl.viewstate.drift_enabled = !cls.demoplayback;
 	Sys_MaskPrintf (SYS_net, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
 		if (old_state == ca_active) {

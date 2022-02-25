@@ -399,6 +399,8 @@ CL_ClearState (void)
 	r_data->force_fullscreen = 0;
 
 	cl.maxclients = MAX_CLIENTS;
+	cl.viewstate.voffs_enabled = 0;
+	cl.viewstate.chasestate = &cl.chasestate;
 
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
@@ -410,6 +412,7 @@ CL_ClearState (void)
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	CL_Init_Entity (&cl.viewent);
+	cl.viewstate.weapon_entity = &cl.viewent;
 
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
@@ -439,7 +442,7 @@ CL_StopCshifts (void)
 	int i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++)
-		cl.cshifts[i].percent = 0;
+		cl.viewstate.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
@@ -618,9 +621,9 @@ CL_FullServerinfo_f (void)
 			Sys_Printf ("Invalid QSG Protocol number: %s", p);
 	}
 
-	cl.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
+	cl.viewstate.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
 	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
-		cl.chase = atoi (p);
+		cl.viewstate.chase = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "cshifts")) && *p) {
 		cl.sv_cshifts = atoi (p);
@@ -801,6 +804,7 @@ CL_Changing_f (void)
 
 	S_StopAllSounds ();
 	cl.intermission = 0;
+	cl.viewstate.intermission = 0;
 	r_data->force_fullscreen = 0;
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
@@ -1141,6 +1145,8 @@ CL_SetState (cactive_t state)
 
 	Sys_MaskPrintf (SYS_dev, "CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
+	cl.viewstate.active = cls.state == ca_active;
+	cl.viewstate.drift_enabled = !cls.demoplayback;
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state

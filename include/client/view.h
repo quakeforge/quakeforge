@@ -30,6 +30,7 @@
 #define __client_view_h_
 
 #include "QF/mathlib.h"
+#include "QF/render.h"
 #include "QF/simd/types.h"
 
 #define INFO_CSHIFT_BONUS		(1 << 0)
@@ -41,12 +42,38 @@ typedef struct viewstate_s {
 	vec4f_t     movecmd;
 	vec4f_t     velocity;
 	vec4f_t     origin;
+	vec4f_t     punchangle;
 	vec3_t      angles;
+	float       frametime;
+	double      time;
+	float       height;
 	int         weaponframe;
 	int         onground;		// -1 when in air
+	int         active:1;
+	int         drift_enabled:1;
+	int         voffs_enabled:1;
+	int         bob_enabled:1;
+	int         intermission:1;
+	int         force_cshifts;	// bitfield of server enforced cshifts
 	uint32_t    flags;
-	float       frametime;
-	vec4f_t     punchangle;
+
+	int         powerup_index;
+	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
+	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
+
+// pitch drifting vars
+	float       idealpitch;
+	float       pitchvel;
+	qboolean    nodrift;
+	float       driftmove;
+	double      laststop;
+
+	struct model_s *weapon_model;
+	struct entity_s *weapon_entity;
+	struct entity_s *player_entity;
+
+	struct chasestate_s *chasestate;
+	int         chase;
 } viewstate_t;
 
 #define VF_DEAD 1
@@ -54,11 +81,11 @@ typedef struct viewstate_s {
 
 void V_Init (void);
 void V_Init_Cvars (void);
-void V_RenderView (void);
+void V_RenderView (viewstate_t *vs);
 float V_CalcRoll (const vec3_t angles, vec4f_t velocity);
-void V_StartPitchDrift (void);
-void V_StopPitchDrift (void);
+void V_StartPitchDrift (viewstate_t *vs);
+void V_StopPitchDrift (viewstate_t *vs);
 
-void V_SetContentsColor (int contents);
+void V_SetContentsColor (viewstate_t *vs, int contents);
 
 #endif // __client_view_h_

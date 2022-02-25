@@ -80,7 +80,7 @@ SCR_CShift (void)
 								cl.worldmodel);
 		contents = leaf->contents;
 	}
-	V_SetContentsColor (contents);
+	V_SetContentsColor (&cl.viewstate, contents);
 	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
@@ -164,7 +164,8 @@ CL_UpdateScreen (double realtime)
 	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
 	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
-	V_PrepBlend ();
-	V_RenderView ();
+	cl.viewstate.intermission = cl.intermission != 0;
+	V_PrepBlend (&cl.viewstate);
+	V_RenderView (&cl.viewstate);
 	SCR_UpdateScreen (realtime, scr_funcs[index]);
 }

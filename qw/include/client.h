@@ -191,9 +191,6 @@ typedef struct client_state_s {
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
 
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
-
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
@@ -202,15 +199,8 @@ typedef struct client_state_s {
 	viewstate_t viewstate;
 	movestate_t movestate;
 	chasestate_t chasestate;
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
 
@@ -249,7 +239,6 @@ typedef struct client_state_s {
 	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
-	int         chase;
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
@@ -327,9 +316,9 @@ void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
 
-void V_ParseDamage (void);
+void V_ParseDamage (viewstate_t *vs);
 
-void V_PrepBlend (void);
+void V_PrepBlend (viewstate_t *vs);
 
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);

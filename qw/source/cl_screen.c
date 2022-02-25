@@ -81,7 +81,7 @@ SCR_CShift (void)
 								cl.worldmodel);
 		contents = leaf->contents;
 	}
-	V_SetContentsColor (contents);
+	V_SetContentsColor (&cl.viewstate, contents);
 	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
@@ -186,7 +186,18 @@ CL_UpdateScreen (double realtime)
 	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
 	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
-	V_PrepBlend ();
-	V_RenderView ();
+	if (cl.viewstate.flags & VF_GIB) {
+		cl.viewstate.height = 8;			// gib view height
+	} else if (cl.viewstate.flags & VF_DEAD) {
+		cl.viewstate.height = -16;			// corpse view height
+	} else {
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
+		if (cl.stdver)
+			cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
+	}
+
+	cl.viewstate.intermission = cl.intermission != 0;
+	V_PrepBlend (&cl.viewstate);
+	V_RenderView (&cl.viewstate);
 	SCR_UpdateScreen (realtime, scr_funcs[index]);
 }
