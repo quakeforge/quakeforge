@@ -78,8 +78,17 @@ glsl_R_ViewChanged (void)
 	// NOTE columns!
 	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
 	proj[1] = (vec4f_t) { 0, f, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, (fard + neard) / (neard - fard), -1 };
-	proj[3] = (vec4f_t) { 0, 0, (2 * fard * neard) / (neard - fard), 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
+	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
+
+	// convert 0..1 depth buffer range to -1..1
+	static mat4f_t depth_range = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 2, 0},
+		{ 0, 0,-1, 1},
+	};
+	mmulf (proj, depth_range, proj);
 }
 
 void
@@ -90,9 +99,10 @@ glsl_R_SetupFrame (void)
 	r_framecount++;
 
 	VectorCopy (r_refdef.viewposition, r_origin);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+	vec4f_t     rotation = r_refdef.viewrotation;
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0,-1, 0, 0 }), vright);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
 
 
 	R_SetFrustum ();
@@ -105,7 +115,7 @@ R_SetupView (void)
 {
 	float       x, y, w, h;
 	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
+		{ 0, 0,  1, 0},
 		{-1, 0,  0, 0},
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
