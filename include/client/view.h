@@ -45,6 +45,7 @@ typedef struct viewstate_s {
 	vec4f_t     punchangle;
 	vec3_t      angles;
 	float       frametime;
+	struct transform_s *camera_transform;
 	double      time;
 	float       height;
 	int         weaponframe;

@@ -31,6 +31,7 @@
 #include <QF/qtypes.h>
 
 struct sfx_s;
+struct transform_s;
 
 typedef struct snd_render_funcs_s {
 	void      (*init) (void);
@@ -47,8 +48,7 @@ typedef struct snd_render_funcs_s {
 	struct sfx_s *(*precache_sound) (const char *sample);
 	struct sfx_s *(*load_sound) (const char *name);
 
-	void      (*update) (const vec3_t origin, const vec3_t v_forward,
-						 const vec3_t v_right, const vec3_t v_up,
+	void      (*update) (struct transform_s *ear,
 						 const byte *ambient_sound_levels);
 	void      (*stop_all_sounds) (void);
 	void      (*extra_update) (void);

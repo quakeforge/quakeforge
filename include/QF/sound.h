@@ -34,6 +34,8 @@
 
 #include "QF/mathlib.h"
 
+struct transform_s;
+
 /**
 	\ingroup sound
 */
@@ -129,16 +131,15 @@ void S_StopAllSounds(void);
 
 /** Update the sound engine with the client's position and orientation and
 	render some sound.
-	\param origin	3d coords of the client
+	\param ear		Transform for the position and orientation of the stereo
+					sound pickup.
 	\param v_forward 3d vector of the client's facing direction
 	\param v_right	3d vector of the client's rightward direction
 	\param v_up		3d vector of the client's upward direction
 	\param ambient_sound_level NUM_AMBIENTS bytes indicating current ambient
 					sound levels
 */
-void S_Update (const vec3_t origin, const vec3_t v_forward,
-			   const vec3_t v_right, const vec3_t v_up,
-			   const byte *ambient_sound_level);
+void S_Update (struct transform_s *ear, const byte *ambient_sound_level);
 
 /** Render some more sound without updating the client's position/orientation.
 */

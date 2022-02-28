@@ -54,6 +54,7 @@
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/transform.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -504,7 +505,9 @@ Host_ClearMemory (void)
 
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
+	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	cl.viewstate.camera_transform = cam;
 }
 
 /*
@@ -606,15 +609,16 @@ Host_ClientFrame (void)
 	if (cls.state == ca_active) {
 		mleaf_t    *l;
 		byte       *asl = 0;
+		vec4f_t     origin;
 
-		l = Mod_PointInLeaf (r_data->origin, cl.worldmodel);
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		l = Mod_PointInLeaf (&origin[0], cl.worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
-		S_Update (r_data->origin, r_data->vpn, r_data->vright, r_data->vup,
-				  asl);
+		S_Update (cl.viewstate.camera_transform, asl);
 		r_funcs->R_DecayLights (host_frametime);
 	} else
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
+		S_Update (0, 0);
 
 	CDAudio_Update ();
 

@@ -86,7 +86,7 @@ typedef struct tent_obj_s {
 
 static PR_RESMAP (tent_t) temp_entities;
 static PR_RESMAP (tent_obj_t) tent_objects;
-static scene_t *scene;
+scene_t *cl_scene;
 static tent_obj_t *cl_beams;
 static tent_obj_t *cl_explosions;
 
@@ -137,7 +137,7 @@ CL_TEnts_Precache (int phase)
 void
 CL_TEnts_Init (void)
 {
-	scene = Scene_NewScene ();
+	cl_scene = Scene_NewScene ();
 
 	QFS_GamedirCallback (CL_TEnts_Precache);
 	CL_TEnts_Precache (1);
@@ -155,7 +155,7 @@ CL_Init_Entity (entity_t *ent)
 	}
 	memset (ent, 0, sizeof (*ent));
 
-	ent->transform = Transform_New (scene, 0);
+	ent->transform = Transform_New (cl_scene, 0);
 	ent->renderer.skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
 	ent->animation.pose1 = ent->animation.pose2 = -1;

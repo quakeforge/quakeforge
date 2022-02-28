@@ -46,7 +46,6 @@ nq_cl_plugin_LIBS= \
 
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
-		libs/scene/libQFscene.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la
 
@@ -55,6 +54,7 @@ nq_server_LIBFILES= \
 		libs/models/libQFmodels.la
 
 nq_common_LIBFILES= \
+		libs/scene/libQFscene.la \
 		libs/net/libnet_main.la \
 		libs/console/libQFconsole.la \
 		libs/image/libQFimage.la \

@@ -31,12 +31,15 @@
 
 #include "QF/qtypes.h"
 
+struct transform_s;
+
 void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
-void SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs);
+void SCR_UpdateScreen (struct transform_s *camera, double realtime,
+					   SCR_Func *scr_funcs);
 
 void SCR_SizeUp (void);
 void SCR_SizeDown (void);

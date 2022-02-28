@@ -47,6 +47,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
 static channel_t *free_channels;
@@ -64,10 +66,10 @@ static sfx_t   *ambient_sfx[NUM_AMBIENTS];
 
 static vec_t    sound_nominal_clip_dist = 1000.0;
 
-static vec3_t   listener_origin;
-static vec3_t   listener_forward;
-static vec3_t   listener_right;
-static vec3_t   listener_up;
+static vec4f_t  listener_origin;
+static vec4f_t  listener_forward;
+static vec4f_t  listener_right;
+static vec4f_t  listener_up;
 
 static cvar_t  *snd_phasesep;
 static cvar_t  *snd_volumesep;
@@ -245,7 +247,8 @@ s_play_f (void *_snd)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
-		SND_StartSound (snd, hash++, 0, sfx, listener_origin, 1.0, 1.0);
+		//FIXME
+		SND_StartSound (snd, hash++, 0, sfx, &listener_origin[0], 1.0, 1.0);
 		i++;
 	}
 	dstring_delete (name);
@@ -270,7 +273,8 @@ s_playcenter_f (void *_snd)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
-		SND_StartSound (snd, viewent, 0, sfx, listener_origin, 1.0, 1.0);
+		//FIXME
+		SND_StartSound (snd, viewent, 0, sfx, &listener_origin[0], 1.0, 1.0);
 	}
 	dstring_delete (name);
 }
@@ -294,7 +298,8 @@ s_playvol_f (void *_snd)
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
 		vol = atof (Cmd_Argv (i + 1));
-		SND_StartSound (snd, hash++, 0, sfx, listener_origin, vol, 1.0);
+		//FIXME
+		SND_StartSound (snd, hash++, 0, sfx, &listener_origin[0], vol, 1.0);
 		i += 2;
 	}
 	dstring_delete (name);
@@ -539,17 +544,22 @@ s_combine_channel (channel_t *combine, channel_t *ch)
 }
 
 void
-SND_SetListener (snd_t *snd, const vec3_t origin, const vec3_t forward,
-				 const vec3_t right, const vec3_t up,
-				 const byte *ambient_sound_level)
+SND_SetListener (snd_t *snd, transform_t *ear, const byte *ambient_sound_level)
 {
 	int         i, j;
 	channel_t  *combine, *ch;
 
-	VectorCopy (origin, listener_origin);
-	VectorCopy (forward, listener_forward);
-	VectorCopy (right, listener_right);
-	VectorCopy (up, listener_up);
+	if (ear) {
+		listener_origin  = Transform_GetWorldPosition (ear);
+		listener_forward = Transform_Forward (ear);
+		listener_right   = Transform_Right (ear);
+		listener_up      = Transform_Up (ear);
+	} else {
+		listener_origin  = (vec4f_t) { };
+		listener_forward = (vec4f_t) {1, 0, 0, 0};
+		listener_right   = (vec4f_t) {0, -1, 0, 0};
+		listener_up      = (vec4f_t) {0, 0, 1, 0};
+	}
 
 	// update general area ambient sound sources
 	s_updateAmbientSounds (snd, ambient_sound_level);

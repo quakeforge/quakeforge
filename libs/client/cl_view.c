@@ -43,6 +43,7 @@
 #include "client/entities.h"
 #include "client/hud.h"
 #include "client/input.h"
+#include "client/temp_entities.h"//FIXME for cl_scene
 #include "client/view.h"
 
 /*
@@ -475,7 +476,7 @@ V_PrepBlend (viewstate_t *vs)
 static void
 CalcGunAngle (viewstate_t *vs)
 {
-	vec4f_t     rotation = r_data->refdef->viewrotation;
+	vec4f_t     rotation = Transform_GetWorldRotation (vs->camera_transform);
 	//FIXME make child of camera
 	Transform_SetWorldRotation (vs->weapon_entity->transform, rotation);
 }
@@ -483,7 +484,8 @@ CalcGunAngle (viewstate_t *vs)
 static void
 V_BoundOffsets (viewstate_t *vs)
 {
-	vec4f_t     offset = r_data->refdef->viewposition - vs->origin;
+	vec4f_t     offset = Transform_GetWorldPosition (vs->camera_transform);
+	offset -= vs->origin;
 
 	// absolutely bound refresh reletive to entity clipping hull
 	// so the view can never be inside a solid wall
@@ -491,7 +493,7 @@ V_BoundOffsets (viewstate_t *vs)
 	offset[0] = bound (-14, offset[0], 14);
 	offset[1] = bound (-14, offset[1], 14);
 	offset[2] = bound (-22, offset[2], 30);
-	r_data->refdef->viewposition = vs->origin + offset;
+	Transform_SetWorldPosition (vs->camera_transform, vs->origin + offset);
 }
 
 static vec4f_t
@@ -525,7 +527,8 @@ V_AddIdle (viewstate_t *vs)
 	vec4f_t     rot = normalf (qmulf (yaw, qmulf (pitch, roll)));
 
 	// rotate the view
-	r_data->refdef->viewrotation = qmulf (rot, r_data->refdef->viewrotation);
+	vec4f_t     rotation = Transform_GetWorldRotation (vs->camera_transform);
+	Transform_SetWorldRotation (vs->camera_transform, qmulf (rot, rotation));
 
 	// counter-rotate the weapon
 	rot = qmulf (qconjf (rot),
@@ -559,7 +562,8 @@ V_CalcViewRoll (viewstate_t *vs)
 
 	vec4f_t     rot;
 	AngleQuat (ang, &rot[0]);//FIXME
-	r_data->refdef->viewrotation = qmulf (r_data->refdef->viewrotation, rot);
+	vec4f_t     rotation = Transform_GetWorldRotation (vs->camera_transform);
+	Transform_SetWorldRotation (vs->camera_transform, qmulf (rotation, rot));
 }
 
 static void
@@ -575,8 +579,8 @@ V_CalcIntermissionRefdef (viewstate_t *vs)
 	// view is the weapon model (visible only from inside body)
 	view = vs->weapon_entity;
 
-	r_data->refdef->viewposition = origin;
-	r_data->refdef->viewrotation = rotation;
+	Transform_SetWorldPosition (vs->camera_transform, origin);
+	Transform_SetWorldRotation (vs->camera_transform, rotation);
 	view->renderer.model = NULL;
 
 	// always idle in intermission
@@ -602,15 +606,17 @@ V_CalcRefdef (viewstate_t *vs)
 	bob = V_CalcBob (vs);
 
 	// refresh position
-	r_data->refdef->viewposition = origin;
-	r_data->refdef->viewposition[2] += vs->height + bob;
+	origin = origin;
+	origin[2] += vs->height + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
 	// server protocol specifies to only 1/8 pixel, so add 1/16 in each axis
-	r_data->refdef->viewposition += (vec4f_t) { 1.0/16, 1.0/16, 1.0/16, 0};
+	origin += (vec4f_t) { 1.0/16, 1.0/16, 1.0/16, 0};
 
-	AngleQuat (vs->angles, &r_data->refdef->viewrotation[0]);//FIXME
+	vec4f_t     rotation;
+	AngleQuat (vs->angles, &rotation[0]);//FIXME
+	Transform_SetWorldRotation (vs->camera_transform, rotation);
 	V_CalcViewRoll (vs);
 	V_AddIdle (vs);
 
@@ -621,7 +627,7 @@ V_CalcRefdef (viewstate_t *vs)
 	// don't allow cheats in multiplayer
 	// FIXME check for dead
 	if (vs->voffs_enabled) {
-		r_data->refdef->viewposition += scr_ofsx->value * forward
+		origin += scr_ofsx->value * forward
 										+ scr_ofsy->value * right
 										+ scr_ofsz->value * up;
 	}
@@ -629,23 +635,24 @@ V_CalcRefdef (viewstate_t *vs)
 	V_BoundOffsets (vs);
 
 	// set up gun position
+	vec4f_t     gun_origin = vs->origin;
 	CalcGunAngle (vs);
 
-	origin += (vec4f_t) { 0, 0, vs->height, 0 };
-	origin += forward * bob * 0.4f + (vec4f_t) { 0, 0, bob, 0 };
+	gun_origin += (vec4f_t) { 0, 0, vs->height, 0 };
+	gun_origin += forward * bob * 0.4f + (vec4f_t) { 0, 0, bob, 0 };
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV
 	if (hud_sbar->int_val == 0 && r_data->scr_viewsize->int_val >= 100) {
 		;
 	} else if (r_data->scr_viewsize->int_val == 110) {
-		origin += (vec4f_t) { 0, 0, 1, 0};
+		gun_origin += (vec4f_t) { 0, 0, 1, 0};
 	} else if (r_data->scr_viewsize->int_val == 100) {
-		origin += (vec4f_t) { 0, 0, 2, 0};
+		gun_origin += (vec4f_t) { 0, 0, 2, 0};
 	} else if (r_data->scr_viewsize->int_val == 90) {
-		origin += (vec4f_t) { 0, 0, 1, 0};
+		gun_origin += (vec4f_t) { 0, 0, 1, 0};
 	} else if (r_data->scr_viewsize->int_val == 80) {
-		origin += (vec4f_t) { 0, 0, 0.5, 0};
+		gun_origin += (vec4f_t) { 0, 0, 0.5, 0};
 	}
 
 	model_t    *model = vs->weapon_model;
@@ -660,29 +667,30 @@ V_CalcRefdef (viewstate_t *vs)
 	view->renderer.skin = 0;
 
 	// set up the refresh position
-	r_data->refdef->viewrotation = qmulf (vs->punchangle,
-										  r_data->refdef->viewrotation);
+	Transform_SetWorldRotation (vs->camera_transform,
+								qmulf (vs->punchangle, rotation));
 
 	// smooth out stair step ups
-	if ((vs->onground != -1) && (origin[2] - oldz > 0)) {
+	if ((vs->onground != -1) && (gun_origin[2] - oldz > 0)) {
 		float       steptime;
 
 		steptime = vs->frametime;
 
 		oldz += steptime * 80;
-		if (oldz > origin[2])
-			oldz = origin[2];
-		if (origin[2] - oldz > 12)
-			oldz = origin[2] - 12;
-		r_data->refdef->viewposition[2] += oldz - origin[2];
-		origin[2] += oldz - origin[2];
+		if (oldz > gun_origin[2])
+			oldz = gun_origin[2];
+		if (gun_origin[2] - oldz > 12)
+			oldz = gun_origin[2] - 12;
+		origin[2] += oldz - gun_origin[2];
+		gun_origin[2] += oldz - gun_origin[2];
 	} else {
-		oldz = origin[2];
+		oldz = gun_origin[2];
 	}
+	Transform_SetWorldPosition (vs->camera_transform, origin);
 	{
 		// FIXME sort out the alias model specific negation
 		vec3_t ang = {-viewangles[0], viewangles[1], viewangles[2]};
-		CL_TransformEntity (view, 1, ang, origin);
+		CL_TransformEntity (view, 1, ang, gun_origin);
 	}
 
 	if (vs->chase && chase_active->int_val) {
@@ -724,8 +732,9 @@ void
 V_RenderView (viewstate_t *vs)
 {
 	if (!vs->active) {
-		r_data->refdef->viewposition = (vec4f_t) { 0, 0, 0, 1 };
-		r_data->refdef->viewrotation = (vec4f_t) { 0, 0, 0, 1 };
+		vec4f_t     base = { 0, 0, 0, 1 };
+		Transform_SetWorldPosition (vs->camera_transform, base);
+		Transform_SetWorldRotation (vs->camera_transform, base);
 		return;
 	}
 
@@ -752,6 +761,8 @@ V_Init (viewstate_t *viewstate)
 					"currently being displayed.\n"
 					"Used when you are underwater, hit, have the Ring of "
 					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
+
+	viewstate->camera_transform = Transform_New (cl_scene, 0);
 }
 
 void

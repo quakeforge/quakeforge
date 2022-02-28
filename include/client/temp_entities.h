@@ -103,6 +103,8 @@ typedef struct TEntContext_s {
 struct msg_s;
 struct entity_s;
 
+extern struct scene_s *cl_scene;
+
 void CL_TEnts_Init (void);
 void CL_Init_Entity (struct entity_s *ent);
 void CL_ClearTEnts (void);

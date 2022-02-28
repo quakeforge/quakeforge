@@ -46,6 +46,7 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
 #include "sbar.h"
@@ -75,9 +76,10 @@ SCR_CShift (void)
 	int         contents = CONTENTS_EMPTY;
 
 	if (cls.state == ca_active && cl.worldmodel) {
+		vec4f_t     origin;
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
 		//FIXME
-		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
-								cl.worldmodel);
+		leaf = Mod_PointInLeaf (&origin[0], cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (&cl.viewstate, contents);
@@ -167,5 +169,6 @@ CL_UpdateScreen (double realtime)
 	cl.viewstate.intermission = cl.intermission != 0;
 	V_PrepBlend (&cl.viewstate);
 	V_RenderView (&cl.viewstate);
-	SCR_UpdateScreen (realtime, scr_funcs[index]);
+	SCR_UpdateScreen (cl.viewstate.camera_transform,
+					  realtime, scr_funcs[index]);
 }

@@ -44,6 +44,7 @@
 #include "QF/sound.h"
 #include "QF/zone.h"
 
+struct transform_s;
 typedef struct portable_samplepair_s portable_samplepair_t;
 typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
@@ -363,8 +364,7 @@ void SND_AmbientOn (snd_t *snd);
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */
-void SND_SetListener (snd_t *snd, const vec3_t origin, const vec3_t v_forward,
-					  const vec3_t v_right, const vec3_t v_up,
+void SND_SetListener (snd_t *snd, struct transform_s *ear,
 					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.

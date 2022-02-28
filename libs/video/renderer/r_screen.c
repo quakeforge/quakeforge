@@ -44,6 +44,7 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
@@ -199,10 +200,18 @@ SCR_CalcRefdef (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 {
 	if (scr_skipupdate || !scr_initialized) {
 		return;
+	}
+
+	if (camera) {
+		r_data->refdef->viewposition = Transform_GetWorldPosition (camera);
+		r_data->refdef->viewrotation = Transform_GetWorldRotation (camera);
+	} else {
+		r_data->refdef->viewposition = (vec4f_t) { 0, 0, 0, 1 };
+		r_data->refdef->viewrotation = (vec4f_t) { 0, 0, 0, 1 };
 	}
 
 	r_data->realtime = realtime;

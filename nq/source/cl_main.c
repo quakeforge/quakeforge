@@ -199,7 +199,9 @@ CL_ClearState (void)
 	}
 
 	// wipe the entire cl structure
+	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	cl.viewstate.camera_transform = cam;
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
 	cl.watervis = 1;
