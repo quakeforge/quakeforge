@@ -523,7 +523,7 @@ CL_EmitEntities (void)
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts (cl.time, &tentCtx);
 	if (cl_draw_locs->int_val) {
-		locs_draw (cl.viewstate.origin);
+		locs_draw (cl.time, cl.viewstate.origin);
 	}
 }
 

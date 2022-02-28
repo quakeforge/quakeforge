@@ -287,7 +287,7 @@ map_to_loc (const char *mapname, char *filename)
 }
 
 void
-locs_draw (vec4f_t simorg)
+locs_draw (double time, vec4f_t simorg)
 {
 	//FIXME custom ent rendering code would be nice
 	dlight_t   *dl;
@@ -302,7 +302,7 @@ locs_draw (vec4f_t simorg)
 		if (dl) {
 			VectorCopy (nearloc->loc, dl->origin);
 			dl->radius = 200;
-			dl->die = r_data->realtime + 0.1;
+			dl->die = time + 0.1;
 			dl->color[0] = 0;
 			dl->color[1] = 1;
 			dl->color[2] = 0;
@@ -310,11 +310,11 @@ locs_draw (vec4f_t simorg)
 		}
 		trueloc = nearloc->loc;
 		clp_funcs->Particle_New (pt_smokecloud, part_tex_smoke, trueloc, 2.0,
-				zero, r_data->realtime + 9.0, 254,
+				zero, time + 9.0, 254,
 				0.25 + qfrandom (0.125), 0.0);
 		for (i = 0; i < 15; i++)
 			clp_funcs->Particle_NewRandom (pt_fallfade, part_tex_dot, trueloc,
-					12, 0.7, 96, r_data->realtime + 5.0,
+					12, 0.7, 96, time + 5.0,
 					104 + (rand () & 7), 1.0, 0.0);
 	}
 }
