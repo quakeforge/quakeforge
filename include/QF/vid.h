@@ -53,8 +53,6 @@ typedef struct {
 	unsigned		 height;
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
-	qboolean		 cshift_changed;
-	quat_t           cshift_color;
 	struct view_s   *conview;
 	struct vid_internal_s *vid_internal;
 

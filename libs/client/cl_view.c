@@ -414,10 +414,10 @@ V_CalcBlend (viewstate_t *vs)
 		b *= a2;
 	}
 
-	r_data->vid->cshift_color[0] = min (r, 255.0) / 255.0;
-	r_data->vid->cshift_color[1] = min (g, 255.0) / 255.0;
-	r_data->vid->cshift_color[2] = min (b, 255.0) / 255.0;
-	r_data->vid->cshift_color[3] = bound (0.0, a, 1.0);
+	vs->cshift_color[0] = min (r, 255.0) / 255.0;
+	vs->cshift_color[1] = min (g, 255.0) / 255.0;
+	vs->cshift_color[2] = min (b, 255.0) / 255.0;
+	vs->cshift_color[3] = bound (0.0, a, 1.0);
 }
 
 static void
@@ -443,17 +443,17 @@ V_PrepBlend (viewstate_t *vs)
 		|| (vs->force_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift (vs);
 
-	r_data->vid->cshift_changed = false;
+	vs->cshift_changed = false;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (vs->cshifts[i].percent != vs->prev_cshifts[i].percent) {
-			r_data->vid->cshift_changed = true;
+			vs->cshift_changed = true;
 			vs->prev_cshifts[i].percent = vs->cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
 			if (vs->cshifts[i].destcolor[j] != vs->prev_cshifts[i].destcolor[j])
 			{
-				r_data->vid->cshift_changed = true;
+				vs->cshift_changed = true;
 				vs->prev_cshifts[i].destcolor[j] = vs->cshifts[i].destcolor[j];
 			}
 		}
@@ -464,7 +464,7 @@ V_PrepBlend (viewstate_t *vs)
 	// drop the bonus value
 	V_DropCShift (&vs->cshifts[CSHIFT_BONUS], vs->time, 100);
 
-	if (!r_data->vid->cshift_changed && !r_data->vid->recalc_refdef)
+	if (!vs->cshift_changed && !r_data->vid->recalc_refdef)
 		return;
 
 	V_CalcBlend (vs);

@@ -83,7 +83,7 @@ SCR_CShift (void)
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (&cl.viewstate, contents);
-	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
+	r_funcs->Draw_BlendScreen (cl.viewstate.cshift_color);
 }
 
 static void
