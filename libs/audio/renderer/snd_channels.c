@@ -555,7 +555,7 @@ SND_SetListener (snd_t *snd, transform_t *ear, const byte *ambient_sound_level)
 		listener_right   = Transform_Right (ear);
 		listener_up      = Transform_Up (ear);
 	} else {
-		listener_origin  = (vec4f_t) { };
+		listener_origin  = (vec4f_t) {0, 0, 0, 1};
 		listener_forward = (vec4f_t) {1, 0, 0, 0};
 		listener_right   = (vec4f_t) {0, -1, 0, 0};
 		listener_up      = (vec4f_t) {0, 0, 1, 0};
