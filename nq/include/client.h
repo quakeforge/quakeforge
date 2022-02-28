@@ -226,8 +226,6 @@ extern struct cvar_s	*cl_autofire;
 extern struct cvar_s	*cl_shownet;
 extern struct cvar_s	*cl_nolerp;
 
-extern struct cvar_s	*hud_sbar;
-
 extern struct cvar_s	*cl_pitchdriftspeed;
 
 extern struct cvar_s	*cl_name;
@@ -296,12 +294,6 @@ struct skin_s;
 void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 
-
-// view
-void V_UpdatePalette (void);
-void V_Register (void);
-void V_ParseDamage (viewstate_t *vs);
-void V_PrepBlend (viewstate_t *vs);
 
 // cl_tent
 void CL_SignonReply (void);

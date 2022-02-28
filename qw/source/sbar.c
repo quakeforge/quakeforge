@@ -57,6 +57,8 @@
 
 #include "compat.h"
 
+#include "client/hud.h"
+
 #include "qw/bothdefs.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_parse.h"
@@ -96,9 +98,6 @@ static qboolean largegame = false;
 
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
-cvar_t     *hud_sbar;
-cvar_t     *hud_swap;
-cvar_t     *hud_scoreboard_gravity;
 cvar_t     *hud_scoreboard_uid;
 cvar_t     *scr_centertime;
 cvar_t     *scr_printspeed;

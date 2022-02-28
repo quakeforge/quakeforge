@@ -57,6 +57,8 @@
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/hud.h"
+
 #include "nq/include/client.h"
 #include "nq/include/game.h"
 #include "nq/include/server.h"
@@ -105,9 +107,6 @@ int         hipweapons[4] =
 	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
-cvar_t     *hud_sbar;
-cvar_t     *hud_swap;
-cvar_t     *hud_scoreboard_gravity;
 cvar_t     *scr_centertime;
 cvar_t     *scr_printspeed;
 

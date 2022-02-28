@@ -48,6 +48,7 @@
 
 #include "sbar.h"
 
+#include "client/hud.h"
 #include "client/view.h"
 
 #include "qw/include/client.h"

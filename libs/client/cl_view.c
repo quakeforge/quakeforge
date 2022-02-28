@@ -33,17 +33,17 @@
 #include "QF/msg.h"
 #include "QF/screen.h"
 
-#include "QF/simd/vec4f.h"
-
 #include "QF/plugin/vid_render.h"
-#include "QF/scene/entity.h"
+#include "QF/scene/transform.h"
+#include "QF/simd/vec4f.h"
 
 #include "compat.h"
 
 #include "client/chase.h"
-
-#include "nq/include/client.h"
-#include "nq/include/host.h"
+#include "client/entities.h"
+#include "client/hud.h"
+#include "client/input.h"
+#include "client/view.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,
@@ -69,6 +69,11 @@ cvar_t     *v_centerspeed;
 cvar_t     *v_kicktime;
 cvar_t     *v_kickroll;
 cvar_t     *v_kickpitch;
+
+cvar_t     *cl_cshift_bonus;
+cvar_t     *cl_cshift_contents;
+cvar_t     *cl_cshift_damage;
+cvar_t     *cl_cshift_powerup;
 
 cvar_t     *v_iyaw_cycle;
 cvar_t     *v_iroll_cycle;
@@ -268,7 +273,7 @@ V_DriftPitch (viewstate_t *vs)
 /* PALETTE FLASHES */
 
 void
-V_ParseDamage (viewstate_t *vs)
+V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 {
 	float       count, side;
 	int         armor, blood;
@@ -644,6 +649,9 @@ V_CalcRefdef (viewstate_t *vs)
 	}
 
 	model_t    *model = vs->weapon_model;
+	if (vs->flags & (VF_GIB | VF_DEAD)) {
+		model = NULL;
+	}
 	if (view->renderer.model != model) {
 		view->animation.pose2 = -1;
 	}
@@ -682,6 +690,30 @@ V_CalcRefdef (viewstate_t *vs)
 	}
 }
 
+static void
+DropPunchAngle (viewstate_t *vs)
+{
+	vec4f_t     punch = vs->punchangle;
+	float       ps = magnitude3f (punch)[0];
+	if (ps < 1e-3) {
+		// < 0.2 degree rotation, not worth worrying about
+		//ensure the quaternion is normalized
+		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+		return;
+	}
+	float       pc = punch[3];
+	float       ds = 0.0871557427 * vs->frametime;
+	float       dc = sqrt (1 - ds * ds);
+	float       s = ps * dc - pc * ds;
+	float       c = pc * dc + ps * ds;
+	if (s <= 0 || c >= 1) {
+		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+	} else {
+		punch *= s / ps;
+		punch[3] = c;
+	}
+}
+
 /*
 	V_RenderView
 
@@ -697,6 +729,9 @@ V_RenderView (viewstate_t *vs)
 		return;
 	}
 
+	if (vs->decay_punchangle) {
+		DropPunchAngle (vs);
+	}
 	if (vs->intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef (vs);
 	} else {
@@ -705,11 +740,11 @@ V_RenderView (viewstate_t *vs)
 }
 
 void
-V_Init (void)
+V_Init (viewstate_t *viewstate)
 {
-	Cmd_AddDataCommand ("bf", V_BonusFlash_f, &cl.viewstate,
+	Cmd_AddDataCommand ("bf", V_BonusFlash_f, viewstate,
 						"Background flash, used when you pick up an item");
-	Cmd_AddDataCommand ("centerview", V_StartPitchDrift_f, &cl.viewstate,
+	Cmd_AddDataCommand ("centerview", V_StartPitchDrift_f, viewstate,
 					"Centers the player's "
 					"view ahead after +lookup or +lookdown\n"
 					"Will not work while mlook is active or freelook is 1.");
@@ -770,4 +805,13 @@ V_Init_Cvars (void)
 						   "How much you lean when hit");
 	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
 							"How much you look up when hit");
+	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
+								"Show bonus flash on item pickup");
+	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
+								   NULL, "Shift view colors for contents "
+								   "(water, slime, etc)");
+	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
+								 "Shift view colors on damage");
+	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
+								  "Shift view colors for powerups");
 }

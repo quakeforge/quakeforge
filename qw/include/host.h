@@ -38,8 +38,6 @@
 
 #define MAX_NUM_ARGVS	50
 
-extern qboolean noclip_anglehack;
-
 extern struct cvar_s	*sys_ticrate;
 extern struct cvar_s	*password;
 

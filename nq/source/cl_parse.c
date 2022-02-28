@@ -1054,7 +1054,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_damage:
-				V_ParseDamage (&cl.viewstate);
+				V_ParseDamage (net_message, &cl.viewstate);
 				// put sbar face into pain frame
 				cl.faceanimtime = cl.time + 0.2;
 				break;

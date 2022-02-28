@@ -76,11 +76,6 @@ cvar_t     *cl_writecfg;
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
 
-cvar_t     *cl_cshift_bonus;
-cvar_t     *cl_cshift_contents;
-cvar_t     *cl_cshift_damage;
-cvar_t     *cl_cshift_powerup;
-
 cvar_t     *hud_fps;
 cvar_t     *hud_time;
 
@@ -171,14 +166,6 @@ CL_InitCvars (void)
 	Chase_Init_Cvars ();
 	V_Init_Cvars ();
 
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
-								   NULL, "Shift view colors for contents "
-								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-								 "Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,                             "Shift view colors for powerups");
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
 						"Player name");
 	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
@@ -582,7 +569,7 @@ CL_Init (cbuf_t *cbuf)
 	CL_TEnts_Init ();
 	CL_ClearState ();
 
-	V_Init ();
+	V_Init (&cl.viewstate);
 
 	Cmd_AddCommand ("pointfile", pointfile_f,
 					"Load a pointfile to determine map leaks.");

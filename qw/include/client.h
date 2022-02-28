@@ -270,9 +270,6 @@ extern	struct cvar_s	*cl_netgraph_box;
 
 extern	struct cvar_s	*cl_draw_locs;
 extern	struct cvar_s	*cl_shownet;
-extern	struct cvar_s	*hud_sbar;
-extern	struct cvar_s	*hud_sbar_separator;
-extern	struct cvar_s	*hud_swap;
 
 extern	struct cvar_s	*cl_pitchdriftspeed;
 
@@ -315,10 +312,6 @@ void CL_NetGraph_Init_Cvars (void);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
-
-void V_ParseDamage (viewstate_t *vs);
-
-void V_PrepBlend (viewstate_t *vs);
 
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);

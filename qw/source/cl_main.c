@@ -151,11 +151,6 @@ cvar_t     *cl_quakerc;
 cvar_t     *cl_maxfps;
 cvar_t     *cl_usleep;
 
-cvar_t     *cl_cshift_bonus;
-cvar_t     *cl_cshift_contents;
-cvar_t     *cl_cshift_damage;
-cvar_t     *cl_cshift_powerup;
-
 cvar_t     *cl_model_crcs;
 
 cvar_t     *cl_predict_players;
@@ -1221,7 +1216,7 @@ CL_Init (void)
 
 	CL_Skin_Init ();
 	Locs_Init ();
-	V_Init ();
+	V_Init (&cl.viewstate);
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
@@ -1368,15 +1363,6 @@ CL_Init_Cvars (void)
 							"exec autoexec.cfg on gamedir change");
 	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
 						   "exec quake.rc on startup");
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
-								   NULL, "Shift view colors for contents "
-								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-								 "Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
-								  "Shift view colors for powerups");
 	cl_fb_players = Cvar_Get ("cl_fb_players", "0", CVAR_ARCHIVE, NULL, "fullbrightness of player models. "
 							"server must allow (via fbskins serverinfo).");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,

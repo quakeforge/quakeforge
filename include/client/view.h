@@ -26,8 +26,8 @@
 */
 // view.h
 
-#ifndef __client_view_h_
-#define __client_view_h_
+#ifndef __client_view_h
+#define __client_view_h
 
 #include "QF/mathlib.h"
 #include "QF/render.h"
@@ -54,6 +54,7 @@ typedef struct viewstate_s {
 	int         voffs_enabled:1;
 	int         bob_enabled:1;
 	int         intermission:1;
+	int         decay_punchangle:1;
 	int         force_cshifts;	// bitfield of server enforced cshifts
 	uint32_t    flags;
 
@@ -79,13 +80,18 @@ typedef struct viewstate_s {
 #define VF_DEAD 1
 #define VF_GIB 2
 
-void V_Init (void);
+struct msg_s;
+
+void V_Init (viewstate_t *vs);
 void V_Init_Cvars (void);
 void V_RenderView (viewstate_t *vs);
 float V_CalcRoll (const vec3_t angles, vec4f_t velocity);
 void V_StartPitchDrift (viewstate_t *vs);
 void V_StopPitchDrift (viewstate_t *vs);
-
 void V_SetContentsColor (viewstate_t *vs, int contents);
+void V_ParseDamage (struct msg_s *net_message, viewstate_t *vs);
+void V_PrepBlend (viewstate_t *vs);
 
-#endif // __client_view_h_
+extern qboolean noclip_anglehack;
+
+#endif // __client_view_h
