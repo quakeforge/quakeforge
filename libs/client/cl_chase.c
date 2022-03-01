@@ -147,8 +147,8 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 	// mouse and joystick controllers add to movement
 	VectorSet (0, vs->player_angles[1] - cs->camera_angles[1], 0, dir);
 	AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
-	//forward *= viewdelta.position[2] * m_forward->value; FIXME
-	//right *= viewdelta.position[0] * m_side->value; FIXME
+	forward *= IN_UpdateAxis (&in_cam_forward) * m_forward->value;
+	right *= IN_UpdateAxis (&in_cam_side) * m_side->value;
 	dir = forward + right;
 	move[FORWARD] += dir[0];
 	move[SIDE]    -= dir[1];

@@ -45,6 +45,10 @@ extern struct cvar_s *cl_pitchspeed;
 
 extern struct cvar_s *cl_anglespeedkey;
 
+extern struct cvar_s *m_pitch;
+extern struct cvar_s *m_yaw;
+extern struct cvar_s *m_forward;
+extern struct cvar_s *m_side;
 
 #define FORWARD 0
 #define SIDE 1
@@ -66,6 +70,9 @@ void CL_Input_Init (struct cbuf_s *cbuf);
 void CL_Input_Init_Cvars (void);
 void CL_Input_Activate (int in_game);
 
+extern in_axis_t in_move_forward, in_move_side, in_move_up;
+extern in_axis_t in_move_pitch, in_move_yaw, in_move_roll;
+extern in_axis_t in_cam_forward, in_cam_side, in_cam_up;
 extern in_button_t  in_left, in_right, in_forward, in_back;
 extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
 extern in_button_t  in_use, in_jump, in_attack;

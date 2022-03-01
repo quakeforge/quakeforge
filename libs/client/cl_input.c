@@ -1,7 +1,7 @@
 /*
-	cl_legacy.c
+	cl_input.c
 
-	Client legacy commands
+	Client input commands
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -60,33 +60,49 @@ static int  cl_event_id;
 static struct LISTENER_SET_TYPE(int) cl_on_focus_change
 	= LISTENER_SET_STATIC_INIT(4);
 
-in_axis_t viewdelta_position_forward = {
+in_axis_t in_move_forward = {
 	.mode = ina_set,
 	.name = "move.forward",
 	.description = "Move forward (negative) or backward (positive)",
 };
-in_axis_t viewdelta_position_side = {
+in_axis_t in_move_side = {
 	.mode = ina_set,
 	.name = "move.side",
 	.description = "Move right (positive) or left (negative)",
 };
-in_axis_t viewdelta_position_up = {
+in_axis_t in_move_up = {
 	.mode = ina_set,
 	.name = "move.up",
 	.description = "Move up (positive) or down (negative)",
 };
 
-in_axis_t viewdelta_angles_pitch = {
+in_axis_t in_cam_forward = {
+	.mode = ina_set,
+	.name = "cam.forward",
+	.description = "Move camera forward (negative) or backward (positive)",
+};
+in_axis_t in_cam_side = {
+	.mode = ina_set,
+	.name = "cam.side",
+	.description = "Move camera right (positive) or left (negative)",
+};
+in_axis_t in_cam_up = {
+	.mode = ina_set,
+	.name = "cam.up",
+	.description = "Move camera up (positive) or down (negative)",
+};
+
+in_axis_t in_move_pitch = {
 	.mode = ina_set,
 	.name = "move.pitch",
 	.description = "Pitch axis",
 };
-in_axis_t viewdelta_angles_yaw = {
+in_axis_t in_move_yaw = {
 	.mode = ina_set,
 	.name = "move.yaw",
 	.description = "Yaw axis",
 };
-in_axis_t viewdelta_angles_roll = {
+in_axis_t in_move_roll = {
 	.mode = ina_set,
 	.name = "move.roll",
 	.description = "Roll axis",
@@ -167,12 +183,12 @@ in_button_t in_mlook = {
 };
 
 static in_axis_t *cl_in_axes[] = {
-	&viewdelta_position_forward,
-	&viewdelta_position_side,
-	&viewdelta_position_up,
-	&viewdelta_angles_pitch,
-	&viewdelta_angles_yaw,
-	&viewdelta_angles_roll,
+	&in_move_forward,
+	&in_move_side,
+	&in_move_up,
+	&in_move_pitch,
+	&in_move_yaw,
+	&in_move_roll,
 	0,
 };
 
@@ -246,9 +262,9 @@ CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 	delta[PITCH] -= pitchspeed * up;
 	delta[PITCH] += pitchspeed * down;
 
-	delta[PITCH] -= IN_UpdateAxis (&viewdelta_angles_pitch) * m_pitch->value;
-	delta[YAW] -= IN_UpdateAxis (&viewdelta_angles_yaw) * m_yaw->value;
-	delta[ROLL] -= IN_UpdateAxis (&viewdelta_angles_roll) * m_pitch->value;
+	delta[PITCH] -= IN_UpdateAxis (&in_move_pitch) * m_pitch->value;
+	delta[YAW] -= IN_UpdateAxis (&in_move_yaw) * m_yaw->value;
+	delta[ROLL] -= IN_UpdateAxis (&in_move_roll) * m_pitch->value;
 
 	ms->angles += delta;
 
@@ -371,9 +387,9 @@ CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 		move *= cl_movespeedkey->value;
 	}
 
-	move[FORWARD] -= IN_UpdateAxis (&viewdelta_position_forward) * m_forward->value;
-	move[SIDE] += IN_UpdateAxis (&viewdelta_position_side) * m_side->value;
-	move[UP] -= IN_UpdateAxis (&viewdelta_position_up);
+	move[FORWARD] -= IN_UpdateAxis (&in_move_forward) * m_forward->value;
+	move[SIDE] += IN_UpdateAxis (&in_move_side) * m_side->value;
+	move[UP] -= IN_UpdateAxis (&in_move_up);
 
 	if (freelook)
 		V_StopPitchDrift (vs);
