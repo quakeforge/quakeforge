@@ -504,15 +504,13 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
-	FIXME these comments are a confused mess (the code is fine)
-
 	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
 	the right, y (yaw) axis up and z (roll) axis forward.
 
-	the math in AngleVectors has the entity frame as left handed with x
+	The math in AngleVectors has the entity frame as left handed with x
 	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right handed system with x to the right, y forward and
-	z up.
+	the world is a right handed system with x forward, y to the left and
+	z up, thus the negation for right.
 
 	pitch =
 		cp 0 -sp
