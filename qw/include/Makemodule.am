@@ -1,5 +1,4 @@
 EXTRA_DIST += \
-	qw/include/chase.h \
 	qw/include/cl_cam.h \
 	qw/include/cl_chat.h \
 	qw/include/cl_demo.h \

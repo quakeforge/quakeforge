@@ -82,6 +82,7 @@ EXTRA_DIST += \
 	include/vregset.h \
 	include/winquake.h \
 	include/world.h \
+	include/client/chase.h \
 	include/client/effects.h \
 	include/client/entities.h \
 	include/client/hud.h \
