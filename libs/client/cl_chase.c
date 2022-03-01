@@ -121,6 +121,9 @@ set_camera (chasestate_t *cs, viewstate_t *vs)
 static void
 cam_controls (chasestate_t *cs, viewstate_t *vs)
 {
+	// FIXME this doesn't actually control the camera, but rather makes the
+	// player face the direction of motion. It probably should not access
+	// movement input buttons and axes directly.
 	// get basic movement from keyboard
 	vec4f_t     move = { };
 	vec4f_t     forward = { };
@@ -162,7 +165,8 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 		vs->player_angles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);
 	}
 
-	vs->player_angles[PITCH] = 0;
+	//vs->player_angles[PITCH] = 0;
+	VectorCopy (vs->player_angles, cs->player_angles);
 }
 
 static void

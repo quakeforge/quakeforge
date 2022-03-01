@@ -409,7 +409,7 @@ CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 		VectorScale (forward, move[FORWARD], f);
 		VectorScale (right, move[SIDE], r);
 		move[FORWARD] = f[0] + r[0];
-		move[SIDE] = f[1] + r[1];
+		move[SIDE] = -f[1] - r[1];
 	}
 	state->move = move;
 }
