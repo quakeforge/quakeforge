@@ -1295,7 +1295,7 @@ CL_ParseMuzzleFlash (void)
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
 	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewstate.angles, f, r, u);
+		AngleVectors (cl.viewstate.player_angles, f, r, u);
 	else
 		AngleVectors (pl->viewangles, f, r, u);
 
@@ -1317,7 +1317,7 @@ CL_ParseServerMessage (void)
 	const char *str;
 	static dstring_t *stuffbuf;
 	TEntContext_t tentCtx = {
-		cl.viewstate.origin, cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin, cl.worldmodel, cl.viewentity
 	};
 
 	received_framecount = host_framecount;
@@ -1437,7 +1437,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewstate.angles;
+				vec_t      *dest = cl.viewstate.player_angles;
 				vec3_t      dummy;
 
 				if (cls.demoplayback2) {
@@ -1565,15 +1565,15 @@ CL_ParseServerMessage (void)
 				cl.completed_time = realtime;
 				r_data->vid->recalc_refdef = true;		// go to full screen
 				Sys_MaskPrintf (SYS_dev, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, &cl.viewstate.origin[0]);//FIXME
-				cl.viewstate.origin[3] = 1;
+				MSG_ReadCoordV (net_message, &cl.viewstate.player_origin[0]);//FIXME
+				cl.viewstate.player_origin[3] = 1;
 				Sys_MaskPrintf (SYS_dev, VEC4F_FMT,
-								VEC4_EXP (cl.viewstate.origin));
+								VEC4_EXP (cl.viewstate.player_origin));
 				Sys_MaskPrintf (SYS_dev, "\nintermission simangles: ");
-				MSG_ReadAngleV (net_message, cl.viewstate.angles);
-				cl.viewstate.angles[ROLL] = 0;			// FIXME @@@
+				MSG_ReadAngleV (net_message, cl.viewstate.player_angles);
+				cl.viewstate.player_angles[ROLL] = 0;			// FIXME @@@
 				Sys_MaskPrintf (SYS_dev, "%f %f %f",
-								VectorExpand (cl.viewstate.angles));
+								VectorExpand (cl.viewstate.player_angles));
 				Sys_MaskPrintf (SYS_dev, "\n");
 				cl.viewstate.velocity = (vec4f_t) { };
 

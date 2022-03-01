@@ -394,7 +394,7 @@ CL_LinkPlayers (void)
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
-			org = cl.viewstate.origin;
+			org = cl.viewstate.player_origin;
 			r_data->player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
@@ -444,8 +444,8 @@ CL_LinkPlayers (void)
 		// angles
 		if (j == cl.playernum)
 		{
-			ang[PITCH] = -cl.viewstate.angles[PITCH] / 3.0;
-			ang[YAW] = cl.viewstate.angles[YAW];
+			ang[PITCH] = -cl.viewstate.player_angles[PITCH] / 3.0;
+			ang[YAW] = cl.viewstate.player_angles[YAW];
 		} else {
 			ang[PITCH] = -state->viewangles[PITCH] / 3.0;
 			ang[YAW] = state->viewangles[YAW];
@@ -516,14 +516,14 @@ CL_EmitEntities (void)
 		return;
 
 	TEntContext_t tentCtx = {
-		cl.viewstate.origin, cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin, cl.worldmodel, cl.viewentity
 	};
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts (cl.time, &tentCtx);
 	if (cl_draw_locs->int_val) {
-		locs_draw (cl.time, cl.viewstate.origin);
+		locs_draw (cl.time, cl.viewstate.player_origin);
 	}
 }
 

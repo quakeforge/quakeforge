@@ -246,7 +246,7 @@ V_DriftPitch (viewstate_t *vs)
 		return;
 	}
 
-	delta = vs->idealpitch - vs->angles[PITCH];
+	delta = vs->idealpitch - vs->player_angles[PITCH];
 
 	if (!delta) {
 		vs->pitchvel = 0;
@@ -261,13 +261,13 @@ V_DriftPitch (viewstate_t *vs)
 			vs->pitchvel = 0;
 			move = delta;
 		}
-		vs->angles[PITCH] += move;
+		vs->player_angles[PITCH] += move;
 	} else if (delta < 0) {
 		if (move > -delta) {
 			vs->pitchvel = 0;
 			move = -delta;
 		}
-		vs->angles[PITCH] -= move;
+		vs->player_angles[PITCH] -= move;
 	}
 }
 
@@ -278,8 +278,8 @@ V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 {
 	float       count, side;
 	int         armor, blood;
-	vec4f_t     origin = vs->origin;
-	vec_t      *angles = vs->angles;
+	vec4f_t     origin = vs->player_origin;
+	vec_t      *angles = vs->player_angles;
 	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
@@ -485,7 +485,7 @@ static void
 V_BoundOffsets (viewstate_t *vs)
 {
 	vec4f_t     offset = Transform_GetWorldPosition (vs->camera_transform);
-	offset -= vs->origin;
+	offset -= vs->player_origin;
 
 	// absolutely bound refresh reletive to entity clipping hull
 	// so the view can never be inside a solid wall
@@ -493,7 +493,8 @@ V_BoundOffsets (viewstate_t *vs)
 	offset[0] = bound (-14, offset[0], 14);
 	offset[1] = bound (-14, offset[1], 14);
 	offset[2] = bound (-22, offset[2], 30);
-	Transform_SetWorldPosition (vs->camera_transform, vs->origin + offset);
+	Transform_SetWorldPosition (vs->camera_transform,
+								vs->player_origin + offset);
 }
 
 static vec4f_t
@@ -544,7 +545,7 @@ V_AddIdle (viewstate_t *vs)
 static void
 V_CalcViewRoll (viewstate_t *vs)
 {
-	vec_t      *angles = vs->angles;
+	vec_t      *angles = vs->player_angles;
 	vec4f_t     velocity = vs->velocity;
 	vec3_t      ang = { };
 
@@ -598,8 +599,8 @@ V_CalcRefdef (viewstate_t *vs)
 	float       bob;
 	static float oldz = 0;
 	vec4f_t     forward = {}, right = {}, up = {};
-	vec4f_t     origin = vs->origin;
-	vec_t      *viewangles = vs->angles;
+	vec4f_t     origin = vs->player_origin;
+	vec_t      *viewangles = vs->player_angles;
 
 	V_DriftPitch (vs);
 
@@ -615,7 +616,7 @@ V_CalcRefdef (viewstate_t *vs)
 	origin += (vec4f_t) { 1.0/16, 1.0/16, 1.0/16, 0};
 
 	vec4f_t     rotation;
-	AngleQuat (vs->angles, &rotation[0]);//FIXME
+	AngleQuat (vs->player_angles, &rotation[0]);//FIXME
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
 	V_CalcViewRoll (vs);
 	V_AddIdle (vs);
@@ -635,7 +636,7 @@ V_CalcRefdef (viewstate_t *vs)
 	V_BoundOffsets (vs);
 
 	// set up gun position
-	vec4f_t     gun_origin = vs->origin;
+	vec4f_t     gun_origin = vs->player_origin;
 	CalcGunAngle (vs);
 
 	gun_origin += (vec4f_t) { 0, 0, vs->height, 0 };

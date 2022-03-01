@@ -440,6 +440,7 @@ CL_ParseServerInfo (void)
 
 	// local state
 	cl_entities[0].renderer.model = cl.worldmodel = cl.model_precache[1];
+	cl.chasestate.worldmodel = cl.worldmodel;
 	if (!centerprint)
 		centerprint = dstring_newstr ();
 	else
@@ -959,7 +960,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewstate.angles;
+				vec_t      *dest = cl.viewstate.player_angles;
 
 				MSG_ReadAngleV (net_message, dest);
 				break;

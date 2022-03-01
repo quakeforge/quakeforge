@@ -204,6 +204,7 @@ CL_ClearState (void)
 	cl.viewstate.camera_transform = cam;
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
+	cl.chasestate.viewstate = &cl.viewstate;
 	cl.watervis = 1;
 	r_data->force_fullscreen = 0;
 	r_data->lightstyle = cl.lightstyle;
@@ -534,7 +535,7 @@ CL_SetState (cactive_t state)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewstate.angles[PITCH] = 0;
+	cl.viewstate.player_angles[PITCH] = 0;
 }
 
 void

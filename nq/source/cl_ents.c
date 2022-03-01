@@ -170,7 +170,8 @@ CL_RelinkEntities (void)
 				d[j] += 360;
 			}
 		}
-		VectorMultAdd (cl.frameViewAngles[1], frac, d, cl.viewstate.angles);
+		VectorMultAdd (cl.frameViewAngles[1], frac, d,
+					   cl.viewstate.player_angles);
 	}
 
 	bobjrotate = anglemod (100 * cl.time);
@@ -304,6 +305,6 @@ CL_RelinkEntities (void)
 
 		cl_forcelink[i] = false;
 	}
-	cl.viewstate.origin
+	cl.viewstate.player_origin
 		= Transform_GetWorldPosition (cl_entities[cl.viewentity].transform);
 }

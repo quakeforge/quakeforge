@@ -90,9 +90,9 @@ CL_BaseMove (usercmd_t *cmd)
 	if (cls.state != ca_active) {
 		return;
 	}
-	VectorCopy (cl.viewstate.angles, cl.movestate.angles);//FIXME
+	VectorCopy (cl.viewstate.player_angles, cl.movestate.angles);//FIXME
 	CL_Input_BuildMove (host_frametime, &cl.movestate, &cl.viewstate);
-	VectorCopy (cl.movestate.angles, cl.viewstate.angles);//FIXME
+	VectorCopy (cl.movestate.angles, cl.viewstate.player_angles);//FIXME
 
 	memset (cmd, 0, sizeof (*cmd));
 	cmd->forwardmove = cl.movestate.move[FORWARD];
@@ -139,7 +139,7 @@ CL_FinishMove (usercmd_t *cmd)
 	}
 	cmd->msec = ms;
 
-	VectorCopy (cl.viewstate.angles, cmd->angles);
+	VectorCopy (cl.viewstate.player_angles, cmd->angles);
 
 	cmd->impulse = in_impulse;
 	in_impulse = 0;

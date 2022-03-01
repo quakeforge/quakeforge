@@ -133,7 +133,7 @@ CL_PredictMove (void)
 		return;
 
 	//VectorCopy (cl.viewstate.angles, cl.viewstate.angles);
-	cl.viewstate.angles[ROLL] = 0;						// FIXME @@@
+	cl.viewstate.player_angles[ROLL] = 0;						// FIXME @@@
 
 	// this is the last frame received from the server
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
@@ -141,7 +141,7 @@ CL_PredictMove (void)
 
 	if (!cl_predict->int_val) {
 		cl.viewstate.velocity = fromes->velocity;
-		cl.viewstate.origin = fromes->origin;
+		cl.viewstate.player_origin = fromes->origin;
 		return;
 	}
 
@@ -182,11 +182,12 @@ CL_PredictMove (void)
 		if (fabs (fromes->origin[i] - toes->origin[i]) > 128) {
 			// teleported, so don't lerp
 			cl.viewstate.velocity = toes->velocity;
-			cl.viewstate.origin = toes->origin;
+			cl.viewstate.player_origin = toes->origin;
 			return;
 		}
 
-	cl.viewstate.origin = fromes->origin + f * (toes->origin - fromes->origin);
+	cl.viewstate.player_origin = fromes->origin
+		+ f * (toes->origin - fromes->origin);
 }
 
 void

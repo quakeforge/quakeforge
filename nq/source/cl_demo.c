@@ -105,7 +105,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	len = LittleLong (msg->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i = 0; i < 3; i++) {
-		f = LittleFloat (cl.viewstate.angles[i]);
+		f = LittleFloat (cl.viewstate.player_angles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
 	Qwrite (cls.demofile, msg->data, msg->cursize);

@@ -74,14 +74,15 @@ CL_BaseMove (usercmd_t *cmd)
 	if (cls.state != ca_active) {
 		return;
 	}
-	VectorCopy (cl.viewstate.angles, cl.movestate.angles);//FIXME
+	VectorCopy (cl.viewstate.player_angles, cl.movestate.angles);//FIXME
 	CL_Input_BuildMove (host_frametime, &cl.movestate, &cl.viewstate);
-	VectorCopy (cl.movestate.angles, cl.viewstate.angles);//FIXME
+	VectorCopy (cl.movestate.angles, cl.viewstate.player_angles);//FIXME
 
 	memset (cmd, 0, sizeof (*cmd));
 	cmd->forwardmove = cl.movestate.move[FORWARD];
 	cmd->sidemove = cl.movestate.move[SIDE];
 	cmd->upmove = cl.movestate.move[UP];
+	cl.viewstate.movecmd = cl.movestate.move;
 }
 
 
@@ -103,7 +104,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);		// so server can get ping times
 
-	write_angles (&buf, cl.viewstate.angles);
+	write_angles (&buf, cl.viewstate.player_angles);
 
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);

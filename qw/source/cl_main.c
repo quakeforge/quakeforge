@@ -1102,7 +1102,7 @@ CL_Download_f (void)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewstate.angles[PITCH] = 0;
+	cl.viewstate.player_angles[PITCH] = 0;
 }
 
 static void
@@ -1111,12 +1111,12 @@ CL_PRotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_PITCH) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewstate.angles[PITCH] += atoi (Cmd_Argv (1));
+	cl.viewstate.player_angles[PITCH] += atoi (Cmd_Argv (1));
 
-	if (cl.viewstate.angles[PITCH] < -70)
-		cl.viewstate.angles[PITCH] = -70;
-	else if (cl.viewstate.angles[PITCH] > 80)
-		cl.viewstate.angles[PITCH] = 80;
+	if (cl.viewstate.player_angles[PITCH] < -70)
+		cl.viewstate.player_angles[PITCH] = -70;
+	else if (cl.viewstate.player_angles[PITCH] > 80)
+		cl.viewstate.player_angles[PITCH] = 80;
 }
 
 static void
@@ -1125,8 +1125,8 @@ CL_Rotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_YAW) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewstate.angles[YAW] += atoi (Cmd_Argv (1));
-	cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
+	cl.viewstate.player_angles[YAW] += atoi (Cmd_Argv (1));
+	cl.viewstate.player_angles[YAW] = anglemod(cl.viewstate.player_angles[YAW]);
 }
 
 void

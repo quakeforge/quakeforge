@@ -39,11 +39,12 @@
 #define INFO_CSHIFT_POWERUP		(1 << 3)
 
 typedef struct viewstate_s {
+	vec4f_t     player_origin;
+	vec3_t      player_angles;
+	int         chase;
 	vec4f_t     movecmd;
 	vec4f_t     velocity;
-	vec4f_t     origin;
 	vec4f_t     punchangle;
-	vec3_t      angles;
 	float       frametime;
 	struct transform_s *camera_transform;
 	double      time;
@@ -77,7 +78,6 @@ typedef struct viewstate_s {
 	struct entity_s *player_entity;
 
 	struct chasestate_s *chasestate;
-	int         chase;
 } viewstate_t;
 
 #define VF_DEAD 1

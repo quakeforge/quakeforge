@@ -438,7 +438,7 @@ Cam_Track (usercmd_t *cmd)
 	if (cl_chasecam->int_val) {
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
-		VectorCopy (player->viewangles, cl.viewstate.angles);
+		VectorCopy (player->viewangles, cl.viewstate.player_angles);
 		VectorCopy (player->pls.es.origin, desired_position);
 		if (memcmp (&desired_position, &self->pls.es.origin,
 					sizeof (desired_position)) != 0) {
@@ -467,8 +467,8 @@ Cam_Track (usercmd_t *cmd)
 		VectorCopy (desired_position, self->pls.es.origin);
 
 		VectorSubtract (player->pls.es.origin, desired_position, vec);
-		vectoangles (vec, cl.viewstate.angles);
-		cl.viewstate.angles[0] = -cl.viewstate.angles[0];
+		vectoangles (vec, cl.viewstate.player_angles);
+		cl.viewstate.player_angles[0] = -cl.viewstate.player_angles[0];
 	}
 }
 
@@ -535,8 +535,8 @@ Cam_SetView (void)
 			adjustang (cam_viewangles[YAW], vec2[YAW],
 					   cl_camera_maxyaw->value);
 	}
-	VectorCopy (cam_viewangles, cl.viewstate.angles);
-	VectorCopy (cl.viewstate.angles, cl.simangles);
+	VectorCopy (cam_viewangles, cl.viewstate.player_angles);
+	VectorCopy (cl.viewstate.player_angles, cl.simangles);
 	cl.simangles[ROLL] = 0;						// FIXME @@@
 }
 #endif
@@ -575,7 +575,7 @@ Cam_FinishMove (usercmd_t *cmd)
 				adjustang (cam_viewangles[YAW], vec2[YAW],
 						   cl_camera_maxyaw->value);
 		}
-		VectorCopy (cam_viewangles, cl.viewstate.angles);
+		VectorCopy (cam_viewangles, cl.viewstate.player_angles);
 	}
 #endif
 
@@ -586,7 +586,7 @@ Cam_FinishMove (usercmd_t *cmd)
 
 			if (autocam > CAM_TRACK) {
 				Cam_Unlock ();
-				VectorCopy (cl.viewstate.angles, cmd->angles);
+				VectorCopy (cl.viewstate.player_angles, cmd->angles);
 				return;
 			}
 		} else

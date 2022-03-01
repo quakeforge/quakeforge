@@ -333,7 +333,7 @@ nextdemomessage:
 			cls.netchan.outgoing_sequence++;
 			for (i = 0; i < 3; i++) {
 				Qread (cls.demofile, &f, 4);
-				cl.viewstate.angles[i] = LittleFloat (f);
+				cl.viewstate.player_angles[i] = LittleFloat (f);
 			}
 			break;
 
@@ -462,7 +462,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	Qwrite (cls.demofile, &cmd, sizeof (cmd));
 
 	for (i = 0; i < 3; i++) {
-		fl = LittleFloat (cl.viewstate.angles[i]);
+		fl = LittleFloat (cl.viewstate.player_angles[i]);
 		Qwrite (cls.demofile, &fl, 4);
 	}
 
