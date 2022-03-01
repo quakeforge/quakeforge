@@ -28,9 +28,16 @@
 #ifndef __client_chase_h
 #define __client_chase_h
 
+#include "QF/math/vector.h"
+#include "QF/simd/vec4f.h"
+
 typedef struct chasestate_s {
 	struct model_s *worldmodel;
 	struct viewstate_s *viewstate;
+	vec4f_t     camera_origin;
+	vec4f_t     player_origin;
+	vec3_t      camera_angles;
+	vec3_t      player_angles;
 } chasestate_t;
 
 extern	struct cvar_s	*chase_active;
