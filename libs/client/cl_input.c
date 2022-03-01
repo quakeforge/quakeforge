@@ -50,6 +50,7 @@
 
 #include "old_keys.h"
 
+#include "client/chase.h"
 #include "client/input.h"
 #include "client/view.h"
 
@@ -394,22 +395,22 @@ CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 	if (freelook)
 		V_StopPitchDrift (vs);
 
-	//if (cl.chase
-	//	&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
-	//	/* adjust for chase camera angles
-	//	 * makes the player move relative to the chase camera frame rather
-	//	 * than the player's frame
-	//	 */
-	//	vec3_t      forward, right, up, f, r;
-	//	vec3_t      dir = {0, 0, 0};
-	//	// need separate camera and player angles
-	//	//FIXME dir[1] = r_data->refdef->viewangles[1] - cl.viewstate.angles[1];
-	//	AngleVectors (dir, forward, right, up);
-	//	VectorScale (forward, move[FORWARD], f);
-	//	VectorScale (right, move[SIDE], r);
-	//	move[FORWARD] = f[0] + r[0];
-	//	move[SIDE] = f[1] + r[1];
-	//}
+	if (vs->chase
+		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
+		/* adjust for chase camera angles
+		 * makes the player move relative to the chase camera frame rather
+		 * than the player's frame
+		 */
+		chasestate_t *cs = vs->chasestate;
+		vec3_t      forward, right, up, f, r;
+		vec3_t      dir = {0, 0, 0};
+		dir[1] = cs->camera_angles[1] - vs->player_angles[1];
+		AngleVectors (dir, forward, right, up);
+		VectorScale (forward, move[FORWARD], f);
+		VectorScale (right, move[SIDE], r);
+		move[FORWARD] = f[0] + r[0];
+		move[SIDE] = f[1] + r[1];
+	}
 	state->move = move;
 }
 
