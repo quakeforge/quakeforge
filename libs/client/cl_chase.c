@@ -160,24 +160,19 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 
 	if (dir[1] || dir[0]) {
 		vs->player_angles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);
-		if (vs->player_angles[YAW] <   0) {
-			vs->player_angles[YAW] += 360;
-		}
 	}
 
 	vs->player_angles[PITCH] = 0;
-
-	// remember the new angle to calculate the difference next frame
-	VectorCopy (vs->player_angles, cs->player_angles);
 }
 
 static void
 update_cam_frame (chasestate_t *cs, viewstate_t *vs)
 {
-	// control camera angles with key/mouse/joy-look
 	vec3_t      d;
 	VectorSubtract (vs->player_angles, cs->player_angles, d);
 	VectorAdd (cs->camera_angles, d, cs->camera_angles);
+	// remember the new angle to calculate the difference next frame
+	VectorCopy (vs->player_angles, cs->player_angles);
 }
 
 static void
@@ -231,8 +226,7 @@ chase_mode_2 (chasestate_t *cs)
 	limit_distance (cs);
 	check_for_walls (cs, forward);
 
-	dir = cs->camera_origin - vs->player_origin;
-	forward = normalf (dir);
+	dir = vs->player_origin - cs->camera_origin;
 
 	if (dir[1] == 0 && dir[0] == 0) {
 		// look straight up or down
@@ -240,22 +234,14 @@ chase_mode_2 (chasestate_t *cs)
 		if (dir[2] > 0)
 			cs->camera_angles[PITCH] = 90;
 		else
-			cs->camera_angles[PITCH] = 270;
+			cs->camera_angles[PITCH] = -90;
 	} else {
 		float       pitch, yaw, fwd;
 		yaw = (atan2 (dir[1], dir[0]) * 180 / M_PI);
-		if (yaw < 0)
-			yaw += 360;
-		if (yaw < 180)
-			yaw += 180;
-		else
-			yaw -= 180;
 		cs->camera_angles[YAW] = yaw;
 
 		fwd = sqrt (dir[0] * dir[0] + dir[1] * dir[1]);
-		pitch = (atan2 (dir[2], fwd) * 180 / M_PI);
-		if (pitch < 0)
-			pitch += 360;
+		pitch = -(atan2 (dir[2], fwd) * 180 / M_PI);
 		cs->camera_angles[PITCH] = pitch;
 	}
 	set_camera (cs, vs);

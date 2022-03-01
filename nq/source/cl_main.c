@@ -202,6 +202,7 @@ CL_ClearState (void)
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
+	cl.viewstate.player_origin = (vec4f_t) {0, 0, 0, 1};
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
 	cl.chasestate.viewstate = &cl.viewstate;

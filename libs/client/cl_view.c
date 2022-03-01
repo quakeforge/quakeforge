@@ -693,10 +693,6 @@ V_CalcRefdef (viewstate_t *vs)
 		vec3_t ang = {-viewangles[0], viewangles[1], viewangles[2]};
 		CL_TransformEntity (view, 1, ang, gun_origin);
 	}
-
-	if (vs->chase && chase_active->int_val) {
-		Chase_Update (vs->chasestate);
-	}
 }
 
 static void
@@ -745,7 +741,11 @@ V_RenderView (viewstate_t *vs)
 	if (vs->intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef (vs);
 	} else {
-		V_CalcRefdef (vs);
+		if (vs->chase && chase_active->int_val) {
+			Chase_Update (vs->chasestate);
+		} else {
+			V_CalcRefdef (vs);
+		}
 	}
 }
 
