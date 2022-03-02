@@ -187,6 +187,7 @@ chase_mode_1 (chasestate_t *cs)
 	vec4f_t	    forward = {}, up = {}, right = {}, stop = {};
 	//FIXME
 	AngleVectors (vs->player_angles, &forward[0], &right[0], &up[0]);
+	VectorCopy (vs->player_angles, cs->camera_angles);
 
 	// calc exact destination
 	cs->camera_origin = vs->player_origin
@@ -200,7 +201,7 @@ chase_mode_1 (chasestate_t *cs)
 		cs->camera_origin = stop + forward * 8;
 	}
 
-	Transform_SetWorldPosition (vs->camera_transform, cs->camera_origin);
+	set_camera (cs, vs);
 }
 
 static void
