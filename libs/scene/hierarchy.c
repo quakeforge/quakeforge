@@ -397,13 +397,13 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
 }
 
 hierarchy_t *
-Hierarchy_New (size_t grow, int createRoot)
+Hierarchy_New (scene_t *scene, int createRoot)
 {
-	if (!grow) {
-		grow = 16;
-	}
-	hierarchy_t *hierarchy = malloc (sizeof (hierarchy_t));
+	scene_resources_t *res = scene->resources;
+	hierarchy_t *hierarchy = PR_RESNEW_NC (res->hierarchies);
+	hierarchy->scene = scene;
 
+	size_t      grow = 16;
 	DARRAY_INIT (&hierarchy->transform, grow);
 	DARRAY_INIT (&hierarchy->entity, grow);
 	DARRAY_INIT (&hierarchy->childCount, grow);
@@ -432,12 +432,9 @@ Hierarchy_New (size_t grow, int createRoot)
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
-	if (hierarchy->transform.size) {
-		scene_resources_t *res = hierarchy->transform.a[0]->scene->resources;
-
-		for (size_t i = 0; i < hierarchy->transform.size; i++) {
-			PR_RESFREE (res->transforms, hierarchy->transform.a[i]);
-		}
+	scene_resources_t *res = hierarchy->scene->resources;
+	for (size_t i = 0; i < hierarchy->transform.size; i++) {
+		PR_RESFREE (res->transforms, hierarchy->transform.a[i]);
 	}
 	DARRAY_CLEAR (&hierarchy->transform);
 	DARRAY_CLEAR (&hierarchy->entity);
@@ -455,5 +452,5 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	DARRAY_CLEAR (&hierarchy->localScale);
 	DARRAY_CLEAR (&hierarchy->worldRotation);
 	DARRAY_CLEAR (&hierarchy->worldScale);
-	free (hierarchy);
+	PR_RESFREE (res->hierarchies, hierarchy);
 }

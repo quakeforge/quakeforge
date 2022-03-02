@@ -61,9 +61,10 @@ typedef struct hierarchy_s {
 	vec4fset_t  localScale;
 	vec4fset_t  worldRotation;
 	vec4fset_t  worldScale;
+	struct scene_s *scene;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (size_t grow, int createRoot);
+hierarchy_t *Hierarchy_New (struct scene_s *scene, int createRoot);
 hierarchy_t *Hierarchy_Copy (hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 
