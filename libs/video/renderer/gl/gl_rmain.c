@@ -448,19 +448,18 @@ R_RenderScene (void)
 	gl_R_SetupFrame ();
 	R_SetupGL ();
 	gl_Fog_EnableGFog ();
+
 	R_MarkLeaves ();			// done here so we know if we're in water
 	R_PushDlights (vec3_origin);
 	gl_R_DrawWorld ();				// adds static entities to the list
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	R_DrawEntitiesOnList ();
 	gl_R_RenderDlights ();
-
 	gl_R_DrawWaterSurfaces ();
+	R_DrawViewModel ();
 	gl_R_DrawParticles ();
 
 	gl_Fog_DisableGFog ();
-
-	R_DrawViewModel ();
 
 	if (R_TestErrors (0))
 		R_DisplayErrors ();

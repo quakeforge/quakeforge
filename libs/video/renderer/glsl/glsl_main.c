@@ -217,15 +217,15 @@ glsl_R_RenderView (void)
 	glsl_R_DrawWaterSurfaces ();
 	if (speeds)
 		t[7] = Sys_DoubleTime ();
-	glsl_R_DrawParticles ();
+	R_DrawViewModel ();
 	if (speeds)
 		t[8] = Sys_DoubleTime ();
-	R_DrawViewModel ();
+	glsl_R_DrawParticles ();
 	if (speeds)
 		t[9] = Sys_DoubleTime ();
 	if (speeds) {
 		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, part: %g, view: %g\n",
+					" sky: %g, ents: %g, water: %g, view: %g, part: %g\n",
 					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
 					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
 					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
