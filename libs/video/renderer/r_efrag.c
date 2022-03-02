@@ -244,8 +244,6 @@ R_StoreEfrags (const efrag_t *efrag)
 				break;
 
 			default:
-				Sys_Error ("R_StoreEfrags: Bad entity type %d",
-						   model->type);
 		}
 	}
 }

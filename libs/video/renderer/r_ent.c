@@ -55,8 +55,13 @@ typedef struct entity_pool_s {
 	entity_t    entities[ENT_POOL_SIZE];
 } entity_pool_t;
 
-entity_t   *r_ent_queue;
-static entity_t **vis_tail = &r_ent_queue;
+entity_t   *r_ent_queue[mod_num_types];
+static entity_t **vis_tail[mod_num_types] = {
+	[mod_brush] &r_ent_queue[mod_brush],
+	[mod_sprite] &r_ent_queue[mod_sprite],
+	[mod_alias] &r_ent_queue[mod_alias],
+	[mod_iqm] &r_ent_queue[mod_iqm],
+};
 
 static entity_pool_t *entity_pools = 0;
 static entity_pool_t **entpool_tail = &entity_pools;
@@ -119,16 +124,23 @@ R_FreeAllEntities (void)
 void
 R_ClearEnts (void)
 {
-	r_ent_queue = 0;
-	vis_tail = &r_ent_queue;
+	for (int i = 0; i < mod_num_types; i++) {
+		r_ent_queue[i] = 0;
+		vis_tail[i] = &r_ent_queue[i];
+	}
 }
 
 void
 R_EnqueueEntity (entity_t *ent)
 {
+	modtype_t   type = ent->renderer.model->type;
+
+	if (type < 0 || type >= mod_num_types) {
+		Sys_Error ("R_EnqueueEntity: Bad entity model type %d", type);
+	}
 	ent->next = 0;
-	*vis_tail = ent;
-	vis_tail = &ent->next;
+	*vis_tail[type] = ent;
+	vis_tail[type] = &ent->next;
 }
 
 float

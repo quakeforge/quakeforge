@@ -149,9 +149,7 @@ R_RenderEntities (void)
 #define RE_LOOP(type_name, Type) \
 	do { \
 		begun = 0; \
-		for (ent = r_ent_queue; ent; ent = ent->next) { \
-			if (ent->renderer.model->type != mod_##type_name) \
-				continue; \
+		for (ent = r_ent_queue[mod_##type_name]; ent; ent = ent->next) { \
 			if (!begun) { \
 				glsl_R_##Type##Begin (); \
 				begun = 1; \

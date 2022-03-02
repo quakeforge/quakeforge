@@ -87,9 +87,7 @@ Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 	do { \
 		entity_t   *ent; \
 		int         begun = 0; \
-		for (ent = r_ent_queue; ent; ent = ent->next) { \
-			if (ent->renderer.model->type != mod_##type_name) \
-				continue; \
+		for (ent = r_ent_queue[mod_##type_name]; ent; ent = ent->next) { \
 			if (!begun) { \
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \

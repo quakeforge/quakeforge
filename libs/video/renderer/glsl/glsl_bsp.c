@@ -1150,9 +1150,7 @@ glsl_R_DrawWorld (void)
 	R_VisitWorldNodes (&bctx);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
-		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->renderer.model->type != mod_brush)
-				continue;
+		for (ent = r_ent_queue[mod_brush]; ent; ent = ent->next) {
 			R_DrawBrushModel (ent);
 		}
 	}

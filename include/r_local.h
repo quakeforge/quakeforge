@@ -292,7 +292,7 @@ extern mleaf_t	*r_viewleaf;
 extern int		r_clipflags;
 extern int		r_dlightframecount;
 
-extern struct entity_s *r_ent_queue;
+extern struct entity_s *r_ent_queue[mod_num_types];
 struct dlight_s;
 
 extern vec3_t lightspot;

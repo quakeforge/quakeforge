@@ -220,9 +220,7 @@ R_DrawEntitiesOnList (void)
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->renderer.model->type != mod_alias)
-			continue;
+	for (ent = r_ent_queue[mod_alias]; ent; ent = ent->next) {
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -250,9 +248,7 @@ R_DrawEntitiesOnList (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->renderer.model->type != mod_iqm)
-			continue;
+	for (ent = r_ent_queue[mod_iqm]; ent; ent = ent->next) {
 		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -261,9 +257,7 @@ R_DrawEntitiesOnList (void)
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->renderer.model->type != mod_sprite)
-			continue;
+	for (ent = r_ent_queue[mod_sprite]; ent; ent = ent->next) {
 		R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
