@@ -88,7 +88,6 @@ Scene_CreateEntity (scene_t *scene)
 	hierarchy_t *h = ent->transform->hierarchy;
 	h->entity.a[ent->transform->index] = ent;
 
-	DARRAY_APPEND (&scene->roots, ent->transform);
 	return ent;
 }
 
@@ -99,8 +98,16 @@ Scene_GetEntity (scene_t *scene, int id)
 	return PR_RESGET (res->entities, id);
 }
 
-static void
-unroot_transform (scene_t *scene, transform_t *transform)
+void
+scene_add_root (scene_t *scene, transform_t *transform)
+{
+	if (!Transform_GetParent (transform)) {
+		DARRAY_APPEND (&scene->roots, transform);
+	}
+}
+
+void
+scene_del_root (scene_t *scene, transform_t *transform)
 {
 	if (!Transform_GetParent (transform)) {
 		for (size_t i = 0; i < scene->roots.size; i++) {
@@ -138,7 +145,6 @@ Scene_DestroyEntity (scene_t *scene, entity_t *ent)
 	if (PR_RESGET (res->entities, ent->id) != ent) {
 		Sys_Error ("Scene_DestroyEntity: entity not owned by scene");
 	}
-	unroot_transform (scene, ent->transform);
 	// pull the transform out of the hierarchy to make it easier to destory
 	// all the child entities
 	Transform_SetParent (ent->transform, 0);

@@ -58,6 +58,7 @@ Transform_New (scene_t *scene, transform_t *parent)
 	} else {
 		transform->hierarchy = Hierarchy_New (16, 1);//FIXME should be config
 		transform->index = 0;
+		scene_add_root (scene, transform);
 	}
 	transform->hierarchy->transform.a[transform->index] = transform;
 	Hierarchy_UpdateMatrices (transform->hierarchy);
@@ -72,6 +73,7 @@ Transform_Delete (transform_t *transform)
 		// hierarchy so deleting it is easier
 		Transform_SetParent (transform, 0);
 	}
+	scene_del_root (transform->scene, transform);
 	Hierarchy_Delete (transform->hierarchy);
 }
 
@@ -87,6 +89,7 @@ void
 Transform_SetParent (transform_t *transform, transform_t *parent)
 {
 	if (parent) {
+		scene_del_root (transform->scene, transform);
 		hierarchy_t *hierarchy = transform->hierarchy;
 		uint32_t    index = transform->index;
 		Hierarchy_InsertHierarchy (parent->hierarchy, hierarchy,
@@ -108,6 +111,7 @@ Transform_SetParent (transform_t *transform, transform_t *parent)
 		Hierarchy_InsertHierarchy (new_hierarchy, hierarchy, null_transform,
 								   index);
 		Hierarchy_RemoveHierarchy (hierarchy, index);
+		scene_add_root (transform->scene, transform);
 	}
 }
 
