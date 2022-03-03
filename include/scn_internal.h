@@ -13,7 +13,4 @@ typedef struct scene_resources_s {
 	PR_RESMAP (transform_t) transforms;
 } scene_resources_t;
 
-void scene_add_root (scene_t *scene, transform_t *transform);
-void scene_del_root (scene_t *scene, transform_t *transform);
-
 #endif//__scn_internal_h

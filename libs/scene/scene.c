@@ -54,8 +54,6 @@ Scene_NewScene (void)
 	res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;
 
-	DARRAY_INIT (&scene->roots, 16);
-
 	return scene;
 }
 
@@ -69,8 +67,6 @@ Scene_DeleteScene (scene_t *scene)
 		free (res->entities._map[i]);
 	}
 	free (res->entities._map);
-
-	DARRAY_CLEAR (&scene->roots);
 
 	free (scene->resources);
 	free (scene);
@@ -96,27 +92,6 @@ Scene_GetEntity (scene_t *scene, int id)
 {
 	scene_resources_t *res = scene->resources;
 	return PR_RESGET (res->entities, id);
-}
-
-void
-scene_add_root (scene_t *scene, transform_t *transform)
-{
-	if (!Transform_GetParent (transform)) {
-		DARRAY_APPEND (&scene->roots, transform);
-	}
-}
-
-void
-scene_del_root (scene_t *scene, transform_t *transform)
-{
-	if (!Transform_GetParent (transform)) {
-		for (size_t i = 0; i < scene->roots.size; i++) {
-			if (scene->roots.a[i] == transform) {
-				DARRAY_REMOVE_AT (&scene->roots, i);
-				break;
-			}
-		}
-	}
 }
 
 static void
@@ -154,8 +129,8 @@ Scene_DestroyEntity (scene_t *scene, entity_t *ent)
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
-	for (size_t i = 0; i < scene->roots.size; i++) {
-		hierarchy_t *h = scene->roots.a[i]->hierarchy;
+	while (scene->hierarchies) {
+		hierarchy_t *h = scene->hierarchies;
 		// deleting the root entity deletes all child entities
 		entity_t   *ent = h->entity.a[0];
 		destroy_entity (scene, ent);

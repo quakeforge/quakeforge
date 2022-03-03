@@ -42,7 +42,7 @@
 
 typedef struct scene_s {
 	struct scene_resources_s *const resources;
-	xformset_t  roots;
+	struct hierarchy_s *hierarchies;
 } scene_t;
 
 scene_t *Scene_NewScene (void);

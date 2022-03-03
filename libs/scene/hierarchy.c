@@ -403,6 +403,13 @@ Hierarchy_New (scene_t *scene, int createRoot)
 	hierarchy_t *hierarchy = PR_RESNEW_NC (res->hierarchies);
 	hierarchy->scene = scene;
 
+	hierarchy->prev = &scene->hierarchies;
+	hierarchy->next = scene->hierarchies;
+	if (scene->hierarchies) {
+		scene->hierarchies->prev = &hierarchy->next;
+	}
+	scene->hierarchies = hierarchy;
+
 	size_t      grow = 16;
 	DARRAY_INIT (&hierarchy->transform, grow);
 	DARRAY_INIT (&hierarchy->entity, grow);
@@ -432,6 +439,11 @@ Hierarchy_New (scene_t *scene, int createRoot)
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
+	if (hierarchy->next) {
+		hierarchy->next->prev = hierarchy->prev;
+	}
+	*hierarchy->prev = hierarchy->next;
+
 	scene_resources_t *res = hierarchy->scene->resources;
 	for (size_t i = 0; i < hierarchy->transform.size; i++) {
 		PR_RESFREE (res->transforms, hierarchy->transform.a[i]);
