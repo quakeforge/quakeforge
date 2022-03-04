@@ -52,20 +52,20 @@ typedef struct rua_scene_s {
 	scene_t    *scene;
 } rua_scene_t;
 
-typedef struct scene_resources_s {
+typedef struct rua_scene_resources_s {
 	progs_t    *pr;
 	PR_RESMAP (rua_scene_t) scene_map;
 	rua_scene_t *scenes;
-} scene_resources_t;
+} rua_scene_resources_t;
 
 static rua_scene_t *
-rua_scene_new (scene_resources_t *res)
+rua_scene_new (rua_scene_resources_t *res)
 {
 	return PR_RESNEW (res->scene_map);
 }
 
 static void
-rua_scene_free (scene_resources_t *res, rua_scene_t *scene)
+rua_scene_free (rua_scene_resources_t *res, rua_scene_t *scene)
 {
 	if (scene->next) {
 		scene->next->prev = scene->prev;
@@ -76,7 +76,7 @@ rua_scene_free (scene_resources_t *res, rua_scene_t *scene)
 }
 
 static rua_scene_t * __attribute__((pure))
-rua__scene_get (scene_resources_t *res, int id, const char *name)
+rua__scene_get (rua_scene_resources_t *res, int id, const char *name)
 {
 	rua_scene_t *scene = PR_RESGET (res->scene_map, id);
 
@@ -114,7 +114,7 @@ rua__transform_get (progs_t *pr, rua_scene_t *scene, int id, const char *name)
 	rua__transform_get(pr, scene, id, __FUNCTION__)
 
 static int __attribute__((pure))
-rua_scene_index (scene_resources_t *res, rua_scene_t *scene)
+rua_scene_index (rua_scene_resources_t *res, rua_scene_t *scene)
 {
 	return PR_RESINDEX (res->scene_map, scene);
 }
@@ -122,7 +122,7 @@ rua_scene_index (scene_resources_t *res, rua_scene_t *scene)
 static void
 bi_Scene_NewScene (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 
 	rua_scene_t *scene = rua_scene_new (res);
 
@@ -139,7 +139,7 @@ bi_Scene_NewScene (progs_t *pr, void *_res)
 }
 
 static void
-rua_delete_scene (scene_resources_t *res, rua_scene_t *scene)
+rua_delete_scene (rua_scene_resources_t *res, rua_scene_t *scene)
 {
 	Scene_DeleteScene (scene->scene);
 	rua_scene_free (res, scene);
@@ -148,7 +148,7 @@ rua_delete_scene (scene_resources_t *res, rua_scene_t *scene)
 static void
 bi_Scene_DeleteScene (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 
 	rua_delete_scene (res, scene);
@@ -157,7 +157,7 @@ bi_Scene_DeleteScene (progs_t *pr, void *_res)
 static void
 bi_Scene_CreateEntity (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	entity_t   *ent = Scene_CreateEntity (scene->scene);
 	R_INT (pr) = ent->id;
@@ -166,7 +166,7 @@ bi_Scene_CreateEntity (progs_t *pr, void *_res)
 static void
 bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	entity_t   *ent = rua_entity_get (pr, scene, P_INT (pr, 1));
 	Scene_DestroyEntity (scene->scene, ent);
@@ -175,7 +175,7 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 static void
 bi_Entity_GetTransform (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	entity_t   *ent = rua_entity_get (pr, scene, P_INT (pr, 1));
 
@@ -185,7 +185,7 @@ bi_Entity_GetTransform (progs_t *pr, void *_res)
 static void
 bi_Transform_ChildCount (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 
@@ -195,7 +195,7 @@ bi_Transform_ChildCount (progs_t *pr, void *_res)
 static void
 bi_Transform_GetChild (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	transform_t *child = Transform_GetChild (transform, P_UINT (pr, 2));
@@ -206,7 +206,7 @@ bi_Transform_GetChild (progs_t *pr, void *_res)
 static void
 bi_Transform_SetParent (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	transform_t *parent = rua_transform_get (pr, scene, P_INT (pr, 2));
@@ -217,7 +217,7 @@ bi_Transform_SetParent (progs_t *pr, void *_res)
 static void
 bi_Transform_GetParent (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	transform_t *parent = Transform_GetParent (transform);
@@ -228,7 +228,7 @@ bi_Transform_GetParent (progs_t *pr, void *_res)
 static void
 bi_Transform_SetTag (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	pr_uint_t   tag = P_UINT (pr, 2);
@@ -238,7 +238,7 @@ bi_Transform_SetTag (progs_t *pr, void *_res)
 static void
 bi_Transform_GetTag (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 
@@ -248,7 +248,7 @@ bi_Transform_GetTag (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_GetLocalMatrix (transform, &R_PACKED (pr, pr_vec4_t));
@@ -257,7 +257,7 @@ bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_GetLocalInverse (transform, &R_PACKED (pr, pr_vec4_t));
@@ -266,7 +266,7 @@ bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_GetWorldMatrix (transform, &R_PACKED (pr, pr_vec4_t));
@@ -275,7 +275,7 @@ bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_GetWorldInverse (transform, &R_PACKED (pr, pr_vec4_t));
@@ -284,7 +284,7 @@ bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetLocalPosition (transform, P_PACKED (pr, pr_vec4_t, 2));
@@ -293,7 +293,7 @@ bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalPosition (transform);
@@ -302,7 +302,7 @@ bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetLocalRotation (transform, P_PACKED (pr, pr_vec4_t, 2));
@@ -311,7 +311,7 @@ bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalRotation (transform);
@@ -320,7 +320,7 @@ bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetLocalScale (transform, P_PACKED (pr, pr_vec4_t, 2));
@@ -329,7 +329,7 @@ bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalScale (transform);
@@ -338,7 +338,7 @@ bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 static void
 bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetWorldPosition (transform, P_PACKED (pr, pr_vec4_t, 2));
@@ -347,7 +347,7 @@ bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldPosition (transform);
@@ -356,7 +356,7 @@ bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetWorldRotation (transform, P_PACKED (pr, pr_vec4_t, 2));
@@ -365,7 +365,7 @@ bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldRotation (transform);
@@ -374,7 +374,7 @@ bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldScale (transform);
@@ -383,7 +383,7 @@ bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	Transform_SetLocalTransform (transform, P_PACKED (pr, pr_vec4_t, 2),
@@ -393,7 +393,7 @@ bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 static void
 bi_Transform_Forward (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_Forward (transform);
@@ -402,7 +402,7 @@ bi_Transform_Forward (progs_t *pr, void *_res)
 static void
 bi_Transform_Right (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_Right (transform);
@@ -411,7 +411,7 @@ bi_Transform_Right (progs_t *pr, void *_res)
 static void
 bi_Transform_Up (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_INT (pr, 0));
 	transform_t *transform = rua_transform_get (pr, scene, P_INT (pr, 1));
 	R_PACKED (pr, pr_vec4_t) = Transform_Up (transform);
@@ -466,7 +466,7 @@ static builtin_t builtins[] = {
 static void
 bi_scene_clear (progs_t *pr, void *_res)
 {
-	scene_resources_t *res = _res;
+	rua_scene_resources_t *res = _res;
 
 	while (res->scenes) {
 		rua_delete_scene (res, res->scenes);
@@ -476,7 +476,7 @@ bi_scene_clear (progs_t *pr, void *_res)
 void
 RUA_Scene_Init (progs_t *pr, int secure)
 {
-	scene_resources_t *res = calloc (sizeof (scene_resources_t), 1);
+	rua_scene_resources_t *res = calloc (sizeof (rua_scene_resources_t), 1);
 
 	res->pr = pr;
 
