@@ -31,8 +31,15 @@
 #ifndef __client_entities_h
 #define __client_entities_h
 
+#include "QF/darray.h"
+#include "QF/msg.h"
 #include "QF/qtypes.h"
+
 #include "QF/simd/types.h"
+
+typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
+		entitystateset_t;
+extern	entitystateset_t cl_static_entities;
 
 // entity_state_t is the information conveyed from the server
 // in an update message

@@ -33,6 +33,7 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
+#include "QF/set.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
@@ -45,6 +46,38 @@
 #include "QF/scene/transform.h"
 
 #include "QF/render.h"	//FIXME move entity_t here
+
+typedef struct entqueue_s {
+	set_t      *queued_ents;
+	entityset_t *ent_queues;
+	int         num_queues;
+} entqueue_t;
+
+#define ENTINLINE GNU89INLINE inline
+
+entqueue_t *EntQueue_New (int num_queues);
+void EntQueue_Delete (entqueue_t *queue);
+ENTINLINE void EntQueue_AddEntity (entqueue_t *queue, entity_t *ent,
+								   int queue_num);
+void EntQueue_Clear (entqueue_t *queue);
+
+#undef ENTINLINE
+#ifndef IMPLEMENT_ENTITY_Funcs
+#define ENTINLINE GNU89INLINE inline
+#else
+#define ENTINLINE VISIBLE
+#endif
+
+ENTINLINE
+void
+EntQueue_AddEntity (entqueue_t *queue, entity_t *ent, int queue_num)
+{
+	if (!set_is_member (queue->queued_ents, ent->id)) {
+		// entity ids are negative (ones-complement)
+		set_add (queue->queued_ents, -ent->id);//FIXME use ~
+		DARRAY_APPEND (&queue->ent_queues[queue_num], ent);
+	}
+}
 
 ///@}
 

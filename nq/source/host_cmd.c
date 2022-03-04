@@ -50,6 +50,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "client/world.h"
+
 #include "compat.h"
 #include "world.h"
 
@@ -1320,7 +1322,7 @@ Host_Viewmodel_f (void)
 	}
 
 	SVfloat (e, frame) = 0;
-	cl.model_precache[(int) SVfloat (e, modelindex)] = m;
+	cl_world.models.a[(int) SVfloat (e, modelindex)] = m;
 }
 
 static void
@@ -1333,7 +1335,7 @@ Host_Viewframe_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	f = atoi (Cmd_Argv (1));
 	if (f >= m->numframes)
@@ -1366,7 +1368,7 @@ Host_Viewnext_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	SVfloat (e, frame) = SVfloat (e, frame) + 1;
 	if (SVfloat (e, frame) >= m->numframes)
@@ -1385,7 +1387,7 @@ Host_Viewprev_f (void)
 	if (!e)
 		return;
 
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	SVfloat (e, frame) = SVfloat (e, frame) - 1;
 	if (SVfloat (e, frame) < 0)

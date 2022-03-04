@@ -180,13 +180,8 @@ typedef struct client_state_s {
 
 /* information that is static for the entire time connected to a server */
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
-	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
@@ -205,9 +200,7 @@ typedef struct client_state_s {
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
@@ -240,10 +233,9 @@ extern struct cvar_s	*noskins;
 
 extern	client_state_t	cl;
 
-// FIXME, allocate dynamically
-extern entity_t cl_entities[MAX_EDICTS];
+extern entity_t *cl_entities[MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
-extern byte cl_forcelink[MAX_EDICTS];
+extern struct set_s cl_forcelink;
 
 extern int fps_count;
 
@@ -299,6 +291,7 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
+entity_t *CL_GetEntity (int num);
 
 extern	double			realtime;
 

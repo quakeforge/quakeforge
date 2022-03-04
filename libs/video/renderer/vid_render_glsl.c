@@ -151,7 +151,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	R_RemoveEfrags,
 	glsl_R_LineGraph,
 	R_AllocDlight,
-	R_AllocEntity,
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	glsl_R_ViewChanged,

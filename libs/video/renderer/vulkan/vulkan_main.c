@@ -45,6 +45,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
@@ -65,7 +67,7 @@ static void
 setup_frame (vulkan_ctx_t *ctx)
 {
 	R_AnimateLight ();
-	R_ClearEnts ();
+	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
 	VectorCopy (r_refdef.viewposition, r_origin);
@@ -85,9 +87,10 @@ Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
-		entity_t   *ent; \
 		int         begun = 0; \
-		for (ent = r_ent_queue[mod_##type_name]; ent; ent = ent->next) { \
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+			 i++) { \
+			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
@@ -122,7 +125,7 @@ Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 		|| !ent->renderer.model)
 		return;
 
-	R_EnqueueEntity (ent);
+	EntQueue_AddEntity (r_ent_queue, ent, ent->renderer.model->type);
 }
 
 void
@@ -195,7 +198,6 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	R_FreeAllEntities ();
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (models, num_models, ctx);
 	//Vulkan_BuildLightmaps (models, num_models, ctx);

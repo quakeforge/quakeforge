@@ -48,6 +48,8 @@
 
 #include "compat.h"
 
+#include "client/world.h"
+
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
@@ -338,8 +340,8 @@ demo_default_name (const char *argv1)
 	time (&tim);
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
-	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->path);
+	// the leading path-name is to be removed from cl_world.worldmodel->name
+	mapname = QFS_SkipPath (cl_world.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended

@@ -38,6 +38,8 @@
 #include "QF/sys.h"
 #include "QF/ui/view.h"
 
+#include "QF/scene/entity.h"
+
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -220,7 +222,7 @@ sw32_R_SetupFrame (void)
 	R_CheckVariables ();
 
 	R_AnimateLight ();
-	R_ClearEnts ();
+	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
 	sw32_numbtofpolys = 0;

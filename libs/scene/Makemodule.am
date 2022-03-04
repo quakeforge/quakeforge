@@ -9,6 +9,7 @@ libs_scene_libQFscene_la_LIBADD=		$(scene_deps)
 libs_scene_libQFscene_la_DEPENDENCIES=	$(scene_deps)
 libs_scene_libQFscene_la_SOURCES= \
 	libs/scene/camera.c \
+	libs/scene/entity.c \
 	libs/scene/hierarchy.c \
 	libs/scene/scene.c \
 	libs/scene/transform.c

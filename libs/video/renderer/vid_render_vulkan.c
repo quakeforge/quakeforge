@@ -61,6 +61,8 @@
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
 
+#include "QF/scene/entity.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -100,6 +102,7 @@ vulkan_ParticleSystem (void)
 static void
 vulkan_R_Init (void)
 {
+	r_ent_queue = EntQueue_New (mod_num_types);
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
@@ -679,7 +682,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	R_RemoveEfrags,
 	vulkan_R_LineGraph,
 	R_AllocDlight,
-	R_AllocEntity,
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	vulkan_R_ViewChanged,

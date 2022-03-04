@@ -222,13 +222,9 @@ typedef struct client_state_s {
 	char        model_name[MAX_MODELS][MAX_QPATH];
 	char        sound_name[MAX_SOUNDS][MAX_QPATH];
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
 	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
@@ -247,9 +243,7 @@ typedef struct client_state_s {
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
@@ -288,10 +282,7 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
-		entitystateset_t;
-extern	entitystateset_t cl_static_entities;
-extern	entity_t		cl_entities[512];
+extern	entity_t	*cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 
 extern	qboolean	nomaster;

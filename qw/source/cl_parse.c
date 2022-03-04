@@ -61,12 +61,15 @@
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
+#include "QF/scene/scene.h"
+
 #include "compat.h"
 #include "sbar.h"
 
 #include "client/effects.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
@@ -170,40 +173,6 @@ int         packet_latency[NET_TIMINGS];
 
 extern cvar_t *hud_scoreboard_uid;
 
-entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
-
-static void
-CL_LoadSky (void)
-{
-	plitem_t   *item;
-	const char *name = 0;
-	static const char *sky_keys[] = {
-		"sky",      // Q2/DarkPlaces
-		"skyname",  // old QF
-		"qlsky",    // QuakeLives
-		0
-	};
-
-	// R_LoadSkys does the right thing with null pointers.
-	if (cl.serverinfo) {
-		name = Info_ValueForKey (cl.serverinfo, "sky");
-	}
-
-	if (!name) {
-		if (!cl.worldspawn) {
-			r_funcs->R_LoadSkys (0);
-			return;
-		}
-		for (const char **key = sky_keys; *key; key++) {
-			if ((item = PL_ObjectForKey (cl.worldspawn, *key))) {
-				name = PL_String (item);
-				break;
-			}
-		}
-	}
-	r_funcs->R_LoadSkys (name);
-}
-
 int
 CL_CalcNet (void)
 {
@@ -290,49 +259,20 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
-static plitem_t *
-map_ent (const char *mapname)
-{
-	static progs_t edpr;
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-	char       *buf;
-	plitem_t   *edicts = 0;
-	QFile      *ent_file;
-
-	QFS_StripExtension (mapname, name);
-	strcat (name, ".ent");
-	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
-	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
-		edicts = ED_Parse (&edpr, buf);
-		free (buf);
-	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->brush.entities);
-	}
-	free (name);
-	return edicts;
-}
-
 static void
 CL_NewMap (const char *mapname)
 {
-	cl_static_entities.size = 0;
-	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check (0);								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
-		cl.edicts = map_ent (mapname);
-		if (cl.edicts) {
-			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
-			CL_LoadSky ();
-			if (r_funcs->Fog_ParseWorldspawn)
-				r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
-		}
+	const char *skyname = 0;
+	// R_LoadSkys does the right thing with null pointers.
+	if (cl.serverinfo) {
+		skyname = Info_ValueForKey (cl.serverinfo, "sky");
 	}
-
-	map_cfg (mapname, 1);
+	CL_World_NewMap (mapname, skyname);
 }
 
 static void
@@ -357,7 +297,7 @@ Model_NextDownload (void)
 	}
 
 	if (cl.model_name[1])
-		map_cfg (cl.model_name[1], 0);
+		CL_MapCfg (cl.model_name[1]);
 
 	for (i = 1; i < cl.nummodels; i++) {
 		const char *info_key = 0;
@@ -365,9 +305,10 @@ Model_NextDownload (void)
 		if (!cl.model_name[i][0])
 			break;
 
-		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
+		DARRAY_APPEND (&cl_world.models,
+					   Mod_ForName (cl.model_name[i], false));
 
-		if (!cl.model_precache[i]) {
+		if (!cl_world.models.a[i]) {
 			Sys_Printf ("\nThe required model file '%s' could not be found or "
 						"downloaded.\n\n", cl.model_name[i]);
 			Sys_Printf ("You may need to download or purchase a %s client "
@@ -378,18 +319,18 @@ Model_NextDownload (void)
 		}
 
 		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl.model_precache[i]->type == mod_alias) {
+			&& cl_world.models.a[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			//XXX mod_funcs->Skin_Player_Model (cl.model_precache[i]);
+			//XXX mod_funcs->Skin_Player_Model (cl_world.models.a[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
-			&& cl.model_precache[i]->type == mod_alias)
+			&& cl_world.models.a[i]->type == mod_alias)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs->int_val) {
-			aliashdr_t *ahdr = cl.model_precache[i]->aliashdr;
+			aliashdr_t *ahdr = cl_world.models.a[i]->aliashdr;
 			if (!ahdr)
-				ahdr = Cache_Get (&cl.model_precache[i]->cache);
+				ahdr = Cache_Get (&cl_world.models.a[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
 															 ahdr->crc),
 								 0);
@@ -398,14 +339,14 @@ Model_NextDownload (void)
 				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
 													info_key, ahdr->crc));
 			}
-			if (!cl.model_precache[i]->aliashdr)
-				Cache_Release (&cl.model_precache[i]->cache);
+			if (!cl_world.models.a[i]->aliashdr)
+				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}
 
 	// Something went wrong (probably in the server, probably a TF server)
 	// We need to disconnect gracefully.
-	if (!cl.model_precache[1]) {
+	if (!cl_world.models.a[1]) {
 		Sys_Printf ("\nThe server has failed to provide the map name.\n\n");
 		Sys_Printf ("Disconnecting to prevent a crash.\n\n");
 		CL_Disconnect ();
@@ -413,8 +354,8 @@ Model_NextDownload (void)
 	}
 
 	// all done
-	cl.worldmodel = cl.model_precache[1];
-	cl.chasestate.worldmodel = cl.worldmodel;
+	cl_world.worldmodel = cl_world.models.a[1];
+	cl.chasestate.worldmodel = cl_world.worldmodel;
 	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages
@@ -422,7 +363,7 @@ Model_NextDownload (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
 						 va (0, prespawn_name, cl.servercount,
-							 cl.worldmodel->brush.checksum2));
+							 cl_world.worldmodel->brush.checksum2));
 	}
 }
 
@@ -453,7 +394,8 @@ Sound_NextDownload (void)
 	}
 
 	// done with sounds, request models now
-	memset (cl.model_precache, 0, sizeof (cl.model_precache));
+	cl_world.models.size = 0;
+	DARRAY_APPEND (&cl_world.models, 0);// ind 0 is null model
 	cl_playerindex = -1;
 	cl_flagindex = -1;
 	cl_h_playerindex = -1;
@@ -832,7 +774,6 @@ CL_ParseServerData (void)
 	}
 
 	cl.viewentity = cl.playernum + 1;
-	cl.viewstate.player_entity = &cl_entities[cl.viewentity];
 	cl.viewstate.bob_enabled = !cl.spectator;
 
 	// get the full level name
@@ -955,54 +896,6 @@ CL_ParseModellist (void)
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_model;
 	Model_NextDownload ();
-}
-
-static void
-CL_ParseBaseline (entity_state_t *es)
-{
-	es->modelindex = MSG_ReadByte (net_message);
-	es->frame = MSG_ReadByte (net_message);
-	es->colormap = MSG_ReadByte (net_message);
-	es->skinnum = MSG_ReadByte (net_message);
-
-	MSG_ReadCoordAngleV (net_message, &es->origin[0], es->angles);//FIXME
-	es->origin[3] = 1;
-
-	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
-	es->colormod = 255;
-	es->alpha = 255;
-	es->scale = 16;
-	es->glow_size = 0;
-	es->glow_color = 254;
-}
-
-/*
-	CL_ParseStatic
-
-	Static entities are non-interactive world objects
-	like torches
-*/
-static void
-CL_ParseStatic (void)
-{
-	entity_t	   *ent;
-	entity_state_t	es;
-
-	CL_ParseBaseline (&es);
-
-	ent = r_funcs->R_AllocEntity ();
-	CL_Init_Entity (ent);
-
-	DARRAY_APPEND (&cl_static_entities, es);
-
-	// copy it to the current state
-	ent->renderer.model = cl.model_precache[es.modelindex];
-	ent->animation.frame = es.frame;
-	ent->renderer.skinnum = es.skinnum;
-
-	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
-
-	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
 
 static void
@@ -1275,7 +1168,7 @@ CL_SetStat (int stat, int value)
 			break;
 	}
 	cl.stats[stat] = value;
-	cl.viewstate.weapon_model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
 }
 
 static void
@@ -1318,7 +1211,7 @@ CL_ParseServerMessage (void)
 	const char *str;
 	static dstring_t *stuffbuf;
 	TEntContext_t tentCtx = {
-		cl.viewstate.player_origin, cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin, cl.viewentity
 	};
 
 	received_framecount = host_framecount;
@@ -1513,14 +1406,14 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_spawnstatic:
-				CL_ParseStatic ();
+				CL_ParseStatic (net_message, 1);
 				break;
 
 			//   svc_spawnbinary
 
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
-				CL_ParseBaseline (&qw_entstates.baseline[i]);
+				CL_ParseBaseline (net_message, &qw_entstates.baseline[i], 1);
 				break;
 
 			case svc_temp_entity:

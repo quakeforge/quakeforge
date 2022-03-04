@@ -117,6 +117,8 @@ sw_R_Init (void)
 {
 	int         dummy;
 
+	r_ent_queue = EntQueue_New (mod_num_types);
+
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
@@ -166,8 +168,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.renderer.model = worldmodel;
-
-	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
 	for (unsigned i = 0; i < brush->modleafs; i++)
@@ -418,14 +418,14 @@ draw_iqm_entity (entity_t *ent)
 static void
 R_DrawEntitiesOnList (void)
 {
-	entity_t   *ent;
-
 	if (!r_drawentities->int_val)
 		return;
 
 #define RE_LOOP(type_name) \
 	do { \
-		for (ent = r_ent_queue[mod_##type_name]; ent; ent = ent->next) { \
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+			 i++) { \
+			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
 			VectorCopy (Transform_GetWorldPosition (ent->transform), \
 						r_entorigin); \
 			currententity = ent; \
@@ -566,7 +566,6 @@ R_DrawBEntitiesOnList (void)
 	vec3_t      origin;
 	model_t    *clmodel;
 	float       minmaxs[6];
-	entity_t   *ent;
 
 	if (!r_drawentities->int_val)
 		return;
@@ -574,12 +573,12 @@ R_DrawBEntitiesOnList (void)
 	VectorCopy (modelorg, oldorigin);
 	insubmodel = true;
 
-	for (ent = r_ent_queue[mod_brush]; ent; ent = ent->next) {
+	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
+		entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 		currententity = ent;
 
-		VectorCopy (Transform_GetWorldPosition (currententity->transform),
-					origin);
-		clmodel = currententity->renderer.model;
+		VectorCopy (Transform_GetWorldPosition (ent->transform), origin);
+		clmodel = ent->renderer.model;
 
 		// see if the bounding box lets us trivially reject, also
 		// sets trivial accept status
@@ -626,8 +625,8 @@ R_DrawBEntitiesOnList (void)
 			if (r_drawpolys | r_drawculledpolys) {
 				R_ZDrawSubmodelPolys (clmodel);
 			} else {
-				if (currententity->visibility.topnode) {
-					mnode_t    *topnode = currententity->visibility.topnode;
+				if (ent->visibility.topnode) {
+					mnode_t    *topnode = ent->visibility.topnode;
 
 					if (topnode->contents >= 0) {
 						// not a leaf; has to be clipped to the world

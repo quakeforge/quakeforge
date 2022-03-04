@@ -52,10 +52,11 @@
 #include "client/entities.h"
 #include "client/particles.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
 typedef struct tent_s {
 	struct tent_s *next;
-	entity_t    ent;
+	entity_t   *ent;
 } tent_t;
 
 typedef struct {
@@ -86,7 +87,6 @@ typedef struct tent_obj_s {
 
 static PR_RESMAP (tent_t) temp_entities;
 static PR_RESMAP (tent_obj_t) tent_objects;
-scene_t *cl_scene;
 static tent_obj_t *cl_beams;
 static tent_obj_t *cl_explosions;
 
@@ -137,8 +137,6 @@ CL_TEnts_Precache (int phase)
 void
 CL_TEnts_Init (void)
 {
-	cl_scene = Scene_NewScene ();
-
 	QFS_GamedirCallback (CL_TEnts_Precache);
 	CL_TEnts_Precache (1);
 	for (int i = 0; i < 360; i++) {
@@ -150,12 +148,12 @@ CL_TEnts_Init (void)
 void
 CL_Init_Entity (entity_t *ent)
 {
-	if (ent->transform) {
-		Transform_Delete (ent->transform);
-	}
-	memset (ent, 0, sizeof (*ent));
+	memset (&ent->animation, 0, sizeof (ent->animation));
+	memset (&ent->visibility, 0, sizeof (ent->visibility));
+	memset (&ent->renderer, 0, sizeof (ent->renderer));
+	ent->active = 1;
+	ent->old_origin = (vec4f_t) {};
 
-	ent->transform = Transform_New (cl_scene, 0);
 	ent->renderer.skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
 	ent->animation.pose1 = ent->animation.pose2 = -1;
@@ -165,9 +163,9 @@ static tent_t *
 new_temp_entity (void)
 {
 	tent_t     *tent = PR_RESNEW_NC (temp_entities);
-	tent->ent.transform = 0;
+	tent->ent = Scene_CreateEntity (cl_world.scene);
 	tent->next = 0;
-	CL_Init_Entity (&tent->ent);
+	CL_Init_Entity (tent->ent);
 	return tent;
 }
 
@@ -177,7 +175,7 @@ free_temp_entities (tent_t *tents)
 	tent_t    **t = &tents;
 
 	while (*t) {
-		Transform_Delete ((*t)->ent.transform);//FIXME reuse?
+		Scene_DestroyEntity (cl_world.scene, (*t)->ent);//FIXME reuse?
 		t = &(*t)->next;
 	}
 	*t = temp_entities._free;
@@ -215,8 +213,8 @@ beam_clear (beam_t *b)
 		tent_t     *t;
 
 		for (t = b->tents; t; t = t->next) {
-			r_funcs->R_RemoveEfrags (&t->ent);
-			t->ent.visibility.efrag = 0;
+			r_funcs->R_RemoveEfrags (t->ent);
+			t->ent->visibility.efrag = 0;
 		}
 		free_temp_entities (b->tents);
 		b->tents = 0;
@@ -263,17 +261,17 @@ beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 
 		vec4f_t     position = org + d * dist;
 		d += 1.0;
-		tent->ent.renderer.model = b->model;
+		tent->ent->renderer.model = b->model;
 		if (transform) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalTransform (tent->ent.transform, scale,
+			Transform_SetLocalTransform (tent->ent->transform, scale,
 										 qmulf (rotation,
 												beam_rolls[seed % 360]),
 										 position);
 		} else {
-			Transform_SetLocalPosition (tent->ent.transform, position);
+			Transform_SetLocalPosition (tent->ent->transform, position);
 		}
-		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
+		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 }
 
@@ -377,8 +375,8 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			if (!cl_spr_explod->cache.data) {
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			}
-			ex->tent->ent.renderer.model = cl_spr_explod;
-			Transform_SetLocalPosition (ex->tent->ent.transform,//FIXME
+			ex->tent->ent->renderer.model = cl_spr_explod;
+			Transform_SetLocalPosition (ex->tent->ent->transform,//FIXME
 										(vec4f_t) {VectorExpand (position), 1});
 			break;
 		case TE_Explosion2:
@@ -601,7 +599,7 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalRotation (t->ent.transform,
+			Transform_SetLocalRotation (t->ent->transform,
 										qmulf (b->rotation,
 											   beam_rolls[seed % 360]));
 		}
@@ -618,7 +616,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 	for (to = &cl_explosions; *to; ) {
 		ex = &(*to)->to.ex;
-		ent = &ex->tent->ent;
+		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
 		if (f >= ent->renderer.model->numframes) {
 			tent_obj_t *_to;
@@ -634,7 +632,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 		ent->animation.frame = f;
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&ctx->worldModel->brush, ent);
+			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		}
 	}
 }
@@ -675,8 +673,8 @@ CL_ClearProjectiles (void)
 	tent_t     *tent;
 
 	for (tent = cl_projectiles; tent; tent = tent->next) {
-		r_funcs->R_RemoveEfrags (&tent->ent);
-		tent->ent.visibility.efrag = 0;
+		r_funcs->R_RemoveEfrags (tent->ent);
+		tent->ent->visibility.efrag = 0;
 	}
 	free_temp_entities (cl_projectiles);
 	cl_projectiles = 0;
@@ -712,7 +710,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		*tail = tent;
 		tail = &tent->next;
 
-		pr = &tent->ent;
+		pr = tent->ent;
 		pr->renderer.model = cl_spike;
 		pr->renderer.skin = 0;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
@@ -721,9 +719,9 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
 		angles[1] = bits[5] * (360.0 / 256.0);
 		angles[2] = 0;
-		CL_TransformEntity (&tent->ent, 1, angles, position);
+		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
+		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 
 	*tail = cl_projectiles;

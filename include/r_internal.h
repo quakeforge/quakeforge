@@ -81,10 +81,6 @@ void R_SetVrect (const vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 void R_LoadSkys (const char *);
 
 void R_ClearEfrags (void);
-void R_ClearEnts (void);
-void R_EnqueueEntity (struct entity_s *ent);
-entity_t *R_AllocEntity (void);
-void R_FreeAllEntities (void);
 
 void R_FindNearLights (const vec3_t pos, int count, dlight_t **lights);
 dlight_t *R_AllocDlight (int key);

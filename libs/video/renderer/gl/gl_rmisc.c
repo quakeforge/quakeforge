@@ -61,6 +61,8 @@
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
+#include "QF/scene/entity.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "varrays.h"
@@ -140,6 +142,7 @@ gl_R_LoadSky_f (void)
 void
 gl_R_Init (void)
 {
+	r_ent_queue = EntQueue_New (mod_num_types);
 	R_Init_Cvars ();
 	gl_R_Particles_Init_Cvars ();
 
@@ -190,8 +193,6 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.renderer.model = worldmodel;
 	brush = &worldmodel->brush;
-
-	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
 	for (unsigned i = 0; i < brush->modleafs; i++)

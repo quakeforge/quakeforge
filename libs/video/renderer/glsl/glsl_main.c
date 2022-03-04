@@ -48,6 +48,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
@@ -95,7 +97,7 @@ void
 glsl_R_SetupFrame (void)
 {
 	R_AnimateLight ();
-	R_ClearEnts ();
+	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
 	VectorCopy (r_refdef.viewposition, r_origin);
@@ -141,7 +143,6 @@ R_SetupView (void)
 static void
 R_RenderEntities (void)
 {
-	entity_t   *ent;
 	int         begun;
 
 	if (!r_drawentities->int_val)
@@ -149,7 +150,9 @@ R_RenderEntities (void)
 #define RE_LOOP(type_name, Type) \
 	do { \
 		begun = 0; \
-		for (ent = r_ent_queue[mod_##type_name]; ent; ent = ent->next) { \
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+			 i++) { \
+			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
@@ -237,6 +240,7 @@ glsl_R_RenderView (void)
 void
 glsl_R_Init (void)
 {
+	r_ent_queue = EntQueue_New (mod_num_types);
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
@@ -267,7 +271,6 @@ glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	R_FreeAllEntities ();
 	R_ClearParticles ();
 	glsl_R_RegisterTextures (models, num_models);
 	glsl_R_BuildLightmaps (models, num_models);

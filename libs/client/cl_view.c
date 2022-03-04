@@ -43,8 +43,8 @@
 #include "client/entities.h"
 #include "client/hud.h"
 #include "client/input.h"
-#include "client/temp_entities.h"//FIXME for cl_scene
 #include "client/view.h"
+#include "client/world.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,
@@ -763,7 +763,7 @@ V_Init (viewstate_t *viewstate)
 					"Used when you are underwater, hit, have the Ring of "
 					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 
-	viewstate->camera_transform = Transform_New (cl_scene, 0);
+	viewstate->camera_transform = Transform_New (cl_world.scene, 0);
 }
 
 void

@@ -148,7 +148,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_RemoveEfrags,
 	R_LineGraph,
 	R_AllocDlight,
-	R_AllocEntity,
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	R_ViewChanged,

@@ -235,11 +235,7 @@ R_StoreEfrags (const efrag_t *efrag)
 			case mod_brush:
 			case mod_sprite:
 			case mod_iqm:
-				if (ent->visibility.visframe != r_framecount) {
-					R_EnqueueEntity (ent);
-					// mark that we've recorded this entity for this frame
-					ent->visibility.visframe = r_framecount;
-				}
+				EntQueue_AddEntity (r_ent_queue, ent, model->type);
 				efrag = efrag->leafnext;
 				break;
 

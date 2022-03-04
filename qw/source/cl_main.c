@@ -91,6 +91,7 @@
 
 #include "QF/plugin/console.h"
 #include "QF/scene/transform.h"
+#include "QF/scene/scene.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -99,6 +100,7 @@
 #include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
@@ -229,7 +231,7 @@ CL_Quit_f (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl.worldmodel);
+	CL_LoadPointFile (cl_world.worldmodel);
 }
 
 static void
@@ -385,6 +387,9 @@ CL_ClearState (void)
 
 	S_StopAllSounds ();
 
+	if (cl.viewstate.weapon_entity) {
+		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+	}
 	// wipe the entire cl structure
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
@@ -402,7 +407,6 @@ CL_ClearState (void)
 	cl.chasestate.viewstate = &cl.viewstate;
 	cl.viewstate.punchangle = (vec4f_t) {0, 0, 0, 1};
 
-
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
 	cl.fpd = FPD_DEFAULT;
@@ -412,9 +416,6 @@ CL_ClearState (void)
 		cl.frames[i].packet_entities.entities = qw_entstates.frame[i];
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
-	CL_Init_Entity (&cl.viewent);
-	cl.viewstate.weapon_entity = &cl.viewent;
-
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
 	Mod_ClearAll ();
@@ -423,6 +424,10 @@ CL_ClearState (void)
 
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
+
+	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
+	CL_Init_Entity (cl.viewstate.weapon_entity);
+	r_data->view_model = cl.viewstate.weapon_entity;
 
 	r_funcs->R_ClearState ();
 
@@ -519,7 +524,7 @@ CL_Disconnect (void)
 			Info_Destroy (cl.players[i].userinfo);
 		memset (&cl.players[i], 0, sizeof (cl.players[i]));
 	}
-	cl.worldmodel = NULL;
+	cl_world.worldmodel = NULL;
 	cl.validsequence = 0;
 }
 
@@ -1216,6 +1221,7 @@ CL_Init (void)
 	CL_Ents_Init ();
 	CL_Particles_Init ();
 	CL_TEnts_Init ();
+	CL_World_Init ();
 	CL_ClearState ();
 	Pmove_Init ();
 
@@ -1725,7 +1731,7 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (&origin[0], cl.worldmodel);//FIXME
+		l = Mod_PointInLeaf (&origin[0], cl_world.worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

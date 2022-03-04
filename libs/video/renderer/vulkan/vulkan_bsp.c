@@ -1039,8 +1039,8 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 
 	R_VisitWorldNodes (brush, ctx);
 	if (r_drawentities->int_val) {
-		entity_t   *ent;
-		for (ent = r_ent_queue[mod_brush]; ent; ent = ent->next) {
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
+			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent, ctx);
 		}
 	}

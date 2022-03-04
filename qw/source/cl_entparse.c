@@ -45,6 +45,7 @@
 
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
@@ -481,7 +482,7 @@ CL_ParsePlayerinfo (void)
 		byte        val;
 		entity_t   *ent;
 
-		ent = &cl_player_ents[num];
+		ent = CL_GetEntity (num + 1);
 		bits = MSG_ReadByte (net_message);
 		if (bits & PF_ALPHA) {
 			val = MSG_ReadByte (net_message);
@@ -529,7 +530,7 @@ CL_SetSolidEntities (void)
 	frame_t			   *frame;
 	packet_entities_t  *pak;
 
-	pmove.physents[0].model = cl.worldmodel;
+	pmove.physents[0].model = cl_world.worldmodel;
 	VectorZero (pmove.physents[0].origin);
 	VectorZero (pmove.physents[0].angles);
 	pmove.physents[0].info = 0;
@@ -543,17 +544,17 @@ CL_SetSolidEntities (void)
 
 		if (!state->modelindex)
 			continue;
-		if (!cl.model_precache[state->modelindex])
+		if (!cl_world.models.a[state->modelindex])
 			continue;
-		if (cl.model_precache[state->modelindex]->brush.hulls[1].firstclipnode
-			|| cl.model_precache[state->modelindex]->clipbox) {
+		if (cl_world.models.a[state->modelindex]->brush.hulls[1].firstclipnode
+			|| cl_world.models.a[state->modelindex]->clipbox) {
 			if (pmove.numphysent == MAX_PHYSENTS) {
 				Sys_Printf ("WARNING: entity physent overflow, email "
 							"quakeforge-devel@lists.quakeforge.net\n");
 				break;
 			}
 			pmove.physents[pmove.numphysent].model =
-				cl.model_precache[state->modelindex];
+				cl_world.models.a[state->modelindex];
 			VectorCopy (state->origin,
 						pmove.physents[pmove.numphysent].origin);
 			VectorCopy (state->angles,

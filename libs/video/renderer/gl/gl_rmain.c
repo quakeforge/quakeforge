@@ -193,8 +193,6 @@ gl_R_RotateForEntity (entity_t *e)
 static void
 R_DrawEntitiesOnList (void)
 {
-	entity_t   *ent;
-
 	if (!r_drawentities->int_val)
 		return;
 
@@ -220,7 +218,8 @@ R_DrawEntitiesOnList (void)
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	for (ent = r_ent_queue[mod_alias]; ent; ent = ent->next) {
+	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_alias].size; i++) { \
+		entity_t   *ent = r_ent_queue->ent_queues[mod_alias].a[i]; \
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -248,7 +247,8 @@ R_DrawEntitiesOnList (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	for (ent = r_ent_queue[mod_iqm]; ent; ent = ent->next) {
+	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_iqm].size; i++) { \
+		entity_t   *ent = r_ent_queue->ent_queues[mod_iqm].a[i]; \
 		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -257,7 +257,8 @@ R_DrawEntitiesOnList (void)
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
-	for (ent = r_ent_queue[mod_sprite]; ent; ent = ent->next) {
+	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_sprite].size; i++) { \
+		entity_t   *ent = r_ent_queue->ent_queues[mod_sprite].a[i]; \
 		R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
@@ -328,7 +329,7 @@ void
 gl_R_SetupFrame (void)
 {
 	R_AnimateLight ();
-	R_ClearEnts ();
+	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
 	gl_Fog_SetupFrame ();

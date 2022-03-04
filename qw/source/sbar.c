@@ -58,6 +58,7 @@
 #include "compat.h"
 
 #include "client/hud.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/include/cl_cam.h"
@@ -1109,8 +1110,8 @@ Sbar_LogFrags (void)
 	if (t)
 		Qwrite (file, t, strlen (t));
 
-	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->path,
-			 cl.levelname);
+	Qprintf (file, "%s\n%s %s\n", cls.servername->str,
+			 cl_world.worldmodel->path, cl.levelname);
 
 	// scores
 	Sbar_SortFrags (true);

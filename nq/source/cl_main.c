@@ -48,14 +48,16 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/chase.h"
 #include "client/particles.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
-#include "client/chase.h"
 #include "nq/include/cl_skin.h"
 #include "nq/include/client.h"
 #include "nq/include/host.h"
@@ -188,9 +190,9 @@ CL_ClearState (void)
 	if (!sv.active)
 		Host_ClearMemory ();
 
-	if (cl.edicts)
-		PL_Free (cl.edicts);
-
+	if (cl.viewstate.weapon_entity) {
+		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+	}
 	if (cl.players) {
 		int         i;
 
@@ -202,6 +204,7 @@ CL_ClearState (void)
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
+
 	cl.viewstate.player_origin = (vec4f_t) {0, 0, 0, 1};
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
@@ -210,10 +213,6 @@ CL_ClearState (void)
 	r_data->force_fullscreen = 0;
 	r_data->lightstyle = cl.lightstyle;
 
-	CL_Init_Entity (&cl.viewent);
-	cl.viewstate.weapon_entity = &cl.viewent;
-	r_data->view_model = &cl.viewent;
-
 	SZ_Clear (&cls.message);
 
 	CL_ClearTEnts ();
@@ -221,6 +220,10 @@ CL_ClearState (void)
 	r_funcs->R_ClearState ();
 
 	CL_ClearEnts ();
+
+	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
+	CL_Init_Entity (cl.viewstate.weapon_entity);
+	r_data->view_model = cl.viewstate.weapon_entity;
 }
 
 /*
@@ -276,7 +279,7 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cl.worldmodel = NULL;
+	cl_world.worldmodel = NULL;
 	cl.intermission = 0;
 	cl.viewstate.intermission = 0;
 }
@@ -389,18 +392,18 @@ CL_NextDemo (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl.worldmodel);
+	CL_LoadPointFile (cl_world.worldmodel);
 }
 
 static void
 CL_PrintEntities_f (void)
 {
-	entity_t   *ent;
 	int         i;
 
-	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
+	for (i = 0; i < cl.num_entities; i++) {
+		entity_t   *ent = cl_entities[i];
 		Sys_Printf ("%3i:", i);
-		if (!ent->renderer.model) {
+		if (!ent || !ent->renderer.model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
@@ -422,8 +425,8 @@ CL_ReadFromServer (void)
 {
 	int         ret;
 	TEntContext_t tentCtx = {
-		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
-		cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin,
+		cl.viewentity
 	};
 
 	cl.oldtime = cl.time;
@@ -571,6 +574,7 @@ CL_Init (cbuf_t *cbuf)
 	CL_Init_Input (cbuf);
 	CL_Particles_Init ();
 	CL_TEnts_Init ();
+	CL_World_Init ();
 	CL_ClearState ();
 
 	V_Init (&cl.viewstate);

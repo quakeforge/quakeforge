@@ -36,11 +36,15 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "client/world.h"
+
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
 client_state_t cl;
 client_static_t cls;
+
+worldscene_t cl_world;
 
 cvar_t     *cl_name;
 cvar_t     *cl_writecfg;

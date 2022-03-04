@@ -155,7 +155,6 @@ typedef struct visibility_s {
 	struct mnode_s *topnode;	// bmodels, first world node that
 								// splits bmodel, or NULL if not split
 								// applies to other models, too
-	int         visframe;		// last frame this entity was
 								// found in an active leaf
 	int         trivial_accept;	// view clipping (frustum and depth)
 } visibility_t;

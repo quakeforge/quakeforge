@@ -51,6 +51,8 @@
 
 #include "sbar.h"
 
+#include "client/world.h"
+
 #include "nq/include/client.h"
 
 static view_t  *net_view;
@@ -75,11 +77,11 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.state == ca_active && cl.worldmodel) {
+	if (cls.state == ca_active && cl_world.worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
 		//FIXME
-		leaf = Mod_PointInLeaf (&origin[0], cl.worldmodel);
+		leaf = Mod_PointInLeaf (&origin[0], cl_world.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (&cl.viewstate, contents);

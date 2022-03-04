@@ -10,6 +10,7 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_particles.c \
 		libs/client/cl_temp_entities.c \
 		libs/client/cl_view.c \
+		libs/client/cl_world.c \
 		libs/client/hud.c \
 		libs/client/locs.c \
 		libs/client/old_keys.c

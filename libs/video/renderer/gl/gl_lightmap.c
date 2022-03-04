@@ -551,7 +551,6 @@ gl_overbright_f (cvar_t *var)
 {
 	int			 num;
 	model_t		*m;
-	entity_t    *ent;
 	mod_brush_t *brush;
 
 	if (!var)
@@ -598,7 +597,8 @@ gl_overbright_f (cvar_t *var)
 	if (!gl_R_BuildLightMap)
 		return;
 
-	for (ent = r_ent_queue[mod_brush]; ent; ent = ent->next) {
+	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
+		entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
 		m = ent->renderer.model;
 		if (m->path[0] == '*')
 			continue;

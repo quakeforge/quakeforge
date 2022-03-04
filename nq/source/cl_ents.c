@@ -44,11 +44,13 @@
 
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 
 #include "client/effects.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
 #include "client/chase.h"
 
@@ -57,9 +59,12 @@
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
-entity_t        cl_entities[MAX_EDICTS];
-double          cl_msgtime[MAX_EDICTS];
-byte            cl_forcelink[MAX_EDICTS];
+entity_t   *cl_entities[MAX_EDICTS];
+double      cl_msgtime[MAX_EDICTS];
+static byte forcelink_bytes[SET_SIZE(MAX_EDICTS)];
+#define alloc_forcelink(s) (set_bits_t *)forcelink_bytes
+set_t       cl_forcelink = SET_STATIC_INIT (MAX_EDICTS, alloc_forcelink);
+#undef alloc_forcelink
 
 void
 CL_ClearEnts (void)
@@ -67,14 +72,27 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		CL_Init_Entity (cl_entities + i);
+		if (cl_entities[i]) {
+			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
+			cl_entities[i] = 0;
+		}
 	}
 
 	// clear other arrays
 	i = nq_entstates.num_frames * nq_entstates.num_entities;
 	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
 	memset (cl_msgtime, 0, sizeof (cl_msgtime));
-	memset (cl_forcelink, 0, sizeof (cl_forcelink));
+	set_empty (&cl_forcelink);
+}
+
+entity_t *
+CL_GetEntity (int num)
+{
+	if (!cl_entities[num]) {
+		cl_entities[num] = Scene_CreateEntity (cl_world.scene);
+		CL_Init_Entity (cl_entities[num]);
+	}
+	return cl_entities[num];
 }
 
 /*
@@ -115,12 +133,12 @@ CL_LerpPoint (void)
 }
 
 static void
-set_entity_model (entity_t *ent, int modelindex)
+set_entity_model (int ent_ind, int modelindex)
 {
-	int         i = ent - cl_entities;
+	entity_t   *ent = cl_entities[ent_ind];
 	renderer_t *renderer = &ent->renderer;
 	animation_t *animation = &ent->animation;
-	renderer->model = cl.model_precache[modelindex];
+	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
 	if (renderer->model) {
@@ -130,11 +148,12 @@ set_entity_model (entity_t *ent, int modelindex)
 			animation->syncbase = 0.0;
 		}
 	} else {
-		cl_forcelink[i] = true;	// hack to make null model players work
+		// hack to make null model players work
+		SET_ADD (&cl_forcelink, ent_ind);
 	}
 	animation->nolerp = 1; // don't try to lerp when the model has changed
-	if (i <= cl.maxclients) {
-		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, i);
+	if (ent_ind <= cl.maxclients) {
+		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, ent_ind);
 	}
 }
 
@@ -149,8 +168,6 @@ CL_RelinkEntities (void)
 	int         i, j;
 	int         entvalid;
 	int         model_flags;
-
-	r_data->player_entity = &cl_entities[cl.viewentity];
 
 	// determine partial update time
 	frac = CL_LerpPoint ();
@@ -180,7 +197,7 @@ CL_RelinkEntities (void)
 	for (i = 1; i < cl.num_entities; i++) {
 		new = &nq_entstates.frame[0 + cl.frameIndex][i];
 		old = &nq_entstates.frame[1 - cl.frameIndex][i];
-		ent = &cl_entities[i];
+		ent = CL_GetEntity (i);
 		renderer = &ent->renderer;
 		animation = &ent->animation;
 
@@ -200,20 +217,24 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
-		if (cl_forcelink[i])
+		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			*old = *new;
+		}
 
-		if (cl_forcelink[i] || new->modelindex != old->modelindex) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->modelindex != old->modelindex) {
 			old->modelindex = new->modelindex;
-			set_entity_model (ent, new->modelindex);
+			set_entity_model (i, new->modelindex);
 		}
 		animation->frame = new->frame;
-		if (cl_forcelink[i] || new->colormap != old->colormap) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->colormap != old->colormap) {
 			old->colormap = new->colormap;
 			renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 														  new->colormap);
 		}
-		if (cl_forcelink[i] || new->skinnum != old->skinnum) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
 			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
@@ -232,7 +253,7 @@ CL_RelinkEntities (void)
 			model_flags = renderer->model->flags;
 		}
 
-		if (cl_forcelink[i]) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			// The entity was not updated in the last message so move to the
 			// final spot
 			animation->pose1 = animation->pose2 = -1;
@@ -242,7 +263,7 @@ CL_RelinkEntities (void)
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
 				}
-				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+				r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 			}
 			ent->old_origin = new->origin;
 		} else {
@@ -278,10 +299,10 @@ CL_RelinkEntities (void)
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+						r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+					r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 				}
 			}
 		}
@@ -303,8 +324,10 @@ CL_RelinkEntities (void)
 		if (model_flags & ~EF_ROTATE)
 			CL_ModelEffects (ent, i, new->glow_color, cl.time);
 
-		cl_forcelink[i] = false;
+		SET_REMOVE (&cl_forcelink, i);
 	}
+	r_data->player_entity = CL_GetEntity (cl.viewentity);
+	cl.viewstate.player_entity = CL_GetEntity (cl.viewentity);
 	cl.viewstate.player_origin
-		= Transform_GetWorldPosition (cl_entities[cl.viewentity].transform);
+		= Transform_GetWorldPosition (cl.viewstate.player_entity->transform);
 }

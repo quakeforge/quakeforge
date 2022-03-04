@@ -42,6 +42,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -50,6 +51,7 @@
 #include "client/locs.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
@@ -62,9 +64,8 @@
 #include "qw/include/cl_pred.h"
 #include "qw/include/host.h"
 
-entity_t    cl_player_ents[MAX_CLIENTS];
-entity_t    cl_flag_ents[MAX_CLIENTS];
-entity_t    cl_entities[512];	// FIXME: magic number
+entity_t   *cl_flag_ents[MAX_CLIENTS];
+entity_t   *cl_entities[512];	// FIXME: magic number
 byte        cl_entity_valid[2][512];
 
 void
@@ -72,15 +73,32 @@ CL_ClearEnts (void)
 {
 	size_t      i;
 
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		if (cl_flag_ents[i]) {
+			Scene_DestroyEntity (cl_world.scene, cl_flag_ents[i]);
+			cl_flag_ents[i] = 0;
+		}
+	}
+
+	for (i = 0; i < 512; i++) {
+		if (cl_entities[i]) {
+			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
+			cl_entities[i] = 0;
+		}
+	}
 	i = qw_entstates.num_frames * qw_entstates.num_entities;
 	memset (qw_entstates.frame[0], 0, i * sizeof (entity_state_t));
 	memset (cl_entity_valid, 0, sizeof (cl_entity_valid));
-	for (i = 0; i < sizeof (cl_entities) / sizeof (cl_entities[0]); i++)
-		CL_Init_Entity (&cl_entities[i]);
-	for (i = 0; i < sizeof (cl_flag_ents) / sizeof (cl_flag_ents[0]); i++)
-		CL_Init_Entity (&cl_flag_ents[i]);
-	for (i = 0; i < sizeof (cl_player_ents) / sizeof (cl_player_ents[0]); i++)
-		CL_Init_Entity (&cl_player_ents[i]);
+}
+
+entity_t *
+CL_GetEntity (int num)
+{
+	if (!cl_entities[num]) {
+		cl_entities[num] = Scene_CreateEntity (cl_world.scene);
+		CL_Init_Entity (cl_entities[num]);
+	}
+	return cl_entities[num];
 }
 
 // Hack hack hack
@@ -110,7 +128,7 @@ set_entity_model (entity_t *ent, int modelindex)
 {
 	renderer_t *renderer = &ent->renderer;
 	animation_t *animation = &ent->animation;
-	renderer->model = cl.model_precache[modelindex];
+	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
 	if (renderer->model) {
@@ -134,10 +152,10 @@ CL_LinkPacketEntities (void)
 	animation_t *animation;
 
 	frac = 1;
-	for (i = 0; i < 512; i++) {
+	for (i = MAX_CLIENTS + 1; i < 512; i++) {
 		new = &qw_entstates.frame[cl.link_sequence & UPDATE_MASK][i];
 		old = &qw_entstates.frame[cl.prev_sequence & UPDATE_MASK][i];
-		ent = &cl_entities[i];
+		ent = CL_GetEntity (i);
 		renderer = &ent->renderer;
 		animation = &ent->animation;
 		forcelink = cl_entity_valid[0][i] != cl_entity_valid[1][i];
@@ -216,7 +234,7 @@ CL_LinkPacketEntities (void)
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
 				}
-				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+				r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 			}
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
@@ -248,15 +266,15 @@ CL_LinkPacketEntities (void)
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+						r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+					r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 				}
 			}
 		}
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		}
 
 		// rotate binary objects locally
@@ -288,7 +306,7 @@ CL_UpdateFlagModels (entity_t *ent, int key)
 	float       f;
 	entity_t   *fent;
 
-	fent = &cl_flag_ents[key];
+	fent = cl_flag_ents[key];
 
 	if (!fent->active) {
 		return;
@@ -322,7 +340,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 {
 	entity_t   *fent;
 
-	fent = &cl_flag_ents[key];
+	fent = cl_flag_ents[key];
 
 	if (cl_flagindex == -1) {
 		fent->active = 0;
@@ -336,7 +354,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	}
 	CL_UpdateFlagModels (ent, key);
 
-	fent->renderer.model = cl.model_precache[cl_flagindex];
+	fent->renderer.model = cl_world.models.a[cl_flagindex];
 	fent->renderer.skinnum = team;
 
 	return fent;
@@ -347,7 +365,7 @@ CL_RemoveFlagModels (int key)
 {
 	entity_t   *fent;
 
-	fent = &cl_flag_ents[key];
+	fent = cl_flag_ents[key];
 	fent->active = 0;
 	Transform_SetParent (fent->transform, 0);
 }
@@ -380,7 +398,7 @@ CL_LinkPlayers (void)
 
 	for (j = 0, player = cl.players, state = frame->playerstate;
 		 j < MAX_CLIENTS; j++, player++, state++) {
-		ent = &cl_player_ents[j];
+		ent = CL_GetEntity (j + 1);
 		if (ent->visibility.efrag)
 			r_funcs->R_RemoveEfrags (ent);
 		if (player->flag_ent && player->flag_ent->visibility.efrag) {
@@ -395,7 +413,8 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			org = cl.viewstate.player_origin;
-			r_data->player_entity = &cl_player_ents[j];
+			r_data->player_entity = ent;
+			cl.viewstate.player_entity = ent;
 			clientplayer = true;
 		} else {
 			org = state->pls.es.origin;
@@ -453,8 +472,8 @@ CL_LinkPlayers (void)
 		ang[ROLL] = V_CalcRoll (ang, state->pls.es.velocity) * 4.0;
 
 		if (ent->renderer.model
-			!= cl.model_precache[state->pls.es.modelindex]) {
-			ent->renderer.model = cl.model_precache[state->pls.es.modelindex];
+			!= cl_world.models.a[state->pls.es.modelindex]) {
+			ent->renderer.model = cl_world.models.a[state->pls.es.modelindex];
 			ent->animation.nolerp = 1;
 		}
 		ent->animation.frame = state->pls.es.frame;
@@ -492,10 +511,10 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		if (player->flag_ent) {
 			CL_UpdateFlagModels (ent, j);
-			r_funcs->R_AddEfrags (&cl.worldmodel->brush, player->flag_ent);
+			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, player->flag_ent);
 		}
 	}
 }
@@ -516,7 +535,7 @@ CL_EmitEntities (void)
 		return;
 
 	TEntContext_t tentCtx = {
-		cl.viewstate.player_origin, cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin, cl.viewentity
 	};
 
 	CL_LinkPlayers ();
@@ -530,5 +549,4 @@ CL_EmitEntities (void)
 void
 CL_Ents_Init (void)
 {
-	r_data->view_model = &cl.viewent;
 }
