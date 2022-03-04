@@ -414,6 +414,7 @@ Model_NextDownload (void)
 
 	// all done
 	cl.worldmodel = cl.model_precache[1];
+	cl.chasestate.worldmodel = cl.worldmodel;
 	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages

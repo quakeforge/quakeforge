@@ -399,6 +399,9 @@ CL_ClearState (void)
 	cl.maxclients = MAX_CLIENTS;
 	cl.viewstate.voffs_enabled = 0;
 	cl.viewstate.chasestate = &cl.chasestate;
+	cl.chasestate.viewstate = &cl.viewstate;
+	cl.viewstate.punchangle = (vec4f_t) {0, 0, 0, 1};
+
 
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
@@ -623,6 +626,7 @@ CL_FullServerinfo_f (void)
 	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
 		cl.viewstate.chase = atoi (p);
 	}
+	cl.viewstate.chase |= cls.demoplayback;
 	if ((p = Info_ValueForKey (cl.serverinfo, "cshifts")) && *p) {
 		cl.sv_cshifts = atoi (p);
 	}
@@ -1341,6 +1345,7 @@ CL_Init_Cvars (void)
 	Game_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
+	Chase_Init_Cvars ();
 	V_Init_Cvars ();
 
 	cl_pitchspeed->callback = cl_pitchspeed_f;
