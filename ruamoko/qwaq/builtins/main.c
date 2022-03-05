@@ -121,13 +121,21 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
+#ifdef _WIN32
+	return _aligned_malloc (size, 64);
+#else
 	return aligned_alloc (64, size);
+#endif
 }
 
 static void
 free_progs_mem (progs_t *pr, void *mem)
 {
+#ifdef _WIN32
+	_aligned_free (mem);
+#else
 	free (mem);
+#endif
 }
 
 static void
