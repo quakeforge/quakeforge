@@ -92,6 +92,7 @@ EXTRA_DIST += \
 	include/client/state.h \
 	include/client/temp_entities.h \
 	include/client/view.h \
+	include/client/world.h \
 	include/evdev/hotplug.h \
 	include/evdev/inputlib.h \
 	include/qw/bothdefs.h \
