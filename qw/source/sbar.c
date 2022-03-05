@@ -93,7 +93,6 @@ qboolean    sb_showscores;
 qboolean    sb_showteamscores;
 
 int         sb_lines;				// scan lines to draw
-qboolean	hudswap;
 
 static qboolean largegame = false;
 
@@ -121,7 +120,6 @@ static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
 static void
 hud_swap_f (cvar_t *var)
 {
-	hudswap = var->int_val;
 	if (var->int_val) {
 		view_setgravity (hud_armament_view, grav_southwest);
 		view_setgravity (stuff_view, grav_southeast);

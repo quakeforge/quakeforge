@@ -160,7 +160,7 @@ CalcFov (float fov_x, float width, float height)
 	return a;
 }
 
-void
+static void
 SCR_CalcRefdef (void)
 {
 	vrect_t     vrect;

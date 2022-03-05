@@ -33,7 +33,6 @@
 
 struct transform_s;
 
-void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
@@ -41,34 +40,16 @@ typedef void (*SCR_Func)(void);
 void SCR_UpdateScreen (struct transform_s *camera, double realtime,
 					   SCR_Func *scr_funcs);
 
-void SCR_SizeUp (void);
-void SCR_SizeDown (void);
-void SCR_BringDownConsole (void);
-void SCR_CalcRefdef (void);
-
-void SCR_BeginLoadingPlaque (void);
-void SCR_EndLoadingPlaque (void);
-
-struct view_s;
-
 int MipColor (int r, int g, int b);
-int SCR_ModalMessage (const char *text);
-
-extern float		scr_con_current;
 
 extern int			sb_lines;
 
-extern qboolean		scr_disabled_for_loading;
 extern qboolean		scr_skipupdate;
-extern qboolean		hudswap;
 
 extern struct cvar_s		*scr_fov;
 extern struct cvar_s		*scr_viewsize;
 
 // only the refresh window will be updated unless these variables are flagged
-
-extern struct qpic_s *scr_ram;
-extern struct qpic_s *scr_turtle;
 
 extern struct cvar_s *hud_fps, *hud_time;
 

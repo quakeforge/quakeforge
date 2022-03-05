@@ -613,8 +613,6 @@ VID_SetMode (int modenum, const byte *palette)
 		return true;
 
 	// so Con_Printfs don't mess us up by forcing vid and snd updates
-//FIXME?    temp = scr_disabled_for_loading;
-//FIXME?    scr_disabled_for_loading = true;
 	in_mode_set = true;
 //FIXME CDAudio_Pause ();
 //FIXME S_ClearBuffer ();
@@ -643,7 +641,6 @@ VID_SetMode (int modenum, const byte *palette)
 
 	Win_UpdateWindowStatus (0, 0);		// FIXME right numbers?
 //FIXME CDAudio_Resume ();
-//FIXME?    scr_disabled_for_loading = temp;
 
 	if (!stat) {
 		VID_RestoreOldMode (original_mode);

@@ -89,7 +89,6 @@ qpic_t     *sb_face_invis_invuln;
 qboolean    sb_showscores;
 
 int         sb_lines;				// scan lines to draw
-qboolean	hudswap;
 
 qpic_t     *rsb_invbar[2];
 qpic_t     *rsb_weapons[5];
@@ -126,7 +125,6 @@ static view_t *main_view;
 static void
 hud_swap_f (cvar_t *var)
 {
-	hudswap = var->int_val;
 	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
 		hud_armament_view->children[0]->gravity = grav_northwest;
