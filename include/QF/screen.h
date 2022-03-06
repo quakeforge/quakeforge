@@ -29,8 +29,6 @@
 #ifndef __QF_screen_h
 #define __QF_screen_h
 
-#include "QF/qtypes.h"
-
 struct transform_s;
 
 void SCR_Init (void);
@@ -39,17 +37,6 @@ typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
 void SCR_UpdateScreen (struct transform_s *camera, double realtime,
 					   SCR_Func *scr_funcs);
-
-int MipColor (int r, int g, int b);
-
-extern int			sb_lines;
-
-extern qboolean		scr_skipupdate;
-
-extern struct cvar_s		*scr_fov;
-extern struct cvar_s		*scr_viewsize;
-
-// only the refresh window will be updated unless these variables are flagged
 
 extern struct cvar_s *hud_fps, *hud_time;
 

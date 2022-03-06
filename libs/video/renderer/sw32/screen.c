@@ -152,10 +152,6 @@ sw32_R_RenderFrame (SCR_Func *scr_funcs)
 		sw32_Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
-	pconupdate = NULL;
-
-	SCR_SetUpToDrawConsole ();
-
 	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
@@ -173,10 +169,6 @@ sw32_R_RenderFrame (SCR_Func *scr_funcs)
 
 	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
-	if (pconupdate) {
-		sw32_D_UpdateRects (pconupdate);
-	}
-
 	// update one of three areas
 	if (vr_data.scr_copyeverything) {
 		vrect.x = 0;

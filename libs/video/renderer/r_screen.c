@@ -51,65 +51,15 @@
 #include "r_internal.h"
 #include "sbar.h"
 
-/*
-	background clear
-	rendering
-	turtle/net/ram icons
-	sbar
-	centerprint / slow centerprint
-	notify lines
-	intermission / finale overlay
-	loading plaque
-	console
-	menu
-
-	required background clears
-	required update regions
-
-	syncronous draw mode or async
-	One off screen buffer, with updates either copied or xblited
-	Need to double buffer?
-
-	async draw will require the refresh area to be cleared, because it will be
-	xblited, but sync draw can just ignore it.
-
-	sync
-	draw
-
-	CenterPrint ()
-	SlowPrint ()
-	Screen_Update ();
-	Sys_Printf ();
-
-	net
-	turn off messages option
-
-	the refresh is always rendered, unless the console is full screen
-
-	console is:
-		notify lines
-		half
-		full
-*/
-
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
-byte       *draw_chars;					// 8*8 graphic characters FIXME location
-
-int         oldsbar;
-
+byte       *draw_chars;			// 8*8 graphic characters FIXME location
 qboolean    r_cache_thrash;		// set if surface cache is thrashing
 
-qboolean    scr_initialized;			// ready to draw
-
-qpic_t     *scr_ram;
-qpic_t     *scr_turtle;
-
-int         clearconsole;
-
-vrect_t    *pconupdate;
-
 qboolean    scr_skipupdate;
+static qboolean scr_initialized;// ready to draw
+static qpic_t *scr_ram;
+static qpic_t *scr_turtle;
 
 void
 R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
@@ -316,11 +266,6 @@ SCR_DrawPause (void)
 	r_funcs->Draw_Pic ((r_data->vid->conview->xlen - pic->width) / 2,
 					   (r_data->vid->conview->ylen - 48 - pic->height) / 2,
 					   pic);
-}
-
-void
-SCR_SetUpToDrawConsole (void)
-{
 }
 
 /*

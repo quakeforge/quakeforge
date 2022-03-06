@@ -180,7 +180,6 @@ glsl_R_RenderFrame (SCR_Func *scr_funcs)
 
 	glsl_R_RenderView ();
 
-	SCR_SetUpToDrawConsole ();
 	GLSL_Set2D ();
 	GLSL_DrawReset ();
 	SCR_TileClear ();

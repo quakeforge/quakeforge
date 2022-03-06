@@ -112,7 +112,6 @@ static SCR_Func scr_funcs_normal[] = {
 	0, //SCR_DrawRam,
 	0, //SCR_DrawTurtle,
 	0, //SCR_DrawPause,
-	//CL_NetGraph,FIXME
 	Sbar_Draw,
 	SCR_CShift,
 	scr_draw_views,

@@ -230,7 +230,6 @@ gl_R_RenderFrame (SCR_Func *scr_funcs)
 	// do 3D refresh drawing, and then update the screen
 	gl_R_RenderView ();
 
-	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();
 	GL_DrawReset ();
 

@@ -31,42 +31,17 @@
 #ifndef __r_screen_h
 #define __r_screen_h
 
-#include "QF/screen.h"
-#include "QF/vid.h"
-
 void SCR_DrawRam (void);
-void SCR_DrawFPS (void);
-void SCR_DrawTime (void);
 void SCR_DrawTurtle (void);
 void SCR_DrawPause (void);
 struct tex_s *SCR_CaptureBGR (void);
 struct tex_s *SCR_ScreenShot (unsigned width, unsigned height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
-
+void SCR_SetFOV (float fov);
+void SCR_ScreenShot_f (void);
+int MipColor (int r, int g, int b);
 
 extern int         scr_copytop;
-
-extern float       scr_con_current;
-extern float       scr_conlines;				// lines of console to display
-
-extern int         oldscreensize;
-extern int         oldsbar;
-
-extern qboolean    scr_initialized;			// ready to draw
-
-extern struct qpic_s *scr_ram;
-extern struct qpic_s *scr_net;
-extern struct qpic_s *scr_turtle;
-
-extern int         clearconsole;
-extern int         clearnotify;
-
-extern vrect_t    *pconupdate;
-
 extern qboolean    scr_skipupdate;
-
-void SCR_SetFOV (float fov);
-void SCR_SetUpToDrawConsole (void);
-void SCR_ScreenShot_f (void);
 
 #endif//__r_screen_h

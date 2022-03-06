@@ -195,10 +195,6 @@ R_RenderFrame (SCR_Func *scr_funcs)
 		Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
-	pconupdate = NULL;
-
-	SCR_SetUpToDrawConsole ();
-
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
@@ -216,10 +212,6 @@ R_RenderFrame (SCR_Func *scr_funcs)
 
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
-	if (pconupdate) {
-		D_UpdateRects (pconupdate);
-	}
-
 	// update one of three areas
 	if (vr_data.scr_copyeverything) {
 		vrect.x = 0;
