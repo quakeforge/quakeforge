@@ -739,16 +739,17 @@ gl_R_DrawWorld (void)
 	bctx.entity = &r_worldentity;
 
 	R_VisitWorldNodes (&bctx);
+
+	gl_R_CalcLightmaps ();
+
+	gl_R_DrawSkyChain (sky_chain);
+
 	if (r_drawentities->int_val) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
 			gl_R_DrawBrushModel (ent);
 		}
 	}
-
-	gl_R_CalcLightmaps ();
-
-	gl_R_DrawSkyChain (sky_chain);
 
 	if (!gl_Fog_GetDensity ()
 		|| (gl_fb_bmodels->int_val && gl_mtex_fullbright)
