@@ -80,9 +80,6 @@ static int	 lmshift = 7;
 void (*gl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
 							msurface_t *surf);
 
-extern void gl_multitexture_f (cvar_t *var);
-
-
 void
 gl_lightmap_init (void)
 {

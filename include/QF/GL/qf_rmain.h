@@ -29,7 +29,9 @@
 #define __QF_GL_rmain_h
 
 #include "QF/qtypes.h"
-#include "QF/cvar.h"
+
+struct cvar_s;
+struct entity_s;
 
 extern qboolean gl_envmap;
 extern int c_brush_polys, c_alias_polys;
@@ -38,7 +40,7 @@ extern float r_world_matrix[16];
 extern float gl_modelalpha;
 //extern vec3_t shadecolor;
 
-extern void gl_multitexture_f (cvar_t *var);
+extern void gl_multitexture_f (struct cvar_s *var);
 
 void glrmain_init (void);
 void R_RotateForEntity (struct entity_s *e);

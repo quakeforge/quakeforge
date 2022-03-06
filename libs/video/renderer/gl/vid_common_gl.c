@@ -48,6 +48,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
@@ -150,8 +151,11 @@ cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
 static cvar_t *vid_use8bit;
 
-void gl_multitexture_f (cvar_t *var);
-
+static void
+gl_triplebuffer_f (cvar_t *var)
+{
+	vid.numpages = var->int_val ? 3 : 2;
+}
 
 static void
 gl_max_size_f (cvar_t *var)
@@ -401,7 +405,8 @@ GL_Common_Init_Cvars (void)
 								"controls whether the skydome is single or "
 								"double pass");
 	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
-	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
+	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE,
+								gl_triplebuffer_f,
 								"Set to 1 by default. Fixes status bar "
 								"flicker on some hardware");
 }

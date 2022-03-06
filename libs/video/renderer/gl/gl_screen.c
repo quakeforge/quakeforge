@@ -211,8 +211,6 @@ gl_R_RenderFrame (SCR_Func *scr_funcs)
 		begun = 0;
 	}
 
-	vid.numpages = 2 + gl_triplebuffer->int_val;
-
 	//FIXME forces the status bar to redraw. needed because it does not fully
 	//update in sw modes but must in gl mode
 	vr_data.scr_copyeverything = 1;
@@ -223,8 +221,6 @@ gl_R_RenderFrame (SCR_Func *scr_funcs)
 
 	if (r_speeds->int_val) {
 		time1 = Sys_DoubleTime ();
-		gl_c_brush_polys = 0;
-		gl_c_alias_polys = 0;
 	}
 
 	// do 3D refresh drawing, and then update the screen
