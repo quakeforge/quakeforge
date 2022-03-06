@@ -169,14 +169,13 @@ glsl_R_RenderFrame (SCR_Func *scr_funcs)
 		glsl_ctx->end_rendering ();
 	}
 
-	//FIXME useless cvar? vid.numpages = 2 + gl_triplebuffer->int_val;
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in glsl mode
+	vr_data.scr_copyeverything = 1;
 
 	qfeglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	begun = 1;
-	//FIXME forces the status bar to redraw. needed because it does not fully
-	//update in sw modes but must in glsl mode
-	vr_data.scr_copyeverything = 1;
 
 	glsl_R_RenderView ();
 
