@@ -64,21 +64,9 @@ D_Init (void)
 }
 
 void
-D_EnableBackBufferAccess (void)
-{
-	VID_LockBuffer ();
-}
-
-void
 D_TurnZOn (void)
 {
 	// not needed for software version
-}
-
-void
-D_DisableBackBufferAccess (void)
-{
-	VID_UnlockBuffer ();
 }
 
 void

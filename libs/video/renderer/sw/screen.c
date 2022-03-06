@@ -72,7 +72,6 @@ SCR_CaptureBGR (void)
 	tex->height = vid.height;
 	tex->format = tex_rgb;
 	tex->palette = 0;
-	D_EnableBackBufferAccess ();
 	src = vid.buffer;
 	for (y = 0; y < tex->height; y++) {
 		dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
@@ -83,7 +82,6 @@ SCR_CaptureBGR (void)
 			src++;
 		}
 	}
-	D_DisableBackBufferAccess ();
 	return tex;
 }
 
@@ -94,9 +92,6 @@ SCR_ScreenShot (unsigned width, unsigned height)
 	float          fracw, frach;
 	int            count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
 	tex_t         *tex;
-
-	// enable direct drawing of console to back buffer
-	D_EnableBackBufferAccess ();
 
 	w = (vid.width < width) ? vid.width : width;
 	h = (vid.height < height) ? vid.height : height;
@@ -145,8 +140,6 @@ SCR_ScreenShot (unsigned width, unsigned height)
 			*dest++ = MipColor (r, g, b);
 		}
 	}
-	// for adapters that can't stay mapped in for linear writes all the time
-	D_DisableBackBufferAccess ();
 
 	return tex;
 }
@@ -163,18 +156,11 @@ SCR_ScreenShot_f (void)
 						   va (0, "%s/qf", qfs_gamedir->dir.shots), ".pcx")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
-		// enable direct drawing of console to back buffer
-		D_EnableBackBufferAccess ();
-
 		// save the pcx file
 		pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
 						 vid.basepal, false, &pcx_len);
 		QFS_WriteFile (pcxname->str, pcx, pcx_len);
 
-
-		// for adapters that can't stay mapped in for linear writes all the
-		// time
-		D_DisableBackBufferAccess ();
 
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
@@ -184,25 +170,13 @@ SCR_ScreenShot_f (void)
 void
 R_RenderFrame (SCR_Func *scr_funcs)
 {
-	vrect_t     vrect;
-
 	// do 3D refresh drawing, and then update the screen
-	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-										// directly
-
 	if (vr_data.scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		vr_data.scr_copyeverything = 1;
 		Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
-	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
-										// in for linear writes all the time
-	VID_LockBuffer ();
 	R_RenderView ();
-	VID_UnlockBuffer ();
-
-	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-										// directly
 
 	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
@@ -210,9 +184,8 @@ R_RenderFrame (SCR_Func *scr_funcs)
 		scr_funcs++;
 	}
 
-	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
-										// in for linear writes all the time
 	// update one of three areas
+	vrect_t     vrect;
 	if (vr_data.scr_copyeverything) {
 		vrect.x = 0;
 		vrect.y = 0;

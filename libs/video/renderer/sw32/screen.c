@@ -75,7 +75,6 @@ sw32_SCR_CaptureBGR (void)
 	tex->height = vid.height;
 	tex->format = tex_rgb;
 	tex->palette = 0;
-	sw32_D_EnableBackBufferAccess ();
 	src = vid.buffer;
 	for (y = 0; y < tex->height; y++) {
 		dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
@@ -86,7 +85,6 @@ sw32_SCR_CaptureBGR (void)
 			src++;
 		}
 	}
-	sw32_D_DisableBackBufferAccess ();
 	return tex;
 }
 
@@ -108,9 +106,6 @@ sw32_SCR_ScreenShot_f (void)
 										qfs_gamedir->dir.shots), ".pcx")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
-		// enable direct drawing of console to back buffer
-		sw32_D_EnableBackBufferAccess ();
-
 		// save the pcx file
 		switch(sw32_ctx->pixbytes) {
 		case 1:
@@ -127,9 +122,6 @@ sw32_SCR_ScreenShot_f (void)
 			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 		}
 
-		// for adapters that can't stay mapped in for linear writes all the time
-		sw32_D_DisableBackBufferAccess ();
-
 		if (pcx) {
 			QFS_WriteFile (pcxname->str, pcx, pcx_len);
 			Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
@@ -143,23 +135,12 @@ sw32_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
-	// do 3D refresh drawing, and then update the screen
-	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-										// directly
-
 	if (vr_data.scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		vr_data.scr_copyeverything = 1;
 		sw32_Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
-	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
-										// in for linear writes all the time
-	VID_LockBuffer ();
 	sw32_R_RenderView ();
-	VID_UnlockBuffer ();
-
-	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-										// directly
 
 	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
@@ -167,8 +148,6 @@ sw32_R_RenderFrame (SCR_Func *scr_funcs)
 		scr_funcs++;
 	}
 
-	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
-										// in for linear writes all the time
 	// update one of three areas
 	if (vr_data.scr_copyeverything) {
 		vrect.x = 0;

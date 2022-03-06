@@ -34,8 +34,6 @@ void VID_InitGamma (const byte *);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
 
-void VID_LockBuffer (void);
-void VID_UnlockBuffer (void);
 void VID_InitBuffers (void);
 void VID_MakeColormaps (void);
 

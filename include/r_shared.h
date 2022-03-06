@@ -105,7 +105,7 @@ typedef struct surf_s {
 	qboolean	insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
 
-	int			pad[2];				// to 64 bytes
+	int			pad[2];				// to 64 bytes (FIXME not for 64-bit)
 } surf_t;
 
 extern	surf_t	*surfaces, *surface_p, *surf_max;

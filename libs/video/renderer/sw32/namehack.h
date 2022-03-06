@@ -1,7 +1,6 @@
 #ifdef NH_DEFINE
 #undef NH_DEFINE
 #define D_CacheSurface sw32_D_CacheSurface
-#define D_DisableBackBufferAccess sw32_D_DisableBackBufferAccess
 #define D_DrawParticle sw32_D_DrawParticle
 #define D_DrawPoly sw32_D_DrawPoly
 #define D_DrawSkyScans sw32_D_DrawSkyScans
@@ -10,7 +9,6 @@
 #define D_DrawSurfaces sw32_D_DrawSurfaces
 #define D_DrawZPoint sw32_D_DrawZPoint
 #define D_DrawZSpans sw32_D_DrawZSpans
-#define D_EnableBackBufferAccess sw32_D_EnableBackBufferAccess
 #define D_FillRect sw32_D_FillRect
 #define D_FlushCaches sw32_D_FlushCaches
 #define D_Init sw32_D_Init
@@ -240,7 +238,6 @@ extern struct surf_s *sw32_surfaces;
 #define zspantable sw32_zspantable
 #else
 #undef D_CacheSurface
-#undef D_DisableBackBufferAccess
 #undef D_DrawParticle
 #undef D_DrawPoly
 #undef D_DrawSkyScans
@@ -249,7 +246,6 @@ extern struct surf_s *sw32_surfaces;
 #undef D_DrawSurfaces
 #undef D_DrawZPoint
 #undef D_DrawZSpans
-#undef D_EnableBackBufferAccess
 #undef D_FillRect
 #undef D_FlushCaches
 #undef D_Init

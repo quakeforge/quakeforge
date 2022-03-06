@@ -76,21 +76,9 @@ sw32_D_Init (void)
 }
 
 void
-sw32_D_EnableBackBufferAccess (void)
-{
-	VID_LockBuffer ();
-}
-
-void
 sw32_D_TurnZOn (void)
 {
 	// not needed for software version
-}
-
-void
-sw32_D_DisableBackBufferAccess (void)
-{
-	VID_UnlockBuffer ();
 }
 
 void

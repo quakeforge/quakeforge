@@ -782,9 +782,7 @@ Draw_FadeScreen (void)
 	int         width = vid.conview->xlen / 4;
 	uint32_t   *pbuf;
 
-	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
-	VID_LockBuffer ();
 
 	for (y = 0; y < height; y++) {
 		uint32_t    mask;
@@ -798,9 +796,7 @@ Draw_FadeScreen (void)
 	}
 	vr_data.scr_copyeverything = 1;
 
-	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
-	VID_LockBuffer ();
 }
 
 void

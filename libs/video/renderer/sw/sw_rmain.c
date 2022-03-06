@@ -731,9 +731,7 @@ R_EdgeDrawing (void)
 	}
 
 	if (!r_dspeeds->int_val) {
-		VID_UnlockBuffer ();
 		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-		VID_LockBuffer ();
 	}
 
 	if (!(r_drawpolys | r_drawculledpolys))
@@ -773,21 +771,14 @@ R_RenderView_ (void)
 // done in screen.c
 	R_LowFPPrecision ();
 
-	if (!r_worldentity.renderer.model)
-		Sys_Error ("R_RenderView: NULL worldmodel");
-
 	if (!r_dspeeds->int_val) {
-		VID_UnlockBuffer ();
 		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-		VID_LockBuffer ();
 	}
 
 	R_EdgeDrawing ();
 
 	if (!r_dspeeds->int_val) {
-		VID_UnlockBuffer ();
 		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-		VID_LockBuffer ();
 	}
 
 	if (r_dspeeds->int_val) {

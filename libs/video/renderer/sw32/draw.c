@@ -1224,9 +1224,7 @@ sw32_Draw_FadeScreen (void)
 {
 	int         x, y;
 
-	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
-	VID_LockBuffer ();
 
 	switch(sw32_ctx->pixbytes) {
 	case 1:
@@ -1269,9 +1267,7 @@ sw32_Draw_FadeScreen (void)
 	}
 	vr_data.scr_copyeverything = 1;
 
-	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
-	VID_LockBuffer ();
 }
 
 void

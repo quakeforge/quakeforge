@@ -70,11 +70,7 @@ sw32_R_TimeRefresh_f (void)
 	for (i = 0; i < 128; i++) {
 		r_refdef.viewangles[1] = i / 128.0 * 360.0;
 
-		VID_LockBuffer ();
-
 		sw32_R_RenderView ();
-
-		VID_UnlockBuffer ();
 
 		vr.x = r_refdef.vrect.x;
 		vr.y = r_refdef.vrect.y;
@@ -289,11 +285,6 @@ sw32_R_SetupFrame (void)
 				sw32_R_ViewChanged ();
 			}
 		} else {
-			vrect.x = 0;
-			vrect.y = 0;
-			vrect.width = vid.width;
-			vrect.height = vid.height;
-
 			r_refdef.vrect.x = vr_data.scr_view->xpos;
 			r_refdef.vrect.y = vr_data.scr_view->ypos;
 			r_refdef.vrect.width = vr_data.scr_view->xlen;

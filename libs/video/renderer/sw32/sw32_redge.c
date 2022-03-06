@@ -503,9 +503,7 @@ sw32_R_ScanEdges (void)
 		// flush the span list if we can't be sure we have enough spans left
 		// for the next scan
 		if (span_p > max_span_p) {
-			VID_UnlockBuffer ();
 			S_ExtraUpdate ();	// don't let sound get messed up if going slow
-			VID_LockBuffer ();
 
 			if (sw32_r_drawculledpolys)
 				R_DrawCulledPolys ();

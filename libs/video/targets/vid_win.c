@@ -155,16 +155,6 @@ VID_Init_Cvars (void)
 }
 
 void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
-
-void
 VID_SetCaption (const char *text)
 {
 	if (text && *text) {
