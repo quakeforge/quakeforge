@@ -94,7 +94,7 @@ R_MakeSky (void)
 	int         x, y;
 	int         ofs, baseofs;
 	int         xshift, yshift;
-	unsigned int *pnewsky;
+	byte       *pnewsky;
 	static int  xlast = -1, ylast = -1;
 
 	xshift = r_skytime * r_skyspeed;
@@ -106,19 +106,17 @@ R_MakeSky (void)
 	xlast = xshift;
 	ylast = yshift;
 
-	pnewsky = (unsigned int *) &newsky[0];
+	pnewsky = &newsky[0];
 
 	for (y = 0; y < SKYSIZE; y++) {
 		baseofs = ((y + yshift) & SKYMASK) * 131;
 		for (x = 0; x < SKYSIZE; x++) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
-			*(byte *) pnewsky = (*((byte *) pnewsky + 128) &
-								 *(byte *) & bottommask[ofs]) |
-				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
+			*pnewsky = (*(pnewsky + 128) & bottommask[ofs]) | bottomsky[ofs];
+			pnewsky = pnewsky + 1;
 		}
-		pnewsky += 128 / sizeof (unsigned int);
+		pnewsky += 128;
 	}
 
 	r_skymade = 1;
