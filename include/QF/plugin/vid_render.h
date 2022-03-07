@@ -135,10 +135,6 @@ typedef struct vid_render_data_s {
 	double      frametime;
 	double      realtime;
 	lightstyle_t *lightstyle;
-	vec_t      *origin;
-	vec_t      *vpn;
-	vec_t      *vright;
-	vec_t      *vup;
 } vid_render_data_t;
 
 #endif // __QF_plugin_vid_render_h

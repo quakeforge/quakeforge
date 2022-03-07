@@ -331,20 +331,15 @@ gl_R_SetupFrame (void)
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
-	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.viewposition, r_origin);
-
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
-
+	vec4f_t     position = r_refdef.viewposition;
+	vec4f_t     rotation = r_refdef.viewrotation;
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
 
 	R_SetFrustum ();
 
-	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
-
-	r_cache_thrash = false;
+	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
 }
 
 static void

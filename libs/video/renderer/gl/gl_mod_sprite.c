@@ -68,8 +68,7 @@ R_DrawSpriteModel_f (entity_t *e)
 	mspriteframe_t	*frame;
 
 	origin = Transform_GetWorldPosition (e->transform);
-	VectorCopy (r_origin, cameravec);
-	cameravec -= origin;
+	cameravec = r_refdef.viewposition - origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (sprite, &e->animation);

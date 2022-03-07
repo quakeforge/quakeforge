@@ -565,13 +565,13 @@ gl_R_DrawBrushModel (entity_t *e)
 			return;
 	}
 
-	VectorSubtract (r_refdef.viewposition, worldMatrix[3], modelorg);
+	vec4f_t     relviewpos = r_refdef.viewposition - worldMatrix[3];
 	if (rotated) {
-		vec4f_t     temp = { modelorg[0], modelorg[1], modelorg[2], 0 };
+		vec4f_t     temp = relviewpos;
 
-		modelorg[0] = dotf (temp, worldMatrix[0])[0];
-		modelorg[1] = dotf (temp, worldMatrix[1])[0];
-		modelorg[2] = dotf (temp, worldMatrix[2])[0];
+		relviewpos[0] = dotf (temp, worldMatrix[0])[0];
+		relviewpos[1] = dotf (temp, worldMatrix[1])[0];
+		relviewpos[2] = dotf (temp, worldMatrix[2])[0];
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
@@ -601,7 +601,7 @@ gl_R_DrawBrushModel (entity_t *e)
 		// find which side of the node we are on
 		plane_t    *plane = surf->plane;
 
-		dot = DotProduct (modelorg, plane->normal) - plane->dist;
+		dot = DotProduct (relviewpos, plane->normal) - plane->dist;
 
 		// draw the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
@@ -626,10 +626,11 @@ get_side (mnode_t *node)
 {
 	// find which side of the node we are on
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.viewposition;
 
 	if (plane->type < 3)
-		return (modelorg[plane->type] - plane->dist) < 0;
-	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static inline void
@@ -727,8 +728,6 @@ gl_R_DrawWorld (void)
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.renderer.model = r_worldentity.renderer.model;
-
-	VectorCopy (r_refdef.viewposition, modelorg);
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;

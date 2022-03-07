@@ -81,7 +81,7 @@ R_RenderDlight (dlight_t *light)
 	bub_cos = gl_bubble_costable;
 	rad = light->radius * 0.35;
 
-	VectorSubtract (light->origin, r_origin, v);
+	VectorSubtract (r_refdef.viewposition, light->origin, v);
 	if (VectorLength (v) < rad)				// view is inside the dlight
 		return;
 
@@ -89,7 +89,6 @@ R_RenderDlight (dlight_t *light)
 
 	qfglColor4fv (light->color);
 
-	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);
 
 	for (i = 0; i < 3; i++)

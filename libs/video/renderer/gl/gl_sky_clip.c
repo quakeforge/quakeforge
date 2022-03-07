@@ -645,12 +645,13 @@ EmitSkyPolys (float speedscale, const instsurf_t *sc)
 	glpoly_t   *p;
 	vec3_t      dir;
 	msurface_t *surf = sc->surface;
+	vec4f_t     origin = r_refdef.viewposition;
 
 	//FIXME transform/color
 	for (p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
-			VectorSubtract (v, r_origin, dir);
+			VectorSubtract (v, origin, dir);
 			dir[2] *= 3.0;	// flatten the sphere
 
 			length = DotProduct (dir, dir);

@@ -744,10 +744,11 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.viewposition;
 
 	if (plane->type < 3)
-		return (r_origin[plane->type] - plane->dist) < 0;
-	return (DotProduct (r_origin, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static inline void
@@ -1000,7 +1001,7 @@ spin (mat4_t mat)
 	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
 	QuatMult (sky_fix, q, q);
 	Mat4Identity (mat);
-	VectorNegate (r_origin, mat + 12);
+	VectorNegate (r_refdef.viewposition, mat + 12);
 	QuatToMatrix (q, m, 1, 1);
 	Mat4Mult (m, mat, mat);
 }

@@ -95,7 +95,7 @@ R_ZGraph (void)
 	else
 		w = 256;
 
-	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
+	height[r_framecount & 255] = ((int) r_refdef.viewposition[2]) & 31;
 
 	x = 0;
 	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, height,

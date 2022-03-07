@@ -115,9 +115,10 @@ R_SetFrustum (void)
 	RotatePointAroundVector (frustum[3].normal, vright, vpn,
 							 -(90 - r_refdef.fov_y / 2));
 
+	vec4f_t     origin = r_refdef.viewposition;
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
-		frustum[i].dist = DotProduct (r_origin, frustum[i].normal);
+		frustum[i].dist = DotProduct (origin, frustum[i].normal);
 		frustum[i].signbits = SignbitsForPlane (&frustum[i]);
 	}
 }

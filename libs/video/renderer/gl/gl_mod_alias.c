@@ -440,8 +440,6 @@ gl_R_DrawAliasModel (entity_t *e)
 		return;
 	}
 
-	VectorSubtract (r_origin, origin, modelorg);
-
 	gl_modelalpha = e->renderer.colormod[3];
 
 	is_fullbright = (model->fullbright || e->renderer.fullbright);
