@@ -32,6 +32,11 @@
 struct transform_s;
 
 void SCR_Init (void);
+void SCR_SetFOV (float fov);
+
+void SCR_DrawRam (void);
+void SCR_DrawTurtle (void);
+void SCR_DrawPause (void);
 
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array

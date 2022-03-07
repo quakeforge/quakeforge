@@ -165,7 +165,7 @@ CL_LinkPacketEntities (void)
 			renderer->model = NULL;
 			animation->pose1 = animation->pose2 = -1;
 			if (ent->visibility.efrag) {
-				r_funcs->R_RemoveEfrags (ent);	// just became empty
+				R_RemoveEfrags (ent);	// just became empty
 			}
 			continue;
 		}
@@ -179,7 +179,7 @@ CL_LinkPacketEntities (void)
 			|| (cl_deadbodyfilter->int_val && is_dead_body (new))
 			|| (cl_gibfilter->int_val && is_gib (new))) {
 			if (ent->visibility.efrag) {
-				r_funcs->R_RemoveEfrags (ent);
+				R_RemoveEfrags (ent);
 			}
 			continue;
 		}
@@ -232,9 +232,9 @@ CL_LinkPacketEntities (void)
 								new->origin);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
-					r_funcs->R_RemoveEfrags (ent);
+					R_RemoveEfrags (ent);
 				}
-				r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+				R_AddEfrags (&cl_world.worldmodel->brush, ent);
 			}
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
@@ -265,16 +265,16 @@ CL_LinkPacketEntities (void)
 					vec4f_t     org
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
-						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+						R_RemoveEfrags (ent);
+						R_AddEfrags (&cl_world.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+					R_AddEfrags (&cl_world.worldmodel->brush, ent);
 				}
 			}
 		}
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+			R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		}
 
 		// rotate binary objects locally
@@ -400,9 +400,9 @@ CL_LinkPlayers (void)
 		 j < MAX_CLIENTS; j++, player++, state++) {
 		ent = CL_GetEntity (j + 1);
 		if (ent->visibility.efrag)
-			r_funcs->R_RemoveEfrags (ent);
+			R_RemoveEfrags (ent);
 		if (player->flag_ent && player->flag_ent->visibility.efrag) {
-			r_funcs->R_RemoveEfrags (player->flag_ent);
+			R_RemoveEfrags (player->flag_ent);
 		}
 		if (state->messagenum != cl.parsecount)
 			continue;							// not present this frame
@@ -421,7 +421,7 @@ CL_LinkPlayers (void)
 			clientplayer = false;
 		}
 		if (player->chat && player->chat->value[0] != '0') {
-			dlight_t   *dl = r_funcs->R_AllocDlight (j + 1);
+			dlight_t   *dl = R_AllocDlight (j + 1);
 			VectorCopy (org, dl->origin);
 			dl->radius = 100;
 			dl->die = cl.time + 0.1;
@@ -511,10 +511,10 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+		R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		if (player->flag_ent) {
 			CL_UpdateFlagModels (ent, j);
-			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, player->flag_ent);
+			R_AddEfrags (&cl_world.worldmodel->brush, player->flag_ent);
 		}
 	}
 }

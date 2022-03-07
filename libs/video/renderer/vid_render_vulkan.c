@@ -661,10 +661,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
 	vulkan_SCR_CaptureBGR,
 	vulkan_SCR_ScreenShot,
 	SCR_DrawStringToSnap,
@@ -678,12 +674,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_ClearState,
 	vulkan_R_LoadSkys,
 	vulkan_R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	vulkan_R_LineGraph,
-	R_AllocDlight,
-	R_MaxDlightsCheck,
-	R_DecayLights,
 	vulkan_R_ViewChanged,
 	vulkan_SCR_ScreenShot_f,
 	&model_funcs

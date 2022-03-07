@@ -200,7 +200,7 @@ viewsize_f (cvar_t *var)
 static void
 r_dlight_max_f (cvar_t *var)
 {
-	r_funcs->R_MaxDlightsCheck (var);
+	R_MaxDlightsCheck (var);
 }
 
 void

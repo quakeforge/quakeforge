@@ -1735,7 +1735,7 @@ Host_Frame (float time)
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
-		r_funcs->R_DecayLights (host_frametime);
+		R_DecayLights (host_frametime);
 	} else
 		S_Update (0, 0);
 

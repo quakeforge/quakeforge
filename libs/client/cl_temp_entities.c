@@ -213,7 +213,7 @@ beam_clear (beam_t *b)
 		tent_t     *t;
 
 		for (t = b->tents; t; t = t->next) {
-			r_funcs->R_RemoveEfrags (t->ent);
+			R_RemoveEfrags (t->ent);
 			t->ent->visibility.efrag = 0;
 		}
 		free_temp_entities (b->tents);
@@ -271,7 +271,7 @@ beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 		} else {
 			Transform_SetLocalPosition (tent->ent->transform, position);
 		}
-		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
+		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 }
 
@@ -350,7 +350,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			clp_funcs->ParticleExplosion (position);
 
 			// light
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 350;
@@ -385,7 +385,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			colorLength = MSG_ReadByte (net_message);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
 			clp_funcs->ParticleExplosion2 (position, colorStart, colorLength);
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (!dl)
 				break;
 			VectorCopy (position, dl->origin);
@@ -403,7 +403,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			color[3] = 0.7;
 			clp_funcs->ParticleExplosion (position);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 350;
@@ -447,7 +447,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, &position[0]);
 
 			// light
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 150;
@@ -620,7 +620,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		f = 10 * (time - ex->start);
 		if (f >= ent->renderer.model->numframes) {
 			tent_obj_t *_to;
-			r_funcs->R_RemoveEfrags (ent);
+			R_RemoveEfrags (ent);
 			ent->visibility.efrag = 0;
 			free_temp_entities (ex->tent);
 			_to = *to;
@@ -632,7 +632,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 		ent->animation.frame = f;
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+			R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		}
 	}
 }
@@ -673,7 +673,7 @@ CL_ClearProjectiles (void)
 	tent_t     *tent;
 
 	for (tent = cl_projectiles; tent; tent = tent->next) {
-		r_funcs->R_RemoveEfrags (tent->ent);
+		R_RemoveEfrags (tent->ent);
 		tent->ent->visibility.efrag = 0;
 	}
 	free_temp_entities (cl_projectiles);
@@ -721,7 +721,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		angles[2] = 0;
 		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
+		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 
 	*tail = cl_projectiles;

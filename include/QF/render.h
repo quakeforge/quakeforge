@@ -239,4 +239,10 @@ void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
+void R_AddEfrags (mod_brush_t *, entity_t *ent);
+void R_RemoveEfrags (entity_t *ent);
+dlight_t *R_AllocDlight (int key);
+void R_MaxDlightsCheck (struct cvar_s *var);
+void R_DecayLights (double frametime);
+
 #endif//__QF_render_h

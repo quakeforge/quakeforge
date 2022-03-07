@@ -298,7 +298,7 @@ locs_draw (double time, vec4f_t simorg)
 
 	nearloc = locs_find (simorg);
 	if (nearloc) {
-		dl = r_funcs->R_AllocDlight (4096);
+		dl = R_AllocDlight (4096);
 		if (dl) {
 			VectorCopy (nearloc->loc, dl->origin);
 			dl->radius = 200;

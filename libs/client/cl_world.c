@@ -119,7 +119,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 
 	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 
-	r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+	R_AddEfrags (&cl_world.worldmodel->brush, ent);
 }
 
 static void

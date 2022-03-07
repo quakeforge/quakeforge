@@ -165,3 +165,8 @@ console_client_PluginInfo (void)
 {
 	return 0;
 }
+
+void
+R_DecayLights (double frametime)
+{
+}

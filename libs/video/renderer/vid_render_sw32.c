@@ -132,10 +132,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_Draw_Picf,
 	sw32_Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
 	sw32_SCR_CaptureBGR,
 	sw32_SCR_ScreenShot,
 	SCR_DrawStringToSnap,
@@ -149,12 +145,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_R_ClearState,
 	sw32_R_LoadSkys,
 	sw32_R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	sw32_R_LineGraph,
-	R_AllocDlight,
-	R_MaxDlightsCheck,
-	R_DecayLights,
 	sw32_R_ViewChanged,
 	sw32_SCR_ScreenShot_f,
 	&model_funcs

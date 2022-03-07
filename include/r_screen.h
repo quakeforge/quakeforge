@@ -31,13 +31,9 @@
 #ifndef __r_screen_h
 #define __r_screen_h
 
-void SCR_DrawRam (void);
-void SCR_DrawTurtle (void);
-void SCR_DrawPause (void);
 struct tex_s *SCR_CaptureBGR (void);
 struct tex_s *SCR_ScreenShot (unsigned width, unsigned height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
-void SCR_SetFOV (float fov);
 void SCR_ScreenShot_f (void);
 int MipColor (int r, int g, int b);
 

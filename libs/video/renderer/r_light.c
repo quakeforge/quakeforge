@@ -63,7 +63,7 @@ R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime || !dl->radius)
+		if (dl->die < r_data->realtime || !dl->radius)
 			continue;
 		VectorSubtract (dl->origin, pos, d);
 		score = DotProduct (d, d) / dl->radius;
@@ -128,19 +128,19 @@ R_AnimateLight (void)
 
 	// light animations
 	// 'm' is normal light, 'a' is no light, 'z' is double bright
-	i = (int) (vr_data.realtime * 10);
+	i = (int) (r_data->realtime * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
-		if (!vr_data.lightstyle[j].length) {
+		if (!r_data->lightstyle[j].length) {
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
 		if (r_flatlightstyles->int_val == 2) {
-			k = vr_data.lightstyle[j].peak - 'a';
+			k = r_data->lightstyle[j].peak - 'a';
 		} else if (r_flatlightstyles->int_val == 1) {
-			k = vr_data.lightstyle[j].average - 'a';
+			k = r_data->lightstyle[j].average - 'a';
 		} else {
-			k = i % vr_data.lightstyle[j].length;
-			k = vr_data.lightstyle[j].map[k] - 'a';
+			k = i % r_data->lightstyle[j].length;
+			k = r_data->lightstyle[j].map[k] - 'a';
 		}
 		d_lightstylevalue[j] = k * 22;
 	}
@@ -325,7 +325,7 @@ R_PushDlights (const vec3_t entorigin)
 	l = r_dlights;
 
 	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < vr_data.realtime || !l->radius)
+		if (l->die < r_data->realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
 		R_MarkLights (lightorigin, l, i, r_worldentity.renderer.model);
@@ -526,7 +526,7 @@ R_AllocDlight (int key)
 	// then look for anything else
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime) {
+		if (dl->die < r_data->realtime) {
 			memset (dl, 0, sizeof (*dl));
 			dl->key = key;
 			dl->color[0] = dl->color[1] = dl->color[2] = 1;
@@ -548,7 +548,7 @@ R_DecayLights (double frametime)
 
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime || !dl->radius)
+		if (dl->die < r_data->realtime || !dl->radius)
 			continue;
 
 		dl->radius -= frametime * dl->decay;

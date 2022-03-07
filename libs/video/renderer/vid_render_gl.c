@@ -131,10 +131,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
 	gl_SCR_CaptureBGR,
 	gl_SCR_ScreenShot,
 	SCR_DrawStringToSnap,
@@ -148,12 +144,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	gl_R_LineGraph,
-	R_AllocDlight,
-	R_MaxDlightsCheck,
-	R_DecayLights,
 	gl_R_ViewChanged,
 	gl_SCR_ScreenShot_f,
 	&model_funcs

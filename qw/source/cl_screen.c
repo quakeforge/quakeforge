@@ -109,9 +109,9 @@ scr_draw_views (void)
 
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
-	0, //SCR_DrawRam,
-	0, //SCR_DrawTurtle,
-	0, //SCR_DrawPause,
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
 	Sbar_Draw,
 	SCR_CShift,
 	scr_draw_views,
@@ -185,9 +185,6 @@ CL_UpdateScreen (double realtime)
 			r_data->min_wateralpha = 1.0;
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
-	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
-	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
-	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
 	if (cl.viewstate.flags & VF_GIB) {
 		cl.viewstate.height = 8;			// gib view height

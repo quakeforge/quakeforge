@@ -212,7 +212,7 @@ CL_RelinkEntities (void)
 			renderer->model = NULL;
 			animation->pose1 = animation->pose2 = -1;
 			if (ent->visibility.efrag) {
-				r_funcs->R_RemoveEfrags (ent);	// just became empty
+				R_RemoveEfrags (ent);	// just became empty
 			}
 			continue;
 		}
@@ -261,9 +261,9 @@ CL_RelinkEntities (void)
 								new->origin);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
-					r_funcs->R_RemoveEfrags (ent);
+					R_RemoveEfrags (ent);
 				}
-				r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+				R_AddEfrags (&cl_world.worldmodel->brush, ent);
 			}
 			ent->old_origin = new->origin;
 		} else {
@@ -298,11 +298,11 @@ CL_RelinkEntities (void)
 					vec4f_t     org
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
-						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+						R_RemoveEfrags (ent);
+						R_AddEfrags (&cl_world.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (&cl_world.worldmodel->brush, ent);
+					R_AddEfrags (&cl_world.worldmodel->brush, ent);
 				}
 			}
 		}

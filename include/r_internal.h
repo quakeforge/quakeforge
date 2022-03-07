@@ -62,9 +62,6 @@ struct psystem_s *sw_ParticleSystem (void);
 struct psystem_s *sw32_ParticleSystem (void);
 void R_RunParticles (float dT);
 
-void R_AddEfrags (mod_brush_t *, entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
-
 void R_NewMap (model_t *worldmodel, model_t **models, int num_models);
 
 // LordHavoc: relative bmodel lighting

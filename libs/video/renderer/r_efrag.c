@@ -46,6 +46,8 @@ typedef struct s_efrag_list {
 static efrag_t    *r_free_efrags;
 static t_efrag_list *efrag_list;
 
+entqueue_t *r_ent_queue;
+
 /* ENTITY FRAGMENT FUNCTIONS */
 
 static inline void
@@ -204,11 +206,9 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 
-	if (!ent->renderer.model || !r_worldentity.renderer.model)
+	if (!ent->renderer.model) {
 		return;
-
-	if (ent == &r_worldentity)
-		return;							// never add the world
+	}
 
 	entmodel = ent->renderer.model;
 

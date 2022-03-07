@@ -127,10 +127,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Picf,
 	Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
 	SCR_CaptureBGR,
 	SCR_ScreenShot,
 	SCR_DrawStringToSnap,
@@ -144,12 +140,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_ClearState,
 	R_LoadSkys,
 	R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	R_LineGraph,
-	R_AllocDlight,
-	R_MaxDlightsCheck,
-	R_DecayLights,
 	R_ViewChanged,
 	SCR_ScreenShot_f,
 	&model_funcs

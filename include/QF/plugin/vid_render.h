@@ -96,10 +96,6 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
-	void (*SCR_SetFOV) (float fov);
-	void (*SCR_DrawRam) (void);
-	void (*SCR_DrawTurtle) (void);
-	void (*SCR_DrawPause) (void);
 	struct tex_s *(*SCR_CaptureBGR) (void);
 	struct tex_s *(*SCR_ScreenShot) (unsigned width, unsigned height);
 	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
@@ -115,12 +111,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
-	void (*R_AddEfrags) (mod_brush_t *brush, entity_t *ent);
-	void (*R_RemoveEfrags) (entity_t *ent);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
-	dlight_t *(*R_AllocDlight) (int key);
-	void (*R_MaxDlightsCheck) (struct cvar_s *var);
-	void (*R_DecayLights) (double frametime);
 
 	void (*R_ViewChanged) (void);
 	void (*SCR_ScreenShot_f) (void);

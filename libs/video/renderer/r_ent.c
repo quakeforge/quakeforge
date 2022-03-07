@@ -48,8 +48,6 @@
 
 #include "r_internal.h"
 
-entqueue_t *r_ent_queue;
-
 float
 R_EntityBlend (animation_t *animation, int pose, float interval)
 {
