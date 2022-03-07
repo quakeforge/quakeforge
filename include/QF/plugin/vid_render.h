@@ -98,10 +98,6 @@ typedef struct vid_render_funcs_s {
 
 	struct tex_s *(*SCR_CaptureBGR) (void);
 
-	void (*Fog_Update) (float density, float red, float green, float blue,
-						float time);
-	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
-
 	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
 	void (*R_ClearState) (void);

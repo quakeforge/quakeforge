@@ -752,7 +752,7 @@ gl_R_DrawWorld (void)
 		}
 	}
 
-	if (!gl_Fog_GetDensity ()
+	if (!Fog_GetDensity ()
 		|| (gl_fb_bmodels->int_val && gl_mtex_fullbright)
 		|| gl_mtex_active_tmus > 1) {
 		// we have enough active TMUs to render everything in one go

@@ -179,9 +179,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 
 	sw_SCR_CaptureBGR,
 
-	0,
-	0,
-
 	sw_ParticleSystem,
 	sw_R_Init,
 	R_ClearState,

@@ -183,9 +183,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 
 	sw32_SCR_CaptureBGR,
 
-	0,
-	0,
-
 	sw32_ParticleSystem,
 	sw32_R_Init,
 	sw32_R_ClearState,

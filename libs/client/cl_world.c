@@ -216,8 +216,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 		if (cl_world.edicts) {
 			cl_world.worldspawn = PL_ObjectAtIndex (cl_world.edicts, 0);
 			CL_LoadSky (skyname);
-			if (r_funcs->Fog_ParseWorldspawn)
-				r_funcs->Fog_ParseWorldspawn (cl_world.worldspawn);
+			Fog_ParseWorldspawn (cl_world.worldspawn);
 		}
 	}
 	map_cfg (mapname, 1);

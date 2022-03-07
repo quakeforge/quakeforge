@@ -70,17 +70,6 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
-static void
-vulkan_Fog_Update (float density, float red, float green, float blue,
-				   float time)
-{
-}
-
-static void
-vulkan_Fog_ParseWorldspawn (struct plitem_s *worldspawn)
-{
-}
-
 static struct psystem_s *
 vulkan_ParticleSystem (void)
 {
@@ -668,9 +657,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_SubPic,
 
 	vulkan_SCR_CaptureBGR,
-
-	vulkan_Fog_Update,
-	vulkan_Fog_ParseWorldspawn,
 
 	vulkan_ParticleSystem,
 	vulkan_R_Init,

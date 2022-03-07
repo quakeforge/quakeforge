@@ -17,14 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-//gl_fog.c -- global and volumetric fog
+//r_fog.c -- global and volumetric fog
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#define NH_DEFINE
-#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -37,9 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-
-#include "QF/GLSL/defines.h"
-#include "QF/GLSL/funcs.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -69,7 +63,7 @@ static float fade_done; //time when fade will be done
 	update internal variables
 */
 void
-glsl_Fog_Update (float density, float red, float green, float blue, float time)
+Fog_Update (float density, float red, float green, float blue, float time)
 {
 	//save previous settings for fade
 	if (time > 0) {
@@ -155,7 +149,7 @@ Fog_FogCommand_f (void)
 	red = bound (0.0, red, 1.0);
 	green = bound (0.0, green, 1.0);
 	blue = bound (0.0, blue, 1.0);
-	glsl_Fog_Update (density, red, green, blue, time);
+	Fog_Update (density, red, green, blue, time);
 }
 
 /*
@@ -164,7 +158,7 @@ Fog_FogCommand_f (void)
 	called at map load
 */
 void
-glsl_Fog_ParseWorldspawn (plitem_t *worldspawn)
+Fog_ParseWorldspawn (plitem_t *worldspawn)
 {
 	plitem_t   *fog;
 	const char *value;
@@ -190,7 +184,7 @@ glsl_Fog_ParseWorldspawn (plitem_t *worldspawn)
 	calculates fog color for this frame, taking into account fade times
 */
 void
-glsl_Fog_GetColor (quat_t fogcolor)
+Fog_GetColor (quat_t fogcolor)
 {
 	float       f;
 	int         i;
@@ -220,7 +214,7 @@ glsl_Fog_GetColor (quat_t fogcolor)
 	returns current density of fog
 */
 float
-glsl_Fog_GetDensity (void)
+Fog_GetDensity (void)
 {
 	float       f;
 
@@ -238,7 +232,7 @@ glsl_Fog_GetDensity (void)
 	called when quake initializes
 */
 void
-glsl_Fog_Init (void)
+Fog_Init (void)
 {
 	Cmd_AddCommand ("fog", Fog_FogCommand_f, "");
 

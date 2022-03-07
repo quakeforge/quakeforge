@@ -497,6 +497,7 @@ draw_sigils (view_t *view)
 static void
 draw_inventory_sbar (view_t *view)
 {
+	printf ("sbar: %d\n", sbar_view->visible);
 	draw_pic (view, 0, 0, sb_ibar);
 	view_draw (view);
 }

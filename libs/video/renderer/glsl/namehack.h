@@ -21,16 +21,6 @@
 #define Draw_Pic glsl_Draw_Pic
 #define Draw_Picf glsl_Draw_Picf
 #define Draw_SubPic glsl_Draw_SubPic
-#define Fog_DisableGFog glsl_Fog_DisableGFog
-#define Fog_EnableGFog glsl_Fog_EnableGFog
-#define Fog_GetColor glsl_Fog_GetColor
-#define Fog_GetDensity glsl_Fog_GetDensity
-#define Fog_Init glsl_Fog_Init
-#define Fog_ParseWorldspawn glsl_Fog_ParseWorldspawn
-#define Fog_SetupFrame glsl_Fog_SetupFrame
-#define Fog_StartAdditive glsl_Fog_StartAdditive
-#define Fog_StopAdditive glsl_Fog_StopAdditive
-#define Fog_Update glsl_Fog_Update
 #define R_AddTexture glsl_R_AddTexture
 #define R_BlendLightmaps glsl_R_BlendLightmaps
 #define R_BuildLightMap glsl_R_BuildLightMap
@@ -76,16 +66,6 @@
 #define r_particles_style_f glsl_r_particles_style_f
 #define r_world_matrix glsl_r_world_matrix
 #else
-#undef Fog_DisableGFog
-#undef Fog_EnableGFog
-#undef Fog_GetColor
-#undef Fog_GetDensity
-#undef Fog_Init
-#undef Fog_ParseWorldspawn
-#undef Fog_SetupFrame
-#undef Fog_StartAdditive
-#undef Fog_StopAdditive
-#undef Fog_Update
 #undef R_AddTexture
 #undef R_BlendLightmaps
 #undef R_BuildLightMap

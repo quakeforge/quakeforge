@@ -252,7 +252,6 @@ glsl_R_Init (void)
 	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
-	glsl_Fog_Init ();
 	Skin_Init ();
 }
 

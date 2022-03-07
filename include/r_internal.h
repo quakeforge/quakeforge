@@ -27,19 +27,6 @@ extern int r_viewsize;
 
 void R_LineGraph (int x, int y, int *h_vals, int count, int height);
 
-void Fog_Update (float density, float red, float green, float blue,
-				 float time);
-struct plitem_s;
-void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
-
-void Fog_GetColor (quat_t fogcolor);
-float Fog_GetDensity (void) __attribute__((pure));
-void Fog_SetupFrame (void);
-void Fog_EnableGFog (void);
-void Fog_DisableGFog (void);
-void Fog_StartAdditive (void);
-void Fog_StopAdditive (void);
-void Fog_Init (void);
 
 void gl_R_Init (void);
 void glsl_R_Init (void);

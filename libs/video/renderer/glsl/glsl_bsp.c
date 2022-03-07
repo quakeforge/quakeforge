@@ -896,8 +896,8 @@ bsp_begin (void)
 
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_bsp.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_bsp.colormap.location, 2);
@@ -951,8 +951,8 @@ turb_begin (void)
 
 	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_turb.palette.location, 1);
@@ -1055,8 +1055,8 @@ sky_begin (void)
 		qfeglEnable (GL_TEXTURE_2D);
 	}
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (mat);

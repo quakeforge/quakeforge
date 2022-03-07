@@ -164,7 +164,6 @@ gl_R_Init (void)
 	r_init = 1;
 	gl_R_InitParticles ();
 	gl_R_InitSprites ();
-	gl_Fog_Init ();
 	Skin_Init ();
 }
 

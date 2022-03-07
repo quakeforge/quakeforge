@@ -25,4 +25,10 @@ extern gl_ctx_t *glsl_ctx;
 struct tex_s *gl_SCR_CaptureBGR (void);
 struct tex_s *glsl_SCR_CaptureBGR (void);
 
+void gl_Fog_SetupFrame (void);
+void gl_Fog_EnableGFog (void);
+void gl_Fog_DisableGFog (void);
+void gl_Fog_StartAdditive (void);
+void gl_Fog_StopAdditive (void);
+
 #endif//__vid_gl_h

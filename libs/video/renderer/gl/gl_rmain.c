@@ -66,6 +66,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "varrays.h"
+#include "vid_gl.h"
 
 qboolean    gl_envmap;					// true during envmap command capture
 
@@ -329,8 +330,6 @@ gl_R_SetupFrame (void)
 	R_AnimateLight ();
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
-
-	gl_Fog_SetupFrame ();
 
 	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.viewposition, r_origin);

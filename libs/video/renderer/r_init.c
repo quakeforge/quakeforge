@@ -98,4 +98,5 @@ R_Init (void)
 {
 	r_funcs->R_Init ();
 	R_ClearEfrags ();	//FIXME force link of r_efrag.o for qwaq
+	Fog_Init ();
 }

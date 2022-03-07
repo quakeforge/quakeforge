@@ -263,9 +263,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 
 	glsl_SCR_CaptureBGR,
 
-	glsl_Fog_Update,
-	glsl_Fog_ParseWorldspawn,
-
 	glsl_ParticleSystem,
 	glsl_R_Init,
 	glsl_R_ClearState,

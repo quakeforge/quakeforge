@@ -163,6 +163,8 @@ gl_begin_frame (void)
 						vid.height - vr_data.lineadj -
 						(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
+
+	gl_Fog_SetupFrame ();
 }
 
 static void
@@ -224,9 +226,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_SubPic,
 
 	gl_SCR_CaptureBGR,
-
-	gl_Fog_Update,
-	gl_Fog_ParseWorldspawn,
 
 	gl_ParticleSystem,
 	gl_R_Init,

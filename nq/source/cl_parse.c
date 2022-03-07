@@ -1066,8 +1066,7 @@ CL_ParseServerMessage (void)
 					blue = MSG_ReadByte (net_message) / 255.0;
 					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
-					if (r_funcs->Fog_Update)
-						r_funcs->Fog_Update (density, red, green, blue, time);
+					Fog_Update (density, red, green, blue, time);
 				}
 				break;
 			case svc_spawnbaseline2:

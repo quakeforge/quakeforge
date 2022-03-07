@@ -244,5 +244,16 @@ void R_RemoveEfrags (entity_t *ent);
 dlight_t *R_AllocDlight (int key);
 void R_MaxDlightsCheck (struct cvar_s *var);
 void R_DecayLights (double frametime);
+void Fog_Update (float density, float red, float green, float blue,
+				 float time);
+struct plitem_s;
+void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
+
+void Fog_GetColor (quat_t fogcolor);
+float Fog_GetDensity (void) __attribute__((pure));
+void Fog_SetupFrame (void);
+void Fog_StartAdditive (void);
+void Fog_StopAdditive (void);
+void Fog_Init (void);
 
 #endif//__QF_render_h
