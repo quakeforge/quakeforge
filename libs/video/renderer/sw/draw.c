@@ -49,7 +49,6 @@
 #include "vid_internal.h"
 
 typedef struct {
-	vrect_t     rect;
 	int         width;
 	int         height;
 	byte       *ptexbytes;
@@ -699,19 +698,14 @@ Draw_TileClear (int x, int y, int w, int h)
 
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	r_rectdesc.rect.x = x;
-	r_rectdesc.rect.y = y;
-	r_rectdesc.rect.width = w;
-	r_rectdesc.rect.height = h;
-
-	vr.y = r_rectdesc.rect.y;
-	height = r_rectdesc.rect.height;
+	vr.y = y;
+	height = h;
 
 	tileoffsety = vr.y % r_rectdesc.height;
 
 	while (height > 0) {
-		vr.x = r_rectdesc.rect.x;
-		width = r_rectdesc.rect.width;
+		vr.x = x;
+		width = w;
 
 		if (tileoffsety != 0)
 			vr.height = r_rectdesc.height - tileoffsety;
