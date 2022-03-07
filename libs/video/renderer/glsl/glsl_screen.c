@@ -219,29 +219,3 @@ glsl_SCR_CaptureBGR (void)
 	}
 	return tex;
 }
-
-__attribute__((const)) tex_t *
-glsl_SCR_ScreenShot (unsigned width, unsigned height)
-{
-	return 0;
-}
-
-void
-glsl_SCR_ScreenShot_f (void)
-{
-	dstring_t  *name = dstring_new ();
-
-	// find a file name to save it to
-	if (!QFS_NextFilename (name, va (0, "%s/qf",
-									 qfs_gamedir->dir.shots), ".png")) {
-		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
-	} else {
-		tex_t      *tex;
-
-		tex = glsl_SCR_CaptureBGR ();
-		WritePNGqfs (name->str, tex->data, tex->width, tex->height);
-		free (tex);
-		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
-	}
-	dstring_delete (name);
-}

@@ -38,11 +38,15 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/image.h"
+#include "QF/png.h"
 #include "QF/pcx.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
@@ -185,7 +189,21 @@ SCR_SetFOV (float fov)
 static void
 ScreenShot_f (void)
 {
-	r_funcs->SCR_ScreenShot_f ();
+	dstring_t  *name = dstring_new ();
+
+	// find a file name to save it to
+	if (!QFS_NextFilename (name, va (0, "%s/qf",
+									 qfs_gamedir->dir.shots), ".png")) {
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
+	} else {
+		tex_t      *tex;
+
+		tex = r_funcs->SCR_CaptureBGR ();
+		WritePNGqfs (name->str, tex->data, tex->width, tex->height);
+		free (tex);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
+	}
+	dstring_delete (name);
 }
 
 /*
@@ -347,12 +365,74 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 	}
 }
 
+tex_t *
+SCR_SnapScreen (unsigned width, unsigned height)
+{
+	byte       *src, *dest;
+	float       fracw, frach;
+	unsigned    count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
+	tex_t      *tex;
+
+	tex_t      *snap = r_funcs->SCR_CaptureBGR ();
+
+	//FIXME casts
+	w = ((unsigned)snap->width < width) ? (unsigned)snap->width : width;
+	h = ((unsigned)snap->height < height) ? (unsigned)snap->height : height;
+
+	fracw = (float) snap->width / (float) w;
+	frach = (float) snap->height / (float) h;
+
+	tex = malloc (sizeof (tex_t) + w * h);
+	tex->data = (byte *) (tex + 1);
+	if (!tex)
+		return 0;
+
+	tex->width = w;
+	tex->height = h;
+	tex->palette = r_data->vid->palette;
+
+	for (y = 0; y < h; y++) {
+		dest = tex->data + (w * y);
+
+		for (x = 0; x < w; x++) {
+			r = g = b = 0;
+
+			dx = x * fracw;
+			dex = (x + 1) * fracw;
+			if (dex == dx)
+				dex++;					// at least one
+			dy = y * frach;
+			dey = (y + 1) * frach;
+			if (dey == dy)
+				dey++;					// at least one
+
+			count = 0;
+			for (; dy < dey; dy++) {
+				src = snap->data + (snap->width * 3 * dy) + dx * 3;
+				for (nx = dx; nx < dex; nx++) {
+					b += *src++;
+					g += *src++;
+					r += *src++;
+					count++;
+				}
+			}
+			r /= count;
+			g /= count;
+			b /= count;
+			*dest++ = MipColor (r, g, b);
+		}
+	}
+	free (snap);
+
+	return tex;
+}
+
 void
 SCR_Init (void)
 {
 	// register our commands
 	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "
-					"saves as qfxxx.pcx in the current directory");
+					"saves as qfxxxx.png in the QF directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 

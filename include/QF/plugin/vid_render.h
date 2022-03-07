@@ -97,9 +97,6 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
 	struct tex_s *(*SCR_CaptureBGR) (void);
-	struct tex_s *(*SCR_ScreenShot) (unsigned width, unsigned height);
-	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
-								  int x, int y);
 
 	void (*Fog_Update) (float density, float red, float green, float blue,
 						float time);
@@ -112,9 +109,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
-
 	void (*R_ViewChanged) (void);
-	void (*SCR_ScreenShot_f) (void);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

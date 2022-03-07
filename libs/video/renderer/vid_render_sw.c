@@ -128,8 +128,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_SubPic,
 
 	SCR_CaptureBGR,
-	SCR_ScreenShot,
-	SCR_DrawStringToSnap,
 
 	0,
 	0,
@@ -142,7 +140,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_NewMap,
 	R_LineGraph,
 	R_ViewChanged,
-	SCR_ScreenShot_f,
 	&model_funcs
 };
 

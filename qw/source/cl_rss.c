@@ -61,25 +61,22 @@ CL_RSShot_f (void)
 
 	Sys_Printf ("Remote screen shot requested.\n");
 
-	tex = r_funcs->SCR_ScreenShot (RSSHOT_WIDTH, RSSHOT_HEIGHT);
+	tex = SCR_SnapScreen (RSSHOT_WIDTH, RSSHOT_HEIGHT);
 
 	if (tex) {
 		time (&now);
 		st = dstring_strdup (ctime (&now));
 		dstring_snip (st, strlen (st->str) - 1, 1);
-		r_funcs->SCR_DrawStringToSnap (st->str, tex,
-									   tex->width - strlen (st->str) * 8,
-									   tex->height - 1);
+		SCR_DrawStringToSnap (st->str, tex, tex->width - strlen (st->str) * 8,
+							  tex->height - 1);
 
 		dstring_copystr (st, cls.servername->str);
-		r_funcs->SCR_DrawStringToSnap (st->str, tex,
-									   tex->width - strlen (st->str) * 8,
-									   tex->height - 11);
+		SCR_DrawStringToSnap (st->str, tex, tex->width - strlen (st->str) * 8,
+							  tex->height - 11);
 
 		dstring_copystr (st, cl_name->string);
-		r_funcs->SCR_DrawStringToSnap (st->str, tex,
-									   tex->width - strlen (st->str) * 8,
-									   tex->height - 21);
+		SCR_DrawStringToSnap (st->str, tex, tex->width - strlen (st->str) * 8,
+							  tex->height - 21);
 
 		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width,
 						 r_data->vid->basepal, true, &pcx_len);

@@ -88,48 +88,6 @@ sw32_SCR_CaptureBGR (void)
 	return tex;
 }
 
-__attribute__((const)) tex_t *
-sw32_SCR_ScreenShot (unsigned width, unsigned height)
-{
-	return 0;
-}
-
-void
-sw32_SCR_ScreenShot_f (void)
-{
-	dstring_t  *pcxname = dstring_new ();
-	pcx_t      *pcx = 0;
-	int         pcx_len;
-
-	// find a file name to save it to
-	if (!QFS_NextFilename (pcxname, va (0, "%s/qf",
-										qfs_gamedir->dir.shots), ".pcx")) {
-		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
-	} else {
-		// save the pcx file
-		switch(sw32_ctx->pixbytes) {
-		case 1:
-			pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-							 vid.basepal, false, &pcx_len);
-			break;
-		case 2:
-			Sys_Printf("SCR_ScreenShot_f: FIXME - add 16bit support\n");
-			break;
-		case 4:
-			Sys_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
-			break;
-		default:
-			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
-		}
-
-		if (pcx) {
-			QFS_WriteFile (pcxname->str, pcx, pcx_len);
-			Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
-		}
-	}
-	dstring_delete (pcxname);
-}
-
 void
 sw32_R_RenderFrame (SCR_Func *scr_funcs)
 {

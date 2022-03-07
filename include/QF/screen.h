@@ -30,6 +30,7 @@
 #define __QF_screen_h
 
 struct transform_s;
+struct tex_s;
 
 void SCR_Init (void);
 void SCR_SetFOV (float fov);
@@ -42,6 +43,8 @@ typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
 void SCR_UpdateScreen (struct transform_s *camera, double realtime,
 					   SCR_Func *scr_funcs);
+void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
+struct tex_s *SCR_SnapScreen (unsigned width, unsigned height);
 
 extern struct cvar_s *hud_fps, *hud_time;
 

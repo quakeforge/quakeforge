@@ -70,18 +70,6 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
-static tex_t *
-vulkan_SCR_CaptureBGR (void)
-{
-	return 0;
-}
-
-static tex_t *
-vulkan_SCR_ScreenShot (unsigned width, unsigned height)
-{
-	return 0;
-}
-
 static void
 vulkan_Fog_Update (float density, float red, float green, float blue,
 				   float time)
@@ -442,14 +430,16 @@ capture_screenshot (const byte *data, int width, int height)
 	dstring_delete (name);
 }
 
-static void
-vulkan_SCR_ScreenShot_f (void)
+static tex_t *
+vulkan_SCR_CaptureBGR (void)
 {
 	if (!vulkan_ctx->capture) {
-		Sys_Printf ("Screenshot not supported\n");
-		return;
+		Sys_Printf ("Capture not supported\n");
+		return 0;
 	}
 	vulkan_ctx->capture_callback = capture_screenshot;
+	//FIXME async process
+	return 0;
 }
 
 static void
@@ -662,8 +652,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_SubPic,
 
 	vulkan_SCR_CaptureBGR,
-	vulkan_SCR_ScreenShot,
-	SCR_DrawStringToSnap,
 
 	vulkan_Fog_Update,
 	vulkan_Fog_ParseWorldspawn,
@@ -676,7 +664,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_NewMap,
 	vulkan_R_LineGraph,
 	vulkan_R_ViewChanged,
-	vulkan_SCR_ScreenShot_f,
 	&model_funcs
 };
 

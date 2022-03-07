@@ -133,8 +133,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_Draw_SubPic,
 
 	sw32_SCR_CaptureBGR,
-	sw32_SCR_ScreenShot,
-	SCR_DrawStringToSnap,
 
 	0,
 	0,
@@ -147,7 +145,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_R_NewMap,
 	sw32_R_LineGraph,
 	sw32_R_ViewChanged,
-	sw32_SCR_ScreenShot_f,
 	&model_funcs
 };
 

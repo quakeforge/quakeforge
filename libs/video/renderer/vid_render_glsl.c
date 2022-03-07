@@ -131,8 +131,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_Draw_SubPic,
 
 	glsl_SCR_CaptureBGR,
-	glsl_SCR_ScreenShot,
-	SCR_DrawStringToSnap,
 
 	glsl_Fog_Update,
 	glsl_Fog_ParseWorldspawn,
@@ -145,7 +143,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_NewMap,
 	glsl_R_LineGraph,
 	glsl_R_ViewChanged,
-	glsl_SCR_ScreenShot_f,
 	&model_funcs
 };
 
