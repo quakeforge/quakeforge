@@ -71,9 +71,9 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	float       size;
 	int         h;
 
-	// intermission is always full screen
 	size = min (r_viewsize, 100);
 	if (r_data->force_fullscreen) {
+		// intermission is always full screen
 		size = 100.0;
 		lineadj = 0;
 	}
@@ -175,7 +175,15 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 	}
 
-	r_funcs->R_RenderFrame (scr_funcs);
+	r_funcs->begin_frame ();
+	r_funcs->render_view ();
+	r_funcs->set_2d();
+	view_draw (vr_data.scr_view);
+	while (*scr_funcs) {
+		(*scr_funcs)();
+		scr_funcs++;
+	}
+	r_funcs->end_frame ();
 }
 
 void
@@ -289,7 +297,7 @@ SCR_DrawPause (void)
 /*
 	Find closest color in the palette for named color
 */
-int
+static int
 MipColor (int r, int g, int b)
 {
 	float       bestdist, dist;

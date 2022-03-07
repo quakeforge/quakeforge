@@ -28,33 +28,12 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
+#include <stdlib.h>
 
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#include <time.h>
-
-#include "QF/cvar.h"
-#include "QF/draw.h"
-#include "QF/dstring.h"
 #include "QF/image.h"
-#include "QF/pcx.h"
-#include "QF/quakefs.h"
-#include "QF/render.h"
-#include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/ui/view.h"
 
-#include "compat.h"
 #include "r_internal.h"
-#include "vid_internal.h"
 #include "vid_sw.h"
 
 /* SCREEN SHOTS */
@@ -86,45 +65,4 @@ sw32_SCR_CaptureBGR (void)
 		}
 	}
 	return tex;
-}
-
-void
-sw32_R_RenderFrame (SCR_Func *scr_funcs)
-{
-	vrect_t     vrect;
-
-	if (vr_data.scr_fullupdate++ < vid.numpages) {	// clear the entire screen
-		vr_data.scr_copyeverything = 1;
-		sw32_Draw_TileClear (0, 0, vid.width, vid.height);
-	}
-
-	sw32_R_RenderView ();
-
-	view_draw (vr_data.scr_view);
-	while (*scr_funcs) {
-		(*scr_funcs)();
-		scr_funcs++;
-	}
-
-	// update one of three areas
-	if (vr_data.scr_copyeverything) {
-		vrect.x = 0;
-		vrect.y = 0;
-		vrect.width = vid.width;
-		vrect.height = vid.height;
-		vrect.next = 0;
-	} else if (scr_copytop) {
-		vrect.x = 0;
-		vrect.y = 0;
-		vrect.width = vid.width;
-		vrect.height = vid.height - vr_data.lineadj;
-		vrect.next = 0;
-	} else {
-		vrect.x = vr_data.scr_view->xpos;
-		vrect.y = vr_data.scr_view->ypos;
-		vrect.width = vr_data.scr_view->xlen;
-		vrect.height = vr_data.scr_view->ylen;
-		vrect.next = 0;
-	}
-	sw32_ctx->update (sw32_ctx, &vrect);
 }

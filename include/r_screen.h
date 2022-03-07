@@ -31,12 +31,6 @@
 #ifndef __r_screen_h
 #define __r_screen_h
 
-struct tex_s *SCR_CaptureBGR (void);
-struct tex_s *SCR_ScreenShot (unsigned width, unsigned height);
-void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
-void SCR_ScreenShot_f (void);
-int MipColor (int r, int g, int b);
-
 extern int         scr_copytop;
 extern qboolean    scr_skipupdate;
 

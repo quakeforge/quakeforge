@@ -31,13 +31,18 @@
 #define NH_DEFINE
 #include "gl/namehack.h"
 
+#include "QF/cvar.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_vid.h"
 
 #include "mod_internal.h"
+#include "r_cvar.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_gl.h"
@@ -108,6 +113,93 @@ gl_vid_render_shutdown (void)
 {
 }
 
+static void
+gl_begin_frame (void)
+{
+	if (gl_ctx->begun) {
+		gl_ctx->end_rendering ();
+		gl_ctx->begun = 0;
+	}
+
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in gl mode
+	vr_data.scr_copyeverything = 1;
+
+	if (gl_clear->int_val) {
+		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	} else {
+		qfglClear (GL_DEPTH_BUFFER_BIT);
+	}
+
+	gl_ctx->begun = 1;
+
+	if (r_speeds->int_val) {
+		gl_ctx->start_time = Sys_DoubleTime ();
+		gl_ctx->brush_polys = 0;
+		gl_ctx->alias_polys = 0;
+	}
+
+	GL_Set2D ();
+	GL_DrawReset ();
+
+	// draw any areas not covered by the refresh
+	if (r_refdef.vrect.x > 0) {
+		// left
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - vr_data.lineadj);
+		// right
+		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
+						vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
+						vid.height - vr_data.lineadj);
+	}
+	if (r_refdef.vrect.y > 0) {
+		// top
+		Draw_TileClear (r_refdef.vrect.x, 0,
+						r_refdef.vrect.x + r_refdef.vrect.width,
+						r_refdef.vrect.y);
+		// bottom
+		Draw_TileClear (r_refdef.vrect.x,
+						r_refdef.vrect.y + r_refdef.vrect.height,
+						r_refdef.vrect.width,
+						vid.height - vr_data.lineadj -
+						(r_refdef.vrect.height + r_refdef.vrect.y));
+	}
+}
+
+static void
+gl_render_view (void)
+{
+	// do 3D refresh drawing, and then update the screen
+	gl_R_RenderView ();
+}
+
+static void
+gl_set_2d (void)
+{
+	GL_Set2DScaled ();
+}
+
+static void
+gl_end_frame (void)
+{
+	if (r_speeds->int_val) {
+//		qfglFinish ();
+		double      start_time = gl_ctx->start_time;
+		double      end_time = Sys_DoubleTime ();
+		Sys_MaskPrintf (SYS_dev, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
+						(int) ((end_time - start_time) * 1000),
+						gl_ctx->brush_polys, gl_ctx->alias_polys,
+						r_psystem.numparticles);
+	}
+
+	GL_FlushText ();
+	qfglFlush ();
+
+	if (gl_finish->int_val) {
+		gl_ctx->end_rendering ();
+		gl_ctx->begun = 0;
+	}
+}
+
 vid_render_funcs_t gl_vid_render_funcs = {
 	gl_vid_render_init,
 	gl_Draw_Character,
@@ -138,12 +230,15 @@ vid_render_funcs_t gl_vid_render_funcs = {
 
 	gl_ParticleSystem,
 	gl_R_Init,
-	gl_R_RenderFrame,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,
 	gl_R_LineGraph,
 	gl_R_ViewChanged,
+	gl_begin_frame,
+	gl_render_view,
+	gl_set_2d,
+	gl_end_frame,
 	&model_funcs
 };
 

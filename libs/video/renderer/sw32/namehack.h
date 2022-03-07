@@ -104,7 +104,6 @@
 #define R_TransformPlane sw32_R_TransformPlane
 #define R_ViewChanged sw32_R_ViewChanged
 #define R_ZDrawSubmodelPolys sw32_R_ZDrawSubmodelPolys
-#define SCR_CaptureBGR sw32_SCR_CaptureBGR
 #define SCR_ScreenShot sw32_SCR_ScreenShot
 #define SCR_ScreenShot_f sw32_SCR_ScreenShot_f
 #define R_RenderFrame sw32_R_RenderFrame

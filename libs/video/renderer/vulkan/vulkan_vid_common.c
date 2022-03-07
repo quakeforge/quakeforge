@@ -339,7 +339,7 @@ renderpass_draw (qfv_renderframe_t *rFrame)
 {
 	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
-	Vulkan_FlushText (rFrame);
+	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
 	Vulkan_Lighting_Draw (rFrame);
 	Vulkan_Compose_Draw (rFrame);
 }

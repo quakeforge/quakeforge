@@ -61,6 +61,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_gl.h"
 
 static instsurf_t  *waterchain = NULL;
 static instsurf_t **waterchain_tail = &waterchain;
@@ -222,7 +223,7 @@ R_RenderBrushPoly_3 (msurface_t *surf)
 	float      *v;
 	int			i;
 
-	gl_c_brush_polys++;
+	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = surf->polys->verts[0];
@@ -243,7 +244,7 @@ R_RenderBrushPoly_2 (msurface_t *surf)
 	float      *v;
 	int			i;
 
-	gl_c_brush_polys++;
+	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = surf->polys->verts[0];
@@ -263,7 +264,7 @@ R_RenderBrushPoly_1 (msurface_t *surf)
 	float      *v;
 	int			i;
 
-	gl_c_brush_polys++;
+	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = surf->polys->verts[0];

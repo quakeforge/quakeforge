@@ -104,12 +104,16 @@ typedef struct vid_render_funcs_s {
 
 	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
-	void (*R_RenderFrame) (SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 	void (*R_ViewChanged) (void);
+
+	void (*begin_frame) (void);
+	void (*render_view) (void);
+	void (*set_2d) (void);
+	void (*end_frame) (void);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

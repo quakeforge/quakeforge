@@ -12,9 +12,17 @@ typedef struct gl_ctx_s {
 	void        (*init_gl) (void);
 	void        *(*get_proc_address) (const char *name, qboolean crit);
 	void        (*end_rendering) (void);
+
+	int         begun;
+	double      start_time;
+	int         brush_polys;
+	int         alias_polys;
 } gl_ctx_t;
 
 extern gl_ctx_t *gl_ctx;
 extern gl_ctx_t *glsl_ctx;
+
+struct tex_s *gl_SCR_CaptureBGR (void);
+struct tex_s *glsl_SCR_CaptureBGR (void);
 
 #endif//__vid_gl_h

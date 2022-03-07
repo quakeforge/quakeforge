@@ -34,6 +34,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/view.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -109,6 +111,53 @@ sw32_vid_render_shutdown (void)
 {
 }
 
+static void
+sw32_begin_frame (void)
+{
+	if (vr_data.scr_fullupdate++ < vid.numpages) {	// clear the entire screen
+		vr_data.scr_copyeverything = 1;
+		sw32_Draw_TileClear (0, 0, vid.width, vid.height);
+	}
+}
+
+static void
+sw32_render_view (void)
+{
+	sw32_R_RenderView ();
+}
+
+static void
+sw32_set_2d (void)
+{
+}
+
+static void
+sw32_end_frame (void)
+{
+	// update one of three areas
+	vrect_t     vrect;
+	if (vr_data.scr_copyeverything) {
+		vrect.x = 0;
+		vrect.y = 0;
+		vrect.width = vid.width;
+		vrect.height = vid.height;
+		vrect.next = 0;
+	} else if (scr_copytop) {
+		vrect.x = 0;
+		vrect.y = 0;
+		vrect.width = vid.width;
+		vrect.height = vid.height - vr_data.lineadj;
+		vrect.next = 0;
+	} else {
+		vrect.x = vr_data.scr_view->xpos;
+		vrect.y = vr_data.scr_view->ypos;
+		vrect.width = vr_data.scr_view->xlen;
+		vrect.height = vr_data.scr_view->ylen;
+		vrect.next = 0;
+	}
+	sw32_ctx->update (sw32_ctx, &vrect);
+}
+
 vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_vid_render_init,
 	sw32_Draw_Character,
@@ -139,12 +188,15 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 
 	sw32_ParticleSystem,
 	sw32_R_Init,
-	sw32_R_RenderFrame,
 	sw32_R_ClearState,
 	sw32_R_LoadSkys,
 	sw32_R_NewMap,
 	sw32_R_LineGraph,
 	sw32_R_ViewChanged,
+	sw32_begin_frame,
+	sw32_render_view,
+	sw32_set_2d,
+	sw32_end_frame,
 	&model_funcs
 };
 

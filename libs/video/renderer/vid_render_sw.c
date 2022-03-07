@@ -31,6 +31,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/view.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -104,6 +106,54 @@ sw_vid_render_shutdown (void)
 {
 }
 
+static void
+sw_begin_frame (void)
+{
+	// do 3D refresh drawing, and then update the screen
+	if (vr_data.scr_fullupdate++ < vid.numpages) {
+		vr_data.scr_copyeverything = 1;
+		Draw_TileClear (0, 0, vid.width, vid.height);
+	}
+}
+
+static void
+sw_render_view (void)
+{
+	R_RenderView ();
+}
+
+static void
+sw_set_2d (void)
+{
+}
+
+static void
+sw_end_frame (void)
+{
+	// update one of three areas
+	vrect_t     vrect;
+	if (vr_data.scr_copyeverything) {
+		vrect.x = 0;
+		vrect.y = 0;
+		vrect.width = vid.width;
+		vrect.height = vid.height;
+		vrect.next = 0;
+	} else if (scr_copytop) {
+		vrect.x = 0;
+		vrect.y = 0;
+		vrect.width = vid.width;
+		vrect.height = vid.height - vr_data.lineadj;
+		vrect.next = 0;
+	} else {
+		vrect.x = vr_data.scr_view->xpos;
+		vrect.y = vr_data.scr_view->ypos;
+		vrect.width = vr_data.scr_view->xlen;
+		vrect.height = vr_data.scr_view->ylen;
+		vrect.next = 0;
+	}
+	sw_ctx->update (sw_ctx, &vrect);
+}
+
 vid_render_funcs_t sw_vid_render_funcs = {
 	sw_vid_render_init,
 	Draw_Character,
@@ -127,19 +177,22 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Picf,
 	Draw_SubPic,
 
-	SCR_CaptureBGR,
+	sw_SCR_CaptureBGR,
 
 	0,
 	0,
 
 	sw_ParticleSystem,
 	sw_R_Init,
-	R_RenderFrame,
 	R_ClearState,
 	R_LoadSkys,
 	R_NewMap,
 	R_LineGraph,
 	R_ViewChanged,
+	sw_begin_frame,
+	sw_render_view,
+	sw_set_2d,
+	sw_end_frame,
 	&model_funcs
 };
 

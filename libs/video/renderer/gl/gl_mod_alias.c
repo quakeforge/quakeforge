@@ -62,6 +62,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_gl.h"
 
 typedef struct {
 	vec3_t      normal;
@@ -559,7 +560,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (!(paliashdr = e->renderer.model->aliashdr)) {
 		paliashdr = Cache_Get (&e->renderer.model->cache);
 	}
-	gl_c_alias_polys += paliashdr->mdl.numtris;
+	gl_ctx->alias_polys += paliashdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data

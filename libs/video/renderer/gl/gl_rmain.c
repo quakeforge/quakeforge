@@ -67,8 +67,6 @@
 #include "r_internal.h"
 #include "varrays.h"
 
-int         gl_c_brush_polys, gl_c_alias_polys;
-
 qboolean    gl_envmap;					// true during envmap command capture
 
 int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
@@ -348,9 +346,6 @@ gl_R_SetupFrame (void)
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 
 	r_cache_thrash = false;
-
-	gl_c_brush_polys = 0;
-	gl_c_alias_polys = 0;
 }
 
 static void

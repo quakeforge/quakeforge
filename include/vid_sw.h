@@ -13,4 +13,7 @@ typedef struct sw_ctx_s {
 extern sw_ctx_t *sw_ctx;
 extern sw_ctx_t *sw32_ctx;
 
+struct tex_s *sw_SCR_CaptureBGR (void);
+struct tex_s *sw32_SCR_CaptureBGR (void);
+
 #endif//__vid_sw_h
