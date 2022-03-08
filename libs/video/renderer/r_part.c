@@ -106,8 +106,6 @@ R_RunParticles (float dT)
 			ps->partparams[j] = *parm;
 			ps->partramps[j] = ramp;
 		}
-		p = &ps->particles[j];
-		parm = &ps->partparams[j];
 		j += 1;
 
 		p->pos += dT * p->vel;
