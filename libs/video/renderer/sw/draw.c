@@ -707,10 +707,7 @@ Draw_TileClear (int x, int y, int w, int h)
 		vr.x = x;
 		width = w;
 
-		if (tileoffsety != 0)
-			vr.height = r_rectdesc.height - tileoffsety;
-		else
-			vr.height = r_rectdesc.height;
+		vr.height = r_rectdesc.height - tileoffsety;
 
 		if (vr.height > height)
 			vr.height = height;
@@ -718,11 +715,7 @@ Draw_TileClear (int x, int y, int w, int h)
 		tileoffsetx = vr.x % r_rectdesc.width;
 
 		while (width > 0) {
-			if (tileoffsetx != 0)
-				vr.width = r_rectdesc.width - tileoffsetx;
-			else
-				vr.width = r_rectdesc.width;
-
+			vr.width = r_rectdesc.width - tileoffsetx;
 			if (vr.width > width)
 				vr.width = width;
 

@@ -653,10 +653,11 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.viewposition;
 
 	if (plane->type < 3)
-		return (r_origin[plane->type] - plane->dist) < 0;
-	return (DotProduct (r_origin, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static inline void

@@ -108,7 +108,7 @@ setup_sky (vulkan_ctx_t *ctx)
 	q = Blend (mctx->sky_rotation[0], mctx->sky_rotation[1], blend);
 	q = normalf (qmulf (mctx->sky_fix, q));
 	mat4fidentity (mat);
-	VectorNegate (r_origin, mat[3]);
+	VectorNegate (r_refdef.viewposition, mat[3]);
 	mat4fquat (m, q);
 	mmulf (mat, m, mat);
 	Vulkan_SetSkyMatrix (ctx, mat);
