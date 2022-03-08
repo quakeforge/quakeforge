@@ -68,10 +68,10 @@ Fog_Update (float density, float red, float green, float blue, float time)
 	//save previous settings for fade
 	if (time > 0) {
 		//check for a fade in progress
-		if (fade_done > vr_data.realtime) {
+		if (fade_done > r_data->realtime) {
 			float       f;
 
-			f = (fade_done - vr_data.realtime) / fade_time;
+			f = (fade_done - r_data->realtime) / fade_time;
 			old_density = f * old_density + (1.0 - f) * fog_density;
 			old_red = f * old_red + (1.0 - f) * fog_red;
 			old_green = f * old_green + (1.0 - f) * fog_green;
@@ -89,7 +89,7 @@ Fog_Update (float density, float red, float green, float blue, float time)
 	fog_green = green;
 	fog_blue = blue;
 	fade_time = time;
-	fade_done = vr_data.realtime + time;
+	fade_done = r_data->realtime + time;
 }
 
 /*
@@ -189,8 +189,8 @@ Fog_GetColor (quat_t fogcolor)
 	float       f;
 	int         i;
 
-	if (fade_done > vr_data.realtime) {
-		f = (fade_done - vr_data.realtime) / fade_time;
+	if (fade_done > r_data->realtime) {
+		f = (fade_done - r_data->realtime) / fade_time;
 		fogcolor[0] = f * old_red + (1.0 - f) * fog_red;
 		fogcolor[1] = f * old_green + (1.0 - f) * fog_green;
 		fogcolor[2] = f * old_blue + (1.0 - f) * fog_blue;
@@ -218,8 +218,8 @@ Fog_GetDensity (void)
 {
 	float       f;
 
-	if (fade_done > vr_data.realtime) {
-		f = (fade_done - vr_data.realtime) / fade_time;
+	if (fade_done > r_data->realtime) {
+		f = (fade_done - r_data->realtime) / fade_time;
 		return f * old_density + (1.0 - f) * fog_density;
 	} else {
 		return fog_density;
