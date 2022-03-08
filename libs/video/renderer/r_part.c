@@ -100,7 +100,7 @@ R_RunParticles (float dT)
 		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
 			continue;
 		}
-		const int  *ramp = ps->partramps[j];
+		const int  *ramp = ps->partramps[i];
 		if (i > j) {
 			ps->particles[j] = *p;
 			ps->partparams[j] = *parm;
