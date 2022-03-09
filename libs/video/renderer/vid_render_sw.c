@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
@@ -109,6 +111,26 @@ sw_vid_render_shutdown (void)
 static void
 sw_begin_frame (void)
 {
+	if (r_numsurfs->int_val) {
+		int         surfcount = surface_p - surfaces;
+		int         max_surfs = surf_max - surfaces;
+		if (surfcount > r_maxsurfsseen)
+			r_maxsurfsseen = surfcount;
+
+		Sys_Printf ("Used %d of %d surfs; %d max\n",
+					surfcount, max_surfs, r_maxsurfsseen);
+	}
+
+	if (r_numedges->int_val) {
+		int         edgecount = edge_p - r_edges;
+
+		if (edgecount > r_maxedgesseen)
+			r_maxedgesseen = edgecount;
+
+		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
+					r_numallocatededges, r_maxedgesseen);
+	}
+
 	// do 3D refresh drawing, and then update the screen
 	if (vr_data.scr_fullupdate++ < vid.numpages) {
 		vr_data.scr_copyeverything = 1;

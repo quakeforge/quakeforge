@@ -190,28 +190,8 @@ R_SetUpFrustumIndexes (void)
 void
 R_SetupFrame (void)
 {
-	int         edgecount;
 	vrect_t     vrect;
 	float       w, h;
-
-	if (r_numsurfs->int_val) {
-		if ((surface_p - surfaces) > r_maxsurfsseen)
-			r_maxsurfsseen = surface_p - surfaces;
-
-		Sys_Printf ("Used %ld of %ld surfs; %d max\n",
-					(long)(surface_p - surfaces),
-					(long)(surf_max - surfaces), r_maxsurfsseen);
-	}
-
-	if (r_numedges->int_val) {
-		edgecount = edge_p - r_edges;
-
-		if (edgecount > r_maxedgesseen)
-			r_maxedgesseen = edgecount;
-
-		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
-					r_numallocatededges, r_maxedgesseen);
-	}
 
 	R_CheckVariables ();
 
