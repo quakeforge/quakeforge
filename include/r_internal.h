@@ -14,7 +14,6 @@ extern vid_render_data_t vid_render_data;
 extern vid_render_funcs_t gl_vid_render_funcs;
 extern vid_render_funcs_t glsl_vid_render_funcs;
 extern vid_render_funcs_t sw_vid_render_funcs;
-extern vid_render_funcs_t sw32_vid_render_funcs;
 extern vid_render_funcs_t vulkan_vid_render_funcs;
 extern vid_render_funcs_t *vid_render_funcs;
 
@@ -30,7 +29,6 @@ void R_LineGraph (int x, int y, int *h_vals, int count, int height);
 void gl_R_Init (void);
 void glsl_R_Init (void);
 void sw_R_Init (void);
-void sw32_R_Init (void);
 void R_RenderFrame (SCR_Func *scr_funcs);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
@@ -45,7 +43,6 @@ extern struct psystem_s r_psystem;
 struct psystem_s *gl_ParticleSystem (void);
 struct psystem_s *glsl_ParticleSystem (void);
 struct psystem_s *sw_ParticleSystem (void);
-struct psystem_s *sw32_ParticleSystem (void);
 void R_RunParticles (float dT);
 
 void R_NewMap (model_t *worldmodel, model_t **models, int num_models);

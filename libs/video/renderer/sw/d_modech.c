@@ -31,9 +31,8 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "d_local.h"
 #include "r_internal.h"
-#include "vid_sw.h"
+#include "d_local.h"
 
 int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 
@@ -71,7 +70,7 @@ D_ViewChanged (void)
 	if (r_dowarp)
 		rowpixels = WARP_WIDTH;
 	else
-		rowpixels = vid.rowbytes / sw_ctx->pixbytes;
+		rowpixels = vid.rowbytes;
 
 	scale_for_mip = xscale;
 	if (yscale > xscale)

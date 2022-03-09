@@ -35,7 +35,6 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
-#include "vid_sw.h"
 
 #define NUM_MIPS	4
 
@@ -46,7 +45,6 @@ float        d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
-float        d_zitable[65536];
 
 void        (*d_drawspans) (espan_t *pspan);
 
@@ -62,16 +60,7 @@ D_Init (void)
 	vr_data.vid->vid_internal->flush_caches = D_FlushCaches;
 	vr_data.vid->vid_internal->init_caches = D_InitCaches;
 
-	// LordHavoc: compute 1/zi table for use in rendering code everywhere
-	if (!d_zitable[1]) {
-		int i;
-		d_zitable[0] = 0;
-		for (i = 1;i < 65536;i++)
-			d_zitable[i] = (65536.0 * 65536.0 / (double) i);
-	}
-
 	VID_InitBuffers ();
-	VID_MakeColormaps ();
 }
 
 void
@@ -93,7 +82,7 @@ D_SetupFrame (void)
 	if (r_dowarp)
 		screenwidth = WARP_WIDTH;
 	else
-		screenwidth = vid.rowbytes / sw_ctx->pixbytes;
+		screenwidth = vid.rowbytes;
 
 	d_roverwrapped = false;
 	d_initial_rover = sc_rover;
@@ -103,7 +92,7 @@ D_SetupFrame (void)
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
-	d_drawspans = sw_ctx->draw->draw_spans;
+	d_drawspans = D_DrawSpans8;
 }
 
 void

@@ -33,21 +33,23 @@
 #include "QF/render.h"
 
 #include "r_internal.h"
-#include "vid_internal.h"
-#include "vid_sw.h"
 
+/*
+	R_LineGraph
+
+	Called by only R_DisplayTime
+*/
 void
-line_grapn_8 (int x, int y, int *h_vals, int count, int height)
+R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	int         h, i, s, color;
-	int         offset = vid.rowbytes;
 	byte       *dest;
 
 	// FIXME: disable on no-buffer adapters, or put in the driver
 	s = height;
 
 	while (count--) {
-		dest = ((byte*)vid.buffer) + offset * y + x++;
+		dest = ((byte*)vid.buffer) + vid.rowbytes * y + x++;
 
 		h = *h_vals++;
 
@@ -63,80 +65,8 @@ line_grapn_8 (int x, int y, int *h_vals, int count, int height)
 		if (h > s)
 			h = s;
 
-		for (i = 0; i < h; i++, dest -= offset) {
+		for (i = 0; i < h; i++, dest -= vid.rowbytes) {
 			dest[0] = color;
 		}
 	}
-}
-
-void
-line_grapn_16 (int x, int y, int *h_vals, int count, int height)
-{
-	int         h, i, s, color;
-	int         offset = vid.rowbytes >> 1;
-	uint16_t   *dest;
-
-	// FIXME: disable on no-buffer adapters, or put in the driver
-	s = height;
-
-	while (count--) {
-		dest = ((uint16_t*)vid.buffer) + offset * y + x++;
-
-		h = *h_vals++;
-
-		if (h == 10000)
-			color = d_8to16table[0x6f];					// yellow
-		else if (h == 9999)
-			color = d_8to16table[0x4f];					// red
-		else if (h == 9998)
-			color = d_8to16table[0xd0];					// blue
-		else
-			color = d_8to16table[0xff];					// pink
-
-		if (h > s)
-			h = s;
-
-		for (i = 0; i < h; i++, dest -= offset) {
-			dest[0] = color;
-		}
-	}
-}
-
-void
-line_grapn_32 (int x, int y, int *h_vals, int count, int height)
-{
-	int         h, i, s, color;
-	int         offset = vid.rowbytes >> 2;
-	uint32_t   *dest;
-
-	// FIXME: disable on no-buffer adapters, or put in the driver
-	s = height;
-
-	while (count--) {
-		dest = ((uint32_t*)vid.buffer) + offset * y + x++;
-
-		h = *h_vals++;
-
-		if (h == 10000)
-			color = d_8to24table[0x6f];					// yellow
-		else if (h == 9999)
-			color = d_8to24table[0x4f];					// red
-		else if (h == 9998)
-			color = d_8to24table[0xd0];					// blue
-		else
-			color = d_8to24table[0xff];					// pink
-
-		if (h > s)
-			h = s;
-
-		for (i = 0; i < h; i++, dest -= offset) {
-			dest[0] = color;
-		}
-	}
-}
-
-void
-R_LineGraph (int x, int y, int *h_vals, int count, int height)
-{
-	sw_ctx->draw->line_grapn (x, y, h_vals, count, height);
 }

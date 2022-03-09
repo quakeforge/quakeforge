@@ -39,7 +39,6 @@
 
 #include "d_ifacea.h"
 #include "r_internal.h"
-#include "vid_sw.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
@@ -564,12 +563,6 @@ R_AliasSetupSkin (entity_t *ent)
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
 	acolormap = vid.colormap8;
-	if (sw_ctx->pixbytes != 1) {
-		if (sw_ctx->pixbytes == 2)
-			acolormap = vid.colormap16;
-		else
-			acolormap = vid.colormap32;
-	}
 	if (ent->renderer.skin) {
 		tex_t      *base;
 
@@ -662,12 +655,6 @@ R_AliasDrawModel (alight_t *plighting)
 
 	if (!acolormap)
 		acolormap = vid.colormap8;
-	if (acolormap == vid.colormap8 && sw_ctx->pixbytes != 1) {
-		if (sw_ctx->pixbytes == 2)
-			acolormap = vid.colormap16;
-		else
-			acolormap = vid.colormap32;
-	}
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...

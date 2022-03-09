@@ -1,5 +1,5 @@
 /*
-	rsurf.c
+	sw_rsurf.c
 
 	surface-related refresh code
 
@@ -33,63 +33,43 @@
 
 #include "QF/scene/entity.h"
 
-#include "compat.h"
 #include "r_internal.h"
-#include "vid_sw.h"
+
+#ifdef PIC
+# undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 drawsurf_t  r_drawsurf;
 
-int         sourcetstep;
-static int         lightleft, blocksize;
+int         sourcesstep, sourcetstep;
+#ifndef USE_INTEL_ASM
+static int  lightleft;
+#endif
+static int  blocksize;
 int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
 static unsigned int blockdivmask;
-byte       *prowdestbase;
-byte       *psource;
-int         surfrowbytes;
-unsigned int        *r_lightptr;
+void       *prowdestbase;
+unsigned char *pbasesource;
+int         surfrowbytes;				// used by ASM files
+unsigned int *r_lightptr;
 int         r_stepback;
 int         r_lightwidth;
 static int         r_numhblocks;
 int         r_numvblocks;
-static byte       *r_source;
-byte              *r_sourcemax;
+static unsigned char *r_source;
+unsigned char *r_sourcemax;
 
-void R_DrawSurfaceBlock8_mip0 (void);
-void R_DrawSurfaceBlock8_mip1 (void);
-void R_DrawSurfaceBlock8_mip2 (void);
-void R_DrawSurfaceBlock8_mip3 (void);
-static void R_DrawSurfaceBlock16_mip0 (void);
-static void R_DrawSurfaceBlock16_mip1 (void);
-static void R_DrawSurfaceBlock16_mip2 (void);
-static void R_DrawSurfaceBlock16_mip3 (void);
-static void R_DrawSurfaceBlock32_mip0 (void);
-static void R_DrawSurfaceBlock32_mip1 (void);
-static void R_DrawSurfaceBlock32_mip2 (void);
-static void R_DrawSurfaceBlock32_mip3 (void);
+void R_DrawSurfaceBlock_mip0 (void);
+void R_DrawSurfaceBlock_mip1 (void);
+void R_DrawSurfaceBlock_mip2 (void);
+void R_DrawSurfaceBlock_mip3 (void);
 
-static void (*surfmiptable8[4]) (void) = {
-	R_DrawSurfaceBlock8_mip0,
-	R_DrawSurfaceBlock8_mip1,
-	R_DrawSurfaceBlock8_mip2,
-	R_DrawSurfaceBlock8_mip3
-};
+static void (*surfmiptable[4]) (void) = {
+	R_DrawSurfaceBlock_mip0, R_DrawSurfaceBlock_mip1,
+	R_DrawSurfaceBlock_mip2, R_DrawSurfaceBlock_mip3};
 
-static void (*surfmiptable16[4]) (void) = {
-	R_DrawSurfaceBlock16_mip0,
-	R_DrawSurfaceBlock16_mip1,
-	R_DrawSurfaceBlock16_mip2,
-	R_DrawSurfaceBlock16_mip3
-};
-
-static void (*surfmiptable32[4]) (void) = {
-	R_DrawSurfaceBlock32_mip0,
-	R_DrawSurfaceBlock32_mip1,
-	R_DrawSurfaceBlock32_mip2,
-	R_DrawSurfaceBlock32_mip3
-};
-
-static unsigned blocklights[34 * 34];	//FIXME make dynamic
+static unsigned int blocklights[34 * 34];	//FIXME make dynamic
 
 
 static void
@@ -202,30 +182,14 @@ R_BuildLightMap (void)
 	if (surf->dlightframe == r_framecount)
 		R_AddDynamicLights ();
 
-	/*
-	 * JohnnyonFlame:
-	 * 32 and 16bpp modes uses the positive lighting, unlike 8bpp
-	 */
-	switch (sw_ctx->pixbytes) {
-	case 1:
-		// bound, invert, and shift
-		for (i = 0; i < size; i++) {
-			t = (255 * 256 - blocklights[i]) >> (8 - VID_CBITS);
+	// bound, invert, and shift
+	for (i = 0; i < size; i++) {
+		t = (255 * 256 - (int) blocklights[i]) >> (8 - VID_CBITS);
 
-			if (t < (1 << 6))
-				t = (1 << 6);
+		if (t < (1 << 6))
+			t = (1 << 6);
 
-			blocklights[i] = t;
-		}
-		break;
-	default:
-		// LordHavoc: changed to positive (not inverse) lighting
-		for (i = 0; i < size; i++) {
-			t = bound(256, blocklights[i] >> (8 - VID_CBITS),
-					  256 * (VID_GRADES - 1));
-			blocklights[i] = t;
-		}
-		break;
+		blocklights[i] = t;
 	}
 }
 
@@ -266,47 +230,34 @@ R_DrawSurface (void)
 
 //==============================
 
+	pblockdrawer = surfmiptable[r_drawsurf.surfmip];
+	// TODO: needs to be set only when there is a display settings change
+	horzblockstep = blocksize;
+
 	smax = mt->width >> r_drawsurf.surfmip;
 	twidth = texwidth;
 	tmax = mt->height >> r_drawsurf.surfmip;
 	sourcetstep = texwidth;
 	r_stepback = tmax * twidth;
 
+	r_sourcemax = r_source + (tmax * smax);
+
 	soffset = r_drawsurf.surf->texturemins[0];
 	basetoffset = r_drawsurf.surf->texturemins[1];
 
-	switch (sw_ctx->pixbytes) {
-	case 1:
-		pblockdrawer = surfmiptable8[r_drawsurf.surfmip];
-		break;
-	case 2:
-		pblockdrawer = surfmiptable16[r_drawsurf.surfmip];
-		break;
-	case 4:
-		pblockdrawer = surfmiptable32[r_drawsurf.surfmip];
-		break;
-	default:
-		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", sw_ctx->pixbytes);
-		pblockdrawer = NULL;
-	}
-
-	horzblockstep = blocksize * sw_ctx->pixbytes;
-
-	r_sourcemax = r_source + (tmax * smax);
-
 	// << 16 components are to guarantee positive values for %
-	basetptr = r_source + (((basetoffset >> r_drawsurf.surfmip) +
-							(tmax << 16)) % tmax) * twidth;
-	soffset = (((soffset >> r_drawsurf.surfmip) + (smax << 16)) % smax);
+	soffset = ((soffset >> r_drawsurf.surfmip) + (smax << 16)) % smax;
+	basetptr = &r_source[((((basetoffset >> r_drawsurf.surfmip)
+							+ (tmax << 16)) % tmax) * twidth)];
 
-	pcolumndest = (byte *) r_drawsurf.surfdat;
+	pcolumndest = r_drawsurf.surfdat;
 
 	for (u = 0; u < r_numhblocks; u++) {
 		r_lightptr = blocklights + u;
 
 		prowdestbase = pcolumndest;
 
-		psource = basetptr + soffset;
+		pbasesource = basetptr + soffset;
 
 		(*pblockdrawer) ();
 
@@ -318,16 +269,15 @@ R_DrawSurface (void)
 	}
 }
 
-//=============================================================================
-
 #ifndef USE_INTEL_ASM
 
 void
-R_DrawSurfaceBlock8_mip0 (void)
+R_DrawSurfaceBlock_mip0 (void)
 {
-	int         v, i, b, lightstep, light;
-	unsigned char pix, *prowdest;
+	int         v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *psource, *prowdest;
 
+	psource = pbasesource;
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
@@ -340,13 +290,15 @@ R_DrawSurfaceBlock8_mip0 (void)
 		lightrightstep = (r_lightptr[1] - lightright) >> 4;
 
 		for (i = 0; i < 16; i++) {
-			lightstep = (lightleft - lightright) >> 4;
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 4;
 
 			light = lightright;
 
 			for (b = 15; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = vid.colormap8[(light & 0xFF00) + pix];
+				prowdest[b] = ((unsigned char *) vid.colormap8)
+					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -362,11 +314,12 @@ R_DrawSurfaceBlock8_mip0 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip1 (void)
+R_DrawSurfaceBlock_mip1 (void)
 {
-	int         v, i, b, lightstep, light;
-	unsigned char pix, *prowdest;
+	int         v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *psource, *prowdest;
 
+	psource = pbasesource;
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
@@ -379,13 +332,15 @@ R_DrawSurfaceBlock8_mip1 (void)
 		lightrightstep = (r_lightptr[1] - lightright) >> 3;
 
 		for (i = 0; i < 8; i++) {
-			lightstep = (lightleft - lightright) >> 3;
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 3;
 
 			light = lightright;
 
 			for (b = 7; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = vid.colormap8[(light & 0xFF00) + pix];
+				prowdest[b] = ((unsigned char *) vid.colormap8)
+					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -401,11 +356,12 @@ R_DrawSurfaceBlock8_mip1 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip2 (void)
+R_DrawSurfaceBlock_mip2 (void)
 {
-	int         v, i, b, lightstep, light;
-	unsigned char pix, *prowdest;
+	int         v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *psource, *prowdest;
 
+	psource = pbasesource;
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
@@ -418,13 +374,15 @@ R_DrawSurfaceBlock8_mip2 (void)
 		lightrightstep = (r_lightptr[1] - lightright) >> 2;
 
 		for (i = 0; i < 4; i++) {
-			lightstep = (lightleft - lightright) >> 2;
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 2;
 
 			light = lightright;
 
 			for (b = 3; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = vid.colormap8[(light & 0xFF00) + pix];
+				prowdest[b] = ((unsigned char *) vid.colormap8)
+					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -440,11 +398,12 @@ R_DrawSurfaceBlock8_mip2 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip3 (void)
+R_DrawSurfaceBlock_mip3 (void)
 {
-	int         v, i, b, lightstep, light;
-	unsigned char pix, *prowdest;
+	int         v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *psource, *prowdest;
 
+	psource = pbasesource;
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
@@ -457,13 +416,15 @@ R_DrawSurfaceBlock8_mip3 (void)
 		lightrightstep = (r_lightptr[1] - lightright) >> 1;
 
 		for (i = 0; i < 2; i++) {
-			lightstep = (lightleft - lightright) >> 1;
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 1;
 
 			light = lightright;
 
 			for (b = 1; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = vid.colormap8[(light & 0xFF00) + pix];
+				prowdest[b] = ((unsigned char *) vid.colormap8)
+					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -481,423 +442,33 @@ R_DrawSurfaceBlock8_mip3 (void)
 #endif
 
 static void
-R_DrawSurfaceBlock16_mip0 (void)
+R_GenTurbTile (byte *pbasetex, void *pdest)
 {
-	int         k, v;
-	int         lightstep, light;
-	unsigned short *prowdest;
+	int        *turb;
+	int         i, j, s, t;
+	byte       *pd;
 
-	prowdest = (unsigned short *) prowdestbase;
+	turb = sintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+	pd = (byte *) pdest;
 
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 4;
-		lightrightstep = (r_lightptr[1] - lightright) >> 4;
-
-		for (k = 0; k < 16; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 4;
-
-			prowdest[0] = vid.colormap16[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap16[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap16[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap16[(light & 0xFF00) + psource[3]];
-			light += lightstep;
-			prowdest[4] = vid.colormap16[(light & 0xFF00) + psource[4]];
-			light += lightstep;
-			prowdest[5] = vid.colormap16[(light & 0xFF00) + psource[5]];
-			light += lightstep;
-			prowdest[6] = vid.colormap16[(light & 0xFF00) + psource[6]];
-			light += lightstep;
-			prowdest[7] = vid.colormap16[(light & 0xFF00) + psource[7]];
-			light += lightstep;
-			prowdest[8] = vid.colormap16[(light & 0xFF00) + psource[8]];
-			light += lightstep;
-			prowdest[9] = vid.colormap16[(light & 0xFF00) + psource[9]];
-			light += lightstep;
-			prowdest[10] = vid.colormap16[(light & 0xFF00) + psource[10]];
-			light += lightstep;
-			prowdest[11] = vid.colormap16[(light & 0xFF00) + psource[11]];
-			light += lightstep;
-			prowdest[12] = vid.colormap16[(light & 0xFF00) + psource[12]];
-			light += lightstep;
-			prowdest[13] = vid.colormap16[(light & 0xFF00) + psource[13]];
-			light += lightstep;
-			prowdest[14] = vid.colormap16[(light & 0xFF00) + psource[14]];
-			light += lightstep;
-			prowdest[15] = vid.colormap16[(light & 0xFF00) + psource[15]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 1);
+	for (i = 0; i < TILE_SIZE; i++) {
+		for (j = 0; j < TILE_SIZE; j++) {
+			s = (((j << 16) + turb[i & (CYCLE - 1)]) >> 16) & 63;
+			t = (((i << 16) + turb[j & (CYCLE - 1)]) >> 16) & 63;
+			*pd++ = *(pbasetex + (t << 6) + s);
 		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
 	}
 }
 
-static void
-R_DrawSurfaceBlock16_mip1 (void)
-{
-	int         k, v;
-	int         lightstep, light;
-	unsigned short *prowdest;
-
-	prowdest = (unsigned short *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 3;
-		lightrightstep = (r_lightptr[1] - lightright) >> 3;
-
-		for (k = 0; k < 8; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 3;
-
-			prowdest[0] = vid.colormap16[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap16[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap16[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap16[(light & 0xFF00) + psource[3]];
-			light += lightstep;
-			prowdest[4] = vid.colormap16[(light & 0xFF00) + psource[4]];
-			light += lightstep;
-			prowdest[5] = vid.colormap16[(light & 0xFF00) + psource[5]];
-			light += lightstep;
-			prowdest[6] = vid.colormap16[(light & 0xFF00) + psource[6]];
-			light += lightstep;
-			prowdest[7] = vid.colormap16[(light & 0xFF00) + psource[7]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 1);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock16_mip2 (void)
-{
-	int         k, v;
-	int         lightstep, light;
-	unsigned short *prowdest;
-
-	prowdest = (unsigned short *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 2;
-		lightrightstep = (r_lightptr[1] - lightright) >> 2;
-
-		for (k = 0; k < 4; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 2;
-
-			prowdest[0] = vid.colormap16[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap16[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap16[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap16[(light & 0xFF00) + psource[3]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 1);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock16_mip3 (void)
-{
-	int v;
-	unsigned short *prowdest;
-
-	prowdest = (unsigned short *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 1;
-		lightrightstep = (r_lightptr[1] - lightright) >> 1;
-
-		prowdest[0] = vid.colormap16[(lightleft & 0xFF00) + psource[0]];
-		prowdest[1] = vid.colormap16[(((lightleft + lightright) >> 1) &
-									  0xFF00) + psource[1]];
-		psource += sourcetstep;
-		lightright += lightrightstep;
-		lightleft += lightleftstep;
-		prowdest += (surfrowbytes >> 1);
-
-		prowdest[0] = vid.colormap16[(lightleft & 0xFF00) + psource[0]];
-		prowdest[1] = vid.colormap16[(((lightleft + lightright) >> 1) &
-									  0xFF00) + psource[1]];
-		psource += sourcetstep;
-		prowdest += (surfrowbytes >> 1);
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock32_mip0 (void)
-{
-	int         k, v;
-	int         lightstep, light;
-	unsigned int *prowdest;
-
-	prowdest = (unsigned int *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 4;
-		lightrightstep = (r_lightptr[1] - lightright) >> 4;
-
-		for (k = 0; k < 16; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 4;
-
-			prowdest[0] = vid.colormap32[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap32[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap32[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap32[(light & 0xFF00) + psource[3]];
-			light += lightstep;
-			prowdest[4] = vid.colormap32[(light & 0xFF00) + psource[4]];
-			light += lightstep;
-			prowdest[5] = vid.colormap32[(light & 0xFF00) + psource[5]];
-			light += lightstep;
-			prowdest[6] = vid.colormap32[(light & 0xFF00) + psource[6]];
-			light += lightstep;
-			prowdest[7] = vid.colormap32[(light & 0xFF00) + psource[7]];
-			light += lightstep;
-			prowdest[8] = vid.colormap32[(light & 0xFF00) + psource[8]];
-			light += lightstep;
-			prowdest[9] = vid.colormap32[(light & 0xFF00) + psource[9]];
-			light += lightstep;
-			prowdest[10] = vid.colormap32[(light & 0xFF00) + psource[10]];
-			light += lightstep;
-			prowdest[11] = vid.colormap32[(light & 0xFF00) + psource[11]];
-			light += lightstep;
-			prowdest[12] = vid.colormap32[(light & 0xFF00) + psource[12]];
-			light += lightstep;
-			prowdest[13] = vid.colormap32[(light & 0xFF00) + psource[13]];
-			light += lightstep;
-			prowdest[14] = vid.colormap32[(light & 0xFF00) + psource[14]];
-			light += lightstep;
-			prowdest[15] = vid.colormap32[(light & 0xFF00) + psource[15]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 2);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock32_mip1 (void)
-{
-	int         k, v;
-	int         lightstep, light;
-	unsigned int *prowdest;
-
-	prowdest = (unsigned int *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 3;
-		lightrightstep = (r_lightptr[1] - lightright) >> 3;
-
-		for (k = 0; k < 8; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 3;
-
-			prowdest[0] = vid.colormap32[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap32[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap32[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap32[(light & 0xFF00) + psource[3]];
-			light += lightstep;
-			prowdest[4] = vid.colormap32[(light & 0xFF00) + psource[4]];
-			light += lightstep;
-			prowdest[5] = vid.colormap32[(light & 0xFF00) + psource[5]];
-			light += lightstep;
-			prowdest[6] = vid.colormap32[(light & 0xFF00) + psource[6]];
-			light += lightstep;
-			prowdest[7] = vid.colormap32[(light & 0xFF00) + psource[7]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 2);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock32_mip2 (void)
-{
-	int         k, v;
-	int         lightstep, light;
-	unsigned int *prowdest;
-
-	prowdest = (unsigned int *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 2;
-		lightrightstep = (r_lightptr[1] - lightright) >> 2;
-
-		for (k = 0; k < 4; k++)
-		{
-			light = lightleft;
-			lightstep = (lightright - lightleft) >> 2;
-
-			prowdest[0] = vid.colormap32[(light & 0xFF00) + psource[0]];
-			light += lightstep;
-			prowdest[1] = vid.colormap32[(light & 0xFF00) + psource[1]];
-			light += lightstep;
-			prowdest[2] = vid.colormap32[(light & 0xFF00) + psource[2]];
-			light += lightstep;
-			prowdest[3] = vid.colormap32[(light & 0xFF00) + psource[3]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 2);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-static void
-R_DrawSurfaceBlock32_mip3 (void)
-{
-	int v;
-	unsigned int *prowdest;
-
-	prowdest = (unsigned int *) prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++)
-	{
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 1;
-		lightrightstep = (r_lightptr[1] - lightright) >> 1;
-
-		prowdest[0] = vid.colormap32[(lightleft & 0xFF00) + psource[0]];
-		prowdest[1] = vid.colormap32[(((lightleft + lightright) >> 1) &
-									  0xFF00) + psource[1]];
-		psource += sourcetstep;
-		lightright += lightrightstep;
-		lightleft += lightleftstep;
-		prowdest += (surfrowbytes >> 2);
-
-		prowdest[0] = vid.colormap32[(lightleft & 0xFF00) + psource[0]];
-		prowdest[1] = vid.colormap32[(((lightleft + lightright) >> 1) &
-									  0xFF00) + psource[1]];
-		psource += sourcetstep;
-		lightright += lightrightstep;
-		lightleft += lightleftstep;
-		prowdest += (surfrowbytes >> 2);
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
-	}
-}
-
-/*
 void
-R_DrawSurfaceBlock32 (void)
+R_GenTile (msurface_t *psurf, void *pdest)
 {
-	int         k, v;
-	int         lightstep, light;
-	unsigned int *prowdest;
-
-	prowdest = prowdestbase;
-
-	for (v = 0; v < r_numvblocks; v++) {
-
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
-		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> blockdivshift;
-		lightrightstep = (r_lightptr[1] - lightright) >> blockdivshift;
-
-		for (k = 0; k < blocksize; k++) {
-			int         b;
-
-			lightstep = (lightright - lightleft) >> blockdivshift;
-
-			light = lightleft;
-
-			for (b = 0;b < blocksize;b++, light += lightstep)
-				prowdest[b] = vid.colormap32[(light & 0xFF00) + psource[b]];
-
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += (surfrowbytes >> 2);
-		}
-
-		if (psource >= r_sourcemax)
-			psource -= r_stepback;
+	if (psurf->flags & SURF_DRAWTURB) {
+		R_GenTurbTile (((byte *) psurf->texinfo->texture +
+						psurf->texinfo->texture->offsets[0]), pdest);
+	} else if (psurf->flags & SURF_DRAWSKY) {
+		R_GenSkyTile (pdest);
+	} else {
+		Sys_Error ("Unknown tile type");
 	}
 }
-*/

@@ -69,8 +69,6 @@ int XShmGetEventBase (Display *x);	// for broken X11 headers
 
 static GC		x_gc;
 
-static cvar_t     *vid_bitdepth;
-
 static qboolean doShm;
 static XShmSegmentInfo x_shminfo[2];
 
@@ -648,27 +646,11 @@ X11_SW_Context (void)
 	ctx->set_palette = x11_set_palette;
 	ctx->choose_visual = x11_choose_visual;
 	ctx->create_context = x11_create_context;
-
-	switch (vid_bitdepth->int_val) {
-		case 8:
-			ctx->pixbytes = 1;
-			break;
-		case 16:
-			ctx->pixbytes = 2;
-			break;
-		case 32:
-			ctx->pixbytes = 4;
-			break;
-		default:
-			Sys_Error ("X11_SW32_Context: unsupported bit depth");
-	}
+	ctx->update = x11_sw8_update;
 	return ctx;
 }
 
 void
 X11_SW_Init_Cvars (void)
 {
-// FIXME: vid_colorbpp in common GL setup, make consistent with sdl32 scheme
-	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
-							 "display bitdepth (supported modes: 8 16 32)");
 }

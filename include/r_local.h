@@ -236,7 +236,7 @@ extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
 extern finalvert_t		*pfinalverts;
 extern auxvert_t		*pauxverts;
-extern float            ziscale, sw32_ziscale;
+extern float            ziscale;
 extern float            aliastransform[3][4];
 
 qboolean R_AliasCheckBBox (void);

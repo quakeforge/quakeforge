@@ -50,8 +50,6 @@ static win_palette_t st2d_8to32table[256];
 static byte     current_palette[768];
 static int      palette_changed;
 
-static cvar_t     *vid_bitdepth;
-
 static LPDIRECTDRAW dd_Object;
 static HINSTANCE   hInstDDraw;
 static LPDIRECTDRAWSURFACE dd_frontbuffer;
@@ -476,27 +474,10 @@ Win_SW_Context (void)
 	ctx->choose_visual = win_choose_visual;
 	ctx->create_context = win_create_context;
 	ctx->update = win_sw_update;
-#if 0	//FIXME need to figure out 16 and 32 bit buffers
-	switch (vid_bitdepth->int_val) {
-		case 8:
-			ctx->pixbytes = 1;
-			break;
-		case 16:
-			ctx->pixbytes = 2;
-			break;
-		case 32:
-			ctx->pixbytes = 4;
-			break;
-		default:
-			Sys_Error ("X11_SW32_Context: unsupported bit depth");
-	}
-#endif
 	return ctx;
 }
 
 void
 Win_SW_Init_Cvars (void)
 {
-	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
-							 "display bitdepth (supported modes: 8 16 32)");
 }

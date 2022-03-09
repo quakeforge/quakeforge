@@ -47,7 +47,6 @@
 #include "d_iface.h"
 #include "r_internal.h"
 #include "vid_internal.h"
-#include "vid_sw.h"
 
 typedef struct {
 	int         width;
@@ -243,88 +242,6 @@ Draw_Init (void)
 	r_rectdesc.rowbytes = draw_backtile->width;
 }
 
-void
-draw_character_8 (int x, int y, byte *source, int drawline)
-{
-	byte       *dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
-
-	while (drawline--) {
-		if (source[0])
-			dest[0] = source[0];
-		if (source[1])
-			dest[1] = source[1];
-		if (source[2])
-			dest[2] = source[2];
-		if (source[3])
-			dest[3] = source[3];
-		if (source[4])
-			dest[4] = source[4];
-		if (source[5])
-			dest[5] = source[5];
-		if (source[6])
-			dest[6] = source[6];
-		if (source[7])
-			dest[7] = source[7];
-		source += 128;
-		dest += vid.rowbytes;
-	}
-}
-
-void
-draw_character_16 (int x, int y, byte *source, int drawline)
-{
-	uint16_t   *dest = (uint16_t *) vid.buffer + y * (vid.rowbytes >> 1) + x;
-
-	while (drawline--) {
-		if (source[0])
-			dest[0] = d_8to16table[source[0]];
-		if (source[1])
-			dest[1] = d_8to16table[source[1]];
-		if (source[2])
-			dest[2] = d_8to16table[source[2]];
-		if (source[3])
-			dest[3] = d_8to16table[source[3]];
-		if (source[4])
-			dest[4] = d_8to16table[source[4]];
-		if (source[5])
-			dest[5] = d_8to16table[source[5]];
-		if (source[6])
-			dest[6] = d_8to16table[source[6]];
-		if (source[7])
-			dest[7] = d_8to16table[source[7]];
-
-		source += 128;
-		dest += (vid.rowbytes >> 1);
-	}
-}
-
-void
-draw_character_32 (int x, int y, byte *source, int drawline)
-{
-	uint32_t   *dest = (uint32_t *) vid.buffer + y * (vid.rowbytes >> 2) + x;
-
-	while (drawline--) {
-		if (source[0])
-			dest[0] = d_8to24table[source[0]];
-		if (source[1])
-			dest[1] = d_8to24table[source[1]];
-		if (source[2])
-			dest[2] = d_8to24table[source[2]];
-		if (source[3])
-			dest[3] = d_8to24table[source[3]];
-		if (source[4])
-			dest[4] = d_8to24table[source[4]];
-		if (source[5])
-			dest[5] = d_8to24table[source[5]];
-		if (source[6])
-			dest[6] = d_8to24table[source[6]];
-		if (source[7])
-			dest[7] = d_8to24table[source[7]];
-
-		source += 128;
-		dest += (vid.rowbytes >> 2);
-	}
-}
 
 /*
 	Draw_Character
@@ -336,6 +253,7 @@ draw_character_32 (int x, int y, byte *source, int drawline)
 inline void
 Draw_Character (int x, int y, unsigned int chr)
 {
+	byte       *dest;
 	byte       *source;
 	int         drawline;
 	int         row, col;
@@ -361,7 +279,28 @@ Draw_Character (int x, int y, unsigned int chr)
 	} else
 		drawline = 8;
 
-	sw_ctx->draw->draw_character (x, y, source, drawline);
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+
+	while (drawline--) {
+		if (source[0])
+			dest[0] = source[0];
+		if (source[1])
+			dest[1] = source[1];
+		if (source[2])
+			dest[2] = source[2];
+		if (source[3])
+			dest[3] = source[3];
+		if (source[4])
+			dest[4] = source[4];
+		if (source[5])
+			dest[5] = source[5];
+		if (source[6])
+			dest[6] = source[6];
+		if (source[7])
+			dest[7] = source[7];
+		source += 128;
+		dest += vid.rowbytes;
+	}
 }
 
 
@@ -394,31 +333,14 @@ Draw_AltString (int x, int y, const char *str)
 	}
 }
 
-void
-draw_pixel_8 (int x, int y, byte color)
+
+static void
+Draw_Pixel (int x, int y, byte color)
 {
 	byte       *dest;
 
 	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	*dest = color;
-}
-
-void
-draw_pixel_16 (int x, int y, byte color)
-{
-	uint16_t   *dest;
-
-	dest = ((uint16_t*)vid.buffer) + y * vid.rowbytes + x;
-	*dest = d_8to16table[color];
-}
-
-void
-draw_pixel_32 (int x, int y, byte color)
-{
-	uint32_t   *dest;
-
-	dest = ((uint32_t*)vid.buffer) + y * vid.rowbytes + x;
-	*dest = d_8to24table[color];
 }
 
 static void
@@ -432,14 +354,14 @@ crosshair_2 (int x, int y)
 {
 	byte        c = crosshaircolor->int_val;
 
-	sw_ctx->draw->draw_pixel (x - 1, y, c);
-	sw_ctx->draw->draw_pixel (x - 3, y, c);
-	sw_ctx->draw->draw_pixel (x + 1, y, c);
-	sw_ctx->draw->draw_pixel (x + 3, y, c);
-	sw_ctx->draw->draw_pixel (x, y - 1, c);
-	sw_ctx->draw->draw_pixel (x, y - 3, c);
-	sw_ctx->draw->draw_pixel (x, y + 1, c);
-	sw_ctx->draw->draw_pixel (x, y + 3, c);
+	Draw_Pixel (x - 1, y, c);
+	Draw_Pixel (x - 3, y, c);
+	Draw_Pixel (x + 1, y, c);
+	Draw_Pixel (x + 3, y, c);
+	Draw_Pixel (x, y - 1, c);
+	Draw_Pixel (x, y - 3, c);
+	Draw_Pixel (x, y + 1, c);
+	Draw_Pixel (x, y + 3, c);
 }
 
 static void
@@ -447,14 +369,14 @@ crosshair_3 (int x, int y)
 {
 	byte        c = crosshaircolor->int_val;
 
-	sw_ctx->draw->draw_pixel (x - 3, y - 3, c);
-	sw_ctx->draw->draw_pixel (x + 3, y - 3, c);
-	sw_ctx->draw->draw_pixel (x - 2, y - 2, c);
-	sw_ctx->draw->draw_pixel (x + 2, y - 2, c);
-	sw_ctx->draw->draw_pixel (x - 3, y + 3, c);
-	sw_ctx->draw->draw_pixel (x + 2, y + 2, c);
-	sw_ctx->draw->draw_pixel (x - 2, y + 2, c);
-	sw_ctx->draw->draw_pixel (x + 3, y + 3, c);
+	Draw_Pixel (x - 3, y - 3, c);
+	Draw_Pixel (x + 3, y - 3, c);
+	Draw_Pixel (x - 2, y - 2, c);
+	Draw_Pixel (x + 2, y - 2, c);
+	Draw_Pixel (x - 3, y + 3, c);
+	Draw_Pixel (x + 2, y + 2, c);
+	Draw_Pixel (x - 2, y + 2, c);
+	Draw_Pixel (x + 3, y + 3, c);
 }
 
 static void
@@ -462,33 +384,33 @@ crosshair_4 (int x, int y)
 {
 	//byte        c = crosshaircolor->int_val;
 
-	sw_ctx->draw->draw_pixel (x,     y - 2, 8);
-	sw_ctx->draw->draw_pixel (x + 1, y - 2, 9);
+	Draw_Pixel (x,     y - 2, 8);
+	Draw_Pixel (x + 1, y - 2, 9);
 
-	sw_ctx->draw->draw_pixel (x,     y - 1, 6);
-	sw_ctx->draw->draw_pixel (x + 1, y - 1, 8);
-	sw_ctx->draw->draw_pixel (x + 2, y - 1, 2);
+	Draw_Pixel (x,     y - 1, 6);
+	Draw_Pixel (x + 1, y - 1, 8);
+	Draw_Pixel (x + 2, y - 1, 2);
 
-	sw_ctx->draw->draw_pixel (x - 2, y,     6);
-	sw_ctx->draw->draw_pixel (x - 1, y,     8);
-	sw_ctx->draw->draw_pixel (x,     y,     8);
-	sw_ctx->draw->draw_pixel (x + 1, y,     6);
-	sw_ctx->draw->draw_pixel (x + 2, y,     8);
-	sw_ctx->draw->draw_pixel (x + 3, y,     8);
+	Draw_Pixel (x - 2, y,     6);
+	Draw_Pixel (x - 1, y,     8);
+	Draw_Pixel (x,     y,     8);
+	Draw_Pixel (x + 1, y,     6);
+	Draw_Pixel (x + 2, y,     8);
+	Draw_Pixel (x + 3, y,     8);
 
-	sw_ctx->draw->draw_pixel (x - 1, y + 1, 2);
-	sw_ctx->draw->draw_pixel (x,     y + 1, 8);
-	sw_ctx->draw->draw_pixel (x + 1, y + 1, 8);
-	sw_ctx->draw->draw_pixel (x + 2, y + 1, 2);
-	sw_ctx->draw->draw_pixel (x + 3, y + 1, 2);
-	sw_ctx->draw->draw_pixel (x + 4, y + 1, 2);
+	Draw_Pixel (x - 1, y + 1, 2);
+	Draw_Pixel (x,     y + 1, 8);
+	Draw_Pixel (x + 1, y + 1, 8);
+	Draw_Pixel (x + 2, y + 1, 2);
+	Draw_Pixel (x + 3, y + 1, 2);
+	Draw_Pixel (x + 4, y + 1, 2);
 
-	sw_ctx->draw->draw_pixel (x,     y + 2, 7);
-	sw_ctx->draw->draw_pixel (x + 1, y + 2, 8);
-	sw_ctx->draw->draw_pixel (x + 2, y + 2, 2);
+	Draw_Pixel (x,     y + 2, 7);
+	Draw_Pixel (x + 1, y + 2, 8);
+	Draw_Pixel (x + 2, y + 2, 2);
 
-	sw_ctx->draw->draw_pixel (x + 1, y + 3, 2);
-	sw_ctx->draw->draw_pixel (x + 2, y + 3, 2);
+	Draw_Pixel (x + 1, y + 3, 2);
+	Draw_Pixel (x + 2, y + 3, 2);
 }
 
 static void
@@ -496,29 +418,29 @@ crosshair_5 (int x, int y)
 {
 	byte        c = crosshaircolor->int_val;
 
-	sw_ctx->draw->draw_pixel (x - 1, y - 3, c);
-	sw_ctx->draw->draw_pixel (x + 0, y - 3, c);
-	sw_ctx->draw->draw_pixel (x + 1, y - 3, c);
+	Draw_Pixel (x - 1, y - 3, c);
+	Draw_Pixel (x + 0, y - 3, c);
+	Draw_Pixel (x + 1, y - 3, c);
 
-	sw_ctx->draw->draw_pixel (x - 2, y - 2, c);
-	sw_ctx->draw->draw_pixel (x + 2, y - 2, c);
+	Draw_Pixel (x - 2, y - 2, c);
+	Draw_Pixel (x + 2, y - 2, c);
 
-	sw_ctx->draw->draw_pixel (x - 3, y - 1, c);
-	sw_ctx->draw->draw_pixel (x + 3, y - 1, c);
+	Draw_Pixel (x - 3, y - 1, c);
+	Draw_Pixel (x + 3, y - 1, c);
 
-	sw_ctx->draw->draw_pixel (x - 3, y, c);
-	sw_ctx->draw->draw_pixel (x, y, c);
-	sw_ctx->draw->draw_pixel (x + 3, y, c);
+	Draw_Pixel (x - 3, y, c);
+	Draw_Pixel (x, y, c);
+	Draw_Pixel (x + 3, y, c);
 
-	sw_ctx->draw->draw_pixel (x - 3, y + 1, c);
-	sw_ctx->draw->draw_pixel (x + 3, y + 1, c);
+	Draw_Pixel (x - 3, y + 1, c);
+	Draw_Pixel (x + 3, y + 1, c);
 
-	sw_ctx->draw->draw_pixel (x - 2, y + 2, c);
-	sw_ctx->draw->draw_pixel (x + 2, y + 2, c);
+	Draw_Pixel (x - 2, y + 2, c);
+	Draw_Pixel (x + 2, y + 2, c);
 
-	sw_ctx->draw->draw_pixel (x - 1, y + 3, c);
-	sw_ctx->draw->draw_pixel (x + 0, y + 3, c);
-	sw_ctx->draw->draw_pixel (x + 1, y + 3, c);
+	Draw_Pixel (x - 1, y + 3, c);
+	Draw_Pixel (x + 0, y + 3, c);
+	Draw_Pixel (x + 1, y + 3, c);
 }
 
 static void (*crosshair_func[]) (int x, int y) = {
@@ -559,11 +481,53 @@ Draw_CrosshairAt (int ch, int x, int y)
 void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
+	byte       *dest, *source, tbyte;
+	int         v, u;
+
 	if (x < 0 || (x + pic->width) > vid.conview->xlen
 		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
 		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
+		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
+		return;
 	}
-	Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
+
+	source = pic->data;
+
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+
+	if (pic->width & 7) {			// general
+		for (v = 0; v < pic->height; v++) {
+			for (u = 0; u < pic->width; u++)
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	} else {						// unwound
+		for (v = 0; v < pic->height; v++) {
+			for (u = 0; u < pic->width; u += 8) {
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+				if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
+					dest[u + 1] = tbyte;
+				if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
+					dest[u + 2] = tbyte;
+				if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
+					dest[u + 3] = tbyte;
+				if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
+					dest[u + 4] = tbyte;
+				if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
+					dest[u + 5] = tbyte;
+				if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
+					dest[u + 6] = tbyte;
+				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
+					dest[u + 7] = tbyte;
+			}
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	}
 }
 
 void
@@ -573,64 +537,12 @@ Draw_Picf (float x, float y, qpic_t *pic)
 }
 
 void
-draw_subpic_8 (int x, int y, struct qpic_s *pic, int srcx, int srcy,
-			   int width, int height)
-{
-	byte       *source = pic->data + srcy * pic->width + srcx;
-	byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
-
-	for (int v = 0; v < height; v++) {
-		for (int u = 0; u < width; u++) {
-			byte        tbyte = source[u];
-			if (tbyte != TRANSPARENT_COLOR) {
-				dest[u] = tbyte;
-			}
-		}
-		dest += vid.rowbytes;
-		source += pic->width;
-	}
-}
-
-void
-draw_subpic_16 (int x, int y, struct qpic_s *pic, int srcx, int srcy,
-			    int width, int height)
-{
-	byte       *source = pic->data + srcy * pic->width + srcx;
-	uint16_t   *dest = (uint16_t *) vid.buffer + y * (vid.rowbytes >> 1) + x;
-	for (int v = 0; v < height; v++) {
-		for (int u = 0; u < width; u++) {
-			byte        tbyte = source[u];
-			if (tbyte != TRANSPARENT_COLOR) {
-				dest[u] = d_8to16table[tbyte];
-			}
-		}
-		dest += vid.rowbytes >> 1;
-		source += pic->width;
-	}
-}
-
-void
-draw_subpic_32 (int x, int y, struct qpic_s *pic, int srcx, int srcy,
-			    int width, int height)
-{
-	byte       *source = pic->data + srcy * pic->width + srcx;
-	uint32_t   *dest = (uint32_t *) vid.buffer + y * (vid.rowbytes >> 2) + x;
-	for (int v = 0; v < height; v++) {
-		for (int u = 0; u < width; u++) {
-			byte        tbyte = source[u];
-			if (tbyte != TRANSPARENT_COLOR) {
-				dest[u] = d_8to24table[tbyte];
-			}
-		}
-		dest += vid.rowbytes >> 2;
-		source += pic->width;
-	}
-}
-
-void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
+	byte       *dest, *source, tbyte;
+	int         u, v;
+
 	if ((x < 0) || (x + width > vid.conview->xlen)
 		|| (y < 0) || (y + height > vid.conview->ylen)) {
 		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
@@ -657,23 +569,68 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	// next, clip to pic
 	CLIP (srcx, srcy, width, height, pic->width, pic->height);
 
-	sw_ctx->draw->draw_subpic (x, y, pic, srcx, srcy, width, height);
+	source = pic->data + srcy * pic->width + srcx;
+
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+
+	if (width & 7) {			// general
+		for (v = 0; v < height; v++) {
+			for (u = 0; u < width; u++)
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	} else {						// unwound
+		for (v = 0; v < height; v++) {
+			for (u = 0; u < width; u += 8) {
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+				if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
+					dest[u + 1] = tbyte;
+				if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
+					dest[u + 2] = tbyte;
+				if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
+					dest[u + 3] = tbyte;
+				if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
+					dest[u + 4] = tbyte;
+				if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
+					dest[u + 5] = tbyte;
+				if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
+					dest[u + 6] = tbyte;
+				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
+					dest[u + 7] = tbyte;
+			}
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	}
 }
 
-void
-draw_console_background_8 (int lines, byte *data)
-{
-	byte       *dest = vid.buffer;
 
-	for (int y = 0; y < lines; y++, dest += vid.rowbytes) {
-		int v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
-		byte *src = data + v * 320;
+void
+Draw_ConsoleBackground (int lines, byte alpha)
+{
+	int         x, y, v;
+	byte       *src, *dest;
+	int         f, fstep;
+	qpic_t     *conback;
+
+	conback = Draw_CachePic ("gfx/conback.lmp", false);
+
+	// draw the pic
+	dest = vid.buffer;
+
+	for (y = 0; y < lines; y++, dest += vid.rowbytes) {
+		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
+		src = conback->data + v * 320;
 		if (vid.conview->xlen == 320)
 			memcpy (dest, src, vid.conview->xlen);
 		else {
-			int f = 0;
-			int fstep = 320 * 0x10000 / vid.conview->xlen;
-			for (int x = 0; x < vid.conview->xlen; x += 4) {
+			f = 0;
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x] = src[f >> 16];
 				f += fstep;
 				dest[x + 1] = src[f >> 16];
@@ -685,72 +642,13 @@ draw_console_background_8 (int lines, byte *data)
 			}
 		}
 	}
-}
-
-void
-draw_console_background_16 (int lines, byte *data)
-{
-	uint16_t   *dest = (uint16_t *) vid.buffer;
-
-	for (int y = 0; y < lines; y++, dest += (vid.rowbytes >> 1)) {
-		// FIXME: pre-expand to native format?
-		// FIXME: does the endian switching go away in production?
-		int v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
-		byte *src = data + v * 320;
-		int f = 0;
-		int fstep = 320 * 0x10000 / vid.conview->xlen;
-		for (int x = 0; x < vid.conview->xlen; x += 4) {
-			dest[x] = d_8to16table[src[f >> 16]];
-			f += fstep;
-			dest[x + 1] = d_8to16table[src[f >> 16]];
-			f += fstep;
-			dest[x + 2] = d_8to16table[src[f >> 16]];
-			f += fstep;
-			dest[x + 3] = d_8to16table[src[f >> 16]];
-			f += fstep;
-		}
-	}
-}
-
-void
-draw_console_background_32 (int lines, byte *data)
-{
-	uint32_t   *dest = (uint32_t *) vid.buffer;
-
-	for (int y = 0; y < lines; y++, dest += (vid.rowbytes >> 2)) {
-		// FIXME: pre-expand to native format?
-		// FIXME: does the endian switching go away in production?
-		int v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
-		byte *src = data + v * 320;
-		int f = 0;
-		int fstep = 320 * 0x10000 / vid.conview->xlen;
-		for (int x = 0; x < vid.conview->xlen; x += 4) {
-			dest[x] = d_8to24table[src[f >> 16]];
-			f += fstep;
-			dest[x + 1] = d_8to24table[src[f >> 16]];
-			f += fstep;
-			dest[x + 2] = d_8to24table[src[f >> 16]];
-			f += fstep;
-			dest[x + 3] = d_8to24table[src[f >> 16]];
-			f += fstep;
-		}
-	}
-}
-
-void
-Draw_ConsoleBackground (int lines, byte alpha)
-{
-	qpic_t     *conback = Draw_CachePic ("gfx/conback.lmp", false);
-
-	// draw the pic
-	sw_ctx->draw->draw_console_background (lines, conback->data);
 
 	Draw_AltString (vid.conview->xlen - strlen (cl_verstring->string) * 8 - 11,
 					lines - 14, cl_verstring->string);
 }
 
-void
-draw_rect_8 (vrect_t *prect, int rowbytes, byte *psrc, int transparent)
+static void
+R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
 	byte        t;
 	int         i, j, srcdelta, destdelta;
@@ -783,223 +681,6 @@ draw_rect_8 (vrect_t *prect, int rowbytes, byte *psrc, int transparent)
 			pdest += vid.rowbytes;
 		}
 	}
-}
-
-void
-draw_rect_16 (vrect_t *prect, int rowbytes, byte *psrc, int transparent)
-{
-	int         i, j, srcdelta, destdelta;
-	uint16_t   *pdest;
-
-	pdest = (uint16_t *) vid.buffer +
-		(prect->y * (vid.rowbytes >> 1)) + prect->x;
-
-	srcdelta = rowbytes - prect->width;
-	destdelta = (vid.rowbytes >> 1) - prect->width;
-
-	if (transparent) {
-		for (i = 0; i < prect->height; i++) {
-			j = prect->width;
-			while(j >= 8) {
-				j -= 8;
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to16table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to16table[psrc[1]];
-				if (psrc[2] != TRANSPARENT_COLOR)
-					pdest[2] = d_8to16table[psrc[2]];
-				if (psrc[3] != TRANSPARENT_COLOR)
-					pdest[3] = d_8to16table[psrc[3]];
-				if (psrc[4] != TRANSPARENT_COLOR)
-					pdest[4] = d_8to16table[psrc[4]];
-				if (psrc[5] != TRANSPARENT_COLOR)
-					pdest[5] = d_8to16table[psrc[5]];
-				if (psrc[6] != TRANSPARENT_COLOR)
-					pdest[6] = d_8to16table[psrc[6]];
-				if (psrc[7] != TRANSPARENT_COLOR)
-					pdest[7] = d_8to16table[psrc[7]];
-				psrc += 8;
-				pdest += 8;
-			}
-			if (j & 4) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to16table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to16table[psrc[1]];
-				if (psrc[2] != TRANSPARENT_COLOR)
-					pdest[2] = d_8to16table[psrc[2]];
-				if (psrc[3] != TRANSPARENT_COLOR)
-					pdest[3] = d_8to16table[psrc[3]];
-				psrc += 4;
-				pdest += 4;
-			}
-			if (j & 2) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to16table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to16table[psrc[1]];
-				psrc += 2;
-				pdest += 2;
-			}
-			if (j & 1) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to16table[psrc[0]];
-				psrc++;
-				pdest++;
-			}
-
-			psrc += srcdelta;
-			pdest += destdelta;
-		}
-	} else {
-		for (i = 0; i < prect->height;
-			 i++, psrc += srcdelta, pdest += destdelta) {
-			j = prect->width;
-			while(j >= 8) {
-				j -= 8;
-				pdest[0] = d_8to16table[psrc[0]];
-				pdest[1] = d_8to16table[psrc[1]];
-				pdest[2] = d_8to16table[psrc[2]];
-				pdest[3] = d_8to16table[psrc[3]];
-				pdest[4] = d_8to16table[psrc[4]];
-				pdest[5] = d_8to16table[psrc[5]];
-				pdest[6] = d_8to16table[psrc[6]];
-				pdest[7] = d_8to16table[psrc[7]];
-				psrc += 8;
-				pdest += 8;
-			}
-			if (j & 4) {
-				pdest[0] = d_8to16table[psrc[0]];
-				pdest[1] = d_8to16table[psrc[1]];
-				pdest[2] = d_8to16table[psrc[2]];
-				pdest[3] = d_8to16table[psrc[3]];
-				psrc += 4;
-				pdest += 4;
-			}
-			if (j & 2) {
-				pdest[0] = d_8to16table[psrc[0]];
-				pdest[1] = d_8to16table[psrc[1]];
-				psrc += 2;
-				pdest += 2;
-			}
-			if (j & 1) {
-				pdest[0] = d_8to16table[psrc[0]];
-				psrc++;
-				pdest++;
-			}
-		}
-	}
-}
-
-void
-draw_rect_32 (vrect_t *prect, int rowbytes, byte *psrc, int transparent)
-{
-	int         i, j, srcdelta, destdelta;
-	uint32_t   *pdest;
-
-	pdest = (uint32_t *)vid.buffer + prect->y * (vid.rowbytes >> 2) + prect->x;
-
-	srcdelta = rowbytes - prect->width;
-	destdelta = (vid.rowbytes >> 2) - prect->width;
-
-	if (transparent) {
-		for (i = 0; i < prect->height; i++) {
-			j = prect->width;
-			while(j >= 8) {
-				j -= 8;
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to24table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to24table[psrc[1]];
-				if (psrc[2] != TRANSPARENT_COLOR)
-					pdest[2] = d_8to24table[psrc[2]];
-				if (psrc[3] != TRANSPARENT_COLOR)
-					pdest[3] = d_8to24table[psrc[3]];
-				if (psrc[4] != TRANSPARENT_COLOR)
-					pdest[4] = d_8to24table[psrc[4]];
-				if (psrc[5] != TRANSPARENT_COLOR)
-					pdest[5] = d_8to24table[psrc[5]];
-				if (psrc[6] != TRANSPARENT_COLOR)
-					pdest[6] = d_8to24table[psrc[6]];
-				if (psrc[7] != TRANSPARENT_COLOR)
-					pdest[7] = d_8to24table[psrc[7]];
-				psrc += 8;
-				pdest += 8;
-			}
-			if (j & 4) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to24table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to24table[psrc[1]];
-				if (psrc[2] != TRANSPARENT_COLOR)
-					pdest[2] = d_8to24table[psrc[2]];
-				if (psrc[3] != TRANSPARENT_COLOR)
-					pdest[3] = d_8to24table[psrc[3]];
-				psrc += 4;
-				pdest += 4;
-			}
-			if (j & 2) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to24table[psrc[0]];
-				if (psrc[1] != TRANSPARENT_COLOR)
-					pdest[1] = d_8to24table[psrc[1]];
-				psrc += 2;
-				pdest += 2;
-			}
-			if (j & 1) {
-				if (psrc[0] != TRANSPARENT_COLOR)
-					pdest[0] = d_8to24table[psrc[0]];
-				psrc++;
-				pdest++;
-			}
-
-			psrc += srcdelta;
-			pdest += destdelta;
-		}
-	} else {
-		for (i = 0; i < prect->height;
-			 i++, psrc += srcdelta, pdest += destdelta) {
-			j = prect->width;
-			while(j >= 8) {
-				j -= 8;
-				pdest[0] = d_8to24table[psrc[0]];
-				pdest[1] = d_8to24table[psrc[1]];
-				pdest[2] = d_8to24table[psrc[2]];
-				pdest[3] = d_8to24table[psrc[3]];
-				pdest[4] = d_8to24table[psrc[4]];
-				pdest[5] = d_8to24table[psrc[5]];
-				pdest[6] = d_8to24table[psrc[6]];
-				pdest[7] = d_8to24table[psrc[7]];
-				psrc += 8;
-				pdest += 8;
-			}
-			if (j & 4) {
-				pdest[0] = d_8to24table[psrc[0]];
-				pdest[1] = d_8to24table[psrc[1]];
-				pdest[2] = d_8to24table[psrc[2]];
-				pdest[3] = d_8to24table[psrc[3]];
-				psrc += 4;
-				pdest += 4;
-			}
-			if (j & 2) {
-				pdest[0] = d_8to24table[psrc[0]];
-				pdest[1] = d_8to24table[psrc[1]];
-				psrc += 2;
-				pdest += 2;
-			}
-			if (j & 1) {
-				pdest[0] = d_8to24table[psrc[0]];
-				psrc++;
-				pdest++;
-			}
-		}
-	}
-}
-
-static void
-R_DrawRect (vrect_t *prect, int rowbytes, byte *psrc, int transparent)
-{
-	sw_ctx->draw->draw_rect (prect, rowbytes, psrc, transparent);
 }
 
 /*
@@ -1054,40 +735,6 @@ Draw_TileClear (int x, int y, int w, int h)
 	}
 }
 
-void
-draw_fill_8 (int x, int y, int w, int h, int c)
-{
-	byte       *dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
-	for (int v = 0; v < h; v++, dest += vid.rowbytes) {
-		for (int u = 0; u < w; u++) {
-			dest[u] = c;
-		}
-	}
-}
-
-void
-draw_fill_16 (int x, int y, int w, int h, int c)
-{
-	byte       *dest = ((byte*)vid.buffer) + y * (vid.rowbytes >> 1) + x;
-	c = d_8to16table[c];
-	for (int v = 0; v < h; v++, dest += vid.rowbytes >> 1) {
-		for (int u = 0; u < w; u++) {
-			dest[u] = c;
-		}
-	}
-}
-
-void
-draw_fill_32 (int x, int y, int w, int h, int c)
-{
-	byte       *dest = ((byte*)vid.buffer) + y * (vid.rowbytes >> 2) + x;
-	c = d_8to24table[c];
-	for (int v = 0; v < h; v++, dest += vid.rowbytes >> 2) {
-		for (int u = 0; u < w; u++) {
-			dest[u] = c;
-		}
-	}
-}
 
 /*
 	Draw_Fill
@@ -1097,6 +744,9 @@ draw_fill_32 (int x, int y, int w, int h, int c)
 void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
+	byte       *dest;
+	int         u, v;
+
 	if (x < 0 || x + w > vid.conview->xlen
 		|| y < 0 || y + h > vid.conview->ylen) {
 		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
@@ -1104,77 +754,40 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	sw_ctx->draw->draw_fill (x, y, w, h, c);
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+	for (v = 0; v < h; v++, dest += vid.rowbytes)
+		for (u = 0; u < w; u++)
+			dest[u] = c;
 }
 
-void
-draw_fadescreen_8 (void)
-{
-	int         height = vid.conview->ylen;
-	int         width = vid.conview->xlen / 4;
-	int         offset = vid.rowbytes;
-	uint32_t   *pbuf;
-
-	for (int y = 0; y < height; y++) {
-		uint32_t    mask;
-
-		pbuf = (uint32_t *) ((byte *)vid.buffer + offset * y);
-		mask = 0xff << ((y & 1) << 4);
-
-		for (int x = 0; x < width; x++) {
-			*pbuf++ &= mask;
-		}
-	}
-}
-
-void
-draw_fadescreen_16 (void)
-{
-	int         height = vid.conview->ylen;
-	int         width = vid.conview->xlen / 4;
-	int         offset = vid.rowbytes >> 1;
-	uint32_t   *pbuf;
-
-	for (int y = 0; y < height; y++) {
-		pbuf = (uint32_t *) ((byte *)vid.buffer + offset * y);
-
-		for (int x = 0; x < width; x++, pbuf++) {
-			*pbuf = (*pbuf >> 1) & 0x7bef7bef;
-		}
-	}
-}
-
-void
-draw_fadescreen_32 (void)
-{
-	int         height = vid.conview->ylen;
-	int         width = vid.conview->xlen / 4;
-	int         offset = vid.rowbytes >> 2;
-	uint32_t   *pbuf;
-
-	for (int y = 0; y < height; y++) {
-		pbuf = (uint32_t *) ((byte *)vid.buffer + offset * y);
-
-		for (int x = 0; x < width; x++, pbuf++) {
-			*pbuf = (*pbuf >> 1) & 0x7f7f7f7f;
-		}
-	}
-}
 
 void
 Draw_FadeScreen (void)
 {
+	int         x, y;
+	int         height = vid.conview->ylen;
+	int         width = vid.conview->xlen / 4;
+	uint32_t   *pbuf;
 
 	S_ExtraUpdate ();
 
-	sw_ctx->draw->draw_fadescreen ();
+	for (y = 0; y < height; y++) {
+		uint32_t    mask;
+
+		pbuf = (uint32_t *) ((byte *)vid.buffer + vid.rowbytes * y);
+		mask = 0xff << ((y & 1) << 4);
+
+		for (x = 0; x < width; x++) {
+			*pbuf++ &= mask;
+		}
+	}
 	vr_data.scr_copyeverything = 1;
 
 	S_ExtraUpdate ();
 }
 
 void
-draw_blendscreen_8 (quat_t color)
+Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;
 	const byte *basepal;
@@ -1199,74 +812,4 @@ draw_blendscreen_8 (quat_t color)
 		newpal += 3;
 	}
 	vid.vid_internal->set_palette (vid.vid_internal->data, pal);
-}
-
-void
-draw_blendscreen_16 (quat_t color)
-{
-	int         i, r, b;
-	int         g1, g2;
-	unsigned    x, y;
-	unsigned short rramp[32], gramp[64], bramp[32], *temp;
-	for (i = 0; i < 32; i++) {
-		r = i << 3;
-		g1 = i << 3;
-		g2 = g1 + 4;
-		b = i << 3;
-
-		r += (int) (color[3] * (color[0] * 256 - r));
-		g1 += (int) (color[3] * (color[1] - g1));
-		g2 += (int) (color[3] * (color[1] - g2));
-		b += (int) (color[3] * (color[2] - b));
-
-		rramp[i] = (vid.gammatable[r] << 8) & 0xF800;
-		gramp[i*2+0] = (vid.gammatable[g1] << 3) & 0x07E0;
-		gramp[i*2+1] = (vid.gammatable[g2] << 3) & 0x07E0;
-		bramp[i] = (vid.gammatable[b] >> 3) & 0x001F;
-	}
-	temp = vid.buffer;
-	for (y = 0;y < vid.height;y++, temp += (vid.rowbytes >> 1))
-		for (x = 0;x < vid.width;x++)
-			temp[x] = rramp[(temp[x] & 0xF800) >> 11]
-				+ gramp[(temp[x] & 0x07E0) >> 5] + bramp[temp[x] & 0x001F];
-}
-
-void
-draw_blendscreen_32 (quat_t color)
-{
-	unsigned    x, y;
-	int         i, r, g, b;
-
-	byte ramp[256][4], *temp;
-	for (i = 0; i < 256; i++) {
-		r = i;
-		g = i;
-		b = i;
-
-		r += (int) (color[3] * (color[0] * 256 - r));
-		g += (int) (color[3] * (color[1] * 256 - g));
-		b += (int) (color[3] * (color[2] * 256 - b));
-
-		ramp[i][0] = vid.gammatable[r];
-		ramp[i][1] = vid.gammatable[g];
-		ramp[i][2] = vid.gammatable[b];
-		ramp[i][3] = 0;
-	}
-	temp = vid.buffer;
-	for (y = 0; y < vid.height; y++, temp += vid.rowbytes)
-	{
-		for (x = 0;x < vid.width;x++)
-		{
-			temp[x*4+0] = ramp[temp[x*4+0]][0];
-			temp[x*4+1] = ramp[temp[x*4+1]][1];
-			temp[x*4+2] = ramp[temp[x*4+2]][2];
-			temp[x*4+3] = 0;
-		}
-	}
-}
-
-void
-Draw_BlendScreen (quat_t color)
-{
-	sw_ctx->draw->draw_blendscreen (color);
 }

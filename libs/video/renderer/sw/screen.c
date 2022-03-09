@@ -37,8 +37,9 @@
 #include "vid_sw.h"
 
 /* SCREEN SHOTS */
+
 tex_t *
-capture_bgr_8 (void)
+sw_SCR_CaptureBGR (void)
 {
 	int         count, x, y;
 	tex_t      *tex;
@@ -64,22 +65,4 @@ capture_bgr_8 (void)
 		}
 	}
 	return tex;
-}
-
-tex_t *
-capture_bgr_16 (void)
-{
-	return capture_bgr_8 ();//FIXME
-}
-
-tex_t *
-capture_bgr_32 (void)
-{
-	return capture_bgr_8 ();//FIXME
-}
-
-tex_t *
-sw_SCR_CaptureBGR (void)
-{
-	return sw_ctx->draw->capture_bgr ();
 }

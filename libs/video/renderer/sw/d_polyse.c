@@ -33,7 +33,6 @@
 
 #include "d_local.h"
 #include "r_internal.h"
-#include "vid_sw.h"
 
 int  ubasestep, errorterm, erroradjustup, erroradjustdown;
 
@@ -43,7 +42,7 @@ int  ubasestep, errorterm, erroradjustup, erroradjustdown;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct spanpackage_s {
-	int         pdest;
+	void       *pdest;
 	short      *pz;
 	int         count;
 	byte       *ptex;
@@ -94,8 +93,7 @@ int         d_aspancount, d_countextrastep;
 spanpackage_t *a_spans;
 spanpackage_t *d_pedgespanpackage;
 static int  ystart;
-int         d_pdest;
-byte       *d_ptex;
+byte       *d_pdest, *d_ptex;
 short      *d_pz;
 int         d_sfrac, d_tfrac, d_light, d_zi;
 int         d_ptexextrastep, d_sfracextrastep;
@@ -596,7 +594,7 @@ InitGel (byte * palette)
 
 #ifndef USE_INTEL_ASM
 void
-polyset_draw_spans_8 (spanpackage_t * pspanpackage)
+D_PolysetDrawSpans8 (spanpackage_t * pspanpackage)
 {
 	int         lcount;
 	byte       *lpdest;
@@ -618,7 +616,7 @@ polyset_draw_spans_8 (spanpackage_t * pspanpackage)
 		}
 
 		if (lcount) {
-			lpdest = d_viewbuffer + pspanpackage->pdest;
+			lpdest = pspanpackage->pdest;
 			lptex = pspanpackage->ptex;
 			lpz = pspanpackage->pz;
 			lsfrac = pspanpackage->sfrac;
@@ -653,178 +651,6 @@ polyset_draw_spans_8 (spanpackage_t * pspanpackage)
 }
 #endif // !USE_INTEL_ASM
 
-void
-polyset_draw_spans_16 (spanpackage_t * pspanpackage)
-{
-	int i, j, texscantable[2*MAX_LBM_HEIGHT], *texscan;
-	// LordHavoc: compute skin row table
-	for (i = 0, j = -r_affinetridesc.skinheight * r_affinetridesc.skinwidth;
-		 i < r_affinetridesc.skinheight*2;i++, j += r_affinetridesc.skinwidth)
-		texscantable[i] = j;
-	texscan = texscantable + r_affinetridesc.skinheight;
-
-	{
-		int         lcount, count = 0;
-		short      *lpdest;
-		byte       *lptex;
-		int         lsfrac, ltfrac;
-		int         llight;
-		int         lzi;
-		short      *lpz;
-
-		do
-		{
-			lcount = d_aspancount - pspanpackage->count;
-
-			errorterm += erroradjustup;
-			if (errorterm >= 0)
-			{
-				d_aspancount += d_countextrastep;
-				errorterm -= erroradjustdown;
-			}
-			else
-				d_aspancount += ubasestep;
-
-			if (lcount)
-			{
-				lpdest = (short *) d_viewbuffer + pspanpackage->pdest;
-				lptex = pspanpackage->ptex;
-				lpz = pspanpackage->pz;
-				lsfrac = pspanpackage->sfrac;
-				ltfrac = pspanpackage->tfrac;
-				llight = pspanpackage->light;
-				lzi = pspanpackage->zi;
-
-				do
-				{
-					if ((lzi >> 16) < *lpz) // hidden
-					{
-						count = 0;
-						goto skiploop16;
-					}
-drawloop16:
-					*lpz++ = lzi >> 16;
-					*lpdest++ = ((short *)acolormap)[(llight & 0xFF00) | lptex[texscan[ltfrac >> 16] + (lsfrac >> 16)]];
-					lzi += r_zistepx;
-					lsfrac += r_sstepx;
-					ltfrac += r_tstepx;
-					llight += r_lstepx;
-				}
-				while (--lcount);
-				goto done16;
-
-				do
-				{
-					if ((lzi >> 16) >= *lpz) // draw
-					{
-						lsfrac += r_sstepx * count;
-						ltfrac += r_tstepx * count;
-						llight += r_lstepx * count;
-						lpdest += count;
-						goto drawloop16;
-					}
-skiploop16:
-					count++;
-					lzi += r_zistepx;
-					lpz++;
-				}
-				while (--lcount);
-done16:			;
-			}
-
-			pspanpackage++;
-		}
-		while (pspanpackage->count != -999999);
-	}
-}
-
-void
-polyset_draw_spans_32 (spanpackage_t * pspanpackage)
-{
-	int i, j, texscantable[2*MAX_LBM_HEIGHT], *texscan;
-	// LordHavoc: compute skin row table
-	for (i = 0, j = -r_affinetridesc.skinheight * r_affinetridesc.skinwidth;
-		 i < r_affinetridesc.skinheight*2;i++, j += r_affinetridesc.skinwidth)
-		texscantable[i] = j;
-	texscan = texscantable + r_affinetridesc.skinheight;
-
-	{
-		int         lcount, count = 0;
-		int        *lpdest;
-		byte       *lptex;
-		int         lsfrac, ltfrac;
-		int         llight;
-		int         lzi;
-		short      *lpz;
-
-		do
-		{
-			lcount = d_aspancount - pspanpackage->count;
-
-			errorterm += erroradjustup;
-			if (errorterm >= 0)
-			{
-				d_aspancount += d_countextrastep;
-				errorterm -= erroradjustdown;
-			}
-			else
-				d_aspancount += ubasestep;
-
-			if (lcount)
-			{
-				lpdest = (int *) d_viewbuffer + pspanpackage->pdest;
-				lptex = pspanpackage->ptex;
-				lpz = pspanpackage->pz;
-				lsfrac = pspanpackage->sfrac;
-				ltfrac = pspanpackage->tfrac;
-				llight = pspanpackage->light;
-				lzi = pspanpackage->zi;
-
-				do
-				{
-					if ((lzi >> 16) < *lpz) // hidden
-					{
-						count = 0;
-						goto skiploop32;
-					}
-drawloop32:
-					*lpz++ = lzi >> 16;
-					*lpdest++ =
-						vid.colormap32[(llight & 0xFF00) |
-									   lptex[texscan[ltfrac >> 16] +
-											 (lsfrac >> 16)]];
-					lzi += r_zistepx;
-					lsfrac += r_sstepx;
-					ltfrac += r_tstepx;
-					llight += r_lstepx;
-				}
-				while (--lcount);
-				goto done32;
-
-				do
-				{
-					if ((lzi >> 16) >= *lpz) // draw
-					{
-						lsfrac += r_sstepx * count;
-						ltfrac += r_tstepx * count;
-						llight += r_lstepx * count;
-						lpdest += count;
-						goto drawloop32;
-					}
-skiploop32:
-					count++;
-					lzi += r_zistepx;
-					lpz++;
-				}
-				while (--lcount);
-done32:			;
-			}
-
-			pspanpackage++;
-		}
-		while (pspanpackage->count != -999999);
-	}
-}
 
 void
 D_RasterizeAliasPolySmooth (void)
@@ -875,13 +701,7 @@ D_RasterizeAliasPolySmooth (void)
 
 	d_pdestbasestep = screenwidth + ubasestep;
 	d_pdestextrastep = d_pdestbasestep + 1;
-#ifdef USE_INTEL_ASM
-	if (sw_ctx->pixbytes == 1) {
-		d_pdest = (int) d_viewbuffer + ystart * screenwidth + plefttop[0];
-	} else
-#endif
-		d_pdest = ystart * screenwidth + plefttop[0];
-
+	d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
 	d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
 
 // TODO: can reuse partial expressions here
@@ -947,13 +767,7 @@ D_RasterizeAliasPolySmooth (void)
 
 		d_pdestbasestep = screenwidth + ubasestep;
 		d_pdestextrastep = d_pdestbasestep + 1;
-#ifdef USE_INTEL_ASM
-		if (sw_ctx->pixbytes == 1) {
-			d_pdest = (int) d_viewbuffer + ystart * screenwidth + plefttop[0];
-		} else
-#endif
-			d_pdest = ystart * screenwidth + plefttop[0];
-
+		d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
 #ifdef USE_INTEL_ASM
 		d_pzbasestep = (d_zwidth + ubasestep) << 1;
 		d_pzextrastep = d_pzbasestep + 2;
@@ -1010,7 +824,7 @@ D_RasterizeAliasPolySmooth (void)
 	originalcount = a_spans[initialrightheight].count;
 	a_spans[initialrightheight].count = -999999;	// mark end of the
 													// spanpackages
-	sw_ctx->draw->polyset_draw_spans (a_spans);
+	D_PolysetDrawSpans8 (a_spans);
 
 	// scan out the bottom part of the right edge, if it exists
 	if (pedgetable->numrightedges == 2) {
@@ -1033,7 +847,7 @@ D_RasterizeAliasPolySmooth (void)
 		d_countextrastep = ubasestep + 1;
 		a_spans[initialrightheight + height].count = -999999;
 		// mark end of the spanpackages
-		sw_ctx->draw->polyset_draw_spans (pstart);
+		D_PolysetDrawSpans8 (pstart);
 	}
 }
 

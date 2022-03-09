@@ -27,8 +27,6 @@ extern struct cvar_s *vid_gamma;
 
 void VID_GetWindowSize (int def_w, int def_h);
 
-extern unsigned short  d_8to16table[256];
-
 void VID_InitGamma (const byte *);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
