@@ -43,7 +43,7 @@ int  ubasestep, errorterm, erroradjustup, erroradjustdown;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct spanpackage_s {
-	void       *pdest;
+	int         pdest;
 	short      *pz;
 	int         count;
 	byte       *ptex;
@@ -94,7 +94,8 @@ int         d_aspancount, d_countextrastep;
 spanpackage_t *a_spans;
 spanpackage_t *d_pedgespanpackage;
 static int  ystart;
-byte       *d_pdest, *d_ptex;
+int         d_pdest;
+byte       *d_ptex;
 short      *d_pz;
 int         d_sfrac, d_tfrac, d_light, d_zi;
 int         d_ptexextrastep, d_sfracextrastep;
@@ -617,7 +618,7 @@ polyset_draw_spans_8 (spanpackage_t * pspanpackage)
 		}
 
 		if (lcount) {
-			lpdest = pspanpackage->pdest;
+			lpdest = d_viewbuffer + pspanpackage->pdest;
 			lptex = pspanpackage->ptex;
 			lpz = pspanpackage->pz;
 			lsfrac = pspanpackage->sfrac;
@@ -686,7 +687,7 @@ polyset_draw_spans_16 (spanpackage_t * pspanpackage)
 
 			if (lcount)
 			{
-				lpdest = (short *) pspanpackage->pdest;
+				lpdest = (short *) d_viewbuffer + pspanpackage->pdest;
 				lptex = pspanpackage->ptex;
 				lpz = pspanpackage->pz;
 				lsfrac = pspanpackage->sfrac;
@@ -771,7 +772,7 @@ polyset_draw_spans_32 (spanpackage_t * pspanpackage)
 
 			if (lcount)
 			{
-				lpdest = (int *) pspanpackage->pdest;
+				lpdest = (int *) d_viewbuffer + pspanpackage->pdest;
 				lptex = pspanpackage->ptex;
 				lpz = pspanpackage->pz;
 				lsfrac = pspanpackage->sfrac;
@@ -874,7 +875,13 @@ D_RasterizeAliasPolySmooth (void)
 
 	d_pdestbasestep = screenwidth + ubasestep;
 	d_pdestextrastep = d_pdestbasestep + 1;
-	d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
+#ifdef USE_INTEL_ASM
+	if (sw_ctx->pixbytes == 1) {
+		d_pdest = (int) d_viewbuffer + ystart * screenwidth + plefttop[0];
+	} else
+#endif
+		d_pdest = ystart * screenwidth + plefttop[0];
+
 	d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
 
 // TODO: can reuse partial expressions here
@@ -940,7 +947,13 @@ D_RasterizeAliasPolySmooth (void)
 
 		d_pdestbasestep = screenwidth + ubasestep;
 		d_pdestextrastep = d_pdestbasestep + 1;
-		d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
+#ifdef USE_INTEL_ASM
+		if (sw_ctx->pixbytes == 1) {
+			d_pdest = (int) d_viewbuffer + ystart * screenwidth + plefttop[0];
+		} else
+#endif
+			d_pdest = ystart * screenwidth + plefttop[0];
+
 #ifdef USE_INTEL_ASM
 		d_pzbasestep = (d_zwidth + ubasestep) << 1;
 		d_pzextrastep = d_pzbasestep + 2;
