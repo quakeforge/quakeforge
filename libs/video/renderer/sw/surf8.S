@@ -55,8 +55,8 @@ C(R_Surf8Start):
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock_mip0)
-C(R_DrawSurfaceBlock_mip0):
+.globl C(R_DrawSurfaceBlock8_mip0)
+C(R_DrawSurfaceBlock8_mip0):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -70,7 +70,7 @@ C(R_DrawSurfaceBlock_mip0):
 	movl	%eax,sb_v
 	movl	C(prowdestbase),%edi
 
-	movl	C(pbasesource),%esi
+	movl	C(psource),%esi
 
 Lv_loop_mip0:
 
@@ -256,8 +256,8 @@ LBPatch15:
 	movl	%edx,C(lightright)
 	jc		Lblockloop8_mip0
 
-//			if (pbasesource >= r_sourcemax)
-//				pbasesource -= stepback;
+//			if (psource >= r_sourcemax)
+//				psource -= stepback;
 
 	cmpl	C(r_sourcemax),%esi
 	jb		LSkip_mip0
@@ -281,8 +281,8 @@ LSkip_mip0:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock_mip1)
-C(R_DrawSurfaceBlock_mip1):
+.globl C(R_DrawSurfaceBlock8_mip1)
+C(R_DrawSurfaceBlock8_mip1):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -296,7 +296,7 @@ C(R_DrawSurfaceBlock_mip1):
 	movl	%eax,sb_v
 	movl	C(prowdestbase),%edi
 
-	movl	C(pbasesource),%esi
+	movl	C(psource),%esi
 
 Lv_loop_mip1:
 
@@ -426,8 +426,8 @@ LBPatch29:
 
 	jc		Lblockloop8_mip1
 
-//			if (pbasesource >= r_sourcemax)
-//				pbasesource -= stepback;
+//			if (psource >= r_sourcemax)
+//				psource -= stepback;
 
 	cmpl	C(r_sourcemax),%esi
 	jb		LSkip_mip1
@@ -451,8 +451,8 @@ LSkip_mip1:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock_mip2)
-C(R_DrawSurfaceBlock_mip2):
+.globl C(R_DrawSurfaceBlock8_mip2)
+C(R_DrawSurfaceBlock8_mip2):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -466,7 +466,7 @@ C(R_DrawSurfaceBlock_mip2):
 	movl	%eax,sb_v
 	movl	C(prowdestbase),%edi
 
-	movl	C(pbasesource),%esi
+	movl	C(psource),%esi
 
 Lv_loop_mip2:
 
@@ -566,8 +566,8 @@ LBPatch21:
 
 	jc		Lblockloop8_mip2
 
-//			if (pbasesource >= r_sourcemax)
-//				pbasesource -= stepback;
+//			if (psource >= r_sourcemax)
+//				psource -= stepback;
 
 	cmpl	C(r_sourcemax),%esi
 	jb		LSkip_mip2
@@ -591,8 +591,8 @@ LSkip_mip2:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock_mip3)
-C(R_DrawSurfaceBlock_mip3):
+.globl C(R_DrawSurfaceBlock8_mip3)
+C(R_DrawSurfaceBlock8_mip3):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -606,7 +606,7 @@ C(R_DrawSurfaceBlock_mip3):
 	movl	%eax,sb_v
 	movl	C(prowdestbase),%edi
 
-	movl	C(pbasesource),%esi
+	movl	C(psource),%esi
 
 Lv_loop_mip3:
 
@@ -708,8 +708,8 @@ LBPatch31:
 	addl	%edx,%esi
 	addl	%ebp,%edi
 
-//			if (pbasesource >= r_sourcemax)
-//				pbasesource -= stepback;
+//			if (psource >= r_sourcemax)
+//				psource -= stepback;
 
 	cmpl	C(r_sourcemax),%esi
 	jb		LSkip_mip3

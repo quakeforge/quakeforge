@@ -101,7 +101,6 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
-	vid_internal.sw32_context = X11_SW32_Context;
 #ifdef HAVE_VULKAN
 	vid_internal.vulkan_context = X11_Vulkan_Context;
 #endif

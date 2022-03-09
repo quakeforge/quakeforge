@@ -28,9 +28,13 @@
 # include "config.h"
 #endif
 
+#include <string.h>
+
 #include "QF/render.h"
 
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 
 static int         iskyspeed = 8;
@@ -47,10 +51,12 @@ int         r_skymade;
 
 byte        bottomsky[128 * 131];
 byte        bottommask[128 * 131];
-byte        newsky[128 * 256];	// newsky and topsky both pack in here, 128
-								// bytes of newsky on the left of each scan,
-								// 128 bytes of topsky on the right, because
-								// the low-level drawers need 256-byte widths
+// sky and topsky both pack in here, 128
+// bytes of sky on the left of each scan,
+// 128 bytes of topsky on the right, because
+// the low-level drawers need 256-byte widths
+byte        skydata[128 * 256];
+byte        skytex[128 * 256 * 4];
 
 
 /*
@@ -61,115 +67,115 @@ byte        newsky[128 * 256];	// newsky and topsky both pack in here, 128
 void
 R_InitSky (texture_t *mt)
 {
-	int         i, j;
-	byte       *src;
-
-	src = (byte *) mt + mt->offsets[0];
-
-	for (i = 0; i < 128; i++) {
-		for (j = 0; j < 128; j++) {
-			newsky[(i * 256) + j + 128] = src[i * 256 + j + 128];
-		}
-	}
-
-	for (i = 0; i < 128; i++) {
-		for (j = 0; j < 131; j++) {
-			if (src[i * 256 + (j & 0x7F)]) {
-				bottomsky[(i * 131) + j] = src[i * 256 + (j & 0x7F)];
-				bottommask[(i * 131) + j] = 0;
-			} else {
-				bottomsky[(i * 131) + j] = 0;
-				bottommask[(i * 131) + j] = 0xff;
-			}
-		}
-	}
-
-	r_skysource = newsky;
+	memcpy (skydata, (byte *) mt + mt->offsets[0], 128 * 256);
+	r_skysource = skytex;
 }
 
-
 void
-R_MakeSky (void)
+make_sky_8 (void)
 {
-	int         x, y;
-	int         ofs, baseofs;
-	int         xshift, yshift;
-	byte       *pnewsky;
+	int x, y, xshift1, yshift1, xshift2, yshift2;
+	byte *base1, *base2;
 	static int  xlast = -1, ylast = -1;
 
-	xshift = r_skytime * r_skyspeed;
-	yshift = r_skytime * r_skyspeed;
+	xshift2 = r_skytime * r_skyspeed * 2.0f;
+	yshift2 = r_skytime * r_skyspeed * 2.0f;
 
-	if ((xshift == xlast) && (yshift == ylast))
+	if ((xshift2 == xlast) && (yshift2 == ylast))
 		return;
 
-	xlast = xshift;
-	ylast = yshift;
+	xlast = xshift2;
+	ylast = yshift2;
+	xshift1 = xshift2 >> 1;
+	yshift1 = yshift2 >> 1;
 
-	pnewsky = &newsky[0];
-
-	for (y = 0; y < SKYSIZE; y++) {
-		baseofs = ((y + yshift) & SKYMASK) * 131;
-		for (x = 0; x < SKYSIZE; x++) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			*pnewsky = (*(pnewsky + 128) & bottommask[ofs]) | bottomsky[ofs];
-			pnewsky = pnewsky + 1;
+	byte *out = (byte *) skytex;
+	for (y = 0;y < 128;y++)
+	{
+		base1 = &skydata[((y + yshift1) & 127) * 256];
+		base2 = &skydata[((y + yshift2) & 127) * 256 + 128];
+		for (x = 0;x < 128;x++)
+		{
+			if (base1[(x + xshift1) & 127])
+				*out = base1[(x + xshift1) & 127];
+			else
+				*out = base2[(x + xshift2) & 127];
+			out++;
 		}
-		pnewsky += 128;
+		out += 128;
 	}
-
 	r_skymade = 1;
 }
 
-
 void
-R_GenSkyTile (void *pdest)
+make_sky_16 (void)
 {
-	int         x, y;
-	int         ofs, baseofs;
-	int         xshift, yshift;
-	unsigned int *pnewsky;
-	unsigned int *pd;
+	int x, y, xshift1, yshift1, xshift2, yshift2;
+	byte *base1, *base2;
+	static int  xlast = -1, ylast = -1;
 
-	xshift = r_skytime * r_skyspeed;
-	yshift = r_skytime * r_skyspeed;
+	xshift2 = r_skytime * r_skyspeed * 2.0f;
+	yshift2 = r_skytime * r_skyspeed * 2.0f;
 
-	pnewsky = (unsigned int *) &newsky[0];
-	pd = (unsigned int *) pdest;
+	if ((xshift2 == xlast) && (yshift2 == ylast))
+		return;
 
-	for (y = 0; y < SKYSIZE; y++) {
-		baseofs = ((y + yshift) & SKYMASK) * 131;
+	xlast = xshift2;
+	ylast = yshift2;
+	xshift1 = xshift2 >> 1;
+	yshift1 = yshift2 >> 1;
 
-// FIXME: clean this up
-#if UNALIGNED_OK
-		for (x = 0; x < SKYSIZE; x += 4) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			// PORT: unaligned dword access to bottommask and bottomsky
-
-			*pd = (*(pnewsky + (128 / sizeof (unsigned int))) &
-				   *(unsigned int *) &bottommask[ofs]) |
-				*(unsigned int *) &bottomsky[ofs];
-
-			pnewsky++;
-			pd++;
+	unsigned short *out = (unsigned short *) skytex;
+	for (y = 0;y < 128;y++)
+	{
+		base1 = &skydata[((y + yshift1) & 127) * 256];
+		base2 = &skydata[((y + yshift2) & 127) * 256 + 128];
+		for (x = 0;x < 128;x++)
+		{
+			if (base1[(x + xshift1) & 127])
+				*out = d_8to16table[base1[(x + xshift1) & 127]];
+			else
+				*out = d_8to16table[base2[(x + xshift2) & 127]];
+			out++;
 		}
-#else
-		for (x = 0; x < SKYSIZE; x++) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			*(byte *) pd = (*((byte *) pnewsky + 128) &
-							*(byte *) & bottommask[ofs]) |
-				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
-			pd = (unsigned int *) ((byte *) pd + 1);
-		}
-#endif
-		pnewsky += 128 / sizeof (unsigned int);
+		out += 128;
 	}
+	r_skymade = 1;
 }
 
+void
+make_sky_32 (void)
+{
+	int x, y, xshift1, yshift1, xshift2, yshift2;
+	byte *base1, *base2;
+	static int  xlast = -1, ylast = -1;
+
+	xshift2 = r_skytime * r_skyspeed * 2.0f;
+	yshift2 = r_skytime * r_skyspeed * 2.0f;
+
+	if ((xshift2 == xlast) && (yshift2 == ylast))
+		return;
+
+	xlast = xshift2;
+	ylast = yshift2;
+	xshift1 = xshift2 >> 1;
+	yshift1 = yshift2 >> 1;
+
+	unsigned int *out = (unsigned int *) skytex;
+	for (y = 0;y < 128;y++) {
+		base1 = &skydata[((y + yshift1) & 127) * 256];
+		base2 = &skydata[((y + yshift2) & 127) * 256 + 128];
+		for (x = 0;x < 128;x++) {
+			if (base1[(x + xshift1) & 127])
+				*out = d_8to24table[base1[(x + xshift1) & 127]];
+			else
+				*out = d_8to24table[base2[(x + xshift2) & 127]];
+			out++;
+		}
+		out += 128;
+	}
+	r_skymade = 1;
+}
 
 void
 R_SetSkyFrame (void)

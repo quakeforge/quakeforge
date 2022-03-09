@@ -1,0 +1,25 @@
+#ifndef SW_DRAW_FUNC
+#define SW_DRAW_FUNC(name, rettype, params)
+#endif
+
+SW_DRAW_FUNC(draw_solid_usrface, void, (struct surf_s *surf, int color))
+SW_DRAW_FUNC(draw_particle, void, (struct particle_s *particle))
+SW_DRAW_FUNC(polyset_draw_spans, void, (struct spanpackage_s *spanpackage))
+SW_DRAW_FUNC(draw_character, void, (int x, int y, byte *source, int drawline))
+SW_DRAW_FUNC(draw_pixel, void, (int x, int y, byte color))
+SW_DRAW_FUNC(draw_subpic, void, (int x, int y, struct qpic_s *pic, int srcx, int srcy, int width, int height))
+SW_DRAW_FUNC(draw_console_background, void, (int lines, byte *data))
+SW_DRAW_FUNC(draw_rect, void, (struct vrect_s *rect, int rowbytes, byte *src, int transparent))
+SW_DRAW_FUNC(draw_fill, void, (int x, int y, int w, int h, int c))
+SW_DRAW_FUNC(draw_fadescreen, void, (void))
+SW_DRAW_FUNC(draw_blendscreen, void, (quat_t color))
+SW_DRAW_FUNC(warp_screen, void, (void))
+SW_DRAW_FUNC(draw_turbulent_span, void, (void))
+SW_DRAW_FUNC(draw_spans, void, (struct espan_s *span))
+SW_DRAW_FUNC(draw_sky_scans, void, (struct espan_s *span))
+SW_DRAW_FUNC(sprite_draw_spans, void, (struct sspan_s *span))
+SW_DRAW_FUNC(draw_z_point, void, (void))
+SW_DRAW_FUNC(line_grapn, void, (int x, int y, int *h_vals, int count, int height))
+SW_DRAW_FUNC(make_sky, void, (void))
+SW_DRAW_FUNC(capture_bgr, struct tex_s *, (void))
+#undef SW_DRAW_FUNC

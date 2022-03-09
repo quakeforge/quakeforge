@@ -54,10 +54,27 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
+
+static sw_draw_t sw_draw_8 = {
+#define SW_DRAW_FUNC(name, rettype, params) \
+	.name = name##_8,
+#include "vid_sw_draw.h"
+};
+static sw_draw_t sw_draw_16 = {
+#define SW_DRAW_FUNC(name, rettype, params) \
+	.name = name##_16,
+#include "vid_sw_draw.h"
+};
+static sw_draw_t sw_draw_32 = {
+#define SW_DRAW_FUNC(name, rettype, params) \
+	.name = name##_32,
+#include "vid_sw_draw.h"
+};
 
 void       *colormap;
 static vec3_t      viewlightvec;
@@ -116,6 +133,15 @@ void
 sw_R_Init (void)
 {
 	int         dummy;
+
+	switch (sw_ctx->pixbytes) {
+		case 1: sw_ctx->draw = &sw_draw_8; break;
+		case 2: sw_ctx->draw = &sw_draw_16; break;
+		case 4: sw_ctx->draw = &sw_draw_32; break;
+		default:
+				Sys_Error("R_Init: unsupported pixbytes %i",
+						  sw_ctx->pixbytes);
+	}
 
 	r_ent_queue = EntQueue_New (mod_num_types);
 
@@ -806,7 +832,7 @@ R_RenderView_ (void)
 		dp_time2 = Sys_DoubleTime ();
 
 	if (r_dowarp)
-		D_WarpScreen ();
+		sw_ctx->draw->warp_screen ();
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();

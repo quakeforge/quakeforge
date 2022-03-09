@@ -756,8 +756,8 @@ LDone:
 .globl C(D_PolysetAff8Start)
 C(D_PolysetAff8Start):
 
-.globl C(D_PolysetDrawSpans8)
-C(D_PolysetDrawSpans8):
+.globl C(polyset_draw_spans_8)
+C(polyset_draw_spans_8):
 	pushl	%esi				// preserve register variables
 	pushl	%ebx
 

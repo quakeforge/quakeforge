@@ -37,6 +37,7 @@
 #include "compat.h"
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 float        surfscale;
 
@@ -69,7 +70,7 @@ D_SurfaceCacheForRes (void *data, int width, int height)
 	if (pix > 64000)
 		size += (pix - 64000) * 3;
 
-	return size;
+	return size * sw_ctx->pixbytes;
 }
 
 static void
@@ -141,7 +142,7 @@ D_SCAlloc (int width, int size)
 	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);
 
-	if ((size <= 0) || (size > 0x40000))	// FIXME ditto
+	if ((size <= 0) || (size > 0x40000 * sw_ctx->pixbytes))	// FIXME ditto
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	// This adds the offset of data[0] in the surfcache_t struct.
@@ -195,7 +196,8 @@ D_SCAlloc (int width, int size)
 	new->width = width;
 // DEBUG
 	if (width > 0)
-		new->height = (size - sizeof (*new) + sizeof (new->data)) / width;
+		new->height = (size - sizeof (*new) + sizeof (new->data)) /
+			(width * sw_ctx->pixbytes);
 
 	new->owner = NULL;					// should be set properly after return
 
@@ -252,14 +254,14 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	surfscale = 1.0 / (1 << miplevel);
 	r_drawsurf.surfmip = miplevel;
 	r_drawsurf.surfwidth = surface->extents[0] >> miplevel;
-	r_drawsurf.rowbytes = r_drawsurf.surfwidth;
+	r_drawsurf.rowbytes = r_drawsurf.surfwidth * sw_ctx->pixbytes;
 	r_drawsurf.surfheight = surface->extents[1] >> miplevel;
 
 	// allocate memory if needed
 	if (!cache) {
 		// if a texture just animated, don't reallocate it
 		cache = D_SCAlloc (r_drawsurf.surfwidth,
-						   r_drawsurf.surfwidth * r_drawsurf.surfheight);
+						   r_drawsurf.rowbytes * r_drawsurf.surfheight);
 		surface->cachespots[miplevel] = cache;
 		cache->owner = &surface->cachespots[miplevel];
 		cache->mipscale = surfscale;

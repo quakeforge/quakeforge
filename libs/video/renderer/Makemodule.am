@@ -11,7 +11,6 @@ noinst_LTLIBRARIES += \
 #plugins
 EXTRA_LTLIBRARIES += \
 	libs/video/renderer/vid_render_sw.la \
-	libs/video/renderer/vid_render_sw32.la \
 	libs/video/renderer/vid_render_gl.la \
 	libs/video/renderer/vid_render_glsl.la \
 	libs/video/renderer/vid_render_vulkan.la
@@ -19,7 +18,6 @@ EXTRA_LTLIBRARIES += \
 #helper libraries
 EXTRA_LTLIBRARIES += \
 	libs/video/renderer/librender_sw.la \
-	libs/video/renderer/librender_sw32.la \
 	libs/video/renderer/librender_gl.la \
 	libs/video/renderer/librender_glsl.la \
 	libs/video/renderer/librender_vulkan.la
@@ -140,7 +138,6 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/d_copy.S \
 	libs/video/renderer/sw/d_draw.S \
 	libs/video/renderer/sw/d_edge.c \
-	libs/video/renderer/sw/d_fill.c \
 	libs/video/renderer/sw/d_init.c \
 	libs/video/renderer/sw/d_modech.c \
 	libs/video/renderer/sw/d_part.c \
@@ -182,47 +179,6 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/sw_rvarsa.S \
 	libs/video/renderer/sw/transform.S \
 	libs/video/renderer/sw/vid_common_sw.c
-
-video_renderer_sw32_libs= \
-	libs/video/renderer/librender_sw32.la \
-	libs/models/libmodels_sw.la
-libs_video_renderer_vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_sw32_la_LIBADD=		$(video_renderer_sw32_libs)
-libs_video_renderer_vid_render_sw32_la_DEPENDENCIES=$(video_renderer_sw32_libs)
-libs_video_renderer_vid_render_sw32_la_SOURCES=\
-	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_sw32.c
-
-libs_video_renderer_librender_sw32_la_SOURCES = \
-	libs/video/renderer/sw32/d_edge.c \
-	libs/video/renderer/sw32/d_fill.c \
-	libs/video/renderer/sw32/d_init.c \
-	libs/video/renderer/sw32/d_modech.c \
-	libs/video/renderer/sw32/d_part.c \
-	libs/video/renderer/sw32/d_polyse.c \
-	libs/video/renderer/sw32/d_scan.c \
-	libs/video/renderer/sw32/d_sky.c \
-	libs/video/renderer/sw32/d_sprite.c \
-	libs/video/renderer/sw32/d_surf.c \
-	libs/video/renderer/sw32/d_vars.c \
-	libs/video/renderer/sw32/d_zpoint.c \
-	libs/video/renderer/sw32/draw.c \
-	libs/video/renderer/sw32/namehack.h \
-	libs/video/renderer/sw32/screen.c \
-	libs/video/renderer/sw32/sw32_graph.c \
-	libs/video/renderer/sw32/sw32_raclip.c \
-	libs/video/renderer/sw32/sw32_ralias.c \
-	libs/video/renderer/sw32/sw32_rbsp.c \
-	libs/video/renderer/sw32/sw32_rdraw.c \
-	libs/video/renderer/sw32/sw32_redge.c \
-	libs/video/renderer/sw32/sw32_riqm.c \
-	libs/video/renderer/sw32/sw32_rmain.c \
-	libs/video/renderer/sw32/sw32_rmisc.c \
-	libs/video/renderer/sw32/sw32_rpart.c \
-	libs/video/renderer/sw32/sw32_rsky.c \
-	libs/video/renderer/sw32/sw32_rsprite.c \
-	libs/video/renderer/sw32/sw32_rsurf.c \
-	libs/video/renderer/sw32/vid_common_sw32.c
 
 pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
 pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc

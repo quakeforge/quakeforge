@@ -55,8 +55,8 @@
 #define P	12+4
 
 	.align 4
-.globl C(D_DrawParticle)
-C(D_DrawParticle):
+.globl C(draw_particle_8)
+C(draw_particle_8):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi				// preserve register variables
 	pushl	%ebx

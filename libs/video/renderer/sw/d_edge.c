@@ -35,6 +35,8 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 static int  miplevel;
 
@@ -72,15 +74,14 @@ D_MipLevelForScale (float scale)
 
 // FIXME: clean this up
 
-static void
-D_DrawSolidSurface (surf_t *surf, int color)
+void
+draw_solid_usrface_8 (surf_t *surf, int color)
 {
-	espan_t    *span;
 	byte       *pdest;
 	int         u, u2, pix;
 
 	pix = (color << 24) | (color << 16) | (color << 8) | color;
-	for (span = surf->spans; span; span = span->pnext) {
+	for (espan_t *span = surf->spans; span; span = span->pnext) {
 		pdest = (byte *) d_viewbuffer + screenwidth * span->v;
 		u = span->u;
 		u2 = span->u + span->count - 1;
@@ -103,6 +104,39 @@ D_DrawSolidSurface (surf_t *surf, int color)
 	}
 }
 
+void
+draw_solid_usrface_16 (surf_t *surf, int color)
+{
+	short *pdest, pix;
+	int u, u2;
+
+	pix = d_8to16table[color];
+	for (espan_t *span = surf->spans; span; span = span->pnext) {
+		pdest = (short *) d_viewbuffer + screenwidth * span->v;
+		u = span->u;
+		u2 = span->u + span->count - 1;
+		for (;u <= u2; u++) {
+			pdest[u] = pix;
+		}
+	}
+}
+
+void
+draw_solid_usrface_32 (surf_t *surf, int color)
+{
+	int *pdest, pix;
+	int u, u2;
+
+	pix = d_8to24table[color];
+	for (espan_t *span = surf->spans; span; span = span->pnext) {
+		pdest = (int *) d_viewbuffer + screenwidth * span->v;
+		u = span->u;
+		u2 = span->u + span->count - 1;
+		for (;u <= u2; u++) {
+			pdest[u] = pix;
+		}
+	}
+}
 
 static void
 D_CalcGradients (msurface_t *pface)
@@ -167,7 +201,8 @@ D_DrawSurfaces (void)
 			d_zistepv = s->d_zistepv;
 			d_ziorigin = s->d_ziorigin;
 
-			D_DrawSolidSurface (s, ((size_t) s->data & 0xFF));
+			int color = (size_t) s->data & 0xff;
+			sw_ctx->draw->draw_solid_usrface (s, color);
 			D_DrawZSpans (s->spans);
 		}
 	} else {
@@ -183,10 +218,10 @@ D_DrawSurfaces (void)
 
 			if (s->flags & SURF_DRAWSKY) {
 				if (!r_skymade) {
-					R_MakeSky ();
+					sw_ctx->draw->make_sky ();
 				}
 
-				D_DrawSkyScans (s->spans);
+				sw_ctx->draw->draw_sky_scans (s->spans);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWBACKGROUND) {
 				// set up a gradient for the background surface that places
@@ -195,7 +230,8 @@ D_DrawSurfaces (void)
 				d_zistepv = 0;
 				d_ziorigin = -0.9;
 
-				D_DrawSolidSurface (s, r_clearcolor->int_val & 0xFF);
+				int color = r_clearcolor->int_val & 0xff;
+				sw_ctx->draw->draw_solid_usrface (s, color);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWTURB) {
 				pface = s->data;

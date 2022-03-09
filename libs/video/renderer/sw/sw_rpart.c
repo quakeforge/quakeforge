@@ -48,6 +48,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 void
 R_DrawParticles (void)
@@ -58,9 +59,10 @@ R_DrawParticles (void)
 
 	R_RunParticles (vr_data.frametime);
 
+	void (*draw) (struct particle_s *particle) = sw_ctx->draw->draw_particle;
 	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
 		particle_t *p = &r_psystem.particles[i];
-		D_DrawParticle (p);
+		draw (p);
 	}
 }
 

@@ -49,8 +49,8 @@
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(D_DrawTurbulent8Span)
-C(D_DrawTurbulent8Span):
+.globl C(draw_turbulent_span_8)
+C(draw_turbulent_span_8):
 	pushl	%ebp				// preserve caller's stack frame pointer
 	pushl	%esi				// preserve register variables
 	pushl	%edi

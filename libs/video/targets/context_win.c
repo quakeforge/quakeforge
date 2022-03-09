@@ -110,8 +110,6 @@ modestate_t modestate = MS_UNINIT;
 
 byte        vid_curpal[256 * 3];
 
-unsigned short d_8to16table[256];
-
 int         mode;
 
 typedef struct {

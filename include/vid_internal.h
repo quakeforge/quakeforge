@@ -18,7 +18,6 @@ typedef struct vid_internal_s {
 
 	struct gl_ctx_s *(*gl_context) (void);
 	struct sw_ctx_s *(*sw_context) (void);
-	struct sw_ctx_s *(*sw32_context) (void);
 	struct vulkan_ctx_s *(*vulkan_context) (void);
 } vid_internal_t;
 
@@ -26,9 +25,9 @@ extern struct cvar_s *vid_fullscreen;
 extern struct cvar_s *vid_system_gamma;
 extern struct cvar_s *vid_gamma;
 
-extern unsigned short  sw32_8to16table[256];
-
 void VID_GetWindowSize (int def_w, int def_h);
+
+extern unsigned short  d_8to16table[256];
 
 void VID_InitGamma (const byte *);
 qboolean VID_SetGamma (double);

@@ -33,6 +33,8 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 byte       *r_turb_pbase;
 byte       *r_turb_pdest;
@@ -47,7 +49,7 @@ int         r_turb_spancount;
 	the sine warp, to keep the edges from wrapping
 */
 void
-D_WarpScreen (void)
+warp_screen_8 (void)
 {
 	int         w, h;
 	int         u, v;
@@ -96,6 +98,105 @@ D_WarpScreen (void)
 	}
 }
 
+void
+warp_screen_16 (void)
+{
+	int         w, h;
+	int         u, v;
+	int         scr_x = vr_data.scr_view->xpos;
+	int         scr_y = vr_data.scr_view->ylen;
+	int         scr_w = vr_data.scr_view->xpos;
+	int         scr_h = vr_data.scr_view->ylen;
+	short      *dest;
+	int        *turb;
+	int        *col;
+	short     **row;
+	short      *rowptr[MAXHEIGHT];
+	int         column[MAXWIDTH];
+	float       wratio, hratio;
+
+	w = r_refdef.vrect.width;
+	h = r_refdef.vrect.height;
+
+	wratio = w / (float) scr_w;
+	hratio = h / (float) scr_h;
+
+	for (v = 0; v < scr_h + AMP2 * 2; v++) {
+		rowptr[v] = (short *) d_viewbuffer +
+			(r_refdef.vrect.y * screenwidth) +
+			(screenwidth * (int) ((float) v * hratio * h /
+								  (h + AMP2 * 2)));
+	}
+
+	for (u = 0; u < scr_w + AMP2 * 2; u++) {
+		column[u] = r_refdef.vrect.x +
+			(int) ((float) u * wratio * w / (w + AMP2 * 2));
+	}
+
+	turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+	dest = (short *) vid.buffer + scr_y * (vid.rowbytes >> 1) + scr_x;
+
+	for (v = 0; v < scr_h; v++, dest += (vid.rowbytes >> 1)) {
+		col = &column[turb[v]];
+		row = &rowptr[v];
+		for (u = 0; u < scr_w; u += 4) {
+			dest[u + 0] = row[turb[u + 0]][col[u + 0]];
+			dest[u + 1] = row[turb[u + 1]][col[u + 1]];
+			dest[u + 2] = row[turb[u + 2]][col[u + 2]];
+			dest[u + 3] = row[turb[u + 3]][col[u + 3]];
+		}
+	}
+}
+
+void
+warp_screen_32 (void)
+{
+	int         w, h;
+	int         u, v;
+	int         scr_x = vr_data.scr_view->xpos;
+	int         scr_y = vr_data.scr_view->ylen;
+	int         scr_w = vr_data.scr_view->xpos;
+	int         scr_h = vr_data.scr_view->ylen;
+	int        *dest;
+	int        *turb;
+	int        *col;
+	int       **row;
+	int        *rowptr[MAXHEIGHT];
+	int         column[MAXWIDTH];
+	float       wratio, hratio;
+
+	w = r_refdef.vrect.width;
+	h = r_refdef.vrect.height;
+
+	wratio = w / (float) scr_w;
+	hratio = h / (float) scr_h;
+
+	for (v = 0; v < scr_h + AMP2 * 2; v++) {
+		rowptr[v] = (int *) d_viewbuffer +
+			(r_refdef.vrect.y * screenwidth) +
+			(screenwidth * (int) ((float) v * hratio * h /
+								  (h + AMP2 * 2)));
+	}
+
+	for (u = 0; u < scr_w + AMP2 * 2; u++) {
+		column[u] = r_refdef.vrect.x +
+			(int) ((float) u * wratio * w / (w + AMP2 * 2));
+	}
+
+	turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+	dest = (int *) vid.buffer + scr_y * (vid.rowbytes >> 2) + scr_x;
+
+	for (v = 0; v < scr_h; v++, dest += (vid.rowbytes >> 2)) {
+		col = &column[turb[v]];
+		row = &rowptr[v];
+		for (u = 0; u < scr_w; u += 4) {
+			dest[u + 0] = row[turb[u + 0]][col[u + 0]];
+			dest[u + 1] = row[turb[u + 1]][col[u + 1]];
+			dest[u + 2] = row[turb[u + 2]][col[u + 2]];
+			dest[u + 3] = row[turb[u + 3]][col[u + 3]];
+		}
+	}
+}
 
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
@@ -103,7 +204,7 @@ D_WarpScreen (void)
 
 #ifndef USE_INTEL_ASM
 void
-D_DrawTurbulent8Span (void)
+draw_turbulent_span_8 (void)
 {
 	int         sturb, tturb;
 
@@ -120,6 +221,41 @@ D_DrawTurbulent8Span (void)
 	} while (--r_turb_spancount > 0);
 }
 #endif // !USE_INTEL_ASM
+
+void
+draw_turbulent_span_16 (void)
+{
+	int         sturb, tturb;
+	short *pdest = (short *) r_turb_pdest;
+
+	do {
+		sturb = ((r_turb_s + r_turb_turb[(r_turb_t >> 16) &
+										 (CYCLE - 1)]) >> 16) & 63;
+		tturb = ((r_turb_t + r_turb_turb[(r_turb_s >> 16) &
+										 (CYCLE - 1)]) >> 16) & 63;
+		*pdest++ = d_8to16table[r_turb_pbase[(tturb << 6) + sturb]];
+		r_turb_s += r_turb_sstep;
+		r_turb_t += r_turb_tstep;
+	} while (--r_turb_spancount > 0);
+	r_turb_pdest = (byte *)pdest;
+}
+
+void
+draw_turbulent_span_32 (void)
+{
+	int         sturb, tturb;
+	int *pdest = (int *) r_turb_pdest;
+	do {
+		sturb = ((r_turb_s + r_turb_turb[(r_turb_t >> 16) &
+										 (CYCLE - 1)]) >> 16) & 63;
+			tturb = ((r_turb_t + r_turb_turb[(r_turb_s >> 16) &
+											 (CYCLE - 1)]) >> 16) & 63;
+			*pdest++ = d_8to24table[r_turb_pbase[(tturb << 6) + sturb]];
+			r_turb_s += r_turb_sstep;
+			r_turb_t += r_turb_tstep;
+	} while (--r_turb_spancount > 0);
+	r_turb_pdest = (byte *)pdest;
+}
 
 void
 Turbulent (espan_t *pspan)
@@ -236,7 +372,7 @@ Turbulent (espan_t *pspan)
 			r_turb_s = r_turb_s & ((CYCLE << 16) - 1);
 			r_turb_t = r_turb_t & ((CYCLE << 16) - 1);
 
-			D_DrawTurbulent8Span ();
+			sw_ctx->draw->draw_turbulent_span ();
 
 			r_turb_s = snext;
 			r_turb_t = tnext;
@@ -248,7 +384,7 @@ Turbulent (espan_t *pspan)
 
 #ifndef USE_INTEL_ASM
 void
-D_DrawSpans8 (espan_t *pspan)
+draw_spans_8 (espan_t *pspan)
 {
 	int         count, spancount;
 	unsigned char *pbase, *pdest;
@@ -372,6 +508,285 @@ D_DrawSpans8 (espan_t *pspan)
 	} while ((pspan = pspan->pnext) != NULL);
 }
 #endif
+
+void
+draw_spans_16 (espan_t *pspan)
+{
+	short      *pbase = (short *) cacheblock, *pdest;
+	int         count;
+	fixed16_t   s, t, snext, tnext, sstep, tstep;
+	float       sdivz, tdivz, zi, z, du, dv;
+	float       sdivz8stepu, tdivz8stepu, zi8stepu;
+
+	sstep = 0;							// keep compiler happy
+	tstep = 0;							// ditto
+
+	sdivz8stepu = d_sdivzstepu * 8;
+	tdivz8stepu = d_tdivzstepu * 8;
+	zi8stepu = d_zistepu * 8 * 65536;
+
+	do {
+		pdest = (short *) d_viewbuffer + (screenwidth * pspan->v) +
+			pspan->u;
+
+		count = pspan->count;
+
+		// calculate the initial s/z, t/z, 1/z, s, and t and clamp
+		du = (float) pspan->u;
+		dv = (float) pspan->v;
+
+		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
+		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+		zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
+		z = d_zitable[(unsigned short) zi];
+
+		s = (int) (sdivz * z) + sadjust;
+		s = bound(0, s, bbextents);
+		t = (int) (tdivz * z) + tadjust;
+		t = bound(0, t, bbextentt);
+
+		while(count >= 8) {
+			count -= 8;
+			// calculate s/z, t/z, zi->fixed s and t at far end of span,
+			// calculate s and t steps across span by shifting
+			sdivz += sdivz8stepu;
+			tdivz += tdivz8stepu;
+			zi += zi8stepu;
+			z = d_zitable[(unsigned short) zi];
+
+			// prevent round-off error on <0 steps from from causing
+			// overstepping & running off the edge of the texture
+			snext = (int) (sdivz * z) + sadjust;
+			snext = bound(8, snext, bbextents);
+			tnext = (int) (tdivz * z) + tadjust;
+			tnext = bound(8, tnext, bbextentt);
+
+			sstep = (snext - s) >> 3;
+			tstep = (tnext - t) >> 3;
+
+			pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[4] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[5] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[6] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[7] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s = snext;t = tnext;
+			pdest += 8;
+		}
+		if (count)
+		{
+			// calculate s/z, t/z, zi->fixed s and t at last pixel in span
+			// (so can't step off polygon), clamp, calculate s and t steps
+			// across span by division, biasing steps low so we don't run
+			// off the texture
+			//countminus1 = (float) (count - 1);
+			sdivz += d_sdivzstepu * count; //minus1;
+			tdivz += d_tdivzstepu * count; //minus1;
+			zi += d_zistepu * 65536.0f * count; //minus1;
+			z = d_zitable[(unsigned short) zi];
+
+			// prevent round-off error on <0 steps from from causing
+			// overstepping & running off the edge of the texture
+			snext = (int) (sdivz * z) + sadjust;
+			snext = bound(count, snext, bbextents);
+			tnext = (int) (tdivz * z) + tadjust;
+			tnext = bound(count, tnext, bbextentt);
+
+			if (count > 1) {
+				sstep = (snext - s) / count; //(count - 1);
+				tstep = (tnext - t) / count; //(count - 1);
+
+				if (count & 4)
+				{
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;t += tstep;
+					pdest += 4;
+				}
+				if (count & 2)
+				{
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest += 2;
+				}
+				if (count & 1)
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			}
+			else
+			{
+				pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			}
+		}
+	} while ((pspan = pspan->pnext) != NULL);
+}
+
+void
+draw_spans_32 (espan_t *pspan)
+{
+	int        *pbase = (int *) cacheblock, *pdest;
+	int         count;
+	fixed16_t   s, t, snext, tnext, sstep, tstep;
+	float       sdivz, tdivz, zi, z, du, dv;
+	float       sdivz8stepu, tdivz8stepu, zi8stepu;
+
+	sstep = 0;							// keep compiler happy
+	tstep = 0;							// ditto
+
+	sdivz8stepu = d_sdivzstepu * 8;
+	tdivz8stepu = d_tdivzstepu * 8;
+	zi8stepu = d_zistepu * 8 * 65536;
+
+	do {
+		pdest = (int *) d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+
+		count = pspan->count;
+
+		// calculate the initial s/z, t/z, 1/z, s, and t and clamp
+		du = (float) pspan->u;
+		dv = (float) pspan->v;
+
+		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
+		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+		zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
+		z = d_zitable[(unsigned short) zi];
+
+		s = (int) (sdivz * z) + sadjust;
+		s = bound(0, s, bbextents);
+		t = (int) (tdivz * z) + tadjust;
+		t = bound(0, t, bbextentt);
+
+		while(count >= 8) {
+			count -= 8;
+			// calculate s/z, t/z, zi->fixed s and t at far end of span,
+			// calculate s and t steps across span by shifting
+			sdivz += sdivz8stepu;
+			tdivz += tdivz8stepu;
+			zi += zi8stepu;
+			z = d_zitable[(unsigned short) zi];
+
+			// prevent round-off error on <0 steps from from causing
+			// overstepping & running off the edge of the texture
+			snext = (int) (sdivz * z) + sadjust;
+			snext = bound(8, snext, bbextents);
+			tnext = (int) (tdivz * z) + tadjust;
+			tnext = bound(8, tnext, bbextentt);
+
+			sstep = (snext - s) >> 3;
+			tstep = (tnext - t) >> 3;
+
+			pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[4] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[5] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[6] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s += sstep;
+			t += tstep;
+			pdest[7] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			s = snext;
+			t = tnext;
+			pdest += 8;
+		}
+		if (count)
+		{
+			// calculate s/z, t/z, zi->fixed s and t at last pixel in span
+			// (so can't step off polygon), clamp, calculate s and t steps
+			// across span by division, biasing steps low so we don't run
+			// off the texture
+			//countminus1 = (float) (count - 1);
+			sdivz += d_sdivzstepu * count; //minus1;
+			tdivz += d_tdivzstepu * count; //minus1;
+			zi += d_zistepu * 65536.0f * count; //minus1;
+			z = d_zitable[(unsigned short) zi];
+
+			// prevent round-off error on <0 steps from from causing
+			// overstepping & running off the edge of the texture
+			snext = (int) (sdivz * z) + sadjust;
+			snext = bound(count, snext, bbextents);
+			tnext = (int) (tdivz * z) + tadjust;
+			tnext = bound(count, tnext, bbextentt);
+
+			if (count > 1) {
+				sstep = (snext - s) / count; //(count - 1);
+				tstep = (tnext - t) / count; //(count - 1);
+
+				if (count & 4)
+				{
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest += 4;
+				}
+				if (count & 2)
+				{
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					s += sstep;
+					t += tstep;
+					pdest += 2;
+				}
+				if (count & 1)
+					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			}
+			else
+			{
+				pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+			}
+		}
+	} while ((pspan = pspan->pnext) != NULL);
+}
 
 #ifndef USE_INTEL_ASM
 void

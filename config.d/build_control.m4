@@ -95,8 +95,8 @@ if test "x$HAVE_X" = xyes; then
 			QF_NEED(iqm, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
-		QF_NEED(vid_render, [sw sw32 gl glsl])
-		QF_NEED(render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
+		QF_NEED(render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -120,8 +120,8 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA desktop/quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl])
-		QF_NEED(render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
+		QF_NEED(render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -175,7 +175,7 @@ if test "x$mingw" = xyes; then
 			QF_NEED(iqm, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
-		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -356,8 +356,8 @@ QF_SUBST(progs_gz)
 QF_PROCESS_NEED_LIST(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
-QF_PROCESS_NEED_LIBS(render, [gl glsl sw sw32 vulkan], [libs/video/renderer])
-QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw sw32 vulkan])
+QF_PROCESS_NEED_LIBS(render, [gl glsl sw vulkan], [libs/video/renderer])
+QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw vulkan])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
@@ -407,7 +407,7 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
-	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw sw32 glsl gl vulkan], [libs/video/renderer])
+	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [libs/console], [client])
 
@@ -422,7 +422,7 @@ if test "x$static_plugins" = xyes; then
 		CDTYPE="$CDTYPE (static)"
 	fi
 else
-	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 glsl gl vulkan], [libs/video/renderer])
+	QF_PROCESS_NEED_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [libs/console], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa], [libs/audio/targets])

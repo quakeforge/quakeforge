@@ -30,10 +30,12 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 
 void
-D_DrawZPoint (void)
+draw_z_point_8 (void)
 {
 	byte       *pdest;
 	short      *pz;
@@ -46,5 +48,37 @@ D_DrawZPoint (void)
 	if (*pz <= izi) {
 		*pz = izi;
 		*pdest = r_zpointdesc.color;
+	}
+}
+
+void
+draw_z_point_16 (void)
+{
+	short      *pz;
+	int         izi;
+
+	pz = d_pzbuffer + (d_zwidth * r_zpointdesc.v) + r_zpointdesc.u;
+	izi = (int) (r_zpointdesc.zi * 0x8000);
+
+	if (*pz <= izi) {
+		*pz = izi;
+		((short *) d_viewbuffer) [d_scantable[r_zpointdesc.v]
+			+ r_zpointdesc.u] = d_8to16table[r_zpointdesc.color];
+	}
+}
+
+void
+draw_z_point_32 (void)
+{
+	short      *pz;
+	int         izi;
+
+	pz = d_pzbuffer + (d_zwidth * r_zpointdesc.v) + r_zpointdesc.u;
+	izi = (int) (r_zpointdesc.zi * 0x8000);
+
+	if (*pz <= izi) {
+		*pz = izi;
+		((int *) d_viewbuffer) [d_scantable[r_zpointdesc.v]
+			+ r_zpointdesc.u] = d_8to24table[r_zpointdesc.color];
 	}
 }
