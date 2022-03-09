@@ -64,7 +64,6 @@ EXTRA_DIST += \
 	include/r_internal.h \
 	include/r_local.h \
 	include/r_scrap.h \
-	include/r_screen.h \
 	include/r_shared.h \
 	include/regex.h \
 	include/rua_internal.h \

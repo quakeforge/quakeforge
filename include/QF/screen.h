@@ -47,5 +47,7 @@ void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 struct tex_s *SCR_SnapScreen (unsigned width, unsigned height);
 
 extern struct cvar_s *hud_fps, *hud_time;
+extern int         scr_copytop;
+extern qboolean    scr_skipupdate;
 
 #endif//__QF_screen_h

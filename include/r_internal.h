@@ -6,7 +6,6 @@
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "r_screen.h"
 #include "r_shared.h"
 
 extern viddef_t 		vid;				// global video state
