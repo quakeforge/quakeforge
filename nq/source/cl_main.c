@@ -81,6 +81,9 @@ cvar_t     *cl_nolerp;
 cvar_t     *hud_fps;
 cvar_t     *hud_time;
 
+static cvar_t *r_ambient;
+static cvar_t *r_drawflat;
+
 int         fps_count;
 
 client_static_t cls;
@@ -182,6 +185,13 @@ CL_InitCvars (void)
 	Cvar_MakeAlias ("show_fps", hud_fps);
 	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
 						 "display the current time");
+
+	//FIXME not hooked up (don't do anything), but should not work in
+	//multi-player
+	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
+						  "Determines the ambient lighting for a level");
+	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
+						   "Toggles the drawing of textures");
 }
 
 void

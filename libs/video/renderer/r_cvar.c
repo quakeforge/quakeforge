@@ -53,13 +53,11 @@ cvar_t     *d_mipscale;
 cvar_t     *r_aliasstats;
 cvar_t     *r_aliastransadj;
 cvar_t     *r_aliastransbase;
-cvar_t     *r_ambient;
 cvar_t     *r_clearcolor;
 cvar_t     *r_dlight_lightmap;
 cvar_t	   *r_dlight_max;
 cvar_t     *r_drawentities;
 cvar_t     *r_drawexplosions;
-cvar_t     *r_drawflat;
 cvar_t     *r_drawviewmodel;
 cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
@@ -230,8 +228,6 @@ R_Init_Cvars (void)
 	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, NULL,
 								 "Determines how much of an alias model is "
 								 "clipped away and how much is viewable");
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
-						  "Determines the ambient lighting for a level");
 	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL,
 							 "This sets the color for areas outside of the "
 							 "current map");
@@ -245,8 +241,6 @@ R_Init_Cvars (void)
 							   "everything but the world)");
 	r_drawexplosions = Cvar_Get ("r_drawexplosions", "1", CVAR_ARCHIVE, NULL,
 								 "Draw explosions.");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
-						   "Toggles the drawing of textures");
 	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, NULL,
 								"Toggles view model drawing (your weapons)");
 	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL,

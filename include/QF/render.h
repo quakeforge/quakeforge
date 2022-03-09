@@ -208,6 +208,7 @@ typedef struct {
 	vec4f_t     viewrotation;
 
 	int			ambientlight;
+	int			drawflat;
 
 	float		fov_x, fov_y;
 } refdef_t;

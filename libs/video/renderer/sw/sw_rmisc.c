@@ -194,10 +194,6 @@ R_SetupFrame (void)
 	vrect_t     vrect;
 	float       w, h;
 
-	// don't allow cheats in multiplayer
-	Cvar_SetValue (r_ambient, 0);
-	Cvar_SetValue (r_drawflat, 0);
-
 	if (r_numsurfs->int_val) {
 		if ((surface_p - surfaces) > r_maxsurfsseen)
 			r_maxsurfsseen = surface_p - surfaces;
@@ -216,8 +212,6 @@ R_SetupFrame (void)
 		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
 					r_numallocatededges, r_maxedgesseen);
 	}
-
-	r_refdef.ambientlight = max (r_ambient->value, 0);
 
 	R_CheckVariables ();
 
