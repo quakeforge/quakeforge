@@ -152,6 +152,7 @@ VID_Init_Cvars (void)
 	Win_Vulkan_Init_Cvars ();
 #endif
 	Win_GL_Init_Cvars ();
+	Win_SW_Init_Cvars ();
 }
 
 void
