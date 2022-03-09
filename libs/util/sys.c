@@ -646,6 +646,39 @@ Sys_PageIn (void *ptr, size_t size)
 //#endif
 }
 
+#if defined(_WIN32) && !defined(_WIN64)
+// this is a hack to make memory allocations 16-byte aligned on 32-bit
+// systems (in particular for this case, windows) as vectors and
+// matrices require 16-byte alignment but system malloc (etc) provide only
+// 8-byte alignment.
+void *__cdecl
+calloc (size_t nume, size_t sizee)
+{
+	size_t size = nume * sizee;
+	void *mem = _aligned_malloc (size, 16);
+	memset (mem, 0, size);
+	return mem;
+}
+
+void __cdecl
+free (void *mem)
+{
+	_aligned_free (mem);
+}
+
+void *__cdecl
+malloc (size_t size)
+{
+	return _aligned_malloc (size, 16);
+}
+
+void *__cdecl
+realloc (void *mem, size_t size)
+{
+	return _aligned_realloc (mem, size, 16);
+}
+#endif
+
 VISIBLE size_t
 Sys_PageSize (void)
 {
