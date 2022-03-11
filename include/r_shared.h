@@ -72,7 +72,6 @@ extern byte color_black[4];
 extern	vec3_t	vup, base_vup;
 extern	vec3_t	vpn, base_vpn;
 extern	vec3_t	vright, base_vright;
-extern	struct entity_s		*currententity;
 
 #define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES

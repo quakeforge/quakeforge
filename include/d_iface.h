@@ -200,8 +200,8 @@ typedef struct
 } drawsurf_t;
 
 extern drawsurf_t	r_drawsurf;
-
-void R_DrawSurface (void);
+struct transform_s;
+void R_DrawSurface (struct transform_s *transform);
 void R_GenTile (msurface_t *psurf, void *pdest);
 
 // !!! if this is changed, it must be changed in d_iface.h too !!!

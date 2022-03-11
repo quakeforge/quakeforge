@@ -73,7 +73,7 @@ static unsigned int blocklights[34 * 34];	//FIXME make dynamic
 
 
 static void
-R_AddDynamicLights (void)
+R_AddDynamicLights (transform_t *transform)
 {
 	msurface_t *surf;
 	unsigned int lnum;
@@ -91,9 +91,9 @@ R_AddDynamicLights (void)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
-	if (currententity->transform) {
+	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -144,7 +144,7 @@ R_AddDynamicLights (void)
 	Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
 static void
-R_BuildLightMap (void)
+R_BuildLightMap (transform_t *transform)
 {
 	int         smax, tmax;
 	int         t;
@@ -180,7 +180,7 @@ R_BuildLightMap (void)
 		}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights ();
+		R_AddDynamicLights (transform);
 
 	// bound, invert, and shift
 	for (i = 0; i < size; i++) {
@@ -194,7 +194,7 @@ R_BuildLightMap (void)
 }
 
 void
-R_DrawSurface (void)
+R_DrawSurface (transform_t *transform)
 {
 	byte       *basetptr;
 	int         smax, tmax, twidth;
@@ -206,7 +206,7 @@ R_DrawSurface (void)
 	texture_t  *mt;
 
 	// calculate the lightings
-	R_BuildLightMap ();
+	R_BuildLightMap (transform);
 
 	surfrowbytes = r_drawsurf.rowbytes;
 

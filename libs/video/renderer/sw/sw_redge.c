@@ -85,8 +85,6 @@ R_DrawCulledPolys (void)
 	surf_t     *s;
 	msurface_t *pface;
 
-	currententity = &r_worldentity;
-
 	if (r_worldpolysbacktofront) {
 		for (s = surface_p - 1; s > &surfaces[1]; s--) {
 			if (!s->spans)
@@ -94,7 +92,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				R_RenderPoly (s->entity, pface, 15);
 			}
 		}
 	} else {
@@ -104,7 +102,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				R_RenderPoly (s->entity, pface, 15);
 			}
 		}
 	}

@@ -495,7 +495,7 @@ R_DrawViewModel (void)
 }
 
 static int
-R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
+R_BmodelCheckBBox (entity_t *ent, model_t *clmodel, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
@@ -504,7 +504,7 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 
 	clipflags = 0;
 
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (ent->transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
 			d = DotProduct (mat[3], view_clipplanes[i].normal);
@@ -565,7 +565,6 @@ R_DrawBrushEntitiesOnList (void)
 
 	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 		entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
-		currententity = ent;
 
 		VectorCopy (Transform_GetWorldPosition (ent->transform), origin);
 		clmodel = ent->renderer.model;
@@ -577,7 +576,7 @@ R_DrawBrushEntitiesOnList (void)
 			minmaxs[3 + j] = origin[j] + clmodel->maxs[j];
 		}
 
-		clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
+		clipflags = R_BmodelCheckBBox (ent, clmodel, minmaxs);
 
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
 			mod_brush_t *brush = &clmodel->brush;
@@ -587,7 +586,7 @@ R_DrawBrushEntitiesOnList (void)
 			r_pcurrentvertbase = brush->vertexes;
 
 			// FIXME: stop transforming twice
-			R_RotateBmodel ();
+			R_RotateBmodel (ent->transform);
 
 			// calculate dynamic lighting for bmodel if it's not an
 			// instanced model
@@ -611,7 +610,7 @@ R_DrawBrushEntitiesOnList (void)
 			// Z-buffering is on at this point, so no clipping to the
 			// world tree is needed, just frustum clipping
 			if (r_drawpolys | r_drawculledpolys) {
-				R_ZDrawSubmodelPolys (clmodel);
+				R_ZDrawSubmodelPolys (ent, clmodel);
 			} else {
 				if (ent->visibility.topnode) {
 					mnode_t    *topnode = ent->visibility.topnode;
@@ -620,12 +619,12 @@ R_DrawBrushEntitiesOnList (void)
 						// not a leaf; has to be clipped to the world
 						// BSP
 						r_clipflags = clipflags;
-						R_DrawSolidClippedSubmodelPolygons (clmodel);
+						R_DrawSolidClippedSubmodelPolygons (ent, clmodel, topnode);
 					} else {
 						// falls entirely in one leaf, so we just put
 						// all the edges in the edge list and let 1/z
 						// sorting handle drawing order
-						R_DrawSubmodelPolygons (clmodel, clipflags);
+						R_DrawSubmodelPolygons (ent, clmodel, clipflags, topnode);
 					}
 				}
 			}

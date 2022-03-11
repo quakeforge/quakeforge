@@ -65,14 +65,12 @@ vec3_t      modelorg;			// modelorg is the viewpoint relative to
 vec3_t      base_modelorg;
 vec3_t      r_entorigin;		// the currently rendering entity in world
 								// coordinates
-entity_t   *currententity;
 entity_t    r_worldentity;
 
 // view origin
 vec3_t      vup, base_vup;
 vec3_t      vpn, base_vpn;
 vec3_t      vright, base_vright;
-vec3_t      r_origin;
 
 // screen size info
 refdef_t    r_refdef;

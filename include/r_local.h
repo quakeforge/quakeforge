@@ -144,9 +144,9 @@ void R_SetFrustum (void);
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
 void R_DrawSprite (entity_t *ent);
-void R_RenderFace (msurface_t *fa, int clipflags);
-void R_RenderPoly (msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
+void R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags);
+void R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags);
+void R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
@@ -154,8 +154,8 @@ texture_t *R_TextureAnimation (const entity_t *entity, msurface_t *surf) __attri
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
+void R_DrawSubmodelPolygons (entity_t *ent, model_t *pmodel, int clipflags, struct mnode_s *topnode);
+void R_DrawSolidClippedSubmodelPolygons (entity_t *ent, model_t *pmodel, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
@@ -188,7 +188,8 @@ extern void R_Surf8End (void);
 extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 
-extern void R_RotateBmodel (void);
+struct transform_s;
+extern void R_RotateBmodel (struct transform_s *transform);
 
 extern int	c_faceclip;
 extern int	r_polycount;
@@ -222,7 +223,7 @@ typedef struct btofpoly_s {
 extern int			numbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (model_t *clmodel);
+void	R_ZDrawSubmodelPolys (entity_t *ent, model_t *clmodel);
 
 // Alias models ===========================================
 

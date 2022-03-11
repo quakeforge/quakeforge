@@ -91,7 +91,9 @@ void D_DrawSkyScans (struct espan_s *pspan);
 
 void R_ShowSubDiv (void);
 extern void (*prealspandrawer)(void);
-surfcache_t	*D_CacheSurface (msurface_t *surface, int miplevel);
+struct entity_s;
+surfcache_t	*D_CacheSurface (struct entity_s *ent,
+							 msurface_t *surface, int miplevel);
 
 int D_MipLevelForScale (float scale) __attribute__((pure));
 

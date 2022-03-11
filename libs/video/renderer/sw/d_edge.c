@@ -153,7 +153,6 @@ D_DrawSurfaces (void)
 	vec3_t      world_transformed_modelorg;
 	vec3_t      local_modelorg;
 
-	currententity = &r_worldentity;
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
@@ -207,14 +206,13 @@ D_DrawSurfaces (void)
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in
-												// to R_RotateBmodel ()
+					transform_t *transform = s->entity->transform;
+					transform = s->entity->transform;
 					VectorSubtract (r_refdef.viewposition,
-						Transform_GetWorldPosition (currententity->transform),
-									local_modelorg);
+						Transform_GetWorldPosition (transform), local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 
-					R_RotateBmodel ();	// FIXME: don't mess with the
+					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in
 				}
 
@@ -228,7 +226,6 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
 
-					currententity = &r_worldentity;
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
 					VectorCopy (base_vpn, vpn);
@@ -241,14 +238,12 @@ D_DrawSurfaces (void)
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in
-												// to R_RotateBmodel ()
+					transform_t *transform = s->entity->transform;
 					VectorSubtract (r_refdef.viewposition,
-						Transform_GetWorldPosition (currententity->transform),
-									local_modelorg);
+						Transform_GetWorldPosition (transform), local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 
-					R_RotateBmodel ();	// FIXME: don't mess with the
+					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in
 				}
 
@@ -257,7 +252,7 @@ D_DrawSurfaces (void)
 											   * pface->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (pface, miplevel);
+				pcurrentcache = D_CacheSurface (s->entity, pface, miplevel);
 
 				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
@@ -280,7 +275,6 @@ D_DrawSurfaces (void)
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
 					R_TransformFrustum ();
-					currententity = &r_worldentity;
 				}
 			}
 		}
