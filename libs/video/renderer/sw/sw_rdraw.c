@@ -505,7 +505,6 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	surface_p->d_ziorigin = p_normal[2] * distinv -
 		xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-//JDC   VectorCopy (r_worldmodelorg, surface_p->modelorg);
 	surface_p++;
 }
 
@@ -605,7 +604,6 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	surface_p->d_ziorigin = p_normal[2] * distinv -
 		xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-//JDC   VectorCopy (r_worldmodelorg, surface_p->modelorg);
 	surface_p++;
 }
 

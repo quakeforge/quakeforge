@@ -209,7 +209,7 @@ D_DrawSurfaces (void)
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in
 												// to R_RotateBmodel ()
-					VectorSubtract (r_origin,
+					VectorSubtract (r_refdef.viewposition,
 						Transform_GetWorldPosition (currententity->transform),
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
@@ -243,7 +243,7 @@ D_DrawSurfaces (void)
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in
 												// to R_RotateBmodel ()
-					VectorSubtract (r_origin,
+					VectorSubtract (r_refdef.viewposition,
 						Transform_GetWorldPosition (currententity->transform),
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);

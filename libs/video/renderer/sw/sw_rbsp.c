@@ -358,10 +358,11 @@ get_side (mnode_t *node)
 {
 	// find which side of the node we are on
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.viewposition;
 
 	if (plane->type < 3)
-		return (modelorg[plane->type] - plane->dist) < 0;
-	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static void
@@ -515,7 +516,6 @@ R_RenderWorld (void)
 	pbtofpolys = btofpolys;
 
 	currententity = &r_worldentity;
-	VectorCopy (r_origin, modelorg);
 	brush = &currententity->renderer.model->brush;
 	r_pcurrentvertbase = brush->vertexes;
 

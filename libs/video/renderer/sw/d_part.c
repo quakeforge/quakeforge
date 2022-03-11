@@ -47,7 +47,7 @@ D_DrawParticle (particle_t *pparticle)
 	int         i, izi, pix, count, u, v;
 
 	// transform point
-	VectorSubtract (pparticle->pos, r_origin, local);
+	VectorSubtract (pparticle->pos, r_porigin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
 	transformed[1] = DotProduct (local, r_pup);

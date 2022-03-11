@@ -49,12 +49,15 @@
 #include "compat.h"
 #include "r_internal.h"
 
+vec3_t          r_pright, r_pup, r_ppn, r_porigin;
+
 void
 R_DrawParticles (void)
 {
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
+	VectorCopy (r_refdef.viewposition, r_porigin);
 
 	R_RunParticles (vr_data.frametime);
 

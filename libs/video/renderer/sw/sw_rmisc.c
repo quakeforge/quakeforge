@@ -146,17 +146,6 @@ TransformVector (const vec3_t in, vec3_t out)
 }
 #endif
 
-void
-R_TransformPlane (plane_t *p, float *normal, float *dist)
-{
-	float       d;
-
-	d = DotProduct (r_origin, p->normal);
-	*dist = p->dist - d;
-// TODO: when we have rotating entities, this will need to use the view matrix
-	TransformVector (p->normal, normal);
-}
-
 static void
 R_SetUpFrustumIndexes (void)
 {
@@ -195,15 +184,16 @@ R_SetupFrame (void)
 
 	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.viewposition, modelorg);
-	VectorCopy (r_refdef.viewposition, r_origin);
 
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+	vec4f_t     position = r_refdef.viewposition;
+	vec4f_t     rotation = r_refdef.viewrotation;
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
+	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
 
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=

@@ -117,7 +117,6 @@ void R_RenderWorld (void);
 
 extern	plane_t	screenedge[4];
 
-extern	vec3_t	r_origin;
 extern	vec3_t	r_entorigin;
 
 extern	int		r_visframecount;
@@ -144,11 +143,10 @@ void R_SetFrustum (void);
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
-void R_DrawSprite (void);
+void R_DrawSprite (const vec3_t relvieworg);
 void R_RenderFace (msurface_t *fa, int clipflags);
 void R_RenderPoly (msurface_t *fa, int clipflags);
 void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
-void R_TransformPlane (plane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
@@ -162,8 +160,8 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (alight_t *plighting);
-void R_IQMDrawModel (alight_t *plighting);
+void R_AliasDrawModel (const vec3_t relvieworg, alight_t *plighting);
+void R_IQMDrawModel (const vec3_t relvieworg, alight_t *plighting);
 maliasskindesc_t *R_AliasGetSkindesc (animation_t *animation, int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (animation_t *animation, aliashdr_t *hdr);
 float R_AliasGetLerpedFrames (animation_t *animation, aliashdr_t *hdr);
@@ -239,7 +237,7 @@ extern auxvert_t		*pauxverts;
 extern float            ziscale;
 extern float            aliastransform[3][4];
 
-qboolean R_AliasCheckBBox (void);
+qboolean R_AliasCheckBBox (const vec3_t relvieworg);
 
 // turbulence stuff =======================================
 
@@ -330,7 +328,7 @@ void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
 						  finalvert_t *out);
 void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 
-void R_AliasSetUpTransform (int trivial_accept);
+void R_AliasSetUpTransform (const vec3_t relvieworg, int trivial_accept);
 void R_AliasTransformVector (vec3_t in, vec3_t out);
 void R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 								stvert_t *pstverts);

@@ -83,7 +83,7 @@ static aedge_t aedges[12] = {
 };
 
 qboolean
-R_AliasCheckBBox (void)
+R_AliasCheckBBox (const vec3_t relvieworg)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -102,7 +102,7 @@ R_AliasCheckBBox (void)
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
-	R_AliasSetUpTransform (0);
+	R_AliasSetUpTransform (relvieworg, 0);
 
 	// construct the base bounding box for this frame
 	frame = currententity->animation.frame;
@@ -351,7 +351,7 @@ R_AliasPreparePoints (void)
 }
 
 void
-R_AliasSetUpTransform (int trivial_accept)
+R_AliasSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4], t2matrix[3][4];
@@ -380,9 +380,9 @@ R_AliasSetUpTransform (int trivial_accept)
 		t2matrix[i][2] = alias_up[i];
 	}
 
-	t2matrix[0][3] = -modelorg[0];
-	t2matrix[1][3] = -modelorg[1];
-	t2matrix[2][3] = -modelorg[2];
+	t2matrix[0][3] = -relvieworg[0];
+	t2matrix[1][3] = -relvieworg[1];
+	t2matrix[2][3] = -relvieworg[2];
 
 // FIXME: can do more efficiently than full concatenation
 	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
@@ -621,7 +621,7 @@ R_AliasSetupFrame (entity_t *ent)
 
 
 void
-R_AliasDrawModel (alight_t *plighting)
+R_AliasDrawModel (const vec3_t relvieworg, alight_t *plighting)
 {
 	entity_t    *ent = currententity;
 	int          size;
@@ -646,7 +646,7 @@ R_AliasDrawModel (alight_t *plighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
-	R_AliasSetUpTransform (ent->visibility.trivial_accept);
+	R_AliasSetUpTransform (relvieworg, ent->visibility.trivial_accept);
 	R_AliasSetupLighting (plighting);
 	R_AliasSetupFrame (ent);
 

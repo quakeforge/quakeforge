@@ -343,8 +343,9 @@ R_ViewChanged (void)
 static inline void
 draw_sprite_entity (entity_t *ent)
 {
-	VectorSubtract (r_origin, r_entorigin, modelorg);
-	R_DrawSprite ();
+	vec3_t      org;
+	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
+	R_DrawSprite (org);
 }
 
 static inline void
@@ -389,22 +390,24 @@ setup_lighting (alight_t *lighting)
 static inline void
 draw_alias_entity (entity_t *ent)
 {
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+	vec3_t      org;
+	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
 
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
 	currententity->visibility.trivial_accept = 0;	//FIXME
-	if (R_AliasCheckBBox ()) {
+	if (R_AliasCheckBBox (org)) {
 		alight_t    lighting;
 		setup_lighting (&lighting);
-		R_AliasDrawModel (&lighting);
+		R_AliasDrawModel (org, &lighting);
 	}
 }
 
 static inline void
 draw_iqm_entity (entity_t *ent)
 {
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+	vec3_t      org;
+	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
 
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
@@ -412,7 +415,7 @@ draw_iqm_entity (entity_t *ent)
 
 	alight_t    lighting;
 	setup_lighting (&lighting);
-	R_IQMDrawModel (&lighting);
+	R_IQMDrawModel (org, &lighting);
 }
 
 static void
@@ -461,7 +464,6 @@ R_DrawViewModel (void)
 
 	VectorCopy (Transform_GetWorldPosition (currententity->transform),
 				r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	VectorCopy (vup, viewlightvec);
 	VectorNegate (viewlightvec, viewlightvec);
@@ -499,7 +501,9 @@ R_DrawViewModel (void)
 
 	r_viewlighting.plightvec = lightvec;
 
-	R_AliasDrawModel (&r_viewlighting);
+	vec3_t      org;
+	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
+	R_AliasDrawModel (org, &r_viewlighting);
 }
 
 static int
@@ -558,11 +562,10 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 }
 
 static void
-R_DrawBEntitiesOnList (void)
+R_DrawBrushEntitiesOnList (void)
 {
 	int         j, clipflags;
 	unsigned int k;
-	vec3_t      oldorigin;
 	vec3_t      origin;
 	model_t    *clmodel;
 	float       minmaxs[6];
@@ -570,7 +573,6 @@ R_DrawBEntitiesOnList (void)
 	if (!r_drawentities->int_val)
 		return;
 
-	VectorCopy (modelorg, oldorigin);
 	insubmodel = true;
 
 	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
@@ -592,7 +594,7 @@ R_DrawBEntitiesOnList (void)
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
 			mod_brush_t *brush = &clmodel->brush;
 			VectorCopy (origin, r_entorigin);
-			VectorSubtract (r_origin, r_entorigin, modelorg);
+			VectorSubtract (r_refdef.viewposition, r_entorigin, modelorg);
 
 			// FIXME: is this needed?
 			VectorCopy (modelorg, r_worldmodelorg);
@@ -648,7 +650,6 @@ R_DrawBEntitiesOnList (void)
 			VectorCopy (base_vup, vup);
 			VectorCopy (base_vright, vright);
 			VectorCopy (base_modelorg, modelorg);
-			VectorCopy (oldorigin, modelorg);
 			R_TransformFrustum ();
 		}
 	}
@@ -723,7 +724,7 @@ R_EdgeDrawing (void)
 		db_time1 = rw_time2;
 	}
 
-	R_DrawBEntitiesOnList ();
+	R_DrawBrushEntitiesOnList ();
 
 	if (r_dspeeds->int_val) {
 		db_time2 = Sys_DoubleTime ();

@@ -66,13 +66,13 @@ C(D_DrawParticle):
 // FIXME: better FP overlap in general here
 
 // transform point
-//	VectorSubtract (p->org, r_origin, local);
-	flds	C(r_origin)
+//	VectorSubtract (p->org, r_porigin, local);
+	flds	C(r_porigin)
 	fsubrs	pt_pos(%edi)
 	flds	pt_pos+4(%edi)
-	fsubs	C(r_origin)+4
+	fsubs	C(r_porigin)+4
 	flds	pt_pos+8(%edi)
-	fsubs	C(r_origin)+8
+	fsubs	C(r_porigin)+8
 	fxch	%st(2)			// local[0] | local[1] | local[2]
 
 //	transformed[2] = DotProduct(local, r_ppn);		

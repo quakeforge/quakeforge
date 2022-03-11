@@ -38,8 +38,6 @@
 
 psystem_t   r_psystem;	//FIXME singleton
 
-vec3_t          r_pright, r_pup, r_ppn;
-
 /*
   R_MaxParticlesCheck
 

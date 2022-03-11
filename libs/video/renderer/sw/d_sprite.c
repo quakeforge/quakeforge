@@ -323,7 +323,7 @@ D_SpriteScanRightEdge (void)
 }
 
 static void
-D_SpriteCalculateGradients (void)
+D_SpriteCalculateGradients (const vec3_t relvieworg)
 {
 	vec3_t      p_normal, p_saxis, p_taxis, p_temp1;
 	float       distinv;
@@ -333,7 +333,7 @@ D_SpriteCalculateGradients (void)
 	TransformVector (r_spritedesc.vup, p_taxis);
 	VectorNegate (p_taxis, p_taxis);
 
-	distinv = 1.0 / (-DotProduct (modelorg, r_spritedesc.vpn));
+	distinv = 1.0 / (-DotProduct (relvieworg, r_spritedesc.vpn));
 
 	d_sdivzstepu = p_saxis[0] * xscaleinv;
 	d_tdivzstepu = p_taxis[0] * xscaleinv;
@@ -351,7 +351,7 @@ D_SpriteCalculateGradients (void)
 	d_ziorigin = p_normal[2] * distinv - xcenter * d_zistepu -
 		ycenter * d_zistepv;
 
-	TransformVector (modelorg, p_temp1);
+	TransformVector (relvieworg, p_temp1);
 
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
 		(-(cachewidth >> 1) << 16);
@@ -364,7 +364,7 @@ D_SpriteCalculateGradients (void)
 }
 
 void
-D_DrawSprite (void)
+D_DrawSprite (const vec3_t relvieworg)
 {
 	int         i, nump;
 	float       ymin, ymax;
@@ -409,7 +409,7 @@ D_DrawSprite (void)
 	pverts = r_spritedesc.pverts;
 	pverts[nump] = pverts[0];
 
-	D_SpriteCalculateGradients ();
+	D_SpriteCalculateGradients (relvieworg);
 	D_SpriteScanLeftEdge ();
 	D_SpriteScanRightEdge ();
 	D_SpriteDrawSpans (sprite_spans);

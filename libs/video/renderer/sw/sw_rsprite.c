@@ -52,16 +52,17 @@ spritedesc_t r_spritedesc;
 
 
 static void
-R_RotateSprite (float beamlength)
+R_RotateSprite (const vec3_t relvieworg, float beamlength, vec3_t org)
 {
 	vec3_t      vec;
 
+	VectorCopy (relvieworg, org);
 	if (beamlength == 0.0)
 		return;
 
 	VectorScale (r_spritedesc.vpn, -beamlength, vec);
 	VectorAdd (r_entorigin, vec, r_entorigin);
-	VectorSubtract (modelorg, vec, modelorg);
+	VectorSubtract (relvieworg, vec, org);
 }
 
 
@@ -147,7 +148,7 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 
 static void
-R_SetupAndDrawSprite (void)
+R_SetupAndDrawSprite (const vec3_t relvieworg)
 {
 	int         i, nump;
 	float       dot, scale, *pv;
@@ -155,7 +156,7 @@ R_SetupAndDrawSprite (void)
 	vec3_t      left, up, right, down, transformed, local;
 	emitpoint_t outverts[MAXWORKINGVERTS + 1], *pout;
 
-	dot = DotProduct (r_spritedesc.vpn, modelorg);
+	dot = DotProduct (r_spritedesc.vpn, relvieworg);
 
 	// backface cull
 	if (dot >= 0)
@@ -210,7 +211,7 @@ R_SetupAndDrawSprite (void)
 	r_spritedesc.nearzi = -999999;
 
 	for (i = 0; i < nump; i++) {
-		VectorSubtract (pv, r_origin, local);
+		VectorSubtract (pv, r_refdef.viewposition, local);
 		TransformVector (local, transformed);
 
 		if (transformed[2] < NEAR_CLIP)
@@ -236,11 +237,11 @@ R_SetupAndDrawSprite (void)
 	// draw it
 	r_spritedesc.nump = nump;
 	r_spritedesc.pverts = outverts;
-	D_DrawSprite ();
+	D_DrawSprite (relvieworg);
 }
 
 void
-R_DrawSprite (void)
+R_DrawSprite (const vec3_t relvieworg)
 {
 	msprite_t  *sprite = currententity->renderer.model->cache.data;
 
@@ -250,7 +251,7 @@ R_DrawSprite (void)
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-	if (!R_BillboardFrame (currententity, sprite->type, modelorg,
+	if (!R_BillboardFrame (currententity, sprite->type, relvieworg,
 						   r_spritedesc.vup,
 						   r_spritedesc.vright,
 						   r_spritedesc.vpn)) {
@@ -258,7 +259,8 @@ R_DrawSprite (void)
 		return;
 	}
 
-	R_RotateSprite (sprite->beamlength);
+	vec3_t      org;
+	R_RotateSprite (relvieworg, sprite->beamlength, org);
 
-	R_SetupAndDrawSprite ();
+	R_SetupAndDrawSprite (org);
 }

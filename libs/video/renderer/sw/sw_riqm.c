@@ -242,7 +242,7 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 }
 
 static void
-R_IQMSetUpTransform (int trivial_accept)
+R_IQMSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
@@ -263,9 +263,9 @@ R_IQMSetUpTransform (int trivial_accept)
 		rotationmatrix[i][2] = up[i];
 	}
 
-	rotationmatrix[0][3] = -modelorg[0];
-	rotationmatrix[1][3] = -modelorg[1];
-	rotationmatrix[2][3] = -modelorg[2];
+	rotationmatrix[0][3] = -relvieworg[0];
+	rotationmatrix[1][3] = -relvieworg[1];
+	rotationmatrix[2][3] = -relvieworg[2];
 
 // TODO: should be global, set when vright, etc., set
 	VectorCopy (vright, viewmatrix[0]);
@@ -297,7 +297,7 @@ R_IQMSetUpTransform (int trivial_accept)
 }
 
 void
-R_IQMDrawModel (alight_t *plighting)
+R_IQMDrawModel (const vec3_t relvieworg, alight_t *plighting)
 {
 	entity_t   *ent = currententity;
 	model_t    *model = ent->renderer.model;
@@ -320,7 +320,7 @@ R_IQMDrawModel (alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	R_IQMSetUpTransform (ent->visibility.trivial_accept);
+	R_IQMSetUpTransform (relvieworg, ent->visibility.trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
 	r_affinetridesc.drawtype = (ent->visibility.trivial_accept == 3) &&

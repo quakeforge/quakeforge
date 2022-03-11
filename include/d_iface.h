@@ -140,7 +140,7 @@ extern int		d_con_indirect;	// if 0, Quake will draw console directly
 								//  draw console via D_DrawRect. Must be
 								//  defined by driver
 
-extern vec3_t	r_pright, r_pup, r_ppn;
+extern vec3_t	r_pright, r_pup, r_ppn, r_porigin;
 
 
 void D_Aff8Patch (void *pcolormap);
@@ -151,7 +151,7 @@ void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
 void D_PolysetSetEdgeTable (void);
 void D_DrawParticle (particle_t *pparticle);
 void D_DrawPoly (void);
-void D_DrawSprite (void);
+void D_DrawSprite (const vec3_t relvieworg);
 void D_DrawSurfaces (void);
 void D_DrawZPoint (void);
 void D_Init (void);
