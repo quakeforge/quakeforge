@@ -343,13 +343,11 @@ R_ViewChanged (void)
 static inline void
 draw_sprite_entity (entity_t *ent)
 {
-	vec3_t      org;
-	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
-	R_DrawSprite (org);
+	R_DrawSprite (ent);
 }
 
 static inline void
-setup_lighting (alight_t *lighting)
+setup_lighting (entity_t *ent, alight_t *lighting)
 {
 	float       minlight = 0;
 	int         j;
@@ -358,8 +356,7 @@ setup_lighting (alight_t *lighting)
 	float       add;
 	float       lightvec[3] = { -1, 0, 0 };
 
-	minlight = max (currententity->renderer.model->min_light,
-					currententity->renderer.min_light);
+	minlight = max (ent->renderer.model->min_light, ent->renderer.min_light);
 
 	// 128 instead of 255 due to clamping below
 	j = max (R_LightPoint (&r_worldentity.renderer.model->brush, r_entorigin),
@@ -390,32 +387,26 @@ setup_lighting (alight_t *lighting)
 static inline void
 draw_alias_entity (entity_t *ent)
 {
-	vec3_t      org;
-	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
-
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	currententity->visibility.trivial_accept = 0;	//FIXME
-	if (R_AliasCheckBBox (org)) {
+	ent->visibility.trivial_accept = 0;	//FIXME
+	if (R_AliasCheckBBox (ent)) {
 		alight_t    lighting;
-		setup_lighting (&lighting);
-		R_AliasDrawModel (org, &lighting);
+		setup_lighting (ent, &lighting);
+		R_AliasDrawModel (ent, &lighting);
 	}
 }
 
 static inline void
 draw_iqm_entity (entity_t *ent)
 {
-	vec3_t      org;
-	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
-
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	currententity->visibility.trivial_accept = 0;	//FIXME
+	ent->visibility.trivial_accept = 0;	//FIXME
 
 	alight_t    lighting;
-	setup_lighting (&lighting);
-	R_IQMDrawModel (org, &lighting);
+	setup_lighting (ent, &lighting);
+	R_IQMDrawModel (ent, &lighting);
 }
 
 static void
@@ -431,7 +422,6 @@ R_DrawEntitiesOnList (void)
 			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
 			VectorCopy (Transform_GetWorldPosition (ent->transform), \
 						r_entorigin); \
-			currententity = ent; \
 			draw_##type_name##_entity (ent); \
 		} \
 	} while (0)
@@ -452,24 +442,24 @@ R_DrawViewModel (void)
 	float       add;
 	float       minlight;
 	dlight_t   *dl;
+	entity_t   *viewent;
 
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val)
 		return;
 
-	currententity = vr_data.view_model;
-	if (!currententity->renderer.model)
+	viewent = vr_data.view_model;
+	if (!viewent->renderer.model)
 		return;
 
-	VectorCopy (Transform_GetWorldPosition (currententity->transform),
-				r_entorigin);
+	VectorCopy (Transform_GetWorldPosition (viewent->transform), r_entorigin);
 
 	VectorCopy (vup, viewlightvec);
 	VectorNegate (viewlightvec, viewlightvec);
 
-	minlight = max (currententity->renderer.min_light,
-					currententity->renderer.model->min_light);
+	minlight = max (viewent->renderer.min_light,
+					viewent->renderer.model->min_light);
 
 	j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
 						   r_entorigin), minlight * 128);
@@ -501,9 +491,7 @@ R_DrawViewModel (void)
 
 	r_viewlighting.plightvec = lightvec;
 
-	vec3_t      org;
-	VectorSubtract (r_refdef.viewposition, r_entorigin, org);
-	R_AliasDrawModel (org, &r_viewlighting);
+	R_AliasDrawModel (viewent, &r_viewlighting);
 }
 
 static int
@@ -596,8 +584,6 @@ R_DrawBrushEntitiesOnList (void)
 			VectorCopy (origin, r_entorigin);
 			VectorSubtract (r_refdef.viewposition, r_entorigin, modelorg);
 
-			// FIXME: is this needed?
-			VectorCopy (modelorg, r_worldmodelorg);
 			r_pcurrentvertbase = brush->vertexes;
 
 			// FIXME: stop transforming twice

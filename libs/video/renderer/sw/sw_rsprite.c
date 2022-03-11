@@ -241,17 +241,19 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 }
 
 void
-R_DrawSprite (const vec3_t relvieworg)
+R_DrawSprite (entity_t *ent)
 {
-	msprite_t  *sprite = currententity->renderer.model->cache.data;
+	msprite_t  *sprite = ent->renderer.model->cache.data;
+	vec3_t      relvieworg;
 
-	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite,
-												  &currententity->animation);
+	VectorSubtract (r_refdef.viewposition, r_entorigin, relvieworg);
+
+	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, &ent->animation);
 
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-	if (!R_BillboardFrame (currententity, sprite->type, relvieworg,
+	if (!R_BillboardFrame (ent, sprite->type, relvieworg,
 						   r_spritedesc.vup,
 						   r_spritedesc.vright,
 						   r_spritedesc.vpn)) {

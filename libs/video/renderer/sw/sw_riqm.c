@@ -242,7 +242,7 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 }
 
 static void
-R_IQMSetUpTransform (const vec3_t relvieworg, int trivial_accept)
+R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
@@ -250,7 +250,7 @@ R_IQMSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 	vec3_t      forward, left, up;
 
 	mat4f_t     mat;
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (ent->transform, mat);
 	VectorCopy (mat[0], forward);
 	VectorCopy (mat[1], left);
 	VectorCopy (mat[2], up);
@@ -263,9 +263,9 @@ R_IQMSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 		rotationmatrix[i][2] = up[i];
 	}
 
-	rotationmatrix[0][3] = -relvieworg[0];
-	rotationmatrix[1][3] = -relvieworg[1];
-	rotationmatrix[2][3] = -relvieworg[2];
+	rotationmatrix[0][3] = r_entorigin[0] - r_refdef.viewposition[0];
+	rotationmatrix[1][3] = r_entorigin[1] - r_refdef.viewposition[1];
+	rotationmatrix[2][3] = r_entorigin[2] - r_refdef.viewposition[2];
 
 // TODO: should be global, set when vright, etc., set
 	VectorCopy (vright, viewmatrix[0]);
@@ -297,9 +297,8 @@ R_IQMSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 }
 
 void
-R_IQMDrawModel (const vec3_t relvieworg, alight_t *plighting)
+R_IQMDrawModel (entity_t *ent, alight_t *plighting)
 {
-	entity_t   *ent = currententity;
 	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -320,7 +319,7 @@ R_IQMDrawModel (const vec3_t relvieworg, alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	R_IQMSetUpTransform (relvieworg, ent->visibility.trivial_accept);
+	R_IQMSetUpTransform (ent, ent->visibility.trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
 	r_affinetridesc.drawtype = (ent->visibility.trivial_accept == 3) &&

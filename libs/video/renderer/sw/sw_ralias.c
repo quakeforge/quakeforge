@@ -82,8 +82,10 @@ static aedge_t aedges[12] = {
 	{0, 5}, {1, 4}, {2, 7}, {3, 6}
 };
 
+static void R_AliasSetUpTransform (entity_t *ent, int trivial_accept);
+
 qboolean
-R_AliasCheckBBox (const vec3_t relvieworg)
+R_AliasCheckBBox (entity_t *ent)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -96,16 +98,16 @@ R_AliasCheckBBox (const vec3_t relvieworg)
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-	currententity->visibility.trivial_accept = 0;
-	pmodel = currententity->renderer.model;
+	ent->visibility.trivial_accept = 0;
+	pmodel = ent->renderer.model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
-	R_AliasSetUpTransform (relvieworg, 0);
+	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
-	frame = currententity->animation.frame;
+	frame = ent->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
@@ -220,11 +222,11 @@ R_AliasCheckBBox (const vec3_t relvieworg)
 		return false;					// trivial reject off one side
 	}
 
-	currententity->visibility.trivial_accept = !anyclip & !zclipped;
+	ent->visibility.trivial_accept = !anyclip & !zclipped;
 
-	if (currententity->visibility.trivial_accept) {
+	if (ent->visibility.trivial_accept) {
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
-			currententity->visibility.trivial_accept |= 2;
+			ent->visibility.trivial_accept |= 2;
 		}
 	}
 
@@ -350,8 +352,8 @@ R_AliasPreparePoints (void)
 	}
 }
 
-void
-R_AliasSetUpTransform (const vec3_t relvieworg, int trivial_accept)
+static void
+R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4], t2matrix[3][4];
@@ -359,7 +361,7 @@ R_AliasSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 	static float viewmatrix[3][4];
 	mat4f_t     mat;
 
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (ent->transform, mat);
 	VectorCopy (mat[0], alias_forward);
 	VectorNegate (mat[1], alias_right);
 	VectorCopy (mat[2], alias_up);
@@ -380,9 +382,9 @@ R_AliasSetUpTransform (const vec3_t relvieworg, int trivial_accept)
 		t2matrix[i][2] = alias_up[i];
 	}
 
-	t2matrix[0][3] = -relvieworg[0];
-	t2matrix[1][3] = -relvieworg[1];
-	t2matrix[2][3] = -relvieworg[2];
+	t2matrix[0][3] = r_entorigin[0] - r_refdef.viewposition[0];
+	t2matrix[1][3] = r_entorigin[1] - r_refdef.viewposition[1];
+	t2matrix[2][3] = r_entorigin[2] - r_refdef.viewposition[2];
 
 // FIXME: can do more efficiently than full concatenation
 	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
@@ -621,9 +623,8 @@ R_AliasSetupFrame (entity_t *ent)
 
 
 void
-R_AliasDrawModel (const vec3_t relvieworg, alight_t *plighting)
+R_AliasDrawModel (entity_t *ent, alight_t *plighting)
 {
-	entity_t    *ent = currententity;
 	int          size;
 	finalvert_t *finalverts;
 
@@ -646,7 +647,7 @@ R_AliasDrawModel (const vec3_t relvieworg, alight_t *plighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
-	R_AliasSetUpTransform (relvieworg, ent->visibility.trivial_accept);
+	R_AliasSetUpTransform (ent, ent->visibility.trivial_accept);
 	R_AliasSetupLighting (plighting);
 	R_AliasSetupFrame (ent);
 

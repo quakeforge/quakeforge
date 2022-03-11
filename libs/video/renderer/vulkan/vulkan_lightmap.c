@@ -57,7 +57,8 @@
 #define LUXEL_SIZE 4
 
 static inline void
-add_dynamic_lights (msurface_t *surf, float *block)
+add_dynamic_lights (const transform_t *transform, msurface_t *surf,
+				    float *block)
 {
 	unsigned    lnum;
 	int         sd, td;
@@ -74,9 +75,9 @@ add_dynamic_lights (msurface_t *surf, float *block)
 	tex = surf->texinfo;
 	plane = surf->plane;
 
-	if (currententity->transform) {
+	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -130,7 +131,8 @@ add_dynamic_lights (msurface_t *surf, float *block)
 }
 
 void
-Vulkan_BuildLightMap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
+Vulkan_BuildLightMap (const transform_t *transform, mod_brush_t *brush,
+					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         smax, tmax, size;
@@ -178,7 +180,7 @@ Vulkan_BuildLightMap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount) {
-		add_dynamic_lights (surf, block);
+		add_dynamic_lights (transform, surf, block);
 	}
 }
 
@@ -267,7 +269,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		for (i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic) {
-				Vulkan_BuildLightMap (brush, surf, ctx);
+				Vulkan_BuildLightMap (0, brush, surf, ctx);
 			}
 		}
 	}
