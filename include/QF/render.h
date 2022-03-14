@@ -219,6 +219,9 @@ typedef struct {
 	int			drawflat;
 
 	float		fov_x, fov_y;
+
+	struct model_s *worldmodel;
+	struct mleaf_s *viewleaf;
 } refdef_t;
 
 // color shifts =============================================================
@@ -239,8 +242,6 @@ typedef struct {
 // REFRESH ====================================================================
 
 extern	struct texture_s	*r_notexture_mip;
-
-extern entity_t r_worldentity;
 
 void R_Init (void);
 struct vid_internal_s;

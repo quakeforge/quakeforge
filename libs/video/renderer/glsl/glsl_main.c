@@ -104,7 +104,7 @@ glsl_R_SetupFrame (void)
 
 	R_SetFrustum ();
 
-	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
+	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
 }
 
 static void
@@ -182,7 +182,7 @@ glsl_R_RenderView (void)
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
-	if (!r_worldentity.renderer.model) {
+	if (!r_refdef.worldmodel) {
 		return;
 	}
 
@@ -275,11 +275,10 @@ glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.renderer.model = worldmodel;
+	r_refdef.worldmodel = worldmodel;
 
 	// Force a vis update
-	r_viewleaf = NULL;
+	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
 	R_ClearParticles ();
@@ -296,7 +295,7 @@ glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 void
 glsl_R_ClearState (void)
 {
-	r_worldentity.renderer.model = 0;
+	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

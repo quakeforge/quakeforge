@@ -275,7 +275,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	int         i;
 	model_t    *m;
-	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 	clear_textures (ctx);
 	init_surface_chains (brush, ctx);
@@ -289,7 +289,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.renderer.model || m->type != mod_brush)
+		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -342,7 +342,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 		brush = &models[~surf->model_index]->brush;
 	} else {
 		// main or sub model
-		brush = &r_worldentity.renderer.model->brush;
+		brush = &r_refdef.worldmodel->brush;
 	}
 	vertices  = brush->vertexes;
 	edges     = brush->edges;
@@ -441,7 +441,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			}
 			surf = brush->surfaces + j;
 			surf->model_index = dm - brush->submodels;
-			if (!surf->model_index && m != r_worldentity.renderer.model) {
+			if (!surf->model_index && m != r_refdef.worldmodel) {
 				surf->model_index = -1 - i;	// instanced model
 			}
 			tex = surf->texinfo->texture->render;
@@ -1031,10 +1031,10 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_worldentity.renderer.model;
-	brush = &r_worldentity.renderer.model->brush;
+	worldent.renderer.model = r_refdef.worldmodel;
+	brush = &r_refdef.worldmodel->brush;
 
-	bctx->entity = &r_worldentity;
+	bctx->entity = &worldent;
 	bctx->transform = 0;
 	bctx->color = 0;
 

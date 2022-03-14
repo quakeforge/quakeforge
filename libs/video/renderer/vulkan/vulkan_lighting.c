@@ -90,8 +90,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = ctx->lighting_context;
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
 
-	mleaf_t    *leaf = r_viewleaf;
-	model_t    *model = r_worldentity.renderer.model;
+	mleaf_t    *leaf = r_refdef.viewleaf;
+	model_t    *model = r_refdef.worldmodel;
 
 	if (!leaf || !model) {
 		return;

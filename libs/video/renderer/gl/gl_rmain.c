@@ -332,7 +332,7 @@ gl_R_SetupFrame (void)
 
 	R_SetFrustum ();
 
-	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
+	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
 }
 
 static void
@@ -456,7 +456,7 @@ R_RenderView_ (void)
 	if (r_norefresh->int_val) {
 		return;
 	}
-	if (!r_worldentity.renderer.model) {
+	if (!r_refdef.worldmodel) {
 		return;
 	}
 
@@ -784,7 +784,7 @@ R_RenderViewFishEye (void)
 void
 gl_R_ClearState (void)
 {
-	r_worldentity.renderer.model = 0;
+	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

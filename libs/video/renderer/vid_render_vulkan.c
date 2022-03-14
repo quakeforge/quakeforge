@@ -104,7 +104,7 @@ vulkan_R_Init (void)
 static void
 vulkan_R_ClearState (void)
 {
-	r_worldentity.renderer.model = 0;
+	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

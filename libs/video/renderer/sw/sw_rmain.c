@@ -171,8 +171,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	mod_brush_t *brush = &worldmodel->brush;
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.renderer.model = worldmodel;
+	r_refdef.worldmodel = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
 	for (unsigned i = 0; i < brush->modleafs; i++)
@@ -182,7 +181,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		R_InitSky (brush->skytexture);
 
 	// Force a vis update
-	r_viewleaf = NULL;
+	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
 	R_ClearParticles ();
@@ -364,7 +363,7 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 	minlight = max (ent->renderer.model->min_light, ent->renderer.min_light);
 
 	// 128 instead of 255 due to clamping below
-	j = max (R_LightPoint (&r_worldentity.renderer.model->brush, r_entorigin),
+	j = max (R_LightPoint (&r_refdef.worldmodel->brush, r_entorigin),
 			 minlight * 128);
 
 	lighting->ambientlight = j;
@@ -466,7 +465,7 @@ R_DrawViewModel (void)
 	minlight = max (viewent->renderer.min_light,
 					viewent->renderer.model->min_light);
 
-	j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
+	j = max (R_LightPoint (&r_refdef.worldmodel->brush,
 						   r_entorigin), minlight * 128);
 
 	r_viewlighting.ambientlight = j;
@@ -741,7 +740,7 @@ R_RenderView_ (void)
 
 	if (r_norefresh->int_val)
 		return;
-	if (!r_worldentity.renderer.model) {
+	if (!r_refdef.worldmodel) {
 		return;
 	}
 
@@ -1153,7 +1152,7 @@ R_RenderViewFishEye (void)
 void
 R_ClearState (void)
 {
-	r_worldentity.renderer.model = 0;
+	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

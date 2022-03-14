@@ -449,7 +449,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		float lightadj;
 
 		// get lighting information
-		R_LightPoint (&r_worldentity.renderer.model->brush, &origin[0]);//FIXME
+		R_LightPoint (&r_refdef.worldmodel->brush, &origin[0]);//FIXME
 
 		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
 

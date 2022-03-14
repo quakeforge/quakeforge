@@ -73,7 +73,7 @@ setup_frame (vulkan_ctx_t *ctx)
 	R_SetFrustum ();
 
 	vec4f_t     position = r_refdef.frame.position;
-	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
+	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
 }
 
 static void
@@ -131,7 +131,7 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
-	if (!r_worldentity.renderer.model) {
+	if (!r_refdef.worldmodel) {
 		return;
 	}
 
@@ -187,11 +187,10 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 		d_lightstylevalue[i] = 264;		// normal light value
 	}
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.renderer.model = worldmodel;
+	r_refdef.worldmodel = worldmodel;
 
 	// Force a vis update
-	r_viewleaf = NULL;
+	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
 	R_ClearParticles ();

@@ -219,8 +219,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.renderer.model = worldmodel;
+	r_refdef.worldmodel = worldmodel;
 	brush = &worldmodel->brush;
 
 	// clear out efrags in case the level hasn't been reloaded
@@ -228,7 +227,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
-	r_viewleaf = NULL;
+	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
 	R_ClearParticles ();
@@ -257,7 +256,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 			continue;
 		if (*models[i]->path == '*')
 			continue;
-		if (models[i] != r_worldentity.renderer.model
+		if (models[i] != r_refdef.worldmodel
 			&& models[i]->type == mod_brush)
 			register_textures (&models[i]->brush);
 	}

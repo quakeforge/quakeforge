@@ -723,7 +723,7 @@ gl_R_DrawWorld (void)
 	glbspctx_t  bctx = { };
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_worldentity.renderer.model;
+	worldent.renderer.model = r_refdef.worldmodel;
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
@@ -732,7 +732,7 @@ gl_R_DrawWorld (void)
 	}
 
 	bctx.brush = &worldent.renderer.model->brush;
-	bctx.entity = &r_worldentity;
+	bctx.entity = &worldent;
 
 	R_VisitWorldNodes (&bctx);
 

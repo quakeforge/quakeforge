@@ -286,8 +286,6 @@ extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
 
-extern mleaf_t	*r_viewleaf;
-
 extern int		r_clipflags;
 extern int		r_dlightframecount;
 

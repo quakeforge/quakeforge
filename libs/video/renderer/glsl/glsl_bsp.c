@@ -433,9 +433,9 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 	mod_brush_t *brush;
 
 	glsl_R_ClearTextures ();
-	glsl_R_InitSurfaceChains (&r_worldentity.renderer.model->brush);
+	glsl_R_InitSurfaceChains (&r_refdef.worldmodel->brush);
 	glsl_R_AddTexture (r_notexture_mip);
-	register_textures (&r_worldentity.renderer.model->brush);
+	register_textures (&r_refdef.worldmodel->brush);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
@@ -444,7 +444,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.renderer.model || m->type != mod_brush)
+		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -489,7 +489,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 	if (surf->model_index < 0) {
 		brush = &models[-surf->model_index - 1]->brush;
 	} else {
-		brush = &r_worldentity.renderer.model->brush;
+		brush = &r_refdef.worldmodel->brush;
 	}
 	vertices = brush->vertexes;
 	edges = brush->edges;
@@ -588,7 +588,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			}
 			surf = brush->surfaces + j;
 			surf->model_index = dm - brush->submodels;
-			if (!surf->model_index && m != r_worldentity.renderer.model)
+			if (!surf->model_index && m != r_refdef.worldmodel)
 				surf->model_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
@@ -1140,10 +1140,10 @@ glsl_R_DrawWorld (void)
 	clear_texture_chains ();	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_worldentity.renderer.model;
+	worldent.renderer.model = r_refdef.worldmodel;
 
 	bctx.brush = &worldent.renderer.model->brush;
-	bctx.entity = &r_worldentity;
+	bctx.entity = &worldent;
 
 	R_VisitWorldNodes (&bctx);
 	if (r_drawentities->int_val) {

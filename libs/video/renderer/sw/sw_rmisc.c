@@ -192,10 +192,10 @@ R_SetupFrame (void)
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
+	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
 
 	r_dowarpold = r_dowarp;
-	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=
+	r_dowarp = r_waterwarp->int_val && (r_refdef.viewleaf->contents <=
 										CONTENTS_WATER);
 
 	if ((r_dowarp != r_dowarpold) || r_viewchanged) {

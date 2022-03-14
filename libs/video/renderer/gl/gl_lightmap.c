@@ -598,7 +598,7 @@ gl_overbright_f (cvar_t *var)
 		}
 	}
 
-	brush = &r_worldentity.renderer.model->brush;
+	brush = &r_refdef.worldmodel->brush;
 
 	for (unsigned i = 0; i < brush->numsurfaces; i++) {
 		msurface_t *surf = brush->surfaces + i;

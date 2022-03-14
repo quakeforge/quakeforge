@@ -40,6 +40,11 @@
 
 #include "r_internal.h"
 
+typedef struct glbspctx_s {
+	mod_brush_t *brush;
+	entity_t   *entity;
+} swbspctx_t;
+
 // current entity info
 qboolean    insubmodel;
 vec3_t      r_worldmodelorg;
@@ -368,11 +373,12 @@ get_side (mnode_t *node)
 }
 
 static void
-visit_node (mod_brush_t *brush, mnode_t *node, int side, int clipflags)
+visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 {
 	int         c;
 	msurface_t *surf;
-	entity_t   *ent = &r_worldentity;
+	entity_t   *ent = bctx->entity;
+	mod_brush_t *brush = &ent->renderer.model->brush;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
 	side = (~side + 1) & SURF_PLANEBACK;
@@ -455,7 +461,7 @@ test_node (mnode_t *node, int *clipflags)
 }
 
 static void
-R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
+R_VisitWorldNodes (swbspctx_t *bctx, int clipflags)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -466,6 +472,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 	mnode_t    *node;
 	mnode_t    *front;
 	int         side, cf;
+	mod_brush_t *brush = &bctx->entity->renderer.model->brush;
 
 	node = brush->nodes;
 	// +2 for paranoia
@@ -489,7 +496,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (brush, node, side, clipflags);
+			visit_node (bctx, node, side, clipflags);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -499,7 +506,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 			node = node_ptr->node;
 			side = node_ptr->side;
 			clipflags = node_ptr->clipflags;
-			visit_node (brush, node, side, clipflags);
+			visit_node (bctx, node, side, clipflags);
 			node = node->children[!side];
 			continue;
 		}
@@ -514,15 +521,21 @@ R_RenderWorld (void)
 {
 	int         i;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
-	mod_brush_t *brush;
-	entity_t    *ent = &r_worldentity;
+	entity_t    worldent = {};
+	entity_t   *ent = &worldent;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	swbspctx_t  bspctx = {
+		brush,
+		ent,
+	};
+	worldent.renderer.model = r_refdef.worldmodel;
 
 	pbtofpolys = btofpolys;
 
-	brush = &r_worldentity.renderer.model->brush;
+	brush = &r_refdef.worldmodel->brush;
 	r_pcurrentvertbase = brush->vertexes;
 
-	R_VisitWorldNodes (brush, 15);
+	R_VisitWorldNodes (&bspctx, 15);
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order
