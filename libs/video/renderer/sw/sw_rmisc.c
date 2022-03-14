@@ -233,7 +233,9 @@ R_SetupFrame (void)
 								   (h / (float) vid.height)));
 				R_ViewChanged ();
 			}
-		} else {
+		} else if (!scr_fisheye->int_val) {
+			//FIXME the above test shouldn't be necessary (this whole section
+			//is a bit of a mess, though)
 			r_refdef.vrect.x = vr_data.scr_view->xpos;
 			r_refdef.vrect.y = vr_data.scr_view->ypos;
 			r_refdef.vrect.width = vr_data.scr_view->xlen;

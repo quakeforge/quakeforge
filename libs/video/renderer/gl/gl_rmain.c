@@ -471,18 +471,18 @@ R_RenderView_ (void)
 		R_ZGraph ();
 }
 
-//FIXME static void R_RenderViewFishEye (void);
+static void R_RenderViewFishEye (void);
 
 void
 gl_R_RenderView (void)
 {
-	R_RenderView_ ();
-	/*if(!scr_fisheye->int_val)
+	if(!scr_fisheye->int_val)
 		R_RenderView_ ();
 	else
-		R_RenderViewFishEye ();*/
+		R_RenderViewFishEye ();
 }
-/*FIXME
+
+//FIXME
 // Algorithm:
 // Draw up to six views, one in each direction.
 // Save the picture to cube map texture, use GL_ARB_texture_cube_map.
@@ -499,7 +499,34 @@ gl_R_RenderView (void)
 #define BOX_TOP    4
 #define BOX_BOTTOM 5
 
-#define FPOLYCNT   16
+static mat4f_t box_rotations[] = {
+	{ { 1, 0, 0, 0},		// front
+	  { 0, 1, 0, 0},
+	  { 0, 0, 1, 0},
+	  { 0, 0, 0, 1} },
+	{ { 0,-1, 0, 0},		// right
+	  { 1, 0, 0, 0},
+	  { 0, 0, 1, 0},
+	  { 0, 0, 0, 1} },
+	{ {-1, 0, 0, 0},		// back
+	  { 0,-1, 0, 0},
+	  { 0, 0, 1, 0},
+	  { 0, 0, 0, 1} },
+	{ { 0, 1, 0, 0},		// left
+	  {-1, 0, 0, 0},
+	  { 0, 0, 1, 0},
+	  { 0, 0, 0, 1} },
+	{ { 0, 0, 1, 0},		// top
+	  { 0, 1, 0, 0},
+	  {-1, 0, 0, 0},
+	  { 0, 0, 0, 1} },
+	{ { 0, 0,-1, 0},		// bottom
+	  { 0, 1, 0, 0},
+	  { 1, 0, 0, 0},
+	  { 0, 0, 0, 1} },
+};
+
+#define FPOLYCNT   128
 
 struct xyz {
 	float x, y, z;
@@ -548,79 +575,51 @@ do { \
 		printf ("%s: gl error %d\n", s, (int) err); \
 } while (0);
 
-#define NO(x) \
-do { \
-	if (x < 0) \
-		x += 360; \
-	else if (x >= 360) \
-		x -= 360; \
-} while (0)
 
 static void
 R_RenderCubeSide (int side)
 {
-	float pitch, n_pitch;
-	float yaw, n_yaw;
-	float roll, n_roll;
-	float s_roll;
+	mat4f_t     camera;
+	mat4f_t     camera_inverse;
+	mat4f_t     rotinv;
 
-	pitch = n_pitch = r_refdef.viewangles[PITCH];
-	yaw  = n_yaw = r_refdef.viewangles[YAW];
-	// setting ROLL for now to 0, correct roll handling
-	// requre more exhaustive changes in rotation
-	// TODO: implement via matrix
-//	roll  = n_roll = r_refdef.viewangles[ROLL];
-	s_roll = r_refdef.viewangles[ROLL];
-	roll = n_roll = 0;
-//	roll -= scr_fviews->int_val * 10;
-//	n_roll = roll;
+	memcpy (camera, r_refdef.camera, sizeof (camera));
+	memcpy (camera_inverse, r_refdef.camera_inverse, sizeof (camera_inverse));
+	mmulf (r_refdef.camera, camera, box_rotations[side]);
+	mat4ftranspose (rotinv, box_rotations[side]);
+	mmulf (r_refdef.camera_inverse, rotinv, camera_inverse);
 
-	switch (side) {
-	case BOX_FRONT:
-		break;
-	case BOX_RIGHT:
-		n_pitch = roll;
-		n_yaw -= 90;
-		n_roll = -pitch;
-		break;
-	case BOX_LEFT:
-		n_pitch = -roll;
-		n_yaw += 90;
-		n_roll = pitch;
-//		static int f = 0;
-//		if (!(f++ % 100))
-//				printf ("%4d %4d %4d | %4d %4d %4d\n", (int) pitch, (int) yaw,
-//						(int) roll, (int) n_pitch, (int) n_yaw, (int) n_roll);
-		break;
-	case BOX_TOP:
-		n_pitch -= 90;
-		break;
-	case BOX_BOTTOM:
-		n_pitch += 90;
-		break;
-	case BOX_BEHIND:
-		n_pitch = -pitch;
-		n_yaw += 180;
-		break;
-	}
-	NO (n_pitch);
-	NO (n_yaw);
-	NO (n_roll);
-	r_refdef.viewangles[PITCH] = n_pitch;
-	r_refdef.viewangles[YAW] = n_yaw;
-	r_refdef.viewangles[ROLL] = n_roll;
-
+	//FIXME see fixme in r_screen.c
+	r_refdef.frame.mat[0] = -r_refdef.camera[1];
+	r_refdef.frame.mat[1] =  r_refdef.camera[0];
+	r_refdef.frame.mat[2] =  r_refdef.camera[2];
+	r_refdef.frame.mat[3] =  r_refdef.camera[3];
+#if 0
+	printf ("side: %d\n", side);
+	printf ("c: " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera, 0));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera, 1));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera, 2));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera, 3));
+	printf ("i: " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera_inverse, 0));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera_inverse, 1));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera_inverse, 2));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.camera_inverse, 3));
+	printf ("f: " VEC4F_FMT "\n", MAT4_ROW(r_refdef.frame.mat, 0));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.frame.mat, 1));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.frame.mat, 2));
+	printf ("   " VEC4F_FMT "\n", MAT4_ROW(r_refdef.frame.mat, 3));
+#endif
+	qfglClear (GL_DEPTH_BUFFER_BIT);
 	R_RenderView_ ();
 	qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
 	qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
 	qfglCopyTexSubImage2D (box2cube_map[side], 0, 0, 0, 0, 0,
 						   gl_cube_map_size, gl_cube_map_size);
-//	CHKGLERR ("qfglCopyTexSubImage2D");
+	CHKGLERR ("qfglCopyTexSubImage2D");
 	qfglDisable (GL_TEXTURE_CUBE_MAP_ARB);
 
-	r_refdef.viewangles[PITCH] = pitch;
-	r_refdef.viewangles[YAW] = yaw;
-	r_refdef.viewangles[ROLL] = s_roll;
+	memcpy (r_refdef.camera, camera, sizeof (camera));
+	memcpy (r_refdef.camera_inverse, camera_inverse, sizeof (camera_inverse));
 }
 
 static qboolean gl_cube_map_capable = false;
@@ -779,7 +778,7 @@ R_RenderViewFishEye (void)
 	R_SetupGL_Viewport_and_Perspective ();
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglCallList (fisheye_grid);
-}*/
+}
 
 void
 gl_R_ClearState (void)
