@@ -87,23 +87,7 @@ gl_lightmap_init (void)
 	for (s = 1; s < 8192; s++)
 		dlightdivtable[s] = 1048576 / (s << 7);
 }
-/*
-static void
-R_RecursiveLightUpdate (mnode_t *node)
-{
-	int         c;
-	msurface_t *surf;
 
-	if (node->children[0]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[0]);
-	if (node->children[1]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[1]);
-	if ((c = node->numsurfaces))
-		for (surf = r_worldentity.model->surfaces + node->firstsurface; c;
-			 c--, surf++)
-			surf->cached_dlight = true;
-}
-*/
 static inline void
 R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 {

@@ -445,83 +445,6 @@ R_RenderScene (void)
 	R_ClearErrors ();
 }
 
-static void
-R_Mirror (void)
-{
-	//float		d;
-//	msurface_t *surf;
-
-//	if (!gl_mirror) // FIXME: Broken
-		return;
-/*
-	memcpy (r_base_world_matrix, gl_r_world_matrix,
-			sizeof (r_base_world_matrix));
-
-	d = 2 * DotProduct (r_refdef.vieworg, gl_mirror_plane->normal) -
-		gl_mirror_plane->dist;
-	VectorMultSub (r_refdef.vieworg, d, gl_mirror_plane->normal,
-				   r_refdef.vieworg);
-
-	d = 2 * DotProduct (vpn, gl_mirror_plane->normal);
-	VectorMultSub (vpn, d, gl_mirror_plane->normal, vpn);
-
-	r_refdef.viewangles[0] = -asin (vpn[2]) / M_PI * 180;
-	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
-	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
-
-	R_EnqueueEntity (vr_data.player_entity);
-
-	gldepthmin = 0.5;
-	gldepthmax = 1;
-	qfglDepthRange (gldepthmin, gldepthmax);
-
-	R_RenderScene ();
-	gl_R_DrawWaterSurfaces ();
-
-	gldepthmin = 0;
-	gldepthmax = 1;
-	qfglDepthRange (gldepthmin, gldepthmax);
-
-	// blend on top
-	qfglMatrixMode (GL_PROJECTION);
-	if (gl_mirror_plane->normal[2])
-		qfglScalef (1, -1, 1);
-	else
-		qfglScalef (-1, 1, 1);
-	qfglFrontFace (GL_CW);
-	qfglMatrixMode (GL_MODELVIEW);
-
-	qfglLoadMatrixf (r_base_world_matrix);
-
-	color_white[3] = r_mirroralpha->value * 255;
-	qfglColor4ubv (color_white);
-#if 0//FIXME
-	surf = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
-	for (; surf; surf = surf->texturechain) {
-		texture_t  *tex;
-
-		if (!surf->texinfo->texture->anim_total)
-			tex = surf->texinfo->texture;
-		else
-			tex = R_TextureAnimation (surf);
-
-// FIXME: Needs to set the texture, the tmu, and include the header, and then
-//	clean up afterwards.
-//		if (tex->gl_fb_texturenum && gl_mtex_fullbright
-//			&& gl_fb_models->int_val) {
-//			surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
-//			fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
-//		}
-
-		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-//		R_RenderBrushPoly (surf, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
-	}
-	r_worldentity.model->textures[gl_mirrortexturenum]->texturechain = NULL;
-#endif
-	qfglColor3ubv (color_white);
-*/
-}
-
 /*
 	R_RenderView_
 
@@ -541,9 +464,6 @@ R_RenderView_ (void)
 
 	// render normal view
 	R_RenderScene ();
-
-	// render mirror view
-	R_Mirror ();
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
