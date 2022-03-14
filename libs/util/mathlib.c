@@ -504,13 +504,21 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
-	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
-	the right, y (yaw) axis up and z (roll) axis forward.
+	angles is a left handed system: 'pitch yaw roll' with x (pitch) axis to
+	the right, y (yaw) axis up and z (roll) axis forward. However, the
+	rotations themselves are right-handed in that they follow the right-hand
+	rule for the world axes: pitch around +y, yaw around +z, and roll around
+	+x.
 
-	The math in AngleVectors has the entity frame as left handed with x
-	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right handed system with x forward, y to the left and
-	z up, thus the negation for right.
+	This results in the entity frame having forward pointed along the world +x
+	axis, right along the world -y axis, and up along the world +z axis.
+	Whether this means the entity frame is left-handed depends on whether
+	forward is local X and right is local Y (left handed), or forward is local
+	Y and right is local X (right handed).
+
+	NOTE: these matrices have forward, left and up vectors horizontal rather
+	than vertical and are thus the inverse of the matrices to produce the
+	actual rotation.
 
 	pitch =
 		cp 0 -sp
@@ -551,11 +559,10 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	forward[0] = cp * cy;
 	forward[1] = cp * sy;
 	forward[2] = -sp;
-	// need to flip right because it's a left handed system in a right handed
-	// world
-	right[0] = -1 * (sr * sp * cy + cr * -sy);
-	right[1] = -1 * (sr * sp * sy + cr * cy);
-	right[2] = -1 * (sr * cp);
+	// need to flip right because the trig produces +Y but right is -Y
+	right[0] = -(sr * sp * cy + cr * -sy);
+	right[1] = -(sr * sp * sy + cr * cy);
+	right[2] = -(sr * cp);
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;
