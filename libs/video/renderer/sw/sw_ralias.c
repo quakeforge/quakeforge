@@ -61,7 +61,7 @@ auxvert_t  *pauxverts;
 float ziscale;
 static model_t *pmodel;
 
-static vec3_t alias_forward, alias_right, alias_up;
+static vec3_t alias_forward, alias_left, alias_up;
 
 static maliasskindesc_t *pskindesc;
 
@@ -356,50 +356,25 @@ static void
 R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
-	float       rotationmatrix[3][4], t2matrix[3][4];
-	static float tmatrix[3][4];
-	static float viewmatrix[3][4];
+	float       rotationmatrix[3][4];
 	mat4f_t     mat;
 
 	Transform_GetWorldMatrix (ent->transform, mat);
 	VectorCopy (mat[0], alias_forward);
-	VectorNegate (mat[1], alias_right);
+	VectorCopy (mat[1], alias_left);
 	VectorCopy (mat[2], alias_up);
 
-	tmatrix[0][0] = pmdl->scale[0];
-	tmatrix[1][1] = pmdl->scale[1];
-	tmatrix[2][2] = pmdl->scale[2];
-
-	tmatrix[0][3] = pmdl->scale_origin[0];
-	tmatrix[1][3] = pmdl->scale_origin[1];
-	tmatrix[2][3] = pmdl->scale_origin[2];
-
-// TODO: can do this with simple matrix rearrangement
-
 	for (i = 0; i < 3; i++) {
-		t2matrix[i][0] = alias_forward[i];
-		t2matrix[i][1] = -alias_right[i];
-		t2matrix[i][2] = alias_up[i];
+		rotationmatrix[i][0] = pmdl->scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = pmdl->scale[1] * alias_left[i];
+		rotationmatrix[i][2] = pmdl->scale[2] * alias_up[i];
+		rotationmatrix[i][3] = pmdl->scale_origin[0] * alias_forward[i]
+							 + pmdl->scale_origin[1] * alias_left[i]
+							 + pmdl->scale_origin[2] * alias_up[i]
+							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
-	t2matrix[0][3] = r_entorigin[0] - r_refdef.frame.position[0];
-	t2matrix[1][3] = r_entorigin[1] - r_refdef.frame.position[1];
-	t2matrix[2][3] = r_entorigin[2] - r_refdef.frame.position[2];
-
-// FIXME: can do more efficiently than full concatenation
-	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
-
-// TODO: should be global, set when vright, etc., set
-	VectorCopy (vright, viewmatrix[0]);
-	VectorCopy (vup, viewmatrix[1]);
-	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vfwd, viewmatrix[2]);
-
-//	viewmatrix[0][3] = 0;
-//	viewmatrix[1][3] = 0;
-//	viewmatrix[2][3] = 0;
-
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (r_viewmatrix, rotationmatrix, aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -603,7 +578,7 @@ R_AliasSetupLighting (alight_t *plighting)
 
 	// rotate the lighting vector into the model's frame of reference
 	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
-	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
+	r_plightvec[1] = DotProduct (plighting->plightvec, alias_left);
 	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
 }
 

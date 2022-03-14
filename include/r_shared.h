@@ -72,6 +72,7 @@ extern byte color_black[4];
 extern	vec3_t	vup, base_vup;
 extern	vec3_t	vfwd, base_vfwd;
 extern	vec3_t	vright, base_vright;
+extern float r_viewmatrix[3][4];
 
 #define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES

@@ -246,7 +246,6 @@ R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
-	static float viewmatrix[3][4];
 	vec3_t      forward, left, up;
 
 	mat4f_t     mat;
@@ -267,17 +266,7 @@ R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 	rotationmatrix[1][3] = r_entorigin[1] - r_refdef.frame.position[1];
 	rotationmatrix[2][3] = r_entorigin[2] - r_refdef.frame.position[2];
 
-// TODO: should be global, set when vright, etc., set
-	VectorCopy (vright, viewmatrix[0]);
-	VectorCopy (vup, viewmatrix[1]);
-	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vfwd, viewmatrix[2]);
-
-//	viewmatrix[0][3] = 0;
-//	viewmatrix[1][3] = 0;
-//	viewmatrix[2][3] = 0;
-
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (r_viewmatrix, rotationmatrix, aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).

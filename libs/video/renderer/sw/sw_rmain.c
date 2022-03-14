@@ -110,6 +110,7 @@ int         r_frustum_indexes[4 * 6];
 vec3_t      vup, base_vup;
 vec3_t      vfwd, base_vfwd;
 vec3_t      vright, base_vright;
+float       r_viewmatrix[3][4];
 
 float       r_aliastransition, r_resfudge;
 

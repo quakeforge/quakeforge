@@ -252,6 +252,10 @@ R_SetupFrame (void)
 	VectorCopy (vup, base_vup);
 	VectorCopy (modelorg, base_modelorg);
 
+	VectorCopy (vright, r_viewmatrix[0]);
+	VectorNegate (vup, r_viewmatrix[1]);
+	VectorCopy (vfwd, r_viewmatrix[2]);
+
 	R_SetSkyFrame ();
 
 	R_SetUpFrustumIndexes ();
