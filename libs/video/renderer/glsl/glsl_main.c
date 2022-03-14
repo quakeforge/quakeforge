@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -54,8 +51,11 @@
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
+#include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
+#include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
 
@@ -93,7 +93,7 @@ glsl_R_ViewChanged (void)
 	mmulf (proj, depth_range, proj);
 }
 
-void
+static void
 glsl_R_SetupFrame (void)
 {
 	R_AnimateLight ();
@@ -227,6 +227,28 @@ glsl_R_RenderView (void)
 	}
 }
 
+static void
+glsl_R_TimeRefresh_f (void)
+{
+/* FIXME update for simd
+	double      start, stop, time;
+	int         i;
+
+	glsl_ctx->end_rendering ();
+
+	start = Sys_DoubleTime ();
+	for (i = 0; i < 128; i++) {
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
+		glsl_R_RenderView ();
+		glsl_ctx->end_rendering ();
+	}
+
+	stop = Sys_DoubleTime ();
+	time = stop - start;
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
+}
+
 void
 glsl_R_Init (void)
 {
@@ -278,26 +300,4 @@ glsl_R_ClearState (void)
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
-}
-
-void
-glsl_R_TimeRefresh_f (void)
-{
-/* FIXME update for simd
-	double      start, stop, time;
-	int         i;
-
-	glsl_ctx->end_rendering ();
-
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
-		r_refdef.viewangles[1] = i * (360.0 / 128.0);
-		glsl_R_RenderView ();
-		glsl_ctx->end_rendering ();
-	}
-
-	stop = Sys_DoubleTime ();
-	time = stop - start;
-	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
-*/
 }

@@ -1,12 +1,12 @@
 /*
-	qf_sprite.h
+	qf_particles.h
 
-	GLSL specific sprite model stuff
+	GL specific particles stuff
 
-	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2021/7/22
+	Date: 2012/1/15
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,13 +27,19 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_sprite_h
-#define __QF_GLSL_qf_sprite_h
+#ifndef __QF_GL_qf_particles_h
+#define __QF_GL_qf_particles_h
 
-struct entity_s;
-void glsl_R_DrawSprite (struct entity_s *ent);
-void glsl_R_SpriteBegin (void);
-void glsl_R_SpriteEnd (void);
-void glsl_R_InitSprites (void);
+#include "QF/GL/types.h"
 
-#endif//__QF_GLSL_qf_sprite_h
+typedef struct {
+	float       texcoord[2];
+	float       vertex[3];
+	byte        color[4];
+} partvert_t;
+
+void gl_R_DrawParticles (void);
+void gl_R_Particles_Init_Cvars (void);
+void gl_R_InitParticles (void);
+
+#endif//__QF_GL_qf_particles_h

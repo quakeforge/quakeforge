@@ -48,8 +48,8 @@ extern glRect_t		gl_lightmap_rectchange[MAX_LIGHTMAPS];
 void GL_BuildSurfaceDisplayList (msurface_t *fa);
 void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
-void R_BlendLightmaps (void);
-void R_CalcLightmaps (void);
+void gl_R_BlendLightmaps (void);
+void gl_R_CalcLightmaps (void);
 struct transform_s;
 extern void (*gl_R_BuildLightMap) (const struct transform_s *transform,
 								   mod_brush_t *brush, msurface_t *surf);

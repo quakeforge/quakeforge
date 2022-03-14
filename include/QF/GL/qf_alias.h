@@ -1,12 +1,12 @@
 /*
-	qf_sprite.h
+	qf_alias.h
 
-	GLSL specific sprite model stuff
+	GL specific alias model stuff
 
-	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2021/7/22
+	Date: 2012/1/1
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,13 +27,18 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_sprite_h
-#define __QF_GLSL_qf_sprite_h
+#ifndef __QF_GL_qf_alias_h
+#define __QF_GL_qf_alias_h
+
+#include "QF/GL/types.h"
+
+typedef struct aliasvrt_s {
+	GLshort     st[2];
+	GLshort     normal[3];
+	GLushort    vertex[3];
+} aliasvrt_t;
 
 struct entity_s;
-void glsl_R_DrawSprite (struct entity_s *ent);
-void glsl_R_SpriteBegin (void);
-void glsl_R_SpriteEnd (void);
-void glsl_R_InitSprites (void);
+void gl_R_DrawAliasModel (struct entity_s *ent);
 
-#endif//__QF_GLSL_qf_sprite_h
+#endif//__QF_GL_qf_alias_h

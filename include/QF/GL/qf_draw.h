@@ -28,8 +28,35 @@
 #ifndef __gl_draw_h
 #define __gl_draw_h
 
+struct qpic_s;
+
+void gl_Draw_Init (void);
+void gl_Draw_Shutdown (void);
+void gl_Draw_Character (int x, int y, unsigned ch);
+void gl_Draw_String (int x, int y, const char *str);
+void gl_Draw_nString (int x, int y, const char *str, int count);
+void gl_Draw_AltString (int x, int y, const char *str);
+void gl_Draw_ConsoleBackground (int lines, byte alpha);
+void gl_Draw_Crosshair (void);
+void gl_Draw_CrosshairAt (int ch, int x, int y);
+void gl_Draw_TileClear (int x, int y, int w, int h);
+void gl_Draw_Fill (int x, int y, int w, int h, int c);
+void gl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
+void gl_Draw_FadeScreen (void);
+void gl_Draw_BlendScreen (quat_t color);
+struct qpic_s *gl_Draw_CachePic (const char *path, qboolean alpha);
+void gl_Draw_UncachePic (const char *path);
+struct qpic_s *gl_Draw_MakePic (int width, int height, const byte *data);
+void gl_Draw_DestroyPic (struct qpic_s *pic);
+struct qpic_s *gl_Draw_PicFromWad (const char *name);
+void gl_Draw_Pic (int x, int y, struct qpic_s *pic);
+void gl_Draw_Picf (float x, float y, struct qpic_s *pic);
+void gl_Draw_SubPic(int x, int y, struct qpic_s *pic,
+					  int srcx, int srcy, int width, int height);
+
 void GL_Set2D (void);
 void GL_Set2DScaled (void);
+void GL_End2D (void);
 void GL_DrawReset (void);
 void GL_FlushText (void);
 

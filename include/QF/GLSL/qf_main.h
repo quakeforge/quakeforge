@@ -1,12 +1,9 @@
 /*
-	qf_sprite.h
+	qf_main.h
 
-	GLSL specific sprite model stuff
+	glsl main stuff from the renderer.
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
-
-	Author: Bill Currie <bill@taniwha.org>
-	Date: 2021/7/22
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,13 +24,14 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_sprite_h
-#define __QF_GLSL_qf_sprite_h
 
-struct entity_s;
-void glsl_R_DrawSprite (struct entity_s *ent);
-void glsl_R_SpriteBegin (void);
-void glsl_R_SpriteEnd (void);
-void glsl_R_InitSprites (void);
+#ifndef __QF_GLSL_qf_main_h
+#define __QF_GLSL_qf_main_h
 
-#endif//__QF_GLSL_qf_sprite_h
+void glsl_R_NewMap (model_t *worldmodel, model_t **models, int num_models);
+void glsl_R_RenderView (void);
+void glsl_R_ClearState (void);
+void glsl_R_ViewChanged (void);
+void glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height);
+
+#endif//__QF_GLSL_qf_main_h

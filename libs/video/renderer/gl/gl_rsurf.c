@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -329,9 +326,6 @@ gl_R_DrawWaterSurfaces (void)
 	if (!waterchain)
 		return;
 
-	// go back to the world matrix
-	qfglLoadMatrixf (gl_r_world_matrix);
-
 	if (wateralpha < 1.0) {
 		qfglDepthMask (GL_FALSE);
 		color_white[3] = wateralpha * 255;
@@ -342,18 +336,20 @@ gl_R_DrawWaterSurfaces (void)
 	for (s = waterchain; s; s = s->tex_chain) {
 		gltex_t    *tex;
 		surf = s->surface;
-		if (s->transform)
+		if (s->transform) {
+			qfglPushMatrix ();
 			qfglLoadMatrixf (s->transform);
-		else
-			qfglLoadMatrixf (gl_r_world_matrix);
+		}
 		tex = surf->texinfo->texture->render;
 		if (i != tex->gl_texturenum) {
 			i = tex->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
 		GL_EmitWaterPolys (surf);
+		if (s->transform) {
+			qfglPopMatrix ();
+		}
 	}
-	qfglLoadMatrixf (gl_r_world_matrix);
 
 	waterchain = NULL;
 	waterchain_tail = &waterchain;

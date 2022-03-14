@@ -35,7 +35,6 @@ struct entity_s;
 
 extern qboolean gl_envmap;
 extern int c_brush_polys, c_alias_polys;
-extern float r_world_matrix[16];
 
 extern float gl_modelalpha;
 //extern vec3_t shadecolor;
@@ -43,6 +42,15 @@ extern float gl_modelalpha;
 extern void gl_multitexture_f (struct cvar_s *var);
 
 void glrmain_init (void);
-void R_RotateForEntity (struct entity_s *e);
+void gl_R_RotateForEntity (struct entity_s *e);
+
+struct model_s;
+void gl_R_NewMap (struct model_s *worldmodel, struct model_s **models,
+				  int num_models);
+void gl_R_RenderView (void);
+void gl_R_ClearState (void);
+void gl_R_ViewChanged (void);
+void gl_R_LineGraph (int x, int y, int *h_vals, int count, int height);
+int gl_R_InitGraphTextures (int base);
 
 #endif // __QF_GL_rmain_h

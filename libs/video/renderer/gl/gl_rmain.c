@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -56,11 +53,14 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_alias.h"
 #include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_iqm.h"
+#include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_sprite.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
@@ -88,9 +88,6 @@ static unsigned int GLErr_OutOfMemory;
 static unsigned int GLErr_StackOverflow;
 static unsigned int GLErr_StackUnderflow;
 static unsigned int GLErr_Unknown;
-
-extern void (*R_DrawSpriteModel) (struct entity_s *ent);
-
 
 static unsigned int
 R_TestErrors (unsigned int numerous)
@@ -258,7 +255,7 @@ R_DrawEntitiesOnList (void)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_sprite].size; i++) { \
 		entity_t   *ent = r_ent_queue->ent_queues[mod_sprite].a[i]; \
-		R_DrawSpriteModel (ent);
+		gl_R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
 }
@@ -324,7 +321,7 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
-void
+static void
 gl_R_SetupFrame (void)
 {
 	R_AnimateLight ();

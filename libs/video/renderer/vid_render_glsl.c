@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "glsl/namehack.h"
-
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
@@ -38,14 +35,13 @@
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
+#include "QF/GLSL/qf_main.h"
 #include "QF/GLSL/qf_vid.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_gl.h"
-
-#include "glsl/namehack.h"
 
 gl_ctx_t *glsl_ctx;
 

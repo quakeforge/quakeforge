@@ -29,6 +29,7 @@
 #define __QF_GL_rlight_h
 
 extern float gl_bubble_sintable[], gl_bubble_costable[];
-void R_RenderDlights (void);
+void gl_R_RenderDlights (void);
+void gl_R_InitBubble (void);
 
 #endif // __QF_GL_rlight_h

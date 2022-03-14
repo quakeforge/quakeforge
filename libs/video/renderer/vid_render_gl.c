@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "gl/namehack.h"
-
 #include "QF/cvar.h"
 
 #include "QF/plugin/general.h"
@@ -38,6 +35,7 @@
 
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_vid.h"
 
@@ -46,8 +44,6 @@
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_gl.h"
-
-#include "gl/namehack.h"
 
 gl_ctx_t *gl_ctx;
 

@@ -80,15 +80,17 @@ include_qf_gl = \
 	include/QF/GL/defines.h \
 	include/QF/GL/extensions.h \
 	include/QF/GL/funcs.h \
+	include/QF/GL/qf_alias.h \
 	include/QF/GL/qf_draw.h \
-	include/QF/GL/qf_explosions.h \
 	include/QF/GL/qf_funcs_list.h \
 	include/QF/GL/qf_iqm.h \
 	include/QF/GL/qf_lightmap.h \
+	include/QF/GL/qf_particles.h \
 	include/QF/GL/qf_rlight.h \
 	include/QF/GL/qf_rmain.h \
 	include/QF/GL/qf_rsurf.h \
 	include/QF/GL/qf_sky.h \
+	include/QF/GL/qf_sprite.h \
 	include/QF/GL/qf_textures.h \
 	include/QF/GL/qf_vid.h \
 	include/QF/GL/types.h
@@ -102,6 +104,7 @@ include_qf_glsl = \
 	include/QF/GLSL/qf_funcs_list.h \
 	include/QF/GLSL/qf_iqm.h \
 	include/QF/GLSL/qf_lightmap.h \
+	include/QF/GLSL/qf_main.h \
 	include/QF/GLSL/qf_particles.h \
 	include/QF/GLSL/qf_sprite.h \
 	include/QF/GLSL/qf_textures.h \

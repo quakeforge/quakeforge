@@ -84,7 +84,6 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_sky_clip.c \
 	libs/video/renderer/gl/gl_textures.c \
 	libs/video/renderer/gl/gl_warp.c \
-	libs/video/renderer/gl/namehack.h \
 	libs/video/renderer/gl/qfgl_ext.c \
 	libs/video/renderer/gl/vid_common_gl.c \
 	libs/video/renderer/gl/vtxarray.c
@@ -119,7 +118,6 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
 	libs/video/renderer/glsl/glsl_textures.c \
-	libs/video/renderer/glsl/namehack.h \
 	libs/video/renderer/glsl/qfglsl.c \
 	libs/video/renderer/glsl/quakeforge.glsl \
 	libs/video/renderer/glsl/vid_common_glsl.c

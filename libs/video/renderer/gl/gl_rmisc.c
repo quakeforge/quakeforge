@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -56,8 +53,13 @@
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_particles.h"
+#include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_sky.h"
+#include "QF/GL/qf_sprite.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
@@ -128,7 +130,7 @@ R_Envmap_f (void)
 	gl_ctx->end_rendering ();*/
 }
 
-void
+static void
 gl_R_LoadSky_f (void)
 {
 	if (Cmd_Argc () != 2) {
@@ -137,6 +139,34 @@ gl_R_LoadSky_f (void)
 	}
 
 	gl_R_LoadSkys (Cmd_Argv (1));
+}
+
+/*
+  R_TimeRefresh_f
+
+  For program optimization
+  LordHavoc: improved appearance and accuracy of timerefresh
+*/
+static void
+gl_R_TimeRefresh_f (void)
+{
+/*FIXME update for simd
+	double      start, stop, time;
+	int         i;
+
+	gl_ctx->end_rendering ();
+
+	start = Sys_DoubleTime ();
+	for (i = 0; i < 128; i++) {
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
+		gl_R_RenderView ();
+		gl_ctx->end_rendering ();
+	}
+
+	stop = Sys_DoubleTime ();
+	time = stop - start;
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
 }
 
 void
@@ -236,32 +266,4 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 void
 gl_R_ViewChanged (void)
 {
-}
-
-/*
-  R_TimeRefresh_f
-
-  For program optimization
-  LordHavoc: improved appearance and accuracy of timerefresh
-*/
-void
-gl_R_TimeRefresh_f (void)
-{
-/*FIXME update for simd
-	double      start, stop, time;
-	int         i;
-
-	gl_ctx->end_rendering ();
-
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
-		r_refdef.viewangles[1] = i * (360.0 / 128.0);
-		gl_R_RenderView ();
-		gl_ctx->end_rendering ();
-	}
-
-	stop = Sys_DoubleTime ();
-	time = stop - start;
-	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
-*/
 }

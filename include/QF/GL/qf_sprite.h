@@ -1,7 +1,7 @@
 /*
 	qf_sprite.h
 
-	GLSL specific sprite model stuff
+	GL specific sprite model stuff
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -27,13 +27,11 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_sprite_h
-#define __QF_GLSL_qf_sprite_h
+#ifndef __QF_GL_qf_sprite_h
+#define __QF_GL_qf_sprite_h
 
 struct entity_s;
-void glsl_R_DrawSprite (struct entity_s *ent);
-void glsl_R_SpriteBegin (void);
-void glsl_R_SpriteEnd (void);
-void glsl_R_InitSprites (void);
+void gl_R_InitSprites (void);
+extern void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
 
-#endif//__QF_GLSL_qf_sprite_h
+#endif//__QF_GL_qf_sprite_h

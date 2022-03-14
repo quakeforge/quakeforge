@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -46,6 +43,7 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_sprite.h"
 
 #include "compat.h"
 #include "r_internal.h"

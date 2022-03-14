@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -303,7 +300,7 @@ GET_RELEASE (elements_t, elements)
 GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
-void
+static void
 glsl_R_AddTexture (texture_t *tx)
 {
 	int         i;
@@ -422,7 +419,7 @@ register_textures (mod_brush_t *brush)
 	}
 }
 
-void
+static void
 glsl_R_ClearTextures (void)
 {
 	r_num_texture_chains = 0;
@@ -1183,7 +1180,7 @@ glsl_R_DrawWorld (void)
 }
 
 void
-glsl_R_DrawWaterSurfaces ()
+glsl_R_DrawWaterSurfaces (void)
 {
 	instsurf_t *is;
 	msurface_t *surf;

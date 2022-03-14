@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #include "QF/cvar.h"
 #include "QF/sys.h"
 

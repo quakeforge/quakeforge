@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -263,7 +260,7 @@ glsl_R_DrawSprite (entity_t *ent)
 
 // All sprites are drawn in a batch, so avoid thrashing the gl state
 void
-R_SpriteBegin (void)
+glsl_R_SpriteBegin (void)
 {
 	mat4f_t     mat;
 	quat_t      fog;
@@ -298,7 +295,7 @@ R_SpriteBegin (void)
 }
 
 void
-R_SpriteEnd (void)
+glsl_R_SpriteEnd (void)
 {
 	qfeglDisableVertexAttribArray (quake_sprite.vertexa.location);
 	qfeglDisableVertexAttribArray (quake_sprite.vertexb.location);

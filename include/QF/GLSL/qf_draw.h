@@ -25,8 +25,34 @@
 
 */
 
-#ifndef __gl_draw_h
-#define __gl_draw_h
+#ifndef __QF_GLSL_qf_draw_h
+#define __QF_GLSL_qf_draw_h
+
+struct qpic_s;
+
+void glsl_Draw_Init (void);
+void glsl_Draw_Shutdown (void);
+void glsl_Draw_Character (int x, int y, unsigned ch);
+void glsl_Draw_String (int x, int y, const char *str);
+void glsl_Draw_nString (int x, int y, const char *str, int count);
+void glsl_Draw_AltString (int x, int y, const char *str);
+void glsl_Draw_ConsoleBackground (int lines, byte alpha);
+void glsl_Draw_Crosshair (void);
+void glsl_Draw_CrosshairAt (int ch, int x, int y);
+void glsl_Draw_TileClear (int x, int y, int w, int h);
+void glsl_Draw_Fill (int x, int y, int w, int h, int c);
+void glsl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
+void glsl_Draw_FadeScreen (void);
+void glsl_Draw_BlendScreen (quat_t color);
+struct qpic_s *glsl_Draw_CachePic (const char *path, qboolean alpha);
+void glsl_Draw_UncachePic (const char *path);
+struct qpic_s *glsl_Draw_MakePic (int width, int height, const byte *data);
+void glsl_Draw_DestroyPic (struct qpic_s *pic);
+struct qpic_s *glsl_Draw_PicFromWad (const char *name);
+void glsl_Draw_Pic (int x, int y, struct qpic_s *pic);
+void glsl_Draw_Picf (float x, float y, struct qpic_s *pic);
+void glsl_Draw_SubPic(int x, int y, struct qpic_s *pic,
+					  int srcx, int srcy, int width, int height);
 
 void GLSL_Set2D (void);
 void GLSL_Set2DScaled (void);
@@ -34,4 +60,4 @@ void GLSL_End2D (void);
 void GLSL_DrawReset (void);
 void GLSL_FlushText (void);
 
-#endif//__gl_draw_h
+#endif//__QF_GLSL_qf_draw_h
