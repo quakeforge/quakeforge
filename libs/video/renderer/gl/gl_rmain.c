@@ -71,7 +71,6 @@
 qboolean    gl_envmap;					// true during envmap command capture
 
 int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
-qboolean    gl_mirror;
 plane_t    *gl_mirror_plane;
 
 float       gl_r_world_matrix[16];
@@ -383,14 +382,7 @@ R_SetupGL (void)
 {
 	R_SetupGL_Viewport_and_Perspective ();
 
-	if (gl_mirror) {
-		if (gl_mirror_plane->normal[2])
-			qfglScalef (1, -1, 1);
-		else
-			qfglScalef (-1, 1, 1);
-		qfglFrontFace (GL_CCW);
-	} else
-		qfglFrontFace (GL_CW);
+	qfglFrontFace (GL_CW);
 
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
@@ -459,8 +451,6 @@ R_RenderView_ (void)
 	if (!r_refdef.worldmodel) {
 		return;
 	}
-
-	gl_mirror = false;
 
 	// render normal view
 	R_RenderScene ();
