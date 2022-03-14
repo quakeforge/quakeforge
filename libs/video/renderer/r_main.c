@@ -67,11 +67,6 @@ vec3_t      r_entorigin;		// the currently rendering entity in world
 								// coordinates
 entity_t    r_worldentity;
 
-// view origin
-vec3_t      vup, base_vup;
-vec3_t      vpn, base_vpn;
-vec3_t      vright, base_vright;
-
 // screen size info
 refdef_t    r_refdef;
 
@@ -99,21 +94,24 @@ void
 R_SetFrustum (void)
 {
 	int         i;
+	vec4f_t     vright = r_refdef.frame.right;
+	vec4f_t     vfwd = r_refdef.frame.forward;
+	vec4f_t     vup = r_refdef.frame.up;
 
 	// rotate VPN right by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[0].normal, vup, vpn,
+	RotatePointAroundVector (frustum[0].normal, &vup[0], &vfwd[0],
 							 -(90 - r_refdef.fov_x / 2));
 	// rotate VPN left by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[1].normal, vup, vpn,
+	RotatePointAroundVector (frustum[1].normal, &vup[0], &vfwd[0],
 							 90 - r_refdef.fov_x / 2);
 	// rotate VPN up by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[2].normal, vright, vpn,
+	RotatePointAroundVector (frustum[2].normal, &vright[0], &vfwd[0],
 							 90 - r_refdef.fov_y / 2);
 	// rotate VPN down by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[3].normal, vright, vpn,
+	RotatePointAroundVector (frustum[3].normal, &vright[0], &vfwd[0],
 							 -(90 - r_refdef.fov_y / 2));
 
-	vec4f_t     origin = r_refdef.viewposition;
+	vec4f_t     origin = r_refdef.frame.position;
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
 		frustum[i].dist = DotProduct (origin, frustum[i].normal);

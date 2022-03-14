@@ -382,9 +382,9 @@ R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
 		t2matrix[i][2] = alias_up[i];
 	}
 
-	t2matrix[0][3] = r_entorigin[0] - r_refdef.viewposition[0];
-	t2matrix[1][3] = r_entorigin[1] - r_refdef.viewposition[1];
-	t2matrix[2][3] = r_entorigin[2] - r_refdef.viewposition[2];
+	t2matrix[0][3] = r_entorigin[0] - r_refdef.frame.position[0];
+	t2matrix[1][3] = r_entorigin[1] - r_refdef.frame.position[1];
+	t2matrix[2][3] = r_entorigin[2] - r_refdef.frame.position[2];
 
 // FIXME: can do more efficiently than full concatenation
 	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
@@ -393,7 +393,7 @@ R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
 	VectorCopy (vright, viewmatrix[0]);
 	VectorCopy (vup, viewmatrix[1]);
 	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vpn, viewmatrix[2]);
+	VectorCopy (vfwd, viewmatrix[2]);
 
 //	viewmatrix[0][3] = 0;
 //	viewmatrix[1][3] = 0;

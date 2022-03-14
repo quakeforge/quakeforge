@@ -131,7 +131,8 @@ gl_R_DrawParticles (void)
 	qfglDepthMask (GL_FALSE);
 	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
-	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
+	minparticledist = DotProduct (r_refdef.frame.position,
+								  r_refdef.frame.forward) +
 		r_particles_nearclip->value;
 
 	vacount = 0;
@@ -141,7 +142,7 @@ gl_R_DrawParticles (void)
 		particle_t *p = &r_psystem.particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
-		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
+		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
 			at = (byte *) &d_8to24table[(byte) p->icolor];
 			VA[0].color[0] = at[0];
 			VA[0].color[1] = at[1];
@@ -186,8 +187,8 @@ gl_R_DrawParticles (void)
 
 			scale = p->scale;
 
-			VectorScale (vup, scale, up_scale);
-			VectorScale (vright, scale, right_scale);
+			VectorScale (r_refdef.frame.up, scale, up_scale);
+			VectorScale (r_refdef.frame.right, scale, right_scale);
 
 			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);

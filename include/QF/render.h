@@ -203,9 +203,17 @@ typedef struct {
 	float		xOrigin;			// should probably always be 0.5
 	float		yOrigin;			// between be around 0.3 to 0.5
 
-	//FIXME was vec3_t, need to deal with asm (maybe? is it worth it?)
-	vec4f_t     viewposition;
-	vec4f_t     viewrotation;
+	union {
+		mat4f_t     mat;
+		struct      {
+			vec4f_t     right;
+			vec4f_t     forward;
+			vec4f_t     up;
+			vec4f_t     position;
+		};
+	}           frame;
+	mat4f_t     camera;
+	mat4f_t     camera_inverse;
 
 	int			ambientlight;
 	int			drawflat;

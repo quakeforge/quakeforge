@@ -691,7 +691,7 @@ R_DrawBrushModel (entity_t *e)
 			return;
 	}
 
-	org = r_refdef.viewposition - mat[3];
+	org = r_refdef.frame.position - mat[3];
 	if (rotated) {
 		vec4f_t     temp = org;
 
@@ -744,7 +744,7 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
-	vec4f_t     org = r_refdef.viewposition;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
 		return (org[plane->type] - plane->dist) < 0;
@@ -1001,7 +1001,7 @@ spin (mat4_t mat)
 	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
 	QuatMult (sky_fix, q, q);
 	Mat4Identity (mat);
-	VectorNegate (r_refdef.viewposition, mat + 12);
+	VectorNegate (r_refdef.frame.position, mat + 12);
 	QuatToMatrix (q, m, 1, 1);
 	Mat4Mult (m, mat, mat);
 }

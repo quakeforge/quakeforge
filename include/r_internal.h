@@ -77,7 +77,7 @@ void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);
 
 int R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
-					  vec3_t bbup, vec3_t bbright, vec3_t bbpn);
+					  vec3_t bbup, vec3_t bbright, vec3_t bbfwd);
 mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,
 								  const animation_t *animation);
 

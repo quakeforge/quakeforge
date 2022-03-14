@@ -263,15 +263,15 @@ R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 		rotationmatrix[i][2] = up[i];
 	}
 
-	rotationmatrix[0][3] = r_entorigin[0] - r_refdef.viewposition[0];
-	rotationmatrix[1][3] = r_entorigin[1] - r_refdef.viewposition[1];
-	rotationmatrix[2][3] = r_entorigin[2] - r_refdef.viewposition[2];
+	rotationmatrix[0][3] = r_entorigin[0] - r_refdef.frame.position[0];
+	rotationmatrix[1][3] = r_entorigin[1] - r_refdef.frame.position[1];
+	rotationmatrix[2][3] = r_entorigin[2] - r_refdef.frame.position[2];
 
 // TODO: should be global, set when vright, etc., set
 	VectorCopy (vright, viewmatrix[0]);
 	VectorCopy (vup, viewmatrix[1]);
 	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vpn, viewmatrix[2]);
+	VectorCopy (vfwd, viewmatrix[2]);
 
 //	viewmatrix[0][3] = 0;
 //	viewmatrix[1][3] = 0;

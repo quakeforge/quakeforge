@@ -229,7 +229,7 @@ glsl_R_DrawSprite (entity_t *ent)
 	};
 
 	vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
-	cameravec = r_refdef.viewposition - origin;
+	cameravec = r_refdef.frame.position - origin;
 
 	if (!R_BillboardFrame (ent, sprite->type, &cameravec[0],
 						   &svup[0], &svright[0], &svpn[0])) {

@@ -100,11 +100,7 @@ glsl_R_SetupFrame (void)
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
-	vec4f_t     position = r_refdef.viewposition;
-	vec4f_t     rotation = r_refdef.viewrotation;
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0,-1, 0, 0 }), vright);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+	vec4f_t     position = r_refdef.frame.position;
 
 	R_SetFrustum ();
 
@@ -121,7 +117,6 @@ R_SetupView (void)
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
 	};
-	vec4f_t     offset = { 0, 0, 0, 1 };
 
 	x = r_refdef.vrect.x;
 	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
@@ -129,11 +124,7 @@ R_SetupView (void)
 	h = r_refdef.vrect.height;
 	qfeglViewport (x, y, w, h);
 
-	mat4fquat (glsl_view, qconjf (r_refdef.viewrotation));
-	mmulf (glsl_view, z_up, glsl_view);
-	offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	glsl_view[3] = mvmulf (glsl_view, offset);
+	mmulf (glsl_view, z_up, r_refdef.camera_inverse);
 
 	qfeglEnable (GL_CULL_FACE);
 	qfeglEnable (GL_DEPTH_TEST);

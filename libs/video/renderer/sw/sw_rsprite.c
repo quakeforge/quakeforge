@@ -60,7 +60,7 @@ R_RotateSprite (const vec3_t relvieworg, float beamlength, vec3_t org)
 	if (beamlength == 0.0)
 		return;
 
-	VectorScale (r_spritedesc.vpn, -beamlength, vec);
+	VectorScale (r_spritedesc.vfwd, -beamlength, vec);
 	VectorAdd (r_entorigin, vec, r_entorigin);
 	VectorSubtract (relvieworg, vec, org);
 }
@@ -156,7 +156,7 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 	vec3_t      left, up, right, down, transformed, local;
 	emitpoint_t outverts[MAXWORKINGVERTS + 1], *pout;
 
-	dot = DotProduct (r_spritedesc.vpn, relvieworg);
+	dot = DotProduct (r_spritedesc.vfwd, relvieworg);
 
 	// backface cull
 	if (dot >= 0)
@@ -211,7 +211,7 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 	r_spritedesc.nearzi = -999999;
 
 	for (i = 0; i < nump; i++) {
-		VectorSubtract (pv, r_refdef.viewposition, local);
+		VectorSubtract (pv, r_refdef.frame.position, local);
 		TransformVector (local, transformed);
 
 		if (transformed[2] < NEAR_CLIP)
@@ -246,7 +246,7 @@ R_DrawSprite (entity_t *ent)
 	msprite_t  *sprite = ent->renderer.model->cache.data;
 	vec3_t      relvieworg;
 
-	VectorSubtract (r_refdef.viewposition, r_entorigin, relvieworg);
+	VectorSubtract (r_refdef.frame.position, r_entorigin, relvieworg);
 
 	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, &ent->animation);
 
@@ -256,7 +256,7 @@ R_DrawSprite (entity_t *ent)
 	if (!R_BillboardFrame (ent, sprite->type, relvieworg,
 						   r_spritedesc.vup,
 						   r_spritedesc.vright,
-						   r_spritedesc.vpn)) {
+						   r_spritedesc.vfwd)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}

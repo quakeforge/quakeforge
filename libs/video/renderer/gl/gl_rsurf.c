@@ -565,7 +565,7 @@ gl_R_DrawBrushModel (entity_t *e)
 			return;
 	}
 
-	vec4f_t     relviewpos = r_refdef.viewposition - worldMatrix[3];
+	vec4f_t     relviewpos = r_refdef.frame.position - worldMatrix[3];
 	if (rotated) {
 		vec4f_t     temp = relviewpos;
 
@@ -626,7 +626,7 @@ get_side (mnode_t *node)
 {
 	// find which side of the node we are on
 	plane_t    *plane = node->plane;
-	vec4f_t     org = r_refdef.viewposition;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
 		return (org[plane->type] - plane->dist) < 0;

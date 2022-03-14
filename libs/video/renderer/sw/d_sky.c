@@ -53,9 +53,9 @@ D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 	wu = 8192.0 * (float) (u - half_width) / temp;
 	wv = 8192.0 * (float) (half_height - v) / temp;
 
-	end[0] = 4096 * vpn[0] + wu * vright[0] + wv * vup[0];
-	end[1] = 4096 * vpn[1] + wu * vright[1] + wv * vup[1];
-	end[2] = 4096 * vpn[2] + wu * vright[2] + wv * vup[2];
+	end[0] = 4096 * vfwd[0] + wu * vright[0] + wv * vup[0];
+	end[1] = 4096 * vfwd[1] + wu * vright[1] + wv * vup[1];
+	end[2] = 4096 * vfwd[2] + wu * vright[2] + wv * vup[2];
 	end[2] *= 3;
 	VectorNormalize (end);
 

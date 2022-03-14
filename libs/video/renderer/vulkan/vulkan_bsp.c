@@ -615,7 +615,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 			return;
 	}
 
-	org = r_refdef.viewposition - mat[3];
+	org = r_refdef.frame.position - mat[3];
 	if (rotated) {
 		vec4f_t     temp = org;
 
@@ -653,7 +653,7 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
-	vec4f_t     org = r_refdef.viewposition;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
 		return (org[plane->type] - plane->dist) < 0;

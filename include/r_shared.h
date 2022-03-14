@@ -70,7 +70,7 @@ extern byte color_white[4];
 extern byte color_black[4];
 
 extern	vec3_t	vup, base_vup;
-extern	vec3_t	vpn, base_vpn;
+extern	vec3_t	vfwd, base_vfwd;
 extern	vec3_t	vright, base_vright;
 
 #define NUMSTACKEDGES		2400 //2000

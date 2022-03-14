@@ -738,7 +738,7 @@ LTransformAndProject:
 //	
 //		lzi0 = 1.0 / transformed[2];
 	fld		%st(0)				// local[0] | local[0] | local[1] | local[2]
-	fmuls	C(vpn)+0			// zm0 | local[0] | local[1] | local[2]
+	fmuls	C(vfwd)+0			// zm0 | local[0] | local[1] | local[2]
 	fld		%st(1)				// local[0] | zm0 | local[0] | local[1] |
 								//  local[2]
 	fmuls	C(vright)+0			// xm0 | zm0 | local[0] | local[1] | local[2]
@@ -746,7 +746,7 @@ LTransformAndProject:
 	fmuls	C(vup)+0			// ym0 |  zm0 | xm0 | local[1] | local[2]
 	fld		%st(3)				// local[1] | ym0 |  zm0 | xm0 | local[1] |
 								//  local[2]
-	fmuls	C(vpn)+4			// zm1 | ym0 | zm0 | xm0 | local[1] |
+	fmuls	C(vfwd)+4			// zm1 | ym0 | zm0 | xm0 | local[1] |
 								//  local[2]
 	fld		%st(4)				// local[1] | zm1 | ym0 | zm0 | xm0 |
 								//  local[1] | local[2]
@@ -763,7 +763,7 @@ LTransformAndProject:
 	faddp	%st(0),%st(4)		// ym0 | zm2 | ym1 | xm2 | local[2]
 	faddp	%st(0),%st(2)		// zm2 | ym2 | xm2 | local[2]
 	fld		%st(3)				// local[2] | zm2 | ym2 | xm2 | local[2]
-	fmuls	C(vpn)+8			// zm3 | zm2 | ym2 | xm2 | local[2]
+	fmuls	C(vfwd)+8			// zm3 | zm2 | ym2 | xm2 | local[2]
 	fld		%st(4)				// local[2] | zm3 | zm2 | ym2 | xm2 | local[2]
 	fmuls	C(vright)+8			// xm3 | zm3 | zm2 | ym2 | xm2 | local[2]
 	fxch	%st(5)				// local[2] | zm3 | zm2 | ym2 | xm2 | xm3

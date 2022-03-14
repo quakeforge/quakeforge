@@ -47,7 +47,7 @@
 
 int
 R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
-				  vec3_t bbup, vec3_t bbright, vec3_t bbpn)
+				  vec3_t bbup, vec3_t bbright, vec3_t bbfwd)
 {
 	vec3_t      tvec;
 	float       dot;
@@ -66,28 +66,26 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			//CrossProduct(bbup, -cameravec, bbright)
 			VectorSet (tvec[1], -tvec[0], 0, bbright);
 			VectorNormalize (bbright);
-			//CrossProduct (bbright, bbup, bbpn)
-			VectorSet (-bbright[1], bbright[0], 0, bbpn);
+			//CrossProduct (bbright, bbup, bbfwd)
+			VectorSet (-bbright[1], bbright[0], 0, bbfwd);
 			break;
 		case SPR_VP_PARALLEL:
 			// the billboard always has the same orientation as the camera
-			VectorCopy (vup, bbup);
-			VectorCopy (vright, bbright);
-			VectorCopy (vpn, bbpn);
+			VectorCopy (r_refdef.frame.up, bbup);
+			VectorCopy (r_refdef.frame.right, bbright);
+			VectorCopy (r_refdef.frame.forward, bbfwd);
 			break;
 		case SPR_VP_PARALLEL_UPRIGHT:
 			// the billboar has its up vector parallel with world up, and
 			// its right vector parallel with the view plane.
 			// Undefined if the camera is looking straight up or down.
-			dot = vpn[2];	// DotProduct (vpn, world up)
+			dot = r_refdef.frame.forward[2];
 			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree)
 				return 0;
 			VectorSet (0, 0, 1, bbup);
-			//CrossProduct(bbup, vpn, bbright)
-			VectorSet (vpn[1], -vpn[0], 0, bbright);
+			VectorSet (r_refdef.frame.forward[1], -r_refdef.frame.forward[0], 0, bbright);
 			VectorNormalize (bbright);
-			//CrossProduct (bbright, bbup, bbpn)
-			VectorSet (-bbright[1], bbright[0], 0, bbpn);
+			VectorSet (-bbright[1], bbright[0], 0, bbfwd);
 			break;
 		case SPR_ORIENTED:
 			{
@@ -95,7 +93,7 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 				// entity's orientation.
 				mat4f_t     mat;
 				Transform_GetWorldMatrix (ent->transform, mat);
-				VectorCopy (mat[0], bbpn);
+				VectorCopy (mat[0], bbfwd);
 				VectorNegate (mat[1], bbright);
 				VectorCopy (mat[2], bbup);
 			}
@@ -104,13 +102,15 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			{
 				// The billboard is rotated relative to the camera using
 				// the entity's local rotation.
-				vec4f_t     rot = Transform_GetLocalRotation (ent->transform);
+				mat4f_t     entmat;
+				mat4f_t     spmat;
+				Transform_GetLocalMatrix (ent->transform, entmat);
 				// FIXME needs proper testing (need to find, make, or fake a
 				// parallel oriented sprite)
-				rot = qmulf (r_refdef.viewrotation, rot);
-				QuatMultVec (&rot[0], vpn, bbpn);
-				QuatMultVec (&rot[0], vright, bbright);
-				QuatMultVec (&rot[0], vup, bbup);
+				mmulf (spmat, r_refdef.camera, entmat);
+				VectorCopy (spmat[0], bbfwd);
+				VectorNegate (spmat[1], bbright);
+				VectorCopy (spmat[1], bbup);
 			}
 			break;
 		default:

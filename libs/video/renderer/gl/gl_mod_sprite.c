@@ -68,7 +68,7 @@ R_DrawSpriteModel_f (entity_t *e)
 	mspriteframe_t	*frame;
 
 	origin = Transform_GetWorldPosition (e->transform);
-	cameravec = r_refdef.viewposition - origin;
+	cameravec = r_refdef.frame.position - origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (sprite, &e->animation);
@@ -138,10 +138,10 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 		right = Transform_Right (e->transform);
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		up = (vec4f_t) { 0, 0, 1, 0 };
-		VectorCopy (vright, right);
+		VectorCopy (r_refdef.frame.right, right);
 	} else {								// normal sprite
-		VectorCopy (vup, up);
-		VectorCopy (vright, right);
+		VectorCopy (r_refdef.frame.up, up);
+		VectorCopy (r_refdef.frame.right, right);
 	}
 
 	for (i = 0; i < 4; i++) {

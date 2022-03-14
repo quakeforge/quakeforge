@@ -119,7 +119,7 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
 	mat[3] = Transform_GetWorldPosition (ent->transform);
-	vec4f_t     cameravec = r_refdef.viewposition - mat[3];
+	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
 	R_BillboardFrame (ent, sprite->type, &cameravec[0],
 					  &mat[2][0], &mat[1][0], &mat[0][0]);
 	mat[0] = -mat[0];

@@ -151,7 +151,7 @@ D_DrawSurfaces (void)
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
 	vec3_t      world_transformed_modelorg;
-	vec3_t      local_modelorg;
+	vec4f_t     local_modelorg;
 
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
@@ -208,9 +208,9 @@ D_DrawSurfaces (void)
 					// TODO: store once at start of frame
 					transform_t *transform = s->entity->transform;
 					transform = s->entity->transform;
-					VectorSubtract (r_refdef.viewposition,
-						Transform_GetWorldPosition (transform), local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
+					local_modelorg = r_refdef.frame.position -
+						Transform_GetWorldPosition (transform);
+					TransformVector (&local_modelorg[0], transformed_modelorg);
 
 					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in
@@ -228,7 +228,7 @@ D_DrawSurfaces (void)
 
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
-					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vfwd, vfwd);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
@@ -239,9 +239,9 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					transform_t *transform = s->entity->transform;
-					VectorSubtract (r_refdef.viewposition,
-						Transform_GetWorldPosition (transform), local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
+					local_modelorg = r_refdef.frame.position -
+						Transform_GetWorldPosition (transform);
+					TransformVector (&local_modelorg[0], transformed_modelorg);
 
 					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in
@@ -270,7 +270,7 @@ D_DrawSurfaces (void)
 
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
-					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vfwd, vfwd);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);

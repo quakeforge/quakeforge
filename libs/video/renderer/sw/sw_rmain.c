@@ -107,6 +107,10 @@ int         r_drawnpolycount;
 int        *pfrustum_indexes[4];
 int         r_frustum_indexes[4 * 6];
 
+vec3_t      vup, base_vup;
+vec3_t      vfwd, base_vfwd;
+vec3_t      vright, base_vright;
+
 float       r_aliastransition, r_resfudge;
 
 static float dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
@@ -581,7 +585,7 @@ R_DrawBrushEntitiesOnList (void)
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
 			mod_brush_t *brush = &clmodel->brush;
 			VectorCopy (origin, r_entorigin);
-			VectorSubtract (r_refdef.viewposition, r_entorigin, modelorg);
+			VectorSubtract (r_refdef.frame.position, r_entorigin, modelorg);
 
 			r_pcurrentvertbase = brush->vertexes;
 
@@ -631,7 +635,7 @@ R_DrawBrushEntitiesOnList (void)
 
 			// put back world rotation and frustum clipping
 			// FIXME: R_RotateBmodel should just work off base_vxx
-			VectorCopy (base_vpn, vpn);
+			VectorCopy (base_vfwd, vfwd);
 			VectorCopy (base_vup, vup);
 			VectorCopy (base_vright, vright);
 			VectorCopy (base_modelorg, modelorg);

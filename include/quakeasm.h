@@ -255,7 +255,7 @@
 
 	.extern C(vright)
 	.extern C(vup)
-	.extern C(vpn)
+	.extern C(vfwd)
 
 #endif
 

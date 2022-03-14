@@ -56,8 +56,8 @@ R_DrawParticles (void)
 {
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
-	VectorCopy (vpn, r_ppn);
-	VectorCopy (r_refdef.viewposition, r_porigin);
+	VectorCopy (vfwd, r_ppn);
+	VectorCopy (r_refdef.frame.position, r_porigin);
 
 	R_RunParticles (vr_data.frametime);
 

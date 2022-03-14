@@ -328,12 +328,12 @@ D_SpriteCalculateGradients (const vec3_t relvieworg)
 	vec3_t      p_normal, p_saxis, p_taxis, p_temp1;
 	float       distinv;
 
-	TransformVector (r_spritedesc.vpn, p_normal);
+	TransformVector (r_spritedesc.vfwd, p_normal);
 	TransformVector (r_spritedesc.vright, p_saxis);
 	TransformVector (r_spritedesc.vup, p_taxis);
 	VectorNegate (p_taxis, p_taxis);
 
-	distinv = 1.0 / (-DotProduct (relvieworg, r_spritedesc.vpn));
+	distinv = 1.0 / (-DotProduct (relvieworg, r_spritedesc.vfwd));
 
 	d_sdivzstepu = p_saxis[0] * xscaleinv;
 	d_tdivzstepu = p_taxis[0] * xscaleinv;

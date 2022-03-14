@@ -161,12 +161,23 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	}
 
 	if (camera) {
-		r_data->refdef->viewposition = Transform_GetWorldPosition (camera);
-		r_data->refdef->viewrotation = Transform_GetWorldRotation (camera);
+		Transform_GetWorldMatrix (camera, r_data->refdef->camera);
+		Transform_GetWorldInverse (camera, r_data->refdef->camera_inverse);
 	} else {
-		r_data->refdef->viewposition = (vec4f_t) { 0, 0, 0, 1 };
-		r_data->refdef->viewrotation = (vec4f_t) { 0, 0, 0, 1 };
+		mat4fidentity (r_data->refdef->camera);
+		mat4fidentity (r_data->refdef->camera_inverse);
 	}
+	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
+	// camera forward vector (camera Y) points along the world +X axis and the
+	// camera right vector (camera X) points along the world -Y axis. This
+	// should not be necessary here but is due to AngleVectors (and thus
+	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
+	// as right). Fixing this would take an audit of the usage of both, but is
+	// probably worthwhile in the long run.
+	r_data->refdef->frame.mat[0] = -r_data->refdef->camera[1];
+	r_data->refdef->frame.mat[1] =  r_data->refdef->camera[0];
+	r_data->refdef->frame.mat[2] =  r_data->refdef->camera[2];
+	r_data->refdef->frame.mat[3] =  r_data->refdef->camera[3];
 
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;

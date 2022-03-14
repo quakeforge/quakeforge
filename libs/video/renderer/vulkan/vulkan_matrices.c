@@ -72,7 +72,6 @@ setup_view (vulkan_ctx_t *ctx)
 		{ 0,-1, 0, 0},
 		{ 0, 0, 0, 1},
 	};
-	vec4f_t     offset = { 0, 0, 0, 1 };
 
 	/*x = r_refdef.vrect.x;
 	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
@@ -80,11 +79,7 @@ setup_view (vulkan_ctx_t *ctx)
 	h = r_refdef.vrect.height;
 	qfeglViewport (x, y, w, h);*/
 
-	mat4fquat (view, qconjf (r_refdef.viewrotation));
-	mmulf (view, z_up, view);
-	offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	view[3] = mvmulf (view, offset);
+	mmulf (view, z_up, r_refdef.camera_inverse);
 	Vulkan_SetViewMatrix (ctx, view);
 }
 
@@ -108,7 +103,7 @@ setup_sky (vulkan_ctx_t *ctx)
 	q = Blend (mctx->sky_rotation[0], mctx->sky_rotation[1], blend);
 	q = normalf (qmulf (mctx->sky_fix, q));
 	mat4fidentity (mat);
-	VectorNegate (r_refdef.viewposition, mat[3]);
+	VectorNegate (r_refdef.frame.position, mat[3]);
 	mat4fquat (m, q);
 	mmulf (mat, m, mat);
 	Vulkan_SetSkyMatrix (ctx, mat);

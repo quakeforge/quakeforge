@@ -70,14 +70,9 @@ setup_frame (vulkan_ctx_t *ctx)
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
-	vec4f_t     position = r_refdef.viewposition;
-	vec4f_t     rotation = r_refdef.viewrotation;
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
-
 	R_SetFrustum ();
 
+	vec4f_t     position = r_refdef.frame.position;
 	r_viewleaf = Mod_PointInLeaf (&position[0], r_worldentity.renderer.model);
 }
 

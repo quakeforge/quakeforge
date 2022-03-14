@@ -122,9 +122,9 @@ R_TransformFrustum (void)
 		v[1] = -screenedge[i].normal[0];
 		v[2] = screenedge[i].normal[1];
 
-		v2[0] = v[1] * vright[0] + v[2] * vup[0] + v[0] * vpn[0];
-		v2[1] = v[1] * vright[1] + v[2] * vup[1] + v[0] * vpn[1];
-		v2[2] = v[1] * vright[2] + v[2] * vup[2] + v[0] * vpn[2];
+		v2[0] = v[1] * vright[0] + v[2] * vup[0] + v[0] * vfwd[0];
+		v2[1] = v[1] * vright[1] + v[2] * vup[1] + v[0] * vfwd[1];
+		v2[2] = v[1] * vright[2] + v[2] * vup[2] + v[0] * vfwd[2];
 
 		VectorCopy (v2, view_clipplanes[i].normal);
 
@@ -142,7 +142,7 @@ TransformVector (const vec3_t in, vec3_t out)
 {
 	out[0] = DotProduct (in, vright);
 	out[1] = DotProduct (in, vup);
-	out[2] = DotProduct (in, vpn);
+	out[2] = DotProduct (in, vfwd);
 }
 #endif
 
@@ -183,13 +183,12 @@ R_SetupFrame (void)
 	numbtofpolys = 0;
 
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.viewposition, modelorg);
+	VectorCopy (r_refdef.frame.position, modelorg);
 
-	vec4f_t     position = r_refdef.viewposition;
-	vec4f_t     rotation = r_refdef.viewrotation;
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+	vec4f_t     position = r_refdef.frame.position;
+	VectorCopy (r_refdef.frame.right, vright);
+	VectorCopy (r_refdef.frame.forward, vfwd);
+	VectorCopy (r_refdef.frame.up, vup);
 	R_SetFrustum ();
 
 	// current viewleaf
@@ -248,7 +247,7 @@ R_SetupFrame (void)
 	R_TransformFrustum ();
 
 	// save base values
-	VectorCopy (vpn, base_vpn);
+	VectorCopy (vfwd, base_vfwd);
 	VectorCopy (vright, base_vright);
 	VectorCopy (vup, base_vup);
 	VectorCopy (modelorg, base_modelorg);

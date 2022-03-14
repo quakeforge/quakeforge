@@ -331,11 +331,7 @@ gl_R_SetupFrame (void)
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
 
-	vec4f_t     position = r_refdef.viewposition;
-	vec4f_t     rotation = r_refdef.viewrotation;
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (rotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+	vec4f_t     position = r_refdef.frame.position;
 
 	R_SetFrustum ();
 
@@ -409,11 +405,7 @@ R_SetupGL (void)
 		{ 0, 0,  0, 1},
 	};
 	mat4f_t view;
-	mat4fquat (view, qconjf (r_refdef.viewrotation));
-	mmulf (view, z_up, view);
-	vec4f_t offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	view[3] = mvmulf (view, offset);
+	mmulf (view, z_up, r_refdef.camera_inverse);
 	qfglLoadMatrixf (&view[0][0]);
 
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, gl_r_world_matrix);
