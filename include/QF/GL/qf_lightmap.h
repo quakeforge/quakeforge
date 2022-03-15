@@ -28,6 +28,8 @@
 #ifndef __QF_GL_lightmap_h
 #define __QF_GL_lightmap_h
 
+#include "QF/GL/types.h"
+
 // LordHavoc: since lightmaps are now allocated only as needed, allow a ridiculous number :)
 #define MAX_LIGHTMAPS	1024
 #define BLOCK_WIDTH		64
@@ -40,7 +42,7 @@ typedef struct glRect_s {
 extern int lm_src_blend, lm_dest_blend;
 extern model_t *gl_currentmodel;
 
-extern int			gl_lightmap_textures;
+extern GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
 extern qboolean		gl_lightmap_modified[MAX_LIGHTMAPS];
 extern instsurf_t  *gl_lightmap_polys[MAX_LIGHTMAPS];
 extern glRect_t		gl_lightmap_rectchange[MAX_LIGHTMAPS];

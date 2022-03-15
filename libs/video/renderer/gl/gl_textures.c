@@ -55,7 +55,7 @@
 #include "vid_internal.h"
 
 typedef struct {
-	int         texnum;
+	GLuint      texnum;
 	char        identifier[64];
 	int         width, height;
 	int         bytesperpixel;
@@ -584,8 +584,7 @@ GL_LoadTexture (const char *identifier, int width, int height, const byte *data,
 	strncpy (glt->identifier, identifier, sizeof (glt->identifier) - 1);
 	glt->identifier[sizeof (glt->identifier) - 1] = '\0';
 
-	glt->texnum = gl_texture_number;
-	gl_texture_number++;
+	qfglGenTextures (1, &glt->texnum);
 
 SetupTexture:
 	glt->crc = crc;

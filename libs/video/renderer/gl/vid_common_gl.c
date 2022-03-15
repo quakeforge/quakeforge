@@ -79,7 +79,6 @@ int					gl_use_bgra;
 int					gl_va_capable;
 static  int					driver_vaelements;
 int					vaelements;
-int         		gl_texture_number = 1;
 int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;

@@ -137,9 +137,6 @@ extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 extern int r_skymade;
 extern void R_MakeSky (void);
 
-extern int gl_solidskytexture;
-extern int gl_alphaskytexture;
-
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001
 #define ALIAS_TOP_CLIP				0x0002

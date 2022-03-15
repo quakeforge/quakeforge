@@ -52,20 +52,16 @@
 #define NUM_GRAPH_TEXTURES 8
 
 static byte *graph_texels[NUM_GRAPH_TEXTURES];
-static int   graph_texture[NUM_GRAPH_TEXTURES];
+static GLuint graph_texture[NUM_GRAPH_TEXTURES];
 static int   graph_index;
 static int   graph_size[NUM_GRAPH_TEXTURES];
 static int   graph_width[NUM_GRAPH_TEXTURES];
 
 
-int
-gl_R_InitGraphTextures (int base)
+void
+gl_R_InitGraphTextures (void)
 {
-	int i;
-
-	for (i = 0; i < NUM_GRAPH_TEXTURES; i++)
-		graph_texture[i] = base++;
-	return base;
+	qfglGenTextures (NUM_GRAPH_TEXTURES, graph_texture);
 }
 
 void

@@ -397,8 +397,8 @@ DrawTextureChains (int disable_blend, int do_bind)
 					}
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
-					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
-									 surf->lightmaptexturenum);
+					qfglBindTexture (GL_TEXTURE_2D,
+							 gl_lightmap_textures[surf->lightmaptexturenum]);
 
 					R_RenderBrushPoly_3 (surf);
 
@@ -416,8 +416,8 @@ DrawTextureChains (int disable_blend, int do_bind)
 				qglActiveTexture (gl_mtex_enum + 1);
 				for (s = tex->tex_chain; s; s = s->tex_chain) {
 					surf = s->surface;
-					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
-									 surf->lightmaptexturenum);
+					qfglBindTexture (GL_TEXTURE_2D,
+							 gl_lightmap_textures[surf->lightmaptexturenum]);
 
 					if (s->transform) {
 						qfglPushMatrix ();

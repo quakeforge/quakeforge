@@ -51,6 +51,6 @@ void gl_R_RenderView (void);
 void gl_R_ClearState (void);
 void gl_R_ViewChanged (void);
 void gl_R_LineGraph (int x, int y, int *h_vals, int count, int height);
-int gl_R_InitGraphTextures (int base);
+void gl_R_InitGraphTextures (void);
 
 #endif // __QF_GL_rmain_h

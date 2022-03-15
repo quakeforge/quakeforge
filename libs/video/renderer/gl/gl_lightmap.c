@@ -59,7 +59,7 @@
 static int          dlightdivtable[8192];
 static int			 gl_internalformat;				// 1 or 3
 static int          lightmap_bytes;				// 1, 3, or 4
-int          gl_lightmap_textures;
+GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
 
 // keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
@@ -480,7 +480,7 @@ gl_R_CalcLightmaps (void)
 		if (!gl_lightmap_polys[i])
 			continue;
 		if (gl_lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 			GL_UploadLightmap (i);
 			gl_lightmap_modified[i] = false;
 		}
@@ -500,7 +500,7 @@ gl_R_BlendLightmaps (void)
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		for (sc = gl_lightmap_polys[i]; sc; sc = sc->lm_chain) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 			if (sc->transform) {
 				qfglPushMatrix ();
 				qfglLoadMatrixf (sc->transform);
@@ -691,9 +691,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 
 	r_framecount = 1;					// no dlightcache
 
-	if (!gl_lightmap_textures) {
-		gl_lightmap_textures = gl_texture_number;
-		gl_texture_number += MAX_LIGHTMAPS;
+	if (!gl_lightmap_textures[0]) {
+		qfglGenTextures (MAX_LIGHTMAPS, gl_lightmap_textures);
 	}
 
 	switch (r_lightmap_components->int_val) {
@@ -756,7 +755,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		gl_lightmap_rectchange[i].w = 0;
 		gl_lightmap_rectchange[i].h = 0;
-		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		if (gl_Anisotropy)

@@ -56,8 +56,8 @@
 // cube from the outside on the -ve y axis with +x to the right, +y going in,
 // +z up, and front is the nearest face.
 static const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
-int         gl_solidskytexture;
-int         gl_alphaskytexture;
+GLuint      gl_solidskytexture;
+GLuint      gl_alphaskytexture;
 
 // Set to true if a valid skybox is loaded --KB
 qboolean    gl_skyloaded = false;
@@ -428,8 +428,9 @@ gl_R_InitSky (texture_t *mt)
 	((byte *) & transpix)[2] = b / (128 * 128);
 	((byte *) & transpix)[3] = 0;
 
-	if (!gl_solidskytexture)
-		gl_solidskytexture = gl_texture_number++;
+	if (!gl_solidskytexture) {
+		qfglGenTextures (1, &gl_solidskytexture);
+	}
 	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);
@@ -448,8 +449,9 @@ gl_R_InitSky (texture_t *mt)
 				trans[(i * 128) + j] = d_8to24table[p];
 		}
 
-	if (!gl_alphaskytexture)
-		gl_alphaskytexture = gl_texture_number++;
+	if (!gl_alphaskytexture) {
+		qfglGenTextures (1, &gl_alphaskytexture);
+	}
 	qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);

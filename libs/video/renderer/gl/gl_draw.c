@@ -82,7 +82,7 @@ static float      *textCoords, *tC;
 static qpic_t	   *draw_backtile;
 
 static cc_cell_t char_cells[256];
-static int	translate_texture;
+static GLuint translate_texture;
 static int	char_texture;
 static int	cs_texture;					// crosshair texturea
 
@@ -403,7 +403,7 @@ gl_Draw_Init (void)
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// save a texture slot for translated picture
-	translate_texture = gl_texture_number++;
+	qfglGenTextures (1, &translate_texture);
 
 	// get the other pics we need
 	draw_backtile = gl_Draw_PicFromWad ("backtile");
