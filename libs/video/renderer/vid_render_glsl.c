@@ -221,9 +221,13 @@ glsl_render_view (void)
 }
 
 static void
-glsl_set_2d (void)
+glsl_set_2d (int scaled)
 {
-	GLSL_Set2DScaled ();
+	if (scaled) {
+		GLSL_Set2DScaled ();
+	} else {
+		GLSL_Set2D ();
+	}
 }
 
 static void

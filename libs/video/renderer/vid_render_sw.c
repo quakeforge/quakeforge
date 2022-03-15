@@ -145,7 +145,7 @@ sw_render_view (void)
 }
 
 static void
-sw_set_2d (void)
+sw_set_2d (int scaled)
 {
 }
 

@@ -370,11 +370,6 @@ R_RenderView_ (void)
 
 	// render normal view
 	R_RenderScene ();
-
-	if (r_timegraph->int_val)
-		R_TimeGraph ();
-	if (r_zgraph->int_val)
-		R_ZGraph ();
 }
 
 static void R_RenderViewFishEye (void);

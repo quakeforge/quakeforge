@@ -108,7 +108,7 @@ typedef struct vid_render_funcs_s {
 
 	void (*begin_frame) (void);
 	void (*render_view) (void);
-	void (*set_2d) (void);
+	void (*set_2d) (int scaled);
 	void (*end_frame) (void);
 
 	vid_model_funcs_t *model_funcs;

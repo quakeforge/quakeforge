@@ -56,6 +56,8 @@
 #include "nq/include/client.h"
 
 static view_t  *net_view;
+static view_t  *timegraph_view;
+static view_t  *zgraph_view;
 static view_t  *loading_view;
 
 static void
@@ -94,6 +96,8 @@ scr_draw_views (void)
 	net_view->visible = (!cls.demoplayback
 						 && realtime - cl.last_servermessage >= 0.3);
 	loading_view->visible = cl.loading;
+	timegraph_view->visible = r_timegraph->int_val;
+	zgraph_view->visible = r_zgraph->int_val;
 
 	view_draw (r_data->vid->conview);
 }
@@ -144,6 +148,22 @@ CL_UpdateScreen (double realtime)
 		net_view->data = pic;
 		net_view->visible = 0;
 		view_add (r_data->scr_view, net_view);
+	}
+
+	if (!timegraph_view) {
+		view_t     *parent = r_data->scr_view;
+		timegraph_view = view_new (0, 0, parent->xlen, 100, grav_southwest);
+		timegraph_view->draw = R_TimeGraph;
+		timegraph_view->visible = 0;
+		view_add (parent, timegraph_view);
+	}
+
+	if (!zgraph_view) {
+		view_t     *parent = r_data->scr_view;
+		zgraph_view = view_new (0, 0, parent->xlen, 100, grav_southwest);
+		zgraph_view->draw = R_ZGraph;
+		zgraph_view->visible = 0;
+		view_add (parent, zgraph_view);
 	}
 
 	if (!loading_view) {

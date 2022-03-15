@@ -281,7 +281,7 @@ extern int			r_maxvalidedgeoffset;
 
 void R_AliasClipTriangle (mtriangle_t *ptri);
 
-extern float	r_time1;
+extern double	r_time1;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
@@ -296,8 +296,6 @@ extern vec3_t lightspot;
 
 void R_StoreEfrags (const efrag_t *ppefrag);
 void R_TimeRefresh_f (void);
-void R_TimeGraph (void);
-void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);

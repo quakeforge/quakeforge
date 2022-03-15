@@ -46,8 +46,12 @@ void SCR_UpdateScreen (struct transform_s *camera, double realtime,
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 struct tex_s *SCR_SnapScreen (unsigned width, unsigned height);
 
-extern struct cvar_s *hud_fps, *hud_time;
+extern struct cvar_s *hud_fps, *hud_time, *r_timegraph, *r_zgraph;
 extern int         scr_copytop;
 extern qboolean    scr_skipupdate;
+
+struct view_s;
+void R_TimeGraph (struct view_s *view);
+void R_ZGraph (struct view_s *view);
 
 #endif//__QF_screen_h

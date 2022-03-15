@@ -35,6 +35,8 @@
 #include "QF/plugin.h"
 #include "QF/sys.h"
 
+#include "QF/ui/view.h"
+
 #include "r_internal.h"
 
 
@@ -48,26 +50,24 @@ int          graphval;
 	Performance monitoring tool
 */
 void
-R_TimeGraph (void)
+R_TimeGraph (view_t *view)
 {
 	static int  timex;
 	int         a;
 	int         l;
-	//XXX float       r_time2;
+	double      r_time2;
 	static int  r_timings[MAX_TIMINGS];
 	int         timings[MAX_TIMINGS];
-	int         x, o;
+	int         o;
 
-	//XXX r_time2 = Sys_DoubleTime ();
+	r_time2 = Sys_DoubleTime ();
 
-	a = graphval;
-
-	r_timings[timex] = a;
+	r_timings[timex] = (r_time2 - r_time1) * 10000;
+	//printf ("%d %g\n", r_timings[timex], r_time2 - r_time1);
 
 	l = MAX_TIMINGS;
 	if (l > r_refdef.vrect.width)
 		l = r_refdef.vrect.width;
-	x = r_refdef.vrect.width - l;
 	o = 0;
 	a = timex - l;
 	if (a < 0) {
@@ -78,16 +78,16 @@ R_TimeGraph (void)
 		a = 0;
 	}
 	memcpy (timings + o, r_timings + a, l * sizeof (timings[0]));
-	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, r_timings,
-						   MAX_TIMINGS, vr_data.graphheight->int_val);
+	vr_funcs->R_LineGraph (view->xabs, view->yabs, r_timings,
+						   MAX_TIMINGS, 200);//vr_data.graphheight->int_val);
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
 
 void
-R_ZGraph (void)
+R_ZGraph (view_t *view)
 {
-	int         x, w;
+	int         w;
 	static int  height[256];
 
 	if (r_refdef.vrect.width <= 256)
@@ -97,7 +97,6 @@ R_ZGraph (void)
 
 	height[r_framecount & 255] = ((int) r_refdef.frame.position[2]) & 31;
 
-	x = 0;
-	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, height,
+	vr_funcs->R_LineGraph (view->xabs, view->yabs, height,
 						   w, vr_data.graphheight->int_val);
 }

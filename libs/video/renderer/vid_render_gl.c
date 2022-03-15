@@ -261,9 +261,13 @@ gl_render_view (void)
 }
 
 static void
-gl_set_2d (void)
+gl_set_2d (int scaled)
 {
-	GL_Set2DScaled ();
+	if (scaled) {
+		GL_Set2DScaled ();
+	} else {
+		GL_Set2D ();
+	}
 }
 
 static void

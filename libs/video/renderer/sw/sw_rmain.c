@@ -798,12 +798,6 @@ R_RenderView_ (void)
 	if (r_dowarp)
 		D_WarpScreen ();
 
-	if (r_timegraph->int_val)
-		R_TimeGraph ();
-
-	if (r_zgraph->int_val)
-		R_ZGraph ();
-
 	if (r_aliasstats->int_val)
 		R_PrintAliasStats ();
 

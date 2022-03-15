@@ -52,7 +52,7 @@ double      r_realtime;
 double      r_frametime;
 entity_t   *r_view_model;
 entity_t   *r_player_entity;
-float       r_time1;
+double      r_time1;
 int         r_lineadj;
 qboolean    r_active;
 int			r_init;

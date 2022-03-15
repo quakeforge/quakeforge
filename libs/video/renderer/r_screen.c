@@ -188,10 +188,11 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 
 	r_funcs->begin_frame ();
 	r_funcs->render_view ();
-	r_funcs->set_2d();
+	r_funcs->set_2d (0);
 	view_draw (r_data->scr_view);
+	r_funcs->set_2d (1);
 	while (*scr_funcs) {
-		(*scr_funcs)();
+		(*scr_funcs) ();
 		scr_funcs++;
 	}
 	r_funcs->end_frame ();
