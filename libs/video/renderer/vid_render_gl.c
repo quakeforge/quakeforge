@@ -47,6 +47,96 @@
 
 gl_ctx_t *gl_ctx;
 
+/* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
+static unsigned int GLErr_InvalidEnum;
+static unsigned int GLErr_InvalidValue;
+static unsigned int GLErr_InvalidOperation;
+static unsigned int GLErr_OutOfMemory;
+static unsigned int GLErr_StackOverflow;
+static unsigned int GLErr_StackUnderflow;
+static unsigned int GLErr_Unknown;
+
+static unsigned int
+R_TestErrors (unsigned int numerous)
+{
+	switch (qfglGetError ()) {
+	case GL_NO_ERROR:
+		return numerous;
+		break;
+	case GL_INVALID_ENUM:
+		GLErr_InvalidEnum++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_INVALID_VALUE:
+		GLErr_InvalidValue++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_INVALID_OPERATION:
+		GLErr_InvalidOperation++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_STACK_OVERFLOW:
+		GLErr_StackOverflow++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_STACK_UNDERFLOW:
+		GLErr_StackUnderflow++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_OUT_OF_MEMORY:
+		GLErr_OutOfMemory++;
+		R_TestErrors (numerous++);
+		break;
+	default:
+		GLErr_Unknown++;
+		R_TestErrors (numerous++);
+		break;
+	}
+
+	return numerous;
+}
+
+static void
+R_DisplayErrors (void)
+{
+	if (GLErr_InvalidEnum)
+		printf ("%d OpenGL errors: Invalid Enum!\n", GLErr_InvalidEnum);
+	if (GLErr_InvalidValue)
+		printf ("%d OpenGL errors: Invalid Value!\n", GLErr_InvalidValue);
+	if (GLErr_InvalidOperation)
+		printf ("%d OpenGL errors: Invalid Operation!\n", GLErr_InvalidOperation);
+	if (GLErr_StackOverflow)
+		printf ("%d OpenGL errors: Stack Overflow!\n", GLErr_StackOverflow);
+	if (GLErr_StackUnderflow)
+		printf ("%d OpenGL errors: Stack Underflow\n!", GLErr_StackUnderflow);
+	if (GLErr_OutOfMemory)
+		printf ("%d OpenGL errors: Out Of Memory!\n", GLErr_OutOfMemory);
+	if (GLErr_Unknown)
+		printf ("%d Unknown OpenGL errors!\n", GLErr_Unknown);
+}
+
+static void
+R_ClearErrors (void)
+{
+	GLErr_InvalidEnum = 0;
+	GLErr_InvalidValue = 0;
+	GLErr_InvalidOperation = 0;
+	GLErr_OutOfMemory = 0;
+	GLErr_StackOverflow = 0;
+	GLErr_StackUnderflow = 0;
+	GLErr_Unknown = 0;
+}
+
+void
+gl_errors (const char *msg)
+{
+	if (R_TestErrors (0)) {
+		printf ("gl_errors: %s\n", msg);
+		R_DisplayErrors ();
+	}
+	R_ClearErrors ();
+}
+
 static void
 gl_vid_render_choose_visual (void *data)
 {

@@ -31,4 +31,6 @@ void gl_Fog_DisableGFog (void);
 void gl_Fog_StartAdditive (void);
 void gl_Fog_StopAdditive (void);
 
+void gl_errors (const char *msg);
+
 #endif//__vid_gl_h
