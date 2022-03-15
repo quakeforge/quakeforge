@@ -521,7 +521,7 @@ R_RenderWorld (void)
 {
 	int         i;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
-	entity_t    worldent = {};
+	static entity_t    worldent = {};
 	entity_t   *ent = &worldent;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 	swbspctx_t  bspctx = {
