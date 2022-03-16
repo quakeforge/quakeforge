@@ -982,11 +982,12 @@ renderside (byte *bufs, int side)
 	r_refdef.fov_x = r_refdef.fov_y = 90;
 	r_refdef.vrect.x = r_refdef.vrect.y = 0;
 	r_refdef.vrect.height = r_refdef.vrect.width = sw_cube_map_size;
-	vid.height = vid.width = sw_cube_map_size;
+	vid.rowbytes = vid.height = vid.width = sw_cube_map_size;
 	R_ViewChanged ();
 
 	rendercopy (bufs);
 
+	vid.rowbytes = width;
 	r_refdef.vrect = rect;
 	vid.height = height;
 	vid.width = width;
@@ -1012,7 +1013,7 @@ renderlookup (byte **offs, byte* bufs)
 static void
 R_RenderViewFishEye (void)
 {
-	sw_cube_map_size = vid.width;
+	sw_cube_map_size = vid.height;
 	int width = vid.width; //r_refdef.vrect.width;
 	int height = vid.height; //r_refdef.vrect.height;
 	int scrsize = sw_cube_map_size * sw_cube_map_size;
