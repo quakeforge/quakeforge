@@ -93,6 +93,8 @@ D_SetupFrame (void)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
 	d_drawspans = D_DrawSpans8;
+
+	d_skyoffs = r_skytime * r_skyspeed;
 }
 
 void

@@ -75,6 +75,8 @@ extern float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
 extern float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
 extern float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
 
+extern float d_skyoffs;
+
 extern fixed16_t       sadjust, tadjust;
 extern fixed16_t       bbextents, bbextentt;
 
