@@ -78,8 +78,8 @@ R_TimeGraph (view_t *view)
 		a = 0;
 	}
 	memcpy (timings + o, r_timings + a, l * sizeof (timings[0]));
-	vr_funcs->R_LineGraph (view->xabs, view->yabs, r_timings,
-						   MAX_TIMINGS, 200);//vr_data.graphheight->int_val);
+	r_funcs->R_LineGraph (view->xabs, view->yabs, r_timings,
+						  MAX_TIMINGS, 200);//r_data->graphheight->int_val);
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
@@ -97,6 +97,6 @@ R_ZGraph (view_t *view)
 
 	height[r_framecount & 255] = ((int) r_refdef.frame.position[2]) & 31;
 
-	vr_funcs->R_LineGraph (view->xabs, view->yabs, height,
-						   w, vr_data.graphheight->int_val);
+	r_funcs->R_LineGraph (view->xabs, view->yabs, height,
+						  w, r_data->graphheight->int_val);
 }
