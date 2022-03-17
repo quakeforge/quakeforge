@@ -221,6 +221,12 @@ glsl_render_view (void)
 }
 
 static void
+glsl_draw_transparent (void)
+{
+	glsl_R_DrawWaterSurfaces ();
+}
+
+static void
 glsl_set_2d (int scaled)
 {
 	if (scaled) {
@@ -274,6 +280,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_render_view,
 	glsl_R_RenderEntities,
 	glsl_R_DrawParticles,
+	glsl_draw_transparent,
 	glsl_set_2d,
 	glsl_end_frame,
 	&model_funcs

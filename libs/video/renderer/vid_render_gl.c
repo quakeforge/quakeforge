@@ -263,6 +263,12 @@ gl_render_view (void)
 }
 
 static void
+gl_draw_transparent (void)
+{
+	gl_R_DrawWaterSurfaces ();
+}
+
+static void
 gl_set_2d (int scaled)
 {
 	if (scaled) {
@@ -330,6 +336,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_render_view,
 	gl_R_RenderEntities,
 	gl_R_DrawParticles,
+	gl_draw_transparent,
 	gl_set_2d,
 	gl_end_frame,
 	&model_funcs

@@ -111,6 +111,7 @@ typedef struct vid_render_funcs_s {
 	void (*render_view) (void);
 	void (*draw_entities) (struct entqueue_s *queue);
 	void (*draw_particles) (struct psystem_s *psystem);
+	void (*draw_transparent) (void);
 	void (*set_2d) (int scaled);
 	void (*end_frame) (void);
 

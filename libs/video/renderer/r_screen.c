@@ -212,6 +212,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	r_funcs->render_view ();
 	r_funcs->draw_entities (r_ent_queue);
 	r_funcs->draw_particles (&r_psystem);
+	r_funcs->draw_transparent ();
 	r_funcs->set_2d (0);
 	view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);

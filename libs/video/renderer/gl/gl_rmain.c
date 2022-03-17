@@ -320,7 +320,6 @@ R_RenderScene (void)
 	gl_R_DrawWorld ();				// adds static entities to the list
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	gl_R_RenderDlights ();
-	gl_R_DrawWaterSurfaces ();
 	R_DrawViewModel ();
 
 	gl_Fog_DisableGFog ();

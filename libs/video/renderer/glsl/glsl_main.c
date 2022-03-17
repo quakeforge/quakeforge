@@ -172,7 +172,6 @@ glsl_R_RenderView (void)
 	R_SetupView ();
 	glsl_R_DrawWorld ();
 	glsl_R_DrawSky ();
-	glsl_R_DrawWaterSurfaces ();
 	R_DrawViewModel ();
 }
 

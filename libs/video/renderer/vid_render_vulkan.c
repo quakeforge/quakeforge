@@ -304,6 +304,11 @@ vulkan_draw_particles (struct psystem_s *psystem)
 }
 
 static void
+vulkan_draw_transparent (void)
+{
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 }
@@ -688,6 +693,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_render_view,
 	vulkan_draw_entities,
 	vulkan_draw_particles,
+	vulkan_draw_transparent,
 	vulkan_set_2d,
 	vulkan_end_frame,
 	&model_funcs

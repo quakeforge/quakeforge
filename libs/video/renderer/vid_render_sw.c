@@ -145,6 +145,11 @@ sw_render_view (void)
 }
 
 static void
+sw_draw_transparent (void)
+{
+}
+
+static void
 sw_set_2d (int scaled)
 {
 }
@@ -218,6 +223,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	sw_render_view,
 	R_DrawEntitiesOnList,
 	R_DrawParticles,
+	sw_draw_transparent,
 	sw_set_2d,
 	sw_end_frame,
 	&model_funcs
