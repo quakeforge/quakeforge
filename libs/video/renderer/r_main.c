@@ -92,22 +92,20 @@ void
 R_SetFrustum (void)
 {
 	int         i;
-	vec4f_t     vright = r_refdef.frame.right;
-	vec4f_t     vfwd = r_refdef.frame.forward;
-	vec4f_t     vup = r_refdef.frame.up;
+	vec4f_t     right = r_refdef.frame.right;
+	vec4f_t     fwd = r_refdef.frame.forward;
+	vec4f_t     up = r_refdef.frame.up;
+	float       rot_x = 90 - r_refdef.fov_x / 2;
+	float       rot_y = 90 - r_refdef.fov_y / 2;
 
-	// rotate VPN right by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[0].normal, &vup[0], &vfwd[0],
-							 -(90 - r_refdef.fov_x / 2));
-	// rotate VPN left by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[1].normal, &vup[0], &vfwd[0],
-							 90 - r_refdef.fov_x / 2);
-	// rotate VPN up by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[2].normal, &vright[0], &vfwd[0],
-							 90 - r_refdef.fov_y / 2);
-	// rotate VPN down by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[3].normal, &vright[0], &vfwd[0],
-							 -(90 - r_refdef.fov_y / 2));
+	// rotate FWD right by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[0].normal, &up[0], &fwd[0], -rot_x);
+	// rotate FWD left by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[1].normal, &up[0], &fwd[0], rot_x);
+	// rotate FWD up by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[2].normal, &right[0], &fwd[0], rot_y);
+	// rotate FWD down by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[3].normal, &right[0], &fwd[0], -rot_y);
 
 	vec4f_t     origin = r_refdef.frame.position;
 	for (i = 0; i < 4; i++) {

@@ -180,18 +180,17 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 }
 
 static void
-make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t vpn, vec4f_t vright,
-		   vec4f_t vup, float verts[6][3])
+make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t sright, vec4f_t sup, float verts[6][3])
 {
 	vec4f_t     left, up, right, down;
 	vec4f_t     ul, ur, ll, lr;
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
-	right = frame->right * vright;
-	up = frame->up * vup;
-	left = frame->left * vright;
-	down = frame->down * vup;
+	right = frame->right * sright;
+	up = frame->up * sup;
+	left = frame->left * sright;
+	down = frame->down * sup;
 	// next, build the sprite corners from the axes
 	ul = up + left;
 	ur = up + right;
@@ -213,7 +212,7 @@ glsl_R_DrawSprite (entity_t *ent)
 	mspriteframe_t *frame1, *frame2;
 	float       blend;
 	vec4f_t     cameravec = {};
-	vec4f_t     svpn = {}, svright = {}, svup = {};
+	vec4f_t     spn = {}, sright = {}, sup = {};
 	static quat_t color = { 1, 1, 1, 1};
 	float       vertsa[6][3], vertsb[6][3];
 	static float uvab[6][4] = {
@@ -229,7 +228,7 @@ glsl_R_DrawSprite (entity_t *ent)
 	cameravec = r_refdef.frame.position - origin;
 
 	if (!R_BillboardFrame (ent, sprite->type, &cameravec[0],
-						   &svup[0], &svright[0], &svpn[0])) {
+						   &sup[0], &sright[0], &spn[0])) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
@@ -246,8 +245,8 @@ glsl_R_DrawSprite (entity_t *ent)
 	qfeglVertexAttrib4fv (quake_sprite.colorb.location, color);
 	qfeglVertexAttrib1f (quake_sprite.blend.location, blend);
 
-	make_quad (frame1, origin, svpn, svright, svup, vertsa);
-	make_quad (frame2, origin, svpn, svright, svup, vertsb);
+	make_quad (frame1, origin, sright, sup, vertsa);
+	make_quad (frame2, origin, sright, sup, vertsb);
 
 	qfeglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
 							 0, 0, vertsa);
