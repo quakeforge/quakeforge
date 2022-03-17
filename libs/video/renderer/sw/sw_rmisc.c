@@ -198,6 +198,13 @@ R_SetupFrame (void)
 	r_dowarp = r_waterwarp->int_val && (r_refdef.viewleaf->contents <=
 										CONTENTS_WATER);
 
+	if (scr_fisheye->int_val)  {
+		//FIXME this shouldn't be necessary, but warp doesn't work well in
+		//fisheye, aand allowing  the non-warp code to mess with vrect messes
+		//things up for the cube map rendering. This whole frame setup path
+		//needs to be redesigned
+		r_dowarp = r_viewchanged = 0;
+	}
 	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
 		if (r_dowarp) {
 			if ((vid.width <= WARP_WIDTH)
@@ -233,9 +240,7 @@ R_SetupFrame (void)
 								   (h / (float) vid.height)));
 				R_ViewChanged ();
 			}
-		} else if (!scr_fisheye->int_val) {
-			//FIXME the above test shouldn't be necessary (this whole section
-			//is a bit of a mess, though)
+		} else {
 			r_refdef.vrect.x = vr_data.scr_view->xpos;
 			r_refdef.vrect.y = vr_data.scr_view->ypos;
 			r_refdef.vrect.width = vr_data.scr_view->xlen;
