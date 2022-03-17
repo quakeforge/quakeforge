@@ -193,24 +193,23 @@ glsl_begin_frame (void)
 	GLSL_DrawReset ();
 
 	if (r_refdef.vrect.x > 0) {
+		int         rx = r_refdef.vrect.x + r_refdef.vrect.width;
+		int         vh = vid.height - vr_data.lineadj;
 		// left
-		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - vr_data.lineadj);
+		glsl_Draw_TileClear (0, 0, r_refdef.vrect.x, vh);
 		// right
-		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
-						vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
-						vid.height - vr_data.lineadj);
+		glsl_Draw_TileClear (rx, 0, vid.width - rx, vh);
 	}
 	if (r_refdef.vrect.y > 0) {
+		int         lx = r_refdef.vrect.x;
+		int         ty = r_refdef.vrect.y;
+		int         rx = r_refdef.vrect.x + r_refdef.vrect.width;
+		int         by = r_refdef.vrect.y + r_refdef.vrect.height;
+		int         vh = vid.height - vr_data.lineadj;
 		// top
-		Draw_TileClear (r_refdef.vrect.x, 0,
-						r_refdef.vrect.x + r_refdef.vrect.width,
-						r_refdef.vrect.y);
+		glsl_Draw_TileClear (lx, 0, rx, ty);
 		// bottom
-		Draw_TileClear (r_refdef.vrect.x,
-						r_refdef.vrect.y + r_refdef.vrect.height,
-						r_refdef.vrect.width,
-						vid.height - vr_data.lineadj -
-						(r_refdef.vrect.height + r_refdef.vrect.y));
+		glsl_Draw_TileClear (lx, by, r_refdef.vrect.width, vh - by);
 	}
 }
 

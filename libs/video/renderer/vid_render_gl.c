@@ -231,23 +231,24 @@ gl_begin_frame (void)
 	// draw any areas not covered by the refresh
 	if (r_refdef.vrect.x > 0) {
 		// left
-		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - vr_data.lineadj);
+		gl_Draw_TileClear (0, 0, r_refdef.vrect.x,
+						   vid.height - vr_data.lineadj);
 		// right
-		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
-						vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
-						vid.height - vr_data.lineadj);
+		gl_Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
+						   vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
+						   vid.height - vr_data.lineadj);
 	}
 	if (r_refdef.vrect.y > 0) {
 		// top
-		Draw_TileClear (r_refdef.vrect.x, 0,
-						r_refdef.vrect.x + r_refdef.vrect.width,
-						r_refdef.vrect.y);
+		gl_Draw_TileClear (r_refdef.vrect.x, 0,
+						   r_refdef.vrect.x + r_refdef.vrect.width,
+						   r_refdef.vrect.y);
 		// bottom
-		Draw_TileClear (r_refdef.vrect.x,
-						r_refdef.vrect.y + r_refdef.vrect.height,
-						r_refdef.vrect.width,
-						vid.height - vr_data.lineadj -
-						(r_refdef.vrect.height + r_refdef.vrect.y));
+		gl_Draw_TileClear (r_refdef.vrect.x,
+						   r_refdef.vrect.y + r_refdef.vrect.height,
+						   r_refdef.vrect.width,
+						   vid.height - vr_data.lineadj -
+						   (r_refdef.vrect.height + r_refdef.vrect.y));
 	}
 
 	gl_Fog_SetupFrame ();
