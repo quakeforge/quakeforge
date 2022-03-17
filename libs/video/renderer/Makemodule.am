@@ -28,11 +28,9 @@ video_renderer_common_sources = \
 	libs/video/renderer/noisetextures.c \
 	libs/video/renderer/r_alias.c \
 	libs/video/renderer/r_billboard.c \
-	libs/video/renderer/r_bsp.c \
 	libs/video/renderer/r_dyn_textures.c \
 	libs/video/renderer/r_ent.c \
 	libs/video/renderer/r_iqm.c \
-	libs/video/renderer/r_part.c \
 	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
@@ -44,6 +42,7 @@ libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
 libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
+	libs/video/renderer/r_bsp.c \
 	libs/video/renderer/r_cvar.c \
 	libs/video/renderer/r_efrag.c \
 	libs/video/renderer/r_fog.c \
@@ -51,6 +50,7 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_init.c \
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
+	libs/video/renderer/r_part.c \
 	libs/video/renderer/r_scrap.c \
 	libs/video/renderer/r_screen.c \
 	libs/video/renderer/r_progs.c

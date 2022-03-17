@@ -63,17 +63,17 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static void
-Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
+void
+Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
 		int         begun = 0; \
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
+			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
@@ -115,52 +115,16 @@ void
 Vulkan_RenderView (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	double      t[10] = {};
-	int         speeds = r_speeds->int_val;
 
 	if (!r_refdef.worldmodel) {
 		return;
 	}
 
-	if (speeds)
-		t[0] = Sys_DoubleTime ();
-	if (speeds)
-		t[1] = Sys_DoubleTime ();
-	R_MarkLeaves ();
-	if (speeds)
-		t[2] = Sys_DoubleTime ();
-	R_PushDlights (vec3_origin);
-	if (speeds)
-		t[3] = Sys_DoubleTime ();
 	Vulkan_DrawWorld (rFrame);
-	if (speeds)
-		t[4] = Sys_DoubleTime ();
 	Vulkan_DrawSky (rFrame);
-	if (speeds)
-		t[5] = Sys_DoubleTime ();
 	Vulkan_DrawViewModel (ctx);
-	Vulkan_RenderEntities (rFrame);
-	if (speeds)
-		t[6] = Sys_DoubleTime ();
 	Vulkan_DrawWaterSurfaces (rFrame);
-	if (speeds)
-		t[7] = Sys_DoubleTime ();
-	Vulkan_DrawParticles (ctx);
-	if (speeds)
-		t[8] = Sys_DoubleTime ();
 	Vulkan_Bsp_Flush (ctx);
-	if (speeds)
-		t[9] = Sys_DoubleTime ();
-	if (speeds) {
-		double      total = (t[9]  - t[0]) * 1000;
-		for (int i = 0; i < 9; i++) {
-			t[i] = (t[i + 1] - t[i]) * 1000;
-		}
-		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, flush: %g, part: %g\n",
-					total,
-					t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
-	}
 }
 
 void

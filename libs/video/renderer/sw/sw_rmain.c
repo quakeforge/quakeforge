@@ -112,15 +112,10 @@ float       r_viewmatrix[3][4];
 
 float       r_aliastransition, r_resfudge;
 
-static float dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
-static float se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
-
 void
 sw_R_Init (void)
 {
 	int         dummy;
-
-	r_ent_queue = EntQueue_New (mod_num_types);
 
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
@@ -411,17 +406,17 @@ draw_iqm_entity (entity_t *ent)
 	R_IQMDrawModel (ent, &lighting);
 }
 
-static void
-R_DrawEntitiesOnList (void)
+void
+R_DrawEntitiesOnList (entqueue_t *queue)
 {
 	if (!r_drawentities->int_val)
 		return;
 
 #define RE_LOOP(type_name) \
 	do { \
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
+			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
 			VectorCopy (Transform_GetWorldPosition (ent->transform), \
 						r_entorigin); \
 			draw_##type_name##_entity (ent); \
@@ -549,7 +544,7 @@ R_BmodelCheckBBox (entity_t *ent, model_t *clmodel, float *minmaxs)
 }
 
 static void
-R_DrawBrushEntitiesOnList (void)
+R_DrawBrushEntitiesOnList (entqueue_t *queue)
 {
 	int         j, clipflags;
 	unsigned int k;
@@ -562,8 +557,8 @@ R_DrawBrushEntitiesOnList (void)
 
 	insubmodel = true;
 
-	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-		entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
+	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
+		entity_t   *ent = queue->ent_queues[mod_brush].a[i];
 
 		VectorCopy (Transform_GetWorldPosition (ent->transform), origin);
 		clmodel = ent->renderer.model;
@@ -642,29 +637,7 @@ R_DrawBrushEntitiesOnList (void)
 }
 
 static void
-R_PrintDSpeeds (void)
-{
-	float       ms, dp_time, r_time2, rw_time, db_time, se_time, de_time,
-
-		dv_time;
-
-	r_time2 = Sys_DoubleTime ();
-
-	dp_time = (dp_time2 - dp_time1) * 1000;
-	rw_time = (rw_time2 - rw_time1) * 1000;
-	db_time = (db_time2 - db_time1) * 1000;
-	se_time = (se_time2 - se_time1) * 1000;
-	de_time = (de_time2 - de_time1) * 1000;
-	dv_time = (dv_time2 - dv_time1) * 1000;
-	ms = (r_time2 - r_time1) * 1000;
-
-	Sys_Printf ("%3i %4.1fp %3iw %4.1fb %3is %4.1fe %4.1fv\n",
-				(int) ms, dp_time, (int) rw_time, db_time, (int) se_time,
-				de_time, dv_time);
-}
-
-static void
-R_EdgeDrawing (void)
+R_EdgeDrawing (entqueue_t *queue)
 {
 	edge_t      ledges[NUMSTACKEDGES +
 					   ((CACHE_SIZE - 1) / sizeof (edge_t)) + 1];
@@ -690,10 +663,6 @@ R_EdgeDrawing (void)
 
 	R_BeginEdgeFrame ();
 
-	if (r_dspeeds->int_val) {
-		rw_time1 = Sys_DoubleTime ();
-	}
-
 	R_RenderWorld ();
 
 	if (r_drawculledpolys)
@@ -703,21 +672,7 @@ R_EdgeDrawing (void)
 	// just z writes, so have the driver turn z compares on now
 	D_TurnZOn ();
 
-	if (r_dspeeds->int_val) {
-		rw_time2 = Sys_DoubleTime ();
-		db_time1 = rw_time2;
-	}
-
-	R_DrawBrushEntitiesOnList ();
-
-	if (r_dspeeds->int_val) {
-		db_time2 = Sys_DoubleTime ();
-		se_time1 = db_time2;
-	}
-
-	if (!r_dspeeds->int_val) {
-		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-	}
+	R_DrawBrushEntitiesOnList (queue);
 
 	if (!(r_drawpolys | r_drawculledpolys))
 		R_ScanEdges ();
@@ -741,14 +696,7 @@ R_RenderView_ (void)
 
 	r_warpbuffer = warpbuffer;
 
-	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
-		r_time1 = Sys_DoubleTime ();
-
 	R_SetupFrame ();
-
-	R_MarkLeaves ();				// done here so we know if we're in water
-
-	R_PushDlights (vec3_origin);
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
@@ -756,57 +704,15 @@ R_RenderView_ (void)
 // done in screen.c
 	R_LowFPPrecision ();
 
-	if (!r_dspeeds->int_val) {
-		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-	}
-
-	R_EdgeDrawing ();
-
-	if (!r_dspeeds->int_val) {
-		S_ExtraUpdate ();		// don't let sound get messed up if going slow
-	}
-
-	if (r_dspeeds->int_val) {
-		se_time2 = Sys_DoubleTime ();
-		de_time1 = se_time2;
-	}
-
-	R_DrawEntitiesOnList ();
-
-	if (r_dspeeds->int_val) {
-		de_time2 = Sys_DoubleTime ();
-		dv_time1 = de_time2;
-	}
+	R_EdgeDrawing (r_ent_queue);
 
 	R_DrawViewModel ();
-
-	if (r_dspeeds->int_val) {
-		dv_time2 = Sys_DoubleTime ();
-		dp_time1 = Sys_DoubleTime ();
-	}
-
-	R_DrawParticles ();
-
-	if (r_dspeeds->int_val)
-		dp_time2 = Sys_DoubleTime ();
 
 	if (r_dowarp)
 		D_WarpScreen ();
 
 	if (r_aliasstats->int_val)
 		R_PrintAliasStats ();
-
-	if (r_speeds->int_val)
-		R_PrintTimes ();
-
-	if (r_dspeeds->int_val)
-		R_PrintDSpeeds ();
-
-	if (r_reportsurfout->int_val && r_outofsurfaces)
-		Sys_Printf ("Short %d surfaces\n", r_outofsurfaces);
-
-	if (r_reportedgeout->int_val && r_outofedges)
-		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 
 	// back to high floating-point precision
 	R_HighFPPrecision ();

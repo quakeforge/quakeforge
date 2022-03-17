@@ -152,6 +152,12 @@ sw_set_2d (int scaled)
 static void
 sw_end_frame (void)
 {
+	if (r_reportsurfout->int_val && r_outofsurfaces)
+		Sys_Printf ("Short %d surfaces\n", r_outofsurfaces);
+
+	if (r_reportedgeout->int_val && r_outofedges)
+		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
+
 	// update one of three areas
 	vrect_t     vrect;
 	if (vr_data.scr_copyeverything) {
@@ -210,6 +216,8 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_ViewChanged,
 	sw_begin_frame,
 	sw_render_view,
+	R_DrawEntitiesOnList,
+	R_DrawParticles,
 	sw_set_2d,
 	sw_end_frame,
 	&model_funcs

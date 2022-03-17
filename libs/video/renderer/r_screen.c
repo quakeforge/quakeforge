@@ -161,6 +161,10 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		return;
 	}
 
+	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val) {
+		r_time1 = Sys_DoubleTime ();
+	}
+
 	refdef_t   *refdef = r_data->refdef;
 	if (camera) {
 		Transform_GetWorldMatrix (camera, refdef->camera);
@@ -194,15 +198,20 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 	}
 
+	R_RunParticles (r_data->frametime);
 	R_AnimateLight ();
 	refdef->viewleaf = 0;
 	if (refdef->worldmodel) {
 		vec4f_t     position = refdef->frame.position;
 		refdef->viewleaf = Mod_PointInLeaf (&position[0], refdef->worldmodel);
 	}
+	R_MarkLeaves ();
+	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();
 	r_funcs->render_view ();
+	r_funcs->draw_entities (r_ent_queue);
+	r_funcs->draw_particles (&r_psystem);
 	r_funcs->set_2d (0);
 	view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);
@@ -475,4 +484,6 @@ SCR_Init (void)
 	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
 
 	scr_initialized = true;
+
+	r_ent_queue = EntQueue_New (mod_num_types);
 }

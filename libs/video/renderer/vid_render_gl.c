@@ -37,6 +37,7 @@
 #include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_vid.h"
 
 #include "mod_internal.h"
@@ -327,6 +328,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_ViewChanged,
 	gl_begin_frame,
 	gl_render_view,
+	gl_R_RenderEntities,
+	gl_R_DrawParticles,
 	gl_set_2d,
 	gl_end_frame,
 	&model_funcs

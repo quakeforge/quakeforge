@@ -100,13 +100,8 @@ gl_R_RotateForEntity (entity_t *e)
 	qfglMultMatrixf (&mat[0][0]);
 }
 
-/*
-	R_DrawEntitiesOnList
-
-	Draw all the entities we have information on.
-*/
-static void
-R_DrawEntitiesOnList (void)
+void
+gl_R_RenderEntities (entqueue_t *queue)
 {
 	if (!r_drawentities->int_val)
 		return;
@@ -133,8 +128,8 @@ R_DrawEntitiesOnList (void)
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_alias].size; i++) { \
-		entity_t   *ent = r_ent_queue->ent_queues[mod_alias].a[i]; \
+	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) { \
+		entity_t   *ent = queue->ent_queues[mod_alias].a[i]; \
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -162,8 +157,8 @@ R_DrawEntitiesOnList (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_iqm].size; i++) { \
-		entity_t   *ent = r_ent_queue->ent_queues[mod_iqm].a[i]; \
+	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) { \
+		entity_t   *ent = queue->ent_queues[mod_iqm].a[i]; \
 		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -172,8 +167,8 @@ R_DrawEntitiesOnList (void)
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
-	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_sprite].size; i++) { \
-		entity_t   *ent = r_ent_queue->ent_queues[mod_sprite].a[i]; \
+	for (size_t i = 0; i < queue->ent_queues[mod_sprite].size; i++) { \
+		entity_t   *ent = queue->ent_queues[mod_sprite].a[i]; \
 		gl_R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
@@ -319,21 +314,14 @@ R_SetupGL (void)
 static void
 R_RenderScene (void)
 {
-	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
-		r_time1 = Sys_DoubleTime ();
-
 	R_SetupGL ();
 	gl_Fog_EnableGFog ();
 
-	R_MarkLeaves ();			// done here so we know if we're in water
-	R_PushDlights (vec3_origin);
 	gl_R_DrawWorld ();				// adds static entities to the list
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
-	R_DrawEntitiesOnList ();
 	gl_R_RenderDlights ();
 	gl_R_DrawWaterSurfaces ();
 	R_DrawViewModel ();
-	gl_R_DrawParticles ();
 
 	gl_Fog_DisableGFog ();
 }

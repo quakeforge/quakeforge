@@ -45,9 +45,11 @@ void glrmain_init (void);
 void gl_R_RotateForEntity (struct entity_s *e);
 
 struct model_s;
+struct entqueue_s;
 void gl_R_NewMap (struct model_s *worldmodel, struct model_s **models,
 				  int num_models);
 void gl_R_RenderView (void);
+void gl_R_RenderEntities (struct entqueue_s *queue);
 void gl_R_ClearState (void);
 void gl_R_ViewChanged (void);
 void gl_R_LineGraph (int x, int y, int *h_vals, int count, int height);

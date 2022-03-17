@@ -110,7 +110,7 @@ gl_R_InitParticles (void)
 }
 
 void
-gl_R_DrawParticles (void)
+gl_R_DrawParticles (psystem_t *psystem)
 {
 	unsigned char  *at;
 	int				vacount;
@@ -118,10 +118,9 @@ gl_R_DrawParticles (void)
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
 	varray_t2f_c4ub_v3f_t		*VA;
 
-	if (!r_particles->int_val)
+	if (!r_psystem.numparticles) {
 		return;
-
-	R_RunParticles (vr_data.frametime);
+	}
 
 	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	// LordHavoc: particles should not affect zbuffer

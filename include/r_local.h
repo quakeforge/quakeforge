@@ -112,6 +112,8 @@ extern	clipplane_t	view_clipplanes[4];
 //=============================================================================
 
 void R_RenderWorld (void);
+struct entqueue_s;
+void R_DrawEntitiesOnList (struct entqueue_s *queue);
 
 //=============================================================================
 
@@ -248,7 +250,8 @@ qboolean R_AliasCheckBBox (entity_t *ent);
 
 // particle stuff =========================================
 
-void R_DrawParticles (void);
+struct psystem_s;
+void R_DrawParticles (struct psystem_s *psystem);
 void R_InitParticles (void);
 void R_ClearParticles (void);
 void R_ReadPointFile_f (void);

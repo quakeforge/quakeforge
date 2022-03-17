@@ -285,6 +285,25 @@ vulkan_render_view (void)
 }
 
 static void
+vulkan_draw_entities (entqueue_t *queue)
+{
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
+	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		Vulkan_RenderEntities (queue, rpFrame);
+	}
+}
+
+static void
+vulkan_draw_particles (struct psystem_s *psystem)
+{
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 }
@@ -667,6 +686,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_ViewChanged,
 	vulkan_begin_frame,
 	vulkan_render_view,
+	vulkan_draw_entities,
+	vulkan_draw_particles,
 	vulkan_set_2d,
 	vulkan_end_frame,
 	&model_funcs

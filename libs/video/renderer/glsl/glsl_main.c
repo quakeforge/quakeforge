@@ -116,8 +116,8 @@ R_SetupView (void)
 	qfeglEnable (GL_DEPTH_TEST);
 }
 
-static void
-R_RenderEntities (void)
+void
+glsl_R_RenderEntities (entqueue_t *queue)
 {
 	int         begun;
 
@@ -126,9 +126,9 @@ R_RenderEntities (void)
 #define RE_LOOP(type_name, Type) \
 	do { \
 		begun = 0; \
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_##type_name].size; \
+		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = r_ent_queue->ent_queues[mod_##type_name].a[i]; \
+			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
@@ -165,51 +165,15 @@ R_DrawViewModel (void)
 void
 glsl_R_RenderView (void)
 {
-	double      t[10] = {};
-	int         speeds = r_speeds->int_val;
-
 	if (!r_refdef.worldmodel) {
 		return;
 	}
 
-	if (speeds)
-		t[0] = Sys_DoubleTime ();
 	R_SetupView ();
-	if (speeds)
-		t[1] = Sys_DoubleTime ();
-	R_MarkLeaves ();
-	if (speeds)
-		t[2] = Sys_DoubleTime ();
-	R_PushDlights (vec3_origin);
-	if (speeds)
-		t[3] = Sys_DoubleTime ();
 	glsl_R_DrawWorld ();
-	if (speeds)
-		t[4] = Sys_DoubleTime ();
 	glsl_R_DrawSky ();
-	if (speeds)
-		t[5] = Sys_DoubleTime ();
-	R_RenderEntities ();
-	if (speeds)
-		t[6] = Sys_DoubleTime ();
 	glsl_R_DrawWaterSurfaces ();
-	if (speeds)
-		t[7] = Sys_DoubleTime ();
 	R_DrawViewModel ();
-	if (speeds)
-		t[8] = Sys_DoubleTime ();
-	glsl_R_DrawParticles ();
-	if (speeds)
-		t[9] = Sys_DoubleTime ();
-	if (speeds) {
-		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, view: %g, part: %g\n",
-					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
-					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
-					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
-					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
-					(t[8] - t[7]) * 1000, (t[9] - t[8]) * 1000);
-	}
 }
 
 static void
@@ -237,7 +201,6 @@ glsl_R_TimeRefresh_f (void)
 void
 glsl_R_Init (void)
 {
-	r_ent_queue = EntQueue_New (mod_num_types);
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();

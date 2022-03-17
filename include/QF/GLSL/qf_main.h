@@ -28,7 +28,10 @@
 #ifndef __QF_GLSL_qf_main_h
 #define __QF_GLSL_qf_main_h
 
+struct entqueue_s;
+
 void glsl_R_NewMap (model_t *worldmodel, model_t **models, int num_models);
+void glsl_R_RenderEntities (struct entqueue_s *queue);
 void glsl_R_RenderView (void);
 void glsl_R_ClearState (void);
 void glsl_R_ViewChanged (void);

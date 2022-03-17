@@ -38,7 +38,8 @@ typedef struct {
 	byte        color[4];
 } partvert_t;
 
-void glsl_R_DrawParticles (void);
+struct psystem_s;
+void glsl_R_DrawParticles (struct psystem_s *psystem);
 void glsl_R_Particles_Init_Cvars (void);
 void glsl_R_InitParticles (void);
 

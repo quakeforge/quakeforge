@@ -36,6 +36,7 @@
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_vid.h"
 
 #include "mod_internal.h"
@@ -271,6 +272,8 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_ViewChanged,
 	glsl_begin_frame,
 	glsl_render_view,
+	glsl_R_RenderEntities,
+	glsl_R_DrawParticles,
 	glsl_set_2d,
 	glsl_end_frame,
 	&model_funcs

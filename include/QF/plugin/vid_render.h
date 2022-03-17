@@ -39,6 +39,7 @@ struct skin_s;
 
 struct mod_alias_ctx_s;
 struct mod_sprite_ctx_s;
+struct entqueue_s;
 
 /*
 	All video plugins must export these functions
@@ -108,6 +109,8 @@ typedef struct vid_render_funcs_s {
 
 	void (*begin_frame) (void);
 	void (*render_view) (void);
+	void (*draw_entities) (struct entqueue_s *queue);
+	void (*draw_particles) (struct psystem_s *psystem);
 	void (*set_2d) (int scaled);
 	void (*end_frame) (void);
 

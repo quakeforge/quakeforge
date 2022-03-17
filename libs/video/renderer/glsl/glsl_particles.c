@@ -215,7 +215,7 @@ glsl_R_InitParticles (void)
 }
 
 static void
-draw_qf_particles (void)
+draw_qf_particles (psystem_t *psystem)
 {
 	byte       *at;
 	int         vacount;
@@ -255,8 +255,8 @@ draw_qf_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
-		particle_t *p = &r_psystem.particles[i];
+	for (unsigned i = 0; i < psystem->numparticles; i++) {
+		particle_t *p = &psystem->particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
@@ -340,7 +340,7 @@ draw_qf_particles (void)
 }
 
 static void
-draw_id_particles (void)
+draw_id_particles (psystem_t *psystem)
 {
 	int         vacount;
 	float       minparticledist;
@@ -375,8 +375,8 @@ draw_id_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
-		particle_t *p = &r_psystem.particles[i];
+	for (unsigned i = 0; i < psystem->numparticles; i++) {
+		particle_t *p = &psystem->particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
@@ -403,15 +403,15 @@ draw_id_particles (void)
 }
 
 void
-glsl_R_DrawParticles (void)
+glsl_R_DrawParticles (psystem_t *psystem)
 {
-	if (!r_particles->int_val || !r_psystem.numparticles)
+	if (!psystem->numparticles) {
 		return;
-	R_RunParticles (vr_data.frametime);
-	if (!r_psystem.points_only) {
-		draw_qf_particles ();
+	}
+	if (!psystem->points_only) {
+		draw_qf_particles (psystem);
 	} else {
-		draw_id_particles ();
+		draw_id_particles (psystem);
 	}
 }
 

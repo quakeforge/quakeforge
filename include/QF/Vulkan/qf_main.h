@@ -30,9 +30,12 @@
 
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
+struct entqueue_s;
 
 void Vulkan_NewMap (model_t *worldmodel, struct model_s **models,
 					int num_models, struct vulkan_ctx_s *ctx);
 void Vulkan_RenderView (struct qfv_renderframe_s *rFrame);
+void Vulkan_RenderEntities (struct entqueue_s *queue,
+							struct qfv_renderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_main_h
