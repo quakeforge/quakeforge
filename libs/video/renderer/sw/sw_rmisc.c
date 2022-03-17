@@ -176,23 +176,14 @@ R_SetupFrame (void)
 	vrect_t     vrect;
 	float       w, h;
 
-	R_AnimateLight ();
-	EntQueue_Clear (r_ent_queue);
-	r_framecount++;
-
 	numbtofpolys = 0;
 
 	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.frame.position, modelorg);
 
-	vec4f_t     position = r_refdef.frame.position;
 	VectorCopy (r_refdef.frame.right, vright);
 	VectorCopy (r_refdef.frame.forward, vfwd);
 	VectorCopy (r_refdef.frame.up, vup);
-	R_SetFrustum ();
-
-	// current viewleaf
-	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
 
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp->int_val && (r_refdef.viewleaf->contents <=

@@ -64,19 +64,6 @@
 #include "vid_vulkan.h"
 
 static void
-setup_frame (vulkan_ctx_t *ctx)
-{
-	R_AnimateLight ();
-	EntQueue_Clear (r_ent_queue);
-	r_framecount++;
-
-	R_SetFrustum ();
-
-	vec4f_t     position = r_refdef.frame.position;
-	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
-}
-
-static void
 Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
@@ -137,7 +124,6 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
-	setup_frame (ctx);
 	if (speeds)
 		t[1] = Sys_DoubleTime ();
 	R_MarkLeaves ();

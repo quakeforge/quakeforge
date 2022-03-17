@@ -94,20 +94,6 @@ glsl_R_ViewChanged (void)
 }
 
 static void
-glsl_R_SetupFrame (void)
-{
-	R_AnimateLight ();
-	EntQueue_Clear (r_ent_queue);
-	r_framecount++;
-
-	vec4f_t     position = r_refdef.frame.position;
-
-	R_SetFrustum ();
-
-	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
-}
-
-static void
 R_SetupView (void)
 {
 	float       x, y, w, h;
@@ -188,7 +174,6 @@ glsl_R_RenderView (void)
 
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
-	glsl_R_SetupFrame ();
 	R_SetupView ();
 	if (speeds)
 		t[1] = Sys_DoubleTime ();

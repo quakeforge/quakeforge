@@ -48,6 +48,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/scene/entity.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
@@ -160,13 +161,15 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		return;
 	}
 
+	refdef_t   *refdef = r_data->refdef;
 	if (camera) {
-		Transform_GetWorldMatrix (camera, r_data->refdef->camera);
-		Transform_GetWorldInverse (camera, r_data->refdef->camera_inverse);
+		Transform_GetWorldMatrix (camera, refdef->camera);
+		Transform_GetWorldInverse (camera, refdef->camera_inverse);
 	} else {
-		mat4fidentity (r_data->refdef->camera);
-		mat4fidentity (r_data->refdef->camera_inverse);
+		mat4fidentity (refdef->camera);
+		mat4fidentity (refdef->camera_inverse);
 	}
+
 	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
 	// camera forward vector (camera Y) points along the world +X axis and the
 	// camera right vector (camera X) points along the world -Y axis. This
@@ -174,16 +177,28 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
 	// as right). Fixing this would take an audit of the usage of both, but is
 	// probably worthwhile in the long run.
-	r_data->refdef->frame.mat[0] = -r_data->refdef->camera[1];
-	r_data->refdef->frame.mat[1] =  r_data->refdef->camera[0];
-	r_data->refdef->frame.mat[2] =  r_data->refdef->camera[2];
-	r_data->refdef->frame.mat[3] =  r_data->refdef->camera[3];
+	refdef->frame.mat[0] = -refdef->camera[1];
+	refdef->frame.mat[1] =  refdef->camera[0];
+	refdef->frame.mat[2] =  refdef->camera[2];
+	refdef->frame.mat[3] =  refdef->camera[3];
+
+	//FIXME breaks fisheye as it calls the view render many times
+	EntQueue_Clear (r_ent_queue);
+	r_framecount++;
+	R_SetFrustum ();
 
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;
 
 	if (r_data->vid->recalc_refdef) {
 		SCR_CalcRefdef ();
+	}
+
+	R_AnimateLight ();
+	refdef->viewleaf = 0;
+	if (refdef->worldmodel) {
+		vec4f_t     position = refdef->frame.position;
+		refdef->viewleaf = Mod_PointInLeaf (&position[0], refdef->worldmodel);
 	}
 
 	r_funcs->begin_frame ();

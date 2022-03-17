@@ -241,20 +241,6 @@ R_DrawViewModel (void)
 }
 
 static void
-gl_R_SetupFrame (void)
-{
-	R_AnimateLight ();
-	EntQueue_Clear (r_ent_queue);
-	r_framecount++;
-
-	vec4f_t     position = r_refdef.frame.position;
-
-	R_SetFrustum ();
-
-	r_refdef.viewleaf = Mod_PointInLeaf (&position[0], r_refdef.worldmodel);
-}
-
-static void
 MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
 				  GLdouble zFar)
 {
@@ -336,7 +322,6 @@ R_RenderScene (void)
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
-	gl_R_SetupFrame ();
 	R_SetupGL ();
 	gl_Fog_EnableGFog ();
 
