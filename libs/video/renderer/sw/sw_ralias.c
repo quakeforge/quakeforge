@@ -52,7 +52,7 @@ trivertx_t *r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
 static mdl_t      *pmdl;
-vec3_t      r_plightvec;
+vec3_t      r_lightvec;
 int         r_ambientlight;
 float       r_shadelight;
 static aliashdr_t *paliashdr;
@@ -413,7 +413,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 
 	// lighting
 	plightnormal = r_avertexnormals[pverts->lightnormalindex];
-	lightcos = DotProduct (plightnormal, r_plightvec);
+	lightcos = DotProduct (plightnormal, r_lightvec);
 	temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -463,7 +463,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 		// lighting
 		plightnormal = r_avertexnormals[pverts->lightnormalindex];
-		lightcos = DotProduct (plightnormal, r_plightvec);
+		lightcos = DotProduct (plightnormal, r_lightvec);
 		temp = r_ambientlight;
 
 		if (lightcos < 0) {
@@ -555,11 +555,11 @@ R_AliasSetupSkin (entity_t *ent)
 
 
 static void
-R_AliasSetupLighting (alight_t *plighting)
+R_AliasSetupLighting (alight_t *lighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
-	r_ambientlight = plighting->ambientlight;
+	r_ambientlight = lighting->ambientlight;
 
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
@@ -569,7 +569,7 @@ R_AliasSetupLighting (alight_t *plighting)
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
 
-	r_shadelight = plighting->shadelight;
+	r_shadelight = lighting->shadelight;
 
 	if (r_shadelight < 0)
 		r_shadelight = 0;
@@ -577,9 +577,9 @@ R_AliasSetupLighting (alight_t *plighting)
 	r_shadelight *= VID_GRADES;
 
 	// rotate the lighting vector into the model's frame of reference
-	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
-	r_plightvec[1] = DotProduct (plighting->plightvec, alias_left);
-	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
+	r_lightvec[0] = DotProduct (lighting->lightvec, alias_forward);
+	r_lightvec[1] = DotProduct (lighting->lightvec, alias_left);
+	r_lightvec[2] = DotProduct (lighting->lightvec, alias_up);
 }
 
 /*
@@ -598,7 +598,7 @@ R_AliasSetupFrame (entity_t *ent)
 
 
 void
-R_AliasDrawModel (entity_t *ent, alight_t *plighting)
+R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 {
 	int          size;
 	finalvert_t *finalverts;
@@ -623,7 +623,7 @@ R_AliasDrawModel (entity_t *ent, alight_t *plighting)
 
 	R_AliasSetupSkin (ent);
 	R_AliasSetUpTransform (ent, ent->visibility.trivial_accept);
-	R_AliasSetupLighting (plighting);
+	R_AliasSetupLighting (lighting);
 	R_AliasSetupFrame (ent);
 
 	r_affinetridesc.drawtype = ((ent->visibility.trivial_accept == 3)

@@ -60,8 +60,6 @@
 #endif
 
 void       *colormap;
-static vec3_t      viewlightvec;
-static alight_t    r_viewlighting = { 128, 192, viewlightvec };
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
@@ -369,7 +367,7 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 	lighting->ambientlight = j;
 	lighting->shadelight = j;
 
-	lighting->plightvec = lightvec;
+	VectorCopy (lightvec, lighting->lightvec);
 
 	for (unsigned lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (r_dlights[lnum].die >= vr_data.realtime) {
@@ -439,7 +437,6 @@ static void
 R_DrawViewModel (void)
 {
 	// FIXME: remove and do real lighting
-	float       lightvec[3] = { -1, 0, 0 };
 	int         j;
 	unsigned int lnum;
 	vec3_t      dist;
@@ -447,6 +444,7 @@ R_DrawViewModel (void)
 	float       minlight;
 	dlight_t   *dl;
 	entity_t   *viewent;
+	alight_t    lighting;
 
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
@@ -459,8 +457,7 @@ R_DrawViewModel (void)
 
 	VectorCopy (Transform_GetWorldPosition (viewent->transform), r_entorigin);
 
-	VectorCopy (vup, viewlightvec);
-	VectorNegate (viewlightvec, viewlightvec);
+	VectorNegate (vup, lighting.lightvec);
 
 	minlight = max (viewent->renderer.min_light,
 					viewent->renderer.model->min_light);
@@ -468,8 +465,8 @@ R_DrawViewModel (void)
 	j = max (R_LightPoint (&r_refdef.worldmodel->brush,
 						   r_entorigin), minlight * 128);
 
-	r_viewlighting.ambientlight = j;
-	r_viewlighting.shadelight = j;
+	lighting.ambientlight = j;
+	lighting.shadelight = j;
 
 	// add dynamic lights
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -484,18 +481,16 @@ R_DrawViewModel (void)
 		VectorSubtract (r_entorigin, dl->origin, dist);
 		add = dl->radius - VectorLength (dist);
 		if (add > 0)
-			r_viewlighting.ambientlight += add;
+			lighting.ambientlight += add;
 	}
 
 	// clamp lighting so it doesn't overbright as much
-	if (r_viewlighting.ambientlight > 128)
-		r_viewlighting.ambientlight = 128;
-	if (r_viewlighting.ambientlight + r_viewlighting.shadelight > 192)
-		r_viewlighting.shadelight = 192 - r_viewlighting.ambientlight;
+	if (lighting.ambientlight > 128)
+		lighting.ambientlight = 128;
+	if (lighting.ambientlight + lighting.shadelight > 192)
+		lighting.shadelight = 192 - lighting.ambientlight;
 
-	r_viewlighting.plightvec = lightvec;
-
-	R_AliasDrawModel (viewent, &r_viewlighting);
+	R_AliasDrawModel (viewent, &lighting);
 }
 
 static int

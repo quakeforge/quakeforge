@@ -47,9 +47,9 @@
 // viewmodel lighting =======================================================
 
 typedef struct {
-	int			ambientlight;
-	int			shadelight;
-	float		*plightvec;
+	int         ambientlight;
+	int         shadelight;
+	vec3_t      lightvec;
 } alight_t;
 
 // clipped bmodel edges =====================================================

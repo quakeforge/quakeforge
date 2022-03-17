@@ -58,14 +58,14 @@
 										// avoid the need for inner-loop light
 										// clamping
 
-static vec3_t r_plightvec;
+static vec3_t r_lightvec;
 static int    r_ambientlight;
 static float  r_shadelight;
 
 static inline int
 calc_light (float *normal)
 {
-	float       lightcos = DotProduct (normal, r_plightvec);
+	float       lightcos = DotProduct (normal, r_lightvec);
 	int         temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -236,9 +236,9 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 	mat4f_t     mat;
 	Transform_GetWorldMatrix (ent->transform, mat);
 	//FIXME vectorize
-	r_plightvec[0] = DotProduct (plighting->plightvec, mat[0]);
-	r_plightvec[1] = DotProduct (plighting->plightvec, mat[1]);
-	r_plightvec[2] = DotProduct (plighting->plightvec, mat[2]);
+	r_lightvec[0] = DotProduct (plighting->lightvec, mat[0]);
+	r_lightvec[1] = DotProduct (plighting->lightvec, mat[1]);
+	r_lightvec[2] = DotProduct (plighting->lightvec, mat[2]);
 }
 
 static void
