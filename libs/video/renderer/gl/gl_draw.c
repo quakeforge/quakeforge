@@ -408,10 +408,6 @@ gl_Draw_Init (void)
 	// get the other pics we need
 	draw_backtile = gl_Draw_PicFromWad ("backtile");
 
-	// LordHavoc: call init code for other GL renderer modules
-	glrmain_init ();
-	gl_lightmap_init ();
-
 	Draw_InitText ();
 }
 

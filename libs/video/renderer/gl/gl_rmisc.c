@@ -54,6 +54,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
@@ -182,6 +183,8 @@ gl_R_Init (void)
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
 	gl_Draw_Init ();
+	glrmain_init ();
+	gl_lightmap_init ();
 	SCR_Init ();
 	gl_R_InitBubble ();
 

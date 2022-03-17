@@ -48,6 +48,7 @@ typedef struct glbspctx_s {
 // current entity info
 qboolean    insubmodel;
 vec3_t      r_worldmodelorg;
+mvertex_t  *r_pcurrentvertbase;
 static float       entity_rotation[3][3];
 
 int         r_currentbkey;

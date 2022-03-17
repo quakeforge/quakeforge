@@ -49,6 +49,7 @@
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
@@ -732,7 +733,6 @@ GL_BuildLightmaps (model_t **models, int num_models)
 			continue;
 		}
 		brush = &m->brush;
-		r_pcurrentvertbase = brush->vertexes;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
@@ -742,7 +742,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 										   SURF_DRAWSKY))
 				continue;
 			GL_CreateSurfaceLightmap (brush, brush->surfaces + i);
-			GL_BuildSurfaceDisplayList (brush->surfaces + i);
+			GL_BuildSurfaceDisplayList (brush, brush->surfaces + i);
 		}
 	}
 

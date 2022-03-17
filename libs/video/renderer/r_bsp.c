@@ -41,7 +41,6 @@
 
 #include "r_internal.h"
 
-mvertex_t  *r_pcurrentvertbase;
 static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
@@ -115,7 +114,7 @@ R_TextureAnimation (const entity_t *entity, msurface_t *surf)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (vr_data.realtime * 10) % base->anim_total;
+	relative = (int) (r_data->realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {

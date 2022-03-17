@@ -817,13 +817,14 @@ gl_R_DrawWorld (void)
 model_t    *gl_currentmodel;
 
 void
-GL_BuildSurfaceDisplayList (msurface_t *surf)
+GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 {
 	float       s, t;
 	float      *vec;
 	int         lindex, lnumverts, i;
 	glpoly_t   *poly;
 	medge_t    *pedges, *r_pedge;
+	mvertex_t  *vertex_base = brush->vertexes;
 
 	// reconstruct the polygon
 	pedges = gl_currentmodel->brush.edges;
@@ -843,10 +844,10 @@ GL_BuildSurfaceDisplayList (msurface_t *surf)
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
-			vec = r_pcurrentvertbase[r_pedge->v[0]].position;
+			vec = vertex_base[r_pedge->v[0]].position;
 		} else {
 			r_pedge = &pedges[-lindex];
-			vec = r_pcurrentvertbase[r_pedge->v[1]].position;
+			vec = vertex_base[r_pedge->v[1]].position;
 		}
 		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
 		s /= texinfo->texture->width;
