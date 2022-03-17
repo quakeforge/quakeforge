@@ -529,7 +529,6 @@ void
 gl_overbright_f (cvar_t *var)
 {
 	int			 num;
-	model_t		*m;
 	mod_brush_t *brush;
 
 	if (!var)
@@ -575,29 +574,6 @@ gl_overbright_f (cvar_t *var)
 
 	if (!gl_R_BuildLightMap)
 		return;
-
-	for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
-		entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
-		m = ent->renderer.model;
-		if (m->path[0] == '*')
-			continue;
-
-		brush = &m->brush;
-		for (unsigned j = 0; j < brush->numsurfaces; j++) {
-			msurface_t *surf = brush->surfaces + j;
-			if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
-				continue;
-
-			num = surf->lightmaptexturenum;
-			gl_lightmap_modified[num] = true;
-			gl_lightmap_rectchange[num].l = 0;
-			gl_lightmap_rectchange[num].t = 0;
-			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
-			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
-
-			gl_R_BuildLightMap (0, brush, surf);
-		}
-	}
 
 	brush = &r_refdef.worldmodel->brush;
 
