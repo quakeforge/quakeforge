@@ -101,18 +101,11 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 static float __attribute__((pure))
 CalcFov (float fov_x, float width, float height)
 {
-	float       a, x;
+	double      f = fov_x * M_PI / 360;
+	double      c = cos(f);
+	double      s = sin(f);
 
-	if (fov_x < 1 || fov_x > 179)
-		Sys_Error ("Bad fov: %f", fov_x);
-
-	x = width / tan (fov_x * (M_PI / 360));
-
-	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
-
-	a = a * (360 / M_PI);
-
-	return a;
+	return 360 * atan2 (s * height, c * width) / M_PI;
 }
 
 static void
@@ -136,7 +129,7 @@ SCR_CalcRefdef (void)
 					  refdef->vrect.width, refdef->vrect.height);
 
 	// bound field of view
-	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
+	Cvar_SetValue (scr_fov, bound (0, scr_fov->value, 170));
 
 	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
 							 refdef->vrect.height);
