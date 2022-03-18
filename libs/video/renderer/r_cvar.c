@@ -161,7 +161,14 @@ r_nearclip_f (cvar_t *var)
 static void
 scr_fov_f (cvar_t *var)
 {
-	SCR_SetFOV (var->value);
+	// bound field of view
+	float       fov = bound (0, var->value, 170);
+
+	if (fov != var->value) {
+		Cvar_SetValue (var, fov);
+	} else {
+		r_data->vid->recalc_refdef = 1;
+	}
 }
 
 static void

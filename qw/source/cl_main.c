@@ -399,7 +399,7 @@ CL_ClearState (void)
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
-	r_data->force_fullscreen = 0;
+	SCR_SetFullscreen (0);
 
 	cl.maxclients = MAX_CLIENTS;
 	cl.viewstate.voffs_enabled = 0;
@@ -812,7 +812,7 @@ CL_Changing_f (void)
 	S_StopAllSounds ();
 	cl.intermission = 0;
 	cl.viewstate.intermission = 0;
-	r_data->force_fullscreen = 0;
+	SCR_SetFullscreen (0);
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
 	Sys_Printf ("\nChanging map...\n");

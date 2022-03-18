@@ -1351,8 +1351,6 @@ CL_ParseServerMessage (void)
 				}
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
-				// leave full screen intermission
-				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
@@ -1455,9 +1453,8 @@ CL_ParseServerMessage (void)
 				Sys_MaskPrintf (SYS_dev, "svc_intermission\n");
 
 				cl.intermission = 1;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				Sys_MaskPrintf (SYS_dev, "intermission simorg: ");
 				MSG_ReadCoordV (net_message, &cl.viewstate.player_origin[0]);//FIXME
 				cl.viewstate.player_origin[3] = 1;
@@ -1479,9 +1476,8 @@ CL_ParseServerMessage (void)
 
 			case svc_finale:
 				cl.intermission = 2;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);

@@ -66,8 +66,8 @@ static qboolean scr_initialized;// ready to draw
 static qpic_t *scr_ram;
 static qpic_t *scr_turtle;
 
-void
-R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
+static void
+set_vrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
 	float       size;
 	int         h;
@@ -98,44 +98,43 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	vrect->y = (h - vrect->height) / 2;
 }
 
-static float __attribute__((pure))
-CalcFov (float fov_x, float width, float height)
+void//FIXME remove when sw warp is cleaned up
+R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
-	double      f = fov_x * M_PI / 360;
+	set_vrect (vrectin, vrect, lineadj);
+}
+
+static void
+set_fov (float fov)
+{
+
+	refdef_t   *refdef = r_data->refdef;
+
+	double      f = fov * M_PI / 360;
 	double      c = cos(f);
 	double      s = sin(f);
+	double      w = refdef->vrect.width;
+	double      h = refdef->vrect.height;
 
-	return 360 * atan2 (s * height, c * width) / M_PI;
+	refdef->fov_x = fov;
+	refdef->fov_y = 360 * atan2 (s * h, c * w) / M_PI;
 }
 
 static void
 SCR_CalcRefdef (void)
 {
-	vrect_t     vrect;
-	refdef_t   *refdef = r_data->refdef;
+	view_t     *view = r_data->scr_view;
+	const vrect_t *rect = &r_data->refdef->vrect;
 
-	// force a background redraw
-	r_data->scr_fullupdate = 0;
 	r_data->vid->recalc_refdef = 0;
 
-	vrect.x = 0;
-	vrect.y = 0;
-	vrect.width = r_data->vid->width;
-	vrect.height = r_data->vid->height;
-
-	R_SetVrect (&vrect, &refdef->vrect, r_data->lineadj);
-
-	view_setgeometry (r_data->scr_view, refdef->vrect.x, refdef->vrect.y,
-					  refdef->vrect.width, refdef->vrect.height);
-
-	// bound field of view
-	Cvar_SetValue (scr_fov, bound (0, scr_fov->value, 170));
-
-	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
-							 refdef->vrect.height);
+	view_setgeometry (view, rect->x, rect->y, rect->width, rect->height);
 
 	// notify the refresh of the change
 	r_funcs->R_ViewChanged ();
+
+	// force a background redraw
+	r_data->scr_fullupdate = 0;
 }
 
 /*
@@ -216,12 +215,39 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	r_funcs->end_frame ();
 }
 
-void
-SCR_SetFOV (float fov)
+static void
+update_vrect (void)
 {
-	refdef_t   *refdef = r_data->refdef;
-	refdef->fov_x = fov;
 	r_data->vid->recalc_refdef = 1;
+
+	vrect_t     vrect;
+	refdef_t   *refdef = r_data->refdef;
+
+	vrect.x = 0;
+	vrect.y = 0;
+	vrect.width = r_data->vid->width;
+	vrect.height = r_data->vid->height;
+
+	set_vrect (&vrect, &refdef->vrect, r_data->lineadj);
+	set_fov (scr_fov->value);
+}
+
+void
+SCR_SetFullscreen (qboolean fullscreen)
+{
+	if (r_data->force_fullscreen == fullscreen) {
+		return;
+	}
+
+	r_data->force_fullscreen = fullscreen;
+	update_vrect ();
+}
+
+void
+SCR_SetBottomMargin (int lines)
+{
+	r_data->lineadj = lines;
+	update_vrect ();
 }
 
 static void
@@ -465,6 +491,12 @@ SCR_SnapScreen (unsigned width, unsigned height)
 	return tex;
 }
 
+static void
+viewsize_listener (void *data, const cvar_t *cvar)
+{
+	update_vrect ();
+}
+
 void
 SCR_Init (void)
 {
@@ -480,4 +512,7 @@ SCR_Init (void)
 	scr_initialized = true;
 
 	r_ent_queue = EntQueue_New (mod_num_types);
+
+	Cvar_AddListener (scr_viewsize, viewsize_listener, 0);
+	update_vrect ();
 }

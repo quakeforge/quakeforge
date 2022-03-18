@@ -206,10 +206,9 @@ calc_sb_lines (cvar_t *var)
 static void
 hud_sbar_f (cvar_t *var)
 {
-	r_data->vid->recalc_refdef = true;
 	if (r_data->scr_viewsize)
 		calc_sb_lines (r_data->scr_viewsize);
-	r_data->lineadj = var->int_val ? sb_lines : 0;
+	SCR_SetBottomMargin (var->int_val ? sb_lines : 0);
 	if (var->int_val) {
 		view_remove (main_view, main_view->children[0]);
 		view_insert (main_view, sbar_view, 0);
@@ -223,8 +222,9 @@ static void
 viewsize_f (cvar_t *var)
 {
 	calc_sb_lines (var);
-	if (hud_sbar)
-		r_data->lineadj = hud_sbar->int_val ? sb_lines : 0;
+	if (hud_sbar) {
+		SCR_SetBottomMargin (hud_sbar->int_val ? sb_lines : 0);
+	}
 }
 
 

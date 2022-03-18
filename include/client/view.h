@@ -64,7 +64,6 @@ typedef struct viewstate_s {
 	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
 	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
 	quat_t      cshift_color;
-	qboolean    cshift_changed;
 
 // pitch drifting vars
 	float       idealpitch;

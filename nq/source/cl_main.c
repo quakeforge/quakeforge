@@ -154,8 +154,7 @@ void
 CL_ClearMemory (void)
 {
 	VID_ClearMemory ();
-	if (r_data)
-		r_data->force_fullscreen = 0;
+	SCR_SetFullscreen (0);
 }
 
 void
@@ -220,7 +219,7 @@ CL_ClearState (void)
 	cl.viewstate.chasestate = &cl.chasestate;
 	cl.chasestate.viewstate = &cl.viewstate;
 	cl.watervis = 1;
-	r_data->force_fullscreen = 0;
+	SCR_SetFullscreen (0);
 	r_data->lightstyle = cl.lightstyle;
 
 	SZ_Clear (&cls.message);

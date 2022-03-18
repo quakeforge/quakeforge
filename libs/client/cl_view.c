@@ -444,17 +444,17 @@ V_PrepBlend (viewstate_t *vs)
 		|| (vs->force_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift (vs);
 
-	vs->cshift_changed = false;
+	qboolean    cshift_changed = false;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (vs->cshifts[i].percent != vs->prev_cshifts[i].percent) {
-			vs->cshift_changed = true;
+			cshift_changed = true;
 			vs->prev_cshifts[i].percent = vs->cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
 			if (vs->cshifts[i].destcolor[j] != vs->prev_cshifts[i].destcolor[j])
 			{
-				vs->cshift_changed = true;
+				cshift_changed = true;
 				vs->prev_cshifts[i].destcolor[j] = vs->cshifts[i].destcolor[j];
 			}
 		}
@@ -465,7 +465,7 @@ V_PrepBlend (viewstate_t *vs)
 	// drop the bonus value
 	V_DropCShift (&vs->cshifts[CSHIFT_BONUS], vs->time, 100);
 
-	if (!vs->cshift_changed && !r_data->vid->recalc_refdef)
+	if (!cshift_changed)
 		return;
 
 	V_CalcBlend (vs);

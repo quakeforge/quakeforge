@@ -865,5 +865,4 @@ Menu_Leave ()
 			Con_SetState (con_inactive);
 		}
 	}
-	r_data->vid->recalc_refdef = true;
 }

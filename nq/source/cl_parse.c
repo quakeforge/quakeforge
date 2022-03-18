@@ -841,8 +841,6 @@ CL_ParseServerMessage (void)
 				}
 				Cbuf_Execute_Stack (host_cbuf);
 				CL_ParseServerInfo ();
-				// leave full screen intermission
-				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
@@ -984,16 +982,14 @@ CL_ParseServerMessage (void)
 
 			case svc_intermission:
 				cl.intermission = 1;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				break;
 
 			case svc_finale:
 				cl.intermission = 2;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);
@@ -1018,9 +1014,8 @@ CL_ParseServerMessage (void)
 
 			case svc_cutscene:
 				cl.intermission = 3;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;	// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);

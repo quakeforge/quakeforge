@@ -33,7 +33,6 @@ struct transform_s;
 struct tex_s;
 
 void SCR_Init (void);
-void SCR_SetFOV (float fov);
 
 void SCR_DrawRam (void);
 void SCR_DrawTurtle (void);
@@ -43,6 +42,9 @@ typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
 void SCR_UpdateScreen (struct transform_s *camera, double realtime,
 					   SCR_Func *scr_funcs);
+// control whether the 3d viewport is user-controlled or always fullscreen
+void SCR_SetFullscreen (qboolean fullscreen);
+void SCR_SetBottomMargin (int lines);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 struct tex_s *SCR_SnapScreen (unsigned width, unsigned height);
 
