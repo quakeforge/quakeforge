@@ -307,7 +307,7 @@ Cvar_Set (cvar_t *var, const char *value)
 VISIBLE void
 Cvar_SetValue (cvar_t *var, float value)
 {
-	Cvar_Set (var, va (0, "%g", value));
+	Cvar_Set (var, va (0, "%.9g", value));
 }
 
 /*
