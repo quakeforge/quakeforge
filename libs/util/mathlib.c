@@ -47,7 +47,6 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
-VISIBLE int nanmask = 255 << 23;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 static quat_t _quat_origin = { 0, 0, 0, 0 };

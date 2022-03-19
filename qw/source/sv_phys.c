@@ -87,18 +87,17 @@ void
 SV_CheckVelocity (edict_t *ent)
 {
 	float       wishspeed;
-//	int         i;
 
 	// bound velocity
 #if 0
-	for (i = 0; i < 3; i++) {
-		if (IS_NAN (SVvector (ent, velocity)[i])) {
+	for (int i = 0; i < 3; i++) {
+		if (isnan (SVvector (ent, velocity)[i])) {
 			Sys_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));
 			SVvector (ent, velocity)[i] = 0;
 		}
-		if (IS_NAN (SVvector (ent, origin)[i])) {
+		if (isnan (SVvector (ent, origin)[i])) {
 			Sys_Printf ("Got a NaN origin on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));

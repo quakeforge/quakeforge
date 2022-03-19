@@ -50,12 +50,8 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-extern int		nanmask;
-
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
-
-#define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
 
 #define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
 
