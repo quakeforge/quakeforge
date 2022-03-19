@@ -48,7 +48,6 @@ vid_render_data_t vid_render_data = {
 	false, false, false,
 	0,
 	0, 0,
-	0,
 	0.0, 0.0,
 	0,
 };

@@ -134,7 +134,6 @@ typedef struct vid_render_data_s {
 	qboolean    paused;
 	int         lineadj;
 	struct entity_s *view_model;
-	struct entity_s *player_entity;
 	float       gravity;
 	double      frametime;
 	double      realtime;

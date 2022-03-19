@@ -413,7 +413,6 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			org = cl.viewstate.player_origin;
-			r_data->player_entity = ent;
 			cl.viewstate.player_entity = ent;
 			clientplayer = true;
 		} else {

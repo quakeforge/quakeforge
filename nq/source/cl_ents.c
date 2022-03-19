@@ -326,7 +326,6 @@ CL_RelinkEntities (void)
 
 		SET_REMOVE (&cl_forcelink, i);
 	}
-	r_data->player_entity = CL_GetEntity (cl.viewentity);
 	cl.viewstate.player_entity = CL_GetEntity (cl.viewentity);
 	cl.viewstate.player_origin
 		= Transform_GetWorldPosition (cl.viewstate.player_entity->transform);
