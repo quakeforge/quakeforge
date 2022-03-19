@@ -141,7 +141,8 @@ extern	vec3_t			r_worldmodelorg;
 extern mat4f_t   glsl_projection;
 extern mat4f_t   glsl_view;
 
-void R_SetFrustum (void);
+union refframe_s;
+void R_SetFrustum (const union refframe_s *frame, float fov_x, float fov_y);
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);

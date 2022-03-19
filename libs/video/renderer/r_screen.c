@@ -177,11 +177,11 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	refdef->frame.mat[1] =  refdef->camera[0];
 	refdef->frame.mat[2] =  refdef->camera[2];
 	refdef->frame.mat[3] =  refdef->camera[3];
+	R_SetFrustum (&refdef->frame, refdef->fov_x, refdef->fov_y);
 
 	//FIXME breaks fisheye as it calls the view render many times
 	EntQueue_Clear (r_ent_queue);
 	r_framecount++;
-	R_SetFrustum ();
 
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;

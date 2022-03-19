@@ -181,6 +181,16 @@ typedef struct entity_s {
 	vec4f_t     old_origin;
 } entity_t;
 
+typedef union refframe_s {
+	mat4f_t     mat;
+	struct      {
+		vec4f_t     right;
+		vec4f_t     forward;
+		vec4f_t     up;
+		vec4f_t     position;
+	};
+} refframe_t;
+
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
 	vrect_t		vrect;				// subwindow in video for refresh
@@ -203,15 +213,7 @@ typedef struct {
 	float		xOrigin;			// should probably always be 0.5
 	float		yOrigin;			// between be around 0.3 to 0.5
 
-	union {
-		mat4f_t     mat;
-		struct      {
-			vec4f_t     right;
-			vec4f_t     forward;
-			vec4f_t     up;
-			vec4f_t     position;
-		};
-	}           frame;
+	refframe_t  frame;
 	mat4f_t     camera;
 	mat4f_t     camera_inverse;
 

@@ -89,25 +89,26 @@ SignbitsForPlane (plane_t *out)
 }
 
 void
-R_SetFrustum (void)
+R_SetFrustum (const refframe_t *frame, float fov_x, float fov_y)
 {
 	int         i;
-	vec4f_t     right = r_refdef.frame.right;
-	vec4f_t     fwd = r_refdef.frame.forward;
-	vec4f_t     up = r_refdef.frame.up;
-	float       rot_x = 90 - r_refdef.fov_x / 2;
-	float       rot_y = 90 - r_refdef.fov_y / 2;
+	vec4f_t     right = frame->right;
+	vec4f_t     fwd = frame->forward;
+	vec4f_t     up = frame->up;
+
+	fov_x = 90 - fov_x / 2;
+	fov_y = 90 - fov_y / 2;
 
 	// rotate FWD right by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[0].normal, &up[0], &fwd[0], -rot_x);
+	RotatePointAroundVector (frustum[0].normal, &up[0], &fwd[0], -fov_x);
 	// rotate FWD left by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[1].normal, &up[0], &fwd[0], rot_x);
+	RotatePointAroundVector (frustum[1].normal, &up[0], &fwd[0], fov_x);
 	// rotate FWD up by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[2].normal, &right[0], &fwd[0], rot_y);
+	RotatePointAroundVector (frustum[2].normal, &right[0], &fwd[0], fov_y);
 	// rotate FWD down by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[3].normal, &right[0], &fwd[0], -rot_y);
+	RotatePointAroundVector (frustum[3].normal, &right[0], &fwd[0], -fov_y);
 
-	vec4f_t     origin = r_refdef.frame.position;
+	vec4f_t     origin = frame->position;
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
 		frustum[i].dist = DotProduct (origin, frustum[i].normal);
