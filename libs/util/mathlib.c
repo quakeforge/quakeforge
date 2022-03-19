@@ -48,8 +48,6 @@
 #include "QF/sys.h"
 
 VISIBLE int nanmask = 255 << 23;
-static plane_t _frustum[4];
-VISIBLE plane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 static quat_t _quat_origin = { 0, 0, 0, 0 };
@@ -393,7 +391,7 @@ BOPS_Error (void)
 	Returns 1, 2, or 1 + 2
 */
 VISIBLE int
-BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
+BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 {
 	float       dist1, dist2;
 	int         sides;

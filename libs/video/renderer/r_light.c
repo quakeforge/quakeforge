@@ -297,7 +297,7 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
 					|| leaf->mins[2] > maxs[2] || leaf->maxs[2] < mins[2])
 					continue;
-				if (R_CullBox (leaf->mins, leaf->maxs))
+				if (R_CullBox (r_refdef.frustum, leaf->mins, leaf->maxs))
 					continue;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = leaf->firstmarksurface[m];

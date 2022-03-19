@@ -89,7 +89,8 @@ SignbitsForPlane (plane_t *out)
 }
 
 void
-R_SetFrustum (const refframe_t *frame, float fov_x, float fov_y)
+R_SetFrustum (plane_t *frustum, const refframe_t *frame,
+			  float fov_x, float fov_y)
 {
 	int         i;
 	vec4f_t     right = frame->right;

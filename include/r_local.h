@@ -142,7 +142,8 @@ extern mat4f_t   glsl_projection;
 extern mat4f_t   glsl_view;
 
 union refframe_s;
-void R_SetFrustum (const union refframe_s *frame, float fov_x, float fov_y);
+void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
+				   float fov_x, float fov_y);
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);

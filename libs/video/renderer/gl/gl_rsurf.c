@@ -544,7 +544,7 @@ gl_R_DrawBrushModel (entity_t *e)
 		if (e->scale != 1.0)
 			radius *= e->scale;
 #endif
-		if (R_CullSphere (&worldMatrix[3][0], radius)) {//FIXME
+		if (R_CullSphere (r_refdef.frustum, &worldMatrix[3][0], radius)) {//FIXME
 			return;
 		}
 	} else {
@@ -557,7 +557,7 @@ gl_R_DrawBrushModel (entity_t *e)
 			VectorScale (maxs, e->scale, maxs);
 		}
 #endif
-		if (R_CullBox (mins, maxs))
+		if (R_CullBox (r_refdef.frustum, mins, maxs))
 			return;
 	}
 
@@ -660,7 +660,7 @@ test_node (mnode_t *node)
 		return 0;
 	if (node->visframe != r_visframecount)
 		return 0;
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
+	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }

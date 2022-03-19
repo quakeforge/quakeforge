@@ -677,14 +677,14 @@ R_DrawBrushModel (entity_t *e)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (&mat[3][0], radius)) { // FIXME
+		if (R_CullSphere (r_refdef.frustum, &mat[3][0], radius)) { // FIXME
 			return;
 		}
 	} else {
 		rotated = false;
 		VectorAdd (mat[3], model->mins, mins);
 		VectorAdd (mat[3], model->maxs, maxs);
-		if (R_CullBox (mins, maxs))
+		if (R_CullBox (r_refdef.frustum, mins, maxs))
 			return;
 	}
 
@@ -779,7 +779,7 @@ test_node (mnode_t *node)
 		return 0;
 	if (node->visframe != r_visframecount)
 		return 0;
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
+	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }

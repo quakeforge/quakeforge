@@ -434,7 +434,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (scale[0] != 1.0) {
 		radius *= scale[0];
 	}
-	if (R_CullSphere (&origin[0], radius)) {//FIXME
+	if (R_CullSphere (r_refdef.frustum, &origin[0], radius)) {//FIXME
 		return;
 	}
 

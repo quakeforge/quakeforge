@@ -214,6 +214,7 @@ typedef struct {
 	float		yOrigin;			// between be around 0.3 to 0.5
 
 	refframe_t  frame;
+	plane_t     frustum[4];
 	mat4f_t     camera;
 	mat4f_t     camera_inverse;
 
