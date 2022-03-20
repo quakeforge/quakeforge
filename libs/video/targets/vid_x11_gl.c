@@ -61,13 +61,26 @@
 #define GLX_RED_SIZE			8		// number of red component bits
 #define GLX_GREEN_SIZE			9		// number of green component bits
 #define GLX_BLUE_SIZE			10		// number of blue component bits
+#define GLX_ALPHA_SIZE			11		// number of alpha component bits
 #define GLX_DEPTH_SIZE			12		// number of depth bits
+#define GLX_STENCIL_SIZE		13		// number of stencil bits
+#define GLX_CONTEXT_MAJOR_VERSION_ARB   0x2091
+#define GLX_CONTEXT_MINOR_VERSION_ARB   0x2092
+
+#define GLX_X_RENDERABLE  0x8012
+#define GLX_DRAWABLE_TYPE 0x8010
+#define GLX_WINDOW_BIT    0x00000001
+#define GLX_RENDER_TYPE   0x8011
+#define GLX_RGBA_BIT      0x00000001
+#define GLX_X_VISUAL_TYPE 0x22
+#define GLX_TRUE_COLOR    0x8002
+
 
 typedef XID GLXDrawable;
 
 // GLXContext is a pointer to opaque data
 typedef struct __GLXcontextRec *GLXContext;
-
+typedef struct __GLXFBConfigRec *GLXFBConfig;
 
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY
@@ -79,16 +92,24 @@ typedef struct __GLXcontextRec *GLXContext;
 #endif
 static void    *libgl_handle;
 static void (*qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
-static XVisualInfo* (*qfglXChooseVisual) (Display *dpy, int screen,
-										  int *attribList);
-static GLXContext (*qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
-										 GLXContext shareList, Bool direct);
+static GLXContext (*qfglXCreateContextAttribsARB) (Display *dpy,
+												   GLXFBConfig cfg,
+												   GLXContext ctx,
+												   Bool direct,
+												   const int *attribs);
+static GLXFBConfig *(*qfglXChooseFBConfig) (Display *dpy, int screen,
+											const int *attribs, int *nitems);
+static XVisualInfo *(*qfglXGetVisualFromFBConfig) (Display *dpy,
+												   GLXFBConfig config);
+static int (*qfglXGetFBConfigAttrib) (Display *dpy, GLXFBConfig config,
+									  int attribute, int *value);
 static Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable,
 								 GLXContext ctx);
 static void (GLAPIENTRY *qfglFinish) (void);
 static void *(*glGetProcAddress) (const char *symbol) = NULL;
 static int use_gl_procaddress = 0;
 
+static GLXFBConfig glx_cfg;
 static cvar_t  *gl_driver;
 
 static void *
@@ -133,28 +154,50 @@ static void
 glx_choose_visual (gl_ctx_t *ctx)
 {
 	int         attrib[] = {
-		GLX_RGBA,
-		GLX_RED_SIZE, 1,
-		GLX_GREEN_SIZE, 1,
-		GLX_BLUE_SIZE, 1,
-		GLX_DOUBLEBUFFER,
-		GLX_DEPTH_SIZE, 1,
+		GLX_X_RENDERABLE,     True,
+		GLX_DRAWABLE_TYPE,    GLX_WINDOW_BIT,
+		GLX_RENDER_TYPE,      GLX_RGBA_BIT,
+		GLX_X_VISUAL_TYPE,    GLX_TRUE_COLOR,
+		GLX_RED_SIZE,         8,
+		GLX_GREEN_SIZE,       8,
+		GLX_BLUE_SIZE,        8,
+		GLX_ALPHA_SIZE,       8,
+		GLX_DEPTH_SIZE,       24,
+		//I can't tell if this makes any difference to performance, but it's
+		//currently not needed
+		//GLX_STENCIL_SIZE,     8,
+		GLX_DOUBLEBUFFER,     True,
 		None
 	};
+	int         fbcount;
+	GLXFBConfig *fbc = qfglXChooseFBConfig (x_disp, x_screen, attrib, &fbcount);
 
-	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
+	if (!fbc) {
+		Sys_Error ("Failed to retrieve a framebuffer config");
+	}
+	Sys_MaskPrintf (SYS_vid, "Found %d matching FB configs.\n", fbcount);
+	glx_cfg = fbc[0];
+	XFree (fbc);
+	x_visinfo = qfglXGetVisualFromFBConfig (x_disp, glx_cfg);
 	if (!x_visinfo) {
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
 	x_vis = x_visinfo->visual;
+	printf ("%p\n", x_vis);
 }
 
 static void
 glx_create_context (gl_ctx_t *ctx)
 {
+	int         attribs[] = {
+		GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+		GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+		//GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+		None
+	};
 	XSync (x_disp, 0);
-	ctx->context = (GL_context) qfglXCreateContext (x_disp, x_visinfo, NULL,
-													True);
+	ctx->context = (GL_context) qfglXCreateContextAttribsARB (x_disp, glx_cfg,
+													0, True, attribs);
 	qfglXMakeCurrent (x_disp, x_win, (GLXContext) ctx->context);
 	ctx->init_gl ();
 }
@@ -179,8 +222,10 @@ glx_load_gl (void)
 		glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddressARB");
 
 	qfglXSwapBuffers = QFGL_ProcAddress ("glXSwapBuffers", true);
-	qfglXChooseVisual = QFGL_ProcAddress ("glXChooseVisual", true);
-	qfglXCreateContext = QFGL_ProcAddress ("glXCreateContext", true);
+	qfglXChooseFBConfig = QFGL_ProcAddress ("glXChooseFBConfig", true);
+	qfglXGetVisualFromFBConfig = QFGL_ProcAddress ("glXGetVisualFromFBConfig", true);
+	qfglXGetFBConfigAttrib = QFGL_ProcAddress ("glXGetFBConfigAttrib", true);
+	qfglXCreateContextAttribsARB = QFGL_ProcAddress ("glXCreateContextAttribsARB", true);
 	qfglXMakeCurrent = QFGL_ProcAddress ("glXMakeCurrent", true);
 
 	use_gl_procaddress = 1;
