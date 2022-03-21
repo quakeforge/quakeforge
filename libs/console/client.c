@@ -673,6 +673,9 @@ setup_console (void)
 	} else {
 		con_data.lines = lines;
 	}
+	if (con_data.lines > r_data->vid->conview->ylen) {
+		con_data.lines = r_data->vid->conview->ylen;
+	}
 	if (con_data.lines >= r_data->vid->conview->ylen - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
 }
