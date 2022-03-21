@@ -412,6 +412,7 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 	if (!r_drawentities->int_val)
 		return;
 
+	R_LowFPPrecision ();
 #define RE_LOOP(type_name) \
 	do { \
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
@@ -426,6 +427,8 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 	RE_LOOP (alias);
 	RE_LOOP (iqm);
 	RE_LOOP (sprite);
+
+	R_HighFPPrecision ();
 }
 
 static void

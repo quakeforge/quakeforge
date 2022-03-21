@@ -645,8 +645,7 @@ R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (ent->visibility.trivial_accept
-		&& pmdl->ident != HEADER_MDL16) {
+	if (ent->visibility.trivial_accept && pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
 	} else {
 		R_AliasPreparePoints ();
