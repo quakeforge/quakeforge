@@ -307,7 +307,7 @@ x11_put_image (vrect_t *rects)
 	Flush the given rectangles from the view buffer to the screen.
 */
 static void
-x11_sw8_update (sw_ctx_t *ctx, vrect_t *rects)
+x11_sw8_8_update (sw_ctx_t *ctx, vrect_t *rects)
 {
 	while (rects) {
 		switch (x_visinfo->depth) {
@@ -327,6 +327,32 @@ x11_sw8_update (sw_ctx_t *ctx, vrect_t *rects)
 	r_data->scr_fullupdate = 0;
 }
 
+static void
+x11_sw8_16_update (sw_ctx_t *ctx, vrect_t *rects)
+{
+	while (rects) {
+		st2_fixup (x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		x11_put_image (rects);
+		rects = rects->next;
+	}
+	XSync (x_disp, False);
+	r_data->scr_fullupdate = 0;
+}
+
+static void
+x11_sw8_24_update (sw_ctx_t *ctx, vrect_t *rects)
+{
+	while (rects) {
+		st3_fixup (x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		x11_put_image (rects);
+		rects = rects->next;
+	}
+	XSync (x_disp, False);
+	r_data->scr_fullupdate = 0;
+}
+#if 0
 static void
 x11_sw16_16_update (sw_ctx_t *ctx, vrect_t *rects)
 {
@@ -411,7 +437,7 @@ x11_sw32_update (sw_ctx_t *ctx, vrect_t *rects)
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
 }
-
+#endif
 static void
 x11_choose_visual (sw_ctx_t *ctx)
 {
@@ -441,31 +467,16 @@ x11_choose_visual (sw_ctx_t *ctx)
 		x_cmap = XCreateColormap (x_disp, x_win, x_vis, AllocAll);
 	x_vis = x_visinfo->visual;
 
-	ctx->update = x11_sw8_update;
+	ctx->update = x11_sw8_8_update;
 	switch (x_visinfo->depth) {
 		case 8:
-			ctx->pixbytes = 1;
-			ctx->update = x11_sw8_update;
+			ctx->update = x11_sw8_8_update;
 			break;
 		case 16:
-			if (ctx->pixbytes > 2) {
-				ctx->pixbytes = 2;
-			}
-			if (ctx->pixbytes == 2) {
-				ctx->update = x11_sw16_16_update;
-			}
+			ctx->update = x11_sw8_16_update;
 			break;
 		case 24:
-			switch (ctx->pixbytes) {
-				case 1:
-					break;
-				case 2:
-					ctx->update = x11_sw16_32_update;
-					break;
-				case 4:
-					ctx->update = x11_sw32_update;
-					break;
-			}
+			ctx->update = x11_sw8_24_update;
 			break;
 	}
 
@@ -584,7 +595,6 @@ ResetSharedFrameBuffers (void)
 static void
 x11_init_buffers (void *data)
 {
-	sw_ctx_t   *ctx = data;
 	if (doShm)
 		ResetSharedFrameBuffers ();
 	else
@@ -592,7 +602,7 @@ x11_init_buffers (void *data)
 
 	current_framebuffer = 0;
 
-	viddef.rowbytes = ctx->pixbytes * viddef.width;
+	viddef.rowbytes = viddef.width;
 	if (x_visinfo->depth != 8) {
 		if (viddef.buffer)
 			free (viddef.buffer);
@@ -651,11 +661,10 @@ sw_ctx_t *
 X11_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-	ctx->pixbytes = 1;
 	ctx->set_palette = x11_set_palette;
 	ctx->choose_visual = x11_choose_visual;
 	ctx->create_context = x11_create_context;
-	ctx->update = x11_sw8_update;
+	ctx->update = x11_sw8_8_update;
 	return ctx;
 }
 

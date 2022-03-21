@@ -469,7 +469,6 @@ sw_ctx_t *
 Win_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-	ctx->pixbytes = 1;
 	ctx->set_palette = win_set_palette;
 	ctx->choose_visual = win_choose_visual;
 	ctx->create_context = win_create_context;
