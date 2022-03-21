@@ -67,7 +67,7 @@ D_DrawParticle (particle_t *pparticle)
 		return;
 	}
 
-	pz = d_pzbuffer + (d_zwidth * v) + u;
+	pz = d_zbuffer + (d_zwidth * v) + u;
 	pdest = d_viewbuffer + d_scantable[v] + u;
 	izi = (int) (zi * 0x8000);
 

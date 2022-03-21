@@ -53,7 +53,7 @@ fixed16_t   sadjust, tadjust, bbextents, bbextentt;
 byte       *cacheblock;
 int         cachewidth;
 byte       *d_viewbuffer;
-short      *d_pzbuffer;
+short      *d_zbuffer;
 int         d_zrowbytes;
 int         d_zwidth;
 

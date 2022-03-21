@@ -389,7 +389,7 @@ D_DrawZSpans (espan_t *pspan)
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {
-		pdest = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pdest = d_zbuffer + (d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

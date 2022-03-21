@@ -702,7 +702,7 @@ D_RasterizeAliasPolySmooth (void)
 	d_pdestbasestep = screenwidth + ubasestep;
 	d_pdestextrastep = d_pdestbasestep + 1;
 	d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
-	d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
+	d_pz = d_zbuffer + ystart * d_zwidth + plefttop[0];
 
 // TODO: can reuse partial expressions here
 
@@ -775,7 +775,7 @@ D_RasterizeAliasPolySmooth (void)
 		d_pzbasestep = d_zwidth + ubasestep;
 		d_pzextrastep = d_pzbasestep + 1;
 #endif
-		d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
+		d_pz = d_zbuffer + ystart * d_zwidth + plefttop[0];
 
 		if (ubasestep < 0)
 			working_lstepx = r_lstepx - 1;
@@ -881,10 +881,10 @@ D_PolysetRecursiveDrawLine (int *lp1, int *lp2)
 
 	// draw the point
 	ofs = d_scantable[new[1]] + new[0];
-	if (new[5] > d_pzbuffer[ofs]) {
+	if (new[5] > d_zbuffer[ofs]) {
 		int         pix;
 
-		d_pzbuffer[ofs] = new[5];
+		d_zbuffer[ofs] = new[5];
 		pix = skintable[new[3] >> 16][new[2] >> 16];
 //		pix = ((byte *)acolormap)[pix + (new[4] & 0xFF00)];
 		d_viewbuffer[ofs] = pix;

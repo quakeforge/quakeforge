@@ -189,7 +189,7 @@ C(D_DrawParticle):
 	imull	C(d_zrowbytes),%edx		// point to the z pixel
 
 	leal	(%edx,%eax,2),%edx
-	movl	C(d_pzbuffer),%eax
+	movl	C(d_zbuffer),%eax
 
 	fistpl	C(izi)
 

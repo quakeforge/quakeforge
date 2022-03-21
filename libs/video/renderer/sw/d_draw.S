@@ -821,7 +821,7 @@ LFSpanLoop:
 	fildl	espan_t_v(%esi)
 	fildl	espan_t_u(%esi)
 	movl	espan_t_v(%esi),%ecx
-	movl	C(d_pzbuffer),%edi
+	movl	C(d_zbuffer),%edi
 	fmuls	C(d_zistepu)
 	fxch	%st(1)
 	fmuls	C(d_zistepv)
@@ -936,7 +936,7 @@ LFNegSpanLoop:
 	fildl	espan_t_v(%esi)
 	fildl	espan_t_u(%esi)
 	movl	espan_t_v(%esi),%ecx
-	movl	C(d_pzbuffer),%edi
+	movl	C(d_zbuffer),%edi
 	fmuls	C(d_zistepu)
 	fxch	%st(1)
 	fmuls	C(d_zistepv)

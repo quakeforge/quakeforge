@@ -32,7 +32,7 @@
 #define TRANSPARENT_COLOR	255
 
 	.extern C(d_zistepu)
-	.extern C(d_pzbuffer)
+	.extern C(d_zbuffer)
 	.extern C(d_zistepv)
 	.extern C(d_zrowbytes)
 	.extern C(d_ziorigin)
@@ -58,7 +58,6 @@
 	.extern	C(cacheblock)
 	.extern	C(d_viewbuffer)
 	.extern	C(cachewidth)
-	.extern	C(d_pzbuffer)
 	.extern	C(d_zrowbytes)
 	.extern	C(d_zwidth)
 	.extern C(d_scantable)

@@ -70,7 +70,7 @@ D_SpriteDrawSpans (sspan_t *pspan)
 
 	do {
 		pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
-		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pz = d_zbuffer + (d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

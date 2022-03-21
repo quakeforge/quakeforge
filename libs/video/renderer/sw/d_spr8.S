@@ -211,7 +211,7 @@ LSpanLoop:
 	movl	sspan_t_u(%ebx),%ebp
 	imull	C(d_zrowbytes)
 	shll	$1,%ebp					// a word per pixel
-	addl	C(d_pzbuffer),%eax
+	addl	C(d_zbuffer),%eax
 	addl	%ebp,%eax
 	movl	%eax,C(pz)
 
