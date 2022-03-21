@@ -55,10 +55,13 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/ui/view.h"
 
 #include "context_x11.h"
 #include "r_internal.h"
@@ -632,6 +635,12 @@ x11_create_context (sw_ctx_t *ctx)
 	if (doShm) {
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
+
+	// FIXME this really shouldn't be here (ideally, scale console in sw)
+	// No console scaling in the sw renderer
+	viddef.conview->xlen = viddef.width;
+	viddef.conview->ylen = viddef.height;
+	Con_CheckResize ();
 
 	viddef.vid_internal->init_buffers = x11_init_buffers;
 //  XSynchronize (x_disp, False);

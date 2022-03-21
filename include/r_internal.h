@@ -52,10 +52,10 @@ void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
 void *D_SurfaceCacheAddress (void) __attribute__((pure));
-int D_SurfaceCacheForRes (void *data, int width, int height);
+int D_SurfaceCacheForRes (int width, int height);
 void D_FlushCaches (void *data);
 void D_DeleteSurfaceCache (void);
-void D_InitCaches (void *data, void *buffer, int size);
+void D_InitCaches (void *buffer, int size);
 void R_SetVrect (const vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
 void R_LoadSkys (const char *);

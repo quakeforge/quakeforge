@@ -56,11 +56,33 @@ D_Init (void)
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
 
-	vr_data.vid->vid_internal->surf_cache_size = D_SurfaceCacheForRes;
-	vr_data.vid->vid_internal->flush_caches = D_FlushCaches;
-	vr_data.vid->vid_internal->init_caches = D_InitCaches;
+	viddef_t   *vid = vr_data.vid;
 
-	VID_InitBuffers ();
+	vid->vid_internal->flush_caches = D_FlushCaches;
+
+	int         buffersize = vid->rowbytes * vid->height;
+	int         zbuffersize = vid->width * vid->height * sizeof (*vid->zbuffer);
+	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
+
+	if (vid->zbuffer) {
+		free (vid->zbuffer);
+		vid->zbuffer = 0;
+	}
+	if (vid->surfcache) {
+		D_FlushCaches (0);
+		free (vid->surfcache);
+		vid->surfcache = 0;
+	}
+	if (vid->vid_internal->init_buffers) {
+		vid->vid_internal->init_buffers (vid->vid_internal->data);
+	} else {
+		free (vid->buffer);
+		vid->buffer = calloc (buffersize, 1);
+	}
+	vid->zbuffer = calloc (zbuffersize, 1);
+	vid->surfcache = calloc (cachesize, 1);
+
+	D_InitCaches (vid->surfcache, cachesize);
 }
 
 void

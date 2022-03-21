@@ -5,9 +5,7 @@
 #include "QF/plugin/vid_render.h"
 
 typedef struct vid_internal_s {
-	int       (*surf_cache_size) (void *data, int width, int height);
 	void      (*flush_caches) (void *data);
-	void      (*init_caches) (void *data, void *cache, int size);
 	void      (*init_buffers) (void *data);
 	void      (*set_palette) (void *data, const byte *palette);
 
@@ -31,7 +29,6 @@ void VID_InitGamma (const byte *);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
 
-void VID_InitBuffers (void);
 void VID_MakeColormaps (void);
 
 #endif//__vid_internal_h
