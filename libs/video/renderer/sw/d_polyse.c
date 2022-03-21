@@ -767,7 +767,7 @@ D_RasterizeAliasPolySmooth (void)
 
 		d_pdestbasestep = screenwidth + ubasestep;
 		d_pdestextrastep = d_pdestbasestep + 1;
-		d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
+		d_pdest = d_viewbuffer + ystart * screenwidth + plefttop[0];
 #ifdef USE_INTEL_ASM
 		d_pzbasestep = (d_zwidth + ubasestep) << 1;
 		d_pzextrastep = d_pzbasestep + 2;

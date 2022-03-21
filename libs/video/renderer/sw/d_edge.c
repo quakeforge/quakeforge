@@ -81,7 +81,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 
 	pix = (color << 24) | (color << 16) | (color << 8) | color;
 	for (span = surf->spans; span; span = span->pnext) {
-		pdest = (byte *) d_viewbuffer + screenwidth * span->v;
+		pdest = d_viewbuffer + screenwidth * span->v;
 		u = span->u;
 		u2 = span->u + span->count - 1;
 		((byte *) pdest)[u] = pix;

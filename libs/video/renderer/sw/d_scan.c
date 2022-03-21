@@ -141,8 +141,7 @@ Turbulent (espan_t *pspan)
 	zi16stepu = d_zistepu * 16;
 
 	do {
-		r_turb_pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) +
-												pspan->u;
+		r_turb_pdest = d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -251,7 +250,7 @@ void
 D_DrawSpans8 (espan_t *pspan)
 {
 	int         count, spancount;
-	unsigned char *pbase, *pdest;
+	byte       *pbase, *pdest;
 	fixed16_t   s, t, snext, tnext, sstep, tstep;
 	float       sdivz, tdivz, zi, z, du, dv, spancountminus1;
 	float       sdivz8stepu, tdivz8stepu, zi8stepu;
@@ -266,8 +265,7 @@ D_DrawSpans8 (espan_t *pspan)
 	zi8stepu = d_zistepu * 8;
 
 	do {
-		pdest = (unsigned char *) ((byte *) d_viewbuffer +
-								   (screenwidth * pspan->v) + pspan->u);
+		pdest = d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
