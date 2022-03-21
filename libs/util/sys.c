@@ -677,6 +677,15 @@ realloc (void *mem, size_t size)
 {
 	return _aligned_realloc (mem, size, 16);
 }
+
+char *__cdecl
+strdup(const char *src)
+{
+	size_t      len = strlen (src);
+	char       *dup = malloc (len + 1);
+	strcpy (dup, src);
+	return dup;
+}
 #endif
 
 VISIBLE size_t
