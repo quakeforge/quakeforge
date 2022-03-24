@@ -81,7 +81,7 @@ D_DrawParticle (particle_t *pparticle)
 	switch (pix) {
 	case 1:
 		count = 1 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -91,7 +91,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 2:
 		count = 2 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -106,7 +106,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 3:
 		count = 3 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -126,7 +126,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 4:
 		count = 4 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -151,7 +151,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	default:
 		count = pix << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
 					pz[i] = izi;

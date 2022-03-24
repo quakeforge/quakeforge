@@ -244,6 +244,17 @@ glsl_end_frame (void)
 	qfeglFlush ();
 }
 
+static framebuffer_t *
+glsl_create_frame_buffer (int width, int height)
+{
+	Sys_Error ("not implemented");
+}
+
+static void
+glsl_bind_framebuffer (framebuffer_t *framebuffer)
+{
+}
+
 vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_vid_render_init,
 	glsl_Draw_Character,
@@ -283,6 +294,10 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_draw_transparent,
 	glsl_set_2d,
 	glsl_end_frame,
+
+	glsl_create_frame_buffer,
+	glsl_bind_framebuffer,
+
 	&model_funcs
 };
 

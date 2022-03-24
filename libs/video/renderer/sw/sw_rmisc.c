@@ -173,9 +173,6 @@ R_SetUpFrustumIndexes (void)
 void
 R_SetupFrame (void)
 {
-	vrect_t     vrect;
-	float       w, h;
-
 	numbtofpolys = 0;
 
 	// build the transformation matrix for the given view angles
@@ -185,62 +182,6 @@ R_SetupFrame (void)
 	VectorCopy (r_refdef.frame.forward, vfwd);
 	VectorCopy (r_refdef.frame.up, vup);
 
-	r_dowarpold = r_dowarp;
-	r_dowarp = r_waterwarp->int_val && (r_refdef.viewleaf->contents <=
-										CONTENTS_WATER);
-
-	if (scr_fisheye->int_val)  {
-		//FIXME this shouldn't be necessary, but warp doesn't work well in
-		//fisheye, aand allowing  the non-warp code to mess with vrect messes
-		//things up for the cube map rendering. This whole frame setup path
-		//needs to be redesigned
-		r_dowarp = r_viewchanged = 0;
-	}
-	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
-		if (r_dowarp) {
-			if ((vid.width <= WARP_WIDTH)
-				&& (vid.height <= WARP_HEIGHT)) {
-				vrect.x = 0;
-				vrect.y = 0;
-				vrect.width = vid.width;
-				vrect.height = vid.height;
-
-				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
-				R_ViewChanged ();
-			} else {
-				w = vid.width;
-				h = vid.height;
-
-				if (w > WARP_WIDTH) {
-					h *= (float) WARP_WIDTH / w;
-					w = WARP_WIDTH;
-				}
-
-				if (h > WARP_HEIGHT) {
-					h = WARP_HEIGHT;
-					w *= (float) WARP_HEIGHT / h;
-				}
-
-				vrect.x = 0;
-				vrect.y = 0;
-				vrect.width = (int) w;
-				vrect.height = (int) h;
-
-				R_SetVrect (&vrect, &r_refdef.vrect,
-							(int) ((float) vr_data.lineadj *
-								   (h / (float) vid.height)));
-				R_ViewChanged ();
-			}
-		} else {
-			r_refdef.vrect.x = vr_data.scr_view->xpos;
-			r_refdef.vrect.y = vr_data.scr_view->ypos;
-			r_refdef.vrect.width = vr_data.scr_view->xlen;
-			r_refdef.vrect.height = vr_data.scr_view->ylen;
-			R_ViewChanged ();
-		}
-
-		r_viewchanged = false;
-	}
 	// start off with just the four screen edge clip planes
 	R_TransformFrustum ();
 

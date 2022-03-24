@@ -19,6 +19,12 @@ typedef struct gl_ctx_s {
 	int         alias_polys;
 } gl_ctx_t;
 
+typedef struct gl_framebuffer_s {
+	unsigned    handle;
+	unsigned    color;
+	unsigned    depth;
+} gl_framebuffer_t;
+
 extern gl_ctx_t *gl_ctx;
 extern gl_ctx_t *glsl_ctx;
 

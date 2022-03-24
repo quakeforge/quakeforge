@@ -93,7 +93,7 @@
 	.extern C(d_pix_min)
 	.extern C(d_pix_max)
 	.extern C(d_y_aspect_shift)
-	.extern C(screenwidth)
+	.extern C(d_rowbytes)
 	.extern C(r_leftclipped)
 	.extern C(r_leftenter)
 	.extern C(r_rightclipped)

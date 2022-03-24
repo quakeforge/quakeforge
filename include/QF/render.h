@@ -191,6 +191,16 @@ typedef union refframe_s {
 	};
 } refframe_t;
 
+/** Generic frame buffer object.
+ *
+ * For attaching scene cameras to render targets.
+ */
+typedef struct framebuffer_s {
+	unsigned    width;
+	unsigned    height;
+	void       *buffer;	///< renderer-specific frame buffer data
+} framebuffer_t;
+
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
 	vrect_t		vrect;				// subwindow in video for refresh

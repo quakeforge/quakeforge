@@ -699,9 +699,9 @@ D_RasterizeAliasPolySmooth (void)
 	d_light = plefttop[4];
 	d_zi = plefttop[5];
 
-	d_pdestbasestep = screenwidth + ubasestep;
+	d_pdestbasestep = d_rowbytes + ubasestep;
 	d_pdestextrastep = d_pdestbasestep + 1;
-	d_pdest = (byte *) d_viewbuffer + ystart * screenwidth + plefttop[0];
+	d_pdest = d_viewbuffer + ystart * d_rowbytes + plefttop[0];
 	d_pz = d_zbuffer + ystart * d_zwidth + plefttop[0];
 
 // TODO: can reuse partial expressions here
@@ -765,9 +765,9 @@ D_RasterizeAliasPolySmooth (void)
 		d_light = plefttop[4];
 		d_zi = plefttop[5];
 
-		d_pdestbasestep = screenwidth + ubasestep;
+		d_pdestbasestep = d_rowbytes + ubasestep;
 		d_pdestextrastep = d_pdestbasestep + 1;
-		d_pdest = d_viewbuffer + ystart * screenwidth + plefttop[0];
+		d_pdest = d_viewbuffer + ystart * d_rowbytes + plefttop[0];
 #ifdef USE_INTEL_ASM
 		d_pzbasestep = (d_zwidth + ubasestep) << 1;
 		d_pzextrastep = d_pzbasestep + 2;

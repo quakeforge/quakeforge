@@ -78,7 +78,7 @@ D_DrawSkyScans (espan_t *pspan)
 	tnext = 0;							// ditto
 
 	do {
-		pdest = d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+		pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

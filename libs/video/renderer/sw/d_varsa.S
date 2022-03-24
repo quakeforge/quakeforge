@@ -80,6 +80,8 @@ C(bbextentt):		.long	0
 
 .globl	C(cacheblock)
 .globl	C(d_viewbuffer)
+.globl	C(d_rowbytes)
+.globl	C(d_height)
 .globl	C(cachewidth)
 .globl	C(d_zbuffer)
 .globl	C(d_zrowbytes)
@@ -87,6 +89,8 @@ C(bbextentt):		.long	0
 C(cacheblock):		.long	0
 C(cachewidth):		.long	0
 C(d_viewbuffer):	.long	0
+C(d_rowbytes):		.long	0
+C(d_height):		.long	0
 C(d_zbuffer):		.long	0
 C(d_zrowbytes):		.long	0
 C(d_zwidth):		.long	0

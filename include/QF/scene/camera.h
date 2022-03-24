@@ -41,6 +41,7 @@
 
 typedef struct camera_s {
 	struct scene_s *scene;	///< owning scene
+	struct framebuffer_s *framebuffer;
 	int32_t     id;			///< id in scene
 	int32_t     transform;
 	float       field_of_view;

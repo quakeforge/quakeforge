@@ -33,6 +33,7 @@
 #include "QF/render.h"
 
 #include "r_internal.h"
+#include "vid_sw.h"
 
 /*
 	R_LineGraph
@@ -44,12 +45,13 @@ R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	int         h, i, s, color;
 	byte       *dest;
+	sw_framebuffer_t *fb = sw_ctx->framebuffer->buffer;
 
 	// FIXME: disable on no-buffer adapters, or put in the driver
 	s = height;
 
 	while (count--) {
-		dest = ((byte*)vid.buffer) + vid.rowbytes * y + x++;
+		dest = fb->color + fb->rowbytes * y + x++;
 
 		h = *h_vals++;
 
@@ -65,7 +67,7 @@ R_LineGraph (int x, int y, int *h_vals, int count, int height)
 		if (h > s)
 			h = s;
 
-		for (i = 0; i < h; i++, dest -= vid.rowbytes) {
+		for (i = 0; i < h; i++, dest -= fb->rowbytes) {
 			dest[0] = color;
 		}
 	}

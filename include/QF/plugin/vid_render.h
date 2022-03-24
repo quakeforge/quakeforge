@@ -115,6 +115,9 @@ typedef struct vid_render_funcs_s {
 	void (*set_2d) (int scaled);
 	void (*end_frame) (void);
 
+	struct framebuffer_s *(*create_frame_buffer) (int width, int height);
+	void (*bind_framebuffer) (struct framebuffer_s *framebuffer);
+
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
 

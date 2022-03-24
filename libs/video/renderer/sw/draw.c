@@ -45,6 +45,7 @@
 #include "QF/ui/view.h"
 
 #include "d_iface.h"
+#include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 
@@ -279,7 +280,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	} else
 		drawline = 8;
 
-	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+	dest = d_viewbuffer + y * d_rowbytes + x;
 
 	while (drawline--) {
 		if (source[0])
@@ -299,7 +300,7 @@ Draw_Character (int x, int y, unsigned int chr)
 		if (source[7])
 			dest[7] = source[7];
 		source += 128;
-		dest += vid.rowbytes;
+		dest += d_rowbytes;
 	}
 }
 
@@ -339,7 +340,7 @@ Draw_Pixel (int x, int y, byte color)
 {
 	byte       *dest;
 
-	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+	dest = d_viewbuffer + y * d_rowbytes + x;
 	*dest = color;
 }
 
@@ -493,7 +494,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	source = pic->data;
 
-	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+	dest = d_viewbuffer + y * d_rowbytes + x;
 
 	if (pic->width & 7) {			// general
 		for (v = 0; v < pic->height; v++) {
@@ -501,7 +502,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
 					dest[u] = tbyte;
 
-			dest += vid.rowbytes;
+			dest += d_rowbytes;
 			source += pic->width;
 		}
 	} else {						// unwound
@@ -524,7 +525,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
 					dest[u + 7] = tbyte;
 			}
-			dest += vid.rowbytes;
+			dest += d_rowbytes;
 			source += pic->width;
 		}
 	}
@@ -571,7 +572,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	source = pic->data + srcy * pic->width + srcx;
 
-	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
+	dest = d_viewbuffer + y * d_rowbytes + x;
 
 	if (width & 7) {			// general
 		for (v = 0; v < height; v++) {
@@ -579,7 +580,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
 					dest[u] = tbyte;
 
-			dest += vid.rowbytes;
+			dest += d_rowbytes;
 			source += pic->width;
 		}
 	} else {						// unwound
@@ -602,7 +603,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
 					dest[u + 7] = tbyte;
 			}
-			dest += vid.rowbytes;
+			dest += d_rowbytes;
 			source += pic->width;
 		}
 	}
@@ -620,9 +621,9 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
 
 	// draw the pic
-	dest = vid.buffer;
+	dest = d_viewbuffer;
 
-	for (y = 0; y < lines; y++, dest += vid.rowbytes) {
+	for (y = 0; y < lines; y++, dest += d_rowbytes) {
 		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 		src = conback->data + v * 320;
 		if (vid.conview->xlen == 320)
@@ -654,10 +655,10 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	int         i, j, srcdelta, destdelta;
 	byte       *pdest;
 
-	pdest = ((byte*)vid.buffer) + (prect->y * vid.rowbytes) + prect->x;
+	pdest = d_viewbuffer + (prect->y * d_rowbytes) + prect->x;
 
 	srcdelta = rowbytes - prect->width;
-	destdelta = vid.rowbytes - prect->width;
+	destdelta = d_rowbytes - prect->width;
 
 	if (transparent) {
 		for (i = 0; i < prect->height; i++) {
@@ -678,7 +679,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 		for (i = 0; i < prect->height; i++) {
 			memcpy (pdest, psrc, prect->width);
 			psrc += rowbytes;
-			pdest += vid.rowbytes;
+			pdest += d_rowbytes;
 		}
 	}
 }
@@ -754,8 +755,8 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
-	for (v = 0; v < h; v++, dest += vid.rowbytes)
+	dest = d_viewbuffer + y * d_rowbytes + x;
+	for (v = 0; v < h; v++, dest += d_rowbytes)
 		for (u = 0; u < w; u++)
 			dest[u] = c;
 }
@@ -774,7 +775,7 @@ Draw_FadeScreen (void)
 	for (y = 0; y < height; y++) {
 		uint32_t    mask;
 
-		pbuf = (uint32_t *) ((byte *)vid.buffer + vid.rowbytes * y);
+		pbuf = (uint32_t *) (d_viewbuffer + d_rowbytes * y);
 		mask = 0xff << ((y & 1) << 4);
 
 		for (x = 0; x < width; x++) {

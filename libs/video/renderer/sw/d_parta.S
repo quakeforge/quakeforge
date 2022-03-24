@@ -245,7 +245,7 @@ C(DP_1x1):
 .globl	C(DP_2x2)
 C(DP_2x2):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -276,7 +276,7 @@ L2x2_4:
 .globl	C(DP_3x3)
 C(DP_3x3):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -335,7 +335,7 @@ L3x3_9:
 .globl	C(DP_4x4)
 C(DP_4x4):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -438,7 +438,7 @@ LDefault:
 	movb	C(d_y_aspect_shift),%cl
 	shll	%cl,%ebx
 
-// for ( ; count ; count--, pz += d_zwidth, pdest += screenwidth)
+// for ( ; count ; count--, pz += d_zwidth, pdest += d_rowbytes)
 // {
 // 	for (i=0 ; i<pix ; i++)
 // 	{
@@ -463,7 +463,7 @@ LGSkip:
 	jnz		LGenColLoop
 
 	addl	C(d_zrowbytes),%edx
-	addl	C(screenwidth),%edi
+	addl	C(d_rowbytes),%edi
 
 	decl	%ebx			// --count
 	jnz		LGenRowLoop

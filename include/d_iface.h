@@ -226,6 +226,4 @@ extern float	r_skytime;
 
 extern int		c_surf;
 
-extern byte		*r_warpbuffer;
-
 #endif // _D_IFACE_H

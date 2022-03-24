@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include <string.h>
+
 #include "QF/cvar.h"
 
 #include "QF/plugin/general.h"
@@ -35,6 +37,7 @@
 
 #include "QF/ui/view.h"
 
+#include "d_local.h"
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -108,6 +111,8 @@ sw_vid_render_shutdown (void)
 {
 }
 
+static void sw_bind_framebuffer (framebuffer_t *framebuffer);
+
 static void
 sw_begin_frame (void)
 {
@@ -131,6 +136,8 @@ sw_begin_frame (void)
 					r_numallocatededges, r_maxedgesseen);
 	}
 
+	sw_bind_framebuffer (0);
+
 	// do 3D refresh drawing, and then update the screen
 	if (vr_data.scr_fullupdate++ < vid.numpages) {
 		vr_data.scr_copyeverything = 1;
@@ -152,6 +159,10 @@ sw_draw_transparent (void)
 static void
 sw_set_2d (int scaled)
 {
+	if (!scaled && r_dowarp) {
+		D_WarpScreen ();
+		sw_bind_framebuffer (0);
+	}
 }
 
 static void
@@ -185,6 +196,68 @@ sw_end_frame (void)
 		vrect.next = 0;
 	}
 	sw_ctx->update (sw_ctx, &vrect);
+}
+
+static framebuffer_t *
+sw_create_frame_buffer (int width, int height)
+{
+	size_t      pixels = width * height;
+	size_t      size = sizeof (framebuffer_t);
+	size += sizeof (sw_framebuffer_t);
+	size += pixels;							// color buffer
+	size += pixels * sizeof (short);		// depth buffer
+
+	framebuffer_t *fb = malloc (size);
+	fb->width = width;
+	fb->height = height;
+	__auto_type buffer = (sw_framebuffer_t *) &fb[1];
+	fb->buffer = buffer;
+	buffer->color = (byte *) &buffer[1];
+	buffer->depth = (short *) (buffer->color + pixels);
+	buffer->rowbytes = width;
+	return fb;
+}
+
+static void
+sw_bind_framebuffer (framebuffer_t *framebuffer)
+{
+	int         changed = 0;
+
+	if (!framebuffer) {
+		framebuffer = sw_ctx->framebuffer;
+	}
+	sw_framebuffer_t *fb = framebuffer->buffer;
+
+	if (!fb->depth) {
+		fb->depth = malloc (framebuffer->width * framebuffer->height
+							* sizeof (short));
+	}
+
+	if (d_zbuffer != fb->depth
+		|| d_zwidth != framebuffer->width || d_height != framebuffer->height) {
+		d_zwidth = framebuffer->width;
+		d_zrowbytes = d_zwidth * sizeof (short);
+		for (unsigned i = 0; i < framebuffer->height; i++) {
+			zspantable[i] = fb->depth + i * d_zwidth;
+		}
+		changed = 1;
+	}
+	if (d_rowbytes != fb->rowbytes || d_height != framebuffer->height) {
+		d_rowbytes = fb->rowbytes;
+		d_height = framebuffer->height;
+		for (unsigned i = 0; i < framebuffer->height; i++) {
+			d_scantable[i] = i * d_rowbytes;
+		}
+		changed = 1;
+	}
+	d_viewbuffer = fb->color;
+	d_zbuffer = fb->depth;
+
+	if (changed) {
+		vrect_t r = { 0, 0, framebuffer->width, framebuffer->height };
+		R_SetVrect (&r, &r_refdef.vrect, 0);
+		R_ViewChanged ();
+	}
 }
 
 vid_render_funcs_t sw_vid_render_funcs = {
@@ -226,6 +299,10 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	sw_draw_transparent,
 	sw_set_2d,
 	sw_end_frame,
+
+	sw_create_frame_buffer,
+	sw_bind_framebuffer,
+
 	&model_funcs
 };
 

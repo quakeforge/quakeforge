@@ -270,8 +270,6 @@ extern edge_t	*r_edges, *edge_p, *edge_max;
 extern	edge_t	*newedges[MAXHEIGHT];
 extern	edge_t	*removeedges[MAXHEIGHT];
 
-extern	int	screenwidth;
-
 extern int		r_bmodelactive;
 extern vrect_t	*pconupdate;
 

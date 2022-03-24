@@ -66,6 +66,7 @@ static qboolean scr_initialized;// ready to draw
 static qpic_t *scr_ram;
 static qpic_t *scr_turtle;
 
+static framebuffer_t *warp_buffer;
 static void
 set_vrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
@@ -197,11 +198,21 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	if (refdef->worldmodel) {
 		vec4f_t     position = refdef->frame.position;
 		refdef->viewleaf = Mod_PointInLeaf (&position[0], refdef->worldmodel);
+		r_dowarpold = r_dowarp;
+		if (r_waterwarp->int_val) {
+			r_dowarp = refdef->viewleaf->contents <= CONTENTS_WATER;
+		}
+		if (r_dowarp && !warp_buffer) {
+			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width, r_data->vid->height);
+		}
 	}
 	R_MarkLeaves ();
 	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();
+	if (r_dowarp) {
+		r_funcs->bind_framebuffer (warp_buffer);
+	}
 	r_funcs->render_view ();
 	r_funcs->draw_entities (r_ent_queue);
 	r_funcs->draw_particles (&r_psystem);

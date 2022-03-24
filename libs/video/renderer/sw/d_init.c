@@ -45,6 +45,7 @@ float        d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
+static byte *surfcache;
 
 void        (*d_drawspans) (espan_t *pspan);
 
@@ -60,29 +61,16 @@ D_Init (void)
 
 	vid->vid_internal->flush_caches = D_FlushCaches;
 
-	int         buffersize = vid->rowbytes * vid->height;
-	int         zbuffersize = vid->width * vid->height * sizeof (*vid->zbuffer);
 	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
 
-	if (vid->zbuffer) {
-		free (vid->zbuffer);
-		vid->zbuffer = 0;
+	if (surfcache) {
+		D_FlushCaches (vid->vid_internal->data);
+		free (surfcache);
+		surfcache = 0;
 	}
-	if (vid->surfcache) {
-		D_FlushCaches (0);
-		free (vid->surfcache);
-		vid->surfcache = 0;
-	}
-	if (vid->vid_internal->init_buffers) {
-		vid->vid_internal->init_buffers (vid->vid_internal->data);
-	} else {
-		free (vid->buffer);
-		vid->buffer = calloc (buffersize, 1);
-	}
-	vid->zbuffer = calloc (zbuffersize, 1);
-	vid->surfcache = calloc (cachesize, 1);
-
-	D_InitCaches (vid->surfcache, cachesize);
+	surfcache = calloc (cachesize, 1);
+	vid->vid_internal->init_buffers (vid->vid_internal->data);
+	D_InitCaches (surfcache, cachesize);
 }
 
 void
@@ -95,16 +83,6 @@ void
 D_SetupFrame (void)
 {
 	int         i;
-
-	if (r_dowarp)
-		d_viewbuffer = r_warpbuffer;
-	else
-		d_viewbuffer = vid.buffer;
-
-	if (r_dowarp)
-		screenwidth = WARP_WIDTH;
-	else
-		screenwidth = vid.rowbytes;
 
 	d_roverwrapped = false;
 	d_initial_rover = sc_rover;

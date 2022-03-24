@@ -45,24 +45,27 @@ sw_SCR_CaptureBGR (void)
 	tex_t      *tex;
 	const byte *src;
 	byte       *dst;
+	framebuffer_t *fb = sw_ctx->framebuffer;
 
-	count = vid.width * vid.height;
+	count = fb->width * fb->height;
 	tex = malloc (sizeof (tex_t) + count * 3);
 	tex->data = (byte *) (tex + 1);
 	SYS_CHECKMEM (tex);
-	tex->width = vid.width;
-	tex->height = vid.height;
+	tex->width = fb->width;
+	tex->height = fb->height;
 	tex->format = tex_rgb;
 	tex->palette = 0;
-	src = vid.buffer;
+	src = ((sw_framebuffer_t *) fb->buffer)->color;
+	int rowbytes = ((sw_framebuffer_t *) fb->buffer)->rowbytes;
 	for (y = 0; y < tex->height; y++) {
 		dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
 		for (x = 0; x < tex->width; x++) {
-			*dst++ = vid.basepal[*src * 3 + 2]; // blue
-			*dst++ = vid.basepal[*src * 3 + 1]; // green
-			*dst++ = vid.basepal[*src * 3 + 0];	// red
-			src++;
+			byte        c = src[x];
+			*dst++ = vid.basepal[c * 3 + 2]; // blue
+			*dst++ = vid.basepal[c * 3 + 1]; // green
+			*dst++ = vid.basepal[c * 3 + 0]; // red
 		}
+		src += rowbytes;
 	}
 	return tex;
 }

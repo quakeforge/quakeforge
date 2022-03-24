@@ -37,9 +37,6 @@
 typedef struct {
 	qboolean		 initialized;
 	qboolean		 is8bit;
-	void			*buffer;		// invisible buffer
-	short			*zbuffer;
-	void			*surfcache;
 	byte			*gammatable;	// 256
 	const byte      *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
@@ -48,7 +45,6 @@ typedef struct {
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
-	int				 rowbytes;		// may be > width if displayed in a window
 	unsigned		 width;
 	unsigned		 height;
 	int				 numpages;

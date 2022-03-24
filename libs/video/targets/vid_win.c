@@ -39,11 +39,14 @@
 
 static vid_internal_t vid_internal;
 
+#if 0
 static byte backingbuf[48 * 24];
+#endif
 
 void
 D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
+#if 0
 	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
@@ -72,12 +75,14 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 	rect.next = NULL;
 
 	win_sw_context->update (win_sw_context, &rect);
+#endif
 }
 
 
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
+#if 0
 	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
@@ -102,6 +107,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	rect.next = NULL;
 
 	win_sw_context->update (win_sw_context, &rect);
+#endif
 }
 
 static void

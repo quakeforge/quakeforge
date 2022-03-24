@@ -45,6 +45,7 @@
 
 #include "r_internal.h"
 
+qboolean    r_dowarp, r_dowarpold;
 qboolean    r_inhibit_viewmodel;
 qboolean    r_force_fullscreen;
 qboolean    r_paused;

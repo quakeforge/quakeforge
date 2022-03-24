@@ -418,6 +418,17 @@ vulkan_end_frame (void)
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
 }
 
+static framebuffer_t *
+vulkan_create_frame_buffer (int width, int height)
+{
+	Sys_Error ("not implemented");
+}
+
+static void
+vulkan_bind_framebuffer (framebuffer_t *framebuffer)
+{
+}
+
 static int
 is_bgr (VkFormat format)
 {
@@ -696,6 +707,10 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_draw_transparent,
 	vulkan_set_2d,
 	vulkan_end_frame,
+
+	vulkan_create_frame_buffer,
+	vulkan_bind_framebuffer,
+
 	&model_funcs
 };
 

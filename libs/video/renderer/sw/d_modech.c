@@ -65,19 +65,9 @@ D_Patch (void)
 void
 D_ViewChanged (void)
 {
-	int         rowpixels;
-
-	if (r_dowarp)
-		rowpixels = WARP_WIDTH;
-	else
-		rowpixels = vid.rowbytes;
-
 	scale_for_mip = xscale;
 	if (yscale > xscale)
 		scale_for_mip = yscale;
-
-	d_zrowbytes = vid.width * 2;
-	d_zwidth = vid.width;
 
 	d_pix_min = r_refdef.vrect.width / 320;
 	if (d_pix_min < 1)
@@ -98,15 +88,6 @@ D_ViewChanged (void)
 	d_vrectright_particle = r_refdef.vrectright - d_pix_max;
 	d_vrectbottom_particle =
 		r_refdef.vrectbottom - (d_pix_max << d_y_aspect_shift);
-
-	{
-		unsigned    i;
-
-		for (i = 0; i < vid.height; i++) {
-			d_scantable[i] = i * rowpixels;
-			zspantable[i] = d_zbuffer + i * d_zwidth;
-		}
-	}
 
 	D_Patch ();
 }

@@ -54,6 +54,7 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
@@ -70,15 +71,13 @@ float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
 
-qboolean    r_dowarp, r_dowarpold, r_viewchanged;
+qboolean    r_viewchanged;
 
 int         c_surf;
 int         r_maxsurfsseen, r_maxedgesseen;
 static int  r_cnumsurfs;
 static qboolean    r_surfsonstack;
 int         r_clipflags;
-
-byte       *r_warpbuffer;
 
 static byte       *r_stack_start;
 
@@ -689,15 +688,11 @@ R_EdgeDrawing (entqueue_t *queue)
 static void
 R_RenderView_ (void)
 {
-	byte        warpbuffer[WARP_WIDTH * WARP_HEIGHT];
-
 	if (r_norefresh->int_val)
 		return;
 	if (!r_refdef.worldmodel) {
 		return;
 	}
-
-	r_warpbuffer = warpbuffer;
 
 	R_SetupFrame ();
 
@@ -710,9 +705,6 @@ R_RenderView_ (void)
 	R_EdgeDrawing (r_ent_queue);
 
 	R_DrawViewModel ();
-
-	if (r_dowarp)
-		D_WarpScreen ();
 
 	if (r_aliasstats->int_val)
 		R_PrintAliasStats ();
@@ -739,7 +731,7 @@ R_RenderView (void)
 	if ((intptr_t) (&dummy) & 3)
 		Sys_Error ("Stack is missaligned");
 
-	if ((intptr_t) (&r_warpbuffer) & 3)
+	if ((intptr_t) (&colormap) & 3)
 		Sys_Error ("Globals are missaligned");
 	if (!scr_fisheye->int_val)
 		R_RenderView_ ();
@@ -765,7 +757,7 @@ R_InitTurb (void)
 #define BOX_LEFT   3
 #define BOX_TOP    4
 #define BOX_BOTTOM 5
-
+#if 0
 static mat4f_t box_rotations[] = {
 	{ { 1, 0, 0, 0},		// front
 	  { 0, 1, 0, 0},
@@ -792,7 +784,7 @@ static mat4f_t box_rotations[] = {
 	  { 1, 0, 0, 0},
 	  { 0, 0, 0, 1} },
 };
-
+#endif
 static int sw_cube_map_size;
 
 static void
@@ -848,7 +840,7 @@ fisheyelookuptable (byte **buf, int width, int height, byte *scrp, double fov)
 		}
 	}
 }
-
+#if 0
 static void
 rendercopy (void *dest)
 {
@@ -901,16 +893,18 @@ renderside (byte *bufs, int side)
 	memcpy (r_refdef.camera, camera, sizeof (camera));
 	memcpy (r_refdef.camera_inverse, camera_inverse, sizeof (camera_inverse));
 }
-
+#endif
 static void
 renderlookup (byte **offs, byte* bufs)
 {
-	byte       *p = (byte*)vid.buffer;
-	unsigned   x, y;
-	for (y = 0; y < vid.height; y++) {
-		for (x = 0; x < vid.width; x++, offs++)
+	framebuffer_t *fb = sw_ctx->framebuffer;
+	sw_framebuffer_t *swfb = fb->buffer;
+	byte       *p = swfb->color;
+	unsigned x, y;
+	for (y = 0; y < fb->height; y++) {
+		for (x = 0; x < fb->width; x++, offs++)
 		    p[x] = **offs;
-		p += vid.rowbytes;
+		p += swfb->rowbytes;
 	}
 }
 
@@ -950,7 +944,7 @@ R_RenderViewFishEye (void)
 		pviews = views;
 		memset (scrbufs, 0, scrsize*6);
 	}
-
+#if 0
 	switch (views) {
 		case 6:  renderside (scrbufs + scrsize * BOX_BEHIND, BOX_BEHIND);
 		case 5:  renderside (scrbufs + scrsize * BOX_BOTTOM, BOX_BOTTOM);
@@ -959,6 +953,7 @@ R_RenderViewFishEye (void)
 		case 2:  renderside (scrbufs + scrsize * BOX_RIGHT,  BOX_RIGHT);
 		default: renderside (scrbufs + scrsize * BOX_FRONT,  BOX_FRONT);
 	}
+#endif
 #if 0
 	memset (scrbufs + scrsize*0, 31, sw_cube_map_size);
 	memset (scrbufs + scrsize*1, 31, sw_cube_map_size);

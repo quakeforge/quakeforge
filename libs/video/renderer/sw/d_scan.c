@@ -33,6 +33,7 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 byte       *r_turb_pbase;
 byte       *r_turb_pdest;
@@ -49,6 +50,7 @@ int         r_turb_spancount;
 void
 D_WarpScreen (void)
 {
+	sw_framebuffer_t *_swfb = sw_ctx->framebuffer->buffer;
 	int         w, h;
 	int         u, v;
 	int         scr_x = vr_data.scr_view->xpos;
@@ -59,6 +61,8 @@ D_WarpScreen (void)
 	int        *turb;
 	int        *col;
 	byte      **row;
+	byte       *color = _swfb->color;
+	int         rowbytes = _swfb->rowbytes;
 
 	/* FIXME: allocate these arrays properly */
 	byte       *rowptr[MAXHEIGHT + AMP2 * 2];
@@ -72,8 +76,8 @@ D_WarpScreen (void)
 	hratio = h / (float) scr_h;
 
 	for (v = 0; v < scr_h + AMP2 * 2; v++) {
-		rowptr[v] = d_viewbuffer + (r_refdef.vrect.y * screenwidth) +
-			(screenwidth * (int) ((float) v * hratio * h / (h + AMP2 * 2)));
+		rowptr[v] = d_viewbuffer + (0*r_refdef.vrect.y * d_rowbytes) +
+			(d_rowbytes * (int) ((float) v * hratio * h / (h + AMP2 * 2)));
 	}
 
 	for (u = 0; u < scr_w + AMP2 * 2; u++) {
@@ -82,9 +86,9 @@ D_WarpScreen (void)
 	}
 
 	turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-	dest = ((byte*)vid.buffer) + scr_y * vid.rowbytes + scr_x;
+	dest = color + scr_y * rowbytes + scr_x;
 
-	for (v = 0; v < scr_h; v++, dest += vid.rowbytes) {
+	for (v = 0; v < scr_h; v++, dest += rowbytes) {
 		col = &column[turb[v]];
 		row = &rowptr[v];
 		for (u = 0; u < scr_w; u += 4) {
@@ -141,7 +145,7 @@ Turbulent (espan_t *pspan)
 	zi16stepu = d_zistepu * 16;
 
 	do {
-		r_turb_pdest = d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+		r_turb_pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -265,7 +269,7 @@ D_DrawSpans8 (espan_t *pspan)
 	zi8stepu = d_zistepu * 8;
 
 	do {
-		pdest = d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+		pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

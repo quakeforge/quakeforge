@@ -300,6 +300,17 @@ gl_end_frame (void)
 	}
 }
 
+static framebuffer_t *
+gl_create_frame_buffer (int width, int height)
+{
+	Sys_Error ("not implemented");
+}
+
+static void
+gl_bind_framebuffer (framebuffer_t *framebuffer)
+{
+}
+
 vid_render_funcs_t gl_vid_render_funcs = {
 	gl_vid_render_init,
 	gl_Draw_Character,
@@ -339,6 +350,10 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_draw_transparent,
 	gl_set_2d,
 	gl_end_frame,
+
+	gl_create_frame_buffer,
+	gl_bind_framebuffer,
+
 	&model_funcs
 };
 

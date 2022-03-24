@@ -219,17 +219,18 @@ x11_set_palette (sw_ctx_t *ctx, const byte *palette)
 }
 
 static void
-st2_fixup (XImage *framebuf, int x, int y, int width, int height)
+st2_fixup (sw_ctx_t *ctx, XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		xi, yi;
 	unsigned char *src;
 	PIXEL16 	*dest;
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)viddef.buffer)[yi * viddef.width];
+		src = &fb->color[yi * fb->rowbytes];
 		dest = (PIXEL16 *) &framebuf->data[yi * framebuf->bytes_per_line];
 		for (xi = x; xi < x + width; xi++) {
 			dest[xi] = st2d_8to16table[src[xi]];
@@ -238,18 +239,19 @@ st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 }
 
 static void
-st3_fixup (XImage * framebuf, int x, int y, int width, int height)
+st3_fixup (sw_ctx_t *ctx, XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		yi;
 	unsigned char *src;
 	PIXEL24 	*dest;
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
 	register int count, n;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)viddef.buffer)[yi * viddef.width + x];
+		src = &fb->color[yi * fb->rowbytes + x];
 		dest = (PIXEL24 *) &framebuf->data[yi * framebuf->bytes_per_line + x];
 
 		// Duff's Device
@@ -280,13 +282,13 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 }
 
 static void
-x11_put_image (vrect_t *rects)
+x11_put_image (vrect_t *rect)
 {
 	if (doShm) {
 		if (!XShmPutImage (x_disp, x_win, x_gc,
 						   x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->x, rects->y,
-						   rects->width, rects->height, True)) {
+						   rect->x, rect->y, rect->x, rect->y,
+						   rect->width, rect->height, True)) {
 			Sys_Error ("VID_Update: XShmPutImage failed");
 		}
 		oktodraw = false;
@@ -296,8 +298,8 @@ x11_put_image (vrect_t *rects)
 		current_framebuffer = !current_framebuffer;
 	} else {
 		if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-						rects->x, rects->y, rects->x, rects->y,
-						rects->width, rects->height)) {
+						rect->x, rect->y, rect->x, rect->y,
+						rect->width, rect->height)) {
 			Sys_Error ("VID_Update: XPutImage failed");
 		}
 	}
@@ -309,33 +311,46 @@ x11_put_image (vrect_t *rects)
 static void
 x11_sw8_8_update (sw_ctx_t *ctx, vrect_t *rects)
 {
-	while (rects) {
-		switch (x_visinfo->depth) {
-			case 16:
-				st2_fixup (x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->width, rects->height);
-				break;
-			case 24:
-				st3_fixup (x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->width, rects->height);
-				break;
-		}
-		x11_put_image (rects);
+	vrect_t     urect = *rects;
+	while (rects->next) {
 		rects = rects->next;
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
 	}
+	x11_put_image (&urect);
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
+
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
+	fb->color = (byte *) x_framebuffer[current_framebuffer]->data;
 }
 
 static void
 x11_sw8_16_update (sw_ctx_t *ctx, vrect_t *rects)
 {
-	while (rects) {
-		st2_fixup (x_framebuffer[current_framebuffer],
-				   rects->x, rects->y, rects->width, rects->height);
-		x11_put_image (rects);
+	vrect_t     urect = *rects;
+	st2_fixup (ctx, x_framebuffer[current_framebuffer],
+			   rects->x, rects->y, rects->width, rects->height);
+	while (rects->next) {
 		rects = rects->next;
+		st2_fixup (ctx, x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
 	}
+	x11_put_image (&urect);
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
 }
@@ -343,12 +358,23 @@ x11_sw8_16_update (sw_ctx_t *ctx, vrect_t *rects)
 static void
 x11_sw8_24_update (sw_ctx_t *ctx, vrect_t *rects)
 {
-	while (rects) {
-		st3_fixup (x_framebuffer[current_framebuffer],
-				   rects->x, rects->y, rects->width, rects->height);
-		x11_put_image (rects);
+	vrect_t     urect = *rects;
+	st3_fixup (ctx, x_framebuffer[current_framebuffer],
+			   rects->x, rects->y, rects->width, rects->height);
+	while (rects->next) {
 		rects = rects->next;
+		st3_fixup (ctx, x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
 	}
+	x11_put_image (&urect);
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
 }
@@ -592,9 +618,16 @@ ResetSharedFrameBuffers (void)
 	}
 }
 
+static sw_framebuffer_t swfb;
+static framebuffer_t fb = { .buffer = &swfb };
+
 static void
 x11_init_buffers (void *data)
 {
+	sw_ctx_t   *ctx = data;
+
+	ctx->framebuffer = &fb;
+
 	if (doShm)
 		ResetSharedFrameBuffers ();
 	else
@@ -602,15 +635,18 @@ x11_init_buffers (void *data)
 
 	current_framebuffer = 0;
 
-	viddef.rowbytes = viddef.width;
+	fb.width = viddef.width;
+	fb.height = viddef.height;
 	if (x_visinfo->depth != 8) {
-		if (viddef.buffer)
-			free (viddef.buffer);
-		viddef.buffer = calloc (viddef.rowbytes, viddef.height);
-		if (!viddef.buffer)
+		if (swfb.color)
+			free (swfb.color);
+		swfb.rowbytes = viddef.width;
+		swfb.color = calloc (swfb.rowbytes, viddef.height);
+		if (!swfb.color)
 			Sys_Error ("Not enough memory for video mode");
 	} else {
-		viddef.buffer = x_framebuffer[current_framebuffer]->data;
+		swfb.rowbytes = x_framebuffer[current_framebuffer]->bytes_per_line;
+		swfb.color = (byte *) x_framebuffer[current_framebuffer]->data;
 	}
 }
 

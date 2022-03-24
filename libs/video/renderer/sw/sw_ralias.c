@@ -29,6 +29,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/image.h"
 #include "QF/render.h"
