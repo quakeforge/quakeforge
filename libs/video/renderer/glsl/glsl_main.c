@@ -58,6 +58,7 @@
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
+#include "QF/GLSL/qf_warp.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -211,6 +212,7 @@ glsl_R_Init (void)
 	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
+	glsl_InitWarp ();
 	Skin_Init ();
 }
 

@@ -38,6 +38,7 @@
 #include "QF/GLSL/qf_main.h"
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_vid.h"
+#include "QF/GLSL/qf_warp.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -229,6 +230,15 @@ glsl_draw_transparent (void)
 static void
 glsl_post_process (framebuffer_t *src)
 {
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	if (r_dowarp) {
+		glsl_WarpScreen (src);
+
+		gl_framebuffer_t *buffer = src->buffer;
+		qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+		qfeglClear (GL_DEPTH_BUFFER_BIT);
+	}
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
 }
 
 static void
@@ -258,12 +268,49 @@ glsl_create_cube_map (int size)
 static framebuffer_t *
 glsl_create_frame_buffer (int width, int height)
 {
-	Sys_Error ("not implemented");
+	size_t      size = sizeof (framebuffer_t) + sizeof (gl_framebuffer_t);
+
+	framebuffer_t *fb = malloc (size);
+	fb->width = width;
+	fb->height = height;
+	__auto_type buffer = (gl_framebuffer_t *) &fb[1];
+	fb->buffer = buffer;
+	qfeglGenFramebuffers (1, &buffer->handle);
+
+	GLuint      tex[2];
+	qfeglGenTextures (2, tex);
+
+	buffer->color = tex[0];
+	buffer->depth = tex[1];
+
+	qfeglBindTexture (GL_TEXTURE_2D, buffer->color);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+					 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	qfeglBindTexture (GL_TEXTURE_2D, buffer->depth);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
+					 GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+	qfeglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+							   GL_TEXTURE_2D, buffer->color, 0);
+	qfeglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+							   GL_TEXTURE_2D, buffer->depth, 0);
+
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return fb;
 }
 
 static void
 glsl_bind_framebuffer (framebuffer_t *framebuffer)
 {
+	gl_framebuffer_t *buffer = framebuffer->buffer;
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+
+	vrect_t r = { 0, 0, framebuffer->width, framebuffer->height };
+	R_SetVrect (&r, &r_refdef.vrect, 0);
+	R_ViewChanged ();
 }
 
 vid_render_funcs_t glsl_vid_render_funcs = {

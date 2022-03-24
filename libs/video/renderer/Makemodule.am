@@ -118,6 +118,7 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
 	libs/video/renderer/glsl/glsl_textures.c \
+	libs/video/renderer/glsl/glsl_warp.c \
 	libs/video/renderer/glsl/qfglsl.c \
 	libs/video/renderer/glsl/quakeforge.glsl \
 	libs/video/renderer/glsl/vid_common_glsl.c

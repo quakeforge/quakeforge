@@ -189,7 +189,6 @@ glx_choose_visual (gl_ctx_t *ctx)
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
 	x_vis = x_visinfo->visual;
-	printf ("%p\n", x_vis);
 }
 
 static void
