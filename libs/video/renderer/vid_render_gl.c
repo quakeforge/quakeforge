@@ -269,6 +269,11 @@ gl_draw_transparent (void)
 }
 
 static void
+gl_post_process (framebuffer_t *src)
+{
+}
+
+static void
 gl_set_2d (int scaled)
 {
 	if (scaled) {
@@ -298,6 +303,12 @@ gl_end_frame (void)
 		gl_ctx->end_rendering ();
 		gl_ctx->begun = 0;
 	}
+}
+
+static framebuffer_t *
+gl_create_cube_map (int size)
+{
+	Sys_Error ("not implemented");
 }
 
 static framebuffer_t *
@@ -348,9 +359,11 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_RenderEntities,
 	gl_R_DrawParticles,
 	gl_draw_transparent,
+	gl_post_process,
 	gl_set_2d,
 	gl_end_frame,
 
+	gl_create_cube_map,
 	gl_create_frame_buffer,
 	gl_bind_framebuffer,
 

@@ -227,6 +227,11 @@ glsl_draw_transparent (void)
 }
 
 static void
+glsl_post_process (framebuffer_t *src)
+{
+}
+
+static void
 glsl_set_2d (int scaled)
 {
 	if (scaled) {
@@ -242,6 +247,12 @@ glsl_end_frame (void)
 	GLSL_FlushText ();
 	GLSL_End2D ();
 	qfeglFlush ();
+}
+
+static framebuffer_t *
+glsl_create_cube_map (int size)
+{
+	Sys_Error ("not implemented");
 }
 
 static framebuffer_t *
@@ -292,9 +303,11 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_RenderEntities,
 	glsl_R_DrawParticles,
 	glsl_draw_transparent,
+	glsl_post_process,
 	glsl_set_2d,
 	glsl_end_frame,
 
+	glsl_create_cube_map,
 	glsl_create_frame_buffer,
 	glsl_bind_framebuffer,
 

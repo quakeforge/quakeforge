@@ -309,6 +309,11 @@ vulkan_draw_transparent (void)
 }
 
 static void
+vulkan_post_process (framebuffer_t *src)
+{
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 }
@@ -416,6 +421,12 @@ vulkan_end_frame (void)
 
 	vulkan_ctx->curFrame++;
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
+}
+
+static framebuffer_t *
+vulkan_create_cube_map (int size)
+{
+	Sys_Error ("not implemented");
 }
 
 static framebuffer_t *
@@ -705,9 +716,11 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_draw_entities,
 	vulkan_draw_particles,
 	vulkan_draw_transparent,
+	vulkan_post_process,
 	vulkan_set_2d,
 	vulkan_end_frame,
 
+	vulkan_create_cube_map,
 	vulkan_create_frame_buffer,
 	vulkan_bind_framebuffer,
 

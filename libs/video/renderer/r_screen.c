@@ -66,7 +66,48 @@ static qboolean scr_initialized;// ready to draw
 static qpic_t *scr_ram;
 static qpic_t *scr_turtle;
 
+static framebuffer_t *fisheye_cube_map;
 static framebuffer_t *warp_buffer;
+
+static mat4f_t box_rotations[] = {
+	[BOX_FRONT] = {
+		{ 1, 0, 0, 0},		// front
+		{ 0, 1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_RIGHT] = {
+		{ 0,-1, 0, 0},		// right
+		{ 1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BEHIND] = {
+		{-1, 0, 0, 0},		// back
+		{ 0,-1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_LEFT] = {
+		{ 0, 1, 0, 0},		// left
+		{-1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_TOP] = {
+		{ 0, 0, 1, 0},		// top
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BOTTOM] = {
+		{ 0, 0,-1, 0},		// bottom
+		{ 0, 1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+};
+
 static void
 set_vrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
@@ -138,6 +179,44 @@ SCR_CalcRefdef (void)
 	r_data->scr_fullupdate = 0;
 }
 
+static void
+render_scene (void)
+{
+	r_framecount++;
+	EntQueue_Clear (r_ent_queue);
+	r_funcs->render_view ();
+	r_funcs->draw_entities (r_ent_queue);
+	r_funcs->draw_particles (&r_psystem);
+	r_funcs->draw_transparent ();
+}
+
+static void
+render_side (int side)
+{
+	mat4f_t     camera;
+	mat4f_t     camera_inverse;
+	mat4f_t     rotinv;
+
+	memcpy (camera, r_refdef.camera, sizeof (camera));
+	memcpy (camera_inverse, r_refdef.camera_inverse, sizeof (camera_inverse));
+	mmulf (r_refdef.camera, camera, box_rotations[side]);
+	mat4ftranspose (rotinv, box_rotations[side]);
+	mmulf (r_refdef.camera_inverse, rotinv, camera_inverse);
+
+	//FIXME see fixme in r_screen.c
+	r_refdef.frame.mat[0] = -r_refdef.camera[1];
+	r_refdef.frame.mat[1] =  r_refdef.camera[0];
+	r_refdef.frame.mat[2] =  r_refdef.camera[2];
+	r_refdef.frame.mat[3] =  r_refdef.camera[3];
+
+	r_data->refdef->fov_x = r_data->refdef->fov_y = 90;
+	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
+	render_scene ();
+
+	memcpy (r_refdef.camera, camera, sizeof (camera));
+	memcpy (r_refdef.camera_inverse, camera_inverse, sizeof (camera_inverse));
+}
+
 /*
 	SCR_UpdateScreen
 
@@ -156,6 +235,10 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val) {
 		r_time1 = Sys_DoubleTime ();
+	}
+
+	if (scr_fisheye->int_val && !fisheye_cube_map) {
+		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
 
 	refdef_t   *refdef = r_data->refdef;
@@ -181,10 +264,6 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	R_SetFrustum (refdef->frustum, &refdef->frame,
 				  refdef->fov_x, refdef->fov_y);
 
-	//FIXME breaks fisheye as it calls the view render many times
-	EntQueue_Clear (r_ent_queue);
-	r_framecount++;
-
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;
 
@@ -203,7 +282,8 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 			r_dowarp = refdef->viewleaf->contents <= CONTENTS_WATER;
 		}
 		if (r_dowarp && !warp_buffer) {
-			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width, r_data->vid->height);
+			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
+														r_data->vid->height);
 		}
 	}
 	R_MarkLeaves ();
@@ -213,10 +293,21 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	if (r_dowarp) {
 		r_funcs->bind_framebuffer (warp_buffer);
 	}
-	r_funcs->render_view ();
-	r_funcs->draw_entities (r_ent_queue);
-	r_funcs->draw_particles (&r_psystem);
-	r_funcs->draw_transparent ();
+	if (scr_fisheye->int_val) {
+		switch (scr_fviews->int_val) {
+			case 6: render_side (BOX_BEHIND);
+			case 5: render_side (BOX_BOTTOM);
+			case 4: render_side (BOX_TOP);
+			case 3: render_side (BOX_LEFT);
+			case 2: render_side (BOX_RIGHT);
+			default:render_side (BOX_FRONT);
+		}
+		r_funcs->bind_framebuffer (0);
+		r_funcs->post_process (fisheye_cube_map);
+	} else {
+		render_scene ();
+		r_funcs->post_process (warp_buffer);
+	}
 	r_funcs->set_2d (0);
 	view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);

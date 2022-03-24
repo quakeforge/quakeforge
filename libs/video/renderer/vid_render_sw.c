@@ -157,12 +157,25 @@ sw_draw_transparent (void)
 }
 
 static void
-sw_set_2d (int scaled)
+sw_post_process (framebuffer_t *src)
 {
-	if (!scaled && r_dowarp) {
+	int         bind = 0;
+
+	if (scr_fisheye->int_val) {
+		R_RenderFisheye (src);
+		bind = 1;
+	} else if (r_dowarp) {
 		D_WarpScreen ();
+		bind = 1;
+	}
+	if (bind) {
 		sw_bind_framebuffer (0);
 	}
+}
+
+static void
+sw_set_2d (int scaled)
+{
 }
 
 static void
@@ -196,6 +209,33 @@ sw_end_frame (void)
 		vrect.next = 0;
 	}
 	sw_ctx->update (sw_ctx, &vrect);
+}
+
+static framebuffer_t *
+sw_create_cube_map (int side)
+{
+	size_t      pixels = side * side;		// per face
+	size_t      size = sizeof (framebuffer_t) * 6;
+	size += sizeof (sw_framebuffer_t) * 6;
+	size += pixels * 6;						// color buffer
+	// depth buffer, scan table and zspantable are shared between cube faces
+	// FIXME need *6 depth and zspan for multi-threaded
+	size += pixels * sizeof (short);		// depth buffer
+
+	framebuffer_t *cube = malloc (size);
+	__auto_type buffer_base = (sw_framebuffer_t *) &cube[6];
+	byte       *color_base = (byte *) &buffer_base[6];
+	short      *depth_base = (short *) (color_base + 6 * pixels);
+	for (int i = 0; i < 6; i++) {
+		cube[i].width = side;
+		cube[i].height = side;
+		__auto_type buffer = buffer_base + i;
+		cube[i].buffer = buffer;
+		buffer->color = color_base + i * pixels;
+		buffer->depth = depth_base;
+		buffer->rowbytes = side;
+	}
+	return cube;
 }
 
 static framebuffer_t *
@@ -297,9 +337,11 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_DrawEntitiesOnList,
 	R_DrawParticles,
 	sw_draw_transparent,
+	sw_post_process,
 	sw_set_2d,
 	sw_end_frame,
 
+	sw_create_cube_map,
 	sw_create_frame_buffer,
 	sw_bind_framebuffer,
 

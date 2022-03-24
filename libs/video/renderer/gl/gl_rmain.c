@@ -364,14 +364,14 @@ gl_R_RenderView (void)
 // translation function to map texture coordinates to fixed/regular
 // grid vertices coordinates.
 // Render view. Fisheye is done.
-
+#if 0
 #define BOX_FRONT  0
 #define BOX_RIGHT  1
 #define BOX_BEHIND 2
 #define BOX_LEFT   3
 #define BOX_TOP    4
 #define BOX_BOTTOM 5
-
+#endif
 static mat4f_t box_rotations[] = {
 	{ { 1, 0, 0, 0},		// front
 	  { 0, 1, 0, 0},

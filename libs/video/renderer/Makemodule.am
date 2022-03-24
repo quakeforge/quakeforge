@@ -157,6 +157,7 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/nonintel.c \
 	libs/video/renderer/sw/screen.c \
 	libs/video/renderer/sw/surf8.S \
+	libs/video/renderer/sw/sw_fisheye.c \
 	libs/video/renderer/sw/sw_graph.c \
 	libs/video/renderer/sw/sw_raclip.c \
 	libs/video/renderer/sw/sw_raclipa.S \
