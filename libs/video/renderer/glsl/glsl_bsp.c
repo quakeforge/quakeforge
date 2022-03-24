@@ -1390,7 +1390,7 @@ glsl_R_LoadSkys (const char *sky)
 	// a -90 degree rotation on the (quake) z-axis. This is taken care of in
 	// the sky_matrix setup code.
 	// However, from the player's perspective, skymaps have lf and rt
-	// swapped, but everythink makes sense if looking at the cube from outside
+	// swapped, but everything makes sense if looking at the cube from outside
 	// along the positive y axis, with the front of the cube being the nearest
 	// face. This matches nicely with Blender's default cube in front (num-1)
 	// view.
