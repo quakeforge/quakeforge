@@ -147,7 +147,7 @@ gl_vid_render_choose_visual (void *data)
 static void
 gl_vid_render_create_context (void *data)
 {
-	gl_ctx->create_context (gl_ctx);
+	gl_ctx->create_context (gl_ctx, 0);
 }
 
 static vid_model_funcs_t model_funcs = {

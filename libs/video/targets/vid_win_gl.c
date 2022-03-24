@@ -117,7 +117,7 @@ wgl_set_pixel_format (void)
 }
 
 static void
-wgl_create_context (gl_ctx_t *ctx)
+wgl_create_context (gl_ctx_t *ctx, int core)
 {
 	DWORD       lasterror;
 

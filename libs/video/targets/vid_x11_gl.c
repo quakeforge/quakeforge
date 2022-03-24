@@ -66,6 +66,12 @@
 #define GLX_STENCIL_SIZE		13		// number of stencil bits
 #define GLX_CONTEXT_MAJOR_VERSION_ARB   0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB   0x2092
+#define GLX_CONTEXT_FLAGS_ARB           0x2094
+#define GLX_CONTEXT_PROFILE_MASK_ARB    0x9126
+#define GLX_CONTEXT_DEBUG_BIT_ARB               0x0001
+#define GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB            0x00000001
+#define GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB   0x00000002
 
 #define GLX_X_RENDERABLE  0x8012
 #define GLX_DRAWABLE_TYPE 0x8010
@@ -187,12 +193,14 @@ glx_choose_visual (gl_ctx_t *ctx)
 }
 
 static void
-glx_create_context (gl_ctx_t *ctx)
+glx_create_context (gl_ctx_t *ctx, int core)
 {
 	int         attribs[] = {
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
 		GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-		//GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+		GLX_CONTEXT_PROFILE_MASK_ARB,
+			core ? GLX_CONTEXT_CORE_PROFILE_BIT_ARB
+				 : GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
 		None
 	};
 	XSync (x_disp, 0);

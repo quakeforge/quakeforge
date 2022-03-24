@@ -55,7 +55,7 @@ glsl_vid_render_choose_visual (void *data)
 static void
 glsl_vid_render_create_context (void *data)
 {
-	glsl_ctx->create_context (glsl_ctx);
+	glsl_ctx->create_context (glsl_ctx, 1);
 }
 
 static vid_model_funcs_t model_funcs = {
