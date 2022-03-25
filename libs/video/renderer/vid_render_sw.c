@@ -159,17 +159,10 @@ sw_draw_transparent (void)
 static void
 sw_post_process (framebuffer_t *src)
 {
-	int         bind = 0;
-
 	if (scr_fisheye->int_val) {
 		R_RenderFisheye (src);
-		bind = 1;
 	} else if (r_dowarp) {
-		D_WarpScreen ();
-		bind = 1;
-	}
-	if (bind) {
-		sw_bind_framebuffer (0);
+		D_WarpScreen (src);
 	}
 }
 
@@ -300,6 +293,11 @@ sw_bind_framebuffer (framebuffer_t *framebuffer)
 	}
 }
 
+static void
+sw_set_viewport (const vrect_t *view)
+{
+}
+
 vid_render_funcs_t sw_vid_render_funcs = {
 	sw_vid_render_init,
 	Draw_Character,
@@ -344,6 +342,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	sw_create_cube_map,
 	sw_create_frame_buffer,
 	sw_bind_framebuffer,
+	sw_set_viewport,
 
 	&model_funcs
 };

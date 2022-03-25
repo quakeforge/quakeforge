@@ -221,15 +221,6 @@ render_side (int side)
 	memcpy (r_refdef.camera_inverse, camera_inverse, sizeof (camera_inverse));
 }
 
-/*
-	SCR_UpdateScreen
-
-	This is called every frame, and can also be called explicitly to flush
-	text to the screen.
-
-	WARNING: be very careful calling this from elsewhere, because the refresh
-	needs almost the entire 256k of stack space!
-*/
 void
 SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 {
@@ -307,10 +298,14 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 			default:render_side (BOX_FRONT);
 		}
 		r_funcs->bind_framebuffer (0);
+		r_funcs->set_viewport (&r_refdef.vrect);
 		r_funcs->post_process (fisheye_cube_map);
 	} else {
 		render_scene ();
-		r_funcs->post_process (warp_buffer);
+		if (r_dowarp) {
+			r_funcs->bind_framebuffer (0);
+			r_funcs->post_process (warp_buffer);
+		}
 	}
 	r_funcs->set_2d (0);
 	view_draw (r_data->scr_view);

@@ -237,11 +237,6 @@ static void
 glsl_post_process (framebuffer_t *src)
 {
 	glsl_bind_framebuffer (0);
-	float x = r_refdef.vrect.x;
-	float y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	float w = r_refdef.vrect.width;
-	float h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);
 	if (scr_fisheye->int_val) {
 		glsl_FisheyeScreen (src);
 	} else if (r_dowarp) {
@@ -377,6 +372,16 @@ glsl_bind_framebuffer (framebuffer_t *framebuffer)
 	glsl_R_ViewChanged ();
 }
 
+static void
+glsl_set_viewport (const vrect_t *view)
+{
+	float x = view->x;
+	float y = vid.height - (view->y + view->height);
+	float w = view->width;
+	float h = view->height;
+	qfeglViewport (x, y, w, h);
+}
+
 vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_vid_render_init,
 	glsl_Draw_Character,
@@ -421,6 +426,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_create_cube_map,
 	glsl_create_frame_buffer,
 	glsl_bind_framebuffer,
+	glsl_set_viewport,
 
 	&model_funcs
 };

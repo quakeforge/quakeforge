@@ -159,7 +159,7 @@ void D_Init_Cvars (void);
 void D_ViewChanged (void);
 void D_SetupFrame (void);
 void D_TurnZOn (void);
-void D_WarpScreen (void);
+void D_WarpScreen (framebuffer_t *src);
 
 void D_FillRect (vrect_t *vrect, int color);
 void D_DrawRect (void);

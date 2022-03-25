@@ -322,6 +322,11 @@ gl_bind_framebuffer (framebuffer_t *framebuffer)
 {
 }
 
+static void
+gl_set_viewport (const vrect_t *view)
+{
+}
+
 vid_render_funcs_t gl_vid_render_funcs = {
 	gl_vid_render_init,
 	gl_Draw_Character,
@@ -366,6 +371,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_create_cube_map,
 	gl_create_frame_buffer,
 	gl_bind_framebuffer,
+	gl_set_viewport,
 
 	&model_funcs
 };

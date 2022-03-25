@@ -48,9 +48,9 @@ int         r_turb_spancount;
 	the sine warp, to keep the edges from wrapping
 */
 void
-D_WarpScreen (void)
+D_WarpScreen (framebuffer_t *src)
 {
-	sw_framebuffer_t *_swfb = sw_ctx->framebuffer->buffer;
+	sw_framebuffer_t *buffer = src->buffer;
 	int         w, h;
 	int         u, v;
 	int         scr_x = vr_data.scr_view->xpos;
@@ -61,8 +61,8 @@ D_WarpScreen (void)
 	int        *turb;
 	int        *col;
 	byte      **row;
-	byte       *color = _swfb->color;
-	int         rowbytes = _swfb->rowbytes;
+	byte       *color = buffer->color;
+	int         rowbytes = buffer->rowbytes;
 
 	/* FIXME: allocate these arrays properly */
 	byte       *rowptr[MAXHEIGHT + AMP2 * 2];
@@ -76,7 +76,7 @@ D_WarpScreen (void)
 	hratio = h / (float) scr_h;
 
 	for (v = 0; v < scr_h + AMP2 * 2; v++) {
-		rowptr[v] = d_viewbuffer + (0*r_refdef.vrect.y * d_rowbytes) +
+		rowptr[v] = color + (0*r_refdef.vrect.y * rowbytes) +
 			(d_rowbytes * (int) ((float) v * hratio * h / (h + AMP2 * 2)));
 	}
 
@@ -86,9 +86,9 @@ D_WarpScreen (void)
 	}
 
 	turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-	dest = color + scr_y * rowbytes + scr_x;
+	dest = d_viewbuffer + scr_y * d_rowbytes + scr_x;
 
-	for (v = 0; v < scr_h; v++, dest += rowbytes) {
+	for (v = 0; v < scr_h; v++, dest += d_rowbytes) {
 		col = &column[turb[v]];
 		row = &rowptr[v];
 		for (u = 0; u < scr_w; u += 4) {
