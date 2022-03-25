@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
@@ -35,6 +37,7 @@
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
+#include "QF/GLSL/qf_fisheye.h"
 #include "QF/GLSL/qf_main.h"
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_vid.h"
@@ -218,6 +221,7 @@ glsl_begin_frame (void)
 static void
 glsl_render_view (void)
 {
+	qfeglClear (GL_DEPTH_BUFFER_BIT);
 	glsl_R_RenderView ();
 }
 
@@ -227,18 +231,22 @@ glsl_draw_transparent (void)
 	glsl_R_DrawWaterSurfaces ();
 }
 
+static void glsl_bind_framebuffer (framebuffer_t *fb);
+
 static void
 glsl_post_process (framebuffer_t *src)
 {
-	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
-	if (r_dowarp) {
+	glsl_bind_framebuffer (0);
+	float x = r_refdef.vrect.x;
+	float y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
+	float w = r_refdef.vrect.width;
+	float h = r_refdef.vrect.height;
+	qfeglViewport (x, y, w, h);
+	if (scr_fisheye->int_val) {
+		glsl_FisheyeScreen (src);
+	} else if (r_dowarp) {
 		glsl_WarpScreen (src);
-
-		gl_framebuffer_t *buffer = src->buffer;
-		qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
-		qfeglClear (GL_DEPTH_BUFFER_BIT);
 	}
-	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
 }
 
 static void
@@ -260,9 +268,53 @@ glsl_end_frame (void)
 }
 
 static framebuffer_t *
-glsl_create_cube_map (int size)
+glsl_create_cube_map (int side)
 {
-	Sys_Error ("not implemented");
+	GLuint      tex[2];
+	qfeglGenTextures (2, tex);
+
+	qfeglBindTexture (GL_TEXTURE_CUBE_MAP, tex[0]);
+	for (int i = 0; i < 6; i++) {
+		qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA,
+						 side, side, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	}
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+						GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+						GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qfeglBindTexture (GL_TEXTURE_2D, tex[1]);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, side, side, 0,
+					 GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	size_t      size = sizeof (framebuffer_t) * 6;
+	size += sizeof (gl_framebuffer_t) * 6;
+
+	framebuffer_t *cube = malloc (size);
+	__auto_type buffer_base = (gl_framebuffer_t *) &cube[6];
+	for (int i = 0; i < 6; i++) {
+		cube[i].width = side;
+		cube[i].height = side;
+		__auto_type buffer = buffer_base + i;
+		cube[i].buffer = buffer;
+
+		buffer->color = tex[0];
+		buffer->depth = tex[1];
+		qfeglGenFramebuffers (1, &buffer->handle);
+
+		qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+		qfeglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+								   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+								   buffer->color, 0);
+		qfeglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+								   GL_TEXTURE_2D, buffer->depth, 0);
+	}
+	qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return cube;
 }
 
 static framebuffer_t *
@@ -287,10 +339,13 @@ glsl_create_frame_buffer (int width, int height)
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 					 GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	qfeglBindTexture (GL_TEXTURE_2D, buffer->depth);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
 					 GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
 	qfeglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -305,12 +360,21 @@ glsl_create_frame_buffer (int width, int height)
 static void
 glsl_bind_framebuffer (framebuffer_t *framebuffer)
 {
-	gl_framebuffer_t *buffer = framebuffer->buffer;
-	qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+	unsigned    width = vr_data.vid->width;
+	unsigned    height = vr_data.vid->height;
+	if (!framebuffer) {
+		qfeglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	} else {
+		gl_framebuffer_t *buffer = framebuffer->buffer;
+		qfeglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
 
-	vrect_t r = { 0, 0, framebuffer->width, framebuffer->height };
+		width = framebuffer->width;
+		height = framebuffer->height;
+	}
+
+	vrect_t r = { 0, 0, width, height };
 	R_SetVrect (&r, &r_refdef.vrect, 0);
-	R_ViewChanged ();
+	glsl_R_ViewChanged ();
 }
 
 vid_render_funcs_t glsl_vid_render_funcs = {

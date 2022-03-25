@@ -586,3 +586,24 @@ main ()
 	vec4        c = texture2D (screenTex, uv);
 	gl_FragColor = c;//vec4(uv, c.x, 1);
 }
+
+-- Fragment.screen.fisheye
+
+uniform samplerCube screenTex;
+uniform float fov;
+uniform float aspect;
+
+in vec2 uv;
+
+void
+main ()
+{
+	// slight offset on y is to avoid the singularity straight aheat
+	vec2        xy = (2.0 * uv - vec2 (1, 1.00002)) * (vec2(1, -aspect));
+	float       r = sqrt (dot (xy, xy));
+	vec2        cs = vec2 (cos (r * fov), sin (r * fov));
+	vec3        dir = vec3 (cs.y * xy / r, cs.x);
+
+	vec4        c = textureCube(screenTex, dir);
+	gl_FragColor = c;// * 0.001 + vec4(dir, 1);
+}

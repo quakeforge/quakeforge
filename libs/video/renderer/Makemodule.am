@@ -110,6 +110,7 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_alias.c \
 	libs/video/renderer/glsl/glsl_bsp.c \
 	libs/video/renderer/glsl/glsl_draw.c \
+	libs/video/renderer/glsl/glsl_fisheye.c \
 	libs/video/renderer/glsl/glsl_iqm.c \
 	libs/video/renderer/glsl/glsl_lightmap.c \
 	libs/video/renderer/glsl/glsl_main.c \

@@ -81,13 +81,15 @@ int R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,
 								  const animation_t *animation);
 
-// These correspond to the standard box sides for OpenGL cube maps
+// These correspond to the standard box sides for OpenGL cube maps but with
+// TOP and BOTTOM swapped due to lelt/right handed systems (quake/gl are right,
+// cube maps are left)
 #define BOX_FRONT  4
 #define BOX_RIGHT  0
 #define BOX_BEHIND 5
 #define BOX_LEFT   1
-#define BOX_TOP    2
-#define BOX_BOTTOM 3
+#define BOX_TOP    3
+#define BOX_BOTTOM 2
 void R_RenderFisheye (framebuffer_t *cube);
 
 #endif//__r_internal_h

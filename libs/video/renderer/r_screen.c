@@ -209,6 +209,10 @@ render_side (int side)
 	r_refdef.frame.mat[2] =  r_refdef.camera[2];
 	r_refdef.frame.mat[3] =  r_refdef.camera[3];
 
+	refdef_t   *refdef = r_data->refdef;
+	R_SetFrustum (refdef->frustum, &refdef->frame,
+				  refdef->fov_x, refdef->fov_y);
+
 	r_data->refdef->fov_x = r_data->refdef->fov_y = 90;
 	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
 	render_scene ();

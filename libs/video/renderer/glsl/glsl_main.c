@@ -52,6 +52,7 @@
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
+#include "QF/GLSL/qf_fisheye.h"
 #include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_main.h"
@@ -212,6 +213,7 @@ glsl_R_Init (void)
 	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
+	glsl_InitFisheye ();
 	glsl_InitWarp ();
 	Skin_Init ();
 }
