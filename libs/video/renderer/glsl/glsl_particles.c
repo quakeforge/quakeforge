@@ -63,6 +63,7 @@
 # define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
 #endif
 
+static uint32_t     maxparticles;
 static GLushort    *pVAindices;
 static partvert_t  *particleVertexArray;
 
@@ -130,11 +131,34 @@ static struct {
 	{"fog", 1},
 };
 
+static void
+alloc_arrays (psystem_t *ps)
+{
+	if (ps->maxparticles > maxparticles) {
+		maxparticles = ps->maxparticles;
+		if (particleVertexArray)
+			free (particleVertexArray);
+		particleVertexArray = calloc (ps->maxparticles * 4,
+									  sizeof (partvert_t));
+
+		if (pVAindices)
+			free (pVAindices);
+		pVAindices = calloc (ps->maxparticles * 6, sizeof (GLushort));
+		for (uint32_t i = 0; i < ps->maxparticles; i++) {
+			pVAindices[i * 6 + 0] = i * 4 + 0;
+			pVAindices[i * 6 + 1] = i * 4 + 1;
+			pVAindices[i * 6 + 2] = i * 4 + 2;
+			pVAindices[i * 6 + 3] = i * 4 + 0;
+			pVAindices[i * 6 + 4] = i * 4 + 2;
+			pVAindices[i * 6 + 5] = i * 4 + 3;
+		}
+	}
+}
+
 void
 glsl_R_InitParticles (void)
 {
 	shader_t   *vert_shader, *frag_shader;
-	unsigned    i;
 	int         vert;
 	int         frag;
 	float       v[2] = {0, 0};
@@ -196,22 +220,7 @@ glsl_R_InitParticles (void)
 					   GL_UNSIGNED_BYTE, tex->data);
 	free (tex);
 
-	if (particleVertexArray)
-		free (particleVertexArray);
-	particleVertexArray = calloc (r_psystem.maxparticles * 4,
-								  sizeof (partvert_t));
-
-	if (pVAindices)
-		free (pVAindices);
-	pVAindices = calloc (r_psystem.maxparticles * 6, sizeof (GLushort));
-	for (i = 0; i < r_psystem.maxparticles; i++) {
-		pVAindices[i * 6 + 0] = i * 4 + 0;
-		pVAindices[i * 6 + 1] = i * 4 + 1;
-		pVAindices[i * 6 + 2] = i * 4 + 2;
-		pVAindices[i * 6 + 3] = i * 4 + 0;
-		pVAindices[i * 6 + 4] = i * 4 + 2;
-		pVAindices[i * 6 + 5] = i * 4 + 3;
-	}
+	alloc_arrays (&r_psystem);
 }
 
 static void
@@ -426,12 +435,14 @@ static void
 r_particles_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (var, r_particles_max);
+	alloc_arrays (&r_psystem);
 }
 
 static void
 r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
+	alloc_arrays (&r_psystem);
 }
 
 void

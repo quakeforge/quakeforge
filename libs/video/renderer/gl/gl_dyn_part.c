@@ -63,23 +63,23 @@ static int						pVAsize;
 static int					   *pVAindices;
 static varray_t2f_c4ub_v3f_t   *particleVertexArray;
 
-void
-gl_R_InitParticles (void)
+static void
+alloc_arrays (psystem_t *ps)
 {
 	int		i;
 
-	if (r_psystem.maxparticles && r_init) {
+	if (ps->maxparticles && r_init) {
 		if (vaelements) {
 			partUseVA = 0;
-			pVAsize = r_psystem.maxparticles * 4;
+			pVAsize = ps->maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: Vertex Array use disabled.\n");
 		} else {
 			if (vaelements > 3)
 				pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
-							   r_psystem.maxparticles * 4);
+							   ps->maxparticles * 4);
 			else if (vaelements >= 0)
-				pVAsize = r_psystem.maxparticles * 4;
+				pVAsize = ps->maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: %i maximum vertex elements.\n",
 							pVAsize);
@@ -107,6 +107,12 @@ gl_R_InitParticles (void)
 			pVAindices = 0;
 		}
 	}
+}
+
+void
+gl_R_InitParticles (void)
+{
+	alloc_arrays (&r_psystem);
 }
 
 void
@@ -238,12 +244,14 @@ static void
 r_particles_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (var, r_particles_max);
+	alloc_arrays (&r_psystem);
 }
 
 static void
 r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
+	alloc_arrays (&r_psystem);
 }
 
 void
