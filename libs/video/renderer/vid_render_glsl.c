@@ -375,10 +375,10 @@ glsl_bind_framebuffer (framebuffer_t *framebuffer)
 static void
 glsl_set_viewport (const vrect_t *view)
 {
-	float x = view->x;
-	float y = vid.height - (view->y + view->height);
-	float w = view->width;
-	float h = view->height;
+	int         x = view->x;
+	int         y = vid.height - (view->y + view->height);
+	int         w = view->width;
+	int         h = view->height;
 	qfeglViewport (x, y, w, h);
 }
 

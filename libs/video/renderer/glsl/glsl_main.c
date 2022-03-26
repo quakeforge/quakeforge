@@ -98,19 +98,12 @@ glsl_R_ViewChanged (void)
 static void
 R_SetupView (void)
 {
-	float       x, y, w, h;
 	static mat4f_t z_up = {
 		{ 0, 0,  1, 0},
 		{-1, 0,  0, 0},
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
 	};
-
-	x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);
 
 	mmulf (glsl_view, z_up, r_refdef.camera_inverse);
 

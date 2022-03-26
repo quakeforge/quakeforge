@@ -325,6 +325,11 @@ gl_bind_framebuffer (framebuffer_t *framebuffer)
 static void
 gl_set_viewport (const vrect_t *view)
 {
+	int         x = r_refdef.vrect.x;
+	int         y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
+	int         w = r_refdef.vrect.width;
+	int         h = r_refdef.vrect.height;
+	qfglViewport (x, y2, w, h);
 }
 
 vid_render_funcs_t gl_vid_render_funcs = {

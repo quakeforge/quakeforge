@@ -73,12 +73,6 @@ setup_view (vulkan_ctx_t *ctx)
 		{ 0, 0, 0, 1},
 	};
 
-	/*x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);*/
-
 	mmulf (view, z_up, r_refdef.camera_inverse);
 	Vulkan_SetViewMatrix (ctx, view);
 }

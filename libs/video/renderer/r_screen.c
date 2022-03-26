@@ -289,6 +289,9 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		r_funcs->bind_framebuffer (warp_buffer);
 	}
 	if (scr_fisheye->int_val) {
+		int         side = fisheye_cube_map->width;
+		vrect_t     feye = { 0, 0, side, side };
+		r_funcs->set_viewport (&feye);
 		switch (scr_fviews->int_val) {
 			case 6: render_side (BOX_BEHIND);
 			case 5: render_side (BOX_BOTTOM);
@@ -301,6 +304,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		r_funcs->set_viewport (&r_refdef.vrect);
 		r_funcs->post_process (fisheye_cube_map);
 	} else {
+		r_funcs->set_viewport (&r_refdef.vrect);
 		render_scene ();
 		if (r_dowarp) {
 			r_funcs->bind_framebuffer (0);

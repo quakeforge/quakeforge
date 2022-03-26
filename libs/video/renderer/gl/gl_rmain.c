@@ -255,24 +255,10 @@ static void
 R_SetupGL_Viewport_and_Perspective (void)
 {
 	float		screenaspect;
-	int			x, y2, w, h;
 
-	// set up viewpoint
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
 
-	if (gl_envmap) {
-		x = y2 = 0;
-		w = h = 256;
-	} else {
-		x = r_refdef.vrect.x;
-		y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-
-		w = r_refdef.vrect.width;
-		h = r_refdef.vrect.height;
-	}
-//	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
-	qfglViewport (x, y2, w, h);
 	screenaspect = r_refdef.vrect.width / (float) r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
 					  r_farclip->value);
