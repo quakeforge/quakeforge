@@ -276,7 +276,7 @@ gl_post_process (framebuffer_t *src)
 	if (scr_fisheye->int_val) {
 		gl_FisheyeScreen (src);
 	} else if (r_dowarp) {
-		//gl_WarpScreen (src);
+		gl_WarpScreen (src);
 	}
 }
 
@@ -367,7 +367,41 @@ gl_create_cube_map (int side)
 static framebuffer_t *
 gl_create_frame_buffer (int width, int height)
 {
-	Sys_Error ("not implemented");
+	size_t      size = sizeof (framebuffer_t) + sizeof (gl_framebuffer_t);
+
+	framebuffer_t *fb = malloc (size);
+	fb->width = width;
+	fb->height = height;
+	__auto_type buffer = (gl_framebuffer_t *) &fb[1];
+	fb->buffer = buffer;
+	qfglGenFramebuffers (1, &buffer->handle);
+
+	GLuint      tex[2];
+	qfglGenTextures (2, tex);
+
+	buffer->color = tex[0];
+	buffer->depth = tex[1];
+
+	qfglBindTexture (GL_TEXTURE_2D, buffer->color);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qfglBindTexture (GL_TEXTURE_2D, buffer->depth);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
+					GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+	qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+							  GL_TEXTURE_2D, buffer->color, 0);
+	qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+							  GL_TEXTURE_2D, buffer->depth, 0);
+
+	qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return fb;
 }
 
 static void

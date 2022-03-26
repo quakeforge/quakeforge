@@ -56,4 +56,7 @@ void gl_R_AddTexture (struct texture_s *tx);
 void gl_R_ClearTextures (void);
 void gl_R_InitSurfaceChains (struct mod_brush_s *brush);
 
+struct framebuffer_s;
+void gl_WarpScreen (struct framebuffer_s *fb);
+
 #endif // __QF_GL_rsurf_h
