@@ -33,7 +33,6 @@
 struct cvar_s;
 struct entity_s;
 
-extern qboolean gl_envmap;
 extern int c_brush_polys, c_alias_polys;
 
 extern float gl_modelalpha;

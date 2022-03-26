@@ -68,8 +68,6 @@
 #include "varrays.h"
 #include "vid_gl.h"
 
-qboolean    gl_envmap;					// true during envmap command capture
-
 int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
 plane_t    *gl_mirror_plane;
 
@@ -180,7 +178,6 @@ R_DrawViewModel (void)
 	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
-		|| gl_envmap
 		|| !r_drawentities->int_val
 		|| !ent->renderer.model)
 		return;

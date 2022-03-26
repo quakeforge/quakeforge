@@ -71,66 +71,6 @@
 #include "varrays.h"
 #include "vid_gl.h"
 
-/*
-	R_Envmap_f
-
-	Grab six views for environment mapping tests
-*/
-static void
-R_Envmap_f (void)
-{
-	/*FIXME update for simd
-	byte        buffer[256 * 256 * 4];
-
-	qfglDrawBuffer (GL_FRONT);
-	qfglReadBuffer (GL_FRONT);
-	gl_envmap = true;
-
-	r_refdef.vrect.x = 0;
-	r_refdef.vrect.y = 0;
-	r_refdef.vrect.width = 256;
-	r_refdef.vrect.height = 256;
-
-	r_refdef.viewangles[0] = 0;
-	r_refdef.viewangles[1] = 0;
-	r_refdef.viewangles[2] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env0.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 90;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env1.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 180;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env2.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 270;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env3.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[0] = -90;
-	r_refdef.viewangles[1] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env4.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[0] = 90;
-	r_refdef.viewangles[1] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env5.rgb", buffer, sizeof (buffer));
-
-	gl_envmap = false;
-	qfglDrawBuffer (GL_BACK);
-	qfglReadBuffer (GL_BACK);
-	gl_ctx->end_rendering ();*/
-}
-
 static void
 gl_R_LoadSky_f (void)
 {
@@ -178,7 +118,6 @@ gl_R_Init (void)
 
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
-	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
 	gl_Draw_Init ();
