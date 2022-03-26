@@ -175,7 +175,6 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	GL_BuildLightmaps (models, num_models);
 
 	// identify sky texture
-	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
@@ -184,8 +183,6 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		if (!strncmp (tex->name, "sky", 3)) {
 			gl_R_InitSky (tex);
 		}
-		if (!strncmp (tex->name, "window02_1", 10))
-			gl_mirrortexturenum = i;
 	}
 
 	gl_R_InitSurfaceChains (brush);

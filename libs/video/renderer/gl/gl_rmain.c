@@ -68,9 +68,6 @@
 #include "varrays.h"
 #include "vid_gl.h"
 
-int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
-plane_t    *gl_mirror_plane;
-
 float       gl_r_world_matrix[16];
 //FIXME static float r_base_world_matrix[16];
 

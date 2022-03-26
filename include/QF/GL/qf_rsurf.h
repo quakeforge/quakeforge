@@ -36,8 +36,6 @@ typedef struct gltex_s {
 	struct instsurf_s **tex_chain_tail;
 } gltex_t;
 
-extern int gl_mirrortexturenum;	// quake texturenum, not gltexturenum
-
 struct model_s;
 struct entity_s;
 struct msurface_s;
