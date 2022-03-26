@@ -236,7 +236,6 @@ static void glsl_bind_framebuffer (framebuffer_t *fb);
 static void
 glsl_post_process (framebuffer_t *src)
 {
-	glsl_bind_framebuffer (0);
 	if (scr_fisheye->int_val) {
 		glsl_FisheyeScreen (src);
 	} else if (r_dowarp) {
@@ -376,7 +375,7 @@ static void
 glsl_set_viewport (const vrect_t *view)
 {
 	int         x = view->x;
-	int         y = vid.height - (view->y + view->height);
+	int         y = vid.height - (view->y + view->height);//FIXME vid.height
 	int         w = view->width;
 	int         h = view->height;
 	qfeglViewport (x, y, w, h);

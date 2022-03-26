@@ -70,6 +70,7 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_dyn_lights.c \
 	libs/video/renderer/gl/gl_dyn_part.c \
 	libs/video/renderer/gl/gl_dyn_textures.c \
+	libs/video/renderer/gl/gl_fisheye.c \
 	libs/video/renderer/gl/gl_fog.c \
 	libs/video/renderer/gl/gl_graph.c \
 	libs/video/renderer/gl/gl_lightmap.c \

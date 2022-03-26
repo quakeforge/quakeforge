@@ -35,6 +35,7 @@
 
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_fisheye.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_particles.h"
@@ -259,6 +260,7 @@ static void
 gl_render_view (void)
 {
 	// do 3D refresh drawing, and then update the screen
+	qfglClear (GL_DEPTH_BUFFER_BIT);
 	gl_R_RenderView ();
 }
 
@@ -271,6 +273,11 @@ gl_draw_transparent (void)
 static void
 gl_post_process (framebuffer_t *src)
 {
+	if (scr_fisheye->int_val) {
+		gl_FisheyeScreen (src);
+	} else if (r_dowarp) {
+		//gl_WarpScreen (src);
+	}
 }
 
 static void
@@ -306,9 +313,55 @@ gl_end_frame (void)
 }
 
 static framebuffer_t *
-gl_create_cube_map (int size)
+gl_create_cube_map (int side)
 {
-	Sys_Error ("not implemented");
+	GLuint      tex[2];
+	qfglGenTextures (2, tex);
+
+	qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, tex[0]);
+	for (int i = 0; i < 6; i++) {
+		qfglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + i, 0, GL_RGBA,
+						side, side, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	}
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER,
+					   GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER,
+					   GL_LINEAR);
+
+	qfglBindTexture (GL_TEXTURE_2D, tex[1]);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, side, side, 0,
+					GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	size_t      size = sizeof (framebuffer_t) * 6;
+	size += sizeof (gl_framebuffer_t) * 6;
+
+	framebuffer_t *cube = malloc (size);
+	__auto_type buffer_base = (gl_framebuffer_t *) &cube[6];
+	for (int i = 0; i < 6; i++) {
+		cube[i].width = side;
+		cube[i].height = side;
+		__auto_type buffer = buffer_base + i;
+		cube[i].buffer = buffer;
+
+		buffer->color = tex[0];
+		buffer->depth = tex[1];
+		qfglGenFramebuffers (1, &buffer->handle);
+
+		qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+		qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+								  GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + i,
+								  buffer->color, 0);
+		qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+								  GL_TEXTURE_2D, buffer->depth, 0);
+	}
+	qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return cube;
 }
 
 static framebuffer_t *
@@ -320,16 +373,31 @@ gl_create_frame_buffer (int width, int height)
 static void
 gl_bind_framebuffer (framebuffer_t *framebuffer)
 {
+	unsigned    width = vr_data.vid->width;
+	unsigned    height = vr_data.vid->height;
+	if (!framebuffer) {
+		qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	} else {
+		gl_framebuffer_t *buffer = framebuffer->buffer;
+		qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+
+		width = framebuffer->width;
+		height = framebuffer->height;
+	}
+
+	vrect_t r = { 0, 0, width, height };
+	R_SetVrect (&r, &r_refdef.vrect, 0);
+	gl_R_ViewChanged ();
 }
 
 static void
 gl_set_viewport (const vrect_t *view)
 {
-	int         x = r_refdef.vrect.x;
-	int         y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	int         w = r_refdef.vrect.width;
-	int         h = r_refdef.vrect.height;
-	qfglViewport (x, y2, w, h);
+	int         x = view->x;
+	int         y = vid.height - (view->y + view->height);//FIXME vid.height
+	int         w = view->width;
+	int         h = view->height;
+	qfglViewport (x, y, w, h);
 }
 
 vid_render_funcs_t gl_vid_render_funcs = {

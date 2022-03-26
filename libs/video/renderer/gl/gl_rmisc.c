@@ -54,6 +54,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_fisheye.h"
 #include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_rlight.h"
@@ -135,6 +136,7 @@ gl_R_Init (void)
 	gl_R_InitParticles ();
 	gl_R_InitSprites ();
 	Skin_Init ();
+	gl_InitFisheye ();
 }
 
 static void
