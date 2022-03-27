@@ -230,38 +230,39 @@ R_DrawViewModel (void)
 }
 
 static void
-MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
-				  GLdouble zFar)
+R_Perspective (void)
 {
-	GLdouble    xmin, xmax, ymin, ymax;
+	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
+	float       f = 1 / tan (r_refdef.fov_y * M_PI / 360);
+	float       neard, fard;
+	mat4f_t     proj;
 
-	ymax = zNear * tan (fovy * M_PI / 360.0);
-	ymin = -ymax;
+	neard = r_nearclip->value;
+	fard = r_farclip->value;
 
-	xmin = ymin * aspect;
-	xmax = -xmin;
+	// NOTE columns!
+	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, f, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
+	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
 
-//	printf ("glFrustum (%f, %f, %f, %f)\n", xmin, xmax, ymin, ymax);
-	qfglFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
-}
-
-static void
-R_SetupGL_Viewport_and_Perspective (void)
-{
-	float		screenaspect;
+	// convert 0..1 depth buffer range to -1..1
+	static mat4f_t depth_range = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 2, 0},
+		{ 0, 0,-1, 1},
+	};
+	mmulf (proj, depth_range, proj);
 
 	qfglMatrixMode (GL_PROJECTION);
-	qfglLoadIdentity ();
-
-	screenaspect = r_refdef.vrect.width / (float) r_refdef.vrect.height;
-	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
-					  r_farclip->value);
+	qfglLoadMatrixf (&proj[0][0]);
 }
 
 static void
 R_SetupGL (void)
 {
-	R_SetupGL_Viewport_and_Perspective ();
+	R_Perspective ();
 
 	qfglFrontFace (GL_CW);
 
@@ -269,7 +270,7 @@ R_SetupGL (void)
 	qfglLoadIdentity ();
 
 	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
+		{ 0, 0,  1, 0},
 		{-1, 0,  0, 0},
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
