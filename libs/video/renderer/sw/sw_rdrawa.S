@@ -412,12 +412,12 @@ LSideDone:
 // // causes it to incorrectly extend to the scan, and the extension of the
 // // line goes off the edge of the screen
 // // FIXME: is this actually needed?
-//	if (edge->u < r_refdef.vrect_x_adj_shift20)
-//		edge->u = r_refdef.vrect_x_adj_shift20;
+//	if (edge->u < r_refdef.vrectx_adj_shift20)
+//		edge->u = r_refdef.vrectx_adj_shift20;
 //	if (edge->u > r_refdef.vrectright_adj_shift20)
 //		edge->u = r_refdef.vrectright_adj_shift20;
 	movl	et_u(%edi),%eax
-	movl	C(r_refdef)+rd_vrect_x_adj_shift20,%edx
+	movl	C(r_refdef)+rd_vrectx_adj_shift20,%edx
 	cmpl	%edx,%eax
 	jl		LP4
 	movl	C(r_refdef)+rd_vrectright_adj_shift20,%edx

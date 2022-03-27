@@ -219,7 +219,7 @@ C(R_Alias_clip_top):
 	leal	C(r_refdef),%eax
 	movl	C(float_point5),%edx
 #endif
-	movl	rd_aliasvrect+4(%eax),%eax
+	movl	rd_aliasvrecttop(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LDoForwardOrBackward
 #ifdef PIC
@@ -310,7 +310,7 @@ C(R_Alias_clip_left):
 	leal	C(r_refdef),%eax
 	movl	C(float_point5),%edx
 #endif
-	movl	rd_aliasvrect+0(%eax),%eax
+	movl	rd_aliasvrectleft(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LRightLeftEntry
 #ifdef PIC

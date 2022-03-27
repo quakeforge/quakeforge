@@ -80,9 +80,9 @@ R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 
 	R_AliasProjectFinalVert (out, &avout);
 
-	if (out->v[0] < r_refdef.aliasvrect.x)
+	if (out->v[0] < r_refdef.aliasvrectleft)
 		out->flags |= ALIAS_LEFT_CLIP;
-	if (out->v[1] < r_refdef.aliasvrect.y)
+	if (out->v[1] < r_refdef.aliasvrecttop)
 		out->flags |= ALIAS_TOP_CLIP;
 	if (out->v[0] > r_refdef.aliasvrectright)
 		out->flags |= ALIAS_RIGHT_CLIP;
@@ -99,12 +99,12 @@ R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 	int         i;
 
 	if (pfv0->v[1] >= pfv1->v[1]) {
-		scale = (float) (r_refdef.aliasvrect.x - pfv0->v[0]) /
+		scale = (float) (r_refdef.aliasvrectleft - pfv0->v[0]) /
 			(pfv1->v[0] - pfv0->v[0]);
 		for (i = 0; i < 6; i++)
 			out->v[i] = pfv0->v[i] + (pfv1->v[i] - pfv0->v[i]) * scale + 0.5;
 	} else {
-		scale = (float) (r_refdef.aliasvrect.x - pfv1->v[0]) /
+		scale = (float) (r_refdef.aliasvrectleft - pfv1->v[0]) /
 			(pfv0->v[0] - pfv1->v[0]);
 		for (i = 0; i < 6; i++)
 			out->v[i] = pfv1->v[i] + (pfv0->v[i] - pfv1->v[i]) * scale + 0.5;
@@ -139,12 +139,12 @@ R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 	int         i;
 
 	if (pfv0->v[1] >= pfv1->v[1]) {
-		scale = (float) (r_refdef.aliasvrect.y - pfv0->v[1]) /
+		scale = (float) (r_refdef.aliasvrecttop - pfv0->v[1]) /
 			(pfv1->v[1] - pfv0->v[1]);
 		for (i = 0; i < 6; i++)
 			out->v[i] = pfv0->v[i] + (pfv1->v[i] - pfv0->v[i]) * scale + 0.5;
 	} else {
-		scale = (float) (r_refdef.aliasvrect.y - pfv1->v[1]) /
+		scale = (float) (r_refdef.aliasvrecttop - pfv1->v[1]) /
 			(pfv0->v[1] - pfv1->v[1]);
 		for (i = 0; i < 6; i++)
 			out->v[i] = pfv1->v[i] + (pfv0->v[i] - pfv1->v[i]) * scale + 0.5;
@@ -195,9 +195,9 @@ R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
 		if (oldflags ^ flags) {
 			clip (&in[j], &in[i], &out[k]);
 			out[k].flags = 0;
-			if (out[k].v[0] < r_refdef.aliasvrect.x)
+			if (out[k].v[0] < r_refdef.aliasvrectleft)
 				out[k].flags |= ALIAS_LEFT_CLIP;
-			if (out[k].v[1] < r_refdef.aliasvrect.y)
+			if (out[k].v[1] < r_refdef.aliasvrecttop)
 				out[k].flags |= ALIAS_TOP_CLIP;
 			if (out[k].v[0] > r_refdef.aliasvrectright)
 				out[k].flags |= ALIAS_RIGHT_CLIP;
@@ -291,13 +291,13 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 	}
 
 	for (i = 0; i < k; i++) {
-		if (fv[pingpong][i].v[0] < r_refdef.aliasvrect.x)
-			fv[pingpong][i].v[0] = r_refdef.aliasvrect.x;
+		if (fv[pingpong][i].v[0] < r_refdef.aliasvrectleft)
+			fv[pingpong][i].v[0] = r_refdef.aliasvrectleft;
 		else if (fv[pingpong][i].v[0] > r_refdef.aliasvrectright)
 			fv[pingpong][i].v[0] = r_refdef.aliasvrectright;
 
-		if (fv[pingpong][i].v[1] < r_refdef.aliasvrect.y)
-			fv[pingpong][i].v[1] = r_refdef.aliasvrect.y;
+		if (fv[pingpong][i].v[1] < r_refdef.aliasvrecttop)
+			fv[pingpong][i].v[1] = r_refdef.aliasvrecttop;
 		else if (fv[pingpong][i].v[1] > r_refdef.aliasvrectbottom)
 			fv[pingpong][i].v[1] = r_refdef.aliasvrectbottom;
 

@@ -214,8 +214,8 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	// causes it to incorrectly extend to the scan, and the extension of the
 	// line goes off the edge of the screen
 	// FIXME: is this actually needed?
-	if (edge->u < r_refdef.vrect_x_adj_shift20)
-		edge->u = r_refdef.vrect_x_adj_shift20;
+	if (edge->u < r_refdef.vrectx_adj_shift20)
+		edge->u = r_refdef.vrectx_adj_shift20;
 	if (edge->u > r_refdef.vrectright_adj_shift20)
 		edge->u = r_refdef.vrectright_adj_shift20;
 

@@ -254,9 +254,9 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 
 	R_AliasProjectFinalVert (fv, av);
 
-	if (fv->v[0] < r_refdef.aliasvrect.x)
+	if (fv->v[0] < r_refdef.aliasvrectleft)
 		fv->flags |= ALIAS_LEFT_CLIP;
-	if (fv->v[1] < r_refdef.aliasvrect.y)
+	if (fv->v[1] < r_refdef.aliasvrecttop)
 		fv->flags |= ALIAS_TOP_CLIP;
 	if (fv->v[0] > r_refdef.aliasvrectright)
 		fv->flags |= ALIAS_RIGHT_CLIP;

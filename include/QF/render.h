@@ -203,25 +203,21 @@ typedef struct framebuffer_s {
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
-	vrect_t		vrect;				// subwindow in video for refresh
-									// FIXME: not need vrect next field here?
-	vrect_t		aliasvrect;			// scaled Alias version
-	int			vrectright, vrectbottom;	// right & bottom screen coords
-	int			aliasvrectright, aliasvrectbottom;	// scaled Alias versions
-	float		vrectrightedge;			// rightmost right edge we care about,
-										//  for use in edge list
-	float		fvrectx, fvrecty;		// for floating-point compares
 	float		fvrectx_adj, fvrecty_adj; // left and top edges, for clamping
-	int			vrect_x_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
-	int			vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
 	float		fvrectright_adj, fvrectbottom_adj;
+	int			aliasvrectleft, aliasvrecttop;	// scaled Alias versions
+	int			aliasvrectright, aliasvrectbottom;	// scaled Alias versions
+	int			vrectright, vrectbottom;	// right & bottom screen coords
+	int			vrectx_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
+	int			vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
+	float		fvrectx, fvrecty;		// for floating-point compares
 										// right and bottom edges, for clamping
 	float		fvrectright;			// rightmost edge, for Alias clamping
 	float		fvrectbottom;			// bottommost edge, for Alias clamping
-	float		horizontalFieldOfView;	// at Z = 1.0, this many X is visible
-										// 2.0 = 90 degrees
-	float		xOrigin;			// should probably always be 0.5
-	float		yOrigin;			// between be around 0.3 to 0.5
+	// end of asm refs
+
+	//FIXME move all of below elsewhere
+	vrect_t		vrect;				// subwindow in video for refresh
 
 	refframe_t  frame;
 	plane_t     frustum[4];
