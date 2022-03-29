@@ -49,6 +49,7 @@
 #include "QF/GL/qf_iqm.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 

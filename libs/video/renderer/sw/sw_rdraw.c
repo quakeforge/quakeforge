@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/render.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 

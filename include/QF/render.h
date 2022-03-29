@@ -120,49 +120,6 @@ typedef struct
 
 //===============
 
-typedef struct animation_s {
-	int         frame;
-	float       syncbase;	// randomize time base for local animations
-	float       frame_start_time;
-	float       frame_interval;
-	int         pose1;
-	int         pose2;
-	float       blend;
-	int         nolerp;		// don't lerp this frame (pose data invalid)
-} animation_t;
-
-typedef struct visibility_s {
-	struct entity_s *entity;	// owning entity
-	struct efrag_s *efrag;		// linked list of efrags
-	struct mnode_s *topnode;	// bmodels, first world node that
-								// splits bmodel, or NULL if not split
-								// applies to other models, too
-								// found in an active leaf
-	int         trivial_accept;	// view clipping (frustum and depth)
-} visibility_t;
-
-typedef struct renderer_s {
-	struct model_s *model;			// NULL = no model
-	struct skin_s *skin;
-	float       colormod[4];	// color tint and alpha for model
-	int         skinnum;		// for Alias models
-	int         fullbright;
-	float       min_light;
-	mat4_t      full_transform;
-} renderer_t;
-
-typedef struct entity_s {
-	struct entity_s *next;
-	struct transform_s *transform;
-	int         id;		///< scene id
-	animation_t animation;
-	visibility_t visibility;
-	renderer_t  renderer;
-	int         active;
-	//XXX FIXME XXX should not be here
-	vec4f_t     old_origin;
-} entity_t;
-
 typedef union refframe_s {
 	mat4f_t     mat;
 	struct      {
@@ -240,8 +197,6 @@ void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
-void R_AddEfrags (mod_brush_t *, entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
 dlight_t *R_AllocDlight (int key);
 void R_MaxDlightsCheck (struct cvar_s *var);
 void R_DecayLights (double frametime);

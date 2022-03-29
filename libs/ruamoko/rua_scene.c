@@ -39,8 +39,8 @@
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
-#include "QF/render.h"
 
+#include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 

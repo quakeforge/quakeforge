@@ -51,8 +51,6 @@ qboolean    r_force_fullscreen;
 qboolean    r_paused;
 double      r_realtime;
 double      r_frametime;
-entity_t   *r_view_model;
-entity_t   *r_player_entity;
 double      r_time1;
 int         r_lineadj;
 qboolean    r_active;

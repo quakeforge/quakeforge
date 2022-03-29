@@ -33,6 +33,7 @@
 #include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "d_local.h"

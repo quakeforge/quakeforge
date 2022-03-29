@@ -43,6 +43,7 @@
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 

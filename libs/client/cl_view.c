@@ -34,6 +34,7 @@
 #include "QF/screen.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 #include "QF/scene/transform.h"
 #include "QF/simd/vec4f.h"
 

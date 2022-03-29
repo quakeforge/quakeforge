@@ -39,6 +39,8 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "r_internal.h"
 
 static mleaf_t *r_oldviewleaf;

@@ -69,17 +69,19 @@ void R_ClearDlights (void);
 
 int R_InitGraphTextures (int base);
 
-void R_DrawAliasModel (entity_t *e);
+struct entity_s;
+struct animation_s;
+void R_DrawAliasModel (struct entity_s *e);
 
 void R_MarkLeaves (void);
 
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);
 
-int R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
+int R_BillboardFrame (struct entity_s *ent, int orientation, const vec3_t cameravec,
 					  vec3_t bbup, vec3_t bbright, vec3_t bbfwd);
 mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,
-								  const animation_t *animation);
+								  const struct animation_s *animation);
 
 // These correspond to the standard box sides for OpenGL cube maps but with
 // TOP and BOTTOM swapped due to lelt/right handed systems (quake/gl are right,
