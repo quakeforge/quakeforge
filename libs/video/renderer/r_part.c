@@ -88,7 +88,7 @@ void
 R_RunParticles (float dT)
 {
 	psystem_t  *ps = &r_psystem;//FIXME
-	vec4f_t     gravity = {0, 0, -r_data->gravity, 0};
+	vec4f_t     gravity = ps->gravity;
 
 	unsigned    j = 0;
 	for (unsigned i = 0; i < ps->numparticles; i++) {

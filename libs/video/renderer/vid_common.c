@@ -55,7 +55,6 @@ vid_render_data_t vid_render_data = {
 	.paused = false,
 	.lineadj = 0,
 	.view_model = 0,
-	.gravity = 0,
 	.frametime = 0.0,
 	.realtime = 0.0,
 	.lightstyle = 0,

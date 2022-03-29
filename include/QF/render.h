@@ -36,25 +36,6 @@
 #include "QF/ui/vrect.h"
 
 typedef enum {
-	pt_static,
-	pt_grav,
-	pt_slowgrav,
-	pt_fire,
-	pt_explode,
-	pt_explode2,
-	pt_blob,
-	pt_blob2,
-	pt_smoke,
-	pt_smokecloud,
-	pt_bloodcloud,
-	pt_fadespark,
-	pt_fadespark2,
-	pt_fallfade,
-	pt_fallfadespark,
-	pt_flame
-} ptype_t;
-
-typedef enum {
 	part_tex_dot,
 	part_tex_spark,
 	part_tex_smoke,
@@ -91,6 +72,7 @@ typedef struct partparm_s {
 } partparm_t;
 
 typedef struct psystem_s {
+	vec4f_t     gravity;
 	uint32_t    maxparticles;
 	uint32_t    numparticles;
 	particle_t *particles;

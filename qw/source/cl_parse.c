@@ -67,6 +67,7 @@
 #include "sbar.h"
 
 #include "client/effects.h"
+#include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -782,7 +783,7 @@ CL_ParseServerData (void)
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
-	r_data->gravity = movevars.gravity;		// Gravity for renderer effects
+	CL_ParticlesGravity (movevars.gravity);// Gravity for renderer effects
 	movevars.stopspeed = MSG_ReadFloat (net_message);
 	movevars.maxspeed = MSG_ReadFloat (net_message);
 	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);

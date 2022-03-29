@@ -1279,3 +1279,9 @@ CL_Particles_Init (void)
 								"Sets particle style. 0 for Id, 1 for QF.");
 	CL_ParticleFunctionInit ();
 }
+
+void
+CL_ParticlesGravity (float gravity)
+{
+	cl_psystem->gravity = (vec4f_t) { 0, 0, -gravity, 0 };
+}

@@ -29,6 +29,25 @@
 
 #include "QF/render.h"
 
+typedef enum {
+	pt_static,
+	pt_grav,
+	pt_slowgrav,
+	pt_fire,
+	pt_explode,
+	pt_explode2,
+	pt_blob,
+	pt_blob2,
+	pt_smoke,
+	pt_smokecloud,
+	pt_bloodcloud,
+	pt_fadespark,
+	pt_fadespark2,
+	pt_fallfade,
+	pt_fallfadespark,
+	pt_flame
+} ptype_t;
+
 typedef struct cl_particle_funcs_s {
 	void (*RocketTrail) (vec4f_t start, vec4f_t end);
 	void (*GrenadeTrail) (vec4f_t start, vec4f_t end);
@@ -70,6 +89,7 @@ extern float cl_frametime;
 extern float cl_realtime;
 
 void CL_Particles_Init (void);
+void CL_ParticlesGravity (float gravity);
 
 struct model_s;
 void CL_LoadPointFile (const struct model_s *model);

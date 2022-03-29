@@ -142,7 +142,6 @@ typedef struct vid_render_data_s {
 	qboolean    paused;
 	int         lineadj;
 	struct entity_s *view_model;
-	float       gravity;
 	double      frametime;
 	double      realtime;
 	lightstyle_t *lightstyle;

@@ -56,6 +56,7 @@
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 
+#include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
 
@@ -378,7 +379,7 @@ CL_ParseServerInfo (void)
 	Hunk_Check (0);						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start
-	r_data->gravity = 800.0;			// Set up gravity for renderer effects
+	CL_ParticlesGravity (800);			// Set up gravity for renderer effects
 done:
 	S_UnblockSound ();
 }
