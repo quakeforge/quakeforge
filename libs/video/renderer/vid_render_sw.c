@@ -63,6 +63,12 @@ sw_vid_render_set_palette (void *data, const byte *palette)
     sw_ctx->set_palette (sw_ctx, palette);
 }
 
+static void
+sw_vid_render_set_colormap (void *data, const byte *colormap)
+{
+	R_SetColormap (colormap);
+}
+
 static vid_model_funcs_t model_funcs = {
 	0,
 	sw_Mod_LoadLighting,
@@ -99,6 +105,7 @@ sw_vid_render_init (void)
 
 	vr_data.vid->vid_internal->data = sw_ctx;
 	vr_data.vid->vid_internal->set_palette = sw_vid_render_set_palette;
+	vr_data.vid->vid_internal->set_colormap = sw_vid_render_set_colormap;
 	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
 	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
 

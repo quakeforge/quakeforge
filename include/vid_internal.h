@@ -8,6 +8,7 @@ typedef struct vid_internal_s {
 	void      (*flush_caches) (void *data);
 	void      (*init_buffers) (void *data);
 	void      (*set_palette) (void *data, const byte *palette);
+	void      (*set_colormap) (void *data, const byte *colormap);
 
 	void      (*choose_visual) (void *data);
 	void      (*create_context) (void *data);

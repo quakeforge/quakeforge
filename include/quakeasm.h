@@ -73,7 +73,7 @@
 	.extern C(surfrowbytes)
 	.extern C(r_sourcemax)
 	.extern C(r_stepback)
-	.extern C(colormap)
+	.extern C(r_colormap)
 	.extern C(blocksize)
 	.extern C(sourcesstep)
 	.extern C(lightleft)

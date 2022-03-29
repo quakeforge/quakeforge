@@ -143,7 +143,7 @@ extern int		d_con_indirect;	// if 0, Quake will draw console directly
 extern vec3_t	r_pright, r_pup, r_ppn, r_porigin;
 
 
-void D_Aff8Patch (void *pcolormap);
+void D_Aff8Patch (const byte *pcolormap);
 void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height);
 void D_EndDirectRect (int x, int y, int width, int height);
 void D_PolysetDraw (void);
@@ -180,7 +180,7 @@ extern byte				*r_skysource;
 // !!! must be kept the same as in quakeasm.h !!!
 #define TRANSPARENT_COLOR	0xFF
 
-extern void *acolormap;	// FIXME: should go away
+extern const byte *acolormap;	// FIXME: should go away
 
 //=======================================================================//
 

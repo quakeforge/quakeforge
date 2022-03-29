@@ -187,6 +187,8 @@ struct vulkan_ctx_s;
 void R_ClearTextures (void);
 void R_InitSurfaceChains (mod_brush_t *brush);
 
+extern const byte *r_colormap;
+void R_SetColormap (const byte *cmap);
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
 extern void R_EdgeCodeStart (void);

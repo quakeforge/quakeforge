@@ -47,7 +47,7 @@
 
 affinetridesc_t r_affinetridesc;
 
-void       *acolormap;					// FIXME: should go away
+const byte *acolormap;					// FIXME: should go away
 
 trivertx_t *r_apverts;
 
@@ -540,7 +540,7 @@ R_AliasSetupSkin (entity_t *ent)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = vid.colormap8;
+	acolormap = r_colormap;
 	if (ent->renderer.skin) {
 		tex_t      *base;
 
@@ -631,7 +631,7 @@ R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
-		acolormap = vid.colormap8;
+		acolormap = r_colormap;
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...

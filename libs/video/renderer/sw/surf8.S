@@ -778,7 +778,7 @@ LPatchTable8:
 C(R_SurfPatch):
 	pushl	%ebx
 
-	movl	C(colormap),%eax
+	movl	C(r_colormap),%eax
 	movl	$LPatchTable8,%ebx
 	movl	$32,%ecx
 LPatchLoop8:

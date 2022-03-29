@@ -133,6 +133,9 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.numpages = 1;
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.data, colormap);
+	}
 
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();

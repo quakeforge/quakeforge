@@ -60,7 +60,7 @@
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
-void       *colormap;
+const byte *r_colormap;
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
@@ -315,15 +315,19 @@ R_ViewChanged (void)
 	r_aliastransition = r_aliastransbase->value * res_scale;
 	r_resfudge = r_aliastransadj->value * res_scale;
 
+	D_ViewChanged ();
+}
+
+void
+R_SetColormap (const byte *cmap)
+{
+	r_colormap = cmap;
 // TODO: collect 386-specific code in one place
 #ifdef USE_INTEL_ASM
 	Sys_MakeCodeWriteable ((long) R_Surf8Start,
 						   (long) R_Surf8End - (long) R_Surf8Start);
-	colormap = vid.colormap8;
 	R_SurfPatch ();
 #endif // USE_INTEL_ASM
-
-	D_ViewChanged ();
 }
 
 static inline void
@@ -719,7 +723,7 @@ R_RenderView (void)
 	if ((intptr_t) (&dummy) & 3)
 		Sys_Error ("Stack is missaligned");
 
-	if ((intptr_t) (&colormap) & 3)
+	if ((intptr_t) (&r_colormap) & 3)
 		Sys_Error ("Globals are missaligned");
 
 	R_RenderView_ ();

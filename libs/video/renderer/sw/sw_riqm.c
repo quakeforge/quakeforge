@@ -315,7 +315,7 @@ R_IQMDrawModel (entity_t *ent, alight_t *plighting)
 			r_recursiveaffinetriangles;
 
 	//if (!acolormap)
-		acolormap = vid.colormap8;
+		acolormap = r_colormap;
 
 	if (ent != vr_data.view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;
