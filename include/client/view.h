@@ -30,8 +30,20 @@
 #define __client_view_h
 
 #include "QF/mathlib.h"
-#include "QF/render.h"
 #include "QF/simd/types.h"
+
+typedef struct {
+	int     destcolor[3];
+	int     percent;        // 0-255
+	double  time;
+	int     initialpct;
+} cshift_t;
+
+#define CSHIFT_CONTENTS 0
+#define CSHIFT_DAMAGE   1
+#define CSHIFT_BONUS    2
+#define CSHIFT_POWERUP  3
+#define NUM_CSHIFTS     4
 
 #define INFO_CSHIFT_BONUS		(1 << 0)
 #define INFO_CSHIFT_CONTENTS	(1 << 1)

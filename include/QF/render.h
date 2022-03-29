@@ -172,21 +172,6 @@ typedef struct {
 	struct mleaf_s *viewleaf;
 } refdef_t;
 
-// color shifts =============================================================
-
-typedef struct {
-	int     destcolor[3];
-	int     percent;        // 0-255
-	double  time;
-	int     initialpct;
-} cshift_t;
-
-#define CSHIFT_CONTENTS 0
-#define CSHIFT_DAMAGE   1
-#define CSHIFT_BONUS    2
-#define CSHIFT_POWERUP  3
-#define NUM_CSHIFTS     4
-
 // REFRESH ====================================================================
 
 extern	struct texture_s	*r_notexture_mip;
