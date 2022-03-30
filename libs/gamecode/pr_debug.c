@@ -1641,7 +1641,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'V':
 						opval += pr->pr_bases[opreg];
-						str = global_string (&data, opval, ev_void,
+						optype = &res->void_type;
+						str = global_string (&data, opval, optype,
 											 contents & 1);
 						break;
 					case 'G':
