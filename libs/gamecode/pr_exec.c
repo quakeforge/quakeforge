@@ -1797,6 +1797,7 @@ op_call:
 		}
 	}
 exit_program:
+	(void)0;//FIXME for clang
 }
 
 #define MM(type) (*((pr_##type##_t *) (mm)))
@@ -1816,6 +1817,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 1:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
+			(void)0;//FIXME for clang
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
@@ -1853,6 +1855,7 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
+			(void)0;//FIXME for clang
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
@@ -2547,6 +2550,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_RETURN:
+				(void)0;//FIXME for clang
 				int         ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if (st->c != 0xffff) {
 					mm = pr_address_mode (pr, st, st->c >> 5);
@@ -2872,6 +2876,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		}
 	}
 exit_program:
+	(void)0;//FIXME for clang
 }
 /*
 	PR_ExecuteProgram

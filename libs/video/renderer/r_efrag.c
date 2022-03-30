@@ -237,8 +237,8 @@ R_StoreEfrags (const efrag_t *efrag)
 			case mod_iqm:
 				EntQueue_AddEntity (r_ent_queue, ent, model->type);
 				break;
-
 			default:
+				(void)0;//FIXME for clang
 		}
 		efrag = efrag->leafnext;
 	}
