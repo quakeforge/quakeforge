@@ -1436,17 +1436,6 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	free (bctx->default_skybox);
 }
 
-static inline __attribute__((const)) int
-is_pow2 (unsigned x)
-{
-	int         count;
-
-	for (count = 0; x; x >>= 1)
-		if (x & 1)
-			count++;
-	return count == 1;
-}
-
 void
 Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 {
