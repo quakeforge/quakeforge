@@ -178,7 +178,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 
 	char *name = QFS_FileBase (mod->path);
-	strncpy (mod->name, name, sizeof (mod->name - 1));
+	strncpy (mod->name, name, sizeof (mod->name) - 1);
 	mod->name[sizeof (mod->name) - 1] = 0;
 	free (name);
 
