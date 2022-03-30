@@ -1,6 +1,8 @@
 #ifndef __vid_gl_h
 #define __vid_gl_h
 
+#include "QF/simd/types.h"
+
 // GL_context is a pointer to opaque data
 typedef struct GL_context *GL_context;
 
@@ -12,6 +14,8 @@ typedef struct gl_ctx_s {
 	void        (*init_gl) (void);
 	void        *(*get_proc_address) (const char *name, qboolean crit);
 	void        (*end_rendering) (void);
+
+	mat4f_t     projection;
 
 	int         begun;
 	double      start_time;

@@ -230,39 +230,10 @@ R_DrawViewModel (void)
 }
 
 static void
-R_Perspective (void)
-{
-	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	float       f = 1 / tan (r_refdef.fov_y * M_PI / 360);
-	float       neard, fard;
-	mat4f_t     proj;
-
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
-
-	// NOTE columns!
-	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
-	proj[1] = (vec4f_t) { 0, f, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
-	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
-
-	// convert 0..1 depth buffer range to -1..1
-	static mat4f_t depth_range = {
-		{ 1, 0, 0, 0},
-		{ 0, 1, 0, 0},
-		{ 0, 0, 2, 0},
-		{ 0, 0,-1, 1},
-	};
-	mmulf (proj, depth_range, proj);
-
-	qfglMatrixMode (GL_PROJECTION);
-	qfglLoadMatrixf (&proj[0][0]);
-}
-
-static void
 R_SetupGL (void)
 {
-	R_Perspective ();
+	qfglMatrixMode (GL_PROJECTION);
+	qfglLoadMatrixf (&gl_ctx->projection[0][0]);
 
 	qfglFrontFace (GL_CW);
 

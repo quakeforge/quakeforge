@@ -166,8 +166,6 @@ gl_FisheyeScreen (framebuffer_t *fb)
 
 	gl_framebuffer_t *buffer = fb->buffer;
 
-	qfglViewport (r_refdef.vrect.x, r_refdef.vrect.x,
-				  r_refdef.vrect.width, r_refdef.vrect.height);
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
 	qfglOrtho (0, r_refdef.vrect.width, r_refdef.vrect.height, 0, -9999, 9999);

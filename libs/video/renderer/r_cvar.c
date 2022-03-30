@@ -167,7 +167,7 @@ scr_fov_f (cvar_t *var)
 	if (fov != var->value) {
 		Cvar_SetValue (var, fov);
 	} else {
-		r_data->vid->recalc_refdef = 1;
+		SCR_SetFOV (var->value);
 	}
 }
 

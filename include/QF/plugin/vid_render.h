@@ -107,7 +107,6 @@ typedef struct vid_render_funcs_s {
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
-	void (*R_ViewChanged) (void);
 
 	void (*begin_frame) (void);
 	void (*render_view) (void);
@@ -122,6 +121,8 @@ typedef struct vid_render_funcs_s {
 	struct framebuffer_s *(*create_frame_buffer) (int width, int height);
 	void (*bind_framebuffer) (struct framebuffer_s *framebuffer);
 	void (*set_viewport) (const struct vrect_s *view);
+	// x and y are tan(f/2) for fov_x and fov_y
+	void (*set_fov) (float x, float y);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

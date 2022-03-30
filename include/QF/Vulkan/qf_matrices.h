@@ -78,7 +78,6 @@ typedef struct matrixctx_s {
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 
-void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx);
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
 void Vulkan_SetViewMatrix (struct vulkan_ctx_s *ctx, mat4f_t view);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);

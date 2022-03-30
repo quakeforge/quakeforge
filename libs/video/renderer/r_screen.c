@@ -69,6 +69,9 @@ static qpic_t *scr_turtle;
 static framebuffer_t *fisheye_cube_map;
 static framebuffer_t *warp_buffer;
 
+static float fov_x, fov_y;
+static float tan_fov_x, tan_fov_y;
+
 static mat4f_t box_rotations[] = {
 	[BOX_FRONT] = {
 		{ 1, 0, 0, 0},		// front
@@ -146,8 +149,8 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	set_vrect (vrectin, vrect, lineadj);
 }
 
-static void
-set_fov (float fov)
+void
+SCR_SetFOV (float fov)
 {
 
 	refdef_t   *refdef = r_data->refdef;
@@ -158,8 +161,11 @@ set_fov (float fov)
 	double      w = refdef->vrect.width;
 	double      h = refdef->vrect.height;
 
-	refdef->fov_x = fov;
-	refdef->fov_y = 360 * atan2 (s * h, c * w) / M_PI;
+	fov_x = fov;
+	fov_y = 360 * atan2 (s * h, c * w) / M_PI;
+	tan_fov_x = s / c;
+	tan_fov_y = (s * h) / (c * w);
+	r_funcs->set_fov (tan_fov_x, tan_fov_y);
 }
 
 static void
@@ -171,9 +177,6 @@ SCR_CalcRefdef (void)
 	r_data->vid->recalc_refdef = 0;
 
 	view_setgeometry (view, rect->x, rect->y, rect->width, rect->height);
-
-	// notify the refresh of the change
-	r_funcs->R_ViewChanged ();
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
@@ -210,10 +213,8 @@ render_side (int side)
 	r_refdef.frame.mat[3] =  r_refdef.camera[3];
 
 	refdef_t   *refdef = r_data->refdef;
-	R_SetFrustum (refdef->frustum, &refdef->frame,
-				  refdef->fov_x, refdef->fov_y);
+	R_SetFrustum (refdef->frustum, &refdef->frame, 90, 90);
 
-	r_data->refdef->fov_x = r_data->refdef->fov_y = 90;
 	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
 	render_scene ();
 
@@ -256,8 +257,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	refdef->frame.mat[1] =  refdef->camera[0];
 	refdef->frame.mat[2] =  refdef->camera[2];
 	refdef->frame.mat[3] =  refdef->camera[3];
-	R_SetFrustum (refdef->frustum, &refdef->frame,
-				  refdef->fov_x, refdef->fov_y);
+	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
 
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;
@@ -292,6 +292,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		int         side = fisheye_cube_map->width;
 		vrect_t     feye = { 0, 0, side, side };
 		r_funcs->set_viewport (&feye);
+		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
 		switch (scr_fviews->int_val) {
 			case 6: render_side (BOX_BEHIND);
 			case 5: render_side (BOX_BOTTOM);
@@ -335,7 +336,7 @@ update_vrect (void)
 	vrect.height = r_data->vid->height;
 
 	set_vrect (&vrect, &refdef->vrect, r_data->lineadj);
-	set_fov (scr_fov->value);
+	SCR_SetFOV (scr_fov->value);
 }
 
 void

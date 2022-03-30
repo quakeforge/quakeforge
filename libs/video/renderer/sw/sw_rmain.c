@@ -67,7 +67,6 @@ qboolean    r_drawculledpolys;
 qboolean    r_worldpolysbacktofront;
 qboolean    r_recursiveaffinetriangles = true;
 int         r_pixbytes = 1;
-float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
 
@@ -209,113 +208,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	r_dowarpold = false;
 	r_viewchanged = false;
-}
-
-/*
-	R_ViewChanged
-
-	Called every time the vid structure or r_refdef changes.
-	Guaranteed to be called before the first refresh
-*/
-void
-R_ViewChanged (void)
-{
-	int         i;
-	float       res_scale;
-
-	r_viewchanged = true;
-
-#define SHIFT20(x) (((x) << 20) + (1 << 19) - 1)
-	r_refdef.vrectright             = r_refdef.vrect.x + r_refdef.vrect.width;
-	r_refdef.vrectbottom            = r_refdef.vrect.y + r_refdef.vrect.height;
-	r_refdef.vrectx_adj_shift20     = SHIFT20 (r_refdef.vrect.x);
-	r_refdef.vrectright_adj_shift20 = SHIFT20 (r_refdef.vrectright);
-
-	r_refdef.fvrectx      = (float) r_refdef.vrect.x;
-	r_refdef.fvrecty      = (float) r_refdef.vrect.y;
-	r_refdef.fvrectright  = (float) r_refdef.vrectright;
-	r_refdef.fvrectbottom = (float) r_refdef.vrectbottom;
-
-	r_refdef.fvrectx_adj      = (float) r_refdef.vrect.x - 0.5;
-	r_refdef.fvrecty_adj      = (float) r_refdef.vrect.y - 0.5;
-	r_refdef.fvrectright_adj  = (float) r_refdef.vrectright - 0.5;
-	r_refdef.fvrectbottom_adj = (float) r_refdef.vrectbottom - 0.5;
-
-	int         aleft = r_refdef.vrect.x * r_aliasuvscale;
-	int         atop = r_refdef.vrect.y * r_aliasuvscale;
-	int         awidth = r_refdef.vrect.width * r_aliasuvscale;
-	int         aheight = r_refdef.vrect.height * r_aliasuvscale;
-	r_refdef.aliasvrectleft = aleft;
-	r_refdef.aliasvrecttop = atop;
-	r_refdef.aliasvrectright = aleft + awidth;
-	r_refdef.aliasvrectbottom = atop + aheight;
-
-	// values for perspective projection
-	// if math were exact, the values would range from 0.5 to to range+0.5
-	// hopefully they wll be in the 0.000001 to range+.999999 and truncate
-	// the polygon rasterization will never render in the first row or column
-	// but will definately render in the [range] row and column, so adjust the
-	// buffer origin to get an exact edge to edge fill
-	xcenter = r_refdef.vrect.width * XCENTERING + r_refdef.vrect.x - 0.5;
-	ycenter = r_refdef.vrect.height * YCENTERING + r_refdef.vrect.y - 0.5;
-	aliasxcenter = xcenter * r_aliasuvscale;
-	aliasycenter = ycenter * r_aliasuvscale;
-
-	pixelAspect = 1;//FIXME vid.aspect;
-
-	float aspect = r_refdef.vrect.width * pixelAspect / r_refdef.vrect.height;
-	// 320*200 1.0 pixelAspect = 1.6 aspect
-	// 320*240 1.0 pixelAspect = 1.3333 aspect
-	// proper 320*200 pixelAspect = 0.8333333
-
-	float       hFOV = 2.0 * tan (r_refdef.fov_x / 360 * M_PI);
-	float       vFOV = hFOV / aspect;
-
-	// general perspective scaling
-	xscale = r_refdef.vrect.width / hFOV;
-	yscale = xscale * pixelAspect;
-	xscaleinv = 1.0 / xscale;
-	yscaleinv = 1.0 / yscale;
-	// perspective scaling for alias models
-	aliasxscale = xscale * r_aliasuvscale;
-	aliasyscale = yscale * r_aliasuvscale;
-	// perspective scaling for paricle position
-	xscaleshrink = (r_refdef.vrect.width - 6) / hFOV;
-	yscaleshrink = xscaleshrink * pixelAspect;
-
-	// left side clip
-	screenedge[0].normal[0] = -1.0 / (XCENTERING * hFOV);
-	screenedge[0].normal[1] = 0;
-	screenedge[0].normal[2] = 1;
-	screenedge[0].type = PLANE_ANYZ;
-
-	// right side clip
-	screenedge[1].normal[0] = 1.0 / ((1.0 - XCENTERING) * hFOV);
-	screenedge[1].normal[1] = 0;
-	screenedge[1].normal[2] = 1;
-	screenedge[1].type = PLANE_ANYZ;
-
-	// top side clip
-	screenedge[2].normal[0] = 0;
-	screenedge[2].normal[1] = -1.0 / (YCENTERING * vFOV);
-	screenedge[2].normal[2] = 1;
-	screenedge[2].type = PLANE_ANYZ;
-
-	// bottom side clip
-	screenedge[3].normal[0] = 0;
-	screenedge[3].normal[1] = 1.0 / ((1.0 - YCENTERING) * vFOV);
-	screenedge[3].normal[2] = 1;
-	screenedge[3].type = PLANE_ANYZ;
-
-	for (i = 0; i < 4; i++)
-		VectorNormalize (screenedge[i].normal);
-
-	res_scale = sqrt ((double) (r_refdef.vrect.width * r_refdef.vrect.height) /
-					  (320.0 * 152.0)) * (2.0 / hFOV);
-	r_aliastransition = r_aliastransbase->value * res_scale;
-	r_resfudge = r_aliastransadj->value * res_scale;
-
-	D_ViewChanged ();
 }
 
 void

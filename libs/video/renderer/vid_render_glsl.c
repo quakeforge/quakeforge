@@ -368,17 +368,41 @@ glsl_bind_framebuffer (framebuffer_t *framebuffer)
 
 	vrect_t r = { 0, 0, width, height };
 	R_SetVrect (&r, &r_refdef.vrect, 0);
-	glsl_R_ViewChanged ();
 }
 
 static void
 glsl_set_viewport (const vrect_t *view)
 {
 	int         x = view->x;
-	int         y = vid.height - (view->y + view->height);//FIXME vid.height
+	int         y = vid.height - (view->y + view->height);	//FIXME vid.height
 	int         w = view->width;
 	int         h = view->height;
 	qfeglViewport (x, y, w, h);
+}
+
+static void
+glsl_set_fov (float x, float y)
+{
+	float       neard, fard;
+	mat4f_t     proj;
+
+	neard = r_nearclip->value;
+	fard = r_farclip->value;
+
+	// NOTE columns!
+	proj[0] = (vec4f_t) { 1/x, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, 1/y, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
+	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
+
+	// convert 0..1 depth buffer range to -1..1
+	static mat4f_t depth_range = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 2, 0},
+		{ 0, 0,-1, 1},
+	};
+	mmulf (glsl_ctx->projection, depth_range, proj);
 }
 
 vid_render_funcs_t glsl_vid_render_funcs = {
@@ -412,7 +436,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_LoadSkys,
 	glsl_R_NewMap,
 	glsl_R_LineGraph,
-	glsl_R_ViewChanged,
 	glsl_begin_frame,
 	glsl_render_view,
 	glsl_R_RenderEntities,
@@ -426,6 +449,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_create_frame_buffer,
 	glsl_bind_framebuffer,
 	glsl_set_viewport,
+	glsl_set_fov,
 
 	&model_funcs
 };

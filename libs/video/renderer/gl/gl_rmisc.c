@@ -200,8 +200,3 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 			register_textures (&models[i]->brush);
 	}
 }
-
-void
-gl_R_ViewChanged (void)
-{
-}

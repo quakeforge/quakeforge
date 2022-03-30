@@ -170,41 +170,6 @@ Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
-{
-	__auto_type mctx = ctx->matrix_context;
-	__auto_type mat = &mctx->matrices;
-
-	int width = vid.conview->xlen;
-	int height = vid.conview->ylen;
-	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
-
-	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	QFV_Perspective (mat->Projection3d, r_refdef.fov_y, aspect);
-#if 0
-	Sys_MaskPrintf (SYS_vulkan, "ortho:\n");
-	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 0));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 4));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 8));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->Projection2d + 12));
-	Sys_MaskPrintf (SYS_vulkan, "presp:\n");
-	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 0));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 4));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 8));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->Projection3d + 12));
-#endif
-	mctx->dirty = mctx->frames.size;
-}
-
-void
 Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, "matrix init");

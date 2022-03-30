@@ -68,33 +68,6 @@
 mat4f_t glsl_projection;
 mat4f_t glsl_view;
 
-void
-glsl_R_ViewChanged (void)
-{
-	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	float       f = 1 / tan (r_refdef.fov_y * M_PI / 360);
-	float       neard, fard;
-	vec4f_t    *proj = glsl_projection;
-
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
-
-	// NOTE columns!
-	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
-	proj[1] = (vec4f_t) { 0, f, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
-	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
-
-	// convert 0..1 depth buffer range to -1..1
-	static mat4f_t depth_range = {
-		{ 1, 0, 0, 0},
-		{ 0, 1, 0, 0},
-		{ 0, 0, 2, 0},
-		{ 0, 0,-1, 1},
-	};
-	mmulf (proj, depth_range, proj);
-}
-
 static void
 R_SetupView (void)
 {
@@ -163,6 +136,8 @@ glsl_R_RenderView (void)
 	if (!r_refdef.worldmodel) {
 		return;
 	}
+
+	memcpy (glsl_projection, glsl_ctx->projection, sizeof (mat4f_t));
 
 	R_SetupView ();
 	glsl_R_DrawWorld ();

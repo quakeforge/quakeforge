@@ -711,7 +711,7 @@ create_light_matrices (lightingctx_t *lctx)
 				mat4fidentity (proj);
 				break;
 			case ST_PLANE:
-				QFV_PerspectiveCos (proj, light->cone, 1);
+				QFV_PerspectiveCos (proj, light->cone);
 				break;
 		}
 		mmulf (lctx->lightmats.a[i], proj, view);

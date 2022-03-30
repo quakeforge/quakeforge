@@ -166,8 +166,6 @@ typedef struct {
 	int			ambientlight;
 	int			drawflat;
 
-	float		fov_x, fov_y;
-
 	struct model_s *worldmodel;
 	struct mleaf_s *viewleaf;
 } refdef_t;

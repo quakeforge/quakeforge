@@ -57,6 +57,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
@@ -248,12 +249,6 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 }
 
 static void
-vulkan_R_ViewChanged (void)
-{
-	Vulkan_CalcProjectionMatrices (vulkan_ctx);
-}
-
-static void
 vulkan_begin_frame (void)
 {
 	uint32_t imageIndex = 0;
@@ -316,6 +311,15 @@ vulkan_post_process (framebuffer_t *src)
 static void
 vulkan_set_2d (int scaled)
 {
+	//FIXME this should not be done every frame
+	__auto_type mctx = vulkan_ctx->matrix_context;
+	__auto_type mat = &mctx->matrices;
+
+	int width = vid.conview->xlen;	//FIXME vid
+	int height = vid.conview->ylen;
+	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
+
+	mctx->dirty = mctx->frames.size;
 }
 
 static void
@@ -443,6 +447,20 @@ vulkan_bind_framebuffer (framebuffer_t *framebuffer)
 static void
 vulkan_set_viewport (const vrect_t *view)
 {
+}
+
+static void
+vulkan_set_fov (float x, float y)
+{
+	if (!vulkan_ctx || !vulkan_ctx->matrix_context) {
+		return;
+	}
+	__auto_type mctx = vulkan_ctx->matrix_context;
+	__auto_type mat = &mctx->matrices;
+
+	QFV_PerspectiveTan (mat->Projection3d, x, y);
+
+	mctx->dirty = mctx->frames.size;
 }
 
 static int
@@ -715,7 +733,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_LoadSkys,
 	vulkan_R_NewMap,
 	vulkan_R_LineGraph,
-	vulkan_R_ViewChanged,
 	vulkan_begin_frame,
 	vulkan_render_view,
 	vulkan_draw_entities,
@@ -729,6 +746,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_create_frame_buffer,
 	vulkan_bind_framebuffer,
 	vulkan_set_viewport,
+	vulkan_set_fov,
 
 	&model_funcs
 };
