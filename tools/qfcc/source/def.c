@@ -605,15 +605,11 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));
 		} else {
-			int         offset = 0;
 			if (!is_constant (init)) {
 				error (init, "non-constant initializier");
 				return;
 			}
 			while (init->type == ex_alias) {
-				if (init->e.alias.offset) {
-					offset += expr_int (init->e.alias.offset);
-				}
 				init = init->e.alias.expr;
 			}
 			if (init->type != ex_value) {	//FIXME enum etc
