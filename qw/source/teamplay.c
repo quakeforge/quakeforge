@@ -199,17 +199,17 @@ Team_ParseSay (dstring_t *buf, const char *s)
 						bracket = 0;
 
 					if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-						t3[0] = 'R' | 0x80;
+						t3[0] = (char) ('R' | 0x80);
 					else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-						t3[0] = 'Y' | 0x80;
+						t3[0] = (char) ('Y' | 0x80);
 					else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-						t3[0] = 'G' | 0x80;
+						t3[0] = (char) ('G' | 0x80);
 					else {
-						t2[0] = 'N' | 0x80;
-						t2[1] = 'O' | 0x80;
-						t2[2] = 'N' | 0x80;
-						t2[3] = 'E' | 0x80;
-						t2[4] = '!' | 0x80;
+						t2[0] = (char) ('N' | 0x80);
+						t2[1] = (char) ('O' | 0x80);
+						t2[2] = (char) ('N' | 0x80);
+						t2[3] = (char) ('E' | 0x80);
+						t2[4] = (char) ('!' | 0x80);
 					}
 
 					snprintf (t2, sizeof (t2), "%sa:%i", t3,
@@ -221,17 +221,17 @@ Team_ParseSay (dstring_t *buf, const char *s)
 			case 'A':
 				bracket = 0;
 				if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-					t2[0] = 'R' | 0x80;
+					t2[0] = (char) ('R' | 0x80);
 				else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-					t2[0] = 'Y' | 0x80;
+					t2[0] = (char) ('Y' | 0x80);
 				else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-					t2[0] = 'G' | 0x80;
+					t2[0] = (char) ('G' | 0x80);
 				else {
-					t2[0] = 'N' | 0x80;
-					t2[1] = 'O' | 0x80;
-					t2[2] = 'N' | 0x80;
-					t2[3] = 'E' | 0x80;
-					t2[4] = '!' | 0x80;
+					t2[0] = (char) ('N' | 0x80);
+					t2[1] = (char) ('O' | 0x80);
+					t2[2] = (char) ('N' | 0x80);
+					t2[3] = (char) ('E' | 0x80);
+					t2[4] = (char) ('!' | 0x80);
 				}
 				break;
 			case 'h':
