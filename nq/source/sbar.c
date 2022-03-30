@@ -300,7 +300,7 @@ draw_string (view_t *view, int x, int y, const char *str)
 {
 	r_funcs->Draw_String (view->xabs + x, view->yabs + y, str);
 }
-
+#if 0
 static inline void
 draw_altstring (view_t *view, int x, int y, const char *str)
 {
@@ -312,7 +312,7 @@ draw_nstring (view_t *view, int x, int y, const char *str, int n)
 {
 	r_funcs->Draw_nString (view->xabs + x, view->yabs + y, str, n);
 }
-
+#endif
 static inline void
 draw_fill (view_t *view, int x, int y, int w, int h, int col)
 {
