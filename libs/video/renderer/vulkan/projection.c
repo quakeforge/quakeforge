@@ -28,9 +28,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
+#include <math.h>
 
 #include "QF/cvar.h"
 #include "QF/Vulkan/projection.h"

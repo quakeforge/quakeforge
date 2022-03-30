@@ -3,26 +3,20 @@
 #endif
 
 #ifdef HAVE_MATH_H
-# include <math.h>
+//# include <math.h>
 #endif
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
-#include "QF/sys.h"
+
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/cvars.h"
-#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
-#include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
-
-#include "util.h"
 
 qfv_swapchain_t *
 QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)

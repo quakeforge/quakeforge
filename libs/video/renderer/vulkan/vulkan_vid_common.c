@@ -49,7 +49,6 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"

@@ -33,22 +33,9 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#include <stdlib.h>
-
-#include "qfalloca.h"
+#include <string.h>
 
 #include "QF/cvar.h"
-#include "QF/darray.h"
-#include "QF/image.h"
-#include "QF/render.h"
-#include "QF/skin.h"
-#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/scene/entity.h"
@@ -56,10 +43,7 @@
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
-#include "QF/Vulkan/buffer.h"
-#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"

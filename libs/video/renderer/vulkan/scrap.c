@@ -28,24 +28,12 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 
-#include "QF/alloc.h"
-#include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/image.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
-#include "QF/sys.h"
+#include "QF/ui/vrect.h"
+
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -53,12 +41,10 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
-#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
 #include "r_scrap.h"
-#include "vid_vulkan.h"
 
 struct scrap_s {
 	rscrap_t    rscrap;

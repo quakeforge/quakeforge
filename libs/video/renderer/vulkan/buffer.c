@@ -29,36 +29,11 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#include "QF/cvar.h"
-#include "QF/dstring.h"
 #include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/memory.h"
-
-#include "compat.h"
-#include "d_iface.h"
-#include "r_internal.h"
-#include "vid_vulkan.h"
-
-#include "util.h"
 
 VkBuffer
 QFV_CreateBuffer (qfv_device_t *device, VkDeviceSize size,

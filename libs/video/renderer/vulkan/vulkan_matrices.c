@@ -42,7 +42,6 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
