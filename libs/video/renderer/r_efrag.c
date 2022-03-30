@@ -236,10 +236,10 @@ R_StoreEfrags (const efrag_t *efrag)
 			case mod_sprite:
 			case mod_iqm:
 				EntQueue_AddEntity (r_ent_queue, ent, model->type);
-				efrag = efrag->leafnext;
 				break;
 
 			default:
 		}
+		efrag = efrag->leafnext;
 	}
 }
