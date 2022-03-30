@@ -95,8 +95,10 @@ typedef struct {
 typedef struct cachepic_s {
 	char		name[MAX_QPATH];
 	qboolean	dirty;
-	qpic_t		pic;
-	byte		padding[32];			// for appended glpic
+	union {
+		qpic_t		pic;
+		byte		padding[sizeof (qpic_t) + 32];// for appended glpic FIXME
+	};
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
