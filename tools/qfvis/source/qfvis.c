@@ -240,9 +240,9 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	// component to the split-plane's distance when the split-plane's
 	// normal is signed-canonical.
 	// "nan" because 0x7fffffff is nan when viewed as a float
-	static const vec4f_t onenan = { 1, 1, 1, ~0u >> 1 };
+	static const vec4i_t onenan = {0x3f800000,0x3f800000,0x3f800000,~0u >> 1};
 	static const vec4i_t nan = { ~0u >> 1, ~0u >> 1, ~0u >> 1, ~0u >> 1};
-	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == onenan;
+	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == (__m128) onenan;
 	// plane vector has -dist in w
 	vec4f_t     y = _mm_and_ps (split, (__m128) x) * -split[3];
 #ifdef __SSE3__
