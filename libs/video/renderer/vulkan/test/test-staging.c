@@ -139,31 +139,31 @@ vkQueueSubmit (VkQueue queue, uint32_t count, const VkSubmitInfo *submits,
 }
 
 qfv_devfuncs_t dfuncs = {
-	vkCreateBuffer:vkCreateBuffer,
-	vkGetBufferMemoryRequirements:vkGetBufferMemoryRequirements,
-	vkMapMemory:vkMapMemory,
-	vkBindBufferMemory:vkBindBufferMemory,
-	vkAllocateCommandBuffers:vkAllocateCommandBuffers,
-	vkCreateFence:vkCreateFence,
-	vkWaitForFences:vkWaitForFences,
-	vkResetFences:vkResetFences,
-	vkGetFenceStatus:vkGetFenceStatus,
-	vkResetCommandBuffer:vkResetCommandBuffer,
-	vkBeginCommandBuffer:vkBeginCommandBuffer,
-	vkEndCommandBuffer:vkEndCommandBuffer,
-	vkFlushMappedMemoryRanges:vkFlushMappedMemoryRanges,
-	vkQueueSubmit:vkQueueSubmit,
+	.vkCreateBuffer = vkCreateBuffer,
+	.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
+	.vkMapMemory = vkMapMemory,
+	.vkBindBufferMemory = vkBindBufferMemory,
+	.vkAllocateCommandBuffers = vkAllocateCommandBuffers,
+	.vkCreateFence = vkCreateFence,
+	.vkWaitForFences = vkWaitForFences,
+	.vkResetFences = vkResetFences,
+	.vkGetFenceStatus = vkGetFenceStatus,
+	.vkResetCommandBuffer = vkResetCommandBuffer,
+	.vkBeginCommandBuffer = vkBeginCommandBuffer,
+	.vkEndCommandBuffer = vkEndCommandBuffer,
+	.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
+	.vkQueueSubmit = vkQueueSubmit,
 };
 qfv_physdev_t physDev = {
-	properties:{
-		limits:{
-			nonCoherentAtomSize:256,
+	.properties = {
+		.limits = {
+			.nonCoherentAtomSize = 256,
 		},
 	},
 };
 qfv_device_t device = {
-	physDev:&physDev,
-	funcs:&dfuncs,
+	.physDev = &physDev,
+	.funcs = &dfuncs,
 };
 
 static void __attribute__ ((format (PRINTF, 2, 3), noreturn))

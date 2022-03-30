@@ -137,7 +137,7 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 	VkClearColorValue color = {
-		float32:{0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
+		.float32 = {0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
 	};
 	VkImageSubresourceRange range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	dfunc->vkCmdClearColorImage (packet->cmd, scrap->image,

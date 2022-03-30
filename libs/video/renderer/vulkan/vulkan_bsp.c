@@ -1052,7 +1052,7 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 					bframe->cmdSet.a[QFV_bspDepth]);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
@@ -1120,7 +1120,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	turb_begin (rFrame);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {
@@ -1182,7 +1182,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 				  bframe->cmdSet.a[QFV_bspSky]);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
