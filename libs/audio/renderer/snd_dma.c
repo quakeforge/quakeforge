@@ -392,7 +392,7 @@ s_ambient_on (void)
 }
 
 static void
-s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
+s_static_sound (sfx_t *sfx, vec4f_t origin, float vol,
 				float attenuation)
 {
 	if (!sound_started)
@@ -401,7 +401,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 }
 
 static void
-s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+s_start_sound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			   float vol, float attenuation)
 {
 	if (!sound_started)

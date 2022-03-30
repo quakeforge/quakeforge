@@ -361,7 +361,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			}
 
 			// sound
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 
 			// sprite
 			to = new_tent_object ();
@@ -383,7 +383,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, &position[0]);
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			clp_funcs->ParticleExplosion2 (position, colorStart, colorLength);
 			dl = R_AllocDlight (0);
 			if (!dl)
@@ -402,7 +402,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, color);		// OUCH!
 			color[3] = 0.7;
 			clp_funcs->ParticleExplosion (position);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
@@ -424,7 +424,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 		case TE_KnightSpike:
 			MSG_ReadCoordV (net_message, &position[0]);
 			clp_funcs->KnightSpikeEffect (position);
-			S_StartSound (-1, 0, cl_sfx_knighthit, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_knighthit, position, 1, 1);
 			break;
 		case TE_LavaSplash:
 			MSG_ReadCoordV (net_message, &position[0]);
@@ -471,7 +471,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				} else {
 					sound = cl_sfx_tink1;
 				}
-				S_StartSound (-1, 0, sound, &position[0], 1, 1);
+				S_StartSound (-1, 0, sound, position, 1, 1);
 			}
 			break;
 		case TE_SuperSpike:
@@ -487,14 +487,14 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				} else {
 					sound = cl_sfx_tink1;
 				}
-				S_StartSound (-1, 0, sound, &position[0], 1, 1);
+				S_StartSound (-1, 0, sound, position, 1, 1);
 			}
 			break;
 		case TE_TarExplosion:
 			MSG_ReadCoordV (net_message, &position[0]);
 			clp_funcs->BlobExplosion (position);
 
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			break;
 		case TE_Teleport:
 			MSG_ReadCoordV (net_message, &position[0]);
@@ -503,7 +503,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 		case TE_WizSpike:
 			MSG_ReadCoordV (net_message, &position[0]);
 			clp_funcs->WizSpikeEffect (position);
-			S_StartSound (-1, 0, cl_sfx_wizhit, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_wizhit, position, 1, 1);
 			break;
 	}
 }

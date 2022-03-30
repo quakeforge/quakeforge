@@ -247,8 +247,7 @@ s_play_f (void *_snd)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
-		//FIXME
-		SND_StartSound (snd, hash++, 0, sfx, &listener_origin[0], 1.0, 1.0);
+		SND_StartSound (snd, hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
 	}
 	dstring_delete (name);
@@ -273,8 +272,7 @@ s_playcenter_f (void *_snd)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
-		//FIXME
-		SND_StartSound (snd, viewent, 0, sfx, &listener_origin[0], 1.0, 1.0);
+		SND_StartSound (snd, viewent, 0, sfx, listener_origin, 1.0, 1.0);
 	}
 	dstring_delete (name);
 }
@@ -298,8 +296,7 @@ s_playvol_f (void *_snd)
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
 		vol = atof (Cmd_Argv (i + 1));
-		//FIXME
-		SND_StartSound (snd, hash++, 0, sfx, &listener_origin[0], vol, 1.0);
+		SND_StartSound (snd, hash++, 0, sfx, listener_origin, vol, 1.0);
 		i += 2;
 	}
 	dstring_delete (name);
@@ -617,7 +614,7 @@ snd_check_channels (snd_t *snd, channel_t *target_chan, const channel_t *check,
 
 void
 SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
-				const vec3_t origin, float fvol, float attenuation)
+				vec4f_t origin, float fvol, float attenuation)
 {
 	int			 vol;
 	int          looped;
@@ -691,7 +688,7 @@ SND_StopSound (snd_t *snd, int entnum, int entchannel)
 }
 
 void
-SND_StaticSound (snd_t *snd, sfx_t *sfx, const vec3_t origin, float vol,
+SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 				 float attenuation)
 {
 	channel_t  *ss;
@@ -743,5 +740,5 @@ SND_LocalSound (snd_t *snd, const char *sound)
 	}
 	if (snd_render_data.viewentity)
 		viewent = *snd_render_data.viewentity;
-	SND_StartSound (snd, viewent, -1, sfx, vec3_origin, 1, 1);
+	SND_StartSound (snd, viewent, -1, sfx, (vec4f_t) {0, 0, 0, 1}, 1, 1);
 }

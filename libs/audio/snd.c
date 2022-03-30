@@ -135,14 +135,14 @@ S_AmbientOn (void)
 }
 
 VISIBLE void
-S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
+S_StaticSound (sfx_t *sfx, vec4f_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->static_sound (sfx, origin, vol, attenuation);
 }
 
 VISIBLE void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			  float vol, float attenuation)
 {
 	if (snd_render_funcs)

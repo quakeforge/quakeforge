@@ -903,9 +903,9 @@ static void
 CL_ParseStaticSound (void)
 {
 	int			sound_num, vol, atten;
-	vec3_t		org;
+	vec4f_t     org = { 0, 0, 0, 1 };
 
-	MSG_ReadCoordV (net_message, org);
+	MSG_ReadCoordV (net_message, (vec_t*)&org);//FIXME
 	sound_num = MSG_ReadByte (net_message);
 	vol = MSG_ReadByte (net_message);
 	atten = MSG_ReadByte (net_message);
@@ -920,7 +920,6 @@ CL_ParseStartSoundPacket (void)
 {
 	float		attenuation;
 	int			bits, channel, ent, sound_num, volume;
-	vec3_t		pos;
 
 	bits = MSG_ReadShort (net_message);
 
@@ -936,7 +935,8 @@ CL_ParseStartSoundPacket (void)
 
 	sound_num = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordV (net_message, pos);
+	vec4f_t     pos = { 0, 0, 0, 1 };
+	MSG_ReadCoordV (net_message, (vec_t*)&pos);//FIXME
 
 	ent = (bits >> 3) & 1023;
 	channel = bits & 7;
