@@ -677,7 +677,7 @@ R_DrawBrushModel (entity_t *e)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (r_refdef.frustum, &mat[3][0], radius)) { // FIXME
+		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { // FIXME
 			return;
 		}
 	} else {
@@ -854,10 +854,10 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		}
 	}
 	if (ec->transform) {
-		Mat4Mult (&bsp_vp[0][0], ec->transform, mat);//FIXME
+		Mat4Mult ((vec_t*)&bsp_vp[0], ec->transform, mat);//FIXME
 		qfeglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, &bsp_vp[0][0]);
+		qfeglUniformMatrix4fv (matloc, 1, false, (vec_t*)&bsp_vp[0]);//FIXME
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)

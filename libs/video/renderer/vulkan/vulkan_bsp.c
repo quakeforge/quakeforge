@@ -604,7 +604,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (r_refdef.frustum, &mat[3][0], radius)) { //FIXME
+		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { //FIXME
 			return;
 		}
 	} else {

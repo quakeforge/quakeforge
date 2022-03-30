@@ -1457,7 +1457,7 @@ CL_ParseServerMessage (void)
 				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
 				Sys_MaskPrintf (SYS_dev, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, &cl.viewstate.player_origin[0]);//FIXME
+				MSG_ReadCoordV (net_message, (vec_t*)&cl.viewstate.player_origin);//FIXME
 				cl.viewstate.player_origin[3] = 1;
 				Sys_MaskPrintf (SYS_dev, VEC4F_FMT,
 								VEC4_EXP (cl.viewstate.player_origin));

@@ -572,7 +572,7 @@ CL_ParseClientdata (void)
 		else
 			cl.frameVelocity[0][i] = 0;
 	}
-	AngleQuat (punchangle, &cl.viewstate.punchangle[0]);//FIXME
+	AngleQuat (punchangle, (vec_t*)&cl.viewstate.punchangle);//FIXME
 
 	//FIXME
 	//if (!VectorCompare (v_punchangles[0], cl.punchangle[0])) {

@@ -430,7 +430,7 @@ CL_ParsePlayerinfo (void)
 	flags = state->pls.es.flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	MSG_ReadCoordV (net_message, &state->pls.es.origin[0]);//FIXME
+	MSG_ReadCoordV (net_message, (vec_t*)&state->pls.es.origin);//FIXME
 	state->pls.es.origin[3] = 1;
 
 	state->pls.es.frame = MSG_ReadByte (net_message);

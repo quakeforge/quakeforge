@@ -92,7 +92,7 @@ gl_R_RotateForEntity (entity_t *e)
 {
 	mat4f_t     mat;
 	Transform_GetWorldMatrix (e->transform, mat);
-	qfglMultMatrixf (&mat[0][0]);
+	qfglMultMatrixf ((vec_t*)&mat[0]);//FIXME
 }
 
 void
@@ -233,7 +233,7 @@ static void
 R_SetupGL (void)
 {
 	qfglMatrixMode (GL_PROJECTION);
-	qfglLoadMatrixf (&gl_ctx->projection[0][0]);
+	qfglLoadMatrixf ((vec_t*)&gl_ctx->projection[0]);//FIXME
 
 	qfglFrontFace (GL_CW);
 
@@ -248,7 +248,7 @@ R_SetupGL (void)
 	};
 	mat4f_t view;
 	mmulf (view, z_up, r_refdef.camera_inverse);
-	qfglLoadMatrixf (&view[0][0]);
+	qfglLoadMatrixf ((vec_t*)&view[0]);//FIXME
 
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, gl_r_world_matrix);
 

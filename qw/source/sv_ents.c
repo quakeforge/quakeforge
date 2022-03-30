@@ -509,7 +509,7 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 	MSG_WriteByte (msg, to->es.number);
 	MSG_WriteShort (msg, flags);
 
-	MSG_WriteCoordV (msg, &to->es.origin[0]);//FIXME
+	MSG_WriteCoordV (msg, (vec_t*)&to->es.origin);//FIXME
 
 	MSG_WriteByte (msg, to->es.frame);
 

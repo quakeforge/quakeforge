@@ -253,7 +253,7 @@ glsl_R_DrawIQM (entity_t *ent)
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
 
 	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false,
-						   &mvp_mat[0][0]);
+						   (vec_t*)&mvp_mat[0]);//FIXME
 	qfeglUniformMatrix3fv (iqm_shader.norm_matrix.location, 1, false,
 						   norm_mat);
 	qfeglUniformMatrix4fv (iqm_shader.bonemats.location, iqm->num_joints,

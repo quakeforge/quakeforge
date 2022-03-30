@@ -613,7 +613,7 @@ Host_ClientFrame (void)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (&origin[0], cl_world.worldmodel);//FIXME
+		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

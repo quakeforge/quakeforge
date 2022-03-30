@@ -191,7 +191,7 @@ Cam_Lock (int playernum)
 }
 
 static trace_t
-Cam_DoTrace (vec3_t vec1, vec3_t vec2)
+Cam_DoTrace (vec4f_t vec1, vec3_t vec2)//FIXME vec2 type
 {
 #if 0
 	memset (&pmove, 0, sizeof (pmove));
@@ -220,7 +220,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	VectorMultAdd (player->pls.es.origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
-	trace = Cam_DoTrace (&player->pls.es.origin[0], v);//FIXME
+	trace = Cam_DoTrace (player->pls.es.origin, v);
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
@@ -229,7 +229,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		trace = Cam_DoTrace (&self->pls.es.origin[0], vec);//FIXME
+		trace = Cam_DoTrace (self->pls.es.origin, vec);
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
 
@@ -247,7 +247,7 @@ Cam_IsVisible (player_state_t *player, vec3_t vec)
 	trace_t     trace;
 	vec3_t      v;
 
-	trace = Cam_DoTrace (&player->pls.es.origin[0], vec);//FIXME
+	trace = Cam_DoTrace (player->pls.es.origin, vec);
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
 		return false;
 	// check distance, don't let the player get too far away or too close

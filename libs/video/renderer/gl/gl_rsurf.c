@@ -544,7 +544,7 @@ gl_R_DrawBrushModel (entity_t *e)
 		if (e->scale != 1.0)
 			radius *= e->scale;
 #endif
-		if (R_CullSphere (r_refdef.frustum, &worldMatrix[3][0], radius)) {//FIXME
+		if (R_CullSphere (r_refdef.frustum, (vec_t*)&worldMatrix[3], radius)) {//FIXME
 			return;
 		}
 	} else {

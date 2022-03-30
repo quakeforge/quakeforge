@@ -299,7 +299,7 @@ glsl_R_DrawAlias (entity_t *ent)
 	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
 	qfeglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
 	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false,
-						   &mvp_mat[0][0]);
+						   (vec_t*)&mvp_mat[0]);//FIXME
 	qfeglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON

@@ -210,7 +210,7 @@ D_DrawSurfaces (void)
 					transform = s->entity->transform;
 					local_modelorg = r_refdef.frame.position -
 						Transform_GetWorldPosition (transform);
-					TransformVector (&local_modelorg[0], transformed_modelorg);
+					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
 
 					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in
@@ -241,7 +241,7 @@ D_DrawSurfaces (void)
 					transform_t *transform = s->entity->transform;
 					local_modelorg = r_refdef.frame.position -
 						Transform_GetWorldPosition (transform);
-					TransformVector (&local_modelorg[0], transformed_modelorg);
+					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
 
 					R_RotateBmodel (transform);	// FIXME: don't mess with the
 										// frustum, make entity passed in

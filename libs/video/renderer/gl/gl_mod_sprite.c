@@ -90,20 +90,20 @@ R_DrawSpriteModel_f (entity_t *e)
 	point = origin + frame->down * up + frame->left * right;
 
 	qfglTexCoord2f (0, 1);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->up * up + frame->left * right;
 	qfglTexCoord2f (0, 0);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->up * up + frame->right * right;
 
 	qfglTexCoord2f (1, 0);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->down * up + frame->right * right;
 	qfglTexCoord2f (1, 1);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	qfglEnd ();
 

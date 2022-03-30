@@ -247,7 +247,7 @@ draw_qf_particles (psystem_t *psystem)
 	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
 	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false,
-						   &vp_mat[0][0]);
+						   (vec_t*)&vp_mat[0]);//FIXME
 
 	qfeglUniform1i (quake_part.texture.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -366,7 +366,7 @@ draw_id_particles (psystem_t *psystem)
 	qfeglEnableVertexAttribArray (quake_point.color.location);
 
 	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false,
-						   &vp_mat[0][0]);
+						   (vec_t*)&vp_mat[0]);//FIXME
 
 	Fog_GetColor (fog);
 	fog[3] = Fog_GetDensity () / 64.0;

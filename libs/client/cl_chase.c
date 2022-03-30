@@ -79,7 +79,7 @@ TraceLine (chasestate_t *cs, vec4f_t start, vec4f_t end)
 
 	memset (&trace, 0, sizeof (trace));
 	trace.fraction = 1;
-	MOD_TraceLine (cs->worldmodel->brush.hulls, 0, &start[0], &end[0], &trace);
+	MOD_TraceLine (cs->worldmodel->brush.hulls, 0, (vec_t*)&start, (vec_t*)&end, &trace);//FIXME
 
 	return (vec4f_t) {trace.endpos[0], trace.endpos[1], trace.endpos[2], 1};
 }
@@ -113,7 +113,7 @@ static void
 set_camera (chasestate_t *cs, viewstate_t *vs)
 {
 	vec4f_t     rotation;
-	AngleQuat (cs->camera_angles, &rotation[0]);//FIXME
+	AngleQuat (cs->camera_angles, (vec_t*)&rotation);//FIXME
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
 	Transform_SetWorldPosition (vs->camera_transform, cs->camera_origin);
 }
@@ -149,7 +149,7 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 
 	// mouse and joystick controllers add to movement
 	VectorSet (0, vs->player_angles[1] - cs->camera_angles[1], 0, dir);
-	AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
+	AngleVectors ((vec_t*)&dir, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up); //FIXME
 	forward *= IN_UpdateAxis (&in_cam_forward) * m_forward->value;
 	right *= IN_UpdateAxis (&in_cam_side) * m_side->value;
 	dir = forward + right;
@@ -157,7 +157,7 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 	move[SIDE]    -= dir[1];
 
 	VectorSet (0, cs->camera_angles[1], 0, dir);
-	AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
+	AngleVectors ((vec_t*)&dir, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up); //FIXME
 
 	dir = forward * move[FORWARD] + right * move[SIDE];
 
@@ -185,8 +185,8 @@ chase_mode_1 (chasestate_t *cs)
 	// regular camera, faces same direction as player
 	viewstate_t *vs = cs->viewstate;
 	vec4f_t	    forward = {}, up = {}, right = {}, stop = {};
-	//FIXME
-	AngleVectors (vs->player_angles, &forward[0], &right[0], &up[0]);
+
+	AngleVectors (vs->player_angles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
 	VectorCopy (vs->player_angles, cs->camera_angles);
 
 	// calc exact destination
@@ -218,7 +218,7 @@ chase_mode_2 (chasestate_t *cs)
 
 	// move camera, it's not enough to just change the angles because
 	// the angles are automatically changed to look toward the player
-	AngleVectors (cs->camera_angles, &forward[0], &right[0], &up[0]);
+	AngleVectors (cs->camera_angles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
 	cs->camera_origin = cs->player_origin - chase_back->value * forward;
 
 	cs->player_origin = vs->player_origin;
@@ -266,7 +266,7 @@ chase_mode_3 (chasestate_t *cs)
 	// the angles are automatically changed to look toward the player
 
 	cs->player_origin = vs->player_origin;
-	AngleVectors (cs->camera_angles, &forward[0], &right[0], &up[0]);
+	AngleVectors (cs->camera_angles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
 	cs->camera_origin = cs->player_origin - chase_back->value * forward;
 	limit_distance (cs);
 	check_for_walls (cs, forward);

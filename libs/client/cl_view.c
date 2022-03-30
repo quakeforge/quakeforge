@@ -563,7 +563,7 @@ V_CalcViewRoll (viewstate_t *vs)
 	}
 
 	vec4f_t     rot;
-	AngleQuat (ang, &rot[0]);//FIXME
+	AngleQuat (ang, (vec_t*)&rot);//FIXME
 	vec4f_t     rotation = Transform_GetWorldRotation (vs->camera_transform);
 	Transform_SetWorldRotation (vs->camera_transform, qmulf (rotation, rot));
 }
@@ -608,7 +608,6 @@ V_CalcRefdef (viewstate_t *vs)
 	bob = V_CalcBob (vs);
 
 	// refresh position
-	origin = origin;
 	origin[2] += vs->height + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
@@ -617,14 +616,14 @@ V_CalcRefdef (viewstate_t *vs)
 	origin += (vec4f_t) { 1.0/16, 1.0/16, 1.0/16, 0};
 
 	vec4f_t     rotation;
-	AngleQuat (vs->player_angles, &rotation[0]);//FIXME
+	AngleQuat (vs->player_angles, (vec_t*)&rotation);//FIXME
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
 	V_CalcViewRoll (vs);
 	V_AddIdle (vs);
 
 	// offsets
 	//FIXME semi-duplicates AngleQuat (also, vec3_t vs vec4f_t)
-	AngleVectors (viewangles, &forward[0], &right[0], &up[0]);
+	AngleVectors (viewangles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
 
 	// don't allow cheats in multiplayer
 	// FIXME check for dead

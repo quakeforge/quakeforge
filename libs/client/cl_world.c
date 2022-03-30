@@ -87,7 +87,7 @@ CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 	baseline->colormap = MSG_ReadByte (msg);
 	baseline->skinnum = MSG_ReadByte (msg);
 
-	MSG_ReadCoordAngleV (msg, &baseline->origin[0], baseline->angles);
+	MSG_ReadCoordAngleV (msg, (vec_t*)&baseline->origin, baseline->angles);//FIXME
 	baseline->origin[3] = 1;//FIXME
 
 	if (bits & B_ALPHA)

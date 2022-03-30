@@ -82,8 +82,7 @@ SCR_CShift (void)
 	if (cls.state == ca_active && cl_world.worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		//FIXME
-		leaf = Mod_PointInLeaf (&origin[0], cl_world.worldmodel);
+		leaf = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (&cl.viewstate, contents);

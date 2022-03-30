@@ -289,7 +289,7 @@ glsl_R_SpriteBegin (void)
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	mmulf (mat, glsl_projection, glsl_view);
-	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, &mat[0][0]);
+	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, (vec_t*)&mat[0]);//FIXME
 }
 
 void

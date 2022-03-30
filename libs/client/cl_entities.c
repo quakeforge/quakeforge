@@ -370,7 +370,7 @@ CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
 			// to everything else?
 			ang[PITCH] = -ang[PITCH];
 		}
-		AngleQuat (ang, &rotation[0]);//FIXME
+		AngleQuat (ang, (vec_t*)&rotation);//FIXME
 	}
 	Transform_SetLocalTransform (ent->transform, scalevec, rotation, position);
 }

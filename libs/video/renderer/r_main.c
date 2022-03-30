@@ -100,13 +100,13 @@ R_SetFrustum (plane_t *frustum, const refframe_t *frame,
 	fov_y = 90 - fov_y / 2;
 
 	// rotate FWD right by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[0].normal, &up[0], &fwd[0], -fov_x);
+	RotatePointAroundVector (frustum[0].normal, (vec_t*)&up, (vec_t*)&fwd, -fov_x);//FIXME
 	// rotate FWD left by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[1].normal, &up[0], &fwd[0], fov_x);
+	RotatePointAroundVector (frustum[1].normal, (vec_t*)&up, (vec_t*)&fwd, fov_x);//FIXME
 	// rotate FWD up by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[2].normal, &right[0], &fwd[0], fov_y);
+	RotatePointAroundVector (frustum[2].normal, (vec_t*)&right, (vec_t*)&fwd, fov_y);//FIXME
 	// rotate FWD down by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[3].normal, &right[0], &fwd[0], -fov_y);
+	RotatePointAroundVector (frustum[3].normal, (vec_t*)&right, (vec_t*)&fwd, -fov_y);//FIXME
 
 	vec4f_t     origin = frame->position;
 	for (i = 0; i < 4; i++) {
