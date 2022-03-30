@@ -1938,41 +1938,40 @@ pr_with (progs_t *pr, const dstatement_t *st)
 	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
 	pr_type_t  *stk;
-	pr_uint_t  *base = &pr->pr_bases[st->c & 3];
 
 	switch (st->a) {
 		// fixed offset
 		case 0:
 			// hard-0 base
-			*base = st->b;
+			pr->pr_bases[st->c & 3] = st->b;
 			return;
 		case 1:
 			// relative to current base (-ve offset)
-			*base = PR_BASE (pr, st, B) + (pr_short_t) st->b;
+			pr->pr_bases[st->c & 3] = PR_BASE (pr, st, B) + (pr_short_t) st->b;
 			return;
 		case 2:
 			// relative to stack (-ve offset)
-			*base = *pr->globals.stack + (pr_short_t) st->b;
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + (pr_short_t) st->b;
 			return;
 		case 3:
 			// relative to edict_area (only +ve)
-			*base = edict_area + st->b;
+			pr->pr_bases[st->c & 3] = edict_area + st->b;
 			return;
 
 		case 4:
 			// hard-0 base
-			*base = pr->pr_globals[st->b].pointer_var;
+			pr->pr_bases[st->c & 3] = pr->pr_globals[st->b].pointer_var;
 			return;
 		case 5:
-			*base = OPB(ptr);
+			pr->pr_bases[st->c & 3] = OPB(ptr);
 			return;
 		case 6:
 			// relative to stack (-ve offset)
-			*base = *pr->globals.stack + OPB(int);
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + OPB(int);
 			return;
 		case 7:
 			// relative to edict_area (only +ve)
-			*base = edict_area + OPB(field);
+			pr->pr_bases[st->c & 3] = edict_area + OPB(field);
 			return;
 
 		case 8:
@@ -1991,7 +1990,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			return;
 		case 11:
 			// return pointer
-			*base = pr->pr_return - pr->pr_globals;
+			pr->pr_bases[st->c & 3] = pr->pr_return - pr->pr_globals;
 			return;
 	}
 	PR_RunError (pr, "Invalid with index: %u", st->a);
