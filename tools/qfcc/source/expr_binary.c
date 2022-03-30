@@ -647,10 +647,10 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
-	expr_t     *ptr;
-	expr_t     *offset;
+	expr_t     *ptr = 0;
+	expr_t     *offset = 0;
 	expr_t     *psize;
-	type_t     *ptype;
+	type_t     *ptype = 0;
 
 	if (!is_ptr (t1) && !is_ptr (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
