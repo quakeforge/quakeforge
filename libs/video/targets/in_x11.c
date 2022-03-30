@@ -1495,7 +1495,7 @@ x11_event_handler (const IE_event_t *ie_event, void *unused)
 	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
 		[ie_app_window] = x11_app_window,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}

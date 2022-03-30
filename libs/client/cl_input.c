@@ -453,7 +453,7 @@ cl_event_handler (const IE_event_t *ie_event, void *unused)
 		[ie_gain_focus] = cl_focus_event,
 		[ie_lose_focus] = cl_focus_event,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return IN_Binding_HandleEvent (ie_event);
 	}

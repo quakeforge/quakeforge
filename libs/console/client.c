@@ -821,7 +821,7 @@ con_event_handler (const IE_event_t *ie_event, void *data)
 		[ie_key] = con_key_event,
 		[ie_mouse] = con_mouse_event,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
