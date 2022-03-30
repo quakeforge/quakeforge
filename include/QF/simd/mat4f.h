@@ -159,9 +159,9 @@ mat4fquat (mat4f_t m, vec4f_t q)
 	vec4f_t zq = q[2] * q;
 	vec4f_t wq = q[3] * q;
 
-	static const vec4i_t shuff103 = { 1, 0, 3, 2 };
-	static const vec4i_t shuff230 = { 2, 3, 0, 1 };
-	static const vec4i_t shuff321 = { 3, 2, 1, 0 };
+#define shuff103(v) (vec4f_t) {v[1], v[0], v[3], v[2]}
+#define shuff230(v) (vec4f_t) {v[2], v[3], v[0], v[1]}
+#define shuff321(v) (vec4f_t) {v[3], v[2], v[1], v[0]}
 #define p (0)
 #define m (1u << 31)
 	static const vec4i_t mpm = { m, p, m, 0 };
@@ -172,24 +172,24 @@ mat4fquat (mat4f_t m, vec4f_t q)
 #undef m
 	{
 		vec4f_t a = xq;
-		vec4f_t b = _mm_xor_ps (__builtin_shuffle (yq, shuff103), (__m128) mpm);
-		vec4f_t c = _mm_xor_ps (__builtin_shuffle (zq, shuff230), (__m128) pmm);
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff321), (__m128) mmp);
+		vec4f_t b = _mm_xor_ps (shuff103 (yq), (__m128) mpm);
+		vec4f_t c = _mm_xor_ps (shuff230 (zq), (__m128) pmm);
+		vec4f_t d = _mm_xor_ps (shuff321 (wq), (__m128) mmp);
 
 		m[0] = _mm_and_ps (a + b - c - d, (__m128) mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (__builtin_shuffle (xq, shuff103), (__m128) mpm);
+		vec4f_t a = _mm_xor_ps (shuff103 (xq), (__m128) mpm);
 		vec4f_t b = yq;
-		vec4f_t c = _mm_xor_ps (__builtin_shuffle (zq, shuff321), (__m128) mmp);
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff230), (__m128) pmm);
+		vec4f_t c = _mm_xor_ps (shuff321 (zq), (__m128) mmp);
+		vec4f_t d = _mm_xor_ps (shuff230 (wq), (__m128) pmm);
 		m[1] = _mm_and_ps (b + c - a - d, (__m128) mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (__builtin_shuffle (xq, shuff230), (__m128) pmm);
-		vec4f_t b = _mm_xor_ps (__builtin_shuffle (yq, shuff321), (__m128) mmp);
+		vec4f_t a = _mm_xor_ps (shuff230 (xq), (__m128) pmm);
+		vec4f_t b = _mm_xor_ps (shuff321 (yq), (__m128) mmp);
 		vec4f_t c = zq;
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff103), (__m128) mpm);
+		vec4f_t d = _mm_xor_ps (shuff103 (wq), (__m128) mpm);
 		m[2] = _mm_and_ps (a - b + c - d, (__m128) mask);
 	}
 	m[3] = (vec4f_t) { 0, 0, 0, 1 };
