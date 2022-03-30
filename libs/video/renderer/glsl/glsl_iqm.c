@@ -225,9 +225,9 @@ glsl_R_DrawIQM (entity_t *ent)
 	entorigin = mat[3];
 	mmulf (mvp_mat, iqm_vp, mat);
 
-	R_LightPoint (&r_refdef.worldmodel->brush, &entorigin[0]);//FIXME min_light?
+	R_LightPoint (&r_refdef.worldmodel->brush, entorigin);//FIXME min_light?
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
-	R_FindNearLights (&entorigin[0], MAX_IQM_LIGHTS, lights);//FIXME
+	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
 	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,

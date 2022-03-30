@@ -52,7 +52,7 @@ spritedesc_t r_spritedesc;
 
 
 static void
-R_RotateSprite (const vec3_t relvieworg, float beamlength, vec3_t org)
+R_RotateSprite (vec4f_t relvieworg, float beamlength, vec3_t org)
 {
 	vec3_t      vec;
 
@@ -244,25 +244,27 @@ void
 R_DrawSprite (entity_t *ent)
 {
 	msprite_t  *sprite = ent->renderer.model->cache.data;
-	vec3_t      relvieworg;
 
-	VectorSubtract (r_refdef.frame.position, r_entorigin, relvieworg);
+	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
 
 	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, &ent->animation);
 
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-	if (!R_BillboardFrame (ent, sprite->type, relvieworg,
-						   r_spritedesc.vup,
-						   r_spritedesc.vright,
-						   r_spritedesc.vfwd)) {
+	vec4f_t     up = {};
+	vec4f_t     right = {};
+	vec4f_t     fwd = {};
+	if (!R_BillboardFrame (ent, sprite->type, cameravec, &up, &right, &fwd)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
+	VectorCopy (up, r_spritedesc.vup);//FIXME
+	VectorCopy (right, r_spritedesc.vright);
+	VectorCopy (fwd, r_spritedesc.vfwd);
 
 	vec3_t      org;
-	R_RotateSprite (relvieworg, sprite->beamlength, org);
+	R_RotateSprite (cameravec, sprite->beamlength, org);
 
 	R_SetupAndDrawSprite (org);
 }

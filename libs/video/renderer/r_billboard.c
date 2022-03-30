@@ -46,10 +46,10 @@
 
 
 int
-R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
-				  vec3_t bbup, vec3_t bbright, vec3_t bbfwd)
+R_BillboardFrame (entity_t *ent, int orientation, vec4f_t cameravec,
+				  vec4f_t *bbup, vec4f_t *bbright, vec4f_t *bbfwd)
 {
-	vec3_t      tvec;
+	vec4f_t     tvec;
 	float       dot;
 
 	switch (orientation) {
@@ -57,23 +57,21 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			// the billboard has its up vector parallel with world up, and
 			// its right vector perpendicular to cameravec.
 			// Undefined if the camera is too close to the entity.
-			VectorNegate (cameravec, tvec);
-			VectorNormalize (tvec);
+			tvec = -normalf (cameravec);
 			dot = tvec[2];		// DotProduct (tvec, world up)
 			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree)
 				return 0;
-			VectorSet (0, 0, 1, bbup);
+			*bbup = (vec4f_t) { 0, 0, 1, 0 };
 			//CrossProduct(bbup, -cameravec, bbright)
-			VectorSet (tvec[1], -tvec[0], 0, bbright);
-			VectorNormalize (bbright);
+			*bbright = normalf ((vec4f_t) { tvec[1], -tvec[0], 0, 0 });
 			//CrossProduct (bbright, bbup, bbfwd)
-			VectorSet (-bbright[1], bbright[0], 0, bbfwd);
+			*bbfwd = (vec4f_t) { -(*bbright)[1], (*bbright)[0], 0, 0};
 			break;
 		case SPR_VP_PARALLEL:
 			// the billboard always has the same orientation as the camera
-			VectorCopy (r_refdef.frame.up, bbup);
-			VectorCopy (r_refdef.frame.right, bbright);
-			VectorCopy (r_refdef.frame.forward, bbfwd);
+			*bbup = r_refdef.frame.up;
+			*bbright = r_refdef.frame.right;
+			*bbfwd = r_refdef.frame.forward;
 			break;
 		case SPR_VP_PARALLEL_UPRIGHT:
 			// the billboar has its up vector parallel with world up, and
@@ -82,10 +80,10 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			dot = r_refdef.frame.forward[2];
 			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree)
 				return 0;
-			VectorSet (0, 0, 1, bbup);
-			VectorSet (r_refdef.frame.forward[1], -r_refdef.frame.forward[0], 0, bbright);
-			VectorNormalize (bbright);
-			VectorSet (-bbright[1], bbright[0], 0, bbfwd);
+			*bbup = (vec4f_t) { 0, 0, 1, 0 };
+			*bbright = normalf ((vec4f_t) {r_refdef.frame.forward[1],
+										   -r_refdef.frame.forward[0], 0, 0 });
+			*bbfwd = (vec4f_t) { -(*bbright)[1], (*bbright)[0], 0, 0};
 			break;
 		case SPR_ORIENTED:
 			{
@@ -93,9 +91,9 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 				// entity's orientation.
 				mat4f_t     mat;
 				Transform_GetWorldMatrix (ent->transform, mat);
-				VectorCopy (mat[0], bbfwd);
-				VectorNegate (mat[1], bbright);
-				VectorCopy (mat[2], bbup);
+				*bbfwd = mat[0];
+				*bbright = mat[1];
+				*bbup = mat[2];
 			}
 			break;
 		case SPR_VP_PARALLEL_ORIENTED:
@@ -108,9 +106,9 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 				// FIXME needs proper testing (need to find, make, or fake a
 				// parallel oriented sprite)
 				mmulf (spmat, r_refdef.camera, entmat);
-				VectorCopy (spmat[0], bbfwd);
-				VectorNegate (spmat[1], bbright);
-				VectorCopy (spmat[1], bbup);
+				*bbfwd = spmat[0];
+				*bbright = spmat[1];
+				*bbup = spmat[2];
 			}
 			break;
 		default:

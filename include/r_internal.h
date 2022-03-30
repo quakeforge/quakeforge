@@ -62,7 +62,7 @@ void R_LoadSkys (const char *);
 
 void R_ClearEfrags (void);
 
-void R_FindNearLights (const vec3_t pos, int count, dlight_t **lights);
+void R_FindNearLights (vec4f_t pos, int count, dlight_t **lights);
 dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);
 void R_ClearDlights (void);
@@ -78,8 +78,9 @@ void R_MarkLeaves (void);
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);
 
-int R_BillboardFrame (struct entity_s *ent, int orientation, const vec3_t cameravec,
-					  vec3_t bbup, vec3_t bbright, vec3_t bbfwd);
+int R_BillboardFrame (struct entity_s *ent, int orientation,
+					  vec4f_t cameravec,
+					  vec4f_t *bbup, vec4f_t *bbright, vec4f_t *bbfwd);
 mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,
 								  const struct animation_s *animation);
 

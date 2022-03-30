@@ -52,7 +52,7 @@ vec3_t      ambientcolor;
 unsigned int r_maxdlights;
 
 void
-R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
+R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 {
 	float      *scores = alloca (count * sizeof (float));
 	float       score;
@@ -399,8 +399,8 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 }
 
 static int
-RecursiveLightPoint (mod_brush_t *brush, mnode_t *node, const vec3_t start,
-					 const vec3_t end)
+RecursiveLightPoint (mod_brush_t *brush, mnode_t *node, vec4f_t start,
+					 vec4f_t end)
 {
 	unsigned    i;
 	int         r, s, t, ds, dt, side;
@@ -408,7 +408,6 @@ RecursiveLightPoint (mod_brush_t *brush, mnode_t *node, const vec3_t start,
 	plane_t    *plane;
 	msurface_t *surf;
 	mtexinfo_t *tex;
-	vec3_t      mid;
 loop:
 	if (node->contents < 0)
 		return -1;						// didn't hit anything
@@ -425,9 +424,7 @@ loop:
 	}
 
 	frac = front / (front - back);
-	mid[0] = start[0] + (end[0] - start[0]) * frac;
-	mid[1] = start[1] + (end[1] - start[1]) * frac;
-	mid[2] = start[2] + (end[2] - start[2]) * frac;
+	vec4f_t     mid = start + (end - start) * frac;
 
 	// go down front side
 	r = RecursiveLightPoint (brush, node->children[side], start, mid);
@@ -476,22 +473,16 @@ loop:
 }
 
 int
-R_LightPoint (mod_brush_t *brush, const vec3_t p)
+R_LightPoint (mod_brush_t *brush, vec4f_t p)
 {
-	vec3_t      end;
-	int         r;
-
 	if (!brush->lightdata) {
 		// allow dlights to have some effect, so don't go /quite/ fullbright
 		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 200;
 		return 200;
 	}
 
-	end[0] = p[0];
-	end[1] = p[1];
-	end[2] = p[2] - 2048;
-
-	r = RecursiveLightPoint (brush, brush->nodes, p, end);
+	vec4f_t     end = p - (vec4f_t) { 0, 0, 2048, 0 };
+	int         r = RecursiveLightPoint (brush, brush->nodes, p, end);
 
 	if (r == -1)
 		r = 0;

@@ -161,7 +161,7 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	entorigin = Transform_GetWorldPosition (ent->transform);
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	light = R_LightPoint (&r_refdef.worldmodel->brush, &entorigin[0]);
+	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
 	*ambient = max (light, max (ent->renderer.model->min_light,
 								ent->renderer.min_light) * 128);
 	*shadelight = *ambient;

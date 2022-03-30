@@ -62,7 +62,7 @@ int         r_framecount = 1;			// so frame counts initialized to 0 don't match
 vec3_t      modelorg;			// modelorg is the viewpoint relative to
 								// the currently rendering entity
 vec3_t      base_modelorg;
-vec3_t      r_entorigin;		// the currently rendering entity in world
+vec4f_t     r_entorigin;		// the currently rendering entity in world
 								// coordinates
 // screen size info
 refdef_t    r_refdef;

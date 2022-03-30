@@ -227,8 +227,7 @@ glsl_R_DrawSprite (entity_t *ent)
 	vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
 	cameravec = r_refdef.frame.position - origin;
 
-	if (!R_BillboardFrame (ent, sprite->type, &cameravec[0],
-						   &sup[0], &sright[0], &spn[0])) {
+	if (!R_BillboardFrame (ent, sprite->type, cameravec, &sup, &sright, &spn)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}

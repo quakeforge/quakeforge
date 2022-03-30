@@ -71,8 +71,7 @@ R_DrawSpriteModel_f (entity_t *e)
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (sprite, &e->animation);
 
-	if (!R_BillboardFrame (e, sprite->type, &cameravec[0],
-						   &up[0], &right[0], &pn[0])) {
+	if (!R_BillboardFrame (e, sprite->type, cameravec, &up, &right, &pn)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}

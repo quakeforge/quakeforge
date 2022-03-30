@@ -119,7 +119,7 @@ void R_DrawEntitiesOnList (struct entqueue_s *queue);
 
 extern	plane_t	screenedge[4];
 
-extern	vec3_t	r_entorigin;
+extern	vec4f_t r_entorigin;
 
 extern	int		r_visframecount;
 
@@ -307,7 +307,7 @@ void R_TimeRefresh_f (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
-int R_LightPoint (mod_brush_t *brush, const vec3_t p);
+int R_LightPoint (mod_brush_t *brush, vec4f_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);

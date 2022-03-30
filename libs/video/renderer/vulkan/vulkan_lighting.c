@@ -160,7 +160,7 @@ update_lights (vulkan_ctx_t *ctx)
 	light_data->distFactor2 = 1 / 16384.0;
 
 	light_data->lightCount = 0;
-	R_FindNearLights (&r_refdef.frame.position[0], MaxLights - 1, lights);
+	R_FindNearLights (r_refdef.frame.position, MaxLights - 1, lights);
 	for (int i = 0; i < MaxLights - 1; i++) {
 		if (!lights[i]) {
 			break;

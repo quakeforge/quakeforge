@@ -434,7 +434,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (scale[0] != 1.0) {
 		radius *= scale[0];
 	}
-	if (R_CullSphere (r_refdef.frustum, &origin[0], radius)) {//FIXME
+	if (R_CullSphere (r_refdef.frustum, (vec_t*)&origin, radius)) {//FIXME
 		return;
 	}
 
@@ -449,7 +449,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		float lightadj;
 
 		// get lighting information
-		R_LightPoint (&r_refdef.worldmodel->brush, &origin[0]);//FIXME
+		R_LightPoint (&r_refdef.worldmodel->brush, origin);//FIXME
 
 		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
 
