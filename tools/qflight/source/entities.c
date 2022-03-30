@@ -241,7 +241,7 @@ LoadEntities (void)
 		}
 
 		if (options.verbosity > 1 && entity->targetname)
-			printf ("%s %d %d\n", entity->targetname, entity->light,
+			printf ("%s %g %d\n", entity->targetname, entity->light,
 					entity->style);
 
 		// all fields have been parsed

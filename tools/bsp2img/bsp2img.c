@@ -820,7 +820,7 @@ render_map (bsp_t *bsp)
 		vert1 = &vertexlist[edgelist[i].v[0]];
 		vert2 = &vertexlist[edgelist[i].v[1]];
 		SUB (*vert1, *vert2, vect);
-		if (abs (tempf) < options.flat_threshold
+		if (fabsf (tempf) < options.flat_threshold
 			&& usearea > options.area_threshold
 			&& sqrt (DOT (vect, vect)) > options.linelen_threshold) {
 			float       offs0, offs1;

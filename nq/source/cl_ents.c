@@ -271,7 +271,7 @@ CL_RelinkEntities (void)
 			f = frac;
 			ent->old_origin = Transform_GetWorldPosition (ent->transform);
 			// If the delta is large, assume a teleport and don't lerp
-			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
+			if (fabs (delta[0]) > 100 || fabs (delta[1]) > 100
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				CL_TransformEntity (ent, new->scale / 16.0, new->angles,

@@ -240,7 +240,7 @@ CL_LinkPacketEntities (void)
 			vec4f_t     delta = new->origin - old->origin;
 			f = frac;
 			// If the delta is large, assume a teleport and don't lerp
-			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
+			if (fabs (delta[0]) > 100 || fabs (delta[1]) > 100
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				CL_TransformEntity (ent, new->scale / 16, new->angles,
