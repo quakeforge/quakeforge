@@ -251,7 +251,7 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	mid = (vec4f_t) ((vec4i_t) _mm_and_ps (y, (__m128) x) |
 					 (vec4i_t) _mm_and_ps (mid, (__m128) ~x));
 #endif
-	if (isnan (mid[0])) *(int *) 0 = 0;
+//	if (isnan (mid[0])) *(int *) 0 = 0;
 	return mid;
 }
 

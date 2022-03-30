@@ -324,7 +324,7 @@ gettokstart (char *str, int req, char delim)
 		start++;
 	}
 	if (*start == '\0')
-		return '\0';
+		return 0;
 	while (tok < req) {					// Stop when we get to the requested
 										// token
 		if (*++start == delim) {		// Increment pointer and test
@@ -334,7 +334,7 @@ gettokstart (char *str, int req, char delim)
 			tok++;
 		}
 		if (*start == '\0') {
-			return '\0';
+			return 0;
 		}
 	}
 	return start;
