@@ -195,7 +195,7 @@ get_iface_list (int sock)
 	if (getifaddrs (&ifa_head) < 0)
 		goto no_ifaddrs;
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
@@ -208,7 +208,7 @@ get_iface_list (int sock)
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
 		struct sockaddr_in *sa;
 
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
