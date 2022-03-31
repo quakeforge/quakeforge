@@ -120,6 +120,6 @@ void glsl_Skin_InitTranslations (void);
 void gl_Skin_SetupSkin (skin_t *skin, int cmap);
 void gl_Skin_ProcessTranslation (int cmap, const byte *translation);
 void gl_Skin_InitTranslations (void);
-int gl_Skin_Init_Textures (int base);
+void gl_Skin_Init_Textures (void);
 void gl_Skin_SetPlayerSkin (int width, int height, const byte *data);
 #endif// __mod_internal_h

@@ -79,6 +79,9 @@ typedef struct vulkan_ctx_s {
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);
+	// make a queue?
+	void       *capture_complete;// really capfunc_t
+	void       *capture_complete_data;
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

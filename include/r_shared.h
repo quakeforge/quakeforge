@@ -54,7 +54,6 @@ extern void	R_DrawLine (polyvert_t *polyvert0, polyvert_t *polyvert1);
 
 extern int		cachewidth;
 extern byte    *cacheblock;
-extern int		screenwidth;
 extern int      	r_init;
 
 extern float	pixelAspect;
@@ -70,9 +69,9 @@ extern byte color_white[4];
 extern byte color_black[4];
 
 extern	vec3_t	vup, base_vup;
-extern	vec3_t	vpn, base_vpn;
+extern	vec3_t	vfwd, base_vfwd;
 extern	vec3_t	vright, base_vright;
-extern	struct entity_s		*currententity;
+extern float r_viewmatrix[3][4];
 
 #define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES
@@ -105,7 +104,7 @@ typedef struct surf_s {
 	qboolean	insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
 
-	int			pad[2];				// to 64 bytes
+	int			pad[2];				// to 64 bytes (FIXME not for 64-bit)
 } surf_t;
 
 extern	surf_t	*surfaces, *surface_p, *surf_max;
@@ -136,9 +135,6 @@ extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 
 extern int r_skymade;
 extern void R_MakeSky (void);
-
-extern int gl_solidskytexture;
-extern int gl_alphaskytexture;
 
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001

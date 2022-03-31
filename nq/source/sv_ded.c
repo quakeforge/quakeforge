@@ -36,11 +36,15 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "client/world.h"
+
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
 client_state_t cl;
 client_static_t cls;
+
+worldscene_t cl_world;
 
 cvar_t     *cl_name;
 cvar_t     *cl_writecfg;
@@ -141,8 +145,7 @@ IN_ProcessEvents (void)
 }
 
 void
-S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up, const byte *ambient_sound_level)
+S_Update (struct transform_s *ere, const byte *ambient_sound_level)
 {
 }
 
@@ -161,4 +164,9 @@ __attribute__((const)) plugin_t *
 console_client_PluginInfo (void)
 {
 	return 0;
+}
+
+void
+R_DecayLights (double frametime)
+{
 }

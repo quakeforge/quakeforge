@@ -44,6 +44,7 @@ typedef struct glsliqm_s {
 	iqmvertexarray *color;
 } gliqm_t;
 
-void gl_R_DrawIQMModel (entity_t *ent);
+struct entity_s;
+void gl_R_DrawIQMModel (struct entity_s *ent);
 
 #endif//__QF_GL_qf_iqm_h

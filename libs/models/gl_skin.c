@@ -60,8 +60,8 @@ typedef struct {
 	qboolean    fb;
 } glskin_t;
 
-static int skin_textures;
-static int skin_fb_textures;
+static GLuint skin_textures[MAX_TRANSLATIONS];
+static GLuint skin_fb_textures[MAX_TRANSLATIONS];
 static byte skin_cmap[MAX_TRANSLATIONS][256];
 
 static glskin_t skins[MAX_TRANSLATIONS];
@@ -189,10 +189,10 @@ build_skin (skin_t *skin, int cmap)
 	if (!s->tex)	// we haven't loaded the player model yet
 		return;
 
-	texnum = skin_textures + cmap;
+	texnum = skin_textures[cmap];
 	fb_texnum = 0;
 	if (s->fb)
-		fb_texnum = skin_fb_textures + cmap;
+		fb_texnum = skin_fb_textures[cmap];
 	if (skin) {
 		skin->texnum = texnum;
 		skin->auxtex = fb_texnum;
@@ -245,9 +245,9 @@ gl_Skin_SetupSkin (skin_t *skin, int cmap)
 	changed = (s->tex != skin->texels);
 	s->tex = skin->texels;
 	if (!changed) {
-		skin->texnum = skin_textures + cmap;
+		skin->texnum = skin_textures[cmap];
 		if (s->fb)
-			skin->auxtex = skin_fb_textures + cmap;
+			skin->auxtex = skin_fb_textures[cmap];
 		return;
 	}
 	if (s->tex)
@@ -260,12 +260,9 @@ gl_Skin_InitTranslations (void)
 {
 }
 
-int
-gl_Skin_Init_Textures (int base)
+void
+gl_Skin_Init_Textures (void)
 {
-	skin_textures = base;
-	base += MAX_TRANSLATIONS;
-	skin_fb_textures = base;
-	base += MAX_TRANSLATIONS;
-	return base;
+	qfglGenTextures (MAX_TRANSLATIONS, skin_textures);
+	qfglGenTextures (MAX_TRANSLATIONS, skin_fb_textures);
 }

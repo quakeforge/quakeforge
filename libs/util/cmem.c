@@ -175,9 +175,9 @@ line_free (memsuper_t *super, memblock_t *block, void *mem)
 
 	for (l = &block->free_lines; *l; l = &(*l)->block_next) {
 		line = *l;
-		if (line->block_next && line->block_next < line) {
-			*(int *)0 = 0;
-		}
+//		if (line->block_next && line->block_next < line) {
+//			*(int *)0 = 0;
+//		}
 		if ((size_t) mem + size < (size_t) line) {
 			// line to be freed is below the free line
 			break;
@@ -206,10 +206,10 @@ line_free (memsuper_t *super, memblock_t *block, void *mem)
 			link_free_line (super, line);
 			return;
 		}
-		if ((size_t) mem >= (size_t) line
-			&& (size_t) mem < (size_t) line + line->size) {
-			*(int *) 0 = 0;
-		}
+//		if ((size_t) mem >= (size_t) line
+//			&& (size_t) mem < (size_t) line + line->size) {
+//			*(int *) 0 = 0;
+//		}
 		line = 0;
 	}
 	memline_t  *memline = (memline_t *) mem;
@@ -326,9 +326,9 @@ cmemalloc (memsuper_t *super, size_t size)
 static void
 unlink_block (memblock_t *block)
 {
-	if (!block->free_lines || block->free_lines->block_next) {
-		*(int *) 0 = 0;
-	}
+//	if (!block->free_lines || block->free_lines->block_next) {
+//		*(int *) 0 = 0;
+//	}
 	unlink_line (block->free_lines);
 
 	if (block->next) {

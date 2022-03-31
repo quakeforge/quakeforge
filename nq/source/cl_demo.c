@@ -48,6 +48,8 @@
 
 #include "compat.h"
 
+#include "client/world.h"
+
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
@@ -105,7 +107,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	len = LittleLong (msg->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i = 0; i < 3; i++) {
-		f = LittleFloat (cl.viewstate.angles[i]);
+		f = LittleFloat (cl.viewstate.player_angles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
 	Qwrite (cls.demofile, msg->data, msg->cursize);
@@ -338,8 +340,8 @@ demo_default_name (const char *argv1)
 	time (&tim);
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
-	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->path);
+	// the leading path-name is to be removed from cl_world.worldmodel->name
+	mapname = QFS_SkipPath (cl_world.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended

@@ -683,7 +683,7 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 	MSG_WriteByte (msg, num);
 	MSG_WriteShort (msg, pflags);
 
-	MSG_WriteCoordV (msg, &pl->es.origin[0]);//FIXME
+	MSG_WriteCoordV (msg, (vec_t*)&pl->es.origin);//FIXME
 	pl->es.origin[3] = 1;
 
 	MSG_WriteByte (msg, pl->es.frame);

@@ -33,6 +33,7 @@
 #include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "d_local.h"
@@ -54,7 +55,7 @@ D_SurfaceCacheAddress (void)
 }
 
 int
-D_SurfaceCacheForRes (void *data, int width, int height)
+D_SurfaceCacheForRes (int width, int height)
 {
 	int         size, pix;
 
@@ -96,7 +97,7 @@ D_ClearCacheGuard (void)
 }
 
 void
-D_InitCaches (void *data, void *buffer, int size)
+D_InitCaches (void *buffer, int size)
 {
 	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
 
@@ -107,8 +108,6 @@ D_InitCaches (void *data, void *buffer, int size)
 	sc_base->next = NULL;
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
-
-	d_pzbuffer = vid.zbuffer;
 
 	D_ClearCacheGuard ();
 }
@@ -226,12 +225,12 @@ D_SCDump (void)
 #endif
 
 surfcache_t *
-D_CacheSurface (msurface_t *surface, int miplevel)
+D_CacheSurface (entity_t *ent, msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (currententity, surface);
+	r_drawsurf.texture = R_TextureAnimation (ent, surface);
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
@@ -282,7 +281,7 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
-	R_DrawSurface ();
+	R_DrawSurface (ent->transform);
 
 	return surface->cachespots[miplevel];
 }

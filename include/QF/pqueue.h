@@ -73,8 +73,8 @@
 
 #define PQUEUE_IS_FULL(queue)		\
 	({								\
-		__auto_type q = (queue);	\
-		q->size == q->maxSize;		\
+		__auto_type q_f = (queue);	\
+		q_f->size == q_f->maxSize;	\
 	})
 
 #define PQUEUE_PEEK(queue) ((queue)->a[0])

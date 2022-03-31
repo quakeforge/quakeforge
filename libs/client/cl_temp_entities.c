@@ -46,15 +46,17 @@
 
 #include "QF/plugin/vid_render.h"	//FIXME
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "client/effects.h"
 #include "client/entities.h"
 #include "client/particles.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
 typedef struct tent_s {
 	struct tent_s *next;
-	entity_t    ent;
+	entity_t   *ent;
 } tent_t;
 
 typedef struct {
@@ -146,12 +148,12 @@ CL_TEnts_Init (void)
 void
 CL_Init_Entity (entity_t *ent)
 {
-	if (ent->transform) {
-		Transform_Delete (ent->transform);
-	}
-	memset (ent, 0, sizeof (*ent));
+	memset (&ent->animation, 0, sizeof (ent->animation));
+	memset (&ent->visibility, 0, sizeof (ent->visibility));
+	memset (&ent->renderer, 0, sizeof (ent->renderer));
+	ent->active = 1;
+	ent->old_origin = (vec4f_t) {};
 
-	ent->transform = Transform_New (0);
 	ent->renderer.skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
 	ent->animation.pose1 = ent->animation.pose2 = -1;
@@ -161,9 +163,9 @@ static tent_t *
 new_temp_entity (void)
 {
 	tent_t     *tent = PR_RESNEW_NC (temp_entities);
-	tent->ent.transform = 0;
+	tent->ent = Scene_CreateEntity (cl_world.scene);
 	tent->next = 0;
-	CL_Init_Entity (&tent->ent);
+	CL_Init_Entity (tent->ent);
 	return tent;
 }
 
@@ -173,7 +175,7 @@ free_temp_entities (tent_t *tents)
 	tent_t    **t = &tents;
 
 	while (*t) {
-		Transform_Delete ((*t)->ent.transform);//FIXME reuse?
+		Scene_DestroyEntity (cl_world.scene, (*t)->ent);//FIXME reuse?
 		t = &(*t)->next;
 	}
 	*t = temp_entities._free;
@@ -211,8 +213,8 @@ beam_clear (beam_t *b)
 		tent_t     *t;
 
 		for (t = b->tents; t; t = t->next) {
-			r_funcs->R_RemoveEfrags (&t->ent);
-			t->ent.visibility.efrag = 0;
+			R_RemoveEfrags (t->ent);
+			t->ent->visibility.efrag = 0;
 		}
 		free_temp_entities (b->tents);
 		b->tents = 0;
@@ -259,17 +261,17 @@ beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 
 		vec4f_t     position = org + d * dist;
 		d += 1.0;
-		tent->ent.renderer.model = b->model;
+		tent->ent->renderer.model = b->model;
 		if (transform) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalTransform (tent->ent.transform, scale,
+			Transform_SetLocalTransform (tent->ent->transform, scale,
 										 qmulf (rotation,
 												beam_rolls[seed % 360]),
 										 position);
 		} else {
-			Transform_SetLocalPosition (tent->ent.transform, position);
+			Transform_SetLocalPosition (tent->ent->transform, position);
 		}
-		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
+		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 }
 
@@ -283,8 +285,8 @@ CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 
 	ent = MSG_ReadShort (net_message);
 
-	MSG_ReadCoordV (net_message, &start[0]);//FIXME
-	MSG_ReadCoordV (net_message, &end[0]);//FIXME
+	MSG_ReadCoordV (net_message, (vec_t*)&start);//FIXME
+	MSG_ReadCoordV (net_message, (vec_t*)&end);//FIXME
 	start[3] = end[3] = 1;//FIXME
 
 	to = 0;
@@ -338,17 +340,17 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			break;
 		case TE_Blood:
 			count = MSG_ReadByte (net_message) * 20;
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->BloodPuffEffect (position, count);
 			break;
 		case TE_Explosion:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 
 			// particles
 			clp_funcs->ParticleExplosion (position);
 
 			// light
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 350;
@@ -359,7 +361,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			}
 
 			// sound
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 
 			// sprite
 			to = new_tent_object ();
@@ -373,17 +375,17 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			if (!cl_spr_explod->cache.data) {
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			}
-			ex->tent->ent.renderer.model = cl_spr_explod;
-			Transform_SetLocalPosition (ex->tent->ent.transform,//FIXME
+			ex->tent->ent->renderer.model = cl_spr_explod;
+			Transform_SetLocalPosition (ex->tent->ent->transform,//FIXME
 										(vec4f_t) {VectorExpand (position), 1});
 			break;
 		case TE_Explosion2:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			clp_funcs->ParticleExplosion2 (position, colorStart, colorLength);
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (!dl)
 				break;
 			VectorCopy (position, dl->origin);
@@ -396,12 +398,12 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			dl->color[3] = 0.7;
 			break;
 		case TE_Explosion3:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			MSG_ReadCoordV (net_message, color);		// OUCH!
 			color[3] = 0.7;
 			clp_funcs->ParticleExplosion (position);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
-			dl = r_funcs->R_AllocDlight (0);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 350;
@@ -411,21 +413,21 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			}
 			break;
 		case TE_Gunshot1:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->GunshotEffect (position, 20);
 			break;
 		case TE_Gunshot2:
 			count = MSG_ReadByte (net_message) * 20;
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->GunshotEffect (position, count);
 			break;
 		case TE_KnightSpike:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->KnightSpikeEffect (position);
-			S_StartSound (-1, 0, cl_sfx_knighthit, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_knighthit, position, 1, 1);
 			break;
 		case TE_LavaSplash:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->LavaSplash (position);
 			break;
 		case TE_Lightning1:
@@ -442,10 +444,10 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			CL_ParseBeam (net_message, Mod_ForName (name, true), time, ctx);
 			break;
 		case TE_LightningBlood:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 
 			// light
-			dl = r_funcs->R_AllocDlight (0);
+			dl = R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (position, dl->origin);
 				dl->radius = 150;
@@ -457,7 +459,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			clp_funcs->LightningBloodEffect (position);
 			break;
 		case TE_Spike:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->SpikeEffect (position);
 			{
 				int		i;
@@ -469,11 +471,11 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				} else {
 					sound = cl_sfx_tink1;
 				}
-				S_StartSound (-1, 0, sound, &position[0], 1, 1);
+				S_StartSound (-1, 0, sound, position, 1, 1);
 			}
 			break;
 		case TE_SuperSpike:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->SuperSpikeEffect (position);
 			{
 				int		i;
@@ -485,23 +487,23 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				} else {
 					sound = cl_sfx_tink1;
 				}
-				S_StartSound (-1, 0, sound, &position[0], 1, 1);
+				S_StartSound (-1, 0, sound, position, 1, 1);
 			}
 			break;
 		case TE_TarExplosion:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->BlobExplosion (position);
 
-			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			break;
 		case TE_Teleport:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->TeleportSplash (position);
 			break;
 		case TE_WizSpike:
-			MSG_ReadCoordV (net_message, &position[0]);
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->WizSpikeEffect (position);
-			S_StartSound (-1, 0, cl_sfx_wizhit, &position[0], 1, 1);
+			S_StartSound (-1, 0, cl_sfx_wizhit, position, 1, 1);
 			break;
 	}
 }
@@ -597,7 +599,7 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalRotation (t->ent.transform,
+			Transform_SetLocalRotation (t->ent->transform,
 										qmulf (b->rotation,
 											   beam_rolls[seed % 360]));
 		}
@@ -614,11 +616,11 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 	for (to = &cl_explosions; *to; ) {
 		ex = &(*to)->to.ex;
-		ent = &ex->tent->ent;
+		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
 		if (f >= ent->renderer.model->numframes) {
 			tent_obj_t *_to;
-			r_funcs->R_RemoveEfrags (ent);
+			R_RemoveEfrags (ent);
 			ent->visibility.efrag = 0;
 			free_temp_entities (ex->tent);
 			_to = *to;
@@ -630,7 +632,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 		ent->animation.frame = f;
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&ctx->worldModel->brush, ent);
+			R_AddEfrags (&cl_world.worldmodel->brush, ent);
 		}
 	}
 }
@@ -653,7 +655,7 @@ CL_ParseParticleEffect (qmsg_t *net_message)
 	int         i, count, color;
 	vec4f_t     org = {0, 0, 0, 1}, dir = {};
 
-	MSG_ReadCoordV (net_message, &org[0]);
+	MSG_ReadCoordV (net_message, (vec_t*)&org);//FIXME
 	for (i = 0; i < 3; i++)
 		dir[i] = ((signed char) MSG_ReadByte (net_message)) * (15.0 / 16.0);
 	count = MSG_ReadByte (net_message);
@@ -671,8 +673,8 @@ CL_ClearProjectiles (void)
 	tent_t     *tent;
 
 	for (tent = cl_projectiles; tent; tent = tent->next) {
-		r_funcs->R_RemoveEfrags (&tent->ent);
-		tent->ent.visibility.efrag = 0;
+		R_RemoveEfrags (tent->ent);
+		tent->ent->visibility.efrag = 0;
 	}
 	free_temp_entities (cl_projectiles);
 	cl_projectiles = 0;
@@ -708,7 +710,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		*tail = tent;
 		tail = &tent->next;
 
-		pr = &tent->ent;
+		pr = tent->ent;
 		pr->renderer.model = cl_spike;
 		pr->renderer.skin = 0;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
@@ -717,9 +719,9 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
 		angles[1] = bits[5] * (360.0 / 256.0);
 		angles[2] = 0;
-		CL_TransformEntity (&tent->ent, 1, angles, position);
+		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
+		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
 	}
 
 	*tail = cl_projectiles;

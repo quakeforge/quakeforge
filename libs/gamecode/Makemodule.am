@@ -21,7 +21,7 @@ libs_gamecode_libQFgamecode_la_SOURCES= \
 	libs/gamecode/pr_v6p_opcode.c \
 	libs/gamecode/pr_zone.c
 
-noinst_PYTHON += $(opcodes_py) $(convert_py) $(hops_py)
+noinst_PYTHON += $(opcodes_py) $(convert_py) $(hops_py) $(swizzle_py)
 
 opcodes_py = $(srcdir)/libs/gamecode/opcodes.py
 pr_opcode_cinc = $(top_builddir)/libs/gamecode/pr_opcode.cinc
@@ -37,11 +37,25 @@ pr_convert_cinc = $(top_builddir)/libs/gamecode/pr_convert.cinc
 hops_py = $(srcdir)/libs/gamecode/hops.py
 pr_hops_cinc = $(top_builddir)/libs/gamecode/pr_hops.cinc
 
+swizzle_py = $(srcdir)/libs/gamecode/swizzle.py
+pr_swizzle32_cinc = $(top_builddir)/libs/gamecode/pr_swizzle32.cinc
+pr_swizzle64_cinc = $(top_builddir)/libs/gamecode/pr_swizzle64.cinc
+
 BUILT_SOURCES += \
 	$(pr_opcode_cinc) \
 	$(pr_opcode_hinc) \
 	$(pr_convert_cinc) \
-	$(pr_hops_cinc)
+	$(pr_hops_cinc) \
+	$(pr_swizzle32_cinc) \
+	$(pr_swizzle64_cinc)
+
+CLEANFILES += \
+	$(pr_opcode_cinc) \
+	$(pr_opcode_hinc) \
+	$(pr_convert_cinc) \
+	$(pr_hops_cinc) \
+	$(pr_swizzle32_cinc) \
+	$(pr_swizzle64_cinc)
 
 $(pr_opcode_cinc): $(opcodes_py)
 	$(V_PY)$(PYTHON) $(opcodes_py) table > $(pr_opcode_cinc).t && \
@@ -59,3 +73,11 @@ $(pr_convert_cinc): $(convert_py)
 $(pr_hops_cinc): $(hops_py)
 	$(V_PY)$(PYTHON) $(hops_py) table > $(pr_hops_cinc).t && \
 	$(am__mv) $(pr_hops_cinc).t $(pr_hops_cinc)
+
+$(pr_swizzle32_cinc): $(swizzle_py)
+	$(V_PY)$(PYTHON) $(swizzle_py) case int > $(pr_swizzle32_cinc).t && \
+	$(am__mv) $(pr_swizzle32_cinc).t $(pr_swizzle32_cinc)
+
+$(pr_swizzle64_cinc): $(swizzle_py)
+	$(V_PY)$(PYTHON) $(swizzle_py) case long > $(pr_swizzle64_cinc).t && \
+	$(am__mv) $(pr_swizzle64_cinc).t $(pr_swizzle64_cinc)

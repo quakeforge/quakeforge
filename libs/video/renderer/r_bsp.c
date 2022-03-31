@@ -39,10 +39,10 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "r_internal.h"
 
-mvertex_t  *r_pcurrentvertbase;
-mleaf_t    *r_viewleaf;
 static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
@@ -54,14 +54,14 @@ R_MarkLeaves (void)
 	mleaf_t     *leaf;
 	mnode_t     *node;
 	msurface_t **mark;
-	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
-	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
+	if (r_oldviewleaf == r_refdef.viewleaf && !r_novis->int_val)
 		return;
 
 	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-	if (!r_viewleaf)
+	r_oldviewleaf = r_refdef.viewleaf;
+	if (!r_refdef.viewleaf)
 		return;
 
 	if (r_novis->int_val) {
@@ -73,7 +73,7 @@ R_MarkLeaves (void)
 		}
 		vis = solid;
 	} else
-		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.renderer.model);
+		vis = Mod_LeafPVS (r_refdef.viewleaf, r_refdef.worldmodel);
 
 	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (vis, i)) {
@@ -116,7 +116,7 @@ R_TextureAnimation (const entity_t *entity, msurface_t *surf)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (vr_data.realtime * 10) % base->anim_total;
+	relative = (int) (r_data->realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {

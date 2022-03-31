@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -52,6 +49,7 @@
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
@@ -62,7 +60,7 @@
 static int          dlightdivtable[8192];
 static int			 gl_internalformat;				// 1 or 3
 static int          lightmap_bytes;				// 1, 3, or 4
-int          gl_lightmap_textures;
+GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
 
 // keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
@@ -80,9 +78,6 @@ static int	 lmshift = 7;
 void (*gl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
 							msurface_t *surf);
 
-extern void gl_multitexture_f (cvar_t *var);
-
-
 void
 gl_lightmap_init (void)
 {
@@ -93,23 +88,7 @@ gl_lightmap_init (void)
 	for (s = 1; s < 8192; s++)
 		dlightdivtable[s] = 1048576 / (s << 7);
 }
-/*
-static void
-R_RecursiveLightUpdate (mnode_t *node)
-{
-	int         c;
-	msurface_t *surf;
 
-	if (node->children[0]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[0]);
-	if (node->children[1]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[1]);
-	if ((c = node->numsurfaces))
-		for (surf = r_worldentity.model->surfaces + node->firstsurface; c;
-			 c--, surf++)
-			surf->cached_dlight = true;
-}
-*/
 static inline void
 R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 {
@@ -502,7 +481,7 @@ gl_R_CalcLightmaps (void)
 		if (!gl_lightmap_polys[i])
 			continue;
 		if (gl_lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 			GL_UploadLightmap (i);
 			gl_lightmap_modified[i] = false;
 		}
@@ -522,7 +501,7 @@ gl_R_BlendLightmaps (void)
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		for (sc = gl_lightmap_polys[i]; sc; sc = sc->lm_chain) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 			if (sc->transform) {
 				qfglPushMatrix ();
 				qfglLoadMatrixf (sc->transform);
@@ -550,8 +529,6 @@ void
 gl_overbright_f (cvar_t *var)
 {
 	int			 num;
-	model_t		*m;
-	entity_t    *ent;
 	mod_brush_t *brush;
 
 	if (!var)
@@ -598,32 +575,7 @@ gl_overbright_f (cvar_t *var)
 	if (!gl_R_BuildLightMap)
 		return;
 
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		m = ent->renderer.model;
-
-		if (m->type != mod_brush)
-			continue;
-		if (m->path[0] == '*')
-			continue;
-
-		brush = &m->brush;
-		for (unsigned j = 0; j < brush->numsurfaces; j++) {
-			msurface_t *surf = brush->surfaces + j;
-			if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
-				continue;
-
-			num = surf->lightmaptexturenum;
-			gl_lightmap_modified[num] = true;
-			gl_lightmap_rectchange[num].l = 0;
-			gl_lightmap_rectchange[num].t = 0;
-			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
-			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
-
-			gl_R_BuildLightMap (0, brush, surf);
-		}
-	}
-
-	brush = &r_worldentity.renderer.model->brush;
+	brush = &r_refdef.worldmodel->brush;
 
 	for (unsigned i = 0; i < brush->numsurfaces; i++) {
 		msurface_t *surf = brush->surfaces + i;
@@ -716,9 +668,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 
 	r_framecount = 1;					// no dlightcache
 
-	if (!gl_lightmap_textures) {
-		gl_lightmap_textures = gl_texture_number;
-		gl_texture_number += MAX_LIGHTMAPS;
+	if (!gl_lightmap_textures[0]) {
+		qfglGenTextures (MAX_LIGHTMAPS, gl_lightmap_textures);
 	}
 
 	switch (r_lightmap_components->int_val) {
@@ -758,7 +709,6 @@ GL_BuildLightmaps (model_t **models, int num_models)
 			continue;
 		}
 		brush = &m->brush;
-		r_pcurrentvertbase = brush->vertexes;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
@@ -768,7 +718,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 										   SURF_DRAWSKY))
 				continue;
 			GL_CreateSurfaceLightmap (brush, brush->surfaces + i);
-			GL_BuildSurfaceDisplayList (brush->surfaces + i);
+			GL_BuildSurfaceDisplayList (brush, brush->surfaces + i);
 		}
 	}
 
@@ -781,7 +731,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		gl_lightmap_rectchange[i].w = 0;
 		gl_lightmap_rectchange[i].h = 0;
-		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
+		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures[i]);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		if (gl_Anisotropy)

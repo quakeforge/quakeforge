@@ -108,7 +108,7 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 	msprite_t  *sprite = model->cache.data;
 	animation_t *animation = &ent->animation;
 
-	mat4f_t     mat;
+	mat4f_t     mat = {};
 	uint32_t    frame;
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
@@ -119,14 +119,10 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
 	mat[3] = Transform_GetWorldPosition (ent->transform);
-	vec4f_t     cameravec = {r_origin[0], r_origin[1], r_origin[2], 0 };
-	vec4f_t     svpn = {}, svright = {}, svup = {};
-	cameravec -= mat[3];
-	R_BillboardFrame (ent, sprite->type, &cameravec[0],
-					  &svup[0], &svright[0], &svpn[0]);
-	mat[2] = svup;
-	mat[1] = svright;
-	mat[0] = -svpn;
+	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
+	R_BillboardFrame (ent, sprite->type, cameravec,
+					  &mat[2], &mat[1], &mat[0]);
+	mat[0] = -mat[0];
 
 	emit_commands (sframe->cmdSet.a[QFV_spriteDepth],
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),

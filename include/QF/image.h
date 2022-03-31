@@ -46,7 +46,14 @@ typedef struct tex_s {
 	int         width;
 	int         height;
 	QFFormat    format;
-	int         loaded;			// 0 if size info only, otherwise data loaded
+	union {
+		struct {
+			int loaded:1;		// 0 if size info only, otherwise data loaded
+			int flipped:1;		// 1 if first pixel is bottom instead of top
+			int bgr:1;			// 1 if image is bgr (for tex_rgb)
+		};
+		int     flagbits;		// for eazy zeroing
+	};
 	const byte *palette;		// 0 = 32 bit, otherwise 8
 	byte       *data;
 } tex_t;

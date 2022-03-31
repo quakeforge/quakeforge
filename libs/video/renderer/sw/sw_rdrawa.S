@@ -412,12 +412,12 @@ LSideDone:
 // // causes it to incorrectly extend to the scan, and the extension of the
 // // line goes off the edge of the screen
 // // FIXME: is this actually needed?
-//	if (edge->u < r_refdef.vrect_x_adj_shift20)
-//		edge->u = r_refdef.vrect_x_adj_shift20;
+//	if (edge->u < r_refdef.vrectx_adj_shift20)
+//		edge->u = r_refdef.vrectx_adj_shift20;
 //	if (edge->u > r_refdef.vrectright_adj_shift20)
 //		edge->u = r_refdef.vrectright_adj_shift20;
 	movl	et_u(%edi),%eax
-	movl	C(r_refdef)+rd_vrect_x_adj_shift20,%edx
+	movl	C(r_refdef)+rd_vrectx_adj_shift20,%edx
 	cmpl	%edx,%eax
 	jl		LP4
 	movl	C(r_refdef)+rd_vrectright_adj_shift20,%edx
@@ -738,7 +738,7 @@ LTransformAndProject:
 //	
 //		lzi0 = 1.0 / transformed[2];
 	fld		%st(0)				// local[0] | local[0] | local[1] | local[2]
-	fmuls	C(vpn)+0			// zm0 | local[0] | local[1] | local[2]
+	fmuls	C(vfwd)+0			// zm0 | local[0] | local[1] | local[2]
 	fld		%st(1)				// local[0] | zm0 | local[0] | local[1] |
 								//  local[2]
 	fmuls	C(vright)+0			// xm0 | zm0 | local[0] | local[1] | local[2]
@@ -746,7 +746,7 @@ LTransformAndProject:
 	fmuls	C(vup)+0			// ym0 |  zm0 | xm0 | local[1] | local[2]
 	fld		%st(3)				// local[1] | ym0 |  zm0 | xm0 | local[1] |
 								//  local[2]
-	fmuls	C(vpn)+4			// zm1 | ym0 | zm0 | xm0 | local[1] |
+	fmuls	C(vfwd)+4			// zm1 | ym0 | zm0 | xm0 | local[1] |
 								//  local[2]
 	fld		%st(4)				// local[1] | zm1 | ym0 | zm0 | xm0 |
 								//  local[1] | local[2]
@@ -763,7 +763,7 @@ LTransformAndProject:
 	faddp	%st(0),%st(4)		// ym0 | zm2 | ym1 | xm2 | local[2]
 	faddp	%st(0),%st(2)		// zm2 | ym2 | xm2 | local[2]
 	fld		%st(3)				// local[2] | zm2 | ym2 | xm2 | local[2]
-	fmuls	C(vpn)+8			// zm3 | zm2 | ym2 | xm2 | local[2]
+	fmuls	C(vfwd)+8			// zm3 | zm2 | ym2 | xm2 | local[2]
 	fld		%st(4)				// local[2] | zm3 | zm2 | ym2 | xm2 | local[2]
 	fmuls	C(vright)+8			// xm3 | zm3 | zm2 | ym2 | xm2 | local[2]
 	fxch	%st(5)				// local[2] | zm3 | zm2 | ym2 | xm2 | xm3

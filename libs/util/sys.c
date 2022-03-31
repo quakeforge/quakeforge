@@ -60,6 +60,7 @@
 # include <pwd.h>
 #endif
 
+#include <inttypes.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -646,6 +647,48 @@ Sys_PageIn (void *ptr, size_t size)
 //#endif
 }
 
+#if defined(_WIN32) && !defined(_WIN64)
+// this is a hack to make memory allocations 16-byte aligned on 32-bit
+// systems (in particular for this case, windows) as vectors and
+// matrices require 16-byte alignment but system malloc (etc) provide only
+// 8-byte alignment.
+void *__cdecl
+calloc (size_t nume, size_t sizee)
+{
+	size_t size = nume * sizee;
+	void *mem = _aligned_malloc (size, 16);
+	memset (mem, 0, size);
+	return mem;
+}
+
+void __cdecl
+free (void *mem)
+{
+	_aligned_free (mem);
+}
+
+void *__cdecl
+malloc (size_t size)
+{
+	return _aligned_malloc (size, 16);
+}
+
+void *__cdecl
+realloc (void *mem, size_t size)
+{
+	return _aligned_realloc (mem, size, 16);
+}
+
+char *__cdecl
+strdup(const char *src)
+{
+	size_t      len = strlen (src);
+	char       *dup = malloc (len + 1);
+	strcpy (dup, src);
+	return dup;
+}
+#endif
+
 VISIBLE size_t
 Sys_PageSize (void)
 {
@@ -1112,4 +1155,30 @@ Sys_ExpandSquiggle (const char *path)
 	if (!home)
 		home = ".";
 	return nva ("%s%s", home, path + 1);	// skip leading ~
+}
+
+VISIBLE int
+Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
+				int mindigits)
+{
+	const int   flags = O_CREAT | O_EXCL | O_RDWR;
+	const int   mode = 0644;
+	int64_t     seq = 0;	// it should take a while to run out
+
+	if (!suffix) {
+		suffix = "";
+	}
+	while (1) {
+		dsprintf (name, "%s%0*"PRIi64"%s", prefix, mindigits, seq, suffix);
+		int         fd = open (name->str, flags, mode);
+		if (fd >= 0) {
+			return fd;
+		}
+		int         err = errno;
+		if (err != EEXIST) {
+			dsprintf (name, "%s", strerror (err));
+			return -err;
+		}
+		seq++;
+	}
 }

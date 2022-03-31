@@ -29,15 +29,17 @@
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
+#include <QF/simd/types.h>
 
 struct sfx_s;
+struct transform_s;
 
 typedef struct snd_render_funcs_s {
 	void      (*init) (void);
 	void      (*ambient_off) (void);
 	void      (*ambient_on) (void);
-	void      (*static_sound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
-	void      (*start_sound) (int entnum, int entchannel, struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
+	void      (*static_sound) (struct sfx_s *sfx, vec4f_t origin, float vol, float attenuation);
+	void      (*start_sound) (int entnum, int entchannel, struct sfx_s *sfx, const vec4f_t, float vol, float attenuation);
 	void      (*local_sound) (const char *s);
 	void      (*stop_sound) (int entnum, int entchannel);
 
@@ -47,8 +49,7 @@ typedef struct snd_render_funcs_s {
 	struct sfx_s *(*precache_sound) (const char *sample);
 	struct sfx_s *(*load_sound) (const char *name);
 
-	void      (*update) (const vec3_t origin, const vec3_t v_forward,
-						 const vec3_t v_right, const vec3_t v_up,
+	void      (*update) (struct transform_s *ear,
 						 const byte *ambient_sound_levels);
 	void      (*stop_all_sounds) (void);
 	void      (*extra_update) (void);

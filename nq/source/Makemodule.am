@@ -46,7 +46,6 @@ nq_cl_plugin_LIBS= \
 
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
-		libs/scene/libQFscene.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la
 
@@ -55,6 +54,7 @@ nq_server_LIBFILES= \
 		libs/models/libQFmodels.la
 
 nq_common_LIBFILES= \
+		libs/scene/libQFscene.la \
 		libs/net/libnet_main.la \
 		libs/console/libQFconsole.la \
 		libs/image/libQFimage.la \
@@ -71,8 +71,8 @@ nq_server_LIBS=	$(nq_server_LIBFILES) $(nq_common_LIBFILES) $(NET_LIBS)
 nq_server_LIB_DEPS=$(nq_server_LIBFILES) $(nq_common_LIBFILES)
 
 nq_source_libnq_client_a_SOURCES= \
-		nq/source/cl_chase.c nq/source/cl_cmd.c nq/source/cl_demo.c nq/source/cl_ents.c nq/source/cl_input.c nq/source/cl_main.c \
-		nq/source/cl_screen.c nq/source/cl_parse.c nq/source/cl_view.c nq/source/sbar.c
+		nq/source/cl_cmd.c nq/source/cl_demo.c nq/source/cl_ents.c nq/source/cl_input.c nq/source/cl_main.c \
+		nq/source/cl_screen.c nq/source/cl_parse.c nq/source/sbar.c
 
 nq_source_libnq_server_a_SOURCES= \
 		nq/source/host.c nq/source/host_cmd.c nq/source/sv_cl_phys.c nq/source/sv_cvar.c nq/source/sv_main.c \

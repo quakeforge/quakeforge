@@ -40,21 +40,17 @@
 */
 ///@{
 
-typedef struct hierarchyset_s DARRAY_TYPE (struct hierarchy_s *)
-	hierarchyset_t;
-typedef struct visibilityset_s DARRAY_TYPE (struct visibility_s *)
-	visibilityset_t;
-
 typedef struct scene_s {
 	struct scene_resources_s *const resources;
-	hierarchyset_t  roots;
-	xformset_t  transforms;
-	entityset_t entities;
-	visibilityset_t visibility;
+	struct hierarchy_s *hierarchies;
 } scene_t;
 
 scene_t *Scene_NewScene (void);
+void Scene_DeleteScene (scene_t *scene);
 struct entity_s *Scene_CreateEntity (scene_t *scene);
+struct entity_s *Scene_GetEntity (scene_t *scene, int id) __attribute__((pure));
+struct transform_s *Scene_GetTransform (scene_t *scene, int id) __attribute__((pure));
+void Scene_DestroyEntity (scene_t *scene, struct entity_s *entity);
 void Scene_FreeAllEntities (scene_t *scene);
 
 

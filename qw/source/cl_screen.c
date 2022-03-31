@@ -44,11 +44,14 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
+#include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
 #include "sbar.h"
 
+#include "client/hud.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/include/client.h"
 #include "qw/include/cl_parse.h"
@@ -75,14 +78,14 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.state == ca_active && cl.worldmodel) {
-		//FIXME
-		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
-								cl.worldmodel);
+	if (cls.state == ca_active && cl_world.worldmodel) {
+		vec4f_t     origin;
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		leaf = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		contents = leaf->contents;
 	}
-	V_SetContentsColor (contents);
-	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
+	V_SetContentsColor (&cl.viewstate, contents);
+	r_funcs->Draw_BlendScreen (cl.viewstate.cshift_color);
 }
 
 static void
@@ -105,10 +108,9 @@ scr_draw_views (void)
 
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
-	0, //SCR_DrawRam,
-	0, //SCR_DrawTurtle,
-	0, //SCR_DrawPause,
-	//CL_NetGraph,FIXME
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
 	Sbar_Draw,
 	SCR_CShift,
 	scr_draw_views,
@@ -182,11 +184,23 @@ CL_UpdateScreen (double realtime)
 			r_data->min_wateralpha = 1.0;
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
-	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
-	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
-	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
-	V_PrepBlend ();
-	V_RenderView ();
-	SCR_UpdateScreen (realtime, scr_funcs[index]);
+	if (cl.viewstate.flags & VF_GIB) {
+		cl.viewstate.height = 8;			// gib view height
+	} else if (cl.viewstate.flags & VF_DEAD) {
+		cl.viewstate.height = -16;			// corpse view height
+	} else {
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
+		if (cl.stdver)
+			cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
+	}
+
+	cl.viewstate.intermission = cl.intermission != 0;
+	V_PrepBlend (&cl.viewstate);
+	int         seq = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
+	frame_t    *frame = &cl.frames[seq];
+	cl.viewstate.movecmd[FORWARD] = frame->cmd.forwardmove;
+	V_RenderView (&cl.viewstate);
+	SCR_UpdateScreen (cl.viewstate.camera_transform,
+					  realtime, scr_funcs[index]);
 }

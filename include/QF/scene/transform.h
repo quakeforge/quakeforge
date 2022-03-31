@@ -33,6 +33,7 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
+#include "QF/scene/hierarchy.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
@@ -42,47 +43,234 @@
 ///@{
 
 typedef struct transform_s {
-	struct hierarchy_s *hierarchy;
-	uint32_t    index;
+	hierarchy_t *hierarchy;
+	struct scene_s *scene;	///< owning scene
+	uint32_t    index;	///< index in hierarchy
+	int32_t     id;		///< scene id
 } transform_t;
 
-transform_t *Transform_New (transform_t *parent);
+#define XFORMINLINE GNU89INLINE inline __attribute__((pure))
+
+transform_t *Transform_New (struct scene_s *scene, transform_t *parent);
+/* Deletes all child transforms, and transform names */
 void Transform_Delete (transform_t *transform);
-transform_t *Transform_NewNamed (transform_t *parent, const char *name);
-uint32_t Transform_ChildCount (const transform_t *transform) __attribute__((pure));
-transform_t *Transform_GetChild (const transform_t *transform,
-								 uint32_t childIndex) __attribute__((pure));
+transform_t *Transform_NewNamed (struct scene_s *scene, transform_t *parent,
+								 const char *name);
+XFORMINLINE uint32_t Transform_ChildCount (const transform_t *transform);
+XFORMINLINE transform_t *Transform_GetChild (const transform_t *transform,
+								 uint32_t childIndex);
 void Transform_SetParent (transform_t *transform, transform_t *parent);
-transform_t *Transform_GetParent (const transform_t *transform) __attribute__((pure));
+XFORMINLINE transform_t *Transform_GetParent (const transform_t *transform);
 void Transform_SetName (transform_t *transform, const char *name);
-const char *Transform_GetName (const transform_t *transform) __attribute__((pure));
+XFORMINLINE const char *Transform_GetName (const transform_t *transform);
 void Transform_SetTag (transform_t *transform, uint32_t tag);
-uint32_t Transform_GetTag (const transform_t *transform) __attribute__((pure));
-void Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat);
-void Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat);
-void Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat);
+XFORMINLINE uint32_t Transform_GetTag (const transform_t *transform);
+GNU89INLINE inline void Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat);
+GNU89INLINE inline void Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat);
+GNU89INLINE inline void Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat);
 // XXX the pointer may be invalidated by hierarchy updates
-const vec4f_t *Transform_GetWorldMatrixPtr (const transform_t *transform) __attribute__((pure));
-void Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat);
-vec4f_t Transform_GetLocalPosition (const transform_t *transform) __attribute__((pure));
+XFORMINLINE const vec4f_t *Transform_GetWorldMatrixPtr (const transform_t *transform);
+GNU89INLINE inline void Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat);
+XFORMINLINE vec4f_t Transform_GetLocalPosition (const transform_t *transform);
 void Transform_SetLocalPosition (transform_t *transform, vec4f_t position);
-vec4f_t Transform_GetLocalRotation (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_GetLocalRotation (const transform_t *transform);
 void Transform_SetLocalRotation (transform_t *transform, vec4f_t rotation);
-vec4f_t Transform_GetLocalScale (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_GetLocalScale (const transform_t *transform);
 void Transform_SetLocalScale (transform_t *transform, vec4f_t scale);
-vec4f_t Transform_GetWorldPosition (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_GetWorldPosition (const transform_t *transform);
 void Transform_SetWorldPosition (transform_t *transform, vec4f_t position);
-vec4f_t Transform_GetWorldRotation (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_GetWorldRotation (const transform_t *transform);
 void Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation);
-vec4f_t Transform_GetWorldScale (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_GetWorldScale (const transform_t *transform);
 void Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 								  vec4f_t rotation, vec4f_t position);
-// NOTE: these use X: right, Y: forward, Z:up
+// NOTE: these use X: forward, -Y: right, Z:up
 // aslo, not guaranteed to be normalized or even orthogonal
-vec4f_t Transform_Forward (const transform_t *transform) __attribute__((pure));
-vec4f_t Transform_Right (const transform_t *transform) __attribute__((pure));
-vec4f_t Transform_Up (const transform_t *transform) __attribute__((pure));
+XFORMINLINE vec4f_t Transform_Forward (const transform_t *transform);
+XFORMINLINE vec4f_t Transform_Right (const transform_t *transform);
+XFORMINLINE vec4f_t Transform_Up (const transform_t *transform);
 // no SetWorldScale because after rotations, non uniform scale becomes shear
+
+#undef XFORMINLINE
+#ifndef IMPLEMENT_TRANSFORM_Funcs
+#define XFORMINLINE GNU89INLINE inline
+#else
+#define XFORMINLINE VISIBLE
+#endif
+
+XFORMINLINE
+uint32_t
+Transform_ChildCount (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->childCount.a[transform->index];
+}
+
+XFORMINLINE
+transform_t *
+Transform_GetChild (const transform_t *transform, uint32_t childIndex)
+{
+	hierarchy_t *h = transform->hierarchy;
+	if (childIndex >= h->childCount.a[transform->index]) {
+		return 0;
+	}
+	return h->transform.a[h->childIndex.a[transform->index] + childIndex];
+}
+
+XFORMINLINE
+transform_t *
+Transform_GetParent (const transform_t *transform)
+{
+	if (transform->index == 0) {
+		return 0;
+	}
+	hierarchy_t *h = transform->hierarchy;
+	return h->transform.a[h->parentIndex.a[transform->index]];
+}
+
+XFORMINLINE
+const char *
+Transform_GetName (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->name.a[transform->index];
+}
+
+XFORMINLINE
+uint32_t
+Transform_GetTag (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->tag.a[transform->index];
+}
+
+XFORMINLINE
+void
+Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat)
+{
+	hierarchy_t *h = transform->hierarchy;
+	vec4f_t     *src = h->localMatrix.a[transform->index];
+	mat[0] = src[0];
+	mat[1] = src[1];
+	mat[2] = src[2];
+	mat[3] = src[3];
+}
+
+XFORMINLINE
+void
+Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat)
+{
+	hierarchy_t *h = transform->hierarchy;
+	vec4f_t     *src = h->localInverse.a[transform->index];
+	mat[0] = src[0];
+	mat[1] = src[1];
+	mat[2] = src[2];
+	mat[3] = src[3];
+}
+
+XFORMINLINE
+void
+Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat)
+{
+	hierarchy_t *h = transform->hierarchy;
+	vec4f_t     *src = h->worldMatrix.a[transform->index];
+	mat[0] = src[0];
+	mat[1] = src[1];
+	mat[2] = src[2];
+	mat[3] = src[3];
+}
+
+XFORMINLINE
+const vec4f_t *
+Transform_GetWorldMatrixPtr (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldMatrix.a[transform->index];
+}
+
+XFORMINLINE
+void
+Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat)
+{
+	hierarchy_t *h = transform->hierarchy;
+	vec4f_t     *src = h->worldInverse.a[transform->index];
+	mat[0] = src[0];
+	mat[1] = src[1];
+	mat[2] = src[2];
+	mat[3] = src[3];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetLocalPosition (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->localMatrix.a[transform->index][3];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetLocalRotation (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->localRotation.a[transform->index];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetLocalScale (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->localScale.a[transform->index];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetWorldPosition (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldMatrix.a[transform->index][3];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetWorldRotation (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldRotation.a[transform->index];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_GetWorldScale (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldScale.a[transform->index];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_Forward (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldMatrix.a[transform->index][0];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_Right (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return -h->worldMatrix.a[transform->index][1];
+}
+
+XFORMINLINE
+vec4f_t
+Transform_Up (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldMatrix.a[transform->index][2];
+}
 
 ///@}
 

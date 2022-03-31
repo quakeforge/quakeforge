@@ -57,6 +57,9 @@
 
 #include "compat.h"
 
+#include "client/hud.h"
+#include "client/world.h"
+
 #include "qw/bothdefs.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_parse.h"
@@ -90,15 +93,11 @@ qboolean    sb_showscores;
 qboolean    sb_showteamscores;
 
 int         sb_lines;				// scan lines to draw
-qboolean	hudswap;
 
 static qboolean largegame = false;
 
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
-cvar_t     *hud_sbar;
-cvar_t     *hud_swap;
-cvar_t     *hud_scoreboard_gravity;
 cvar_t     *hud_scoreboard_uid;
 cvar_t     *scr_centertime;
 cvar_t     *scr_printspeed;
@@ -121,7 +120,6 @@ static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
 static void
 hud_swap_f (cvar_t *var)
 {
-	hudswap = var->int_val;
 	if (var->int_val) {
 		view_setgravity (hud_armament_view, grav_southwest);
 		view_setgravity (stuff_view, grav_southeast);
@@ -196,10 +194,9 @@ calc_sb_lines (cvar_t *var)
 static void
 hud_sbar_f (cvar_t *var)
 {
-	r_data->vid->recalc_refdef = true;
 	if (r_data->scr_viewsize)
 		calc_sb_lines (r_data->scr_viewsize);
-	r_data->lineadj = var->int_val ? sb_lines : 0;
+	SCR_SetBottomMargin (var->int_val ? sb_lines : 0);
 	if (var->int_val) {
 		view_remove (main_view, main_view->children[0]);
 		view_insert (main_view, sbar_view, 0);
@@ -213,8 +210,9 @@ static void
 viewsize_f (cvar_t *var)
 {
 	calc_sb_lines (var);
-	if (hud_sbar)
-		r_data->lineadj = hud_sbar->int_val ? sb_lines : 0;
+	if (hud_sbar) {
+		SCR_SetBottomMargin (hud_sbar->int_val ? sb_lines : 0);
+	}
 }
 
 
@@ -307,13 +305,13 @@ draw_string (view_t *view, int x, int y, const char *str)
 {
 	r_funcs->Draw_String (view->xabs + x, view->yabs + y, str);
 }
-
+#if 0
 static inline void
 draw_altstring (view_t *view, int x, int y, const char *str)
 {
 	r_funcs->Draw_AltString (view->xabs + x, view->yabs + y, str);
 }
-
+#endif
 static inline void
 draw_nstring (view_t *view, int x, int y, const char *str, int n)
 {
@@ -1110,8 +1108,8 @@ Sbar_LogFrags (void)
 	if (t)
 		Qwrite (file, t, strlen (t));
 
-	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->path,
-			 cl.levelname);
+	Qprintf (file, "%s\n%s %s\n", cls.servername->str,
+			 cl_world.worldmodel->path, cl.levelname);
 
 	// scores
 	Sbar_SortFrags (true);

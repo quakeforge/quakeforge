@@ -503,46 +503,47 @@ draw_input (view_t *view)
 static void
 draw_download (view_t *view)
 {
-	char		dlbar[1024];
+	static dstring_t *dlbar;
 	const char *text;
-	size_t		i, j, x, y, n;
 
 	if (!con_data.dl_name || !*con_data.dl_name->str)
 		return;
 
+	if (!dlbar) {
+		dlbar = dstring_new ();
+	}
+
 	text = QFS_SkipPath(con_data.dl_name->str);
 
-	x = con_linewidth - ((con_linewidth * 7) / 40);
-	y = x - strlen (text) - 8;
-	i = con_linewidth / 3;
-	if (strlen (text) > i) {
-		y = x - i - 11;
-		strncpy (dlbar, text, i);
-		dlbar[i] = 0;
-		strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar));
-	} else
-		strncpy (dlbar, text, sizeof (dlbar));
-	strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar));
-	i = strlen (dlbar);
-	dlbar[i++] = '\x80';
+	int         line_size = con_linewidth - ((con_linewidth * 7) / 40);
+	int         dot_space = line_size - strlen (text) - 8;
+	const char *ellipsis = "";
+	int         txt_size = con_linewidth / 3;
+	if (strlen (text) > (size_t) txt_size) {
+		ellipsis = "...";
+		dot_space = line_size - txt_size - 11;
+	} else {
+		txt_size = strlen (text);
+	}
 	// where's the dot go?
-	if (con_data.dl_percent == 0)
-		n = 0;
-	else
-		n = y * *con_data.dl_percent / 100;
-	for (j = 0; j < y; j++)
-		if (j == n)
-			dlbar[i++] = '\x83';
-		else
-			dlbar[i++] = '\x81';
-	dlbar[i++] = '\x82';
-	dlbar[i] = 0;
+	int         n = 0;
+	if (con_data.dl_percent) {
+		n = dot_space * *con_data.dl_percent / 100;
+	}
+	char       *dots = alloca (dot_space + 1);
+	dots[dot_space] = 0;
+	for (int j = 0; j < dot_space; j++) {
+		if (j == n) {
+			dots[j++] = '\x83';
+		} else {
+			dots[j++] = '\x81';
+		}
+	}
 
-	snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
-			  " %02d%%", *con_data.dl_percent);
+	dsprintf (dlbar, "%.*s%s: \x80%s\x82 %02d%%", txt_size, text, ellipsis, dots, *con_data.dl_percent);
 
 	// draw it
-	r_funcs->Draw_String (view->xabs, view->yabs, dlbar);
+	r_funcs->Draw_String (view->xabs, view->yabs, dlbar->str);
 }
 
 static void
@@ -672,6 +673,9 @@ setup_console (void)
 		}
 	} else {
 		con_data.lines = lines;
+	}
+	if (con_data.lines > r_data->vid->conview->ylen) {
+		con_data.lines = r_data->vid->conview->ylen;
 	}
 	if (con_data.lines >= r_data->vid->conview->ylen - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
@@ -818,7 +822,7 @@ con_event_handler (const IE_event_t *ie_event, void *data)
 		[ie_key] = con_key_event,
 		[ie_mouse] = con_mouse_event,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}

@@ -2197,12 +2197,14 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			return e;
 		}
 
-		if (!type_size (t))
+		if (!type_size (t)) {
 			err = error (e, "type of formal parameter %d is incomplete",
 						 i + 1);
-		if (type_size (t) > type_size (&type_param))
+		}
+		if (value_too_large (t)) {
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
+		}
 		if (i < param_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->t.func.param_types[i]);

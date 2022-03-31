@@ -19,7 +19,7 @@ AC_CHECK_FUNCS(
 
 AC_FUNC_VA_COPY
 AC_FUNC__VA_COPY
-AH_VERBATIM([DEFINE_VA_COPY],
+AH_VERBATIM([HAVE__VA_COPY_],
 [#ifndef HAVE_VA_COPY
 # ifdef HAVE__VA_COPY
 #  define va_copy(d,s) __va_copy ((d), (s))

@@ -90,8 +90,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = ctx->lighting_context;
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
 
-	mleaf_t    *leaf = r_viewleaf;
-	model_t    *model = r_worldentity.renderer.model;
+	mleaf_t    *leaf = r_refdef.viewleaf;
+	model_t    *model = r_refdef.worldmodel;
 
 	if (!leaf || !model) {
 		return;
@@ -160,7 +160,7 @@ update_lights (vulkan_ctx_t *ctx)
 	light_data->distFactor2 = 1 / 16384.0;
 
 	light_data->lightCount = 0;
-	R_FindNearLights (r_origin, MaxLights - 1, lights);
+	R_FindNearLights (r_refdef.frame.position, MaxLights - 1, lights);
 	for (int i = 0; i < MaxLights - 1; i++) {
 		if (!lights[i]) {
 			break;
@@ -711,7 +711,7 @@ create_light_matrices (lightingctx_t *lctx)
 				mat4fidentity (proj);
 				break;
 			case ST_PLANE:
-				QFV_PerspectiveCos (proj, light->cone, 1);
+				QFV_PerspectiveCos (proj, light->cone);
 				break;
 		}
 		mmulf (lctx->lightmats.a[i], proj, view);

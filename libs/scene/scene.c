@@ -36,14 +36,13 @@
 #endif
 
 #include "QF/progs.h"	// for PR_RESMAP
+#include "QF/sys.h"
 
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-typedef struct scene_resources_s {
-	PR_RESMAP (entity_t) entities;
-} scene_resources_t;
+#include "scn_internal.h"
 
 scene_t *
 Scene_NewScene (void)
@@ -55,12 +54,22 @@ Scene_NewScene (void)
 	res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;
 
-	DARRAY_INIT (&scene->roots, 16);
-	DARRAY_INIT (&scene->transforms, 16);
-	DARRAY_INIT (&scene->entities, 16);
-	DARRAY_INIT (&scene->visibility, 16);
-
 	return scene;
+}
+
+void
+Scene_DeleteScene (scene_t *scene)
+{
+	Scene_FreeAllEntities (scene);
+
+	scene_resources_t *res = scene->resources;
+	for (unsigned i = 0; i < res->entities._size; i++) {
+		free (res->entities._map[i]);
+	}
+	free (res->entities._map);
+
+	free (scene->resources);
+	free (scene);
 }
 
 entity_t *
@@ -69,21 +78,70 @@ Scene_CreateEntity (scene_t *scene)
 	scene_resources_t *res = scene->resources;
 
 	entity_t   *ent = PR_RESNEW_NC (res->entities);
-	ent->transform = 0;
-	DARRAY_APPEND (&scene->entities, ent);
+	ent->transform = Transform_New (scene, 0);
+	ent->id = PR_RESINDEX (res->entities, ent);
+
+	hierarchy_t *h = ent->transform->hierarchy;
+	h->entity.a[ent->transform->index] = ent;
+
 	return ent;
+}
+
+entity_t *
+Scene_GetEntity (scene_t *scene, int id)
+{
+	scene_resources_t *res = scene->resources;
+	return PR_RESGET (res->entities, id);
+}
+
+static void
+destroy_entity (scene_t *scene, entity_t *ent)
+{
+	scene_resources_t *res = scene->resources;
+	// ent->transform will be trampled by the loop below
+	transform_t *transform = ent->transform;
+
+	// Transform_Delete takes care of all hierarchy stuff (transforms
+	// themselves, name strings, hierarchy table)
+	hierarchy_t *h = transform->hierarchy;
+	for (size_t i = 0; i < h->entity.size; i++) {
+		entity_t   *e = h->entity.a[0];
+		e->transform = 0;
+		PR_RESFREE (res->entities, ent);
+	}
+	Transform_Delete (transform);
+}
+
+void
+Scene_DestroyEntity (scene_t *scene, entity_t *ent)
+{
+	scene_resources_t *res = scene->resources;
+
+	if (PR_RESGET (res->entities, ent->id) != ent) {
+		Sys_Error ("Scene_DestroyEntity: entity not owned by scene");
+	}
+	// pull the transform out of the hierarchy to make it easier to destory
+	// all the child entities
+	Transform_SetParent (ent->transform, 0);
+	destroy_entity (scene, ent);
 }
 
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
-	scene_resources_t *res = scene->resources;
-	for (size_t i = 0; i < scene->entities.size; i++) {
-		entity_t   *ent = scene->entities.a[i];
-		if (ent->transform) {
-			Transform_Delete (ent->transform);
-			ent->transform = 0;
-		}
+	while (scene->hierarchies) {
+		hierarchy_t *h = scene->hierarchies;
+		// deleting the root entity deletes all child entities
+		entity_t   *ent = h->entity.a[0];
+		destroy_entity (scene, ent);
 	}
+	scene_resources_t *res = scene->resources;
 	PR_RESRESET (res->entities);
+}
+
+transform_t *
+Scene_GetTransform (scene_t *scene, int id)
+{
+	scene_resources_t *res = scene->resources;
+	return PR_RESGET (res->transforms, id);
 }

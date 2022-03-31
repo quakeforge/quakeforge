@@ -35,20 +35,28 @@
 # include <strings.h>
 #endif
 
+#define IMPLEMENT_TRANSFORM_Funcs
+
 #include "QF/scene/hierarchy.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-transform_t *
-Transform_New (transform_t *parent)
-{
-	transform_t *transform = malloc (sizeof (transform_t));
+#include "scn_internal.h"
 
+transform_t *
+Transform_New (scene_t *scene, transform_t *parent)
+{
+	scene_resources_t *res = scene->resources;
+	transform_t *transform = PR_RESNEW_NC (res->transforms);
+
+	transform->scene = scene;
+	transform->id = PR_RESINDEX (res->transforms, transform);
 	if (parent) {
 		transform->hierarchy = parent->hierarchy;
 		transform->index = Hierarchy_InsertHierarchy (parent->hierarchy, 0,
 													  parent->index, 0);
 	} else {
-		transform->hierarchy = Hierarchy_New (16, 1);//FIXME should be config
+		transform->hierarchy = Hierarchy_New (scene, 1);
 		transform->index = 0;
 	}
 	transform->hierarchy->transform.a[transform->index] = transform;
@@ -64,32 +72,16 @@ Transform_Delete (transform_t *transform)
 		// hierarchy so deleting it is easier
 		Transform_SetParent (transform, 0);
 	}
+	// Takes care of freeing the transforms
 	Hierarchy_Delete (transform->hierarchy);
 }
 
 transform_t *
-Transform_NewNamed (transform_t *parent, const char *name)
+Transform_NewNamed (scene_t *scene, transform_t *parent, const char *name)
 {
-	transform_t *transform = Transform_New (parent);
+	transform_t *transform = Transform_New (scene, parent);
 	Transform_SetName (transform, name);
 	return transform;
-}
-
-uint32_t
-Transform_ChildCount (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->childCount.a[transform->index];
-}
-
-transform_t *
-Transform_GetChild (const transform_t *transform, uint32_t childIndex)
-{
-	hierarchy_t *h = transform->hierarchy;
-	if (childIndex >= h->childCount.a[transform->index]) {
-		return 0;
-	}
-	return h->transform.a[h->childIndex.a[transform->index] + childIndex];
 }
 
 void
@@ -113,21 +105,11 @@ Transform_SetParent (transform_t *transform, transform_t *parent)
 		hierarchy_t *hierarchy = transform->hierarchy;
 		uint32_t    index = transform->index;
 
-		hierarchy_t *new_hierarchy = Hierarchy_New (16, 0);
+		hierarchy_t *new_hierarchy = Hierarchy_New (transform->scene, 0);
 		Hierarchy_InsertHierarchy (new_hierarchy, hierarchy, null_transform,
 								   index);
 		Hierarchy_RemoveHierarchy (hierarchy, index);
 	}
-}
-
-transform_t *
-Transform_GetParent (const transform_t *transform)
-{
-	if (transform->index == 0) {
-		return 0;
-	}
-	hierarchy_t *h = transform->hierarchy;
-	return h->transform.a[h->parentIndex.a[transform->index]];
 }
 
 void
@@ -141,67 +123,11 @@ Transform_SetName (transform_t *transform, const char *name)
 	h->name.a[transform->index] = strdup (name);
 }
 
-const char *
-Transform_GetName (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->name.a[transform->index];
-}
-
 void
 Transform_SetTag (transform_t *transform, uint32_t tag)
 {
 	hierarchy_t *h = transform->hierarchy;
 	h->tag.a[transform->index] = tag;
-}
-
-uint32_t
-Transform_GetTag (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->tag.a[transform->index];
-}
-
-void
-Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat)
-{
-	hierarchy_t *h = transform->hierarchy;
-	memcpy (mat, h->localMatrix.a[transform->index], sizeof (mat4f_t));
-}
-
-void
-Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat)
-{
-	hierarchy_t *h = transform->hierarchy;
-	memcpy (mat, h->localInverse.a[transform->index], sizeof (mat4f_t));
-}
-
-void
-Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat)
-{
-	hierarchy_t *h = transform->hierarchy;
-	memcpy (mat, h->worldMatrix.a[transform->index], sizeof (mat4f_t));
-}
-
-const vec4f_t *
-Transform_GetWorldMatrixPtr (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index];
-}
-
-void
-Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat)
-{
-	hierarchy_t *h = transform->hierarchy;
-	memcpy (mat, h->worldInverse.a[transform->index], sizeof (mat4f_t));
-}
-
-vec4f_t
-Transform_GetLocalPosition (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->localMatrix.a[transform->index][3];
 }
 
 void
@@ -211,13 +137,6 @@ Transform_SetLocalPosition (transform_t *transform, vec4f_t position)
 	h->localMatrix.a[transform->index][3] = position;
 	h->modified.a[transform->index] = 1;
 	Hierarchy_UpdateMatrices (h);
-}
-
-vec4f_t
-Transform_GetLocalRotation (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->localRotation.a[transform->index];
 }
 
 void
@@ -237,13 +156,6 @@ Transform_SetLocalRotation (transform_t *transform, vec4f_t rotation)
 	Hierarchy_UpdateMatrices (h);
 }
 
-vec4f_t
-Transform_GetLocalScale (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->localScale.a[transform->index];
-}
-
 void
 Transform_SetLocalScale (transform_t *transform, vec4f_t scale)
 {
@@ -261,13 +173,6 @@ Transform_SetLocalScale (transform_t *transform, vec4f_t scale)
 	Hierarchy_UpdateMatrices (h);
 }
 
-vec4f_t
-Transform_GetWorldPosition (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][3];
-}
-
 void
 Transform_SetWorldPosition (transform_t *transform, vec4f_t position)
 {
@@ -279,13 +184,6 @@ Transform_SetWorldPosition (transform_t *transform, vec4f_t position)
 	Transform_SetLocalPosition (transform, position);
 }
 
-vec4f_t
-Transform_GetWorldRotation (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldRotation.a[transform->index];
-}
-
 void
 Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation)
 {
@@ -295,13 +193,6 @@ Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation)
 		rotation = qmulf (qconjf (h->worldRotation.a[parent]), rotation);
 	}
 	Transform_SetLocalRotation (transform, rotation);
-}
-
-vec4f_t
-Transform_GetWorldScale (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldScale.a[transform->index];
 }
 
 void
@@ -321,25 +212,4 @@ Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 	h->localMatrix.a[transform->index][3] = position;
 	h->modified.a[transform->index] = 1;
 	Hierarchy_UpdateMatrices (h);
-}
-
-vec4f_t
-Transform_Forward (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][0];
-}
-
-vec4f_t
-Transform_Right (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return -h->worldMatrix.a[transform->index][1];
-}
-
-vec4f_t
-Transform_Up (const transform_t *transform)
-{
-	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][2];
 }

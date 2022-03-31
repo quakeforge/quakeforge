@@ -124,7 +124,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	ddef_t     *global_ddefs;
 	ddef_t     *field_ddefs;
 	// absolute minimum alignment is 4 bytes
-	int         alignment = sizeof (void *);
+	int         edict_alignment = __alignof__(pr_lvec4_t);
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -175,8 +175,10 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		// ensure SIMD types can be aligned (qfcc will align them within
 		// the progs memory map, so the engine needs to ensure the progs memory
 		// is aligned)
-		alignment = __alignof__(pr_lvec4_t);
+		edict_alignment = __alignof__(pr_lvec4_t);
 	}
+	// edict size is in words
+	edict_alignment /= 4;
 
 	// Some compilers (eg, FTE) put extra data between the header and the
 	// strings section. What's worse, they de-align the data.
@@ -187,15 +189,15 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->progs_size = size + offset_tweak;
 	Sys_MaskPrintf (SYS_dev, "Programs occupy %iK.\n", size / 1024);
 
-	pr->progs_size = align_size (pr->progs_size, alignment);
-	pr->zone_size = align_size (pr->zone_size, alignment);
-	pr->stack_size = align_size (pr->stack_size, alignment);
+	pr->progs_size = align_size (pr->progs_size, 64);
+	pr->zone_size = align_size (pr->zone_size, 64);
+	pr->stack_size = align_size (pr->stack_size, 64);
 
 	// size of edict asked for by progs, but at least 1
 	pr->pr_edict_size = max (1, progs.entityfields);
-	// edict size is in words
-	pr->pr_edict_size = align_size (pr->pr_edict_size, alignment / 4);
+	pr->pr_edict_size = align_size (pr->pr_edict_size, edict_alignment);
 	pr->pr_edict_area_size = pr->max_edicts * pr->pr_edict_size;
+	pr->pr_edict_area_size = align_size (pr->pr_edict_area_size, 64);
 
 	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
 	mem_size += pr->progs_size + pr->zone_size + pr->stack_size;

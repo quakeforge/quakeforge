@@ -118,32 +118,23 @@
 
 // refdef_t structure
 // !!! if this is changed, it must be changed in render.h too !!!
-#define rd_vrect					0
-#define rd_aliasvrect				20
-#define rd_vrectright				40
-#define rd_vrectbottom				44
-#define rd_aliasvrectright			48
-#define rd_aliasvrectbottom			52
-#define rd_vrectrightedge			56
-#define rd_fvrectx					60
-#define rd_fvrecty					64
-#define rd_fvrectx_adj				68
-#define rd_fvrecty_adj				72
-#define rd_vrect_x_adj_shift20		76
-#define rd_vrectright_adj_shift20	80
-#define rd_fvrectright_adj			84
-#define rd_fvrectbottom_adj			88
-#define rd_fvrectright				92
-#define rd_fvrectbottom				96
-#define rd_horizontalFieldOfView	100
-#define rd_xOrigin					104
-#define rd_yOrigin					108
-#define rd_viewposition				112
-#define rd_viewrotation				128
-#define rd_ambientlight				144
-#defin	rd_fov_x					148
-#defin	rd_fov_y					152
-#define rd_size						156	// sizeof (refdef_t)
+#define rd_fvrectx_adj				0
+#define rd_fvrecty_adj				4
+#define rd_fvrectright_adj			8
+#define rd_fvrectbottom_adj			12
+#define rd_aliasvrectleft			16
+#define rd_aliasvrecttop			20
+#define rd_aliasvrectright			24
+#define rd_aliasvrectbottom			28
+#define rd_vrectright				32
+#define rd_vrectbottom				36
+#define rd_vrectx_adj_shift20		40
+#define rd_vrectright_adj_shift20	44
+#define rd_fvrectx					48
+#define rd_fvrecty					52
+#define rd_fvrectright				56
+#define rd_fvrectbottom				60
+#define rd_size						64	// sizeof (refdef_t) FIXME make true
 
 // mtriangle_t structure
 // !!! if this is changed, it must be changed in model.h too !!!

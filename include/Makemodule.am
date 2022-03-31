@@ -64,12 +64,12 @@ EXTRA_DIST += \
 	include/r_internal.h \
 	include/r_local.h \
 	include/r_scrap.h \
-	include/r_screen.h \
 	include/r_shared.h \
 	include/regex.h \
 	include/rua_internal.h \
 	include/sbar.h \
 	include/skin_stencil.h \
+	include/scn_internal.h \
 	include/snd_internal.h \
 	include/sv_console.h \
 	include/varrays.h \
@@ -81,14 +81,17 @@ EXTRA_DIST += \
 	include/vregset.h \
 	include/winquake.h \
 	include/world.h \
+	include/client/chase.h \
 	include/client/effects.h \
 	include/client/entities.h \
+	include/client/hud.h \
 	include/client/input.h \
-	include/client/temp_entities.h \
 	include/client/locs.h \
 	include/client/particles.h \
 	include/client/state.h \
+	include/client/temp_entities.h \
 	include/client/view.h \
+	include/client/world.h \
 	include/evdev/hotplug.h \
 	include/evdev/inputlib.h \
 	include/qw/bothdefs.h \

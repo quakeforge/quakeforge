@@ -101,7 +101,6 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
-	vid_internal.sw32_context = X11_SW32_Context;
 #ifdef HAVE_VULKAN
 	vid_internal.vulkan_context = X11_Vulkan_Context;
 #endif
@@ -111,6 +110,9 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.numpages = 2;
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.data, colormap);
+	}
 
 	srandom (getpid ());
 
@@ -166,16 +168,6 @@ update ()
 	}
 }
 #endif
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
 
 void
 VID_SetCaption (const char *text)

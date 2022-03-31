@@ -39,11 +39,14 @@
 
 static vid_internal_t vid_internal;
 
+#if 0
 static byte backingbuf[48 * 24];
+#endif
 
 void
 D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
+#if 0
 	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
@@ -72,12 +75,14 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 	rect.next = NULL;
 
 	win_sw_context->update (win_sw_context, &rect);
+#endif
 }
 
 
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
+#if 0
 	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
@@ -102,6 +107,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	rect.next = NULL;
 
 	win_sw_context->update (win_sw_context, &rect);
+#endif
 }
 
 static void
@@ -127,6 +133,9 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.numpages = 1;
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.data, colormap);
+	}
 
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();
@@ -152,16 +161,7 @@ VID_Init_Cvars (void)
 	Win_Vulkan_Init_Cvars ();
 #endif
 	Win_GL_Init_Cvars ();
-}
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
+	Win_SW_Init_Cvars ();
 }
 
 void

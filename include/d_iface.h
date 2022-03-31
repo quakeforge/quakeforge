@@ -101,7 +101,7 @@ typedef struct
 							//  if the driver wants to duplicate element [0] at
 							//  element [nump] to avoid dealing with wrapping
 	mspriteframe_t	*pspriteframe;
-	vec3_t			vup, vright, vpn;	// in worldspace
+	vec3_t			vup, vright, vfwd;	// in worldspace
 	float			nearzi;
 } spritedesc_t;
 
@@ -140,28 +140,26 @@ extern int		d_con_indirect;	// if 0, Quake will draw console directly
 								//  draw console via D_DrawRect. Must be
 								//  defined by driver
 
-extern vec3_t	r_pright, r_pup, r_ppn;
+extern vec3_t	r_pright, r_pup, r_ppn, r_porigin;
 
 
-void D_Aff8Patch (void *pcolormap);
+void D_Aff8Patch (const byte *pcolormap);
 void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height);
-void D_DisableBackBufferAccess (void);
 void D_EndDirectRect (int x, int y, int width, int height);
 void D_PolysetDraw (void);
 void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
 void D_PolysetSetEdgeTable (void);
 void D_DrawParticle (particle_t *pparticle);
 void D_DrawPoly (void);
-void D_DrawSprite (void);
+void D_DrawSprite (const vec3_t relvieworg);
 void D_DrawSurfaces (void);
 void D_DrawZPoint (void);
-void D_EnableBackBufferAccess (void);
 void D_Init (void);
 void D_Init_Cvars (void);
 void D_ViewChanged (void);
 void D_SetupFrame (void);
 void D_TurnZOn (void);
-void D_WarpScreen (void);
+void D_WarpScreen (framebuffer_t *src);
 
 void D_FillRect (vrect_t *vrect, int color);
 void D_DrawRect (void);
@@ -182,7 +180,7 @@ extern byte				*r_skysource;
 // !!! must be kept the same as in quakeasm.h !!!
 #define TRANSPARENT_COLOR	0xFF
 
-extern void *acolormap;	// FIXME: should go away
+extern const byte *acolormap;	// FIXME: should go away
 
 //=======================================================================//
 
@@ -202,8 +200,8 @@ typedef struct
 } drawsurf_t;
 
 extern drawsurf_t	r_drawsurf;
-
-void R_DrawSurface (void);
+struct transform_s;
+void R_DrawSurface (struct transform_s *transform);
 void R_GenTile (msurface_t *psurf, void *pdest);
 
 // !!! if this is changed, it must be changed in d_iface.h too !!!
@@ -227,7 +225,5 @@ extern float	r_skyspeed;
 extern float	r_skytime;
 
 extern int		c_surf;
-
-extern byte		*r_warpbuffer;
 
 #endif // _D_IFACE_H

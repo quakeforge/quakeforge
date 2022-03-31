@@ -96,7 +96,6 @@ typedef enum TE_qwEffect {
 //FIXME find a better way to get this info from the parser
 typedef struct TEntContext_s {
 	vec4f_t     simorg;
-	struct model_s *worldModel;
 	int         playerEntity;
 } TEntContext_t;
 

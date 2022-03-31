@@ -459,6 +459,18 @@ find_function (expr_t *fexpr, expr_t *params)
 	return fexpr;
 }
 
+int
+value_too_large (type_t *val_type)
+{
+	if ((options.code.progsversion < PROG_VERSION
+		 && type_size (val_type) > type_size (&type_param))
+		|| (options.code.progsversion == PROG_VERSION
+			&& type_size (val_type) > MAX_DEF_SIZE)) {
+		return 1;
+	}
+	return 0;
+}
+
 static void
 check_function (symbol_t *fsym)
 {
@@ -470,7 +482,7 @@ check_function (symbol_t *fsym)
 		error (0, "return type is an incomplete type");
 		fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
-	if (type_size (fsym->type->t.func.type) > type_size (&type_param)) {
+	if (value_too_large (fsym->type->t.func.type)) {
 		error (0, "return value too large to be passed by value (%d)",
 			   type_size (&type_param));
 		fsym->type->t.func.type = &type_void;//FIXME better type?
@@ -480,12 +492,14 @@ check_function (symbol_t *fsym)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		if (!type_size (p->type))
+		if (!type_size (p->type)) {
 			error (0, "parameter %d (‘%s’) has incomplete type",
 				   i + 1, p->name);
-		if (type_size (p->type) > type_size (&type_param))
+		}
+		if (value_too_large (p->type)) {
 			error (0, "param %d (‘%s’) is too large to be passed by value",
 				   i + 1, p->name);
+		}
 	}
 }
 

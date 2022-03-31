@@ -25,6 +25,14 @@ static pr_ivec4_t uint_conv_init[] = {
 	{  0,  0, 0, 0},
 };
 
+/* Note that these tests (specifically 1, 3a and 3b) fail when compiled with
+ * clang and optimzing due to difference between clang and gcc, and more
+ * interestingly, within clang itself: with optimization enabled, the entries
+ * marked with "undef?" produce 0x80000000 instead of 0, but with optimization
+ * disabled, the expected 0 is produced.
+ * Inspecting the results, it seems that clang sets negative floats and doubles
+ * to 0 when casting to unsigned long, but not consistently.
+ */
 static pr_ivec4_t uint_conv_expect[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
 	{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float

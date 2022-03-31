@@ -39,6 +39,9 @@ struct skin_s;
 
 struct mod_alias_ctx_s;
 struct mod_sprite_ctx_s;
+struct entqueue_s;
+struct framebuffer_s;
+struct vrect_s;
 
 /*
 	All video plugins must export these functions
@@ -73,6 +76,9 @@ typedef struct vid_model_funcs_s {
 	void (*Skin_InitTranslations) (void);
 } vid_model_funcs_t;
 
+struct tex_s;
+typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
+
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
 	void (*Draw_Character) (int x, int y, unsigned ch);
@@ -96,35 +102,31 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
-	void (*SCR_SetFOV) (float fov);
-	void (*SCR_DrawRam) (void);
-	void (*SCR_DrawTurtle) (void);
-	void (*SCR_DrawPause) (void);
-	struct tex_s *(*SCR_CaptureBGR) (void);
-	struct tex_s *(*SCR_ScreenShot) (unsigned width, unsigned height);
-	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
-								  int x, int y);
-
-	void (*Fog_Update) (float density, float red, float green, float blue,
-						float time);
-	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
 	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
-	void (*R_RenderFrame) (SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
-	void (*R_AddEfrags) (mod_brush_t *brush, entity_t *ent);
-	void (*R_RemoveEfrags) (entity_t *ent);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
-	dlight_t *(*R_AllocDlight) (int key);
-	entity_t *(*R_AllocEntity) (void);
-	void (*R_MaxDlightsCheck) (struct cvar_s *var);
-	void (*R_DecayLights) (double frametime);
 
-	void (*R_ViewChanged) (void);
-	void (*SCR_ScreenShot_f) (void);
+	void (*begin_frame) (void);
+	void (*render_view) (void);
+	void (*draw_entities) (struct entqueue_s *queue);
+	void (*draw_particles) (struct psystem_s *psystem);
+	void (*draw_transparent) (void);
+	void (*post_process) (struct framebuffer_s *src);
+	void (*set_2d) (int scaled);
+	void (*end_frame) (void);
+
+	struct framebuffer_s *(*create_cube_map) (int side);
+	struct framebuffer_s *(*create_frame_buffer) (int width, int height);
+	void (*bind_framebuffer) (struct framebuffer_s *framebuffer);
+	void (*set_viewport) (const struct vrect_s *view);
+	// x and y are tan(f/2) for fov_x and fov_y
+	void (*set_fov) (float x, float y);
+
+	void (*capture_screen) (capfunc_t callback, void *data);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
@@ -145,15 +147,9 @@ typedef struct vid_render_data_s {
 	qboolean    paused;
 	int         lineadj;
 	struct entity_s *view_model;
-	struct entity_s *player_entity;
-	float       gravity;
 	double      frametime;
 	double      realtime;
 	lightstyle_t *lightstyle;
-	vec_t      *origin;
-	vec_t      *vpn;
-	vec_t      *vright;
-	vec_t      *vup;
 } vid_render_data_t;
 
 #endif // __QF_plugin_vid_render_h

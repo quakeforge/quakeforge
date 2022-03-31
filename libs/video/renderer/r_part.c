@@ -38,8 +38,6 @@
 
 psystem_t   r_psystem;	//FIXME singleton
 
-vec3_t          r_pright, r_pup, r_ppn;
-
 /*
   R_MaxParticlesCheck
 
@@ -90,7 +88,7 @@ void
 R_RunParticles (float dT)
 {
 	psystem_t  *ps = &r_psystem;//FIXME
-	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
+	vec4f_t     gravity = ps->gravity;
 
 	unsigned    j = 0;
 	for (unsigned i = 0; i < ps->numparticles; i++) {
@@ -100,14 +98,12 @@ R_RunParticles (float dT)
 		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
 			continue;
 		}
-		const int  *ramp = ps->partramps[j];
+		const int  *ramp = ps->partramps[i];
 		if (i > j) {
 			ps->particles[j] = *p;
 			ps->partparams[j] = *parm;
 			ps->partramps[j] = ramp;
 		}
-		p = &ps->particles[j];
-		parm = &ps->partparams[j];
 		j += 1;
 
 		p->pos += dT * p->vel;

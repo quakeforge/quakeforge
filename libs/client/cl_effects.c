@@ -64,7 +64,7 @@ CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
 			return;
 	}
 
-	dl = r_funcs->R_AllocDlight (key);
+	dl = R_AllocDlight (key);
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
@@ -124,7 +124,7 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
-		dl = r_funcs->R_AllocDlight (num);
+		dl = R_AllocDlight (num);
 		if (dl) {
 			VectorCopy (ent_origin, dl->origin);
 			dl->radius = 200.0;
@@ -154,7 +154,7 @@ void
 CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
 				double time)
 {
-	dlight_t   *dl = r_funcs->R_AllocDlight (num);
+	dlight_t   *dl = R_AllocDlight (num);
 	if (dl) {
 		position += 18 * fv;
 		VectorCopy (position, dl->origin);

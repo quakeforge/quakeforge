@@ -19,7 +19,7 @@ def print_ref(i, j, k, l):
     print(f"\t\t&&{label(i, j, k, l)},")
 
 def print_op(i, j, k, l):
-    print(f"\t{label(i, j, k, l)}: vec = swizzle (vec, (pr_ivec4_t) {{ {l}, {k}, {j}, {i} }}); goto negate;")
+    print(f"\t{label(i, j, k, l)}: vec = ({optype}) {{ vec[{l}], vec[{k}], vec[{j}], vec[{i}] }}; goto negate;")
 
 def print_data(i, j, k, l):
     print(f"\t{{ {l+1:2}, {k+1:2}, {j+1:2}, {i+1:2} }},")
@@ -78,6 +78,10 @@ types = ["f", "d"]
 tests = ["swizzle", "neg", "zero"]
 
 if sys.argv[1] == "case":
+    if sys.argv[2] == "int":
+        optype = "pr_ivec4_t"
+    elif sys.argv[2] == "long":
+        optype = "pr_lvec4_t"
     iter(print_op)
     print("\tstatic void *swizzle_table[256] = {")
     iter(print_ref)

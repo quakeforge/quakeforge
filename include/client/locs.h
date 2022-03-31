@@ -47,6 +47,6 @@ int  locs_nearest (vec4f_t loc) __attribute__((pure));
 void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
-void locs_draw (vec4f_t simorg);
+void locs_draw (double time, vec4f_t simorg);
 
 #endif//__QF_locs_h

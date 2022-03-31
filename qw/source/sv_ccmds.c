@@ -249,13 +249,12 @@ SV_Fraglogfile_f (void)
 		return;
 	}
 	name = dstring_new ();
-	if (!QFS_NextFilename (name,
-						   va (0, "%s/frag_", qfs_gamedir->dir.def), ".log")) {
-		SV_Printf ("Can't open any logfiles.\n");
-		sv_fraglogfile = NULL;
+	if (!(sv_fraglogfile = QFS_NextFile (name,
+										 va (0, "%s/frag_",
+											 qfs_gamedir->dir.def), ".log"))) {
+		SV_Printf ("Can't open any logfiles.\n%s\n", name->str);
 	} else {
 		SV_Printf ("Logging frags to %s.\n", name->str);
-		sv_fraglogfile = QFS_WOpen (name->str, 0);
 	}
 	dstring_delete (name);
 }
@@ -1136,14 +1135,16 @@ SV_Snap (int uid)
 	if (!cl->uploadfn)
 		cl->uploadfn = dstring_new ();
 
-	if (!QFS_NextFilename (cl->uploadfn,
-						   va (0, "%s/snap/%d-", qfs_gamedir->dir.def, uid),
-						   ".pcx")) {
-		SV_Printf ("Snap: Couldn't create a file, clean some out.\n");
+	if (!(cl->upload = QFS_NextFile (cl->uploadfn,
+									 va (0, "%s/snap/%d-",
+										 qfs_gamedir->dir.def, uid), ".pcx"))) {
+		SV_Printf ("Snap: Couldn't create a file, clean some out.\n%s\n",
+				   cl->uploadfn->str);
 		dstring_delete (cl->uploadfn);
 		cl->uploadfn = 0;
 		return;
 	}
+	cl->upload_started = 0;
 
 	memcpy (&cl->snap_from, &net_from, sizeof (net_from));
 	if (sv_redirected != RD_NONE)

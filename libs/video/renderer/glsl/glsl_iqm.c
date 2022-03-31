@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -228,9 +225,9 @@ glsl_R_DrawIQM (entity_t *ent)
 	entorigin = mat[3];
 	mmulf (mvp_mat, iqm_vp, mat);
 
-	R_LightPoint (&r_worldentity.renderer.model->brush, &entorigin[0]);//FIXME min_light?
+	R_LightPoint (&r_refdef.worldmodel->brush, entorigin);//FIXME min_light?
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
-	R_FindNearLights (&entorigin[0], MAX_IQM_LIGHTS, lights);//FIXME
+	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
 	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
@@ -256,7 +253,7 @@ glsl_R_DrawIQM (entity_t *ent)
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
 
 	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false,
-						   &mvp_mat[0][0]);
+						   (vec_t*)&mvp_mat[0]);//FIXME
 	qfeglUniformMatrix3fv (iqm_shader.norm_matrix.location, 1, false,
 						   norm_mat);
 	qfeglUniformMatrix4fv (iqm_shader.bonemats.location, iqm->num_joints,
@@ -285,8 +282,8 @@ glsl_R_IQMBegin (void)
 
 	qfeglUseProgram (iqm_shader.program);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (iqm_shader.fog.location, 1, fog);
 
 	qfeglUniform1i (iqm_shader.texture.location, 0);

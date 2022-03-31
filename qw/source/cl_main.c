@@ -90,6 +90,8 @@
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
+#include "QF/scene/transform.h"
+#include "QF/scene/scene.h"
 
 #include "buildnum.h"
 #include "compat.h"
@@ -98,6 +100,7 @@
 #include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
@@ -151,19 +154,7 @@ cvar_t     *cl_quakerc;
 cvar_t     *cl_maxfps;
 cvar_t     *cl_usleep;
 
-cvar_t     *cl_cshift_bonus;
-cvar_t     *cl_cshift_contents;
-cvar_t     *cl_cshift_damage;
-cvar_t     *cl_cshift_powerup;
-
 cvar_t     *cl_model_crcs;
-
-cvar_t     *lookspring;
-
-cvar_t     *m_pitch;
-cvar_t     *m_yaw;
-cvar_t     *m_forward;
-cvar_t     *m_side;
 
 cvar_t     *cl_predict_players;
 cvar_t     *cl_solid_players;
@@ -240,7 +231,7 @@ CL_Quit_f (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl.worldmodel);
+	CL_LoadPointFile (cl_world.worldmodel);
 }
 
 static void
@@ -396,16 +387,25 @@ CL_ClearState (void)
 
 	S_StopAllSounds ();
 
+	if (cl.viewstate.weapon_entity) {
+		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+	}
 	// wipe the entire cl structure
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
 	if (cl.players)
 		free (cl.players);
+	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	cl.viewstate.camera_transform = cam;
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
-	r_data->force_fullscreen = 0;
+	SCR_SetFullscreen (0);
 
 	cl.maxclients = MAX_CLIENTS;
+	cl.viewstate.voffs_enabled = 0;
+	cl.viewstate.chasestate = &cl.chasestate;
+	cl.chasestate.viewstate = &cl.viewstate;
+	cl.viewstate.punchangle = (vec4f_t) {0, 0, 0, 1};
 
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
@@ -416,8 +416,6 @@ CL_ClearState (void)
 		cl.frames[i].packet_entities.entities = qw_entstates.frame[i];
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
-	CL_Init_Entity (&cl.viewent);
-
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
 	Mod_ClearAll ();
@@ -426,6 +424,10 @@ CL_ClearState (void)
 
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
+
+	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
+	CL_Init_Entity (cl.viewstate.weapon_entity);
+	r_data->view_model = cl.viewstate.weapon_entity;
 
 	r_funcs->R_ClearState ();
 
@@ -446,7 +448,7 @@ CL_StopCshifts (void)
 	int i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++)
-		cl.cshifts[i].percent = 0;
+		cl.viewstate.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
@@ -522,7 +524,7 @@ CL_Disconnect (void)
 			Info_Destroy (cl.players[i].userinfo);
 		memset (&cl.players[i], 0, sizeof (cl.players[i]));
 	}
-	cl.worldmodel = NULL;
+	cl_world.worldmodel = NULL;
 	cl.validsequence = 0;
 }
 
@@ -625,10 +627,11 @@ CL_FullServerinfo_f (void)
 			Sys_Printf ("Invalid QSG Protocol number: %s", p);
 	}
 
-	cl.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
+	cl.viewstate.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
 	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
-		cl.chase = atoi (p);
+		cl.viewstate.chase = atoi (p);
 	}
+	cl.viewstate.chase |= cls.demoplayback;
 	if ((p = Info_ValueForKey (cl.serverinfo, "cshifts")) && *p) {
 		cl.sv_cshifts = atoi (p);
 	}
@@ -808,7 +811,8 @@ CL_Changing_f (void)
 
 	S_StopAllSounds ();
 	cl.intermission = 0;
-	r_data->force_fullscreen = 0;
+	cl.viewstate.intermission = 0;
+	SCR_SetFullscreen (0);
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
 	Sys_Printf ("\nChanging map...\n");
@@ -1107,7 +1111,7 @@ CL_Download_f (void)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewstate.angles[PITCH] = 0;
+	cl.viewstate.player_angles[PITCH] = 0;
 }
 
 static void
@@ -1116,12 +1120,12 @@ CL_PRotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_PITCH) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewstate.angles[PITCH] += atoi (Cmd_Argv (1));
+	cl.viewstate.player_angles[PITCH] += atoi (Cmd_Argv (1));
 
-	if (cl.viewstate.angles[PITCH] < -70)
-		cl.viewstate.angles[PITCH] = -70;
-	else if (cl.viewstate.angles[PITCH] > 80)
-		cl.viewstate.angles[PITCH] = 80;
+	if (cl.viewstate.player_angles[PITCH] < -70)
+		cl.viewstate.player_angles[PITCH] = -70;
+	else if (cl.viewstate.player_angles[PITCH] > 80)
+		cl.viewstate.player_angles[PITCH] = 80;
 }
 
 static void
@@ -1130,8 +1134,8 @@ CL_Rotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_YAW) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewstate.angles[YAW] += atoi (Cmd_Argv (1));
-	cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
+	cl.viewstate.player_angles[YAW] += atoi (Cmd_Argv (1));
+	cl.viewstate.player_angles[YAW] = anglemod(cl.viewstate.player_angles[YAW]);
 }
 
 void
@@ -1148,6 +1152,8 @@ CL_SetState (cactive_t state)
 
 	Sys_MaskPrintf (SYS_dev, "CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
+	cl.viewstate.active = cls.state == ca_active;
+	cl.viewstate.drift_enabled = !cls.demoplayback;
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state
@@ -1172,7 +1178,7 @@ CL_SetState (cactive_t state)
 	}
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
 	if (state != old_state && state == ca_active) {
-		CL_Input_Activate ();
+		CL_Input_Activate (!cls.demoplayback);
 	}
 }
 
@@ -1211,10 +1217,11 @@ CL_Init (void)
 
 	Sbar_Init ();
 
-	CL_Input_Init ();
+	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
 	CL_Particles_Init ();
 	CL_TEnts_Init ();
+	CL_World_Init ();
 	CL_ClearState ();
 	Pmove_Init ();
 
@@ -1222,7 +1229,7 @@ CL_Init (void)
 
 	CL_Skin_Init ();
 	Locs_Init ();
-	V_Init ();
+	V_Init (&cl.viewstate);
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
@@ -1313,6 +1320,23 @@ cl_cmd_pkt_adr_f (cvar_t *var)
 }
 
 static void
+cl_pitchspeed_f (cvar_t *var)
+{
+	if ((cl.fpd & FPD_LIMIT_PITCH) && var->value > FPD_MAXPITCH) {
+		var->value = FPD_MAXPITCH;
+	}
+}
+
+static void
+cl_yawspeed_f (cvar_t *var)
+{
+	if ((cl.fpd & FPD_LIMIT_YAW) && var->value > FPD_MAXYAW) {
+		var->value = FPD_MAXYAW;
+	}
+}
+
+
+static void
 CL_Init_Cvars (void)
 {
 	VID_Init_Cvars ();
@@ -1321,13 +1345,17 @@ CL_Init_Cvars (void)
 	S_Init_Cvars ();
 
 	CL_Cam_Init_Cvars ();
-	CL_Input_Init_Cvars ();
+	CL_Init_Input_Cvars ();
 	CL_Prediction_Init_Cvars ();
 	CL_NetGraph_Init_Cvars ();
 	Game_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
+	Chase_Init_Cvars ();
 	V_Init_Cvars ();
+
+	cl_pitchspeed->callback = cl_pitchspeed_f;
+	cl_yawspeed->callback = cl_yawspeed_f;
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
@@ -1349,33 +1377,8 @@ CL_Init_Cvars (void)
 							"exec autoexec.cfg on gamedir change");
 	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
 						   "exec quake.rc on startup");
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
-								   NULL, "Shift view colors for contents "
-								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-								 "Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
-								  "Shift view colors for powerups");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
-								 "turn `run' speed multiplier");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
-							 "backward speed");
 	cl_fb_players = Cvar_Get ("cl_fb_players", "0", CVAR_ARCHIVE, NULL, "fullbrightness of player models. "
 							"server must allow (via fbskins serverinfo).");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-								"move `run' speed multiplier");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-							  "look up/down speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-							 "strafe speed");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-							"turning speed");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
 							"write config files?");
 	cl_draw_locs = Cvar_Get ("cl_draw_locs", "0", CVAR_NONE, NULL,
@@ -1388,16 +1391,6 @@ CL_Init_Cvars (void)
 						   "connection timeout (since last packet received)");
 	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
 							"display host processing times");
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
-						   "to center when moving and no mlook/klook");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
-						  "mouse forward/back speed");
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-						"mouse pitch (up/down) multipier");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
-					   "mouse strafe speed");
-	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
-					  "mouse yaw (left/right) multiplier");
 	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
 							  "remote control password");
 	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
@@ -1624,6 +1617,19 @@ Host_SimulationTime (float time)
 	return 0;
 }
 
+static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
 int         nopacketcount;
 
 /*
@@ -1735,15 +1741,16 @@ Host_Frame (float time)
 	if (cls.state == ca_active) {
 		mleaf_t    *l;
 		byte       *asl = 0;
+		vec4f_t     origin;
 
-		l = Mod_PointInLeaf (r_data->origin, cl.worldmodel);
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
-		S_Update (r_data->origin, r_data->vpn, r_data->vright, r_data->vup,
-				  asl);
-		r_funcs->R_DecayLights (host_frametime);
+		S_Update (cl.viewstate.camera_transform, asl);
+		R_DecayLights (host_frametime);
 	} else
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
+		S_Update (0, 0);
 
 	CDAudio_Update ();
 
@@ -1757,11 +1764,7 @@ Host_Frame (float time)
 	}
 
 	if (cls.demo_capture) {
-		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
-						 cls.demo_capture++),
-					 tex->data, tex->width, tex->height);
-		free (tex);
+		r_funcs->capture_screen (write_capture, 0);
 	}
 
 	host_framecount++;

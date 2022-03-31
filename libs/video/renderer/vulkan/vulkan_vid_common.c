@@ -49,7 +49,6 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
@@ -339,7 +338,7 @@ renderpass_draw (qfv_renderframe_t *rFrame)
 {
 	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
-	Vulkan_FlushText (rFrame);
+	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
 	Vulkan_Lighting_Draw (rFrame);
 	Vulkan_Compose_Draw (rFrame);
 }

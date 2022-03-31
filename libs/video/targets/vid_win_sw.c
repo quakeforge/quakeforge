@@ -72,6 +72,9 @@ static ddCreateProc_t ddCreate;
 static int         dd_window_width = 640;
 static int         dd_window_height = 480;
 
+static sw_framebuffer_t swfb;
+static framebuffer_t fb = { .buffer = &swfb };
+
 static void
 DD_UpdateRects (int width, int height)
 {
@@ -94,8 +97,10 @@ VID_CreateDDrawDriver (int width, int height)
 	dd_window_width = width;
 	dd_window_height = height;
 
-	viddef.buffer = malloc (width * height);
-	viddef.rowbytes = width;
+	fb.width = width;
+	fb.height = height;
+	swfb.color = malloc (width * height);
+	swfb.rowbytes = width;
 
 	if (!(hInstDDraw = LoadLibrary ("ddraw.dll"))) {
 		return;
@@ -162,7 +167,7 @@ VID_CreateDDrawDriver (int width, int height)
 }
 
 static void
-VID_CreateGDIDriver (int width, int height, const byte *palette, void **buffer,
+VID_CreateGDIDriver (int width, int height, const byte *palette, byte **buffer,
 					 int *rowbytes)
 {
 	// common bitmap definition
@@ -235,10 +240,13 @@ void
 Win_UnloadAllDrivers (void)
 {
 	// shut down ddraw
-	if (viddef.buffer) {
-		free (viddef.buffer);
-		*(int *)0xdb = 0;
-		viddef.buffer = 0;
+	if (swfb.color) {
+		free (swfb.color);
+		swfb.color = 0;
+	}
+	if (swfb.depth) {
+		free (swfb.depth);
+		swfb.depth = 0;
 	}
 
 	if (dd_Clipper) {
@@ -303,13 +311,17 @@ Win_CreateDriver (void)
 		Win_UnloadAllDrivers ();
 
 		VID_CreateGDIDriver (viddef.width, viddef.height, viddef.palette,
-							 &viddef.buffer, &viddef.rowbytes);
+							 &swfb.color, &swfb.rowbytes);
 	}
 }
 
 static void
 win_init_bufers (void *data)
 {
+	sw_ctx_t   *ctx = data;
+
+	ctx->framebuffer = &fb;
+
 	Win_UnloadAllDrivers ();
 	Win_CreateDriver ();
 }
@@ -372,13 +384,13 @@ dd_blit_rect (vrect_t *rect)
 	// convert pitch to 32-bit addressable
 	ddsd.lPitch >>= 2;
 
-	byte       *src = viddef.buffer + rect->y * viddef.rowbytes + rect->x;
+	byte       *src = swfb.color + rect->y * swfb.rowbytes + rect->x;
 	unsigned   *dst = ddsd.lpSurface;
 	for (int y = rect->height; y-- > 0; ) {
 		for (int x = rect->width; x-- > 0; ) {
 			*dst++ = st2d_8to32table[*src++].value;
 		}
-		src += viddef.rowbytes - rect->width;
+		src += swfb.rowbytes - rect->width;
 		dst += ddsd.lPitch - rect->width;
 	}
 

@@ -31,11 +31,18 @@
 # include "config.h"
 #endif
 
-#include "QF/render.h" //FIXME for entity_t
+#include "QF/msg.h"
+
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
+#include "QF/plugin/vid_render.h"	//FIXME
+
 #include "client/entities.h"
+#include "client/temp_entities.h"
+
+entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
 /*  QW has a max of 512 entities and wants 64 frames of data per entity, plus
 	the baseline data (512 * (64 + 1) = 33280), but NQ has a max of 32000
@@ -363,7 +370,7 @@ CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
 			// to everything else?
 			ang[PITCH] = -ang[PITCH];
 		}
-		AngleQuat (ang, &rotation[0]);//FIXME
+		AngleQuat (ang, (vec_t*)&rotation);//FIXME
 	}
 	Transform_SetLocalTransform (ent->transform, scalevec, rotation, position);
 }

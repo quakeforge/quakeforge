@@ -52,6 +52,7 @@
 #include "compat.h"
 
 #include "client/locs.h"
+#include "client/world.h"
 
 #include "qw/bothdefs.h"
 #include "qw/include/cl_input.h"
@@ -184,10 +185,10 @@ Team_ParseSay (dstring_t *buf, const char *s)
 			case 'l':
 			location:
 				bracket = 0;
-				location = locs_find (cl.viewstate.origin);
+				location = locs_find (cl.viewstate.player_origin);
 				if (location) {
 					recorded_location = true;
-					last_recorded_location = cl.viewstate.origin;
+					last_recorded_location = cl.viewstate.player_origin;
 					t1 = location->name;
 				} else
 					snprintf (t2, sizeof (t2), "Unknown!");
@@ -198,17 +199,17 @@ Team_ParseSay (dstring_t *buf, const char *s)
 						bracket = 0;
 
 					if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-						t3[0] = 'R' | 0x80;
+						t3[0] = (char) ('R' | 0x80);
 					else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-						t3[0] = 'Y' | 0x80;
+						t3[0] = (char) ('Y' | 0x80);
 					else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-						t3[0] = 'G' | 0x80;
+						t3[0] = (char) ('G' | 0x80);
 					else {
-						t2[0] = 'N' | 0x80;
-						t2[1] = 'O' | 0x80;
-						t2[2] = 'N' | 0x80;
-						t2[3] = 'E' | 0x80;
-						t2[4] = '!' | 0x80;
+						t2[0] = (char) ('N' | 0x80);
+						t2[1] = (char) ('O' | 0x80);
+						t2[2] = (char) ('N' | 0x80);
+						t2[3] = (char) ('E' | 0x80);
+						t2[4] = (char) ('!' | 0x80);
 					}
 
 					snprintf (t2, sizeof (t2), "%sa:%i", t3,
@@ -220,17 +221,17 @@ Team_ParseSay (dstring_t *buf, const char *s)
 			case 'A':
 				bracket = 0;
 				if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-					t2[0] = 'R' | 0x80;
+					t2[0] = (char) ('R' | 0x80);
 				else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-					t2[0] = 'Y' | 0x80;
+					t2[0] = (char) ('Y' | 0x80);
 				else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-					t2[0] = 'G' | 0x80;
+					t2[0] = (char) ('G' | 0x80);
 				else {
-					t2[0] = 'N' | 0x80;
-					t2[1] = 'O' | 0x80;
-					t2[2] = 'N' | 0x80;
-					t2[3] = 'E' | 0x80;
-					t2[4] = '!' | 0x80;
+					t2[0] = (char) ('N' | 0x80);
+					t2[1] = (char) ('O' | 0x80);
+					t2[2] = (char) ('N' | 0x80);
+					t2[3] = (char) ('E' | 0x80);
+					t2[4] = (char) ('!' | 0x80);
 				}
 				break;
 			case 'h':
@@ -279,7 +280,7 @@ void
 Team_Dead (void)
 {
 	died = true;
-	death_location = cl.viewstate.origin;
+	death_location = cl.viewstate.player_origin;
 }
 
 void
@@ -289,8 +290,8 @@ Team_NewMap (void)
 
 	died = false;
 	recorded_location = false;
-	mapname = strdup (cl.worldmodel->path);
-	t2 = malloc (sizeof (cl.worldmodel->path));
+	mapname = strdup (cl_world.worldmodel->path);
+	t2 = malloc (sizeof (cl_world.worldmodel->path));
 	if (!mapname || !t2)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (mapname,t2);
@@ -340,16 +341,16 @@ locs_loc (void)
 					"parameter\n");
 		return;
 	}
-	if (!cl.worldmodel) {
+	if (!cl_world.worldmodel) {
 		Sys_Printf ("No map loaded. Unable to work with location markers.\n");
 		return;
 	}
 	if (Cmd_Argc () >= 3)
 		desc = Cmd_Args (2);
-	mapname = malloc (sizeof (cl.worldmodel->path));
+	mapname = malloc (sizeof (cl_world.worldmodel->path));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	map_to_loc (cl.worldmodel->path, mapname);
+	map_to_loc (cl_world.worldmodel->path, mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s",
 			  qfs_gamedir->dir.def, mapname);
 	free (mapname);
@@ -370,7 +371,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "add") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_mark (cl.viewstate.origin, desc);
+			locs_mark (cl.viewstate.player_origin, desc);
 		else
 			Sys_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
@@ -379,7 +380,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "rename") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_edit (cl.viewstate.origin, desc);
+			locs_edit (cl.viewstate.player_origin, desc);
 		else
 			Sys_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
@@ -387,14 +388,14 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_del (cl.viewstate.origin);
+			locs_del (cl.viewstate.player_origin);
 		else
 			Sys_Printf ("loc delete :removes nearest location marker\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1),"move") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_edit (cl.viewstate.origin, NULL);
+			locs_edit (cl.viewstate.player_origin, NULL);
 		else
 			Sys_Printf ("loc move :moves the nearest location marker to your "
 						"current location\n");
@@ -409,7 +410,7 @@ Locs_Loc_Get (void)
 	if (GIB_Argc () != 1)
 		GIB_USAGE ("");
 	else {
-		location = locs_find (cl.viewstate.origin);
+		location = locs_find (cl.viewstate.player_origin);
 		GIB_Return (location ? location->name : "unknown");
 	}
 }

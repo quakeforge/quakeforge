@@ -47,6 +47,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
 static channel_t *free_channels;
@@ -64,10 +66,10 @@ static sfx_t   *ambient_sfx[NUM_AMBIENTS];
 
 static vec_t    sound_nominal_clip_dist = 1000.0;
 
-static vec3_t   listener_origin;
-static vec3_t   listener_forward;
-static vec3_t   listener_right;
-static vec3_t   listener_up;
+static vec4f_t  listener_origin;
+static vec4f_t  listener_forward;
+static vec4f_t  listener_right;
+static vec4f_t  listener_up;
 
 static cvar_t  *snd_phasesep;
 static cvar_t  *snd_volumesep;
@@ -539,17 +541,22 @@ s_combine_channel (channel_t *combine, channel_t *ch)
 }
 
 void
-SND_SetListener (snd_t *snd, const vec3_t origin, const vec3_t forward,
-				 const vec3_t right, const vec3_t up,
-				 const byte *ambient_sound_level)
+SND_SetListener (snd_t *snd, transform_t *ear, const byte *ambient_sound_level)
 {
 	int         i, j;
 	channel_t  *combine, *ch;
 
-	VectorCopy (origin, listener_origin);
-	VectorCopy (forward, listener_forward);
-	VectorCopy (right, listener_right);
-	VectorCopy (up, listener_up);
+	if (ear) {
+		listener_origin  = Transform_GetWorldPosition (ear);
+		listener_forward = Transform_Forward (ear);
+		listener_right   = Transform_Right (ear);
+		listener_up      = Transform_Up (ear);
+	} else {
+		listener_origin  = (vec4f_t) {0, 0, 0, 1};
+		listener_forward = (vec4f_t) {1, 0, 0, 0};
+		listener_right   = (vec4f_t) {0, -1, 0, 0};
+		listener_up      = (vec4f_t) {0, 0, 1, 0};
+	}
 
 	// update general area ambient sound sources
 	s_updateAmbientSounds (snd, ambient_sound_level);
@@ -607,7 +614,7 @@ snd_check_channels (snd_t *snd, channel_t *target_chan, const channel_t *check,
 
 void
 SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
-				const vec3_t origin, float fvol, float attenuation)
+				vec4f_t origin, float fvol, float attenuation)
 {
 	int			 vol;
 	int          looped;
@@ -681,7 +688,7 @@ SND_StopSound (snd_t *snd, int entnum, int entchannel)
 }
 
 void
-SND_StaticSound (snd_t *snd, sfx_t *sfx, const vec3_t origin, float vol,
+SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 				 float attenuation)
 {
 	channel_t  *ss;
@@ -733,5 +740,5 @@ SND_LocalSound (snd_t *snd, const char *sound)
 	}
 	if (snd_render_data.viewentity)
 		viewent = *snd_render_data.viewentity;
-	SND_StartSound (snd, viewent, -1, sfx, vec3_origin, 1, 1);
+	SND_StartSound (snd, viewent, -1, sfx, (vec4f_t) {0, 0, 0, 1}, 1, 1);
 }

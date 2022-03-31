@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "QF/bspfile.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/mathlib.h"
 #include "QF/pcx.h"
 #include "QF/png.h"
@@ -820,7 +821,7 @@ render_map (bsp_t *bsp)
 		vert1 = &vertexlist[edgelist[i].v[0]];
 		vert2 = &vertexlist[edgelist[i].v[1]];
 		SUB (*vert1, *vert2, vect);
-		if (abs (tempf) < options.flat_threshold
+		if (fabsf (tempf) < options.flat_threshold
 			&& usearea > options.area_threshold
 			&& sqrt (DOT (vect, vect)) > options.linelen_threshold) {
 			float       offs0, offs1;
@@ -888,17 +889,29 @@ render_map (bsp_t *bsp)
 static void
 write_png (image_t *image)
 {
-	byte       *data, *in, *out, b;
+	byte       *in, *out, b;
 	int         size = image->width * image->height;
+	tex_t       tex = {
+		.width = image->width,
+		.height = image->height,
+		.format = tex_rgb,
+		.loaded = 1,
+		.data = malloc (size * 3),
+	};
 
-	out = data = malloc (size * 3);
+	out = tex.data;
 	for (in = image->image; in - image->image < size; in++) {
 		b = *in;
 		*out++ = b;
 		*out++ = b;
 		*out++ = b;
 	}
-	WritePNG (options.outf_name, data, image->width, image->height);
+	QFile      *file = Qopen (options.outf_name, "wb");
+	if (file) {
+		WritePNG (file, &tex);
+		Qclose (file);
+	}
+	free (tex.data);
 }
 
 static void

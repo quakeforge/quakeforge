@@ -249,15 +249,19 @@ CL_LoadPointFile (const model_t *model)
 	vec4f_t     zero = {};
 	for (;;) {
 		char        buf[64];
-		vec4f_t     org = { 0, 0, 0, 1 };
+		union {
+			vec4f_t     org;
+			vec3_t      org3;
+		} o = { .org = { 0, 0, 0, 1 }};
 
 		Qgets (f, buf, sizeof (buf));
-		int         r = sscanf (buf, "%f %f %f\n", &org[0], &org[1], &org[2]);
+		int         r = sscanf (buf, "%f %f %f\n",
+								&o.org3[0], &o.org3[1], &o.org3[2]);
 		if (r != 3)
 			break;
 		c++;
 
-		if (!particle_new (pt_static, part_tex_dot, org, 1.5, zero,
+		if (!particle_new (pt_static, part_tex_dot, o.org, 1.5, zero,
 						   99999, (-c) & 15, 1.0, 0.0)) {
 			Sys_MaskPrintf (SYS_dev, "Not enough free particles\n");
 			break;
@@ -1278,4 +1282,10 @@ CL_Particles_Init (void)
 								particles_style_f,
 								"Sets particle style. 0 for Id, 1 for QF.");
 	CL_ParticleFunctionInit ();
+}
+
+void
+CL_ParticlesGravity (float gravity)
+{
+	cl_psystem->gravity = (vec4f_t) { 0, 0, -gravity, 0 };
 }

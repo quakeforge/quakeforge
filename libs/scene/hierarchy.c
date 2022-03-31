@@ -38,16 +38,7 @@
 #include "QF/scene/hierarchy.h"
 #include "QF/scene/transform.h"
 
-#if defined(_WIN32) && !defined(_WIN64)
-// FIXME (maybe) this is a hack to make DARRAY arrrays 16-byte aligned on
-// 32-bit systems (in particular for this case, windows) as the vectors and
-// matrices require 16-byte alignment but system malloc (etc) provide only
-// 8-byte alignment.
-// Really, a custom allocator (maybe using cmem) would be better.
-#define free(mem) _aligned_free(mem)
-#define malloc(size) _aligned_malloc(size, 16)
-#define realloc(mem, size) _aligned_realloc(mem, size, 16)
-#endif
+#include "scn_internal.h"
 
 static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
@@ -395,13 +386,20 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
 }
 
 hierarchy_t *
-Hierarchy_New (size_t grow, int createRoot)
+Hierarchy_New (scene_t *scene, int createRoot)
 {
-	if (!grow) {
-		grow = 16;
-	}
-	hierarchy_t *hierarchy = malloc (sizeof (hierarchy_t));
+	scene_resources_t *res = scene->resources;
+	hierarchy_t *hierarchy = PR_RESNEW_NC (res->hierarchies);
+	hierarchy->scene = scene;
 
+	hierarchy->prev = &scene->hierarchies;
+	hierarchy->next = scene->hierarchies;
+	if (scene->hierarchies) {
+		scene->hierarchies->prev = &hierarchy->next;
+	}
+	scene->hierarchies = hierarchy;
+
+	size_t      grow = 16;
 	DARRAY_INIT (&hierarchy->transform, grow);
 	DARRAY_INIT (&hierarchy->entity, grow);
 	DARRAY_INIT (&hierarchy->childCount, grow);
@@ -430,11 +428,14 @@ Hierarchy_New (size_t grow, int createRoot)
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
-	for (size_t i = 0; i < hierarchy->transform.size; i++) {
-		free (hierarchy->transform.a[i]);
+	if (hierarchy->next) {
+		hierarchy->next->prev = hierarchy->prev;
 	}
-	for (size_t i = 0; i < hierarchy->name.size; i++) {
-		free (hierarchy->name.a[i]);
+	*hierarchy->prev = hierarchy->next;
+
+	scene_resources_t *res = hierarchy->scene->resources;
+	for (size_t i = 0; i < hierarchy->transform.size; i++) {
+		PR_RESFREE (res->transforms, hierarchy->transform.a[i]);
 	}
 	DARRAY_CLEAR (&hierarchy->transform);
 	DARRAY_CLEAR (&hierarchy->entity);
@@ -452,5 +453,5 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	DARRAY_CLEAR (&hierarchy->localScale);
 	DARRAY_CLEAR (&hierarchy->worldRotation);
 	DARRAY_CLEAR (&hierarchy->worldScale);
-	free (hierarchy);
+	PR_RESFREE (res->hierarchies, hierarchy);
 }

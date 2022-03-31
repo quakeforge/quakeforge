@@ -133,10 +133,6 @@ typedef struct bspctx_s {
 	struct qfv_tex_s *default_skybox;
 	struct qfv_tex_s *skybox_tex;
 	VkDescriptorSet skybox_descriptor;
-	vec4f_t      sky_rotation[2];
-	vec4f_t      sky_velocity;
-	vec4f_t      sky_fix;
-	double       sky_time;
 
 	quat_t       default_color;
 	quat_t       last_color;

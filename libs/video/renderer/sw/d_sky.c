@@ -36,6 +36,7 @@
 #define SKY_SPAN_SHIFT	5
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
 
+float d_skyoffs;
 
 static void
 D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
@@ -53,22 +54,21 @@ D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 	wu = 8192.0 * (float) (u - half_width) / temp;
 	wv = 8192.0 * (float) (half_height - v) / temp;
 
-	end[0] = 4096 * vpn[0] + wu * vright[0] + wv * vup[0];
-	end[1] = 4096 * vpn[1] + wu * vright[1] + wv * vup[1];
-	end[2] = 4096 * vpn[2] + wu * vright[2] + wv * vup[2];
+	end[0] = 4096 * vfwd[0] + wu * vright[0] + wv * vup[0];
+	end[1] = 4096 * vfwd[1] + wu * vright[1] + wv * vup[1];
+	end[2] = 4096 * vfwd[2] + wu * vright[2] + wv * vup[2];
 	end[2] *= 3;
 	VectorNormalize (end);
 
-	temp = r_skytime * r_skyspeed;	// TODO: add D_SetupFrame & set this there
-	*s = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[0]) * 0x10000);
-	*t = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[1]) * 0x10000);
+	*s = (int) ((d_skyoffs + 6 * (SKYSIZE / 2 - 1) * end[0]) * 0x10000);
+	*t = (int) ((d_skyoffs + 6 * (SKYSIZE / 2 - 1) * end[1]) * 0x10000);
 }
 
 void
 D_DrawSkyScans (espan_t *pspan)
 {
 	int         count, spancount, u, v;
-	unsigned char *pdest;
+	byte       *pdest;
 	fixed16_t   s, t, snext, tnext, sstep, tstep;
 	int         spancountminus1;
 
@@ -78,8 +78,7 @@ D_DrawSkyScans (espan_t *pspan)
 	tnext = 0;							// ditto
 
 	do {
-		pdest = (unsigned char *) ((byte *) d_viewbuffer +
-								   (screenwidth * pspan->v) + pspan->u);
+		pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

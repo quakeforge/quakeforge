@@ -564,7 +564,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 			 type_ptr += type->size) {
 			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
 			if (type->meta == ty_basic
-				&& type->type >= 0 && type->type < ev_type_count) {
+				&& (unsigned) type->type < ev_type_count) {
 				res->type_encodings[type->type] = type;
 			}
 		}
@@ -1641,7 +1641,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'V':
 						opval += pr->pr_bases[opreg];
-						str = global_string (&data, opval, ev_void,
+						optype = &res->void_type;
+						str = global_string (&data, opval, optype,
 											 contents & 1);
 						break;
 					case 'G':

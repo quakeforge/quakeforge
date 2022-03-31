@@ -252,6 +252,7 @@ typedef struct client_s {
 
 	QFile			*upload;
 	struct dstring_s *uploadfn;
+	int             upload_started;
 	netadr_t		snap_from;
 	qboolean		remote_snap;
 

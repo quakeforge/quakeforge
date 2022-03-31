@@ -48,7 +48,6 @@
 #include "compat.h"
 #include "sbar.h"
 
-#include "qw/include/chase.h"
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_input.h"
 #include "qw/include/client.h"
@@ -117,7 +116,7 @@ vectoangles (vec3_t vec, vec3_t ang)
 qboolean
 Cam_DrawViewModel (void)
 {
-	if (cl.chase && chase_active->int_val)
+	if (cl.viewstate.chase && chase_active->int_val)
 		return false;
 
 	if (!cl.spectator)
@@ -133,7 +132,7 @@ qboolean
 Cam_DrawPlayer (int playernum)
 {
 	if (playernum == cl.playernum) {						// client player
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active->int_val == 0)
 			return false;
 		if (!cl.spectator)
 			return true;
@@ -142,7 +141,7 @@ Cam_DrawPlayer (int playernum)
 			return true;
 		if (cl.spectator && autocam && locked && spec_track == playernum)
 			return false;
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active->int_val == 0)
 			return true;
 	}
 	return false;
@@ -192,7 +191,7 @@ Cam_Lock (int playernum)
 }
 
 static trace_t
-Cam_DoTrace (vec3_t vec1, vec3_t vec2)
+Cam_DoTrace (vec4f_t vec1, vec3_t vec2)//FIXME vec2 type
 {
 #if 0
 	memset (&pmove, 0, sizeof (pmove));
@@ -221,7 +220,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	VectorMultAdd (player->pls.es.origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
-	trace = Cam_DoTrace (&player->pls.es.origin[0], v);//FIXME
+	trace = Cam_DoTrace (player->pls.es.origin, v);
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
@@ -230,7 +229,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		trace = Cam_DoTrace (&self->pls.es.origin[0], vec);//FIXME
+		trace = Cam_DoTrace (self->pls.es.origin, vec);
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
 
@@ -248,7 +247,7 @@ Cam_IsVisible (player_state_t *player, vec3_t vec)
 	trace_t     trace;
 	vec3_t      v;
 
-	trace = Cam_DoTrace (&player->pls.es.origin[0], vec);//FIXME
+	trace = Cam_DoTrace (player->pls.es.origin, vec);
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
 		return false;
 	// check distance, don't let the player get too far away or too close
@@ -439,7 +438,7 @@ Cam_Track (usercmd_t *cmd)
 	if (cl_chasecam->int_val) {
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
-		VectorCopy (player->viewangles, cl.viewstate.angles);
+		VectorCopy (player->viewangles, cl.viewstate.player_angles);
 		VectorCopy (player->pls.es.origin, desired_position);
 		if (memcmp (&desired_position, &self->pls.es.origin,
 					sizeof (desired_position)) != 0) {
@@ -468,8 +467,8 @@ Cam_Track (usercmd_t *cmd)
 		VectorCopy (desired_position, self->pls.es.origin);
 
 		VectorSubtract (player->pls.es.origin, desired_position, vec);
-		vectoangles (vec, cl.viewstate.angles);
-		cl.viewstate.angles[0] = -cl.viewstate.angles[0];
+		vectoangles (vec, cl.viewstate.player_angles);
+		cl.viewstate.player_angles[0] = -cl.viewstate.player_angles[0];
 	}
 }
 
@@ -536,8 +535,8 @@ Cam_SetView (void)
 			adjustang (cam_viewangles[YAW], vec2[YAW],
 					   cl_camera_maxyaw->value);
 	}
-	VectorCopy (cam_viewangles, cl.viewstate.angles);
-	VectorCopy (cl.viewstate.angles, cl.simangles);
+	VectorCopy (cam_viewangles, cl.viewstate.player_angles);
+	VectorCopy (cl.viewstate.player_angles, cl.simangles);
 	cl.simangles[ROLL] = 0;						// FIXME @@@
 }
 #endif
@@ -576,7 +575,7 @@ Cam_FinishMove (usercmd_t *cmd)
 				adjustang (cam_viewangles[YAW], vec2[YAW],
 						   cl_camera_maxyaw->value);
 		}
-		VectorCopy (cam_viewangles, cl.viewstate.angles);
+		VectorCopy (cam_viewangles, cl.viewstate.player_angles);
 	}
 #endif
 
@@ -587,7 +586,7 @@ Cam_FinishMove (usercmd_t *cmd)
 
 			if (autocam > CAM_TRACK) {
 				Cam_Unlock ();
-				VectorCopy (cl.viewstate.angles, cmd->angles);
+				VectorCopy (cl.viewstate.player_angles, cmd->angles);
 				return;
 			}
 		} else

@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -66,6 +63,7 @@
 # define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
 #endif
 
+static uint32_t     maxparticles;
 static GLushort    *pVAindices;
 static partvert_t  *particleVertexArray;
 
@@ -133,11 +131,34 @@ static struct {
 	{"fog", 1},
 };
 
+static void
+alloc_arrays (psystem_t *ps)
+{
+	if (ps->maxparticles > maxparticles) {
+		maxparticles = ps->maxparticles;
+		if (particleVertexArray)
+			free (particleVertexArray);
+		particleVertexArray = calloc (ps->maxparticles * 4,
+									  sizeof (partvert_t));
+
+		if (pVAindices)
+			free (pVAindices);
+		pVAindices = calloc (ps->maxparticles * 6, sizeof (GLushort));
+		for (uint32_t i = 0; i < ps->maxparticles; i++) {
+			pVAindices[i * 6 + 0] = i * 4 + 0;
+			pVAindices[i * 6 + 1] = i * 4 + 1;
+			pVAindices[i * 6 + 2] = i * 4 + 2;
+			pVAindices[i * 6 + 3] = i * 4 + 0;
+			pVAindices[i * 6 + 4] = i * 4 + 2;
+			pVAindices[i * 6 + 5] = i * 4 + 3;
+		}
+	}
+}
+
 void
 glsl_R_InitParticles (void)
 {
 	shader_t   *vert_shader, *frag_shader;
-	unsigned    i;
 	int         vert;
 	int         frag;
 	float       v[2] = {0, 0};
@@ -199,26 +220,11 @@ glsl_R_InitParticles (void)
 					   GL_UNSIGNED_BYTE, tex->data);
 	free (tex);
 
-	if (particleVertexArray)
-		free (particleVertexArray);
-	particleVertexArray = calloc (r_psystem.maxparticles * 4,
-								  sizeof (partvert_t));
-
-	if (pVAindices)
-		free (pVAindices);
-	pVAindices = calloc (r_psystem.maxparticles * 6, sizeof (GLushort));
-	for (i = 0; i < r_psystem.maxparticles; i++) {
-		pVAindices[i * 6 + 0] = i * 4 + 0;
-		pVAindices[i * 6 + 1] = i * 4 + 1;
-		pVAindices[i * 6 + 2] = i * 4 + 2;
-		pVAindices[i * 6 + 3] = i * 4 + 0;
-		pVAindices[i * 6 + 4] = i * 4 + 2;
-		pVAindices[i * 6 + 5] = i * 4 + 3;
-	}
+	alloc_arrays (&r_psystem);
 }
 
 static void
-draw_qf_particles (void)
+draw_qf_particles (psystem_t *psystem)
 {
 	byte       *at;
 	int         vacount;
@@ -236,12 +242,12 @@ draw_qf_particles (void)
 	qfeglEnableVertexAttribArray (quake_part.color.location);
 	qfeglEnableVertexAttribArray (quake_part.st.location);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
 	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false,
-						   &vp_mat[0][0]);
+						   (vec_t*)&vp_mat[0]);//FIXME
 
 	qfeglUniform1i (quake_part.texture.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -251,17 +257,18 @@ draw_qf_particles (void)
 	// LordHavoc: particles should not affect zbuffer
 	qfeglDepthMask (GL_FALSE);
 
-	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
+	minparticledist = DotProduct (r_refdef.frame.position,
+								  r_refdef.frame.forward) +
 		r_particles_nearclip->value;
 
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
-		particle_t *p = &r_psystem.particles[i];
+	for (unsigned i = 0; i < psystem->numparticles; i++) {
+		particle_t *p = &psystem->particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
-		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
+		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
 			at = (byte *) &d_8to24table[(byte) p->icolor];
 			VA[0].color[0] = at[0];
 			VA[0].color[1] = at[1];
@@ -306,8 +313,8 @@ draw_qf_particles (void)
 
 			scale = p->scale;
 
-			VectorScale (vup, scale, up_scale);
-			VectorScale (vright, scale, right_scale);
+			VectorScale (r_refdef.frame.up, scale, up_scale);
+			VectorScale (r_refdef.frame.right, scale, right_scale);
 
 			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
@@ -342,7 +349,7 @@ draw_qf_particles (void)
 }
 
 static void
-draw_id_particles (void)
+draw_id_particles (psystem_t *psystem)
 {
 	int         vacount;
 	float       minparticledist;
@@ -359,10 +366,10 @@ draw_id_particles (void)
 	qfeglEnableVertexAttribArray (quake_point.color.location);
 
 	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false,
-						   &vp_mat[0][0]);
+						   (vec_t*)&vp_mat[0]);//FIXME
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_point.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_point.palette.location, 0);
@@ -370,17 +377,18 @@ draw_id_particles (void)
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
+	minparticledist = DotProduct (r_refdef.frame.position,
+								  r_refdef.frame.forward) +
 		r_particles_nearclip->value;
 
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
-		particle_t *p = &r_psystem.particles[i];
+	for (unsigned i = 0; i < psystem->numparticles; i++) {
+		particle_t *p = &psystem->particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
-		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
+		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
 			VA[0].color[0] = (byte) p->icolor;
 			VectorCopy (p->pos, VA[0].vertex);
 			VA++;
@@ -404,15 +412,15 @@ draw_id_particles (void)
 }
 
 void
-glsl_R_DrawParticles (void)
+glsl_R_DrawParticles (psystem_t *psystem)
 {
-	if (!r_particles->int_val || !r_psystem.numparticles)
+	if (!psystem->numparticles) {
 		return;
-	R_RunParticles (vr_data.frametime);
-	if (!r_psystem.points_only) {
-		draw_qf_particles ();
+	}
+	if (!psystem->points_only) {
+		draw_qf_particles (psystem);
 	} else {
-		draw_id_particles ();
+		draw_id_particles (psystem);
 	}
 }
 
@@ -427,12 +435,14 @@ static void
 r_particles_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (var, r_particles_max);
+	alloc_arrays (&r_psystem);
 }
 
 static void
 r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
+	alloc_arrays (&r_psystem);
 }
 
 void

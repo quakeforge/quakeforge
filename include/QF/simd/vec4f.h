@@ -197,9 +197,9 @@ VISIBLE
 vec4f_t
 crossf (vec4f_t a, vec4f_t b)
 {
-	static const vec4i_t A = {1, 2, 0, 3};
-	vec4f_t c = a * __builtin_shuffle (b, A) - __builtin_shuffle (a, A) * b;
-	return __builtin_shuffle(c, A);
+	vec4f_t c = a * (vec4f_t) {b[1], b[2], b[0], b[3]}
+			  - b * (vec4f_t) {a[1], a[2], a[0], a[3]};
+	return (vec4f_t) {c[1], c[2], c[0], c[3]};
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs

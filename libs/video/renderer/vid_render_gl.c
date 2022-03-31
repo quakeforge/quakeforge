@@ -28,23 +28,117 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "gl/namehack.h"
+#include "QF/cvar.h"
+#include "QF/image.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_fisheye.h"
+#include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_vid.h"
 
 #include "mod_internal.h"
+#include "r_cvar.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_gl.h"
 
-#include "gl/namehack.h"
-
 gl_ctx_t *gl_ctx;
+
+/* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
+static unsigned int GLErr_InvalidEnum;
+static unsigned int GLErr_InvalidValue;
+static unsigned int GLErr_InvalidOperation;
+static unsigned int GLErr_OutOfMemory;
+static unsigned int GLErr_StackOverflow;
+static unsigned int GLErr_StackUnderflow;
+static unsigned int GLErr_Unknown;
+
+static unsigned int
+R_TestErrors (unsigned int numerous)
+{
+	switch (qfglGetError ()) {
+	case GL_NO_ERROR:
+		return numerous;
+		break;
+	case GL_INVALID_ENUM:
+		GLErr_InvalidEnum++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_INVALID_VALUE:
+		GLErr_InvalidValue++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_INVALID_OPERATION:
+		GLErr_InvalidOperation++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_STACK_OVERFLOW:
+		GLErr_StackOverflow++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_STACK_UNDERFLOW:
+		GLErr_StackUnderflow++;
+		R_TestErrors (numerous++);
+		break;
+	case GL_OUT_OF_MEMORY:
+		GLErr_OutOfMemory++;
+		R_TestErrors (numerous++);
+		break;
+	default:
+		GLErr_Unknown++;
+		R_TestErrors (numerous++);
+		break;
+	}
+
+	return numerous;
+}
+
+static void
+R_DisplayErrors (void)
+{
+	if (GLErr_InvalidEnum)
+		printf ("%d OpenGL errors: Invalid Enum!\n", GLErr_InvalidEnum);
+	if (GLErr_InvalidValue)
+		printf ("%d OpenGL errors: Invalid Value!\n", GLErr_InvalidValue);
+	if (GLErr_InvalidOperation)
+		printf ("%d OpenGL errors: Invalid Operation!\n", GLErr_InvalidOperation);
+	if (GLErr_StackOverflow)
+		printf ("%d OpenGL errors: Stack Overflow!\n", GLErr_StackOverflow);
+	if (GLErr_StackUnderflow)
+		printf ("%d OpenGL errors: Stack Underflow\n!", GLErr_StackUnderflow);
+	if (GLErr_OutOfMemory)
+		printf ("%d OpenGL errors: Out Of Memory!\n", GLErr_OutOfMemory);
+	if (GLErr_Unknown)
+		printf ("%d Unknown OpenGL errors!\n", GLErr_Unknown);
+}
+
+static void
+R_ClearErrors (void)
+{
+	GLErr_InvalidEnum = 0;
+	GLErr_InvalidValue = 0;
+	GLErr_InvalidOperation = 0;
+	GLErr_OutOfMemory = 0;
+	GLErr_StackOverflow = 0;
+	GLErr_StackUnderflow = 0;
+	GLErr_Unknown = 0;
+}
+
+void
+gl_errors (const char *msg)
+{
+	if (R_TestErrors (0)) {
+		printf ("gl_errors: %s\n", msg);
+		R_DisplayErrors ();
+	}
+	R_ClearErrors ();
+}
 
 static void
 gl_vid_render_choose_visual (void *data)
@@ -55,7 +149,7 @@ gl_vid_render_choose_visual (void *data)
 static void
 gl_vid_render_create_context (void *data)
 {
-	gl_ctx->create_context (gl_ctx);
+	gl_ctx->create_context (gl_ctx, 0);
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -108,6 +202,287 @@ gl_vid_render_shutdown (void)
 {
 }
 
+static void
+gl_begin_frame (void)
+{
+	if (gl_ctx->begun) {
+		gl_ctx->end_rendering ();
+		gl_ctx->begun = 0;
+	}
+
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in gl mode
+	vr_data.scr_copyeverything = 1;
+
+	if (gl_clear->int_val) {
+		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	} else {
+		qfglClear (GL_DEPTH_BUFFER_BIT);
+	}
+
+	gl_ctx->begun = 1;
+
+	if (r_speeds->int_val) {
+		gl_ctx->start_time = Sys_DoubleTime ();
+		gl_ctx->brush_polys = 0;
+		gl_ctx->alias_polys = 0;
+	}
+
+	GL_Set2D ();
+	GL_DrawReset ();
+
+	// draw any areas not covered by the refresh
+	if (r_refdef.vrect.x > 0) {
+		// left
+		gl_Draw_TileClear (0, 0, r_refdef.vrect.x,
+						   vid.height - vr_data.lineadj);
+		// right
+		gl_Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
+						   vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
+						   vid.height - vr_data.lineadj);
+	}
+	if (r_refdef.vrect.y > 0) {
+		// top
+		gl_Draw_TileClear (r_refdef.vrect.x, 0,
+						   r_refdef.vrect.x + r_refdef.vrect.width,
+						   r_refdef.vrect.y);
+		// bottom
+		gl_Draw_TileClear (r_refdef.vrect.x,
+						   r_refdef.vrect.y + r_refdef.vrect.height,
+						   r_refdef.vrect.width,
+						   vid.height - vr_data.lineadj -
+						   (r_refdef.vrect.height + r_refdef.vrect.y));
+	}
+
+	gl_Fog_SetupFrame ();
+}
+
+static void
+gl_render_view (void)
+{
+	// do 3D refresh drawing, and then update the screen
+	qfglClear (GL_DEPTH_BUFFER_BIT);
+	gl_R_RenderView ();
+}
+
+static void
+gl_draw_transparent (void)
+{
+	gl_R_DrawWaterSurfaces ();
+}
+
+static void
+gl_post_process (framebuffer_t *src)
+{
+	if (scr_fisheye->int_val) {
+		gl_FisheyeScreen (src);
+	} else if (r_dowarp) {
+		gl_WarpScreen (src);
+	}
+}
+
+static void
+gl_set_2d (int scaled)
+{
+	if (scaled) {
+		GL_Set2DScaled ();
+	} else {
+		GL_Set2D ();
+	}
+}
+
+static void
+gl_end_frame (void)
+{
+	if (r_speeds->int_val) {
+//		qfglFinish ();
+		double      start_time = gl_ctx->start_time;
+		double      end_time = Sys_DoubleTime ();
+		Sys_MaskPrintf (SYS_dev, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
+						(int) ((end_time - start_time) * 1000),
+						gl_ctx->brush_polys, gl_ctx->alias_polys,
+						r_psystem.numparticles);
+	}
+
+	GL_FlushText ();
+	qfglFlush ();
+
+	if (gl_finish->int_val) {
+		gl_ctx->end_rendering ();
+		gl_ctx->begun = 0;
+	}
+}
+
+static framebuffer_t *
+gl_create_cube_map (int side)
+{
+	GLuint      tex[2];
+	qfglGenTextures (2, tex);
+
+	qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, tex[0]);
+	for (int i = 0; i < 6; i++) {
+		qfglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + i, 0, GL_RGBA,
+						side, side, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	}
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER,
+					   GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER,
+					   GL_LINEAR);
+
+	qfglBindTexture (GL_TEXTURE_2D, tex[1]);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, side, side, 0,
+					GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	size_t      size = sizeof (framebuffer_t) * 6;
+	size += sizeof (gl_framebuffer_t) * 6;
+
+	framebuffer_t *cube = malloc (size);
+	__auto_type buffer_base = (gl_framebuffer_t *) &cube[6];
+	for (int i = 0; i < 6; i++) {
+		cube[i].width = side;
+		cube[i].height = side;
+		__auto_type buffer = buffer_base + i;
+		cube[i].buffer = buffer;
+
+		buffer->color = tex[0];
+		buffer->depth = tex[1];
+		qfglGenFramebuffers (1, &buffer->handle);
+
+		qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+		qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+								  GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + i,
+								  buffer->color, 0);
+		qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+								  GL_TEXTURE_2D, buffer->depth, 0);
+	}
+	qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return cube;
+}
+
+static framebuffer_t *
+gl_create_frame_buffer (int width, int height)
+{
+	size_t      size = sizeof (framebuffer_t) + sizeof (gl_framebuffer_t);
+
+	framebuffer_t *fb = malloc (size);
+	fb->width = width;
+	fb->height = height;
+	__auto_type buffer = (gl_framebuffer_t *) &fb[1];
+	fb->buffer = buffer;
+	qfglGenFramebuffers (1, &buffer->handle);
+
+	GLuint      tex[2];
+	qfglGenTextures (2, tex);
+
+	buffer->color = tex[0];
+	buffer->depth = tex[1];
+
+	qfglBindTexture (GL_TEXTURE_2D, buffer->color);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qfglBindTexture (GL_TEXTURE_2D, buffer->depth);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
+					GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+	qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+							  GL_TEXTURE_2D, buffer->color, 0);
+	qfglFramebufferTexture2D (GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+							  GL_TEXTURE_2D, buffer->depth, 0);
+
+	qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	return fb;
+}
+
+static void
+gl_bind_framebuffer (framebuffer_t *framebuffer)
+{
+	unsigned    width = vr_data.vid->width;
+	unsigned    height = vr_data.vid->height;
+	if (!framebuffer) {
+		qfglBindFramebuffer (GL_FRAMEBUFFER, 0);
+	} else {
+		gl_framebuffer_t *buffer = framebuffer->buffer;
+		qfglBindFramebuffer (GL_FRAMEBUFFER, buffer->handle);
+
+		width = framebuffer->width;
+		height = framebuffer->height;
+	}
+
+	vrect_t r = { 0, 0, width, height };
+	R_SetVrect (&r, &r_refdef.vrect, 0);
+}
+
+static void
+gl_set_viewport (const vrect_t *view)
+{
+	int         x = view->x;
+	int         y = vid.height - (view->y + view->height);	//FIXME vid.height
+	int         w = view->width;
+	int         h = view->height;
+	qfglViewport (x, y, w, h);
+}
+
+static void
+gl_set_fov (float x, float y)
+{
+	float       neard, fard;
+	mat4f_t     proj;
+
+	neard = r_nearclip->value;
+	fard = r_farclip->value;
+
+	// NOTE columns!
+	proj[0] = (vec4f_t) { 1/x, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, 1/y, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard) / (fard - neard), 1 };
+	proj[3] = (vec4f_t) { 0, 0, (fard * neard) / (neard - fard), 0 };
+
+	// convert 0..1 depth buffer range to -1..1
+	static mat4f_t depth_range = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 2, 0},
+		{ 0, 0,-1, 1},
+	};
+	mmulf (gl_ctx->projection, depth_range, proj);
+}
+
+static void
+gl_capture_screen (capfunc_t callback, void *data)
+{
+	int         count;
+	tex_t      *tex;
+
+	count = vid.width * vid.height;
+	tex = malloc (sizeof (tex_t) + count * 3);
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->width = vid.width;
+		tex->height = vid.height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
+		tex->bgr = 1;
+		tex->flipped = 1;
+		qfglReadPixels (0, 0, tex->width, tex->height, GL_BGR_EXT,
+						GL_UNSIGNED_BYTE, tex->data);
+	}
+	callback (tex, data);
+}
+
 vid_render_funcs_t gl_vid_render_funcs = {
 	gl_vid_render_init,
 	gl_Draw_Character,
@@ -131,32 +506,29 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
-	gl_SCR_CaptureBGR,
-	gl_SCR_ScreenShot,
-	SCR_DrawStringToSnap,
-
-	gl_Fog_Update,
-	gl_Fog_ParseWorldspawn,
-
 	gl_ParticleSystem,
 	gl_R_Init,
-	gl_R_RenderFrame,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	gl_R_LineGraph,
-	R_AllocDlight,
-	R_AllocEntity,
-	R_MaxDlightsCheck,
-	R_DecayLights,
-	gl_R_ViewChanged,
-	gl_SCR_ScreenShot_f,
+	gl_begin_frame,
+	gl_render_view,
+	gl_R_RenderEntities,
+	gl_R_DrawParticles,
+	gl_draw_transparent,
+	gl_post_process,
+	gl_set_2d,
+	gl_end_frame,
+
+	gl_create_cube_map,
+	gl_create_frame_buffer,
+	gl_bind_framebuffer,
+	gl_set_viewport,
+	gl_set_fov,
+
+	gl_capture_screen,
+
 	&model_funcs
 };
 

@@ -46,6 +46,8 @@ typedef struct s_efrag_list {
 static efrag_t    *r_free_efrags;
 static t_efrag_list *efrag_list;
 
+entqueue_t *r_ent_queue;
+
 /* ENTITY FRAGMENT FUNCTIONS */
 
 static inline void
@@ -204,11 +206,9 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 
-	if (!ent->renderer.model || !r_worldentity.renderer.model)
+	if (!ent->renderer.model) {
 		return;
-
-	if (ent == &r_worldentity)
-		return;							// never add the world
+	}
 
 	entmodel = ent->renderer.model;
 
@@ -235,17 +235,11 @@ R_StoreEfrags (const efrag_t *efrag)
 			case mod_brush:
 			case mod_sprite:
 			case mod_iqm:
-				if (ent->visibility.visframe != r_framecount) {
-					R_EnqueueEntity (ent);
-					// mark that we've recorded this entity for this frame
-					ent->visibility.visframe = r_framecount;
-				}
-				efrag = efrag->leafnext;
+				EntQueue_AddEntity (r_ent_queue, ent, model->type);
 				break;
-
 			default:
-				Sys_Error ("R_StoreEfrags: Bad entity type %d",
-						   model->type);
+				(void)0;//FIXME for clang
 		}
+		efrag = efrag->leafnext;
 	}
 }

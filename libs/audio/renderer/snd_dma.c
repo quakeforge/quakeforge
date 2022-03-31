@@ -211,8 +211,7 @@ s_update_ (void)
 	Called once each time through the main loop
 */
 static void
-s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-			const vec3_t up, const byte *ambient_sound_level)
+s_update (struct transform_s *ear, const byte *ambient_sound_level)
 {
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -221,7 +220,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		snd_output_funcs->on_update (&snd);
 	}
 
-	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
+	SND_SetListener (&snd, ear, ambient_sound_level);
 
 	if (snd_output_data->model == som_push) {
 		// mix some sound
@@ -393,7 +392,7 @@ s_ambient_on (void)
 }
 
 static void
-s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
+s_static_sound (sfx_t *sfx, vec4f_t origin, float vol,
 				float attenuation)
 {
 	if (!sound_started)
@@ -402,7 +401,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 }
 
 static void
-s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+s_start_sound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			   float vol, float attenuation)
 {
 	if (!sound_started)

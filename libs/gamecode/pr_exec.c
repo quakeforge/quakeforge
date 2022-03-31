@@ -1797,6 +1797,7 @@ op_call:
 		}
 	}
 exit_program:
+	(void)0;//FIXME for clang
 }
 
 #define MM(type) (*((pr_##type##_t *) (mm)))
@@ -1816,6 +1817,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 1:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
+			(void)0;//FIXME for clang
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
@@ -1853,6 +1855,7 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
+			(void)0;//FIXME for clang
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
@@ -1938,41 +1941,40 @@ pr_with (progs_t *pr, const dstatement_t *st)
 	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
 	pr_type_t  *stk;
-	pr_uint_t  *base = &pr->pr_bases[st->c & 3];
 
 	switch (st->a) {
 		// fixed offset
 		case 0:
 			// hard-0 base
-			*base = st->b;
+			pr->pr_bases[st->c & 3] = st->b;
 			return;
 		case 1:
 			// relative to current base (-ve offset)
-			*base = PR_BASE (pr, st, B) + (pr_short_t) st->b;
+			pr->pr_bases[st->c & 3] = PR_BASE (pr, st, B) + (pr_short_t) st->b;
 			return;
 		case 2:
 			// relative to stack (-ve offset)
-			*base = *pr->globals.stack + (pr_short_t) st->b;
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + (pr_short_t) st->b;
 			return;
 		case 3:
 			// relative to edict_area (only +ve)
-			*base = edict_area + st->b;
+			pr->pr_bases[st->c & 3] = edict_area + st->b;
 			return;
 
 		case 4:
 			// hard-0 base
-			*base = pr->pr_globals[st->b].pointer_var;
+			pr->pr_bases[st->c & 3] = pr->pr_globals[st->b].pointer_var;
 			return;
 		case 5:
-			*base = OPB(ptr);
+			pr->pr_bases[st->c & 3] = OPB(ptr);
 			return;
 		case 6:
 			// relative to stack (-ve offset)
-			*base = *pr->globals.stack + OPB(int);
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + OPB(int);
 			return;
 		case 7:
 			// relative to edict_area (only +ve)
-			*base = edict_area + OPB(field);
+			pr->pr_bases[st->c & 3] = edict_area + OPB(field);
 			return;
 
 		case 8:
@@ -1991,7 +1993,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			return;
 		case 11:
 			// return pointer
-			*base = pr->pr_return - pr->pr_globals;
+			pr->pr_bases[st->c & 3] = pr->pr_return - pr->pr_globals;
 			return;
 	}
 	PR_RunError (pr, "Invalid with index: %u", st->a);
@@ -2001,330 +2003,7 @@ static pr_ivec4_t
 pr_swizzle_f (pr_ivec4_t vec, pr_ushort_t swiz)
 {
 	goto do_swizzle;
-#define swizzle __builtin_shuffle
-	swizzle_xxxx: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 0, 0 }); goto negate;
-	swizzle_yxxx: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 0, 0 }); goto negate;
-	swizzle_zxxx: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 0, 0 }); goto negate;
-	swizzle_wxxx: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 0, 0 }); goto negate;
-	swizzle_xyxx: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 0, 0 }); goto negate;
-	swizzle_yyxx: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 0, 0 }); goto negate;
-	swizzle_zyxx: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 0, 0 }); goto negate;
-	swizzle_wyxx: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 0, 0 }); goto negate;
-	swizzle_xzxx: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 0, 0 }); goto negate;
-	swizzle_yzxx: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 0, 0 }); goto negate;
-	swizzle_zzxx: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 0, 0 }); goto negate;
-	swizzle_wzxx: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 0, 0 }); goto negate;
-	swizzle_xwxx: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 0, 0 }); goto negate;
-	swizzle_ywxx: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 0, 0 }); goto negate;
-	swizzle_zwxx: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 0, 0 }); goto negate;
-	swizzle_wwxx: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 0, 0 }); goto negate;
-	swizzle_xxyx: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 1, 0 }); goto negate;
-	swizzle_yxyx: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 1, 0 }); goto negate;
-	swizzle_zxyx: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 1, 0 }); goto negate;
-	swizzle_wxyx: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 1, 0 }); goto negate;
-	swizzle_xyyx: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 1, 0 }); goto negate;
-	swizzle_yyyx: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 1, 0 }); goto negate;
-	swizzle_zyyx: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 1, 0 }); goto negate;
-	swizzle_wyyx: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 1, 0 }); goto negate;
-	swizzle_xzyx: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 1, 0 }); goto negate;
-	swizzle_yzyx: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 1, 0 }); goto negate;
-	swizzle_zzyx: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 1, 0 }); goto negate;
-	swizzle_wzyx: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 1, 0 }); goto negate;
-	swizzle_xwyx: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 1, 0 }); goto negate;
-	swizzle_ywyx: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 1, 0 }); goto negate;
-	swizzle_zwyx: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 1, 0 }); goto negate;
-	swizzle_wwyx: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 1, 0 }); goto negate;
-	swizzle_xxzx: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 2, 0 }); goto negate;
-	swizzle_yxzx: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 2, 0 }); goto negate;
-	swizzle_zxzx: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 2, 0 }); goto negate;
-	swizzle_wxzx: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 2, 0 }); goto negate;
-	swizzle_xyzx: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 2, 0 }); goto negate;
-	swizzle_yyzx: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 2, 0 }); goto negate;
-	swizzle_zyzx: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 2, 0 }); goto negate;
-	swizzle_wyzx: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 2, 0 }); goto negate;
-	swizzle_xzzx: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 2, 0 }); goto negate;
-	swizzle_yzzx: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 2, 0 }); goto negate;
-	swizzle_zzzx: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 2, 0 }); goto negate;
-	swizzle_wzzx: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 2, 0 }); goto negate;
-	swizzle_xwzx: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 2, 0 }); goto negate;
-	swizzle_ywzx: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 2, 0 }); goto negate;
-	swizzle_zwzx: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 2, 0 }); goto negate;
-	swizzle_wwzx: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 2, 0 }); goto negate;
-	swizzle_xxwx: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 3, 0 }); goto negate;
-	swizzle_yxwx: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 3, 0 }); goto negate;
-	swizzle_zxwx: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 3, 0 }); goto negate;
-	swizzle_wxwx: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 3, 0 }); goto negate;
-	swizzle_xywx: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 3, 0 }); goto negate;
-	swizzle_yywx: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 3, 0 }); goto negate;
-	swizzle_zywx: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 3, 0 }); goto negate;
-	swizzle_wywx: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 3, 0 }); goto negate;
-	swizzle_xzwx: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 3, 0 }); goto negate;
-	swizzle_yzwx: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 3, 0 }); goto negate;
-	swizzle_zzwx: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 3, 0 }); goto negate;
-	swizzle_wzwx: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 3, 0 }); goto negate;
-	swizzle_xwwx: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 3, 0 }); goto negate;
-	swizzle_ywwx: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 3, 0 }); goto negate;
-	swizzle_zwwx: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 3, 0 }); goto negate;
-	swizzle_wwwx: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 3, 0 }); goto negate;
-	swizzle_xxxy: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 0, 1 }); goto negate;
-	swizzle_yxxy: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 0, 1 }); goto negate;
-	swizzle_zxxy: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 0, 1 }); goto negate;
-	swizzle_wxxy: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 0, 1 }); goto negate;
-	swizzle_xyxy: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 0, 1 }); goto negate;
-	swizzle_yyxy: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 0, 1 }); goto negate;
-	swizzle_zyxy: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 0, 1 }); goto negate;
-	swizzle_wyxy: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 0, 1 }); goto negate;
-	swizzle_xzxy: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 0, 1 }); goto negate;
-	swizzle_yzxy: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 0, 1 }); goto negate;
-	swizzle_zzxy: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 0, 1 }); goto negate;
-	swizzle_wzxy: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 0, 1 }); goto negate;
-	swizzle_xwxy: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 0, 1 }); goto negate;
-	swizzle_ywxy: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 0, 1 }); goto negate;
-	swizzle_zwxy: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 0, 1 }); goto negate;
-	swizzle_wwxy: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 0, 1 }); goto negate;
-	swizzle_xxyy: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 1, 1 }); goto negate;
-	swizzle_yxyy: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 1, 1 }); goto negate;
-	swizzle_zxyy: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 1, 1 }); goto negate;
-	swizzle_wxyy: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 1, 1 }); goto negate;
-	swizzle_xyyy: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 1, 1 }); goto negate;
-	swizzle_yyyy: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 1, 1 }); goto negate;
-	swizzle_zyyy: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 1, 1 }); goto negate;
-	swizzle_wyyy: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 1, 1 }); goto negate;
-	swizzle_xzyy: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 1, 1 }); goto negate;
-	swizzle_yzyy: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 1, 1 }); goto negate;
-	swizzle_zzyy: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 1, 1 }); goto negate;
-	swizzle_wzyy: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 1, 1 }); goto negate;
-	swizzle_xwyy: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 1, 1 }); goto negate;
-	swizzle_ywyy: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 1, 1 }); goto negate;
-	swizzle_zwyy: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 1, 1 }); goto negate;
-	swizzle_wwyy: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 1, 1 }); goto negate;
-	swizzle_xxzy: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 2, 1 }); goto negate;
-	swizzle_yxzy: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 2, 1 }); goto negate;
-	swizzle_zxzy: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 2, 1 }); goto negate;
-	swizzle_wxzy: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 2, 1 }); goto negate;
-	swizzle_xyzy: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 2, 1 }); goto negate;
-	swizzle_yyzy: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 2, 1 }); goto negate;
-	swizzle_zyzy: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 2, 1 }); goto negate;
-	swizzle_wyzy: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 2, 1 }); goto negate;
-	swizzle_xzzy: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 2, 1 }); goto negate;
-	swizzle_yzzy: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 2, 1 }); goto negate;
-	swizzle_zzzy: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 2, 1 }); goto negate;
-	swizzle_wzzy: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 2, 1 }); goto negate;
-	swizzle_xwzy: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 2, 1 }); goto negate;
-	swizzle_ywzy: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 2, 1 }); goto negate;
-	swizzle_zwzy: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 2, 1 }); goto negate;
-	swizzle_wwzy: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 2, 1 }); goto negate;
-	swizzle_xxwy: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 3, 1 }); goto negate;
-	swizzle_yxwy: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 3, 1 }); goto negate;
-	swizzle_zxwy: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 3, 1 }); goto negate;
-	swizzle_wxwy: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 3, 1 }); goto negate;
-	swizzle_xywy: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 3, 1 }); goto negate;
-	swizzle_yywy: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 3, 1 }); goto negate;
-	swizzle_zywy: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 3, 1 }); goto negate;
-	swizzle_wywy: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 3, 1 }); goto negate;
-	swizzle_xzwy: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 3, 1 }); goto negate;
-	swizzle_yzwy: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 3, 1 }); goto negate;
-	swizzle_zzwy: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 3, 1 }); goto negate;
-	swizzle_wzwy: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 3, 1 }); goto negate;
-	swizzle_xwwy: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 3, 1 }); goto negate;
-	swizzle_ywwy: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 3, 1 }); goto negate;
-	swizzle_zwwy: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 3, 1 }); goto negate;
-	swizzle_wwwy: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 3, 1 }); goto negate;
-	swizzle_xxxz: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 0, 2 }); goto negate;
-	swizzle_yxxz: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 0, 2 }); goto negate;
-	swizzle_zxxz: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 0, 2 }); goto negate;
-	swizzle_wxxz: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 0, 2 }); goto negate;
-	swizzle_xyxz: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 0, 2 }); goto negate;
-	swizzle_yyxz: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 0, 2 }); goto negate;
-	swizzle_zyxz: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 0, 2 }); goto negate;
-	swizzle_wyxz: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 0, 2 }); goto negate;
-	swizzle_xzxz: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 0, 2 }); goto negate;
-	swizzle_yzxz: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 0, 2 }); goto negate;
-	swizzle_zzxz: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 0, 2 }); goto negate;
-	swizzle_wzxz: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 0, 2 }); goto negate;
-	swizzle_xwxz: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 0, 2 }); goto negate;
-	swizzle_ywxz: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 0, 2 }); goto negate;
-	swizzle_zwxz: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 0, 2 }); goto negate;
-	swizzle_wwxz: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 0, 2 }); goto negate;
-	swizzle_xxyz: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 1, 2 }); goto negate;
-	swizzle_yxyz: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 1, 2 }); goto negate;
-	swizzle_zxyz: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 1, 2 }); goto negate;
-	swizzle_wxyz: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 1, 2 }); goto negate;
-	swizzle_xyyz: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 1, 2 }); goto negate;
-	swizzle_yyyz: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 1, 2 }); goto negate;
-	swizzle_zyyz: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 1, 2 }); goto negate;
-	swizzle_wyyz: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 1, 2 }); goto negate;
-	swizzle_xzyz: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 1, 2 }); goto negate;
-	swizzle_yzyz: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 1, 2 }); goto negate;
-	swizzle_zzyz: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 1, 2 }); goto negate;
-	swizzle_wzyz: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 1, 2 }); goto negate;
-	swizzle_xwyz: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 1, 2 }); goto negate;
-	swizzle_ywyz: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 1, 2 }); goto negate;
-	swizzle_zwyz: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 1, 2 }); goto negate;
-	swizzle_wwyz: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 1, 2 }); goto negate;
-	swizzle_xxzz: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 2, 2 }); goto negate;
-	swizzle_yxzz: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 2, 2 }); goto negate;
-	swizzle_zxzz: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 2, 2 }); goto negate;
-	swizzle_wxzz: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 2, 2 }); goto negate;
-	swizzle_xyzz: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 2, 2 }); goto negate;
-	swizzle_yyzz: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 2, 2 }); goto negate;
-	swizzle_zyzz: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 2, 2 }); goto negate;
-	swizzle_wyzz: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 2, 2 }); goto negate;
-	swizzle_xzzz: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 2, 2 }); goto negate;
-	swizzle_yzzz: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 2, 2 }); goto negate;
-	swizzle_zzzz: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 2, 2 }); goto negate;
-	swizzle_wzzz: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 2, 2 }); goto negate;
-	swizzle_xwzz: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 2, 2 }); goto negate;
-	swizzle_ywzz: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 2, 2 }); goto negate;
-	swizzle_zwzz: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 2, 2 }); goto negate;
-	swizzle_wwzz: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 2, 2 }); goto negate;
-	swizzle_xxwz: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 3, 2 }); goto negate;
-	swizzle_yxwz: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 3, 2 }); goto negate;
-	swizzle_zxwz: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 3, 2 }); goto negate;
-	swizzle_wxwz: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 3, 2 }); goto negate;
-	swizzle_xywz: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 3, 2 }); goto negate;
-	swizzle_yywz: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 3, 2 }); goto negate;
-	swizzle_zywz: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 3, 2 }); goto negate;
-	swizzle_wywz: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 3, 2 }); goto negate;
-	swizzle_xzwz: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 3, 2 }); goto negate;
-	swizzle_yzwz: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 3, 2 }); goto negate;
-	swizzle_zzwz: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 3, 2 }); goto negate;
-	swizzle_wzwz: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 3, 2 }); goto negate;
-	swizzle_xwwz: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 3, 2 }); goto negate;
-	swizzle_ywwz: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 3, 2 }); goto negate;
-	swizzle_zwwz: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 3, 2 }); goto negate;
-	swizzle_wwwz: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 3, 2 }); goto negate;
-	swizzle_xxxw: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 0, 3 }); goto negate;
-	swizzle_yxxw: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 0, 3 }); goto negate;
-	swizzle_zxxw: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 0, 3 }); goto negate;
-	swizzle_wxxw: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 0, 3 }); goto negate;
-	swizzle_xyxw: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 0, 3 }); goto negate;
-	swizzle_yyxw: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 0, 3 }); goto negate;
-	swizzle_zyxw: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 0, 3 }); goto negate;
-	swizzle_wyxw: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 0, 3 }); goto negate;
-	swizzle_xzxw: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 0, 3 }); goto negate;
-	swizzle_yzxw: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 0, 3 }); goto negate;
-	swizzle_zzxw: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 0, 3 }); goto negate;
-	swizzle_wzxw: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 0, 3 }); goto negate;
-	swizzle_xwxw: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 0, 3 }); goto negate;
-	swizzle_ywxw: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 0, 3 }); goto negate;
-	swizzle_zwxw: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 0, 3 }); goto negate;
-	swizzle_wwxw: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 0, 3 }); goto negate;
-	swizzle_xxyw: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 1, 3 }); goto negate;
-	swizzle_yxyw: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 1, 3 }); goto negate;
-	swizzle_zxyw: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 1, 3 }); goto negate;
-	swizzle_wxyw: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 1, 3 }); goto negate;
-	swizzle_xyyw: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 1, 3 }); goto negate;
-	swizzle_yyyw: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 1, 3 }); goto negate;
-	swizzle_zyyw: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 1, 3 }); goto negate;
-	swizzle_wyyw: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 1, 3 }); goto negate;
-	swizzle_xzyw: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 1, 3 }); goto negate;
-	swizzle_yzyw: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 1, 3 }); goto negate;
-	swizzle_zzyw: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 1, 3 }); goto negate;
-	swizzle_wzyw: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 1, 3 }); goto negate;
-	swizzle_xwyw: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 1, 3 }); goto negate;
-	swizzle_ywyw: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 1, 3 }); goto negate;
-	swizzle_zwyw: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 1, 3 }); goto negate;
-	swizzle_wwyw: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 1, 3 }); goto negate;
-	swizzle_xxzw: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 2, 3 }); goto negate;
-	swizzle_yxzw: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 2, 3 }); goto negate;
-	swizzle_zxzw: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 2, 3 }); goto negate;
-	swizzle_wxzw: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 2, 3 }); goto negate;
-	swizzle_xyzw: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 2, 3 }); goto negate;
-	swizzle_yyzw: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 2, 3 }); goto negate;
-	swizzle_zyzw: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 2, 3 }); goto negate;
-	swizzle_wyzw: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 2, 3 }); goto negate;
-	swizzle_xzzw: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 2, 3 }); goto negate;
-	swizzle_yzzw: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 2, 3 }); goto negate;
-	swizzle_zzzw: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 2, 3 }); goto negate;
-	swizzle_wzzw: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 2, 3 }); goto negate;
-	swizzle_xwzw: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 2, 3 }); goto negate;
-	swizzle_ywzw: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 2, 3 }); goto negate;
-	swizzle_zwzw: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 2, 3 }); goto negate;
-	swizzle_wwzw: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 2, 3 }); goto negate;
-	swizzle_xxww: vec = swizzle (vec, (pr_ivec4_t) { 0, 0, 3, 3 }); goto negate;
-	swizzle_yxww: vec = swizzle (vec, (pr_ivec4_t) { 1, 0, 3, 3 }); goto negate;
-	swizzle_zxww: vec = swizzle (vec, (pr_ivec4_t) { 2, 0, 3, 3 }); goto negate;
-	swizzle_wxww: vec = swizzle (vec, (pr_ivec4_t) { 3, 0, 3, 3 }); goto negate;
-	swizzle_xyww: vec = swizzle (vec, (pr_ivec4_t) { 0, 1, 3, 3 }); goto negate;
-	swizzle_yyww: vec = swizzle (vec, (pr_ivec4_t) { 1, 1, 3, 3 }); goto negate;
-	swizzle_zyww: vec = swizzle (vec, (pr_ivec4_t) { 2, 1, 3, 3 }); goto negate;
-	swizzle_wyww: vec = swizzle (vec, (pr_ivec4_t) { 3, 1, 3, 3 }); goto negate;
-	swizzle_xzww: vec = swizzle (vec, (pr_ivec4_t) { 0, 2, 3, 3 }); goto negate;
-	swizzle_yzww: vec = swizzle (vec, (pr_ivec4_t) { 1, 2, 3, 3 }); goto negate;
-	swizzle_zzww: vec = swizzle (vec, (pr_ivec4_t) { 2, 2, 3, 3 }); goto negate;
-	swizzle_wzww: vec = swizzle (vec, (pr_ivec4_t) { 3, 2, 3, 3 }); goto negate;
-	swizzle_xwww: vec = swizzle (vec, (pr_ivec4_t) { 0, 3, 3, 3 }); goto negate;
-	swizzle_ywww: vec = swizzle (vec, (pr_ivec4_t) { 1, 3, 3, 3 }); goto negate;
-	swizzle_zwww: vec = swizzle (vec, (pr_ivec4_t) { 2, 3, 3, 3 }); goto negate;
-	swizzle_wwww: vec = swizzle (vec, (pr_ivec4_t) { 3, 3, 3, 3 }); goto negate;
-	static void *swizzle_table[256] = {
-		&&swizzle_xxxx, &&swizzle_yxxx, &&swizzle_zxxx, &&swizzle_wxxx,
-		&&swizzle_xyxx, &&swizzle_yyxx, &&swizzle_zyxx, &&swizzle_wyxx,
-		&&swizzle_xzxx, &&swizzle_yzxx, &&swizzle_zzxx, &&swizzle_wzxx,
-		&&swizzle_xwxx, &&swizzle_ywxx, &&swizzle_zwxx, &&swizzle_wwxx,
-		&&swizzle_xxyx, &&swizzle_yxyx, &&swizzle_zxyx, &&swizzle_wxyx,
-		&&swizzle_xyyx, &&swizzle_yyyx, &&swizzle_zyyx, &&swizzle_wyyx,
-		&&swizzle_xzyx, &&swizzle_yzyx, &&swizzle_zzyx, &&swizzle_wzyx,
-		&&swizzle_xwyx, &&swizzle_ywyx, &&swizzle_zwyx, &&swizzle_wwyx,
-		&&swizzle_xxzx, &&swizzle_yxzx, &&swizzle_zxzx, &&swizzle_wxzx,
-		&&swizzle_xyzx, &&swizzle_yyzx, &&swizzle_zyzx, &&swizzle_wyzx,
-		&&swizzle_xzzx, &&swizzle_yzzx, &&swizzle_zzzx, &&swizzle_wzzx,
-		&&swizzle_xwzx, &&swizzle_ywzx, &&swizzle_zwzx, &&swizzle_wwzx,
-		&&swizzle_xxwx, &&swizzle_yxwx, &&swizzle_zxwx, &&swizzle_wxwx,
-		&&swizzle_xywx, &&swizzle_yywx, &&swizzle_zywx, &&swizzle_wywx,
-		&&swizzle_xzwx, &&swizzle_yzwx, &&swizzle_zzwx, &&swizzle_wzwx,
-		&&swizzle_xwwx, &&swizzle_ywwx, &&swizzle_zwwx, &&swizzle_wwwx,
-		&&swizzle_xxxy, &&swizzle_yxxy, &&swizzle_zxxy, &&swizzle_wxxy,
-		&&swizzle_xyxy, &&swizzle_yyxy, &&swizzle_zyxy, &&swizzle_wyxy,
-		&&swizzle_xzxy, &&swizzle_yzxy, &&swizzle_zzxy, &&swizzle_wzxy,
-		&&swizzle_xwxy, &&swizzle_ywxy, &&swizzle_zwxy, &&swizzle_wwxy,
-		&&swizzle_xxyy, &&swizzle_yxyy, &&swizzle_zxyy, &&swizzle_wxyy,
-		&&swizzle_xyyy, &&swizzle_yyyy, &&swizzle_zyyy, &&swizzle_wyyy,
-		&&swizzle_xzyy, &&swizzle_yzyy, &&swizzle_zzyy, &&swizzle_wzyy,
-		&&swizzle_xwyy, &&swizzle_ywyy, &&swizzle_zwyy, &&swizzle_wwyy,
-		&&swizzle_xxzy, &&swizzle_yxzy, &&swizzle_zxzy, &&swizzle_wxzy,
-		&&swizzle_xyzy, &&swizzle_yyzy, &&swizzle_zyzy, &&swizzle_wyzy,
-		&&swizzle_xzzy, &&swizzle_yzzy, &&swizzle_zzzy, &&swizzle_wzzy,
-		&&swizzle_xwzy, &&swizzle_ywzy, &&swizzle_zwzy, &&swizzle_wwzy,
-		&&swizzle_xxwy, &&swizzle_yxwy, &&swizzle_zxwy, &&swizzle_wxwy,
-		&&swizzle_xywy, &&swizzle_yywy, &&swizzle_zywy, &&swizzle_wywy,
-		&&swizzle_xzwy, &&swizzle_yzwy, &&swizzle_zzwy, &&swizzle_wzwy,
-		&&swizzle_xwwy, &&swizzle_ywwy, &&swizzle_zwwy, &&swizzle_wwwy,
-		&&swizzle_xxxz, &&swizzle_yxxz, &&swizzle_zxxz, &&swizzle_wxxz,
-		&&swizzle_xyxz, &&swizzle_yyxz, &&swizzle_zyxz, &&swizzle_wyxz,
-		&&swizzle_xzxz, &&swizzle_yzxz, &&swizzle_zzxz, &&swizzle_wzxz,
-		&&swizzle_xwxz, &&swizzle_ywxz, &&swizzle_zwxz, &&swizzle_wwxz,
-		&&swizzle_xxyz, &&swizzle_yxyz, &&swizzle_zxyz, &&swizzle_wxyz,
-		&&swizzle_xyyz, &&swizzle_yyyz, &&swizzle_zyyz, &&swizzle_wyyz,
-		&&swizzle_xzyz, &&swizzle_yzyz, &&swizzle_zzyz, &&swizzle_wzyz,
-		&&swizzle_xwyz, &&swizzle_ywyz, &&swizzle_zwyz, &&swizzle_wwyz,
-		&&swizzle_xxzz, &&swizzle_yxzz, &&swizzle_zxzz, &&swizzle_wxzz,
-		&&swizzle_xyzz, &&swizzle_yyzz, &&swizzle_zyzz, &&swizzle_wyzz,
-		&&swizzle_xzzz, &&swizzle_yzzz, &&swizzle_zzzz, &&swizzle_wzzz,
-		&&swizzle_xwzz, &&swizzle_ywzz, &&swizzle_zwzz, &&swizzle_wwzz,
-		&&swizzle_xxwz, &&swizzle_yxwz, &&swizzle_zxwz, &&swizzle_wxwz,
-		&&swizzle_xywz, &&swizzle_yywz, &&swizzle_zywz, &&swizzle_wywz,
-		&&swizzle_xzwz, &&swizzle_yzwz, &&swizzle_zzwz, &&swizzle_wzwz,
-		&&swizzle_xwwz, &&swizzle_ywwz, &&swizzle_zwwz, &&swizzle_wwwz,
-		&&swizzle_xxxw, &&swizzle_yxxw, &&swizzle_zxxw, &&swizzle_wxxw,
-		&&swizzle_xyxw, &&swizzle_yyxw, &&swizzle_zyxw, &&swizzle_wyxw,
-		&&swizzle_xzxw, &&swizzle_yzxw, &&swizzle_zzxw, &&swizzle_wzxw,
-		&&swizzle_xwxw, &&swizzle_ywxw, &&swizzle_zwxw, &&swizzle_wwxw,
-		&&swizzle_xxyw, &&swizzle_yxyw, &&swizzle_zxyw, &&swizzle_wxyw,
-		&&swizzle_xyyw, &&swizzle_yyyw, &&swizzle_zyyw, &&swizzle_wyyw,
-		&&swizzle_xzyw, &&swizzle_yzyw, &&swizzle_zzyw, &&swizzle_wzyw,
-		&&swizzle_xwyw, &&swizzle_ywyw, &&swizzle_zwyw, &&swizzle_wwyw,
-		&&swizzle_xxzw, &&swizzle_yxzw, &&swizzle_zxzw, &&swizzle_wxzw,
-		&&swizzle_xyzw, &&swizzle_yyzw, &&swizzle_zyzw, &&swizzle_wyzw,
-		&&swizzle_xzzw, &&swizzle_yzzw, &&swizzle_zzzw, &&swizzle_wzzw,
-		&&swizzle_xwzw, &&swizzle_ywzw, &&swizzle_zwzw, &&swizzle_wwzw,
-		&&swizzle_xxww, &&swizzle_yxww, &&swizzle_zxww, &&swizzle_wxww,
-		&&swizzle_xyww, &&swizzle_yyww, &&swizzle_zyww, &&swizzle_wyww,
-		&&swizzle_xzww, &&swizzle_yzww, &&swizzle_zzww, &&swizzle_wzww,
-		&&swizzle_xwww, &&swizzle_ywww, &&swizzle_zwww, &&swizzle_wwww,
-	};
-#undef swizzle
+#include "libs/gamecode/pr_swizzle32.cinc"
 	static const pr_ivec4_t neg[16] = {
 		{     0,     0,     0,     0 },
 		{ 1<<31,     0,     0,     0 },
@@ -2379,330 +2058,7 @@ __attribute__((sysv_abi))
 pr_swizzle_d (pr_lvec4_t vec, pr_ushort_t swiz)
 {
 	goto do_swizzle;
-#define swizzle __builtin_shuffle
-	swizzle_xxxx: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 0, 0 }); goto negate;
-	swizzle_yxxx: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 0, 0 }); goto negate;
-	swizzle_zxxx: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 0, 0 }); goto negate;
-	swizzle_wxxx: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 0, 0 }); goto negate;
-	swizzle_xyxx: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 0, 0 }); goto negate;
-	swizzle_yyxx: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 0, 0 }); goto negate;
-	swizzle_zyxx: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 0, 0 }); goto negate;
-	swizzle_wyxx: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 0, 0 }); goto negate;
-	swizzle_xzxx: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 0, 0 }); goto negate;
-	swizzle_yzxx: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 0, 0 }); goto negate;
-	swizzle_zzxx: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 0, 0 }); goto negate;
-	swizzle_wzxx: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 0, 0 }); goto negate;
-	swizzle_xwxx: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 0, 0 }); goto negate;
-	swizzle_ywxx: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 0, 0 }); goto negate;
-	swizzle_zwxx: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 0, 0 }); goto negate;
-	swizzle_wwxx: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 0, 0 }); goto negate;
-	swizzle_xxyx: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 1, 0 }); goto negate;
-	swizzle_yxyx: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 1, 0 }); goto negate;
-	swizzle_zxyx: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 1, 0 }); goto negate;
-	swizzle_wxyx: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 1, 0 }); goto negate;
-	swizzle_xyyx: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 1, 0 }); goto negate;
-	swizzle_yyyx: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 1, 0 }); goto negate;
-	swizzle_zyyx: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 1, 0 }); goto negate;
-	swizzle_wyyx: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 1, 0 }); goto negate;
-	swizzle_xzyx: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 1, 0 }); goto negate;
-	swizzle_yzyx: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 1, 0 }); goto negate;
-	swizzle_zzyx: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 1, 0 }); goto negate;
-	swizzle_wzyx: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 1, 0 }); goto negate;
-	swizzle_xwyx: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 1, 0 }); goto negate;
-	swizzle_ywyx: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 1, 0 }); goto negate;
-	swizzle_zwyx: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 1, 0 }); goto negate;
-	swizzle_wwyx: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 1, 0 }); goto negate;
-	swizzle_xxzx: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 2, 0 }); goto negate;
-	swizzle_yxzx: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 2, 0 }); goto negate;
-	swizzle_zxzx: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 2, 0 }); goto negate;
-	swizzle_wxzx: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 2, 0 }); goto negate;
-	swizzle_xyzx: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 2, 0 }); goto negate;
-	swizzle_yyzx: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 2, 0 }); goto negate;
-	swizzle_zyzx: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 2, 0 }); goto negate;
-	swizzle_wyzx: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 2, 0 }); goto negate;
-	swizzle_xzzx: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 2, 0 }); goto negate;
-	swizzle_yzzx: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 2, 0 }); goto negate;
-	swizzle_zzzx: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 2, 0 }); goto negate;
-	swizzle_wzzx: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 2, 0 }); goto negate;
-	swizzle_xwzx: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 2, 0 }); goto negate;
-	swizzle_ywzx: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 2, 0 }); goto negate;
-	swizzle_zwzx: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 2, 0 }); goto negate;
-	swizzle_wwzx: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 2, 0 }); goto negate;
-	swizzle_xxwx: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 3, 0 }); goto negate;
-	swizzle_yxwx: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 3, 0 }); goto negate;
-	swizzle_zxwx: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 3, 0 }); goto negate;
-	swizzle_wxwx: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 3, 0 }); goto negate;
-	swizzle_xywx: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 3, 0 }); goto negate;
-	swizzle_yywx: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 3, 0 }); goto negate;
-	swizzle_zywx: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 3, 0 }); goto negate;
-	swizzle_wywx: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 3, 0 }); goto negate;
-	swizzle_xzwx: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 3, 0 }); goto negate;
-	swizzle_yzwx: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 3, 0 }); goto negate;
-	swizzle_zzwx: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 3, 0 }); goto negate;
-	swizzle_wzwx: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 3, 0 }); goto negate;
-	swizzle_xwwx: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 3, 0 }); goto negate;
-	swizzle_ywwx: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 3, 0 }); goto negate;
-	swizzle_zwwx: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 3, 0 }); goto negate;
-	swizzle_wwwx: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 3, 0 }); goto negate;
-	swizzle_xxxy: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 0, 1 }); goto negate;
-	swizzle_yxxy: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 0, 1 }); goto negate;
-	swizzle_zxxy: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 0, 1 }); goto negate;
-	swizzle_wxxy: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 0, 1 }); goto negate;
-	swizzle_xyxy: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 0, 1 }); goto negate;
-	swizzle_yyxy: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 0, 1 }); goto negate;
-	swizzle_zyxy: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 0, 1 }); goto negate;
-	swizzle_wyxy: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 0, 1 }); goto negate;
-	swizzle_xzxy: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 0, 1 }); goto negate;
-	swizzle_yzxy: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 0, 1 }); goto negate;
-	swizzle_zzxy: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 0, 1 }); goto negate;
-	swizzle_wzxy: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 0, 1 }); goto negate;
-	swizzle_xwxy: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 0, 1 }); goto negate;
-	swizzle_ywxy: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 0, 1 }); goto negate;
-	swizzle_zwxy: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 0, 1 }); goto negate;
-	swizzle_wwxy: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 0, 1 }); goto negate;
-	swizzle_xxyy: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 1, 1 }); goto negate;
-	swizzle_yxyy: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 1, 1 }); goto negate;
-	swizzle_zxyy: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 1, 1 }); goto negate;
-	swizzle_wxyy: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 1, 1 }); goto negate;
-	swizzle_xyyy: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 1, 1 }); goto negate;
-	swizzle_yyyy: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 1, 1 }); goto negate;
-	swizzle_zyyy: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 1, 1 }); goto negate;
-	swizzle_wyyy: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 1, 1 }); goto negate;
-	swizzle_xzyy: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 1, 1 }); goto negate;
-	swizzle_yzyy: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 1, 1 }); goto negate;
-	swizzle_zzyy: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 1, 1 }); goto negate;
-	swizzle_wzyy: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 1, 1 }); goto negate;
-	swizzle_xwyy: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 1, 1 }); goto negate;
-	swizzle_ywyy: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 1, 1 }); goto negate;
-	swizzle_zwyy: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 1, 1 }); goto negate;
-	swizzle_wwyy: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 1, 1 }); goto negate;
-	swizzle_xxzy: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 2, 1 }); goto negate;
-	swizzle_yxzy: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 2, 1 }); goto negate;
-	swizzle_zxzy: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 2, 1 }); goto negate;
-	swizzle_wxzy: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 2, 1 }); goto negate;
-	swizzle_xyzy: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 2, 1 }); goto negate;
-	swizzle_yyzy: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 2, 1 }); goto negate;
-	swizzle_zyzy: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 2, 1 }); goto negate;
-	swizzle_wyzy: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 2, 1 }); goto negate;
-	swizzle_xzzy: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 2, 1 }); goto negate;
-	swizzle_yzzy: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 2, 1 }); goto negate;
-	swizzle_zzzy: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 2, 1 }); goto negate;
-	swizzle_wzzy: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 2, 1 }); goto negate;
-	swizzle_xwzy: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 2, 1 }); goto negate;
-	swizzle_ywzy: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 2, 1 }); goto negate;
-	swizzle_zwzy: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 2, 1 }); goto negate;
-	swizzle_wwzy: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 2, 1 }); goto negate;
-	swizzle_xxwy: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 3, 1 }); goto negate;
-	swizzle_yxwy: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 3, 1 }); goto negate;
-	swizzle_zxwy: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 3, 1 }); goto negate;
-	swizzle_wxwy: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 3, 1 }); goto negate;
-	swizzle_xywy: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 3, 1 }); goto negate;
-	swizzle_yywy: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 3, 1 }); goto negate;
-	swizzle_zywy: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 3, 1 }); goto negate;
-	swizzle_wywy: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 3, 1 }); goto negate;
-	swizzle_xzwy: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 3, 1 }); goto negate;
-	swizzle_yzwy: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 3, 1 }); goto negate;
-	swizzle_zzwy: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 3, 1 }); goto negate;
-	swizzle_wzwy: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 3, 1 }); goto negate;
-	swizzle_xwwy: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 3, 1 }); goto negate;
-	swizzle_ywwy: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 3, 1 }); goto negate;
-	swizzle_zwwy: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 3, 1 }); goto negate;
-	swizzle_wwwy: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 3, 1 }); goto negate;
-	swizzle_xxxz: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 0, 2 }); goto negate;
-	swizzle_yxxz: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 0, 2 }); goto negate;
-	swizzle_zxxz: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 0, 2 }); goto negate;
-	swizzle_wxxz: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 0, 2 }); goto negate;
-	swizzle_xyxz: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 0, 2 }); goto negate;
-	swizzle_yyxz: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 0, 2 }); goto negate;
-	swizzle_zyxz: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 0, 2 }); goto negate;
-	swizzle_wyxz: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 0, 2 }); goto negate;
-	swizzle_xzxz: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 0, 2 }); goto negate;
-	swizzle_yzxz: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 0, 2 }); goto negate;
-	swizzle_zzxz: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 0, 2 }); goto negate;
-	swizzle_wzxz: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 0, 2 }); goto negate;
-	swizzle_xwxz: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 0, 2 }); goto negate;
-	swizzle_ywxz: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 0, 2 }); goto negate;
-	swizzle_zwxz: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 0, 2 }); goto negate;
-	swizzle_wwxz: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 0, 2 }); goto negate;
-	swizzle_xxyz: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 1, 2 }); goto negate;
-	swizzle_yxyz: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 1, 2 }); goto negate;
-	swizzle_zxyz: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 1, 2 }); goto negate;
-	swizzle_wxyz: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 1, 2 }); goto negate;
-	swizzle_xyyz: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 1, 2 }); goto negate;
-	swizzle_yyyz: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 1, 2 }); goto negate;
-	swizzle_zyyz: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 1, 2 }); goto negate;
-	swizzle_wyyz: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 1, 2 }); goto negate;
-	swizzle_xzyz: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 1, 2 }); goto negate;
-	swizzle_yzyz: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 1, 2 }); goto negate;
-	swizzle_zzyz: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 1, 2 }); goto negate;
-	swizzle_wzyz: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 1, 2 }); goto negate;
-	swizzle_xwyz: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 1, 2 }); goto negate;
-	swizzle_ywyz: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 1, 2 }); goto negate;
-	swizzle_zwyz: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 1, 2 }); goto negate;
-	swizzle_wwyz: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 1, 2 }); goto negate;
-	swizzle_xxzz: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 2, 2 }); goto negate;
-	swizzle_yxzz: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 2, 2 }); goto negate;
-	swizzle_zxzz: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 2, 2 }); goto negate;
-	swizzle_wxzz: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 2, 2 }); goto negate;
-	swizzle_xyzz: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 2, 2 }); goto negate;
-	swizzle_yyzz: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 2, 2 }); goto negate;
-	swizzle_zyzz: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 2, 2 }); goto negate;
-	swizzle_wyzz: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 2, 2 }); goto negate;
-	swizzle_xzzz: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 2, 2 }); goto negate;
-	swizzle_yzzz: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 2, 2 }); goto negate;
-	swizzle_zzzz: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 2, 2 }); goto negate;
-	swizzle_wzzz: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 2, 2 }); goto negate;
-	swizzle_xwzz: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 2, 2 }); goto negate;
-	swizzle_ywzz: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 2, 2 }); goto negate;
-	swizzle_zwzz: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 2, 2 }); goto negate;
-	swizzle_wwzz: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 2, 2 }); goto negate;
-	swizzle_xxwz: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 3, 2 }); goto negate;
-	swizzle_yxwz: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 3, 2 }); goto negate;
-	swizzle_zxwz: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 3, 2 }); goto negate;
-	swizzle_wxwz: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 3, 2 }); goto negate;
-	swizzle_xywz: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 3, 2 }); goto negate;
-	swizzle_yywz: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 3, 2 }); goto negate;
-	swizzle_zywz: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 3, 2 }); goto negate;
-	swizzle_wywz: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 3, 2 }); goto negate;
-	swizzle_xzwz: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 3, 2 }); goto negate;
-	swizzle_yzwz: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 3, 2 }); goto negate;
-	swizzle_zzwz: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 3, 2 }); goto negate;
-	swizzle_wzwz: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 3, 2 }); goto negate;
-	swizzle_xwwz: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 3, 2 }); goto negate;
-	swizzle_ywwz: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 3, 2 }); goto negate;
-	swizzle_zwwz: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 3, 2 }); goto negate;
-	swizzle_wwwz: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 3, 2 }); goto negate;
-	swizzle_xxxw: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 0, 3 }); goto negate;
-	swizzle_yxxw: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 0, 3 }); goto negate;
-	swizzle_zxxw: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 0, 3 }); goto negate;
-	swizzle_wxxw: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 0, 3 }); goto negate;
-	swizzle_xyxw: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 0, 3 }); goto negate;
-	swizzle_yyxw: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 0, 3 }); goto negate;
-	swizzle_zyxw: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 0, 3 }); goto negate;
-	swizzle_wyxw: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 0, 3 }); goto negate;
-	swizzle_xzxw: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 0, 3 }); goto negate;
-	swizzle_yzxw: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 0, 3 }); goto negate;
-	swizzle_zzxw: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 0, 3 }); goto negate;
-	swizzle_wzxw: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 0, 3 }); goto negate;
-	swizzle_xwxw: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 0, 3 }); goto negate;
-	swizzle_ywxw: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 0, 3 }); goto negate;
-	swizzle_zwxw: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 0, 3 }); goto negate;
-	swizzle_wwxw: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 0, 3 }); goto negate;
-	swizzle_xxyw: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 1, 3 }); goto negate;
-	swizzle_yxyw: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 1, 3 }); goto negate;
-	swizzle_zxyw: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 1, 3 }); goto negate;
-	swizzle_wxyw: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 1, 3 }); goto negate;
-	swizzle_xyyw: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 1, 3 }); goto negate;
-	swizzle_yyyw: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 1, 3 }); goto negate;
-	swizzle_zyyw: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 1, 3 }); goto negate;
-	swizzle_wyyw: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 1, 3 }); goto negate;
-	swizzle_xzyw: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 1, 3 }); goto negate;
-	swizzle_yzyw: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 1, 3 }); goto negate;
-	swizzle_zzyw: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 1, 3 }); goto negate;
-	swizzle_wzyw: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 1, 3 }); goto negate;
-	swizzle_xwyw: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 1, 3 }); goto negate;
-	swizzle_ywyw: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 1, 3 }); goto negate;
-	swizzle_zwyw: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 1, 3 }); goto negate;
-	swizzle_wwyw: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 1, 3 }); goto negate;
-	swizzle_xxzw: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 2, 3 }); goto negate;
-	swizzle_yxzw: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 2, 3 }); goto negate;
-	swizzle_zxzw: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 2, 3 }); goto negate;
-	swizzle_wxzw: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 2, 3 }); goto negate;
-	swizzle_xyzw: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 2, 3 }); goto negate;
-	swizzle_yyzw: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 2, 3 }); goto negate;
-	swizzle_zyzw: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 2, 3 }); goto negate;
-	swizzle_wyzw: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 2, 3 }); goto negate;
-	swizzle_xzzw: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 2, 3 }); goto negate;
-	swizzle_yzzw: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 2, 3 }); goto negate;
-	swizzle_zzzw: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 2, 3 }); goto negate;
-	swizzle_wzzw: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 2, 3 }); goto negate;
-	swizzle_xwzw: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 2, 3 }); goto negate;
-	swizzle_ywzw: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 2, 3 }); goto negate;
-	swizzle_zwzw: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 2, 3 }); goto negate;
-	swizzle_wwzw: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 2, 3 }); goto negate;
-	swizzle_xxww: vec = swizzle (vec, (pr_lvec4_t) { 0, 0, 3, 3 }); goto negate;
-	swizzle_yxww: vec = swizzle (vec, (pr_lvec4_t) { 1, 0, 3, 3 }); goto negate;
-	swizzle_zxww: vec = swizzle (vec, (pr_lvec4_t) { 2, 0, 3, 3 }); goto negate;
-	swizzle_wxww: vec = swizzle (vec, (pr_lvec4_t) { 3, 0, 3, 3 }); goto negate;
-	swizzle_xyww: vec = swizzle (vec, (pr_lvec4_t) { 0, 1, 3, 3 }); goto negate;
-	swizzle_yyww: vec = swizzle (vec, (pr_lvec4_t) { 1, 1, 3, 3 }); goto negate;
-	swizzle_zyww: vec = swizzle (vec, (pr_lvec4_t) { 2, 1, 3, 3 }); goto negate;
-	swizzle_wyww: vec = swizzle (vec, (pr_lvec4_t) { 3, 1, 3, 3 }); goto negate;
-	swizzle_xzww: vec = swizzle (vec, (pr_lvec4_t) { 0, 2, 3, 3 }); goto negate;
-	swizzle_yzww: vec = swizzle (vec, (pr_lvec4_t) { 1, 2, 3, 3 }); goto negate;
-	swizzle_zzww: vec = swizzle (vec, (pr_lvec4_t) { 2, 2, 3, 3 }); goto negate;
-	swizzle_wzww: vec = swizzle (vec, (pr_lvec4_t) { 3, 2, 3, 3 }); goto negate;
-	swizzle_xwww: vec = swizzle (vec, (pr_lvec4_t) { 0, 3, 3, 3 }); goto negate;
-	swizzle_ywww: vec = swizzle (vec, (pr_lvec4_t) { 1, 3, 3, 3 }); goto negate;
-	swizzle_zwww: vec = swizzle (vec, (pr_lvec4_t) { 2, 3, 3, 3 }); goto negate;
-	swizzle_wwww: vec = swizzle (vec, (pr_lvec4_t) { 3, 3, 3, 3 }); goto negate;
-	static void *swizzle_table[256] = {
-		&&swizzle_xxxx, &&swizzle_yxxx, &&swizzle_zxxx, &&swizzle_wxxx,
-		&&swizzle_xyxx, &&swizzle_yyxx, &&swizzle_zyxx, &&swizzle_wyxx,
-		&&swizzle_xzxx, &&swizzle_yzxx, &&swizzle_zzxx, &&swizzle_wzxx,
-		&&swizzle_xwxx, &&swizzle_ywxx, &&swizzle_zwxx, &&swizzle_wwxx,
-		&&swizzle_xxyx, &&swizzle_yxyx, &&swizzle_zxyx, &&swizzle_wxyx,
-		&&swizzle_xyyx, &&swizzle_yyyx, &&swizzle_zyyx, &&swizzle_wyyx,
-		&&swizzle_xzyx, &&swizzle_yzyx, &&swizzle_zzyx, &&swizzle_wzyx,
-		&&swizzle_xwyx, &&swizzle_ywyx, &&swizzle_zwyx, &&swizzle_wwyx,
-		&&swizzle_xxzx, &&swizzle_yxzx, &&swizzle_zxzx, &&swizzle_wxzx,
-		&&swizzle_xyzx, &&swizzle_yyzx, &&swizzle_zyzx, &&swizzle_wyzx,
-		&&swizzle_xzzx, &&swizzle_yzzx, &&swizzle_zzzx, &&swizzle_wzzx,
-		&&swizzle_xwzx, &&swizzle_ywzx, &&swizzle_zwzx, &&swizzle_wwzx,
-		&&swizzle_xxwx, &&swizzle_yxwx, &&swizzle_zxwx, &&swizzle_wxwx,
-		&&swizzle_xywx, &&swizzle_yywx, &&swizzle_zywx, &&swizzle_wywx,
-		&&swizzle_xzwx, &&swizzle_yzwx, &&swizzle_zzwx, &&swizzle_wzwx,
-		&&swizzle_xwwx, &&swizzle_ywwx, &&swizzle_zwwx, &&swizzle_wwwx,
-		&&swizzle_xxxy, &&swizzle_yxxy, &&swizzle_zxxy, &&swizzle_wxxy,
-		&&swizzle_xyxy, &&swizzle_yyxy, &&swizzle_zyxy, &&swizzle_wyxy,
-		&&swizzle_xzxy, &&swizzle_yzxy, &&swizzle_zzxy, &&swizzle_wzxy,
-		&&swizzle_xwxy, &&swizzle_ywxy, &&swizzle_zwxy, &&swizzle_wwxy,
-		&&swizzle_xxyy, &&swizzle_yxyy, &&swizzle_zxyy, &&swizzle_wxyy,
-		&&swizzle_xyyy, &&swizzle_yyyy, &&swizzle_zyyy, &&swizzle_wyyy,
-		&&swizzle_xzyy, &&swizzle_yzyy, &&swizzle_zzyy, &&swizzle_wzyy,
-		&&swizzle_xwyy, &&swizzle_ywyy, &&swizzle_zwyy, &&swizzle_wwyy,
-		&&swizzle_xxzy, &&swizzle_yxzy, &&swizzle_zxzy, &&swizzle_wxzy,
-		&&swizzle_xyzy, &&swizzle_yyzy, &&swizzle_zyzy, &&swizzle_wyzy,
-		&&swizzle_xzzy, &&swizzle_yzzy, &&swizzle_zzzy, &&swizzle_wzzy,
-		&&swizzle_xwzy, &&swizzle_ywzy, &&swizzle_zwzy, &&swizzle_wwzy,
-		&&swizzle_xxwy, &&swizzle_yxwy, &&swizzle_zxwy, &&swizzle_wxwy,
-		&&swizzle_xywy, &&swizzle_yywy, &&swizzle_zywy, &&swizzle_wywy,
-		&&swizzle_xzwy, &&swizzle_yzwy, &&swizzle_zzwy, &&swizzle_wzwy,
-		&&swizzle_xwwy, &&swizzle_ywwy, &&swizzle_zwwy, &&swizzle_wwwy,
-		&&swizzle_xxxz, &&swizzle_yxxz, &&swizzle_zxxz, &&swizzle_wxxz,
-		&&swizzle_xyxz, &&swizzle_yyxz, &&swizzle_zyxz, &&swizzle_wyxz,
-		&&swizzle_xzxz, &&swizzle_yzxz, &&swizzle_zzxz, &&swizzle_wzxz,
-		&&swizzle_xwxz, &&swizzle_ywxz, &&swizzle_zwxz, &&swizzle_wwxz,
-		&&swizzle_xxyz, &&swizzle_yxyz, &&swizzle_zxyz, &&swizzle_wxyz,
-		&&swizzle_xyyz, &&swizzle_yyyz, &&swizzle_zyyz, &&swizzle_wyyz,
-		&&swizzle_xzyz, &&swizzle_yzyz, &&swizzle_zzyz, &&swizzle_wzyz,
-		&&swizzle_xwyz, &&swizzle_ywyz, &&swizzle_zwyz, &&swizzle_wwyz,
-		&&swizzle_xxzz, &&swizzle_yxzz, &&swizzle_zxzz, &&swizzle_wxzz,
-		&&swizzle_xyzz, &&swizzle_yyzz, &&swizzle_zyzz, &&swizzle_wyzz,
-		&&swizzle_xzzz, &&swizzle_yzzz, &&swizzle_zzzz, &&swizzle_wzzz,
-		&&swizzle_xwzz, &&swizzle_ywzz, &&swizzle_zwzz, &&swizzle_wwzz,
-		&&swizzle_xxwz, &&swizzle_yxwz, &&swizzle_zxwz, &&swizzle_wxwz,
-		&&swizzle_xywz, &&swizzle_yywz, &&swizzle_zywz, &&swizzle_wywz,
-		&&swizzle_xzwz, &&swizzle_yzwz, &&swizzle_zzwz, &&swizzle_wzwz,
-		&&swizzle_xwwz, &&swizzle_ywwz, &&swizzle_zwwz, &&swizzle_wwwz,
-		&&swizzle_xxxw, &&swizzle_yxxw, &&swizzle_zxxw, &&swizzle_wxxw,
-		&&swizzle_xyxw, &&swizzle_yyxw, &&swizzle_zyxw, &&swizzle_wyxw,
-		&&swizzle_xzxw, &&swizzle_yzxw, &&swizzle_zzxw, &&swizzle_wzxw,
-		&&swizzle_xwxw, &&swizzle_ywxw, &&swizzle_zwxw, &&swizzle_wwxw,
-		&&swizzle_xxyw, &&swizzle_yxyw, &&swizzle_zxyw, &&swizzle_wxyw,
-		&&swizzle_xyyw, &&swizzle_yyyw, &&swizzle_zyyw, &&swizzle_wyyw,
-		&&swizzle_xzyw, &&swizzle_yzyw, &&swizzle_zzyw, &&swizzle_wzyw,
-		&&swizzle_xwyw, &&swizzle_ywyw, &&swizzle_zwyw, &&swizzle_wwyw,
-		&&swizzle_xxzw, &&swizzle_yxzw, &&swizzle_zxzw, &&swizzle_wxzw,
-		&&swizzle_xyzw, &&swizzle_yyzw, &&swizzle_zyzw, &&swizzle_wyzw,
-		&&swizzle_xzzw, &&swizzle_yzzw, &&swizzle_zzzw, &&swizzle_wzzw,
-		&&swizzle_xwzw, &&swizzle_ywzw, &&swizzle_zwzw, &&swizzle_wwzw,
-		&&swizzle_xxww, &&swizzle_yxww, &&swizzle_zxww, &&swizzle_wxww,
-		&&swizzle_xyww, &&swizzle_yyww, &&swizzle_zyww, &&swizzle_wyww,
-		&&swizzle_xzww, &&swizzle_yzww, &&swizzle_zzww, &&swizzle_wzww,
-		&&swizzle_xwww, &&swizzle_ywww, &&swizzle_zwww, &&swizzle_wwww,
-	};
-#undef swizzle
+#include "libs/gamecode/pr_swizzle64.cinc"
 #define L(x) UINT64_C(x)
 	static const pr_lvec4_t neg[16] = {
 		{     INT64_C(0),     INT64_C(0),     INT64_C(0),     INT64_C(0) },
@@ -3194,6 +2550,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_RETURN:
+				(void)0;//FIXME for clang
 				int         ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if (st->c != 0xffff) {
 					mm = pr_address_mode (pr, st, st->c >> 5);
@@ -3519,6 +2876,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		}
 	}
 exit_program:
+	(void)0;//FIXME for clang
 }
 /*
 	PR_ExecuteProgram

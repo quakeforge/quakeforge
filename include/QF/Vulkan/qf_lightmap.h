@@ -38,11 +38,12 @@ struct vulkan_ctx_s;
 struct model_s;
 struct mod_brush_s;
 struct msurface_s;
+struct transform_s;
 
 void Vulkan_lightmap_init (struct vulkan_ctx_s *ctx);
 void Vulkan_BuildLightmaps (struct model_s **models, int num_models, struct vulkan_ctx_s *ctx);
 void Vulkan_CalcLightmaps (struct vulkan_ctx_s *ctx);
-void Vulkan_BuildLightMap (struct mod_brush_s *brush, struct msurface_s *surf, struct vulkan_ctx_s *ctx);
+void Vulkan_BuildLightMap (const struct transform_s *transform, struct mod_brush_s *brush, struct msurface_s *surf, struct vulkan_ctx_s *ctx);
 VkImageView Vulkan_LightmapImageView (struct vulkan_ctx_s *ctx) __attribute__((pure));
 void Vulkan_FlushLightmaps (struct vulkan_ctx_s *ctx);
 

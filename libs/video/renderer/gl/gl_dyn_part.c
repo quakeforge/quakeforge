@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -53,7 +50,7 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_explosions.h"
+#include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
@@ -66,23 +63,23 @@ static int						pVAsize;
 static int					   *pVAindices;
 static varray_t2f_c4ub_v3f_t   *particleVertexArray;
 
-void
-gl_R_InitParticles (void)
+static void
+alloc_arrays (psystem_t *ps)
 {
 	int		i;
 
-	if (r_psystem.maxparticles && r_init) {
+	if (ps->maxparticles && r_init) {
 		if (vaelements) {
 			partUseVA = 0;
-			pVAsize = r_psystem.maxparticles * 4;
+			pVAsize = ps->maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: Vertex Array use disabled.\n");
 		} else {
 			if (vaelements > 3)
 				pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
-							   r_psystem.maxparticles * 4);
+							   ps->maxparticles * 4);
 			else if (vaelements >= 0)
-				pVAsize = r_psystem.maxparticles * 4;
+				pVAsize = ps->maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: %i maximum vertex elements.\n",
 							pVAsize);
@@ -113,7 +110,13 @@ gl_R_InitParticles (void)
 }
 
 void
-gl_R_DrawParticles (void)
+gl_R_InitParticles (void)
+{
+	alloc_arrays (&r_psystem);
+}
+
+void
+gl_R_DrawParticles (psystem_t *psystem)
 {
 	unsigned char  *at;
 	int				vacount;
@@ -121,17 +124,17 @@ gl_R_DrawParticles (void)
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
 	varray_t2f_c4ub_v3f_t		*VA;
 
-	if (!r_particles->int_val)
+	if (!r_psystem.numparticles) {
 		return;
-
-	R_RunParticles (vr_data.frametime);
+	}
 
 	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
-	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
+	minparticledist = DotProduct (r_refdef.frame.position,
+								  r_refdef.frame.forward) +
 		r_particles_nearclip->value;
 
 	vacount = 0;
@@ -141,7 +144,7 @@ gl_R_DrawParticles (void)
 		particle_t *p = &r_psystem.particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
-		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
+		if (!(DotProduct (p->pos, r_refdef.frame.forward) < minparticledist)) {
 			at = (byte *) &d_8to24table[(byte) p->icolor];
 			VA[0].color[0] = at[0];
 			VA[0].color[1] = at[1];
@@ -186,8 +189,8 @@ gl_R_DrawParticles (void)
 
 			scale = p->scale;
 
-			VectorScale (vup, scale, up_scale);
-			VectorScale (vright, scale, right_scale);
+			VectorScale (r_refdef.frame.up, scale, up_scale);
+			VectorScale (r_refdef.frame.right, scale, right_scale);
 
 			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
@@ -241,12 +244,14 @@ static void
 r_particles_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (var, r_particles_max);
+	alloc_arrays (&r_psystem);
 }
 
 static void
 r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
+	alloc_arrays (&r_psystem);
 }
 
 void

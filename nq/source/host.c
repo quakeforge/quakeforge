@@ -54,11 +54,14 @@
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/transform.h"
 
 #include "buildnum.h"
 #include "compat.h"
 
-#include "nq/include/chase.h"
+#include "client/chase.h"
+#include "client/world.h"
+
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 #include "nq/include/sv_progs.h"
@@ -503,7 +506,9 @@ Host_ClearMemory (void)
 
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
+	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	cl.viewstate.camera_transform = cam;
 }
 
 /*
@@ -605,15 +610,16 @@ Host_ClientFrame (void)
 	if (cls.state == ca_active) {
 		mleaf_t    *l;
 		byte       *asl = 0;
+		vec4f_t     origin;
 
-		l = Mod_PointInLeaf (r_data->origin, cl.worldmodel);
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
-		S_Update (r_data->origin, r_data->vpn, r_data->vright, r_data->vup,
-				  asl);
-		r_funcs->R_DecayLights (host_frametime);
+		S_Update (cl.viewstate.camera_transform, asl);
+		R_DecayLights (host_frametime);
 	} else
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
+		S_Update (0, 0);
 
 	CDAudio_Update ();
 
@@ -625,6 +631,19 @@ Host_ClientFrame (void)
 		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
+}
+
+static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
 }
 
 /*
@@ -695,11 +714,7 @@ _Host_Frame (float time)
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
 
 	if (cls.demo_capture) {
-		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
-						 cls.demo_capture++),
-					 tex->data, tex->width, tex->height);
-		free (tex);
+		r_funcs->capture_screen (write_capture, 0);
 	}
 
 	host_framecount++;

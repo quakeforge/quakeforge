@@ -50,12 +50,8 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-extern int		nanmask;
-
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
-
-#define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
 
 #define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
 
@@ -141,7 +137,7 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct plane_s *plane) __attribute__((pure));
+					const plane_t *plane) __attribute__((pure));
 float anglemod (float a) __attribute__((const));
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
@@ -175,9 +171,8 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-extern plane_t * const frustum;
-GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
-GNU89INLINE inline qboolean R_CullSphere (const vec3_t origin, const float radius);
+GNU89INLINE inline qboolean R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs) __attribute__((pure));
+GNU89INLINE inline qboolean R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull
 GNU89INLINE inline
@@ -185,7 +180,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 qboolean
-R_CullBox (const vec3_t mins, const vec3_t maxs)
+R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
 
@@ -203,7 +198,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 qboolean
-R_CullSphere (const vec3_t origin, const float radius)
+R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius)
 {
 	int		i;
 	float	r;

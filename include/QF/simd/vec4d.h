@@ -184,11 +184,9 @@ VISIBLE
 vec4d_t
 crossd (vec4d_t a, vec4d_t b)
 {
-	static const vec4l_t A = {1, 2, 0, 3};
-	vec4d_t c = a * __builtin_shuffle (b, A);
-	vec4d_t d = __builtin_shuffle (a, A) * b;
-	c = c - d;
-	return __builtin_shuffle(c, A);
+	vec4d_t c = a * (vec4d_t) {b[1], b[2], b[0], b[3]}
+			  - b * (vec4d_t) {a[1], a[2], a[0], a[3]};
+	return (vec4d_t) {c[1], c[2], c[0], c[3]};
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -205,8 +203,7 @@ dotd (vec4d_t a, vec4d_t b)
 #else
 	c = _mm256_hadd_pd (c, c);
 #endif
-	static const vec4l_t A = {2, 3, 0, 1};
-	c += __builtin_shuffle(c, A);
+	c += (vec4d_t) {c[2], c[3], c[0], c[1]};
 	return c;
 }
 

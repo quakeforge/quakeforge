@@ -30,8 +30,6 @@
 
 #include "QF/qtypes.h"
 
-extern qboolean noclip_anglehack;
-
 typedef struct
 {
 	int		argc;

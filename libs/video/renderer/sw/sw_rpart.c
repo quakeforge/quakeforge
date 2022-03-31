@@ -49,17 +49,21 @@
 #include "compat.h"
 #include "r_internal.h"
 
+vec3_t          r_pright, r_pup, r_ppn, r_porigin;
+
 void
-R_DrawParticles (void)
+R_DrawParticles (psystem_t *psystem)
 {
+	if (!psystem->numparticles) {
+		return;
+	}
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
-	VectorCopy (vpn, r_ppn);
+	VectorCopy (vfwd, r_ppn);
+	VectorCopy (r_refdef.frame.position, r_porigin);
 
-	R_RunParticles (vr_data.frametime);
-
-	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
-		particle_t *p = &r_psystem.particles[i];
+	for (unsigned i = 0; i < psystem->numparticles; i++) {
+		particle_t *p = &psystem->particles[i];
 		D_DrawParticle (p);
 	}
 }

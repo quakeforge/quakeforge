@@ -45,6 +45,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
@@ -61,35 +63,17 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static void
-setup_frame (vulkan_ctx_t *ctx)
-{
-	R_AnimateLight ();
-	R_ClearEnts ();
-	r_framecount++;
-
-	VectorCopy (r_refdef.viewposition, r_origin);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
-	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
-
-	R_SetFrustum ();
-
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
-}
-
-static void
-Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
+void
+Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
-		entity_t   *ent; \
 		int         begun = 0; \
-		for (ent = r_ent_queue; ent; ent = ent->next) { \
-			if (ent->renderer.model->type != mod_##type_name) \
-				continue; \
+		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
+			 i++) { \
+			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
@@ -124,60 +108,23 @@ Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 		|| !ent->renderer.model)
 		return;
 
-	R_EnqueueEntity (ent);
+	EntQueue_AddEntity (r_ent_queue, ent, ent->renderer.model->type);
 }
 
 void
 Vulkan_RenderView (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	double      t[10] = {};
-	int         speeds = r_speeds->int_val;
 
-	if (!r_worldentity.renderer.model) {
+	if (!r_refdef.worldmodel) {
 		return;
 	}
 
-	if (speeds)
-		t[0] = Sys_DoubleTime ();
-	setup_frame (ctx);
-	if (speeds)
-		t[1] = Sys_DoubleTime ();
-	R_MarkLeaves ();
-	if (speeds)
-		t[2] = Sys_DoubleTime ();
-	R_PushDlights (vec3_origin);
-	if (speeds)
-		t[3] = Sys_DoubleTime ();
 	Vulkan_DrawWorld (rFrame);
-	if (speeds)
-		t[4] = Sys_DoubleTime ();
 	Vulkan_DrawSky (rFrame);
-	if (speeds)
-		t[5] = Sys_DoubleTime ();
 	Vulkan_DrawViewModel (ctx);
-	Vulkan_RenderEntities (rFrame);
-	if (speeds)
-		t[6] = Sys_DoubleTime ();
 	Vulkan_DrawWaterSurfaces (rFrame);
-	if (speeds)
-		t[7] = Sys_DoubleTime ();
-	Vulkan_DrawParticles (ctx);
-	if (speeds)
-		t[8] = Sys_DoubleTime ();
 	Vulkan_Bsp_Flush (ctx);
-	if (speeds)
-		t[9] = Sys_DoubleTime ();
-	if (speeds) {
-		double      total = (t[9]  - t[0]) * 1000;
-		for (int i = 0; i < 9; i++) {
-			t[i] = (t[i + 1] - t[i]) * 1000;
-		}
-		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, flush: %g, part: %g\n",
-					total,
-					t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
-	}
 }
 
 void
@@ -190,14 +137,12 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 		d_lightstylevalue[i] = 264;		// normal light value
 	}
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.renderer.model = worldmodel;
+	r_refdef.worldmodel = worldmodel;
 
 	// Force a vis update
-	r_viewleaf = NULL;
+	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
-	R_FreeAllEntities ();
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (models, num_models, ctx);
 	//Vulkan_BuildLightmaps (models, num_models, ctx);

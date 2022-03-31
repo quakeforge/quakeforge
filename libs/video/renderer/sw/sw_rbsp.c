@@ -40,9 +40,15 @@
 
 #include "r_internal.h"
 
+typedef struct glbspctx_s {
+	mod_brush_t *brush;
+	entity_t   *entity;
+} swbspctx_t;
+
 // current entity info
 qboolean    insubmodel;
 vec3_t      r_worldmodelorg;
+mvertex_t  *r_pcurrentvertbase;
 static float       entity_rotation[3][3];
 
 int         r_currentbkey;
@@ -77,17 +83,17 @@ R_EntityRotate (vec3_t vec)
 
 
 void
-R_RotateBmodel (void)
+R_RotateBmodel (transform_t *transform)
 {
 	mat4f_t     mat;
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (transform, mat);
 	VectorCopy (mat[0], entity_rotation[0]);
 	VectorCopy (mat[1], entity_rotation[1]);
 	VectorCopy (mat[2], entity_rotation[2]);
 
 	// rotate modelorg and the transformation matrix
 	R_EntityRotate (modelorg);
-	R_EntityRotate (vpn);
+	R_EntityRotate (vfwd);
 	R_EntityRotate (vright);
 	R_EntityRotate (vup);
 
@@ -96,7 +102,8 @@ R_RotateBmodel (void)
 
 
 static void
-R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
+R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
+					  msurface_t *psurf)
 {
 	bedge_t    *psideedges[2], *pnextedge, *ptedge;
 	int         i, side, lastside;
@@ -228,11 +235,11 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 				if (pn->contents < 0) {
 					if (pn->contents != CONTENTS_SOLID) {
 						r_currentbkey = ((mleaf_t *) pn)->key;
-						R_RenderBmodelFace (psideedges[i], psurf);
+						R_RenderBmodelFace (ent, psideedges[i], psurf);
 					}
 				} else {
-					R_RecursiveClipBPoly (psideedges[i], pnode->children[i],
-										  psurf);
+					R_RecursiveClipBPoly (ent, psideedges[i],
+										  pnode->children[i], psurf);
 				}
 			}
 		}
@@ -241,7 +248,8 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 
 
 void
-R_DrawSolidClippedSubmodelPolygons (model_t *model)
+R_DrawSolidClippedSubmodelPolygons (entity_t *ent, model_t *model,
+									mnode_t *topnode)
 {
 	int         i, j, lindex;
 	vec_t       dot;
@@ -301,8 +309,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *model)
 
 				pbedge[j - 1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly (pbedge,
-									  currententity->visibility.topnode, psurf);
+				R_RecursiveClipBPoly (ent, pbedge, topnode, psurf);
 			} else {
 				Sys_Error ("no edges in bmodel");
 			}
@@ -312,7 +319,8 @@ R_DrawSolidClippedSubmodelPolygons (model_t *model)
 
 
 void
-R_DrawSubmodelPolygons (model_t *model, int clipflags)
+R_DrawSubmodelPolygons (entity_t *ent, model_t *model, int clipflags,
+						mnode_t *topnode)
 {
 	int         i;
 	vec_t       dot;
@@ -335,10 +343,10 @@ R_DrawSubmodelPolygons (model_t *model, int clipflags)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			r_currentkey = ((mleaf_t *) currententity->visibility.topnode)->key;
+			r_currentkey = ((mleaf_t *) topnode)->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderFace (psurf, clipflags);
+			R_RenderFace (ent, psurf, clipflags);
 		}
 	}
 }
@@ -358,17 +366,20 @@ get_side (mnode_t *node)
 {
 	// find which side of the node we are on
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
-		return (modelorg[plane->type] - plane->dist) < 0;
-	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static void
-visit_node (mod_brush_t *brush, mnode_t *node, int side, int clipflags)
+visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 {
 	int         c;
 	msurface_t *surf;
+	entity_t   *ent = bctx->entity;
+	mod_brush_t *brush = &ent->renderer.model->brush;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
 	side = (~side + 1) & SURF_PLANEBACK;
@@ -391,10 +402,10 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, int clipflags)
 						numbtofpolys++;
 					}
 				} else {
-					R_RenderPoly (surf, clipflags);
+					R_RenderPoly (ent, surf, clipflags);
 				}
 			} else {
-				R_RenderFace (surf, clipflags);
+				R_RenderFace (ent, surf, clipflags);
 			}
 		}
 		// all surfaces on the same node share the same sequence number
@@ -451,7 +462,7 @@ test_node (mnode_t *node, int *clipflags)
 }
 
 static void
-R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
+R_VisitWorldNodes (swbspctx_t *bctx, int clipflags)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -462,6 +473,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 	mnode_t    *node;
 	mnode_t    *front;
 	int         side, cf;
+	mod_brush_t *brush = &bctx->entity->renderer.model->brush;
 
 	node = brush->nodes;
 	// +2 for paranoia
@@ -485,7 +497,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (brush, node, side, clipflags);
+			visit_node (bctx, node, side, clipflags);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -495,7 +507,7 @@ R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 			node = node_ptr->node;
 			side = node_ptr->side;
 			clipflags = node_ptr->clipflags;
-			visit_node (brush, node, side, clipflags);
+			visit_node (bctx, node, side, clipflags);
 			node = node->children[!side];
 			continue;
 		}
@@ -510,22 +522,27 @@ R_RenderWorld (void)
 {
 	int         i;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
-	mod_brush_t *brush;
+	static entity_t    worldent = {};
+	entity_t   *ent = &worldent;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	swbspctx_t  bspctx = {
+		brush,
+		ent,
+	};
+	worldent.renderer.model = r_refdef.worldmodel;
 
 	pbtofpolys = btofpolys;
 
-	currententity = &r_worldentity;
-	VectorCopy (r_origin, modelorg);
-	brush = &currententity->renderer.model->brush;
+	brush = &r_refdef.worldmodel->brush;
 	r_pcurrentvertbase = brush->vertexes;
 
-	R_VisitWorldNodes (brush, 15);
+	R_VisitWorldNodes (&bspctx, 15);
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order
 	if (r_worldpolysbacktofront) {
 		for (i = numbtofpolys - 1; i >= 0; i--) {
-			R_RenderPoly (btofpolys[i].psurf, btofpolys[i].clipflags);
+			R_RenderPoly (ent, btofpolys[i].psurf, btofpolys[i].clipflags);
 		}
 	}
 }

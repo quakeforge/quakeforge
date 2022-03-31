@@ -824,7 +824,7 @@ Menu_EventHandler (const IE_event_t *ie_event)
 		[ie_key] = menu_key_event,
 		[ie_mouse] = menu_mouse_event,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
@@ -865,5 +865,4 @@ Menu_Leave ()
 			Con_SetState (con_inactive);
 		}
 	}
-	r_data->vid->recalc_refdef = true;
 }

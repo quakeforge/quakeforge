@@ -52,16 +52,17 @@ spritedesc_t r_spritedesc;
 
 
 static void
-R_RotateSprite (float beamlength)
+R_RotateSprite (vec4f_t relvieworg, float beamlength, vec3_t org)
 {
 	vec3_t      vec;
 
+	VectorCopy (relvieworg, org);
 	if (beamlength == 0.0)
 		return;
 
-	VectorScale (r_spritedesc.vpn, -beamlength, vec);
+	VectorScale (r_spritedesc.vfwd, -beamlength, vec);
 	VectorAdd (r_entorigin, vec, r_entorigin);
-	VectorSubtract (modelorg, vec, modelorg);
+	VectorSubtract (relvieworg, vec, org);
 }
 
 
@@ -147,7 +148,7 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 
 static void
-R_SetupAndDrawSprite (void)
+R_SetupAndDrawSprite (const vec3_t relvieworg)
 {
 	int         i, nump;
 	float       dot, scale, *pv;
@@ -155,7 +156,7 @@ R_SetupAndDrawSprite (void)
 	vec3_t      left, up, right, down, transformed, local;
 	emitpoint_t outverts[MAXWORKINGVERTS + 1], *pout;
 
-	dot = DotProduct (r_spritedesc.vpn, modelorg);
+	dot = DotProduct (r_spritedesc.vfwd, relvieworg);
 
 	// backface cull
 	if (dot >= 0)
@@ -210,7 +211,7 @@ R_SetupAndDrawSprite (void)
 	r_spritedesc.nearzi = -999999;
 
 	for (i = 0; i < nump; i++) {
-		VectorSubtract (pv, r_origin, local);
+		VectorSubtract (pv, r_refdef.frame.position, local);
 		TransformVector (local, transformed);
 
 		if (transformed[2] < NEAR_CLIP)
@@ -236,29 +237,34 @@ R_SetupAndDrawSprite (void)
 	// draw it
 	r_spritedesc.nump = nump;
 	r_spritedesc.pverts = outverts;
-	D_DrawSprite ();
+	D_DrawSprite (relvieworg);
 }
 
 void
-R_DrawSprite (void)
+R_DrawSprite (entity_t *ent)
 {
-	msprite_t  *sprite = currententity->renderer.model->cache.data;
+	msprite_t  *sprite = ent->renderer.model->cache.data;
 
-	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite,
-												  &currententity->animation);
+	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
+
+	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, &ent->animation);
 
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-	if (!R_BillboardFrame (currententity, sprite->type, modelorg,
-						   r_spritedesc.vup,
-						   r_spritedesc.vright,
-						   r_spritedesc.vpn)) {
+	vec4f_t     up = {};
+	vec4f_t     right = {};
+	vec4f_t     fwd = {};
+	if (!R_BillboardFrame (ent, sprite->type, cameravec, &up, &right, &fwd)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
+	VectorCopy (up, r_spritedesc.vup);//FIXME
+	VectorCopy (right, r_spritedesc.vright);
+	VectorCopy (fwd, r_spritedesc.vfwd);
 
-	R_RotateSprite (sprite->beamlength);
+	vec3_t      org;
+	R_RotateSprite (cameravec, sprite->beamlength, org);
 
-	R_SetupAndDrawSprite ();
+	R_SetupAndDrawSprite (org);
 }

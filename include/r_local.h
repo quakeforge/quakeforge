@@ -47,9 +47,9 @@
 // viewmodel lighting =======================================================
 
 typedef struct {
-	int			ambientlight;
-	int			shadelight;
-	float		*plightvec;
+	int         ambientlight;
+	int         shadelight;
+	vec3_t      lightvec;
 } alight_t;
 
 // clipped bmodel edges =====================================================
@@ -112,13 +112,14 @@ extern	clipplane_t	view_clipplanes[4];
 //=============================================================================
 
 void R_RenderWorld (void);
+struct entqueue_s;
+void R_DrawEntitiesOnList (struct entqueue_s *queue);
 
 //=============================================================================
 
 extern	plane_t	screenedge[4];
 
-extern	vec3_t	r_origin;
-extern	vec3_t	r_entorigin;
+extern	vec4f_t r_entorigin;
 
 extern	int		r_visframecount;
 
@@ -140,40 +141,44 @@ extern	vec3_t			r_worldmodelorg;
 extern mat4f_t   glsl_projection;
 extern mat4f_t   glsl_view;
 
-void R_SetFrustum (void);
+union refframe_s;
+void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
+				   float fov_x, float fov_y);
+
+struct entity_s;
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
-void R_DrawSprite (void);
-void R_RenderFace (msurface_t *fa, int clipflags);
-void R_RenderPoly (msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
-void R_TransformPlane (plane_t *p, float *normal, float *dist);
+void R_DrawSprite (struct entity_s *ent);
+void R_RenderFace (struct entity_s *ent, msurface_t *fa, int clipflags);
+void R_RenderPoly (struct entity_s *ent, msurface_t *fa, int clipflags);
+void R_RenderBmodelFace (struct entity_s *ent, bedge_t *pedges, msurface_t *psurf);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (const entity_t *entity, msurface_t *surf) __attribute__((pure));
+texture_t *R_TextureAnimation (const struct entity_s *entity, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
+void R_DrawSubmodelPolygons (struct entity_s *ent, model_t *pmodel, int clipflags, struct mnode_s *topnode);
+void R_DrawSolidClippedSubmodelPolygons (struct entity_s *ent, model_t *pmodel, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (alight_t *plighting);
-void R_IQMDrawModel (alight_t *plighting);
-maliasskindesc_t *R_AliasGetSkindesc (animation_t *animation, int skinnum, aliashdr_t *hdr);
-maliasframedesc_t *R_AliasGetFramedesc (animation_t *animation, aliashdr_t *hdr);
-float R_AliasGetLerpedFrames (animation_t *animation, aliashdr_t *hdr);
-float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
+void R_AliasDrawModel (struct entity_s *ent, alight_t *plighting);
+void R_IQMDrawModel (struct entity_s *ent, alight_t *plighting);
+struct animation_s;
+maliasskindesc_t *R_AliasGetSkindesc (struct animation_s *animation, int skinnum, aliashdr_t *hdr);
+maliasframedesc_t *R_AliasGetFramedesc (struct animation_s *animation, aliashdr_t *hdr);
+float R_AliasGetLerpedFrames (struct animation_s *animation, aliashdr_t *hdr);
+float R_IQMGetLerpedFrames (struct entity_s *ent, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);
 iqmframe_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
 							   float blend, int extra,
 							   iqmblend_t *blend_palette, int palette_size);
-float R_EntityBlend (animation_t *animation, int pose, float interval);
+float R_EntityBlend (struct animation_s *animation, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
 void D_DrawSurfaces (void);
@@ -185,12 +190,15 @@ struct vulkan_ctx_s;
 void R_ClearTextures (void);
 void R_InitSurfaceChains (mod_brush_t *brush);
 
+extern const byte *r_colormap;
+void R_SetColormap (const byte *cmap);
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
 extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 
-extern void R_RotateBmodel (void);
+struct transform_s;
+extern void R_RotateBmodel (struct transform_s *transform);
 
 extern int	c_faceclip;
 extern int	r_polycount;
@@ -224,7 +232,7 @@ typedef struct btofpoly_s {
 extern int			numbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (model_t *clmodel);
+void	R_ZDrawSubmodelPolys (struct entity_s *ent, model_t *clmodel);
 
 // Alias models ===========================================
 
@@ -236,10 +244,10 @@ extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
 extern finalvert_t		*pfinalverts;
 extern auxvert_t		*pauxverts;
-extern float            ziscale, sw32_ziscale;
+extern float            ziscale;
 extern float            aliastransform[3][4];
 
-qboolean R_AliasCheckBBox (void);
+qboolean R_AliasCheckBBox (struct entity_s *ent);
 
 // turbulence stuff =======================================
 
@@ -249,7 +257,8 @@ qboolean R_AliasCheckBBox (void);
 
 // particle stuff =========================================
 
-void R_DrawParticles (void);
+struct psystem_s;
+void R_DrawParticles (struct psystem_s *psystem);
 void R_InitParticles (void);
 void R_ClearParticles (void);
 void R_ReadPointFile_f (void);
@@ -266,8 +275,6 @@ extern edge_t	*r_edges, *edge_p, *edge_max;
 extern	edge_t	*newedges[MAXHEIGHT];
 extern	edge_t	*removeedges[MAXHEIGHT];
 
-extern	int	screenwidth;
-
 extern int		r_bmodelactive;
 extern vrect_t	*pconupdate;
 
@@ -282,29 +289,25 @@ extern int			r_maxvalidedgeoffset;
 
 void R_AliasClipTriangle (mtriangle_t *ptri);
 
-extern float	r_time1;
+extern double	r_time1;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
 
-extern mleaf_t	*r_viewleaf;
-
 extern int		r_clipflags;
 extern int		r_dlightframecount;
 
-extern struct entity_s *r_ent_queue;
+extern struct entqueue_s *r_ent_queue;
 struct dlight_s;
 
 extern vec3_t lightspot;
 
 void R_StoreEfrags (const efrag_t *ppefrag);
 void R_TimeRefresh_f (void);
-void R_TimeGraph (void);
-void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
-int R_LightPoint (mod_brush_t *brush, const vec3_t p);
+int R_LightPoint (mod_brush_t *brush, vec4f_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
@@ -330,7 +333,6 @@ void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
 						  finalvert_t *out);
 void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 
-void R_AliasSetUpTransform (int trivial_accept);
 void R_AliasTransformVector (vec3_t in, vec3_t out);
 void R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 								stvert_t *pstverts);

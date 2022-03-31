@@ -156,13 +156,3 @@ D_EndDirectRect (int x, int y, int width, int height)
 		x = sdl_screen->w + x - 1;
 	SDL_UpdateRect (sdl_screen, x, y, width, height);
 }
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}

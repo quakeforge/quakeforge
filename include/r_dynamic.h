@@ -53,7 +53,6 @@ void R_InitBubble (void);
 
 void R_InitParticles (void);
 void R_ClearParticles (void);
-void R_DrawParticles (void);
 struct cvar_s;
 void R_MaxParticlesCheck (struct cvar_s *r_particles,
 						  struct cvar_s *r_particles_max);

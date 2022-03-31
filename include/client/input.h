@@ -27,8 +27,56 @@
 #ifndef __client_input_h_
 #define __client_input_h_
 
-void CL_Legacy_Init (void);
+#include "QF/simd/vec4f.h"
+
+#include "QF/input.h"
+
+struct cbuf_s;
+
+extern struct cvar_s *cl_upspeed;
+extern struct cvar_s *cl_forwardspeed;
+extern struct cvar_s *cl_backspeed;
+extern struct cvar_s *cl_sidespeed;
+
+extern struct cvar_s *cl_movespeedkey;
+
+extern struct cvar_s *cl_yawspeed;
+extern struct cvar_s *cl_pitchspeed;
+
+extern struct cvar_s *cl_anglespeedkey;
+
+extern struct cvar_s *m_pitch;
+extern struct cvar_s *m_yaw;
+extern struct cvar_s *m_forward;
+extern struct cvar_s *m_side;
+
+#define FORWARD 0
+#define SIDE 1
+#define UP 2
+
+typedef struct movestate_s {
+	vec4f_t     move;
+	vec4f_t     angles;
+} movestate_t;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
+
+struct viewstate_s;
+
+void CL_OnFocusChange (void (*func) (int game));
+void CL_Input_BuildMove (float frametime, movestate_t *state,
+						 struct viewstate_s *vs);
+void CL_Input_Init (struct cbuf_s *cbuf);
+void CL_Input_Init_Cvars (void);
+void CL_Input_Activate (int in_game);
+
+extern in_axis_t in_move_forward, in_move_side, in_move_up;
+extern in_axis_t in_move_pitch, in_move_yaw, in_move_roll;
+extern in_axis_t in_cam_forward, in_cam_side, in_cam_up;
+extern in_button_t  in_left, in_right, in_forward, in_back;
+extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
+extern in_button_t  in_use, in_jump, in_attack;
+extern in_button_t  in_up, in_down;
+extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
 
 #endif // __client_input_h_

@@ -76,6 +76,21 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+AC_ARG_ENABLE(Werror,
+	AS_HELP_STRING([--disable-Werror], [do not treat warnings as errors]))
+dnl We want warnings, lots of warnings...
+dnl The help text should be INVERTED before release!
+dnl when in git, this test defaults to ENABLED.
+dnl In a release, this test defaults to DISABLED.
+if test "x$GCC" = "xyes"; then
+	if test "x$enable_Werror" $cvs_def_enabled; then
+		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
+	else
+		CFLAGS="$CFLAGS -Wall"
+	fi
+	CFLAGS="$CFLAGS -fno-common"
+fi
+
 AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--disable-optimize],
 		[compile without optimizations (for development)]),
@@ -121,13 +136,14 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
 		saved_cflags="$CFLAGS"
-		CFLAGS=""
+		dnl CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
+		QF_CC_OPTION(-fexpensive-optimizations)
 		dnl if test "$CC_MAJ" -ge 4; then
 		dnl 	QF_CC_OPTION(-finline-limit=32000 -Winline)
 		dnl fi
-		dnl heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
-		heavy="-O2 $CFLAGS -fno-fast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		dnl heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer"
+		heavy="-O2 $CFLAGS -fno-fast-math -funroll-loops -fomit-frame-pointer "
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
@@ -278,21 +294,6 @@ if test "x$GCC" != xyes; then
         AC_MSG_RESULT(nothing needed or no switch known)
 	;;
   esac
-fi
-
-AC_ARG_ENABLE(Werror,
-	AS_HELP_STRING([--disable-Werror], [do not treat warnings as errors]))
-dnl We want warnings, lots of warnings...
-dnl The help text should be INVERTED before release!
-dnl when in git, this test defaults to ENABLED.
-dnl In a release, this test defaults to DISABLED.
-if test "x$GCC" = "xyes"; then
-	if test "x$enable_Werror" $cvs_def_enabled; then
-		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
-	else
-		CFLAGS="$CFLAGS -Wall"
-	fi
-	CFLAGS="$CFLAGS -fno-common"
 fi
 
 AS="$CC"

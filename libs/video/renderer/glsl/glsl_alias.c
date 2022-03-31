@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -164,7 +161,7 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	entorigin = Transform_GetWorldPosition (ent->transform);
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	light = R_LightPoint (&r_worldentity.renderer.model->brush, &entorigin[0]);
+	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
 	*ambient = max (light, max (ent->renderer.model->min_light,
 								ent->renderer.min_light) * 128);
 	*shadelight = *ambient;
@@ -302,7 +299,7 @@ glsl_R_DrawAlias (entity_t *ent)
 	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
 	qfeglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
 	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false,
-						   &mvp_mat[0][0]);
+						   (vec_t*)&mvp_mat[0]);//FIXME
 	qfeglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON
@@ -342,8 +339,8 @@ glsl_R_AliasBegin (void)
 	qfeglDisableVertexAttribArray (quake_mdl.colora.location);
 	qfeglDisableVertexAttribArray (quake_mdl.colorb.location);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_mdl.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_mdl.colormap.location, 1);

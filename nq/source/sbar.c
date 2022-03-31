@@ -57,6 +57,8 @@
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/hud.h"
+
 #include "nq/include/client.h"
 #include "nq/include/game.h"
 #include "nq/include/server.h"
@@ -87,7 +89,6 @@ qpic_t     *sb_face_invis_invuln;
 qboolean    sb_showscores;
 
 int         sb_lines;				// scan lines to draw
-qboolean	hudswap;
 
 qpic_t     *rsb_invbar[2];
 qpic_t     *rsb_weapons[5];
@@ -105,9 +106,6 @@ int         hipweapons[4] =
 	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
-cvar_t     *hud_sbar;
-cvar_t     *hud_swap;
-cvar_t     *hud_scoreboard_gravity;
 cvar_t     *scr_centertime;
 cvar_t     *scr_printspeed;
 
@@ -127,7 +125,6 @@ static view_t *main_view;
 static void
 hud_swap_f (cvar_t *var)
 {
-	hudswap = var->int_val;
 	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
 		hud_armament_view->children[0]->gravity = grav_northwest;
@@ -209,10 +206,9 @@ calc_sb_lines (cvar_t *var)
 static void
 hud_sbar_f (cvar_t *var)
 {
-	r_data->vid->recalc_refdef = true;
 	if (r_data->scr_viewsize)
 		calc_sb_lines (r_data->scr_viewsize);
-	r_data->lineadj = var->int_val ? sb_lines : 0;
+	SCR_SetBottomMargin (var->int_val ? sb_lines : 0);
 	if (var->int_val) {
 		view_remove (main_view, main_view->children[0]);
 		view_insert (main_view, sbar_view, 0);
@@ -226,8 +222,9 @@ static void
 viewsize_f (cvar_t *var)
 {
 	calc_sb_lines (var);
-	if (hud_sbar)
-		r_data->lineadj = hud_sbar->int_val ? sb_lines : 0;
+	if (hud_sbar) {
+		SCR_SetBottomMargin (hud_sbar->int_val ? sb_lines : 0);
+	}
 }
 
 
@@ -303,7 +300,7 @@ draw_string (view_t *view, int x, int y, const char *str)
 {
 	r_funcs->Draw_String (view->xabs + x, view->yabs + y, str);
 }
-
+#if 0
 static inline void
 draw_altstring (view_t *view, int x, int y, const char *str)
 {
@@ -315,7 +312,7 @@ draw_nstring (view_t *view, int x, int y, const char *str, int n)
 {
 	r_funcs->Draw_nString (view->xabs + x, view->yabs + y, str, n);
 }
-
+#endif
 static inline void
 draw_fill (view_t *view, int x, int y, int w, int h, int col)
 {
@@ -500,6 +497,7 @@ draw_sigils (view_t *view)
 static void
 draw_inventory_sbar (view_t *view)
 {
+	printf ("sbar: %d\n", sbar_view->visible);
 	draw_pic (view, 0, 0, sb_ibar);
 	view_draw (view);
 }

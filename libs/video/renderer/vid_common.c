@@ -40,18 +40,24 @@ viddef_t    vid;					// global video state
 view_t      scr_view;
 
 vid_render_data_t vid_render_data = {
-	&vid, &r_refdef, &scr_view,
-	0, 0, 0,
-	0,
-	0, 0,
-	0.0,
-	false, false, false,
-	0,
-	0, 0,
-	0,
-	0.0, 0.0,
-	0,
-	r_origin, vpn, vright, vup
+	.vid = &vid,
+	.refdef = &r_refdef,
+	.scr_view = &scr_view,
+	.scr_copytop = 0,
+	.scr_copyeverything = 0,
+	.scr_fullupdate = 0,
+	.viewsize_callback = 0,
+	.scr_viewsize = 0,
+	.graphheight = 0,
+	.min_wateralpha = 0.0,
+	.force_fullscreen = false,
+	.inhibit_viewmodel = false,
+	.paused = false,
+	.lineadj = 0,
+	.view_model = 0,
+	.frametime = 0.0,
+	.realtime = 0.0,
+	.lightstyle = 0,
 };
 
 vid_render_funcs_t *vid_render_funcs;

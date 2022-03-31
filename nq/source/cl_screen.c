@@ -46,13 +46,18 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
 #include "sbar.h"
 
+#include "client/world.h"
+
 #include "nq/include/client.h"
 
 static view_t  *net_view;
+static view_t  *timegraph_view;
+static view_t  *zgraph_view;
 static view_t  *loading_view;
 
 static void
@@ -74,14 +79,14 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.state == ca_active && cl.worldmodel) {
-		//FIXME
-		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
-								cl.worldmodel);
+	if (cls.state == ca_active && cl_world.worldmodel) {
+		vec4f_t     origin;
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		leaf = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
 		contents = leaf->contents;
 	}
-	V_SetContentsColor (contents);
-	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
+	V_SetContentsColor (&cl.viewstate, contents);
+	r_funcs->Draw_BlendScreen (cl.viewstate.cshift_color);
 }
 
 static void
@@ -90,15 +95,17 @@ scr_draw_views (void)
 	net_view->visible = (!cls.demoplayback
 						 && realtime - cl.last_servermessage >= 0.3);
 	loading_view->visible = cl.loading;
+	timegraph_view->visible = r_timegraph->int_val;
+	zgraph_view->visible = r_zgraph->int_val;
 
 	view_draw (r_data->vid->conview);
 }
 
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
-	0, //SCR_DrawRam,
-	0, //SCR_DrawTurtle,
-	0, //SCR_DrawPause,
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
 	Sbar_Draw,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,
@@ -142,6 +149,22 @@ CL_UpdateScreen (double realtime)
 		view_add (r_data->scr_view, net_view);
 	}
 
+	if (!timegraph_view) {
+		view_t     *parent = r_data->scr_view;
+		timegraph_view = view_new (0, 0, parent->xlen, 100, grav_southwest);
+		timegraph_view->draw = R_TimeGraph;
+		timegraph_view->visible = 0;
+		view_add (parent, timegraph_view);
+	}
+
+	if (!zgraph_view) {
+		view_t     *parent = r_data->scr_view;
+		zgraph_view = view_new (0, 0, parent->xlen, 100, grav_southwest);
+		zgraph_view->draw = R_ZGraph;
+		zgraph_view->visible = 0;
+		view_add (parent, zgraph_view);
+	}
+
 	if (!loading_view) {
 		const char *name = "gfx/loading.lmp";
 		qpic_t     *pic = r_funcs->Draw_CachePic (name, 1);
@@ -160,11 +183,10 @@ CL_UpdateScreen (double realtime)
 			r_data->min_wateralpha = 1.0;
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
-	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
-	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
-	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
-	V_PrepBlend ();
-	V_RenderView ();
-	SCR_UpdateScreen (realtime, scr_funcs[index]);
+	cl.viewstate.intermission = cl.intermission != 0;
+	V_PrepBlend (&cl.viewstate);
+	V_RenderView (&cl.viewstate);
+	SCR_UpdateScreen (cl.viewstate.camera_transform,
+					  realtime, scr_funcs[index]);
 }

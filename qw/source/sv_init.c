@@ -165,8 +165,9 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.colormap);
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, &SVdata (svent)->state.origin[0],
-							  SVdata (svent)->state.angles);//FIXME
+		MSG_WriteCoordAngleV (&sv.signon,
+							  (vec_t*)&SVdata (svent)->state.origin,//FIXME
+							  SVdata (svent)->state.angles);
 	}
 }
 

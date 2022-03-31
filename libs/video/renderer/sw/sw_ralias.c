@@ -29,6 +29,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/image.h"
 #include "QF/render.h"
@@ -46,13 +47,13 @@
 
 affinetridesc_t r_affinetridesc;
 
-void       *acolormap;					// FIXME: should go away
+const byte *acolormap;					// FIXME: should go away
 
 trivertx_t *r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
 static mdl_t      *pmdl;
-vec3_t      r_plightvec;
+vec3_t      r_lightvec;
 int         r_ambientlight;
 float       r_shadelight;
 static aliashdr_t *paliashdr;
@@ -61,7 +62,7 @@ auxvert_t  *pauxverts;
 float ziscale;
 static model_t *pmodel;
 
-static vec3_t alias_forward, alias_right, alias_up;
+static vec3_t alias_forward, alias_left, alias_up;
 
 static maliasskindesc_t *pskindesc;
 
@@ -82,8 +83,10 @@ static aedge_t aedges[12] = {
 	{0, 5}, {1, 4}, {2, 7}, {3, 6}
 };
 
+static void R_AliasSetUpTransform (entity_t *ent, int trivial_accept);
+
 qboolean
-R_AliasCheckBBox (void)
+R_AliasCheckBBox (entity_t *ent)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -96,16 +99,16 @@ R_AliasCheckBBox (void)
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-	currententity->visibility.trivial_accept = 0;
-	pmodel = currententity->renderer.model;
+	ent->visibility.trivial_accept = 0;
+	pmodel = ent->renderer.model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
-	R_AliasSetUpTransform (0);
+	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
-	frame = currententity->animation.frame;
+	frame = ent->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
@@ -220,11 +223,11 @@ R_AliasCheckBBox (void)
 		return false;					// trivial reject off one side
 	}
 
-	currententity->visibility.trivial_accept = !anyclip & !zclipped;
+	ent->visibility.trivial_accept = !anyclip & !zclipped;
 
-	if (currententity->visibility.trivial_accept) {
+	if (ent->visibility.trivial_accept) {
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
-			currententity->visibility.trivial_accept |= 2;
+			ent->visibility.trivial_accept |= 2;
 		}
 	}
 
@@ -251,9 +254,9 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 
 	R_AliasProjectFinalVert (fv, av);
 
-	if (fv->v[0] < r_refdef.aliasvrect.x)
+	if (fv->v[0] < r_refdef.aliasvrectleft)
 		fv->flags |= ALIAS_LEFT_CLIP;
-	if (fv->v[1] < r_refdef.aliasvrect.y)
+	if (fv->v[1] < r_refdef.aliasvrecttop)
 		fv->flags |= ALIAS_TOP_CLIP;
 	if (fv->v[0] > r_refdef.aliasvrectright)
 		fv->flags |= ALIAS_RIGHT_CLIP;
@@ -350,54 +353,29 @@ R_AliasPreparePoints (void)
 	}
 }
 
-void
-R_AliasSetUpTransform (int trivial_accept)
+static void
+R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
-	float       rotationmatrix[3][4], t2matrix[3][4];
-	static float tmatrix[3][4];
-	static float viewmatrix[3][4];
+	float       rotationmatrix[3][4];
 	mat4f_t     mat;
 
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (ent->transform, mat);
 	VectorCopy (mat[0], alias_forward);
-	VectorNegate (mat[1], alias_right);
+	VectorCopy (mat[1], alias_left);
 	VectorCopy (mat[2], alias_up);
 
-	tmatrix[0][0] = pmdl->scale[0];
-	tmatrix[1][1] = pmdl->scale[1];
-	tmatrix[2][2] = pmdl->scale[2];
-
-	tmatrix[0][3] = pmdl->scale_origin[0];
-	tmatrix[1][3] = pmdl->scale_origin[1];
-	tmatrix[2][3] = pmdl->scale_origin[2];
-
-// TODO: can do this with simple matrix rearrangement
-
 	for (i = 0; i < 3; i++) {
-		t2matrix[i][0] = alias_forward[i];
-		t2matrix[i][1] = -alias_right[i];
-		t2matrix[i][2] = alias_up[i];
+		rotationmatrix[i][0] = pmdl->scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = pmdl->scale[1] * alias_left[i];
+		rotationmatrix[i][2] = pmdl->scale[2] * alias_up[i];
+		rotationmatrix[i][3] = pmdl->scale_origin[0] * alias_forward[i]
+							 + pmdl->scale_origin[1] * alias_left[i]
+							 + pmdl->scale_origin[2] * alias_up[i]
+							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
-	t2matrix[0][3] = -modelorg[0];
-	t2matrix[1][3] = -modelorg[1];
-	t2matrix[2][3] = -modelorg[2];
-
-// FIXME: can do more efficiently than full concatenation
-	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
-
-// TODO: should be global, set when vright, etc., set
-	VectorCopy (vright, viewmatrix[0]);
-	VectorCopy (vup, viewmatrix[1]);
-	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vpn, viewmatrix[2]);
-
-//	viewmatrix[0][3] = 0;
-//	viewmatrix[1][3] = 0;
-//	viewmatrix[2][3] = 0;
-
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (r_viewmatrix, rotationmatrix, aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -436,7 +414,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 
 	// lighting
 	plightnormal = r_avertexnormals[pverts->lightnormalindex];
-	lightcos = DotProduct (plightnormal, r_plightvec);
+	lightcos = DotProduct (plightnormal, r_lightvec);
 	temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -486,7 +464,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 		// lighting
 		plightnormal = r_avertexnormals[pverts->lightnormalindex];
-		lightcos = DotProduct (plightnormal, r_plightvec);
+		lightcos = DotProduct (plightnormal, r_lightvec);
 		temp = r_ambientlight;
 
 		if (lightcos < 0) {
@@ -562,7 +540,7 @@ R_AliasSetupSkin (entity_t *ent)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = vid.colormap8;
+	acolormap = r_colormap;
 	if (ent->renderer.skin) {
 		tex_t      *base;
 
@@ -578,11 +556,11 @@ R_AliasSetupSkin (entity_t *ent)
 
 
 static void
-R_AliasSetupLighting (alight_t *plighting)
+R_AliasSetupLighting (alight_t *lighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
-	r_ambientlight = plighting->ambientlight;
+	r_ambientlight = lighting->ambientlight;
 
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
@@ -592,7 +570,7 @@ R_AliasSetupLighting (alight_t *plighting)
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
 
-	r_shadelight = plighting->shadelight;
+	r_shadelight = lighting->shadelight;
 
 	if (r_shadelight < 0)
 		r_shadelight = 0;
@@ -600,9 +578,9 @@ R_AliasSetupLighting (alight_t *plighting)
 	r_shadelight *= VID_GRADES;
 
 	// rotate the lighting vector into the model's frame of reference
-	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
-	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
-	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
+	r_lightvec[0] = DotProduct (lighting->lightvec, alias_forward);
+	r_lightvec[1] = DotProduct (lighting->lightvec, alias_left);
+	r_lightvec[2] = DotProduct (lighting->lightvec, alias_up);
 }
 
 /*
@@ -621,9 +599,8 @@ R_AliasSetupFrame (entity_t *ent)
 
 
 void
-R_AliasDrawModel (alight_t *plighting)
+R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 {
-	entity_t    *ent = currententity;
 	int          size;
 	finalvert_t *finalverts;
 
@@ -646,15 +623,15 @@ R_AliasDrawModel (alight_t *plighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
-	R_AliasSetUpTransform (ent->visibility.trivial_accept);
-	R_AliasSetupLighting (plighting);
+	R_AliasSetUpTransform (ent, ent->visibility.trivial_accept);
+	R_AliasSetupLighting (lighting);
 	R_AliasSetupFrame (ent);
 
 	r_affinetridesc.drawtype = ((ent->visibility.trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
-		acolormap = vid.colormap8;
+		acolormap = r_colormap;
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...
@@ -669,8 +646,7 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (ent->visibility.trivial_accept
-		&& pmdl->ident != HEADER_MDL16) {
+	if (ent->visibility.trivial_accept && pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
 	} else {
 		R_AliasPreparePoints ();

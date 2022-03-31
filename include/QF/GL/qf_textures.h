@@ -29,6 +29,7 @@
 #define __gl_textures_h
 
 #include "QF/qtypes.h"
+#include "QF/GL/types.h"
 
 #define MAX_GLTEXTURES	2048
 
@@ -39,7 +40,7 @@ extern int gl_filter_min;
 extern int gl_filter_max;
 extern qboolean gl_Anisotropy;
 extern float gl_aniso;
-extern int gl_part_tex;
+extern GLuint gl_part_tex;
 
 void GL_Upload8 (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);

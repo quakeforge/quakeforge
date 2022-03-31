@@ -463,16 +463,6 @@ VID_Update (vrect_t *rects)
 }
 
 void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
-
-void
 VID_SetCaption (const char *text)
 {
 }

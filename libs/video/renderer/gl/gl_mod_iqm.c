@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -52,6 +49,7 @@
 #include "QF/GL/qf_iqm.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 

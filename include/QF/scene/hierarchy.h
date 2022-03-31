@@ -45,6 +45,9 @@
 #define null_transform (~0u)
 
 typedef struct hierarchy_s {
+	struct hierarchy_s *next;
+	struct hierarchy_s **prev;
+	struct scene_s *scene;
 	xformset_t  transform;
 	entityset_t entity;
 	uint32set_t childCount;
@@ -63,7 +66,7 @@ typedef struct hierarchy_s {
 	vec4fset_t  worldScale;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (size_t grow, int createRoot);
+hierarchy_t *Hierarchy_New (struct scene_s *scene, int createRoot);
 hierarchy_t *Hierarchy_Copy (hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 

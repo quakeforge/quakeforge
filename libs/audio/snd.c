@@ -135,14 +135,14 @@ S_AmbientOn (void)
 }
 
 VISIBLE void
-S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
+S_StaticSound (sfx_t *sfx, vec4f_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->static_sound (sfx, origin, vol, attenuation);
 }
 
 VISIBLE void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			  float vol, float attenuation)
 {
 	if (snd_render_funcs)
@@ -166,12 +166,10 @@ S_PrecacheSound (const char *sample)
 }
 
 VISIBLE void
-S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up, const byte *ambient_sound_level)
+S_Update (struct transform_s *ear, const byte *ambient_sound_level)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->update (origin, v_forward, v_right, v_up,
-									 ambient_sound_level);
+		snd_render_funcs->update (ear, ambient_sound_level);
 }
 
 VISIBLE void

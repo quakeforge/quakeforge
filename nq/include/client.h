@@ -30,14 +30,15 @@
 
 #include <stdio.h>
 
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/render.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
 #include "client/state.h"
 #include "client/view.h"
 
@@ -102,7 +103,7 @@ typedef struct {
 
 	QFile      *demofile;
 	qboolean    demorecording;
-	qboolean    demo_capture;
+	int         demo_capture;
 	qboolean    demoplayback;
 	int         forcetrack;			// -1 = use normal cd track
 	qboolean    timedemo;
@@ -147,9 +148,6 @@ typedef struct client_state_s {
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
 
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
-
 // The client maintains its own idea of view angles, which are sent to the
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
@@ -160,16 +158,10 @@ typedef struct client_state_s {
 	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
 	viewstate_t viewstate;
-
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
 	qboolean    paused;			// Sent over by server
-	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
 
@@ -188,13 +180,8 @@ typedef struct client_state_s {
 
 /* information that is static for the entire time connected to a server */
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
-	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
@@ -205,7 +192,6 @@ typedef struct client_state_s {
 	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
-	int         chase;
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
@@ -214,9 +200,7 @@ typedef struct client_state_s {
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
@@ -230,32 +214,12 @@ typedef struct client_state_s {
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_color;
 
-extern struct cvar_s	*cl_upspeed;
-extern struct cvar_s	*cl_forwardspeed;
-extern struct cvar_s	*cl_backspeed;
-extern struct cvar_s	*cl_sidespeed;
-
-extern struct cvar_s	*cl_movespeedkey;
-
-extern struct cvar_s	*cl_yawspeed;
-extern struct cvar_s	*cl_pitchspeed;
-
-extern struct cvar_s	*cl_anglespeedkey;
-
 extern struct cvar_s	*cl_autofire;
 
 extern struct cvar_s	*cl_shownet;
 extern struct cvar_s	*cl_nolerp;
 
-extern struct cvar_s	*hud_sbar;
-
 extern struct cvar_s	*cl_pitchdriftspeed;
-extern struct cvar_s	*lookspring;
-
-extern struct cvar_s	*m_pitch;
-extern struct cvar_s	*m_yaw;
-extern struct cvar_s	*m_forward;
-extern struct cvar_s	*m_side;
 
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_writecfg;
@@ -269,10 +233,9 @@ extern struct cvar_s	*noskins;
 
 extern	client_state_t	cl;
 
-// FIXME, allocate dynamically
-extern entity_t cl_entities[MAX_EDICTS];
+extern struct entity_s *cl_entities[MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
-extern byte cl_forcelink[MAX_EDICTS];
+extern struct set_s cl_forcelink;
 
 extern int fps_count;
 
@@ -297,8 +260,8 @@ void CL_NextDemo (void);
 
 
 // cl_input
-void CL_Input_Init (struct cbuf_s *cbuf);
-void CL_Input_Activate (void);
+void CL_Init_Input (struct cbuf_s *cbuf);
+void CL_Init_Input_Cvars (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
 
@@ -324,26 +287,11 @@ void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 
 
-// view
-void V_StartPitchDrift (void);
-void V_StopPitchDrift (void);
-
-void V_UpdatePalette (void);
-void V_Register (void);
-void V_ParseDamage (void);
-void V_SetContentsColor (int contents);
-void V_PrepBlend (void);
-
 // cl_tent
 void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
-
-extern in_button_t  in_left, in_right, in_forward, in_back;
-extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern in_button_t  in_use, in_jump, in_attack;
-extern in_button_t  in_up, in_down;
-extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
+struct entity_s *CL_GetEntity (int num);
 
 extern	double			realtime;
 

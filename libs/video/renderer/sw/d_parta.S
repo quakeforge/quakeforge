@@ -66,13 +66,13 @@ C(D_DrawParticle):
 // FIXME: better FP overlap in general here
 
 // transform point
-//	VectorSubtract (p->org, r_origin, local);
-	flds	C(r_origin)
+//	VectorSubtract (p->org, r_porigin, local);
+	flds	C(r_porigin)
 	fsubrs	pt_pos(%edi)
 	flds	pt_pos+4(%edi)
-	fsubs	C(r_origin)+4
+	fsubs	C(r_porigin)+4
 	flds	pt_pos+8(%edi)
-	fsubs	C(r_origin)+8
+	fsubs	C(r_porigin)+8
 	fxch	%st(2)			// local[0] | local[1] | local[2]
 
 //	transformed[2] = DotProduct(local, r_ppn);		
@@ -189,7 +189,7 @@ C(D_DrawParticle):
 	imull	C(d_zrowbytes),%edx		// point to the z pixel
 
 	leal	(%edx,%eax,2),%edx
-	movl	C(d_pzbuffer),%eax
+	movl	C(d_zbuffer),%eax
 
 	fistpl	C(izi)
 
@@ -245,7 +245,7 @@ C(DP_1x1):
 .globl	C(DP_2x2)
 C(DP_2x2):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -276,7 +276,7 @@ L2x2_4:
 .globl	C(DP_3x3)
 C(DP_3x3):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -335,7 +335,7 @@ L3x3_9:
 .globl	C(DP_4x4)
 C(DP_4x4):
 	pushl	%esi
-	movl	C(screenwidth),%ebx
+	movl	C(d_rowbytes),%ebx
 	movl	C(d_zrowbytes),%esi
 
 	cmpw	%bp,(%edx)
@@ -438,7 +438,7 @@ LDefault:
 	movb	C(d_y_aspect_shift),%cl
 	shll	%cl,%ebx
 
-// for ( ; count ; count--, pz += d_zwidth, pdest += screenwidth)
+// for ( ; count ; count--, pz += d_zwidth, pdest += d_rowbytes)
 // {
 // 	for (i=0 ; i<pix ; i++)
 // 	{
@@ -463,7 +463,7 @@ LGSkip:
 	jnz		LGenColLoop
 
 	addl	C(d_zrowbytes),%edx
-	addl	C(screenwidth),%edi
+	addl	C(d_rowbytes),%edi
 
 	decl	%ebx			// --count
 	jnz		LGenRowLoop

@@ -1622,7 +1622,7 @@ PR_Check_v6p_Opcodes (progs_t *pr)
 	if (0 && !pr_boundscheck->int_val) {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->statements.count;
 			 st++, i++) {
-			pr_opcode_v6p_e st_op = st->op;
+			pr_opcode_v6p_e st_op = (pr_opcode_v6p_e) st->op;
 			op = PR_v6p_Opcode (st_op);
 			if (!op) {
 				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "
@@ -1643,7 +1643,7 @@ PR_Check_v6p_Opcodes (progs_t *pr)
 	} else {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->statements.count;
 			 st++, i++) {
-			pr_opcode_v6p_e st_op = st->op;
+			pr_opcode_v6p_e st_op = (pr_opcode_v6p_e) st->op;
 			op = PR_v6p_Opcode (st_op);
 			if (!op) {
 				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "

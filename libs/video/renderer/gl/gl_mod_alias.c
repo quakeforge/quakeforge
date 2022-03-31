@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -55,6 +52,7 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_alias.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
@@ -62,6 +60,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_gl.h"
 
 typedef struct {
 	vec3_t      normal;
@@ -435,11 +434,9 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (scale[0] != 1.0) {
 		radius *= scale[0];
 	}
-	if (R_CullSphere (&origin[0], radius)) {//FIXME
+	if (R_CullSphere (r_refdef.frustum, (vec_t*)&origin, radius)) {//FIXME
 		return;
 	}
-
-	VectorSubtract (r_origin, origin, modelorg);
 
 	gl_modelalpha = e->renderer.colormod[3];
 
@@ -452,7 +449,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		float lightadj;
 
 		// get lighting information
-		R_LightPoint (&r_worldentity.renderer.model->brush, &origin[0]);//FIXME
+		R_LightPoint (&r_refdef.worldmodel->brush, origin);//FIXME
 
 		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
 
@@ -559,7 +556,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (!(paliashdr = e->renderer.model->aliashdr)) {
 		paliashdr = Cache_Get (&e->renderer.model->cache);
 	}
-	gl_c_alias_polys += paliashdr->mdl.numtris;
+	gl_ctx->alias_polys += paliashdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data

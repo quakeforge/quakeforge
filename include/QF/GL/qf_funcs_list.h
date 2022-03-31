@@ -418,6 +418,19 @@ QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 // ATI Extensions
 QFGL_WANT (void, glPNTrianglesiATI, (GLint x, GLint y))
 
+// frame buffers
+QFGL_DONT_NEED (GLboolean, glIsFramebuffer, (GLuint framebuffer))
+QFGL_NEED (void, glBindFramebuffer, (GLenum target, GLuint framebuffer))
+QFGL_DONT_NEED (void, glDeleteFramebuffers, (GLsizei n, const GLuint *framebuffers))
+QFGL_NEED (void, glGenFramebuffers, (GLsizei n, GLuint *framebuffers))
+QFGL_DONT_NEED (GLenum, glCheckFramebufferStatus, (GLenum target))
+QFGL_DONT_NEED (void, glFramebufferTexture1D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_NEED (void, glFramebufferTexture2D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_DONT_NEED (void, glFramebufferTexture3D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset))
+QFGL_DONT_NEED (void, glFramebufferRenderbuffer, (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer))
+QFGL_DONT_NEED (void, glGetFramebufferAttachmentParameteriv, (GLenum target, GLenum attachment, GLenum pname, GLint *params))
+
+
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED
 #endif

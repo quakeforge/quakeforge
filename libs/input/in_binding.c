@@ -250,7 +250,7 @@ in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 		[ie_add_device] = in_binding_add_device,
 		[ie_remove_device] = in_binding_remove_device,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
@@ -265,7 +265,7 @@ IN_Binding_HandleEvent (const IE_event_t *ie_event)
 		[ie_axis] = in_binding_axis,
 		[ie_button] = in_binding_button,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}

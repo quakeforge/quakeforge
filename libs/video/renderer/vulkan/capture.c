@@ -29,17 +29,6 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#include <stdlib.h>
-
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
@@ -47,8 +36,6 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
-
-#include "vid_vulkan.h"
 
 qfv_capture_t *
 QFV_CreateCapture (qfv_device_t *device, int numframes,
@@ -117,7 +104,7 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 	capture->memsize = numframes * image_size;
 	capture->memory = QFV_AllocImageMemory (device,
 											capture->image_set->a[0].image,
-											VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+											VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 											capture->memsize, 0);
 	byte       *data;
 	dfunc->vkMapMemory (device->dev, capture->memory, 0, capture->memsize, 0,

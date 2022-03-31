@@ -28,9 +28,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
+#include <math.h>
 
 #include "QF/cvar.h"
 #include "QF/Vulkan/projection.h"
@@ -68,30 +66,24 @@ QFV_Orthographic (mat4f_t proj, float xmin, float xmax, float ymin, float ymax,
 }
 
 void
-QFV_PerspectiveTan (mat4f_t proj, float fov, float aspect)
+QFV_PerspectiveTan (mat4f_t proj, float fov_x, float fov_y)
 {
-	float       f = 1 / fov;
 	float       neard, fard;
 
 	neard = r_nearclip->value;
 	fard = r_farclip->value;
 
-	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
-	proj[1] = (vec4f_t) { 0, -f, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, fard / (neard - fard), -1 };
+	proj[0] = (vec4f_t) { 1 / fov_x, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, 1 / fov_y, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, fard / (fard - neard), 1 };
 	proj[3] = (vec4f_t) { 0, 0, (neard * fard) / (neard - fard), 0 };
 }
 
 void
-QFV_PerspectiveCos (mat4f_t proj, float fov, float aspect)
+QFV_PerspectiveCos (mat4f_t proj, float fov)
 {
 	// square first for auto-abs (no support for > 180 degree fov)
 	fov = fov * fov;
-	QFV_PerspectiveTan (proj, sqrt ((1 - fov) / fov), aspect);
-}
-
-void
-QFV_Perspective (mat4f_t proj, float fov, float aspect)
-{
-	QFV_PerspectiveTan (proj, tan (fov * M_PI / 360), aspect);
+	float       t = sqrt ((1 - fov) / fov);
+	QFV_PerspectiveTan (proj, t, t);
 }

@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -59,8 +56,8 @@
 // cube from the outside on the -ve y axis with +x to the right, +y going in,
 // +z up, and front is the nearest face.
 static const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
-int         gl_solidskytexture;
-int         gl_alphaskytexture;
+GLuint      gl_solidskytexture;
+GLuint      gl_alphaskytexture;
 
 // Set to true if a valid skybox is loaded --KB
 qboolean    gl_skyloaded = false;
@@ -189,9 +186,9 @@ R_DrawSkyBox (void)
 			float *v = (float *) gl_skyvec[i][j];
 
 			qfglTexCoord2fv (v);
-			qfglVertex3f (r_refdef.viewposition[0] + v[2],
-						  r_refdef.viewposition[1] + v[3],
-						  r_refdef.viewposition[2] + v[4]);
+			qfglVertex3f (r_refdef.frame.position[0] + v[2],
+						  r_refdef.frame.position[1] + v[3],
+						  r_refdef.frame.position[2] + v[4]);
 		}
 		qfglEnd ();
 	}
@@ -219,7 +216,7 @@ skydome_vertex (const vec3_t v, float speedscale)
 	s = speedscale + dir[0];
 	t = speedscale + dir[1];
 
-	VectorAdd (r_refdef.viewposition, v, point);
+	VectorAdd (r_refdef.frame.position, v, point);
 
 	qfglTexCoord2f (s, t);
 	qfglVertex3fv (point);
@@ -242,7 +239,7 @@ skydome_debug (void)
 
 		h = 1;
 		t = 0;
-		VectorAdd (zenith, r_refdef.viewposition, v[0]);
+		VectorAdd (zenith, r_refdef.frame.position, v[0]);
 		for (b = 1; b <= 8; b++) {
 			x = gl_bubble_costable[b + 8];
 			y = -gl_bubble_sintable[b + 8];
@@ -250,7 +247,7 @@ skydome_debug (void)
 			v[h][0] = a1x * x;
 			v[h][1] = a1y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.viewposition, v[h]);
+			VectorAdd (v[h], r_refdef.frame.position, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -262,7 +259,7 @@ skydome_debug (void)
 			v[h][0] = a2x * x;
 			v[h][1] = a2y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.viewposition, v[h]);
+			VectorAdd (v[h], r_refdef.frame.position, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -274,7 +271,7 @@ skydome_debug (void)
 
 		h = 1;
 		t = 0;
-		VectorAdd (nadir, r_refdef.viewposition, v[0]);
+		VectorAdd (nadir, r_refdef.frame.position, v[0]);
 		for (b = 15; b >= 8; b--) {
 			x = gl_bubble_costable[b + 8];
 			y = -gl_bubble_sintable[b + 8];
@@ -282,7 +279,7 @@ skydome_debug (void)
 			v[h][0] = a2x * x;
 			v[h][1] = a2y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.viewposition, v[h]);
+			VectorAdd (v[h], r_refdef.frame.position, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -294,7 +291,7 @@ skydome_debug (void)
 			v[h][0] = a1x * x;
 			v[h][1] = a1y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.viewposition, v[h]);
+			VectorAdd (v[h], r_refdef.frame.position, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -431,8 +428,9 @@ gl_R_InitSky (texture_t *mt)
 	((byte *) & transpix)[2] = b / (128 * 128);
 	((byte *) & transpix)[3] = 0;
 
-	if (!gl_solidskytexture)
-		gl_solidskytexture = gl_texture_number++;
+	if (!gl_solidskytexture) {
+		qfglGenTextures (1, &gl_solidskytexture);
+	}
 	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);
@@ -451,8 +449,9 @@ gl_R_InitSky (texture_t *mt)
 				trans[(i * 128) + j] = d_8to24table[p];
 		}
 
-	if (!gl_alphaskytexture)
-		gl_alphaskytexture = gl_texture_number++;
+	if (!gl_alphaskytexture) {
+		qfglGenTextures (1, &gl_alphaskytexture);
+	}
 	qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);

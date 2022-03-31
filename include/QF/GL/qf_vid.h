@@ -44,7 +44,6 @@ extern qboolean					gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
 extern qboolean					gl_combine_capable;
 extern float					gl_rgb_scale;
-extern int						gl_texture_number;
 
 extern qboolean					gl_feature_mach64;
 extern float					gldepthmin, gldepthmax;

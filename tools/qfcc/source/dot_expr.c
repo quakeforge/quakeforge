@@ -711,7 +711,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 
 	if ((int) e->type < 0 || e->type >= ex_count || !print_funcs[e->type]) {
 		const char *type = va (0, "%d", e->type);
-		if (e->type >= 0 && e->type < ex_count) {
+		if ((unsigned) e->type < ex_count) {
 			type = expr_names[e->type];
 		}
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type: %s)\\n%d\"];\n",

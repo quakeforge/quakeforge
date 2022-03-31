@@ -36,7 +36,9 @@
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
 #include "client/state.h"
 #include "client/view.h"
 
@@ -134,7 +136,7 @@ typedef struct {
 
 	QFile      *demofile;
 	qboolean    demorecording;
-	qboolean    demo_capture;
+	int         demo_capture;
 	qboolean    demoplayback;
 	qboolean    demoplayback2;
 	qboolean    findtrack;
@@ -189,24 +191,16 @@ typedef struct client_state_s {
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
 
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
-
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
 // the client maintains its own idea of view angles, which are sent to the
 // server each frame.  And reset only at level change and teleport times
 	viewstate_t viewstate;
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
 	qboolean    paused;			// Sent over by server
-	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
 
@@ -228,13 +222,9 @@ typedef struct client_state_s {
 	char        model_name[MAX_MODELS][MAX_QPATH];
 	char        sound_name[MAX_SOUNDS][MAX_QPATH];
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
 	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
@@ -245,7 +235,6 @@ typedef struct client_state_s {
 	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
-	int         chase;
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
@@ -254,9 +243,7 @@ typedef struct client_state_s {
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
@@ -275,31 +262,10 @@ extern	struct cvar_s	*cl_netgraph_height;
 extern	struct cvar_s	*cl_netgraph_alpha;
 extern	struct cvar_s	*cl_netgraph_box;
 
-extern	struct cvar_s	*cl_upspeed;
-extern	struct cvar_s	*cl_forwardspeed;
-extern	struct cvar_s	*cl_backspeed;
-extern	struct cvar_s	*cl_sidespeed;
-
-extern	struct cvar_s	*cl_movespeedkey;
-
-extern	struct cvar_s	*cl_yawspeed;
-extern	struct cvar_s	*cl_pitchspeed;
-
-extern	struct cvar_s	*cl_anglespeedkey;
-
 extern	struct cvar_s	*cl_draw_locs;
 extern	struct cvar_s	*cl_shownet;
-extern	struct cvar_s	*hud_sbar;
-extern	struct cvar_s	*hud_sbar_separator;
-extern	struct cvar_s	*hud_swap;
 
 extern	struct cvar_s	*cl_pitchdriftspeed;
-extern	struct cvar_s	*lookspring;
-
-extern	struct cvar_s	*m_pitch;
-extern	struct cvar_s	*m_yaw;
-extern	struct cvar_s	*m_forward;
-extern	struct cvar_s	*m_side;
 
 extern	struct cvar_s	*cl_name;
 
@@ -316,10 +282,7 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
-		entitystateset_t;
-extern	entitystateset_t cl_static_entities;
-extern	entity_t		cl_entities[512];
+extern	entity_t	*cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 
 extern	qboolean	nomaster;
@@ -340,10 +303,6 @@ void CL_NetGraph_Init_Cvars (void);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
-
-void V_ParseDamage (void);
-
-void V_PrepBlend (void);
 
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);

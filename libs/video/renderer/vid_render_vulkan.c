@@ -57,9 +57,12 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
+
+#include "QF/scene/entity.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -67,29 +70,6 @@
 #include "vid_vulkan.h"
 
 static vulkan_ctx_t *vulkan_ctx;
-
-static tex_t *
-vulkan_SCR_CaptureBGR (void)
-{
-	return 0;
-}
-
-static tex_t *
-vulkan_SCR_ScreenShot (unsigned width, unsigned height)
-{
-	return 0;
-}
-
-static void
-vulkan_Fog_Update (float density, float red, float green, float blue,
-				   float time)
-{
-}
-
-static void
-vulkan_Fog_ParseWorldspawn (struct plitem_s *worldspawn)
-{
-}
 
 static struct psystem_s *
 vulkan_ParticleSystem (void)
@@ -100,6 +80,7 @@ vulkan_ParticleSystem (void)
 static void
 vulkan_R_Init (void)
 {
+	r_ent_queue = EntQueue_New (mod_num_types);
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
@@ -122,134 +103,9 @@ vulkan_R_Init (void)
 }
 
 static void
-vulkan_R_RenderFrame (SCR_Func *scr_funcs)
-{
-	uint32_t imageIndex = 0;
-	qfv_device_t *device = vulkan_ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkDevice    dev = device->dev;
-	qfv_queue_t *queue = &vulkan_ctx->device->queue;
-
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-
-	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-						  frame->imageAvailableSemaphore,
-						  0, &imageIndex);
-	vulkan_ctx->swapImageIndex = imageIndex;
-
-	view_draw (vr_data.scr_view);
-	while (*scr_funcs) {
-		(*scr_funcs) ();
-		scr_funcs++;
-	}
-
-	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
-		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-		frame->framebuffer = rp->framebuffers->a[imageIndex];
-		rp->draw (rpFrame);
-	}
-
-	VkCommandBufferBeginInfo beginInfo
-		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-
-	VkRenderPassBeginInfo renderPassInfo = {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
-	};
-
-	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
-	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
-		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-
-		if (rpFrame->renderpass) {
-			renderPassInfo.framebuffer = frame->framebuffer,
-			renderPassInfo.renderPass = rp->renderpass;
-			renderPassInfo.clearValueCount = rp->clearValues->size;
-			renderPassInfo.pClearValues = rp->clearValues->a;
-
-			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
-										 rpFrame->subpassContents);
-
-			for (int j = 0; j < rpFrame->subpassCount; j++) {
-				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-				if (cmdSet->size) {
-					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-												 cmdSet->size, cmdSet->a);
-				}
-				// reset for next time around
-				cmdSet->size = 0;
-
-				//Regardless of whether any commands were submitted for this
-				//subpass, must step through each and every subpass, otherwise
-				//the attachments won't be transitioned correctly.
-				if (j < rpFrame->subpassCount - 1) {
-					dfunc->vkCmdNextSubpass (frame->cmdBuffer,
-											 rpFrame->subpassContents);
-				}
-			}
-			dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
-		} else {
-			for (int j = 0; j < rpFrame->subpassCount; j++) {
-				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-				if (cmdSet->size) {
-					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-												 cmdSet->size, cmdSet->a);
-				}
-				// reset for next time around
-				cmdSet->size = 0;
-			}
-		}
-	}
-
-	if (vulkan_ctx->capture_callback) {
-		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
-		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
-												vulkan_ctx->curFrame);
-		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
-	}
-	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
-
-	VkPipelineStageFlags waitStage
-		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		1, &frame->imageAvailableSemaphore, &waitStage,
-		1, &frame->cmdBuffer,
-		1, &frame->renderDoneSemaphore,
-	};
-	dfunc->vkResetFences (dev, 1, &frame->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
-
-	if (vulkan_ctx->capture_callback) {
-		//FIXME look into "threading" this rather than waiting here
-		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
-								1000000000ull);
-		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
-													   vulkan_ctx->curFrame),
-									  vulkan_ctx->capture->extent.width,
-									  vulkan_ctx->capture->extent.height);
-		vulkan_ctx->capture_callback = 0;
-	}
-
-	VkPresentInfoKHR presentInfo = {
-		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frame->renderDoneSemaphore,
-		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
-		0
-	};
-	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
-
-	vulkan_ctx->curFrame++;
-	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
-}
-
-static void
 vulkan_R_ClearState (void)
 {
-	r_worldentity.renderer.model = 0;
+	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
@@ -393,9 +249,218 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 }
 
 static void
-vulkan_R_ViewChanged (void)
+vulkan_begin_frame (void)
 {
-	Vulkan_CalcProjectionMatrices (vulkan_ctx);
+	uint32_t imageIndex = 0;
+	qfv_device_t *device = vulkan_ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkDevice    dev = device->dev;
+
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
+
+	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
+	QFV_AcquireNextImage (vulkan_ctx->swapchain,
+						  frame->imageAvailableSemaphore,
+						  0, &imageIndex);
+	vulkan_ctx->swapImageIndex = imageIndex;
+}
+
+static void
+vulkan_render_view (void)
+{
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
+	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		rp->draw (rpFrame);
+	}
+}
+
+static void
+vulkan_draw_entities (entqueue_t *queue)
+{
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
+	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		Vulkan_RenderEntities (queue, rpFrame);
+	}
+}
+
+static void
+vulkan_draw_particles (struct psystem_s *psystem)
+{
+}
+
+static void
+vulkan_draw_transparent (void)
+{
+}
+
+static void
+vulkan_post_process (framebuffer_t *src)
+{
+}
+
+static void
+vulkan_set_2d (int scaled)
+{
+	//FIXME this should not be done every frame
+	__auto_type mctx = vulkan_ctx->matrix_context;
+	__auto_type mat = &mctx->matrices;
+
+	int width = vid.conview->xlen;	//FIXME vid
+	int height = vid.conview->ylen;
+	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
+
+	mctx->dirty = mctx->frames.size;
+}
+
+static void
+vulkan_end_frame (void)
+{
+	qfv_device_t *device = vulkan_ctx->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_queue_t *queue = &device->queue;
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
+	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+
+	VkCommandBufferBeginInfo beginInfo
+		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+
+	VkRenderPassBeginInfo renderPassInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
+	};
+
+	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+
+		if (rpFrame->renderpass) {
+			renderPassInfo.framebuffer = frame->framebuffer,
+			renderPassInfo.renderPass = rp->renderpass;
+			renderPassInfo.clearValueCount = rp->clearValues->size;
+			renderPassInfo.pClearValues = rp->clearValues->a;
+
+			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
+										 rpFrame->subpassContents);
+
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				if (cmdSet->size) {
+					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+												 cmdSet->size, cmdSet->a);
+				}
+				// reset for next time around
+				cmdSet->size = 0;
+
+				//Regardless of whether any commands were submitted for this
+				//subpass, must step through each and every subpass, otherwise
+				//the attachments won't be transitioned correctly.
+				if (j < rpFrame->subpassCount - 1) {
+					dfunc->vkCmdNextSubpass (frame->cmdBuffer,
+											 rpFrame->subpassContents);
+				}
+			}
+			dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
+		} else {
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				if (cmdSet->size) {
+					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+												 cmdSet->size, cmdSet->a);
+				}
+				// reset for next time around
+				cmdSet->size = 0;
+			}
+		}
+	}
+
+	if (vulkan_ctx->capture_callback) {
+		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
+		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
+												vulkan_ctx->curFrame);
+		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
+	}
+	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
+
+	VkPipelineStageFlags waitStage
+		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkSubmitInfo submitInfo = {
+		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
+		1, &frame->imageAvailableSemaphore, &waitStage,
+		1, &frame->cmdBuffer,
+		1, &frame->renderDoneSemaphore,
+	};
+	dfunc->vkResetFences (dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+
+	if (vulkan_ctx->capture_callback) {
+		//FIXME look into "threading" this rather than waiting here
+		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
+								1000000000ull);
+		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
+													   vulkan_ctx->curFrame),
+									  vulkan_ctx->capture->extent.width,
+									  vulkan_ctx->capture->extent.height);
+		vulkan_ctx->capture_callback = 0;
+	}
+
+	VkPresentInfoKHR presentInfo = {
+		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
+		1, &frame->renderDoneSemaphore,
+		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
+		0
+	};
+	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
+
+	vulkan_ctx->curFrame++;
+	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
+}
+
+static framebuffer_t *
+vulkan_create_cube_map (int size)
+{
+	Sys_Error ("not implemented");
+}
+
+static framebuffer_t *
+vulkan_create_frame_buffer (int width, int height)
+{
+	Sys_Error ("not implemented");
+}
+
+static void
+vulkan_bind_framebuffer (framebuffer_t *framebuffer)
+{
+}
+
+static void
+vulkan_set_viewport (const vrect_t *view)
+{
+}
+
+static void
+vulkan_set_fov (float x, float y)
+{
+	if (!vulkan_ctx || !vulkan_ctx->matrix_context) {
+		return;
+	}
+	__auto_type mctx = vulkan_ctx->matrix_context;
+	__auto_type mat = &mctx->matrices;
+
+	QFV_PerspectiveTan (mat->Projection3d, x, y);
+
+	mctx->dirty = mctx->frames.size;
 }
 
 static int
@@ -408,45 +473,47 @@ is_bgr (VkFormat format)
 static void
 capture_screenshot (const byte *data, int width, int height)
 {
-	dstring_t  *name = dstring_new ();
-	// find a file name to save it to
-	if (!QFS_NextFilename (name, va (vulkan_ctx->va_ctx, "%s/qf",
-									 qfs_gamedir->dir.shots),
-						   ".ppm")) {
-		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a ppm file\n");
-	} else {
-		QFile      *file = QFS_Open (name->str, "wb");
-		if (!file) {
-			Sys_Printf ("Couldn't open %s\n", name->str);
-		} else {
-			Qprintf (file, "P6\n%d\n%d\n255\n", width, height);
-			if (vulkan_ctx->capture->canBlit ||
-				!is_bgr (vulkan_ctx->swapchain->format)) {
-				for (int count = width * height; count-- > 0; ) {
-					Qwrite (file, data, 3);
-					data += 4;
-				}
-			} else {
-				for (int count = width * height; count-- > 0; ) {
-					byte        rgb[] = { data[2], data[1], data[0] };
-					Qwrite (file, rgb, 3);
-					data += 4;
-				}
-			}
-			Qclose (file);
+	int         count = width * height;
+	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
+
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->flagbits = 0;
+		tex->width = width;
+		tex->height = height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
+
+		if (!vulkan_ctx->capture->canBlit ||
+			is_bgr (vulkan_ctx->swapchain->format)) {
+			tex->bgr = 1;
+		}
+		const byte *src = data;
+		byte       *dst = tex->data;
+		for (int count = width * height; count-- > 0; ) {
+			*dst++ = *src++;
+			*dst++ = *src++;
+			*dst++ = *src++;
+			src++;
 		}
 	}
-	dstring_delete (name);
+	capfunc_t   callback = vulkan_ctx->capture_complete;
+	callback (tex, vulkan_ctx->capture_complete_data);;
 }
 
 static void
-vulkan_SCR_ScreenShot_f (void)
+vulkan_capture_screen (capfunc_t callback, void *data)
 {
 	if (!vulkan_ctx->capture) {
-		Sys_Printf ("Screenshot not supported\n");
+		Sys_Printf ("Capture not supported\n");
+		callback (0, data);
 		return;
 	}
 	vulkan_ctx->capture_callback = capture_screenshot;
+	vulkan_ctx->capture_complete = callback;
+	vulkan_ctx->capture_complete_data = data;
 }
 
 static void
@@ -658,32 +725,29 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 
-	SCR_SetFOV,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
-	vulkan_SCR_CaptureBGR,
-	vulkan_SCR_ScreenShot,
-	SCR_DrawStringToSnap,
-
-	vulkan_Fog_Update,
-	vulkan_Fog_ParseWorldspawn,
-
 	vulkan_ParticleSystem,
 	vulkan_R_Init,
-	vulkan_R_RenderFrame,
 	vulkan_R_ClearState,
 	vulkan_R_LoadSkys,
 	vulkan_R_NewMap,
-	R_AddEfrags,
-	R_RemoveEfrags,
 	vulkan_R_LineGraph,
-	R_AllocDlight,
-	R_AllocEntity,
-	R_MaxDlightsCheck,
-	R_DecayLights,
-	vulkan_R_ViewChanged,
-	vulkan_SCR_ScreenShot_f,
+	vulkan_begin_frame,
+	vulkan_render_view,
+	vulkan_draw_entities,
+	vulkan_draw_particles,
+	vulkan_draw_transparent,
+	vulkan_post_process,
+	vulkan_set_2d,
+	vulkan_end_frame,
+
+	vulkan_create_cube_map,
+	vulkan_create_frame_buffer,
+	vulkan_bind_framebuffer,
+	vulkan_set_viewport,
+	vulkan_set_fov,
+
+	vulkan_capture_screen,
+
 	&model_funcs
 };
 

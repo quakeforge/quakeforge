@@ -56,7 +56,7 @@ typedef struct entity_s {
 	const char *classname;
 	vec3_t      origin;
 	vec_t       angle;
-	int         light;
+	vec_t       light;
 
 	int         sun_light[2];
 	vec3_t      sun_color[2];

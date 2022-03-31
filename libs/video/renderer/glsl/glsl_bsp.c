@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -303,7 +300,7 @@ GET_RELEASE (elements_t, elements)
 GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
-void
+static void
 glsl_R_AddTexture (texture_t *tx)
 {
 	int         i;
@@ -422,7 +419,7 @@ register_textures (mod_brush_t *brush)
 	}
 }
 
-void
+static void
 glsl_R_ClearTextures (void)
 {
 	r_num_texture_chains = 0;
@@ -436,9 +433,9 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 	mod_brush_t *brush;
 
 	glsl_R_ClearTextures ();
-	glsl_R_InitSurfaceChains (&r_worldentity.renderer.model->brush);
+	glsl_R_InitSurfaceChains (&r_refdef.worldmodel->brush);
 	glsl_R_AddTexture (r_notexture_mip);
-	register_textures (&r_worldentity.renderer.model->brush);
+	register_textures (&r_refdef.worldmodel->brush);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
@@ -447,7 +444,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.renderer.model || m->type != mod_brush)
+		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -492,7 +489,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 	if (surf->model_index < 0) {
 		brush = &models[-surf->model_index - 1]->brush;
 	} else {
-		brush = &r_worldentity.renderer.model->brush;
+		brush = &r_refdef.worldmodel->brush;
 	}
 	vertices = brush->vertexes;
 	edges = brush->edges;
@@ -591,7 +588,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			}
 			surf = brush->surfaces + j;
 			surf->model_index = dm - brush->submodels;
-			if (!surf->model_index && m != r_worldentity.renderer.model)
+			if (!surf->model_index && m != r_refdef.worldmodel)
 				surf->model_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
@@ -680,18 +677,18 @@ R_DrawBrushModel (entity_t *e)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (&mat[3][0], radius)) { // FIXME
+		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { // FIXME
 			return;
 		}
 	} else {
 		rotated = false;
 		VectorAdd (mat[3], model->mins, mins);
 		VectorAdd (mat[3], model->maxs, maxs);
-		if (R_CullBox (mins, maxs))
+		if (R_CullBox (r_refdef.frustum, mins, maxs))
 			return;
 	}
 
-	org = r_refdef.viewposition - mat[3];
+	org = r_refdef.frame.position - mat[3];
 	if (rotated) {
 		vec4f_t     temp = org;
 
@@ -744,10 +741,11 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
-		return (r_origin[plane->type] - plane->dist) < 0;
-	return (DotProduct (r_origin, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static inline void
@@ -781,7 +779,7 @@ test_node (mnode_t *node)
 		return 0;
 	if (node->visframe != r_visframecount)
 		return 0;
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
+	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }
@@ -856,10 +854,10 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		}
 	}
 	if (ec->transform) {
-		Mat4Mult (&bsp_vp[0][0], ec->transform, mat);//FIXME
+		Mat4Mult ((vec_t*)&bsp_vp[0], ec->transform, mat);//FIXME
 		qfeglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, &bsp_vp[0][0]);
+		qfeglUniformMatrix4fv (matloc, 1, false, (vec_t*)&bsp_vp[0]);//FIXME
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
@@ -896,8 +894,8 @@ bsp_begin (void)
 
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_bsp.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_bsp.colormap.location, 2);
@@ -951,8 +949,8 @@ turb_begin (void)
 
 	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_turb.palette.location, 1);
@@ -1000,7 +998,7 @@ spin (mat4_t mat)
 	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
 	QuatMult (sky_fix, q, q);
 	Mat4Identity (mat);
-	VectorNegate (r_origin, mat + 12);
+	VectorNegate (r_refdef.frame.position, mat + 12);
 	QuatToMatrix (q, m, 1, 1);
 	Mat4Mult (m, mat, mat);
 }
@@ -1055,8 +1053,8 @@ sky_begin (void)
 		qfeglEnable (GL_TEXTURE_2D);
 	}
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (mat);
@@ -1142,17 +1140,15 @@ glsl_R_DrawWorld (void)
 	clear_texture_chains ();	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_worldentity.renderer.model;
+	worldent.renderer.model = r_refdef.worldmodel;
 
 	bctx.brush = &worldent.renderer.model->brush;
-	bctx.entity = &r_worldentity;
+	bctx.entity = &worldent;
 
 	R_VisitWorldNodes (&bctx);
 	if (r_drawentities->int_val) {
-		entity_t   *ent;
-		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->renderer.model->type != mod_brush)
-				continue;
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
+			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent);
 		}
 	}
@@ -1184,7 +1180,7 @@ glsl_R_DrawWorld (void)
 }
 
 void
-glsl_R_DrawWaterSurfaces ()
+glsl_R_DrawWaterSurfaces (void)
 {
 	instsurf_t *is;
 	msurface_t *surf;
@@ -1394,7 +1390,7 @@ glsl_R_LoadSkys (const char *sky)
 	// a -90 degree rotation on the (quake) z-axis. This is taken care of in
 	// the sky_matrix setup code.
 	// However, from the player's perspective, skymaps have lf and rt
-	// swapped, but everythink makes sense if looking at the cube from outside
+	// swapped, but everything makes sense if looking at the cube from outside
 	// along the positive y axis, with the front of the cube being the nearest
 	// face. This matches nicely with Blender's default cube in front (num-1)
 	// view.

@@ -275,7 +275,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	int         i;
 	model_t    *m;
-	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 	clear_textures (ctx);
 	init_surface_chains (brush, ctx);
@@ -289,7 +289,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.renderer.model || m->type != mod_brush)
+		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -342,7 +342,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 		brush = &models[~surf->model_index]->brush;
 	} else {
 		// main or sub model
-		brush = &r_worldentity.renderer.model->brush;
+		brush = &r_refdef.worldmodel->brush;
 	}
 	vertices  = brush->vertexes;
 	edges     = brush->edges;
@@ -413,13 +413,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bsppoly_t  *poly;
 	mod_brush_t *brush;
 
-	bctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
-	bctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
-	bctx->sky_rotation[1] = bctx->sky_rotation[0];
-	bctx->sky_velocity = (vec4f_t) { };
-	bctx->sky_velocity = qexpf (bctx->sky_velocity);
-	bctx->sky_time = vr_data.realtime;
-
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
@@ -448,7 +441,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			}
 			surf = brush->surfaces + j;
 			surf->model_index = dm - brush->submodels;
-			if (!surf->model_index && m != r_worldentity.renderer.model) {
+			if (!surf->model_index && m != r_refdef.worldmodel) {
 				surf->model_index = -1 - i;	// instanced model
 			}
 			tex = surf->texinfo->texture->render;
@@ -611,18 +604,18 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (&mat[3][0], radius)) { //FIXME
+		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { //FIXME
 			return;
 		}
 	} else {
 		rotated = false;
 		VectorAdd (mat[3], model->mins, mins);
 		VectorAdd (mat[3], model->maxs, maxs);
-		if (R_CullBox (mins, maxs))
+		if (R_CullBox (r_refdef.frustum, mins, maxs))
 			return;
 	}
 
-	org = r_refdef.viewposition - mat[3];
+	org = r_refdef.frame.position - mat[3];
 	if (rotated) {
 		vec4f_t     temp = org;
 
@@ -660,10 +653,11 @@ get_side (mnode_t *node)
 {
 	// find the node side on which we are
 	plane_t    *plane = node->plane;
+	vec4f_t     org = r_refdef.frame.position;
 
 	if (plane->type < 3)
-		return (r_origin[plane->type] - plane->dist) < 0;
-	return (DotProduct (r_origin, plane->normal) - plane->dist) < 0;
+		return (org[plane->type] - plane->dist) < 0;
+	return (DotProduct (org, plane->normal) - plane->dist) < 0;
 }
 
 static inline void
@@ -697,7 +691,7 @@ test_node (mnode_t *node)
 		return 0;
 	if (node->visframe != r_visframecount)
 		return 0;
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
+	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }
@@ -948,30 +942,7 @@ turb_end (vulkan_ctx_t *ctx)
 
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTurb], ctx);
 }
-/*XXX
-static void
-spin (mat4f_t mat, bspctx_t *bctx)
-{
-	vec4f_t     q;
-	mat4f_t     m;
-	float       blend;
 
-	while (vr_data.realtime - bctx->sky_time > 1) {
-		bctx->sky_rotation[0] = bctx->sky_rotation[1];
-		bctx->sky_rotation[1] = qmulf (bctx->sky_velocity,
-									   bctx->sky_rotation[0]);
-		bctx->sky_time += 1;
-	}
-	blend = bound (0, (vr_data.realtime - bctx->sky_time), 1);
-
-	q = Blend (bctx->sky_rotation[0], bctx->sky_rotation[1], blend);
-	q = normalf (qmulf (bctx->sky_fix, q));
-	mat4fidentity (mat);
-	VectorNegate (r_origin, mat[3]);
-	mat4fquat (m, q);
-	mmulf (mat, m, mat);
-}
-*/
 static void
 sky_begin (qfv_renderframe_t *rFrame)
 {
@@ -980,8 +951,6 @@ sky_begin (qfv_renderframe_t *rFrame)
 
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
-
-	//XXX spin (ctx->matrices.sky_3d, bctx);
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
@@ -1062,19 +1031,17 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_worldentity.renderer.model;
-	brush = &r_worldentity.renderer.model->brush;
+	worldent.renderer.model = r_refdef.worldmodel;
+	brush = &r_refdef.worldmodel->brush;
 
-	bctx->entity = &r_worldentity;
+	bctx->entity = &worldent;
 	bctx->transform = 0;
 	bctx->color = 0;
 
 	R_VisitWorldNodes (brush, ctx);
 	if (r_drawentities->int_val) {
-		entity_t   *ent;
-		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->renderer.model->type != mod_brush)
-				continue;
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
+			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent, ctx);
 		}
 	}
@@ -1085,7 +1052,7 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 					bframe->cmdSet.a[QFV_bspDepth]);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
@@ -1153,7 +1120,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	turb_begin (rFrame);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {
@@ -1215,7 +1182,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 				  bframe->cmdSet.a[QFV_bspSky]);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
-	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
@@ -1467,17 +1434,6 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
 	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
 	free (bctx->default_skybox);
-}
-
-static inline __attribute__((const)) int
-is_pow2 (unsigned x)
-{
-	int         count;
-
-	for (count = 0; x; x >>= 1)
-		if (x & 1)
-			count++;
-	return count == 1;
 }
 
 void

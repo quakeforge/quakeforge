@@ -293,7 +293,7 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 			return;
 	}
 	// try other directions
-	if (((rand () & 3) & 1) || abs (deltay) > abs (deltax)) {
+	if (((rand () & 3) & 1) || fabsf (deltay) > fabsf (deltax)) {
 		tdir = d[1];
 		d[1] = d[2];
 		d[2] = tdir;

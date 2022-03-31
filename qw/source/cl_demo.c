@@ -56,6 +56,8 @@
 
 #include "compat.h"
 
+#include "client/world.h"
+
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_demo.h"
 #include "qw/include/cl_ents.h"
@@ -333,7 +335,7 @@ nextdemomessage:
 			cls.netchan.outgoing_sequence++;
 			for (i = 0; i < 3; i++) {
 				Qread (cls.demofile, &f, 4);
-				cl.viewstate.angles[i] = LittleFloat (f);
+				cl.viewstate.player_angles[i] = LittleFloat (f);
 			}
 			break;
 
@@ -462,7 +464,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	Qwrite (cls.demofile, &cmd, sizeof (cmd));
 
 	for (i = 0; i < 3; i++) {
-		fl = LittleFloat (cl.viewstate.angles[i]);
+		fl = LittleFloat (cl.viewstate.player_angles[i]);
 		Qwrite (cls.demofile, &fl, 4);
 	}
 
@@ -633,8 +635,8 @@ demo_default_name (const char *argv1)
 	time (&tim);
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
-	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->path);
+	// the leading path-name is to be removed from cl_world.worldmodel->name
+	mapname = QFS_SkipPath (cl_world.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended
@@ -765,7 +767,7 @@ demo_start_recording (int track)
 		MSG_WriteByte (&buf, es->frame);
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, es->skinnum);
-		MSG_WriteCoordAngleV (&buf, &es->origin[0], &es->angles[0]);
+		MSG_WriteCoordAngleV (&buf, (vec_t*)&es->origin, es->angles);//FIXME
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);
@@ -789,7 +791,7 @@ demo_start_recording (int track)
 			MSG_WriteByte (&buf, es->frame);
 			MSG_WriteByte (&buf, es->colormap);
 			MSG_WriteByte (&buf, es->skinnum);
-			MSG_WriteCoordAngleV (&buf, &es->origin[0], es->angles);//FIXME
+			MSG_WriteCoordAngleV (&buf, (vec_t*)&es->origin, es->angles);//FIXME
 
 			if (buf.cursize > MAX_MSGLEN / 2) {
 				CL_WriteRecordDemoMessage (&buf, seq++);

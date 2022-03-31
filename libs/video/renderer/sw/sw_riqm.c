@@ -58,14 +58,14 @@
 										// avoid the need for inner-loop light
 										// clamping
 
-static vec3_t r_plightvec;
+static vec3_t r_lightvec;
 static int    r_ambientlight;
 static float  r_shadelight;
 
 static inline int
 calc_light (float *normal)
 {
-	float       lightcos = DotProduct (normal, r_plightvec);
+	float       lightcos = DotProduct (normal, r_lightvec);
 	int         temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -236,21 +236,20 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 	mat4f_t     mat;
 	Transform_GetWorldMatrix (ent->transform, mat);
 	//FIXME vectorize
-	r_plightvec[0] = DotProduct (plighting->plightvec, mat[0]);
-	r_plightvec[1] = DotProduct (plighting->plightvec, mat[1]);
-	r_plightvec[2] = DotProduct (plighting->plightvec, mat[2]);
+	r_lightvec[0] = DotProduct (plighting->lightvec, mat[0]);
+	r_lightvec[1] = DotProduct (plighting->lightvec, mat[1]);
+	r_lightvec[2] = DotProduct (plighting->lightvec, mat[2]);
 }
 
 static void
-R_IQMSetUpTransform (int trivial_accept)
+R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
-	static float viewmatrix[3][4];
 	vec3_t      forward, left, up;
 
 	mat4f_t     mat;
-	Transform_GetWorldMatrix (currententity->transform, mat);
+	Transform_GetWorldMatrix (ent->transform, mat);
 	VectorCopy (mat[0], forward);
 	VectorCopy (mat[1], left);
 	VectorCopy (mat[2], up);
@@ -263,21 +262,11 @@ R_IQMSetUpTransform (int trivial_accept)
 		rotationmatrix[i][2] = up[i];
 	}
 
-	rotationmatrix[0][3] = -modelorg[0];
-	rotationmatrix[1][3] = -modelorg[1];
-	rotationmatrix[2][3] = -modelorg[2];
+	rotationmatrix[0][3] = r_entorigin[0] - r_refdef.frame.position[0];
+	rotationmatrix[1][3] = r_entorigin[1] - r_refdef.frame.position[1];
+	rotationmatrix[2][3] = r_entorigin[2] - r_refdef.frame.position[2];
 
-// TODO: should be global, set when vright, etc., set
-	VectorCopy (vright, viewmatrix[0]);
-	VectorCopy (vup, viewmatrix[1]);
-	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vpn, viewmatrix[2]);
-
-//	viewmatrix[0][3] = 0;
-//	viewmatrix[1][3] = 0;
-//	viewmatrix[2][3] = 0;
-
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (r_viewmatrix, rotationmatrix, aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -297,9 +286,8 @@ R_IQMSetUpTransform (int trivial_accept)
 }
 
 void
-R_IQMDrawModel (alight_t *plighting)
+R_IQMDrawModel (entity_t *ent, alight_t *plighting)
 {
-	entity_t   *ent = currententity;
 	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -320,14 +308,14 @@ R_IQMDrawModel (alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	R_IQMSetUpTransform (ent->visibility.trivial_accept);
+	R_IQMSetUpTransform (ent, ent->visibility.trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
 	r_affinetridesc.drawtype = (ent->visibility.trivial_accept == 3) &&
 			r_recursiveaffinetriangles;
 
 	//if (!acolormap)
-		acolormap = vid.colormap8;
+		acolormap = r_colormap;
 
 	if (ent != vr_data.view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;

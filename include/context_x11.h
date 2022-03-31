@@ -83,8 +83,7 @@ struct gl_ctx_s *X11_GL_Context (void);
 void X11_GL_Init_Cvars (void);
 
 struct sw_ctx_s *X11_SW_Context (void);
-struct sw_ctx_s *X11_SW32_Context (void);
-void X11_SW_Init_Cvars (void);	// sw and sw32 cvars shared
+void X11_SW_Init_Cvars (void);
 
 struct vulkan_ctx_s *X11_Vulkan_Context (void);
 void X11_Vulkan_Init_Cvars (void);

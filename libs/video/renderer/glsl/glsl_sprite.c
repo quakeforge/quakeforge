@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -183,18 +180,17 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 }
 
 static void
-make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t vpn, vec4f_t vright,
-		   vec4f_t vup, float verts[6][3])
+make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t sright, vec4f_t sup, float verts[6][3])
 {
 	vec4f_t     left, up, right, down;
 	vec4f_t     ul, ur, ll, lr;
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
-	right = frame->right * vright;
-	up = frame->up * vup;
-	left = frame->left * vright;
-	down = frame->down * vup;
+	right = frame->right * sright;
+	up = frame->up * sup;
+	left = frame->left * sright;
+	down = frame->down * sup;
 	// next, build the sprite corners from the axes
 	ul = up + left;
 	ur = up + right;
@@ -216,7 +212,7 @@ glsl_R_DrawSprite (entity_t *ent)
 	mspriteframe_t *frame1, *frame2;
 	float       blend;
 	vec4f_t     cameravec = {};
-	vec4f_t     svpn = {}, svright = {}, svup = {};
+	vec4f_t     spn = {}, sright = {}, sup = {};
 	static quat_t color = { 1, 1, 1, 1};
 	float       vertsa[6][3], vertsb[6][3];
 	static float uvab[6][4] = {
@@ -229,11 +225,9 @@ glsl_R_DrawSprite (entity_t *ent)
 	};
 
 	vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
-	VectorCopy (r_origin, cameravec);
-	cameravec -= origin;
+	cameravec = r_refdef.frame.position - origin;
 
-	if (!R_BillboardFrame (ent, sprite->type, &cameravec[0],
-						   &svup[0], &svright[0], &svpn[0])) {
+	if (!R_BillboardFrame (ent, sprite->type, cameravec, &sup, &sright, &spn)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
@@ -250,8 +244,8 @@ glsl_R_DrawSprite (entity_t *ent)
 	qfeglVertexAttrib4fv (quake_sprite.colorb.location, color);
 	qfeglVertexAttrib1f (quake_sprite.blend.location, blend);
 
-	make_quad (frame1, origin, svpn, svright, svup, vertsa);
-	make_quad (frame2, origin, svpn, svright, svup, vertsb);
+	make_quad (frame1, origin, sright, sup, vertsa);
+	make_quad (frame2, origin, sright, sup, vertsb);
 
 	qfeglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
 							 0, 0, vertsa);
@@ -264,7 +258,7 @@ glsl_R_DrawSprite (entity_t *ent)
 
 // All sprites are drawn in a batch, so avoid thrashing the gl state
 void
-R_SpriteBegin (void)
+glsl_R_SpriteBegin (void)
 {
 	mat4f_t     mat;
 	quat_t      fog;
@@ -277,8 +271,8 @@ R_SpriteBegin (void)
 	qfeglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfeglDisableVertexAttribArray (quake_sprite.blend.location);
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_sprite.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_sprite.spritea.location, 0);
@@ -295,11 +289,11 @@ R_SpriteBegin (void)
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	mmulf (mat, glsl_projection, glsl_view);
-	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, &mat[0][0]);
+	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, (vec_t*)&mat[0]);//FIXME
 }
 
 void
-R_SpriteEnd (void)
+glsl_R_SpriteEnd (void)
 {
 	qfeglDisableVertexAttribArray (quake_sprite.vertexa.location);
 	qfeglDisableVertexAttribArray (quake_sprite.vertexb.location);

@@ -42,7 +42,6 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -64,26 +63,43 @@ static void
 setup_view (vulkan_ctx_t *ctx)
 {
 	mat4f_t     view;
+	// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
+	// z-forward, x-right, y-down.
 	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
-		{-1, 0,  0, 0},
-		{ 0, 1,  0, 0},
-		{ 0, 0,  0, 1},
+		{ 0, 0, 1, 0},
+		{-1, 0, 0, 0},
+		{ 0,-1, 0, 0},
+		{ 0, 0, 0, 1},
 	};
-	vec4f_t     offset = { 0, 0, 0, 1 };
 
-	/*x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);*/
-
-	mat4fquat (view, qconjf (r_refdef.viewrotation));
-	mmulf (view, z_up, view);
-	offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	view[3] = mvmulf (view, offset);
+	mmulf (view, z_up, r_refdef.camera_inverse);
 	Vulkan_SetViewMatrix (ctx, view);
+}
+
+static void
+setup_sky (vulkan_ctx_t *ctx)
+{
+	__auto_type mctx = ctx->matrix_context;
+	vec4f_t     q;
+	mat4f_t     m;
+	float       blend;
+	mat4f_t     mat;
+
+	while (vr_data.realtime - mctx->sky_time > 1) {
+		mctx->sky_rotation[0] = mctx->sky_rotation[1];
+		mctx->sky_rotation[1] = qmulf (mctx->sky_velocity,
+									   mctx->sky_rotation[0]);
+		mctx->sky_time += 1;
+	}
+	blend = bound (0, (vr_data.realtime - mctx->sky_time), 1);
+
+	q = Blend (mctx->sky_rotation[0], mctx->sky_rotation[1], blend);
+	q = normalf (qmulf (mctx->sky_fix, q));
+	mat4fidentity (mat);
+	VectorNegate (r_refdef.frame.position, mat[3]);
+	mat4fquat (m, q);
+	mmulf (mat, m, mat);
+	Vulkan_SetSkyMatrix (ctx, mat);
 }
 
 void
@@ -93,6 +109,17 @@ Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
 
 	if (memcmp (mctx->matrices.View, view, sizeof (mat4f_t))) {
 		memcpy (mctx->matrices.View, view, sizeof (mat4f_t));
+		mctx->dirty = mctx->frames.size;
+	}
+}
+
+void
+Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
+{
+	__auto_type mctx = ctx->matrix_context;
+
+	if (memcmp (mctx->matrices.Sky, sky, sizeof (mat4f_t))) {
+		memcpy (mctx->matrices.Sky, sky, sizeof (mat4f_t));
 		mctx->dirty = mctx->frames.size;
 	}
 }
@@ -108,6 +135,7 @@ Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
 	__auto_type mframe = &mctx->frames.a[ctx->curFrame];
 
 	setup_view (ctx);
+	setup_sky (ctx);
 
 	if (mctx->dirty <= 0) {
 		mctx->dirty = 0;
@@ -138,41 +166,6 @@ Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 
 	QFV_PacketSubmit (packet);
-}
-
-void
-Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
-{
-	__auto_type mctx = ctx->matrix_context;
-	__auto_type mat = &mctx->matrices;
-
-	int width = vid.conview->xlen;
-	int height = vid.conview->ylen;
-	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
-
-	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	QFV_Perspective (mat->Projection3d, r_refdef.fov_y, aspect);
-#if 0
-	Sys_MaskPrintf (SYS_vulkan, "ortho:\n");
-	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 0));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 4));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection2d + 8));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->Projection2d + 12));
-	Sys_MaskPrintf (SYS_vulkan, "presp:\n");
-	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 0));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 4));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->Projection3d + 8));
-	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->Projection3d + 12));
-#endif
-	mctx->dirty = mctx->frames.size;
 }
 
 void
@@ -241,10 +234,18 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 	}
 	free (sets);
 
+	mctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
+	mctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
+	mctx->sky_rotation[1] = mctx->sky_rotation[0];
+	mctx->sky_velocity = (vec4f_t) { };
+	mctx->sky_velocity = qexpf (mctx->sky_velocity);
+	mctx->sky_time = vr_data.realtime;
+
 	mat4fidentity (mctx->matrices.Projection3d);
 	mat4fidentity (mctx->matrices.View);
 	mat4fidentity (mctx->matrices.Sky);
 	mat4fidentity (mctx->matrices.Projection2d);
+
 	mctx->dirty = mctx->frames.size;
 
 	mctx->stage = QFV_CreateStagingBuffer (device, "matrix",

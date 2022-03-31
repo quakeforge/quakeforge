@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -46,6 +43,7 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_sprite.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -68,14 +66,12 @@ R_DrawSpriteModel_f (entity_t *e)
 	mspriteframe_t	*frame;
 
 	origin = Transform_GetWorldPosition (e->transform);
-	VectorCopy (r_origin, cameravec);
-	cameravec -= origin;
+	cameravec = r_refdef.frame.position - origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (sprite, &e->animation);
 
-	if (!R_BillboardFrame (e, sprite->type, &cameravec[0],
-						   &up[0], &right[0], &pn[0])) {
+	if (!R_BillboardFrame (e, sprite->type, cameravec, &up, &right, &pn)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
@@ -94,20 +90,20 @@ R_DrawSpriteModel_f (entity_t *e)
 	point = origin + frame->down * up + frame->left * right;
 
 	qfglTexCoord2f (0, 1);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->up * up + frame->left * right;
 	qfglTexCoord2f (0, 0);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->up * up + frame->right * right;
 
 	qfglTexCoord2f (1, 0);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	point = origin + frame->down * up + frame->right * right;
 	qfglTexCoord2f (1, 1);
-	qfglVertex3fv (&point[0]);
+	qfglVertex3fv ((vec_t*)&point);//FIXME
 
 	qfglEnd ();
 
@@ -139,10 +135,10 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 		right = Transform_Right (e->transform);
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		up = (vec4f_t) { 0, 0, 1, 0 };
-		VectorCopy (vright, right);
+		VectorCopy (r_refdef.frame.right, right);
 	} else {								// normal sprite
-		VectorCopy (vup, up);
-		VectorCopy (vright, right);
+		VectorCopy (r_refdef.frame.up, up);
+		VectorCopy (r_refdef.frame.right, right);
 	}
 
 	for (i = 0; i < 4; i++) {

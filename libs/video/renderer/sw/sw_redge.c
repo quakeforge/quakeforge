@@ -85,8 +85,6 @@ R_DrawCulledPolys (void)
 	surf_t     *s;
 	msurface_t *pface;
 
-	currententity = &r_worldentity;
-
 	if (r_worldpolysbacktofront) {
 		for (s = surface_p - 1; s > &surfaces[1]; s--) {
 			if (!s->spans)
@@ -94,7 +92,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				R_RenderPoly (s->entity, pface, 15);
 			}
 		}
 	} else {
@@ -104,7 +102,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				R_RenderPoly (s->entity, pface, 15);
 			}
 		}
 	}
@@ -522,9 +520,7 @@ R_ScanEdges (void)
 		// flush the span list if we can't be sure we have enough spans left
 		// for the next scan
 		if (span_p > max_span_p) {
-			VID_UnlockBuffer ();
 			S_ExtraUpdate ();	// don't let sound get messed up if going slow
-			VID_LockBuffer ();
 
 			if (r_drawculledpolys)
 				R_DrawCulledPolys ();

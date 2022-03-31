@@ -41,12 +41,9 @@ void CL_ParsePacketEntities (qboolean delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);
 void CL_Ents_Init (void);
+struct entity_s *CL_GetEntity (int num);
 
 extern struct cvar_s   *cl_deadbodyfilter;
 extern struct cvar_s   *cl_gibfilter;
-
-extern entity_t cl_player_ents[];
-extern entity_t cl_flag_ents[];
-extern entity_t cl_packet_ents[];
 
 #endif

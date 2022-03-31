@@ -55,10 +55,13 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/ui/view.h"
 
 #include "context_x11.h"
 #include "r_internal.h"
@@ -68,8 +71,6 @@
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 
 static GC		x_gc;
-
-static cvar_t     *vid_bitdepth;
 
 static qboolean doShm;
 static XShmSegmentInfo x_shminfo[2];
@@ -218,17 +219,18 @@ x11_set_palette (sw_ctx_t *ctx, const byte *palette)
 }
 
 static void
-st2_fixup (XImage *framebuf, int x, int y, int width, int height)
+st2_fixup (sw_ctx_t *ctx, XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		xi, yi;
 	unsigned char *src;
 	PIXEL16 	*dest;
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)viddef.buffer)[yi * viddef.width];
+		src = &fb->color[yi * fb->rowbytes];
 		dest = (PIXEL16 *) &framebuf->data[yi * framebuf->bytes_per_line];
 		for (xi = x; xi < x + width; xi++) {
 			dest[xi] = st2d_8to16table[src[xi]];
@@ -237,18 +239,19 @@ st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 }
 
 static void
-st3_fixup (XImage * framebuf, int x, int y, int width, int height)
+st3_fixup (sw_ctx_t *ctx, XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		yi;
 	unsigned char *src;
 	PIXEL24 	*dest;
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
 	register int count, n;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)viddef.buffer)[yi * viddef.width + x];
+		src = &fb->color[yi * fb->rowbytes + x];
 		dest = (PIXEL24 *) &framebuf->data[yi * framebuf->bytes_per_line + x];
 
 		// Duff's Device
@@ -279,13 +282,13 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 }
 
 static void
-x11_put_image (vrect_t *rects)
+x11_put_image (vrect_t *rect)
 {
 	if (doShm) {
 		if (!XShmPutImage (x_disp, x_win, x_gc,
 						   x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->x, rects->y,
-						   rects->width, rects->height, True)) {
+						   rect->x, rect->y, rect->x, rect->y,
+						   rect->width, rect->height, True)) {
 			Sys_Error ("VID_Update: XShmPutImage failed");
 		}
 		oktodraw = false;
@@ -295,8 +298,8 @@ x11_put_image (vrect_t *rects)
 		current_framebuffer = !current_framebuffer;
 	} else {
 		if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-						rects->x, rects->y, rects->x, rects->y,
-						rects->width, rects->height)) {
+						rect->x, rect->y, rect->x, rect->y,
+						rect->width, rect->height)) {
 			Sys_Error ("VID_Update: XPutImage failed");
 		}
 	}
@@ -306,26 +309,76 @@ x11_put_image (vrect_t *rects)
 	Flush the given rectangles from the view buffer to the screen.
 */
 static void
-x11_sw8_update (sw_ctx_t *ctx, vrect_t *rects)
+x11_sw8_8_update (sw_ctx_t *ctx, vrect_t *rects)
 {
-	while (rects) {
-		switch (x_visinfo->depth) {
-			case 16:
-				st2_fixup (x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->width, rects->height);
-				break;
-			case 24:
-				st3_fixup (x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->width, rects->height);
-				break;
-		}
-		x11_put_image (rects);
+	vrect_t     urect = *rects;
+	while (rects->next) {
 		rects = rects->next;
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
 	}
+	x11_put_image (&urect);
+	XSync (x_disp, False);
+	r_data->scr_fullupdate = 0;
+
+	sw_framebuffer_t *fb = ctx->framebuffer->buffer;
+	fb->color = (byte *) x_framebuffer[current_framebuffer]->data;
+}
+
+static void
+x11_sw8_16_update (sw_ctx_t *ctx, vrect_t *rects)
+{
+	vrect_t     urect = *rects;
+	st2_fixup (ctx, x_framebuffer[current_framebuffer],
+			   rects->x, rects->y, rects->width, rects->height);
+	while (rects->next) {
+		rects = rects->next;
+		st2_fixup (ctx, x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
+	}
+	x11_put_image (&urect);
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
 }
 
+static void
+x11_sw8_24_update (sw_ctx_t *ctx, vrect_t *rects)
+{
+	vrect_t     urect = *rects;
+	st3_fixup (ctx, x_framebuffer[current_framebuffer],
+			   rects->x, rects->y, rects->width, rects->height);
+	while (rects->next) {
+		rects = rects->next;
+		st3_fixup (ctx, x_framebuffer[current_framebuffer],
+				   rects->x, rects->y, rects->width, rects->height);
+		int         minx = min (VRect_MinX (&urect), VRect_MinX (rects));
+		int         miny = min (VRect_MinY (&urect), VRect_MinY (rects));
+		int         maxx = max (VRect_MaxX (&urect), VRect_MaxX (rects));
+		int         maxy = max (VRect_MaxY (&urect), VRect_MaxY (rects));
+		urect.x = minx;
+		urect.y = miny;
+		urect.width = maxx - minx;
+		urect.height = maxy - miny;
+	}
+	x11_put_image (&urect);
+	XSync (x_disp, False);
+	r_data->scr_fullupdate = 0;
+}
+#if 0
 static void
 x11_sw16_16_update (sw_ctx_t *ctx, vrect_t *rects)
 {
@@ -410,7 +463,7 @@ x11_sw32_update (sw_ctx_t *ctx, vrect_t *rects)
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
 }
-
+#endif
 static void
 x11_choose_visual (sw_ctx_t *ctx)
 {
@@ -440,31 +493,16 @@ x11_choose_visual (sw_ctx_t *ctx)
 		x_cmap = XCreateColormap (x_disp, x_win, x_vis, AllocAll);
 	x_vis = x_visinfo->visual;
 
-	ctx->update = x11_sw8_update;
+	ctx->update = x11_sw8_8_update;
 	switch (x_visinfo->depth) {
 		case 8:
-			ctx->pixbytes = 1;
-			ctx->update = x11_sw8_update;
+			ctx->update = x11_sw8_8_update;
 			break;
 		case 16:
-			if (ctx->pixbytes > 2) {
-				ctx->pixbytes = 2;
-			}
-			if (ctx->pixbytes == 2) {
-				ctx->update = x11_sw16_16_update;
-			}
+			ctx->update = x11_sw8_16_update;
 			break;
 		case 24:
-			switch (ctx->pixbytes) {
-				case 1:
-					break;
-				case 2:
-					ctx->update = x11_sw16_32_update;
-					break;
-				case 4:
-					ctx->update = x11_sw32_update;
-					break;
-			}
+			ctx->update = x11_sw8_24_update;
 			break;
 	}
 
@@ -580,10 +618,16 @@ ResetSharedFrameBuffers (void)
 	}
 }
 
+static sw_framebuffer_t swfb;
+static framebuffer_t fb = { .buffer = &swfb };
+
 static void
 x11_init_buffers (void *data)
 {
 	sw_ctx_t   *ctx = data;
+
+	ctx->framebuffer = &fb;
+
 	if (doShm)
 		ResetSharedFrameBuffers ();
 	else
@@ -591,15 +635,18 @@ x11_init_buffers (void *data)
 
 	current_framebuffer = 0;
 
-	viddef.rowbytes = ctx->pixbytes * viddef.width;
+	fb.width = viddef.width;
+	fb.height = viddef.height;
 	if (x_visinfo->depth != 8) {
-		if (viddef.buffer)
-			free (viddef.buffer);
-		viddef.buffer = calloc (viddef.rowbytes, viddef.height);
-		if (!viddef.buffer)
+		if (swfb.color)
+			free (swfb.color);
+		swfb.rowbytes = viddef.width;
+		swfb.color = calloc (swfb.rowbytes, viddef.height);
+		if (!swfb.color)
 			Sys_Error ("Not enough memory for video mode");
 	} else {
-		viddef.buffer = x_framebuffer[current_framebuffer]->data;
+		swfb.rowbytes = x_framebuffer[current_framebuffer]->bytes_per_line;
+		swfb.color = (byte *) x_framebuffer[current_framebuffer]->data;
 	}
 }
 
@@ -635,6 +682,12 @@ x11_create_context (sw_ctx_t *ctx)
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
 
+	// FIXME this really shouldn't be here (ideally, scale console in sw)
+	// No console scaling in the sw renderer
+	viddef.conview->xlen = viddef.width;
+	viddef.conview->ylen = viddef.height;
+	Con_CheckResize ();
+
 	viddef.vid_internal->init_buffers = x11_init_buffers;
 //  XSynchronize (x_disp, False);
 //	X11_AddEvent (x_shmeventtype, event_shm);
@@ -644,43 +697,14 @@ sw_ctx_t *
 X11_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-	ctx->pixbytes = 1;
 	ctx->set_palette = x11_set_palette;
 	ctx->choose_visual = x11_choose_visual;
 	ctx->create_context = x11_create_context;
-	ctx->update = x11_sw8_update;
-	return ctx;
-}
-
-sw_ctx_t *
-X11_SW32_Context (void)
-{
-	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-	ctx->pixbytes = 1;
-	ctx->set_palette = x11_set_palette;
-	ctx->choose_visual = x11_choose_visual;
-	ctx->create_context = x11_create_context;
-
-	switch (vid_bitdepth->int_val) {
-		case 8:
-			ctx->pixbytes = 1;
-			break;
-		case 16:
-			ctx->pixbytes = 2;
-			break;
-		case 32:
-			ctx->pixbytes = 4;
-			break;
-		default:
-			Sys_Error ("X11_SW32_Context: unsupported bit depth");
-	}
+	ctx->update = x11_sw8_8_update;
 	return ctx;
 }
 
 void
 X11_SW_Init_Cvars (void)
 {
-// FIXME: vid_colorbpp in common GL setup, make consistent with sdl32 scheme
-	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
-							 "display bitdepth (supported modes: 8 16 32)");
 }
