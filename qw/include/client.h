@@ -136,7 +136,7 @@ typedef struct {
 
 	QFile      *demofile;
 	qboolean    demorecording;
-	qboolean    demo_capture;
+	int         demo_capture;
 	qboolean    demoplayback;
 	qboolean    demoplayback2;
 	qboolean    findtrack;

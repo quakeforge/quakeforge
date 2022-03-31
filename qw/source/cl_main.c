@@ -1617,6 +1617,19 @@ Host_SimulationTime (float time)
 	return 0;
 }
 
+static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
 int         nopacketcount;
 
 /*
@@ -1749,19 +1762,11 @@ Host_Frame (float time)
 		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
-#if 0
+
 	if (cls.demo_capture) {
-		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		QFile      *file = Qopen (va (0, "%s/qfmv%06d.png",
-								  qfs_gamedir->dir.shots, cls.demo_capture++),
-								  "wb");
-		if (file) {
-			WritePNG (file, tex->data, tex->width, tex->height);
-			Qclose (file);
-		}
-		free (tex);
+		r_funcs->capture_screen (write_capture, 0);
 	}
-#endif
+
 	host_framecount++;
 	fps_count++;
 }

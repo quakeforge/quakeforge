@@ -103,7 +103,7 @@ typedef struct {
 
 	QFile      *demofile;
 	qboolean    demorecording;
-	qboolean    demo_capture;
+	int         demo_capture;
 	qboolean    demoplayback;
 	int         forcetrack;			// -1 = use normal cd track
 	qboolean    timedemo;

@@ -633,6 +633,19 @@ Host_ClientFrame (void)
 	}
 }
 
+static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
 /*
 	Host_Frame
 
@@ -699,19 +712,11 @@ _Host_Frame (float time)
 		Host_ClientFrame ();
 	else
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
-#if 0
+
 	if (cls.demo_capture) {
-		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		QFile      *file = Qopen (va (0, "%s/qfmv%06d.png",
-									  qfs_gamedir->dir.shots,
-									  cls.demo_capture++), "wb");
-		if (file) {
-			WritePNG (file, tex->data, tex->width, tex->height);
-			Qclose (file);
-		}
-		free (tex);
+		r_funcs->capture_screen (write_capture, 0);
 	}
-#endif
+
 	host_framecount++;
 	fps_count++;
 }
