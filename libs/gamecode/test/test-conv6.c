@@ -33,6 +33,12 @@ static pr_ivec4_t ulong_conv_init[] = {
 	{  0,  0, 0, 0},
 };
 
+/* Note that these tests fail when compiled with clang due to difference
+ * between clang and gcc. However, unlike test-conv4, the failure is
+ * consistent between optimized and unoptimized: all tests fail either way.
+ * Inspecting the results, it seems that clang sets negative floats and doubles
+ * to 0 when casting to unsigned long.
+ */
 static pr_ivec4_t ulong_conv_expect[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
 	{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float
