@@ -38,6 +38,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+struct dstring_s;
+
 extern	struct cvar_s	*sys_nostdout;
 extern	struct cvar_s	*sys_extrasleep;
 extern	struct cvar_s	*sys_dead_sleep;
@@ -165,6 +167,37 @@ int Sys_CreatePath (const char *path);
 	\note It is the caller's responsibility to free the returned string.
 */
 char *Sys_ExpandSquiggle (const char *path);
+
+/** Open a newly created file with a guaranteed unique name.
+
+	Uniqueness is guaranteed by adding a numeric sequence between the \a
+	prefix and \a suffix, with a minium of \a mindigits numeric characters
+	(with any required leading 0s to expand the number to \a mindigits).
+
+	The created file has read and write permissions as modified by the OS,
+	and the handle can be bothe written and read.
+
+	\param name     dstring into which the name will be generated. Any
+					existing contents will be lost. If an error occurs,
+					\a name will be set to the error string.
+	\param prefix	This includes the path to the file and any file name
+					prefix. The numeric sequence will be appended directly
+					to the prefix with no directory separator.
+	\param suffix	Optional tail to be appended after the numeric sequence,
+					usually the file extension. A dot is not added
+					automatically, it is up to the caller to supply one. NULL
+					and an empty string are equivalent.
+	\param mindigits	The minimum number of digits to include in the
+					generated file name. The sequence number will be padded
+					with 0s in order to meet this menimum. Overflow will
+					simply produce longer numeric sequence sub-strings.
+	\return			File handle to the newly created file, or a negative
+					value if an error occured (the negative error code).
+					Suitable for use with read, write, fdopen, Qdopen, etc.
+	\note	It is the caller's responsibility to close the file.
+*/
+int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
+					const char *suffix, int mindigits);
 
 ///@}
 

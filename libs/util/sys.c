@@ -60,6 +60,7 @@
 # include <pwd.h>
 #endif
 
+#include <inttypes.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -1154,4 +1155,30 @@ Sys_ExpandSquiggle (const char *path)
 	if (!home)
 		home = ".";
 	return nva ("%s%s", home, path + 1);	// skip leading ~
+}
+
+VISIBLE int
+Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
+				int mindigits)
+{
+	const int   flags = O_CREAT | O_EXCL | O_RDWR;
+	const int   mode = 0644;
+	int64_t     seq = 0;	// it should take a while to run out
+
+	if (!suffix) {
+		suffix = "";
+	}
+	while (1) {
+		dsprintf (name, "%s%0*"PRIi64"%s", prefix, mindigits, seq, suffix);
+		int         fd = open (name->str, flags, mode);
+		if (fd >= 0) {
+			return fd;
+		}
+		int         err = errno;
+		if (err != EEXIST) {
+			dsprintf (name, "%s", strerror (err));
+			return -err;
+		}
+		seq++;
+	}
 }
