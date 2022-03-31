@@ -45,9 +45,9 @@
 		unsigned    tail;			\
 	}
 
-#define RB_buffer_size(ring_buffer)						\
-	({	__auto_type rb = (ring_buffer);					\
-		sizeof (rb->buffer) / sizeof (rb->buffer[0]);	\
+#define RB_buffer_size(ring_buffer)							\
+	({	__auto_type rb_s = (ring_buffer);					\
+		sizeof (rb_s->buffer) / sizeof (rb_s->buffer[0]);	\
 	})
 
 /** Return the amount of space available for writing in the ring buffer.
