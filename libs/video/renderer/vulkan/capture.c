@@ -104,7 +104,7 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 	capture->memsize = numframes * image_size;
 	capture->memory = QFV_AllocImageMemory (device,
 											capture->image_set->a[0].image,
-											VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+											VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 											capture->memsize, 0);
 	byte       *data;
 	dfunc->vkMapMemory (device->dev, capture->memory, 0, capture->memsize, 0,
