@@ -23,7 +23,7 @@ Vulkan (very WIP), all within the one executable.
 Dedicated servers for both Quake (nq-server) and QuakeWorld (qw-server)
 are included, as well as a master server for QuakeWorld (qw-master).
 
-## Tool
+## Tools
 
 QuakeForge includes several tools for working with Quake data:
 - bsp2image produces wireframe images from Quake maps (bsp files)
