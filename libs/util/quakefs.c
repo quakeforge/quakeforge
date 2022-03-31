@@ -1557,26 +1557,19 @@ QFS_SetExtension (struct dstring_s *path, const char *extension)
 VISIBLE int
 QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 {
-	char       *digits;
-	int         i;
 	int         ret = 0;
 	dstring_t  *full_path = dstring_new ();
 
-	dsprintf (filename, "%s0000%s", prefix, ext);
-	digits = filename->str + strlen (prefix);
-
-	for (i = 0; i <= 9999; i++) {
-		digits[0] = i / 1000 + '0';
-		digits[1] = i / 100 % 10 + '0';
-		digits[2] = i / 10 % 10 + '0';
-		digits[3] = i % 10 + '0';
-
-		if (qfs_expand_userpath (full_path, filename->str) == -1)
-			break;
-		if (Sys_FileExists (full_path->str) == -1) {
-			// file doesn't exist, so we can use this name
+	if (qfs_expand_userpath (full_path, "") == -1) {
+		dsprintf (filename, "failed to expand userpath");
+	} else {
+		size_t      qfs_pos = strlen (full_path->str);
+		dstring_appendstr (full_path, prefix);
+		int         fd = Sys_UniqueFile (filename, full_path->str, ext, 4);
+		if (fd >= 0) {
+			dstring_snip (filename, 0, qfs_pos);
+			close (fd);
 			ret = 1;
-			break;
 		}
 	}
 	dstring_delete (full_path);

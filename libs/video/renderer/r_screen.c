@@ -365,7 +365,8 @@ ScreenShot_f (void)
 	// find a file name to save it to
 	if (!QFS_NextFilename (name, va (0, "%s/qf",
 									 qfs_gamedir->dir.shots), ".png")) {
-		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file: %s\n",
+					name->str);
 	} else {
 		tex_t      *tex;
 
