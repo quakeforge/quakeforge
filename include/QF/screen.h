@@ -46,8 +46,6 @@ void SCR_SetFOV (float fov);
 // control whether the 3d viewport is user-controlled or always fullscreen
 void SCR_SetFullscreen (qboolean fullscreen);
 void SCR_SetBottomMargin (int lines);
-void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
-struct tex_s *SCR_SnapScreen (unsigned width, unsigned height);
 
 extern struct cvar_s *hud_fps, *hud_time, *r_timegraph, *r_zgraph;
 extern int         scr_copytop;
