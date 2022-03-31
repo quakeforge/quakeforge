@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "QF/cvar.h"
+#include "QF/image.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
@@ -411,6 +412,41 @@ sw_set_fov (float x, float y)
 	r_resfudge = r_aliastransadj->value * res_scale;
 }
 
+static void
+sw_capture_screen (capfunc_t callback, void *data)
+{
+	int         count, x, y;
+	tex_t      *tex;
+	const byte *src;
+	byte       *dst;
+	framebuffer_t *fb = sw_ctx->framebuffer;
+
+	count = fb->width * fb->height;
+	tex = malloc (sizeof (tex_t) + count * 3);
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->width = fb->width;
+		tex->height = fb->height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+		src = ((sw_framebuffer_t *) fb->buffer)->color;
+		int rowbytes = ((sw_framebuffer_t *) fb->buffer)->rowbytes;
+		//FIXME shouldn't have to swap between rgb and bgr since WritePNG
+		//swaps back
+		for (y = 0; y < tex->height; y++) {
+			dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
+			for (x = 0; x < tex->width; x++) {
+				byte        c = src[x];
+				*dst++ = vid.basepal[c * 3 + 2]; // blue
+				*dst++ = vid.basepal[c * 3 + 1]; // green
+				*dst++ = vid.basepal[c * 3 + 0]; // red
+			}
+			src += rowbytes;
+		}
+	}
+	callback (tex, data);
+}
+
 vid_render_funcs_t sw_vid_render_funcs = {
 	sw_vid_render_init,
 	Draw_Character,
@@ -434,8 +470,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Picf,
 	Draw_SubPic,
 
-	sw_SCR_CaptureBGR,
-
 	sw_ParticleSystem,
 	sw_R_Init,
 	R_ClearState,
@@ -456,6 +490,8 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	sw_bind_framebuffer,
 	sw_set_viewport,
 	sw_set_fov,
+
+	sw_capture_screen,
 
 	&model_funcs
 };

@@ -76,6 +76,9 @@ typedef struct vid_model_funcs_s {
 	void (*Skin_InitTranslations) (void);
 } vid_model_funcs_t;
 
+struct tex_s;
+typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
+
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
 	void (*Draw_Character) (int x, int y, unsigned ch);
@@ -99,7 +102,6 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
-	struct tex_s *(*SCR_CaptureBGR) (void);
 
 	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
@@ -123,6 +125,8 @@ typedef struct vid_render_funcs_s {
 	void (*set_viewport) (const struct vrect_s *view);
 	// x and y are tan(f/2) for fov_x and fov_y
 	void (*set_fov) (float x, float y);
+
+	void (*capture_screen) (capfunc_t callback, void *data);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

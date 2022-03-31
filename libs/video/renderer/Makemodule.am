@@ -80,7 +80,6 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_rmain.c \
 	libs/video/renderer/gl/gl_rmisc.c \
 	libs/video/renderer/gl/gl_rsurf.c \
-	libs/video/renderer/gl/gl_screen.c \
 	libs/video/renderer/gl/gl_sky.c \
 	libs/video/renderer/gl/gl_sky_clip.c \
 	libs/video/renderer/gl/gl_textures.c \
@@ -116,7 +115,6 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_lightmap.c \
 	libs/video/renderer/glsl/glsl_main.c \
 	libs/video/renderer/glsl/glsl_particles.c \
-	libs/video/renderer/glsl/glsl_screen.c \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
 	libs/video/renderer/glsl/glsl_textures.c \
@@ -158,7 +156,6 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/fpu.c \
 	libs/video/renderer/sw/fpua.S \
 	libs/video/renderer/sw/nonintel.c \
-	libs/video/renderer/sw/screen.c \
 	libs/video/renderer/sw/surf8.S \
 	libs/video/renderer/sw/sw_fisheye.c \
 	libs/video/renderer/sw/sw_graph.c \

@@ -699,7 +699,7 @@ _Host_Frame (float time)
 		Host_ClientFrame ();
 	else
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
-
+#if 0
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
 		QFile      *file = Qopen (va (0, "%s/qfmv%06d.png",
@@ -711,7 +711,7 @@ _Host_Frame (float time)
 		}
 		free (tex);
 	}
-
+#endif
 	host_framecount++;
 	fps_count++;
 }

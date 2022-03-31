@@ -32,9 +32,6 @@ typedef struct gl_framebuffer_s {
 extern gl_ctx_t *gl_ctx;
 extern gl_ctx_t *glsl_ctx;
 
-struct tex_s *gl_SCR_CaptureBGR (void);
-struct tex_s *glsl_SCR_CaptureBGR (void);
-
 void gl_Fog_SetupFrame (void);
 void gl_Fog_EnableGFog (void);
 void gl_Fog_DisableGFog (void);

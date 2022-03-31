@@ -20,6 +20,4 @@ typedef struct sw_framebuffer_s {
 
 extern sw_ctx_t *sw_ctx;
 
-struct tex_s *sw_SCR_CaptureBGR (void);
-
 #endif//__vid_sw_h

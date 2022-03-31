@@ -462,60 +462,69 @@ vulkan_set_fov (float x, float y)
 
 	mctx->dirty = mctx->frames.size;
 }
-#if 0
+
 static int
 is_bgr (VkFormat format)
 {
 	return (format >= VK_FORMAT_B8G8R8A8_UNORM
 			&& format <= VK_FORMAT_B8G8R8A8_SRGB);
 }
-#endif
+
 static void
 capture_screenshot (const byte *data, int width, int height)
 {
-#if 0
-	dstring_t  *name = dstring_new ();
-	// find a file name to save it to
-	if (!QFS_NextFilename (name, va (vulkan_ctx->va_ctx, "%s/qf",
-									 qfs_gamedir->dir.shots),
-						   ".ppm")) {
-		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a ppm file\n");
-	} else {
-		QFile      *file = QFS_Open (name->str, "wb");
-		if (!file) {
-			Sys_Printf ("Couldn't open %s\n", name->str);
-		} else {
-			Qprintf (file, "P6\n%d\n%d\n255\n", width, height);
-			if (vulkan_ctx->capture->canBlit ||
-				!is_bgr (vulkan_ctx->swapchain->format)) {
-				for (int count = width * height; count-- > 0; ) {
-					Qwrite (file, data, 3);
-					data += 4;
-				}
-			} else {
-				for (int count = width * height; count-- > 0; ) {
-					byte        rgb[] = { data[2], data[1], data[0] };
-					Qwrite (file, rgb, 3);
-					data += 4;
-				}
+	int         count = width * height;
+	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
+
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->width = width;
+		tex->height = height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+
+		//FIXME shouldn't have to swap between rgb and bgr since WritePNG
+		//swaps back (ie, it can work with either)
+		//can it auto-convert RGBA to RGB?
+		if (!vulkan_ctx->capture->canBlit ||
+			is_bgr (vulkan_ctx->swapchain->format)) {
+			const byte *src = data;
+			byte       *dst = tex->data;
+			for (int count = width * height; count-- > 0; ) {
+				*dst++ = *src++;
+				*dst++ = *src++;
+				*dst++ = *src++;
+				src++;
 			}
-			Qclose (file);
+		} else {
+			const byte *src = data;
+			byte       *dst = tex->data;
+			for (int count = width * height; count-- > 0; ) {
+				byte        r = *src++;
+				byte        g = *src++;
+				byte        b = *src++;
+				*dst++ = b;
+				*dst++ = g;
+				*dst++ = r;
+				src++;
+			}
 		}
 	}
-	dstring_delete (name);
-#endif
+	capfunc_t   callback = vulkan_ctx->capture_complete;
+	callback (tex, vulkan_ctx->capture_complete_data);;
 }
 
-static tex_t *
-vulkan_SCR_CaptureBGR (void)
+static void
+vulkan_capture_screen (capfunc_t callback, void *data)
 {
 	if (!vulkan_ctx->capture) {
 		Sys_Printf ("Capture not supported\n");
-		return 0;
+		callback (0, data);
+		return;
 	}
 	vulkan_ctx->capture_callback = capture_screenshot;
-	//FIXME async process
-	return 0;
+	vulkan_ctx->capture_complete = callback;
+	vulkan_ctx->capture_complete_data = data;
 }
 
 static void
@@ -727,8 +736,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 
-	vulkan_SCR_CaptureBGR,
-
 	vulkan_ParticleSystem,
 	vulkan_R_Init,
 	vulkan_R_ClearState,
@@ -749,6 +756,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_bind_framebuffer,
 	vulkan_set_viewport,
 	vulkan_set_fov,
+
+	vulkan_capture_screen,
 
 	&model_funcs
 };

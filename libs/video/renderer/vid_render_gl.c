@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/image.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
@@ -458,6 +459,26 @@ gl_set_fov (float x, float y)
 	mmulf (gl_ctx->projection, depth_range, proj);
 }
 
+static void
+gl_capture_screen (capfunc_t callback, void *data)
+{
+	int         count;
+	tex_t      *tex;
+
+	count = vid.width * vid.height;
+	tex = malloc (sizeof (tex_t) + count * 3);
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->width = vid.width;
+		tex->height = vid.height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+		qfglReadPixels (0, 0, tex->width, tex->height, GL_BGR_EXT,
+						GL_UNSIGNED_BYTE, tex->data);
+	}
+	callback (tex, data);
+}
+
 vid_render_funcs_t gl_vid_render_funcs = {
 	gl_vid_render_init,
 	gl_Draw_Character,
@@ -481,8 +502,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
-	gl_SCR_CaptureBGR,
-
 	gl_ParticleSystem,
 	gl_R_Init,
 	gl_R_ClearState,
@@ -503,6 +522,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_bind_framebuffer,
 	gl_set_viewport,
 	gl_set_fov,
+
+	gl_capture_screen,
 
 	&model_funcs
 };

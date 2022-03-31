@@ -1749,7 +1749,7 @@ Host_Frame (float time)
 		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
-
+#if 0
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
 		QFile      *file = Qopen (va (0, "%s/qfmv%06d.png",
@@ -1761,7 +1761,7 @@ Host_Frame (float time)
 		}
 		free (tex);
 	}
-
+#endif
 	host_framecount++;
 	fps_count++;
 }

@@ -357,6 +357,28 @@ SCR_SetBottomMargin (int lines)
 	update_vrect ();
 }
 
+typedef struct scr_capture_s {
+	dstring_t  *name;
+	QFile      *file;
+} scr_capture_t;
+
+static void
+scr_write_caputre (tex_t *tex, void *data)
+{
+	scr_capture_t *cap = data;
+
+	if (tex) {
+		WritePNG (cap->file, tex->data, tex->width, tex->height);
+		free (tex);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, cap->name->str);
+	} else {
+		Sys_Printf ("Capture failed\n");
+	}
+	Qclose (cap->file);
+	dstring_delete (cap->name);
+	free (cap);
+}
+
 static void
 ScreenShot_f (void)
 {
@@ -368,16 +390,13 @@ ScreenShot_f (void)
 							   ".png"))) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file: %s\n",
 					name->str);
+		dstring_delete (name);
 	} else {
-		tex_t      *tex;
-
-		tex = r_funcs->SCR_CaptureBGR ();
-		WritePNG (file, tex->data, tex->width, tex->height);
-		free (tex);
-		Qclose (file);
-		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
+		scr_capture_t *cap = malloc (sizeof (scr_capture_t));
+		cap->file = file;
+		cap->name = name;
+		r_funcs->capture_screen (scr_write_caputre, cap);
 	}
-	dstring_delete (name);
 }
 
 /*
@@ -463,6 +482,7 @@ SCR_DrawPause (void)
 /*
 	Find closest color in the palette for named color
 */
+#if 0
 static int
 MipColor (int r, int g, int b)
 {
@@ -495,6 +515,7 @@ MipColor (int r, int g, int b)
 	lastbest = best;
 	return best;
 }
+#endif
 
 // in draw.c
 
@@ -542,6 +563,8 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 tex_t *
 SCR_SnapScreen (unsigned width, unsigned height)
 {
+	return 0;
+#if 0
 	byte       *src, *dest;
 	float       fracw, frach;
 	unsigned    count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
@@ -599,6 +622,7 @@ SCR_SnapScreen (unsigned width, unsigned height)
 	free (snap);
 
 	return tex;
+#endif
 }
 
 static void
