@@ -54,7 +54,14 @@
 #include "r_internal.h"
 
 static byte null_data[] = {15, 15, 15, 15};
-static tex_t null_texture = { 2, 2, tex_palette, 1, 0, null_data };
+static tex_t null_texture = {
+	.width = 2,
+	.height = 2,
+	.format = tex_palette,
+	.loaded = 1,
+	.palette =0,
+	.data = null_data
+};
 
 static void
 sw_iqm_clear (model_t *mod, void *data)

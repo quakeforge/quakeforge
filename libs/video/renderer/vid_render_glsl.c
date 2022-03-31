@@ -409,28 +409,20 @@ glsl_set_fov (float x, float y)
 static void
 glsl_capture_screen (capfunc_t callback, void *data)
 {
-	byte       *r, *b;
-	int         count, i;
-	tex_t      *tex;
+	int         count = vid.width * vid.height;
+	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
 
-	count = vid.width * vid.height;
-	tex = malloc (sizeof (tex_t) + count * 3);
 	if (tex) {
 		tex->data = (byte *) (tex + 1);
 		tex->width = vid.width;
 		tex->height = vid.height;
 		tex->format = tex_rgb;
 		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
+		tex->flipped = 1;
 		qfeglReadPixels (0, 0, tex->width, tex->height, GL_RGB,
 						 GL_UNSIGNED_BYTE, tex->data);
-		//FIXME shouldn't have to swap between rgb and bgr since WritePNG
-		//swaps back
-		for (i = 0, r = tex->data, b = tex->data + 2; i < count;
-			 i++, r+= 3, b += 3) {
-			byte        t = *b;
-			*b = *r;
-			*r = t;
-		}
 	}
 	callback (tex, data);
 }

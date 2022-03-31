@@ -429,17 +429,17 @@ sw_capture_screen (capfunc_t callback, void *data)
 		tex->height = fb->height;
 		tex->format = tex_rgb;
 		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
 		src = ((sw_framebuffer_t *) fb->buffer)->color;
 		int rowbytes = ((sw_framebuffer_t *) fb->buffer)->rowbytes;
-		//FIXME shouldn't have to swap between rgb and bgr since WritePNG
-		//swaps back
 		for (y = 0; y < tex->height; y++) {
-			dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
+			dst = tex->data + y * tex->width * 3;
 			for (x = 0; x < tex->width; x++) {
 				byte        c = src[x];
-				*dst++ = vid.basepal[c * 3 + 2]; // blue
-				*dst++ = vid.basepal[c * 3 + 1]; // green
-				*dst++ = vid.basepal[c * 3 + 0]; // red
+				*dst++ = vid.basepal[c * 3 + 0];
+				*dst++ = vid.basepal[c * 3 + 1];
+				*dst++ = vid.basepal[c * 3 + 2];
 			}
 			src += rowbytes;
 		}

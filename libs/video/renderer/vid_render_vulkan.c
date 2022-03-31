@@ -478,36 +478,25 @@ capture_screenshot (const byte *data, int width, int height)
 
 	if (tex) {
 		tex->data = (byte *) (tex + 1);
+		tex->flagbits = 0;
 		tex->width = width;
 		tex->height = height;
 		tex->format = tex_rgb;
 		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
 
-		//FIXME shouldn't have to swap between rgb and bgr since WritePNG
-		//swaps back (ie, it can work with either)
-		//can it auto-convert RGBA to RGB?
 		if (!vulkan_ctx->capture->canBlit ||
 			is_bgr (vulkan_ctx->swapchain->format)) {
-			const byte *src = data;
-			byte       *dst = tex->data;
-			for (int count = width * height; count-- > 0; ) {
-				*dst++ = *src++;
-				*dst++ = *src++;
-				*dst++ = *src++;
-				src++;
-			}
-		} else {
-			const byte *src = data;
-			byte       *dst = tex->data;
-			for (int count = width * height; count-- > 0; ) {
-				byte        r = *src++;
-				byte        g = *src++;
-				byte        b = *src++;
-				*dst++ = b;
-				*dst++ = g;
-				*dst++ = r;
-				src++;
-			}
+			tex->bgr = 1;
+		}
+		const byte *src = data;
+		byte       *dst = tex->data;
+		for (int count = width * height; count-- > 0; ) {
+			*dst++ = *src++;
+			*dst++ = *src++;
+			*dst++ = *src++;
+			src++;
 		}
 	}
 	capfunc_t   callback = vulkan_ctx->capture_complete;

@@ -48,6 +48,7 @@
 #include "QF/zone.h"
 
 #include "compat.h"
+#include "qfalloca.h"
 
 
 /* Qread wrapper for libpng */
@@ -206,7 +207,7 @@ LoadPNG (QFile *infile, int load)
 #define WRITEPNG_BIT_DEPTH 8
 
 int
-WritePNG (QFile *outfile, const byte *data, int width, int height)
+WritePNG (QFile *outfile, const tex_t *tex)
 {
 	int         i;
 	png_structp png_ptr;
@@ -240,27 +241,32 @@ WritePNG (QFile *outfile, const byte *data, int width, int height)
 		return 0;
 	}
 
-	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
+	png_set_IHDR (png_ptr, info_ptr, tex->width, tex->height,
+				  WRITEPNG_BIT_DEPTH,
 				  PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 				  PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 	/* NOTE: Write gamma support? */
 	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
 
-	png_set_bgr(png_ptr);
+	if (tex->bgr) {
+		png_set_bgr(png_ptr);
+	}
 
 	png_write_info (png_ptr, info_ptr);
 
 	/* Setup row pointers */
-	row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep));
-	if (row_pointers == NULL) {
-		png_destroy_write_struct (&png_ptr, &info_ptr);
-		return 0; /* Out of memory */
-	}
+	row_pointers = (png_bytepp)alloca(tex->height * sizeof(png_bytep));
 
-	for (i = 0; i < height; i++) {
-		//FIXME stupid png types :P
-		row_pointers[height - i - 1] = (byte *) data + (i * width * 3);
+	int         rowbytes = tex->width * 3;
+	if (tex->flipped) {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[tex->height - i - 1] = tex->data + (i * rowbytes);
+		}
+	} else {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[i] = tex->data + (i * rowbytes);
+		}
 	}
 
 

@@ -368,7 +368,7 @@ scr_write_caputre (tex_t *tex, void *data)
 	scr_capture_t *cap = data;
 
 	if (tex) {
-		WritePNG (cap->file, tex->data, tex->width, tex->height);
+		WritePNG (cap->file, tex);
 		free (tex);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, cap->name->str);
 	} else {
