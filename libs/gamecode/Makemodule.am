@@ -52,8 +52,10 @@ BUILT_SOURCES += \
 CLEANFILES += \
 	$(pr_opcode_cinc) \
 	$(pr_opcode_hinc) \
+	$(pr_convert_cinc) \
 	$(pr_hops_cinc) \
-	$(pr_convert_cinc)
+	$(pr_swizzle32_cinc) \
+	$(pr_swizzle64_cinc)
 
 $(pr_opcode_cinc): $(opcodes_py)
 	$(V_PY)$(PYTHON) $(opcodes_py) table > $(pr_opcode_cinc).t && \
