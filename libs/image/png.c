@@ -205,8 +205,8 @@ LoadPNG (QFile *infile, int load)
 
 #define WRITEPNG_BIT_DEPTH 8
 
-static int
-write_png (QFile *outfile, const byte *data, int width, int height)
+int
+WritePNG (QFile *outfile, const byte *data, int width, int height)
 {
 	int         i;
 	png_structp png_ptr;
@@ -282,36 +282,6 @@ write_png (QFile *outfile, const byte *data, int width, int height)
 	return 1;
 }
 
-VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = Qopen (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		Qremove (fileName);
-	Qclose (outfile);
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = QFS_Open (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		QFS_Remove (fileName);
-	Qclose (outfile);
-}
-
 #else
 
 #include "QF/image.h"
@@ -324,12 +294,7 @@ LoadPNG (QFile *infile, int load)
 }
 
 VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
-{
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
+WritePNG (QFile *outfile, const byte *data, int width, int height)
 {
 }
 

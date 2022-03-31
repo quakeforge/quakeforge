@@ -1554,10 +1554,10 @@ QFS_SetExtension (struct dstring_s *path, const char *extension)
 	dstring_appendstr (path, extension);
 }
 
-VISIBLE int
-QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
+VISIBLE QFile *
+QFS_NextFile (dstring_t *filename, const char *prefix, const char *ext)
 {
-	int         ret = 0;
+	QFile      *file = 0;
 	dstring_t  *full_path = dstring_new ();
 
 	if (qfs_expand_userpath (full_path, "") == -1) {
@@ -1568,12 +1568,13 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 		int         fd = Sys_UniqueFile (filename, full_path->str, ext, 4);
 		if (fd >= 0) {
 			dstring_snip (filename, 0, qfs_pos);
-			close (fd);
-			ret = 1;
+			// Sys_UniqueFile opens with O_RDWR, and ensure binary files work
+			// on Windows. gzip writing is NOT specified
+			file = Qdopen (fd, "w+b");
 		}
 	}
 	dstring_delete (full_path);
-	return ret;
+	return file;
 }
 
 VISIBLE QFile *

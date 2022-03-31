@@ -366,12 +366,6 @@ SV_Record (char *name)
 	client_t   *player;
 	const char *gamedir, *s;
 
-	demo_file = QFS_Open (name, "wb");
-	if (!demo_file) {
-		Sys_Printf ("ERROR: couldn't open %s\n", name);
-		return;
-	}
-
 	SV_InitRecord ();
 
 	dstring_copystr (demo_name, name);
@@ -642,7 +636,12 @@ SV_Record_f (void)
 	// open the demo file
 	QFS_DefaultExtension (name, ".mvd");
 
-	SV_Record (name->str);
+	demo_file = QFS_Open (name->str, "wb");
+	if (!demo_file) {
+		Sys_Printf ("ERROR: couldn't open %s\n", name->str);
+	} else {
+		SV_Record (name->str);
+	}
 
 	dstring_delete (name);
 }
@@ -757,8 +756,9 @@ SV_EasyRecord_f (void)
 			  sv_demoPrefix->string, SV_CleanName (name->str),
 			  sv_demoSuffix->string);
 
-	if (QFS_NextFilename (name, name2->str, ".mvd"))
+	if ((demo_file = QFS_NextFile (name, name2->str, ".mvd"))) {
 		SV_Record (name->str);
+	}
 
 	dstring_delete (name);
 	dstring_delete (name2);

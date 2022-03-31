@@ -462,17 +462,18 @@ vulkan_set_fov (float x, float y)
 
 	mctx->dirty = mctx->frames.size;
 }
-
+#if 0
 static int
 is_bgr (VkFormat format)
 {
 	return (format >= VK_FORMAT_B8G8R8A8_UNORM
 			&& format <= VK_FORMAT_B8G8R8A8_SRGB);
 }
-
+#endif
 static void
 capture_screenshot (const byte *data, int width, int height)
 {
+#if 0
 	dstring_t  *name = dstring_new ();
 	// find a file name to save it to
 	if (!QFS_NextFilename (name, va (vulkan_ctx->va_ctx, "%s/qf",
@@ -502,6 +503,7 @@ capture_screenshot (const byte *data, int width, int height)
 		}
 	}
 	dstring_delete (name);
+#endif
 }
 
 static tex_t *

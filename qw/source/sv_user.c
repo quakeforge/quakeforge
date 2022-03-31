@@ -647,7 +647,7 @@ SV_NextUpload (void)
 {
 	int		percent, size;
 
-	if (!host_client->uploadfn) {
+	if (!host_client->upload) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Upload denied\n");
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
 		MSG_ReliableWrite_String (&host_client->backbuf, "stopul");
@@ -662,16 +662,8 @@ SV_NextUpload (void)
 	size = MSG_ReadShort (net_message);
 	percent = MSG_ReadByte (net_message);
 
-	if (!host_client->upload) {
-		host_client->upload = QFS_Open (host_client->uploadfn->str, "wb");
-		if (!host_client->upload) {
-			SV_Printf ("Can't create %s\n", host_client->uploadfn->str);
-			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
-			MSG_ReliableWrite_String (&host_client->backbuf, "stopul");
-			dstring_delete (host_client->uploadfn);
-			host_client->uploadfn = 0;
-			return;
-		}
+	if (!host_client->upload_started) {
+		host_client->upload_started = 1;
 		SV_Printf ("Receiving %s from %d...\n", host_client->uploadfn->str,
 					host_client->userid);
 		if (host_client->remote_snap)
@@ -708,6 +700,7 @@ SV_NextUpload (void)
 		}
 		dstring_delete (host_client->uploadfn);
 		host_client->uploadfn = 0;
+		host_client->upload_started = 0;
 	}
 
 }

@@ -290,17 +290,20 @@ int QFS_Remove (const char *path);
 /**	Find available filename.
 
 	The filename will be of the form \c prefixXXXX.ext where \c XXXX
-	is a zero padded number from 0 to 9999.
+	is a zero padded number from 0 to 9999. Should there already be 10000
+	files of such a pattern, then extra digits will be added.
 
 	\param filename	This will be set to the available filename.
 	\param prefix	The part of the filename preceeding the numers.
 	\param ext		The extension to add to the filename.
-	\return			1 for success, 0 for failure.
+	\return			NULL for failure (with an error message in \a filename)
+					or a quakeio file handle.
 
-	\note \a prefix is relative to \c qfc_userpath.
+	\note \a prefix is relative to \c qfc_userpath, as is the generated
+	filename.
 */
-int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
-					  const char *ext);
+QFile *QFS_NextFile (struct dstring_s *filename, const char *prefix,
+					 const char *ext);
 
 /** Extract the non-extension part of the file name from the path.
 

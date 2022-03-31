@@ -898,7 +898,11 @@ write_png (image_t *image)
 		*out++ = b;
 		*out++ = b;
 	}
-	WritePNG (options.outf_name, data, image->width, image->height);
+	QFile      *file = Qopen (options.outf_name, "wb");
+	if (file) {
+		WritePNG (file, data, image->width, image->height);
+		Qclose (file);
+	}
 }
 
 static void

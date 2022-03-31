@@ -702,9 +702,13 @@ _Host_Frame (float time)
 
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
-						 cls.demo_capture++),
-					 tex->data, tex->width, tex->height);
+		QFile      *file = Qopen (va (0, "%s/qfmv%06d.png",
+									  qfs_gamedir->dir.shots,
+									  cls.demo_capture++), "wb");
+		if (file) {
+			WritePNG (file, tex->data, tex->width, tex->height);
+			Qclose (file);
+		}
 		free (tex);
 	}
 

@@ -361,18 +361,20 @@ static void
 ScreenShot_f (void)
 {
 	dstring_t  *name = dstring_new ();
+	QFile      *file;
 
 	// find a file name to save it to
-	if (!QFS_NextFilename (name, va (0, "%s/qf",
-									 qfs_gamedir->dir.shots), ".png")) {
+	if (!(file = QFS_NextFile (name, va (0, "%s/qf", qfs_gamedir->dir.shots),
+							   ".png"))) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file: %s\n",
 					name->str);
 	} else {
 		tex_t      *tex;
 
 		tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (name->str, tex->data, tex->width, tex->height);
+		WritePNG (file, tex->data, tex->width, tex->height);
 		free (tex);
+		Qclose (file);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
 	}
 	dstring_delete (name);
