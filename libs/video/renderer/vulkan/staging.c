@@ -55,7 +55,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
 						 dsprintf (str, "staging:buffer:%s", name));
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
-										   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+										   VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 										   size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, stage->memory,
 						 dsprintf (str, "staging:memory:%s", name));
