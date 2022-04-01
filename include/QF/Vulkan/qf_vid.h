@@ -40,8 +40,8 @@ typedef enum {
 	QFV_passDepth,			// geometry
 	QFV_passTranslucent,	// geometry
 	QFV_passGBuffer,		// geometry
-	QFV_passLighting,		// single quad
-	QFV_passCompose,		// single quad
+	QFV_passLighting,		// single triangle
+	QFV_passCompose,		// single triangle
 
 	QFV_NumPasses
 } QFV_Subpass;

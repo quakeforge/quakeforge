@@ -301,6 +301,8 @@ alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
 alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
+fstriangle_src = $(vkshaderpath)/fstriangle.vert
+fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 shadow_src = $(vkshaderpath)/shadow.geom
@@ -358,6 +360,8 @@ $(alias_shadow_c): $(alias_shadow_src)
 
 $(passthrough_c): $(passthrough_src)
 
+$(fstriangle_c): $(fstriangle_src)
+
 $(pushcolor_c): $(pushcolor_src)
 
 $(shadow_c): $(shadow_src)
@@ -391,6 +395,7 @@ vkshader_c = \
 	$(alias_gbuf_c) \
 	$(alias_shadow_c) \
 	$(passthrough_c) \
+	$(fstriangle_c) \
 	$(pushcolor_c) \
 	$(shadow_c)
 
@@ -443,6 +448,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/compose.frag \
 	libs/video/renderer/vulkan/shader/lighting.frag \
 	libs/video/renderer/vulkan/shader/passthrough.vert \
+	libs/video/renderer/vulkan/shader/fstriangle.vert \
 	libs/video/renderer/vulkan/shader/partphysics.comp \
 	libs/video/renderer/vulkan/shader/partupdate.comp \
 	libs/video/renderer/vulkan/shader/particle.vert \

@@ -95,6 +95,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/shadow.geom.spvc"
@@ -134,6 +136,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
+	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
 	{ "shadow.geom", shadow_geom, sizeof (shadow_geom) },
 	{}

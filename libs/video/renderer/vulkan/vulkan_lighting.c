@@ -260,9 +260,7 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
 
-	VkDeviceSize offset = 0;
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &ctx->quad_buffer, &offset);
-	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
