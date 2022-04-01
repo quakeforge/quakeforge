@@ -102,8 +102,8 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									cctx->layout, 0, 1, sets, 0, 0);
 
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 

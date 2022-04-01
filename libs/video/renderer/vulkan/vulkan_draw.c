@@ -840,8 +840,8 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  dctx->pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 	VkDeviceSize offsets[] = {dframe->vert_offset};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,

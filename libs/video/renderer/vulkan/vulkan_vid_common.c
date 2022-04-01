@@ -432,6 +432,11 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 												name));
 	}
 
+	int         width = ctx->window_width;
+	int         height = ctx->window_height;
+	rp->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
+	rp->scissor = (VkRect2D) { {0, 0}, {width, height} };
+
 	DARRAY_INIT (&rp->frames, 4);
 	DARRAY_RESIZE (&rp->frames, ctx->frames.size);
 	for (size_t i = 0; i < rp->frames.size; i++) {

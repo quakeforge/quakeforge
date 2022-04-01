@@ -70,6 +70,8 @@ typedef struct qfv_renderpass_s {
 	VkDeviceMemory attachmentMemory;
 
 	qfv_framebufferset_t *framebuffers;
+	VkViewport  viewport;
+	VkRect2D    scissor;
 
 	qfv_renderframeset_t frames;
 

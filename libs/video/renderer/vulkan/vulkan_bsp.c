@@ -853,8 +853,8 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
 	VkDeviceSize offsets[] = { 0 };
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);

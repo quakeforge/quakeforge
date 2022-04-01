@@ -85,8 +85,9 @@ typedef struct vulkan_ctx_s {
 	struct qfv_tex_s *default_magenta;
 	struct qfv_tex_s *default_magenta_array;
 
-	VkViewport  viewport;
-	VkRect2D    scissor;
+	// size of window
+	int         window_width;
+	int         window_height;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
