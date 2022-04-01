@@ -288,7 +288,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	if (r_dowarp) {
 		r_funcs->bind_framebuffer (warp_buffer);
 	}
-	if (scr_fisheye->int_val) {
+	if (scr_fisheye->int_val && fisheye_cube_map) {
 		int         side = fisheye_cube_map->width;
 		vrect_t     feye = { 0, 0, side, side };
 		r_funcs->set_viewport (&feye);
