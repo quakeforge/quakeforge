@@ -80,7 +80,6 @@ vulkan_ParticleSystem (void)
 static void
 vulkan_R_Init (void)
 {
-	r_ent_queue = EntQueue_New (mod_num_types);
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
