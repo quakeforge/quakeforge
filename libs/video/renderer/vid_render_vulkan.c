@@ -430,13 +430,13 @@ vulkan_end_frame (void)
 static framebuffer_t *
 vulkan_create_cube_map (int size)
 {
-	Sys_Error ("not implemented");
+	return 0;
 }
 
 static framebuffer_t *
 vulkan_create_frame_buffer (int width, int height)
 {
-	Sys_Error ("not implemented");
+	return 0;
 }
 
 static void
