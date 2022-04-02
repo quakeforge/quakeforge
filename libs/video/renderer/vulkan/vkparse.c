@@ -42,14 +42,25 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/shader.h"
-#include "QF/Vulkan/swapchain.h"
 
 #include "vid_vulkan.h"
 
 #define vkparse_internal
 #include "vkparse.h"
 #undef vkparse_internal
+
+typedef struct parseres_s {
+	const char *name;
+	plfield_t  *field;
+	size_t      offset;
+} parseres_t;
+
+typedef struct handleref_s {
+	char       *name;
+	uint64_t    handle;
+} handleref_t;
 
 static void flag_or (const exprval_t *val1, const exprval_t *val2,
 					 exprval_t *result, exprctx_t *ctx)
@@ -577,7 +588,7 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	return ret;
 }
 
-static exprtype_t imageview_type = {
+exprtype_t VkImageView_type = {
 	"VkImageView",
 	sizeof (VkImageView),
 	0, 0, 0
@@ -610,7 +621,7 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 	plitem_t   *imageViewItem = 0;
 	if (ret) {
 		VkImageView imageView;
-		if (value->type == &imageview_type) {
+		if (value->type == &VkImageView_type) {
 			imageView = *(VkImageView *) value->value;
 		} else if (value->type == &cexpr_plitem) {
 			imageView = QFV_ParseImageView (ctx, imageViewItem,
@@ -856,82 +867,21 @@ parse_specialization_data (const plitem_t *item, void **data,
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
-static void
-imageviewset_index (const exprval_t *a, size_t index, exprval_t *c,
-					exprctx_t *ctx)
-{
-	__auto_type set = *(qfv_imageviewset_t **) a->value;
-	exprval_t  *val = 0;
-	if (index >= set->size) {
-		cexpr_error (ctx, "invalid index: %zd", index);
-	} else {
-		val = cexpr_value (&imageview_type, ctx);
-		*(VkImageView *) val->value = set->a[index];
-	}
-	*(exprval_t **) c->value = val;
-}
-
-static void
-imageviewset_int (const exprval_t *a, const exprval_t *b, exprval_t *c,
-				  exprctx_t *ctx)
-{
-	size_t      index = *(int *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-static void
-imageviewset_uint (const exprval_t *a, const exprval_t *b, exprval_t *c,
-				   exprctx_t *ctx)
-{
-	size_t      index = *(unsigned *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-static void
-imageviewset_size_t (const exprval_t *a, const exprval_t *b, exprval_t *c,
-					 exprctx_t *ctx)
-{
-	size_t      index = *(size_t *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-binop_t imageviewset_binops[] = {
-	{ '.', &cexpr_field, &cexpr_exprval, cexpr_struct_pointer_getfield },
-	{ '[', &cexpr_int, &imageview_type, imageviewset_int },
-	{ '[', &cexpr_uint, &imageview_type, imageviewset_uint },
-	{ '[', &cexpr_size_t, &imageview_type, imageviewset_size_t },
-	{}
-};
-
-static exprsym_t imageviewset_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (qfv_imageviewset_t, size)},
+static exprsym_t qfv_output_t_symbols[] = {
+	{"format", &VkFormat_type, (void *)field_offset (qfv_output_t, format)},
+	{"extent", &VkExtent2D_type, (void *)field_offset (qfv_output_t, extent)},
+	{"view", &VkImageView_type, (void *)field_offset (qfv_output_t, view)},
 	{ }
 };
-static exprtab_t imageviewset_symtab = {
-	imageviewset_symbols,
+static exprtab_t qfv_output_t_symtab = {
+	qfv_output_t_symbols,
 };
-exprtype_t imageviewset_type = {
-	"imageviewset",
-	sizeof (qfv_imageviewset_t *),
-	imageviewset_binops,
-	0,
-	&imageviewset_symtab,
-};
-static exprsym_t qfv_swapchain_t_symbols[] = {
-	{"format", &VkFormat_type, (void *)field_offset (qfv_swapchain_t, format)},
-	{"extent", &VkExtent2D_type, (void *)field_offset (qfv_swapchain_t, extent)},
-	{"views", &imageviewset_type, (void *)field_offset (qfv_swapchain_t, imageViews)},
-	{ }
-};
-static exprtab_t qfv_swapchain_t_symtab = {
-	qfv_swapchain_t_symbols,
-};
-exprtype_t qfv_swapchain_t_type = {
-	"qfv_swapchain_t",
-	sizeof (qfv_swapchain_t),
+exprtype_t qfv_output_t_type = {
+	"qfv_output_t",
+	sizeof (qfv_output_t),
 	cexpr_struct_binops,
 	0,
-	&qfv_swapchain_t_symtab,
+	&qfv_output_t_symtab,
 };
 
 static exprsym_t vulkan_frameset_t_symbols[] = {
@@ -1023,9 +973,8 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 								 &ctx->hashlinks);
 	context.hashlinks = &ctx->hashlinks;
 	vkgen_init_symtabs (&context);
-	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
+	cexpr_init_symtab (&qfv_output_t_symtab, &context);
 	cexpr_init_symtab (&vulkan_frameset_t_symtab, &context);
-	cexpr_init_symtab (&imageviewset_symtab, &context);
 	cexpr_init_symtab (&data_array_symtab, &context);
 
 	if (!ctx->setLayouts) {
@@ -1054,10 +1003,9 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
 	exprsym_t   var_syms[] = {
-		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"output", &qfv_output_t_type, &ctx->output},
 		{"frames", &vulkan_frameset_t_type, &ctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{"swapImageIndex", &cexpr_uint, &ctx->swapImageIndex},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
 			&ctx->device->physDev->properties.limits },
 		{QFV_PROPERTIES, &cexpr_plitem, &parsectx.properties},

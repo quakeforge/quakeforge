@@ -5,8 +5,8 @@
 			format = x8_d24_unorm_pack32;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -20,8 +20,8 @@
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -35,8 +35,8 @@
 			format = r16g16b16a16_sfloat;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -50,8 +50,8 @@
 			format = r16g16b16a16_sfloat;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -65,8 +65,8 @@
 			format = r32g32b32a32_sfloat;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -80,8 +80,8 @@
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -95,8 +95,8 @@
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
-				width = $swapchain.extent.width;
-				height = $swapchain.extent.height;
+				width = $output.extent.width;
+				height = $output.extent.height;
 				depth = 1;
 			};
 			mipLevels = 1;
@@ -223,9 +223,9 @@
 	framebuffer = {
 		renderPass = $properties.renderpass;
 		attachments = (depth, color, emission, normal, position, opaque,
-					   translucent, "$swapchain.views[$swapImageIndex]");
-		width = $swapchain.extent.width;
-		height = $swapchain.extent.height;
+					   translucent, $output.view);
+		width = $output.extent.width;
+		height = $output.extent.height;
 		layers = 1;
 	};
 	clearValues = (
@@ -236,7 +236,7 @@
 		{ color = "[0, 0, 0, 1]"; },	// position
 		{ color = "[0, 0, 0, 1]"; },	// opaque
 		{ color = "[0, 0, 0, 0]"; },	// translucent
-		{ color = "[0, 0, 0, 1]"; },	// swapchain
+		{ color = "[0, 0, 0, 1]"; },	// output
 	);
 	renderpass = {
 		attachments = (
@@ -311,7 +311,7 @@
 				finalLayout = color_attachment_optimal;
 			},
 			{
-				format = $swapchain.format;
+				format = $output.format;
 				samples = 1;
 				loadOp = clear;
 				storeOp = store;
@@ -414,7 +414,7 @@
 					},
 				);
 				colorAttachments = (
-					{	// swapchain
+					{	// output
 						attachment = 7;
 						layout = color_attachment_optimal;
 					},

@@ -10,23 +10,11 @@ typedef struct parsectx_s {
 
 #include "QF/cexpr.h"
 #include "QF/plist.h"
-#include "QF/Vulkan/renderpass.h"
 #ifdef vkparse_internal
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 #endif
 
 #define QFV_PROPERTIES "properties"
-
-typedef struct parseres_s {
-	const char *name;
-	plfield_t  *field;
-	size_t      offset;
-} parseres_t;
-
-typedef struct handleref_s {
-	char       *name;
-	uint64_t    handle;
-} handleref_t;
 
 void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);
