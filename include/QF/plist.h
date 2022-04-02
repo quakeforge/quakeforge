@@ -67,12 +67,12 @@ struct plfield_s;
 	dictionary objects.
 
 	If null, then the default parser for the object type is used:
-	  * QFString: the  point to the actual string. The string continues
-		to be owned by the string object.
+	  * QFString: pointer to the actual string. The string continues to
+		be owned by the string object.
 	  * QFBinary: pointer to fixed-size DARRAY_TYPE(byte) (so size isn't
 		lost)
 	  * QFArray: pointer to fixed-size DARRAY_TYPE(plitem_t *) with the
-		indivisual objects. The individual objects continue to be owned
+		individual objects. The individual objects continue to be owned
 		by the array object.
 	  * QFDictionary: pointer to the hashtab_t hash table used for the
 		dictionary object. The hash table continues to be owned by the
@@ -86,7 +86,9 @@ struct plfield_s;
 					checking is done: it is up to the top-level caller to
 					parse out the messages.
 	\param context	Additional context data passed to the parser.
-	\return			0 for error, 1 for success. See \a PL_ParseDictionary.
+	\return			0 for error, 1 for success. See \a PL_ParseStruct,
+					\a PL_ParseArray, \a PL_ParseLabeledArray, and
+					\a PL_ParseSymtab.
 */
 typedef int (*plparser_t) (const struct plfield_s *field,
 						   const struct plitem_s *item,
@@ -96,7 +98,15 @@ typedef int (*plparser_t) (const struct plfield_s *field,
 
 /** A field to be parsed from a dictionary item.
 
-	something
+	\a PL_ParseStruct uses an array (terminated by an element with \a name
+	set to null) of these to describe the fields in the structure being
+	parsed.
+
+	\a PL_ParseArray, \a PL_ParseLabeledArray, and \a PL_ParseSymtab use only
+	a single \a plfield_t object, and then only the \a data field, which must
+	point to a \a plelement_t object. This allows all the parse functions to
+	be used directly as either a \a plfield_t or \a plelement_t object's
+	\a parser.
 */
 typedef struct plfield_s {
 	const char *name;		///< matched by dictionary key
