@@ -9,6 +9,13 @@
 #include "QF/darray.h"
 #include "QF/simd/types.h"
 
+//FIXME name
+typedef struct qfv_output_s {
+	VkExtent2D  extent;
+	VkImageView view;
+	VkFormat    format;
+} qfv_output_t;
+
 typedef struct vulkan_frame_s {
 	VkFramebuffer framebuffer;
 	VkFence     fence;
@@ -90,6 +97,9 @@ typedef struct vulkan_ctx_s {
 
 	VkViewport  viewport;
 	VkRect2D    scissor;
+
+	//FIXME not sure I like it being here (also, type name)
+	qfv_output_t output;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
