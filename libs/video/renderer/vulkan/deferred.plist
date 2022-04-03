@@ -106,118 +106,58 @@
 			initialLayout = undefined;
 		};
 	};
+	flat_color_view_template = {
+		viewType = VK_IMAGE_VIEW_TYPE_2D;
+		components = {
+			r = identity;
+			g = identity;
+			b = identity;
+			a = identity;
+		};
+		subresourceRange = {
+			aspectMask = color;
+			levelCount = 1;
+			layerCount = 1;
+		};
+	};
 	imageViews = {
 		depth = {
+			@inherit = $properties.flat_color_view_template;
 			image = depth;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.depth.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
 			subresourceRange = {
 				aspectMask = depth;
-				levelCount = 1;
-				layerCount = 1;
 			};
 		};
 		color = {
+			@inherit = $properties.flat_color_view_template;
 			image = color;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.color.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 		emission = {
+			@inherit = $properties.flat_color_view_template;
 			image = emission;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.emission.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 		normal = {
+			@inherit = $properties.flat_color_view_template;
 			image = normal;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.normal.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 		position = {
+			@inherit = $properties.flat_color_view_template;
 			image = position;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.position.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 		opaque = {
+			@inherit = $properties.flat_color_view_template;
 			image = opaque;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.opaque.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 		translucent = {
+			@inherit = $properties.flat_color_view_template;
 			image = translucent;
-			viewType = VK_IMAGE_VIEW_TYPE_2D;
 			format = $properties.images.translucent.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = color;
-				levelCount = 1;
-				layerCount = 1;
-			};
 		};
 	};
 	framebuffer = {
