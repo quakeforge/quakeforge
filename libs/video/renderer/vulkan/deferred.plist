@@ -1,109 +1,47 @@
 {
+	flat_color_image_template = {
+		imageType = `2d;
+		samples = 1;
+		extent = {
+			width = $output.extent.width;
+			height = $output.extent.height;
+			depth = 1;
+		};
+		mipLevels = 1;
+		arrayLayers = 1;
+		tiling = optimal;
+		usage = color_attachment|input_attachment|transient_attachment;
+		initialLayout = undefined;
+	};
 	images = {
 		depth = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = x8_d24_unorm_pack32;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
 			usage = depth_stencil_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		color = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r8g8b8a8_unorm;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		emission = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r16g16b16a16_sfloat;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		normal = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r16g16b16a16_sfloat;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		position = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r32g32b32a32_sfloat;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		opaque = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r16g16b16a16_sfloat;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 		translucent = {
-			imageType = `2d;
+			@inherit = $properties.flat_color_image_template;
 			format = r8g8b8a8_unorm;
-			samples = 1;
-			extent = {
-				width = $output.extent.width;
-				height = $output.extent.height;
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 1;
-			tiling = optimal;
-			usage = color_attachment|input_attachment|transient_attachment;
-			initialLayout = undefined;
 		};
 	};
 	flat_color_view_template = {
