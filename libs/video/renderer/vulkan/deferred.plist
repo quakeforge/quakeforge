@@ -116,86 +116,55 @@
 		{ color = "[0, 0, 0, 0]"; },	// translucent
 		{ color = "[0, 0, 0, 1]"; },	// output
 	);
+	attachment_template = {
+		samples = 1;
+		loadOp = dont_care;
+		storeOp = dont_care;
+		stencilLoadOp = dont_care;
+		stencilStoreOp = dont_care;
+		initialLayout = undefined;
+		finalLayout = color_attachment_optimal;
+	};
 	renderpass = {
 		attachments = (
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.depth.format;
-				samples = 1;
 				loadOp = clear;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
 				finalLayout = depth_stencil_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.color.format;
-				samples = 1;
 				loadOp = clear;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.emission.format;
-				samples = 1;
 				loadOp = clear;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.normal.format;
-				samples = 1;
-				loadOp = dont_care;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.position.format;
-				samples = 1;
-				loadOp = dont_care;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.opaque.format;
-				samples = 1;
-				loadOp = dont_care;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $properties.images.translucent.format;
-				samples = 1;
 				loadOp = clear;
-				storeOp = dont_care;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
-				finalLayout = color_attachment_optimal;
 			},
 			{
+				@inherit = $properties.attachment_template;
 				format = $output.format;
-				samples = 1;
 				loadOp = clear;
 				storeOp = store;
-				stencilLoadOp = dont_care;
-				stencilStoreOp = dont_care;
-				initialLayout = undefined;
 				finalLayout = present_src_khr;
 			},
 		);
