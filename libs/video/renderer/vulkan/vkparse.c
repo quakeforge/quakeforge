@@ -377,6 +377,24 @@ parse_custom (const plfield_t *field, const plitem_t *item,
 }
 
 static int
+parse_inherit (const plfield_t *field, const plitem_t *item,
+			   void *data, plitem_t *messages, void *context)
+{
+	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	plitem_t   *inheritItem = 0;
+	exprval_t   result = { &cexpr_plitem, &inheritItem };
+	ectx.result = &result;
+	const char *inheritstr = PL_String (item);
+	Sys_MaskPrintf (SYS_vulkan_parse, "parse_inherit: %s\n", inheritstr);
+	int         ret = !cexpr_eval_string (inheritstr, &ectx);
+	if (ret) {
+		ret = PL_ParseStruct (field->data, inheritItem, data, messages,
+							  context);
+	}
+	return ret;
+}
+
+static int
 parse_RGBA (const plitem_t *item, void **data,
 			plitem_t *messages, parsectx_t *context)
 {
