@@ -77,7 +77,7 @@
 		};
 		opaque = {
 			imageType = `2d;
-			format = r8g8b8a8_unorm;
+			format = r16g16b16a16_sfloat;
 			samples = 1;
 			extent = {
 				width = $output.extent.width;
