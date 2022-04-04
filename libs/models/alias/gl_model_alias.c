@@ -52,55 +52,47 @@
 
 #include "compat.h"
 
-static void *
-gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-				 int snum, int gnum, qboolean group,
-				 maliasskindesc_t *skindesc)
+static void
+gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
+				 int snum, int gnum, maliasskindesc_t *skindesc)
 {
 	aliashdr_t *header = alias_ctx->header;
-	byte   *pskin;
 	char	modname[MAX_QPATH + 4];
 	int		fb_texnum = 0, texnum = 0;
 	dstring_t  *name = dstring_new ();
 
-	pskin = Hunk_AllocName (0, skinsize, alias_ctx->mod->name);
-	skindesc->skin = (byte *) pskin - (byte *) header;
-
-	memcpy (pskin, skin, skinsize);
-
-	Mod_FloodFillSkin (pskin, header->mdl.skinwidth, header->mdl.skinheight);
+	Mod_FloodFillSkin (texels, header->mdl.skinwidth, header->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
 	// FIXME remove model restriction
 	if (strequal (alias_ctx->mod->path, "progs/player.mdl"))
 		gl_Skin_SetPlayerSkin (header->mdl.skinwidth, header->mdl.skinheight,
-							   pskin);
+							   texels);
 
 	QFS_StripExtension (alias_ctx->mod->path, modname);
 
 	if (!alias_ctx->mod->fullbright) {
-		if (group) {
+		if (gnum != -1) {
 			dsprintf (name, "fb_%s_%i_%i", modname, snum, gnum);
 		} else {
 			dsprintf (name, "fb_%s_%i", modname, snum);
 		}
-		fb_texnum = Mod_Fullbright (pskin, header->mdl.skinwidth,
+		fb_texnum = Mod_Fullbright (texels, header->mdl.skinwidth,
 									header->mdl.skinheight, name->str);
 		Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, fb_texnum);
 	}
-	if (group) {
+	if (gnum != -1) {
 		dsprintf (name, "%s_%i_%i", modname, snum, gnum);
 	} else {
 		dsprintf (name, "%s_%i", modname, snum);
 	}
 	texnum = GL_LoadTexture (name->str, header->mdl.skinwidth,
-							 header->mdl.skinheight, pskin, true, false, 1);
+							 header->mdl.skinheight, texels, true, false, 1);
 	Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
 	alias_ctx->mod->hasfullbrights = fb_texnum;
 	dstring_delete (name);
 	// alpha param was true for non group skins
-	return skin + skinsize;
 }
 
 void
@@ -108,12 +100,18 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
 	aliashdr_t *header = alias_ctx->header;
 	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
+	int         num_skins = alias_ctx->skins.size;
+	byte       *texel_block = Hunk_AllocName (0, skinsize * num_skins,
+											  alias_ctx->mod->name);
 
-	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
+	for (int i = 0; i < num_skins; i++) {
 		__auto_type skin = alias_ctx->skins.a + i;
-		gl_Mod_LoadSkin (alias_ctx, skin->texels, skinsize,
-						 skin->skin_num, skin->group_num,
-						 skin->group_num != -1, skin->skindesc);
+		byte      *texels = texel_block + i * skinsize;
+
+		skin->skindesc->skin = texels - (byte *) header;
+		memcpy (texels, skin->texels, skinsize);
+		gl_Mod_LoadSkin (alias_ctx, texels, skin->skin_num, skin->group_num,
+						 skin->skindesc);
 	}
 }
 

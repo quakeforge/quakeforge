@@ -48,6 +48,7 @@
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
+#include "qfalloca.h"
 #include "r_shared.h"
 
 static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
@@ -90,41 +91,33 @@ glsl_alias_clear (model_t *m, void *data)
 	}
 }
 
-static void *
-glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-				   int snum, int gnum, qboolean group,
-				   maliasskindesc_t *skindesc)
+static void
+glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
+				   int snum, int gnum, maliasskindesc_t *skindesc)
 {
 	aliashdr_t *header = alias_ctx->header;
-	byte       *tskin;
+	int         w = header->mdl.skinwidth;
+	int         h = header->mdl.skinheight;
+	size_t      skinsize = w * h;
+	byte       *tskin = alloca (skinsize);
 	const char *name;
-	int         w, h;
 
-	w = header->mdl.skinwidth;
-	h = header->mdl.skinheight;
-	tskin = malloc (skinsize);
-	memcpy (tskin, skin, skinsize);
+	memcpy (tskin, texels, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
-	if (group)
+	if (gnum != -1)
 		name = va (0, "%s_%i_%i", alias_ctx->mod->path, snum, gnum);
 	else
 		name = va (0, "%s_%i", alias_ctx->mod->path, snum);
 	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
-	free (tskin);
-	return skin + skinsize;
 }
 
 void
 glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
-
 	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
 		__auto_type skin = alias_ctx->skins.a + i;
-		glsl_Mod_LoadSkin (alias_ctx, skin->texels, skinsize,
-						   skin->skin_num, skin->group_num,
-						   skin->group_num != -1, skin->skindesc);
+		glsl_Mod_LoadSkin (alias_ctx, skin->texels,
+						   skin->skin_num, skin->group_num, skin->skindesc);
 	}
 }
 
