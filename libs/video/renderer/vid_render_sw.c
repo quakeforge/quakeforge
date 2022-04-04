@@ -83,7 +83,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	sw_Mod_MakeAliasModelDisplayLists,
-	sw_Mod_LoadSkin,
+	sw_Mod_LoadAllSkins,
 	0,
 	0,
 	sw_Mod_IQMFinish,

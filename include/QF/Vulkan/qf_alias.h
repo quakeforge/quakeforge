@@ -94,10 +94,8 @@ struct qfv_renderframe_s;
 struct entity_s;
 struct mod_alias_ctx_s;
 
-void *Vulkan_Mod_LoadSkin (struct mod_alias_ctx_s *alias_ctx, byte *skin,
-						   int skinsize, int snum, int gnum, qboolean group,
-						   maliasskindesc_t *skindesc,
-						   struct vulkan_ctx_s *ctx);
+void Vulkan_Mod_LoadAllSkins (struct mod_alias_ctx_s *alias_ctx,
+							  struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_FinalizeAliasModel (struct mod_alias_ctx_s *alias_ctx,
 									struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_LoadExternalSkins (struct mod_alias_ctx_s *alias_ctx,

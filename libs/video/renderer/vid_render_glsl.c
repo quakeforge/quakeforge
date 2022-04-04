@@ -74,7 +74,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	glsl_Mod_MakeAliasModelDisplayLists,
-	glsl_Mod_LoadSkin,
+	glsl_Mod_LoadAllSkins,
 	glsl_Mod_FinalizeAliasModel,
 	glsl_Mod_LoadExternalSkins,
 	glsl_Mod_IQMFinish,

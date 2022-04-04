@@ -540,13 +540,10 @@ vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 										   vulkan_ctx);
 }
 
-static void *
-vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-					 int snum, int gnum, qboolean group,
-					 maliasskindesc_t *skindesc)
+static void
+vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	return Vulkan_Mod_LoadSkin (alias_ctx, skin, skinsize, snum, gnum, group,
-								skindesc, vulkan_ctx);
+	Vulkan_Mod_LoadAllSkins (alias_ctx, vulkan_ctx);
 }
 
 static void
@@ -638,7 +635,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	vulkan_Mod_MakeAliasModelDisplayLists,
-	vulkan_Mod_LoadSkin,
+	vulkan_Mod_LoadAllSkins,
 	vulkan_Mod_FinalizeAliasModel,
 	vulkan_Mod_LoadExternalSkins,
 	vulkan_Mod_IQMFinish,

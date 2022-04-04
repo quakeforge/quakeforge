@@ -58,9 +58,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
 	void (*Mod_MakeAliasModelDisplayLists) (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra);
-	void *(*Mod_LoadSkin) (struct mod_alias_ctx_s *alias_ctx, byte *skin,
-						   int skinsize, int snum, int gnum,
-						   qboolean group, maliasskindesc_t *skindesc);
+	void (*Mod_LoadAllSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_FinalizeAliasModel) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (model_t *mod);
