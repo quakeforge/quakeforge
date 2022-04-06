@@ -306,7 +306,7 @@ CL_Disconnect_f (void)
 void
 CL_EstablishConnection (const char *host)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 
 	if (cls.demoplayback)
@@ -510,8 +510,6 @@ CL_SetState (cactive_t state)
 			r_funcs->R_ClearState ();
 		}
 		switch (state) {
-			case ca_dedicated:
-				break;
 			case ca_disconnected:
 				CL_ClearState ();
 				cls.signon = so_none;

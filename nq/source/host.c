@@ -157,7 +157,7 @@ Host_EndGame (const char *message, ...)
 	if (sv.active)
 		Host_ShutdownServer (false);
 
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		Sys_Error ("Host_EndGame: %s", str->str);	// dedicated servers exit
 
 	if (cls.demonum != -1)
@@ -197,7 +197,7 @@ Host_Error (const char *error, ...)
 	if (sv.active)
 		Host_ShutdownServer (false);
 
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		Sys_Error ("Host_Error: %s", str->str);		// dedicated servers exit
 
 	Sys_Printf ("Host_Error: %s\n", str->str);
@@ -219,17 +219,17 @@ Host_FindMaxClients (void)
 
 	i = COM_CheckParm ("-dedicated");
 	if (i) {
-		cls.state = ca_dedicated;
 		if (i != (com_argc - 1)) {
 			svs.maxclients = atoi (com_argv[i + 1]);
 		} else
 			svs.maxclients = 8;
-	} else
-		cls.state = ca_disconnected;
+	}
+	cls.state = ca_disconnected;
+	net_is_dedicated = i;
 
 	i = COM_CheckParm ("-listen");
 	if (i) {
-		if (cls.state == ca_dedicated)
+		if (net_is_dedicated)
 			Sys_Error ("Only one of -dedicated or -listen can be specified");
 		if (i != (com_argc - 1))
 			svs.maxclients = atoi (com_argv[i + 1]);
@@ -676,10 +676,10 @@ _Host_Frame (float time)
 		return;
 	}
 
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		IN_ProcessEvents ();
 
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		Con_ProcessInput ();
 
 	GIB_Thread_Execute ();
@@ -708,7 +708,7 @@ _Host_Frame (float time)
 		Host_ServerFrame ();
 	}
 
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		Host_ClientFrame ();
 	else
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
@@ -920,13 +920,13 @@ Host_Init (void)
 	Host_InitVCR (&host_parms);
 	Host_InitLocal ();
 
-	NET_Init ();
+	NET_Init (host_cbuf);
 
 	Mod_Init ();
 
 	SV_Init ();
 
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		CL_Init (host_cbuf);
 
 	if (con_module) {

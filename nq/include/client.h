@@ -70,7 +70,6 @@ typedef enum {
 #define	MAX_DEMONAME	16
 
 typedef enum {
-	ca_dedicated, 		// a dedicated server with no ability to start a client
 	ca_disconnected, 	// full screen console with no connection
 	ca_connected,		// talking to a server
 	ca_active,			// everything is in, so frames can be rendered

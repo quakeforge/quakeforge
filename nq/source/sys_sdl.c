@@ -136,7 +136,7 @@ SDL_main (int argc, char *argv[])
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
-		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
+		if (net_is_dedicated) {	// play vcrfiles at max speed
 			if (time < sys_ticrate->value && (!vcrFile || recording)) {
 				usleep (1);
 				continue;			// not time to run a server-only tic yet

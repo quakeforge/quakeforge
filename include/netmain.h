@@ -270,9 +270,11 @@ extern	double		net_time;
 extern	struct msg_s *net_message;
 extern	unsigned	net_activeconnections;
 
+struct cbuf_s;
+
 /** Initialize the networking sub-system.
 */
-void		NET_Init (void);
+void		NET_Init (struct cbuf_s *cbuf);
 
 /** Check for new connections.
 
@@ -447,6 +449,7 @@ typedef struct {
 
 extern int			net_numdrivers;
 extern net_driver_t	net_drivers[MAX_NET_DRIVERS];
+extern int net_is_dedicated;
 
 ///@}
 

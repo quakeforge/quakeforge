@@ -47,8 +47,9 @@
 #include "netmain.h"
 #include "net_vcr.h"
 
-#include "../nq/include/host.h"
 #include "../nq/include/server.h"
+
+int net_is_dedicated = 0;
 
 qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;
@@ -101,6 +102,8 @@ double      net_time;
 
 static int         hostCacheCount = 0;
 static hostcache_t hostcache[HOSTCACHESIZE];
+
+static cbuf_t *net_cbuf;
 
 double
 SetNetTime (void)
@@ -219,10 +222,10 @@ MaxPlayers_f (void)
 	}
 
 	if ((n == 1) && listening)
-		Cbuf_AddText (host_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
 
 	if ((n > 1) && (!listening))
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 
 	svs.maxclients = n;
 	if (n == 1)
@@ -253,8 +256,8 @@ NET_Port_f (void)
 
 	if (listening) {
 		// force a change to the new port
-		Cbuf_AddText (host_cbuf, "listen 0\n");
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 	}
 }
 
@@ -796,11 +799,13 @@ NET_shutdown (void *data)
 }
 
 void
-NET_Init (void)
+NET_Init (cbuf_t *cbuf)
 {
 	int         i;
 	int         controlSocket;
 	qsocket_t  *s;
+
+	net_cbuf = cbuf;
 
 	Sys_RegisterShutdown (NET_shutdown, 0);
 
@@ -826,10 +831,10 @@ NET_Init (void)
 	}
 	net_hostport = DEFAULTnet_hostport;
 
-	if (COM_CheckParm ("-listen") || cls.state == ca_dedicated)
+	if (COM_CheckParm ("-listen") || net_is_dedicated)
 		listening = true;
 	net_numsockets = svs.maxclientslimit;
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		net_numsockets++;
 
 	SetNetTime ();

@@ -35,7 +35,6 @@
 #include "netmain.h"
 #include "net_loop.h"
 
-#include "../nq/include/client.h"
 #include "../nq/include/server.h"
 
 qboolean    localconnectpending = false;
@@ -45,7 +44,7 @@ qsocket_t  *loop_server = NULL;
 __attribute__((pure)) int
 Loop_Init (void)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return -1;
 	return 0;
 }
