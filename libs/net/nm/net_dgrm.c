@@ -46,9 +46,7 @@
 
 #include "netmain.h"
 
-#include "../nq/include/client.h"
 #include "../nq/include/server.h"
-#include "../nq/include/game.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST

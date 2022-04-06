@@ -303,7 +303,7 @@ Host_Map_f (void)
 	if (!sv.active)
 		return;
 
-	if (cls.state != ca_dedicated) {
+	if (!net_is_dedicated) {
 		Cmd_ExecuteString ("connect local", src_command);
 	}
 }
@@ -717,7 +717,7 @@ Host_Loadgame_f (void)
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 
-	if (cls.state != ca_dedicated) {
+	if (!net_is_dedicated) {
 		CL_EstablishConnection ("local");
 		Host_Reconnect_f ();
 	}
@@ -790,7 +790,7 @@ Host_Say (qboolean teamonly)
 	qboolean    fromServer = false;
 
 	if (cmd_source == src_command) {
-		if (cls.state == ca_dedicated) {
+		if (net_is_dedicated) {
 			fromServer = true;
 			teamonly = false;
 		} else {
@@ -1134,7 +1134,7 @@ Host_Kick_f (void)
 
 	if (i < svs.maxclients) {
 		if (cmd_source == src_command)
-			if (cls.state == ca_dedicated)
+			if (net_is_dedicated)
 				who = "Console";
 			else
 				who = cl_name->string;
@@ -1403,7 +1403,7 @@ Host_Startdemos_f (void)
 {
 	int         i, c;
 
-	if (cls.state == ca_dedicated) {
+	if (net_is_dedicated) {
 		if (!sv.active)
 			Cbuf_AddText (host_cbuf, "map start\n");
 		return;
@@ -1434,7 +1434,7 @@ Host_Startdemos_f (void)
 static void
 Host_Demos_f (void)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 	if (cls.demonum == -1)
 		cls.demonum = 1;
@@ -1450,7 +1450,7 @@ Host_Demos_f (void)
 static void
 Host_Stopdemo_f (void)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 	if (!cls.demoplayback)
 		return;
