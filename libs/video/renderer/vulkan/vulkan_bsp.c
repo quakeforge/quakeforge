@@ -522,7 +522,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 							 "buffer:bsp:index");
 		bctx->index_memory
 			= QFV_AllocBufferMemory (device, bctx->index_buffer,
-									 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+									 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 									 index_buffer_size, 0);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
 							 bctx->index_memory, "memory:bsp:index");
