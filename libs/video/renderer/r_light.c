@@ -126,6 +126,10 @@ R_AnimateLight (void)
 {
 	int         i, j, k;
 
+	if (!r_data->lightstyle) {
+		return;
+	}
+
 	// light animations
 	// 'm' is normal light, 'a' is no light, 'z' is double bright
 	i = (int) (r_data->realtime * 10);
