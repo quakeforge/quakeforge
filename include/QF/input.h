@@ -129,7 +129,6 @@ void IN_ClearStates (void);
 extern struct cvar_s		*in_grab;
 extern struct cvar_s		*in_amp;
 extern struct cvar_s		*in_pre_amp;
-extern struct cvar_s		*m_filter;
 extern struct cvar_s		*in_mouse_accel;
 extern struct cvar_s		*in_freelook;
 extern struct cvar_s		*lookstrafe;

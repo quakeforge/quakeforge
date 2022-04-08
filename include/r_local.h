@@ -71,7 +71,6 @@ extern struct cvar_s	*r_timegraph;
 extern struct cvar_s	*r_graphheight;
 extern struct cvar_s	*r_clearcolor;
 extern struct cvar_s	*r_waterwarp;
-extern struct cvar_s	*r_fullbright;
 extern struct cvar_s	*r_drawentities;
 extern struct cvar_s	*r_aliasstats;
 extern struct cvar_s	*r_dspeeds;

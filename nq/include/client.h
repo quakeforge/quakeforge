@@ -213,12 +213,8 @@ typedef struct client_state_s {
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_color;
 
-extern struct cvar_s	*cl_autofire;
-
 extern struct cvar_s	*cl_shownet;
 extern struct cvar_s	*cl_nolerp;
-
-extern struct cvar_s	*cl_pitchdriftspeed;
 
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_writecfg;

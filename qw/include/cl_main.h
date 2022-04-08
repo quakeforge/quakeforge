@@ -52,7 +52,6 @@ void CL_BeginServerConnect(void);
 #define soundlist_name "soundlist %i %i"
 
 
-extern struct cvar_s *cl_timeframes;
 extern struct cvar_s *cl_predict_players;
 extern struct cvar_s *cl_solid_players;
 extern struct cvar_s *cl_autoexec;

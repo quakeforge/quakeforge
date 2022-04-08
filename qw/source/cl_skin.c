@@ -200,7 +200,7 @@ CL_Skin_Init (void)
 					"shirt pants) Note that if only shirt color is given, "
 					"pants will match");
 
-	noskins = Cvar_Get ("noskins", "0", CVAR_ARCHIVE, NULL, //XXX FIXME
+	noskins = Cvar_Get ("noskins", "0", CVAR_ARCHIVE, NULL,
 						"set to 1 to not download new skins");
 	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, skin_f,
 					 "Players skin");
