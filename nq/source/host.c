@@ -719,7 +719,8 @@ Host_Frame (float time)
 {
 	double        time1, time2;
 	static double timetotal;
-	int           c, m;
+	int           c;
+	double        m;
 	static int    timecount;
 
 	if (!serverprofile->int_val) {
@@ -746,7 +747,7 @@ Host_Frame (float time)
 			c++;
 	}
 
-	Sys_Printf ("serverprofile: %2i clients %2i msec\n", c, m);
+	Sys_Printf ("serverprofile: %2i clients %5.3g msec\n", c, m);
 }
 
 
