@@ -1,7 +1,7 @@
 /*
  *  Linux Frame Buffer Device Configuration
  *
- *  © Copyright 1995-1998 by Geert Uytterhoeven
+ *  Â© Copyright 1995-1998 by Geert Uytterhoeven
  *			(Geert.Uytterhoeven@cs.kuleuven.ac.be)
  *
  *  --------------------------------------------------------------------------
