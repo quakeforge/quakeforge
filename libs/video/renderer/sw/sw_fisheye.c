@@ -128,7 +128,7 @@ R_RenderFisheye (framebuffer_t *cube)
 {
 	int width = r_refdef.vrect.width;
 	int height = r_refdef.vrect.height;
-	int fov = scr_ffov->int_val;
+	float fov = scr_ffov->value;
 	static int pwidth = -1;
 	static int pheight = -1;
 	static int pfov = -1;
