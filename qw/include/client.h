@@ -280,6 +280,8 @@ extern	struct cvar_s	*skin;
 
 extern	struct cvar_s	*cl_fb_players;
 
+extern struct cvar_s *hud_scoreboard_uid;
+
 extern	client_state_t	cl;
 
 extern	entity_t	*cl_entities[512];

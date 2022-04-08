@@ -172,8 +172,6 @@ int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
 
-extern cvar_t *hud_scoreboard_uid;
-
 int
 CL_CalcNet (void)
 {

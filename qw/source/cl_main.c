@@ -216,7 +216,6 @@ jmp_buf     host_abort;
 
 char       *server_version = NULL;		// version of server we connected to
 
-extern cvar_t *hud_scoreboard_uid;
 static netadr_t cl_cmd_packet_address;
 
 static void
