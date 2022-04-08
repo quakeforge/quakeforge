@@ -940,7 +940,7 @@ SV_Say (qboolean team)
 	}
 	// non-team messages should be seen allways, even if not tracking any
 	// player
-	if (!team && ((host_client->spectator && sv_spectalk->value)
+	if (!team && ((host_client->spectator && sv_spectalk->int_val)
 				  || !host_client->spectator)) {
 		dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 3);
 	} else {
