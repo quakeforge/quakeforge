@@ -113,7 +113,6 @@ int			gl_tess;
 int					gl_max_lights;
 
 cvar_t		*gl_anisotropy;
-cvar_t		*gl_doublebright;
 cvar_t      *gl_fb_bmodels;
 cvar_t      *gl_finish;
 cvar_t      *gl_max_size;
@@ -485,9 +484,6 @@ CheckCombineExtensions (void)
 						"doublebright enabled.\n");
 	} else {
 		gl_combine_capable = false;
-		Sys_MaskPrintf (SYS_vid, "GL_ARB_texture_env_combine not found. "
-						"gl_doublebright will have no effect with "
-						"gl_multitexture on.\n");
 	}
 }
 

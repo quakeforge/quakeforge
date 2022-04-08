@@ -345,6 +345,7 @@ s_init (void)
 					"fix permanently blocked sound");
 
 // FIXME
+//extern struct cvar_s *snd_loadas8bit;
 //	if (host_parms.memsize < 0x800000) {
 //		Cvar_Set (snd_loadas8bit, "1");
 //		Sys_Printf ("loading all sounds as 8bit\n");

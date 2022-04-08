@@ -59,9 +59,7 @@ extern struct cvar_s	 *r_explosionclip;
 extern struct cvar_s     *r_farclip;
 extern struct cvar_s     *r_firecolor;
 extern struct cvar_s     *r_flatlightstyles;
-extern struct cvar_s     *r_fullbright;
 extern struct cvar_s     *r_graphheight;
-extern struct cvar_s     *r_lightmap;
 extern struct cvar_s     *r_lightmap_components;
 extern struct cvar_s     *r_maxedges;
 extern struct cvar_s     *r_maxsurfs;
@@ -85,8 +83,6 @@ extern struct cvar_s     *r_waterripple;
 extern struct cvar_s     *r_waterwarp;
 extern struct cvar_s     *r_zgraph;
 
-extern struct cvar_s     *scr_consize;
-extern struct cvar_s     *scr_conspeed;
 extern struct cvar_s     *scr_fov;
 extern struct cvar_s     *scr_fisheye;
 extern struct cvar_s     *scr_fviews;

@@ -265,8 +265,6 @@ extern	struct cvar_s	*cl_netgraph_box;
 extern	struct cvar_s	*cl_draw_locs;
 extern	struct cvar_s	*cl_shownet;
 
-extern	struct cvar_s	*cl_pitchdriftspeed;
-
 extern	struct cvar_s	*cl_name;
 
 extern	struct cvar_s	*cl_model_crcs;

@@ -229,11 +229,7 @@ struct channel_s {
 	//@}
 };
 
-extern struct cvar_s *snd_loadas8bit;
 extern struct cvar_s *snd_volume;
-
-extern struct cvar_s *snd_interp;
-extern struct cvar_s *snd_stereo_phase_separation;
 
 extern snd_render_data_t snd_render_data;
 #define PAINTBUFFER_SIZE    512
