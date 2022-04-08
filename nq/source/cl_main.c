@@ -155,6 +155,11 @@ CL_ClearMemory (void)
 {
 	VID_ClearMemory ();
 	SCR_SetFullscreen (0);
+
+	cls.signon = 0;
+	__auto_type cam = cl.viewstate.camera_transform;
+	memset (&cl, 0, sizeof (cl));
+	cl.viewstate.camera_transform = cam;
 }
 
 void

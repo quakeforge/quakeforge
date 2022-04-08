@@ -503,12 +503,6 @@ Host_ClearMemory (void)
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (0, host_hunklevel);
-
-	cls.signon = 0;
-	memset (&sv, 0, sizeof (sv));
-	__auto_type cam = cl.viewstate.camera_transform;
-	memset (&cl, 0, sizeof (cl));
-	cl.viewstate.camera_transform = cam;
 }
 
 /*
@@ -576,17 +570,23 @@ Host_ServerFrame (void)
 }
 
 static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
+static void
 Host_ClientFrame (void)
 {
 	static double time1 = 0, time2 = 0, time3 = 0;
 	int         pass1, pass2, pass3;
-
-	// if running the server remotely, send intentions now after
-	// the incoming messages have been read
-	if (!sv.active)
-		CL_SendCmd ();
-
-	host_time += host_frametime;
 
 	// fetch results from server
 	if (cls.state >= ca_connected)
@@ -631,19 +631,10 @@ Host_ClientFrame (void)
 		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
-}
 
-static void
-write_capture (tex_t *tex, void *data)
-{
-	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
-									 qfs_gamedir->dir.shots,
-									 cls.demo_capture++), "wb");
-	if (file) {
-		WritePNG (file, tex);
-		Qclose (file);
+	if (cls.demo_capture) {
+		r_funcs->capture_screen (write_capture, 0);
 	}
-	free (tex);
 }
 
 /*
@@ -675,12 +666,13 @@ _Host_Frame (float time)
 #endif
 		return;
 	}
+	host_time += host_frametime;	//FIXME is this needed? vcr stuff
 
-	if (!net_is_dedicated)
-		IN_ProcessEvents ();
-
-	if (net_is_dedicated)
+	if (net_is_dedicated) {
 		Con_ProcessInput ();
+	} else {
+		IN_ProcessEvents ();
+	}
 
 	GIB_Thread_Execute ();
 	cmd_source = src_command;
@@ -703,18 +695,19 @@ _Host_Frame (float time)
 
 	NET_Poll ();
 
-	if (sv.active) {
+	if (!net_is_dedicated) {
+		// Whether or not the server is active, if this is not a dedicated
+		// server, then the client always needs to be able to process input
+		// and send commands to the server before the server runs a frame.
 		CL_SendCmd ();
+	}
+
+	if (sv.active) {
 		Host_ServerFrame ();
 	}
 
-	if (!net_is_dedicated)
+	if (!net_is_dedicated) {
 		Host_ClientFrame ();
-	else
-		host_time += host_frametime;	//FIXME is this needed? vcr stuff
-
-	if (cls.demo_capture) {
-		r_funcs->capture_screen (write_capture, 0);
 	}
 
 	host_framecount++;
