@@ -34,6 +34,11 @@
 #include "QF/mathlib.h"
 #endif
 
+/** \defgroup input_bindings Input Bindings
+	\ingroup input
+*/
+///@{
+
 /*** Recipe for converting an axis to a floating point value.
 
 	Absolute axes are converted to the 0..1 range for unbalanced axes, and
@@ -365,5 +370,7 @@ void IN_Binding_SaveConfig (struct plitem_s *config);
 void IN_Binding_LoadConfig (struct plitem_s *config);
 
 #endif
+
+///@}
 
 #endif//__QF_input_binding_h

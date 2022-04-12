@@ -353,10 +353,8 @@ void SND_AmbientOn (snd_t *snd);
 /** Update the sound engine with the client's position and orientation and
 	render some sound.
 	\param snd		sound system state
-	\param origin	3d coords of the client
-	\param v_forward 3d vector of the client's facing direction
-	\param v_right	3d vector of the client's rightward direction
-	\param v_up		3d vector of the client's upward direction
+	\param ear		Transform for the position and orientation of the stereo
+					sound pickup.
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */

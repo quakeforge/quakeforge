@@ -133,9 +133,6 @@ void S_StopAllSounds(void);
 	render some sound.
 	\param ear		Transform for the position and orientation of the stereo
 					sound pickup.
-	\param v_forward 3d vector of the client's facing direction
-	\param v_right	3d vector of the client's rightward direction
-	\param v_up		3d vector of the client's upward direction
 	\param ambient_sound_level NUM_AMBIENTS bytes indicating current ambient
 					sound levels
 */

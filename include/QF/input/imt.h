@@ -29,6 +29,11 @@
 #ifndef __QF_input_imt_h
 #define __QF_input_imt_h
 
+/** \defgroup input_imt Input Mapping Tables
+	\ingroup input
+*/
+///@{
+
 #ifndef __QFCC__
 
 #include "QF/darray.h"
@@ -133,5 +138,7 @@ void IMT_SaveButtonConfig (struct plitem_s *buttons, int button_ind,
 void IMT_LoadConfig (struct plitem_s *config);
 
 #endif
+
+///@}
 
 #endif//__QF_input_imt_h

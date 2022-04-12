@@ -28,6 +28,9 @@
 #ifndef __QF_input_h
 #define __QF_input_h
 
+/** \defgroup input Input Sub-system */
+
+///@{
 typedef struct in_axisinfo_s {
 	int         deviceid;
 	int         axis;
@@ -134,5 +137,7 @@ extern struct cvar_s		*in_freelook;
 extern struct cvar_s		*lookstrafe;
 
 #endif
+
+///@}
 
 #endif//__QF_input_h

@@ -34,8 +34,6 @@
 # include "QF/quakeio.h"
 #endif
 
-/** \defgroup input Input Sub-system */
-
 /** \defgroup input_keybinding Key Binding Sub-system
 	\ingroup input
 */
