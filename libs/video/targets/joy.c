@@ -466,12 +466,12 @@ JOY_Init_Cvars (void)
 	int         i;
 
 	joy_device = Cvar_Get ("joy_device", "/dev/input/js0",
-						   CVAR_NONE | CVAR_ROM, 0, "Joystick device");
-	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
+						   CVAR_ROM, 0, "Joystick device");
+	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_ARCHIVE, 0,
 						   "Joystick enable flag");
-	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_NONE | CVAR_ARCHIVE, joyamp_f,
+	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_ARCHIVE, joyamp_f,
 						"Joystick amplification");
-	joy_pre_amp = Cvar_Get ("joy_pre_amp", "0.01", CVAR_NONE | CVAR_ARCHIVE,
+	joy_pre_amp = Cvar_Get ("joy_pre_amp", "0.01", CVAR_ARCHIVE,
 							joyamp_f, "Joystick pre-amplification");
 
 	Cmd_AddCommand ("in_joy", in_joy_f, "Configures the joystick behaviour");
