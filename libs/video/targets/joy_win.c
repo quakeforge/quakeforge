@@ -353,12 +353,11 @@ void
 JOY_Init_Cvars(void)
 {
 	// joystick variables
-	joy_device = Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, 0,
+	joy_device = Cvar_Get ("joy_device", "none", CVAR_ROM, 0,
 						   "Joystick device");
-	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
+	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_ARCHIVE, 0,
 						   "Joystick enable flag");
-	joy_sensitivity = Cvar_Get ("joy_sensitivity", "1", CVAR_NONE |
-								CVAR_ARCHIVE, 0, "Joystick sensitivity");
+	joy_sensitivity = Cvar_Get ("joy_sensitivity", "1", CVAR_ARCHIVE, 0, "Joystick sensitivity");
 	in_joystick =  Cvar_Get ("joystick", "0", CVAR_ARCHIVE, 0, "FIXME: No "
 							 "Description");
 	joy_name = Cvar_Get ("joyname", "joystick", CVAR_NONE, 0, "FIXME: No "
