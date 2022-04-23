@@ -276,6 +276,11 @@ pic_data (const char *name, int w, int h, const byte *data, drawctx_t *dctx)
 		*picdata++ = *col++;
 		*picdata++ = (pix == 255) - 1;
 	}
+	//FIXME live updates of the scrap aren't
+	//syncronized properly for some reason and result in stale texels being
+	//rendered (flashing pink around the Q menu cursor the first time it's
+	//displayed). I suspect simple barriers aren't enough and more
+	//sophisticated syncronization (events? semaphores?) is needed.
 	return pic;
 }
 
