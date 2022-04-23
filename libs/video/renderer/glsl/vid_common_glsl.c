@@ -151,7 +151,7 @@ GLSL_Init_Common (void)
 
 	GLSL_TextureInit ();
 
-	if (developer->int_val & SYS_glsl) {
+	if (developer & SYS_glsl) {
 		GLint       max;
 
 		qfeglGetIntegerv (GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
@@ -198,7 +198,7 @@ GLSL_CompileShader (const char *name, const shader_t *shader, int type)
 	qfeglShaderSource (sid, shader->num_strings, shader->strings, 0);
 	qfeglCompileShader (sid);
 	qfeglGetShaderiv (sid, GL_COMPILE_STATUS, &compiled);
-	if (!compiled || (developer->int_val & SYS_glsl)) {
+	if (!compiled || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetShaderiv (sid, GL_INFO_LOG_LENGTH, &size);
@@ -321,7 +321,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 	qfeglLinkProgram (program);
 
 	qfeglGetProgramiv (program, GL_LINK_STATUS, &linked);
-	if (!linked || (developer->int_val & SYS_glsl)) {
+	if (!linked || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
@@ -336,7 +336,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 		if (!linked)
 			return 0;
 	}
-	if (developer->int_val & SYS_glsl)
+	if (developer & SYS_glsl)
 		dump_program (name, program);
 	return program;
 }

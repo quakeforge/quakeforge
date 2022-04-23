@@ -156,10 +156,10 @@ gl_FisheyeScreen (framebuffer_t *fb)
 	static float pfov = -1;
 
 	if (pwidth != r_refdef.vrect.width || pheight != r_refdef.vrect.height
-		|| pfov != scr_ffov->value) {
+		|| pfov != scr_ffov) {
 		pwidth = r_refdef.vrect.width;
 		pheight = r_refdef.vrect.height;
-		pfov = scr_ffov->value;
+		pfov = scr_ffov;
 
 		build_display_list (pwidth, pheight, pfov);
 	}

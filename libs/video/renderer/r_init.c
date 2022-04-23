@@ -49,7 +49,15 @@
 #include "r_scrap.h"
 #include "vid_internal.h"
 
-cvar_t         *vidrend_plugin;
+char *vidrend_plugin;
+static cvar_t vidrend_plugin_cvar = {
+	.name = "vid_render",
+	.description =
+		"Video Render Plugin to use",
+	.default_value = VID_RENDER_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &vidrend_plugin },
+};
 plugin_t       *vidrendmodule = NULL;
 
 VID_RENDER_PLUGIN_PROTOS
@@ -77,12 +85,11 @@ VISIBLE void
 R_LoadModule (vid_internal_t *vid_internal)
 {
 	PI_RegisterPlugins (vidrend_plugin_list);
-	vidrend_plugin = Cvar_Get ("vid_render", VID_RENDER_DEFAULT, CVAR_ROM, 0,
-							   "Video Render Plugin to use");
-	vidrendmodule = PI_LoadPlugin ("vid_render", vidrend_plugin->string);
+	Cvar_Register (&vidrend_plugin_cvar, 0, 0);
+	vidrendmodule = PI_LoadPlugin ("vid_render", vidrend_plugin);
 	if (!vidrendmodule) {
 		Sys_Error ("Loading of video render module: %s failed!\n",
-				   vidrend_plugin->string);
+				   vidrend_plugin);
 	}
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;

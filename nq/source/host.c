@@ -105,40 +105,178 @@ client_t   *host_client;				// current client
 
 jmp_buf		host_abortserver;
 
-cvar_t     *host_mem_size;
+float host_mem_size;
+static cvar_t host_mem_size_cvar = {
+	.name = "host_mem_size",
+	.description =
+		"Amount of memory (in MB) to allocate for the "
+		PACKAGE_NAME
+		" heap",
+	.default_value = "40",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &host_mem_size },
+};
 
-cvar_t     *host_framerate;
-cvar_t     *host_speeds;
-cvar_t     *max_edicts;
+float host_framerate;
+static cvar_t host_framerate_cvar = {
+	.name = "host_framerate",
+	.description =
+		"set for slow motion",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &host_framerate },
+};
+int host_speeds;
+static cvar_t host_speeds_cvar = {
+	.name = "host_speeds",
+	.description =
+		"set for running times",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &host_speeds },
+};
+int max_edicts;
+static cvar_t max_edicts_cvar = {
+	.name = "max_edicts",
+	.description =
+		"maximum server edicts",
+	.default_value = "1024",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &max_edicts },
+};
 
-cvar_t     *sys_ticrate;
-cvar_t     *serverprofile;
+float sys_ticrate;
+static cvar_t sys_ticrate_cvar = {
+	.name = "sys_ticrate",
+	.description =
+		"None",
+	.default_value = "0.05",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sys_ticrate },
+};
+int serverprofile;
+static cvar_t serverprofile_cvar = {
+	.name = "serverprofile",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &serverprofile },
+};
 
-cvar_t     *cl_quakerc;
+int cl_quakerc;
+static cvar_t cl_quakerc_cvar = {
+	.name = "cl_quakerc",
+	.description =
+		"exec quake.rc on startup",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_quakerc },
+};
 
-cvar_t     *fraglimit;
-cvar_t     *timelimit;
-cvar_t     *teamplay;
-cvar_t     *noexit;
-cvar_t     *samelevel;
+char *fraglimit;
+static cvar_t fraglimit_cvar = {
+	.name = "fraglimit",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = 0/* not used */, .value = &fraglimit },
+};
+int timelimit;
+static cvar_t timelimit_cvar = {
+	.name = "timelimit",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &timelimit },
+};
+int teamplay;
+static cvar_t teamplay_cvar = {
+	.name = "teamplay",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &teamplay },
+};
+char *noexit;
+static cvar_t noexit_cvar = {
+	.name = "noexit",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = 0/* not used */, .value = &noexit },
+};
+char *samelevel;
+static cvar_t samelevel_cvar = {
+	.name = "samelevel",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &samelevel },
+};
 
-cvar_t     *skill;
-cvar_t     *coop;
-cvar_t     *deathmatch;
+int skill;
+static cvar_t skill_cvar = {
+	.name = "skill",
+	.description =
+		"0 - 3",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &skill },
+};
+int coop;
+static cvar_t coop_cvar = {
+	.name = "coop",
+	.description =
+		"0 or 1",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &coop },
+};
+int deathmatch;
+static cvar_t deathmatch_cvar = {
+	.name = "deathmatch",
+	.description =
+		"0, 1, or 2",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &deathmatch },
+};
 
-cvar_t     *pausable;
+int pausable;
+static cvar_t pausable_cvar = {
+	.name = "pausable",
+	.description =
+		"None",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pausable },
+};
 
-cvar_t     *temp1;
-cvar_t     *cl_usleep;
-
-static int  cl_usleep_cache;
-
-static void
-cl_usleep_f (cvar_t *var)
-{
-	cl_usleep_cache = var->int_val;
-}
-
+char *temp1;
+static cvar_t temp1_cvar = {
+	.name = "temp1",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &temp1 },
+};
+int cl_usleep;
+static cvar_t cl_usleep_cvar = {
+	.name = "cl_usleep",
+	.description =
+		"Turn this on to save cpu when fps limited. May affect frame rate "
+		"adversely depending on local machine/os conditions",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_usleep },
+};
 
 void
 Host_EndGame (const char *message, ...)
@@ -248,9 +386,9 @@ Host_FindMaxClients (void)
 		Hunk_AllocName (0, svs.maxclientslimit * sizeof (client_t), "clients");
 
 	if (svs.maxclients > 1)
-		Cvar_SetValue (deathmatch, 1.0);
+		deathmatch = 1.0;
 	else
-		Cvar_SetValue (deathmatch, 0.0);
+		deathmatch = 0.0;
 }
 
 static void
@@ -258,37 +396,26 @@ Host_InitLocal (void)
 {
 	Host_InitCommands ();
 
-	host_framerate =
-		Cvar_Get ("host_framerate", "0", CVAR_NONE, NULL,
-				"set for slow motion");
-	host_speeds =
-		Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
-				"set for running times");
-	max_edicts = Cvar_Get ("max_edicts", "1024", CVAR_NONE, NULL,
-						   "maximum server edicts");
+	Cvar_Register (&host_framerate_cvar, 0, 0);
+	Cvar_Register (&host_speeds_cvar, 0, 0);
+	Cvar_Register (&max_edicts_cvar, 0, 0);
 
-	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, NULL, "None");
-	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, NULL, "None");
+	Cvar_Register (&sys_ticrate_cvar, 0, 0);
+	Cvar_Register (&serverprofile_cvar, 0, 0);
 
-	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
-						   "exec quake.rc on startup");
+	Cvar_Register (&cl_quakerc_cvar, 0, 0);
 
-	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info,
-						  "None");
-	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info,
-						  "None");
-	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, Cvar_Info, "None");
-	samelevel = Cvar_Get ("samelevel", "0", CVAR_NONE, NULL, "None");
-	noexit = Cvar_Get ("noexit", "0", CVAR_SERVERINFO, Cvar_Info, "None");
-	skill = Cvar_Get ("skill", "1", CVAR_NONE, NULL, "0 - 3");
-	deathmatch = Cvar_Get ("deathmatch", "0", CVAR_NONE, NULL, "0, 1, or 2");
-	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "0 or 1");
-	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "None");
-	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, NULL, "None");
-	cl_usleep = Cvar_Get ("cl_usleep", "1", CVAR_ARCHIVE, cl_usleep_f,
-						  "Turn this on to save cpu when fps limited. "
-						  "May affect frame rate adversely depending on "
-						  "local machine/os conditions");
+	Cvar_Register (&fraglimit_cvar, Cvar_Info, &fraglimit);
+	Cvar_Register (&timelimit_cvar, Cvar_Info, &timelimit);
+	Cvar_Register (&teamplay_cvar, Cvar_Info, &teamplay);
+	Cvar_Register (&samelevel_cvar, 0, 0);
+	Cvar_Register (&noexit_cvar, Cvar_Info, &noexit);
+	Cvar_Register (&skill_cvar, 0, 0);
+	Cvar_Register (&deathmatch_cvar, 0, 0);
+	Cvar_Register (&coop_cvar, 0, 0);
+	Cvar_Register (&pausable_cvar, 0, 0);
+	Cvar_Register (&temp1_cvar, 0, 0);
+	Cvar_Register (&cl_usleep_cvar, 0, 0);
 
 	Host_FindMaxClients ();
 
@@ -525,7 +652,7 @@ Host_FilterTime (float time)
 	con_realtime += time;
 
 	if (cls.demoplayback) {
-		timescale = max (0, demo_speed->value);
+		timescale = max (0, demo_speed);
 		time *= timescale;
 	}
 
@@ -543,8 +670,8 @@ Host_FilterTime (float time)
 	con_frametime = con_realtime - oldcon_realtime;
 	oldcon_realtime = con_realtime;
 
-	if (host_framerate->value > 0)
-		host_frametime = host_framerate->value;
+	if (host_framerate > 0)
+		host_frametime = host_framerate;
 	else	// don't allow really long or short frames
 		host_frametime = bound (0.000, host_frametime, 0.1);
 
@@ -593,17 +720,17 @@ Host_ClientFrame (void)
 		CL_ReadFromServer ();
 
 	// update video
-	if (host_speeds->int_val)
+	if (host_speeds)
 		time1 = Sys_DoubleTime ();
 
-	r_data->inhibit_viewmodel = (chase_active->int_val
+	r_data->inhibit_viewmodel = (chase_active
 								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 								 || cl.stats[STAT_HEALTH] <= 0);
 	r_data->frametime = host_frametime;
 
 	CL_UpdateScreen (cl.time);
 
-	if (host_speeds->int_val)
+	if (host_speeds)
 		time2 = Sys_DoubleTime ();
 
 	// update audio
@@ -623,7 +750,7 @@ Host_ClientFrame (void)
 
 	CDAudio_Update ();
 
-	if (host_speeds->int_val) {
+	if (host_speeds) {
 		pass1 = (time1 - time3) * 1000;
 		time3 = Sys_DoubleTime ();
 		pass2 = (time2 - time1) * 1000;
@@ -670,7 +797,7 @@ _Host_Frame (float time)
 	if ((sleeptime = Host_FilterTime (time)) != 0) {
 		// don't run too fast, or packet will flood outs
 #ifdef HAVE_USLEEP
-		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
+		if (cl_usleep && sleeptime > 0.002) // minimum sleep time
 			usleep ((unsigned long) (sleeptime * 1000000 / 2));
 #endif
 		return;
@@ -729,7 +856,7 @@ Host_Frame (float time)
 	int           c, m;
 	static int    timecount;
 
-	if (!serverprofile->int_val) {
+	if (!serverprofile) {
 		_Host_Frame (time);
 		return;
 	}
@@ -835,18 +962,15 @@ Host_Init_Memory (void)
 	else
 		minimum_memory = MINIMUM_MEMORY_LEVELPAK;
 
-	host_mem_size = Cvar_Get ("host_mem_size", "40", CVAR_NONE, NULL,
-							  "Amount of memory (in MB) to allocate for the "
-							  PACKAGE_NAME " heap");
+	Cvar_Register (&host_mem_size_cvar, 0, 0);
 	if (mem_parm)
-		Cvar_Set (host_mem_size, com_argv[mem_parm + 1]);
+		Cvar_Set ("host_mem_size", com_argv[mem_parm + 1]);
 
 	if (COM_CheckParm ("-minmemory"))
-		Cvar_SetValue (host_mem_size, minimum_memory / (1024 * 1024.0));
+		host_mem_size = minimum_memory / (1024 * 1024.0);
 
-	Cvar_SetFlags (host_mem_size, host_mem_size->flags | CVAR_ROM);
 
-	mem_size = ((size_t) host_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) host_mem_size * 1024 * 1024);
 
 	if (mem_size < minimum_memory)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -860,7 +984,7 @@ Host_Init_Memory (void)
 	Sys_PageIn (mem_base, mem_size);
 	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
 
-	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
+	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size);
 	return hunk;
 }
 
@@ -873,14 +997,14 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 	// should be used to set up defaults on the assumption that the user has
 	// things set up to work with another (hopefully compatible) client
 	if (CL_ReadConfiguration ("quakeforge.cfg")) {
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		Cmd_StuffCmds (cbuf);
 		COM_Check_quakerc ("startdemos", cbuf);
 	} else {
 		if (!skip_quakerc) {
 			Cbuf_InsertText (cbuf, "exec quake.rc\n");
 		}
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		// Reparse the command line for + commands.
 		// (sets still done, but it doesn't matter)
 		// (Note, no non-base commands exist yet)
@@ -939,7 +1063,7 @@ Host_Init (void)
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
 
-	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
+	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc);
 
 	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark (0);

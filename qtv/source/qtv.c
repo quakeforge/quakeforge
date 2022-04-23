@@ -75,14 +75,49 @@ static plugin_list_t server_plugin_list[] = {
 
 double realtime;
 
-cvar_t     *sv_timeout;
+float sv_timeout;
+static cvar_t sv_timeout_cvar = {
+	.name = "timeout",
+	.description =
+		"Sets the amount of time in seconds before a client is considered "
+		"disconnected if the server does not receive a packet",
+	.default_value = "60",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_timeout },
+};
 
 cbuf_t     *qtv_cbuf;
 cbuf_args_t *qtv_args;
 
-static cvar_t  *qtv_console_plugin;
-static cvar_t  *qtv_port;
-static cvar_t  *qtv_mem_size;
+static char *qtv_console_plugin;
+static cvar_t qtv_console_plugin_cvar = {
+	.name = "qtv_console_plugin",
+	.description =
+		"Plugin used for the console",
+	.default_value = "server",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &qtv_console_plugin },
+};
+static int qtv_port;
+static cvar_t qtv_port_cvar = {
+	.name = "qtv_port",
+	.description =
+		"udp port to use",
+	.default_value = 0,
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &qtv_port },
+};
+static float qtv_mem_size;
+static cvar_t qtv_mem_size_cvar = {
+	.name = "qtv_mem_size",
+	.description =
+		"Amount of memory (in MB) to allocate for the "
+		PACKAGE_NAME
+		" heap",
+	.default_value = "8",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &qtv_mem_size },
+};
 
 redirect_t  qtv_redirected;
 client_t   *qtv_redirect_client;
@@ -208,12 +243,9 @@ qtv_memory_init (void)
 	int         mem_size;
 	void       *mem_base;
 
-	qtv_mem_size = Cvar_Get ("qtv_mem_size", "8", CVAR_NONE, NULL,
-							 "Amount of memory (in MB) to allocate for the "
-							 PACKAGE_NAME " heap");
+	Cvar_Register (&qtv_mem_size_cvar, 0, 0);
 
-	Cvar_SetFlags (qtv_mem_size, qtv_mem_size->flags | CVAR_ROM);
-	mem_size = (int) (qtv_mem_size->value * 1024 * 1024);
+	mem_size = (int) (qtv_mem_size * 1024 * 1024);
 	mem_base = Sys_Alloc (mem_size);
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
@@ -237,10 +269,10 @@ qtv_quit_f (void)
 static void
 qtv_net_init (void)
 {
-	qtv_port = Cvar_Get ("qtv_port", va (0, "%d", PORT_QTV), 0, 0,
-						 "udp port to use");
-	sv_timeout = Cvar_Get ("sv_timeout", "60", 0, 0, "server timeout");
-	NET_Init (qtv_port->int_val);
+	qtv_port_cvar.default_value = nva ("%d", PORT_QTV);
+	Cvar_Register (&qtv_port_cvar, 0, 0);
+	Cvar_Register (&sv_timeout_cvar, 0, 0);
+	NET_Init (qtv_port);
 	Connection_Init ();
 	net_realtime = &realtime;
 	Netchan_Init ();
@@ -256,17 +288,16 @@ qtv_init (void)
 
 	Sys_Init ();
 	COM_ParseConfig (qtv_cbuf);
-	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
+	cmd_warncmd = 1;
 
 	memhunk_t  *hunk = qtv_memory_init ();
 
 	QFS_Init (hunk, "qw");
 	PI_Init ();
 
-	qtv_console_plugin = Cvar_Get ("qtv_console_plugin", "server",
-								   CVAR_ROM, 0, "Plugin used for the console");
+	Cvar_Register (&qtv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (qtv_console_plugin->string);
+	Con_Init (qtv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = qtv_cbuf;
 	Sys_SetStdPrintf (qtv_print);

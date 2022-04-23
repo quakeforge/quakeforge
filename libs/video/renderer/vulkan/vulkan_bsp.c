@@ -920,7 +920,7 @@ turb_begin (qfv_renderframe_t *rFrame)
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	bctx->default_color[3] = bound (0, r_wateralpha->value, 1);
+	bctx->default_color[3] = bound (0, r_wateralpha, 1);
 
 	QuatCopy (bctx->default_color, bctx->last_color);
 
@@ -1039,7 +1039,7 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bctx->color = 0;
 
 	R_VisitWorldNodes (brush, ctx);
-	if (r_drawentities->int_val) {
+	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent, ctx);
@@ -1453,7 +1453,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	bctx->skybox_tex = 0;
 
 	if (!sky || !*sky) {
-		sky = r_skyname->string;
+		sky = r_skyname;
 	}
 
 	if (!*sky || !strcasecmp (sky, "none")) {

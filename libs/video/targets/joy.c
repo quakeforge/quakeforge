@@ -42,10 +42,42 @@
 #include "compat.h"
 #include <string.h>
 
-cvar_t     *joy_device;					// Joystick device name
-cvar_t     *joy_enable;					// Joystick enabling flag
-cvar_t     *joy_amp;					// Joystick amplification
-cvar_t     *joy_pre_amp;				// Joystick pre-amplification
+char *joy_device;
+static cvar_t joy_device_cvar = {
+	.name = "joy_device",
+	.description =
+		"Joystick device",
+	.default_value = "none",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &joy_device },
+};
+int joy_enable;
+static cvar_t joy_enable_cvar = {
+	.name = "joy_enable",
+	.description =
+		"Joystick enable flag",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &joy_enable },
+};
+float joy_amp;
+static cvar_t joy_amp_cvar = {
+	.name = "joy_amp",
+	.description =
+		"Joystick amplification",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &joy_amp },
+};
+float joy_pre_amp;
+static cvar_t joy_pre_amp_cvar = {
+	.name = "joy_pre_amp",
+	.description =
+		"Joystick pre-amplification",
+	.default_value = "0.01",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &joy_pre_amp },
+};
 
 qboolean    joy_found = false;
 qboolean    joy_active = false;
@@ -117,11 +149,11 @@ JOY_Move (void)
 {
 	struct joy_axis *ja;
 	float       value;
-	float       amp = joy_amp->value * in_amp->value;
-	float       pre = joy_pre_amp->value * in_pre_amp->value;
+	float       amp = joy_amp * in_amp;
+	float       pre = joy_pre_amp * in_pre_amp;
 	int         i;
 
-	if (!joy_active || !joy_enable->int_val)
+	if (!joy_active || !joy_enable)
 		return;
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
@@ -164,7 +196,7 @@ JOY_Init (void)
 
 	joy_found = true;
 
-	if (!joy_enable->int_val) {
+	if (!joy_enable) {
 		Sys_MaskPrintf (SYS_vid, "JOY: Joystick found, but not enabled.\n");
 		joy_active = false;
 		JOY_Close ();
@@ -181,9 +213,9 @@ JOY_Init (void)
 }
 
 static void
-joyamp_f (cvar_t *var)
+joyamp_f (void *data, const cvar_t *cvar)
 {
-	Cvar_Set (var, va (0, "%g", max (0.0001, var->value)));
+	Cvar_SetVar (cvar, va (0, "%g", max (0.0001, *(float *)data)));
 }
 
 typedef struct {
@@ -465,14 +497,10 @@ JOY_Init_Cvars (void)
 {
 	int         i;
 
-	joy_device = Cvar_Get ("joy_device", "/dev/input/js0",
-						   CVAR_ROM, 0, "Joystick device");
-	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_ARCHIVE, 0,
-						   "Joystick enable flag");
-	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_ARCHIVE, joyamp_f,
-						"Joystick amplification");
-	joy_pre_amp = Cvar_Get ("joy_pre_amp", "0.01", CVAR_ARCHIVE,
-							joyamp_f, "Joystick pre-amplification");
+	Cvar_Register (&joy_device_cvar, 0, 0);
+	Cvar_Register (&joy_enable_cvar, 0, 0);
+	Cvar_Register (&joy_amp_cvar, joyamp_f, &joy_amp);
+	Cvar_Register (&joy_pre_amp_cvar, joyamp_f, &joy_pre_amp);
 
 	Cmd_AddCommand ("in_joy", in_joy_f, "Configures the joystick behaviour");
 

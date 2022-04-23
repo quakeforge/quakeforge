@@ -81,10 +81,9 @@ glrmain_init (void)
 	gldepthmax = 1;
 	qfglDepthFunc (GL_LEQUAL);
 	qfglDepthRange (gldepthmin, gldepthmax);
-	if (gl_multitexture)
-		gl_multitexture_f (gl_multitexture);
-	if (gl_overbright)
-		gl_overbright_f (gl_overbright);
+
+	gl_overbright_f (0, 0);
+	gl_multitexture_f (0, 0);
 }
 
 void
@@ -98,7 +97,7 @@ gl_R_RotateForEntity (entity_t *e)
 void
 gl_R_RenderEntities (entqueue_t *queue)
 {
-	if (!r_drawentities->int_val)
+	if (!r_drawentities)
 		return;
 
 	// LordHavoc: split into 3 loops to simplify state changes
@@ -110,13 +109,13 @@ gl_R_RenderEntities (entqueue_t *queue)
 		qfglDisable (GL_TEXTURE_2D);
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
-	if (gl_affinemodels->int_val)
+	if (gl_affinemodels)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (gl_tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
 	qfglEnable (GL_CULL_FACE);
 
-	if (gl_vector_light->int_val) {
+	if (gl_vector_light) {
 		qfglEnable (GL_LIGHTING);
 		qfglEnable (GL_NORMALIZE);
 	} else if (gl_tess) {
@@ -134,13 +133,13 @@ gl_R_RenderEntities (entqueue_t *queue)
 
 	if (gl_tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
-	if (gl_affinemodels->int_val)
+	if (gl_affinemodels)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning
 									// up in every R_DrawAliasModel()!
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
-		if (gl_combine_capable && gl_overbright->int_val) {
+		if (gl_combine_capable && gl_overbright) {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
@@ -174,8 +173,8 @@ R_DrawViewModel (void)
 {
 	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
-		|| !r_drawviewmodel->int_val
-		|| !r_drawentities->int_val
+		|| !r_drawviewmodel
+		|| !r_drawentities
 		|| !ent->renderer.model)
 		return;
 
@@ -183,14 +182,14 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	qfglEnable (GL_CULL_FACE);
 
-	if (gl_vector_light->int_val) {
+	if (gl_vector_light) {
 		qfglEnable (GL_LIGHTING);
 		qfglEnable (GL_NORMALIZE);
 	} else if (gl_tess) {
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	if (gl_affinemodels->int_val)
+	if (gl_affinemodels)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (gl_mtex_active_tmus >= 2) {
 		qglActiveTexture (gl_mtex_enum + 1);
@@ -207,7 +206,7 @@ R_DrawViewModel (void)
 									// up in every R_DrawAliasModel()!
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
-		if (gl_combine_capable && gl_overbright->int_val) {
+		if (gl_combine_capable && gl_overbright) {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
@@ -218,7 +217,7 @@ R_DrawViewModel (void)
 
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
-	if (gl_affinemodels->int_val)
+	if (gl_affinemodels)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
 	qfglDisable (GL_NORMALIZE);
@@ -257,7 +256,7 @@ R_SetupGL (void)
 	qfglDisable (GL_ALPHA_TEST);
 	qfglAlphaFunc (GL_GREATER, 0.5);
 	qfglEnable (GL_DEPTH_TEST);
-	if (gl_dlight_smooth->int_val)
+	if (gl_dlight_smooth)
 		qfglShadeModel (GL_SMOOTH);
 	else
 		qfglShadeModel (GL_FLAT);
@@ -266,7 +265,7 @@ R_SetupGL (void)
 void
 gl_R_RenderView (void)
 {
-	if (r_norefresh->int_val) {
+	if (r_norefresh) {
 		return;
 	}
 	if (!r_refdef.worldmodel) {

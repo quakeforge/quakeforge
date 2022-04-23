@@ -55,9 +55,33 @@ static unsigned shm_rpos;
 
 static unsigned wpos;
 
-static cvar_t *snd_bits;
-static cvar_t *snd_rate;
-static cvar_t *snd_stereo;
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -86,12 +110,9 @@ paint_audio (void *unused, Uint8 * stream, int len)
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
 }
 
 static int
@@ -109,9 +130,9 @@ SNDDMA_Init (snd_t *snd)
 
 	/* Set up the desired format */
 	desired.freq = 22050;
-	if (snd_rate->int_val)
-		desired.freq = snd_rate->int_val;
-	switch (snd_bits->int_val) {
+	if (snd_rate)
+		desired.freq = snd_rate;
+	switch (snd_bits) {
 		case 8:
 			desired.format = AUDIO_U8;
 			break;
@@ -124,10 +145,10 @@ SNDDMA_Init (snd_t *snd)
 			break;
 		default:
 			Sys_Printf ("Unknown number of audio bits: %d\n",
-						snd_bits->int_val);
+						snd_bits);
 			return 0;
 	}
-	desired.channels = snd_stereo->int_val ? 2 : 1;
+	desired.channels = snd_stereo ? 2 : 1;
 	desired.samples = 1024;
 	desired.callback = paint_audio;
 

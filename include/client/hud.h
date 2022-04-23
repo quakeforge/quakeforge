@@ -25,11 +25,29 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __client_hud_h_
-#define __client_hud_h_
+#ifndef __client_hud_h
+#define __client_hud_h
 
-extern struct cvar_s *hud_sbar;
-extern struct cvar_s *hud_scoreboard_gravity;
-extern struct cvar_s *hud_swap;
+extern int hud_sb_lines;
 
-#endif // __client_hud_h_
+extern int hud_sbar;
+extern char *hud_scoreboard_gravity;
+extern int hud_swap;
+
+extern struct view_s *sbar_view;
+extern struct view_s *sbar_inventory_view;
+extern struct view_s *sbar_frags_view;
+
+extern struct view_s *hud_view;
+extern struct view_s *hud_inventory_view;
+extern struct view_s *hud_armament_view;
+extern struct view_s *hud_frags_view;
+
+extern struct view_s *hud_overlay_view;
+extern struct view_s *hud_stuff_view;
+extern struct view_s *hud_main_view;
+
+void HUD_Init_Cvars (void);
+void HUD_Calc_sb_lines (int view_size);
+
+#endif//__client_hud_h

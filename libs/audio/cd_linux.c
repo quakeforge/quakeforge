@@ -77,8 +77,24 @@ static byte playTrack;
 static byte maxTrack;
 static int  cdfile = -1;
 
-static cvar_t *mus_cddevice;
-static cvar_t *bgmvolume;
+static char *mus_cddevice;
+static cvar_t mus_cddevice_cvar = {
+	.name = "mus_cddevice",
+	.description =
+		"device to use for CD music",
+	.default_value = "/dev/cdrom",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &mus_cddevice },
+};
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 
 static void
@@ -382,14 +398,14 @@ I_CDAudio_Update (void)
 	if (!mus_enabled)
 		return;
 
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 0.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 1.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Resume ();
 		}
 	}
@@ -412,20 +428,20 @@ I_CDAudio_Update (void)
 }
 
 static void
-Mus_CDChange (cvar_t *mus_cdaudio)
+Mus_CDChange (void *data, const cvar_t *cvar)
 {
 	int         i;
 
 	I_CDAudio_Shutdown ();
-	if (strequal (mus_cdaudio->string, "none")) {
+	if (strequal (mus_cddevice, "none")) {
 		return;
 	}
 
-	cdfile = open (mus_cdaudio->string, O_RDONLY | O_NONBLOCK);
+	cdfile = open (mus_cddevice, O_RDONLY | O_NONBLOCK);
 	if (cdfile == -1) {
 		Sys_MaskPrintf (SYS_snd,
 						"Mus_CDInit: open device \"%s\" failed (error %i)\n",
-						mus_cdaudio->string, errno);
+						mus_cddevice, errno);
 		return;
 	}
 
@@ -443,10 +459,8 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 static void
 I_CDAudio_Init (void)
 {
-	mus_cddevice = Cvar_Get ("mus_cddevice", "/dev/cdrom", CVAR_NONE,
-							 Mus_CDChange, "device to use for CD music");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&mus_cddevice_cvar, Mus_CDChange, 0);
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

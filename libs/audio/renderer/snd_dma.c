@@ -60,10 +60,52 @@ static unsigned soundtime;					// sample PAIRS
 static int      sound_started = 0;
 
 
-static cvar_t  *nosound;
-static cvar_t  *snd_mixahead;
-static cvar_t  *snd_noextraupdate;
-static cvar_t  *snd_show;
+float snd_volume;
+static cvar_t snd_volume_cvar = {
+	.name = "volume",
+	.description =
+		"Set the volume for sound playback",
+	.default_value = "0.7",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_volume },
+};
+static char *nosound;
+static cvar_t nosound_cvar = {
+	.name = "nosound",
+	.description =
+		"Set to turn sound off",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &nosound },
+};
+static float snd_mixahead;
+static cvar_t snd_mixahead_cvar = {
+	.name = "snd_mixahead",
+	.description =
+		"Delay time for sounds",
+	.default_value = "0.1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_mixahead },
+};
+static int snd_noextraupdate;
+static cvar_t snd_noextraupdate_cvar = {
+	.name = "snd_noextraupdate",
+	.description =
+		"Toggles the correct value display in host_speeds. Usually messes up "
+		"sound playback when in effect",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &snd_noextraupdate },
+};
+static char *snd_show;
+static cvar_t snd_show_cvar = {
+	.name = "snd_show",
+	.description =
+		"Toggles display of sounds currently being played",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &snd_show },
+};
 
 static general_data_t plugin_info_general_data;
 
@@ -196,7 +238,7 @@ s_update_ (void)
 		snd.paintedtime = soundtime;
 	}
 	// mix ahead of current position
-	endtime = soundtime + snd_mixahead->value * snd.speed;
+	endtime = soundtime + snd_mixahead * snd.speed;
 	samps = snd.frames;
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
@@ -233,7 +275,7 @@ static void
 s_extra_update (void)
 {
 	if (snd_output_data->model == som_push) {
-		if (!sound_started || snd_noextraupdate->int_val)
+		if (!sound_started || snd_noextraupdate)
 			return;							// don't pollute timings
 		s_update_ ();
 	}
@@ -315,18 +357,11 @@ s_snd_force_unblock (void)
 static void
 s_init_cvars (void)
 {
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
-						"Set to turn sound off");
-	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-						   "Set the volume for sound playback");
-	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
-							  "Delay time for sounds");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
-								  "Toggles the correct value display in "
-								  "host_speeds. Usually messes up sound "
-								  "playback when in effect");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
-						 "Toggles display of sounds currently being played");
+	Cvar_Register (&nosound_cvar, 0, 0);
+	Cvar_Register (&snd_volume_cvar, 0, 0);
+	Cvar_Register (&snd_mixahead_cvar, 0, 0);
+	Cvar_Register (&snd_noextraupdate_cvar, 0, 0);
+	Cvar_Register (&snd_show_cvar, 0, 0);
 }
 
 static void
@@ -343,13 +378,6 @@ s_init (void)
 					"Report information on the sound system");
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
-
-// FIXME
-//extern struct cvar_s *snd_loadas8bit;
-//	if (host_parms.memsize < 0x800000) {
-//		Cvar_Set (snd_loadas8bit, "1");
-//		Sys_Printf ("loading all sounds as 8bit\n");
-//	}
 
 	snd_initialized = true;
 

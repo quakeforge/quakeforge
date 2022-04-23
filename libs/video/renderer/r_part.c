@@ -37,6 +37,33 @@
 #include "r_internal.h"
 
 psystem_t   r_psystem;	//FIXME singleton
+int r_particles;
+static cvar_t r_particles_cvar = {
+	.name = "r_particles",
+	.description =
+		"Toggles drawing of particles.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &r_particles },
+};
+int r_particles_max;
+static cvar_t r_particles_max_cvar = {
+	.name = "r_particles_max",
+	.description =
+		"Maximum amount of particles to display. No maximum, minimum is 0.",
+	.default_value = "2048",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &r_particles_max },
+};
+float r_particles_nearclip;
+static cvar_t r_particles_nearclip_cvar = {
+	.name = "r_particles_nearclip",
+	.description =
+		"Distance of the particle near clipping plane from the player.",
+	.default_value = "32",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &r_particles_nearclip },
+};
 
 /*
   R_MaxParticlesCheck
@@ -45,14 +72,13 @@ psystem_t   r_psystem;	//FIXME singleton
   Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of
   others.
 */
-void
-R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
+static void
+R_MaxParticlesCheck (void)
 {
 	psystem_t  *ps = &r_psystem;//FIXME
 	unsigned    maxparticles = 0;
-	if (r_particles && r_particles->int_val) {
-		maxparticles = r_particles_max ? r_particles_max->int_val : 0;
-	}
+
+	maxparticles = r_particles ? r_particles_max : 0;
 
 	if (ps->maxparticles == maxparticles) {
 		return;
@@ -115,4 +141,30 @@ R_RunParticles (float dT)
 		}
 	}
 	ps->numparticles = j;
+}
+
+static void
+r_particles_nearclip_f (void *data, const cvar_t *cvar)
+{
+	r_particles_nearclip = bound (r_nearclip, r_particles_nearclip, r_farclip);
+}
+
+static void
+r_particles_f (void *data, const cvar_t *cvar)
+{
+	R_MaxParticlesCheck ();
+}
+
+static void
+r_particles_max_f (void *data, const cvar_t *cvar)
+{
+	R_MaxParticlesCheck ();
+}
+
+void
+R_Particles_Init_Cvars (void)
+{
+	Cvar_Register (&r_particles_cvar, r_particles_f, 0);
+	Cvar_Register (&r_particles_max_cvar, r_particles_max_f, 0);
+	Cvar_Register (&r_particles_nearclip_cvar, r_particles_nearclip_f, 0);
 }

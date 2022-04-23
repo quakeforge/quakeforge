@@ -37,7 +37,7 @@
 
 #include "util.h"
 
-cvar_t *vulkan_use_validation;
+int vulkan_use_validation;
 
 static uint32_t numLayers;
 static VkLayerProperties *instanceLayerProperties;
@@ -81,7 +81,7 @@ get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 		strset_add (instanceExtensions, extensions[i].extensionName);
 	}
 
-	if (developer->int_val & SYS_vulkan) {
+	if (developer & SYS_vulkan) {
 		for (i = 0; i < numLayers; i++) {
 			Sys_Printf ("%s %x %u %s\n",
 						layers[i].layerName,
@@ -127,7 +127,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				void *data)
 {
 	qfv_instance_t *instance = data;
-	if (!(messageSeverity & vulkan_use_validation->int_val)) {
+	if (!(messageSeverity & vulkan_use_validation)) {
 		return 0;
 	}
 	const char *msgSev = "";
@@ -223,7 +223,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	uint32_t nlay = count_strings (layers) + 1;
 	uint32_t next = count_strings (extensions)
 					+ count_strings (ctx->required_extensions) + 1;
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		nlay += count_strings (vulkanValidationLayers);
 		next += count_strings (debugExtensions);
 	}
@@ -235,7 +235,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	memset (ext, 0, next-- * sizeof (const char *));
 	merge_strings (lay, layers, 0);
 	merge_strings (ext, extensions, ctx->required_extensions);
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		merge_strings (lay, lay, vulkanValidationLayers);
 		merge_strings (ext, ext, debugExtensions);
 	}
@@ -262,7 +262,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	ctx->instance = inst;
 	load_instance_funcs (ctx);
 
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		setup_debug_callback (inst);
 	}
 

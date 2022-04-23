@@ -449,10 +449,11 @@ void Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 
 void Mod_Print (void);
 
-extern struct cvar_s *gl_mesh_cache;
-extern struct cvar_s *gl_subdivide_size;
-extern struct cvar_s *gl_alias_render_tri;
-extern struct cvar_s *gl_textures_external;
+extern int gl_mesh_cache;
+extern float gl_subdivide_size;
+extern int gl_alias_render_tri;
+extern int gl_textures_external;
+extern int mod_sky_divide;
 extern int mod_lightmap_bytes;
 
 #endif//__QF_model_h

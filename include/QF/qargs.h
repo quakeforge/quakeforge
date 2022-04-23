@@ -39,8 +39,8 @@
 extern int com_argc;
 extern const char **com_argv;
 extern const char *com_cmdline;
-extern struct cvar_s *fs_globalcfg;
-extern struct cvar_s *fs_usercfg;
+extern char *fs_globalcfg;
+extern char *fs_usercfg;
 
 int COM_CheckParm (const char *parm) __attribute__((pure));
 void COM_AddParm (const char *parm);

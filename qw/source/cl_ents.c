@@ -176,8 +176,8 @@ CL_LinkPacketEntities (void)
 
 		// if set to invisible, skip
 		if (!new->modelindex
-			|| (cl_deadbodyfilter->int_val && is_dead_body (new))
-			|| (cl_gibfilter->int_val && is_gib (new))) {
+			|| (cl_deadbodyfilter && is_dead_body (new))
+			|| (cl_gibfilter && is_gib (new))) {
 			if (ent->visibility.efrag) {
 				R_RemoveEfrags (ent);
 			}
@@ -219,7 +219,7 @@ CL_LinkPacketEntities (void)
 		renderer->min_light = 0;
 		renderer->fullbright = 0;
 		if (new->modelindex == cl_playerindex) {
-			renderer->min_light = min (cl.fbskins, cl_fb_players->value);
+			renderer->min_light = min (cl.fbskins, cl_fb_players);
 			if (renderer->min_light >= 1.0) {
 				renderer->fullbright = 1;
 			}
@@ -230,7 +230,7 @@ CL_LinkPacketEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			CL_TransformEntity (ent, new->scale / 16, new->angles,
 								new->origin);
-			if (i != cl.viewentity || chase_active->int_val) {
+			if (i != cl.viewentity || chase_active) {
 				if (ent->visibility.efrag) {
 					R_RemoveEfrags (ent);
 				}
@@ -260,7 +260,7 @@ CL_LinkPacketEntities (void)
 				VectorMultAdd (old->angles, f, d, angles);
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
-			if (i != cl.viewentity || chase_active->int_val) {
+			if (i != cl.viewentity || chase_active) {
 				if (ent->visibility.efrag) {
 					vec4f_t     org
 						= Transform_GetWorldPosition (ent->transform);
@@ -439,14 +439,14 @@ CL_LinkPlayers (void)
 			continue;
 
 		// Hack hack hack
-		if (cl_deadbodyfilter->int_val
+		if (cl_deadbodyfilter
 			&& state->pls.es.modelindex == cl_playerindex
 			&& is_dead_body (&state->pls.es))
 			continue;
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
+		if (msec <= 0 || (!cl_predict_players) || cls.demoplayback2) {
 			Sys_Printf("a\n");
 			exact.pls.es.origin = state->pls.es.origin;
 		} else {									// predict players movement
@@ -488,7 +488,7 @@ CL_LinkPlayers (void)
 			// use custom skin
 			ent->renderer.skin = player->skin;
 
-			ent->renderer.min_light = min (cl.fbskins, cl_fb_players->value);
+			ent->renderer.min_light = min (cl.fbskins, cl_fb_players);
 
 			if (ent->renderer.min_light >= 1.0) {
 				ent->renderer.fullbright = 1;
@@ -540,7 +540,7 @@ CL_EmitEntities (void)
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts (cl.time, &tentCtx);
-	if (cl_draw_locs->int_val) {
+	if (cl_draw_locs) {
 		locs_draw (cl.time, cl.viewstate.player_origin);
 	}
 }

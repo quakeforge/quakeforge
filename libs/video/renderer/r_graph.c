@@ -98,5 +98,5 @@ R_ZGraph (view_t *view)
 	height[r_framecount & 255] = ((int) r_refdef.frame.position[2]) & 31;
 
 	r_funcs->R_LineGraph (view->xabs, view->yabs, height,
-						  w, r_data->graphheight->int_val);
+						  w, *r_data->graphheight);
 }

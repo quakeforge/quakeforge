@@ -115,7 +115,6 @@ void
 gl_R_Init (void)
 {
 	R_Init_Cvars ();
-	gl_R_Particles_Init_Cvars ();
 
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");

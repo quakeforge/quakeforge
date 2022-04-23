@@ -377,7 +377,7 @@ SV_SpawnServer (const char *server)
 	SV_FreeAllEdictLeafs ();
 	SV_SetupUserCommands ();
 	Info_SetValueForStarKey (svs.info, "*progs", va (0, "%i", sv_pr_state.crc),
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 
 	// leave slots at start for only clients
 	sv.num_edicts = MAX_CLIENTS + 1;
@@ -468,7 +468,7 @@ SV_SpawnServer (const char *server)
 	SV_CreateBaseline ();
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
-	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
+	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars);
 	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	if (sv_map_e->func)
 		GIB_Event_Callback (sv_map_e, 1, server);
@@ -477,14 +477,14 @@ SV_SpawnServer (const char *server)
 void
 SV_SetMoveVars (void)
 {
-	movevars.gravity = sv_gravity->value;
-	movevars.stopspeed = sv_stopspeed->value;
-	movevars.maxspeed = sv_maxspeed->value;
-	movevars.spectatormaxspeed = sv_spectatormaxspeed->value;
-	movevars.accelerate = sv_accelerate->value;
-	movevars.airaccelerate = sv_airaccelerate->value;
-	movevars.wateraccelerate = sv_wateraccelerate->value;
-	movevars.friction = sv_friction->value;
-	movevars.waterfriction = sv_waterfriction->value;
+	movevars.gravity = sv_gravity;
+	movevars.stopspeed = sv_stopspeed;
+	movevars.maxspeed = sv_maxspeed;
+	movevars.spectatormaxspeed = sv_spectatormaxspeed;
+	movevars.accelerate = sv_accelerate;
+	movevars.airaccelerate = sv_airaccelerate;
+	movevars.wateraccelerate = sv_wateraccelerate;
+	movevars.friction = sv_friction;
+	movevars.waterfriction = sv_waterfriction;
 	movevars.entgravity = 1.0;
 }

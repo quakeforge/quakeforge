@@ -1037,7 +1037,7 @@ Win_Activate (BOOL active, BOOL minimize)
 						   win_gdevmode.dmPelsHeight, false);
 			}
 		}
-		else if ((modestate == MS_WINDOWED) && in_grab->int_val
+		else if ((modestate == MS_WINDOWED) && in_grab
 				 && win_in_game) {
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -1050,7 +1050,7 @@ Win_Activate (BOOL active, BOOL minimize)
 				ChangeDisplaySettings (NULL, 0);
 				vid_wassuspended = true;
 			}
-		} else if ((modestate == MS_WINDOWED) && in_grab->int_val) {
+		} else if ((modestate == MS_WINDOWED) && in_grab) {
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
 		}

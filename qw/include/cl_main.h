@@ -52,13 +52,13 @@ void CL_BeginServerConnect(void);
 #define soundlist_name "soundlist %i %i"
 
 
-extern struct cvar_s *cl_predict_players;
-extern struct cvar_s *cl_solid_players;
-extern struct cvar_s *cl_autoexec;
-extern struct cvar_s *cl_cshift_bonus;
-extern struct cvar_s *cl_cshift_contents;
-extern struct cvar_s *cl_cshift_damage;
-extern struct cvar_s *cl_cshift_powerup;
+extern int cl_predict_players;
+extern int cl_solid_players;
+extern int cl_autoexec;
+extern int cl_cshift_bonus;
+extern int cl_cshift_contents;
+extern int cl_cshift_damage;
+extern int cl_cshift_powerup;
 
 extern struct gib_event_s *cl_player_health_e, *cl_chat_e;
 

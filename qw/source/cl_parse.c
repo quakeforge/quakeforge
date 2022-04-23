@@ -190,7 +190,7 @@ CL_CalcNet (void)
 		} else {
 			double      d = frame->receivedtime - frame->senttime;
 			d = log (d * 1000 + 1) / log (1000);
-			d *= d * cl_netgraph_height->int_val;
+			d *= d * cl_netgraph_height;
 			packet_latency[i & NET_TIMINGSMASK] = d;
 		}
 	}
@@ -326,7 +326,7 @@ Model_NextDownload (void)
 			&& cl_world.models.a[i]->type == mod_alias)
 			info_key = emodel_name;
 
-		if (info_key && cl_model_crcs->int_val) {
+		if (info_key && cl_model_crcs) {
 			aliashdr_t *ahdr = cl_world.models.a[i]->aliashdr;
 			if (!ahdr)
 				ahdr = Cache_Get (&cl_world.models.a[i]->cache);
@@ -1115,11 +1115,11 @@ CL_ServerInfo (void)
 	} else if (strequal (key, "cshifts")) {
 		cl.sv_cshifts = atoi (value);
 	} else if (strequal (key, "no_pogo_stick")) {
-		Cvar_Set (no_pogo_stick, value);
-		cl.no_pogo_stick = no_pogo_stick->int_val;
+		Cvar_Set ("no_pogo_stick", value);
+		cl.no_pogo_stick = no_pogo_stick;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
+		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
 	} else if (strequal (key, "watervis")) {
 		cl.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
@@ -1198,7 +1198,7 @@ CL_ParseMuzzleFlash (void)
 }
 
 #define SHOWNET(x) \
-	if (cl_shownet->int_val == 2) \
+	if (cl_shownet == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 int			received_framecount;
@@ -1218,9 +1218,9 @@ CL_ParseServerMessage (void)
 	CL_ClearProjectiles ();
 
 	// if recording demos, copy the message out
-	if (cl_shownet->int_val == 1)
+	if (cl_shownet == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
-	else if (cl_shownet->int_val == 2)
+	else if (cl_shownet == 2)
 		Sys_Printf ("------------------ %d\n",
 					cls.netchan.incoming_acknowledged);
 
@@ -1286,7 +1286,7 @@ CL_ParseServerMessage (void)
 						break;
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
-					if (cl_nofake->int_val) {
+					if (cl_nofake) {
 						char	*c;
 
 						p = dstring_strdup (str);

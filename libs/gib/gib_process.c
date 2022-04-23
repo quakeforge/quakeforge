@@ -114,7 +114,8 @@ GIB_Process_Embedded (gib_tree_t * node, cbuf_args_t * args)
 			} else if (cur->delim == '#')
 				dstring_appendstr (args->argv[args->argc - 1], "0");
 			else if (cvar)
-				dstring_appendstr (args->argv[args->argc - 1], cvar->string);
+				dstring_appendstr (args->argv[args->argc - 1],
+								   Cvar_VarString (cvar));
 		} else if ((var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals,
 									  &GIB_DATA (cbuf_active)->globals,
 									  (char *) cur->str, &index, false))) {
@@ -126,7 +127,8 @@ GIB_Process_Embedded (gib_tree_t * node, cbuf_args_t * args)
 		} else if (cur->delim == '#')
 			dstring_appendstr (args->argv[args->argc - 1], "0");
 		else if ((cvar = Cvar_FindVar (cur->str)))
-			dstring_appendstr (args->argv[args->argc - 1], cvar->string);
+			dstring_appendstr (args->argv[args->argc - 1],
+							   Cvar_VarString (cvar));
 	}
 	if (str[prev])
 		dstring_appendstr (args->argv[args->argc - 1], str + prev);

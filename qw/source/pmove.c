@@ -39,7 +39,16 @@
 #include "qw/include/client.h"
 #include "qw/pmove.h"
 
-cvar_t     *no_pogo_stick;
+int no_pogo_stick;
+static cvar_t no_pogo_stick_cvar = {
+	.name = "no_pogo_stick",
+	.description =
+		"disable the ability to pogo stick: 0 pogo allowed, 1 no pogo, 2 pogo "
+		"but high friction, 3 high friction and no pogo",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &no_pogo_stick },
+};
 movevars_t  movevars;
 
 playermove_t pmove;
@@ -63,10 +72,7 @@ Pmove_Init (void)
 void
 Pmove_Init_Cvars (void)
 {
-	no_pogo_stick = Cvar_Get ("no_pogo_stick", "0", CVAR_SERVERINFO, Cvar_Info,
-							  "disable the ability to pogo stick: 0 pogo "
-							  "allowed, 1 no pogo, 2 pogo but high friction, "
-							  "3 high friction and no pogo");
+	Cvar_Register (&no_pogo_stick_cvar, Cvar_Info, &no_pogo_stick);
 }
 
 #define	STEPSIZE	18
@@ -637,7 +643,7 @@ JumpButton (void)
 	}
 
 	if (onground == -1) {
-		if (no_pogo_stick->int_val & 1)
+		if (no_pogo_stick & 1)
 			pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until
 												// released
 		return;							// in air, so no effect
@@ -820,9 +826,9 @@ PlayerMove (void)
 	// set onground, watertype, and waterlevel
 	PM_CategorizePosition ();
 
-	if (((pmove.cmd.buttons & BUTTON_JUMP) || (no_pogo_stick->int_val & 1))
+	if (((pmove.cmd.buttons & BUTTON_JUMP) || (no_pogo_stick & 1))
 		&& onground != -1 && pmove.oldonground == -1	// just landed
-		&& (no_pogo_stick->int_val & 2)) {
+		&& (no_pogo_stick & 2)) {
 		float save = movevars.friction;
 
 		pmove.waterjumptime = 0;

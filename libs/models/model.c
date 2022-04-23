@@ -59,10 +59,43 @@ static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
-cvar_t     *gl_mesh_cache;
-cvar_t     *gl_subdivide_size;
-cvar_t     *gl_alias_render_tri;
-cvar_t     *gl_textures_external;
+int gl_mesh_cache;
+static cvar_t gl_mesh_cache_cvar = {
+	.name = "gl_mesh_cache",
+	.description =
+		"minimum triangle count in a model for its mesh to be cached. 0 to "
+		"disable caching",
+	.default_value = "256",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_mesh_cache },
+};
+float gl_subdivide_size;
+static cvar_t gl_subdivide_size_cvar = {
+	.name = "gl_subdivide_size",
+	.description =
+		"Sets the division value for the sky brushes.",
+	.default_value = "128",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &gl_subdivide_size },
+};
+int gl_alias_render_tri;
+static cvar_t gl_alias_render_tri_cvar = {
+	.name = "gl_alias_render_tri",
+	.description =
+		"When loading alias models mesh for pure triangle rendering",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_alias_render_tri },
+};
+int gl_textures_external;
+static cvar_t gl_textures_external_cvar = {
+	.name = "gl_textures_external",
+	.description =
+		"Use external textures to replace BSP textures",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_textures_external },
+};
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
@@ -99,18 +132,10 @@ Mod_Init (void)
 VISIBLE void
 Mod_Init_Cvars (void)
 {
-	gl_subdivide_size =
-		Cvar_Get ("gl_subdivide_size", "128", CVAR_ARCHIVE, NULL,
-				  "Sets the division value for the sky brushes.");
-	gl_mesh_cache = Cvar_Get ("gl_mesh_cache", "256", CVAR_ARCHIVE, NULL,
-							  "minimum triangle count in a model for its mesh"
-							  " to be cached. 0 to disable caching");
-	gl_alias_render_tri =
-		Cvar_Get ("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL, "When "
-				  "loading alias models mesh for pure triangle rendering");
-	gl_textures_external =
-		Cvar_Get ("gl_textures_external", "1", CVAR_ARCHIVE, NULL,
-				  "Use external textures to replace BSP textures");
+	Cvar_Register (&gl_subdivide_size_cvar, 0, 0);
+	Cvar_Register (&gl_mesh_cache_cvar, 0, 0);
+	Cvar_Register (&gl_alias_render_tri_cvar, 0, 0);
+	Cvar_Register (&gl_textures_external_cvar, 0, 0);
 }
 
 VISIBLE void

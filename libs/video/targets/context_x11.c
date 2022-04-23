@@ -125,7 +125,16 @@ static int	accel_threshold;
 static Atom x_net_state;
 static Atom x_net_fullscreen;
 
-static cvar_t *x11_vidmode;
+static int x11_vidmode;
+static cvar_t x11_vidmode_cvar = {
+	.name = "x11_vidmode",
+	.description =
+		"Use x11 vidmode extension to set video mode (not recommended for "
+		"modern systems)",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &x11_vidmode },
+};
 
 static void
 set_fullscreen (int full)
@@ -355,7 +364,7 @@ X11_GetGamma (void)
 	XF86VidModeGamma	xgamma;
 	vec3_t				*temp;
 
-	if (vid_gamma_avail && vid_system_gamma->int_val) {
+	if (vid_gamma_avail && vid_system_gamma) {
 		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
 			if ((temp = malloc (sizeof (vec3_t)))) {
 				(*temp)[0] = xgamma.red;
@@ -379,12 +388,12 @@ X11_SetVidMode (int width, int height)
 	if (vidmode_active)
 		return;
 
-	if (!x11_vidmode->int_val) {
+	if (!x11_vidmode) {
 		return;
 	}
 
 	if (str && (tolower (*str) == 'f')) {
-		Cvar_Set (vid_fullscreen, "1");
+		Cvar_Set ("vid_fullscreen", "1");
 	}
 
 #ifdef HAVE_VIDMODE
@@ -412,7 +421,7 @@ X11_SetVidMode (int width, int height)
 
 		}
 
-		if (vid_fullscreen->int_val && vidmode_avail) {
+		if (vid_fullscreen && vidmode_avail) {
 			int 				i, dotclock;
 			int 				best_mode = 0;
 			qboolean			found_mode = false;
@@ -430,7 +439,7 @@ X11_SetVidMode (int width, int height)
 					   (vidmodes[i]->vdisplay == orig_data.vdisplay)) {
 					original_mode = i;
 				}
-				if (developer->int_val & SYS_vid) {
+				if (developer & SYS_vid) {
 					Sys_Printf ("VID:%c%dx%d\n",
 								original_mode == i ? '*' : ' ',
 								vidmodes[i]->hdisplay, vidmodes[i]->vdisplay);
@@ -471,13 +480,13 @@ X11_SetVidMode (int width, int height)
 #endif
 }
 
-static void
-X11_UpdateFullscreen (cvar_t *fullscreen)
+void
+X11_UpdateFullscreen (int fullscreen)
 {
 	if (!vid_context_created)
 		return;
 
-	if (!fullscreen->int_val) {
+	if (!fullscreen) {
 		X11_RestoreVidMode ();
 		set_fullscreen (0);
 		IN_UpdateGrab (in_grab);
@@ -500,14 +509,7 @@ X11_Init_Cvars (void)
 {
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-							   &X11_UpdateFullscreen,
-							   "Toggles fullscreen game mode");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
-	x11_vidmode = Cvar_Get ("x11_vidmode", "0", CVAR_ROM, 0,
-							"Use x11 vidmode extension to set video mode "
-							"(not recommended for modern systems)");
+	Cvar_Register (&x11_vidmode_cvar, 0, 0);
 }
 
 void
@@ -573,9 +575,7 @@ X11_CreateWindow (int width, int height)
 	vid_context_created = true;
 	XRaiseWindow (x_disp, x_win);
 	X11_WaitForEvent (VisibilityNotify);
-	if (vid_fullscreen->int_val) {
-		X11_UpdateFullscreen (vid_fullscreen);
-	}
+	X11_UpdateFullscreen (vid_fullscreen);
 }
 
 void
@@ -615,7 +615,7 @@ X11_SetGamma (double gamma)
 #ifdef HAVE_VIDMODE
 	XF86VidModeGamma	xgamma;
 
-	if (vid_gamma_avail && vid_system_gamma->int_val && x_have_focus) {
+	if (vid_gamma_avail && vid_system_gamma && x_have_focus) {
 		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
 			return true;

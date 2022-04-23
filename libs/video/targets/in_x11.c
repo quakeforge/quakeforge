@@ -132,10 +132,43 @@ static x11_device_t x11_mouse_device = {
 	x11_mouse_axes, x11_mouse_buttons,
 };
 
-cvar_t     *in_auto_focus;
-cvar_t     *in_snd_block;
-cvar_t     *in_dga;
-cvar_t     *in_mouse_accel;
+int in_auto_focus;
+static cvar_t in_auto_focus_cvar = {
+	.name = "in_auto_focus",
+	.description =
+		"grab input focus when the mouse enters the window when using xinput2 "
+		"with certain window managers using focus-follows-mouse (eg, openbox)",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_auto_focus },
+};
+int in_snd_block;
+static cvar_t in_snd_block_cvar = {
+	.name = "in_snd_block",
+	.description =
+		"block sound output on window focus loss",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_snd_block },
+};
+char *in_dga;
+static cvar_t in_dga_cvar = {
+	.name = "in_dga",
+	.description =
+		"DGA Input support",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &in_dga },
+};
+int in_mouse_accel;
+static cvar_t in_mouse_accel_cvar = {
+	.name = "in_mouse_accel",
+	.description =
+		"set to 0 to remove mouse acceleration",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_mouse_accel },
+};
 
 static qboolean dga_avail;
 static qboolean dga_active;
@@ -190,9 +223,9 @@ dga_off (void)
 }
 
 static void
-in_dga_f (cvar_t *var)
+in_dga_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val && input_grabbed) {
+	if (in_dga && input_grabbed) {
 		Sys_MaskPrintf (SYS_vid, "VID: in_dga_f on\n");
 		dga_on ();
 	} else {
@@ -202,9 +235,9 @@ in_dga_f (cvar_t *var)
 }
 
 static void
-in_mouse_accel_f (cvar_t *var)
+in_mouse_accel_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val) {
+	if (in_mouse_accel) {
 		X11_RestoreMouseAcceleration ();
 	} else {
 		X11_SaveMouseAcceleration ();
@@ -232,7 +265,7 @@ enter_notify (XEvent *event)
 
 	x11_mouse.x = event->xmotion.x;
 	x11_mouse.y = event->xmotion.y;
-	if (!x_have_focus && (!in_auto_focus || in_auto_focus->int_val)) {
+	if (!x_have_focus && in_auto_focus) {
 		XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
 	}
 }
@@ -661,7 +694,7 @@ event_focusout (XEvent *event)
 	if (x_have_focus) {
 		x_have_focus = false;
 		in_x11_send_focus_event (0);
-		if (in_snd_block->int_val) {
+		if (in_snd_block) {
 			S_BlockSound ();
 			CDAudio_Pause ();
 		}
@@ -674,11 +707,11 @@ event_focusin (XEvent *event)
 {
 	in_x11_send_focus_event (1);
 	x_have_focus = true;
-	if (in_snd_block->int_val) {
+	if (in_snd_block) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
 	}
-	VID_UpdateGamma (vid_gamma);
+	VID_UpdateGamma ();
 }
 
 static void
@@ -799,7 +832,7 @@ event_motion (XEvent *event)
 		x11_mouse_axes[0].value = event->xmotion.x_root;
 		x11_mouse_axes[1].value = event->xmotion.y_root;
 	} else {
-		if (vid_fullscreen->int_val || input_grabbed) {
+		if (vid_fullscreen || input_grabbed) {
 			if (!event->xmotion.send_event) {
 				int         center_x = viddef.width / 2;
 				int         center_y = viddef.height / 2;
@@ -1140,7 +1173,7 @@ in_x11_grab_input (void *data, int grab)
 #endif
 
 	if (vid_fullscreen)
-		grab = grab || vid_fullscreen->int_val;
+		grab = grab || vid_fullscreen;
 
 	if ((input_grabbed && grab) || (!input_grabbed && !grab))
 		return;
@@ -1162,12 +1195,12 @@ in_x11_grab_input (void *data, int grab)
 			return;
 		}
 		input_grabbed = 1;
-		in_dga_f (in_dga);
+		in_dga_f (0, &in_dga_cvar);
 	} else {
 		XUngrabPointer (x_disp, CurrentTime);
 		XUngrabKeyboard (x_disp, CurrentTime);
 		input_grabbed = 0;
-		in_dga_f (in_dga);
+		in_dga_f (0, &in_dga_cvar);
 	}
 }
 #ifdef X11_USE_SELECT
@@ -1340,7 +1373,7 @@ in_x11_shutdown (void *data)
 //		XAutoRepeatOn (x_disp);
 		dga_off ();
 	}
-	if (in_mouse_accel && !in_mouse_accel->int_val)
+	if (!in_mouse_accel)
 		X11_RestoreMouseAcceleration ();
 }
 
@@ -1361,18 +1394,10 @@ in_x11_get_device_event_data (void *device, void *data)
 static void
 in_x11_init_cvars (void *data)
 {
-	in_auto_focus = Cvar_Get ("in_auto_focus", "1", CVAR_ARCHIVE, 0,
-							  "grab input focus when the mouse enters the"
-							  " window when using xinput2 with certain"
-							  " window managers using focus-follows-mouse"
-							  " (eg, openbox)");
-	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
-							 "block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f,
-					   "DGA Input support");
-	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
-							   in_mouse_accel_f,
-							   "set to 0 to remove mouse acceleration");
+	Cvar_Register (&in_auto_focus_cvar, 0, 0);
+	Cvar_Register (&in_snd_block_cvar, 0, 0);
+	Cvar_Register (&in_dga_cvar, in_dga_f, 0);
+	Cvar_Register (&in_mouse_accel_cvar, in_mouse_accel_f, 0);
 }
 
 static void

@@ -750,7 +750,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 		sc = sc->tex_chain;
 	}
 
-	if (gl_sky_multipass->int_val) {
+	if (gl_sky_multipass) {
 		sc = sky_chain;
 
 		speedscale = vr_data.realtime / 8;
@@ -797,19 +797,19 @@ draw_z_sky_polys (const instsurf_t *sky_chain)
 void
 gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 {
-	if (gl_sky_clip->int_val > 2) {
+	if (gl_sky_clip > 2) {
 		draw_black_sky_polys (sky_chain);
 		return;
 	}
 
 	if (gl_skyloaded) {
-		if (gl_sky_clip->int_val) {
+		if (gl_sky_clip) {
 			draw_skybox_sky_polys (sky_chain);
 		}
 		draw_z_sky_polys (sky_chain);
-	} else if (gl_sky_clip->int_val == 2) {
+	} else if (gl_sky_clip == 2) {
 		draw_id_sky_polys (sky_chain);
-	} else if (gl_sky_clip->int_val) {
+	} else if (gl_sky_clip) {
 		// XXX not properly implemented
 		draw_skydome_sky_polys (sky_chain);
 		//draw_z_sky_polys (sky_chain);
@@ -817,11 +817,11 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 		draw_z_sky_polys (sky_chain);
 	}
 
-	if (gl_sky_debug->int_val) {
+	if (gl_sky_debug) {
 		const instsurf_t *sc;
 
 		qfglDisable (GL_TEXTURE_2D);
-		if (gl_sky_debug->int_val & 1) {
+		if (gl_sky_debug & 1) {
 			sc = sky_chain;
 			qfglColor3ub (255, 255, 255);
 			while (sc) {
@@ -846,7 +846,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 				sc = sc->tex_chain;
 			}
 		}
-		if (gl_sky_debug->int_val & 2) {
+		if (gl_sky_debug & 2) {
 			sc = sky_chain;
 			qfglColor3ub (0, 255, 0);
 			qfglBegin (GL_POINTS);
@@ -876,7 +876,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 			}
 			qfglEnd ();
 		}
-		if (gl_sky_debug->int_val & 4) {
+		if (gl_sky_debug & 4) {
 			if (gl_skyloaded) {
 				int         i, j;
 

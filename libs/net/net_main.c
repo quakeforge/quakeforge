@@ -86,8 +86,24 @@ int         messagesReceived = 0;
 int         unreliableMessagesSent = 0;
 int         unreliableMessagesReceived = 0;
 
-cvar_t     *net_messagetimeout;
-cvar_t     *hostname;
+float net_messagetimeout;
+static cvar_t net_messagetimeout_cvar = {
+	.name = "net_messagetimeout",
+	.description =
+		"None",
+	.default_value = "300",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &net_messagetimeout },
+};
+char *hostname;
+static cvar_t hostname_cvar = {
+	.name = "hostname",
+	.description =
+		"None",
+	.default_value = "UNNAMED",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &hostname },
+};
 
 QFile      *vcrFile;
 qboolean    recording = false;
@@ -229,9 +245,9 @@ MaxPlayers_f (void)
 
 	svs.maxclients = n;
 	if (n == 1)
-		Cvar_Set (deathmatch, "0");
+		Cvar_Set ("deathmatch", "0");
 	else
-		Cvar_Set (deathmatch, "1");
+		Cvar_Set ("deathmatch", "1");
 }
 
 
@@ -574,7 +590,7 @@ NET_GetMessage (qsocket_t *sock)
 
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
-		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
+		if (net_time - sock->lastMessageTime > net_messagetimeout) {
 			Sys_MaskPrintf (SYS_net, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
@@ -849,9 +865,8 @@ NET_Init (cbuf_t *cbuf)
 	// allocate space for network message buffer
 	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
 
-	net_messagetimeout =
-		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, NULL, "None");
-	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, NULL, "None");
+	Cvar_Register (&net_messagetimeout_cvar, 0, 0);
+	Cvar_Register (&hostname_cvar, 0, 0);
 
 	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
 	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");

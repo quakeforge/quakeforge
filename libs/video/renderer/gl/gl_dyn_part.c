@@ -109,9 +109,17 @@ alloc_arrays (psystem_t *ps)
 	}
 }
 
+static void
+gl_particles_f (void *data, const cvar_t *cvar)
+{
+	alloc_arrays (&r_psystem);//FIXME
+}
+
 void
 gl_R_InitParticles (void)
 {
+	Cvar_AddListener (Cvar_FindVar ("r_particles"), gl_particles_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("r_particles_max"), gl_particles_f, 0);
 	alloc_arrays (&r_psystem);
 }
 
@@ -134,8 +142,8 @@ gl_R_DrawParticles (psystem_t *psystem)
 	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
 	minparticledist = DotProduct (r_refdef.frame.position,
-								  r_refdef.frame.forward) +
-		r_particles_nearclip->value;
+								  r_refdef.frame.forward)
+		+ r_particles_nearclip;
 
 	vacount = 0;
 	VA = particleVertexArray;
@@ -231,42 +239,6 @@ gl_R_DrawParticles (psystem_t *psystem)
 
 	qfglColor3ubv (color_white);
 	qfglDepthMask (GL_TRUE);
-}
-
-static void
-r_particles_nearclip_f (cvar_t *var)
-{
-	Cvar_SetValue (r_particles_nearclip, bound (r_nearclip->value, var->value,
-												r_farclip->value));
-}
-
-static void
-r_particles_f (cvar_t *var)
-{
-	R_MaxParticlesCheck (var, r_particles_max);
-	alloc_arrays (&r_psystem);
-}
-
-static void
-r_particles_max_f (cvar_t *var)
-{
-	R_MaxParticlesCheck (r_particles, var);
-	alloc_arrays (&r_psystem);
-}
-
-void
-gl_R_Particles_Init_Cvars (void)
-{
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
-							"Toggles drawing of particles.");
-	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
-								r_particles_max_f, "Maximum amount of "
-								"particles to display. No maximum, minimum "
-								"is 0.");
-	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
-									 CVAR_ARCHIVE, r_particles_nearclip_f,
-									 "Distance of the particle near clipping "
-									 "plane from the player.");
 }
 
 psystem_t * __attribute__((const))//FIXME

@@ -41,6 +41,8 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
+#include "QF/simd/types.h"
+
 #include "rua_internal.h"
 
 typedef struct bi_alias_s {
@@ -127,7 +129,7 @@ bi_Cvar_SetString (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, val);
+		Cvar_SetVar (var, val);
 }
 
 static void
@@ -140,7 +142,7 @@ bi_Cvar_SetInteger (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va (0, "%d", val));
+		Cvar_SetVar (var, va (0, "%d", val));
 }
 
 static void
@@ -153,7 +155,7 @@ bi_Cvar_SetFloat (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va (0, "%g", val));
+		Cvar_SetVar (var, va (0, "%g", val));
 }
 
 static void
@@ -166,7 +168,7 @@ bi_Cvar_SetVector (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va (0, "%g %g %g", val[0], val[1], val[2]));
+		Cvar_SetVar (var, va (0, "%g %g %g", val[0], val[1], val[2]));
 }
 
 static void
@@ -178,7 +180,7 @@ bi_Cvar_GetString (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		RETURN_STRING (pr, var->string);
+		RETURN_STRING (pr, Cvar_VarString (var));
 	else
 		RETURN_STRING (pr, "");
 }
@@ -189,9 +191,13 @@ bi_Cvar_GetInteger (progs_t *pr, void *_res)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	R_INT (pr) = 0;
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	R_INT (pr) = var ? var->int_val : 0;
+	if (!var || var->value.type != &cexpr_int)
+		return;
+
+	R_INT (pr) = *(int *) var->value.value;
 }
 
 static void
@@ -200,9 +206,12 @@ bi_Cvar_GetFloat (progs_t *pr, void *_res)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	R_FLOAT (pr) = 0;
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	R_FLOAT (pr) = var ? var->value : 0;
+	if (!var || var->value.type != &cexpr_float)
+		return;
+	R_INT (pr) = *(float *) var->value.value;
 }
 
 static void
@@ -213,8 +222,8 @@ bi_Cvar_GetVector (progs_t *pr, void *_res)
 
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var)
-		RETURN_VECTOR (pr, var->vec);
+	if (var && var->value.type == &cexpr_vector)
+		RETURN_VECTOR (pr, *(vec4f_t *) var->value.value);
 	else
 		VectorZero (R_VECTOR (pr));
 }
@@ -228,8 +237,9 @@ bi_Cvar_Toggle (progs_t *pr, void *_res)
 	var = Cvar_FindVar (varname);
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var)
-		Cvar_Set (var, var->int_val ? "0" : "1");
+	if (var && var->value.type == &cexpr_int) {
+		*(int *) var->value.value = !*(int *) var->value.value;
+	}
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}

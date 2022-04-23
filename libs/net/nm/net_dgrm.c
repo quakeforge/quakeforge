@@ -634,7 +634,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_SERVER_INFO);
 		dfunc.GetSocketAddr (acceptsock, &newaddr);
 		MSG_WriteString (net_message->message, dfunc.AddrToString (&newaddr));
-		MSG_WriteString (net_message->message, hostname->string);
+		MSG_WriteString (net_message->message, hostname);
 		MSG_WriteString (net_message->message, sv.name);
 		MSG_WriteByte (net_message->message, net_activeconnections);
 		MSG_WriteByte (net_message->message, svs.maxclients);
@@ -719,7 +719,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_RULE_INFO);
 		if (var) {
 			MSG_WriteString (net_message->message, var->name);
-			MSG_WriteString (net_message->message, var->string);
+			MSG_WriteString (net_message->message, Cvar_VarString (var));
 		}
 		MSG_PokeLongBE (net_message->message, 0,
 						NETFLAG_CTL | net_message->message->cursize);

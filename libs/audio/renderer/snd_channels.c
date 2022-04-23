@@ -71,11 +71,51 @@ static vec4f_t  listener_forward;
 static vec4f_t  listener_right;
 static vec4f_t  listener_up;
 
-static cvar_t  *snd_phasesep;
-static cvar_t  *snd_volumesep;
-static cvar_t  *snd_swapchannelside;
-static cvar_t  *ambient_fade;
-static cvar_t  *ambient_level;
+static float snd_phasesep;
+static cvar_t snd_phasesep_cvar = {
+	.name = "snd_phasesep",
+	.description =
+		"max stereo phase separation in ms. 0.6 is for 20cm head",
+	.default_value = "0.0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_phasesep },
+};
+static float snd_volumesep;
+static cvar_t snd_volumesep_cvar = {
+	.name = "snd_volumesep",
+	.description =
+		"max stereo volume separation. 1.0 is max",
+	.default_value = "1.0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_volumesep },
+};
+static int snd_swapchannelside;
+static cvar_t snd_swapchannelside_cvar = {
+	.name = "snd_swapchannelside",
+	.description =
+		"Toggle swapping of left and right channels",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &snd_swapchannelside },
+};
+static float ambient_fade;
+static cvar_t ambient_fade_cvar = {
+	.name = "ambient_fade",
+	.description =
+		"How quickly ambient sounds fade in or out",
+	.default_value = "100",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &ambient_fade },
+};
+static float ambient_level;
+static cvar_t ambient_level_cvar = {
+	.name = "ambient_level",
+	.description =
+		"Ambient sounds' volume",
+	.default_value = "0.3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &ambient_level },
+};
 
 static inline channel_t *
 unlink_channel (channel_t **_ch)
@@ -320,18 +360,11 @@ SND_Channels_Init (snd_t *snd)
 {
 	int         i;
 
-	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
-							 "max stereo phase separation in ms. 0.6 is for "
-							 "20cm head");
-	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
-							  "max stereo volume separation. 1.0 is max");
-	snd_swapchannelside = Cvar_Get ("snd_swapchannelside", "0", CVAR_ARCHIVE,
-									NULL, "Toggle swapping of left and right "
-									"channels");
-	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
-							 "How quickly ambient sounds fade in or out");
-	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
-							  "Ambient sounds' volume");
+	Cvar_Register (&snd_phasesep_cvar, 0, 0);
+	Cvar_Register (&snd_volumesep_cvar, 0, 0);
+	Cvar_Register (&snd_swapchannelside_cvar, 0, 0);
+	Cvar_Register (&ambient_fade_cvar, 0, 0);
+	Cvar_Register (&ambient_level_cvar, 0, 0);
 
 	Cmd_AddDataCommand ("play", s_play_f, snd,
 						"Play selected sound effect (play pathto/sound.wav)");
@@ -408,7 +441,7 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 	if (!snd_ambient)
 		return;
 	// calc ambient sound levels
-	if (!ambient_sound_level || !ambient_level->value) {
+	if (!ambient_sound_level || !ambient_level) {
 		// if we're not in a leaf (huh?) or ambients have been turned off,
 		// stop all ambient channels.
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
@@ -447,19 +480,19 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
 
-		vol = ambient_level->value * ambient_sound_level[ambient_channel];
+		vol = ambient_level * ambient_sound_level[ambient_channel];
 		if (vol < 8)
 			vol = 0;
 
 		// don't adjust volume too fast
 		if (chan->master_vol < vol) {
 			chan->master_vol += *snd_render_data.host_frametime
-				* ambient_fade->value;
+				* ambient_fade;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		} else if (chan->master_vol > vol) {
 			chan->master_vol -= *snd_render_data.host_frametime
-				* ambient_fade->value;
+				* ambient_fade;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
 		}
@@ -494,7 +527,7 @@ s_spatialize (snd_t *snd, channel_t *ch)
 	dist = VectorNormalize (source_vec) * ch->dist_mult;
 
 	dot = DotProduct (listener_right, source_vec);
-	if (snd_swapchannelside->int_val)
+	if (snd_swapchannelside)
 		dot = -dot;
 
 	if (snd->channels == 1) {
@@ -502,9 +535,9 @@ s_spatialize (snd_t *snd, channel_t *ch)
 		lscale = 1.0;
 		phase = 0;
 	} else {
-		rscale = 1.0 + dot * snd_volumesep->value;
-		lscale = 1.0 - dot * snd_volumesep->value;
-		phase = snd_phasesep->value * 0.001 * snd->speed * dot;
+		rscale = 1.0 + dot * snd_volumesep;
+		lscale = 1.0 - dot * snd_volumesep;
+		phase = snd_phasesep * 0.001 * snd->speed * dot;
 	}
 
 	// add in distance effect

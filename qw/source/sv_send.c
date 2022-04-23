@@ -226,14 +226,13 @@ SV_Print (const char *fmt, va_list args)
 	}
 	if (*msg->str && !con_printf_no_log) {
 		// We want to output to console and maybe logfile
-		if (sv_timestamps && sv_timefmt && sv_timefmt->string
-			&& sv_timestamps->int_val && !pending)
+		if (sv_timefmt && sv_timestamps && !pending)
 			timestamps = true;
 
 		if (timestamps) {
 			mytime = time (NULL);
 			local = localtime (&mytime);
-			hstrftime (msg3, sizeof (msg3), sv_timefmt->string, local);
+			hstrftime (msg3, sizeof (msg3), sv_timefmt, local);
 
 			dsprintf (msg2, "%s%s", msg3, msg->str);
 		} else {
@@ -423,7 +422,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 
 	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
 
-	if ((channel & 8) || !sv_phs->int_val)	// no PHS flag
+	if ((channel & 8) || !sv_phs)	// no PHS flag
 	{
 		if (channel & 8)
 			reliable = true;			// sounds that break the phs are

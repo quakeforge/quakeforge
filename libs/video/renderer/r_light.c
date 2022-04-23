@@ -106,9 +106,9 @@ R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 }
 
 void
-R_MaxDlightsCheck (cvar_t *var)
+R_MaxDlightsCheck (int max_dlights)
 {
-	r_maxdlights = bound (0, var->int_val, MAX_DLIGHTS);
+	r_maxdlights = bound (0, max_dlights, MAX_DLIGHTS);
 
 	if (r_dlights)
 		free (r_dlights);
@@ -134,9 +134,9 @@ R_AnimateLight (void)
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
-		if (r_flatlightstyles->int_val == 2) {
+		if (r_flatlightstyles == 2) {
 			k = r_data->lightstyle[j].peak - 'a';
-		} else if (r_flatlightstyles->int_val == 1) {
+		} else if (r_flatlightstyles == 1) {
 			k = r_data->lightstyle[j].average - 'a';
 		} else {
 			k = i % r_data->lightstyle[j].length;
@@ -317,7 +317,7 @@ R_PushDlights (const vec3_t entorigin)
 	dlight_t   *l;
 	vec3_t      lightorigin;
 
-	if (!r_dlight_lightmap->int_val)
+	if (!r_dlight_lightmap)
 		return;
 
 	l = r_dlights;

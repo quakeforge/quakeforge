@@ -33,31 +33,20 @@
 */
 ///@{
 
+#include "QF/cexpr.h"
 #include "QF/listener.h"
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
 typedef struct cvar_s {
-	const char *name;			///< The name of the cvar.
-	const char *string;			///< The current cvar value as a string.
-	const char *default_string;	///< The default value of the cvar.
-	int	        flags;			///< Cvar flags
-	/** Callback for when the cvar value changes.
-
-		This allows for more flexibility in what happens when a cvar is
-		nodifed than can be achieved with flags alone. While a similar could
-		be done using commands, a cvar with a callback and CVAR_ARCHIVE set
-		allows the setting to be saved automatically.
-
-		\param var	This cvar.
-	*/
-	void      (*callback)(struct cvar_s *var);
+	const char *name;
+	const char *description;
+	const char *default_value;
+	unsigned    flags;
+	exprval_t   value;
+	int       (*validator) (const struct cvar_s *var);
 	struct cvar_listener_set_s *listeners;
-	const char *description;	///< for "help" command
-	float       value;			///< The current cvar value as a float
-	int         int_val;		///< The current cvar value as an integer
-	vec3_t      vec;			///< The current cvar value as a vector
-	struct cvar_s *next;		///< \internal Linked list of cvars.
+	struct cvar_s *next;
 } cvar_t;
 
 typedef struct cvar_listener_set_s LISTENER_SET_TYPE (cvar_t)
@@ -88,16 +77,14 @@ typedef struct cvar_alias_s {
 									///< (not implemented)
 #define	CVAR_ROM			64		///< display only, cannot be set
 #define	CVAR_USER_CREATED	128		///< created by a set command
+#define CVAR_REGISTERED     256		///< var has been registered
 #define CVAR_LATCH			2048	///< will change only when C code next does
 									///< a Cvar_Get(), so it can't be changed
 									///< (not implemented)
 ///@}
 
 
-// Returns the Cvar if found, creates it with value if not.  Description and
-// flags are always updated.
-cvar_t	*Cvar_Get (const char *name, const char *value, int cvarflags,
-				   void (*callback)(cvar_t*), const char *description);
+void Cvar_Register (cvar_t *var, cvar_listener_t listener, void *data);
 
 cvar_t	*Cvar_FindAlias (const char *alias_name);
 
@@ -107,17 +94,18 @@ void Cvar_AddListener (cvar_t *cvar, cvar_listener_t listener, void *data);
 void Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data);
 
 // equivelants to "<name> <variable>" typed at the console
-void 	Cvar_Set (cvar_t *var, const char *value);
-void	Cvar_SetValue (cvar_t *var, float value);
+void Cvar_Set (const char *var, const char *value);
+void Cvar_SetVar (cvar_t *var, const char *value);
 
 // allows you to change a Cvar's flags without a full Cvar_Get
 void	Cvar_SetFlags (cvar_t *var, int cvarflags);
 
 // returns 0 if not defined or non numeric
-float	Cvar_VariableValue (const char *var_name);
+float	Cvar_Value (const char *var_name);
 
 // returns an empty string if not defined
-const char	*Cvar_VariableString (const char *var_name);
+const char *Cvar_String (const char *var_name);
+const char *Cvar_VarString (const cvar_t *var);
 
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that

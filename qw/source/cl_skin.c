@@ -50,10 +50,42 @@
 #include "qw/include/client.h"
 #include "qw/include/host.h"
 
-cvar_t     *noskins; //XXX FIXME
-cvar_t     *skin;
-cvar_t     *topcolor;
-cvar_t     *bottomcolor;
+int noskins;
+static cvar_t noskins_cvar = {
+	.name = "noskins",
+	.description =
+		"set to 1 to not download new skins",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &noskins },
+};
+char *skin;
+static cvar_t skin_cvar = {
+	.name = "skin",
+	.description =
+		"Players skin",
+	.default_value = "",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = 0, .value = &skin },
+};
+char *topcolor;
+static cvar_t topcolor_cvar = {
+	.name = "topcolor",
+	.description =
+		"Players color on top",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = 0/* not used */, .value = &topcolor },
+};
+char *bottomcolor;
+static cvar_t bottomcolor_cvar = {
+	.name = "bottomcolor",
+	.description =
+		"Players color on bottom",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = 0/* not used */, .value = &bottomcolor },
+};
 
 
 void
@@ -76,7 +108,7 @@ Skin_NextDownload (void)
 		if (!sc->name || !sc->name->value[0])
 			continue;
 		//XXX Skin_Find (sc);
-		if (noskins->int_val) //XXX FIXME
+		if (noskins) //XXX FIXME
 			continue;
 		//XXX if (!CL_CheckOrDownloadFile (va (0, "skins/%s.pcx",
 		//									   sc->skin->name)))
@@ -175,18 +207,18 @@ CL_Color_f (void)
 		bottom = 13;
 
 	snprintf (num, sizeof (num), "%i", top);
-	Cvar_Set (topcolor, num);
+	Cvar_Set ("topcolor", num);
 	snprintf (num, sizeof (num), "%i", bottom);
-	Cvar_Set (bottomcolor, num);
+	Cvar_Set ("bottomcolor", num);
 }
 
 static void
-skin_f (cvar_t *var)
+skin_f (void *data, const cvar_t *cvar)
 {
-	char       *s = Hunk_TempAlloc (0, strlen (var->string) + 1);
-	QFS_StripExtension (var->string, s);
-	Cvar_Set (var, s);
-	Cvar_Info (var);
+	char       *s = Hunk_TempAlloc (0, strlen (skin) + 1);
+	QFS_StripExtension (skin, s);
+	skin = strdup (s);
+	Cvar_Info (0, cvar);
 }
 
 void
@@ -200,12 +232,8 @@ CL_Skin_Init (void)
 					"shirt pants) Note that if only shirt color is given, "
 					"pants will match");
 
-	noskins = Cvar_Get ("noskins", "0", CVAR_ARCHIVE, NULL,
-						"set to 1 to not download new skins");
-	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, skin_f,
-					 "Players skin");
-	topcolor = Cvar_Get ("topcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
-						 Cvar_Info, "Players color on top");
-	bottomcolor = Cvar_Get ("bottomcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
-							Cvar_Info, "Players color on bottom");
+	Cvar_Register (&noskins_cvar, 0, 0);
+	Cvar_Register (&skin_cvar, skin_f, 0);
+	Cvar_Register (&topcolor_cvar, Cvar_Info, &topcolor);
+	Cvar_Register (&bottomcolor_cvar, Cvar_Info, &bottomcolor);
 }

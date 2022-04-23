@@ -108,7 +108,7 @@ CL_LerpPoint (void)
 
 	f = cl.mtime[0] - cl.mtime[1];
 
-	if (!f || cl_nolerp->int_val || cls.timedemo || sv.active) {
+	if (!f || cl_nolerp || cls.timedemo || sv.active) {
 		cl.time = cl.mtime[0];
 		return 1;
 	}
@@ -259,7 +259,7 @@ CL_RelinkEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
-			if (i != cl.viewentity || chase_active->int_val) {
+			if (i != cl.viewentity || chase_active) {
 				if (ent->visibility.efrag) {
 					R_RemoveEfrags (ent);
 				}
@@ -293,7 +293,7 @@ CL_RelinkEntities (void)
 				}
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
-			if (i != cl.viewentity || chase_active->int_val) {
+			if (i != cl.viewentity || chase_active) {
 				if (ent->visibility.efrag) {
 					vec4f_t     org
 						= Transform_GetWorldPosition (ent->transform);

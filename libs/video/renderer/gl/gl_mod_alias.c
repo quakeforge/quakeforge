@@ -302,7 +302,7 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t *e)
 	}
 	vo->count = count;
 
-	if (!gl_lerp_anim->int_val)
+	if (!gl_lerp_anim)
 		blend = 1.0;
 
 
@@ -367,7 +367,7 @@ GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t *e)
 	}
 	vo->count = count;
 
-	if (!gl_lerp_anim->int_val)
+	if (!gl_lerp_anim)
 		blend = 1.0;
 
 	if (blend == 0.0) {
@@ -467,7 +467,7 @@ gl_R_DrawAliasModel (entity_t *e)
 			ambientcolor[0] = ambientcolor[1] = ambientcolor[2] = minlight;
 		}
 
-		if (gl_vector_light->int_val) {
+		if (gl_vector_light) {
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
 				if (l->die >= vr_data.realtime) {
 					VectorSubtract (l->origin, origin, dist);
@@ -560,11 +560,11 @@ gl_R_DrawAliasModel (entity_t *e)
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	if (e->renderer.skin && e->renderer.skin->texnum && !gl_nocolors->int_val) {
+	if (e->renderer.skin && e->renderer.skin->texnum && !gl_nocolors) {
 		skin_t *skin = e->renderer.skin;
 
 		texture = skin->texnum;
-		if (gl_fb_models->int_val) {
+		if (gl_fb_models) {
 			fb_texture = skin->auxtex;
 		}
 	} else {
@@ -574,7 +574,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		skindesc = R_AliasGetSkindesc (animation, e->renderer.skinnum,
 									   paliashdr);
 		texture = skindesc->texnum;
-		if (gl_fb_models->int_val && !is_fullbright) {
+		if (gl_fb_models && !is_fullbright) {
 			fb_texture = skindesc->fb_texnum;
 		}
 	}
@@ -607,7 +607,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (is_fullbright) {
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 
-		if (gl_vector_light->int_val) {
+		if (gl_vector_light) {
 			qfglDisable (GL_LIGHTING);
 			if (!gl_tess)
 				qfglDisable (GL_NORMALIZE);
@@ -618,7 +618,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		else
 			GL_DrawAliasFrame (vo);
 
-		if (gl_vector_light->int_val) {
+		if (gl_vector_light) {
 			if (!gl_tess)
 				qfglEnable (GL_NORMALIZE);
 			qfglEnable (GL_LIGHTING);
@@ -653,7 +653,7 @@ gl_R_DrawAliasModel (entity_t *e)
 				qfglBindTexture (GL_TEXTURE_2D, texture);
 				GL_DrawAliasFrameTri (vo);
 
-				if (gl_vector_light->int_val) {
+				if (gl_vector_light) {
 					qfglDisable (GL_LIGHTING);
 					if (!gl_tess)
 						qfglDisable (GL_NORMALIZE);
@@ -664,7 +664,7 @@ gl_R_DrawAliasModel (entity_t *e)
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 				GL_DrawAliasFrameTri (vo);
 
-				if (gl_vector_light->int_val) {
+				if (gl_vector_light) {
 					qfglEnable (GL_LIGHTING);
 					if (!gl_tess)
 						qfglEnable (GL_NORMALIZE);
@@ -673,7 +673,7 @@ gl_R_DrawAliasModel (entity_t *e)
 				qfglBindTexture (GL_TEXTURE_2D, texture);
 				GL_DrawAliasFrame (vo);
 
-				if (gl_vector_light->int_val) {
+				if (gl_vector_light) {
 					qfglDisable (GL_LIGHTING);
 					if (!gl_tess)
 						qfglDisable (GL_NORMALIZE);
@@ -684,7 +684,7 @@ gl_R_DrawAliasModel (entity_t *e)
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 				GL_DrawAliasFrame (vo);
 
-				if (gl_vector_light->int_val) {
+				if (gl_vector_light) {
 					qfglEnable (GL_LIGHTING);
 					if (!gl_tess)
 						qfglEnable (GL_NORMALIZE);
@@ -696,7 +696,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	qfglPopMatrix ();
 
 	// torches, grenades, and lightning bolts do not have shadows
-	if (r_shadows->int_val && model->shadow_alpha) {
+	if (r_shadows && model->shadow_alpha) {
 		mat4f_t     shadow_mat;
 
 		qfglPushMatrix ();

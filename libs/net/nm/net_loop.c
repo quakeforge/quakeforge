@@ -69,8 +69,8 @@ Loop_SearchForHosts (qboolean xmit)
 		return;
 
 	const char *name = "local";
-	if (strcmp (hostname->string, "UNNAMED") != 0) {
-		name = hostname->string;
+	if (strcmp (hostname, "UNNAMED") != 0) {
+		name = hostname;
 	}
 	const char *map = sv.name;
 	int         users = net_activeconnections;

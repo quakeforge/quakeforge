@@ -33,22 +33,22 @@
 
 struct cbuf_s;
 
-extern struct cvar_s *cl_upspeed;
-extern struct cvar_s *cl_forwardspeed;
-extern struct cvar_s *cl_backspeed;
-extern struct cvar_s *cl_sidespeed;
+extern float cl_upspeed;
+extern float cl_forwardspeed;
+extern float cl_backspeed;
+extern float cl_sidespeed;
 
-extern struct cvar_s *cl_movespeedkey;
+extern float cl_movespeedkey;
 
-extern struct cvar_s *cl_yawspeed;
-extern struct cvar_s *cl_pitchspeed;
+extern float cl_yawspeed;
+extern float cl_pitchspeed;
 
-extern struct cvar_s *cl_anglespeedkey;
+extern float cl_anglespeedkey;
 
-extern struct cvar_s *m_pitch;
-extern struct cvar_s *m_yaw;
-extern struct cvar_s *m_forward;
-extern struct cvar_s *m_side;
+extern float m_pitch;
+extern float m_yaw;
+extern float m_forward;
+extern float m_side;
 
 #define FORWARD 0
 #define SIDE 1
@@ -59,7 +59,7 @@ typedef struct movestate_s {
 	vec4f_t     angles;
 } movestate_t;
 
-#define freelook (in_mlook.state & 1 || in_freelook->int_val)
+#define freelook (in_mlook.state & 1 || in_freelook)
 
 struct viewstate_s;
 

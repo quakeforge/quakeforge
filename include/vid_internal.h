@@ -4,6 +4,14 @@
 #include "QF/vid.h"
 #include "QF/plugin/vid_render.h"
 
+typedef struct vid_system_s {
+	void      (*init) (byte *palette, byte *colormap);
+	void      (*init_cvars) (void);
+	void      (*update_fullscreen) (int fullscreen);
+} vid_system_t;
+
+extern vid_system_t vid_system;
+
 typedef struct vid_internal_s {
 	void      (*flush_caches) (void *data);
 	void      (*init_buffers) (void *data);
@@ -20,15 +28,15 @@ typedef struct vid_internal_s {
 	struct vulkan_ctx_s *(*vulkan_context) (void);
 } vid_internal_t;
 
-extern struct cvar_s *vid_fullscreen;
-extern struct cvar_s *vid_system_gamma;
-extern struct cvar_s *vid_gamma;
+extern int vid_fullscreen;
+extern int vid_system_gamma;
+extern float vid_gamma;
 
 void VID_GetWindowSize (int def_w, int def_h);
 
 void VID_InitGamma (const byte *);
 qboolean VID_SetGamma (double);
-void VID_UpdateGamma (struct cvar_s *);
+void VID_UpdateGamma (void);
 
 void VID_MakeColormaps (void);
 

@@ -80,11 +80,79 @@ static old_console_t  *con;
 
 static float       con_cursorspeed = 4;
 
-static cvar_t *con_notifytime;				// seconds
-static cvar_t *con_alpha;
-static cvar_t *con_size;
-static cvar_t *con_speed;
-static cvar_t *cl_conmode;
+static float con_notifytime;
+static cvar_t con_notifytime_cvar = {
+	.name = "con_notifytime",
+	.description =
+		"How long in seconds messages are displayed on screen",
+	.default_value = "3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &con_notifytime },
+};
+static float con_alpha;
+static cvar_t con_alpha_cvar = {
+	.name = "con_alpha",
+	.description =
+		"alpha value for the console background",
+	.default_value = "0.6",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &con_alpha },
+};
+static float con_size;
+static cvar_t con_size_cvar = {
+	.name = "con_size",
+	.description =
+		"Fraction of the screen the console covers when down",
+	.default_value = "0.5",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &con_size },
+};
+static float con_speed;
+static cvar_t con_speed_cvar = {
+	.name = "con_speed",
+	.description =
+		"How quickly the console scrolls up or down",
+	.default_value = "300",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &con_speed },
+};
+static exprenum_t cl_conmode_enum;
+static exprtype_t cl_conmode_type = {
+	.name = "cl_conmode",
+	.size = sizeof (int),
+	.data = &cl_conmode_enum,
+	.get_string = cexpr_enum_get_string,
+};
+static int cl_exec_line_command (void *data, const char *line);
+static int cl_exec_line_chat (void *data, const char *line);
+static int cl_exec_line_rcon (void *data, const char *line);
+static int (*cl_conmode_values[])(void *, const char *) = {
+	cl_exec_line_command,
+	cl_exec_line_chat,
+	cl_exec_line_rcon,
+};
+static exprsym_t cl_conmode_symbols[] = {
+	{"command", &cl_conmode_type, cl_conmode_values + 0},
+	{"chat", &cl_conmode_type, cl_conmode_values + 1},
+	{"rcon", &cl_conmode_type, cl_conmode_values + 1},
+	{}
+};
+static exprtab_t cl_conmode_symtab = {
+	cl_conmode_symbols,
+};
+static exprenum_t cl_conmode_enum = {
+	&cl_conmode_type,
+	&cl_conmode_symtab,
+};
+static char *cl_conmode;
+static cvar_t cl_conmode_cvar = {
+	.name = "cl_conmode",
+	.description =
+		"Set the console input mode (command, chat, rcon)",
+	.default_value = "command",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cl_conmode_type, .value = &cl_conmode },
+};
 
 #define	NUM_CON_TIMES 4
 static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
@@ -311,22 +379,6 @@ cl_exec_line_rcon (void *data, const char *line)
 	Cbuf_AddText (con_data.cbuf, "\n");
 	Sys_Printf ("rcon %s\n", line);
 	return 0;
-}
-
-static void
-cl_conmode_f (cvar_t *var)
-{
-	if (!strcmp (var->string, "command")) {
-		con_data.exec_line = cl_exec_line_command;
-	} else if (!strcmp (var->string, "chat")) {
-		con_data.exec_line = cl_exec_line_chat;
-	} else if (!strcmp (var->string, "rcon")) {
-		con_data.exec_line = cl_exec_line_rcon;
-	} else {
-		Sys_Printf ("mode must be one of \"command\", \"chat\" or \"rcon\"\n");
-		Sys_Printf ("    forcing \"command\"\n");
-		Cvar_Set (var, "command");
-	}
 }
 
 static void
@@ -588,8 +640,8 @@ draw_console (view_t *view)
 	if (con_state == con_fullscreen) {
 		alpha = 255;
 	} else {
-		float       y = r_data->vid->conview->ylen * con_size->value;
-		alpha = 255 * con_alpha->value * view->ylen / y;
+		float       y = r_data->vid->conview->ylen * con_size;
+		alpha = 255 * con_alpha * view->ylen / y;
 		alpha = min (alpha, 255);
 	}
 	// draw the background
@@ -632,7 +684,7 @@ draw_notify (view_t *view)
 		if (time == 0)
 			continue;
 		time = *con_data.realtime - time;
-		if (time > con_notifytime->value)
+		if (time > con_notifytime)
 			continue;
 		text = con->text + (i % con_totallines) * con_linewidth;
 
@@ -655,7 +707,7 @@ setup_console (void)
 			lines = 0;
 			break;
 		case con_active:
-			lines = r_data->vid->conview->ylen * bound (0.2, con_size->value,
+			lines = r_data->vid->conview->ylen * bound (0.2, con_size,
 														1);
 			break;
 		case con_fullscreen:
@@ -663,12 +715,12 @@ setup_console (void)
 			break;
 	}
 
-	if (con_speed->value) {
+	if (con_speed) {
 		if (lines < con_data.lines) {
-			con_data.lines -= max (0.2, con_speed->value) * *con_data.frametime;
+			con_data.lines -= max (0.2, con_speed) * *con_data.frametime;
 			con_data.lines = max (con_data.lines, lines);
 		} else if (lines > con_data.lines) {
-			con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
+			con_data.lines += max (0.2, con_speed) * *con_data.frametime;
 			con_data.lines = min (con_data.lines, lines);
 		}
 	} else {
@@ -843,19 +895,12 @@ C_Init (void)
 
 	Menu_Init ();
 
-	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
-							   "How long in seconds messages are displayed "
-							   "on screen");
+	Cvar_Register (&con_notifytime_cvar, 0, 0);
 
-	con_alpha = Cvar_Get ("con_alpha", "0.6", CVAR_ARCHIVE, NULL,
-						  "alpha value for the console background");
-	con_size = Cvar_Get ("con_size", "0.5", CVAR_ARCHIVE, NULL,
-						 "Fraction of the screen the console covers when "
-						 "down");
-	con_speed = Cvar_Get ("con_speed", "300", CVAR_ARCHIVE, NULL,
-						  "How quickly the console scrolls up or down");
-	cl_conmode = Cvar_Get ("cl_conmode", "command", CVAR_ARCHIVE, cl_conmode_f,
-						   "Set the console input mode (command, chat, rcon)");
+	Cvar_Register (&con_alpha_cvar, 0, 0);
+	Cvar_Register (&con_size_cvar, 0, 0);
+	Cvar_Register (&con_speed_cvar, 0, 0);
+	Cvar_Register (&cl_conmode_cvar, 0, 0);
 
 	con_debuglog = COM_CheckParm ("-condebug");
 

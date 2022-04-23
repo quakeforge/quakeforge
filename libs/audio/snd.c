@@ -37,8 +37,24 @@
 
 #include "snd_internal.h"
 
-static cvar_t  *snd_output;
-static cvar_t  *snd_render;
+static char *snd_output;
+static cvar_t snd_output_cvar = {
+	.name = "snd_output",
+	.description =
+		"Sound Output Plugin to use",
+	.default_value = SND_OUTPUT_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_output },
+};
+static char *snd_render;
+static cvar_t snd_render_cvar = {
+	.name = "snd_render",
+	.description =
+		"Sound Renderer Plugin to use",
+	.default_value = "default",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_render },
+};
 static plugin_t *snd_render_module = NULL;
 static plugin_t *snd_output_module = NULL;
 static snd_render_funcs_t *snd_render_funcs = NULL;
@@ -73,7 +89,7 @@ S_Init (int *viewentity, double *host_frametime)
 	if (COM_CheckParm ("-nosound"))
 		return;
 
-	if (!*snd_output->string || !*snd_render->string) {
+	if (!*snd_output || !*snd_render) {
 		Sys_Printf ("Not loading sound due to no renderer/output\n");
 		return;
 	}
@@ -82,15 +98,15 @@ S_Init (int *viewentity, double *host_frametime)
 
 	PI_RegisterPlugins (snd_output_list);
 	PI_RegisterPlugins (snd_render_list);
-	snd_output_module = PI_LoadPlugin ("snd_output", snd_output->string);
+	snd_output_module = PI_LoadPlugin ("snd_output", snd_output);
 	if (!snd_output_module) {
 		Sys_Printf ("Loading of sound output module: %s failed!\n",
-					snd_output->string);
+					snd_output);
 	} else {
-		snd_render_module = PI_LoadPlugin ("snd_render", snd_render->string);
+		snd_render_module = PI_LoadPlugin ("snd_render", snd_render);
 		if (!snd_render_module) {
 			Sys_Printf ("Loading of sound render module: %s failed!\n",
-						snd_render->string);
+						snd_render);
 			PI_UnloadPlugin (snd_output_module);
 			snd_output_module = NULL;
 		} else {
@@ -114,10 +130,8 @@ S_Init (int *viewentity, double *host_frametime)
 VISIBLE void
 S_Init_Cvars (void)
 {
-	snd_output = Cvar_Get ("snd_output", SND_OUTPUT_DEFAULT, CVAR_ROM, NULL,
-						   "Sound Output Plugin to use");
-	snd_render = Cvar_Get ("snd_render", "default", CVAR_ROM, NULL,
-						   "Sound Renderer Plugin to use");
+	Cvar_Register (&snd_output_cvar, 0, 0);
+	Cvar_Register (&snd_render_cvar, 0, 0);
 }
 
 VISIBLE void

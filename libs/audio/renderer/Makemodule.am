@@ -2,39 +2,57 @@ plugin_LTLIBRARIES +=	@snd_render_plugins@
 noinst_LTLIBRARIES +=	@snd_render_static_plugins@
 EXTRA_LTLIBRARIES +=	libs/audio/renderer/snd_render_default.la
 
-flac_src=libs/audio/renderer/flac.c
-midi_src=libs/audio/renderer/midi.c
-vorbis_src=libs/audio/renderer/vorbis.c
-wav_src=libs/audio/renderer/wav.c
+flac_src = libs/audio/renderer/flac.c
+midi_src = libs/audio/renderer/midi.c
+vorbis_src = libs/audio/renderer/vorbis.c
+wav_src = libs/audio/renderer/wav.c
 
 if HAVE_FLAC
-have_flac_src=$(flac_src)
+have_flac_src = $(flac_src)
 else
-have_flac_src=
+have_flac_src =
 endif
 if HAVE_MIDI
-have_midi_src=$(midi_src)
+have_midi_src = $(midi_src)
 else
-have_midi_src=
+have_midi_src =
 endif
 if HAVE_VORBIS
-have_vorbis_src=$(vorbis_src)
+have_vorbis_src = $(vorbis_src)
 else
-have_vorbis_src=
+have_vorbis_src =
 endif
-have_wav_src=$(wav_src)
+have_wav_src = $(wav_src)
 
 format_src=$(have_flac_src) $(have_midi_src) $(have_vorbis_src) $(have_wav_src)
 format_libs= \
-	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(FLAC_LIBS) \
-	$(OGG_LIBS) $(WM_LIBS)
-extra_format_src=libs/audio/renderer/flac.c libs/audio/renderer/midi.c libs/audio/renderer/vorbis.c libs/audio/renderer/wav.c
-snd_common=libs/audio/renderer/snd_channels.c libs/audio/renderer/snd_mem.c libs/audio/renderer/snd_mix.c libs/audio/renderer/snd_resample.c libs/audio/renderer/snd_sfx.c
-snd_libs= \
+	$(SAMPLERATE_LIBS) \
+	$(VORBISFILE_LIBS) \
+	$(VORBIS_LIBS) \
+	$(FLAC_LIBS) \
+	$(OGG_LIBS) \
+	$(WM_LIBS)
+extra_format_src = \
+	libs/audio/renderer/flac.c \
+	libs/audio/renderer/midi.c \
+	libs/audio/renderer/vorbis.c \
+	libs/audio/renderer/wav.c
+snd_common = \
+	libs/audio/renderer/snd_channels.c \
+	libs/audio/renderer/snd_mem.c \
+	libs/audio/renderer/snd_mix.c \
+	libs/audio/renderer/snd_resample.c \
+	libs/audio/renderer/snd_sfx.c
+snd_libs = \
 	libs/util/libQFutil.la
 
-libs_audio_renderer_snd_render_default_la_LDFLAGS=		$(plugin_ldflags)
-libs_audio_renderer_snd_render_default_la_SOURCES=		libs/audio/renderer/snd_dma.c $(snd_common) $(format_src)
-libs_audio_renderer_snd_render_default_la_LIBADD=		$(snd_libs) $(format_libs)
-libs_audio_renderer_snd_render_default_la_DEPENDENCIES=	$(snd_libs)
-EXTRA_libs_audio_renderer_snd_render_default_la_SOURCES=$(extra_format_src)
+libs_audio_renderer_snd_render_default_la_LDFLAGS =		$(plugin_ldflags)
+libs_audio_renderer_snd_render_default_la_SOURCES = \
+	libs/audio/renderer/snd_dma.c \
+	$(snd_common) \
+	$(format_src)
+libs_audio_renderer_snd_render_default_la_LIBADD = \
+	$(snd_libs) \
+	$(format_libs)
+libs_audio_renderer_snd_render_default_la_DEPENDENCIES =  $(snd_libs)
+EXTRA_libs_audio_renderer_snd_render_default_la_SOURCES = $(extra_format_src)

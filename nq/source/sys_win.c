@@ -229,14 +229,14 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		time = newtime - oldtime;
 
 		if (net_is_dedicated) {	// play vcrfiles at max speed
-			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+			if (time < sys_ticrate && (!vcrFile || recording)) {
 				Sleep (1);
 				continue;			// not time to run a server-only tic yet
 			}
-			time = sys_ticrate->value;
+			time = sys_ticrate;
 		}
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

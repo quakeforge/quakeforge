@@ -82,8 +82,59 @@
 static console_data_t sv_con_data;
 
 static QFile  *log_file;
-static cvar_t *sv_logfile;
-static cvar_t *sv_conmode;
+static char *sv_logfile;
+static cvar_t sv_logfile_cvar = {
+	.name = "sv_logfile",
+	.description =
+		"Control server console logging. \"none\" for off, or "
+		"\"filename:gzflags\"",
+	.default_value = "none",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &sv_logfile },
+};
+static exprenum_t sv_conmode_enum;
+static exprtype_t sv_conmode_type = {
+	.name = "sv_conmode",
+	.size = sizeof (int),
+	.data = &sv_conmode_enum,
+	.get_string = cexpr_enum_get_string,
+};
+static int sv_exec_line_command (void *data, const char *line);
+static int sv_exec_line_chat (void *data, const char *line);
+static int (*sv_conmode_values[])(void *, const char *) = {
+	sv_exec_line_command,
+	sv_exec_line_chat,
+};
+static exprsym_t sv_conmode_symbols[] = {
+	{"command", &sv_conmode_type, sv_conmode_values + 0},
+	{"chat", &sv_conmode_type, sv_conmode_values + 1},
+	{}
+};
+static exprtab_t sv_conmode_symtab = {
+	sv_conmode_symbols,
+};
+static exprenum_t sv_conmode_enum = {
+	&sv_conmode_type,
+	&sv_conmode_symtab,
+};
+static char *sv_conmode;
+static cvar_t sv_conmode_cvar = {
+	.name = "sv_conmode",
+	.description =
+		"Set the console input mode (command, chat)",
+	.default_value = "command",
+	.flags = CVAR_NONE,
+	.value = { .type = &sv_conmode_type, .value = &sv_conmode },
+};
+static int sv_use_curses;
+static cvar_t sv_use_curses_cvar = {
+	.name = "sv_use_curses",
+	.description =
+		"Set to 1 to enable curses server console.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &sv_use_curses },
+};
 
 #ifdef HAVE_NCURSES
 
@@ -631,14 +682,14 @@ init (void)
 #endif
 
 static void
-sv_logfile_f (cvar_t *var)
+sv_logfile_f (void *data, const cvar_t *cvar)
 {
-	if (!var->string[0] || strequal (var->string, "none")) {
+	if (!sv_logfile[0] || strequal (sv_logfile, "none")) {
 		if (log_file)
 			Qclose (log_file);
 		log_file = 0;
 	} else {
-		char       *fname = strdup (var->string);
+		char       *fname = strdup (sv_logfile);
 		char       *flags = strrchr (fname, ':');
 
 		if (flags) {
@@ -671,36 +722,18 @@ sv_exec_line_chat (void *data, const char *line)
 }
 
 static void
-sv_conmode_f (cvar_t *var)
-{
-	if (!strcmp (var->string, "command")) {
-		sv_con_data.exec_line = sv_exec_line_command;
-	} else if (!strcmp (var->string, "chat")) {
-		sv_con_data.exec_line = sv_exec_line_chat;
-	} else {
-		Sys_Printf ("mode must be one of \"command\" or \"chat\"\n");
-		Sys_Printf ("    forcing \"command\"\n");
-		Cvar_Set (var, "command");
-	}
-}
-
-static void
 C_Init (void)
 {
+	Cvar_Register (&sv_use_curses_cvar, 0, 0);
 #ifdef HAVE_NCURSES
-	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
-								  "Set to 1 to enable curses server console.");
-	use_curses = curses->int_val;
+	use_curses = sv_use_curses;
 	if (use_curses) {
 		init ();
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
-	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
-						   "Control server console logging. \"none\" for off, "
-						   "or \"filename:gzflags\"");
-	sv_conmode = Cvar_Get ("sv_conmode", "command", CVAR_NONE, sv_conmode_f,
-						   "Set the console input mode (command, chat)");
+	Cvar_Register (&sv_logfile_cvar, sv_logfile_f, 0);
+	Cvar_Register (&sv_conmode_cvar, 0, 0);
 }
 
 static void

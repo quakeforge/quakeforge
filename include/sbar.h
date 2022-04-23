@@ -38,7 +38,7 @@ extern int sb_lines;	// scan lines to draw
 void Sbar_Init (void);
 
 struct cvar_s;
-void Sbar_DMO_Init_f (struct cvar_s *var);
+void Sbar_DMO_Init_f (void *data, const struct cvar_s *var);
 
 void Sbar_Changed (void);
 // call whenever any of the client stats represented on the sbar changes

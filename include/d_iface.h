@@ -112,8 +112,8 @@ typedef struct
 	int		color;
 } zpointdesc_t;
 
-extern struct cvar_s	*r_drawflat;
-extern int		r_framecount;		// sequence # of current frame since Quake
+extern int r_drawflat;
+extern int r_framecount;			// sequence # of current frame since Quake
 									//  started
 extern qboolean	r_drawpolys;		// 1 if driver wants clipped polygons
 									//  rather than a span list

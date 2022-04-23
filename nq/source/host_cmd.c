@@ -92,7 +92,7 @@ Host_Status_f (void)
 	} else
 		print = SV_ClientPrintf;
 
-	print ("host:    %s\n", Cvar_VariableString ("hostname"));
+	print ("host:    %s\n", hostname);
 	print ("version: %4.2s\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
@@ -667,7 +667,7 @@ Host_Loadgame_f (void)
 		spawn_parms[i] = atof (PL_String (PL_ObjectAtIndex (item, i)));
 	}
 	current_skill = atoi (PL_String (PL_ObjectForKey (game, "current_skill")));
-	Cvar_SetValue (skill, current_skill);
+	skill = current_skill;
 	mapname = strdup (PL_String (PL_ObjectForKey (game, "name")));
 
 	CL_Disconnect_f ();
@@ -742,7 +742,7 @@ Host_Name_f (void)
 	const char *newName;
 
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("\"name\" is \"%s\"\n", cl_name->string);
+		Sys_Printf ("\"name\" is \"%s\"\n", cl_name);
 		return;
 	}
 	if (Cmd_Argc () == 2)
@@ -751,9 +751,9 @@ Host_Name_f (void)
 		newName = Cmd_Args (1);
 
 	if (cmd_source == src_command) {
-		if (strcmp (cl_name->string, newName) == 0)
+		if (strcmp (cl_name, newName) == 0)
 			return;
-		Cvar_Set (cl_name, va (0, "%.15s", newName));
+		Cvar_Set ("_cl_name", va (0, "%.15s", newName));
 		if (cls.state >= ca_connected)
 			CL_Cmd_ForwardToServer ();
 		return;
@@ -815,7 +815,7 @@ Host_Say (qboolean teamonly)
 	if (!fromServer)
 		snprintf (text, sizeof (text), "%c%s: ", 1, save->name);
 	else
-		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname->string);
+		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname);
 
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
 	if (strlen (p) > j)
@@ -827,7 +827,7 @@ Host_Say (qboolean teamonly)
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++) {
 		if (!client || !client->active || !client->spawned)
 			continue;
-		if (teamplay->int_val && teamonly && SVfloat (client->edict, team) !=
+		if (teamplay && teamonly && SVfloat (client->edict, team) !=
 			SVfloat (save->edict, team))
 			continue;
 		host_client = client;
@@ -925,7 +925,7 @@ Host_Pause_f (void)
 		CL_Cmd_ForwardToServer ();
 		return;
 	}
-	if (!pausable->int_val)
+	if (!pausable)
 		SV_ClientPrintf ("Pause not allowed.\n");
 	else {
 		sv.paused ^= 1;
@@ -1137,7 +1137,7 @@ Host_Kick_f (void)
 			if (net_is_dedicated)
 				who = "Console";
 			else
-				who = cl_name->string;
+				who = cl_name;
 		else
 			who = save->name;
 

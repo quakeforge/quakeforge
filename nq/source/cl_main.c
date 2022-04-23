@@ -70,19 +70,91 @@ static plugin_list_t client_plugin_list[] = {
 };
 
 // these two are not intended to be set directly
-cvar_t     *cl_name;
-cvar_t     *cl_color;
+char *cl_name;
+static cvar_t cl_name_cvar = {
+	.name = "_cl_name",
+	.description =
+		"Player name",
+	.default_value = "player",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &cl_name },
+};
+int cl_color;
+static cvar_t cl_color_cvar = {
+	.name = "_cl_color",
+	.description =
+		"Player color",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_color },
+};
 
-cvar_t     *cl_writecfg;
+int cl_writecfg;
+static cvar_t cl_writecfg_cvar = {
+	.name = "cl_writecfg",
+	.description =
+		"write config files?",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_writecfg },
+};
 
-cvar_t     *cl_shownet;
-cvar_t     *cl_nolerp;
+int cl_shownet;
+static cvar_t cl_shownet_cvar = {
+	.name = "cl_shownet",
+	.description =
+		"show network packets. 0=off, 1=basic, 2=verbose",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_shownet },
+};
+int cl_nolerp;
+static cvar_t cl_nolerp_cvar = {
+	.name = "cl_nolerp",
+	.description =
+		"linear motion interpolation",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_nolerp },
+};
 
-cvar_t     *hud_fps;
-cvar_t     *hud_time;
+int hud_fps;
+static cvar_t hud_fps_cvar = {
+	.name = "hud_fps",
+	.description =
+		"display realtime frames per second",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_fps },
+};
+int hud_time;
+static cvar_t hud_time_cvar = {
+	.name = "hud_time",
+	.description =
+		"display the current time",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_time },
+};
 
-static cvar_t *r_ambient;
-static cvar_t *r_drawflat;
+static char *r_ambient;
+static cvar_t r_ambient_cvar = {
+	.name = "r_ambient",
+	.description =
+		"Determines the ambient lighting for a level",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &r_ambient },
+};
+static char *r_drawflat;
+static cvar_t r_drawflat_cvar = {
+	.name = "r_drawflat",
+	.description =
+		"Toggles the drawing of textures",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &r_drawflat },
+};
 
 int         fps_count;
 
@@ -99,7 +171,7 @@ CL_WriteConfiguration (void)
 {
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
-	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
+	if (host_initialized && !isDedicated && cl_writecfg) {
 		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
@@ -170,27 +242,19 @@ CL_InitCvars (void)
 	Chase_Init_Cvars ();
 	V_Init_Cvars ();
 
-	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
-						"Player name");
-	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
-							"write config files?");
-	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
-						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
-						  "linear motion interpolation");
-	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
-						"display realtime frames per second");
-	Cvar_MakeAlias ("show_fps", hud_fps);
-	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
-						 "display the current time");
+	Cvar_Register (&cl_name_cvar, 0, 0);
+	Cvar_Register (&cl_color_cvar, 0, 0);
+	Cvar_Register (&cl_writecfg_cvar, 0, 0);
+	Cvar_Register (&cl_shownet_cvar, 0, 0);
+	Cvar_Register (&cl_nolerp_cvar, 0, 0);
+	Cvar_Register (&hud_fps_cvar, 0, 0);
+	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
+	Cvar_Register (&hud_time_cvar, 0, 0);
 
 	//FIXME not hooked up (don't do anything), but should not work in
 	//multi-player
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
-						  "Determines the ambient lighting for a level");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
-						   "Toggles the drawing of textures");
+	Cvar_Register (&r_ambient_cvar, 0, 0);
+	Cvar_Register (&r_drawflat_cvar, 0, 0);
 }
 
 void
@@ -345,11 +409,11 @@ CL_SignonReply (void)
 	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, va (0, "name \"%s\"\n",
-										   cl_name->string));
+										   cl_name));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
-						 va (0, "color %i %i\n", (cl_color->int_val) >> 4,
-							 (cl_color->int_val) & 15));
+						 va (0, "color %i %i\n", (cl_color) >> 4,
+							 (cl_color) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "spawn");
 		break;
@@ -450,7 +514,7 @@ CL_ReadFromServer (void)
 		CL_ParseServerMessage ();
 	} while (ret && cls.state >= ca_connected);
 
-	if (cl_shownet->int_val)
+	if (cl_shownet)
 		Sys_Printf ("\n");
 
 	CL_RelinkEntities ();

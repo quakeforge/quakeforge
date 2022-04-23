@@ -449,7 +449,7 @@ sv_new_f (void)
 	sv->name = strdup (name);
 	sv->address = strdup (address);
 	sv->adr = adr;
-	sv->qport = qport->int_val;
+	sv->qport = qport;
 	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0);
 	Info_SetValueForStarKey (sv->info, "*ver",
 							 va (0, "%s QTV %s", QW_VERSION, PACKAGE_VERSION),
@@ -554,7 +554,7 @@ Server_Frame (void)
 	server_t   *sv;
 
 	for (sv = servers; sv; sv = sv->next) {
-		if (realtime - sv->netchan.last_received > sv_timeout->value) {
+		if (realtime - sv->netchan.last_received > sv_timeout) {
 			qtv_printf ("Server %s timed out\n", sv->name);
 			server_drop (sv);
 			return; // chain has changed, avoid segfaulting

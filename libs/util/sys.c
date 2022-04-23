@@ -96,10 +96,45 @@
 static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 
-VISIBLE cvar_t *sys_nostdout;
-VISIBLE cvar_t *sys_extrasleep;
-cvar_t     *sys_dead_sleep;
-cvar_t     *sys_sleep;
+VISIBLE int sys_nostdout;
+static cvar_t sys_nostdout_cvar = {
+	.name = "sys_nostdout",
+	.description =
+		"Set to disable std out",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_nostdout },
+};
+VISIBLE int sys_extrasleep;
+static cvar_t sys_extrasleep_cvar = {
+	.name = "sys_extrasleep",
+	.description =
+		"Set to cause whatever amount delay in microseconds you want. Mostly "
+		"useful to generate simulated bad connections.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_extrasleep },
+};
+int sys_dead_sleep;
+static cvar_t sys_dead_sleep_cvar = {
+	.name = "sys_dead_sleep",
+	.description =
+		"When set, the server gets NO cpu if no clients are connected and "
+		"there's no other activity. *MIGHT* cause problems with some mods.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_dead_sleep },
+};
+int sys_sleep;
+static cvar_t sys_sleep_cvar = {
+	.name = "sys_sleep",
+	.description =
+		"Sleep how long in seconds between checking for connections. Minimum "
+		"is 0, maximum is 13",
+	.default_value = "8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_sleep },
+};
 
 int         sys_checksum;
 
@@ -297,7 +332,7 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 static void
 Sys_StdPrintf (const char *fmt, va_list args)
 {
-	if (sys_nostdout && sys_nostdout->int_val)
+	if (sys_nostdout)
 		return;
 	Sys_Print (stdout, fmt, args);
 }
@@ -322,7 +357,7 @@ Sys_MaskPrintf (int mask, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (!developer || !(developer->int_val & mask))
+	if (!(developer & mask))
 		return;
 	va_start (args, fmt);
 	sys_std_printf_function (fmt, args);
@@ -495,21 +530,10 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 VISIBLE void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "Set to disable std out");
-	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
-							   "Set to cause whatever amount delay in "
-							   "microseconds you want. Mostly "
-							   "useful to generate simulated bad "
-							   "connections.");
-	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "0", CVAR_NONE, NULL,
-							   "When set, the server gets NO cpu if no "
-							   "clients are connected and there's no other "
-							   "activity. *MIGHT* cause problems with some "
-							   "mods.");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
-						  "in seconds between checking for connections. "
-						  "Minimum is 0, maximum is 13");
+	Cvar_Register (&sys_nostdout_cvar, 0, 0);
+	Cvar_Register (&sys_extrasleep_cvar, 0, 0);
+	Cvar_Register (&sys_dead_sleep_cvar, 0, 0);
+	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
 void
@@ -802,7 +826,7 @@ Sys_CheckInput (int idle, int net_socket)
 	int         sleep_msec;
 	// Now we want to give some processing time to other applications,
 	// such as qw_client, running on this machine.
-	sleep_msec = sys_sleep->int_val;
+	sleep_msec = sys_sleep;
 	if (sleep_msec > 0) {
 		if (sleep_msec > 13)
 			sleep_msec = 13;
@@ -825,7 +849,7 @@ Sys_CheckInput (int idle, int net_socket)
 	if (net_socket >= 0)
 		QF_FD_SET (((unsigned) net_socket), &fdset);// cast needed for windows
 
-	if (idle && sys_dead_sleep->int_val)
+	if (idle && sys_dead_sleep)
 		usec = -1;
 
 	res = Sys_Select (max (net_socket, 0), &fdset, usec);

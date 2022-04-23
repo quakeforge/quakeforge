@@ -126,7 +126,7 @@ static void sw_bind_framebuffer (framebuffer_t *framebuffer);
 static void
 sw_begin_frame (void)
 {
-	if (r_numsurfs->int_val) {
+	if (r_numsurfs) {
 		int         surfcount = surface_p - surfaces;
 		int         max_surfs = surf_max - surfaces;
 		if (surfcount > r_maxsurfsseen)
@@ -136,7 +136,7 @@ sw_begin_frame (void)
 					surfcount, max_surfs, r_maxsurfsseen);
 	}
 
-	if (r_numedges->int_val) {
+	if (r_numedges) {
 		int         edgecount = edge_p - r_edges;
 
 		if (edgecount > r_maxedgesseen)
@@ -169,7 +169,7 @@ sw_draw_transparent (void)
 static void
 sw_post_process (framebuffer_t *src)
 {
-	if (scr_fisheye->int_val) {
+	if (scr_fisheye) {
 		R_RenderFisheye (src);
 	} else if (r_dowarp) {
 		D_WarpScreen (src);
@@ -184,10 +184,10 @@ sw_set_2d (int scaled)
 static void
 sw_end_frame (void)
 {
-	if (r_reportsurfout->int_val && r_outofsurfaces)
+	if (r_reportsurfout && r_outofsurfaces)
 		Sys_Printf ("Short %d surfaces\n", r_outofsurfaces);
 
-	if (r_reportedgeout->int_val && r_outofedges)
+	if (r_reportedgeout && r_outofedges)
 		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 
 	// update one of three areas
@@ -408,8 +408,8 @@ sw_set_fov (float x, float y)
 
 	res_scale = sqrt ((double) (r_refdef.vrect.width * r_refdef.vrect.height) /
 					  (320.0 * 152.0)) * (2.0 / hFOV);
-	r_aliastransition = r_aliastransbase->value * res_scale;
-	r_resfudge = r_aliastransadj->value * res_scale;
+	r_aliastransition = r_aliastransbase * res_scale;
+	r_resfudge = r_aliastransadj * res_scale;
 }
 
 static void

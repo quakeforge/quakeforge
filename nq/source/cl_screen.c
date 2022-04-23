@@ -95,8 +95,8 @@ scr_draw_views (void)
 	net_view->visible = (!cls.demoplayback
 						 && realtime - cl.last_servermessage >= 0.3);
 	loading_view->visible = cl.loading;
-	timegraph_view->visible = r_timegraph->int_val;
-	zgraph_view->visible = r_zgraph->int_val;
+	timegraph_view->visible = r_timegraph;
+	zgraph_view->visible = r_zgraph;
 
 	view_draw (r_data->vid->conview);
 }

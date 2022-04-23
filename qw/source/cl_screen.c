@@ -96,12 +96,12 @@ scr_draw_views (void)
 							 - cls.netchan.incoming_acknowledged)
 						    >= UPDATE_BACKUP - 1);
 	loading_view->visible = cl.loading;
-	cl_netgraph_view->visible = cl_netgraph->int_val != 0;
+	cl_netgraph_view->visible = cl_netgraph != 0;
 
 	//FIXME don't do every frame
-	view_move (cl_netgraph_view, cl_netgraph_view->xpos, sb_lines);
+	view_move (cl_netgraph_view, cl_netgraph_view->xpos, hud_sb_lines);
 	view_setgravity (cl_netgraph_view,
-					 hud_swap->int_val ? grav_southeast : grav_southwest);
+					 hud_swap ? grav_southeast : grav_southwest);
 
 	view_draw (r_data->vid->conview);
 }
@@ -167,9 +167,9 @@ CL_UpdateScreen (double realtime)
 	}
 
 	if (!cl_netgraph_view) {
-		cl_netgraph_view = view_new (0, sb_lines,
+		cl_netgraph_view = view_new (0, hud_sb_lines,
 									 NET_TIMINGS + 16,
-									 cl_netgraph_height->int_val + 25,
+									 cl_netgraph_height + 25,
 									 grav_southwest);
 		cl_netgraph_view->draw = CL_NetGraph;
 		cl_netgraph_view->visible = 0;

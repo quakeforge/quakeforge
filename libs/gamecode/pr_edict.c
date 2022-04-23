@@ -114,7 +114,7 @@ ED_Free (progs_t *pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
-	if (pr_deadbeef_ents->int_val) {
+	if (pr_deadbeef_ents) {
 		ED_ClearEdict (pr, ed, 0xdeadbeef);
 	} else {
 		if (pr->free_edict)

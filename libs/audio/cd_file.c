@@ -84,15 +84,31 @@ static plitem_t  *play_list;		// string or array of strings
 static int        play_pos = -1;	// position in play_list (0 for string)
 									// -1 = invalid (both)
 
-static cvar_t	 *bgmvolume;		// volume cvar
-static cvar_t	 *mus_ogglist;	// tracklist cvar
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
+static char *mus_ogglist;
+static cvar_t mus_ogglist_cvar = {
+	.name = "mus_ogglist",
+	.description =
+		"filename of track to music file map",
+	.default_value = "tracklist.cfg",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &mus_ogglist },
+};
 
 
 static void
 set_volume (void)
 {
 	if (cd_channel && cd_channel->sfx) {
-		int		vol = bgmvolume->value * 255;
+		int		vol = bgmvolume * 255;
 
 		cd_channel->master_vol = vol;
 		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
@@ -151,14 +167,14 @@ Load_Tracklist (void)
 	ogglistvalid = false;
 	mus_enabled = false;
 
-	if (!mus_ogglist || strequal (mus_ogglist->string, "none")) {
+	if (!mus_ogglist || strequal (mus_ogglist, "none")) {
 		return -1;		// bail if we don't have a valid filename
 	}
 
-	oggfile = QFS_FOpenFile (mus_ogglist->string);
+	oggfile = QFS_FOpenFile (mus_ogglist);
 	if (!oggfile) {
 		Sys_Printf ("Mus_OggInit: open of file \"%s\" failed\n",
-			mus_ogglist->string);
+			mus_ogglist);
 		return -1;
 	}
 
@@ -324,7 +340,7 @@ I_OGGMus_Info (void)
 		return;
 
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
-				"---------------------------\n", mus_ogglist->string);
+				"---------------------------\n", mus_ogglist);
 
 	/* loop, and count up the Highest key number. */
 	for (iter = 1, count = 0; count < keycount && iter <= 99 ; iter++) {
@@ -439,15 +455,14 @@ I_OGGMus_Update (void)
 
 /* called when the mus_ogglist cvar is changed */
 static void
-Mus_OggChange (cvar_t *ogglist)
+Mus_OggChange (void *data, const cvar_t *cvar)
 {
-	mus_ogglist = ogglist;
 	Load_Tracklist ();
 }
 
 /* change volume on sound object */
 static void
-Mus_VolChange (cvar_t *bgmvolume)
+Mus_VolChange (void *data, const cvar_t *bgmvolume)
 {
 	set_volume ();
 }
@@ -456,18 +471,15 @@ static void
 Mus_gamedir (int phase)
 {
 	if (phase)
-		Mus_OggChange (mus_ogglist);
+		Load_Tracklist ();
 }
 
 static void
 I_OGGMus_Init (void)
 {
 	/* check list file cvar, open list file, create map, close file. */
-	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
-							Mus_OggChange,
-							"filename of track to music file map");
-	bgmvolume = Cvar_Get ("bgmvolume", "1.0", CVAR_ARCHIVE, Mus_VolChange,
-						  "Volume of CD music");
+	Cvar_Register (&mus_ogglist_cvar, Mus_OggChange, 0);
+	Cvar_Register (&bgmvolume_cvar, Mus_VolChange, 0);
 	QFS_GamedirCallback (Mus_gamedir);
 }
 

@@ -257,28 +257,28 @@ typedef struct client_state_s {
 /*
   cvars
 */
-extern	struct cvar_s	*cl_netgraph;
-extern	struct cvar_s	*cl_netgraph_height;
-extern	struct cvar_s	*cl_netgraph_alpha;
-extern	struct cvar_s	*cl_netgraph_box;
+extern int cl_netgraph;
+extern int cl_netgraph_height;
+extern float cl_netgraph_alpha;
+extern int cl_netgraph_box;
 
-extern	struct cvar_s	*cl_draw_locs;
-extern	struct cvar_s	*cl_shownet;
+extern int cl_draw_locs;
+extern int cl_shownet;
 
-extern	struct cvar_s	*cl_name;
+extern char *cl_name;
 
-extern	struct cvar_s	*cl_model_crcs;
+extern int cl_model_crcs;
 
-extern	struct cvar_s	*rate;
+extern float rate;
 
-extern	struct cvar_s	*hud_ping;
-extern	struct cvar_s	*hud_pl;
+extern int hud_ping;
+extern int hud_pl;
 
-extern	struct cvar_s	*skin;
+extern char *skin;
 
-extern	struct cvar_s	*cl_fb_players;
+extern float cl_fb_players;
 
-extern struct cvar_s *hud_scoreboard_uid;
+extern int hud_scoreboard_uid;
 
 extern	client_state_t	cl;
 
@@ -294,7 +294,8 @@ extern	int			fps_count;
 extern struct cbuf_s *cl_cbuf;
 extern struct cbuf_s *cl_stbuf;
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 extern struct view_s *cl_netgraph_view;
 void CL_NetGraph (struct view_s *view);

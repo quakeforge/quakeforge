@@ -122,16 +122,16 @@ int IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info);
 
 void IN_ProcessEvents (void);
 
-void IN_UpdateGrab (struct cvar_s *);
+void IN_UpdateGrab (int grab);
 
 void IN_ClearStates (void);
 
-extern struct cvar_s		*in_grab;
-extern struct cvar_s		*in_amp;
-extern struct cvar_s		*in_pre_amp;
-extern struct cvar_s		*in_mouse_accel;
-extern struct cvar_s		*in_freelook;
-extern struct cvar_s		*lookstrafe;
+extern int in_grab;
+extern float in_amp;
+extern float in_pre_amp;
+extern int in_mouse_accel;
+extern int in_freelook;
+extern char *lookstrafe;
 
 #endif
 

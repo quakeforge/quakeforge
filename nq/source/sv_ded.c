@@ -46,10 +46,10 @@ client_static_t cls;
 
 worldscene_t cl_world;
 
-cvar_t     *cl_name;
-cvar_t     *cl_writecfg;
-cvar_t     *demo_speed;
-cvar_t     *chase_active;
+char *cl_name;
+int cl_writecfg;
+float demo_speed;
+int chase_active;
 
 int         fps_count;
 int         viewentity;

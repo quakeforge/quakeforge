@@ -40,7 +40,7 @@ extern int      win_canalttab;
 extern DEVMODE  win_gdevmode;
 extern struct sw_ctx_s *win_sw_context;
 extern int      win_minimized;
-extern struct cvar_s *vid_ddraw;
+extern int vid_ddraw;
 extern int      win_center_x, win_center_y;
 extern RECT     win_rect;
 

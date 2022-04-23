@@ -52,12 +52,12 @@ VID_SetGamma (double gamma)
 }
 
 static void
-VID_UpdateFullscreen (cvar_t *vid_fullscreen)
+VID_UpdateFullscreen (void *data, const cvar_t *cvar)
 {
 	if (!r_data || !viddef.initialized)
 		return;
-	if ((vid_fullscreen->int_val && !(sdl_screen->flags & SDL_FULLSCREEN))
-		|| (!vid_fullscreen->int_val && sdl_screen->flags & SDL_FULLSCREEN))
+	if ((cvar && !(sdl_screen->flags & SDL_FULLSCREEN))
+		|| (!cvar && sdl_screen->flags & SDL_FULLSCREEN))
 		if (!SDL_WM_ToggleFullScreen (sdl_screen))
 			Sys_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
 	IN_UpdateGrab (in_grab);
@@ -66,9 +66,6 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 void
 SDL_Init_Cvars (void)
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-							   VID_UpdateFullscreen,
-							   "Toggles fullscreen mode");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
+	Cvar_Register (&vid_fullscreen_cvar, VID_UpdateFullscreen, 0);
+	Cvar_Register (&vid_system_gamma_cvar, 0, 0);
 }

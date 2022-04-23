@@ -860,7 +860,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 	pr_method_t *method;
 	pr_sel_t   *sel;
 	int         i;
-	int         dev = developer->int_val;
+	int         dev = developer;
 	pr_string_t *names;
 
 	if (dev & SYS_rua_msg) {
@@ -882,7 +882,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
 				sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
-				if (developer->int_val & SYS_rua_msg) {
+				if (developer & SYS_rua_msg) {
 					names = probj->selector_names;
 					Sys_Printf ("  %s\n",
 								PR_GetString (pr, names[sel->sel_id]));
@@ -1214,7 +1214,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						class->instance_size,
 						class->ivars);
-		if (developer->int_val & SYS_rua_obj)
+		if (developer & SYS_rua_obj)
 			dump_ivars (probj, class->ivars);
 		Sys_MaskPrintf (SYS_rua_obj, "    instance methods: %x\n",
 						class->methods);
@@ -1224,7 +1224,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						meta->instance_size,
 						meta->ivars);
-		if (developer->int_val & SYS_rua_obj)
+		if (developer & SYS_rua_obj)
 			dump_ivars (probj, meta->ivars);
 
 		class->subclass_list = 0;
@@ -1482,7 +1482,7 @@ rua_obj_msg_sendv (progs_t *pr, void *data)
 	if (count < 2 || count > PR_MAX_PARAMS) {
 		PR_RunError (pr, "bad args count in obj_msg_sendv: %d", count);
 	}
-	if (pr_boundscheck->int_val) {
+	if (pr_boundscheck) {
 		PR_BoundsCheckSize (pr, args->list, count * pr->pr_param_size);
 	}
 

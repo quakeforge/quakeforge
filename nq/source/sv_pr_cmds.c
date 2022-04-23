@@ -949,7 +949,15 @@ PF_pointcontents (progs_t *pr, void *data)
 	R_FLOAT (pr) = SV_PointContents (v);
 }
 
-cvar_t     *sv_aim;
+float sv_aim;
+static cvar_t sv_aim_cvar = {
+	.name = "sv_aim",
+	.description =
+		"None",
+	.default_value = "0.93",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_aim },
+};
 
 /*
 	PF_aim
@@ -980,7 +988,7 @@ PF_aim (progs_t *pr, void *data)
 	VectorMultAdd (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 	if (tr.ent && SVfloat (tr.ent, takedamage) == DAMAGE_AIM
-		&& (!teamplay->int_val || SVfloat (ent, team) <= 0
+		&& (!teamplay || SVfloat (ent, team) <= 0
 			|| SVfloat (ent, team) != SVfloat (tr.ent, team))) {
 		VectorCopy (*sv_globals.v_forward, R_VECTOR (pr));
 		return;
@@ -988,7 +996,7 @@ PF_aim (progs_t *pr, void *data)
 
 	// try all possible entities
 	VectorCopy (dir, bestdir);
-	bestdist = sv_aim->value;
+	bestdist = sv_aim;
 	bestent = NULL;
 
 	check = NEXT_EDICT (pr, sv.edicts);
@@ -997,7 +1005,7 @@ PF_aim (progs_t *pr, void *data)
 			continue;
 		if (check == ent)
 			continue;
-		if (teamplay->int_val && SVfloat (ent, team) > 0
+		if (teamplay && SVfloat (ent, team) > 0
 			&& SVfloat (ent, team) == SVfloat (check, team))
 			continue;	// don't aim at teammate
 
@@ -1574,6 +1582,8 @@ static builtin_t builtins[] = {
 void
 SV_PR_Cmds_Init ()
 {
+	Cvar_Register (&sv_aim_cvar, 0, 0);
+
 	RUA_Init (&sv_pr_state, 1);
 
 	PR_Cmds_Init (&sv_pr_state);

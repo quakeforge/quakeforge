@@ -291,7 +291,7 @@ R_AddToLightmapChain (glbspctx_t *bctx, msurface_t *surf, instsurf_t *sc)
 
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 	  dynamic:
-		if (r_dynamic->int_val) {
+		if (r_dynamic) {
 			gl_lightmap_modified[surf->lightmaptexturenum] = true;
 			theRect = &gl_lightmap_rectchange[surf->lightmaptexturenum];
 			if (surf->light_t < theRect->t) {
@@ -321,7 +321,7 @@ gl_R_DrawWaterSurfaces (void)
 	int         i;
 	instsurf_t *s;
 	msurface_t *surf;
-	float       wateralpha = max (vr_data.min_wateralpha, r_wateralpha->value);
+	float       wateralpha = max (vr_data.min_wateralpha, r_wateralpha);
 
 	if (!waterchain)
 		return;
@@ -571,7 +571,7 @@ gl_R_DrawBrushModel (entity_t *e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
 		vec3_t      lightorigin;
 
 		for (unsigned k = 0; k < r_maxdlights; k++) {
@@ -727,7 +727,7 @@ gl_R_DrawWorld (void)
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
-	if (!gl_sky_clip->int_val) {
+	if (!gl_sky_clip) {
 		gl_R_DrawSky ();
 	}
 
@@ -740,7 +740,7 @@ gl_R_DrawWorld (void)
 
 	gl_R_DrawSkyChain (sky_chain);
 
-	if (r_drawentities->int_val) {
+	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
 			gl_R_DrawBrushModel (ent);
@@ -748,7 +748,7 @@ gl_R_DrawWorld (void)
 	}
 
 	if (!Fog_GetDensity ()
-		|| (gl_fb_bmodels->int_val && gl_mtex_fullbright)
+		|| (gl_fb_bmodels && gl_mtex_fullbright)
 		|| gl_mtex_active_tmus > 1) {
 		// we have enough active TMUs to render everything in one go
 		// or we're not doing fog
@@ -757,7 +757,7 @@ gl_R_DrawWorld (void)
 		if (gl_mtex_active_tmus <= 1)
 			gl_R_BlendLightmaps ();
 
-		if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
+		if (gl_fb_bmodels && !gl_mtex_fullbright)
 			R_RenderFullbrights ();
 	} else {
 		if (gl_mtex_active_tmus > 1) {
@@ -877,7 +877,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	}
 
 	// remove co-linear points - Ed
-	if (!gl_keeptjunctions->int_val && !(surf->flags & SURF_UNDERWATER)) {
+	if (!gl_keeptjunctions && !(surf->flags & SURF_UNDERWATER)) {
 		for (i = 0; i < lnumverts; ++i) {
 			vec3_t      v1, v2;
 			float      *prev, *this, *next;

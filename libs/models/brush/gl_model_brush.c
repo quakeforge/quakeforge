@@ -125,7 +125,7 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 		r_notexture_mip->render = &gl_notexture;
 		return;
 	}
-	if (gl_textures_external && gl_textures_external->int_val) {
+	if (gl_textures_external) {
 		if (Mod_LoadExternalTextures (mod, tx)) {
 			return;
 		}
@@ -239,8 +239,7 @@ SubdividePolygon (int numverts, float *verts)
 
 	for (i = 0; i < 3; i++) {
 		m = (mins[i] + maxs[i]) * 0.5;
-		m = gl_subdivide_size->value * floor (m / gl_subdivide_size->value +
-											  0.5);
+		m = gl_subdivide_size * floor (m / gl_subdivide_size + 0.5);
 		if (maxs[i] - m < 8)
 			continue;
 		if (m - mins[i] < 8)

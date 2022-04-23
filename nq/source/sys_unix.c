@@ -80,7 +80,7 @@ main (int argc, const char **argv)
 
 	Host_Init ();
 
-	if (!sys_nostdout->int_val) {
+	if (!sys_nostdout) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
@@ -92,14 +92,14 @@ main (int argc, const char **argv)
 		time = newtime - oldtime;
 
 		if (net_is_dedicated) {	// play vcrfiles at max speed
-			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+			if (time < sys_ticrate && (!vcrFile || recording)) {
 				usleep (1);
 				continue;			// not time to run a server-only tic yet
 			}
-			time = sys_ticrate->value;
+			time = sys_ticrate;
 		}
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

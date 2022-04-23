@@ -155,17 +155,9 @@ static void
 init_qf (void)
 {
 	Sys_Init ();
-	Cvar_Get ("developer", va (0, "%d", options.developer), 0, 0, 0);
+	developer = options.developer;
 
 	Memory_Init (Sys_Alloc (1024 * 1024), 1024 * 1024);
-
-	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
-	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
-	Cvar_Get ("pr_deadbeef_locals", "1", 0, 0, 0);
-
-	if (options.trace > 1) {
-		Cvar_SetValue (debug, 4);
-	}
 
 	test_pr.pr_edicts = &edicts;
 	test_pr.num_edicts = &num_edicts;
@@ -176,6 +168,10 @@ init_qf (void)
 	test_pr.no_exec_limit = 0;	// absolutely want a limit!
 
 	PR_Init_Cvars ();
+
+	pr_debug = options.trace > 1 ? 4 : 2;
+	pr_boundscheck = 2;
+	pr_deadbeef_locals = 1;
 
 	PR_AddLoadFunc (&test_pr, init_edicts);
 	PR_Init (&test_pr);

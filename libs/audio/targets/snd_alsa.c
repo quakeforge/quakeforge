@@ -53,10 +53,42 @@ static void		   *alsa_handle;
 static snd_pcm_t   *pcm;
 static snd_async_handler_t *async_handler;
 
-static cvar_t      *snd_bits;
-static cvar_t      *snd_device;
-static cvar_t      *snd_rate;
-static cvar_t      *snd_stereo;
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
+static char *snd_device;
+static cvar_t snd_device_cvar = {
+	.name = "snd_device",
+	.description =
+		"sound device. \"\" is system default",
+	.default_value = "",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_device },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
 
 //FIXME xfer probably should not be touching this (such data should probably
 //come through snd_t)
@@ -92,14 +124,10 @@ load_libasound (void)
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
-						 "sound device. \"\" is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_device_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
 }
 
 static __attribute__((const)) snd_pcm_uframes_t
@@ -415,13 +443,13 @@ alsa_playback_set_bps (snd_t *snd, snd_pcm_hw_params_t *hw)
 	int         res;
 	int         bps = 0;
 
-	if (snd_bits->int_val == 16) {
+	if (snd_bits == 16) {
 		bps = SND_PCM_FORMAT_S16_LE;
 		snd->samplebits = 16;
-	} else if (snd_bits->int_val == 8) {
+	} else if (snd_bits == 8) {
 		bps = SND_PCM_FORMAT_U8;
 		snd->samplebits = 8;
-	} else if (snd_bits->int_val) {
+	} else if (snd_bits) {
 		Sys_Printf ("snd_alsa: invalid sample bits: %d\n", bps);
 		return 0;
 	}
@@ -454,7 +482,7 @@ alsa_playback_set_channels (snd_t *snd, snd_pcm_hw_params_t *hw)
 	int         res;
 	int         channels = 1;
 
-	if (snd_stereo->int_val) {
+	if (snd_stereo) {
 		channels = 2;
 	}
 	if ((res = qfsnd_pcm_hw_params_set_channels (pcm, hw, channels)) == 0) {
@@ -473,8 +501,8 @@ alsa_playback_set_rate (snd_t *snd, snd_pcm_hw_params_t *hw)
 	unsigned    rate = 0;
 	static int  default_rates[] = { 48000, 44100, 22050, 11025, 0 };
 
-	if (snd_rate->int_val) {
-		rate = snd_rate->int_val;
+	if (snd_rate) {
+		rate = snd_rate;
 	}
 
 	if (rate) {
@@ -531,7 +559,7 @@ static int
 SNDDMA_Init (snd_t *snd)
 {
 	int         res;
-	const char *device = snd_device->string;
+	const char *device = snd_device;
 
 	snd_pcm_hw_params_t *hw;
 	snd_pcm_sw_params_t *sw;

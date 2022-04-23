@@ -134,53 +134,284 @@ qboolean    noclip_anglehack;			// remnant from old quake
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
 
-cvar_t     *cl_mem_size;
+float cl_mem_size;
+static cvar_t cl_mem_size_cvar = {
+	.name = "cl_mem_size",
+	.description =
+		"Amount of memory (in MB) to allocate for the "
+		PACKAGE_NAME
+		" heap",
+	.default_value = "32",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &cl_mem_size },
+};
 
-cvar_t     *rcon_password;
+char *rcon_password;
+static cvar_t rcon_password_cvar = {
+	.name = "rcon_password",
+	.description =
+		"Set the password for rcon 'root' commands",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &rcon_password },
+};
 
-cvar_t     *rcon_address;
+char *rcon_address;
+static cvar_t rcon_address_cvar = {
+	.name = "rcon_address",
+	.description =
+		"server IP address when client not connected - for sending rcon "
+		"commands",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &rcon_address },
+};
 
-cvar_t     *cl_writecfg;
-cvar_t     *cl_allow_cmd_pkt;
-cvar_t     *cl_cmd_pkt_adr;
-cvar_t     *cl_paranoid;
+int cl_writecfg;
+static cvar_t cl_writecfg_cvar = {
+	.name = "cl_writecfg",
+	.description =
+		"write config files?",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_writecfg },
+};
+int cl_allow_cmd_pkt;
+static cvar_t cl_allow_cmd_pkt_cvar = {
+	.name = "cl_allow_cmd_pkt",
+	.description =
+		"enables packets from the likes of gamespy",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_allow_cmd_pkt },
+};
+char *cl_cmd_pkt_adr;
+static cvar_t cl_cmd_pkt_adr_cvar = {
+	.name = "cl_cmd_pkt_adr",
+	.description =
+		"allowed address for non-local command packet",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &cl_cmd_pkt_adr },
+};
+int cl_paranoid;
+static cvar_t cl_paranoid_cvar = {
+	.name = "cl_paranoid",
+	.description =
+		"print source address of connectionless packets even when coming from "
+		"the server being connected to.",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_paranoid },
+};
 
-cvar_t     *cl_timeout;
+float cl_timeout;
+static cvar_t cl_timeout_cvar = {
+	.name = "cl_timeout",
+	.description =
+		"server connection timeout (since last packet received)",
+	.default_value = "60",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_timeout },
+};
 
-cvar_t     *cl_draw_locs;
-cvar_t     *cl_shownet;
-cvar_t     *cl_autoexec;
-cvar_t     *cl_quakerc;
-cvar_t     *cl_maxfps;
-cvar_t     *cl_usleep;
+int cl_draw_locs;
+static cvar_t cl_draw_locs_cvar = {
+	.name = "cl_draw_locs",
+	.description =
+		"Draw location markers.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_draw_locs },
+};
+int cl_shownet;
+static cvar_t cl_shownet_cvar = {
+	.name = "cl_shownet",
+	.description =
+		"show network packets. 0=off, 1=basic, 2=verbose",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_shownet },
+};
+int cl_autoexec;
+static cvar_t cl_autoexec_cvar = {
+	.name = "cl_autoexec",
+	.description =
+		"exec autoexec.cfg on gamedir change",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &cl_autoexec },
+};
+int cl_quakerc;
+static cvar_t cl_quakerc_cvar = {
+	.name = "cl_quakerc",
+	.description =
+		"exec quake.rc on startup",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_quakerc },
+};
+float cl_maxfps;
+static cvar_t cl_maxfps_cvar = {
+	.name = "cl_maxfps",
+	.description =
+		"maximum frames rendered in one second. 0 == 72",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_maxfps },
+};
+int cl_usleep;
+static cvar_t cl_usleep_cvar = {
+	.name = "cl_usleep",
+	.description =
+		"Turn this on to save cpu when fps limited. May affect frame rate "
+		"adversely depending on local machine/os conditions",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_usleep },
+};
 
-cvar_t     *cl_model_crcs;
+int cl_model_crcs;
+static cvar_t cl_model_crcs_cvar = {
+	.name = "cl_model_crcs",
+	.description =
+		"Controls setting of emodel and pmodel info vars. Required by some "
+		"servers, but clearing this can make the difference between connecting"
+		" and not connecting on some others.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_model_crcs },
+};
 
-cvar_t     *cl_predict_players;
-cvar_t     *cl_solid_players;
+int cl_predict_players;
+static cvar_t cl_predict_players_cvar = {
+	.name = "cl_predict_players",
+	.description =
+		"If this is 0, no player prediction is done",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_predict_players },
+};
+int cl_solid_players;
+static cvar_t cl_solid_players_cvar = {
+	.name = "cl_solid_players",
+	.description =
+		"Are players solid? If off, you can walk through them with difficulty",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_solid_players },
+};
 
-cvar_t     *localid;
+char *localid;
+static cvar_t localid_cvar = {
+	.name = "localid",
+	.description =
+		"Used by gamespy+others to authenticate when sending commands to the "
+		"client",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &localid },
+};
 
-cvar_t     *cl_port;
-cvar_t     *cl_autorecord;
+int cl_port;
+static cvar_t cl_port_cvar = {
+	.name = "cl_port",
+	.description =
+		"UDP Port for client to use.",
+	.default_value = PORT_CLIENT,
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_port },
+};
+int cl_autorecord;
+static cvar_t cl_autorecord_cvar = {
+	.name = "cl_autorecord",
+	.description =
+		"Turn this on, if you want to record every game",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_autorecord },
+};
 
-cvar_t     *cl_fb_players;
+float cl_fb_players;
+static cvar_t cl_fb_players_cvar = {
+	.name = "cl_fb_players",
+	.description =
+		"fullbrightness of player models. server must allow (via fbskins "
+		"serverinfo).",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_fb_players },
+};
 
 static qboolean allowremotecmd = true;
 
 /*  info mirrors */
-cvar_t     *password;
-cvar_t     *spectator;
-cvar_t     *cl_name;
-cvar_t     *team;
-cvar_t     *rate;
-cvar_t     *noaim;
-cvar_t     *msg;
+char *password;
+static cvar_t password_cvar = {
+	.name = "password",
+	.description =
+		"Set the server password for players",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &password },
+};
+char *spectator;
+static cvar_t spectator_cvar = {
+	.name = "spectator",
+	.description =
+		"Set to 1 before connecting to become a spectator",
+	.default_value = "",
+	.flags = CVAR_USERINFO,
+	.value = { .type = 0/* not used */, .value = &spectator },
+};
+char *cl_name;
+static cvar_t cl_name_cvar = {
+	.name = "_cl_name",
+	.description =
+		"Player name",
+	.default_value = "player",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &cl_name },
+};
+float team;
+static cvar_t team_cvar = {
+	.name = "team",
+	.description =
+		"Team player is on.",
+	.default_value = "",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = &cexpr_float, .value = &team },
+};
+float rate;
+static cvar_t rate_cvar = {
+	.name = "rate",
+	.description =
+		"Amount of bytes per second server will send/download to you",
+	.default_value = "10000",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = &cexpr_float, .value = &rate },
+};
+char *noaim;
+static cvar_t noaim_cvar = {
+	.name = "noaim",
+	.description =
+		"Auto aim off switch. Set to 1 to turn off.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = 0/* not used */, .value = &noaim },
+};
+char *msg;
+static cvar_t msg_cvar = {
+	.name = "msg",
+	.description =
+		"Determines the type of messages reported 0 is maximum, 4 is none",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
+	.value = { .type = 0/* not used */, .value = &msg },
+};
 
 /* GIB events */
 gib_event_t *cl_player_health_e, *cl_chat_e;
-
-static int  cl_usleep_cache;
 
 client_static_t cls;
 client_state_t cl;
@@ -204,11 +435,51 @@ double      oldcon_realtime;
 
 size_t      host_hunklevel;
 
-cvar_t     *host_speeds;
-cvar_t     *hud_fps;
-cvar_t     *hud_ping;
-cvar_t     *hud_pl;
-cvar_t     *hud_time;
+int host_speeds;
+static cvar_t host_speeds_cvar = {
+	.name = "host_speeds",
+	.description =
+		"set for running times",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &host_speeds },
+};
+int hud_fps;
+static cvar_t hud_fps_cvar = {
+	.name = "hud_fps",
+	.description =
+		"display realtime frames per second",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_fps },
+};
+int hud_ping;
+static cvar_t hud_ping_cvar = {
+	.name = "hud_ping",
+	.description =
+		"display current ping to server",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_ping },
+};
+int hud_pl;
+static cvar_t hud_pl_cvar = {
+	.name = "hud_pl",
+	.description =
+		"display current packet loss to server",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_pl },
+};
+int hud_time;
+static cvar_t hud_time_cvar = {
+	.name = "hud_time",
+	.description =
+		"display the current time",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_time },
+};
 
 int         fps_count;
 
@@ -272,7 +543,7 @@ CL_SendConnectPacket (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	cls.qport = qport->int_val;
+	cls.qport = qport;
 
 	data = dstring_new ();
 	dsprintf (data, "%c%c%c%cconnect %i %i %i \"%s\"\n",
@@ -360,18 +631,18 @@ CL_Rcon_f (void)
 	if (!message)
 		message = dstring_new ();
 
-	dsprintf (message, "\377\377\377\377rcon %s %s", rcon_password->string,
+	dsprintf (message, "\377\377\377\377rcon %s %s", rcon_password,
 			  Cmd_Args (1));
 
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
 	else {
-		if (!rcon_address->string[0]) {
+		if (!rcon_address[0]) {
 			Sys_Printf ("You must either be connected, or set the "
 						"'rcon_address' cvar to issue rcon commands\n");
 			return;
 		}
-		NET_StringToAdr (rcon_address->string, &to);
+		NET_StringToAdr (rcon_address, &to);
 		if (to.port == 0)
 			to.port = BigShort (27500);
 	}
@@ -639,7 +910,7 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
-		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
+		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.watervis = atoi (p);
@@ -867,7 +1138,7 @@ CL_ConnectionlessPacket (void)
 	if (net_message->badread)
 		return;
 	if (!cls.demoplayback
-		&& (cl_paranoid->int_val
+		&& (cl_paranoid
 			|| !NET_CompareAdr (net_from, cls.server_addr)))
 		Sys_Printf ("%s: ", NET_AdrToString (net_from));
 	if (c == S2C_CONNECTION) {
@@ -893,16 +1164,16 @@ CL_ConnectionlessPacket (void)
 
 		Sys_Printf ("client command\n");
 
-		if (!cl_allow_cmd_pkt->int_val
+		if (!cl_allow_cmd_pkt
 			|| (!NET_CompareBaseAdr (net_from, net_local_adr)
 				&& !NET_CompareBaseAdr (net_from, net_loopback_adr)
-				&& (!cl_cmd_pkt_adr->string[0]
+				&& (!cl_cmd_pkt_adr[0]
 					|| !NET_CompareBaseAdr (net_from,
 											cl_cmd_packet_address)))) {
 			Sys_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
-		if (cl_cmd_pkt_adr->string[0]
+		if (cl_cmd_pkt_adr[0]
 			&& NET_CompareBaseAdr (net_from, cl_cmd_packet_address))
 			allowremotecmd = false; // force password checking
 		s = MSG_ReadString (net_message);
@@ -918,10 +1189,10 @@ CL_ConnectionlessPacket (void)
 		while (len && isspace ((byte) s[len - 1]))
 			len--;
 
-		if (!allowremotecmd && (!*localid->string ||
-								(int) strlen (localid->string) > len ||
-								strncmp (localid->string, s, len))) {
-			if (!*localid->string) {
+		if (!allowremotecmd && (!*localid ||
+								(int) strlen (localid) > len ||
+								strncmp (localid, s, len))) {
+			if (!*localid) {
 				Sys_Printf ("===========================\n");
 				Sys_Printf ("Command packet received from local host, but no "
 							"localid has been set.  You may need to upgrade "
@@ -934,9 +1205,9 @@ CL_ConnectionlessPacket (void)
 				("Invalid localid on command packet received from local host. "
 				 "\n|%s| != |%s|\n"
 				 "You may need to reload your server browser and %s.\n", s,
-				 localid->string, PACKAGE_NAME);
+				 localid, PACKAGE_NAME);
 			Sys_Printf ("===========================\n");
-			Cvar_Set (localid, "");
+			Cvar_Set ("localid", "");
 			return;
 		}
 
@@ -953,7 +1224,7 @@ CL_ConnectionlessPacket (void)
 			Sys_Printf ("status response\n");
 			return;
 		} else if (!cls.demoplayback
-				   && (cl_paranoid->int_val
+				   && (cl_paranoid
 					   || !NET_CompareAdr (net_from, cls.server_addr))) {
 			Sys_Printf ("print\n");
 		}
@@ -1028,7 +1299,7 @@ CL_ReadPackets (void)
 			continue;
 		}
 
-		if (cls.demoplayback && net_packetlog->int_val)
+		if (cls.demoplayback && net_packetlog)
 			Log_Incoming_Packet (net_message->message->data,
 								 net_message->message->cursize, 0);
 
@@ -1068,7 +1339,7 @@ CL_ReadPackets (void)
 
 	// check timeout
 	if (!cls.demoplayback && cls.state >= ca_connected
-		&& realtime - cls.netchan.last_received > cl_timeout->value) {
+		&& realtime - cls.netchan.last_received > cl_timeout) {
 		Sys_Printf ("\nServer connection timed out.\n");
 		CL_Disconnect ();
 		return;
@@ -1160,7 +1431,7 @@ CL_SetState (cactive_t state)
 			CL_ClearState ();
 
 			// Auto demo recorder stops here
-			if (cl_autorecord->int_val && cls.demorecording)
+			if (cl_autorecord && cls.demorecording)
 				CL_StopRecording ();
 
 			r_funcs->R_ClearState ();
@@ -1170,7 +1441,7 @@ CL_SetState (cactive_t state)
 			IN_ClearStates ();
 
 			// Auto demo recorder starts here
-			if (cl_autorecord->int_val && !cls.demoplayback
+			if (cl_autorecord && !cls.demoplayback
 				&& !cls.demorecording)
 				CL_Record (0, -1);
 		}
@@ -1304,33 +1575,27 @@ CL_Init (void)
 }
 
 static void
-cl_usleep_f (cvar_t *var)
+cl_cmd_pkt_adr_f (void *data, const cvar_t *cvar)
 {
-	cl_usleep_cache = var->int_val;
-}
-
-static void
-cl_cmd_pkt_adr_f (cvar_t *var)
-{
-	if (var->string[0])
-		NET_StringToAdr (var->string, &cl_cmd_packet_address);
+	if (cl_cmd_pkt_adr[0])
+		NET_StringToAdr (cl_cmd_pkt_adr, &cl_cmd_packet_address);
 	else
 		memset (&cl_cmd_packet_address, 0, sizeof (cl_cmd_packet_address));
 }
 
 static void
-cl_pitchspeed_f (cvar_t *var)
+cl_pitchspeed_f (void *data, const cvar_t *var)
 {
-	if ((cl.fpd & FPD_LIMIT_PITCH) && var->value > FPD_MAXPITCH) {
-		var->value = FPD_MAXPITCH;
+	if ((cl.fpd & FPD_LIMIT_PITCH) && cl_pitchspeed > FPD_MAXPITCH) {
+		cl_pitchspeed = FPD_MAXPITCH;
 	}
 }
 
 static void
-cl_yawspeed_f (cvar_t *var)
+cl_yawspeed_f (void *data, const cvar_t *var)
 {
-	if ((cl.fpd & FPD_LIMIT_YAW) && var->value > FPD_MAXYAW) {
-		var->value = FPD_MAXYAW;
+	if ((cl.fpd & FPD_LIMIT_YAW) && cl_yawspeed > FPD_MAXYAW) {
+		cl_yawspeed = FPD_MAXYAW;
 	}
 }
 
@@ -1353,91 +1618,48 @@ CL_Init_Cvars (void)
 	Chase_Init_Cvars ();
 	V_Init_Cvars ();
 
-	cl_pitchspeed->callback = cl_pitchspeed_f;
-	cl_yawspeed->callback = cl_yawspeed_f;
+	cvar_t *var;
+	var = Cvar_FindVar ("cl_pitchspeed");
+	Cvar_AddListener (var, cl_pitchspeed_f, 0);
+	var = Cvar_FindVar ("cl_yawspeed");
+	Cvar_AddListener (var, cl_yawspeed_f, 0);
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
-	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
-							  "Controls setting of emodel and pmodel info "
-							  "vars. Required by some servers, but clearing "
-							  "this can make the difference between "
-							  "connecting and not connecting on some others.");
-	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
-								 "enables packets from the likes of gamespy");
-	cl_cmd_pkt_adr = Cvar_Get ("cl_cmd_pkt_adr", "", CVAR_NONE,
-							   cl_cmd_pkt_adr_f,
-							   "allowed address for non-local command packet");
-	cl_paranoid = Cvar_Get ("cl_paranoid", "1", CVAR_NONE, NULL,
-							"print source address of connectionless packets"
-							" even when coming from the server being connected"
-							" to.");
-	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
-							"exec autoexec.cfg on gamedir change");
-	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
-						   "exec quake.rc on startup");
-	cl_fb_players = Cvar_Get ("cl_fb_players", "0", CVAR_ARCHIVE, NULL, "fullbrightness of player models. "
-							"server must allow (via fbskins serverinfo).");
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
-							"write config files?");
-	cl_draw_locs = Cvar_Get ("cl_draw_locs", "0", CVAR_NONE, NULL,
-						   "Draw location markers.");
-	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
-						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, NULL,
-						  "maximum frames rendered in one second. 0 == 72");
-	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, NULL, "server "
-						   "connection timeout (since last packet received)");
-	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
-							"display host processing times");
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
-							  "remote control password");
-	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
-							 "address when client not connected - for "
-							 "sending rcon commands");
-	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
-						"display realtime frames per second");
-	Cvar_MakeAlias ("show_fps", hud_fps);
-	hud_ping = Cvar_Get ("hud_ping", "0", CVAR_ARCHIVE, NULL,
-						 "display current ping to server");
-	hud_pl = Cvar_Get ("hud_pl", "0", CVAR_ARCHIVE, NULL,
-					   "display current packet loss to server");
-	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
-						 "Display the current time, 1 24hr, 2 AM/PM");
-	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
-								   "If this is 0, no player prediction is "
-								   "done");
-	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE, NULL,
-								 "Are players solid? If off, you can walk "
-								 "through them with difficulty");
-	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "Used by "
-								 "gamespy+others to authenticate when sending "
-								 "commands to the client");
+	Cvar_Register (&cl_model_crcs_cvar, 0, 0);
+	Cvar_Register (&cl_allow_cmd_pkt_cvar, 0, 0);
+	Cvar_Register (&cl_cmd_pkt_adr_cvar, cl_cmd_pkt_adr_f, 0);
+	Cvar_Register (&cl_paranoid_cvar, 0, 0);
+	Cvar_Register (&cl_autoexec_cvar, 0, 0);
+	Cvar_Register (&cl_quakerc_cvar, 0, 0);
+	Cvar_Register (&cl_fb_players_cvar, 0, 0);
+	Cvar_Register (&cl_writecfg_cvar, 0, 0);
+	Cvar_Register (&cl_draw_locs_cvar, 0, 0);
+	Cvar_Register (&cl_shownet_cvar, 0, 0);
+	Cvar_Register (&cl_maxfps_cvar, 0, 0);
+	Cvar_Register (&cl_timeout_cvar, 0, 0);
+	Cvar_Register (&host_speeds_cvar, 0, 0);
+	Cvar_Register (&rcon_password_cvar, 0, 0);
+	Cvar_Register (&rcon_address_cvar, 0, 0);
+	Cvar_Register (&hud_fps_cvar, 0, 0);
+	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
+	Cvar_Register (&hud_ping_cvar, 0, 0);
+	Cvar_Register (&hud_pl_cvar, 0, 0);
+	Cvar_Register (&hud_time_cvar, 0, 0);
+	Cvar_Register (&cl_predict_players_cvar, 0, 0);
+	Cvar_Register (&cl_solid_players_cvar, 0, 0);
+	Cvar_Register (&localid_cvar, 0, 0);
 	// info mirrors
-	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
-						Cvar_Info, "Player name");
-	password = Cvar_Get ("password", "", CVAR_USERINFO, Cvar_Info,
-						 "Server password");
-	spectator = Cvar_Get ("spectator", "", CVAR_USERINFO, Cvar_Info,
-						  "Set to 1 before connecting to become a spectator");
-	team = Cvar_Get ("team", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					 "Team player is on.");
-	rate = Cvar_Get ("rate", "10000", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					 "Amount of bytes per second server will send/download "
-					 "to you");
-	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					"Determines the type of messages reported 0 is maximum, "
-					"4 is none");
-	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					  "Auto aim off switch. Set to 1 to turn off.");
-	cl_port = Cvar_Get ("cl_port", PORT_CLIENT, CVAR_NONE, Cvar_Info,
-						"UDP Port for client to use.");
-	cl_usleep = Cvar_Get ("cl_usleep", "1", CVAR_ARCHIVE, cl_usleep_f,
-						  "Turn this on to save cpu when fps limited. "
-						  "May affect frame rate adversely depending on "
-						  "local machine/os conditions");
-	cl_autorecord = Cvar_Get ("cl_autorecord", "0", CVAR_ARCHIVE, NULL, "Turn "
-							  "this on, if you want to record every game");
+	Cvar_Register (&cl_name_cvar, 0, 0);
+	Cvar_Register (&password_cvar, 0, 0);
+	Cvar_Register (&spectator_cvar, Cvar_Info, &spectator);
+	Cvar_Register (&team_cvar, Cvar_Info, &team);
+	Cvar_Register (&rate_cvar, Cvar_Info, &rate);
+	Cvar_Register (&msg_cvar, Cvar_Info, &msg);
+	Cvar_Register (&noaim_cvar, Cvar_Info, &noaim);
+	Cvar_Register (&cl_port_cvar, Cvar_Info, &cl_port);
+	Cvar_Register (&cl_usleep_cvar, 0, 0);
+	Cvar_Register (&cl_autorecord_cvar, 0, 0);
 }
 
 /*
@@ -1507,7 +1729,7 @@ Host_Error (const char *error, ...)
 void
 Host_WriteConfiguration (void)
 {
-	if (host_initialized && cl_writecfg->int_val) {
+	if (host_initialized && cl_writecfg) {
 		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
@@ -1561,14 +1783,14 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 	// should be used to set up defaults on the assumption that the user has
 	// things set up to work with another (hopefully compatible) client
 	if (Host_ReadConfiguration ("quakeforge.cfg")) {
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		Cmd_StuffCmds (cbuf);
 		COM_Check_quakerc ("startdemos", cbuf);
 	} else {
 		if (!skip_quakerc) {
 			Cbuf_InsertText (cbuf, "exec quake.rc\n");
 		}
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		// Reparse the command line for + commands.
 		// (sets still done, but it doesn't matter)
 		// (Note, no non-base commands exist yet)
@@ -1593,7 +1815,7 @@ Host_SimulationTime (float time)
 	con_realtime += time;
 
 	if (cls.demoplayback) {
-		timescale = max (0, demo_speed->value);
+		timescale = max (0, demo_speed);
 		time *= timescale;
 	}
 
@@ -1604,10 +1826,10 @@ Host_SimulationTime (float time)
 	if (cls.demoplayback)
 		return 0;
 
-	if (cl_maxfps->value <= 0)
+	if (cl_maxfps <= 0)
 		fps = 72;
 	else
-		fps = min (cl_maxfps->value, 72);
+		fps = min (cl_maxfps, 72);
 
 	timedifference = (timescale / fps) - (realtime - oldrealtime);
 
@@ -1655,7 +1877,7 @@ Host_Frame (float time)
 	// decide the simulation time
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
 #ifdef HAVE_USLEEP
-		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
+		if (cl_usleep && sleeptime > 0.002) // minimum sleep time
 			usleep ((unsigned long) (sleeptime * 1000000 / 2));
 #endif
 		return;					// framerate is too high
@@ -1716,14 +1938,14 @@ Host_Frame (float time)
 		CL_PredictMove ();
 
 		// Set up prediction for other players
-		CL_SetUpPlayerPrediction (cl_predict_players->int_val);
+		CL_SetUpPlayerPrediction (cl_predict_players);
 
 		// build a refresh entity list
 		CL_EmitEntities ();
 	}
 
 	// update video
-	if (host_speeds->int_val)
+	if (host_speeds)
 		time1 = Sys_DoubleTime ();
 
 	r_data->inhibit_viewmodel = (!Cam_DrawViewModel ()
@@ -1733,7 +1955,7 @@ Host_Frame (float time)
 
 	CL_UpdateScreen (realtime);
 
-	if (host_speeds->int_val)
+	if (host_speeds)
 		time2 = Sys_DoubleTime ();
 
 	// update audio
@@ -1753,7 +1975,7 @@ Host_Frame (float time)
 
 	CDAudio_Update ();
 
-	if (host_speeds->int_val) {
+	if (host_speeds) {
 		pass1 = (time1 - time3) * 1000;
 		time3 = Sys_DoubleTime ();
 		pass2 = (time2 - time1) * 1000;
@@ -1777,18 +1999,15 @@ CL_Init_Memory (void)
 	size_t      mem_size;
 	void       *mem_base;
 
-	cl_mem_size = Cvar_Get ("cl_mem_size", "32", CVAR_NONE, NULL,
-							"Amount of memory (in MB) to allocate for the "
-							PACKAGE_NAME " heap");
+	Cvar_Register (&cl_mem_size_cvar, 0, 0);
 	if (mem_parm)
-		Cvar_Set (cl_mem_size, com_argv[mem_parm + 1]);
+		Cvar_Set ("cl_mem_size", com_argv[mem_parm + 1]);
 
 	if (COM_CheckParm ("-minmemory"))
-		Cvar_SetValue (cl_mem_size, MINIMUM_MEMORY / (1024 * 1024.0));
+		cl_mem_size = MINIMUM_MEMORY / (1024 * 1024.0);
 
-	Cvar_SetFlags (cl_mem_size, cl_mem_size->flags | CVAR_ROM);
 
-	mem_size = ((size_t) cl_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) cl_mem_size * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -1802,7 +2021,7 @@ CL_Init_Memory (void)
 	Sys_PageIn (mem_base, mem_size);
 	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
 
-	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
+	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size);
 	return hunk;
 }
 
@@ -1812,7 +2031,7 @@ CL_Autoexec (int phase)
 	if (!phase)
 		return;
 	if (!Host_ReadConfiguration ("quakeforge.cfg")) {
-		int         cmd_warncmd_val = cmd_warncmd->int_val;
+		int         cmd_warncmd_val = cmd_warncmd;
 
 		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
 		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
@@ -1821,7 +2040,7 @@ CL_Autoexec (int phase)
 		Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
 	}
 
-	if (cl_autoexec->int_val) {
+	if (cl_autoexec) {
 		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 	}
 }
@@ -1856,7 +2075,7 @@ Host_Init (void)
 	CL_Cmd_Init ();
 	Game_Init ();
 
-	NET_Init (cl_port->int_val);
+	NET_Init (cl_port);
 	Netchan_Init ();
 	net_realtime = &realtime;
 	{
@@ -1876,7 +2095,7 @@ Host_Init (void)
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);
 
-	Host_ExecConfig (cl_cbuf, !cl_quakerc->int_val);
+	Host_ExecConfig (cl_cbuf, !cl_quakerc);
 
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);

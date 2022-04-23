@@ -55,23 +55,151 @@ sv_fields_t sv_fields;
 edict_t sv_edicts[MAX_EDICTS];
 sv_data_t sv_data[MAX_EDICTS];
 
-cvar_t     *sv_progs;
-cvar_t     *sv_progs_zone;
-cvar_t     *sv_progs_stack;
-cvar_t     *sv_progs_ext;
-cvar_t     *pr_checkextensions;
+char *sv_progs;
+static cvar_t sv_progs_cvar = {
+	.name = "sv_progs",
+	.description =
+		"Override the default game progs.",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs },
+};
+int sv_progs_zone;
+static cvar_t sv_progs_zone_cvar = {
+	.name = "sv_progs_zone",
+	.description =
+		"size of the zone for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_zone },
+};
+int sv_progs_stack;
+static cvar_t sv_progs_stack_cvar = {
+	.name = "sv_progs_stack",
+	.description =
+		"size of the stack for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_stack },
+};
+char *sv_progs_ext;
+static cvar_t sv_progs_ext_cvar = {
+	.name = "sv_progs_ext",
+	.description =
+		"extention mapping to use: none, id, qf",
+	.default_value = "qf",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs_ext },
+};
+char *pr_checkextensions;
+static cvar_t pr_checkextensions_cvar = {
+	.name = "pr_checkextensions",
+	.description =
+		"indicate the presence of the checkextentions qc function",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = 0/* not used */, .value = &pr_checkextensions },
+};
 
-cvar_t     *nomonsters;
-cvar_t     *gamecfg;
-cvar_t     *scratch1;
-cvar_t     *scratch2;
-cvar_t     *scratch3;
-cvar_t     *scratch4;
-cvar_t     *savedgamecfg;
-cvar_t     *saved1;
-cvar_t     *saved2;
-cvar_t     *saved3;
-cvar_t     *saved4;
+char *nomonsters;
+static cvar_t nomonsters_cvar = {
+	.name = "nomonsters",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &nomonsters },
+};
+char *gamecfg;
+static cvar_t gamecfg_cvar = {
+	.name = "gamecfg",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &gamecfg },
+};
+char *scratch1;
+static cvar_t scratch1_cvar = {
+	.name = "scratch1",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &scratch1 },
+};
+char *scratch2;
+static cvar_t scratch2_cvar = {
+	.name = "scratch2",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &scratch2 },
+};
+char *scratch3;
+static cvar_t scratch3_cvar = {
+	.name = "scratch3",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &scratch3 },
+};
+char *scratch4;
+static cvar_t scratch4_cvar = {
+	.name = "scratch4",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &scratch4 },
+};
+char *savedgamecfg;
+static cvar_t savedgamecfg_cvar = {
+	.name = "savedgamecfg",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &savedgamecfg },
+};
+char *saved1;
+static cvar_t saved1_cvar = {
+	.name = "saved1",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &saved1 },
+};
+char *saved2;
+static cvar_t saved2_cvar = {
+	.name = "saved2",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &saved2 },
+};
+char *saved3;
+static cvar_t saved3_cvar = {
+	.name = "saved3",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &saved3 },
+};
+char *saved4;
+static cvar_t saved4_cvar = {
+	.name = "saved4",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &saved4 },
+};
 
 static int sv_range;
 
@@ -93,7 +221,7 @@ static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
 	// remove things from different skill levels or deathmatch
-	if (deathmatch->int_val) {
+	if (deathmatch) {
 		if (((int) SVfloat (ent, spawnflags)
 			& SPAWNFLAG_NOT_DEATHMATCH)) {
 			return 1;
@@ -493,10 +621,10 @@ SV_LoadProgs (void)
 	const char *progs_name = "progs.dat";
 	const char *range;
 
-	if (strequal (sv_progs_ext->string, "qf")) {
+	if (strequal (sv_progs_ext, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
-	} else if (strequal (sv_progs_ext->string, "id")) {
+	} else if (strequal (sv_progs_ext, "id")) {
 		sv_range = PR_RANGE_ID;
 		range = "ID";
 	} else {
@@ -510,12 +638,12 @@ SV_LoadProgs (void)
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
-	if (*sv_progs->string)
-		progs_name = sv_progs->string;
+	if (*sv_progs)
+		progs_name = sv_progs;
 
 	sv_pr_state.max_edicts = sv.max_edicts;
-	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
-	sv_pr_state.stack_size = sv_progs_stack->int_val * 1024;
+	sv_pr_state.zone_size = sv_progs_zone * 1024;
+	sv_pr_state.stack_size = sv_progs_stack * 1024;
 	sv.edicts = sv_edicts;
 
 	PR_LoadProgs (&sv_pr_state, progs_name);
@@ -559,30 +687,21 @@ void
 SV_Progs_Init_Cvars (void)
 {
 	PR_Init_Cvars ();
-	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
-						 "Override the default game progs.");
-	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
-							  "size of the zone for progs in kb");
-	sv_progs_stack = Cvar_Get ("sv_progs_stack", "256", CVAR_NONE, NULL,
-							  "size of the stack for progs in kb");
-	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
-							 "extention mapping to use: "
-							 "none, id, qf");
-	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
-								   "indicate the presence of the "
-								   "checkextentions qc function");
+	Cvar_Register (&sv_progs_cvar, 0, 0);
+	Cvar_Register (&sv_progs_zone_cvar, 0, 0);
+	Cvar_Register (&sv_progs_stack_cvar, 0, 0);
+	Cvar_Register (&sv_progs_ext_cvar, 0, 0);
+	Cvar_Register (&pr_checkextensions_cvar, 0, 0);
 
-	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, NULL,
-						   "No Description");
-	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, NULL, "No Description");
-	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, NULL, "No Description");
-	scratch2 = Cvar_Get ("scratch2", "0", CVAR_NONE, NULL, "No Description");
-	scratch3 = Cvar_Get ("scratch3", "0", CVAR_NONE, NULL, "No Description");
-	scratch4 = Cvar_Get ("scratch4", "0", CVAR_NONE, NULL, "No Description");
-	savedgamecfg = Cvar_Get ("savedgamecfg", "0", CVAR_ARCHIVE, NULL,
-							 "No Description");
-	saved1 = Cvar_Get ("saved1", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved2 = Cvar_Get ("saved2", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved3 = Cvar_Get ("saved3", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved4 = Cvar_Get ("saved4", "0", CVAR_ARCHIVE, NULL, "No Description");
+	Cvar_Register (&nomonsters_cvar, 0, 0);
+	Cvar_Register (&gamecfg_cvar, 0, 0);
+	Cvar_Register (&scratch1_cvar, 0, 0);
+	Cvar_Register (&scratch2_cvar, 0, 0);
+	Cvar_Register (&scratch3_cvar, 0, 0);
+	Cvar_Register (&scratch4_cvar, 0, 0);
+	Cvar_Register (&savedgamecfg_cvar, 0, 0);
+	Cvar_Register (&saved1_cvar, 0, 0);
+	Cvar_Register (&saved2_cvar, 0, 0);
+	Cvar_Register (&saved3_cvar, 0, 0);
+	Cvar_Register (&saved4_cvar, 0, 0);
 }

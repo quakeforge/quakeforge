@@ -80,34 +80,215 @@ edict_t    *sv_player;
 
 usercmd_t   cmd;
 
-cvar_t     *sv_antilag;
-cvar_t     *sv_antilag_frac;
+int sv_maxrate;
+static cvar_t sv_maxrate_cvar = {
+	.name = "sv_maxrate",
+	.description =
+		"Maximum allowable rate",
+	.default_value = "10000",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &sv_maxrate },
+};
+										// capped)
+int sv_antilag;
+static cvar_t sv_antilag_cvar = {
+	.name = "sv_antilag",
+	.description =
+		"Attempt to backdate impacts to compensate for lag. 0=completely off. "
+		"1=mod-controlled. 2=forced, which might break certain uses of "
+		"traceline.",
+	.default_value = "1",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &sv_antilag },
+};
+float sv_antilag_frac;
+static cvar_t sv_antilag_frac_cvar = {
+	.name = "sv_antilag_frac",
+	.description =
+		"FIXME something to do with sv_antilag",
+	.default_value = "1",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &sv_antilag_frac },
+};
 
-cvar_t     *sv_accelerate;
-cvar_t     *sv_airaccelerate;
-cvar_t     *sv_maxspeed;
-cvar_t     *sv_spectatormaxspeed;
-cvar_t     *sv_wateraccelerate;
-cvar_t     *sv_waterfriction;
+float sv_accelerate;
+static cvar_t sv_accelerate_cvar = {
+	.name = "sv_accelerate",
+	.description =
+		"None",
+	.default_value = "10",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_accelerate },
+};
+float sv_airaccelerate;
+static cvar_t sv_airaccelerate_cvar = {
+	.name = "sv_airaccelerate",
+	.description =
+		"Sets how quickly the players accelerate in air",
+	.default_value = "0.7",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_airaccelerate },
+};
+float sv_maxspeed;
+static cvar_t sv_maxspeed_cvar = {
+	.name = "sv_maxspeed",
+	.description =
+		"None",
+	.default_value = "320",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &sv_maxspeed },
+};
+float sv_spectatormaxspeed;
+static cvar_t sv_spectatormaxspeed_cvar = {
+	.name = "sv_spectatormaxspeed",
+	.description =
+		"Sets the maximum speed a spectator can move",
+	.default_value = "500",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_spectatormaxspeed },
+};
+float sv_wateraccelerate;
+static cvar_t sv_wateraccelerate_cvar = {
+	.name = "sv_wateraccelerate",
+	.description =
+		"Sets the water acceleration value",
+	.default_value = "10",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_wateraccelerate },
+};
+float sv_waterfriction;
+static cvar_t sv_waterfriction_cvar = {
+	.name = "sv_waterfriction",
+	.description =
+		"Sets the water friction value",
+	.default_value = "4",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_waterfriction },
+};
 
-cvar_t     *sv_allowfake;
+int sv_allowfake;
+static cvar_t sv_allowfake_cvar = {
+	.name = "sv_allowfake",
+	.description =
+		"Allow 'fake' messages (FuhQuake $\\). 1 = always, 2 = only say_team",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_allowfake },
+};
 
-cvar_t     *cl_rollspeed;
-cvar_t     *cl_rollangle;
-cvar_t     *sv_spectalk;
+float cl_rollspeed;
+static cvar_t cl_rollspeed_cvar = {
+	.name = "cl_rollspeed",
+	.description =
+		"How quickly you straighten out after strafing",
+	.default_value = "200",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_rollspeed },
+};
+float cl_rollangle;
+static cvar_t cl_rollangle_cvar = {
+	.name = "cl_rollangle",
+	.description =
+		"How much your screen tilts when strafing",
+	.default_value = "2.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_rollangle },
+};
+int sv_spectalk;
+static cvar_t sv_spectalk_cvar = {
+	.name = "sv_spectalk",
+	.description =
+		"Toggles the ability of spectators to talk to players",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_spectalk },
+};
 
-cvar_t     *sv_kickfake;
+int sv_kickfake;
+static cvar_t sv_kickfake_cvar = {
+	.name = "sv_kickfake",
+	.description =
+		"Kick users sending to send fake talk messages",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_kickfake },
+};
 
-cvar_t     *sv_mapcheck;
+int sv_mapcheck;
+static cvar_t sv_mapcheck_cvar = {
+	.name = "sv_mapcheck",
+	.description =
+		"Toggle the use of map checksumming to check for players who edit maps"
+		" to cheat",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_mapcheck },
+};
 
-cvar_t     *sv_timecheck_mode;
-cvar_t     *sv_timekick;
-cvar_t     *sv_timekick_fuzz;
-cvar_t     *sv_timekick_interval;
-cvar_t     *sv_timecheck_fuzz;
-cvar_t     *sv_timecheck_decay;
+int sv_timecheck_mode;
+static cvar_t sv_timecheck_mode_cvar = {
+	.name = "sv_timecheck_mode",
+	.description =
+		"select between timekick (0, default) and timecheck (1)",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_timecheck_mode },
+};
+int sv_timekick;
+static cvar_t sv_timekick_cvar = {
+	.name = "sv_timekick",
+	.description =
+		"Time cheat protection",
+	.default_value = "3",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &sv_timekick },
+};
+float sv_timekick_fuzz;
+static cvar_t sv_timekick_fuzz_cvar = {
+	.name = "sv_timekick_fuzz",
+	.description =
+		"Time cheat \"fuzz factor\" in milliseconds",
+	.default_value = "30",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_timekick_fuzz },
+};
+float sv_timekick_interval;
+static cvar_t sv_timekick_interval_cvar = {
+	.name = "sv_timekick_interval",
+	.description =
+		"Time cheat check interval in seconds",
+	.default_value = "30",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_timekick_interval },
+};
+int sv_timecheck_fuzz;
+static cvar_t sv_timecheck_fuzz_cvar = {
+	.name = "sv_timecheck_fuzz",
+	.description =
+		"Milliseconds of tolerance before time cheat throttling kicks in.",
+	.default_value = "250",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_timecheck_fuzz },
+};
+int sv_timecheck_decay;
+static cvar_t sv_timecheck_decay_cvar = {
+	.name = "sv_timecheck_decay",
+	.description =
+		"Rate at which time inaccuracies are \"forgiven\".",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_timecheck_decay },
+};
 
-cvar_t     *sv_http_url_base;
+char *sv_http_url_base;
+static cvar_t sv_http_url_base_cvar = {
+	.name = "sv_http_url_base",
+	.description =
+		"set to base url for http redirects of downloaded files",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_http_url_base },
+};
 
 static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (PRINTF, 2, 3)));
 
@@ -335,7 +516,7 @@ SV_PreSpawn_f (void *unused)
 
 //      Sys_MaskPrintf (SYS_dev, , "Client check = %d\n", check);
 
-		if (sv_mapcheck->int_val && check != sv.worldmodel->brush.checksum &&
+		if (sv_mapcheck && check != sv.worldmodel->brush.checksum &&
 			check != sv.worldmodel->brush.checksum2) {
 			SV_ClientPrintf (1, host_client, PRINT_HIGH, "Map model file does "
 							 "not match (%s), %i != %i/%i.\n"
@@ -386,9 +567,9 @@ SV_Spawn (client_t *client)
 	client->entgravity = 1.0;
 	if (sv_fields.gravity != -1)
 		SVfloat (ent, gravity) = 1.0;
-	client->maxspeed = sv_maxspeed->value;
+	client->maxspeed = sv_maxspeed;
 	if (sv_fields.maxspeed != -1)
-		SVfloat (ent, maxspeed) = sv_maxspeed->value;
+		SVfloat (ent, maxspeed) = sv_maxspeed;
 }
 
 void
@@ -715,19 +896,19 @@ SV_BeginDownload_f (void *unused)
 	name = Cmd_Argv (1);
 // hacked by zoid to allow more conrol over download
 	// first off, no .. or global allow check
-	if (strstr (name, "..") || !allow_download->int_val
+	if (strstr (name, "..") || !allow_download
 		// leading dot is no good
 		|| *name == '.'
 		// next up, skin check
-		|| (strncmp (name, "skins/", 6) == 0 && !allow_download_skins->int_val)
+		|| (strncmp (name, "skins/", 6) == 0 && !allow_download_skins)
 		// now models
 		|| (strncmp (name, "progs/", 6) == 0 &&
-			!allow_download_models->int_val)
+			!allow_download_models)
 		// now sounds
 		|| (strncmp (name, "sound/", 6) == 0 &&
-			!allow_download_sounds->int_val)
+			!allow_download_sounds)
 		// now maps (note special case for maps, must not be in pak)
-		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
+		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps)
 		// MUST be in a subdirectory
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
@@ -742,7 +923,7 @@ SV_BeginDownload_f (void *unused)
 	}
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
-	http = sv_http_url_base->string[0]
+	http = sv_http_url_base[0]
 			&& strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'h');
 
 	file = _QFS_FOpenFile (name, !zip);
@@ -770,15 +951,15 @@ SV_BeginDownload_f (void *unused)
 	if (http) {
 		int         size;
 		int         ren = zip && strcmp (qfs_foundfile.realname, name);
-		SV_Printf ("http redirect: %s/%s\n", sv_http_url_base->string,
+		SV_Printf ("http redirect: %s/%s\n", sv_http_url_base,
 				   qfs_foundfile.realname);
 		size = ren ? strlen (qfs_foundfile.realname) * 2 : strlen (name);
-		size += strlen (sv_http_url_base->string) + 7;
+		size += strlen (sv_http_url_base) + 7;
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		MSG_ReliableWrite_String (&host_client->backbuf,
-								  va (0, "%s/%s", sv_http_url_base->string,
+								  va (0, "%s/%s", sv_http_url_base,
 									  ren ? qfs_foundfile.realname : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
 								  ren ? qfs_foundfile.realname : "");
@@ -860,10 +1041,10 @@ SV_Say (qboolean team)
 		p[strlen (p) - 1] = 0;
 	}
 
-	if (!sv_allowfake->int_val || (!team && sv_allowfake->int_val == 2)) {
+	if (!sv_allowfake || (!team && sv_allowfake == 2)) {
 		for (i = p; *i; i++) {
 			if (*i == 13) { // ^M
-				if (sv_kickfake->int_val) {
+				if (sv_kickfake) {
 						SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
 											"attempting to fake messages\n",
 											host_client->name);
@@ -892,7 +1073,7 @@ SV_Say (qboolean team)
 	}
 
 	text = dstring_new ();
-	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
+	if (host_client->spectator && (!sv_spectalk || team)) {
 		type = "2";
 		dsprintf (text, "[SPEC] %s: ", host_client->name);
 	} else if (team) {
@@ -915,7 +1096,7 @@ SV_Say (qboolean team)
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear. //FIXME record to mvd?
 			continue;
-		if (host_client->spectator && !sv_spectalk->int_val)
+		if (host_client->spectator && !sv_spectalk)
 			if (!client->spectator)
 				continue;
 
@@ -940,7 +1121,7 @@ SV_Say (qboolean team)
 	}
 	// non-team messages should be seen allways, even if not tracking any
 	// player
-	if (!team && ((host_client->spectator && sv_spectalk->int_val)
+	if (!team && ((host_client->spectator && sv_spectalk)
 				  || !host_client->spectator)) {
 		dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 3);
 	} else {
@@ -1045,7 +1226,7 @@ SV_Pause_f (void *unused)
 
 	lastpausetime = currenttime;
 
-	if (!pausable->int_val) {
+	if (!pausable) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Pause not allowed.\n");
 		return;
 	}
@@ -1139,8 +1320,8 @@ SV_Rate_f (void *unused)
 	}
 
 	rate = atoi (Cmd_Argv (1));
-	if (sv_maxrate->int_val) {
-		rate = bound (500, rate, sv_maxrate->int_val);
+	if (sv_maxrate) {
+		rate = bound (500, rate, sv_maxrate);
 	} else {
 		rate = max (500, rate);
 	}
@@ -1179,7 +1360,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 	if (sv_setinfo_e->func || sv_funcs.UserInfoChanged)
 		oldvalue = strdup (Info_ValueForKey (client->userinfo, key));
 	if (!Info_SetValueForKey (client->userinfo, key, value,
-							  !sv_highchars->int_val)) {
+							  !sv_highchars)) {
 		// key hasn't changed
 		if (oldvalue)
 			free (oldvalue);
@@ -1487,10 +1668,10 @@ SV_CalcRoll (vec3_t angles, vec3_t velocity)
 	sign = side < 0 ? -1 : 1;
 	side = fabs (side);
 
-	value = cl_rollangle->value;
+	value = cl_rollangle;
 
-	if (side < cl_rollspeed->value)
-		side = side * value / cl_rollspeed->value;
+	if (side < cl_rollspeed)
+		side = side * value / cl_rollspeed;
 	else
 		side = value;
 
@@ -1592,12 +1773,12 @@ adjust_usecs (usercmd_t *ucmd)
 	passed = (int) ((realtime - host_client->last_check) * 1000.0);
 	host_client->msecs += passed - ucmd->msec;
 	if (host_client->msecs >= 0) {
-		host_client->msecs -= sv_timecheck_decay->int_val;
+		host_client->msecs -= sv_timecheck_decay;
 	} else {
-		host_client->msecs += sv_timecheck_decay->int_val;
+		host_client->msecs += sv_timecheck_decay;
 	}
-	if (abs (host_client->msecs) > sv_timecheck_fuzz->int_val) {
-		int         fuzz = sv_timecheck_fuzz->int_val;
+	if (abs (host_client->msecs) > sv_timecheck_fuzz) {
+		int         fuzz = sv_timecheck_fuzz;
 		host_client->msecs = bound (-fuzz, host_client->msecs, fuzz);
 		ucmd->msec = passed;
 	}
@@ -1616,18 +1797,18 @@ check_usecs (usercmd_t *ucmd)
 	if (host_client->last_check == -1.0)
 		return;
 	tmp_time = realtime - host_client->last_check;
-	if (tmp_time < sv_timekick_interval->value)
+	if (tmp_time < sv_timekick_interval)
 		return;
 	host_client->last_check = realtime;
-	tmp_time1 = tmp_time * (1000 + sv_timekick_fuzz->value);
+	tmp_time1 = tmp_time * (1000 + sv_timekick_fuzz);
 	if (host_client->msecs >= tmp_time1) {
 		host_client->msec_cheating++;
 		SV_BroadcastPrintf (PRINT_HIGH, "%s thinks there are %d ms "
 							"in %d seconds (Strike %d/%d)\n",
 							host_client->name, host_client->msecs,
 							(int) tmp_time, host_client->msec_cheating,
-							sv_timekick->int_val);
-		if (host_client->msec_cheating >= sv_timekick->int_val) {
+							sv_timekick);
+		if (host_client->msec_cheating >= sv_timekick) {
 			SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
 								host_client->msec_cheating, host_client->name);
 			SV_BroadcastPrintf (PRINT_HIGH, "Please see "
@@ -1648,7 +1829,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	edict_t    *ent;
 
 	if (!inside) {
-		if (sv_timecheck_mode->int_val) {
+		if (sv_timecheck_mode) {
 			adjust_usecs (ucmd);
 		} else {
 			check_usecs (ucmd);
@@ -1863,7 +2044,7 @@ SV_ExecuteClientMessage (client_t *cl)
 	frame->ping_time = realtime - frame->senttime;
 
 	cl->laggedents_count = 0;
-	if (sv_antilag->int_val) {
+	if (sv_antilag) {
 		int         i;
 
 		for (i = 0; i < MAX_CLIENTS; i++) {
@@ -1874,7 +2055,7 @@ SV_ExecuteClientMessage (client_t *cl)
 			}
 		}
 		cl->laggedents_count = MAX_CLIENTS;
-		cl->laggedents_frac = sv_antilag_frac->value;
+		cl->laggedents_frac = sv_antilag_frac;
 	}
 
 	// save time for ping calculations
@@ -2000,56 +2181,63 @@ static builtin_t builtins[] = {
 	{0}
 };
 
+static void
+SV_MaxRate_f (void *data, const cvar_t *cvar)
+{
+	client_t   *cl;
+	int         maxrate = sv_maxrate;
+	int         i, rate = 2500;
+	const char *val;
+
+	Cvar_Info (data, cvar);
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->userinfo)
+			continue;
+		val = Info_ValueForKey (cl->userinfo, "rate");
+		if (strlen (val)) {
+			rate = atoi (val);
+
+			if (maxrate) {
+				rate = bound (500, rate, maxrate);
+			} else {
+				rate = max (500, rate);
+			}
+			cl->netchan.rate = 1.0 / rate;
+		}
+		SV_ClientPrintf (1, cl, PRINT_HIGH, "Net rate set to %i\n", rate);
+	}
+}
+
 void
 SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
 	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-							 "How quickly a player straightens out after "
-							 "strafing");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2", CVAR_NONE, NULL, "How much "
-							 "a player's screen tilts when strafing");
+	Cvar_Register (&cl_rollspeed_cvar, 0, 0);
+	Cvar_Register (&cl_rollangle_cvar, 0, 0);
 
-	sv_antilag = Cvar_Get ("sv_antilag", "1", CVAR_SERVERINFO, Cvar_Info,
-						   "Attempt to backdate impacts to compensate for "
-						   "lag. 0=completely off. 1=mod-controlled. "
-						   "2=forced, which might break certain uses of "
-						   "traceline.");
-	sv_antilag_frac = Cvar_Get ("sv_antilag_frac", "1", CVAR_SERVERINFO,
-								Cvar_Info,
-								"FIXME something to do with sv_antilag");
+	Cvar_Register (&sv_antilag_cvar, Cvar_Info, &sv_antilag);
+	Cvar_Register (&sv_antilag_frac_cvar, Cvar_Info, &sv_antilag_frac);
 
-	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL,
-							 "Allow 'fake' messages (FuhQuake $\\). 1 = "
-							 "always, 2 = only say_team");
-	sv_spectalk = Cvar_Get ("sv_spectalk", "1", CVAR_NONE, NULL, "Toggles "
-							"the ability of spectators to talk to players");
-	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, "Toggle the "
-							"use of map checksumming to check for players who "
-							"edit maps to cheat");
-	sv_timecheck_mode = Cvar_Get ("sv_timecheck_mode", "0", CVAR_NONE, NULL,
-								  "select between timekick (0, default) and "
-								  "timecheck (1)");
-	sv_timekick = Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
-							"Time cheat protection");
-	sv_timekick_fuzz = Cvar_Get ("sv_timekick_fuzz", "30", CVAR_NONE, NULL,
-								 "Time cheat \"fuzz factor\" in milliseconds");
-	sv_timekick_interval = Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE,
-									 NULL, "Time cheat check interval in "
-									 "seconds");
-	sv_timecheck_fuzz = Cvar_Get ("sv_timecheck_fuzz", "250", CVAR_NONE, NULL,
-								  "Milliseconds of tolerance before time "
-								  "cheat throttling kicks in.");
-	sv_timecheck_decay = Cvar_Get ("sv_timecheck_decay", "2", CVAR_NONE,
-								   NULL, "Rate at which time inaccuracies are "
-								   "\"forgiven\".");
-	sv_kickfake = Cvar_Get ("sv_kickfake", "0", CVAR_NONE, NULL,
-							"Kick users sending to send fake talk messages");
-	sv_http_url_base = Cvar_Get ("sv_http_url_base", "", CVAR_NONE, NULL,
-								 "set to base url for http redirects of "
-								 "downloaded files");
+	Cvar_Register (&sv_allowfake_cvar, 0, 0);
+	Cvar_Register (&sv_spectalk_cvar, 0, 0);
+	Cvar_Register (&sv_mapcheck_cvar, 0, 0);
+	Cvar_Register (&sv_timecheck_mode_cvar, 0, 0);
+	Cvar_Register (&sv_timekick_cvar, Cvar_Info, &sv_timekick);
+	Cvar_Register (&sv_timekick_fuzz_cvar, 0, 0);
+	Cvar_Register (&sv_timekick_interval_cvar, 0, 0);
+	Cvar_Register (&sv_timecheck_fuzz_cvar, 0, 0);
+	Cvar_Register (&sv_timecheck_decay_cvar, 0, 0);
+	Cvar_Register (&sv_kickfake_cvar, 0, 0);
+	Cvar_Register (&sv_http_url_base_cvar, 0, 0);
+	Cvar_Register (&sv_maxrate_cvar, SV_MaxRate_f, 0);
+	Cvar_Register (&sv_maxspeed_cvar, Cvar_Info, &sv_maxspeed);
+	Cvar_Register (&sv_spectatormaxspeed_cvar, 0, 0);
+	Cvar_Register (&sv_accelerate_cvar, 0, 0);
+	Cvar_Register (&sv_airaccelerate_cvar, 0, 0);
+	Cvar_Register (&sv_wateraccelerate_cvar, 0, 0);
+	Cvar_Register (&sv_waterfriction_cvar, 0, 0);
 }
 
 static void

@@ -43,6 +43,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/plist.h"
@@ -56,13 +57,82 @@
 #define USER_RO_CVAR "User-created READ-ONLY Cvar"
 #define USER_CVAR "User-created cvar"
 
-VISIBLE cvar_t          *developer;
+static exprenum_t developer_enum;
+static exprtype_t developer_type = {
+	.name = "developer",
+	.size = sizeof (int),
+	.binops = cexpr_flag_binops,
+	.unops = cexpr_flag_unops,
+	.data = &developer_enum,
+	.get_string = cexpr_enum_get_string,
+};
+
+#define SYS_DEVELOPER(dev) (SYS_##dev & ~SYS_dev),
+static int developer_values[] = {
+	SYS_dev,
+#include "QF/sys_developer.h"
+};
+#undef SYS_DEVELOPER
+#define SYS_DEVELOPER(dev) {#dev, &developer_type, developer_values + __LINE__ - 31},
+static exprsym_t developer_symbols[] = {
+	{"dev", &developer_type, developer_values + 0},
+#include "QF/sys_developer.h"
+	{}
+};
+#undef SYS_DEVELOPER
+static exprtab_t developer_symtab = {
+	developer_symbols,
+};
+static exprenum_t developer_enum = {
+	&developer_type,
+	&developer_symtab,
+};
+
+VISIBLE int developer;
+static cvar_t developer_cvar = {
+	.name = "developer",
+	.description =
+		"set to enable extra debugging information",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &developer_type, .value = &developer },
+};
 VISIBLE cvar_t			*cvar_vars;
+static cvar_t           *user_cvars;
 static const char		*cvar_null_string = "";
 static cvar_alias_t		*calias_vars;
 static hashtab_t		*cvar_hash;
 static hashtab_t		*calias_hash;
 
+static cvar_t *
+cvar_create (const char *name, const char *value)
+{
+	cvar_t     *var = calloc (1, sizeof (cvar_t) + sizeof (char *));
+	var->name = strdup (name);
+	var->description = cvar_null_string;
+	var->default_value = cvar_null_string;
+	var->flags = CVAR_USER_CREATED;
+	var->value.value = var + 1;
+	*(char **)var->value.value = strdup (value);
+
+	var->next = user_cvars;
+	user_cvars = var;
+
+	Hash_Add (cvar_hash, var);
+	return var;
+}
+
+static void
+cvar_destroy (cvar_t *var)
+{
+	if (!(var->flags & CVAR_USER_CREATED)) {
+		Sys_Error ("Attempt to destroy non-user cvar");
+	}
+	Hash_Del (cvar_hash, var->name);
+	free (*(char **) var->value.value);
+	free ((char *) var->name);
+	free (var);
+}
 
 VISIBLE cvar_t *
 Cvar_FindVar (const char *var_name)
@@ -130,8 +200,21 @@ Cvar_RemoveAlias (const char *name)
 	return var;
 }
 
+static float
+cvar_value (cvar_t *var)
+{
+	if (!var->value.type) {
+		return atof (*(char **)var->value.value);
+	} else if (var->value.type == &cexpr_int) {
+		return *(int *)var->value.value;
+	} else if (var->value.type == &cexpr_float) {
+		return *(float *)var->value.value;
+	}
+	return 0;
+}
+
 VISIBLE float
-Cvar_VariableValue (const char *var_name)
+Cvar_Value (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -140,11 +223,22 @@ Cvar_VariableValue (const char *var_name)
 		var = Cvar_FindAlias (var_name);
 	if (!var)
 		return 0;
-	return atof (var->string);
+	return cvar_value (var);
+}
+
+static const char *
+cvar_string (const cvar_t *var)
+{
+	if (!var->value.type) {
+		return *(char **)var->value.value;
+	} else if (var->value.type->get_string) {
+		return var->value.type->get_string (&var->value, 0);
+	}
+	return cvar_null_string;
 }
 
 VISIBLE const char *
-Cvar_VariableString (const char *var_name)
+Cvar_String (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -153,7 +247,13 @@ Cvar_VariableString (const char *var_name)
 		var = Cvar_FindAlias (var_name);
 	if (!var)
 		return cvar_null_string;
-	return var->string;
+	return cvar_string (var);
+}
+
+VISIBLE const char *
+Cvar_VarString (const cvar_t *var)
+{
+	return cvar_string (var);
 }
 
 VISIBLE const char *
@@ -267,47 +367,74 @@ Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data)
 	}
 }
 
-VISIBLE void
-Cvar_Set (cvar_t *var, const char *value)
+static int
+cvar_setvar (cvar_t *var, const char *value)
 {
-	int     changed;
-	int     vals;
+	int         changed = 0;
 
-	if (!var)
-		return;
+	if (!var->value.type) {
+		char      **str_value = var->value.value;
+		changed = !*str_value || !strequal (*str_value, value);
+		if (var->validator) {
+			changed = changed && var->validator (var);
+		}
+		if (changed) {
+			free (*str_value);
+			*str_value = strdup (value);
+		}
+	} else {
+		exprenum_t *enm = var->value.type->data;
+		exprctx_t   context = {
+			.memsuper = new_memsuper (),
+			.symtab = enm ? enm->symtab : 0,
+			.msg_prefix = var->name,
+		};
+		if (context.symtab && !context.symtab->tab) {
+			cexpr_init_symtab (context.symtab, &context);
+		}
+		context.result = cexpr_value (var->value.type, &context);
+		if (!cexpr_eval_string (value, &context)) {
+			changed = memcmp (context.result->value, var->value.value,
+							  var->value.type->size) != 0;
+			if (var->validator) {
+				changed = changed && var->validator (var);
+			}
+			if (changed) {
+				memcpy (var->value.value, context.result->value,
+						var->value.type->size);
+			}
+		}
+		delete_memsuper (context.memsuper);
+	}
 
+	if (changed && var->listeners) {
+		LISTENER_INVOKE (var->listeners, var);
+	}
+	return changed;
+}
+
+VISIBLE void
+Cvar_SetVar (cvar_t *var, const char *value)
+{
 	if (var->flags & CVAR_ROM) {
 		Sys_MaskPrintf (SYS_dev, "Cvar \"%s\" is read-only, cannot modify\n",
 						var->name);
 		return;
 	}
-
-	changed = !strequal (var->string, value);
-	if (changed) {
-		free ((char*)var->string);				// free the old value string
-
-		var->string = strdup (value);
-		var->value = atof (var->string);
-		var->int_val = atoi (var->string);
-		VectorZero (var->vec);
-		vals = sscanf (var->string, "%f %f %f",
-					   &var->vec[0], &var->vec[1], &var->vec[2]);
-		if (vals == 1)
-			var->vec[2] = var->vec[1] = var->vec[0];
-
-		if (var->callback)
-			var->callback (var);
-
-		if (var->listeners) {
-			LISTENER_INVOKE (var->listeners, var);
-		}
-	}
+	cvar_setvar (var, value);
 }
 
 VISIBLE void
-Cvar_SetValue (cvar_t *var, float value)
+Cvar_Set (const char *var_name, const char *value)
 {
-	Cvar_Set (var, va (0, "%.9g", value));
+	cvar_t     *var;
+
+	var = Cvar_FindVar (var_name);
+
+	if (!var)
+		return;
+
+	Cvar_SetVar (var, value);
 }
 
 /*
@@ -329,11 +456,11 @@ Cvar_Command (void)
 
 	// perform a variable print or set
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
+		Sys_Printf ("\"%s\" is \"%s\"\n", v->name, cvar_string (v));
 		return true;
 	}
 
-	Cvar_Set (v, Cmd_Argv (1));
+	Cvar_SetVar (v, Cmd_Argv (1));
 	return true;
 }
 
@@ -350,7 +477,7 @@ Cvar_WriteVariables (QFile *f)
 
 	for (var = cvar_vars; var; var = var->next)
 		if (var->flags & CVAR_ARCHIVE)
-			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
+			Qprintf (f, "seta %s \"%s\"\n", var->name, cvar_string (var));
 }
 
 VISIBLE void
@@ -360,7 +487,7 @@ Cvar_SaveConfig (plitem_t *config)
 	PL_D_AddObject (config, "cvars", cvars);
 	for (cvar_t *var = cvar_vars; var; var = var->next) {
 		if (var->flags & CVAR_ARCHIVE) {
-			PL_D_AddObject (cvars, var->name, PL_NewString (var->string));
+			PL_D_AddObject (cvars, var->name, PL_NewString (cvar_string (var)));
 		}
 	}
 }
@@ -379,76 +506,13 @@ Cvar_LoadConfig (plitem_t *config)
 		if (value) {
 			cvar_t      *var = Cvar_FindVar (cvar_name);
 			if (var) {
-				Cvar_Set (var, value);
-				Cvar_SetFlags (var, var->flags | CVAR_ARCHIVE);
+				Cvar_SetVar (var, value);
+				var->flags |= CVAR_ARCHIVE;
 			} else {
-				Cvar_Get (cvar_name, value, CVAR_USER_CREATED | CVAR_ARCHIVE,
-						  0, USER_CVAR);
+				var = cvar_create (cvar_name, value);
+				var->flags |= CVAR_ARCHIVE;
 			}
 		}
-	}
-}
-
-#define SYS_DEVELOPER(developer) #developer,
-static const char *developer_flags[] = {
-	"dev",
-#include "QF/sys_developer.h"
-	0
-};
-
-static int
-parse_developer_flag (const char *flag)
-{
-	const char **devflag;
-	char       *end;
-	int         val;
-
-	val = strtol (flag, &end, 0);
-	if (!*end) {
-		return val;
-	}
-	for (devflag = developer_flags; *devflag; devflag++) {
-		if (!strcmp (*devflag, flag)) {
-			return 1 << (devflag - developer_flags);
-		}
-	}
-	return 0;
-}
-
-static void
-developer_f (cvar_t *var)
-{
-	char       *buf = alloca (strlen (var->string) + 1);
-	const char *s;
-	char       *b;
-	char        c;
-	int         parse = 0;
-
-	for (s = var->string; *s; s++) {
-		if (isalpha (*s) || *s == '|') {
-			parse = 1;
-			break;
-		}
-	}
-	if (!parse) {
-		return;
-	}
-	var->int_val = 0;
-	for (s = var->string, b = buf; (c = *s++); ) {
-		if (isspace (c)) {
-			continue;
-		}
-		if (c == '|') {
-			*b = 0;
-			var->int_val |= parse_developer_flag (buf);
-			b = buf;
-			continue;
-		}
-		*b++ = c;
-	}
-	if (b != buf) {
-		*b = 0;
-		var->int_val |= parse_developer_flag (buf);
 	}
 }
 
@@ -477,12 +541,12 @@ set_cvar (const char *cmd, int orflags)
 							"Cvar \"%s\" is read-only, cannot modify\n",
 							var_name);
 		} else {
-			Cvar_Set (var, value);
-			Cvar_SetFlags (var, var->flags | orflags);
+			Cvar_SetVar (var, value);
+			var->flags |= orflags;
 		}
 	} else {
-		Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
-				  USER_CVAR);
+		var = cvar_create (var_name, value);
+		var->flags |= orflags;
 	}
 }
 
@@ -523,11 +587,23 @@ Cvar_Inc_f (void)
 			var = Cvar_FindVar (name);
 			if (!var)
 				var = Cvar_FindAlias (name);
-			if (!var)
+			if (!var) {
 				Sys_Printf ("Unknown variable \"%s\"\n", name);
+				return;
+			}
+			if (var->flags & CVAR_ROM) {
+				Sys_Printf ("Variable \"%s\" is read-only\n", name);
+				return;
+			}
 			break;
 	}
-	Cvar_SetValue (var, var->value + inc);
+	if (var->value.type == &cexpr_float) {
+		*(float *) var->value.value += inc;
+	} else if (var->value.type == &cexpr_int) {
+		*(int *) var->value.value += inc;
+	} else {
+		Sys_Printf ("Variable \"%s\" cannot be incremented\n", name);
+	}
 }
 
 static void
@@ -547,8 +623,12 @@ Cvar_Toggle_f (void)
 		Sys_Printf ("Unknown variable \"%s\"\n", Cmd_Argv (1));
 		return;
 	}
+	if ((var->flags & CVAR_ROM) || var->value.type != &cexpr_int) {
+		Sys_Printf ("Variable \"%s\" cannot be toggled\n", Cmd_Argv (1));
+		return;
+	}
 
-	Cvar_Set (var, var->int_val ? "0" : "1");
+	*(int *) var->value.value = !*(int *) var->value.value;
 }
 
 static void
@@ -569,8 +649,7 @@ Cvar_Cycle_f (void)
 	if (!var)
 		var = Cvar_FindAlias (name);
 	if (!var) {
-		var = Cvar_Get (name, Cmd_Argv (Cmd_Argc () - 1), CVAR_USER_CREATED,
-						0, USER_CVAR);
+		var = cvar_create (name, Cmd_Argv (Cmd_Argc () - 1));
 	}
 
 	// loop through the args until you find one that matches the current cvar
@@ -583,27 +662,22 @@ Cvar_Cycle_f (void)
 		// it won't match on zero when it should, but after that, it will be
 		// comparing string that all had the same source (the user) so it will
 		// work.
-		if (atof (Cmd_Argv (i)) == 0) {
-			if (!strcmp (Cmd_Argv (i), var->string))
-				break;
-		} else {
-			if (atof (Cmd_Argv (i)) == var->value)
-				break;
-		}
+		if (!strcmp (Cmd_Argv (i), cvar_string (var)))
+			break;
 	}
 
 	if (i == Cmd_Argc ())
-		Cvar_Set (var, Cmd_Argv (2));	// no match
+		Cvar_SetVar (var, Cmd_Argv (2));	// no match
 	else if (i + 1 == Cmd_Argc ())
-		Cvar_Set (var, Cmd_Argv (2));	// matched last value in list
+		Cvar_SetVar (var, Cmd_Argv (2));	// matched last value in list
 	else
-		Cvar_Set (var, Cmd_Argv (i + 1));	// matched earlier in list
+		Cvar_SetVar (var, Cmd_Argv (i + 1));	// matched earlier in list
 }
 
 static void
 Cvar_Reset (cvar_t *var)
 {
-	Cvar_Set (var, var->default_string);
+	Cvar_SetVar (var, var->default_value);
 }
 
 static void
@@ -661,7 +735,7 @@ Cvar_CvarList_f (void)
 					var->flags & CVAR_SERVERINFO ? 's' : ' ');
 		if (showhelp == 2)
 			Sys_Printf ("//%s %s\n%s \"%s\"\n\n", flags, var->description,
-						var->name, var->string);
+						var->name, cvar_string (var));
 		else if (showhelp)
 			Sys_Printf ("%s %-20s : %s\n", flags, var->name, var->description);
 		else
@@ -669,15 +743,6 @@ Cvar_CvarList_f (void)
 	}
 
 	Sys_Printf ("------------\n%d variables\n", i);
-}
-
-static void
-cvar_free (void *c, void *unused)
-{
-	cvar_t *cvar = (cvar_t*)c;
-	free ((char*)cvar->name);
-	free ((char*)cvar->string);
-	free (cvar);
 }
 
 static const char *
@@ -705,15 +770,14 @@ calias_get_key (const void *c, void *unused)
 VISIBLE void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, 0, 0, 0);
 	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
 }
 
 VISIBLE void
 Cvar_Init (void)
 {
-	developer = Cvar_Get ("developer", "0", CVAR_NONE, developer_f,
-			"set to enable extra debugging information");
+	Cvar_Register (&developer_cvar, 0, 0);
 
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
 					"the command line (+set variablename setting)");
@@ -732,66 +796,38 @@ Cvar_Init (void)
 	Cmd_AddCommand ("resetall", Cvar_ResetAll_f, "Reset all cvars");
 }
 
-VISIBLE cvar_t *
-Cvar_Get (const char *name, const char *string, int cvarflags,
-		  void (*callback)(cvar_t*), const char *description)
+VISIBLE void
+Cvar_Register (cvar_t *var, cvar_listener_t listener, void *data)
 {
-	int         changed = 0;
-	cvar_t     *var;
+	cvar_t     *user_var;
 
-	if (Cmd_Exists (name)) {
-		Sys_Printf ("Cvar_Get: %s is a command\n", name);
-		return NULL;
+	if (Cmd_Exists (var->name)) {
+		Sys_Printf ("Cvar_Get: %s is a command\n", var->name);
+		return;
 	}
-	var = Cvar_FindVar (name);
-	if (!var) {
-		cvar_t    **v;
-		var = (cvar_t *) calloc (1, sizeof (cvar_t));
+	if (var->flags & CVAR_REGISTERED) {
+		Sys_Error ("Cvar %s already registered", var->name);
+	}
 
-		// Cvar doesn't exist, so we create it
-		var->name = strdup (name);
-		var->string = strdup (string);
-		var->default_string = strdup (string);
-		var->flags = cvarflags;
-		var->callback = callback;
-		var->description = description;
-		var->value = atof (var->string);
-		var->int_val = atoi (var->string);
-		sscanf (var->string, "%f %f %f",
-				&var->vec[0], &var->vec[1], &var->vec[2]);
-		Hash_Add (cvar_hash, var);
-
-		for (v = &cvar_vars; *v; v = &(*v)->next)
-			if (strcmp ((*v)->name, var->name) >= 0)
-				break;
-		var->next = *v;
-		*v = var;
-
-		changed = 1;
+	if ((user_var = Hash_Find (cvar_hash, var->name))) {
+		cvar_setvar (var, cvar_string (user_var));
+		cvar_destroy (user_var);
 	} else {
-		// Cvar does exist, so we update the flags and return.
-		var->flags &= ~CVAR_USER_CREATED;
-		var->flags |= cvarflags;
-		changed = !strequal (var->string, string) || var->callback != callback;
-		if (!var->callback)
-			var->callback = callback;
-		if (!var->description
-			|| strequal (var->description, USER_RO_CVAR)
-			|| strequal (var->description, USER_CVAR))
-			var->description = description;
-		if (!var->default_string)
-			var->default_string = strdup (string);
+		cvar_setvar (var, var->default_value);
 	}
-	if (changed) {
-		if (var->callback)
-			var->callback (var);
+	var->flags |= CVAR_REGISTERED;
+	var->next = cvar_vars;
+	cvar_vars = var;
 
-		if (var->listeners) {
-			LISTENER_INVOKE (var->listeners, var);
-		}
+	if (listener) {
+		Cvar_AddListener (var, listener, data);
 	}
 
-	return var;
+	Hash_Add (cvar_hash, var);
+
+	if (var->listeners) {
+		LISTENER_INVOKE (var->listeners, var);
+	}
 }
 
 /*

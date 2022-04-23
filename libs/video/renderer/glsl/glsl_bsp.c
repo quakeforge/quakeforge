@@ -374,7 +374,7 @@ update_lightmap (glslbspctx_t *bctx, msurface_t *surf)
 
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
-		if (r_dynamic->int_val)
+		if (r_dynamic)
 			glsl_R_BuildLightMap (bctx->entity->transform, bctx->brush, surf);
 	}
 }
@@ -698,7 +698,7 @@ R_DrawBrushModel (entity_t *e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
@@ -936,7 +936,7 @@ turb_begin (void)
 {
 	quat_t      fog;
 
-	default_color[3] = bound (0, r_wateralpha->value, 1);
+	default_color[3] = bound (0, r_wateralpha, 1);
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
@@ -1146,7 +1146,7 @@ glsl_R_DrawWorld (void)
 	bctx.entity = &worldent;
 
 	R_VisitWorldNodes (&bctx);
-	if (r_drawentities->int_val) {
+	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent);
@@ -1405,7 +1405,7 @@ glsl_R_LoadSkys (const char *sky)
 	};
 
 	if (!sky || !*sky)
-		sky = r_skyname->string;
+		sky = r_skyname;
 
 	if (!*sky || !strcasecmp (sky, "none")) {
 		skybox_loaded = false;

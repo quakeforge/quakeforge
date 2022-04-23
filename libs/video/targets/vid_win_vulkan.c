@@ -44,7 +44,15 @@
 #include "vid_internal.h"
 #include "vid_vulkan.h"
 
-static cvar_t *vulkan_library_name;
+static char *vulkan_library_name;
+static cvar_t vulkan_library_name_cvar = {
+	.name = "vulkan_library",
+	.description =
+		"the name of the vulkan shared library",
+	.default_value = "vulkan-1.dll",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &vulkan_library_name },
+};
 
 typedef struct vulkan_presentation_s {
 #define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
@@ -65,11 +73,11 @@ static HMODULE vulkan_library;
 static void
 load_vulkan_library (vulkan_ctx_t *ctx)
 {
-	vulkan_library = LoadLibrary (vulkan_library_name->string);
+	vulkan_library = LoadLibrary (vulkan_library_name);
 	if (!vulkan_library) {
 		DWORD       errcode = GetLastError ();
 		Sys_Error ("Couldn't load vulkan library %s: %ld",
-				   vulkan_library_name->string, errcode);
+				   vulkan_library_name, errcode);
 	}
 
 	#define EXPORTED_VULKAN_FUNCTION(name) \
@@ -185,7 +193,5 @@ Win_Vulkan_Context (void)
 void
 Win_Vulkan_Init_Cvars (void)
 {
-	vulkan_library_name = Cvar_Get ("vulkan_library", "vulkan-1.dll",
-									CVAR_ROM, 0,
-									"the name of the vulkan shared library");
+	Cvar_Register (&vulkan_library_name_cvar, 0, 0);
 }

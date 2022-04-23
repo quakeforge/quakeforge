@@ -385,7 +385,7 @@ extern	qboolean	slistInProgress;
 extern	qboolean	slistSilent;
 extern	qboolean	slistLocal;
 
-extern struct cvar_s	*hostname;
+extern char *hostname;
 
 extern QFile *vcrFile;
 

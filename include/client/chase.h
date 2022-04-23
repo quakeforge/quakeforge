@@ -40,7 +40,7 @@ typedef struct chasestate_s {
 	vec3_t      player_angles;
 } chasestate_t;
 
-extern	struct cvar_s	*chase_active;
+extern int chase_active;
 
 void Chase_Init_Cvars (void);
 void Chase_Reset (void);

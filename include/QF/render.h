@@ -181,7 +181,6 @@ struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
 dlight_t *R_AllocDlight (int key);
-void R_MaxDlightsCheck (struct cvar_s *var);
 void R_DecayLights (double frametime);
 void Fog_Update (float density, float red, float green, float blue,
 				 float time);

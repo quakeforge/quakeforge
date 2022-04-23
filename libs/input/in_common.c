@@ -70,14 +70,79 @@ typedef struct {
 static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8 };
 static struct DARRAY_TYPE (in_device_t) in_devices = { .grow = 8 };
 
-cvar_t     *in_grab;
-VISIBLE cvar_t     *in_amp;
-VISIBLE cvar_t     *in_pre_amp;
-cvar_t     *in_freelook;
-cvar_t     *in_mouse_filter;
-cvar_t     *in_mouse_amp;
-cvar_t     *in_mouse_pre_amp;
-cvar_t     *lookstrafe;
+int in_grab;
+static cvar_t in_grab_cvar = {
+	.name = "in_grab",
+	.description =
+		"With this set to 1, quake will grab the mouse, preventing loss of "
+		"input focus.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_grab },
+};
+VISIBLE float in_amp;
+static cvar_t in_amp_cvar = {
+	.name = "in_amp",
+	.description =
+		"global in_amp multiplier",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &in_amp },
+};
+VISIBLE float in_pre_amp;
+static cvar_t in_pre_amp_cvar = {
+	.name = "in_pre_amp",
+	.description =
+		"global in_pre_amp multiplier",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &in_pre_amp },
+};
+int in_freelook;
+static cvar_t in_freelook_cvar = {
+	.name = "freelook",
+	.description =
+		"force +mlook",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_freelook },
+};
+char *in_mouse_filter;
+static cvar_t in_mouse_filter_cvar = {
+	.name = "in_mouse_filter",
+	.description =
+		"Toggle mouse input filtering.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &in_mouse_filter },
+};
+char *in_mouse_amp;
+static cvar_t in_mouse_amp_cvar = {
+	.name = "in_mouse_amp",
+	.description =
+		"mouse in_mouse_amp multiplier",
+	.default_value = "15",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &in_mouse_amp },
+};
+char *in_mouse_pre_amp;
+static cvar_t in_mouse_pre_amp_cvar = {
+	.name = "in_mouse_pre_amp",
+	.description =
+		"mouse in_mouse_pre_amp multiplier",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &in_mouse_pre_amp },
+};
+char *lookstrafe;
+static cvar_t lookstrafe_cvar = {
+	.name = "lookstrafe",
+	.description =
+		"when mlook/klook on player will strafe",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &lookstrafe },
+};
 
 int64_t     in_timeout = 10000;//10ms default timeout
 
@@ -395,16 +460,20 @@ IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info)
 }
 
 void
-IN_UpdateGrab (cvar_t *var)		// called from context_*.c
+IN_UpdateGrab (int grab)
 {
-	if (var) {
-		for (size_t i = 0; i < in_drivers.size; i++) {
-			in_regdriver_t *rd = &in_drivers.a[i];
-			if (rd->driver.grab_input) {
-				rd->driver.grab_input (rd->data, var->int_val);
-			}
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.grab_input) {
+			rd->driver.grab_input (rd->data, grab);
 		}
 	}
+}
+
+static void
+in_grab_f (void *data, const cvar_t *cvar)
+{
+	IN_UpdateGrab (in_grab);
 }
 
 void
@@ -488,23 +557,14 @@ IN_Init (void)
 void
 IN_Init_Cvars (void)
 {
-	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
-						"With this set to 1, quake will grab the mouse, "
-						"preventing loss of input focus.");
-	in_amp = Cvar_Get ("in_amp", "1", CVAR_ARCHIVE, NULL,
-					   "global in_amp multiplier");
-	in_pre_amp = Cvar_Get ("in_pre_amp", "1", CVAR_ARCHIVE, NULL,
-						   "global in_pre_amp multiplier");
-	in_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, NULL,
-							"force +mlook");
-	in_mouse_filter = Cvar_Get ("in_mouse_filter", "0", CVAR_ARCHIVE, NULL,
-								"Toggle mouse input filtering.");
-	in_mouse_amp = Cvar_Get ("in_mouse_amp", "15", CVAR_ARCHIVE, NULL,
-							 "mouse in_mouse_amp multiplier");
-	in_mouse_pre_amp = Cvar_Get ("in_mouse_pre_amp", "1", CVAR_ARCHIVE, NULL,
-								 "mouse in_mouse_pre_amp multiplier");
-	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
-						   "when mlook/klook on player will strafe");
+	Cvar_Register (&in_grab_cvar, in_grab_f, 0);
+	Cvar_Register (&in_amp_cvar, 0, 0);
+	Cvar_Register (&in_pre_amp_cvar, 0, 0);
+	Cvar_Register (&in_freelook_cvar, 0, 0);
+	Cvar_Register (&in_mouse_filter_cvar, 0, 0);
+	Cvar_Register (&in_mouse_amp_cvar, 0, 0);
+	Cvar_Register (&in_mouse_pre_amp_cvar, 0, 0);
+	Cvar_Register (&lookstrafe_cvar, 0, 0);
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		if (rd->driver.init_cvars) {

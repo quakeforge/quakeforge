@@ -38,11 +38,11 @@ typedef struct
 
 extern	quakeparms_t host_parms;
 
-extern	struct cvar_s	*sys_ticrate;
-extern	struct cvar_s	*sys_nostdout;
-extern	struct cvar_s	*developer;
+extern float sys_ticrate;
+extern int sys_nostdout;
+extern int developer;
 
-extern	struct cvar_s	*pausable;
+extern int pausable;
 
 extern int viewentity;
 

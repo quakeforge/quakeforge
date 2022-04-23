@@ -210,21 +210,21 @@ typedef struct client_state_s {
 } client_state_t;
 
 // cvars
-extern struct cvar_s	*cl_name;
-extern struct cvar_s	*cl_color;
+extern char *cl_name;
+extern int cl_color;
 
-extern struct cvar_s	*cl_shownet;
-extern struct cvar_s	*cl_nolerp;
+extern int cl_shownet;
+extern int cl_nolerp;
 
-extern struct cvar_s	*cl_name;
-extern struct cvar_s	*cl_writecfg;
+extern char *cl_name;
+extern int cl_writecfg;
 
-extern struct cvar_s	*cl_cshift_bonus;
-extern struct cvar_s	*cl_cshift_contents;
-extern struct cvar_s	*cl_cshift_damage;
-extern struct cvar_s	*cl_cshift_powerup;
+extern int cl_cshift_bonus;
+extern int cl_cshift_contents;
+extern int cl_cshift_damage;
+extern int cl_cshift_powerup;
 
-extern struct cvar_s	*noskins;
+extern int noskins;
 
 extern	client_state_t	cl;
 
@@ -273,8 +273,8 @@ void CL_Record (const char *argv1, int track);
 int CL_GetMessage (void);
 void CL_Demo_Init (void);
 
-extern struct cvar_s *demo_gzip;
-extern struct cvar_s *demo_speed;
+extern int demo_gzip;
+extern float demo_speed;
 
 // cl_parse.c
 struct skin_s;
@@ -292,7 +292,8 @@ extern	double			realtime;
 
 extern qboolean recording;
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 void CL_UpdateScreen (double realtime);
 

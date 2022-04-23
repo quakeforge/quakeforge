@@ -108,13 +108,13 @@ typedef struct vulkan_ctx_s {
 
 #define qfvPushDebug(ctx, x)									\
 	do {														\
-		if (developer->int_val & SYS_vulkan) {					\
+		if (developer & SYS_vulkan) {					\
 			DARRAY_APPEND(&(ctx)->instance->debug_stack, (x));	\
 		}														\
 	} while (0)
 #define qfvPopDebug(ctx) 										\
 	do {														\
-		if (developer->int_val & SYS_vulkan) {					\
+		if (developer & SYS_vulkan) {					\
 			__auto_type ds = &(ctx)->instance->debug_stack;		\
 			DARRAY_REMOVE_AT(ds, ds->size - 1);					\
 		}														\

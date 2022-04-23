@@ -48,29 +48,59 @@
 #include "qw/include/client.h"
 #include "sbar.h"
 
-cvar_t     *cl_netgraph;
-cvar_t     *cl_netgraph_alpha;
-cvar_t     *cl_netgraph_box;
-cvar_t     *cl_netgraph_height;
+int cl_netgraph;
+static cvar_t cl_netgraph_cvar = {
+	.name = "cl_netgraph",
+	.description =
+		"Toggle the display of a graph showing network performance",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph },
+};
+float cl_netgraph_alpha;
+static cvar_t cl_netgraph_alpha_cvar = {
+	.name = "cl_netgraph_alpha",
+	.description =
+		"Net graph translucency",
+	.default_value = "0.5",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_netgraph_alpha },
+};
+int cl_netgraph_box;
+static cvar_t cl_netgraph_box_cvar = {
+	.name = "cl_netgraph_box",
+	.description =
+		" Draw box around net graph",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph_box },
+};
+int cl_netgraph_height;
+static cvar_t cl_netgraph_height_cvar = {
+	.name = "cl_netgraph_height",
+	.description =
+		"Set the fullscale (1s) height of the graph",
+	.default_value = "32",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph_height },
+};
 view_t     *cl_netgraph_view;
 
 static void
-cl_netgraph_f (cvar_t *var)
+cl_netgraph_f (void *data, const cvar_t *cvar)
 {
 	if (cl_netgraph_view) {
-		cl_netgraph_view->visible = var->int_val != 0;
+		cl_netgraph_view->visible = cl_netgraph != 0;
 	}
 }
 
 static void
-cl_netgraph_height_f (cvar_t *var)
+cl_netgraph_height_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val < 32) {
-		Cvar_Set (var, "32");
-	}
+	cl_netgraph_height = max (32, cl_netgraph_height);
 	if (cl_netgraph_view) {
 		view_resize (cl_netgraph_view, cl_netgraph_view->xlen,
-					 var->int_val + 25);
+					 cl_netgraph_height + 25);
 	}
 }
 
@@ -83,10 +113,10 @@ CL_NetGraph (view_t *view)
 	x = view->xabs;
 	y = view->yabs;
 
-	if (cl_netgraph_box->int_val) {
+	if (cl_netgraph_box) {
 		r_funcs->Draw_TextBox (x, y, NET_TIMINGS / 8,
-							   cl_netgraph_height->int_val / 8 + 1,
-							   cl_netgraph_alpha->value * 255);
+							   cl_netgraph_height / 8 + 1,
+							   cl_netgraph_alpha * 255);
 	}
 
 	lost = CL_CalcNet ();
@@ -108,7 +138,7 @@ CL_NetGraph (view_t *view)
 	}
 	memcpy (timings + o, packet_latency + a, l * sizeof (timings[0]));
 	r_funcs->R_LineGraph (x, y, timings,
-						  NET_TIMINGS, cl_netgraph_height->int_val);
+						  NET_TIMINGS, cl_netgraph_height);
 
 	x = view->xabs + 8;
 	y = view->yabs + 8;
@@ -118,15 +148,8 @@ CL_NetGraph (view_t *view)
 void
 CL_NetGraph_Init_Cvars (void)
 {
-	cl_netgraph = Cvar_Get ("cl_netgraph", "0", CVAR_NONE, cl_netgraph_f,
-						    "Toggle the display of a graph showing network "
-						    "performance");
-	cl_netgraph_alpha = Cvar_Get ("cl_netgraph_alpha", "0.5", CVAR_ARCHIVE, 0,
-								  "Net graph translucency");
-	cl_netgraph_box = Cvar_Get ("cl_netgraph_box", "1", CVAR_ARCHIVE, 0,
-							    " Draw box around net graph");
-	cl_netgraph_height = Cvar_Get ("cl_netgraph_height", "32", CVAR_ARCHIVE,
-								   cl_netgraph_height_f,
-								   "Set the fullscale (1s) height of the "
-								   "graph");
+	Cvar_Register (&cl_netgraph_cvar, cl_netgraph_f, 0);
+	Cvar_Register (&cl_netgraph_alpha_cvar, 0, 0);
+	Cvar_Register (&cl_netgraph_box_cvar, 0, 0);
+	Cvar_Register (&cl_netgraph_height_cvar, cl_netgraph_height_f, 0);
 }

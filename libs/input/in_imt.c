@@ -267,7 +267,8 @@ imt_switcher_update (imt_switcher_t *switcher)
 				val = !!(input->button->state & inb_down);
 				break;
 			case imti_cvar:
-				val = !!input->cvar->int_val;
+				//FIXME check cvar type
+				val = !!*(int *) input->cvar->value.value;
 				break;
 		}
 		state |= val << i;
@@ -497,6 +498,7 @@ IMT_CreateSwitcher (const char *switcher_name, int context, imt_t *default_imt,
 								  switcher);
 		} else {
 			input->type = imti_cvar;
+			//FIXME check cvar type
 			input->cvar = Cvar_FindVar (input_name);
 			Cvar_AddListener (input->cvar, imt_switcher_cvar_update, switcher);
 		}

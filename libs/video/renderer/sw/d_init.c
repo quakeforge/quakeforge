@@ -87,10 +87,10 @@ D_SetupFrame (void)
 	d_roverwrapped = false;
 	d_initial_rover = sc_rover;
 
-	d_minmip = bound (0, d_mipcap->value, 3);
+	d_minmip = bound (0, d_mipcap, 3);
 
 	for (i = 0; i < (NUM_MIPS - 1); i++)
-		d_scalemip[i] = basemip[i] * d_mipscale->value;
+		d_scalemip[i] = basemip[i] * d_mipscale;
 
 	d_drawspans = D_DrawSpans8;
 

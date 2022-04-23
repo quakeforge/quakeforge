@@ -60,8 +60,24 @@ cl_particle_funcs_t *clp_funcs;
 static mtstate_t mt;	// private PRNG state
 static psystem_t *cl_psystem;
 
-static cvar_t *easter_eggs;
-static cvar_t *particles_style;
+static int easter_eggs;
+static cvar_t easter_eggs_cvar = {
+	.name = "easter_eggs",
+	.description =
+		"Enables easter eggs.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &easter_eggs },
+};
+static int particles_style;
+static cvar_t particles_style_cvar = {
+	.name = "particles_style",
+	.description =
+		"Sets particle style. 0 for Id, 1 for QF.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &particles_style },
+};
 
 static int  ramp[] = {
 	/*ramp1*/ 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61,
@@ -1238,37 +1254,34 @@ static cl_particle_funcs_t particles_ID_egg = {
 };
 
 static void
-easter_eggs_f (cvar_t *var)
+set_particle_funcs (void)
 {
 	if (easter_eggs) {
-		if (easter_eggs->int_val) {
-			if (particles_style->int_val) {
-				clp_funcs = &particles_QF_egg;
-			} else {
-				clp_funcs = &particles_ID_egg;
-			}
-		} else if (particles_style) {
-			if (particles_style->int_val) {
-				clp_funcs = &particles_QF;
-			} else {
-				clp_funcs = &particles_ID;
-			}
+		if (particles_style) {
+			clp_funcs = &particles_QF_egg;
+		} else {
+			clp_funcs = &particles_ID_egg;
+		}
+	} else {
+		if (particles_style) {
+			clp_funcs = &particles_QF;
+		} else {
+			clp_funcs = &particles_ID;
 		}
 	}
 }
 
 static void
-particles_style_f (cvar_t *var)
+easter_eggs_f (void *data, const cvar_t *cvar)
 {
-	easter_eggs_f (easter_eggs);
-	cl_psystem->points_only = !var->int_val;
+	set_particle_funcs ();
 }
 
 static void
-CL_ParticleFunctionInit (void)
+particles_style_f (void *data, const cvar_t *cvar)
 {
-	particles_style_f (particles_style);
-	easter_eggs_f (easter_eggs);
+	set_particle_funcs ();
+	cl_psystem->points_only = !particles_style;
 }
 
 void
@@ -1276,12 +1289,9 @@ CL_Particles_Init (void)
 {
 	mtwist_seed (&mt, 0xdeadbeef);
 	cl_psystem = r_funcs->ParticleSystem ();
-	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, easter_eggs_f,
-							"Enables easter eggs.");
-	particles_style = Cvar_Get ("particles_style", "1", CVAR_ARCHIVE,
-								particles_style_f,
-								"Sets particle style. 0 for Id, 1 for QF.");
-	CL_ParticleFunctionInit ();
+	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);
+	Cvar_Register (&particles_style_cvar, particles_style_f, 0);
+	set_particle_funcs ();
 }
 
 void

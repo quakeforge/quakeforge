@@ -83,21 +83,42 @@ static HINSTANCE   hInstDS;
 
 static sndinitstat SNDDMA_InitDirect (snd_t *snd);
 
-static cvar_t	   *snd_stereo;
-static cvar_t	   *snd_rate;
-static cvar_t	   *snd_bits;
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
 
 static DWORD *DSOUND_LockBuffer (snd_t *snd, qboolean lockit);
 
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "11025", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_bits = Cvar_Get ("snd_bits", "16", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
 }
 
 static void
@@ -152,14 +173,14 @@ SNDDMA_InitDirect (snd_t *snd)
 	HRESULT			hresult;
 	WAVEFORMATEX	format, pformat;
 
-	if (!snd_stereo->int_val) {
+	if (!snd_stereo) {
 		snd->channels = 1;
 	} else {
 		snd->channels = 2;
 	}
 
-	snd->samplebits = snd_bits->int_val;
-	snd->speed = snd_rate->int_val;
+	snd->samplebits = snd_bits;
+	snd->speed = snd_rate;
 
 	memset (&format, 0, sizeof (format));
 	format.wFormatTag = WAVE_FORMAT_PCM;

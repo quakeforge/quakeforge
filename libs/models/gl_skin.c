@@ -174,12 +174,12 @@ build_skin (skin_t *skin, int cmap)
 	int         texnum, fb_texnum;
 
 	// FIXME deek: This 512x256 limit sucks!
-	scaled_width = min (gl_max_size->int_val, 512);
-	scaled_height = min (gl_max_size->int_val, 256);
+	scaled_width = min (gl_max_size, 512);
+	scaled_height = min (gl_max_size, 256);
 
 	// allow users to crunch sizes down even more if they want
-	scaled_width >>= gl_playermip->int_val;
-	scaled_height >>= gl_playermip->int_val;
+	scaled_width >>= gl_playermip;
+	scaled_height >>= gl_playermip;
 	scaled_width = max (scaled_width, 1);
 	scaled_height = max (scaled_height, 1);
 

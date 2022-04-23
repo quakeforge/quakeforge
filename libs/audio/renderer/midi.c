@@ -57,19 +57,32 @@ typedef struct {
 
 static int midi_intiialized = 0;
 
-static cvar_t  *wildmidi_volume;
-static cvar_t  *wildmidi_config;
+static char *wildmidi_volume;
+static cvar_t wildmidi_volume_cvar = {
+	.name = "wildmidi_volume",
+	.description =
+		"Set the Master Volume",
+	.default_value = "100",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0/* not used */, .value = &wildmidi_volume },
+};
+static char *wildmidi_config;
+static cvar_t wildmidi_config_cvar = {
+	.name = "wildmidi_config",
+	.description =
+		"path/filename of timidity.cfg",
+	.default_value = "/etc/timidity.cfg",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &wildmidi_config },
+};
 
 static int
 midi_init (snd_t *snd)
 {
-	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL,
-								"Set the Master Volume");
-	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg",
-								CVAR_ROM, NULL,
-								"path/filename of timidity.cfg");
+	Cvar_Register (&wildmidi_volume_cvar, 0, 0);
+	Cvar_Register (&wildmidi_config_cvar, 0, 0);
 
-	if (WildMidi_Init (wildmidi_config->string, snd->speed, 0) == -1)
+	if (WildMidi_Init (wildmidi_config, snd->speed, 0) == -1)
 		return 1;
 	midi_intiialized = 1;
 	return 0;

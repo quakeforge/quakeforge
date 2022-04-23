@@ -53,7 +53,15 @@ static sfx_t    snd_sfx[MAX_SFX];
 static int      snd_num_sfx;
 static hashtab_t *snd_sfx_hash;
 
-static cvar_t  *precache;
+static int precache;
+static cvar_t precache_cvar = {
+	.name = "precache",
+	.description =
+		"Toggle the use of a precache",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &precache },
+};
 
 static const char *
 snd_sfx_getkey (const void *sfx, void *unused)
@@ -203,7 +211,7 @@ SND_PrecacheSound (snd_t *snd, const char *name)
 		Sys_Error ("SND_PrecacheSound: NULL");
 
 	sfx = SND_LoadSound (snd, va (0, "sound/%s", name));
-	if (sfx && precache->int_val) {
+	if (sfx && precache) {
 		if (sfx->retain (sfx))
 			sfx->release (sfx);
 	}
@@ -249,8 +257,7 @@ void
 SND_SFX_Init (snd_t *snd)
 {
 	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
-	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
-						 "Toggle the use of a precache");
+	Cvar_Register (&precache_cvar, 0, 0);
 
 	QFS_GamedirCallback (s_gamedir);
 

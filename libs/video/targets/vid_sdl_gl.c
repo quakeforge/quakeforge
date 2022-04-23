@@ -66,7 +66,15 @@
 
 static void (GLAPIENTRY *qfglFinish) (void);
 static int use_gl_procaddress = 0;
-static cvar_t  *gl_driver;
+static char *gl_driver;
+static cvar_t gl_driver_cvar = {
+	.name = "gl_driver",
+	.description =
+		"The OpenGL library to use. (path optional)",
+	.default_value = GL_DRIVER,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &gl_driver },
+};
 
 static void *
 QFGL_ProcAddress (const char *name, qboolean crit)
@@ -151,8 +159,8 @@ sdlgl_end_rendering (void)
 static void
 sdl_load_gl (void)
 {
-	if (SDL_GL_LoadLibrary (gl_driver->string) != 0)
-		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
+	if (SDL_GL_LoadLibrary (gl_driver) != 0)
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver);
 
 	use_gl_procaddress = 1;
 
@@ -173,6 +181,5 @@ SDL_GL_Context (void)
 void
 SDL_GL_Init_Cvars ()
 {
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
+	Cvar_Register (&gl_driver_cvar, 0, 0);
 }
