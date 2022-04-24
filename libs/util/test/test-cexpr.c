@@ -50,11 +50,11 @@ exprarray_t int_array_4_data = {
 	sizeof (array) / sizeof (array[0]),
 };
 exprtype_t int_array_4 = {
-	"int[4]",
-	4 * sizeof (int),
-	cexpr_array_binops,
-	0,
-	&int_array_4_data,
+	.name = "int[4]",
+	.size = 4 * sizeof (int),
+	.binops = cexpr_array_binops,
+	.unops = 0,
+	.data = &int_array_4_data,
 };
 
 exprsym_t symbols[] = {

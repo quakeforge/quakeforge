@@ -189,11 +189,11 @@
 	fprintf (output_file, "};\n");
 
 	fprintf (output_file, "exprtype_t %s_type = {\n", [self outname]);
-	fprintf (output_file, "\t\"%s\",\n", [self outname]);
-	fprintf (output_file, "\tsizeof (%s),\n", [self outname]);
-	fprintf (output_file, "\tcexpr_struct_binops,\n");
-	fprintf (output_file, "\t0,\n");
-	fprintf (output_file, "\t&%s_symtab,\n", [self outname]);
+	fprintf (output_file, "\t.name = \"%s\",\n", [self outname]);
+	fprintf (output_file, "\t.size = sizeof (%s),\n", [self outname]);
+	fprintf (output_file, "\t.binops = cexpr_struct_binops,\n");
+	fprintf (output_file, "\t.unops = 0,\n");
+	fprintf (output_file, "\t.data = &%s_symtab,\n", [self outname]);
 	fprintf (output_file, "};\n");
 	fprintf (output_file, "\n");
 	fprintf (header_file, "extern exprtype_t %s_type;\n", [self outname]);

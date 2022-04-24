@@ -55,7 +55,7 @@ typedef struct exprtype_s {
 	binop_t    *binops;
 	unop_t     *unops;
 	void       *data;
-} exprtype_t;
+} __attribute__((designated_init)) exprtype_t;
 
 typedef struct exprval_s {
 	exprtype_t *type;

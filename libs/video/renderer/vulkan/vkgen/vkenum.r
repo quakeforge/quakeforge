@@ -89,16 +89,17 @@ skip_value(string name)
 		strip_bit = 1;
 	}
 
-	fprintf (output_file, "static exprtype_t %s_type = {\n", [self name]);
-	fprintf (output_file, "\t\"%s\",\n", [self name]);
-	fprintf (output_file, "\tsizeof (int),\n");
+	fprintf (output_file, "exprtype_t %s_type = {\n", [self name]);
+	fprintf (output_file, "\t.name = \"%s\",\n", [self name]);
+	fprintf (output_file, "\t.size = sizeof (int),\n");
 	if (strip_bit) {
-		fprintf (output_file, "\tflag_binops,\n");
-		fprintf (output_file, "\tflag_unops,\n");
+		fprintf (output_file, "\t.binops = flag_binops,\n");
+		fprintf (output_file, "\t.unops = flag_unops,\n");
 	} else {
-		fprintf (output_file, "\tenum_binops,\n");
-		fprintf (output_file, "\t0,\n");
+		fprintf (output_file, "\t.binops = enum_binops,\n");
+		fprintf (output_file, "\t.unops = 0,\n");
 	}
+	fprintf (output_file, "\t.data = &%s_enum,\n", [self name]);
 	fprintf (output_file, "};\n");
 
 	if (![self isEmpty]) {
@@ -114,7 +115,7 @@ skip_value(string name)
 		}
 		fprintf (output_file, "};\n");
 	}
-	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self name]);
+	fprintf (output_file, "exprsym_t %s_symbols[] = {\n", [self name]);
 	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *var = &type.strct.fields[i];
 		if (skip_value (var.name)) {
@@ -137,10 +138,10 @@ skip_value(string name)
 	}
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
-	fprintf (output_file, "static exprtab_t %s_symtab = {\n", [self name]);
+	fprintf (output_file, "exprtab_t %s_symtab = {\n", [self name]);
 	fprintf (output_file, "\t%s_symbols,\n", [self name]);
 	fprintf (output_file, "};\n");
-	fprintf (output_file, "static exprenum_t %s_enum = {\n", [self name]);
+	fprintf (output_file, "exprenum_t %s_enum = {\n", [self name]);
 	fprintf (output_file, "\t&%s_type,\n", [self name]);
 	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
 	fprintf (output_file, "};\n");
@@ -163,6 +164,10 @@ skip_value(string name)
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context);\n",
 			 [self name]);
+	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
+	fprintf (header_file, "extern exprtype_t %s_type;\n", [self name]);
+	fprintf (header_file, "extern exprtab_t %s_symtab;\n", [self name]);
+	fprintf (header_file, "extern exprsym_t %s_symbols[];\n", [self name]);
 }
 
 -(void) writeSymtabInit

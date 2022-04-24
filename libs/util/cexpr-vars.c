@@ -114,10 +114,10 @@ static binop_t cvar_binops[] = {
 };
 
 static exprtype_t cvar_type = {
-	"cvar",
-	sizeof (void *),	// ref to struct (will always be 0)
-	cvar_binops,
-	0,
+	.name = "cvar",
+	.size = sizeof (void *),	// ref to struct (will always be 0)
+	.binops = cvar_binops,
+	.unops = 0,
 };
 
 VISIBLE exprval_t *

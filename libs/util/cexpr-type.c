@@ -124,10 +124,10 @@ unop_t int_unops[] = {
 };
 
 exprtype_t cexpr_int = {
-	"int",
-	sizeof (int),
-	int_binops,
-	int_unops,
+	.name = "int",
+	.size = sizeof (int),
+	.binops = int_binops,
+	.unops = int_unops,
 };
 
 BINOP(uint, shl, unsigned, <<)
@@ -179,10 +179,10 @@ unop_t uint_unops[] = {
 };
 
 exprtype_t cexpr_uint = {
-	"uint",
-	sizeof (unsigned),
-	uint_binops,
-	uint_unops,
+	.name = "uint",
+	.size = sizeof (unsigned),
+	.binops = uint_binops,
+	.unops = uint_unops,
 };
 
 BINOP(size_t, shl, unsigned, <<)
@@ -248,10 +248,10 @@ unop_t size_t_unops[] = {
 };
 
 exprtype_t cexpr_size_t = {
-	"size_t",
-	sizeof (size_t),
-	size_t_binops,
-	size_t_unops,
+	.name = "size_t",
+	.size = sizeof (size_t),
+	.binops = size_t_binops,
+	.unops = size_t_unops,
 };
 
 BINOP(float, add, float, +)
@@ -333,10 +333,10 @@ unop_t float_unops[] = {
 };
 
 exprtype_t cexpr_float = {
-	"float",
-	sizeof (float),
-	float_binops,
-	float_unops,
+	.name = "float",
+	.size = sizeof (float),
+	.binops = float_binops,
+	.unops = float_unops,
 };
 
 BINOP(double, add, double, +)
@@ -397,10 +397,10 @@ unop_t double_unops[] = {
 };
 
 exprtype_t cexpr_double = {
-	"double",
-	sizeof (double),
-	double_binops,
-	double_unops,
+	.name = "double",
+	.size = sizeof (double),
+	.binops = double_binops,
+	.unops = double_unops,
 };
 
 BINOP(vector, add, vec4f_t, +)
@@ -546,10 +546,10 @@ unop_t vector_unops[] = {
 };
 
 exprtype_t cexpr_vector = {
-	"vector",
-	sizeof (vec4f_t),
-	vector_binops,
-	vector_unops,
+	.name = "vector",
+	.size = sizeof (vec4f_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
 };
 
 static void
@@ -588,31 +588,31 @@ unop_t quaternion_unops[] = {
 };
 
 exprtype_t cexpr_quaternion = {
-	"quaterion",
-	sizeof (vec4f_t),
-	quaternion_binops,
-	quaternion_unops,
+	.name = "quaterion",
+	.size = sizeof (vec4f_t),
+	.binops = quaternion_binops,
+	.unops = quaternion_unops,
 };
 
 exprtype_t cexpr_exprval = {
-	"exprval",
-	sizeof (exprval_t *),
-	0,	// can't actually do anything with an exprval
-	0,
+	.name = "exprval",
+	.size = sizeof (exprval_t *),
+	.binops = 0,	// can't actually do anything with an exprval
+	.unops = 0,
 };
 
 exprtype_t cexpr_field = {
-	"field",
-	0,	// has no size of its own, rather, it's the length of the name
-	0,	// can't actually do anything with a field
-	0,
+	.name = "field",
+	.size = 0,	// has no size of its own, rather, it's the length of the name
+	.binops = 0,	// can't actually do anything with a field
+	.unops = 0,
 };
 
 exprtype_t cexpr_function = {
-	"function",
-	0,	// has no size of its own
-	0,	// can't actually do anything with a function other than call
-	0,
+	.name = "function",
+	.size = 0,	// has no size of its own
+	.binops = 0,// can't actually do anything with a function other than call
+	.unops = 0,
 };
 
 void
@@ -711,10 +711,10 @@ binop_t plitem_binops[] = {
 };
 
 exprtype_t cexpr_plitem = {
-	"plitem",
-	sizeof (plitem_t *),
-	plitem_binops,
-	0,
+	.name = "plitem",
+	.size = sizeof (plitem_t *),
+	.binops = plitem_binops,
+	.unops = 0,
 };
 
 VISIBLE binop_t *
