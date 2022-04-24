@@ -815,3 +815,53 @@ cexpr_enum_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 	}
 	return "";
 }
+
+BINOP(flag, and, int, &)
+BINOP(flag, or, int, |)
+BINOP(flag, xor, int, ^)
+
+UNOP(flag, not, int, ~)
+
+binop_t cexpr_flag_binops[] = {
+	{ '&', 0, 0, flag_and },
+	{ '|', 0, 0, flag_or },
+	{ '^', 0, 0, flag_xor },
+	{ '=', &cexpr_int, 0, uint_cast_int },
+	{}
+};
+
+unop_t cexpr_flag_unops[] = {
+	{ '~', 0, flag_not },
+	{}
+};
+
+VISIBLE const char *
+cexpr_flags_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	exprenum_t *enm = val->type->data;
+	exprsym_t  *symbols = enm->symtab->symbols;
+	const char *val_str = 0;
+
+	if (val->type->size != 4) {
+		Sys_Error ("cexpr_flags_get_string: only 32-bit values supported");
+	}
+	uint32_t    flags = *(uint32_t *) val->value;
+	for (exprsym_t *sym = symbols; sym->name; sym++) {
+		uint32_t    sym_flags = *(uint32_t *) sym->value;
+		// if there are duplicate values, choose the *later* value
+		if (sym[1].name && sym_flags == *(uint32_t *) sym[1].value) {
+			continue;
+		}
+		if ((flags & sym_flags) && !(sym_flags & ~flags)) {
+			if (val_str) {
+				val_str = va (va_ctx, "%s | %s", val_str, sym->name);
+			} else {
+				val_str = sym->name;
+			}
+		}
+	}
+	if (!val_str) {
+		val_str = "0";
+	}
+	return val_str;
+}
