@@ -242,7 +242,7 @@ static cvar_t rcon_password_cvar = {
 		"Set the password for rcon 'root' commands",
 	.default_value = "",
 	.flags = CVAR_NONE,
-	.value = { .type = 0, .value = &rcon_password },
+	.value = { .type=0/*FIXME want secret strings*/, .value = &rcon_password },
 };
 char *admin_password;
 static cvar_t admin_password_cvar = {
