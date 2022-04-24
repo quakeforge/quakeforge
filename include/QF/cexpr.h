@@ -99,6 +99,7 @@ typedef struct exprctx_s {
 	exprval_t  *result;
 	exprtab_t  *symtab;				// directly accessible symbols
 	exprtab_t  *external_variables;	// accessible via $id
+	const char *msg_prefix;			// optional prefix for error messages
 	struct memsuper_s *memsuper;
 	const struct plitem_s *item;
 	struct plitem_s *messages;
