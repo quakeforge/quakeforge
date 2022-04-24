@@ -328,6 +328,7 @@ float_div_quat (const exprval_t *val1, const exprval_t *val2,
 
 CASTOP (float, int)
 CASTOP (float, uint)
+CASTOP (float, double)
 
 UNOP(float, pos, float, +)
 UNOP(float, neg, float, -)
@@ -351,6 +352,7 @@ binop_t float_binops[] = {
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
 	{ '=', &cexpr_int,  &cexpr_float, float_cast_int },
 	{ '=', &cexpr_uint,  &cexpr_float, float_cast_uint },
+	{ '=', &cexpr_double, &cexpr_float, float_cast_double },
 	{ '=', &cexpr_plitem, &cexpr_float, cexpr_cast_plitem },
 	{}
 };
