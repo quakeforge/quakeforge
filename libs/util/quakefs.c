@@ -1436,6 +1436,10 @@ static void
 qfs_path_cvar (void *data, const cvar_t *cvar)
 {
 	char       *cpath = QFS_CompressPath (*(char **)data);
+	if (!*cpath) {
+		free (cpath);
+		cpath = strdup (".");
+	}
 	if (strcmp (cpath, *(char **)data)) {
 		free (*(char **)cvar->value.value);
 		*(char **)cvar->value.value = cpath;
