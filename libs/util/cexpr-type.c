@@ -28,11 +28,14 @@
 # include "config.h"
 #endif
 #include <math.h>
+#include <string.h>
 
 #include "QF/cexpr.h"
 #include "QF/cmem.h"
 #include "QF/mathlib.h"
 #include "QF/plist.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/simd/vec4f.h"
 
 #include "libs/util/cexpr-parse.h"
@@ -99,6 +102,12 @@ int_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	*(int *) result->value = c + (mask & b);
 }
 
+static const char *
+int_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%d", *(int *) val->value);
+}
+
 binop_t int_binops[] = {
 	{ SHL, &cexpr_int, &cexpr_int, int_shl },
 	{ SHR, &cexpr_int, &cexpr_int, int_shr },
@@ -128,6 +137,7 @@ exprtype_t cexpr_int = {
 	.size = sizeof (int),
 	.binops = int_binops,
 	.unops = int_unops,
+	.get_string = int_get_string,
 };
 
 BINOP(uint, shl, unsigned, <<)
@@ -152,6 +162,12 @@ UNOP(uint, pos, unsigned, +)
 UNOP(uint, neg, unsigned, -)
 UNOP(uint, tnot, unsigned, !)
 UNOP(uint, bnot, unsigned, ~)
+
+static const char *
+uint_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%u", *(unsigned *) val->value);
+}
 
 binop_t uint_binops[] = {
 	{ SHL, &cexpr_uint, &cexpr_uint, uint_shl },
@@ -183,6 +199,7 @@ exprtype_t cexpr_uint = {
 	.size = sizeof (unsigned),
 	.binops = uint_binops,
 	.unops = uint_unops,
+	.get_string = uint_get_string,
 };
 
 BINOP(size_t, shl, unsigned, <<)
@@ -221,6 +238,12 @@ UNOP(size_t, neg, unsigned, -)
 UNOP(size_t, tnot, unsigned, !)
 UNOP(size_t, bnot, unsigned, ~)
 
+static const char *
+size_t_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%zd", *(size_t *) val->value);
+}
+
 binop_t size_t_binops[] = {
 	{ SHL, &cexpr_size_t, &cexpr_size_t, size_t_shl },
 	{ SHR, &cexpr_size_t, &cexpr_size_t, size_t_shr },
@@ -252,6 +275,7 @@ exprtype_t cexpr_size_t = {
 	.size = sizeof (size_t),
 	.binops = size_t_binops,
 	.unops = size_t_unops,
+	.get_string = size_t_get_string,
 };
 
 BINOP(float, add, float, +)
@@ -309,6 +333,12 @@ UNOP(float, pos, float, +)
 UNOP(float, neg, float, -)
 UNOP(float, tnot, float, !)
 
+static const char *
+float_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%.9g", *(float *) val->value);
+}
+
 binop_t float_binops[] = {
 	{ '+', &cexpr_float, &cexpr_float, float_add },
 	{ '-', &cexpr_float, &cexpr_float, float_sub },
@@ -337,6 +367,7 @@ exprtype_t cexpr_float = {
 	.size = sizeof (float),
 	.binops = float_binops,
 	.unops = float_unops,
+	.get_string = float_get_string,
 };
 
 BINOP(double, add, double, +)
@@ -375,6 +406,12 @@ UNOP(double, pos, double, +)
 UNOP(double, neg, double, -)
 UNOP(double, tnot, double, !)
 
+static const char *
+double_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%.17g", *(double *) val->value);
+}
+
 binop_t double_binops[] = {
 	{ '+', &cexpr_double, &cexpr_double, double_add },
 	{ '-', &cexpr_double, &cexpr_double, double_sub },
@@ -401,6 +438,7 @@ exprtype_t cexpr_double = {
 	.size = sizeof (double),
 	.binops = double_binops,
 	.unops = double_unops,
+	.get_string = double_get_string,
 };
 
 BINOP(vector, add, vec4f_t, +)
@@ -518,6 +556,13 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 UNOP(vector, pos, vec4f_t, +)
 UNOP(vector, neg, vec4f_t, -)
 
+static const char *
+vector_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4f_t     vec = *(vec4f_t *) val->value;
+	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+}
+
 static void
 vector_tnot (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
 {
@@ -550,6 +595,7 @@ exprtype_t cexpr_vector = {
 	.size = sizeof (vec4f_t),
 	.binops = vector_binops,
 	.unops = vector_unops,
+	.get_string = vector_get_string,
 };
 
 static void
@@ -572,6 +618,13 @@ quaternion_vector_mul (const exprval_t *val1, const exprval_t *val2,
 	*c = qvmulf (a, b);
 }
 
+static const char *
+quaternion_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4f_t     vec = *(vec4f_t *) val->value;
+	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+}
+
 binop_t quaternion_binops[] = {
 	{ '+', &cexpr_quaternion, &cexpr_quaternion, vector_add },
 	{ '-', &cexpr_quaternion, &cexpr_quaternion, vector_sub },
@@ -592,6 +645,7 @@ exprtype_t cexpr_quaternion = {
 	.size = sizeof (vec4f_t),
 	.binops = quaternion_binops,
 	.unops = quaternion_unops,
+	.get_string = quaternion_get_string,
 };
 
 exprtype_t cexpr_exprval = {
@@ -742,4 +796,22 @@ cexpr_parse_enum (exprenum_t *enm, const char *str, const exprctx_t *ctx,
 	context.symtab = enm->symtab;
 	context.result = &result;
 	return cexpr_eval_string (str, &context);
+}
+
+VISIBLE const char *
+cexpr_enum_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	exprenum_t *enm = val->type->data;
+	exprsym_t  *symbols = enm->symtab->symbols;
+	for (exprsym_t *sym = symbols; sym->name; sym++) {
+		// if there are duplicate values, choose the *later* value
+		if (sym[1].name
+			&& memcmp (sym->value, sym[1].value, val->type->size) == 0) {
+			continue;
+		}
+		if (memcmp (sym->value, val->value, val->type->size) == 0) {
+			return sym->name;
+		}
+	}
+	return "";
 }

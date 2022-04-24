@@ -31,6 +31,7 @@
 
 struct exprval_s;
 struct exprctx_s;
+struct va_ctx_s;
 
 typedef struct binop_s {
 	int         op;
@@ -52,6 +53,7 @@ typedef struct unop_s {
 typedef struct exprtype_s {
 	const char *name;
 	size_t      size;
+	const char *(*get_string) (const struct exprval_s *val, struct va_ctx_s *va_ctx);
 	binop_t    *binops;
 	unop_t     *unops;
 	void       *data;
@@ -114,6 +116,7 @@ int cexpr_parse_enum (exprenum_t *enm, const char *str,
 binop_t *cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type) __attribute__((pure));
 exprval_t *cexpr_value (exprtype_t *type, exprctx_t *ctx);
 exprval_t *cexpr_value_reference (exprtype_t *type, void *data, exprctx_t *ctx);
+const char *cexpr_enum_get_string (const exprval_t *val, struct va_ctx_s *va_ctx) __attribute__((pure));
 int cexpr_eval_string (const char *str, exprctx_t *context);
 void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
