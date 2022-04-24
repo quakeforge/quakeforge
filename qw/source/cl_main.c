@@ -355,14 +355,14 @@ static cvar_t password_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &password },
 };
-char *spectator;
+int spectator;
 static cvar_t spectator_cvar = {
 	.name = "spectator",
 	.description =
 		"Set to 1 before connecting to become a spectator",
 	.default_value = "",
 	.flags = CVAR_USERINFO,
-	.value = { .type = 0/* not used */, .value = &spectator },
+	.value = { .type = &cexpr_int, .value = &spectator },
 };
 char *cl_name;
 static cvar_t cl_name_cvar = {
@@ -391,23 +391,23 @@ static cvar_t rate_cvar = {
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
 	.value = { .type = &cexpr_float, .value = &rate },
 };
-char *noaim;
+int noaim;
 static cvar_t noaim_cvar = {
 	.name = "noaim",
 	.description =
 		"Auto aim off switch. Set to 1 to turn off.",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
-	.value = { .type = 0/* not used */, .value = &noaim },
+	.value = { .type = &cexpr_int, .value = &noaim },
 };
-char *msg;
+int msg;
 static cvar_t msg_cvar = {
 	.name = "msg",
 	.description =
 		"Determines the type of messages reported 0 is maximum, 4 is none",
 	.default_value = "1",
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
-	.value = { .type = 0/* not used */, .value = &msg },
+	.value = { .type = &cexpr_int, .value = &msg },
 };
 
 /* GIB events */

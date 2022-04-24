@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern struct recorder_s demo;
 extern float sv_demofps;
 extern float sv_demoPings;
-extern char *sv_demoMaxSize;
 
 void SV_Stop (int reason);
 void Demo_Init (void);

@@ -174,14 +174,14 @@ static cvar_t cl_quakerc_cvar = {
 	.value = { .type = &cexpr_int, .value = &cl_quakerc },
 };
 
-char *fraglimit;
+float fraglimit;
 static cvar_t fraglimit_cvar = {
 	.name = "fraglimit",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &fraglimit },
+	.value = { .type = &cexpr_float, .value = &fraglimit },
 };
 int timelimit;
 static cvar_t timelimit_cvar = {
@@ -201,23 +201,23 @@ static cvar_t teamplay_cvar = {
 	.flags = CVAR_SERVERINFO,
 	.value = { .type = &cexpr_int, .value = &teamplay },
 };
-char *noexit;
+float noexit;
 static cvar_t noexit_cvar = {
 	.name = "noexit",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &noexit },
+	.value = { .type = &cexpr_float, .value = &noexit },
 };
-char *samelevel;
+float samelevel;
 static cvar_t samelevel_cvar = {
 	.name = "samelevel",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &samelevel },
+	.value = { .type = &cexpr_float, .value = &samelevel },
 };
 
 int skill;
@@ -258,14 +258,14 @@ static cvar_t pausable_cvar = {
 	.value = { .type = &cexpr_int, .value = &pausable },
 };
 
-char *temp1;
+float temp1;
 static cvar_t temp1_cvar = {
 	.name = "temp1",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &temp1 },
+	.value = { .type = &cexpr_float, .value = &temp1 },
 };
 int cl_usleep;
 static cvar_t cl_usleep_cvar = {

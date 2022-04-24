@@ -319,14 +319,14 @@ static cvar_t allow_download_maps_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &allow_download_maps },
 };
-char *allow_download_demos;
+int allow_download_demos;
 static cvar_t allow_download_demos_cvar = {
 	.name = "allow_download_demos",
 	.description =
 		"Toggle if clients can download maps from the server",
 	.default_value = "1",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &allow_download_demos },
+	.value = { .type = &cexpr_int, .value = &allow_download_demos },
 };
 
 int sv_highchars;
@@ -391,14 +391,14 @@ static cvar_t sv_timefmt_cvar = {
 };
 
 // game rules mirrored in svs.info
-char *fraglimit;
+float fraglimit;
 static cvar_t fraglimit_cvar = {
 	.name = "fraglimit",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &fraglimit },
+	.value = { .type = &cexpr_float, .value = &fraglimit },
 };
 int timelimit;
 static cvar_t timelimit_cvar = {
@@ -418,14 +418,14 @@ static cvar_t teamplay_cvar = {
 	.flags = CVAR_SERVERINFO,
 	.value = { .type = &cexpr_int, .value = &teamplay },
 };
-char *samelevel;
+float samelevel;
 static cvar_t samelevel_cvar = {
 	.name = "samelevel",
 	.description =
 		"None",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &samelevel },
+	.value = { .type = &cexpr_float, .value = &samelevel },
 };
 int maxclients;
 static cvar_t maxclients_cvar = {
@@ -475,23 +475,23 @@ static cvar_t skill_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &skill },
 };
-char *spawn;
+float spawn;
 static cvar_t spawn_cvar = {
 	.name = "spawn",
 	.description =
 		"Spawn the player entity",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &spawn },
+	.value = { .type = &cexpr_float, .value = &spawn },
 };
-char *watervis;
+int watervis;
 static cvar_t watervis_cvar = {
 	.name = "watervis",
 	.description =
 		"Set nonzero to enable r_wateralpha on clients",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &watervis },
+	.value = { .type = &cexpr_int, .value = &watervis },
 };
 
 char *hostname;

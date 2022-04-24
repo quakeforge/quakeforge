@@ -102,14 +102,14 @@ static cvar_t sv_progs_ext_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_progs_ext },
 };
-char *pr_checkextensions;
+float pr_checkextensions;
 static cvar_t pr_checkextensions_cvar = {
 	.name = "pr_checkextensions",
 	.description =
 		"indicate the presence of the checkextentions qc function",
 	.default_value = "1",
 	.flags = CVAR_ROM,
-	.value = { .type = 0/* not used */, .value = &pr_checkextensions },
+	.value = { .type = &cexpr_float, .value = &pr_checkextensions },
 };
 int sv_old_entity_free;
 static cvar_t sv_old_entity_free_cvar = {

@@ -63,7 +63,7 @@ static cvar_t con_interpreter_cvar = {
 		"Interpreter for the interactive console",
 	.default_value = "id",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &con_interpreter },
+	.value = { .type = 0, .value = &con_interpreter },
 };
 static sys_printf_t saved_sys_printf;
 

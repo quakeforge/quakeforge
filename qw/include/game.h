@@ -33,7 +33,6 @@
 #include "QF/qtypes.h"
 #include "QF/qdefs.h"
 
-extern char *registered;
 
 void Game_Init (void);
 void Game_Init_Cvars (void);

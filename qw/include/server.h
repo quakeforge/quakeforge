@@ -437,10 +437,8 @@ extern float sv_timeout;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 
-extern char *spawn;
 extern int teamplay;
 extern int deathmatch;
-extern char *fraglimit;
 extern int timelimit;
 
 extern	server_static_t	svs;				// persistant server info

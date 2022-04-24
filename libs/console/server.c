@@ -90,7 +90,7 @@ static cvar_t sv_logfile_cvar = {
 		"\"filename:gzflags\"",
 	.default_value = "none",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &sv_logfile },
+	.value = { .type = 0, .value = &sv_logfile },
 };
 static exprenum_t sv_conmode_enum;
 static exprtype_t sv_conmode_type = {

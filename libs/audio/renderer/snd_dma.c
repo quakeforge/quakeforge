@@ -69,14 +69,14 @@ static cvar_t snd_volume_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_float, .value = &snd_volume },
 };
-static char *nosound;
+static int nosound;
 static cvar_t nosound_cvar = {
 	.name = "nosound",
 	.description =
 		"Set to turn sound off",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &nosound },
+	.value = { .type = &cexpr_int, .value = &nosound },
 };
 static float snd_mixahead;
 static cvar_t snd_mixahead_cvar = {
@@ -97,14 +97,14 @@ static cvar_t snd_noextraupdate_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &snd_noextraupdate },
 };
-static char *snd_show;
+static int snd_show;
 static cvar_t snd_show_cvar = {
 	.name = "snd_show",
 	.description =
 		"Toggles display of sounds currently being played",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &snd_show },
+	.value = { .type = &cexpr_int, .value = &snd_show },
 };
 
 static general_data_t plugin_info_general_data;

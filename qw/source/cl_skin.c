@@ -68,23 +68,23 @@ static cvar_t skin_cvar = {
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
 	.value = { .type = 0, .value = &skin },
 };
-char *topcolor;
+int topcolor;
 static cvar_t topcolor_cvar = {
 	.name = "topcolor",
 	.description =
 		"Players color on top",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
-	.value = { .type = 0/* not used */, .value = &topcolor },
+	.value = { .type = &cexpr_int, .value = &topcolor },
 };
-char *bottomcolor;
+int bottomcolor;
 static cvar_t bottomcolor_cvar = {
 	.name = "bottomcolor",
 	.description =
 		"Players color on bottom",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE | CVAR_USERINFO,
-	.value = { .type = 0/* not used */, .value = &bottomcolor },
+	.value = { .type = &cexpr_int, .value = &bottomcolor },
 };
 
 

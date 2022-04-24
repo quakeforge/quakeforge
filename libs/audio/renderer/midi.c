@@ -57,14 +57,14 @@ typedef struct {
 
 static int midi_intiialized = 0;
 
-static char *wildmidi_volume;
+static float wildmidi_volume;
 static cvar_t wildmidi_volume_cvar = {
 	.name = "wildmidi_volume",
 	.description =
 		"Set the Master Volume",
 	.default_value = "100",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &wildmidi_volume },
+	.value = { .type = &cexpr_float, .value = &wildmidi_volume },
 };
 static char *wildmidi_config;
 static cvar_t wildmidi_config_cvar = {

@@ -137,23 +137,23 @@ static cvar_t hud_time_cvar = {
 	.value = { .type = &cexpr_int, .value = &hud_time },
 };
 
-static char *r_ambient;
+static int r_ambient;
 static cvar_t r_ambient_cvar = {
 	.name = "r_ambient",
 	.description =
 		"Determines the ambient lighting for a level",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &r_ambient },
+	.value = { .type = &cexpr_int, .value = &r_ambient },
 };
-static char *r_drawflat;
+static int r_drawflat;
 static cvar_t r_drawflat_cvar = {
 	.name = "r_drawflat",
 	.description =
 		"Toggles the drawing of textures",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &r_drawflat },
+	.value = { .type = &cexpr_int, .value = &r_drawflat },
 };
 
 int         fps_count;

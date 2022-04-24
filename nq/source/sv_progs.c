@@ -91,114 +91,114 @@ static cvar_t sv_progs_ext_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_progs_ext },
 };
-char *pr_checkextensions;
+float pr_checkextensions;
 static cvar_t pr_checkextensions_cvar = {
 	.name = "pr_checkextensions",
 	.description =
 		"indicate the presence of the checkextentions qc function",
 	.default_value = "1",
 	.flags = CVAR_ROM,
-	.value = { .type = 0/* not used */, .value = &pr_checkextensions },
+	.value = { .type = &cexpr_float, .value = &pr_checkextensions },
 };
 
-char *nomonsters;
+float nomonsters;
 static cvar_t nomonsters_cvar = {
 	.name = "nomonsters",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &nomonsters },
+	.value = { .type = &cexpr_float, .value = &nomonsters },
 };
-char *gamecfg;
+float gamecfg;
 static cvar_t gamecfg_cvar = {
 	.name = "gamecfg",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &gamecfg },
+	.value = { .type = &cexpr_float, .value = &gamecfg },
 };
-char *scratch1;
+float scratch1;
 static cvar_t scratch1_cvar = {
 	.name = "scratch1",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &scratch1 },
+	.value = { .type = &cexpr_float, .value = &scratch1 },
 };
-char *scratch2;
+float scratch2;
 static cvar_t scratch2_cvar = {
 	.name = "scratch2",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &scratch2 },
+	.value = { .type = &cexpr_float, .value = &scratch2 },
 };
-char *scratch3;
+float scratch3;
 static cvar_t scratch3_cvar = {
 	.name = "scratch3",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &scratch3 },
+	.value = { .type = &cexpr_float, .value = &scratch3 },
 };
-char *scratch4;
+float scratch4;
 static cvar_t scratch4_cvar = {
 	.name = "scratch4",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &scratch4 },
+	.value = { .type = &cexpr_float, .value = &scratch4 },
 };
-char *savedgamecfg;
+float savedgamecfg;
 static cvar_t savedgamecfg_cvar = {
 	.name = "savedgamecfg",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &savedgamecfg },
+	.value = { .type = &cexpr_float, .value = &savedgamecfg },
 };
-char *saved1;
+float saved1;
 static cvar_t saved1_cvar = {
 	.name = "saved1",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &saved1 },
+	.value = { .type = &cexpr_float, .value = &saved1 },
 };
-char *saved2;
+float saved2;
 static cvar_t saved2_cvar = {
 	.name = "saved2",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &saved2 },
+	.value = { .type = &cexpr_float, .value = &saved2 },
 };
-char *saved3;
+float saved3;
 static cvar_t saved3_cvar = {
 	.name = "saved3",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &saved3 },
+	.value = { .type = &cexpr_float, .value = &saved3 },
 };
-char *saved4;
+float saved4;
 static cvar_t saved4_cvar = {
 	.name = "saved4",
 	.description =
 		"No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &saved4 },
+	.value = { .type = &cexpr_float, .value = &saved4 },
 };
 
 static int sv_range;

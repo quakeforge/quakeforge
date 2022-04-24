@@ -133,7 +133,7 @@ static cvar_t pr_source_path_cvar = {
 		"where to look (within gamedir) for source files",
 	.default_value = ".",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &pr_source_path },
+	.value = { .type = 0, .value = &pr_source_path },
 };
 static char    *source_path_string;
 static char   **source_paths;

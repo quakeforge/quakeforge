@@ -46,14 +46,14 @@
 #include "compat.h"
 
 // Joystick variables and structures
-char *joy_sensitivity;
+float joy_sensitivity;
 static cvar_t joy_sensitivity_cvar = {
 	.name = "joy_sensitivity",
 	.description =
 		"Joystick sensitivity",
 	.default_value = "1",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &joy_sensitivity },
+	.value = { .type = &cexpr_float, .value = &joy_sensitivity },
 };
 
 // joystick defines and variables
@@ -97,7 +97,7 @@ static cvar_t in_joystick_cvar = {
 		"FIXME: No Description",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &in_joystick },
+	.value = { .type = 0, .value = &in_joystick },
 };
 char *joy_name;
 static cvar_t joy_name_cvar = {
@@ -171,77 +171,77 @@ static cvar_t joy_advaxisv_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &joy_advaxisv },
 };
-char *joy_forwardthreshold;
+float joy_forwardthreshold;
 static cvar_t joy_forwardthreshold_cvar = {
 	.name = "joyforwardthreshold",
 	.description =
 		"FIXME: No Description",
 	.default_value = "0.15",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_forwardthreshold },
+	.value = { .type = &cexpr_float, .value = &joy_forwardthreshold },
 };
-char *joy_sidethreshold;
+float joy_sidethreshold;
 static cvar_t joy_sidethreshold_cvar = {
 	.name = "joysidethreshold",
 	.description =
 		"FIXME: No Description",
 	.default_value = "0.15",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_sidethreshold },
+	.value = { .type = &cexpr_float, .value = &joy_sidethreshold },
 };
-char *joy_pitchthreshold;
+float joy_pitchthreshold;
 static cvar_t joy_pitchthreshold_cvar = {
 	.name = "joypitchthreshold",
 	.description =
 		"FIXME: No Description",
 	.default_value = "0.15",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_pitchthreshold },
+	.value = { .type = &cexpr_float, .value = &joy_pitchthreshold },
 };
-char *joy_yawthreshold;
+float joy_yawthreshold;
 static cvar_t joy_yawthreshold_cvar = {
 	.name = "joyyawthreshold",
 	.description =
 		"FIXME: No Description",
 	.default_value = "0.15",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_yawthreshold },
+	.value = { .type = &cexpr_float, .value = &joy_yawthreshold },
 };
-char *joy_forwardsensitivity;
+float joy_forwardsensitivity;
 static cvar_t joy_forwardsensitivity_cvar = {
 	.name = "joyforwardsensitivity",
 	.description =
 		"FIXME: No Description",
 	.default_value = "-1.0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_forwardsensitivity },
+	.value = { .type = &cexpr_float, .value = &joy_forwardsensitivity },
 };
-char *joy_sidesensitivity;
+float joy_sidesensitivity;
 static cvar_t joy_sidesensitivity_cvar = {
 	.name = "joysidesensitivity",
 	.description =
 		"FIXME: No Description",
 	.default_value = "-1.0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_sidesensitivity },
+	.value = { .type = &cexpr_float, .value = &joy_sidesensitivity },
 };
-char *joy_pitchsensitivity;
+float joy_pitchsensitivity;
 static cvar_t joy_pitchsensitivity_cvar = {
 	.name = "joypitchsensitivity",
 	.description =
 		"FIXME: No Description",
 	.default_value = "1.0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_pitchsensitivity },
+	.value = { .type = &cexpr_float, .value = &joy_pitchsensitivity },
 };
-char *joy_yawsensitivity;
+float joy_yawsensitivity;
 static cvar_t joy_yawsensitivity_cvar = {
 	.name = "joyyawsensitivity",
 	.description =
 		"FIXME: No Description",
 	.default_value = "-1.0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_yawsensitivity },
+	.value = { .type = &cexpr_float, .value = &joy_yawsensitivity },
 };
 int joy_wwhack1;
 static cvar_t joy_wwhack1_cvar = {
@@ -252,14 +252,14 @@ static cvar_t joy_wwhack1_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &joy_wwhack1 },
 };
-char *joy_wwhack2;
+float joy_wwhack2;
 static cvar_t joy_wwhack2_cvar = {
 	.name = "joywwhack2",
 	.description =
 		"FIXME: No Description",
 	.default_value = "0.0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &joy_wwhack2 },
+	.value = { .type = &cexpr_float, .value = &joy_wwhack2 },
 };
 
 int joy_debug;

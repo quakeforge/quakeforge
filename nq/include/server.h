@@ -206,7 +206,6 @@ extern int teamplay;
 extern int skill;
 extern int deathmatch;
 extern int coop;
-extern char *fraglimit;
 extern int timelimit;
 
 extern float sv_rollangle;

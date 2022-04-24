@@ -40,14 +40,14 @@
 
 qboolean standard_quake = false;
 
-char *registered;
+float registered;
 static cvar_t registered_cvar = {
 	.name = "registered",
 	.description =
 		"Is the game the registered version. 1 yes 0 no",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &registered },
+	.value = { .type = &cexpr_float, .value = &registered },
 };
 char *cmdline;
 static cvar_t cmdline_cvar = {
@@ -56,7 +56,7 @@ static cvar_t cmdline_cvar = {
 		"None",
 	.default_value = "0",
 	.flags = CVAR_SERVERINFO,
-	.value = { .type = 0/* not used */, .value = &cmdline },
+	.value = { .type = 0, .value = &cmdline },
 };
 int         static_registered = 1;
 

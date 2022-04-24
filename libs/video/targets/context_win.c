@@ -78,14 +78,14 @@ static cvar_t vid_mode_cvar = {
 };
 
 // Note that 0 is MODE_WINDOWED
-static char *_vid_default_mode;
+int _vid_default_mode;
 static cvar_t _vid_default_mode_cvar = {
 	.name = "_vid_default_mode",
 	.description =
 		"",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &_vid_default_mode },
+	.value = { .type = &cexpr_int, .value = &_vid_default_mode },
 };
 
 // Note that 3 is MODE_FULLSCREEN_DEFAULT
@@ -98,59 +98,59 @@ static cvar_t _vid_default_mode_win_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &_vid_default_mode_win },
 };
-static char *vid_wait;
+int vid_wait;
 static cvar_t vid_wait_cvar = {
 	.name = "vid_wait",
 	.description =
 		"",
 	.default_value = "0",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &vid_wait },
+	.value = { .type = &cexpr_int, .value = &vid_wait },
 };
-static char *vid_nopageflip;
+int vid_nopageflip;
 static cvar_t vid_nopageflip_cvar = {
 	.name = "vid_nopageflip",
 	.description =
 		"",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &vid_nopageflip },
+	.value = { .type = &cexpr_int, .value = &vid_nopageflip },
 };
-static char *_vid_wait_override;
+int _vid_wait_override;
 static cvar_t _vid_wait_override_cvar = {
 	.name = "_vid_wait_override",
 	.description =
 		"",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &_vid_wait_override },
+	.value = { .type = &cexpr_int, .value = &_vid_wait_override },
 };
-static char *vid_config_x;
+int vid_config_x;
 static cvar_t vid_config_x_cvar = {
 	.name = "vid_config_x",
 	.description =
 		"",
 	.default_value = "800",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &vid_config_x },
+	.value = { .type = &cexpr_int, .value = &vid_config_x },
 };
-static char *vid_config_y;
+int vid_config_y;
 static cvar_t vid_config_y_cvar = {
 	.name = "vid_config_y",
 	.description =
 		"",
 	.default_value = "600",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &vid_config_y },
+	.value = { .type = &cexpr_int, .value = &vid_config_y },
 };
-static char *vid_stretch_by_2;
+int vid_stretch_by_2;
 static cvar_t vid_stretch_by_2_cvar = {
 	.name = "vid_stretch_by_2",
 	.description =
 		"",
 	.default_value = "1",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &vid_stretch_by_2 },
+	.value = { .type = &cexpr_int, .value = &vid_stretch_by_2 },
 };
 static int _windowed_mouse;
 static cvar_t _windowed_mouse_cvar = {
@@ -179,14 +179,14 @@ static cvar_t vid_windowed_mode_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &vid_windowed_mode },
 };
-static char *block_switch;
+int block_switch;
 static cvar_t block_switch_cvar = {
 	.name = "block_switch",
 	.description =
 		"",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &block_switch },
+	.value = { .type = &cexpr_int, .value = &block_switch },
 };
 static int vid_window_x;
 static cvar_t vid_window_x_cvar = {

@@ -151,14 +151,14 @@ static cvar_t in_snd_block_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &in_snd_block },
 };
-char *in_dga;
+int in_dga;
 static cvar_t in_dga_cvar = {
 	.name = "in_dga",
 	.description =
 		"DGA Input support",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &in_dga },
+	.value = { .type = &cexpr_int, .value = &in_dga },
 };
 int in_mouse_accel;
 static cvar_t in_mouse_accel_cvar = {

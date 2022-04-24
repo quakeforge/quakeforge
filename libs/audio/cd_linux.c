@@ -84,7 +84,7 @@ static cvar_t mus_cddevice_cvar = {
 		"device to use for CD music",
 	.default_value = "/dev/cdrom",
 	.flags = CVAR_NONE,
-	.value = { .type = 0/* not used */, .value = &mus_cddevice },
+	.value = { .type = 0, .value = &mus_cddevice },
 };
 static float bgmvolume;
 static cvar_t bgmvolume_cvar = {
