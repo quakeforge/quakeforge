@@ -707,7 +707,7 @@ CL_SetStat (int stat, int value)
 }
 
 #define SHOWNET(x) \
-	if (cl_shownet->int_val == 2) \
+	if (cl_shownet == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 void
@@ -725,9 +725,9 @@ CL_ParseServerMessage (void)
 	};
 
 	// if recording demos, copy the message out
-	if (cl_shownet->int_val == 1)
+	if (cl_shownet == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
-	else if (cl_shownet->int_val == 2)
+	else if (cl_shownet == 2)
 		Sys_Printf ("------------------\n");
 
 	cl.viewstate.onground = -1;		// unless the server says otherwise

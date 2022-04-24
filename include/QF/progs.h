@@ -1829,11 +1829,12 @@ void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);
 void PR_Profile (progs_t *pr);
 
-extern struct cvar_s *pr_debug;
-extern struct cvar_s *pr_deadbeef_ents;
-extern struct cvar_s *pr_deadbeef_locals;
-extern struct cvar_s *pr_boundscheck;
-extern struct cvar_s *pr_faultchecks;
+extern int pr_debug;
+extern char *pr_source_path;
+extern int pr_deadbeef_ents;
+extern int pr_deadbeef_locals;
+extern int pr_boundscheck;
+extern int pr_faultchecks;
 
 ///@}
 

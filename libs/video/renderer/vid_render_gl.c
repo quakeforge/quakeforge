@@ -214,7 +214,7 @@ gl_begin_frame (void)
 	//update in sw modes but must in gl mode
 	vr_data.scr_copyeverything = 1;
 
-	if (gl_clear->int_val) {
+	if (gl_clear) {
 		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	} else {
 		qfglClear (GL_DEPTH_BUFFER_BIT);
@@ -222,7 +222,7 @@ gl_begin_frame (void)
 
 	gl_ctx->begun = 1;
 
-	if (r_speeds->int_val) {
+	if (r_speeds) {
 		gl_ctx->start_time = Sys_DoubleTime ();
 		gl_ctx->brush_polys = 0;
 		gl_ctx->alias_polys = 0;
@@ -274,7 +274,7 @@ gl_draw_transparent (void)
 static void
 gl_post_process (framebuffer_t *src)
 {
-	if (scr_fisheye->int_val) {
+	if (scr_fisheye) {
 		gl_FisheyeScreen (src);
 	} else if (r_dowarp) {
 		gl_WarpScreen (src);
@@ -294,7 +294,7 @@ gl_set_2d (int scaled)
 static void
 gl_end_frame (void)
 {
-	if (r_speeds->int_val) {
+	if (r_speeds) {
 //		qfglFinish ();
 		double      start_time = gl_ctx->start_time;
 		double      end_time = Sys_DoubleTime ();
@@ -307,7 +307,7 @@ gl_end_frame (void)
 	GL_FlushText ();
 	qfglFlush ();
 
-	if (gl_finish->int_val) {
+	if (gl_finish) {
 		gl_ctx->end_rendering ();
 		gl_ctx->begun = 0;
 	}
@@ -440,8 +440,8 @@ gl_set_fov (float x, float y)
 	float       neard, fard;
 	mat4f_t     proj;
 
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
+	neard = r_nearclip;
+	fard = r_farclip;
 
 	// NOTE columns!
 	proj[0] = (vec4f_t) { 1/x, 0, 0, 0 };

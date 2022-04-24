@@ -209,7 +209,7 @@ PF_cvar (progs_t *pr, void *data)
 
 	str = P_GSTRING (pr, 0);
 
-	R_FLOAT (pr) = Cvar_VariableValue (str);
+	R_FLOAT (pr) = Cvar_Value (str);
 }
 
 /*
@@ -231,7 +231,7 @@ PF_cvar_set (progs_t *pr, void *data)
 		return;
 	}
 
-	Cvar_Set (var, val);
+	Cvar_SetVar (var, val);
 }
 
 /*

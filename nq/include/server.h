@@ -202,31 +202,30 @@ typedef struct client_s
 
 //============================================================================
 
-extern	struct cvar_s	*teamplay;
-extern	struct cvar_s	*skill;
-extern	struct cvar_s	*deathmatch;
-extern	struct cvar_s	*coop;
-extern	struct cvar_s	*fraglimit;
-extern	struct cvar_s	*timelimit;
+extern int teamplay;
+extern int skill;
+extern int deathmatch;
+extern int coop;
+extern int timelimit;
 
-extern	struct cvar_s	*sv_rollangle;
-extern	struct cvar_s	*sv_rollspeed;
+extern float sv_rollangle;
+extern float sv_rollspeed;
 
-extern	struct cvar_s	*sv_maxvelocity;
-extern	struct cvar_s	*sv_gravity;
-extern	struct cvar_s	*sv_jump_any;
-extern	struct cvar_s	*sv_nostep;
-extern	struct cvar_s	*sv_friction;
-extern	struct cvar_s	*sv_edgefriction;
-extern	struct cvar_s	*sv_stopspeed;
-extern	struct cvar_s	*sv_maxspeed;
-extern	struct cvar_s	*sv_accelerate;
-extern	struct cvar_s	*sv_idealpitchscale;
-extern	struct cvar_s	*sv_aim;
-extern	struct cvar_s	*sv_friction;
-extern	struct cvar_s	*sv_stopspeed;
+extern float sv_maxvelocity;
+extern float sv_gravity;
+extern int sv_jump_any;
+extern int sv_nostep;
+extern float sv_friction;
+extern float sv_edgefriction;
+extern float sv_stopspeed;
+extern float sv_maxspeed;
+extern float sv_accelerate;
+extern float sv_idealpitchscale;
+extern float sv_aim;
+extern float sv_friction;
+extern float sv_stopspeed;
 
-extern	struct cvar_s	*max_edicts;
+extern int max_edicts;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -277,6 +276,7 @@ void SV_FinishGravity (edict_t *ent, vec3_t move);
 void SV_Physics_Toss (edict_t *ent);
 void SV_Physics_Client (edict_t *ent, int num);
 void SV_Physics (void);
+void SV_Physics_Init_Cvars (void);
 void SV_ProgStartFrame (void);
 void SV_RunNewmis (void);
 
@@ -289,6 +289,7 @@ void SV_MoveToGoal (progs_t *pr, void *data);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);
+void SV_User_Init_Cvars (void);
 void SV_SaveSpawnparms (void);
 void SV_SpawnServer (const char *server);
 
@@ -296,7 +297,8 @@ void SV_LoadProgs (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 //FIXME location
 #define		STOP_EPSILON	0.1

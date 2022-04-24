@@ -62,7 +62,15 @@ qboolean    sv_allow_cheats;
 
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
-cvar_t     *sv_leetnickmatch;
+int sv_leetnickmatch;
+static cvar_t sv_leetnickmatch_cvar = {
+	.name = "sv_3133735_7h4n_7h0u",
+	.description =
+		"Match '1' as 'i' and such in nicks",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_leetnickmatch },
+};
 
 static qboolean
 match_char (char a, char b)
@@ -70,7 +78,7 @@ match_char (char a, char b)
 	a = tolower ((byte) sys_char_map[(byte) a]);
 	b = tolower ((byte) sys_char_map[(byte) b]);
 
-	if (a == b || (sv_leetnickmatch->int_val
+	if (a == b || (sv_leetnickmatch
 		&& (   (a == '1' && b == 'i') || (a == 'i' && b == '1')
 			|| (a == '1' && b == 'l') || (a == 'l' && b == '1')
 			|| (a == '3' && b == 'e') || (a == 'e' && b == '3')
@@ -871,13 +879,12 @@ SV_SendServerInfoChange (const char *key, const char *value)
 }
 
 void
-Cvar_Info (cvar_t *var)
+Cvar_Info (void *data, const cvar_t *cvar)
 {
-	if (var->flags & CVAR_SERVERINFO) {
-		Info_SetValueForKey (svs.info, var->name, var->string,
-							 (!sv_highchars || !sv_highchars->int_val));
-
-		SV_SendServerInfoChange (var->name, var->string);
+	if (cvar->flags & CVAR_SERVERINFO) {
+		const char *cvar_str = Cvar_VarString (cvar);
+		Info_SetValueForKey (svs.info, cvar->name, cvar_str, !sv_highchars);
+		SV_SendServerInfoChange (cvar->name, cvar_str);
 	}
 }
 
@@ -923,9 +930,9 @@ SV_Serverinfo_f (void)
 	// if this is a cvar, change it too
 	var = Cvar_FindVar (key);
 	if (var && (var->flags & CVAR_SERVERINFO)) {
-		Cvar_Set (var, value);
+		Cvar_SetVar (var, value);
 	} else {
-		Info_SetValueForKey (svs.info, key, value, !sv_highchars->int_val);
+		Info_SetValueForKey (svs.info, key, value, !sv_highchars);
 		SV_SendServerInfoChange (key, value);
 	}
 }
@@ -939,7 +946,7 @@ SV_SetLocalinfo (const char *key, const char *value)
 		oldvalue = strdup (Info_ValueForKey (localinfo, key));
 
 	if (*value)
-		Info_SetValueForKey (localinfo, key, value, !sv_highchars->int_val);
+		Info_SetValueForKey (localinfo, key, value, !sv_highchars);
 	else
 		Info_RemoveKey (localinfo, key);
 
@@ -1049,7 +1056,7 @@ SV_Gamedir (void)
 	}
 
 	Info_SetValueForStarKey (svs.info, "*gamedir", dir,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 }
 
 /*
@@ -1304,6 +1311,5 @@ SV_InitOperatorCommands (void)
 					"commands do, so you can check safely");
 
 	// poor description
-	sv_leetnickmatch = Cvar_Get ("sv_3133735_7h4n_7h0u", "1", CVAR_NONE, NULL,
-								 "Match '1' as 'i' and such in nicks");
+	Cvar_Register (&sv_leetnickmatch_cvar, 0, 0);
 }

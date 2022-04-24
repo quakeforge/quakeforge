@@ -55,7 +55,15 @@ typedef struct server_s {
 	double timeout;
 } server_t;
 
-static cvar_t *sv_console_plugin;
+static char *sv_console_plugin;
+static cvar_t sv_console_plugin_cvar = {
+	.name = "sv_console_plugin",
+	.description =
+		"Plugin used for the console",
+	.default_value = "server",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &sv_console_plugin },
+};
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
@@ -535,10 +543,9 @@ main (int argc, const char **argv)
 
 	PI_Init ();
 
-	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
-								  CVAR_ROM, 0, "Plugin used for the console");
+	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (sv_console_plugin->string);
+	Con_Init (sv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = mst_cbuf;
 	con_list_print = Sys_Printf;

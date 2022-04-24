@@ -85,28 +85,8 @@ SV_Init (void)
 
 	SV_Progs_Init ();
 
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
-							   "None");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info,
-						   "None");
-	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info,
-							"None");
-	//NOTE: the cl/sv clash is deliberate: dedicated server will use the right
-	//vars, but client/server combo will use the one.
-	sv_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-							 "How quickly you straighten out after strafing");
-	sv_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
-							 "How much your screen tilts when strafing");
-	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, NULL, "None");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, "None");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_SERVERINFO, Cvar_Info,
-							"None");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL, "None");
-	sv_idealpitchscale = Cvar_Get ("sv_idealpitchscale", "0.8", CVAR_NONE,
-								   NULL, "None");
-	sv_aim = Cvar_Get ("sv_aim", "0.93", CVAR_NONE, NULL, "None");
-	sv_nostep = Cvar_Get ("sv_nostep", "0", CVAR_NONE, NULL, "None");
+	SV_Physics_Init_Cvars ();
+	SV_User_Init_Cvars ();
 
 	Cmd_AddCommand ("sv_protocol", SV_Protocol_f, "set the protocol to be "
 					"used after the next map load");
@@ -254,7 +234,7 @@ SV_SendServerinfo (client_t *client)
 	MSG_WriteLong (&client->message, sv.protocol);
 	MSG_WriteByte (&client->message, svs.maxclients);
 
-	if (!coop->int_val && deathmatch->int_val)
+	if (!coop && deathmatch)
 		MSG_WriteByte (&client->message, GAME_DEATHMATCH);
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
@@ -1109,8 +1089,8 @@ SV_SpawnServer (const char *server)
 
 	S_BlockSound ();
 	// let's not have any servers with no name
-	if (hostname->string[0] == 0)
-		Cvar_Set (hostname, "UNNAMED");
+	if (hostname[0] == 0)
+		Cvar_Set ("hostname", "UNNAMED");
 
 	Sys_MaskPrintf (SYS_dev, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
@@ -1122,15 +1102,15 @@ SV_SpawnServer (const char *server)
 	}
 
 	// make cvars consistant
-	if (coop->int_val)
-		Cvar_SetValue (deathmatch, 0);
-	current_skill = skill->int_val;
+	if (coop)
+		deathmatch = 0;
+	current_skill = skill;
 	if (current_skill < 0)
 		current_skill = 0;
 	if (current_skill > 3)
 		current_skill = 3;
 
-	Cvar_SetValue (skill, (float) current_skill);
+	skill = current_skill;
 
 	// set up the new server
 	Host_ClearMemory ();
@@ -1142,7 +1122,7 @@ SV_SpawnServer (const char *server)
 	sv.protocol = sv_protocol;
 
 	// load progs to get entity field count
-	sv.max_edicts = bound (MIN_EDICTS, max_edicts->int_val, MAX_EDICTS);
+	sv.max_edicts = bound (MIN_EDICTS, max_edicts, MAX_EDICTS);
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 
@@ -1202,10 +1182,10 @@ SV_SpawnServer (const char *server)
 	SVfloat (ent, solid) = SOLID_BSP;
 	SVfloat (ent, movetype) = MOVETYPE_PUSH;
 
-	if (coop->int_val)
-		*sv_globals.coop = coop->int_val;
+	if (coop)
+		*sv_globals.coop = coop;
 	else
-		*sv_globals.deathmatch = deathmatch->int_val;
+		*sv_globals.deathmatch = deathmatch;
 
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 

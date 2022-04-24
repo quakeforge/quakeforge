@@ -66,22 +66,22 @@ typedef struct {
 
 //===========================================================================
 
-extern struct cvar_s	*r_speeds;
-extern struct cvar_s	*r_timegraph;
-extern struct cvar_s	*r_graphheight;
-extern struct cvar_s	*r_clearcolor;
-extern struct cvar_s	*r_waterwarp;
-extern struct cvar_s	*r_drawentities;
-extern struct cvar_s	*r_aliasstats;
-extern struct cvar_s	*r_dspeeds;
-extern struct cvar_s	*r_drawflat;
-extern struct cvar_s	*r_ambient;
-extern struct cvar_s	*r_reportsurfout;
-extern struct cvar_s	*r_maxsurfs;
-extern struct cvar_s	*r_numsurfs;
-extern struct cvar_s	*r_reportedgeout;
-extern struct cvar_s	*r_maxedges;
-extern struct cvar_s	*r_numedges;
+extern int r_speeds;
+extern int r_timegraph;
+extern int r_graphheight;
+extern int r_clearcolor;
+extern int r_waterwarp;
+extern int r_drawentities;
+extern int r_aliasstats;
+extern int r_dspeeds;
+extern int r_drawflat;
+extern int r_ambient;
+extern int r_reportsurfout;
+extern int r_maxsurfs;
+extern int r_numsurfs;
+extern int r_reportedgeout;
+extern int r_maxedges;
+extern int r_numedges;
 
 extern float	cl_wateralpha;
 

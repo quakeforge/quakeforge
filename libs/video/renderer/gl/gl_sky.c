@@ -115,7 +115,7 @@ gl_R_LoadSkys (const char *skyname)
 	int         i;	// j
 
 	if (!skyname || !*skyname)
-		skyname = r_skyname->string;
+		skyname = r_skyname;
 
 	if (!*skyname || strcasecmp (skyname, "none") == 0) {
 		gl_skyloaded = false;
@@ -370,13 +370,13 @@ R_DrawSkyDome (void)
 	qfglEnable (GL_BLEND);
 
 	// clouds
-	if (gl_sky_multipass->int_val) {
+	if (gl_sky_multipass) {
 		qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 		speedscale = vr_data.realtime / 8.0;
 		speedscale -= floor (speedscale);
 		R_DrawSkyLayer (speedscale);
 	}
-	if (gl_sky_debug->int_val) {
+	if (gl_sky_debug) {
 		skydome_debug ();
 	}
 }

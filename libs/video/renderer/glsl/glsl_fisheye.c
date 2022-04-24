@@ -104,7 +104,7 @@ glsl_FisheyeScreen (framebuffer_t *fb)
 {
 	qfeglUseProgram (fisheye.program);
 
-	qfeglUniform1f (fisheye.fov.location, scr_ffov->value * M_PI / 360);
+	qfeglUniform1f (fisheye.fov.location, scr_ffov * M_PI / 360);
 	qfeglUniform1f (fisheye.aspect.location,
 					(float) r_refdef.vrect.height / r_refdef.vrect.width);
 

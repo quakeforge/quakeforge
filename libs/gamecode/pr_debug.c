@@ -117,8 +117,24 @@ typedef struct {
 	dstring_t  *dstr;
 } pr_debug_data_t;
 
-cvar_t         *pr_debug;
-cvar_t         *pr_source_path;
+int pr_debug;
+static cvar_t pr_debug_cvar = {
+	.name = "pr_debug",
+	.description =
+		"enable progs debugging",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_debug },
+};
+char *pr_source_path;
+static cvar_t pr_source_path_cvar = {
+	.name = "pr_source_path",
+	.description =
+		"where to look (within gamedir) for source files",
+	.default_value = ".",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &pr_source_path },
+};
 static char    *source_path_string;
 static char   **source_paths;
 
@@ -182,7 +198,7 @@ compunit_get_key (const void *cu, void *p)
 }
 
 static void
-source_path_f (cvar_t *var)
+source_path_f (void *data, const cvar_t *cvar)
 {
 	int         i;
 	char       *s;
@@ -190,7 +206,7 @@ source_path_f (cvar_t *var)
 	if (source_path_string) {
 		free (source_path_string);
 	}
-	source_path_string = strdup (var->string);
+	source_path_string = strdup (pr_source_path);
 	if (source_paths) {
 		free (source_paths);
 	}
@@ -587,7 +603,7 @@ PR_LoadDebug (progs_t *pr)
 
 	res->debug = 0;
 
-	if (!pr_debug->int_val)
+	if (!pr_debug)
 		return 1;
 
 	def = PR_FindGlobal (pr, ".debug_file");
@@ -976,7 +992,7 @@ PR_DumpState (progs_t *pr)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	if (pr->pr_xfunction) {
-		if (pr_debug->int_val && res->debug) {
+		if (pr_debug && res->debug) {
 			pr_lineno_t *lineno;
 			pr_auxfunction_t *func = 0;
 			dfunction_t *descriptor = pr->pr_xfunction->descriptor;
@@ -1045,7 +1061,7 @@ pr_debug_find_def (progs_t *pr, pr_ptr_t *ofs)
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && res->debug) {
+	if (pr_debug && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
 	}
 	if (*ofs >= pr->progs->globals.count) {
@@ -1486,10 +1502,10 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	data.pr = pr;
 	data.dstr = res->dstr;
 
-	if (pr_debug->int_val > 1)
+	if (pr_debug > 1)
 		dump_code = 1;
 
-	if (pr_debug->int_val && res->debug) {
+	if (pr_debug && res->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line) {
@@ -1528,7 +1544,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	}
 
 	dasprintf (res->line, "%04x ", addr);
-	if (pr_debug->int_val > 2) {
+	if (pr_debug > 2) {
 		if (pr->progs->version < PROG_VERSION) {
 			dasprintf (res->line,
 						"%03x %04x(%8s) %04x(%8s) %04x(%8s)\t",
@@ -1741,7 +1757,7 @@ dump_frame (progs_t *pr, prstack_t *frame)
 		Sys_Printf ("<NO FUNCTION>\n");
 		return;
 	}
-	if (pr_debug->int_val && res->debug) {
+	if (pr_debug && res->debug) {
 		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->staddr);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
@@ -1932,9 +1948,6 @@ PR_Debug_Init (progs_t *pr)
 void
 PR_Debug_Init_Cvars (void)
 {
-	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
-						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
-							   "where to look (within gamedir) for source "
-							   "files");
+	Cvar_Register (&pr_debug_cvar, 0, 0);
+	Cvar_Register (&pr_source_path_cvar, source_path_f, 0);
 }

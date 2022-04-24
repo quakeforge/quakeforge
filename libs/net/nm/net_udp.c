@@ -259,9 +259,9 @@ UDP_Init (void)
 		myAddr = 0;
 
 	// if the quake hostname isn't set, set it to the machine name
-	if (strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname, "UNNAMED") == 0) {
 		buff[15] = 0;
-		Cvar_Set (hostname, buff);
+		Cvar_Set ("hostname", buff);
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
@@ -552,7 +552,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
-	if (developer->int_val & SYS_net) {
+	if (developer & SYS_net) {
 		hex_dump_buf (buf, ret);
 	}
 	return ret;
@@ -603,7 +603,7 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 		return 0;
 	Sys_MaskPrintf (SYS_net, "sent %d bytes to %s\n", ret,
 					UDP_AddrToString (to));
-	if (developer->int_val & SYS_net) {
+	if (developer & SYS_net) {
 		hex_dump_buf (buf, len);
 	}
 	return ret;

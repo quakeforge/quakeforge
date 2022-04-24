@@ -47,7 +47,10 @@ void SCR_SetFOV (float fov);
 void SCR_SetFullscreen (qboolean fullscreen);
 void SCR_SetBottomMargin (int lines);
 
-extern struct cvar_s *hud_fps, *hud_time, *r_timegraph, *r_zgraph;
+extern int hud_fps;
+extern int hud_time;
+extern int r_timegraph;
+extern int r_zgraph;
 extern int         scr_copytop;
 extern qboolean    scr_skipupdate;
 

@@ -81,6 +81,8 @@
 #include "util.h"
 #include "vkparse.h"
 
+#include "libs/video/renderer/vulkan/vkparse.hinc"
+
 static const char quakeforge_pipeline[] =
 #include "libs/video/renderer/vulkan/qfpipeline.plc"
 ;
@@ -89,96 +91,108 @@ static const char quakeforge_renderpass[] =
 #include "libs/video/renderer/vulkan/deferred.plc"
 ;
 
-cvar_t *vulkan_frame_count;
-cvar_t *vulkan_presentation_mode;
-cvar_t *msaaSamples;
+int vulkan_frame_count;
+static cvar_t vulkan_frame_count_cvar = {
+	.name = "vulkan_frame_count",
+	.description =
+		"Number of frames to render in the background. More frames can "
+		"increase performance, but at the cost of latency. The default of 3 is"
+		" recommended.",
+	.default_value = "3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
+};
+int vulkan_presentation_mode;
+static cvar_t vulkan_presentation_mode_cvar = {
+	.name = "vulkan_presentation_mode",
+	.description =
+		"desired presentation mode (may fall back to fifo).",
+	.default_value = "mailbox",
+	.flags = CVAR_NONE,
+	.value = {
+		.type = &VkPresentModeKHR_type,
+		.value = &vulkan_presentation_mode,
+	},
+};
+int msaaSamples;
+static cvar_t msaaSamples_cvar = {
+	.name = "msaaSamples",
+	.description =
+		"desired MSAA sample size.",
+	.default_value = "VK_SAMPLE_COUNT_1_BIT",
+	.flags = CVAR_NONE,
+	.value = { .type = &VkSampleCountFlagBits_type, .value = &msaaSamples },
+};
+static exprenum_t validation_enum;
+static exprtype_t validation_type = {
+	.name = "vulkan_use_validation",
+	.size = sizeof (int),
+	.binops = cexpr_flag_binops,
+	.unops = cexpr_flag_unops,
+	.data = &validation_enum,
+	.get_string = cexpr_flags_get_string,
+};
+
+static int validation_values[] = {
+	0,
+	VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
+};
+static exprsym_t validation_symbols[] = {
+	{"none", &validation_type, validation_values + 0},
+	{"all", &validation_type, validation_values + 1},
+	{}
+};
+static exprtab_t validation_symtab = {
+	validation_symbols,
+};
+static exprenum_t validation_enum = {
+	&validation_type,
+	&validation_symtab,
+};
+static cvar_t vulkan_use_validation_cvar = {
+	.name = "vulkan_use_validation",
+	.description =
+		"enable KRONOS Validation Layer if available (requires instance "
+		"restart).",
+	.default_value = "error|warning",
+	.flags = CVAR_NONE,
+	.value = { .type = &validation_type, .value = &vulkan_use_validation },
+};
 
 static void
-parse_cvar_enum (const char *enum_name, const char *err_str, int err_val,
-				 cvar_t *var)
+vulkan_frame_count_f (void *data, const cvar_t *cvar)
 {
-	exprctx_t   context = {};
-	context.memsuper = new_memsuper();
-
-	if (cexpr_parse_enum (QFV_GetEnum (enum_name), var->string,
-						  &context, &var->int_val)) {
-		Sys_Printf ("%s\n", err_str);
-		var->int_val = err_val;
+	if (vulkan_frame_count < 1) {
+		Sys_Printf ("Invalid frame count: %d. Setting to 1\n",
+					vulkan_frame_count);
+		vulkan_frame_count = 1;
 	}
-	delete_memsuper (context.memsuper);
-}
-
-static void
-vulkan_presentation_mode_f (cvar_t *var)
-{
-	if (!strcmp (var->string, "immediate")) {
-		var->int_val = VK_PRESENT_MODE_IMMEDIATE_KHR;
-	} else if (!strcmp (var->string, "fifo")) {
-		var->int_val = VK_PRESENT_MODE_FIFO_KHR;
-	} else if (!strcmp (var->string, "relaxed")) {
-		var->int_val = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
-	} else if (!strcmp (var->string, "mailbox")) {
-		var->int_val = VK_PRESENT_MODE_MAILBOX_KHR;
-	} else {
-		Sys_Printf ("Invalid presentation mode, using fifo\n");
-		var->int_val = VK_PRESENT_MODE_FIFO_KHR;
-	}
-}
-
-static void
-vulkan_use_validation_f (cvar_t *var)
-{
-	if (!strcmp (var->string, "none")) {
-		var->int_val = 0;
-	} else if (!strcmp (var->string, "all")) {
-		var->int_val = VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT;
-	} else {
-		parse_cvar_enum ("VkDebugUtilsMessageSeverityFlagBitsEXT",
-						 "Invalid validation flags, using all",
-					 VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
-						 var);
-	}
-}
-
-static void
-vulkan_frame_count_f (cvar_t *var)
-{
-	if (var->int_val < 1) {
-		Sys_Printf ("Invalid frame count: %d. Setting to 1\n", var->int_val);
-		Cvar_Set (var, "1");
-	}
-}
-
-static void
-msaaSamples_f (cvar_t *var)
-{
-	parse_cvar_enum ("VkSampleCountFlagBits", "Invalid MSAA samples, using 1",
-					 VK_SAMPLE_COUNT_1_BIT, var);
 }
 
 static void
 Vulkan_Init_Cvars (void)
 {
-	vulkan_use_validation = Cvar_Get ("vulkan_use_validation",
-									  "error|warning", CVAR_NONE,
-									  vulkan_use_validation_f,
-									  "enable KRONOS Validation Layer if "
-									  "available (requires instance "
-									  "restart).");
+	int         num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+	}
+	validation_symtab.symbols = calloc (num_syms + 1, sizeof (exprsym_t));
+	num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+		validation_symtab.symbols[num_syms].type = &validation_type;
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+	}
+	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
 	// FIXME implement fallback choices (instead of just fifo)
-	vulkan_presentation_mode = Cvar_Get ("vulkan_presentation_mode", "mailbox",
-										 CVAR_NONE, vulkan_presentation_mode_f,
-										 "desired presentation mode (may fall "
-										 "back to fifo).");
-	vulkan_frame_count = Cvar_Get ("vulkan_frame_count", "3", CVAR_NONE,
-								   vulkan_frame_count_f,
-								   "Number of frames to render in the"
-								   " background. More frames can increase"
-								   " performance, but at the cost of latency."
-								   " The default of 3 is recommended.");
-	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
-										 CVAR_NONE, msaaSamples_f,
-										 "desired MSAA sample size.");
+	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
+	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);
+	Cvar_Register (&msaaSamples_cvar, 0, 0);
 	R_Init_Cvars ();
 }
 
@@ -254,7 +268,7 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 	//FIXME msaa and deferred rendering...
 	//also, location
 	ctx->msaaSamples = 1;
-	/*ctx->msaaSamples = min ((VkSampleCountFlagBits) msaaSamples->int_val,
+	/*ctx->msaaSamples = min ((VkSampleCountFlagBits) msaaSamples,
 							QFV_GetMaxSampleCount (device->physDev));
 	if (ctx->msaaSamples > 1) {
 		name = "renderpass_msaa";
@@ -668,7 +682,7 @@ Vulkan_CreateFrames (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&ctx->frames, 4);
 	}
 
-	DARRAY_RESIZE (&ctx->frames, vulkan_frame_count->int_val);
+	DARRAY_RESIZE (&ctx->frames, vulkan_frame_count);
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->frames.size,
 														alloca);

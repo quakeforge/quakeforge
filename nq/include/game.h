@@ -156,7 +156,6 @@ extern int			current_skill;		// skill level for currently loaded level (in case
 
 extern qboolean		isDedicated;
 extern qboolean		standard_quake;
-extern struct cvar_s		*registered;
 
 struct memhunk_s;
 void Game_Init (struct memhunk_s *hunk);

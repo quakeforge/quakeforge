@@ -234,9 +234,11 @@ init_qf (void)
 {
 	Sys_Init ();
 
-	Cvar_Get ("pr_debug", va (0, "%d", 1+verbosity), 0, 0, "");
-	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
+
+	pr_debug = 1 + verbosity;
+	free (pr_source_path);
+	pr_source_path = (char *) source_path;
 
 	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;

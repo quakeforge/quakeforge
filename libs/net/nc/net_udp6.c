@@ -114,7 +114,15 @@
 # endif
 #endif
 
-static cvar_t *net_family;
+static char *net_family;
+static cvar_t net_family_cvar = {
+	.name = "net_family",
+	.description =
+		"Set the address family to ipv4, ipv6 or unspecified",
+	.default_value = "unspecified",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &net_family },
+};
 
 netadr_t    net_from;
 netadr_t    net_local_adr;
@@ -330,9 +338,9 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_socktype = SOCK_DGRAM;
-	if (strchr (net_family->string, '6')) {
+	if (strchr (net_family, '6')) {
 		hints.ai_family = AF_INET6;
-	} else if (strchr (net_family->string, '4')) {
+	} else if (strchr (net_family, '4')) {
 		hints.ai_family = AF_INET;
 	} else {
 		hints.ai_family = AF_UNSPEC;
@@ -492,9 +500,9 @@ UDP_OpenSocket (int port)
 	address.sin6_family = AF_INET6;
 
 	memset (&hints, 0, sizeof (hints));
-	if (strchr (net_family->string, '6')) {
+	if (strchr (net_family, '6')) {
 		hints.ai_family = AF_INET6;
-	} else if (strchr (net_family->string, '4')) {
+	} else if (strchr (net_family, '4')) {
 		hints.ai_family = AF_INET;
 	} else {
 		hints.ai_family = AF_UNSPEC;
@@ -581,9 +589,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
-	net_family = Cvar_Get ("net_family", "unspecified", CVAR_ROM, 0,
-						   "Set the address family to ipv4, ipv6 or"
-						   " unspecified");
+	Cvar_Register (&net_family_cvar, 0, 0);
 
 	// open the single socket to be used for all communications
 	net_socket = UDP_OpenSocket (port);

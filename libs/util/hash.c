@@ -447,6 +447,43 @@ Hash_GetList (hashtab_t *tab)
 	return list;
 }
 
+VISIBLE void **
+Hash_Select (hashtab_t *tab, hash_select_t select, void *data)
+{
+	void      **list;
+	void      **l;
+	size_t      ind;
+
+	l = list = malloc ((tab->num_ele + 1) * sizeof (void *));
+	if (!list)
+		return 0;
+	for (ind = 0; ind < tab->tab_size; ind++) {
+		hashlink_t *lnk;
+
+		for (lnk = tab->tab[ind]; lnk; lnk = lnk->next) {
+			if (select (lnk->data, data)) {
+				*l++ = lnk->data;
+			}
+		}
+	}
+	*l++ = 0;
+	return list;
+}
+
+VISIBLE void
+Hash_ForEach (hashtab_t *tab, hash_action_t action, void *data)
+{
+	size_t      ind;
+
+	for (ind = 0; ind < tab->tab_size; ind++) {
+		hashlink_t *lnk;
+
+		for (lnk = tab->tab[ind]; lnk; lnk = lnk->next) {
+			action (lnk->data, data);
+		}
+	}
+}
+
 static inline double
 sqr (double x)
 {

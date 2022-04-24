@@ -110,7 +110,15 @@ static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
 static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
-static cvar_t *glsl_conback_texnum;
+static int glsl_conback_texnum;
+static cvar_t glsl_conback_texnum_cvar = {
+	.name = "glsl_conback_texnum",
+	.description =
+		"bind conback to this texture for debugging",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &glsl_conback_texnum },
+};
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -377,7 +385,7 @@ glsl_Draw_Init (void)
 	QFS_GamedirCallback (Draw_ClearCache);
 	//FIXME temporary work around for the timing of cvar creation and palette
 	//loading
-	crosshaircolor->callback (crosshaircolor);
+	//crosshaircolor->callback (crosshaircolor);
 
 	draw_queue = dstring_new ();
 
@@ -427,9 +435,7 @@ glsl_Draw_Init (void)
 	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glsl_conback_texnum = Cvar_Get ("glsl_conback_texnum", "0", CVAR_NONE,
-									NULL, "bind conback to this texture for "
-									"debugging");
+	Cvar_Register (&glsl_conback_texnum_cvar, 0, 0);
 }
 
 static inline void
@@ -568,10 +574,10 @@ glsl_Draw_Crosshair (void)
 {
 	int         x, y;
 
-	x = vid.conview->xlen / 2 + cl_crossx->int_val;
-	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx;
+	y = vid.conview->ylen / 2 + cl_crossy;
 
-	glsl_Draw_CrosshairAt (crosshair->int_val, x, y);
+	glsl_Draw_CrosshairAt (crosshair, x, y);
 }
 
 void
@@ -621,8 +627,8 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 	QuatCopy (color, verts[4].color);
 	QuatCopy (color, verts[5].color);
 
-	if (glsl_conback_texnum->int_val)
-		qfeglBindTexture (GL_TEXTURE_2D, glsl_conback_texnum->int_val);
+	if (glsl_conback_texnum)
+		qfeglBindTexture (GL_TEXTURE_2D, glsl_conback_texnum);
 	else
 		qfeglBindTexture (GL_TEXTURE_2D, conback_texture);
 

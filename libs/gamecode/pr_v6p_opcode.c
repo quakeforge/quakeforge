@@ -1562,7 +1562,7 @@ check_global (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op, etype_t typ
 			}
 			if (!pr->denorm_found) {
 				pr->denorm_found = 1;
-				if (pr_boundscheck->int_val) {
+				if (pr_boundscheck) {
 					Sys_Printf ("DENORMAL floats detected, these progs might "
 								"not work. Good luck.\n");
 					return;
@@ -1619,7 +1619,7 @@ PR_Check_v6p_Opcodes (progs_t *pr)
 	//FIXME need to decide if I really want to always do static bounds checking
 	// the only problem is that it slows progs load a little, but it's the only
 	// way to check for qccx' evil
-	if (0 && !pr_boundscheck->int_val) {
+	if (0 && !pr_boundscheck) {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->statements.count;
 			 st++, i++) {
 			pr_opcode_v6p_e st_op = (pr_opcode_v6p_e) st->op;

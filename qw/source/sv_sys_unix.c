@@ -139,7 +139,7 @@ main (int argc, const char **argv)
 		SV_Frame (time);
 
 		// extrasleep is just a way to generate a bad connection on purpose
-		if (sys_extrasleep->int_val)
-			usleep (sys_extrasleep->int_val);
+		if (sys_extrasleep)
+			usleep (sys_extrasleep);
 	}
 }

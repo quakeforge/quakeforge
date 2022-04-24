@@ -214,20 +214,124 @@ static in_button_t *cl_in_buttons[] = {
 	0
 };
 
-cvar_t     *cl_anglespeedkey;
-cvar_t     *cl_backspeed;
-cvar_t     *cl_forwardspeed;
-cvar_t     *cl_movespeedkey;
-cvar_t     *cl_pitchspeed;
-cvar_t     *cl_sidespeed;
-cvar_t     *cl_upspeed;
-cvar_t     *cl_yawspeed;
+float cl_anglespeedkey;
+static cvar_t cl_anglespeedkey_cvar = {
+	.name = "cl_anglespeedkey",
+	.description =
+		"turn `run' speed multiplier",
+	.default_value = "1.5",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_anglespeedkey },
+};
+float cl_backspeed;
+static cvar_t cl_backspeed_cvar = {
+	.name = "cl_backspeed",
+	.description =
+		"backward speed",
+	.default_value = "200",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_backspeed },
+};
+float cl_forwardspeed;
+static cvar_t cl_forwardspeed_cvar = {
+	.name = "cl_forwardspeed",
+	.description =
+		"forward speed",
+	.default_value = "200",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_forwardspeed },
+};
+float cl_movespeedkey;
+static cvar_t cl_movespeedkey_cvar = {
+	.name = "cl_movespeedkey",
+	.description =
+		"move `run' speed multiplier",
+	.default_value = "2.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_movespeedkey },
+};
+float cl_pitchspeed;
+static cvar_t cl_pitchspeed_cvar = {
+	.name = "cl_pitchspeed",
+	.description =
+		"look up/down speed",
+	.default_value = "150",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_pitchspeed },
+};
+float cl_sidespeed;
+static cvar_t cl_sidespeed_cvar = {
+	.name = "cl_sidespeed",
+	.description =
+		"strafe speed",
+	.default_value = "350",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_sidespeed },
+};
+float cl_upspeed;
+static cvar_t cl_upspeed_cvar = {
+	.name = "cl_upspeed",
+	.description =
+		"swim/fly up/down speed",
+	.default_value = "200",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_upspeed },
+};
+float cl_yawspeed;
+static cvar_t cl_yawspeed_cvar = {
+	.name = "cl_yawspeed",
+	.description =
+		"turning speed",
+	.default_value = "140",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_yawspeed },
+};
 
-cvar_t     *lookspring;
-cvar_t     *m_pitch;
-cvar_t     *m_yaw;
-cvar_t     *m_forward;
-cvar_t     *m_side;
+int lookspring;
+static cvar_t lookspring_cvar = {
+	.name = "lookspring",
+	.description =
+		"Snap view to center when moving and no mlook/klook",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &lookspring },
+};
+float m_pitch;
+static cvar_t m_pitch_cvar = {
+	.name = "m_pitch",
+	.description =
+		"mouse pitch (up/down) multipier",
+	.default_value = "0.022",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &m_pitch },
+};
+float m_yaw;
+static cvar_t m_yaw_cvar = {
+	.name = "m_yaw",
+	.description =
+		"mouse yaw (left/right) multipiler",
+	.default_value = "0.022",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &m_yaw },
+};
+float m_forward;
+static cvar_t m_forward_cvar = {
+	.name = "m_forward",
+	.description =
+		"mouse forward/back speed",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &m_forward },
+};
+float m_side;
+static cvar_t m_side_cvar = {
+	.name = "m_side",
+	.description =
+		"mouse strafe speed",
+	.default_value = "0.8",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &m_side },
+};
 
 static void
 CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
@@ -236,12 +340,12 @@ CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 	float       pitchspeed, yawspeed;
 	vec4f_t     delta = {};
 
-	pitchspeed = cl_pitchspeed->value;
-	yawspeed = cl_yawspeed->value;
+	pitchspeed = cl_pitchspeed;
+	yawspeed = cl_yawspeed;
 
 	if (in_speed.state & inb_down) {
-		pitchspeed *= cl_anglespeedkey->value;
-		yawspeed *= cl_anglespeedkey->value;
+		pitchspeed *= cl_anglespeedkey;
+		yawspeed *= cl_anglespeedkey;
 	}
 
 	pitchspeed *= frametime;
@@ -263,9 +367,9 @@ CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 	delta[PITCH] -= pitchspeed * up;
 	delta[PITCH] += pitchspeed * down;
 
-	delta[PITCH] -= IN_UpdateAxis (&in_move_pitch) * m_pitch->value;
-	delta[YAW] -= IN_UpdateAxis (&in_move_yaw) * m_yaw->value;
-	delta[ROLL] -= IN_UpdateAxis (&in_move_roll) * m_pitch->value;
+	delta[PITCH] -= IN_UpdateAxis (&in_move_pitch) * m_pitch;
+	delta[YAW] -= IN_UpdateAxis (&in_move_yaw) * m_yaw;
+	delta[ROLL] -= IN_UpdateAxis (&in_move_roll) * m_pitch;
 
 	ms->angles += delta;
 
@@ -359,7 +463,7 @@ CL_Legacy_Init (void)
 void
 CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 {
-	if (IN_ButtonReleased (&in_mlook) && !freelook && lookspring->int_val) {
+	if (IN_ButtonReleased (&in_mlook) && !freelook && lookspring) {
 		V_StartPitchDrift (vs);
 	}
 
@@ -368,35 +472,35 @@ CL_Input_BuildMove (float frametime, movestate_t *state, viewstate_t *vs)
 	vec4f_t     move = {};
 
 	if (in_strafe.state & inb_down) {
-		move[SIDE] += cl_sidespeed->value * IN_ButtonState (&in_right);
-		move[SIDE] -= cl_sidespeed->value * IN_ButtonState (&in_left);
+		move[SIDE] += cl_sidespeed * IN_ButtonState (&in_right);
+		move[SIDE] -= cl_sidespeed * IN_ButtonState (&in_left);
 	}
 
-	move[SIDE] += cl_sidespeed->value * IN_ButtonState (&in_moveright);
-	move[SIDE] -= cl_sidespeed->value * IN_ButtonState (&in_moveleft);
+	move[SIDE] += cl_sidespeed * IN_ButtonState (&in_moveright);
+	move[SIDE] -= cl_sidespeed * IN_ButtonState (&in_moveleft);
 
-	move[UP] += cl_upspeed->value * IN_ButtonState (&in_up);
-	move[UP] -= cl_upspeed->value * IN_ButtonState (&in_down);
+	move[UP] += cl_upspeed * IN_ButtonState (&in_up);
+	move[UP] -= cl_upspeed * IN_ButtonState (&in_down);
 
 	if (!(in_klook.state & inb_down)) {
-		move[FORWARD] += cl_forwardspeed->value * IN_ButtonState (&in_forward);
-		move[FORWARD] -= cl_backspeed->value * IN_ButtonState (&in_back);
+		move[FORWARD] += cl_forwardspeed * IN_ButtonState (&in_forward);
+		move[FORWARD] -= cl_backspeed * IN_ButtonState (&in_back);
 	}
 
 	// adjust for speed key
 	if (in_speed.state & inb_down) {
-		move *= cl_movespeedkey->value;
+		move *= cl_movespeedkey;
 	}
 
-	move[FORWARD] -= IN_UpdateAxis (&in_move_forward) * m_forward->value;
-	move[SIDE] += IN_UpdateAxis (&in_move_side) * m_side->value;
+	move[FORWARD] -= IN_UpdateAxis (&in_move_forward) * m_forward;
+	move[SIDE] += IN_UpdateAxis (&in_move_side) * m_side;
 	move[UP] -= IN_UpdateAxis (&in_move_up);
 
 	if (freelook)
 		V_StopPitchDrift (vs);
 
 	if (vs->chase
-		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
+		&& (chase_active == 2 || chase_active == 3)) {
 		/* adjust for chase camera angles
 		 * makes the player move relative to the chase camera frame rather
 		 * than the player's frame
@@ -481,32 +585,19 @@ CL_Input_Init (cbuf_t *cbuf)
 void
 CL_Input_Init_Cvars (void)
 {
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
-						   "to center when moving and no mlook/klook");
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-						"mouse pitch (up/down) multipier");
-	m_yaw =	Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
-					  "mouse yaw (left/right) multipiler");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
-						  "mouse forward/back speed");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
-					   "mouse strafe speed");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
-								 "turn `run' speed multiplier");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
-							 "backward speed");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-								"move `run' speed multiplier");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-							  "look up/down speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-							 "strafe speed");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-							"turning speed");
+	Cvar_Register (&lookspring_cvar, 0, 0);
+	Cvar_Register (&m_pitch_cvar, 0, 0);
+	Cvar_Register (&m_yaw_cvar, 0, 0);
+	Cvar_Register (&m_forward_cvar, 0, 0);
+	Cvar_Register (&m_side_cvar, 0, 0);
+	Cvar_Register (&cl_anglespeedkey_cvar, 0, 0);
+	Cvar_Register (&cl_backspeed_cvar, 0, 0);
+	Cvar_Register (&cl_forwardspeed_cvar, 0, 0);
+	Cvar_Register (&cl_movespeedkey_cvar, 0, 0);
+	Cvar_Register (&cl_pitchspeed_cvar, 0, 0);
+	Cvar_Register (&cl_sidespeed_cvar, 0, 0);
+	Cvar_Register (&cl_upspeed_cvar, 0, 0);
+	Cvar_Register (&cl_yawspeed_cvar, 0, 0);
 }
 
 void

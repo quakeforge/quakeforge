@@ -63,9 +63,36 @@
 #include "qw/include/client.h"
 #include "qw/include/host.h"
 
-cvar_t     *cl_nodelta;
-cvar_t     *cl_maxnetfps;
-cvar_t     *cl_spamimpulse;
+int cl_nodelta;
+static cvar_t cl_nodelta_cvar = {
+	.name = "cl_nodelta",
+	.description =
+		"Disable player delta compression. Set to 1 if you have a poor ISP and"
+		" get many U_REMOVE warnings.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_nodelta },
+};
+int cl_maxnetfps;
+static cvar_t cl_maxnetfps_cvar = {
+	.name = "cl_maxnetfps",
+	.description =
+		"Controls number of command packets sent per second. Default 0 is "
+		"unlimited.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_maxnetfps },
+};
+int cl_spamimpulse;
+static cvar_t cl_spamimpulse_cvar = {
+	.name = "cl_spamimpulse",
+	.description =
+		"Controls number of duplicate packets sent if an impulse is being "
+		"sent. Default (id behavior) is 3.",
+	.default_value = "3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_spamimpulse },
+};
 
 int         in_impulse;
 
@@ -166,8 +193,8 @@ pps_check (int dontdrop)
 	if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
 		float   pps;
 
-		if (!(pps = cl_maxnetfps->int_val))
-			pps = rate->value / 80.0;
+		if (!(pps = cl_maxnetfps))
+			pps = rate / 80.0;
 
 		pps = bound (1, pps, 72);
 
@@ -250,21 +277,21 @@ CL_SendCmd (void)
 
 	frame = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
 	cmd = &cl.frames[frame].cmd;
-	if (cl_spamimpulse->int_val >= 2)
+	if (cl_spamimpulse >= 2)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, &nullcmd, cmd);
 	oldcmd = cmd;
 
 	frame = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
 	cmd = &cl.frames[frame].cmd;
-	if (cl_spamimpulse->int_val >= 3)
+	if (cl_spamimpulse >= 3)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 	oldcmd = cmd;
 
 	frame = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
 	cmd = &cl.frames[frame].cmd;
-	if (cl_spamimpulse->int_val >= 1)
+	if (cl_spamimpulse >= 1)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 
@@ -277,7 +304,7 @@ CL_SendCmd (void)
 	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP - 1)
 		cl.validsequence = 0;
 
-	if (cl.validsequence && !cl_nodelta->int_val && cls.state == ca_active
+	if (cl.validsequence && !cl_nodelta && cls.state == ca_active
 		&& !cls.demorecording) {
 		cl.frames[frame].delta_sequence = cl.validsequence;
 		MSG_WriteByte (&buf, clc_delta);
@@ -306,14 +333,7 @@ void
 CL_Init_Input_Cvars (void)
 {
 	CL_Input_Init_Cvars ();
-	cl_nodelta = Cvar_Get ("cl_nodelta", "0", CVAR_NONE, NULL,
-						   "Disable player delta compression. Set to 1 if you "
-						   "have a poor ISP and get many U_REMOVE warnings.");
-	cl_maxnetfps = Cvar_Get ("cl_maxnetfps", "0", CVAR_ARCHIVE, NULL,
-							 "Controls number of command packets sent per "
-							 "second. Default 0 is unlimited.");
-	cl_spamimpulse = Cvar_Get ("cl_spamimpulse", "3", CVAR_NONE, NULL,
-							   "Controls number of duplicate packets sent if "
-							   "an impulse is being sent. Default (id "
-							   "behavior) is 3.");
+	Cvar_Register (&cl_nodelta_cvar, 0, 0);
+	Cvar_Register (&cl_maxnetfps_cvar, 0, 0);
+	Cvar_Register (&cl_spamimpulse_cvar, 0, 0);
 }

@@ -374,11 +374,11 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	for (scaled_width = 1; scaled_width < width; scaled_width <<= 1);
 	for (scaled_height = 1; scaled_height < height; scaled_height <<= 1);
 
-	scaled_width >>= gl_picmip->int_val;
-	scaled_height >>= gl_picmip->int_val;
+	scaled_width >>= gl_picmip;
+	scaled_height >>= gl_picmip;
 
-	scaled_width = min (scaled_width, gl_max_size->int_val);
-	scaled_height = min (scaled_height, gl_max_size->int_val);
+	scaled_width = min (scaled_width, gl_max_size);
+	scaled_height = min (scaled_height, gl_max_size);
 
 	if (!(scaled = malloc (scaled_width * scaled_height * sizeof (GLuint))))
 		Sys_Error ("GL_LoadTexture: too big");
@@ -421,7 +421,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	} else {
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 						   gl_filter_max);
-		if (gl_picmip->int_val)
+		if (gl_picmip)
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 							   GL_NEAREST);
 		else
@@ -452,11 +452,11 @@ GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 	for (scaled_width = 1; scaled_width < width; scaled_width <<= 1);
 	for (scaled_height = 1; scaled_height < height; scaled_height <<= 1);
 
-	scaled_width >>= gl_picmip->int_val;
-	scaled_height >>= gl_picmip->int_val;
+	scaled_width >>= gl_picmip;
+	scaled_height >>= gl_picmip;
 
-	scaled_width = min (scaled_width, gl_max_size->int_val);
-	scaled_height = min (scaled_height, gl_max_size->int_val);
+	scaled_width = min (scaled_width, gl_max_size);
+	scaled_height = min (scaled_height, gl_max_size);
 
 	if (!(scaled = malloc (scaled_width * scaled_height)))
 		Sys_Error ("GL_LoadTexture: too big");
@@ -498,7 +498,7 @@ GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 	} else {
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 						   gl_filter_max);
-		if (gl_picmip->int_val)
+		if (gl_picmip)
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 							   GL_NEAREST);
 		else

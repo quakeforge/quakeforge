@@ -648,7 +648,7 @@ CL_SetSolidPlayers (int playernum)
 	physent_t  *pent;
 	struct predicted_player *pplayer;
 
-	if (!cl_solid_players->int_val)
+	if (!cl_solid_players)
 		return;
 
 	pent = pmove.physents + pmove.numphysent;

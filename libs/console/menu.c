@@ -79,7 +79,15 @@ typedef struct menu_item_s {
 	menu_pic_t *pics;
 } menu_item_t;
 
-static cvar_t  *confirm_quit;
+static int confirm_quit;
+static cvar_t confirm_quit_cvar = {
+	.name = "confirm_quit",
+	.description =
+		"confirm quit command",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &confirm_quit },
+};
 
 static progs_t  menu_pr_state;
 static menu_item_t *menu;
@@ -482,7 +490,7 @@ quit_f (void)
 {
 	int         ret;
 
-	if (confirm_quit->int_val && menu_quit) {
+	if (confirm_quit && menu_quit) {
 		run_menu_pre ();
 		PR_ExecuteProgram (&menu_pr_state, menu_quit);
 		ret = R_INT (&menu_pr_state);
@@ -611,8 +619,7 @@ Menu_Init (void)
 	R_Progs_Init (&menu_pr_state);
 	S_Progs_Init (&menu_pr_state);
 
-	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
-							 "confirm quit command");
+	Cvar_Register (&confirm_quit_cvar, 0, 0);
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");

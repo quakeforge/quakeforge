@@ -48,8 +48,6 @@
 									// note: must be >= 255 due to the channel
 									// volumes being 0-255.
 
-cvar_t     *snd_volume;
-
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift
@@ -170,7 +168,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 
 		// transfer out according to DMA format
 		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime,
-				   snd_volume->value);
+				   snd_volume);
 
 		memmove (snd_paintbuffer, snd_paintbuffer + end - snd->paintedtime,
 				 max_overpaint * sizeof (snd_paintbuffer[0]));

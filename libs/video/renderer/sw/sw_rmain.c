@@ -116,7 +116,6 @@ sw_R_Init (void)
 	r_stack_start = (byte *) & dummy;
 
 	R_Init_Cvars ();
-	R_Particles_Init_Cvars ();
 
 	Draw_Init ();
 	SCR_Init ();
@@ -131,8 +130,8 @@ sw_R_Init (void)
 					"refresh rate for the current location");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
-	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
-	Cvar_SetValue (r_maxsurfs, (float) NUMSTACKSURFACES);
+	r_maxedges = NUMSTACKEDGES;
+	r_maxsurfs = NUMSTACKSURFACES;
 
 	view_clipplanes[0].leftedge = true;
 	view_clipplanes[1].rightedge = true;
@@ -171,7 +170,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	R_ClearParticles ();
 
-	r_cnumsurfs = r_maxsurfs->int_val;
+	r_cnumsurfs = r_maxsurfs;
 
 	if (r_cnumsurfs <= MINSURFACES)
 		r_cnumsurfs = MINSURFACES;
@@ -194,7 +193,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_maxedgesseen = 0;
 	r_maxsurfsseen = 0;
 
-	r_numallocatededges = r_maxedges->int_val;
+	r_numallocatededges = r_maxedges;
 
 	if (r_numallocatededges < MINEDGES)
 		r_numallocatededges = MINEDGES;
@@ -294,7 +293,7 @@ draw_iqm_entity (entity_t *ent)
 void
 R_DrawEntitiesOnList (entqueue_t *queue)
 {
-	if (!r_drawentities->int_val)
+	if (!r_drawentities)
 		return;
 
 	R_LowFPPrecision ();
@@ -330,8 +329,8 @@ R_DrawViewModel (void)
 	alight_t    lighting;
 
 	if (vr_data.inhibit_viewmodel
-		|| !r_drawviewmodel->int_val
-		|| !r_drawentities->int_val)
+		|| !r_drawviewmodel
+		|| !r_drawentities)
 		return;
 
 	viewent = vr_data.view_model;
@@ -440,7 +439,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	model_t    *clmodel;
 	float       minmaxs[6];
 
-	if (!r_drawentities->int_val)
+	if (!r_drawentities)
 		return;
 
 	insubmodel = true;
@@ -574,7 +573,7 @@ R_EdgeDrawing (entqueue_t *queue)
 static void
 R_RenderView_ (void)
 {
-	if (r_norefresh->int_val)
+	if (r_norefresh)
 		return;
 	if (!r_refdef.worldmodel) {
 		return;
@@ -592,7 +591,7 @@ R_RenderView_ (void)
 
 	R_DrawViewModel ();
 
-	if (r_aliasstats->int_val)
+	if (r_aliasstats)
 		R_PrintAliasStats ();
 
 	// back to high floating-point precision

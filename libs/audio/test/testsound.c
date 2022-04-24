@@ -66,7 +66,7 @@ init (void)
 
 	Sys_Init ();
 	COM_ParseConfig (testsound_cbuf);
-	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
+	cmd_warncmd = 1;
 
 	memhunk_t *hunk = Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 

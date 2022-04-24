@@ -28,11 +28,14 @@
 # include "config.h"
 #endif
 #include <math.h>
+#include <string.h>
 
 #include "QF/cexpr.h"
 #include "QF/cmem.h"
 #include "QF/mathlib.h"
 #include "QF/plist.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/simd/vec4f.h"
 
 #include "libs/util/cexpr-parse.h"
@@ -99,6 +102,12 @@ int_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	*(int *) result->value = c + (mask & b);
 }
 
+static const char *
+int_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%d", *(int *) val->value);
+}
+
 binop_t int_binops[] = {
 	{ SHL, &cexpr_int, &cexpr_int, int_shl },
 	{ SHR, &cexpr_int, &cexpr_int, int_shr },
@@ -124,10 +133,11 @@ unop_t int_unops[] = {
 };
 
 exprtype_t cexpr_int = {
-	"int",
-	sizeof (int),
-	int_binops,
-	int_unops,
+	.name = "int",
+	.size = sizeof (int),
+	.binops = int_binops,
+	.unops = int_unops,
+	.get_string = int_get_string,
 };
 
 BINOP(uint, shl, unsigned, <<)
@@ -152,6 +162,12 @@ UNOP(uint, pos, unsigned, +)
 UNOP(uint, neg, unsigned, -)
 UNOP(uint, tnot, unsigned, !)
 UNOP(uint, bnot, unsigned, ~)
+
+static const char *
+uint_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%u", *(unsigned *) val->value);
+}
 
 binop_t uint_binops[] = {
 	{ SHL, &cexpr_uint, &cexpr_uint, uint_shl },
@@ -179,10 +195,11 @@ unop_t uint_unops[] = {
 };
 
 exprtype_t cexpr_uint = {
-	"uint",
-	sizeof (unsigned),
-	uint_binops,
-	uint_unops,
+	.name = "uint",
+	.size = sizeof (unsigned),
+	.binops = uint_binops,
+	.unops = uint_unops,
+	.get_string = uint_get_string,
 };
 
 BINOP(size_t, shl, unsigned, <<)
@@ -221,6 +238,12 @@ UNOP(size_t, neg, unsigned, -)
 UNOP(size_t, tnot, unsigned, !)
 UNOP(size_t, bnot, unsigned, ~)
 
+static const char *
+size_t_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%zd", *(size_t *) val->value);
+}
+
 binop_t size_t_binops[] = {
 	{ SHL, &cexpr_size_t, &cexpr_size_t, size_t_shl },
 	{ SHR, &cexpr_size_t, &cexpr_size_t, size_t_shr },
@@ -248,10 +271,11 @@ unop_t size_t_unops[] = {
 };
 
 exprtype_t cexpr_size_t = {
-	"size_t",
-	sizeof (size_t),
-	size_t_binops,
-	size_t_unops,
+	.name = "size_t",
+	.size = sizeof (size_t),
+	.binops = size_t_binops,
+	.unops = size_t_unops,
+	.get_string = size_t_get_string,
 };
 
 BINOP(float, add, float, +)
@@ -304,10 +328,17 @@ float_div_quat (const exprval_t *val1, const exprval_t *val2,
 
 CASTOP (float, int)
 CASTOP (float, uint)
+CASTOP (float, double)
 
 UNOP(float, pos, float, +)
 UNOP(float, neg, float, -)
 UNOP(float, tnot, float, !)
+
+static const char *
+float_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%.9g", *(float *) val->value);
+}
 
 binop_t float_binops[] = {
 	{ '+', &cexpr_float, &cexpr_float, float_add },
@@ -321,6 +352,7 @@ binop_t float_binops[] = {
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
 	{ '=', &cexpr_int,  &cexpr_float, float_cast_int },
 	{ '=', &cexpr_uint,  &cexpr_float, float_cast_uint },
+	{ '=', &cexpr_double, &cexpr_float, float_cast_double },
 	{ '=', &cexpr_plitem, &cexpr_float, cexpr_cast_plitem },
 	{}
 };
@@ -333,10 +365,11 @@ unop_t float_unops[] = {
 };
 
 exprtype_t cexpr_float = {
-	"float",
-	sizeof (float),
-	float_binops,
-	float_unops,
+	.name = "float",
+	.size = sizeof (float),
+	.binops = float_binops,
+	.unops = float_unops,
+	.get_string = float_get_string,
 };
 
 BINOP(double, add, double, +)
@@ -375,6 +408,12 @@ UNOP(double, pos, double, +)
 UNOP(double, neg, double, -)
 UNOP(double, tnot, double, !)
 
+static const char *
+double_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%.17g", *(double *) val->value);
+}
+
 binop_t double_binops[] = {
 	{ '+', &cexpr_double, &cexpr_double, double_add },
 	{ '-', &cexpr_double, &cexpr_double, double_sub },
@@ -397,10 +436,11 @@ unop_t double_unops[] = {
 };
 
 exprtype_t cexpr_double = {
-	"double",
-	sizeof (double),
-	double_binops,
-	double_unops,
+	.name = "double",
+	.size = sizeof (double),
+	.binops = double_binops,
+	.unops = double_unops,
+	.get_string = double_get_string,
 };
 
 BINOP(vector, add, vec4f_t, +)
@@ -518,6 +558,13 @@ vector_swizzle (const exprval_t *val1, const exprval_t *val2,
 UNOP(vector, pos, vec4f_t, +)
 UNOP(vector, neg, vec4f_t, -)
 
+static const char *
+vector_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4f_t     vec = *(vec4f_t *) val->value;
+	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+}
+
 static void
 vector_tnot (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
 {
@@ -546,10 +593,11 @@ unop_t vector_unops[] = {
 };
 
 exprtype_t cexpr_vector = {
-	"vector",
-	sizeof (vec4f_t),
-	vector_binops,
-	vector_unops,
+	.name = "vector",
+	.size = sizeof (vec4f_t),
+	.binops = vector_binops,
+	.unops = vector_unops,
+	.get_string = vector_get_string,
 };
 
 static void
@@ -572,6 +620,13 @@ quaternion_vector_mul (const exprval_t *val1, const exprval_t *val2,
 	*c = qvmulf (a, b);
 }
 
+static const char *
+quaternion_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	vec4f_t     vec = *(vec4f_t *) val->value;
+	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+}
+
 binop_t quaternion_binops[] = {
 	{ '+', &cexpr_quaternion, &cexpr_quaternion, vector_add },
 	{ '-', &cexpr_quaternion, &cexpr_quaternion, vector_sub },
@@ -588,31 +643,32 @@ unop_t quaternion_unops[] = {
 };
 
 exprtype_t cexpr_quaternion = {
-	"quaterion",
-	sizeof (vec4f_t),
-	quaternion_binops,
-	quaternion_unops,
+	.name = "quaterion",
+	.size = sizeof (vec4f_t),
+	.binops = quaternion_binops,
+	.unops = quaternion_unops,
+	.get_string = quaternion_get_string,
 };
 
 exprtype_t cexpr_exprval = {
-	"exprval",
-	sizeof (exprval_t *),
-	0,	// can't actually do anything with an exprval
-	0,
+	.name = "exprval",
+	.size = sizeof (exprval_t *),
+	.binops = 0,	// can't actually do anything with an exprval
+	.unops = 0,
 };
 
 exprtype_t cexpr_field = {
-	"field",
-	0,	// has no size of its own, rather, it's the length of the name
-	0,	// can't actually do anything with a field
-	0,
+	.name = "field",
+	.size = 0,	// has no size of its own, rather, it's the length of the name
+	.binops = 0,	// can't actually do anything with a field
+	.unops = 0,
 };
 
 exprtype_t cexpr_function = {
-	"function",
-	0,	// has no size of its own
-	0,	// can't actually do anything with a function other than call
-	0,
+	.name = "function",
+	.size = 0,	// has no size of its own
+	.binops = 0,// can't actually do anything with a function other than call
+	.unops = 0,
 };
 
 void
@@ -711,10 +767,10 @@ binop_t plitem_binops[] = {
 };
 
 exprtype_t cexpr_plitem = {
-	"plitem",
-	sizeof (plitem_t *),
-	plitem_binops,
-	0,
+	.name = "plitem",
+	.size = sizeof (plitem_t *),
+	.binops = plitem_binops,
+	.unops = 0,
 };
 
 VISIBLE binop_t *
@@ -742,4 +798,72 @@ cexpr_parse_enum (exprenum_t *enm, const char *str, const exprctx_t *ctx,
 	context.symtab = enm->symtab;
 	context.result = &result;
 	return cexpr_eval_string (str, &context);
+}
+
+VISIBLE const char *
+cexpr_enum_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	exprenum_t *enm = val->type->data;
+	exprsym_t  *symbols = enm->symtab->symbols;
+	for (exprsym_t *sym = symbols; sym->name; sym++) {
+		// if there are duplicate values, choose the *later* value
+		if (sym[1].name
+			&& memcmp (sym->value, sym[1].value, val->type->size) == 0) {
+			continue;
+		}
+		if (memcmp (sym->value, val->value, val->type->size) == 0) {
+			return sym->name;
+		}
+	}
+	return "";
+}
+
+BINOP(flag, and, int, &)
+BINOP(flag, or, int, |)
+BINOP(flag, xor, int, ^)
+
+UNOP(flag, not, int, ~)
+
+binop_t cexpr_flag_binops[] = {
+	{ '&', 0, 0, flag_and },
+	{ '|', 0, 0, flag_or },
+	{ '^', 0, 0, flag_xor },
+	{ '=', &cexpr_int, 0, uint_cast_int },
+	{}
+};
+
+unop_t cexpr_flag_unops[] = {
+	{ '~', 0, flag_not },
+	{}
+};
+
+VISIBLE const char *
+cexpr_flags_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	exprenum_t *enm = val->type->data;
+	exprsym_t  *symbols = enm->symtab->symbols;
+	const char *val_str = 0;
+
+	if (val->type->size != 4) {
+		Sys_Error ("cexpr_flags_get_string: only 32-bit values supported");
+	}
+	uint32_t    flags = *(uint32_t *) val->value;
+	for (exprsym_t *sym = symbols; sym->name; sym++) {
+		uint32_t    sym_flags = *(uint32_t *) sym->value;
+		// if there are duplicate values, choose the *later* value
+		if (sym[1].name && sym_flags == *(uint32_t *) sym[1].value) {
+			continue;
+		}
+		if ((flags & sym_flags) && !(sym_flags & ~flags)) {
+			if (val_str) {
+				val_str = va (va_ctx, "%s | %s", val_str, sym->name);
+			} else {
+				val_str = sym->name;
+			}
+		}
+	}
+	if (!val_str) {
+		val_str = "0";
+	}
+	return val_str;
 }

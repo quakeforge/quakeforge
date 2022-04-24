@@ -452,7 +452,7 @@ do_subimage_2 (int i)
 static void
 GL_UploadLightmap (int i)
 {
-	switch (gl_lightmap_subimage->int_val) {
+	switch (gl_lightmap_subimage) {
 	case 2:
 		do_subimage_2 (i);
 		break;
@@ -526,15 +526,15 @@ gl_R_BlendLightmaps (void)
 }
 
 void
-gl_overbright_f (cvar_t *var)
+gl_overbright_f (void *data, const cvar_t *cvar)
 {
 	int			 num;
 	mod_brush_t *brush;
 
-	if (!var)
+	if (!cvar)
 		return;
 
-	if (var->int_val) {
+	if (gl_overbright) {
 		if (!gl_combine_capable && gl_mtex_capable) {
 			Sys_Printf ("Warning: gl_overbright has no effect with "
 						"gl_multitexture enabled if you don't have "
@@ -547,7 +547,7 @@ gl_overbright_f (cvar_t *var)
 			lm_src_blend = GL_DST_COLOR;
 			lm_dest_blend = GL_SRC_COLOR;
 
-			switch (var->int_val) {
+			switch (gl_overbright) {
 			case 2:
 				lmshift = 9;
 				gl_rgb_scale = 4.0;
@@ -568,9 +568,6 @@ gl_overbright_f (cvar_t *var)
 		lmshift = 7;
 		gl_rgb_scale = 1.0;
 	}
-
-	if (gl_multitexture)
-		gl_multitexture_f (gl_multitexture);
 
 	if (!gl_R_BuildLightMap)
 		return;
@@ -672,7 +669,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		qfglGenTextures (MAX_LIGHTMAPS, gl_lightmap_textures);
 	}
 
-	switch (r_lightmap_components->int_val) {
+	switch (r_lightmap_components) {
 	case 1:
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
@@ -712,10 +709,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
 		for (unsigned i = 0; i < brush->numsurfaces; i++) {
-			if (brush->surfaces[i].flags & SURF_DRAWTURB)
-				continue;
-			if (gl_sky_divide->int_val && (brush->surfaces[i].flags &
-										   SURF_DRAWSKY))
+			if (brush->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 			GL_CreateSurfaceLightmap (brush, brush->surfaces + i);
 			GL_BuildSurfaceDisplayList (brush, brush->surfaces + i);

@@ -88,7 +88,7 @@ typedef struct {
 	float	entgravity;
 } movevars_t;
 
-extern	struct cvar_s	*no_pogo_stick;
+extern int no_pogo_stick;
 extern	movevars_t		movevars;
 extern	playermove_t	pmove;
 extern	int		onground;

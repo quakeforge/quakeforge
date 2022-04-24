@@ -66,7 +66,7 @@
 void
 Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 {
-	if (!r_drawentities->int_val)
+	if (!r_drawentities)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
@@ -103,8 +103,8 @@ Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
 	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
-		|| !r_drawviewmodel->int_val
-		|| !r_drawentities->int_val
+		|| !r_drawviewmodel
+		|| !r_drawentities
 		|| !ent->renderer.model)
 		return;
 

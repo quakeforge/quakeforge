@@ -98,7 +98,7 @@ typedef struct plugin_list_s {
 /*
 	Plugin system variables
 */
-extern struct cvar_s	*fs_pluginpath;
+extern char *fs_pluginpath;
 
 /*
 	Function prototypes

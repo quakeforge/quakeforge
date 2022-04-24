@@ -632,10 +632,10 @@ Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
 	int         x, y;
 
-	x = vid.conview->xlen / 2 + cl_crossx->int_val;
-	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx;
+	y = vid.conview->ylen / 2 + cl_crossy;
 
-	Vulkan_Draw_CrosshairAt (crosshair->int_val, x, y, ctx);
+	Vulkan_Draw_CrosshairAt (crosshair, x, y, ctx);
 }
 
 void

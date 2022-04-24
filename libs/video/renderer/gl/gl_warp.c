@@ -70,11 +70,11 @@ GL_EmitWaterPolys (msurface_t *surf)
 			t = (v[4] + os) * (1.0 / 64.0);
 			qfglTexCoord2f (s, t);
 
-			if (r_waterripple->value != 0) {
+			if (r_waterripple != 0) {
 				vec3_t		nv;
 
 				VectorCopy (v, nv);
-				nv[2] += r_waterripple->value * os * ot * (1.0 / 64.0);
+				nv[2] += r_waterripple * os * ot * (1.0 / 64.0);
 				qfglVertex3fv (nv);
 			} else
 				qfglVertex3fv (v);

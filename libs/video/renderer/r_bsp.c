@@ -56,7 +56,7 @@ R_MarkLeaves (void)
 	msurface_t **mark;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
-	if (r_oldviewleaf == r_refdef.viewleaf && !r_novis->int_val)
+	if (r_oldviewleaf == r_refdef.viewleaf && !r_novis)
 		return;
 
 	r_visframecount++;
@@ -64,7 +64,7 @@ R_MarkLeaves (void)
 	if (!r_refdef.viewleaf)
 		return;
 
-	if (r_novis->int_val) {
+	if (r_novis) {
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
 							// turned off
 		if (!solid) {

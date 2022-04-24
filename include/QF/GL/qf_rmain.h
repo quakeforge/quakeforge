@@ -38,7 +38,7 @@ extern int c_brush_polys, c_alias_polys;
 extern float gl_modelalpha;
 //extern vec3_t shadecolor;
 
-extern void gl_multitexture_f (struct cvar_s *var);
+extern void gl_multitexture_f (void *data, const struct cvar_s *var);
 
 void glrmain_init (void);
 void gl_R_RotateForEntity (struct entity_s *e);

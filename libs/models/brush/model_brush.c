@@ -56,8 +56,8 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-VISIBLE cvar_t		*gl_sky_divide; //FIXME visibility?
-VISIBLE int   mod_lightmap_bytes = 1;	//FIXME should this be visible?
+VISIBLE int mod_sky_divide; //FIXME visibility?
+VISIBLE int mod_lightmap_bytes = 1;	//FIXME should this be visible?
 
 VISIBLE mleaf_t *
 Mod_PointInLeaf (const vec3_t p, model_t *model)
@@ -640,9 +640,11 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 
 		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
-			if (gl_sky_divide && gl_sky_divide->int_val)
-				if (mod_funcs && mod_funcs->Mod_SubdivideSurface)
+			if (mod_sky_divide) {
+				if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
 					mod_funcs->Mod_SubdivideSurface (mod, out);
+				}
+			}
 			continue;
 		}
 

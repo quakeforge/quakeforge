@@ -136,9 +136,9 @@ typedef struct vid_render_data_s {
 	int         scr_copytop;
 	int         scr_copyeverything;
 	int         scr_fullupdate;	// set to 0 to force full redraw
-	void       (*viewsize_callback) (struct cvar_s *);
-	struct cvar_s *scr_viewsize;
-	struct cvar_s *graphheight;
+	void       (*viewsize_callback) (int view_size);
+	int        *scr_viewsize;
+	int        *graphheight;
 	float       min_wateralpha;
 	qboolean    force_fullscreen;
 	qboolean    inhibit_viewmodel;

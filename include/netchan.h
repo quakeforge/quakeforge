@@ -62,7 +62,7 @@ extern	netadr_t	net_loopback_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
-extern	struct cvar_s	*qport;
+extern int qport;
 
 int Net_Log_Init (const char **sound_precache, int server);
 void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
@@ -72,7 +72,7 @@ void Net_LogStop (void *data);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
-extern struct cvar_s *net_packetlog;
+extern int net_packetlog;
 ///@}
 
 /** \defgroup qw-udp QuakeWorld udp support.

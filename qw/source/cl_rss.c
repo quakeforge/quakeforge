@@ -213,7 +213,7 @@ snap_capture (tex_t *snap, void *data)
 		snap_drawstring (st->str, tex, tex->width - strlen (st->str) * 8,
 						 tex->height - 11);
 
-		dstring_copystr (st, cl_name->string);
+		dstring_copystr (st, cl_name);
 		snap_drawstring (st->str, tex, tex->width - strlen (st->str) * 8,
 						 tex->height - 21);
 

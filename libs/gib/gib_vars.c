@@ -222,9 +222,11 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 				dstring_replace (key, n, i-n+varstartskip, "0", 1);
 				protect = n+1;
 			} else if ((cvar = Cvar_FindVar (key->str+n+1+varstartskip))) {
+				const char *cvar_str = Cvar_VarString (cvar);
 				key->str[i] = c;
-				dstring_replace (key, n, i-n+varstartskip, cvar->string, strlen (cvar->string));
-				protect = n+strlen(cvar->string);
+				dstring_replace (key, n, i-n+varstartskip, cvar_str,
+								 strlen (cvar_str));
+				protect = n+strlen(cvar_str);
 			} else  {
 				key->str[i] = c;
 				dstring_snip (key, n, n-i+varstartskip);

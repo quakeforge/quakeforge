@@ -149,9 +149,6 @@ init_qf (void)
 	//Cvar_Set (developer, "1");
 
 	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
-
-	Cvar_Get ("pr_debug", "2", 0, 0, 0);
-	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 }
 
 static void
@@ -212,6 +209,8 @@ create_progs (qwaq_thread_t *thread)
 	pr->hashlink_freelist = &thread->hashlink_freelist;
 
 	PR_Init_Cvars ();
+	pr_debug = 2;
+	pr_boundscheck = 0;
 	PR_Init (pr);
 	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear);
 	RUA_Init (pr, thread->rua_security);

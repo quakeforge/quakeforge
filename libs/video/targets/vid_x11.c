@@ -94,8 +94,8 @@ VID_shutdown (void *data)
 	palette.  Palette data will go away after the call, so copy it if you'll
 	need it later.
 */
-void
-VID_Init (byte *palette, byte *colormap)
+static void
+X11_VID_Init (byte *palette, byte *colormap)
 {
 	Sys_RegisterShutdown (VID_shutdown, 0);
 
@@ -134,8 +134,8 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.recalc_refdef = 1;			// force a surface cache flush
 }
 
-void
-VID_Init_Cvars ()
+static void
+X11_VID_Init_Cvars (void)
 {
 	X11_Init_Cvars ();
 #ifdef HAVE_VULKAN
@@ -144,6 +144,12 @@ VID_Init_Cvars ()
 	X11_GL_Init_Cvars ();
 	X11_SW_Init_Cvars ();
 }
+
+vid_system_t vid_system = {
+	.init = X11_VID_Init,
+	.init_cvars = X11_VID_Init_Cvars,
+	.update_fullscreen = X11_UpdateFullscreen,
+};
 
 #if 0
 static int  config_notify = 0;

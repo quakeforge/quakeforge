@@ -50,19 +50,51 @@
 #include "client/view.h"
 
 
-cvar_t     *chase_back;
-cvar_t     *chase_up;
-cvar_t     *chase_right;
-cvar_t     *chase_active;
+float chase_back;
+static cvar_t chase_back_cvar = {
+	.name = "chase_back",
+	.description =
+		"None",
+	.default_value = "100",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &chase_back },
+};
+float chase_up;
+static cvar_t chase_up_cvar = {
+	.name = "chase_up",
+	.description =
+		"None",
+	.default_value = "16",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &chase_up },
+};
+float chase_right;
+static cvar_t chase_right_cvar = {
+	.name = "chase_right",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &chase_right },
+};
+int chase_active;
+static cvar_t chase_active_cvar = {
+	.name = "chase_active",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &chase_active },
+};
 
 
 void
 Chase_Init_Cvars (void)
 {
-	chase_back = Cvar_Get ("chase_back", "100", CVAR_NONE, NULL, "None");
-	chase_up = Cvar_Get ("chase_up", "16", CVAR_NONE, NULL, "None");
-	chase_right = Cvar_Get ("chase_right", "0", CVAR_NONE, NULL, "None");
-	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
+	Cvar_Register (&chase_back_cvar, 0, 0);
+	Cvar_Register (&chase_up_cvar, 0, 0);
+	Cvar_Register (&chase_right_cvar, 0, 0);
+	Cvar_Register (&chase_active_cvar, 0, 0);
 }
 
 void
@@ -104,8 +136,8 @@ limit_distance (chasestate_t *cs)
 	vec4f_t     dir = cs->camera_origin - cs->player_origin;
 	vec4f_t     forward = normalf (dir);
 
-	if (magnitudef (dir)[0] > chase_back->value) {
-		cs->camera_origin = cs->player_origin + forward * chase_back->value;
+	if (magnitudef (dir)[0] > chase_back) {
+		cs->camera_origin = cs->player_origin + forward * chase_back;
 	}
 }
 
@@ -132,26 +164,26 @@ cam_controls (chasestate_t *cs, viewstate_t *vs)
 	vec4f_t     dir = { };
 
 	if (in_strafe.state & 1) {
-		move[SIDE] += cl_sidespeed->value * IN_ButtonState (&in_right);
-		move[SIDE] -= cl_sidespeed->value * IN_ButtonState (&in_left);
+		move[SIDE] += cl_sidespeed * IN_ButtonState (&in_right);
+		move[SIDE] -= cl_sidespeed * IN_ButtonState (&in_left);
 	}
-	move[SIDE] += cl_sidespeed->value * IN_ButtonState (&in_moveright);
-	move[SIDE] -= cl_sidespeed->value * IN_ButtonState (&in_moveleft);
+	move[SIDE] += cl_sidespeed * IN_ButtonState (&in_moveright);
+	move[SIDE] -= cl_sidespeed * IN_ButtonState (&in_moveleft);
 
 	if (!(in_klook.state & 1)) {
-		move[FORWARD] += cl_forwardspeed->value
+		move[FORWARD] += cl_forwardspeed
 			* IN_ButtonState (&in_forward);
-		move[FORWARD] -= cl_backspeed->value * IN_ButtonState (&in_back);
+		move[FORWARD] -= cl_backspeed * IN_ButtonState (&in_back);
 	}
 	if (in_speed.state & 1) {
-		move *= cl_movespeedkey->value;
+		move *= cl_movespeedkey;
 	}
 
 	// mouse and joystick controllers add to movement
 	VectorSet (0, vs->player_angles[1] - cs->camera_angles[1], 0, dir);
 	AngleVectors ((vec_t*)&dir, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up); //FIXME
-	forward *= IN_UpdateAxis (&in_cam_forward) * m_forward->value;
-	right *= IN_UpdateAxis (&in_cam_side) * m_side->value;
+	forward *= IN_UpdateAxis (&in_cam_forward) * m_forward;
+	right *= IN_UpdateAxis (&in_cam_side) * m_side;
 	dir = forward + right;
 	move[FORWARD] += dir[0];
 	move[SIDE]    -= dir[1];
@@ -191,9 +223,9 @@ chase_mode_1 (chasestate_t *cs)
 
 	// calc exact destination
 	cs->camera_origin = vs->player_origin
-		- forward * chase_back->value - right * chase_right->value;
+		- forward * chase_back - right * chase_right;
 	// chase_up is world up
-	cs->camera_origin[2] += chase_up->value;
+	cs->camera_origin[2] += chase_up;
 
 	// check for walls between player and camera
 	stop = TraceLine (cs, vs->player_origin, cs->camera_origin);
@@ -219,13 +251,13 @@ chase_mode_2 (chasestate_t *cs)
 	// move camera, it's not enough to just change the angles because
 	// the angles are automatically changed to look toward the player
 	AngleVectors (cs->camera_angles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
-	cs->camera_origin = cs->player_origin - chase_back->value * forward;
+	cs->camera_origin = cs->player_origin - chase_back * forward;
 
 	cs->player_origin = vs->player_origin;
 
 	// don't let camera get too low
-	if (cs->camera_origin[2] < cs->player_origin[2] + chase_up->value) {
-		cs->camera_origin[2] = cs->player_origin[2] + chase_up->value;
+	if (cs->camera_origin[2] < cs->player_origin[2] + chase_up) {
+		cs->camera_origin[2] = cs->player_origin[2] + chase_up;
 	}
 
 	limit_distance (cs);
@@ -267,7 +299,7 @@ chase_mode_3 (chasestate_t *cs)
 
 	cs->player_origin = vs->player_origin;
 	AngleVectors (cs->camera_angles, (vec_t*)&forward, (vec_t*)&right, (vec_t*)&up);//FIXME
-	cs->camera_origin = cs->player_origin - chase_back->value * forward;
+	cs->camera_origin = cs->player_origin - chase_back * forward;
 	limit_distance (cs);
 	check_for_walls (cs, forward);
 	set_camera (cs, vs);
@@ -277,7 +309,7 @@ chase_mode_3 (chasestate_t *cs)
 void
 Chase_Update (chasestate_t *cs)
 {
-	switch (chase_active->int_val) {
+	switch (chase_active) {
 		case 1:
 			chase_mode_1 (cs);
 			return;

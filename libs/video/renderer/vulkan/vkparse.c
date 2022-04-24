@@ -607,9 +607,11 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 }
 
 exprtype_t VkImageView_type = {
-	"VkImageView",
-	sizeof (VkImageView),
-	0, 0, 0
+	.name = "VkImageView",
+	.size = sizeof (VkImageView),
+	.binops = 0,
+	.unops = 0,
+	.data = 0
 };
 
 static int
@@ -823,10 +825,10 @@ data_array (const exprval_t **params, exprval_t *result, exprctx_t *context)
 }
 
 static exprtype_t data_array_type = {
-	"array",
-	sizeof (data_array_t *),
-	0,
-	0,
+	.name = "array",
+	.size = sizeof (data_array_t *),
+	.binops = 0,
+	.unops = 0,
 };
 static exprfunc_t data_array_func[] = {
 	{ &data_array_type, -1, 0, data_array },
@@ -895,11 +897,11 @@ static exprtab_t qfv_output_t_symtab = {
 	qfv_output_t_symbols,
 };
 exprtype_t qfv_output_t_type = {
-	"qfv_output_t",
-	sizeof (qfv_output_t),
-	cexpr_struct_binops,
-	0,
-	&qfv_output_t_symtab,
+	.name = "qfv_output_t",
+	.size = sizeof (qfv_output_t),
+	.binops = cexpr_struct_binops,
+	.unops = 0,
+	.data = &qfv_output_t_symtab,
 };
 
 static exprsym_t vulkan_frameset_t_symbols[] = {
@@ -910,11 +912,11 @@ static exprtab_t vulkan_frameset_t_symtab = {
 	vulkan_frameset_t_symbols,
 };
 exprtype_t vulkan_frameset_t_type = {
-	"frameset",
-	sizeof (vulkan_frameset_t *),
-	cexpr_struct_binops,
-	0,
-	&vulkan_frameset_t_symtab,
+	.name = "frameset",
+	.size = sizeof (vulkan_frameset_t *),
+	.binops = cexpr_struct_binops,
+	.unops = 0,
+	.data = &vulkan_frameset_t_symtab,
 };
 
 typedef struct {

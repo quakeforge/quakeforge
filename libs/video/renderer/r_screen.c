@@ -229,11 +229,11 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		return;
 	}
 
-	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val) {
+	if (r_timegraph || r_speeds || r_dspeeds) {
 		r_time1 = Sys_DoubleTime ();
 	}
 
-	if (scr_fisheye->int_val && !fisheye_cube_map) {
+	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
 
@@ -273,7 +273,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		vec4f_t     position = refdef->frame.position;
 		refdef->viewleaf = Mod_PointInLeaf ((vec_t*)&position, refdef->worldmodel);//FIXME
 		r_dowarpold = r_dowarp;
-		if (r_waterwarp->int_val) {
+		if (r_waterwarp) {
 			r_dowarp = refdef->viewleaf->contents <= CONTENTS_WATER;
 		}
 		if (r_dowarp && !warp_buffer) {
@@ -288,12 +288,12 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	if (r_dowarp) {
 		r_funcs->bind_framebuffer (warp_buffer);
 	}
-	if (scr_fisheye->int_val && fisheye_cube_map) {
+	if (scr_fisheye && fisheye_cube_map) {
 		int         side = fisheye_cube_map->width;
 		vrect_t     feye = { 0, 0, side, side };
 		r_funcs->set_viewport (&feye);
 		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
-		switch (scr_fviews->int_val) {
+		switch (scr_fviews) {
 			case 6: render_side (BOX_BEHIND);
 			case 5: render_side (BOX_BOTTOM);
 			case 4: render_side (BOX_TOP);
@@ -336,7 +336,7 @@ update_vrect (void)
 	vrect.height = r_data->vid->height;
 
 	set_vrect (&vrect, &refdef->vrect, r_data->lineadj);
-	SCR_SetFOV (scr_fov->value);
+	SCR_SetFOV (scr_fov);
 }
 
 void
@@ -407,8 +407,8 @@ ScreenShot_f (void)
 static void
 SCR_SizeUp_f (void)
 {
-	if (scr_viewsize->int_val < 120) {
-		Cvar_SetValue (scr_viewsize, scr_viewsize->int_val + 10);
+	if (scr_viewsize < 120) {
+		scr_viewsize = scr_viewsize + 10;
 		r_data->vid->recalc_refdef = 1;
 	}
 }
@@ -421,14 +421,14 @@ SCR_SizeUp_f (void)
 static void
 SCR_SizeDown_f (void)
 {
-	Cvar_SetValue (scr_viewsize, scr_viewsize->int_val - 10);
+	scr_viewsize = scr_viewsize - 10;
 	r_data->vid->recalc_refdef = 1;
 }
 
 void
 SCR_DrawRam (void)
 {
-	if (!scr_showram->int_val)
+	if (!scr_showram)
 		return;
 
 	if (!r_cache_thrash)
@@ -444,7 +444,7 @@ SCR_DrawTurtle (void)
 {
 	static int  count;
 
-	if (!scr_showturtle->int_val)
+	if (!scr_showturtle)
 		return;
 
 	if (r_data->frametime < 0.1) {
@@ -466,7 +466,7 @@ SCR_DrawPause (void)
 {
 	qpic_t     *pic;
 
-	if (!scr_showpause->int_val)		// turn off for screenshots
+	if (!scr_showpause)		// turn off for screenshots
 		return;
 
 	if (!r_data->paused)
@@ -501,6 +501,7 @@ SCR_Init (void)
 
 	r_ent_queue = EntQueue_New (mod_num_types);
 
-	Cvar_AddListener (scr_viewsize, viewsize_listener, 0);
+	cvar_t     *var = Cvar_FindVar ("viewsize");
+	Cvar_AddListener (var, viewsize_listener, 0);
 	update_vrect ();
 }

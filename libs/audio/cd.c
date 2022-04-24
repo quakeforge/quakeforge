@@ -40,7 +40,15 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/cd.h"
 
-cvar_t         *cd_plugin;
+char *cd_plugin;
+static cvar_t cd_plugin_cvar = {
+	.name = "cd_plugin",
+	.description =
+		"CD Plugin to use",
+	.default_value = CD_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &cd_plugin },
+};
 plugin_t       *cdmodule = NULL;
 
 CD_PLUGIN_PROTOS
@@ -96,19 +104,18 @@ CDAudio_Init (void)
 	Sys_RegisterShutdown (CDAudio_shutdown, 0);
 
 	PI_RegisterPlugins (cd_plugin_list);
-	cd_plugin = Cvar_Get ("cd_plugin", CD_DEFAULT, CVAR_ROM, NULL,
-						  "CD Plugin to use");
+	Cvar_Register (&cd_plugin_cvar, 0, 0);
 
 	if (COM_CheckParm ("-nocdaudio"))
 		return 0;
 
-	if (!*cd_plugin->string) {
+	if (!*cd_plugin) {
 		Sys_Printf ("Not loading CD due to no driver\n");
 		return 0;
 	}
-	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
+	cdmodule = PI_LoadPlugin ("cd", cd_plugin);
 	if (!cdmodule) {
-		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
+		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin);
 		return -1;
 	}
 	Cmd_AddCommand (

@@ -39,8 +39,6 @@
 
 #define sv_frametime host_frametime
 
-cvar_t     *sv_nostep;
-
 // CLIENT MOVEMENT ============================================================
 
 /*
@@ -248,7 +246,7 @@ SV_WalkMove (edict_t *ent)
 	if (SVfloat (ent, movetype) != MOVETYPE_WALK)
 		return;							// gibbed by a trigger
 
-	if (sv_nostep->int_val)
+	if (sv_nostep)
 		return;
 
 	if ((int) SVfloat (sv_player, flags) & FL_WATERJUMP)

@@ -40,8 +40,24 @@
 
 qboolean standard_quake = false;
 
-cvar_t     *registered;
-cvar_t     *cmdline;
+float registered;
+static cvar_t registered_cvar = {
+	.name = "registered",
+	.description =
+		"Is the game the registered version. 1 yes 0 no",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &registered },
+};
+char *cmdline;
+static cvar_t cmdline_cvar = {
+	.name = "cmdline",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = 0, .value = &cmdline },
+};
 int         static_registered = 1;
 
 /*
@@ -66,7 +82,7 @@ Game_CheckRegistered (void)
 	}
 
 	if (static_registered) {
-		Cvar_Set (registered, "1");
+		Cvar_Set ("registered", "1");
 		Sys_Printf ("Playing registered version.\n");
 	}
 }
@@ -91,9 +107,8 @@ Game_Init (memhunk_t *hunk)
 	}
 	QFS_Init (hunk, game);
 
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
-						   "Is the game the registered version. 1 yes 0 no");
-	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+	Cvar_Register (&registered_cvar, 0, 0);
+	Cvar_Register (&cmdline_cvar, Cvar_Info, &cmdline);
 
 	Game_CheckRegistered ();
 }

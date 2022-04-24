@@ -46,12 +46,12 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 													   ctx->surface,
 													   &numModes, modes);
 	for (uint32_t i = 0; i < numModes; i++) {
-		if ((int) modes[i] == vulkan_presentation_mode->int_val) {
+		if ((int) modes[i] == vulkan_presentation_mode) {
 			useMode = modes[i];
 		}
 	}
 	Sys_MaskPrintf (SYS_vulkan, "presentation mode: %d (%d)\n", useMode,
-					vulkan_presentation_mode->int_val);
+					vulkan_presentation_mode);
 
 	VkSurfaceCapabilitiesKHR surfCaps;
 	ifuncs->vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physDev,

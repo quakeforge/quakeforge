@@ -350,10 +350,9 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	cache = dstring_new ();
 	fullpath = dstring_new ();
 
-	if (!gl_alias_render_tri->int_val) {
+	if (!gl_alias_render_tri) {
 
-		if (gl_mesh_cache->int_val
-			&& gl_mesh_cache->int_val <= header->mdl.numtris) {
+		if (gl_mesh_cache && gl_mesh_cache <= header->mdl.numtris) {
 			do_cache = true;
 
 			mdfour (model_digest, (unsigned char *) _m, _s);

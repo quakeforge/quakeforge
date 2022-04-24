@@ -40,12 +40,12 @@
 
 struct dstring_s;
 
-extern	struct cvar_s	*sys_nostdout;
-extern	struct cvar_s	*sys_extrasleep;
-extern	struct cvar_s	*sys_dead_sleep;
-extern	struct cvar_s	*sys_sleep;
+extern int sys_nostdout;
+extern int sys_extrasleep;
+extern int sys_dead_sleep;
+extern int sys_sleep;
 
-extern struct cvar_s *developer;
+extern int developer;
 
 
 extern const char sys_char_map[256];

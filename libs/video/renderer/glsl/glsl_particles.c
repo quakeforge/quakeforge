@@ -138,6 +138,7 @@ alloc_arrays (psystem_t *ps)
 		maxparticles = ps->maxparticles;
 		if (particleVertexArray)
 			free (particleVertexArray);
+		printf ("alloc_arrays: %d\n", ps->maxparticles);
 		particleVertexArray = calloc (ps->maxparticles * 4,
 									  sizeof (partvert_t));
 
@@ -155,6 +156,12 @@ alloc_arrays (psystem_t *ps)
 	}
 }
 
+static void
+glsl_particles_f (void *data, const cvar_t *cvar)
+{
+	alloc_arrays (&r_psystem);//FIXME
+}
+
 void
 glsl_R_InitParticles (void)
 {
@@ -164,6 +171,9 @@ glsl_R_InitParticles (void)
 	float       v[2] = {0, 0};
 	byte        data[64][64][2];
 	tex_t      *tex;
+
+	Cvar_AddListener (Cvar_FindVar ("r_particles"), glsl_particles_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("r_particles_max"), glsl_particles_f, 0);
 
 	qfeglEnable (GL_VERTEX_PROGRAM_POINT_SIZE);
 	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
@@ -258,8 +268,8 @@ draw_qf_particles (psystem_t *psystem)
 	qfeglDepthMask (GL_FALSE);
 
 	minparticledist = DotProduct (r_refdef.frame.position,
-								  r_refdef.frame.forward) +
-		r_particles_nearclip->value;
+								  r_refdef.frame.forward)
+		+ r_particles_nearclip;
 
 	vacount = 0;
 	VA = particleVertexArray;
@@ -378,8 +388,8 @@ draw_id_particles (psystem_t *psystem)
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	minparticledist = DotProduct (r_refdef.frame.position,
-								  r_refdef.frame.forward) +
-		r_particles_nearclip->value;
+								  r_refdef.frame.forward)
+		+ r_particles_nearclip;
 
 	vacount = 0;
 	VA = particleVertexArray;
@@ -422,42 +432,6 @@ glsl_R_DrawParticles (psystem_t *psystem)
 	} else {
 		draw_id_particles (psystem);
 	}
-}
-
-static void
-r_particles_nearclip_f (cvar_t *var)
-{
-	Cvar_SetValue (r_particles_nearclip, bound (r_nearclip->value, var->value,
-												r_farclip->value));
-}
-
-static void
-r_particles_f (cvar_t *var)
-{
-	R_MaxParticlesCheck (var, r_particles_max);
-	alloc_arrays (&r_psystem);
-}
-
-static void
-r_particles_max_f (cvar_t *var)
-{
-	R_MaxParticlesCheck (r_particles, var);
-	alloc_arrays (&r_psystem);
-}
-
-void
-glsl_R_Particles_Init_Cvars (void)
-{
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
-							"Toggles drawing of particles.");
-	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
-								r_particles_max_f, "Maximum amount of "
-								"particles to display. No maximum, minimum "
-								"is 0.");
-	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
-									 CVAR_ARCHIVE, r_particles_nearclip_f,
-									 "Distance of the particle near clipping "
-									 "plane from the player.");
 }
 
 psystem_t * __attribute__((const))//FIXME

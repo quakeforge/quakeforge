@@ -38,6 +38,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
+#include "QF/heapsort.h"
 #include "QF/keys.h"
 #include "QF/qendian.h"
 #include "QF/msg.h"
@@ -580,6 +581,26 @@ Datagram_Listen (qboolean state)
 	}
 }
 
+static const cvar_t **cvar_list;
+static int num_cvars;
+
+static int
+dg_cvar_cmp (const void *_a, const void *_b)
+{
+	const cvar_t * const *a = _a;
+	const cvar_t * const *b = _b;
+	return strcmp ((*a)->name, (*b)->name);
+}
+
+static int
+dg_cvar_select (const cvar_t *cvar, void *data)
+{
+	if (cvar->flags & CVAR_SERVERINFO) {
+		*(int *)data += 1;
+		return 1;
+	}
+	return 0;
+}
 
 static qsocket_t *
 _Datagram_CheckNewConnections (void)
@@ -634,7 +655,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_SERVER_INFO);
 		dfunc.GetSocketAddr (acceptsock, &newaddr);
 		MSG_WriteString (net_message->message, dfunc.AddrToString (&newaddr));
-		MSG_WriteString (net_message->message, hostname->string);
+		MSG_WriteString (net_message->message, hostname);
 		MSG_WriteString (net_message->message, sv.name);
 		MSG_WriteByte (net_message->message, net_activeconnections);
 		MSG_WriteByte (net_message->message, svs.maxclients);
@@ -690,25 +711,25 @@ _Datagram_CheckNewConnections (void)
 
 	if (command == CCREQ_RULE_INFO) {
 		const char *prevCvarName;
-		cvar_t     *var;
+		const cvar_t *var;
 
 		// find the search start location
 		prevCvarName = MSG_ReadString (net_message);
 		if (*prevCvarName) {
-			var = Cvar_FindVar (prevCvarName);
+			cvar_t      key = { .name = prevCvarName };
+			var = bsearch (&key, cvar_list, num_cvars, sizeof (cvar_t *),
+						   dg_cvar_cmp);
 			if (!var)
-				return NULL;
-			var = var->next;
+				return 0;
+			var++;
 		} else {
-			var = cvar_vars;
-		}
-
-		// search for the next server cvar
-		while (var) {
-			if (var->flags & CVAR_SERVERINFO) {
-				break;
+			if (cvar_list) {
+				free (cvar_list);
 			}
-			var = var->next;
+			num_cvars = 0;
+			cvar_list = Cvar_Select (dg_cvar_select, &num_cvars);
+			heapsort (cvar_list, num_cvars, sizeof (cvar_t *), dg_cvar_cmp);
+			var = cvar_list[0];
 		}
 
 		// send the response
@@ -719,7 +740,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_RULE_INFO);
 		if (var) {
 			MSG_WriteString (net_message->message, var->name);
-			MSG_WriteString (net_message->message, var->string);
+			MSG_WriteString (net_message->message, Cvar_VarString (var));
 		}
 		MSG_PokeLongBE (net_message->message, 0,
 						NETFLAG_CTL | net_message->message->cursize);

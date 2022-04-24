@@ -59,8 +59,24 @@
 #include "qw/protocol.h"
 #include "qw/include/server.h"
 
-cvar_t     *net_packetlog;
-cvar_t     *net_loglevel;
+int net_packetlog;
+static cvar_t net_packetlog_cvar = {
+	.name = "net_packetlog",
+	.description =
+		"enable/disable packet logging",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &net_packetlog },
+};
+int net_loglevel;
+static cvar_t net_loglevel_cvar = {
+	.name = "net_loglevel",
+	.description =
+		"Packet logging/parsing",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &net_loglevel },
+};
 
 // note: this is SUPPOSED to be duplicate, like many others
 const char *svc_string[] = {
@@ -227,22 +243,22 @@ ascii_dump_buf (unsigned char *buf, int len)
 void
 Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 {
-	if (!net_loglevel->int_val)
+	if (!net_loglevel)
 		return;
 
 	if (is_server) {
 		Net_LogPrintf ("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: "
 					   "<<<<<<<<<<<<<<<<<<<<<<<<\n", len);
-		if (net_loglevel->int_val != 3)
+		if (net_loglevel != 3)
 			hex_dump_buf ((unsigned char *) p, len);
-		if (net_loglevel->int_val > 1)
+		if (net_loglevel > 1)
 			Analyze_Client_Packet (p, len, has_sequence);
 	} else {
 		Net_LogPrintf ("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: "
 					   ">>>>>>>>>>>>>>>>>>>>>>>>\n", len);
-		if (net_loglevel->int_val != 3)
+		if (net_loglevel != 3)
 			hex_dump_buf ((unsigned char *) p, len);
-		if (net_loglevel->int_val > 1)
+		if (net_loglevel > 1)
 			Analyze_Server_Packet (p, len, has_sequence);
 	}
 	return;
@@ -251,22 +267,22 @@ Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 void
 Log_Outgoing_Packet (const byte *p, int len, int has_sequence)
 {
-	if (!net_loglevel->int_val)
+	if (!net_loglevel)
 		return;
 
 	if (is_server) {
 		Net_LogPrintf ("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: "
 					   ">>>>>>>>>>>>>>>>>>>>>>>>\n", len);
-		if (net_loglevel->int_val != 3)
+		if (net_loglevel != 3)
 			hex_dump_buf ((unsigned char *) p, len);
-		if (net_loglevel->int_val > 1)
+		if (net_loglevel > 1)
 			Analyze_Server_Packet (p, len, has_sequence);
 	} else {
 		Net_LogPrintf ("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: "
 					   "<<<<<<<<<<<<<<<<<<<<<<<<\n", len);
-		if (net_loglevel->int_val != 3)
+		if (net_loglevel != 3)
 			hex_dump_buf ((unsigned char *) p, len);
-		if (net_loglevel->int_val > 1)
+		if (net_loglevel > 1)
 			Analyze_Client_Packet (p, len, has_sequence);
 	}
 	return;
@@ -958,9 +974,9 @@ net_packet_log_f (int length, const void *data, netadr_t to)
 }
 
 static void
-Net_PacketLog_f (cvar_t *var)
+Net_PacketLog_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val) {
+	if (net_packetlog) {
 		Net_LogStart ("qfpacket.log");
 		net_log_packet = net_packet_log_f;
 	} else {
@@ -990,8 +1006,7 @@ Net_Log_Init (const char **sound_precache, int server)
 
 	_stdout = Qdopen (1, "wt");	// create a QFile of stdout
 
-	net_packetlog = Cvar_Get ("net_packetlog", "0", CVAR_NONE, Net_PacketLog_f,
-							 "enable/disable packet logging");
+	Cvar_Register (&net_packetlog_cvar, Net_PacketLog_f, 0);
 
 // 0 = no logging
 // 1 = hex dump only
@@ -999,8 +1014,7 @@ Net_Log_Init (const char **sound_precache, int server)
 // 3 = just parse
 // 4 = parse/hexdump, skip movement/empty messages
 
-	net_loglevel = Cvar_Get ("net_loglevel", "2", CVAR_NONE, NULL,
-							 "Packet logging/parsing");
+	Cvar_Register (&net_loglevel_cvar, 0, 0);
 
 	Cmd_AddCommand ("net_packetlog_zap", Net_PacketLog_Zap_f,
 					"clear the packet log file");

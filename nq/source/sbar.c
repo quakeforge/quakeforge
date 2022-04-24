@@ -64,6 +64,7 @@
 #include "nq/include/server.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
+static int sb_view_size;
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
 
@@ -106,124 +107,33 @@ int         hipweapons[4] =
 	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
-cvar_t     *scr_centertime;
-cvar_t     *scr_printspeed;
-
-static view_t *sbar_view;
-static view_t *sbar_inventory_view;
-static view_t *sbar_frags_view;
-
-static view_t *hud_view;
-static view_t *hud_inventory_view;
-static view_t *hud_armament_view;
-static view_t *hud_frags_view;
-
-static view_t *overlay_view;
-static view_t *stuff_view;
-static view_t *main_view;
-
-static void
-hud_swap_f (cvar_t *var)
-{
-	if (var->int_val) {
-		hud_armament_view->gravity = grav_southwest;
-		hud_armament_view->children[0]->gravity = grav_northwest;
-		hud_armament_view->children[1]->gravity = grav_southeast;
-		stuff_view->gravity = grav_southeast;
-	} else {
-		hud_armament_view->gravity = grav_southeast;
-		hud_armament_view->children[0]->gravity = grav_northeast;
-		hud_armament_view->children[1]->gravity = grav_southwest;
-		stuff_view->gravity = grav_southwest;
-	}
-	view_move (hud_armament_view, hud_armament_view->xpos,
-			   hud_armament_view->ypos);
-	view_move (stuff_view, stuff_view->xpos, stuff_view->ypos);
-}
+float scr_centertime;
+static cvar_t scr_centertime_cvar = {
+	.name = "scr_centertime",
+	.description =
+		"How long in seconds screen hints are displayed",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_centertime },
+};
+float scr_printspeed;
+static cvar_t scr_printspeed_cvar = {
+	.name = "scr_printspeed",
+	.description =
+		"How fast the text is displayed at the end of the single player "
+		"episodes",
+	.default_value = "8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_printspeed },
+};
 
 static void
-hud_scoreboard_gravity_f (cvar_t *var)
+viewsize_f (int view_size)
 {
-	grav_t      grav;
-
-	if (strequal (var->string, "center"))
-		grav = grav_center;
-	else if (strequal (var->string, "northwest"))
-		grav = grav_northwest;
-	else if (strequal (var->string, "north"))
-		grav = grav_north;
-	else if (strequal (var->string, "northeast"))
-		grav = grav_northeast;
-	else if (strequal (var->string, "west"))
-		grav = grav_west;
-	else if (strequal (var->string, "east"))
-		grav = grav_east;
-	else if (strequal (var->string, "southwest"))
-		grav = grav_southwest;
-	else if (strequal (var->string, "south"))
-		grav = grav_south;
-	else if (strequal (var->string, "southeast"))
-		grav = grav_southeast;
-	else
-		grav = grav_center;
-	overlay_view->gravity = grav;
-	view_move (overlay_view, overlay_view->xpos, overlay_view->ypos);
-}
-
-static void
-calc_sb_lines (cvar_t *var)
-{
-	int        stuff_y;
-
-	if (var->int_val >= 120) {
-		sb_lines = 0;
-		stuff_y = 0;
-	} else if (var->int_val >= 110) {
-		sb_lines = 24;
-		sbar_inventory_view->visible = 0;
-		hud_inventory_view->visible = 0;
-		hud_armament_view->visible = 0;
-		stuff_y = 32;
-	} else {
-		sb_lines = 48;
-		sbar_inventory_view->visible = 1;
-		hud_inventory_view->visible = 1;
-		hud_armament_view->visible = 1;
-		stuff_y = 48;
-	}
-	if (sb_lines) {
-		sbar_view->visible = 1;
-		hud_view->visible = 1;
-		view_resize (sbar_view, sbar_view->xlen, sb_lines);
-		view_resize (hud_view, hud_view->xlen, sb_lines);
-	} else {
-		sbar_view->visible = 0;
-		hud_view->visible = 0;
-	}
-	view_move (stuff_view, stuff_view->xpos, stuff_y);
-}
-
-static void
-hud_sbar_f (cvar_t *var)
-{
-	if (r_data->scr_viewsize)
-		calc_sb_lines (r_data->scr_viewsize);
-	SCR_SetBottomMargin (var->int_val ? sb_lines : 0);
-	if (var->int_val) {
-		view_remove (main_view, main_view->children[0]);
-		view_insert (main_view, sbar_view, 0);
-	} else {
-		view_remove (main_view, main_view->children[0]);
-		view_insert (main_view, hud_view, 0);
-	}
-}
-
-static void
-viewsize_f (cvar_t *var)
-{
-	calc_sb_lines (var);
+	sb_view_size = view_size;
+	HUD_Calc_sb_lines (view_size);
 	if (hud_sbar) {
-		SCR_SetBottomMargin (hud_sbar->int_val ? sb_lines : 0);
+		SCR_SetBottomMargin (hud_sbar ? sb_lines : 0);
 	}
 }
 
@@ -835,7 +745,7 @@ draw_rogue_status (view_t *view)
 		draw_pic (view, 0, 0, sb_armor[0]);
 
 	// PGM 03/02/97 - fixed so color swatch appears in only CTF modes
-	if (cl.maxclients != 1 && teamplay->int_val > 3 && teamplay->int_val < 7)
+	if (cl.maxclients != 1 && teamplay > 3 && teamplay < 7)
 		draw_rogue_face (view);
 	else
 		draw_face (view);
@@ -996,7 +906,7 @@ sbar_update_vis (void)
 
 	sbar_view->visible = 0;
 
-	headsup = !(hud_sbar->int_val || r_data->scr_viewsize->int_val < 100);
+	headsup = !(hud_sbar || sb_view_size < 100);
 
 	if ((sb_updates >= r_data->vid->numpages) && !headsup)
 		return;
@@ -1007,9 +917,9 @@ sbar_update_vis (void)
 
 	if (cls.state == ca_active
 		&& ((cl.stats[STAT_HEALTH] <= 0) || sb_showscores))
-		overlay_view->visible = 1;
+		hud_overlay_view->visible = 1;
 	else
-		overlay_view->visible = 0;
+		hud_overlay_view->visible = 0;
 
 	if (!sb_lines)
 		return;
@@ -1024,7 +934,7 @@ void
 Sbar_Draw (void)
 {
 	sbar_update_vis ();
-	main_view->draw (main_view);
+	hud_main_view->draw (hud_main_view);
 }
 
 static void
@@ -1078,7 +988,7 @@ Sbar_DrawScoreboard (void)
 {
 	//Sbar_SoloScoreboard ();
 	if (cl.gametype == GAME_DEATHMATCH)
-		Sbar_DeathmatchOverlay (overlay_view);
+		Sbar_DeathmatchOverlay (hud_overlay_view);
 }
 
 static void
@@ -1109,10 +1019,10 @@ draw_time (view_t *view)
 #  define HOUR24 "%k"
 #  define PM "%P"
 #endif
-	if (hud_time->int_val == 1) {  // Use international format
+	if (hud_time == 1) {  // Use international format
 		strftime (st, sizeof (st), HOUR24":%M", local);
 		draw_string (view, 8, 0, st);
-	} else if (hud_time->int_val >= 2) {   // US AM/PM display
+	} else if (hud_time >= 2) {   // US AM/PM display
 		strftime (st, sizeof (st), HOUR12":%M "PM, local);
 		draw_string (view, 8, 0, st);
 	}
@@ -1139,9 +1049,9 @@ draw_fps (view_t *view)
 static void
 draw_stuff (view_t *view)
 {
-	if (hud_time->int_val > 0)
+	if (hud_time > 0)
 		draw_time (view);
-	if (hud_fps->int_val > 0)
+	if (hud_fps > 0)
 		draw_fps (view);
 }
 
@@ -1182,10 +1092,10 @@ Sbar_IntermissionOverlay (void)
 	r_data->scr_fullupdate = 0;
 
 	if (cl.gametype == GAME_DEATHMATCH) {
-		Sbar_DeathmatchOverlay (overlay_view);
+		Sbar_DeathmatchOverlay (hud_overlay_view);
 		return;
 	}
-	draw_intermission (overlay_view);
+	draw_intermission (hud_overlay_view);
 }
 
 /* CENTER PRINTING */
@@ -1209,7 +1119,7 @@ Sbar_CenterPrint (const char *str)
 
 	dstring_copystr (&center_string, str);
 
-	centertime_off = scr_centertime->value;
+	centertime_off = scr_centertime;
 	centertime_start = realtime;
 
 	// count the number of lines for centering
@@ -1263,10 +1173,10 @@ Sbar_FinaleOverlay (void)
 
 	r_data->scr_copyeverything = 1;
 
-	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
+	draw_cachepic (hud_overlay_view, 0, 16, "gfx/finale.lmp", 1);
 	// the finale prints the characters one at a time
-	remaining = scr_printspeed->value * (realtime - centertime_start);
-	Sbar_DrawCenterString (overlay_view, remaining);
+	remaining = scr_printspeed * (realtime - centertime_start);
+	Sbar_DrawCenterString (hud_overlay_view, remaining);
 }
 
 void
@@ -1278,7 +1188,7 @@ Sbar_DrawCenterPrint (void)
 	if (centertime_off <= 0)
 		return;
 
-	Sbar_DrawCenterString (overlay_view, -1);
+	Sbar_DrawCenterString (hud_overlay_view, -1);
 }
 
 static void
@@ -1383,7 +1293,7 @@ init_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	view_insert (main_view, hud_view, 0);
+	view_insert (hud_main_view, hud_view, 0);
 }
 
 static void
@@ -1495,7 +1405,7 @@ init_hipnotic_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	view_insert (main_view, hud_view, 0);
+	view_insert (hud_main_view, hud_view, 0);
 }
 
 static void
@@ -1592,33 +1502,33 @@ init_rogue_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	view_insert (main_view, hud_view, 0);
+	view_insert (hud_main_view, hud_view, 0);
 }
 
 static void
 init_views (void)
 {
-	main_view = view_new (0, 0, r_data->vid->conview->xlen,
+	hud_main_view = view_new (0, 0, r_data->vid->conview->xlen,
 						  r_data->vid->conview->ylen,
 						  grav_northwest);
 	if (con_module)
-		view_insert (con_module->data->console->view, main_view, 0);
-	main_view->resize_x = 1;	// get resized if the 2d view resizes
-	main_view->resize_y = 1;
-	main_view->visible = 0;		// but don't let the console draw our stuff
+		view_insert (con_module->data->console->view, hud_main_view, 0);
+	hud_main_view->resize_x = 1;	// get resized if the 2d view resizes
+	hud_main_view->resize_y = 1;
+	hud_main_view->visible = 0;		// but don't let the console draw our stuff
 	if (r_data->vid->conview->ylen > 300)
-		overlay_view = view_new (0, 0, 320, 300, grav_center);
+		hud_overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
-		overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
+		hud_overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
 								 grav_center);
-	overlay_view->draw = draw_overlay;
-	overlay_view->visible = 0;
+	hud_overlay_view->draw = draw_overlay;
+	hud_overlay_view->visible = 0;
 
-	stuff_view = view_new (0, 48, 152, 16, grav_southwest);
-	stuff_view->draw = draw_stuff;
+	hud_stuff_view = view_new (0, 48, 152, 16, grav_southwest);
+	hud_stuff_view->draw = draw_stuff;
 
-	view_insert (main_view, overlay_view, 0);
-	view_insert (main_view, stuff_view, 0);
+	view_insert (hud_main_view, hud_overlay_view, 0);
+	view_insert (hud_main_view, hud_stuff_view, 0);
 
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
@@ -1793,21 +1703,9 @@ Sbar_Init (void)
 	}
 
 	r_data->viewsize_callback = viewsize_f;
-	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
-						 "status bar mode: 0 = hud, 1 = oldstyle");
-	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
-						 "new HUD on left side?");
-	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",
-									   CVAR_ARCHIVE, hud_scoreboard_gravity_f,
-									   "control placement of scoreboard "
-									   "overlay: center, northwest, north, "
-									   "northeast, west, east, southwest, "
-									   "south, southeast");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
-							   "long in seconds screen hints are displayed");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
-							   "How fast the text is displayed at the end of "
-							   "the single player episodes");
+	HUD_Init_Cvars ();
+	Cvar_Register (&scr_centertime_cvar, 0, 0);
+	Cvar_Register (&scr_printspeed_cvar, 0, 0);
 
 	// register GIB builtins
 	GIB_Builtin_Add ("print::center", Sbar_GIB_Print_Center_f);

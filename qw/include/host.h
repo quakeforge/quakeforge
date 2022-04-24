@@ -38,8 +38,8 @@
 
 #define MAX_NUM_ARGVS	50
 
-extern struct cvar_s	*sys_ticrate;
-extern struct cvar_s	*password;
+extern float sys_ticrate;
+extern char *password;
 
 extern double	host_frametime;		// Tonik
 

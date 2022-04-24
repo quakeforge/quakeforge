@@ -122,73 +122,389 @@ qboolean    rcon_from_user;
 double      netdosexpire[DOSFLOODCMDS] = { 1, 1, 2, 0.9, 1, 5 };
 double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 
-cvar_t     *sv_mem_size;
+float sv_mem_size;
+static cvar_t sv_mem_size_cvar = {
+	.name = "sv_mem_size",
+	.description =
+		"Amount of memory (in MB) to allocate for the "
+		PACKAGE_NAME
+		" heap",
+	.default_value = "8",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &sv_mem_size },
+};
 
-cvar_t     *sv_console_plugin;
+char *sv_console_plugin;
+static cvar_t sv_console_plugin_cvar = {
+	.name = "sv_console_plugin",
+	.description =
+		"Plugin used for the console",
+	.default_value = "server",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &sv_console_plugin },
+};
 
-cvar_t     *sv_allow_status;
-cvar_t     *sv_allow_log;
-cvar_t     *sv_allow_ping;
+int sv_allow_status;
+static cvar_t sv_allow_status_cvar = {
+	.name = "sv_allow_status",
+	.description =
+		"Allow remote status queries (qstat etc)",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_allow_status },
+};
+int sv_allow_log;
+static cvar_t sv_allow_log_cvar = {
+	.name = "sv_allow_log",
+	.description =
+		"Allow remote logging",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_allow_log },
+};
+int sv_allow_ping;
+static cvar_t sv_allow_ping_cvar = {
+	.name = "sv_allow_pings",
+	.description =
+		"Allow remote pings (qstat etc)",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_allow_ping },
+};
 
-cvar_t     *sv_extensions;				// Use the extended protocols
+int sv_extensions;
+static cvar_t sv_extensions_cvar = {
+	.name = "sv_extensions",
+	.description =
+		"Use protocol extensions for QuakeForge clients",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_extensions },
+};
 
-cvar_t     *sv_mintic;					// bound the size of the
-cvar_t     *sv_maxtic;					// physics time tic
+float sv_mintic;
+static cvar_t sv_mintic_cvar = {
+	.name = "sv_mintic",
+	.description =
+		"The minimum amount of time the server will wait before sending "
+		"packets to a client. Set to .5 to make modem users happy",
+	.default_value = "0.03",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_mintic },
+};
+float sv_maxtic;
+static cvar_t sv_maxtic_cvar = {
+	.name = "sv_maxtic",
+	.description =
+		"The maximum amount of time in seconds before a client a receives an "
+		"update from the server",
+	.default_value = "0.1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_maxtic },
+};
 
-cvar_t     *sv_netdosprotect;			// tone down DoS from quake servers
+int sv_netdosprotect;
+static cvar_t sv_netdosprotect_cvar = {
+	.name = "sv_netdosprotect",
+	.description =
+		"DoS flood attack protection",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_netdosprotect },
+};
 
-cvar_t     *sv_timeout;					// seconds without any message
-cvar_t     *zombietime;					// seconds to sink messages after
+float sv_timeout;
+static cvar_t sv_timeout_cvar = {
+	.name = "timeout",
+	.description =
+		"Sets the amount of time in seconds before a client is considered "
+		"disconnected if the server does not receive a packet",
+	.default_value = "65",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_timeout },
+};
+float zombietime;
+static cvar_t zombietime_cvar = {
+	.name = "zombietime",
+	.description =
+		"The number of seconds that the server will keep the character of a "
+		"player on the map who seems to have disconnected",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &zombietime },
+};
 										// disconnect
 
-cvar_t     *rcon_password;				// password for remote server
-cvar_t     *admin_password;				// password for admin commands
+char *rcon_password;
+static cvar_t rcon_password_cvar = {
+	.name = "rcon_password",
+	.description =
+		"Set the password for rcon 'root' commands",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type=0/*FIXME want secret strings*/, .value = &rcon_password },
+};
+char *admin_password;
+static cvar_t admin_password_cvar = {
+	.name = "admin_password",
+	.description =
+		"Set the password for rcon admin commands",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0/* not used */, .value = &admin_password },
+};
 
-cvar_t     *password;					// password for entering the game
-cvar_t     *spectator_password;			// password for entering as a
+char *password;
+static cvar_t password_cvar = {
+	.name = "password",
+	.description =
+		"Set the server password for players",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &password },
+};
+char *spectator_password;
+static cvar_t spectator_password_cvar = {
+	.name = "spectator_password",
+	.description =
+		"Set the spectator password",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &spectator_password },
+};
 										// spectator
 
-cvar_t     *allow_download;
-cvar_t     *allow_download_skins;
-cvar_t     *allow_download_models;
-cvar_t     *allow_download_sounds;
-cvar_t     *allow_download_maps;
-cvar_t     *allow_download_demos;
+int allow_download;
+static cvar_t allow_download_cvar = {
+	.name = "allow_download",
+	.description =
+		"Toggle if clients can download game data from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download },
+};
+int allow_download_skins;
+static cvar_t allow_download_skins_cvar = {
+	.name = "allow_download_skins",
+	.description =
+		"Toggle if clients can download skins from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download_skins },
+};
+int allow_download_models;
+static cvar_t allow_download_models_cvar = {
+	.name = "allow_download_models",
+	.description =
+		"Toggle if clients can download models from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download_models },
+};
+int allow_download_sounds;
+static cvar_t allow_download_sounds_cvar = {
+	.name = "allow_download_sounds",
+	.description =
+		"Toggle if clients can download sounds from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download_sounds },
+};
+int allow_download_maps;
+static cvar_t allow_download_maps_cvar = {
+	.name = "allow_download_maps",
+	.description =
+		"Toggle if clients can download maps from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download_maps },
+};
+int allow_download_demos;
+static cvar_t allow_download_demos_cvar = {
+	.name = "allow_download_demos",
+	.description =
+		"Toggle if clients can download maps from the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &allow_download_demos },
+};
 
-cvar_t     *sv_highchars;
-cvar_t     *sv_phs;
+int sv_highchars;
+static cvar_t sv_highchars_cvar = {
+	.name = "sv_highchars",
+	.description =
+		"Toggle the use of high character color names for players",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_highchars },
+};
+int sv_phs;
+static cvar_t sv_phs_cvar = {
+	.name = "sv_phs",
+	.description =
+		"Possibly Hearable Set. If set to zero, the server calculates sound "
+		"hearability in realtime",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_phs },
+};
 
-cvar_t     *pausable;
+int pausable;
+static cvar_t pausable_cvar = {
+	.name = "pausable",
+	.description =
+		"None",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pausable },
+};
 
 
-cvar_t     *sv_minqfversion;			// Minimum QF version allowed to
+char *sv_minqfversion;
+static cvar_t sv_minqfversion_cvar = {
+	.name = "sv_minqfversion",
+	.description =
+		"Minimum QF version on client",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = 0, .value = &sv_minqfversion },
+};
 										// connect
-cvar_t     *sv_maxrate;					// Maximum allowable rate (silently
-										// capped)
 
-cvar_t     *sv_timestamps;
-cvar_t     *sv_timefmt;
+int sv_timestamps;
+static cvar_t sv_timestamps_cvar = {
+	.name = "sv_timestamps",
+	.description =
+		"Time/date stamps in log entries",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_timestamps },
+};
+char *sv_timefmt;
+static cvar_t sv_timefmt_cvar = {
+	.name = "sv_timefmt",
+	.description =
+		"Time/date format to use",
+	.default_value = "[%b %e %X] ",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_timefmt },
+};
 
 // game rules mirrored in svs.info
-cvar_t     *fraglimit;
-cvar_t     *timelimit;
-cvar_t     *teamplay;
-cvar_t     *samelevel;
-cvar_t     *maxclients;
-cvar_t     *maxspectators;
-cvar_t     *deathmatch;					// 0, 1, or 2
-cvar_t     *coop;
-cvar_t     *skill;
-cvar_t     *spawn;
-cvar_t     *watervis;
+float fraglimit;
+static cvar_t fraglimit_cvar = {
+	.name = "fraglimit",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &fraglimit },
+};
+int timelimit;
+static cvar_t timelimit_cvar = {
+	.name = "timelimit",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &timelimit },
+};
+int teamplay;
+static cvar_t teamplay_cvar = {
+	.name = "teamplay",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &teamplay },
+};
+float samelevel;
+static cvar_t samelevel_cvar = {
+	.name = "samelevel",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &samelevel },
+};
+int maxclients;
+static cvar_t maxclients_cvar = {
+	.name = "maxclients",
+	.description =
+		"Sets how many clients can connect to your server, this includes "
+		"spectators and players",
+	.default_value = "8",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &maxclients },
+};
+int maxspectators;
+static cvar_t maxspectators_cvar = {
+	.name = "maxspectators",
+	.description =
+		"Sets how many spectators can connect to your server. The maxclients "
+		"value takes precedence over this value so this value should always be"
+		" equal-to or less-then the maxclients value",
+	.default_value = "8",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &maxspectators },
+};
+int deathmatch;
+static cvar_t deathmatch_cvar = {
+	.name = "deathmatch",
+	.description =
+		"0, 1, or 2",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &deathmatch },
+};
+int coop;
+static cvar_t coop_cvar = {
+	.name = "coop",
+	.description =
+		"0 or 1",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &coop },
+};
+int skill;
+static cvar_t skill_cvar = {
+	.name = "skill",
+	.description =
+		"0 - 3",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &skill },
+};
+float spawn;
+static cvar_t spawn_cvar = {
+	.name = "spawn",
+	.description =
+		"Spawn the player entity",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &spawn },
+};
+int watervis;
+static cvar_t watervis_cvar = {
+	.name = "watervis",
+	.description =
+		"Set nonzero to enable r_wateralpha on clients",
+	.default_value = "0",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_int, .value = &watervis },
+};
 
-cvar_t     *hostname;
+char *hostname;
+static cvar_t hostname_cvar = {
+	.name = "hostname",
+	.description =
+		"None",
+	.default_value = "UNNAMED",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &hostname },
+};
 
 QFile      *sv_fraglogfile;
-
-cvar_t     *pr_gc;
-cvar_t     *pr_gc_interval;
-int         pr_gc_count = 0;
 
 int         sv_net_initialized;
 
@@ -479,7 +795,7 @@ CheckForFlood (flood_enum_t cmdtype)
 	int         oldest, i;
 	static qboolean firsttime = true;
 
-	if (!sv_netdosprotect->int_val)
+	if (!sv_netdosprotect)
 		return 0;
 
 	oldestTime = 0x7fffffff;
@@ -545,7 +861,7 @@ SVC_Status (void)
 	client_t   *cl;
 	int         ping, bottom, top, i;
 
-	if (!sv_allow_status->int_val)
+	if (!sv_allow_status)
 		return;
 	if (CheckForFlood (FLOOD_STATUS))
 		return;
@@ -610,7 +926,7 @@ SVC_Log (void)
 	char        data[MAX_DATAGRAM + 64];
 	int         seq;
 
-	if (!sv_allow_log->int_val)
+	if (!sv_allow_log)
 		return;
 	if (CheckForFlood (FLOOD_LOG))
 		return;
@@ -650,7 +966,7 @@ SVC_Ping (void)
 {
 	char        data;
 
-	if (!sv_allow_ping->int_val)
+	if (!sv_allow_ping)
 		return;
 	if (CheckForFlood (FLOOD_PING))
 		return;
@@ -696,7 +1012,7 @@ SVC_GetChallenge (void)
 		i = oldest;
 	}
 
-	if (sv_extensions->int_val) {
+	if (sv_extensions) {
 		extended = " QF qtv EXT";
 	}
 
@@ -730,8 +1046,8 @@ SV_AllocClient (int spectator, int server)
 
 	// if at server limits, refuse connection
 	if (!free ||
-		(!server && ((spectator && spectators >= maxspectators->int_val)
-					 || (!spectator && clients >= maxclients->int_val)))) {
+		(!server && ((spectator && spectators >= maxspectators)
+					 || (!spectator && clients >= maxclients)))) {
 		return 0;
 	}
 	// find a client slot
@@ -789,7 +1105,7 @@ SVC_DirectConnect (void)
 
 	if (strlen (Cmd_Argv (4)) < MAX_INFO_STRING)
 		userinfo = Info_ParseString (Cmd_Argv (4), 1023,
-									 !sv_highchars->int_val);
+									 !sv_highchars);
 
 	// Validate the userinfo string.
 	if (!userinfo) {
@@ -819,25 +1135,25 @@ SVC_DirectConnect (void)
 	}
 
 	s = Info_ValueForKey (userinfo, "*qf_version");
-	if ((!s[0]) || sv_minqfversion->string[0]) {	// kick old clients?
-		if (ver_compare (s, sv_minqfversion->string) < 0) {
+	if ((!s[0]) || sv_minqfversion[0]) {	// kick old clients?
+		if (ver_compare (s, sv_minqfversion) < 0) {
 			SV_Printf ("%s: Version %s is less than minimum version %s.\n",
 						NET_AdrToString (net_from), s,
-					   sv_minqfversion->string);
+					   sv_minqfversion);
 
 			SV_OutOfBandPrint (net_from, "%c\nserver requires QuakeForge "
 							   "v%s or greater. Get it from "
 							   "http://www.quakeforge.net/\n", A2C_PRINT,
-							   sv_minqfversion->string);
+							   sv_minqfversion);
 			return;
 		}
 	}
 	// check for password or spectator_password
 	s = Info_ValueForKey (userinfo, "spectator");
 	if (s[0] && strcmp (s, "0")) {
-		if (spectator_password->string[0] &&
-			!strcaseequal (spectator_password->string, "none") &&
-			!strequal (spectator_password->string, s)) {	// failed
+		if (spectator_password[0] &&
+			!strcaseequal (spectator_password, "none") &&
+			!strequal (spectator_password, s)) {	// failed
 			SV_Printf ("%s: spectator password failed\n",
 						NET_AdrToString (net_from));
 			SV_OutOfBandPrint (net_from,
@@ -847,13 +1163,13 @@ SVC_DirectConnect (void)
 		}
 		Info_RemoveKey (userinfo, "spectator");	// remove passwd
 		Info_SetValueForStarKey (userinfo, "*spectator", "1",
-								 !sv_highchars->int_val);
+								 !sv_highchars);
 		spectator = true;
 	} else {
 		s = Info_ValueForKey (userinfo, "password");
-		if (password->string[0]
-			&& !strcaseequal (password->string, "none")
-			&& !strequal (password->string, s)) {
+		if (password[0]
+			&& !strcaseequal (password, "none")
+			&& !strequal (password, s)) {
 			SV_Printf ("%s:password failed\n", NET_AdrToString (net_from));
 			SV_OutOfBandPrint (net_from,
 							   "%c\nserver requires a password\n\n",
@@ -948,12 +1264,12 @@ SVC_DirectConnect (void)
 }
 
 static int
-Rcon_Validate (cvar_t *pass)
+Rcon_Validate (const char *pass)
 {
-	if (!strlen (pass->string))
+	if (!strlen (pass))
 		return 0;
 
-	if (strcmp (Cmd_Argv (1), pass->string))
+	if (strcmp (Cmd_Argv (1), pass))
 		return 0;
 
 	return 1;
@@ -1146,8 +1462,28 @@ typedef struct {
 
 #define	MAX_IPFILTERS	1024
 
-cvar_t     *filterban;
-cvar_t     *sv_filter_automask;
+int filterban;
+static cvar_t filterban_cvar = {
+	.name = "filterban",
+	.description =
+		"Determines the rules for the IP list 0 Only IP addresses on the Ban "
+		"list will be allowed onto the server, 1 Only IP addresses NOT on the "
+		"Ban list will be allowed onto the server",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &filterban },
+};
+int sv_filter_automask;
+static cvar_t sv_filter_automask_cvar = {
+	.name = "sv_filter_automask",
+	.description =
+		"Automatically determine the mask length when it is not explicitely "
+		"given.  e.g. \"addip 1.2.0.0\" would be the same as \"addip "
+		"1.2.0.0/16\"",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_filter_automask },
+};
 int         numipfilters;
 ipfilter_t  ipfilters[MAX_IPFILTERS];
 unsigned int ipmasks[33]; // network byte order
@@ -1314,7 +1650,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 
 		// change trailing 0 segments to be a mask, eg 1.2.0.0 gives a /16 mask
 		if (mask == -1) {
-			if (sv_filter_automask->int_val) {
+			if (sv_filter_automask) {
 				mask = sizeof (b) * 8;
 				i = sizeof (b);
 				while (i > 0 && !b[i - 1]) {
@@ -1563,7 +1899,7 @@ SV_netDoSexpire_f (void)
 		for (i = 0; i < DOSFLOODCMDS; i++)
 			SV_Printf ("%f ", netdosexpire[i]);
 		SV_Printf ("\n");
-		if (!sv_netdosprotect->int_val)
+		if (!sv_netdosprotect)
 			SV_Printf ("(disabled)\n");
 		return;
 	}
@@ -1592,7 +1928,7 @@ SV_netDoSvalues_f (void)
 		for (i = 0; i < DOSFLOODCMDS; i++)
 			SV_Printf ("%f ", netdosvalues[i]);
 		SV_Printf ("\n");
-		if (!sv_netdosprotect->int_val)
+		if (!sv_netdosprotect)
 			SV_Printf ("(disabled)\n");
 		return;
 	}
@@ -1609,33 +1945,6 @@ SV_netDoSvalues_f (void)
 			netdosvalues[i] = arg1;
 	}
 	return;
-}
-
-static void
-SV_MaxRate_f (cvar_t *var)
-{
-	client_t   *cl;
-	int         maxrate = var->int_val;
-	int         i, rate = 2500;
-	const char *val;
-
-	Cvar_Info (var);
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->userinfo)
-			continue;
-		val = Info_ValueForKey (cl->userinfo, "rate");
-		if (strlen (val)) {
-			rate = atoi (val);
-
-			if (maxrate) {
-				rate = bound (500, rate, maxrate);
-			} else {
-				rate = max (500, rate);
-			}
-			cl->netchan.rate = 1.0 / rate;
-		}
-		SV_ClientPrintf (1, cl, PRINT_HIGH, "Net rate set to %i\n", rate);
-	}
 }
 
 static void
@@ -1680,7 +1989,7 @@ SV_FilterIP (byte *ip, double *until)
 		if (SV_MaskIPCompare (ip, ipfilters[i].ip, ipfilters[i].mask)) {
 			if (!ipfilters[i].time) {
 				// normal ban
-				return filterban->int_val;
+				return filterban;
 			} else if (ipfilters[i].time > realtime) {
 				*until = ipfilters[i].time;
 				return true;	// banned no matter what
@@ -1691,7 +2000,7 @@ SV_FilterIP (byte *ip, double *until)
 			}
 		}
 	}
-	return !filterban->int_val;
+	return !filterban;
 }
 
 void
@@ -1746,7 +2055,7 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 void
 SV_OutOfBand (netadr_t adr, unsigned length, byte *data)
 {
-	if (net_packetlog->int_val) {
+	if (net_packetlog) {
 		Log_Outgoing_Packet (data, length, 0);
 	}
 	Netchan_OutOfBand (adr, length, data);
@@ -1779,7 +2088,7 @@ SV_ReadPackets (void)
 	double      until;
 
 	while (NET_GetPacket ()) {
-		if (net_packetlog->int_val)
+		if (net_packetlog)
 			Log_Incoming_Packet (net_message->message->data,
 								 net_message->message->cursize, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
@@ -1857,7 +2166,7 @@ SV_CheckTimeouts (void)
 	float       droptime;
 	int         nclients, i;
 
-	droptime = realtime - sv_timeout->value;
+	droptime = realtime - sv_timeout;
 	nclients = 0;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
@@ -1872,7 +2181,7 @@ SV_CheckTimeouts (void)
 			}
 		}
 		if (cl->state == cs_zombie &&
-			realtime - cl->connection_started > zombietime->value) {
+			realtime - cl->connection_started > zombietime) {
 			cl->state = cs_free;		// can now be reused
 			svs.num_clients--;
 		}
@@ -1893,10 +2202,10 @@ SV_CheckVars (void)
 	static char const *pw, *spw;
 	int         v;
 
-	if (password->string == pw && spectator_password->string == spw)
+	if (password == pw && spectator_password == spw)
 		return;
-	pw = password->string;
-	spw = spectator_password->string;
+	pw = password;
+	spw = spectator_password;
 
 	v = 0;
 	if (pw && pw[0] && strcmp (pw, "none"))
@@ -1907,23 +2216,10 @@ SV_CheckVars (void)
 	SV_Printf ("Updated needpass.\n");
 	if (!v)
 		Info_SetValueForKey (svs.info, "needpass", "",
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 	else
 		Info_SetValueForKey (svs.info, "needpass", va (0, "%i", v),
-							 !sv_highchars->int_val);
-}
-
-/*
-	SV_GarbageCollect
-
-	Run string GC on progs every pr_gc_interval frames
-
-	//snax: run QFobject GC as well
-*/
-static void
-SV_GarbageCollect (void)
-{
-	//Object_Garbage_Collect ();
+							 !sv_highchars);
 }
 
 void
@@ -1959,12 +2255,12 @@ SV_Frame (float time)
 		// don't bother running a frame if sys_ticrate seconds haven't passed
 		sv_frametime = sv.time - old_time;
 		if (sv_frametime < 0) {
-			old_time = sv.time - sv_mintic->value;
-			sv_frametime = sv_mintic->value;
+			old_time = sv.time - sv_mintic;
+			sv_frametime = sv_mintic;
 		}
-		if (sv_frametime >= sv_mintic->value) {
-			if (sv_frametime > sv_maxtic->value)
-				sv_frametime = sv_maxtic->value;
+		if (sv_frametime >= sv_mintic) {
+			if (sv_frametime > sv_maxtic)
+				sv_frametime = sv_maxtic;
 			old_time = sv.time;
 
 			*sv_globals.frametime = sv_frametime;
@@ -2001,8 +2297,6 @@ SV_Frame (float time)
 	// send a heartbeat to the master if needed
 	Master_Heartbeat ();
 
-	SV_GarbageCollect ();
-
 	// collect timing statistics
 	end = Sys_DoubleTime ();
 	svs.stats.active += end - start;
@@ -2021,34 +2315,26 @@ SV_Frame (float time)
 }
 
 static void
-maxspectators_f (cvar_t *var)
+maxspectators_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val > MAX_CLIENTS)
-		Cvar_SetValue (var, maxclients->int_val);
-	else if (var->int_val + maxclients->int_val > MAX_CLIENTS)
-		Cvar_SetValue (var, MAX_CLIENTS - maxclients->int_val);
-	else if (var->int_val < 0)
-		Cvar_SetValue (var, 0);
-	else if (var->int_val != var->value)
-		Cvar_SetValue (var, var->int_val);
-	else
-		Cvar_Info (var);
+	if (maxspectators > MAX_CLIENTS)
+		maxspectators = maxclients;
+	else if (maxspectators + maxclients > MAX_CLIENTS)
+		maxspectators = MAX_CLIENTS - maxclients;
+	else if (maxspectators < 0)
+		maxspectators = 0;
+	Cvar_Info (data, cvar);
 }
 
 static void
-maxclients_f (cvar_t *var)
+maxclients_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val > MAX_CLIENTS)
-		Cvar_SetValue (var, MAX_CLIENTS);
-	else if (var->int_val < 1)
-		Cvar_SetValue (var, 1);
-	else if (var->int_val != var->value)
-		Cvar_SetValue (var, var->int_val);
-	else {
-		Cvar_Info (var);
-		if (maxspectators)
-			maxspectators_f (maxspectators);
-	}
+	if (maxclients > MAX_CLIENTS)
+		maxclients = MAX_CLIENTS;
+	else if (maxclients < 1)
+		maxclients = 1;
+	Cvar_Info (data, cvar);
+	maxspectators_f (0, &maxspectators_cvar);
 }
 
 static void
@@ -2070,172 +2356,45 @@ SV_InitLocal (void)
 
 	SV_UserInit ();
 
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the "
-							  "password for rcon 'root' commands");
-	admin_password = Cvar_Get ("admin_password", "", CVAR_NONE, NULL, "Set "
-							   "the password for rcon admin commands");
-	password = Cvar_Get ("password", "", CVAR_NONE, NULL, "Set the server "
-						 "password for players");
-	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, NULL,
-								   "Set the spectator password");
-	sv_mintic = Cvar_Get ("sv_mintic", "0.03", CVAR_NONE, NULL, "The minimum "
-						  "amount of time the server will wait before sending "
-						  "packets to a client. Set to .5 to make modem users "
-						  "happy");
-	sv_maxtic = Cvar_Get ("sv_maxtic", "0.1", CVAR_NONE, NULL, "The maximum "
-						  "amount of time in seconds before a client a "
-						  "receives an update from the server");
-	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info,
-						  "Amount of frags a player must attain in order to "
-						  "exit the level");
-	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info,
-						  "Sets the amount of time in minutes that is needed "
-						  "before advancing to the next level");
-	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, Cvar_Info,
-						 "Determines teamplay rules. 0 off, 1 You cannot hurt "
-						 "yourself nor your teammates, 2 You can hurt "
-						 "yourself, your teammates, and you will lose one "
-						 "frag for killing a teammate, 3 You can hurt "
-						 "yourself but you cannot hurt your teammates");
-	samelevel = Cvar_Get ("samelevel", "0", CVAR_SERVERINFO, Cvar_Info,
-						  "Determines the rules for level changing and "
-						  "exiting. 0 Allows advancing to the next level,"
-						  "1 The same level will be played until someone "
-						  "exits, 2 The same level will be played and the "
-						  "exit will kill anybody that tries to exit, 3 The "
-						  "same level will be played and the exit will kill "
-						  "anybody that tries to exit, except on the Start "
-						  "map.");
-	maxclients = Cvar_Get ("maxclients", "8", CVAR_SERVERINFO, maxclients_f,
-						   "Sets how many clients can connect to your "
-						   "server, this includes spectators and players");
-	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO,
-							  maxspectators_f,
-							  "Sets how many spectators can connect to your "
-							  "server. The maxclients value takes precedence "
-							  "over this value so this value should always be "
-							  "equal-to or less-then the maxclients value");
-	hostname = Cvar_Get ("hostname", "unnamed", CVAR_SERVERINFO, Cvar_Info,
-						 "Report or sets the server name");
-	deathmatch = Cvar_Get ("deathmatch", "1", CVAR_SERVERINFO, Cvar_Info,
-						   "Sets the rules for weapon and item respawning. "
-						   "1 Does not leave weapons on the map. You can "
-						   "pickup weapons and items and they will respawn, "
-						   "2 Leaves weapons on the map. You can pick up a "
-						   "weapon only once. Picked up items will not "
-						   "respawn, 3 Leaves weapons on the map. You can "
-						   "pick up a weapon only once. Picked up items will "
-						   "respawn.");
-	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "co-op mode for progs that "
-					 "support it");
-	skill = Cvar_Get ("skill", "0", CVAR_NONE, NULL, "skill setting for progs "
-					  "that support it");
-	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info,
-					  "Spawn the player entity");
-	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
-						 "Set nonzero to enable r_wateralpha on clients");
-	sv_timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, "Sets the amount "
-						"of time in seconds before a client is considered "
-						"disconnected if the server does not receive a "
-						"packet");
-	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, "The number of "
-						   "seconds that the server will keep the character "
-						   "of a player on the map who seems to have "
-						   "disconnected");
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
-							   "Sets the maximum velocity an object can "
-							   "travel");
-	sv_extensions = Cvar_Get ("sv_extensions", "1", CVAR_NONE, NULL,
-							  "Use protocol extensions for QuakeForge "
-							  "clients");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
-						   "Sets the global value for the amount of gravity");
-	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL,
-							 "Sets the value that determines how fast the "
-							 "player should come to a complete stop");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL,
-							"Sets the maximum speed a player can move");
-	sv_spectatormaxspeed = Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE,
-									 NULL, "Sets the maximum speed a "
-									 "spectator can move");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL,
-							  "Sets the acceleration value for the players");
-	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, NULL,
-								 "Sets how quickly the players accelerate in "
-								 "air");
-	sv_wateraccelerate = Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL,
-								   "Sets the water acceleration value");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, NULL,
-							"Sets the friction value for the players");
-	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, NULL,
-								 "Sets the water friction value");
-	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL,
-					   "Sets the value for auto-aiming leniency");
-	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
-								Cvar_Info, "Minimum QF version on client");
-	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, SV_MaxRate_f,
-						   "Maximum allowable rate");
-	sv_allow_log = Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL,
-							 "Allow remote logging");
-	sv_allow_status = Cvar_Get ("sv_allow_status", "1", CVAR_NONE, NULL,
-								"Allow remote status queries (qstat etc)");
-	sv_allow_ping = Cvar_Get ("sv_allow_pings", "1", CVAR_NONE, NULL,
-							  "Allow remote pings (qstat etc)");
-	sv_netdosprotect = Cvar_Get ("sv_netdosprotect", "0", CVAR_NONE, NULL,
-								 "DoS flood attack protection");
-	sv_timestamps = Cvar_Get ("sv_timestamps", "0", CVAR_NONE, NULL,
-							  "Time/date stamps in log entries");
-	sv_timefmt = Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, NULL,
-						   "Time/date format to use");
-	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, NULL,
-						  "Determines the rules for the IP list "
-						  "0 Only IP addresses on the Ban list will be "
-						  "allowed onto the server, 1 Only IP addresses NOT "
-						  "on the Ban list will be allowed onto the server");
-	sv_filter_automask = Cvar_Get ("sv_filter_automask", "1", CVAR_NONE, NULL,
-									"Automatically determine the mask length "
-									"when it is not explicitely given.  e.g. "
-									"\"addip 1.2.0.0\" would be the same as "
-									"\"addip 1.2.0.0/16\"");
-	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL,
-							   "Toggle if clients can download game data from "
-							   "the server");
-	allow_download_skins = Cvar_Get ("allow_download_skins", "1", CVAR_NONE,
-									 NULL, "Toggle if clients can download "
-									 "skins from the server");
-	allow_download_models = Cvar_Get ("allow_download_models", "1", CVAR_NONE,
-									  NULL, "Toggle if clients can download "
-									  "models from the server");
-	allow_download_sounds = Cvar_Get ("allow_download_sounds", "1", CVAR_NONE,
-									  NULL, "Toggle if clients can download "
-									  "sounds from the server");
-	allow_download_maps = Cvar_Get ("allow_download_maps", "1", CVAR_NONE,
-									NULL, "Toggle if clients can download "
-									"maps from the server");
-	allow_download_demos = Cvar_Get ("allow_download_demos", "1", CVAR_NONE,
-									 NULL, "Toggle if clients can download "
-									 "maps from the server");
-	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL,
-							 "Toggle the use of high character color names "
-							 "for players");
-	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, NULL, "Possibly Hearable "
-					   "Set. If set to zero, the server calculates sound "
-					   "hearability in realtime");
- 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
-						 "Toggle if server can be paused 1 is on, 0 is off");
-	pr_gc = Cvar_Get ("pr_gc", "2", CVAR_NONE, NULL, "Enable/disable the "
-					  "garbage collector.  0 is off, 1 is on, 2 is auto (on "
-					  "for newer qfcc progs, off otherwise)");
-	pr_gc_interval = Cvar_Get ("pr_gc_interval", "50", CVAR_NONE, NULL,
-							   "Number of frames to wait before running "
-							   "string garbage collector.");
-	pr_double_remove = Cvar_Get ("pr_double_remove", "1", CVAR_NONE, NULL,
-								 "Handling of double entity remove.  "
-								 "0 is silently ignore, 1 prints a "
-								 "traceback, and 2 gives an error.\n"
-								 "works Only if debugging is available "
-								 "and enabled");
+	Cvar_Register (&rcon_password_cvar, 0, 0);
+	Cvar_Register (&admin_password_cvar, 0, 0);
+	Cvar_Register (&password_cvar, 0, 0);
+	Cvar_Register (&spectator_password_cvar, 0, 0);
+	Cvar_Register (&sv_mintic_cvar, 0, 0);
+	Cvar_Register (&sv_maxtic_cvar, 0, 0);
+	Cvar_Register (&fraglimit_cvar, Cvar_Info, &fraglimit);
+	Cvar_Register (&timelimit_cvar, Cvar_Info, &timelimit);
+	Cvar_Register (&teamplay_cvar, Cvar_Info, &teamplay);
+	Cvar_Register (&samelevel_cvar, 0, 0);
+	Cvar_Register (&maxclients_cvar, maxclients_f, 0);
+	Cvar_Register (&maxspectators_cvar, maxspectators_f, 0);
+	Cvar_Register (&hostname_cvar, 0, 0);
+	Cvar_Register (&deathmatch_cvar, 0, 0);
+	Cvar_Register (&coop_cvar, 0, 0);
+	Cvar_Register (&skill_cvar, 0, 0);
+	Cvar_Register (&spawn_cvar, Cvar_Info, &spawn);
+	Cvar_Register (&watervis_cvar, Cvar_Info, &watervis);
+	Cvar_Register (&sv_timeout_cvar, 0, 0);
+	Cvar_Register (&zombietime_cvar, 0, 0);
+	Cvar_Register (&sv_extensions_cvar, 0, 0);
+	Cvar_Register (&sv_minqfversion_cvar, Cvar_Info, &sv_minqfversion);
+	Cvar_Register (&sv_allow_log_cvar, 0, 0);
+	Cvar_Register (&sv_allow_status_cvar, 0, 0);
+	Cvar_Register (&sv_allow_ping_cvar, 0, 0);
+	Cvar_Register (&sv_netdosprotect_cvar, 0, 0);
+	Cvar_Register (&sv_timestamps_cvar, 0, 0);
+	Cvar_Register (&sv_timefmt_cvar, 0, 0);
+	Cvar_Register (&filterban_cvar, 0, 0);
+	Cvar_Register (&sv_filter_automask_cvar, 0, 0);
+	Cvar_Register (&allow_download_cvar, 0, 0);
+	Cvar_Register (&allow_download_skins_cvar, 0, 0);
+	Cvar_Register (&allow_download_models_cvar, 0, 0);
+	Cvar_Register (&allow_download_sounds_cvar, 0, 0);
+	Cvar_Register (&allow_download_maps_cvar, 0, 0);
+	Cvar_Register (&allow_download_demos_cvar, 0, 0);
+	Cvar_Register (&sv_highchars_cvar, 0, 0);
+	Cvar_Register (&sv_phs_cvar, 0, 0);
+	Cvar_Register (&pausable_cvar, 0, 0);
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS "
 					"protection obviously, but I don't know what it does. No "
@@ -2257,13 +2416,13 @@ SV_InitLocal (void)
 		snprintf (localmodels[i], sizeof (localmodels[i]), "*%i", i);
 
 	Info_SetValueForStarKey (svs.info, "*version", QW_VERSION,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 
 	// Brand server as QF, with appropriate QSG standards version  --KB
 	Info_SetValueForStarKey (svs.info, "*qf_version", PACKAGE_VERSION,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 	Info_SetValueForStarKey (svs.info, "*qsg_version", QW_QSG_VERSION,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 
 	CF_Init ();
 
@@ -2386,7 +2545,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 	// set the name
 	if (strcmp (newname, val) || strcmp (cl->name, newname)) {
 		Info_SetValueForKey (cl->userinfo, "name", newname,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 		val = Info_ValueForKey (cl->userinfo, "name");
 		SVstring (cl->edict, netname) = PR_SetString (&sv_pr_state, newname);
 
@@ -2430,8 +2589,8 @@ SV_ExtractFromUserinfo (client_t *cl)
 	if (strlen (val)) {
 		i = atoi (val);
 
-		if (sv_maxrate->int_val) {
-			i = bound (500, i, sv_maxrate->int_val);
+		if (sv_maxrate) {
+			i = bound (500, i, sv_maxrate);
 		} else {
 			i = max (500, i);
 		}
@@ -2478,18 +2637,15 @@ SV_Init_Memory (void)
 	size_t      mem_size;
 	void       *mem_base;
 
-	sv_mem_size = Cvar_Get ("sv_mem_size", "8", CVAR_NONE, NULL,
-							"Amount of memory (in MB) to allocate for the "
-							PACKAGE_NAME " heap");
+	Cvar_Register (&sv_mem_size_cvar, 0, 0);
 	if (mem_parm)
-		Cvar_Set (sv_mem_size, com_argv[mem_parm + 1]);
+		Cvar_Set ("sv_mem_size", com_argv[mem_parm + 1]);
 
 	if (COM_CheckParm ("-minmemory"))
-		Cvar_SetValue (sv_mem_size, MINIMUM_MEMORY / (1024 * 1024.0));
+		sv_mem_size = MINIMUM_MEMORY / (1024 * 1024.0);
 
-	Cvar_SetFlags (sv_mem_size, sv_mem_size->flags | CVAR_ROM);
 
-	mem_size = ((size_t) sv_mem_size->value * 1024 * 1024);
+	mem_size = (size_t) (sv_mem_size * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -2515,7 +2671,7 @@ SV_Init (void)
 	GIB_Init (true);
 	COM_ParseConfig (sv_cbuf);
 
-	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
+	cmd_warncmd = 1;
 
 	// snax: Init experimental object system and run a test
 	//Object_Init();
@@ -2532,10 +2688,9 @@ SV_Init (void)
 	QFS_Init (hunk, "qw");
 	PI_Init ();
 
-	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
-								  CVAR_ROM, 0, "Plugin used for the console");
+	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (sv_console_plugin->string);
+	Con_Init (sv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = sv_cbuf;
 	con_list_print = Sys_Printf;
@@ -2574,7 +2729,7 @@ SV_Init (void)
 	host_initialized = true;
 
 //	SV_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	SV_Printf ("%4.1f megabyte heap\n", sv_mem_size->value);
+	SV_Printf ("%4.1f megabyte heap\n", sv_mem_size);
 
 	SV_Printf ("\n");
 	SV_Printf ("%s server, Version %s (build %04d)\n",
@@ -2585,7 +2740,7 @@ SV_Init (void)
 	SV_Printf ("<==> %s initialized <==>\n", PACKAGE_NAME);
 
 	// process command line arguments
-	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
+	Cmd_Exec_File (sv_cbuf, fs_usercfg, 0);
 	Cmd_StuffCmds (sv_cbuf);
 	Cbuf_Execute_Stack (sv_cbuf);
 

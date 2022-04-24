@@ -353,7 +353,7 @@ crosshair_1 (int x, int y)
 static void
 crosshair_2 (int x, int y)
 {
-	byte        c = crosshaircolor->int_val;
+	byte        c = crosshaircolor;
 
 	Draw_Pixel (x - 1, y, c);
 	Draw_Pixel (x - 3, y, c);
@@ -368,7 +368,7 @@ crosshair_2 (int x, int y)
 static void
 crosshair_3 (int x, int y)
 {
-	byte        c = crosshaircolor->int_val;
+	byte        c = crosshaircolor;
 
 	Draw_Pixel (x - 3, y - 3, c);
 	Draw_Pixel (x + 3, y - 3, c);
@@ -383,7 +383,7 @@ crosshair_3 (int x, int y)
 static void
 crosshair_4 (int x, int y)
 {
-	//byte        c = crosshaircolor->int_val;
+	//byte        c = crosshaircolor;
 
 	Draw_Pixel (x,     y - 2, 8);
 	Draw_Pixel (x + 1, y - 2, 9);
@@ -417,7 +417,7 @@ crosshair_4 (int x, int y)
 static void
 crosshair_5 (int x, int y)
 {
-	byte        c = crosshaircolor->int_val;
+	byte        c = crosshaircolor;
 
 	Draw_Pixel (x - 1, y - 3, c);
 	Draw_Pixel (x + 0, y - 3, c);
@@ -458,12 +458,12 @@ Draw_Crosshair (void)
 	int            x, y;
 	int            ch;
 
-	ch = crosshair->int_val - 1;
+	ch = crosshair - 1;
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conview->xlen / 2 + cl_crossx->int_val;
-	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx;
+	y = vid.conview->ylen / 2 + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }
@@ -644,8 +644,8 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		}
 	}
 
-	Draw_AltString (vid.conview->xlen - strlen (cl_verstring->string) * 8 - 11,
-					lines - 14, cl_verstring->string);
+	Draw_AltString (vid.conview->xlen - strlen (cl_verstring) * 8 - 11,
+					lines - 14, cl_verstring);
 }
 
 static void

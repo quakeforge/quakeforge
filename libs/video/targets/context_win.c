@@ -56,28 +56,156 @@ sw_ctx_t   *win_sw_context;
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
 
-cvar_t *vid_ddraw;
+int vid_ddraw;
+static cvar_t vid_ddraw_cvar = {
+	.name = "vid_ddraw",
+	.description =
+		"",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vid_ddraw },
+};
 
 // Note that 0 is MODE_WINDOWED
-static cvar_t *vid_mode;
+static int vid_mode;
+static cvar_t vid_mode_cvar = {
+	.name = "vid_mode",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vid_mode },
+};
 
 // Note that 0 is MODE_WINDOWED
-static cvar_t *_vid_default_mode;
+int _vid_default_mode;
+static cvar_t _vid_default_mode_cvar = {
+	.name = "_vid_default_mode",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &_vid_default_mode },
+};
 
 // Note that 3 is MODE_FULLSCREEN_DEFAULT
-static cvar_t *_vid_default_mode_win;
-static cvar_t *vid_wait;
-static cvar_t *vid_nopageflip;
-static cvar_t *_vid_wait_override;
-static cvar_t *vid_config_x;
-static cvar_t *vid_config_y;
-static cvar_t *vid_stretch_by_2;
-static cvar_t *_windowed_mouse;
-static cvar_t *vid_fullscreen_mode;
-static cvar_t *vid_windowed_mode;
-static cvar_t *block_switch;
-static cvar_t *vid_window_x;
-static cvar_t *vid_window_y;
+static int _vid_default_mode_win;
+static cvar_t _vid_default_mode_win_cvar = {
+	.name = "_vid_default_mode_win",
+	.description =
+		"",
+	.default_value = "3",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &_vid_default_mode_win },
+};
+int vid_wait;
+static cvar_t vid_wait_cvar = {
+	.name = "vid_wait",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vid_wait },
+};
+int vid_nopageflip;
+static cvar_t vid_nopageflip_cvar = {
+	.name = "vid_nopageflip",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_nopageflip },
+};
+int _vid_wait_override;
+static cvar_t _vid_wait_override_cvar = {
+	.name = "_vid_wait_override",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &_vid_wait_override },
+};
+int vid_config_x;
+static cvar_t vid_config_x_cvar = {
+	.name = "vid_config_x",
+	.description =
+		"",
+	.default_value = "800",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_config_x },
+};
+int vid_config_y;
+static cvar_t vid_config_y_cvar = {
+	.name = "vid_config_y",
+	.description =
+		"",
+	.default_value = "600",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_config_y },
+};
+int vid_stretch_by_2;
+static cvar_t vid_stretch_by_2_cvar = {
+	.name = "vid_stretch_by_2",
+	.description =
+		"",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_stretch_by_2 },
+};
+static int _windowed_mouse;
+static cvar_t _windowed_mouse_cvar = {
+	.name = "_windowed_mouse",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &_windowed_mouse },
+};
+static int vid_fullscreen_mode;
+static cvar_t vid_fullscreen_mode_cvar = {
+	.name = "vid_fullscreen_mode",
+	.description =
+		"",
+	.default_value = "3",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_fullscreen_mode },
+};
+static int vid_windowed_mode;
+static cvar_t vid_windowed_mode_cvar = {
+	.name = "vid_windowed_mode",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_windowed_mode },
+};
+int block_switch;
+static cvar_t block_switch_cvar = {
+	.name = "block_switch",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &block_switch },
+};
+static int vid_window_x;
+static cvar_t vid_window_x_cvar = {
+	.name = "vid_window_x",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_window_x },
+};
+static int vid_window_y;
+static cvar_t vid_window_y_cvar = {
+	.name = "vid_window_y",
+	.description =
+		"",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_window_y },
+};
 
 //FIXME?int yeahimconsoled;
 
@@ -168,8 +296,8 @@ VID_RememberWindowPos (void)
 		if ((rect.left < GetSystemMetrics (SM_CXSCREEN)) &&
 			(rect.top < GetSystemMetrics (SM_CYSCREEN)) &&
 			(rect.right > 0) && (rect.bottom > 0)) {
-			Cvar_SetValue (vid_window_x, (float) rect.left);
-			Cvar_SetValue (vid_window_y, (float) rect.top);
+			vid_window_x = rect.left;
+			vid_window_y = rect.top;
 		}
 	}
 }
@@ -178,11 +306,11 @@ VID_RememberWindowPos (void)
 static void
 VID_CheckWindowXY (void)
 {
-	if ((vid_window_x->int_val > (GetSystemMetrics (SM_CXSCREEN) - 160)) ||
-		(vid_window_y->int_val > (GetSystemMetrics (SM_CYSCREEN) - 120)) ||
-		(vid_window_x->int_val < 0) || (vid_window_y->int_val < 0)) {
-		Cvar_SetValue (vid_window_x, 0.0);
-		Cvar_SetValue (vid_window_y, 0.0);
+	if ((vid_window_x > (GetSystemMetrics (SM_CXSCREEN) - 160)) ||
+		(vid_window_y > (GetSystemMetrics (SM_CYSCREEN) - 120)) ||
+		(vid_window_x < 0) || (vid_window_y < 0)) {
+		vid_window_x = 0.0;
+		vid_window_y = 0.0;
 	}
 }
 #endif
@@ -391,8 +519,8 @@ VID_SetWindowedMode (int modenum)
 #if 0
 	if (!windowed_mode_set) {
 		if (COM_CheckParm ("-resetwinpos")) {
-			Cvar_SetValue (vid_window_x, 0.0);
-			Cvar_SetValue (vid_window_y, 0.0);
+			vid_window_x = 0.0;
+			vid_window_y = 0.0;
 		}
 
 		windowed_mode_set = true;
@@ -430,8 +558,8 @@ VID_SetWindowedMode (int modenum)
 
 	// position and show the DIB window
 	VID_CheckWindowXY ();
-	SetWindowPos (win_mainwindow, NULL, vid_window_x->int_val,
-				  vid_window_y->int_val, 0, 0,
+	SetWindowPos (win_mainwindow, NULL, vid_window_x,
+				  vid_window_y, 0, 0,
 				  SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 
 	if (force_minimized)
@@ -600,9 +728,9 @@ VID_SetMode (int modenum, const byte *palette)
 				modenum = vid_default;
 			}
 
-			Cvar_SetValue (vid_mode, (float) modenum);
+			vid_mode = modenum;
 		} else {
-			Cvar_SetValue (vid_mode, (float) vid_modenum);
+			vid_mode = vid_modenum;
 			return 0;
 		}
 	}
@@ -622,7 +750,7 @@ VID_SetMode (int modenum, const byte *palette)
 
 	// Set either the fullscreen or windowed mode
 	if (modelist[modenum].type == MS_WINDOWED) {
-		if (_windowed_mouse->int_val) {
+		if (_windowed_mouse) {
 			stat = VID_SetWindowedMode (modenum);
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -663,7 +791,7 @@ VID_SetMode (int modenum, const byte *palette)
 	ReleaseDC (NULL, hdc);
 
 	vid_modenum = modenum;
-	Cvar_SetValue (vid_mode, (float) vid_modenum);
+	vid_mode = vid_modenum;
 
 	while (PeekMessage (&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage (&msg);
@@ -776,7 +904,7 @@ VID_HandlePause
 static void __attribute__ ((used))
 VID_HandlePause (qboolean pause)
 {
-	if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val) {
+	if ((modestate == MS_WINDOWED) && _windowed_mouse) {
 		if (pause) {
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
@@ -957,13 +1085,13 @@ VID_TestMode_f (void)
 static void
 VID_Windowed_f (void)
 {
-	VID_SetMode (vid_windowed_mode->int_val, vid_curpal);
+	VID_SetMode (vid_windowed_mode, vid_curpal);
 }
 
 static void
 VID_Fullscreen_f (void)
 {
-	VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
+	VID_SetMode (vid_fullscreen_mode, vid_curpal);
 }
 
 static void
@@ -1018,35 +1146,22 @@ Win_SetGamma (double gamma)
 void
 Win_Init_Cvars (void)
 {
-	vid_ddraw = Cvar_Get ("vid_ddraw", "1", CVAR_NONE, 0, "");
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "");
-	vid_wait = Cvar_Get ("vid_wait", "0", CVAR_NONE, 0, "");
-	vid_nopageflip =
-		Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, 0, "");
-	_vid_wait_override =
-		Cvar_Get ("_vid_wait_override", "0", CVAR_ARCHIVE, 0, "");
-	_vid_default_mode =
-		Cvar_Get ("_vid_default_mode", "0", CVAR_ARCHIVE, 0, "");
-	_vid_default_mode_win =
-		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, 0, "");
-	vid_config_x =
-		Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, 0, "");
-	vid_config_y =
-		Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, 0, "");
-	vid_stretch_by_2 =
-		Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, 0, "");
-	_windowed_mouse =
-		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "");
-	vid_fullscreen_mode =
-		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, 0, "");
-	vid_windowed_mode =
-		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, 0, "");
-	block_switch =
-		Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, 0, "");
-	vid_window_x =
-		Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, 0, "");
-	vid_window_y =
-		Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, 0, "");
+	Cvar_Register (&vid_ddraw_cvar, 0, 0);
+	Cvar_Register (&vid_mode_cvar, 0, 0);
+	Cvar_Register (&vid_wait_cvar, 0, 0);
+	Cvar_Register (&vid_nopageflip_cvar, 0, 0);
+	Cvar_Register (&_vid_wait_override_cvar, 0, 0);
+	Cvar_Register (&_vid_default_mode_cvar, 0, 0);
+	Cvar_Register (&_vid_default_mode_win_cvar, 0, 0);
+	Cvar_Register (&vid_config_x_cvar, 0, 0);
+	Cvar_Register (&vid_config_y_cvar, 0, 0);
+	Cvar_Register (&vid_stretch_by_2_cvar, 0, 0);
+	Cvar_Register (&_windowed_mouse_cvar, 0, 0);
+	Cvar_Register (&vid_fullscreen_mode_cvar, 0, 0);
+	Cvar_Register (&vid_windowed_mode_cvar, 0, 0);
+	Cvar_Register (&block_switch_cvar, 0, 0);
+	Cvar_Register (&vid_window_x_cvar, 0, 0);
+	Cvar_Register (&vid_window_y_cvar, 0, 0);
 
 	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "");
 	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "");

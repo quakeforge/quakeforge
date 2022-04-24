@@ -43,7 +43,7 @@ void CL_ParsePlayerinfo (void);
 void CL_Ents_Init (void);
 struct entity_s *CL_GetEntity (int num);
 
-extern struct cvar_s   *cl_deadbodyfilter;
-extern struct cvar_s   *cl_gibfilter;
+extern int cl_deadbodyfilter;
+extern int cl_gibfilter;
 
 #endif

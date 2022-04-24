@@ -237,7 +237,7 @@ static void glsl_bind_framebuffer (framebuffer_t *fb);
 static void
 glsl_post_process (framebuffer_t *src)
 {
-	if (scr_fisheye->int_val) {
+	if (scr_fisheye) {
 		glsl_FisheyeScreen (src);
 	} else if (r_dowarp) {
 		glsl_WarpScreen (src);
@@ -387,8 +387,8 @@ glsl_set_fov (float x, float y)
 	float       neard, fard;
 	mat4f_t     proj;
 
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
+	neard = r_nearclip;
+	fard = r_farclip;
 
 	// NOTE columns!
 	proj[0] = (vec4f_t) { 1/x, 0, 0, 0 };

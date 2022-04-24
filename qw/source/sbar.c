@@ -67,6 +67,7 @@
 #include "sbar.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
+static int sb_view_size;
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
 
@@ -92,126 +93,64 @@ qpic_t     *sb_face_invis_invuln;
 qboolean    sb_showscores;
 qboolean    sb_showteamscores;
 
-int         sb_lines;				// scan lines to draw
-
 static qboolean largegame = false;
 
-cvar_t     *fs_fraglog;
-cvar_t     *cl_fraglog;
-cvar_t     *hud_scoreboard_uid;
-cvar_t     *scr_centertime;
-cvar_t     *scr_printspeed;
-
-static view_t *sbar_view;
-static view_t *sbar_inventory_view;
-static view_t *sbar_frags_view;
-
-static view_t *hud_view;
-static view_t *hud_inventory_view;
-static view_t *hud_armament_view;
-static view_t *hud_frags_view;
-
-static view_t *overlay_view;
-static view_t *stuff_view;
-static view_t *main_view;
+char *fs_fraglog;
+static cvar_t fs_fraglog_cvar = {
+	.name = "fs_fraglog",
+	.description =
+		"Filename of the automatic frag-log.",
+	.default_value = "qw-scores.log",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &fs_fraglog },
+};
+int cl_fraglog;
+static cvar_t cl_fraglog_cvar = {
+	.name = "cl_fraglog",
+	.description =
+		"Automatic fraglogging, non-zero value will switch it on.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_fraglog },
+};
+int hud_scoreboard_uid;
+static cvar_t hud_scoreboard_uid_cvar = {
+	.name = "hud_scoreboard_uid",
+	.description =
+		"Set to 1 to show uid instead of ping. Set to 2 to show both.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &hud_scoreboard_uid },
+};
+float scr_centertime;
+static cvar_t scr_centertime_cvar = {
+	.name = "scr_centertime",
+	.description =
+		"How long in seconds screen hints are displayed",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_centertime },
+};
+float scr_printspeed;
+static cvar_t scr_printspeed_cvar = {
+	.name = "scr_printspeed",
+	.description =
+		"How fast the text is displayed at the end of the single player "
+		"episodes",
+	.default_value = "8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_printspeed },
+};
 
 static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
 
 static void
-hud_swap_f (cvar_t *var)
+viewsize_f (int view_size)
 {
-	if (var->int_val) {
-		view_setgravity (hud_armament_view, grav_southwest);
-		view_setgravity (stuff_view, grav_southeast);
-	} else {
-		view_setgravity (hud_armament_view, grav_southeast);
-		view_setgravity (stuff_view, grav_southwest);
-	}
-}
-
-static void
-hud_scoreboard_gravity_f (cvar_t *var)
-{
-	grav_t      grav;
-
-	if (strequal (var->string, "center"))
-		grav = grav_center;
-	else if (strequal (var->string, "northwest"))
-		grav = grav_northwest;
-	else if (strequal (var->string, "north"))
-		grav = grav_north;
-	else if (strequal (var->string, "northeast"))
-		grav = grav_northeast;
-	else if (strequal (var->string, "west"))
-		grav = grav_west;
-	else if (strequal (var->string, "east"))
-		grav = grav_east;
-	else if (strequal (var->string, "southwest"))
-		grav = grav_southwest;
-	else if (strequal (var->string, "south"))
-		grav = grav_south;
-	else if (strequal (var->string, "southeast"))
-		grav = grav_southeast;
-	else
-		grav = grav_center;
-	overlay_view->gravity = grav;
-	view_move (overlay_view, overlay_view->xpos, overlay_view->ypos);
-}
-
-static void
-calc_sb_lines (cvar_t *var)
-{
-	int        stuff_y;
-
-	if (var->int_val >= 120) {
-		sb_lines = 0;
-		stuff_y = 0;
-	} else if (var->int_val >= 110) {
-		sb_lines = 24;
-		sbar_inventory_view->visible = 0;
-		hud_inventory_view->visible = 0;
-		hud_armament_view->visible = 0;
-		stuff_y = 32;
-	} else {
-		sb_lines = 48;
-		sbar_inventory_view->visible = 1;
-		hud_inventory_view->visible = 1;
-		hud_armament_view->visible = 1;
-		stuff_y = 48;
-	}
-	if (sb_lines) {
-		sbar_view->visible = 1;
-		hud_view->visible = 1;
-		view_resize (sbar_view, sbar_view->xlen, sb_lines);
-		view_resize (hud_view, hud_view->xlen, sb_lines);
-	} else {
-		sbar_view->visible = 0;
-		hud_view->visible = 0;
-	}
-	view_move (stuff_view, stuff_view->xpos, stuff_y);
-}
-
-static void
-hud_sbar_f (cvar_t *var)
-{
-	if (r_data->scr_viewsize)
-		calc_sb_lines (r_data->scr_viewsize);
-	SCR_SetBottomMargin (var->int_val ? sb_lines : 0);
-	if (var->int_val) {
-		view_remove (main_view, main_view->children[0]);
-		view_insert (main_view, sbar_view, 0);
-	} else {
-		view_remove (main_view, main_view->children[0]);
-		view_insert (main_view, hud_view, 0);
-	}
-}
-
-static void
-viewsize_f (cvar_t *var)
-{
-	calc_sb_lines (var);
+	sb_view_size = view_size;
+	HUD_Calc_sb_lines (view_size);
 	if (hud_sbar) {
-		SCR_SetBottomMargin (hud_sbar->int_val ? sb_lines : 0);
+		SCR_SetBottomMargin (hud_sbar ? hud_sb_lines : 0);
 	}
 }
 
@@ -1049,7 +988,7 @@ sbar_update_vis (void)
 
 	sbar_view->visible = 0;
 
-	headsup = !(hud_sbar->int_val || r_data->scr_viewsize->int_val < 100);
+	headsup = !(hud_sbar || sb_view_size < 100);
 
 	if ((sb_updates >= r_data->vid->numpages) && !headsup)
 		return;
@@ -1058,7 +997,7 @@ sbar_update_vis (void)
 		&& con_module->data->console->lines == r_data->vid->conview->ylen)
 		return;							// console is full screen
 
-	if (!sb_lines)
+	if (!hud_sb_lines)
 		return;
 
 	sbar_view->visible = 1;
@@ -1074,7 +1013,7 @@ void
 Sbar_Draw (void)
 {
 	sbar_update_vis ();
-	main_view->draw (main_view);
+	hud_main_view->draw (hud_main_view);
 }
 
 /*
@@ -1098,10 +1037,10 @@ Sbar_LogFrags (void)
 	const char *t = NULL;
 	time_t      tt = time (NULL);
 
-	if (!cl_fraglog->int_val)
+	if (!cl_fraglog)
 		return;
 
-	if ((file = QFS_Open (fs_fraglog->string, "a")) == NULL)
+	if ((file = QFS_Open (fs_fraglog, "a")) == NULL)
 		return;
 
 	t = ctime (&tt);
@@ -1158,7 +1097,7 @@ Sbar_LogFrags (void)
 		} else {
 			if (cl.teamplay) {
 				team = malloc (strlen (s->team->value) + 1);
-				for (cp = (byte *) s->team->value, d = 0; *cp; cp++, d++)
+				for (cp = (byte *) s->team, d = 0; *cp; cp++, d++)
 					team[d] = sys_char_map[*cp];
 				team[d] = 0;
 
@@ -1414,25 +1353,19 @@ Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 }
 
 void
-Sbar_DMO_Init_f (cvar_t *var)
+Sbar_DMO_Init_f (void *data, const cvar_t *cvar)
 {
-	// "var" is "hud_scoreboard_uid"
-	if (!var) {
-		Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping;
-		return;
-	}
-
 	if (cl.teamplay)
-		if (var->int_val > 1)
+		if (hud_scoreboard_uid > 1)
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_Ping_UID;
-		else if (var->int_val > 0)
+		else if (hud_scoreboard_uid > 0)
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_UID;
 		else
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_Ping;
 	else
-		if (var->int_val > 1)
+		if (hud_scoreboard_uid > 1)
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping_UID;
-		else if (var->int_val > 0)
+		else if (hud_scoreboard_uid > 0)
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_UID;
 		else
 			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping;
@@ -1572,10 +1505,10 @@ draw_time (view_t *view)
 #  define HOUR24 "%k"
 #  define PM "%P"
 #endif
-	if (hud_time->int_val == 1) {  // Use international format
+	if (hud_time == 1) {  // Use international format
 		strftime (st, sizeof (st), HOUR24":%M", local);
 		draw_string (view, 8, 0, st);
-	} else if (hud_time->int_val >= 2) {   // US AM/PM display
+	} else if (hud_time >= 2) {   // US AM/PM display
 		strftime (st, sizeof (st), HOUR12":%M "PM, local);
 		draw_string (view, 8, 0, st);
 	}
@@ -1608,17 +1541,17 @@ draw_net (view_t *view)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "pings");
 	}
-	if (hud_ping->int_val) {
+	if (hud_ping) {
 		int ping = cl.players[cl.playernum].ping;
 
 		ping = bound (0, ping, 999);
 		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
 	}
 
-	if (hud_ping->int_val && hud_pl->int_val)
+	if (hud_ping && hud_pl)
 		draw_character (view, 48, 0, '/');
 
-	if (hud_pl->int_val) {
+	if (hud_pl) {
 		int lost = CL_CalcNet ();
 
 		lost = bound (0, lost, 999);
@@ -1629,11 +1562,11 @@ draw_net (view_t *view)
 static void
 draw_stuff (view_t *view)
 {
-	if (hud_time->int_val > 0)
+	if (hud_time > 0)
 		draw_time (view);
-	if (hud_fps->int_val > 0)
+	if (hud_fps > 0)
 		draw_fps (view);
-	if (cls.state == ca_active && (hud_ping->int_val || hud_pl->int_val))
+	if (cls.state == ca_active && (hud_ping || hud_pl))
 		draw_net (view);
 }
 
@@ -1644,9 +1577,9 @@ Sbar_IntermissionOverlay (void)
 	r_data->scr_fullupdate = 0;
 
 	if (cl.teamplay > 0 && !sb_showscores)
-		Sbar_TeamOverlay (overlay_view);
+		Sbar_TeamOverlay (hud_overlay_view);
 	else
-		Sbar_DeathmatchOverlay (overlay_view, 0);
+		Sbar_DeathmatchOverlay (hud_overlay_view, 0);
 }
 
 /* CENTER PRINTING */
@@ -1670,7 +1603,7 @@ Sbar_CenterPrint (const char *str)
 
 	dstring_copystr (&center_string, str);
 
-	centertime_off = scr_centertime->value;
+	centertime_off = scr_centertime;
 	centertime_start = realtime;
 
 	// count the number of lines for centering
@@ -1724,10 +1657,10 @@ Sbar_FinaleOverlay (void)
 
 	r_data->scr_copyeverything = 1;
 
-	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
+	draw_cachepic (hud_overlay_view, 0, 16, "gfx/finale.lmp", 1);
 	// the finale prints the characters one at a time
-	remaining = scr_printspeed->value * (realtime - centertime_start);
-	Sbar_DrawCenterString (overlay_view, remaining);
+	remaining = scr_printspeed * (realtime - centertime_start);
+	Sbar_DrawCenterString (hud_overlay_view, remaining);
 }
 
 void
@@ -1739,7 +1672,7 @@ Sbar_DrawCenterPrint (void)
 	if (centertime_off <= 0)
 		return;
 
-	Sbar_DrawCenterString (overlay_view, -1);
+	Sbar_DrawCenterString (hud_overlay_view, -1);
 }
 
 static void
@@ -1901,33 +1834,33 @@ init_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	view_insert (main_view, hud_view, 0);
+	view_insert (hud_main_view, hud_view, 0);
 }
 
 static void
 init_views (void)
 {
-	main_view = view_new (0, 0, r_data->vid->conview->xlen,
+	hud_main_view = view_new (0, 0, r_data->vid->conview->xlen,
 						  r_data->vid->conview->ylen,
 						  grav_northwest);
 	if (con_module)
-		view_insert (con_module->data->console->view, main_view, 0);
-	main_view->resize_x = 1;	// get resized if the 2d view resizes
-	main_view->resize_y = 1;
-	main_view->visible = 0;		// but don't let the console draw our stuff
+		view_insert (con_module->data->console->view, hud_main_view, 0);
+	hud_main_view->resize_x = 1;	// get resized if the 2d view resizes
+	hud_main_view->resize_y = 1;
+	hud_main_view->visible = 0;		// but don't let the console draw our stuff
 	if (r_data->vid->conview->ylen > 300)
-		overlay_view = view_new (0, 0, 320, 300, grav_center);
+		hud_overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
-		overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
+		hud_overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
 								 grav_center);
-	overlay_view->draw = draw_overlay;
-	overlay_view->visible = 0;
+	hud_overlay_view->draw = draw_overlay;
+	hud_overlay_view->visible = 0;
 
-	stuff_view = view_new (0, 48, 152, 16, grav_southwest);
-	stuff_view->draw = draw_stuff;
+	hud_stuff_view = view_new (0, 48, 152, 16, grav_southwest);
+	hud_stuff_view->draw = draw_stuff;
 
-	view_insert (main_view, overlay_view, 0);
-	view_insert (main_view, stuff_view, 0);
+	view_insert (hud_main_view, hud_overlay_view, 0);
+	view_insert (hud_main_view, hud_stuff_view, 0);
 
 	init_sbar_views ();
 	init_hud_views ();
@@ -2052,29 +1985,13 @@ Sbar_Init (void)
 
 	r_data->viewsize_callback = viewsize_f;
 
-	hud_scoreboard_uid = Cvar_Get ("hud_scoreboard_uid", "0", CVAR_NONE,
-								 Sbar_DMO_Init_f, "Set to 1 to show uid "
-								 "instead of ping. Set to 2 to show both.");
-	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
-						   "Filename of the automatic frag-log.");
-	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
-						   "Automatic fraglogging, non-zero value will switch "
-						   "it on.");
-	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
-						 "status bar mode: 0 = hud, 1 = oldstyle");
-	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
-						 "new HUD on left side?");
-	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",
-									   CVAR_ARCHIVE, hud_scoreboard_gravity_f,
-									   "control placement of scoreboard "
-									   "overlay: center, northwest, north, "
-									   "northeast, west, east, southwest, "
-									   "south, southeast");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
-							   "long in seconds screen hints are displayed");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
-							   "How fast the text is displayed at the end of "
-							   "the single player episodes");
+	HUD_Init_Cvars ();
+
+	Cvar_Register (&hud_scoreboard_uid_cvar, Sbar_DMO_Init_f, 0);
+	Cvar_Register (&fs_fraglog_cvar, 0, 0);
+	Cvar_Register (&cl_fraglog_cvar, 0, 0);
+	Cvar_Register (&scr_centertime_cvar, 0, 0);
+	Cvar_Register (&scr_printspeed_cvar, 0, 0);
 
 	// register GIB builtins
 	GIB_Builtin_Add ("print::center", Sbar_GIB_Print_Center_f);

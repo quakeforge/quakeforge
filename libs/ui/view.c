@@ -39,7 +39,46 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/cexpr.h"
 #include "QF/ui/view.h"
+
+static exprenum_t grav_t_enum;
+exprtype_t grav_t_type = {
+	.name = "grav_t",
+	.size = sizeof (grav_t),
+	.data = &grav_t_enum,
+	.get_string = cexpr_enum_get_string,
+};
+static grav_t grav_t_values[] = {
+	grav_center,
+	grav_north,
+	grav_northeast,
+	grav_east,
+	grav_southeast,
+	grav_south,
+	grav_southwest,
+	grav_west,
+	grav_northwest,
+};
+static exprsym_t grav_t_symbols[] = {
+	{ "center",    &grav_t_type, grav_t_values + grav_center    },
+	{ "north",     &grav_t_type, grav_t_values + grav_north     },
+	{ "northeast", &grav_t_type, grav_t_values + grav_northeast },
+	{ "east",      &grav_t_type, grav_t_values + grav_east      },
+	{ "southeast", &grav_t_type, grav_t_values + grav_southeast },
+	{ "south",     &grav_t_type, grav_t_values + grav_south     },
+	{ "southwest", &grav_t_type, grav_t_values + grav_southwest },
+	{ "west",      &grav_t_type, grav_t_values + grav_west      },
+	{ "northwest", &grav_t_type, grav_t_values + grav_northwest },
+	{}
+};
+static exprtab_t grav_t_symtab = {
+	grav_t_symbols,
+};
+static exprenum_t grav_t_enum = {
+	&grav_t_type,
+	&grav_t_symtab,
+};
 
 static void
 setgeometry (view_t *view)

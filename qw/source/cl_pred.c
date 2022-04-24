@@ -42,8 +42,24 @@
 #include "qw/include/client.h"
 #include "qw/pmove.h"
 
-cvar_t     *cl_predict;
-cvar_t     *cl_pushlatency;
+int cl_predict;
+static cvar_t cl_predict_cvar = {
+	.name = "cl_predict",
+	.description =
+		"Set to enable client prediction",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_predict },
+};
+float cl_pushlatency;
+static cvar_t cl_pushlatency_cvar = {
+	.name = "pushlatency",
+	.description =
+		"How much prediction should the client make",
+	.default_value = "-999",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_pushlatency },
+};
 
 
 void
@@ -108,8 +124,8 @@ CL_PredictMove (void)
 	entity_state_t *fromes;
 	entity_state_t *toes;
 
-	if (cl_pushlatency->value > 0)
-		Cvar_Set (cl_pushlatency, "0");
+	if (cl_pushlatency > 0)
+		Cvar_Set ("pushlatency", "0");
 
 	if (cl.paused)
 		return;
@@ -117,7 +133,7 @@ CL_PredictMove (void)
 	// assume on ground unless prediction says different
 	cl.viewstate.onground = 0;
 
-	cl.time = realtime - cls.latency - cl_pushlatency->value * 0.001;
+	cl.time = realtime - cls.latency - cl_pushlatency * 0.001;
 	if (cl.time > realtime)
 		cl.time = realtime;
 
@@ -139,7 +155,7 @@ CL_PredictMove (void)
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 	fromes = &from->playerstate[cl.playernum].pls.es;
 
-	if (!cl_predict->int_val) {
+	if (!cl_predict) {
 		cl.viewstate.velocity = fromes->velocity;
 		cl.viewstate.player_origin = fromes->origin;
 		return;
@@ -193,8 +209,6 @@ CL_PredictMove (void)
 void
 CL_Prediction_Init_Cvars (void)
 {
-	cl_predict = Cvar_Get ("cl_predict", "1", CVAR_NONE, NULL,
-						  "Set to enable client prediction");
-	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
-							   "How much prediction should the client make");
+	Cvar_Register (&cl_predict_cvar, 0, 0);
+	Cvar_Register (&cl_pushlatency_cvar, 0, 0);
 }

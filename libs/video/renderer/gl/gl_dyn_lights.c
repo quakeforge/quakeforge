@@ -112,7 +112,7 @@ gl_R_RenderDlights (void)
 	unsigned int i;
 	dlight_t   *l;
 
-	if (!gl_dlight_polyblend->int_val)
+	if (!gl_dlight_polyblend)
 		return;
 
 	qfglDepthMask (GL_FALSE);
@@ -127,7 +127,7 @@ gl_R_RenderDlights (void)
 		R_RenderDlight (l);
 	}
 
-	if (!gl_dlight_smooth->int_val)
+	if (!gl_dlight_smooth)
 		qfglShadeModel (GL_FLAT);
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);

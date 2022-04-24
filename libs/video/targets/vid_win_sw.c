@@ -300,7 +300,7 @@ Win_UnloadAllDrivers (void)
 static void
 Win_CreateDriver (void)
 {
-	if (vid_ddraw->int_val) {
+	if (vid_ddraw) {
 		VID_CreateDDrawDriver (viddef.width, viddef.height);
 	}
 	if (!using_ddraw) {

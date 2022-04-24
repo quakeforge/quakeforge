@@ -121,8 +121,8 @@ QFGL_LoadLibrary (void)
 {
 	void   *handle;
 
-	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+	if (!(handle = dlopen (gl_driver, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver,
 				   dlerror ());
 	}
 	glGetProcAddress = dlsym (handle, "glXGetProcAddress");
@@ -331,8 +331,7 @@ VID_Init (byte *palette, byte *colormap)
 void
 VID_Init_Cvars (void)
 {
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
+	Cvar_Register (&vid_system_gamma_cvar, 0, 0);
 }
 
 void

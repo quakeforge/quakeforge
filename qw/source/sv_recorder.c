@@ -121,7 +121,7 @@ static byte     datagram_data[MAX_DATAGRAM];
 static byte     msg_buffer[2][MAX_DATAGRAM];
 
 #define MIN_DEMO_MEMORY 0x100000
-#define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
+#define USECACHE (sv_demoUseCache && svs.demomemsize)
 #define MAXSIZE (rec.dbuffer.end < rec.dbuffer.last ? \
 				 rec.dbuffer.start - rec.dbuffer.end : \
 				 rec.dbuffer.maxsize - rec.dbuffer.end)
@@ -559,7 +559,7 @@ SVR_SendMessages (void)
 	int         stats[MAX_CL_STATS];
 	recorder_t *r;
 
-	if (sv_demoPings->value && sv.time - rec.pingtime > sv_demoPings->value) {
+	if (sv_demoPings && sv.time - rec.pingtime > sv_demoPings) {
 		demo_pings ();
 		rec.pingtime = sv.time;
 	}

@@ -61,11 +61,53 @@
 static qboolean died = false, recorded_location = false;
 static vec4f_t  death_location, last_recorded_location;
 
-cvar_t         *cl_deadbodyfilter;
-cvar_t         *cl_gibfilter;
-cvar_t         *cl_parsesay;
-cvar_t         *cl_nofake;
-cvar_t         *cl_freply;
+int cl_deadbodyfilter;
+static cvar_t cl_deadbodyfilter_cvar = {
+	.name = "cl_deadbodyfilter",
+	.description =
+		"Hide dead player models",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_deadbodyfilter },
+};
+int cl_gibfilter;
+static cvar_t cl_gibfilter_cvar = {
+	.name = "cl_gibfilter",
+	.description =
+		"Hide gibs",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_gibfilter },
+};
+int cl_parsesay;
+static cvar_t cl_parsesay_cvar = {
+	.name = "cl_parsesay",
+	.description =
+		"Use .loc files to find your present location when you put %l in "
+		"messages",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_parsesay },
+};
+int cl_nofake;
+static cvar_t cl_nofake_cvar = {
+	.name = "cl_nofake",
+	.description =
+		"Unhide fake messages",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_nofake },
+};
+float cl_freply;
+static cvar_t cl_freply_cvar = {
+	.name = "cl_freply",
+	.description =
+		"Delay between replies to f_*. 0 disables. Minimum suggested setting "
+		"is 20",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_freply },
+};
 
 
 void
@@ -129,7 +171,7 @@ Team_ParseSay (dstring_t *buf, const char *s)
 	size_t      i, bracket;
 	static location_t *location = NULL;
 
-	if (!cl_parsesay->int_val || (cl.fpd & FPD_NO_MACROS))
+	if (!cl_parsesay || (cl.fpd & FPD_NO_MACROS))
 		return s;
 
 	i = 0;
@@ -158,7 +200,7 @@ Team_ParseSay (dstring_t *buf, const char *s)
 				break;
 			case 'S':
 				bracket = 0;
-				t1 = skin->string;
+				t1 = skin;
 				break;
 			case 'd':
 				bracket = 0;
@@ -308,18 +350,11 @@ Team_NewMap (void)
 void
 Team_Init_Cvars (void)
 {
-	cl_deadbodyfilter = Cvar_Get ("cl_deadbodyfilter", "0", CVAR_NONE, NULL,
-								  "Hide dead player models");
-	cl_gibfilter = Cvar_Get ("cl_gibfilter", "0", CVAR_NONE, NULL,
-							 "Hide gibs");
-	cl_parsesay = Cvar_Get ("cl_parsesay", "0", CVAR_NONE, NULL,
-							"Use .loc files to find your present location "
-							"when you put %l in messages");
-	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, NULL,
-						  "Unhide fake messages");
-	cl_freply = Cvar_Get ("cl_freply", "0", CVAR_NONE, NULL,
-						  "Delay between replies to f_*. 0 disables. Minimum "
-						  "suggested setting is 20");
+	Cvar_Register (&cl_deadbodyfilter_cvar, 0, 0);
+	Cvar_Register (&cl_gibfilter_cvar, 0, 0);
+	Cvar_Register (&cl_parsesay_cvar, 0, 0);
+	Cvar_Register (&cl_nofake_cvar, 0, 0);
+	Cvar_Register (&cl_freply_cvar, 0, 0);
 }
 
 /*
@@ -435,7 +470,7 @@ Team_F_Skins (char *args)
 	int		totalfb, l;
 	float		allfb = 0.0;
 
-	allfb = min (cl.fbskins, cl_fb_players->value);
+	allfb = min (cl.fbskins, cl_fb_players);
 
 	if (allfb >= 1.0) {
 		return "say Player models fullbright";
@@ -474,7 +509,7 @@ Team_ParseChat (const char *string)
 	char	*s;
 	unsigned int i;
 
-	if (!cl_freply->value)
+	if (!cl_freply)
 		return;
 
 	if (!(s = strchr (string, ':')))
@@ -485,7 +520,7 @@ Team_ParseChat (const char *string)
 
 	for (i = 0; i < sizeof (f_replies) / sizeof (f_replies[0]); i++) {
 		if (!strncmp (f_replies[i].name, s, strlen (f_replies[i].name))
-			&& realtime - f_replies[i].lasttime >= cl_freply->value) {
+			&& realtime - f_replies[i].lasttime >= cl_freply) {
 			while (*s && !isspace ((byte) *s))
 				s++;
 			Cbuf_AddText (cl_cbuf, f_replies[i].func (s));
@@ -501,6 +536,6 @@ Team_ResetTimers (void)
 	unsigned int i;
 
 	for (i = 0; i < sizeof (f_replies) / sizeof (f_replies[0]); i++)
-		f_replies[i].lasttime = realtime - cl_freply->value;
+		f_replies[i].lasttime = realtime - cl_freply;
 	return;
 }

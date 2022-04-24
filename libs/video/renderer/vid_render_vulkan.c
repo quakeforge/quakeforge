@@ -597,7 +597,7 @@ vulkan_vid_render_choose_visual (void *data)
 	Vulkan_CreateDevice (vulkan_ctx);
 	if (!vulkan_ctx->device) {
 		Sys_Error ("Unable to create Vulkan device.%s",
-				   vulkan_use_validation->int_val ? ""
+				   vulkan_use_validation ? ""
 					: "\nSet vulkan_use_validation for details");
 	}
 	vulkan_ctx->choose_visual (vulkan_ctx);

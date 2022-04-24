@@ -54,37 +54,230 @@
 	especially when crossing a water boudnary.
 */
 
-cvar_t     *scr_ofsx;
-cvar_t     *scr_ofsy;
-cvar_t     *scr_ofsz;
+float scr_ofsx;
+static cvar_t scr_ofsx_cvar = {
+	.name = "scr_ofsx",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_ofsx },
+};
+float scr_ofsy;
+static cvar_t scr_ofsy_cvar = {
+	.name = "scr_ofsy",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_ofsy },
+};
+float scr_ofsz;
+static cvar_t scr_ofsz_cvar = {
+	.name = "scr_ofsz",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scr_ofsz },
+};
 
-cvar_t     *cl_rollspeed;
-cvar_t     *cl_rollangle;
+float cl_rollspeed;
+static cvar_t cl_rollspeed_cvar = {
+	.name = "cl_rollspeed",
+	.description =
+		"How quickly you straighten out after strafing",
+	.default_value = "200",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_rollspeed },
+};
+float cl_rollangle;
+static cvar_t cl_rollangle_cvar = {
+	.name = "cl_rollangle",
+	.description =
+		"How much your screen tilts when strafing",
+	.default_value = "2.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_rollangle },
+};
 
-cvar_t     *cl_bob;
-cvar_t     *cl_bobcycle;
-cvar_t     *cl_bobup;
+float cl_bob;
+static cvar_t cl_bob_cvar = {
+	.name = "cl_bob",
+	.description =
+		"How much your weapon moves up and down when walking",
+	.default_value = "0.02",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_bob },
+};
+float cl_bobcycle;
+static cvar_t cl_bobcycle_cvar = {
+	.name = "cl_bobcycle",
+	.description =
+		"How quickly your weapon moves up and down when walking",
+	.default_value = "0.6",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_bobcycle },
+};
+float cl_bobup;
+static cvar_t cl_bobup_cvar = {
+	.name = "cl_bobup",
+	.description =
+		"How long your weapon stays up before cycling when walking",
+	.default_value = "0.5",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_bobup },
+};
 
-cvar_t     *v_centermove;
-cvar_t     *v_centerspeed;
+float v_centermove;
+static cvar_t v_centermove_cvar = {
+	.name = "v_centermove",
+	.description =
+		"How far the player must move forward before the view re-centers",
+	.default_value = "0.15",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_centermove },
+};
+float v_centerspeed;
+static cvar_t v_centerspeed_cvar = {
+	.name = "v_centerspeed",
+	.description =
+		"How quickly you return to a center view after a lookup or lookdown",
+	.default_value = "500",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_centerspeed },
+};
 
-cvar_t     *v_kicktime;
-cvar_t     *v_kickroll;
-cvar_t     *v_kickpitch;
+float v_kicktime;
+static cvar_t v_kicktime_cvar = {
+	.name = "v_kicktime",
+	.description =
+		"How long the kick from an attack lasts",
+	.default_value = "0.5",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_kicktime },
+};
+float v_kickroll;
+static cvar_t v_kickroll_cvar = {
+	.name = "v_kickroll",
+	.description =
+		"How much you lean when hit",
+	.default_value = "0.6",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_kickroll },
+};
+float v_kickpitch;
+static cvar_t v_kickpitch_cvar = {
+	.name = "v_kickpitch",
+	.description =
+		"How much you look up when hit",
+	.default_value = "0.6",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_kickpitch },
+};
 
-cvar_t     *cl_cshift_bonus;
-cvar_t     *cl_cshift_contents;
-cvar_t     *cl_cshift_damage;
-cvar_t     *cl_cshift_powerup;
+int cl_cshift_bonus;
+static cvar_t cl_cshift_bonus_cvar = {
+	.name = "cl_cshift_bonus",
+	.description =
+		"Show bonus flash on item pickup",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_cshift_bonus },
+};
+int cl_cshift_contents;
+static cvar_t cl_cshift_contents_cvar = {
+	.name = "cl_cshift_content",
+	.description =
+		"Shift view colors for contents (water, slime, etc)",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_cshift_contents },
+};
+int cl_cshift_damage;
+static cvar_t cl_cshift_damage_cvar = {
+	.name = "cl_cshift_damage",
+	.description =
+		"Shift view colors on damage",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_cshift_damage },
+};
+int cl_cshift_powerup;
+static cvar_t cl_cshift_powerup_cvar = {
+	.name = "cl_cshift_powerup",
+	.description =
+		"Shift view colors for powerups",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_cshift_powerup },
+};
 
-cvar_t     *v_iyaw_cycle;
-cvar_t     *v_iroll_cycle;
-cvar_t     *v_ipitch_cycle;
-cvar_t     *v_iyaw_level;
-cvar_t     *v_iroll_level;
-cvar_t     *v_ipitch_level;
+float v_iyaw_cycle;
+static cvar_t v_iyaw_cycle_cvar = {
+	.name = "v_iyaw_cycle",
+	.description =
+		"How far you tilt right and left when v_idlescale is enabled",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_iyaw_cycle },
+};
+float v_iroll_cycle;
+static cvar_t v_iroll_cycle_cvar = {
+	.name = "v_iroll_cycle",
+	.description =
+		"How quickly you tilt right and left when v_idlescale is enabled",
+	.default_value = "0.5",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_iroll_cycle },
+};
+float v_ipitch_cycle;
+static cvar_t v_ipitch_cycle_cvar = {
+	.name = "v_ipitch_cycle",
+	.description =
+		"How quickly you lean forwards and backwards when v_idlescale is "
+		"enabled",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_ipitch_cycle },
+};
+float v_iyaw_level;
+static cvar_t v_iyaw_level_cvar = {
+	.name = "v_iyaw_level",
+	.description =
+		"How far you tilt right and left when v_idlescale is enabled",
+	.default_value = "0.3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_iyaw_level },
+};
+float v_iroll_level;
+static cvar_t v_iroll_level_cvar = {
+	.name = "v_iroll_level",
+	.description =
+		"How far you tilt right and left when v_idlescale is enabled",
+	.default_value = "0.1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_iroll_level },
+};
+float v_ipitch_level;
+static cvar_t v_ipitch_level_cvar = {
+	.name = "v_ipitch_level",
+	.description =
+		"How far you lean forwards and backwards when v_idlescale is enabled",
+	.default_value = "0.3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_ipitch_level },
+};
 
-cvar_t     *v_idlescale;
+float v_idlescale;
+static cvar_t v_idlescale_cvar = {
+	.name = "v_idlescale",
+	.description =
+		"Toggles whether the view remains idle",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &v_idlescale },
+};
 
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
@@ -137,10 +330,10 @@ V_CalcRoll (const vec3_t angles, vec4f_t velocity)
 	sign = side < 0 ? -1 : 1;
 	side = fabs (side);
 
-	value = cl_rollangle->value;
+	value = cl_rollangle;
 
-	if (side < cl_rollspeed->value)
-		side = side * value / cl_rollspeed->value;
+	if (side < cl_rollspeed)
+		side = side * value / cl_rollspeed;
 	else
 		side = value;
 
@@ -162,18 +355,18 @@ V_CalcBob (viewstate_t *vs)
 		return bob;						// just use old value
 
 	bobtime += vs->frametime;
-	cycle = bobtime - (int) (bobtime / cl_bobcycle->value) *
-		cl_bobcycle->value;
-	cycle /= cl_bobcycle->value;
-	if (cycle < cl_bobup->value)
-		cycle = cycle / cl_bobup->value;
+	cycle = bobtime - (int) (bobtime / cl_bobcycle) *
+		cl_bobcycle;
+	cycle /= cl_bobcycle;
+	if (cycle < cl_bobup)
+		cycle = cycle / cl_bobup;
 	else
-		cycle = 1 + (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
+		cycle = 1 + (cycle - cl_bobup) / (1.0 - cl_bobup);
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
 	velocity[2] = 0;
-	bob = sqrt (dotf (velocity, velocity)[0]) * cl_bob->value;
+	bob = sqrt (dotf (velocity, velocity)[0]) * cl_bob;
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle * M_PI);
 	if (bob > 4)
 		bob = 4;
@@ -190,7 +383,7 @@ V_StartPitchDrift (viewstate_t *vs)
 	}
 
 	if (vs->nodrift || !vs->pitchvel) {
-		vs->pitchvel = v_centerspeed->value;
+		vs->pitchvel = v_centerspeed;
 		vs->nodrift = false;
 		vs->driftmove = 0;
 	}
@@ -236,12 +429,12 @@ V_DriftPitch (viewstate_t *vs)
 
 	// don't count small mouse motion
 	if (vs->nodrift) {
-		if (fabs (forwardmove) < cl_forwardspeed->value)
+		if (fabs (forwardmove) < cl_forwardspeed)
 			vs->driftmove = 0;
 		else
 			vs->driftmove += vs->frametime;
 
-		if (vs->driftmove > v_centermove->value) {
+		if (vs->driftmove > v_centermove) {
 			V_StartPitchDrift (vs);
 		}
 		return;
@@ -255,7 +448,7 @@ V_DriftPitch (viewstate_t *vs)
 	}
 
 	move = vs->frametime * vs->pitchvel;
-	vs->pitchvel += vs->frametime * v_centerspeed->value;
+	vs->pitchvel += vs->frametime * v_centerspeed;
 
 	if (delta > 0) {
 		if (move > delta) {
@@ -291,7 +484,7 @@ V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 	if (count < 10)
 		count = 10;
 
-	if (cl_cshift_damage->int_val
+	if (cl_cshift_damage
 		|| (vs->force_cshifts & INFO_CSHIFT_DAMAGE)) {
 		cshift_t   *cshift = &vs->cshifts[CSHIFT_DAMAGE];
 		int         percent = cshift->percent;
@@ -309,12 +502,12 @@ V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 	AngleVectors (angles, forward, right, up);
 
 	side = DotProduct (from, right);
-	v_dmg_roll = count * side * v_kickroll->value;
+	v_dmg_roll = count * side * v_kickroll;
 
 	side = DotProduct (from, forward);
-	v_dmg_pitch = count * side * v_kickpitch->value;
+	v_dmg_pitch = count * side * v_kickpitch;
 
-	v_dmg_time = v_kicktime->value;
+	v_dmg_time = v_kicktime;
 }
 
 static void
@@ -335,7 +528,7 @@ static void
 V_BonusFlash_f (void *data)
 {
 	viewstate_t *vs = data;
-	if (!cl_cshift_bonus->int_val
+	if (!cl_cshift_bonus
 		&& !(vs->force_cshifts & INFO_CSHIFT_BONUS))
 		return;
 
@@ -352,7 +545,7 @@ V_BonusFlash_f (void *data)
 void
 V_SetContentsColor (viewstate_t *vs, int contents)
 {
-	if (!cl_cshift_contents->int_val
+	if (!cl_cshift_contents
 		&& !(vs->force_cshifts & INFO_CSHIFT_CONTENTS)) {
 		vs->cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		return;
@@ -441,7 +634,7 @@ V_PrepBlend (viewstate_t *vs)
 {
 	int         i, j;
 
-	if (cl_cshift_powerup->int_val
+	if (cl_cshift_powerup
 		|| (vs->force_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift (vs);
 
@@ -499,14 +692,14 @@ V_BoundOffsets (viewstate_t *vs)
 }
 
 static vec4f_t
-idle_quat (vec4f_t axis, cvar_t *cycle, cvar_t *level, double time)
+idle_quat (vec4f_t axis, float cycle, float level, double time)
 {
 	vec4f_t     identity = { 0, 0, 0, 1 };
 	if (!level || !cycle) {
 		return identity;
 	}
-	float       scale = sin (time * cycle->value);
-	float       ang = scale * level->value * v_idlescale->value;
+	float       scale = sin (time * cycle);
+	float       ang = scale * level * v_idlescale;
 	float       c = cos (ang * M_PI / 360);
 	float       s = sin (ang * M_PI / 360);
 	return axis * s + identity * c;
@@ -553,8 +746,8 @@ V_CalcViewRoll (viewstate_t *vs)
 	ang[ROLL] = V_CalcRoll (angles, velocity);
 
 	if (v_dmg_time > 0) {
-		ang[ROLL] += v_dmg_time / v_kicktime->value * v_dmg_roll;
-		ang[PITCH] += v_dmg_time / v_kicktime->value * v_dmg_pitch;
+		ang[ROLL] += v_dmg_time / v_kicktime * v_dmg_roll;
+		ang[PITCH] += v_dmg_time / v_kicktime * v_dmg_pitch;
 		v_dmg_time -= vs->frametime;
 	}
 
@@ -586,10 +779,10 @@ V_CalcIntermissionRefdef (viewstate_t *vs)
 	view->renderer.model = NULL;
 
 	// always idle in intermission
-	old = v_idlescale->value;
-	Cvar_SetValue (v_idlescale, 1);
+	old = v_idlescale;
+	v_idlescale = 1;
 	V_AddIdle (vs);
-	Cvar_SetValue (v_idlescale, old);
+	v_idlescale = old;
 }
 
 static void
@@ -628,9 +821,7 @@ V_CalcRefdef (viewstate_t *vs)
 	// don't allow cheats in multiplayer
 	// FIXME check for dead
 	if (vs->voffs_enabled) {
-		origin += scr_ofsx->value * forward
-										+ scr_ofsy->value * right
-										+ scr_ofsz->value * up;
+		origin += scr_ofsx * forward + scr_ofsy * right + scr_ofsz * up;
 	}
 
 	V_BoundOffsets (vs);
@@ -644,15 +835,15 @@ V_CalcRefdef (viewstate_t *vs)
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV
-	if (hud_sbar->int_val == 0 && r_data->scr_viewsize->int_val >= 100) {
+	if (hud_sbar == 0 && *r_data->scr_viewsize >= 100) {
 		;
-	} else if (r_data->scr_viewsize->int_val == 110) {
+	} else if (*r_data->scr_viewsize == 110) {
 		gun_origin += (vec4f_t) { 0, 0, 1, 0};
-	} else if (r_data->scr_viewsize->int_val == 100) {
+	} else if (*r_data->scr_viewsize == 100) {
 		gun_origin += (vec4f_t) { 0, 0, 2, 0};
-	} else if (r_data->scr_viewsize->int_val == 90) {
+	} else if (*r_data->scr_viewsize == 90) {
 		gun_origin += (vec4f_t) { 0, 0, 1, 0};
-	} else if (r_data->scr_viewsize->int_val == 80) {
+	} else if (*r_data->scr_viewsize == 80) {
 		gun_origin += (vec4f_t) { 0, 0, 0.5, 0};
 	}
 
@@ -741,7 +932,7 @@ V_RenderView (viewstate_t *vs)
 	if (vs->intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef (vs);
 	} else {
-		if (vs->chase && chase_active->int_val) {
+		if (vs->chase && chase_active) {
 			Chase_Update (vs->chasestate);
 		} else {
 			V_CalcRefdef (vs);
@@ -769,61 +960,29 @@ V_Init (viewstate_t *viewstate)
 void
 V_Init_Cvars (void)
 {
-	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL,
-							 "How far the player must move forward before the "
-							 "view re-centers");
-	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL,
-							  "How quickly you return to a center view after "
-							  "a lookup or lookdown");
-	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL,
-							 "How far you tilt right and left when "
-							 "v_idlescale is enabled");
-	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL,
-							  "How quickly you tilt right and left when "
-							  "v_idlescale is enabled");
-	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL,
-							   "How quickly you lean forwards and backwards "
-							   "when v_idlescale is enabled");
-	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL,
-							 "How far you tilt right and left when "
-							 "v_idlescale is enabled");
-	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL,
-							  "How far you tilt right and left when "
-							  "v_idlescale is enabled");
-	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, NULL,
-							   "How far you lean forwards and backwards when "
-							   "v_idlescale is enabled");
-	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL,
-							"Toggles whether the view remains idle");
+	Cvar_Register (&v_centermove_cvar, 0, 0);
+	Cvar_Register (&v_centerspeed_cvar, 0, 0);
+	Cvar_Register (&v_iyaw_cycle_cvar, 0, 0);
+	Cvar_Register (&v_iroll_cycle_cvar, 0, 0);
+	Cvar_Register (&v_ipitch_cycle_cvar, 0, 0);
+	Cvar_Register (&v_iyaw_level_cvar, 0, 0);
+	Cvar_Register (&v_iroll_level_cvar, 0, 0);
+	Cvar_Register (&v_ipitch_level_cvar, 0, 0);
+	Cvar_Register (&v_idlescale_cvar, 0, 0);
 
-	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
-	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");
-	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, NULL, "None");
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-							 "How quickly you straighten out after strafing");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
-							 "How much your screen tilts when strafing");
-	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL,
-					   "How much your weapon moves up and down when walking");
-	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL,
-							"How quickly your weapon moves up and down when "
-							"walking");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL,
-						 "How long your weapon stays up before cycling when "
-						 "walking");
-	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL,
-						   "How long the kick from an attack lasts");
-	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL,
-						   "How much you lean when hit");
-	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
-							"How much you look up when hit");
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
-								   NULL, "Shift view colors for contents "
-								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-								 "Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
-								  "Shift view colors for powerups");
+	Cvar_Register (&scr_ofsx_cvar, 0, 0);
+	Cvar_Register (&scr_ofsy_cvar, 0, 0);
+	Cvar_Register (&scr_ofsz_cvar, 0, 0);
+	Cvar_Register (&cl_rollspeed_cvar, 0, 0);
+	Cvar_Register (&cl_rollangle_cvar, 0, 0);
+	Cvar_Register (&cl_bob_cvar, 0, 0);
+	Cvar_Register (&cl_bobcycle_cvar, 0, 0);
+	Cvar_Register (&cl_bobup_cvar, 0, 0);
+	Cvar_Register (&v_kicktime_cvar, 0, 0);
+	Cvar_Register (&v_kickroll_cvar, 0, 0);
+	Cvar_Register (&v_kickpitch_cvar, 0, 0);
+	Cvar_Register (&cl_cshift_bonus_cvar, 0, 0);
+	Cvar_Register (&cl_cshift_contents_cvar, 0, 0);
+	Cvar_Register (&cl_cshift_damage_cvar, 0, 0);
+	Cvar_Register (&cl_cshift_powerup_cvar, 0, 0);
 }

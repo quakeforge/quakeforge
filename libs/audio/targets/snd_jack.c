@@ -55,8 +55,25 @@ static double snd_alive_time = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static float   *output[2];
-static cvar_t  *snd_jack_server;
-static cvar_t  *snd_jack_ports;
+static char *snd_jack_server;
+static cvar_t snd_jack_server_cvar = {
+	.name = "snd_jack_server",
+	.description =
+		"The name of the JACK server to connect to",
+	.default_value = "default",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_jack_server },
+};
+static char *snd_jack_ports;
+static cvar_t snd_jack_ports_cvar = {
+	.name = "snd_jack_ports",
+	.description =
+		"; separated list of port names to which QF will connect. Defaults to "
+		"the first two physical ports. Currently only two ports are supported.",
+	.default_value = "",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_jack_ports },
+};
 
 static int s_jack_connect (snd_t *snd);
 
@@ -126,13 +143,13 @@ s_jack_activate (void)
 	int         i;
 
 	snd_shutdown = 0;
-	if (!*snd_jack_ports->string) {
+	if (!*snd_jack_ports) {
 		ports = jack_get_ports (jack_handle, 0, 0,
 								JackPortIsPhysical | JackPortIsInput);
 	} else {
-		ports = s_jack_parse_ports (snd_jack_ports->string);
+		ports = s_jack_parse_ports (snd_jack_ports);
 	}
-	if (developer->int_val & SYS_snd) {
+	if (developer & SYS_snd) {
 		for (i = 0; ports[i]; i++) {
 			Sys_Printf ("%s\n", ports[i]);
 		}
@@ -222,7 +239,7 @@ snd_jack_error (const char *desc)
 static int
 snd_jack_xrun (void *arg)
 {
-	if (developer->int_val & SYS_snd) {
+	if (developer & SYS_snd) {
 		fprintf (stderr, "snd_jack: xrun\n");
 	}
 	return 0;
@@ -236,7 +253,7 @@ s_jack_connect (snd_t *snd)
 	jack_set_error_function (snd_jack_error);
 	if ((jack_handle = jack_client_open ("QuakeForge",
 										 JackServerName | JackNoStartServer, 0,
-										 snd_jack_server->string)) == 0) {
+										 snd_jack_server)) == 0) {
 		Sys_Printf ("Could not connect to JACK\n");
 		return 0;
 	}
@@ -280,13 +297,8 @@ s_shutdown (snd_t *snd)
 static void
 s_init_cvars (void)
 {
-	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
-								"The name of the JACK server to connect to");
-	snd_jack_ports = Cvar_Get ("snd_jack_ports", "", CVAR_ROM, NULL,
-							   "; separated list of port names to which QF "
-							   "will connect. Defaults to the first two "
-							   "physical ports. Currently only two ports "
-							   "are supported.");
+	Cvar_Register (&snd_jack_server_cvar, 0, 0);
+	Cvar_Register (&snd_jack_ports_cvar, 0, 0);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

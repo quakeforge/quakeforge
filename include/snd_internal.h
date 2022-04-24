@@ -229,7 +229,7 @@ struct channel_s {
 	//@}
 };
 
-extern struct cvar_s *snd_volume;
+extern float snd_volume;
 
 extern snd_render_data_t snd_render_data;
 #define PAINTBUFFER_SIZE    512

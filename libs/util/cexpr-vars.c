@@ -114,10 +114,10 @@ static binop_t cvar_binops[] = {
 };
 
 static exprtype_t cvar_type = {
-	"cvar",
-	sizeof (void *),	// ref to struct (will always be 0)
-	cvar_binops,
-	0,
+	.name = "cvar",
+	.size = sizeof (void *),	// ref to struct (will always be 0)
+	.binops = cvar_binops,
+	.unops = 0,
 };
 
 VISIBLE exprval_t *
@@ -132,21 +132,13 @@ cexpr_cvar (const char *name, exprctx_t *ctx)
 	}
 
 	exprtype_t *type = ctx->result->type;
-	binop_t *cast = cexpr_find_cast (type, &cexpr_int);
-
-	exprval_t  *val = 0;
-	if (cast || val->type == &cexpr_int || val->type == &cexpr_uint) {
-		val = cexpr_value (type, ctx);
-		*(int *) val->value = var->int_val;
-	} else if (val->type == &cexpr_float) {
-		val = cexpr_value (type, ctx);
-		*(float *) val->value = var->value;
-	} else if (val->type == &cexpr_double) {
-		val = cexpr_value (type, ctx);
-		//FIXME cvars need to support double values
-		*(double *) val->value = var->value;
+	if (var->value.type) {
+		exprval_t  *val = cexpr_value (type, ctx);
+		cexpr_assign_value (val, &var->value, ctx);
+		return val;
 	}
-	return val;
+	cexpr_error (ctx, "cvar %s has unknown type", var->name);
+	return 0;
 }
 
 VISIBLE exprval_t *

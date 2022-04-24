@@ -426,21 +426,20 @@ typedef enum {
 //============================================================================
 // FIXME: declare exported variables in their own relevant .h
 
-extern	struct cvar_s	*sv_hide_version_info;
-extern	struct cvar_s	*sv_highchars;
+extern int sv_hide_version_info;
+extern int sv_highchars;
 
-extern	struct cvar_s	*sv_mintic, *sv_maxtic;
-extern	struct cvar_s	*sv_maxspeed;
+extern float sv_mintic;
+extern float sv_maxtic;
+extern float sv_maxspeed;
 
-extern	struct cvar_s	*sv_timeout;
+extern float sv_timeout;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 
-extern	struct cvar_s	*spawn;
-extern	struct cvar_s	*teamplay;
-extern	struct cvar_s	*deathmatch;
-extern	struct cvar_s	*fraglimit;
-extern	struct cvar_s	*timelimit;
+extern int teamplay;
+extern int deathmatch;
+extern int timelimit;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -544,6 +543,7 @@ void SV_FlushSignon (void);
 //
 void SV_ProgStartFrame (void);
 void SV_Physics (void);
+void SV_Physics_Init_Cvars (void);
 void SV_CheckVelocity (struct edict_s *ent);
 void SV_AddGravity (struct edict_s *ent);
 void SV_FinishGravity (struct edict_s *ent, vec3_t move);
@@ -630,38 +630,39 @@ void SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg);
 // sv_nchan.c
 //
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct cvar_s *sv_antilag;
-extern struct cvar_s *sv_antilag_frac;
-extern struct cvar_s *sv_timecheck_fuzz;
-extern struct cvar_s *sv_timecheck_decay;
-extern struct cvar_s *sv_maxrate;
-extern struct cvar_s *sv_timestamps;
-extern struct cvar_s *sv_timefmt;
-extern struct cvar_s *sv_phs;
-extern struct cvar_s *sv_maxvelocity;
-extern struct cvar_s *sv_gravity;
-extern struct cvar_s *sv_jump_any;
-extern struct cvar_s *sv_aim;
-extern struct cvar_s *sv_stopspeed;
-extern struct cvar_s *sv_spectatormaxspeed;
-extern struct cvar_s *sv_accelerate;
-extern struct cvar_s *sv_airaccelerate;
-extern struct cvar_s *sv_wateraccelerate;
-extern struct cvar_s *sv_friction;
-extern struct cvar_s *sv_waterfriction;
-extern struct cvar_s *pr_double_remove;
-extern struct cvar_s *allow_download;
-extern struct cvar_s *allow_download_skins;
-extern struct cvar_s *allow_download_models;
-extern struct cvar_s *allow_download_sounds;
-extern struct cvar_s *allow_download_maps;
+extern int sv_antilag;
+extern float sv_antilag_frac;
+extern int sv_timecheck_fuzz;
+extern int sv_timecheck_decay;
+extern int sv_maxrate;
+extern int sv_timestamps;
+extern char *sv_timefmt;
+extern int sv_phs;
+extern float sv_maxvelocity;
+extern float sv_gravity;
+extern int sv_jump_any;
+extern float sv_aim;
+extern float sv_stopspeed;
+extern float sv_spectatormaxspeed;
+extern float sv_accelerate;
+extern float sv_airaccelerate;
+extern float sv_wateraccelerate;
+extern float sv_friction;
+extern float sv_waterfriction;
+extern int pr_double_remove;
+extern int allow_download;
+extern int allow_download_skins;
+extern int allow_download_models;
+extern int allow_download_sounds;
+extern int allow_download_maps;
 
 extern int fp_messages;
 extern int fp_persecond;
 extern int fp_secondsdead;
-extern struct cvar_s *pausable;
+extern int pausable;
 extern qboolean nouse;
 
 extern char fp_msg[255];

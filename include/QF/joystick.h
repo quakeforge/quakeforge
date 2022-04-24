@@ -34,8 +34,8 @@
 #define JOY_MAX_AXES    32
 #define JOY_MAX_BUTTONS 64
 
-extern struct cvar_s	*joy_device;		// Joystick device name
-extern struct cvar_s	*joy_enable;		// Joystick enabling flag
+extern char *joy_device;
+extern int joy_enable;
 
 struct joy_axis_button {
 	float       threshold;
@@ -92,7 +92,7 @@ extern struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 	frame.
 
 	You should exit this function immediately if either joy_active or
-	joy_enable->int_val are zero.
+	joy_enable are zero.
 */
 void JOY_Command (void);
 void joy_clear_axis (int i);
@@ -103,7 +103,7 @@ void joy_clear_axis (int i);
 	Use this function to process joystick movements to move the player around.
 
 	You should exit this function immediately if either joy_active or
-	joy_enable->int_val are zero.
+	joy_enable are zero.
 */
 void JOY_Move (void);
 

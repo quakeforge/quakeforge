@@ -94,9 +94,18 @@ cexpr_error(exprctx_t *ctx, const char *fmt, ...)
 	va_end (args);
 
 	if (ctx->messages) {
-		PL_Message (ctx->messages, ctx->item, "%s", string->str);
+		if (ctx->msg_prefix) {
+			PL_Message (ctx->messages, ctx->item, "%s:%s",
+						ctx->msg_prefix, string->str);
+		} else {
+			PL_Message (ctx->messages, ctx->item, "%s", string->str);
+		}
 	} else {
-		Sys_Printf ("%s\n", string->str);
+		if (ctx->msg_prefix) {
+			Sys_Printf ("%s:%s\n", ctx->msg_prefix, string->str);
+		} else {
+			Sys_Printf ("%s\n", string->str);
+		}
 	}
 	dstring_delete (string);
 }

@@ -50,10 +50,42 @@
 
 #include "compat.h"
 
-VISIBLE cvar_t *pr_boundscheck;
-cvar_t     *pr_deadbeef_ents;
-cvar_t     *pr_deadbeef_locals;
-cvar_t     *pr_faultchecks;
+VISIBLE int pr_boundscheck;
+static cvar_t pr_boundscheck_cvar = {
+	.name = "pr_boundscheck",
+	.description =
+		"Server progs bounds checking",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_boundscheck },
+};
+int pr_deadbeef_ents;
+static cvar_t pr_deadbeef_ents_cvar = {
+	.name = "pr_deadbeef_ents",
+	.description =
+		"set to clear unallocated memory to 0xdeadbeef",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_deadbeef_ents },
+};
+int pr_deadbeef_locals;
+static cvar_t pr_deadbeef_locals_cvar = {
+	.name = "pr_deadbeef_locals",
+	.description =
+		"set to clear uninitialized local vars to 0xdeadbeef",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_deadbeef_locals },
+};
+int pr_faultchecks;
+static cvar_t pr_faultchecks_cvar = {
+	.name = "pr_faultchecks",
+	.description =
+		"capture and handle division by 0 in progs",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_faultchecks },
+};
 
 static const char *
 function_get_key (const void *f, void *_pr)
@@ -498,16 +530,10 @@ PR_LoadProgs (progs_t *pr, const char *progsname)
 VISIBLE void
 PR_Init_Cvars (void)
 {
-	pr_boundscheck =
-		Cvar_Get ("pr_boundscheck", "0", CVAR_NONE, NULL,
-				  "Server progs bounds checking");
-	pr_deadbeef_ents = Cvar_Get ("pr_deadbeef_ents", "0", CVAR_NONE, NULL,
-							"set to clear unallocated memory to 0xdeadbeef");
-	pr_deadbeef_locals = Cvar_Get ("pr_deadbeef_locals", "0", CVAR_NONE, NULL,
-								   "set to clear uninitialized local vars to "
-								   "0xdeadbeef");
-	pr_faultchecks = Cvar_Get ("pr_faultchecks", "0", CVAR_NONE, NULL,
-							   "capture and handle division by 0 in progs");
+	Cvar_Register (&pr_boundscheck_cvar, 0, 0);
+	Cvar_Register (&pr_deadbeef_ents_cvar, 0, 0);
+	Cvar_Register (&pr_deadbeef_locals_cvar, 0, 0);
+	Cvar_Register (&pr_faultchecks_cvar, 0, 0);
 	PR_Debug_Init_Cvars ();
 }
 

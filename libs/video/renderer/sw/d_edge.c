@@ -194,7 +194,7 @@ D_DrawSurfaces (void)
 				d_zistepv = 0;
 				d_ziorigin = -0.9;
 
-				D_DrawSolidSurface (s, r_clearcolor->int_val & 0xFF);
+				D_DrawSolidSurface (s, r_clearcolor & 0xFF);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWTURB) {
 				pface = s->data;

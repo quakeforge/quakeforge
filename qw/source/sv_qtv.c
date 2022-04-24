@@ -456,7 +456,7 @@ SV_qtvCheckTimeouts (void)
 	float       droptime;
 	sv_qtv_t   *proxy;
 
-	droptime = realtime - sv_timeout->value;
+	droptime = realtime - sv_timeout;
 
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;

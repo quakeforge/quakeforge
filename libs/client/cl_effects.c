@@ -129,7 +129,7 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 			VectorCopy (ent_origin, dl->origin);
 			dl->radius = 200.0;
 			dl->die = time + 0.1;
-			//FIXME VectorCopy (r_firecolor->vec, dl->color);
+			//FIXME VectorCopy (r_firecolor, dl->color);
 			VectorSet (0.9, 0.7, 0.0, dl->color);
 			dl->color[3] = 0.7;
 		}

@@ -569,7 +569,7 @@ crosshair_2 (int x, int y)
 {
 	unsigned char *pColor;
 
-	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor];
 	qfglColor4ubv (pColor);
 	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
 
@@ -593,7 +593,7 @@ crosshair_3 (int x, int y)
 {
 	unsigned char *pColor;
 
-	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor];
 	qfglColor4ubv (pColor);
 	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
 
@@ -617,7 +617,7 @@ crosshair_4 (int x, int y)
 {
 	unsigned char *pColor;
 
-	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor];
 	qfglColor4ubv (pColor);
 	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
 
@@ -641,7 +641,7 @@ crosshair_5 (int x, int y)	//FIXME don't use until the data is filled in
 {
 	unsigned char *pColor;
 
-	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor];
 	qfglColor4ubv (pColor);
 	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
 
@@ -674,12 +674,12 @@ gl_Draw_Crosshair (void)
 	int            x, y;
 	int            ch;
 
-	ch = crosshair->int_val - 1;
+	ch = crosshair - 1;
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conview->xlen / 2 + cl_crossx->int_val;
-	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx;
+	y = vid.conview->ylen / 2 + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }
@@ -784,7 +784,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	gl = (glpic_t *) conback->data;
 
 	// spin the console? - effect described in a QER tutorial
-	if (gl_conspin->value) {
+	if (gl_conspin) {
 		static float xangle = 0;
 		static float xfactor = .3f;
 		static float xstep = .005f;
@@ -793,7 +793,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 		qfglMatrixMode (GL_TEXTURE);
 		qfglPushMatrix ();
 		qfglLoadIdentity ();
-		xangle += gl_conspin->value;
+		xangle += gl_conspin;
 		xfactor += xstep;
 		if (xfactor > 8 || xfactor < .3f)
 			xstep = -xstep;
@@ -801,7 +801,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 		qfglScalef (xfactor, xfactor, xfactor);
 	}
 	// slide console up/down or stretch it?
-	if (gl_constretch->int_val) {
+	if (gl_constretch) {
 		ofs = 0;
 	} else
 		ofs = (vid.conview->ylen - lines) / (float) vid.conview->ylen;
@@ -827,15 +827,15 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 		qfglColor3ubv (color_0_8);
 	}
 
-	if (gl_conspin->value) {
+	if (gl_conspin) {
 		qfglPopMatrix ();
 		qfglMatrixMode (GL_MODELVIEW);
 		qfglPopMatrix ();
 	}
 
-	int         len = strlen (cl_verstring->string);
+	int         len = strlen (cl_verstring);
 	gl_Draw_AltString (vid.conview->xlen - len * 8 - 11, lines - 14,
-					   cl_verstring->string);
+					   cl_verstring);
 	qfglColor3ubv (color_white);
 }
 

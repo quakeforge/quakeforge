@@ -116,7 +116,15 @@ static void *(*glGetProcAddress) (const char *symbol) = NULL;
 static int use_gl_procaddress = 0;
 
 static GLXFBConfig glx_cfg;
-static cvar_t  *gl_driver;
+static char *gl_driver;
+static cvar_t gl_driver_cvar = {
+	.name = "gl_driver",
+	.description =
+		"The OpenGL library to use. (path optional)",
+	.default_value = GL_DRIVER,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &gl_driver },
+};
 
 static void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -219,9 +227,9 @@ glx_end_rendering (void)
 static void
 glx_load_gl (void)
 {
-	libgl_handle = dlopen (gl_driver->string, RTLD_NOW);
+	libgl_handle = dlopen (gl_driver, RTLD_NOW);
 	if (!libgl_handle) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver,
 				   dlerror ());
 	}
 	glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddress");
@@ -255,6 +263,5 @@ X11_GL_Context (void)
 void
 X11_GL_Init_Cvars (void)
 {
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
+	Cvar_Register (&gl_driver_cvar, 0, 0);
 }

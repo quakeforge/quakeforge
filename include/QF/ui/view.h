@@ -66,6 +66,8 @@ typedef enum {
 	grav_northwest,	///< +ve X right, +ve Y down, -X left,  -ve Y up
 } grav_t;
 
+extern struct exprtype_s grav_t_type;
+
 /** The view object.
 */
 typedef struct view_s view_t;

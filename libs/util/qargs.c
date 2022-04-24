@@ -51,8 +51,24 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
+char *fs_globalcfg;
+static cvar_t fs_globalcfg_cvar = {
+	.name = "fs_globalcfg",
+	.description =
+		"global configuration file",
+	.default_value = FS_GLOBALCFG,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_globalcfg },
+};
+char *fs_usercfg;
+static cvar_t fs_usercfg_cvar = {
+	.name = "fs_usercfg",
+	.description =
+		"user configuration file",
+	.default_value = FS_USERCFG,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_usercfg },
+};
 
 static const char **largv;
 static const char *argvdummy = " ";
@@ -160,9 +176,8 @@ COM_ParseConfig (cbuf_t *cbuf)
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute set commands in the global configuration file if it exists
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
-							 "global configuration file");
-	Cmd_Exec_File (cbuf, fs_globalcfg->string, 0);
+	Cvar_Register (&fs_globalcfg_cvar, 0, 0);
+	Cmd_Exec_File (cbuf, fs_globalcfg, 0);
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute +set again to override the config file
@@ -170,9 +185,8 @@ COM_ParseConfig (cbuf_t *cbuf)
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute set commands in the user configuration file if it exists
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
-						   "user configuration file");
-	Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+	Cvar_Register (&fs_usercfg_cvar, 0, 0);
+	Cmd_Exec_File (cbuf, fs_usercfg, 0);
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute +set again to override the config file
@@ -212,14 +226,14 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 	// should be used to set up defaults on the assumption that the user has
 	// things set up to work with another (hopefully compatible) client
 	if (Cmd_Exec_File (cbuf, "quakeforge.cfg", 1)) {
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		Cmd_StuffCmds (cbuf);
 		COM_Check_quakerc ("startdemos", cbuf);
 	} else {
 		if (!skip_quakerc) {
 			Cbuf_InsertText (cbuf, "exec quake.rc\n");
 		}
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		// Reparse the command line for + commands.
 		// (sets still done, but it doesn't matter)
 		// (Note, no non-base commands exist yet)

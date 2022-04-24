@@ -46,7 +46,15 @@
 #include "qw/include/game.h"
 #include "qw/include/server.h"
 
-cvar_t     *registered;
+float registered;
+static cvar_t registered_cvar = {
+	.name = "registered",
+	.description =
+		"Is the game the registered version. 1 yes 0 no",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &registered },
+};
 int         static_registered = 1;		// only for startup check, then set
 
 /*
@@ -71,7 +79,7 @@ Game_CheckRegistered (void)
 	}
 
 	if (static_registered) {
-		Cvar_Set (registered, "1");
+		Cvar_Set ("registered", "1");
 		Sys_Printf ("Playing registered version.\n");
 	}
 }
@@ -110,8 +118,7 @@ SV_Gamedir_f (void)
 void
 Game_Init (void)
 {
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
-						   "Is the game the registered version. 1 yes 0 no");
+	Cvar_Register (&registered_cvar, 0, 0);
 	Game_CheckRegistered ();
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f,
 					"Specifies the directory to be used while playing.");

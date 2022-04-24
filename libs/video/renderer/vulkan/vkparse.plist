@@ -2,6 +2,7 @@
 	search = (
 		VkAttachmentDescription,
 		VkDebugUtilsMessageSeverityFlagBitsEXT,
+		VkPresentModeKHR,
 		VkSubpassDescription,
 		VkSubpassDependency,
 		VkSpecializationInfo,

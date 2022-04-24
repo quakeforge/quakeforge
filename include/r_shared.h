@@ -60,7 +60,7 @@ extern float	pixelAspect;
 
 extern int		r_drawnpolycount;
 
-extern struct cvar_s	*r_clearcolor;
+extern int r_clearcolor;
 
 extern int	sintable[SIN_BUFFER_SIZE];
 extern int	intsintable[SIN_BUFFER_SIZE];

@@ -52,11 +52,13 @@
 	fprintf (output_file, "\t%d,\n", ele_count);
 	fprintf (output_file, "};\n");
 	fprintf (output_file, "exprtype_t %s_type = {\n", [self name]);
-	fprintf (output_file, "\t\"%s[%d]\",\n", [ele_type name], ele_count);
-	fprintf (output_file, "\t%d * sizeof (%s),\n", ele_count, [ele_type name]);
-	fprintf (output_file, "\tcexpr_array_binops,\n");
-	fprintf (output_file, "\t0,\n");
-	fprintf (output_file, "\t&%s_array,\n", [self name]);
+	fprintf (output_file, "\t.name = \"%s[%d]\",\n", [ele_type name],
+			 ele_count);
+	fprintf (output_file, "\t.size = %d * sizeof (%s),\n", ele_count,
+			 [ele_type name]);
+	fprintf (output_file, "\t.binops = cexpr_array_binops,\n");
+	fprintf (output_file, "\t.unops = 0,\n");
+	fprintf (output_file, "\t.data = &%s_array,\n", [self name]);
 	fprintf (output_file, "};\n");
 	fprintf (output_file, "\n");
 	fprintf (header_file, "extern exprtype_t %s_type;\n", [self name]);

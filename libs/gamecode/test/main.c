@@ -201,7 +201,7 @@ main (int argc, char **argv)
 	Cmd_Init ();
 	Cvar_Init ();
 	PR_Init_Cvars ();
-	pr_boundscheck->int_val = 1;
+	pr_boundscheck = 1;
 
 	while ((c = getopt (argc, argv, "qvt:")) != EOF) {
 		switch (c) {

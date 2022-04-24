@@ -123,9 +123,33 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 // QUAKE FILESYSTEM
 
 static memhunk_t *qfs_hunk;
-static cvar_t *fs_userpath;
-static cvar_t *fs_sharepath;
-static cvar_t *fs_dirconf;
+static char *fs_userpath;
+static cvar_t fs_userpath_cvar = {
+	.name = "fs_userpath",
+	.description =
+		"location of your game directories",
+	.default_value = FS_USERPATH,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_userpath },
+};
+static char *fs_sharepath;
+static cvar_t fs_sharepath_cvar = {
+	.name = "fs_sharepath",
+	.description =
+		"location of shared (read-only) game directories",
+	.default_value = FS_SHAREPATH,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_sharepath },
+};
+static char *fs_dirconf;
+static cvar_t fs_dirconf_cvar = {
+	.name = "fs_dirconf",
+	.description =
+		"full path to gamedir.conf FIXME",
+	.default_value = "",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_dirconf },
+};
 
 VISIBLE const char *qfs_userpath;
 
@@ -650,8 +674,8 @@ qfs_load_config (void)
 	char       *buf;
 	char       *dirconf;
 
-	if (*fs_dirconf->string) {
-		dirconf = Sys_ExpandSquiggle (fs_dirconf->string);
+	if (*fs_dirconf) {
+		dirconf = Sys_ExpandSquiggle (fs_dirconf);
 		if (!(f = Qopen (dirconf, "rt")))
 			Sys_MaskPrintf (SYS_fs,
 							"Could not load `%s', using builtin defaults\n",
@@ -1333,17 +1357,17 @@ qfs_add_gamedir (vpath_t *vpath, const char *dir)
 
 	if (!*dir)
 		return;
-	e = fs_sharepath->string + strlen (fs_sharepath->string);
+	e = fs_sharepath + strlen (fs_sharepath);
 	s = e;
 	s_dir = dstring_new ();
 	f_dir = dstring_new ();
 
-	while (s >= fs_sharepath->string) {
-		while (s != fs_sharepath->string && s[-1] !=':')
+	while (s >= fs_sharepath) {
+		while (s != fs_sharepath && s[-1] !=':')
 			s--;
 		if (s != e) {
 			dsprintf (s_dir, "%.*s", (int) (e - s), s);
-			if (strcmp (s_dir->str, fs_userpath->string) != 0) {
+			if (strcmp (s_dir->str, fs_userpath) != 0) {
 				if (qfs_expand_path (f_dir, s_dir->str, dir, 0) != 0) {
 					Sys_Printf ("dropping bad directory %s\n", dir);
 					break;
@@ -1409,12 +1433,19 @@ QFS_GamedirCallback (gamedir_callback_t *func)
 }
 
 static void
-qfs_path_cvar (cvar_t *var)
+qfs_path_cvar (void *data, const cvar_t *cvar)
 {
-	char       *cpath = QFS_CompressPath (var->string);
-	if (strcmp (cpath, var->string))
-		Cvar_Set (var, cpath);
-	free (cpath);
+	char       *cpath = QFS_CompressPath (*(char **)data);
+	if (!*cpath) {
+		free (cpath);
+		cpath = strdup (".");
+	}
+	if (strcmp (cpath, *(char **)data)) {
+		free (*(char **)cvar->value.value);
+		*(char **)cvar->value.value = cpath;
+	} else {
+		free (cpath);
+	}
 }
 
 static void
@@ -1434,19 +1465,13 @@ QFS_Init (memhunk_t *hunk, const char *game)
 
 	qfs_hunk = hunk;
 
-	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM,
-							 qfs_path_cvar,
-							 "location of shared (read-only) game "
-							 "directories");
-	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM,
-							qfs_path_cvar,
-							"location of your game directories");
-	fs_dirconf = Cvar_Get ("fs_dirconf", "", CVAR_ROM, NULL,
-							"full path to gamedir.conf FIXME");
+	Cvar_Register (&fs_sharepath_cvar, qfs_path_cvar, &fs_sharepath);
+	Cvar_Register (&fs_userpath_cvar, qfs_path_cvar, &fs_userpath);
+	Cvar_Register (&fs_dirconf_cvar, 0, 0);
 
 	Cmd_AddCommand ("path", qfs_path_f, "Show what paths Quake is using");
 
-	qfs_userpath = Sys_ExpandSquiggle (fs_userpath->string);
+	qfs_userpath = Sys_ExpandSquiggle (fs_userpath);
 
 	qfs_load_config ();
 

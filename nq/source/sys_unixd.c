@@ -100,13 +100,13 @@ main (int argc, const char **argv)
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
-		if (time < sys_ticrate->value) {
+		if (time < sys_ticrate) {
 			usleep (1);
 			continue;				// not time to run a server-only tic yet
 		}
-		time = sys_ticrate->value;
+		time = sys_ticrate;
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

@@ -71,7 +71,15 @@ typedef struct loaded_plugin_s {
 	plugin_t		*plugin;
 } loaded_plugin_t;
 
-cvar_t     *fs_pluginpath;
+char *fs_pluginpath;
+static cvar_t fs_pluginpath_cvar = {
+	.name = "fs_pluginpath",
+	.description =
+		"Location of your plugin directory",
+	.default_value = FS_PLUGINPATH,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_pluginpath },
+};
 
 hashtab_t  *registered_plugins, *loaded_plugins;
 
@@ -155,9 +163,9 @@ static const char *
 pi_realname (const char *type, const char *name)
 {
 #if defined(HAVE_DLOPEN)
-	return va (0, "%s/%s_%s.so", fs_pluginpath->string, type, name);
+	return va (0, "%s/%s_%s.so", fs_pluginpath, type, name);
 #elif defined(_WIN32)
-	return va (0, "%s/%s_%s.dll", fs_pluginpath->string, type, name);
+	return va (0, "%s/%s_%s.dll", fs_pluginpath, type, name);
 #else
 	return "No shared library support. FIXME";
 #endif
@@ -178,8 +186,7 @@ pi_info_name (const char *type, const char *name)
 static void
 PI_InitCvars (void)
 {
-	fs_pluginpath = Cvar_Get ("fs_pluginpath", FS_PLUGINPATH, CVAR_ROM, NULL,
-							"Location of your plugin directory");
+	Cvar_Register (&fs_pluginpath_cvar, 0, 0);
 }
 
 static void

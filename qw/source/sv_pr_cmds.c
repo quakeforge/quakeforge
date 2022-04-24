@@ -389,7 +389,7 @@ PF_traceline (progs_t *pr, void *data)
 	nomonsters = P_FLOAT (pr, 2);
 	ent = P_EDICT (pr, 3);
 
-	if (sv_antilag->int_val == 2)
+	if (sv_antilag == 2)
 		nomonsters |= MOVE_LAGGED;
 
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
@@ -692,8 +692,6 @@ PF_spawn (progs_t *pr, void *data)
 	RETURN_EDICT (pr, ed);
 }
 
-cvar_t *pr_double_remove;
-
 // void (entity e) remove
 static void
 PF_remove (progs_t *pr, void *data)
@@ -702,14 +700,14 @@ PF_remove (progs_t *pr, void *data)
 
 	ed = P_EDICT (pr, 0);
 	if (NUM_FOR_EDICT (pr, ed) < *pr->reserved_edicts) {
-		if (pr_double_remove->int_val == 1) {
+		if (pr_double_remove == 1) {
 			PR_DumpState (pr);
 			Sys_Printf ("Reserved entity remove\n");
 		} else // == 2
 			PR_RunError (pr, "Reserved entity remove\n");
 	}
-	if (ed->free && pr_double_remove->int_val) {
-		if (pr_double_remove->int_val == 1) {
+	if (ed->free && pr_double_remove) {
+		if (pr_double_remove == 1) {
 			PR_DumpState (pr);
 			Sys_Printf ("Double entity remove\n");
 		} else // == 2
@@ -922,8 +920,6 @@ PF_pointcontents (progs_t *pr, void *data)
 	R_FLOAT (pr) = SV_PointContents (v);
 }
 
-cvar_t     *sv_aim;
-
 /*
 	PF_aim
 
@@ -942,7 +938,7 @@ PF_aim (progs_t *pr, void *data)
 	trace_t     tr;
 	vec3_t      start, dir, end, bestdir;
 
-	if (sv_aim->value >= 1.0) {
+	if (sv_aim >= 1.0) {
 		VectorCopy (*sv_globals.v_forward, R_VECTOR (pr));
 		return;
 	}
@@ -969,7 +965,7 @@ PF_aim (progs_t *pr, void *data)
 	VectorMultAdd (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 	if (tr.ent && SVfloat (tr.ent, takedamage) == DAMAGE_AIM
-		&& (!teamplay->int_val || SVfloat (ent, team) <= 0
+		&& (!teamplay || SVfloat (ent, team) <= 0
 			|| SVfloat (ent, team) != SVfloat (tr.ent, team))) {
 		VectorCopy (*sv_globals.v_forward, R_VECTOR (pr));
 		return;
@@ -977,7 +973,7 @@ PF_aim (progs_t *pr, void *data)
 
 	// try all possible entities
 	VectorCopy (dir, bestdir);
-	bestdist = sv_aim->value;
+	bestdist = sv_aim;
 	bestent = NULL;
 
 	check = NEXT_EDICT (pr, sv.edicts);
@@ -986,7 +982,7 @@ PF_aim (progs_t *pr, void *data)
 			continue;
 		if (check == ent)
 			continue;
-		if (teamplay->int_val && SVfloat (ent, team) > 0
+		if (teamplay && SVfloat (ent, team) > 0
 			&& SVfloat (ent, team) == SVfloat (check, team))
 			continue;	// don't aim at teammate
 
@@ -1510,7 +1506,7 @@ PF_infokey (progs_t *pr, void *data)
 	e1 = NUM_FOR_EDICT (pr, e);
 	key = P_GSTRING (pr, 1);
 
-	if (sv_hide_version_info->int_val
+	if (sv_hide_version_info
 		&& (strequal (key, "*qf_version")
 			|| strequal (key, "*qsg_version")
 			|| strequal (key, "no_pogo_stick"))) {
@@ -1836,11 +1832,11 @@ PF_sv_cvar (progs_t *pr, void *data)
 
 	str = P_GSTRING (pr, 0);
 
-	if (sv_hide_version_info->int_val
+	if (sv_hide_version_info
 		&& strequal (str, "sv_hide_version_info")) {
 		R_FLOAT (pr) = 0;
 	} else {
-		R_FLOAT (pr) = Cvar_VariableValue (str);
+		R_FLOAT (pr) = Cvar_Value (str);
 	}
 }
 
@@ -1910,7 +1906,7 @@ PF_SV_SetUserinfo (progs_t *pr, void *data)
 	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
 		PR_RunError (pr, "not a server client");
 
-	cl->userinfo = Info_ParseString (str, 1023, !sv_highchars->int_val);
+	cl->userinfo = Info_ParseString (str, 1023, !sv_highchars);
 	cl->sendinfo = true;
 	SV_ExtractFromUserinfo (cl);
 }
