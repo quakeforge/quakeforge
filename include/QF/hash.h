@@ -38,6 +38,8 @@
 
 typedef struct hashtab_s hashtab_t;
 typedef struct hashlink_s hashlink_t;
+typedef int (*hash_select_t) (void *ele, void *data);
+typedef void (*hash_action_t) (void *ele, void *data);
 
 /** create a new hash table.
 	\param tsize	table size. larger values will give better distribution, but
@@ -212,6 +214,32 @@ size_t Hash_NumElements (hashtab_t *tab) __attribute__((pure));
 	will delete the correct items.
 */
 void **Hash_GetList (hashtab_t *tab);
+
+/** list of all matching elements in the table.
+	\param tab	the table to search
+	\param select	function that tests for a match. The expected return value
+					is 0 for no match, non-zero for a match.
+	\param data		context data passed to the \a select function
+	\return			a null terminated list of element pointers for all matchin
+					elements in the table
+	\note		it is the caller's responsibilty to free() the list.
+
+	returned list is guaranteed to be in reverse order of insertion for
+	elements with the same key. ie, deleting items from the list in list order
+	will delete the correct items.
+*/
+void **Hash_Select (hashtab_t *tab, hash_select_t select, void *data);
+
+
+/** call a function for all elements in the table.
+	\param tab	the table to search
+	\param action	function to call for each elelemnt
+	\param data		context data passed to the \a action function
+
+	call order is guaranteed to be in reverse order of insertion for
+	elements with the same key
+*/
+void Hash_ForEach (hashtab_t *tab, hash_action_t action, void *data);
 
 /** dump statistics about the hash table
 	\param tab	the table to dump
