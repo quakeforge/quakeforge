@@ -107,41 +107,41 @@ static cvar_t in_freelook_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &in_freelook },
 };
-char *in_mouse_filter;
+int in_mouse_filter;
 static cvar_t in_mouse_filter_cvar = {
 	.name = "in_mouse_filter",
 	.description =
 		"Toggle mouse input filtering.",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &in_mouse_filter },
+	.value = { .type = &cexpr_int, .value = &in_mouse_filter },
 };
-char *in_mouse_amp;
+float in_mouse_amp;
 static cvar_t in_mouse_amp_cvar = {
 	.name = "in_mouse_amp",
 	.description =
 		"mouse in_mouse_amp multiplier",
 	.default_value = "15",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &in_mouse_amp },
+	.value = { .type = &cexpr_float, .value = &in_mouse_amp },
 };
-char *in_mouse_pre_amp;
+float in_mouse_pre_amp;
 static cvar_t in_mouse_pre_amp_cvar = {
 	.name = "in_mouse_pre_amp",
 	.description =
 		"mouse in_mouse_pre_amp multiplier",
 	.default_value = "1",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &in_mouse_pre_amp },
+	.value = { .type = &cexpr_float, .value = &in_mouse_pre_amp },
 };
-char *lookstrafe;
+int lookstrafe;
 static cvar_t lookstrafe_cvar = {
 	.name = "lookstrafe",
 	.description =
 		"when mlook/klook on player will strafe",
 	.default_value = "0",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &lookstrafe },
+	.value = { .type = &cexpr_int, .value = &lookstrafe },
 };
 
 int64_t     in_timeout = 10000;//10ms default timeout

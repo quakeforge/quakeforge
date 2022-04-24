@@ -131,7 +131,7 @@ extern float in_amp;
 extern float in_pre_amp;
 extern int in_mouse_accel;
 extern int in_freelook;
-extern char *lookstrafe;
+extern int lookstrafe;
 
 #endif
 
