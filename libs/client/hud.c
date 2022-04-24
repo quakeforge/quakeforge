@@ -52,7 +52,7 @@ static cvar_t hud_sbar_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &hud_sbar },
 };
-char *hud_scoreboard_gravity;
+grav_t hud_scoreboard_gravity;
 static cvar_t hud_scoreboard_gravity_cvar = {
 	.name = "hud_scoreboard_gravity",
 	.description =
@@ -60,7 +60,7 @@ static cvar_t hud_scoreboard_gravity_cvar = {
 		"northeast, west, east, southwest, south, southeast",
 	.default_value = "center",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = 0/* not used */, .value = &hud_scoreboard_gravity },
+	.value = { .type = &grav_t_type, .value = &hud_scoreboard_gravity },
 };
 int hud_swap;
 static cvar_t hud_swap_cvar = {
@@ -123,29 +123,7 @@ hud_swap_f (void *data, const cvar_t *cvar)
 static void
 hud_scoreboard_gravity_f (void *data, const cvar_t *cvar)
 {
-	grav_t      grav;
-
-	if (strequal (hud_scoreboard_gravity, "center"))
-		grav = grav_center;
-	else if (strequal (hud_scoreboard_gravity, "northwest"))
-		grav = grav_northwest;
-	else if (strequal (hud_scoreboard_gravity, "north"))
-		grav = grav_north;
-	else if (strequal (hud_scoreboard_gravity, "northeast"))
-		grav = grav_northeast;
-	else if (strequal (hud_scoreboard_gravity, "west"))
-		grav = grav_west;
-	else if (strequal (hud_scoreboard_gravity, "east"))
-		grav = grav_east;
-	else if (strequal (hud_scoreboard_gravity, "southwest"))
-		grav = grav_southwest;
-	else if (strequal (hud_scoreboard_gravity, "south"))
-		grav = grav_south;
-	else if (strequal (hud_scoreboard_gravity, "southeast"))
-		grav = grav_southeast;
-	else
-		grav = grav_center;
-	view_setgravity (hud_overlay_view, grav);
+	view_setgravity (hud_overlay_view, hud_scoreboard_gravity);
 }
 
 void

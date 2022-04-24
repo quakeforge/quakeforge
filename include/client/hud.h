@@ -31,7 +31,6 @@
 extern int hud_sb_lines;
 
 extern int hud_sbar;
-extern char *hud_scoreboard_gravity;
 extern int hud_swap;
 
 extern struct view_s *sbar_view;
