@@ -112,6 +112,8 @@ typedef struct exprenum_s {
 	exprtab_t  *symtab;
 } exprenum_t;
 
+exprval_t *cexpr_assign_value (exprval_t *dst, const exprval_t *src,
+							   exprctx_t *context);
 int cexpr_parse_enum (exprenum_t *enm, const char *str,
 					  const exprctx_t *context, void *data);
 binop_t *cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type) __attribute__((pure));

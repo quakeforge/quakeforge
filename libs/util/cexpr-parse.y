@@ -51,8 +51,6 @@
 
 #include "QF/cexpr.h"
 
-static exprval_t *assign_expr (exprval_t *dst, const exprval_t *src,
-							   exprctx_t *context);
 static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
@@ -109,7 +107,7 @@ yyerror (void *scanner, exprctx_t *context, const char *s)
 %%
 
 start
-	: expr				{ assign_expr (context->result, $1, context); }
+	: expr				{ cexpr_assign_value (context->result, $1, context); }
 	;
 
 uexpr
@@ -138,7 +136,7 @@ uexpr
 
 expr
 	: uexpr
-	| expr '=' expr		{ $$ = assign_expr ($1, $3, context); }
+	| expr '=' expr		{ $$ = cexpr_assign_value ($1, $3, context); }
 	| expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
 	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
 	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
@@ -185,8 +183,8 @@ arg_expr
 
 %%
 
-static exprval_t *
-assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
+exprval_t *
+cexpr_assign_value (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 {
 	binop_t    *binop;
 	if (!dst || !src) {
