@@ -95,7 +95,7 @@ static cvar_t sv_logfile_cvar = {
 static exprenum_t sv_conmode_enum;
 static exprtype_t sv_conmode_type = {
 	.name = "sv_conmode",
-	.size = sizeof (int),
+	.size = sizeof (sv_con_data.exec_line),
 	.data = &sv_conmode_enum,
 	.get_string = cexpr_enum_get_string,
 };
@@ -117,14 +117,13 @@ static exprenum_t sv_conmode_enum = {
 	&sv_conmode_type,
 	&sv_conmode_symtab,
 };
-static char *sv_conmode;
 static cvar_t sv_conmode_cvar = {
 	.name = "sv_conmode",
 	.description =
 		"Set the console input mode (command, chat)",
 	.default_value = "command",
 	.flags = CVAR_NONE,
-	.value = { .type = &sv_conmode_type, .value = &sv_conmode },
+	.value = { .type = &sv_conmode_type, .value = &sv_con_data.exec_line },
 };
 static int sv_use_curses;
 static cvar_t sv_use_curses_cvar = {

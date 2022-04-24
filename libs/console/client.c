@@ -119,7 +119,7 @@ static cvar_t con_speed_cvar = {
 static exprenum_t cl_conmode_enum;
 static exprtype_t cl_conmode_type = {
 	.name = "cl_conmode",
-	.size = sizeof (int),
+	.size = sizeof (con_data.exec_line),
 	.data = &cl_conmode_enum,
 	.get_string = cexpr_enum_get_string,
 };
@@ -144,14 +144,13 @@ static exprenum_t cl_conmode_enum = {
 	&cl_conmode_type,
 	&cl_conmode_symtab,
 };
-static char *cl_conmode;
 static cvar_t cl_conmode_cvar = {
 	.name = "cl_conmode",
 	.description =
 		"Set the console input mode (command, chat, rcon)",
 	.default_value = "command",
 	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cl_conmode_type, .value = &cl_conmode },
+	.value = { .type = &cl_conmode_type, .value = &con_data.exec_line },
 };
 
 #define	NUM_CON_TIMES 4
