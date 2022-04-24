@@ -46,17 +46,17 @@ typedef struct cvar_s {
 	exprval_t   value;
 	int       (*validator) (const struct cvar_s *var);
 	struct cvar_listener_set_s *listeners;
-	struct cvar_s *next;
 } cvar_t;
 
 typedef struct cvar_listener_set_s LISTENER_SET_TYPE (cvar_t)
 	cvar_listener_set_t;
 typedef void (*cvar_listener_t) (void *data, const cvar_t *cvar);
 
+typedef int (*cvar_select_t) (const cvar_t *cvar, void *data);
+
 typedef struct cvar_alias_s {
 	char       *name;			///< The name of the alias.
 	cvar_t     *cvar;			///< The cvar to which this alias refers
-	struct cvar_alias_s	*next;	///< \internal LInked list of aliases.
 } cvar_alias_t;
 
 /** \name cvar_flags
@@ -133,10 +133,10 @@ const char	**Cvar_CompleteBuildList (const char *partial);
 // Returns a pointer to the Cvar, NULL if not found
 cvar_t *Cvar_FindVar (const char *var_name);
 
+const cvar_t **Cvar_Select (cvar_select_t select, void *data);
+
 void Cvar_Init_Hash (void);
 void Cvar_Init (void);
-
-extern cvar_t	*cvar_vars;
 
 ///@}
 
