@@ -513,8 +513,6 @@ R_VisitWorldNodes (swbspctx_t *bctx, int clipflags)
 		}
 		break;
 	}
-	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-		visit_leaf ((mleaf_t *) node);
 }
 
 void

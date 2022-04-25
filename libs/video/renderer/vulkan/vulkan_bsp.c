@@ -746,8 +746,6 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 		}
 		break;
 	}
-	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-		visit_leaf ((mleaf_t *) node);
 }
 
 static void

@@ -831,8 +831,6 @@ R_VisitWorldNodes (glslbspctx_t *bctx)
 		}
 		break;
 	}
-	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-		visit_leaf ((mleaf_t *) node);
 }
 
 static void
