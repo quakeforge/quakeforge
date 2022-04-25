@@ -278,7 +278,9 @@ gl_R_RenderView (void)
 	gl_R_DrawWorld ();
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	gl_R_RenderDlights ();
-	R_DrawViewModel ();
+	if (vr_data.view_model) {
+		R_DrawViewModel ();
+	}
 
 	gl_Fog_DisableGFog ();
 }

@@ -142,7 +142,9 @@ glsl_R_RenderView (void)
 	R_SetupView ();
 	glsl_R_DrawWorld ();
 	glsl_R_DrawSky ();
-	R_DrawViewModel ();
+	if (vr_data.view_model) {
+		R_DrawViewModel ();
+	}
 }
 
 static void

@@ -122,7 +122,9 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 
 	Vulkan_DrawWorld (rFrame);
 	Vulkan_DrawSky (rFrame);
-	Vulkan_DrawViewModel (ctx);
+	if (vr_data.view_model) {
+		Vulkan_DrawViewModel (ctx);
+	}
 	Vulkan_DrawWaterSurfaces (rFrame);
 	Vulkan_Bsp_Flush (ctx);
 }

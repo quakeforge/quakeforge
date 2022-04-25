@@ -589,7 +589,9 @@ R_RenderView_ (void)
 
 	R_EdgeDrawing (r_ent_queue);
 
-	R_DrawViewModel ();
+	if (vr_data.view_model) {
+		R_DrawViewModel ();
+	}
 
 	if (r_aliasstats)
 		R_PrintAliasStats ();
