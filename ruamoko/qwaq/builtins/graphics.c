@@ -86,6 +86,40 @@ static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static int event_handler_id;
 
+static mleaf_t empty_leafs[] = {
+	[1] = {
+		.contents = CONTENTS_EMPTY,
+		.mins = {-INFINITY, -INFINITY, -INFINITY},
+		.maxs = { INFINITY,  INFINITY,  INFINITY},
+	},
+};
+
+static mnode_t *empty_leaf_parents[] = {
+	[1] = 0,
+};
+
+static int empty_leaf_flags[] = {
+	[1] = 0,
+};
+
+static char empty_entities[] = { 0 };
+
+static model_t empty_world = {
+	.type = mod_brush,
+	.radius = INFINITY,
+	.mins = {-INFINITY, -INFINITY, -INFINITY},
+	.maxs = { INFINITY,  INFINITY,  INFINITY},
+	.brush = {
+		.modleafs = 2,
+		.visleafs = 1,
+		.nodes = (mnode_t *) &empty_leafs[1],
+		.leafs = empty_leafs,
+		.entities = empty_entities,
+		.leaf_parents = empty_leaf_parents,
+		.leaf_flags = empty_leaf_flags,
+	},
+};
+
 static void
 bi_2d (void)
 {
@@ -196,4 +230,8 @@ BI_Graphics_Init (progs_t *pr)
 	//CDAudio_Init ();
 	Con_NewMap ();
 	basetime = Sys_DoubleTime ();
+	if (mod_funcs->Mod_ProcessTexture) {
+		mod_funcs->Mod_ProcessTexture (&empty_world, 0);
+	}
+	r_funcs->R_NewMap (&empty_world, 0, 0);
 }
