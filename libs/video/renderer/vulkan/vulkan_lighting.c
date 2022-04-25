@@ -927,6 +927,10 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = ctx->lighting_context;
 	plitem_t   *entities = 0;
 
+	if (!entity_data) {
+		return;
+	}
+
 	lctx->lights.size = 0;
 	lctx->lightleafs.size = 0;
 	lctx->lightmats.size = 0;
@@ -1006,11 +1010,13 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 		PL_Free (entities);
 	}
 	Sys_MaskPrintf (SYS_vulkan, "loaded %zd lights\n", lctx->lights.size);
-	build_shadow_maps (lctx, ctx);
-	create_light_matrices (lctx);
-	locate_lights (model, lctx);
-	for (size_t i = 0; i < lctx->lights.size; i++) {
-		dump_light (&lctx->lights.a[i], lctx->lightleafs.a[i],
-					lctx->lightmats.a[i]);
+	if (lctx->lights.size) {
+		build_shadow_maps (lctx, ctx);
+		create_light_matrices (lctx);
+		locate_lights (model, lctx);
+		for (size_t i = 0; i < lctx->lights.size; i++) {
+			dump_light (&lctx->lights.a[i], lctx->lightleafs.a[i],
+						lctx->lightmats.a[i]);
+		}
 	}
 }

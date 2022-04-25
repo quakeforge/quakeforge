@@ -303,7 +303,9 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 		mod->data = mctx;
 
 		r_notexture_mip->render = &vulkan_notexture;
-		load_textures (mod, ctx);
+		if (mod->brush.numtextures) {
+			load_textures (mod, ctx);
+		}
 		return;
 	}
 

@@ -413,6 +413,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bsppoly_t  *poly;
 	mod_brush_t *brush;
 
+	if (!num_models) {
+		return;
+	}
+
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
@@ -1037,6 +1041,9 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bctx->color = 0;
 
 	R_VisitWorldNodes (brush, ctx);
+	if (!bctx->vertex_buffer) {
+		return;
+	}
 	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
@@ -1089,6 +1096,9 @@ Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 	size_t      offset = bframe->index_offset;
 	size_t      size = bframe->index_count * sizeof (uint32_t);
 
+	if (!bframe->index_count) {
+		return;
+	}
 	offset &= ~atom_mask;
 	size = (size + atom_mask) & ~atom_mask;
 
