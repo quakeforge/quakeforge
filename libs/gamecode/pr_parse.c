@@ -68,34 +68,34 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 
 	switch (type) {
 		case ev_string:
-			dsprintf (line, "%s", PR_GetString (pr, val->string_var));
+			dsprintf (line, "%s", PR_GetString (pr, PR_PTR (string, val)));
 			break;
 		case ev_entity:
 			dsprintf (line, "%d",
-					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
+					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, PR_PTR (entity, val))));
 			break;
 		case ev_func:
-			f = pr->pr_functions + val->func_var;
+			f = pr->pr_functions + PR_PTR (func, val);
 			dsprintf (line, "%s", PR_GetString (pr, f->name));
 			break;
 		case ev_field:
-			def = PR_FieldAtOfs (pr, val->int_var);
+			def = PR_FieldAtOfs (pr, PR_PTR (int, val));
 			dsprintf (line, "%s", PR_GetString (pr, def->name));
 			break;
 		case ev_void:
 			dstring_copystr (line, "void");
 			break;
 		case ev_float:
-			dsprintf (line, "%.9g", val->float_var);
+			dsprintf (line, "%.9g", PR_PTR (float, val));
 			break;
 		case ev_int:
-			dsprintf (line, "%d", val->int_var);
+			dsprintf (line, "%d", PR_PTR (int, val));
 			break;
 		case ev_vector:
-			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&val->vector_var));
+			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&PR_PTR (float, val)));
 			break;
 		case ev_quaternion:
-			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&val->quat_var));
+			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&PR_PTR (float, val)));
 			break;
 		default:
 			dsprintf (line, "bad type %i", type);
@@ -132,7 +132,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			// if the value is still all 0, skip the field
 			type = d->type & ~DEF_SAVEGLOBAL;
 			for (j = 0; j < pr_type_size[type]; j++)
-				if (v[j].int_var)
+				if (v[j].value)
 					break;
 			if (j == pr_type_size[type])
 				continue;
@@ -226,11 +226,11 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 
 	switch (key->type & ~DEF_SAVEGLOBAL) {
 		case ev_string:
-			d->string_var = ED_NewString (pr, s);
+			PR_PTR (string, d) = ED_NewString (pr, s);
 			break;
 
 		case ev_float:
-			d->float_var = atof (s);
+			PR_PTR (float, d) = atof (s);
 			break;
 
 		case ev_vector:
@@ -241,14 +241,14 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 				while (*v && *v != ' ')
 					v++;
 				*v = 0;
-				(&d->vector_var)[i] = atof (w);
+				(&PR_PTR (float, d))[i] = atof (w);
 				w = v = v + 1;
 			}
 			free (string);
 			break;
 
 		case ev_entity:
-			d->entity_var = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
+			PR_PTR (entity, d) = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
 			break;
 
 		case ev_field:
@@ -257,7 +257,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 				Sys_Printf ("Can't find field %s\n", s);
 				return false;
 			}
-			d->int_var = G_INT (pr, def->ofs);
+			PR_PTR (int, d) = G_INT (pr, def->ofs);
 			break;
 
 		case ev_func:
@@ -266,7 +266,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 				Sys_Printf ("Can't find function %s\n", s);
 				return false;
 			}
-			d->func_var = func - pr->pr_functions;
+			PR_PTR (func, d) = func - pr->pr_functions;
 			break;
 
 		default:

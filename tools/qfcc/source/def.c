@@ -401,7 +401,7 @@ init_elements (struct def_s *def, expr_t *eles)
 				internal_error (c, "bogus expression type in init_elements()");
 			}
 			if (c->e.value->lltype == ev_string) {
-				EMIT_STRING (def->space, g->string_var,
+				EMIT_STRING (def->space, *(pr_string_t *) g,
 							 c->e.value->v.string_val);
 			} else {
 				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
@@ -636,7 +636,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
 								 v->v.string_val);
 				} else {
-					memcpy (D_POINTER (void, sym->s.def), &v->v,
+					memcpy (D_POINTER (pr_type_t, sym->s.def), &v->v,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}

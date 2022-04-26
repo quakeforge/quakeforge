@@ -73,7 +73,7 @@ static const char *reloc_name[] = {
 	"rel_def_field_ofs",
 };
 
-#define RELOC(r) (r)->space->data[(r)->offset].int_var
+#define RELOC(r) (r)->space->data[(r)->offset].value
 
 void
 relocate_refs (reloc_t *reloc, int offset)
@@ -169,7 +169,7 @@ relocate_refs (reloc_t *reloc, int offset)
 			case rel_def_field_ofs:
 				//FIXME what is correct here?
 				//RELOC (reloc) += pr.data->data[offset].int_var;
-				RELOC (reloc) += pr.near_data->data[offset].int_var;
+				RELOC (reloc) += PR_PTR (int, &pr.near_data->data[offset]);
 				break;
 		}
 		reloc = reloc->next;

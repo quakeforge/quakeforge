@@ -403,16 +403,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 ///@{
 
-/** \internal
-	\param p		pointer to ::progs_t VM struct
-	\param o		offset into global data space
-	\param t		typename prefix (see pr_type_u)
-	\return			lvalue of the appropriate type
-
-	\hideinitializer
-*/
-#define G_var(p,o,t)	((p)->pr_globals[o].t##_var)
-
 /** Access a global as an arbitray type.
 
 	More direct than G_STRUCT
@@ -427,6 +417,16 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define G_PACKED(p,t,o)	(*(t *) &(p)->pr_globals[o])
+
+/** \internal
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\param t		typename prefix (see pr_type_u)
+	\return			lvalue of the appropriate type
+
+	\hideinitializer
+*/
+#define G_var(p,o,t)	G_PACKED(p, pr_##t##_t, o)
 
 /** Access a float global. Can be assigned to.
 
@@ -450,7 +450,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_DOUBLE(p,o)	(*(double *) ((p)->pr_globals + o))
+#define G_DOUBLE(p,o)	G_var (p, o, double)
 
 /** Access an int global. Can be assigned to.
 
@@ -486,7 +486,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_VECTOR(p,o)	(&G_var (p, o, vector))
+#define G_VECTOR(p,o)	(&G_var (p, o, float))
 
 /** Access a quaternion global. Can be assigned to.
 
@@ -498,7 +498,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_QUAT(p,o)		(&G_var (p, o, quat))
+#define G_QUAT(p,o)		(&G_var (p, o, float))
 
 /** Access a string index global. Can be assigned to.
 
@@ -534,8 +534,31 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_POINTER(p,o)	G_var (p, o, pointer)
+#define G_POINTER(p,o)	G_var (p, o, ptr)
 
+/** Access a field global.
+
+	\par QC type:
+		\c field
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			field offset
+
+	\hideinitializer
+*/
+#define G_FIELD(p,o)	G_var (p, o, field)
+
+/** Access an entity global.
+
+	\par QC type:
+		\c entity
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			entity "pointer"
+
+	\hideinitializer
+*/
+#define G_ENTITY(p,o)	G_var (p, o, entity)
 
 /** Access an entity global.
 
@@ -620,16 +643,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 ///@{
 
-/** \internal
-	\param p		pointer to ::progs_t VM struct
-	\param n		parameter number (0-7)
-	\param t		typename prefix (see pr_type_u)
-	\return			lvalue of the appropriate type
-
-	\hideinitializer
-*/
-#define P_var(p,n,t)	((p)->pr_params[n]->t##_var)
-
 /** Access a parameter as an arbitray type.
 
 	\par QC type:
@@ -643,6 +656,16 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_PACKED(p,t,n)	(*(t *) (p)->pr_params[n])
+
+/** \internal
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\param t		typename prefix (see pr_type_u)
+	\return			lvalue of the appropriate type
+
+	\hideinitializer
+*/
+#define P_var(p,n,t)	P_PACKED(p, pr_##t##_t, n)
 
 /** Access a float parameter. Can be assigned to.
 
@@ -666,7 +689,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_DOUBLE(p,n)	P_PACKED(p, double, n)
+#define P_DOUBLE(p,n)	P_var (p, n, double)
 
 /** Access an int parameter. Can be assigned to.
 
@@ -702,7 +725,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_VECTOR(p,n)	(&P_var (p, n, vector))
+#define P_VECTOR(p,n)	(&P_var (p, n, float))
 
 /** Access a quaterion parameter. Can be used any way a quat_t variable can.
 
@@ -714,7 +737,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_QUAT(p,n)		(&P_var (p, n, quat))
+#define P_QUAT(p,n)		(&P_var (p, n, float))
 
 /** Access a string index parameter. Can be assigned to.
 
@@ -750,7 +773,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_POINTER(p,n)	P_var (p, n, pointer)
+#define P_POINTER(p,n)	P_var (p, n, ptr)
 
 /** Access an entity parameter.
 
@@ -839,16 +862,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 ///@{
 
-/** \internal
-	\param p		pointer to ::progs_t VM struct
-	\param t		typename prefix (see pr_type_u)
-	\return			lvalue of the appropriate type
-
-	\hideinitializer
-*/
-#define R_var(p,t)		((p)->pr_return->t##_var)
-
-/** Access the VM function return value parameter as an arbitray type.
+/** Access the VM function return value as an arbitray type.
 
 	\par QC type:
 		\c struct etc small enough to fit in the return slot
@@ -860,6 +874,15 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define R_PACKED(p,t)	(*(t *) (p)->pr_return)
+
+/** \internal
+	\param p		pointer to ::progs_t VM struct
+	\param t		typename prefix (see pr_type_u)
+	\return			lvalue of the appropriate type
+
+	\hideinitializer
+*/
+#define R_var(p,t)		R_PACKED(p, pr_##t##_t)
 
 /** Access the VM function return value as a \c float
 
@@ -881,7 +904,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_DOUBLE(p)		R_PACKED (p, double)
+#define R_DOUBLE(p)		R_var  (p, double)
 
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
@@ -914,7 +937,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_VECTOR(p)		(&R_var (p, vector))
+#define R_VECTOR(p)		(&R_var (p, float))
 
 /** Access the VM function return value as a \c ::quat_t quaternion.
 
@@ -925,7 +948,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_QUAT(p)		(&R_var (p, quat))
+#define R_QUAT(p)		(&R_var (p, float))
 
 /** Access the VM function return value as a ::pr_string_t (a VM string reference).
 
@@ -958,7 +981,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_POINTER(p)	R_var (p, pointer)
+#define R_POINTER(p)	R_var (p, ptr)
 
 
 /** Set the return value to the given C string. The returned string will
@@ -1036,6 +1059,19 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define E_fld(e,o)	((e)->pr->pr_edict_area[(e)->edict + (o)])
 
+/** Access an entity field as an arbitray type.
+
+	\par QC type:
+		\c struct etc small enough to fit in a single parameter
+	\param e		pointer to the entity
+	\param t		C type of the structure
+	\param o		field offset into entity data space
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define E_PACKED(e,t,o)	(*(t *) &E_fld (e, o))
 
 /** \internal
 	\param e		pointer to the entity
@@ -1045,7 +1081,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_var(e,o,t)	(E_fld (e,o).t##_var)
+#define E_var(e,o,t)	E_PACKED (e, pr_##t##_t,o)
 
 
 /** Access a float entity field. Can be assigned to.
@@ -1070,7 +1106,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_DOUBLE(e,o)	(*(double *) ((e)->v + o))
+#define E_DOUBLE(e,o)	E_var (e, o, double)
 
 /** Access an int entity field. Can be assigned to.
 
@@ -1106,7 +1142,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_VECTOR(e,o)	(&E_var (e, o, vector))
+#define E_VECTOR(e,o)	(&E_var (e, o, float))
 
 /** Access a quaternion entity field. Can be used any way a quat_t variable
 	can.
@@ -1119,7 +1155,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_QUAT(e,o)		E_var (e, o, quat)
+#define E_QUAT(e,o)		E_var (e, o, float)
 
 /** Access a string index entity field. Can be assigned to.
 
@@ -1155,7 +1191,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_POINTER(e,o)	E_var (e, o, pointer)
+#define E_POINTER(e,o)	E_var (e, o, ptr)
 
 
 /** Access a string entity field, converting it to a C string. Kills the

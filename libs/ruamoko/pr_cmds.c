@@ -62,10 +62,10 @@ PF_VarString (progs_t *pr, int first, int argc)
 	pr_type_t **argv = pr->pr_params;
 
 	for (len = 0, i = first; i < argc; i++)
-		len += strlen (PR_GetString (pr, argv[i]->string_var));
+		len += strlen (PR_GetString (pr, *(pr_string_t *) argv[i]));
 	dst = out = Hunk_TempAlloc (0, len + 1);
 	for (i = first; i < argc; i++) {
-		src = PR_GetString (pr, argv[i]->string_var);
+		src = PR_GetString (pr, PR_PTR (string,  argv[i]));
 		while (*src)
 			*dst++ = *src++;
 	}

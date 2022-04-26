@@ -246,7 +246,7 @@ WriteProgs (dprograms_t *progs, int size)
 		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
 	for (i = 0; i < progs->globals.count; i++)
-		globals[i].int_var = LittleLong (globals[i].int_var);
+		globals[i].value = LittleLong (globals[i].value);
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
@@ -307,7 +307,7 @@ WriteSym (pr_debug_header_t *sym, int size)
 		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
 	}
 	for (i = 0; i < sym->debug_data_size; i++) {
-		debug_data[i].int_var = LittleLong (debug_data[i].int_var);
+		debug_data[i].value = LittleLong (debug_data[i].value);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))

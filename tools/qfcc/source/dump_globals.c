@@ -327,7 +327,7 @@ qfo_globals (qfo_t *qfo)
 					QFO_TYPESTR (qfo, def->type));
 			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].data)
 				printf (" %d",
-						qfo->spaces[space].data[def->offset].int_var);
+						qfo->spaces[space].data[def->offset].value);
 			puts ("");
 		}
 	}

@@ -365,7 +365,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 		if (!defs[i].emit) {
 			//FIXME relocs? arrays? structs?
 			pr_type_t  *val = (pr_type_t *) data;
-			memcpy (D_POINTER (void, &field_def), val,
+			memcpy (D_POINTER (pr_type_t, &field_def), val,
 					type_size (field_def.type) * sizeof (pr_type_t));
 			data = &val[type_size (field_def.type)];
 		} else {

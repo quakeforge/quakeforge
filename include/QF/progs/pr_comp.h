@@ -39,6 +39,8 @@ typedef int64_t   pr_long_t          __attribute__((aligned(8)));
 typedef uint64_t  pr_ulong_t         __attribute__((aligned(8)));
 typedef uint16_t  pr_ushort_t        __attribute__((aligned(2)));;
 
+#define PR_PTR(t, p)	(*(pr_##t##_t *) (p))
+
 #define PR_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
 
@@ -538,16 +540,12 @@ typedef struct dfunction_s {
 	dparmsize_t param_size[PR_MAX_PARAMS];
 } dfunction_t;
 
-typedef union pr_type_u {
-	float       float_var;
-	pr_string_t string_var;
-	pr_func_t   func_var;
-	pr_uint_t   entity_var;
-	float       vector_var;	// really [3], but this structure must be 32 bits
-	float       quat_var;	// really [4], but this structure must be 32 bits
-	pr_int_t    int_var;
-	pr_ptr_t    pointer_var;
-	pr_uint_t   uint_var;
+typedef struct pr_type_s {
+	union {
+		pr_int_t    value;
+		pr_uint_t   uint_value;
+		pr_float_t  float_value;
+	};
 } pr_type_t;
 
 typedef pr_type_t pr_void_t;	// so size of void is 1

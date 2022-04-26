@@ -308,7 +308,7 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_var(q, s, t, o)	((q)->spaces[s].data[o].t##_var)
+#define QFO_var(q, s, t, o)	(*(pr_##t##_t *) &(q)->spaces[s].data[o])
 
 /** Access a double variable in the object file. Can be assigned to.
 

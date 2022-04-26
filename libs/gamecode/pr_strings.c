@@ -860,9 +860,7 @@ fmt_append_item (fmt_state_t *state)
 }
 
 #undef P_var
-#define P_var(p,n,t) (state->args[n]->t##_var)
-#undef P_DOUBLE
-#define P_DOUBLE(p,n) (*(double *) (state->args[n]))
+#define P_var(p,n,t) PR_PTR (t, state->args[n])
 
 /**	State machine for PR_Sprintf
  *

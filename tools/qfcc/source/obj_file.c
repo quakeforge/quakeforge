@@ -433,7 +433,7 @@ qfo_byteswap_space (void *space, int size, qfos_type_t type)
 		case qfos_type:
 		case qfos_debug:
 			for (val = (pr_type_t *) space, c = 0; c < size; c++, val++)
-				val->int_var = LittleLong (val->int_var);
+				val->value = LittleLong (val->value);
 			break;
 	}
 }
