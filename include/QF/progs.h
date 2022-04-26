@@ -476,6 +476,30 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_UINT(p,o)		G_var (p, o, uint)
 
+/** Access a long global. Can be assigned to.
+
+	\par QC type:
+		\c long
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			long lvalue
+
+	\hideinitializer
+*/
+#define G_LONG(p,o)		G_var (p, o, long)
+
+/** Access an unsigned long global. Can be assigned to.
+
+	\par QC type:
+		\c ulong
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			unsigned long lvalue
+
+	\hideinitializer
+*/
+#define G_ULONG(p,o)	G_var (p, o, ulong)
+
 /** Access a vector global. Can be assigned to.
 
 	\par QC type:
@@ -715,6 +739,30 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_UINT(p,n)		P_var (p, n, uint)
 
+/** Access a long parameter. Can be assigned to.
+
+	\par QC type:
+		\c long
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\return			long lvalue
+
+	\hideinitializer
+*/
+#define P_LONG(p,n)		P_var (p, n, long)
+
+/** Access an unsigned long parameter. Can be assigned to.
+
+	\par QC type:
+		\c ulong
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\return			unsigned long lvalue
+
+	\hideinitializer
+*/
+#define P_ULONG(p,n)	P_var (p, n, ulong)
+
 /** Access a vector parameter. Can be used any way a vec3_t variable can.
 
 	\par QC type:
@@ -928,6 +976,28 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_UINT(p)		R_var (p, uint)
 
+/** Access the VM function return value as a \c ::pr_long_t (AKA int32_t)
+
+	\par QC type:
+		\c long
+	\param p		pointer to ::progs_t VM struct
+	\return			::pr_long_t lvalue
+
+	\hideinitializer
+*/
+#define R_LONG(p)		R_var (p, long)
+
+/** Access the VM function return value as a \c ::pr_ulong_t (AKA uint32_t)
+
+	\par QC type:
+		\c ulong
+	\param p		pointer to ::progs_t VM struct
+	\return			::pr_long_t lvalue
+
+	\hideinitializer
+*/
+#define R_ULONG(p)		R_var (p, ulong)
+
 /** Access the VM function return value as a \c ::vec3_t vector.
 
 	\par QC type:
@@ -1131,6 +1201,30 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define E_UINT(e,o)		E_var (e, o, uint)
+
+/** Access a long entity field. Can be assigned to.
+
+	\par QC type:
+		\c long
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\return			long lvalue
+
+	\hideinitializer
+*/
+#define E_LONG(e,o)		E_var (e, o, long)
+
+/** Access an unsigned long entity field. Can be assigned to.
+
+	\par QC type:
+		\c ulong
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\return			unsigned long lvalue
+
+	\hideinitializer
+*/
+#define E_ULONG(e,o)	E_var (e, o, ulong)
 
 /** Access a vector entity field. Can be used any way a vec3_t variable can.
 
