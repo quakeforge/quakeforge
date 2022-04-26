@@ -166,6 +166,7 @@ type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
 const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
+const char *get_type_string (const type_t *type);
 void print_type (const type_t *type);
 void dump_dot_type (void *t, const char *filename);
 const char *encode_params (const type_t *type);

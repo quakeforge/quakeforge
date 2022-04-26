@@ -596,7 +596,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		}
 		init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
-			error (init, "type mismatch in initializer");
+			error (init, "type mismatch in initializer: %s = %s",
+				   get_type_string (sym->type), get_type_string (init_type));
 			return;
 		}
 		if (storage == sc_local && local_expr) {

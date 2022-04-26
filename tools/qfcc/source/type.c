@@ -711,7 +711,9 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_short:
 				case ev_ushort:
 				case ev_double:
-					dasprintf (str, " %s", pr_type_name[type->type]);
+					dasprintf (str, " %s%s", pr_type_name[type->type],
+							   type->width > 1 ? va (0, "{%d}", type->width)
+											   : "");
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -720,6 +722,25 @@ print_type_str (dstring_t *str, const type_t *type)
 			break;
 	}
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
+}
+
+const char *
+get_type_string (const type_t *type)
+{
+	static dstring_t *type_str[8];
+	static int  str_index;
+
+	if (!type_str[str_index]) {
+		type_str[str_index] = dstring_newstr ();
+	}
+	dstring_clearstr (type_str[str_index]);
+	print_type_str (type_str[str_index], type);
+	const char *str = type_str[str_index++]->str;
+	str_index %= sizeof (type_str) / sizeof (type_str[0]);
+	while (*str == ' ') {
+		str++;
+	}
+	return str;
 }
 
 void

@@ -828,11 +828,12 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 invalid_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
-	etype_t     t1, t2;
-	t1 = extract_type (e1);
-	t2 = extract_type (e2);
+	type_t     *t1, *t2;
+	t1 = get_type (e1);
+	t2 = get_type (e2);
 	return error (e1, "invalid binary expression: %s %s %s",
-				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
+				  get_type_string (t1), get_op_string (op),
+				  get_type_string (t2));
 }
 
 static expr_t *
