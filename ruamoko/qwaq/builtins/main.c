@@ -149,6 +149,7 @@ init_qf (void)
 	//Cvar_Set (developer, "1");
 
 	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
+	PR_Init_Cvars ();
 }
 
 static void
@@ -208,7 +209,6 @@ create_progs (qwaq_thread_t *thread)
 	pr->no_exec_limit = 1;
 	pr->hashlink_freelist = &thread->hashlink_freelist;
 
-	PR_Init_Cvars ();
 	pr_debug = 2;
 	pr_boundscheck = 0;
 	PR_Init (pr);
