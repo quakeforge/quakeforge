@@ -269,6 +269,45 @@ new_nil_val (type_t *type)
 	return find_value (&val);
 }
 
+ex_value_t *
+new_type_value (const type_t *type, const pr_type_t *data)
+{
+	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
+	ex_value_t  val = {};
+	set_val_type (&val, (type_t *) type);//FIXME cast
+	memcpy (&val.v, data, typeSize);
+	return find_value (&val);
+}
+
+void
+value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
+{
+	size_t      dstSize = type_size (dstType) * sizeof (pr_type_t);
+
+	if (src->type == ex_nil) {
+		memset (dst, 0, dstSize);
+		return;
+	}
+	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_var) {
+		// initialized global def treated as a constant
+		// from the tests in cast_expr, the def is known to be constant
+		def_t      *def = src->e.symbol->s.def;
+		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
+		return;
+	}
+	ex_value_t *val = 0;
+	if (src->type == ex_value) {
+		val = src->e.value;
+	}
+	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_const) {
+		val = src->e.symbol->s.value;
+	}
+	if (!val) {
+		internal_error (src, "unexpected constant expression type");
+	}
+	memcpy (dst, &val->v, dstSize);
+}
+
 static hashtab_t *string_imm_defs;
 static hashtab_t *float_imm_defs;
 static hashtab_t *vector_imm_defs;
