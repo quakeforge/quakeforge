@@ -205,6 +205,8 @@ typedef struct ex_value_s {
 		unsigned    uint_val;			///< unsigned int constant
 		int16_t     short_val;			///< short constant
 		uint16_t    ushort_val;			///< unsigned short constant
+#define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
+#include "tools/qfcc/include/vec_types.h"
 	} v;
 } ex_value_t;
 
@@ -309,7 +311,6 @@ expr_t *type_mismatch (expr_t *e1, expr_t *e2, int op);
 
 expr_t *param_mismatch (expr_t *e, int param, const char *fn,
 					    struct type_s *t1, struct type_s *t2);
-expr_t *cast_error (expr_t *e, struct type_s *t1, struct type_s *t2);
 expr_t *test_error (expr_t *e, struct type_s *t);
 
 extern expr_t *local_expr;
@@ -640,6 +641,7 @@ unsigned expr_uint (expr_t *e) __attribute__((pure));
 */
 expr_t *new_short_expr (short short_val);
 short expr_short (expr_t *e) __attribute__((pure));
+unsigned short expr_ushort (expr_t *e) __attribute__((pure));
 
 int expr_integral (expr_t *e) __attribute__((pure));
 

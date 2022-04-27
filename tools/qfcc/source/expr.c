@@ -214,16 +214,9 @@ extract_type (expr_t *e)
 expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
-	dstring_t  *t1 = dstring_newstr ();
-	dstring_t  *t2 = dstring_newstr ();
-
-	print_type_str (t1, get_type (e1));
-	print_type_str (t2, get_type (e2));
-
 	e1 = error (e1, "type mismatch: %s %s %s",
-				t1->str, get_op_string (op), t2->str);
-	dstring_delete (t1);
-	dstring_delete (t2);
+				get_type_string (get_type (e1)), get_op_string (op),
+				get_type_string (get_type (e2)));
 	return e1;
 }
 
@@ -238,21 +231,6 @@ param_mismatch (expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 
 	e = error (e, "type mismatch for parameter %d of %s: expected %s, got %s",
 			   param, fn, s1->str, s2->str);
-	dstring_delete (s1);
-	dstring_delete (s2);
-	return e;
-}
-
-expr_t *
-cast_error (expr_t *e, type_t *t1, type_t *t2)
-{
-	dstring_t  *s1 = dstring_newstr ();
-	dstring_t  *s2 = dstring_newstr ();
-
-	print_type_str (s1, t1);
-	print_type_str (s2, t2);
-
-	e = error (e, "cannot cast from %s to %s", s1->str, s2->str);
 	dstring_delete (s1);
 	dstring_delete (s2);
 	return e;
@@ -1143,6 +1121,22 @@ expr_short (expr_t *e)
 		return e->e.symbol->s.value->v.short_val;
 	}
 	internal_error (e, "not a short constant");
+}
+
+unsigned short
+expr_ushort (expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 0;
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_ushort) {
+		return e->e.value->v.ushort_val;
+	}
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_ushort) {
+		return e->e.symbol->s.value->v.ushort_val;
+	}
+	internal_error (e, "not a ushort constant");
 }
 
 int
@@ -2870,83 +2864,6 @@ think_expr (symbol_t *think_sym)
 	think_sym = function_symbol (think_sym, 0, 1);
 	make_function (think_sym, 0, current_symtab->space, current_storage);
 	return new_symbol_expr (think_sym);
-}
-
-expr_t *
-cast_expr (type_t *dstType, expr_t *e)
-{
-	expr_t    *c;
-	type_t    *srcType;
-
-	convert_name (e);
-
-	if (e->type == ex_error)
-		return e;
-
-	dstType = (type_t *) unalias_type (dstType); //FIXME cast
-	srcType = get_type (e);
-
-	if (dstType == srcType)
-		return e;
-
-	if ((dstType == type_default && is_enum (srcType))
-		|| (is_enum (dstType) && srcType == type_default))
-		return e;
-	if ((is_ptr (dstType) && is_string (srcType))
-		|| (is_string (dstType) && is_ptr (srcType))) {
-		c = new_alias_expr (dstType, e);
-		return c;
-	}
-	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
-							   || is_array (srcType)))
-		&& !(is_integral (dstType) && is_ptr (srcType))
-		&& !(is_func (dstType) && is_func (srcType))
-		&& !(is_scalar (dstType) && is_scalar (srcType))) {
-		return cast_error (e, srcType, dstType);
-	}
-	if (is_array (srcType)) {
-		return address_expr (e, dstType->t.fldptr.type);
-	}
-	if (is_constant (e) && is_scalar (dstType) && is_scalar (srcType)) {
-		ex_value_t *val = 0;
-		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {
-			val = e->e.symbol->s.value;
-		} else if (e->type == ex_symbol
-				   && e->e.symbol->sy_type == sy_var) {
-			// initialized global def treated as a constant
-			// from the tests above, the def is known to be constant
-			// and of one of the three storable scalar types
-			def_t      *def = e->e.symbol->s.def;
-			if (is_float (def->type)) {
-				val = new_float_val (D_FLOAT (def));
-			} else if (is_double (def->type)) {
-				val = new_double_val (D_DOUBLE (def));
-			} else if (is_integral (def->type)) {
-				val = new_int_val (D_INT (def));
-			}
-		} else if (e->type == ex_value) {
-			val = e->e.value;
-		} else if (e->type == ex_nil) {
-			convert_nil (e, dstType);
-			return e;
-		}
-		if (!val)
-			internal_error (e, "unexpected constant expression type");
-		e->e.value = convert_value (val, dstType);
-		e->type = ex_value;
-		c = e;
-	} else if (is_integral (dstType) && is_integral (srcType)) {
-		c = new_alias_expr (dstType, e);
-	} else if (is_scalar (dstType) && is_scalar (srcType)) {
-		c = new_unary_expr ('C', e);
-		c->e.expr.type = dstType;
-	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {
-		e->e.expr.type = dstType;
-		c = e;
-	} else {
-		c = new_alias_expr (dstType, e);
-	}
-	return c;
 }
 
 expr_t *
