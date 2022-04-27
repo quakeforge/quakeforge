@@ -1490,6 +1490,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	int         dump_code = contents & 2;
 	const char *fmt;
 	const char *mnemonic;
+	const char *width = "";
 	dfunction_t *call_func = 0;
 	pr_def_t   *param_def = 0;
 	pr_auxfunction_t *aux_func = 0;
@@ -1558,13 +1559,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						print_raw_op (pr, s->a, PR_BASE_IND (s->op, A),
 									  op_type[0], op_width[0]),
 						print_raw_op (pr, s->b, PR_BASE_IND (s->op, B),
-									  op_type[0], op_width[0]),
+									  op_type[1], op_width[1]),
 						print_raw_op (pr, s->c, PR_BASE_IND (s->op, C),
-									  op_type[0], op_width[0]));
+									  op_type[2], op_width[2]));
 		}
+	} else if (op_width[0] > 1 || op_width[1] > 1 || op_width[2] > 1) {
+		width = va (res->va, "{%d,%d,%d}", VectorExpand (op_width));
 	}
 
-	dasprintf (res->line, "%s ", mnemonic);
+	dasprintf (res->line, "%s%s ", mnemonic, width);
 
 	while (*fmt) {
 		if (*fmt == '%') {
