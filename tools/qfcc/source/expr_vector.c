@@ -62,155 +62,110 @@
 #include "tools/qfcc/source/qc-parse.h"
 
 expr_t *
-convert_vector (expr_t *e)
+new_vector_list (expr_t *expr_list)
 {
-	float       val[4];
+	type_t     *ele_type = type_default;
 
-	if (e->type != ex_vector)
-		return e;
-	if (is_vector(e->e.vector.type)) {
-		// guaranteed to have three elements
-		expr_t     *x = e->e.vector.list;
-		expr_t     *y = x->next;
-		expr_t     *z = y->next;
-		x = fold_constants (cast_expr (&type_float, x));
-		y = fold_constants (cast_expr (&type_float, y));
-		z = fold_constants (cast_expr (&type_float, z));
-		if (is_constant (x) && is_constant (y) && is_constant (z)) {
-			val[0] = expr_float(x);
-			val[1] = expr_float(y);
-			val[2] = expr_float(z);
-			return new_vector_expr (val);
-		}
-		// at least one of x, y, z is not constant, so rebuild the
-		// list incase any of them are new expressions
-		z->next = 0;
-		y->next = z;
-		x->next = y;
-		e->e.vector.list = x;
-		return e;
-	}
-	if (is_quaternion(e->e.vector.type)) {
-		// guaranteed to have two or four elements
-		if (e->e.vector.list->next->next) {
-			// four vals: x, y, z, w
-			expr_t     *x = e->e.vector.list;
-			expr_t     *y = x->next;
-			expr_t     *z = y->next;
-			expr_t     *w = z->next;
-			x = fold_constants (cast_expr (&type_float, x));
-			y = fold_constants (cast_expr (&type_float, y));
-			z = fold_constants (cast_expr (&type_float, z));
-			w = fold_constants (cast_expr (&type_float, w));
-			if (is_constant (x) && is_constant (y) && is_constant (z)
-				&& is_constant (w)) {
-				val[0] = expr_float(x);
-				val[1] = expr_float(y);
-				val[2] = expr_float(z);
-				val[3] = expr_float(w);
-				return new_quaternion_expr (val);
-			}
-			// at least one of x, y, z, w is not constant, so rebuild the
-			// list incase any of them are new expressions
-			w->next = 0;
-			z->next = w;
-			y->next = z;
-			x->next = y;
-			e->e.vector.list = x;
-			return e;
-		} else {
-			// v, s
-			expr_t     *v = e->e.vector.list;
-			expr_t     *s = v->next;
+	// lists are built in reverse order
+	expr_list = reverse_expr_list (expr_list);
 
-			v = convert_vector (v);
-			s = fold_constants (cast_expr (&type_float, s));
-			if (is_constant (v) && is_constant (s)) {
-				memcpy (val, expr_vector (v), 3 * sizeof (float));
-				val[3] = expr_float (s);
-				return new_quaternion_expr (val);
-			}
-			// Either v or s is not constant, so can't convert to a quaternion
-			// constant.
-			// Rebuild the list in case v or s is a new expression
-			// the list will always be v, s
-			s->next = 0;
-			v->next = s;
-			e->e.vector.list = v;
-			return e;
-		}
-	}
-	internal_error (e, "bogus vector expression");
-}
-
-expr_t *
-new_vector_list (expr_t *e)
-{
-	expr_t     *t;
-	int         count;
-	type_t     *type = &type_vector;
-	expr_t     *vec;
-
-	e = reverse_expr_list (e);		// put the elements in the right order
-	for (t = e, count = 0; t; t = t->next)
+	int         width = 0;
+	int         count = 0;
+	for (expr_t *e = expr_list; e; e = e->next) {
 		count++;
+		type_t     *t = get_type (e);
+		if (!t) {
+			return e;
+		}
+		if (!is_math (t)) {
+			return error (e, "invalid type for vector element");
+		}
+		width += type_width (t);
+		if (is_nonscalar (t)) {
+			t = base_type (t);
+		}
+		if (type_promotes (t, ele_type)) {
+			ele_type = t;
+		}
+	}
+	if (width < 2) {
+		return error (expr_list, "not a vector");
+	}
+	if (width > 4) {
+		return error (expr_list, "resulting vector is too large: %d elements",
+					  width);
+	}
+
+	int         all_constant = 1;
+	expr_t     *elements[count + 1];
+	elements[count] = 0;
+	count = 0;
+	for (expr_t *e = expr_list; e; e = e->next) {
+		int         cast_width = type_width (get_type (e));
+		type_t     *cast_type = vector_type (ele_type, cast_width);
+		elements[count] = cast_expr (cast_type, fold_constants (e));
+		all_constant = all_constant && is_constant (elements[count]);
+		count++;
+	}
+
 	switch (count) {
 		case 4:
-			type = &type_quaternion;
+			// all scalars (otherwise width would be too large)
+			break;
 		case 3:
-			// quaternion or vector. all expressions must be compatible with
-			// a float (ie, a scalar)
-			for (t = e; t; t = t->next) {
-				if (t->type == ex_error) {
-					return t;
-				}
-				if (!is_scalar (get_type (t))) {
-					return error (t, "invalid type for vector element");
+			// shuffle any vectors to the beginning of the list (there should
+			// be only one, but futhre...)
+			for (int i = 1; i < count; i++) {
+				if (is_nonscalar (get_type (elements[i]))) {
+					expr_t     *t = elements[i];
+					int         j = i;
+					for (; j > 0 && is_scalar (get_type (elements[j])); j--) {
+						elements[j] = elements[j - 1];
+					}
+					elements[j] = t;
 				}
 			}
-			vec = new_expr ();
-			vec->type = ex_vector;
-			vec->e.vector.type = type;
-			vec->e.vector.list = e;
 			break;
 		case 2:
-			if (e->type == ex_error || e->next->type == ex_error) {
-				return e;
+			if (is_scalar (get_type (elements[0]))
+				&& is_nonscalar (get_type (elements[1]))) {
+				// swap s, v to be v, s (ie, vector always comes before scalar)
+				expr_t     *t = elements[0];
+				elements[0] = elements[1];
+				elements[1] = t;
 			}
-			if (is_scalar (get_type (e)) && is_scalar (get_type (e->next))) {
-				// scalar, scalar
-				// expand [x, y] to [x, y, 0]
-				e->next->next = new_float_expr (0);
-				vec = new_expr ();
-				vec->type = ex_vector;
-				vec->e.vector.type = type;
-				vec->e.vector.list = e;
-				break;
-			}
-			// quaternion. either scalar, vector or vector, scalar
-			if (is_scalar (get_type (e))
-				&& is_vector (get_type (e->next))) {
-				// scalar, vector
-				// swap expressions
-				t = e;
-				e = e->next;
-				e->next = t;
-				t->next = 0;
-			} else if (is_vector (get_type (e))
-					   && is_scalar (get_type (e->next))) {
-				// vector, scalar
-				// do nothing
-			} else {
-				return error (t, "invalid types for vector elements");
-			}
-			// v, s
-			vec = new_expr ();
-			vec->type = ex_vector;
-			vec->e.vector.type = &type_quaternion;
-			vec->e.vector.list = e;
 			break;
-		default:
-			return error (e, "invalid number of elements in vector exprssion");
+		case 1:
+			if (is_scalar (get_type (elements[0]))) {
+				internal_error (expr_list, "confused about vectors");
+			}
+			// it's already a vector
+			return elements[0];
 	}
+
+	if (all_constant) {
+		type_t     *vec_type = vector_type (ele_type, width);
+		pr_type_t   value[type_size (vec_type)];
+
+		for (int i = 0, offs = 0; i < count; i++) {
+			type_t     *src_type = get_type (elements[i]);
+			value_store (value + offs, src_type, elements[i]);
+			offs += type_size (src_type);
+		}
+
+		expr_t     *vec = new_expr ();
+		vec->type = ex_value;
+		vec->e.value = new_type_value (vec_type, value);
+		return vec;
+	}
+
+	for (int i = 0; i < count; i++) {
+		elements[i]->next = elements[i + 1];
+	}
+
+	expr_t     *vec = new_expr ();
+	vec->type = ex_vector;
+	vec->e.vector.type = vector_type (ele_type, width);
+	vec->e.vector.list = elements[0];
 	return vec;
 }

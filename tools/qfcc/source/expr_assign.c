@@ -211,73 +211,31 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	return type_mismatch (dst, src, '=');
 }
 
+static int
+copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
+{
+	int         index = 0;
+	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+		if (e->type == ex_vector) {
+			index += copy_elements (block, dst, e, index + base);
+		} else {
+			expr_t     *dst_ele = array_expr (dst, new_int_expr (index + base));
+			append_expr (block, assign_expr (dst_ele, e));
+			index += type_width (get_type (e));
+		}
+	}
+	return index;
+}
+
 static expr_t *
 assign_vector_expr (expr_t *dst, expr_t *src)
 {
-	expr_t     *dx, *sx;
-	expr_t     *dy, *sy;
-	expr_t     *dz, *sz;
-	expr_t     *dw, *sw;
-	expr_t     *ds, *ss;
-	expr_t     *dv, *sv;
-	expr_t     *block;
-
-	if (src->type == ex_vector) {
-		src = convert_vector (src);
-		if (src->type != ex_vector) {
-			// src was constant and thus converted
-			return assign_expr (dst, src);
-		}
-	}
 	if (src->type == ex_vector && dst->type != ex_vector) {
-		if (is_vector(src->e.vector.type)) {
-			// guaranteed to have three elements
-			sx = src->e.vector.list;
-			sy = sx->next;
-			sz = sy->next;
-			dx = field_expr (dst, new_name_expr ("x"));
-			dy = field_expr (dst, new_name_expr ("y"));
-			dz = field_expr (dst, new_name_expr ("z"));
-			block = new_block_expr ();
-			append_expr (block, assign_expr (dx, sx));
-			append_expr (block, assign_expr (dy, sy));
-			append_expr (block, assign_expr (dz, sz));
-			block->e.block.result = dst;
-			return block;
-		}
-		if (is_quaternion(src->e.vector.type)) {
-			// guaranteed to have two or four elements
-			if (src->e.vector.list->next->next) {
-				// four vals: x, y, z, w
-				sx = src->e.vector.list;
-				sy = sx->next;
-				sz = sy->next;
-				sw = sz->next;
-				dx = field_expr (dst, new_name_expr ("x"));
-				dy = field_expr (dst, new_name_expr ("y"));
-				dz = field_expr (dst, new_name_expr ("z"));
-				dw = field_expr (dst, new_name_expr ("w"));
-				block = new_block_expr ();
-				append_expr (block, assign_expr (dx, sx));
-				append_expr (block, assign_expr (dy, sy));
-				append_expr (block, assign_expr (dz, sz));
-				append_expr (block, assign_expr (dw, sw));
-				block->e.block.result = dst;
-				return block;
-			} else {
-				// v, s
-				sv = src->e.vector.list;
-				ss = sv->next;
-				dv = field_expr (dst, new_name_expr ("v"));
-				ds = field_expr (dst, new_name_expr ("s"));
-				block = new_block_expr ();
-				append_expr (block, assign_expr (dv, sv));
-				append_expr (block, assign_expr (ds, ss));
-				block->e.block.result = dst;
-				return block;
-			}
-		}
-		internal_error (src, "bogus vector expression");
+		expr_t     *block = new_block_expr ();
+
+		copy_elements (block, dst, src, 0);
+		block->e.block.result = dst;
+		return block;
 	}
 	return 0;
 }

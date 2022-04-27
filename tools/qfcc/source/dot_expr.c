@@ -461,39 +461,9 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (is_vector(e->e.vector.type)) {
-		expr_t     *x = e->e.vector.list;
-		expr_t     *y = x->next;
-		expr_t     *z = y->next;
-		_print_expr (dstr, x, level, id, next);
-		_print_expr (dstr, y, level, id, next);
-		_print_expr (dstr, z, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, x);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
-	}
-	if (is_quaternion(e->e.vector.type)) {
-		if (e->e.vector.list->next->next) {
-			expr_t     *x = e->e.vector.list;
-			expr_t     *y = x->next;
-			expr_t     *z = y->next;
-			expr_t     *w = z->next;
-			_print_expr (dstr, x, level, id, next);
-			_print_expr (dstr, y, level, id, next);
-			_print_expr (dstr, z, level, id, next);
-			_print_expr (dstr, w, level, id, next);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, x);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, w);
-		} else {
-			expr_t     *v = e->e.vector.list;
-			expr_t     *s = v->next;
-			_print_expr (dstr, v, level, id, next);
-			_print_expr (dstr, s, level, id, next);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, v);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, s);
-		}
+	for (expr_t *ele = e->e.vector.list; ele; ele = ele->next) {
+		_print_expr (dstr, ele, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, ele);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"vector %d\"];\n", indent, "", e,
 			   e->line);

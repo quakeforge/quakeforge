@@ -761,8 +761,6 @@ expr_t *new_param_expr (struct type_s *type, int num);
 */
 void convert_name (expr_t *e);
 
-expr_t *convert_vector (expr_t *e);
-
 expr_t *append_expr (expr_t *block, expr_t *e);
 expr_t *prepend_expr (expr_t *block, expr_t *e);
 

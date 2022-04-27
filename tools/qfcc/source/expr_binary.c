@@ -958,7 +958,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	expr_type_t *expr_type;
 
 	convert_name (e1);
-	e1 = convert_vector (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
 	if (e1->type == ex_alias && is_call (e1->e.alias.expr)) {
@@ -982,7 +981,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e1;
 
 	convert_name (e2);
-	e2 = convert_vector (e2);
 	if (e2->type == ex_error)
 		return e2;
 

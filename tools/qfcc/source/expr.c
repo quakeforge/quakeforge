@@ -2104,15 +2104,14 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		// expression tree
 		// That, or always use a temp, since it should get optimized out
 		if (has_function_call (e)) {
-			expr_t     *cast = cast_expr (arg_types[i], convert_vector (e));
+			expr_t     *cast = cast_expr (arg_types[i], e);
 			expr_t     *tmp = new_temp_def_expr (arg_types[i]);
 			*a = expr_file_line (tmp, e);
 			arg_exprs[arg_expr_count][0] = expr_file_line (cast, e);
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = expr_file_line (cast_expr (arg_types[i], convert_vector (e)),
-								 e);
+			*a = expr_file_line (cast_expr (arg_types[i], e), e);
 		}
 		a = &(*a)->next;
 	}

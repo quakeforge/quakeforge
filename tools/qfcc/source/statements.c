@@ -1926,13 +1926,28 @@ expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 	return sblock;
 }
 
+static int
+statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
+{
+	int         index = 0;
+	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+		if (e->type == ex_vector) {
+			index += statement_copy_elements (sblock, dst, e, index + base);
+		} else {
+			int         size = type_size (base_type (get_type (dst)));
+			type_t     *src_type = get_type (e);
+			expr_t     *dst_ele = new_offset_alias_expr (src_type, dst,
+														 size * (index + base));
+			index += type_width (src_type);
+			*sblock = statement_slist (*sblock, assign_expr (dst_ele, e));
+		}
+	}
+	return index;
+}
+
 static sblock_t *
 expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	expr_t     *x, *y, *z, *w;
-	expr_t     *s, *v;
-	expr_t     *ax, *ay, *az, *aw;
-	expr_t     *as, *av;
 	expr_t     *tmp;
 	type_t     *vec_type = get_type (e);
 	int         file = pr.source_file;
@@ -1942,52 +1957,8 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	pr.source_line = e->line;
 
 	tmp = new_temp_def_expr (vec_type);
-	if (is_vector(vec_type)) {
-		// guaranteed to have three elements
-		x = e->e.vector.list;
-		y = x->next;
-		z = y->next;
-		ax = new_name_expr ("x");
-		ay = new_name_expr ("y");
-		az = new_name_expr ("z");
-		ax = assign_expr (field_expr (tmp, ax), x);
-		ay = assign_expr (field_expr (tmp, ay), y);
-		az = assign_expr (field_expr (tmp, az), z);
-		sblock = statement_slist (sblock, ax);
-		sblock = statement_slist (sblock, ay);
-		sblock = statement_slist (sblock, az);
-	} else {
-		// guaranteed to have two or four elements
-		if (e->e.vector.list->next->next) {
-			// four vals: x, y, z, w
-			x = e->e.vector.list;
-			y = x->next;
-			z = y->next;
-			w = z->next;
-			ax = new_name_expr ("x");
-			ay = new_name_expr ("y");
-			az = new_name_expr ("z");
-			aw = new_name_expr ("w");
-			ax = assign_expr (field_expr (tmp, ax), x);
-			ay = assign_expr (field_expr (tmp, ay), y);
-			az = assign_expr (field_expr (tmp, az), z);
-			aw = assign_expr (field_expr (tmp, aw), w);
-			sblock = statement_slist (sblock, ax);
-			sblock = statement_slist (sblock, ay);
-			sblock = statement_slist (sblock, az);
-			sblock = statement_slist (sblock, aw);
-		} else {
-			// v, s
-			v = e->e.vector.list;
-			s = v->next;
-			av = new_name_expr ("v");
-			as = new_name_expr ("s");
-			av = assign_expr (field_expr (tmp, av), v);
-			as = assign_expr (field_expr (tmp, as), s);
-			sblock = statement_slist (sblock, av);
-			sblock = statement_slist (sblock, as);
-		}
-	}
+	statement_copy_elements (&sblock, tmp, e, 0);
+
 	pr.source_file = file;
 	pr.source_line = line;
 	sblock = statement_subexpr (sblock, tmp, op);
