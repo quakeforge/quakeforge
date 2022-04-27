@@ -1760,17 +1760,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	return sblock;
 }
 
-static int type_map[ev_type_count] = {
-	[ev_int] = 0,
-	[ev_float] = 1,
-	[ev_long] = 2,
-	[ev_double] = 3,
-	[ev_uint] = 4,
-	//[ev_bool32] = 5,
-	[ev_ulong] = 6,
-	//[ev_bool64] = 7,
-};
-
 static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
@@ -1786,10 +1775,10 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		s = new_statement (st_expr, "conv", e);
 		s->opa = src;
 		if (options.code.progsversion == PROG_VERSION) {
-			int         from = type_map[src_type->type];
-			int         to = type_map[type->type];
+			int         from = type_cast_map[src_type->type];
+			int         to = type_cast_map[type->type];
 			int         width = type_width (src_type) - 1;
-			int         conv = (width << 6) | (from << 3) | to;
+			int         conv = TYPE_CAST_CODE (from, to, width);
 			s->opb = short_operand (conv, e);
 		}
 		s->opc = *op;

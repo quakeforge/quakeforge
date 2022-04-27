@@ -160,6 +160,8 @@ type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
+type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
+type_t *base_type (const type_t *vec_type) __attribute__((pure));
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
 type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
@@ -187,6 +189,7 @@ int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
+int type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
@@ -197,5 +200,7 @@ void chain_initial_types (void);
 void clear_typedefs (void);
 
 extern type_t *ev_types[];
+extern int type_cast_map[];
+#define TYPE_CAST_CODE(from, to, width) (((width) << 6) | ((from) << 3) | (to))
 
 #endif//__type_h

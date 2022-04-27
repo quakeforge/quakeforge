@@ -89,6 +89,11 @@ type_t      type_invalid = {
 	};
 #include "tools/qfcc/include/vec_types.h"
 
+#define VEC_TYPE(type_name, base_type) &type_##type_name,
+static type_t *vec_types[] = {
+#include "tools/qfcc/include/vec_types.h"
+	0
+};
 type_t     *type_nil;
 type_t     *type_default;
 type_t     *type_long_int;
@@ -143,6 +148,17 @@ type_t      type_floatfield = {
 type_t     *ev_types[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
 	&type_invalid,
+};
+
+int type_cast_map[ev_type_count] = {
+	[ev_int] = 0,
+	[ev_float] = 1,
+	[ev_long] = 2,
+	[ev_double] = 3,
+	[ev_uint] = 4,
+	//[ev_bool32] = 5,
+	[ev_ulong] = 6,
+	//[ev_bool64] = 7,
 };
 
 static type_t *types_freelist;
@@ -522,6 +538,38 @@ pointer_type (type_t *aux)
 		new = find_type (append_type (new, aux));
 	}
 	return new;
+}
+
+type_t *
+vector_type (const type_t *ele_type, int width)
+{
+	if (width == 1) {
+		for (type_t **t = ev_types; t - ev_types < ev_type_count; t++) {
+			if ((*t)->type == ele_type->type && (*t)->width == 1) {
+				return *t;
+			}
+		}
+	}
+	for (type_t **vtype = vec_types; *vtype; vtype++) {
+		if ((*vtype)->type == ele_type->type
+			&& (*vtype)->width == width) {
+			return *vtype;
+		}
+	}
+	return 0;
+}
+
+type_t *
+base_type (const type_t *vec_type)
+{
+	if (!is_math (vec_type)) {
+		return 0;
+	}
+	// vec_type->type for quaternion and vector points back to itself
+	if (is_quaternion (vec_type) || is_vector (vec_type)) {
+		return &type_float;
+	}
+	return ev_types[vec_type->type];
 }
 
 type_t *
@@ -1094,6 +1142,35 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 1;
 	if (is_void (src))
 		return 1;
+	return 0;
+}
+
+int
+type_promotes (const type_t *dst, const type_t *src)
+{
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	// nothing promotes to int
+	if (is_int (dst)) {
+		return 0;
+	}
+	if (is_uint (dst) && is_int (src)) {
+		return 1;
+	}
+	if (is_long (dst) && (is_int (src) || is_uint (src))) {
+		return 1;
+	}
+	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src))) {
+		return 1;
+	}
+	if (is_float (dst) && (is_int (src) || is_uint (src))) {
+		return 1;
+	}
+	//XXX what to do with (u)long<->float?
+	// everything promotes to double
+	if (is_double (dst)) {
+		return 1;
+	}
 	return 0;
 }
 
