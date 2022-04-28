@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define VEC_TYPE(t,n,s) \
+#define QF_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
 
 /** Three element vector type for interfacing with compact data.
@@ -41,8 +41,8 @@
  */
 typedef double vec3d_t[3];
 
-VEC_TYPE (double, vec2d_t, 2);
-VEC_TYPE (int64_t, vec2l_t, 2);
+QF_VEC_TYPE (double, vec2d_t, 2);
+QF_VEC_TYPE (int64_t, vec2l_t, 2);
 
 /** Four element vector type for horizontal (AOS) vector data.
  *
@@ -53,11 +53,11 @@ VEC_TYPE (int64_t, vec2l_t, 2);
  * a single component from four vectors, or a single row/column (depending on
  * context) of an Nx4 or 4xN matrix.
  */
-VEC_TYPE (double, vec4d_t, 4);
+QF_VEC_TYPE (double, vec4d_t, 4);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (int64_t, vec4l_t, 4);
+QF_VEC_TYPE (int64_t, vec4l_t, 4);
 
 /** Three element vector type for interfacing with compact data.
  *
@@ -66,8 +66,8 @@ VEC_TYPE (int64_t, vec4l_t, 4);
  */
 typedef float vec3f_t[3];
 
-VEC_TYPE (float, vec2f_t, 2);
-VEC_TYPE (int, vec2i_t, 2);
+QF_VEC_TYPE (float, vec2f_t, 2);
+QF_VEC_TYPE (int, vec2i_t, 2);
 
 /** Four element vector type for horizontal (AOS) vector data.
  *
@@ -78,11 +78,11 @@ VEC_TYPE (int, vec2i_t, 2);
  * a single component from four vectors, or a single row/column (depending on
  * context) of an Nx4 or 4xN matrix.
  */
-VEC_TYPE (float, vec4f_t, 4);
+QF_VEC_TYPE (float, vec4f_t, 4);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (int, vec4i_t, 4);
+QF_VEC_TYPE (int, vec4i_t, 4);
 
 #define VEC2D_FMT "[%.17g, %.17g]"
 #define VEC2L_FMT "[%"PRIi64", %"PRIi64"]"
