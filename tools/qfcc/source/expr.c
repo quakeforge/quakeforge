@@ -689,109 +689,73 @@ new_name_expr (const char *name)
 expr_t *
 new_string_expr (const char *string_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_string_val (string_val);
-	return e;
+	return new_value_expr (new_string_val (string_val));
 }
 
 expr_t *
 new_double_expr (double double_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_double_val (double_val);
-	return e;
+	return new_value_expr (new_double_val (double_val));
 }
 
 expr_t *
 new_float_expr (float float_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-	return e;
+	return new_value_expr (new_float_val (float_val));
 }
 
 expr_t *
 new_vector_expr (const float *vector_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_vector_val (vector_val);
-	return e;
+	return new_value_expr (new_vector_val (vector_val));
 }
 
 expr_t *
 new_entity_expr (int entity_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_entity_val (entity_val);
-	return e;
+	return new_value_expr (new_entity_val (entity_val));
 }
 
 expr_t *
 new_field_expr (int field_val, type_t *type, def_t *def)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_field_val (field_val, type, def);
-	return e;
+	return new_value_expr (new_field_val (field_val, type, def));
 }
 
 expr_t *
 new_func_expr (int func_val, type_t *type)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_func_val (func_val, type);
-	return e;
+	return new_value_expr (new_func_val (func_val, type));
 }
 
 expr_t *
 new_pointer_expr (int val, type_t *type, def_t *def)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_pointer_val (val, type, def, 0);
-	return e;
+	return new_value_expr (new_pointer_val (val, type, def, 0));
 }
 
 expr_t *
 new_quaternion_expr (const float *quaternion_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_quaternion_val (quaternion_val);
-	return e;
+	return new_value_expr (new_quaternion_val (quaternion_val));
 }
 
 expr_t *
 new_int_expr (int int_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_int_val (int_val);
-	return e;
+	return new_value_expr (new_int_val (int_val));
 }
 
 expr_t *
 new_uint_expr (unsigned uint_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_uint_val (uint_val);
-	return e;
+	return new_value_expr (new_uint_val (uint_val));
 }
 
 expr_t *
 new_short_expr (short short_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_short_val (short_val);
-	return e;
+	return new_value_expr (new_short_val (short_val));
 }
 
 int
@@ -853,11 +817,9 @@ constant_expr (expr_t *e)
 	} else {
 		return e;
 	}
-	new = new_expr ();
-	new->type = ex_value;
+	new = new_value_expr (value);
 	new->line = e->line;
 	new->file = e->file;
-	new->e.value = value;
 	return new;
 }
 
@@ -1508,38 +1470,6 @@ convert_from_bool (expr_t *e, type_t *type)
 	return e;
 }
 
-void
-convert_int (expr_t *e)
-{
-	float       float_val = expr_int (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
-void
-convert_short (expr_t *e)
-{
-	float       float_val = expr_short (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
-void
-convert_short_int (expr_t *e)
-{
-	float       int_val = expr_short (e);
-	e->type = ex_value;
-	e->e.value = new_int_val (int_val);
-}
-
-void
-convert_double (expr_t *e)
-{
-	float       float_val = expr_double (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
 expr_t *
 convert_nil (expr_t *e, type_t *t)
 {
@@ -2063,7 +1993,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				convert_from_bool (e, get_type (e));
 			if (is_int_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
-				convert_int (e);
+				e = cast_expr (&type_float, e);
 			if (options.code.promote_float) {
 				if (is_float (get_type (e))) {
 					t = &type_double;
@@ -2280,7 +2210,7 @@ return_expr (function_t *f, expr_t *e)
 		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
 	}
 	if (is_float(ret_type) && is_int_val (e)) {
-		convert_int (e);
+		e = cast_expr (&type_float, e);
 		t = &type_float;
 	}
 	if (is_void(t)) {
@@ -2828,7 +2758,7 @@ build_state_expr (expr_t *e)
 	if (think->type == ex_symbol)
 		think = think_expr (think->e.symbol);
 	if (is_int_val (frame))
-		convert_int (frame);
+		frame = cast_expr (&type_float, frame);
 	if (!type_assignable (&type_float, get_type (frame)))
 		return error (frame, "invalid type for frame number");
 	if (extract_type (think) != ev_func)
@@ -2837,7 +2767,7 @@ build_state_expr (expr_t *e)
 		if (step->next)
 			return error (step->next, "too many state arguments");
 		if (is_int_val (step))
-			convert_int (step);
+			step = cast_expr (&type_float, step);
 		if (!type_assignable (&type_float, get_type (step)))
 			return error (step, "invalid type for step");
 	}

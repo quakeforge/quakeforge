@@ -380,12 +380,13 @@ init_elements (struct def_s *def, expr_t *eles)
 				reloc_def_op (c->e.labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				if (c->e.value->lltype == ev_int && is_float (element->type)) {
-					convert_int (c);
-				}
-				if (is_double (get_type (c)) && is_float (element->type)
-					&& c->implicit) {
-					convert_double (c);
+				if (is_float (element->type)
+					&& (is_int (get_type (c))
+						|| (is_double (get_type (c)) && c->implicit))) {
+					expr_t     *n = cast_expr (&type_float, c);
+					n->line = c->line;
+					n->file = c->line;
+					c = n;
 				}
 				if (get_type (c) != element->type) {
 					error (c, "type mismatch in initializer");

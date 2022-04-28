@@ -768,10 +768,6 @@ expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
 void dump_dot_expr (void *e, const char *filename);
 
-void convert_int (expr_t *e);
-void convert_short (expr_t *e);
-void convert_short_int (expr_t *e);
-void convert_double (expr_t *e);
 expr_t *convert_nil (expr_t *e, struct type_s *t);
 
 expr_t *test_expr (expr_t *e);

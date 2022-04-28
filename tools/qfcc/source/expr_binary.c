@@ -787,11 +787,11 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 
 	if (is_constant (e1) && e1->implicit && is_double (t1) && is_float (t2)) {
 		t1 = &type_float;
-		convert_double (e1);
+		e1 = cast_expr (t1, e1);
 	}
 	if (is_float (t1) && is_constant (e2) && e2->implicit && is_double (t2)) {
 		t2 = &type_float;
-		convert_double (e2);
+		e2 = cast_expr (t2, e2);
 	}
 	if (is_double (t1)) {
 		if (is_float (t2)) {
@@ -1009,11 +1009,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (is_constant (e1) && is_double (t1) && e1->implicit && is_float (t2)) {
 		t1 = &type_float;
-		convert_double (e1);
+		e1 = cast_expr (t1, e1);
 	}
 	if (is_constant (e2) && is_double (t2) && e2->implicit && is_float (t1)) {
 		t2 = &type_float;
-		convert_double (e2);
+		e2 = cast_expr (t2, e2);
 	}
 
 	et1 = low_level_type (t1);

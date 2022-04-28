@@ -78,10 +78,7 @@ cast_math (type_t *dstType, type_t *srcType, expr_t *expr)
 
 	do_conversion (dst_value, dstType, src_value, srcType, expr);
 
-	expr_t     *val = new_expr ();
-	val->type = ex_value;
-	val->e.value = new_type_value (dstType, dst_value);
-	return val;
+	return new_value_expr (new_type_value (dstType, dst_value));
 }
 
 expr_t *

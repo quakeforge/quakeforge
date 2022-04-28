@@ -153,10 +153,7 @@ new_vector_list (expr_t *expr_list)
 			offs += type_size (src_type);
 		}
 
-		expr_t     *vec = new_expr ();
-		vec->type = ex_value;
-		vec->e.value = new_type_value (vec_type, value);
-		return vec;
+		return new_value_expr (new_type_value (vec_type, value));
 	}
 
 	for (int i = 0; i < count; i++) {

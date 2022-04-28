@@ -55,13 +55,6 @@
 typedef expr_t *(*operation_t) (int op, expr_t *e, expr_t *e1, expr_t *e2);
 typedef expr_t *(*unaryop_t) (int op, expr_t *e, expr_t *e1);
 
-static expr_t *
-cf_cast_expr (type_t *type, expr_t *e)
-{
-	e = cast_expr (type, e);
-	return e;
-}
-
 static __attribute__((pure)) int
 valid_op (int op, int *valid_ops)
 {
@@ -162,33 +155,10 @@ convert_to_float (expr_t *e)
 	if (is_float(get_type (e)))
 		return e;
 
-	switch (e->type) {
-		case ex_value:
-			switch (e->e.value->lltype) {
-				case ev_int:
-					convert_int (e);
-					return e;
-				case ev_short:
-					convert_short (e);
-					return e;
-				case ev_double:
-					convert_double (e);
-					return e;
-				default:
-					internal_error (e, "bad conversion to float: %d",
-									e->e.value->lltype);
-			}
-			break;
-		case ex_symbol:
-		case ex_expr:
-		case ex_uexpr:
-		case ex_temp:
-		case ex_block:
-			e = cf_cast_expr (&type_float, e);
-			return e;
-		default:
-			internal_error (e, 0);
-	}
+	expr_t     *n = cast_expr (&type_float, e);
+	n->file = e->file;
+	n->line = e->line;
+	return n;
 }
 
 static expr_t *
@@ -197,32 +167,10 @@ convert_to_double (expr_t *e)
 	if (is_double(get_type (e)))
 		return e;
 
-	switch (e->type) {
-		case ex_value:
-			switch (e->e.value->lltype) {
-				case ev_int:
-					e->e.value = new_double_val (expr_int (e));
-					return e;
-				case ev_short:
-					e->e.value = new_double_val (expr_short (e));
-					return e;
-				case ev_float:
-					e->e.value = new_double_val (expr_float (e));
-					return e;
-				default:
-					internal_error (e, 0);
-			}
-			break;
-		case ex_symbol:
-		case ex_expr:
-		case ex_uexpr:
-		case ex_temp:
-		case ex_block:
-			e = cf_cast_expr (&type_float, e);
-			return e;
-		default:
-			internal_error (e, 0);
-	}
+	expr_t     *n = cast_expr (&type_double, e);
+	n->file = e->file;
+	n->line = e->line;
+	return n;
 }
 
 static expr_t *
@@ -634,7 +582,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op != '.' && extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
 	if (op == '.' && is_uint(get_type (e2)))
-		e->e.expr.e2 = cf_cast_expr (&type_int, e2);
+		e->e.expr.e2 = cast_expr (&type_int, e2);
 	return e;
 }
 
