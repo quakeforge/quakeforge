@@ -56,6 +56,8 @@ struct ex_value_s *new_pointer_val (int val, struct type_s *type,
 struct ex_value_s *new_quaternion_val (const float *quaternion_val);
 struct ex_value_s *new_int_val (int int_val);
 struct ex_value_s *new_uint_val (int uint_val);
+struct ex_value_s *new_long_val (pr_long_t long_val);
+struct ex_value_s *new_ulong_val (pr_ulong_t ulong_val);
 struct ex_value_s *new_short_val (short short_val);
 struct ex_value_s *new_nil_val (struct type_s *type);
 struct ex_value_s *new_type_value (const struct type_s *type,

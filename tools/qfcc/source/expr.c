@@ -753,6 +753,18 @@ new_uint_expr (unsigned uint_val)
 }
 
 expr_t *
+new_long_expr (pr_long_t long_val)
+{
+	return new_value_expr (new_long_val (long_val));
+}
+
+expr_t *
+new_ulong_expr (pr_ulong_t ulong_val)
+{
+	return new_value_expr (new_ulong_val (ulong_val));
+}
+
+expr_t *
 new_short_expr (short short_val)
 {
 	return new_value_expr (new_short_val (short_val));

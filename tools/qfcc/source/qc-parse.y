@@ -94,7 +94,7 @@ int yylex (void);
 
 %union {
 	int			op;
-	int         size;
+	unsigned    size;
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
@@ -1131,11 +1131,13 @@ abs_decl
 array_decl
 	: '[' expr ']'
 		{
-			if (!is_int_val ($2) || expr_int ($2) < 1) {
+			if (is_int_val ($2) && expr_int ($2) > 0) {
+				$$ = expr_int ($2);
+			} else if (is_uint_val ($2) && expr_uint ($2) > 0) {
+				$$ = expr_uint ($2);
+			} else {
 				error (0, "invalid array size");
 				$$ = 0;
-			} else {
-				$$ = expr_int ($2);
 			}
 		}
 	| '[' ']'					{ $$ = 0; }

@@ -131,17 +131,25 @@ STRING		\"(\\.|[^"\\])*\"
 
 {INT}+{UL}?			{
 						const char *c = yytext + yyleng - 1;
-						int         i;
+						pr_long_t   i;
 
 						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						if (*c == 'u' || *c == 'U') {
-							qc_yylval.expr = new_int_expr (i);//FIXME
+						if (tolower (*c) == 'u') {
+							if (tolower (c[1]) == 'l') {
+								qc_yylval.expr = new_ulong_expr (i);
+							} else {
+								qc_yylval.expr = new_uint_expr (i);
+							}
 						} else {
-							qc_yylval.expr = new_int_expr (i);
-							qc_yylval.expr->implicit = 1;
+							if (tolower (c[1]) == 'l') {
+								qc_yylval.expr = new_long_expr (i);
+							} else {
+								qc_yylval.expr = new_int_expr (i);
+								qc_yylval.expr->implicit = 1;
+							}
 						}
 						return VALUE;
 					}

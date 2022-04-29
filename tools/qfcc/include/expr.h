@@ -633,6 +633,9 @@ int expr_int (expr_t *e) __attribute__((pure));
 expr_t *new_uint_expr (unsigned uint_val);
 unsigned expr_uint (expr_t *e) __attribute__((pure));
 
+expr_t *new_long_expr (pr_long_t long_val);
+expr_t *new_ulong_expr (pr_ulong_t ulong_val);
+
 /** Create a new short constant expression node.
 
 	\param short_val	The short constant being represented.

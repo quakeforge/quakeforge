@@ -241,6 +241,22 @@ new_uint_val (int uint_val)
 }
 
 ex_value_t *
+new_long_val (pr_long_t long_val)
+{
+	ex_value_t  val = { .v = { .long_val = long_val } };
+	set_val_type (&val, &type_long);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_ulong_val (pr_ulong_t ulong_val)
+{
+	ex_value_t  val = { .v = { .ulong_val = ulong_val } };
+	set_val_type (&val, &type_ulong);
+	return find_value (&val);
+}
+
+ex_value_t *
 new_short_val (short short_val)
 {
 	ex_value_t  val;
