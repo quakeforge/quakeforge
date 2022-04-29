@@ -149,7 +149,7 @@ _print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_def:
-			printf ("(%s) ", pr_type_name[op->type->type]);
+			printf ("(%s) ", get_type_string (op->type));
 			printf ("%s", op->def->name);
 			break;
 		case op_value:
@@ -160,12 +160,12 @@ _print_operand (operand_t *op)
 			printf ("block %p", op->label->dest);
 			break;
 		case op_temp:
-			printf ("tmp (%s) %p", pr_type_name[op->type->type], op);
+			printf ("tmp (%s) %p", get_type_string (op->type), op);
 			if (op->tempop.def)
 				printf (" %s", op->tempop.def->name);
 			break;
 		case op_alias:
-			printf ("alias(%s,", pr_type_name[op->type->type]);
+			printf ("alias(%s,", get_type_string (op->type));
 			_print_operand (op->alias);
 			printf (")");
 			break;
@@ -1633,10 +1633,13 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		opcode = "cmp";
 	}
 	if (strcmp (opcode, "dot") == 0) {
-		if (is_vector (get_type (e->e.expr.e1))) {
+		if (type_width (get_type (e->e.expr.e1)) == 2) {
+			opcode = "cdot";
+		}
+		if (type_width (get_type (e->e.expr.e1)) == 3) {
 			opcode = "vdot";
 		}
-		if (is_quaternion (get_type (e->e.expr.e1))) {
+		if (type_width (get_type (e->e.expr.e1)) == 4) {
 			opcode = "qdot";
 		}
 	}
