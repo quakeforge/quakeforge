@@ -62,16 +62,11 @@
 typedef struct {
 	def_t      *def;
 	union {
-		pr_string_t string_val;
-		float       float_val;
-		float       vector_val[3];
-		int         entity_val;
-		int         field_val;
-		int         func_val;
+#define EV_TYPE(type) pr_##type##_t type##_val;
+#include "QF/progs/pr_type_names.h"
+#define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
+#include "tools/qfcc/include/vec_types.h"
 		ex_pointer_t pointer;
-		float       quaternion_val[4];
-		int         int_val;
-		double      double_val;
 	} i;
 } immediate_t;
 
@@ -460,15 +455,8 @@ get_value_string (const ex_value_t *value)
 }
 
 static hashtab_t *string_imm_defs;
-static hashtab_t *float_imm_defs;
-static hashtab_t *vector_imm_defs;
-static hashtab_t *entity_imm_defs;
-static hashtab_t *field_imm_defs;
-static hashtab_t *func_imm_defs;
-static hashtab_t *pointer_imm_defs;
-static hashtab_t *quaternion_imm_defs;
-static hashtab_t *int_imm_defs;
-static hashtab_t *double_imm_defs;
+static hashtab_t *fldptr_imm_defs;
+static hashtab_t *value_imm_defs;
 
 static void
 imm_free (void *_imm, void *unused)
@@ -485,27 +473,13 @@ imm_get_hash (const void *_imm, void *_tab)
 	if (tab == &string_imm_defs) {
 		const char *str = pr.strings->strings + imm->i.string_val;
 		return str ? Hash_String (str) : 0;
-	} else if (tab == &float_imm_defs) {
-		return imm->i.int_val;
-	} else if (tab == &vector_imm_defs) {
-		return Hash_Buffer (&imm->i.vector_val, sizeof (&imm->i.vector_val));
-	} else if (tab == &entity_imm_defs) {
-		return imm->i.int_val;
-	} else if (tab == &field_imm_defs) {
+	} else if (tab == &fldptr_imm_defs) {
 		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
-	} else if (tab == &func_imm_defs) {
-		return imm->i.int_val;
-	} else if (tab == &pointer_imm_defs) {
-		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
-	} else if (tab == &quaternion_imm_defs) {
-		return Hash_Buffer (&imm->i.quaternion_val,
-							sizeof (&imm->i.quaternion_val));
-	} else if (tab == &double_imm_defs) {
-		return Hash_Buffer (&imm->i.double_val, sizeof (&imm->i.double_val));
-	} else if (tab == &int_imm_defs) {
-		return imm->i.int_val;
+	} else if (tab == &value_imm_defs) {
+		size_t      size = type_size (imm->def->type) * sizeof (pr_type_t);
+		return Hash_Buffer (&imm->i, size) ^ (uintptr_t) imm->def->type;
 	} else {
-		internal_error (0, 0);
+		internal_error (0, "invalid immediate hash table");
 	}
 }
 
@@ -520,28 +494,14 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 		const char *str1 = pr.strings->strings + imm1->i.string_val;
 		const char *str2 = pr.strings->strings + imm2->i.string_val;
 		return (str1 == str2 || (str1 && str2 && !strcmp (str1, str2)));
-	} else if (tab == &float_imm_defs) {
-		return imm1->i.float_val == imm2->i.float_val;
-	} else if (tab == &vector_imm_defs) {
-		return VectorCompare (imm1->i.vector_val, imm2->i.vector_val);
-	} else if (tab == &entity_imm_defs) {
-		return imm1->i.entity_val == imm2->i.entity_val;
-	} else if (tab == &field_imm_defs) {
+	} else if (tab == &fldptr_imm_defs) {
 		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
 						sizeof (imm1->i.pointer));
-	} else if (tab == &func_imm_defs) {
-		return imm1->i.func_val == imm2->i.func_val;
-	} else if (tab == &pointer_imm_defs) {
-		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
-						sizeof (imm1->i.pointer));
-	} else if (tab == &quaternion_imm_defs) {
-		return QuatCompare (imm1->i.quaternion_val, imm2->i.quaternion_val);
-	} else if (tab == &double_imm_defs) {
-		return imm1->i.double_val == imm2->i.double_val;
-	} else if (tab == &int_imm_defs) {
-		return imm1->i.int_val == imm2->i.int_val;
+	} else if (tab == &value_imm_defs) {
+		size_t      size = type_size (imm1->def->type) * sizeof (pr_type_t);
+		return !memcmp (&imm1->i, &imm2->i, size);
 	} else {
-		internal_error (0, 0);
+		internal_error (0, "invalid immediate hash table");
 	}
 }
 
@@ -676,7 +636,6 @@ emit_value (ex_value_t *value, def_t *def)
 	hashtab_t  *tab = 0;
 	type_t     *type;
 	ex_value_t  val = *value;
-	immediate_t *imm, search;
 
 	if (!string_imm_defs) {
 		clear_immediates ();
@@ -686,56 +645,36 @@ emit_value (ex_value_t *value, def_t *def)
 //		val.type = type_nil->type;
 	switch (val.lltype) {
 		case ev_entity:
-			tab = entity_imm_defs;
-			type = &type_entity;
-			break;
-		case ev_field:
-			tab = field_imm_defs;
-			type = &type_field;
-			break;
 		case ev_func:
-			tab = func_imm_defs;
-			type = &type_func;
-			break;
-		case ev_ptr:
-			tab = pointer_imm_defs;
-			type = &type_ptr;
-			break;
 		case ev_int:
 		case ev_uint:
-			if (!def || !is_float(def->type)) {
-				tab = int_imm_defs;
-				type = &type_int;
-				break;
-			}
-			val.v.float_val = val.v.int_val;
-			val.lltype = ev_float;
 		case ev_float:
-			tab = float_imm_defs;
-			type = &type_float;
+		case ev_vector:
+		case ev_quaternion:
+		case ev_double:
+			tab = value_imm_defs;
+			type = val.type;
+			break;
+		case ev_field:
+		case ev_ptr:
+			tab = fldptr_imm_defs;
+			type = ev_types[val.lltype];
 			break;
 		case ev_string:
 			val.v.int_val = ReuseString (val.v.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
-		case ev_vector:
-			tab = vector_imm_defs;
-			type = &type_vector;
-			break;
-		case ev_quaternion:
-			tab = quaternion_imm_defs;
-			type = &type_quaternion;
-			break;
-		case ev_double:
-			tab = double_imm_defs;
-			type = &type_double;
-			break;
 		default:
-			internal_error (0, 0);
+			internal_error (0, "unexpected value type: %s",
+							val.type->type < ev_type_count
+								? pr_type_name[val.lltype]
+								: va (0, "%d", val.lltype));
 	}
+	def_t       search_def = { .type = type };
+	immediate_t search = { .def = &search_def };
 	memcpy (&search.i, &val.v, sizeof (search.i));
-	imm = (immediate_t *) Hash_FindElement (tab, &search);
+	immediate_t *imm = Hash_FindElement (tab, &search);
 	if (imm && strcmp (imm->def->name, ".zero") == 0) {
 		if (def) {
 			imm = 0;	//FIXME do full def aliasing
@@ -820,15 +759,8 @@ clear_immediates (void)
 	if (value_table) {
 		Hash_FlushTable (value_table);
 		Hash_FlushTable (string_imm_defs);
-		Hash_FlushTable (float_imm_defs);
-		Hash_FlushTable (vector_imm_defs);
-		Hash_FlushTable (entity_imm_defs);
-		Hash_FlushTable (field_imm_defs);
-		Hash_FlushTable (func_imm_defs);
-		Hash_FlushTable (pointer_imm_defs);
-		Hash_FlushTable (quaternion_imm_defs);
-		Hash_FlushTable (int_imm_defs);
-		Hash_FlushTable (double_imm_defs);
+		Hash_FlushTable (fldptr_imm_defs);
+		Hash_FlushTable (value_imm_defs);
 	} else {
 		value_table = Hash_NewTable (16381, 0, 0, 0, 0);
 		Hash_SetHashCompare (value_table, value_get_hash, value_compare);
@@ -837,49 +769,19 @@ clear_immediates (void)
 										 &string_imm_defs, 0);
 		Hash_SetHashCompare (string_imm_defs, imm_get_hash, imm_compare);
 
-		float_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										&float_imm_defs, 0);
-		Hash_SetHashCompare (float_imm_defs, imm_get_hash, imm_compare);
+		fldptr_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&fldptr_imm_defs, 0);
+		Hash_SetHashCompare (fldptr_imm_defs, imm_get_hash, imm_compare);
 
-		vector_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										 &vector_imm_defs, 0);
-		Hash_SetHashCompare (vector_imm_defs, imm_get_hash, imm_compare);
-
-		entity_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										 &entity_imm_defs, 0);
-		Hash_SetHashCompare (entity_imm_defs, imm_get_hash, imm_compare);
-
-		field_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										&field_imm_defs, 0);
-		Hash_SetHashCompare (field_imm_defs, imm_get_hash, imm_compare);
-
-		func_imm_defs = Hash_NewTable (16381, 0, imm_free,
-									   &func_imm_defs, 0);
-		Hash_SetHashCompare (func_imm_defs, imm_get_hash, imm_compare);
-
-		pointer_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										  &pointer_imm_defs, 0);
-		Hash_SetHashCompare (pointer_imm_defs, imm_get_hash, imm_compare);
-
-		quaternion_imm_defs = Hash_NewTable (16381, 0, imm_free,
-											 &quaternion_imm_defs, 0);
-		Hash_SetHashCompare (quaternion_imm_defs, imm_get_hash, imm_compare);
-
-		int_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										  &int_imm_defs, 0);
-		Hash_SetHashCompare (int_imm_defs, imm_get_hash, imm_compare);
-
-		double_imm_defs = Hash_NewTable (16381, 0, imm_free,
-										 &double_imm_defs, 0);
-		Hash_SetHashCompare (double_imm_defs, imm_get_hash, imm_compare);
+		value_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&value_imm_defs, 0);
+		Hash_SetHashCompare (value_imm_defs, imm_get_hash, imm_compare);
 	}
 
 	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
 
 	memset (&zero_val, 0, sizeof (zero_val));
 	make_def_imm (def, string_imm_defs, &zero_val);
-	make_def_imm (def, float_imm_defs, &zero_val);
-	make_def_imm (def, entity_imm_defs, &zero_val);
-	make_def_imm (def, pointer_imm_defs, &zero_val);
-	make_def_imm (def, int_imm_defs, &zero_val);
+	make_def_imm (def, fldptr_imm_defs, &zero_val);
+	make_def_imm (def, value_imm_defs, &zero_val);
 }
