@@ -495,6 +495,20 @@ find_type (type_t *type)
 	// allocate a new one
 	check = new_type ();
 	*check = *type;
+	if (is_func (type)) {
+		check->t.func.param_types = 0;
+		const type_t *t = unalias_type (type);
+		int         num_params = t->t.func.num_params;
+		if (num_params < 0) {
+			num_params = ~num_params;
+		}
+		if (num_params) {
+			check->t.func.param_types = malloc (sizeof (type_t *) * num_params);
+			for (int i = 0; i < num_params; i++) {
+				check->t.func.param_types[i] = t->t.func.param_types[i];
+			}
+		}
+	}
 	check->freeable = 0;
 
 	chain_type (check);
