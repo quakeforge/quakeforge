@@ -1301,6 +1301,33 @@ chain_initial_types (void)
 	chain_structural_types ();
 }
 
+static const char *vector_field_names[] = { "x", "y", "z", "w" };
+//static const char *color_field_names[] = { "r", "g", "b", "a" };
+//static const char *texture_field_names[] = { "s", "t", "p", "q" };
+
+static void
+build_vector_struct (type_t *type)
+{
+	ty_meta_e   meta = type->meta;
+	etype_t     etype = type->type;
+	type_t     *ele_type = base_type (type);
+	int         width = type_width (type);
+
+	if (!ele_type || width < 2) {
+		internal_error (0, "%s not a vector type: %p %d", type->name, ele_type, width);
+	}
+
+	struct_def_t fields[width + 1];
+	for (int i = 0; i < width; i++) {
+		fields[i] = (struct_def_t) { vector_field_names[i], ele_type };
+	}
+	fields[width] = (struct_def_t) {};
+
+	make_structure (va (0, "@%s", type->name), 's', fields, type);
+	type->type = etype;
+	type->meta = meta;
+}
+
 void
 init_types (void)
 {
@@ -1332,17 +1359,6 @@ init_types (void)
 		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
-		{0, 0}
-	};
-	static struct_def_t vector_struct[] = {
-		{"x", &type_float},
-		{"y", &type_float},
-		{"z", &type_float},
-		{0, 0}
-	};
-	static struct_def_t quaternion_struct[] = {
-		{"v", &type_vector},
-		{"s", &type_float},
 		{0, 0}
 	};
 	static struct_def_t type_encoding_struct[] = {
@@ -1390,9 +1406,7 @@ init_types (void)
 
 	make_structure ("@zero", 'u', zero_struct, &type_zero);
 	make_structure ("@param", 'u', param_struct, &type_param);
-	make_structure ("@vector", 's', vector_struct, &type_vector);
-	type_vector.type = ev_vector;
-	type_vector.meta = ty_basic;
+	build_vector_struct (&type_vector);
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
@@ -1402,24 +1416,20 @@ init_types (void)
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
-	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
-	type_quaternion.type = ev_quaternion;
-	type_quaternion.meta = ty_basic;
+	build_vector_struct (&type_quaternion);
 	{
 		symbol_t   *sym;
-		sym = new_symbol_type ("x", &type_float);
+
+		sym = new_symbol_type ("v", &type_vector);
 		sym->s.offset = 0;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("y", &type_float);
-		sym->s.offset = 1;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("z", &type_float);
-		sym->s.offset = 2;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("w", &type_float);
+
+		sym = new_symbol_type ("s", &type_float);
 		sym->s.offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}
+#define VEC_TYPE(type_name, base_type) build_vector_struct (&type_##type_name);
+#include "tools/qfcc/include/vec_types.h"
 
 	chain_structural_types ();
 }

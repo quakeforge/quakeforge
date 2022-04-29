@@ -1330,7 +1330,11 @@ get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 	}
 	field = symtab_lookup (strct, sym->name);
 	if (!field && !is_entity(t1)) {
-		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
+		const char *name = t1->name;
+		if (!strncmp (name, "tag ", 4)) {
+			name += 4;
+		}
+		error (e2, "'%s' has no member named '%s'", name, sym->name);
 		e1->type = ex_error;
 	}
 	return field;
@@ -1391,7 +1395,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e1 = cast_expr (pointer_type (ivar->type), e1);
 			return unary_expr ('.', e1);
 		}
-	} else if (is_vector (t1) || is_quaternion (t1) || is_struct (t1)) {
+	} else if (is_nonscalar (t1) || is_struct (t1)) {
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
