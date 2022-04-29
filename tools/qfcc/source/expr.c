@@ -322,7 +322,7 @@ copy_expr (expr_t *e)
 			}
 			if (e->e.block.result && !n->e.block.result)
 				internal_error (e, "bogus block result?");
-			break;
+			return n;
 		case ex_expr:
 			n = new_expr ();
 			*n = *e;
