@@ -223,16 +223,8 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 expr_t *
 param_mismatch (expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 {
-	dstring_t  *s1 = dstring_newstr ();
-	dstring_t  *s2 = dstring_newstr ();
-
-	print_type_str (s1, t1);
-	print_type_str (s2, t2);
-
 	e = error (e, "type mismatch for parameter %d of %s: expected %s, got %s",
-			   param, fn, s1->str, s2->str);
-	dstring_delete (s1);
-	dstring_delete (s2);
+			   param, fn, get_type_string (t1), get_type_string (t2));
 	return e;
 }
 
@@ -2011,11 +2003,11 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				e = cast_expr (&type_float, e);
 			if (options.code.promote_float) {
-				if (is_float (get_type (e))) {
+				if (is_scalar (get_type (e)) && is_float (get_type (e))) {
 					t = &type_double;
 				}
 			} else {
-				if (is_double (get_type (e))) {
+				if (is_scalar (get_type (e)) && is_double (get_type (e))) {
 					if (!e->implicit) {
 						warning (e, "passing double into ... function");
 					}
