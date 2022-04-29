@@ -45,6 +45,8 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
+#include "QF/simd/types.h"
+
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -306,6 +308,155 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		internal_error (src, "unexpected constant expression type");
 	}
 	memcpy (dst, &val->v, dstSize);
+}
+
+const char *
+get_value_string (const ex_value_t *value)
+{
+	const type_t *type = value->type;
+	const char *str = "";
+	switch (type->type) {
+		case ev_string:
+			return va (0, "\"%s\"", quote_string (value->v.string_val));
+		case ev_vector:
+		case ev_quaternion:
+		case ev_float:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%.9g", value->v.float_val);
+					break;
+				case 2:
+					str = va (0, VEC2F_FMT, VEC2_EXP (value->v.vec2_val));
+					break;
+				case 3:
+					str = va (0, "[%.9g, %.9g, %.9g]",
+							  VectorExpand (value->v.vec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4F_FMT, VEC4_EXP (value->v.vec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_entity:
+		case ev_func:
+			return va (0, "%s %d", type->name, value->v.int_val);
+		case ev_field:
+			if (value->v.pointer.def) {
+				int         offset = value->v.pointer.val;
+				offset += value->v.pointer.def->offset;
+				return va (0, "field %d", offset);
+			} else {
+				return va (0, "field %d", value->v.pointer.val);
+			}
+		case ev_ptr:
+			if (value->v.pointer.def) {
+				str = va (0, "<%s>", value->v.pointer.def->name);
+			}
+			return va (0, "(* %s)[%d]%s",
+					   value->v.pointer.type
+						? get_type_string (value->v.pointer.type) : "???",
+					   value->v.pointer.val, str);
+		case ev_int:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIi32, value->v.int_val);
+					break;
+				case 2:
+					str = va (0, VEC2I_FMT, VEC2_EXP (value->v.ivec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIi32", %"PRIi32", %"PRIi32"]",
+							  VectorExpand (value->v.ivec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4I_FMT, VEC4_EXP (value->v.ivec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_uint:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIu32, value->v.uint_val);
+					break;
+				case 2:
+					str = va (0, "[%"PRIu32", %"PRIi32"]",
+							  VEC2_EXP (value->v.uivec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32"]",
+							  VectorExpand (value->v.uivec3_val));
+					break;
+				case 4:
+					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
+							  VEC4_EXP (value->v.uivec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_short:
+			return va (0, "%s %"PRIi16, type->name, value->v.short_val);
+		case ev_ushort:
+			return va (0, "%s %"PRIu16, type->name, value->v.ushort_val);
+		case ev_double:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%.17g", value->v.double_val);
+					break;
+				case 2:
+					str = va (0, VEC2D_FMT, VEC2_EXP (value->v.dvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%.17g, %.17g, %.17g]",
+							  VectorExpand (value->v.dvec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4D_FMT, VEC4_EXP (value->v.dvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_long:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIi64, value->v.long_val);
+					break;
+				case 2:
+					str = va (0, VEC2L_FMT, VEC2_EXP (value->v.lvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIi64", %"PRIi64", %"PRIi64"]",
+							  VectorExpand (value->v.lvec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4L_FMT, VEC4_EXP (value->v.lvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_ulong:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIu64, value->v.ulong_val);
+					break;
+				case 2:
+					str = va (0, "[%"PRIu64", %"PRIi64"]",
+							  VEC2_EXP (value->v.ulvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64"]",
+							  VectorExpand (value->v.ulvec3_val));
+					break;
+				case 4:
+					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
+							  VEC4_EXP (value->v.ulvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_void:
+			return "<void>";
+		case ev_invalid:
+			return "<invalid>";
+		case ev_type_count:
+			return "<type_count>";
+	}
+	return "invalid type";
 }
 
 static hashtab_t *string_imm_defs;

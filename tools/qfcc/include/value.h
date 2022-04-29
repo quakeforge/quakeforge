@@ -62,6 +62,7 @@ struct ex_value_s *new_type_value (const struct type_s *type,
 								   const struct pr_type_s *data);
 void value_store (pr_type_t *dst, const struct type_s *dstType,
 				  const struct expr_s *src);
+const char *get_value_string (const struct ex_value_s *value);
 
 struct ex_value_s *convert_value (struct ex_value_s *value,
 								  struct type_s *type);

@@ -123,63 +123,7 @@ operand_string (operand_t *op)
 		case op_def:
 			return op->def->name;
 		case op_value:
-			switch (op->value->lltype) {
-				case ev_string:
-					return va (0, "\"%s\"",
-							   quote_string (op->value->v.string_val));
-				case ev_double:
-					return va (0, "%g", op->value->v.double_val);
-				case ev_float:
-					return va (0, "%g", op->value->v.float_val);
-				case ev_vector:
-					return va (0, "'%g %g %g'",
-							   op->value->v.vector_val[0],
-							   op->value->v.vector_val[1],
-							   op->value->v.vector_val[2]);
-				case ev_quaternion:
-					return va (0, "'%g %g %g %g'",
-							   op->value->v.quaternion_val[0],
-							   op->value->v.quaternion_val[1],
-							   op->value->v.quaternion_val[2],
-							   op->value->v.quaternion_val[3]);
-				case ev_ptr:
-					if (op->value->v.pointer.def) {
-						return va (0, "ptr %s+%d",
-								   op->value->v.pointer.def->name,
-								   op->value->v.pointer.val);
-					} else if(op->value->v.pointer.tempop) {
-						operand_t  *tempop = op->value->v.pointer.tempop;
-						return va (0, "ptr %s+%d", tempop_string (tempop),
-								   op->value->v.pointer.val);
-					} else {
-						return va (0, "ptr %d", op->value->v.pointer.val);
-					}
-				case ev_field:
-					return va (0, "field %d", op->value->v.pointer.val);
-				case ev_entity:
-					return va (0, "ent %d", op->value->v.int_val);
-				case ev_func:
-					return va (0, "func %d", op->value->v.int_val);
-				case ev_int:
-					return va (0, "int %d", op->value->v.int_val);
-				case ev_uint:
-					return va (0, "uint %u", op->value->v.uint_val);
-				case ev_long:
-					return va (0, "long %"PRIi64, op->value->v.long_val);
-				case ev_ulong:
-					return va (0, "ulong %"PRIu64, op->value->v.ulong_val);
-				case ev_short:
-					return va (0, "short %d", op->value->v.short_val);
-				case ev_ushort:
-					return va (0, "ushort %d", op->value->v.ushort_val);
-				case ev_void:
-					return "(void)";
-				case ev_invalid:
-					return "(invalid)";
-				case ev_type_count:
-					return "(type_count)";
-			}
-			break;
+			return get_value_string (op->value);
 		case op_label:
 			return op->label->name;
 		case op_temp:
@@ -209,61 +153,8 @@ _print_operand (operand_t *op)
 			printf ("%s", op->def->name);
 			break;
 		case op_value:
-			printf ("(%s) ", pr_type_name[op->type->type]);
-			switch (op->value->lltype) {
-				case ev_string:
-					printf ("\"%s\"", op->value->v.string_val);
-					break;
-				case ev_double:
-					printf ("%g", op->value->v.double_val);
-					break;
-				case ev_float:
-					printf ("%g", op->value->v.float_val);
-					break;
-				case ev_vector:
-					printf ("'%g", op->value->v.vector_val[0]);
-					printf (" %g", op->value->v.vector_val[1]);
-					printf (" %g'", op->value->v.vector_val[2]);
-					break;
-				case ev_quaternion:
-					printf ("'%g", op->value->v.quaternion_val[0]);
-					printf (" %g", op->value->v.quaternion_val[1]);
-					printf (" %g", op->value->v.quaternion_val[2]);
-					printf (" %g'", op->value->v.quaternion_val[3]);
-					break;
-				case ev_ptr:
-					printf ("(%s)[%d]",
-							pr_type_name[op->value->v.pointer.type->type],
-							op->value->v.pointer.val);
-					break;
-				case ev_field:
-					printf ("%d", op->value->v.pointer.val);
-					break;
-				case ev_entity:
-				case ev_func:
-				case ev_int:
-					printf ("%d", op->value->v.int_val);
-					break;
-				case ev_uint:
-					printf ("%u", op->value->v.uint_val);
-					break;
-				case ev_long:
-					printf ("%"PRIu64, op->value->v.long_val);
-					break;
-				case ev_ulong:
-					printf ("%"PRIu64, op->value->v.ulong_val);
-					break;
-				case ev_short:
-					printf ("%d", op->value->v.short_val);
-					break;
-				case ev_ushort:
-					printf ("%d", op->value->v.ushort_val);
-					break;
-				case ev_void:
-				case ev_invalid:
-				case ev_type_count:
-					internal_error (op->expr, "weird value type");
-			}
+			printf ("(%s) %s", pr_type_name[op->type->type],
+					get_value_string (op->value));
 			break;
 		case op_label:
 			printf ("block %p", op->label->dest);
