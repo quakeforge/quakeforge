@@ -137,10 +137,12 @@ STRING		\"(\\.|[^"\\])*\"
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						if (*c == 'u' || *c == 'U')
+						if (*c == 'u' || *c == 'U') {
 							qc_yylval.expr = new_int_expr (i);//FIXME
-						else
+						} else {
 							qc_yylval.expr = new_int_expr (i);
+							qc_yylval.expr->implicit = 1;
+						}
 						return VALUE;
 					}
 

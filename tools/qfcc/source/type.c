@@ -1124,8 +1124,16 @@ type_assignable (const type_t *dst, const type_t *src)
 			return 1;
 		return 0;
 	}
-	if (!is_ptr (dst) || !is_ptr (src))
-		return is_scalar (dst) && is_scalar (src);
+	if (!is_ptr (dst) || !is_ptr (src)) {
+		if (is_scalar (dst) && is_scalar (src)) {
+			return 1;
+		}
+		if (is_nonscalar (dst) && is_nonscalar (src)
+			&& type_width (dst) == type_width (src)) {
+			return 1;
+		}
+		return 0;
+	}
 
 	// pointer = pointer
 	// give the object system first shot because the pointee types might have

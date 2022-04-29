@@ -97,12 +97,14 @@ new_vector_list (expr_t *expr_list)
 	}
 
 	int         all_constant = 1;
+	int         all_implicit = 1;
 	expr_t     *elements[count + 1];
 	elements[count] = 0;
 	count = 0;
 	for (expr_t *e = expr_list; e; e = e->next) {
 		int         cast_width = type_width (get_type (e));
 		type_t     *cast_type = vector_type (ele_type, cast_width);
+		all_implicit = all_implicit && e->implicit;
 		elements[count] = cast_expr (cast_type, fold_constants (e));
 		all_constant = all_constant && is_constant (elements[count]);
 		count++;
@@ -153,7 +155,9 @@ new_vector_list (expr_t *expr_list)
 			offs += type_size (src_type);
 		}
 
-		return new_value_expr (new_type_value (vec_type, value));
+		expr_t     *vec = new_value_expr (new_type_value (vec_type, value));
+		vec->implicit = all_implicit;
+		return vec;
 	}
 
 	for (int i = 0; i < count; i++) {

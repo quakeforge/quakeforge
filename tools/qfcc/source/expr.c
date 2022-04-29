@@ -2231,8 +2231,9 @@ return_expr (function_t *f, expr_t *e)
 	}
 	if (!type_assignable (ret_type, t)) {
 		if (!options.traditional)
-			return error (e, "type mismatch for return value of %s",
-						  f->sym->name);
+			return error (e, "type mismatch for return value of %s: %s -> %s",
+						  f->sym->name, get_type_string (t),
+						  get_type_string (ret_type));
 		if (options.warnings.traditional)
 			warning (e, "type mismatch for return value of %s",
 					 f->sym->name);

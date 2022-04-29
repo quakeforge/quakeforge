@@ -173,20 +173,19 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	}
 
 	if (type_assignable (dst_type, src_type)) {
-		if (is_scalar (dst_type) && is_scalar (src_type)) {
-			if (!src->implicit) {
-				if (is_double (src_type)) {
-					warning (dst, "assignment of double to %s (use a cast)\n",
-							 dst_type->name);
-				}
+		debug (dst, "casting %s to %s", src_type->name, dst_type->name);
+		if (!src->implicit && !type_promotes (dst_type, src_type)) {
+			if (is_double (src_type)) {
+				warning (dst, "assignment of %s to %s (use a cast)\n",
+						 src_type->name, dst_type->name);
 			}
-			// the types are different but cast-compatible
-			expr_t     *new = cast_expr (dst_type, src);
-			// the cast was a no-op, so the types are compatible at the
-			// low level (very true for default type <-> enum)
-			if (new != src) {
-				return assign_expr (dst, new);
-			}
+		}
+		// the types are different but cast-compatible
+		expr_t     *new = cast_expr (dst_type, src);
+		// the cast was a no-op, so the types are compatible at the
+		// low level (very true for default type <-> enum)
+		if (new != src) {
+			return assign_expr (dst, new);
 		}
 		return 0;
 	}
