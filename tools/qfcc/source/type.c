@@ -1010,6 +1010,8 @@ is_integral (const type_t *type)
 	type = unalias_type (type);
 	if (is_int (type) || is_uint (type) || is_short (type))
 		return 1;
+	if (is_long (type) || is_ulong (type) || is_ushort (type))
+		return 1;
 	return is_enum (type);
 }
 
