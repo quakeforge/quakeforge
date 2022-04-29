@@ -380,10 +380,17 @@ init_elements (struct def_s *def, expr_t *eles)
 				reloc_def_op (c->e.labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				if (is_float (element->type)
-					&& (is_int (get_type (c))
-						|| (is_double (get_type (c)) && c->implicit))) {
-					expr_t     *n = cast_expr (&type_float, c);
+				type_t     *ctype = get_type (c);
+				if (ctype != element->type
+					&& type_assignable (element->type, ctype)) {
+					if (!c->implicit
+						&& !type_promotes (element->type, ctype)) {
+						warning (c, "initialization of %s with %s"
+								 " (use a cast)\n)",
+								 get_type_string (element->type),
+								 get_type_string (ctype));
+					}
+					expr_t     *n = cast_expr (element->type, c);
 					n->line = c->line;
 					n->file = c->line;
 					c = n;
