@@ -31,8 +31,6 @@
 # include "config.h"
 #endif
 
-#define _GNU_SOURCE	// for qsort_r
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -48,6 +46,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
@@ -479,6 +478,14 @@ process_compunit (prdeb_resources_t *res, pr_def_t *def)
 }
 
 static int
+def_compare_sort (const void *_da, const void *_db, void *_res)
+{
+	pr_def_t    da = *(const pr_def_t *)_da;
+	pr_def_t    db = *(const pr_def_t *)_db;
+	return da.ofs - db.ofs;
+}
+
+static int
 func_compare_sort (const void *_fa, const void *_fb, void *_res)
 {
 	prdeb_resources_t *res = _res;
@@ -552,9 +559,12 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 		}
 		res->auxfunction_map[res->auxfunctions[i].function] =
 			&res->auxfunctions[i];
+		heapsort_r (res->local_defs + res->auxfunctions[i].local_defs,
+					res->auxfunctions[i].num_locals, sizeof (pr_def_t),
+					def_compare_sort, res);
 	}
-	qsort_r (res->sorted_functions, pr->progs->functions.count,
-			 sizeof (pr_func_t), func_compare_sort, res);
+	heapsort_r (res->sorted_functions, pr->progs->functions.count,
+				sizeof (pr_func_t), func_compare_sort, res);
 
 	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
 		if (type_encodings) {
