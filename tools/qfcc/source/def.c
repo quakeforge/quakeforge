@@ -180,8 +180,6 @@ alias_def (def_t *def, type_t *type, int offset)
 		internal_error (0, "aliasing a def to a larger type");
 	if (offset < 0 || offset + type_size (type) > type_size (def->type))
 		internal_error (0, "invalid alias offset");
-	if (type == def->type)
-		return def;
 	for (alias = def->alias_defs; alias; alias = alias->next) {
 		if (alias->type == type && alias->offset == offset)
 			return alias;
