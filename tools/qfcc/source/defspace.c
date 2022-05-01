@@ -173,7 +173,8 @@ defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
 		// exact fit, so just shrink the block or remove it if there is no
 		// padding (any padding remains free)
 		if (size + pad == loc->size) {
-			if (!pad) {
+			loc->size -= size;
+			if (!loc->size) {
 				*l = loc->next;
 				del_locref (loc);
 			}
