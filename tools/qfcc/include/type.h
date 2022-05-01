@@ -162,6 +162,36 @@ type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 type_t *base_type (const type_t *vec_type) __attribute__((pure));
+
+/** Return an integral type of same size as the provided type.
+
+	Any 32-bit type will produce type_int (or one of ivec2, ivec3 or ivec4).
+	Any 64-bit type will produce type_long (lor one of lvec2, lvec3, or lvec4).
+
+	Both type_width() and type_size() of the returned type will match the
+	provided type.
+
+	\param base		Type on which the return type will be based.
+	\return			Matching integral type (int, long, or a vector form), or
+					null if no such match can be made.
+*/
+type_t *int_type (const type_t *base) __attribute__((pure));
+
+/** Return a floating point type of same size as the provided type.
+
+	Any 32-bit type will produce type_float (or one of vec2, vec3 or vec4).
+	Any 64-bit type will produce type_double (lor one of dvec2, dvec3, or
+	dvec4).
+
+	Both type_width() and type_size() of the returned type will match the
+	provided type.
+
+	\param base		Type on which the return type will be based.
+	\return			Matching floating point type (float, double, or a vector
+					form), or null if no such match can be made.
+*/
+type_t *float_type (const type_t *base) __attribute__((pure));
+
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
 type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);

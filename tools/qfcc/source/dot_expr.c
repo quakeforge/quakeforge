@@ -556,6 +556,41 @@ print_args (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_horizontal (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.hop.vec, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->e.hop.vec);
+	dasprintf (dstr, "%*se_%p [label=\"hop %s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.hop.op), e->line);
+}
+
+static void
+print_swizzle (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	static char swizzle_components[] = "xyzw";
+	int         indent = level * 2 + 2;
+	ex_swizzle_t swiz = e->e.swizzle;
+	const char *swizzle = "";
+
+	for (int i = 0; i < 4; i++) {
+		if (swiz.zero & (1 << i)) {
+			swizzle = va (0, "%s0", swizzle);
+		} else {
+			swizzle = va (0, "%s%s%c", swizzle,
+						  swiz.neg & (1 << i) ? "-" : "",
+						  swizzle_components[swiz.source[i]]);
+		}
+	}
+
+	_print_expr (dstr, swiz.src, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, swiz.src);
+	dasprintf (dstr, "%*se_%p [label=\"swizzle %s\\n%d\"];\n", indent, "", e,
+			   swizzle, e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -584,6 +619,8 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_adjstk] = print_adjstk,
 		[ex_with] = print_with,
 		[ex_args] = print_args,
+		[ex_horizontal] = print_horizontal,
+		[ex_swizzle] = print_swizzle,
 	};
 	int         indent = level * 2 + 2;
 

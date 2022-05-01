@@ -1784,6 +1784,32 @@ expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	const char *opcode = "swizzle";
+	statement_t *s;
+	int         swiz = 0;
+	type_t     *res_type = e->e.swizzle.type;
+
+	for (int i = 0; i < 4; i++) {
+		swiz |= e->e.swizzle.source[i] & 3;
+	}
+	swiz |= (e->e.swizzle.neg & 0xf) << 8;
+	swiz |= (e->e.swizzle.zero & 0xf) << 12;
+
+	s = new_statement (st_expr, opcode, e);
+	sblock = statement_subexpr (sblock, e->e.swizzle.src, &s->opa);
+	s->opb = short_operand (swiz, e);
+	if (!*op) {
+		*op = temp_operand (res_type, e);
+	}
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
+	return sblock;
+}
+
+static sblock_t *
 expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->e.def, e->e.def->type, e);
@@ -1915,6 +1941,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_expr] = expr_expr,
 		[ex_uexpr] = expr_uexpr,
 		[ex_horizontal] = expr_horizontal,
+		[ex_swizzle] = expr_swizzle,
 		[ex_def] = expr_def,
 		[ex_symbol] = expr_symbol,
 		[ex_temp] = expr_temp,

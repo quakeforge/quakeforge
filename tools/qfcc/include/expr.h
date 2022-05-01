@@ -258,6 +258,17 @@ typedef struct {
 	struct type_s *type;		///< result type
 } ex_horizontal_t;
 
+//NOTE always operates on vec4 or dvec4, so needs a suitable destination and
+//care must be taken when working with smaller source operands (check aligmnet
+//and adjust swizzle operation as needed)
+typedef struct {
+	struct expr_s *src;			///< source expression
+	unsigned    source[4];		///< src component indices
+	unsigned    neg;			///< bitmask of dst components to negate
+	unsigned    zero;			///< bitmask of dst components to 0
+	struct type_s *type;		///< result type
+} ex_swizzle_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -293,6 +304,7 @@ typedef struct expr_s {
 		ex_with_t   with;				///< with expr param
 		struct type_s *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
+		ex_swizzle_t swizzle;			///< vector swizzle operation
 	} e;
 } expr_t;
 
@@ -479,6 +491,8 @@ expr_t *new_unary_expr (int op, expr_t *e1);
 					is not an error expression, otherwise \a e1.
 */
 expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
+
+expr_t *new_swizzle_expr (expr_t *src, const char *swizzle);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 

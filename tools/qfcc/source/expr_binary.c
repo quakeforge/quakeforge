@@ -654,13 +654,28 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 	if (!*s_op) {
 		return 0;
 	}
+
 	// expand the scalar to a vector of the same width as vec
-	for (int i = 1; i < type_width (get_type (vec)); i++) {
-		expr_t     *s = copy_expr (scalar);
-		s->next = scalar;
-		scalar = s;
+	type_t     *vec_type = get_type (vec);
+
+	if (scalar->type == ex_symbol || scalar->type == ex_def
+		|| is_constant (scalar)) {
+		for (int i = 1; i < type_width (get_type (vec)); i++) {
+			expr_t     *s = copy_expr (scalar);
+			s->next = scalar;
+			scalar = s;
+		}
+		return new_vector_list (scalar);
 	}
-	return new_vector_list (scalar);
+
+	char        swizzle[] = "xxxx";
+	type_t     *vec_base = base_type (vec_type);
+	expr_t     *tmp = new_temp_def_expr (vector_type (vec_base, 4));
+	expr_t     *block = new_block_expr ();
+	swizzle[type_width (vec_type)] = 0;
+	append_expr (block, assign_expr (tmp, new_swizzle_expr (scalar, swizzle)));
+	block->e.block.result = new_alias_expr (vec_type, tmp);
+	return block;
 }
 
 static expr_t *

@@ -41,6 +41,7 @@
 
 #include <QF/hash.h>
 
+#include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -302,7 +303,26 @@ operand_width (const char *opname, operand_t *op)
 	}
 	return op->width;
 }
-
+#if 0
+	if (!strcmp (name, "swizzle")) {
+		adjust_swizzle_op (&search_op, 0);
+		adjust_swizzle_op (&search_op, 2);
+	}
+static void
+adjust_swizzle_op (opcode_t *op, int opind)
+{
+	// swizzle instructions require both operands to be 4 components (4 or 8
+	// words) in size with the same alignment.
+	op->widths[opind] = 4;
+	if (pr_type_size[op->types[opind]] == 1) {
+		op->types[opind] = ev_float;
+	} else if (pr_type_size[op->types[opind]] == 2) {
+		op->types[opind] = ev_double;
+	} else {
+		internal_error (0, "unexpected swizzle op size");
+	}
+}
+#endif
 static opcode_t *
 rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)

@@ -195,6 +195,8 @@ get_type (expr_t *e)
 			return &type_va_list;
 		case ex_horizontal:
 			return e->e.hop.type;
+		case ex_swizzle:
+			return e->e.swizzle.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -425,6 +427,11 @@ copy_expr (expr_t *e)
 			*n = *e;
 			e->e.hop.vec = copy_expr (e->e.hop.vec);
 			return n;
+		case ex_swizzle:
+			n = new_expr ();
+			*n = *e;
+			e->e.swizzle.src = copy_expr (e->e.swizzle.src);
+			return n;
 		case ex_count:
 			break;
 	}
@@ -609,6 +616,74 @@ new_horizontal_expr (int op, expr_t *vec, type_t *type)
 	e->e.hop.vec = vec;
 	e->e.hop.type = type;
 	return e;
+}
+
+expr_t *
+new_swizzle_expr (expr_t *src, const char *swizzle)
+{
+	type_t     *src_type = get_type (src);
+	if (!src_type) {
+		return src;
+	}
+	int         src_width = type_width (src_type);
+	// swizzle always generates a *vec4
+	ex_swizzle_t swiz = {};
+
+#define m(x) (1 << ((x) - 'a'))
+#define v(x, mask) (((x) & 0x60) == 0x60 && (m(x) & (mask)))
+#define vind(x) ((x) & 3)
+#define cind(x) (-(((x) >> 3) ^ (x)) & 3)
+#define tind(x) ((((~(x+1)>>2)&1) + x + 1) & 3)
+	const int   color = m('r') | m('g') | m('b') | m('a');
+	const int   vector = m('x') | m('y') | m('z') | m('w');
+	const int   texture = m('s') | m('t') | m('p') | m('q');
+
+	int         type_mask = 0;
+	int         comp_count = 0;
+
+	for (const char *s = swizzle; *s; s++) {
+		if (comp_count >= 4) {
+			return error (src, "too many components in swizzle");
+		}
+		if (*s == '0') {
+			swiz.zero |= 1 << comp_count;
+			comp_count++;
+		} else if (*s == '-') {
+			swiz.neg |= 1 << comp_count;
+		} else {
+			int         ind = 0;
+			int         mask = 0;
+			if (v (*s, vector)) {
+				ind = vind (*s);
+				mask = 1;
+			} else if (v (*s, color)) {
+				ind = cind (*s);
+				mask = 2;
+			} else if (v (*s, texture)) {
+				ind = tind (*s);
+				mask = 4;
+			}
+			if (!mask) {
+				return error (src, "invalid component in swizzle");
+			}
+			if (type_mask & ~mask) {
+				return error (src, "mixed components in swizzle");
+			}
+			if (ind >= src_width) {
+				return error (src, "swizzle component out of bounds");
+			}
+			type_mask |= mask;
+			swiz.source[comp_count++] = ind;
+		}
+	}
+	swiz.zero |= (0xf << comp_count) & 0xf;
+	swiz.src = new_alias_expr (vector_type (&type_float, src_width), src);
+	swiz.type = vector_type (base_type (src_type), 4);
+
+	expr_t     *expr = new_expr ();
+	expr->type = ex_swizzle;
+	expr->e.swizzle = swiz;
+	return expr;
 }
 
 expr_t *
@@ -1547,6 +1622,8 @@ has_function_call (expr_t *e)
 			return has_function_call (e->e.retrn.ret_val);
 		case ex_horizontal:
 			return has_function_call (e->e.hop.vec);
+		case ex_swizzle:
+			return has_function_call (e->e.swizzle.src);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1692,6 +1769,7 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1785,6 +1863,7 @@ unary_expr (int op, expr_t *e)
 				case ex_address:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 					if (options.code.progsversion == PROG_VERSION) {
 						return binary_expr (EQ, e, new_nil_expr ());
 					} else {
@@ -1874,6 +1953,7 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_int_expr (-1);

@@ -587,6 +587,38 @@ base_type (const type_t *vec_type)
 }
 
 type_t *
+int_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_int;
+	} else if (type_size (base) == 2) {
+		base = &type_long;
+	}
+	return vector_type (base, width);
+}
+
+type_t *
+float_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_float;
+	} else if (type_size (base) == 2) {
+		base = &type_double;
+	}
+	return vector_type (base, width);
+}
+
+type_t *
 array_type (type_t *aux, int size)
 {
 	type_t      _new;
