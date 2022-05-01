@@ -658,8 +658,7 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 	// expand the scalar to a vector of the same width as vec
 	type_t     *vec_type = get_type (vec);
 
-	if (scalar->type == ex_symbol || scalar->type == ex_def
-		|| is_constant (scalar)) {
+	if (is_constant (scalar)) {
 		for (int i = 1; i < type_width (get_type (vec)); i++) {
 			expr_t     *s = copy_expr (scalar);
 			s->next = scalar;
