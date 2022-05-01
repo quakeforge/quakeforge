@@ -38,6 +38,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -60,10 +61,12 @@ typedef struct fmt_item_s {
 	int         precision;
 	union {
 		const char *string_var;
-		int         integer_var;
-		unsigned    uinteger_var;
+		pr_int_t    int_var;
+		pr_uint_t   uint_var;
 		float       float_var;
 		double      double_var;
+		pr_long_t   long_var;
+		pr_ulong_t  ulong_var;
 	}           data;
 	struct fmt_item_s *next;
 } fmt_item_t;
@@ -769,23 +772,35 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 				break;
 			case 'c':
 				dstring_appendstr (tmp, "c");
-				PRINT (integer);
+				PRINT (int);
 				break;
 			case 'i':
 			case 'd':
-				dstring_appendstr (tmp, "d");
-				PRINT (integer);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRId64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRId32);
+					PRINT (uint);
+				}
 				break;
 			case 'x':
-				dstring_appendstr (tmp, "x");
-				PRINT (integer);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRIx64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRIx32);
+					PRINT (uint);
+				}
 				break;
 			case 'u':
-				if (current->flags & FMT_HEX)
-					dstring_appendstr (tmp, "x");
-				else
-					dstring_appendstr (tmp, "u");
-				PRINT (uinteger);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRIu64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRIu32);
+					PRINT (uint);
+				}
 				break;
 			case 'f':
 				dstring_appendstr (tmp, "f");
@@ -860,9 +875,7 @@ fmt_append_item (fmt_state_t *state)
 }
 
 #undef P_var
-#define P_var(p,n,t) (state->args[n]->t##_var)
-#undef P_DOUBLE
-#define P_DOUBLE(p,n) (*(double *) (state->args[n]))
+#define P_var(p,n,t) PR_PTR (t, state->args[n])
 
 /**	State machine for PR_Sprintf
  *
@@ -1021,6 +1034,12 @@ static void
 fmt_state_modifiers (fmt_state_t *state)
 {
 	// no modifiers supported
+	if (state->c[0] == 'l'
+		&& (state->c[1] == 'i' || state->c[1] == 'd' || state->c[1] == 'x'
+			|| state->c[1] == 'u')) {
+		(*state->fi)->flags |= FMT_LONG;
+		state->c++;
+	}
 	state->state = fmt_state_conversion;
 }
 
@@ -1038,8 +1057,7 @@ fmt_state_conversion (fmt_state_t *state)
 		case 'e':
 			// entity
 			(*state->fi)->type = 'i';
-			(*state->fi)->data.integer_var =
-				P_EDICTNUM (pr, state->fmt_count);
+			(*state->fi)->data.int_var = P_EDICTNUM (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1047,9 +1065,13 @@ fmt_state_conversion (fmt_state_t *state)
 		case 'i':
 		case 'd':
 		case 'c':
-			// integer
+			// int
 			(*state->fi)->type = conv;
-			(*state->fi)->data.integer_var = P_INT (pr, state->fmt_count);
+			if ((*state->fi)->flags & FMT_LONG) {
+				(*state->fi)->data.long_var = P_LONG (pr, state->fmt_count);
+			} else {
+				(*state->fi)->data.int_var = P_INT (pr, state->fmt_count);
+			}
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1076,7 +1098,7 @@ fmt_state_conversion (fmt_state_t *state)
 			// pointer
 			(*state->fi)->flags |= FMT_ALTFORM;
 			(*state->fi)->type = 'x';
-			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+			(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1134,9 +1156,13 @@ fmt_state_conversion (fmt_state_t *state)
 			break;
 		case 'u':
 		case 'x':
-			// integer, unsigned or hex notation
+			// int, unsigned or hex notation
 			(*state->fi)->type = conv;
-			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+			if ((*state->fi)->flags & FMT_LONG) {
+				(*state->fi)->data.ulong_var = P_ULONG (pr, state->fmt_count);
+			} else {
+				(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
+			}
 
 			state->fmt_count++;
 			fmt_append_item (state);

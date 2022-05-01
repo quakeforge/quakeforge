@@ -276,7 +276,7 @@ bi_Hash_FindList (progs_t *pr, void *_res)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].int_var = (intptr_t) *l;
+		PR_PTR (ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -296,7 +296,7 @@ bi_Hash_FindElementList (progs_t *pr, void *_res)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].int_var = (intptr_t) *l;
+		PR_PTR (ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -356,7 +356,7 @@ bi_Hash_GetList (progs_t *pr, void *_res)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].int_var = (intptr_t) *l;
+		PR_PTR(ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }

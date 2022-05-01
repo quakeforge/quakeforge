@@ -63,5 +63,6 @@ EX_EXPR(adjstk)		///< stack adjust expression  (::ex_adjstk_t)
 EX_EXPR(with)		///< with expression  (::ex_with_t)
 EX_EXPR(args)		///< @args marker in parameter list. no data
 EX_EXPR(horizontal)	///< horizontal vector operation (::ex_horzontal_t)
+EX_EXPR(swizzle)	///< vector swizzle operation (::ex_swizzle_t)
 
 ///@}

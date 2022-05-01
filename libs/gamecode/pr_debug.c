@@ -31,8 +31,6 @@
 # include "config.h"
 #endif
 
-#define _GNU_SOURCE	// for qsort_r
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -48,6 +46,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
@@ -337,11 +336,11 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 					goto error;
 				if (!Script_GetToken (es, 1))
 					goto error;
-				pr->wp_val.int_var = strtol (es->token->str, &e, 0);
+				PR_PTR (int, &pr->wp_val) = strtol (es->token->str, &e, 0);
 				if (e == es->token->str)
 					goto error;
 				if (*e == '.' || *e == 'e' || *e == 'E')
-					pr->wp_val.float_var = strtod (es->token->str, &e);
+					PR_PTR (float, &pr->wp_val) = strtod (es->token->str, &e);
 				pr->wp_conditional = 1;
 			}
 		}
@@ -385,7 +384,7 @@ pr_debug_clear (progs_t *pr, void *data)
 
 	pr->watch = 0;
 	pr->wp_conditional = 0;
-	pr->wp_val.int_var = 0;
+	PR_PTR (int, &pr->wp_val) = 0;
 
 	for (int i = 0; i < ev_type_count; i++ ) {
 		res->type_encodings[i] = &res->void_type;
@@ -479,6 +478,14 @@ process_compunit (prdeb_resources_t *res, pr_def_t *def)
 }
 
 static int
+def_compare_sort (const void *_da, const void *_db, void *_res)
+{
+	pr_def_t    da = *(const pr_def_t *)_da;
+	pr_def_t    db = *(const pr_def_t *)_db;
+	return da.ofs - db.ofs;
+}
+
+static int
 func_compare_sort (const void *_fa, const void *_fb, void *_res)
 {
 	prdeb_resources_t *res = _res;
@@ -552,9 +559,12 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 		}
 		res->auxfunction_map[res->auxfunctions[i].function] =
 			&res->auxfunctions[i];
+		heapsort_r (res->local_defs + res->auxfunctions[i].local_defs,
+					res->auxfunctions[i].num_locals, sizeof (pr_def_t),
+					def_compare_sort, res);
 	}
-	qsort_r (res->sorted_functions, pr->progs->functions.count,
-			 sizeof (pr_func_t), func_compare_sort, res);
+	heapsort_r (res->sorted_functions, pr->progs->functions.count,
+				sizeof (pr_func_t), func_compare_sort, res);
 
 	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
 		if (type_encodings) {
@@ -612,7 +622,7 @@ PR_LoadDebug (progs_t *pr)
 
 	if (!str)
 		return 1;
-	res->debugfile = PR_GetString (pr, str->string_var);
+	res->debugfile = PR_GetString (pr, PR_PTR (string, str));
 	sym_file = QFS_SkipPath (res->debugfile);
 	path_end = QFS_SkipPath (pr->progs_name);
 	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
@@ -1152,7 +1162,7 @@ pr_debug_string_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
-	pr_string_t string = value->string_var;
+	pr_string_t string = PR_PTR (string, value);
 	if (PR_StringValid (data->pr, string)) {
 		const char *str = PR_GetString (data->pr, string);
 
@@ -1196,11 +1206,11 @@ pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	if (data->pr->progs->version == PROG_ID_VERSION
-		&& ISDENORM (value->int_var)
-		&& value->uint_var != 0x80000000) {
-		dasprintf (dstr, "<%08x>", value->int_var);
+		&& ISDENORM (PR_PTR (int, value))
+		&& PR_PTR (uint, value) != 0x80000000) {
+		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
 	} else {
-		dasprintf (dstr, "%.9g", value->float_var);
+		dasprintf (dstr, "%.9g", PR_PTR (float, value));
 	}
 }
 
@@ -1210,7 +1220,7 @@ pr_debug_vector_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%.9g %.9g %.9g'", VectorExpand (&value->vector_var));
+	dasprintf (dstr, "'%.9g %.9g %.9g'", VectorExpand (&PR_PTR (float, value)));
 }
 
 static void
@@ -1221,15 +1231,15 @@ pr_debug_entity_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	if (pr->pr_edicts
-		&& value->entity_var < pr->max_edicts
-		&& !(value->entity_var % pr->pr_edict_size)) {
-		edict_t    *edict = PROG_TO_EDICT (pr, value->entity_var);
+		&& PR_PTR (entity, value) < pr->max_edicts
+		&& !(PR_PTR (entity, value) % pr->pr_edict_size)) {
+		edict_t    *edict = PROG_TO_EDICT (pr, PR_PTR (entity, value));
 		if (edict) {
 			dasprintf (dstr, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
 			return;
 		}
 	}
-	dasprintf (dstr, "entity [%x]", value->entity_var);
+	dasprintf (dstr, "entity [%x]", PR_PTR (entity, value));
 }
 
 static void
@@ -1238,12 +1248,12 @@ pr_debug_field_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	pr_def_t   *def = PR_FieldAtOfs (pr, value->int_var);
+	pr_def_t   *def = PR_FieldAtOfs (pr, PR_PTR (int, value));
 
 	if (def) {
 		dasprintf (dstr, ".%s", PR_GetString (pr, def->name));
 	} else {
-		dasprintf (dstr, ".<$%04x>", value->int_var);
+		dasprintf (dstr, ".<$%04x>", PR_PTR (int, value));
 	}
 }
 
@@ -1254,12 +1264,12 @@ pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
 
-	if (value->func_var >= pr->progs->functions.count) {
-		dasprintf (dstr, "INVALID:%d", value->func_var);
-	} else if (!value->func_var) {
+	if (PR_PTR (func, value) >= pr->progs->functions.count) {
+		dasprintf (dstr, "INVALID:%d", PR_PTR (func, value));
+	} else if (!PR_PTR (func, value)) {
 		dstring_appendstr (dstr, "NULL");
 	} else {
-		dfunction_t *f = pr->pr_functions + value->func_var;
+		dfunction_t *f = pr->pr_functions + PR_PTR (func, value);
 		dasprintf (dstr, "%s()", PR_GetString (pr, f->name));
 	}
 }
@@ -1270,7 +1280,7 @@ pr_debug_ptr_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	pr_ptr_t    offset = value->int_var;
+	pr_ptr_t    offset = PR_PTR (int, value);
 	pr_ptr_t    offs = offset;
 	pr_def_t   *def = 0;
 
@@ -1292,7 +1302,7 @@ pr_debug_quaternion_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'", QuatExpand (&value->quat_var));
+	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'", QuatExpand (&PR_PTR (float, value)));
 }
 
 static void
@@ -1301,7 +1311,7 @@ pr_debug_int_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%d", value->int_var);
+	dasprintf (dstr, "%d", PR_PTR (int, value));
 }
 
 static void
@@ -1310,7 +1320,7 @@ pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "$%08x", value->uint_var);
+	dasprintf (dstr, "$%08x", PR_PTR (uint, value));
 }
 
 static void
@@ -1319,7 +1329,7 @@ pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%04x", (short)value->int_var);
+	dasprintf (dstr, "%04x", (short)PR_PTR (int, value));
 }
 
 static void
@@ -1355,7 +1365,7 @@ pr_debug_ushort_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%04x", (pr_ushort_t)value->int_var);
+	dasprintf (dstr, "%04x", (pr_ushort_t)PR_PTR (int, value));
 }
 
 static void
@@ -1431,7 +1441,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 						(int) (intptr_t) (pr->watch - pr->pr_globals));
 			if (pr->wp_conditional)
 				Sys_Printf ("        if new val == %d\n",
-							pr->wp_val.int_var);
+							PR_PTR (int, &pr->wp_val));
 		} else { Sys_Printf ("    none active\n");
 		}
 		return;
@@ -1444,7 +1454,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
 		if (pr->wp_conditional)
-			Sys_Printf ("    if new val == %d\n", pr->wp_val.int_var);
+			Sys_Printf ("    if new val == %d\n", PR_PTR (int, &pr->wp_val));
 	} else {
 		Sys_Printf ("watchpoint cleared\n");
 	}
@@ -1490,6 +1500,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	int         dump_code = contents & 2;
 	const char *fmt;
 	const char *mnemonic;
+	const char *width = "";
 	dfunction_t *call_func = 0;
 	pr_def_t   *param_def = 0;
 	pr_auxfunction_t *aux_func = 0;
@@ -1558,13 +1569,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						print_raw_op (pr, s->a, PR_BASE_IND (s->op, A),
 									  op_type[0], op_width[0]),
 						print_raw_op (pr, s->b, PR_BASE_IND (s->op, B),
-									  op_type[0], op_width[0]),
+									  op_type[1], op_width[1]),
 						print_raw_op (pr, s->c, PR_BASE_IND (s->op, C),
-									  op_type[0], op_width[0]));
+									  op_type[2], op_width[2]));
 		}
+	} else if (op_width[0] > 1 || op_width[1] > 1 || op_width[2] > 1) {
+		width = va (res->va, "{%d,%d,%d}", VectorExpand (op_width));
 	}
 
-	dasprintf (res->line, "%s ", mnemonic);
+	dasprintf (res->line, "%s%s ", mnemonic, width);
 
 	while (*fmt) {
 		if (*fmt == '%') {
@@ -1683,8 +1696,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'E':
 						{
 							edict_t    *ed = 0;
-							opval = pr->pr_globals[s->a].entity_var;
-							param_ind = pr->pr_globals[s->b].uint_var;
+							opval = G_ENTITY (pr, s->a);
+							param_ind = G_FIELD (pr, s->b);
 							if (param_ind < pr->progs->entityfields
 								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {

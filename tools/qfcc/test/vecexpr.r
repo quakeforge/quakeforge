@@ -39,8 +39,8 @@ main ()
 		printf("t3(5) = %v\n", v);
 		ret |= 1;
 	}
-	v = [x, y] / 2;
-	if (v != [2, 2.5]) {
+	v = [x, y, 0] / 2;
+	if (v != [2, 2.5, 0]) {
 		printf("v = %v\n", v);
 		ret |= 1;
 	}

@@ -89,6 +89,11 @@ type_t      type_invalid = {
 	};
 #include "tools/qfcc/include/vec_types.h"
 
+#define VEC_TYPE(type_name, base_type) &type_##type_name,
+static type_t *vec_types[] = {
+#include "tools/qfcc/include/vec_types.h"
+	0
+};
 type_t     *type_nil;
 type_t     *type_default;
 type_t     *type_long_int;
@@ -143,6 +148,17 @@ type_t      type_floatfield = {
 type_t     *ev_types[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
 	&type_invalid,
+};
+
+int type_cast_map[ev_type_count] = {
+	[ev_int] = 0,
+	[ev_float] = 1,
+	[ev_long] = 2,
+	[ev_double] = 3,
+	[ev_uint] = 4,
+	//[ev_bool32] = 5,
+	[ev_ulong] = 6,
+	//[ev_bool64] = 7,
 };
 
 static type_t *types_freelist;
@@ -479,6 +495,20 @@ find_type (type_t *type)
 	// allocate a new one
 	check = new_type ();
 	*check = *type;
+	if (is_func (type)) {
+		check->t.func.param_types = 0;
+		const type_t *t = unalias_type (type);
+		int         num_params = t->t.func.num_params;
+		if (num_params < 0) {
+			num_params = ~num_params;
+		}
+		if (num_params) {
+			check->t.func.param_types = malloc (sizeof (type_t *) * num_params);
+			for (int i = 0; i < num_params; i++) {
+				check->t.func.param_types[i] = t->t.func.param_types[i];
+			}
+		}
+	}
 	check->freeable = 0;
 
 	chain_type (check);
@@ -522,6 +552,70 @@ pointer_type (type_t *aux)
 		new = find_type (append_type (new, aux));
 	}
 	return new;
+}
+
+type_t *
+vector_type (const type_t *ele_type, int width)
+{
+	if (width == 1) {
+		for (type_t **t = ev_types; t - ev_types < ev_type_count; t++) {
+			if ((*t)->type == ele_type->type && (*t)->width == 1) {
+				return *t;
+			}
+		}
+	}
+	for (type_t **vtype = vec_types; *vtype; vtype++) {
+		if ((*vtype)->type == ele_type->type
+			&& (*vtype)->width == width) {
+			return *vtype;
+		}
+	}
+	return 0;
+}
+
+type_t *
+base_type (const type_t *vec_type)
+{
+	if (!is_math (vec_type)) {
+		return 0;
+	}
+	// vec_type->type for quaternion and vector points back to itself
+	if (is_quaternion (vec_type) || is_vector (vec_type)) {
+		return &type_float;
+	}
+	return ev_types[vec_type->type];
+}
+
+type_t *
+int_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_int;
+	} else if (type_size (base) == 2) {
+		base = &type_long;
+	}
+	return vector_type (base, width);
+}
+
+type_t *
+float_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_float;
+	} else if (type_size (base) == 2) {
+		base = &type_double;
+	}
+	return vector_type (base, width);
 }
 
 type_t *
@@ -711,7 +805,9 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_short:
 				case ev_ushort:
 				case ev_double:
-					dasprintf (str, " %s", pr_type_name[type->type]);
+					dasprintf (str, " %s%s", pr_type_name[type->type],
+							   type->width > 1 ? va (0, "{%d}", type->width)
+											   : "");
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -720,6 +816,25 @@ print_type_str (dstring_t *str, const type_t *type)
 			break;
 	}
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
+}
+
+const char *
+get_type_string (const type_t *type)
+{
+	static dstring_t *type_str[8];
+	static int  str_index;
+
+	if (!type_str[str_index]) {
+		type_str[str_index] = dstring_newstr ();
+	}
+	dstring_clearstr (type_str[str_index]);
+	print_type_str (type_str[str_index], type);
+	const char *str = type_str[str_index++]->str;
+	str_index %= sizeof (type_str) / sizeof (type_str[0]);
+	while (*str == ' ') {
+		str++;
+	}
+	return str;
 }
 
 void
@@ -941,6 +1056,8 @@ is_integral (const type_t *type)
 	type = unalias_type (type);
 	if (is_int (type) || is_uint (type) || is_short (type))
 		return 1;
+	if (is_long (type) || is_ulong (type) || is_ushort (type))
+		return 1;
 	return is_enum (type);
 }
 
@@ -1053,8 +1170,16 @@ type_assignable (const type_t *dst, const type_t *src)
 			return 1;
 		return 0;
 	}
-	if (!is_ptr (dst) || !is_ptr (src))
-		return is_scalar (dst) && is_scalar (src);
+	if (!is_ptr (dst) || !is_ptr (src)) {
+		if (is_scalar (dst) && is_scalar (src)) {
+			return 1;
+		}
+		if (is_nonscalar (dst) && is_nonscalar (src)
+			&& type_width (dst) == type_width (src)) {
+			return 1;
+		}
+		return 0;
+	}
 
 	// pointer = pointer
 	// give the object system first shot because the pointee types might have
@@ -1073,6 +1198,35 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 1;
 	if (is_void (src))
 		return 1;
+	return 0;
+}
+
+int
+type_promotes (const type_t *dst, const type_t *src)
+{
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	// nothing promotes to int
+	if (is_int (dst)) {
+		return 0;
+	}
+	if (is_uint (dst) && is_int (src)) {
+		return 1;
+	}
+	if (is_long (dst) && (is_int (src) || is_uint (src))) {
+		return 1;
+	}
+	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src))) {
+		return 1;
+	}
+	if (is_float (dst) && (is_int (src) || is_uint (src))) {
+		return 1;
+	}
+	//XXX what to do with (u)long<->float?
+	// everything promotes to double
+	if (is_double (dst)) {
+		return 1;
+	}
 	return 0;
 }
 
@@ -1201,6 +1355,33 @@ chain_initial_types (void)
 	chain_structural_types ();
 }
 
+static const char *vector_field_names[] = { "x", "y", "z", "w" };
+//static const char *color_field_names[] = { "r", "g", "b", "a" };
+//static const char *texture_field_names[] = { "s", "t", "p", "q" };
+
+static void
+build_vector_struct (type_t *type)
+{
+	ty_meta_e   meta = type->meta;
+	etype_t     etype = type->type;
+	type_t     *ele_type = base_type (type);
+	int         width = type_width (type);
+
+	if (!ele_type || width < 2) {
+		internal_error (0, "%s not a vector type: %p %d", type->name, ele_type, width);
+	}
+
+	struct_def_t fields[width + 1];
+	for (int i = 0; i < width; i++) {
+		fields[i] = (struct_def_t) { vector_field_names[i], ele_type };
+	}
+	fields[width] = (struct_def_t) {};
+
+	make_structure (va (0, "@%s", type->name), 's', fields, type);
+	type->type = etype;
+	type->meta = meta;
+}
+
 void
 init_types (void)
 {
@@ -1232,17 +1413,6 @@ init_types (void)
 		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
-		{0, 0}
-	};
-	static struct_def_t vector_struct[] = {
-		{"x", &type_float},
-		{"y", &type_float},
-		{"z", &type_float},
-		{0, 0}
-	};
-	static struct_def_t quaternion_struct[] = {
-		{"v", &type_vector},
-		{"s", &type_float},
 		{0, 0}
 	};
 	static struct_def_t type_encoding_struct[] = {
@@ -1290,9 +1460,7 @@ init_types (void)
 
 	make_structure ("@zero", 'u', zero_struct, &type_zero);
 	make_structure ("@param", 'u', param_struct, &type_param);
-	make_structure ("@vector", 's', vector_struct, &type_vector);
-	type_vector.type = ev_vector;
-	type_vector.meta = ty_basic;
+	build_vector_struct (&type_vector);
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
@@ -1302,24 +1470,20 @@ init_types (void)
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
-	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
-	type_quaternion.type = ev_quaternion;
-	type_quaternion.meta = ty_basic;
+	build_vector_struct (&type_quaternion);
 	{
 		symbol_t   *sym;
-		sym = new_symbol_type ("x", &type_float);
+
+		sym = new_symbol_type ("v", &type_vector);
 		sym->s.offset = 0;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("y", &type_float);
-		sym->s.offset = 1;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("z", &type_float);
-		sym->s.offset = 2;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("w", &type_float);
+
+		sym = new_symbol_type ("s", &type_float);
 		sym->s.offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}
+#define VEC_TYPE(type_name, base_type) build_vector_struct (&type_##type_name);
+#include "tools/qfcc/include/vec_types.h"
 
 	chain_structural_types ();
 }

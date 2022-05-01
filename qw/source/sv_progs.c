@@ -181,16 +181,16 @@ static void
 free_edict (progs_t *pr, edict_t *ent)
 {
 	if (sv_old_entity_free) {
-		E_fld (ent, sv_fields.model).entity_var = 0;
-		E_fld (ent, sv_fields.takedamage).float_var = 0;
-		E_fld (ent, sv_fields.modelindex).float_var = 0;
-		E_fld (ent, sv_fields.colormap).float_var = 0;
-		E_fld (ent, sv_fields.skin).float_var = 0;
-		E_fld (ent, sv_fields.frame).float_var = 0;
-		E_fld (ent, sv_fields.nextthink).float_var = -1;
-		E_fld (ent, sv_fields.solid).float_var = 0;
-		memset (&E_fld (ent, sv_fields.origin).vector_var, 0, 3*sizeof (float));
-		memset (&E_fld (ent, sv_fields.angles).vector_var, 0, 3*sizeof (float));
+		E_STRING (ent, sv_fields.model) = 0;
+		E_FLOAT (ent, sv_fields.takedamage) = 0;
+		E_FLOAT (ent, sv_fields.modelindex) = 0;
+		E_FLOAT (ent, sv_fields.colormap) = 0;
+		E_FLOAT (ent, sv_fields.skin) = 0;
+		E_FLOAT (ent, sv_fields.frame) = 0;
+		E_FLOAT (ent, sv_fields.nextthink) = -1;
+		E_FLOAT (ent, sv_fields.solid) = 0;
+		VectorZero (E_VECTOR (ent, sv_fields.origin));
+		VectorZero (E_VECTOR (ent, sv_fields.angles));
 	} else {
 		ED_ClearEdict (pr, ent, 0);
 	}

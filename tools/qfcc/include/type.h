@@ -160,12 +160,45 @@ type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
+type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
+type_t *base_type (const type_t *vec_type) __attribute__((pure));
+
+/** Return an integral type of same size as the provided type.
+
+	Any 32-bit type will produce type_int (or one of ivec2, ivec3 or ivec4).
+	Any 64-bit type will produce type_long (lor one of lvec2, lvec3, or lvec4).
+
+	Both type_width() and type_size() of the returned type will match the
+	provided type.
+
+	\param base		Type on which the return type will be based.
+	\return			Matching integral type (int, long, or a vector form), or
+					null if no such match can be made.
+*/
+type_t *int_type (const type_t *base) __attribute__((pure));
+
+/** Return a floating point type of same size as the provided type.
+
+	Any 32-bit type will produce type_float (or one of vec2, vec3 or vec4).
+	Any 64-bit type will produce type_double (lor one of dvec2, dvec3, or
+	dvec4).
+
+	Both type_width() and type_size() of the returned type will match the
+	provided type.
+
+	\param base		Type on which the return type will be based.
+	\return			Matching floating point type (float, double, or a vector
+					form), or null if no such match can be made.
+*/
+type_t *float_type (const type_t *base) __attribute__((pure));
+
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
 type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
 const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
+const char *get_type_string (const type_t *type);
 void print_type (const type_t *type);
 void dump_dot_type (void *t, const char *filename);
 const char *encode_params (const type_t *type);
@@ -186,6 +219,7 @@ int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
+int type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
@@ -196,5 +230,7 @@ void chain_initial_types (void);
 void clear_typedefs (void);
 
 extern type_t *ev_types[];
+extern int type_cast_map[];
+#define TYPE_CAST_CODE(from, to, width) (((width) << 6) | ((from) << 3) | (to))
 
 #endif//__type_h

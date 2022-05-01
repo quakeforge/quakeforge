@@ -42,7 +42,6 @@
 #include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
-#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
@@ -127,88 +126,6 @@ convert:
 	e->e = new->e;
 }
 
-expr_t *
-convert_vector (expr_t *e)
-{
-	float       val[4];
-
-	if (e->type != ex_vector)
-		return e;
-	if (is_vector(e->e.vector.type)) {
-		// guaranteed to have three elements
-		expr_t     *x = e->e.vector.list;
-		expr_t     *y = x->next;
-		expr_t     *z = y->next;
-		x = fold_constants (cast_expr (&type_float, x));
-		y = fold_constants (cast_expr (&type_float, y));
-		z = fold_constants (cast_expr (&type_float, z));
-		if (is_constant (x) && is_constant (y) && is_constant (z)) {
-			val[0] = expr_float(x);
-			val[1] = expr_float(y);
-			val[2] = expr_float(z);
-			return new_vector_expr (val);
-		}
-		// at least one of x, y, z is not constant, so rebuild the
-		// list incase any of them are new expressions
-		z->next = 0;
-		y->next = z;
-		x->next = y;
-		e->e.vector.list = x;
-		return e;
-	}
-	if (is_quaternion(e->e.vector.type)) {
-		// guaranteed to have two or four elements
-		if (e->e.vector.list->next->next) {
-			// four vals: x, y, z, w
-			expr_t     *x = e->e.vector.list;
-			expr_t     *y = x->next;
-			expr_t     *z = y->next;
-			expr_t     *w = z->next;
-			x = fold_constants (cast_expr (&type_float, x));
-			y = fold_constants (cast_expr (&type_float, y));
-			z = fold_constants (cast_expr (&type_float, z));
-			w = fold_constants (cast_expr (&type_float, w));
-			if (is_constant (x) && is_constant (y) && is_constant (z)
-				&& is_constant (w)) {
-				val[0] = expr_float(x);
-				val[1] = expr_float(y);
-				val[2] = expr_float(z);
-				val[3] = expr_float(w);
-				return new_quaternion_expr (val);
-			}
-			// at least one of x, y, z, w is not constant, so rebuild the
-			// list incase any of them are new expressions
-			w->next = 0;
-			z->next = w;
-			y->next = z;
-			x->next = y;
-			e->e.vector.list = x;
-			return e;
-		} else {
-			// v, s
-			expr_t     *v = e->e.vector.list;
-			expr_t     *s = v->next;
-
-			v = convert_vector (v);
-			s = fold_constants (cast_expr (&type_float, s));
-			if (is_constant (v) && is_constant (s)) {
-				memcpy (val, expr_vector (v), 3 * sizeof (float));
-				val[3] = expr_float (s);
-				return new_quaternion_expr (val);
-			}
-			// Either v or s is not constant, so can't convert to a quaternion
-			// constant.
-			// Rebuild the list in case v or s is a new expression
-			// the list will always be v, s
-			s->next = 0;
-			v->next = s;
-			e->e.vector.list = v;
-			return e;
-		}
-	}
-	internal_error (e, "bogus vector expression");
-}
-
 type_t *
 get_type (expr_t *e)
 {
@@ -278,6 +195,8 @@ get_type (expr_t *e)
 			return &type_va_list;
 		case ex_horizontal:
 			return e->e.hop.type;
+		case ex_swizzle:
+			return e->e.swizzle.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -297,47 +216,17 @@ extract_type (expr_t *e)
 expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
-	dstring_t  *t1 = dstring_newstr ();
-	dstring_t  *t2 = dstring_newstr ();
-
-	print_type_str (t1, get_type (e1));
-	print_type_str (t2, get_type (e2));
-
 	e1 = error (e1, "type mismatch: %s %s %s",
-				t1->str, get_op_string (op), t2->str);
-	dstring_delete (t1);
-	dstring_delete (t2);
+				get_type_string (get_type (e1)), get_op_string (op),
+				get_type_string (get_type (e2)));
 	return e1;
 }
 
 expr_t *
 param_mismatch (expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 {
-	dstring_t  *s1 = dstring_newstr ();
-	dstring_t  *s2 = dstring_newstr ();
-
-	print_type_str (s1, t1);
-	print_type_str (s2, t2);
-
 	e = error (e, "type mismatch for parameter %d of %s: expected %s, got %s",
-			   param, fn, s1->str, s2->str);
-	dstring_delete (s1);
-	dstring_delete (s2);
-	return e;
-}
-
-expr_t *
-cast_error (expr_t *e, type_t *t1, type_t *t2)
-{
-	dstring_t  *s1 = dstring_newstr ();
-	dstring_t  *s2 = dstring_newstr ();
-
-	print_type_str (s1, t1);
-	print_type_str (s2, t2);
-
-	e = error (e, "cannot cast from %s to %s", s1->str, s2->str);
-	dstring_delete (s1);
-	dstring_delete (s2);
+			   param, fn, get_type_string (t1), get_type_string (t2));
 	return e;
 }
 
@@ -435,7 +324,7 @@ copy_expr (expr_t *e)
 			}
 			if (e->e.block.result && !n->e.block.result)
 				internal_error (e, "bogus block result?");
-			break;
+			return n;
 		case ex_expr:
 			n = new_expr ();
 			*n = *e;
@@ -537,6 +426,11 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			e->e.hop.vec = copy_expr (e->e.hop.vec);
+			return n;
+		case ex_swizzle:
+			n = new_expr ();
+			*n = *e;
+			e->e.swizzle.src = copy_expr (e->e.swizzle.src);
 			return n;
 		case ex_count:
 			break;
@@ -725,6 +619,74 @@ new_horizontal_expr (int op, expr_t *vec, type_t *type)
 }
 
 expr_t *
+new_swizzle_expr (expr_t *src, const char *swizzle)
+{
+	type_t     *src_type = get_type (src);
+	if (!src_type) {
+		return src;
+	}
+	int         src_width = type_width (src_type);
+	// swizzle always generates a *vec4
+	ex_swizzle_t swiz = {};
+
+#define m(x) (1 << ((x) - 'a'))
+#define v(x, mask) (((x) & 0x60) == 0x60 && (m(x) & (mask)))
+#define vind(x) ((x) & 3)
+#define cind(x) (-(((x) >> 3) ^ (x)) & 3)
+#define tind(x) ((((~(x+1)>>2)&1) + x + 1) & 3)
+	const int   color = m('r') | m('g') | m('b') | m('a');
+	const int   vector = m('x') | m('y') | m('z') | m('w');
+	const int   texture = m('s') | m('t') | m('p') | m('q');
+
+	int         type_mask = 0;
+	int         comp_count = 0;
+
+	for (const char *s = swizzle; *s; s++) {
+		if (comp_count >= 4) {
+			return error (src, "too many components in swizzle");
+		}
+		if (*s == '0') {
+			swiz.zero |= 1 << comp_count;
+			comp_count++;
+		} else if (*s == '-') {
+			swiz.neg |= 1 << comp_count;
+		} else {
+			int         ind = 0;
+			int         mask = 0;
+			if (v (*s, vector)) {
+				ind = vind (*s);
+				mask = 1;
+			} else if (v (*s, color)) {
+				ind = cind (*s);
+				mask = 2;
+			} else if (v (*s, texture)) {
+				ind = tind (*s);
+				mask = 4;
+			}
+			if (!mask) {
+				return error (src, "invalid component in swizzle");
+			}
+			if (type_mask & ~mask) {
+				return error (src, "mixed components in swizzle");
+			}
+			if (ind >= src_width) {
+				return error (src, "swizzle component out of bounds");
+			}
+			type_mask |= mask;
+			swiz.source[comp_count++] = ind;
+		}
+	}
+	swiz.zero |= (0xf << comp_count) & 0xf;
+	swiz.src = new_alias_expr (vector_type (&type_float, src_width), src);
+	swiz.type = vector_type (base_type (src_type), 4);
+
+	expr_t     *expr = new_expr ();
+	expr->type = ex_swizzle;
+	expr->e.swizzle = swiz;
+	return expr;
+}
+
+expr_t *
 new_def_expr (def_t *def)
 {
 	expr_t     *e = new_expr ();
@@ -794,181 +756,85 @@ new_name_expr (const char *name)
 expr_t *
 new_string_expr (const char *string_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_string_val (string_val);
-	return e;
+	return new_value_expr (new_string_val (string_val));
 }
 
 expr_t *
 new_double_expr (double double_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_double_val (double_val);
-	return e;
+	return new_value_expr (new_double_val (double_val));
 }
 
 expr_t *
 new_float_expr (float float_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-	return e;
+	return new_value_expr (new_float_val (float_val));
 }
 
 expr_t *
 new_vector_expr (const float *vector_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_vector_val (vector_val);
-	return e;
-}
-
-expr_t *
-new_vector_list (expr_t *e)
-{
-	expr_t     *t;
-	int         count;
-	type_t     *type = &type_vector;
-	expr_t     *vec;
-
-	e = reverse_expr_list (e);		// put the elements in the right order
-	for (t = e, count = 0; t; t = t->next)
-		count++;
-	switch (count) {
-		case 4:
-			type = &type_quaternion;
-		case 3:
-			// quaternion or vector. all expressions must be compatible with
-			// a float (ie, a scalar)
-			for (t = e; t; t = t->next) {
-				if (t->type == ex_error) {
-					return t;
-				}
-				if (!is_scalar (get_type (t))) {
-					return error (t, "invalid type for vector element");
-				}
-			}
-			vec = new_expr ();
-			vec->type = ex_vector;
-			vec->e.vector.type = type;
-			vec->e.vector.list = e;
-			break;
-		case 2:
-			if (e->type == ex_error || e->next->type == ex_error) {
-				return e;
-			}
-			if (is_scalar (get_type (e)) && is_scalar (get_type (e->next))) {
-				// scalar, scalar
-				// expand [x, y] to [x, y, 0]
-				e->next->next = new_float_expr (0);
-				vec = new_expr ();
-				vec->type = ex_vector;
-				vec->e.vector.type = type;
-				vec->e.vector.list = e;
-				break;
-			}
-			// quaternion. either scalar, vector or vector, scalar
-			if (is_scalar (get_type (e))
-				&& is_vector (get_type (e->next))) {
-				// scalar, vector
-				// swap expressions
-				t = e;
-				e = e->next;
-				e->next = t;
-				t->next = 0;
-			} else if (is_vector (get_type (e))
-					   && is_scalar (get_type (e->next))) {
-				// vector, scalar
-				// do nothing
-			} else {
-				return error (t, "invalid types for vector elements");
-			}
-			// v, s
-			vec = new_expr ();
-			vec->type = ex_vector;
-			vec->e.vector.type = &type_quaternion;
-			vec->e.vector.list = e;
-			break;
-		default:
-			return error (e, "invalid number of elements in vector exprssion");
-	}
-	return vec;
+	return new_value_expr (new_vector_val (vector_val));
 }
 
 expr_t *
 new_entity_expr (int entity_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_entity_val (entity_val);
-	return e;
+	return new_value_expr (new_entity_val (entity_val));
 }
 
 expr_t *
 new_field_expr (int field_val, type_t *type, def_t *def)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_field_val (field_val, type, def);
-	return e;
+	return new_value_expr (new_field_val (field_val, type, def));
 }
 
 expr_t *
 new_func_expr (int func_val, type_t *type)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_func_val (func_val, type);
-	return e;
+	return new_value_expr (new_func_val (func_val, type));
 }
 
 expr_t *
 new_pointer_expr (int val, type_t *type, def_t *def)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_pointer_val (val, type, def, 0);
-	return e;
+	return new_value_expr (new_pointer_val (val, type, def, 0));
 }
 
 expr_t *
 new_quaternion_expr (const float *quaternion_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_quaternion_val (quaternion_val);
-	return e;
+	return new_value_expr (new_quaternion_val (quaternion_val));
 }
 
 expr_t *
 new_int_expr (int int_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_int_val (int_val);
-	return e;
+	return new_value_expr (new_int_val (int_val));
 }
 
 expr_t *
 new_uint_expr (unsigned uint_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_uint_val (uint_val);
-	return e;
+	return new_value_expr (new_uint_val (uint_val));
+}
+
+expr_t *
+new_long_expr (pr_long_t long_val)
+{
+	return new_value_expr (new_long_val (long_val));
+}
+
+expr_t *
+new_ulong_expr (pr_ulong_t ulong_val)
+{
+	return new_value_expr (new_ulong_val (ulong_val));
 }
 
 expr_t *
 new_short_expr (short short_val)
 {
-	expr_t     *e = new_expr ();
-	e->type = ex_value;
-	e->e.value = new_short_val (short_val);
-	return e;
+	return new_value_expr (new_short_val (short_val));
 }
 
 int
@@ -1030,11 +896,9 @@ constant_expr (expr_t *e)
 	} else {
 		return e;
 	}
-	new = new_expr ();
-	new->type = ex_value;
+	new = new_value_expr (value);
 	new->line = e->line;
 	new->file = e->file;
-	new->e.value = value;
 	return new;
 }
 
@@ -1300,6 +1164,22 @@ expr_short (expr_t *e)
 	internal_error (e, "not a short constant");
 }
 
+unsigned short
+expr_ushort (expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 0;
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_ushort) {
+		return e->e.value->v.ushort_val;
+	}
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_ushort) {
+		return e->e.symbol->s.value->v.ushort_val;
+	}
+	internal_error (e, "not a ushort constant");
+}
+
 int
 is_integral_val (expr_t *e)
 {
@@ -1529,7 +1409,11 @@ get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 	}
 	field = symtab_lookup (strct, sym->name);
 	if (!field && !is_entity(t1)) {
-		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
+		const char *name = t1->name;
+		if (!strncmp (name, "tag ", 4)) {
+			name += 4;
+		}
+		error (e2, "'%s' has no member named '%s'", name, sym->name);
 		e1->type = ex_error;
 	}
 	return field;
@@ -1590,7 +1474,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e1 = cast_expr (pointer_type (ivar->type), e1);
 			return unary_expr ('.', e1);
 		}
-	} else if (is_vector (t1) || is_quaternion (t1) || is_struct (t1)) {
+	} else if (is_nonscalar (t1) || is_struct (t1)) {
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
@@ -1669,38 +1553,6 @@ convert_from_bool (expr_t *e, type_t *type)
 	return e;
 }
 
-void
-convert_int (expr_t *e)
-{
-	float       float_val = expr_int (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
-void
-convert_short (expr_t *e)
-{
-	float       float_val = expr_short (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
-void
-convert_short_int (expr_t *e)
-{
-	float       int_val = expr_short (e);
-	e->type = ex_value;
-	e->e.value = new_int_val (int_val);
-}
-
-void
-convert_double (expr_t *e)
-{
-	float       float_val = expr_double (e);
-	e->type = ex_value;
-	e->e.value = new_float_val (float_val);
-}
-
 expr_t *
 convert_nil (expr_t *e, type_t *t)
 {
@@ -1770,6 +1622,8 @@ has_function_call (expr_t *e)
 			return has_function_call (e->e.retrn.ret_val);
 		case ex_horizontal:
 			return has_function_call (e->e.hop.vec);
+		case ex_swizzle:
+			return has_function_call (e->e.swizzle.src);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1915,6 +1769,7 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -2008,6 +1863,7 @@ unary_expr (int op, expr_t *e)
 				case ex_address:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 					if (options.code.progsversion == PROG_VERSION) {
 						return binary_expr (EQ, e, new_nil_expr ());
 					} else {
@@ -2097,6 +1953,7 @@ unary_expr (int op, expr_t *e)
 				case ex_alias:
 				case ex_assign:
 				case ex_horizontal:
+				case ex_swizzle:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_int_expr (-1);
@@ -2224,13 +2081,13 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 				convert_from_bool (e, get_type (e));
 			if (is_int_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
-				convert_int (e);
+				e = cast_expr (&type_float, e);
 			if (options.code.promote_float) {
-				if (is_float (get_type (e))) {
+				if (is_scalar (get_type (e)) && is_float (get_type (e))) {
 					t = &type_double;
 				}
 			} else {
-				if (is_double (get_type (e))) {
+				if (is_scalar (get_type (e)) && is_double (get_type (e))) {
 					if (!e->implicit) {
 						warning (e, "passing double into ... function");
 					}
@@ -2265,15 +2122,14 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		// expression tree
 		// That, or always use a temp, since it should get optimized out
 		if (has_function_call (e)) {
-			expr_t     *cast = cast_expr (arg_types[i], convert_vector (e));
+			expr_t     *cast = cast_expr (arg_types[i], e);
 			expr_t     *tmp = new_temp_def_expr (arg_types[i]);
 			*a = expr_file_line (tmp, e);
 			arg_exprs[arg_expr_count][0] = expr_file_line (cast, e);
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = expr_file_line (cast_expr (arg_types[i], convert_vector (e)),
-								 e);
+			*a = expr_file_line (cast_expr (arg_types[i], e), e);
 		}
 		a = &(*a)->next;
 	}
@@ -2442,7 +2298,7 @@ return_expr (function_t *f, expr_t *e)
 		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
 	}
 	if (is_float(ret_type) && is_int_val (e)) {
-		convert_int (e);
+		e = cast_expr (&type_float, e);
 		t = &type_float;
 	}
 	if (is_void(t)) {
@@ -2459,8 +2315,9 @@ return_expr (function_t *f, expr_t *e)
 	}
 	if (!type_assignable (ret_type, t)) {
 		if (!options.traditional)
-			return error (e, "type mismatch for return value of %s",
-						  f->sym->name);
+			return error (e, "type mismatch for return value of %s: %s -> %s",
+						  f->sym->name, get_type_string (t),
+						  get_type_string (ret_type));
 		if (options.warnings.traditional)
 			warning (e, "type mismatch for return value of %s",
 					 f->sym->name);
@@ -2990,7 +2847,7 @@ build_state_expr (expr_t *e)
 	if (think->type == ex_symbol)
 		think = think_expr (think->e.symbol);
 	if (is_int_val (frame))
-		convert_int (frame);
+		frame = cast_expr (&type_float, frame);
 	if (!type_assignable (&type_float, get_type (frame)))
 		return error (frame, "invalid type for frame number");
 	if (extract_type (think) != ev_func)
@@ -2999,7 +2856,7 @@ build_state_expr (expr_t *e)
 		if (step->next)
 			return error (step->next, "too many state arguments");
 		if (is_int_val (step))
-			convert_int (step);
+			step = cast_expr (&type_float, step);
 		if (!type_assignable (&type_float, get_type (step)))
 			return error (step, "invalid type for step");
 	}
@@ -3025,83 +2882,6 @@ think_expr (symbol_t *think_sym)
 	think_sym = function_symbol (think_sym, 0, 1);
 	make_function (think_sym, 0, current_symtab->space, current_storage);
 	return new_symbol_expr (think_sym);
-}
-
-expr_t *
-cast_expr (type_t *dstType, expr_t *e)
-{
-	expr_t    *c;
-	type_t    *srcType;
-
-	convert_name (e);
-
-	if (e->type == ex_error)
-		return e;
-
-	dstType = (type_t *) unalias_type (dstType); //FIXME cast
-	srcType = get_type (e);
-
-	if (dstType == srcType)
-		return e;
-
-	if ((dstType == type_default && is_enum (srcType))
-		|| (is_enum (dstType) && srcType == type_default))
-		return e;
-	if ((is_ptr (dstType) && is_string (srcType))
-		|| (is_string (dstType) && is_ptr (srcType))) {
-		c = new_alias_expr (dstType, e);
-		return c;
-	}
-	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
-							   || is_array (srcType)))
-		&& !(is_integral (dstType) && is_ptr (srcType))
-		&& !(is_func (dstType) && is_func (srcType))
-		&& !(is_scalar (dstType) && is_scalar (srcType))) {
-		return cast_error (e, srcType, dstType);
-	}
-	if (is_array (srcType)) {
-		return address_expr (e, dstType->t.fldptr.type);
-	}
-	if (is_constant (e) && is_scalar (dstType) && is_scalar (srcType)) {
-		ex_value_t *val = 0;
-		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {
-			val = e->e.symbol->s.value;
-		} else if (e->type == ex_symbol
-				   && e->e.symbol->sy_type == sy_var) {
-			// initialized global def treated as a constant
-			// from the tests above, the def is known to be constant
-			// and of one of the three storable scalar types
-			def_t      *def = e->e.symbol->s.def;
-			if (is_float (def->type)) {
-				val = new_float_val (D_FLOAT (def));
-			} else if (is_double (def->type)) {
-				val = new_double_val (D_DOUBLE (def));
-			} else if (is_integral (def->type)) {
-				val = new_int_val (D_INT (def));
-			}
-		} else if (e->type == ex_value) {
-			val = e->e.value;
-		} else if (e->type == ex_nil) {
-			convert_nil (e, dstType);
-			return e;
-		}
-		if (!val)
-			internal_error (e, "unexpected constant expression type");
-		e->e.value = convert_value (val, dstType);
-		e->type = ex_value;
-		c = e;
-	} else if (is_integral (dstType) && is_integral (srcType)) {
-		c = new_alias_expr (dstType, e);
-	} else if (is_scalar (dstType) && is_scalar (srcType)) {
-		c = new_unary_expr ('C', e);
-		c->e.expr.type = dstType;
-	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {
-		e->e.expr.type = dstType;
-		c = e;
-	} else {
-		c = new_alias_expr (dstType, e);
-	}
-	return c;
 }
 
 expr_t *

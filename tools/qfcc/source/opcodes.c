@@ -41,6 +41,7 @@
 
 #include <QF/hash.h>
 
+#include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -302,7 +303,26 @@ operand_width (const char *opname, operand_t *op)
 	}
 	return op->width;
 }
-
+#if 0
+	if (!strcmp (name, "swizzle")) {
+		adjust_swizzle_op (&search_op, 0);
+		adjust_swizzle_op (&search_op, 2);
+	}
+static void
+adjust_swizzle_op (opcode_t *op, int opind)
+{
+	// swizzle instructions require both operands to be 4 components (4 or 8
+	// words) in size with the same alignment.
+	op->widths[opind] = 4;
+	if (pr_type_size[op->types[opind]] == 1) {
+		op->types[opind] = ev_float;
+	} else if (pr_type_size[op->types[opind]] == 2) {
+		op->types[opind] = ev_double;
+	} else {
+		internal_error (0, "unexpected swizzle op size");
+	}
+}
+#endif
 static opcode_t *
 rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)
@@ -507,6 +527,9 @@ opcode_print_statement (pr_uint_t addr, dstatement_t *st)
 	} else {
 		mnemonic = pr_opcodes[st_op].mnemonic;
 	}
-	printf ("%04x (%03x)%-8s %04x %04x %04x\n",
-			addr, st_op & 0x1ff, mnemonic, st->a, st->b, st->c);
+	printf ("%04x (%03x)%-8s %d:%04x %d:%04x %d:%04x\n",
+			addr, st_op & 0x1ff, mnemonic,
+			(st->op & OP_A_BASE) >> OP_A_SHIFT, st->a,
+			(st->op & OP_B_BASE) >> OP_B_SHIFT, st->b,
+			(st->op & OP_C_BASE) >> OP_C_SHIFT, st->c);
 }

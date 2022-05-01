@@ -123,63 +123,7 @@ operand_string (operand_t *op)
 		case op_def:
 			return op->def->name;
 		case op_value:
-			switch (op->value->lltype) {
-				case ev_string:
-					return va (0, "\"%s\"",
-							   quote_string (op->value->v.string_val));
-				case ev_double:
-					return va (0, "%g", op->value->v.double_val);
-				case ev_float:
-					return va (0, "%g", op->value->v.float_val);
-				case ev_vector:
-					return va (0, "'%g %g %g'",
-							   op->value->v.vector_val[0],
-							   op->value->v.vector_val[1],
-							   op->value->v.vector_val[2]);
-				case ev_quaternion:
-					return va (0, "'%g %g %g %g'",
-							   op->value->v.quaternion_val[0],
-							   op->value->v.quaternion_val[1],
-							   op->value->v.quaternion_val[2],
-							   op->value->v.quaternion_val[3]);
-				case ev_ptr:
-					if (op->value->v.pointer.def) {
-						return va (0, "ptr %s+%d",
-								   op->value->v.pointer.def->name,
-								   op->value->v.pointer.val);
-					} else if(op->value->v.pointer.tempop) {
-						operand_t  *tempop = op->value->v.pointer.tempop;
-						return va (0, "ptr %s+%d", tempop_string (tempop),
-								   op->value->v.pointer.val);
-					} else {
-						return va (0, "ptr %d", op->value->v.pointer.val);
-					}
-				case ev_field:
-					return va (0, "field %d", op->value->v.pointer.val);
-				case ev_entity:
-					return va (0, "ent %d", op->value->v.int_val);
-				case ev_func:
-					return va (0, "func %d", op->value->v.int_val);
-				case ev_int:
-					return va (0, "int %d", op->value->v.int_val);
-				case ev_uint:
-					return va (0, "uint %u", op->value->v.uint_val);
-				case ev_long:
-					return va (0, "long %"PRIi64, op->value->v.long_val);
-				case ev_ulong:
-					return va (0, "ulong %"PRIu64, op->value->v.ulong_val);
-				case ev_short:
-					return va (0, "short %d", op->value->v.short_val);
-				case ev_ushort:
-					return va (0, "ushort %d", op->value->v.ushort_val);
-				case ev_void:
-					return "(void)";
-				case ev_invalid:
-					return "(invalid)";
-				case ev_type_count:
-					return "(type_count)";
-			}
-			break;
+			return get_value_string (op->value);
 		case op_label:
 			return op->label->name;
 		case op_temp:
@@ -205,76 +149,24 @@ _print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_def:
-			printf ("(%s) ", pr_type_name[op->type->type]);
+			printf ("(%s) ", get_type_string (op->type));
 			printf ("%s", op->def->name);
 			break;
 		case op_value:
-			printf ("(%s) ", pr_type_name[op->type->type]);
-			switch (op->value->lltype) {
-				case ev_string:
-					printf ("\"%s\"", op->value->v.string_val);
-					break;
-				case ev_double:
-					printf ("%g", op->value->v.double_val);
-					break;
-				case ev_float:
-					printf ("%g", op->value->v.float_val);
-					break;
-				case ev_vector:
-					printf ("'%g", op->value->v.vector_val[0]);
-					printf (" %g", op->value->v.vector_val[1]);
-					printf (" %g'", op->value->v.vector_val[2]);
-					break;
-				case ev_quaternion:
-					printf ("'%g", op->value->v.quaternion_val[0]);
-					printf (" %g", op->value->v.quaternion_val[1]);
-					printf (" %g", op->value->v.quaternion_val[2]);
-					printf (" %g'", op->value->v.quaternion_val[3]);
-					break;
-				case ev_ptr:
-					printf ("(%s)[%d]",
-							pr_type_name[op->value->v.pointer.type->type],
-							op->value->v.pointer.val);
-					break;
-				case ev_field:
-					printf ("%d", op->value->v.pointer.val);
-					break;
-				case ev_entity:
-				case ev_func:
-				case ev_int:
-					printf ("%d", op->value->v.int_val);
-					break;
-				case ev_uint:
-					printf ("%u", op->value->v.uint_val);
-					break;
-				case ev_long:
-					printf ("%"PRIu64, op->value->v.long_val);
-					break;
-				case ev_ulong:
-					printf ("%"PRIu64, op->value->v.ulong_val);
-					break;
-				case ev_short:
-					printf ("%d", op->value->v.short_val);
-					break;
-				case ev_ushort:
-					printf ("%d", op->value->v.ushort_val);
-					break;
-				case ev_void:
-				case ev_invalid:
-				case ev_type_count:
-					internal_error (op->expr, "weird value type");
-			}
+			printf ("(%s) %s", pr_type_name[op->type->type],
+					get_value_string (op->value));
 			break;
 		case op_label:
 			printf ("block %p", op->label->dest);
 			break;
 		case op_temp:
-			printf ("tmp (%s) %p", pr_type_name[op->type->type], op);
+			printf ("tmp (%s) %p", get_type_string (op->type), op);
 			if (op->tempop.def)
-				printf (" %s", op->tempop.def->name);
+				printf (" %s:%04x", op->tempop.def->name,
+						op->tempop.def->offset);
 			break;
 		case op_alias:
-			printf ("alias(%s,", pr_type_name[op->type->type]);
+			printf ("alias(%s,", get_type_string (op->type));
 			_print_operand (op->alias);
 			printf (")");
 			break;
@@ -1742,10 +1634,13 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		opcode = "cmp";
 	}
 	if (strcmp (opcode, "dot") == 0) {
-		if (is_vector (get_type (e->e.expr.e1))) {
+		if (type_width (get_type (e->e.expr.e1)) == 2) {
+			opcode = "cdot";
+		}
+		if (type_width (get_type (e->e.expr.e1)) == 3) {
 			opcode = "vdot";
 		}
-		if (is_quaternion (get_type (e->e.expr.e1))) {
+		if (type_width (get_type (e->e.expr.e1)) == 4) {
 			opcode = "qdot";
 		}
 	}
@@ -1759,17 +1654,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 
 	return sblock;
 }
-
-static int type_map[ev_type_count] = {
-	[ev_int] = 0,
-	[ev_float] = 1,
-	[ev_long] = 2,
-	[ev_double] = 3,
-	[ev_uint] = 4,
-	//[ev_bool32] = 5,
-	[ev_ulong] = 6,
-	//[ev_bool64] = 7,
-};
 
 static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
@@ -1786,10 +1670,10 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		s = new_statement (st_expr, "conv", e);
 		s->opa = src;
 		if (options.code.progsversion == PROG_VERSION) {
-			int         from = type_map[src_type->type];
-			int         to = type_map[type->type];
+			int         from = type_cast_map[src_type->type];
+			int         to = type_cast_map[type->type];
 			int         width = type_width (src_type) - 1;
-			int         conv = (width << 6) | (from << 3) | to;
+			int         conv = TYPE_CAST_CODE (from, to, width);
 			s->opb = short_operand (conv, e);
 		}
 		s->opc = *op;
@@ -1901,6 +1785,32 @@ expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	const char *opcode = "swizzle";
+	statement_t *s;
+	int         swiz = 0;
+	type_t     *res_type = e->e.swizzle.type;
+
+	for (int i = 0; i < 4; i++) {
+		swiz |= e->e.swizzle.source[i] & 3;
+	}
+	swiz |= (e->e.swizzle.neg & 0xf) << 8;
+	swiz |= (e->e.swizzle.zero & 0xf) << 12;
+
+	s = new_statement (st_expr, opcode, e);
+	sblock = statement_subexpr (sblock, e->e.swizzle.src, &s->opa);
+	s->opb = short_operand (swiz, e);
+	if (!*op) {
+		*op = temp_operand (res_type, e);
+	}
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
+	return sblock;
+}
+
+static sblock_t *
 expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->e.def, e->e.def->type, e);
@@ -1937,13 +1847,28 @@ expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 	return sblock;
 }
 
+static int
+statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
+{
+	int         index = 0;
+	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+		if (e->type == ex_vector) {
+			index += statement_copy_elements (sblock, dst, e, index + base);
+		} else {
+			int         size = type_size (base_type (get_type (dst)));
+			type_t     *src_type = get_type (e);
+			expr_t     *dst_ele = new_offset_alias_expr (src_type, dst,
+														 size * (index + base));
+			index += type_width (src_type);
+			*sblock = statement_slist (*sblock, assign_expr (dst_ele, e));
+		}
+	}
+	return index;
+}
+
 static sblock_t *
 expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	expr_t     *x, *y, *z, *w;
-	expr_t     *s, *v;
-	expr_t     *ax, *ay, *az, *aw;
-	expr_t     *as, *av;
 	expr_t     *tmp;
 	type_t     *vec_type = get_type (e);
 	int         file = pr.source_file;
@@ -1953,52 +1878,8 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	pr.source_line = e->line;
 
 	tmp = new_temp_def_expr (vec_type);
-	if (is_vector(vec_type)) {
-		// guaranteed to have three elements
-		x = e->e.vector.list;
-		y = x->next;
-		z = y->next;
-		ax = new_name_expr ("x");
-		ay = new_name_expr ("y");
-		az = new_name_expr ("z");
-		ax = assign_expr (field_expr (tmp, ax), x);
-		ay = assign_expr (field_expr (tmp, ay), y);
-		az = assign_expr (field_expr (tmp, az), z);
-		sblock = statement_slist (sblock, ax);
-		sblock = statement_slist (sblock, ay);
-		sblock = statement_slist (sblock, az);
-	} else {
-		// guaranteed to have two or four elements
-		if (e->e.vector.list->next->next) {
-			// four vals: x, y, z, w
-			x = e->e.vector.list;
-			y = x->next;
-			z = y->next;
-			w = z->next;
-			ax = new_name_expr ("x");
-			ay = new_name_expr ("y");
-			az = new_name_expr ("z");
-			aw = new_name_expr ("w");
-			ax = assign_expr (field_expr (tmp, ax), x);
-			ay = assign_expr (field_expr (tmp, ay), y);
-			az = assign_expr (field_expr (tmp, az), z);
-			aw = assign_expr (field_expr (tmp, aw), w);
-			sblock = statement_slist (sblock, ax);
-			sblock = statement_slist (sblock, ay);
-			sblock = statement_slist (sblock, az);
-			sblock = statement_slist (sblock, aw);
-		} else {
-			// v, s
-			v = e->e.vector.list;
-			s = v->next;
-			av = new_name_expr ("v");
-			as = new_name_expr ("s");
-			av = assign_expr (field_expr (tmp, av), v);
-			as = assign_expr (field_expr (tmp, as), s);
-			sblock = statement_slist (sblock, av);
-			sblock = statement_slist (sblock, as);
-		}
-	}
+	statement_copy_elements (&sblock, tmp, e, 0);
+
 	pr.source_file = file;
 	pr.source_line = line;
 	sblock = statement_subexpr (sblock, tmp, op);
@@ -2061,6 +1942,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_expr] = expr_expr,
 		[ex_uexpr] = expr_uexpr,
 		[ex_horizontal] = expr_horizontal,
+		[ex_swizzle] = expr_swizzle,
 		[ex_def] = expr_def,
 		[ex_symbol] = expr_symbol,
 		[ex_temp] = expr_temp,

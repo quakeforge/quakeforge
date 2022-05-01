@@ -642,6 +642,41 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 	[ev_double] = double_x
 };
 
+// supported operators for scalar-vector expressions
+static int scalar_vec_ops[] = { '*', '/', '%', MOD, 0 };
+static expr_t *
+convert_scalar (expr_t *scalar, int op, expr_t *vec)
+{
+	int        *s_op = scalar_vec_ops;
+	while (*s_op && *s_op != op) {
+		s_op++;
+	}
+	if (!*s_op) {
+		return 0;
+	}
+
+	// expand the scalar to a vector of the same width as vec
+	type_t     *vec_type = get_type (vec);
+
+	if (is_constant (scalar)) {
+		for (int i = 1; i < type_width (get_type (vec)); i++) {
+			expr_t     *s = copy_expr (scalar);
+			s->next = scalar;
+			scalar = s;
+		}
+		return new_vector_list (scalar);
+	}
+
+	char        swizzle[] = "xxxx";
+	type_t     *vec_base = base_type (vec_type);
+	expr_t     *tmp = new_temp_def_expr (vector_type (vec_base, 4));
+	expr_t     *block = new_block_expr ();
+	swizzle[type_width (vec_type)] = 0;
+	append_expr (block, assign_expr (tmp, new_swizzle_expr (scalar, swizzle)));
+	block->e.block.result = new_alias_expr (vec_type, tmp);
+	return block;
+}
+
 static expr_t *
 pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 {
@@ -787,11 +822,11 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 
 	if (is_constant (e1) && e1->implicit && is_double (t1) && is_float (t2)) {
 		t1 = &type_float;
-		convert_double (e1);
+		e1 = cast_expr (t1, e1);
 	}
 	if (is_float (t1) && is_constant (e2) && e2->implicit && is_double (t2)) {
 		t2 = &type_float;
-		convert_double (e2);
+		e2 = cast_expr (t2, e2);
 	}
 	if (is_double (t1)) {
 		if (is_float (t2)) {
@@ -828,11 +863,12 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 invalid_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
-	etype_t     t1, t2;
-	t1 = extract_type (e1);
-	t2 = extract_type (e2);
+	type_t     *t1, *t2;
+	t1 = get_type (e1);
+	t2 = get_type (e2);
 	return error (e1, "invalid binary expression: %s %s %s",
-				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
+				  get_type_string (t1), get_op_string (op),
+				  get_type_string (t2));
 }
 
 static expr_t *
@@ -957,7 +993,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	expr_type_t *expr_type;
 
 	convert_name (e1);
-	e1 = convert_vector (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
 	if (e1->type == ex_alias && is_call (e1->e.alias.expr)) {
@@ -981,7 +1016,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e1;
 
 	convert_name (e2);
-	e2 = convert_vector (e2);
 	if (e2->type == ex_error)
 		return e2;
 
@@ -1010,11 +1044,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (is_constant (e1) && is_double (t1) && e1->implicit && is_float (t2)) {
 		t1 = &type_float;
-		convert_double (e1);
+		e1 = cast_expr (t1, e1);
 	}
 	if (is_constant (e2) && is_double (t2) && e2->implicit && is_float (t1)) {
 		t2 = &type_float;
-		convert_double (e2);
+		e2 = cast_expr (t2, e2);
 	}
 
 	et1 = low_level_type (t1);
@@ -1026,12 +1060,55 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return invalid_binary_expr(op, e1, e2);
 
 	if ((t1->width > 1 || t2->width > 1)) {
-		if (t1 != t2) {
+		// vector/quaternion and scalar won't get here as vector and quaternion
+		// are distict types with type.width == 1, but vector and vec3 WILL get
+		// here because of vec3 being float{3}
+		if (type_width (t1) == 1) {
+			// scalar op vec
+			if (!(e = convert_scalar (e1, op, e2))) {
+				return invalid_binary_expr (op, e1, e2);
+			}
+			e1 = e;
+			t1 = get_type (e1);
+		}
+		if (type_width (t2) == 1) {
+			// vec op scalar
+			if (!(e = convert_scalar (e2, op, e1))) {
+				return invalid_binary_expr (op, e1, e2);
+			}
+			e2 = e;
+			t2 = get_type (e2);
+		}
+		if (type_width (t1) != type_width (t2)) {
+			// vec op vec of different widths
 			return invalid_binary_expr (op, e1, e2);
 		}
-		e = new_binary_expr (op, e1, e2);
-		e->e.expr.type = t1;
-		return e;
+		if (t1 != t2) {
+			if (is_float (base_type (t1)) && is_double (base_type (t2))
+				&& e2->implicit) {
+				e2 = cast_expr (t1, e2);
+			} else if (is_double (base_type (t1)) && is_float (base_type (t2))
+					   && e1->implicit) {
+				e1 = cast_expr (t2, e1);
+			} else if (type_promotes (base_type (t1), base_type (t2))) {
+				e2 = cast_expr (t1, e2);
+			} else if (type_promotes (base_type (t2), base_type (t1))) {
+				e1 = cast_expr (t2, e1);
+			} else {
+				debug (e1, "%d %d\n", e1->implicit, e2->implicit);
+				return invalid_binary_expr (op, e1, e2);
+			}
+		}
+		t1 = get_type (e1);
+		t2 = get_type (e2);
+		et1 = low_level_type (t1);
+		et2 = low_level_type (t2);
+		// both widths are the same at this point
+		if (t1->width > 1) {
+			e = new_binary_expr (op, e1, e2);
+			e->e.expr.type = t1;
+			return e;
+		}
 	}
 
 	expr_type = binary_expr_types[et1][et2];

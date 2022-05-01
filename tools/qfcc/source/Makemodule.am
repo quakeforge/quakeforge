@@ -28,8 +28,10 @@ qfcc_SOURCES = \
 	tools/qfcc/source/expr_assign.c \
 	tools/qfcc/source/expr_binary.c \
 	tools/qfcc/source/expr_bool.c \
+	tools/qfcc/source/expr_cast.c \
 	tools/qfcc/source/expr_compound.c \
 	tools/qfcc/source/expr_obj.c \
+	tools/qfcc/source/expr_vector.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
 	tools/qfcc/source/grab.c \

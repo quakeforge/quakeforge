@@ -80,7 +80,9 @@ int yyget_debug (void) __attribute__((pure));
 FILE *yyget_in (void) __attribute__((pure));
 FILE *yyget_out (void) __attribute__((pure));
 
-static int keyword_or_id (char *token);
+static int keyword_or_id (const char *token);
+static expr_t *parse_float_vector (const char *token, int width);
+static expr_t *parse_int_vector (const char *token, int width);
 
 extern QC_YYSTYPE qc_yylval;
 
@@ -95,7 +97,12 @@ ID			[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
 FLOATf		{FLOAT}[fF]
 FLOATd		{FLOAT}[dD]
+FCOMP		{m}?{FLOAT}
+FD			[fFdD]
 INT			({D}+|0[xX]{X}+|0[bB]{B})
+ICOMP		{m}?{INT}
+UL			([uU]?([lL][lL]?)?)
+ULFD		({UL}|{FD})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
@@ -122,18 +129,28 @@ STRING		\"(\\.|[^"\\])*\"
 
 ^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
-{INT}+[uU]?([lL][lL]?)?	{
+{INT}+{UL}?			{
 						const char *c = yytext + yyleng - 1;
-						int         i;
+						pr_long_t   i;
 
 						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						if (*c == 'u' || *c == 'U')
-							qc_yylval.expr = new_int_expr (i);//FIXME
-						else
-							qc_yylval.expr = new_int_expr (i);
+						if (tolower (*c) == 'u') {
+							if (tolower (c[1]) == 'l') {
+								qc_yylval.expr = new_ulong_expr (i);
+							} else {
+								qc_yylval.expr = new_uint_expr (i);
+							}
+						} else {
+							if (tolower (c[1]) == 'l') {
+								qc_yylval.expr = new_long_expr (i);
+							} else {
+								qc_yylval.expr = new_int_expr (i);
+								qc_yylval.expr->implicit = 1;
+							}
+						}
 						return VALUE;
 					}
 
@@ -187,19 +204,33 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 @					return '@';
 
-'{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
-						vec3_t      v;
-						sscanf (yytext, "' %f %f %f '",
-								&v[0], &v[1], &v[2]);
-						qc_yylval.expr = new_vector_expr (v);
+'{s}*{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
+						qc_yylval.expr = parse_int_vector (yytext, 2);
 						return VALUE;
 					}
 
-'{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
-						quat_t      q;
-						sscanf (yytext, "' %f %f %f %f'",
-								&q[0], &q[1], &q[2], &q[3]);
-						qc_yylval.expr = new_quaternion_expr (q);
+'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
+						qc_yylval.expr = parse_int_vector (yytext, 3);
+						return VALUE;
+					}
+
+'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
+						qc_yylval.expr = parse_int_vector (yytext, 4);
+						return VALUE;
+					}
+
+'{s}*{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
+						qc_yylval.expr = parse_float_vector (yytext, 2);
+						return VALUE;
+					}
+
+'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
+						qc_yylval.expr = parse_float_vector (yytext, 3);
+						return VALUE;
+					}
+
+'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
+						qc_yylval.expr = parse_float_vector (yytext, 4);
 						return VALUE;
 					}
 
@@ -453,7 +484,7 @@ process_keyword (keyword_t *keyword, const char *token)
 }
 
 static int
-keyword_or_id (char *token)
+keyword_or_id (const char *token)
 {
 	static hashtab_t *keyword_tab;
 	static hashtab_t *qf_keyword_tab;
@@ -523,6 +554,166 @@ keyword_or_id (char *token)
 	if (sym->sy_type == sy_class)
 		return CLASS_NAME;
 	return NAME;
+}
+
+static expr_t *
+parse_int_vector (const char *token, int width)
+{
+	char        t1 = 0, t2 = 0;
+	type_t     *type = 0;
+
+	union {
+		pr_long_t   l[4];
+		pr_type_t   t[PR_SIZEOF (dvec4)];
+	}           long_data = {};
+	pr_type_t  *data = __builtin_choose_expr (
+		sizeof (pr_long_t) == sizeof (long), long_data.t, (void) 0);
+
+	switch (width) {
+		case 4:
+			sscanf (token, "' %li %li %li %li '%c%c",
+					&long_data.l[0], &long_data.l[1],
+					&long_data.l[2], &long_data.l[3], &t1, &t2);
+			break;
+		case 3:
+			sscanf (token, "' %li %li %li '%c%c",
+					&long_data.l[0], &long_data.l[1],
+					&long_data.l[2], &t1, &t2);
+			break;
+		case 2:
+			sscanf (token, "' %li %li '%c%c",
+					&long_data.l[0], &long_data.l[1], &t1, &t2);
+			break;
+	}
+	t1 = tolower (t1);
+	t2 = tolower (t2);
+	switch (t1) {
+		case 'u':
+			if (t2 == 'l') {
+				type = &type_ulong;
+			} else {
+				type = &type_uint;
+				volatile union {
+					pr_uint_t   u[4];
+					pr_type_t   t[PR_SIZEOF (ivec4)];
+				}           uint_data = {
+					.u = {
+						long_data.l[0],
+						long_data.l[1],
+						long_data.l[2],
+						long_data.l[3],
+					}
+				};
+				data = (pr_type_t *) uint_data.t;
+			}
+			break;
+		case 'l':
+			type = &type_long;
+			break;
+		case 'f':
+			type = &type_float;
+			volatile union {
+				pr_float_t  f[4];
+				pr_type_t   t[PR_SIZEOF (vec4)];
+			}           float_data = {
+				.f = {
+					long_data.l[0],
+					long_data.l[1],
+					long_data.l[2],
+					long_data.l[3],
+				}
+			};
+			data = (pr_type_t *) float_data.t;
+			break;
+		case 'd':
+			type = &type_double;
+			volatile union {
+				pr_double_t d[4];
+				pr_type_t   t[PR_SIZEOF (dvec4)];
+			}           double_data = {
+				.d = {
+					long_data.l[0],
+					long_data.l[1],
+					long_data.l[2],
+					long_data.l[3],
+				}
+			};
+			data = (pr_type_t *) double_data.t;
+			break;
+		case 0:
+			type = &type_int;
+			volatile union {
+				pr_int_t    i[4];
+				pr_type_t   t[PR_SIZEOF (ivec4)];
+			}           int_data = {
+				.i = {
+					long_data.l[0],
+					long_data.l[1],
+					long_data.l[2],
+					long_data.l[3],
+				}
+			};
+			data = (pr_type_t *) int_data.t;
+			break;
+	}
+	type = vector_type (type, width);
+	expr_t     *expr = new_value_expr (new_type_value (type, data));
+	expr->implicit = !t1;
+	return expr;
+}
+
+static expr_t *
+parse_float_vector (const char *token, int width)
+{
+	char        t = 0;
+	type_t     *type = 0;
+
+	union {
+		pr_double_t d[4];
+		pr_type_t   t[PR_SIZEOF (dvec4)];
+	}           double_data = {};
+	pr_type_t  *data = __builtin_choose_expr (
+		sizeof (pr_double_t) == sizeof (double), double_data.t, (void) 0);
+
+	switch (width) {
+		case 4:
+			sscanf (token, "' %lf %lf %lf %lf '%c",
+					&double_data.d[0], &double_data.d[1],
+					&double_data.d[2], &double_data.d[3], &t);
+			break;
+		case 3:
+			sscanf (token, "' %lf %lf %lf '%c",
+					&double_data.d[0], &double_data.d[1],
+					&double_data.d[1], &t);
+			type = (t == 'f' || t == 'F') ? &type_vec3 : &type_dvec3;
+			break;
+		case 2:
+			sscanf (token, "' %lf %lf '%c",
+					&double_data.d[0], &double_data.d[1], &t);
+			type = (t == 'f' || t == 'F') ? &type_vec2 : &type_dvec2;
+			break;
+	}
+	if (t == 'f' || t == 'F') {
+		volatile union {
+			pr_float_t  f[4];
+			pr_type_t   t[PR_SIZEOF (vec4)];
+		}           float_data = {
+			.f = {
+				double_data.d[0],
+				double_data.d[1],
+				double_data.d[2],
+				double_data.d[3],
+			}
+		};
+		data = (pr_type_t *) float_data.t;
+		type = &type_float;
+	} else {
+		type = &type_double;
+	}
+	type = vector_type (type, width);
+	expr_t     *expr = new_value_expr (new_type_value (type, data));
+	expr->implicit = !t;
+	return expr;
 }
 
 #ifdef YY_FLEX_REALLOC_HACK

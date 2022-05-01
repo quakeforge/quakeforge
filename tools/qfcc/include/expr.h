@@ -205,6 +205,8 @@ typedef struct ex_value_s {
 		unsigned    uint_val;			///< unsigned int constant
 		int16_t     short_val;			///< short constant
 		uint16_t    ushort_val;			///< unsigned short constant
+#define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
+#include "tools/qfcc/include/vec_types.h"
 	} v;
 } ex_value_t;
 
@@ -256,6 +258,17 @@ typedef struct {
 	struct type_s *type;		///< result type
 } ex_horizontal_t;
 
+//NOTE always operates on vec4 or dvec4, so needs a suitable destination and
+//care must be taken when working with smaller source operands (check aligmnet
+//and adjust swizzle operation as needed)
+typedef struct {
+	struct expr_s *src;			///< source expression
+	unsigned    source[4];		///< src component indices
+	unsigned    neg;			///< bitmask of dst components to negate
+	unsigned    zero;			///< bitmask of dst components to 0
+	struct type_s *type;		///< result type
+} ex_swizzle_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -291,6 +304,7 @@ typedef struct expr_s {
 		ex_with_t   with;				///< with expr param
 		struct type_s *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
+		ex_swizzle_t swizzle;			///< vector swizzle operation
 	} e;
 } expr_t;
 
@@ -309,7 +323,6 @@ expr_t *type_mismatch (expr_t *e1, expr_t *e2, int op);
 
 expr_t *param_mismatch (expr_t *e, int param, const char *fn,
 					    struct type_s *t1, struct type_s *t2);
-expr_t *cast_error (expr_t *e, struct type_s *t1, struct type_s *t2);
 expr_t *test_error (expr_t *e, struct type_s *t);
 
 extern expr_t *local_expr;
@@ -479,6 +492,8 @@ expr_t *new_unary_expr (int op, expr_t *e1);
 */
 expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
 
+expr_t *new_swizzle_expr (expr_t *src, const char *swizzle);
+
 /**	Create a new def reference (non-temporary variable) expression node.
 
 	\return			The new def reference expression node (::def_t).
@@ -632,6 +647,9 @@ int expr_int (expr_t *e) __attribute__((pure));
 expr_t *new_uint_expr (unsigned uint_val);
 unsigned expr_uint (expr_t *e) __attribute__((pure));
 
+expr_t *new_long_expr (pr_long_t long_val);
+expr_t *new_ulong_expr (pr_ulong_t ulong_val);
+
 /** Create a new short constant expression node.
 
 	\param short_val	The short constant being represented.
@@ -640,6 +658,7 @@ unsigned expr_uint (expr_t *e) __attribute__((pure));
 */
 expr_t *new_short_expr (short short_val);
 short expr_short (expr_t *e) __attribute__((pure));
+unsigned short expr_ushort (expr_t *e) __attribute__((pure));
 
 int expr_integral (expr_t *e) __attribute__((pure));
 
@@ -759,8 +778,6 @@ expr_t *new_param_expr (struct type_s *type, int num);
 */
 void convert_name (expr_t *e);
 
-expr_t *convert_vector (expr_t *e);
-
 expr_t *append_expr (expr_t *block, expr_t *e);
 expr_t *prepend_expr (expr_t *block, expr_t *e);
 
@@ -768,10 +785,6 @@ expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
 void dump_dot_expr (void *e, const char *filename);
 
-void convert_int (expr_t *e);
-void convert_short (expr_t *e);
-void convert_short_int (expr_t *e);
-void convert_double (expr_t *e);
 expr_t *convert_nil (expr_t *e, struct type_s *t);
 
 expr_t *test_expr (expr_t *e);

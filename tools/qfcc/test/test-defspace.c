@@ -104,6 +104,39 @@ test_init (void)
 	return pass;
 }
 
+static int
+test_aligned_alloc (void)
+{
+	defspace_t *space = defspace_new (ds_virtual);
+	struct {
+		int size, align;
+	}           allocations[6] = {
+		{ 2, 2 },
+		{ 2, 2 },
+		{ 1, 1 },
+		{ 4, 4 },
+		{ 2, 2 },
+		{ 2, 2 },
+	};
+	int         offsets[6];
+	for (int i = 0; i < 6; i++) {
+		offsets[i] = defspace_alloc_aligned_loc (space, allocations[i].size,
+												 allocations[i].align);
+	}
+	for (int i = 0; i < 5; i++) {
+		for (int j = i + 1; j < 6; j++) {
+			if (offsets[i] == offsets[j]) {
+				printf ("duplicate offset in allocations");
+				printf ("%d %d %d %d %d %d\n",
+						offsets[0], offsets[1], offsets[2],
+						offsets[3], offsets[4], offsets[5]);
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
 int
 main (int argc, const char **argv)
 {
@@ -112,6 +145,7 @@ main (int argc, const char **argv)
 	int pass = 1;
 
 	pass &= test_init ();
+	pass &= test_aligned_alloc ();
 
 	return !pass;
 }

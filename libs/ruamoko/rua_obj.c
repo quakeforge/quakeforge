@@ -1507,25 +1507,27 @@ rua_obj_msg_sendv (progs_t *pr, void *data)
 	RUA_CALL_END (pr, imp)
 }
 
+#define RETAIN_COUNT(obj) PR_PTR (int, &(obj)[-1])
+
 static void
 rua_obj_increment_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = ++(*--obj).int_var;
+	R_INT (pr) = ++RETAIN_COUNT (obj);
 }
 
 static void
 rua_obj_decrement_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = --(*--obj).int_var;
+	R_INT (pr) = --RETAIN_COUNT (obj);
 }
 
 static void
 rua_obj_get_retaincount (progs_t *pr, void *data)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = (*--obj).int_var;
+	R_INT (pr) = RETAIN_COUNT (obj);
 }
 
 static void

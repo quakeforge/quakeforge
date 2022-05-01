@@ -49,9 +49,10 @@
 
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
-#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/value.h"
 
 #include "tools/qfcc/source/qc-parse.h"
 
@@ -461,39 +462,9 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (is_vector(e->e.vector.type)) {
-		expr_t     *x = e->e.vector.list;
-		expr_t     *y = x->next;
-		expr_t     *z = y->next;
-		_print_expr (dstr, x, level, id, next);
-		_print_expr (dstr, y, level, id, next);
-		_print_expr (dstr, z, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, x);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
-	}
-	if (is_quaternion(e->e.vector.type)) {
-		if (e->e.vector.list->next->next) {
-			expr_t     *x = e->e.vector.list;
-			expr_t     *y = x->next;
-			expr_t     *z = y->next;
-			expr_t     *w = z->next;
-			_print_expr (dstr, x, level, id, next);
-			_print_expr (dstr, y, level, id, next);
-			_print_expr (dstr, z, level, id, next);
-			_print_expr (dstr, w, level, id, next);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, x);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, w);
-		} else {
-			expr_t     *v = e->e.vector.list;
-			expr_t     *s = v->next;
-			_print_expr (dstr, v, level, id, next);
-			_print_expr (dstr, s, level, id, next);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, v);
-			dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, s);
-		}
+	for (expr_t *ele = e->e.vector.list; ele; ele = ele->next) {
+		_print_expr (dstr, ele, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, ele);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"vector %d\"];\n", indent, "", e,
 			   e->line);
@@ -521,96 +492,11 @@ static void
 print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	type_t     *type;
 	const char *label = "?!?";
-	static dstring_t *type_str;
 
-	if (!type_str) {
-		type_str = dstring_newstr ();
-	}
-
-	switch (e->e.value->lltype) {
-		case ev_string:
-			label = va (0, "\\\"%s\\\"",
-						quote_string (e->e.value->v.string_val));
-			break;
-		case ev_double:
-			label = va (0, "f %g", e->e.value->v.double_val);
-			break;
-		case ev_float:
-			label = va (0, "f %g", e->e.value->v.float_val);
-			break;
-		case ev_vector:
-			label = va (0, "'%g %g %g'",
-						e->e.value->v.vector_val[0],
-						e->e.value->v.vector_val[1],
-						e->e.value->v.vector_val[2]);
-			break;
-		case ev_quaternion:
-			label = va (0, "'%g %g %g %g'",
-						e->e.value->v.quaternion_val[0],
-						e->e.value->v.quaternion_val[1],
-						e->e.value->v.quaternion_val[2],
-						e->e.value->v.quaternion_val[3]);
-			break;
-		case ev_ptr:
-			type = e->e.value->v.pointer.type;
-			dstring_clearstr(type_str);
-			if (type) {
-				print_type_str (type_str, type);
-			}
-			if (e->e.value->v.pointer.def)
-				label = va (0, "(*%s)[%d]<%s>",
-							type ? type_str->str : "???",
-							e->e.value->v.pointer.val,
-							e->e.value->v.pointer.def->name);
-			else
-				label = va (0, "(*%s)[%d]",
-							type ? type_str->str : "???",
-							e->e.value->v.pointer.val);
-			break;
-		case ev_field:
-			if (e->e.value->v.pointer.def) {
-				int         offset = e->e.value->v.pointer.val;
-				offset += e->e.value->v.pointer.def->offset;
-				label = va (0, "field %d", offset);
-			} else {
-				label = va (0, "field %d", e->e.value->v.pointer.val);
-			}
-			break;
-		case ev_entity:
-			label = va (0, "ent %d", e->e.value->v.int_val);
-			break;
-		case ev_func:
-			label = va (0, "func %d", e->e.value->v.int_val);
-			break;
-		case ev_int:
-			label = va (0, "i %d", e->e.value->v.int_val);
-			break;
-		case ev_uint:
-			label = va (0, "u %u", e->e.value->v.uint_val);
-			break;
-		case ev_long:
-			label = va (0, "i %"PRIi64, e->e.value->v.long_val);
-			break;
-		case ev_ulong:
-			label = va (0, "u %"PRIu64, e->e.value->v.ulong_val);
-			break;
-		case ev_short:
-			label = va (0, "s %d", e->e.value->v.short_val);
-			break;
-		case ev_ushort:
-			label = va (0, "us %d", e->e.value->v.ushort_val);
-			break;
-		case ev_void:
-			label = "<void>";
-			break;
-		case ev_invalid:
-			label = "<invalid>";
-			break;
-		case ev_type_count:
-			label = "<type_count>";
-			break;
+	label = get_value_string (e->e.value);
+	if (is_string (e->e.value->type)) {
+		label = quote_string (html_string (label));
 	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e, label,
 			   e->line);
@@ -670,6 +556,41 @@ print_args (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_horizontal (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.hop.vec, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->e.hop.vec);
+	dasprintf (dstr, "%*se_%p [label=\"hop %s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.hop.op), e->line);
+}
+
+static void
+print_swizzle (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	static char swizzle_components[] = "xyzw";
+	int         indent = level * 2 + 2;
+	ex_swizzle_t swiz = e->e.swizzle;
+	const char *swizzle = "";
+
+	for (int i = 0; i < 4; i++) {
+		if (swiz.zero & (1 << i)) {
+			swizzle = va (0, "%s0", swizzle);
+		} else {
+			swizzle = va (0, "%s%s%c", swizzle,
+						  swiz.neg & (1 << i) ? "-" : "",
+						  swizzle_components[swiz.source[i]]);
+		}
+	}
+
+	_print_expr (dstr, swiz.src, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, swiz.src);
+	dasprintf (dstr, "%*se_%p [label=\"swizzle %s\\n%d\"];\n", indent, "", e,
+			   swizzle, e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -698,6 +619,8 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_adjstk] = print_adjstk,
 		[ex_with] = print_with,
 		[ex_args] = print_args,
+		[ex_horizontal] = print_horizontal,
+		[ex_swizzle] = print_swizzle,
 	};
 	int         indent = level * 2 + 2;
 

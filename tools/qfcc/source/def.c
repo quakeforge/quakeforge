@@ -180,8 +180,6 @@ alias_def (def_t *def, type_t *type, int offset)
 		internal_error (0, "aliasing a def to a larger type");
 	if (offset < 0 || offset + type_size (type) > type_size (def->type))
 		internal_error (0, "invalid alias offset");
-	if (type == def->type)
-		return def;
 	for (alias = def->alias_defs; alias; alias = alias->next) {
 		if (alias->type == type && alias->offset == offset)
 			return alias;
@@ -380,12 +378,20 @@ init_elements (struct def_s *def, expr_t *eles)
 				reloc_def_op (c->e.labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				if (c->e.value->lltype == ev_int && is_float (element->type)) {
-					convert_int (c);
-				}
-				if (is_double (get_type (c)) && is_float (element->type)
-					&& c->implicit) {
-					convert_double (c);
+				type_t     *ctype = get_type (c);
+				if (ctype != element->type
+					&& type_assignable (element->type, ctype)) {
+					if (!c->implicit
+						&& !type_promotes (element->type, ctype)) {
+						warning (c, "initialization of %s with %s"
+								 " (use a cast)\n)",
+								 get_type_string (element->type),
+								 get_type_string (ctype));
+					}
+					expr_t     *n = cast_expr (element->type, c);
+					n->line = c->line;
+					n->file = c->line;
+					c = n;
 				}
 				if (get_type (c) != element->type) {
 					error (c, "type mismatch in initializer");
@@ -401,7 +407,7 @@ init_elements (struct def_s *def, expr_t *eles)
 				internal_error (c, "bogus expression type in init_elements()");
 			}
 			if (c->e.value->lltype == ev_string) {
-				EMIT_STRING (def->space, g->string_var,
+				EMIT_STRING (def->space, *(pr_string_t *) g,
 							 c->e.value->v.string_val);
 			} else {
 				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
@@ -596,7 +602,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		}
 		init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
-			error (init, "type mismatch in initializer");
+			error (init, "type mismatch in initializer: %s = %s",
+				   get_type_string (sym->type), get_type_string (init_type));
 			return;
 		}
 		if (storage == sc_local && local_expr) {
@@ -636,7 +643,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
 								 v->v.string_val);
 				} else {
-					memcpy (D_POINTER (void, sym->s.def), &v->v,
+					memcpy (D_POINTER (pr_type_t, sym->s.def), &v->v,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}

@@ -287,7 +287,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	if (pr_deadbeef_locals) {
 		for (pr_uint_t i = f->params_start;
 			 i < f->params_start + f->locals; i++) {
-			pr->pr_globals[i].int_var = 0xdeadbeef;
+			pr->pr_globals[i].value = 0xdeadbeef;
 		}
 	}
 
@@ -304,8 +304,8 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			copy_param (dstParams[i], pr->pr_params[i], f->param_size[i].size);
 		}
 		copy_args = pr->pr_argc - i;
-		argc->int_var = copy_args;
-		argv->int_var = dstParams[i] - pr->pr_globals;
+		PR_PTR (int, argc) = copy_args;
+		PR_PTR (ptr, argv) = PR_SetPointer (pr, dstParams[i]);
 		if (i < PR_MAX_PARAMS) {
 			memcpy (dstParams[i], pr->pr_params[i],
 					(copy_args * pr->pr_param_size) * sizeof (pr_type_t));
@@ -517,7 +517,7 @@ static inline void
 pr_memset (pr_type_t *dst, int val, pr_uint_t count)
 {
 	while (count-- > 0) {
-		(*dst++).int_var = val;
+		(*dst++).value = val;
 	}
 }
 
@@ -839,7 +839,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
 				ptr = pr->pr_globals + pointer;
-				ptr->int_var = OPA(int);
+				ptr->value = OPA(int);
 				break;
 			case OP_STOREP_V_v6p:
 				pointer = OPB(ptr);
@@ -847,7 +847,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (&OPA(float), &ptr->vector_var);
+				VectorCopy (&OPA(float), &PR_PTR (float, ptr));
 				break;
 			case OP_STOREP_Q_v6p:
 				pointer = OPB(ptr);
@@ -855,7 +855,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (&OPA(float), &ptr->quat_var);
+				QuatCopy (&OPA(float), &PR_PTR (float, ptr));
 				break;
 			case OP_STOREP_D_v6p:
 				pointer = OPB(ptr);
@@ -910,7 +910,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 									 "field in an edict");
 				}
 				fldofs = OPA(entity) + OPB(field);
-				OPC(int) = pr->pr_edict_area[fldofs].int_var;
+				OPC(int) = PR_PTR (int, &pr->pr_edict_area[fldofs]);
 				break;
 			case OP_LOAD_V_v6p:
 				if (pr_boundscheck) {
@@ -961,23 +961,21 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
 				ptr = pr->pr_globals + pointer;
-				OPC(int) = ptr->int_var;
+				OPC(int) = ptr->value;
 				break;
 			case OP_LOADB_V_v6p:
 				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
-				ptr = pr->pr_globals + pointer;
-				VectorCopy (&ptr->vector_var, &OPC(float));
+				VectorCopy (G_VECTOR (pr, pointer), &OPC(float));
 				break;
 			case OP_LOADB_Q_v6p:
 				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
-				ptr = pr->pr_globals + pointer;
-				QuatCopy (&ptr->quat_var, &OPC(float));
+				QuatCopy (G_QUAT (pr, pointer), &OPC(float));
 				break;
 			case OP_LOADB_D_v6p:
 				pointer = OPA(entity) + OPB(field);
@@ -1000,7 +998,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
 				ptr = pr->pr_globals + pointer;
-				OPC(int) = ptr->int_var;
+				OPC(int) = ptr->value;
 				break;
 			case OP_LOADBI_V_v6p:
 				pointer = OPA(ptr) + (short) st->b;
@@ -1008,7 +1006,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (&ptr->vector_var, &OPC(float));
+				VectorCopy (G_VECTOR (pr, pointer), &OPC(float));
 				break;
 			case OP_LOADBI_Q_v6p:
 				pointer = OPA(ptr) + (short) st->b;
@@ -1016,7 +1014,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (&ptr->quat_var, &OPC(float));
+				QuatCopy (G_QUAT (pr, pointer), &OPC(float));
 				break;
 			case OP_LOADBI_D_v6p:
 				pointer = OPA(ptr) + (short) st->b;
@@ -1049,7 +1047,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
 				ptr = pr->pr_globals + pointer;
-				ptr->int_var = OPA(int);
+				ptr->value = OPA(int);
 				break;
 			case OP_STOREB_V_v6p:
 				pointer = OPB(ptr) + OPC(int);
@@ -1057,7 +1055,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (&OPA(float), &ptr->vector_var);
+				VectorCopy (&OPA(float), G_VECTOR (pr, pointer));
 				break;
 			case OP_STOREB_Q_v6p:
 				pointer = OPB(ptr) + OPC(int);
@@ -1065,7 +1063,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (&OPA(float), &ptr->quat_var);
+				QuatCopy (&OPA(float), G_QUAT (pr, pointer));
 				break;
 			case OP_STOREB_D_v6p:
 				pointer = OPB(ptr) + OPC(int);
@@ -1088,7 +1086,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
 				ptr = pr->pr_globals + pointer;
-				ptr->int_var = OPA(int);
+				ptr->value = OPA(int);
 				break;
 			case OP_STOREBI_V_v6p:
 				pointer = OPB(ptr) + (short) st->c;
@@ -1096,7 +1094,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (&OPA(float), &ptr->vector_var);
+				VectorCopy (&OPA(float), G_VECTOR (pr, pointer));
 				break;
 			case OP_STOREBI_Q_v6p:
 				pointer = OPB(ptr) + (short) st->c;
@@ -1104,7 +1102,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (&OPA(float), &ptr->quat_var);
+				QuatCopy (&OPA(float), G_QUAT (pr, pointer));
 				break;
 			case OP_STOREBI_D_v6p:
 				pointer = OPB(ptr) + (short) st->c;
@@ -1128,7 +1126,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					if (pr_boundscheck) {
 						check_stack_pointer (pr, stack, 1);
 					}
-					stk->int_var = OPA(int);
+					stk->value = OPA(int);
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1174,14 +1172,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					stk->int_var = ptr->int_var;
+					stk->value = ptr->value;
 					*pr->globals.stack = stack;
 				}
 				break;
 			case OP_PUSHB_V_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack - 3;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
@@ -1191,14 +1188,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					VectorCopy (&ptr->vector_var, &stk->vector_var);
+					VectorCopy (G_VECTOR (pr, pointer), G_VECTOR (pr, stack));
 					*pr->globals.stack = stack;
 				}
 				break;
 			case OP_PUSHB_Q_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack - 4;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
@@ -1208,7 +1204,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
-					QuatCopy (&ptr->quat_var, &stk->quat_var);
+					QuatCopy (G_QUAT (pr, pointer), G_QUAT (pr, stack));
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1232,14 +1228,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					stk->int_var = ptr->int_var;
+					stk->value = ptr->value;
 					*pr->globals.stack = stack;
 				}
 				break;
 			case OP_PUSHBI_V_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack - 3;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
@@ -1249,14 +1244,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					VectorCopy (&ptr->vector_var, &stk->vector_var);
+					VectorCopy (G_VECTOR (pr, pointer), G_VECTOR (pr, stack));
 					*pr->globals.stack = stack;
 				}
 				break;
 			case OP_PUSHBI_Q_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack - 4;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
@@ -1266,7 +1260,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
-					QuatCopy (&ptr->quat_var, &stk->quat_var);
+					QuatCopy (G_QUAT (pr, pointer), G_QUAT (pr, stack));
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1284,7 +1278,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					if (pr_boundscheck) {
 						check_stack_pointer (pr, stack, 1);
 					}
-					OPA(int) = stk->int_var;
+					OPA(int) = stk->value;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
@@ -1330,14 +1324,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					ptr->int_var = stk->int_var;
+					ptr->value = stk->value;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
 			case OP_POPB_V_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
@@ -1347,14 +1340,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					VectorCopy (&stk->vector_var, &ptr->vector_var);
+					VectorCopy (G_VECTOR (pr, stack), G_VECTOR (pr, pointer));
 					*pr->globals.stack = stack + 3;
 				}
 				break;
 			case OP_POPB_Q_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
@@ -1364,7 +1356,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
-					QuatCopy (&stk->quat_var, &ptr->quat_var);
+					QuatCopy (G_QUAT (pr, stack), G_QUAT (pr, pointer));
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1388,14 +1380,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					ptr->int_var = stk->int_var;
+					ptr->value = stk->value;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
 			case OP_POPBI_V_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
@@ -1405,14 +1396,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_int);
 					}
 
-					VectorCopy (&stk->vector_var, &ptr->vector_var);
+					VectorCopy (G_VECTOR (pr, stack), G_VECTOR (pr, pointer));
 					*pr->globals.stack = stack + 3;
 				}
 				break;
 			case OP_POPBI_Q_v6p:
 				{
 					pr_ptr_t    stack = *pr->globals.stack;
-					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
@@ -1422,7 +1412,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
-					QuatCopy (&stk->quat_var, &ptr->quat_var);
+					QuatCopy (G_QUAT (pr, stack), G_QUAT (pr, pointer));
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1481,8 +1471,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				if (pr_boundscheck) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
-				ptr = pr->pr_globals + pointer;
-				pointer = ptr->int_var;
+				pointer = G_POINTER (pr, pointer);
 				if (pr_boundscheck
 					&& (pointer >= pr->progs->statements.count)) {
 					PR_RunError (pr, "Invalid jump destination");
@@ -1551,9 +1540,9 @@ op_call:
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					float       time = *pr->globals.ftime + 0.1;
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = OPB(func);
+					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			case OP_STATE_F_v6p:
@@ -1563,9 +1552,9 @@ op_call:
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					float       time = *pr->globals.ftime + OPC(float);
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = OPB(func);
+					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			case OP_ADD_I_v6p:
@@ -1748,8 +1737,7 @@ op_call:
 				OPC(float) = OPA(double) < OPB(double);
 				break;
 			case OP_NOT_D_v6p:
-				OPC(int) = (op_a[0].int_var
-							|| (op_a[1].int_var & ~0x80000000u));
+				OPC(int) = (op_a[0].value || (op_a[1].value & ~0x80000000u));
 				break;
 			case OP_EQ_D_v6p:
 				OPC(int) = OPA(double) == OPB(double);
@@ -1783,17 +1771,17 @@ op_call:
 			default:
 				PR_RunError (pr, "Bad opcode %i", st->op & ~OP_BREAK);
 		}
-		if (pr->watch && pr->watch->int_var != old_val.int_var) {
+		if (pr->watch && pr->watch->value != old_val.value) {
 			if (!pr->wp_conditional
-				|| pr->watch->int_var == pr->wp_val.int_var) {
+				|| pr->watch->value == pr->wp_val.value) {
 				if (pr->debug_handler) {
 					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
 				} else {
 					PR_RunError (pr, "watchpoint hit: %d -> %d",
-								 old_val.int_var, pr->watch->int_var);
+								 old_val.value, pr->watch->value);
 				}
 			}
-			old_val.int_var = pr->watch->int_var;
+			old_val.value = pr->watch->value;
 		}
 	}
 exit_program:
@@ -1877,7 +1865,7 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 			break;
 		case 1:
 			// variable indexed array: a + *b (only +ve)
-			jump_offs = (op_a + OPB(uint))->uint_var;
+			jump_offs = PR_PTR (uint, op_a + OPB(uint));
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)
@@ -1963,7 +1951,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 
 		case 4:
 			// hard-0 base
-			pr->pr_bases[st->c & 3] = pr->pr_globals[st->b].pointer_var;
+			pr->pr_bases[st->c & 3] = G_POINTER (pr, st->b);;
 			return;
 		case 5:
 			pr->pr_bases[st->c & 3] = OPB(ptr);
@@ -2571,7 +2559,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_CALL_C:
 			case OP_CALL_D:
 				mm = pr_call_mode (pr, st, st_op - OP_CALL_B + 1);
-				function = mm->func_var;
+				function = PR_PTR (func, mm);
 				pr->pr_argc = 0;
 				// op_c specifies the location for the return value if any
 				pr->pr_xfunction->profile += profile - startprofile;
@@ -2714,9 +2702,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					float       time = *pr->globals.ftime + 0.1;
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
+					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
@@ -2736,9 +2724,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					float       time = *pr->globals.ftime + OPC(float);
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
+					PR_PTR (float, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (float, &pr->pr_edict_area[frame]) = OPA(float);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			// 1 1110
@@ -2768,9 +2756,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					double      time = *pr->globals.dtime + 0.1;
-					*(double *) (&pr->pr_edict_area[nextthink]) = time;
-					pr->pr_edict_area[frame].int_var = OPA(int);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
+					PR_PTR (double, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (int, &pr->pr_edict_area[frame]) = OPA(int);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
@@ -2799,9 +2787,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
 					double      time = *pr->globals.dtime + OPC(double);
-					*(double *) (&pr->pr_edict_area[nextthink]) = time;
-					pr->pr_edict_area[frame].int_var = OPA(int);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
+					PR_PTR (double, &pr->pr_edict_area[nextthink]) = time;
+					PR_PTR (int, &pr->pr_edict_area[frame]) = OPA(int);
+					PR_PTR (func, &pr->pr_edict_area[think]) = OPB(func);
 				}
 				break;
 			// 1 1111
@@ -2810,7 +2798,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_LEA_C:
 			case OP_LEA_D:
 				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
-				op_c->pointer_var = mm - pr->pr_globals;
+				OPC(ptr) = mm - pr->pr_globals;
 				break;
 			case OP_QV4MUL_F:
 				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
@@ -2862,17 +2850,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			default:
 				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);
 		}
-		if (pr->watch && pr->watch->int_var != old_val.int_var) {
+		if (pr->watch && pr->watch->value != old_val.value) {
 			if (!pr->wp_conditional
-				|| pr->watch->int_var == pr->wp_val.int_var) {
+				|| pr->watch->value == pr->wp_val.value) {
 				if (pr->debug_handler) {
 					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
 				} else {
 					PR_RunError (pr, "watchpoint hit: %d -> %d",
-								 old_val.int_var, pr->watch->int_var);
+								 old_val.value, pr->watch->value);
 				}
 			}
-			old_val.int_var = pr->watch->int_var;
+			old_val.value = pr->watch->value;
 		}
 	}
 exit_program:
