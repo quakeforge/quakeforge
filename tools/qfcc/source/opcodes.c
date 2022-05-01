@@ -527,6 +527,9 @@ opcode_print_statement (pr_uint_t addr, dstatement_t *st)
 	} else {
 		mnemonic = pr_opcodes[st_op].mnemonic;
 	}
-	printf ("%04x (%03x)%-8s %04x %04x %04x\n",
-			addr, st_op & 0x1ff, mnemonic, st->a, st->b, st->c);
+	printf ("%04x (%03x)%-8s %d:%04x %d:%04x %d:%04x\n",
+			addr, st_op & 0x1ff, mnemonic,
+			(st->op & OP_A_BASE) >> OP_A_SHIFT, st->a,
+			(st->op & OP_B_BASE) >> OP_B_SHIFT, st->b,
+			(st->op & OP_C_BASE) >> OP_C_SHIFT, st->c);
 }

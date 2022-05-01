@@ -162,7 +162,8 @@ _print_operand (operand_t *op)
 		case op_temp:
 			printf ("tmp (%s) %p", get_type_string (op->type), op);
 			if (op->tempop.def)
-				printf (" %s", op->tempop.def->name);
+				printf (" %s:%04x", op->tempop.def->name,
+						op->tempop.def->offset);
 			break;
 		case op_alias:
 			printf ("alias(%s,", get_type_string (op->type));
