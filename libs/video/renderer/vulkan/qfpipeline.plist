@@ -206,8 +206,6 @@
 				},
 			);
 		};
-		quakebsp_set = $properties.setLayouts.texture_set;
-		alias_set = $properties.setLayouts.texture_set;
 		sprite_set = {
 			bindings = (
 				{
@@ -337,7 +335,7 @@
 			);
 		};
 		alias_layout = {
-			setLayouts = (matrix_set, alias_set);
+			setLayouts = (matrix_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
