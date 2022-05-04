@@ -44,6 +44,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
@@ -560,6 +561,7 @@ vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 static void
 vulkan_Mod_IQMFinish (model_t *mod)
 {
+	Vulkan_Mod_IQMFinish (mod, vulkan_ctx);
 }
 
 static void

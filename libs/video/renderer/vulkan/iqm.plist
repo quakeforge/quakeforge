@@ -1,0 +1,254 @@
+{
+	setLayouts = {
+		texture_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+	};
+	pipelineLayouts = {
+		iqm_layout = {
+			setLayouts = (matrix_set, texture_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 68;
+					size = "3 * 4 + 2 * 4 * 4 + 4";
+				},
+			);
+		};
+	};
+
+	depthStencil = {
+		test_and_write = {
+			depthTestEnable = true;
+			depthWriteEnable = true;
+			depthCompareOp = less_or_equal;
+			depthBoundsTestEnable = false;
+			stencilTestEnable = false;
+		};
+		test_only = {
+			depthTestEnable = true;
+			depthWriteEnable = false;
+			depthCompareOp = less_or_equal;
+			depthBoundsTestEnable = false;
+			stencilTestEnable = false;
+		};
+		disable = {
+			depthTestEnable = false;
+			depthWriteEnable = false;
+			depthCompareOp = less_or_equal;
+			depthBoundsTestEnable = false;
+			stencilTestEnable = false;
+		};
+	};
+
+	inputAssembly = {
+		iqm = {
+			topology = triangle_list;
+			primitiveRestartEnable = false;
+		};
+	};
+
+	vertexInput = {
+		iqm = {
+			bindings = (
+				{ binding = 0; stride = 20; inputRate = vertex; },
+				{ binding = 1; stride = 40; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32_sfloat;    offset = 0;  },	// position
+				{ location = 1; binding = 0; format = r8g8b8a8_uint;       offset = 0; },	// bonindices
+				{ location = 2; binding = 0; format = r8g8b8a8_unorm;      offset = 4; },	// boneweights
+
+				{ location = 3; binding = 1; format = r32g32_sfloat;       offset = 0;  },	// texcoord
+				{ location = 4; binding = 1; format = r32g32b32_sfloat;    offset = 8;  },	// normal
+				{ location = 5; binding = 1; format = r32g32b32a32_sfloat; offset = 20; },	// tangent
+				{ location = 6; binding = 1; format = r8g8b8a8_unorm;      offset = 36; },	// color
+
+			);
+		};
+	};
+
+	rasterization = {
+		cw_cull_back = {
+			depthClampEnable = false;
+			rasterizerDiscardEnable = false;
+			polygonMode = fill;
+			cullMode = back;
+			frontFace = clockwise;
+			depthBiasEnable = false;
+			lineWidth = 1;
+		};
+		counter_cw_cull_back = {
+			depthClampEnable = false;
+			rasterizerDiscardEnable = false;
+			polygonMode = fill;
+			cullMode = back;
+			frontFace = counter_clockwise;
+			depthBiasEnable = false;
+			lineWidth = 1;
+		};
+	};
+
+	multisample = {
+		rasterizationSamples = $msaaSamples;
+		sampleShadingEnable = false;
+		minSampleShading = 0.5f;
+		alphaToCoverageEnable = false;
+		alphaToOneEnable = false;
+	};
+
+	viewport = {
+		viewports = (
+			{
+				x = 0; y = 0;
+				width = 640; height = 480;
+				minDepth = 0; maxDepth = 1;
+			}
+		);
+		scissors = (
+			{
+				offset = { x = 0; y = 0 };
+				extent = { width = 640; height = 480; };
+			},
+		);
+	};
+
+	attachmentBlendOp = {
+		disabled = {
+			blendEnable = false;
+			srcColorBlendFactor = src_alpha;
+			dstColorBlendFactor = one_minus_src_alpha;
+			colorBlendOp = add;
+			srcAlphaBlendFactor = src_alpha;
+			dstAlphaBlendFactor = one_minus_src_alpha;
+			alphaBlendOp = add;
+			colorWriteMask = r|g|b|a;
+		};
+		alpha_blend = {
+			blendEnable = true;
+			srcColorBlendFactor = src_alpha;
+			dstColorBlendFactor = one_minus_src_alpha;
+			colorBlendOp = add;
+			srcAlphaBlendFactor = src_alpha;
+			dstAlphaBlendFactor = one_minus_src_alpha;
+			alphaBlendOp = add;
+			colorWriteMask = r|g|b|a;
+		};
+	};
+
+	pipelines = {
+		iqm_shadow = {
+			subpass = 0;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/iqm_shadow.vert;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					"$properties.vertexInput.iqm.bindings[0]",
+					"$properties.vertexInput.iqm.bindings[1]",
+				);
+				attributes = (
+					"$properties.vertexInput.iqm.attributes[0]",
+					"$properties.vertexInput.iqm.attributes[1]",
+					"$properties.vertexInput.iqm.attributes[2]",
+					"$properties.vertexInput.iqm.attributes[3]",
+				);
+			};
+			inputAssembly = $properties.inputAssembly.iqm;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_and_write;
+			colorBlend    = $properties.pipelines.iqm_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = iqm_layout;
+		};
+		iqm_depth = {
+			subpass = 0;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/iqm_depth.vert;
+				},
+			);
+			vertexInput = {
+				// depth pass doesn't use UVs
+				bindings = (
+					"$properties.vertexInput.iqm.bindings[0]",
+					"$properties.vertexInput.iqm.bindings[1]",
+				);
+				attributes = (
+					"$properties.vertexInput.iqm.attributes[0]",
+					"$properties.vertexInput.iqm.attributes[1]",
+					"$properties.vertexInput.iqm.attributes[2]",
+					"$properties.vertexInput.iqm.attributes[3]",
+				);
+			};
+			inputAssembly = $properties.inputAssembly.iqm;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_and_write;
+			colorBlend    = $properties.pipelines.iqm_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = iqm_layout;
+			renderPass = renderpass;
+		};
+		iqm_gbuf = {
+			subpass = 2;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/iqm.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/iqm_gbuf.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.iqm;
+			inputAssembly = $properties.inputAssembly.iqm;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = (
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+				);
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor, blend_constants );
+			};
+			layout = iqm_layout;
+			renderPass = renderpass;
+		};
+	};
+}
