@@ -207,6 +207,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/projection.c \
 	libs/video/renderer/vulkan/renderpass.c \
+	libs/video/renderer/vulkan/resource.c \
 	libs/video/renderer/vulkan/scrap.c \
 	libs/video/renderer/vulkan/shader.c \
 	libs/video/renderer/vulkan/staging.c \
