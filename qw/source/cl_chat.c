@@ -255,7 +255,7 @@ static void
 cl_chat_on_focus_change (int game)
 {
 	//FIXME afk mode
-	CL_ChatInfo (!!game);
+	CL_ChatInfo (!game);
 }
 
 
