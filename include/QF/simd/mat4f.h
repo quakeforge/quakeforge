@@ -175,7 +175,7 @@ mat4fquat (mat4f_t m, vec4f_t q)
 		vec4f_t b = _mm_xor_ps (shuff103 (yq), (__m128) mpm);
 		vec4f_t c = _mm_xor_ps (shuff230 (zq), (__m128) pmm);
 		vec4f_t d = _mm_xor_ps (shuff321 (wq), (__m128) mmp);
-
+		// column: ww + xx - yy - zz // 2xy + 2wz // 2zx - 2wy // 0
 		m[0] = _mm_and_ps (a + b - c - d, (__m128) mask);
 	}
 	{
@@ -183,6 +183,7 @@ mat4fquat (mat4f_t m, vec4f_t q)
 		vec4f_t b = yq;
 		vec4f_t c = _mm_xor_ps (shuff321 (zq), (__m128) mmp);
 		vec4f_t d = _mm_xor_ps (shuff230 (wq), (__m128) pmm);
+		// column: 2xy - 2wz // ww - xx + yy - zz // 2yz + 2wx // 0
 		m[1] = _mm_and_ps (b + c - a - d, (__m128) mask);
 	}
 	{
@@ -190,6 +191,7 @@ mat4fquat (mat4f_t m, vec4f_t q)
 		vec4f_t b = _mm_xor_ps (shuff321 (yq), (__m128) mmp);
 		vec4f_t c = zq;
 		vec4f_t d = _mm_xor_ps (shuff103 (wq), (__m128) mpm);
+		// column: 2xz + 2wy // 2yz - 2wx // ww - xx - yy + zz // 0
 		m[2] = _mm_and_ps (a - b + c - d, (__m128) mask);
 	}
 	m[3] = (vec4f_t) { 0, 0, 0, 1 };
