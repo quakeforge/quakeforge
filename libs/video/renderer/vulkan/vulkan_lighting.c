@@ -147,17 +147,10 @@ update_lights (vulkan_ctx_t *ctx)
 	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
 													   sizeof (*light_data));
 
+	float       style_intensities[NumStyles];
 	for (int i = 0; i < NumStyles; i++) {
-		light_data->intensity[i] = d_lightstylevalue[i] / 65536.0;
+		style_intensities[i] = d_lightstylevalue[i] / 65536.0;
 	}
-	// dynamic lights seem a tad faint, so 16x map lights
-	light_data->intensity[64] = 1 / 16.0;
-	light_data->intensity[65] = 1 / 16.0;
-	light_data->intensity[66] = 1 / 16.0;
-	light_data->intensity[67] = 1 / 16.0;
-
-	light_data->distFactor1 = 1 / 128.0;
-	light_data->distFactor2 = 1 / 16384.0;
 
 	light_data->lightCount = 0;
 	R_FindNearLights (r_refdef.frame.position, MaxLights - 1, lights);
@@ -167,16 +160,20 @@ update_lights (vulkan_ctx_t *ctx)
 		}
 		light_data->lightCount++;
 		VectorCopy (lights[i]->color, light_data->lights[i].color);
+		// dynamic lights seem a tad faint, so 16x map lights
+		light_data->lights[i].color[3] = lights[i]->radius / 16;
 		VectorCopy (lights[i]->origin, light_data->lights[i].position);
-		light_data->lights[i].light = lights[i]->radius;
-		light_data->lights[i].data = 64;	// default dynamic light
-		VectorZero (light_data->lights[i].direction);
-		light_data->lights[i].cone = 1;
+		light_data->lights[i].attenuation =
+			(vec4f_t) { 0, 0, 1, 1/lights[i]->radius };
+		light_data->lights[i].direction =
+			(vec4f_t) { 0, 0, 1, 1 };
 	}
 	for (size_t i = 0; (i < lframe->lightvis.size
 						&& light_data->lightCount < MaxLights); i++) {
 		if (lframe->lightvis.a[i]) {
-			light_data->lights[light_data->lightCount++] = lctx->lights.a[i];
+			qfv_light_t *light = &light_data->lights[light_data->lightCount++];
+			*light = lctx->lights.a[i];
+			light->color[3] *= style_intensities[lctx->lightstyles.a[i]];
 		}
 	}
 
@@ -303,6 +300,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	ctx->lighting_context = lctx;
 
 	DARRAY_INIT (&lctx->lights, 16);
+	DARRAY_INIT (&lctx->lightstyles, 16);
 	DARRAY_INIT (&lctx->lightleafs, 16);
 	DARRAY_INIT (&lctx->lightmats, 16);
 	DARRAY_INIT (&lctx->lightlayers, 16);
@@ -462,6 +460,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	dfunc->vkFreeMemory (device->dev, lctx->light_memory, 0);
 	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
 	DARRAY_CLEAR (&lctx->lights);
+	DARRAY_CLEAR (&lctx->lightstyles);
 	DARRAY_CLEAR (&lctx->lightleafs);
 	DARRAY_CLEAR (&lctx->lightmats);
 	DARRAY_CLEAR (&lctx->lightimages);
@@ -475,19 +474,17 @@ static void
 dump_light (qfv_light_t *light, int leaf, mat4f_t mat)
 {
 	Sys_MaskPrintf (SYS_vulkan,
-					"[%g, %g, %g] %d %d %d, "
-					"[%g %g %g] %g, [%g %g %g] %g, %d\n",
-					VectorExpand (light->color),
-					(light->data & 0x07f),
-					(light->data & 0x380) >> 7,
-					(light->data & 0xc00) >> 10,
-					VectorExpand (light->position), light->light,
-					VectorExpand (light->direction), light->cone,
+					"[%g, %g, %g] %g, "
+					"[%g, %g, %g, %g], [%g %g %g] %g, [%g, %g, %g, %g] %d\n",
+					VEC4_EXP (light->color),
+					VEC4_EXP (light->position),
+					VEC4_EXP (light->direction),
+					VEC4_EXP (light->attenuation),
 					leaf);
-	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 0));
-	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 1));
-	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 2));
-	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 3));
+//	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 0));
+//	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 1));
+//	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 2));
+//	Sys_MaskPrintf (SYS_vulkan, "    " VEC4F_FMT "\n", MAT4_ROW (mat, 3));
 }
 
 static float
@@ -548,13 +545,17 @@ esin (float ang)
 	return sin (ang * M_PI / 180);
 }
 
-static void
-sun_vector (const vec_t *ang, vec_t *vec)
+static vec4f_t
+sun_vector (const vec_t *ang)
 {
 	// ang is yaw, pitch (maybe roll, but ignored
-	vec[0] = ecos (ang[1]) * ecos (ang[0]);
-	vec[1] = ecos (ang[1]) * esin (ang[0]);
-	vec[2] = esin (ang[1]);
+	vec4f_t     vec = {
+		ecos (ang[1]) * ecos (ang[0]),
+		ecos (ang[1]) * esin (ang[0]),
+		esin (ang[1]),
+		0,
+	};
+	return vec;
 }
 
 static void
@@ -577,11 +578,13 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 		return;
 	}
 	VectorSet (1, 1, 1, light.color);
-	light.data = LM_INFINITE | ST_CASCADE;
-	light.light = sunlight;
-	sun_vector (sunangle, light.direction);
-	light.cone = 1;
+	light.color[3] = sunlight;
+	light.position = sun_vector (sunangle);
+	light.direction = light.position;
+	light.direction[3] = 1;
+	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
 	DARRAY_APPEND (&lctx->lights, light);
+	DARRAY_APPEND (&lctx->lightstyles, 0);
 	DARRAY_APPEND (&lctx->lightleafs, -1);
 
 	// Any leaf with sky surfaces can potentially see the sun, thus put
@@ -597,8 +600,16 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 	expand_pvs (lctx->sun_pvs, model);
 }
 
+static vec4f_t
+parse_position (const char *str)
+{
+	vec3_t      vec = {};
+	sscanf (str, "%f %f %f", VectorExpandAddr (vec));
+	return (vec4f_t) {vec[0], vec[1], vec[2], 1};
+}
+
 static void
-parse_light (qfv_light_t *light, const plitem_t *entity,
+parse_light (qfv_light_t *light, int *style, const plitem_t *entity,
 			 const plitem_t *targets)
 {
 	const char *str;
@@ -612,48 +623,47 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 	}
 	Sys_Printf ("}\n");*/
 
-	light->cone = 1;
-	light->data = 0;
-	light->light = 300;
-	VectorSet (1, 1, 1, light->color);
+	// omnidirectional light (unit length xyz so not treated as ambient)
+	light->direction = (vec4f_t) { 0, 0, 1, 1 };
+	// bright white
+	light->color = (vec4f_t) { 1, 1, 1, 300 };
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "origin")))) {
-		sscanf (str, "%f %f %f", VectorExpandAddr (light->position));
+		light->position = parse_position (str);
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "target")))) {
-		vec3_t      position = {};
 		plitem_t   *target = PL_ObjectForKey (targets, str);
+		vec4f_t     dir = { 1, 0, 0, 0 };
 		if (target) {
 			if ((str = PL_String (PL_ObjectForKey (target, "origin")))) {
-				sscanf (str, "%f %f %f", VectorExpandAddr (position));
+				dir = parse_position (str);
+				dir = normalf (dir - light->position);
 			}
-			VectorSubtract (position, light->position, light->direction);
-			VectorNormalize (light->direction);
 		}
 
 		float angle = 40;
 		if ((str = PL_String (PL_ObjectForKey (entity, "angle")))) {
 			angle = atof (str);
 		}
-		light->cone = -cos (angle * M_PI / 360); // half angle
+		dir[3] = -cos (angle * M_PI / 360); // half angle
+		light->direction = dir;
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
-		light->light = atof (str);
+		light->color[3] = atof (str);
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "style")))) {
-		light->data = atoi (str) & 0x3f;
+		*style = atoi (str) & 0x3f;
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "delay")))) {
-		model = (atoi (str) & 0x7) << 7;
+		model = atoi (str) & 0x7;
 		if (model == LM_INVERSE2) {
 			model = LM_INVERSE3;	//FIXME for marcher (need a map)
 		}
-		light->data |= model;
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
@@ -662,15 +672,29 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 		VectorScale (light->color, 1/255.0, light->color);
 	}
 
-	if (model == LM_INFINITE) {
-		light->data |= ST_CASCADE;
-	} else if (model != LM_AMBIENT) {
-		if (light->cone > -0.5) {
-			light->data |= ST_CUBE;
-		} else {
-			light->data |= ST_PLANE;
-		}
+	vec4f_t     attenuation = { 1, 0, 0, 0 }; 	// inverse square
+	switch (model) {
+		case LM_LINEAR:
+			attenuation = (vec4f_t) { 0, 0, 1, 1 / fabsf (light->color[3]) };
+			break;
+		case LM_INVERSE:
+			attenuation = (vec4f_t) { 0, 1.0 / 128, 0, 0 };
+			break;
+		case LM_INVERSE2:
+			attenuation = (vec4f_t) { 1.0 / 16384, 0, 0, 0 };
+			break;
+		case LM_INFINITE:
+			attenuation = (vec4f_t) { 0, 0, 1, 0 };
+			break;
+		case LM_AMBIENT:
+			attenuation = (vec4f_t) { 0, 0, 1, 0 };
+			light->direction = (vec4f_t) { 0, 0, 0, 1 };
+			break;
+		case LM_INVERSE3:
+			attenuation = (vec4f_t) { 1.0 / 16384, 2.0 / 128, 1, 0 };
+			break;
 	}
+	light->attenuation = attenuation;
 }
 
 static void
@@ -681,8 +705,18 @@ create_light_matrices (lightingctx_t *lctx)
 		qfv_light_t *light = &lctx->lights.a[i];
 		mat4f_t     view;
 		mat4f_t     proj;
+		int         mode = ST_NONE;
 
-		switch (light->data & ShadowMask) {
+		if (!light->position[3]) {
+			mode = ST_CASCADE;
+		} else {
+			if (light->direction[3] > -0.5) {
+				mode = ST_CUBE;
+			} else {
+				mode = ST_PLANE;
+			}
+		}
+		switch (mode) {
 			default:
 			case ST_NONE:
 			case ST_CUBE:
@@ -691,13 +725,14 @@ create_light_matrices (lightingctx_t *lctx)
 			case ST_CASCADE:
 			case ST_PLANE:
 				//FIXME will fail for -ref_direction
-				mat4fquat (view, qrotf (loadvec3f (light->direction),
-										ref_direction));
+				vec4f_t     dir = light->direction;
+				dir[3] = 0;
+				mat4fquat (view, qrotf (dir, ref_direction));
 				break;
 		}
 		VectorNegate (light->position, view[3]);
 
-		switch (light->data & ShadowMask) {
+		switch (mode) {
 			case ST_NONE:
 				mat4fidentity (proj);
 				break;
@@ -709,7 +744,7 @@ create_light_matrices (lightingctx_t *lctx)
 				mat4fidentity (proj);
 				break;
 			case ST_PLANE:
-				QFV_PerspectiveCos (proj, light->cone);
+				QFV_PerspectiveCos (proj, -light->direction[3]);
 				break;
 		}
 		mmulf (lctx->lightmats.a[i], proj, view);
@@ -722,10 +757,11 @@ light_compare (const void *_l2, const void *_l1)
 	const qfv_light_t *l1 = _l1;
 	const qfv_light_t *l2 = _l2;
 
-	if (l1->light == l2->light) {
-		return (l1->data & ShadowMask) - (l2->data & ShadowMask);
+	if (l1->color[3] == l2->color[3]) {
+		return (l1->position[3] == l2->position[3])
+			&& (l1->direction[3] > -0.5) == (l2->direction[3] > -0.5);
 	}
-	return l1->light - l2->light;
+	return l1->color[3] - l2->color[3];
 }
 
 static VkImage
@@ -758,7 +794,7 @@ create_map (int size, int layers, int cube, vulkan_ctx_t *ctx)
 }
 
 static VkImageView
-create_view (VkImage image, int baseLayer, int data, int id, vulkan_ctx_t *ctx)
+create_view (VkImage image, int baseLayer, int mode, int id, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -767,7 +803,7 @@ create_view (VkImage image, int baseLayer, int data, int id, vulkan_ctx_t *ctx)
 	VkImageViewType type = 0;
 	const char *viewtype = 0;
 
-	switch (data & ShadowMask) {
+	switch (mode) {
 		case ST_NONE:
 			return 0;
 		case ST_PLANE:
@@ -827,8 +863,18 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->lightlayers, numLights);
 	qsort (lights, numLights, sizeof (qfv_light_t), light_compare);
 	for (int i = 0; i < numLights; i++) {
-		int         shadow = lights[i].data & ShadowMask;
 		int         layers = 1;
+		int         shadow = ST_NONE;
+
+		if (!lights[i].position[3]) {
+			shadow = ST_CASCADE;
+		} else {
+			if (lights[i].direction[3] > -0.5) {
+				shadow = ST_CUBE;
+			} else {
+				shadow = ST_PLANE;
+			}
+		}
 		if (shadow == ST_CASCADE || shadow == ST_NONE) {
 			// cascade shadows will be handled separately, and "none" has no
 			// shadow map at all
@@ -838,13 +884,14 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		if (shadow == ST_CUBE) {
 			layers = 6;
 		}
-		if (size != (int) lights[i].light || numLayers + layers > maxLayers) {
+		if (size != (int) lights[i].color[3]
+			|| numLayers + layers > maxLayers) {
 			if (numLayers) {
 				VkImage     shadow_map = create_map (size, numLayers, 1, ctx);
 				DARRAY_APPEND (&lctx->lightimages, shadow_map);
 				numLayers = 0;
 			}
-			size = lights[i].light;
+			size = lights[i].color[3];
 		}
 		imageMap[i] = lctx->lightimages.size;
 		lctx->lightlayers.a[i] = numLayers;
@@ -859,8 +906,18 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	numLayers = 0;
 	size = 1024;
 	for (int i = 0; i < numLights; i++) {
-		int         shadow = lights[i].data & ShadowMask;
 		int         layers = 4;
+		int         shadow = ST_NONE;
+
+		if (!lights[i].position[3]) {
+			shadow = ST_CASCADE;
+		} else {
+			if (lights[i].direction[3] > -0.5) {
+				shadow = ST_CUBE;
+			} else {
+				shadow = ST_PLANE;
+			}
+		}
 
 		if (shadow != ST_CASCADE) {
 			continue;
@@ -902,9 +959,20 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			lctx->lightviews.a[i] = 0;
 			continue;
 		}
+		int         mode = ST_NONE;
+
+		if (!lctx->lights.a[i].position[3]) {
+			mode = ST_CASCADE;
+		} else {
+			if (lctx->lights.a[i].direction[3] > -0.5) {
+				mode = ST_CUBE;
+			} else {
+				mode = ST_PLANE;
+			}
+		}
 		lctx->lightviews.a[i] = create_view (lctx->lightimages.a[imageMap[i]],
 											 lctx->lightlayers.a[i],
-											 lctx->lights.a[i].data, i, ctx);
+											 mode, i, ctx);
 	}
 	Sys_MaskPrintf (SYS_vulkan, "shadow maps: %d layers in %zd images: %zd\n",
 					totalLayers, lctx->lightimages.size, memsize);
@@ -932,6 +1000,7 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 	}
 
 	lctx->lights.size = 0;
+	lctx->lightstyles.size = 0;
 	lctx->lightleafs.size = 0;
 	lctx->lightmats.size = 0;
 	if (lctx->sun_pvs) {
@@ -989,11 +1058,13 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				parse_sun (lctx, entity, model);
 			} else if (strnequal (classname, "light", 5)) {
 				qfv_light_t light = {};
+				int         style = 0;
 
-				parse_light (&light, entity, targets);
+				parse_light (&light, &style, entity, targets);
 				// some lights have 0 output, so drop them
-				if (light.light) {
+				if (light.color[3]) {
 					DARRAY_APPEND (&lctx->lights, light);
+					DARRAY_APPEND (&lctx->lightstyles, style);
 				}
 			}
 		}

@@ -7,12 +7,10 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput n
 layout (input_attachment_index = 4, set = 0, binding = 4) uniform subpassInput position;
 
 struct LightData {
-	vec3        color;
-	int         data;// bits 0-6: intensity key (however, values 0-66)
-	vec3        position;
-	float       light;	// doubles as radius for linear
-	vec3        direction;
-	float       cone;
+	vec4        color;		// .a is intensity
+	vec4        position;	// .w = 0 -> directional, .w = 1 -> point/cone
+	vec4        direction;	// .w = -cos(cone_angle/2) (1 for omni/dir)
+	vec4        attenuation;
 };
 
 #define StyleMask   0x07f
@@ -38,13 +36,10 @@ layout (set = 2, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
 layout (set = 2, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
 
 layout (set = 1, binding = 0) uniform Lights {
-	vec4        intensity[17]; // 68 floats
-	float       distFactor1;	// for inverse
-	float       distFactor2;	// for inverse2 and inverse3
-	int         lightCount;
 	LightData   lights[MaxLights];
-	mat4        shadowMat[MaxLights];
-	vec4        shadowCascale[MaxLights];
+	int         lightCount;
+	//mat4        shadowMat[MaxLights];
+	//vec4        shadowCascale[MaxLights];
 };
 
 layout (location = 0) out vec4 frag_color;
@@ -52,8 +47,10 @@ layout (location = 0) out vec4 frag_color;
 float
 spot_cone (LightData light, vec3 incoming)
 {
-	float       spotdot = dot (incoming, light.direction);
-	return smoothstep (spotdot, 1 - (1 - spotdot) * 0.995, light.cone);
+	vec3        dir = light.direction.xyz;
+	float       cone = light.direction.w;
+	float       spotdot = dot (incoming, dir);
+	return 1 - smoothstep (cone, cone + 0.02, spotdot);
 }
 
 float
@@ -61,50 +58,6 @@ diffuse (vec3 incoming, vec3 normal)
 {
 	float       lightdot = dot (incoming, normal);
 	return clamp (lightdot, 0, 1);
-}
-
-float
-light_linear (LightData light, float d)
-{
-	float       l = light.light;
-	if (l < 0) {
-		return min (l + d, 0);
-	}  else {
-		return max (l - d, 0);
-	}
-}
-
-float
-light_inverse (LightData light, float d)
-{
-	float       l = light.light;
-	return l / (distFactor1 * d);
-}
-
-float
-light_inverse2 (LightData light, float d)
-{
-	float       l = light.light;
-	return l / (distFactor2 * d);
-}
-
-float
-light_infinite (LightData light)
-{
-	return light.light;
-}
-
-float
-light_ambient (LightData light)
-{
-	return light.light;
-}
-
-float
-light_inverse3 (LightData light, float d)
-{
-	float       l = light.light;
-	return l / (distFactor2 * d + 1);
 }
 
 float
@@ -138,55 +91,31 @@ main (void)
 	if (MaxLights > 0) {
 		vec3        minLight = vec3 (0);
 		for (int i = 0; i < lightCount; i++) {
-			vec3        dist = lights[i].position - p;
-			float       d = dot (dist, dist);
-			int         model = lights[i].data & ModelMask;
+			LightData   l = lights[i];
+			vec3        dir = l.position.xyz - l.position.w * p;
+			float       r2 = dot (dir, dir);
+			vec4        a = l.attenuation;
 
-			if (model != LM_INFINITE
-				&& d > lights[i].light * lights[i].light) {
+			if (l.position.w * a.w * a.w * r2 >= 1) {
 				continue;
 			}
+			vec4        r = vec4 (r2, sqrt(r2), 1, 0);
+			vec3        incoming = dir / r.y;
+			float       I = (1 - a.w * r.y) / dot (a, r);
 
-			float       l = 0;
-			if (model == LM_LINEAR) {
-				d = sqrt (d);
-				l = light_linear (lights[i], d);
-			} else if (model == LM_INVERSE) {
-				d = sqrt (d);
-				l = light_inverse (lights[i], d);
-			} else if (model == LM_INVERSE2) {
-				l = light_inverse2 (lights[i], d);
-				d = sqrt (d);
-			} else if (model == LM_INFINITE) {
-				l = light_infinite (lights[i]);
-				dist = lights[i].direction;
-				d = -1;
-			} else if (model == LM_AMBIENT) {
-				l = light_ambient (lights[i]);
-			} else if (model == LM_INVERSE3) {
-				l = light_inverse3 (lights[i], d);
-				d = sqrt (d);
-			}
-
-			int         style = lights[i].data & StyleMask;
-			l *= intensity[style / 4][style % 4];
-
-			int         shadow = lights[i].data & ShadowMask;
+			/*int         shadow = lights[i].data & ShadowMask;
 			if (shadow == ST_CASCADE) {
-				l *= shadow_cascade (shadowCascade[i]);
+				I *= shadow_cascade (shadowCascade[i]);
 			} else if (shadow == ST_PLANE) {
-				l *= shadow_plane (shadowPlane[i]);
+				I *= shadow_plane (shadowPlane[i]);
 			} else if (shadow == ST_CUBE) {
-				l *= shadow_cube (shadowCube[i]);
-			}
+				I *= shadow_cube (shadowCube[i]);
+			}*/
 
-			if (model == LM_AMBIENT) {
-				minLight = max (l * lights[i].color, minLight);
-			} else {
-				vec3        incoming = dist / d;
-				l *= spot_cone (lights[i], incoming) * diffuse (incoming, n);
-				light += l * lights[i].color;
-			}
+			float       namb = dot(l.direction.xyz, l.direction.xyz);
+			I *= spot_cone (l, incoming) * diffuse (incoming, n);
+			I = mix (1, I, namb);
+			light += I * l.color.w * l.color.xyz;
 		}
 		light = max (light, minLight);
 	}

@@ -39,12 +39,10 @@
 #include "QF/simd/types.h"
 
 typedef struct qfv_light_s {
-	vec3_t      color;
-	int         data;
-	vec3_t      position;
-	float       light;
-	vec3_t      direction;
-	float       cone;
+	vec4f_t      color;
+	vec4f_t      position;
+	vec4f_t      direction;
+	vec4f_t      attenuation;
 } qfv_light_t;
 
 typedef struct qfv_lightset_s DARRAY_TYPE (qfv_light_t) qfv_lightset_t;
@@ -54,32 +52,25 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
 #define MaxLights   256
 
-#define StyleMask   0x07f
-#define ModelMask   0x380
-#define ShadowMask  0xc00
+#define LM_LINEAR   0	// light - dist (or radius + dist if -ve)
+#define LM_INVERSE  1	// distFactor1 * light / dist
+#define LM_INVERSE2 2	// distFactor2 * light / (dist * dist)
+#define LM_INFINITE 3	// light
+#define LM_AMBIENT  4	// light
+#define LM_INVERSE3 5	// distFactor2 * light / (dist + distFactor2)**2
 
-#define LM_LINEAR   (0 << 7)	// light - dist (or radius + dist if -ve)
-#define LM_INVERSE  (1 << 7)	// distFactor1 * light / dist
-#define LM_INVERSE2 (2 << 7)	// distFactor2 * light / (dist * dist)
-#define LM_INFINITE (3 << 7)	// light
-#define LM_AMBIENT  (4 << 7)	// light
-#define LM_INVERSE3 (5 << 7)	// distFactor2 * light / (dist + distFactor2)**2
-
-#define ST_NONE     (0 << 10)	// no shadows
-#define ST_PLANE    (1 << 10)	// single plane shadow map (small spotlight)
-#define ST_CASCADE  (2 << 10)	// cascaded shadow maps
-#define ST_CUBE     (3 << 10)	// cubemap (omni, large spotlight)
+#define ST_NONE     0	// no shadows
+#define ST_PLANE    1	// single plane shadow map (small spotlight)
+#define ST_CASCADE  2	// cascaded shadow maps
+#define ST_CUBE     3	// cubemap (omni, large spotlight)
 
 #define NumStyles 64
 
 typedef struct qfv_light_buffer_s {
-	float       intensity[NumStyles + 4];
-	float       distFactor1;
-	float       distFactor2;
-	int         lightCount;
 	qfv_light_t lights[MaxLights] __attribute__((aligned(16)));
-	mat4f_t     shadowMat[MaxLights];
-	vec4f_t     shadowCascade[MaxLights];
+	int         lightCount;
+	//mat4f_t     shadowMat[MaxLights];
+	//vec4f_t     shadowCascade[MaxLights];
 } qfv_light_buffer_t;
 
 #define LIGHTING_BUFFER_INFOS 1
@@ -119,6 +110,7 @@ typedef struct lightingctx_s {
 	VkDeviceMemory light_memory;
 	VkDeviceMemory shadow_memory;
 	qfv_lightset_t lights;
+	qfv_lightintset_t lightstyles;
 	qfv_lightintset_t lightleafs;
 	qfv_lightmatset_t lightmats;
 	qfv_imageset_t lightimages;
