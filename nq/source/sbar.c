@@ -216,13 +216,13 @@ draw_altstring (view_t *view, int x, int y, const char *str)
 {
 	r_funcs->Draw_AltString (view->xabs + x, view->yabs + y, str);
 }
-
+#endif
 static inline void
 draw_nstring (view_t *view, int x, int y, const char *str, int n)
 {
 	r_funcs->Draw_nString (view->xabs + x, view->yabs + y, str, n);
 }
-#endif
+
 static inline void
 draw_fill (view_t *view, int x, int y, int w, int h, int col)
 {
@@ -407,18 +407,25 @@ draw_sigils (view_t *view)
 static void
 draw_inventory_sbar (view_t *view)
 {
-	printf ("sbar: %d\n", sbar_view->visible);
 	draw_pic (view, 0, 0, sb_ibar);
 	view_draw (view);
 }
 
+typedef struct {
+	char        team[16 + 1];
+	int         frags;
+	int         players;
+	int         plow, phigh, ptotal;
+} team_t;
 
+team_t      teams[MAX_CLIENTS];
+int         teamsort[MAX_CLIENTS];
 int         fragsort[MAX_SCOREBOARD];
 char        scoreboardtext[MAX_SCOREBOARD][20];
 int         scoreboardtop[MAX_SCOREBOARD];
 int         scoreboardbottom[MAX_SCOREBOARD];
 int         scoreboardcount[MAX_SCOREBOARD];
-int         scoreboardlines;
+int         scoreboardlines, scoreboardteams;
 
 
 static void
@@ -436,7 +443,7 @@ Sbar_SortFrags (void)
 	}
 
 	for (i = 0; i < scoreboardlines; i++) {
-		for (j = 0; j < (scoreboardlines - 1 - i); j++) {
+		for (j = 0; j < scoreboardlines - 1 - i; j++) {
 			if (cl.players[fragsort[j]].frags
 				< cl.players[fragsort[j + 1]].frags) {
 				k = fragsort[j];
@@ -447,12 +454,77 @@ Sbar_SortFrags (void)
 	}
 }
 
+static void
+Sbar_SortTeams (void)
+{
+	char        t[16 + 1];
+	int         i, j, k;
+	player_info_t *s;
+
+	// request new ping times every two second
+	scoreboardteams = 0;
+
+	if (!cl.teamplay)
+		return;
+
+	// sort the teams
+	memset (teams, 0, sizeof (teams));
+	for (i = 0; i < MAX_CLIENTS; i++)
+		teams[i].plow = 999;
+
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		s = &cl.players[i];
+		if (!s->name || !s->name->value[0])
+			continue;
+		if (s->spectator)
+			continue;
+
+		// find his team in the list
+		t[16] = 0;
+		strncpy (t, s->team->value, 16);
+		if (!t[0])
+			continue;					// not on team
+		for (j = 0; j < scoreboardteams; j++)
+			if (!strcmp (teams[j].team, t)) {
+				teams[j].frags += s->frags;
+				teams[j].players++;
+				goto addpinginfo;
+			}
+		if (j == scoreboardteams) {		// must add him
+			j = scoreboardteams++;
+			strcpy (teams[j].team, t);
+			teams[j].frags = s->frags;
+			teams[j].players = 1;
+		  addpinginfo:
+			if (teams[j].plow > s->ping)
+				teams[j].plow = s->ping;
+			if (teams[j].phigh < s->ping)
+				teams[j].phigh = s->ping;
+			teams[j].ptotal += s->ping;
+		}
+	}
+
+	// sort
+	for (i = 0; i < scoreboardteams; i++)
+		teamsort[i] = i;
+
+	// good 'ol bubble sort
+	for (i = 0; i < scoreboardteams - 1; i++) {
+		for (j = i + 1; j < scoreboardteams; j++) {
+			if (teams[teamsort[i]].frags < teams[teamsort[j]].frags) {
+				k = teamsort[i];
+				teamsort[i] = teamsort[j];
+				teamsort[j] = k;
+			}
+		}
+	}
+}
 
 static void
 draw_solo (view_t *view)
 {
 	char        str[80];
-	int         minutes, seconds, tens, units;
+	int         minutes, seconds;
 	int         l;
 
 	draw_pic (view, 0, 0, sb_scorebar);
@@ -467,10 +539,8 @@ draw_solo (view_t *view)
 
 	// time
 	minutes = cl.time / 60;
-	seconds = cl.time - (60 * minutes);
-	tens = seconds / 10;
-	units = seconds - (10 * tens);
-	snprintf (str, sizeof (str), "Time :%3i:%i%i", minutes, tens, units);
+	seconds = cl.time - 60 * minutes;
+	snprintf (str, sizeof (str), "Time :%3i:%02i", minutes, seconds);
 	draw_string (view, 184, 4, str);
 
 	// draw level name
@@ -500,7 +570,7 @@ draw_frags (view_t *view)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name->value[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		// draw background
@@ -1191,6 +1261,120 @@ Sbar_DrawCenterPrint (void)
 	Sbar_DrawCenterString (hud_overlay_view, -1);
 }
 
+/*
+	draw_minifrags
+
+	frags name
+	frags team name
+	displayed to right of status bar if there's room
+*/
+static void
+draw_minifrags (view_t *view)
+{
+	int         numlines, top, bottom, f, i, k, x, y;
+	char        num[20];
+	player_info_t *s;
+
+	r_data->scr_copyeverything = 1;
+	r_data->scr_fullupdate = 0;
+
+	// scores
+	Sbar_SortFrags ();
+
+	if (!scoreboardlines)
+		return;							// no one there?
+
+	numlines = view->ylen / 8;
+	if (numlines < 3)
+		return;							// not enough room
+
+	// find us
+	for (i = 0; i < scoreboardlines; i++)
+		if (fragsort[i] == cl.playernum)
+			break;
+
+	if (i == scoreboardlines)			// we're not there, we are probably a
+										// spectator, just display top
+		i = 0;
+	else								// figure out start
+		i = i - numlines / 2;
+
+	if (i > scoreboardlines - numlines)
+		i = scoreboardlines - numlines;
+	if (i < 0)
+		i = 0;
+
+	x = 4;
+	y = 0;
+
+	for (; i < scoreboardlines && y < view->ylen - 8 + 1; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name || !s->name->value[0])
+			continue;
+
+		// draw ping
+		top = s->topcolor;
+		bottom = s->bottomcolor;
+		top = Sbar_ColorForMap (top);
+		bottom = Sbar_ColorForMap (bottom);
+
+		draw_fill (view, x + 2, y + 1, 37, 3, top);
+		draw_fill (view, x + 2, y + 4, 37, 4, bottom);
+
+		// draw number
+		f = s->frags;
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
+		}
+
+		draw_nstring (view, x, y, num, 5);
+
+		// team
+		if (cl.teamplay) {
+			draw_nstring (view, x + 48, y, s->team->value, 4);
+			draw_nstring (view, x + 48 + 40, y, s->name->value, 16);
+		} else
+			draw_nstring (view, x + 48, y, s->name->value, 16);
+		y += 8;
+	}
+}
+
+static void
+draw_miniteam (view_t *view)
+{
+	int         i, k, x, y;
+	char        num[12];
+	info_key_t *player_team = cl.players[cl.playernum].team;
+	team_t     *tm;
+
+	if (!cl.teamplay)
+		return;
+	Sbar_SortTeams ();
+
+	x = 0;
+	y = 0;
+	for (i = 0; i < scoreboardteams && y <= view->ylen; i++) {
+		k = teamsort[i];
+		tm = teams + k;
+
+		// draw pings
+		draw_nstring (view, x, y, tm->team, 4);
+		// draw total
+		snprintf (num, sizeof (num), "%5i", tm->frags);
+		draw_string (view, x + 40, y, num);
+
+		if (player_team && strnequal (player_team->value, tm->team, 16)) {
+			draw_character (view, x - 8, y, 16);
+			draw_character (view, x + 32, y, 17);
+		}
+
+		y += 8;
+	}
+}
+
 static void
 init_sbar_views (void)
 {
@@ -1252,16 +1436,36 @@ static void
 init_hud_views (void)
 {
 	view_t     *view;
+	view_t     *minifrags_view = 0;
+	view_t     *miniteam_view = 0;
 
-	hud_view = view_new (0, 0, 320, 48, grav_south);
-	hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	hud_frags_view->draw = draw_frags;
+	if (r_data->vid->conview->xlen < 512) {
+		hud_view = view_new (0, 0, 320, 48, grav_south);
 
+		hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+		hud_frags_view->draw = draw_frags;
+	} else if (r_data->vid->conview->xlen < 640) {
+		hud_view = view_new (0, 0, 512, 48, grav_south);
+
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+	} else {
+		hud_view = view_new (0, 0, 640, 48, grav_south);
+
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+
+		miniteam_view = view_new (0, 0, 96, 48, grav_southeast);
+		miniteam_view->draw = draw_miniteam;
+		miniteam_view->resize_y = 1;
+	}
 	hud_view->resize_y = 1;
 
 	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
 
-	view = view_new (0, 0, 24, 112, grav_northeast);
+	view = view_new (0, 0, 42, 112, grav_northeast);
 	view->draw = draw_weapons_hud;
 	view_add (hud_armament_view, view);
 

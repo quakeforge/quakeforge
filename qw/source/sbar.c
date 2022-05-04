@@ -292,123 +292,6 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 	}
 }
 
-typedef struct {
-	char        team[16 + 1];
-	int         frags;
-	int         players;
-	int         plow, phigh, ptotal;
-} team_t;
-
-team_t      teams[MAX_CLIENTS];
-int         teamsort[MAX_CLIENTS];
-int         fragsort[MAX_CLIENTS]; // ZOID changed this from [MAX_SCOREBOARD]
-int         scoreboardlines, scoreboardteams;
-
-static void
-Sbar_SortFrags (qboolean includespec)
-{
-	int         i, j, k;
-
-	// sort by frags
-	scoreboardlines = 0;
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name && cl.players[i].name->value[0]
-			&& (!cl.players[i].spectator || includespec)) {
-			fragsort[scoreboardlines] = i;
-			scoreboardlines++;
-			if (cl.players[i].spectator)
-				cl.players[i].frags = -999;
-		}
-	}
-
-	for (i = 0; i < scoreboardlines; i++)
-		for (j = 0; j < scoreboardlines - 1 - i; j++)
-			if (cl.players[fragsort[j]].frags <
-				cl.players[fragsort[j + 1]].frags) {
-				k = fragsort[j];
-				fragsort[j] = fragsort[j + 1];
-				fragsort[j + 1] = k;
-			}
-}
-
-static void
-Sbar_SortTeams (void)
-{
-	char        t[16 + 1];
-	int         i, j, k;
-	player_info_t *s;
-
-	// request new ping times every two second
-	scoreboardteams = 0;
-
-	if (!cl.teamplay)
-		return;
-
-	// sort the teams
-	memset (teams, 0, sizeof (teams));
-	for (i = 0; i < MAX_CLIENTS; i++)
-		teams[i].plow = 999;
-
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		s = &cl.players[i];
-		if (!s->name || !s->name->value[0])
-			continue;
-		if (s->spectator)
-			continue;
-
-		// find his team in the list
-		t[16] = 0;
-		strncpy (t, s->team->value, 16);
-		if (!t[0])
-			continue;					// not on team
-		for (j = 0; j < scoreboardteams; j++)
-			if (!strcmp (teams[j].team, t)) {
-				teams[j].frags += s->frags;
-				teams[j].players++;
-				goto addpinginfo;
-			}
-		if (j == scoreboardteams) {		// must add him
-			j = scoreboardteams++;
-			strcpy (teams[j].team, t);
-			teams[j].frags = s->frags;
-			teams[j].players = 1;
-		  addpinginfo:
-			if (teams[j].plow > s->ping)
-				teams[j].plow = s->ping;
-			if (teams[j].phigh < s->ping)
-				teams[j].phigh = s->ping;
-			teams[j].ptotal += s->ping;
-		}
-	}
-
-	// sort
-	for (i = 0; i < scoreboardteams; i++)
-		teamsort[i] = i;
-
-	// good 'ol bubble sort
-	for (i = 0; i < scoreboardteams - 1; i++)
-		for (j = i + 1; j < scoreboardteams; j++)
-			if (teams[teamsort[i]].frags < teams[teamsort[j]].frags) {
-				k = teamsort[i];
-				teamsort[i] = teamsort[j];
-				teamsort[j] = k;
-			}
-}
-
-static void
-draw_solo (view_t *view)
-{
-	char        str[80];
-	int         minutes, seconds;
-
-	draw_pic (view, 0, 0, sb_scorebar);
-
-	minutes = cl.time / 60;
-	seconds = cl.time - 60 * minutes;
-	snprintf (str, sizeof (str), "Time :%3i:%02i", minutes, seconds);
-	draw_string (view, 184, 4, str);
-}
-
 static inline void
 draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 {
@@ -567,6 +450,127 @@ draw_inventory_sbar (view_t *view)
 	view_draw (view);
 }
 
+typedef struct {
+	char        team[16 + 1];
+	int         frags;
+	int         players;
+	int         plow, phigh, ptotal;
+} team_t;
+
+team_t      teams[MAX_CLIENTS];
+int         teamsort[MAX_CLIENTS];
+int         fragsort[MAX_CLIENTS]; // ZOID changed this from [MAX_SCOREBOARD]
+int         scoreboardlines, scoreboardteams;
+
+static void
+Sbar_SortFrags (qboolean includespec)
+{
+	int         i, j, k;
+
+	// sort by frags
+	scoreboardlines = 0;
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		if (cl.players[i].name && cl.players[i].name->value[0]
+			&& (!cl.players[i].spectator || includespec)) {
+			fragsort[scoreboardlines] = i;
+			scoreboardlines++;
+			if (cl.players[i].spectator)
+				cl.players[i].frags = -999;
+		}
+	}
+
+	for (i = 0; i < scoreboardlines; i++) {
+		for (j = 0; j < scoreboardlines - 1 - i; j++) {
+			if (cl.players[fragsort[j]].frags <
+				cl.players[fragsort[j + 1]].frags) {
+				k = fragsort[j];
+				fragsort[j] = fragsort[j + 1];
+				fragsort[j + 1] = k;
+			}
+		}
+	}
+}
+
+static void
+Sbar_SortTeams (void)
+{
+	char        t[16 + 1];
+	int         i, j, k;
+	player_info_t *s;
+
+	// request new ping times every two second
+	scoreboardteams = 0;
+
+	if (!cl.teamplay)
+		return;
+
+	// sort the teams
+	memset (teams, 0, sizeof (teams));
+	for (i = 0; i < MAX_CLIENTS; i++)
+		teams[i].plow = 999;
+
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		s = &cl.players[i];
+		if (!s->name || !s->name->value[0])
+			continue;
+		if (s->spectator)
+			continue;
+
+		// find his team in the list
+		t[16] = 0;
+		strncpy (t, s->team->value, 16);
+		if (!t[0])
+			continue;					// not on team
+		for (j = 0; j < scoreboardteams; j++)
+			if (!strcmp (teams[j].team, t)) {
+				teams[j].frags += s->frags;
+				teams[j].players++;
+				goto addpinginfo;
+			}
+		if (j == scoreboardteams) {		// must add him
+			j = scoreboardteams++;
+			strcpy (teams[j].team, t);
+			teams[j].frags = s->frags;
+			teams[j].players = 1;
+		  addpinginfo:
+			if (teams[j].plow > s->ping)
+				teams[j].plow = s->ping;
+			if (teams[j].phigh < s->ping)
+				teams[j].phigh = s->ping;
+			teams[j].ptotal += s->ping;
+		}
+	}
+
+	// sort
+	for (i = 0; i < scoreboardteams; i++)
+		teamsort[i] = i;
+
+	// good 'ol bubble sort
+	for (i = 0; i < scoreboardteams - 1; i++) {
+		for (j = i + 1; j < scoreboardteams; j++) {
+			if (teams[teamsort[i]].frags < teams[teamsort[j]].frags) {
+				k = teamsort[i];
+				teamsort[i] = teamsort[j];
+				teamsort[j] = k;
+			}
+		}
+	}
+}
+
+static void
+draw_solo (view_t *view)
+{
+	char        str[80];
+	int         minutes, seconds;
+
+	draw_pic (view, 0, 0, sb_scorebar);
+
+	minutes = cl.time / 60;
+	seconds = cl.time - 60 * minutes;
+	snprintf (str, sizeof (str), "Time :%3i:%02i", minutes, seconds);
+	draw_string (view, 184, 4, str);
+}
+
 static inline void
 dmo_ping (view_t *view, int x, int y, player_info_t *s)
 {
@@ -697,9 +701,6 @@ draw_frags (view_t *view)
 			continue;
 
 		// draw background
-		top = bound (0, s->topcolor, 13);
-		bottom = bound (0, s->bottomcolor, 13);
-
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
@@ -785,18 +786,9 @@ draw_status_bar (view_t *view)
 		draw_pic (view, 0, 0, sb_sbar);
 }
 
-static void
-draw_status (view_t *view)
+static inline void
+draw_armor (view_t *view)
 {
-	if (cl.spectator) {
-		draw_spectator (view);
-		if (autocam != CAM_TRACK)
-			return;
-	} if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		draw_num (view, 24, 0, 666, 3, 1);
 	} else {
@@ -809,15 +801,18 @@ draw_status (view_t *view)
 		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
 			draw_pic (view, 0, 0, sb_armor[0]);
 	}
+}
 
-	// face
-	draw_face (view);
-
-	// health
+static inline void
+draw_health (view_t *view)
+{
 	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
 			  cl.stats[STAT_HEALTH] <= 25);
+}
 
-	// ammo icon
+static inline void
+draw_ammo (view_t *view)
+{
 	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
 		draw_pic (view, 224, 0, sb_ammo[0]);
 	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
@@ -828,6 +823,25 @@ draw_status (view_t *view)
 		draw_pic (view, 224, 0, sb_ammo[3]);
 
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+}
+
+static void
+draw_status (view_t *view)
+{
+	if (cl.spectator) {
+		draw_spectator (view);
+		if (autocam != CAM_TRACK)
+			return;
+	}
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
+		return;
+	}
+
+	draw_armor (view);
+	draw_face (view);
+	draw_health (view);
+	draw_ammo (view);
 }
 
 /*
