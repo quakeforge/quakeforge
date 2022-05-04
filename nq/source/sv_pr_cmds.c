@@ -1139,7 +1139,7 @@ PF_WriteBytes (progs_t *pr, void *data)
 		}
 	}
 	for (i = 0; i < argc; i++) {
-		p = PR_PTR (float, &argv[i]);
+		p = PR_PTR (float, argv[i]);
 		MSG_WriteByte (msg, p);
 	}
 }
