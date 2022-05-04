@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/mathlib.h"
 #include "QF/progs.h"	// for PR_RESMAP
 #include "QF/sys.h"
 
@@ -83,6 +84,8 @@ Scene_CreateEntity (scene_t *scene)
 
 	hierarchy_t *h = ent->transform->hierarchy;
 	h->entity.a[ent->transform->index] = ent;
+
+	QuatSet (1, 1, 1, 1, ent->renderer.colormod);
 
 	return ent;
 }
