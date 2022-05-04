@@ -137,6 +137,9 @@ bi_Model_Load (progs_t *pr, void *_res)
 model_t *
 Model_GetModel (progs_t *pr, int handle)
 {
+	if (!handle) {
+		return 0;
+	}
 	rua_model_resources_t *res = PR_Resources_Find (pr, "Model");
 	rua_model_t    *h = rua_model_handle_get (res, handle);
 

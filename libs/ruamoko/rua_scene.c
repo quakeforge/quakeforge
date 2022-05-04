@@ -38,7 +38,11 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/model.h"
 #include "QF/progs.h"
+#include "QF/render.h"
+
+#include "QF/plugin/vid_render.h"
 
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
@@ -207,6 +211,20 @@ bi_Entity_GetTransform (progs_t *pr, void *_res)
 
 	// ent_id contains scene id
 	R_ULONG (pr) = MAKE_ID (ent->transform->id, ent_id);
+}
+
+static void
+bi_Entity_SetModel (progs_t *pr, void *_res)
+{
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	pr_int_t    model_id = P_INT (pr, 1);
+	entity_t   *ent = rua_entity_get (res, ent_id);
+	model_t    *model = Model_GetModel (pr, model_id);
+
+	R_RemoveEfrags (ent);
+	ent->renderer.model = model;
+	R_AddEfrags (&r_data->refdef->worldmodel->brush, ent);//FIXME r_data
 }
 
 static void
@@ -431,6 +449,7 @@ static builtin_t builtins[] = {
 	bi(Scene_DestroyEntity,         1, p(ulong)),
 
 	bi(Entity_GetTransform,         1, p(ulong)),
+	bi(Entity_SetModel,             2, p(ulong), p(int)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),

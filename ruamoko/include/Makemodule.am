@@ -16,8 +16,9 @@ ruamoko_include = \
 	ruamoko/include/qw_physics.h \
 	ruamoko/include/qw_sys.h \
 	ruamoko/include/server.h \
-	ruamoko/include/sound.h \
+	ruamoko/include/scene.h \
 	ruamoko/include/script.h \
+	ruamoko/include/sound.h \
 	ruamoko/include/stdlib.h \
 	ruamoko/include/string.h \
 	ruamoko/include/sv_sound.h \
