@@ -80,7 +80,7 @@ hierarchy_calcLocalInverse (hierarchy_t *h, uint32_t index)
 	vec4f_t     t = h->localMatrix.a[index][3];
 
 	// "one" is to ensure both the scalar and translation have 1 in their
-	// forth components
+	// fourth components
 	vec4f_t     one = { 0, 0, 0, 1 };
 	vec4f_t     nx = { x[0], y[0], z[0], 0 };
 	vec4f_t     ny = { x[1], y[1], z[1], 0 };
