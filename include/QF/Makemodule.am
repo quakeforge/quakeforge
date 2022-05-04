@@ -178,7 +178,6 @@ include_qf_vulkan = \
 	include/QF/Vulkan/debug.h \
 	include/QF/Vulkan/descriptor.h \
 	include/QF/Vulkan/device.h \
-	include/QF/Vulkan/draw.h \
 	include/QF/Vulkan/funclist.h \
 	include/QF/Vulkan/image.h \
 	include/QF/Vulkan/instance.h \
