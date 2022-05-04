@@ -126,32 +126,32 @@ ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lcsqc -lr
+ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
 
 ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
 ruamoko_qwaq_input_app_obj=$(ruamoko_qwaq_input_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_input_app_dep=$(call qcautodep,$(ruamoko_qwaq_input_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/input-app.dat$(EXEEXT): $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_input_app_obj) $(libui) -lcsqc -lr
+ruamoko/qwaq/input-app.dat$(EXEEXT): $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_input_app_obj) $(libui) -lr
 include $(ruamoko_qwaq_input_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
 
 ruamoko_qwaq_gcd_dat_SOURCES=ruamoko/qwaq/gcd.r
 ruamoko_qwaq_gcd_obj=$(ruamoko_qwaq_gcd_dat_SOURCES:.r=.o)
 ruamoko_qwaq_gcd_dep=$(call qcautodep,$(ruamoko_qwaq_gcd_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lcsqc -lr
+ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lr
 include $(ruamoko_qwaq_gcd_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
 
 ruamoko_qwaq_z_transform_dat_SOURCES=ruamoko/qwaq/z-transform.r
 ruamoko_qwaq_z_transform_obj=$(ruamoko_qwaq_z_transform_dat_SOURCES:.r=.o)
 ruamoko_qwaq_z_transform_dep=$(call qcautodep,$(ruamoko_qwaq_z_transform_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lcsqc -lr
+ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lr
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
 
