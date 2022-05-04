@@ -138,22 +138,31 @@ Mod_Init_Cvars (void)
 	Cvar_Register (&gl_textures_external_cvar, 0, 0);
 }
 
+static void
+mod_unload_model (size_t ind)
+{
+	model_t    *mod = mod_known.a[ind];
+
+	//FIXME this seems to be correct but need to double check the behavior
+	//with alias models
+	if (!mod->needload && mod->clear) {
+		mod->clear (mod, mod->data);
+	}
+	if (mod->type != mod_alias) {
+		mod->needload = true;
+	}
+	if (mod->type == mod_sprite) {
+		mod->cache.data = 0;
+	}
+}
+
 VISIBLE void
 Mod_ClearAll (void)
 {
 	size_t      i;
-	model_t   **mod;
 
-	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
-		//FIXME this seems to be correct but need to double check the behavior
-		//with alias models
-		if (!(*mod)->needload && (*mod)->clear) {
-			(*mod)->clear (*mod, (*mod)->data);
-		}
-		if ((*mod)->type != mod_alias)
-			(*mod)->needload = true;
-		if ((*mod)->type == mod_sprite)
-			(*mod)->cache.data = 0;
+	for (i = 0; i < mod_numknown; i++) {
+		mod_unload_model (i);
 	}
 }
 
@@ -320,6 +329,16 @@ Mod_TouchModel (const char *name)
 	if (!mod->needload) {
 		if (mod->type == mod_alias)
 			Cache_Check (&mod->cache);
+	}
+}
+
+VISIBLE void
+Mod_UnloadModel (model_t *model)
+{
+	for (size_t i = 0; i < mod_numknown; i++) {
+		if (mod_known.a[i] == model) {
+			mod_unload_model (i);
+		}
 	}
 }
 

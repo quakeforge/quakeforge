@@ -438,6 +438,7 @@ void Mod_Init_Cvars (void);
 void Mod_ClearAll (void);
 model_t *Mod_ForName (const char *name, qboolean crash);
 void Mod_TouchModel (const char *name);
+void Mod_UnloadModel (model_t *model);
 // brush specific
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
 struct set_s *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
