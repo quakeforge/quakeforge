@@ -20,7 +20,7 @@
 # <pep8 compliant>
 
 quotables = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             + "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
+             + "`abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
 
 class PListError(Exception):
     def __init__(self, line, message):
