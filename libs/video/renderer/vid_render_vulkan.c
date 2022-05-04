@@ -771,8 +771,7 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Vulkan Renderer",
-	"Copyright (C) 1996-1997  Id Software, Inc.\n"
-	"Copyright (C) 1999-2019  contributors of the QuakeForge project\n"
+	"Copyright (C) 2019 Bill Currie <bill@taniwha.org>\n"
 	"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,

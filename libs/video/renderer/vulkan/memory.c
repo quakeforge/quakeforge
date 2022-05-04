@@ -3,7 +3,6 @@
 
 	Vulkan memory functions
 
-	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2020      Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
