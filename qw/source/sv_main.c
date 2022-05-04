@@ -2355,6 +2355,7 @@ SV_InitLocal (void)
 	int         i;
 
 	SV_UserInit ();
+	SV_Physics_Init_Cvars ();
 
 	Cvar_Register (&rcon_password_cvar, 0, 0);
 	Cvar_Register (&admin_password_cvar, 0, 0);
