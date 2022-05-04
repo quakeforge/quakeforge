@@ -605,19 +605,25 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *);
 static decoder_t decoder_functions[] = {
-	0,					// 0 invalid
-	decode_colormap,
-	decode_truecolor,
-	decode_greyscale,
-	0, 0, 0, 0,			// 5-7 invalid
-	0,					// 8 invalid
-	decode_colormap_rle,
-	decode_truecolor_rle,
-	decode_greyscale_rle,
-	0, 0, 0, 0,			// 12-15 invalid
+	[targa_colormap]       = decode_colormap,
+	[targa_truecolor]      = decode_truecolor,
+	[targa_greyscale]      = decode_greyscale,
+	[targa_colormap_rle]   = decode_colormap_rle,
+	[targa_truecolor_rle]  = decode_truecolor_rle,
+	[targa_greyscale_rle]  = decode_greyscale_rle,
+	[targa_max_image_type] = 0
 };
 #define NUM_DECODERS (sizeof (decoder_functions) \
 					  / sizeof (decoder_functions[0]))
+static QFFormat targa_formats[] = {
+	[targa_colormap]       = tex_palette,
+	[targa_truecolor]      = tex_rgba,
+	[targa_greyscale]      = tex_l,
+	[targa_colormap_rle]   = tex_palette,
+	[targa_truecolor_rle]  = tex_rgba,
+	[targa_greyscale_rle]  = tex_l,
+	[targa_max_image_type] = 0
+};
 
 struct tex_s *
 LoadTGA (QFile *fin, int load)
@@ -669,6 +675,11 @@ LoadTGA (QFile *fin, int load)
 		dataByte += targa->id_length;
 
 		decode (targa, tex, dataByte);
+	} else {
+		//FIXME
+		// assume the format is valid so we can return a format type without
+		// having to check individial image type specific data
+		tex->format = targa_formats[targa->image_type];
 	}
 
 	Hunk_FreeToLowMark (0, targa_mark);
