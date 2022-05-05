@@ -124,9 +124,7 @@ parse_sun (lightingdata_t *ldata, plitem_t *entity)
 	light.direction = light.position;
 	light.direction[3] = 1;
 	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
-	DARRAY_APPEND (&ldata->lights, light);
-	DARRAY_APPEND (&ldata->lightstyles, 0);
-	DARRAY_APPEND (&ldata->lightleafs, -1);
+	Light_AddLight (ldata, &light, 0);
 }
 
 static vec4f_t
@@ -226,25 +224,6 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 	light->attenuation = attenuation;
 }
 
-static void
-locate_lights (model_t *model, lightingdata_t *ldata)
-{
-	light_t    *lights = ldata->lights.a;
-	DARRAY_RESIZE (&ldata->lightleafs, ldata->lights.size);
-	for (size_t i = 0; i < ldata->lights.size; i++) {
-		if (1 || lights[i].position[3]) {
-			mleaf_t    *leaf = Mod_PointInLeaf (&lights[i].position[0], model);
-			ldata->lightleafs.a[i] = leaf - model->brush.leafs - 1;
-		} else {
-			if (DotProduct (lights[i].direction, lights[i].direction)) {
-				ldata->lightleafs.a[i] = -1;
-			} else {
-				ldata->lightleafs.a[i] = -2;
-			}
-		}
-	}
-}
-
 void
 CL_LoadLights (plitem_t *entities, scene_t *scene)
 {
@@ -285,8 +264,7 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 				light.color = (vec4f_t) { 1, 1, 1, atof (str) };
 				light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
 				light.direction = (vec4f_t) { 0, 0, 0, 1 };
-				DARRAY_APPEND (&ldata->lights, light);
-				DARRAY_APPEND (&ldata->lightstyles, 0);
+				Light_AddLight (ldata, &light, 0);
 			}
 		} else if (!strncmp (classname, "light", 5)) {
 			light_t     light = {};
@@ -295,12 +273,10 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 			parse_light (&light, &style, entity, targets);
 			// some lights have 0 output, so drop them
 			if (light.color[3]) {
-				DARRAY_APPEND (&ldata->lights, light);
-				DARRAY_APPEND (&ldata->lightstyles, style);
+				Light_AddLight (ldata, &light, style);
 			}
 		}
 	}
-	DARRAY_RESIZE (&ldata->lightvis, ldata->lights.size);
 	// targets does not own the objects, so need to remove them before
 	// freeing targets
 	for (int i = PL_D_NumKeys (targets); i-- > 0; ) {
@@ -308,11 +284,8 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 	}
 	PL_Free (targets);
 
-	if (ldata->lights.size) {
-		locate_lights (model, ldata);
-		for (size_t i = 0; i < ldata->lights.size; i++) {
-			dump_light (&ldata->lights.a[i], ldata->lightleafs.a[i]);
-		}
+	for (size_t i = 0; i < ldata->lights.size; i++) {
+		dump_light (&ldata->lights.a[i], ldata->lightleafs.a[i]);
 	}
 	Sys_MaskPrintf (SYS_lighting, "loaded %zd lights\n", ldata->lights.size);
 }

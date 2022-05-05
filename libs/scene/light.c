@@ -67,6 +67,28 @@ Light_ClearLights (lightingdata_t *ldata)
 }
 
 void
+Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
+{
+	scene_t    *scene = ldata->scene;
+	model_t    *model = scene->worldmodel;
+
+	DARRAY_APPEND (&ldata->lights, *light);
+	DARRAY_APPEND (&ldata->lightstyles, style);
+
+	int         visleaf = -1;	// directional light
+	if (light->position[3]) {
+		// positional light
+		mleaf_t    *leaf = Mod_PointInLeaf (&light->position[0], model);
+		visleaf = leaf - model->brush.leafs - 1;
+	} else if (!DotProduct (light->direction, light->direction)) {
+		// ambient light
+		visleaf = -2;
+	}
+	DARRAY_APPEND (&ldata->lightleafs, visleaf);
+	DARRAY_APPEND (&ldata->lightvis, 0);
+}
+
+void
 Light_EnableSun (lightingdata_t *ldata)
 {
 	scene_t    *scene = ldata->scene;
