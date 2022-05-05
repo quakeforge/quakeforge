@@ -299,17 +299,22 @@ ED_ConvertToPlist (script_t *script, int nohack, struct hashlink_s **hashlinks)
 	plitem_t   *value;
 	char       *token;
 	int         anglehack;
+	const char *msg = "";
 
 	while (Script_GetToken (script, 1)) {
 		token = script->token->str;
-		if (!strequal (token, "{"))
-			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
+		if (!strequal (token, "{")) {
+			msg = "EOF without closing brace";
+			goto parse_error;
+		}
 		ent = PL_NewDictionary (hashlinks);
 		while (1) {
 			int         n;
 
-			if (!Script_GetToken (script, 1))
-				Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
+			if (!Script_GetToken (script, 1)) {
+				msg = "EOF without closing brace";
+				goto parse_error;
+			}
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
@@ -327,12 +332,16 @@ ED_ConvertToPlist (script_t *script, int nohack, struct hashlink_s **hashlinks)
 			} else {
 				key = PL_NewString (token);
 			}
-			if (!Script_TokenAvailable (script, 0))
-				Sys_Error ("ED_ConvertToPlist: EOL without value");
+			if (!Script_TokenAvailable (script, 0)) {
+				msg = "EOL without value";
+				goto parse_error;
+			}
 			Script_GetToken (script, 0);
 			token = script->token->str;
-			if (strequal (token, "}"))
-				Sys_Error ("ED_ConvertToPlist: closing brace without data");
+			if (strequal (token, "}")) {
+				msg = "closing brace without data";
+				goto parse_error;
+			}
 			if (anglehack) {
 				dsprintf (dstr, "0 %s 0", token);
 				value = PL_NewString (dstr->str);
@@ -346,6 +355,11 @@ ED_ConvertToPlist (script_t *script, int nohack, struct hashlink_s **hashlinks)
 	}
 	dstring_delete (dstr);
 	return plist;
+parse_error:
+	Sys_Printf ("%s:%d: %s", script->file, script->line, msg);
+	dstring_delete (dstr);
+	PL_Free (plist);
+	return 0;
 }
 
 
