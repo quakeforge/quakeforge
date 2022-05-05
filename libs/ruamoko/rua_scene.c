@@ -180,6 +180,17 @@ bi_Scene_DeleteScene (progs_t *pr, void *_res)
 	rua_delete_scene (res, scene);
 }
 
+scene_t *
+Scene_GetScene (progs_t *pr, pr_ulong_t handle)
+{
+	if (!handle) {
+		return 0;
+	}
+	rua_scene_resources_t *res = PR_Resources_Find (pr, "Scene");
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
+	return scene->scene;
+}
+
 static void
 bi_Scene_CreateEntity (progs_t *pr, void *_res)
 {
@@ -221,10 +232,13 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	pr_int_t    model_id = P_INT (pr, 1);
 	entity_t   *ent = rua_entity_get (res, ent_id);
 	model_t    *model = Model_GetModel (pr, model_id);
+	pr_ulong_t  scene_id = ent_id & 0xffffffff;
+	// bad scene caught above
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
 	R_RemoveEfrags (ent);
 	ent->renderer.model = model;
-	R_AddEfrags (&r_data->refdef->worldmodel->brush, ent);//FIXME r_data
+	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
 
 static void
@@ -502,6 +516,6 @@ RUA_Scene_Init (progs_t *pr, int secure)
 
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "scene", res, bi_scene_clear);
+	PR_Resources_Register (pr, "Scene", res, bi_scene_clear);
 	PR_RegisterBuiltins (pr, builtins, res);
 }
