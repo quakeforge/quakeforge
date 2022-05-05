@@ -52,8 +52,6 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static gltex_t gl_notexture = { };
-
 static tex_t *
 Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 {
@@ -122,7 +120,6 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 	const char *name;
 
 	if (!tx) {
-		r_notexture_mip->render = &gl_notexture;
 		return;
 	}
 	if (gl_textures_external) {

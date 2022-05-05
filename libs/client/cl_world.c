@@ -47,6 +47,7 @@
 #include "QF/msg.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
@@ -64,6 +65,7 @@ void
 CL_World_Init (void)
 {
 	cl_world.scene = Scene_NewScene ();
+	cl_world.scene->lights = Light_CreateLightingData (cl_world.scene);
 }
 
 void
@@ -119,7 +121,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 
 	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 
-	R_AddEfrags (&cl_world.worldmodel->brush, ent);
+	R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 }
 
 static void
@@ -205,9 +207,11 @@ CL_LoadSky (const char *name)
 void
 CL_World_NewMap (const char *mapname, const char *skyname)
 {
+	model_t    *worldmodel = cl_world.models.a[1];
+	cl_world.scene->worldmodel = worldmodel;
+
 	cl_static_entities.size = 0;
-	r_funcs->R_NewMap (cl_world.worldmodel,
-					   cl_world.models.a, cl_world.models.size);
+
 	if (cl_world.models.a[1] && cl_world.models.a[1]->brush.entities) {
 		if (cl_world.edicts) {
 			PL_Free (cl_world.edicts);
@@ -219,5 +223,10 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 			Fog_ParseWorldspawn (cl_world.worldspawn);
 		}
 	}
+	CL_LoadLights (cl_world.edicts, cl_world.scene);
+
+	cl_world.scene->models = cl_world.models.a;
+	cl_world.scene->num_models = cl_world.models.size;
+	SCR_NewScene (cl_world.scene);
 	map_cfg (mapname, 1);
 }

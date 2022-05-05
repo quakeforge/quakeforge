@@ -206,8 +206,8 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									actx->layout, 0, 1, sets, 0, 0);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -261,7 +261,7 @@ Vulkan_AliasDepthRange (qfv_renderframe_t *rFrame,
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 
-	VkViewport  viewport = ctx->viewport;
+	VkViewport  viewport = rFrame->renderpass->viewport;
 	viewport.minDepth = minDepth;
 	viewport.maxDepth = maxDepth;
 

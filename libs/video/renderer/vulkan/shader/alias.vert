@@ -34,6 +34,6 @@ main (void)
 	pos = (Model * vertex);
 	gl_Position = Projection3d * (View * pos);
 	position = pos;
-	normal = mat3 (Model) * norm;
+	normal = normalize (mat3 (Model) * norm);
 	st = uv;
 }

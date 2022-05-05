@@ -44,6 +44,17 @@
 # endif
 #endif
 
+typedef enum {
+	targa_colormap = 1,
+	targa_truecolor = 2,
+	targa_greyscale = 3,
+	targa_colormap_rle = 9,
+	targa_truecolor_rle = 10,
+	targa_greyscale_rle = 11,
+
+	targa_max_image_type = 15
+} TargaImageType;
+
 typedef struct _TargaHeader {
 	unsigned char id_length; // __attribute__((packed));
 	unsigned char colormap_type; // __attribute__((packed));

@@ -206,8 +206,6 @@
 				},
 			);
 		};
-		quakebsp_set = $properties.setLayouts.texture_set;
-		alias_set = $properties.setLayouts.texture_set;
 		sprite_set = {
 			bindings = (
 				{
@@ -337,7 +335,7 @@
 			);
 		};
 		alias_layout = {
-			setLayouts = (matrix_set, alias_set);
+			setLayouts = (matrix_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -559,17 +557,13 @@
 		};
 	};
 
-	fsquad = {
+	fstriangle = {
 		vertexInput = {
-			bindings = (
-				{ binding = 0; stride = "4 * 4"; inputRate = vertex; },
-			);
-			attributes = (
-				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0; },
-			);
+			bindings = ();
+			attributes = ();
 		};
 		inputAssembly = {
-			topology = triangle_strip;
+			topology = triangle_list;
 			primitiveRestartEnable = false;
 		};
 		colorBlend = {
@@ -1008,7 +1002,7 @@
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/passthrough.vert;
+					module = $builtin/fstriangle.vert;
 				},
 				{
 					stage = fragment;
@@ -1022,13 +1016,13 @@
 					};
 				},
 			);
-			vertexInput   = $properties.fsquad.vertexInput;
-			inputAssembly = $properties.fsquad.inputAssembly;
+			vertexInput   = $properties.fstriangle.vertexInput;
+			inputAssembly = $properties.fstriangle.inputAssembly;
 			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.counter_cw_cull_back;
 			multisample   = $properties.multisample;
 			depthStencil  = $properties.depthStencil.disable;
-			colorBlend    = $properties.fsquad.colorBlend;
+			colorBlend    = $properties.fstriangle.colorBlend;
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
@@ -1041,7 +1035,7 @@
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/passthrough.vert;
+					module = $builtin/fstriangle.vert;
 				},
 				{
 					stage = fragment;
@@ -1049,13 +1043,13 @@
 					module = $builtin/compose.frag;
 				},
 			);
-			vertexInput   = $properties.fsquad.vertexInput;
-			inputAssembly = $properties.fsquad.inputAssembly;
+			vertexInput   = $properties.fstriangle.vertexInput;
+			inputAssembly = $properties.fstriangle.inputAssembly;
 			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.counter_cw_cull_back;
 			multisample   = $properties.multisample;
 			depthStencil  = $properties.depthStencil.disable;
-			colorBlend    = $properties.fsquad.colorBlend;
+			colorBlend    = $properties.fstriangle.colorBlend;
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};

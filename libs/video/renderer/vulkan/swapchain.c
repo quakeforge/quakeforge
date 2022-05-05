@@ -62,7 +62,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 		numImages = surfCaps.maxImageCount;
 	}
 
-	VkExtent2D imageSize = {viddef.width, viddef.height};
+	VkExtent2D imageSize = {ctx->window_width, ctx->window_height};
 	if (surfCaps.currentExtent.width == ~0u) {
 		imageSize.width = bound (surfCaps.minImageExtent.width,
 								 imageSize.width,

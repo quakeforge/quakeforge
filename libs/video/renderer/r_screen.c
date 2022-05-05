@@ -49,6 +49,7 @@
 #include "QF/va.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
@@ -71,40 +72,41 @@ static framebuffer_t *warp_buffer;
 
 static float fov_x, fov_y;
 static float tan_fov_x, tan_fov_y;
+static scene_t *scr_scene;//FIXME don't want this here
 
 static mat4f_t box_rotations[] = {
 	[BOX_FRONT] = {
-		{ 1, 0, 0, 0},		// front
+		{ 1, 0, 0, 0},
 		{ 0, 1, 0, 0},
 		{ 0, 0, 1, 0},
 		{ 0, 0, 0, 1}
 	},
 	[BOX_RIGHT] = {
-		{ 0,-1, 0, 0},		// right
+		{ 0,-1, 0, 0},
 		{ 1, 0, 0, 0},
 		{ 0, 0, 1, 0},
 		{ 0, 0, 0, 1}
 	},
 	[BOX_BEHIND] = {
-		{-1, 0, 0, 0},		// back
+		{-1, 0, 0, 0},
 		{ 0,-1, 0, 0},
 		{ 0, 0, 1, 0},
 		{ 0, 0, 0, 1}
 	},
 	[BOX_LEFT] = {
-		{ 0, 1, 0, 0},		// left
+		{ 0, 1, 0, 0},
 		{-1, 0, 0, 0},
 		{ 0, 0, 1, 0},
 		{ 0, 0, 0, 1}
 	},
 	[BOX_TOP] = {
-		{ 0, 0, 1, 0},		// top
+		{ 0, 0, 1, 0},
 		{ 0, 1, 0, 0},
 		{-1, 0, 0, 0},
 		{ 0, 0, 0, 1}
 	},
 	[BOX_BOTTOM] = {
-		{ 0, 0,-1, 0},		// bottom
+		{ 0, 0,-1, 0},
 		{ 0, 1, 0, 0},
 		{ 1, 0, 0, 0},
 		{ 0, 0, 0, 1}
@@ -268,20 +270,21 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 
 	R_RunParticles (r_data->frametime);
 	R_AnimateLight ();
-	refdef->viewleaf = 0;
-	if (refdef->worldmodel) {
+	if (scr_scene && scr_scene->worldmodel) {
+		scr_scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		refdef->viewleaf = Mod_PointInLeaf ((vec_t*)&position, refdef->worldmodel);//FIXME
+		scr_scene->viewleaf = Mod_PointInLeaf ((vec_t*)&position,
+											   scr_scene->worldmodel);//FIXME
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
-			r_dowarp = refdef->viewleaf->contents <= CONTENTS_WATER;
+			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
 		}
 		if (r_dowarp && !warp_buffer) {
 			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
 														r_data->vid->height);
 		}
+		R_MarkLeaves (scr_scene->viewleaf);
 	}
-	R_MarkLeaves ();
 	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();
@@ -504,4 +507,16 @@ SCR_Init (void)
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
 	update_vrect ();
+}
+
+void
+SCR_NewScene (scene_t *scene)
+{
+	scr_scene = scene;
+	if (scene) {
+		r_funcs->set_fov (tan_fov_x, tan_fov_y);
+		r_funcs->R_NewScene (scene);
+	} else {
+		r_funcs->R_ClearState ();
+	}
 }

@@ -35,14 +35,54 @@
 # include <strings.h>
 #endif
 
+#include "QF/mathlib.h"
 #include "QF/progs.h"	// for PR_RESMAP
 #include "QF/sys.h"
+#include "QF/model.h"
 
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
 #include "scn_internal.h"
+
+static byte empty_visdata[] = { 0x01 };
+
+static mleaf_t empty_leafs[] = {
+	[1] = {
+		.contents = CONTENTS_EMPTY,
+		.mins = {-INFINITY, -INFINITY, -INFINITY},
+		.maxs = { INFINITY,  INFINITY,  INFINITY},
+		.compressed_vis = empty_visdata,
+	},
+};
+
+static mnode_t *empty_leaf_parents[] = {
+	[1] = 0,
+};
+
+static int empty_leaf_flags[] = {
+	[1] = SURF_DRAWSKY,
+};
+
+static char empty_entities[] = { 0 };
+
+static model_t empty_world = {
+	.type = mod_brush,
+	.radius = INFINITY,
+	.mins = {-INFINITY, -INFINITY, -INFINITY},
+	.maxs = { INFINITY,  INFINITY,  INFINITY},
+	.brush = {
+		.modleafs = 2,
+		.visleafs = 1,
+		.nodes = (mnode_t *) &empty_leafs[1],
+		.leafs = empty_leafs,
+		.entities = empty_entities,
+		.visdata = empty_visdata,
+		.leaf_parents = empty_leaf_parents,
+		.leaf_flags = empty_leaf_flags,
+	},
+};
 
 scene_t *
 Scene_NewScene (void)
@@ -53,6 +93,8 @@ Scene_NewScene (void)
 	scene = calloc (1, sizeof (scene_t));
 	res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;
+
+	scene->worldmodel = &empty_world;
 
 	return scene;
 }
@@ -83,6 +125,8 @@ Scene_CreateEntity (scene_t *scene)
 
 	hierarchy_t *h = ent->transform->hierarchy;
 	h->entity.a[ent->transform->index] = ent;
+
+	QuatSet (1, 1, 1, 1, ent->renderer.colormod);
 
 	return ent;
 }

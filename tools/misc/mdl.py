@@ -29,7 +29,7 @@ for i in range(m[6]):
 			k[2].append (model[:s])
 			model = model[s:]
 		skins.append (k)
-pprint (skins)
+#pprint (skins)
 
 stverts = []
 for i in range(m[9]):
@@ -51,7 +51,11 @@ for i in range (m[11]):
 	model = model[4:]
 	if t==0:
 		if m[1] == 6:
-			x = unpack ("3B B 3B B 16s", model[:24])
+			try:
+				x = unpack ("3B B 3B B 16s", model[:24])
+			except:
+				print(len(model))
+				raise
 			f = (t, ((x[:3], x[3]), (x[4:7], x[7]), x[8]), [])
 			model = model[24:]
 		else:

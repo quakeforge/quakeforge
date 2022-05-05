@@ -44,6 +44,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
@@ -63,6 +64,7 @@
 #include "QF/ui/view.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -80,7 +82,6 @@ vulkan_ParticleSystem (void)
 static void
 vulkan_R_Init (void)
 {
-	r_ent_queue = EntQueue_New (mod_num_types);
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
@@ -118,9 +119,9 @@ vulkan_R_LoadSkys (const char *skyname)
 }
 
 static void
-vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
+vulkan_R_NewScene (scene_t *scene)
 {
-	Vulkan_NewMap (worldmodel, models, num_models, vulkan_ctx);
+	Vulkan_NewScene (scene, vulkan_ctx);
 }
 
 static void
@@ -541,13 +542,10 @@ vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 										   vulkan_ctx);
 }
 
-static void *
-vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-					 int snum, int gnum, qboolean group,
-					 maliasskindesc_t *skindesc)
+static void
+vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	return Vulkan_Mod_LoadSkin (alias_ctx, skin, skinsize, snum, gnum, group,
-								skindesc, vulkan_ctx);
+	Vulkan_Mod_LoadAllSkins (alias_ctx, vulkan_ctx);
 }
 
 static void
@@ -564,6 +562,7 @@ vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 static void
 vulkan_Mod_IQMFinish (model_t *mod)
 {
+	Vulkan_Mod_IQMFinish (mod, vulkan_ctx);
 }
 
 static void
@@ -639,7 +638,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	vulkan_Mod_MakeAliasModelDisplayLists,
-	vulkan_Mod_LoadSkin,
+	vulkan_Mod_LoadAllSkins,
 	vulkan_Mod_FinalizeAliasModel,
 	vulkan_Mod_LoadExternalSkins,
 	vulkan_Mod_IQMFinish,
@@ -729,7 +728,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_Init,
 	vulkan_R_ClearState,
 	vulkan_R_LoadSkys,
-	vulkan_R_NewMap,
+	vulkan_R_NewScene,
 	vulkan_R_LineGraph,
 	vulkan_begin_frame,
 	vulkan_render_view,
@@ -773,8 +772,7 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Vulkan Renderer",
-	"Copyright (C) 1996-1997  Id Software, Inc.\n"
-	"Copyright (C) 1999-2019  contributors of the QuakeForge project\n"
+	"Copyright (C) 2019 Bill Currie <bill@taniwha.org>\n"
 	"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,

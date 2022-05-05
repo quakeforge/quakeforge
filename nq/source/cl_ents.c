@@ -263,7 +263,7 @@ CL_RelinkEntities (void)
 				if (ent->visibility.efrag) {
 					R_RemoveEfrags (ent);
 				}
-				R_AddEfrags (&cl_world.worldmodel->brush, ent);
+				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 			ent->old_origin = new->origin;
 		} else {
@@ -299,10 +299,10 @@ CL_RelinkEntities (void)
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						R_RemoveEfrags (ent);
-						R_AddEfrags (&cl_world.worldmodel->brush, ent);
+						R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 					}
 				} else {
-					R_AddEfrags (&cl_world.worldmodel->brush, ent);
+					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
 		}

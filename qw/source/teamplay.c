@@ -49,6 +49,8 @@
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
+#include "QF/scene/scene.h"
+
 #include "compat.h"
 
 #include "client/locs.h"
@@ -332,8 +334,8 @@ Team_NewMap (void)
 
 	died = false;
 	recorded_location = false;
-	mapname = strdup (cl_world.worldmodel->path);
-	t2 = malloc (sizeof (cl_world.worldmodel->path));
+	mapname = strdup (cl_world.scene->worldmodel->path);
+	t2 = malloc (sizeof (cl_world.scene->worldmodel->path));
 	if (!mapname || !t2)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (mapname,t2);
@@ -376,16 +378,16 @@ locs_loc (void)
 					"parameter\n");
 		return;
 	}
-	if (!cl_world.worldmodel) {
+	if (!cl_world.scene->worldmodel) {
 		Sys_Printf ("No map loaded. Unable to work with location markers.\n");
 		return;
 	}
 	if (Cmd_Argc () >= 3)
 		desc = Cmd_Args (2);
-	mapname = malloc (sizeof (cl_world.worldmodel->path));
+	mapname = malloc (sizeof (cl_world.scene->worldmodel->path));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	map_to_loc (cl_world.worldmodel->path, mapname);
+	map_to_loc (cl_world.scene->worldmodel->path, mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s",
 			  qfs_gamedir->dir.def, mapname);
 	free (mapname);

@@ -130,6 +130,9 @@
 		[field_def writeParseData];
 	}
 	fprintf (output_file, "static plfield_t %s_fields[] = {\n", [self outname]);
+	fprintf (output_file,
+			 "\t{\"@inherit\", 0, QFString, parse_inherit, &%s_fields},\n",
+			 [self outname]);
 	for (int i = [field_defs count]; i-- > 0; ) {
 		FieldDef   *field_def = [field_defs objectAtIndex:i];
 		[field_def writeField];

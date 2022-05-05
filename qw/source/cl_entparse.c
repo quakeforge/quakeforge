@@ -41,6 +41,8 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/scene.h"
+
 #include "compat.h"
 
 #include "client/temp_entities.h"
@@ -530,7 +532,7 @@ CL_SetSolidEntities (void)
 	frame_t			   *frame;
 	packet_entities_t  *pak;
 
-	pmove.physents[0].model = cl_world.worldmodel;
+	pmove.physents[0].model = cl_world.scene->worldmodel;
 	VectorZero (pmove.physents[0].origin);
 	VectorZero (pmove.physents[0].angles);
 	pmove.physents[0].info = 0;

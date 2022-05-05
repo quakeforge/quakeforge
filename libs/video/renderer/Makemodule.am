@@ -91,7 +91,7 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 shader_src= libs/video/renderer/glsl/quakeforge.glsl
 shader_gen= libs/video/renderer/glsl/quakeforge.slc
 
-SUFFICES += .frag .vert .spv .spvc .fc .vc .slc .glsl
+SUFFIXES += .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
 	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
@@ -207,6 +207,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/projection.c \
 	libs/video/renderer/vulkan/renderpass.c \
+	libs/video/renderer/vulkan/resource.c \
 	libs/video/renderer/vulkan/scrap.c \
 	libs/video/renderer/vulkan/shader.c \
 	libs/video/renderer/vulkan/staging.c \
@@ -218,6 +219,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
 	libs/video/renderer/vulkan/vulkan_compose.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
+	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
@@ -299,8 +301,14 @@ alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
 alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
 alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
 alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
+iqmv_src = $(vkshaderpath)/iqm.vert
+iqmv_c = $(vkshaderpath)/iqm.vert.spvc
+iqmf_src = $(vkshaderpath)/iqm.frag
+iqmf_c = $(vkshaderpath)/iqm.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
+fstriangle_src = $(vkshaderpath)/fstriangle.vert
+fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 shadow_src = $(vkshaderpath)/shadow.geom
@@ -356,7 +364,13 @@ $(alias_gbuf_c): $(alias_gbuf_src)
 
 $(alias_shadow_c): $(alias_shadow_src)
 
+$(iqmv_c): $(iqmv_src)
+
+$(iqmf_c): $(iqmf_src)
+
 $(passthrough_c): $(passthrough_src)
+
+$(fstriangle_c): $(fstriangle_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
@@ -390,7 +404,10 @@ vkshader_c = \
 	$(aliasf_c) \
 	$(alias_gbuf_c) \
 	$(alias_shadow_c) \
+	$(iqmv_c) \
+	$(iqmf_c) \
 	$(passthrough_c) \
+	$(fstriangle_c) \
 	$(pushcolor_c) \
 	$(shadow_c)
 
@@ -443,6 +460,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/compose.frag \
 	libs/video/renderer/vulkan/shader/lighting.frag \
 	libs/video/renderer/vulkan/shader/passthrough.vert \
+	libs/video/renderer/vulkan/shader/fstriangle.vert \
 	libs/video/renderer/vulkan/shader/partphysics.comp \
 	libs/video/renderer/vulkan/shader/partupdate.comp \
 	libs/video/renderer/vulkan/shader/particle.vert \

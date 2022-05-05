@@ -433,7 +433,9 @@ typedef enum {
 #define OP_BREAK 0x8000
 
 typedef enum {
+#ifndef IN_DOXYGEN
 #include "QF/progs/pr_opcode.hinc"
+#endif
 } pr_opcode_e;
 
 // Used for both branch and comparison, with jump and call being ignored for

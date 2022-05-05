@@ -41,26 +41,20 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include <string.h>
 
 #include "QF/cbuf.h"
-#include "QF/cdaudio.h"
-#include "QF/console.h"
 #include "QF/draw.h"
-#include "QF/dstring.h"
 #include "QF/input.h"
-#include "QF/model.h"
-#include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/ruamoko.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "QF/input/event.h"
 
 #include "QF/plugin/console.h"
-#include "QF/plugin/vid_render.h"
+
+#include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 
@@ -100,6 +94,13 @@ static SCR_Func bi_2dfuncs[] = {
 };
 
 static void
+bi_newscene (progs_t *pr, void *_res)
+{
+	pr_ulong_t  scene_id = P_ULONG (pr, 0);
+	SCR_NewScene (Scene_GetScene (pr, scene_id));
+}
+
+static void
 bi_refresh (progs_t *pr, void *_res)
 {
 	con_realtime = Sys_DoubleTime () - basetime;
@@ -128,6 +129,7 @@ bi_shutdown (progs_t *pr, void *_res)
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(newscene,   -1, 1, p(long)),
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(shutdown,   -1, 0),

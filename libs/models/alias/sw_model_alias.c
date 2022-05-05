@@ -48,20 +48,22 @@
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
-
-void *
-sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin,
-				 int skinsize, int snum, int gnum,
-				 qboolean group, maliasskindesc_t *skindesc)
+void
+sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	byte		*pskin;
+	aliashdr_t *header = alias_ctx->header;
+	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
+	int         num_skins = alias_ctx->skins.size;
+	byte       *texel_block = Hunk_AllocName (0, skinsize * num_skins,
+											  alias_ctx->mod->name);
 
-	pskin = Hunk_AllocName (0, skinsize, alias_ctx->mod->name);
-	skindesc->skin = (byte *) pskin - (byte *) alias_ctx->header;
+	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
+		__auto_type skin = alias_ctx->skins.a + i;
+		byte      *texels = texel_block + i * skinsize;
 
-	memcpy (pskin, skin, skinsize);
-
-	return skin + skinsize;
+		skin->skindesc->skin = texels - (byte *) header;
+		memcpy (texels, skin->texels, skinsize);
+	}
 }
 
 static void

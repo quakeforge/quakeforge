@@ -3,7 +3,6 @@
 
 	Vulkan frame capture support
 
-	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2021      Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
@@ -99,22 +98,21 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 		image->layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		image->cmd = cmdset->a[i];
 	}
-	size_t      image_size = QFV_GetImageSize (device,
-											   capture->image_set->a[0].image);
-	capture->memsize = numframes * image_size;
+	capture->imgsize = QFV_GetImageSize (device,
+										 capture->image_set->a[0].image);
+	capture->memsize = numframes * capture->imgsize;
 	capture->memory = QFV_AllocImageMemory (device,
 											capture->image_set->a[0].image,
 											VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 											capture->memsize, 0);
-	byte       *data;
 	dfunc->vkMapMemory (device->dev, capture->memory, 0, capture->memsize, 0,
-						(void **) &data);
+						(void **) &capture->data);
 
 	for (int i = 0; i < numframes; i++) {
 		__auto_type image = &capture->image_set->a[i];
-		image->data = data + i * image_size;
+		image->data = capture->data + i * capture->imgsize;
 		dfunc->vkBindImageMemory (device->dev, image->image, capture->memory,
-								  image->data - data);
+								  image->data - capture->data);
 	}
 	return capture;
 }
@@ -252,6 +250,15 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 const byte *
 QFV_CaptureData (qfv_capture_t *capture, int frame)
 {
+	qfv_device_t *device = capture->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type image = &capture->image_set->a[frame];
+	VkMappedMemoryRange range = {
+		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+		.memory = capture->memory,
+		.offset = image->data - capture->data,
+		.size = capture->imgsize,
+	};
+	dfunc->vkInvalidateMappedMemoryRanges (device->dev, 1, &range);
 	return image->data;
 }

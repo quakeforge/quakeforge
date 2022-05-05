@@ -83,7 +83,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	sw_Mod_MakeAliasModelDisplayLists,
-	sw_Mod_LoadSkin,
+	sw_Mod_LoadAllSkins,
 	0,
 	0,
 	sw_Mod_IQMFinish,
@@ -474,7 +474,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	sw_R_Init,
 	R_ClearState,
 	R_LoadSkys,
-	R_NewMap,
+	R_NewScene,
 	R_LineGraph,
 	sw_begin_frame,
 	sw_render_view,

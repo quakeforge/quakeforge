@@ -163,7 +163,7 @@ static vid_model_funcs_t model_funcs = {
 	Mod_LoadSpriteModel,
 
 	gl_Mod_MakeAliasModelDisplayLists,
-	gl_Mod_LoadSkin,
+	gl_Mod_LoadAllSkins,
 	gl_Mod_FinalizeAliasModel,
 	gl_Mod_LoadExternalSkins,
 	gl_Mod_IQMFinish,
@@ -510,7 +510,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_Init,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
-	gl_R_NewMap,
+	gl_R_NewScene,
 	gl_R_LineGraph,
 	gl_begin_frame,
 	gl_render_view,

@@ -1,6 +1,11 @@
 #ifndef __QF_Vulkan_barrier_h
 #define __QF_Vulkan_barrier_h
 
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan.h>
+
 typedef struct {
 	VkPipelineStageFlags srcStages;
 	VkPipelineStageFlags dstStages;

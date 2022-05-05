@@ -26,8 +26,8 @@ VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen -I$(VKGENUSRINC)
 vkgen_dat_SOURCES=$(vkgen_dat_src)
 vkgen_obj=$(vkgen_dat_SOURCES:.r=.o)
 vkgen_dep=$(call qcautodep,$(vkgen_dat_SOURCES:.o=.Qo))
-vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lcsqc -lr
+vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lr
 include $(vkgen_dep) # am--include-marker
 r_depfiles_remade += $(vkgen_dep)
 

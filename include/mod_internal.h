@@ -7,9 +7,17 @@
 #include "QF/skin.h"
 #include "QF/plugin/vid_render.h"
 
+typedef struct mod_alias_skin_s {
+	int         skin_num;
+	int         group_num;	// -1 if not in an animated group
+	byte       *texels;
+	maliasskindesc_t *skindesc;
+} mod_alias_skin_t;
+
 typedef struct stvertset_s DARRAY_TYPE (stvert_t) stvertset_t;
 typedef struct mtriangleset_s DARRAY_TYPE (mtriangle_t) mtriangleset_t;
 typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
+typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
 typedef struct mod_alias_ctx_s {
 	aliashdr_t *header;
@@ -17,6 +25,7 @@ typedef struct mod_alias_ctx_s {
 	stvertset_t stverts;
 	mtriangleset_t triangles;
 	trivertxset_t poseverts;
+	askinset_t  skins;
 	int         aliasbboxmins[3];
 	int         aliasbboxmaxs[3];
 } mod_alias_ctx_t;
@@ -49,27 +58,21 @@ extern vid_model_funcs_t *m_funcs;
 
 void gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
-void *gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-					   int snum, int gnum, qboolean group,
-					   maliasskindesc_t *skindesc);
+void gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_IQMFinish (model_t *mod);
 
 void glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 										  void *_m, int _s, int extra);
-void *glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-						 int snum, int gnum, qboolean group,
-						 maliasskindesc_t *skindesc);
+void glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_IQMFinish (model_t *mod);
 
 void sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
-void *sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-					   int snum, int gnum, qboolean group,
-					   maliasskindesc_t *skindesc);
+void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);

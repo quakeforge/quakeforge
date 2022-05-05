@@ -1,7 +1,13 @@
 #ifndef __QF_Vulkan_image_h
 #define __QF_Vulkan_image_h
 
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan.h>
+
 #include "QF/darray.h"
+#include "QF/image.h"
 
 typedef struct qfv_imageset_s
 	DARRAY_TYPE (VkImage) qfv_imageset_t;
@@ -94,5 +100,15 @@ void QFV_GenerateMipMaps (struct qfv_device_s *device, VkCommandBuffer cmd,
 						  VkImage image, unsigned mips,
 						  unsigned width, unsigned height, unsigned layers);
 int QFV_MipLevels (int width, int height) __attribute__((const));
+
+/** Convert QFFormat to VkFormat
+ *
+ *	\param format	The format to convert.
+ *	\return			The corresponding VkFormat.
+ *
+ *	\note For tex_palette, VK_FORMAT_R8_UINT is returned. If \a format is
+ *	not a valid QFFormat, then VK_FORMAT_R8_SRGB is returned.
+ */
+VkFormat QFV_ImageFormat (QFFormat format);
 
 #endif//__QF_Vulkan_image_h

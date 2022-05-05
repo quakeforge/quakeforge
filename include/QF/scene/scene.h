@@ -43,6 +43,11 @@
 typedef struct scene_s {
 	struct scene_resources_s *const resources;
 	struct hierarchy_s *hierarchies;
+	struct model_s *worldmodel;
+	int         num_models;
+	struct model_s **models;
+	struct mleaf_s *viewleaf;
+	struct lightingdata_s *lights;
 } scene_t;
 
 scene_t *Scene_NewScene (void);

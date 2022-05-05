@@ -62,8 +62,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static vulktex_t vulkan_notexture = { };
-
 static void
 vulkan_brush_clear (model_t *mod, void *data)
 {
@@ -302,8 +300,9 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 		mod->clear = vulkan_brush_clear;
 		mod->data = mctx;
 
-		r_notexture_mip->render = &vulkan_notexture;
-		load_textures (mod, ctx);
+		if (mod->brush.numtextures) {
+			load_textures (mod, ctx);
+		}
 		return;
 	}
 

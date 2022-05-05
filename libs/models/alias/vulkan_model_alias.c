@@ -111,7 +111,7 @@ vulkan_alias_clear (model_t *m, void *data)
 	}
 }
 
-void *
+static void *
 Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 					 int snum, int gnum, qboolean group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
@@ -226,6 +226,20 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 
 	qfvPopDebug (ctx);
 	return skinpix + skinsize;
+}
+
+void
+Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
+{
+	aliashdr_t *header = alias_ctx->header;
+	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
+
+	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
+		__auto_type skin = alias_ctx->skins.a + i;
+		Vulkan_Mod_LoadSkin (alias_ctx, skin->texels, skinsize,
+							 skin->skin_num, skin->group_num,
+							 skin->group_num != -1, skin->skindesc, ctx);
+	}
 }
 
 void
@@ -401,6 +415,9 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	for (i = 0; i < numtris; i++) {
 		for (j = 0; j < 3; j++) {
 			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			// can't use indexmap to do the test because it indicates only
+			// that the vertex has been duplicated, not whether or not
+			// the vertex is the original or the duplicate
 			if (alias_ctx->stverts.a[vind].onseam
 				&& !alias_ctx->triangles.a[i].facesfront) {
 				vind = indexmap[vind];

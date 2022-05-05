@@ -23,7 +23,9 @@ typedef struct qfv_capture_s {
 	int         canBlit;
 	VkExtent2D  extent;
 	qfv_capture_image_set_t *image_set;
+	size_t      imgsize;
 	size_t      memsize;
+	byte       *data;
 	VkDeviceMemory memory;
 } qfv_capture_t;
 

@@ -49,6 +49,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -151,8 +152,9 @@ sw_R_Init (void)
 }
 
 void
-R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+R_NewScene (scene_t *scene)
 {
+	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
 	r_refdef.worldmodel = worldmodel;
@@ -165,8 +167,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		R_InitSky (brush->skytexture);
 
 	// Force a vis update
-	r_refdef.viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0);
 
 	R_ClearParticles ();
 
@@ -589,7 +590,9 @@ R_RenderView_ (void)
 
 	R_EdgeDrawing (r_ent_queue);
 
-	R_DrawViewModel ();
+	if (vr_data.view_model) {
+		R_DrawViewModel ();
+	}
 
 	if (r_aliasstats)
 		R_PrintAliasStats ();

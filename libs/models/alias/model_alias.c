@@ -75,8 +75,14 @@ Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
 		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin = m_funcs->Mod_LoadSkin (alias_ctx, skin, skinsize, snum, 0,
-										  false, &pskindesc[snum]);
+			mod_alias_skin_t askin = {
+				.skin_num = snum,
+				.group_num = -1,
+				.texels = skin,
+				.skindesc = &pskindesc[snum],
+			};
+			skin += skinsize;
+			DARRAY_APPEND (&alias_ctx->skins, askin);
 		} else {
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
@@ -107,13 +113,20 @@ Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
 				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
-				skin = mod_funcs->Mod_LoadSkin (alias_ctx, skin, skinsize,
-												snum, gnum, true,
-											&paliasskingroup->skindescs[gnum]);
+				skin = (byte *) (pskintype + 1);
+				mod_alias_skin_t askin = {
+					.skin_num = snum,
+					.group_num = gnum,
+					.texels = skin,
+					.skindesc = &paliasskingroup->skindescs[gnum],
+				};
+				skin += skinsize;
+				DARRAY_APPEND (&alias_ctx->skins, askin);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;
 	}
+	mod_funcs->Mod_LoadAllSkins (alias_ctx);
 
 	return pskintype;
 }
@@ -232,6 +245,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	DARRAY_INIT (&alias_ctx.poseverts, 256);
 	DARRAY_INIT (&alias_ctx.stverts, 256);
 	DARRAY_INIT (&alias_ctx.triangles, 256);
+	DARRAY_INIT (&alias_ctx.skins, 256);
 
 	if (LittleLong (* (unsigned int *) buffer) == HEADER_MDL16)
 		extra = 1;		// extra precision bytes
@@ -392,4 +406,5 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	DARRAY_CLEAR (&alias_ctx.poseverts);
 	DARRAY_CLEAR (&alias_ctx.stverts);
 	DARRAY_CLEAR (&alias_ctx.triangles);
+	DARRAY_CLEAR (&alias_ctx.skins);
 }

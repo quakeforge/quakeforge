@@ -46,6 +46,7 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
@@ -79,10 +80,10 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.state == ca_active && cl_world.worldmodel) {
+	if (cls.state == ca_active && cl_world.scene->worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		leaf = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
+		leaf = Mod_PointInLeaf ((vec_t*)&origin, cl_world.scene->worldmodel);//FIXME
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (&cl.viewstate, contents);

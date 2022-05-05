@@ -62,6 +62,9 @@ struct plitem_s *Plist_GetItem (struct progs_s *pr, int handle);
 
 void RUA_Input_Init (struct progs_s *pr, int secure);
 void RUA_Mersenne_Init (struct progs_s *pr, int secure);
+void RUA_Model_Init (struct progs_s *pr, int secure);
+struct model_s *Model_GetModel (progs_t *pr, int handle);
 void RUA_Scene_Init (struct progs_s *pr, int secure);
+struct scene_s *Scene_GetScene (struct progs_s *pr, pr_ulong_t handle);
 
 #endif//__rua_internal_h

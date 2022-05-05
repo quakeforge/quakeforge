@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_alias.h"
@@ -122,14 +123,15 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 
 	Vulkan_DrawWorld (rFrame);
 	Vulkan_DrawSky (rFrame);
-	Vulkan_DrawViewModel (ctx);
+	if (vr_data.view_model) {
+		Vulkan_DrawViewModel (ctx);
+	}
 	Vulkan_DrawWaterSurfaces (rFrame);
 	Vulkan_Bsp_Flush (ctx);
 }
 
 void
-Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
-			   vulkan_ctx_t *ctx)
+Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
 	int         i;
 
@@ -137,17 +139,16 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 		d_lightstylevalue[i] = 264;		// normal light value
 	}
 
-	r_refdef.worldmodel = worldmodel;
+	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
-	r_refdef.viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0);
 
 	R_ClearParticles ();
-	Vulkan_RegisterTextures (models, num_models, ctx);
-	//Vulkan_BuildLightmaps (models, num_models, ctx);
-	Vulkan_BuildDisplayLists (models, num_models, ctx);
-	Vulkan_LoadLights (worldmodel, worldmodel->brush.entities, ctx);
+	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
+	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
+	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
+	Vulkan_LoadLights (scene, ctx);
 }
 
 /*void

@@ -125,7 +125,7 @@ MatchTargets (void)
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
 			entities[i].style = entities[j].style;
-			SetKeyValue (&entities[i], "style", va (0, "%i",
+			SetKeyValue (&entities[i], "style", va (0, "%d",
 													entities[i].style));
 		}
 
@@ -334,12 +334,9 @@ LoadEntities (void)
 		if (entity->classname && !strcmp (entity->classname, "light")) {
 			if (entity->targetname && entity->targetname[0]
 				&& !entity->style) {
-				char s[16];
-
 				entity->style = LightStyleForTargetname (entity->targetname,
 														 true);
-				sprintf (s, "%i", entity->style);
-				SetKeyValue (entity, "style", s);
+				SetKeyValue (entity, "style", va (0, "%d", entity->style));
 			}
 		}
 	}

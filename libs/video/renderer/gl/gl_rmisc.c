@@ -66,11 +66,14 @@
 #include "QF/GL/qf_vid.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "varrays.h"
 #include "vid_gl.h"
+
+static gltex_t gl_notexture = { };
 
 static void
 gl_R_LoadSky_f (void)
@@ -114,6 +117,8 @@ gl_R_TimeRefresh_f (void)
 void
 gl_R_Init (void)
 {
+	r_notexture_mip->render = &gl_notexture;
+
 	R_Init_Cvars ();
 
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
@@ -152,7 +157,7 @@ register_textures (mod_brush_t *brush)
 }
 
 void
-gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+gl_R_NewScene (scene_t *scene)
 {
 	texture_t  *tex;
 	mod_brush_t *brush;
@@ -160,20 +165,19 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	r_refdef.worldmodel = worldmodel;
-	brush = &worldmodel->brush;
+	r_refdef.worldmodel = scene->worldmodel;
+	brush = &scene->worldmodel->brush;
 
 	// clear out efrags in case the level hasn't been reloaded
 	for (unsigned i = 0; i < brush->modleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
-	r_refdef.viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0);
 
 	R_ClearParticles ();
 
-	GL_BuildLightmaps (models, num_models);
+	GL_BuildLightmaps (scene->models, scene->num_models);
 
 	// identify sky texture
 	gl_R_ClearTextures ();
@@ -189,13 +193,13 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	gl_R_InitSurfaceChains (brush);
 	gl_R_AddTexture (r_notexture_mip);
 	register_textures (brush);
-	for (int i = 0; i < num_models; i++) {
-		if (!models[i])
+	for (int i = 0; i < scene->num_models; i++) {
+		if (!scene->models[i])
 			continue;
-		if (*models[i]->path == '*')
+		if (*scene->models[i]->path == '*')
 			continue;
-		if (models[i] != r_refdef.worldmodel
-			&& models[i]->type == mod_brush)
-			register_textures (&models[i]->brush);
+		if (scene->models[i] != r_refdef.worldmodel
+			&& scene->models[i]->type == mod_brush)
+			register_textures (&scene->models[i]->brush);
 	}
 }

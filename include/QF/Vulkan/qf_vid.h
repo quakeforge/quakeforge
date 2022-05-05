@@ -3,7 +3,7 @@
 
 	vulkan vid stuff from the renderer.
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2019 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -40,8 +40,8 @@ typedef enum {
 	QFV_passDepth,			// geometry
 	QFV_passTranslucent,	// geometry
 	QFV_passGBuffer,		// geometry
-	QFV_passLighting,		// single quad
-	QFV_passCompose,		// single quad
+	QFV_passLighting,		// single triangle
+	QFV_passCompose,		// single triangle
 
 	QFV_NumPasses
 } QFV_Subpass;

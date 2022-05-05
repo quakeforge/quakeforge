@@ -98,6 +98,8 @@ static float identity[] = {
 	0, 0, 0, 1,
 };
 
+static vulktex_t vulkan_notexture = { };
+
 #define ALLOC_CHUNK 64
 
 typedef struct bsppoly_s {
@@ -412,6 +414,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bspvert_t  *vertices;
 	bsppoly_t  *poly;
 	mod_brush_t *brush;
+
+	if (!num_models) {
+		return;
+	}
 
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
@@ -746,8 +752,6 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 		}
 		break;
 	}
-	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-		visit_leaf ((mleaf_t *) node);
 }
 
 static void
@@ -853,8 +857,8 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
 	VkDeviceSize offsets[] = { 0 };
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);
@@ -1039,6 +1043,9 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bctx->color = 0;
 
 	R_VisitWorldNodes (brush, ctx);
+	if (!bctx->vertex_buffer) {
+		return;
+	}
 	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
@@ -1091,6 +1098,9 @@ Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 	size_t      offset = bframe->index_offset;
 	size_t      size = bframe->index_count * sizeof (uint32_t);
 
+	if (!bframe->index_count) {
+		return;
+	}
 	offset &= ~atom_mask;
 	size = (size + atom_mask) & ~atom_mask;
 
@@ -1333,6 +1343,8 @@ void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+
+	r_notexture_mip->render = &vulkan_notexture;
 
 	qfvPushDebug (ctx, "bsp init");
 

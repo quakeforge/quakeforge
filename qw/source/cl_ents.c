@@ -234,7 +234,7 @@ CL_LinkPacketEntities (void)
 				if (ent->visibility.efrag) {
 					R_RemoveEfrags (ent);
 				}
-				R_AddEfrags (&cl_world.worldmodel->brush, ent);
+				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
@@ -266,15 +266,15 @@ CL_LinkPacketEntities (void)
 						= Transform_GetWorldPosition (ent->transform);
 					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						R_RemoveEfrags (ent);
-						R_AddEfrags (&cl_world.worldmodel->brush, ent);
+						R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 					}
 				} else {
-					R_AddEfrags (&cl_world.worldmodel->brush, ent);
+					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
 		}
 		if (!ent->visibility.efrag) {
-			R_AddEfrags (&cl_world.worldmodel->brush, ent);
+			R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 		}
 
 		// rotate binary objects locally
@@ -510,10 +510,10 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		R_AddEfrags (&cl_world.worldmodel->brush, ent);
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 		if (player->flag_ent) {
 			CL_UpdateFlagModels (ent, j);
-			R_AddEfrags (&cl_world.worldmodel->brush, player->flag_ent);
+			R_AddEfrags (&cl_world.scene->worldmodel->brush, player->flag_ent);
 		}
 	}
 }
