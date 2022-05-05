@@ -9,9 +9,9 @@
 #include "QF/model.h"
 #include "QF/plist.h"
 #include "QF/progs.h"	//for ED_ConvertToPlist
-#include "QF/script.h"
 #include "QF/set.h"
 #include "QF/scene/light.h"
+#include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
 #include "client/world.h"
@@ -238,78 +238,59 @@ locate_lights (model_t *model, lightingdata_t *ldata)
 }
 
 void
-CL_LoadLights (model_t *model, const char *entity_data, lightingdata_t *ldata)
+CL_LoadLights (plitem_t *entities, scene_t *scene)
 {
-	plitem_t   *entities = 0;
+	lightingdata_t *ldata = scene->lights;
+	model_t    *model = scene->worldmodel;
 
-	if (!entity_data) {
+	Light_ClearLights (ldata);
+	ldata->sun_pvs = set_new_size (model->brush.visleafs);
+	if (!entities) {
 		return;
 	}
 
-	Light_ClearLights (ldata);
+	plitem_t   *targets = PL_NewDictionary (0);
 
-	ldata->sun_pvs = set_new_size (model->brush.visleafs);
-
-	script_t   *script = Script_New ();
-	Script_Start (script, "ent data", entity_data);
-
-	if (Script_GetToken (script, 1)) {
-		if (!strcmp (script->token->str, "(")) {
-			// new style (plist) entity data
-			entities = PL_GetPropertyList (entity_data, 0);
-		} else {
-			// old style entity data
-			Script_UngetToken (script);
-			// FIXME ED_ConvertToPlist aborts if an error is encountered.
-			entities = ED_ConvertToPlist (script, 0, 0);
+	// find all the targets so spotlights can be aimed
+	for (int i = 1; i < PL_A_NumObjects (entities); i++) {
+		plitem_t   *entity = PL_ObjectAtIndex (entities, i);
+		const char *targetname = PL_String (PL_ObjectForKey (entity,
+															 "targetname"));
+		if (targetname && !PL_ObjectForKey (targets, targetname)) {
+			PL_D_AddObject (targets, targetname, entity);
 		}
 	}
-	Script_Delete (script);
 
-	if (entities) {
-		plitem_t   *targets = PL_NewDictionary (0);
+	for (int i = 0; i < PL_A_NumObjects (entities); i++) {
+		plitem_t   *entity = PL_ObjectAtIndex (entities, i);
+		const char *classname = PL_String (PL_ObjectForKey (entity,
+															"classname"));
+		if (!classname) {
+			continue;
+		}
+		if (!strcmp (classname, "worldspawn")) {
+			// parse_sun can add many lights
+			parse_sun (ldata, entity);
+		} else if (!strncmp (classname, "light", 5)) {
+			light_t     light = {};
+			int         style = 0;
 
-		// find all the targets so spotlights can be aimed
-		for (int i = 1; i < PL_A_NumObjects (entities); i++) {
-			plitem_t   *entity = PL_ObjectAtIndex (entities, i);
-			const char *targetname = PL_String (PL_ObjectForKey (entity,
-																 "targetname"));
-			if (targetname && !PL_ObjectForKey (targets, targetname)) {
-				PL_D_AddObject (targets, targetname, entity);
+			parse_light (&light, &style, entity, targets);
+			// some lights have 0 output, so drop them
+			if (light.color[3]) {
+				DARRAY_APPEND (&ldata->lights, light);
+				DARRAY_APPEND (&ldata->lightstyles, style);
 			}
 		}
-
-		for (int i = 0; i < PL_A_NumObjects (entities); i++) {
-			plitem_t   *entity = PL_ObjectAtIndex (entities, i);
-			const char *classname = PL_String (PL_ObjectForKey (entity,
-																"classname"));
-			if (!classname) {
-				continue;
-			}
-			if (!strcmp (classname, "worldspawn")) {
-				// parse_sun can add many lights
-				parse_sun (ldata, entity);
-			} else if (!strncmp (classname, "light", 5)) {
-				light_t     light = {};
-				int         style = 0;
-
-				parse_light (&light, &style, entity, targets);
-				// some lights have 0 output, so drop them
-				if (light.color[3]) {
-					DARRAY_APPEND (&ldata->lights, light);
-					DARRAY_APPEND (&ldata->lightstyles, style);
-				}
-			}
-		}
-		DARRAY_RESIZE (&ldata->lightvis, ldata->lights.size);
-		// targets does not own the objects, so need to remove them before
-		// freeing targets
-		for (int i = PL_D_NumKeys (targets); i-- > 0; ) {
-			PL_RemoveObjectForKey (targets, PL_KeyAtIndex (targets, i));
-		}
-		PL_Free (targets);
-		PL_Free (entities);
 	}
+	DARRAY_RESIZE (&ldata->lightvis, ldata->lights.size);
+	// targets does not own the objects, so need to remove them before
+	// freeing targets
+	for (int i = PL_D_NumKeys (targets); i-- > 0; ) {
+		PL_RemoveObjectForKey (targets, PL_KeyAtIndex (targets, i));
+	}
+	PL_Free (targets);
+
 	if (ldata->lights.size) {
 		locate_lights (model, ldata);
 		for (size_t i = 0; i < ldata->lights.size; i++) {

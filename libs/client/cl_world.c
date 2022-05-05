@@ -212,12 +212,6 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 
 	cl_static_entities.size = 0;
 
-	const char *entity_data = worldmodel->brush.entities;
-	CL_LoadLights (worldmodel, entity_data, cl_world.scene->lights);
-
-	cl_world.scene->models = cl_world.models.a;
-	cl_world.scene->num_models = cl_world.models.size;
-	SCR_NewScene (cl_world.scene);
 	if (cl_world.models.a[1] && cl_world.models.a[1]->brush.entities) {
 		if (cl_world.edicts) {
 			PL_Free (cl_world.edicts);
@@ -229,5 +223,10 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 			Fog_ParseWorldspawn (cl_world.worldspawn);
 		}
 	}
+	CL_LoadLights (cl_world.edicts, cl_world.scene);
+
+	cl_world.scene->models = cl_world.models.a;
+	cl_world.scene->num_models = cl_world.models.size;
+	SCR_NewScene (cl_world.scene);
 	map_cfg (mapname, 1);
 }
