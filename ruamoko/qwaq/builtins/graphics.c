@@ -41,26 +41,20 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include <string.h>
 
 #include "QF/cbuf.h"
-#include "QF/cdaudio.h"
-#include "QF/console.h"
 #include "QF/draw.h"
-#include "QF/dstring.h"
 #include "QF/input.h"
-#include "QF/model.h"
-#include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/ruamoko.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "QF/input/event.h"
 
 #include "QF/plugin/console.h"
-#include "QF/plugin/vid_render.h"
+
+#include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 
@@ -86,40 +80,6 @@ static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static int event_handler_id;
 
-static mleaf_t empty_leafs[] = {
-	[1] = {
-		.contents = CONTENTS_EMPTY,
-		.mins = {-INFINITY, -INFINITY, -INFINITY},
-		.maxs = { INFINITY,  INFINITY,  INFINITY},
-	},
-};
-
-static mnode_t *empty_leaf_parents[] = {
-	[1] = 0,
-};
-
-static int empty_leaf_flags[] = {
-	[1] = 0,
-};
-
-static char empty_entities[] = { 0 };
-
-static model_t empty_world = {
-	.type = mod_brush,
-	.radius = INFINITY,
-	.mins = {-INFINITY, -INFINITY, -INFINITY},
-	.maxs = { INFINITY,  INFINITY,  INFINITY},
-	.brush = {
-		.modleafs = 2,
-		.visleafs = 1,
-		.nodes = (mnode_t *) &empty_leafs[1],
-		.leafs = empty_leafs,
-		.entities = empty_entities,
-		.leaf_parents = empty_leaf_parents,
-		.leaf_flags = empty_leaf_flags,
-	},
-};
-
 static void
 bi_2d (void)
 {
@@ -132,6 +92,13 @@ static SCR_Func bi_2dfuncs[] = {
 	Con_DrawConsole,
 	0,
 };
+
+static void
+bi_newscene (progs_t *pr, void *_res)
+{
+	pr_ulong_t  scene_id = P_ULONG (pr, 0);
+	SCR_NewScene (Scene_GetScene (pr, scene_id));
+}
 
 static void
 bi_refresh (progs_t *pr, void *_res)
@@ -162,6 +129,7 @@ bi_shutdown (progs_t *pr, void *_res)
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	bi(newscene,   -1, 1, p(long)),
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(shutdown,   -1, 0),
@@ -230,8 +198,4 @@ BI_Graphics_Init (progs_t *pr)
 	//CDAudio_Init ();
 	Con_NewMap ();
 	basetime = Sys_DoubleTime ();
-	if (mod_funcs->Mod_ProcessTexture) {
-		mod_funcs->Mod_ProcessTexture (&empty_world, 0);
-	}
-	//r_funcs->R_NewMap (&empty_world, 0, 0);
 }
