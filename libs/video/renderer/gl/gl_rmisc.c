@@ -73,6 +73,8 @@
 #include "varrays.h"
 #include "vid_gl.h"
 
+static gltex_t gl_notexture = { };
+
 static void
 gl_R_LoadSky_f (void)
 {
@@ -115,6 +117,8 @@ gl_R_TimeRefresh_f (void)
 void
 gl_R_Init (void)
 {
+	r_notexture_mip->render = &gl_notexture;
+
 	R_Init_Cvars ();
 
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,

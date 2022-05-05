@@ -103,6 +103,7 @@ static double   sky_time;
 
 static quat_t   default_color = { 1, 1, 1, 1 };
 static quat_t   last_color;
+static glsltex_t glsl_notexture = { };
 
 static const char *bsp_vert_effects[] =
 {
@@ -1281,6 +1282,8 @@ glsl_R_InitBsp (void)
 	shader_t   *vert_shader, *frag_shader;
 	int         vert;
 	int         frag;
+
+	r_notexture_mip->render = &glsl_notexture;
 
 	vert_shader = GLSL_BuildShader (bsp_vert_effects);
 	frag_shader = GLSL_BuildShader (bsp_lit_effects);

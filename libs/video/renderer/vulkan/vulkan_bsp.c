@@ -98,6 +98,8 @@ static float identity[] = {
 	0, 0, 0, 1,
 };
 
+static vulktex_t vulkan_notexture = { };
+
 #define ALLOC_CHUNK 64
 
 typedef struct bsppoly_s {
@@ -1341,6 +1343,8 @@ void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+
+	r_notexture_mip->render = &vulkan_notexture;
 
 	qfvPushDebug (ctx, "bsp init");
 
