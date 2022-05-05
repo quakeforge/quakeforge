@@ -46,11 +46,14 @@
 
 #include "scn_internal.h"
 
+static byte empty_visdata[] = { 0x01 };
+
 static mleaf_t empty_leafs[] = {
 	[1] = {
 		.contents = CONTENTS_EMPTY,
 		.mins = {-INFINITY, -INFINITY, -INFINITY},
 		.maxs = { INFINITY,  INFINITY,  INFINITY},
+		.compressed_vis = empty_visdata,
 	},
 };
 
@@ -59,7 +62,7 @@ static mnode_t *empty_leaf_parents[] = {
 };
 
 static int empty_leaf_flags[] = {
-	[1] = 0,
+	[1] = SURF_DRAWSKY,
 };
 
 static char empty_entities[] = { 0 };
@@ -75,6 +78,7 @@ static model_t empty_world = {
 		.nodes = (mnode_t *) &empty_leafs[1],
 		.leafs = empty_leafs,
 		.entities = empty_entities,
+		.visdata = empty_visdata,
 		.leaf_parents = empty_leaf_parents,
 		.leaf_flags = empty_leaf_flags,
 	},
