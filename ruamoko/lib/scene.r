@@ -4,6 +4,7 @@ scene_t Scene_NewScene (void) = #0;
 void Scene_DeleteScene (scene_t scene) = #0;
 entity_t Scene_CreateEntity (scene_t scene) = #0;
 void Scene_DestroyEntity (entity_t ent) = #0;
+void Scene_SetLighting (scene_t scene, lightingdata_t ldata) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
@@ -35,6 +36,12 @@ void Transform_SetLocalTransform (transform_t transform, vec4 scale,
 vec4 Transform_Forward (transform_t transform) = #0;
 vec4 Transform_Right (transform_t transform) = #0;
 vec4 Transform_Up (transform_t transform) = #0;
+
+lightingdata_t Light_CreateLightingData (scene_t scene) = #0;
+void Light_DestroyLightingData (lightingdata_t ldata) = #0;
+void Light_ClearLights (lightingdata_t ldata) = #0;
+void Light_AddLight (lightingdata_t ldata, light_t light) = #0;
+void Light_EnableSun (lightingdata_t ldata) = #0;
 
 model_t Model_Load (string path) = #0;
 void Model_Unload (model_t model) = #0;

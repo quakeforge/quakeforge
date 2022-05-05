@@ -6,16 +6,25 @@ typedef struct {
 	vec4 col[4];
 } mat4x4;
 
+typedef struct light_s {
+	vec4        color;
+	vec4        position;
+	vec4        direction;
+	vec4        attenuation;
+} light_t;
+
 //FIXME need a handle type
 typedef struct { long handle; } scene_t;
 typedef struct { long handle; } entity_t;
 typedef struct { long handle; } transform_t;
+typedef struct { long handle; } lightingdata_t;
 typedef struct { int handle; } model_t;
 
 scene_t Scene_NewScene (void);
 void Scene_DeleteScene (scene_t scene);
 entity_t Scene_CreateEntity (scene_t scene);
 void Scene_DestroyEntity (entity_t ent);
+void Scene_SetLighting (scene_t scene, lightingdata_t ldata);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
@@ -47,6 +56,12 @@ void Transform_SetLocalTransform (transform_t transform, vec4 scale,
 vec4 Transform_Forward (transform_t transform);
 vec4 Transform_Right (transform_t transform);
 vec4 Transform_Up (transform_t transform);
+
+lightingdata_t Light_CreateLightingData (scene_t scene);
+void Light_DestroyLightingData (lightingdata_t ldata);
+void Light_ClearLights (lightingdata_t ldata);
+void Light_AddLight (lightingdata_t ldata, light_t light);
+void Light_EnableSun (lightingdata_t ldata);
 
 model_t Model_Load (string path);
 void Model_Unload (model_t model);
