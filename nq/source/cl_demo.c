@@ -46,6 +46,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/scene/scene.h"
+
 #include "compat.h"
 
 #include "client/world.h"
@@ -375,7 +377,7 @@ demo_default_name (const char *argv1)
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 	// the leading path-name is to be removed from cl_world.worldmodel->name
-	mapname = QFS_SkipPath (cl_world.worldmodel->path);
+	mapname = QFS_SkipPath (cl_world.scene->worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended

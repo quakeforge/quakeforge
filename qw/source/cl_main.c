@@ -501,7 +501,7 @@ CL_Quit_f (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl_world.worldmodel);
+	CL_LoadPointFile (cl_world.scene->worldmodel);
 }
 
 static void
@@ -794,7 +794,7 @@ CL_Disconnect (void)
 			Info_Destroy (cl.players[i].userinfo);
 		memset (&cl.players[i], 0, sizeof (cl.players[i]));
 	}
-	cl_world.worldmodel = NULL;
+	cl_world.scene->worldmodel = NULL;
 	cl.validsequence = 0;
 }
 
@@ -1965,7 +1965,7 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
+		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.scene->worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

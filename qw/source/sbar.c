@@ -53,6 +53,8 @@
 
 #include "QF/plugin/console.h"
 
+#include "QF/scene/scene.h"
+
 #include "QF/ui/view.h"
 
 #include "compat.h"
@@ -1062,7 +1064,7 @@ Sbar_LogFrags (void)
 		Qwrite (file, t, strlen (t));
 
 	Qprintf (file, "%s\n%s %s\n", cls.servername->str,
-			 cl_world.worldmodel->path, cl.levelname);
+			 cl_world.scene->worldmodel->path, cl.levelname);
 
 	// scores
 	Sbar_SortFrags (true);

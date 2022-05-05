@@ -261,17 +261,19 @@ CL_CheckOrDownloadFile (const char *filename)
 static void
 CL_NewMap (const char *mapname)
 {
-	Team_NewMap ();
-	Con_NewMap ();
-	Hunk_Check (0);								// make sure nothing is hurt
-	Sbar_CenterPrint (0);
-
 	const char *skyname = 0;
 	// R_LoadSkys does the right thing with null pointers.
 	if (cl.serverinfo) {
 		skyname = Info_ValueForKey (cl.serverinfo, "sky");
 	}
 	CL_World_NewMap (mapname, skyname);
+	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
+
+	Team_NewMap ();
+	Con_NewMap ();
+	Sbar_CenterPrint (0);
+
+	Hunk_Check (0);								// make sure nothing is hurt
 }
 
 static void
@@ -353,8 +355,6 @@ Model_NextDownload (void)
 	}
 
 	// all done
-	cl_world.worldmodel = cl_world.models.a[1];
-	cl.chasestate.worldmodel = cl_world.worldmodel;
 	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages
@@ -362,7 +362,7 @@ Model_NextDownload (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
 						 va (0, prespawn_name, cl.servercount,
-							 cl_world.worldmodel->brush.checksum2));
+							 cl_world.scene->worldmodel->brush.checksum2));
 	}
 }
 

@@ -49,6 +49,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -151,8 +152,9 @@ sw_R_Init (void)
 }
 
 void
-R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+R_NewScene (scene_t *scene)
 {
+	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
 	r_refdef.worldmodel = worldmodel;

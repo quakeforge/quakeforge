@@ -252,10 +252,13 @@ CL_KeepaliveMessage (void)
 static void
 CL_NewMap (const char *mapname)
 {
-	Con_NewMap ();
-	Hunk_Check (0);								// make sure nothing is hurt
-	Sbar_CenterPrint (0);
 	CL_World_NewMap (mapname, 0);
+	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
+
+	Con_NewMap ();
+	Sbar_CenterPrint (0);
+
+	Hunk_Check (0);								// make sure nothing is hurt
 }
 
 static void
@@ -349,9 +352,9 @@ CL_ParseServerInfo (void)
 		strcpy (sound_precache[cl.numsounds], str);
 	}
 
-	// now we try to load everything else until a cache allocation fails
 	CL_MapCfg (model_precache[1]);
 
+	// now we try to load everything else until a cache allocation fails
 	for (i = 1; i < nummodels; i++) {
 		DARRAY_APPEND (&cl_world.models,
 					   Mod_ForName (model_precache[i], false));
@@ -368,15 +371,11 @@ CL_ParseServerInfo (void)
 	}
 
 	// local state
-	cl_world.worldmodel = cl_world.models.a[1];
-	cl.chasestate.worldmodel = cl_world.worldmodel;
 	if (!centerprint)
 		centerprint = dstring_newstr ();
 	else
 		dstring_clearstr (centerprint);
 	CL_NewMap (model_precache[1]);
-
-	Hunk_Check (0);						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start
 	CL_ParticlesGravity (800);			// Set up gravity for renderer effects

@@ -29,6 +29,7 @@
 #ifndef __QF_screen_h
 #define __QF_screen_h
 
+struct scene_s;
 struct transform_s;
 struct tex_s;
 
@@ -46,6 +47,8 @@ void SCR_SetFOV (float fov);
 // control whether the 3d viewport is user-controlled or always fullscreen
 void SCR_SetFullscreen (qboolean fullscreen);
 void SCR_SetBottomMargin (int lines);
+
+void SCR_NewScene (struct scene_s *scene);
 
 extern int hud_fps;
 extern int hud_time;

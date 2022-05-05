@@ -271,7 +271,7 @@ beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 		} else {
 			Transform_SetLocalPosition (tent->ent->transform, position);
 		}
-		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, tent->ent);
 	}
 }
 
@@ -632,7 +632,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 
 		ent->animation.frame = f;
 		if (!ent->visibility.efrag) {
-			R_AddEfrags (&cl_world.worldmodel->brush, ent);
+			R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 		}
 	}
 }
@@ -721,7 +721,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		angles[2] = 0;
 		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		R_AddEfrags (&cl_world.worldmodel->brush, tent->ent);
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, tent->ent);
 	}
 
 	*tail = cl_projectiles;

@@ -64,6 +64,7 @@
 #include "QF/ui/view.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -118,9 +119,9 @@ vulkan_R_LoadSkys (const char *skyname)
 }
 
 static void
-vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
+vulkan_R_NewScene (scene_t *scene)
 {
-	Vulkan_NewMap (worldmodel, models, num_models, vulkan_ctx);
+	Vulkan_NewScene (scene, vulkan_ctx);
 }
 
 static void
@@ -727,7 +728,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_Init,
 	vulkan_R_ClearState,
 	vulkan_R_LoadSkys,
-	vulkan_R_NewMap,
+	vulkan_R_NewScene,
 	vulkan_R_LineGraph,
 	vulkan_begin_frame,
 	vulkan_render_view,

@@ -233,5 +233,5 @@ BI_Graphics_Init (progs_t *pr)
 	if (mod_funcs->Mod_ProcessTexture) {
 		mod_funcs->Mod_ProcessTexture (&empty_world, 0);
 	}
-	r_funcs->R_NewMap (&empty_world, 0, 0);
+	//r_funcs->R_NewMap (&empty_world, 0, 0);
 }

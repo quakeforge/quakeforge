@@ -43,7 +43,6 @@ typedef struct worldscene_s {
 	struct scene_s *scene;
 	struct plitem_s *edicts;
 	struct plitem_s *worldspawn;
-	struct model_s *worldmodel;
 	modelset_t  models;
 } worldscene_t;
 

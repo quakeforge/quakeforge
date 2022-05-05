@@ -49,6 +49,7 @@
 #include "QF/va.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
@@ -71,6 +72,7 @@ static framebuffer_t *warp_buffer;
 
 static float fov_x, fov_y;
 static float tan_fov_x, tan_fov_y;
+static scene_t *scr_scene;//FIXME don't want this here
 
 static mat4f_t box_rotations[] = {
 	[BOX_FRONT] = {
@@ -504,4 +506,16 @@ SCR_Init (void)
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
 	update_vrect ();
+}
+
+void
+SCR_NewScene (scene_t *scene)
+{
+	scr_scene = scene;
+	if (scene) {
+		r_funcs->set_fov (tan_fov_x, tan_fov_y);
+		r_funcs->R_NewScene (scene);
+	} else {
+		r_funcs->R_ClearState ();
+	}
 }

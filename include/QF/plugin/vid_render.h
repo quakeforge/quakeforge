@@ -35,6 +35,7 @@
 
 struct plitem_s;
 struct cvar_s;
+struct scene_s;
 struct skin_s;
 
 struct mod_alias_ctx_s;
@@ -105,7 +106,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_Init) (void);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
-	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
+	void (*R_NewScene) (struct scene_s *scene);
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 
 	void (*begin_frame) (void);

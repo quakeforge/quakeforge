@@ -454,7 +454,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_Init,
 	glsl_R_ClearState,
 	glsl_R_LoadSkys,
-	glsl_R_NewMap,
+	glsl_R_NewScene,
 	glsl_R_LineGraph,
 	glsl_begin_frame,
 	glsl_render_view,

@@ -295,7 +295,7 @@ CL_ClearState (void)
 
 	CL_ClearTEnts ();
 
-	r_funcs->R_ClearState ();
+	SCR_NewScene (0);
 
 	CL_ClearEnts ();
 
@@ -354,7 +354,7 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cl_world.worldmodel = NULL;
+	cl_world.scene->worldmodel = NULL;
 	cl.intermission = 0;
 	cl.viewstate.intermission = 0;
 }
@@ -467,7 +467,7 @@ CL_NextDemo (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl_world.worldmodel);
+	CL_LoadPointFile (cl_world.scene->worldmodel);
 }
 
 static void

@@ -54,6 +54,7 @@
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
 #include "buildnum.h"
@@ -740,7 +741,7 @@ Host_ClientFrame (void)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.worldmodel);//FIXME
+		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.scene->worldmodel);//FIXME
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

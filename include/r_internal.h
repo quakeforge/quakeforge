@@ -45,7 +45,8 @@ struct psystem_s *glsl_ParticleSystem (void);
 struct psystem_s *sw_ParticleSystem (void);
 void R_RunParticles (float dT);
 
-void R_NewMap (model_t *worldmodel, model_t **models, int num_models);
+struct scene_s;
+void R_NewScene (struct scene_s *scene);
 
 // LordHavoc: relative bmodel lighting
 void R_PushDlights (const vec3_t entorigin);

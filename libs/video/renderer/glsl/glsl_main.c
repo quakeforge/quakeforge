@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -188,23 +189,23 @@ glsl_R_Init (void)
 }
 
 void
-glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+glsl_R_NewScene (scene_t *scene)
 {
 	int         i;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	r_refdef.worldmodel = worldmodel;
+	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
 	r_refdef.viewleaf = NULL;
 	R_MarkLeaves ();
 
 	R_ClearParticles ();
-	glsl_R_RegisterTextures (models, num_models);
-	glsl_R_BuildLightmaps (models, num_models);
-	glsl_R_BuildDisplayLists (models, num_models);
+	glsl_R_RegisterTextures (scene->models, scene->num_models);
+	glsl_R_BuildLightmaps (scene->models, scene->num_models);
+	glsl_R_BuildDisplayLists (scene->models, scene->num_models);
 }
 
 void
