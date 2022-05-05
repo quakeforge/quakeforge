@@ -33,6 +33,6 @@ main (void)
 
 	frag_color = c;
 	frag_emission = e;
-	frag_normal = vec4(normal, 1);
+	frag_normal = vec4(normalize(normal), 1);
 	frag_position = position;
 }
