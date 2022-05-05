@@ -645,6 +645,9 @@ bi_scene_clear (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
 
+	while (res->ldatas) {
+		rua_delete_lighting (res, res->ldatas);
+	}
 	while (res->scenes) {
 		rua_delete_scene (res, res->scenes);
 	}
