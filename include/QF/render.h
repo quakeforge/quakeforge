@@ -167,7 +167,6 @@ typedef struct {
 	int			drawflat;
 
 	struct model_s *worldmodel;
-	struct mleaf_s *viewleaf;
 } refdef_t;
 
 // REFRESH ====================================================================

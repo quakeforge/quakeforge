@@ -47,7 +47,7 @@ static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
 void
-R_MarkLeaves (void)
+R_MarkLeaves (mleaf_t *viewleaf)
 {
 	set_t       *vis;
 	int			 c;
@@ -56,12 +56,12 @@ R_MarkLeaves (void)
 	msurface_t **mark;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
-	if (r_oldviewleaf == r_refdef.viewleaf && !r_novis)
+	if (r_oldviewleaf == viewleaf && !r_novis)
 		return;
 
 	r_visframecount++;
-	r_oldviewleaf = r_refdef.viewleaf;
-	if (!r_refdef.viewleaf)
+	r_oldviewleaf = viewleaf;
+	if (!viewleaf)
 		return;
 
 	if (r_novis) {
@@ -73,7 +73,7 @@ R_MarkLeaves (void)
 		}
 		vis = solid;
 	} else
-		vis = Mod_LeafPVS (r_refdef.viewleaf, r_refdef.worldmodel);
+		vis = Mod_LeafPVS (viewleaf, r_refdef.worldmodel);
 
 	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (vis, i)) {

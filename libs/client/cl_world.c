@@ -47,6 +47,7 @@
 #include "QF/msg.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
@@ -64,6 +65,7 @@ void
 CL_World_Init (void)
 {
 	cl_world.scene = Scene_NewScene ();
+	cl_world.scene->lights = Light_CreateLightingData (cl_world.scene);
 }
 
 void
@@ -209,6 +211,9 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 	cl_world.scene->worldmodel = worldmodel;
 
 	cl_static_entities.size = 0;
+
+	const char *entity_data = worldmodel->brush.entities;
+	CL_LoadLights (worldmodel, entity_data, cl_world.scene->lights);
 
 	cl_world.scene->models = cl_world.models.a;
 	cl_world.scene->num_models = cl_world.models.size;

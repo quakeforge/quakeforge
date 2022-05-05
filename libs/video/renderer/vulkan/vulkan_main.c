@@ -142,14 +142,13 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
-	r_refdef.viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0);
 
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
 	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
-	Vulkan_LoadLights (scene->worldmodel, scene->worldmodel->brush.entities, ctx);
+	Vulkan_LoadLights (scene, ctx);
 }
 
 /*void

@@ -270,20 +270,21 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 
 	R_RunParticles (r_data->frametime);
 	R_AnimateLight ();
-	refdef->viewleaf = 0;
-	if (refdef->worldmodel) {
+	if (scr_scene && scr_scene->worldmodel) {
+		scr_scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		refdef->viewleaf = Mod_PointInLeaf ((vec_t*)&position, refdef->worldmodel);//FIXME
+		scr_scene->viewleaf = Mod_PointInLeaf ((vec_t*)&position,
+											   scr_scene->worldmodel);//FIXME
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
-			r_dowarp = refdef->viewleaf->contents <= CONTENTS_WATER;
+			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
 		}
 		if (r_dowarp && !warp_buffer) {
 			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
 														r_data->vid->height);
 		}
+		R_MarkLeaves (scr_scene->viewleaf);
 	}
-	R_MarkLeaves ();
 	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();

@@ -149,6 +149,7 @@ include_qf_scene = \
 	include/QF/scene/camera.h \
 	include/QF/scene/entity.h \
 	include/QF/scene/hierarchy.h \
+	include/QF/scene/light.h \
 	include/QF/scene/transform.h \
 	include/QF/scene/scene.h \
 	include/QF/scene/types.h

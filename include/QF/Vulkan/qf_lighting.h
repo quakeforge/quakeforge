@@ -33,41 +33,23 @@
 #include "QF/darray.h"
 #include "QF/model.h"
 #include "QF/modelgen.h"
+#include "QF/scene/light.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
 
-typedef struct qfv_light_s {
-	vec4f_t      color;
-	vec4f_t      position;
-	vec4f_t      direction;
-	vec4f_t      attenuation;
-} qfv_light_t;
-
-typedef struct qfv_lightset_s DARRAY_TYPE (qfv_light_t) qfv_lightset_t;
-typedef struct qfv_lightleafset_s DARRAY_TYPE (int) qfv_lightintset_t;
-typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
 typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
 #define MaxLights   256
-
-#define LM_LINEAR   0	// light - dist (or radius + dist if -ve)
-#define LM_INVERSE  1	// distFactor1 * light / dist
-#define LM_INVERSE2 2	// distFactor2 * light / (dist * dist)
-#define LM_INFINITE 3	// light
-#define LM_AMBIENT  4	// light
-#define LM_INVERSE3 5	// distFactor2 * light / (dist + distFactor2)**2
 
 #define ST_NONE     0	// no shadows
 #define ST_PLANE    1	// single plane shadow map (small spotlight)
 #define ST_CASCADE  2	// cascaded shadow maps
 #define ST_CUBE     3	// cubemap (omni, large spotlight)
 
-#define NumStyles 64
-
 typedef struct qfv_light_buffer_s {
-	qfv_light_t lights[MaxLights] __attribute__((aligned(16)));
+	light_t     lights[MaxLights] __attribute__((aligned(16)));
 	int         lightCount;
 	//mat4f_t     shadowMat[MaxLights];
 	//vec4f_t     shadowCascade[MaxLights];
@@ -92,11 +74,6 @@ typedef struct lightingframe_s {
 			VkWriteDescriptorSet shadowWrite;
 		};
 	};
-	// A fat PVS of leafs visible from visible leafs so hidden lights can
-	// illuminate the leafs visible to the player
-	struct set_s *pvs;
-	struct mleaf_s *leaf;	// the last leaf used to generate the pvs
-	qfv_lightvisset_t lightvis;
 } lightingframe_t;
 
 typedef struct lightingframeset_s
@@ -109,14 +86,13 @@ typedef struct lightingctx_s {
 	VkSampler    sampler;
 	VkDeviceMemory light_memory;
 	VkDeviceMemory shadow_memory;
-	qfv_lightset_t lights;
-	qfv_lightintset_t lightstyles;
-	qfv_lightintset_t lightleafs;
 	qfv_lightmatset_t lightmats;
 	qfv_imageset_t lightimages;
-	qfv_lightintset_t lightlayers;
+	lightintset_t lightlayers;
 	qfv_imageviewset_t lightviews;
-	struct set_s *sun_pvs;
+
+	struct lightingdata_s *ldata;
+	struct scene_s *scene;
 } lightingctx_t;
 
 struct vulkan_ctx_s;
@@ -125,7 +101,6 @@ struct qfv_renderframe_s;
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Draw (struct qfv_renderframe_s *rFrame);
-void Vulkan_LoadLights (model_t *model, const char *entity_data,
-						struct vulkan_ctx_s *ctx);
+void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_lighting_h

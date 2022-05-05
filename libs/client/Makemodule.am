@@ -7,6 +7,7 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_effects.c \
 		libs/client/cl_entities.c \
 		libs/client/cl_input.c \
+		libs/client/cl_light.c \
 		libs/client/cl_particles.c \
 		libs/client/cl_temp_entities.c \
 		libs/client/cl_view.c \

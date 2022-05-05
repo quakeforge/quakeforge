@@ -167,8 +167,7 @@ R_NewScene (scene_t *scene)
 		R_InitSky (brush->skytexture);
 
 	// Force a vis update
-	r_refdef.viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0);
 
 	R_ClearParticles ();
 

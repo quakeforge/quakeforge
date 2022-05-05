@@ -46,6 +46,8 @@ typedef struct scene_s {
 	struct model_s *worldmodel;
 	int         num_models;
 	struct model_s **models;
+	struct mleaf_s *viewleaf;
+	struct lightingdata_s *lights;
 } scene_t;
 
 scene_t *Scene_NewScene (void);

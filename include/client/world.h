@@ -50,6 +50,7 @@ extern worldscene_t cl_world;
 
 struct msg_s;
 struct entity_state_s;
+struct lightingdata_s;
 
 void CL_World_Init (void);
 
@@ -65,5 +66,7 @@ void CL_ParseBaseline (struct msg_s *msg, struct entity_state_s *baseline,
 void CL_ParseStatic (struct msg_s *msg, int version);
 void CL_MapCfg (const char *mapname);
 void CL_World_NewMap (const char *mapname, const char *skyname);
+void CL_LoadLights (struct model_s *model, const char *entity_data,
+					struct lightingdata_s *ldata);
 
 #endif//__client_world_h
