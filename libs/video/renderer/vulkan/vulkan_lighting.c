@@ -148,7 +148,9 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 	if (!lctx->scene) {
 		return;
 	}
-	update_lights (ctx);
+	if (lctx->scene->lights) {
+		update_lights (ctx);
+	}
 
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
