@@ -102,10 +102,12 @@ update_lights (vulkan_ctx_t *ctx)
 		// dynamic lights seem a tad faint, so 16x map lights
 		light_data->lights[i].color[3] = lights[i]->radius / 16;
 		VectorCopy (lights[i]->origin, light_data->lights[i].position);
+		// dlights are local point sources
+		light_data->lights[i].position[3] = 1;
 		light_data->lights[i].attenuation =
 			(vec4f_t) { 0, 0, 1, 1/lights[i]->radius };
-		light_data->lights[i].direction =
-			(vec4f_t) { 0, 0, 1, 1 };
+		// full sphere, normal light (not ambient)
+		light_data->lights[i].direction = (vec4f_t) { 0, 0, 1, 1 };
 	}
 	for (size_t i = 0; (i < ldata->lightvis.size
 						&& light_data->lightCount < MaxLights); i++) {
