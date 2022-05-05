@@ -38,7 +38,6 @@
 struct mod_brush_s;
 
 #define NumStyles 64
-#define NoStyle -1
 
 #define LM_LINEAR   0	// light - dist (or radius + dist if -ve)
 #define LM_INVERSE  1	// distFactor1 * light / dist

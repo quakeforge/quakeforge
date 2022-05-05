@@ -232,8 +232,16 @@ locate_lights (model_t *model, lightingdata_t *ldata)
 	light_t    *lights = ldata->lights.a;
 	DARRAY_RESIZE (&ldata->lightleafs, ldata->lights.size);
 	for (size_t i = 0; i < ldata->lights.size; i++) {
-		mleaf_t    *leaf = Mod_PointInLeaf (&lights[i].position[0], model);
-		ldata->lightleafs.a[i] = leaf - model->brush.leafs - 1;
+		if (1 || lights[i].position[3]) {
+			mleaf_t    *leaf = Mod_PointInLeaf (&lights[i].position[0], model);
+			ldata->lightleafs.a[i] = leaf - model->brush.leafs - 1;
+		} else {
+			if (DotProduct (lights[i].direction, lights[i].direction)) {
+				ldata->lightleafs.a[i] = -1;
+			} else {
+				ldata->lightleafs.a[i] = -2;
+			}
+		}
 	}
 }
 
@@ -271,6 +279,15 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 		if (!strcmp (classname, "worldspawn")) {
 			// parse_sun can add many lights
 			parse_sun (ldata, entity);
+			const char *str;
+			if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))) {
+				light_t     light = {};
+				light.color = (vec4f_t) { 1, 1, 1, atof (str) };
+				light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
+				light.direction = (vec4f_t) { 0, 0, 0, 1 };
+				DARRAY_APPEND (&ldata->lights, light);
+				DARRAY_APPEND (&ldata->lightstyles, 0);
+			}
 		} else if (!strncmp (classname, "light", 5)) {
 			light_t     light = {};
 			int         style = 0;

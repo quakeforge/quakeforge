@@ -128,7 +128,7 @@ Light_FindVisibleLights (lightingdata_t *ldata)
 		memset (ldata->lightvis.a, 0, ldata->lightvis.size * sizeof (byte));
 		for (size_t i = 0; i < ldata->lightleafs.size; i++) {
 			int         l = ldata->lightleafs.a[i];
-			if ((l == -1 && (flags & SURF_DRAWSKY))
+			if ((l == -2) || (l == -1 && (flags & SURF_DRAWSKY))
 				|| set_is_member (ldata->pvs, l)) {
 				ldata->lightvis.a[i] = 1;
 				visible++;
