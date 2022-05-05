@@ -50,7 +50,7 @@ spot_cone (LightData light, vec3 incoming)
 	vec3        dir = light.direction.xyz;
 	float       cone = light.direction.w;
 	float       spotdot = dot (incoming, dir);
-	return 1 - smoothstep (cone, cone + 0.02, spotdot);
+	return 1 - smoothstep (cone, .995 * cone + 0.005, spotdot);
 }
 
 float
