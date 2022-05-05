@@ -120,7 +120,7 @@ parse_sun (lightingdata_t *ldata, plitem_t *entity)
 	}
 	VectorSet (1, 1, 1, light.color);
 	light.color[3] = sunlight;
-	light.position = sun_vector (sunangle);
+	light.position = -sun_vector (sunangle);
 	light.direction = light.position;
 	light.direction[3] = 1;
 	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
