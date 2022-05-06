@@ -558,6 +558,11 @@
 	};
 
 	fstriangle = {
+		vertexStage = {
+			stage = vertex;
+			name = main;
+			module = $builtin/fstriangle.vert;
+		};
 		vertexInput = {
 			bindings = ();
 			attributes = ();
@@ -573,8 +578,62 @@
 	};
 
 	pipelines = {
-		alias_shadow = {
+		base = {
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.counter_cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.disable;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = (
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+					$properties.attachmentBlendOp.disabled,
+				);
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			renderPass = renderpass;
+		};
+		depth_base = {
+			@inherit      = $properties.pipelines.base;
 			subpass = 0;
+			rasterization = $properties.rasterization.cw_cull_back;
+			depthStencil  = $properties.depthStencil.test_and_write;
+		};
+		trans_base = {
+			@inherit      = $properties.pipelines.base;
+			subpass = 1;
+			rasterization = $properties.rasterization.cw_cull_back;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ($properties.attachmentBlendOp.disabled);
+			};
+		};
+		gbuf_base = {
+			@inherit      = $properties.pipelines.base;
+			subpass = 2;
+			rasterization = $properties.rasterization.cw_cull_back;
+			depthStencil  = $properties.depthStencil.test_only;
+			dynamic = {//FIXME why?
+				dynamicState = ( viewport, scissor );
+			};
+		};
+		comp_base = {
+			@inherit = $properties.pipelines.base;
+			vertexInput   = $properties.fstriangle.vertexInput;
+			inputAssembly = $properties.fstriangle.inputAssembly;
+			colorBlend    = $properties.fstriangle.colorBlend;
+		};
+		shadow_base = {
+			@inherit      = $properties.pipelines.depth_base;
+		};
+
+		alias_shadow = {
+			@inherit = $properties.pipelines.shadow_base;
 			stages = (
 				{
 					stage = vertex;
@@ -595,18 +654,10 @@
 				);
 			};
 			inputAssembly = $properties.inputAssembly.alias;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
-			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = alias_layout;
 		};
 		bsp_shadow = {
-			subpass = 0;
+			@inherit = $properties.pipelines.shadow_base;
 			stages = (
 				{
 					stage = vertex;
@@ -623,19 +674,9 @@
 				);
 			};
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
-			colorBlend    = $properties.pipelines.bsp_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
-			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		alias_depth = {
-			subpass = 0;
+			@inherit = $properties.pipelines.depth_base;
 			stages = (
 				{
 					stage = vertex;
@@ -657,19 +698,10 @@
 				);
 			};
 			inputAssembly = $properties.inputAssembly.alias;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
-			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = alias_layout;
-			renderPass = renderpass;
 		};
 		alias_gbuf = {
-			subpass = 2;
+			@inherit = $properties.pipelines.gbuf_base;
 			stages = (
 				{
 					stage = vertex;
@@ -684,27 +716,10 @@
 			);
 			vertexInput   = $properties.vertexInput.alias;
 			inputAssembly = $properties.inputAssembly.alias;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = (
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-				);
-			};
-			dynamic = {
-				dynamicState = ( viewport, scissor, blend_constants );
-			};
 			layout = alias_layout;
-			renderPass = renderpass;
 		};
 		bsp_depth = {
-			subpass = 0;
+			@inherit = $properties.pipelines.depth_base;
 			stages = (
 				{
 					stage = vertex;
@@ -721,19 +736,10 @@
 				);
 			};
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
-			colorBlend    = $properties.pipelines.bsp_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		bsp_gbuf = {
-			subpass = 2;
+			@inherit = $properties.pipelines.gbuf_base;
 			stages = (
 				{
 					stage = vertex;
@@ -753,27 +759,10 @@
 			);
 			vertexInput   = $properties.vertexInput.brush;
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil   = $properties.depthStencil.test_only;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = (
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-					$properties.attachmentBlendOp.disabled,
-				);
-			};
-			dynamic = {
-				dynamicState = ( viewport, scissor, blend_constants );
-			};
 			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		bsp_skybox = {
-			subpass = 1;
+			@inherit = $properties.pipelines.trans_base;
 			stages = (
 				{
 					stage = vertex;
@@ -797,22 +786,10 @@
 			);
 			vertexInput   = $properties.vertexInput.brush;
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = ($properties.attachmentBlendOp.disabled);
-			};
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		bsp_skysheet = {
-			subpass = 1;
+			@inherit = $properties.pipelines.trans_base;
 			stages = (
 				{
 					stage = vertex;
@@ -836,22 +813,10 @@
 			);
 			vertexInput   = $properties.vertexInput.brush;
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = ($properties.attachmentBlendOp.disabled);
-			};
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		bsp_turb = {
-			subpass = 1;
+			@inherit = $properties.pipelines.trans_base;
 			stages = (
 				{
 					stage = vertex;
@@ -866,22 +831,10 @@
 			);
 			vertexInput   = $properties.vertexInput.brush;
 			inputAssembly = $properties.inputAssembly.brush;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = ($properties.attachmentBlendOp.disabled);
-			};
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = quakebsp_layout;
-			renderPass = renderpass;
 		};
 		partdraw = {
-			subpass = 1;
+			@inherit = $properties.pipelines.trans_base;
 			stages = (
 				{
 					stage = vertex;
@@ -901,19 +854,10 @@
 			);
 			vertexInput   = $properties.vertexInput.particle;
 			inputAssembly = $properties.inputAssembly.sprite;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend    = $properties.pipelines.bsp_turb.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor, blend_constants );
-			};
 			layout = partdraw_layout;
-			renderPass = renderpass;
 		};
 		sprite_gbuf = {
-			subpass = 2;
+			@inherit = $properties.pipelines.gbuf_base;
 			stages = (
 				{
 					stage = vertex;
@@ -928,19 +872,10 @@
 			);
 			vertexInput   = $properties.vertexInput.index_only;
 			inputAssembly = $properties.inputAssembly.sprite;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
-			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor, blend_constants );
-			};
 			layout = sprite_layout;
-			renderPass = renderpass;
 		};
 		sprite_depth = {
-			subpass = 0;
+			@inherit = $properties.pipelines.depth_base;
 			stages = (
 				{
 					stage = vertex;
@@ -955,19 +890,10 @@
 			);
 			vertexInput   = $properties.vertexInput.index_only;
 			inputAssembly = $properties.inputAssembly.alias;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
-			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = sprite_layout;
-			renderPass = renderpass;
 		};
 		twod = {
-			subpass = 1;
+			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
 			stages = (
 				{
 					stage = vertex;
@@ -982,28 +908,18 @@
 			);
 			vertexInput   = $properties.vertexInput.twod;
 			inputAssembly = $properties.inputAssembly.twod;
-			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.counter_cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_only;
 			colorBlend = {
 				logicOpEnable = false;
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
 			};
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = twod_layout;
-			renderPass = renderpass;
 		};
 		lighting = {
+			@inherit = $properties.pipelines.comp_base;
 			subpass = 3;
 			stages = (
-				{
-					stage = vertex;
-					name = main;
-					module = $builtin/fstriangle.vert;
-				},
+				$properties.fstriangle.vertexStage,
 				{
 					stage = fragment;
 					name = main;
@@ -1016,46 +932,22 @@
 					};
 				},
 			);
-			vertexInput   = $properties.fstriangle.vertexInput;
-			inputAssembly = $properties.fstriangle.inputAssembly;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.counter_cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.disable;
-			colorBlend    = $properties.fstriangle.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = lighting_layout;
-			renderPass = renderpass;
 		};
 		compose = {
+			@inherit = $properties.pipelines.comp_base;
 			subpass = 4;
 			stages = (
-				{
-					stage = vertex;
-					name = main;
-					module = $builtin/fstriangle.vert;
-				},
+				$properties.fstriangle.vertexStage,
 				{
 					stage = fragment;
 					name = main;
 					module = $builtin/compose.frag;
 				},
 			);
-			vertexInput   = $properties.fstriangle.vertexInput;
-			inputAssembly = $properties.fstriangle.inputAssembly;
-			viewport      = $properties.viewport;
-			rasterization = $properties.rasterization.counter_cw_cull_back;
-			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.disable;
-			colorBlend    = $properties.fstriangle.colorBlend;
-			dynamic = {
-				dynamicState = ( viewport, scissor );
-			};
 			layout = compose_layout;
-			renderPass = renderpass;
 		};
+
 		partphysics = {
 			stage = {
 				stage = compute;
