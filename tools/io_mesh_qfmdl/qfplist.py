@@ -173,9 +173,11 @@ class pldata:
                         "Unexpected character (expected '=')")
                 self.pos += 1
                 value = self.parse()
+                self.skip_space()
                 if self.src[self.pos] == ';':
                     self.pos += 1
                 elif self.src[self.pos] != '}':
+                    print(self.src[self.pos])
                     raise PListError(self.line,
                         "Unexpected character (wanted ';' or '}')")
                 item[key] = value
