@@ -60,7 +60,7 @@ vec4 Transform_Up (transform_t transform);
 lightingdata_t Light_CreateLightingData (scene_t scene);
 void Light_DestroyLightingData (lightingdata_t ldata);
 void Light_ClearLights (lightingdata_t ldata);
-void Light_AddLight (lightingdata_t ldata, light_t light);
+void Light_AddLight (lightingdata_t ldata, light_t light, int style);
 void Light_EnableSun (lightingdata_t ldata);
 
 model_t Model_Load (string path);
