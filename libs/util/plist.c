@@ -95,6 +95,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    end;
 	unsigned    pos;
 	unsigned    line;
+	unsigned    line_start;
 	plitem_t   *error;
 	va_ctx_t   *va_ctx;
 	hashlink_t **hashlinks;
@@ -516,6 +517,7 @@ pl_skipspace (pldata_t *pl)
 
 						if (c == '\n') {
 							pl->line++;
+							pl->line_start = pl->pos + 1;
 						} else if (c == '*' && pl->pos < pl->end - 1
 									&& pl->ptr[pl->pos+1] == '/') {
 							pl->pos++;
@@ -536,6 +538,7 @@ pl_skipspace (pldata_t *pl)
 		}
 		if (c == '\n') {
 			pl->line++;
+			pl->line_start = pl->pos + 1;
 		}
 		pl->pos++;
 	}
@@ -649,6 +652,7 @@ pl_parsequotedstring (pldata_t *pl)
 
 		if (c == '\n') {
 			pl->line++;
+			pl->line_start = pl->pos + 1;
 		}
 
 		pl->pos++;
@@ -932,36 +936,32 @@ pl_parsepropertylistitem (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetPropertyList (const char *string, hashlink_t **hashlinks)
 {
-	pldata_t	*pl = calloc (1, sizeof (pldata_t));
 	plitem_t	*newpl = NULL;
 
 	if (!quotable_bitmap[0])
 		init_quotables ();
 
-	pl->ptr = string;
-	pl->pos = 0;
-	pl->end = strlen (string);
-	pl->error = NULL;
-	pl->line = 1;
-	pl->va_ctx = va_create_context (4);
-	pl->hashlinks = hashlinks;
+	pldata_t	 pl = {
+		.ptr = string,
+		.end = strlen (string),
+		.line = 1,
+		.va_ctx = va_create_context (4),
+		.hashlinks = hashlinks,
+	};
 
-	if ((newpl = pl_parsepropertylistitem (pl))) {
-		va_destroy_context (pl->va_ctx);
-		free (pl);
-		return newpl;
-	} else {
-		if (pl && pl->error) {
-			const char *error = PL_String (pl->error);
+	if (!(newpl = pl_parsepropertylistitem (&pl))) {
+		if (pl.error) {
+			const char *error = PL_String (pl.error);
 			if (error[0]) {
-				Sys_Printf ("plist: %d,%d: %s\n", pl->line, pl->pos, error);
+				Sys_Printf ("plist: %d,%d: %s\n", pl.line,
+							pl.pos - pl.line_start, error);
 			}
-			PL_Free (pl->error);
+			PL_Free (pl.error);
 		}
-		va_destroy_context (pl->va_ctx);
-		free (pl);
 		return NULL;
 	}
+	va_destroy_context (pl.va_ctx);
+	return newpl;
 }
 
 static void
