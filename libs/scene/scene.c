@@ -119,7 +119,7 @@ Scene_CreateEntity (scene_t *scene)
 {
 	scene_resources_t *res = scene->resources;
 
-	entity_t   *ent = PR_RESNEW_NC (res->entities);
+	entity_t   *ent = PR_RESNEW (res->entities);
 	ent->transform = Transform_New (scene, 0);
 	ent->id = PR_RESINDEX (res->entities, ent);
 
