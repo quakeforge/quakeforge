@@ -1,6 +1,6 @@
 include libs/scene/test/Makemodule.am
 
-scene_deps=libs/util/libQFutil.la
+scene_deps=libs/models/libQFmodels.la libs/util/libQFutil.la
 
 lib_LTLIBRARIES += libs/scene/libQFscene.la
 

@@ -458,6 +458,8 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/bsp_sky.frag \
 	libs/video/renderer/vulkan/shader/bsp_turb.frag \
 	libs/video/renderer/vulkan/shader/compose.frag \
+	libs/video/renderer/vulkan/shader/iqm.frag \
+	libs/video/renderer/vulkan/shader/iqm.vert \
 	libs/video/renderer/vulkan/shader/lighting.frag \
 	libs/video/renderer/vulkan/shader/passthrough.vert \
 	libs/video/renderer/vulkan/shader/fstriangle.vert \
