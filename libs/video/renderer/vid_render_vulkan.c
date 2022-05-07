@@ -111,6 +111,7 @@ vulkan_R_ClearState (void)
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
+	Vulkan_LoadLights (0, vulkan_ctx);
 }
 
 static void

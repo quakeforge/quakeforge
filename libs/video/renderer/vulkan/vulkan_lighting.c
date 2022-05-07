@@ -697,5 +697,5 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = ctx->lighting_context;
 
 	lctx->scene = scene;
-	lctx->ldata = scene->lights;
+	lctx->ldata = scene ? scene->lights : 0;
 }
