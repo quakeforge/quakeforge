@@ -55,6 +55,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -348,6 +349,7 @@ vulkan_end_frame (void)
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
+		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
 		if (rpFrame->renderpass) {
 			renderPassInfo.framebuffer = frame->framebuffer,
 			renderPassInfo.renderPass = rp->renderpass;
@@ -360,8 +362,12 @@ vulkan_end_frame (void)
 			for (int j = 0; j < rpFrame->subpassCount; j++) {
 				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
 				if (cmdSet->size) {
+					QFV_CmdBeginLabel (device, frame->cmdBuffer,
+									   rpFrame->subpassInfo[j].name,
+									   rpFrame->subpassInfo[j].color);
 					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
 												 cmdSet->size, cmdSet->a);
+					QFV_CmdEndLabel (device, frame->cmdBuffer);
 				}
 				// reset for next time around
 				cmdSet->size = 0;
@@ -386,6 +392,7 @@ vulkan_end_frame (void)
 				cmdSet->size = 0;
 			}
 		}
+		QFV_CmdEndLabel (device, frame->cmdBuffer);
 	}
 
 	if (vulkan_ctx->capture_callback) {

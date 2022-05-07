@@ -2,6 +2,7 @@
 #define __QF_Vulkan_renderpass_h
 
 #include "QF/darray.h"
+#include "QF/simd/types.h"
 
 typedef struct qfv_attachmentdescription_s
 	DARRAY_TYPE (VkAttachmentDescription) qfv_attachmentdescription_t;
@@ -47,11 +48,17 @@ QFV_CreateFramebuffer (struct qfv_device_s *device,
 					   struct qfv_imageviewset_s *attachments,
 					   VkExtent2D, uint32_t layers);
 
+typedef struct qfv_subpass_s {
+	vec4f_t     color;
+	const char *name;
+} qfv_subpass_t;
+
 typedef struct qfv_renderframe_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	struct qfv_renderpass_s *renderpass;
 	VkSubpassContents subpassContents;
 	int subpassCount;
+	qfv_subpass_t *subpassInfo;
 	struct qfv_cmdbufferset_s *subpassCmdSets;
 } qfv_renderframe_t;
 
@@ -62,6 +69,8 @@ typedef struct clearvalueset_s
 	DARRAY_TYPE (VkClearValue) clearvalueset_t;
 
 typedef struct qfv_renderpass_s {
+	vec4f_t     color;		// for bebugging
+	const char *name;		// for bebugging
 	struct plitem_s  *renderpassDef;
 	VkRenderPass renderpass;
 	clearvalueset_t *clearValues;

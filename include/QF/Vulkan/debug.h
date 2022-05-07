@@ -1,6 +1,13 @@
 #ifndef __QF_Vulkan_debug_h
 #define __QF_Vulkan_debug_h
 
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan.h>
+
+#include "QF/simd/types.h"
+
 #if (defined(_WIN32) && !defined(_WIN64)) || (__WORDSIZE < 64)
 #define QFV_duCmdBeginLabel(device, cmd, name...)
 #define QFV_duCmdEndLabel(device, cmd)
@@ -125,5 +132,13 @@
 		} \
 	} while (0)
 #endif
+
+struct qfv_device_s;
+
+void QFV_CmdBeginLabel (struct qfv_device_s *device, VkCommandBuffer cmd,
+						const char *name, vec4f_t color);
+void QFV_CmdEndLabel (struct qfv_device_s *device, VkCommandBuffer cmd);
+void QFV_CmdInsertLabel (struct qfv_device_s *device, VkCommandBuffer cmd,
+						 const char *name, vec4f_t color);
 
 #endif//__QF_Vulkan_debug_h

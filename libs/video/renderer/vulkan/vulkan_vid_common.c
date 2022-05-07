@@ -480,10 +480,20 @@ static void
 init_renderframe (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 				  qfv_renderframe_t *rFrame)
 {
+	// FIXME should not be hard-coded
+	static qfv_subpass_t subpass_info[] = {
+		{ .name = "depth",       .color = { 0.5,  0.5,  0.5, 1} },
+		{ .name = "translucent", .color = { 0.25, 0.25, 0.6, 1} },
+		{ .name = "g-buffef",    .color = { 0.3,  0.7,  0.3, 1} },
+		{ .name = "lighting",    .color = { 0.8,  0.8,  0.8, 1} },
+		{ .name = "compose",     .color = { 0.7,  0.3,  0.3, 1} },
+	};
+
 	rFrame->subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	rFrame->vulkan_ctx = ctx;
 	rFrame->renderpass = rp;
 	rFrame->subpassCount = QFV_NumPasses;
+	rFrame->subpassInfo = subpass_info;	//FIXME
 	rFrame->subpassCmdSets = malloc (QFV_NumPasses
 									 * sizeof (qfv_cmdbufferset_t));
 	for (int j = 0; j < QFV_NumPasses; j++) {
@@ -498,6 +508,9 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	plitem_t   *item;
 
 	qfv_renderpass_t *rp = calloc (1, sizeof (qfv_renderpass_t));
+
+	rp->name = name;
+	rp->color = (vec4f_t) { 0, 1, 0, 1 };	//FIXME
 
 	hashtab_t  *tab = ctx->renderpasses;
 	const char *path;

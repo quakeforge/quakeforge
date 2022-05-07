@@ -201,6 +201,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/buffer.c \
 	libs/video/renderer/vulkan/command.c \
 	libs/video/renderer/vulkan/capture.c \
+	libs/video/renderer/vulkan/debug.c \
 	libs/video/renderer/vulkan/descriptor.c \
 	libs/video/renderer/vulkan/device.c \
 	libs/video/renderer/vulkan/image.c \
