@@ -49,8 +49,9 @@ main (void)
 		mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz),
 							  cross(m[2].xyz, m[0].xyz),
 							  cross(m[0].xyz, m[1].xyz));
-		normal = mat3 (Model) * vnormal * adjTrans;
+		normal = normalize (mat3 (Model) * vnormal * adjTrans);
 		tangent = mat3 (Model) * vtangent.xyz * adjTrans;
+		tangent = normalize (tangent - dot (tangent, normal) * normal);
 		bitangent = cross (normal, tangent) * vtangent.w;
 		texcoord = vtexcoord;
 		color = vcolor;

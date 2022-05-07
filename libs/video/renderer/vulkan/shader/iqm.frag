@@ -12,9 +12,9 @@ layout (push_constant) uniform PushConstants {
 
 layout (location = 0) in vec2 texcoord;
 layout (location = 1) in vec4 position;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in vec3 tangent;
-layout (location = 4) in vec3 bitangent;
+layout (location = 2) in vec3 fnormal;
+layout (location = 3) in vec3 ftangent;
+layout (location = 4) in vec3 fbitangent;
 layout (location = 5) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
@@ -29,6 +29,9 @@ main (void)
 	vec4        e;
 	//vec3        n;
 	int         i;
+	vec3        normal = normalize (fnormal);
+	vec3        tangent = normalize (ftangent);
+	vec3        bitangent = normalize (fbitangent);
 	//mat3        tbn = mat3 (tangent, bitangent, normal);
 
 	c = texture (Skin, texcoord);// * color;
