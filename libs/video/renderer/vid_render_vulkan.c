@@ -92,6 +92,7 @@ vulkan_R_Init (void)
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
+	Vulkan_IQM_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
@@ -686,16 +687,18 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
+	Mod_ClearAll ();
+
 	Vulkan_Compose_Shutdown (vulkan_ctx);
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Sprite_Shutdown (vulkan_ctx);
 	Vulkan_Particles_Shutdown (vulkan_ctx);
+	Vulkan_IQM_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
-	Mod_ClearAll ();
 	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);

@@ -97,6 +97,16 @@
 				},
 			);
 		};
+		bone_pool = {
+			flags = free_descriptor_set;
+			maxSets = 512;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = $properties.descriptorPools.bone_pool.maxSets;
+				},
+			);
+		};
 		texture_pool = {
 			flags = free_descriptor_set;
 			maxSets = 512;
@@ -203,6 +213,16 @@
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
+				},
+			);
+		};
+		bone_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
 				},
 			);
 		};
@@ -349,6 +369,21 @@
 				},
 			);
 		};
+		iqm_layout = {
+			setLayouts = (matrix_set, texture_set, bone_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 68;
+					size = "3 * 4 + 2 * 4 * 4 + 4";
+				},
+			);
+		};
 		sprite_layout = {
 			setLayouts = (matrix_set, sprite_set);
 			pushConstantRanges = (
@@ -428,6 +463,10 @@
 			topology = triangle_fan;
 			primitiveRestartEnable = true;
 		};
+		iqm = {
+			topology = triangle_list;
+			primitiveRestartEnable = false;
+		};
 		twod = {
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
@@ -464,6 +503,23 @@
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+			);
+		};
+		iqm = {
+			bindings = (
+				{ binding = 0; stride = 20; inputRate = vertex; },
+				{ binding = 1; stride = 40; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32_sfloat;    offset = 0;  },	// position
+				{ location = 1; binding = 0; format = r8g8b8a8_uint;       offset = 12; },	// bonindices
+				{ location = 2; binding = 0; format = r8g8b8a8_unorm;      offset = 16; },	// boneweights
+
+				{ location = 3; binding = 1; format = r32g32_sfloat;       offset = 0;  },	// texcoord
+				{ location = 4; binding = 1; format = r32g32b32_sfloat;    offset = 8;  },	// normal
+				{ location = 5; binding = 1; format = r32g32b32a32_sfloat; offset = 20; },	// tangent
+				{ location = 6; binding = 1; format = r8g8b8a8_unorm;      offset = 36; },	// color
+
 			);
 		};
 		particle = {
@@ -832,6 +888,61 @@
 			vertexInput   = $properties.vertexInput.brush;
 			inputAssembly = $properties.inputAssembly.brush;
 			layout = quakebsp_layout;
+		};
+		iqm_depth = {
+			@inherit = $properties.pipelines.depth_base;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/iqm.vert;
+					specializationInfo = {
+						mapEntries = (
+							// IQMDepthOnly
+							{ size = 4; offset = 0; constantID = 0; },
+						);
+						data = "array(1)";
+					};
+				},
+			);
+			vertexInput   = $properties.vertexInput.iqm;
+			/*vertexInput = {
+				bindings = (
+					"$properties.vertexInput.iqm.bindings[0]",
+				);
+				attributes = (
+					"$properties.vertexInput.iqm.attributes[0]",
+					"$properties.vertexInput.iqm.attributes[1]",
+					"$properties.vertexInput.iqm.attributes[2]",
+				);
+			};*/
+			inputAssembly = $properties.inputAssembly.iqm;
+			layout = iqm_layout;
+		};
+		iqm_gbuf = {
+			@inherit = $properties.pipelines.gbuf_base;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/iqm.vert;
+					specializationInfo = {
+						mapEntries = (
+							// !IQMDepthOnly
+							{ size = 4; offset = 0; constantID = 0; },
+						);
+						data = "array(0)";
+					};
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/iqm.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.iqm;
+			inputAssembly = $properties.inputAssembly.iqm;
+			layout = iqm_layout;
 		};
 		partdraw = {
 			@inherit = $properties.pipelines.trans_base;

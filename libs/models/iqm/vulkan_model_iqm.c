@@ -81,6 +81,11 @@ vulkan_iqm_clear (model_t *mod, void *data)
 
 	mod->needload = true;
 
+	for (int i = 0; i < iqm->num_meshes; i++) {
+		Vulkan_IQMRemoveSkin (ctx, &mesh->skins[i]);
+	}
+	Vulkan_IQMRemoveBones (ctx, iqm);//FIXME doesn't belong here (per-instance)
+
 	QFV_DestroyResource (device, mesh->bones);
 	QFV_DestroyResource (device, mesh->mesh);
 	free (mesh);
@@ -162,6 +167,14 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 	memcpy (dst, tex->data, layer_size);
+	VkBufferImageCopy copy = {
+		packet->offset, 0, 0,
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{0, 0, 0}, {tex->width, tex->height, 1},
+	};
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &copy);
 
 	int         mipLevels = QFV_MipLevels (tex->width, tex->height);
 	if (mipLevels == 1) {
@@ -225,6 +238,7 @@ vulkan_iqm_load_textures (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 			tex = &null_tex;
 		}
 		iqm_transfer_texture (tex, image->image, stage, device);
+		Vulkan_IQMAddSkin (ctx, skin);
 	}
 	dstring_delete (str);
 	QFV_DestroyStagingBuffer (stage);
@@ -236,6 +250,8 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	iqmctx_t   *ictx = ctx->iqm_context;
+
 	size_t      geom_size = iqm->num_verts * sizeof (iqmgvert_t);
 	size_t      rend_size = iqm->num_verts * sizeof (iqmrvert_t);
 	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
@@ -350,7 +366,7 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 	vec4f_t    *bone_data;
 	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
 						0, (void **)&bone_data);
-	for (int i = 0; i < 3 * iqm->num_joints; i++) {
+	for (size_t i = 0; i < ictx->frames.size * iqm->num_joints; i++) {
 		vec4f_t    *bone = bone_data + i * 3;
 		bone[0] = (vec4f_t) {1, 0, 0, 0};
 		bone[1] = (vec4f_t) {0, 1, 0, 0};
@@ -363,12 +379,15 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 
 	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
+
+	Vulkan_IQMAddBones (ctx, iqm);	//FIXME doesn't belong here (per-instance)
 }
 
 void
 Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	iqmctx_t   *ictx = ctx->iqm_context;
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	mod->clear = vulkan_iqm_clear;
 	mod->data = ctx;
@@ -378,10 +397,12 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 	// 2 is for image + image view
 	int         num_objects = 4 + 2 * iqm->num_meshes;
 	qfv_iqm_t  *mesh = calloc (1, sizeof (qfv_iqm_t)
+							   + ictx->frames.size * sizeof (VkDescriptorSet)
 							   + 2 * sizeof (qfv_resource_t)
 							   + num_objects * sizeof (qfv_resobj_t)
 							   + iqm->num_meshes * sizeof (qfv_iqm_skin_t));
-	mesh->bones = (qfv_resource_t *) &mesh[1];
+	mesh->bones_descriptors = (VkDescriptorSet *) &mesh[1];
+	mesh->bones = (qfv_resource_t *)&mesh->bones_descriptors[ictx->frames.size];
 	mesh->mesh = &mesh->bones[1];
 
 	mesh->bones[0] = (qfv_resource_t) {
@@ -395,9 +416,9 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 		.name = "bones",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = 3 * iqm->num_joints * 3 * sizeof (vec4f_t),
+			.size = ictx->frames.size * iqm->num_joints * 3 * sizeof (vec4f_t),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		},
 	};
 
@@ -460,9 +481,10 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 	mesh->geom_buffer = mesh->mesh->objects[0].buffer.buffer;
 	mesh->rend_buffer = mesh->mesh->objects[1].buffer.buffer;
 	mesh->index_buffer = mesh->mesh->objects[2].buffer.buffer;
+	mesh->bones_buffer = mesh->bones->objects[0].buffer.buffer;
+
+	iqm->extra_data = mesh;
 
 	vulkan_iqm_load_textures (mod, iqm, mesh, ctx);
 	vulkan_iqm_load_arrays (mod, iqm, mesh, ctx);
-
-	iqm->extra_data = mesh;
 }

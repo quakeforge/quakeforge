@@ -51,7 +51,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
-//#include "QF/Vulkan/qf_iqm.h"
+#include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
@@ -95,7 +95,7 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 	} while (0)
 
 	RE_LOOP (alias, Alias);
-	//RE_LOOP (iqm, IQM);
+	RE_LOOP (iqm, IQM);
 	RE_LOOP (sprite, Sprite);
 }
 

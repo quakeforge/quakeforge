@@ -127,7 +127,7 @@ typedef struct {
 	byte        weights[4];
 } iqmblend_t;
 
-typedef struct {
+typedef struct iqm_s {
 	char       *text;
 	int         num_meshes;
 	iqmmesh    *meshes;

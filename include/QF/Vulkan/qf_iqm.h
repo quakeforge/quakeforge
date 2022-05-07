@@ -65,6 +65,8 @@ typedef struct qfv_iqm_s {
 	qfv_iqm_skin_t *skins;
 	struct qfv_resource_s *mesh;
 	struct qfv_resource_s *bones;
+	VkBuffer     bones_buffer;
+	VkDescriptorSet *bones_descriptors;	// one per frame FIXME per instance!!!
 } qfv_iqm_t;
 
 typedef enum {
@@ -91,14 +93,20 @@ typedef struct iqmctx_s {
 	VkPipeline   gbuf;
 	VkPipelineLayout layout;
 	VkSampler    sampler;
+	VkDescriptorPool bones_pool;
+	VkDescriptorSetLayout bones_setLayout;
 } iqmctx_t;
 
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 struct entity_s;
 struct mod_iqm_ctx_s;
+struct iqm_s;
 
 void Vulkan_Mod_IQMFinish (struct model_s *mod, struct vulkan_ctx_s *ctx);
+
+void Vulkan_IQMAddBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
+void Vulkan_IQMRemoveBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
 
 void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);

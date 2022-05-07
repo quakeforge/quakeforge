@@ -1,5 +1,7 @@
 #version 450
 
+layout (constant_id = 0) const bool IQMDepthOnly = false;
+
 layout (set = 0, binding = 0) uniform Matrices {
 	mat4 Projection3d;
 	mat4 View;
@@ -7,7 +9,7 @@ layout (set = 0, binding = 0) uniform Matrices {
 	mat4 Projection2d;
 };
 
-layout (set = 3, binding = 0) buffer Bones {
+layout (set = 2, binding = 0) buffer Bones {
 	// NOTE these are transposed, so v * m
 	mat3x4      bones[];
 };
@@ -18,7 +20,7 @@ layout (push_constant) uniform PushConstants {
 };
 
 layout (location = 0) in vec3 vposition;
-layout (location = 1) in ivec4 vbones;
+layout (location = 1) in uvec4 vbones;
 layout (location = 2) in vec4 vweights;
 layout (location = 3) in vec2 vtexcoord;
 layout (location = 4) in vec3 vnormal;
@@ -41,12 +43,16 @@ main (void)
 	m += bones[vbones.w] * vweights.w;
 	vec4        pos = vec4 (Model * vec4(vposition, 1) * m, 1);
 	gl_Position = Projection3d * (View * pos);
-	position = pos;
-	mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz), cross(m[2].xyz, m[0].xyz),
-						  cross(m[0].xyz, m[1].xyz));
-	normal = mat3 (Model) * vnormal * adjTrans;
-	tangent = mat3 (Model) * vtangent.xyz * adjTrans;
-	bitangent = cross (normal, tangent) * vtangent.w;
-	texcoord = vtexcoord;
-	color = vcolor;
+
+	if (!IQMDepthOnly) {
+		position = pos;
+		mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz),
+							  cross(m[2].xyz, m[0].xyz),
+							  cross(m[0].xyz, m[1].xyz));
+		normal = mat3 (Model) * vnormal * adjTrans;
+		tangent = mat3 (Model) * vtangent.xyz * adjTrans;
+		bitangent = cross (normal, tangent) * vtangent.w;
+		texcoord = vtexcoord;
+		color = vcolor;
+	}
 }

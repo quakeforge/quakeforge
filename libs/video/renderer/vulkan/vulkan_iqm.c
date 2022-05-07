@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "QF/cvar.h"
+#include "QF/iqm.h"
 #include "QF/va.h"
 
 #include "QF/scene/entity.h"
@@ -42,6 +43,7 @@
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
@@ -72,7 +74,7 @@ static QFV_Subpass subpass_map[] = {
 
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
-			   qfv_iqm_skin_t **skins,
+			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
 			   iqm_t *iqm, qfv_renderframe_t *rFrame)
 {
@@ -88,20 +90,28 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 		mesh->geom_buffer,
 		mesh->rend_buffer,
 	};
-	int         bindingCount = skins ? 2 : 1;
+	int         bindingCount = 2;//skins ? 2 : 1;
 
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
-								 VK_INDEX_TYPE_UINT32);
+								 VK_INDEX_TYPE_UINT16);
 	QFV_PushConstants (device, cmd, ictx->layout, numPC, constants);
 	for (int i = 0; i < iqm->num_meshes; i++) {
 		if (skins) {
 			VkDescriptorSet sets[] = {
-				skins[i]->descriptor,
+				skins[i].descriptor,
+				mesh->bones_descriptors[ctx->curFrame],
 			};
 			dfunc->vkCmdBindDescriptorSets (cmd,
 											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											ictx->layout, 1, 1, sets, 0, 0);
+											ictx->layout, 1, 2, sets, 0, 0);
+		} else {
+			VkDescriptorSet sets[] = {
+				mesh->bones_descriptors[ctx->curFrame],
+			};
+			dfunc->vkCmdBindDescriptorSets (cmd,
+											VK_PIPELINE_BIND_POINT_GRAPHICS,
+											ictx->layout, 2, 1, sets, 0, 0);
 		}
 		dfunc->vkCmdDrawIndexed (cmd, 3 * iqm->meshes[i].num_triangles, 1,
 								 3 * iqm->meshes[i].first_triangle, 0, 0);
@@ -117,7 +127,7 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
-	qfv_iqm_skin_t **skins = &mesh->skins;
+	qfv_iqm_skin_t *skins = mesh->skins;
 	iqm_push_constants_t constants = {};
 
 	constants.blend = R_IQMGetLerpedFrames (ent, iqm);
@@ -144,8 +154,8 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 	};
 
 	QuatCopy (ent->renderer.colormod, constants.base_color);
-	QuatCopy (skins[0]->colora, constants.colorA);
-	QuatCopy (skins[0]->colorb, constants.colorB);
+	QuatCopy (skins[0].colora, constants.colorA);
+	QuatCopy (skins[0].colorb, constants.colorB);
 	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_iqmDepth],
@@ -157,8 +167,8 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 }
 
 static void
-alias_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
-					 qfv_renderframe_t *rFrame)
+iqm_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
+				   qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -200,7 +210,7 @@ alias_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
 }
 
 static void
-alias_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+iqm_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -222,8 +232,8 @@ Vulkan_IQMBegin (qfv_renderframe_t *rFrame)
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
 				   aframe->cmdSet.a[QFV_iqmGBuffer]);
 
-	alias_begin_subpass (QFV_iqmDepth, ictx->depth, rFrame);
-	alias_begin_subpass (QFV_iqmGBuffer, ictx->gbuf, rFrame);
+	iqm_begin_subpass (QFV_iqmDepth, ictx->depth, rFrame);
+	iqm_begin_subpass (QFV_iqmGBuffer, ictx->gbuf, rFrame);
 }
 
 void
@@ -233,8 +243,69 @@ Vulkan_IQMEnd (qfv_renderframe_t *rFrame)
 	iqmctx_t   *ictx = ctx->iqm_context;
 	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
 
-	alias_end_subpass (aframe->cmdSet.a[QFV_iqmDepth], ctx);
-	alias_end_subpass (aframe->cmdSet.a[QFV_iqmGBuffer], ctx);
+	iqm_end_subpass (aframe->cmdSet.a[QFV_iqmDepth], ctx);
+	iqm_end_subpass (aframe->cmdSet.a[QFV_iqmGBuffer], ctx);
+}
+
+static VkWriteDescriptorSet base_buffer_write = {
+	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+	0, 0, 1,
+	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+	0, 0, 0
+};
+
+void
+Vulkan_IQMAddBones (vulkan_ctx_t *ctx, iqm_t *iqm)
+{
+	qfvPushDebug (ctx, "Vulkan_IQMAddBones");
+
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	iqmctx_t   *ictx = ctx->iqm_context;
+	__auto_type mesh = (qfv_iqm_t *) iqm->extra_data;
+	int         num_sets = ictx->frames.size;
+
+	//FIXME kinda dumb
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (num_sets, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = ictx->bones_setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, ictx->bones_pool,
+												  layouts);
+	for (size_t i = 0; i < sets->size; i++) {
+		mesh->bones_descriptors[i] = sets->a[i];
+	}
+	free (sets);
+
+	VkDescriptorBufferInfo bufferInfo[num_sets];
+	size_t      bones_size = iqm->num_joints * 3 * sizeof (vec4f_t);
+	for (int i = 0; i < num_sets; i++) {
+		bufferInfo[i].buffer = mesh->bones_buffer;
+		bufferInfo[i].offset = i * bones_size;
+		bufferInfo[i].range = bones_size;
+	};
+	VkWriteDescriptorSet write[num_sets];
+	for (int i = 0; i < num_sets; i++) {
+		write[i] = base_buffer_write;
+		write[i].dstSet = mesh->bones_descriptors[i];
+		write[i].pBufferInfo = &bufferInfo[i];
+	}
+	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
+
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_IQMRemoveBones (vulkan_ctx_t *ctx, iqm_t *iqm)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	iqmctx_t   *ictx = ctx->iqm_context;
+	__auto_type mesh = (qfv_iqm_t *) iqm->extra_data;
+	int         num_sets = ictx->frames.size;
+
+	dfunc->vkFreeDescriptorSets (device->dev, ictx->bones_pool, num_sets,
+								 mesh->bones_descriptors);
 }
 
 void
@@ -267,10 +338,13 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;
 
-	ictx->depth = Vulkan_CreateGraphicsPipeline (ctx, "alias_depth");
-	ictx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "alias_gbuf");
-	ictx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
+	ictx->depth = Vulkan_CreateGraphicsPipeline (ctx, "iqm_depth");
+	ictx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "iqm_gbuf");
+	ictx->layout = Vulkan_CreatePipelineLayout (ctx, "iqm_layout");
 	ictx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
+
+	ictx->bones_pool = Vulkan_CreateDescriptorPool (ctx, "bone_pool");
+	ictx->bones_setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "bone_set");
 
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &ictx->frames.a[i];
