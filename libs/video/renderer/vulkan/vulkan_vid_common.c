@@ -49,6 +49,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/simd/vec4f.h"
+#include "QF/scene/entity.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
@@ -798,4 +800,19 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 	}
 
 	DARRAY_CLEAR (&ctx->frames);
+}
+
+void
+Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
+						 entity_t *ent)
+{
+	qfv_device_t *device = ctx->device;
+	int         entaddr = (intptr_t) ent & 0xfffff;
+	vec4f_t     pos = Transform_GetWorldPosition (ent->transform);
+	vec4f_t     dir = normalf (pos - (vec4f_t) { 0, 0, 0, 1 });
+	vec4f_t     color = 0.5 * dir + (vec4f_t) {0.5, 0.5, 0.5, 1 };
+
+	QFV_CmdBeginLabel (device, cmd,
+					   va (ctx->va_ctx, "ent %05x [%g, %g, %g]", entaddr,
+						   VectorExpand (pos)), color);
 }

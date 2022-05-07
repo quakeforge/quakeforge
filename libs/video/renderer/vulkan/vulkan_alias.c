@@ -76,7 +76,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   aliashdr_t *hdr, qfv_renderframe_t *rFrame)
+			   aliashdr_t *hdr, qfv_renderframe_t *rFrame, entity_t *ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -97,6 +97,8 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	};
 	int         bindingCount = skin ? 3 : 2;
 
+	Vulkan_BeginEntityLabel (ctx, cmd, ent);
+
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
@@ -109,6 +111,8 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 										actx->layout, 1, 1, sets, 0, 0);
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
+
+	QFV_CmdEndLabel (device, cmd);
 }
 
 void
@@ -164,10 +168,10 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
 				   ent->animation.pose1, ent->animation.pose2,
-				   0, 2, push_constants, hdr, rFrame);
+				   0, 2, push_constants, hdr, rFrame, ent);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
 				   ent->animation.pose1, ent->animation.pose2,
-				   skin, 6, push_constants, hdr, rFrame);
+				   skin, 6, push_constants, hdr, rFrame, ent);
 }
 
 static void

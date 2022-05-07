@@ -81,4 +81,8 @@ VkSampler Vulkan_CreateSampler (struct vulkan_ctx_s *ctx, const char *name);
 VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
 													   const char *name);
 
+struct entity_s;
+void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
+							  struct entity_s *ent);
+
 #endif // __QF_Vulkan_vid_h

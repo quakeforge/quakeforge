@@ -76,7 +76,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   iqm_t *iqm, qfv_renderframe_t *rFrame)
+			   iqm_t *iqm, qfv_renderframe_t *rFrame, entity_t *ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -91,6 +91,8 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 		mesh->rend_buffer,
 	};
 	int         bindingCount = 2;//skins ? 2 : 1;
+
+	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
@@ -116,6 +118,8 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 		dfunc->vkCmdDrawIndexed (cmd, 3 * iqm->meshes[i].num_triangles, 1,
 								 3 * iqm->meshes[i].first_triangle, 0, 0);
 	}
+
+	QFV_CmdEndLabel (device, cmd);
 }
 
 void
@@ -160,10 +164,10 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 
 	emit_commands (aframe->cmdSet.a[QFV_iqmDepth],
 				   ent->animation.pose1, ent->animation.pose2,
-				   0, 2, push_constants, iqm, rFrame);
+				   0, 2, push_constants, iqm, rFrame, ent);
 	emit_commands (aframe->cmdSet.a[QFV_iqmGBuffer],
 				   ent->animation.pose1, ent->animation.pose2,
-				   skins, 6, push_constants, iqm, rFrame);
+				   skins, 6, push_constants, iqm, rFrame, ent);
 }
 
 static void

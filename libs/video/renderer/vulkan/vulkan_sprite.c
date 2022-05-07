@@ -82,12 +82,14 @@ static QFV_Subpass subpass_map[] = {
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   qfv_renderframe_t *rFrame)
+			   qfv_renderframe_t *rFrame, entity_t *ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
+
+	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
 	QFV_PushConstants (device, cmd, sctx->layout, numPC, constants);
 	VkDescriptorSet sets[] = {
@@ -96,6 +98,8 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									sctx->layout, 1, 1, sets, 0, 0);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
+
+	QFV_CmdEndLabel (device, cmd);
 }
 
 void
@@ -126,10 +130,10 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 
 	emit_commands (sframe->cmdSet.a[QFV_spriteDepth],
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
-				   2, push_constants, rFrame);
+				   2, push_constants, rFrame, ent);
 	emit_commands (sframe->cmdSet.a[QFV_spriteGBuffer],
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
-				   2, push_constants, rFrame);
+				   2, push_constants, rFrame, ent);
 }
 
 static void
