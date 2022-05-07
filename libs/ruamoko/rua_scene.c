@@ -257,6 +257,8 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 	pr_ulong_t  id = P_ULONG (pr, 0);
 	entity_t   *ent = rua_entity_get (res, id);
 	pr_ulong_t  scene_id = id & 0xffffffff;
+
+	R_RemoveEfrags (ent);
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	Scene_DestroyEntity (scene->scene, ent);
