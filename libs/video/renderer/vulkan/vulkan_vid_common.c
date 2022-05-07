@@ -83,13 +83,23 @@
 
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 
-static const char quakeforge_pipeline[] =
+static exprsym_t builtin_plist_syms[] = {
+	{ .name = "qfpipeline",
+	  .value = (void *)
 #include "libs/video/renderer/vulkan/qfpipeline.plc"
-;
-
-static const char quakeforge_renderpass[] =
+		},
+	{ .name = "deferred",
+	  .value = (void *)
 #include "libs/video/renderer/vulkan/deferred.plc"
-;
+		},
+	{ .name = "forward",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/forward.plc"
+		},
+	{}
+};
+static plitem_t **builtin_plists;
+static exprtab_t builtin_configs = { .symbols = builtin_plist_syms };
 
 int vulkan_frame_count;
 static cvar_t vulkan_frame_count_cvar = {
@@ -298,12 +308,67 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 	}
 }
 
+static void
+build_configs (vulkan_ctx_t *ctx)
+{
+	int         num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		num_plists++;
+	}
+	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
+	num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		plitem_t   *item = PL_GetPropertyList (sym->value, &ctx->hashlinks);
+		if (!item) {
+			// Syntax errors in the compiled-in plists are unrecoverable
+			Sys_Error ("Error parsing plist for %s", sym->name);
+		}
+		builtin_plists[num_plists] = item;
+		sym->value = &builtin_plists[num_plists];
+		sym->type = &cexpr_plitem;
+		num_plists++;
+	}
+	exprctx_t   ectx = { .hashlinks = &ctx->hashlinks };
+	cexpr_init_symtab (&builtin_configs, &ectx);
+}
+
+static plitem_t *
+get_builtin_config (vulkan_ctx_t *ctx, const char *name)
+{
+	if (!builtin_configs.tab) {
+		build_configs (ctx);
+	}
+
+	plitem_t   *config = 0;
+	exprval_t   result = { .type = &cexpr_plitem, .value = &config };
+	exprctx_t   ectx = {
+		.result = &result,
+		.symtab = &builtin_configs,
+		.memsuper = new_memsuper (),
+		.hashlinks = &ctx->hashlinks,
+		.messages = PL_NewArray (),
+	};
+	if (cexpr_eval_string (name, &ectx)) {
+		dstring_t  *msg = dstring_newstr ();
+
+		for (int i = 0; i < PL_A_NumObjects (ectx.messages); i++) {
+			dasprintf (msg, "%s\n",
+					   PL_String (PL_ObjectAtIndex (ectx.messages, i)));
+		}
+		Sys_Printf ("%s", msg->str);
+		dstring_delete (msg);
+		config = 0;
+	}
+	PL_Free (ectx.messages);
+	delete_memsuper (ectx.memsuper);
+	return config;
+}
+
 static plitem_t *
 qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	if (!ctx->pipelineDef) {
-		ctx->pipelineDef = PL_GetPropertyList (quakeforge_pipeline,
-											   &ctx->hashlinks);
+		ctx->pipelineDef = get_builtin_config (ctx, "qfpipeline");
 	}
 
 	plitem_t   *item = ctx->pipelineDef;
@@ -319,8 +384,7 @@ static plitem_t *
 qfv_load_renderpass (vulkan_ctx_t *ctx, qfv_renderpass_t *rp, const char *name)
 {
 	if (!rp->renderpassDef) {
-		rp->renderpassDef = PL_GetPropertyList (quakeforge_renderpass,
-												&ctx->hashlinks);
+		rp->renderpassDef = get_builtin_config (ctx, "deferred");
 	}
 
 	plitem_t   *item = rp->renderpassDef;

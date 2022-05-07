@@ -181,8 +181,10 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 
 pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
 pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
-renderpass_src = libs/video/renderer/vulkan/deferred.plist
-renderpass_gen = libs/video/renderer/vulkan/deferred.plc
+deferred_src = libs/video/renderer/vulkan/deferred.plist
+deferred_gen = libs/video/renderer/vulkan/deferred.plc
+forward_src = libs/video/renderer/vulkan/forward.plist
+forward_gen = libs/video/renderer/vulkan/forward.plc
 
 video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
@@ -232,7 +234,7 @@ libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vk
 
 libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
 
-libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${deferred_gen} $(forward_gen)
 
 
 qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
@@ -441,8 +443,9 @@ BUILT_SOURCES += $(shader_gen)
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
 EXTRA_DIST += \
-	libs/video/renderer/vulkan/deferred.plist \
-	libs/video/renderer/vulkan/qfpipeline.plist \
+	$(deferred_src) \
+	$(forward_src) \
+	$(pipeline_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	libs/video/renderer/vulkan/shader/alias.frag \
