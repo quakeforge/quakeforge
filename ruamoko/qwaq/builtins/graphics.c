@@ -326,7 +326,6 @@ BI_Graphics_Init (progs_t *pr)
 	generate_palette ();
 	generate_colormap ();
 
-	W_LoadWadFile ("gfx.wad");
 	VID_Init (default_palette[0], default_colormap);
 	IN_Init ();
 	Mod_Init ();
