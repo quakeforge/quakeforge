@@ -107,7 +107,7 @@ vulkan_iqm_init_image (iqm_t *iqm, int meshnum, qfv_resobj_t *image)
 			.type = qfv_res_image,
 			.image = {
 				.type = VK_IMAGE_TYPE_2D,
-				.format = QFV_ImageFormat (tex->format),
+				.format = QFV_ImageFormat (tex->format, 0),
 				.extent = {
 					.width = tex->width,
 					.height = tex->height,
@@ -127,7 +127,7 @@ vulkan_iqm_init_image (iqm_t *iqm, int meshnum, qfv_resobj_t *image)
 			.type = qfv_res_image,
 			.image = {
 				.type = VK_IMAGE_TYPE_2D,
-				.format = QFV_ImageFormat (tex_rgba),
+				.format = QFV_ImageFormat (tex_rgba, 0),
 				.extent = {
 					.width = 2,
 					.height = 2,

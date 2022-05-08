@@ -267,20 +267,20 @@ QFV_MipLevels (int width, int height)
 }
 
 VkFormat
-QFV_ImageFormat (QFFormat format)
+QFV_ImageFormat (QFFormat format, int srgb)
 {
 	switch (format) {
 		case tex_palette:
 			return VK_FORMAT_R8_UINT;
 		case tex_l:
 		case tex_a:
-			return VK_FORMAT_R8_UNORM;
+			return srgb ? VK_FORMAT_R8_SRGB : VK_FORMAT_R8_UNORM;
 		case tex_la:
-			return VK_FORMAT_R8G8_UNORM;
+			return srgb ? VK_FORMAT_R8G8_SRGB : VK_FORMAT_R8G8_UNORM;
 		case tex_rgb:
-			return VK_FORMAT_R8G8B8_UNORM;	// SRGB?
+			return srgb ? VK_FORMAT_R8G8B8_SRGB : VK_FORMAT_R8G8B8_UNORM;
 		case tex_rgba:
-			return VK_FORMAT_R8G8B8A8_UNORM;// SRGB?
+			return srgb ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
 		case tex_frgba:
 			return VK_FORMAT_R32G32B32A32_SFLOAT;
 	}

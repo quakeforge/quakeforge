@@ -104,11 +104,12 @@ int QFV_MipLevels (int width, int height) __attribute__((const));
 /** Convert QFFormat to VkFormat
  *
  *	\param format	The format to convert.
+ *	\param srgb		Select SRGB formats (non-zero) or UNORM (0).
  *	\return			The corresponding VkFormat.
  *
  *	\note For tex_palette, VK_FORMAT_R8_UINT is returned. If \a format is
  *	not a valid QFFormat, then VK_FORMAT_R8_SRGB is returned.
  */
-VkFormat QFV_ImageFormat (QFFormat format);
+VkFormat QFV_ImageFormat (QFFormat format, int srgb);
 
 #endif//__QF_Vulkan_image_h
