@@ -44,13 +44,22 @@
 #include "scn_internal.h"
 
 transform_t *
-Transform_New (scene_t *scene, transform_t *parent)
+__transform_alloc (scene_t *scene)
 {
 	scene_resources_t *res = scene->resources;
 	transform_t *transform = PR_RESNEW_NC (res->transforms);
-
 	transform->scene = scene;
 	transform->id = PR_RESINDEX (res->transforms, transform);
+	transform->hierarchy = 0;
+	transform->index = 0;
+	return transform;
+}
+
+transform_t *
+Transform_New (scene_t *scene, transform_t *parent)
+{
+	transform_t *transform = __transform_alloc (scene);
+
 	if (parent) {
 		transform->hierarchy = parent->hierarchy;
 		transform->index = Hierarchy_InsertHierarchy (parent->hierarchy, 0,

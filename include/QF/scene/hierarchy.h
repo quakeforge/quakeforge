@@ -67,7 +67,8 @@ typedef struct hierarchy_s {
 } hierarchy_t;
 
 hierarchy_t *Hierarchy_New (struct scene_s *scene, int createRoot);
-hierarchy_t *Hierarchy_Copy (hierarchy_t *src);
+void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
+hierarchy_t *Hierarchy_Copy (struct scene_s *scene, const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 
 void Hierarchy_UpdateMatrices (hierarchy_t *hierarchy);

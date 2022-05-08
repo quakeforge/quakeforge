@@ -455,3 +455,110 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	DARRAY_CLEAR (&hierarchy->worldScale);
 	PR_RESFREE (res->hierarchies, hierarchy);
 }
+
+void
+Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
+{
+	size_t      size = hierarchy->transform.size;
+
+	DARRAY_RESIZE (&hierarchy->transform, size + count);
+	DARRAY_RESIZE (&hierarchy->entity, size + count);
+	DARRAY_RESIZE (&hierarchy->childCount, size + count);
+	DARRAY_RESIZE (&hierarchy->childIndex, size + count);
+	DARRAY_RESIZE (&hierarchy->parentIndex, size + count);
+	DARRAY_RESIZE (&hierarchy->name, size + count);
+	DARRAY_RESIZE (&hierarchy->tag, size + count);
+	DARRAY_RESIZE (&hierarchy->modified, size + count);
+	DARRAY_RESIZE (&hierarchy->localMatrix, size + count);
+	DARRAY_RESIZE (&hierarchy->localInverse, size + count);
+	DARRAY_RESIZE (&hierarchy->worldMatrix, size + count);
+	DARRAY_RESIZE (&hierarchy->worldInverse, size + count);
+	DARRAY_RESIZE (&hierarchy->localRotation, size + count);
+	DARRAY_RESIZE (&hierarchy->localScale, size + count);
+	DARRAY_RESIZE (&hierarchy->worldRotation, size + count);
+	DARRAY_RESIZE (&hierarchy->worldScale, size + count);
+
+	DARRAY_RESIZE (&hierarchy->transform, size);
+	DARRAY_RESIZE (&hierarchy->entity, size);
+	DARRAY_RESIZE (&hierarchy->childCount, size);
+	DARRAY_RESIZE (&hierarchy->childIndex, size);
+	DARRAY_RESIZE (&hierarchy->parentIndex, size);
+	DARRAY_RESIZE (&hierarchy->name, size);
+	DARRAY_RESIZE (&hierarchy->tag, size);
+	DARRAY_RESIZE (&hierarchy->modified, size);
+	DARRAY_RESIZE (&hierarchy->localMatrix, size);
+	DARRAY_RESIZE (&hierarchy->localInverse, size);
+	DARRAY_RESIZE (&hierarchy->worldMatrix, size);
+	DARRAY_RESIZE (&hierarchy->worldInverse, size);
+	DARRAY_RESIZE (&hierarchy->localRotation, size);
+	DARRAY_RESIZE (&hierarchy->localScale, size);
+	DARRAY_RESIZE (&hierarchy->worldRotation, size);
+	DARRAY_RESIZE (&hierarchy->worldScale, size);
+}
+
+hierarchy_t *
+Hierarchy_Copy (scene_t *scene, const hierarchy_t *src)
+{
+	hierarchy_t *dst = Hierarchy_New (scene, 0);
+	size_t      count = src->transform.size;
+
+	DARRAY_RESIZE (&dst->transform, count);
+	DARRAY_RESIZE (&dst->entity, count);
+	DARRAY_RESIZE (&dst->childCount, count);
+	DARRAY_RESIZE (&dst->childIndex, count);
+	DARRAY_RESIZE (&dst->parentIndex, count);
+	DARRAY_RESIZE (&dst->name, count);
+	DARRAY_RESIZE (&dst->tag, count);
+	DARRAY_RESIZE (&dst->modified, count);
+	DARRAY_RESIZE (&dst->localMatrix, count);
+	DARRAY_RESIZE (&dst->localInverse, count);
+	DARRAY_RESIZE (&dst->worldMatrix, count);
+	DARRAY_RESIZE (&dst->worldInverse, count);
+	DARRAY_RESIZE (&dst->localRotation, count);
+	DARRAY_RESIZE (&dst->localScale, count);
+	DARRAY_RESIZE (&dst->worldRotation, count);
+	DARRAY_RESIZE (&dst->worldScale, count);
+
+	for (size_t i = 0; i < count; i++) {
+		dst->transform.a[i] = __transform_alloc (scene);
+		dst->transform.a[i]->hierarchy = dst;
+		dst->transform.a[i]->index = i;
+	}
+	for (size_t i = 0; i < count; i++) {
+		dst->entity.a[i] = 0;	// FIXME clone entity
+	}
+	memcpy (dst->childCount.a, src->childCount.a,
+			count * sizeof(dst->childCount.a[0]));
+	memcpy (dst->childIndex.a, src->childIndex.a,
+			count * sizeof(dst->childIndex.a[0]));
+	memcpy (dst->parentIndex.a, src->parentIndex.a,
+			count * sizeof(dst->parentIndex.a[0]));
+	for (size_t i = 0; i < count; i++) {
+		// use the transform code so string allocation remains consistent
+		// regardless how it changes.
+		Transform_SetName (dst->transform.a[i], src->name.a[i]);
+	}
+	memcpy (dst->tag.a, src->tag.a,
+			count * sizeof(dst->tag.a[0]));
+	memcpy (dst->modified.a, src->modified.a,
+			count * sizeof(dst->modified.a[0]));
+	memcpy (dst->localMatrix.a, src->localMatrix.a,
+			count * sizeof(dst->localMatrix.a[0]));
+	memcpy (dst->localInverse.a, src->localInverse.a,
+			count * sizeof(dst->localInverse.a[0]));
+	memcpy (dst->worldMatrix.a, src->worldMatrix.a,
+			count * sizeof(dst->worldMatrix.a[0]));
+	memcpy (dst->worldInverse.a, src->worldInverse.a,
+			count * sizeof(dst->worldInverse.a[0]));
+	memcpy (dst->localRotation.a, src->localRotation.a,
+			count * sizeof(dst->localRotation.a[0]));
+	memcpy (dst->localScale.a, src->localScale.a,
+			count * sizeof(dst->localScale.a[0]));
+	memcpy (dst->worldRotation.a, src->worldRotation.a,
+			count * sizeof(dst->worldRotation.a[0]));
+	memcpy (dst->worldScale.a, src->worldScale.a,
+			count * sizeof(dst->localScale.a[0]));
+	// Just in case the source hierarchy has modified transforms
+	Hierarchy_UpdateMatrices (dst);
+	return dst;
+}
