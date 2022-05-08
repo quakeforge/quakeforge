@@ -34,7 +34,6 @@
 #include "QF/render.h"
 #include "QF/ui/vrect.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"

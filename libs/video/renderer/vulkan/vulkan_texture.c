@@ -38,30 +38,16 @@
 # include <strings.h>
 #endif
 
-#include "QF/alloc.h"
-#include "QF/cvar.h"
-#include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/image.h"
-#include "QF/mathlib.h"
-#include "QF/quakefs.h"
-#include "QF/render.h"
-#include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
-#include "QF/Vulkan/buffer.h"
-#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
-#include "r_scrap.h"
 #include "vid_vulkan.h"
 
 void

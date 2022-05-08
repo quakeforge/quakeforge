@@ -150,28 +150,3 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
 	Vulkan_LoadLights (scene, ctx);
 }
-
-/*void
-glsl_R_LineGraph (int x, int y, int *h_vals, int count)
-{
-}*/
-
-/*void
-glsl_R_TimeRefresh_f (void)
-{
-	double      start, stop, time;
-	int         i;
-
-	glsl_ctx->end_rendering ();
-
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
-		r_refdef.viewangles[1] = i * (360.0 / 128.0);
-		Vulkan_RenderView (ctx);
-		glsl_ctx->end_rendering ();
-	}
-
-	stop = Sys_DoubleTime ();
-	time = stop - start;
-	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
-}*/

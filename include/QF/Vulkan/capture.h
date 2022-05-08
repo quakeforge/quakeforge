@@ -1,6 +1,11 @@
 #ifndef __QF_Vulkan_capture_h
 #define __QF_Vulkan_capture_h
 
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan.h>
+
 #include "QF/darray.h"
 #include "QF/qtypes.h"
 

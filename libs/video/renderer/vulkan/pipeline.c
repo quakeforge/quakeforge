@@ -30,7 +30,6 @@
 
 #include "QF/dstring.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/pipeline.h"

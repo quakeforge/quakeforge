@@ -30,7 +30,6 @@
 
 #include "QF/hash.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 

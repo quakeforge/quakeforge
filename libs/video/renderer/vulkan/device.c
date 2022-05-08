@@ -32,7 +32,6 @@
 
 #include "QF/sys.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 

@@ -49,15 +49,11 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/ui/view.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
-
-#include "util.h"
 
 static void
 setup_view (vulkan_ctx_t *ctx)

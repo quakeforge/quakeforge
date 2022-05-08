@@ -28,7 +28,6 @@
 # include "config.h"
 #endif
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/memory.h"
 

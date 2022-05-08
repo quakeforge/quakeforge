@@ -28,7 +28,6 @@
 # include "config.h"
 #endif
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"

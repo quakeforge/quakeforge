@@ -42,9 +42,6 @@
 #include "QF/render.h"
 #include "QF/va.h"
 
-#include "QF/plugin/vid_render.h"
-
-#include "QF/Vulkan/qf_vid.h" //FIXME header issues
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -52,7 +49,6 @@
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/qf_particles.h"
 
-#include "r_internal.h"
 #include "vid_vulkan.h"
 
 //FIXME make dynamic

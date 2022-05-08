@@ -9,13 +9,11 @@
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
-#include "r_internal.h"
 #include "vid_vulkan.h"
 
 qfv_swapchain_t *
