@@ -47,6 +47,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/resource.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -122,10 +123,14 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	QFV_CmdEndLabel (device, cmd);
 }
 
+#define a(x) ((x) & ~0x3f)
+
 void
 Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
 	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
 	model_t    *model = ent->renderer.model;
@@ -133,8 +138,34 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 	qfv_iqm_t  *mesh = iqm->extra_data;
 	qfv_iqm_skin_t *skins = mesh->skins;
 	iqm_push_constants_t constants = {};
+	iqmframe_t *frame;
 
 	constants.blend = R_IQMGetLerpedFrames (ent, iqm);
+	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
+							  constants.blend, 0);
+
+	vec4f_t    *bone_data;
+	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
+						0, (void **)&bone_data);
+	for (int i = 0; i < iqm->num_joints; i++) {
+		vec4f_t    *b = bone_data + (ctx->curFrame * iqm->num_joints + i) * 3;
+		mat4f_t     f;
+		// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v, but
+		// the shader wants a 3x4 (column x row) matrix for v * m, which is
+		// just a transpose (and drop of the 4th column) away.
+		mat4ftranspose (f, (vec4f_t *) &frame[i]);
+		// copy only the first 3 columns
+		memcpy (b, f, 3 * sizeof (vec4f_t));
+	}
+	VkMappedMemoryRange range = {
+		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		mesh->bones->memory,
+		a(3 * ctx->curFrame * iqm->num_joints * sizeof (vec4f_t)),
+		a(3 * iqm->num_joints * sizeof (vec4f_t) + 0x3f),
+	};
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
+
 
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
