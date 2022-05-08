@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cbuf.h"
 #include "QF/draw.h"
+#include "QF/image.h"
 #include "QF/input.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
@@ -51,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sound.h"
 
 #include "QF/input/event.h"
+#include "QF/math/bitop.h"
 
 #include "QF/plugin/console.h"
 
@@ -147,11 +149,166 @@ BI_shutdown (void *data)
 {
 }
 
+static byte default_palette[256][3];
+
+static byte *
+write_raw_rgb (byte *dst, byte r, byte g, byte b)
+{
+	*dst++ = r;
+	*dst++ = g;
+	*dst++ = b;
+	return dst;
+}
+
+static byte *
+write_rgb (byte *dst, byte r, byte g, byte b)
+{
+#define shift(x) (((x) << 2) | (((x) & 0x3f) >> 4))
+	*dst++ = shift(r);
+	*dst++ = shift(g);
+	*dst++ = shift(b);
+	return dst;
+#undef shift
+}
+
+static byte *
+write_grey (byte *dst, byte grey)
+{
+	return write_rgb (dst, grey, grey, grey);
+}
+
+static byte *
+genererate_irgb (byte *dst, byte lo, byte melo, byte mehi, byte hi)
+{
+	for (int i = 0; i < 16; i++) {
+		byte        l = i & 8 ? melo : lo;
+		byte        h = i & 8 ? hi : mehi;
+		byte        r = i & 4 ? h : l;
+		byte        g = i & 2 ? h : l;
+		byte        b = i & 1 ? h : l;
+		if (i == 6) {	// make dim yellow brown
+			g = melo;
+		}
+		dst = write_rgb (dst, r, g, b);
+	}
+	return dst;
+}
+
+static byte *
+write_run (byte *dst, byte *hue, byte ch, const byte *levels)
+{
+	byte        rgb[3] = {
+		*hue & 4 ? levels[4] : levels[0],
+		*hue & 2 ? levels[4] : levels[0],
+		*hue & 1 ? levels[4] : levels[0],
+	};
+	byte        chan = 2 - BITOP_LOG2 (ch);
+	int         ind = *hue & ch ? 4 : 0;
+	int         dir = *hue & ch ? -1 : 1;
+
+	for (int i = 0; i < 4; i++, ind += dir) {
+		rgb[chan] = levels[ind];
+		dst = write_rgb (dst, rgb[0], rgb[1], rgb[2]);
+	}
+
+	*hue ^= ch;
+	return dst;
+}
+
+static byte *
+write_cycle (byte *dst, byte lo, byte melo, byte me, byte mehi, byte hi)
+{
+	const byte  levels[] = { lo, melo, me, mehi, hi };
+	byte        hue = 1;
+	dst = write_run (dst, &hue, 4, levels);
+	dst = write_run (dst, &hue, 1, levels);
+	dst = write_run (dst, &hue, 2, levels);
+
+	dst = write_run (dst, &hue, 4, levels);
+	dst = write_run (dst, &hue, 1, levels);
+	dst = write_run (dst, &hue, 2, levels);
+	return dst;
+}
+
+static void
+generate_palette (void)
+{
+	const byte  grey[] = {
+		0,  5,  8,  11, 14, 17, 20, 24,
+		28, 32, 36, 40, 45, 50, 56, 63,
+	};
+	byte       *dst = default_palette[0];
+
+	dst = genererate_irgb (dst, 0, 21, 42, 63);
+
+	for (int i = 0; i < 16; i++) {
+		dst = write_grey (dst, grey[i]);
+	}
+
+	dst = write_cycle (dst, 11, 12, 13, 15, 16);
+	dst = write_cycle (dst,  8, 10, 12, 14, 16);
+	dst = write_cycle (dst,  0,  4,  8, 12, 16);
+
+	dst = write_cycle (dst, 20, 22, 24, 26, 28);
+	dst = write_cycle (dst, 14, 17, 21, 24, 28);
+	dst = write_cycle (dst,  0,  7, 14, 21, 28);
+
+	dst = write_cycle (dst, 45, 49, 54, 58, 63);
+	dst = write_cycle (dst, 31, 39, 47, 55, 63);
+	dst = write_cycle (dst,  0, 16, 31, 47, 63);
+
+	// std is black, but want vis trans and some phosphors
+	dst = write_raw_rgb (dst,  40,  40,  40);
+	dst = write_raw_rgb (dst,  40, 127,  40);
+	dst = write_raw_rgb (dst,  51, 255,  51);
+	dst = write_raw_rgb (dst, 102, 255, 102);
+	dst = write_raw_rgb (dst, 127, 102,   0);
+	dst = write_raw_rgb (dst, 255, 176,   0);
+	dst = write_raw_rgb (dst, 255, 204,   0);
+
+	dst = write_raw_rgb (dst, 176, 160, 176);
+}
+
+static byte default_colormap[64 * 256 + 1] = { [64 * 256] = 32 };
+
+static void
+generate_colormap (void)
+{
+	byte        colors[64][256][3];
+	tex_t       tex = {
+		.width = 256,
+		.height = 64,
+		.format = tex_rgb,
+		.data = colors[0][0],
+	};
+
+	// baseline colors
+	for (int i = 0; i < 256; i++) {
+		VectorCopy (default_palette[i], colors[31][i]);
+		VectorCopy (default_palette[i], colors[32][i]);
+	}
+	for (int i = 0; i < 64; i++) {
+		// main colors
+		if (i < 31 || i > 32) {
+			float       scale = i < 32 ? 2 - i / 31.0 : 1 - (i - 32) / 31.0;
+			for (int j = 0; j < 224; j++) {
+				for (int k = 0; k < 3; k++) {
+					colors[i][j][k] = bound (0, scale * colors[31][j][k], 255);
+				}
+			}
+		}
+		// fullbrights
+		memcpy (colors[i][224], colors[31][224], 32 * 3);
+	}
+	tex_t     *cmap = ConvertImage (&tex, default_palette[0]);
+	memcpy (default_colormap, cmap->data, sizeof (default_colormap));
+	free (cmap);
+}
+
 void
 BI_Graphics_Init (progs_t *pr)
 {
 	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
-	byte       *basepal, *colormap;
 
 	PR_RegisterBuiltins (pr, builtins, 0);
 
@@ -166,15 +323,11 @@ BI_Graphics_Init (progs_t *pr)
 	Mod_Init_Cvars ();
 	S_Init_Cvars ();
 
-	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
-	if (!basepal)
-		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/colormap.lmp"));
-	if (!colormap)
-		Sys_Error ("Couldn't load gfx/colormap.lmp");
+	generate_palette ();
+	generate_colormap ();
 
 	W_LoadWadFile ("gfx.wad");
-	VID_Init (basepal, colormap);
+	VID_Init (default_palette[0], default_colormap);
 	IN_Init ();
 	Mod_Init ();
 	R_Init ();
