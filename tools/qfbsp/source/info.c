@@ -49,6 +49,52 @@ static lumpinfo_t lump_info[] = {
 	{ "models",       O(models),        O(nummodels) },
 };
 
+typedef struct {
+	int         count;
+	int         depth;
+	uint32_t    node_faces;
+	uint32_t    leaf_faces;
+} nodedata_t;
+
+static void
+get_nodedata (int node, nodedata_t *data, int depth)
+{
+	if (node < 0) {
+		// hit a leaf, no surfaces
+		if (depth > data->depth) {
+			data->depth = depth;
+		}
+		dleaf_t    *leaf = bsp->leafs + ~node;
+		if (leaf->nummarksurfaces > data->leaf_faces) {
+			data->leaf_faces = leaf->nummarksurfaces;
+		}
+		return;
+	}
+	data->count++;
+	dnode_t    *dnode = &bsp->nodes[node];
+	if (dnode->numfaces > data->node_faces) {
+		data->node_faces = dnode->numfaces;
+	}
+	get_nodedata (dnode->children[0], data, depth + 1);
+	get_nodedata (dnode->children[1], data, depth + 1);
+}
+
+static void
+get_clipdata (int node, nodedata_t *data, int depth)
+{
+	if (node < 0 || (uint32_t) node >= bsp->numclipnodes) {
+		// hit contents
+		if (depth > data->depth) {
+			data->depth = depth;
+		}
+		return;
+	}
+	data->count++;
+	dclipnode_t *cnode = &bsp->clipnodes[node];
+	get_clipdata (cnode->children[0], data, depth + 1);
+	get_clipdata (cnode->children[1], data, depth + 1);
+}
+
 void
 bspinfo ()
 {
@@ -75,10 +121,41 @@ bspinfo ()
 		printf ("    maxs    : [%g, %g, %g]\n", VectorExpand (model->maxs));
 		printf ("    origin  : [%g, %g, %g]\n", VectorExpand (model->origin));
 		printf ("    headnode:");
+		nodedata_t nodedata[MAX_MAP_HULLS] = {};
 		for (int j = 0; j < MAX_MAP_HULLS; j++) {
-			printf (" %d", model->headnode[j]);
+			int         k;
+			for (k = 1; k < j; k++) {
+				if (model->headnode[j] == model->headnode[k]) {
+					nodedata[j] = nodedata[k];
+					break;
+				}
+			}
+			if (k >= j) {
+				if (j) {
+					get_clipdata (model->headnode[j], &nodedata[j], 0);
+				} else {
+					get_nodedata (model->headnode[j], &nodedata[j], 0);
+				}
+			}
+			printf (" %5d", model->headnode[j]);
+		}
+		printf ("\n       nodes:");
+		for (int j = 0; j < MAX_MAP_HULLS; j++) {
+			if (model->headnode[j] < model->headnode[0]) {
+				continue;
+			}
+			printf (" %5d", nodedata[j].count);
+		}
+		printf ("\n       depth:");
+		for (int j = 0; j < MAX_MAP_HULLS; j++) {
+			if (model->headnode[j] < model->headnode[0]) {
+				continue;
+			}
+			printf (" %5d", nodedata[j].depth);
 		}
 		printf ("\n");
+		printf ("   max faces: n: %d l:%d\n",
+				nodedata[0].node_faces, nodedata[0].leaf_faces);
 		printf ("    visleafs: %d\n", model->visleafs);
 		printf ("    faces   : %7d %7d\n", model->firstface, model->numfaces);
 	}
