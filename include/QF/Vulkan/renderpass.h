@@ -69,8 +69,8 @@ typedef struct clearvalueset_s
 	DARRAY_TYPE (VkClearValue) clearvalueset_t;
 
 typedef struct qfv_renderpass_s {
-	vec4f_t     color;		// for bebugging
-	const char *name;		// for bebugging
+	vec4f_t     color;		// for debugging
+	const char *name;		// for debugging
 	struct plitem_s  *renderpassDef;
 	VkRenderPass renderpass;
 	clearvalueset_t *clearValues;

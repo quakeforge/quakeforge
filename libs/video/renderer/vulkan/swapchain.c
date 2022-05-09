@@ -71,13 +71,13 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	} else {
 		imageSize = surfCaps.currentExtent;
 	}
-	Sys_MaskPrintf (SYS_vulkan, "%d [%d, %d]\n", numImages,
+	Sys_MaskPrintf (SYS_vulkan, "swapchain: %d [%d, %d]\n", numImages,
 					imageSize.width, imageSize.height);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
-	Sys_MaskPrintf (SYS_vulkan, "%x %x\n", imageUsage,
+	Sys_MaskPrintf (SYS_vulkan, "    usage:%x supported:%x\n", imageUsage,
 					surfCaps.supportedUsageFlags);
 
 	VkSurfaceTransformFlagBitsKHR surfTransform
