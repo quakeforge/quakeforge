@@ -91,10 +91,12 @@ static vec4f_t
 sun_vector (const vec_t *ang)
 {
 	// ang is yaw, pitch (maybe roll, but ignored
+	// negative as the vector points *to* the sun, but ang specifies the
+	// direction from the sun
 	vec4f_t     vec = {
-		ecos (ang[1]) * ecos (ang[0]),
-		ecos (ang[1]) * esin (ang[0]),
-		esin (ang[1]),
+		-ecos (ang[1]) * ecos (ang[0]),
+		-ecos (ang[1]) * esin (ang[0]),
+		-esin (ang[1]),
 		0,
 	};
 	return vec;
@@ -120,7 +122,7 @@ parse_sun (lightingdata_t *ldata, plitem_t *entity)
 	}
 	VectorSet (1, 1, 1, light.color);
 	light.color[3] = sunlight;
-	light.position = -sun_vector (sunangle);
+	light.position = sun_vector (sunangle);
 	light.direction = light.position;
 	light.direction[3] = 1;
 	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
