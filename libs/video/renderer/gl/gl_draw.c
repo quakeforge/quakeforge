@@ -171,7 +171,7 @@ qpic_t *
 gl_Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;
-	qpic_t	   *p, *pic;
+	qpic_t	   *p = 0, *pic;
 	tex_t	   *targa;
 
 	pic = W_GetLumpName (name);
@@ -187,7 +187,7 @@ gl_Draw_PicFromWad (const char *name)
 		} else
 			gl->texnum = GL_LoadTexture (name, targa->width, targa->height,
 										 targa->data, false, true, 4);
-	} else {
+	} else if (pic) {
 		p = pic;
 		gl = (glpic_t *) p->data;
 		gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data,
@@ -365,14 +365,21 @@ gl_Draw_Init (void)
 										   true, 4);
 		width = image->width;
 		height = image->height;
-	} else {
-		draw_chars = W_GetLumpName ("conchars");
-		for (i = 0; i < 256 * 64; i++)
-			if (draw_chars[i] == 0)
+	} else if ((draw_chars = W_GetLumpName ("conchars"))) {
+		for (i = 0; i < 256 * 64; i++) {
+			if (draw_chars[i] == 0) {
 				draw_chars[i] = 255;		// proper transparent color
+			}
+		}
 
 		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
 									   true, 1);
+		width = 128;
+		height = 128;
+	} else {
+		qpic_t     *charspic = Draw_Font8x8Pic ();
+		char_texture = GL_LoadTexture ("charset", 128, 128, charspic->data,
+									   false, true, 1);
 		width = 128;
 		height = 128;
 	}

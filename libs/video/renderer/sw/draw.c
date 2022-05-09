@@ -237,10 +237,16 @@ Draw_Init (void)
 	draw_disc = W_GetLumpName ("disc");
 	draw_backtile = W_GetLumpName ("backtile");
 
-	r_rectdesc.width = draw_backtile->width;
-	r_rectdesc.height = draw_backtile->height;
-	r_rectdesc.ptexbytes = draw_backtile->data;
-	r_rectdesc.rowbytes = draw_backtile->width;
+	if (!draw_chars) {
+		qpic_t     *pic = Draw_Font8x8Pic ();
+		draw_chars = pic->data;	// FIXME indirect hold on the memory
+	}
+	if (draw_backtile) {
+		r_rectdesc.width = draw_backtile->width;
+		r_rectdesc.height = draw_backtile->height;
+		r_rectdesc.ptexbytes = draw_backtile->data;
+		r_rectdesc.rowbytes = draw_backtile->width;
+	}
 }
 
 
@@ -697,6 +703,9 @@ Draw_TileClear (int x, int y, int w, int h)
 	byte       *psrc;
 	vrect_t     vr;
 
+	if (!r_rectdesc.height) {
+		return;
+	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	vr.y = y;

@@ -407,11 +407,19 @@ glsl_Draw_Init (void)
 	draw_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 0);
 
 	draw_chars = W_GetLumpName ("conchars");
-	for (i = 0; i < 256 * 64; i++)
-		if (draw_chars[i] == 0)
-			draw_chars[i] = 255;		// proper transparent color
-
-	conchars = pic_data ("conchars", 128, 128, draw_chars);
+	if (draw_chars) {
+		for (i = 0; i < 256 * 64; i++) {
+			if (draw_chars[i] == 0) {
+				draw_chars[i] = 255;		// proper transparent color
+			}
+		}
+		conchars = pic_data ("conchars", 128, 128, draw_chars);
+	} else {
+		qpic_t     *charspic = Draw_Font8x8Pic ();
+		conchars = pic_data ("conchars", charspic->width,
+							 charspic->height, charspic->data);
+		free (charspic);
+	}
 
 	pic = (qpic_t *) QFS_LoadFile (QFS_FOpenFile ("gfx/conback.lmp"), 0);
 	if (pic) {
