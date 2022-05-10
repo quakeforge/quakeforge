@@ -48,11 +48,27 @@
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/ui/vrect.h"
 
 #include "compat.h"
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "sbar.h"
 #include "vid_internal.h"
+
+struct scrap_s {
+	rscrap_t    rscrap;
+	GLuint      tnum;
+	int         format;
+	int         bpp;
+	byte       *data;	// local copy of the texture so updates can be batched
+	vrect_t    *batch;
+	subpic_t   *subpics;
+	struct scrap_s *next;
+};
+
+static scrap_t *scrap_list;
+static int max_tex_size;
 
 typedef struct {
 	GLuint      texnum;
@@ -624,4 +640,253 @@ SetupTexture:
 	}
 
 	return glt->texnum;
+}
+
+void
+GL_ReleaseTexture (int tex)
+{
+	GLuint      tnum = tex;
+	qfglDeleteTextures (1, &tnum);
+}
+
+static void
+gl_scraps_f (void)
+{
+	scrap_t    *scrap;
+	int         area;
+	int         size;
+
+	if (!scrap_list) {
+		Sys_Printf ("No scraps\n");
+		return;
+	}
+	for (scrap = scrap_list; scrap; scrap = scrap->next) {
+		area = R_ScrapArea (&scrap->rscrap);
+		// always square
+		size = scrap->rscrap.width;
+		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%%\n",
+					scrap->tnum, size, scrap->format, scrap->bpp,
+					area * 100 / (size * size));
+		if (Cmd_Argc () > 1) {
+			R_ScrapDump (&scrap->rscrap);
+		}
+	}
+}
+
+void
+GL_TextureInit (void)
+{
+	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
+	Sys_MaskPrintf (SYS_glt, "max texture size: %d\n", max_tex_size);
+
+	Cmd_AddCommand ("gl_scraps", gl_scraps_f, "Dump GL scrap stats");
+}
+
+scrap_t *
+GL_CreateScrap (int size, int format, int linear)
+{
+	int         i;
+	int         bpp;
+	scrap_t    *scrap;
+
+	for (i = 0; i < 16; i++)
+		if (size <= 1 << i)
+			break;
+	size = 1 << i;
+	size = min (size, max_tex_size);
+	switch (format) {
+		case GL_ALPHA:
+		case GL_LUMINANCE:
+			bpp = 1;
+			break;
+		case GL_LUMINANCE_ALPHA:
+			bpp = 2;
+			break;
+		case GL_RGB:
+			bpp = 3;
+			break;
+		case GL_RGBA:
+			bpp = 4;
+			break;
+		default:
+			Sys_Error ("GL_CreateScrap: Invalid texture format");
+	}
+	scrap = malloc (sizeof (scrap_t));
+	qfglGenTextures (1, &scrap->tnum);
+	R_ScrapInit (&scrap->rscrap, size, size);
+	scrap->format = format;
+	scrap->bpp = bpp;
+	scrap->subpics = 0;
+	scrap->next = scrap_list;
+	scrap_list = scrap;
+
+	scrap->data = calloc (1, size * size * bpp);
+	scrap->batch = 0;
+
+	qfglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, format,
+					size, size, 0, format, GL_UNSIGNED_BYTE, scrap->data);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if (linear) {
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	qfglGenerateMipmap (GL_TEXTURE_2D);
+
+	return scrap;
+}
+
+void
+GL_ScrapClear (scrap_t *scrap)
+{
+	subpic_t   *sp;
+	while (scrap->subpics) {
+		sp = scrap->subpics;
+		scrap->subpics = (subpic_t *) sp->next;
+		free (sp);
+	}
+	R_ScrapClear (&scrap->rscrap);
+}
+
+void
+GL_DestroyScrap (scrap_t *scrap)
+{
+	scrap_t   **s;
+
+	for (s = &scrap_list; *s; s = &(*s)->next) {
+		if (*s == scrap) {
+			*s = scrap->next;
+			break;
+		}
+	}
+	GL_ScrapClear (scrap);
+	R_ScrapDelete (&scrap->rscrap);
+	GL_ReleaseTexture (scrap->tnum);
+	free (scrap->data);
+	free (scrap);
+}
+
+int
+GL_ScrapTexture (scrap_t *scrap)
+{
+	return scrap->tnum;
+}
+
+subpic_t *
+GL_ScrapSubpic (scrap_t *scrap, int width, int height)
+{
+	vrect_t    *rect;
+	subpic_t   *subpic;
+
+	rect = R_ScrapAlloc (&scrap->rscrap, width, height);
+	if (!rect) {
+		return 0;
+	}
+
+	subpic = malloc (sizeof (subpic_t));
+	*((subpic_t **) &subpic->next) = scrap->subpics;
+	scrap->subpics = subpic;
+	*((scrap_t **) &subpic->scrap) = scrap;
+	*((vrect_t **) &subpic->rect) = rect;
+	*((int *) &subpic->width) = width;
+	*((int *) &subpic->height) = height;
+	*((float *) &subpic->size) = 1.0 / scrap->rscrap.width;
+	return subpic;
+}
+
+void
+GL_SubpicDelete (subpic_t *subpic)
+{
+	scrap_t    *scrap = (scrap_t *) subpic->scrap;
+	vrect_t    *rect = (vrect_t *) subpic->rect;
+	subpic_t  **sp;
+
+	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next)
+		if (*sp == subpic)
+			break;
+	if (*sp != subpic)
+		Sys_Error ("GL_ScrapDelSubpic: broken subpic");
+	*sp = (subpic_t *) subpic->next;
+	free (subpic);
+	R_ScrapFree (&scrap->rscrap, rect);
+}
+
+void
+GL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
+{
+	scrap_t    *scrap = (scrap_t *) subpic->scrap;
+	vrect_t    *rect = (vrect_t *) subpic->rect;
+	byte       *dest;
+	int         step, sbytes;
+	int         i;
+
+	if (batch) {
+		/*if (scrap->batch) {
+			vrect_t    *r = scrap->batch;
+			scrap->batch = VRect_Union (r, rect);
+			VRect_Delete (r);
+		} else {
+			scrap->batch = VRect_New (rect->x, rect->y,
+									  rect->width, rect->height);
+		}*/
+		vrect_t    *r = VRect_New (rect->x, rect->y,
+								   rect->width, rect->height);
+		r->next = scrap->batch;
+		scrap->batch = r;
+
+		step = scrap->rscrap.width * scrap->bpp;
+		sbytes = subpic->width * scrap->bpp;
+		dest = scrap->data + rect->y * step + rect->x * scrap->bpp;
+		for (i = 0; i < subpic->height; i++, dest += step, data += sbytes)
+			memcpy (dest, data, sbytes);
+	} else {
+		qfglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+		qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, rect->y,
+						   subpic->width, subpic->height, scrap->format,
+						   GL_UNSIGNED_BYTE, data);
+	}
+}
+
+void
+GL_ScrapFlush (scrap_t *scrap)
+{
+	vrect_t    *rect = scrap->batch;
+	int         size = scrap->rscrap.width;
+
+	if (!rect)
+		return;
+	//FIXME: it seems gl (as opposed to egl) allows row step to be specified.
+	//should update to not update the entire horizontal block
+	qfglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+	qfglPixelStorei(GL_UNPACK_ROW_LENGTH, size);
+	//qfglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	while (rect) {
+		vrect_t    *next = rect->next;
+#if 1
+		int         x = rect->x;
+		int         y = rect->y;
+		int         w = rect->width;
+		int         h = rect->height;
+		qfglTexSubImage2D (GL_TEXTURE_2D, 0, x, y, w, h, scrap->format,
+						   GL_UNSIGNED_BYTE,
+						   scrap->data + (y * size + x) * scrap->bpp);
+#else
+		for (int i = 0; i < rect->height; i++) {
+			int         y = rect->y + i;
+			qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, y,
+							   rect->width, 1, scrap->format,
+							   GL_UNSIGNED_BYTE,
+							   scrap->data + (y * size + rect->x) * scrap->bpp);
+		}
+#endif
+		VRect_Delete (rect);
+		rect = next;
+	}
+	qfglPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	//qfglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	scrap->batch = 0;
 }

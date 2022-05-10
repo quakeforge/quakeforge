@@ -48,7 +48,22 @@ int GL_LoadTexture (const char *identifier, int width, int height, const byte *d
 int GL_FindTexture (const char *identifier);
 
 void GL_TextureMode_f (void);
-
+void GL_ReleaseTexture (int tex);
 void GDT_Init (void);
+
+void GL_TextureInit (void);
+
+typedef struct scrap_s scrap_t;
+
+scrap_t *GL_CreateScrap (int size, int format, int linear);
+void GL_DestroyScrap (scrap_t *scrap);
+void GL_ScrapClear (scrap_t *scrap);
+int GL_ScrapTexture (scrap_t *scrap) __attribute__((pure));
+//XXX slow!
+struct subpic_s *GL_ScrapSubpic (scrap_t *scrap, int width, int height);
+//XXX slow!
+void GL_SubpicDelete (struct subpic_s *subpic);
+void GL_SubpicUpdate (struct subpic_s *subpic, byte *data, int batch);
+void GL_ScrapFlush (scrap_t *scrap);
 
 #endif // __gl_textures_h

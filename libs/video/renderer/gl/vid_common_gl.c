@@ -49,6 +49,7 @@
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
@@ -1030,6 +1031,8 @@ GL_Init_Common (void)
 	CheckLights ();
 
 	GL_Common_Init_Cvars ();
+
+	GL_TextureInit ();
 
 	qfglClearColor (0, 0, 0, 0);
 

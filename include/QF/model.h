@@ -152,17 +152,8 @@ typedef struct msurface_s {
 		struct {
 			glpoly_t   *polys;	// multiple if warped
 			instsurf_t *instsurf;///< null if not part of world model/sub-model
-			union {
-				struct {
-					struct subpic_s *lightpic;///< light map texture ref (glsl)
-					byte       *base;
-				};
-				struct {
-					int         light_s;
-					int         light_t;
-					int         lightmaptexturenum;
-				};
-			};
+			struct subpic_s *lightpic;///< light map texture ref (glsl)
+			byte       *base;
 		};
 	};
 

@@ -44,7 +44,7 @@ extern model_t *gl_currentmodel;
 
 extern GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
 extern qboolean		gl_lightmap_modified[MAX_LIGHTMAPS];
-extern instsurf_t  *gl_lightmap_polys[MAX_LIGHTMAPS];
+extern instsurf_t  *gl_lightmap_polys;
 extern glRect_t		gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 void gl_lightmap_init (void);
@@ -54,5 +54,8 @@ void gl_R_CalcLightmaps (void);
 struct transform_s;
 extern void (*gl_R_BuildLightMap) (const struct transform_s *transform,
 								   mod_brush_t *brush, msurface_t *surf);
+int gl_R_LightmapTexture (void) __attribute__((pure));
+void gl_R_FlushLightmaps (void);
+
 
 #endif // __QF_GL_lightmap_h

@@ -85,6 +85,15 @@ static cc_cell_t char_cells[256];
 static GLuint translate_texture;
 static int	char_texture;
 static int	cs_texture;					// crosshair texturea
+static int gl_conback_texnum;
+static cvar_t gl_conback_texnum_cvar = {
+	.name = "gl_conback_texnum",
+	.description =
+		"bind conback to this texture for debugging",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_conback_texnum },
+};
 
 static byte color_0_8[4] = { 204, 204, 204, 255 };
 
@@ -418,6 +427,8 @@ gl_Draw_Init (void)
 	draw_backtile = gl_Draw_PicFromWad ("backtile");
 
 	Draw_InitText ();
+
+	Cvar_Register (&gl_conback_texnum_cvar, 0, 0);
 }
 
 static inline void
@@ -817,7 +828,11 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	qfglColor4ubv (color_0_8);
 
 	// draw the console texture
-	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	if (gl_conback_texnum) {
+		qfglBindTexture (GL_TEXTURE_2D, gl_conback_texnum);
+	} else {
+		qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	}
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (0, 0 + ofs);
 	qfglVertex2f (0, 0);
