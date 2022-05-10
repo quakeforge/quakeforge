@@ -67,6 +67,8 @@ vulkan_sprite_clear (model_t *m, void *data)
 	msprite_t  *msprite = m->cache.data;
 	__auto_type sprite = (qfv_sprite_t *) ((byte *) msprite + msprite->data);
 
+	Vulkan_Sprint_FreeDescriptors (ctx, sprite);
+
 	dfunc->vkDestroyBuffer (device->dev, sprite->verts, 0);
 	dfunc->vkDestroyImageView (device->dev, sprite->view, 0);
 	dfunc->vkDestroyImage (device->dev, sprite->image, 0);

@@ -272,6 +272,17 @@ Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 }
 
 void
+Vulkan_Sprint_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	dfunc->vkFreeDescriptorSets (device->dev, sctx->pool, 1,
+								 &sprite->descriptors);
+}
+
+void
 Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;

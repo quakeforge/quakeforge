@@ -81,6 +81,8 @@ struct qfv_renderframe_s;
 struct entity_s;
 struct mod_sprite_ctx_s;
 
+void Vulkan_Sprint_FreeDescriptors (struct vulkan_ctx_s *ctx,
+									qfv_sprite_t *sprite);
 void Vulkan_Sprite_DescriptorSet (struct vulkan_ctx_s *ctx,
 								  qfv_sprite_t *sprite);
 void Vulkan_Mod_SpriteLoadFrames (struct mod_sprite_ctx_s *sprite_ctx,
