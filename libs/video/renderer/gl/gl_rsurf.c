@@ -734,8 +734,6 @@ gl_R_DrawWorld (void)
 
 	R_VisitWorldNodes (&bctx);
 
-	gl_R_CalcLightmaps ();
-
 	gl_R_DrawSkyChain (sky_chain);
 
 	if (r_drawentities) {
@@ -744,6 +742,8 @@ gl_R_DrawWorld (void)
 			gl_R_DrawBrushModel (ent);
 		}
 	}
+
+	gl_R_CalcLightmaps ();
 
 	if (!Fog_GetDensity ()
 		|| (gl_fb_bmodels && gl_mtex_fullbright)
