@@ -201,6 +201,8 @@ typedef struct dleaf_s {
 	float       mins[3];			// for frustum culling
 	float       maxs[3];
 
+	// the list of marksurfaces is the surfaces that make up the effective
+	// mesh of the leaf
 	uint32_t    firstmarksurface;
 	uint32_t    nummarksurfaces;
 
