@@ -41,7 +41,7 @@
 
 typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
-#define MaxLights   256
+#define MaxLights   768
 
 #define ST_NONE     0	// no shadows
 #define ST_PLANE    1	// single plane shadow map (small spotlight)

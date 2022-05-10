@@ -170,7 +170,7 @@
 			bindings = (
 				{
 					type = combined_image_sampler;
-					descriptorCount = "$frames.size * size_t($properties.limits.maxSamplers)";
+					descriptorCount = 768;//"$frames.size * size_t($properties.limits.maxSamplers)";
 				},
 			);
 		};
@@ -291,7 +291,7 @@
 				{
 					binding = 0;
 					descriptorType = combined_image_sampler;
-					descriptorCount = $properties.limits.maxSamplers;
+					descriptorCount = 768;//$properties.limits.maxSamplers;
 					stageFlags = fragment;
 				},
 			);
@@ -1035,12 +1035,12 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/lighting.frag;
-					specializationInfo = {
-						mapEntries = (
-							{ size = 4; offset = 0; constantID = 0; },
-						);
-						data = "array(uint($properties.limits.maxSamplers))";
-					};
+					//specializationInfo = {
+					//	mapEntries = (
+					//		{ size = 4; offset = 0; constantID = 0; },
+					//	);
+					//	data = "array(uint($properties.limits.maxSamplers))";
+					//};
 				},
 			);
 			layout = lighting_layout;

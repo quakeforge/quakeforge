@@ -29,7 +29,7 @@ struct LightData {
 #define ST_CASCADE  (2 << 10)	// cascaded shadow maps
 #define ST_CUBE     (3 << 10)	// cubemap (omni, large spotlight)
 
-layout (constant_id = 0) const int MaxLights = 256;
+layout (constant_id = 0) const int MaxLights = 768;
 
 layout (set = 2, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
 layout (set = 2, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
