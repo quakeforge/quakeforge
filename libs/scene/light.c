@@ -132,14 +132,13 @@ Light_FindVisibleLights (lightingdata_t *ldata)
 
 		if (leaf == model->brush.leafs) {
 			set_everything (ldata->pvs);
+			flags = SURF_DRAWSKY;
 		} else {
 			Mod_LeafPVS_set (leaf, model, 0, ldata->pvs);
-			expand_pvs (ldata->pvs, model);
-		}
-		for (unsigned i = 0; i < model->brush.visleafs; i++) {
-			if (set_is_member (ldata->pvs, i)) {
-				flags |= model->brush.leaf_flags[i + 1];
+			if (set_is_intersecting (ldata->pvs, ldata->sun_pvs)) {
+				flags |= SURF_DRAWSKY;
 			}
+			expand_pvs (ldata->pvs, model);
 		}
 		ldata->leaf = leaf;
 
@@ -156,7 +155,8 @@ Light_FindVisibleLights (lightingdata_t *ldata)
 				visible++;
 			}
 		}
-		//Sys_Printf ("find_visible_lights: %d / %zd visible\n", visible,
-		//			 ldata->lightvis.size);
+		Sys_MaskPrintf (SYS_lighting,
+						"find_visible_lights: %d / %zd visible\n", visible,
+						ldata->lightvis.size);
 	}
 }
