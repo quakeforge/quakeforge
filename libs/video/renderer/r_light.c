@@ -50,6 +50,7 @@ dlight_t    *r_dlights;
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
+static int r_dlightframecount;
 
 void
 R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
@@ -179,9 +180,9 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 	if (is * is + it * it > dist2)
 		return;
 
-	if (surf->dlightframe != r_framecount) {
+	if (surf->dlightframe != r_dlightframecount) {
 		memset (surf->dlightbits, 0, sizeof (surf->dlightbits));
-		surf->dlightframe = r_framecount;
+		surf->dlightframe = r_dlightframecount;
 	}
 	ind = lightnum / 32;
 	bit = 1 << (lightnum % 32);
@@ -260,7 +261,7 @@ loc0:
 }
 
 
-void
+static void
 R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
@@ -320,6 +321,9 @@ R_PushDlights (const vec3_t entorigin)
 	unsigned int i;
 	dlight_t   *l;
 	vec3_t      lightorigin;
+
+	// because the count hasn't advanced yet for this frame
+	r_dlightframecount = r_framecount + 1;
 
 	if (!r_dlight_lightmap)
 		return;

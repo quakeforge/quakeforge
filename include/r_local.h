@@ -292,7 +292,6 @@ extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
 
 extern int		r_clipflags;
-extern int		r_dlightframecount;
 
 extern struct entqueue_s *r_ent_queue;
 struct dlight_s;
@@ -311,8 +310,6 @@ void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
 							struct dlight_s *light, int bit, mnode_t *node);
-void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
-				   model_t *model);
 
 void R_LoadSkys (const char *);
 //void Vulkan_R_LoadSkys (const char *, struct vulkan_ctx_s *ctx);
