@@ -139,36 +139,47 @@ typedef struct glpoly_s {
 typedef struct msurface_s {
 	int			visframe;		// should be drawn when node is crossed
 
-	plane_t		*plane;
 	int			flags;
+	plane_t		*plane;
 
 	int			firstedge;	// look up in model->surfedges[], negative numbers
 	int			numedges;	// are backwards edges
 
-	struct surfcache_s	*cachespots[MIPLEVELS];
+	union {
+		// sw-only
+		struct surfcache_s	*cachespots[MIPLEVELS];
+		// gl/glsl/vulkan
+		struct {
+			glpoly_t   *polys;	// multiple if warped
+			instsurf_t *instsurf;///< null if not part of world model/sub-model
+			union {
+				struct {
+					struct subpic_s *lightpic;///< light map texture ref (glsl)
+					byte       *base;
+				};
+				struct {
+					int         light_s;
+					int         light_t;
+					int         lightmaptexturenum;
+				};
+			};
+		};
+	};
 
+	mtexinfo_t *texinfo;
 	short		texturemins[2];
 	unsigned short extents[2];
 
-	int			light_s, light_t;	// gl lightmap coordinates
-
-	glpoly_t   *polys;				// multiple if warped
-	instsurf_t *instsurf;	///< null if not part of world model/sub-model
-
-	mtexinfo_t *texinfo;
-	int         model_index;	///< < 0: instance, 0 main, > 0: sub
-	byte       *base;
-
 // lighting info
-	struct subpic_s *lightpic;	///< light map texture ref (glsl)
+	byte		*samples;		// [numstyles*surfsize]
 	int			dlightframe;
 	uint32_t    dlightbits[(MAX_DLIGHTS + 31) >> 5];
 
-	int			lightmaptexturenum;
 	byte		styles[MAXLIGHTMAPS];
 	int			cached_light[MAXLIGHTMAPS];	// values currently used in lightmap
 	qboolean	cached_dlight;				// true if dynamic light in cache
-	byte		*samples;		// [numstyles*surfsize]
+
+	int         model_index;	///< < 0: instance, 0 main, > 0: sub
 } msurface_t;
 
 typedef struct mnode_s {
