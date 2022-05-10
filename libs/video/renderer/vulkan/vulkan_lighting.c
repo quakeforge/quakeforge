@@ -43,6 +43,7 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/heapsort.h"
 #include "QF/plist.h"
 #include "QF/progs.h"
 #include "QF/script.h"
@@ -372,6 +373,7 @@ clear_shadows (vulkan_ctx_t *ctx)
 
 	if (lctx->shadow_memory) {
 		dfunc->vkFreeMemory (device->dev, lctx->shadow_memory, 0);
+		lctx->shadow_memory = 0;
 	}
 	for (size_t i = 0; i < lctx->lightviews.size; i++) {
 		dfunc->vkDestroyImageView (device->dev, lctx->lightviews.a[i], 0);
@@ -405,7 +407,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	free (lctx->frames.a);
 	free (lctx);
 }
-#if 0
+
 static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 
 static void
@@ -464,10 +466,13 @@ create_light_matrices (lightingctx_t *lctx)
 }
 
 static int
-light_compare (const void *_l2, const void *_l1)
+light_compare (const void *_li2, const void *_li1, void *_ldata)
 {
-	const light_t *l1 = _l1;
-	const light_t *l2 = _l2;
+	const int *li1 = _li1;
+	const int *li2 = _li2;
+	lightingdata_t *ldata = _ldata;
+	const light_t *l1 = &ldata->lights.a[*li1];
+	const light_t *l2 = &ldata->lights.a[*li2];
 
 	if (l1->color[3] == l2->color[3]) {
 		return (l1->position[3] == l2->position[3])
@@ -572,17 +577,22 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	int         totalLayers = 0;
 	int        *imageMap = alloca (numLights * sizeof (int));
 	size_t      memsize = 0;
+	int        *lightMap = alloca (numLights * sizeof (int));
 
+	for (int i = 0; i < numLights; i++) {
+		lightMap[i] = i;
+	}
 	DARRAY_RESIZE (&lctx->lightlayers, numLights);
-	qsort (lights, numLights, sizeof (light_t), light_compare);
+	heapsort_r (lightMap, numLights, sizeof (int), light_compare, ldata);
 	for (int i = 0; i < numLights; i++) {
 		int         layers = 1;
 		int         shadow = ST_NONE;
+		int         li = lightMap[i];
 
-		if (!lights[i].position[3]) {
+		if (!lights[li].position[3]) {
 			shadow = ST_CASCADE;
 		} else {
-			if (lights[i].direction[3] > -0.5) {
+			if (lights[li].direction[3] > -0.5) {
 				shadow = ST_CUBE;
 			} else {
 				shadow = ST_PLANE;
@@ -591,23 +601,23 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		if (shadow == ST_CASCADE || shadow == ST_NONE) {
 			// cascade shadows will be handled separately, and "none" has no
 			// shadow map at all
-			imageMap[i] = -1;
+			imageMap[li] = -1;
 			continue;
 		}
 		if (shadow == ST_CUBE) {
 			layers = 6;
 		}
-		if (size != (int) lights[i].color[3]
+		if (size != (int) lights[li].color[3]
 			|| numLayers + layers > maxLayers) {
 			if (numLayers) {
 				VkImage     shadow_map = create_map (size, numLayers, 1, ctx);
 				DARRAY_APPEND (&lctx->lightimages, shadow_map);
 				numLayers = 0;
 			}
-			size = lights[i].color[3];
+			size = lights[li].color[3];
 		}
-		imageMap[i] = lctx->lightimages.size;
-		lctx->lightlayers.a[i] = numLayers;
+		imageMap[li] = lctx->lightimages.size;
+		lctx->lightlayers.a[li] = numLayers;
 		numLayers += layers;
 		totalLayers += layers;
 	}
@@ -621,11 +631,12 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	for (int i = 0; i < numLights; i++) {
 		int         layers = 4;
 		int         shadow = ST_NONE;
+		int         li = lightMap[i];
 
-		if (!lights[i].position[3]) {
+		if (!lights[li].position[3]) {
 			shadow = ST_CASCADE;
 		} else {
-			if (lights[i].direction[3] > -0.5) {
+			if (lights[li].direction[3] > -0.5) {
 				shadow = ST_CUBE;
 			} else {
 				shadow = ST_PLANE;
@@ -640,8 +651,8 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			DARRAY_APPEND (&lctx->lightimages, shadow_map);
 			numLayers = 0;
 		}
-		imageMap[i] = lctx->lightimages.size;
-		lctx->lightlayers.a[i] = numLayers;
+		imageMap[li] = lctx->lightimages.size;
+		lctx->lightlayers.a[li] = numLayers;
 		numLayers += layers;
 		totalLayers += layers;
 	}
@@ -668,29 +679,30 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 
 	DARRAY_RESIZE (&lctx->lightviews, numLights);
 	for (int i = 0; i < numLights; i++) {
-		if (imageMap[i] == -1) {
-			lctx->lightviews.a[i] = 0;
+		int         li = lightMap[i];
+
+		if (imageMap[li] == -1) {
+			lctx->lightviews.a[li] = 0;
 			continue;
 		}
 		int         mode = ST_NONE;
 
-		if (!ldata->lights.a[i].position[3]) {
+		if (!ldata->lights.a[li].position[3]) {
 			mode = ST_CASCADE;
 		} else {
-			if (ldata->lights.a[i].direction[3] > -0.5) {
+			if (ldata->lights.a[li].direction[3] > -0.5) {
 				mode = ST_CUBE;
 			} else {
 				mode = ST_PLANE;
 			}
 		}
-		lctx->lightviews.a[i] = create_view (lctx->lightimages.a[imageMap[i]],
-											 lctx->lightlayers.a[i],
-											 mode, i, ctx);
+		lctx->lightviews.a[li] = create_view (lctx->lightimages.a[imageMap[li]],
+											  lctx->lightlayers.a[li],
+											  mode, li, ctx);
 	}
 	Sys_MaskPrintf (SYS_vulkan, "shadow maps: %d layers in %zd images: %zd\n",
 					totalLayers, lctx->lightimages.size, memsize);
 }
-#endif
 
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
@@ -699,4 +711,11 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 
 	lctx->scene = scene;
 	lctx->ldata = scene ? scene->lights : 0;
+
+	clear_shadows (ctx);
+
+	if (lctx->ldata && lctx->ldata->lights.size) {
+		build_shadow_maps (lctx, ctx);
+		create_light_matrices (lctx);
+	}
 }

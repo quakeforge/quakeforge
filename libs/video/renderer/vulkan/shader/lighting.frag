@@ -88,36 +88,35 @@ main (void)
 	vec3        p = subpassLoad (position).rgb;
 	vec3        light = vec3 (0);
 
-	if (MaxLights > 0) {
-		vec3        minLight = vec3 (0);
-		for (int i = 0; i < lightCount; i++) {
-			LightData   l = lights[i];
-			vec3        dir = l.position.xyz - l.position.w * p;
-			float       r2 = dot (dir, dir);
-			vec4        a = l.attenuation;
+	//vec3        minLight = vec3 (0);
+	for (int i = 0; i < lightCount; i++) {
+		LightData   l = lights[i];
+		vec3        dir = l.position.xyz - l.position.w * p;
+		float       r2 = dot (dir, dir);
+		vec4        a = l.attenuation;
 
-			if (l.position.w * a.w * a.w * r2 >= 1) {
-				continue;
-			}
-			vec4        r = vec4 (r2, sqrt(r2), 1, 0);
-			vec3        incoming = dir / r.y;
-			float       I = (1 - a.w * r.y) / dot (a, r);
-
-			/*int         shadow = lights[i].data & ShadowMask;
-			if (shadow == ST_CASCADE) {
-				I *= shadow_cascade (shadowCascade[i]);
-			} else if (shadow == ST_PLANE) {
-				I *= shadow_plane (shadowPlane[i]);
-			} else if (shadow == ST_CUBE) {
-				I *= shadow_cube (shadowCube[i]);
-			}*/
-
-			float       namb = dot(l.direction.xyz, l.direction.xyz);
-			I *= spot_cone (l, incoming) * diffuse (incoming, n);
-			I = mix (1, I, namb);
-			light += I * l.color.w * l.color.xyz;
+		if (l.position.w * a.w * a.w * r2 >= 1) {
+			continue;
 		}
-		light = max (light, minLight);
+		vec4        r = vec4 (r2, sqrt(r2), 1, 0);
+		vec3        incoming = dir / r.y;
+		float       I = (1 - a.w * r.y) / dot (a, r);
+
+		/*int         shadow = lights[i].data & ShadowMask;
+		if (shadow == ST_CASCADE) {
+			I *= shadow_cascade (shadowCascade[i]);
+		} else if (shadow == ST_PLANE) {
+			I *= shadow_plane (shadowPlane[i]);
+		} else if (shadow == ST_CUBE) {
+			I *= shadow_cube (shadowCube[i]);
+		}*/
+
+		float       namb = dot(l.direction.xyz, l.direction.xyz);
+		I *= spot_cone (l, incoming) * diffuse (incoming, n);
+		I = mix (1, I, namb);
+		light += I * l.color.w * l.color.xyz;
 	}
+	//light = max (light, minLight);
+
 	frag_color = vec4 (c * light + e, 1);
 }
