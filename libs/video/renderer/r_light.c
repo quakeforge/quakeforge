@@ -304,8 +304,9 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 					continue;
 				if (R_CullBox (r_refdef.frustum, leaf->mins, leaf->maxs))
 					continue;
+				msurface_t **msurf = brush->marksurfaces + leaf->firstmarksurface;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
-					msurface_t *surf = leaf->firstmarksurface[m];
+					msurface_t *surf = *msurf++;
 					if (surf->visframe != r_visframecount)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);

@@ -79,7 +79,7 @@ R_MarkLeaves (mleaf_t *viewleaf)
 		if (set_is_member (vis, i)) {
 			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
-				mark = leaf->firstmarksurface;
+				mark = brush->marksurfaces + leaf->firstmarksurface;
 				do {
 					(*mark)->visframe = r_visframecount;
 					mark++;

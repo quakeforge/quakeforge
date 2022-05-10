@@ -199,7 +199,7 @@ typedef struct mleaf_s {
 	byte		*compressed_vis;
 	efrag_t		*efrags;
 
-	msurface_t	**firstmarksurface;
+	int         firstmarksurface;
 	int			nummarksurfaces;
 	int			key;			// BSP sequence number for leaf's contents
 	byte		ambient_sound_level[NUM_AMBIENTS];

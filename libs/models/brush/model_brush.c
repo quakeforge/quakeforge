@@ -683,8 +683,9 @@ Mod_SetLeafFlags (mod_brush_t *brush)
 	for (unsigned i = 0; i < brush->modleafs; i++) {
 		int         flags = 0;
 		mleaf_t    *leaf = &brush->leafs[i];
+		msurface_t **msurf = brush->marksurfaces + leaf->firstmarksurface;
 		for (int j = 0; j < leaf->nummarksurfaces; j++) {
-			msurface_t *surf = leaf->firstmarksurface[j];
+			msurface_t *surf = *msurf++;
 			flags |= surf->flags;
 		}
 		brush->leaf_flags[i] = flags;
@@ -780,7 +781,7 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 		p = in->contents;
 		out->contents = p;
 
-		out->firstmarksurface = brush->marksurfaces + in->firstmarksurface;
+		out->firstmarksurface = in->firstmarksurface;
 		out->nummarksurfaces = in->nummarksurfaces;
 
 		p = in->visofs;
@@ -795,12 +796,18 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 
 		// gl underwater warp
 		if (out->contents != CONTENTS_EMPTY) {
-			for (j = 0; j < out->nummarksurfaces; j++)
-				out->firstmarksurface[j]->flags |= SURF_UNDERWATER;
+			msurface_t **msurf = brush->marksurfaces + out->firstmarksurface;
+			for (j = 0; j < out->nummarksurfaces; j++) {
+				msurface_t *surf = *msurf++;
+				surf->flags |= SURF_UNDERWATER;
+			}
 		}
 		if (isnotmap) {
-			for (j = 0; j < out->nummarksurfaces; j++)
-				out->firstmarksurface[j]->flags |= SURF_DONTWARP;
+			msurface_t **msurf = brush->marksurfaces + out->firstmarksurface;
+			for (j = 0; j < out->nummarksurfaces; j++) {
+				msurface_t *surf = *msurf++;
+				surf->flags |= SURF_DONTWARP;
+			}
 		}
 	}
 }
