@@ -573,10 +573,10 @@ CL_SetState (cactive_t state)
 	cl.viewstate.drift_enabled = !cls.demoplayback;
 	Sys_MaskPrintf (SYS_net, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
-		if (old_state == ca_active) {
+		if (old_state == ca_active && state != ca_disconnected) {
 			// leaving active state
 			S_AmbientOff ();
-			r_funcs->R_ClearState ();
+			SCR_NewScene (0);
 		}
 		switch (state) {
 			case ca_disconnected:
