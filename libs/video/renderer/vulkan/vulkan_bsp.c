@@ -68,6 +68,8 @@
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
+#include "QF/simd/types.h"
+
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
@@ -325,20 +327,7 @@ static bsppoly_t *
 build_surf_displist (model_t **models, msurface_t *surf, int base,
 					 bspvert_t **vert_list)
 {
-	int         numverts;
-	int         numindices;
-	int         i;
-	vec_t      *vec;
-	mvertex_t  *vertices;
-	medge_t    *edges;
-	int        *surfedges;
-	int         index;
-	bspvert_t  *verts;
-	bsppoly_t  *poly;
-	uint32_t   *ind;
-	float       s, t;
 	mod_brush_t *brush;
-
 	if (surf->model_index < 0) {
 		// instance model
 		brush = &models[~surf->model_index]->brush;
@@ -346,58 +335,62 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 		// main or sub model
 		brush = &r_refdef.worldmodel->brush;
 	}
-	vertices  = brush->vertexes;
-	edges     = brush->edges;
-	surfedges = brush->surfedges;
-	// create a triangle fan
-	numverts = surf->numedges;
-	numindices = numverts + 1;
-	verts = *vert_list;
+	mvertex_t  *vertices  = brush->vertexes;
+	medge_t    *edges     = brush->edges;
+	int        *surfedges = brush->surfedges;
+
 	// surf->polys is set to the next slot before the call
-	poly = (bsppoly_t *) surf->polys;
-	poly->count = numindices;
-	for (i = 0, ind = poly->indices; i < numverts; i++) {
-		*ind++ = base + i;
+	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
+	// create a triangle fan
+	int         numverts = surf->numedges;
+	poly->count = numverts + 1;	// +1 for primitive restart
+	for (int i = 0; i < numverts; i++) {
+		poly->indices[i] = base + i;
 	}
-	*ind++ = -1;	// end of primitive
+	poly->indices[numverts] = -1;	// primitive restart
 	surf->polys = (glpoly_t *) poly;
 
+	bspvert_t  *verts = *vert_list;
 	mtexinfo_t *texinfo = surf->texinfo;
-	for (i = 0; i < numverts; i++) {
-		index = surfedges[surf->firstedge + i];
+	for (int i = 0; i < numverts; i++) {
+		vec_t      *vec;
+		int         index = surfedges[surf->firstedge + i];
 		if (index > 0) {
+			// forward edge
 			vec = vertices[edges[index].v[0]].position;
 		} else {
+			// reverse edge
 			vec = vertices[edges[-index].v[1]].position;
 		}
-
-		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
-		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
 		VectorCopy (vec, verts[i].vertex);
-		verts[i].vertex[3] = 1;
-		verts[i].tlst[0] = s / texinfo->texture->width;
-		verts[i].tlst[1] = t / texinfo->texture->height;
+		verts[i].vertex[3] = 1;	// homogeneous coord
 
-		//lightmap texture coordinates
-		if (!surf->lightpic) {
-			// sky and water textures don't have lightmaps
+		vec2f_t     st = {
+			DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3],
+			DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3],
+		};
+		verts[i].tlst[0] = st[0] / texinfo->texture->width;
+		verts[i].tlst[1] = st[1] / texinfo->texture->height;
+
+		if (surf->lightpic) {
+			//lightmap texture coordinates
+			//every lit surface has its own lighmap at a 1/16 resolution
+			//(ie, 16 albedo pixels for every lightmap pixel)
+			const vrect_t *rect = surf->lightpic->rect;
+			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
+			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
+			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
+			verts[i].tlst[2] = st[0];
+			verts[i].tlst[3] = st[1];
+		} else {
+			// no lightmap for this surface (probably sky or water), so
+			// make the lightmap texture polygone degenerate
 			verts[i].tlst[2] = 0;
 			verts[i].tlst[3] = 0;
-			continue;
 		}
-		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
-		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
-		s -= surf->texturemins[0];
-		t -= surf->texturemins[1];
-		s += surf->lightpic->rect->x * 16 + 8;
-		t += surf->lightpic->rect->y * 16 + 8;
-		s /= 16;
-		t /= 16;
-		verts[i].tlst[2] = s * surf->lightpic->size;
-		verts[i].tlst[3] = t * surf->lightpic->size;
 	}
 	*vert_list += numverts;
-	return (bsppoly_t *) &poly->indices[numindices];
+	return (bsppoly_t *) &poly->indices[poly->count];
 }
 
 void
@@ -406,14 +399,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-	int         vertex_index_base;
-	model_t    *m;
-	dmodel_t   *dm;
-	msurface_t *surf;
-	qfv_stagebuf_t *stage;
-	bspvert_t  *vertices;
-	bsppoly_t  *poly;
-	mod_brush_t *brush;
 
 	if (!num_models) {
 		return;
@@ -423,17 +408,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
 	for (int i = 0; i < num_models; i++) {
-		m = models[i];
-		if (!m)
-			continue;
+		model_t    *m = models[i];
 		// sub-models are done as part of the main model
 		// and non-bsp models don't have surfaces.
-		if (*m->path == '*' || m->type != mod_brush)
+		if (!m || *m->path == '*' || m->type != mod_brush)
 			continue;
-		brush = &m->brush;
-		dm = brush->submodels;
+		mod_brush_t *brush = &m->brush;
+		dmodel_t    *dm = brush->submodels;
 		for (unsigned j = 0; j < brush->numsurfaces; j++) {
-			vulktex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				// move on to the next sub-model
 				dm++;
@@ -445,13 +427,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					break;
 				}
 			}
-			surf = brush->surfaces + j;
+			msurface_t *surf = brush->surfaces + j;
 			surf->model_index = dm - brush->submodels;
 			if (!surf->model_index && m != r_refdef.worldmodel) {
 				surf->model_index = -1 - i;	// instanced model
 			}
-			tex = surf->texinfo->texture->render;
 			// append surf to the texture chain
+			vulktex_t *tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
 		}
 	}
@@ -477,29 +459,35 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
-	stage = QFV_CreateStagingBuffer (device, "bsp", vertex_buffer_size,
-									 ctx->cmdpool);
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "bsp",
+													 vertex_buffer_size,
+													 ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
-	vertices = QFV_PacketExtend (packet, vertex_buffer_size);
-	vertex_index_base = 0;
-	// holds all the polygon definitions: vertex indices + poly_count "end of
-	// primitive" markers.
+	bspvert_t  *vertices = QFV_PacketExtend (packet, vertex_buffer_size);
+	// holds all the polygon definitions: vertex indices + poly_count
+	// primitive restart markers + poly_count index counts. The primitive
+	// restart markers are included in index_count, so poly_count below is
+	// for the per-polygon index count.
+	// so each polygon within the list:
+	//     count        includes the end of primitive marker
+	//     index        count-1 indices
+	//     index
+	//     ...
+	//     "end of primitive" (~0u)
 	free (bctx->polys);
 	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
 
 	// All usable surfaces have been chained to the (base) texture they use.
-	// Run through the textures, using their chains to build display maps.
+	// Run through the textures, using their chains to build display lists.
 	// For animated textures, if a surface is on one texture of the group, it
-	// will be on all.
-	poly = bctx->polys;
-	int count = 0;
+	// will effectively be on all (just one at a time).
+	int         count = 0;
+	int         vertex_index_base = 0;
+	bsppoly_t  *poly = bctx->polys;
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
-		vulktex_t  *tex;
-		instsurf_t *is;
+		vulktex_t  *tex = bctx->texture_chains.a[i];
 
-		tex = bctx->texture_chains.a[i];
-
-		for (is = tex->tex_chain; is; is = is->tex_chain) {
+		for (instsurf_t *is = tex->tex_chain; is; is = is->tex_chain) {
 			msurface_t *surf = is->surface;
 
 			surf->polys = (glpoly_t *) poly;
