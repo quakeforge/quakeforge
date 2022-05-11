@@ -473,12 +473,14 @@ light_compare (const void *_li2, const void *_li1, void *_ldata)
 	lightingdata_t *ldata = _ldata;
 	const light_t *l1 = &ldata->lights.a[*li1];
 	const light_t *l2 = &ldata->lights.a[*li2];
+	int         s1 = abs ((int) l1->color[3]);
+	int         s2 = abs ((int) l2->color[3]);
 
-	if (l1->color[3] == l2->color[3]) {
+	if (s1 == s2) {
 		return (l1->position[3] == l2->position[3])
 			&& (l1->direction[3] > -0.5) == (l2->direction[3] > -0.5);
 	}
-	return l1->color[3] - l2->color[3];
+	return s1 - s2;
 }
 
 static VkImage
@@ -607,14 +609,14 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		if (shadow == ST_CUBE) {
 			layers = 6;
 		}
-		if (size != (int) lights[li].color[3]
+		if (size != abs ((int) lights[li].color[3])
 			|| numLayers + layers > maxLayers) {
 			if (numLayers) {
 				VkImage     shadow_map = create_map (size, numLayers, 1, ctx);
 				DARRAY_APPEND (&lctx->lightimages, shadow_map);
 				numLayers = 0;
 			}
-			size = lights[li].color[3];
+			size = abs ((int) lights[li].color[3]);
 		}
 		imageMap[li] = lctx->lightimages.size;
 		lctx->lightlayers.a[li] = numLayers;
