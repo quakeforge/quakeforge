@@ -472,75 +472,69 @@ static void
 build_surf_displist (model_t **models, msurface_t *surf, int base,
 					 dstring_t *vert_list)
 {
-	int         numverts;
-	int         numtris;
-	int         numindices;
-	int         i;
-	vec_t      *vec;
-	mvertex_t  *vertices;
-	medge_t    *edges;
-	int        *surfedges;
-	int         index;
-	bspvert_t  *verts;
-	glslpoly_t *poly;
-	GLushort   *ind;
-	float       s, t;
 	mod_brush_t *brush;
-
 	if (surf->model_index < 0) {
 		brush = &models[-surf->model_index - 1]->brush;
 	} else {
 		brush = &r_refdef.worldmodel->brush;
 	}
-	vertices = brush->vertexes;
-	edges = brush->edges;
-	surfedges = brush->surfedges;
+	mvertex_t  *vertices = brush->vertexes;
+	medge_t    *edges = brush->edges;
+	int        *surfedges = brush->surfedges;
 
-	numverts = surf->numedges;
-	numtris = numverts - 2;
-	numindices = numtris * 3;
-	verts = alloca (numverts * sizeof (bspvert_t));
-	poly = malloc (field_offset (glslpoly_t, indices[numindices]));
+	// create triangle soup for the polygon (this was written targeting
+	// GLES 2, which didn't have primitive restart)
+	int         numverts = surf->numedges;
+	int         numtris = numverts - 2;
+	int         numindices = numtris * 3;
+	glslpoly_t *poly = malloc (field_offset (glslpoly_t, indices[numindices]));
 	poly->count = numindices;
-	for (i = 0, ind = poly->indices; i < numtris; i++) {
-		*ind++ = base;
-		*ind++ = base + i + 1;
-		*ind++ = base + i + 2;
+	for (int i = 0, ind = 0; i < numtris; i++) {
+		// pretend we can use a triangle fan
+		poly->indices[ind++] = base;
+		poly->indices[ind++] = base + i + 1;
+		poly->indices[ind++] = base + i + 2;
 	}
 	surf->polys = (glpoly_t *) poly;
 
+	bspvert_t  *verts = alloca (numverts * sizeof (bspvert_t));
 	mtexinfo_t *texinfo = surf->texinfo;
-	for (i = 0; i < numverts; i++) {
-		index = surfedges[surf->firstedge + i];
-		if (index > 0)
+	for (int i = 0; i < numverts; i++) {
+		vec_t      *vec;
+		int         index = surfedges[surf->firstedge + i];
+		if (index > 0) {
+			// forward edge
 			vec = vertices[edges[index].v[0]].position;
-		else
+		} else {
+			// reverse edge
 			vec = vertices[edges[-index].v[1]].position;
-
-		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
-		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
+		}
 		VectorCopy (vec, verts[i].vertex);
-		verts[i].vertex[3] = 1;
-		verts[i].tlst[0] = s / texinfo->texture->width;
-		verts[i].tlst[1] = t / texinfo->texture->height;
+		verts[i].vertex[3] = 1;	// homogeneous coord
 
-		//lightmap texture coordinates
-		if (!surf->lightpic) {
-			// sky and water textures don't have lightmaps
+		vec2f_t     st = {
+			DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3],
+			DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3],
+		};
+		verts[i].tlst[0] = st[0] / texinfo->texture->width;
+		verts[i].tlst[1] = st[1] / texinfo->texture->height;
+
+		if (surf->lightpic) {
+			//lightmap texture coordinates
+			//every lit surface has its own lighmap at a 1/16 resolution
+			//(ie, 16 albedo pixels for every lightmap pixel)
+			const vrect_t *rect = surf->lightpic->rect;
+			vec2f_t     lmorg = (vec2f_t) { VEC2_EXP (&rect->x) } * 16 + 8;
+			vec2f_t     texorg = { VEC2_EXP (surf->texturemins) };
+			st = ((st - texorg + lmorg) / 16) * surf->lightpic->size;
+			verts[i].tlst[2] = st[0];
+			verts[i].tlst[3] = st[1];
+		} else {
+			// no lightmap for this surface (probably sky or water), so
+			// make the lightmap texture polygone degenerate
 			verts[i].tlst[2] = 0;
 			verts[i].tlst[3] = 0;
-			continue;
 		}
-		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
-		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
-		s -= surf->texturemins[0];
-		t -= surf->texturemins[1];
-		s += surf->lightpic->rect->x * 16 + 8;
-		t += surf->lightpic->rect->y * 16 + 8;
-		s /= 16;
-		t /= 16;
-		verts[i].tlst[2] = s * surf->lightpic->size;
-		verts[i].tlst[3] = t * surf->lightpic->size;
 	}
 	dstring_append (vert_list, (char *) verts, numverts * sizeof (bspvert_t));
 }
