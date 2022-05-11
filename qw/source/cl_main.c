@@ -699,7 +699,7 @@ CL_ClearState (void)
 	CL_Init_Entity (cl.viewstate.weapon_entity);
 	r_data->view_model = cl.viewstate.weapon_entity;
 
-	r_funcs->R_ClearState ();
+	SCR_NewScene (0);
 
 	SZ_Clear (&cls.netchan.message);
 
@@ -1434,7 +1434,7 @@ CL_SetState (cactive_t state)
 			if (cl_autorecord && cls.demorecording)
 				CL_StopRecording ();
 
-			r_funcs->R_ClearState ();
+			SCR_NewScene (0);
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
