@@ -90,6 +90,7 @@ static vid_model_funcs_t model_funcs = {
 	1,
 	sw_Mod_SpriteLoadFrames,
 
+	Skin_Free,
 	Skin_SetColormap,
 	Skin_SetSkin,
 	sw_Skin_SetupSkin,

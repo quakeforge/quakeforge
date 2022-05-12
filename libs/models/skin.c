@@ -72,6 +72,14 @@ new_skin (void)
 }
 
 VISIBLE void
+Skin_Free (skin_t *skin)
+{
+	if (skin) {
+		free (skin);
+	}
+}
+
+VISIBLE void
 Skin_SetTranslation (int cmap, int top, int bottom)
 {
 	int         i, j;

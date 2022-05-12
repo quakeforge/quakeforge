@@ -170,6 +170,7 @@ static vid_model_funcs_t model_funcs = {
 	1,
 	gl_Mod_SpriteLoadFrames,
 
+	Skin_Free,
 	Skin_SetColormap,
 	Skin_SetSkin,
 	gl_Skin_SetupSkin,

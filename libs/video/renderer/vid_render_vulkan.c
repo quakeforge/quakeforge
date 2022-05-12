@@ -654,6 +654,7 @@ static vid_model_funcs_t model_funcs = {
 	0,
 	vulkan_Mod_SpriteLoadFrames,
 
+	Skin_Free,
 	Skin_SetColormap,
 	Skin_SetSkin,
 	vulkan_Skin_SetupSkin,

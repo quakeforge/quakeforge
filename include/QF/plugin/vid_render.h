@@ -66,6 +66,7 @@ typedef struct vid_model_funcs_s {
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
+	void (*Skin_Free) (struct skin_s *skin);
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
 									const char *skinname);

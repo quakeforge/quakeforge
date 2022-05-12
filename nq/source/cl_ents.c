@@ -73,6 +73,7 @@ CL_ClearEnts (void)
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		if (cl_entities[i]) {
+			mod_funcs->Skin_Free (cl_entities[i]->renderer.skin);
 			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
 			cl_entities[i] = 0;
 		}
