@@ -76,9 +76,7 @@ static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 static void
 R_shutdown (void *data)
 {
-	if (vidrendmodule->functions->general->shutdown) {
-		vidrendmodule->functions->general->shutdown ();
-	}
+	PI_UnloadPlugin (vidrendmodule);
 }
 
 VISIBLE void

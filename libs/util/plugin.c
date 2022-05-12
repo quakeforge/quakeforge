@@ -235,27 +235,8 @@ PI_Plugin_Unload_f (void)
 	PI_UnloadPlugin (pi);
 }
 
-/*
-	PI_Init
-
-	Eventually this function will likely initialize libltdl. It doesn't, yet,
-	since we aren't using libltdl yet.
-*/
-VISIBLE void
-PI_Init (void)
-{
-	PI_InitCvars ();
-	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
-	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
-								   loaded_plugin_delete, 0, 0);
-	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
-				   "load the plugin of the given type name and name");
-	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
-				   "unload the plugin of the given type name and name");
-}
-
-void
-PI_Shutdown (void)
+static void
+PI_Shutdown (void *data)
 {
 	void **elems, **cur;
 
@@ -266,7 +247,28 @@ PI_Shutdown (void)
 	free (elems);
 
 	Hash_DelTable (loaded_plugins);
+	Hash_DelTable (registered_plugins);
+}
 
+/*
+	PI_Init
+
+	Eventually this function will likely initialize libltdl. It doesn't, yet,
+	since we aren't using libltdl yet.
+*/
+VISIBLE void
+PI_Init (void)
+{
+	Sys_RegisterShutdown (PI_Shutdown, 0);
+
+	PI_InitCvars ();
+	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
+	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
+								   loaded_plugin_delete, 0, 0);
+	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
+				   "load the plugin of the given type name and name");
+	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
+				   "unload the plugin of the given type name and name");
 }
 
 VISIBLE plugin_t *
