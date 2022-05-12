@@ -181,8 +181,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
-	Sys_RegisterShutdown (Net_LogStop, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

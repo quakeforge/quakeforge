@@ -519,7 +519,6 @@ CL_Version_f (void)
 static void
 CL_SendConnectPacket (void)
 {
-	dstring_t  *data;
 	double      t1, t2;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
@@ -545,12 +544,11 @@ CL_SendConnectPacket (void)
 
 	cls.qport = qport;
 
-	data = dstring_new ();
-	dsprintf (data, "%c%c%c%cconnect %i %i %i \"%s\"\n",
-			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
-			  Info_MakeString (cls.userinfo, 0));
-	Netchan_SendPacket (strlen (data->str), data->str, cls.server_addr);
-	dstring_delete (data);
+	const char *data = va (0, "%c%c%c%cconnect %i %i %i \"%s\"\n",
+						   255, 255, 255, 255, PROTOCOL_VERSION,
+						   cls.qport, cls.challenge,
+						   Info_MakeString (cls.userinfo, 0));
+	Netchan_SendPacket (strlen (data), data, cls.server_addr);
 }
 
 /*
@@ -625,14 +623,7 @@ CL_Connect_f (void)
 static void
 CL_Rcon_f (void)
 {
-	static dstring_t *message;
 	netadr_t    to;
-
-	if (!message)
-		message = dstring_new ();
-
-	dsprintf (message, "\377\377\377\377rcon %s %s", rcon_password,
-			  Cmd_Args (1));
 
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
@@ -647,7 +638,10 @@ CL_Rcon_f (void)
 			to.port = BigShort (27500);
 	}
 
-	Netchan_SendPacket (strlen (message->str) + 1, message->str, to);
+
+	const char *message;
+	message = va (0, "\377\377\377\377rcon %s %s", rcon_password, Cmd_Args (1));
+	Netchan_SendPacket (strlen (message) + 1, message, to);
 }
 
 void
@@ -1479,6 +1473,8 @@ CL_Init (void)
 		con_module->data->console->realtime = &con_realtime;
 		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = CL_Quit_f;
+		//FIXME need to rethink cbuf connections (they can form a stack)
+		Cbuf_DeleteStack (con_module->data->console->cbuf);
 		con_module->data->console->cbuf = cl_cbuf;
 	}
 
@@ -1508,7 +1504,9 @@ CL_Init (void)
 	cls.downloadtempname = dstring_newstr ();
 	cls.downloadname = dstring_newstr ();
 	cls.downloadurl = dstring_newstr ();
+	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	free (cl.players);
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 
 	// register our commands
@@ -1670,18 +1668,16 @@ CL_Init_Cvars (void)
 void
 Host_EndGame (const char *message, ...)
 {
-	static dstring_t *str;
 	va_list     argptr;
 
-	if (!str)
-		str = dstring_new ();
-
+	dstring_t *str = dstring_new ();
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
 	Sys_Printf ("\n===========================\n");
 	Sys_Printf ("Host_EndGame: %s\n", str->str);
 	Sys_Printf ("===========================\n\n");
+	dstring_delete (str);
 
 	CL_Disconnect ();
 
@@ -1696,18 +1692,15 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	static dstring_t *str;
 	static qboolean inerror = false;
 	va_list     argptr;
 
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
 
-	if (!str)
-		str = dstring_new ();
-
 	inerror = true;
 
+	dstring_t  *str = dstring_new ();
 	va_start (argptr, error);
 	dvsprintf (str, error, argptr);
 	va_end (argptr);
@@ -1724,6 +1717,7 @@ Host_Error (const char *error, ...)
 	} else {
 		Sys_Error ("Host_Error: %s", str->str);
 	}
+	dstring_delete (str);
 }
 
 void
@@ -1763,6 +1757,8 @@ Host_ReadConfiguration (const char *cfg_name)
 	Qclose (cfg_file);
 
 	plitem_t   *config = PL_GetPropertyList (cfg, 0);
+	free (cfg);
+
 	if (!config) {
 		return 0;
 	}
@@ -2064,6 +2060,9 @@ Host_Init (void)
 	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (Net_LogStop, 0);
+
 	Netchan_Init_Cvars ();
 
 	PR_Init_Cvars ();		// FIXME location
@@ -2138,4 +2137,16 @@ Host_Shutdown (void *data)
 	Host_WriteConfiguration ();
 
 	CL_HTTP_Shutdown ();
+
+	if (cl.serverinfo) {
+		Info_Destroy (cl.serverinfo);
+	}
+	Info_Destroy (cls.userinfo);
+	Cbuf_DeleteStack (cl_stbuf);
+	dstring_delete (centerprint);
+	dstring_delete (cls.servername);
+	dstring_delete (cls.downloadtempname);
+	dstring_delete (cls.downloadname);
+	dstring_delete (cls.downloadurl);
+	free (cl.players);
 }

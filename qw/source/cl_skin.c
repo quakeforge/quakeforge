@@ -217,6 +217,7 @@ skin_f (void *data, const cvar_t *cvar)
 {
 	char       *s = Hunk_TempAlloc (0, strlen (skin) + 1);
 	QFS_StripExtension (skin, s);
+	free (skin);	// cvar allocated one FIXME do in validator?
 	skin = strdup (s);
 	Cvar_Info (0, cvar);
 }
