@@ -124,16 +124,17 @@ cvar_destroy (cvar_t *var)
 	if (!(var->flags & CVAR_USER_CREATED)) {
 		Sys_Error ("Attempt to destroy non-user cvar");
 	}
-	Hash_Del (user_cvar_hash, var->name);
-	free (*(char **) var->value.value);
-	free ((char *) var->name);
-	free (var);
+	Hash_Free (user_cvar_hash, Hash_Del (user_cvar_hash, var->name));
 }
 
 VISIBLE cvar_t *
 Cvar_FindVar (const char *var_name)
 {
-	return (cvar_t*) Hash_Find (cvar_hash, var_name);
+	cvar_t     *var = Hash_Find (cvar_hash, var_name);
+	if (!var) {
+		var = Hash_Find (user_cvar_hash, var_name);
+	}
+	return var;
 }
 
 VISIBLE cvar_t *
@@ -762,11 +763,46 @@ Cvar_CvarList_f (void)
 	Sys_Printf ("------------\n%d variables\n", num_vars);
 }
 
+static void
+cvar_free_memory (void *ele, void *data)
+{
+	const cvar_t *cvar = ele;
+	if (!cvar->value.type) {
+		char      **str_value = cvar->value.value;
+		free (*str_value);
+		*str_value = 0;
+	}
+
+	if (cvar->listeners) {
+		DARRAY_CLEAR (cvar->listeners);
+		free (cvar->listeners);
+	}
+}
+
+static void
+cvar_shutdown (void *data)
+{
+	Hash_ForEach (cvar_hash, cvar_free_memory, 0);
+	Hash_DelTable (cvar_hash);
+	Hash_DelTable (user_cvar_hash);
+	Hash_DelTable (calias_hash);
+}
+
 static const char *
 cvar_get_key (const void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
 	return cvar->name;
+}
+
+static void
+cvar_free (void *c, void *unused)
+{
+	cvar_t *cvar = (cvar_t*)c;
+
+	free (*(char **) cvar->value.value);
+	free ((char *) cvar->name);
+	free (cvar);
 }
 
 static void
@@ -788,8 +824,11 @@ VISIBLE void
 Cvar_Init_Hash (void)
 {
 	cvar_hash = Hash_NewTable (1021, cvar_get_key, 0, 0, 0);
-	user_cvar_hash = Hash_NewTable (1021, cvar_get_key, 0, 0, 0);
+	user_cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
 	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
+
+	Sys_RegisterShutdown (cvar_shutdown, 0);
+
 }
 
 VISIBLE void
