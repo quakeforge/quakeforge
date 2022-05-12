@@ -187,14 +187,14 @@ void Hash_Free (hashtab_t *tab, void *ele);
 
 	this is the same function as used internally.
 */
-unsigned long Hash_String (const char *str) __attribute__((pure));
+uintptr_t Hash_String (const char *str) __attribute__((pure));
 
 /** hash a buffer.
 	\param buf	the buffer to hash
 	\param len	the size of the buffer
 	\return		the hash value of the string.
 */
-unsigned long Hash_Buffer (const void *buf, int len) __attribute__((pure));
+uintptr_t Hash_Buffer (const void *buf, int len) __attribute__((pure));
 
 /** get the size of the table
 	\param tab	the table in question

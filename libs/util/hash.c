@@ -93,11 +93,11 @@ free_hashlink (hashlink_t *link, hashlink_t **free_hashlinks)
 
 static hashlink_t *default_hashlink_freelist;
 
-VISIBLE unsigned long
+VISIBLE uintptr_t
 Hash_String (const char *str)
 {
 #if 0
-	unsigned long h = 0;
+	uintptr_t   h = 0;
 	while (*str) {
 		h = (h << 4) + (unsigned char)*str++;
 		if (h&0xf0000000)
@@ -119,12 +119,12 @@ Hash_String (const char *str)
 #endif
 }
 
-VISIBLE unsigned long
+VISIBLE uintptr_t
 Hash_Buffer (const void *_buf, int len)
 {
 	const unsigned char *buf = _buf;
 #if 0
-	unsigned long h = 0;
+	uintptr_t   h = 0;
 	while (len-- > 0) {
 		h = (h << 4) + (unsigned char)*buf++;
 		if (h&0xf0000000)
@@ -162,8 +162,8 @@ static inline int
 get_index (uintptr_t hash, size_t size, size_t bits)
 {
 #if 0
-	unsigned long mask = ~0UL << bits;
-	unsigned long extract;
+	uintptr_t   mask = ~0UL << bits;
+	uintptr_t   extract;
 
 	size -= 1;
 	for (extract = (hash & mask) >> bits;
@@ -245,7 +245,7 @@ Hash_FlushTable (hashtab_t *tab)
 VISIBLE int
 Hash_Add (hashtab_t *tab, void *ele)
 {
-	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
+	uintptr_t   h = Hash_String (tab->get_key(ele, tab->user_data));
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
 
@@ -264,7 +264,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 VISIBLE int
 Hash_AddElement (hashtab_t *tab, void *ele)
 {
-	unsigned long h = tab->get_hash (ele, tab->user_data);
+	uintptr_t   h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
 
@@ -283,7 +283,7 @@ Hash_AddElement (hashtab_t *tab, void *ele)
 VISIBLE void *
 Hash_Find (hashtab_t *tab, const char *key)
 {
-	unsigned long h = Hash_String (key);
+	uintptr_t   h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind];
 
@@ -298,7 +298,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 VISIBLE void *
 Hash_FindElement (hashtab_t *tab, const void *ele)
 {
-	unsigned long h = tab->get_hash (ele, tab->user_data);
+	uintptr_t   h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind];
 
@@ -313,7 +313,7 @@ Hash_FindElement (hashtab_t *tab, const void *ele)
 VISIBLE void **
 Hash_FindList (hashtab_t *tab, const char *key)
 {
-	unsigned long h = Hash_String (key);
+	uintptr_t   h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind], *start = 0;
 	int         count = 0;
@@ -341,7 +341,7 @@ Hash_FindList (hashtab_t *tab, const char *key)
 VISIBLE void **
 Hash_FindElementList (hashtab_t *tab, void *ele)
 {
-	unsigned long h = tab->get_hash (ele, tab->user_data);
+	uintptr_t   h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind], *start = 0;
 	int         count = 0;
@@ -369,7 +369,7 @@ Hash_FindElementList (hashtab_t *tab, void *ele)
 VISIBLE void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
-	unsigned long h = Hash_String (key);
+	uintptr_t   h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind];
 	void *data;
@@ -392,7 +392,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 VISIBLE void *
 Hash_DelElement (hashtab_t *tab, void *ele)
 {
-	unsigned long h = tab->get_hash (ele, tab->user_data);
+	uintptr_t   h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = tab->tab[ind];
 	void *data;
