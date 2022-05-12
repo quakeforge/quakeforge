@@ -62,7 +62,12 @@ button_get_key (const void *b, void *data)
 static void
 button_free (void *b, void *data)
 {
-	free (b);
+	regbutton_t *rb = b;
+	if (rb->button->listeners) {
+		DARRAY_CLEAR (rb->button->listeners);
+		free (rb->button->listeners);
+	}
+	free (rb);
 }
 
 static void
@@ -222,8 +227,15 @@ IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
 	}
 }
 
+static void
+in_button_shutdown (void *data)
+{
+	Hash_DelTable (button_tab);
+}
+
 static void __attribute__((constructor))
 in_button_init (void)
 {
 	button_tab = Hash_NewTable (127, button_get_key, button_free, 0, 0);
+	Sys_RegisterShutdown (in_button_shutdown, 0);
 }

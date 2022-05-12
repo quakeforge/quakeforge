@@ -76,6 +76,11 @@ static void
 in_evdev_shutdown (void *data)
 {
 	inputlib_close ();
+
+	for (unsigned i = 0; i < devmap._size; i++) {
+		free (devmap._map[i]);
+	}
+	free (devmap._map);
 }
 
 static void

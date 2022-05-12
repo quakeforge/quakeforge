@@ -789,6 +789,19 @@ IN_Binding_Init (void)
 }
 
 void
+IN_Binding_Shutdown ()
+{
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		clear_connection (db);
+	}
+	for (unsigned i = 0; i < devbindings._size; i++) {
+		free (devbindings._map[i]);
+	}
+	free (devbindings._map);
+	DARRAY_CLEAR (&known_devices);
+}
+
+void
 IN_Binding_SaveConfig (plitem_t *config)
 {
 	plitem_t   *devices = PL_NewArray ();

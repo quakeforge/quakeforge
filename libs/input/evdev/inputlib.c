@@ -191,7 +191,6 @@ check_device (const char *path)
 {
 	device_t   *dev;
 	int         fd;
-	dstring_t  *buff = dstring_newstr ();
 
 	fd = open (path, O_RDWR);
 	if (fd == -1)
@@ -208,9 +207,11 @@ check_device (const char *path)
 	dev->path = strdup (path);
 	dev->fd = fd;
 
+	dstring_t  *buff = dstring_newstr ();
 	dev->name = strdup (get_string (fd, EVIOCGNAME, buff));
 	dev->phys = strdup (get_string (fd, EVIOCGPHYS, buff));
 	dev->uniq = strdup (get_string (fd, EVIOCGUNIQ, buff));
+	dstring_delete (buff);
 
 	setup_buttons(dev);
 	setup_axes(dev);

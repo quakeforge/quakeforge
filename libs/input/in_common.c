@@ -539,6 +539,11 @@ IN_shutdown (void *data)
 			rd->driver.shutdown (rd->data);
 		}
 	}
+	IN_Binding_Shutdown ();
+	IMT_Shutdown ();
+
+	DARRAY_CLEAR (&in_drivers);
+	DARRAY_CLEAR (&in_devices);
 }
 
 void

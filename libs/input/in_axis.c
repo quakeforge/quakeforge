@@ -93,9 +93,15 @@ IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener, void *data)
 	}
 }
 
+static void
+in_axis_shutdown (void *data)
+{
+	Hash_DelTable (axis_tab);
+}
 
 static void __attribute__((constructor))
 in_axis_init (void)
 {
 	axis_tab = Hash_NewTable (127, axis_get_key, axis_free, 0, 0);
+	Sys_RegisterShutdown (in_axis_shutdown, 0);
 }

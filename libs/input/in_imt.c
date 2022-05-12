@@ -835,6 +835,8 @@ imt_drop_all_f (void)
 			for (size_t i = 0; i < imt->button_bindings.size; i++) {
 				free_button_binding (imt->button_bindings.a[i]);
 			}
+			DARRAY_CLEAR (&imt->axis_bindings);
+			DARRAY_CLEAR (&imt->button_bindings);
 			free ((char *) imt->name);
 			free (imt);
 		}
@@ -938,6 +940,19 @@ IMT_Init (void)
 	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
 		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
 	}
+}
+
+void
+IMT_Shutdown (void)
+{
+	imt_drop_all_f ();
+	Hash_DelTable (recipe_tab);
+
+	delete_memsuper (binding_mem);
+	binding_mem = 0;
+	DARRAY_CLEAR (&axis_blocks);
+	DARRAY_CLEAR (&button_blocks);
+	DARRAY_CLEAR (&in_contexts);
 }
 
 void
@@ -1078,8 +1093,8 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 void
 IMT_LoadConfig (plitem_t *config)
 {
-	imt_reset_blocks ();
 	imt_drop_all_f ();
+	imt_reset_blocks ();
 
 	plitem_t   *ctx_list = PL_ObjectForKey (config, "contexts");
 	if (PL_Type (ctx_list) != QFArray) {

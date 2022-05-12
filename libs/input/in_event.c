@@ -120,3 +120,16 @@ IE_Get_Focus (void)
 {
 	return focus;
 }
+
+static void
+in_event_shutdown (void *data)
+{
+	DARRAY_CLEAR (&ie_handlers);
+}
+
+static void __attribute__((constructor))
+in_event_init (void)
+{
+	//FIXME see in_evdev
+	Sys_RegisterShutdown (in_event_shutdown, 0);
+}
