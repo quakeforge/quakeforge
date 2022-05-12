@@ -242,10 +242,9 @@ Hash_FlushTable (hashtab_t *tab)
 	tab->num_ele = 0;
 }
 
-VISIBLE int
-Hash_Add (hashtab_t *tab, void *ele)
+static int
+hash_add_element (hashtab_t *tab, uintptr_t h, void *ele)
 {
-	uintptr_t   h = Hash_String (tab->get_key(ele, tab->user_data));
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
 
@@ -262,22 +261,17 @@ Hash_Add (hashtab_t *tab, void *ele)
 }
 
 VISIBLE int
+Hash_Add (hashtab_t *tab, void *ele)
+{
+	uintptr_t   h = Hash_String (tab->get_key(ele, tab->user_data));
+	return hash_add_element (tab, h, ele);
+}
+
+VISIBLE int
 Hash_AddElement (hashtab_t *tab, void *ele)
 {
 	uintptr_t   h = tab->get_hash (ele, tab->user_data);
-	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
-
-	if (!lnk)
-		return -1;
-	if (tab->tab[ind])
-		tab->tab[ind]->prev = &lnk->next;
-	lnk->next = tab->tab[ind];
-	lnk->prev = &tab->tab[ind];
-	lnk->data = ele;
-	tab->tab[ind] = lnk;
-	tab->num_ele++;
-	return 0;
+	return hash_add_element (tab, h, ele);
 }
 
 VISIBLE void *
