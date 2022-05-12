@@ -209,6 +209,7 @@ view_delete (view_t *view)
 		view_remove (view->parent, view);
 	while (view->num_children)
 		view_delete (view->children[0]);
+	free (view->children);
 	free (view);
 }
 
