@@ -205,6 +205,8 @@ CL_ReadConfiguration (const char *cfg_name)
 	Qclose (cfg_file);
 
 	plitem_t   *config = PL_GetPropertyList (cfg, 0);
+	free (cfg);
+
 	if (!config) {
 		return 0;
 	}
@@ -620,8 +622,6 @@ CL_Init (cbuf_t *cbuf)
 {
 	byte       *basepal, *colormap;
 
-	Sys_RegisterShutdown (CL_Shutdown, 0);
-
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
@@ -661,6 +661,8 @@ CL_Init (cbuf_t *cbuf)
 	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
+
+	Sys_RegisterShutdown (CL_Shutdown, 0);
 
 	SZ_Alloc (&cls.message, 1024);
 	CL_SetState (ca_disconnected);

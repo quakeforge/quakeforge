@@ -1012,6 +1012,7 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 void
 Host_Init (void)
 {
+	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 
 	host_cbuf = Cbuf_New (&id_interp);
@@ -1052,6 +1053,8 @@ Host_Init (void)
 		con_module->data->console->realtime = &con_realtime;
 		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = Host_Quit_f;
+		//FIXME need to rethink cbuf connections (they can form a stack)
+		Cbuf_DeleteStack (con_module->data->console->cbuf);
 		con_module->data->console->cbuf = host_cbuf;
 	}
 

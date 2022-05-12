@@ -86,7 +86,6 @@ main (int argc, const char **argv)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

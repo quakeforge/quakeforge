@@ -75,7 +75,6 @@ main (int argc, const char **argv)
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

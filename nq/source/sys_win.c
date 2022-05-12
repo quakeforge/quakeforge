@@ -207,7 +207,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!isDedicated)
 		init_handles (hInstance);
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

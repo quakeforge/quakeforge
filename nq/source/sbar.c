@@ -1003,6 +1003,7 @@ sbar_update_vis (void)
 void
 Sbar_Draw (void)
 {
+	if (!cl.players) return;	//FIXME draw_miniteam
 	sbar_update_vis ();
 	hud_main_view->draw (hud_main_view);
 }
@@ -1490,6 +1491,11 @@ init_hud_views (void)
 
 	if (hud_frags_view)
 		view_add (hud_inventory_view, hud_frags_view);
+
+	if (minifrags_view)
+		view_add (hud_view, minifrags_view);
+	if (miniteam_view)
+		view_add (hud_view, miniteam_view);
 
 	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
 	view_add (view, hud_view);
