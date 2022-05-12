@@ -293,7 +293,6 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
-		free (realname);
 		return -1;
 	}
 	info = vorbis_get_info (&vf);
