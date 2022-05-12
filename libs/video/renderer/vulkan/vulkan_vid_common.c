@@ -549,6 +549,9 @@ destroy_attachments (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 		dfunc->vkDestroyImage (device->dev, rp->attachment_images->a[i], 0);
 	}
 	dfunc->vkFreeMemory (device->dev, rp->attachmentMemory, 0);
+
+	free (rp->attachment_images);
+	free (rp->attachment_views);
 }
 
 static void
@@ -591,6 +594,8 @@ Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
 		destroy_renderframes (ctx, rp);
 		destroy_framebuffers (ctx, rp);
 
+		DARRAY_CLEAR (&rp->frames);
+		free (rp->clearValues);
 		free (rp);
 	}
 }

@@ -357,6 +357,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 			device->physDev->properties.limits.maxPerStageDescriptorSamplers);
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
+	free (shadow_set);
 	free (attach_set);
 	free (lights_set);
 	qfvPopDebug (ctx);

@@ -484,6 +484,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	vertex_index_base = 0;
 	// holds all the polygon definitions: vertex indices + poly_count "end of
 	// primitive" markers.
+	free (bctx->polys);
 	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
 
 	// All usable surfaces have been chained to the (base) texture they use.
