@@ -669,7 +669,6 @@ CL_TimeDemo_f (void)
 		free (timedemo_data);
 		timedemo_data = 0;
 	}
-	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartTimeDemo ();
 	timedemo_runs = timedemo_count = max (count, 1);
