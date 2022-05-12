@@ -219,28 +219,26 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
-	char       *name;
+	char        name[17];
 	int         num = 0, i;
-	dstring_t  *tag = 0;
+	const char *tag;
 
-	name = tx->name;
+	strncpy (name, tx->name, 16);
+	name[16] = 0;
 	do {
 		for (i = 0; i < ind; i++)
 			if (textures[i] && !strcmp (textures[i]->name, tx->name))
 				break;
 		if (i == ind)
 			break;
-		if (!tag) {
-			tag = dstring_new ();
-		}
-		dsprintf (tag, "%s~%x", name, num++);
-		tx->name = tag->str;
+		tag = va (0, "~%x", num++);
+		strncpy (tx->name, name, 16);
+		tx->name[15] = 0;
+		if (strlen (name) + strlen (tag) <= 15)
+			strcat (tx->name, tag);
+		else
+			strcpy (tx->name + 15 - strlen (tag), tag);
 	} while (1);
-
-	if (tag) {
-		tx->name = dstring_freeze (tag);
-		free(name);
-	}
 }
 
 static void
@@ -280,7 +278,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 
 		brush->textures[i] = tx;
 
-		tx->name = strndup(mt->name, sizeof (mt->name));
+		memcpy (tx->name, mt->name, sizeof (tx->name));
 		mod_unique_miptex_name (brush->textures, tx, i);
 		tx->width = mt->width;
 		tx->height = mt->height;

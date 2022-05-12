@@ -89,7 +89,7 @@ typedef struct instsurf_s {
 } instsurf_t;
 
 typedef struct texture_s {
-	char		*name;
+	char		name[16];
 	unsigned    width, height;
 	void       *render;		// renderer specific data
 	int			anim_total;				// total tenths in sequence ( 0 = no)
