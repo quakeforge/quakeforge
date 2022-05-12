@@ -627,7 +627,6 @@ void
 Host_ClearMemory (void)
 {
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
-	CL_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (0, host_hunklevel);

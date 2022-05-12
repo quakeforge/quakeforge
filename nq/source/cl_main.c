@@ -231,9 +231,27 @@ CL_ClearMemory (void)
 	SCR_SetFullscreen (0);
 
 	cls.signon = 0;
+	SZ_Clear (&cls.message);
+
+	if (cl.viewstate.weapon_entity) {
+		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+	}
+	if (cl.players) {
+		int         i;
+
+		for (i = 0; i < cl.maxclients; i++)
+			Info_Destroy (cl.players[i].userinfo);
+	}
+	// wipe the entire cl structure
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
+
+	CL_ClearTEnts ();
+
+	SCR_NewScene (0);
+
+	CL_ClearEnts ();
 }
 
 void
@@ -267,23 +285,9 @@ CL_InitCvars (void)
 void
 CL_ClearState (void)
 {
+	CL_ClearMemory ();
 	if (!sv.active)
 		Host_ClearMemory ();
-
-	if (cl.viewstate.weapon_entity) {
-		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
-	}
-	if (cl.players) {
-		int         i;
-
-		for (i = 0; i < cl.maxclients; i++)
-			Info_Destroy (cl.players[i].userinfo);
-	}
-
-	// wipe the entire cl structure
-	__auto_type cam = cl.viewstate.camera_transform;
-	memset (&cl, 0, sizeof (cl));
-	cl.viewstate.camera_transform = cam;
 
 	cl.viewstate.player_origin = (vec4f_t) {0, 0, 0, 1};
 	cl.viewstate.chase = 1;
@@ -292,14 +296,6 @@ CL_ClearState (void)
 	cl.watervis = 1;
 	SCR_SetFullscreen (0);
 	r_data->lightstyle = cl.lightstyle;
-
-	SZ_Clear (&cls.message);
-
-	CL_ClearTEnts ();
-
-	SCR_NewScene (0);
-
-	CL_ClearEnts ();
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
