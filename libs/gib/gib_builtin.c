@@ -1039,6 +1039,12 @@ GIB_bp4_f (void)
 {
 }
 
+static void
+gib_builtin_shutdown (void *data)
+{
+	Hash_DelTable (gib_builtins);
+}
+
 void
 GIB_Builtin_Init (qboolean sandbox)
 {
@@ -1090,4 +1096,6 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("bp2", GIB_bp2_f);
 	GIB_Builtin_Add ("bp3", GIB_bp3_f);
 	GIB_Builtin_Add ("bp4", GIB_bp4_f);
+
+	Sys_RegisterShutdown (gib_builtin_shutdown, 0);
 }
