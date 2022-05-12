@@ -77,6 +77,11 @@ bi_cvar_clear (progs_t *pr, void *_res)
 }
 
 static void
+bi_cvar_destroy (progs_t *pr, void *_res)
+{
+}
+
+static void
 bi_Cvar_MakeAlias (progs_t *pr, void *_res)
 {
 	__auto_type res = (cvar_resources_t *) _res;
@@ -266,6 +271,6 @@ RUA_Cvar_Init (progs_t *pr, int secure)
 	cvar_resources_t *res = calloc (1, sizeof (cvar_resources_t));
 
 	res->aliases = 0;
-	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear);
+	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear, bi_cvar_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -1861,6 +1861,11 @@ bi_curses_clear (progs_t *pr, void *_res)
 	panel_reset (res);
 }
 
+static void
+bi_curses_destroy (progs_t *pr, void *_res)
+{
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -1963,7 +1968,8 @@ BI_Curses_Init (progs_t *pr)
 	qwaq_init_pipe (&res->commands);
 	qwaq_init_pipe (&res->results);
 
-	PR_Resources_Register (pr, "curses", res, bi_curses_clear);
+	PR_Resources_Register (pr, "curses", res, bi_curses_clear,
+						   bi_curses_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 	Sys_RegisterShutdown (bi_shutdown, pr);
 }

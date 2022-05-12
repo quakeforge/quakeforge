@@ -655,6 +655,11 @@ bi_scene_clear (progs_t *pr, void *_res)
 	}
 }
 
+static void
+bi_scene_destroy (progs_t *pr, void *_res)
+{
+}
+
 void
 RUA_Scene_Init (progs_t *pr, int secure)
 {
@@ -662,6 +667,6 @@ RUA_Scene_Init (progs_t *pr, int secure)
 
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "Scene", res, bi_scene_clear);
+	PR_Resources_Register (pr, "Scene", res, bi_scene_clear, bi_scene_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

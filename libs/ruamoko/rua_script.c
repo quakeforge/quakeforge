@@ -92,6 +92,11 @@ bi_script_clear (progs_t *pr, void *_res)
 }
 
 static void
+bi_script_destroy (progs_t *pr, void *_res)
+{
+}
+
+static void
 bi_Script_New (progs_t *pr, void *_res)
 {
 	script_resources_t *res = _res;
@@ -206,6 +211,7 @@ RUA_Script_Init (progs_t *pr, int secure)
 {
 	script_resources_t *res = calloc (1, sizeof (script_resources_t));
 
-	PR_Resources_Register (pr, "Script", res, bi_script_clear);
+	PR_Resources_Register (pr, "Script", res, bi_script_clear,
+						   bi_script_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -197,6 +197,11 @@ qwaq_thread_clear (progs_t *pr, void *_thread)
 {
 }
 
+static void
+qwaq_thread_destroy (progs_t *pr, void *_res)
+{
+}
+
 static progs_t *
 create_progs (qwaq_thread_t *thread)
 {
@@ -212,7 +217,8 @@ create_progs (qwaq_thread_t *thread)
 	pr_debug = 2;
 	pr_boundscheck = 0;
 	PR_Init (pr);
-	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear);
+	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear,
+						   qwaq_thread_destroy);
 	RUA_Init (pr, thread->rua_security);
 	common_builtins_init (pr);
 	while (*funcs) {

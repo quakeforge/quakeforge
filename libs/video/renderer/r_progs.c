@@ -327,6 +327,13 @@ bi_draw_clear (progs_t *pr, void *_res)
 	Hash_FlushTable (res->pic_hash);
 }
 
+static void
+bi_draw_destroy (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = (draw_resources_t *) _res;
+	Hash_DelTable (res->pic_hash);
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -354,6 +361,6 @@ R_Progs_Init (progs_t *pr)
 	draw_resources_t *res = calloc (1, sizeof (draw_resources_t));
 	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0, pr->hashctx);
 
-	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
+	PR_Resources_Register (pr, "Draw", res, bi_draw_clear, bi_draw_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

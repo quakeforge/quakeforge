@@ -113,6 +113,13 @@ bi_gib_builtin_clear (progs_t *progs, void *_res)
 }
 
 static void
+bi_gib_builtin_destroy (progs_t *progs, void *_res)
+{
+	//bi_gib_resources_t *res = (bi_gib_resources_t *) _res;
+	Hash_DelTable (bi_gib_builtins);
+}
+
+static void
 bi_GIB_Builtin_Add (progs_t *pr, void *_res)
 {
 	bi_gib_resources_t *res = _res;
@@ -194,9 +201,13 @@ GIB_Progs_Init (progs_t *pr)
 	bi_gib_resources_t *res = malloc (sizeof (bi_gib_resources_t));
 	res->builtins = 0;
 
+	if (bi_gib_builtins) {
+		Sys_Error ("GIB_Progs_Init: only one progs VM supported FIXME");
+	}
 	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
 									 bi_gib_builtin_free, 0, pr->hashctx);
 
-	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
+	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear,
+						   bi_gib_builtin_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -41,13 +41,12 @@ typedef struct {
 	cbuf_t     *cbuf;
 } cbuf_resources_t;
 
-static cbuf_t *
-get_cbuf (progs_t *pr, int arg, const char *func)
+static cbuf_t * __attribute__((pure))
+_get_cbuf (progs_t *pr, cbuf_resources_t *res, int arg, const char *func)
 {
 	cbuf_t     *cbuf = 0;
 
 	if (arg == 0) {
-		cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
 		cbuf = res->cbuf;
 	} else {
 		PR_RunError (pr, "%s: Invalid cbuf_t", func);
@@ -57,12 +56,13 @@ get_cbuf (progs_t *pr, int arg, const char *func)
 
 	return cbuf;
 }
+#define get_cbuf(pr, res, arg) _get_cbuf(pr, res, arg, __FUNCTION__)
 
 static void
 bi_Cbuf_AddText (progs_t *pr, void *data)
 {
 	const char *text = P_GSTRING (pr, 0);
-	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
+	cbuf_t     *cbuf = get_cbuf (pr, data, 0);
 	Cbuf_AddText (cbuf, text);
 }
 
@@ -70,26 +70,31 @@ static void
 bi_Cbuf_InsertText (progs_t *pr, void *data)
 {
 	const char *text = P_GSTRING (pr, 0);
-	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
+	cbuf_t     *cbuf = get_cbuf (pr, data, 0);
 	Cbuf_InsertText (cbuf, text);
 }
 
 static void
 bi_Cbuf_Execute (progs_t *pr, void *data)
 {
-	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
+	cbuf_t     *cbuf = get_cbuf (pr, data, 0);
 	Cbuf_Execute (cbuf);
 }
 
 static void
 bi_Cbuf_Execute_Sets (progs_t *pr, void *data)
 {
-	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
+	cbuf_t     *cbuf = get_cbuf (pr, data, 0);
 	Cbuf_Execute_Sets (cbuf);
 }
 
 static void
 bi_cbuf_clear (progs_t *pr, void *data)
+{
+}
+
+static void
+bi_cbuf_destroy (progs_t *pr, void *data)
 {
 }
 
@@ -108,7 +113,7 @@ void
 RUA_Cbuf_Init (progs_t *pr, int secure)
 {
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
-	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);
+	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear, bi_cbuf_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }
 

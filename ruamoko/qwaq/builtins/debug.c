@@ -165,12 +165,22 @@ qwaq_debug_clear (progs_t *pr, void *_res)
 }
 
 static void
+qwaq_debug_destroy (progs_t *pr, void *_res)
+{
+}
+
+static void
 qwaq_target_clear (progs_t *pr, void *_res)
 {
 	qwaq_target_t *target = pr->debug_data;
 	if (target) {
 		target_free (target->debugger, target);
 	}
+}
+
+static void
+qwaq_target_destroy (progs_t *pr, void *_res)
+{
 }
 
 static int
@@ -718,7 +728,8 @@ QWAQ_Debug_Init (progs_t *pr)
 	debug->input = PR_Resources_Find (pr, "input");
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
-	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear);
+	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear,
+						   qwaq_debug_destroy);
 	PR_RegisterBuiltins (pr, builtins, debug);
 }
 
@@ -726,5 +737,6 @@ void
 QWAQ_DebugTarget_Init (progs_t *pr)
 {
 	PR_AddLoadFunc (pr, qwaq_target_load);
-	PR_Resources_Register (pr, "qwaq-target", 0, qwaq_target_clear);
+	PR_Resources_Register (pr, "qwaq-target", 0, qwaq_target_clear,
+						   qwaq_target_destroy);
 }

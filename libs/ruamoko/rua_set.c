@@ -803,6 +803,11 @@ res_set_clear (progs_t *pr, void *_res)
 	res_set_iter_reset (res);
 }
 
+static void
+res_set_destroy (progs_t *pr, void *_res)
+{
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -863,6 +868,6 @@ RUA_Set_Init (progs_t *pr, int secure)
 	set_resources_t *res = calloc (1, sizeof (set_resources_t));
 	res->sets = 0;
 
-	PR_Resources_Register (pr, "Set", res, res_set_clear);
+	PR_Resources_Register (pr, "Set", res, res_set_clear, res_set_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

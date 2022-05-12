@@ -61,6 +61,15 @@ typedef struct edict_s edict_t;
 */
 void PR_Init (progs_t *pr);
 
+/** Shut down the progs engine.
+
+	Shuts down only the specified progs engine. Frees resources allocated
+	during progs init.
+
+	\param pr		The progs engine instance to shut down.
+*/
+void PR_Shutdown (progs_t *pr);
+
 /** Initialize the Cvars for the progs engine. Call before calling PR_Init().
 */
 void PR_Init_Cvars (void);
@@ -1692,6 +1701,9 @@ void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
 */
 void PR_Resources_Init (progs_t *pr);
 
+void PR_Resources_Shutdown (progs_t *pr);
+void PR_Builtins_Shutdown (progs_t *pr);
+
 /** Clear all resources before loading a new progs.
 
 	Calls the clear() callback of all registered resources.
@@ -1706,17 +1718,23 @@ void PR_Resources_Clear (progs_t *pr);
 	\param name		The name of the resource. Used for retrieving the
 					resource.
 	\param data		The resource data.
-	\param clear	Callback for performing any necessary cleanup. Called
-					by PR_Resources_Clear(). The parameters are the current
+	\param clear	Callback for performing any necessary cleanup before
+					VM reuse. Called by PR_Resources_Clear(). The parameters
+					are the current VM (\p pr) and \p data.
+	\param destroy	Callback for when the resource is about to be destryed
+					due to final VM shutdown. The parameters are the current
 					VM (\p pr) and \p data.
 	\note			The name should be unique to the VM, but no checking is
 					done. If the name is not unique, the previous registered
 					resource will break. The name of the sub-system
 					registering the resource is a suitable name, and will
 					probably be unique.
+	\note			During VM shutdown, \a clear is called (for all resources)
+					before \destroy is called.
 */
 void PR_Resources_Register (progs_t *pr, const char *name, void *data,
-							void (*clear)(progs_t *, void *));
+							void (*clear)(progs_t *, void *),
+							void (*destroy)(progs_t *, void *));
 
 /** Retrieve a resource registered with the VM.
 

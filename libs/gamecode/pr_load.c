@@ -551,6 +551,27 @@ PR_Init (progs_t *pr)
 }
 
 VISIBLE void
+PR_Shutdown (progs_t *pr)
+{
+	PR_Resources_Shutdown (pr);
+	PR_Builtins_Shutdown (pr);
+
+	free (pr->load_funcs);
+	free (pr->load_finish_funcs);
+	pr->num_load_funcs = pr->max_load_funcs = 0;
+	pr->num_load_finish_funcs = pr->max_load_finish_funcs = 0;
+
+	Hash_DelTable (pr->function_hash);
+	Hash_DelTable (pr->global_hash);
+	Hash_DelTable (pr->field_hash);
+	Hash_DelTable (pr->type_hash);
+	pr->function_hash = 0;
+	pr->global_hash = 0;
+	pr->field_hash = 0;
+	pr->type_hash = 0;
+}
+
+VISIBLE void
 PR_Error (progs_t *pr, const char *error, ...)
 {
 	va_list     argptr;

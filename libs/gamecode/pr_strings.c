@@ -232,6 +232,15 @@ pr_strings_clear (progs_t *pr, void *data)
 	pr->pr_xtstr = 0;
 }
 
+static void
+pr_strings_destroy (progs_t *pr, void *_res)
+{
+	__auto_type res = (prstr_resources_t *) _res;
+	dstring_delete (res->print_str);
+	Hash_DelTable (res->strref_hash);
+	pr->pr_string_resources = 0;
+}
+
 VISIBLE int
 PR_LoadStrings (progs_t *pr)
 {
@@ -261,15 +270,7 @@ PR_LoadStrings (progs_t *pr)
 	res->ds_mem.realloc = pr_strings_realloc;
 	res->ds_mem.data = pr;
 
-	if (res->strref_hash) {
-		Hash_FlushTable (res->strref_hash);
-	} else {
-		res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
-										  res, pr->hashctx);
-		res->string_map = 0;
-		res->free_string_refs = 0;
-		res->dyn_str_size = 0;
-	}
+	Hash_FlushTable (res->strref_hash);
 
 	if (res->static_strings)
 		free (res->static_strings);
@@ -1254,7 +1255,10 @@ PR_Strings_Init (progs_t *pr)
 	prstr_resources_t *res = calloc (1, sizeof (*res));
 	res->pr = pr;
 	res->print_str = dstring_new ();
+	res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
+									  res, pr->hashctx);
 
-	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
+	PR_Resources_Register (pr, "Strings", res, pr_strings_clear,
+						   pr_strings_destroy);
 	pr->pr_string_resources = res;
 }

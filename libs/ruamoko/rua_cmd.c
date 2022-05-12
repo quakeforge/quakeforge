@@ -58,6 +58,7 @@ typedef struct {
 } cmd_resources_t;
 
 static hashtab_t *bi_cmds;
+static int bi_cmds_refs;
 
 static const char *
 bi_cmd_get_key (const void *c, void *unused)
@@ -124,6 +125,14 @@ bi_cmd_clear (progs_t *pr, void *data)
 }
 
 static void
+bi_cmd_destroy (progs_t *pr, void *data)
+{
+	if (!--bi_cmds_refs) {
+		Hash_DelTable (bi_cmds);
+	}
+}
+
+static void
 bi_Cmd_Argc (progs_t *pr, void *data)
 {
 	R_INT (pr) = Cmd_Argc ();
@@ -162,10 +171,12 @@ RUA_Cmd_Init (progs_t *pr, int secure)
 
 	res->cmds = 0;
 
-	if (!bi_cmds)
+	if (!bi_cmds) {
 		bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0,
 								 pr->hashctx);
+	}
+	bi_cmds_refs++;
 
-	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);
+	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear, bi_cmd_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

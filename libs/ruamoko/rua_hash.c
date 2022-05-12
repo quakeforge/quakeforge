@@ -382,6 +382,11 @@ bi_hash_clear (progs_t *pr, void *_res)
 	table_reset (res);
 }
 
+static void
+bi_hash_destroy (progs_t *pr, void *_res)
+{
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -411,6 +416,6 @@ RUA_Hash_Init (progs_t *pr, int secure)
 	hash_resources_t *res = calloc (1, sizeof (hash_resources_t));
 	res->tabs = 0;
 
-	PR_Resources_Register (pr, "Hash", res, bi_hash_clear);
+	PR_Resources_Register (pr, "Hash", res, bi_hash_clear, bi_hash_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

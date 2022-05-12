@@ -480,6 +480,14 @@ bi_input_clear (progs_t *pr, void *_res)
 	Hash_FlushTable (res->cookies);
 }
 
+static void
+bi_input_destroy (progs_t *pr, void *_res)
+{
+	input_resources_t *res = _res;
+	Hash_DelTable (res->cookies);
+	delete_memsuper (res->cookie_super);
+}
+
 static uintptr_t
 rua_in_hash_cookie (const void *_cookie, void *_res)
 {
@@ -513,7 +521,7 @@ RUA_Input_Init (progs_t *pr, int secure)
 								  &res->hashctx);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
-	PR_Resources_Register (pr, "input", res, bi_input_clear);
+	PR_Resources_Register (pr, "input", res, bi_input_clear, bi_input_destroy);
 	if (secure & 2) {
 		PR_RegisterBuiltins (pr, secure_builtins, res);
 	} else {

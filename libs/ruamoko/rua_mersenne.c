@@ -147,6 +147,11 @@ bi_mtwist_clear (progs_t *pr, void *_res)
 	state_reset (res);
 }
 
+static void
+bi_mtwist_destroy (progs_t *pr, void *_res)
+{
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -164,6 +169,7 @@ RUA_Mersenne_Init (progs_t *pr, int secure)
 {
 	mtwist_resources_t *res = calloc (1, sizeof (mtwist_resources_t));
 
-	PR_Resources_Register (pr, "Mersenne Twister", res, bi_mtwist_clear);
+	PR_Resources_Register (pr, "Mersenne Twister", res, bi_mtwist_clear,
+						   bi_mtwist_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

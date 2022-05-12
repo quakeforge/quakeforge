@@ -103,6 +103,11 @@ bi_rua_model_clear (progs_t *pr, void *_res)
 	rua_model_handle_reset (res);
 }
 
+static void
+bi_rua_model_destroy (progs_t *pr, void *_res)
+{
+}
+
 static int
 alloc_handle (rua_model_resources_t *res, model_t *model)
 {
@@ -177,6 +182,7 @@ RUA_Model_Init (progs_t *pr, int secure)
 	rua_model_resources_t *res = calloc (sizeof (rua_model_resources_t), 1);
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "Model", res, bi_rua_model_clear);
+	PR_Resources_Register (pr, "Model", res, bi_rua_model_clear,
+						   bi_rua_model_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

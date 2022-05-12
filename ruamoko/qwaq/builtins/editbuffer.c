@@ -1017,6 +1017,11 @@ qwaq_ebresources_clear (progs_t *pr, void *_res)
 	editbuffer_reset (res);
 }
 
+static void
+qwaq_ebresources_destroy (progs_t *pr, void *_res)
+{
+}
+
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -1067,6 +1072,7 @@ QWAQ_EditBuffer_Init (progs_t *pr)
 	qwaq_ebresources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
 
-	PR_Resources_Register (pr, "qwaq-editbuffer", res, qwaq_ebresources_clear);
+	PR_Resources_Register (pr, "qwaq-editbuffer", res, qwaq_ebresources_clear,
+						   qwaq_ebresources_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

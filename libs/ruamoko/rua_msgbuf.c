@@ -94,6 +94,11 @@ bi_msgbuf_clear (progs_t *pr, void *data)
 	msgbuf_reset (res);
 }
 
+static void
+bi_msgbuf_destroy (progs_t *pr, void *_res)
+{
+}
+
 static int
 alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 {
@@ -481,6 +486,7 @@ RUA_MsgBuf_Init (progs_t *pr, int secure)
 {
 	msgbuf_resources_t *res = calloc (sizeof (msgbuf_resources_t), 1);
 
-	PR_Resources_Register (pr, "MsgBuf", res, bi_msgbuf_clear);
+	PR_Resources_Register (pr, "MsgBuf", res, bi_msgbuf_clear,
+						   bi_msgbuf_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

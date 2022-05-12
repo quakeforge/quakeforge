@@ -106,6 +106,13 @@ bi_plist_clear (progs_t *pr, void *_res)
 	plist_reset (res);
 }
 
+static void
+bi_plist_destroy (progs_t *pr, void *_res)
+{
+	__auto_type res = (plist_resources_t *) _res;
+	Hash_DelTable (res->plist_tab);
+}
+
 static inline int
 plist_handle (plist_resources_t *res, plitem_t *plitem)
 {
@@ -486,6 +493,6 @@ RUA_Plist_Init (progs_t *pr, int secure)
 	res->plist_tab = Hash_NewTable (1021, 0, 0, 0, pr->hashctx);
 	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
-	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
+	PR_Resources_Register (pr, "plist", res, bi_plist_clear, bi_plist_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }

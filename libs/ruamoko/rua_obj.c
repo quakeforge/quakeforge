@@ -124,6 +124,7 @@ typedef struct probj_resources_s {
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
 	hashtab_t  *load_methods;
+	obj_list   *obj_list_free_list;
 	obj_list   *unresolved_classes;
 	obj_list   *unclaimed_categories;
 	obj_list   *uninitialized_statics;
@@ -175,27 +176,25 @@ get_dtable (probj_t *probj, const char *name, int index)
 	return dtable;
 }
 
-static obj_list *obj_list_free_list;
-
 static obj_list *
-obj_list_new (void)
+obj_list_new (probj_t *probj)
 {
 	int         i;
 	obj_list   *l;
 
-	if (!obj_list_free_list) {
-		obj_list_free_list = calloc (128, sizeof (obj_list));
+	if (!probj->obj_list_free_list) {
+		probj->obj_list_free_list = calloc (128, sizeof (obj_list));
 		for (i = 0; i < 127; i++)
-			obj_list_free_list[i].next = &obj_list_free_list[i + 1];
+			probj->obj_list_free_list[i].next = &probj->obj_list_free_list[i + 1];
 	}
-	l = obj_list_free_list;
-	obj_list_free_list = l->next;
+	l = probj->obj_list_free_list;
+	probj->obj_list_free_list = l->next;
 	l->next = 0;
 	return l;
 }
 
 static void
-obj_list_free (obj_list *l)
+obj_list_free (probj_t *probj, obj_list *l)
 {
 	obj_list   *e;
 
@@ -204,29 +203,29 @@ obj_list_free (obj_list *l)
 
 	for (e = l; e->next; e = e->next)
 		;
-	e->next = obj_list_free_list;
-	obj_list_free_list = l;
+	e->next = probj->obj_list_free_list;
+	probj->obj_list_free_list = l;
 }
 
 static inline obj_list *
-list_cons (void *data, obj_list *next)
+list_cons (probj_t *probj, void *data, obj_list *next)
 {
-	obj_list   *l = obj_list_new ();
+	obj_list   *l = obj_list_new (probj);
 	l->data = data;
 	l->next = next;
 	return l;
 }
 
 static inline void
-list_remove (obj_list **list)
+list_remove (probj_t *probj, obj_list **list)
 {
 	if ((*list)->next) {
 		obj_list   *l = *list;
 		*list = (*list)->next;
 		l->next = 0;
-		obj_list_free (l);
+		obj_list_free (probj, l);
 	} else {
-		obj_list_free (*list);
+		obj_list_free (probj, *list);
 		*list = 0;
 	}
 }
@@ -288,7 +287,7 @@ create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 	while (superclass != upper) {
 		tree = class_tree_new ();
 		tree->class = superclass;
-		tree->subclasses = list_cons (prev, tree->subclasses);
+		tree->subclasses = list_cons (probj, prev, tree->subclasses);
 		super_class = PR_GetString (pr, superclass->super_class);
 		superclass = (superclass->super_class ? Hash_Find (probj->classes,
 														   super_class)
@@ -323,7 +322,7 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 		}
 		node = class_tree_new ();
 		node->class = class;
-		tree->subclasses = list_cons (node, tree->subclasses);
+		tree->subclasses = list_cons (probj, node, tree->subclasses);
 		return tree;
 	}
 	if (!class_is_subclass_of_class (probj, class, tree->class))
@@ -339,7 +338,7 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 	}
 	new_tree = create_tree_of_subclasses_inherited_from (probj, class,
 														 tree->class);
-	tree->subclasses = list_cons (new_tree, tree->subclasses);
+	tree->subclasses = list_cons (probj, new_tree, tree->subclasses);
 	return tree;
 }
 
@@ -361,7 +360,8 @@ obj_tree_insert_class (probj_t *probj, pr_class_t *class)
 	}
 	if (!list_node) {
 		tree = _obj_tree_insert_class (probj, 0, class);
-		probj->class_tree_list = list_cons (tree, probj->class_tree_list);
+		probj->class_tree_list = list_cons (probj, tree,
+											probj->class_tree_list);
 	}
 }
 
@@ -584,7 +584,7 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 	sel->sel_id = index;
 	sel->sel_types = PR_SetString (pr, types);
 
-	l = obj_list_new ();
+	l = obj_list_new (probj);
 	l->data = sel;
 	l->next = probj->selector_sels[index];
 	probj->selector_sels[index] = l;
@@ -700,7 +700,7 @@ obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 		return;
 
 	if (!(proto_class = Hash_Find (probj->classes, "Protocol"))) {
-		probj->unclaimed_proto_list = list_cons (protos,
+		probj->unclaimed_proto_list = list_cons (probj, protos,
 												 probj->unclaimed_proto_list);
 		return;
 	}
@@ -821,7 +821,7 @@ obj_send_load (probj_t *probj)
 		pr_class_t *class = probj->unresolved_classes->data;
 		const char *super_class = PR_GetString (pr, class->super_class);
 		while (Hash_Find (probj->classes, super_class)) {
-			list_remove (&probj->unresolved_classes);
+			list_remove (probj, &probj->unresolved_classes);
 			if (probj->unresolved_classes) {
 				class = probj->unresolved_classes->data;
 				super_class = PR_GetString (pr, class->super_class);
@@ -842,12 +842,12 @@ obj_send_load (probj_t *probj)
 							   send_load);
 		obj_postorder_traverse (probj, probj->class_tree_list->data, 0,
 								obj_destroy_class_tree_node);
-		list_remove (&probj->class_tree_list);
+		list_remove (probj, &probj->class_tree_list);
 	}
 	//XXX callback
 	//for (m = probj->module_list; m; m = m->next)
 	//	obj_create_classes_tree (probj, m->data);
-	obj_list_free (probj->module_list);
+	obj_list_free (probj, probj->module_list);
 	probj->module_list = 0;
 }
 
@@ -1090,10 +1090,9 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 {
 	progs_t    *pr = probj->pr;
 	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
-	dstring_t  *dstr = dstring_newstr ();
 
-	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), dstr->str);
+	PR_Sprintf (pr, probj->msg, "obj_verror", fmt, count, args);
+	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), probj->msg->str);
 }
 
 static void
@@ -1152,7 +1151,7 @@ obj_init_statics (probj_t *probj)
 		}
 
 		if (initialized) {
-			list_remove (cell);
+			list_remove (probj, cell);
 		} else {
 			cell = &(*cell)->next;
 		}
@@ -1188,7 +1187,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 					symtab->defs[symtab->cls_def_cnt
 								 + symtab->cat_def_cnt] ? "yes" : "no");
 
-	probj->module_list = list_cons (module, probj->module_list);
+	probj->module_list = list_cons (probj, module, probj->module_list);
 
 	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
 	for (i = 0; i < symtab->sel_ref_cnt; i++) {
@@ -1242,7 +1241,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 		}
 
 		if (class->super_class && !Hash_Find (probj->classes, super_class))
-			probj->unresolved_classes = list_cons (class,
+			probj->unresolved_classes = list_cons (probj, class,
 												   probj->unresolved_classes);
 	}
 
@@ -1265,14 +1264,14 @@ rua___obj_exec_class (progs_t *pr, void *data)
 			finish_category (probj, category, class);
 		} else {
 			probj->unclaimed_categories
-				= list_cons (category, probj->unclaimed_categories);
+				= list_cons (probj, category, probj->unclaimed_categories);
 		}
 	}
 
 	if (*ptr) {
 		Sys_MaskPrintf (SYS_rua_obj, "Static instances lists: %x\n", *ptr);
 		probj->uninitialized_statics
-			= list_cons (&G_STRUCT (pr, pr_ptr_t, *ptr),
+			= list_cons (probj, &G_STRUCT (pr, pr_ptr_t, *ptr),
 						 probj->uninitialized_statics);
 	}
 	if (probj->uninitialized_statics) {
@@ -1285,7 +1284,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 		pr_class_t *class = Hash_Find (probj->classes, class_name);
 
 		if (class) {
-			list_remove (cell);
+			list_remove (probj, cell);
 			finish_category (probj, category, class);
 		} else {
 			cell = &(*cell)->next;
@@ -1296,7 +1295,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 		&& Hash_Find (probj->classes, "Protocol")) {
 		for (cell = &probj->unclaimed_proto_list; *cell; ) {
 			obj_init_protocols (probj, (*cell)->data);
-			list_remove (cell);
+			list_remove (probj, cell);
 		}
 	}
 
@@ -2044,14 +2043,13 @@ rua__i_Object_error_error_ (progs_t *pr, void *data)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	const char *fmt = P_GSTRING (pr, 2);
-	dstring_t  *dstr = dstring_new ();
 	int         count = pr->pr_argc - 3;
 	pr_type_t **args = &pr->pr_params[3];
 
-	dsprintf (dstr, "error: %s (%s)\n%s",
+	dsprintf (probj->msg, "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (probj, self)),
 			  object_is_instance (probj, self) ? "instance" : "class", fmt);
-	obj_verror (probj, self, 0, dstr->str, count, args);
+	obj_verror (probj, self, 0, probj->msg->str, count, args);
 }
 
 static int
@@ -2281,7 +2279,7 @@ rua_obj_cleanup (progs_t *pr, void *data)
 	probj->available_selectors = 0;
 	probj->selector_block = 0;
 	for (i = 0; i < probj->selector_index_max; i++) {
-		obj_list_free (probj->selector_sels[i]);
+		obj_list_free (probj, probj->selector_sels[i]);
 		probj->selector_sels[i] = 0;
 		probj->selector_names[i] = 0;
 	}
@@ -2302,6 +2300,18 @@ rua_obj_cleanup (progs_t *pr, void *data)
 	probj->class_tree_list = 0;
 }
 
+static void
+rua_obj_destroy (progs_t *pr, void *_res)
+{
+	probj_t    *probj = _res;
+
+	dstring_delete (probj->msg);
+	Hash_DelTable (probj->selector_hash);
+	Hash_DelTable (probj->classes);
+	Hash_DelTable (probj->protocols);
+	Hash_DelTable (probj->load_methods);
+}
+
 void
 RUA_Obj_Init (progs_t *pr, int secure)
 {
@@ -2318,7 +2328,8 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
 
-	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup);
+	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup,
+						   rua_obj_destroy);
 	PR_RegisterBuiltins (pr, obj_methods, probj);
 
 	PR_AddLoadFunc (pr, rua_obj_init_runtime);

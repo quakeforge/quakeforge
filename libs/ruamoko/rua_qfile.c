@@ -95,6 +95,11 @@ bi_qfile_clear (progs_t *pr, void *_res)
 	handle_reset (res);
 }
 
+static void
+bi_qfile_destroy (progs_t *pr, void *_res)
+{
+}
+
 static int
 alloc_handle (qfile_resources_t *res, QFile *file)
 {
@@ -401,7 +406,7 @@ RUA_QFile_Init (progs_t *pr, int secure)
 {
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
 
-	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear);
+	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear, bi_qfile_destroy);
 	if (secure) {
 		PR_RegisterBuiltins (pr, secure_builtins, res);
 	} else {

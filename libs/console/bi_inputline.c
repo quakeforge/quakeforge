@@ -102,6 +102,11 @@ bi_il_clear (progs_t *pr, void *_res)
 	il_data_reset (res);
 }
 
+static void
+bi_il_destroy (progs_t *pr, void *_res)
+{
+}
+
 static il_data_t * __attribute__((pure))
 get_inputline (progs_t *pr, il_resources_t *res, int arg, const char *func)
 {
@@ -341,7 +346,7 @@ InputLine_Progs_Init (progs_t *pr)
 {
 	il_resources_t *res = calloc (1, sizeof (il_resources_t));
 
-	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
+	PR_Resources_Register (pr, "InputLine", res, bi_il_clear, bi_il_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 }
 

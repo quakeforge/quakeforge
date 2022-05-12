@@ -391,6 +391,24 @@ pr_debug_clear (progs_t *pr, void *data)
 	}
 }
 
+static void
+pr_debug_destroy (progs_t *pr, void *_res)
+{
+	__auto_type res = (prdeb_resources_t *) _res;
+
+	dstring_delete (res->string);
+	dstring_delete (res->dva);
+	dstring_delete (res->line);
+	dstring_delete (res->dstr);
+	va_destroy_context (res->va);
+
+	Hash_DelTable (res->file_hash);
+	Hash_DelTable (res->debug_syms);
+	Hash_DelTable (res->compunits);
+
+	pr->pr_debug_resources = 0;
+}
+
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
@@ -1952,7 +1970,8 @@ PR_Debug_Init (progs_t *pr)
 	res->debug_syms = Hash_NewTable (509, def_get_key, 0, pr, pr->hashctx);
 	res->compunits = Hash_NewTable (509, compunit_get_key, 0, pr, pr->hashctx);
 
-	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
+	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear,
+						   pr_debug_destroy);
 	pr->pr_debug_resources = res;
 }
 

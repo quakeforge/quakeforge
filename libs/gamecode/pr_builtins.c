@@ -158,6 +158,21 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data)
 	}
 }
 
+void
+PR_Builtins_Shutdown (progs_t *pr)
+{
+	for (size_t i = 0; i < pr->builtin_blocks->size; i++) {
+		free (pr->builtin_blocks->a[i]);
+	}
+	DARRAY_CLEAR (pr->builtin_blocks);
+	free (pr->builtin_blocks);
+	pr->builtin_blocks = 0;
+	Hash_DelTable (pr->builtin_hash);
+	pr->builtin_hash = 0;
+	Hash_DelTable (pr->builtin_num_hash);
+	pr->builtin_num_hash = 0;
+}
+
 VISIBLE builtin_t *
 PR_FindBuiltin (progs_t *pr, const char *name)
 {
