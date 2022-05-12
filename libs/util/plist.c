@@ -98,7 +98,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    line_start;
 	plitem_t   *error;
 	va_ctx_t   *va_ctx;
-	hashlink_t **hashlinks;
+	hashctx_t **hashctx;
 } pldata_t;
 
 //	Ugly defines for fast checking and conversion from char to number
@@ -165,11 +165,11 @@ pl_newitem (pltype_t type)
 }
 
 VISIBLE plitem_t *
-PL_NewDictionary (hashlink_t **hashlinks)
+PL_NewDictionary (hashctx_t **hashctx)
 {
 	plitem_t   *item = pl_newitem (QFDictionary);
 	pldict_t   *dict = malloc (sizeof (pldict_t));
-	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, NULL, hashlinks);
+	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, NULL, hashctx);
 	DARRAY_INIT (&dict->keys, 8);
 	item->data = dict;
 	return item;
@@ -776,7 +776,7 @@ pl_parsepropertylistitem (pldata_t *pl)
 	switch (pl->ptr[pl->pos]) {
 	case '{':
 	{
-		item = PL_NewDictionary (pl->hashlinks);
+		item = PL_NewDictionary (pl->hashctx);
 		item->line = pl->line;
 
 		pl->pos++;
@@ -934,7 +934,7 @@ pl_parsepropertylistitem (pldata_t *pl)
 }
 
 VISIBLE plitem_t *
-PL_GetPropertyList (const char *string, hashlink_t **hashlinks)
+PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 {
 	plitem_t	*newpl = NULL;
 
@@ -946,7 +946,7 @@ PL_GetPropertyList (const char *string, hashlink_t **hashlinks)
 		.end = strlen (string),
 		.line = 1,
 		.va_ctx = va_create_context (4),
-		.hashlinks = hashlinks,
+		.hashctx = hashctx,
 	};
 
 	if (!(newpl = pl_parsepropertylistitem (&pl))) {

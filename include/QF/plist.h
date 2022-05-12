@@ -28,7 +28,7 @@
 #ifndef __QF_plist_h
 #define __QF_plist_h
 
-struct hashlink_s;
+struct hashctx_s;
 
 /** \defgroup plist Property lists
 	\ingroup utils
@@ -127,14 +127,14 @@ typedef struct plelement_s {
 /** Create an in-memory representation of the contents of a property list.
 
 	\param string	the saved plist, as read from a file.
-	\param hashlinks Hashlink chain to use when creating dictionaries (see
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
 					Hash_NewTable()). May be null.
 
 	\return Returns an object equivalent to the passed-in string.
 	\note You are responsible for freeing the returned object.
 */
 plitem_t *PL_GetPropertyList (const char *string,
-							  struct hashlink_s **hashlinks);
+							  struct hashctx_s **hashctx);
 
 /** Create a property list string from the in-memory representation.
 
@@ -308,11 +308,11 @@ plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
 
 /** Create a new dictionary object.
 	The dictionary will be empty.
-	\param hashlinks Hashlink chain to use when creating dictionaries (see
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
 					Hash_NewTable()). May be null.
 	\return the new dictionary object
 */
-plitem_t *PL_NewDictionary (struct hashlink_s **hashlinks);
+plitem_t *PL_NewDictionary (struct hashctx_s **hashctx);
 
 /** Create a new array object.
 	The array will be empty.

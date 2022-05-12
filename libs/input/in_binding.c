@@ -794,7 +794,7 @@ IN_Binding_SaveConfig (plitem_t *config)
 	plitem_t   *devices = PL_NewArray ();
 	PL_D_AddObject (config, "devices", devices);
 	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
-		plitem_t   *db_cfg = PL_NewDictionary (0); //FIXME hashlinks
+		plitem_t   *db_cfg = PL_NewDictionary (0);
 		PL_A_AddObject (devices, db_cfg);
 		PL_D_AddObject (db_cfg, "name", PL_NewString (db->name));
 		PL_D_AddObject (db_cfg, "devname", PL_NewString (db->devname));

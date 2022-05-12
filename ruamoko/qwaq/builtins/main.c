@@ -207,7 +207,7 @@ create_progs (qwaq_thread_t *thread)
 	pr->allocate_progs_mem = allocate_progs_mem;
 	pr->free_progs_mem = free_progs_mem;
 	pr->no_exec_limit = 1;
-	pr->hashlink_freelist = &thread->hashlink_freelist;
+	pr->hashctx = &thread->hashctx;
 
 	pr_debug = 2;
 	pr_boundscheck = 0;

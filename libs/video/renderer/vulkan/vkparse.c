@@ -961,8 +961,7 @@ static plfield_t renderpass_fields[] = {
 static hashtab_t *
 handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
 {
-	return Hash_NewTable (23, handleref_getkey, free_func,
-						  ctx, &ctx->hashlinks);
+	return Hash_NewTable (23, handleref_getkey, free_func, ctx, &ctx->hashctx);
 }
 
 static const char *
@@ -978,7 +977,7 @@ static exprtab_t root_symtab = {
 static void __attribute__((constructor))
 root_symtab_init (void)
 {
-	// using a null hashlinks here is safe because this function is run before
+	// using a null hashctx here is safe because this function is run before
 	// main and thus before any possibility of threading.
 	exprctx_t root_context = { .symtab = &root_symtab };
 	cexpr_init_symtab (&root_symtab, &root_context);
@@ -988,9 +987,8 @@ void
 QFV_InitParse (vulkan_ctx_t *ctx)
 {
 	exprctx_t   context = {};
-	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0,
-								 &ctx->hashlinks);
-	context.hashlinks = &ctx->hashlinks;
+	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &ctx->hashctx);
+	context.hashctx = &ctx->hashctx;
 	vkgen_init_symtabs (&context);
 	cexpr_init_symtab (&qfv_output_t_symtab, &context);
 	cexpr_init_symtab (&vulkan_frameset_t_symtab, &context);
@@ -1034,7 +1032,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 
 	exprctx.external_variables = &vars_tab;
 	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
+	exprctx.hashctx = &ctx->hashctx;
 	exprctx.memsuper = memsuper;
 
 	cexpr_init_symtab (&vars_tab, &exprctx);

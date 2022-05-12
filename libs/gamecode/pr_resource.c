@@ -54,7 +54,7 @@ VISIBLE void
 PR_Resources_Init (progs_t *pr)
 {
 	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0,
-									   pr->hashlink_freelist);
+									   pr->hashctx);
 	pr->resources = 0;
 }
 

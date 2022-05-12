@@ -489,7 +489,7 @@ cvar_write_config (void *ele, void *data)
 VISIBLE void
 Cvar_SaveConfig (plitem_t *config)
 {
-	plitem_t   *cvars = PL_NewDictionary (0);	//FIXME hashlinks
+	plitem_t   *cvars = PL_NewDictionary (0);
 	PL_D_AddObject (config, "cvars", cvars);
 	Hash_ForEach (cvar_hash, cvar_write_config, cvars);
 	Hash_ForEach (user_cvar_hash, cvar_write_config, cvars);

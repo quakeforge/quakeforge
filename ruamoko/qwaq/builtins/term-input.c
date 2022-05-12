@@ -587,7 +587,7 @@ qwaq_input_init (qwaq_input_resources_t *res)
 		Hash_FlushTable (res->key_sequences);
 	} else {
 		res->key_sequences = Hash_NewTable (127, key_sequence_getkey, 0, 0,
-											res->pr->hashlink_freelist);
+											res->pr->hashctx);
 	}
 	for (size_t i = 0; i < sizeof (default_keys) / sizeof (default_keys[0]);
 		 i++) {

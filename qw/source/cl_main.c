@@ -1730,7 +1730,7 @@ void
 Host_WriteConfiguration (void)
 {
 	if (host_initialized && cl_writecfg) {
-		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+		plitem_t   *config = PL_NewDictionary (0);
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
 
@@ -1762,7 +1762,7 @@ Host_ReadConfiguration (const char *cfg_name)
 	cfg[len] = 0;
 	Qclose (cfg_file);
 
-	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);
 	if (!config) {
 		return 0;
 	}

@@ -265,7 +265,7 @@ PR_LoadStrings (progs_t *pr)
 		Hash_FlushTable (res->strref_hash);
 	} else {
 		res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
-										  res, pr->hashlink_freelist);
+										  res, pr->hashctx);
 		res->string_map = 0;
 		res->free_string_refs = 0;
 		res->dyn_str_size = 0;

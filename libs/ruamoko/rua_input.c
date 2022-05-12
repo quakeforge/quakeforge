@@ -51,7 +51,7 @@ typedef struct rua_in_cookie_s {
 } rua_in_cookie_t;
 
 typedef struct input_resources_s {
-	hashlink_t *hash_links;
+	hashctx_t  *hashctx;
 	hashtab_t  *cookies;
 	memsuper_t *cookie_super;
 } input_resources_t;
@@ -510,7 +510,7 @@ RUA_Input_Init (progs_t *pr, int secure)
 
 	res->cookie_super = new_memsuper ();
 	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res,
-								  &res->hash_links);
+								  &res->hashctx);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
 	PR_Resources_Register (pr, "input", res, bi_input_clear);

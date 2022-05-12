@@ -1948,11 +1948,9 @@ PR_Debug_Init (progs_t *pr)
 		res->type_encodings[i] = &res->void_type;
 	}
 	res->file_hash = Hash_NewTable (509, file_get_key, file_free, 0,
-									pr->hashlink_freelist);
-	res->debug_syms = Hash_NewTable (509, def_get_key, 0, pr,
-									 pr->hashlink_freelist);
-	res->compunits = Hash_NewTable (509, compunit_get_key, 0, pr,
-									pr->hashlink_freelist);
+									pr->hashctx);
+	res->debug_syms = Hash_NewTable (509, def_get_key, 0, pr, pr->hashctx);
+	res->compunits = Hash_NewTable (509, compunit_get_key, 0, pr, pr->hashctx);
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
 	pr->pr_debug_resources = res;

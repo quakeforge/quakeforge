@@ -508,7 +508,7 @@ IN_ProcessEvents (void)
 void
 IN_SaveConfig (plitem_t *config)
 {
-	plitem_t   *input_config = PL_NewDictionary (0); //FIXME hashlinks
+	plitem_t   *input_config = PL_NewDictionary (0);
 	PL_D_AddObject (config, "input", input_config);
 
 	IMT_SaveConfig (input_config);

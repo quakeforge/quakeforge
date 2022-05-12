@@ -48,7 +48,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_device_s *device;
 	struct qfv_swapchain_s *swapchain;
 	VkSampleCountFlagBits msaaSamples;	// FIXME not here?
-	struct hashlink_s *hashlinks;	//FIXME want per thread
+	struct hashctx_s *hashctx;	//FIXME want per thread
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 	struct plitem_s  *pipelineDef;
 

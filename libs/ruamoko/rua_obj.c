@@ -2309,13 +2309,11 @@ RUA_Obj_Init (progs_t *pr, int secure)
 
 	probj->pr = pr;
 	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj,
-										  pr->hashlink_freelist);
-	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj,
-									pr->hashlink_freelist);
+										  pr->hashctx);
+	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj, pr->hashctx);
 	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj,
-									  pr->hashlink_freelist);
-	probj->load_methods = Hash_NewTable (1021, 0, 0, probj,
-										 pr->hashlink_freelist);
+									  pr->hashctx);
+	probj->load_methods = Hash_NewTable (1021, 0, 0, probj, pr->hashctx);
 	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);

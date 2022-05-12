@@ -194,7 +194,7 @@ bi_PL_GetFromFile (progs_t *pr, void *_res)
 	Qread (file, buf, len);
 	buf[len] = 0;
 
-	plitem = PL_GetPropertyList (buf, pr->hashlink_freelist);
+	plitem = PL_GetPropertyList (buf, pr->hashctx);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -203,8 +203,7 @@ static void
 bi_PL_GetPropertyList (progs_t *pr, void *_res)
 {
 	plist_resources_t *res = _res;
-	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0),
-											 pr->hashlink_freelist);
+	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0), pr->hashctx);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -382,7 +381,7 @@ static void
 bi_PL_NewDictionary (progs_t *pr, void *_res)
 {
 	plist_resources_t *res = _res;
-	plitem_t   *plitem = PL_NewDictionary (pr->hashlink_freelist);
+	plitem_t   *plitem = PL_NewDictionary (pr->hashctx);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -484,7 +483,7 @@ void
 RUA_Plist_Init (progs_t *pr, int secure)
 {
 	plist_resources_t *res = calloc (1, sizeof (plist_resources_t));
-	res->plist_tab = Hash_NewTable (1021, 0, 0, 0, pr->hashlink_freelist);
+	res->plist_tab = Hash_NewTable (1021, 0, 0, 0, pr->hashctx);
 	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);

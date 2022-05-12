@@ -103,7 +103,7 @@ typedef struct exprctx_s {
 	struct memsuper_s *memsuper;
 	const struct plitem_s *item;
 	struct plitem_s *messages;
-	struct hashlink_s **hashlinks;
+	struct hashctx_s **hashctx;
 	int         errors;
 } exprctx_t;
 

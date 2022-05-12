@@ -947,14 +947,14 @@ IMT_SaveConfig (plitem_t *config)
 	PL_D_AddObject (config, "contexts", ctx_list);
 	for (size_t i = 0; i < in_contexts.size; i++) {
 		in_context_t *context = &in_contexts.a[i];
-		plitem_t   *ctx = PL_NewDictionary (0); //FIXME hashlinks
+		plitem_t   *ctx = PL_NewDictionary (0);
 		PL_A_AddObject (ctx_list, ctx);
 		PL_D_AddObject (ctx, "name", PL_NewString (context->name));
 		if (context->imts) {
 			plitem_t   *imt_list = PL_NewArray ();
 			PL_D_AddObject (ctx, "imts", imt_list);
 			for (imt_t *imt = context->imts; imt; imt = imt->next) {
-				plitem_t   *imt_cfg = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *imt_cfg = PL_NewDictionary (0);
 				PL_D_AddObject (imt_cfg, "name", PL_NewString (imt->name));
 				if (imt->chain) {
 					PL_D_AddObject (imt_cfg, "chain",
@@ -976,7 +976,6 @@ IMT_SaveConfig (plitem_t *config)
 			PL_D_AddObject (ctx, "switchers", switcher_list);
 			for (imt_switcher_t *switcher = context->switchers; switcher;
 				 switcher = switcher->next) {
-				//FIXME hashlinks
 				plitem_t   *switcher_cfg = PL_NewDictionary (0);
 				PL_A_AddObject (switcher_list, switcher_cfg);
 
@@ -1020,7 +1019,7 @@ IMT_SaveAxisConfig (plitem_t *axes, int axis_ind, int dev_axis)
 			in_axisbinding_t *a = imt->axis_bindings.a[axis_ind];
 			if (a) {
 				in_recipe_t *recipe = a->recipe;
-				plitem_t   *axis = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *axis = PL_NewDictionary (0);
 				PL_A_AddObject (axes, axis);
 
 				PL_D_AddObject (axis, "imt", PL_NewString (imt->name));
@@ -1054,7 +1053,7 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 		for (imt_t *imt = context->imts; imt; imt = imt->next) {
 			in_buttonbinding_t *b = imt->button_bindings.a[button_ind];
 			if (b) {
-				plitem_t   *button = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *button = PL_NewDictionary (0);
 				PL_A_AddObject (buttons, button);
 
 				PL_D_AddObject (button, "imt", PL_NewString (imt->name));

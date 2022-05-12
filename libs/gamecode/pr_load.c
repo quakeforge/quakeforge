@@ -544,13 +544,10 @@ PR_Init (progs_t *pr)
 	PR_Strings_Init (pr);
 	PR_Debug_Init (pr);
 	pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
-									   pr->hashlink_freelist);
-	pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
-									 pr->hashlink_freelist);
-	pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
-									pr->hashlink_freelist);
-	pr->type_hash = Hash_NewTable (1021, type_get_key, 0, pr,
-								   pr->hashlink_freelist);
+									   pr->hashctx);
+	pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr, pr->hashctx);
+	pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr, pr->hashctx);
+	pr->type_hash = Hash_NewTable (1021, type_get_key, 0, pr, pr->hashctx);
 }
 
 VISIBLE void

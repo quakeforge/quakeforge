@@ -111,9 +111,8 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data)
 		pr->builtin_blocks = malloc (sizeof (biblock_t));
 		DARRAY_INIT (pr->builtin_blocks, 16);
 		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr,
-										  pr->hashlink_freelist);
-		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr,
-											  pr->hashlink_freelist);
+										  pr->hashctx);
+		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr, pr->hashctx);
 		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
 							 builtin_compare);
 

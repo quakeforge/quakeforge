@@ -301,7 +301,7 @@ build_configs (vulkan_ctx_t *ctx)
 	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
 	num_plists = 0;
 	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		plitem_t   *item = PL_GetPropertyList (sym->value, &ctx->hashlinks);
+		plitem_t   *item = PL_GetPropertyList (sym->value, &ctx->hashctx);
 		if (!item) {
 			// Syntax errors in the compiled-in plists are unrecoverable
 			Sys_Error ("Error parsing plist for %s", sym->name);
@@ -311,7 +311,7 @@ build_configs (vulkan_ctx_t *ctx)
 		sym->type = &cexpr_plitem;
 		num_plists++;
 	}
-	exprctx_t   ectx = { .hashlinks = &ctx->hashlinks };
+	exprctx_t   ectx = { .hashctx = &ctx->hashctx };
 	cexpr_init_symtab (&builtin_configs, &ectx);
 }
 
@@ -328,7 +328,7 @@ get_builtin_config (vulkan_ctx_t *ctx, const char *name)
 		.result = &result,
 		.symtab = &builtin_configs,
 		.memsuper = new_memsuper (),
-		.hashlinks = &ctx->hashlinks,
+		.hashctx = &ctx->hashctx,
 		.messages = PL_NewArray (),
 	};
 	if (cexpr_eval_string (name, &ectx)) {

@@ -45,11 +45,11 @@
 
 #include "compat.h"
 
-struct hashlink_s {
+typedef struct hashlink_s {
 	struct hashlink_s *next;
 	struct hashlink_s **prev;
 	void *data;
-};
+} hashlink_t;
 
 struct hashtab_s {
 	size_t tab_size;
@@ -184,8 +184,7 @@ get_index (uintptr_t hash, size_t size, size_t bits)
 
 VISIBLE hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
-			   void (*f)(void*,void*), void *ud,
-			   hashlink_t **hashlink_freelist)
+			   void (*f)(void*,void*), void *ud, hashctx_t **hctx)
 {
 	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
 	if (!tab)
@@ -194,10 +193,10 @@ Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 	tab->user_data = ud;
 	tab->get_key = gk;
 	tab->free_ele = f;
-	if (!hashlink_freelist) {
-		hashlink_freelist = &default_hashlink_freelist;
+	if (!hctx) {
+		hctx = (hashctx_t **) &default_hashlink_freelist;
 	}
-	tab->hashlink_freelist = hashlink_freelist;
+	tab->hashlink_freelist = (hashlink_t **) hctx;
 
 	while (tsize) {
 		tab->size_bits++;
