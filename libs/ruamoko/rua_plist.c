@@ -202,6 +202,7 @@ bi_PL_GetFromFile (progs_t *pr, void *_res)
 	buf[len] = 0;
 
 	plitem = PL_GetPropertyList (buf, pr->hashctx);
+	free (buf);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
