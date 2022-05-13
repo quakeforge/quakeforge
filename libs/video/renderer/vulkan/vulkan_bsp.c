@@ -638,11 +638,13 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 static inline void
 visit_leaf (mleaf_t *leaf)
 {
-	// deal with model fragments in this leaf
+	// since this leaf will be rendered, any entities in the leaf also need
+	// to be rendered (the bsp tree doubles as an entity cull structure)
 	if (leaf->efrags)
 		R_StoreEfrags (leaf->efrags);
 }
 
+// 1 = back side, 0 = front side
 static inline int
 get_side (mnode_t *node)
 {
@@ -662,8 +664,10 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 	msurface_t *surf;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
-	side = (~side + 1) & SURF_PLANEBACK;
-	// draw stuff
+	// seems to be microscopically faster even on modern hardware
+	side = (-side) & SURF_PLANEBACK;
+	// chain any visible surfaces on the node that face the camera.
+	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		surf = brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
@@ -671,6 +675,8 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
+			// if side and the surface facing differ, then the camera is
+			// on backside of the surface
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 

@@ -731,6 +731,7 @@ visit_leaf (mleaf_t *leaf)
 		R_StoreEfrags (leaf->efrags);
 }
 
+// 1 = back side, 0 = front side
 static inline int
 get_side (mnode_t *node)
 {
@@ -750,8 +751,10 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 	msurface_t *surf;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
-	side = (~side + 1) & SURF_PLANEBACK;
-	// draw stuff
+	// seems to be microscopically faster even on modern hardware
+	side = (-side) & SURF_PLANEBACK;
+	// chain any visible surfaces on the node that face the camera.
+	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
 		surf = bctx->brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
@@ -759,6 +762,8 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
+			// if side and the surface facing differ, then the camera is
+			// on backside of the surface
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
