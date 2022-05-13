@@ -396,6 +396,11 @@ PI_LoadPlugin (const char *type, const char *name)
 VISIBLE qboolean
 PI_UnloadPlugin (plugin_t *plugin)
 {
+	// Remove the plugin from the set of loaded plugins to ensure that a
+	// shutdown triggered by an error in the unload process doesn't try to
+	// unload the plugin a second time
+	loaded_plugin_t *lp = Hash_Del (loaded_plugins, plugin->full_name);
+
 	if (plugin && plugin->functions && plugin->functions->general
 		&& plugin->functions->general->shutdown) {
 		plugin->functions->general->shutdown ();
@@ -405,8 +410,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 						plugin->type);
 	}
 
-	// remove from the table of loaded plugins
-	Hash_Free (loaded_plugins, Hash_Del (loaded_plugins, plugin->full_name));
+	Hash_Free (loaded_plugins, lp);
 
 	if (!plugin->handle) // we didn't load it
 		return true;
