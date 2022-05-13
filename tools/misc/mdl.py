@@ -3,6 +3,7 @@ from pprint import *
 import sys
 
 model = open(sys.argv[1],"rb").read()
+file_bytes = len(model)
 m = unpack ("4s i 3f 3f f 3f i i i i i i i", model[:76])
 model = model[76:]
 m = m[0:2] + (m[2:5],) + (m[5:8],) + m[8:9] + (m[9:12],) + m[12:20]
@@ -11,6 +12,7 @@ if m[1] == 6:
 	model = model[8:]
 pprint (m)
 
+print(f"skins @ {file_bytes - len(model)}")
 skins = []
 s = m[7] * m[8]
 for i in range(m[6]):
@@ -31,6 +33,7 @@ for i in range(m[6]):
 		skins.append (k)
 #pprint (skins)
 
+print(f"stverts @ {file_bytes - len(model)}")
 stverts = []
 for i in range(m[9]):
 	x = unpack ("i i i", model[:12])
@@ -38,6 +41,7 @@ for i in range(m[9]):
 	model = model [12:]
 pprint (stverts)
 
+print(f"tris @ {file_bytes - len(model)}")
 tris = []
 for i in range(m[10]):
 	tris.append (unpack ("i i i i", model[:16]))
@@ -45,6 +49,7 @@ for i in range(m[10]):
 	model = model [16:]
 pprint (tris)
 
+print(f"frames @ {file_bytes - len(model)}")
 frames = []
 for i in range (m[11]):
 	t = unpack ("i", model[:4])[0]
