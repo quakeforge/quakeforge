@@ -235,7 +235,6 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
-	QFV_DestroyStagingBuffer (ctx->staging);
 	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
 											   ctx->surface, 0);
 	clear_table (&ctx->pipelineLayouts);

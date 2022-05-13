@@ -49,6 +49,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	stage->atom_mask = atom - 1;
 	size = (size + stage->atom_mask) & ~stage->atom_mask;
 	stage->device = device;
+	stage->cmdPool = cmdPool;
 	stage->buffer = QFV_CreateBuffer (device, size,
 									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
@@ -96,14 +97,18 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 
 	int         count = RB_buffer_size (&stage->packets);
 	__auto_type fences = QFV_AllocFenceSet (count, alloca);
+	__auto_type cmdBuf = QFV_AllocCommandBufferSet (count, alloca);
 	for (int i = 0; i < count; i++) {
 		fences->a[i] = stage->packets.buffer[i].fence;
+		cmdBuf->a[i] = stage->packets.buffer[i].cmd;
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
 							5000000000ull);
 	for (int i = 0; i < count; i++) {
 		dfunc->vkDestroyFence (device->dev, fences->a[i], 0);
 	}
+	dfunc->vkFreeCommandBuffers (device->dev, stage->cmdPool,
+								 cmdBuf->size, cmdBuf->a);
 
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
 	dfunc->vkFreeMemory (device->dev, stage->memory, 0);

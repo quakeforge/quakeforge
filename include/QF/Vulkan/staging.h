@@ -13,6 +13,7 @@ typedef struct qfv_packet_s {
 
 typedef struct qfv_stagebuf_s {
 	struct qfv_device_s *device;
+	VkCommandPool cmdPool;
 	VkBuffer    buffer;
 	VkDeviceMemory memory;
 	RING_BUFFER(qfv_packet_t, 4) packets;	///< packets for controlling access

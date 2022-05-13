@@ -60,6 +60,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
@@ -693,8 +694,6 @@ vulkan_vid_render_shutdown (void)
 	qfv_devfuncs_t *df = device->funcs;
 	VkDevice    dev = device->dev;
 	QFV_DeviceWaitIdle (device);
-	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
-	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
 	Mod_ClearAll ();
 
@@ -710,6 +709,11 @@ vulkan_vid_render_shutdown (void)
 
 	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
+
+	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
+	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
+	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
+
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 
