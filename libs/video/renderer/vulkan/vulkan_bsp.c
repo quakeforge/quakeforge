@@ -162,7 +162,6 @@ release_##name##s (bspctx_t *bctx)									\
 }
 
 GET_RELEASE (elechain_t, elechain)
-GET_RELEASE (elements_t, elements)
 GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
@@ -216,7 +215,6 @@ clear_texture_chains (bspctx_t *bctx)
 	}
 	clear_tex_chain (r_notexture_mip->render);
 	release_elechains (bctx);
-	release_elementss (bctx);
 	release_instsurfs (bctx);
 }
 
@@ -225,7 +223,6 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	release_elechains (bctx);
-	release_elementss (bctx);
 }
 
 static inline void
@@ -307,7 +304,8 @@ add_elechain (vulktex_t *tex, bspctx_t *bctx)
 	elechain_t *ec;
 
 	ec = get_elechain (bctx);
-	ec->elements = get_elements (bctx);
+	ec->first_index = 0;
+	ec->index_count = 0;
 	ec->transform = 0;
 	ec->color = 0;
 	*tex->elechain_tail = ec;
@@ -793,7 +791,6 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_device_t *device,
 			   VkCommandBuffer cmd)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
-	elements_t *el;
 
 	if (ec->transform) {
 		push_transform (ec->transform, layout, device, cmd);
@@ -801,10 +798,8 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_device_t *device,
 		//FIXME should cache current transform
 		push_transform (identity, layout, device, cmd);
 	}
-	for (el = ec->elements; el; el = el->next) {
-		if (!el->index_count)
-			continue;
-		dfunc->vkCmdDrawIndexed (cmd, el->index_count, 1, el->first_index,
+	if (ec->index_count) {
+		dfunc->vkCmdDrawIndexed (cmd, ec->index_count, 1, ec->first_index,
 								 0, 0);
 	}
 }
@@ -812,13 +807,10 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_device_t *device,
 static void
 reset_elechain (elechain_t *ec)
 {
-	elements_t *el;
-
-	for (el = ec->elements; el; el = el->next) {
-		el->first_index = 0;
-		el->index_count = 0;
-	}
+	ec->first_index = 0;
+	ec->index_count = 0;
 }
+
 
 static void
 bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
@@ -975,8 +967,7 @@ sky_end (vulkan_ctx_t *ctx)
 }
 
 static inline void
-add_surf_elements (vulktex_t *tex, instsurf_t *is,
-				   elechain_t **ec, elements_t **el,
+add_surf_elements (vulktex_t *tex, instsurf_t *is, elechain_t **ec,
 				   bspctx_t *bctx, bspframe_t *bframe)
 {
 	bsppoly_t  *poly = (bsppoly_t *) is->surface->polys;
@@ -985,19 +976,17 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 		(*ec) = add_elechain (tex, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
-		(*el) = (*ec)->elements;
-		(*el)->first_index = bframe->index_count;
+		(*ec)->first_index = bframe->index_count;
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
 		(*ec) = add_elechain (tex, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
-		(*el) = (*ec)->elements;
-		(*el)->first_index = bframe->index_count;
+		(*ec)->first_index = bframe->index_count;
 	}
 	memcpy (bframe->index_data + bframe->index_count,
 			poly->indices, poly->count * sizeof (poly->indices[0]));
-	(*el)->index_count += poly->count;
+	(*ec)->index_count += poly->count;
 	bframe->index_count += poly->count;
 }
 
@@ -1006,12 +995,11 @@ build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 {
 	instsurf_t *is;
 	elechain_t *ec = 0;
-	elements_t *el = 0;
 
 	for (is = tex->tex_chain; is; is = is->tex_chain) {
 		// emit the polygon indices for the surface to the texture's
 		// element chain
-		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
+		add_surf_elements (tex, is, &ec, bctx, bframe);
 	}
 }
 
@@ -1117,7 +1105,6 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	instsurf_t *is;
 	vulktex_t  *tex = 0;
 	elechain_t *ec = 0;
-	elements_t *el = 0;
 
 	if (!bctx->waterchain)
 		return;
@@ -1146,7 +1133,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		}
 		// emit the polygon indices for the surface to the texture's
 		// element chain
-		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
+		add_surf_elements (tex, is, &ec, bctx, bframe);
 	}
 	if (tex) {
 		bind_texture (tex, 1, bctx->layout, dfunc,
@@ -1176,7 +1163,6 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 	instsurf_t *is;
 	vulktex_t  *tex = 0;
 	elechain_t *ec = 0;
-	elements_t *el = 0;
 
 	if (!bctx->sky_chain)
 		return;
@@ -1208,7 +1194,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 		}
 		// emit the polygon indices for the surface to the texture's
 		// element chain
-		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
+		add_surf_elements (tex, is, &ec, bctx, bframe);
 	}
 	if (tex) {
 		bind_texture (tex, 1, bctx->layout, dfunc,
@@ -1350,7 +1336,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->sky_chain_tail = &bctx->sky_chain;
 	bctx->static_instsurfs_tail = &bctx->static_instsurfs;
 	bctx->elechains_tail = &bctx->elechains;
-	bctx->elementss_tail = &bctx->elementss;
 	bctx->instsurfs_tail = &bctx->instsurfs;
 
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,

@@ -54,17 +54,11 @@ typedef struct bspvert_s {
 	quat_t      tlst;
 } bspvert_t;
 
-typedef struct elements_s {
-	struct elements_s *_next;
-	struct elements_s *next;
-	uint32_t    first_index;
-	uint32_t    index_count;
-} elements_t;
-
 typedef struct elechain_s {
 	struct elechain_s *_next;
 	struct elechain_s *next;
-	elements_t *elements;
+	uint32_t    first_index;
+	uint32_t    index_count;
 	vec_t      *transform;
 	float      *color;
 } elechain_t;
@@ -120,9 +114,6 @@ typedef struct bspctx_s {
 	elechain_t  *elechains;
 	elechain_t **elechains_tail;
 	elechain_t  *free_elechains;
-	elements_t  *elementss;
-	elements_t **elementss_tail;
-	elements_t  *free_elementss;
 	instsurf_t  *instsurfs;
 	instsurf_t **instsurfs_tail;
 	instsurf_t  *free_instsurfs;
