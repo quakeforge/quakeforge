@@ -107,12 +107,9 @@ static model_t *cl_spike;
 
 static vec4f_t beam_rolls[360];
 
-static void
-CL_TEnts_Precache (int phase)
+void
+CL_TEnts_Precache (void)
 {
-	if (!phase) {
-		return;
-	}
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
@@ -134,11 +131,19 @@ CL_TEnts_Precache (int phase)
 	}
 }
 
+static void
+cl_tents_precache (int phase)
+{
+	if (!phase) {
+		return;
+	}
+	CL_TEnts_Precache ();
+}
+
 void
 CL_TEnts_Init (void)
 {
-	QFS_GamedirCallback (CL_TEnts_Precache);
-	CL_TEnts_Precache (1);
+	QFS_GamedirCallback (cl_tents_precache);
 	for (int i = 0; i < 360; i++) {
 		float       ang = i * M_PI / 360;
 		beam_rolls[i] = (vec4f_t) { sin (ang), 0, 0, cos (ang) };

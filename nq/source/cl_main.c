@@ -300,6 +300,8 @@ CL_ClearState (void)
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
 	r_data->view_model = cl.viewstate.weapon_entity;
+
+	CL_TEnts_Precache ();
 }
 
 /*

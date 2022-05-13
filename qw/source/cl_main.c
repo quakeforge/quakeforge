@@ -693,6 +693,8 @@ CL_ClearState (void)
 	CL_Init_Entity (cl.viewstate.weapon_entity);
 	r_data->view_model = cl.viewstate.weapon_entity;
 
+	CL_TEnts_Precache ();
+
 	SCR_NewScene (0);
 
 	SZ_Clear (&cls.netchan.message);
