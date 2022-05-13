@@ -118,6 +118,9 @@ static int message_types =
 static void
 debug_breakpoint (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity)
 {
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		exit(1);
+	}
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
