@@ -910,9 +910,9 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_return Return Values
 	\ingroup progs_data_access
-	These macros are used to access the value returned by an interpreted VM
-	function, and to return values from engine functions into progs space
-	(that is, builtins).
+	Typed return value access. These macros are used to access the value
+	returned by an interpreted VM function, and to return values from engine
+	functions into progs space (that is, builtins).
 	\warning No checking is performed against progs types; for example, if you
 	ask for an \c int from a function that returned a \c float, you're asking
 	for trouble.
@@ -1730,7 +1730,7 @@ void PR_Resources_Clear (progs_t *pr);
 					registering the resource is a suitable name, and will
 					probably be unique.
 	\note			During VM shutdown, \a clear is called (for all resources)
-					before \destroy is called.
+					before \a destroy is called.
 */
 void PR_Resources_Register (progs_t *pr, const char *name, void *data,
 							void (*clear)(progs_t *, void *),

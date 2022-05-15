@@ -33,6 +33,7 @@
 
 /** \defgroup segtext Segmented text files
 	\ingroup utils
+	Access named sections of a text file.
 
 	Based on The OpenGL Shader Wrangler:
 	https://prideout.net/blog/old/blog/index.html@p=11.html
@@ -66,7 +67,7 @@ typedef struct segchunk_s {
 	Segments are stored sequentially in \a chunk_list are indexed by
 	identifying tag (if present) in \a tab.
 	Segments that have no identifying tag are not in \a tab, but can
-	be accessed by walking \a chunk_list its \a next field.
+	be accessed by walking \a chunk_list 's \a next field.
 */
 typedef struct segtext_s {
 	struct segtext_s *next;
