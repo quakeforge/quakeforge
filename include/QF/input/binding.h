@@ -39,7 +39,7 @@
 */
 ///@{
 
-/*** Recipe for converting an axis to a floating point value.
+/** Recipe for converting an axis to a floating point value.
 
 	Absolute axes are converted to the 0..1 range for unbalanced axes, and
 	the -1..1 range for balanced axes, and then scaled.
@@ -78,7 +78,7 @@ typedef enum {
 	ina_accumulate,	///< add the axis value to the destination
 } in_axis_mode;
 
-/*** Logical axis.
+/** Logical axis.
 
 	Logical axes are the inputs defined by the game on which axis inputs
 	(usually "physical" axes) can act. Depending on the mode, the physical
@@ -102,12 +102,12 @@ typedef struct in_axis_s {
 typedef struct axis_listener_set_s LISTENER_SET_TYPE (in_axis_t)
 	axis_listener_set_t;
 
-/*** Function type for axis listeners.
+/** Function type for axis listeners.
 */
 typedef void (*axis_listener_t) (void *data, const in_axis_t *axis);
 #endif
 
-/*** Current state of the logical button.
+/** Current state of the logical button.
 
 	Captures the current state and any transitions during the last frame.
 	Not all combinations are valid (inb_edge_up|inb_down and inb_edge_down
@@ -121,7 +121,7 @@ typedef enum {
 	inb_edge_up   = 1<<2,	///< button released this frame
 } in_button_state;
 
-/*** Logical button.
+/** Logical button.
 
 	Logical buttons are the inputs defined by the game on which button inputs
 	(usually "physical" buttons) can act. Up to two button inputs can be
@@ -143,7 +143,7 @@ typedef struct in_button_s {
 typedef struct button_listener_set_s LISTENER_SET_TYPE (in_button_t)
 	button_listener_set_t;
 
-/*** Function type for button listeners.
+/** Function type for button listeners.
 */
 typedef void (*button_listener_t) (void *data, const in_button_t *button);
 
@@ -165,7 +165,7 @@ typedef struct in_buttonbinding_s {
 	};
 } in_buttonbinding_t;
 
-/*** Represent the button's activity in the last frame as a float.
+/** Represent the button's activity in the last frame as a float.
 
 	The detected activity is:
 		steady off (up)
@@ -184,7 +184,7 @@ typedef struct in_buttonbinding_s {
 */
 GNU89INLINE inline float IN_ButtonState (in_button_t *button);
 
-/*** Test whether a button has been pressed in the last frame.
+/** Test whether a button has been pressed in the last frame.
 
 	Both steady-state on, and brief clicks are detected.
 
@@ -196,7 +196,7 @@ GNU89INLINE inline float IN_ButtonState (in_button_t *button);
 */
 GNU89INLINE inline int IN_ButtonPressed (in_button_t *button);
 
-/*** Test whether a button was released in the last frame.
+/** Test whether a button was released in the last frame.
 
 	Valid only if the button is still released. A pulsed off does not
 	count as being released as the button is still held.
@@ -209,7 +209,7 @@ GNU89INLINE inline int IN_ButtonPressed (in_button_t *button);
 */
 GNU89INLINE inline int IN_ButtonReleased (in_button_t *button);
 
-/*** Update the axis value based on its mode and clear its relative input.
+/** Update the axis value based on its mode and clear its relative input.
 
 	The absolute and relative inputs are separate because absolute inputs
 	usually get written when the input actually changes (and thus must not
@@ -222,7 +222,7 @@ GNU89INLINE inline int IN_ButtonReleased (in_button_t *button);
 */
 GNU89INLINE inline float IN_UpdateAxis (in_axis_t *axis);
 
-/*** Update and clamp the axis value (see IN_UpdateAxis())
+/** Update and clamp the axis value (see IN_UpdateAxis())
 
 	Like IN_UpdateAxis(), but clamps the final output to the specified range.
 	This is most useful for \a ina_accumulate axes, but can be used to ensure
@@ -235,7 +235,7 @@ GNU89INLINE inline float IN_UpdateAxis (in_axis_t *axis);
 
 	\param axis  	Pointer to the axis being updated.
 	\param minval	The minimum value to which the axis output will be clamped.
-	\param minval	The minimum value to which the axis output will be clamped.
+	\param maxval	The minimum value to which the axis output will be clamped.
 	\return         The resulting output value of the axis.
 	\note           The relative input (\a rel_input) is zeroed. The absolute
 					input is not affected by the clamping, only the output

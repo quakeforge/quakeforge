@@ -29,8 +29,9 @@
 #define __QF_input_h
 
 /** \defgroup input Input Sub-system */
-
 ///@{
+
+/// input axis info
 typedef struct in_axisinfo_s {
 	int         deviceid;
 	int         axis;
@@ -39,6 +40,7 @@ typedef struct in_axisinfo_s {
 	int         max;
 } in_axisinfo_t;
 
+/// input button info
 typedef struct in_buttoninfo_s {
 	int         deviceid;
 	int         button;
@@ -52,6 +54,7 @@ typedef struct in_buttoninfo_s {
 
 struct qf_fd_set;
 
+/// driver interface
 typedef struct in_driver_s {
 	void (*init_cvars) (void *data);
 	void (*init) (void *data);
@@ -87,6 +90,7 @@ typedef struct in_driver_s {
 							in_buttoninfo_t *info);
 } in_driver_t;
 
+/// device info
 typedef struct in_device_s {
 	int         driverid;
 	void       *device;
@@ -94,8 +98,6 @@ typedef struct in_device_s {
 	const char *id;
 	void       *event_data;
 } in_device_t;
-
-struct cvar_s;
 
 int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
