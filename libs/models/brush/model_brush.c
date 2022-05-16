@@ -322,9 +322,13 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		memset (anims, 0, sizeof (anims));
 		memset (altanims, 0, sizeof (altanims));
 
+// convert to uppercase, avoiding toupper (table lookup,
+// localization issues, etc)
+#define QTOUPPER(x) ((x) - ('a' - 'A'))
+
 		max = tx->name[1];
 		if (max >= 'a' && max <= 'z')
-			max -= 'a' - 'A';
+			max = QTOUPPER (max);
 		if (max >= '0' && max <= '9') {
 			max -= '0';
 			altmax = 0;
@@ -347,7 +351,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 
 			num = tx2->name[1];
 			if (num >= 'a' && num <= 'z')
-				num -= 'a' - 'A';
+				num = QTOUPPER (num);
 			if (num >= '0' && num <= '9') {
 				num -= '0';
 				anims[num] = tx2;
