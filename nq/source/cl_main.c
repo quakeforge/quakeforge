@@ -625,6 +625,8 @@ CL_Init (cbuf_t *cbuf)
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
+	Host_OnServerSpawn (CL_ClearMemory);
+
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init ();

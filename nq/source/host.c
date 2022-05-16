@@ -42,6 +42,7 @@
 #include "QF/image.h"
 #include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/listener.h"
 #include "QF/msg.h"
 #include "QF/png.h"
 #include "QF/progs.h"
@@ -630,6 +631,22 @@ Host_ClearMemory (void)
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (0, host_hunklevel);
+}
+
+static struct LISTENER_SET_TYPE(void) host_server_spawn = LISTENER_SET_STATIC_INIT(4);
+
+void
+Host_SpawnServer (void)
+{
+	LISTENER_INVOKE (&host_server_spawn, NULL);
+	Host_ClearMemory ();
+}
+
+void
+Host_OnServerSpawn (void (*onSpawn) (void))
+{
+	LISTENER_ADD (&host_server_spawn,
+				  (void(*)(void *, const void*)) onSpawn, 0);
 }
 
 /*

@@ -1003,7 +1003,9 @@ sbar_update_vis (void)
 void
 Sbar_Draw (void)
 {
-	if (!cl.players) return;	//FIXME draw_miniteam
+	if (cls.state != ca_active) {
+		return;
+	}
 	sbar_update_vis ();
 	hud_main_view->draw (hud_main_view);
 }

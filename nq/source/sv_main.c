@@ -1113,7 +1113,7 @@ SV_SpawnServer (const char *server)
 	skill = current_skill;
 
 	// set up the new server
-	Host_ClearMemory ();
+	Host_SpawnServer ();
 
 	memset (&sv, 0, sizeof (sv));
 
