@@ -317,7 +317,20 @@ CL_RelinkEntities (void)
 		}
 		CL_EntityEffects (i, ent, new, cl.time);
 		vec4f_t org = Transform_GetWorldPosition (ent->transform);
-		CL_NewDlight (i, org, new->effects, new->glow_size,
+		int effects = new->effects;
+		if (cl.maxclients == 1 && effects) {
+			// Enable blue and red lights for quad and invulnerability,
+			// but only for single-player as such information isn't provided
+			// by the server for other players and thus it would probably be
+			// confusing if the player could see the colored effects but not
+			// for others.
+			int         it = cl.stats[STAT_ITEMS];
+			effects |= (it & IT_QUAD)
+				>> (BITOP_LOG2(IT_QUAD) - BITOP_LOG2 (EF_BLUE));
+			effects |= (it & IT_INVULNERABILITY)
+				>> (BITOP_LOG2(IT_INVULNERABILITY) - BITOP_LOG2 (EF_RED));
+		}
+		CL_NewDlight (i, org, effects, new->glow_size,
 					  new->glow_color, cl.time);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
 			old->origin = org;
