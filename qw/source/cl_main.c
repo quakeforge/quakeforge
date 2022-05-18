@@ -1446,6 +1446,36 @@ CL_SetState (cactive_t state)
 	}
 }
 
+static void
+CL_Shutdown (void *data)
+{
+	static qboolean isdown = false;
+
+	if (isdown) {
+		printf ("recursive shutdown\n");
+		return;
+	}
+	isdown = true;
+
+	SL_Shutdown ();
+
+	Host_WriteConfiguration ();
+
+	CL_HTTP_Shutdown ();
+
+	if (cl.serverinfo) {
+		Info_Destroy (cl.serverinfo);
+	}
+	Info_Destroy (cls.userinfo);
+	Cbuf_DeleteStack (cl_stbuf);
+	dstring_delete (centerprint);
+	dstring_delete (cls.servername);
+	dstring_delete (cls.downloadtempname);
+	dstring_delete (cls.downloadname);
+	dstring_delete (cls.downloadurl);
+	free (cl.players);
+}
+
 void
 CL_Init (void)
 {
@@ -1496,6 +1526,8 @@ CL_Init (void)
 	CL_Skin_Init ();
 	Locs_Init ();
 	V_Init (&cl.viewstate);
+
+	Sys_RegisterShutdown (CL_Shutdown, 0);
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
@@ -2060,7 +2092,6 @@ Host_Init (void)
 	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (Net_LogStop, 0);
 
 	Netchan_Init_Cvars ();
@@ -2119,34 +2150,4 @@ Host_Init (void)
 					  "server browser to connect to a game.\n");
 	}
 	Cbuf_AddText (cl_cbuf, "set cmd_warncmd 1\n");
-}
-
-void
-Host_Shutdown (void *data)
-{
-	static qboolean isdown = false;
-
-	if (isdown) {
-		printf ("recursive shutdown\n");
-		return;
-	}
-	isdown = true;
-
-	SL_Shutdown ();
-
-	Host_WriteConfiguration ();
-
-	CL_HTTP_Shutdown ();
-
-	if (cl.serverinfo) {
-		Info_Destroy (cl.serverinfo);
-	}
-	Info_Destroy (cls.userinfo);
-	Cbuf_DeleteStack (cl_stbuf);
-	dstring_delete (centerprint);
-	dstring_delete (cls.servername);
-	dstring_delete (cls.downloadtempname);
-	dstring_delete (cls.downloadname);
-	dstring_delete (cls.downloadurl);
-	free (cl.players);
 }
