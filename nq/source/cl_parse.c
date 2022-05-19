@@ -655,8 +655,10 @@ CL_ParseClientdata (void)
 		}
 	}
 
-	if (bits & SU_WEAPON2)
+	if (bits & SU_WEAPON2) {
 		cl.stats[STAT_WEAPON] |= MSG_ReadByte (net_message) << 8;
+		cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+	}
 	if (bits & SU_ARMOR2)
 		cl.stats[STAT_ARMOR] |= MSG_ReadByte (net_message) << 8;
 	if (bits & SU_AMMO2)
