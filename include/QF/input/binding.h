@@ -351,7 +351,9 @@ void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
 int IN_RegisterButton (in_button_t *button);
 int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
+void IN_ButtonClearStates (void);
 in_axis_t *IN_FindAxis (const char *name);
+void IN_AxisClearStates (void);
 void IN_ButtonAddListener (in_button_t *button, button_listener_t listener,
 						   void *data);
 void IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,

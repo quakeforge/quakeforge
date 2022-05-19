@@ -228,6 +228,19 @@ IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
 }
 
 static void
+button_clear_state (void *_rb, void *data)
+{
+	regbutton_t *rb = _rb;
+	button_release_cmd (rb->button);
+}
+
+void
+IN_ButtonClearStates (void)
+{
+	Hash_ForEach (button_tab, button_clear_state, 0);
+}
+
+static void
 in_button_shutdown (void *data)
 {
 	Hash_DelTable (button_tab);

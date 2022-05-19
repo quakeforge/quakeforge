@@ -587,6 +587,8 @@ IN_ClearStates (void)
 			rd->driver.clear_states (rd->data);
 		}
 	}
+	IN_AxisClearStates ();
+	IN_ButtonClearStates ();
 }
 
 #ifdef HAVE_EVDEV

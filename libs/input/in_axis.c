@@ -75,6 +75,18 @@ IN_FindAxis (const char *name)
 	return Hash_Find (axis_tab, name);
 }
 
+static void
+axis_clear_state (void *_a, void *data)
+{
+	//FIXME what to do here?
+}
+
+void
+IN_AxisClearStates (void)
+{
+	Hash_ForEach (axis_tab, axis_clear_state, 0);
+}
+
 void
 IN_AxisAddListener (in_axis_t *axis, axis_listener_t listener, void *data)
 {
