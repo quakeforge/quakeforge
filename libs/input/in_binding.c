@@ -365,7 +365,7 @@ in_bind_f (void)
 		Sys_Printf ("in_bind imt device type number binding...\n");
 		Sys_Printf ("    imt: the name of the input mapping table in which the"
 					" intput will be bound\n");
-		Sys_Printf ("    device: the nickname or id of the devise owning"
+		Sys_Printf ("    device: the nickname or id of the device owning"
 					" the input to be bound\n");
 		Sys_Printf ("    type: the type of input to be bound (axis or"
 					" button)\n");

@@ -897,7 +897,7 @@ static imtcmd_t imt_commands[] = {
 		"contexts\n"
 		"The new switcher will be attached to the specified context\n"
 		"default_imt specifies the default imt to be used for all possible\n"
-		"states and must axis and be in the context.\n"
+		"states and must exist and be in the context.\n"
 		"input0..inputN specify the inputs (cvar or button) used to set the\n"
 		"switcher's state. As each input forms a bit in the state index,\n"
 		"there will be 2**(N+1) states (so 4 inputs will result in 16\n"

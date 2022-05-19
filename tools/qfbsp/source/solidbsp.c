@@ -110,7 +110,7 @@ FaceSide (const face_t *in, const plane_t *split)
 	return SIDE_ON;
 }
 
-/**	Chose the best plane for dividing the bsp.
+/**	Choose the best plane for dividing the bsp.
 
 	The clipping hull BSP doesn't worry about avoiding splits, so this
 	function tries to find the plane that gives the most even split of the
