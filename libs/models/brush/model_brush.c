@@ -818,7 +818,7 @@ static void
 Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 {
 	dclipnode_t *in;
-	mclipnode_t *out;
+	dclipnode_t *out;
 	hull_t		*hull;
 	int         count, i;
 	mod_brush_t *brush = &mod->brush;
@@ -891,7 +891,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 static void
 Mod_MakeHull0 (model_t *mod)
 {
-	mclipnode_t *out;
+	dclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i, j;
 	mnode_t		*in, *child;

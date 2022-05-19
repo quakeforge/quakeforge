@@ -46,7 +46,7 @@
 #include "world.h"
 
 static hull_t box_hull;
-static mclipnode_t box_clipnodes[6];
+static dclipnode_t box_clipnodes[6];
 static plane_t box_planes[6];
 
 
@@ -107,7 +107,7 @@ inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t     *plane;
 
 	while (num >= 0) {
@@ -132,7 +132,7 @@ PM_PointContents (const vec3_t p)
 {
 	float       d;
 	int         num;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	hull_t     *hull;
 	plane_t    *plane;
 

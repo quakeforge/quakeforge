@@ -135,7 +135,7 @@ typedef struct {
 /* HULL BOXES */
 
 static hull_t box_hull;
-static mclipnode_t box_clipnodes[6];
+static dclipnode_t box_clipnodes[6];
 static plane_t box_planes[6];
 
 
@@ -146,7 +146,7 @@ static plane_t box_planes[6];
 	can just be stored out and get a proper hull_t structure.
 */
 void
-SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes)
+SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, plane_t *planes)
 {
 	int			side, i;
 
@@ -532,7 +532,7 @@ int
 SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t     *plane;
 
 	while (num >= 0) {

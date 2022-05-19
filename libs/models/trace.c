@@ -786,7 +786,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	int         side;
 	tracestack_t *tstack;
 	tracestack_t *tracestack;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t    *plane;
 	clipleaf_t *leaf;
 	trace_state_t trace_state;
@@ -927,7 +927,7 @@ MOD_HullContents (hull_t *hull, int num, const vec3_t origin, trace_t *trace)
 	// follow origin down the bsp tree to find the "central" leaf
 	while (num >= 0) {
 		vec_t       d;
-		mclipnode_t *node;
+		dclipnode_t *node;
 		plane_t    *plane;
 
 		node = hull->clipnodes + num;
