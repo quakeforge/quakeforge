@@ -257,12 +257,6 @@ trace_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum render
 }
 
 void
-trace_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-	TRACE;
-}
-
-void
 trace_glGenBuffers (GLsizei n, GLuint* buffers)
 {
 	TRACE;
@@ -1413,7 +1407,7 @@ trace_glGetIntegerv (GLenum pname, GLint * params)
 	TRACE;
 	switch (pname) {
 		case GL_MAX_TEXTURE_SIZE:
-			*params = 512;
+			*params = 2048;
 			break;
 		case GL_UNPACK_ALIGNMENT:
 		case GL_PACK_ALIGNMENT:
@@ -2925,4 +2919,39 @@ void
 trace_glPNTrianglesiATI (GLint x, GLint y)
 {
 	TRACE;
+}
+
+void
+trace_glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer)
+{
+}
+
+void
+trace_glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glNamedFramebufferTexture (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glCreateVertexArrays (GLsizei n, GLuint *arrays)
+{
+}
+
+void
+trace_glBindVertexArray (GLuint array)
+{
 }

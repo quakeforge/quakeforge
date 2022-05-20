@@ -228,11 +228,6 @@ norm_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderb
 }
 
 void
-norm_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-}
-
-void
 norm_glGenBuffers (GLsizei n, GLuint* buffers)
 {
 }
@@ -1196,7 +1191,7 @@ norm_glGetIntegerv (GLenum pname, GLint * params)
 {
 	switch (pname) {
 		case GL_MAX_TEXTURE_SIZE:
-			*params = 512;
+			*params = 2048;
 			break;
 		case GL_UNPACK_ALIGNMENT:
 		case GL_PACK_ALIGNMENT:
@@ -2464,5 +2459,40 @@ norm_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 
 void
 norm_glPNTrianglesiATI (GLint x, GLint y)
+{
+}
+
+void
+norm_glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer)
+{
+}
+
+void
+norm_glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glNamedFramebufferTexture (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glCreateVertexArrays (GLsizei n, GLuint *arrays)
+{
+}
+
+void
+norm_glBindVertexArray (GLuint array)
 {
 }

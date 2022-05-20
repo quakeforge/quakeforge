@@ -15,6 +15,7 @@
 
 typedef XID GLXDrawable;
 typedef struct __GLXcontextRec *GLXContext;
+typedef struct __GLXFBConfigRec *GLXFBConfig;
 
 #define TRACE do { \
 	puts (__FUNCTION__);\
@@ -148,4 +149,49 @@ glXGetConfig (Display *dpy, XVisualInfo *visual, int attrib, int *value )
 	if (trace)
 		TRACE;
     return 0;
+}
+
+GLXFBConfig *
+glXChooseFBConfig (Display *dpy, int screen, int *attribList, int *count)
+{
+	if (trace)
+		TRACE;
+	GLXFBConfig *cfg = calloc (1, sizeof (GLXFBConfig));
+	*cfg = (GLXFBConfig) (intptr_t) screen;
+	return cfg;
+}
+
+XVisualInfo *
+glXGetVisualFromFBConfig (Display *dpy, GLXFBConfig config)
+{
+	XVisualInfo template;
+	int         num_visuals;
+	int         template_mask;
+	int         screen;
+
+	if (trace)
+		TRACE;
+
+	screen = (intptr_t) config;
+	template_mask = 0;
+	template.visualid =
+		XVisualIDFromVisual (XDefaultVisual (dpy, screen));
+	template_mask = VisualIDMask;
+	return XGetVisualInfo (dpy, template_mask, &template, &num_visuals);
+}
+
+int
+glXGetFBConfigAttrib (Display *dpy, GLXFBConfig config, int attribute, int *value)
+{
+	if (trace)
+		TRACE;
+	return 0;
+}
+
+GLXContext
+glXCreateContextAttribsARB (Display *dpy, GLXFBConfig cfg, GLXContext ctx, Bool direct, const int *attribs)
+{
+	if (trace)
+		TRACE;
+	return (GLXContext)1;
 }
