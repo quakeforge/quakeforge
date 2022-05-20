@@ -198,12 +198,8 @@ vec4d_t
 dotd (vec4d_t a, vec4d_t b)
 {
 	vec4d_t c = a * b;
-#ifndef __AVX__
-	c = (vec4d_t) { c[0] + c[1], c[0] + c[1], c[2] + c[3], c[2] + c[3] };
-#else
-	c = _mm256_hadd_pd (c, c);
-#endif
-	c += (vec4d_t) {c[2], c[3], c[0], c[1]};
+	c += (vec4d_t) { c[3], c[0], c[1], c[2] };
+	c += (vec4d_t) { c[2], c[3], c[0], c[1] };
 	return c;
 }
 
@@ -302,9 +298,7 @@ VISIBLE
 vec4d_t
 qconjd (vec4d_t q)
 {
-	const uint64_t sign = UINT64_C(1) << 63;
-	const vec4l_t neg = { sign, sign, sign, 0 };
-	return (vec4d_t) ((vec4l_t) q ^ neg);
+	return (vec4d_t) { -q[0], -q[1], -q[2], q[3] };
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs

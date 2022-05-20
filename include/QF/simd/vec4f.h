@@ -211,13 +211,8 @@ vec4f_t
 dotf (vec4f_t a, vec4f_t b)
 {
 	vec4f_t c = a * b;
-#ifndef __SSE3__
-	float x = c[0] + c[1] + c[2] + c[3];
-	c = (vec4f_t) { x, x, x, x };
-#else
-	c = _mm_hadd_ps (c, c);
-	c = _mm_hadd_ps (c, c);
-#endif
+	c += (vec4f_t) { c[3], c[0], c[1], c[2] };
+	c += (vec4f_t) { c[2], c[3], c[0], c[1] };
 	return c;
 }
 
@@ -234,11 +229,7 @@ qmulf (vec4f_t a, vec4f_t b)
 	vec4f_t c = crossf (a, b) + a * b[3] + a[3] * b;
 	vec4f_t d = dotf (a, b);
 	// zero out the vector component of dot product so only the scalar remains
-#ifndef __SSE4_1__
 	d = (vec4f_t) { 0, 0, 0, d[3] };
-#else
-	d = _mm_insert_ps (d, d, 0xf7);
-#endif
 	return c - d;
 }
 
@@ -314,8 +305,7 @@ VISIBLE
 vec4f_t
 qconjf (vec4f_t q)
 {
-	const vec4i_t neg = { 1u << 31, 1u << 31, 1u << 31, 0 };
-	return (vec4f_t) ((vec4i_t) q ^ neg);
+	return (vec4f_t) { -q[0], -q[1], -q[2], q[3] };
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -348,22 +338,7 @@ loadvec3f (const float *v3)
 {
 	vec4f_t v4;
 
-#ifndef __SSE4_1__
 	v4 = (vec4f_t) { v3[0], v3[1], v3[2], 0 };
-#else
-	// this had to be in asm otherwise gcc thinks v4 is only partially
-	// initialized, and gcc 10 does not use the zero flags when generating
-	// the code, resulting in a memory access to load a 0 into v4[3]
-	//
-	// The first instruction zeros v4[3] while loading v4[0]
-	asm ("\n\
-		vinsertps $0x08, %1, %0, %0     \n\
-		vinsertps $0x10, %2, %0, %0     \n\
-		vinsertps $0x20, %3, %0, %0     \n\
-		"
-		: "=v"(v4)
-		: "m"(v3[0]), "m"(v3[1]), "m"(v3[2]));
-#endif
 	return v4;
 }
 
