@@ -68,8 +68,6 @@ struct sfx_s
 };
 ///@}
 
-struct model_s;
-
 /** \defgroup sound_init Initialization functions
 	\ingroup sound
 */

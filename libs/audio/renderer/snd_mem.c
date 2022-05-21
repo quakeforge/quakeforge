@@ -134,7 +134,7 @@ SND_StreamRelease (sfx_t *sfx)
 wavinfo_t *
 SND_CacheWavinfo (sfx_t *sfx)
 {
-	return &sfx->data.stream->wavinfo;
+	return &sfx->data.block->wavinfo;
 }
 
 wavinfo_t *
@@ -161,9 +161,11 @@ read_samples (sfxbuffer_t *buffer, int count)
 		if ((c = stream->read (stream, data, count)) != count)
 			Sys_Printf ("%s nr %d %d\n", sfx->name, count, c);
 
-		buffer->head += count;
-		if (buffer->head >= buffer->length)
-			buffer->head -= buffer->length;
+		if (c > 0) {
+			buffer->head += count;
+			if (buffer->head >= buffer->length)
+				buffer->head -= buffer->length;
+		}
 	}
 }
 
