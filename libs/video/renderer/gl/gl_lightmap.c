@@ -598,7 +598,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	}
 
 	if (!light_scrap) {
-		light_scrap = GL_CreateScrap (2048, gl_lightmap_format, 1);
+		light_scrap = GL_CreateScrap (4096, gl_lightmap_format, 1);
 	} else {
 		GL_ScrapClear (light_scrap);
 	}

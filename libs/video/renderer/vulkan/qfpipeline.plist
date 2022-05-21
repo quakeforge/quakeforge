@@ -109,7 +109,7 @@
 		};
 		texture_pool = {
 			flags = free_descriptor_set;
-			maxSets = 512;
+			maxSets = 1024;
 			bindings = (
 				{
 					type = combined_image_sampler;
