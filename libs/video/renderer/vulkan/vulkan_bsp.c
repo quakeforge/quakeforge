@@ -77,6 +77,7 @@ typedef struct bsp_push_constants_s {
 	mat4f_t     Model;
 	quat_t      fog;
 	float       time;
+	float       alpha;
 } bsp_push_constants_t;
 
 static const char * __attribute__((used)) bsp_pass_names[] = {
@@ -782,8 +783,11 @@ push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			field_offset (bsp_push_constants_t, time),
 			sizeof (constants->time), &constants->time },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (bsp_push_constants_t, alpha),
+			sizeof (constants->alpha), &constants->alpha },
 	};
-	QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	QFV_PushConstants (device, cmd, layout, 3, push_constants);
 }
 
 static void
@@ -1112,7 +1116,10 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	turb_begin (rFrame);
 	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
-	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
+	bsp_push_constants_t frag_constants = {
+		.time = vr_data.realtime,
+		.alpha = r_wateralpha
+	};
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {

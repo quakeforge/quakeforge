@@ -6,6 +6,7 @@ layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
 	vec4        fog;
 	float       time;
+	float       alpha;
 };
 
 layout (location = 0) in vec4 tl_st;
@@ -48,5 +49,7 @@ main (void)
 
 	c = texture (Texture, t_st);
 	e = texture (Texture, e_st);
-	frag_color = c + e;//fogBlend (c);
+	c += e;
+	c.a = alpha;
+	frag_color = c;//fogBlend (c);
 }
