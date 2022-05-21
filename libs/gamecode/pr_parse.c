@@ -215,10 +215,7 @@ ED_NewString (progs_t *pr, const char *string)
 VISIBLE qboolean
 ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 {
-	int			i;
-	char		*string;
 	pr_def_t    *def;
-	char		*v, *w;
 	pr_type_t	*d;
 	dfunction_t	*func;
 
@@ -234,17 +231,18 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 			break;
 
 		case ev_vector:
-			string = strdup (s);
-			v = string;
-			w = string;
-			for (i = 0; i < 3; i++) {
-				while (*v && *v != ' ')
-					v++;
-				*v = 0;
-				(&PR_PTR (float, d))[i] = atof (w);
-				w = v = v + 1;
+			vec3_t      vec = {};
+			char       *str = alloca (strlen (s) + 1);
+			strcpy (str, s);
+			for (char *v = str; *v; v++) {
+				if (*v == ',') {
+					*v = ' ';
+				}
 			}
-			free (string);
+			if (sscanf (s, "%f %f %f", VectorExpandAddr (vec)) != 3) {
+				Sys_Printf ("Malformed vector %s\n", s);
+			}
+			VectorCopy (vec, PR_PTR (vector, d));
 			break;
 
 		case ev_entity:
