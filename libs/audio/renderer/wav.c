@@ -181,14 +181,13 @@ wav_get_info (QFile *file)
 	riff_data_t *data = 0;
 
 	riff_cue_t *cue;
-	riff_d_cue_t *dcue;
-	riff_d_cue_point_t *cp = 0;
+	riff_d_cue_t *dcue = 0;
 
 	riff_list_t *list;
 	riff_d_chunk_t **lck;
 
-	riff_ltxt_t *ltxt;
-	riff_d_ltxt_t *dltxt = 0;
+	//riff_ltxt_t *ltxt;
+	//riff_d_ltxt_t *dltxt = 0;
 
 	wavinfo_t   info;
 
@@ -211,8 +210,6 @@ wav_get_info (QFile *file)
 			case RIFF_CASE ('c','u','e',' '):
 				cue = (riff_cue_t *) *ck;
 				dcue = cue->cue;
-				if (dcue->count)
-					cp = &dcue->cue_points[dcue->count - 1];
 				break;
 			case RIFF_CASE ('L','I','S','T'):
 				list = (riff_list_t *) *ck;
@@ -221,8 +218,8 @@ wav_get_info (QFile *file)
 						for (lck = list->chunks; *lck; lck++) {
 							RIFF_SWITCH ((*lck)->name) {
 								case RIFF_CASE ('l','t','x','t'):
-									ltxt = (riff_ltxt_t *) *lck;
-									dltxt = &ltxt->ltxt;
+									//ltxt = (riff_ltxt_t *) *lck;
+									//dltxt = &ltxt->ltxt;
 									break;
 							}
 						}
@@ -252,15 +249,19 @@ wav_get_info (QFile *file)
 	info.width = dfmt->bits_per_sample / 8;
 	info.channels = dfmt->channels;
 	info.frames = 0;
-	if (cp) {
-		info.loopstart = cp->sample_offset;
-		if (dltxt)
-			info.frames = info.loopstart + dltxt->len;
+	info.frames = data->ck.len / (info.width * info.channels);
+	if (dcue && dcue->count) {
+		if (dcue->cue_points[0].sample_offset < info.frames) {
+			info.loopstart = dcue->cue_points[0].sample_offset;
+		}
+		if (dcue->count > 1) {
+			info.frames = min (info.frames, dcue->cue_points[1].sample_offset);
+		}
+		//if (dltxt)
+		//	info.frames = info.loopstart + dltxt->len;
 	} else {
 		info.loopstart = -1;
 	}
-	if (!info.frames)
-		info.frames = data->ck.len / (info.width * info.channels);
 	info.dataofs = *(int *)data->data;
 	info.datalen = data->ck.len;
 
