@@ -307,7 +307,6 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 	}
 
 	vulktex_t    *tex = tx->render;
-	tex->texture = tx;
 	tex->tex = (qfv_tex_t *) (tex + 1);
 	VkExtent3D extent = { tx->width, tx->height, 1 };
 

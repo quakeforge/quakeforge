@@ -105,67 +105,6 @@ static vulktex_t vulkan_notexture = { };
 
 #define ALLOC_CHUNK 64
 
-typedef struct bsppoly_s {
-	uint32_t    count;
-	uint32_t    indices[1];
-} bsppoly_t;
-
-#define CHAIN_SURF_F2B(surf,chain)							\
-	({ 														\
-		instsurf_t *inst = (surf)->instsurf;				\
-		if (__builtin_expect(!inst, 1))						\
-			inst = get_instsurf (bctx);						\
-		inst->surface = (surf);								\
-		*(chain##_tail) = inst;								\
-		(chain##_tail) = &inst->tex_chain;					\
-		*(chain##_tail) = 0;								\
-		inst;												\
-	})
-
-#define CHAIN_SURF_B2F(surf,chain) 							\
-	({	 													\
-		instsurf_t *inst = (surf)->instsurf;				\
-		if (__builtin_expect(!inst, 1))						\
-			inst = get_instsurf (bctx);						\
-		inst->surface = (surf);								\
-		inst->tex_chain = (chain);							\
-		(chain) = inst;										\
-		inst;												\
-	})
-
-#define GET_RELEASE(type,name) \
-static inline type *												\
-get_##name (bspctx_t *bctx)											\
-{																	\
-	type       *ele;												\
-	if (!bctx->free_##name##s) {									\
-		int         i;												\
-		bctx->free_##name##s = calloc (ALLOC_CHUNK, sizeof (type));	\
-		for (i = 0; i < ALLOC_CHUNK - 1; i++)						\
-			bctx->free_##name##s[i]._next = &bctx->free_##name##s[i + 1];	\
-	}																\
-	ele = bctx->free_##name##s;										\
-	bctx->free_##name##s = ele->_next;								\
-	ele->_next = 0;													\
-	*bctx->name##s_tail = ele;										\
-	bctx->name##s_tail = &ele->_next;								\
-	return ele;														\
-}																	\
-static inline void													\
-release_##name##s (bspctx_t *bctx)									\
-{																	\
-	if (bctx->name##s) {											\
-		*bctx->name##s_tail = bctx->free_##name##s;					\
-		bctx->free_##name##s = bctx->name##s;						\
-		bctx->name##s = 0;											\
-		bctx->name##s_tail = &bctx->name##s;						\
-	}																\
-}
-
-GET_RELEASE (elechain_t, elechain)
-GET_RELEASE (instsurf_t, static_instsurf)
-GET_RELEASE (instsurf_t, instsurf)
-
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 {
@@ -173,83 +112,25 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 
 	vulktex_t  *tex = tx->render;
 	if (tex->tex) {
-		DARRAY_APPEND (&bctx->texture_chains, tex);
+		tex->tex_id = bctx->registered_textures.size;
+		DARRAY_APPEND (&bctx->registered_textures, tex);
 		tex->descriptor = Vulkan_CreateTextureDescriptor (ctx, tex->tex,
 														  bctx->sampler);
 	}
-	tex->tex_chain = 0;
-	tex->tex_chain_tail = &tex->tex_chain;
-	tex->elechain = 0;
-	tex->elechain_tail = &tex->elechain;
-}
-
-static void
-init_surface_chains (mod_brush_t *brush, vulkan_ctx_t *ctx)
-{
-	bspctx_t   *bctx = ctx->bsp_context;
-
-	release_static_instsurfs (bctx);
-	release_instsurfs (bctx);
-
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++) {
-		brush->surfaces[i].instsurf = get_static_instsurf (bctx);
-		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
-	}
-}
-
-static inline void
-clear_tex_chain (vulktex_t *tex)
-{
-	tex->tex_chain = 0;
-	tex->tex_chain_tail = &tex->tex_chain;
-	tex->elechain = 0;
-	tex->elechain_tail = &tex->elechain;
-}
-
-static void
-clear_texture_chains (bspctx_t *bctx)
-{
-	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
-		if (!bctx->texture_chains.a[i])
-			continue;
-		clear_tex_chain (bctx->texture_chains.a[i]);
-	}
-	clear_tex_chain (r_notexture_mip->render);
-	release_elechains (bctx);
-	release_instsurfs (bctx);
 }
 
 void
 Vulkan_ClearElements (vulkan_ctx_t *ctx)
 {
-	bspctx_t   *bctx = ctx->bsp_context;
-	release_elechains (bctx);
+//	bspctx_t   *bctx = ctx->bsp_context;
 }
 
 static inline void
-chain_surface (msurface_t *surf, vulkan_ctx_t *ctx)
+chain_surface (const bsp_face_t *face, bsp_pass_t *pass, bspctx_t *bctx)
 {
-	bspctx_t   *bctx = ctx->bsp_context;
-	instsurf_t *is;
 
-	if (surf->flags & SURF_DRAWSKY) {
-		is = CHAIN_SURF_F2B (surf, bctx->sky_chain);
-	} else if ((surf->flags & SURF_DRAWTURB)
-			   || (bctx->color && bctx->color[3] < 1.0)) {
-		is = CHAIN_SURF_B2F (surf, bctx->waterchain);
-	} else {
-		texture_t  *tx;
-		vulktex_t  *tex;
-
-		if (!surf->texinfo->texture->anim_total)
-			tx = surf->texinfo->texture;
-		else
-			tx = R_TextureAnimation (bctx->entity, surf);
-		tex = tx->render;
-		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
-	}
-	is->transform = bctx->transform;
-	is->color = bctx->color;
+	DARRAY_APPEND (&pass->face_queue[face->tex_id],
+				   ((instface_t) { bctx->inst_id, face - bctx->faces }));
 }
 
 static void
@@ -269,7 +150,16 @@ static void
 clear_textures (vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
-	bctx->texture_chains.size = 0;
+
+	if (bctx->main_pass.face_queue) {
+		for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+			DARRAY_CLEAR (&bctx->main_pass.face_queue[i]);
+		}
+		free (bctx->main_pass.face_queue);
+		bctx->main_pass.face_queue = 0;
+	}
+
+	bctx->registered_textures.size = 0;
 }
 
 void
@@ -280,7 +170,6 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 	clear_textures (ctx);
-	init_surface_chains (brush, ctx);
 	add_texture (r_notexture_mip, ctx);
 	register_textures (brush, ctx);
 	for (i = 0; i < num_models; i++) {
@@ -297,60 +186,67 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush, ctx);
 	}
+
+	bspctx_t   *bctx = ctx->bsp_context;
+	int         num_tex = bctx->registered_textures.size;
+	bctx->main_pass.face_queue = malloc (num_tex * sizeof (bsp_instfaceset_t));
+	for (int i = 0; i < num_tex; i++) {
+		bctx->main_pass.face_queue[i]
+			= (bsp_instfaceset_t) DARRAY_STATIC_INIT (128);
+	}
 }
 
-static elechain_t *
-add_elechain (vulktex_t *tex, bspctx_t *bctx)
-{
-	elechain_t *ec;
+typedef struct {
+	msurface_t *face;
+	model_t    *model;
+	int         model_face_base;
+} faceref_t;
 
-	ec = get_elechain (bctx);
-	ec->first_index = 0;
-	ec->index_count = 0;
-	ec->transform = 0;
-	ec->color = 0;
-	*tex->elechain_tail = ec;
-	tex->elechain_tail = &ec->next;
-	return ec;
-}
+typedef struct DARRAY_TYPE (faceref_t) facerefset_t;
 
 static void
-count_verts_inds (model_t **models, msurface_t *surf,
-				  uint32_t *verts, uint32_t *inds)
+count_verts_inds (faceref_t *faceref, uint32_t *verts, uint32_t *inds)
 {
+	msurface_t *surf = faceref->face;
 	*verts = surf->numedges;
 	*inds = surf->numedges + 1;
 }
 
-static bsppoly_t *
-build_surf_displist (model_t **models, msurface_t *surf, int base,
-					 bspvert_t **vert_list)
-{
-	mod_brush_t *brush;
-	if (surf->model_index < 0) {
-		// instance model
-		brush = &models[~surf->model_index]->brush;
-	} else {
-		// main or sub model
-		brush = &r_refdef.worldmodel->brush;
-	}
-	mvertex_t  *vertices  = brush->vertexes;
-	medge_t    *edges     = brush->edges;
-	int        *surfedges = brush->surfedges;
+typedef struct {
+	bsp_face_t *faces;
+	uint32_t   *indices;
+	bspvert_t  *vertices;
+	uint32_t    index_base;
+	uint32_t    vertex_base;
+	int         tex_id;
+} buildctx_t;
 
-	// surf->polys is set to the next slot before the call
-	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
+static void
+build_surf_displist (faceref_t *faceref, buildctx_t *build)
+{
+	msurface_t *surf = faceref->face;
+	mod_brush_t *brush = &faceref->model->brush;;
+
+	int         facenum = surf - brush->surfaces;
+	bsp_face_t *face = &build->faces[facenum + faceref->model_face_base];
 	// create a triangle fan
 	int         numverts = surf->numedges;
-	poly->count = numverts + 1;	// +1 for primitive restart
+	face->first_index = build->index_base;
+	face->index_count = numverts + 1;	// +1 for primitive restart
+	face->tex_id = build->tex_id;
+	face->flags = surf->flags;
+	build->index_base += face->index_count;
 	for (int i = 0; i < numverts; i++) {
-		poly->indices[i] = base + i;
+		build->indices[face->first_index + i] = build->vertex_base + i;
 	}
-	poly->indices[numverts] = -1;	// primitive restart
-	surf->polys = (glpoly_t *) poly;
+	build->indices[face->first_index + numverts] = -1;	// primitive restart
 
-	bspvert_t  *verts = *vert_list;
+	bspvert_t  *verts = build->vertices + build->vertex_base;
+	build->vertex_base += numverts;
 	mtexinfo_t *texinfo = surf->texinfo;
+	mvertex_t  *vertices = brush->vertexes;
+	medge_t    *edges     = brush->edges;
+	int        *surfedges = brush->surfedges;
 	for (int i = 0; i < numverts; i++) {
 		vec_t      *vec;
 		int         index = surfedges[surf->firstedge + i];
@@ -388,8 +284,6 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 			verts[i].tlst[3] = 0;
 		}
 	}
-	*vert_list += numverts;
-	return (bsppoly_t *) &poly->indices[poly->count];
 }
 
 void
@@ -403,9 +297,16 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		return;
 	}
 
+	facerefset_t *face_sets = alloca (bctx->registered_textures.size
+									  * sizeof (facerefset_t));
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		face_sets[i] = (facerefset_t) DARRAY_STATIC_INIT (1024);
+	}
+
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
+	int         face_base = 0;
 	for (int i = 0; i < num_models; i++) {
 		model_t    *m = models[i];
 		// sub-models are done as part of the main model
@@ -421,30 +322,32 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				if (dm == brush->submodels + brush->numsubmodels) {
 					// limit the surfaces
 					// probably never hit
-					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");
+					Sys_Printf ("Vulkan_BuildDisplayLists: too many faces\n");
 					brush->numsurfaces = j;
 					break;
 				}
 			}
 			msurface_t *surf = brush->surfaces + j;
-			surf->model_index = dm - brush->submodels;
-			if (!surf->model_index && m != r_refdef.worldmodel) {
-				surf->model_index = -1 - i;	// instanced model
-			}
 			// append surf to the texture chain
 			vulktex_t *tex = surf->texinfo->texture->render;
-			CHAIN_SURF_F2B (surf, tex->tex_chain);
+			DARRAY_APPEND (&face_sets[tex->tex_id],
+						   ((faceref_t) { surf, m, face_base }));
 		}
+		face_base += brush->numsurfaces;
 	}
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = 0;
 	uint32_t    index_count = 0;
 	uint32_t    poly_count = 0;
-	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
-		vulktex_t  *tex = bctx->texture_chains.a[i];
-		for (instsurf_t *is = tex->tex_chain; is; is = is->tex_chain) {
+	// This is not optimal as counted vertices are not shared between faces,
+	// however this greatly simplifies display list creation as no care needs
+	// to be taken when it comes to UVs, and every vertex needs a unique light
+	// map UV anyway (when lightmaps are used).
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		for (size_t j = 0; j < face_sets[i].size; j++) {
+			faceref_t  *faceref = &face_sets[i].a[j];
 			uint32_t    verts, inds;
-			count_verts_inds (models, is->surface, &verts, &inds);
+			count_verts_inds (faceref, &verts, &inds);
 			vertex_count += verts;
 			index_count += inds;
 			poly_count++;
@@ -464,44 +367,39 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	bspvert_t  *vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	// holds all the polygon definitions: vertex indices + poly_count
-	// primitive restart markers + poly_count index counts. The primitive
-	// restart markers are included in index_count, so poly_count below is
-	// for the per-polygon index count.
+	// primitive restart markers. The primitive restart markers are included
+	// in index_count.
 	// so each polygon within the list:
-	//     count        includes the end of primitive marker
 	//     index        count-1 indices
 	//     index
 	//     ...
 	//     "end of primitive" (~0u)
-	free (bctx->polys);
-	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
+	free (bctx->faces);
+	free (bctx->poly_indices);
+	bctx->faces = malloc (face_base * sizeof (bsp_face_t));
+	bctx->poly_indices = malloc (index_count * sizeof (uint32_t));
 
 	// All usable surfaces have been chained to the (base) texture they use.
 	// Run through the textures, using their chains to build display lists.
 	// For animated textures, if a surface is on one texture of the group, it
 	// will effectively be on all (just one at a time).
-	int         count = 0;
-	int         vertex_index_base = 0;
-	bsppoly_t  *poly = bctx->polys;
-	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
-		vulktex_t  *tex = bctx->texture_chains.a[i];
-
-		for (instsurf_t *is = tex->tex_chain; is; is = is->tex_chain) {
-			msurface_t *surf = is->surface;
-
-			surf->polys = (glpoly_t *) poly;
-			poly = build_surf_displist (models, surf, vertex_index_base,
-										&vertices);
-			vertex_index_base += surf->numedges;
-			count++;
+	buildctx_t  build = {
+		.faces = bctx->faces,
+		.indices = bctx->poly_indices,
+		.vertices = vertices,
+		.index_base = 0,
+		.vertex_base = 0,
+	};
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		build.tex_id = i;
+		for (size_t j = 0; j < face_sets[i].size; j++) {
+			faceref_t  *faceref = &face_sets[i].a[j];
+			build_surf_displist (faceref, &build);
 		}
 	}
-	clear_texture_chains (bctx);
 	Sys_MaskPrintf (SYS_vulkan,
-					"R_BuildDisplayLists: verts:%u, inds:%u, "
-					"polys:%u (%d) %zd\n",
-					vertex_count, index_count, poly_count, count,
-					((size_t) poly - (size_t) bctx->polys) / sizeof(uint32_t));
+					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u\n",
+					vertex_count, index_count, poly_count);
 	if (index_buffer_size > bctx->index_buffer_size) {
 		if (bctx->index_buffer) {
 			dfunc->vkUnmapMemory (device->dev, bctx->index_memory);
@@ -571,6 +469,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		DARRAY_CLEAR (&face_sets[i]);
+	}
+
 }
 
 static void
@@ -629,7 +531,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (surf, ctx);
+			//chain_surface (surf, ctx);
 		}
 	}
 }
@@ -656,8 +558,9 @@ get_side (mnode_t *node)
 static inline void
 visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 {
+	bspctx_t   *bctx = ctx->bsp_context;
+	bsp_pass_t *pass = &ctx->bsp_context->main_pass;
 	int         c;
-	msurface_t *surf;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
 	// seems to be microscopically faster even on modern hardware
@@ -665,19 +568,19 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 	// chain any visible surfaces on the node that face the camera.
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
-		int         surf_id = node->firstsurface;
-		surf = brush->surfaces + surf_id;
-		for (; c; c--, surf++, surf_id++) {
-			if (r_face_visframes[surf_id] != r_visframecount)
+		const bsp_face_t *face = bctx->faces + node->firstsurface;
+		const int  *frame = pass->face_frames + node->firstsurface;
+		for (; c; c--, face++, frame++) {
+			if (*frame != r_visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
 			// if side and the surface facing differ, then the camera is
 			// on backside of the surface
-			if (side ^ (surf->flags & SURF_PLANEBACK))
+			if (side ^ (face->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (surf, ctx);
+			chain_surface (face, pass, bctx);
 		}
 	}
 }
@@ -798,32 +701,6 @@ push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
 	};
 	QFV_PushConstants (device, cmd, layout, 3, push_constants);
 }
-
-static void
-draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_device_t *device,
-			   VkCommandBuffer cmd)
-{
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	if (ec->transform) {
-		push_transform (ec->transform, layout, device, cmd);
-	} else {
-		//FIXME should cache current transform
-		push_transform (identity, layout, device, cmd);
-	}
-	if (ec->index_count) {
-		dfunc->vkCmdDrawIndexed (cmd, ec->index_count, 1, ec->first_index,
-								 0, 0);
-	}
-}
-
-static void
-reset_elechain (elechain_t *ec)
-{
-	ec->first_index = 0;
-	ec->index_count = 0;
-}
-
 
 static void
 bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
@@ -979,40 +856,32 @@ sky_end (vulkan_ctx_t *ctx)
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspSky], ctx);
 }
 
-static inline void
-add_surf_elements (vulktex_t *tex, instsurf_t *is, elechain_t **ec,
-				   bspctx_t *bctx, bspframe_t *bframe)
+static void
+clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 {
-	bsppoly_t  *poly = (bsppoly_t *) is->surface->polys;
-
-	if (!tex->elechain) {
-		(*ec) = add_elechain (tex, bctx);
-		(*ec)->transform = is->transform;
-		(*ec)->color = is->color;
-		(*ec)->first_index = bframe->index_count;
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		DARRAY_RESIZE (&pass->face_queue[i], 0);
 	}
-	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
-		(*ec) = add_elechain (tex, bctx);
-		(*ec)->transform = is->transform;
-		(*ec)->color = is->color;
-		(*ec)->first_index = bframe->index_count;
+	for (int j = 0; j < pass->num_queues; j++) {
+		DARRAY_RESIZE (&pass->draw_queues[j], 0);
 	}
-	memcpy (bframe->index_data + bframe->index_count,
-			poly->indices, poly->count * sizeof (poly->indices[0]));
-	(*ec)->index_count += poly->count;
-	bframe->index_count += poly->count;
+	pass->index_count = 0;
 }
 
 static void
-build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
+draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
+			qfv_device_t *device, VkCommandBuffer cmd)
 {
-	instsurf_t *is;
-	elechain_t *ec = 0;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
-	for (is = tex->tex_chain; is; is = is->tex_chain) {
-		// emit the polygon indices for the surface to the texture's
-		// element chain
-		add_surf_elements (tex, is, &ec, bctx, bframe);
+	for (size_t i = 0; i < pass->draw_queues[queue].size; i++) {
+		__auto_type d = pass->draw_queues[queue].a[i];
+		if (pass->textures) {
+			vulktex_t  *tex = pass->textures->a[d.tex_id];
+			bind_texture (tex, 1, layout, dfunc, cmd);
+		}
+		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
+								 d.first_index, 0, d.first_instance);
 	}
 }
 
@@ -1021,13 +890,17 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	//qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	entity_t    worldent;
 	mod_brush_t *brush;
 
-	clear_texture_chains (bctx);	// do this first for water and skys
+	bctx->main_pass.face_frames = r_face_visframes;
+	bctx->main_pass.leaf_frames = r_leaf_visframes;
+	bctx->main_pass.node_frames = r_node_visframes;
+
+	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
 	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
@@ -1058,27 +931,42 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
-	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
-		vulktex_t  *tex;
-		elechain_t *ec = 0;
-
-		tex = bctx->texture_chains.a[i];
-
-		build_tex_elechain (tex, bctx, bframe);
-
-		bind_texture (tex, 1, bctx->layout, dfunc,
-					  bframe->cmdSet.a[QFV_bspGBuffer]);
-
-		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, device,
-						   bframe->cmdSet.a[QFV_bspDepth]);
-			draw_elechain (ec, bctx->layout, device,
-						   bframe->cmdSet.a[QFV_bspGBuffer]);
-			reset_elechain (ec);
+	__auto_type pass = &bctx->main_pass;
+	pass->indices = bframe->index_data;
+	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+		__auto_type queue = &pass->face_queue[i];
+		if (!queue->size) {
+			continue;
 		}
-		tex->elechain = 0;
-		tex->elechain_tail = &tex->elechain;
+		//FIXME implement draw_queue selection correctly (per face)
+		int         dq = 0;
+		if (bctx->faces[queue->a[0].face].flags & SURF_DRAWSKY) {
+			dq = 1;
+		}
+		if (bctx->faces[queue->a[0].face].flags & SURF_DRAWTURB) {
+			dq = 2;
+		}
+		bsp_draw_t  draw = {
+			.tex_id = i,
+			.instance_count = 1,
+			.first_index = pass->index_count,
+		};
+		for (size_t j = 0; j < queue->size; j++) {
+			__auto_type is = queue->a[j];
+			__auto_type f = bctx->faces[is.face];
+			memcpy (pass->indices + pass->index_count,
+					bctx->poly_indices + f.first_index,
+					f.index_count * sizeof (uint32_t));
+			draw.index_count += f.index_count;
+			pass->index_count += f.index_count;
+		}
+		DARRAY_APPEND (&pass->draw_queues[dq], draw);
 	}
+	VkPipelineLayout layout = bctx->layout;
+	pass->textures = 0;
+	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspDepth]);
+	pass->textures = &bctx->registered_textures;
+	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspGBuffer]);
 	bsp_end (ctx);
 }
 
@@ -1112,14 +1000,11 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	//qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	instsurf_t *is;
-	vulktex_t  *tex = 0;
-	elechain_t *ec = 0;
 
-	if (!bctx->waterchain)
+	if (!bctx->main_pass.draw_queues[2].size)
 		return;
 
 	turb_begin (rFrame);
@@ -1131,41 +1016,13 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	};
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
-	for (is = bctx->waterchain; is; is = is->tex_chain) {
-		msurface_t *surf = is->surface;
-		if (tex != surf->texinfo->texture->render) {
-			if (tex) {
-				bind_texture (tex, 1, bctx->layout, dfunc,
-							  bframe->cmdSet.a[QFV_bspTurb]);
-				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, device,
-								   bframe->cmdSet.a[QFV_bspTurb]);
-					reset_elechain (ec);
-				}
-				tex->elechain = 0;
-				tex->elechain_tail = &tex->elechain;
-			}
-			tex = surf->texinfo->texture->render;
-		}
-		// emit the polygon indices for the surface to the texture's
-		// element chain
-		add_surf_elements (tex, is, &ec, bctx, bframe);
-	}
-	if (tex) {
-		bind_texture (tex, 1, bctx->layout, dfunc,
-					  bframe->cmdSet.a[QFV_bspTurb]);
-		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, device,
-						   bframe->cmdSet.a[QFV_bspTurb]);
-			reset_elechain (ec);
-		}
-		tex->elechain = 0;
-		tex->elechain_tail = &tex->elechain;
-	}
-	turb_end (ctx);
 
-	bctx->waterchain = 0;
-	bctx->waterchain_tail = &bctx->waterchain;
+	VkPipelineLayout layout = bctx->layout;
+	__auto_type pass = &bctx->main_pass;
+	pass->textures = &bctx->registered_textures;
+	draw_queue (pass, 2, layout, device, bframe->cmdSet.a[QFV_bspTurb]);
+
+	turb_end (ctx);
 }
 
 void
@@ -1176,11 +1033,8 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	instsurf_t *is;
-	vulktex_t  *tex = 0;
-	elechain_t *ec = 0;
 
-	if (!bctx->sky_chain)
+	if (!bctx->main_pass.draw_queues[1].size)
 		return;
 
 	sky_begin (rFrame);
@@ -1192,41 +1046,13 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
-	for (is = bctx->sky_chain; is; is = is->tex_chain) {
-		msurface_t *surf = is->surface;
-		if (tex != surf->texinfo->texture->render) {
-			if (tex) {
-				bind_texture (tex, 1, bctx->layout, dfunc,
-							  bframe->cmdSet.a[QFV_bspSky]);
-				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, device,
-								   bframe->cmdSet.a[QFV_bspSky]);
-					reset_elechain (ec);
-				}
-				tex->elechain = 0;
-				tex->elechain_tail = &tex->elechain;
-			}
-			tex = surf->texinfo->texture->render;
-		}
-		// emit the polygon indices for the surface to the texture's
-		// element chain
-		add_surf_elements (tex, is, &ec, bctx, bframe);
-	}
-	if (tex) {
-		bind_texture (tex, 1, bctx->layout, dfunc,
-					  bframe->cmdSet.a[QFV_bspSky]);
-		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, device,
-						   bframe->cmdSet.a[QFV_bspSky]);
-			reset_elechain (ec);
-		}
-		tex->elechain = 0;
-		tex->elechain_tail = &tex->elechain;
-	}
-	sky_end (ctx);
 
-	bctx->sky_chain = 0;
-	bctx->sky_chain_tail = &bctx->sky_chain;
+	VkPipelineLayout layout = bctx->layout;
+	__auto_type pass = &bctx->main_pass;
+	pass->textures = &bctx->registered_textures;
+	draw_queue (pass, 1, layout, device, bframe->cmdSet.a[QFV_bspSky]);
+
+	sky_end (ctx);
 }
 
 static void
@@ -1348,12 +1174,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
 
-	bctx->waterchain_tail = &bctx->waterchain;
-	bctx->sky_chain_tail = &bctx->sky_chain;
-	bctx->static_instsurfs_tail = &bctx->static_instsurfs;
-	bctx->elechains_tail = &bctx->elechains;
-	bctx->instsurfs_tail = &bctx->instsurfs;
-
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
 										 tex_frgba, ctx->staging);
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
@@ -1362,7 +1182,14 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	create_default_skys (ctx);
 
-	DARRAY_INIT (&bctx->texture_chains, 64);
+	DARRAY_INIT (&bctx->registered_textures, 64);
+
+	bctx->main_pass.num_queues = 3;
+	bctx->main_pass.draw_queues = malloc (bctx->main_pass.num_queues
+										  * sizeof (bsp_drawset_t));
+	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
+		DARRAY_INIT (&bctx->main_pass.draw_queues[i], 64);
+	}
 
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&bctx->frames, frames);
@@ -1418,7 +1245,11 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	dfunc->vkDestroyPipeline (device->dev, bctx->skybox, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->skysheet, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->turb, 0);
-	DARRAY_CLEAR (&bctx->texture_chains);
+	DARRAY_CLEAR (&bctx->registered_textures);
+	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
+		DARRAY_CLEAR (&bctx->main_pass.draw_queues[i]);
+	}
+	free (bctx->main_pass.draw_queues);
 	DARRAY_CLEAR (&bctx->frames);
 	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);

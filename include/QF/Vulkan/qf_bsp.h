@@ -39,29 +39,80 @@
 
 #include "QF/simd/types.h"
 
+typedef struct bsp_face_s {
+	uint32_t    first_index;
+	uint32_t    index_count;
+	uint32_t    tex_id;
+	uint32_t    flags;
+} bsp_face_t;
+
+typedef struct bsp_packet_s {
+	int         first_index;
+	int         index_count;
+	int         transform_id;
+	int         color_id;
+} bsp_packet_t;
+
+typedef struct bsp_packetset_s
+    DARRAY_TYPE (bsp_packet_t) bsp_packetset_t;
+
+typedef struct bsp_indexset_s
+    DARRAY_TYPE (uint32_t) bsp_indexset_t;
+
+typedef struct bsp_tex_s {
+	VkDescriptorSet descriptors;
+	bsp_packetset_t packets;
+	bsp_indexset_t indices;
+} bsp_tex_t;
+
 typedef struct vulktex_s {
-	struct texture_s  *texture;
-	struct instsurf_s *tex_chain;	// for gl_texsort drawing
-	struct instsurf_s **tex_chain_tail;
-	struct elechain_s *elechain;
-	struct elechain_s **elechain_tail;
 	struct qfv_tex_s *tex;
 	VkDescriptorSet descriptor;
+	int         tex_id;
 } vulktex_t;
+
+typedef struct regtexset_s
+    DARRAY_TYPE (vulktex_t *) regtexset_t;
+
+typedef struct bsp_texset_s
+    DARRAY_TYPE (bsp_tex_t) bsp_texset_t;
+
+typedef struct bsp_draw_s {
+	uint32_t    tex_id;
+	uint32_t    index_count;
+	uint32_t    instance_count;
+	uint32_t    first_index;
+	uint32_t    first_instance;
+} bsp_draw_t;
+
+typedef struct bsp_drawset_s
+    DARRAY_TYPE (bsp_draw_t) bsp_drawset_t;
+
+typedef struct instface_s {
+	uint32_t    inst_id;
+	uint32_t    face;
+} instface_t;
+
+typedef struct bsp_instfaceset_s
+    DARRAY_TYPE (instface_t) bsp_instfaceset_t;
+
+typedef struct bsp_pass_s {
+	uint32_t   *indices;		// points into index buffer
+	uint32_t    index_count;	// number of indices written to buffer
+	int         vis_frame;
+	int        *face_frames;
+	int        *leaf_frames;
+	int        *node_frames;
+	bsp_instfaceset_t *face_queue;
+	regtexset_t *textures;
+	int         num_queues;
+	bsp_drawset_t *draw_queues;
+} bsp_pass_t;
 
 typedef struct bspvert_s {
 	quat_t      vertex;
 	quat_t      tlst;
 } bspvert_t;
-
-typedef struct elechain_s {
-	struct elechain_s *_next;
-	struct elechain_s *next;
-	uint32_t    first_index;
-	uint32_t    index_count;
-	vec_t      *transform;
-	float      *color;
-} elechain_t;
 
 typedef enum {
 	qfv_bsp_texture,
@@ -90,33 +141,13 @@ typedef struct bspframe_s {
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
-typedef struct texchainset_s
-    DARRAY_TYPE (vulktex_t *) texchainset_t;
-
 typedef struct bspctx_s {
 	struct entity_s *entity;
 	vec_t       *transform;
 	float       *color;
+	uint32_t     inst_id;
 
-	instsurf_t  *waterchain;
-	instsurf_t **waterchain_tail;
-	instsurf_t  *sky_chain;
-	instsurf_t **sky_chain_tail;
-
-	texchainset_t texture_chains;
-
-	// for world and non-instance models
-	instsurf_t  *static_instsurfs;
-	instsurf_t **static_instsurfs_tail;
-	instsurf_t  *free_static_instsurfs;
-
-	// for instance models
-	elechain_t  *elechains;
-	elechain_t **elechains_tail;
-	elechain_t  *free_elechains;
-	instsurf_t  *instsurfs;
-	instsurf_t **instsurfs_tail;
-	instsurf_t  *free_instsurfs;
+	regtexset_t registered_textures;
 
 	struct qfv_tex_s *default_skysheet;
 	struct qfv_tex_s *skysheet_tex;
@@ -131,7 +162,10 @@ typedef struct bspctx_s {
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
 
-	struct bsppoly_s *polys;
+	bsp_face_t *faces;
+	uint32_t   *poly_indices;
+
+	bsp_pass_t  main_pass;	// camera view depth, gbuffer, etc
 
 	VkSampler    sampler;
 	VkPipelineLayout layout;
