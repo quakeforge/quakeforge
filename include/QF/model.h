@@ -34,6 +34,8 @@
 #include "QF/modelgen.h"
 #include "QF/zone.h"
 
+#include "QF/simd/types.h"
+
 extern struct vid_model_funcs_s *mod_funcs;
 
 /*
@@ -174,18 +176,18 @@ typedef struct msurface_s {
 } msurface_t;
 
 typedef struct mnode_s {
-// common with leaf
-	int			contents;		// 0, to differentiate from leafs
-	int			visframe;		// node needs to be traversed if current
-
-	float		minmaxs[6];		// for bounding box culling
-
-// node specific
-	plane_t		*plane;
-	struct mnode_s	*children[2];
-
-	unsigned int		firstsurface;
-	unsigned int		numsurfaces;
+	/// Vector representation of the plane.
+	/// \note the 4th component is the negative of the plane distance. This
+	/// makes it so a 4d dot product with a point vector (4th component = 1)
+	/// gives the distance of the point from the plane.
+	vec4f_t     plane;
+	byte        type;
+	byte        signbits;
+	byte        pad[2];
+	int32_t     children[2];	///< Negative values = ~(leaf number)
+	float       minmaxs[6];
+	uint32_t    firstsurface;
+	uint32_t    numsurfaces;
 } mnode_t;
 
 typedef struct mleaf_s {
@@ -267,8 +269,8 @@ typedef struct mod_brush_s {
 	byte       *lightdata;
 	char       *entities;	//FIXME should not be here
 
-	mnode_t   **node_parents;
-	mnode_t   **leaf_parents;
+	int32_t    *node_parents;
+	int32_t    *leaf_parents;
 	int        *leaf_flags;	// union of surf flags for surfs in leaf
 
 	unsigned int checksum;
@@ -437,7 +439,7 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void Mod_TouchModel (const char *name);
 void Mod_UnloadModel (model_t *model);
 // brush specific
-mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
+mleaf_t *Mod_PointInLeaf (vec4f_t p, model_t *model) __attribute__((pure));
 struct set_s *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
 
 void Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,

@@ -159,7 +159,7 @@ texture_t *R_TextureAnimation (const struct entity_s *entity, msurface_t *surf) 
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (struct entity_s *ent, model_t *pmodel, int clipflags, struct mnode_s *topnode);
+void R_DrawSubmodelPolygons (struct entity_s *ent, model_t *pmodel, int clipflags, struct mleaf_s *topleaf);
 void R_DrawSolidClippedSubmodelPolygons (struct entity_s *ent, model_t *pmodel, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
@@ -308,8 +308,8 @@ void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
-							struct dlight_s *light, int bit, mnode_t *node);
+void R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+							struct dlight_s *light, int bit, int node_id);
 
 void R_LoadSkys (const char *);
 //void Vulkan_R_LoadSkys (const char *, struct vulkan_ctx_s *ctx);

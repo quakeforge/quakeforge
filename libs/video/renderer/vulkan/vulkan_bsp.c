@@ -648,12 +648,9 @@ static inline int
 get_side (mnode_t *node)
 {
 	// find the node side on which we are
-	plane_t    *plane = node->plane;
 	vec4f_t     org = r_refdef.frame.position;
 
-	if (plane->type < 3)
-		return (org[plane->type] - plane->dist) < 0;
-	return (DotProduct (org, plane->normal) - plane->dist) < 0;
+	return dotf (org, node->plane)[0] < 0;
 }
 
 static inline void
@@ -685,12 +682,13 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 }
 
 static inline int
-test_node (mnode_t *node)
+test_node (mod_brush_t *brush, int node_id)
 {
-	if (node->contents < 0)
+	if (node_id < 0)
 		return 0;
-	if (node->visframe != r_visframecount)
+	if (r_node_visframes[node_id] != r_visframecount)
 		return 0;
+	mnode_t    *node = brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
@@ -700,48 +698,58 @@ static void
 R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
 	typedef struct {
-		mnode_t    *node;
+		int         node_id;
 		int         side;
 	} rstack_t;
 	rstack_t   *node_ptr;
 	rstack_t   *node_stack;
-	mnode_t    *node;
-	mnode_t    *front;
+	int         node_id;
+	int         front;
 	int         side;
 
-	node = brush->nodes;
+	node_id = 0;
 	// +2 for paranoia
 	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
-		while (test_node (node)) {
+		while (test_node (brush, node_id)) {
+			mnode_t    *node = brush->nodes + node_id;
 			side = get_side (node);
 			front = node->children[side];
-			if (test_node (front)) {
-				node_ptr->node = node;
+			if (test_node (brush, front)) {
+				node_ptr->node_id = node_id;
 				node_ptr->side = side;
 				node_ptr++;
-				node = front;
+				node_id = front;
 				continue;
 			}
 			// front is either not a node (ie, is a leaf) or is not visible
 			// if node is visible, then at least one of its child nodes
 			// must also be visible, and a leaf child in front of the node
 			// will be visible, so no need for vis checks on a leaf
-			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
-				visit_leaf ((mleaf_t *) front);
+			if (front < 0) {
+				mleaf_t    *leaf = brush->leafs + ~front;
+				if (leaf->contents != CONTENTS_SOLID) {
+					visit_leaf (leaf);
+				}
+			}
 			visit_node (brush, node, side, ctx);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 		}
-		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-			visit_leaf ((mleaf_t *) node);
+		if (node_id < 0) {
+			mleaf_t    *leaf = brush->leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				visit_leaf (leaf);
+			}
+		}
 		if (node_ptr != node_stack) {
 			node_ptr--;
-			node = node_ptr->node;
+			node_id = node_ptr->node_id;
 			side = node_ptr->side;
+			mnode_t    *node = brush->nodes + node_id;
 			visit_node (brush, node, side, ctx);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 			continue;
 		}
 		break;

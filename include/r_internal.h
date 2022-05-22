@@ -74,7 +74,8 @@ struct entity_s;
 struct animation_s;
 void R_DrawAliasModel (struct entity_s *e);
 
-void R_MarkLeaves (struct mleaf_s *viewleaf);
+void R_MarkLeaves (struct mleaf_s *viewleaf, int *node_visframes);
+extern int *r_node_visframes;
 
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);

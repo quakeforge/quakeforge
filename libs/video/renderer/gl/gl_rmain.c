@@ -122,8 +122,8 @@ gl_R_RenderEntities (entqueue_t *queue)
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) { \
-		entity_t   *ent = queue->ent_queues[mod_alias].a[i]; \
+	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
+		entity_t   *ent = queue->ent_queues[mod_alias].a[i];
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);

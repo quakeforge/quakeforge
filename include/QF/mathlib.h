@@ -136,6 +136,7 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
+// NOTE expects plane distance is -p.n
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
 					const plane_t *plane) __attribute__((pure));
 float anglemod (float a) __attribute__((const));
@@ -143,14 +144,15 @@ float anglemod (float a) __attribute__((const));
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
+// NOTE expects plane distance is -p.n
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
 	(													\
-		((p)->dist <= (emins)[(p)->type])?				\
+		(-(p)->dist <= (emins)[(p)->type])?				\
 		1												\
 		:												\
 		(												\
-			((p)->dist >= (emaxs)[(p)->type])?			\
+			(-(p)->dist >= (emaxs)[(p)->type])?			\
 			2											\
 			:											\
 			3											\
@@ -185,6 +187,7 @@ R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs)
 	int		i;
 
 	for (i=0 ; i < 4 ; i++) {
+		// NOTE frustum distance is -p.n
 		if (BOX_ON_PLANE_SIDE (mins, maxs, &frustum[i]) == 2) {
 			return true;
 		}
@@ -205,7 +208,8 @@ R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius)
 
 	for (i = 0; i < 4; i++)
 	{
-		r = DotProduct (origin, frustum[i].normal) - frustum[i].dist;
+		// NOTE frustum distance is -p.n
+		r = DotProduct (origin, frustum[i].normal) + frustum[i].dist;
 		if (r <= -radius)
 			return true;
 	}

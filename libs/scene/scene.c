@@ -57,8 +57,8 @@ static mleaf_t empty_leafs[] = {
 	},
 };
 
-static mnode_t *empty_leaf_parents[] = {
-	[1] = 0,
+static int empty_leaf_parents[] = {
+	[1] = -1,
 };
 
 static int empty_leaf_flags[] = {

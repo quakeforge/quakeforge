@@ -111,7 +111,7 @@ R_SetFrustum (plane_t *frustum, const refframe_t *frame,
 	vec4f_t     origin = frame->position;
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
-		frustum[i].dist = DotProduct (origin, frustum[i].normal);
+		frustum[i].dist = -DotProduct (origin, frustum[i].normal);
 		frustum[i].signbits = SignbitsForPlane (&frustum[i]);
 	}
 }

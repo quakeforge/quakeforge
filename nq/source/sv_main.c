@@ -372,30 +372,29 @@ SV_ClearDatagram (void)
 static set_t *fatpvs;
 
 static void
-SV_AddToFatPVS (vec3_t org, mnode_t *node)
+SV_AddToFatPVS (vec4f_t org, int node_id)
 {
 	float       d;
-	plane_t    *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
-		if (node->contents < 0) {
-			if (node->contents != CONTENTS_SOLID) {
-				set_union (fatpvs, Mod_LeafPVS ((mleaf_t *) node,
-												sv.worldmodel));
+		if (node_id < 0) {
+			mleaf_t    *leaf = sv.worldmodel->brush.leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				set_union (fatpvs, Mod_LeafPVS (leaf, sv.worldmodel));
 			}
 			return;
 		}
+		mnode_t    *node = sv.worldmodel->brush.nodes + node_id;
 
-		plane = node->plane;
-		d = DotProduct (org, plane->normal) - plane->dist;
+		d = dotf (node->plane, org)[0];
 		if (d > 8)
-			node = node->children[0];
+			node_id = node->children[0];
 		else if (d < -8)
-			node = node->children[1];
+			node_id = node->children[1];
 		else {							// go down both
 			SV_AddToFatPVS (org, node->children[0]);
-			node = node->children[1];
+			node_id = node->children[1];
 		}
 	}
 }
@@ -407,14 +406,14 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
   given point.
 */
 static set_t *
-SV_FatPVS (vec3_t org)
+SV_FatPVS (vec4f_t org)
 {
 	if (!fatpvs) {
 		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
 	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
 	set_empty (fatpvs);
-	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
+	SV_AddToFatPVS (org, 0);
 	return fatpvs;
 }
 
@@ -426,13 +425,14 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	pr_uint_t   bits, e;
 	set_t      *pvs;
 	float       miss;
-	vec3_t      org;
+	vec4f_t     org;
 	edict_t    *ent;
 	entity_state_t *baseline;
 	edict_leaf_t *el;
 
 	// find the client's PVS
 	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
+	org[3] = 1;
 	pvs = SV_FatPVS (org);
 
 	// send over all entities (excpet the client) that touch the pvs

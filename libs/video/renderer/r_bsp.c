@@ -47,12 +47,11 @@ static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
 void
-R_MarkLeaves (mleaf_t *viewleaf)
+R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes)
 {
 	set_t       *vis;
 	int			 c;
 	mleaf_t     *leaf;
-	mnode_t     *node;
 	msurface_t **mark;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
@@ -86,12 +85,12 @@ R_MarkLeaves (mleaf_t *viewleaf)
 				} while (--c);
 			}
 			leaf->visframe = r_visframecount;
-			node = brush->leaf_parents[leaf - brush->leafs];
-			while (node) {
-				if (node->visframe == r_visframecount)
+			int         node_id = brush->leaf_parents[leaf - brush->leafs];
+			while (node_id >= 0) {
+				if (node_visframes[node_id] == r_visframecount)
 					break;
-				node->visframe = r_visframecount;
-				node = brush->node_parents[node - brush->nodes];
+				node_visframes[node_id] = r_visframecount;
+				node_id = brush->node_parents[node_id];
 			}
 		}
 	}

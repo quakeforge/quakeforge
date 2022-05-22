@@ -116,15 +116,16 @@ sv_unlink_entity (server_t *sv, qtv_entity_t *ent)
 }
 
 static void
-sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, mnode_t *node)
+sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, int node_id)
 {
-	if (node->contents == CONTENTS_SOLID) {
-		return;
-	}
 	// add an efrag if the node is a leaf
-	if (node->contents < 0) {
+	if (node_id < 0) {
+		mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+		if (leaf->contents == CONTENTS_SOLID) {
+			return;
+		}
 		qtv_leaf_t *ent_leaf = alloc_qtv_leaf ();
-		ent_leaf->num = (mleaf_t *) node - sv->worldmodel->brush.leafs - 1;
+		ent_leaf->num = ~node_id - 1;
 		ent_leaf->next = ent->leafs;
 		ent->leafs = ent_leaf;
 		return;
@@ -134,7 +135,8 @@ sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, mnode_t *node)
 	VectorAdd (ent->e.origin, ent->model->mins, emins);
 	VectorAdd (ent->e.origin, ent->model->maxs, emaxs);
 
-	plane_t    *splitplane = node->plane;
+	mnode_t    *node = sv->worldmodel->brush.nodes + node_id;
+	plane_t    *splitplane = (plane_t *) &node->plane;
 	int         sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
 	if (sides & 1) {
 		sv_find_touched_leafs (sv, ent, node->children[0]);
@@ -153,7 +155,7 @@ sv_link_entity (server_t *sv, qtv_entity_t *ent)
 		ent->model = Mod_ForName (sv->modellist[ent->model_index - 1], false);
 	}
 	if (ent->model) {
-		sv_find_touched_leafs (sv, ent, sv->worldmodel->brush.nodes);
+		sv_find_touched_leafs (sv, ent, 0);
 	}
 }
 

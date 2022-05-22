@@ -52,6 +52,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
@@ -978,30 +980,27 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 }
 
 static void
-add_to_fat_pvs (vec4f_t org, mnode_t *node, server_t *sv)
+add_to_fat_pvs (vec4f_t org, int node_id, server_t *sv)
 {
-	float       d;
-	plane_t    *plane;
-
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
-		if (node->contents < 0) {
-			if (node->contents != CONTENTS_SOLID) {
-				set_union (sv->fatpvs, Mod_LeafPVS ((mleaf_t *) node,
-													sv->worldmodel));
+		if (node_id < 0) {
+			mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				set_union (sv->fatpvs, Mod_LeafPVS (leaf, sv->worldmodel));
 			}
 			return;
 		}
 
-		plane = node->plane;
-		d = DotProduct (org, plane->normal) - plane->dist;
+		mnode_t    *node = sv->worldmodel->brush.nodes + node_id;
+		float       d = dotf (node->plane, org)[0];
 		if (d > 8)
-			node = node->children[0];
+			node_id = node->children[0];
 		else if (d < -8)
-			node = node->children[1];
+			node_id = node->children[1];
 		else {							// go down both
 			add_to_fat_pvs (org, node->children[0], sv);
-			node = node->children[1];
+			node_id = node->children[1];
 		}
 	}
 }
@@ -1015,7 +1014,7 @@ fat_pvs (vec4f_t org, server_t *sv)
 	set_expand (sv->fatpvs, sv->worldmodel->brush.visleafs);
 	set_empty (sv->fatpvs);
 
-	add_to_fat_pvs (org, sv->worldmodel->brush.nodes, sv);
+	add_to_fat_pvs (org, 0, sv);
 	return sv->fatpvs;
 }
 

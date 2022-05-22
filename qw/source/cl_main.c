@@ -1995,7 +1995,7 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf ((vec_t*)&origin, cl_world.scene->worldmodel);//FIXME
+		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

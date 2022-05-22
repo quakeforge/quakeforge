@@ -118,8 +118,8 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 
 	// transform the BSP plane into model space
 	// FIXME: cache these?
-	splitplane = pnode->plane;
-	tplane.dist = splitplane->dist -
+	splitplane = (plane_t *) &pnode->plane;
+	tplane.dist = splitplane->dist +
 		DotProduct (r_entorigin, splitplane->normal);
 	tplane.normal[0] = DotProduct (entity_rotation[0], splitplane->normal);
 	tplane.normal[1] = DotProduct (entity_rotation[1], splitplane->normal);
@@ -132,7 +132,7 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 		// set the status for the last point as the previous point
 		// FIXME: cache this stuff somehow?
 		plastvert = pedges->v[0];
-		lastdist = DotProduct (plastvert->position, tplane.normal) -
+		lastdist = DotProduct (plastvert->position, tplane.normal) +
 			tplane.dist;
 
 		if (lastdist > 0)
@@ -142,7 +142,7 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 
 		pvert = pedges->v[1];
 
-		dist = DotProduct (pvert->position, tplane.normal) - tplane.dist;
+		dist = DotProduct (pvert->position, tplane.normal) + tplane.dist;
 
 		if (dist > 0)
 			side = 0;
@@ -228,18 +228,20 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 		if (psideedges[i]) {
 			// draw if we've reached a non-solid leaf, done if all that's left
 			// is a solid leaf, and continue down the tree if it's not a leaf
-			pn = pnode->children[i];
+			int         child_id = pnode->children[i];
+			pn = r_refdef.worldmodel->brush.nodes + child_id;
 
 			// we're done with this branch if the node or leaf isn't in the PVS
-			if (pn->visframe == r_visframecount) {
-				if (pn->contents < 0) {
-					if (pn->contents != CONTENTS_SOLID) {
-						r_currentbkey = ((mleaf_t *) pn)->key;
-						R_RenderBmodelFace (ent, psideedges[i], psurf);
-					}
-				} else {
-					R_RecursiveClipBPoly (ent, psideedges[i],
-										  pnode->children[i], psurf);
+			if (child_id < 0) {
+				mleaf_t    *leaf = r_refdef.worldmodel->brush.leafs + ~child_id;
+				if (leaf->visframe == r_visframecount
+					&& leaf->contents != CONTENTS_SOLID) {
+					r_currentbkey = leaf->key;
+					R_RenderBmodelFace (ent, psideedges[i], psurf);
+				}
+			} else {
+				if (r_node_visframes[child_id] == r_visframecount) {
+					R_RecursiveClipBPoly (ent, psideedges[i], pn, psurf);
 				}
 			}
 		}
@@ -320,7 +322,7 @@ R_DrawSolidClippedSubmodelPolygons (entity_t *ent, model_t *model,
 
 void
 R_DrawSubmodelPolygons (entity_t *ent, model_t *model, int clipflags,
-						mnode_t *topnode)
+						mleaf_t *topleaf)
 {
 	int         i;
 	vec_t       dot;
@@ -343,7 +345,7 @@ R_DrawSubmodelPolygons (entity_t *ent, model_t *model, int clipflags,
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			r_currentkey = ((mleaf_t *) topnode)->key;
+			r_currentkey = topleaf->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
 			R_RenderFace (ent, psurf, clipflags);
@@ -365,12 +367,9 @@ static inline int
 get_side (mnode_t *node)
 {
 	// find which side of the node we are on
-	plane_t    *plane = node->plane;
 	vec4f_t     org = r_refdef.frame.position;
 
-	if (plane->type < 3)
-		return (org[plane->type] - plane->dist) < 0;
-	return (DotProduct (org, plane->normal) - plane->dist) < 0;
+	return dotf (org, node->plane)[0] < 0;
 }
 
 static void
@@ -414,20 +413,21 @@ visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 }
 
 static inline int
-test_node (mnode_t *node, int *clipflags)
+test_node (swbspctx_t *bctx, int node_id, int *clipflags)
 {
 	int         i, *pindex;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
 
-	if (node->contents < 0)
+	if (node_id < 0)
 		return 0;
-	if (node->visframe != r_visframecount)
+	if (r_node_visframes[node_id] != r_visframecount)
 		return 0;
 	// cull the clipping planes if not trivial accept
 	// FIXME: the compiler is doing a lousy job of optimizing here; it could be
 	// twice as fast in ASM
 	if (*clipflags) {
+		mnode_t    *node = bctx->brush->nodes + node_id;
 		for (i = 0; i < 4; i++) {
 			if (!(*clipflags & (1 << i)))
 				continue;				// don't need to clip against it
@@ -465,50 +465,60 @@ static void
 R_VisitWorldNodes (swbspctx_t *bctx, int clipflags)
 {
 	typedef struct {
-		mnode_t    *node;
+		int         node_id;
 		int         side, clipflags;
 	} rstack_t;
 	rstack_t   *node_ptr;
 	rstack_t   *node_stack;
-	mnode_t    *node;
-	mnode_t    *front;
+	int         front;
 	int         side, cf;
+	int         node_id;
 	mod_brush_t *brush = &bctx->entity->renderer.model->brush;
 
-	node = brush->nodes;
 	// +2 for paranoia
 	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
+	node_id = 0;
 	cf = clipflags;
 	while (1) {
-		while (test_node (node, &cf)) {
+		while (test_node (bctx, node_id, &cf)) {
+			mnode_t    *node = bctx->brush->nodes + node_id;
 			cf = clipflags;
 			side = get_side (node);
 			front = node->children[side];
-			if (test_node (front, &cf)) {
-				node_ptr->node = node;
+			if (test_node (bctx, front, &cf)) {
+				node_ptr->node_id = node_id;
 				node_ptr->side = side;
 				node_ptr->clipflags = clipflags;
 				node_ptr++;
 				clipflags = cf;
-				node = front;
+				node_id = front;
 				continue;
 			}
-			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
-				visit_leaf ((mleaf_t *) front);
+			if (front < 0) {
+				mleaf_t    *leaf = bctx->brush->leafs + ~front;
+				if (leaf->contents != CONTENTS_SOLID) {
+					visit_leaf (leaf);
+				}
+			}
 			visit_node (bctx, node, side, clipflags);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 		}
-		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-			visit_leaf ((mleaf_t *) node);
+		if (node_id < 0) {
+			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				visit_leaf (leaf);
+			}
+		}
 		if (node_ptr != node_stack) {
 			node_ptr--;
-			node = node_ptr->node;
+			node_id = node_ptr->node_id;
+			mnode_t    *node = bctx->brush->nodes + node_id;
 			side = node_ptr->side;
 			clipflags = node_ptr->clipflags;
 			visit_node (bctx, node, side, clipflags);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 			continue;
 		}
 		break;

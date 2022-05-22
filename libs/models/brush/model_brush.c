@@ -52,6 +52,7 @@
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/simd/vec4f.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -60,25 +61,20 @@ VISIBLE int mod_sky_divide; //FIXME visibility?
 VISIBLE int mod_lightmap_bytes = 1;	//FIXME should this be visible?
 
 VISIBLE mleaf_t *
-Mod_PointInLeaf (const vec3_t p, model_t *model)
+Mod_PointInLeaf (vec4f_t p, model_t *model)
 {
 	float       d;
-	mnode_t    *node;
-	plane_t    *plane;
 
 	if (!model || !model->brush.nodes)
 		Sys_Error ("Mod_PointInLeaf: bad model");
 
-	node = model->brush.nodes;
+	int         node_id = 0;
 	while (1) {
-		if (node->contents < 0)
-			return (mleaf_t *) node;
-		plane = node->plane;
-		d = DotProduct (p, plane->normal) - plane->dist;
-		if (d >= 0)
-			node = node->children[0];
-		else
-			node = node->children[1];
+		if (node_id < 0)
+			return model->brush.leafs + ~node_id;
+		mnode_t    *node = model->brush.nodes + node_id;
+		d = dotf (p, node->plane)[0];
+		node_id = node->children[d < 0];
 	}
 
 	return NULL;						// never reached
@@ -668,15 +664,16 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_SetParent (mod_brush_t *brush, mnode_t *node, mnode_t *parent)
+Mod_SetParent (mod_brush_t *brush, int node_id, int parent_id)
 {
-	if (node->contents < 0) {
-		brush->leaf_parents[(mleaf_t *)node - brush->leafs] = parent;
+	if (node_id < 0) {
+		brush->leaf_parents[~node_id] = parent_id;
 		return;
 	}
-	brush->node_parents[node - brush->nodes] = parent;
-	Mod_SetParent (brush, node->children[0], node);
-	Mod_SetParent (brush, node->children[1], node);
+	brush->node_parents[node_id] = parent_id;
+	mnode_t    *node = brush->nodes + node_id;
+	Mod_SetParent (brush, node->children[0], node_id);
+	Mod_SetParent (brush, node->children[1], node_id);
 }
 
 static void
@@ -720,8 +717,11 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 			out->minmaxs[3 + j] = in->maxs[j];
 		}
 
-		p = in->planenum;
-		out->plane = brush->planes + p;
+		plane_t    *plane = brush->planes + in->planenum;
+		out->plane = loadvec3f (plane->normal);
+		out->plane[3] = -plane->dist;
+		out->type = plane->type;
+		out->signbits = plane->signbits;
 
 		out->firstsurface = in->firstface;
 		out->numsurfaces = in->numfaces;
@@ -730,28 +730,27 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 			p = in->children[j];
 			// this check is for extended bsp 29 files
 			if (p >= 0) {
-				out->children[j] = brush->nodes + p;
+				out->children[j] = p;
 			} else {
-				p = ~p;
-				if ((unsigned) p < brush->modleafs) {
-					out->children[j] = (mnode_t *) (brush->leafs + p);
+				if ((unsigned) ~p < brush->modleafs) {
+					out->children[j] = p;
 				} else {
 					Sys_Printf ("Mod_LoadNodes: invalid leaf index %i "
-								"(file has only %i leafs)\n", p,
+								"(file has only %i leafs)\n", ~p,
 								brush->modleafs);
 					//map it to the solid leaf
-					out->children[j] = (mnode_t *)(brush->leafs);
+					out->children[j] = ~0;
 				}
 			}
 		}
 	}
 
-	size_t      size = (brush->modleafs + brush->numnodes) * sizeof (mnode_t *);
+	size_t      size = (brush->modleafs + brush->numnodes) * sizeof (int32_t);
 	size += brush->modleafs * sizeof (int);
 	brush->node_parents = Hunk_AllocName (0, size, mod->name);
 	brush->leaf_parents = brush->node_parents + brush->numnodes;
 	brush->leaf_flags = (int *) (brush->leaf_parents + brush->modleafs);
-	Mod_SetParent (brush, brush->nodes, NULL);	// sets nodes and leafs
+	Mod_SetParent (brush, 0, -1);	// sets nodes and leafs
 	Mod_SetLeafFlags (brush);
 }
 
@@ -889,12 +888,12 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	Replicate the drawing hull structure as a clipping hull
 */
 static void
-Mod_MakeHull0 (model_t *mod)
+Mod_MakeHull0 (model_t *mod, bsp_t *bsp)
 {
 	dclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i, j;
-	mnode_t		*in, *child;
+	mnode_t		*in;
 	mod_brush_t *brush = &mod->brush;
 
 	hull = &brush->hulls[0];
@@ -910,13 +909,14 @@ Mod_MakeHull0 (model_t *mod)
 	hull->planes = brush->planes;
 
 	for (i = 0; i < count; i++, out++, in++) {
-		out->planenum = in->plane - brush->planes;
+		out->planenum = bsp->nodes[i].planenum;
 		for (j = 0; j < 2; j++) {
-			child = in->children[j];
-			if (child->contents < 0)
-				out->children[j] = child->contents;
-			else
-				out->children[j] = child - brush->nodes;
+			int         child_id = in->children[j];
+			if (child_id < 0) {
+				out->children[j] = bsp->leafs[~child_id].contents;
+			} else {
+				out->children[j] = child_id;
+			}
 		}
 	}
 }
@@ -1026,13 +1026,14 @@ do_checksums (const bsp_t *bsp, void *_mod)
 }
 
 static void
-recurse_draw_tree (mod_brush_t *brush, mnode_t *node, int depth)
+recurse_draw_tree (mod_brush_t *brush, int node_id, int depth)
 {
-	if (!node || node->contents < 0) {
+	if (node_id < 0) {
 		if (depth > brush->depth)
 			brush->depth = depth;
 		return;
 	}
+	mnode_t    *node = &brush->nodes[node_id];
 	recurse_draw_tree (brush, node->children[0], depth + 1);
 	recurse_draw_tree (brush, node->children[1], depth + 1);
 }
@@ -1041,7 +1042,7 @@ static void
 Mod_FindDrawDepth (mod_brush_t *brush)
 {
 	brush->depth = 0;
-	recurse_draw_tree (brush, brush->nodes, 1);
+	recurse_draw_tree (brush, 0, 1);
 }
 
 void
@@ -1074,9 +1075,9 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadEntities (mod, bsp);
 	Mod_LoadSubmodels (mod, bsp);
 
-	BSP_Free(bsp);
+	Mod_MakeHull0 (mod, bsp);
 
-	Mod_MakeHull0 (mod);
+	BSP_Free(bsp);
 
 	Mod_FindDrawDepth (&mod->brush);
 	for (i = 0; i < MAX_MAP_HULLS; i++)

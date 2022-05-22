@@ -469,7 +469,6 @@ PF_newcheckclient (progs_t *pr, int check)
 	edict_t    *ent;
 	int         i;
 	mleaf_t    *leaf;
-	vec3_t      org;
 
 	// cycle to the next one
 	if (check < 1)
@@ -503,7 +502,9 @@ PF_newcheckclient (progs_t *pr, int check)
 	}
 
 	// get the PVS for the entity
+	vec4f_t     org;
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
+	org[3] = 1;
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	if (!checkpvs) {
 		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
@@ -536,7 +537,6 @@ PF_checkclient (progs_t *pr, void *data)
 	edict_t    *ent, *self;
 	int         l;
 	mleaf_t    *leaf;
-	vec3_t      view;
 
 	// find a new check if on a new frame
 	if (sv.time - sv.lastchecktime >= 0.1) {
@@ -551,7 +551,9 @@ PF_checkclient (progs_t *pr, void *data)
 	}
 	// if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
+	vec4f_t     view;
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
+	view[3] = 1;
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->brush.leafs) - 1;
 	if (!set_is_member (checkpvs, l)) {

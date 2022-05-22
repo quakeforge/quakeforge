@@ -78,7 +78,7 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 	int         visleaf = -1;	// directional light
 	if (light->position[3]) {
 		// positional light
-		mleaf_t    *leaf = Mod_PointInLeaf (&light->position[0], model);
+		mleaf_t    *leaf = Mod_PointInLeaf (light->position, model);
 		visleaf = leaf - model->brush.leafs - 1;
 	} else if (!DotProduct (light->direction, light->direction)) {
 		// ambient light

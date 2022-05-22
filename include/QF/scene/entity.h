@@ -59,7 +59,7 @@ typedef struct animation_s {
 typedef struct visibility_s {
 	struct entity_s *entity;	// owning entity
 	struct efrag_s *efrag;		// linked list of efrags
-	struct mnode_s *topnode;	// bmodels, first world node that
+	int         topnode_id;		// bmodels, first world node that
 								// splits bmodel, or NULL if not split
 								// applies to other models, too
 								// found in an active leaf

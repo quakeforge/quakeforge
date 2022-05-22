@@ -486,9 +486,9 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 #endif
 
 	sides = 0;
-	if (dist1 >= p->dist)
+	if (dist1 >= -p->dist)
 		sides = 1;
-	if (dist2 < p->dist)
+	if (dist2 < -p->dist)
 		sides |= 2;
 
 #ifdef PARANOID

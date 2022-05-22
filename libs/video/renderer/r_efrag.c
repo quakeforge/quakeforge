@@ -140,25 +140,25 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 	mleaf_t    *leaf;
 	int         sides;
 	efrag_t   **lastlink;
-	mnode_t   **node_stack;
-	mnode_t   **node_ptr;
-	mnode_t    *node = brush->nodes;
+	int        *node_stack;
+	int        *node_ptr;
 
 	node_stack = alloca ((brush->depth + 2) * sizeof (mnode_t *));
 	node_ptr = node_stack;
 
 	lastlink = &ent->visibility.efrag;
 
-	*node_ptr++ = 0;
+	*node_ptr++ = brush->numnodes;
 
-	while (node) {
+	int         node_id = 0;
+	while (node_id != (int) brush->numnodes) {
 		// add an efrag if the node is a leaf
-		if (__builtin_expect (node->contents < 0, 0)) {
-			if (!ent->visibility.topnode) {
-				ent->visibility.topnode = node;
+		if (__builtin_expect (node_id < 0, 0)) {
+			if (ent->visibility.topnode_id == -1) {
+				ent->visibility.topnode_id = node_id;
 			}
 
-			leaf = (mleaf_t *) node;
+			leaf = brush->leafs + ~node_id;
 
 			ef = new_efrag ();	// ensures ef->entnext is 0
 
@@ -172,29 +172,30 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 			ef->leafnext = leaf->efrags;
 			leaf->efrags = ef;
 
-			node = *--node_ptr;
+			node_id = *--node_ptr;
 		} else {
+			mnode_t    *node = brush->nodes + node_id;
 			// NODE_MIXED
-			splitplane = node->plane;
+			splitplane = (plane_t *) &node->plane;
 			sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
 
 			if (sides == 3) {
 				// split on this plane
 				// if this is the first splitter of this bmodel, remember it
-				if (!ent->visibility.topnode) {
-					ent->visibility.topnode = node;
+				if (ent->visibility.topnode_id == -1) {
+					ent->visibility.topnode_id = node_id;
 				}
 			}
 			// recurse down the contacted sides
-			if (sides & 1 && node->children[0]->contents != CONTENTS_SOLID) {
-				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
+			if (sides & 1) {
+				if (sides & 2)
 					*node_ptr++ = node->children[1];
-				node = node->children[0];
+				node_id = node->children[0];
 			} else {
-				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
-					node = node->children[1];
+				if (sides & 2)
+					node_id = node->children[1];
 				else
-					node = *--node_ptr;
+					node_id = *--node_ptr;
 			}
 		}
 	}
@@ -216,7 +217,7 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 	VectorAdd (org, entmodel->mins, emins);
 	VectorAdd (org, entmodel->maxs, emaxs);
 
-	ent->visibility.topnode = 0;
+	ent->visibility.topnode_id = -1;	// leaf 0 (solid space)
 	R_SplitEntityOnNode (brush, ent, emins, emaxs);
 }
 

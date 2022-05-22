@@ -167,7 +167,7 @@ R_NewScene (scene_t *scene)
 		R_InitSky (brush->skytexture);
 
 	// Force a vis update
-	R_MarkLeaves (0);
+	R_MarkLeaves (0, 0);
 
 	R_ClearParticles ();
 
@@ -303,8 +303,7 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
 			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
-			VectorCopy (Transform_GetWorldPosition (ent->transform), \
-						r_entorigin); \
+			r_entorigin = Transform_GetWorldPosition (ent->transform); \
 			draw_##type_name##_entity (ent); \
 		} \
 	} while (0)
@@ -473,19 +472,18 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// calculate dynamic lighting for bmodel if it's not an
 			// instanced model
 			if (brush->firstmodelsurface != 0) {
-				vec3_t      lightorigin;
-
 				for (k = 0; k < r_maxdlights; k++) {
 					if ((r_dlights[k].die < vr_data.realtime) ||
 						(!r_dlights[k].radius)) {
 						continue;
 					}
 
+					vec4f_t     lightorigin;
 					VectorSubtract (r_dlights[k].origin, origin, lightorigin);
+					lightorigin[3] = 1;
 					R_RecursiveMarkLights (brush, lightorigin,
 										   &r_dlights[k], k,
-										   brush->nodes
-								+ brush->hulls[0].firstclipnode);
+										   brush->hulls[0].firstclipnode);
 				}
 			}
 			// if the driver wants polygons, deliver those.
@@ -494,20 +492,21 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			if (r_drawpolys | r_drawculledpolys) {
 				R_ZDrawSubmodelPolys (ent, clmodel);
 			} else {
-				if (ent->visibility.topnode) {
-					mnode_t    *topnode = ent->visibility.topnode;
+				int         topnode_id = ent->visibility.topnode_id;
+				mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
-					if (topnode->contents >= 0) {
-						// not a leaf; has to be clipped to the world
-						// BSP
-						r_clipflags = clipflags;
-						R_DrawSolidClippedSubmodelPolygons (ent, clmodel, topnode);
-					} else {
-						// falls entirely in one leaf, so we just put
-						// all the edges in the edge list and let 1/z
-						// sorting handle drawing order
-						R_DrawSubmodelPolygons (ent, clmodel, clipflags, topnode);
-					}
+				if (topnode_id >= 0) {
+					// not a leaf; has to be clipped to the world
+					// BSP
+					mnode_t    *node = brush->nodes + topnode_id;
+					r_clipflags = clipflags;
+					R_DrawSolidClippedSubmodelPolygons (ent, clmodel, node);
+				} else {
+					// falls entirely in one leaf, so we just put
+					// all the edges in the edge list and let 1/z
+					// sorting handle drawing order
+					mleaf_t    *leaf = brush->leafs + ~topnode_id;
+					R_DrawSubmodelPolygons (ent, clmodel, clipflags, leaf);
 				}
 			}
 

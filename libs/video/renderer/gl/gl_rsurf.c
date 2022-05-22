@@ -548,16 +548,16 @@ gl_R_DrawBrushModel (entity_t *e)
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		vec3_t      lightorigin;
-
 		for (unsigned k = 0; k < r_maxdlights; k++) {
 			if ((r_dlights[k].die < vr_data.realtime)
 				 || (!r_dlights[k].radius))
 				continue;
 
+			vec4f_t     lightorigin;
 			VectorSubtract (r_dlights[k].origin, worldMatrix[3], lightorigin);
+			lightorigin[3] = 1;
 			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
-							brush->nodes + brush->hulls[0].firstclipnode);
+								   brush->hulls[0].firstclipnode);
 		}
 	}
 
@@ -597,12 +597,9 @@ static inline int
 get_side (mnode_t *node)
 {
 	// find which side of the node we are on
-	plane_t    *plane = node->plane;
 	vec4f_t     org = r_refdef.frame.position;
 
-	if (plane->type < 3)
-		return (org[plane->type] - plane->dist) < 0;
-	return (DotProduct (org, plane->normal) - plane->dist) < 0;
+	return dotf (org, node->plane)[0] < 0;
 }
 
 static inline void
@@ -630,12 +627,13 @@ visit_node (glbspctx_t *bctx, mnode_t *node, int side)
 }
 
 static inline int
-test_node (mnode_t *node)
+test_node (glbspctx_t *bctx, int node_id)
 {
-	if (node->contents < 0)
+	if (node_id < 0)
 		return 0;
-	if (node->visframe != r_visframecount)
+	if (r_node_visframes[node_id] != r_visframecount)
 		return 0;
+	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
@@ -645,45 +643,55 @@ static void
 R_VisitWorldNodes (glbspctx_t *bctx)
 {
 	typedef struct {
-		mnode_t    *node;
+		int         node_id;
 		int         side;
 	} rstack_t;
 	mod_brush_t *brush = bctx->brush;
 	rstack_t   *node_ptr;
 	rstack_t   *node_stack;
-	mnode_t    *node;
-	mnode_t    *front;
+	int         node_id;
+	int         front;
 	int         side;
 
-	node = brush->nodes;
+	node_id = 0;
 	// +2 for paranoia
 	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
-		while (test_node (node)) {
+		while (test_node (bctx, node_id)) {
+			mnode_t    *node = bctx->brush->nodes + node_id;
 			side = get_side (node);
 			front = node->children[side];
-			if (test_node (front)) {
-				node_ptr->node = node;
+			if (test_node (bctx, front)) {
+				node_ptr->node_id = node_id;
 				node_ptr->side = side;
 				node_ptr++;
-				node = front;
+				node_id = front;
 				continue;
 			}
-			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
-				visit_leaf ((mleaf_t *) front);
+			if (front < 0) {
+				mleaf_t    *leaf = bctx->brush->leafs + ~front;
+				if (leaf->contents != CONTENTS_SOLID) {
+					visit_leaf (leaf);
+				}
+			}
 			visit_node (bctx, node, side);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 		}
-		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-			visit_leaf ((mleaf_t *) node);
+		if (node_id < 0) {
+			mleaf_t    *leaf = bctx->brush->leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				visit_leaf (leaf);
+			}
+		}
 		if (node_ptr != node_stack) {
 			node_ptr--;
-			node = node_ptr->node;
+			node_id = node_ptr->node_id;
+			mnode_t    *node = bctx->brush->nodes + node_id;
 			side = node_ptr->side;
 			visit_node (bctx, node, side);
-			node = node->children[!side];
+			node_id = node->children[side ^ 1];
 			continue;
 		}
 		break;

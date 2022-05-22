@@ -152,7 +152,7 @@ R_AnimateLight (void)
 }
 
 static inline void
-real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
+real_mark_surfaces (float dist, msurface_t *surf, vec4f_t lightorigin,
 					dlight_t *light, unsigned lightnum)
 {
 	float      dist2, is, it;
@@ -190,7 +190,7 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 }
 
 static inline void
-mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
+mark_surfaces (msurface_t *surf, vec4f_t lightorigin, dlight_t *light,
 			   int lightnum)
 {
 	float      dist;
@@ -208,35 +208,33 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
-					   dlight_t *light, int lightnum, mnode_t *node)
+R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+					   dlight_t *light, int lightnum, int node_id)
 {
 	unsigned    i;
 	float       ndist, maxdist;
-	plane_t    *splitplane;
 	msurface_t *surf;
 
 	maxdist = light->radius;
 
 loc0:
-	if (node->contents < 0)
+	if (node_id < 0)
 		return;
 
-	splitplane = node->plane;
-	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
+	mnode_t    *node = brush->nodes + node_id;
+	ndist = dotf (lightorigin, node->plane)[0];
 
 	if (ndist > maxdist * maxdist) {
 		// Save time by not pushing another stack frame.
-		if (node->children[0]->contents >= 0) {
-			node = node->children[0];
+		if (node->children[0] >= 0) {
+			node_id = node->children[0];
 			goto loc0;
 		}
 		return;
 	}
 	if (ndist < -maxdist * maxdist) {
-		// Save time by not pushing another stack frame.
-		if (node->children[1]->contents >= 0) {
-			node = node->children[1];
+		if (node->children[1] >= 0) {
+			node_id = node->children[1];
 			goto loc0;
 		}
 		return;
@@ -248,29 +246,29 @@ loc0:
 		mark_surfaces (surf, lightorigin, light, lightnum);
 	}
 
-	if (node->children[0]->contents >= 0) {
-		if (node->children[1]->contents >= 0)
+	if (node->children[0] >= 0) {
+		if (node->children[1] >= 0)
 			R_RecursiveMarkLights (brush, lightorigin, light, lightnum,
 								   node->children[1]);
-		node = node->children[0];
+		node_id = node->children[0];
 		goto loc0;
-	} else if (node->children[1]->contents >= 0) {
-		node = node->children[1];
+	} else if (node->children[1] >= 0) {
+		node_id = node->children[1];
 		goto loc0;
 	}
 }
 
 
 static void
-R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
+R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
 	mod_brush_t *brush = &model->brush;
 	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
-		mnode_t *node = brush->nodes + brush->hulls[0].firstclipnode;
-		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node);
+		int         node_id = brush->hulls[0].firstclipnode;
+		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node_id);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
@@ -321,7 +319,6 @@ R_PushDlights (const vec3_t entorigin)
 {
 	unsigned int i;
 	dlight_t   *l;
-	vec3_t      lightorigin;
 
 	// because the count hasn't advanced yet for this frame
 	r_dlightframecount = r_framecount + 1;
@@ -334,14 +331,15 @@ R_PushDlights (const vec3_t entorigin)
 	for (i = 0; i < r_maxdlights; i++, l++) {
 		if (l->die < r_data->realtime || !l->radius)
 			continue;
+		vec4f_t     lightorigin;
 		VectorSubtract (l->origin, entorigin, lightorigin);
+		lightorigin[3] = 1;
 		R_MarkLights (lightorigin, l, i, r_refdef.worldmodel);
 	}
 }
 
 /* LIGHT SAMPLING */
 
-plane_t    *lightplane;
 vec3_t      lightspot;
 
 static int
@@ -408,27 +406,26 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 }
 
 static int
-RecursiveLightPoint (mod_brush_t *brush, mnode_t *node, vec4f_t start,
+RecursiveLightPoint (mod_brush_t *brush, int node_id, vec4f_t start,
 					 vec4f_t end)
 {
 	unsigned    i;
 	int         r, s, t, ds, dt, side;
 	float       front, back, frac;
-	plane_t    *plane;
 	msurface_t *surf;
 	mtexinfo_t *tex;
 loop:
-	if (node->contents < 0)
+	if (node_id < 0)
 		return -1;						// didn't hit anything
 
 	// calculate mid point
-	plane = node->plane;
-	front = DotProduct (start, plane->normal) - plane->dist;
-	back = DotProduct (end, plane->normal) - plane->dist;
+	mnode_t    *node = brush->nodes + node_id;
+	front = dotf (start, node->plane)[0];
+	back = dotf (end, node->plane)[0];
 	side = front < 0;
 
 	if ((back < 0) == side) {
-		node = node->children[side];
+		node_id = node->children[side];
 		goto loop;
 	}
 
@@ -445,7 +442,6 @@ loop:
 
 	// check for impact on this node
 	VectorCopy (mid, lightspot);
-	lightplane = plane;
 
 	surf = brush->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
@@ -478,7 +474,7 @@ loop:
 	}
 
 	// go down back side
-	return RecursiveLightPoint (brush, node->children[!side], mid, end);
+	return RecursiveLightPoint (brush, node->children[side ^ 1], mid, end);
 }
 
 int
@@ -491,7 +487,7 @@ R_LightPoint (mod_brush_t *brush, vec4f_t p)
 	}
 
 	vec4f_t     end = p - (vec4f_t) { 0, 0, 2048, 0 };
-	int         r = RecursiveLightPoint (brush, brush->nodes, p, end);
+	int         r = RecursiveLightPoint (brush, 0, p, end);
 
 	if (r == -1)
 		r = 0;
