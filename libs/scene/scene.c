@@ -57,8 +57,23 @@ static mleaf_t empty_leafs[] = {
 	},
 };
 
+static mnode_t empty_nodes[] = {
+	[0] = {
+		.plane = { 0, 0, 0, -1 },
+		.type = 3,
+		.children = { ~0, ~1 },
+		.minmaxs = {-INFINITY, -INFINITY, -INFINITY,
+					INFINITY,  INFINITY,  INFINITY},
+	},
+};
+
+static int empty_node_parents[] = {
+	[0] = -1,
+};
+
 static int empty_leaf_parents[] = {
-	[1] = -1,
+	[0] = 0,
+	[1] = 0,
 };
 
 static int empty_leaf_flags[] = {
@@ -75,10 +90,12 @@ static model_t empty_world = {
 	.brush = {
 		.modleafs = 2,
 		.visleafs = 1,
-		.nodes = (mnode_t *) &empty_leafs[1],
+		.numnodes = 1,
+		.nodes = empty_nodes,
 		.leafs = empty_leafs,
 		.entities = empty_entities,
 		.visdata = empty_visdata,
+		.node_parents = empty_node_parents,
 		.leaf_parents = empty_leaf_parents,
 		.leaf_flags = empty_leaf_flags,
 	},
