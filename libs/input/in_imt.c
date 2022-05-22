@@ -879,13 +879,14 @@ static imtcmd_t imt_commands[] = {
 		"Set the active imt of the specified context"
 	},
 	{	"imt_list", imt_list_f,
-		"List the available input mapping tables"
+		"List the available input mapping tables."
 	},
 	{	"imt_create", imt_create_f,
 		"create a new imt table:\n"
 		"    imt_create <context> <imt_name> [chain_name]\n"
 		"\n"
-		"The new table will be attached to the specified context\n"
+		"The new table will be attached to the specified context.\n"
+		"\n"
 		"imt_name must not already exist.\n"
 		"If given, chain_name must already exist and be in the context.\n"
 	},
@@ -894,15 +895,18 @@ static imtcmd_t imt_commands[] = {
 		"    imt_switcher_create <name> <context> <default_imt> <input0>"
 			" [..<inputN>]\n"
 		"name is the name of the switcher and must be unique across all\n"
-		"contexts\n"
+		"contexts.\n"
+		"\n"
 		"The new switcher will be attached to the specified context\n"
+		"\n"
 		"default_imt specifies the default imt to be used for all possible\n"
 		"states and must exist and be in the context.\n"
+		"\n"
 		"input0..inputN specify the inputs (cvar or button) used to set the\n"
 		"switcher's state. As each input forms a bit in the state index,\n"
 		"there will be 2**(N+1) states (so 4 inputs will result in 16\n"
 		"states, and 16 inputs will result in 65536 states). Up to 16 inputs\n"
-		"are allowed\n"
+		"are allowed.\n"
 		"\n"
 		"Buttons are spefied as +buttonname (eg, +mlook, +strafe).\n"
 		"Cvars are just the cvar name (eg, freelook, lookstrafe).\n"
@@ -920,13 +924,14 @@ static imtcmd_t imt_commands[] = {
 		"state_index is the state index formed by the binary number\n"
 		"interpretation of the inputs with input0 being bit 0 and inputN\n"
 		"being bit N.\n"
+		"\n"
 		"imt is the name of the imt to be assigned to the state and must\n"
 		"exist and be in the same context as the switcher.\n"
 		"\n"
 		"Any number of state_index imt pairs can be specified.\n"
 	},
 	{	"imt_drop_all", imt_drop_all_f,
-		"delete all imt tables\n"
+		"Delete all imt tables.\n"
 	},
 	{},
 };

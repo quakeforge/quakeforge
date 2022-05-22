@@ -728,17 +728,17 @@ static bindcmd_t in_binding_commands[] = {
 		"commands in quotes and separate with semi-colons."
 	},
 	{	"in_unbind", in_unbind_f,
-		"Remove the bind from the the selected key"
+		"Remove the bind from the the selected key."
 	},
 	{	"in_clear", in_clear_f,
-		"Remove all binds from the specified imts"
+		"Remove all binds from the specified imts."
 	},
 	{	"in_devices", in_devices_f,
 		"List the known devices and their status."
 	},
 	{	"in_connect", in_connect_f,
-		"Create a device binding connection. Supports hot-plug in that the "
-		"device will be automatically reconnected when plugged in or"
+		"Create a device binding connection. Supports hot-plug: the "
+		"device will be automatically reconnected when plugged in or "
 		PACKAGE_NAME " is restarted."
 	},
 	{	"in_connections", in_connections_f,
@@ -746,10 +746,11 @@ static bindcmd_t in_binding_commands[] = {
 	},
 	{	"keyhelp", keyhelp_f,
 		"Identify the next active input axis or button.\n"
+		"\n"
 		"The identification includes the device binding name, axis or button "
 		"number, and (if known) the name of the axis or button. Axes and "
 		"buttons can always be bound by number, so even those for which a "
-		"name is not known, but" PACKAGE_NAME " sees, can be bound."
+		"name is not known, but " PACKAGE_NAME " sees, can be bound."
 	},
 	{ }
 #if 0
