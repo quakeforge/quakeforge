@@ -567,21 +567,21 @@ parse_int_vector (const char *token, int width)
 		pr_type_t   t[PR_SIZEOF (dvec4)];
 	}           long_data = {};
 	pr_type_t  *data = __builtin_choose_expr (
-		sizeof (pr_long_t) == sizeof (long), long_data.t, (void) 0);
+		sizeof (pr_long_t) == sizeof (int64_t), long_data.t, (void) 0);
 
 	switch (width) {
 		case 4:
-			sscanf (token, "' %li %li %li %li '%c%c",
+			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
 					&long_data.l[0], &long_data.l[1],
 					&long_data.l[2], &long_data.l[3], &t1, &t2);
 			break;
 		case 3:
-			sscanf (token, "' %li %li %li '%c%c",
+			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
 					&long_data.l[0], &long_data.l[1],
 					&long_data.l[2], &t1, &t2);
 			break;
 		case 2:
-			sscanf (token, "' %li %li '%c%c",
+			sscanf (token, "' %"SCNi64" %"SCNi64" '%c%c",
 					&long_data.l[0], &long_data.l[1], &t1, &t2);
 			break;
 	}

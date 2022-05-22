@@ -61,6 +61,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 										 buffer->buffer, name);
 					dfunc->vkGetBufferMemoryRequirements (device->dev,
 														  buffer->buffer, &req);
+					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_buffer_view:
@@ -92,6 +93,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 										 image->image, name);
 					dfunc->vkGetImageMemoryRequirements (device->dev,
 														 image->image, &req);
+					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_image_view:
@@ -199,6 +201,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER_VIEW,
 										 buffview->view, name);
+					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_image_view:
@@ -215,6 +218,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
 										 imgview->view, name);
+					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 		}
