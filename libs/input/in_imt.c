@@ -3,7 +3,7 @@
 
 	Input Mapping Table management
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2001 Zephaniah E. Hull <warp@babylon.d2dc.net>
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
