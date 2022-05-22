@@ -173,7 +173,7 @@ gl_R_NewScene (scene_t *scene)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
-	R_MarkLeaves (0, 0);
+	R_MarkLeaves (0, 0, 0);
 
 	R_ClearParticles ();
 

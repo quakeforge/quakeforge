@@ -62,6 +62,7 @@ int         scr_copytop;
 byte       *draw_chars;			// 8*8 graphic characters FIXME location
 qboolean    r_cache_thrash;		// set if surface cache is thrashing
 int        *r_node_visframes;	//FIXME per renderer
+int        *r_leaf_visframes;	//FIXME per renderer
 
 qboolean    scr_skipupdate;
 static qboolean scr_initialized;// ready to draw
@@ -283,7 +284,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
 														r_data->vid->height);
 		}
-		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes);
+		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes);
 	}
 	R_PushDlights (vec3_origin);
 
@@ -515,8 +516,9 @@ SCR_NewScene (scene_t *scene)
 	scr_scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &scr_scene->worldmodel->brush;
-		int         size = brush->numnodes * sizeof (int);
+		int         size = (brush->numnodes + brush->modleafs) * sizeof (int);
 		r_node_visframes = Hunk_AllocName (0, size, "visframes");
+		r_leaf_visframes = r_node_visframes + brush->numnodes;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
 	} else {

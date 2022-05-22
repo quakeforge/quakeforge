@@ -294,7 +294,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
-				if (leaf->visframe != r_visframecount)
+				if (r_leaf_visframes[leafnum + 1] != r_visframecount)
 					continue;
 				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]

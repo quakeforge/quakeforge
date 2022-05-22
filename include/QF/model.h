@@ -193,7 +193,7 @@ typedef struct mnode_s {
 typedef struct mleaf_s {
 // common with node
 	int			contents;		// wil be a negative contents number
-	int			visframe;		// node needs to be traversed if current
+	int			cluster;		// cluster to which this leaf bleongs XXX
 
 	// for bounding box culling
 	float		mins[3];

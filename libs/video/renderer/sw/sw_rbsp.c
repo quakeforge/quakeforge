@@ -234,7 +234,7 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (child_id < 0) {
 				mleaf_t    *leaf = r_refdef.worldmodel->brush.leafs + ~child_id;
-				if (leaf->visframe == r_visframecount
+				if (r_leaf_visframes[~child_id] == r_visframecount
 					&& leaf->contents != CONTENTS_SOLID) {
 					r_currentbkey = leaf->key;
 					R_RenderBmodelFace (ent, psideedges[i], psurf);
