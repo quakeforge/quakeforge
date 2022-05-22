@@ -142,7 +142,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
-	R_MarkLeaves (0, 0, 0);
+	R_MarkLeaves (0, 0, 0, 0);
 
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);

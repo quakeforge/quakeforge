@@ -139,7 +139,8 @@ typedef struct glpoly_s {
 #define MAX_DLIGHTS 128
 
 typedef struct msurface_s {
-	int			visframe;		// should be drawn when node is crossed
+	int			_visframe;	// should be drawn when node is crossed/
+							// no longer used, see r_face_visframes
 
 	int			flags;
 	plane_t		*plane;

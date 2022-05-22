@@ -665,9 +665,10 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 	// chain any visible surfaces on the node that face the camera.
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
-		surf = brush->surfaces + node->firstsurface;
-		for (; c; c--, surf++) {
-			if (surf->visframe != r_visframecount)
+		int         surf_id = node->firstsurface;
+		surf = brush->surfaces + surf_id;
+		for (; c; c--, surf++, surf_id++) {
+			if (r_face_visframes[surf_id] != r_visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK

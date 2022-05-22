@@ -305,7 +305,8 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				msurface_t **msurf = brush->marksurfaces + leaf->firstmarksurface;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = *msurf++;
-					if (surf->visframe != r_visframecount)
+					int         surf_id = surf - brush->surfaces;
+					if (r_face_visframes[surf_id] != r_visframecount)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);
 				}

@@ -47,7 +47,8 @@ static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
 void
-R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes)
+R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
+			  int *face_visframes)
 {
 	set_t       *vis;
 	int			 c;
@@ -80,7 +81,7 @@ R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes)
 			if ((c = leaf->nummarksurfaces)) {
 				mark = brush->marksurfaces + leaf->firstmarksurface;
 				do {
-					(*mark)->visframe = r_visframecount;
+					face_visframes[*mark - brush->surfaces] = r_visframecount;
 					mark++;
 				} while (--c);
 			}

@@ -612,9 +612,10 @@ visit_node (glbspctx_t *bctx, mnode_t *node, int side)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = bctx->brush->surfaces + node->firstsurface;
-		for (; c; c--, surf++) {
-			if (surf->visframe != r_visframecount)
+		int         surf_id = node->firstsurface;
+		surf = bctx->brush->surfaces + surf_id;
+		for (; c; c--, surf++, surf_id++) {
+			if (r_face_visframes[surf_id] != r_visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK

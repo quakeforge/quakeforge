@@ -753,9 +753,10 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 	// chain any visible surfaces on the node that face the camera.
 	// not all nodes have any surfaces to draw (purely a split plane)
 	if ((c = node->numsurfaces)) {
-		surf = bctx->brush->surfaces + node->firstsurface;
-		for (; c; c--, surf++) {
-			if (surf->visframe != r_visframecount)
+		int         surf_id = node->firstsurface;
+		surf = bctx->brush->surfaces + surf_id;
+		for (; c; c--, surf++, surf_id++) {
+			if (r_face_visframes[surf_id] != r_visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
