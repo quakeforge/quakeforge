@@ -760,7 +760,6 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 	dleaf_t    *in;
 	int			count, i, j, p;
 	mleaf_t    *out;
-	qboolean    isnotmap = true;
 	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->leafs;
@@ -769,10 +768,6 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 
 	brush->leafs = out;
 	brush->modleafs = count;
-//	snprintf(s, sizeof (s), "maps/%s.bsp",
-//	Info_ValueForKey(cl.serverinfo,"map"));
-	if (!strncmp ("maps/", mod->path, 5))
-		isnotmap = false;
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 3; j++) {
 			out->mins[j] = in->mins[j];
@@ -794,22 +789,6 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
-
-		// gl underwater warp
-		if (out->contents != CONTENTS_EMPTY) {
-			msurface_t **msurf = brush->marksurfaces + out->firstmarksurface;
-			for (j = 0; j < out->nummarksurfaces; j++) {
-				msurface_t *surf = *msurf++;
-				surf->flags |= SURF_UNDERWATER;
-			}
-		}
-		if (isnotmap) {
-			msurface_t **msurf = brush->marksurfaces + out->firstmarksurface;
-			for (j = 0; j < out->nummarksurfaces; j++) {
-				msurface_t *surf = *msurf++;
-				surf->flags |= SURF_DONTWARP;
-			}
-		}
 	}
 }
 

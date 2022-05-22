@@ -856,7 +856,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	}
 
 	// remove co-linear points - Ed
-	if (!gl_keeptjunctions && !(surf->flags & SURF_UNDERWATER)) {
+	if (!gl_keeptjunctions) {
 		for (i = 0; i < lnumverts; ++i) {
 			vec3_t      v1, v2;
 			float      *prev, *this, *next;
