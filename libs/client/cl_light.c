@@ -143,6 +143,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 {
 	const char *str;
 	int         model = 0;
+	float       atten = 1;
 
 	/*Sys_Printf ("{\n");
 	for (int i = PL_D_NumKeys (entity); i-- > 0; ) {
@@ -201,26 +202,54 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		VectorScale (light->color, 1/255.0, light->color);
 	}
 
-	vec4f_t     attenuation = { 1, 0, 0, 0 }; 	// inverse square
+	if ((str = PL_String (PL_ObjectForKey (entity, "wait")))) {
+		atten = atof (str);
+		if (atten <= 0) {
+			atten = 1;
+		}
+	}
+
+	vec4f_t     attenuation = { 	// inverse square
+		1, 0, 0,
+		0,
+	};
 	switch (model) {
 		case LM_LINEAR:
-			attenuation = (vec4f_t) { 0, 0, 1, 1 / fabsf (light->color[3]) };
+			attenuation = (vec4f_t) {
+				0, 0, 1,
+				atten / fabsf (light->color[3]),
+			};
 			break;
 		case LM_INVERSE:
-			attenuation = (vec4f_t) { 0, 1.0 / 128, 0, 0 };
+			attenuation = (vec4f_t) {
+				0, atten / 128, 0,
+				0,
+			};
 			break;
 		case LM_INVERSE2:
-			attenuation = (vec4f_t) { 1.0 / 16384, 0, 0, 0 };
+			attenuation = (vec4f_t) {
+				atten * atten / 16384, 0, 0,
+				0,
+			};
 			break;
 		case LM_INFINITE:
-			attenuation = (vec4f_t) { 0, 0, 1, 0 };
+			attenuation = (vec4f_t) {
+				0, 0, 1,
+				0,
+			};
 			break;
 		case LM_AMBIENT:
-			attenuation = (vec4f_t) { 0, 0, 1, 0 };
+			attenuation = (vec4f_t) {
+				0, 0, 1,
+				0,
+			};
 			light->direction = (vec4f_t) { 0, 0, 0, 1 };
 			break;
 		case LM_INVERSE3:
-			attenuation = (vec4f_t) { 1.0 / 16384, 2.0 / 128, 1, 0 };
+			attenuation = (vec4f_t) {
+				atten * atten / 16384, 2 * atten / 128, 1,
+				0,
+			};
 			break;
 	}
 	light->attenuation = attenuation;
