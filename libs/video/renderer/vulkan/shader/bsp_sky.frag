@@ -3,11 +3,10 @@
 layout (constant_id = 0) const bool doSkyBox = false;
 layout (constant_id = 1) const bool doSkySheet = false;
 
-layout (set = 1, binding = 0) uniform sampler2DArray SkySheet;
-layout (set = 2, binding = 0) uniform samplerCube SkyBox;
+layout (set = 2, binding = 0) uniform sampler2DArray SkySheet;
+layout (set = 3, binding = 0) uniform samplerCube SkyBox;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
 	vec4        fog;
 	float       time;
 	float       alpha;

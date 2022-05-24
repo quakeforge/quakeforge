@@ -73,6 +73,7 @@ typedef struct renderer_s {
 	int         skinnum;		// for Alias models
 	int         fullbright;
 	float       min_light;
+	int         render_id;
 	mat4_t      full_transform;
 } renderer_t;
 

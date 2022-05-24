@@ -55,6 +55,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/barrier.h"
@@ -74,7 +75,6 @@
 #include "vid_vulkan.h"
 
 typedef struct bsp_push_constants_s {
-	mat4f_t     Model;
 	quat_t      fog;
 	float       time;
 	float       alpha;
@@ -92,13 +92,6 @@ static QFV_Subpass subpass_map[] = {
 	QFV_passGBuffer,		// QFV_bspGBuffer
 	QFV_passTranslucent,	// QFV_bspSky
 	QFV_passTranslucent,	// QFV_bspTurb
-};
-
-static float identity[] = {
-	1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 0,
-	0, 0, 0, 1,
 };
 
 static vulktex_t vulkan_notexture = { };
@@ -486,11 +479,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	vec3_t      mins, maxs;
 	vec4f_t     org;
 	mod_brush_t *brush;
-	bspctx_t   *bctx = ctx->bsp_context;
-
-	bctx->entity = e;
-	bctx->transform = e->renderer.full_transform;
-	bctx->color = e->renderer.colormod;
+	//bspctx_t   *bctx = ctx->bsp_context;
 
 	model = e->renderer.model;
 	brush = &model->brush;
@@ -661,18 +650,6 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 }
 
 static void
-push_transform (vec_t *transform, VkPipelineLayout layout,
-				qfv_device_t *device, VkCommandBuffer cmd)
-{
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (bsp_push_constants_t, Model),
-			sizeof (mat4f_t), transform },
-	};
-	QFV_PushConstants (device, cmd, layout, 1, push_constants);
-}
-
-static void
 bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 			  qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
 {
@@ -737,16 +714,18 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
-	VkDeviceSize offsets[] = { 0 };
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);
+	VkBuffer    buffers[] = { bctx->vertex_buffer, bctx->entid_buffer };
+	VkDeviceSize offsets[] = { 0, bframe->entid_offset };
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Scene_Descriptors (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, sets, 0, 0);
+									layout, 0, 2, sets, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -869,70 +848,9 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 }
 
 static void
-draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
-			qfv_device_t *device, VkCommandBuffer cmd)
+queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
 {
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	for (size_t i = 0; i < pass->draw_queues[queue].size; i++) {
-		__auto_type d = pass->draw_queues[queue].a[i];
-		if (pass->textures) {
-			vulktex_t  *tex = pass->textures->a[d.tex_id];
-			bind_texture (tex, 1, layout, dfunc, cmd);
-		}
-		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
-								 d.first_index, 0, d.first_instance);
-	}
-}
-
-void
-Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	//qfv_devfuncs_t *dfunc = device->funcs;
-	bspctx_t   *bctx = ctx->bsp_context;
-	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	entity_t    worldent;
-	mod_brush_t *brush;
-
-	bctx->main_pass.face_frames = r_face_visframes;
-	bctx->main_pass.leaf_frames = r_leaf_visframes;
-	bctx->main_pass.node_frames = r_node_visframes;
-
-	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
-	bframe->index_count = 0;
-
-	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_refdef.worldmodel;
-	brush = &r_refdef.worldmodel->brush;
-
-	bctx->entity = &worldent;
-	bctx->transform = 0;
-	bctx->color = 0;
-
-	R_VisitWorldNodes (brush, ctx);
-	if (!bctx->vertex_buffer) {
-		return;
-	}
-	if (r_drawentities) {
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
-			R_DrawBrushModel (ent, ctx);
-		}
-	}
-
-	bsp_begin (rFrame);
-
-	push_transform (identity, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspDepth]);
-	push_transform (identity, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspGBuffer]);
-	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
-	push_fragconst (&frag_constants, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspGBuffer]);
-	__auto_type pass = &bctx->main_pass;
-	pass->indices = bframe->index_data;
+	pass->indices = bframe->index_data + bframe->index_count;
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		__auto_type queue = &pass->face_queue[i];
 		if (!queue->size) {
@@ -962,7 +880,88 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 		}
 		DARRAY_APPEND (&pass->draw_queues[dq], draw);
 	}
+	bframe->index_count += pass->index_count;
+}
+
+static void
+draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
+			qfv_device_t *device, VkCommandBuffer cmd)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	for (size_t i = 0; i < pass->draw_queues[queue].size; i++) {
+		__auto_type d = pass->draw_queues[queue].a[i];
+		if (pass->textures) {
+			vulktex_t  *tex = pass->textures->a[d.tex_id];
+			bind_texture (tex, 2, layout, dfunc, cmd);
+		}
+		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
+								 d.first_index, 0, d.first_instance);
+	}
+}
+
+static int
+add_entity (vulkan_ctx_t *ctx, bsp_pass_t *pass, entity_t *entity)
+{
+	int         entid = Vulkan_Scene_AddEntity (ctx, entity);
+	if (entid >= 0) {
+		pass->entid_data[pass->entid_count++] = entid;
+	}
+	return entid >= 0;
+}
+
+void
+Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	//qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+	mod_brush_t *brush;
+
+	bctx->main_pass.face_frames = r_face_visframes;
+	bctx->main_pass.leaf_frames = r_leaf_visframes;
+	bctx->main_pass.node_frames = r_node_visframes;
+	bctx->main_pass.entid_data = bframe->entid_data;
+	bctx->main_pass.entid_count = 0;
+
+	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
+	bframe->index_count = 0;
+
+	entity_t    worldent = {
+		.renderer = {
+			.model = r_refdef.worldmodel,
+			.colormod = { 1, 1, 1, 1 },
+		},
+	};
+	brush = &r_refdef.worldmodel->brush;
+
+	add_entity (ctx, &bctx->main_pass, &worldent);
+
+	R_VisitWorldNodes (brush, ctx);
+	if (!bctx->vertex_buffer) {
+		return;
+	}
+	if (r_drawentities) {
+		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
+			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
+			if (add_entity (ctx, &bctx->main_pass, ent)) {
+				R_DrawBrushModel (ent, ctx);
+			}
+		}
+	}
+
+	queue_faces (&bctx->main_pass, bctx, bframe);
+
+	bsp_begin (rFrame);
+
+	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
+	push_fragconst (&frag_constants, bctx->layout, device,
+					bframe->cmdSet.a[QFV_bspGBuffer]);
 	VkPipelineLayout layout = bctx->layout;
+
+	__auto_type pass = &bctx->main_pass;
 	pass->textures = 0;
 	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspDepth]);
 	pass->textures = &bctx->registered_textures;
@@ -979,20 +978,28 @@ Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	size_t      atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
-	size_t      offset = bframe->index_offset;
-	size_t      size = bframe->index_count * sizeof (uint32_t);
+	size_t      index_offset = bframe->index_offset;
+	size_t      index_size = bframe->index_count * sizeof (uint32_t);
+	size_t      entid_offset = bframe->entid_offset;
+	size_t      entid_size = bframe->entid_count * sizeof (uint32_t);
 
 	if (!bframe->index_count) {
 		return;
 	}
-	offset &= ~atom_mask;
-	size = (size + atom_mask) & ~atom_mask;
+	index_offset &= ~atom_mask;
+	index_size = (index_size + atom_mask) & ~atom_mask;
+	entid_offset &= ~atom_mask;
+	entid_size = (entid_size + atom_mask) & ~atom_mask;
 
-	VkMappedMemoryRange range = {
-		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		bctx->index_memory, offset, size
+	VkMappedMemoryRange ranges[] = {
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  bctx->index_memory, index_offset, index_size
+		},
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  bctx->entid_memory, entid_offset, entid_size
+		},
 	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
 }
 
 void
@@ -1008,8 +1015,6 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		return;
 
 	turb_begin (rFrame);
-	push_transform (identity, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspTurb]);
 	bsp_push_constants_t frag_constants = {
 		.time = vr_data.realtime,
 		.alpha = r_wateralpha
@@ -1039,10 +1044,8 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 
 	sky_begin (rFrame);
 	vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
-	bind_texture (&skybox, 2, bctx->layout, dfunc,
+	bind_texture (&skybox, 3, bctx->layout, dfunc,
 				  bframe->cmdSet.a[QFV_bspSky]);
-	push_transform (identity, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspSky]);
 	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
@@ -1166,6 +1169,7 @@ void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
 	r_notexture_mip->render = &vulkan_notexture;
 
@@ -1204,6 +1208,28 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
+	size_t      entid_size = Vulkan_Scene_MaxEntities (ctx) * sizeof (uint32_t);
+	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	size_t atom_mask = atom - 1;
+	entid_size = (entid_size + atom_mask) & ~atom_mask;
+	bctx->entid_buffer
+		= QFV_CreateBuffer (device, frames * entid_size,
+							VK_BUFFER_USAGE_TRANSFER_DST_BIT
+							| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->entid_buffer,
+						 "buffer:bsp:entid");
+	bctx->entid_memory
+		= QFV_AllocBufferMemory (device, bctx->entid_buffer,
+								 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+								 frames * entid_size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 bctx->entid_memory, "memory:bsp:entid");
+	QFV_BindBufferMemory (device,
+						  bctx->entid_buffer, bctx->entid_memory, 0);
+	uint32_t   *entid_data;
+	dfunc->vkMapMemory (device->dev, bctx->entid_memory, 0,
+						frames * entid_size, 0, (void **) &entid_data);
+
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type bframe = &bctx->frames.a[i];
 
@@ -1219,6 +1245,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
 									 bsp_pass_names[j]));
 		}
+		bframe->entid_data = entid_data + i * entid_size;
+		bframe->entid_offset = i * entid_size;
 	}
 
 	bctx->skybox_descriptor
@@ -1261,6 +1289,8 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
 		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
 	}
+	dfunc->vkDestroyBuffer (device->dev, bctx->entid_buffer, 0);
+	dfunc->vkFreeMemory (device->dev, bctx->entid_memory, 0);
 
 	if (bctx->skybox_tex) {
 		Vulkan_UnloadTex (ctx, bctx->skybox_tex);

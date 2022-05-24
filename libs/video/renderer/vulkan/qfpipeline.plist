@@ -97,6 +97,16 @@
 				},
 			);
 		};
+		entity_pool = {
+			flags = free_descriptor_set;
+			maxSets = 512;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = $properties.descriptorPools.entity_pool.maxSets;
+				},
+			);
+		};
 		bone_pool = {
 			flags = free_descriptor_set;
 			maxSets = 512;
@@ -213,6 +223,16 @@
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
+				},
+			);
+		};
+		entity_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
 				},
 			);
 		};
@@ -340,16 +360,11 @@
 			setLayouts = (matrix_set, twod_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (matrix_set, texture_set, texture_set);
+			setLayouts = (matrix_set, entity_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
-					stageFlags = vertex;
-					offset = 0;
-					size = "16 * 4";
-				},
-				{
 					stageFlags = fragment;
-					offset = 64;
+					offset = 0;
 					size = "4 * 4 + 4 + 4";
 				},
 			);
@@ -499,10 +514,12 @@
 		brush = {
 			bindings = (
 				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 1; stride = "4"; inputRate = instance; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 1; format = r32_uint; offset = 0; },
 			);
 		};
 		iqm = {
@@ -786,9 +803,11 @@
 			vertexInput = {
 				bindings = (
 					"$properties.vertexInput.brush.bindings[0]",
+					"$properties.vertexInput.brush.bindings[1]",
 				);
 				attributes = (
 					"$properties.vertexInput.brush.attributes[0]",
+					"$properties.vertexInput.brush.attributes[2]",
 				);
 			};
 			inputAssembly = $properties.inputAssembly.brush;

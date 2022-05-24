@@ -7,7 +7,6 @@ layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
 layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
 	vec4        fog;
 	float       time;
 	float       alpha;

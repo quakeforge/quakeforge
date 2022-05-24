@@ -50,6 +50,7 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
@@ -92,6 +93,7 @@ vulkan_R_Init (void)
 	Vulkan_Texture_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
+	Vulkan_Scene_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_IQM_Init (vulkan_ctx);
@@ -705,6 +707,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_IQM_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);
+	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
 	Vulkan_Texture_Shutdown (vulkan_ctx);

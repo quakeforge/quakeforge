@@ -1,9 +1,8 @@
 #version 450
 
-layout (set = 1, binding = 0) uniform sampler2DArray Texture;
+layout (set = 2, binding = 0) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
 	vec4        fog;
 	float       time;
 	float       alpha;

@@ -99,6 +99,8 @@ typedef struct bsp_instfaceset_s
 typedef struct bsp_pass_s {
 	uint32_t   *indices;		// points into index buffer
 	uint32_t    index_count;	// number of indices written to buffer
+	uint32_t   *entid_data;
+	uint32_t    entid_count;
 	int         vis_frame;
 	int        *face_frames;
 	int        *leaf_frames;
@@ -132,9 +134,12 @@ typedef enum {
 } QFV_BspSubpass;
 
 typedef struct bspframe_s {
-	uint32_t    *index_data;	// pointer into mega-buffer for this frame (c)
-	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
-	uint32_t     index_count;	// number if indices queued (d)
+	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
+	uint32_t    index_offset;	// offset of index_data within mega-buffer (c)
+	uint32_t    index_count;	// number if indices queued (d)
+	uint32_t   *entid_data;
+	uint32_t    entid_offset;
+	uint32_t    entid_count;
 	qfv_cmdbufferset_t cmdSet;
 } bspframe_t;
 
@@ -142,9 +147,6 @@ typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
 typedef struct bspctx_s {
-	struct entity_s *entity;
-	vec_t       *transform;
-	float       *color;
 	uint32_t     inst_id;
 
 	regtexset_t registered_textures;
@@ -182,6 +184,8 @@ typedef struct bspctx_s {
 	VkDeviceMemory vertex_memory;
 	VkBuffer     index_buffer;
 	VkDeviceMemory index_memory;
+	VkBuffer     entid_buffer;
+	VkDeviceMemory entid_memory;
 	bspframeset_t frames;
 } bspctx_t;
 
