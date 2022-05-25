@@ -393,12 +393,20 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	face_base = 0;
 	for (int i = 0; i < num_models; i++) {
-		if (models[i] && models[i]->type == mod_brush) {
-			bsp_model_t *m = &bctx->models[models[i]->render_id];
-			m->first_face = face_base;
-			m->face_count = models[i]->brush.nummodelsurfaces;
-			face_base += m->face_count;
+		if (!models[i] || models[i]->type != mod_brush) {
+			continue;
 		}
+		int         num_faces = models[i]->brush.numsurfaces;
+		bsp_model_t *m = &bctx->models[models[i]->render_id];
+		m->first_face = face_base + models[i]->brush.firstmodelsurface;
+		m->face_count = models[i]->brush.nummodelsurfaces;
+		while (models[i + 1] && models[i + 1]->path[0] == '*') {
+			i++;
+			m = &bctx->models[models[i]->render_id];
+			m->first_face = face_base + models[i]->brush.firstmodelsurface;
+			m->face_count = models[i]->brush.nummodelsurfaces;
+		}
+		face_base += num_faces;;
 	}
 
 	// All usable surfaces have been chained to the (base) texture they use.
