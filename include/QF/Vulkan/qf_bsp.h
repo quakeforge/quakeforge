@@ -46,6 +46,11 @@ typedef struct bsp_face_s {
 	uint32_t    flags;
 } bsp_face_t;
 
+typedef struct bsp_model_s {
+	uint32_t    first_face;
+	uint32_t    face_count;
+} bsp_model_t;
+
 typedef struct bsp_packet_s {
 	int         first_index;
 	int         index_count;
@@ -79,6 +84,7 @@ typedef struct bsp_texset_s
 
 typedef struct bsp_draw_s {
 	uint32_t    tex_id;
+	uint32_t    inst_id;
 	uint32_t    index_count;
 	uint32_t    instance_count;
 	uint32_t    first_index;
@@ -96,6 +102,14 @@ typedef struct instface_s {
 typedef struct bsp_instfaceset_s
     DARRAY_TYPE (instface_t) bsp_instfaceset_t;
 
+typedef struct bsp_modelentset_s
+	DARRAY_TYPE (uint32_t) bsp_modelentset_t;
+
+typedef struct bsp_instance_s {
+	int         first_instance;
+	bsp_modelentset_t entities;
+} bsp_instance_t;
+
 typedef struct bsp_pass_s {
 	uint32_t   *indices;		// points into index buffer
 	uint32_t    index_count;	// number of indices written to buffer
@@ -109,6 +123,8 @@ typedef struct bsp_pass_s {
 	regtexset_t *textures;
 	int         num_queues;
 	bsp_drawset_t *draw_queues;
+	uint32_t     inst_id;
+	bsp_instance_t *instances;
 } bsp_pass_t;
 
 typedef struct bspvert_s {
@@ -147,8 +163,6 @@ typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
 typedef struct bspctx_s {
-	uint32_t     inst_id;
-
 	regtexset_t registered_textures;
 
 	struct qfv_tex_s *default_skysheet;
@@ -164,8 +178,11 @@ typedef struct bspctx_s {
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
 
+	bsp_model_t *models;
 	bsp_face_t *faces;
 	uint32_t   *poly_indices;
+
+	int         model_id;
 
 	bsp_pass_t  main_pass;	// camera view depth, gbuffer, etc
 

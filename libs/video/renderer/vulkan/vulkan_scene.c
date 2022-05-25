@@ -101,6 +101,16 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t *entity)
 	return entity->renderer.render_id;
 }
 
+void
+Vulkan_Scene_Flush (vulkan_ctx_t *ctx)
+{
+	scenectx_t *sctx = ctx->scene_context;
+	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
+
+	set_empty (sframe->pooled_entities);
+	sframe->entity_pool.size = 0;
+}
+
 static VkWriteDescriptorSet base_buffer_write = {
 	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
 	0, 0, 1,

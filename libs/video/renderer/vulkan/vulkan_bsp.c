@@ -45,6 +45,7 @@
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
+#include "QF/heapsort.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -123,7 +124,7 @@ chain_surface (const bsp_face_t *face, bsp_pass_t *pass, bspctx_t *bctx)
 {
 
 	DARRAY_APPEND (&pass->face_queue[face->tex_id],
-				   ((instface_t) { bctx->inst_id, face - bctx->faces }));
+				   ((instface_t) { pass->inst_id, face - bctx->faces }));
 }
 
 static void
@@ -215,7 +216,7 @@ typedef struct {
 } buildctx_t;
 
 static void
-build_surf_displist (faceref_t *faceref, buildctx_t *build)
+build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 {
 	msurface_t *surf = faceref->face;
 	mod_brush_t *brush = &faceref->model->brush;;
@@ -296,6 +297,12 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		face_sets[i] = (facerefset_t) DARRAY_STATIC_INIT (1024);
 	}
 
+	for (int i = 0; i < bctx->model_id; i++) {
+		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
+	}
+	free (bctx->main_pass.instances);
+	bctx->model_id = 0;
+
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
@@ -304,8 +311,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		model_t    *m = models[i];
 		// sub-models are done as part of the main model
 		// and non-bsp models don't have surfaces.
-		if (!m || *m->path == '*' || m->type != mod_brush)
+		if (!m || m->type != mod_brush) {
 			continue;
+		}
+		m->render_id = bctx->model_id++;
+		if (*m->path == '*') {
+			continue;
+		}
 		mod_brush_t *brush = &m->brush;
 		dmodel_t    *dm = brush->submodels;
 		for (unsigned j = 0; j < brush->numsurfaces; j++) {
@@ -327,6 +339,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 						   ((faceref_t) { surf, m, face_base }));
 		}
 		face_base += brush->numsurfaces;
+	}
+	bctx->main_pass.instances = malloc (bctx->model_id
+										* sizeof (bsp_instance_t));
+	for (int i = 0; i < bctx->model_id; i++) {
+		DARRAY_INIT (&bctx->main_pass.instances[i].entities, 16);
 	}
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = 0;
@@ -369,8 +386,20 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	//     "end of primitive" (~0u)
 	free (bctx->faces);
 	free (bctx->poly_indices);
+	free (bctx->models);
+	bctx->models = malloc (bctx->model_id * sizeof (bsp_model_t));
 	bctx->faces = malloc (face_base * sizeof (bsp_face_t));
 	bctx->poly_indices = malloc (index_count * sizeof (uint32_t));
+
+	face_base = 0;
+	for (int i = 0; i < num_models; i++) {
+		if (models[i] && models[i]->type == mod_brush) {
+			bsp_model_t *m = &bctx->models[models[i]->render_id];
+			m->first_face = face_base;
+			m->face_count = models[i]->brush.nummodelsurfaces;
+			face_base += m->face_count;
+		}
+	}
 
 	// All usable surfaces have been chained to the (base) texture they use.
 	// Run through the textures, using their chains to build display lists.
@@ -468,61 +497,44 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 }
 
-static void
-R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
+static int
+R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
-	float       dot, radius;
+	float       radius;
 	model_t    *model;
-	plane_t    *plane;
-	msurface_t *surf;
-	qboolean    rotated;
 	vec3_t      mins, maxs;
-	vec4f_t     org;
-	mod_brush_t *brush;
-	//bspctx_t   *bctx = ctx->bsp_context;
+	bspctx_t   *bctx = ctx->bsp_context;
 
 	model = e->renderer.model;
-	brush = &model->brush;
 	mat4f_t mat;
 	Transform_GetWorldMatrix (e->transform, mat);
-	memcpy (e->renderer.full_transform, mat, sizeof (mat));//FIXME
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
-		rotated = true;
 		radius = model->radius;
 		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { //FIXME
-			return;
+			return 1;
 		}
 	} else {
-		rotated = false;
 		VectorAdd (mat[3], model->mins, mins);
 		VectorAdd (mat[3], model->maxs, maxs);
 		if (R_CullBox (r_refdef.frustum, mins, maxs))
-			return;
+			return 1;
+	}
+	if (Vulkan_Scene_AddEntity (ctx, e) < 0) {
+		return 0;
 	}
 
-	org = r_refdef.frame.position - mat[3];
-	if (rotated) {
-		vec4f_t     temp = org;
-
-		org[0] = DotProduct (temp, mat[0]);
-		org[1] = DotProduct (temp, mat[1]);
-		org[2] = DotProduct (temp, mat[2]);
-	}
-
-	surf = &brush->surfaces[brush->firstmodelsurface];
-
-	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
-		// find the node side on which we are
-		plane = surf->plane;
-
-		dot = PlaneDiff (org, plane);
-
-		// enqueue the polygon
-		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
-			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			//chain_surface (surf, ctx);
+	pass->inst_id = model->render_id;
+	if (!pass->instances[model->render_id].entities.size) {
+		bsp_model_t *m = &bctx->models[model->render_id];
+		bsp_face_t *face = &bctx->faces[m->first_face];
+		for (unsigned i = 0; i < m->face_count; i++, face++) {
+			// enqueue the polygon
+			chain_surface (face, pass, bctx);
 		}
 	}
+	DARRAY_APPEND (&pass->instances[model->render_id].entities,
+				   e->renderer.render_id);
+	return 1;
 }
 
 static inline void
@@ -841,8 +853,12 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_RESIZE (&pass->face_queue[i], 0);
 	}
-	for (int j = 0; j < pass->num_queues; j++) {
-		DARRAY_RESIZE (&pass->draw_queues[j], 0);
+	for (int i = 0; i < pass->num_queues; i++) {
+		DARRAY_RESIZE (&pass->draw_queues[i], 0);
+	}
+	for (int i = 0; i < bctx->model_id; i++) {
+		pass->instances[i].first_instance = -1;
+		DARRAY_RESIZE (&pass->instances[i].entities, 0);
 	}
 	pass->index_count = 0;
 }
@@ -856,29 +872,50 @@ queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
 		if (!queue->size) {
 			continue;
 		}
-		//FIXME implement draw_queue selection correctly (per face)
-		int         dq = 0;
-		if (bctx->faces[queue->a[0].face].flags & SURF_DRAWSKY) {
-			dq = 1;
-		}
-		if (bctx->faces[queue->a[0].face].flags & SURF_DRAWTURB) {
-			dq = 2;
-		}
-		bsp_draw_t  draw = {
-			.tex_id = i,
-			.instance_count = 1,
-			.first_index = pass->index_count,
-		};
 		for (size_t j = 0; j < queue->size; j++) {
 			__auto_type is = queue->a[j];
 			__auto_type f = bctx->faces[is.face];
+
+			if (pass->instances[is.inst_id].first_instance == -1) {
+				uint32_t    count = pass->instances[is.inst_id].entities.size;
+				pass->instances[is.inst_id].first_instance = pass->entid_count;
+				memcpy (pass->entid_data + pass->entid_count,
+						pass->instances[is.inst_id].entities.a,
+						count * sizeof (uint32_t));
+				pass->entid_count += count;
+			}
+
+			int         dq = 0;
+			if (bctx->faces[queue->a[0].face].flags & SURF_DRAWSKY) {
+				dq = 1;
+			}
+			if (bctx->faces[queue->a[0].face].flags & SURF_DRAWTURB) {
+				dq = 2;
+			}
+
+			size_t      dq_size = pass->draw_queues[dq].size;
+			bsp_draw_t *draw = &pass->draw_queues[dq].a[dq_size - 1];
+			if (!pass->draw_queues[dq].size
+				|| draw->tex_id != f.tex_id
+				|| draw->inst_id != is.inst_id) {
+				bsp_instance_t *instance = &pass->instances[is.inst_id];
+				DARRAY_APPEND (&pass->draw_queues[dq], ((bsp_draw_t) {
+					.tex_id = i,
+					.inst_id = is.inst_id,
+					.instance_count = instance->entities.size,
+					.first_index = pass->index_count,
+					.first_instance = instance->first_instance,
+				}));
+				dq_size = pass->draw_queues[dq].size;
+				draw = &pass->draw_queues[dq].a[dq_size - 1];
+			}
+
 			memcpy (pass->indices + pass->index_count,
 					bctx->poly_indices + f.first_index,
 					f.index_count * sizeof (uint32_t));
-			draw.index_count += f.index_count;
+			draw->index_count += f.index_count;
 			pass->index_count += f.index_count;
 		}
-		DARRAY_APPEND (&pass->draw_queues[dq], draw);
 	}
 	bframe->index_count += pass->index_count;
 }
@@ -901,13 +938,11 @@ draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
 }
 
 static int
-add_entity (vulkan_ctx_t *ctx, bsp_pass_t *pass, entity_t *entity)
+ent_model_cmp (const void *_a, const void *_b)
 {
-	int         entid = Vulkan_Scene_AddEntity (ctx, entity);
-	if (entid >= 0) {
-		pass->entid_data[pass->entid_count++] = entid;
-	}
-	return entid >= 0;
+	const entity_t * const *a = _a;
+	const entity_t * const *b = _b;
+	return (*a)->renderer.model->render_id - (*b)->renderer.model->render_id;
 }
 
 void
@@ -937,20 +972,29 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	};
 	brush = &r_refdef.worldmodel->brush;
 
-	add_entity (ctx, &bctx->main_pass, &worldent);
+	Vulkan_Scene_AddEntity (ctx, &worldent);
 
+	int         world_id = worldent.renderer.model->render_id;
+	bctx->main_pass.inst_id = world_id;
+	DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
+				   worldent.renderer.render_id);
 	R_VisitWorldNodes (brush, ctx);
 	if (!bctx->vertex_buffer) {
 		return;
 	}
 	if (r_drawentities) {
+		heapsort (r_ent_queue->ent_queues[mod_brush].a,
+				  r_ent_queue->ent_queues[mod_brush].size,
+				  sizeof (entity_t *), ent_model_cmp);
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
-			if (add_entity (ctx, &bctx->main_pass, ent)) {
-				R_DrawBrushModel (ent, ctx);
+			if (!R_DrawBrushModel (ent, &bctx->main_pass, ctx)) {
+				Sys_Printf ("Too many entities!\n");
+				break;
 			}
 		}
 	}
+	bframe->entid_count = bctx->main_pass.entid_count;
 
 	queue_faces (&bctx->main_pass, bctx, bframe);
 
@@ -1188,7 +1232,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
-	bctx->main_pass.num_queues = 3;
+	bctx->main_pass.num_queues = 3;//solid, sky, water
 	bctx->main_pass.draw_queues = malloc (bctx->main_pass.num_queues
 										  * sizeof (bsp_drawset_t));
 	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
@@ -1208,7 +1252,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
-	size_t      entid_size = Vulkan_Scene_MaxEntities (ctx) * sizeof (uint32_t);
+	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
+	size_t      entid_size = entid_count * sizeof (uint32_t);
 	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
 	entid_size = (entid_size + atom_mask) & ~atom_mask;
@@ -1245,7 +1290,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
 									 bsp_pass_names[j]));
 		}
-		bframe->entid_data = entid_data + i * entid_size;
+		bframe->entid_data = entid_data + i * entid_count;
 		bframe->entid_offset = i * entid_size;
 	}
 
@@ -1273,12 +1318,22 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	dfunc->vkDestroyPipeline (device->dev, bctx->skybox, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->skysheet, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->turb, 0);
+
 	DARRAY_CLEAR (&bctx->registered_textures);
 	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
 		DARRAY_CLEAR (&bctx->main_pass.draw_queues[i]);
 	}
+
+	free (bctx->faces);
+	free (bctx->models);
+
 	free (bctx->main_pass.draw_queues);
+	for (int i = 0; i < bctx->model_id; i++) {
+		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
+	}
+	free (bctx->main_pass.instances);
 	DARRAY_CLEAR (&bctx->frames);
+
 	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);
 	if (bctx->vertex_buffer) {

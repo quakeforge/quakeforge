@@ -425,6 +425,8 @@ typedef struct model_s {
 	cache_user_t cache;
 	void      (*clear) (struct model_s *m, void *data);
 	void       *data;
+
+	int         render_id;
 } model_t;
 
 // ============================================================================

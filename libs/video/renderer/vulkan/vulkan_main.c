@@ -56,6 +56,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 //#include "QF/Vulkan/qf_textures.h"
 #include "QF/Vulkan/renderpass.h"
@@ -128,6 +129,7 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 	}
 	Vulkan_DrawWaterSurfaces (rFrame);
 	Vulkan_Bsp_Flush (ctx);
+	Vulkan_Scene_Flush (ctx);
 }
 
 void
