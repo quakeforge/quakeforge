@@ -145,7 +145,8 @@ stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
 }
 
 qfv_tex_t *
-Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
+Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
+					 const char *name)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -156,8 +157,15 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 		return 0;
 	}
 
+	for (int i = 1; i < layers; i++) {
+		if (tex[i].width != tex[0].width || tex[i].height != tex[0].height
+			|| tex[i].format != tex[0].format) {
+			return 0;
+		}
+	}
+
 	if (mip) {
-		mip = QFV_MipLevels (tex->width, tex->height);
+		mip = QFV_MipLevels (tex[0].width, tex[0].height);
 	} else {
 		mip = 1;
 	}
@@ -166,9 +174,15 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 	//FIXME this whole thing is ineffiecient, especially for small textures
 	qfv_tex_t  *qtex = malloc (sizeof (qfv_tex_t));
 
-	VkExtent3D  extent = { tex->width, tex->height, 1 };
-	qtex->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, format, extent,
-								   mip, 1, VK_SAMPLE_COUNT_1_BIT,
+	VkExtent3D  extent = { tex[0].width, tex[0].height, 1 };
+	VkImageType itype = layers > 0 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_2D;
+	VkImageType vtype = layers > 0 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY
+								   : VK_IMAGE_VIEW_TYPE_2D;
+	if (layers < 1) {
+		layers = 1;
+	}
+	qtex->image = QFV_CreateImage (device, 0, itype, format, extent,
+								   mip, layers, VK_SAMPLE_COUNT_1_BIT,
 								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
 								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 								   | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -180,31 +194,37 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
 						 va (ctx->va_ctx, "memory:%s", name));
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
-	qtex->view = QFV_CreateImageView (device, qtex->image,
-									  VK_IMAGE_VIEW_TYPE_2D,
+	qtex->view = QFV_CreateImageView (device, qtex->image, vtype,
 									  VK_FORMAT_R8G8B8A8_UNORM,
 									  VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
 						 va (ctx->va_ctx, "iview:%s", name));
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	stage_tex_data (packet, tex, bpp);
+
+	VkBufferImageCopy copy[layers];
+	copy[0] = (VkBufferImageCopy) {
+		0, 0, 0,
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{0, 0, 0}, {tex[0].width, tex[0].height, 1},
+	};
+	for (int i = 0; i < layers; i++) {
+		copy[i] = copy[0];
+		copy[i].bufferOffset = stage_tex_data (packet, &tex[i], bpp);
+		copy[i].imageSubresource.baseArrayLayer = i;
+	}
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = qtex->image;
 	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
-	VkBufferImageCopy copy = {
-		packet->offset, 0, 0,
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		{0, 0, 0}, {tex->width, tex->height, 1},
-	};
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
 								   qtex->image,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   1, &copy);
+								   layers, copy);
 	if (mip == 1) {
 		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 		ib.barrier.image = qtex->image;
@@ -213,10 +233,16 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 									 1, &ib.barrier);
 	} else {
 		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
-							 mip, tex->width, tex->height, 1);
+							 mip, tex->width, tex->height, layers);
 	}
 	QFV_PacketSubmit (packet);
 	return qtex;
+}
+
+qfv_tex_t *
+Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
+{
+	return Vulkan_LoadTexArray (ctx, tex, 0, mip, name);
 }
 
 static qfv_tex_t *

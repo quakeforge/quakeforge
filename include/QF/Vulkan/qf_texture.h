@@ -19,6 +19,8 @@ void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 						   int alpha, int count);
 qfv_tex_t *Vulkan_LoadTex (struct vulkan_ctx_s *ctx, tex_t *tex, int mip,
 						   const char *name);
+qfv_tex_t *Vulkan_LoadTexArray (struct vulkan_ctx_s *ctx, tex_t *tex,
+								int layers, int mip, const char *name);
 qfv_tex_t *Vulkan_LoadEnvMap (struct vulkan_ctx_s *ctx, tex_t *tex,
 							  const char *name);
 qfv_tex_t *Vulkan_LoadEnvSides (struct vulkan_ctx_s *ctx, tex_t **tex,
