@@ -51,6 +51,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/math/bitop.h"
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_bsp.h"
@@ -79,6 +80,7 @@ typedef struct bsp_push_constants_s {
 	quat_t      fog;
 	float       time;
 	float       alpha;
+	float       turb_scale;
 } bsp_push_constants_t;
 
 static const char * __attribute__((used)) bsp_pass_names[] = {
@@ -604,6 +606,7 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 
 	pass->ent_frame = e->animation.frame & 1;
 	pass->inst_id = model->render_id;
+	pass->inst_id |= e->renderer.colormod[3] < 1 ? INST_ALPHA : 0;
 	if (!pass->instances[model->render_id].entities.size) {
 		bsp_model_t *m = &bctx->models[model->render_id];
 		bsp_face_t *face = &bctx->faces[m->first_face];
@@ -767,8 +770,11 @@ push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			field_offset (bsp_push_constants_t, alpha),
 			sizeof (constants->alpha), &constants->alpha },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (bsp_push_constants_t, turb_scale),
+			sizeof (constants->turb_scale), &constants->turb_scale },
 	};
-	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+	QFV_PushConstants (device, cmd, layout, 4, push_constants);
 }
 
 static void
@@ -956,6 +962,10 @@ queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
 			__auto_type is = queue->a[j];
 			__auto_type f = bctx->faces[is.face];
 
+			f.flags |= ((is.inst_id & INST_ALPHA)
+						>> (BITOP_LOG2(INST_ALPHA)
+							- BITOP_LOG2(SURF_DRAWALPHA))) & SURF_DRAWALPHA;
+			is.inst_id &= ~INST_ALPHA;
 			if (pass->instances[is.inst_id].first_instance == -1) {
 				uint32_t    count = pass->instances[is.inst_id].entities.size;
 				pass->instances[is.inst_id].first_instance = pass->entid_count;
@@ -966,11 +976,14 @@ queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
 			}
 
 			int         dq = 0;
-			if (bctx->faces[queue->a[0].face].flags & SURF_DRAWSKY) {
+			if (f.flags & SURF_DRAWSKY) {
 				dq = 1;
 			}
-			if (bctx->faces[queue->a[0].face].flags & SURF_DRAWTURB) {
+			if (f.flags & SURF_DRAWALPHA) {
 				dq = 2;
+			}
+			if (f.flags & SURF_DRAWTURB) {
+				dq = 3;
 			}
 
 			size_t      dq_size = pass->draw_queues[dq].size;
@@ -1138,21 +1151,29 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	if (!bctx->main_pass.draw_queues[2].size)
+	if (!bctx->main_pass.draw_queues[3].size)
 		return;
 
 	turb_begin (rFrame);
-	bsp_push_constants_t frag_constants = {
-		.time = vr_data.realtime,
-		.alpha = r_wateralpha
-	};
-	push_fragconst (&frag_constants, bctx->layout, device,
-					bframe->cmdSet.a[QFV_bspTurb]);
 
 	VkPipelineLayout layout = bctx->layout;
+	bsp_push_constants_t frag_constants = {
+		.time = vr_data.realtime,
+		.alpha = 1,
+		.turb_scale = 0,
+	};
+	push_fragconst (&frag_constants, layout, device,
+					bframe->cmdSet.a[QFV_bspTurb]);
+
 	__auto_type pass = &bctx->main_pass;
 	pass->textures = &bctx->registered_textures;
 	draw_queue (pass, 2, layout, device, bframe->cmdSet.a[QFV_bspTurb]);
+
+	frag_constants.alpha = r_wateralpha;
+	frag_constants.turb_scale = 1;
+	push_fragconst (&frag_constants, bctx->layout, device,
+					bframe->cmdSet.a[QFV_bspTurb]);
+	draw_queue (pass, 3, layout, device, bframe->cmdSet.a[QFV_bspTurb]);
 
 	turb_end (ctx);
 }
@@ -1379,7 +1400,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
-	bctx->main_pass.num_queues = 3;//solid, sky, water
+	bctx->main_pass.num_queues = 4;//solid, sky, water, transparent
 	bctx->main_pass.draw_queues = malloc (bctx->main_pass.num_queues
 										  * sizeof (bsp_drawset_t));
 	for (int i = 0; i < bctx->main_pass.num_queues; i++) {

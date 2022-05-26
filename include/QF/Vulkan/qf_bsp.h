@@ -110,6 +110,7 @@ typedef struct bsp_draw_s {
 typedef struct bsp_drawset_s
     DARRAY_TYPE (bsp_draw_t) bsp_drawset_t;
 
+#define INST_ALPHA (1u<<31)
 typedef struct instface_s {
 	uint32_t    inst_id;
 	uint32_t    face;

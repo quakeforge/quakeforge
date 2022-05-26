@@ -6,10 +6,12 @@ layout (push_constant) uniform PushConstants {
 	vec4        fog;
 	float       time;
 	float       alpha;
+	float       turb_scale;
 };
 
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
+layout (location = 2) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 
@@ -25,7 +27,7 @@ warp_st (vec2 st, float time)
 {
 	vec2        angle = st.ts * CYCLE / 2.0;
 	vec2        phase = vec2 (time, time) * SPEED;
-	return st + (sin ((angle + phase) * FACTOR) + BIAS) / SCALE;
+	return st + turb_scale * (sin ((angle + phase) * FACTOR) + BIAS) / SCALE;
 }
 
 vec4
@@ -48,7 +50,8 @@ main (void)
 
 	c = texture (Texture, t_st);
 	e = texture (Texture, e_st);
+	float       a = c.a * e.a * alpha;
 	c += e;
-	c.a = alpha;
-	frag_color = c;//fogBlend (c);
+	c.a = a;
+	frag_color = c * color;//fogBlend (c);
 }

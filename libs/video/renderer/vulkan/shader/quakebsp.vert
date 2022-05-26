@@ -20,6 +20,7 @@ layout (location = 2) in uint entid;
 
 layout (location = 0) out vec4 tl_st;
 layout (location = 1) out vec3 direction;
+layout (location = 2) out vec4 color;
 
 void
 main (void)
@@ -28,4 +29,5 @@ main (void)
 	gl_Position = Projection3d * (View * vec4 (vert, 1));
 	direction = (Sky * vertex).xyz;
 	tl_st = tl_uv;
+	color = entities[entid].color;
 }
