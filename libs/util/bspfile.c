@@ -683,7 +683,7 @@ do { \
 	size_t      size = LittleLong (bsp29->header->lumps[l].filelen); \
 	size_t      offs = LittleLong (bsp29->header->lumps[l].fileofs); \
 	void       *data = (byte *) mem + offs; \
-	if (offs >= mem_size || (offs + size) > mem_size) \
+	if (offs > mem_size || (offs + size) > mem_size) \
 		Sys_Error ("invalid lump"); \
 	bsp29->n = 0; \
 	if (size) \
