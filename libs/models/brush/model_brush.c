@@ -362,7 +362,6 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 				Sys_Error ("Bad animating texture %s", tx->name);
 		}
 
-#define	ANIM_CYCLE	2
 		// link them all together
 		for (int j = 0; j < max; j++) {
 			tx2 = anims[j];

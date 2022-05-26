@@ -90,6 +90,7 @@ typedef struct instsurf_s {
 	float      *color;
 } instsurf_t;
 
+#define ANIM_CYCLE 2
 typedef struct texture_s {
 	char		name[16];
 	unsigned    width, height;
