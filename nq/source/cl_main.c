@@ -35,9 +35,11 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
+#include "QF/image.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/png.h"
 #include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
@@ -60,7 +62,6 @@
 
 #include "nq/include/cl_skin.h"
 #include "nq/include/client.h"
-#include "nq/include/host.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
@@ -610,6 +611,75 @@ CL_SetState (cactive_t state)
 }
 
 static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
+void
+CL_Frame (void)
+{
+	static double time1 = 0, time2 = 0, time3 = 0;
+	int         pass1, pass2, pass3;
+
+	// fetch results from server
+	if (cls.state >= ca_connected)
+		CL_ReadFromServer ();
+
+	// update video
+	if (host_speeds)
+		time1 = Sys_DoubleTime ();
+
+	r_data->inhibit_viewmodel = (chase_active
+								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+								 || cl.stats[STAT_HEALTH] <= 0);
+	r_data->frametime = host_frametime;
+
+	CL_UpdateScreen (cl.time);
+
+	if (host_speeds)
+		time2 = Sys_DoubleTime ();
+
+	// update audio
+	if (cls.state == ca_active) {
+		mleaf_t    *l;
+		byte       *asl = 0;
+		vec4f_t     origin;
+
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
+		if (l)
+			asl = l->ambient_sound_level;
+		S_Update (cl.viewstate.camera_transform, asl);
+		R_DecayLights (host_frametime);
+	} else
+		S_Update (0, 0);
+
+	CDAudio_Update ();
+
+	if (host_speeds) {
+		pass1 = (time1 - time3) * 1000;
+		time3 = Sys_DoubleTime ();
+		pass2 = (time2 - time1) * 1000;
+		pass3 = (time3 - time2) * 1000;
+		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
+					pass1 + pass2 + pass3, pass1, pass2, pass3);
+	}
+
+	if (cls.demo_capture) {
+		r_funcs->capture_screen (write_capture, 0);
+	}
+	fps_count++;
+}
+
+static void
 Force_CenterView_f (void)
 {
 	cl.viewstate.player_angles[PITCH] = 0;
@@ -632,9 +702,9 @@ CL_Init (cbuf_t *cbuf)
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init ();
+	GIB_Key_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
-
 	S_Init (&cl.viewentity, &host_frametime);
 
 	PI_RegisterPlugins (client_plugin_list);

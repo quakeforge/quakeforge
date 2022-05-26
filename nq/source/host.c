@@ -29,45 +29,24 @@
 #endif
 
 #ifdef HAVE_UNISTD_H
-# include "unistd.h"
+# include <unistd.h>
 #endif
 
 #include "QF/cbuf.h"
-#include "QF/cdaudio.h"
-#include "QF/draw.h"
 #include "QF/dstring.h"
-#include "QF/idparse.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/image.h"
-#include "QF/input.h"
-#include "QF/keys.h"
-#include "QF/listener.h"
-#include "QF/msg.h"
-#include "QF/png.h"
-#include "QF/progs.h"
-#include "QF/qargs.h"
-#include "QF/screen.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vid.h"
+#include "QF/dstring.h"
 #include "QF/gib.h"
+#include "QF/idparse.h"
+#include "QF/qargs.h"
 
 #include "QF/plugin/console.h"
-#include "QF/plugin/vid_render.h"
-#include "QF/scene/scene.h"
-#include "QF/scene/transform.h"
 
 #include "buildnum.h"
-#include "compat.h"
-
-#include "client/chase.h"
-#include "client/world.h"
 
 #include "nq/include/host.h"
 #include "nq/include/server.h"
-#include "nq/include/sv_progs.h"
 
 
 /*
@@ -714,74 +693,6 @@ Host_ServerFrame (void)
 	SV_SendClientMessages ();
 }
 
-static void
-write_capture (tex_t *tex, void *data)
-{
-	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
-									 qfs_gamedir->dir.shots,
-									 cls.demo_capture++), "wb");
-	if (file) {
-		WritePNG (file, tex);
-		Qclose (file);
-	}
-	free (tex);
-}
-
-static void
-Host_ClientFrame (void)
-{
-	static double time1 = 0, time2 = 0, time3 = 0;
-	int         pass1, pass2, pass3;
-
-	// fetch results from server
-	if (cls.state >= ca_connected)
-		CL_ReadFromServer ();
-
-	// update video
-	if (host_speeds)
-		time1 = Sys_DoubleTime ();
-
-	r_data->inhibit_viewmodel = (chase_active
-								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-								 || cl.stats[STAT_HEALTH] <= 0);
-	r_data->frametime = host_frametime;
-
-	CL_UpdateScreen (cl.time);
-
-	if (host_speeds)
-		time2 = Sys_DoubleTime ();
-
-	// update audio
-	if (cls.state == ca_active) {
-		mleaf_t    *l;
-		byte       *asl = 0;
-		vec4f_t     origin;
-
-		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
-		if (l)
-			asl = l->ambient_sound_level;
-		S_Update (cl.viewstate.camera_transform, asl);
-		R_DecayLights (host_frametime);
-	} else
-		S_Update (0, 0);
-
-	CDAudio_Update ();
-
-	if (host_speeds) {
-		pass1 = (time1 - time3) * 1000;
-		time3 = Sys_DoubleTime ();
-		pass2 = (time2 - time1) * 1000;
-		pass3 = (time3 - time2) * 1000;
-		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
-					pass1 + pass2 + pass3, pass1, pass2, pass3);
-	}
-
-	if (cls.demo_capture) {
-		r_funcs->capture_screen (write_capture, 0);
-	}
-}
-
 /*
 	Host_Frame
 
@@ -834,8 +745,6 @@ _Host_Frame (float time)
 		} else {
 			Con_NewMap ();
 		}
-
-		CL_UpdateScreen (cl.time);
 	}
 
 	NET_Poll ();
@@ -852,11 +761,10 @@ _Host_Frame (float time)
 	}
 
 	if (!net_is_dedicated) {
-		Host_ClientFrame ();
+		CL_Frame ();
 	}
 
 	host_framecount++;
-	fps_count++;
 }
 
 void
@@ -1037,7 +945,7 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	GIB_Key_Init ();
+
 	COM_ParseConfig (host_cbuf);
 
 	memhunk_t  *hunk = Host_Init_Memory ();
@@ -1075,9 +983,6 @@ Host_Init (void)
 		con_module->data->console->cbuf = host_cbuf;
 	}
 
-	CL_UpdateScreen (cl.time);
-	CL_UpdateScreen (cl.time);
-
 	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc);
 
 	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
@@ -1090,8 +995,6 @@ Host_Init (void)
 			    PACKAGE_NAME);
 
 	host_initialized = true;
-
-	CL_UpdateScreen (cl.time);
 }
 
 /*

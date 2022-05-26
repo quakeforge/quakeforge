@@ -46,6 +46,7 @@ extern int pausable;
 
 extern int viewentity;
 
+extern int host_speeds;
 extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	int			host_framecount;	// incremented every frame, never reset

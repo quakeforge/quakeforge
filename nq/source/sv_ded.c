@@ -51,14 +51,18 @@ int cl_writecfg;
 float demo_speed;
 int chase_active;
 
-int         fps_count;
-int         viewentity;
-
-vid_render_data_t *r_data;
-vid_render_funcs_t *r_funcs;
+void
+CL_Frame (void)
+{
+}
 
 void
-GIB_Key_Init (void)
+CL_Init (struct cbuf_s *cbuf)
+{
+}
+
+void
+CL_InitCvars (void)
 {
 }
 
@@ -78,11 +82,6 @@ CL_Cmd_ForwardToServer (void)
 }
 
 void
-CDAudio_Update (void)
-{
-}
-
-void
 CL_Disconnect (void)
 {
 }
@@ -98,28 +97,12 @@ CL_EstablishConnection (const char *host)
 }
 
 void
-CL_Init (struct cbuf_s *cbuf)
-{
-}
-
-void
-CL_InitCvars (void)
-{
-}
-
-void
 CL_NextDemo (void)
 {
 }
 
 __attribute__((const)) int
 CL_ReadConfiguration (const char *cfg_name)
-{
-	return 0;
-}
-
-__attribute__((const)) int
-CL_ReadFromServer (void)
 {
 	return 0;
 }
@@ -135,33 +118,11 @@ CL_StopPlayback (void)
 }
 
 void
-IN_ProcessEvents (void)
-{
-}
-
-void
-S_Update (struct transform_s *ere, const byte *ambient_sound_level)
-{
-}
-
-void
 S_BlockSound (void)
 {
 }
 
 void
 S_UnblockSound (void)
-{
-}
-
-plugin_t *console_client_PluginInfo (void);
-__attribute__((const)) plugin_t *
-console_client_PluginInfo (void)
-{
-	return 0;
-}
-
-void
-R_DecayLights (double frametime)
 {
 }
