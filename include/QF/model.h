@@ -103,13 +103,13 @@ typedef struct texture_s {
 } texture_t;
 
 
-#define SURF_PLANEBACK          0x02
-#define SURF_DRAWSKY            0x04
-#define SURF_DRAWTURB           0x08
+#define SURF_DRAWSKY            0x01
+#define SURF_DRAWALPHA          0x02
+#define SURF_DRAWTURB           0x04
+#define SURF_PLANEBACK          0x08
 #define SURF_DRAWTILED          0x10
 #define SURF_DRAWBACKGROUND     0x20
-#define SURF_DRAWNOALPHA        0x40
-#define SURF_LIGHTBOTHSIDES     0x80
+#define SURF_LIGHTBOTHSIDES     0x40
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
