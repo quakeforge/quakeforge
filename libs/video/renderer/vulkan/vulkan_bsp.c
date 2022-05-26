@@ -120,8 +120,14 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 static inline void
 chain_surface (const bsp_face_t *face, bsp_pass_t *pass, bspctx_t *bctx)
 {
-
-	DARRAY_APPEND (&pass->face_queue[face->tex_id],
+	int         ent_frame = pass->ent_frame;
+	// if the texture has no alt animations, anim_alt holds the sama data
+	// as anim_main
+	texanim_t  *anim = ent_frame ? &bctx->texdata.anim_alt[face->tex_id]
+								 : &bctx->texdata.anim_main[face->tex_id];
+	int         anim_ind = (bctx->anim_index + anim->offset) % anim->count;
+	int         tex_id = bctx->texdata.anim_map[anim->base + anim_ind];
+	DARRAY_APPEND (&pass->face_queue[tex_id],
 				   ((instface_t) { pass->inst_id, face - bctx->faces }));
 }
 
@@ -157,15 +163,13 @@ clear_textures (vulkan_ctx_t *ctx)
 void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
-	int         i;
-	model_t    *m;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 	clear_textures (ctx);
 	add_texture (r_notexture_mip, ctx);
 	register_textures (brush, ctx);
-	for (i = 0; i < num_models; i++) {
-		m = models[i];
+	for (int i = 0; i < num_models; i++) {
+		model_t    *m = models[i];
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
@@ -181,6 +185,74 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         num_tex = bctx->registered_textures.size;
+
+	texture_t **textures = alloca (num_tex * sizeof (texture_t *));
+	textures[0] = r_notexture_mip;
+	for (int i = 0, t = 1; i < num_models; i++) {
+		model_t    *m = models[i];
+		// sub-models are done as part of the main model
+		if (!m || *m->path == '*') {
+			continue;
+		}
+		brush = &m->brush;
+		for (unsigned j = 0; j < brush->numtextures; j++) {
+			if (brush->textures[j]) {
+				textures[t++] = brush->textures[j];
+			}
+		}
+	}
+
+	size_t      texdata_size = 2.5 * num_tex * sizeof (texanim_t);
+	texanim_t  *texdata = Hunk_AllocName (0, texdata_size, "texdata");
+	bctx->texdata.anim_main = texdata;
+	bctx->texdata.anim_alt = texdata + num_tex;
+	bctx->texdata.anim_map = (uint16_t *) (texdata + 2 * num_tex);
+	int16_t     map_index = 0;
+	for (int i = 0; i < num_tex; i++) {
+		texanim_t  *anim = bctx->texdata.anim_main + i;
+		if (anim->count) {
+			// already done as part of an animation group
+			continue;
+		}
+		*anim = (texanim_t) { .base = map_index, .offset = 0, .count = 1 };
+		bctx->texdata.anim_map[anim->base] = i;
+
+		if (textures[i]->anim_total > 1) {
+			// bsp loader multiplies anim_total by ANIM_CYCLE to slow the
+			// frame rate
+			anim->count = textures[i]->anim_total / ANIM_CYCLE;
+			texture_t  *tx = textures[i]->anim_next;
+			for (int j = 1; j < anim->count; j++) {
+				if (!tx) {
+					Sys_Error ("broken cycle");
+				}
+				vulktex_t  *vtex = tx->render;
+				texanim_t  *a = bctx->texdata.anim_main + vtex->tex_id;
+				if (a->count) {
+					Sys_Error ("crossed cycle");
+				}
+				*a = *anim;
+				a->offset = j;
+				bctx->texdata.anim_map[a->base + a->offset] = vtex->tex_id;
+				tx = tx->anim_next;
+			}
+			if (tx != textures[i]) {
+				Sys_Error ("infinite cycle");
+			}
+		};
+		map_index += bctx->texdata.anim_main[i].count;
+	}
+	for (int i = 0; i < num_tex; i++) {
+		texanim_t  *alt = bctx->texdata.anim_alt + i;
+		if (textures[i]->alternate_anims) {
+			texture_t  *tx = textures[i]->alternate_anims;
+			vulktex_t  *vtex = tx->render;
+			*alt = bctx->texdata.anim_main[vtex->tex_id];
+		} else {
+			*alt = bctx->texdata.anim_main[i];
+		}
+	}
+
 	bctx->main_pass.face_queue = malloc (num_tex * sizeof (bsp_instfaceset_t));
 	for (int i = 0; i < num_tex; i++) {
 		bctx->main_pass.face_queue[i]
@@ -398,7 +470,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		bsp_model_t *m = &bctx->models[models[i]->render_id];
 		m->first_face = face_base + models[i]->brush.firstmodelsurface;
 		m->face_count = models[i]->brush.nummodelsurfaces;
-		while (models[i + 1] && models[i + 1]->path[0] == '*') {
+		while (i < num_models - 1 && models[i + 1]
+			   && models[i + 1]->path[0] == '*') {
 			i++;
 			m = &bctx->models[models[i]->render_id];
 			m->first_face = face_base + models[i]->brush.firstmodelsurface;
@@ -529,6 +602,7 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
+	pass->ent_frame = e->animation.frame & 1;
 	pass->inst_id = model->render_id;
 	if (!pass->instances[model->render_id].entities.size) {
 		bsp_model_t *m = &bctx->models[model->render_id];
@@ -902,7 +976,7 @@ queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
 			size_t      dq_size = pass->draw_queues[dq].size;
 			bsp_draw_t *draw = &pass->draw_queues[dq].a[dq_size - 1];
 			if (!pass->draw_queues[dq].size
-				|| draw->tex_id != f.tex_id
+				|| draw->tex_id != i
 				|| draw->inst_id != is.inst_id) {
 				bsp_instance_t *instance = &pass->instances[is.inst_id];
 				DARRAY_APPEND (&pass->draw_queues[dq], ((bsp_draw_t) {
@@ -967,6 +1041,8 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	bctx->main_pass.entid_data = bframe->entid_data;
 	bctx->main_pass.entid_count = 0;
 
+	bctx->anim_index = r_data->realtime * 5;
+
 	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
 	bframe->index_count = 0;
 
@@ -981,6 +1057,7 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	Vulkan_Scene_AddEntity (ctx, &worldent);
 
 	int         world_id = worldent.renderer.model->render_id;
+	bctx->main_pass.ent_frame = 0;	// world is always frame 0
 	bctx->main_pass.inst_id = world_id;
 	DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
 				   worldent.renderer.render_id);

@@ -64,11 +64,30 @@ typedef struct bsp_packetset_s
 typedef struct bsp_indexset_s
     DARRAY_TYPE (uint32_t) bsp_indexset_t;
 
-typedef struct bsp_tex_s {
-	VkDescriptorSet descriptors;
-	bsp_packetset_t packets;
-	bsp_indexset_t indices;
-} bsp_tex_t;
+typedef struct texname_s {
+	char        name[MIPTEXNAME];
+} texname_t;
+
+typedef struct texmip_s {
+	uint32_t    width;
+	uint32_t    height;
+	uint32_t    offsets[MIPLEVELS];
+} texmip_t;
+
+typedef struct texanim_s {
+	uint16_t    base;
+	byte        offset;
+	byte        count;
+} texanim_t;
+
+typedef struct texdata_s {
+//	texname_t  *names;
+//	texmip_t  **mips;
+	texanim_t  *anim_main;
+	texanim_t  *anim_alt;
+	uint16_t   *anim_map;
+//	int         num_tex;
+} texdata_t;
 
 typedef struct vulktex_s {
 	struct qfv_tex_s *tex;
@@ -78,9 +97,6 @@ typedef struct vulktex_s {
 
 typedef struct regtexset_s
     DARRAY_TYPE (vulktex_t *) regtexset_t;
-
-typedef struct bsp_texset_s
-    DARRAY_TYPE (bsp_tex_t) bsp_texset_t;
 
 typedef struct bsp_draw_s {
 	uint32_t    tex_id;
@@ -123,8 +139,9 @@ typedef struct bsp_pass_s {
 	regtexset_t *textures;
 	int         num_queues;
 	bsp_drawset_t *draw_queues;
-	uint32_t     inst_id;
+	uint32_t    inst_id;
 	bsp_instance_t *instances;
+	int         ent_frame;
 } bsp_pass_t;
 
 typedef struct bspvert_s {
@@ -172,6 +189,8 @@ typedef struct bspctx_s {
 	struct qfv_tex_s *skybox_tex;
 	VkDescriptorSet skybox_descriptor;
 
+	vulktex_t    notexture;
+
 	quat_t       default_color;
 	quat_t       last_color;
 
@@ -181,6 +200,9 @@ typedef struct bspctx_s {
 	bsp_model_t *models;
 	bsp_face_t *faces;
 	uint32_t   *poly_indices;
+
+	texdata_t   texdata;
+	int         anim_index;
 
 	int         model_id;
 
