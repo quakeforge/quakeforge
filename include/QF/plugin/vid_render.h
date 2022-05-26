@@ -43,6 +43,7 @@ struct mod_sprite_ctx_s;
 struct entqueue_s;
 struct framebuffer_s;
 struct vrect_s;
+struct texture_s;
 
 /*
 	All video plugins must export these functions
@@ -52,7 +53,7 @@ typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
 	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
 	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
-	void (*Mod_ProcessTexture) (model_t *mod, texture_t *tx);
+	void (*Mod_ProcessTexture) (model_t *mod, struct texture_s *tx);
 	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);

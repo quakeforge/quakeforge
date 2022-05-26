@@ -77,10 +77,11 @@ void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
 void gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa);
-void gl_Mod_ProcessTexture (model_t *mod, texture_t *tx);
+struct texture_s;
+void gl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
 
 void glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
-void glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx);
+void glsl_Mod_ProcessTexture (model_t *mod, struct texture_s *tx);
 
 void sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
 
@@ -88,7 +89,7 @@ void Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp,
 							  struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa,
 								  struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx,
+void Vulkan_Mod_ProcessTexture (model_t *mod, struct texture_s *tx,
 								struct vulkan_ctx_s *ctx);
 
 void Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe);

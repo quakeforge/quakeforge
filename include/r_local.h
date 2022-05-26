@@ -155,7 +155,7 @@ void R_RenderBmodelFace (struct entity_s *ent, bedge_t *pedges, msurface_t *psur
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (const struct entity_s *entity, msurface_t *surf) __attribute__((pure));
+struct texture_s *R_TextureAnimation (const struct entity_s *entity, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
@@ -184,7 +184,7 @@ void D_DrawSurfaces (void);
 void R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist);
 void R_StepActiveU (edge_t *pedge);
 void R_RemoveEdges (edge_t *pedge);
-void R_AddTexture (texture_t *tex);
+void R_AddTexture (struct texture_s *tex);
 struct vulkan_ctx_s;
 void R_ClearTextures (void);
 void R_InitSurfaceChains (mod_brush_t *brush);

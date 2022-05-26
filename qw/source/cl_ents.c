@@ -45,7 +45,6 @@
 #include "QF/scene/scene.h"
 
 #include "compat.h"
-#include "d_iface.h"
 
 #include "client/effects.h"
 #include "client/locs.h"
