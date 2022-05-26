@@ -95,8 +95,6 @@ static QFV_Subpass subpass_map[] = {
 	QFV_passTranslucent,	// QFV_bspTurb
 };
 
-static vulktex_t vulkan_notexture = { };
-
 #define ALLOC_CHUNK 64
 
 static void
@@ -1217,13 +1215,76 @@ create_default_skys (vulkan_ctx_t *ctx)
 	QFV_PacketSubmit (packet);
 }
 
+static void
+create_notexture (vulkan_ctx_t *ctx)
+{
+	const char *missing = "Missing";
+	byte        data[2][64 * 64 * 4];	// 2 * 64x64 rgba (8x8 chars)
+	tex_t       tex[2] = {
+		{	.width = 64,
+			.height = 64,
+			.format = tex_rgba,
+			.loaded = 1,
+			.data = data[0],
+		},
+		{	.width = 64,
+			.height = 64,
+			.format = tex_rgba,
+			.loaded = 1,
+			.data = data[1],
+		},
+	};
+
+	for (int i = 0; i < 64 * 64; i++) {
+		data[0][i * 4 + 0] = 0x20;
+		data[0][i * 4 + 1] = 0x20;
+		data[0][i * 4 + 2] = 0x20;
+		data[0][i * 4 + 3] = 0xff;
+
+		data[1][i * 4 + 0] = 0x00;
+		data[1][i * 4 + 1] = 0x00;
+		data[1][i * 4 + 2] = 0x00;
+		data[1][i * 4 + 3] = 0xff;
+	}
+	int         x = 4;
+	int         y = 4;
+	for (const char *c = missing; *c; c++) {
+		byte       *bitmap = font8x8_data + *c * 8;
+		for (int l = 0; l < 8; l++) {
+			byte        d = *bitmap++;
+			for (int b = 0; b < 8; b++) {
+				if (d & 0x80) {
+					int         base = ((y + l) * 64 + x + b) * 4;
+					data[0][base + 0] = 0x00;
+					data[0][base + 1] = 0x00;
+					data[0][base + 2] = 0x00;
+					data[0][base + 3] = 0xff;
+
+					data[1][base + 0] = 0xff;
+					data[1][base + 1] = 0x00;
+					data[1][base + 2] = 0xff;
+					data[1][base + 3] = 0xff;
+				}
+				d <<= 1;
+			}
+		}
+		x += 8;
+	}
+	for (int i = 1; i < 7; i++) {
+		y += 8;
+		memcpy (data[0] + y * 64 * 4, data[0] + 4 * 64 * 4, 8 * 64 * 4);
+		memcpy (data[1] + y * 64 * 4, data[1] + 4 * 64 * 4, 8 * 64 * 4);
+	}
+
+	bspctx_t   *bctx = ctx->bsp_context;
+	bctx->notexture.tex = Vulkan_LoadTexArray (ctx, tex, 2, 1, "notexture");
+}
+
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-
-	r_notexture_mip->render = &vulkan_notexture;
 
 	qfvPushDebug (ctx, "bsp init");
 
@@ -1237,6 +1298,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 												 ctx->cmdpool);
 
 	create_default_skys (ctx);
+	create_notexture (ctx);
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
@@ -1305,6 +1367,11 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->skybox_descriptor
 		= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
 										  bctx->sampler);
+	bctx->notexture.descriptor
+		= Vulkan_CreateTextureDescriptor (ctx, bctx->notexture.tex,
+										  bctx->sampler);
+
+	r_notexture_mip->render = &bctx->notexture;
 
 	qfvPopDebug (ctx);
 }
@@ -1357,6 +1424,9 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 
 	if (bctx->skybox_tex) {
 		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
+	}
+	if (bctx->notexture.tex) {
+		Vulkan_UnloadTex (ctx, bctx->notexture.tex);
 	}
 
 	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
