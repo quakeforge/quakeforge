@@ -52,6 +52,11 @@ float demo_speed;
 int chase_active;
 
 void
+CL_PreFrame (void)
+{
+}
+
+void
 CL_Frame (void)
 {
 }
@@ -114,15 +119,5 @@ CL_SendCmd (void)
 
 void
 CL_StopPlayback (void)
-{
-}
-
-void
-S_BlockSound (void)
-{
-}
-
-void
-S_UnblockSound (void)
 {
 }

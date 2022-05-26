@@ -46,6 +46,7 @@ nq_cl_plugin_LIBS= \
 
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
+		libs/input/libQFinput.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la
 
@@ -62,7 +63,6 @@ nq_common_LIBFILES= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/gamecode/libQFgamecode.la \
 		libs/ui/libQFui.la \
-		libs/input/libQFinput.la \
 		libs/util/libQFutil.la
 
 nq_client_LIBS=	$(nq_client_LIBFILES) $(nq_common_LIBFILES)

@@ -669,30 +669,6 @@ Host_FilterTime (float time)
 	return 0;
 }
 
-void
-Host_ServerFrame (void)
-{
-	*sv_globals.frametime = sv_frametime = host_frametime;
-
-	// set the time and clear the general datagram
-	SV_ClearDatagram ();
-
-	SV_CheckForNewClients ();
-
-	// read client messages
-	SV_RunClients ();
-
-	// move things around and think
-	// always pause in single player if in console or menus
-	if (!sv.paused && (svs.maxclients > 1 || host_in_game)) {
-		SV_Physics ();
-		sv.time += host_frametime;
-	}
-
-	// send all messages to the clients
-	SV_SendClientMessages ();
-}
-
 /*
 	Host_Frame
 
@@ -724,16 +700,6 @@ _Host_Frame (float time)
 	}
 	host_time += host_frametime;	//FIXME is this needed? vcr stuff
 
-	if (net_is_dedicated) {
-		Con_ProcessInput ();
-	} else {
-		IN_ProcessEvents ();
-	}
-
-	GIB_Thread_Execute ();
-	cmd_source = src_command;
-	Cbuf_Execute_Stack (host_cbuf);
-
 	if (first) {
 		first = 0;
 
@@ -753,11 +719,11 @@ _Host_Frame (float time)
 		// Whether or not the server is active, if this is not a dedicated
 		// server, then the client always needs to be able to process input
 		// and send commands to the server before the server runs a frame.
-		CL_SendCmd ();
+		CL_PreFrame ();
 	}
 
 	if (sv.active) {
-		Host_ServerFrame ();
+		SV_Frame ();
 	}
 
 	if (!net_is_dedicated) {

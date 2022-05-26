@@ -59,7 +59,6 @@ extern struct cbuf_s *host_cbuf;
 void Host_ClearMemory (void);
 void Host_SpawnServer (void);
 void Host_OnServerSpawn (void (*onSpawn)(void));
-void Host_ServerFrame (void);
 void Host_InitCommands (void);
 void Host_Init (void);
 void Host_Shutdown(void *data);

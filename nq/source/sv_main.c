@@ -29,7 +29,9 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/gib.h"
 #include "QF/msg.h"
 #include "QF/mathlib.h"
 #include "QF/set.h"
@@ -1087,7 +1089,6 @@ SV_SpawnServer (const char *server)
 	edict_t    *ent;
 
 
-	S_BlockSound ();
 	// let's not have any servers with no name
 	if (hostname[0] == 0)
 		Cvar_Set ("hostname", "UNNAMED");
@@ -1156,7 +1157,6 @@ SV_SpawnServer (const char *server)
 	if (!sv.worldmodel) {
 		Sys_Printf ("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = false;
-		S_UnblockSound ();
 		return;
 	}
 	sv.models[1] = sv.worldmodel;
@@ -1230,5 +1230,36 @@ SV_SpawnServer (const char *server)
 	}
 
 	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
-	S_UnblockSound ();
+}
+
+void
+SV_Frame (void)
+{
+	if (net_is_dedicated) {
+		Con_ProcessInput ();
+
+		GIB_Thread_Execute ();
+		cmd_source = src_command;
+		Cbuf_Execute_Stack (host_cbuf);
+	}
+
+	*sv_globals.frametime = sv_frametime = host_frametime;
+
+	// set the time and clear the general datagram
+	SV_ClearDatagram ();
+
+	SV_CheckForNewClients ();
+
+	// read client messages
+	SV_RunClients ();
+
+	// move things around and think
+	// always pause in single player if in console or menus
+	if (!sv.paused && (svs.maxclients > 1 || host_in_game)) {
+		SV_Physics ();
+		sv.time += host_frametime;
+	}
+
+	// send all messages to the clients
+	SV_SendClientMessages ();
 }

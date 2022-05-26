@@ -241,6 +241,7 @@ struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
 void CL_ClearMemory (void);
+void CL_PreFrame (void);
 void CL_Frame (void);
 int CL_ReadConfiguration (const char *cfg_name);
 

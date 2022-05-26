@@ -34,6 +34,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/image.h"
 #include "QF/joystick.h"
@@ -621,6 +622,18 @@ write_capture (tex_t *tex, void *data)
 		Qclose (file);
 	}
 	free (tex);
+}
+
+void
+CL_PreFrame (void)
+{
+	IN_ProcessEvents ();
+
+	GIB_Thread_Execute ();
+	cmd_source = src_command;
+	Cbuf_Execute_Stack (host_cbuf);
+
+	CL_SendCmd ();
 }
 
 void

@@ -292,6 +292,7 @@ void SV_RunClients (void);
 void SV_User_Init_Cvars (void);
 void SV_SaveSpawnparms (void);
 void SV_SpawnServer (const char *server);
+void SV_Frame (void);
 
 void SV_LoadProgs (void);
 void SV_Progs_Init (void);
