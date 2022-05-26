@@ -592,7 +592,7 @@ typedef struct dleaf_s { //BSP2 version (bsp 29 version is in bspfile.c)
 
 	Single-frame sequences are useful for simple static texture switchinng
 	based on game state (entity frame: 0 for main, non-zero for alternate).
-	Multi-frame sequences are played back at ten frames per second.
+	Multi-frame sequences are played back at five frames per second.
 
 	For example, the folowing sets up an animitation with a 4-frame main
 	sequence and a 2-frame alternate sequence. Perhaps a roaring fire in
