@@ -37,6 +37,7 @@
 
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"

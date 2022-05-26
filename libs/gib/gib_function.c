@@ -38,6 +38,7 @@
 #include "QF/sys.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/llist.h"
 #include "QF/cbuf.h"
 #include "QF/va.h"
 #include "QF/gib.h"

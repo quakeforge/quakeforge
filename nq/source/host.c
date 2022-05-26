@@ -35,6 +35,7 @@
 #include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/idparse.h"
 #include "QF/cmd.h"
 #include "QF/console.h"

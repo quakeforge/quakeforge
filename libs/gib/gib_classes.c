@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/gib.h"
 #include "QF/va.h"
 #include "QF/sys.h"

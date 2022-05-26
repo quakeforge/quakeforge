@@ -42,6 +42,7 @@
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/gib.h"
 #include "QF/model.h"
 #include "QF/va.h"

@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/info.h"

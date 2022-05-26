@@ -39,7 +39,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/cbuf.h"
 #include "QF/hash.h"
+#include "QF/llist.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/gib.h"

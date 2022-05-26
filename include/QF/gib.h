@@ -31,12 +31,7 @@
 #ifndef __QF_gib_h
 #define __QF_gib_h
 
-// Dependencies
-
-#include "QF/dstring.h"
-#include "QF/cbuf.h"
-#include "QF/hash.h"
-#include "QF/llist.h"
+#include "QF/qtypes.h"
 
 // Object interface
 
@@ -56,11 +51,11 @@ typedef struct gib_slot_s {
 
 typedef struct gib_object_s {
 	struct gib_class_s *class;
-	hashtab_t *methods;
+	struct hashtab_s *methods;
 	void **data;
 	unsigned long int handle, refs;
-	hashtab_t *signals, *vars;
-	llist_t *slots;
+	struct hashtab_s *signals, *vars;
+	struct llist_s *slots;
 	const char *handstr;
 } gib_object_t;
 
@@ -87,13 +82,13 @@ typedef void (*gib_obj_destructor) (void *data);
 
 typedef struct gib_class_s {
 	const char *name;
-	hashtab_t *methods, *class_methods;
+	struct hashtab_s *methods, *class_methods;
 	gib_obj_constructor construct, class_construct;
 	gib_obj_destructor destruct;
 	unsigned int depth;
 	struct gib_object_s *classobj;
 	struct gib_class_s *parent;
-	llist_t *children;
+	struct llist_s *children;
 } gib_class_t;
 
 typedef struct gib_methodtab_s {
@@ -144,6 +139,8 @@ typedef struct gib_script_s {
 	unsigned int refs;
 } gib_script_t;
 
+struct cbuf_s;
+
 typedef struct gib_buffer_data_s {
 	struct gib_script_s *script;
 	struct gib_tree_s *program, *ip;
@@ -163,7 +160,7 @@ typedef struct gib_buffer_data_s {
 	} reply;
 	struct hashtab_s *locals; // Local variables
 	struct hashtab_s *globals; // Current domain
-	void (*dnotify) (cbuf_t *cbuf, void *data);
+	void (*dnotify) (struct cbuf_s *cbuf, void *data);
 	void *ddata;
 } gib_buffer_data_t;
 
@@ -181,7 +178,7 @@ extern char * const gib_null_string;
 
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
-dstring_t *GIB_Return (const char *str);
+struct dstring_s *GIB_Return (const char *str);
 void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(PRINTF, 2, 3)));
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
