@@ -286,6 +286,42 @@ static cvar_t cl_yawspeed_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &cl_yawspeed },
 };
+float cl_maxpitch;
+static cvar_t cl_maxpitch_cvar = {
+	.name = "cl_maxpitch",
+	.description =
+		"turning speed",
+	.default_value = "90",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_maxpitch },
+};
+float cl_minpitch;
+static cvar_t cl_minpitch_cvar = {
+	.name = "cl_minpitch",
+	.description =
+		"turning speed",
+	.default_value = "-90",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_minpitch },
+};
+float cl_maxroll;
+static cvar_t cl_maxroll_cvar = {
+	.name = "cl_maxroll",
+	.description =
+		"turning speed",
+	.default_value = "50",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_maxroll },
+};
+float cl_minroll;
+static cvar_t cl_minroll_cvar = {
+	.name = "cl_minroll",
+	.description =
+		"turning speed",
+	.default_value = "-50",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_minroll },
+};
 
 int lookspring;
 static cvar_t lookspring_cvar = {
@@ -375,10 +411,10 @@ CL_AdjustAngles (float frametime, movestate_t *ms, viewstate_t *vs)
 
 	if (delta[PITCH]) {
 		V_StopPitchDrift (vs);
-		ms->angles[PITCH] = bound (-70, ms->angles[PITCH], 80);
+		ms->angles[PITCH] = bound (cl_minpitch, ms->angles[PITCH], cl_maxpitch);
 	}
 	if (delta[ROLL]) {
-		ms->angles[ROLL] = bound (-50, ms->angles[ROLL], 50);
+		ms->angles[ROLL] = bound (cl_minroll, ms->angles[ROLL], cl_maxroll);
 	}
 	if (delta[YAW]) {
 		ms->angles[YAW] = anglemod (ms->angles[YAW]);
@@ -599,6 +635,10 @@ CL_Input_Init_Cvars (void)
 	Cvar_Register (&cl_sidespeed_cvar, 0, 0);
 	Cvar_Register (&cl_upspeed_cvar, 0, 0);
 	Cvar_Register (&cl_yawspeed_cvar, 0, 0);
+	Cvar_Register (&cl_maxpitch_cvar, 0, 0);
+	Cvar_Register (&cl_minpitch_cvar, 0, 0);
+	Cvar_Register (&cl_maxroll_cvar, 0, 0);
+	Cvar_Register (&cl_minroll_cvar, 0, 0);
 }
 
 void
