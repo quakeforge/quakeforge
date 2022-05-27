@@ -153,13 +153,13 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 	static set_t *novis;
 	static set_t *decompressed;
 	unsigned    numvis = model->brush.visleafs;
+	unsigned    excess = SET_SIZE (numvis) - numvis;
 
 	if (leaf == model->brush.leafs) {
 		if (!novis) {
 			novis = set_new_size (numvis);
 		}
 		if (!novis->map[0] || SET_SIZE (numvis) > novis->size) {
-			unsigned    excess = SET_SIZE (numvis) - numvis;
 			set_expand (novis, numvis);
 			memset (novis->map, 0xff,
 					SET_WORDS (novis) * sizeof (*novis->map));
@@ -173,6 +173,7 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 	set_expand (decompressed, numvis);
 	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, 0xff,
 						   decompressed);
+	decompressed->map[SET_WORDS (decompressed) - 1] &= (~SET_ZERO) >> excess;
 	return decompressed;
 }
 
@@ -181,14 +182,16 @@ Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
 				 set_t *out)
 {
 	unsigned    numvis = model->brush.visleafs;
+	unsigned    excess = SET_SIZE (numvis) - numvis;
+
 	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
-		unsigned    excess = SET_SIZE (numvis) - numvis;
 		memset (out->map, defvis, SET_WORDS (out) * sizeof (*out->map));
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
 	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis, out);
+	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
 VISIBLE void
@@ -196,9 +199,10 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 				 set_t *out)
 {
 	unsigned    numvis = model->brush.visleafs;
+	unsigned    excess = SET_SIZE (numvis) - numvis;
+
 	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
-		unsigned    excess = SET_SIZE (numvis) - numvis;
 		byte       *o = (byte *) out->map;
 		for (int i = SET_WORDS (out) * sizeof (*out->map); i-- > 0; ) {
 			*o++ |= defvis;
@@ -207,6 +211,7 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 		return;
 	}
 	Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis, out);
+	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
 // BRUSHMODEL LOADING =========================================================
