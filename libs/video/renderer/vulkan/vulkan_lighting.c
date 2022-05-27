@@ -52,7 +52,9 @@
 #include "QF/va.h"
 
 #include "QF/scene/scene.h"
+#include "QF/ui/view.h"
 
+#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
@@ -117,6 +119,11 @@ update_lights (vulkan_ctx_t *ctx)
 			*light = ldata->lights.a[i];
 			light->color[3] *= style_intensities[ldata->lightstyles.a[i]];
 		}
+	}
+	if (developer & SYS_lighting) {
+		Vulkan_Draw_String (vid.conview->xlen - 32, 8,
+							va (ctx->va_ctx, "%3d", light_data->lightCount),
+							ctx);
 	}
 
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
