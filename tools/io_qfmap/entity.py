@@ -25,6 +25,9 @@ from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
 from bpy.props import BoolVectorProperty, CollectionProperty, PointerProperty
 from bpy.props import FloatVectorProperty, IntProperty
 from mathutils import Vector
+from math import ceil
+
+from textwrap import TextWrapper
 
 from .entityclass import EntityClass
 
@@ -158,23 +161,6 @@ class QFEntpropRemove(bpy.types.Operator):
             qfentity.fields.remove(qfentity.field_idx)
         return {'FINISHED'}
 
-def reflow_text(text, max_width):
-    lines = []
-    for text_line in text.split("\n"):
-        if not text_line:
-            continue
-        words = text_line.split(" ")
-        flowed_line = ""
-        while words:
-            if len(flowed_line) + len(words[0]) > max_width:
-                lines.append(flowed_line)
-                flowed_line = ""
-            flowed_line += (" " if flowed_line else "") + words[0]
-            del words[0]
-        if flowed_line:
-            lines.append(flowed_line)
-    return lines
-
 class OBJECT_PT_EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -198,9 +184,22 @@ class OBJECT_PT_EntityPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(qfentity, "classname")
         box=layout.box()
-        lines = reflow_text(ec.comment, 40)
-        for l in lines:
-            box.label(text=l)
+        width = int(ceil(context.region.width / 6))
+        mainwrap = TextWrapper(width = width)
+        subwrap = TextWrapper(width = width - 8)
+        for c in ec.comment:
+            clines = mainwrap.wrap(c)
+            for l in clines:
+                box.label(text=l)
+        for f in ec.fields.values():
+            print(f.name)
+            flines = subwrap.wrap(f.comment)
+            box.label(text=f"{f.name}")
+            for l in flines:
+                box.label(text=f"        {l}")
+            if hasattr(f, "sounds"):
+                for s in f.sounds:
+                    box.label(text=f"        {s[0]} {s[1]}")
         row = layout.row()
         for c in range(3):
             col = row.column()
