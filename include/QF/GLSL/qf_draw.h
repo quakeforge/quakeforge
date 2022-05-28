@@ -41,6 +41,7 @@ void glsl_Draw_Crosshair (void);
 void glsl_Draw_CrosshairAt (int ch, int x, int y);
 void glsl_Draw_TileClear (int x, int y, int w, int h);
 void glsl_Draw_Fill (int x, int y, int w, int h, int c);
+void glsl_Draw_Line (int x0, int y0, int x1, int y1, int c);
 void glsl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 void glsl_Draw_FadeScreen (void);
 void glsl_Draw_BlendScreen (quat_t color);

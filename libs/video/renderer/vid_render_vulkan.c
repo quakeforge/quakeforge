@@ -190,6 +190,12 @@ vulkan_Draw_Fill (int x, int y, int w, int h, int c)
 }
 
 static void
+vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c)
+{
+	Vulkan_Draw_Line (x0, y0, x1, y1, c, vulkan_ctx);
+}
+
+static void
 vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	Vulkan_Draw_TextBox (x, y, width, lines, alpha, vulkan_ctx);
@@ -731,6 +737,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_CrosshairAt,
 	vulkan_Draw_TileClear,
 	vulkan_Draw_Fill,
+	vulkan_Draw_Line,
 	vulkan_Draw_TextBox,
 	vulkan_Draw_FadeScreen,
 	vulkan_Draw_BlendScreen,

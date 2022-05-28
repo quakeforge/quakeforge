@@ -144,6 +144,17 @@ void Draw_TileClear (int x, int y, int w, int h);
 */
 void Draw_Fill (int x, int y, int w, int h, int c);
 
+/** Clear a line with a solid color.
+	\param x0	horizontal position of the line start point
+	\param y0	horizontal position of the line start point
+	\param x1	horizontal position of the line end point
+	\param y1	horizontal position of the line end point
+	\param c	8 bit color index.
+
+	The color comes from the quake palette.
+*/
+void Draw_Line (int x0, int y0, int x1, int y1, int c);
+
 /** Draw a text box on the screen
 	\param x	horizontal location of the upper left corner of the box
 	\param y	vertical location of the upper left corner of the box

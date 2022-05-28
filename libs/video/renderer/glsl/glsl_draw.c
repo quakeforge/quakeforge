@@ -104,6 +104,7 @@ static struct {
 static scrap_t *draw_scrap;		// hold all 2d images
 static byte white_block[8 * 8];
 static dstring_t *draw_queue;
+static dstring_t *line_queue;
 static qpic_t *conchars;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
@@ -388,6 +389,7 @@ glsl_Draw_Init (void)
 	//crosshaircolor->callback (crosshaircolor);
 
 	draw_queue = dstring_new ();
+	line_queue = dstring_new ();
 
 	vert_shader = GLSL_BuildShader (twod_vert_effects);
 	frag_shader = GLSL_BuildShader (twod_frag_effects);
@@ -461,14 +463,26 @@ static void
 flush_2d (void)
 {
 	GLSL_ScrapFlush (draw_scrap);
-	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
-	qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
-							 0, 32, draw_queue->str);
-	qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
-							 0, 32, draw_queue->str + 16);
 
-	qfeglDrawArrays (GL_TRIANGLES, 0, draw_queue->size / 32);
+	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
+	if (draw_queue->size) {
+		qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
+								 0, 32, draw_queue->str);
+		qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
+								 0, 32, draw_queue->str + 16);
+
+		qfeglDrawArrays (GL_TRIANGLES, 0, draw_queue->size / 32);
+	}
+	if (line_queue->size) {
+		qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
+								 0, 32, line_queue->str);
+		qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
+								 0, 32, line_queue->str + 16);
+
+		qfeglDrawArrays (GL_LINES, 0, line_queue->size / 32);
+	}
 	draw_queue->size = 0;
+	line_queue->size = 0;
 }
 
 void
@@ -693,6 +707,32 @@ glsl_Draw_Fill (int x, int y, int w, int h, int c)
 	draw_pic (x, y, w, h, white_pic, 0, 0, 8, 8, color);
 }
 
+void
+glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
+{
+	glpic_t    *gl = (glpic_t *) white_pic->data;
+	subpic_t   *sp = gl->subpic;
+	float       sl = sp->rect->x * sp->size;
+	float       sh = sp->rect->x * sp->size;
+	float       tl = sp->rect->y * sp->size;
+	float       th = sp->rect->y * sp->size;
+
+	quat_t      color = { VectorExpand (vid.palette + c * 3), 255 };
+	QuatScale (color, 1/255.0, color);
+	drawvert_t  verts[2] = {
+		{ .xyst = { x0, y0, sl, tl }, .color = { QuatExpand (color) }, },
+		{ .xyst = { x1, y1, sh, th }, .color = { QuatExpand (color) }, },
+	};
+
+	void       *v;
+	int         size = sizeof (verts);
+
+	line_queue->size += size;
+	dstring_adjust (line_queue);
+	v = line_queue->str + line_queue->size - size;
+	memcpy (v, verts, size);
+}
+
 static inline void
 draw_blendscreen (quat_t color)
 {
@@ -784,12 +824,13 @@ void
 GLSL_DrawReset (void)
 {
 	draw_queue->size = 0;
+	line_queue->size = 0;
 }
 
 void
 GLSL_FlushText (void)
 {
-	if (draw_queue->size)
+	if (draw_queue->size || line_queue->size)
 		flush_2d ();
 }
 

@@ -495,6 +495,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_CrosshairAt,
 	gl_Draw_TileClear,
 	gl_Draw_Fill,
+	gl_Draw_Line,
 	gl_Draw_TextBox,
 	gl_Draw_FadeScreen,
 	gl_Draw_BlendScreen,

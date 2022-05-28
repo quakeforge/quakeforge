@@ -1059,8 +1059,10 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	int         world_id = worldent.renderer.model->render_id;
 	bctx->main_pass.ent_frame = 0;	// world is always frame 0
 	bctx->main_pass.inst_id = world_id;
-	DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
-				   worldent.renderer.render_id);
+	if (bctx->main_pass.instances) {
+		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
+					   worldent.renderer.render_id);
+	}
 	R_VisitWorldNodes (brush, ctx);
 	if (!bctx->vertex_buffer) {
 		return;
