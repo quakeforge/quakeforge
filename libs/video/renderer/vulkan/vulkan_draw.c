@@ -82,8 +82,11 @@ typedef struct cachepic_s {
 
 typedef struct drawframe_s {
 	size_t      vert_offset;
-	drawvert_t *verts;
+	size_t      line_offset;
+	drawvert_t *quad_verts;
+	drawvert_t *line_verts;
 	uint32_t    num_quads;
+	uint32_t    num_lines;
 	VkCommandBuffer cmd;
 	VkDescriptorSet descriptors;
 } drawframe_t;
@@ -109,7 +112,8 @@ typedef struct drawctx_s {
 	VkDeviceMemory vert_memory;
 	VkBuffer    ind_buffer;
 	VkDeviceMemory ind_memory;
-	VkPipeline  pipeline;
+	VkPipeline  quad_pipeline;
+	VkPipeline  line_pipeline;
 	VkPipelineLayout layout;
 	drawframeset_t frames;
 } drawctx_t;
@@ -118,6 +122,11 @@ typedef struct drawctx_s {
 #define MAX_QUADS (32768)
 #define VERTS_PER_QUAD (4)
 #define INDS_PER_QUAD (5)	// one per vert plus primitive reset
+
+#define MAX_LINES (32768)
+#define VERTS_PER_LINE (2)
+
+#define VERTS_PER_FRAME (MAX_LINES*VERTS_PER_LINE + MAX_QUADS*VERTS_PER_QUAD)
 
 static void
 create_quad_buffers (vulkan_ctx_t *ctx)
@@ -133,7 +142,7 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 	VkBuffer    vbuf, ibuf;
 	VkDeviceMemory vmem, imem;
 
-	vert_size = frames * MAX_QUADS * VERTS_PER_QUAD * sizeof (drawvert_t);
+	vert_size = frames * VERTS_PER_FRAME * sizeof (drawvert_t);
 	ind_size = MAX_QUADS * INDS_PER_QUAD * sizeof (uint32_t);
 
 	vbuf = QFV_CreateBuffer (device, vert_size,
@@ -161,10 +170,14 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 
 	for (size_t f = 0; f < frames; f++) {
 		drawframe_t *frame = &dctx->frames.a[f];
-		size_t       ind = f * MAX_QUADS * VERTS_PER_QUAD;
+		size_t       ind = f * VERTS_PER_FRAME;
+		size_t       lind = ind + MAX_QUADS * VERTS_PER_QUAD;
 		frame->vert_offset = ind * sizeof (drawvert_t);
-		frame->verts = vert_data + ind;
+		frame->line_offset = lind;
+		frame->quad_verts = vert_data + ind;
+		frame->line_verts = frame->quad_verts + MAX_QUADS * VERTS_PER_QUAD;
 		frame->num_quads = 0;
+		frame->num_lines = 0;
 	}
 
 	// The indices will never change so pre-generate and stash them
@@ -347,7 +360,8 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	destroy_quad_buffers (ctx);
 
-	dfunc->vkDestroyPipeline (device->dev, dctx->pipeline, 0);
+	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
+	dfunc->vkDestroyPipeline (device->dev, dctx->line_pipeline, 0);
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
 	delete_memsuper (dctx->string_memsuper);
@@ -409,7 +423,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	flush_draw_scrap (ctx);
 
-	dctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
+	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
+	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
 
@@ -457,7 +472,7 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		return;
 	}
 
-	drawvert_t *verts = frame->verts + frame->num_quads * VERTS_PER_QUAD;
+	drawvert_t *verts = frame->quad_verts + frame->num_quads * VERTS_PER_QUAD;
 	frame->num_quads++;
 
 	subpic_t   *subpic = *(subpic_t **) pic->data;
@@ -767,6 +782,32 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 	draw_pic (x, y, w, h, dctx->white_pic, 0, 0, 1, 1, color, frame);
 }
 
+void
+Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	if (frame->num_quads >= MAX_QUADS) {
+		return;
+	}
+
+	quat_t      color = { VectorExpand (vid.palette + c * 3), 255 };
+	QuatScale (color, 1/255.0, color);
+	drawvert_t *verts = frame->line_verts + frame->num_lines * VERTS_PER_LINE;
+
+	verts[0] = (drawvert_t) {
+		.xy = { x0, y0 },
+		.color = { QuatExpand (color) },
+	};
+	verts[1] = (drawvert_t) {
+		.xy = { x1, y1 },
+		.color = { QuatExpand (color) },
+	};
+
+	frame->num_lines++;
+}
+
 static inline void
 draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 {
@@ -816,16 +857,23 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
+	if (!dframe->num_quads && !dframe->num_lines) {
+		return;
+	}
+
 	VkCommandBuffer cmd = dframe->cmd;
 	//FIXME which pass?
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent], cmd);
 
-	VkMappedMemoryRange range = {
-		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		dctx->vert_memory, dframe->vert_offset,
-		dframe->num_quads * VERTS_PER_QUAD * sizeof (drawvert_t),
+	VkMappedMemoryRange ranges[] = {
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  dctx->vert_memory, dframe->vert_offset,
+		  dframe->num_quads * VERTS_PER_QUAD * sizeof (drawvert_t) },
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  dctx->vert_memory, dframe->line_offset,
+		  dframe->num_lines * VERTS_PER_LINE * sizeof (drawvert_t) },
 	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -843,10 +891,6 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 
 	QFV_duCmdBeginLabel (device, cmd, "twod", { 0.6, 0.2, 0, 1});
 
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  dctx->pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 	VkDeviceSize offsets[] = {dframe->vert_offset};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
@@ -858,13 +902,27 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	VkPipelineLayout layout = dctx->layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, set, 0, 0);
-	dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
-							 1, 0, 0, 0);
+	if (dframe->num_quads) {
+		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+								  dctx->quad_pipeline);
+		dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+		dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
+		dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
+								 1, 0, 0, 0);
+	}
+
+	if (dframe->num_lines) {
+		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+								  dctx->line_pipeline);
+		dfunc->vkCmdDraw (cmd, dframe->num_lines * VERTS_PER_LINE,
+						  1, MAX_QUADS * VERTS_PER_QUAD, 0);
+	}
 
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	dframe->num_quads = 0;
+	dframe->num_lines = 0;
 }
 
 void

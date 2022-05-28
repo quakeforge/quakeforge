@@ -41,6 +41,7 @@ void gl_Draw_Crosshair (void);
 void gl_Draw_CrosshairAt (int ch, int x, int y);
 void gl_Draw_TileClear (int x, int y, int w, int h);
 void gl_Draw_Fill (int x, int y, int w, int h, int c);
+void gl_Draw_Line (int x0, int y0, int x1, int y1, int c);
 void gl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 void gl_Draw_FadeScreen (void);
 void gl_Draw_BlendScreen (quat_t color);

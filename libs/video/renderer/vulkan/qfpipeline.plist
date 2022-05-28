@@ -482,6 +482,10 @@
 			topology = triangle_list;
 			primitiveRestartEnable = false;
 		};
+		lines = {
+			topology = line_list;
+			primitiveRestartEnable = false;
+		};
 		twod = {
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
@@ -1044,6 +1048,10 @@
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
 			};
 			layout = twod_layout;
+		};
+		lines = {
+			@inherit = $properties.pipelines.twod;
+			inputAssembly = $properties.inputAssembly.lines;
 		};
 		lighting = {
 			@inherit = $properties.pipelines.comp_base;

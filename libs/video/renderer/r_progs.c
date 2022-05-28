@@ -42,6 +42,8 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/ui/view.h"
+
 #include "r_internal.h"
 
 typedef struct {
@@ -297,6 +299,18 @@ bi_Draw_Fill (progs_t *pr, void *_res)
 }
 
 static void
+bi_Draw_Line (progs_t *pr, void *_res)
+{
+	int         x0 = P_INT (pr, 0);
+	int         y0 = P_INT (pr, 1);
+	int         x1 = P_INT (pr, 2);
+	int         y1 = P_INT (pr, 3);
+	int         color = P_INT (pr, 4);
+
+	r_funcs->Draw_Line (x0, y0, x1, y1, color);
+}
+
+static void
 bi_Draw_Crosshair (progs_t *pr, void *_res)
 {
 	int         ch = P_INT (pr, 0);
@@ -304,6 +318,18 @@ bi_Draw_Crosshair (progs_t *pr, void *_res)
 	int         y = P_INT (pr, 2);
 
 	r_funcs->Draw_CrosshairAt (ch, x, y);
+}
+
+static void
+bi_Draw_Width (progs_t *pr, void *_res)
+{
+	R_INT (pr) = r_data->vid->conview->xlen;
+}
+
+static void
+bi_Draw_Height (progs_t *pr, void *_res)
+{
+	R_INT (pr) = r_data->vid->conview->ylen;
 }
 
 static const char *
@@ -338,6 +364,8 @@ bi_draw_destroy (progs_t *pr, void *_res)
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
+	bi(Draw_Width,      0),
+	bi(Draw_Height,     0),
 	bi(Draw_FreePic,    1, p(ptr)),
 	bi(Draw_MakePic,    3, p(int), p(int), p(string)),
 	bi(Draw_CachePic,   2, p(string), p(int)),
@@ -351,6 +379,7 @@ static builtin_t builtins[] = {
 	bi(Draw_nString,    4, p(int), p(int), p(string), p(int)),
 	bi(Draw_AltString,  3, p(int), p(int), p(string)),
 	bi(Draw_Fill,       5, p(int), p(int), p(int), p(int), p(int)),
+	bi(Draw_Line,       5, p(int), p(int), p(int), p(int), p(int)),
 	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
 	{0}
 };

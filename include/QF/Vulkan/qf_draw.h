@@ -50,6 +50,8 @@ void Vulkan_Draw_TileClear (int x, int y, int w, int h,
 							struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Fill (int x, int y, int w, int h, int c,
 					   struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c,
+					   struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 						  struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_FadeScreen (struct vulkan_ctx_s *ctx);

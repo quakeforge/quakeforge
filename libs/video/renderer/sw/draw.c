@@ -766,6 +766,165 @@ Draw_Fill (int x, int y, int w, int h, int c)
 			dest[u] = c;
 }
 
+static inline byte *
+draw_horizontal (byte *dest, int xs, int len, int c)
+{
+	while (len-- > 0) {
+		*dest = c;
+		dest += xs;
+	}
+	return dest;
+}
+
+static inline byte *
+draw_vertical (byte *dest, int len, int c)
+{
+	while (len-- > 0) {
+		*dest = c;
+		dest += d_rowbytes;
+	}
+	return dest;
+}
+
+static void
+draw_line (int x0, int y0, int x1, int y1, int c)
+{
+	// Bresenham's line slice algorith (ala Michael Abrash)
+	int         dx, dy, sx;
+	// always go top to bottom
+	if (y1 < y0) {
+		int         t;
+		t = y1; y1 = y0; y0 = t;
+		t = x1; x1 = x0; x0 = t;
+	}
+	dy = y1 - y0;
+
+	if ((dx = x1 - x0) < 0) {
+		sx = -1;
+		dx = -dx;
+	} else  {
+		sx = 1;
+	}
+
+	byte        *dest = d_viewbuffer + y0 * d_rowbytes + x0;
+
+	if (!dx) {
+		draw_vertical (dest, dy, c);
+		return;
+	}
+	if (!dy) {
+		draw_horizontal (dest, sx, dx, c);
+		return;
+	}
+	if (dx == dy) {
+		while (dy-- > 0) {
+			*dest = c;
+			dest += d_rowbytes + sx;
+		}
+		return;
+	}
+	if (dx > dy) {
+		int         step = dx / dy;
+		int         adj_up = (dx % dy) * 2;
+		int         adj_down = dy * 2;
+		int         error = (dx % dy) - adj_down;
+		int         initial = step / 2 + 1;
+		int         final = initial;
+
+		if (!adj_up && !(step & 1)) {
+			initial--;
+		}
+		if (step & 1) {
+			error += dy;
+		}
+		dest = draw_horizontal (dest, sx, initial, c);
+		dest += d_rowbytes;
+		while (dy-- > 1) {
+			int         run = step;
+			if ((error += adj_up) > 0) {
+				run++;
+				error -= adj_down;
+			}
+			dest = draw_horizontal (dest, sx, run, c);
+			dest += d_rowbytes;
+		}
+		dest = draw_horizontal (dest, sx, final, c);
+	} else {
+		int         step = dy / dx;
+		int         adj_up = (dy % dx) * 2;
+		int         adj_down = dx * 2;
+		int         error = (dy % dx) - adj_down;
+		int         initial = step / 2 + 1;
+		int         final = initial;
+
+		if (!adj_up && !(step & 1)) {
+			initial--;
+		}
+		if (step & 1) {
+			error += dx;
+		}
+		dest = draw_vertical (dest, initial, c);
+		dest += sx;
+		while (dx-- > 1) {
+			int         run = step;
+			if ((error += adj_up) > 0) {
+				run++;
+				error -= adj_down;
+			}
+			dest = draw_vertical (dest, run, c);
+			dest += sx;
+		}
+		dest = draw_vertical (dest, final, c);
+	}
+}
+
+static inline byte
+test_point (int x, int y)
+{
+	byte        c = 0;
+
+	if (x < 0) {
+		c |= 1;
+	} else if (x >= vid.conview->xlen) {
+		c |= 2;
+	}
+	if (y < 0) {
+		c |= 4;
+	} else if (y >= vid.conview->ylen) {
+		c |= 8;
+	}
+	return c;
+}
+
+void
+Draw_Line (int x0, int y0, int x1, int y1, int c)
+{
+	byte        c0 = test_point (x0, y0);
+	byte        c1 = test_point (x1, y1);
+	int         xmax = vid.conview->xlen - 1;
+	int         ymax = vid.conview->ylen - 1;
+
+	while (c0 | c1) {
+		// Cohen-Sutherland line clipping
+		if (c0 & c1) {
+			return;
+		}
+		int     dx = x1 - x0;
+		int     dy = y1 - y0;
+		if (c0 & 1) { y0 = ((   0 - x0) * dy + dx * y0) / dx; x0 =    0; }
+		if (c0 & 2) { y0 = ((xmax - x0) * dy + dx * y0) / dx; x0 = xmax; }
+		if (c1 & 1) { y1 = ((   0 - x1) * dy + dx * y1) / dx; x1 =    0; }
+		if (c1 & 2) { y1 = ((xmax - x1) * dy + dx * y1) / dx; x1 = xmax; }
+
+		if (c0 & 4) { x0 = ((   0 - y0) * dx + dy * x0) / dy; y0 =    0; }
+		if (c0 & 8) { x0 = ((ymax - y0) * dx + dy * x0) / dy; y0 = ymax; }
+		if (c1 & 4) { x1 = ((   0 - y1) * dx + dy * x1) / dy; y1 =    0; }
+		if (c1 & 8) { x1 = ((ymax - y1) * dx + dy * x1) / dy; y1 = ymax; }
+		c0 = test_point (x0, y0);
+		c1 = test_point (x1, y1);
+	}
+	draw_line (x0, y0, x1, y1, c);
+}
 
 void
 Draw_FadeScreen (void)

@@ -439,6 +439,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_Draw_CrosshairAt,
 	glsl_Draw_TileClear,
 	glsl_Draw_Fill,
+	glsl_Draw_Line,
 	glsl_Draw_TextBox,
 	glsl_Draw_FadeScreen,
 	glsl_Draw_BlendScreen,
