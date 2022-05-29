@@ -978,46 +978,6 @@ exprtype_t vulkan_frameset_t_type = {
 	.data = &vulkan_frameset_t_symtab,
 };
 
-typedef struct {
-	qfv_attachmentdescription_t *attachments;
-	qfv_subpassparametersset_t *subpasses;
-	qfv_subpassdependency_t *dependencies;
-} vkparse_renderpass_t;
-
-static plelement_t parse_qfv_renderpass_attachments_data = {
-	QFDictionary,
-	sizeof (VkAttachmentDescription),
-	vkparse_alloc,
-	parse_VkAttachmentDescription,
-	0,
-};
-
-static plelement_t parse_qfv_renderpass_subpasses_data = {
-	QFDictionary,
-	sizeof (VkSubpassDescription),
-	vkparse_alloc,
-	parse_VkSubpassDescription,
-	0,
-};
-
-static plelement_t parse_qfv_renderpass_dependencies_data = {
-	QFDictionary,
-	sizeof (VkSubpassDependency),
-	vkparse_alloc,
-	parse_VkSubpassDependency,
-	0,
-};
-
-static plfield_t renderpass_fields[] = {
-	{ "attachments", field_offset(vkparse_renderpass_t,attachments), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_attachments_data },
-	{ "subpasses", field_offset(vkparse_renderpass_t,subpasses), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_subpasses_data },
-	{ "dependencies", field_offset(vkparse_renderpass_t,dependencies), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_dependencies_data },
-	{}
-};
-
 static hashtab_t *
 handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
 {
@@ -1118,33 +1078,25 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 	return 1;
 }
 
-static int
-parse_qfv_renderpass (const plfield_t *field, const plitem_t *item, void *data,
-					  plitem_t *messages, void *context)
-{
-	return PL_ParseStruct (renderpass_fields, item, data, messages, context);
-}
-
 VkRenderPass
 QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
 	memsuper_t *memsuper = new_memsuper ();
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
-	vkparse_renderpass_t renderpass_data = {};
+	VkRenderPassCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, memsuper, plist, parse_qfv_renderpass,
-					   &renderpass_data, properties)) {
+	if (!parse_object (ctx, memsuper, plist, parse_VkRenderPassCreateInfo,
+					   &cInfo, properties)) {
 		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkRenderPass renderpass;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseRenderPass: %d", PL_Line (plist)));
-	renderpass = QFV_CreateRenderPass (device,
-									   renderpass_data.attachments,
-									   renderpass_data.subpasses,
-									   renderpass_data.dependencies);
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseRenderPass: %d",
+				  PL_Line (plist)));
+	dfunc->vkCreateRenderPass (device->dev, &cInfo, 0, &renderpass);
 	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
