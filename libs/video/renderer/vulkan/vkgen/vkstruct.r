@@ -84,6 +84,7 @@
 	PLItem     *new_name = [field_dict getObjectForKey:".name"];
 	Array      *field_defs = [Array array];
 	int         have_sType = 0;
+	int         have_pNext = 0;
 
 	if ([parse string] == "skip") {
 		return;
@@ -96,6 +97,10 @@
 		qfot_var_t *field = &type.strct.fields[i];
 		if (field.name == "sType") {
 			have_sType = 1;
+		}
+		if (field.name == "pNext") {
+			have_pNext = 1;
+			write_symtab = 1;
 		}
 	}
 	if (field_dict) {
@@ -133,6 +138,11 @@
 	fprintf (output_file,
 			 "\t{\"@inherit\", 0, QFString, parse_inherit, &%s_fields},\n",
 			 [self outname]);
+	if (have_pNext) {
+		fprintf (output_file,
+				"\t{\"@next\", field_offset (%s, pNext), "
+				"QFArray, parse_next, 0},", [self outname]);
+	}
 	for (int i = [field_defs count]; i-- > 0; ) {
 		FieldDef   *field_def = [field_defs objectAtIndex:i];
 		[field_def writeField];
@@ -140,14 +150,14 @@
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
 
-	fprintf (header_file, "int parse_%s (const plfield_t *field,"
+	fprintf (header_file, "int %s (const plfield_t *field,"
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context);\n",
-			 [self outname]);
-	fprintf (output_file, "int parse_%s (const plfield_t *field,"
+			 [self parseFunc]);
+	fprintf (output_file, "int %s (const plfield_t *field,"
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context)\n",
-			 [self outname]);
+			 [self parseFunc]);
 	fprintf (output_file, "{\n");
 	if (have_sType) {
 		fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
@@ -162,6 +172,12 @@
 			 " context);\n",
 			 [self outname], [self outname]);
 	fprintf (output_file, "}\n");
+	if (have_pNext) {
+		fprintf (output_file, "static parserref_t %s_parser = ",
+				 [self outname]);
+		fprintf (output_file, "{\"%s\", %s, sizeof(%s)};\n",
+				 [self outname], [self parseFunc], [self outname]);
+	}
 
 	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self outname]);
 	if (field_defs) {
@@ -216,6 +232,12 @@
 
 -(void) writeSymtabEntry
 {
+	if (!write_symtab || [parse string] == "skip") {
+		return;
+	}
+	fprintf (output_file,
+			 "\tHash_Add (parser_table, &%s_parser);\n",
+			 [self outname]);
 }
 
 -(string) outname

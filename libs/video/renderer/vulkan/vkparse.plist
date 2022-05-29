@@ -28,6 +28,8 @@
 		VkFramebufferCreateInfo,
 		VkClearValue,
 		VkPhysicalDeviceLimits,
+		VkRenderPassCreateInfo,
+		VkRenderPassMultiviewCreateInfo,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -359,5 +361,22 @@
 			};
 			depthStencil = auto;
 		};
+		VkRenderPassMultiviewCreateInfo = {
+			viewMasks = {
+				type = (array, uint32_t);
+				size = subpassCount;
+				values = pViewMasks;
+			};
+			viewOffsets = {
+				type = (array, int32_t);
+				size = dependencyCount;
+				values = pViewOffsets;
+			};
+			correlationMasks = {
+				type = (array, uint32_t);
+				size = correlationMaskCount;
+				values = pCorrelationMasks;
+			};
+		}
 	}
 }

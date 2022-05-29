@@ -56,6 +56,12 @@ typedef struct parseres_s {
 	size_t      offset;
 } parseres_t;
 
+typedef struct parseref_s {
+	const char *name;
+	plparser_t  parse;
+	size_t      size;
+} parserref_t;
+
 typedef struct handleref_s {
 	char       *name;
 	uint64_t    handle;
@@ -165,6 +171,33 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 		}
 	}
 	//Sys_MaskPrintf (SYS_vulkan_parse, "    %x\n", *(uint32_t *)data);
+
+	return ret;
+}
+
+static int
+parse_int32_t (const plfield_t *field, const plitem_t *item,
+				void *data, plitem_t *messages, void *context)
+{
+	int         ret = 1;
+	// use size_t (and cexpr_size_t) for val so references to array sizes
+	// can be used
+	size_t      val = 0;
+	exprval_t   result = { &cexpr_size_t, &val };
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	ectx.result = &result;
+	const char *valstr = PL_String (item);
+	//Sys_MaskPrintf (SYS_vulkan_parse,
+	//				"parse_int32_t: %s %zd %d %p %p %s\n",
+	//				field->name, field->offset, field->type, field->parser,
+	//				field->data, valstr);
+	ret = !cexpr_eval_string (valstr, &ectx);
+	if (!ret) {
+		PL_Message (messages, item, "error parsing %s: %s",
+					field->name, valstr);
+	}
+	*(int32_t *) data = val;
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    %d\n", *(int32_t *)data);
 
 	return ret;
 }
@@ -391,6 +424,33 @@ parse_inherit (const plfield_t *field, const plitem_t *item,
 							  context);
 	}
 	return ret;
+}
+
+static hashtab_t *parser_table;
+
+static int
+parse_next (const plfield_t *field, const plitem_t *item, void *data,
+			plitem_t *messages, void *context)
+{
+	const char *type_name = PL_String (PL_ObjectAtIndex (item, 0));
+	plitem_t   *next_def = PL_ObjectAtIndex (item, 1);
+
+	if (!type_name || PL_Type (next_def) != QFDictionary) {
+		PL_Message (messages, item, "invalid @next");
+		return 0;
+	}
+	parserref_t *parser = Hash_Find (parser_table, type_name);
+	if (!parser) {
+		PL_Message (messages, item, "Invalid type for @next: %s", type_name);
+		return 0;
+	}
+	void       *data_ptr = vkparse_alloc (context, parser->size);
+	memset (data_ptr, 0, parser->size);
+	if (!parser->parse (field, next_def, data_ptr, messages, context)) {
+		return 0;
+	}
+	*(void **) data = data_ptr;
+	return 1;
 }
 
 static int
@@ -971,6 +1031,13 @@ enum_symtab_getkey (const void *e, void *unused)
 	return enm->type->name;
 }
 
+static const char *
+parser_getkey (const void *e, void *unused)
+{
+	__auto_type parser = (const parserref_t *) e;
+	return parser->name;
+}
+
 static exprtab_t root_symtab = {
 	.symbols = cexpr_lib_symbols,
 };
@@ -988,6 +1055,7 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 {
 	exprctx_t   context = {};
 	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &ctx->hashctx);
+	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &ctx->hashctx);
 	context.hashctx = &ctx->hashctx;
 	vkgen_init_symtabs (&context);
 	cexpr_init_symtab (&qfv_output_t_symtab, &context);

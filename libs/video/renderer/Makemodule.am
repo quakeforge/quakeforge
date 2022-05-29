@@ -183,6 +183,8 @@ pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
 pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
 deferred_src = libs/video/renderer/vulkan/deferred.plist
 deferred_gen = libs/video/renderer/vulkan/deferred.plc
+shadow_src = libs/video/renderer/vulkan/shadow.plist
+shadow_gen = libs/video/renderer/vulkan/shadow.plc
 forward_src = libs/video/renderer/vulkan/forward.plist
 forward_gen = libs/video/renderer/vulkan/forward.plc
 
@@ -236,7 +238,13 @@ libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vk
 
 libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
 
-libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${deferred_gen} $(forward_gen)
+libs/video/renderer/vulkan/vulkan_vid_common.lo: \
+	libs/video/renderer/vulkan/vulkan_vid_common.c \
+	$(vkparse_src) \
+	$(pipeline_gen) \
+	${deferred_gen} \
+	${shadow_gen} \
+	$(forward_gen)
 
 
 qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
@@ -315,8 +323,6 @@ fstriangle_src = $(vkshaderpath)/fstriangle.vert
 fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
-shadow_src = $(vkshaderpath)/shadow.geom
-shadow_c = $(vkshaderpath)/shadow.geom.spvc
 
 $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
@@ -377,8 +383,6 @@ $(passthrough_c): $(passthrough_src)
 $(fstriangle_c): $(fstriangle_src)
 
 $(pushcolor_c): $(pushcolor_src)
-
-$(shadow_c): $(shadow_src)
 
 vkshader_c = \
 	$(partphysicsc_c) \
@@ -446,6 +450,7 @@ BUILT_SOURCES += $(shader_gen)
 
 EXTRA_DIST += \
 	$(deferred_src) \
+	$(shadow_src) \
 	$(forward_src) \
 	$(pipeline_src) \
 	libs/video/renderer/vulkan/vkparse.plist \

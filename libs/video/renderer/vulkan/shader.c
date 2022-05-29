@@ -102,8 +102,6 @@ static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/shadow.geom.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -144,7 +142,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
-	{ "shadow.geom", shadow_geom, sizeof (shadow_geom) },
 	{}
 };
 

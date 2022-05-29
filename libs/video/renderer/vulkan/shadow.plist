@@ -23,10 +23,7 @@
 			viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 			format = $properties.images.shadow.format;
 			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
+				r = identity; g = identity; b = identity; a = identity;
 			};
 			subresourceRange = {
 				aspectMask = depth;
@@ -37,7 +34,7 @@
 	};
 	framebuffer = {
 		renderPass = $properties.renderpass;
-		attachments = (shadown);
+		attachments = (shadow);
 		width = $properties.images.shadow.extent.width;
 		height = $properties.images.shadow.extent.height;
 		layers = $properties.images.shadow.arrayLayers;
@@ -46,9 +43,12 @@
 		{ depthStencil = { depth = 1; stencil = 0; }; },
 	);
 	renderpass = {
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks = (0xffffffff);
+		});
 		attachments = (
 			{
-				format = $properties.images.depth.format;
+				format = $properties.images.shadow.format;
 				samples = 1;
 				loadOp = dont_care;
 				storeOp = store;
