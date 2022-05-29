@@ -1092,7 +1092,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 		{"frames", &vulkan_frameset_t_type, &ctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
-			&ctx->device->physDev->properties.limits },
+			&ctx->device->physDev->properties->limits },
 		{QFV_PROPERTIES, &cexpr_plitem, &parsectx.properties},
 		{}
 	};

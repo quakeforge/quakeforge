@@ -362,7 +362,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		lframe->shadowWrite.dstBinding = 0;
 		lframe->shadowWrite.descriptorCount
 			= min (MaxLights,
-			device->physDev->properties.limits.maxPerStageDescriptorSamplers);
+			device->physDev->properties->limits.maxPerStageDescriptorSamplers);
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
 	free (shadow_set);
@@ -578,7 +578,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physDev = device->physDev;
-	int         maxLayers = physDev->properties.limits.maxImageArrayLayers;
+	int         maxLayers = physDev->properties->limits.maxImageArrayLayers;
 	lightingdata_t *ldata = lctx->ldata;
 	light_t    *lights = ldata->lights.a;
 	int         numLights = ldata->lights.size;

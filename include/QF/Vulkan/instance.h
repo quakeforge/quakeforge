@@ -42,7 +42,9 @@ typedef struct DARRAY_TYPE(const char *) qfv_debugstack_t;
 typedef struct qfv_physdev_s {
 	struct qfv_instance_s *instance;
 	VkPhysicalDevice dev;
-	VkPhysicalDeviceProperties properties;
+	VkPhysicalDeviceProperties2 properties2;
+	VkPhysicalDeviceProperties *properties;
+	VkPhysicalDeviceMultiviewProperties multiViewProperties;
 	VkPhysicalDeviceMemoryProperties memory_properties;
 } qfv_physdev_t;
 
