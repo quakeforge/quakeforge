@@ -149,11 +149,16 @@ destroy_attachments (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	for (size_t i = 0; i < rp->attachment_views->size; i++) {
-		dfunc->vkDestroyImageView (device->dev, rp->attachment_views->a[i], 0);
+	if (rp->attachment_views) {
+		for (size_t i = 0; i < rp->attachment_views->size; i++) {
+			dfunc->vkDestroyImageView (device->dev,
+									   rp->attachment_views->a[i], 0);
+		}
 	}
-	for (size_t i = 0; i < rp->attachment_images->size; i++) {
-		dfunc->vkDestroyImage (device->dev, rp->attachment_images->a[i], 0);
+	if (rp->attachment_images) {
+		for (size_t i = 0; i < rp->attachment_images->size; i++) {
+			dfunc->vkDestroyImage (device->dev, rp->attachment_images->a[i], 0);
+		}
 	}
 	dfunc->vkFreeMemory (device->dev, rp->attachmentMemory, 0);
 
@@ -261,7 +266,9 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 	destroy_attachments (ctx, renderpass);
 	dfunc->vkDestroyRenderPass (device->dev, renderpass->renderpass, 0);
 	destroy_renderframes (ctx, renderpass);
-	destroy_framebuffers (ctx, renderpass);
+	if (renderpass->framebuffers) {
+		destroy_framebuffers (ctx, renderpass);
+	}
 
 	DARRAY_CLEAR (&renderpass->frames);
 	free (renderpass->clearValues);
