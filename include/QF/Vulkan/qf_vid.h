@@ -61,7 +61,7 @@ struct vulkan_ctx_s;
 void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
+void Vulkan_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
@@ -84,5 +84,7 @@ VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
 struct entity_s;
 void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
 							  struct entity_s *ent);
+
+struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
 
 #endif // __QF_Vulkan_vid_h

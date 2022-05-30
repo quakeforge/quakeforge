@@ -15,6 +15,9 @@ typedef struct qfv_subpass_s {
 	const char *name;
 } qfv_subpass_t;
 
+typedef struct qfv_subpassset_s
+	DARRAY_TYPE (qfv_subpass_t) qfv_subpassset_t;
+
 typedef struct qfv_renderframe_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	struct qfv_renderpass_s *renderpass;
@@ -30,6 +33,8 @@ typedef struct qfv_renderframeset_s
 typedef struct clearvalueset_s
 	DARRAY_TYPE (VkClearValue) clearvalueset_t;
 
+typedef void (*qfv_draw_t) (qfv_renderframe_t *rFrame);
+
 typedef struct qfv_renderpass_s {
 	vec4f_t     color;		// for debugging
 	const char *name;		// for debugging
@@ -44,9 +49,19 @@ typedef struct qfv_renderpass_s {
 	VkViewport  viewport;
 	VkRect2D    scissor;
 
+	size_t      subpassCount;
+	qfv_subpassset_t *subpass_info;
 	qfv_renderframeset_t frames;
 
-	void      (*draw) (qfv_renderframe_t *rFrame);
+	qfv_draw_t  draw;
 } qfv_renderpass_t;
+
+struct qfv_output_s;
+qfv_renderpass_t *Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx,
+										   const char *name,
+										   struct qfv_output_s *output,
+										   qfv_draw_t draw);
+void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx,
+							   qfv_renderpass_t *renderpass);
 
 #endif//__QF_Vulkan_renderpass_h

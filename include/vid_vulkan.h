@@ -98,7 +98,7 @@ typedef struct vulkan_ctx_s {
 	int         window_width;
 	int         window_height;
 
-	//FIXME not sure I like it being here (also, type name)
+	//FIXME this is for the parser
 	qfv_output_t output;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;

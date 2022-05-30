@@ -672,7 +672,7 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
-			renderPass = renderpass;
+			renderPass = deferred;
 		};
 		depth_base = {
 			@inherit      = $properties.pipelines.base;

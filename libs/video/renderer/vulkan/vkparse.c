@@ -531,7 +531,7 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 
 		// path not guaranteed to survive cexpr_eval_string due to va
 		path = resource_path (ctx, 0, name);
-		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
+		QFV_AddHandle (ctx->renderpasses, path, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -1515,4 +1515,66 @@ QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 	delete_memsuper (memsuper);
 	return cv;
+}
+
+static int
+parse_subpassset (const plfield_t *field, const plitem_t *item, void *data,
+					 plitem_t *messages, void *context)
+{
+	plelement_t element = {
+		QFDictionary,
+		sizeof (qfv_subpass_t),
+		vkparse_alloc,
+		parse_qfv_subpass_t,
+		0,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	if (!PL_ParseArray (&f, item, data, messages, context)) {
+		return 0;
+	}
+	return 1;
+}
+
+qfv_subpassset_t *
+QFV_ParseSubpasses (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
+{
+	qfv_subpassset_t *sp = 0;
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_subpassset_t *subpasses = 0;
+
+	if (parse_object (ctx, memsuper, plist, parse_subpassset, &subpasses,
+					  properties)) {
+		sp = DARRAY_ALLOCFIXED (qfv_subpassset_t, subpasses->size, malloc);
+		memcpy (sp->a, subpasses->a, sp->size * sizeof (sp->a[0]));
+		// the name is in memsuper which is about to be freed
+		for (size_t i = 0; i < sp->size; i++) {
+			sp->a[i].name = strdup (sp->a[i].name);
+		}
+	}
+	delete_memsuper (memsuper);
+	return sp;
+}
+
+static int
+parse_rgba (const plfield_t *field, const plitem_t *item, void *data,
+			plitem_t *messages, void *context)
+{
+	return parse_RGBA (item, &data, messages, context);
+}
+
+int
+QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
+			   plitem_t *properties)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	int         ret = 0;
+	vec4f_t     color;
+
+	if (parse_object (ctx, memsuper, plist, parse_rgba, &color, properties)) {
+		memcpy (rgba, &color, sizeof (color));
+		ret = 1;
+	}
+	delete_memsuper (memsuper);
+	return ret;
 }

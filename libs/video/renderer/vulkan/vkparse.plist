@@ -30,6 +30,8 @@
 		VkPhysicalDeviceLimits,
 		VkRenderPassCreateInfo,
 		VkRenderPassMultiviewCreateInfo,
+
+		qfv_subpass_t,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -377,6 +379,18 @@
 				size = correlationMaskCount;
 				values = pCorrelationMasks;
 			};
-		}
-	}
+		};
+
+		qfv_subpass_s = {
+			.name = qfv_subpass_t;
+			color = {
+				type = (custom, QFString, parse_RGBA);
+				fields = (color);
+			};
+			name = {
+				type = string;
+				string = name;
+			};
+		};
+	};
 }

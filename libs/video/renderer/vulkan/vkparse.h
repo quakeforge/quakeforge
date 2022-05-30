@@ -49,5 +49,9 @@ struct clearvalueset_s *QFV_ParseClearValues (vulkan_ctx_t *ctx,
 											  plitem_t *plist,
 											  plitem_t *properties);
 
-
+struct qfv_subpassset_s *QFV_ParseSubpasses (vulkan_ctx_t *ctx,
+											 plitem_t *plist,
+											 plitem_t *properties);
+int QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
+				   plitem_t *properties);
 #endif//__vkparse_h
