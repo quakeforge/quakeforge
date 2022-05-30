@@ -46,7 +46,6 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
 
@@ -57,6 +56,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
 
 #include "r_internal.h"

@@ -45,12 +45,12 @@
 #include "QF/sys.h"
 
 #include "QF/Vulkan/qf_compose.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"

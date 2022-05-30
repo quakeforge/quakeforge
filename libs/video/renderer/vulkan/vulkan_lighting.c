@@ -56,6 +56,7 @@
 
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -65,7 +66,6 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/staging.h"
 
 #include "compat.h"

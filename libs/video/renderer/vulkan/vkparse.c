@@ -41,8 +41,9 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/shader.h"
+
+#include "QF/Vulkan/qf_renderpass.h"
 
 #include "vid_vulkan.h"
 

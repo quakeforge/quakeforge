@@ -50,6 +50,7 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -62,7 +63,6 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
 

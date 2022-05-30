@@ -54,6 +54,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
@@ -62,7 +63,6 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"

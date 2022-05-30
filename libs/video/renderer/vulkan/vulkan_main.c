@@ -56,10 +56,9 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
-//#include "QF/Vulkan/qf_textures.h"
-#include "QF/Vulkan/renderpass.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"

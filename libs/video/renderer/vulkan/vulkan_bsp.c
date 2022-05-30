@@ -57,6 +57,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
@@ -67,7 +68,6 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
