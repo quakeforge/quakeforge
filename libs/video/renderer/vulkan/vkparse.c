@@ -156,6 +156,7 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	exprval_t   result = { etype, data };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_basic: %s %zd %d %p %p: %s\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -186,6 +187,7 @@ parse_int32_t (const plfield_t *field, const plitem_t *item,
 	exprval_t   result = { &cexpr_size_t, &val };
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse,
 	//				"parse_int32_t: %s %zd %d %p %p %s\n",
@@ -213,6 +215,7 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 	exprval_t   result = { &cexpr_size_t, &val };
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_uint32_t: %s %zd %d %p %p: %s\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -268,6 +271,7 @@ parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
 	plitem_t   *refItem = 0;
 	exprval_t   result = { &cexpr_plitem, &refItem };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *name = PL_String (item);
 	if (cexpr_eval_string (name, &ectx)) {
 		PL_Message (messages, item, "not a %s reference", type);
@@ -416,6 +420,7 @@ parse_inherit (const plfield_t *field, const plitem_t *item,
 	plitem_t   *inheritItem = 0;
 	exprval_t   result = { &cexpr_plitem, &inheritItem };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *inheritstr = PL_String (item);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_inherit: %s\n", inheritstr);
 	int         ret = !cexpr_eval_string (inheritstr, &ectx);
@@ -461,6 +466,7 @@ parse_RGBA (const plitem_t *item, void **data,
 	exprctx_t   ectx = *context->ectx;
 	exprval_t   result = { &cexpr_vector, data[0] };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
 	ret = !cexpr_eval_string (valstr, &ectx);
@@ -523,6 +529,7 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.result = &result;
+	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkRenderPass setLayout;
@@ -583,6 +590,7 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.result = &result;
+	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkDescriptorSetLayout setLayout;
@@ -618,6 +626,7 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.result = &result;
+	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkPipelineLayout layout;
@@ -652,6 +661,7 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	plitem_t   *imageItem = 0;
 	exprval_t   result = { &cexpr_plitem, &imageItem };
 	ectx.result = &result;
+	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkImage image;
@@ -695,6 +705,7 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 	exprval_t  *value = 0;
 	exprval_t   result = { &cexpr_exprval, &value };
 	ectx.result = &result;
+	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 
 	plitem_t   *imageViewItem = 0;
@@ -924,6 +935,7 @@ parse_specialization_data (const plitem_t *item, void **data,
 	ectx.parent = ((parsectx_t *)context)->ectx;
 	ectx.symtab = &data_array_symtab;
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse,
 	//				"parse_specialization_data: %s %zd %d %p %p %s\n",
