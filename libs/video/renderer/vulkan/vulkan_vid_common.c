@@ -379,9 +379,10 @@ void
 Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
 	qfv_output_t output = {
-		.extent = ctx->swapchain->extent,
-		.view   = ctx->swapchain->imageViews->a[0],
-		.format = ctx->swapchain->format,
+		.extent    = ctx->swapchain->extent,
+		.view      = ctx->swapchain->imageViews->a[0],
+		.format    = ctx->swapchain->format,
+		.view_list = ctx->swapchain->imageViews->a,
 	};
 	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
 											  &output, renderpass_draw);

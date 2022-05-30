@@ -14,6 +14,7 @@ typedef struct qfv_output_s {
 	VkExtent2D  extent;
 	VkImageView view;
 	VkFormat    format;
+	VkImageView *view_list;	// per frame
 } qfv_output_t;
 
 typedef struct vulkan_frame_s {

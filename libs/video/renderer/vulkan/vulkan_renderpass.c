@@ -119,11 +119,7 @@ create_attachements (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	rp->framebuffers = QFV_AllocFrameBuffers (ctx->swapchain->numImages,
 											  malloc);
 	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		ctx->output = (qfv_output_t) {
-			.extent = ctx->swapchain->extent,
-			.view   = ctx->swapchain->imageViews->a[i],
-			.format = ctx->swapchain->format,
-		};
+		ctx->output.view = ctx->output.view_list[i];
 		rp->framebuffers->a[i] = QFV_ParseFramebuffer (ctx, item,
 													   rp->renderpassDef);
 	}
