@@ -47,9 +47,8 @@
 
 #include "vid_vulkan.h"
 
-#define vkparse_internal
 #include "vkparse.h"
-#undef vkparse_internal
+#include "libs/video/renderer/vulkan/vkparse.hinc"
 
 typedef struct parseres_s {
 	const char *name;

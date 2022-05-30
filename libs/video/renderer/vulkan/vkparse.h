@@ -10,9 +10,6 @@ typedef struct parsectx_s {
 
 #include "QF/cexpr.h"
 #include "QF/plist.h"
-#ifdef vkparse_internal
-#include "libs/video/renderer/vulkan/vkparse.hinc"
-#endif
 
 #define QFV_PROPERTIES "properties"
 

@@ -63,7 +63,6 @@
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
-
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 
 static exprsym_t builtin_plist_syms[] = {
