@@ -702,10 +702,12 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		int         layers = 1;
 		int         li = lightMap[i];
 		__auto_type lr = &lctx->light_renderers.a[li];
+		*lr = (light_renderer_t) {};
 
-		lr->mode = ST_NONE;
 		if (!lights[li].position[3]) {
-			lr->mode = ST_CASCADE;
+			if (!VectorIsZero (lights[li].direction)) {
+				lr->mode = ST_CASCADE;
+			}
 		} else {
 			if (lights[li].direction[3] > -0.5) {
 				lr->mode = ST_CUBE;
@@ -791,7 +793,6 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		__auto_type lr = &lctx->light_renderers.a[li];
 
 		if (imageMap[li] == -1) {
-			*lr = (light_renderer_t) {};
 			continue;
 		}
 
