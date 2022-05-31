@@ -722,7 +722,7 @@ Hunk_RawAlloc (memhunk_t *hunk, size_t size)
 		Hunk_HighMark (hunk);	// force free of temp hunk
 	}
 	if (hunk->size - hunk->low_used - hunk->high_used < size) {
-		int         mem = hunk->size / (1024 * 1024);
+		int         mem = (hunk->size + sizeof (memhunk_t)) / (1024 * 1024);
 		mem += 8;
 		mem &= ~7;
 		Hunk_Print (hunk, 1);
