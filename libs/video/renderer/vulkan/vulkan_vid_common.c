@@ -374,6 +374,7 @@ void
 Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
 	Vulkan_Main_CreateRenderPasses (ctx);
+	Vulkan_Lighting_CreateRenderPasses (ctx);
 
 	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,
 			  sizeof (qfv_renderpass_t *), renderpass_cmp);

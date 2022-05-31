@@ -36,6 +36,7 @@
 #include <vulkan/vulkan.h>
 
 enum {
+	QFV_rp_shadowmap,
 	QFV_rp_main,
 };
 
