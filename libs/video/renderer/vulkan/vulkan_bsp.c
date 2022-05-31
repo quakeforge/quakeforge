@@ -120,13 +120,13 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 }
 
 static inline void
-chain_surface (const bsp_face_t *face, bsp_pass_t *pass, bspctx_t *bctx)
+chain_surface (const bsp_face_t *face, bsp_pass_t *pass, const bspctx_t *bctx)
 {
 	int         ent_frame = pass->ent_frame;
 	// if the texture has no alt animations, anim_alt holds the sama data
 	// as anim_main
-	texanim_t  *anim = ent_frame ? &bctx->texdata.anim_alt[face->tex_id]
-								 : &bctx->texdata.anim_main[face->tex_id];
+	const texanim_t *anim = ent_frame ? &bctx->texdata.anim_alt[face->tex_id]
+									  : &bctx->texdata.anim_main[face->tex_id];
 	int         anim_ind = (bctx->anim_index + anim->offset) % anim->count;
 	int         tex_id = bctx->texdata.anim_map[anim->base + anim_ind];
 	DARRAY_APPEND (&pass->face_queue[tex_id],
@@ -165,11 +165,15 @@ clear_textures (vulkan_ctx_t *ctx)
 void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
-	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 	clear_textures (ctx);
 	add_texture (r_notexture_mip, ctx);
-	register_textures (brush, ctx);
+	{
+		// FIXME make worldmodel non-special. needs smarter handling of
+		// textures on sub-models but not on main model.
+		mod_brush_t *brush = &r_refdef.worldmodel->brush;
+		register_textures (brush, ctx);
+	}
 	for (int i = 0; i < num_models; i++) {
 		model_t    *m = models[i];
 		if (!m)
@@ -178,9 +182,10 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
+		// FIXME see above
 		if (m == r_refdef.worldmodel || m->type != mod_brush)
 			continue;
-		brush = &m->brush;
+		mod_brush_t *brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush, ctx);
 	}
@@ -196,7 +201,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m || *m->path == '*') {
 			continue;
 		}
-		brush = &m->brush;
+		mod_brush_t *brush = &m->brush;
 		for (unsigned j = 0; j < brush->numtextures; j++) {
 			if (brush->textures[j]) {
 				textures[t++] = brush->textures[j];
@@ -271,12 +276,17 @@ typedef struct {
 typedef struct DARRAY_TYPE (faceref_t) facerefset_t;
 
 static void
-count_verts_inds (faceref_t *faceref, uint32_t *verts, uint32_t *inds)
+count_verts_inds (const faceref_t *faceref, uint32_t *verts, uint32_t *inds)
 {
 	msurface_t *surf = faceref->face;
 	*verts = surf->numedges;
 	*inds = surf->numedges + 1;
 }
+
+typedef struct bspvert_s {
+	quat_t      vertex;
+	quat_t      tlst;
+} bspvert_t;
 
 typedef struct {
 	bsp_face_t *faces;
@@ -591,13 +601,13 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 	Transform_GetWorldMatrix (e->transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		radius = model->radius;
-		if (R_CullSphere (r_refdef.frustum, (vec_t*)&mat[3], radius)) { //FIXME
+		if (R_CullSphere (pass->frustum, (vec_t*)&mat[3], radius)) { //FIXME
 			return 1;
 		}
 	} else {
 		VectorAdd (mat[3], model->mins, mins);
 		VectorAdd (mat[3], model->maxs, maxs);
-		if (R_CullBox (r_refdef.frustum, mins, maxs))
+		if (R_CullBox (pass->frustum, mins, maxs))
 			return 1;
 	}
 	if (Vulkan_Scene_AddEntity (ctx, e) < 0) {
@@ -631,19 +641,18 @@ visit_leaf (mleaf_t *leaf)
 
 // 1 = back side, 0 = front side
 static inline int
-get_side (mnode_t *node)
+get_side (const bsp_pass_t *pass, const mnode_t *node)
 {
 	// find the node side on which we are
-	vec4f_t     org = r_refdef.frame.position;
+	vec4f_t     org = pass->position;
 
 	return dotf (org, node->plane)[0] < 0;
 }
 
 static inline void
-visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
+visit_node (bsp_pass_t *pass, const mnode_t *node, int side)
 {
-	bspctx_t   *bctx = ctx->bsp_context;
-	bsp_pass_t *pass = &ctx->bsp_context->main_pass;
+	bspctx_t   *bctx = pass->bsp_context;
 	int         c;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
@@ -654,8 +663,9 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 	if ((c = node->numsurfaces)) {
 		const bsp_face_t *face = bctx->faces + node->firstsurface;
 		const int  *frame = pass->face_frames + node->firstsurface;
+		int         vis_frame = pass->vis_frame;
 		for (; c; c--, face++, frame++) {
-			if (*frame != r_visframecount)
+			if (*frame != vis_frame)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -670,21 +680,22 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 }
 
 static inline int
-test_node (mod_brush_t *brush, int node_id)
+test_node (const bsp_pass_t *pass, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_node_visframes[node_id] != r_visframecount)
+	if (pass->node_frames[node_id] != pass->vis_frame)
 		return 0;
-	mnode_t    *node = brush->nodes + node_id;
-	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
+	mnode_t    *node = pass->brush->nodes + node_id;
+	if (R_CullBox (pass->frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }
 
 static void
-R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
+R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
+	const mod_brush_t *brush = pass->brush;
 	typedef struct {
 		int         node_id;
 		int         side;
@@ -701,11 +712,11 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 	node_ptr = node_stack;
 
 	while (1) {
-		while (test_node (brush, node_id)) {
+		while (test_node (pass, node_id)) {
 			mnode_t    *node = brush->nodes + node_id;
-			side = get_side (node);
+			side = get_side (pass, node);
 			front = node->children[side];
-			if (test_node (brush, front)) {
+			if (test_node (pass, front)) {
 				node_ptr->node_id = node_id;
 				node_ptr->side = side;
 				node_ptr++;
@@ -722,7 +733,7 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 					visit_leaf (leaf);
 				}
 			}
-			visit_node (brush, node, side, ctx);
+			visit_node (pass, node, side);
 			node_id = node->children[side ^ 1];
 		}
 		if (node_id < 0) {
@@ -736,7 +747,7 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 			node_id = node_ptr->node_id;
 			side = node_ptr->side;
 			mnode_t    *node = brush->nodes + node_id;
-			visit_node (brush, node, side, ctx);
+			visit_node (pass, node, side);
 			node_id = node->children[side ^ 1];
 			continue;
 		}
@@ -846,9 +857,6 @@ bsp_begin (qfv_renderframe_t *rFrame)
 	bspctx_t   *bctx = ctx->bsp_context;
 	//XXX quat_t      fog;
 
-	bctx->default_color[3] = 1;
-	QuatCopy (bctx->default_color, bctx->last_color);
-
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
@@ -878,10 +886,6 @@ turb_begin (qfv_renderframe_t *rFrame)
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	bctx->default_color[3] = bound (0, r_wateralpha, 1);
-
-	QuatCopy (bctx->default_color, bctx->last_color);
-
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
@@ -906,9 +910,6 @@ sky_begin (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
-
-	bctx->default_color[3] = 1;
-	QuatCopy (bctx->default_color, bctx->last_color);
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
@@ -950,7 +951,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 }
 
 static void
-queue_faces (bsp_pass_t *pass, bspctx_t *bctx, bspframe_t *bframe)
+queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
 	pass->indices = bframe->index_data + bframe->index_count;
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
@@ -1046,8 +1047,11 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	//qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	mod_brush_t *brush;
 
+	bctx->main_pass.bsp_context = bctx;
+	bctx->main_pass.position = r_refdef.frame.position;
+	bctx->main_pass.frustum = r_refdef.frustum;
+	bctx->main_pass.vis_frame = r_visframecount;
 	bctx->main_pass.face_frames = r_face_visframes;
 	bctx->main_pass.leaf_frames = r_leaf_visframes;
 	bctx->main_pass.node_frames = r_node_visframes;
@@ -1065,18 +1069,18 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 			.colormod = { 1, 1, 1, 1 },
 		},
 	};
-	brush = &r_refdef.worldmodel->brush;
 
 	Vulkan_Scene_AddEntity (ctx, &worldent);
 
 	int         world_id = worldent.renderer.model->render_id;
 	bctx->main_pass.ent_frame = 0;	// world is always frame 0
 	bctx->main_pass.inst_id = world_id;
+	bctx->main_pass.brush = &worldent.renderer.model->brush;
 	if (bctx->main_pass.instances) {
 		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
 					   worldent.renderer.render_id);
 	}
-	R_VisitWorldNodes (brush, ctx);
+	R_VisitWorldNodes (&bctx->main_pass, ctx);
 	if (!bctx->vertex_buffer) {
 		return;
 	}

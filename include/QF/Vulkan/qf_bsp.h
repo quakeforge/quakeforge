@@ -51,19 +51,7 @@ typedef struct bsp_model_s {
 	uint32_t    face_count;
 } bsp_model_t;
 
-typedef struct bsp_packet_s {
-	int         first_index;
-	int         index_count;
-	int         transform_id;
-	int         color_id;
-} bsp_packet_t;
-
-typedef struct bsp_packetset_s
-    DARRAY_TYPE (bsp_packet_t) bsp_packetset_t;
-
-typedef struct bsp_indexset_s
-    DARRAY_TYPE (uint32_t) bsp_indexset_t;
-
+#if 0
 typedef struct texname_s {
 	char        name[MIPTEXNAME];
 } texname_t;
@@ -73,7 +61,7 @@ typedef struct texmip_s {
 	uint32_t    height;
 	uint32_t    offsets[MIPLEVELS];
 } texmip_t;
-
+#endif
 typedef struct texanim_s {
 	uint16_t    base;
 	byte        offset;
@@ -128,9 +116,13 @@ typedef struct bsp_instance_s {
 } bsp_instance_t;
 
 typedef struct bsp_pass_s {
+	vec4f_t     position;
+	plane_t    *frustum;
+	const struct mod_brush_s *brush;
+	struct bspctx_s *bsp_context;
 	uint32_t   *indices;		// points into index buffer
 	uint32_t    index_count;	// number of indices written to buffer
-	uint32_t   *entid_data;
+	uint32_t   *entid_data;		// points into entid buffer
 	uint32_t    entid_count;
 	int         vis_frame;
 	int        *face_frames;
@@ -144,19 +136,6 @@ typedef struct bsp_pass_s {
 	bsp_instance_t *instances;
 	int         ent_frame;
 } bsp_pass_t;
-
-typedef struct bspvert_s {
-	quat_t      vertex;
-	quat_t      tlst;
-} bspvert_t;
-
-typedef enum {
-	qfv_bsp_texture,
-	qfv_bsp_glowmap,
-	qfv_bsp_lightmap,
-	qfv_bsp_skysheet,
-	qfv_bsp_skycube,
-} qfv_bsp_tex;
 
 typedef enum {
 	QFV_bspDepth,
@@ -191,9 +170,6 @@ typedef struct bspctx_s {
 	VkDescriptorSet skybox_descriptor;
 
 	vulktex_t    notexture;
-
-	quat_t       default_color;
-	quat_t       last_color;
 
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
