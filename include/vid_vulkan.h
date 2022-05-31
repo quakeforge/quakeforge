@@ -77,8 +77,6 @@ typedef struct vulkan_ctx_s {
 	struct composectx_s *compose_context;
 
 	VkCommandPool cmdpool;
-	VkCommandBuffer cmdbuffer;
-	VkFence     fence;			// for ctx->cmdbuffer only
 	struct qfv_stagebuf_s *staging;
 	size_t      curFrame;
 	vulkan_frameset_t frames;

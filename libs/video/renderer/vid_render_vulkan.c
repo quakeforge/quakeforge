@@ -631,11 +631,6 @@ vulkan_vid_render_choose_visual (void *data)
 	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
 									 vulkan_ctx->device->queue.queueFamily,
 									 0, 1);
-	__auto_type cmdset = QFV_AllocCommandBufferSet (1, alloca);
-	QFV_AllocateCommandBuffers (vulkan_ctx->device, vulkan_ctx->cmdpool, 0,
-								cmdset);
-	vulkan_ctx->cmdbuffer = cmdset->a[0];
-	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
 	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %#zx\n",
 					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
 					vulkan_ctx->device->queue.queueFamily,
@@ -647,7 +642,7 @@ vulkan_vid_render_create_context (void *data)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_MaskPrintf (SYS_vulkan, "vk create context %#zx\n",
+	Sys_MaskPrintf (SYS_vulkan, "vk create context: surface:%#zx\n",
 					(size_t) vulkan_ctx->surface);
 }
 
@@ -726,7 +721,6 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
 
 	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
-	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
 	Vulkan_Shutdown_Common (vulkan_ctx);
