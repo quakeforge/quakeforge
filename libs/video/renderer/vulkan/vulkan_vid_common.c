@@ -39,23 +39,20 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/plist.h"
 #include "QF/va.h"
 #include "QF/scene/entity.h"
 #include "QF/Vulkan/capture.h"
+#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
 
-#include "QF/Vulkan/qf_alias.h"
-#include "QF/Vulkan/qf_bsp.h"
-#include "QF/Vulkan/qf_compose.h"
-#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_main.h"
-#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
 
@@ -365,28 +362,21 @@ qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 	return item;
 }
 
-static void
-renderpass_draw (qfv_renderframe_t *rFrame)
+static int
+renderpass_cmp (const void *_a, const void *_b)
 {
-	Vulkan_Matrix_Draw (rFrame);
-	Vulkan_RenderView (rFrame);
-	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
-	Vulkan_Lighting_Draw (rFrame);
-	Vulkan_Compose_Draw (rFrame);
+	const qfv_renderpass_t *a = _a;
+	const qfv_renderpass_t *b = _b;
+	return a->order - b->order;
 }
 
 void
 Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	qfv_output_t output = {
-		.extent    = ctx->swapchain->extent,
-		.view      = ctx->swapchain->imageViews->a[0],
-		.format    = ctx->swapchain->format,
-		.view_list = ctx->swapchain->imageViews->a,
-	};
-	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
-											  &output, renderpass_draw);
-	DARRAY_APPEND (&ctx->renderPasses, rp);
+	Vulkan_Main_CreateRenderPasses (ctx);
+
+	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,
+			  sizeof (qfv_renderpass_t *), renderpass_cmp);
 }
 
 void

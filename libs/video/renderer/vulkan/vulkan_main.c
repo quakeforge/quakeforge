@@ -48,17 +48,21 @@
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
-#include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_compose.h"
+#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
+#include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/swapchain.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -150,4 +154,29 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
 	Vulkan_LoadLights (scene, ctx);
+}
+
+static void
+main_draw (qfv_renderframe_t *rFrame)
+{
+	Vulkan_Matrix_Draw (rFrame);
+	Vulkan_RenderView (rFrame);
+	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
+	Vulkan_Lighting_Draw (rFrame);
+	Vulkan_Compose_Draw (rFrame);
+}
+
+void
+Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
+{
+	qfv_output_t output = {
+		.extent    = ctx->swapchain->extent,
+		.view      = ctx->swapchain->imageViews->a[0],
+		.format    = ctx->swapchain->format,
+		.view_list = ctx->swapchain->imageViews->a,
+	};
+	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
+											  &output, main_draw);
+	rp->order = QFV_rp_main;
+	DARRAY_APPEND (&ctx->renderPasses, rp);
 }

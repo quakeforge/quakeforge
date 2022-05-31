@@ -35,6 +35,10 @@
 #endif
 #include <vulkan/vulkan.h>
 
+enum {
+	QFV_rp_main,
+};
+
 //FIXME location
 typedef enum {
 	QFV_passDepth,			// geometry
