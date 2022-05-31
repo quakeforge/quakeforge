@@ -225,6 +225,7 @@ glsl_render_view (void)
 {
 	qfeglClear (GL_DEPTH_BUFFER_BIT);
 	glsl_R_RenderView ();
+	glsl_R_RenderEntities (r_ent_queue);
 }
 
 static void
@@ -460,7 +461,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_LineGraph,
 	glsl_begin_frame,
 	glsl_render_view,
-	glsl_R_RenderEntities,
 	glsl_R_DrawParticles,
 	glsl_draw_transparent,
 	glsl_post_process,

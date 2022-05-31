@@ -264,6 +264,7 @@ gl_render_view (void)
 	// do 3D refresh drawing, and then update the screen
 	qfglClear (GL_DEPTH_BUFFER_BIT);
 	gl_R_RenderView ();
+	gl_R_RenderEntities (r_ent_queue);
 }
 
 static void
@@ -516,7 +517,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_LineGraph,
 	gl_begin_frame,
 	gl_render_view,
-	gl_R_RenderEntities,
 	gl_R_DrawParticles,
 	gl_draw_transparent,
 	gl_post_process,
