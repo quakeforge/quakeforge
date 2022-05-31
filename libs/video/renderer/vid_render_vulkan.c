@@ -29,6 +29,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
@@ -111,6 +112,7 @@ vulkan_R_Init (void)
 static void
 vulkan_R_ClearState (void)
 {
+	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
@@ -287,7 +289,9 @@ vulkan_render_view (void)
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		if (rp->framebuffers) {
+			frame->framebuffer = rp->framebuffers->a[imageIndex];
+		}
 		rp->draw (rpFrame);
 	}
 }
@@ -339,13 +343,27 @@ vulkan_end_frame (void)
 		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
 	};
 
+	__auto_type cmdBufs = (qfv_cmdbufferset_t) DARRAY_STATIC_INIT (4);
+	DARRAY_APPEND (&cmdBufs, frame->cmdBuffer);
+
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
+		if (rp->primary_commands) {
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				size_t      base = cmdBufs.size;
+				DARRAY_RESIZE (&cmdBufs, base + cmdSet->size);
+				memcpy (&cmdBufs.a[base], cmdSet->a,
+						cmdSet->size * sizeof (VkCommandBuffer));
+			}
+			continue;
+		}
+
 		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
-		if (rpFrame->renderpass) {
+		if (rpFrame->renderpass && rp->renderpass) {
 			renderPassInfo.framebuffer = frame->framebuffer,
 			renderPassInfo.renderPass = rp->renderpass;
 			renderPassInfo.clearValueCount = rp->clearValues->size;
@@ -403,11 +421,13 @@ vulkan_end_frame (void)
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		1, &frame->imageAvailableSemaphore, &waitStage,
-		1, &frame->cmdBuffer,
+		cmdBufs.size, cmdBufs.a,
 		1, &frame->renderDoneSemaphore,
 	};
 	dfunc->vkResetFences (dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+
+	DARRAY_CLEAR (&cmdBufs);
 
 	if (vulkan_ctx->capture_callback) {
 		//FIXME look into "threading" this rather than waiting here

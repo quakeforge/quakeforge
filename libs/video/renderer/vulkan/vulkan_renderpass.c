@@ -51,9 +51,9 @@ get_rp_item (vulkan_ctx_t *ctx, qfv_renderpass_t *rp, const char *name)
 	}
 
 	plitem_t   *item = rp->renderpassDef;
-	if (!item || !(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading %s\n", name);
-	} else {
+	if (!item) {
+		Sys_Printf ("error loading %s\n", rp->name);
+	} else if ((item = PL_ObjectForKey (item, name))) {
 		Sys_MaskPrintf (SYS_vulkan_parse, "Found %s def\n", name);
 	}
 	return item;
@@ -201,30 +201,37 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 	rp->name = name;
 
 	plitem_t   *rp_cfg = get_rp_item (ctx, rp, "renderpass");
-	hashtab_t  *tab = ctx->renderpasses;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
-	__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
-	if (renderpass) {
-		rp->renderpass = renderpass;
-	} else {
-		ctx->output = *output;
-		rp->renderpass =  QFV_ParseRenderPass (ctx, rp_cfg, rp->renderpassDef);
-		QFV_AddHandle (tab, path, (uint64_t) rp->renderpass);
-		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
-							 rp->renderpass, va (ctx->va_ctx, "renderpass:%s",
-												name));
+	if (rp_cfg) {
+		hashtab_t  *tab = ctx->renderpasses;
+		const char *path;
+		path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
+		__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
+		if (renderpass) {
+			rp->renderpass = renderpass;
+		} else {
+			ctx->output = *output;
+			rp->renderpass =  QFV_ParseRenderPass (ctx, rp_cfg,
+												   rp->renderpassDef);
+			QFV_AddHandle (tab, path, (uint64_t) rp->renderpass);
+			QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
+								 rp->renderpass, va (ctx->va_ctx,
+													 "renderpass:%s", name));
+		}
+		rp->subpassCount = PL_A_NumObjects (PL_ObjectForKey (rp_cfg,
+															 "subpasses"));
 	}
-	rp->subpassCount = PL_A_NumObjects (PL_ObjectForKey (rp_cfg, "subpasses"));
 	plitem_t   *rp_info = get_rp_item (ctx, rp, "info");
 	if (rp_info) {
 		plitem_t   *subpass_info = PL_ObjectForKey (rp_info, "subpass_info");
 		if (subpass_info) {
 			rp->subpass_info = QFV_ParseSubpasses (ctx, subpass_info,
 												   rp->renderpassDef);
-			if (rp->subpass_info->size > rp->subpassCount) {
+			if (rp->subpass_info->size < rp->subpassCount) {
 				Sys_Printf ("warning:%s:%d: insufficient entries in "
 							"subpass_info\n", name, PL_Line (subpass_info));
+			}
+			if (!rp->subpassCount) {
+				rp->subpassCount = rp->subpass_info->size;
 			}
 		}
 

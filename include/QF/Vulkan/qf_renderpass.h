@@ -49,7 +49,7 @@ typedef struct qfv_renderpass_s {
 	VkViewport  viewport;
 	VkRect2D    scissor;
 	int         order;
-
+	int         primary_commands;
 	size_t      subpassCount;
 	qfv_subpassset_t *subpass_info;
 	qfv_renderframeset_t frames;
