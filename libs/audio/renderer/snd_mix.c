@@ -44,9 +44,7 @@
 #include "compat.h"
 #include "snd_internal.h"
 
-#define VOLSCALE 512.0				// so mixing is less likely to overflow
-									// note: must be >= 255 due to the channel
-									// volumes being 0-255.
+#define VOLSCALE 0.5				// so mixing is less likely to overflow
 
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
@@ -226,8 +224,8 @@ snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 	unsigned    i = 0;
 	portable_samplepair_t *pair;
 
-	leftvol = ch->leftvol / VOLSCALE;
-	rightvol = ch->rightvol / VOLSCALE;
+	leftvol = ch->leftvol * VOLSCALE;
+	rightvol = ch->rightvol * VOLSCALE;
 
 	max_overpaint = max (abs (ch->phase),
 						 max (abs (ch->oldphase), max_overpaint));
@@ -320,8 +318,8 @@ static void
 snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -338,8 +336,8 @@ static void
 snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -357,8 +355,8 @@ static void
 snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -377,8 +375,8 @@ static void
 snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -398,8 +396,8 @@ static void
 snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -421,8 +419,8 @@ static void
 snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -445,8 +443,8 @@ static void
 snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {

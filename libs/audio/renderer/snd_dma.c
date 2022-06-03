@@ -522,8 +522,8 @@ s_channel_get_state (channel_t *chan)
 static void
 s_channel_set_volume (channel_t *chan, float volume)
 {
-	chan->master_vol = volume * 256; //FIXME
-	chan->leftvol = chan->rightvol = chan->master_vol;
+	chan->volume = volume;
+	chan->leftvol = chan->rightvol = chan->volume;
 }
 
 static void

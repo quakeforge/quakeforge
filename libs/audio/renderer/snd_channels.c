@@ -448,8 +448,8 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 			 ambient_channel++) {
 			chan = ambient_channels[ambient_channel];
 			if (chan) {
-				chan->master_vol = 0;
-				chan->leftvol = chan->rightvol = chan->master_vol;
+				chan->volume = 0;
+				chan->leftvol = chan->rightvol = chan->volume;
 			}
 		}
 		return;
@@ -480,24 +480,23 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
 
-		vol = ambient_level * ambient_sound_level[ambient_channel];
-		if (vol < 8)
+		vol = ambient_level * ambient_sound_level[ambient_channel] * (1/255.0);
+		if (vol < 8/255.0)
 			vol = 0;
 
 		// don't adjust volume too fast
-		if (chan->master_vol < vol) {
-			chan->master_vol += *snd_render_data.host_frametime
-				* ambient_fade;
-			if (chan->master_vol > vol)
-				chan->master_vol = vol;
-		} else if (chan->master_vol > vol) {
-			chan->master_vol -= *snd_render_data.host_frametime
-				* ambient_fade;
-			if (chan->master_vol < vol)
-				chan->master_vol = vol;
+		float       fade = ambient_fade * (1/255.0);
+		if (chan->volume < vol) {
+			chan->volume += *snd_render_data.host_frametime * fade;
+			if (chan->volume > vol)
+				chan->volume = vol;
+		} else if (chan->volume > vol) {
+			chan->volume -= *snd_render_data.host_frametime * fade;
+			if (chan->volume < vol)
+				chan->volume = vol;
 		}
 
-		chan->leftvol = chan->rightvol = chan->master_vol;
+		chan->leftvol = chan->rightvol = chan->volume;
 		chan->sfx = sfx;
 	}
 }
@@ -515,8 +514,8 @@ s_spatialize (snd_t *snd, channel_t *ch)
 	// anything coming from the view entity will always be full volume
 	if (!snd_render_data.viewentity
 		|| ch->entnum == *snd_render_data.viewentity) {
-		ch->leftvol = ch->master_vol;
-		ch->rightvol = ch->master_vol;
+		ch->leftvol = ch->volume;
+		ch->rightvol = ch->volume;
 		ch->phase = 0;
 		return;
 	}
@@ -542,12 +541,12 @@ s_spatialize (snd_t *snd, channel_t *ch)
 
 	// add in distance effect
 	scale = (1.0 - dist) * rscale;
-	ch->rightvol = (int) (ch->master_vol * scale);
+	ch->rightvol = ch->volume * scale;
 	if (ch->rightvol < 0)
 		ch->rightvol = 0;
 
 	scale = (1.0 - dist) * lscale;
-	ch->leftvol = (int) (ch->master_vol * scale);
+	ch->leftvol = ch->volume * scale;
 	if (ch->leftvol < 0)
 		ch->leftvol = 0;
 
@@ -647,9 +646,8 @@ snd_check_channels (snd_t *snd, channel_t *target_chan, const channel_t *check,
 
 void
 SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
-				vec4f_t origin, float fvol, float attenuation)
+				vec4f_t origin, float vol, float attenuation)
 {
-	int			 vol;
 	int          looped;
 	channel_t   *target_chan, *check;
 	sfx_t       *osfx;
@@ -662,12 +660,10 @@ SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 	if (!target_chan)
 		return;
 
-	vol = fvol * 255;
-
 	// spatialize
 	VectorCopy (origin, target_chan->origin);
 	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
-	target_chan->master_vol = vol;
+	target_chan->volume = vol;
 	target_chan->entnum = entnum;
 	target_chan->entchannel = entchannel;
 	s_spatialize (snd, target_chan);
@@ -747,8 +743,8 @@ SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 		return;
 
 	VectorCopy (origin, ss->origin);
-	ss->master_vol = vol;
-	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
+	ss->volume = vol;
+	ss->dist_mult = attenuation / sound_nominal_clip_dist;
 	ss->end = 0;
 
 	s_spatialize (snd, ss);

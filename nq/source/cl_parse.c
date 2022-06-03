@@ -685,7 +685,8 @@ CL_ParseClientdata (void)
 static void
 CL_ParseStaticSound (int version)
 {
-	int         sound_num, vol, atten;
+	int         sound_num;
+	float       vol, atten;
 	vec4f_t     org = { 0, 0, 0, 1 };
 
 	MSG_ReadCoordV (net_message, (vec_t*)&org);//FIXME
@@ -693,8 +694,8 @@ CL_ParseStaticSound (int version)
 		sound_num = MSG_ReadShort (net_message);
 	else
 		sound_num = MSG_ReadByte (net_message);
-	vol = MSG_ReadByte (net_message);
-	atten = MSG_ReadByte (net_message);
+	vol = MSG_ReadByte (net_message) / 255.0;
+	atten = MSG_ReadByte (net_message) / 64.0;
 
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
