@@ -87,8 +87,6 @@ int64_t Sys_TimeBase (void) __attribute__ ((const));
 double Sys_DoubleTimeBase (void) __attribute__ ((const));
 void Sys_TimeOfDay(date_t *date);
 
-void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
-
 #define SYS_DEVELOPER(developer) SYS_DeveloperID_##developer,
 enum {
 #include "QF/sys_developer.h"
@@ -97,10 +95,12 @@ enum {
 // bit 0 so developer 1 will pick it up
 #define SYS_DEVELOPER(developer) \
 	SYS_##developer = (SYS_dev | (1 << (SYS_DeveloperID_##developer + 1))),
-enum {
+typedef enum {
 	SYS_dev = 1,
 #include "QF/sys_developer.h"
-};
+} sys_developer_e;
+
+void Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 struct qf_fd_set;
 int Sys_Select (int maxfd, struct qf_fd_set *fdset, int64_t usec);

@@ -353,7 +353,7 @@ Sys_Printf (const char *fmt, ...)
 }
 
 VISIBLE void
-Sys_MaskPrintf (int mask, const char *fmt, ...)
+Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...)
 {
 	va_list     args;
 

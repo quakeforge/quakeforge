@@ -222,7 +222,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	int         requested_size = size;
 	memblock_t *start, *rover, *new, *base;
 
-	if (developer & SYS_dev)
+	if (developer & SYS_zone)
 		Z_CheckHeap (zone);	// DEBUG
 
 	if (!tag) {
@@ -291,7 +291,7 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 	if (!ptr)
 		return Z_Malloc (zone, size);
 
-	if (developer & SYS_dev)
+	if (developer & SYS_zone)
 		Z_CheckHeap (zone);	// DEBUG
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
@@ -821,7 +821,7 @@ Cache_Move (cache_system_t *c)
 	// we are clearing up space at the bottom, so allocate it late
 	new = Cache_TryAlloc (hunk, c->size, true);
 	if (new) {
-		Sys_MaskPrintf (SYS_dev, "cache_move ok\n");
+		Sys_MaskPrintf (SYS_cache, "cache_move ok\n");
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
@@ -829,7 +829,7 @@ Cache_Move (cache_system_t *c)
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
-		Sys_MaskPrintf (SYS_dev, "cache_move failed\n");
+		Sys_MaskPrintf (SYS_cache, "cache_move failed\n");
 
 		Cache_Free (c->user);			// tough luck...
 	}
@@ -1122,7 +1122,7 @@ Cache_Free (cache_user_t *c)
 		Sys_Error ("Cache_Free: attempt to free locked block");
 
 	const int   sz = sizeof (cs->name);
-	Sys_MaskPrintf (SYS_dev, "Cache_Free: freeing '%.*s' %p\n",
+	Sys_MaskPrintf (SYS_cache, "Cache_Free: freeing '%.*s' %p\n",
 					sz, cs->name, cs);
 
 	Cache_UnlinkLRU (cs);
@@ -1195,16 +1195,17 @@ Cache_Alloc (cache_user_t *c, size_t size, const char *name)
 static void
 Cache_Report_r (memhunk_t *hunk)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
-	Sys_MaskPrintf (SYS_dev, "%4.1f megabyte data cache\n",
-					(hunk->size - hunk->high_used -
-					 hunk->low_used) / (float) (1024 * 1024));
+	Sys_Printf ("%4.1f megabyte data cache\n",
+				(hunk->size - hunk->high_used -
+				 hunk->low_used) / (float) (1024 * 1024));
 }
 
 VISIBLE void
 Cache_Report (void)
 {
-	Cache_Report_r (global_hunk);
+	if (developer & SYS_cache) {
+		Cache_Report_r (global_hunk);
+	}
 }
 
 VISIBLE void
