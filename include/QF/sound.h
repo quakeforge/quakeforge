@@ -42,6 +42,15 @@ struct transform_s;
 */
 ///@{
 typedef struct sfx_s sfx_t;
+typedef struct channel_s channel_t;
+
+typedef enum chan_state_e {
+	chan_invalid,	//!< Channel is in an invalid state and must not be used
+	chan_pending,	//!< Channel is waiting to be initialized
+	chan_done,		//!< Channel is done and should be freed
+	chan_paused,	//!< Channel is paused but can be resumed at any time
+	chan_playing,	//!< Channel is currently playing
+} chan_state;
 ///@}
 
 /** \defgroup sound_init Initialization functions
@@ -138,12 +147,24 @@ sfx_t *S_LoadSound (const char *name);
 
 /** Allocate a sound channel that can be used for playing sounds.
 */
-struct channel_s *S_AllocChannel (void);
+channel_t *S_AllocChannel (void);
 
 /** Stop and safely free a channel.
 	\param chan		channel to stop
 */
-void S_ChannelStop (struct channel_s *chan);
+void S_ChannelFree (channel_t *chan);
+
+int S_ChannelSetSfx (channel_t *chan, sfx_t *sfx);
+void S_ChannelSetPaused (channel_t *chan, int paused);
+void S_ChannelSetLooping (channel_t *chan, int looping);
+chan_state S_ChannelGetState (channel_t *chan);
+
+/** Set a channel's volume.
+	\param chan		The channel for which the volume will be set.
+	\param volume	The overall playback volume of the channel: set to 0 for
+					silence, 1 for full volume.
+*/
+void S_ChannelSetVolume (channel_t *chan, float volume);
 
 /** Start a sound local to the client view.
 	\param s name of sound to play

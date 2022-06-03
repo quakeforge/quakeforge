@@ -229,7 +229,7 @@ S_LoadSound (const char *name)
 	return 0;
 }
 
-VISIBLE struct channel_s *
+VISIBLE channel_t *
 S_AllocChannel (void)
 {
 	if (snd_render_funcs)
@@ -238,8 +238,51 @@ S_AllocChannel (void)
 }
 
 VISIBLE void
-S_ChannelStop (struct channel_s *chan)
+S_ChannelFree (channel_t *chan)
 {
-	if (snd_render_funcs)
-		snd_render_funcs->channel_stop (chan);
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_free (chan);
+	}
+}
+
+VISIBLE int
+S_ChannelSetSfx (channel_t *chan, sfx_t *sfx)
+{
+	if (snd_render_funcs) {
+		return snd_render_funcs->channel_set_sfx (chan, sfx);
+	}
+	return 0;
+}
+
+VISIBLE void
+S_ChannelSetPaused (channel_t *chan, int paused)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_paused (chan, paused);
+	}
+}
+
+VISIBLE void
+S_ChannelSetLooping (channel_t *chan, int looping)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_looping (chan, looping);
+	}
+}
+
+VISIBLE chan_state
+S_ChannelGetState (channel_t *chan)
+{
+	if (snd_render_funcs) {
+		return snd_render_funcs->channel_get_state (chan);
+	}
+	return 0;
+}
+
+VISIBLE void
+S_ChannelSetVolume (channel_t *chan, float volume)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_volume (chan, volume);
+	}
 }

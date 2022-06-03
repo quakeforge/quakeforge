@@ -465,11 +465,65 @@ s_load_sound (const char *name)
 }
 
 static void
-s_channel_stop (channel_t *chan)
+s_channel_free (channel_t *chan)
 {
 	if (!sound_started)
 		return;
 	SND_ChannelStop (&snd, chan);
+}
+
+static int
+s_channel_set_sfx (channel_t *chan, sfx_t *sfx)
+{
+	sfx_t      *s = sfx->open (sfx);
+	if (!s) {
+		return 0;
+	}
+	chan->sfx = s;
+	return 1;
+}
+
+static void
+s_channel_set_paused (channel_t *chan, int paused)
+{
+	chan->pause = paused != 0;
+}
+
+static void
+s_channel_set_looping (channel_t *chan, int looping)
+{
+	// FIXME implement
+}
+
+static chan_state
+s_channel_get_state (channel_t *chan)
+{
+	// stop means the channel has been "freed" and is waiting for the mixer
+	// thread to be done with it, thus putting the channel in an invalid state
+	// from the user's point of view. ie, don't touch (user should set channel
+	// pointer to null).
+	if (!chan->stop) {
+		if (chan->done) {
+			// The mixer has finished mixing the channel (come to the end).
+			return chan_done;
+		}
+		if (!chan->sfx) {
+			// channel requires initialization
+			return chan_pending;
+		}
+		if (chan->pause) {
+			return chan_paused;
+		}
+		return chan_playing;
+	}
+	return chan_invalid;
+}
+
+static void
+s_channel_set_volume (channel_t *chan, float volume)
+{
+	chan->master_vol = volume * 256; //FIXME
+	chan->leftvol = chan->rightvol = chan->master_vol;
 }
 
 static void
@@ -506,7 +560,12 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	.stop_sound      = s_stop_sound,
 
 	.alloc_channel   = s_alloc_channel,
-	.channel_stop    = s_channel_stop,
+	.channel_free    = s_channel_free,
+	.channel_set_sfx = s_channel_set_sfx,
+	.channel_set_paused  = s_channel_set_paused,
+	.channel_set_looping = s_channel_set_looping,
+	.channel_get_state   = s_channel_get_state,
+	.channel_set_volume  = s_channel_set_volume,
 
 	.precache_sound  = s_precache_sound,
 	.load_sound      = s_load_sound,

@@ -48,7 +48,6 @@ struct transform_s;
 typedef struct portable_samplepair_s portable_samplepair_t;
 typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
-typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
@@ -224,7 +223,7 @@ struct sfxblock_s {
 /** Representation of a sound being played.
 */
 struct channel_s {
-	struct channel_s *next;		//!< next channel in "free" list
+	channel_t  *next;		//!< next channel in "free" list
 	sfx_t      *sfx;			//!< sound played by this channel
 	int         leftvol;		//!< 0-255 volume
 	int         rightvol;		//!< 0-255 volume
@@ -250,7 +249,7 @@ struct channel_s {
 		  can be reused at any time.
 	*/
 	//@{
-	int			stop;
+	int         stop;
 	int         done;
 	//@}
 };
@@ -342,7 +341,7 @@ extern	int			snd_total_channels;	//!< number of active channels
 /** Allocate a sound channel that can be used for playing sounds.
 	\param snd		sound system state
 */
-struct channel_s *SND_AllocChannel (snd_t *snd);
+channel_t *SND_AllocChannel (snd_t *snd);
 
 /** Stop a channel from playing.
 	\param snd		sound system state

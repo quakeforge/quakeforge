@@ -65,7 +65,6 @@
 #include "QF/plugin/cd.h"
 
 #include "compat.h"
-#include "snd_internal.h"
 
 /* Generic plugin structures */
 static general_data_t plugin_info_general_data;
@@ -107,11 +106,8 @@ static cvar_t mus_ogglist_cvar = {
 static void
 set_volume (void)
 {
-	if (cd_channel && cd_channel->sfx) {
-		int		vol = bgmvolume * 255;
-
-		cd_channel->master_vol = vol;
-		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
+	if (cd_channel) {
+		S_ChannelSetVolume (cd_channel, bgmvolume);
 	}
 }
 
@@ -136,7 +132,7 @@ I_OGGMus_Stop (void)
 	wasPlaying = false;
 
 	if (cd_channel) {
-		S_ChannelStop (cd_channel);
+		S_ChannelFree (cd_channel);
 		cd_channel = NULL;
 	}
 }
@@ -235,8 +231,7 @@ static void
 I_OGGMus_PlayNext (int looping)
 {
 	const char *track;
-	sfx_t      *cd_sfx, *sfx;
-	wavinfo_t  *info = 0;
+	sfx_t      *sfx;
 
 	if (!play_list)
 		return;
@@ -252,29 +247,21 @@ I_OGGMus_PlayNext (int looping)
 	}
 
 	if (cd_channel) {
-		S_ChannelStop (cd_channel);
+		S_ChannelFree (cd_channel);
 		cd_channel = 0;
 	}
 
 	if (!(cd_channel = S_AllocChannel ()))
 		return;
 
-	if (!(cd_sfx = S_LoadSound (track)) || !(sfx = cd_sfx->open (cd_sfx))) {
-		S_ChannelStop (cd_channel);
+	if (!(sfx = S_LoadSound (track)) || !S_ChannelSetSfx (cd_channel, sfx)) {
+		S_ChannelFree (cd_channel);
 		cd_channel = 0;
 		return;
 	}
-	Sys_Printf ("Playing: %s.\n", track);
-	if (sfx->wavinfo)
-		info = sfx->wavinfo (sfx);
-	if (info) {
-		if (looping == true)
-			info->loopstart = 0;
-		else
-			info->loopstart = -1;
-	}
-	cd_channel->sfx = sfx;
+	S_ChannelSetLooping (cd_channel, looping ? 1 : -1);
 	set_volume ();
+	Sys_Printf ("Playing: %s.\n", track);
 
 	playing = true;
 }
@@ -286,7 +273,7 @@ I_OGGMus_Pause (void)
 		return;
 
 	if (cd_channel)
-		cd_channel->pause = 1;
+		S_ChannelSetPaused (cd_channel, 1);
 
 	wasPlaying = playing;
 	playing = false;
@@ -299,7 +286,7 @@ I_OGGMus_Resume (void)
 		return;
 
 	set_volume ();
-	cd_channel->pause = 0;
+	S_ChannelSetPaused (cd_channel, 0);
 	wasPlaying = false;
 	playing = true;
 }
@@ -446,7 +433,7 @@ I_OGG_f (void)
 static void
 I_OGGMus_Update (void)
 {
-	if (!cd_channel || !cd_channel->done)
+	if (!cd_channel || S_ChannelGetState (cd_channel) > chan_done)
 		return;
 	// will get here only when multi-tracked
 	I_OGGMus_Stop ();
