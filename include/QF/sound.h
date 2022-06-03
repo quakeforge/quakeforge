@@ -42,30 +42,6 @@ struct transform_s;
 */
 ///@{
 typedef struct sfx_s sfx_t;
-struct sfx_s
-{
-	struct snd_s *snd;			//!< ownding snd_t instance
-	const char *name;
-	sfx_t      *owner;
-
-	unsigned int length;
-	unsigned int loopstart;
-
-	union {
-		struct sfxstream_s *stream;
-		struct sfxblock_s *block;
-	} data;
-
-	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
-	struct sfxbuffer_s *(*retain) (sfx_t *sfx);
-	void        (*release) (sfx_t *sfx);
-
-	struct sfxbuffer_s *(*getbuffer) (sfx_t *sfx);
-	struct wavinfo_s *(*wavinfo) (sfx_t *sfx);
-
-	sfx_t      *(*open) (sfx_t *sfx);
-	void        (*close) (sfx_t *sfx);
-};
 ///@}
 
 /** \defgroup sound_init Initialization functions
