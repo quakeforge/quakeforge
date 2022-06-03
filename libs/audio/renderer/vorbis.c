@@ -163,29 +163,29 @@ static sfxbuffer_t *
 vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 {
 	float      *data;
-	sfxbuffer_t *sc = 0;
+	sfxbuffer_t *sb = 0;
 	sfx_t      *sfx = block->sfx;
 	wavinfo_t  *info = &block->wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (info->frames, info->rate, info->channels,
+	sb = SND_GetCache (info->frames, info->rate, info->channels,
 					   block, allocator);
-	if (!sc)
+	if (!sb)
 		goto bail;
-	sc->sfx = sfx;
+	sb->sfx = sfx;
 	if (vorbis_read (vf, data, info->frames, info) < 0)
 		goto bail;
-	SND_SetPaint (sc);
-	SND_SetupResampler (sc, 0);
-	SND_Resample (sc, data, info->frames);
-	sc->head = sc->length;
+	SND_SetPaint (sb);
+	SND_SetupResampler (sb, 0);
+	SND_Resample (sb, data, info->frames);
+	sb->head = sb->length;
   bail:
 	if (data)
 		free (data);
 	ov_clear (vf);
-	return sc;
+	return sb;
 }
 
 static void

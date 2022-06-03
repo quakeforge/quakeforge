@@ -351,18 +351,18 @@ SND_GetCache (long frames, int rate, int channels,
 {
 	int         len, size;
 	float		stepscale;
-	sfxbuffer_t *sc;
+	sfxbuffer_t *sb;
 	sfx_t      *sfx = block->sfx;
 	snd_t      *snd = sfx->snd;
 
 	stepscale = (float) rate / snd->speed;
 	len = size = frames / stepscale;
 	size *= sizeof (float) * channels;
-	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
-	if (!sc)
+	sb = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
+	if (!sb)
 		return 0;
-	memset (sc, 0, sizeof (sfxbuffer_t) + size);
-	sc->length = len;
-	memcpy (sc->data + len * channels, "\xde\xad\xbe\xef", 4);
-	return sc;
+	memset (sb, 0, sizeof (sfxbuffer_t) + size);
+	sb->length = len;
+	memcpy (sb->data + len * channels, "\xde\xad\xbe\xef", 4);
+	return sb;
 }

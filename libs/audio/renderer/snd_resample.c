@@ -54,21 +54,21 @@ typedef struct {
 } snd_null_state_t;
 
 static void
-check_buffer_integrity (sfxbuffer_t *sc, int width, const char *func)
+check_buffer_integrity (sfxbuffer_t *sb, int width, const char *func)
 {
-	byte       *x = (byte *) sc->data + sc->length * width;
+	byte       *x = (byte *) sb->data + sb->length * width;
 	if (memcmp (x, "\xde\xad\xbe\xef", 4))
 		Sys_Error ("%s screwed the pooch %02x%02x%02x%02x", func,
 				   x[0], x[1], x[2], x[3]);
 }
 
 void
-SND_Resample (sfxbuffer_t *sc, float *data, int length)
+SND_Resample (sfxbuffer_t *sb, float *data, int length)
 {
 	int			outcount;
 	double		stepscale;
-	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
-	snd_t      *snd = sc->sfx->snd;
+	wavinfo_t  *info = sb->sfx->wavinfo (sb->sfx);
+	snd_t      *snd = sb->sfx->snd;
 	int         inrate = info->rate;
 	int         outwidth;
 	SRC_DATA    src_data;
@@ -77,15 +77,15 @@ SND_Resample (sfxbuffer_t *sc, float *data, int length)
 	outcount = length * stepscale;
 
 	src_data.data_in = data;
-	src_data.data_out = sc->data + sc->head * sc->channels;
+	src_data.data_out = sb->data + sb->head * sb->channels;
 	src_data.input_frames = length;
 	src_data.output_frames = outcount;
 	src_data.src_ratio = stepscale;
 
-	src_simple (&src_data, SRC_LINEAR, sc->channels);
+	src_simple (&src_data, SRC_LINEAR, sb->channels);
 
 	outwidth = info->channels * sizeof (float);
-	check_buffer_integrity (sc, outwidth, __FUNCTION__);
+	check_buffer_integrity (sb, outwidth, __FUNCTION__);
 }
 
 static int
@@ -140,26 +140,26 @@ snd_seek (sfxstream_t *stream, int pos)
 }
 
 void
-SND_SetupResampler (sfxbuffer_t *sc, int streamed)
+SND_SetupResampler (sfxbuffer_t *sb, int streamed)
 {
 	double		stepscale;
-	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
-	snd_t      *snd = sc->sfx->snd;
+	wavinfo_t  *info = sb->sfx->wavinfo (sb->sfx);
+	snd_t      *snd = sb->sfx->snd;
 	int         inrate = info->rate;
 
 	stepscale = (double) snd->speed / inrate;
 
-	sc->sfx->length = info->frames * stepscale;
+	sb->sfx->length = info->frames * stepscale;
 	if (info->loopstart != (unsigned int)-1)
-		sc->sfx->loopstart = info->loopstart * stepscale;
+		sb->sfx->loopstart = info->loopstart * stepscale;
 	else
-		sc->sfx->loopstart = (unsigned int)-1;
+		sb->sfx->loopstart = (unsigned int)-1;
 
-	sc->channels = info->channels;
+	sb->channels = info->channels;
 
 	if (streamed) {
 		int         err;
-		sfxstream_t *stream = sc->sfx->data.stream;
+		sfxstream_t *stream = sb->sfx->data.stream;
 
 		if (snd->speed == inrate) {
 			stream->state = calloc (sizeof (snd_null_state_t), 1);

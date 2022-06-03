@@ -68,7 +68,7 @@ check_channel_end (channel_t *ch, sfx_t *sfx, int count, unsigned ltime)
 }
 
 static inline void
-snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
+snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 {
 	unsigned    pos;
 	int         offs = 0;
@@ -82,17 +82,17 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 		count -= offs;
 		ch->pos = 0;
 	}
-	if (ch->pos < sc->pos || ch->pos - sc->pos >= sc->length)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = sc->data + pos * sc->channels;
+	if (ch->pos < sb->pos || ch->pos - sb->pos >= sb->length)
+		sb->setpos (sb, ch->pos);
+	pos = (ch->pos - sb->pos + sb->tail) % sb->length;
+	samps = sb->data + pos * sb->channels;
 
-	if (pos + count > sc->length) {
-		unsigned    sub = sc->length - pos;
-		sc->paint (offs, ch, samps, sub);
-		sc->paint (offs + sub, ch, sc->data, count - sub);
+	if (pos + count > sb->length) {
+		unsigned    sub = sb->length - pos;
+		sb->paint (offs, ch, samps, sub);
+		sb->paint (offs + sub, ch, sb->data, count - sub);
 	} else {
-		sc->paint (offs, ch, samps, count);
+		sb->paint (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }
@@ -104,7 +104,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 	int         i, count;
 	channel_t  *ch;
 	sfx_t      *sfx;
-	sfxbuffer_t *sc;
+	sfxbuffer_t *sb;
 
 	// clear the paint buffer
 	for (i = 0; i < PAINTBUFFER_SIZE * 2; i++) {
@@ -131,8 +131,8 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 			}
 			if (ch->pause)
 				continue;
-			sc = sfx->getbuffer (sfx);
-			if (!sc) {				// something went wrong with the sfx
+			sb = sfx->getbuffer (sfx);
+			if (!sb) {				// something went wrong with the sfx
 				printf ("XXXX sfx blew up!!!!\n");
 				continue;
 			}
@@ -146,9 +146,9 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 				count = ((ch->end < end) ? ch->end : end) - ltime;
 				if (count > 0) {
 					if (ch->leftvol || ch->rightvol) {
-						snd_paint_channel (ch, sc, count);
-						if (sc->advance) {
-							if (!sc->advance (sc, count)) {
+						snd_paint_channel (ch, sb, count);
+						if (sb->advance) {
+							if (!sb->advance (sb, count)) {
 								// this channel can no longer be used as its
 								// source has died.
 								ch->done = 1;
@@ -457,7 +457,7 @@ snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 }
 
 void
-SND_SetPaint (sfxbuffer_t *sc)
+SND_SetPaint (sfxbuffer_t *sb)
 {
 	static sfxpaint_t *painters[] = {
 		0,
@@ -471,8 +471,8 @@ SND_SetPaint (sfxbuffer_t *sc)
 		snd_paint_8,
 	};
 
-	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
+	wavinfo_t *info = sb->sfx->wavinfo (sb->sfx);
 	if (info->channels > 8)
 		Sys_Error ("illegal channel count %d", info->channels);
-	sc->paint = painters[info->channels];
+	sb->paint = painters[info->channels];
 }
