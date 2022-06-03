@@ -45,6 +45,7 @@
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 

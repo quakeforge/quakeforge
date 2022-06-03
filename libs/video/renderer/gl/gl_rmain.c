@@ -39,16 +39,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/cvar.h"
-#include "QF/draw.h"
-#include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/render.h"
-#include "QF/skin.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
-
 #include "QF/scene/entity.h"
 
 #include "QF/GL/defines.h"
@@ -276,7 +266,6 @@ gl_R_RenderView (void)
 	gl_Fog_EnableGFog ();
 
 	gl_R_DrawWorld ();
-	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	gl_R_RenderDlights ();
 	if (vr_data.view_model) {
 		R_DrawViewModel ();

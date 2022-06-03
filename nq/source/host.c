@@ -45,6 +45,7 @@
 
 #include "buildnum.h"
 
+#include "nq/include/client.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 

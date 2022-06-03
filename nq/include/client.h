@@ -33,7 +33,6 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
-#include "QF/sound.h"
 #include "QF/render.h"
 
 #include "client/chase.h"

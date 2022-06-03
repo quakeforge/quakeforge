@@ -48,7 +48,7 @@
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
-#include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
+#include "QF/sound.h"
 #include "QF/va.h"
 
 #include "QF/scene/scene.h"

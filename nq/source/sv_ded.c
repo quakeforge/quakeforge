@@ -38,6 +38,7 @@
 
 #include "client/world.h"
 
+#include "nq/include/client.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 

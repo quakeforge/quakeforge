@@ -39,14 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/cvar.h"
-#include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/render.h"
 #include "QF/skin.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "QF/scene/entity.h"
 

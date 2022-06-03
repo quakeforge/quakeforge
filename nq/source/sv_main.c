@@ -34,9 +34,12 @@
 #include "QF/gib.h"
 #include "QF/msg.h"
 #include "QF/mathlib.h"
+#include "QF/quakefs.h"
 #include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/simd/vec4f.h"
 
 #include "compat.h"
 #include "world.h"

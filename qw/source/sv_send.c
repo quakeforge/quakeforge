@@ -44,7 +44,6 @@
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/set.h"
-#include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
 #include "compat.h"

@@ -37,11 +37,7 @@
 
 #include <stdlib.h>
 
-#include "QF/cvar.h"
-#include "QF/draw.h"
 #include "QF/quakefs.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
 #include "QF/ui/view.h"
 
 #include "d_iface.h"
@@ -779,8 +775,6 @@ Draw_FadeScreen (void)
 	int         width = vid.conview->xlen / 4;
 	uint32_t   *pbuf;
 
-	S_ExtraUpdate ();
-
 	for (y = 0; y < height; y++) {
 		uint32_t    mask;
 
@@ -792,8 +786,6 @@ Draw_FadeScreen (void)
 		}
 	}
 	vr_data.scr_copyeverything = 1;
-
-	S_ExtraUpdate ();
 }
 
 void

@@ -47,6 +47,8 @@
 
 #include "netmain.h"
 
+//FIXME these should not be here!!!
+#include "../nq/include/client.h"
 #include "../nq/include/server.h"
 
 // This is enables a simple IP banning mechanism

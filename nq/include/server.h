@@ -35,7 +35,7 @@
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 
-#include "client.h"
+#include "game.h"
 #include "netmain.h"
 #include "protocol.h"
 #include "sv_progs.h"

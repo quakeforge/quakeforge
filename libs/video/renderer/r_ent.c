@@ -38,12 +38,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "QF/model.h"
-#include "QF/msg.h"
-#include "QF/render.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
-
 #include "QF/scene/entity.h"
 
 #include "r_internal.h"
