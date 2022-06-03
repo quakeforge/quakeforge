@@ -616,7 +616,7 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 	hunkblk_t  *h;
 
 #ifdef PARANOID
-	Hunk_Check ();
+	Hunk_Check (hunk);
 #endif
 
 	size = sizeof (hunkblk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));

@@ -23,7 +23,8 @@ libs_util_tests = \
 	libs/util/test/test-seg \
 	libs/util/test/test-set \
 	libs/util/test/test-simd \
-	libs/util/test/test-utf8
+	libs/util/test/test-utf8 \
+	libs/util/test/test-zone
 
 TESTS += $(libs_util_tests)
 
@@ -128,3 +129,7 @@ libs_util_test_test_simd_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_utf8_SOURCES=libs/util/test/test-utf8.c
 libs_util_test_test_utf8_LDADD=libs/util/libQFutil.la
 libs_util_test_test_utf8_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_zone_SOURCES=libs/util/test/test-zone.c
+libs_util_test_test_zone_LDADD=libs/util/libQFutil.la
+libs_util_test_test_zone_DEPENDENCIES=libs/util/libQFutil.la
