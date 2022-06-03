@@ -269,6 +269,7 @@ s_jack_connect (snd_t *snd)
 	snd->channels = 2;
 	s_jack_activate ();
 	sound_started = 1;
+	snd_alive_time = Sys_DoubleTime ();
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd->speed);
 	return 1;
 }
