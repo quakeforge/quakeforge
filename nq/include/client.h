@@ -47,15 +47,6 @@
 #include "protocol.h"
 
 
-typedef struct usercmd_s {
-	vec3_t	viewangles;
-
-// intended velocities
-	float	forwardmove;
-	float	sidemove;
-	float	upmove;
-} usercmd_t;
-
 // client_state_t should hold all pieces of the client state
 
 typedef enum {
