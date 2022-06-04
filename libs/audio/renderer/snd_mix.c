@@ -123,8 +123,10 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 		// paint in the channels.
 		ch = snd_channels;
 		for (i = 0; i < snd_total_channels; i++, ch++) {
-			if (!(sfx = ch->sfx))
+			if (!(sfx = ch->sfx)) {
+				// channel is inactive
 				continue;
+			}
 			if (ch->stop || ch->done) {
 				ch->done = 1;		// acknowledge stopped signal
 				continue;

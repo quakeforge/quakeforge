@@ -223,15 +223,12 @@ struct sfxblock_s {
 /** Representation of a sound being played.
 */
 struct channel_s {
-	channel_t  *next;		//!< next channel in "free" list
 	sfx_t      *sfx;			//!< sound played by this channel
 	float       leftvol;		//!< 0-1 volume
 	float       rightvol;		//!< 0-1 volume
 	unsigned    end;			//!< end time in global paintsamples
 	unsigned    pos;			//!< sample position in sfx
 	unsigned    looping;		//!< where to loop, -1 = no looping
-	int         entnum;			//!< to allow overriding a specific sound
-	int         entchannel;		//
 	vec3_t      origin;			//!< origin of sound effect
 	vec_t       dist_mult;		//!< distance multiplier (attenuation/clip)
 	int         pause;			//!< don't update the channel at all
