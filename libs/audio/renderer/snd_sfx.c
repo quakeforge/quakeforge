@@ -124,7 +124,6 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 	int         frames;
-	int         size;
 
 	// if the speed is 0, there is no sound driver (probably failed to connect
 	// to jackd)
@@ -144,11 +143,10 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 
 	frames = snd->speed * 0.3;
 	frames = (frames + 255) & ~255;
-	size = frames * info->channels * sizeof (float);
 
-	stream = calloc (1, sizeof (sfxstream_t) + size);
+	stream = calloc (1, sizeof (sfxstream_t));
 	new_sfx->data.stream = stream;
-	memcpy ((byte *) stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
+	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
 	stream->file = file;
 	stream->sfx = new_sfx;
 	stream->ll_read = read;
@@ -156,14 +154,14 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 
 	stream->wavinfo = *sfx->wavinfo (sfx);
 
-	stream->buffer.size = frames;
-	stream->buffer.advance = SND_StreamAdvance;
-	stream->buffer.setpos = SND_StreamSetPos;
-	stream->buffer.sfx = new_sfx;
-	SND_SetPaint (&stream->buffer);
+	stream->buffer->size = frames;
+	stream->buffer->advance = SND_StreamAdvance;
+	stream->buffer->setpos = SND_StreamSetPos;
+	stream->buffer->sfx = new_sfx;
+	SND_SetPaint (stream->buffer);
 
-	SND_SetupResampler (&stream->buffer, 1);		// get sfx setup properly
-	stream->buffer.setpos (&stream->buffer, 0);		// pre-fill the buffer
+	SND_SetupResampler (stream->buffer, 1);			// get sfx setup properly
+	stream->buffer->setpos (stream->buffer, 0);		// pre-fill the buffer
 
 	return new_sfx;
 }
@@ -173,6 +171,7 @@ SND_SFX_StreamClose (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
 	SND_PulldownResampler (stream);
+	SND_Memory_FreeBuffer (stream->buffer);
 	free (stream);
 	free (sfx);
 }

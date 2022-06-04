@@ -92,7 +92,7 @@ static int
 snd_read (sfxstream_t *stream, float *data, int frames)
 {
 	snd_null_state_t *state = (snd_null_state_t *) stream->state;
-	int         channels = stream->buffer.channels;
+	int         channels = stream->buffer->channels;
 	int         framesize = channels * sizeof (float);
 	int         count;
 	int         read = 0;

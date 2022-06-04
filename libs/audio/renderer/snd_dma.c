@@ -52,7 +52,6 @@
 
 #include "snd_internal.h"
 
-static qboolean snd_initialized = false;
 static int      snd_blocked = 0;
 
 static unsigned soundtime;					// sample PAIRS
@@ -333,12 +332,11 @@ s_stop_all_sounds_f (void)
 static void
 s_startup (void)
 {
-	if (!snd_initialized)
+	if (!SND_Memory_Init ()) {
 		return;
-
+	}
 	if (!snd_output_funcs->init (&snd)) {
-		Sys_Printf ("S_Startup: S_O_Init failed.\n");
-		sound_started = 0;
+		Sys_Printf ("S_Startup: output init failed.\n");
 		return;
 	}
 	if (!snd.xfer)
@@ -362,6 +360,8 @@ s_init_cvars (void)
 	Cvar_Register (&snd_mixahead_cvar, 0, 0);
 	Cvar_Register (&snd_noextraupdate_cvar, 0, 0);
 	Cvar_Register (&snd_show_cvar, 0, 0);
+
+	SND_Memory_Init_Cvars ();
 }
 
 static void
@@ -378,8 +378,6 @@ s_init (void)
 					"Report information on the sound system");
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
-
-	snd_initialized = true;
 
 	s_startup ();
 

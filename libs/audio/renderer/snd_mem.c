@@ -1,9 +1,10 @@
 /*
 	snd_mem.c
 
-	sound caching
+	sound memory management
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2003 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -35,10 +36,6 @@
 # include <strings.h>
 #endif
 
-#if defined(_WIN32) && defined(HAVE_MALLOC_H)
-#include <malloc.h>
-#endif
-
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/sound.h"
@@ -50,6 +47,85 @@
 #include "snd_internal.h"
 
 #define SAMPLE_GAP	4
+
+static uint32_t snd_mem_size;
+static cvar_t snd_mem_size_cvar = {
+	.name = "snd_mem_size",
+	.description =
+		"Amount of LOCKED memory to allocate to the sound system in MB. "
+		"Defaults to 32MB.",
+	.default_value = "32",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_uint, .value = &snd_mem_size },
+};
+
+static memzone_t *snd_zone;
+
+void
+SND_Memory_Init_Cvars (void)
+{
+	Cvar_Register (&snd_mem_size_cvar, 0, 0);
+}
+
+static void
+snd_zone_error (void *data, const char *msg)
+{
+	Sys_Error ("Sound: %s", msg);
+}
+
+static void
+snd_memory_shutdown (void *data)
+{
+	if (snd_zone) {
+		size_t      size = snd_mem_size * 1024 * 1024;
+		Sys_Free (snd_zone, size);
+	}
+}
+
+int
+SND_Memory_Init (void)
+{
+	size_t      size = snd_mem_size * 1024 * 1024;
+
+	snd_zone = Sys_Alloc (size);
+	if (!snd_zone) {
+		Sys_Printf ("Sound: Unable to allocate %uMB buffer\n", snd_mem_size);
+		return 0;
+	}
+	if (!Sys_LockMemory (snd_zone, size)) {
+		Sys_Printf ("Sound: Unable to lock %uMB buffer\n", snd_mem_size);
+		Sys_Free (snd_zone, size);
+		return 0;
+	}
+	Z_ClearZone (snd_zone, size, 0, 1);
+	Z_SetError (snd_zone, snd_zone_error, 0);
+
+	Sys_MaskPrintf (SYS_snd, "Sound: Initialized %uMB buffer\n", snd_mem_size);
+
+	Sys_RegisterShutdown (snd_memory_shutdown, 0);
+	return 1;
+}
+
+sfxbuffer_t *
+SND_Memory_AllocBuffer (unsigned samples)
+{
+	size_t      size = field_offset (sfxbuffer_t, data[samples]);
+	// Z_Malloc (currently) clears memory, don't need that for the whole
+	// buffer (just the header), but Z_TagMalloc // does not
+	// +4 for sentinel
+	sfxbuffer_t *buffer = Z_TagMalloc (snd_zone, size + 4, 1);
+	// place a sentinel at the end of the buffer for added safety
+	memcpy ((byte *) buffer->data + size, "\xde\xad\xbe\xef", 4);
+	// clear buffer header
+	memset (buffer, 0, sizeof (sfxbuffer_t));
+	return buffer;
+}
+
+void
+SND_Memory_FreeBuffer (sfxbuffer_t *buffer)
+{
+	Z_Free (snd_zone, buffer);
+}
 
 static sfxbuffer_t *
 snd_fail (sfx_t *sfx)
@@ -117,13 +193,13 @@ SND_CacheRelease (sfx_t *sfx)
 sfxbuffer_t *
 SND_StreamGetBuffer (sfx_t *sfx)
 {
-	return &sfx->data.stream->buffer;
+	return sfx->data.stream->buffer;
 }
 
 sfxbuffer_t *
 SND_StreamRetain (sfx_t *sfx)
 {
-	return &sfx->data.stream->buffer;
+	return sfx->data.stream->buffer;
 }
 
 void

@@ -62,15 +62,15 @@ struct sfx_s
 	unsigned int loopstart;
 
 	union {
-		struct sfxstream_s *stream;
-		struct sfxblock_s *block;
+		sfxstream_t *stream;
+		sfxblock_t *block;
 	} data;
 
-	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
-	struct sfxbuffer_s *(*retain) (sfx_t *sfx);
+	sfxbuffer_t *(*touch) (sfx_t *sfx);
+	sfxbuffer_t *(*retain) (sfx_t *sfx);
 	void        (*release) (sfx_t *sfx);
 
-	struct sfxbuffer_s *(*getbuffer) (sfx_t *sfx);
+	sfxbuffer_t *(*getbuffer) (sfx_t *sfx);
 	struct wavinfo_s *(*wavinfo) (sfx_t *sfx);
 
 	sfx_t      *(*open) (sfx_t *sfx);
@@ -207,7 +207,7 @@ struct sfxstream_s {
 		\param pos		frame position with the stream
 	*/
 	int         (*seek)(sfxstream_t *stream, int pos);
-	sfxbuffer_t buffer;			//<! stream's ring buffer
+	sfxbuffer_t *buffer;		//<! stream's ring buffer
 };
 
 /** Representation of sound loaded into memory as a full block.
@@ -255,6 +255,11 @@ extern snd_render_data_t snd_render_data;
 extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 
 ///@}
+
+void SND_Memory_Init_Cvars (void);
+int SND_Memory_Init (void);
+sfxbuffer_t *SND_Memory_AllocBuffer (unsigned samples);
+void SND_Memory_FreeBuffer (sfxbuffer_t *buffer);
 
 /** \defgroup sound_render_sfx Sound sfx
 	\ingroup sound_render_mix
