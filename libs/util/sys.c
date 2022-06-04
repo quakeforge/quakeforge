@@ -759,6 +759,19 @@ Sys_Free (void *mem, size_t size)
 }
 
 VISIBLE int
+Sys_LockMemory (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	return VirtualLock (mem, size) != 0;
+#else
+	return mlock (mem, size) == 0;
+#endif
+}
+
+VISIBLE int
 Sys_ProcessorCount (void)
 {
 	int         cpus = 1;
