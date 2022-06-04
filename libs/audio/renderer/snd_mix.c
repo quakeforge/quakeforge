@@ -201,7 +201,7 @@ snd_mix_pair (portable_samplepair_t *pair, float **samp,
 }
 
 static inline void
-snd_mix_tripple (portable_samplepair_t *pair, float **samp,
+snd_mix_triple (portable_samplepair_t *pair, float **samp,
 				 float lvol, float rvol)
 {
 	float       left = *(*samp)++;
@@ -343,7 +343,7 @@ snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		pair++;
 	}
 }
@@ -382,7 +382,7 @@ snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		pair++;
 	}
@@ -403,7 +403,7 @@ snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
 		pair++;
@@ -426,7 +426,7 @@ snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
@@ -450,7 +450,7 @@ snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
