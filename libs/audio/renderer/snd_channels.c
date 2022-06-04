@@ -60,9 +60,16 @@ typedef struct entchan_s {
 	int         channel;	// per-entity sound channel
 } entchan_t;
 
+typedef struct spacial_s {
+	vec3_t      origin;			//!< origin of sound effect
+	vec_t       dist_mult;		//!< distance multiplier (attenuation/clip)
+	float       volume;			//!< 0-1 overall channel volume
+} spacial_t;
+
 int             snd_total_channels;
 channel_t       snd_channels[MAX_CHANNELS];
 static entchan_t snd_entity_channels[MAX_CHANNELS];
+static spacial_t snd_spacialization[MAX_CHANNELS];
 static int      snd_free_channels[MAX_CHANNELS];
 static int      snd_num_free_channels;
 /* Dynamic channels are (usually) short sound bytes, never looped. They do not
@@ -347,14 +354,6 @@ s_playvol_f (void *_snd)
 static void
 s_channels_gamedir (int phase, void *_snd)
 {
-	//FIXME for some reason, a gamedir change causes semi-random
-	//"already released" cache errors. fortunatly, servers don't change
-	//gamedir often, so I'll put this in the too-hard basket for now.
-	//XXX FIXME set ambient sounds
-	//if (phase) {
-	//	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound (snd, "ambience/water1.wav");
-	//	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound (snd, "ambience/wind2.wav");
-	//}
 }
 
 void
@@ -442,8 +441,10 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 			 ambient_channel++) {
 			chan = ambient_channels[ambient_channel];
 			if (chan) {
-				chan->volume = 0;
-				chan->leftvol = chan->rightvol = chan->volume;
+				int         chan_ind = chan - snd_channels;
+				spacial_t  *spacial = &snd_spacialization[chan_ind];
+				spacial->volume = 0;
+				chan->leftvol = chan->rightvol = spacial->volume;
 			}
 		}
 		return;
@@ -474,23 +475,26 @@ s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
 
+		int         chan_ind = chan - snd_channels;
+		spacial_t  *spacial = &snd_spacialization[chan_ind];
+
 		vol = ambient_level * ambient_sound_level[ambient_channel] * (1/255.0);
 		if (vol < 8/255.0)
 			vol = 0;
 
 		// don't adjust volume too fast
 		float       fade = ambient_fade * (1/255.0);
-		if (chan->volume < vol) {
-			chan->volume += *snd_render_data.host_frametime * fade;
-			if (chan->volume > vol)
-				chan->volume = vol;
-		} else if (chan->volume > vol) {
-			chan->volume -= *snd_render_data.host_frametime * fade;
-			if (chan->volume < vol)
-				chan->volume = vol;
+		if (spacial->volume < vol) {
+			spacial->volume += *snd_render_data.host_frametime * fade;
+			if (spacial->volume > vol)
+				spacial->volume = vol;
+		} else if (spacial->volume > vol) {
+			spacial->volume -= *snd_render_data.host_frametime * fade;
+			if (spacial->volume < vol)
+				spacial->volume = vol;
 		}
 
-		chan->leftvol = chan->rightvol = chan->volume;
+		chan->leftvol = chan->rightvol = spacial->volume;
 		chan->sfx = sfx;
 	}
 }
@@ -506,19 +510,21 @@ s_spatialize (snd_t *snd, channel_t *ch)
 	// prepare to lerp from prev to next phase
 	ch->oldphase = ch->phase;
 
+	spacial_t  *spacial = &snd_spacialization[chan_ind];
+
 	// anything coming from the view entity will always be full volume
 	if (!snd_render_data.viewentity
 		|| snd_entity_channels[chan_ind].id == *snd_render_data.viewentity) {
-		ch->leftvol = ch->volume;
-		ch->rightvol = ch->volume;
+		ch->leftvol = spacial->volume;
+		ch->rightvol = spacial->volume;
 		ch->phase = 0;
 		return;
 	}
 	// calculate stereo seperation and distance attenuation
 
-	VectorSubtract (ch->origin, listener_origin, source_vec);
+	VectorSubtract (spacial->origin, listener_origin, source_vec);
 
-	dist = VectorNormalize (source_vec) * ch->dist_mult;
+	dist = VectorNormalize (source_vec) * spacial->dist_mult;
 
 	dot = DotProduct (listener_right, source_vec);
 	if (snd_swapchannelside)
@@ -536,12 +542,12 @@ s_spatialize (snd_t *snd, channel_t *ch)
 
 	// add in distance effect
 	scale = (1.0 - dist) * rscale;
-	ch->rightvol = ch->volume * scale;
+	ch->rightvol = spacial->volume * scale;
 	if (ch->rightvol < 0)
 		ch->rightvol = 0;
 
 	scale = (1.0 - dist) * lscale;
-	ch->leftvol = ch->volume * scale;
+	ch->leftvol = spacial->volume * scale;
 	if (ch->leftvol < 0)
 		ch->leftvol = 0;
 
@@ -656,9 +662,10 @@ SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
 
 	int         chan_ind = target_chan - snd_channels;
 	// spatialize
-	VectorCopy (origin, target_chan->origin);
-	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
-	target_chan->volume = vol;
+	spacial_t  *spacial = &snd_spacialization[chan_ind];
+	VectorCopy (origin, spacial->origin);
+	spacial->dist_mult = attenuation / sound_nominal_clip_dist;
+	spacial->volume = vol;
 	snd_entity_channels[chan_ind] = (entchan_t) {
 		.id = entnum,
 		.channel = entchannel,
@@ -737,9 +744,10 @@ SND_StaticSound (snd_t *snd, sfx_t *sfx, vec4f_t origin, float vol,
 	if (!(osfx = sfx->open (sfx)))
 		return;
 
-	VectorCopy (origin, ss->origin);
-	ss->volume = vol;
-	ss->dist_mult = attenuation / sound_nominal_clip_dist;
+	spacial_t  *spacial = &snd_spacialization[ss_ind];
+	VectorCopy (origin, spacial->origin);
+	spacial->volume = vol;
+	spacial->dist_mult = attenuation / sound_nominal_clip_dist;
 	ss->end = 0;
 
 	s_spatialize (snd, ss);
@@ -770,4 +778,12 @@ SND_LocalSound (snd_t *snd, const char *sound)
 	if (snd_render_data.viewentity)
 		viewent = *snd_render_data.viewentity;
 	SND_StartSound (snd, viewent, -1, sfx, (vec4f_t) {0, 0, 0, 1}, 1, 1);
+}
+
+void
+SND_ChannelSetVolume (channel_t *chan, float volume)
+{
+	int         chan_ind = chan - snd_channels;
+	snd_spacialization[chan_ind].volume = volume;
+	chan->leftvol = chan->rightvol = volume;
 }

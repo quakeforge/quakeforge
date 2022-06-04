@@ -522,8 +522,7 @@ s_channel_get_state (channel_t *chan)
 static void
 s_channel_set_volume (channel_t *chan, float volume)
 {
-	chan->volume = volume;
-	chan->leftvol = chan->rightvol = chan->volume;
+	SND_ChannelSetVolume (chan, volume);
 }
 
 static void

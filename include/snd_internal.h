@@ -229,10 +229,7 @@ struct channel_s {
 	unsigned    end;			//!< end time in global paintsamples
 	unsigned    pos;			//!< sample position in sfx
 	unsigned    looping;		//!< where to loop, -1 = no looping
-	vec3_t      origin;			//!< origin of sound effect
-	vec_t       dist_mult;		//!< distance multiplier (attenuation/clip)
 	int         pause;			//!< don't update the channel at all
-	float       volume;			//!< 0-1 overall channel volume
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
 	/** signal between main program and mixer thread that the channel is to be
@@ -339,6 +336,8 @@ extern	int			snd_total_channels;	//!< number of active channels
 	\param snd		sound system state
 */
 channel_t *SND_AllocChannel (snd_t *snd);
+
+void SND_ChannelSetVolume (channel_t *chan, float volume);
 
 /** Stop a channel from playing.
 	\param snd		sound system state
