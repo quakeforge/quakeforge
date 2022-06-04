@@ -1783,14 +1783,14 @@ rua_class_pose_as (progs_t *pr, void *data)
 static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
-	int         size = (class->instance_size + 1) * sizeof (pr_type_t);
+	int         size = class->instance_size * sizeof (pr_type_t);
 	pr_type_t  *mem;
 	pr_id_t    *id = 0;
 
 	mem = PR_Zone_TagMalloc (pr, size, class->name);
 	if (mem) {
 		memset (mem, 0, size);
-		id = (pr_id_t *) (mem + 1);
+		id = (pr_id_t *) mem;
 		id->class_pointer = PR_SetPointer (pr, class);
 	}
 	return id;
@@ -1908,7 +1908,7 @@ rua_object_dispose (progs_t *pr, void *data)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_type_t  *mem = (pr_type_t *) object;
-	PR_Zone_Free (pr, mem - 1);
+	PR_Zone_Free (pr, mem);
 }
 
 static void

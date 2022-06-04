@@ -75,8 +75,10 @@ typedef struct memblock_s {
 	struct memblock_s *next;
 	struct memblock_s *prev;
 	size_t      size;		// requested size
+	byte        pad[64 - 3 * 4 - 4 * sizeof (size_t)];
 	int         tag;		// a tag of 0 is a free block
 	int         id;			// should be ZONEID
+	int         retain;		// reference counter (optional usage)
 } __attribute__((aligned (64))) memblock_t;
 
 struct memzone_s {
@@ -104,10 +106,20 @@ z_offset (memzone_t *zone, memblock_t *block)
 	return offset / zone->ele_size + zone->offset;
 }
 
+static void
+z_error (memzone_t *zone, const char *msg)
+{
+	if (zone->error)
+		zone->error (zone->data, msg);
+	Sys_Error ("%s", msg);
+}
+
 VISIBLE void
 Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset, size_t ele_size)
 {
-	memblock_t	*block;
+	memblock_t	*block
+		= __builtin_choose_expr (__builtin_offsetof (memblock_t, retain) == 60,
+								 0, (void) 0);
 
 	// set the entire zone to one free block
 
@@ -169,6 +181,13 @@ Z_Free (memzone_t *zone, void *ptr)
 		if (zone->error)
 			zone->error (zone->data, "Z_Free: freed a freed pointer");
 		Sys_Error ("Z_Free: freed a freed pointer");
+	}
+	if (block->retain) {
+		const char *msg = nva ("Z_Free: freed a retained pointer: %d",
+							   block->retain);
+		if (zone->error)
+			zone->error (zone->data, msg);
+		Sys_Error ("%s", msg);
 	}
 
 	block->tag = 0;		// mark as free
@@ -265,6 +284,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 		base->block_size = size;
 	}
 
+	base->retain = 0;				// use is optional, but must be 0 to free
 	base->tag = tag;				// no longer a free block
 	base->size = requested_size;
 
@@ -339,9 +359,9 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%5x ofs:%x\n",
+		Sys_Printf ("block:%p    size:%7i    tag:%5x ret: %5d ofs:%x\n",
 					block, z_block_size (block),
-					block->tag, z_offset (zone, block));
+					block->tag, block->retain, z_offset (zone, block));
 
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit
@@ -359,14 +379,6 @@ Z_Print (memzone_t *zone)
 						id, ZONEID);
 		fflush (stdout);
 	}
-}
-
-static void
-z_error (memzone_t *zone, const char *msg)
-{
-	if (zone->error)
-		zone->error (zone->data, msg);
-	Sys_Error ("%s", msg);
 }
 
 void
@@ -427,6 +439,33 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 			zone->error (zone->data, "invalid access to allocated memory");
 		return;		// access ok
 	}
+}
+
+VISIBLE int
+Z_IncRetainCount (memzone_t *zone, void *ptr)
+{
+	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	if (!++block->retain) {
+		z_error (zone, "inc retain count wrapped to 0");
+	}
+	return block->retain;
+}
+
+VISIBLE int
+Z_DecRetainCount (memzone_t *zone, void *ptr)
+{
+	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	if (--block->retain == -1) {
+		z_error (zone, "dec retain count wrapped past 0");
+	}
+	return block->retain;
+}
+
+VISIBLE int
+Z_GetRetainCount (memzone_t *zone, void *ptr)
+{
+	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	return block->retain;
 }
 
 VISIBLE void
