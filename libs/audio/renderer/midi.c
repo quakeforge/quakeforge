@@ -70,8 +70,8 @@ static char *wildmidi_config;
 static cvar_t wildmidi_config_cvar = {
 	.name = "wildmidi_config",
 	.description =
-		"path/filename of timidity.cfg",
-	.default_value = "/etc/timidity.cfg",
+		"path/filename of wildmidi.cfg",
+	.default_value = "/etc/wildmidi/wildmidi.cfg",
 	.flags = CVAR_ROM,
 	.value = { .type = 0, .value = &wildmidi_config },
 };
