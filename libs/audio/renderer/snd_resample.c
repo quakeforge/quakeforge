@@ -62,6 +62,16 @@ check_buffer_integrity (sfxbuffer_t *sb, int width, const char *func)
 				   x[0], x[1], x[2], x[3]);
 }
 
+unsigned
+SND_ResamplerFrames (sfx_t *sfx)
+{
+	wavinfo_t  *info = sfx->wavinfo (sfx);
+	snd_t      *snd = sfx->snd;
+	int         inrate = info->rate;
+	double      stepscale = (double) snd->speed / inrate;
+	return info->frames * stepscale;
+}
+
 void
 SND_Resample (sfxbuffer_t *sb, float *data, int length)
 {

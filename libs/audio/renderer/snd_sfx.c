@@ -79,8 +79,8 @@ snd_sfx_free (void *_sfx, void *unused)
 }
 
 void
-SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
-			   cache_loader_t loader)
+SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
+			   sfxbuffer_t *(*load) (sfxblock_t *block))
 {
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 
@@ -94,8 +94,7 @@ SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
 	block->sfx = sfx;
 	block->file = realname;
 	block->wavinfo = info;
-
-	Cache_Add (&block->cache, block, loader);
+	block->buffer = load (block);
 }
 
 void

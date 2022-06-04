@@ -160,7 +160,7 @@ vorbis_read (OggVorbis_File *vf, float *buf, int len, wavinfo_t *info)
 }
 
 static sfxbuffer_t *
-vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
+vorbis_load (OggVorbis_File *vf, sfxblock_t *block)
 {
 	float      *data;
 	sfxbuffer_t *sb = 0;
@@ -170,10 +170,11 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sb = SND_GetCache (info->frames, info->rate, info->channels,
-					   block, allocator);
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
+	sb = SND_Memory_AllocBuffer (buffer_frames * info->channels);
 	if (!sb)
 		goto bail;
+	sb->size = buffer_frames * info->channels;
 	sb->sfx = sfx;
 	if (vorbis_read (vf, data, info->frames, info) < 0)
 		goto bail;
@@ -188,31 +189,29 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	return sb;
 }
 
-static void
-vorbis_callback_load (void *object, cache_allocator_t allocator)
+static sfxbuffer_t *
+vorbis_callback_load (sfxblock_t *block)
 {
 	QFile      *file;
 	OggVorbis_File vf;
 
-	sfxblock_t *block = (sfxblock_t *) object;
-
 	file = QFS_FOpenFile (block->file);
 	if (!file)
-		return; //FIXME Sys_Error?
+		return 0;
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
 		Qclose (file);
-		return; //FIXME Sys_Error?
+		return 0;
 	}
-	vorbis_load (&vf, block, allocator);
+	return vorbis_load (&vf, block);
 }
 
 static void
 vorbis_cache (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
 	ov_clear (vf);
-	SND_SFX_Cache (sfx, realname, info, vorbis_callback_load);
+	SND_SFX_Block (sfx, realname, info, vorbis_callback_load);
 }
 
 static long

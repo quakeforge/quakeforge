@@ -287,7 +287,6 @@ s_play_f (void *_snd)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (snd, name->str);
-		printf ("%s %p\n", name->str, sfx);
 		SND_StartSound (snd, hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
 	}

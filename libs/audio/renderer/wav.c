@@ -54,10 +54,9 @@ typedef struct {
 	QFile      *file;
 } wav_file_t;
 
-static void
-wav_callback_load (void *object, cache_allocator_t allocator)
+static sfxbuffer_t *
+wav_callback_load (sfxblock_t *block)
 {
-	sfxblock_t *block = (sfxblock_t *) object;
 	sfx_t      *sfx = block->sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
@@ -69,7 +68,7 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 
 	file = QFS_FOpenFile (name);
 	if (!file)
-		return; //FIXME Sys_Error?
+		return 0;
 
 	Qseek (file, info->dataofs, SEEK_SET);
 	fdata_ofs = (info->datalen + sizeof (float) - 1) & ~(sizeof (float) - 1);
@@ -81,21 +80,23 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 
 	SND_Convert (data, fdata, info->frames, info->channels, info->width);
 
-	buffer = SND_GetCache (info->frames, info->rate,
-						   info->channels, block, allocator);
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
+	buffer = SND_Memory_AllocBuffer (buffer_frames * info->channels);
+	buffer->size = buffer_frames * info->channels;
 	buffer->sfx = sfx;
 	SND_SetPaint (buffer);
 	SND_SetupResampler (buffer, 0);
 	SND_Resample (buffer, fdata, info->frames);
 	buffer->head = buffer->size;
 	free (data);
+	return buffer;
 }
 
 static void
 wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
 	Qclose (file);
-	SND_SFX_Cache (sfx, realname, info, wav_callback_load);
+	SND_SFX_Block (sfx, realname, info, wav_callback_load);
 }
 
 static long

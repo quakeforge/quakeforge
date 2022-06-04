@@ -115,7 +115,7 @@ SND_Memory_AllocBuffer (unsigned samples)
 	// +4 for sentinel
 	sfxbuffer_t *buffer = Z_TagMalloc (snd_zone, size + 4, 1);
 	// place a sentinel at the end of the buffer for added safety
-	memcpy ((byte *) buffer->data + size, "\xde\xad\xbe\xef", 4);
+	memcpy (&buffer->data[samples], "\xde\xad\xbe\xef", 4);
 	// clear buffer header
 	memset (buffer, 0, sizeof (sfxbuffer_t));
 	return buffer;
@@ -153,7 +153,7 @@ snd_open_fail (sfx_t *sfx)
 sfxbuffer_t *
 SND_CacheTouch (sfx_t *sfx)
 {
-	return Cache_Check (&sfx->data.block->cache);
+	return sfx->data.block->buffer;
 }
 
 sfxbuffer_t *
@@ -165,29 +165,12 @@ SND_CacheGetBuffer (sfx_t *sfx)
 sfxbuffer_t *
 SND_CacheRetain (sfx_t *sfx)
 {
-	sfxblock_t *block = sfx->data.block;
-	block->buffer = Cache_TryGet (&block->cache);
-	if (!block->buffer)
-		Sys_Printf ("failed to cache sound!\n");
-	return block->buffer;
+	return sfx->data.block->buffer;
 }
 
 void
 SND_CacheRelease (sfx_t *sfx)
 {
-	sfxblock_t *block = sfx->data.block;
-	// due to the possibly asynchronous nature of the mixer, the cache
-	// may have been flushed behind our backs
-	if (block->cache.data) {
-		if (!Cache_ReadLock (&block->cache)) {
-			Sys_Printf ("WARNING: taniwha screwed up in the sound engine: %s\n",
-						sfx->name);
-			return;
-		}
-		Cache_Release (&block->cache);
-		if (!Cache_ReadLock (&block->cache))
-			block->buffer = 0;
-	}
 }
 
 sfxbuffer_t *
@@ -419,26 +402,4 @@ bail:
 	if (realname != sfx->name)
 		free (realname);
 	return -1;
-}
-
-sfxbuffer_t *
-SND_GetCache (long frames, int rate, int channels,
-			  sfxblock_t *block, cache_allocator_t allocator)
-{
-	int         len, size;
-	float		stepscale;
-	sfxbuffer_t *sb;
-	sfx_t      *sfx = block->sfx;
-	snd_t      *snd = sfx->snd;
-
-	stepscale = (float) rate / snd->speed;
-	len = size = frames / stepscale;
-	size *= sizeof (float) * channels;
-	sb = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
-	if (!sb)
-		return 0;
-	memset (sb, 0, sizeof (sfxbuffer_t) + size);
-	sb->size = len;
-	memcpy (sb->data + len * channels, "\xde\xad\xbe\xef", 4);
-	return sb;
 }

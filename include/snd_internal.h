@@ -164,7 +164,7 @@ struct sfxbuffer_s {
 	/** Sample data. The block at the beginning of the buffer (size depends on
 		sample size)
 	*/
-	float       data[1];
+	float       data[];
 };
 
 /** Representation of sound loaded that is streamed in as needed.
@@ -271,8 +271,8 @@ void SND_Memory_FreeBuffer (sfxbuffer_t *buffer);
 	\param info
 	\param loader
 */
-void SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
-		            cache_loader_t loader);
+void SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
+		            sfxbuffer_t *(*load) (sfxblock_t *block));
 
 /** Stream sound data. Initializes streaming fields of sfx.
 	\param sfx
@@ -455,9 +455,9 @@ void SND_PaintChannels(snd_t *snd, unsigned int endtime);
 void SND_InitScaletable (snd_t *snd);
 
 /** Set the paint function of the sfxbuffer
-	\param sc		sfxbuffer to set.
+	\param sb		sfxbuffer to set.
 */
-void SND_SetPaint (sfxbuffer_t *sc);
+void SND_SetPaint (sfxbuffer_t *sb);
 ///@}
 
 
@@ -465,11 +465,14 @@ void SND_SetPaint (sfxbuffer_t *sc);
 	\ingroup sound_render
 */
 ///@{
+
+unsigned SND_ResamplerFrames (sfx_t *sfx);
+
 /** Set up the various parameters that depend on the actual sample rate.
-	\param sc		buffer to setup
+	\param sb		buffer to setup
 	\param streamed	non-zero if this is for a stream.
 */
-void SND_SetupResampler (sfxbuffer_t *sc, int streamed);
+void SND_SetupResampler (sfxbuffer_t *sb, int streamed);
 
 /** Free memory allocated for the resampler.
 	\param stream	stream to pulldown
@@ -477,11 +480,11 @@ void SND_SetupResampler (sfxbuffer_t *sc, int streamed);
 void SND_PulldownResampler (sfxstream_t *stream);
 
 /** Copy/resample data into buffer, resampling as necessary.
-	\param sc		buffer to write resampled sound
+	\param sb		buffer to write resampled sound
 	\param data		raw sample data
 	\param length	number of frames to resample
 */
-void SND_Resample (sfxbuffer_t *sc, float *data, int length);
+void SND_Resample (sfxbuffer_t *sb, float *data, int length);
 
 /** Convert integer sample data to float sample data.
 	\param idata	integer data buffer
@@ -612,17 +615,6 @@ int SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
 	\param pos		sample position with the stream
 */
 void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
-
-/** Allocate a sound buffer from cache for cached sounds.
-	\param samples	size in samples
-	\param rate		sample rate
-	\param channels	number of channels in input data
-	\param block	cached sound descriptor to initialize
-	\param allocator cache allocator function
-	\return			pointer to sound sample buffer (setup for block mode)
-*/
-sfxbuffer_t *SND_GetCache (long samples, int rate, int channels,
-						   sfxblock_t *block, cache_allocator_t allocator);
 ///@}
 
 #endif//__snd_internal_h
