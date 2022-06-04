@@ -219,7 +219,7 @@ SND_PrecacheSound (snd_t *snd, const char *name)
 }
 
 static void
-s_gamedir (int phase)
+s_gamedir (int phase, void *data)
 {
 	snd_num_sfx = 0;
 }
@@ -259,7 +259,7 @@ SND_SFX_Init (snd_t *snd)
 	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
 	Cvar_Register (&precache_cvar, 0, 0);
 
-	QFS_GamedirCallback (s_gamedir);
+	QFS_GamedirCallback (s_gamedir, 0);
 
 	Cmd_AddCommand ("soundlist", s_soundlist_f,
 					"Reports a list of sounds in the cache");

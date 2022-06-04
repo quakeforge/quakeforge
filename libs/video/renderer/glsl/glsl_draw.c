@@ -365,7 +365,7 @@ glsl_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 }
 
 static void
-Draw_ClearCache (int phase)
+Draw_ClearCache (int phase, void *data)
 {
 	if (phase)
 		return;
@@ -382,7 +382,7 @@ glsl_Draw_Init (void)
 	//FIXME glpic_t    *gl;
 
 	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
-	QFS_GamedirCallback (Draw_ClearCache);
+	QFS_GamedirCallback (Draw_ClearCache, 0);
 	//FIXME temporary work around for the timing of cvar creation and palette
 	//loading
 	//crosshaircolor->callback (crosshaircolor);

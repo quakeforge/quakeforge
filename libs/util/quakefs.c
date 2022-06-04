@@ -259,9 +259,13 @@ static const char *qfs_default_dirconf =
 	"	};"
 	"}";
 
+typedef struct {
+	gamedir_callback_t *callback;
+	void       *data;
+} gdcallback_t;
 
 #define GAMEDIR_CALLBACK_CHUNK 16
-static gamedir_callback_t **gamedir_callbacks;
+static gdcallback_t *gamedir_callbacks;
 static int num_gamedir_callbacks;
 static int max_gamedir_callbacks;
 
@@ -1404,20 +1408,20 @@ QFS_Gamedir (const char *gamedir)
 
 	// Make sure everyone else knows we've changed gamedirs
 	for (i = 0; i < num_gamedir_callbacks; i++) {
-		gamedir_callbacks[i] (0);
+		gamedir_callbacks[i].callback (0, gamedir_callbacks[i].data);
 	}
 	Cache_Flush ();
 	for (i = 0; i < num_gamedir_callbacks; i++) {
-		gamedir_callbacks[i] (1);
+		gamedir_callbacks[i].callback (1, gamedir_callbacks[i].data);
 	}
 }
 
 VISIBLE void
-QFS_GamedirCallback (gamedir_callback_t *func)
+QFS_GamedirCallback (gamedir_callback_t *func, void *data)
 {
 	if (num_gamedir_callbacks == max_gamedir_callbacks) {
 		size_t size = (max_gamedir_callbacks + GAMEDIR_CALLBACK_CHUNK)
-					  * sizeof (gamedir_callback_t *);
+					  * sizeof (gdcallback_t);
 		gamedir_callbacks = realloc (gamedir_callbacks, size);
 		if (!gamedir_callbacks)
 			Sys_Error ("Too many gamedir callbacks!\n");
@@ -1428,7 +1432,8 @@ QFS_GamedirCallback (gamedir_callback_t *func)
 		Sys_Error ("null gamedir callback\n");
 	}
 
-	gamedir_callbacks[num_gamedir_callbacks] = func;
+	gamedir_callbacks[num_gamedir_callbacks].callback = func;
+	gamedir_callbacks[num_gamedir_callbacks].data = data;
 	num_gamedir_callbacks++;
 }
 

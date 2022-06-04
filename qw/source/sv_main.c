@@ -2338,7 +2338,7 @@ maxclients_f (void *data, const cvar_t *cvar)
 }
 
 static void
-gamedir_f (int phase)
+gamedir_f (int phase, void *data)
 {
 	if (!phase)
 		return;
@@ -2679,7 +2679,7 @@ SV_Init (void)
 
 	memhunk_t  *hunk = SV_Init_Memory ();
 
-	QFS_GamedirCallback (gamedir_f);
+	QFS_GamedirCallback (gamedir_f, 0);
 	svs.maxclients = MAX_CLIENTS;
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0);
 	localinfo = Info_ParseString ("", 0, 0);	// unlimited

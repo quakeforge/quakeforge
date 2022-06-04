@@ -132,7 +132,7 @@ CL_TEnts_Precache (void)
 }
 
 static void
-cl_tents_precache (int phase)
+cl_tents_precache (int phase, void *data)
 {
 	if (!phase) {
 		return;
@@ -143,7 +143,7 @@ cl_tents_precache (int phase)
 void
 CL_TEnts_Init (void)
 {
-	QFS_GamedirCallback (cl_tents_precache);
+	QFS_GamedirCallback (cl_tents_precache, 0);
 	for (int i = 0; i < 360; i++) {
 		float       ang = i * M_PI / 360;
 		beam_rolls[i] = (vec4f_t) { sin (ang), 0, 0, cos (ang) };

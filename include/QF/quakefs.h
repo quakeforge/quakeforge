@@ -85,7 +85,7 @@ extern gamedir_t *qfs_gamedir;
 /** Function type of callback called on gamedir change.
 	\param phase	0 = before Cache_Flush(), 1 = after Cache_Flush()
 */
-typedef void gamedir_callback_t (int phase);
+typedef void gamedir_callback_t (int phase, void *data);
 
 /**	Base of the QFS user directory tree. The QFS functions, except for
 	QFS_FOpenFile() and _QFS_FOpenFile(),  will never access a file outside of
@@ -381,8 +381,9 @@ const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 	\param func		The function to call every time the gamedir changes via
 					QFS_Gamedir().
+	\param data		Opaque data pointer passed to the callback.
 */
-void QFS_GamedirCallback (gamedir_callback_t *func);
+void QFS_GamedirCallback (gamedir_callback_t *func, void *data);
 
 /**	Create a new file list.
 

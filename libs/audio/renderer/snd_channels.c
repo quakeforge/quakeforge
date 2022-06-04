@@ -345,7 +345,7 @@ s_playvol_f (void *_snd)
 }
 
 static void
-s_channels_gamedir (int phase)
+s_channels_gamedir (int phase, void *_snd)
 {
 	//FIXME for some reason, a gamedir change causes semi-random
 	//"already released" cache errors. fortunatly, servers don't change
@@ -381,7 +381,7 @@ SND_Channels_Init (snd_t *snd)
 	snd_num_free_channels = MAX_CHANNELS;
 	snd_total_channels = MAX_CHANNELS;
 
-	QFS_GamedirCallback (s_channels_gamedir);
+	QFS_GamedirCallback (s_channels_gamedir, snd);
 }
 
 static channel_t *

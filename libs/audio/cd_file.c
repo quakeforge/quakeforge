@@ -455,7 +455,7 @@ Mus_VolChange (void *data, const cvar_t *bgmvolume)
 }
 
 static void
-Mus_gamedir (int phase)
+Mus_gamedir (int phase, void *data)
 {
 	if (phase)
 		Load_Tracklist ();
@@ -467,7 +467,7 @@ I_OGGMus_Init (void)
 	/* check list file cvar, open list file, create map, close file. */
 	Cvar_Register (&mus_ogglist_cvar, Mus_OggChange, 0);
 	Cvar_Register (&bgmvolume_cvar, Mus_VolChange, 0);
-	QFS_GamedirCallback (Mus_gamedir);
+	QFS_GamedirCallback (Mus_gamedir, 0);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

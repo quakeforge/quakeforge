@@ -2057,7 +2057,7 @@ CL_Init_Memory (void)
 }
 
 static void
-CL_Autoexec (int phase)
+CL_Autoexec (int phase, void *data)
 {
 	if (!phase)
 		return;
@@ -2092,7 +2092,7 @@ Host_Init (void)
 	pr_gametype = "quakeworld";
 
 	QFS_Init (hunk, "qw");
-	QFS_GamedirCallback (CL_Autoexec);
+	QFS_GamedirCallback (CL_Autoexec, 0);
 	PI_Init ();
 
 	Sys_RegisterShutdown (Net_LogStop, 0);

@@ -206,7 +206,7 @@ gl_Draw_PicFromWad (const char *name)
 }
 
 static void
-Draw_ClearCache (int phase)
+Draw_ClearCache (int phase, void *data)
 {
 	cachepic_t *pic;
 	int         i;
@@ -356,7 +356,7 @@ gl_Draw_Init (void)
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
 
-	QFS_GamedirCallback (Draw_ClearCache);
+	QFS_GamedirCallback (Draw_ClearCache, 0);
 
 	// load the console background and the charset by hand, because we need to
 	// write the version string into the background before turning it into a
