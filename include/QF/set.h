@@ -52,6 +52,7 @@ typedef uint32_t set_bits_t;
 #define SET_BITS (sizeof (set_bits_t) * 8)
 //NOTE: x is the element number, so size is x + 1
 #define SET_SIZE(x) (((x) + SET_BITS) & ~(SET_BITS - 1))
+#define SET_WORDS_STATIC(x) (SET_SIZE (x) / SET_BITS)
 #define SET_WORDS(s) ((s)->size / SET_BITS)
 #define SET_ZERO ((set_bits_t) 0)
 #define SET_ONE ((set_bits_t) 1)
@@ -64,6 +65,14 @@ typedef uint32_t set_bits_t;
 #define SET_STATIC_INIT(x, alloc) { \
 	.size = SET_SIZE (x), \
 	.map = alloc (SET_SIZE (x) / 8), \
+}
+#define SET_STATIC_ARRAY(array) { \
+	.size = 8 * __builtin_choose_expr ( \
+		sizeof (array[0]) == sizeof (set_bits_t), \
+		sizeof (array), \
+		(void) 0 \
+	), \
+	.map = array, \
 }
 
 /** Represent a set using a bitmap.
