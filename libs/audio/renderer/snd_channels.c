@@ -164,14 +164,6 @@ SND_AllocChannel (snd_t *snd)
 {
 	channel_t  *chan;
 
-	// chech for any channels that have become available as the mixer thread
-	// has finished with them
-	for (int i = 0; i < MAX_CHANNELS; i++) {
-		channel_t  *ch = &snd_channels[i];
-		if (ch->done) {
-			snd_free_channel (ch);
-		}
-	}
 	//Sys_MaskPrintf (SYS_snd, "SND_AllocChannel: free channels: %d\n",
 	//				snd_num_free_channels);
 	if (!snd_num_free_channels) {
