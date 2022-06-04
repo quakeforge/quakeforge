@@ -87,7 +87,7 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	SND_SetPaint (buffer);
 	SND_SetupResampler (buffer, 0);
 	SND_Resample (buffer, fdata, info->frames);
-	buffer->head = buffer->length;
+	buffer->head = buffer->size;
 	free (data);
 }
 

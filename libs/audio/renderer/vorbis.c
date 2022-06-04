@@ -180,7 +180,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	SND_SetPaint (sb);
 	SND_SetupResampler (sb, 0);
 	SND_Resample (sb, data, info->frames);
-	sb->head = sb->length;
+	sb->head = sb->size;
   bail:
 	if (data)
 		free (data);

@@ -147,9 +147,9 @@ static void
 read_samples (sfxbuffer_t *buffer, int count)
 {
 
-	if (buffer->head + count > buffer->length) {
-		count -= buffer->length - buffer->head;
-		read_samples (buffer, buffer->length - buffer->head);
+	if (buffer->head + count > buffer->size) {
+		count -= buffer->size - buffer->head;
+		read_samples (buffer, buffer->size - buffer->head);
 		read_samples (buffer, count);
 	} else {
 		sfx_t      *sfx = buffer->sfx;
@@ -163,8 +163,8 @@ read_samples (sfxbuffer_t *buffer, int count)
 
 		if (c > 0) {
 			buffer->head += count;
-			if (buffer->head >= buffer->length)
-				buffer->head -= buffer->length;
+			if (buffer->head >= buffer->size)
+				buffer->head -= buffer->size;
 		}
 	}
 }
@@ -179,7 +179,7 @@ fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 	// find out how many samples can be read into the buffer
 	samples = buffer->tail - buffer->head - SAMPLE_GAP;
 	if (buffer->tail <= buffer->head)
-		samples += buffer->length;
+		samples += buffer->size;
 
 	if (headpos + samples > sfx->length) {
 		if (sfx->loopstart == (unsigned int)-1) {
@@ -233,7 +233,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	// find out how many samples the buffer currently holds
 	samples = buffer->head - buffer->tail;
 	if (buffer->head < buffer->tail)
-		samples += buffer->length;
+		samples += buffer->size;
 
 	// find out where head points to in the stream
 	headpos = buffer->pos + samples;
@@ -276,8 +276,8 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		}
 
 		buffer->tail += count;
-		if (buffer->tail >= buffer->length)
-			buffer->tail -= buffer->length;
+		if (buffer->tail >= buffer->size)
+			buffer->tail -= buffer->size;
 	}
 	fill_buffer (sfx, stream, buffer, info, headpos);
 	return !stream->error;
@@ -362,7 +362,7 @@ SND_GetCache (long frames, int rate, int channels,
 	if (!sb)
 		return 0;
 	memset (sb, 0, sizeof (sfxbuffer_t) + size);
-	sb->length = len;
+	sb->size = len;
 	memcpy (sb->data + len * channels, "\xde\xad\xbe\xef", 4);
 	return sb;
 }

@@ -143,7 +143,7 @@ struct wavinfo_s {
 struct sfxbuffer_s {
 	unsigned    head;			//!< ring buffer head position in sampels
 	unsigned    tail;			//!< ring buffer tail position in sampels
-	unsigned    length;			//!< length of buffer in frames
+	unsigned    size;			//!< size of buffer in frames
 	unsigned    pos;			//!< position of tail within full stream
 	unsigned    channels;		//!< number of channels per frame
 	sfxpaint_t *paint;			//!< channel count specific paint function

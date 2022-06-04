@@ -82,13 +82,13 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 		count -= offs;
 		ch->pos = 0;
 	}
-	if (ch->pos < sb->pos || ch->pos - sb->pos >= sb->length)
+	if (ch->pos < sb->pos || ch->pos - sb->pos >= sb->size)
 		sb->setpos (sb, ch->pos);
-	pos = (ch->pos - sb->pos + sb->tail) % sb->length;
+	pos = (ch->pos - sb->pos + sb->tail) % sb->size;
 	samps = sb->data + pos * sb->channels;
 
-	if (pos + count > sb->length) {
-		unsigned    sub = sb->length - pos;
+	if (pos + count > sb->size) {
+		unsigned    sub = sb->size - pos;
 		sb->paint (offs, ch, samps, sub);
 		sb->paint (offs + sub, ch, sb->data, count - sub);
 	} else {

@@ -56,7 +56,7 @@ typedef struct {
 static void
 check_buffer_integrity (sfxbuffer_t *sb, int width, const char *func)
 {
-	byte       *x = (byte *) sb->data + sb->length * width;
+	byte       *x = (byte *) sb->data + sb->size * width;
 	if (memcmp (x, "\xde\xad\xbe\xef", 4))
 		Sys_Error ("%s screwed the pooch %02x%02x%02x%02x", func,
 				   x[0], x[1], x[2], x[3]);
