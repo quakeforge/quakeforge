@@ -146,6 +146,11 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream = calloc (1, sizeof (sfxstream_t));
 	new_sfx->data.stream = stream;
 	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
+	if (!stream->buffer) {
+		free (stream);
+		free (new_sfx);
+		return 0;
+	}
 	stream->file = file;
 	stream->sfx = new_sfx;
 	stream->ll_read = read;

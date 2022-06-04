@@ -114,10 +114,14 @@ SND_Memory_AllocBuffer (unsigned samples)
 	// buffer (just the header), but Z_TagMalloc // does not
 	// +4 for sentinel
 	sfxbuffer_t *buffer = Z_TagMalloc (snd_zone, size + 4, 1);
-	// place a sentinel at the end of the buffer for added safety
-	memcpy (&buffer->data[samples], "\xde\xad\xbe\xef", 4);
-	// clear buffer header
-	memset (buffer, 0, sizeof (sfxbuffer_t));
+	if (buffer) {
+		// place a sentinel at the end of the buffer for added safety
+		memcpy (&buffer->data[samples], "\xde\xad\xbe\xef", 4);
+		// clear buffer header
+		memset (buffer, 0, sizeof (sfxbuffer_t));
+	} else {
+		Sys_Printf ("Sound: out of memory: %uMB exhausted\n", snd_mem_size);
+	}
 	return buffer;
 }
 

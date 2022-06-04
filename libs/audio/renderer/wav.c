@@ -74,21 +74,26 @@ wav_callback_load (sfxblock_t *block)
 	fdata_ofs = (info->datalen + sizeof (float) - 1) & ~(sizeof (float) - 1);
 	len = fdata_ofs + info->frames * info->channels * sizeof (float);
 	data = malloc (len);
+	if (!data)
+		goto bail;
 	fdata = (float *) (data + fdata_ofs);
 	Qread (file, data, info->datalen);
-	Qclose (file);
 
 	SND_Convert (data, fdata, info->frames, info->channels, info->width);
 
 	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
 	buffer = SND_Memory_AllocBuffer (buffer_frames * info->channels);
+	if (!buffer)
+		goto bail;
 	buffer->size = buffer_frames * info->channels;
 	buffer->sfx = sfx;
 	SND_SetPaint (buffer);
 	SND_SetupResampler (buffer, 0);
 	SND_Resample (buffer, fdata, info->frames);
 	buffer->head = buffer->size;
+bail:
 	free (data);
+	Qclose (file);
 	return buffer;
 }
 
