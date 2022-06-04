@@ -254,7 +254,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	// of sufficient size
 	size += sizeof (memblock_t);	// account for size of block header
 	size += 4;						// space for memory trash tester
-	size = (size + 7) & ~7;			// align to 8-byte boundary
+	size = (size + 63) & ~63;		// align to 64-byte boundary
 
 	base = rover = zone->rover;
 	start = base->prev;
