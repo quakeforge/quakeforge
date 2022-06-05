@@ -278,6 +278,7 @@ static int
 s_init (snd_t *snd)
 {
 	snd->xfer = snd_jack_xfer;
+	snd->threaded = 1;
 	return s_jack_connect (snd);
 }
 

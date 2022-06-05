@@ -186,7 +186,7 @@ static void
 s_stop_all_sounds (void)
 {
 	SND_StopAllSounds (&snd);
-	SND_ScanChannels (&snd, 0);
+	SND_ScanChannels (&snd, snd.threaded);
 	s_clear_buffer (&snd);
 }
 

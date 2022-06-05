@@ -655,6 +655,8 @@ SNDDMA_Init (snd_t *snd)
 
 	snd->frames = buffer_size;
 
+	snd->threaded = 1;//XXX FIXME double check whether it's always true
+
 	// send the first period to fill the buffer
 	// also sets snd->buffer
 	if (alsa_process (pcm, snd) < 0) {

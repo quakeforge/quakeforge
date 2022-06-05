@@ -106,6 +106,7 @@ struct snd_s {
 	int				submission_chunk;		//!< don't mix less than this #
 	unsigned        paintedtime;			//!< sound clock in samples
 	int				framepos;				//!< position of dma cursor
+	int         threaded;					//!< output runs in a thread
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
 		\param paintbuffer The buffer of mixed samples to be transferred.
