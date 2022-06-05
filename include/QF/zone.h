@@ -112,6 +112,10 @@ void Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size);
 int Z_IncRetainCount (memzone_t *zone, void *ptr);
 int Z_DecRetainCount (memzone_t *zone, void *ptr);
 int Z_GetRetainCount (memzone_t *zone, void *ptr) __attribute__((pure));
+int Z_GetTag (memzone_t *zone, void *ptr) __attribute__((pure));
+void Z_SetTag (memzone_t *zone, void *ptr, int tag);
+
+
 
 memhunk_t *Hunk_Init (void *buf, size_t size);
 void Hunk_Print (memhunk_t *hunk, qboolean all);

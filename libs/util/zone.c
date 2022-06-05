@@ -92,7 +92,7 @@ struct memzone_s {
 	memblock_t  blocklist;	// start / end cap for linked list
 } __attribute__((aligned (64)));
 
-static int
+static size_t
 z_block_size (memblock_t *block)
 {
 	return block->block_size - sizeof (memblock_t) - 4;
@@ -359,7 +359,7 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%5x ret: %5d ofs:%x\n",
+		Sys_Printf ("block:%p    size:%8zd    tag:%5x ret: %5d ofs:%x\n",
 					block, z_block_size (block),
 					block->tag, block->retain, z_offset (zone, block));
 
@@ -468,6 +468,22 @@ Z_GetRetainCount (memzone_t *zone, void *ptr)
 	return block->retain;
 }
 
+VISIBLE int
+Z_GetTag (memzone_t *zone, void *ptr)
+{
+	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	return block->tag;
+}
+
+VISIBLE void
+Z_SetTag (memzone_t *zone, void *ptr, int tag)
+{
+	if (!tag) {
+		z_error (zone, "Attept to set tag to 0");
+	}
+	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	block->tag = tag;
+}
 VISIBLE void
 Z_MemInfo (const memzone_t *zone, size_t *used, size_t *size)
 {
