@@ -237,10 +237,10 @@ SND_ScanChannels (snd_t *snd, int wait)
 		ch = &snd_channels[i];
 		if (!ch->buffer || !ch->done)
 			continue;
-		sfxbuffer_t *buffer = ch->buffer;
-		ch->buffer = 0;
-		buffer->close (buffer);
+		snd_free_channel (ch);
 	}
+	Sys_MaskPrintf (SYS_snd, "SND_ScanChannels: free channels: %d\n",
+					snd_num_free_channels);
 }
 
 void
