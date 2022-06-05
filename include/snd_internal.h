@@ -91,34 +91,33 @@ typedef void sfxpaint_t (int offset, channel_t *ch, float *buffer,
 /** Represent a single output frame in the mixer.
 */
 struct portable_samplepair_s {
-	float        left;						//!< left sample
-	float        right;						//!< right sample
+	float       left;						//!< left sample
+	float       right;						//!< right sample
 };
 
 /** Sound system state
 */
 struct snd_s {
-	int				speed;					//!< sample rate
-	int				samplebits;				//!< bits per sample
-	int				channels;				//!< number of output channels
-	int				frames;					//!< frames in buffer
-											//!< 1 frame = channels samples
-	int				submission_chunk;		//!< don't mix less than this #
-	unsigned        paintedtime;			//!< sound clock in samples
-	int				framepos;				//!< position of dma cursor
-	int         threaded;					//!< output runs in a thread
-	unsigned char	*buffer;				//!< destination for mixed sound
+	int         speed;				//!< sample rate
+	int         samplebits;			//!< bits per sample
+	int         channels;			//!< number of output channels
+	int         frames;				//!< frames in buffer
+									//!< 1 frame = channels samples
+	int         submission_chunk;	//!< don't mix less than this #
+	unsigned    paintedtime;		//!< sound clock in samples
+	int         framepos;			//!< position of dma cursor
+	int         threaded;			//!< output+mixer run asynchronously
+	byte       *buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
 		\param paintbuffer The buffer of mixed samples to be transferred.
 		\param count	The number of sample to transfer.
 		\param volume	The gain for the samples.
 	*/
-	void            (*xfer) (struct snd_s *snd,
-							 portable_samplepair_t *paintbuffer, int count,
-							 float volume);
+	void      (*xfer) (struct snd_s *snd, portable_samplepair_t *paintbuffer,
+					   int count, float volume);
 	/** Optional data for the xfer function.
 	*/
-	void            *xfer_data;
+	void       *xfer_data;
 
 	void      (*finish_channels) (void);
 	void      (*paint_channels) (struct snd_s *snd, unsigned endtime);
@@ -163,14 +162,14 @@ struct sfxbuffer_s {
 		\param count	number of frames to advance
 		\return			true for success, false if an error occured
 	*/
-	int         (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	int       (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
 		\param pos		frame position with the stream
 	*/
-	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
-	void        (*close) (sfxbuffer_t *buffer);
+	void      (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
+	void      (*close) (sfxbuffer_t *buffer);
 	/** Sample data. The block at the beginning of the buffer (size depends on
 		sample size)
 	*/
@@ -196,12 +195,12 @@ struct sfxstream_s {
 		\param data		address of pointer to be set to point to the buffer
 						holding the samples
 	*/
-	long        (*ll_read)(void *cb_data, float **data);
+	long      (*ll_read)(void *cb_data, float **data);
 	/** Seek to an absolute position within the stream (low level).
 		\param stream	"this"
 		\param pos		frame position with the stream
 	*/
-	int         (*ll_seek)(sfxstream_t *stream, int pos);
+	int       (*ll_seek)(sfxstream_t *stream, int pos);
 	/** Read data from the stream.
 		This is a high-level function for use in the mixer. The read samples
 		will always at be the correct sample rate for the mixer, reguardless
@@ -211,12 +210,12 @@ struct sfxstream_s {
 		\param frames	maximum number of frames to read from stream
 		\return			number of frames read from stream
 	*/
-	int         (*read)(sfxstream_t *stream, float *data, int frames);
+	int       (*read)(sfxstream_t *stream, float *data, int frames);
 	/** Seek to an absolute position within the stream.
 		\param stream	"this"
 		\param pos		frame position with the stream
 	*/
-	int         (*seek)(sfxstream_t *stream, int pos);
+	int       (*seek)(sfxstream_t *stream, int pos);
 	sfxbuffer_t *buffer;		//<! stream's ring buffer
 };
 
