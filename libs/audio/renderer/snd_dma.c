@@ -473,11 +473,11 @@ s_channel_free (channel_t *chan)
 static int
 s_channel_set_sfx (channel_t *chan, sfx_t *sfx)
 {
-	sfx_t      *s = sfx->open (sfx);
-	if (!s) {
+	sfxbuffer_t *buffer = sfx->open (sfx);
+	if (!buffer) {
 		return 0;
 	}
-	chan->sfx = s;
+	chan->buffer = buffer;
 	return 1;
 }
 
@@ -505,8 +505,8 @@ s_channel_get_state (channel_t *chan)
 			// The mixer has finished mixing the channel (come to the end).
 			return chan_done;
 		}
-		if (!chan->sfx) {
-			// channel requires initialization
+		if (!chan->buffer) {
+			// channel has not been started yet
 			return chan_pending;
 		}
 		if (chan->pause) {

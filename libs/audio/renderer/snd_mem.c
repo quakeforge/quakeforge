@@ -126,9 +126,37 @@ SND_Memory_AllocBuffer (unsigned samples)
 }
 
 void
-SND_Memory_FreeBuffer (sfxbuffer_t *buffer)
+SND_Memory_Free (void *ptr)
 {
-	Z_Free (snd_zone, buffer);
+	Z_Free (snd_zone, ptr);
+}
+
+void
+SND_Memory_SetTag (void *ptr, int tag)
+{
+	Z_SetTag (snd_zone, ptr, tag);
+}
+
+int
+SND_Memory_Retain (void *ptr)
+{
+	return Z_IncRetainCount (snd_zone, ptr);
+}
+
+int
+SND_Memory_Release (void *ptr)
+{
+	int         retain =  Z_DecRetainCount (snd_zone, ptr);
+	if (!retain) {
+		Z_Free (snd_zone, ptr);
+	}
+	return retain;
+}
+
+int
+SND_Memory_GetRetainCount (void *ptr)
+{
+	return Z_GetRetainCount (snd_zone, ptr);
 }
 
 static sfxbuffer_t *
@@ -142,34 +170,36 @@ snd_noop (sfx_t *sfx)
 {
 }
 
-static sfx_t *
+static sfxbuffer_t *
 snd_open (sfx_t *sfx)
 {
-	return sfx;
+	sfxbuffer_t *buffer = sfx->block->buffer;
+	SND_Memory_Retain (buffer);
+	return buffer;
 }
 
-static sfx_t *
+static sfxbuffer_t *
 snd_open_fail (sfx_t *sfx)
 {
 	return 0;
 }
 
-sfxbuffer_t *
+sfxbuffer_t * __attribute__((pure))
 SND_CacheTouch (sfx_t *sfx)
 {
-	return sfx->data.block->buffer;
+	return sfx->block->buffer;
 }
 
 sfxbuffer_t *
 SND_CacheGetBuffer (sfx_t *sfx)
 {
-	return sfx->data.block->buffer;
+	return sfx->block->buffer;
 }
 
-sfxbuffer_t *
+sfxbuffer_t * __attribute__((pure))
 SND_CacheRetain (sfx_t *sfx)
 {
-	return sfx->data.block->buffer;
+	return sfx->block->buffer;
 }
 
 void
@@ -180,13 +210,13 @@ SND_CacheRelease (sfx_t *sfx)
 sfxbuffer_t *
 SND_StreamGetBuffer (sfx_t *sfx)
 {
-	return sfx->data.stream->buffer;
+	return sfx->stream->buffer;
 }
 
 sfxbuffer_t *
 SND_StreamRetain (sfx_t *sfx)
 {
-	return sfx->data.stream->buffer;
+	return sfx->stream->buffer;
 }
 
 void
@@ -195,15 +225,15 @@ SND_StreamRelease (sfx_t *sfx)
 }
 
 wavinfo_t *
-SND_CacheWavinfo (sfx_t *sfx)
+SND_CacheWavinfo (const sfx_t *sfx)
 {
-	return &sfx->data.block->wavinfo;
+	return &sfx->block->wavinfo;
 }
 
 wavinfo_t *
-SND_StreamWavinfo (sfx_t *sfx)
+SND_StreamWavinfo (const sfx_t *sfx)
 {
-	return &sfx->data.stream->wavinfo;
+	return &sfx->stream->wavinfo;
 }
 
 static void
@@ -215,8 +245,8 @@ read_samples (sfxbuffer_t *buffer, int count)
 		read_samples (buffer, buffer->size - buffer->head);
 		read_samples (buffer, count);
 	} else {
-		sfx_t      *sfx = buffer->sfx;
-		sfxstream_t *stream = sfx->data.stream;
+		sfxstream_t *stream = buffer->stream;
+		const sfx_t *sfx = stream->sfx;
 		wavinfo_t  *info = &stream->wavinfo;
 		float      *data = buffer->data + buffer->head * info->channels;
 		int         c;
@@ -233,7 +263,7 @@ read_samples (sfxbuffer_t *buffer, int count)
 }
 
 static void
-fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
+fill_buffer (const sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 			 wavinfo_t *info, unsigned int headpos)
 {
 	unsigned int samples;
@@ -244,11 +274,11 @@ fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 	if (buffer->tail <= buffer->head)
 		samples += buffer->size;
 
-	if (headpos + samples > sfx->length) {
+	if (headpos + samples > buffer->sfx_length) {
 		if (sfx->loopstart == (unsigned int)-1) {
-			samples = sfx->length - headpos;
+			samples = buffer->sfx_length - headpos;
 		} else {
-			loop_samples = headpos + samples - sfx->length;
+			loop_samples = headpos + samples - buffer->sfx_length;
 			samples -= loop_samples;
 		}
 	}
@@ -264,8 +294,8 @@ void
 SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 {
 	float       stepscale;
-	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
+	const sfx_t *sfx = stream->sfx;
 	wavinfo_t  *info = &stream->wavinfo;
 
 	stepscale = (float) info->rate / sfx->snd->speed;
@@ -282,8 +312,8 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 {
 	float       stepscale;
 	unsigned int headpos, samples;
-	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
+	const sfx_t *sfx = stream->sfx;
 	wavinfo_t  *info = &stream->wavinfo;
 
 	stream->pos += count;
@@ -300,23 +330,23 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 
 	// find out where head points to in the stream
 	headpos = buffer->pos + samples;
-	if (headpos >= sfx->length) {
+	if (headpos >= buffer->sfx_length) {
 		if (sfx->loopstart == (unsigned int)-1)
-			headpos = sfx->length;
+			headpos = buffer->sfx_length;
 		else
-			headpos -= sfx->length - sfx->loopstart;
+			headpos -= buffer->sfx_length - sfx->loopstart;
 	}
 
 	if (samples < count) {
 		buffer->head = buffer->tail = 0;
 		buffer->pos += count;
-		if (buffer->pos > sfx->length) {
+		if (buffer->pos > buffer->sfx_length) {
 			if (sfx->loopstart == (unsigned int)-1) {
 				// reset the buffer and fill it incase it's needed again
 				buffer->pos = 0;
 			} else {
 				buffer->pos -= sfx->loopstart;
-				buffer->pos %= sfx->length - sfx->loopstart;
+				buffer->pos %= buffer->sfx_length - sfx->loopstart;
 				buffer->pos += sfx->loopstart;
 			}
 			stream->pos = buffer->pos;
@@ -325,7 +355,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		stream->seek (stream, buffer->pos * stepscale);
 	} else {
 		buffer->pos += count;
-		if (buffer->pos >= sfx->length) {
+		if (buffer->pos >= buffer->sfx_length) {
 			if (sfx->loopstart == (unsigned int)-1) {
 				// reset the buffer and fill it in case it's needed again
 				headpos = buffer->pos = 0;
@@ -333,7 +363,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 				count = 0;
 				stream->seek (stream, buffer->pos * stepscale);
 			} else {
-				buffer->pos -= sfx->length - sfx->loopstart;
+				buffer->pos -= buffer->sfx_length - sfx->loopstart;
 			}
 			stream->pos = buffer->pos;
 		}
@@ -355,7 +385,6 @@ SND_Load (sfx_t *sfx)
 
 	sfx->touch = sfx->retain = snd_fail;
 	sfx->release = snd_noop;
-	sfx->close = snd_noop;
 	sfx->open = snd_open_fail;
 
 	file = QFS_FOpenFile (sfx->name);

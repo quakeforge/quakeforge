@@ -283,18 +283,20 @@ flac_load (flacfile_t *ff, sfxblock_t *block)
 {
 	float      *data;
 	sfxbuffer_t *sb = 0;
-	sfx_t      *sfx = block->sfx;
+	const sfx_t *sfx = block->sfx;
 	wavinfo_t  *info = &block->wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx, info->frames);
 	sb = SND_Memory_AllocBuffer (buffer_frames * info->channels);
 	if (!sb)
 		goto bail;
 	sb->size = buffer_frames * info->channels;
-	sb->sfx = sfx;
+	sb->channels = info->channels;
+	sb->sfx_length = info->frames;
+	sb->block = sfx->block;
 	if (flac_read (ff, data, info->frames) < 0)
 		goto bail;
 	SND_SetPaint (sb);
@@ -358,18 +360,18 @@ flac_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-flac_stream_close (sfx_t *sfx)
+flac_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 
 	flac_close (stream->file);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 flac_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	void       *f;
 

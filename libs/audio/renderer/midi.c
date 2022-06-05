@@ -143,20 +143,20 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-midi_stream_close (sfx_t *sfx)
+midi_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 
 	WildMidi_Close (mf->handle);
 	free (mf);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 midi_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile	   *file;
 	midi	   *handle;
 	unsigned char *local_buffer;

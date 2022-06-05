@@ -164,18 +164,20 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block)
 {
 	float      *data;
 	sfxbuffer_t *sb = 0;
-	sfx_t      *sfx = block->sfx;
+	const sfx_t *sfx = block->sfx;
 	wavinfo_t  *info = &block->wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx, info->frames);
 	sb = SND_Memory_AllocBuffer (buffer_frames * info->channels);
 	if (!sb)
 		goto bail;
 	sb->size = buffer_frames * info->channels;
-	sb->sfx = sfx;
+	sb->channels = info->channels;
+	sb->sfx_length = info->frames;
+	sb->block = block;
 	if (vorbis_read (vf, data, info->frames, info) < 0)
 		goto bail;
 	SND_SetPaint (sb);
@@ -240,9 +242,9 @@ vorbis_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-vorbis_stream_close (sfx_t *sfx)
+vorbis_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
 
 	if (vf->data)
@@ -250,13 +252,13 @@ vorbis_stream_close (sfx_t *sfx)
 	ov_clear (vf->vf);
 	free (vf->vf);
 	free (vf);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 vorbis_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	vorbis_file_t *f;
 

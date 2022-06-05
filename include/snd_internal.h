@@ -56,28 +56,29 @@ struct sfx_s
 {
 	struct snd_s *snd;			//!< ownding snd_t instance
 	const char *name;
-	sfx_t      *owner;
 
-	unsigned int length;
-	unsigned int loopstart;
+	unsigned    length;
+	unsigned    loopstart;
 
 	union {
 		sfxstream_t *stream;
 		sfxblock_t *block;
-	} data;
+	};
 
 	sfxbuffer_t *(*touch) (sfx_t *sfx);
 	sfxbuffer_t *(*retain) (sfx_t *sfx);
 	void        (*release) (sfx_t *sfx);
 
 	sfxbuffer_t *(*getbuffer) (sfx_t *sfx);
-	struct wavinfo_s *(*wavinfo) (sfx_t *sfx);
+	struct wavinfo_s *(*wavinfo) (const sfx_t *sfx);
 
-	sfx_t      *(*open) (sfx_t *sfx);
-	void        (*close) (sfx_t *sfx);
+	sfxbuffer_t *(*open) (sfx_t *sfx);
 };
 
 /** paint samples into the mix buffer
+
+	This is currently used for channel-count specific mixing
+
 	\param offset   offset into the mix buffer at which to start mixing
 					the channel
 	\param ch		sound channel
@@ -87,7 +88,7 @@ struct sfx_s
 typedef void sfxpaint_t (int offset, channel_t *ch, float *buffer,
 						 unsigned count);
 
-/** Represent a sound sample in the mixer.
+/** Represent a single output frame in the mixer.
 */
 struct portable_samplepair_s {
 	float        left;						//!< left sample
@@ -146,6 +147,14 @@ struct sfxbuffer_s {
 	unsigned    size;			//!< size of buffer in frames
 	unsigned    pos;			//!< position of tail within full stream
 	unsigned    channels;		//!< number of channels per frame
+	unsigned    sfx_length;		//!< total length of sfx
+	union {		// owning instance
+		// the first field of both sfxstream_t and sfxblock_t is a pointer
+		// to sfx_t
+		sfx_t const * const * const sfx;
+		sfxstream_t *stream;
+		sfxblock_t *block;
+	};
 	sfxpaint_t *paint;			//!< channel count specific paint function
 	/** Advance the position with the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
@@ -160,7 +169,7 @@ struct sfxbuffer_s {
 		\param pos		frame position with the stream
 	*/
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
-	sfx_t      *sfx;			//!< owning sfx_t instance
+	void        (*close) (sfxbuffer_t *buffer);
 	/** Sample data. The block at the beginning of the buffer (size depends on
 		sample size)
 	*/
@@ -170,7 +179,7 @@ struct sfxbuffer_s {
 /** Representation of sound loaded that is streamed in as needed.
 */
 struct sfxstream_s {
-	sfx_t      *sfx;			//!< owning sfx_t instance
+	const sfx_t *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
@@ -213,25 +222,24 @@ struct sfxstream_s {
 /** Representation of sound loaded into memory as a full block.
 */
 struct sfxblock_s {
-	sfx_t      *sfx;			//!< owning sfx_t instance
+	const sfx_t *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the block
 	wavinfo_t   wavinfo;		//!< description of sound data
-	cache_user_t cache;			//!< cached sound buffer (::sfxbuffer_s)
 	sfxbuffer_t *buffer;		//!< pointer to cached buffer
 };
 
 /** Representation of a sound being played.
 */
 struct channel_s {
-	sfx_t      *sfx;			//!< sound played by this channel
+	sfxbuffer_t *buffer;		//!< sound played by this channel
 	float       leftvol;		//!< 0-1 volume
 	float       rightvol;		//!< 0-1 volume
 	unsigned    end;			//!< end time in global paintsamples
 	unsigned    pos;			//!< sample position in sfx
-	unsigned    looping;		//!< where to loop, -1 = no looping
-	int         pause;			//!< don't update the channel at all
+	unsigned    loopstart;		//!< where to loop, -1 = no looping
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
+	byte        pause;			//!< don't update the channel at all
 	/** signal between main program and mixer thread that the channel is to be
 		stopped.
 		- both \c stop and \c done are zero: normal operation
@@ -243,8 +251,8 @@ struct channel_s {
 		  can be reused at any time.
 	*/
 	//@{
-	int         stop;
-	int         done;
+	byte        stop;
+	byte        done;
 	//@}
 };
 
@@ -259,7 +267,11 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 void SND_Memory_Init_Cvars (void);
 int SND_Memory_Init (void);
 sfxbuffer_t *SND_Memory_AllocBuffer (unsigned samples);
-void SND_Memory_FreeBuffer (sfxbuffer_t *buffer);
+void SND_Memory_Free (void *ptr);
+void SND_Memory_SetTag (void *ptr, int tag);
+int SND_Memory_Retain (void *ptr);
+int SND_Memory_Release (void *ptr);
+int SND_Memory_GetRetainCount (void *ptr) __attribute__((pure));
 
 /** \defgroup sound_render_sfx Sound sfx
 	\ingroup sound_render_mix
@@ -281,7 +293,7 @@ void SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 	\param open
 */
 void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
-					 sfx_t *(*open) (sfx_t *sfx));
+					 sfxbuffer_t *(*open) (sfx_t *sfx));
 
 /** Open a stream for playback.
 	\param sfx
@@ -290,15 +302,15 @@ void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	\param seek
 	\param close
 */
-sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
-						   long (*read)(void *, float **),
-						   int (*seek)(sfxstream_t *, int),
-						   void (*close) (sfx_t *));
+sfxbuffer_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
+								 long (*read)(void *, float **),
+								 int (*seek)(sfxstream_t *, int),
+								 void (*close) (sfxbuffer_t *));
 
 /** Close a stream.
 	\param sfx
 */
-void SND_SFX_StreamClose (sfx_t *sfx);
+void SND_SFX_StreamClose (sfxstream_t *stream);
 
 /** Pre-load a sound into the cache.
 	\param snd		sound system state
@@ -466,7 +478,7 @@ void SND_SetPaint (sfxbuffer_t *sb);
 */
 ///@{
 
-unsigned SND_ResamplerFrames (sfx_t *sfx);
+unsigned SND_ResamplerFrames (const sfx_t *sfx, unsigned frames);
 
 /** Set up the various parameters that depend on the actual sample rate.
 	\param sb		buffer to setup
@@ -549,13 +561,13 @@ int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_CacheWavinfo (sfx_t *sfx) __attribute__((pure));
+wavinfo_t *SND_CacheWavinfo (const sfx_t *sfx) __attribute__((pure));
 
 /** Retrieve wavinfo from a streamed sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_StreamWavinfo (sfx_t *sfx) __attribute__((pure));
+wavinfo_t *SND_StreamWavinfo (const sfx_t *sfx) __attribute__((pure));
 
 /** Ensure a cached sound is in memory.
 	\param sfx		sound reference

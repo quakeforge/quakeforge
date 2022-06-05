@@ -57,13 +57,13 @@ typedef struct {
 static sfxbuffer_t *
 wav_callback_load (sfxblock_t *block)
 {
-	sfx_t      *sfx = block->sfx;
+	const sfx_t *sfx = block->sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
 	int         len, fdata_ofs;
 	byte       *data;
 	float      *fdata;
-	sfxbuffer_t *buffer;
+	sfxbuffer_t *buffer = 0;
 	wavinfo_t  *info = &block->wavinfo;
 
 	file = QFS_FOpenFile (name);
@@ -81,12 +81,14 @@ wav_callback_load (sfxblock_t *block)
 
 	SND_Convert (data, fdata, info->frames, info->channels, info->width);
 
-	unsigned    buffer_frames = SND_ResamplerFrames (sfx);
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx, info->frames);
 	buffer = SND_Memory_AllocBuffer (buffer_frames * info->channels);
 	if (!buffer)
 		goto bail;
 	buffer->size = buffer_frames * info->channels;
-	buffer->sfx = sfx;
+	buffer->channels = info->channels;
+	buffer->sfx_length = info->frames;
+	buffer->block = block;
 	SND_SetPaint (buffer);
 	SND_SetupResampler (buffer, 0);
 	SND_Resample (buffer, fdata, info->frames);
@@ -139,22 +141,22 @@ wav_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-wav_stream_close (sfx_t *sfx)
+wav_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 
 	Qclose (wf->file);
 	if (wf->data)
 		free (wf->data);
 	free (wf);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 wav_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	wav_file_t *wf;
 

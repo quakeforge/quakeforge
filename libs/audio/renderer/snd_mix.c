@@ -53,12 +53,12 @@ static int  max_overpaint;				// number of extra samples painted
 /* CHANNEL MIXING */
 
 static inline int
-check_channel_end (channel_t *ch, sfx_t *sfx, int count, unsigned ltime)
+check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 {
 	if (count <= 0 || ltime >= ch->end) {
-		if (sfx->loopstart != (unsigned) -1) {
-			ch->pos = sfx->loopstart;
-			ch->end = ltime + sfx->length - ch->pos;
+		if (ch->loopstart != (unsigned) -1) {
+			ch->pos = ch->loopstart;
+			ch->end = ltime + sb->sfx_length - ch->pos;
 		} else {			// channel just stopped
 			ch->done = 1;
 			return 1;
@@ -103,7 +103,6 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
-	sfx_t      *sfx;
 	sfxbuffer_t *sb;
 
 	// clear the paint buffer
@@ -123,7 +122,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 		// paint in the channels.
 		ch = snd_channels;
 		for (i = 0; i < snd_total_channels; i++, ch++) {
-			if (!(sfx = ch->sfx)) {
+			if (!(sb = ch->buffer)) {
 				// channel is inactive
 				continue;
 			}
@@ -133,14 +132,9 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 			}
 			if (ch->pause)
 				continue;
-			sb = sfx->getbuffer (sfx);
-			if (!sb) {				// something went wrong with the sfx
-				printf ("XXXX sfx blew up!!!!\n");
-				continue;
-			}
 
 			if (!ch->end)
-				ch->end = snd->paintedtime + sfx->length - ch->pos;
+				ch->end = snd->paintedtime + sb->sfx_length - ch->pos;
 
 			ltime = snd->paintedtime;
 
@@ -161,7 +155,7 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 					ltime += count;
 				}
 
-				if (check_channel_end (ch, sfx, count, ltime))
+				if (check_channel_end (ch, sb, count, ltime))
 					break;
 			}
 		}
@@ -473,8 +467,7 @@ SND_SetPaint (sfxbuffer_t *sb)
 		snd_paint_8,
 	};
 
-	wavinfo_t *info = sb->sfx->wavinfo (sb->sfx);
-	if (info->channels > 8)
-		Sys_Error ("illegal channel count %d", info->channels);
-	sb->paint = painters[info->channels];
+	if (sb->channels > 8 || !sb->channels)
+		Sys_Error ("invaliid channel count %d", sb->channels);
+	sb->paint = painters[sb->channels];
 }

@@ -75,7 +75,12 @@ snd_sfx_free (void *_sfx, void *unused)
 	sfx_t      *sfx = (sfx_t *) _sfx;
 	free ((char *) sfx->name);
 	sfx->name = 0;
-	sfx->owner = 0;
+}
+
+static void
+snd_block_close (sfxbuffer_t *buffer)
+{
+	SND_Memory_Release (buffer);
 }
 
 void
@@ -84,22 +89,26 @@ SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 {
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 
-	sfx->data.block = block;
+	sfx->block = block;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = SND_CacheTouch;
 	sfx->retain = SND_CacheRetain;
 	sfx->release = SND_CacheRelease;
 	sfx->getbuffer = SND_CacheGetBuffer;
+	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
+	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
 	block->sfx = sfx;
 	block->file = realname;
 	block->wavinfo = info;
 	block->buffer = load (block);
+	SND_Memory_Retain (block->buffer);
+	block->buffer->close = snd_block_close;
 }
 
 void
 SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
-				sfx_t *(*open) (sfx_t *sfx))
+				sfxbuffer_t *(*open) (sfx_t *sfx))
 {
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	sfx->open = open;
@@ -107,20 +116,22 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
 	sfx->getbuffer = SND_StreamGetBuffer;
-	sfx->data.stream = stream;
+	sfx->stream = stream;
+	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
+	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
 	stream->file = realname;
 	stream->wavinfo = info;
 }
 
-sfx_t *
+sfxbuffer_t *
 SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					long (*read)(void *, float **),
 					int (*seek)(sfxstream_t *, int),
-					void (*close) (sfx_t *))
+					void (*close) (sfxbuffer_t *))
 {
 	snd_t      *snd = sfx->snd;
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	wavinfo_t  *info = &stream->wavinfo;
 	int         frames;
 
@@ -129,55 +140,44 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	if (!snd->speed)
 		return 0;
 
-	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
-
-	new_sfx->snd = sfx->snd;
-	new_sfx->name = sfx->name;
-	new_sfx->owner = sfx;
-	new_sfx->wavinfo = SND_CacheWavinfo;
-	new_sfx->touch = new_sfx->retain = SND_StreamRetain;
-	new_sfx->release = SND_StreamRelease;
-	new_sfx->getbuffer = SND_StreamGetBuffer;
-	new_sfx->close = close;
-
 	frames = snd->speed * 0.3;
 	frames = (frames + 255) & ~255;
 
 	stream = calloc (1, sizeof (sfxstream_t));
-	new_sfx->data.stream = stream;
 	stream->buffer = SND_Memory_AllocBuffer (frames * info->channels);
 	if (!stream->buffer) {
 		free (stream);
-		free (new_sfx);
 		return 0;
 	}
+
 	stream->file = file;
-	stream->sfx = new_sfx;
+	stream->sfx = sfx;
 	stream->ll_read = read;
 	stream->ll_seek = seek;
 
 	stream->wavinfo = *sfx->wavinfo (sfx);
 
+	stream->buffer->stream = stream;
 	stream->buffer->size = frames;
 	stream->buffer->advance = SND_StreamAdvance;
 	stream->buffer->setpos = SND_StreamSetPos;
-	stream->buffer->sfx = new_sfx;
+	stream->buffer->sfx_length = info->frames;
+	stream->buffer->channels = info->channels;
+	stream->buffer->close = close;
 	SND_SetPaint (stream->buffer);
 
 	SND_SetupResampler (stream->buffer, 1);			// get sfx setup properly
 	stream->buffer->setpos (stream->buffer, 0);		// pre-fill the buffer
 
-	return new_sfx;
+	return stream->buffer;
 }
 
 void
-SND_SFX_StreamClose (sfx_t *sfx)
+SND_SFX_StreamClose (sfxstream_t *stream)
 {
-	sfxstream_t *stream = sfx->data.stream;
 	SND_PulldownResampler (stream);
-	SND_Memory_FreeBuffer (stream->buffer);
+	SND_Memory_Free (stream->buffer);
 	free (stream);
-	free (sfx);
 }
 
 sfx_t *
@@ -196,7 +196,6 @@ SND_LoadSound (snd_t *snd, const char *name)
 	sfx = &snd_sfx[snd_num_sfx++];
 	sfx->snd = snd;
 	sfx->name = strdup (name);
-	sfx->owner = sfx;
 	if (SND_Load (sfx) == -1) {
 		snd_num_sfx--;
 		return 0;
