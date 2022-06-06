@@ -419,6 +419,15 @@ SND_AmbientOn (snd_t *snd)
 	snd_ambient = true;
 }
 
+void
+SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx)
+{
+	if (amb_channel < 0 || amb_channel > NUM_AMBIENTS) {
+		return;
+	}
+	ambient_sfx[amb_channel] = sfx;
+}
+
 static void
 s_updateAmbientSounds (snd_t *snd, const byte *ambient_sound_level)
 {

@@ -386,6 +386,8 @@ void SND_AmbientOff (snd_t *snd);
 */
 void SND_AmbientOn (snd_t *snd);
 
+void SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx);
+
 /** Update the sound engine with the client's position and orientation and
 	render some sound.
 	\param snd		sound system state

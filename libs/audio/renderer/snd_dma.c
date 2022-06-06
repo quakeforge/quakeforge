@@ -419,6 +419,14 @@ s_ambient_on (void)
 }
 
 static void
+s_set_ambient (int amb_channel, sfx_t *sfx)
+{
+	if (!sound_started)
+		return;
+	SND_SetAmbient (&snd, amb_channel, sfx);
+}
+
+static void
 s_static_sound (sfx_t *sfx, vec4f_t origin, float vol,
 				float attenuation)
 {
@@ -551,6 +559,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	.init = s_init,
 	.ambient_off     = s_ambient_off,
 	.ambient_on      = s_ambient_on,
+	.set_ambient     = s_set_ambient,
 	.static_sound    = s_static_sound,
 	.start_sound     = s_start_sound,
 	.local_sound     = s_local_sound,

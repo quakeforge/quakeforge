@@ -38,6 +38,7 @@ typedef struct snd_render_funcs_s {
 	void      (*init) (void);
 	void      (*ambient_off) (void);
 	void      (*ambient_on) (void);
+	void      (*set_ambient) (int amb_channel, struct sfx_s *sfx);
 	void      (*static_sound) (struct sfx_s *sfx, vec4f_t origin, float vol, float attenuation);
 	void      (*start_sound) (int entnum, int entchannel, struct sfx_s *sfx, const vec4f_t, float vol, float attenuation);
 	void      (*local_sound) (const char *s);

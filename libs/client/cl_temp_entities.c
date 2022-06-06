@@ -129,6 +129,8 @@ CL_TEnts_Precache (void)
 	if (!cl_mod_beam) {
 		cl_mod_beam = cl_mod_bolt;
 	}
+	S_SetAmbient (AMBIENT_WATER, S_PrecacheSound ("ambience/water1.wav"));
+	S_SetAmbient (AMBIENT_SKY, S_PrecacheSound ("ambience/wind2.wav"));
 }
 
 static void

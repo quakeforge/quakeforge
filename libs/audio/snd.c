@@ -149,6 +149,13 @@ S_AmbientOn (void)
 }
 
 VISIBLE void
+S_SetAmbient (int amb_channel, sfx_t *sfx)
+{
+	if (snd_render_funcs)
+		snd_render_funcs->set_ambient (amb_channel, sfx);
+}
+
+VISIBLE void
 S_StaticSound (sfx_t *sfx, vec4f_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)

@@ -181,6 +181,8 @@ void S_AmbientOff (void);
 */
 void S_AmbientOn (void);
 
+void S_SetAmbient (int amb_channel, sfx_t *sfx);
+
 /** Link sound engine builtins into the specified progs vm
 	\param pr	the vm to link the builtins into.
 */
