@@ -122,11 +122,11 @@ SND_PaintChannels (snd_t *snd, unsigned endtime)
 		// paint in the channels.
 		ch = snd_channels;
 		for (i = 0; i < snd_total_channels; i++, ch++) {
-			if (!(sb = ch->buffer)) {
+			if (!(sb = ch->buffer) || ch->done) {
 				// channel is inactive
 				continue;
 			}
-			if (ch->stop || ch->done) {
+			if (ch->stop) {
 				ch->done = 1;		// acknowledge stopped signal
 				continue;
 			}

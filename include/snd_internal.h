@@ -31,6 +31,7 @@
 #ifndef __snd_internal_h
 #define __snd_internal_h
 
+#include <stdatomic.h>
 
 /** \defgroup sound_render Sound rendering sub-system.
 	\ingroup sound
@@ -142,10 +143,12 @@ struct wavinfo_s {
 	an ordinary buffer. For streamed sounds, acts as a ring buffer.
 */
 struct sfxbuffer_s {
-	unsigned    head;			//!< ring buffer head position in sampels
-	unsigned    tail;			//!< ring buffer tail position in sampels
-	unsigned    size;			//!< size of buffer in frames
+	_Atomic unsigned head;		//!< ring buffer head position in sampels
+	_Atomic unsigned tail;		//!< ring buffer tail position in sampels
+	// FIXME should pos be atomic? it's primary use is in the mixer but can
+	// be used for checking the channel's "time"
 	unsigned    pos;			//!< position of tail within full stream
+	unsigned    size;			//!< size of buffer in frames
 	unsigned    channels;		//!< number of channels per frame
 	unsigned    sfx_length;		//!< total length of sfx
 	union {		// owning instance
@@ -231,7 +234,7 @@ struct sfxblock_s {
 /** Representation of a sound being played.
 */
 struct channel_s {
-	sfxbuffer_t *buffer;		//!< sound played by this channel
+	sfxbuffer_t *_Atomic buffer;//!< sound played by this channel
 	float       leftvol;		//!< 0-1 volume
 	float       rightvol;		//!< 0-1 volume
 	unsigned    end;			//!< end time in global paintsamples
@@ -239,7 +242,7 @@ struct channel_s {
 	unsigned    loopstart;		//!< where to loop, -1 = no looping
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
-	byte        pause;			//!< don't update the channel at all
+	_Atomic byte pause;			//!< don't update the channel at all
 	/** signal between main program and mixer thread that the channel is to be
 		stopped.
 		- both \c stop and \c done are zero: normal operation
@@ -251,8 +254,8 @@ struct channel_s {
 		  can be reused at any time.
 	*/
 	//@{
-	byte        stop;
-	byte        done;
+	_Atomic byte stop;
+	_Atomic byte done;
 	//@}
 };
 
