@@ -655,7 +655,8 @@ Hunk_Print (memhunk_t *hunk, qboolean all)
 		// print the single block
 		if (all) {
 			const int   sz = sizeof (h->name);
-			Sys_Printf ("%8p :%8zd %*.*s\n", h, h->size, sz, sz, h->name);
+			Sys_Printf ("%8p :%8zd %*.*s\n", h, h->size, sz, sz,
+						h->name[0] ? h->name : "unknown");
 		}
 
 		// print the total
@@ -664,7 +665,7 @@ Hunk_Print (memhunk_t *hunk, qboolean all)
 			if (!all) {
 				const int   sz = sizeof (h->name);
 				Sys_Printf ("          :%8i %*.*s (TOTAL)\n",
-							sum, sz, sz, h->name);
+							sum, sz, sz, h->name[0] ? h->name : "unknown");
 			}
 			count = 0;
 			sum = 0;
@@ -707,7 +708,7 @@ Hunk_HighMark (memhunk_t *hunk)
 }
 
 VISIBLE void *
-Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
+Hunk_RawAlloc (memhunk_t *hunk, size_t size)
 {
 	hunkblk_t  *h;
 
@@ -718,13 +719,13 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 	size = sizeof (hunkblk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk->size - hunk->low_used - hunk->high_used < size) {
-		Hunk_HighMark (hunk);
-		Cache_FreeLRU (hunk);
+		Hunk_HighMark (hunk);	// force free of temp hunk
 	}
 	if (hunk->size - hunk->low_used - hunk->high_used < size) {
 		int         mem = hunk->size / (1024 * 1024);
 		mem += 8;
 		mem &= ~7;
+		Hunk_Print (hunk, 1);
 		Cache_Profile_r (hunk);
 		Sys_Error
 			("Not enough RAM allocated.  Try starting using \"-mem %d\" on "
@@ -740,9 +741,18 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 	h->size = size;
 	h->sentinal1 = HUNK_SENTINAL;
 	h->sentinal2 = HUNK_SENTINAL;
-	memccpy (h->name, name, 0, sizeof (h->name));
+	h->name[0] = 0;
 
 	return (void *) (h + 1);
+}
+
+VISIBLE void *
+Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
+{
+	void       *mem = Hunk_RawAlloc (hunk, size);
+	hunkblk_t  *h = ((hunkblk_t *) mem) - 1;
+	memccpy (h->name, name, 0, sizeof (h->name));
+	return mem;
 }
 
 VISIBLE void *
@@ -755,16 +765,12 @@ Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
 }
 
 VISIBLE void *
-Hunk_RawAlloc (memhunk_t *hunk, size_t size)
-{
-	return Hunk_RawAllocName (hunk, size, "unknown");
-}
-
-VISIBLE void *
 Hunk_Alloc (memhunk_t *hunk, size_t size)
 {
 	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
-	return Hunk_AllocName (hunk, size, "unknown");
+	void       *mem = Hunk_RawAlloc (hunk, size);
+	memset (mem, 0, size);
+	return mem;
 }
 
 VISIBLE size_t
