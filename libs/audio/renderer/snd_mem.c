@@ -160,17 +160,6 @@ SND_Memory_GetRetainCount (void *ptr)
 }
 
 static sfxbuffer_t *
-snd_fail (sfx_t *sfx)
-{
-	return 0;
-}
-
-static void
-snd_noop (sfx_t *sfx)
-{
-}
-
-static sfxbuffer_t *
 snd_open (sfx_t *sfx)
 {
 	sfxbuffer_t *buffer = sfx->block->buffer;
@@ -184,48 +173,8 @@ snd_open_fail (sfx_t *sfx)
 	return 0;
 }
 
-sfxbuffer_t * __attribute__((pure))
-SND_CacheTouch (sfx_t *sfx)
-{
-	return sfx->block->buffer;
-}
-
-sfxbuffer_t *
-SND_CacheGetBuffer (sfx_t *sfx)
-{
-	return sfx->block->buffer;
-}
-
-sfxbuffer_t * __attribute__((pure))
-SND_CacheRetain (sfx_t *sfx)
-{
-	return sfx->block->buffer;
-}
-
-void
-SND_CacheRelease (sfx_t *sfx)
-{
-}
-
-sfxbuffer_t *
-SND_StreamGetBuffer (sfx_t *sfx)
-{
-	return sfx->stream->buffer;
-}
-
-sfxbuffer_t *
-SND_StreamRetain (sfx_t *sfx)
-{
-	return sfx->stream->buffer;
-}
-
-void
-SND_StreamRelease (sfx_t *sfx)
-{
-}
-
 wavinfo_t *
-SND_CacheWavinfo (const sfx_t *sfx)
+SND_BlockWavinfo (const sfx_t *sfx)
 {
 	return &sfx->block->wavinfo;
 }
@@ -383,8 +332,6 @@ SND_Load (sfx_t *sfx)
 	char        buf[4];
 	QFile      *file;
 
-	sfx->touch = sfx->retain = snd_fail;
-	sfx->release = snd_noop;
 	sfx->open = snd_open_fail;
 
 	file = QFS_FOpenFile (sfx->name);

@@ -329,7 +329,7 @@ flac_callback_load (sfxblock_t *block)
 }
 
 static void
-flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
+flac_block (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
 	flac_close (ff);
 	SND_SFX_Block (sfx, realname, info, flac_callback_load);
@@ -461,8 +461,8 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_snd, "cache %s\n", realname);
-		flac_cache (sfx, realname, ff, info);
+		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
+		flac_block (sfx, realname, ff, info);
 	} else {
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		flac_stream (sfx, realname, ff, info);

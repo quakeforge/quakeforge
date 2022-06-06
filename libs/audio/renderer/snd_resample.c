@@ -1,9 +1,10 @@
 /*
-	snd_mem.c
+	snd_resample.c
 
-	sound caching
+	sound resampling
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2010  Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License

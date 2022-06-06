@@ -100,7 +100,7 @@ bail:
 }
 
 static void
-wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
+wav_block (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
 	Qclose (file);
 	SND_SFX_Block (sfx, realname, info, wav_callback_load);
@@ -289,8 +289,8 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	}
 
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_snd, "cache %s\n", realname);
-		wav_cache (sfx, realname, file, info);
+		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
+		wav_block (sfx, realname, file, info);
 	} else {
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);

@@ -209,8 +209,8 @@ vorbis_callback_load (sfxblock_t *block)
 	return vorbis_load (&vf, block);
 }
 
-static void
-vorbis_cache (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+static void//extra _ in name because vorbis_block is a vorbis type
+vorbis__block (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
 	ov_clear (vf);
 	SND_SFX_Block (sfx, realname, info, vorbis_callback_load);
@@ -302,8 +302,8 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_snd, "cache %s\n", realname);
-		vorbis_cache (sfx, realname, &vf, info);
+		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
+		vorbis__block (sfx, realname, &vf, info);
 	} else {
 		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);

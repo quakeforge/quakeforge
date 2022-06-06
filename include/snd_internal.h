@@ -66,11 +66,6 @@ struct sfx_s
 		sfxblock_t *block;
 	};
 
-	sfxbuffer_t *(*touch) (sfx_t *sfx);
-	sfxbuffer_t *(*retain) (sfx_t *sfx);
-	void        (*release) (sfx_t *sfx);
-
-	sfxbuffer_t *(*getbuffer) (sfx_t *sfx);
 	struct wavinfo_s *(*wavinfo) (const sfx_t *sfx);
 
 	sfxbuffer_t *(*open) (sfx_t *sfx);
@@ -139,8 +134,8 @@ struct wavinfo_s {
 	unsigned    datalen;		//!< chunk bytes
 };
 
-/** Buffer for storing sound samples in memory. For cached sounds, acts as
-	an ordinary buffer. For streamed sounds, acts as a ring buffer.
+/** Buffer for storing sound samples in memory. For block-loaded sounds, acts
+	as an ordinary buffer. For streamed sounds, acts as a ring buffer.
 */
 struct sfxbuffer_s {
 	_Atomic unsigned head;		//!< ring buffer head position in sampels
@@ -228,7 +223,7 @@ struct sfxblock_s {
 	const sfx_t *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the block
 	wavinfo_t   wavinfo;		//!< description of sound data
-	sfxbuffer_t *buffer;		//!< pointer to cached buffer
+	sfxbuffer_t *buffer;		//!< pointer to block-loaded buffer
 };
 
 /** Representation of a sound being played.
@@ -280,7 +275,7 @@ int SND_Memory_GetRetainCount (void *ptr) __attribute__((pure));
 	\ingroup sound_render_mix
 */
 ///@{
-/** Cache sound data. Initializes caching fields of sfx.
+/** Block sound data. Initializes block fields of sfx.
 	\param sfx
 	\param realname
 	\param info
@@ -315,9 +310,9 @@ sfxbuffer_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 */
 void SND_SFX_StreamClose (sfxstream_t *stream);
 
-/** Pre-load a sound into the cache.
+/** Load a sound into the system.
 	\param snd		sound system state
-	\param sample	name of sound to precache
+	\param sample	name of sound to load
 */
 sfx_t *SND_PrecacheSound (snd_t *snd, const char *sample);
 
@@ -556,66 +551,21 @@ int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 ///@}
 
-/** \defgroup sound_render_cache_stream Cache/Stream Functions.
+/** \defgroup sound_render_block_stream Block/Stream Functions.
 	\ingroup sound_render
 */
 ///@{
-/** Retrieve wavinfo from a cached sound.
+/** Retrieve wavinfo from a block-loaded sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_CacheWavinfo (const sfx_t *sfx) __attribute__((pure));
+wavinfo_t *SND_BlockWavinfo (const sfx_t *sfx) __attribute__((pure));
 
 /** Retrieve wavinfo from a streamed sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
 wavinfo_t *SND_StreamWavinfo (const sfx_t *sfx) __attribute__((pure));
-
-/** Ensure a cached sound is in memory.
-	\param sfx		sound reference
-	\return			poitner to sound buffer
-*/
-sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
-
-/** Get the pointer to the sound buffer.
-	\param sfx		sound reference
-	\return			sound buffer or null
-	\note	The sound must be retained with SND_CacheRetain() for the returned
-			buffer to be valid.
-*/
-sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx) __attribute__((pure));
-
-/** Lock a cached sound into memory. After calling this, SND_CacheGetBffer()
-	will return a valid buffer.
-	\param sfx		sound reference
-	\return			poitner to sound buffer
-*/
-sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
-
-/** Unlock a cached sound from memory. After calling this, SND_CacheGetBffer()
-	will return a null buffer.
-	\param sfx		sound reference
-*/
-void SND_CacheRelease (sfx_t *sfx);
-
-/** Get the pointer to the sound buffer.
-	\param sfx		sound reference
-	\return			poitner to sound buffer
-*/
-sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx) __attribute__((pure));
-
-/** Lock a streamed sound into memory. Doesn't actually do anything other than
-	return a pointer to the buffer.
-	\param sfx		sound reference
-	\return			poitner to sound buffer
-*/
-sfxbuffer_t *SND_StreamRetain (sfx_t *sfx) __attribute__((pure));
-
-/** Unlock a streamed sound from memory. Doesn't actually do anything.
-	\param sfx		sound reference
-*/
-void SND_StreamRelease (sfx_t *sfx);
 
 /** Advance the position with the stream, updating the ring buffer as
 	necessary. Null for chached sounds.

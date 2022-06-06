@@ -53,16 +53,6 @@ static sfx_t    snd_sfx[MAX_SFX];
 static int      snd_num_sfx;
 static hashtab_t *snd_sfx_hash;
 
-static int precache;
-static cvar_t precache_cvar = {
-	.name = "precache",
-	.description =
-		"Toggle the use of a precache",
-	.default_value = "1",
-	.flags = CVAR_NONE,
-	.value = { .type = &cexpr_int, .value = &precache },
-};
-
 static const char *
 snd_sfx_getkey (const void *sfx, void *unused)
 {
@@ -90,11 +80,7 @@ SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 
 	sfx->block = block;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = SND_CacheTouch;
-	sfx->retain = SND_CacheRetain;
-	sfx->release = SND_CacheRelease;
-	sfx->getbuffer = SND_CacheGetBuffer;
+	sfx->wavinfo = SND_BlockWavinfo;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
 
@@ -112,10 +98,7 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 {
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	sfx->open = open;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->getbuffer = SND_StreamGetBuffer;
+	sfx->wavinfo = SND_StreamWavinfo;
 	sfx->stream = stream;
 	sfx->loopstart = SND_ResamplerFrames (sfx, info.loopstart);
 	sfx->length = SND_ResamplerFrames (sfx, info.frames);
@@ -213,10 +196,6 @@ SND_PrecacheSound (snd_t *snd, const char *name)
 		Sys_Error ("SND_PrecacheSound: NULL");
 
 	sfx = SND_LoadSound (snd, va (0, "sound/%s", name));
-	if (sfx && precache) {
-		if (sfx->retain (sfx))
-			sfx->release (sfx);
-	}
 	return sfx;
 }
 
@@ -229,28 +208,13 @@ s_gamedir (int phase, void *data)
 static void
 s_soundlist_f (void)
 {
-	int			load, total, i;
+	int			total, i;
 	sfx_t	   *sfx;
-
-	if (Cmd_Argc() >= 2 && Cmd_Argv (1)[0])
-		load = 1;
-	else
-		load = 0;
 
 	total = 0;
 	for (sfx = snd_sfx, i = 0; i < snd_num_sfx; i++, sfx++) {
-		if (load) {
-			if (!sfx->retain (sfx))
-				continue;
-		} else {
-			if (!sfx->touch (sfx))
-				continue;
-		}
 		total += sfx->length;
 		Sys_Printf ("%6d %6d %s\n", sfx->loopstart, sfx->length, sfx->name);
-
-		if (load)
-			sfx->release (sfx);
 	}
 	Sys_Printf ("Total resident: %i\n", total);
 }
@@ -259,10 +223,9 @@ void
 SND_SFX_Init (snd_t *snd)
 {
 	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
-	Cvar_Register (&precache_cvar, 0, 0);
 
 	QFS_GamedirCallback (s_gamedir, 0);
 
 	Cmd_AddCommand ("soundlist", s_soundlist_f,
-					"Reports a list of sounds in the cache");
+					"Reports a list of loaded sounds");
 }

@@ -760,7 +760,7 @@ SND_LocalSound (snd_t *snd, const char *sound)
 
 	sfx = SND_PrecacheSound (snd, sound);
 	if (!sfx) {
-		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
+		Sys_Printf ("S_LocalSound: can't load %s\n", sound);
 		return;
 	}
 	if (snd_render_data.viewentity)
