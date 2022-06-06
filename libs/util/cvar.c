@@ -332,7 +332,6 @@ Cvar_CompleteBuildList (const char *partial)
 	// criteron for a match
 	Hash_ForEach (calias_hash, cvar_match_copy, &ctx);
 	ctx.list[ctx.index] = 0;
-	fprintf (stderr, "%d %d\n", num_matches, ctx.index);
 	heapsort (ctx.list, ctx.index, sizeof (char *), cvar_cmp_name);
 	return ctx.list;
 }
