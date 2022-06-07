@@ -37,12 +37,34 @@
  * \param size		The number of objects in the ring buffer. Note that the
  * 					actual capacity of the buffer is `size - 1` due to the
  * 					way ring buffers work.
+ *
+ * \note On its own, this is not thread-safe. Suitable locking is required.
  */
 #define RING_BUFFER(type, size) 	\
 	struct {						\
 		type        buffer[size];	\
 		unsigned    head;			\
 		unsigned    tail;			\
+	}
+
+/** Type declaration for a type-safe ring buffer with atomic head and tail.
+ *
+ * \param type		The type of data element stored in the ring buffer.
+ * \param size		The number of objects in the ring buffer. Note that the
+ * 					actual capacity of the buffer is `size - 1` due to the
+ * 					way ring buffers work.
+ *
+ * \note This is suitable only for single-reader/single-writer unless
+ * additional locking is provided for multi-user side. This means `head` must
+ * have an associated lock for multiple writers, and `tail` must have an
+ * associated lock for multiple readers. For multi-reader + multi-writer, it
+ * may be better to use RING_BUFFER with suitable locking.
+ */
+#define RING_BUFFER_ATOMIC(type, size) 	\
+	struct {							\
+		type        buffer[size];		\
+		_Atomic unsigned head;			\
+		_Atomic unsigned tail;			\
 	}
 
 #define RB_buffer_size(ring_buffer)							\
@@ -95,7 +117,7 @@
 		const typeof (rb->buffer[0]) *d = (data);							\
 		unsigned    c = (count);											\
 		unsigned    h = rb->head;											\
-		rb->head = (h + c) % RB_buffer_size (rb);							\
+		unsigned    new_head = (h + c) % RB_buffer_size (rb);				\
 		if (c > RB_buffer_size (rb) - h) {									\
 			memcpy (rb->buffer + h, d,										\
 					(RB_buffer_size (rb) - h) * sizeof (rb->buffer[0]));	\
@@ -104,6 +126,7 @@
 			h = 0;															\
 		}																	\
 		memcpy (rb->buffer + h, d, c * sizeof (rb->buffer[0]));				\
+		rb->head = new_head;												\
 	})
 
 /** Acquire \a count objects from the buffer, wrapping if necessary.
@@ -122,8 +145,10 @@
 	({	__auto_type rb = &(ring_buffer);									\
 		unsigned    c = (count);											\
 		unsigned    h = rb->head;											\
-		rb->head = (h + c) % RB_buffer_size (rb);							\
-		&rb->buffer[h];														\
+		unsigned    new_head = (h + c) % RB_buffer_size (rb);				\
+		__auto_type head_addr = &rb->buffer[h];								\
+		rb->head = new_head;												\
+		head_addr;															\
 	})
 
 /** Read \a count objects from the buffer to \a data, wrapping if necessary.
@@ -145,6 +170,7 @@
 		unsigned    c = (count);											\
 		unsigned    oc = c;													\
 		unsigned    t = rb->tail;											\
+		unsigned    new_tail = (t + oc) % RB_buffer_size (rb);				\
 		if (c > RB_buffer_size (rb) - t) {									\
 			memcpy (d, rb->buffer + t,										\
 					(RB_buffer_size (rb) - t) * sizeof (rb->buffer[0]));	\
@@ -153,7 +179,7 @@
 			t = 0;															\
 		}																	\
 		memcpy (d, rb->buffer + t, c * sizeof (rb->buffer[0]));				\
-		rb->tail = (t + oc) % RB_buffer_size (rb);							\
+		rb->tail = new_tail;												\
 	})
 
 /** Discard \a count objects from the ring buffer.
