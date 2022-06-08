@@ -84,6 +84,7 @@ extern gamedir_t *qfs_gamedir;
 
 /** Function type of callback called on gamedir change.
 	\param phase	0 = before Cache_Flush(), 1 = after Cache_Flush()
+	\param data		data pointer passed on to the callback
 */
 typedef void gamedir_callback_t (int phase, void *data);
 

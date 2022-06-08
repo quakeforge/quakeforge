@@ -279,7 +279,7 @@ int SND_Memory_GetRetainCount (void *ptr) __attribute__((pure));
 	\param sfx
 	\param realname
 	\param info
-	\param loader
+	\param load
 */
 void SND_SFX_Block (sfx_t *sfx, char *realname, wavinfo_t info,
 		            sfxbuffer_t *(*load) (sfxblock_t *block));
@@ -306,7 +306,7 @@ sfxbuffer_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 								 void (*close) (sfxbuffer_t *));
 
 /** Close a stream.
-	\param sfx
+	\param stream
 */
 void SND_SFX_StreamClose (sfxstream_t *stream);
 
