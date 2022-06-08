@@ -35,6 +35,9 @@
 #endif
 #include <vulkan/vulkan.h>
 
+/** \defgroup vulkan Vulkan Renderer
+*/
+
 enum {
 	QFV_rp_shadowmap,
 	QFV_rp_main,

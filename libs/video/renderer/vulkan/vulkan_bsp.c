@@ -91,13 +91,11 @@ static const char * __attribute__((used)) bsp_pass_names[] = {
 };
 
 static QFV_Subpass subpass_map[] = {
-	QFV_passDepth,			// QFV_bspDepth
-	QFV_passGBuffer,		// QFV_bspGBuffer
-	QFV_passTranslucent,	// QFV_bspSky
-	QFV_passTranslucent,	// QFV_bspTurb
+	[QFV_bspDepth]   = QFV_passDepth,
+	[QFV_bspGBuffer] = QFV_passGBuffer,
+	[QFV_bspSky]     = QFV_passTranslucent,
+	[QFV_bspTurb]    = QFV_passTranslucent,
 };
-
-#define ALLOC_CHUNK 64
 
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
@@ -113,12 +111,6 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 	}
 }
 
-void
-Vulkan_ClearElements (vulkan_ctx_t *ctx)
-{
-//	bspctx_t   *bctx = ctx->bsp_context;
-}
-
 static inline void
 chain_surface (const bsp_face_t *face, bsp_pass_t *pass, const bspctx_t *bctx)
 {
@@ -128,7 +120,7 @@ chain_surface (const bsp_face_t *face, bsp_pass_t *pass, const bspctx_t *bctx)
 	const texanim_t *anim = ent_frame ? &bctx->texdata.anim_alt[face->tex_id]
 									  : &bctx->texdata.anim_main[face->tex_id];
 	int         anim_ind = (bctx->anim_index + anim->offset) % anim->count;
-	int         tex_id = bctx->texdata.anim_map[anim->base + anim_ind];
+	int         tex_id = bctx->texdata.frame_map[anim->base + anim_ind];
 	DARRAY_APPEND (&pass->face_queue[tex_id],
 				   ((instface_t) { pass->inst_id, face - bctx->faces }));
 }
@@ -165,7 +157,6 @@ clear_textures (vulkan_ctx_t *ctx)
 void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
-
 	clear_textures (ctx);
 	add_texture (r_notexture_mip, ctx);
 	{
@@ -209,11 +200,13 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 	}
 
+	// 2.5 for two texanim_t structs (32-bits each) and 1 uint16_t for each
+	// element
 	size_t      texdata_size = 2.5 * num_tex * sizeof (texanim_t);
 	texanim_t  *texdata = Hunk_AllocName (0, texdata_size, "texdata");
 	bctx->texdata.anim_main = texdata;
 	bctx->texdata.anim_alt = texdata + num_tex;
-	bctx->texdata.anim_map = (uint16_t *) (texdata + 2 * num_tex);
+	bctx->texdata.frame_map = (uint16_t *) (texdata + 2 * num_tex);
 	int16_t     map_index = 0;
 	for (int i = 0; i < num_tex; i++) {
 		texanim_t  *anim = bctx->texdata.anim_main + i;
@@ -222,7 +215,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			continue;
 		}
 		*anim = (texanim_t) { .base = map_index, .offset = 0, .count = 1 };
-		bctx->texdata.anim_map[anim->base] = i;
+		bctx->texdata.frame_map[anim->base] = i;
 
 		if (textures[i]->anim_total > 1) {
 			// bsp loader multiplies anim_total by ANIM_CYCLE to slow the
@@ -240,7 +233,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				}
 				*a = *anim;
 				a->offset = j;
-				bctx->texdata.anim_map[a->base + a->offset] = vtex->tex_id;
+				bctx->texdata.frame_map[a->base + a->offset] = vtex->tex_id;
 				tx = tx->anim_next;
 			}
 			if (tx != textures[i]) {
@@ -260,6 +253,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 	}
 
+	// create face queue arrays
 	bctx->main_pass.face_queue = malloc (num_tex * sizeof (bsp_instfaceset_t));
 	for (int i = 0; i < num_tex; i++) {
 		bctx->main_pass.face_queue[i]
@@ -379,11 +373,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		face_sets[i] = (facerefset_t) DARRAY_STATIC_INIT (1024);
 	}
 
-	for (int i = 0; i < bctx->model_id; i++) {
+	for (int i = 0; i < bctx->num_models; i++) {
 		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
 	}
 	free (bctx->main_pass.instances);
-	bctx->model_id = 0;
+	bctx->num_models = 0;
 
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
@@ -396,7 +390,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m || m->type != mod_brush) {
 			continue;
 		}
-		m->render_id = bctx->model_id++;
+		m->render_id = bctx->num_models++;
 		if (*m->path == '*') {
 			continue;
 		}
@@ -422,9 +416,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		face_base += brush->numsurfaces;
 	}
-	bctx->main_pass.instances = malloc (bctx->model_id
+	bctx->main_pass.instances = malloc (bctx->num_models
 										* sizeof (bsp_instance_t));
-	for (int i = 0; i < bctx->model_id; i++) {
+	for (int i = 0; i < bctx->num_models; i++) {
 		DARRAY_INIT (&bctx->main_pass.instances[i].entities, 16);
 	}
 	// All vertices from all brush models go into one giant vbo.
@@ -469,7 +463,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	free (bctx->faces);
 	free (bctx->poly_indices);
 	free (bctx->models);
-	bctx->models = malloc (bctx->model_id * sizeof (bsp_model_t));
+	bctx->models = malloc (bctx->num_models * sizeof (bsp_model_t));
 	bctx->faces = malloc (face_base * sizeof (bsp_face_t));
 	bctx->poly_indices = malloc (index_count * sizeof (uint32_t));
 
@@ -943,7 +937,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 	for (int i = 0; i < pass->num_queues; i++) {
 		DARRAY_RESIZE (&pass->draw_queues[i], 0);
 	}
-	for (int i = 0; i < bctx->model_id; i++) {
+	for (int i = 0; i < bctx->num_models; i++) {
 		pass->instances[i].first_instance = -1;
 		DARRAY_RESIZE (&pass->instances[i].entities, 0);
 	}
@@ -1507,7 +1501,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	free (bctx->models);
 
 	free (bctx->main_pass.draw_queues);
-	for (int i = 0; i < bctx->model_id; i++) {
+	for (int i = 0; i < bctx->num_models; i++) {
 		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
 	}
 	free (bctx->main_pass.instances);
