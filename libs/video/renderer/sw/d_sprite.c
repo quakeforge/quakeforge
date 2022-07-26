@@ -35,8 +35,6 @@
 
 static int  sprite_height;
 static int  minindex, maxindex;
-static sspan_t *sprite_spans;
-
 
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
@@ -195,15 +193,13 @@ D_SpriteDrawSpans (sspan_t *pspan)
 #endif
 
 static void
-D_SpriteScanLeftEdge (void)
+D_SpriteScanLeftEdge (sspan_t *pspan)
 {
 	int         i, v, itop, ibottom, lmaxindex;
 	emitpoint_t *pvert, *pnext;
-	sspan_t    *pspan;
 	float       du, dv, vtop, vbottom, slope;
 	fixed16_t   u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 	if (i == 0)
 		i = r_spritedesc.nump;
@@ -249,15 +245,13 @@ D_SpriteScanLeftEdge (void)
 }
 
 static void
-D_SpriteScanRightEdge (void)
+D_SpriteScanRightEdge (sspan_t *pspan)
 {
 	int         i, v, itop, ibottom;
 	emitpoint_t *pvert, *pnext;
-	sspan_t    *pspan;
 	float       du, dv, vtop, vbottom, slope, uvert, unext, vvert, vnext;
 	fixed16_t   u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 
 	vvert = r_spritedesc.pverts[i].v;
@@ -371,8 +365,6 @@ D_DrawSprite (const vec3_t relvieworg)
 	emitpoint_t *pverts;
 	sspan_t     spans[MAXHEIGHT + 1];
 
-	sprite_spans = spans;
-
 	// find the top and bottom vertices, and make sure there's at least one
 	// scan to draw
 	ymin = 999999.9;
@@ -410,7 +402,7 @@ D_DrawSprite (const vec3_t relvieworg)
 	pverts[nump] = pverts[0];
 
 	D_SpriteCalculateGradients (relvieworg);
-	D_SpriteScanLeftEdge ();
-	D_SpriteScanRightEdge ();
-	D_SpriteDrawSpans (sprite_spans);
+	D_SpriteScanLeftEdge (spans);
+	D_SpriteScanRightEdge (spans);
+	D_SpriteDrawSpans (spans);
 }

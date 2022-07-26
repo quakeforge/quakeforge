@@ -72,8 +72,8 @@ def dst_str(width, src_type, dst_type):
         return f"OPC({types[dst_type]})"
 
 def zero_str(width, src_type):
-    ones = "{%s}" % (", ".join(["0"] * (width + 1)))
-    return f"{cast_str(width, src_type, src_type)} {ones}"
+    zeros = "{%s}" % (", ".join(["0"] * (width + 1)))
+    return f"{cast_str(width, src_type, src_type)} {zeros}"
 
 def one_str(width, src_type):
     ones = "{%s}" % (", ".join(["1"] * (width + 1)))
@@ -110,7 +110,7 @@ for width in range(4):
                 elif width == 2:
                     print(f"{case} VectorCompUop(&{dst},{cast},&{src}); break;")
                 else:
-                    expand = expand_str(width, src)
+                    expand = expand_str(width, src, f"({types[dst_type]})")
                     print(f"{case} {dst} = {cast} {expand}; break;")
             elif mode == 2:
                 one = one_str(width, src_type)

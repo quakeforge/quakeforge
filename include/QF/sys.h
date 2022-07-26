@@ -80,7 +80,7 @@ void Sys_FatalError (const char *error, ...) __attribute__((format(PRINTF,1,2), 
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void *), void *data);
-int64_t Sys_StartTime (void) __attribute__ ((const));
+int64_t Sys_StartTime (void) __attribute__ ((pure));
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
 int64_t Sys_TimeBase (void) __attribute__ ((const));

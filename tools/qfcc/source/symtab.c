@@ -51,7 +51,7 @@
 static symtab_t *symtabs_freelist;
 static symbol_t *symbols_freelist;
 
-static const char *sy_type_names[] = {
+static const char * const sy_type_names[] = {
 	"sy_name",
 	"sy_var",
 	"sy_const",

@@ -135,8 +135,8 @@ struct expr_s;
 struct type_s;
 struct dstring_s;
 
-extern const char *op_type_names[];
-extern const char *st_type_names[];
+extern const char * const op_type_names[];
+extern const char * const st_type_names[];
 
 const char *optype_str (op_type_e type) __attribute__((const));
 

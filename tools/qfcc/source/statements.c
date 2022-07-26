@@ -65,7 +65,7 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
-const char *op_type_names[] = {
+const char * const op_type_names[] = {
 	"op_def",
 	"op_value",
 	"op_label",
@@ -75,7 +75,7 @@ const char *op_type_names[] = {
 	"op_pseudo",
 };
 
-const char *st_type_names[] = {
+const char * const st_type_names[] = {
 	"st_none",
 	"st_expr",
 	"st_assign",

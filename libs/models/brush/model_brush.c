@@ -637,8 +637,10 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 			out->samples = brush->lightdata + (i * mod_lightmap_bytes);
 
 		// set the drawing flags flag
-		if (!out->texinfo->texture || !out->texinfo->texture->name)
-			continue;				// avoid crashing on null textures
+		if (!out->texinfo->texture) {
+			// avoid crashing on null textures (which do exist)
+			continue;
+		}
 
 		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);

@@ -297,8 +297,7 @@ Model_NextDownload (void)
 			return;								// started a download
 	}
 
-	if (cl.model_name[1])
-		CL_MapCfg (cl.model_name[1]);
+	CL_MapCfg (cl.model_name[1]);
 
 	for (i = 1; i < cl.nummodels; i++) {
 		const char *info_key = 0;

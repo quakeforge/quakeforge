@@ -963,7 +963,11 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *
    being larger than MAX_BUF_SIZE, then flag memory exhausted.  */
 #define EXTEND_BUFFER()							\
   do { 									\
-    unsigned char *old_buffer = bufp->buffer;				\
+    intptr_t b_offs = b - bufp->buffer;					\
+    intptr_t begalt_offs = b - begalt;					\
+    intptr_t fixup_alt_jump_offs = b - fixup_alt_jump;			\
+    intptr_t laststart_offs = b - laststart;				\
+    intptr_t pending_exact_offs = b - pending_exact;			\
     if (bufp->allocated == MAX_BUF_SIZE) 				\
       return REG_ESIZE;							\
     bufp->allocated <<= 1;						\
@@ -971,19 +975,18 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *
       bufp->allocated = MAX_BUF_SIZE; 					\
     bufp->buffer = (unsigned char *) realloc (bufp->buffer, bufp->allocated);\
     if (bufp->buffer == NULL)						\
-      return REG_ESPACE;						\
-    /* If the buffer moved, move all the pointers into it.  */		\
-    if (old_buffer != bufp->buffer)					\
       {									\
-        b = (b - old_buffer) + bufp->buffer;				\
-        begalt = (begalt - old_buffer) + bufp->buffer;			\
-        if (fixup_alt_jump)						\
-          fixup_alt_jump = (fixup_alt_jump - old_buffer) + bufp->buffer;\
-        if (laststart)							\
-          laststart = (laststart - old_buffer) + bufp->buffer;		\
-        if (pending_exact)						\
-          pending_exact = (pending_exact - old_buffer) + bufp->buffer;	\
+	laststart = fixup_alt_jump = 0;					\
+        return REG_ESPACE;						\
       }									\
+    b = b_offs + bufp->buffer;						\
+    begalt = b - begalt_offs;						\
+    if (fixup_alt_jump)							\
+      fixup_alt_jump = b - fixup_alt_jump_offs;				\
+    if (laststart)							\
+      laststart = b - laststart_offs;					\
+    if (pending_exact)							\
+      pending_exact = b - pending_exact_offs;				\
   } while (0)
 
 

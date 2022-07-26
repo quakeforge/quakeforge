@@ -118,9 +118,9 @@ struct selector_s;
 
 int is_id (const struct type_s *type) __attribute__((pure));
 int is_class (const struct type_s *type) __attribute__((pure));
-int is_Class (const struct type_s *type) __attribute__((const));
+int is_Class (const struct type_s *type) __attribute__((pure));
 int is_classptr (const struct type_s *type) __attribute__((pure));
-int is_SEL (const struct type_s *type) __attribute__((const));
+int is_SEL (const struct type_s *type) __attribute__((pure));
 int is_object (const struct type_s *type) __attribute__((const));
 int is_method (const struct type_s *type) __attribute__((const));
 int is_method_description (const struct type_s *type) __attribute__((const));

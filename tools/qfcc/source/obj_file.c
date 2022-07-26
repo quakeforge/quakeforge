@@ -960,7 +960,7 @@ typedef struct globals_info_s {
 } globals_info_t;
 
 
-static globals_info_t
+static globals_info_t __attribute__((pure))
 qfo_count_globals (qfo_t *qfo, dprograms_t *progs, int word_align)
 {
 	globals_info_t info = {};

@@ -311,6 +311,7 @@ alsa_process (snd_pcm_t *pcm, snd_t *snd)
 			if ((res = alsa_recover (pcm, -EPIPE)) < 0) {
 				Sys_Printf ("snd_alsa: XRUN recovery failed: %s\n",
 							qfsnd_strerror (res));
+				snd->xfer_data = 0;
 				return res;
 			}
 			ret = 0;
@@ -323,6 +324,7 @@ alsa_process (snd_pcm_t *pcm, snd_t *snd)
 			if ((res = alsa_recover (pcm, res >= 0 ? -EPIPE : res)) < 0) {
 				Sys_Printf ("snd_alsa: XRUN recovery failed: %s\n",
 							qfsnd_strerror (res));
+				snd->xfer_data = 0;
 				return res;
 			}
 			ret = 0;
@@ -330,6 +332,7 @@ alsa_process (snd_pcm_t *pcm, snd_t *snd)
 		size -= packet.nframes;
 	}
 
+	snd->xfer_data = 0;
 	return ret;
 }
 

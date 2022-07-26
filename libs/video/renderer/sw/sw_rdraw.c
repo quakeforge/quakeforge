@@ -49,7 +49,7 @@ static polydesc_t  r_polydesc;
 
 clipplane_t view_clipplanes[4];
 
-medge_t    *r_pedge;
+medge_t    *r_pedge;	// FIXME used by asm
 
 qboolean    r_leftclipped, r_rightclipped;
 static qboolean makeleftedge, makerightedge;
@@ -518,7 +518,6 @@ R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
 	plane_t    *pplane;
 	float       distinv;
 	vec3_t      p_normal;
-	medge_t     tedge;
 	clipplane_t *pclip;
 
 	// skip out if no more surfs
@@ -535,6 +534,7 @@ R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
 	c_faceclip++;
 
 	// this is a dummy to give the caching mechanism someplace to write to
+	static medge_t tedge;
 	r_pedge = &tedge;
 
 	// set up clip planes

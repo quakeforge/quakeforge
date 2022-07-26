@@ -5,6 +5,8 @@
 
 #include "QF/va.h"
 
+#include "QF/simd/types.h"
+
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 static int test_enabled[num_tests] = { 0 };
 
@@ -156,6 +158,14 @@ check_result (test_t *test)
 		printf ("test #%zd: %s: OK\n", test - tests, test->desc);
 	} else {
 		printf ("test #%zd: %s: words differ\n", test - tests, test->desc);
+		for (pr_uint_t i = 0; i < test->num_globals; i += 4) {
+			pr_ivec4_t *a = (pr_ivec4_t *) &test->expect_globals[i];
+			pr_ivec4_t *b = (pr_ivec4_t *) &test_pr.pr_globals[i];
+			if (memcmp (a, b, sizeof (pr_ivec4_t))) {
+				printf ("-%4x { %8x, %8x %8x %8x }\n", i, VEC4_EXP (*a));
+				printf ("+%4x { %8x, %8x %8x %8x }\n", i, VEC4_EXP (*b));
+			}
+		}
 	}
 	return ret;
 }
