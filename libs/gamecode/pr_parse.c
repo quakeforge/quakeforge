@@ -231,6 +231,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 			break;
 
 		case ev_vector:
+			(void)0;//FIXME for clang
 			vec3_t      vec = {};
 			char       *str = alloca (strlen (s) + 1);
 			strcpy (str, s);

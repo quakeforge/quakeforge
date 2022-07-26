@@ -149,7 +149,7 @@ static void
 snd_free_channel (channel_t *ch)
 {
 	sfxbuffer_t *buffer = ch->buffer;
-	ch->buffer = 0;
+	ch->buffer = (sfxbuffer_t *) 0;
 	ch->stop = 0;
 	ch->done = 0;
 	int         chan_ind = ch - snd_channels;

@@ -29,6 +29,12 @@
 
 #include <stdlib.h>
 
+#ifdef __clang__
+#define DESIGNATED_INIT
+#else
+#define DESIGNATED_INIT __attribute__((designated_init))
+#endif
+
 struct exprval_s;
 struct exprctx_s;
 struct va_ctx_s;
@@ -57,7 +63,7 @@ typedef struct exprtype_s {
 	binop_t    *binops;
 	unop_t     *unops;
 	void       *data;
-} __attribute__((designated_init)) exprtype_t;
+} DESIGNATED_INIT exprtype_t;
 
 typedef struct exprval_s {
 	exprtype_t *type;

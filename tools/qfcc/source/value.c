@@ -94,7 +94,9 @@ static ex_value_t *
 new_value (void)
 {
 	ex_value_t *value;
+#define malloc(x) aligned_alloc (__alignof__(ex_value_t), x)
 	ALLOC (256, ex_value_t, values, value);
+#undef malloc
 	return value;
 }
 
@@ -636,7 +638,8 @@ make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 {
 	immediate_t *imm;
 
-	imm = calloc (1, sizeof (immediate_t));
+	imm = aligned_alloc (__alignof__(immediate_t), sizeof (immediate_t));
+	memset (imm, 0, sizeof (immediate_t));
 	imm->def = def;
 	memcpy (&imm->i, &val->v, sizeof (imm->i));
 

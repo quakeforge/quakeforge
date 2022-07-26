@@ -198,7 +198,12 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_color")))) {
-		sscanf (str, "%f %f %f", VectorExpandAddr (light->color));
+		union {
+			float       a[4];
+			vec4f_t     v;
+		} color = {};
+		sscanf (str, "%f %f %f", VectorExpandAddr (color.a));
+		light->color = color.v;
 		VectorScale (light->color, 1/255.0, light->color);
 	}
 

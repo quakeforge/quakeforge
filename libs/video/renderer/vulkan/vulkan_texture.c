@@ -176,8 +176,8 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 
 	VkExtent3D  extent = { tex[0].width, tex[0].height, 1 };
 	VkImageType itype = layers > 0 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_2D;
-	VkImageType vtype = layers > 0 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY
-								   : VK_IMAGE_VIEW_TYPE_2D;
+	VkImageViewType vtype = layers > 0 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY
+									   : VK_IMAGE_VIEW_TYPE_2D;
 	if (layers < 1) {
 		layers = 1;
 	}

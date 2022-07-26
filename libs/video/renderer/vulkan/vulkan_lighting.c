@@ -438,6 +438,7 @@ create_light_matrices (lightingctx_t *lctx)
 				break;
 			case ST_CASCADE:
 			case ST_PLANE:
+				(void)0;//FIXME for clang
 				//FIXME will fail for -ref_direction
 				vec4f_t     dir = light->direction;
 				dir[3] = 0;

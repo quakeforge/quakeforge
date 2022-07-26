@@ -418,26 +418,6 @@ R_BuildLightMap_4 (const transform_t *transform, mod_brush_t *brush,
 
 // BRUSH MODELS ===============================================================
 
-static inline void
-do_subimage_2 (int i)
-{
-	byte       *block, *lm, *b;
-	int         stride, width;
-	glRect_t   *rect = &gl_lightmap_rectchange[i];
-
-	width = rect->w * lightmap_bytes;
-	stride = BLOCK_WIDTH * lightmap_bytes;
-	b = block = Hunk_TempAlloc (0, rect->h * width);
-	lm = lightmaps[i] + (rect->t * BLOCK_WIDTH + rect->l) * lightmap_bytes;
-	for (i = rect->h; i > 0; i--) {
-		memcpy (b, lm, width);
-		b += width;
-		lm += stride;
-	}
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->l, rect->t, rect->w, rect->h,
-					   gl_lightmap_format, GL_UNSIGNED_BYTE, block);
-}
-
 void
 gl_R_BlendLightmaps (void)
 {
