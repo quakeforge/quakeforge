@@ -242,6 +242,8 @@ void reloc_def_op (const struct ex_label_s *label,
 
 void reloc_attach_relocs (reloc_t *relocs, reloc_t **location);
 
+extern const char * const reloc_name[];
+
 ///@}
 
 #endif//__reloc_h

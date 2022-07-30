@@ -559,6 +559,17 @@ add_code (qfo_mspace_t *code)
 	work->spaces[qfo_code_space].data_size = work_code->size;
 }
 
+static void
+align_data (int space, qfo_mspace_t *data)
+{
+	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
+		linker_internal_error ("bad space for align_data (): %d", space);
+	defspace_alloc_aligned_highwater (*work_spaces[space], 0,
+									  1 << data->alignment);
+	work->spaces[space].data = (*work_spaces[space])->data;
+	work->spaces[space].data_size = (*work_spaces[space])->size;
+}
+
 /**	Add the data in a data space to the working qfo.
 
 	\param space	The space to which the data will be added.
@@ -603,6 +614,7 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 	}
 	ws->data_size = space->data_size;
 	ws->id = space->id;
+	ws->alignment = space->alignment;
 }
 
 static defref_t *
@@ -765,18 +777,25 @@ process_code_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
-	if (space->id == qfo_near_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_near_data_space,
-				  process_data_def);
-		add_data (qfo_near_data_space, space);
-	} else if (space->id == qfo_far_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_far_data_space,
-				  process_data_def);
-		add_data (qfo_far_data_space, space);
-	} else {
-		add_data_space (qfo, space);
+	if (pass == 0) {
+		if (space->id == qfo_near_data_space) {
+			align_data (qfo_near_data_space, space);
+		} else if (space->id == qfo_far_data_space) {
+			align_data (qfo_far_data_space, space);
+		} else {
+		}
+	} else if (pass == 1) {
+		if (space->id == qfo_near_data_space) {
+			add_defs (qfo, space, work->spaces + qfo_near_data_space,
+					  process_data_def);
+			add_data (qfo_near_data_space, space);
+		} else if (space->id == qfo_far_data_space) {
+			add_defs (qfo, space, work->spaces + qfo_far_data_space,
+					  process_data_def);
+			add_data (qfo_far_data_space, space);
+		} else {
+			add_data_space (qfo, space);
+		}
 	}
 	return 0;
 }
@@ -797,10 +816,12 @@ process_strings_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
-	add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
-	add_data (qfo_entity_space, space);
+	if (pass == 0) {
+		align_data (qfo_entity_space, space);
+	} else if (pass == 1) {
+		add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
+		add_data (qfo_entity_space, space);
+	}
 	return 0;
 }
 
@@ -915,14 +936,16 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_debug_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
 	if (space->type != qfos_debug) {
-		linker_internal_error ("bad space type for add_data_space (): %d",
+		linker_internal_error ("bad space type for process_debug_space (): %d",
 							   space->type);
 	}
-	add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
-	add_data (qfo_debug_space, space);
+	if (pass == 0) {
+		align_data (qfo_debug_space, space);
+	} else if (pass == 1) {
+		add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
+		add_data (qfo_debug_space, space);
+	}
 	return 0;
 }
 
@@ -1032,9 +1055,6 @@ linker_add_qfo (qfo_t *qfo)
 	qfo_mspace_t *space;
 
 	qfo_type_defs = 0;
-	for (i = 0; i < qfo_num_spaces; i++) {
-		work_base[i] = work->spaces[i].data_size;
-	}
 	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
@@ -1044,6 +1064,11 @@ linker_add_qfo (qfo_t *qfo)
 			}
 			if (funcs[space->type] (qfo, space, pass))
 				return 1;
+		}
+		for (i = 0; i < qfo_num_spaces; i++) {
+			if (pass == 0) {
+				work_base[i] = work->spaces[i].data_size;
+			}
 		}
 	}
 	process_funcs (qfo);

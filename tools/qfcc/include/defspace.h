@@ -56,6 +56,7 @@ typedef struct defspace_s {
 	struct def_s *defs;			///< list of defs using this space
 	struct def_s **def_tail;	///< for appending to \a defs
 	pr_type_t  *data;			///< backing memory for this space
+	int         alignment;		///< minimum alignment of the whole space
 	int         size;			///< current high-water mark for alloced data
 	int         max_size;		///< size of backing memory, or highwater mark
 								///< for ds_virtual

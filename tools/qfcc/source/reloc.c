@@ -53,7 +53,7 @@
 
 static reloc_t *refs_freelist;
 
-static const char *reloc_name[] = {
+const char * const reloc_name[] = {
 	"rel_none",
 	"rel_op_a_def",
 	"rel_op_b_def",

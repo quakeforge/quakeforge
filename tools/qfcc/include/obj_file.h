@@ -91,7 +91,8 @@ typedef struct qfo_space_s {
 	pr_uint_t   data;			///< byte offset in qfo
 	pr_uint_t   data_size;		///< in elements. zero for entity spaces
 	pr_uint_t   id;
-	pr_int_t    reserved[2];
+	pr_uint_t   alignment;		///< min alignment for space (1<<alignment)
+	pr_int_t    reserved[1];
 } qfo_space_t;
 
 /** Representation of a def in the object file.
@@ -259,6 +260,7 @@ typedef struct qfo_mspace_s {
 	};
 	pr_uint_t   data_size;
 	pr_uint_t   id;
+	pr_uint_t   alignment;
 } qfo_mspace_t;
 
 /** In-memory representation of a QFO object file.

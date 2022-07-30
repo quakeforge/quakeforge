@@ -237,6 +237,7 @@ qfo_init_data_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 		memcpy (space->data, data->data, size);
 	}
 	space->data_size = data->size;
+	space->alignment = qfo_log2 (data->alignment);
 }
 
 static void
@@ -250,6 +251,7 @@ qfo_init_entity_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 	space->data = 0;
 	space->data_size = data->size;
 	space->id = qfo_entity_space;
+	space->alignment = qfo_log2 (data->alignment);
 }
 
 static void
@@ -501,6 +503,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 		}
 		spaces[i].data_size = LittleLong (qfo->spaces[i].data_size);
 		spaces[i].id = LittleLong (qfo->spaces[i].id);
+		spaces[i].alignment = LittleLong (qfo->spaces[i].alignment);
 	}
 	for (i = 0; i < qfo->num_relocs; i++) {
 		relocs[i].space = LittleLong (qfo->relocs[i].space);
@@ -608,6 +611,7 @@ qfo_read (QFile *file)
 								qfo->spaces[i].data_size, qfo->spaces[i].type);
 		}
 		qfo->spaces[i].id = LittleLong (spaces[i].id);
+		qfo->spaces[i].alignment = LittleLong (spaces[i].alignment);
 	}
 	for (i = 0; i < qfo->num_relocs; i++) {
 		qfo->relocs[i].space = LittleLong (qfo->relocs[i].space);
@@ -1041,7 +1045,7 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	// these are in order in which they usually appear in the file rather
 	// than the order they appear in the struct, though with the offsets
 	// it doesn't matter too much. However, as people expect a certain
-	// layout, ti does matter enough to preserve the traditional file order.
+	// layout, it does matter enough to preserve the traditional file order.
 	progs->strings.offset = *size;
 	progs->strings.count = qfo->spaces[qfo_strings_space].data_size;
 

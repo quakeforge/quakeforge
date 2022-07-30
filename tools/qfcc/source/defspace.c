@@ -198,6 +198,9 @@ defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
 	}
 	ofs = space->size;
 	pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+	if (alignment > space->alignment) {
+		space->alignment = alignment;
+	}
 	space->size += size + pad;
 	if (space->size > space->max_size) {
 		if (!space->grow || !space->grow (space))
@@ -263,7 +266,7 @@ defspace_add_data (defspace_t *space, pr_type_t *data, int size)
 {
 	int         loc;
 
-	loc = defspace_alloc_loc (space, size);
+	loc = defspace_alloc_highwater (space, size);
 	if (data)
 		memcpy (space->data + loc, data, size * sizeof (pr_type_t));
 	return loc;
@@ -285,6 +288,9 @@ defspace_alloc_aligned_highwater (defspace_t *space, int size, int alignment)
 
 	int         ofs = space->size;
 	int         pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+	if (alignment > space->alignment) {
+		space->alignment = alignment;
+	}
 	space->size += size + pad;
 	if (space->size > space->max_size) {
 		if (!space->grow || !space->grow (space))
