@@ -149,12 +149,16 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
+		VkPhysicalDeviceMultiviewFeatures multiview_features = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+			.multiview = 1,
+		};
 		VkPhysicalDeviceFeatures features = {
 			.geometryShader = 1,
 			.multiViewport = 1,
 		};
 		VkDeviceCreateInfo dCreateInfo = {
-			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
+			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &multiview_features, 0,
 			1, &qCreateInfo,
 			nlay, lay,
 			next, ext,
