@@ -59,6 +59,12 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+//FIXME I don't like this being here (or aligned_alloc being necessary in
+//the first place, but not at all sure what to do about that)
+#ifdef _WIN32
+#define aligned_alloc(al, sz) _aligned_malloc(sz, al)
+#endif
+
 typedef struct {
 	def_t      *def;
 	union {

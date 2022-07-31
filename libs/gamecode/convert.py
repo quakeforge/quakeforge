@@ -110,7 +110,7 @@ for width in range(4):
                 elif width == 2:
                     print(f"{case} VectorCompUop(&{dst},{cast},&{src}); break;")
                 else:
-                    expand = expand_str(width, src, f"({types[dst_type]})")
+                    expand = expand_str(width, src, f"(pr_{types[dst_type]}_t)")
                     print(f"{case} {dst} = {cast} {expand}; break;")
             elif mode == 2:
                 one = one_str(width, src_type)
