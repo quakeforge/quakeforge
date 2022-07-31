@@ -46,7 +46,8 @@ typedef struct {
 struct symbol_s *find_struct (int su, struct symbol_s *tag,
 							  struct type_s *type);
 struct symbol_s *build_struct (int su, struct symbol_s *tag,
-							   struct symtab_s *symtab, struct type_s *type);
+							   struct symtab_s *symtab, struct type_s *type,
+							   int base);
 struct symbol_s *find_enum (struct symbol_s *tag);
 struct symtab_s *start_enum (struct symbol_s *enm);
 struct symbol_s *finish_enum (struct symbol_s *sym);

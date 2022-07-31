@@ -846,7 +846,7 @@ struct_specifier
 			current_symtab = symtab->parent;
 
 			if ($1) {
-				sym = build_struct ($1, $2, symtab, 0);
+				sym = build_struct ($1, $2, symtab, 0, 0);
 				$$ = make_spec (sym->type, 0, 0, 0);
 				if (!sym->table)
 					symtab_addsymbol (current_symtab, sym);
@@ -2051,7 +2051,11 @@ ivar_decl_list
 			tab->parent = 0;
 
 			tab = $$->parent;	// preserve the ivars inheritance chain
-			build_struct ('s', 0, $$, 0);
+			int         base = 0;
+			if ($<class>0->super_class) {
+				base = type_size ($<class>0->super_class->type);
+			}
+			build_struct ('s', 0, $$, 0, base);
 			$$->parent = tab;
 			current_visibility = vis_public;
 		}

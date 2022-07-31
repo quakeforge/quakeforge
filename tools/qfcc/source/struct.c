@@ -110,7 +110,7 @@ find_struct (int su, symbol_t *tag, type_t *type)
 }
 
 symbol_t *
-build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
+build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
 	symbol_t   *s;
@@ -131,7 +131,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 				   s->type->t.class->name);
 		}
 		if (su == 's') {
-			symtab->size = RUP (symtab->size, s->type->alignment);
+			symtab->size = RUP (symtab->size + base, s->type->alignment) - base;
 			s->s.offset = symtab->size;
 			symtab->size += type_size (s->type);
 		} else {
@@ -304,7 +304,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;
 	}
-	sym = build_struct (su, sym, strct, type);
+	sym = build_struct (su, sym, strct, type, 0);
 	return sym;
 }
 
