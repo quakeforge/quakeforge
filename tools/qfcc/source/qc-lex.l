@@ -587,13 +587,16 @@ parse_int_vector (const char *token, int width)
 	}
 	t1 = tolower (t1);
 	t2 = tolower (t2);
+	expr_t     *expr = 0;
 	switch (t1) {
 		case 'u':
 			if (t2 == 'l') {
 				type = &type_ulong;
+				type = vector_type (type, width);
+				expr = new_value_expr (new_type_value (type, data));
 			} else {
 				type = &type_uint;
-				volatile union {
+				union {
 					pr_uint_t   u[4];
 					pr_type_t   t[PR_SIZEOF (ivec4)];
 				}           uint_data = {
@@ -604,15 +607,19 @@ parse_int_vector (const char *token, int width)
 						long_data.l[3],
 					}
 				};
-				data = (pr_type_t *) uint_data.t;
+				data = uint_data.t;
+				type = vector_type (type, width);
+				expr = new_value_expr (new_type_value (type, data));
 			}
 			break;
 		case 'l':
 			type = &type_long;
+			type = vector_type (type, width);
+			expr = new_value_expr (new_type_value (type, data));
 			break;
 		case 'f':
 			type = &type_float;
-			volatile union {
+			union {
 				pr_float_t  f[4];
 				pr_type_t   t[PR_SIZEOF (vec4)];
 			}           float_data = {
@@ -623,11 +630,13 @@ parse_int_vector (const char *token, int width)
 					long_data.l[3],
 				}
 			};
-			data = (pr_type_t *) float_data.t;
+			data = float_data.t;
+			type = vector_type (type, width);
+			expr = new_value_expr (new_type_value (type, data));
 			break;
 		case 'd':
 			type = &type_double;
-			volatile union {
+			union {
 				pr_double_t d[4];
 				pr_type_t   t[PR_SIZEOF (dvec4)];
 			}           double_data = {
@@ -638,11 +647,13 @@ parse_int_vector (const char *token, int width)
 					long_data.l[3],
 				}
 			};
-			data = (pr_type_t *) double_data.t;
+			data = double_data.t;
+			type = vector_type (type, width);
+			expr = new_value_expr (new_type_value (type, data));
 			break;
 		case 0:
 			type = &type_int;
-			volatile union {
+			union {
 				pr_int_t    i[4];
 				pr_type_t   t[PR_SIZEOF (ivec4)];
 			}           int_data = {
@@ -653,11 +664,11 @@ parse_int_vector (const char *token, int width)
 					long_data.l[3],
 				}
 			};
-			data = (pr_type_t *) int_data.t;
+			data = int_data.t;
+			type = vector_type (type, width);
+			expr = new_value_expr (new_type_value (type, data));
 			break;
 	}
-	type = vector_type (type, width);
-	expr_t     *expr = new_value_expr (new_type_value (type, data));
 	expr->implicit = !t1;
 	return expr;
 }
