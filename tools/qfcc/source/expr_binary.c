@@ -1094,6 +1094,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				e2 = cast_expr (t1, e2);
 			} else if (type_promotes (base_type (t2), base_type (t1))) {
 				e1 = cast_expr (t2, e1);
+			} else if (base_type (t1) == base_type (t2)) {
+				if (is_vector (t1) || is_quaternion (t1)) {
+					e2 = cast_expr (t1, e2);
+				} else if (is_vector (t2) || is_quaternion (t2)) {
+					e1 = cast_expr (t2, e1);
+				}
 			} else {
 				debug (e1, "%d %d\n", e1->implicit, e2->implicit);
 				return invalid_binary_expr (op, e1, e2);
