@@ -269,6 +269,12 @@ typedef struct {
 	struct type_s *type;		///< result type
 } ex_swizzle_t;
 
+typedef struct {
+	struct expr_s *src;			///< source expression
+	int         extend;			///< extend mode 0: 0, 1: 1, 2: copy/0 3:-1
+	struct type_s *type;		///< result type;
+} ex_extend_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -305,6 +311,7 @@ typedef struct expr_s {
 		struct type_s *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
 		ex_swizzle_t swizzle;			///< vector swizzle operation
+		ex_extend_t extend;				///< vector extend operation
 	} e;
 } expr_t;
 
@@ -493,6 +500,8 @@ expr_t *new_unary_expr (int op, expr_t *e1);
 expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
 
 expr_t *new_swizzle_expr (expr_t *src, const char *swizzle);
+
+expr_t *new_extend_expr (expr_t *src, struct type_s *type, int ext);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 

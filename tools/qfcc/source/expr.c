@@ -197,6 +197,8 @@ get_type (expr_t *e)
 			return e->e.hop.type;
 		case ex_swizzle:
 			return e->e.swizzle.type;
+		case ex_extend:
+			return e->e.extend.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -431,6 +433,11 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			e->e.swizzle.src = copy_expr (e->e.swizzle.src);
+			return n;
+		case ex_extend:
+			n = new_expr ();
+			*n = *e;
+			e->e.extend.src = copy_expr (e->e.extend.src);
 			return n;
 		case ex_count:
 			break;
@@ -683,6 +690,17 @@ new_swizzle_expr (expr_t *src, const char *swizzle)
 	expr_t     *expr = new_expr ();
 	expr->type = ex_swizzle;
 	expr->e.swizzle = swiz;
+	return expr;
+}
+
+expr_t *
+new_extend_expr (expr_t *src, type_t *type, int ext)
+{
+	expr_t     *expr = new_expr ();
+	expr->type = ex_extend;
+	expr->e.extend.src = src;
+	expr->e.extend.extend = ext;
+	expr->e.extend.type = type;
 	return expr;
 }
 
@@ -1624,6 +1642,8 @@ has_function_call (expr_t *e)
 			return has_function_call (e->e.hop.vec);
 		case ex_swizzle:
 			return has_function_call (e->e.swizzle.src);
+		case ex_extend:
+			return has_function_call (e->e.extend.src);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1770,6 +1790,7 @@ unary_expr (int op, expr_t *e)
 				case ex_assign:
 				case ex_horizontal:
 				case ex_swizzle:
+				case ex_extend:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1864,6 +1885,7 @@ unary_expr (int op, expr_t *e)
 				case ex_assign:
 				case ex_horizontal:
 				case ex_swizzle:
+				case ex_extend:
 					if (options.code.progsversion == PROG_VERSION) {
 						return binary_expr (EQ, e, new_nil_expr ());
 					} else {
@@ -1954,6 +1976,7 @@ unary_expr (int op, expr_t *e)
 				case ex_assign:
 				case ex_horizontal:
 				case ex_swizzle:
+				case ex_extend:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_int_expr (-1);

@@ -1811,6 +1811,41 @@ expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	type_t     *src_type = get_type (e->e.extend.src);
+	type_t     *res_type = e->e.extend.type;
+	int         src_width = type_width (src_type);
+	int         res_width = type_width (res_type);
+	type_t     *src_base = base_type (src_type);
+	type_t     *res_base = base_type (res_type);
+	static int mode[4][4] = {
+		{-1, 0, 1, 2},
+		{-1,-1, 3, 4},
+		{-1,-1,-1, 5},
+		{-1,-1,-1,-1},
+	};
+	int         ext = mode[src_width - 1][res_width - 1];
+	ext |= (e->e.extend.extend & 3) << 3;
+	ext |= (pr_type_size[res_base->type] - 1) << 5;
+	if (ext < 0 || res_base != src_base) {
+		internal_error (e, "invalid type combination for extend %d %d %d",
+						ext, src_width, res_width);
+	}
+
+	statement_t *s = new_statement (st_expr, "extend", e);
+	sblock = statement_subexpr (sblock, e->e.extend.src, &s->opa);
+	s->opb = short_operand (ext, e);
+	if (!*op) {
+		*op = temp_operand (res_type, e);
+	}
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
+	return sblock;
+}
+
+static sblock_t *
 expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->e.def, e->e.def->type, e);
@@ -1954,6 +1989,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_address] = expr_address,
 		[ex_assign] = expr_assign,
 		[ex_branch] = expr_branch,
+		[ex_extend] = expr_extend,
 	};
 	if (!e) {
 		*op = 0;

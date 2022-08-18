@@ -667,14 +667,7 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 		return new_vector_list (scalar);
 	}
 
-	char        swizzle[] = "xxxx";
-	type_t     *vec_base = base_type (vec_type);
-	expr_t     *tmp = new_temp_def_expr (vector_type (vec_base, 4));
-	expr_t     *block = new_block_expr ();
-	swizzle[type_width (vec_type)] = 0;
-	append_expr (block, assign_expr (tmp, new_swizzle_expr (scalar, swizzle)));
-	block->e.block.result = new_alias_expr (vec_type, tmp);
-	return block;
+	return new_extend_expr (scalar, vec_type, 2);//2 = copy
 }
 
 static expr_t *
