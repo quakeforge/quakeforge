@@ -2835,7 +2835,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_WITH:
 				pr_with (pr, st);
 				break;
-			//        1110 spare
+			case OP_EXTEND:
+				switch (st->b) {
+#include "libs/gamecode/pr_extend.cinc"
+					default:
+						PR_RunError (pr, "invalid extend code: %04o", st->b);
+				}
+				break;
 #define OP_hop2(vec, op) ((vec)[0] op (vec)[1])
 #define OP_hop3(vec, op) ((vec)[0] op (vec)[1] op (vec)[2])
 #define OP_hop4(vec, op) ((vec)[0] op (vec)[1] op (vec)[2] op (vec)[3])
@@ -2843,8 +2849,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				switch (st->b) {
 #include "libs/gamecode/pr_hops.cinc"
 					default:
-						PR_RunError (pr, "invalid hops code: %04o",
-									 st->b);
+						PR_RunError (pr, "invalid hops code: %04o", st->b);
 				}
 				break;
 			default:

@@ -34,7 +34,7 @@ bitmap_txt = """
 1 1111 10oo fbitops
 1 1111 1100 convert (conversion mode in st->b)
 1 1111 1101 with (mode in st->a, value in st->b, reg in st->c)
-1 1111 1110
+1 1111 1110 extend
 1 1111 1111 hops
 """
 
@@ -203,6 +203,14 @@ fbitops_formats = {
             "%Ga, %gc",
         ],
     },
+}
+extend_formats = {
+    "opcode": "OP_EXTEND",
+    "mnemonic": "extend",
+    "opname": "extend",
+    "format": "%Ga %Hb %gc",
+    "widths": "-1, 0, -1",
+    "types": "ev_void, ev_short, ev_void",
 }
 hops_formats = {
     "opcode": "OP_HOPS",
@@ -566,6 +574,7 @@ group_map = {
     "compare2": compare2_formats,
     "constant": constant_formats,
     "convert":  convert_formats,
+    "extend":   extend_formats,
     "fbitops":  fbitops_formats,
     "hops":     hops_formats,
     "jump":     jump_formats,
