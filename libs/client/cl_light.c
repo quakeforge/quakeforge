@@ -201,7 +201,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		union {
 			float       a[4];
 			vec4f_t     v;
-		} color = {};
+		} color = { .v = light->color };
 		sscanf (str, "%f %f %f", VectorExpandAddr (color.a));
 		light->color = color.v;
 		VectorScale (light->color, 1/255.0, light->color);
