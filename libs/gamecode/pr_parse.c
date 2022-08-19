@@ -240,7 +240,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 					*v = ' ';
 				}
 			}
-			if (sscanf (s, "%f %f %f", VectorExpandAddr (vec)) != 3) {
+			if (sscanf (str, "%f %f %f", VectorExpandAddr (vec)) != 3) {
 				Sys_Printf ("Malformed vector %s\n", s);
 			}
 			VectorCopy (vec, PR_PTR (vector, d));
