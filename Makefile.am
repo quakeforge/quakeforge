@@ -26,7 +26,7 @@ NOCONV_DIST= \
 
 BUILT_SOURCES = $(top_srcdir)/.version
 #AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS)
 
 common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 

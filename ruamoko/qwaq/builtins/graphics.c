@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/plugin/console.h"
 
 #include "rua_internal.h"
+#include "r_font.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 
@@ -330,6 +331,8 @@ BI_Graphics_Init (progs_t *pr)
 	IN_Init ();
 	Mod_Init ();
 	R_Init ();
+	R_FontInit ();
+
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);
 	S_Progs_Init (pr);

@@ -30,13 +30,15 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_billboard.c \
 	libs/video/renderer/r_dyn_textures.c \
 	libs/video/renderer/r_ent.c \
+	libs/video/renderer/r_font.c \
 	libs/video/renderer/r_iqm.c \
 	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
 	@vid_render_static_plugin_libs@ \
-	libs/util/libQFutil.la
+	libs/util/libQFutil.la \
+	$(FREETYPE_LIBS)
 
 libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
 libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)

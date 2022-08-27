@@ -39,12 +39,14 @@
 #include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
 #include "QF/ui/view.h"
 
 #include "r_internal.h"
+#include "r_font.h"
 
 typedef struct {
 	pr_int_t    width;
@@ -332,6 +334,18 @@ bi_Draw_Height (progs_t *pr, void *_res)
 	R_INT (pr) = r_data->vid->conview->ylen;
 }
 
+static void
+bi_Font_Load (progs_t *pr, void *_res)
+{
+	const char *font_path = P_GSTRING (pr, 0);
+	int         font_size = P_INT (pr, 1);
+	int        *preload = (int *) P_GPOINTER (pr, 2);
+
+	QFile      *font_file = QFS_FOpenFile (font_path);
+	rfont_t    *font = R_FontLoad (font_file, font_size, preload);
+	(void)font;
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -381,6 +395,8 @@ static builtin_t builtins[] = {
 	bi(Draw_Fill,       5, p(int), p(int), p(int), p(int), p(int)),
 	bi(Draw_Line,       5, p(int), p(int), p(int), p(int), p(int)),
 	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
+
+	bi(Font_Load,       3, p(string), p(int), p(ptr)),
 	{0}
 };
 
