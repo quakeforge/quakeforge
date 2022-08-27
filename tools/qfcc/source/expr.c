@@ -2081,7 +2081,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			err = error (e, "type of formal parameter %d is incomplete",
 						 i + 1);
 		}
-		if (value_too_large (t)) {
+		if (!is_array (t) && value_too_large (t)) {
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
 		}
