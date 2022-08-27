@@ -72,16 +72,12 @@ R_ScrapDelete (rscrap_t *scrap)
 VISIBLE vrect_t *
 R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
-	int         w, h;
 	vrect_t   **t, **best;
 	vrect_t    *old, *frags, *rect;
 
-	w = pow2rup (width);
-	h = pow2rup (height);
-
 	best = 0;
 	for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-		if ((*t)->width < w || (*t)->height < h)
+		if ((*t)->width < width || (*t)->height < height)
 			continue;						// won't fit
 		if (!best) {
 			best = t;
@@ -94,7 +90,7 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 		return 0;							// couldn't find a spot
 	old = *best;
 	*best = old->next;
-	rect = VRect_New (old->x, old->y, w, h);
+	rect = VRect_New (old->x, old->y, width, height);
 	frags = VRect_Difference (old, rect);
 	VRect_Delete (old);
 	if (frags) {
