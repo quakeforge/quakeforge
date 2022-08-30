@@ -624,10 +624,10 @@
 		};
 		alpha_blend = {
 			blendEnable = true;
-			srcColorBlendFactor = src_alpha;
+			srcColorBlendFactor = one;
 			dstColorBlendFactor = one_minus_src_alpha;
 			colorBlendOp = add;
-			srcAlphaBlendFactor = src_alpha;
+			srcAlphaBlendFactor = one;
 			dstAlphaBlendFactor = one_minus_src_alpha;
 			alphaBlendOp = add;
 			colorWriteMask = r|g|b|a;

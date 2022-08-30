@@ -284,10 +284,12 @@ pic_data (const char *name, int w, int h, const byte *data, drawctx_t *dctx)
 	for (size_t i = 0; i < size; i++) {
 		byte        pix = *data++;
 		byte       *col = vid.palette + pix * 3;
-		*picdata++ = *col++;
-		*picdata++ = *col++;
-		*picdata++ = *col++;
-		*picdata++ = (pix == 255) - 1;
+		byte        alpha = (pix == 255) - 1;
+		// pre-multiply alpha.
+		*picdata++ = *col++ & alpha;
+		*picdata++ = *col++ & alpha;
+		*picdata++ = *col++ & alpha;
+		*picdata++ = alpha;
 	}
 	//FIXME live updates of the scrap aren't
 	//syncronized properly for some reason and result in stale texels being
@@ -755,7 +757,9 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	quat_t      color = { 1, 1, 1, bound (0, alpha, 255) / 255.0};
+	float       a = bound (0, alpha, 255) / 255.0;
+	// use pre-multiplied alpha
+	quat_t      color = { a, a, a, a};
 	qpic_t     *cpic;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	int         ofs = max (0, cpic->height - lines);
@@ -929,6 +933,13 @@ void
 Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 {
 	if (color[3]) {
-		draw_blendscreen (color, ctx);
+		quat_t      c;
+		// pre-multiply alpha.
+		// FIXME this is kind of silly because q1source pre-multiplies alpha
+		// for blends, but this was un-done early in QF's history in order
+		// to avoid a pair of state changes
+		VectorScale (color, color[3], c);
+		c[3] = color[3];
+		draw_blendscreen (c, ctx);
 	}
 }
