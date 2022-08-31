@@ -471,6 +471,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Pic,
 	Draw_Picf,
 	Draw_SubPic,
+	Draw_AddFont,
 
 	sw_ParticleSystem,
 	sw_R_Init,

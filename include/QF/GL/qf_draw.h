@@ -29,6 +29,7 @@
 #define __gl_draw_h
 
 struct qpic_s;
+struct rfont_s;
 
 void gl_Draw_Init (void);
 void gl_Draw_Shutdown (void);
@@ -54,6 +55,7 @@ void gl_Draw_Pic (int x, int y, struct qpic_s *pic);
 void gl_Draw_Picf (float x, float y, struct qpic_s *pic);
 void gl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);
+void gl_Draw_AddFont (struct rfont_s *font);
 
 void GL_Set2D (void);
 void GL_Set2DScaled (void);

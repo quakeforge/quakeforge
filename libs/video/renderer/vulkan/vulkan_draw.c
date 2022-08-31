@@ -52,6 +52,7 @@
 #include "compat.h"
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -66,6 +67,7 @@
 #include "QF/Vulkan/staging.h"
 #include "QF/ui/view.h"
 
+#include "r_font.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
@@ -97,6 +99,8 @@ typedef struct drawframeset_s
 typedef struct drawctx_s {
 	VkSampler   sampler;
 	scrap_t    *scrap;
+	rfont_t    *font;
+	qfv_tex_t  *font_tex;
 	qfv_stagebuf_t *stage;
 	qpic_t     *crosshair;
 	qpic_t     *conchars;
@@ -369,6 +373,9 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 	delete_memsuper (dctx->string_memsuper);
 	QFV_DestroyScrap (dctx->scrap);
 	QFV_DestroyStagingBuffer (dctx->stage);
+	if (dctx->font_tex) {
+		Vulkan_UnloadTex (ctx, dctx->font_tex);
+	}
 }
 
 void
@@ -941,5 +948,27 @@ Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 		VectorScale (color, color[3], c);
 		c[3] = color[3];
 		draw_blendscreen (c, ctx);
+	}
+}
+
+void
+Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+
+	if (dctx->font_tex) {
+		Vulkan_UnloadTex (ctx, dctx->font_tex);
+		dctx->font_tex = 0;
+	}
+	dctx->font = font;
+	if (dctx->font) {
+		tex_t       tex = {
+			.width = font->scrap.width,
+			.height = font->scrap.height,
+			.format = tex_l,
+			.loaded = 1,
+			.data = font->scrap_bitmap,
+		};
+		dctx->font_tex = Vulkan_LoadTex (ctx, &tex, 0, "draw.font");
 	}
 }

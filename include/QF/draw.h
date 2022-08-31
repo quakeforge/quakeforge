@@ -243,6 +243,10 @@ void Draw_Picf (float x, float y, qpic_t *pic);
 	\param height vertical size of the sub-region to be drawn
 */
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
+
+struct rfont_s;
+void Draw_AddFont (struct rfont_s *font);
+
 ///@}
 
 #endif//__QF_draw_h

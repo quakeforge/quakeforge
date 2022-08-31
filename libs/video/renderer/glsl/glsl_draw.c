@@ -841,3 +841,8 @@ glsl_Draw_BlendScreen (quat_t color)
 		return;
 	draw_blendscreen (color);
 }
+
+void
+glsl_Draw_AddFont (struct rfont_s *font)
+{
+}

@@ -1018,3 +1018,8 @@ gl_Draw_BlendScreen (quat_t color)
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
 }
+
+void
+gl_Draw_AddFont (struct rfont_s *font)
+{
+}

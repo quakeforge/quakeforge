@@ -78,6 +78,7 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 struct tex_s;
+struct rfont_s;
 typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
 
 typedef struct vid_render_funcs_s {
@@ -103,6 +104,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Pic) (int x, int y, qpic_t *pic);
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
+	void (*Draw_AddFont) (struct rfont_s *font);
 
 
 	struct psystem_s *(*ParticleSystem) (void);

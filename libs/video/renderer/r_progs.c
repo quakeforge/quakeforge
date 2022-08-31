@@ -343,7 +343,7 @@ bi_Font_Load (progs_t *pr, void *_res)
 
 	QFile      *font_file = QFS_FOpenFile (font_path);
 	rfont_t    *font = R_FontLoad (font_file, font_size, preload);
-	(void)font;
+	r_funcs->Draw_AddFont (font);
 }
 
 static const char *
