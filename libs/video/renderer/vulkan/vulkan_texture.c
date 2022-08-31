@@ -195,8 +195,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 						 va (ctx->va_ctx, "memory:%s", name));
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
 	qtex->view = QFV_CreateImageView (device, qtex->image, vtype,
-									  VK_FORMAT_R8G8B8A8_UNORM,
-									  VK_IMAGE_ASPECT_COLOR_BIT);
+									  format, VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
 						 va (ctx->va_ctx, "iview:%s", name));
 
