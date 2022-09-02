@@ -258,3 +258,44 @@ cleanup:
 	}
 	return 0;
 }
+
+VISIBLE vrect_t *
+VRect_SubRect (const vrect_t *rect, int width, int height)
+{
+	if (width > rect->width) {
+		width = rect->width;
+	}
+	if (height > rect->height) {
+		height = rect->height;
+	}
+	int         a = rect->height - height;
+	int         b = rect->width - width;
+	vrect_t    *r, *s;
+	if (b * height > a * width) {
+		// a horizontal cut produces a larger off-cut rectangle than a vertical
+		// cut, so do a vertical cut first so the off-cut is as small as
+		// possible
+		r = VRect_VSplit (rect, rect->x + width);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		s = VRect_HSplit (r, r->y + height);
+	} else {
+		r = VRect_HSplit (rect, rect->y + height);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		s = VRect_VSplit (r, r->x + width);
+	}
+
+	if (VRect_IsEmpty (s->next)) {
+		VRect_Delete (s->next);
+		s->next = r->next;
+	} else {
+		s->next->next = r->next;
+	}
+	VRect_Delete (r);
+	return s;
+}
