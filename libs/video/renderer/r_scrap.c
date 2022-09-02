@@ -90,8 +90,8 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 		return 0;							// couldn't find a spot
 	old = *best;
 	*best = old->next;
-	rect = VRect_New (old->x, old->y, width, height);
-	frags = VRect_Difference (old, rect);
+	rect = VRect_SubRect (old, width, height);
+	frags = rect->next;
 	VRect_Delete (old);
 	if (frags) {
 		// old was bigger than the requested size
