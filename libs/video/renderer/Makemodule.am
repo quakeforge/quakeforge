@@ -270,6 +270,8 @@ sprite_depthv_src = $(vkshaderpath)/sprite_depth.vert
 sprite_depthv_c = $(vkshaderpath)/sprite_depth.vert.spvc
 sprite_depthf_src = $(vkshaderpath)/sprite_depth.frag
 sprite_depthf_c = $(vkshaderpath)/sprite_depth.frag.spvc
+twod_impalpha_src = $(vkshaderpath)/twod_impalpha.frag
+twod_impalpha_c = $(vkshaderpath)/twod_impalpha.frag.spvc
 twodv_src = $(vkshaderpath)/twod.vert
 twodv_c = $(vkshaderpath)/twod.vert.spvc
 twodf_src = $(vkshaderpath)/twod.frag
@@ -334,6 +336,8 @@ $(sprite_depthv_c): $(sprite_depthv_src)
 
 $(sprite_depthf_c): $(sprite_depthf_src)
 
+$(twod_impalpha_c): $(twod_impalpha_src)
+
 $(twodv_c): $(twodv_src)
 
 $(twodf_c): $(twodf_src)
@@ -392,6 +396,7 @@ vkshader_c = \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \
 	$(sprite_depthf_c) \
+	$(twod_impalpha_c) \
 	$(twodv_c) \
 	$(twodf_c) \
 	$(quakebspv_c) \

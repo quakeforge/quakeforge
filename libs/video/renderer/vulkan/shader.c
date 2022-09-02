@@ -57,6 +57,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/twod_impalpha.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/twod.frag.spvc"
@@ -121,6 +123,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
 	{ "sprite_depth.frag", sprite_depth_frag, sizeof (sprite_depth_frag) },
+	{ "twod_impalpha.frag", twod_impalpha_frag, sizeof (twod_impalpha_frag) },
 	{ "twod.vert", twod_vert, sizeof (twod_vert) },
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },

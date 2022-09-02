@@ -84,13 +84,17 @@ typedef struct cachepic_s {
 
 typedef struct drawframe_s {
 	size_t      vert_offset;
+	size_t      iavert_offset;
 	size_t      line_offset;
 	drawvert_t *quad_verts;
+	drawvert_t *iaquad_verts;
 	drawvert_t *line_verts;
 	uint32_t    num_quads;
+	uint32_t    num_iaquads;
 	uint32_t    num_lines;
 	VkCommandBuffer cmd;
 	VkDescriptorSet descriptors;
+	VkDescriptorSet iadescriptors;
 } drawframe_t;
 
 typedef struct drawframeset_s
@@ -117,6 +121,7 @@ typedef struct drawctx_s {
 	VkBuffer    ind_buffer;
 	VkDeviceMemory ind_memory;
 	VkPipeline  quad_pipeline;
+	VkPipeline  iaquad_pipeline;
 	VkPipeline  line_pipeline;
 	VkPipelineLayout layout;
 	drawframeset_t frames;
@@ -130,7 +135,11 @@ typedef struct drawctx_s {
 #define MAX_LINES (32768)
 #define VERTS_PER_LINE (2)
 
-#define VERTS_PER_FRAME (MAX_LINES*VERTS_PER_LINE + MAX_QUADS*VERTS_PER_QUAD)
+#define QUADS_OFFSET 0
+#define IAQUADS_OFFSET (MAX_QUADS * VERTS_PER_QUAD)
+#define LINES_OFFSET (IAQUADS_OFFSET + (MAX_QUADS * VERTS_PER_QUAD))
+
+#define VERTS_PER_FRAME (LINES_OFFSET + MAX_LINES*VERTS_PER_LINE)
 
 static void
 create_quad_buffers (vulkan_ctx_t *ctx)
@@ -175,11 +184,14 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 	for (size_t f = 0; f < frames; f++) {
 		drawframe_t *frame = &dctx->frames.a[f];
 		size_t       ind = f * VERTS_PER_FRAME;
-		size_t       lind = ind + MAX_QUADS * VERTS_PER_QUAD;
+		size_t       iaind = ind + IAQUADS_OFFSET;
+		size_t       lind = ind + LINES_OFFSET;
 		frame->vert_offset = ind * sizeof (drawvert_t);
+		frame->iavert_offset = iaind;
 		frame->line_offset = lind;
 		frame->quad_verts = vert_data + ind;
-		frame->line_verts = frame->quad_verts + MAX_QUADS * VERTS_PER_QUAD;
+		frame->iaquad_verts = frame->quad_verts + IAQUADS_OFFSET;
+		frame->line_verts = frame->quad_verts + LINES_OFFSET;
 		frame->num_quads = 0;
 		frame->num_lines = 0;
 	}
@@ -367,6 +379,7 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 	destroy_quad_buffers (ctx);
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
+	dfunc->vkDestroyPipeline (device->dev, dctx->iaquad_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->line_pipeline, 0);
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
@@ -433,6 +446,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	flush_draw_scrap (ctx);
 
 	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
+	dctx->iaquad_pipeline = Vulkan_CreateGraphicsPipeline (ctx,
+														   "twod_impalpha");
 	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
@@ -448,21 +463,32 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		QFV_ScrapImageView (dctx->scrap),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
+	VkDescriptorImageInfo iaimageInfo = {
+		dctx->sampler,
+		Vulkan_TexImageView (ctx->default_magenta),
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	};
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
 
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
+	__auto_type iasets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type dframe = &dctx->frames.a[i];
 		dframe->descriptors = sets->a[i];
+		dframe->iadescriptors = iasets->a[i];
 
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
 			  dframe->descriptors, 0, 0, 1,
 			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			  &imageInfo, 0, 0 },
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			  dframe->iadescriptors, 0, 0, 1,
+			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			  &iaimageInfo, 0, 0 },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 		dframe->cmd = cmdBuffers->a[i];
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 dframe->cmd,
@@ -868,7 +894,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
-	if (!dframe->num_quads && !dframe->num_lines) {
+	if (!dframe->num_quads && !dframe->num_iaquads && !dframe->num_lines) {
 		return;
 	}
 
@@ -880,6 +906,9 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  dctx->vert_memory, dframe->vert_offset,
 		  dframe->num_quads * VERTS_PER_QUAD * sizeof (drawvert_t) },
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  dctx->vert_memory, dframe->iavert_offset,
+		  dframe->num_iaquads * VERTS_PER_QUAD * sizeof (drawvert_t) },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  dctx->vert_memory, dframe->line_offset,
 		  dframe->num_lines * VERTS_PER_LINE * sizeof (drawvert_t) },
@@ -906,33 +935,72 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	VkDescriptorSet set[2] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		dframe->descriptors,
-	};
-	VkPipelineLayout layout = dctx->layout;
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, set, 0, 0);
 	if (dframe->num_quads) {
+		VkDescriptorSet set[2] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			dframe->descriptors,
+		};
+		VkPipelineLayout layout = dctx->layout;
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, set, 0, 0);
+
 		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 								  dctx->quad_pipeline);
 		dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 		dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 		dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
-								 1, 0, 0, 0);
+								 1, 0, QUADS_OFFSET, 0);
+	}
+	if (dframe->num_iaquads) {
+		VkDescriptorImageInfo iaimageInfo = {
+			dctx->sampler,
+			Vulkan_TexImageView (dctx->font_tex),
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		};
+		VkWriteDescriptorSet write[] = {
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			  dframe->iadescriptors, 0, 0, 1,
+			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			  &iaimageInfo, 0, 0 },
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+
+		VkDescriptorSet set[2] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			dframe->iadescriptors,
+		};
+		VkPipelineLayout layout = dctx->layout;
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, set, 0, 0);
+
+		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+								  dctx->iaquad_pipeline);
+		dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+		dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
+		dfunc->vkCmdDrawIndexed (cmd, dframe->num_iaquads * INDS_PER_QUAD,
+								 1, 0, IAQUADS_OFFSET, 0);
 	}
 
 	if (dframe->num_lines) {
+		VkDescriptorSet set[2] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			dframe->descriptors,
+		};
+		VkPipelineLayout layout = dctx->layout;
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, set, 0, 0);
+
 		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 								  dctx->line_pipeline);
 		dfunc->vkCmdDraw (cmd, dframe->num_lines * VERTS_PER_LINE,
-						  1, MAX_QUADS * VERTS_PER_QUAD, 0);
+						  1, LINES_OFFSET, 0);
 	}
 
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	dframe->num_quads = 0;
+	dframe->num_iaquads = 0;
 	dframe->num_lines = 0;
 }
 
@@ -976,4 +1044,48 @@ Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	if (!dctx->font) {
+		return;
+	}
+	//FIXME ewwwwwww
+	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
+	uint32_t    num_quads = dframe->num_quads;
+	drawvert_t *quad_verts = dframe->quad_verts;
+	dframe->num_quads = dframe->num_iaquads;
+	dframe->quad_verts = dframe->iaquad_verts;
+	subpic_t    glyph_subpic = {
+		.width = dctx->font->scrap.width,
+		.height = dctx->font->scrap.height,
+		.size = 1.0 / dctx->font->scrap.width,
+	};
+	struct {
+		qpic_t      pic;
+		subpic_t   *subpic;
+	} glyph_pic = {
+		.pic = {
+			.width = 1,
+			.height = 1,
+		},
+		.subpic = &glyph_subpic,
+	};
+	quat_t      color = { 0.5, 1, 0.6, 1 };
+	for (const char *c = str; *c; c++) {
+		rglyph_t    search = { .charcode = *c };
+		rglyph_t   *glyph = Hash_FindElement (dctx->font->glyphmap, &search);
+		if (!glyph) {
+			continue;
+		}
+		*((vrect_t **) &glyph_subpic.rect) = glyph->rect;
+		int         gw = glyph->rect->width;
+		int         gh = glyph->rect->height;
+		vec2i_t     pos = (vec2i_t) { x, y } + glyph->bearing * (vec2i_t) { 1, -1 };
+		draw_pic (pos[0], pos[1], gw, gh, &glyph_pic.pic,
+				  0, 0, gw, gh, color, dframe);
+		x += glyph->advance / 64;
+	}
+	dframe->num_iaquads = dframe->num_quads;
+	dframe->iaquad_verts = dframe->quad_verts;
+	dframe->num_quads = num_quads;
+	dframe->quad_verts = quad_verts;
 }

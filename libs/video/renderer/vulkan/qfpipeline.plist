@@ -89,7 +89,7 @@
 		};
 		twod_pool = {
 			flags = 0;
-			maxSets = $frames.size;
+			maxSets = "$frames.size * 2z";
 			bindings = (
 				{
 					type = combined_image_sampler;
@@ -1048,6 +1048,21 @@
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
 			};
 			layout = twod_layout;
+		};
+		twod_impalpha = {
+			@inherit = $properties.pipelines.twod;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/twod.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/twod_impalpha.frag;
+				},
+			);
 		};
 		lines = {
 			@inherit = $properties.pipelines.twod;
