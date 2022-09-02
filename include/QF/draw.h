@@ -246,6 +246,7 @@ void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int h
 
 struct rfont_s;
 void Draw_AddFont (struct rfont_s *font);
+void Draw_FontString (int x, int y, const char *str);
 
 ///@}
 

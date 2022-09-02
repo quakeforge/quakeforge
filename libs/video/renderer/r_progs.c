@@ -346,6 +346,15 @@ bi_Font_Load (progs_t *pr, void *_res)
 	r_funcs->Draw_AddFont (font);
 }
 
+static void
+bi_Font_String (progs_t *pr, void *_res)
+{
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *str = P_GSTRING (pr, 2);
+	r_funcs->Draw_FontString (x, y, str);
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -397,6 +406,7 @@ static builtin_t builtins[] = {
 	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
 
 	bi(Font_Load,       3, p(string), p(int), p(ptr)),
+	bi(Font_String,     3, p(int), p(int), p(string)),
 	{0}
 };
 

@@ -1023,3 +1023,8 @@ void
 gl_Draw_AddFont (struct rfont_s *font)
 {
 }
+
+void
+gl_Draw_FontString (int x, int y, const char *str)
+{
+}

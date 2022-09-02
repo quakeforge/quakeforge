@@ -846,3 +846,8 @@ void
 glsl_Draw_AddFont (struct rfont_s *font)
 {
 }
+
+void
+glsl_Draw_FontString (int x, int y, const char *str)
+{
+}

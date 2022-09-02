@@ -452,6 +452,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_Draw_Picf,
 	glsl_Draw_SubPic,
 	glsl_Draw_AddFont,
+	glsl_Draw_FontString,
 
 	glsl_ParticleSystem,
 	glsl_R_Init,

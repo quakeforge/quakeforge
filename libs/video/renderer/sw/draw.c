@@ -979,3 +979,8 @@ void
 Draw_AddFont (struct rfont_s *font)
 {
 }
+
+void
+Draw_FontString (int x, int y, const char *str)
+{
+}

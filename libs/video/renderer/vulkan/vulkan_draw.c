@@ -972,3 +972,8 @@ Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 		dctx->font_tex = Vulkan_LoadTex (ctx, &tex, 0, "draw.font");
 	}
 }
+
+void
+Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
+{
+}

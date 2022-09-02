@@ -268,6 +268,12 @@ vulkan_Draw_AddFont (struct rfont_s *font)
 }
 
 static void
+vulkan_Draw_FontString (int x, int y, const char *str)
+{
+	Vulkan_Draw_FontString (x, y, str, vulkan_ctx);
+}
+
+static void
 vulkan_begin_frame (void)
 {
 	uint32_t imageIndex = 0;
@@ -756,6 +762,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 	vulkan_Draw_AddFont,
+	vulkan_Draw_FontString,
 
 	vulkan_ParticleSystem,
 	vulkan_R_Init,

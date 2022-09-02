@@ -56,6 +56,7 @@ void glsl_Draw_Picf (float x, float y, struct qpic_s *pic);
 void glsl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);
 void glsl_Draw_AddFont (struct rfont_s *font);
+void glsl_Draw_FontString (int x, int y, const char *str);
 
 void GLSL_Set2D (void);
 void GLSL_Set2DScaled (void);
