@@ -68,6 +68,7 @@
 #include "QF/ui/view.h"
 
 #include "r_font.h"
+#include "r_text.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
@@ -1041,6 +1042,25 @@ Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 	}
 }
 
+typedef struct {
+	drawframe_t *dframe;
+	qpic_t      pic;
+	subpic_t   *subpic;
+	quat_t      color;
+} rgctx_t;
+
+static void
+vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
+{
+	rgctx_t    *rgctx = _rgctx;
+
+	*((vrect_t **) &rgctx->subpic->rect) = glyph->rect;
+	int         gw = glyph->rect->width;
+	int         gh = glyph->rect->height;
+	draw_pic (x, y, gw, gh, &rgctx->pic, 0, 0, gw, gh, rgctx->color,
+			  rgctx->dframe);
+}
+
 void
 Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 {
@@ -1054,36 +1074,32 @@ Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	drawvert_t *quad_verts = dframe->quad_verts;
 	dframe->num_quads = dframe->num_iaquads;
 	dframe->quad_verts = dframe->iaquad_verts;
+
 	subpic_t    glyph_subpic = {
 		.width = dctx->font->scrap.width,
 		.height = dctx->font->scrap.height,
 		.size = 1.0 / dctx->font->scrap.width,
 	};
-	struct {
-		qpic_t      pic;
-		subpic_t   *subpic;
-	} glyph_pic = {
+	rgctx_t     rgctx = {
+		.dframe = dframe,
 		.pic = {
 			.width = 1,
 			.height = 1,
 		},
 		.subpic = &glyph_subpic,
+		.color = { 0.5, 1, 0.6, 1 },
 	};
-	quat_t      color = { 0.5, 1, 0.6, 1 };
-	for (const char *c = str; *c; c++) {
-		rglyph_t    search = { .charcode = *c };
-		rglyph_t   *glyph = Hash_FindElement (dctx->font->glyphmap, &search);
-		if (!glyph) {
-			continue;
-		}
-		*((vrect_t **) &glyph_subpic.rect) = glyph->rect;
-		int         gw = glyph->rect->width;
-		int         gh = glyph->rect->height;
-		vec2i_t     pos = (vec2i_t) { x, y } + glyph->bearing * (vec2i_t) { 1, -1 };
-		draw_pic (pos[0], pos[1], gw, gh, &glyph_pic.pic,
-				  0, 0, gw, gh, color, dframe);
-		x += glyph->advance / 64;
-	}
+	rtext_t     text = {
+		.text = str,
+		.language = "en",
+		.script = HB_SCRIPT_LATIN,
+		.direction = HB_DIRECTION_LTR,
+	};
+
+	rshaper_t  *shaper = RText_NewShaper (dctx->font);
+	RText_RenderText (shaper, &text, x, y, vulkan_render_glyph, &rgctx);
+	RText_DeleteShaper (shaper);
+
 	dframe->num_iaquads = dframe->num_quads;
 	dframe->iaquad_verts = dframe->quad_verts;
 	dframe->num_quads = num_quads;

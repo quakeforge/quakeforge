@@ -42,35 +42,8 @@
 
 static FT_Library ft;
 
-static uintptr_t
-glyph_get_hash (const void *_glyph, void *unused)
-{
-	__auto_type glyph = (const rglyph_t *) _glyph;
-	return glyph->charcode;
-}
-
-static int
-glyph_compare (const void *_a, const void *_b, void *unused)
-{
-	__auto_type a = (const rglyph_t *) _a;
-	__auto_type b = (const rglyph_t *) _b;
-	return a->charcode == b->charcode;
-}
-
-static rglyph_t *
-alloc_glyph (rfont_t *font)
-{
-	return PR_RESNEW(font->glyphs);
-}
-
 static void
-free_glyph (rfont_t *font, rglyph_t *glyph)
-{
-	PR_RESFREE (font->glyphs, glyph);
-}
-
-static void
-copy_glypn (rglyph_t *glyph, FT_GlyphSlot src_glyph)
+copy_glyph (rglyph_t *glyph, FT_GlyphSlot src_glyph)
 {
 	int         dst_pitch = glyph->font->scrap.width;
 	byte       *dst = glyph->font->scrap_bitmap + glyph->rect->x + glyph->rect->y * dst_pitch;
@@ -82,14 +55,6 @@ copy_glypn (rglyph_t *glyph, FT_GlyphSlot src_glyph)
 		dst += dst_pitch;
 		src += src_pitch;
 	}
-}
-
-static void
-glyphmap_free_glyph (void *_g, void *_f)
-{
-	rglyph_t   *glyph = _g;
-	rfont_t    *font = _f;
-	free_glyph (font, glyph);
 }
 
 VISIBLE void
@@ -106,19 +71,17 @@ R_FontFree (rfont_t *font)
 	if (font->face) {
 		FT_Done_Face (font->face);
 	}
-	if (font->glyphmap) {
-		Hash_DelTable (font->glyphmap);
-	}
 	if (font->scrap.rects || font->scrap.free_rects) {
 		R_ScrapDelete (&font->scrap);
 	}
+	free (font->glyphs);
 	free (font->scrap_bitmap);
 	free (font->font_resource);
 	free (font);
 }
 
 VISIBLE rfont_t *
-R_FontLoad (QFile *font_file, int size, const int *preload)
+R_FontLoad (QFile *font_file, int size)
 {
 	byte       *font_data = QFS_LoadFile (font_file, 0);
 	if (!font_data) {
@@ -132,54 +95,35 @@ R_FontLoad (QFile *font_file, int size, const int *preload)
 		return 0;
 	}
 
-	font->glyphmap = Hash_NewTable (0x10000, 0, glyphmap_free_glyph, font, 0);
-	Hash_SetHashCompare (font->glyphmap, glyph_get_hash, glyph_compare);
-
 	FT_Set_Pixel_Sizes(font->face, 0, size);
 	int         pixels = 0;
-	for (const int *c = preload; *c; c++) {
-		rglyph_t    search = { .charcode = *c };
-		rglyph_t   *glyph = Hash_FindElement (font->glyphmap, &search);
-		if (glyph) {
-			continue;
-		}
-		if (FT_Load_Char(font->face, *c, FT_LOAD_DEFAULT)) {
-			continue;
-		}
+	for (FT_Long gind = 0; gind < font->face->num_glyphs; gind++) {
+		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
+
 		__auto_type g = font->face->glyph;
 		pixels += g->bitmap.width * g->bitmap.rows;
-
-		glyph = alloc_glyph (font);
-		glyph->charcode = *c;
-		Hash_AddElement (font->glyphmap, glyph);
 	}
-	Hash_FlushTable (font->glyphmap);
 	pixels = sqrt (2 * pixels);
 	pixels = BITOP_RUP (pixels);
 	R_ScrapInit (&font->scrap, pixels, pixels);
 	font->scrap_bitmap = calloc (1, pixels * pixels);
+	font->num_glyphs = font->face->num_glyphs;
+	font->glyphs = malloc (font->num_glyphs * sizeof (rglyph_t));
 
-	for (const int *c = preload; *c; c++) {
-		rglyph_t    search = { .charcode = *c };
-		rglyph_t   *glyph = Hash_FindElement (font->glyphmap, &search);
-		if (glyph) {
-			continue;
-		}
-		if (FT_Load_Char(font->face, *c, FT_LOAD_RENDER)) {
-			continue;
-		}
-		__auto_type g = font->face->glyph;
-		int     width = g->bitmap.width;
-		int     height = g->bitmap.rows;
-		glyph = alloc_glyph (font);
+	for (FT_Long gind = 0; gind < font->face->num_glyphs; gind++) {
+		rglyph_t   *glyph = &font->glyphs[gind];
+		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
+		__auto_type slot = font->face->glyph;
+		FT_Render_Glyph (slot, FT_RENDER_MODE_NORMAL);
+		int     width = slot->bitmap.width;
+		int     height = slot->bitmap.rows;
 		glyph->font = font;
 		glyph->rect = R_ScrapAlloc (&font->scrap, width, height);
-		glyph->bearing = (vec2i_t) { g->bitmap_left, g->bitmap_top };
-		glyph->advance = g->advance.x;
-		glyph->charcode = *c;
-		Hash_AddElement (font->glyphmap, glyph);
+		glyph->bearing = (vec2i_t) { slot->bitmap_left, slot->bitmap_top };
+		glyph->advance = slot->advance.x;
+		glyph->charcode = gind;
 
-		copy_glypn (glyph, g);
+		copy_glyph (glyph, slot);
 	}
 
 	return font;

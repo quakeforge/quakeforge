@@ -33,12 +33,14 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_font.c \
 	libs/video/renderer/r_iqm.c \
 	libs/video/renderer/r_sprite.c \
+	libs/video/renderer/r_text.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
 	@vid_render_static_plugin_libs@ \
 	libs/util/libQFutil.la \
-	$(FREETYPE_LIBS)
+	$(FREETYPE_LIBS) \
+	$(HARFBUZZ_LIBS)
 
 libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
 libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)

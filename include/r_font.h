@@ -34,9 +34,6 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "QF/hash.h"
-#include "QF/progs.h"	//FIXME for PR_RESMAP
-
 #include "QF/ui/vrect.h"
 #include "QF/simd/types.h"
 
@@ -55,12 +52,12 @@ typedef struct rfont_s {
 	FT_Face     face;
 	rscrap_t    scrap;
 	byte       *scrap_bitmap;
-	hashtab_t  *glyphmap;
-	PR_RESMAP(rglyph_t) glyphs;
+	FT_Long     num_glyphs;
+	rglyph_t   *glyphs;
 } rfont_t;
 
 void R_FontInit (void);
 void R_FontFree (rfont_t *font);
-rfont_t *R_FontLoad (QFile *font_file, int size, const int *preload);
+rfont_t *R_FontLoad (QFile *font_file, int size);
 
 #endif//__r_font_h
