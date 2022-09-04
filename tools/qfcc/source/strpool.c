@@ -43,6 +43,7 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/msg.h"
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/options.h"
@@ -161,11 +162,16 @@ save_cwd (void)
 const char *
 make_string (char *token, char **end)
 {
-	char        s[2];
+	char        s[7];	// utf8 needs 6 + nul
+	sizebuf_t   utf8str = {
+		.maxsize = sizeof (s),
+		.data = (byte *) s,
+	};
 	int         c;
 	int         i;
 	int         mask;
 	int         boldnext;
+	int         unicount;
 	int         quote;
 	static dstring_t *str;
 
@@ -177,6 +183,7 @@ make_string (char *token, char **end)
 
 	mask = 0x00;
 	boldnext = 0;
+	unicount = 0;
 
 	quote = *token++;
 	do {
@@ -252,7 +259,33 @@ make_string (char *token, char **end)
 					}
 					if (!*token)
 						error (0, "EOF inside quote");
-					c ^= mask;
+					c ^= mask;	// cancel mask below
+					break;
+				case 'U':
+					unicount += 4;
+				case 'u':
+					unicount += 4;
+					boldnext = 0;
+					c = 0;
+					while (unicount && *token
+						   && isxdigit ((unsigned char)*token)) {
+						c *= 16;
+						if (*token <= '9')
+							c += *token - '0';
+						else if (*token <= 'F')
+							c += *token - 'A' + 10;
+						else
+							c += *token - 'a' + 10;
+						token++;
+						--unicount;
+					}
+					if (!*token) {
+						error (0, "EOF inside quote");
+					} else if (unicount) {
+						error (0, "incomplete unicode sequence: %x %d", c, unicount);
+					}
+					unicount = 1;	// signal need to encode to utf8
+					c ^= mask;	// cancel mask below
 					break;
 				case 'a':
 					boldnext = 0;
@@ -371,7 +404,14 @@ make_string (char *token, char **end)
 			c = c ^ 0x80;
 		boldnext = 0;
 		c = c ^ mask;
-		s[0] = c;
+		if (unicount) {
+			SZ_Clear (&utf8str);
+			MSG_WriteUTF8 (&utf8str, c);
+			MSG_WriteByte (&utf8str, 0);	// nul-terminate string
+			unicount = 0;
+		} else {
+			s[0] = c;
+		}
 		dstring_appendstr (str, s);
 	} while (1);
 
