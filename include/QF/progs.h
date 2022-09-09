@@ -1628,6 +1628,32 @@ void PR_FreeString (progs_t *pr, pr_string_t str);
 */
 void PR_FreeTempStrings (progs_t *pr);
 
+/** Callback for handling %@ in PR_Sprintf format strings.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param at_param	Parameter to be converted to a string. Usually a progs
+					pointer value. It is the callee's responsibility to
+					interpret the value as a pointer.
+	\param data		User data pointer as passed to PR_Sprintf_SetAtHandler
+	\return			String to be printed in place of %@
+*/
+typedef const char *(*prstr_at_handler_t) (progs_t *pr, pr_ptr_t at_param,
+										   void *data);
+
+/** Set the at_handler callback and its user data pointer.
+
+	The at_handler callback defaults to null resulting in [ptr] in the output
+	string. Setting the callback allows the at_handler to interpret the value
+	(nominally pr_ptr_t, but always a 32-bit value) as it chooses.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param at_handler Function pointer for callback to interpret the parameter
+					corresponding to the %@ format specifier.
+	\param data		User data pointer, passed to \a at_handler.
+*/
+void PR_Sprintf_SetAtHandler (progs_t *pr, prstr_at_handler_t at_handler,
+							  void *data);
+
 /** Formatted printing similar to C's vsprintf, but using QC types.
 	The format string is a string of characters (other than \c \%) to be
 	printed that includes optional format specifiers, one for each arg to be

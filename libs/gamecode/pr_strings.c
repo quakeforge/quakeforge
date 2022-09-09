@@ -90,6 +90,8 @@ typedef struct prstr_resources_s {
 	int         num_strings;
 	fmt_item_t *free_fmt_items;
 	dstring_t  *print_str;
+	prstr_at_handler_t at_handler;
+	void       *at_handler_data;
 } prstr_resources_t;
 
 typedef enum {
@@ -866,6 +868,8 @@ typedef struct fmt_state_s {
 	fmt_item_t *fmt_items;
 	fmt_item_t **fi;
 	int         fmt_count;
+	prstr_at_handler_t at_handler;
+	void       *at_handler_data;
 } fmt_state_t;
 
 static inline void
@@ -1052,6 +1056,25 @@ fmt_state_conversion (fmt_state_t *state)
 	switch ((conv = *state->c++)) {
 		case '@':
 			// object
+			pr_ptr_t    at_param = P_UINT (pr, state->fmt_count);
+			if (state->at_handler) {
+				const char *at_str = state->at_handler (pr, at_param,
+														state->at_handler_data);
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = at_str;
+			} else {
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = "[";
+				fmt_append_item (state);
+
+				(*state->fi)->flags |= FMT_ALTFORM;
+				(*state->fi)->type = 'x';
+				(*state->fi)->data.uint_var = at_param;
+				fmt_append_item (state);
+
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = "]";
+			}
 			state->fmt_count++;
 			fmt_append_item (state);
 			break;
@@ -1201,6 +1224,15 @@ fmt_state_format (fmt_state_t *state)
 ///@}
 
 VISIBLE void
+PR_Sprintf_SetAtHandler (progs_t *pr, prstr_at_handler_t at_handler,
+						 void *data)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	res->at_handler = at_handler;
+	res->at_handler_data = data;
+}
+
+VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {
@@ -1214,6 +1246,8 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	*state.fi = new_fmt_item (res);
 	state.c = format;
 	state.state = fmt_state_format;
+	state.at_handler = res->at_handler;
+	state.at_handler_data = res->at_handler_data;
 
 	if (!name)
 		name = "PR_Sprintf";
