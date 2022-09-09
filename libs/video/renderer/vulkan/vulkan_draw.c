@@ -510,7 +510,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 }
 
 static inline void
-draw_pic (float x, float y, int w, int h, qpic_t *pic,
+draw_pic (float x, float y, int w, int h, subpic_t *subpic,
 		  int srcx, int srcy, int srcw, int srch,
 		  float *color, vertqueue_t *queue)
 {
@@ -521,7 +521,6 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	drawvert_t *verts = queue->verts + queue->count * VERTS_PER_QUAD;
 	queue->count++;
 
-	subpic_t   *subpic = *(subpic_t **) pic->data;
 	srcx += subpic->rect->x;
 	srcy += subpic->rect->y;
 
@@ -567,7 +566,8 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 	cx = chr % 16;
 	cy = chr / 16;
 
-	draw_pic (x, y, 8, 8, dctx->conchars, cx * 8, cy * 8, 8, 8, color,
+	subpic_t   *subpic = *(subpic_t **) dctx->conchars->data;
+	draw_pic (x, y, 8, 8, subpic, cx * 8, cy * 8, 8, 8, color,
 			  &frame->quad_verts);
 }
 
@@ -665,8 +665,9 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 	};
 	const int *p = pos[ch - 1];
 
+	subpic_t   *subpic = *(subpic_t **) dctx->crosshair->data;
 	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
-			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, dctx->crosshair,
+			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, subpic,
 			  p[0], p[1], p[2], p[3], crosshair_color, &frame->quad_verts);
 }
 
@@ -710,9 +711,12 @@ Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 	quat_t      color = {1, 1, 1, 1};
 	qpic_t     *p;
 	int         cx, cy, n;
-#define draw(px, py, pp) \
-	draw_pic (px, py, pp->width, pp->height, pp, \
-			  0, 0, pp->width, pp->height, color, &frame->quad_verts);
+#define draw(px, py, pp)													\
+	do {																	\
+		subpic_t   *subpic = *(subpic_t **) (pp)->data;						\
+		draw_pic (px, py, pp->width, pp->height, subpic,					\
+				  0, 0, pp->width, pp->height, color, &frame->quad_verts);	\
+	} while (0)
 
 	color[3] = alpha;
 	// draw left side
@@ -768,7 +772,8 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, pic->width, pic->height, pic,
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	draw_pic (x, y, pic->width, pic->height, subpic,
 			  0, 0, pic->width, pic->height, color, &frame->quad_verts);
 }
 
@@ -779,7 +784,8 @@ Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, pic->width, pic->height, pic,
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	draw_pic (x, y, pic->width, pic->height, subpic,
 			  0, 0, pic->width, pic->height, color, &frame->quad_verts);
 }
 
@@ -792,7 +798,8 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, width, height, pic, srcx, srcy, width, height,
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	draw_pic (x, y, width, height, subpic, srcx, srcy, width, height,
 			  color, &frame->quad_verts);
 }
 
@@ -809,7 +816,8 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	int         ofs = max (0, cpic->height - lines);
 	lines = min (lines, cpic->height);
-	draw_pic (0, 0, vid.conview->xlen, lines, cpic,
+	subpic_t   *subpic = *(subpic_t **) cpic->data;
+	draw_pic (0, 0, vid.conview->xlen, lines, subpic,
 			  0, ofs, cpic->width, lines, color, &frame->quad_verts);
 }
 
@@ -828,7 +836,8 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 
 	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
 	color[3] = 1;
-	draw_pic (x, y, w, h, dctx->white_pic, 0, 0, 1, 1, color,
+	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
+	draw_pic (x, y, w, h, subpic, 0, 0, 1, 1, color,
 			  &frame->quad_verts);
 }
 
@@ -865,7 +874,8 @@ draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, dctx->white_pic,
+	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
+	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, subpic,
 			  0, 0, 1, 1, color, &frame->quad_verts);
 }
 
@@ -1058,7 +1068,6 @@ Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 
 typedef struct {
 	drawframe_t *dframe;
-	qpic_t      pic;
 	subpic_t   *subpic;
 	quat_t      color;
 } rgctx_t;
@@ -1071,7 +1080,7 @@ vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
 	*((vrect_t **) &rgctx->subpic->rect) = glyph->rect;
 	int         gw = glyph->rect->width;
 	int         gh = glyph->rect->height;
-	draw_pic (x, y, gw, gh, &rgctx->pic, 0, 0, gw, gh, rgctx->color,
+	draw_pic (x, y, gw, gh, rgctx->subpic, 0, 0, gw, gh, rgctx->color,
 			  &rgctx->dframe->iaquad_verts);
 }
 
@@ -1092,10 +1101,6 @@ Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	};
 	rgctx_t     rgctx = {
 		.dframe = dframe,
-		.pic = {
-			.width = 1,
-			.height = 1,
-		},
 		.subpic = &glyph_subpic,
 		.color = { 0.5, 1, 0.6, 1 },
 	};
