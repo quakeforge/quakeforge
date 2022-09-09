@@ -1314,7 +1314,7 @@ rua___obj_forward (progs_t *pr, void *data)
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
 	pr_sel_t   *fwd_sel = probj->forward_selector;
 	pr_sel_t   *err_sel;
-	pr_class_t *class =&G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
 	pr_func_t   imp;
 
 	if (!fwd_sel) {
@@ -1442,6 +1442,28 @@ rua_obj_set_error_handler (progs_t *pr, void *data)
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+}
+
+static const char *
+rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
+{
+	probj_t    *probj = _probj;
+	pr_id_t    *obj = &G_STRUCT (pr, pr_id_t, at_param);
+	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	//FIXME sel_register_typed_name is really not the way to go about
+	//looking for a selector by name
+	pr_sel_t   *describe_sel=sel_register_typed_name (probj, "describe", "", 0);
+	pr_func_t   imp = get_imp (probj, class, describe_sel);
+
+	PR_PushFrame (pr);
+	PR_RESET_PARAMS (pr);
+	P_POINTER (pr, 0) = at_param;
+	P_POINTER (pr, 1) = PR_SetPointer (pr, describe_sel);
+	pr->pr_argc = 2;
+	PR_ExecuteProgram (pr, imp);
+	PR_PopFrame (pr);
+	//FIXME the lifetime of the string may be a problem
+	return PR_GetString (pr, R_STRING (pr));
 }
 
 static void
@@ -2327,6 +2349,8 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
+
+	PR_Sprintf_SetAtHandler (pr, rua_at_handler, probj);
 
 	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup,
 						   rua_obj_destroy);
