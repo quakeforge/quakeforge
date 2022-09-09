@@ -1,5 +1,6 @@
 #include <Object.h>
 #include <AutoreleasePool.h>
+#include <string.h>
 
 static void link__obj_forward (void)
 {
@@ -365,6 +366,11 @@ typedef void arIMP(id, SEL, id);
 - (id) mutableCopy
 {
 	return self;
+}
+
+- (string) describe
+{
+	return sprintf ("[%s@%p]", object_get_class_name (self), self);
 }
 
 @end
