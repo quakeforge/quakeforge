@@ -37,12 +37,15 @@ video_renderer_common_sources = \
 
 renderer_libs= \
 	@vid_render_static_plugin_libs@ \
-	libs/util/libQFutil.la \
+	libs/util/libQFutil.la
+
+renderer_libadd= \
+	$(renderer_libs) \
 	$(FREETYPE_LIBS) \
 	$(HARFBUZZ_LIBS)
 
 libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
-libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)
+libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libadd)
 libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_bsp.c \
