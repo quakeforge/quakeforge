@@ -39,6 +39,7 @@
 #endif
 
 #include <stdlib.h>
+#define FLAC__NO_DLL
 #include <FLAC/export.h>
 
 #include "qfalloca.h"
