@@ -1238,6 +1238,8 @@ find_def_operand (expr_t *ref)
 		expr_symbol (0, ref, &op);
 	} else if (ref->type == ex_def) {
 		expr_def (0, ref, &op);
+	} else if (ref->type == ex_expr) {
+		debug (ref, "unexpected expr type: %s", expr_names[ref->type]);
 	} else {
 		internal_error (ref, "unexpected expr type: %s",
 						expr_names[ref->type]);
