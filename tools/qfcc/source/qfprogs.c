@@ -237,8 +237,7 @@ init_qf (void)
 	PR_Init_Cvars ();
 
 	pr_debug = 1 + verbosity;
-	free (pr_source_path);
-	pr_source_path = (char *) source_path;
+	Cvar_Set ("pr_source_path", source_path);
 
 	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
