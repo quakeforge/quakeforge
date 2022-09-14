@@ -853,13 +853,16 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
+#define invalid_binary_expr(_op, _e1, _e2) \
+	_invalid_binary_expr(_op, _e1, _e2, __FILE__, __LINE__)
 static expr_t *
-invalid_binary_expr (int op, expr_t *e1, expr_t *e2)
+_invalid_binary_expr (int op, expr_t *e1, expr_t *e2,
+					  const char *file, int line)
 {
 	type_t     *t1, *t2;
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-	return error (e1, "invalid binary expression: %s %s %s",
+	return _error (e1, file, line, "invalid binary expression: %s %s %s",
 				  get_type_string (t1), get_op_string (op),
 				  get_type_string (t2));
 }
@@ -977,6 +980,15 @@ static int is_call (expr_t *e)
 	return e->type == ex_block && e->e.block.is_call;
 }
 
+static type_t *
+promote_type (type_t *dst, type_t *src)
+{
+	if (is_vector (dst) || is_quaternion (dst)) {
+		return dst;
+	}
+	return vector_type (base_type (dst), type_width (src));
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -1056,6 +1068,38 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		// vector/quaternion and scalar won't get here as vector and quaternion
 		// are distict types with type.width == 1, but vector and vec3 WILL get
 		// here because of vec3 being float{3}
+		if (t1 != t2) {
+			type_t     *pt1 = t1;
+			type_t     *pt2 = t2;
+			if (is_float (base_type (t1)) && is_double (base_type (t2))
+				&& e2->implicit) {
+				pt2 = promote_type (t1, t2);
+			} else if (is_double (base_type (t1)) && is_float (base_type (t2))
+					   && e1->implicit) {
+				pt1 = promote_type (t2, t1);
+			} else if (type_promotes (base_type (t1), base_type (t2))) {
+				pt2 = promote_type (t1, t2);
+			} else if (type_promotes (base_type (t2), base_type (t1))) {
+				pt1 = promote_type (t2, t1);
+			} else if (base_type (t1) == base_type (t2)) {
+				if (is_vector (t1) || is_quaternion (t1)) {
+					pt2 = t1;
+				} else if (is_vector (t2) || is_quaternion (t2)) {
+					pt1 = t2;
+				}
+			} else {
+				debug (e1, "%d %d\n", e1->implicit, e2->implicit);
+				return invalid_binary_expr (op, e1, e2);
+			}
+			if (pt1 != t1) {
+				e1 = cast_expr (pt1, e1);
+				t1 = pt1;
+			}
+			if (pt2 != t2) {
+				e2 = cast_expr (pt2, e2);
+				t2 = pt2;
+			}
+		}
 		if (type_width (t1) == 1) {
 			// scalar op vec
 			if (!(e = convert_scalar (e1, op, e2))) {
@@ -1075,28 +1119,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		if (type_width (t1) != type_width (t2)) {
 			// vec op vec of different widths
 			return invalid_binary_expr (op, e1, e2);
-		}
-		if (t1 != t2) {
-			if (is_float (base_type (t1)) && is_double (base_type (t2))
-				&& e2->implicit) {
-				e2 = cast_expr (t1, e2);
-			} else if (is_double (base_type (t1)) && is_float (base_type (t2))
-					   && e1->implicit) {
-				e1 = cast_expr (t2, e1);
-			} else if (type_promotes (base_type (t1), base_type (t2))) {
-				e2 = cast_expr (t1, e2);
-			} else if (type_promotes (base_type (t2), base_type (t1))) {
-				e1 = cast_expr (t2, e1);
-			} else if (base_type (t1) == base_type (t2)) {
-				if (is_vector (t1) || is_quaternion (t1)) {
-					e2 = cast_expr (t1, e2);
-				} else if (is_vector (t2) || is_quaternion (t2)) {
-					e1 = cast_expr (t2, e1);
-				}
-			} else {
-				debug (e1, "%d %d\n", e1->implicit, e2->implicit);
-				return invalid_binary_expr (op, e1, e2);
-			}
 		}
 		t1 = get_type (e1);
 		t2 = get_type (e2);
