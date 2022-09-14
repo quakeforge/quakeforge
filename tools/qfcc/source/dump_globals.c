@@ -65,8 +65,6 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 	const char *type;
 	pr_uint_t   offset;
 	const char *comment;
-	pr_string_t string;
-	const char *str;
 	int         saveglobal;
 
 	if (!def->type && !def->ofs && !def->name)
@@ -80,78 +78,13 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 	comment = " invalid offset";
 
 	if (offset < pr->progs->globals.count) {
-		comment = "";
-		switch (def->type & ~DEF_SAVEGLOBAL) {
-			case ev_void:
-				break;
-			case ev_string:
-				string = G_INT (pr, offset);
-				// at runtime, strings can be negative (thus pr_string_t is
-				// signed), but negative strings means they have been
-				// dynamically allocated, thus a negative string index should
-				// never appear in compiled code
-				if (string < 0
-					|| (pr_uint_t) string >= pr->progs->strings.count) {
-					str = "invalid string offset";
-					comment = va (0, " %d %s", string, str);
-				} else {
-					str = quote_string (pr->pr_strings + G_INT (pr, offset));
-					comment = va (0, " %d \"%s\"", string, str);
-				}
-				break;
-			case ev_float:
-				comment = va (0, " %g", G_FLOAT (pr, offset));
-				break;
-			case ev_double:
-				comment = va (0, " %.17g", G_DOUBLE (pr, offset));
-				break;
-			case ev_vector:
-				comment = va (0, " '%g %g %g'",
-							  G_VECTOR (pr, offset)[0],
-							  G_VECTOR (pr, offset)[1],
-							  G_VECTOR (pr, offset)[2]);
-				break;
-			case ev_entity:
-				break;
-			case ev_field:
-				comment = va (0, " %x", G_INT (pr, offset));
-				break;
-			case ev_func:
-				{
-					pr_func_t   func = G_FUNCTION (pr, offset);
-					int         start;
-					if (func < pr->progs->functions.count) {
-						start = pr->pr_functions[func].first_statement;
-						if (start > 0)
-							comment = va (0, " %d @ %x", func, start);
-						else
-							comment = va (0, " %d = #%d", func, -start);
-					} else {
-						comment = va (0, " %d = illegal function", func);
-					}
-				}
-				break;
-			case ev_ptr:
-				comment = va (0, " %x", G_INT (pr, offset));
-				break;
-			case ev_quaternion:
-				comment = va (0, " '%g %g %g %g'",
-							  G_QUAT (pr, offset)[0],
-							  G_QUAT (pr, offset)[1],
-							  G_QUAT (pr, offset)[2],
-							  G_QUAT (pr, offset)[3]);
-				break;
-			case ev_int:
-				comment = va (0, " %d", G_INT (pr, offset));
-				break;
-			case ev_short:
-				break;
-			case ev_invalid:
-				comment = " struct?";
-				break;
-			case ev_type_count:
-				break;
+		static dstring_t *value_dstr;
+		if (!value_dstr) {
+			value_dstr = dstring_newstr ();
 		}
+		dstring_clearstr (value_dstr);
+		qfot_type_t *ty = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+		comment = PR_Debug_ValueString (pr, offset, ty, value_dstr);
 	}
 	printf ("%*s %x:%d %d %s %s:%x %s\n", indent * 12, "",
 			offset, def->size, saveglobal, name, type, def->type_encoding,
