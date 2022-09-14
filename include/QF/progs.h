@@ -1984,6 +1984,9 @@ int PR_LoadDebug (progs_t *pr);
 const char *PR_Debug_GetBaseDirectory (progs_t *pr, const char *file);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
 void PR_Debug_Print (progs_t *pr, const char *expr);
+const char *PR_Debug_ValueString (progs_t *pr, pr_ptr_t offset,
+								  struct qfot_type_s *type,
+								  struct dstring_s *dstr);
 pr_auxfunction_t *PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
 pr_auxfunction_t *PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
 pr_def_t *PR_Debug_LocalDefs (progs_t *pr, pr_auxfunction_t *aux_function) __attribute__((pure));
