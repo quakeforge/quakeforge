@@ -1168,6 +1168,15 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 	return dstr->str;
 }
 
+const char *
+PR_Debug_ValueString (progs_t *pr, pr_ptr_t offset, qfot_type_t *type,
+					  dstring_t *dstr)
+{
+	pr_debug_data_t data = {pr, dstr};
+	value_string (&data, type, pr->pr_globals + offset);
+	return dstr->str;
+}
+
 static void
 pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
