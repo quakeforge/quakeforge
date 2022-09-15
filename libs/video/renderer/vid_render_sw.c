@@ -450,6 +450,7 @@ sw_capture_screen (capfunc_t callback, void *data)
 
 vid_render_funcs_t sw_vid_render_funcs = {
 	sw_vid_render_init,
+	sw_Draw_CharBuffer,
 	Draw_Character,
 	Draw_String,
 	Draw_nString,

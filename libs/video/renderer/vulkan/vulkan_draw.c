@@ -572,6 +572,22 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 }
 
 void
+Vulkan_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer,
+						vulkan_ctx_t *ctx)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			Vulkan_Draw_Character (x + i * 8, y, line[i], ctx);
+		}
+		line += width;
+		y += 8;
+	}
+}
+
+void
 Vulkan_Draw_Character (int x, int y, unsigned int chr, vulkan_ctx_t *ctx)
 {
 	if (chr == ' ') {

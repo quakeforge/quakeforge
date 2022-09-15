@@ -486,6 +486,21 @@ tVA_increment (void)
 		flush_text ();
 }
 
+void
+gl_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			gl_Draw_Character (x + i * 8, y, line[i]);
+		}
+		line += width;
+		y += 8;
+	}
+}
+
 /*
 	Draw_Character
 

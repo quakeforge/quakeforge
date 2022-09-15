@@ -226,4 +226,7 @@ extern float	r_skytime;
 
 extern int		c_surf;
 
+struct draw_charbuffer_s;
+void sw_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer);
+
 #endif // _D_IFACE_H

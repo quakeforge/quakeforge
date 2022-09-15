@@ -30,9 +30,11 @@
 
 struct qpic_s;
 struct rfont_s;
+struct draw_charbuffer_s;
 
 void gl_Draw_Init (void);
 void gl_Draw_Shutdown (void);
+void gl_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer);
 void gl_Draw_Character (int x, int y, unsigned ch);
 void gl_Draw_String (int x, int y, const char *str);
 void gl_Draw_nString (int x, int y, const char *str, int count);

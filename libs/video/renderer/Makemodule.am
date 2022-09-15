@@ -50,6 +50,7 @@ libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_bsp.c \
 	libs/video/renderer/r_cvar.c \
+	libs/video/renderer/r_draw.c \
 	libs/video/renderer/r_efrag.c \
 	libs/video/renderer/r_fog.c \
 	libs/video/renderer/r_font.c \

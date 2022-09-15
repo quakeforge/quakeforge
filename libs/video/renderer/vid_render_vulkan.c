@@ -136,6 +136,12 @@ vulkan_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 }
 
 static void
+vulkan_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	Vulkan_Draw_CharBuffer (x, y, buffer, vulkan_ctx);
+}
+
+static void
 vulkan_Draw_Character (int x, int y, unsigned ch)
 {
 	Vulkan_Draw_Character (x, y, ch, vulkan_ctx);
@@ -740,6 +746,7 @@ vulkan_vid_render_shutdown (void)
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_vid_render_init,
+	vulkan_Draw_CharBuffer,
 	vulkan_Draw_Character,
 	vulkan_Draw_String,
 	vulkan_Draw_nString,

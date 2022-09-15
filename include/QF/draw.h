@@ -41,6 +41,23 @@
 
 #include "QF/wad.h"
 
+/** Buffer for drawing text using quake conchars or the default 8x8 font.
+
+	Characters are stored with the first character in the upper left, scanning
+	horizontally to the right.
+*/
+typedef struct draw_charbuffer_s {
+	int         width;		///< width in character cells
+	int         height;		///< height in character cells
+	char       *chars;		///< width * height characters
+} draw_charbuffer_t;
+
+draw_charbuffer_t *Draw_CreateBuffer (int width, int height);
+void Draw_DestroyBuffer (draw_charbuffer_t *buffer);
+void Draw_ClearBuffer (draw_charbuffer_t *buffer);
+void Draw_ScrollBuffer (draw_charbuffer_t *buffer, int lines);
+void Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer);
+
 extern byte *draw_chars;
 
 /** Initialize the draw stuff.

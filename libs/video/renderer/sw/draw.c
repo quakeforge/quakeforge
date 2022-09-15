@@ -245,7 +245,6 @@ Draw_Init (void)
 	}
 }
 
-
 /*
 	Draw_Character
 
@@ -303,6 +302,21 @@ Draw_Character (int x, int y, unsigned int chr)
 			dest[7] = source[7];
 		source += 128;
 		dest += d_rowbytes;
+	}
+}
+
+void
+sw_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			Draw_Character (x + i * 8, y, line[i]);
+		}
+		line += width;
+		y += 8;
 	}
 }
 

@@ -63,10 +63,17 @@ typedef struct qpic_res_s {
 	char       *name;
 } qpic_res_t;
 
+typedef struct bi_charbuff_s {
+	struct bi_charbuff_s *next;
+	draw_charbuffer_t *buffer;
+} bi_charbuff_t;
+
 typedef struct {
 	PR_RESMAP (qpic_res_t) qpic_map;
+	PR_RESMAP (bi_charbuff_t) charbuff_map;
 	qpic_res_t *qpics;
 	hashtab_t  *pic_hash;
+	bi_charbuff_t *charbuffs;
 } draw_resources_t;
 
 static qpic_res_t *
@@ -119,6 +126,47 @@ get_qpic (progs_t *pr, draw_resources_t *res, const char *name, int qpic_handle)
 	if (!qp)
 		PR_RunError (pr, "invalid qpic handle passed to %s", name + 3);
 	return qp;
+}
+
+static bi_charbuff_t *
+charbuff_new (draw_resources_t *res)
+{
+	return PR_RESNEW (res->charbuff_map);
+}
+
+static void
+charbuff_free (draw_resources_t *res, bi_charbuff_t *cbuff)
+{
+	Draw_DestroyBuffer (cbuff->buffer);
+	PR_RESFREE (res->charbuff_map, cbuff);
+}
+
+static void
+charbuff_reset (draw_resources_t *res)
+{
+	PR_RESRESET (res->charbuff_map);
+}
+
+static inline bi_charbuff_t *
+charbuff_get (draw_resources_t *res, int index)
+{
+	return PR_RESGET (res->charbuff_map, index);
+}
+
+static inline int __attribute__((pure))
+charbuff_index (draw_resources_t *res, bi_charbuff_t *qp)
+{
+	return PR_RESINDEX (res->charbuff_map, qp);
+}
+
+static bi_charbuff_t * __attribute__((pure))
+get_charbuff (progs_t *pr, draw_resources_t *res, const char *name, int charbuff_handle)
+{
+	bi_charbuff_t *cbuff = charbuff_get (res, charbuff_handle);
+
+	if (!cbuff)
+		PR_RunError (pr, "invalid charbuff handle passed to %s", name + 3);
+	return cbuff;
 }
 
 static void
@@ -354,6 +402,66 @@ bi_Font_String (progs_t *pr, void *_res)
 	r_funcs->Draw_FontString (x, y, str);
 }
 
+static void
+bi_Draw_CreateBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	int         width = P_INT (pr, 0);
+	int         height = P_INT (pr, 1);
+	draw_charbuffer_t *buffer;
+	bi_charbuff_t *cbuff;
+
+	buffer = Draw_CreateBuffer (width, height);
+	cbuff = charbuff_new (res);
+	cbuff->next = res->charbuffs;
+	res->charbuffs = cbuff;
+	cbuff->buffer = buffer;
+	R_INT (pr) = charbuff_index (res, cbuff);
+}
+
+static void
+bi_Draw_DestroyBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
+	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
+
+	charbuff_free (res, cbuff);
+}
+
+static void
+bi_Draw_ClearBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
+	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
+
+	Draw_ClearBuffer (cbuff->buffer);
+}
+
+static void
+bi_Draw_ScrollBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
+	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
+	int         lines = P_INT (pr, 1);
+
+	Draw_ScrollBuffer (cbuff->buffer, lines);
+}
+
+static void
+bi_Draw_CharBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	pr_ptr_t    cbuff_handle = P_POINTER (pr, 2);
+	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
+
+	Draw_CharBuffer (x, y, cbuff->buffer);
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -365,13 +473,20 @@ bi_draw_clear (progs_t *pr, void *_res)
 {
 	draw_resources_t *res = (draw_resources_t *) _res;
 	qpic_res_t *qp;
+	bi_charbuff_t *cbuff;
 
 	for (qp = res->qpics; qp; qp = qp->next) {
 		bi_draw_free_qpic (qp);
 	}
 	res->qpics = 0;
 
+	for (cbuff = res->charbuffs; cbuff; cbuff = cbuff->next) {
+		Draw_DestroyBuffer (cbuff->buffer);
+	}
+	res->charbuffs = 0;
+
 	qpic_reset (res);
+	charbuff_reset (res);
 	Hash_FlushTable (res->pic_hash);
 }
 
@@ -406,6 +521,12 @@ static builtin_t builtins[] = {
 
 	bi(Font_Load,       2, p(string), p(int)),
 	bi(Font_String,     3, p(int), p(int), p(string)),
+
+	bi(Draw_CreateBuffer,   2, p(int), p(int)),
+	bi(Draw_DestroyBuffer,  1, p(ptr)),
+	bi(Draw_ClearBuffer,    1, p(ptr)),
+	bi(Draw_ScrollBuffer,   2, p(ptr), p(int)),
+	bi(Draw_CharBuffer,     3, p(int), p(int), p(ptr)),
 	{0}
 };
 

@@ -32,7 +32,10 @@ struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 struct qpic_s;
 struct rfont_s;
+struct draw_charbuffer_s;
 
+void Vulkan_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer,
+							 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Character (int x, int y, unsigned ch,

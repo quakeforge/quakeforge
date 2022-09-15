@@ -430,6 +430,7 @@ glsl_capture_screen (capfunc_t callback, void *data)
 
 vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_vid_render_init,
+	glsl_Draw_CharBuffer,
 	glsl_Draw_Character,
 	glsl_Draw_String,
 	glsl_Draw_nString,
