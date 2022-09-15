@@ -462,6 +462,17 @@ bi_Draw_CharBuffer (progs_t *pr, void *_res)
 	Draw_CharBuffer (x, y, cbuff->buffer);
 }
 
+static void
+bi_Draw_PrintBuffer (progs_t *pr, void *_res)
+{
+	draw_resources_t *res = _res;
+	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
+	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
+	const char *str = P_GSTRING (pr, 1);
+
+	Draw_PrintBuffer (cbuff->buffer, str);
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -527,6 +538,7 @@ static builtin_t builtins[] = {
 	bi(Draw_ClearBuffer,    1, p(ptr)),
 	bi(Draw_ScrollBuffer,   2, p(ptr), p(int)),
 	bi(Draw_CharBuffer,     3, p(int), p(int), p(ptr)),
+	bi(Draw_PrintBuffer,    2, p(ptr), p(string)),
 	{0}
 };
 

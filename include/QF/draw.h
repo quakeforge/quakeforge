@@ -50,6 +50,8 @@ typedef struct draw_charbuffer_s {
 	int         width;		///< width in character cells
 	int         height;		///< height in character cells
 	char       *chars;		///< width * height characters
+	int         cursx;		///< horizontal cursor position
+	int         cursy;		///< vertical cursor position
 } draw_charbuffer_t;
 
 draw_charbuffer_t *Draw_CreateBuffer (int width, int height);
@@ -57,6 +59,7 @@ void Draw_DestroyBuffer (draw_charbuffer_t *buffer);
 void Draw_ClearBuffer (draw_charbuffer_t *buffer);
 void Draw_ScrollBuffer (draw_charbuffer_t *buffer, int lines);
 void Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer);
+void Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str);
 
 extern byte *draw_chars;
 

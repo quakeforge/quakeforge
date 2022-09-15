@@ -43,6 +43,7 @@ Draw_CreateBuffer (int width, int height)
 	buffer->width = width;
 	buffer->height = height;
 	buffer->chars = (char *) (buffer + 1);
+	buffer->cursx = buffer->cursy = 0;
 	return buffer;
 }
 
@@ -56,6 +57,7 @@ VISIBLE void
 Draw_ClearBuffer (draw_charbuffer_t *buffer)
 {
 	memset (buffer->chars, ' ', buffer->height * buffer->width);
+	buffer->cursx = buffer->cursy = 0;
 }
 
 VISIBLE void
@@ -85,4 +87,52 @@ VISIBLE void
 Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
 {
 	r_funcs->Draw_CharBuffer (x, y, buffer);
+}
+
+#define TAB 8
+
+VISIBLE void
+Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
+{
+	char       *dst = buffer->chars;
+	char        c;
+	int         tab;
+	dst += buffer->cursy * buffer->width + buffer->cursx;
+	while ((c = *str++)) {
+		switch (c) {
+			case '\r':
+				dst -= buffer->cursx;
+				buffer->cursx = 0;
+				break;
+			case '\n':
+				dst -= buffer->cursx;
+				buffer->cursx = 0;
+				dst += buffer->width;
+				buffer->cursy++;
+				break;
+			case '\f':
+				dst += buffer->width;
+				buffer->cursy++;
+				break;
+			case '\t':
+				tab = TAB - buffer->cursx % TAB;
+				buffer->cursx += tab;
+				dst += tab;
+				break;
+			default:
+				*dst++ = c;
+				buffer->cursx++;
+				break;
+		}
+		if (buffer->cursx >= buffer->width) {
+			buffer->cursx -= buffer->width;
+			buffer->cursy++;
+		}
+		if (buffer->cursy >= buffer->height) {
+			int         lines = buffer->cursy - buffer->height + 1;
+			Draw_ScrollBuffer (buffer, lines);
+			dst -= lines * buffer->width;
+			buffer->cursy -= lines;
+		}
+	}
 }
