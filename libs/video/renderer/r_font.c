@@ -87,7 +87,7 @@ R_FontLoad (QFile *font_file, int size)
 	if (!font_data) {
 		return 0;
 	}
-	size_t      font_size = Qfilesize (font_file);;
+	size_t      font_size = qfs_filesize;
 	rfont_t    *font = calloc (1, sizeof (rfont_t));
 	font->font_resource = font_data;
 	if (FT_New_Memory_Face (ft, font_data, font_size, 0, &font->face)) {
