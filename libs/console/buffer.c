@@ -78,19 +78,27 @@ VISIBLE void
 Con_BufferAddText (con_buffer_t *buf, const char *text)
 {
 	con_line_t *cur_line = &buf->lines[buf->cur_line];
-	con_line_t *tail_line;
 	size_t		len = strlen (text);
-	byte       *pos = cur_line->text + cur_line->len;
+	// Point to the oldest line in the buffer (first to be dropped when
+	// the buffer overflows).
+	con_line_t *tail_line = buf->lines + (buf->cur_line + 1 - buf->num_lines
+										  + buf->max_lines) % buf->max_lines;
 
+	byte       *pos = cur_line->text + cur_line->len;
 	if (pos >= buf->buffer + buf->buffer_size)
 		pos -= buf->buffer_size;
-	tail_line = buf->lines + (buf->cur_line + buf->max_lines + 1
-							  - buf->num_lines) % buf->max_lines;
+
+	// Limit the appended text to the size of the buffer. The entire buffer
+	// may be overwritten.
 	if (len > buf->buffer_size) {
 		text += len - buf->buffer_size;
 		len = buf->buffer_size;
 	}
 	while (len--) {
+		// Drop the oldest line if it will be overwritten by the next
+		// character to be inserted. However, if there is only one line,
+		// then tail_line is effectively invalid and should not be touched.
+		// This happens when the buffer is filled with a single line of text.
 		if (buf->num_lines > 1 && pos == tail_line->text) {
 			buf->num_lines--;
 			tail_line->text = 0;
@@ -99,10 +107,14 @@ Con_BufferAddText (con_buffer_t *buf, const char *text)
 			if (tail_line - buf->lines >= buf->max_lines)
 				tail_line = buf->lines;
 		}
+
+		// Copy character into the buffer, updating the current line length
+		// (trailing \n is part of the line).
 		byte        c = *pos++ = *text++;
 		if (pos >= buf->buffer + buf->buffer_size)
 			pos = buf->buffer;
 		cur_line->len++;
+
 		if (c == '\n') {
 			if (buf->num_lines < buf->max_lines)
 				buf->num_lines++;
