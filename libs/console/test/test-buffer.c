@@ -96,6 +96,35 @@ test_2 (void)
 		goto fail;
 	}
 
+	// add a single char at the end of the full buffer the buffer should
+	// just effectively scroll through the text as chars are added (via
+	// the single line object maintaining constant length but updating its
+	// text pointer)
+	Con_BufferAddText (con, "N");
+	if (con->num_lines != 1) {
+		printf ("con_buffer num_lines incorrect: %d\n", con->num_lines);
+		goto fail;
+	}
+	if (con->cur_line != 0) {
+		printf ("con_buffer cur_line incorrect: %d\n", con->cur_line);
+		goto fail;
+	}
+	if (con->lines[con->cur_line].text != con->buffer + 1) {
+		printf ("con_buffer cur_line.text incorrect: %p, %p\n",
+				con->lines[con->cur_line].text, con->buffer + 1);
+		goto fail;
+	}
+	if (con->lines[con->cur_line].len != 1024) {
+		printf ("con_buffer cur_line.line incorrect: %zd\n",
+				con->lines[con->cur_line].len);
+		goto fail;
+	}
+	if (memcmp (con->buffer + 1, text + 1024 + 1, 1024 - 1)
+		|| con->buffer[0] != 'N') {
+		printf ("con_buffer incorrect\n");
+		goto fail;
+	}
+
 	ret = 0;
 fail:
 	if (ret) {
