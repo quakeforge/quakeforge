@@ -91,19 +91,18 @@ Con_BufferAddText (con_buffer_t *buf, const char *text)
 		len = buf->buffer_size;
 	}
 	while (len--) {
-		byte        c = *pos++ = *text++;
-		if (pos >= buf->buffer + buf->buffer_size)
-			pos = buf->buffer;
-		cur_line->len++;
-		if (pos == tail_line->text) {
-			if (buf->num_lines > 0)
-				buf->num_lines--;
+		if (buf->num_lines > 1 && pos == tail_line->text) {
+			buf->num_lines--;
 			tail_line->text = 0;
 			tail_line->len = 0;
 			tail_line++;
 			if (tail_line - buf->lines >= buf->max_lines)
 				tail_line = buf->lines;
 		}
+		byte        c = *pos++ = *text++;
+		if (pos >= buf->buffer + buf->buffer_size)
+			pos = buf->buffer;
+		cur_line->len++;
 		if (c == '\n') {
 			if (buf->num_lines < buf->max_lines)
 				buf->num_lines++;

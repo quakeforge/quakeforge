@@ -91,6 +91,10 @@ test_2 (void)
 				con->lines[con->cur_line].len);
 		goto fail;
 	}
+	if (memcmp (con->buffer, text + 1024, 1024)) {
+		printf ("con_buffer incorrect\n");
+		goto fail;
+	}
 
 	ret = 0;
 fail:
