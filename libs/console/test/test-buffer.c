@@ -26,29 +26,29 @@ test_1 (void)
 		goto fail;
 	}
 	if (con->buffer_size != 1024) {
-		printf ("con_buffer buffer_size incorrect: %zd\n", con->buffer_size);
+		printf ("con_buffer buffer_size incorrect: %u\n", con->buffer_size);
 		goto fail;
 	}
 	if (con->max_lines != 25) {
 		printf ("con_buffer max_lines incorrect: %d\n", con->max_lines);
 		goto fail;
 	}
-	if (con->num_lines != 1) {
-		printf ("con_buffer num_lines incorrect: %d\n", con->num_lines);
+	if (con->line_head != 1) {
+		printf ("con_buffer line_head incorrect: %d\n", con->line_head);
 		goto fail;
 	}
-	if (con->cur_line != 0) {
-		printf ("con_buffer cur_line incorrect: %d\n", con->cur_line);
+	if (con->line_tail != 0) {
+		printf ("con_buffer line_tail incorrect: %d\n", con->line_tail);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].text != con->buffer) {
-		printf ("con_buffer cur_line.text incorrect: %p, %p\n",
-				con->lines[con->cur_line].text, con->buffer);
+	if (con->lines[con->line_tail].text != 0) {
+		printf ("con_buffer line_tail.text incorrect: %u\n",
+				con->lines[con->line_tail].text);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].len != 0) {
-		printf ("con_buffer cur_line.line incorrect: %zd\n",
-				con->lines[con->cur_line].len);
+	if (con->lines[con->line_tail].len != 0) {
+		printf ("con_buffer line_tail.len incorrect: %u\n",
+				con->lines[con->line_tail].len);
 		goto fail;
 	}
 
@@ -73,55 +73,58 @@ test_2 (void)
 	__auto_type con = Con_CreateBuffer (1024, 25);
 	Con_BufferAddText (con, text);
 
-	if (con->num_lines != 1) {
-		printf ("con_buffer num_lines incorrect: %d\n", con->num_lines);
+	if (con->line_head != 1) {
+		printf ("con_buffer num_lines incorrect: %d\n", con->line_head);
 		goto fail;
 	}
-	if (con->cur_line != 0) {
-		printf ("con_buffer cur_line incorrect: %d\n", con->cur_line);
+	if (con->line_tail != 0) {
+		printf ("con_buffer line_tail incorrect: %d\n", con->line_tail);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].text != con->buffer) {
-		printf ("con_buffer cur_line.text incorrect: %p, %p\n",
-				con->lines[con->cur_line].text, con->buffer);
+	if (con->lines[con->line_tail].text != 1) {
+		printf ("con_buffer line_tail.text incorrect: %u\n",
+				con->lines[con->line_tail].text);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].len != 1024) {
-		printf ("con_buffer cur_line.line incorrect: %zd\n",
-				con->lines[con->cur_line].len);
+	if (con->lines[con->line_tail].len != 1023) {
+		printf ("con_buffer line_tail.len incorrect: %u\n",
+				con->lines[con->line_tail].len);
 		goto fail;
 	}
-	if (memcmp (con->buffer, text + 1024, 1024)) {
+	if (memcmp (con->buffer + 1, text + 1025, 1023)
+		|| con->buffer[0] != 0) {
 		printf ("con_buffer incorrect\n");
 		goto fail;
 	}
 
-	// add a single char at the end of the full buffer the buffer should
+	// Add a single char at the end of the full buffer. The buffer should
 	// just effectively scroll through the text as chars are added (via
 	// the single line object maintaining constant length but updating its
 	// text pointer)
 	Con_BufferAddText (con, "N");
-	if (con->num_lines != 1) {
-		printf ("con_buffer num_lines incorrect: %d\n", con->num_lines);
+
+	if (con->line_head != 1) {
+		printf ("2 con_buffer num_lines incorrect: %d\n", con->line_head);
 		goto fail;
 	}
-	if (con->cur_line != 0) {
-		printf ("con_buffer cur_line incorrect: %d\n", con->cur_line);
+	if (con->line_tail != 0) {
+		printf ("2 con_buffer line_tail incorrect: %d\n", con->line_tail);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].text != con->buffer + 1) {
-		printf ("con_buffer cur_line.text incorrect: %p, %p\n",
-				con->lines[con->cur_line].text, con->buffer + 1);
+	if (con->lines[con->line_tail].text != 2) {
+		printf ("2 con_buffer line_tail.text incorrect: %u\n",
+				con->lines[con->line_tail].text);
 		goto fail;
 	}
-	if (con->lines[con->cur_line].len != 1024) {
-		printf ("con_buffer cur_line.line incorrect: %zd\n",
-				con->lines[con->cur_line].len);
+	if (con->lines[con->line_tail].len != 1023) {
+		printf ("2 con_buffer line_tail.len incorrect: %u\n",
+				con->lines[con->line_tail].len);
 		goto fail;
 	}
-	if (memcmp (con->buffer + 1, text + 1024 + 1, 1024 - 1)
-		|| con->buffer[0] != 'N') {
-		printf ("con_buffer incorrect\n");
+	if (memcmp (con->buffer + 2, text + 1026, 1022)
+		|| con->buffer[0] != 'N'
+		|| con->buffer[1] != 0) {
+		printf ("2 con_buffer incorrect\n");
 		goto fail;
 	}
 

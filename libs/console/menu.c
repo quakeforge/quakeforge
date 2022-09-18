@@ -40,6 +40,7 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
+#include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"

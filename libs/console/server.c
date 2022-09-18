@@ -277,7 +277,7 @@ draw_output (view_t *view)
 	// this is not the most efficient way to update the screen, but oh well
 	int         lines = view->ylen - 1; // leave a blank line
 	int         width = view->xlen;
-	int         cur_line = output_buffer->cur_line + view_offset;
+	int         cur_line = output_buffer->line_head - 1 + view_offset;
 	int         i, y;
 
 	if (lines < 1)
@@ -297,7 +297,7 @@ draw_output (view_t *view)
 	wmove (win, 0, 0);
 	do {
 		con_line_t *l = Con_BufferLine (output_buffer, cur_line++);
-		byte       *text = l->text;
+		byte       *text = output_buffer->buffer + l->text;
 		int         len = l->len;
 
 		if (y > 0) {
@@ -306,12 +306,12 @@ draw_output (view_t *view)
 			y = 0;
 			if (len < 1) {
 				len = 1;
-				text = l->text + l->len - 1;
+				text = output_buffer->buffer + l->text + l->len - 1;
 			}
 		}
 		while (len--)
 			draw_fun_char (win, *text++, 0);
-	} while (cur_line < output_buffer->cur_line + view_offset);
+	} while (cur_line < (int) output_buffer->line_head - 1 + view_offset);
 }
 
 static void
@@ -526,14 +526,17 @@ key_event (knum_t key, short unicode, qboolean down)
 	int         ovf = view_offset;
 	sv_view_t  *sv_view;
 	con_buffer_t *buffer;
+	int         num_lines;
 
 	switch (key) {
 		case QFK_PAGEUP:
 			view_offset -= 10;
 			sv_view = output->data;
 			buffer = sv_view->obj;
-			if (view_offset <= -(buffer->num_lines - (screen_y - 3)))
-				view_offset = -(buffer->num_lines - (screen_y - 3)) + 1;
+			num_lines = (buffer->line_head - buffer->line_tail
+						 + buffer->max_lines) % buffer->max_lines;
+			if (view_offset <= -(num_lines - (screen_y - 3)))
+				view_offset = -(num_lines - (screen_y - 3)) + 1;
 			if (ovf != view_offset)
 				sv_draw (output);
 			break;

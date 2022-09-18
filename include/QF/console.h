@@ -28,9 +28,8 @@
 #ifndef __QF_console_h
 #define __QF_console_h
 
-#include <stdarg.h>
+#include <stdint.h>
 
-#include "QF/keys.h"
 #include "QF/qtypes.h"
 
 /** \defgroup console 2d Console Stuff
@@ -47,17 +46,17 @@ typedef struct
 } old_console_t;
 
 typedef struct {
-	byte	*text;
-	size_t	len;
+	uint32_t    text;
+	uint32_t    len;
 } con_line_t;
 
 typedef struct {
-	byte		*buffer;
-	size_t		buffer_size;
-	con_line_t	*lines;
-	int			max_lines;			// size of lines array
-	int			num_lines;			// number of lines used
-	int			cur_line;			// current line
+	byte       *buffer;
+	con_line_t *lines;
+	uint32_t    buffer_size;
+	uint32_t    max_lines;			// size of lines array
+	uint32_t    line_head;			// number of lines used
+	uint32_t    line_tail;			// current line
 } con_buffer_t;
 
 typedef enum {

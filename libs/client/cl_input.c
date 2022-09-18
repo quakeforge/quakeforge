@@ -43,6 +43,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
+#include "QF/keys.h"
 #include "QF/plist.h"
 #include "QF/sys.h"
 
