@@ -494,7 +494,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 				set_remove (gn->edges, n->number);
 			}
 		}
-		if (num_params && isdigit (*num_params)) {
+		if (num_params && isdigit ((byte) *num_params)) {
 			for (i = first_param; i < *num_params - '0'; i++) {
 				flowvar_t  *var = flowvars[i + 1];
 				def_t      *param_def = var->op->def;

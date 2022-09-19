@@ -537,7 +537,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	}
 	SockadrToNetadr (&addr, from);
 	Sys_MaskPrintf (SYS_net, "got %d bytes from %s on iface %d (%s)\n", ret,
-					UDP_AddrToString (from), info ? info->ipi_ifindex - 1 : -1,
+					UDP_AddrToString (from), info ? (int) info->ipi_ifindex - 1 : -1,
 					last_iface ? inet_ntoa (info->ipi_addr) : "?");
 #else
 	socklen_t   addrlen = sizeof (AF_address_t);
