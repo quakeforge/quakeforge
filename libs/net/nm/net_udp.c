@@ -58,12 +58,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-#ifdef HAVE_WINSOCK_H
-# include <winsock.h>
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
