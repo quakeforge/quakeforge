@@ -246,7 +246,7 @@ if test "x$ENABLE_tools_qfbsp" = xyes; then
 	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
-	QFCC_TARGETS="qfcc qfprogs\$(EXEEXT)"
+	QFCC_TARGETS="qfcc\$(EXEEXT) qfprogs\$(EXEEXT)"
 	QF_NEED(tools,[qfcc])
 	QF_NEED(libs,[gamecode util])
 fi

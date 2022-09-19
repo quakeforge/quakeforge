@@ -33,7 +33,7 @@ ruamoko_scheme_libscheme_a_SOURCES=\
 	ruamoko/scheme/BaseContinuation.r
 ruamoko_scheme_libscheme_a_dep=$(call qcautodep,$(ruamoko_scheme_libscheme_a_SOURCES))
 ruamoko_scheme_libscheme_a_AR=$(PAK) -cf
-EXTRA_ruamoko_scheme_libscheme_a_DEPENDENCIES=pak
+EXTRA_ruamoko_scheme_libscheme_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_scheme_libscheme_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_scheme_libscheme_a_dep)
 

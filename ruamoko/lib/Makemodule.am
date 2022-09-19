@@ -33,7 +33,7 @@ ruamoko_lib_libr_a_SOURCES=\
 	ruamoko/lib/Set.r
 ruamoko_lib_libr_a_dep=$(call qcautodep,$(ruamoko_lib_libr_a_SOURCES))
 ruamoko_lib_libr_a_AR=$(PAK) -cf
-EXTRA_ruamoko_lib_libr_a_DEPENDENCIES=pak
+EXTRA_ruamoko_lib_libr_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_lib_libr_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libr_a_dep)
 
@@ -83,7 +83,7 @@ ruamoko_lib_libqw_a_SOURCES= \
 	ruamoko/lib/math.r
 ruamoko_lib_libqw_a_dep=$(call qcautodep,$(ruamoko_lib_libqw_a_src))
 ruamoko_lib_libqw_a_AR=$(PAK) -cf
-EXTRA_ruamoko_lib_libqw_a_DEPENDENCIES=pak
+EXTRA_ruamoko_lib_libqw_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_lib_libqw_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libqw_a_dep)
 
@@ -94,7 +94,7 @@ ruamoko_lib_libnq_a_SOURCES=\
 	ruamoko/lib/math.r
 ruamoko_lib_libnq_a_dep=$(call qcautodep,$(ruamoko_lib_libnq_a_src))
 ruamoko_lib_libnq_a_AR=$(PAK) -cf
-EXTRA_ruamoko_lib_libnq_a_DEPENDENCIES=pak
+EXTRA_ruamoko_lib_libnq_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_lib_libnq_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libnq_a_dep)
 
@@ -103,7 +103,7 @@ ruamoko_lib_libcsqc_a_SOURCES=\
 	$(ruamoko_lib_common_src)
 ruamoko_lib_libcsqc_a_dep=$(call qcautodep,$(ruamoko_lib_libcsqc_a_src))
 ruamoko_lib_libcsqc_a_AR=	$(PAK) -cf
-EXTRA_ruamoko_lib_libcsqc_a_DEPENDENCIES=pak
+EXTRA_ruamoko_lib_libcsqc_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_lib_libcsqc_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libcsqc_a_dep)
 

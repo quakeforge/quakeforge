@@ -15,7 +15,7 @@ ruamoko_gui_libgui_a_SOURCES= \
 	ruamoko/gui/View.r
 ruamoko_gui_libgui_a_dep=$(call qcautodep,$(ruamoko_gui_libgui_a_SOURCES))
 ruamoko_gui_libgui_a_AR=	$(PAK) -cf
-EXTRA_ruamoko_gui_libgui_a_DEPENDENCIES=pak
+EXTRA_ruamoko_gui_libgui_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_gui_libgui_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_gui_libgui_a_dep)
 
