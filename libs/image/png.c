@@ -206,7 +206,7 @@ LoadPNG (QFile *infile, int load)
 
 #define WRITEPNG_BIT_DEPTH 8
 
-int
+VISIBLE int
 WritePNG (QFile *outfile, const tex_t *tex)
 {
 	int         i;
@@ -299,9 +299,10 @@ LoadPNG (QFile *infile, int load)
 	return 0;
 }
 
-VISIBLE void
-WritePNG (QFile *outfile, const byte *data, int width, int height)
+VISIBLE int
+WritePNG (QFile *outfile, const tex_t *tex)
 {
+	return 0;
 }
 
 #endif
