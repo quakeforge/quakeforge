@@ -59,10 +59,12 @@ AC_SUBST(SGI_CD_LIBS)
 
 AC_EGREP_CPP([QF_maGiC_VALUE],
 	[
+#ifdef _WIN32
 #include <windows.h>
 #include <mmsystem.h>
 #if defined(MCI_SET_DOOR_OPEN)
 QF_maGiC_VALUE
+#endif
 #endif
 	],
 	CDTYPE="$CDTYPE WIN32"

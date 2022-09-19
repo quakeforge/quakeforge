@@ -238,26 +238,28 @@ QF_maGiC_VALUE
 	fi
 
 	dnl Win32
-	if test "x$ac_cv_header_windows_h" = "xyes"; then
-		SOUND_TYPES="$SOUND_TYPES Win32"
-		QF_NEED(snd_output, [win])
-		QF_NEED(snd_render, [default])
-		WINSND_LIBS="-lwinmm"
-		if test "x$ac_cv_header_dsound_h" = "xyes"; then
-		AC_EGREP_CPP([QF_maGiC_VALUE],
-			[
-#include <windows.h>
-#include <dsound.h>
-#ifdef GMEM_MOVEABLE
-# ifdef DirectSoundEnumerate
-QF_maGiC_VALUE
-# endif
-#endif
-			],
-			SOUND_TYPES="$SOUND_TYPES DirectX"
-			QF_NEED(snd_output, [dx])
+	if test "x$SYSTYPE" = xWIN32; then
+		if test "x$ac_cv_header_windows_h" = "xyes"; then
+			SOUND_TYPES="$SOUND_TYPES Win32"
+			QF_NEED(snd_output, [win])
 			QF_NEED(snd_render, [default])
-		)
+			WINSND_LIBS="-lwinmm"
+			if test "x$ac_cv_header_dsound_h" = "xyes"; then
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
+	#include <windows.h>
+	#include <dsound.h>
+	#ifdef GMEM_MOVEABLE
+	# ifdef DirectSoundEnumerate
+	QF_maGiC_VALUE
+	# endif
+	#endif
+				],
+				SOUND_TYPES="$SOUND_TYPES DirectX"
+				QF_NEED(snd_output, [dx])
+				QF_NEED(snd_render, [default])
+			)
+			fi
 		fi
 	fi
 	AC_SUBST(WINSND_LIBS)

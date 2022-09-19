@@ -91,7 +91,7 @@ case "${host}" in
 
 		;;
 	i?86-*-cygwin*|x86_64-*-cygwin*)
-		SYSTYPE=WIN32
+		#SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
 		WIN32_LIBS=' $(NET_LIBS)'
 		;;

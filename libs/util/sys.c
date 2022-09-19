@@ -940,7 +940,11 @@ Sys_ConsoleInput (void)
 #endif
 }
 
+#ifdef _WIN32
 static jmp_buf  aiee_abort;
+#else
+static sigjmp_buf aiee_abort;
+#endif
 
 typedef struct sh_stack_s {
 	struct sh_stack_s *next;
