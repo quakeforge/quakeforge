@@ -91,12 +91,13 @@ Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
 
 #define TAB 8
 
-VISIBLE void
+VISIBLE int
 Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
 {
 	char       *dst = buffer->chars;
 	char        c;
 	int         tab;
+	int         lines = 0;
 	dst += buffer->cursy * buffer->width + buffer->cursx;
 	while ((c = *str++)) {
 		switch (c) {
@@ -109,10 +110,12 @@ Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
 				buffer->cursx = 0;
 				dst += buffer->width;
 				buffer->cursy++;
+				lines++;
 				break;
 			case '\f':
 				dst += buffer->width;
 				buffer->cursy++;
+				lines++;
 				break;
 			case '\t':
 				tab = TAB - buffer->cursx % TAB;
@@ -127,12 +130,14 @@ Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
 		if (buffer->cursx >= buffer->width) {
 			buffer->cursx -= buffer->width;
 			buffer->cursy++;
+			lines++;
 		}
 		if (buffer->cursy >= buffer->height) {
-			int         lines = buffer->cursy - buffer->height + 1;
-			Draw_ScrollBuffer (buffer, lines);
-			dst -= lines * buffer->width;
-			buffer->cursy -= lines;
+			int         excess = buffer->cursy - buffer->height + 1;
+			Draw_ScrollBuffer (buffer, excess);
+			dst -= excess * buffer->width;
+			buffer->cursy -= excess;
 		}
 	}
+	return lines;
 }
