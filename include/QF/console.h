@@ -98,6 +98,7 @@ con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);
 void Con_DestroyBuffer (con_buffer_t *buffer);
 void Con_BufferAddText (con_buffer_t *buf, const char *text);
 #define Con_BufferLine(b,l) ((b)->lines + ((l) + (b)->max_lines) % (b)->max_lines)
+void Con_ClearBuffer (con_buffer_t *buffer);
 
 // init/shutdown functions
 void Con_Init (const char *plugin_name);

@@ -125,3 +125,12 @@ Con_BufferAddText (con_buffer_t *buf, const char *text)
 		}
 	}
 }
+
+VISIBLE void
+Con_ClearBuffer (con_buffer_t *buffer)
+{
+	buffer->line_head = 1;
+	buffer->line_tail = 0;
+	buffer->lines[0].text = 0;
+	buffer->lines[0].len = 0;
+}
