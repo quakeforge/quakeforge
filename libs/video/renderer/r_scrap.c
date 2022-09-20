@@ -83,8 +83,23 @@ R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 			best = t;
 			continue;
 		}
-		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height)
+		if ((*t)->width == width && (*t)->height == height) {
+			// exact fit
 			best = t;
+			break;
+		}
+		if ((*best)->height == height) {
+			if ((*t)->height == height && (*t)->width < (*best)->width) {
+				best = t;
+			}
+		} else if ((*best)->width == width) {
+			if ((*t)->width == width && (*t)->height < (*best)->height) {
+				best = t;
+			}
+		}
+		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height) {
+			best = t;
+		}
 	}
 	if (!best)
 		return 0;							// couldn't find a spot

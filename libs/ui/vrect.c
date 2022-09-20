@@ -268,10 +268,37 @@ VRect_SubRect (const vrect_t *rect, int width, int height)
 	if (height > rect->height) {
 		height = rect->height;
 	}
+	// First check for exact fits as no heuristics are necessary
+	if (width == rect->width) {
+		if (height == rect->height) {
+			// Exact fit, return a new rect of the same size
+			return VRect_New (rect->x, rect->y, rect->width, rect->height);
+		}
+
+		vrect_t    *r = VRect_HSplit (rect, rect->y + height);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		return r;
+	} else if (height == rect->height) {
+		// Because rect's width ks known to be greater than the requested
+		// width, the split is guaranteed to produce two non-empty rectangles.
+		return VRect_VSplit (rect, rect->x + width);
+	}
+
 	int         a = rect->height - height;
 	int         b = rect->width - width;
 	vrect_t    *r, *s;
-	if (b * height > a * width) {
+	if (b * height <= a * width || 16 * a > 15 * rect->height) {
+		// horizontal cuts produce better memory locality so favor them
+		r = VRect_HSplit (rect, rect->y + height);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		s = VRect_VSplit (r, r->x + width);
+	} else {
 		// a horizontal cut produces a larger off-cut rectangle than a vertical
 		// cut, so do a vertical cut first so the off-cut is as small as
 		// possible
@@ -281,13 +308,6 @@ VRect_SubRect (const vrect_t *rect, int width, int height)
 			r->next = 0;
 		}
 		s = VRect_HSplit (r, r->y + height);
-	} else {
-		r = VRect_HSplit (rect, rect->y + height);
-		if (VRect_IsEmpty (r->next)) {
-			VRect_Delete (r->next);
-			r->next = 0;
-		}
-		s = VRect_VSplit (r, r->x + width);
 	}
 
 	if (VRect_IsEmpty (s->next)) {
