@@ -1,7 +1,7 @@
 /*
-	console.c
+	client.c
 
-	(description)
+	Client console routines
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -42,22 +42,15 @@
 # include <locale.h>
 #endif
 
-#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/gib.h"
-#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
-#include "QF/render.h"
-#include "QF/screen.h"
-#include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 
 #include "QF/input/event.h"
 
@@ -65,20 +58,18 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
-#include "QF/ui/view.h"
-
 #include "QF/ui/inputline.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 
 static general_data_t plugin_info_general_data;
 console_data_t con_data;
 
-static old_console_t   con_main;
-static old_console_t   con_chat;
-static old_console_t  *con;
+//static con_buffer_t *con_chat;
+static con_buffer_t *con;
 
-static float       con_cursorspeed = 4;
+static float con_cursorspeed = 4;
 
 static float con_notifytime;
 static cvar_t con_notifytime_cvar = {
@@ -153,10 +144,6 @@ static cvar_t cl_conmode_cvar = {
 	.value = { .type = &cl_conmode_type, .value = &con_data.exec_line },
 };
 
-#define	NUM_CON_TIMES 4
-static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
-										// for transparent notify lines
-
 static int  con_totallines;				// total lines in console scrollback
 static con_state_t con_state;
 static int  con_event_id;
@@ -167,12 +154,27 @@ static qboolean chat_team;
 
 #define		MAXCMDLINE	256
 static inputline_t *input_line;
+
+#define CON_BUFFER_SIZE 32768
+#define CON_LINES 1024
+static view_t *console_view;
+static draw_charbuffer_t *console_buffer;
+static con_buffer_t *con_main;
+static int view_offset;
+
+static view_t *say_view;
+static draw_charbuffer_t *say_buffer;
 static inputline_t *say_line;
 static inputline_t *say_team_line;
 
-static view_t *console_view;
-static view_t *say_view;
+#define	NOTIFY_LINES 4
 static view_t *notify_view;
+static draw_charbuffer_t *notify_buffer;
+// ring buffer holding realtime time the line was generated
+static float notify_times[NOTIFY_LINES + 1];
+static int notify_head;
+static int notify_tail;
+
 static view_t *menu_view;
 static view_t *hud_view;
 
@@ -181,10 +183,8 @@ static qboolean con_initialized;
 static void
 ClearNotify (void)
 {
-	int			i;
-
-	for (i = 0; i < NUM_CON_TIMES; i++)
-		con_times[i] = 0;
+	Draw_ClearBuffer (notify_buffer);
+	notify_head = notify_tail = 0;
 }
 
 static void
@@ -198,6 +198,16 @@ C_SetState (con_state_t state)
 		con_saved_focos = IE_Get_Focus ();
 		IE_Set_Focus (con_event_id);
 	}
+
+	if (state == con_message) {
+		const char *prompt = "say:";
+		if (chat_team) {
+			prompt = "say_team:";
+		}
+		say_buffer->cursx = 0;
+		Draw_PrintBuffer (say_buffer, prompt);
+	}
+
 	if (con_state == con_menu && old_state != con_menu) {
 		Menu_Enter ();
 	}
@@ -227,11 +237,8 @@ ToggleConsole_f (void)
 static void
 Clear_f (void)
 {
-	con_main.numlines = 0;
-	con_chat.numlines = 0;
-	memset (con_main.text, ' ', CON_TEXTSIZE);
-	memset (con_chat.text, ' ', CON_TEXTSIZE);
-	con_main.display = con_main.current;
+	Con_ClearBuffer (con_main);
+	//Con_ClearBuffer (con_chat);
 }
 
 static void
@@ -253,23 +260,19 @@ MessageMode2_f (void)
 }
 
 static void
-Resize (old_console_t *con)
+Resize (con_buffer_t *con)
 {
-	char		tbuf[CON_TEXTSIZE];
-	int			width, oldwidth, oldtotallines, numlines, numchars, i, j;
+	int			width, oldwidth, oldtotallines, numlines, numchars;
 
 	width = (r_data->vid->conview->xlen >> 3) - 2;
 
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
-		con_totallines = CON_TEXTSIZE / con_linewidth;
-		memset (con->text, ' ', CON_TEXTSIZE);
 	} else {
 		oldwidth = con_linewidth;
 		con_linewidth = width;
 		oldtotallines = con_totallines;
-		con_totallines = CON_TEXTSIZE / con_linewidth;
 		numlines = oldtotallines;
 
 		if (con_totallines < numlines)
@@ -280,25 +283,9 @@ Resize (old_console_t *con)
 		if (con_linewidth < numchars)
 			numchars = con_linewidth;
 
-		memcpy (tbuf, con->text, CON_TEXTSIZE);
-		memset (con->text, ' ', CON_TEXTSIZE);
-
-		for (i = 0; i < numlines; i++) {
-			for (j = 0; j < numchars; j++) {
-				con->text[(con_totallines - 1 - i) * con_linewidth + j] =
-					tbuf[((con->current - i + oldtotallines) %
-						  oldtotallines) * oldwidth + j];
-			}
-		}
-
 		ClearNotify ();
 	}
-	say_team_line->width = con_linewidth - 9;
-	say_line->width = con_linewidth - 4;
 	input_line->width = con_linewidth;
-
-	con->current = con_totallines - 1;
-	con->display = con->current;
 }
 
 /*
@@ -309,8 +296,8 @@ Resize (old_console_t *con)
 static void
 C_CheckResize (void)
 {
-	Resize (&con_main);
-	Resize (&con_chat);
+	Resize (con_main);
+	//Resize (con_chat);
 
 	view_resize (con_data.view, r_data->vid->conview->xlen,
 				 r_data->vid->conview->ylen);
@@ -319,8 +306,6 @@ C_CheckResize (void)
 static void
 Condump_f (void)
 {
-	int         line = con->current - con->numlines;
-	const char *start, *end;
 	QFile      *file;
 	const char *name;
 
@@ -341,13 +326,10 @@ Condump_f (void)
 		return;
 	}
 
-	while (line < con->current) {
-		start = &con->text[(line % con_totallines) * con_linewidth];
-		end = start + con_linewidth;
-		while (end > start && end[-1] != ' ')
-			end--;
-		Qprintf (file, "%.*s\n", (int)(end - start), start);
-		line++;
+	for (uint32_t line_ind = con->line_tail; line_ind != con->line_head;
+		 line_ind = (line_ind + 1) % con->max_lines) {
+		con_line_t *line = &con->lines[line_ind];
+		Qwrite (file, con->buffer + line->text, line->len);
 	}
 
 	Qclose (file);
@@ -412,19 +394,6 @@ C_SayTeam (inputline_t *il)
 	con_end_message (il);
 }
 
-static void
-Linefeed (void)
-{
-	con->x = 0;
-	if (con->display == con->current)
-		con->display++;
-	con->current++;
-	if (con->numlines < con_totallines)
-		con->numlines++;
-	memset (&con->text[(con->current % con_totallines) * con_linewidth],
-			' ', con_linewidth);
-}
-
 /*
 	C_Print
 
@@ -437,8 +406,7 @@ C_Print (const char *fmt, va_list args)
 {
 	char       *s;
 	static dstring_t *buffer;
-	int         mask, c, l, y;
-	static int  cr;
+	int         mask, c;
 
 	if (!buffer)
 		buffer = dstring_new ();
@@ -455,55 +423,42 @@ C_Print (const char *fmt, va_list args)
 
 	s = buffer->str;
 
-	if (s[0] == 1 || s[0] == 2) {
+	mask = 0;
+	if (buffer->str[0] == 1 || buffer->str[0] == 2) {
 		mask = 128;						// go to colored text
 		s++;
-	} else
-		mask = 0;
-
-	while ((c = (byte)*s)) {
-		// count word length
-		for (l = 0; l < con_linewidth; l++)
-			if (s[l] <= ' ')
-				break;
-
-		// word wrap
-		if (l != con_linewidth && (con->x + l > con_linewidth))
-			con->x = 0;
-
-		*s++ = sys_char_map[c];
-
-		if (cr) {
-			con->current--;
-			cr = false;
+	}
+	if (mask || con_data.ormask) {
+		for (char *m = s; *m; m++) {
+			if (*m >= ' ') {
+				*m |= mask | con_data.ormask;
+			}
 		}
+	}
 
-		if (!con->x) {
-			Linefeed ();
-			// mark time for transparent overlay
-			if (con->current >= 0 && con_data.realtime)
-				con_times[con->current % NUM_CON_TIMES] = *con_data.realtime;
+	if (con_data.realtime) {
+		c = Draw_PrintBuffer (notify_buffer, s);
+		while (c-- > 0) {
+			notify_times[notify_head++] = *con_data.realtime;
+			if (notify_head >= NOTIFY_LINES + 1) {
+				notify_head -= NOTIFY_LINES + 1;
+			}
+			if (notify_head == notify_tail) {
+				notify_tail++;
+				if (notify_tail >= NOTIFY_LINES + 1) {
+					notify_tail -= NOTIFY_LINES + 1;
+				}
+			}
 		}
+	}
+	Con_BufferAddText (con_main, s);
+	if (!view_offset) {
+		Draw_PrintBuffer (console_buffer, s);
+	}
 
-		switch (c) {
-			case '\n':
-				con->x = 0;
-				break;
-
-			case '\r':
-				con->x = 0;
-				cr = 1;
-				break;
-
-			default:					// display character and advance
-				y = con->current % con_totallines;
-				con->text[y * con_linewidth + con->x] = c | mask | con_data.ormask;
-				con->x++;
-				if (con->x >= con_linewidth)
-					con->x = 0;
-				break;
-		}
-
+	while (*s) {
+		*s = sys_char_map[(byte) *s];
+		s++;
 	}
 
 	// echo to debugging console
@@ -591,7 +546,8 @@ draw_download (view_t *view)
 		}
 	}
 
-	dsprintf (dlbar, "%.*s%s: \x80%s\x82 %02d%%", txt_size, text, ellipsis, dots, *con_data.dl_percent);
+	dsprintf (dlbar, "%.*s%s: \x80%s\x82 %02d%%",
+			  txt_size, text, ellipsis, dots, *con_data.dl_percent);
 
 	// draw it
 	r_funcs->Draw_String (view->xabs, view->yabs, dlbar->str);
@@ -600,34 +556,29 @@ draw_download (view_t *view)
 static void
 draw_console_text (view_t *view)
 {
-	char	   *text;
-	int			row, rows, i, x, y;
+	Draw_CharBuffer (view->xabs, view->yabs, console_buffer);
+}
 
-	rows = view->ylen >> 3;			// rows of text to draw
+static void
+draw_con_scrollback (void)
+{
+	__auto_type cb = console_buffer;
+	char       *dst = cb->chars + (cb->height - 1) * cb->width;
+	int         rows = cb->height;
+	int         cur_line = con_main->line_head - 1 + view_offset;
 
-	x = view->xabs + 8;
-	y = view->yabs + view->ylen - 8;
-
-	// draw from the bottom up
-	if (con->display != con->current) {
+	if (view_offset) {
 		// draw arrows to show the buffer is backscrolled
-		for (i = 0; i < con_linewidth; i += 4)
-			r_funcs->Draw_Character (x + (i << 3), y, '^');
-
-		y -= 8;
+		memset (dst, '^' | 0x80, cb->width);
+		dst -= cb->width;
 		rows--;
 	}
-
-	row = con->display;
-	for (i = 0; i < rows; i++, y -= 8, row--) {
-		if (row < 0)
-			break;
-		if (con->current - row >= con_totallines)
-			break;						// past scrollback wrap point
-
-		text = con->text + (row % con_totallines) * con_linewidth;
-
-		r_funcs->Draw_nString(x, y, text, con_linewidth);
+	for (int i = 0; i < rows; i++) {
+		con_line_t *l = Con_BufferLine (con_main, cur_line - i);
+		int         len = max (min ((int) l->len, cb->width + 1) - 1, 0);
+		memcpy (dst, con_main->buffer + l->text, len);
+		memset (dst + len, ' ', cb->width - len);
+		dst -= cb->width;
 	}
 }
 
@@ -655,43 +606,80 @@ draw_say (view_t *view)
 {
 	r_data->scr_copytop = 1;
 
-	if (chat_team) {
-		r_funcs->Draw_String (view->xabs + 8, view->yabs, "say_team:");
-		DrawInputLine (view->xabs + 80, view->yabs, 1, say_team_line);
-	} else {
-		r_funcs->Draw_String (view->xabs + 8, view->yabs, "say:");
-		DrawInputLine (view->xabs + 40, view->yabs, 1, say_line);
+	Draw_CharBuffer (view->xabs, view->yabs, say_buffer);
+}
+
+static void
+draw_input_line (inputline_t *il, draw_charbuffer_t *buffer)
+{
+	char       *dst = buffer->chars + buffer->cursx;
+	char       *src = il->lines[il->edit_line] + il->scroll;
+	size_t      i;
+
+	*dst++ = il->scroll ? '<' | 0x80 : ' ';
+	for (i = 0; i < il->width - 2 && *src; i++) {
+		*dst++ = *src++;
 	}
+	while (i++ < il->width - 2) {
+		*dst++ = ' ';
+	}
+	*dst++ = *src ? '>' | 0x80 : ' ';
+}
+
+static void
+say_line_draw (inputline_t *il)
+{
+	say_buffer->cursx = 4;
+	draw_input_line (il, say_buffer);
+}
+
+static void
+say_team_line_draw (inputline_t *il)
+{
+	say_buffer->cursx = 9;
+	draw_input_line (il, say_buffer);
+}
+
+static void
+resize_console (view_t *view)
+{
+	Draw_DestroyBuffer (console_buffer);
+	console_buffer = Draw_CreateBuffer (view->xlen / 8, view->ylen / 8);
+	Draw_ClearBuffer (console_buffer);
+}
+
+static void
+resize_say (view_t *view)
+{
+	Draw_DestroyBuffer (say_buffer);
+	say_buffer = Draw_CreateBuffer (view->xlen / 8, 1);
+	Draw_ClearBuffer (say_buffer);
+
+	say_team_line->width = say_buffer->width - 9;
+	say_line->width = say_buffer->width - 4;
 }
 
 static void
 draw_notify (view_t *view)
 {
-	int			i, x, y;
-	char	   *text;
-	float		time;
-
-	if (!con_data.realtime)
-		return;
-
-	x = view->xabs + 8;
-	y = view->yabs;
-	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
-		if (i < 0)
-			continue;
-		time = con_times[i % NUM_CON_TIMES];
-		if (time == 0)
-			continue;
-		time = *con_data.realtime - time;
-		if (time > con_notifytime)
-			continue;
-		text = con->text + (i % con_totallines) * con_linewidth;
-
-		r_data->scr_copytop = 1;
-
-		r_funcs->Draw_nString (x, y, text, con_linewidth);
-		y += 8;
+	if (con_data.realtime && notify_tail != notify_head
+		&& *con_data.realtime - notify_times[notify_tail] > con_notifytime) {
+		Draw_ScrollBuffer (notify_buffer, 1);
+		notify_buffer->cursy--;
+		notify_tail++;
+		if (notify_tail >= (NOTIFY_LINES + 1)) {
+			notify_tail -= NOTIFY_LINES + 1;
+		}
 	}
+	Draw_CharBuffer (view->xabs, view->yabs, notify_buffer);
+}
+
+static void
+resize_notify (view_t *view)
+{
+	Draw_DestroyBuffer (notify_buffer);
+	notify_buffer = Draw_CreateBuffer (view->xlen / 8, NOTIFY_LINES + 1);
+	ClearNotify ();
 }
 
 static void
@@ -787,6 +775,7 @@ con_key_event (const IE_event_t *event)
 {
 	inputline_t *il;
 	__auto_type key = &event->key;
+	int         old_view_offset = view_offset;
 
 #if 0
 	if (con_curr_keydest == key_menu) {
@@ -812,42 +801,39 @@ con_key_event (const IE_event_t *event)
 			return;
 		}
 	} else {
+		con_buffer_t *cb = con_main;
+		int         num_lines = (cb->line_head - cb->line_tail
+								 + cb->max_lines) % cb->max_lines;
+		int         con_lines = con_data.lines / 8;
 		switch (key->code) {
 			case QFK_ESCAPE:
 				ToggleConsole_f ();
 				break;
 			case QFK_PAGEUP:
-				if (key->shift & ies_control)
-					con->display = 0;
-				else
-					con->display -= 10;
-				if (con->display < con->current - con->numlines)
-					con->display = con->current - con->numlines;
-				return;
+				view_offset -= 10;
+				if (view_offset <= -(num_lines - con_lines)) {
+					view_offset = -(num_lines - con_lines) + 1;
+				}
+				break;
 			case QFK_PAGEDOWN:
-				if (key->shift & ies_control)
-					con->display = con->current;
-				else
-					con->display += 10;
-				if (con->display > con->current)
-					con->display = con->current;
-				return;
+				view_offset += 10;
+				if (view_offset > 0) {
+					view_offset = 0;
+				}
+				break;
 #if 0
 			case QFM_WHEEL_UP:
-				con->display -= 3;
-				if (con->display < con->current - con->numlines)
-					con->display = con->current - con->numlines;
-				return;
+				break;
 			case QFM_WHEEL_DOWN:
-				con->display += 3;
-				if (con->display > con->current)
-					con->display = con->current;
-				return;
+				break;
 #endif
 			default:
 				break;
 		}
 		il = input_line;
+	}
+	if (old_view_offset != view_offset) {
+		draw_con_scrollback ();
 	}
 
 	if (key->unicode) {
@@ -907,7 +893,7 @@ C_Init (void)
 	con_data.view = view_new (0, 0, 320, 200, grav_northeast);
 	console_view = view_new (0, 0, 320, 200, grav_northwest);
 	say_view     = view_new (0, 0, 320, 8, grav_northwest);
-	notify_view  = view_new (0, 8, 320, 32, grav_northwest);
+	notify_view  = view_new (8, 8, 312, NOTIFY_LINES * 8, grav_northwest);
 	menu_view    = view_new (0, 0, 320, 200, grav_center);
 	hud_view     = view_new (0, 0, 320, 200, grav_northeast);
 
@@ -917,15 +903,26 @@ C_Init (void)
 	view_add (con_data.view, console_view);
 	view_add (con_data.view, menu_view);
 
+	console_buffer = Draw_CreateBuffer (console_view->xlen / 8,
+										console_view->ylen / 8);
+	Draw_ClearBuffer (console_buffer);
+	con_main = Con_CreateBuffer (CON_BUFFER_SIZE, CON_LINES);
 	console_view->draw = draw_console;
+	say_view->setgeometry = resize_console;
 	console_view->visible = 0;
 	console_view->resize_x = console_view->resize_y = 1;
 
+	say_buffer = Draw_CreateBuffer (say_view->xlen / 8, 1);
+	Draw_ClearBuffer (say_buffer);
 	say_view->draw = draw_say;
+	say_view->setgeometry = resize_say;
 	say_view->visible = 0;
 	say_view->resize_x = 1;
 
+	notify_buffer = Draw_CreateBuffer (notify_view->xlen / 8, NOTIFY_LINES + 1);
+	Draw_ClearBuffer (notify_buffer);
 	notify_view->draw = draw_notify;
+	notify_view->setgeometry = resize_notify;
 	notify_view->resize_x = 1;
 
 	menu_view->draw = Menu_Draw;
@@ -949,7 +946,7 @@ C_Init (void)
 	view->resize_x = 1;
 	view_add (console_view, view);
 
-	con = &con_main;
+	con = con_main;
 	con_linewidth = -1;
 
 	input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
@@ -964,14 +961,14 @@ C_Init (void)
 	say_line->enter = C_Say;
 	say_line->width = con_linewidth - 5;
 	say_line->user_data = 0;
-	say_line->draw = 0;
+	say_line->draw = say_line_draw;
 
 	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
 	say_team_line->complete = 0;
 	say_team_line->enter = C_SayTeam;
 	say_team_line->width = con_linewidth - 10;
 	say_team_line->user_data = 0;
-	say_team_line->draw = 0;
+	say_team_line->draw = say_team_line_draw;
 
 	C_CheckResize ();
 

@@ -35,16 +35,6 @@
 /** \defgroup console 2d Console Stuff
 */
 
-#define		CON_TEXTSIZE	32764
-typedef struct
-{
-	char	text[CON_TEXTSIZE];
-	int		current;		// line where next message will be printed
-	int		x;				// offset in current line for next print
-	int		display;		// bottom of console displays this line
-	int		numlines;		// number of non-blank text lines, used for backscroling
-} old_console_t;
-
 typedef struct {
 	uint32_t    text;
 	uint32_t    len;
