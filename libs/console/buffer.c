@@ -103,7 +103,7 @@ Con_BufferAddText (con_buffer_t *buf, const char *text)
 		}
 		if (c == '\n') {
 			cur_line++;
-			if (cur_line - buf->lines >= buf->max_lines) {
+			if ((uint32_t) (cur_line - buf->lines) >= buf->max_lines) {
 				cur_line -= buf->max_lines;
 			}
 			cur_line->text = text_head;
