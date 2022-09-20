@@ -655,18 +655,19 @@ gl_scraps_f (void)
 	scrap_t    *scrap;
 	int         area;
 	int         size;
+	int         count;
 
 	if (!scrap_list) {
 		Sys_Printf ("No scraps\n");
 		return;
 	}
 	for (scrap = scrap_list; scrap; scrap = scrap->next) {
-		area = R_ScrapArea (&scrap->rscrap);
+		area = R_ScrapArea (&scrap->rscrap, &count);
 		// always square
 		size = scrap->rscrap.width;
-		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%%\n",
+		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%% rects=%d\n",
 					scrap->tnum, size, scrap->format, scrap->bpp,
-					area * 100 / (size * size));
+					area * 100 / (size * size), count);
 		if (Cmd_Argc () > 1) {
 			R_ScrapDump (&scrap->rscrap);
 		}

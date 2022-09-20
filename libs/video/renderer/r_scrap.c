@@ -157,13 +157,18 @@ R_ScrapClear (rscrap_t *scrap)
 }
 
 VISIBLE size_t
-R_ScrapArea (rscrap_t *scrap)
+R_ScrapArea (rscrap_t *scrap, int *count)
 {
 	vrect_t    *rect;
 	size_t      area;
+	int         c = 0;
 
 	for (rect = scrap->free_rects, area = 0; rect; rect = rect->next) {
 		area += rect->width * rect->height;
+		c++;
+	}
+	if (count) {
+		*count = c;
 	}
 	return area;
 }
