@@ -52,6 +52,7 @@ typedef struct {
 	struct vid_internal_s *vid_internal;
 
 	struct viddef_listener_set_s *onPaletteChanged;
+	struct viddef_listener_set_s *onVidResize;
 } viddef_t;
 
 typedef struct viddef_listener_set_s LISTENER_SET_TYPE (viddef_t)
@@ -76,5 +77,7 @@ void VID_ClearMemory (void);
 void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
 void VID_OnPaletteChange_RemoveListener (viddef_listener_t listener,
 										 void *data);
+void VID_OnVidResize_AddListener (viddef_listener_t listener, void *data);
+void VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data);
 
 #endif//__QF_vid_h

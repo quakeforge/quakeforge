@@ -292,6 +292,24 @@ VID_OnPaletteChange_RemoveListener (viddef_listener_t listener, void *data)
 }
 
 VISIBLE void
+VID_OnVidResize_AddListener (viddef_listener_t listener, void *data)
+{
+	if (!viddef.onVidResize) {
+		viddef.onVidResize = malloc (sizeof (*viddef.onVidResize));
+		LISTENER_SET_INIT (viddef.onVidResize, 8);
+	}
+	LISTENER_ADD (viddef.onVidResize, listener, data);
+}
+
+VISIBLE void
+VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data)
+{
+	if (viddef.onVidResize) {
+		LISTENER_REMOVE (viddef.onVidResize, listener, data);
+	}
+}
+
+VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
 	vid_system.init (palette, colormap);
