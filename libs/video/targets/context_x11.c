@@ -188,6 +188,7 @@ configure_notify (XEvent *event)
 		},
 	};
 	IE_Send_Event (&ie_event);
+	VID_SetWindowSize (c->width, c->height);
 }
 
 qboolean
@@ -519,7 +520,6 @@ X11_CreateWindow (int width, int height)
 	unsigned long	mask;
 	XSetWindowAttributes	attr;
 	XClassHint	   *ClassHint;
-	XSizeHints	   *SizeHints;
 
 	X11_AddEvent (ConfigureNotify, configure_notify);
 
@@ -540,17 +540,13 @@ X11_CreateWindow (int width, int height)
 	IN_X11_Postinit ();
 
 	// Set window size hints
-	SizeHints = XAllocSizeHints ();
-	if (SizeHints) {
-		SizeHints->flags = (PMinSize | PMaxSize);
-		SizeHints->min_width = width;
-		SizeHints->min_height = height;
-		SizeHints->max_width = width;
-		SizeHints->max_height = height;
-		XSetWMNormalHints (x_disp, x_win, SizeHints);
+	XSizeHints	    SizeHints = {
+		.flags = PMinSize,
+		.min_width = 32,
+		.min_height = 20,
+	};
+	XSetWMNormalHints (x_disp, x_win, &SizeHints);
 
-		XFree (SizeHints);
-	}
 	// Set window title
 	X11_SetCaption (va (0, "%s", PACKAGE_STRING));
 
