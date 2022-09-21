@@ -38,7 +38,6 @@ typedef struct console_funcs_s {
 	void (*print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 	void (*process_input) (void);
 	void (*draw_console) (void);
-	void (*check_resize) (void);
 	void (*new_map) (void);
 	void (*set_state) (con_state_t state);
 } console_funcs_t;

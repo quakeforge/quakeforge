@@ -192,8 +192,6 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_height >= 200
 	con_height = max (con_height & ~7, 200);
 	viddef.conview->ylen = con_height;
-
-	Con_CheckResize ();     // Now that we have a window size, fix console
 }
 
 /* GAMMA FUNCTIONS */

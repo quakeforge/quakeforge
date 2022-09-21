@@ -686,7 +686,6 @@ x11_create_context (sw_ctx_t *ctx)
 	// No console scaling in the sw renderer
 	viddef.conview->xlen = viddef.width;
 	viddef.conview->ylen = viddef.height;
-	Con_CheckResize ();
 
 	viddef.vid_internal->init_buffers = x11_init_buffers;
 //  XSynchronize (x_disp, False);

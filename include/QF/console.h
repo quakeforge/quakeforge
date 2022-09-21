@@ -65,7 +65,6 @@ extern struct console_data_s con_data;
 //extern qboolean con_initialized;
 //extern byte *con_chars;
 
-void Con_CheckResize (void);
 void Con_DrawConsole (void);
 
 void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));

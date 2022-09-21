@@ -804,11 +804,6 @@ C_DrawConsole (void)
 }
 
 static void
-C_CheckResize (void)
-{
-}
-
-static void
 C_NewMap (void)
 {
 }
@@ -823,7 +818,6 @@ static console_funcs_t plugin_info_console_funcs = {
 	.print = C_Print,
 	.process_input = C_ProcessInput,
 	.draw_console = C_DrawConsole,
-	.check_resize = C_CheckResize,
 	.new_map = C_NewMap,
 };
 

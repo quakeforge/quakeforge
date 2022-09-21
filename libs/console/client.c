@@ -288,21 +288,6 @@ Resize (con_buffer_t *con)
 	input_line->width = con_linewidth;
 }
 
-/*
-	C_CheckResize
-
-	If the line width has changed, reformat the buffer.
-*/
-static void
-C_CheckResize (void)
-{
-	Resize (con_main);
-	//Resize (con_chat);
-
-	view_resize (con_data.view, r_data->vid->conview->xlen,
-				 r_data->vid->conview->ylen);
-}
-
 static void
 Condump_f (void)
 {
@@ -736,11 +721,6 @@ C_DrawConsole (void)
 }
 
 static void
-C_ProcessInput (void)
-{
-}
-
-static void
 C_NewMap (void)
 {
 	static dstring_t *old_gamedir = 0;
@@ -1007,9 +987,7 @@ static general_funcs_t plugin_info_general_funcs = {
 
 static console_funcs_t plugin_info_console_funcs = {
 	.print = C_Print,
-	.process_input = C_ProcessInput,
 	.draw_console = C_DrawConsole,
-	.check_resize = C_CheckResize,
 	.new_map = C_NewMap,
 	.set_state = C_SetState,
 };
