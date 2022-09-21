@@ -49,6 +49,22 @@ static byte *surfcache;
 
 void        (*d_drawspans) (espan_t *pspan);
 
+static void
+d_vidsize_listener (void *data, const viddef_t *vid)
+{
+	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
+
+	if (surfcache) {
+		D_FlushCaches (vid->vid_internal->data);
+		free (surfcache);
+		surfcache = 0;
+	}
+	surfcache = calloc (cachesize, 1);
+	vid->vid_internal->init_buffers (vid->vid_internal->data);
+	D_InitCaches (surfcache, cachesize);
+
+	viddef.recalc_refdef = 1;
+}
 
 void
 D_Init (void)
@@ -61,16 +77,8 @@ D_Init (void)
 
 	vid->vid_internal->flush_caches = D_FlushCaches;
 
-	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
-
-	if (surfcache) {
-		D_FlushCaches (vid->vid_internal->data);
-		free (surfcache);
-		surfcache = 0;
-	}
-	surfcache = calloc (cachesize, 1);
-	vid->vid_internal->init_buffers (vid->vid_internal->data);
-	D_InitCaches (surfcache, cachesize);
+	VID_OnVidResize_AddListener (d_vidsize_listener, 0);
+	d_vidsize_listener (0, vr_data.vid);
 }
 
 void

@@ -640,13 +640,19 @@ x11_init_buffers (void *data)
 	if (x_visinfo->depth != 8) {
 		if (swfb.color)
 			free (swfb.color);
+		if (swfb.depth)
+			free (swfb.depth);
 		swfb.rowbytes = viddef.width;
 		swfb.color = calloc (swfb.rowbytes, viddef.height);
+		swfb.depth = 0;
 		if (!swfb.color)
 			Sys_Error ("Not enough memory for video mode");
 	} else {
 		swfb.rowbytes = x_framebuffer[current_framebuffer]->bytes_per_line;
 		swfb.color = (byte *) x_framebuffer[current_framebuffer]->data;
+		if (swfb.depth)
+			free (swfb.depth);
+		swfb.depth = 0;
 	}
 }
 

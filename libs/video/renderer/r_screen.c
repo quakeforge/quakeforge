@@ -183,6 +183,7 @@ SCR_CalcRefdef (void)
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
+	r_funcs->bind_framebuffer (0);
 }
 
 static void
@@ -435,6 +436,21 @@ viewsize_listener (void *data, const cvar_t *cvar)
 	update_vrect ();
 }
 
+static void
+vidsize_listener (void *data, const viddef_t *vdef)
+{
+	update_vrect ();
+	if (fisheye_cube_map) {
+		r_funcs->destroy_frame_buffer (fisheye_cube_map);
+		fisheye_cube_map = 0;
+	}
+	if (warp_buffer) {
+		r_funcs->destroy_frame_buffer (warp_buffer);
+		warp_buffer = 0;
+	}
+	r_funcs->set_fov (tan_fov_x, tan_fov_y);
+}
+
 void
 SCR_Init (void)
 {
@@ -453,6 +469,7 @@ SCR_Init (void)
 
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
+	VID_OnVidResize_AddListener (vidsize_listener, 0);
 	update_vrect ();
 }
 
