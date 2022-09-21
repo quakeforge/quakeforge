@@ -129,6 +129,7 @@ typedef struct vid_render_funcs_s {
 
 	struct framebuffer_s *(*create_cube_map) (int side);
 	struct framebuffer_s *(*create_frame_buffer) (int width, int height);
+	void (*destroy_frame_buffer) (struct framebuffer_s *framebuffer);
 	void (*bind_framebuffer) (struct framebuffer_s *framebuffer);
 	void (*set_viewport) (const struct vrect_s *view);
 	// x and y are tan(f/2) for fov_x and fov_y

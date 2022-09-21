@@ -477,6 +477,11 @@ vulkan_create_frame_buffer (int width, int height)
 }
 
 static void
+vulkan_destroy_frame_buffer (framebuffer_t *framebuffer)
+{
+}
+
+static void
 vulkan_bind_framebuffer (framebuffer_t *framebuffer)
 {
 }
@@ -788,6 +793,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 
 	vulkan_create_cube_map,
 	vulkan_create_frame_buffer,
+	vulkan_destroy_frame_buffer,
 	vulkan_bind_framebuffer,
 	vulkan_set_viewport,
 	vulkan_set_fov,

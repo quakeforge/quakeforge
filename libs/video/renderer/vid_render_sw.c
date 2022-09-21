@@ -262,6 +262,12 @@ sw_create_frame_buffer (int width, int height)
 	return fb;
 }
 
+static void
+sw_destroy_frame_buffer (framebuffer_t *framebuffer)
+{
+	free (framebuffer);
+}
+
 static void sw_set_viewport (const vrect_t *view);
 
 static void
@@ -492,6 +498,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 
 	sw_create_cube_map,
 	sw_create_frame_buffer,
+	sw_destroy_frame_buffer,
 	sw_bind_framebuffer,
 	sw_set_viewport,
 	sw_set_fov,

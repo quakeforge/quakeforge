@@ -422,7 +422,7 @@ QFGL_WANT (void, glPNTrianglesiATI, (GLint x, GLint y))
 // frame buffers
 QFGL_DONT_NEED (GLboolean, glIsFramebuffer, (GLuint framebuffer))
 QFGL_NEED (void, glBindFramebuffer, (GLenum target, GLuint framebuffer))
-QFGL_DONT_NEED (void, glDeleteFramebuffers, (GLsizei n, const GLuint *framebuffers))
+QFGL_NEED (void, glDeleteFramebuffers, (GLsizei n, const GLuint *framebuffers))
 QFGL_NEED (void, glGenFramebuffers, (GLsizei n, GLuint *framebuffers))
 QFGL_DONT_NEED (GLenum, glCheckFramebufferStatus, (GLenum target))
 QFGL_DONT_NEED (void, glFramebufferTexture1D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))

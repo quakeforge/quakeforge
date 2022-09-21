@@ -354,6 +354,18 @@ glsl_create_frame_buffer (int width, int height)
 }
 
 static void
+glsl_destroy_frame_buffer (framebuffer_t *framebuffer)
+{
+	__auto_type fb = (gl_framebuffer_t *) framebuffer->buffer;
+
+	qfeglDeleteFramebuffers (1, &fb->handle);
+
+	GLuint      tex[2] = { fb->color, fb->depth };
+	qfeglDeleteTextures (2, tex);
+	free (framebuffer);
+}
+
+static void
 glsl_bind_framebuffer (framebuffer_t *framebuffer)
 {
 	unsigned    width = vr_data.vid->width;
@@ -472,6 +484,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 
 	glsl_create_cube_map,
 	glsl_create_frame_buffer,
+	glsl_destroy_frame_buffer,
 	glsl_bind_framebuffer,
 	glsl_set_viewport,
 	glsl_set_fov,
