@@ -1500,6 +1500,7 @@ init_hud_views (void)
 		view_add (hud_view, miniteam_view);
 
 	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
+	view->resize_x = 1;
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1610,6 +1611,7 @@ init_hipnotic_hud_views (void)
 		view_add (hud_inventory_view, hud_frags_view);
 
 	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
+	view->resize_x = 1;
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1707,6 +1709,7 @@ init_rogue_hud_views (void)
 		view_add (hud_inventory_view, hud_frags_view);
 
 	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
+	view->resize_x = 1;
 	view_add (view, hud_view);
 	hud_view = view;
 
