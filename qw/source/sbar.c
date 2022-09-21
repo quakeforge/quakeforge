@@ -390,7 +390,7 @@ draw_weapons_hud (view_t *view)
 	if (view->parent->gravity == grav_southeast)
 		x = view->xlen - 24;
 
-	for (i = r_data->vid->conview->ylen < 204; i < 7; i++) {
+	for (i = cl_screen_view->ylen < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
@@ -857,7 +857,7 @@ Sbar_DeathmatchOverlay (view_t *view, int start)
 	int			l, y;
 	int			skip = 10;
 
-	if (r_data->vid->conview->xlen < 244) // FIXME: magic number, gained through experimentation
+	if (cl_screen_view->xlen < 244) // FIXME: magic number, gained through experimentation
 		return;
 
 	if (largegame)
@@ -1009,8 +1009,7 @@ sbar_update_vis (void)
 	if ((sb_updates >= r_data->vid->numpages) && !headsup)
 		return;
 
-	if (con_module
-		&& con_module->data->console->lines == r_data->vid->conview->ylen)
+	if (con_module && con_module->data->console->lines == cl_screen_view->ylen)
 		return;							// console is full screen
 
 	if (!hud_sb_lines)
@@ -1698,12 +1697,12 @@ init_sbar_views (void)
 	view_t     *minifrags_view = 0;
 	view_t     *miniteam_view = 0;
 
-	if (r_data->vid->conview->xlen < 512) {
+	if (cl_screen_view->xlen < 512) {
 		sbar_view = view_new (0, 0, 320, 48, grav_south);
 
 		sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
 		sbar_frags_view->draw = draw_frags;
-	} else if (r_data->vid->conview->xlen < 640) {
+	} else if (cl_screen_view->xlen < 640) {
 		sbar_view = view_new (0, 0, 512, 48, grav_south);
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
 		minifrags_view->draw = draw_minifrags;
@@ -1765,8 +1764,8 @@ init_sbar_views (void)
 	if (miniteam_view)
 		view_add (sbar_view, miniteam_view);
 
-	if (r_data->vid->conview->xlen > 640) {
-		int         l = (r_data->vid->conview->xlen - 640) / 2;
+	if (cl_screen_view->xlen > 640) {
+		int         l = (cl_screen_view->xlen - 640) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1787,12 +1786,12 @@ init_hud_views (void)
 	view_t     *minifrags_view = 0;
 	view_t     *miniteam_view = 0;
 
-	if (r_data->vid->conview->xlen < 512) {
+	if (cl_screen_view->xlen < 512) {
 		hud_view = view_new (0, 0, 320, 48, grav_south);
 
 		hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
 		hud_frags_view->draw = draw_frags;
-	} else if (r_data->vid->conview->xlen < 640) {
+	} else if (cl_screen_view->xlen < 640) {
 		hud_view = view_new (0, 0, 512, 48, grav_south);
 
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
@@ -1844,7 +1843,7 @@ init_hud_views (void)
 	if (miniteam_view)
 		view_add (hud_view, miniteam_view);
 
-	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
+	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1856,19 +1855,17 @@ init_hud_views (void)
 static void
 init_views (void)
 {
-	hud_main_view = view_new (0, 0, r_data->vid->conview->xlen,
-						  r_data->vid->conview->ylen,
-						  grav_northwest);
-	if (con_module)
-		view_insert (con_module->data->console->view, hud_main_view, 0);
+	hud_main_view = view_new (0, 0, cl_screen_view->xlen, cl_screen_view->ylen,
+							  grav_northwest);
+	view_insert (cl_screen_view, hud_main_view, 0);
 	hud_main_view->resize_x = 1;	// get resized if the 2d view resizes
 	hud_main_view->resize_y = 1;
 	hud_main_view->visible = 0;		// but don't let the console draw our stuff
-	if (r_data->vid->conview->ylen > 300)
+	if (cl_screen_view->ylen > 300)
 		hud_overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
-		hud_overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
-								 grav_center);
+		hud_overlay_view = view_new (0, 0, 320, cl_screen_view->ylen,
+									 grav_center);
 	hud_overlay_view->draw = draw_overlay;
 	hud_overlay_view->visible = 0;
 

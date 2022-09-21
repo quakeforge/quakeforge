@@ -593,10 +593,10 @@ Vulkan_Draw_Character (int x, int y, unsigned int chr, vulkan_ctx_t *ctx)
 	if (chr == ' ') {
 		return;
 	}
-	if (y <= -8 || y >= vid.conview->ylen) {
+	if (y <= -8 || y >= (int) vid.height) {
 		return;
 	}
-	if (x <= -8 || x >= vid.conview->xlen) {
+	if (x <= -8 || x >= (int) vid.width) {
 		return;
 	}
 	queue_character (x, y, chr, ctx);
@@ -610,11 +610,11 @@ Vulkan_Draw_String (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conview->ylen) {
+	if (y <= -8 || y >= (int) vid.height) {
 		return;
 	}
 	while (*str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < (int) vid.width) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -630,11 +630,11 @@ Vulkan_Draw_nString (int x, int y, const char *str, int count,
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conview->ylen) {
+	if (y <= -8 || y >= (int) vid.height) {
 		return;
 	}
 	while (count-- > 0 && *str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < (int) vid.width) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -649,12 +649,12 @@ Vulkan_Draw_AltString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conview->ylen) {
+	if (y <= -8 || y >= (int) vid.height) {
 		return;
 	}
 	while (*str) {
 		if ((chr = *str++ | 0x80) != (' ' | 0x80)
-			&& x >= -8 && x < vid.conview->xlen) {
+			&& x >= -8 && x < (int) vid.width) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -711,8 +711,8 @@ Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
 	int         x, y;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	x = vid.width / 2 + cl_crossx;
+	y = vid.height / 2 + cl_crossy;
 
 	Vulkan_Draw_CrosshairAt (crosshair, x, y, ctx);
 }
@@ -833,7 +833,7 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	int         ofs = max (0, cpic->height - lines);
 	lines = min (lines, cpic->height);
 	subpic_t   *subpic = *(subpic_t **) cpic->data;
-	draw_pic (0, 0, vid.conview->xlen, lines, subpic,
+	draw_pic (0, 0, vid.width, lines, subpic,
 			  0, ofs, cpic->width, lines, color, &frame->quad_verts);
 }
 
@@ -891,7 +891,7 @@ draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
-	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, subpic,
+	draw_pic (0, 0, vid.width, vid.height, subpic,
 			  0, 0, 1, 1, color, &frame->quad_verts);
 }
 

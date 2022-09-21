@@ -67,8 +67,6 @@ int        *r_face_visframes;	//FIXME per renderer
 
 qboolean    scr_skipupdate;
 static qboolean scr_initialized;// ready to draw
-static qpic_t *scr_ram;
-static qpic_t *scr_turtle;
 
 static framebuffer_t *fisheye_cube_map;
 static framebuffer_t *warp_buffer;
@@ -431,60 +429,6 @@ SCR_SizeDown_f (void)
 	r_data->vid->recalc_refdef = 1;
 }
 
-void
-SCR_DrawRam (void)
-{
-	if (!scr_showram)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	//FIXME view
-	r_funcs->Draw_Pic (r_data->scr_view->xpos + 32, r_data->scr_view->ypos,
-					   scr_ram);
-}
-
-void
-SCR_DrawTurtle (void)
-{
-	static int  count;
-
-	if (!scr_showturtle)
-		return;
-
-	if (r_data->frametime < 0.1) {
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-
-	//FIXME view
-	r_funcs->Draw_Pic (r_data->scr_view->xpos, r_data->scr_view->ypos,
-					   scr_turtle);
-}
-
-void
-SCR_DrawPause (void)
-{
-	qpic_t     *pic;
-
-	if (!scr_showpause)		// turn off for screenshots
-		return;
-
-	if (!r_data->paused)
-		return;
-
-	//FIXME view conwidth
-	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	r_funcs->Draw_Pic ((r_data->vid->conview->xlen - pic->width) / 2,
-					   (r_data->vid->conview->ylen - 48 - pic->height) / 2,
-					   pic);
-}
-
 static void
 viewsize_listener (void *data, const cvar_t *cvar)
 {
@@ -494,14 +438,14 @@ viewsize_listener (void *data, const cvar_t *cvar)
 void
 SCR_Init (void)
 {
+	r_data->scr_view->xlen = r_data->vid->width;
+	r_data->scr_view->ylen = r_data->vid->height;
+
 	// register our commands
 	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "
 					"saves as qfxxxx.png in the QF directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
-
-	scr_ram = r_funcs->Draw_PicFromWad ("ram");
-	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
 
 	scr_initialized = true;
 

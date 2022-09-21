@@ -1500,6 +1500,7 @@ CL_Init (void)
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");
+	CL_Init_Screen ();
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;
 		con_module->data->console->dl_percent = &cls.downloadpercent;

@@ -611,8 +611,8 @@ glsl_Draw_Crosshair (void)
 {
 	int         x, y;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	x = vid.width / 2 + cl_crossx;
+	y = vid.height / 2 + cl_crossy;
 
 	glsl_Draw_CrosshairAt (crosshair, x, y);
 }
@@ -644,14 +644,14 @@ glsl_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 glsl_Draw_ConsoleBackground (int lines, byte alpha)
 {
-	float       ofs = (vid.conview->ylen - lines) / (float) vid.conview->ylen;
+	float       ofs = (vid.height - lines) / (float) vid.height;
 	quat_t      color = {1, 1, 1, bound (0, alpha, 255) / 255.0};
 	drawvert_t  verts[] = {
 		{{           0,     0, 0, ofs}},
-		{{vid.conview->xlen,     0, 1, ofs}},
-		{{vid.conview->xlen, lines, 1,   1}},
+		{{vid.width,     0, 1, ofs}},
+		{{vid.width, lines, 1,   1}},
 		{{           0,     0, 0, ofs}},
-		{{vid.conview->xlen, lines, 1,   1}},
+		{{vid.width, lines, 1,   1}},
 		{{           0, lines, 0,   1}},
 	};
 
@@ -751,8 +751,7 @@ glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 static inline void
 draw_blendscreen (quat_t color)
 {
-	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, white_pic,
-			  0, 0, 8, 8, color);
+	draw_pic (0, 0, vid.width, vid.height, white_pic, 0, 0, 8, 8, color);
 }
 
 void
@@ -825,7 +824,7 @@ GLSL_Set2D (void)
 void
 GLSL_Set2DScaled (void)
 {
-    set_2d (vid.conview->xlen, vid.conview->ylen);
+    set_2d (vid.width, vid.height);
 }
 
 void

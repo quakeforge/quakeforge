@@ -723,6 +723,7 @@ CL_Init (cbuf_t *cbuf)
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");
+	CL_Init_Screen ();
 
 	CDAudio_Init ();
 

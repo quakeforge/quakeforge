@@ -346,8 +346,8 @@ vulkan_set_2d (int scaled)
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
 
-	int width = vid.conview->xlen;	//FIXME vid
-	int height = vid.conview->ylen;
+	int width = vid.width;	//FIXME vid
+	int height = vid.height;
 	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
 
 	mctx->dirty = mctx->frames.size;

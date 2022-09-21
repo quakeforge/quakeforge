@@ -682,11 +682,6 @@ x11_create_context (sw_ctx_t *ctx)
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
 
-	// FIXME this really shouldn't be here (ideally, scale console in sw)
-	// No console scaling in the sw renderer
-	viddef.conview->xlen = viddef.width;
-	viddef.conview->ylen = viddef.height;
-
 	viddef.vid_internal->init_buffers = x11_init_buffers;
 //  XSynchronize (x_disp, False);
 //	X11_AddEvent (x_shmeventtype, event_shm);

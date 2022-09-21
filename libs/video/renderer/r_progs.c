@@ -373,13 +373,13 @@ bi_Draw_Crosshair (progs_t *pr, void *_res)
 static void
 bi_Draw_Width (progs_t *pr, void *_res)
 {
-	R_INT (pr) = r_data->vid->conview->xlen;
+	R_INT (pr) = r_data->vid->width;
 }
 
 static void
 bi_Draw_Height (progs_t *pr, void *_res)
 {
-	R_INT (pr) = r_data->vid->conview->ylen;
+	R_INT (pr) = r_data->vid->height;
 }
 
 static void

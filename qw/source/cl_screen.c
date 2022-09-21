@@ -44,11 +44,15 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
+#include "QF/plugin/console.h"
+
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
 
 #include "sbar.h"
+
+#include "r_local.h"	//FIXME for r_cache_thrash
 
 #include "client/hud.h"
 #include "client/view.h"
@@ -57,8 +61,40 @@
 #include "qw/include/client.h"
 #include "qw/include/cl_parse.h"
 
+int scr_showpause;
+static cvar_t scr_showpause_cvar = {
+	.name = "showpause",
+	.description =
+		"Toggles display of pause graphic",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &scr_showpause },
+};
+int scr_showram;
+static cvar_t scr_showram_cvar = {
+	.name = "showram",
+	.description =
+		"Show RAM icon if game is running low on memory",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &scr_showram },
+};
+int scr_showturtle;
+static cvar_t scr_showturtle_cvar = {
+	.name = "showturtle",
+	.description =
+		"Show a turtle icon if your fps is below 10",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &scr_showturtle },
+};
+
+view_t *cl_screen_view;
 static view_t  *net_view;
 static view_t  *loading_view;
+
+static qpic_t *scr_ram;
+static qpic_t *scr_turtle;
 
 static void
 draw_pic (view_t *view)
@@ -90,6 +126,60 @@ SCR_CShift (void)
 }
 
 static void
+SCR_DrawRam (void)
+{
+	if (!scr_showram)
+		return;
+
+	if (!r_cache_thrash)
+		return;
+
+	//FIXME view
+	r_funcs->Draw_Pic (cl_screen_view->xpos + 32, cl_screen_view->ypos,
+					   scr_ram);
+}
+
+static void
+SCR_DrawTurtle (void)
+{
+	static int  count;
+
+	if (!scr_showturtle)
+		return;
+
+	if (r_data->frametime < 0.1) {
+		count = 0;
+		return;
+	}
+
+	count++;
+	if (count < 3)
+		return;
+
+	//FIXME view
+	r_funcs->Draw_Pic (cl_screen_view->xpos, cl_screen_view->ypos,
+					   scr_turtle);
+}
+
+static void
+SCR_DrawPause (void)
+{
+	qpic_t     *pic;
+
+	if (!scr_showpause)		// turn off for screenshots
+		return;
+
+	if (!r_data->paused)
+		return;
+
+	//FIXME view conwidth
+	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
+	r_funcs->Draw_Pic ((cl_screen_view->xlen - pic->width) / 2,
+					   (cl_screen_view->ylen - 48 - pic->height) / 2,
+					   pic);
+}
+
+static void
 scr_draw_views (void)
 {
 	net_view->visible = (!cls.demoplayback
@@ -104,7 +194,7 @@ scr_draw_views (void)
 	view_setgravity (cl_netgraph_view,
 					 hud_swap ? grav_southeast : grav_southwest);
 
-	view_draw (r_data->vid->conview);
+	view_draw (cl_screen_view);
 }
 
 static SCR_Func scr_funcs_normal[] = {
@@ -141,41 +231,51 @@ static SCR_Func *scr_funcs[] = {
 };
 
 void
+CL_Init_Screen (void)
+{
+	qpic_t     *pic;
+
+	cl_screen_view = r_data->scr_view;
+	con_module->data->console->screen_view = cl_screen_view;
+
+	scr_ram = r_funcs->Draw_PicFromWad ("ram");
+	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
+
+	Cvar_Register (&scr_showpause_cvar, 0, 0);
+	Cvar_Register (&scr_showram_cvar, 0, 0);
+	Cvar_Register (&scr_showturtle_cvar, 0, 0);
+
+	pic = r_funcs->Draw_PicFromWad ("net");
+	net_view = view_new (64, 0, pic->width, pic->height, grav_northwest);
+	net_view->draw = draw_pic;
+	net_view->data = pic;
+	net_view->visible = 0;
+	view_add (cl_screen_view, net_view);
+
+	const char *name = "gfx/loading.lmp";
+	pic = r_funcs->Draw_CachePic (name, 1);
+	loading_view = view_new (0, -24, pic->width, pic->height, grav_center);
+	loading_view->draw = draw_cachepic;
+	loading_view->data = (void *) name;
+	loading_view->visible = 0;
+	view_add (cl_screen_view, loading_view);
+
+	cl_netgraph_view = view_new (0, hud_sb_lines,
+								 NET_TIMINGS + 16,
+								 cl_netgraph_height + 25,
+								 grav_southwest);
+	cl_netgraph_view->draw = CL_NetGraph;
+	cl_netgraph_view->visible = 0;
+	view_add (cl_screen_view, cl_netgraph_view);
+}
+
+void
 CL_UpdateScreen (double realtime)
 {
 	unsigned    index = cl.intermission;
 
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
-
-	if (!net_view) {
-		qpic_t     *pic = r_funcs->Draw_PicFromWad ("net");
-		net_view = view_new (64, 0, pic->width, pic->height, grav_northwest);
-		net_view->draw = draw_pic;
-		net_view->data = pic;
-		net_view->visible = 0;
-		view_add (r_data->scr_view, net_view);
-	}
-
-	if (!loading_view) {
-		const char *name = "gfx/loading.lmp";
-		qpic_t     *pic = r_funcs->Draw_CachePic (name, 1);
-		loading_view = view_new (0, -24, pic->width, pic->height, grav_center);
-		loading_view->draw = draw_cachepic;
-		loading_view->data = (void *) name;
-		loading_view->visible = 0;
-		view_add (r_data->vid->conview, loading_view);
-	}
-
-	if (!cl_netgraph_view) {
-		cl_netgraph_view = view_new (0, hud_sb_lines,
-									 NET_TIMINGS + 16,
-									 cl_netgraph_height + 25,
-									 grav_southwest);
-		cl_netgraph_view->draw = CL_NetGraph;
-		cl_netgraph_view->visible = 0;
-		view_add (r_data->vid->conview, cl_netgraph_view);
-	}
 
 	//FIXME not every time
 	if (cls.state == ca_active) {

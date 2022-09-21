@@ -301,6 +301,8 @@ extern struct view_s *cl_netgraph_view;
 void CL_NetGraph (struct view_s *view);
 void CL_NetGraph_Init_Cvars (void);
 
+extern struct view_s *cl_screen_view;
+void CL_Init_Screen (void);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);

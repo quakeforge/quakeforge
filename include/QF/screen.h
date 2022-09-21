@@ -35,10 +35,6 @@ struct tex_s;
 
 void SCR_Init (void);
 
-void SCR_DrawRam (void);
-void SCR_DrawTurtle (void);
-void SCR_DrawPause (void);
-
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
 void SCR_UpdateScreen (struct transform_s *camera, double realtime,

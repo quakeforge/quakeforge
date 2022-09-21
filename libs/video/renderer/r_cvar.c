@@ -463,33 +463,6 @@ static cvar_t scr_ffov_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &scr_ffov },
 };
-int scr_showpause;
-static cvar_t scr_showpause_cvar = {
-	.name = "showpause",
-	.description =
-		"Toggles display of pause graphic",
-	.default_value = "1",
-	.flags = CVAR_NONE,
-	.value = { .type = &cexpr_int, .value = &scr_showpause },
-};
-int scr_showram;
-static cvar_t scr_showram_cvar = {
-	.name = "showram",
-	.description =
-		"Show RAM icon if game is running low on memory",
-	.default_value = "1",
-	.flags = CVAR_NONE,
-	.value = { .type = &cexpr_int, .value = &scr_showram },
-};
-int scr_showturtle;
-static cvar_t scr_showturtle_cvar = {
-	.name = "showturtle",
-	.description =
-		"Show a turtle icon if your fps is below 10",
-	.default_value = "0",
-	.flags = CVAR_NONE,
-	.value = { .type = &cexpr_int, .value = &scr_showturtle },
-};
 int scr_viewsize;
 static cvar_t scr_viewsize_cvar = {
 	.name = "viewsize",
@@ -651,9 +624,6 @@ R_Init_Cvars (void)
 	Cvar_Register (&scr_fisheye_cvar, scr_fisheye_f, 0);
 	Cvar_Register (&scr_fviews_cvar, 0, 0);
 	Cvar_Register (&scr_ffov_cvar, scr_ffov_f, 0);
-	Cvar_Register (&scr_showpause_cvar, 0, 0);
-	Cvar_Register (&scr_showram_cvar, 0, 0);
-	Cvar_Register (&scr_showturtle_cvar, 0, 0);
 	Cvar_Register (&scr_viewsize_cvar, viewsize_f, 0);
 
 	r_data->graphheight = &r_graphheight;

@@ -265,7 +265,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.conview->ylen - 8 || x < 0 || x > vid.conview->xlen - 8)
+	if (y > (int) vid.height - 8 || x < 0 || x > (int) vid.width - 8)
 		return;
 	if (chr > 255)
 		return;
@@ -478,8 +478,8 @@ Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	x = vid.width / 2 + cl_crossx;
+	y = vid.height / 2 + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }
@@ -501,8 +501,8 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *dest, *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (x + pic->width) > vid.conview->xlen
-		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
+	if (x < 0 || (x + pic->width) > (int) vid.width
+		|| y < 0 || (y + pic->height) > (int) vid.height) {
 		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
@@ -560,8 +560,8 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *dest, *source, tbyte;
 	int         u, v;
 
-	if ((x < 0) || (x + width > vid.conview->xlen)
-		|| (y < 0) || (y + height > vid.conview->ylen)) {
+	if ((x < 0) || (x + width > (int) vid.width)
+		|| (y < 0) || (y + height > (int) vid.height)) {
 		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
@@ -629,7 +629,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
-	int         x, y, v;
 	byte       *src, *dest;
 	int         f, fstep;
 	qpic_t     *conback;
@@ -639,15 +638,15 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	// draw the pic
 	dest = d_viewbuffer;
 
-	for (y = 0; y < lines; y++, dest += d_rowbytes) {
-		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
+	for (int y = 0; y < lines; y++, dest += d_rowbytes) {
+		int         v = (vid.height - lines + y) * 200 / vid.height;
 		src = conback->data + v * 320;
-		if (vid.conview->xlen == 320)
-			memcpy (dest, src, vid.conview->xlen);
+		if (vid.width == 320)
+			memcpy (dest, src, vid.width);
 		else {
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conview->xlen;
-			for (x = 0; x < vid.conview->xlen; x += 4) {
+			fstep = 320 * 0x10000 / vid.width;
+			for (unsigned x = 0; x < vid.width; x += 4) {
 				dest[x] = src[f >> 16];
 				f += fstep;
 				dest[x + 1] = src[f >> 16];
@@ -660,7 +659,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		}
 	}
 
-	Draw_AltString (vid.conview->xlen - strlen (cl_verstring) * 8 - 11,
+	Draw_AltString (vid.width - strlen (cl_verstring) * 8 - 11,
 					lines - 14, cl_verstring);
 }
 
@@ -767,8 +766,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	byte       *dest;
 	int         u, v;
 
-	if (x < 0 || x + w > vid.conview->xlen
-		|| y < 0 || y + h > vid.conview->ylen) {
+	if (x < 0 || x + w > (int) vid.width || y < 0 || y + h > (int) vid.height) {
 		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
@@ -899,12 +897,12 @@ test_point (int x, int y)
 
 	if (x < 0) {
 		c |= 1;
-	} else if (x >= vid.conview->xlen) {
+	} else if (x >= (int) vid.width) {
 		c |= 2;
 	}
 	if (y < 0) {
 		c |= 4;
-	} else if (y >= vid.conview->ylen) {
+	} else if (y >= (int) vid.height) {
 		c |= 8;
 	}
 	return c;
@@ -915,8 +913,8 @@ Draw_Line (int x0, int y0, int x1, int y1, int c)
 {
 	byte        c0 = test_point (x0, y0);
 	byte        c1 = test_point (x1, y1);
-	int         xmax = vid.conview->xlen - 1;
-	int         ymax = vid.conview->ylen - 1;
+	int         xmax = vid.width - 1;
+	int         ymax = vid.height - 1;
 
 	while (c0 | c1) {
 		// Cohen-Sutherland line clipping
@@ -944,8 +942,8 @@ void
 Draw_FadeScreen (void)
 {
 	int         x, y;
-	int         height = vid.conview->ylen;
-	int         width = vid.conview->xlen / 4;
+	int         height = vid.height;
+	int         width = vid.width / 4;
 	uint32_t   *pbuf;
 
 	for (y = 0; y < height; y++) {

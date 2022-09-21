@@ -563,7 +563,7 @@ draw_console (view_t *view)
 	if (con_state == con_fullscreen) {
 		alpha = 255;
 	} else {
-		float       y = r_data->vid->conview->ylen * con_size;
+		float       y = con_data.screen_view->ylen * con_size;
 		alpha = 255 * con_alpha * view->ylen / y;
 		alpha = min (alpha, 255);
 	}
@@ -609,11 +609,11 @@ setup_console (void)
 			lines = 0;
 			break;
 		case con_active:
-			lines = r_data->vid->conview->ylen * bound (0.2, con_size,
+			lines = con_data.screen_view->ylen * bound (0.2, con_size,
 														1);
 			break;
 		case con_fullscreen:
-			lines = con_data.lines = r_data->vid->conview->ylen;
+			lines = con_data.lines = con_data.screen_view->ylen;
 			break;
 	}
 
@@ -628,10 +628,10 @@ setup_console (void)
 	} else {
 		con_data.lines = lines;
 	}
-	if (con_data.lines > r_data->vid->conview->ylen) {
-		con_data.lines = r_data->vid->conview->ylen;
+	if (con_data.lines > con_data.screen_view->ylen) {
+		con_data.lines = con_data.screen_view->ylen;
 	}
-	if (con_data.lines >= r_data->vid->conview->ylen - r_data->lineadj)
+	if (con_data.lines >= con_data.screen_view->ylen - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
 }
 
@@ -688,8 +688,8 @@ con_app_window (const IE_event_t *event)
 		old_xlen = event->app_window.xlen;
 		old_ylen = event->app_window.ylen;
 
-		view_resize (con_data.view, r_data->vid->conview->xlen,
-					 r_data->vid->conview->ylen);
+		view_resize (con_data.view, con_data.screen_view->xlen,
+					 con_data.screen_view->ylen);
 	}
 }
 
