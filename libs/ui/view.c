@@ -143,7 +143,7 @@ setgeometry (view_t *view)
 }
 
 VISIBLE view_t *
-view_new (int xp, int yp, int xl, int yl, grav_t grav)
+view_new_data (int xp, int yp, int xl, int yl, grav_t grav, void *data)
 {
 	view_t     *view = calloc (1, sizeof (view_t));
 	view->xpos = xp;
@@ -153,8 +153,15 @@ view_new (int xp, int yp, int xl, int yl, grav_t grav)
 	view->gravity = grav;
 	view->visible = 1;
 	view->draw = view_draw;
+	view->data = data;
 	setgeometry (view);
 	return view;
+}
+
+VISIBLE view_t *
+view_new (int xp, int yp, int xl, int yl, grav_t grav)
+{
+	return view_new_data (xp, yp, xl, yl, grav, 0);
 }
 
 VISIBLE void

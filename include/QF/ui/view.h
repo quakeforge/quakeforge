@@ -137,6 +137,21 @@ struct view_s {
 */
 view_t *view_new (int xp, int yp, int xl, int yl, grav_t grav);
 
+/** Create a new view. view_t::draw is set to view_draw() and the view is made
+	visible. All coordinates are set appropriately for the new view being a
+	root view. All other fields not set by the parameters are 0.
+
+	\param xp		The X coordinate of the view's origin.
+	\param yp		The Y coordinate of the view's origin.
+	\param xl		The width of the view.
+	\param yl		The height of the view.
+	\param grav		The gravity of the view. determines the view's origin and
+					its positioning within the view's parent.
+	\param data     Pointer with which the view\s data pointer will be
+					initialized.
+*/
+view_t *view_new_data (int xp, int yp, int xl, int yl, grav_t grav, void *data);
+
 /** Insert a view into a parent view at the specified location. If \c pos is
 	negative, it is taken to be relative to the end of the parent's list of
 	views (view_insert (par, view, -1) is equivalent to view_add (par, view)).
