@@ -99,7 +99,7 @@ D_ClearCacheGuard (void)
 void
 D_InitCaches (void *buffer, int size)
 {
-	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
+	Sys_MaskPrintf (SYS_vid, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
