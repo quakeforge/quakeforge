@@ -678,6 +678,10 @@ exec_line (inputline_t *il)
 	Con_ExecLine (il->line);
 }
 
+// The console view is not a child of the client's screen view, so it won't
+// get resized automatically when the screen changes size. However, since the
+// console has to process input events anyway, handling ie_app_window is a
+// reasonable alternative.
 static void
 con_app_window (const IE_event_t *event)
 {
