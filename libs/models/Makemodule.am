@@ -73,4 +73,4 @@ vulkan_libs= \
 libs_models_libmodels_vulkan_la_LDFLAGS=
 libs_models_libmodels_vulkan_la_LIBADD=			$(vulkan_libs)
 libs_models_libmodels_vulkan_la_DEPENDENCIES=	$(vulkan_libs)
-libs_models_libmodels_vulkan_la_SOURCES=		libs/models/vulkan_skin.c libs/models/skin.c
+libs_models_libmodels_vulkan_la_SOURCES=		libs/models/vulkan_skin.c libs/models/skin.c libs/models/fullbright.c
