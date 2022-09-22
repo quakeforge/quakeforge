@@ -253,7 +253,7 @@ class pldata:
         elif type(item) in [int, float]:
             self.write_string(str(item))
         else:
-            raise PListError(0, "unsupported type")
+            raise PListError(0, f"unsupported type {type(item)}")
     def write(self, item):
         self.data = []
         self.write_item(item, 0)

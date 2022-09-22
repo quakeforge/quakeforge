@@ -192,7 +192,6 @@ render_scene (void)
 	r_framecount++;
 	EntQueue_Clear (r_ent_queue);
 	r_funcs->render_view ();
-	r_funcs->draw_entities (r_ent_queue);
 	r_funcs->draw_particles (&r_psystem);
 	r_funcs->draw_transparent ();
 }

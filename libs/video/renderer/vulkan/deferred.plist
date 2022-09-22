@@ -99,7 +99,7 @@
 		};
 	};
 	framebuffer = {
-		renderPass = $properties.renderpass;
+		renderPass = deferred;
 		attachments = (depth, color, emission, normal, position, opaque,
 					   translucent, $output.view);
 		width = $output.extent.width;
@@ -124,6 +124,16 @@
 		stencilStoreOp = dont_care;
 		initialLayout = undefined;
 		finalLayout = color_attachment_optimal;
+	};
+	info = {
+		color = "[0, 1, 0, 1]";
+		subpass_info = (
+			{ name = depth;       color = "[ 0.5,  0.5,  0.5, 1]" },
+			{ name = translucent; color = "[ 0.25, 0.25, 0.6, 1]" },
+			{ name = g-buffef;    color = "[ 0.3,  0.7,  0.3, 1]" },
+			{ name = lighting;    color = "[ 0.8,  0.8,  0.8, 1]" },
+			{ name = compose;     color = "[ 0.7,  0.3,  0.3, 1]" },
+		);
 	};
 	renderpass = {
 		attachments = (

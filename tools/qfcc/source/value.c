@@ -63,6 +63,7 @@
 //the first place, but not at all sure what to do about that)
 #ifdef _WIN32
 #define aligned_alloc(al, sz) _aligned_malloc(sz, al)
+#define free(x) _aligned_free(x)
 #endif
 
 typedef struct {

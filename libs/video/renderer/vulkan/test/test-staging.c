@@ -155,11 +155,14 @@ qfv_devfuncs_t dfuncs = {
 	.vkQueueSubmit = vkQueueSubmit,
 };
 qfv_physdev_t physDev = {
-	.properties = {
-		.limits = {
-			.nonCoherentAtomSize = 256,
+	.properties2 = {
+		.properties = {
+			.limits = {
+				.nonCoherentAtomSize = 256,
+			},
 		},
 	},
+	.properties = &physDev.properties2.properties,
 };
 qfv_device_t device = {
 	.physDev = &physDev,

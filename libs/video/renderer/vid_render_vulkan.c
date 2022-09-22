@@ -29,6 +29,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
@@ -50,6 +51,7 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -62,7 +64,6 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
 
@@ -89,7 +90,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
-	Vulkan_CreateRenderPass (vulkan_ctx);
+	Vulkan_CreateRenderPasses (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
@@ -111,6 +112,7 @@ vulkan_R_Init (void)
 static void
 vulkan_R_ClearState (void)
 {
+	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	r_refdef.worldmodel = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
@@ -305,22 +307,10 @@ vulkan_render_view (void)
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		if (rp->framebuffers) {
+			frame->framebuffer = rp->framebuffers->a[imageIndex];
+		}
 		rp->draw (rpFrame);
-	}
-}
-
-static void
-vulkan_draw_entities (entqueue_t *queue)
-{
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
-
-	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
-		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-		frame->framebuffer = rp->framebuffers->a[imageIndex];
-		Vulkan_RenderEntities (queue, rpFrame);
 	}
 }
 
@@ -371,13 +361,27 @@ vulkan_end_frame (void)
 		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
 	};
 
+	__auto_type cmdBufs = (qfv_cmdbufferset_t) DARRAY_STATIC_INIT (4);
+	DARRAY_APPEND (&cmdBufs, frame->cmdBuffer);
+
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
+		if (rp->primary_commands) {
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				size_t      base = cmdBufs.size;
+				DARRAY_RESIZE (&cmdBufs, base + cmdSet->size);
+				memcpy (&cmdBufs.a[base], cmdSet->a,
+						cmdSet->size * sizeof (VkCommandBuffer));
+			}
+			continue;
+		}
+
 		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
-		if (rpFrame->renderpass) {
+		if (rpFrame->renderpass && rp->renderpass) {
 			renderPassInfo.framebuffer = frame->framebuffer,
 			renderPassInfo.renderPass = rp->renderpass;
 			renderPassInfo.clearValueCount = rp->clearValues->size;
@@ -435,11 +439,13 @@ vulkan_end_frame (void)
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		1, &frame->imageAvailableSemaphore, &waitStage,
-		1, &frame->cmdBuffer,
+		cmdBufs.size, cmdBufs.a,
 		1, &frame->renderDoneSemaphore,
 	};
 	dfunc->vkResetFences (dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+
+	DARRAY_CLEAR (&cmdBufs);
 
 	if (vulkan_ctx->capture_callback) {
 		//FIXME look into "threading" this rather than waiting here
@@ -648,11 +654,6 @@ vulkan_vid_render_choose_visual (void *data)
 	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
 									 vulkan_ctx->device->queue.queueFamily,
 									 0, 1);
-	__auto_type cmdset = QFV_AllocCommandBufferSet (1, alloca);
-	QFV_AllocateCommandBuffers (vulkan_ctx->device, vulkan_ctx->cmdpool, 0,
-								cmdset);
-	vulkan_ctx->cmdbuffer = cmdset->a[0];
-	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
 	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %#zx\n",
 					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
 					vulkan_ctx->device->queue.queueFamily,
@@ -664,7 +665,7 @@ vulkan_vid_render_create_context (void *data)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_MaskPrintf (SYS_vulkan, "vk create context %#zx\n",
+	Sys_MaskPrintf (SYS_vulkan, "vk create context: surface:%#zx\n",
 					(size_t) vulkan_ctx->surface);
 }
 
@@ -743,7 +744,6 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
 
 	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
-	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
 	Vulkan_Shutdown_Common (vulkan_ctx);
@@ -784,7 +784,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_LineGraph,
 	vulkan_begin_frame,
 	vulkan_render_view,
-	vulkan_draw_entities,
 	vulkan_draw_particles,
 	vulkan_draw_transparent,
 	vulkan_post_process,

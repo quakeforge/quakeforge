@@ -218,6 +218,11 @@ check_device (const char *path)
 
 	dev->event_count = 0;
 
+	dev->data = 0;
+	dev->axis_event = 0;
+	dev->button_event = 0;
+
+
 	//Sys_Printf ("%s:\n", path);
 	//Sys_Printf ("\tname: %s\n", dev->name);
 	//Sys_Printf ("\tbuttons: %d\n", dev->num_buttons);

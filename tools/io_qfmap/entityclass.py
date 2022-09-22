@@ -20,9 +20,14 @@
 # <pep8 compliant>
 
 import os
-from .script import Script
-from .qfplist import pldata
-from . import quakechr
+try:
+    from .script import Script
+    from .qfplist import pldata
+    from . import quakechr
+except ImportError:
+    from script import Script
+    from qfplist import pldata
+    import quakechr
 
 MAX_FLAGS = 8
 
@@ -34,16 +39,46 @@ class EntityClassError(Exception):
 def entclass_error(self, msg):
     raise EntityClassError(self.filename, self.line, msg)
 
+class EntityField:
+    def __init__(self, name, default, comment):
+        self.name = name
+        self.default = default
+        self.comment = comment
+    def to_dictionary(self):
+        d = {}
+        if self.default != None:
+            d["default"] = self.default
+        if self.comment:
+            d["comment"] = self.comment
+        if hasattr(self, "sounds"):
+            d["sounds"] = self.sounds
+        return d
+    @classmethod
+    def from_dictionary(cls, name, d):
+        if "default" in d:
+            default = d["default"]
+        else:
+            default = None
+        if "comment" in d:
+            comment = d["comment"]
+        else:
+            comment = ""
+        field = cls(name, default, comment)
+        if "sounds" in d:
+            field.sounds = d["sounds"]
+        return field
+
 class EntityClass:
-    def __init__(self, name, color, size, flagnames, comment):
+    def __init__(self, name, color, size, flagnames, comment, fields):
         self.name = name
         self.color = color
         self.size = size
         self.flagnames = flagnames
         self.comment = comment
+        self.fields = fields
     @classmethod
     def null(cls):
-        return cls('', (1, 1, 1), None, (), "")
+        return cls('', (1, 1, 1), None, (), "", {})
     @classmethod
     def from_quaked(cls, text, filename, line = 0):
         script = Script(filename, text)
@@ -59,8 +94,49 @@ class EntityClass:
         else:
             size = None
             flagnames = ()
-        comment = cls.extract_comment(script)
-        return cls(name, color, size, flagnames, comment)
+        comment = []
+        fields = {}
+        script.quotes = False
+        script.single = ""
+        while script.tokenAvailable(True):
+            line = []
+            while script.tokenAvailable():
+                script.getToken()
+                if script.token[-2:] == "*/":
+                    break;
+                line.append(script.token)
+            if line:
+                if ((line[0][0] == '"' and line[0][-1] == '"')
+                    or (len(line) > 1 and line[1] == '=')):
+                    if line[0][0] == '"':
+                        fname = line[0][1:-1]
+                        line = line[1:]
+                    else:
+                        fname = line[0]
+                        line = line[2:]
+                    default = None
+                    for i, t in enumerate(line[:-1]):
+                        if t[0] == '(' and line[i + 1] == "default)":
+                            default = t[1:]
+                            break
+                    line = " ".join(line)
+                    fields[fname] = EntityField(fname, default, line)
+                    line = None
+                elif "sounds" in fields:
+                    sounds = fields["sounds"]
+                    if not hasattr(sounds, "sounds"):
+                        sounds.sounds = []
+                    if line[0][-1] == ')':
+                        line[0] = line[0][:-1]
+                    sounds.sounds.append((line[0], " ".join(line[1:])))
+                    line = None
+                else:
+                    line = " ".join(line)
+                if line:
+                    comment.append(line)
+            if script.token[-2:] == "*/":
+                break;
+        return cls(name, color, size, flagnames, comment, fields)
     @classmethod
     def from_dictionary(cls, name, d):
         if "color" in d:
@@ -81,11 +157,21 @@ class EntityClass:
         if "comment" in d:
             comment = d["comment"]
         else:
-            comment = ""
-        return cls(name, color, size, flagnames, comment)
+            comment = []
+        if "fields" in d:
+            field_dict = d["fields"]
+            fields = {}
+            for f in field_dict:
+                fields[f] = EntityField.from_dictionary(f, field_dict[f])
+        else:
+            fields = {}
+        return cls(name, color, size, flagnames, comment, fields)
     def to_dictionary(self):
+        fields = {}
+        for f in self.fields:
+            fields[f] = self.fields[f].to_dictionary()
         d = {"color":self.color, "flagnames":self.flagnames,
-             "comment":self.comment}
+             "comment":self.comment, "fields":fields}
         if self.size:
             d["size"] = self.size
         return d
@@ -93,8 +179,11 @@ class EntityClass:
     def parse_vector(cls, script):
         if script.getToken() != "(":
             script.error("Missing (")
-        v = (float(script.getToken()), float(script.getToken()),
-             float(script.getToken()))
+        s = script.getToken(), script.getToken(), script.getToken()
+        try:
+            v = (float(s[0]), float(s[1]), float(s[2]))
+        except ValueError:
+            v = s
         if script.getToken() != ")":
             script.error("Missing )")
         return v
@@ -118,7 +207,6 @@ class EntityClass:
             if len(flagnames) < MAX_FLAGS:
                 flagnames.append(script.token)
         return tuple(flagnames)
-    @classmethod
     def extract_comment(cls, script):
         if not script.tokenAvailable(True):
             return ""
@@ -203,3 +291,35 @@ class EntityClassDict:
         self.entity_classes = {}
         for k in ec.keys():
             self.entity_classes[k] = EntityClass.from_dictionary(k, ec[k])
+
+if __name__ == "__main__":
+    import sys
+    from pprint import pprint
+    from textwrap import TextWrapper
+
+    mainwrap = TextWrapper(width = 70)
+    fieldwrap = TextWrapper(width = 50)
+
+    ecd = EntityClassDict()
+    for fname in sys.argv[1:]:
+        ecd.scan_source(fname)
+    text = ecd.to_plist()
+    print(text)
+    ecd.from_plist(text)
+    for ec in ecd.entity_classes.values():
+        print(f"{ec.name}: {ec.color} {ec.size} {ec.flagnames}")
+        for c in ec.comment:
+            mlines = mainwrap.wrap(c)
+            for m in mlines:
+                print(f"        {m}")
+            print()
+        for f in ec.fields.values():
+            print(f"   {f.name}: {f.default}")
+            flines = fieldwrap.wrap(f.comment)
+            for l in flines:
+                print(f"        {l}")
+            if f.name == "sounds":
+                for s in f.sounds:
+                    print(f"        {s[0]} {s[1]}")
+        print()
+        print()

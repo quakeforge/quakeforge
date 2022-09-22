@@ -652,19 +652,23 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 			continue;
 		}
 
-		if (out->texinfo->texture->name[0] == '*') {	// turbulent
-			out->flags |= (SURF_DRAWTURB
-						   | SURF_DRAWTILED
-						   | SURF_LIGHTBOTHSIDES);
-			for (i = 0; i < 2; i++) {
-				out->extents[i] = 16384;
-				out->texturemins[i] = -8192;
-			}
-			if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
-				// cut up polygon for warps
-				mod_funcs->Mod_SubdivideSurface (mod, out);
-			}
-			continue;
+		switch (out->texinfo->texture->name[0]) {
+			case '*':	// turbulent
+				out->flags |= (SURF_DRAWTURB
+							   | SURF_DRAWTILED
+							   | SURF_LIGHTBOTHSIDES);
+				for (i = 0; i < 2; i++) {
+					out->extents[i] = 16384;
+					out->texturemins[i] = -8192;
+				}
+				if (mod_funcs && mod_funcs->Mod_SubdivideSurface) {
+					// cut up polygon for warps
+					mod_funcs->Mod_SubdivideSurface (mod, out);
+				}
+				break;
+			case '{':
+				out->flags |= SURF_DRAWALPHA;
+				break;
 		}
 	}
 }

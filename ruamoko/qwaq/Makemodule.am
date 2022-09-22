@@ -24,7 +24,7 @@ ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/window.r
 ruamoko_qwaq_libui_a_dep=$(call qcautodep,$(ruamoko_qwaq_libui_a_SOURCES))
 ruamoko_qwaq_libui_a_AR=$(PAK) -cf
-EXTRA_ruamoko_qwaq_libui_a_DEPENDENCIES=pak
+EXTRA_ruamoko_qwaq_libui_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_qwaq_libui_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_libui_a_dep)
 

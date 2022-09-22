@@ -279,7 +279,15 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		qfv_physdev_t *dev = &inst->devices[i];
 		dev->instance = inst;
 		dev->dev = physDev;
-		ifunc->vkGetPhysicalDeviceProperties (physDev, &dev->properties);
+		dev->properties2 = (VkPhysicalDeviceProperties2) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+			.pNext = &dev->multiViewProperties,
+		};
+		dev->multiViewProperties = (VkPhysicalDeviceMultiviewProperties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES,
+		};
+		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->properties2);
+		dev->properties = &dev->properties2.properties;
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
 													&dev->memory_properties);
 	}
@@ -306,8 +314,8 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 {
 	VkSampleCountFlagBits maxSamples = VK_SAMPLE_COUNT_64_BIT;
 	VkSampleCountFlagBits counts;
-	counts = min (physdev->properties.limits.framebufferColorSampleCounts,
-				  physdev->properties.limits.framebufferDepthSampleCounts);
+	counts = min (physdev->properties->limits.framebufferColorSampleCounts,
+				  physdev->properties->limits.framebufferDepthSampleCounts);
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}

@@ -1,6 +1,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+// because libc has its own remove
 #define remove remove_renamed
 #include <stdio.h>
 #include <string.h>

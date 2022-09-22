@@ -279,7 +279,10 @@ merge_method_lists (methodlist_t *dst, methodlist_t *src)
 		s->next = 0;
 		if (method_in_list (dst, s)) {
 			debug (0, "dropping duplicate method: %s", s->name);
-			free (s);
+			//FIXME this free is currently erroneous as it remains in
+			//known_methods, but it may also be a leak, thus only
+			//commented out for now.
+			//free (s);
 		} else {
 			// add_method does the duplicate check
 			*dst->tail = s;

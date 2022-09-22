@@ -120,7 +120,6 @@ typedef struct vid_render_funcs_s {
 
 	void (*begin_frame) (void);
 	void (*render_view) (void);
-	void (*draw_entities) (struct entqueue_s *queue);
 	void (*draw_particles) (struct psystem_s *psystem);
 	void (*draw_transparent) (void);
 	void (*post_process) (struct framebuffer_s *src);

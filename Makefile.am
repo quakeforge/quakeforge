@@ -28,7 +28,7 @@ BUILT_SOURCES = $(top_srcdir)/.version
 #AM_CFLAGS= @PREFER_NON_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS)
 
-common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
+common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
 SUFFICES =
 TESTS =
@@ -166,11 +166,11 @@ CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r qfcc@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
 $(pas_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas qfcc@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) $(pas_depfiles_remade)
 	echo findme $(ruamoko_gui_libgui_a_dep)

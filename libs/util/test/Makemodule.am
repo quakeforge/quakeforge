@@ -18,6 +18,7 @@ libs_util_tests = \
 	libs/util/test/test-pqueue \
 	libs/util/test/test-qfs \
 	libs/util/test/test-quat \
+	libs/util/test/test-ringbuffer \
 	libs/util/test/test-seb \
 	libs/util/test/test-sebvf \
 	libs/util/test/test-seg \
@@ -105,6 +106,11 @@ libs_util_test_test_qfs_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_quat_SOURCES=libs/util/test/test-quat.c
 libs_util_test_test_quat_LDADD=libs/util/libQFutil.la
 libs_util_test_test_quat_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_ringbuffer_SOURCES=libs/util/test/test-ringbuffer.c
+libs_util_test_test_ringbuffer_LDADD=libs/util/libQFutil.la
+libs_util_test_test_ringbuffer_LDFLAGS=-pthread
+libs_util_test_test_ringbuffer_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_seb_SOURCES=libs/util/test/test-seb.c
 libs_util_test_test_seb_LDADD=libs/util/libQFutil.la

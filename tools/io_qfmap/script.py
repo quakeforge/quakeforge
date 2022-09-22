@@ -26,17 +26,19 @@ class ScriptError(Exception):
 
 class Script:
     def __init__(self, filename, text, single="{}()':", quotes=True):
-        self.filename = filename
         if text[0:3] == "\xef\xbb\xbf":
             text = text[3:]
         elif text[0] == u"\ufeff":
             text = text[1:]
+        self.token = ""
+        self.unget = False
         self.text = text
+        self.pos = 0
+        self.filename = filename
+        self.line = 1
+        self.no_quote_lines = False
         self.single = single
         self.quotes = quotes
-        self.pos = 0
-        self.line = 1
-        self.unget = False
     def error(self, msg):
         raise ScriptError(self.filename, self.line, msg)
     def tokenAvailable(self, crossline=False):
@@ -102,6 +104,9 @@ class Script:
                     self.error("EOF inside quoted string")
                     return None
                 if self.text[self.pos] == "\n":
+                    if self.no_quote_lines:
+                        self.error("EOL inside quoted string")
+                        return None
                     self.line += 1
                 self.pos += 1
             self.token = self.text[start:self.pos]

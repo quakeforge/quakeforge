@@ -10,10 +10,12 @@ layout (push_constant) uniform PushConstants {
 	vec4        fog;
 	float       time;
 	float       alpha;
+	float       turb_scale;
 };
 
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
+layout (location = 2) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 

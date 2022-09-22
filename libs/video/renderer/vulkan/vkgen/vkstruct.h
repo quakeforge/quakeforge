@@ -11,6 +11,7 @@
 @interface Struct: Type
 {
 	string outname;
+	int write_symtab;
 }
 -(void) queueFieldTypes;
 -(qfot_var_t *)findField:(string) fieldName;

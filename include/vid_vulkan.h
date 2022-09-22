@@ -14,6 +14,7 @@ typedef struct qfv_output_s {
 	VkExtent2D  extent;
 	VkImageView view;
 	VkFormat    format;
+	VkImageView *view_list;	// per frame
 } qfv_output_t;
 
 typedef struct vulkan_frame_s {
@@ -76,8 +77,6 @@ typedef struct vulkan_ctx_s {
 	struct composectx_s *compose_context;
 
 	VkCommandPool cmdpool;
-	VkCommandBuffer cmdbuffer;
-	VkFence     fence;			// for ctx->cmdbuffer only
 	struct qfv_stagebuf_s *staging;
 	size_t      curFrame;
 	vulkan_frameset_t frames;
@@ -98,7 +97,7 @@ typedef struct vulkan_ctx_s {
 	int         window_width;
 	int         window_height;
 
-	//FIXME not sure I like it being here (also, type name)
+	//FIXME this is for the parser
 	qfv_output_t output;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;

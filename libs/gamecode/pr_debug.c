@@ -1629,7 +1629,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						goto err;
 				}
 				if (mode == 'M' || mode == 'm') {
-					if (!isxdigit (fmt[3])) {
+					if (!isxdigit ((byte) fmt[3])) {
 						goto err;
 					}
 					shift = fmt[3];

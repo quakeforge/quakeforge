@@ -204,7 +204,9 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		} color = { .v = light->color };
 		sscanf (str, "%f %f %f", VectorExpandAddr (color.a));
 		light->color = color.v;
-		VectorScale (light->color, 1/255.0, light->color);
+		if (light->color[0] > 1 || light->color[1] > 1 || light->color[2] > 1) {
+			VectorScale (light->color, 1/255.0, light->color);
+		}
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "wait")))) {

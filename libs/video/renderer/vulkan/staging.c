@@ -41,7 +41,7 @@ qfv_stagebuf_t *
 QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 						 VkCommandPool cmdPool)
 {
-	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dstring_t  *str = dstring_new ();
 

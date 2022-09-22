@@ -22,7 +22,7 @@ GLOBAL_LEVEL_VULKAN_FUNCTION (vkCreateInstance)
 #endif
 
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumeratePhysicalDevices)
-INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceProperties)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceProperties2)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceFeatures)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceQueueFamilyProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkCreateDevice)

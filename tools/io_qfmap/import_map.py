@@ -175,8 +175,8 @@ def process_entity(ent, wads):
             obj = bpy.data.objects.new(name, mesh)
         else:
             obj = bpy.data.objects.new(name, None)
-            obj.empty_draw_type = 'CUBE'
-            obj.empty_draw_size = 8
+            obj.empty_display_type = 'CUBE'
+            obj.empty_display_size = 8
         obj.show_name = True
     if "origin" in ent.d:
         obj.location = parse_vector (ent.d["origin"])

@@ -160,6 +160,7 @@ static void
 sw_render_view (void)
 {
 	R_RenderView ();
+	R_DrawEntitiesOnList (r_ent_queue);
 }
 
 static void
@@ -489,7 +490,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_LineGraph,
 	sw_begin_frame,
 	sw_render_view,
-	R_DrawEntitiesOnList,
 	R_DrawParticles,
 	sw_draw_transparent,
 	sw_post_process,

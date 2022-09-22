@@ -1,54 +1,17 @@
 {
-	images = {
-		shadow = {
-			flags = cube_compatible;
-			imageType = `2d;
-			format = x8_d24_unorm_pack32;
-			samples = 1;
-			extent = {
-				width = 256;	// FIXME config
-				height = 256;	// FIXME config
-				depth = 1;
-			};
-			mipLevels = 1;
-			arrayLayers = 2048;	// FIXME config
-			tiling = optimal;
-			usage = depth_stencil_attachment|sampled;
-			initialLayout = undefined;
-		};
-	};
-	imageViews = {
-		shadow = {
-			image = depth;
-			viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-			format = $properties.images.shadow.format;
-			components = {
-				r = identity;
-				g = identity;
-				b = identity;
-				a = identity;
-			};
-			subresourceRange = {
-				aspectMask = depth;
-				levelCount = 1;
-				layerCount = $properties.images.shadow.arrayLayers;
-			};
-		};
-	};
-	framebuffer = {
-		renderPass = $properties.renderpass;
-		attachments = (shadown);
-		width = $properties.images.shadow.extent.width;
-		height = $properties.images.shadow.extent.height;
-		layers = $properties.images.shadow.arrayLayers;
-	};
 	clearValues = (
 		{ depthStencil = { depth = 1; stencil = 0; }; },
 	);
-	renderpass = {
+	info = {
+		color = "[0.2, 0.2, 0.2, 1]";
+		subpass_info = (
+			{ name = depth;       color = "[ 0.5,  0.5,  0.5, 1]" },
+		);
+	};
+	renderpass_base = {
 		attachments = (
 			{
-				format = $properties.images.depth.format;
+				format = $output.format;
 				samples = 1;
 				loadOp = dont_care;
 				storeOp = store;
@@ -67,5 +30,23 @@
 				};
 			}
 		);
+	};
+	renderpass_6 = {
+		@inherit = $properties.renderpass_base;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks = (0x0000003fu);
+		});
+	};
+	renderpass_4 = {
+		@inherit = $properties.renderpass_base;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks = (0x0000000fu);
+		});
+	};
+	renderpass_1 = {
+		@inherit = $properties.renderpass_base;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks = (0x00000001u);
+		});
 	};
 }

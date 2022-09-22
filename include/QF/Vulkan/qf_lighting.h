@@ -35,6 +35,7 @@
 #include "QF/modelgen.h"
 #include "QF/scene/light.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
@@ -79,6 +80,20 @@ typedef struct lightingframe_s {
 typedef struct lightingframeset_s
     DARRAY_TYPE (lightingframe_t) lightingframeset_t;
 
+typedef struct light_renderer_s {
+	VkRenderPass renderPass;	// shared
+	VkFramebuffer framebuffer;
+	VkImage     image;			// shared
+	VkImageView view;
+	uint32_t    size;
+	uint32_t    layer;
+	uint32_t    numLayers;
+	int         mode;
+} light_renderer_t;
+
+typedef struct light_renderer_set_s
+    DARRAY_TYPE (light_renderer_t) light_renderer_set_t;
+
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
 	VkPipeline   pipeline;
@@ -86,10 +101,16 @@ typedef struct lightingctx_s {
 	VkSampler    sampler;
 	VkDeviceMemory light_memory;
 	VkDeviceMemory shadow_memory;
-	qfv_lightmatset_t lightmats;
-	qfv_imageset_t lightimages;
-	lightintset_t lightlayers;
-	qfv_imageviewset_t lightviews;
+	qfv_lightmatset_t light_mats;
+	qfv_imageset_t light_images;
+	light_renderer_set_t light_renderers;
+
+	qfv_renderpass_t *qfv_renderpass;
+	VkRenderPass renderpass_6;
+	VkRenderPass renderpass_4;
+	VkRenderPass renderpass_1;
+
+	VkCommandPool cmdpool;
 
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;
@@ -98,6 +119,7 @@ typedef struct lightingctx_s {
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 
+void Vulkan_Lighting_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Draw (struct qfv_renderframe_s *rFrame);

@@ -12,6 +12,7 @@ layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec4 position;
+layout (location = 4) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
@@ -37,7 +38,7 @@ main (void)
 	vec3        e_st = vec3 (tl_st.xy, 1);
 	vec2        l_st = vec2 (tl_st.zw);
 
-	c = texture (Texture, t_st);
+	c = texture (Texture, t_st) * color;
 	e = texture (Texture, e_st);
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
