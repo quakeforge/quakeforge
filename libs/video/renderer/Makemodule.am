@@ -40,12 +40,13 @@ renderer_libs= \
 	libs/util/libQFutil.la
 
 renderer_libadd= \
-	$(renderer_libs) \
 	$(FREETYPE_LIBS) \
 	$(HARFBUZZ_LIBS)
 
 libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
-libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libadd)
+libs_video_renderer_libQFrenderer_la_LIBADD=\
+	$(renderer_libs) \
+	$(renderer_libadd)
 libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_bsp.c \
@@ -67,7 +68,9 @@ video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
 	libs/models/libmodels_gl.la
 libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
+libs_video_renderer_vid_render_gl_la_LIBADD=\
+	$(video_renderer_gl_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -108,7 +111,9 @@ video_renderer_glsl_libs= \
 	libs/video/renderer/librender_glsl.la \
 	libs/models/libmodels_glsl.la
 libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
+libs_video_renderer_vid_render_glsl_la_LIBADD=\
+	$(video_renderer_glsl_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -135,7 +140,9 @@ video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
+libs_video_renderer_vid_render_sw_la_LIBADD=\
+	$(video_renderer_sw_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -200,7 +207,9 @@ video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
 	libs/models/libmodels_vulkan.la
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
-libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(video_renderer_vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=\
+	$(video_renderer_vulkan_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
