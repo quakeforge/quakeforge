@@ -122,7 +122,7 @@ update_lights (vulkan_ctx_t *ctx)
 		}
 	}
 	if (developer & SYS_lighting) {
-		Vulkan_Draw_String (vid.conview->xlen - 32, 8,
+		Vulkan_Draw_String (vid.width - 32, 8,
 							va (ctx->va_ctx, "%3d", light_data->lightCount),
 							ctx);
 	}
