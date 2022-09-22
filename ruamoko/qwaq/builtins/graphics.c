@@ -55,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/math/bitop.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
 #include "rua_internal.h"
 #include "r_font.h"
@@ -346,6 +347,7 @@ BI_Graphics_Init (progs_t *pr)
 		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = quit_f;
 		con_module->data->console->cbuf = qwaq_cbuf;
+		con_module->data->console->screen_view = r_data->scr_view;
 	}
 	//Key_SetKeyDest (key_game);
 
