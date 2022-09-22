@@ -885,6 +885,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 void
 gl_Draw_TileClear (int x, int y, int w, int h)
 {
+	if (!draw_backtile) {
+		return;
+	}
 	glpic_t    *gl;
 	qfglColor3ubv (color_0_8);
 	gl = (glpic_t *) draw_backtile->data;

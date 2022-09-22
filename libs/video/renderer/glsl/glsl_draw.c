@@ -440,6 +440,9 @@ glsl_Draw_Init (void)
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
 	backtile_pic = glsl_Draw_PicFromWad ("backtile");
+	if (!backtile_pic) {
+		backtile_pic = white_pic;
+	}
 	//FIXME gl = (glpic_t *) backtile_pic->data;
 	//FIXME qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
