@@ -74,7 +74,7 @@ static int developer_values[] = {
 #include "QF/sys_developer.h"
 };
 #undef SYS_DEVELOPER
-#define SYS_DEVELOPER(dev) {#dev, &developer_type, developer_values + __LINE__ - 31},
+#define SYS_DEVELOPER(dev) {#dev, &developer_type, developer_values + SYS_DeveloperID_##dev + 1},
 static exprsym_t developer_symbols[] = {
 	{"dev", &developer_type, developer_values + 0},
 #include "QF/sys_developer.h"
