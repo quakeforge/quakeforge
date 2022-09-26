@@ -87,11 +87,12 @@ static void
 vulkan_R_Init (void)
 {
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
-	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
+	Vulkan_Texture_Init (vulkan_ctx);
+
+	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 	Vulkan_CreateRenderPasses (vulkan_ctx);
-	Vulkan_Texture_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Scene_Init (vulkan_ctx);

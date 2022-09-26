@@ -74,10 +74,11 @@ get_image_size (VkImage image, qfv_device_t *device)
 	return size;
 }
 
-static void
-create_attachements (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+void
+Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 {
 	qfv_device_t *device = ctx->device;
+	__auto_type rp = renderpass;
 
 	plitem_t   *item = get_rp_item (ctx, rp, "images");
 	if (!item) {
@@ -252,12 +253,12 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 		init_renderframe (ctx, rp, &rp->frames.a[i]);
 	}
 
-	create_attachements (ctx, rp);
-
 	item = get_rp_item (ctx, rp, "clearValues");
 	rp->clearValues = QFV_ParseClearValues (ctx, item, rp->renderpassDef);
 
 	rp->draw = draw;
+
+	Vulkan_CreateAttachments (ctx, rp);
 
 	return rp;
 }
