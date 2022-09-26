@@ -81,6 +81,8 @@ typedef struct vulkan_ctx_s {
 	size_t      curFrame;
 	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
+	//FIXME for resize, but should be a set
+	struct qfv_renderpass_s *main_renderpass;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);

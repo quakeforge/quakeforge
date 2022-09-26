@@ -180,4 +180,5 @@ Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 											  &output, main_draw);
 	rp->order = QFV_rp_main;
 	DARRAY_APPEND (&ctx->renderPasses, rp);
+	ctx->main_renderpass = rp;
 }

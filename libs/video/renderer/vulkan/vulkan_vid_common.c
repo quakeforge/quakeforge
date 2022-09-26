@@ -280,7 +280,16 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 {
 	VkSwapchainKHR old_swapchain = 0;
 	if (ctx->swapchain) {
+		//FIXME this shouldn't be here
+		qfv_device_t *device = ctx->swapchain->device;
+		VkDevice dev = device->dev;
+		qfv_devfuncs_t *dfunc = device->funcs;
 		old_swapchain = ctx->swapchain->swapchain;
+		for (size_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
+			dfunc->vkDestroyImageView(dev, ctx->swapchain->imageViews->a[i], 0);
+		}
+		free (ctx->swapchain->images);
+		free (ctx->swapchain->imageViews);
 		free (ctx->swapchain);
 	}
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);

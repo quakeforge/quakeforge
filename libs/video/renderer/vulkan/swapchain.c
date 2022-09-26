@@ -8,7 +8,9 @@
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
+#include "QF/va.h"
 
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"

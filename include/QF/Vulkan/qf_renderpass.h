@@ -44,6 +44,7 @@ typedef struct qfv_renderpass_s {
 	struct qfv_imageset_s *attachment_images;
 	struct qfv_imageviewset_s *attachment_views;
 	VkDeviceMemory attachmentMemory;
+	size_t attachmentMemory_size;
 
 	qfv_framebufferset_t *framebuffers;
 	VkViewport  viewport;

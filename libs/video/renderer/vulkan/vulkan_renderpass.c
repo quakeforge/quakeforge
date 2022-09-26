@@ -74,15 +74,48 @@ get_image_size (VkImage image, qfv_device_t *device)
 	return size;
 }
 
+static void
+destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	for (size_t i = 0; i < rp->framebuffers->size; i++) {
+		dfunc->vkDestroyFramebuffer (device->dev, rp->framebuffers->a[i], 0);
+	}
+	free (rp->framebuffers);
+	rp->framebuffers = 0;
+}
+
 void
 Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rp = renderpass;
 
 	plitem_t   *item = get_rp_item (ctx, rp, "images");
 	if (!item) {
 		return;
+	}
+
+	if (renderpass->framebuffers) {
+		destroy_framebuffers (ctx, renderpass);
+	}
+	if (rp->attachment_views) {
+		for (size_t i = 0; i < rp->attachment_views->size; i++) {
+			dfunc->vkDestroyImageView (device->dev,
+									   rp->attachment_views->a[i], 0);
+		}
+		free (rp->attachment_views);
+		rp->attachment_views = 0;
+	}
+	if (rp->attachment_images) {
+		for (size_t i = 0; i < rp->attachment_images->size; i++) {
+			dfunc->vkDestroyImage (device->dev, rp->attachment_images->a[i], 0);
+		}
+		free (rp->attachment_images);
+		rp->attachment_images = 0;
 	}
 
 	__auto_type images = QFV_ParseImageSet (ctx, item, rp->renderpassDef);
@@ -91,13 +124,19 @@ Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 	for (size_t i = 0; i < images->size; i++) {
 		memSize += get_image_size (images->a[i], device);
 	}
-	VkDeviceMemory mem;
-	mem = QFV_AllocImageMemory (device, images->a[0],
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-								memSize, 0);
-	rp->attachmentMemory = mem;
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 mem, "memory:framebuffers");
+	VkDeviceMemory mem = rp->attachmentMemory;
+	if (memSize > rp->attachmentMemory_size) {
+		if (rp->attachmentMemory) {
+			dfunc->vkFreeMemory (device->dev, rp->attachmentMemory, 0);
+		}
+		rp->attachmentMemory_size = memSize;
+		mem = QFV_AllocImageMemory (device, images->a[0],
+									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+									memSize, 0);
+		rp->attachmentMemory = mem;
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+							 mem, "memory:framebuffers");
+	}
 	size_t      offset = 0;
 	for (size_t i = 0; i < images->size; i++) {
 		QFV_BindImageMemory (device, images->a[i], mem, offset);
@@ -177,18 +216,6 @@ destroy_renderframes (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 		}
 		free (rFrame->subpassCmdSets);
 	}
-}
-
-static void
-destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		dfunc->vkDestroyFramebuffer (device->dev, rp->framebuffers->a[i], 0);
-	}
-	free (rp->framebuffers);
 }
 
 qfv_renderpass_t *

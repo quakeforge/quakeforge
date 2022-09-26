@@ -293,9 +293,32 @@ vulkan_begin_frame (void)
 	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-						  frame->imageAvailableSemaphore,
-						  0, &imageIndex);
+	if (!QFV_AcquireNextImage (vulkan_ctx->swapchain,
+							   frame->imageAvailableSemaphore,
+							   0, &imageIndex)) {
+		QFV_DeviceWaitIdle (device);
+		if (vulkan_ctx->capture) {
+			QFV_DestroyCapture (vulkan_ctx->capture);
+		}
+		Vulkan_CreateSwapchain (vulkan_ctx);
+		Vulkan_CreateCapture (vulkan_ctx);
+
+		//FIXME
+		qfv_output_t output = {
+			.extent    = vulkan_ctx->swapchain->extent,
+			.view      = vulkan_ctx->swapchain->imageViews->a[0],
+			.format    = vulkan_ctx->swapchain->format,
+			.view_list = vulkan_ctx->swapchain->imageViews->a,
+		};
+		vulkan_ctx->main_renderpass->viewport.width = output.extent.width;
+		vulkan_ctx->main_renderpass->viewport.height = output.extent.height;
+		vulkan_ctx->main_renderpass->scissor.extent = output.extent;
+		vulkan_ctx->output = output;
+		Vulkan_CreateAttachments (vulkan_ctx, vulkan_ctx->main_renderpass);
+		QFV_AcquireNextImage (vulkan_ctx->swapchain,
+								   frame->imageAvailableSemaphore,
+								   0, &imageIndex);
+	}
 	vulkan_ctx->swapImageIndex = imageIndex;
 }
 
