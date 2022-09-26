@@ -558,8 +558,7 @@ capture_screenshot (const byte *data, int width, int height)
 		tex->flagbits = 0;
 		tex->loaded = 1;
 
-		if (!vulkan_ctx->capture->canBlit ||
-			is_bgr (vulkan_ctx->swapchain->format)) {
+		if (is_bgr (vulkan_ctx->swapchain->format)) {
 			tex->bgr = 1;
 		}
 		const byte *src = data;
