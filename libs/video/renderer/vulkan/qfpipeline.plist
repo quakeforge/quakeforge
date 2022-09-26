@@ -695,9 +695,6 @@
 			subpass = 2;
 			rasterization = $properties.rasterization.cw_cull_back;
 			depthStencil  = $properties.depthStencil.test_only;
-			dynamic = {//FIXME why?
-				dynamicState = ( viewport, scissor );
-			};
 		};
 		comp_base = {
 			@inherit = $properties.pipelines.base;
