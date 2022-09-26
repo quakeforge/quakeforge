@@ -481,6 +481,9 @@ Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 									 VK_FORMAT_R8G8B8A8_UNORM,
 									 VK_IMAGE_ASPECT_COLOR_BIT);
+	qfv_device_t *device = ctx->device;
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, tex->view,
+						 "iview:default_magenta_array");
 	qfvPopDebug (ctx);
 }
 
