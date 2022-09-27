@@ -42,7 +42,6 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 {
 	qfv_instfuncs_t *ifunc = device->physDev->instance->funcs;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkFormat    format = VK_FORMAT_R8G8B8A8_UNORM;
 
 	VkFormatProperties format_props;
 	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev,
@@ -52,8 +51,6 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 		Sys_Printf ("Swapchain does not support reading. FIXME\n");
 		return 0;
 	}
-	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev, format,
-												&format_props);
 
 	qfv_capture_t *capture = malloc (sizeof (qfv_capture_t));
 	capture->device = device;
@@ -63,13 +60,19 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 	__auto_type cmdset = QFV_AllocCommandBufferSet (numframes, alloca);
 	QFV_AllocateCommandBuffers (device, cmdPool, 1, cmdset);
 
-	capture->imgsize = QFV_GetImageSize (device,
-										 swapchain->images->a[0]);
+	//FIXME assumes the swapchain is 32bpp
+	capture->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
+
 	for (int i = 0; i < numframes; i++) {
 		__auto_type image = &capture->image_set->a[i];
 		image->buffer = QFV_CreateBuffer (device, capture->imgsize,
 										  VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 	}
+	VkMemoryRequirements req;
+	dfunc->vkGetBufferMemoryRequirements (device->dev,
+										  capture->image_set->a[0].buffer,
+										  &req);
+	capture->imgsize = QFV_NextOffset (capture->imgsize, &req);
 	capture->memsize = numframes * capture->imgsize;
 	capture->memory = QFV_AllocBufferMemory (device,
 											 capture->image_set->a[0].buffer,
