@@ -873,12 +873,25 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 	QuatScale (color, 1/255.0, color);
 	drawvert_t *verts = queue->verts + queue->count * VERTS_PER_LINE;
 
+	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
+	int srcx = subpic->rect->x;
+	int srcy = subpic->rect->y;
+	int srcw = subpic->rect->width;
+	int srch = subpic->rect->height;
+	float size = subpic->size;
+	float sl = (srcx + 0.03125) * size;
+	float sr = (srcx + srcw - 0.03125) * size;
+	float st = (srcy + 0.03125) * size;
+	float sb = (srcy + srch - 0.03125) * size;
+
 	verts[0] = (drawvert_t) {
 		.xy = { x0, y0 },
+		.st = {sl, st},
 		.color = { QuatExpand (color) },
 	};
 	verts[1] = (drawvert_t) {
 		.xy = { x1, y1 },
+		.st = {sr, sb},
 		.color = { QuatExpand (color) },
 	};
 
