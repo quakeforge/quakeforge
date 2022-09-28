@@ -524,12 +524,12 @@ resize_console_text (view_t *view)
 	int			width = view->xlen / 8;
 	int         height = view->ylen / 8;
 
-	ClearNotify ();
-
-	con_linewidth = width;
-	Draw_DestroyBuffer (console_buffer);
-	console_buffer = Draw_CreateBuffer (width, height);
-	clear_console_text ();
+	if (console_buffer->width != width || console_buffer->height != height) {
+		con_linewidth = width;
+		Draw_DestroyBuffer (console_buffer);
+		console_buffer = Draw_CreateBuffer (width, height);
+		clear_console_text ();
+	}
 }
 
 static void
@@ -568,7 +568,7 @@ draw_console (view_t *view)
 		alpha = min (alpha, 255);
 	}
 	// draw the background
-	r_funcs->Draw_ConsoleBackground (view->ylen, alpha);
+	r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
 
 	// draw everything else
 	view_draw (view);
@@ -640,6 +640,11 @@ C_DrawConsole (void)
 {
 	setup_console ();
 
+	int         ypos = con_data.lines - con_data.screen_view->ylen;
+	if (console_view->ypos != ypos) {
+		view_move (console_view, 0, ypos);
+	}
+
 	say_line.view->visible = con_state == con_message ? !chat_team : 0;
 	team_line.view->visible = con_state == con_message ? chat_team : 0;
 	console_view->visible = con_data.lines != 0;
@@ -692,8 +697,7 @@ con_app_window (const IE_event_t *event)
 		old_xlen = event->app_window.xlen;
 		old_ylen = event->app_window.ylen;
 
-		view_resize (con_data.view, con_data.screen_view->xlen,
-					 con_data.screen_view->ylen);
+		view_resize (con_data.view, old_xlen, old_ylen);
 	}
 }
 
@@ -780,6 +784,9 @@ static int
 con_event_handler (const IE_event_t *ie_event, void *data)
 {
 	if (con_state == con_menu) {
+		if (ie_event->type == ie_app_window) {
+			con_app_window (ie_event);
+		}
 		return Menu_EventHandler (ie_event);
 	}
 	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
