@@ -360,9 +360,11 @@ vulkan_set_2d (int scaled)
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
 
-	int width = vid.width;	//FIXME vid
-	int height = vid.height;
-	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
+	float       left = -0.5;
+	float       top = -0.5;
+	float       right = left + vid.width;	//FIXME vid
+	float       bottom = top + vid.height;
+	QFV_Orthographic (mat->Projection2d, left, right, top, bottom, 0, 99999);
 
 	mctx->dirty = mctx->frames.size;
 }
