@@ -799,7 +799,8 @@ set_2d (int width, int height)
 	qfeglDisable (GL_DEPTH_TEST);
 	qfeglDisable (GL_CULL_FACE);
 
-	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
+	ortho_mat (proj_matrix, -0.5, width - 0.5, height - 0.5, -0.5,
+			   -99999, 99999);
 
 	qfeglUseProgram (quake_2d.program);
 	qfeglEnableVertexAttribArray (quake_2d.vertex.location);

@@ -970,7 +970,7 @@ set_2d (int width, int height)
 
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
-	qfglOrtho (0, width, height, 0, -99999, 99999);
+	qfglOrtho (-0.5, width - 0.5, height - 0.5, -0.5, -99999, 99999);
 
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
