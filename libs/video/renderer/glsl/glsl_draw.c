@@ -650,12 +650,12 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 	float       ofs = (vid.height - lines) / (float) vid.height;
 	quat_t      color = {1, 1, 1, bound (0, alpha, 255) / 255.0};
 	drawvert_t  verts[] = {
-		{{           0,     0, 0, ofs}},
+		{{        0,     0, 0, ofs}},
 		{{vid.width,     0, 1, ofs}},
 		{{vid.width, lines, 1,   1}},
-		{{           0,     0, 0, ofs}},
+		{{        0,     0, 0, ofs}},
 		{{vid.width, lines, 1,   1}},
-		{{           0, lines, 0,   1}},
+		{{        0, lines, 0,   1}},
 	};
 
 	GLSL_FlushText (); // Flush text that should be rendered before the console
