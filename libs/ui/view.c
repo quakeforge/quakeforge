@@ -40,6 +40,7 @@
 #include <stdlib.h>
 
 #include "QF/cexpr.h"
+#include "QF/mathlib.h"
 #include "QF/ui/view.h"
 
 static exprenum_t grav_t_enum;
@@ -132,6 +133,8 @@ setgeometry (view_t *view)
 		case grav_northwest:
 			view->xrel = view->xpos;
 			view->yrel = view->ypos;
+			break;
+		case grav_flow:
 			break;
 	}
 	view->xabs = par->xabs + view->xrel;
@@ -283,4 +286,212 @@ view_setgravity (view_t *view, grav_t grav)
 {
 	view->gravity = grav;
 	setgeometry (view);
+}
+
+typedef struct flowline_s {
+	struct flowline_s *next;
+	int         first_child;
+	int         child_count;
+	int         cursor;
+	int         height;
+} flowline_t;
+
+#define NEXT_LINE(line, child_index) \
+	do { \
+		line->next = alloca (sizeof (flowline_t)); \
+		memset (line->next, 0, sizeof (flowline_t)); \
+		line = line->next; \
+		line->first_child = child_index; \
+	} while (0)
+
+static void
+flow_right (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+{
+	flowline_t  flowline = {};
+	flowline_t *line = &flowline;
+	for (int i = 0; i < view->num_children; i++) {
+		view_t     *child = view->children[i];
+		if (line->cursor && line->cursor + child->xlen > view->xlen) {
+			NEXT_LINE(line, i);
+		}
+		child->xpos = line->cursor;
+		if (child->xpos || !child->bol_suppress) {
+			line->cursor += child->xlen;
+		}
+		line->height = max (child->ylen, line->height);
+		line->child_count++;
+	}
+	set_rows (view, &flowline);
+}
+
+static void
+flow_left (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+{
+	flowline_t  flowline = {};
+	flowline_t *line = &flowline;
+	line->cursor = view->xlen;
+	for (int i = 0; i < view->num_children; i++) {
+		view_t     *child = view->children[i];
+		if (line->cursor < view->xlen && line->cursor - child->xlen < 0) {
+			NEXT_LINE(line, i);
+			line->cursor = view->xlen;
+		}
+		if (child->xpos < view->xlen || !child->bol_suppress) {
+			line->cursor -= child->xlen;
+		}
+		child->xpos = line->cursor;
+		line->height = max (child->ylen, line->height);
+		line->child_count++;
+	}
+	set_rows (view, &flowline);
+}
+
+static void
+flow_down (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+{
+	flowline_t  flowline = {};
+	flowline_t *line = &flowline;
+	for (int i = 0; i < view->num_children; i++) {
+		view_t     *child = view->children[i];
+		if (line->cursor && line->cursor + child->ylen > view->ylen) {
+			NEXT_LINE(line, i);
+		}
+		child->ypos = line->cursor;
+		if (child->ypos || !child->bol_suppress) {
+			line->cursor += child->ylen;
+		}
+		line->height = max (child->xlen, line->height);
+		line->child_count++;
+	}
+	set_rows (view, &flowline);
+}
+
+static void
+flow_up (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+{
+	flowline_t  flowline = {};
+	flowline_t *line = &flowline;
+	line->cursor = view->ylen;
+	for (int i = 0; i < view->num_children; i++) {
+		view_t     *child = view->children[i];
+		if (line->cursor < view->ylen && line->cursor - child->ylen < 0) {
+			NEXT_LINE(line, i);
+			line->cursor = view->ylen;
+		}
+		if (child->ypos < view->ylen || !child->bol_suppress) {
+			line->cursor -= child->ylen;
+		}
+		child->ypos = line->cursor;
+		line->height = max (child->xlen, line->height);
+		line->child_count++;
+	}
+	set_rows (view, &flowline);
+}
+
+static void
+set_rows_down (view_t *view, flowline_t *flowlines)
+{
+	int         cursor = 0;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		cursor += line->height;
+		for (int i = 0; i < line->child_count; i++) {
+			view_t     *child = view->children[line->first_child + i];
+
+			child->xrel = child->xpos;
+			child->yrel = cursor + child->ypos - child->ylen;
+		}
+	}
+}
+
+static void
+set_rows_up (view_t *view, flowline_t *flowlines)
+{
+	int         cursor = view->ylen;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		for (int i = 0; i < line->child_count; i++) {
+			view_t     *child = view->children[line->first_child + i];
+
+			child->xrel = child->xpos;
+			child->yrel = cursor + child->ypos - child->ylen;
+		}
+		cursor -= line->height;
+	}
+}
+
+static void
+set_columns_right (view_t *view, flowline_t *flowlines)
+{
+	int         cursor = 0;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		for (int i = 0; i < line->child_count; i++) {
+			view_t     *child = view->children[line->first_child + i];
+
+			child->xrel = cursor + child->xpos;
+			child->yrel = child->ypos;
+		}
+		cursor += line->height;
+	}
+}
+
+static void
+set_columns_left (view_t *view, flowline_t *flowlines)
+{
+	int         cursor = view->xlen;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		cursor -= line->height;
+		for (int i = 0; i < line->child_count; i++) {
+			view_t     *child = view->children[line->first_child + i];
+
+			child->xrel = cursor + child->xpos;
+			child->yrel = child->ypos;
+		}
+	}
+}
+
+VISIBLE void
+view_flow_right_down (view_t *view)
+{
+	flow_right (view, set_rows_down);
+}
+
+VISIBLE void
+view_flow_right_up (view_t *view)
+{
+	flow_right (view, set_rows_up);
+}
+
+VISIBLE void
+view_flow_left_down (view_t *view)
+{
+	flow_left (view, set_rows_down);
+}
+
+VISIBLE void
+view_flow_left_up (view_t *view)
+{
+	flow_left (view, set_rows_up);
+}
+
+VISIBLE void
+view_flow_down_right (view_t *view)
+{
+	flow_down (view, set_columns_right);
+}
+
+VISIBLE void
+view_flow_up_right (view_t *view)
+{
+	flow_up (view, set_columns_right);
+}
+
+VISIBLE void
+view_flow_down_left (view_t *view)
+{
+	flow_down (view, set_columns_left);
+}
+
+VISIBLE void
+view_flow_up_left (view_t *view)
+{
+	flow_up (view, set_columns_left);
 }

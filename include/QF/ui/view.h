@@ -64,6 +64,7 @@ typedef enum {
 	grav_southwest,	///< +ve X right, +ve Y up,   -X left,  -ve Y down
 	grav_west,		///< +ve X right, +ve Y down, -X left,  -ve Y up
 	grav_northwest,	///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_flow,		///< controlled by view_flow
 } grav_t;
 
 extern struct exprtype_s grav_t_type;
@@ -96,6 +97,7 @@ struct view_s {
 	unsigned visible:1;			///< If false, view_draw() skips this view.
 	unsigned resize_x:1;		///< If true, view's width follows parent's.
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
+	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
 	view_t *parent;				///< The parent view.
 	view_t **children;			///< The child views.
 	int     num_children;		///< Number of child views in view.
@@ -253,6 +255,15 @@ void view_setgeometry (view_t *view, int xp, int yp, int xl, int yl);
 					its positioning within the view's parent.
 */
 void view_setgravity (view_t *view, grav_t grav);
+
+void view_flow_right_down (view_t *view);
+void view_flow_right_up (view_t *view);
+void view_flow_left_down (view_t *view);
+void view_flow_left_up (view_t *view);
+void view_flow_down_right (view_t *view);
+void view_flow_up_right (view_t *view);
+void view_flow_down_left (view_t *view);
+void view_flow_up_left (view_t *view);
 
 ///@}
 

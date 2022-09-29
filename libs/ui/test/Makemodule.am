@@ -1,10 +1,15 @@
 libs_ui_tests = \
+	libs/ui/test/test-flow \
 	libs/ui/test/test-txtbuffer \
 	libs/ui/test/test-vrect
 
 TESTS += $(libs_ui_tests)
 
 check_PROGRAMS += $(libs_ui_tests)
+
+libs_ui_test_test_flow_SOURCES=libs/ui/test/test-flow.c
+libs_ui_test_test_flow_LDADD=libs/ui/libQFui.la
+libs_ui_test_test_flow_DEPENDENCIES=libs/ui/libQFui.la
 
 libs_ui_test_test_txtbuffer_SOURCES=libs/ui/test/test-txtbuffer.c
 libs_ui_test_test_txtbuffer_LDADD=libs/ui/libQFui.la
