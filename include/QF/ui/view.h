@@ -93,6 +93,9 @@ struct view_s {
 	int     xrel, yrel;
 	//@}
 	grav_t  gravity;			///< The gravity of the view.
+	unsigned visible:1;			///< If false, view_draw() skips this view.
+	unsigned resize_x:1;		///< If true, view's width follows parent's.
+	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	view_t *parent;				///< The parent view.
 	view_t **children;			///< The child views.
 	int     num_children;		///< Number of child views in view.
@@ -119,9 +122,6 @@ struct view_s {
 		touch this at all except view_new(), which just sets it to 0.
 	*/
 	void   *data;
-	unsigned visible:1;			///< If false, view_draw() skips this view.
-	unsigned resize_x:1;		///< If true, view's width follows parent's.
-	unsigned resize_y:1;		///< If true, view's height follows parent's.
 };
 
 /** Create a new view. view_t::draw is set to view_draw() and the view is made
