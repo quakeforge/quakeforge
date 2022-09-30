@@ -9,6 +9,7 @@ libs_ui_libQFui_la_LIBADD=		$(ui_deps)
 libs_ui_libQFui_la_DEPENDENCIES=	$(ui_deps)
 libs_ui_libQFui_la_SOURCES= \
 	libs/ui/inputline.c \
+	libs/ui/passage.c \
 	libs/ui/txtbuffer.c \
 	libs/ui/view.c \
 	libs/ui/vrect.c
