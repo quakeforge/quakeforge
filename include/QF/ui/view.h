@@ -256,14 +256,83 @@ void view_setgeometry (view_t *view, int xp, int yp, int xl, int yl);
 */
 void view_setgravity (view_t *view, grav_t grav);
 
+/** Automatic layout of child views by flowing them.
+
+	The child views are layed out linearly in the first indicated direction,
+	and when a child view exceeds the bounds of the view, a new flow line is
+	started in the second indicated direction. Flow lines always start at the
+	edge of the view, and the first flow line is at the appropriate edge of
+	the view such that at least one child view on the line touches the view's
+	edge and no child view exceeds that edge.
+
+	All child views must have gravity set to grav_flow, or their behavior will
+	be undefined.
+
+	A child view with bol_suppress set will not contribute to a flow-line's
+	length when that child view is the first view on the line, otherwise it
+	behaves as if bol_suppress is not set.
+*/
+///@{
+
+/** Flow child views from left to right, top to bottom.
+
+	Suitable for English and most European scripts.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_right_down (view_t *view);
+
+/** Flow child views from right to left, bottom to top.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_right_up (view_t *view);
+
+/** Flow child views from right to left, top to bottom.
+
+	Suitable for Arabic and similar scripts.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_left_down (view_t *view);
+
+/** Flow child views from left to left, bottom to top.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_left_up (view_t *view);
+
+/** Flow child views from top to bottom, left to right.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_down_right (view_t *view);
+
+/** Flow child views from bottom to top, left to right.
+
+	Suitable for English and most European scripts.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_up_right (view_t *view);
+
+/** Flow child views from top to bottom, right to left.
+
+	Suitable for Asian lanauges (Japanese, Korean, Chinese).
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_down_left (view_t *view);
+
+/** Flow child views from bottom to top, right to left.
+
+	Suitable for English and most European scripts.
+
+	\param view		The parent view containing the children to be flowed.
+*/
 void view_flow_up_left (view_t *view);
+
+///@}
 
 ///@}
 
