@@ -389,8 +389,32 @@ flow_up (view_t *view, void (*set_rows) (view_t *, flowline_t *))
 }
 
 static void
+flow_view_height (view_t *view, flowline_t *flowlines)
+{
+	if (view->flow_size) {
+		view->ylen = 0;
+		for (flowline_t *line = flowlines; line; line = line->next) {
+			view->ylen += line->height;
+		}
+	}
+}
+
+static void
+flow_view_width (view_t *view, flowline_t *flowlines)
+{
+	if (view->flow_size) {
+		view->xlen = 0;
+		for (flowline_t *line = flowlines; line; line = line->next) {
+			view->xlen += line->height;
+		}
+	}
+}
+
+static void
 set_rows_down (view_t *view, flowline_t *flowlines)
 {
+	flow_view_height (view, flowlines);
+
 	int         cursor = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		cursor += line->height;
@@ -406,6 +430,8 @@ set_rows_down (view_t *view, flowline_t *flowlines)
 static void
 set_rows_up (view_t *view, flowline_t *flowlines)
 {
+	flow_view_height (view, flowlines);
+
 	int         cursor = view->ylen;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		for (int i = 0; i < line->child_count; i++) {
@@ -421,6 +447,8 @@ set_rows_up (view_t *view, flowline_t *flowlines)
 static void
 set_columns_right (view_t *view, flowline_t *flowlines)
 {
+	flow_view_width (view, flowlines);
+
 	int         cursor = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		for (int i = 0; i < line->child_count; i++) {
@@ -436,6 +464,8 @@ set_columns_right (view_t *view, flowline_t *flowlines)
 static void
 set_columns_left (view_t *view, flowline_t *flowlines)
 {
+	flow_view_width (view, flowlines);
+
 	int         cursor = view->xlen;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		cursor -= line->height;

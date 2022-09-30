@@ -98,6 +98,7 @@ struct view_s {
 	unsigned resize_x:1;		///< If true, view's width follows parent's.
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
+	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
 	view_t *parent;				///< The parent view.
 	view_t **children;			///< The child views.
 	int     num_children;		///< Number of child views in view.
@@ -271,6 +272,10 @@ void view_setgravity (view_t *view, grav_t grav);
 	A child view with bol_suppress set will not contribute to a flow-line's
 	length when that child view is the first view on the line, otherwise it
 	behaves as if bol_suppress is not set.
+
+	If the view's flow_size is set, then its secondary axis size is adjusted
+	so the child views fill the view along that axis. The primary axis size is
+	never adjusted.
 */
 ///@{
 
