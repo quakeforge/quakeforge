@@ -55,13 +55,12 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					buffer->buffer = QFV_CreateBuffer (device,
 													   buffer->size,
 													   buffer->usage);
-					const char *name = va (resource->va_ctx, "buffer:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-										 buffer->buffer, name);
+										 buffer->buffer,
+										 va (resource->va_ctx, "buffer:%s:%s",
+											 resource->name, obj->name));
 					dfunc->vkGetBufferMemoryRequirements (device->dev,
 														  buffer->buffer, &req);
-					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_buffer_view:
@@ -87,13 +86,12 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 													image->num_layers,
 													image->samples,
 													image->usage);
-					const char *name = va (resource->va_ctx, "image:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
-										 image->image, name);
+										 image->image,
+										 va (resource->va_ctx, "image:%s:%s",
+											 resource->name, obj->name));
 					dfunc->vkGetImageMemoryRequirements (device->dev,
 														 image->image, &req);
-					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_image_view:
@@ -197,11 +195,10 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 														   buffview->format,
 														   buffview->offset,
 														   buffview->size);
-					const char *name = va (resource->va_ctx, "bview:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER_VIEW,
-										 buffview->view, name);
-					(void) name;	// for when QFV_duSetObjectName is empty
+										 buffview->view,
+										 va (resource->va_ctx, "bview:%s:%s",
+											 resource->name, obj->name));
 				}
 				break;
 			case qfv_res_image_view:
@@ -214,11 +211,10 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 														 imgview->type,
 														 imgview->format,
 														 imgview->aspect);
-					const char *name = va (resource->va_ctx, "iview:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
-										 imgview->view, name);
-					(void) name;	// for when QFV_duSetObjectName is empty
+										 imgview->view,
+										 va (resource->va_ctx, "iview:%s:%s",
+											 resource->name, obj->name));
 				}
 				break;
 		}
