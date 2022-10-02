@@ -64,5 +64,8 @@ struct qfv_device_s;
 int QFV_CreateResource (struct qfv_device_s *device, qfv_resource_t *resource);
 void QFV_DestroyResource (struct qfv_device_s *device,
 						  qfv_resource_t *resource);
+struct tex_s;
+void QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
+							   int mips, const struct tex_s *tex);
 
 #endif//__QF_Vulkan_resource_h

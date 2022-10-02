@@ -269,3 +269,28 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 	}
 	dfunc->vkFreeMemory (device->dev, resource->memory, 0);
 }
+
+void
+QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
+						  int mips, const tex_t *tex)
+{
+	*image = (qfv_resobj_t) {
+		.name = name,
+		.type = qfv_res_image,
+		.image = {
+			.type = VK_IMAGE_TYPE_2D,
+			.format = QFV_ImageFormat (tex->format, 0),
+			.extent = {
+				.width = tex->width,
+				.height = tex->height,
+				.depth = 1,
+			},
+			.num_mipmaps = mips ? QFV_MipLevels (tex->width, tex->height) : 1,
+			.num_layers = 1,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+					| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+					| VK_IMAGE_USAGE_SAMPLED_BIT,
+		},
+	};
+}
