@@ -987,12 +987,13 @@ Draw_BlendScreen (quat_t color)
 	vid.vid_internal->set_palette (vid.vid_internal->data, pal);
 }
 
-void
+int
 Draw_AddFont (struct rfont_s *font)
 {
+	return 0;
 }
 
 void
-Draw_FontString (int x, int y, const char *str)
+Draw_FontString (int x, int y, int fontid, const char *str)
 {
 }

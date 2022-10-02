@@ -1037,12 +1037,13 @@ gl_Draw_BlendScreen (quat_t color)
 	qfglEnable (GL_TEXTURE_2D);
 }
 
-void
+int
 gl_Draw_AddFont (struct rfont_s *font)
 {
+	return 0;
 }
 
 void
-gl_Draw_FontString (int x, int y, const char *str)
+gl_Draw_FontString (int x, int y, int fontid, const char *str)
 {
 }

@@ -107,8 +107,8 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Pic) (int x, int y, qpic_t *pic);
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-	void (*Draw_AddFont) (struct rfont_s *font);
-	void (*Draw_FontString) (int x, int y, const char *str);
+	int (*Draw_AddFont) (struct rfont_s *font);
+	void (*Draw_FontString) (int x, int y, int fontid, const char *str);
 
 
 	struct psystem_s *(*ParticleSystem) (void);

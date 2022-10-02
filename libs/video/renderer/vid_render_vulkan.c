@@ -270,16 +270,16 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 	Vulkan_Draw_SubPic (x, y, pic, srcx, srcy, width, height, vulkan_ctx);
 }
 
-static void
+static int
 vulkan_Draw_AddFont (struct rfont_s *font)
 {
-	Vulkan_Draw_AddFont (font, vulkan_ctx);
+	return Vulkan_Draw_AddFont (font, vulkan_ctx);
 }
 
 static void
-vulkan_Draw_FontString (int x, int y, const char *str)
+vulkan_Draw_FontString (int x, int y, int fontid, const char *str)
 {
-	Vulkan_Draw_FontString (x, y, str, vulkan_ctx);
+	Vulkan_Draw_FontString (x, y, fontid, str, vulkan_ctx);
 }
 
 static void

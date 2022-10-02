@@ -390,7 +390,7 @@ bi_Font_Load (progs_t *pr, void *_res)
 
 	QFile      *font_file = QFS_FOpenFile (font_path);
 	rfont_t    *font = R_FontLoad (font_file, font_size);
-	r_funcs->Draw_AddFont (font);
+	R_INT (pr) = r_funcs->Draw_AddFont (font);
 }
 
 static void
@@ -398,8 +398,9 @@ bi_Font_String (progs_t *pr, void *_res)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *str = P_GSTRING (pr, 2);
-	r_funcs->Draw_FontString (x, y, str);
+	int         fontid = P_INT (pr, 2);
+	const char *str = P_GSTRING (pr, 3);
+	r_funcs->Draw_FontString (x, y, fontid, str);
 }
 
 static void
@@ -531,7 +532,7 @@ static builtin_t builtins[] = {
 	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
 
 	bi(Font_Load,       2, p(string), p(int)),
-	bi(Font_String,     3, p(int), p(int), p(string)),
+	bi(Font_String,     4, p(int), p(int), p(int), p(string)),
 
 	bi(Draw_CreateBuffer,   2, p(int), p(int)),
 	bi(Draw_DestroyBuffer,  1, p(ptr)),

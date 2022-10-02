@@ -1074,7 +1074,7 @@ Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 	}
 }
 
-void
+int
 Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
@@ -1094,6 +1094,8 @@ Vulkan_Draw_AddFont (rfont_t *font, vulkan_ctx_t *ctx)
 		};
 		dctx->font_tex = Vulkan_LoadTex (ctx, &tex, 0, "draw.font");
 	}
+
+	return 0;
 }
 
 typedef struct {
@@ -1115,7 +1117,8 @@ vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
 }
 
 void
-Vulkan_Draw_FontString (int x, int y, const char *str, vulkan_ctx_t *ctx)
+Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
+						vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	if (!dctx->font) {

@@ -75,8 +75,8 @@ void Vulkan_Draw_Picf (float x, float y, struct qpic_s *pic,
 void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 						int srcx, int srcy, int width, int height,
 						struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_AddFont (struct rfont_s *font, struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_FontString (int x, int y, const char *str,
+int Vulkan_Draw_AddFont (struct rfont_s *font, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 							 struct vulkan_ctx_s *ctx);
 
 void Vulkan_Set2D (struct vulkan_ctx_s *ctx);
