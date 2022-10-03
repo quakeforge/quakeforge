@@ -6,13 +6,13 @@
 #endif
 #include <vulkan/vulkan.h>
 
-typedef struct {
+typedef struct qfv_imagebarrier_s {
 	VkPipelineStageFlags srcStages;
 	VkPipelineStageFlags dstStages;
 	VkImageMemoryBarrier barrier;
 } qfv_imagebarrier_t;
 
-typedef struct {
+typedef struct qfv_bufferbarrier_s {
 	VkPipelineStageFlags srcStages;
 	VkPipelineStageFlags dstStages;
 	VkBufferMemoryBarrier barrier;
