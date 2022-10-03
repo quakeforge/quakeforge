@@ -21,6 +21,7 @@ typedef struct qfv_resobj_s {
 			VkDeviceSize size;
 			VkBufferUsageFlags usage;
 			VkBuffer    buffer;
+			VkDeviceSize offset;
 		}       buffer;
 		struct {
 			unsigned    buffer;
@@ -39,6 +40,7 @@ typedef struct qfv_resobj_s {
 			VkSampleCountFlags samples;
 			VkImageUsageFlags usage;
 			VkImage     image;
+			VkDeviceSize offset;
 		}       image;
 		struct {
 			unsigned    image;

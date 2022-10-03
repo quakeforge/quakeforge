@@ -163,6 +163,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					__auto_type buffer = &obj->buffer;
 					QFV_BindBufferMemory (device, buffer->buffer,
 										  resource->memory, offset);
+					buffer->offset = offset;
 				}
 				break;
 			case qfv_res_image:
@@ -170,6 +171,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					__auto_type image = &obj->image;
 					QFV_BindImageMemory (device, image->image,
 										 resource->memory, offset);
+					image->offset = offset;
 				}
 				break;
 			case qfv_res_buffer_view:
