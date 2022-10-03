@@ -97,6 +97,21 @@
 				},
 			);
 		};
+		glyph_pool = {
+			maxSets = 16;
+			bindings = (
+				{
+					// glyph geometry data (offset and uv)
+					type = uniform_texel_buffer;
+					descriptorCount = 16;
+				},
+				{
+					// glyph texture data
+					type = combined_image_sampler;
+					descriptorCount = 16;
+				},
+			);
+		};
 		entity_pool = {
 			flags = free_descriptor_set;
 			maxSets = 512;
@@ -210,6 +225,24 @@
 			bindings = (
 				{
 					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+		glyph_data_set = {
+			bindings = (
+				{
+					// glyph geometry data (offset and uv)
+					binding = 0;
+					descriptorType = uniform_texel_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
+				},
+				{
+					// glyph texture data
+					binding = 1;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -358,6 +391,12 @@
 	pipelineLayouts = {
 		twod_layout = {
 			setLayouts = (matrix_set, twod_set);
+		};
+		glyph_layout = {
+			setLayouts = (matrix_set, glyph_data_set);
+		};
+		lines_layout = {
+			setLayouts = (matrix_set);
 		};
 		quakebsp_layout = {
 			setLayouts = (matrix_set, entity_set, texture_set, texture_set);
@@ -524,6 +563,19 @@
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
 				{ location = 2; binding = 1; format = r32_uint; offset = 0; },
+			);
+		};
+		glyph = {
+			bindings = (
+				{ binding = 0; stride = "4 + 4 + 2 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				// glyph index
+				{ location = 0; binding = 0; format = r32_uint;       offset = 0; },
+				// glyph color
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				// glyph position (2d)
+				{ location = 2; binding = 0; format = r32g32_sfloat;  offset = 8; },
 			);
 		};
 		iqm = {
@@ -1046,24 +1098,44 @@
 			};
 			layout = twod_layout;
 		};
-		twod_impalpha = {
-			@inherit = $properties.pipelines.twod;
+		glyph = {
+			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+			vertexInput   = $properties.vertexInput.glyph;
+			inputAssembly = {
+				// glyphs are drawn using instanced quads, so primitive restart
+				// is not needed as only four vertices are drawn per instance.
+				topology = triangle_strip;
+				primitiveRestartEnable = false;
+			};
+			rasterization = $properties.rasterization.counter_cw_cull_back;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ($properties.attachmentBlendOp.alpha_blend);
+			};
+			layout = glyph_layout;
+		};
+		glyph_color = {
+			@inherit = $properties.pipelines.glyph;
 			stages = (
-				{
-					stage = vertex;
-					name = main;
-					module = $builtin/twod.vert;
-				},
-				{
-					stage = fragment;
-					name = main;
-					module = $builtin/twod_impalpha.frag;
-				},
+				{ stage = vertex;   name = main; module = $builtin/glyph.vert; },
+				{ stage = fragment; name = main; module = $builtin/glyph_color.frag; },
+			);
+		};
+		glyph_coverage = {
+			@inherit = $properties.pipelines.glyph;
+			stages = (
+				{ stage = vertex;   name = main; module = $builtin/glyph.vert; },
+				{ stage = fragment; name = main; module = $builtin/glyph_coverage.frag; },
 			);
 		};
 		lines = {
 			@inherit = $properties.pipelines.twod;
+			stages = (
+				{ stage = vertex;   name = main; module = $builtin/line.vert; },
+				{ stage = fragment; name = main; module = $builtin/line.frag; },
+			);
 			inputAssembly = $properties.inputAssembly.lines;
+			layout = lines_layout;
 		};
 		lighting = {
 			@inherit = $properties.pipelines.comp_base;

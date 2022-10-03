@@ -275,6 +275,16 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+glyph_src = $(vkshaderpath)/glyph.vert
+glyph_c = $(vkshaderpath)/glyph.vert.spvc
+glyph_color_src = $(vkshaderpath)/glyph_color.frag
+glyph_color_c = $(vkshaderpath)/glyph_color.frag.spvc
+glyph_coverage_src = $(vkshaderpath)/glyph_coverage.frag
+glyph_coverage_c = $(vkshaderpath)/glyph_coverage.frag.spvc
+linev_src = $(vkshaderpath)/line.vert
+linev_c = $(vkshaderpath)/line.vert.spvc
+linef_src = $(vkshaderpath)/line.frag
+linef_c = $(vkshaderpath)/line.frag.spvc
 partphysicsc_src = $(vkshaderpath)/partphysics.comp
 partphysicsc_c = $(vkshaderpath)/partphysics.comp.spvc
 partupdatec_src = $(vkshaderpath)/partupdate.comp
@@ -293,8 +303,6 @@ sprite_depthv_src = $(vkshaderpath)/sprite_depth.vert
 sprite_depthv_c = $(vkshaderpath)/sprite_depth.vert.spvc
 sprite_depthf_src = $(vkshaderpath)/sprite_depth.frag
 sprite_depthf_c = $(vkshaderpath)/sprite_depth.frag.spvc
-twod_impalpha_src = $(vkshaderpath)/twod_impalpha.frag
-twod_impalpha_c = $(vkshaderpath)/twod_impalpha.frag.spvc
 twodv_src = $(vkshaderpath)/twod.vert
 twodv_c = $(vkshaderpath)/twod.vert.spvc
 twodf_src = $(vkshaderpath)/twod.frag
@@ -343,6 +351,13 @@ fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 
+$(glyph_vert_c): $(glyph_vert_src)
+$(glyph_color_c): $(glyph_color_src)
+$(glyph_coverage_c): $(glyph_coverage_src)
+
+$(linev_c): $(linev_src)
+$(linef_c): $(linef_src)
+
 $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src)
@@ -356,8 +371,6 @@ $(sprite_gbuff_c): $(sprite_gbuff_src)
 $(sprite_depthv_c): $(sprite_depthv_src)
 
 $(sprite_depthf_c): $(sprite_depthf_src)
-
-$(twod_impalpha_c): $(twod_impalpha_src)
 
 $(twodv_c): $(twodv_src)
 
@@ -406,6 +419,11 @@ $(fstriangle_c): $(fstriangle_src)
 $(pushcolor_c): $(pushcolor_src)
 
 vkshader_c = \
+	$(glyph_c) \
+	$(glyph_color_c) \
+	$(glyph_coverage_c) \
+	$(linev_c) \
+	$(linef_c) \
 	$(partphysicsc_c) \
 	$(partupdatec_c) \
 	$(particlev_c) \
@@ -415,7 +433,6 @@ vkshader_c = \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \
 	$(sprite_depthf_c) \
-	$(twod_impalpha_c) \
 	$(twodv_c) \
 	$(twodf_c) \
 	$(quakebspv_c) \

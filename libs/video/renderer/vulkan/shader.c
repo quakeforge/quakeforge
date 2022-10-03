@@ -39,6 +39,16 @@
 #include "QF/Vulkan/shader.h"
 
 static
+#include "libs/video/renderer/vulkan/shader/glyph.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/glyph_color.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/glyph_coverage.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/particle.geom.spvc"
@@ -56,8 +66,6 @@ static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/twod_impalpha.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
@@ -112,6 +120,11 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "glyph.vert", glyph_vert, sizeof (glyph_vert) },
+	{ "glyph_color.frag", glyph_color_frag, sizeof (glyph_color_frag) },
+	{ "glyph_coverage.frag", glyph_coverage_frag, sizeof (glyph_coverage_frag) },
+	{ "line.vert", line_vert, sizeof (line_vert) },
+	{ "line.frag", line_frag, sizeof (line_frag) },
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },
 	{ "particle.geom", particle_geom, sizeof (particle_geom) },
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
@@ -121,7 +134,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
 	{ "sprite_depth.frag", sprite_depth_frag, sizeof (sprite_depth_frag) },
-	{ "twod_impalpha.frag", twod_impalpha_frag, sizeof (twod_impalpha_frag) },
 	{ "twod.vert", twod_vert, sizeof (twod_vert) },
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
