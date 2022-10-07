@@ -103,7 +103,7 @@ R_FontLoad (QFile *font_file, int size)
 		__auto_type g = font->face->glyph;
 		pixels += g->bitmap.width * g->bitmap.rows;
 	}
-	pixels = sqrt (2 * pixels);
+	pixels = sqrt (5 * pixels / 4);
 	pixels = BITOP_RUP (pixels);
 	R_ScrapInit (&font->scrap, pixels, pixels);
 	font->scrap_bitmap = calloc (1, pixels * pixels);
