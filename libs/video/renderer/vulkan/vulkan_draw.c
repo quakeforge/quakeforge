@@ -73,6 +73,14 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+typedef struct descbatch_s {
+	int32_t     descid;		// texture or font descriptor id
+	uint32_t    count;		// number of objects in batch
+} descbatch_t;
+
+typedef struct descbatchset_s
+	DARRAY_TYPE (descbatch_t) descbatchset_t;
+
 typedef struct {
 	float       xy[2];
 	float       st[2];
@@ -112,7 +120,9 @@ typedef struct drawframe_s {
 	size_t      glyph_offset;
 	size_t      line_offset;
 	VkBuffer    quad_buffer;
+	descbatchset_t quad_batch;
 	VkBuffer    glyph_buffer;
+	descbatchset_t glyph_batch;
 	VkBuffer    line_buffer;
 	vertqueue_t quad_verts;
 	glyphqueue_t glyph_insts;
@@ -278,10 +288,12 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 			.verts = (drawvert_t *) ((byte *)data + frame->quad_offset),
 			.size = MAX_QUADS,
 		};
+		DARRAY_INIT (&frame->quad_batch, 16);
 		frame->glyph_insts = (glyphqueue_t) {
 			.glyphs = (glyphinst_t *) ((byte *)data + frame->glyph_offset),
 			.size = MAX_QUADS,
 		};
+		DARRAY_INIT (&frame->glyph_batch, 16);
 		frame->line_verts = (vertqueue_t) {
 			.verts = (drawvert_t *) ((byte *)data + frame->line_offset),
 			.size = MAX_QUADS,
@@ -1062,19 +1074,28 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		VkBuffer    glyph_buffer = dframe->glyph_buffer;
 		VkDeviceSize offsets[] = {0};
 		dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &glyph_buffer, offsets);
-		VkDescriptorSet set[2] = {
-			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-			dctx->fonts.a[0].set,
-		};
-		VkPipelineLayout layout = dctx->glyph_layout;
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 2, set, 0, 0);
-
 		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 								  dctx->glyph_coverage_pipeline);
 		dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 		dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-		dfunc->vkCmdDraw (cmd, 4, dframe->glyph_insts.count, 0, 0);
+
+		uint32_t    inst_start = 0;
+		for (size_t i = 0; i < dframe->glyph_batch.size; i++) {
+			int         fontid = dframe->glyph_batch.a[i].descid;
+			uint32_t    inst_count = dframe->glyph_batch.a[i].count;
+			VkDescriptorSet set[2] = {
+				Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+				dctx->fonts.a[fontid].set,
+			};
+			VkPipelineLayout layout = dctx->glyph_layout;
+			dfunc->vkCmdBindDescriptorSets (cmd,
+											VK_PIPELINE_BIND_POINT_GRAPHICS,
+											layout, 0, 2, set, 0, 0);
+
+			dfunc->vkCmdDraw (cmd, 4, inst_count, 0, inst_start);
+			inst_start += inst_count;
+		}
+		DARRAY_RESIZE (&dframe->glyph_batch, 0);
 	}
 
 	if (dframe->line_verts.count) {
@@ -1131,7 +1152,7 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 
 	font->resource = malloc (sizeof (drawfontres_t));
 	font->resource->resource = (qfv_resource_t) {
-		.name = "glyph_data",	//FIXME include font info
+		.name = va (ctx->va_ctx, "glyph_data:%d", fontid),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 4,
@@ -1249,13 +1270,13 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 	free (glyph_sets);
 
-	return 0;
+	return fontid;
 }
 
 typedef struct {
-   drawframe_t *dframe;
-   drawfont_t  *font;
-   byte         color[4];
+	drawframe_t *dframe;
+	descbatch_t *batch;
+	byte        color[4];
 } rgctx_t;
 
 static void
@@ -1268,6 +1289,7 @@ vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
 		return;
 	}
 
+	rgctx->batch->count++;
 	glyphinst_t *inst = &queue->glyphs[queue->count++];
 	inst->index = glyph->charcode;
 	QuatCopy (rgctx->color, inst->color);
@@ -1285,12 +1307,11 @@ Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 	}
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
-	//FIXME ewwwwwww
 	rgctx_t     rgctx = {
 		.dframe = dframe,
-		.font = &dctx->fonts.a[fontid],
 		.color = { 127, 255, 153, 255 },
 	};
+	//FIXME ewwwwwww
 	rtext_t     text = {
 		.text = str,
 		.language = "en",
@@ -1298,7 +1319,14 @@ Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 		.direction = HB_DIRECTION_LTR,
 	};
 
-	rshaper_t  *shaper = RText_NewShaper (rgctx.font->font);
+	rgctx.batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
+	if (!dframe->glyph_batch.size || rgctx.batch->descid != fontid) {
+		DARRAY_APPEND(&dframe->glyph_batch,
+					  ((descbatch_t) { .descid = fontid }));
+		rgctx.batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
+	}
+
+	rshaper_t  *shaper = RText_NewShaper (dctx->fonts.a[fontid].font);
 	RText_RenderText (shaper, &text, x, y, vulkan_render_glyph, &rgctx);
 	RText_DeleteShaper (shaper);
 }
