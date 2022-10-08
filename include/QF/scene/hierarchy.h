@@ -1,5 +1,5 @@
 /*
-	hierarch.h
+	hierarchy.h
 
 	Hierarchy management
 
@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __QF_scene_hierarch_h
-#define __QF_scene_hierarch_h
+#ifndef __QF_scene_hierarchy_h
+#define __QF_scene_hierarchy_h
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
@@ -77,4 +77,4 @@ uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);
 ///@}
 
-#endif//__QF_scene_hierarch_h
+#endif//__QF_scene_hierarchy_h
