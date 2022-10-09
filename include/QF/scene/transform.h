@@ -42,6 +42,22 @@
 */
 ///@{
 
+enum {
+	transform_type_name,
+	transform_type_tag,
+	transform_type_modified,
+	transform_type_localMatrix,
+	transform_type_localInverse,
+	transform_type_worldMatrix,
+	transform_type_worldInverse,
+	transform_type_localRotation,
+	transform_type_localScale,
+	transform_type_worldRotation,
+	transform_type_worldScale,
+
+	transform_type_count
+};
+
 typedef struct transform_s {
 	hierarchy_t *hierarchy;
 	struct scene_s *scene;	///< owning scene
@@ -103,7 +119,7 @@ uint32_t
 Transform_ChildCount (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->childCount.a[transform->index];
+	return h->childCount[transform->index];
 }
 
 XFORMINLINE
@@ -111,10 +127,10 @@ transform_t *
 Transform_GetChild (const transform_t *transform, uint32_t childIndex)
 {
 	hierarchy_t *h = transform->hierarchy;
-	if (childIndex >= h->childCount.a[transform->index]) {
+	if (childIndex >= h->childCount[transform->index]) {
 		return 0;
 	}
-	return h->transform.a[h->childIndex.a[transform->index] + childIndex];
+	return h->transform[h->childIndex[transform->index] + childIndex];
 }
 
 XFORMINLINE
@@ -125,7 +141,7 @@ Transform_GetParent (const transform_t *transform)
 		return 0;
 	}
 	hierarchy_t *h = transform->hierarchy;
-	return h->transform.a[h->parentIndex.a[transform->index]];
+	return h->transform[h->parentIndex[transform->index]];
 }
 
 XFORMINLINE
@@ -133,7 +149,8 @@ const char *
 Transform_GetName (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->name.a[transform->index];
+	char      **name = h->components[transform_type_name];
+	return name[transform->index];
 }
 
 XFORMINLINE
@@ -141,7 +158,8 @@ uint32_t
 Transform_GetTag (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->tag.a[transform->index];
+	uint32_t   *tag = h->components[transform_type_tag];
+	return tag[transform->index];
 }
 
 XFORMINLINE
@@ -149,7 +167,8 @@ void
 Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat)
 {
 	hierarchy_t *h = transform->hierarchy;
-	vec4f_t     *src = h->localMatrix.a[transform->index];
+	mat4f_t     *localMatrix = h->components[transform_type_localMatrix];
+	vec4f_t     *src = localMatrix[transform->index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -161,7 +180,8 @@ void
 Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat)
 {
 	hierarchy_t *h = transform->hierarchy;
-	vec4f_t     *src = h->localInverse.a[transform->index];
+	mat4f_t     *localInverse = h->components[transform_type_localInverse];
+	vec4f_t     *src = localInverse[transform->index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -173,7 +193,8 @@ void
 Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat)
 {
 	hierarchy_t *h = transform->hierarchy;
-	vec4f_t     *src = h->worldMatrix.a[transform->index];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	vec4f_t     *src = worldMatrix[transform->index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -185,7 +206,8 @@ const vec4f_t *
 Transform_GetWorldMatrixPtr (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	return worldMatrix[transform->index];
 }
 
 XFORMINLINE
@@ -193,7 +215,8 @@ void
 Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat)
 {
 	hierarchy_t *h = transform->hierarchy;
-	vec4f_t     *src = h->worldInverse.a[transform->index];
+	mat4f_t     *worldInverse = h->components[transform_type_worldInverse];
+	vec4f_t     *src = worldInverse[transform->index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -205,7 +228,8 @@ vec4f_t
 Transform_GetLocalPosition (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->localMatrix.a[transform->index][3];
+	mat4f_t     *localMatrix = h->components[transform_type_localMatrix];
+	return localMatrix[transform->index][3];
 }
 
 XFORMINLINE
@@ -213,7 +237,8 @@ vec4f_t
 Transform_GetLocalRotation (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->localRotation.a[transform->index];
+	vec4f_t     *localRotation = h->components[transform_type_localRotation];
+	return localRotation[transform->index];
 }
 
 XFORMINLINE
@@ -221,7 +246,8 @@ vec4f_t
 Transform_GetLocalScale (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->localScale.a[transform->index];
+	vec4f_t     *localScale = h->components[transform_type_localScale];
+	return localScale[transform->index];
 }
 
 XFORMINLINE
@@ -229,7 +255,8 @@ vec4f_t
 Transform_GetWorldPosition (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][3];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	return worldMatrix[transform->index][3];
 }
 
 XFORMINLINE
@@ -237,7 +264,8 @@ vec4f_t
 Transform_GetWorldRotation (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldRotation.a[transform->index];
+	vec4f_t     *worldRotation = h->components[transform_type_worldRotation];
+	return worldRotation[transform->index];
 }
 
 XFORMINLINE
@@ -245,7 +273,8 @@ vec4f_t
 Transform_GetWorldScale (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldScale.a[transform->index];
+	vec4f_t     *worldScale = h->components[transform_type_worldScale];
+	return worldScale[transform->index];
 }
 
 XFORMINLINE
@@ -253,7 +282,8 @@ vec4f_t
 Transform_Forward (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][0];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	return worldMatrix[transform->index][0];
 }
 
 XFORMINLINE
@@ -261,7 +291,8 @@ vec4f_t
 Transform_Right (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return -h->worldMatrix.a[transform->index][1];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	return -worldMatrix[transform->index][1];
 }
 
 XFORMINLINE
@@ -269,7 +300,8 @@ vec4f_t
 Transform_Up (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][2];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	return worldMatrix[transform->index][2];
 }
 
 ///@}

@@ -42,36 +42,42 @@
 */
 ///@{
 
+/** Descriptors for components attached to every entity in the hierarchy.
+*/
+typedef struct hierarchy_type_s {
+	uint32_t    num_components;
+	const struct component_s *components;
+} hierarchy_type_t;
+
 #define null_transform (~0u)
+
+typedef struct hierref_s {
+	struct hierarchy_s *hierarchy;
+	uint32_t    index;	///< index in hierarchy
+	int32_t     id;		///< scene id
+} hierref_t;
 
 typedef struct hierarchy_s {
 	struct hierarchy_s *next;
 	struct hierarchy_s **prev;
 	struct scene_s *scene;
-	xformset_t  transform;
-	entityset_t entity;
-	uint32set_t childCount;
-	uint32set_t childIndex;
-	uint32set_t parentIndex;
-	stringset_t name;
-	uint32set_t tag;
-	byteset_t   modified;
-	mat4fset_t  localMatrix;
-	mat4fset_t  localInverse;
-	mat4fset_t  worldMatrix;
-	mat4fset_t  worldInverse;
-	vec4fset_t  localRotation;
-	vec4fset_t  localScale;
-	vec4fset_t  worldRotation;
-	vec4fset_t  worldScale;
+	uint32_t    num_objects;
+	uint32_t    max_objects;
+	struct transform_s **transform;	//FIXME use hierref_t
+	struct entity_s **entity;		//FIXME should not exist
+	uint32_t   *childCount;
+	uint32_t   *childIndex;
+	uint32_t   *parentIndex;
+	const hierarchy_type_t *type;
+	void      **components;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (struct scene_s *scene, int createRoot);
+hierarchy_t *Hierarchy_New (struct scene_s *scene,
+							const hierarchy_type_t *type, int createRoot);
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
 hierarchy_t *Hierarchy_Copy (struct scene_s *scene, const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 
-void Hierarchy_UpdateMatrices (hierarchy_t *hierarchy);
 uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 									uint32_t dstParent, uint32_t srcRoot);
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);

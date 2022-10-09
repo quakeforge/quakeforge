@@ -43,30 +43,15 @@ mat4_equal (const mat4f_t a, const mat4f_t b)
 static int
 check_hierarchy_size (hierarchy_t *h, uint32_t size)
 {
-	if (h->transform.size != size
-		|| h->entity.size != size
-		|| h->childCount.size != size
-		|| h->childIndex.size != size
-		|| h->parentIndex.size != size
-		|| h->name.size != size
-		|| h->tag.size != size
-		|| h->modified.size != size
-		|| h->localMatrix.size != size
-		|| h->localInverse.size != size
-		|| h->worldMatrix.size != size
-		|| h->worldInverse.size != size
-		|| h->localRotation.size != size
-		|| h->localScale.size != size
-		|| h->worldRotation.size != size
-		|| h->worldScale.size != size) {
-		printf ("hierarchy does not have exactly %u"
-				" transform or array sizes are inconsistent\n", size);
+	if (h->num_objects != size) {
+		printf ("hierarchy does not have exactly %u transform\n", size);
 		return 0;
 	}
-	for (size_t i = 0; i < h->transform.size; i++) {
-		if (h->transform.a[i]->hierarchy != h) {
-			printf ("transform %zd (%s) does not point to hierarchy\n",
-					i, h->name.a[i]);
+	char      **name = h->components[transform_type_name];
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (h->transform[i]->hierarchy != h) {
+			printf ("transform %d (%s) does not point to hierarchy\n",
+					i, name[i]);
 		}
 	}
 	return 1;
@@ -75,10 +60,11 @@ check_hierarchy_size (hierarchy_t *h, uint32_t size)
 static void
 dump_hierarchy (hierarchy_t *h)
 {
-	for (size_t i = 0; i < h->transform.size; i++) {
-		printf ("%2zd: %5s %2u %2u %2u %2u\n", i, h->name.a[i],
-				h->transform.a[i]->index, h->parentIndex.a[i],
-				h->childIndex.a[i], h->childCount.a[i]);
+	char      **name = h->components[transform_type_name];
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		printf ("%2d: %5s %2u %2u %2u %2u\n", i, name[i],
+				h->transform[i]->index, h->parentIndex[i],
+				h->childIndex[i], h->childCount[i]);
 	}
 	puts ("");
 }
@@ -88,25 +74,26 @@ check_indices (transform_t *transform, uint32_t index, uint32_t parentIndex,
 			   uint32_t childIndex, uint32_t childCount)
 {
 	hierarchy_t *h = transform->hierarchy;
+	char      **name = h->components[transform_type_name];
 	if (transform->index != index) {
 		printf ("%s/%s index incorrect: expect %u got %u\n",
-				h->name.a[transform->index], h->name.a[index],
+				name[transform->index], name[index],
 				index, transform->index);
 		return 0;
 	}
-	if (h->parentIndex.a[index] != parentIndex) {
+	if (h->parentIndex[index] != parentIndex) {
 		printf ("%s parent index incorrect: expect %u got %u\n",
-				h->name.a[index], parentIndex, h->parentIndex.a[index]);
+				name[index], parentIndex, h->parentIndex[index]);
 		return 0;
 	}
-	if (h->childIndex.a[index] != childIndex) {
+	if (h->childIndex[index] != childIndex) {
 		printf ("%s child index incorrect: expect %u got %u\n",
-				h->name.a[index], childIndex, h->childIndex.a[index]);
+				name[index], childIndex, h->childIndex[index]);
 		return 0;
 	}
-	if (h->childCount.a[index] != childCount) {
+	if (h->childCount[index] != childCount) {
 		printf ("%s child count incorrect: expect %u got %u\n",
-				h->name.a[index], childCount, h->childCount.a[index]);
+				name[index], childCount, h->childCount[index]);
 		return 0;
 	}
 	return 1;
@@ -126,19 +113,25 @@ test_single_transform (void)
 		printf ("New transform has no hierarchy\n");
 		return 1;
 	}
+	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
+	mat4f_t    *localInverse = h->components[transform_type_localInverse];
+	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
+	mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
+	vec4f_t    *localRotation = h->components[transform_type_localRotation];
+	vec4f_t    *localScale = h->components[transform_type_localScale];
 	if (!check_hierarchy_size (h, 1)) { return 1; }
 	if (!check_indices (transform, 0, null_transform, 1, 0)) { return 1; }
 
-	if (!mat4_equal (h->localMatrix.a[0], identity)
-		|| !mat4_equal (h->localInverse.a[0], identity)
-		|| !mat4_equal (h->worldMatrix.a[0], identity)
-		|| !mat4_equal (h->worldInverse.a[0], identity)) {
+	if (!mat4_equal (localMatrix[0], identity)
+		|| !mat4_equal (localInverse[0], identity)
+		|| !mat4_equal (worldMatrix[0], identity)
+		|| !mat4_equal (worldInverse[0], identity)) {
 		printf ("New transform matrices not identity\n");
 		return 1;
 	}
 
-	if (!vec4_equal (h->localRotation.a[0], identity[3])
-		|| !vec4_equal (h->localScale.a[0], one)) {
+	if (!vec4_equal (localRotation[0], identity[3])
+		|| !vec4_equal (localScale[0], one)) {
 		printf ("New transform rotation or scale not identity\n");
 		return 1;
 	}
@@ -166,30 +159,36 @@ test_parent_child_init (void)
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
 	hierarchy_t *h = parent->hierarchy;
-	if (!mat4_equal (h->localMatrix.a[0], identity)
-		|| !mat4_equal (h->localInverse.a[0], identity)
-		|| !mat4_equal (h->worldMatrix.a[0], identity)
-		|| !mat4_equal (h->worldInverse.a[0], identity)) {
+	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
+	mat4f_t    *localInverse = h->components[transform_type_localInverse];
+	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
+	mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
+	vec4f_t    *localRotation = h->components[transform_type_localRotation];
+	vec4f_t    *localScale = h->components[transform_type_localScale];
+	if (!mat4_equal (localMatrix[0], identity)
+		|| !mat4_equal (localInverse[0], identity)
+		|| !mat4_equal (worldMatrix[0], identity)
+		|| !mat4_equal (worldInverse[0], identity)) {
 		printf ("Parent transform matrices not identity\n");
 		return 1;
 	}
 
-	if (!vec4_equal (h->localRotation.a[0], identity[3])
-		|| !vec4_equal (h->localScale.a[0], one)) {
+	if (!vec4_equal (localRotation[0], identity[3])
+		|| !vec4_equal (localScale[0], one)) {
 		printf ("Parent transform rotation or scale not identity\n");
 		return 1;
 	}
 
-	if (!mat4_equal (h->localMatrix.a[1], identity)
-		|| !mat4_equal (h->localInverse.a[1], identity)
-		|| !mat4_equal (h->worldMatrix.a[1], identity)
-		|| !mat4_equal (h->worldInverse.a[1], identity)) {
+	if (!mat4_equal (localMatrix[1], identity)
+		|| !mat4_equal (localInverse[1], identity)
+		|| !mat4_equal (worldMatrix[1], identity)
+		|| !mat4_equal (worldInverse[1], identity)) {
 		printf ("Child transform matrices not identity\n");
 		return 1;
 	}
 
-	if (!vec4_equal (h->localRotation.a[1], identity[3])
-		|| !vec4_equal (h->localScale.a[1], one)) {
+	if (!vec4_equal (localRotation[1], identity[3])
+		|| !vec4_equal (localScale[1], one)) {
 		printf ("Child transform rotation or scale not identity\n");
 		return 1;
 	}
@@ -231,30 +230,36 @@ test_parent_child_setparent (void)
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
 	hierarchy_t *h = parent->hierarchy;
-	if (!mat4_equal (h->localMatrix.a[0], identity)
-		|| !mat4_equal (h->localInverse.a[0], identity)
-		|| !mat4_equal (h->worldMatrix.a[0], identity)
-		|| !mat4_equal (h->worldInverse.a[0], identity)) {
+	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
+	mat4f_t    *localInverse = h->components[transform_type_localInverse];
+	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
+	mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
+	vec4f_t    *localRotation = h->components[transform_type_localRotation];
+	vec4f_t    *localScale = h->components[transform_type_localScale];
+	if (!mat4_equal (localMatrix[0], identity)
+		|| !mat4_equal (localInverse[0], identity)
+		|| !mat4_equal (worldMatrix[0], identity)
+		|| !mat4_equal (worldInverse[0], identity)) {
 		printf ("Parent transform matrices not identity\n");
 		return 1;
 	}
 
-	if (!vec4_equal (h->localRotation.a[0], identity[3])
-		|| !vec4_equal (h->localScale.a[0], one)) {
+	if (!vec4_equal (localRotation[0], identity[3])
+		|| !vec4_equal (localScale[0], one)) {
 		printf ("Parent transform rotation or scale not identity\n");
 		return 1;
 	}
 
-	if (!mat4_equal (h->localMatrix.a[1], identity)
-		|| !mat4_equal (h->localInverse.a[1], identity)
-		|| !mat4_equal (h->worldMatrix.a[1], identity)
-		|| !mat4_equal (h->worldInverse.a[1], identity)) {
+	if (!mat4_equal (localMatrix[1], identity)
+		|| !mat4_equal (localInverse[1], identity)
+		|| !mat4_equal (worldMatrix[1], identity)
+		|| !mat4_equal (worldInverse[1], identity)) {
 		printf ("Child transform matrices not identity\n");
 		return 1;
 	}
 
-	if (!vec4_equal (h->localRotation.a[1], identity[3])
-		|| !vec4_equal (h->localScale.a[1], one)) {
+	if (!vec4_equal (localRotation[1], identity[3])
+		|| !vec4_equal (localScale[1], one)) {
 		printf ("Child transform rotation or scale not identity\n");
 		return 1;
 	}
@@ -530,65 +535,70 @@ test_frames (void)
 	Transform_SetLocalRotation (B1, (vec4f_t) { -0.5, 0.5, -0.5, 0.5 });
 
 	hierarchy_t *h = root->hierarchy;
-	for (size_t i = 0; i < h->transform.size; i++) {
+	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
+	mat4f_t    *localInverse = h->components[transform_type_localInverse];
+	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
+	mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
+	char      **name = h->components[transform_type_name];
+	for (uint32_t i = 0; i < h->num_objects; i++) {
 		mat4f_t     res;
-		mmulf (res, h->localMatrix.a[i], h->localInverse.a[i]);
+		mmulf (res, localMatrix[i], localInverse[i]);
 		if (!mat4_equal (res, identity)) {
 			printf ("%s: localInverse not inverse of localMatrix\n",
-					h->name.a[i]);
-			printf ("l: " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 0));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 1));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 2));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 3));
-			printf ("i: " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 0));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 1));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 2));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 3));
+					name[i]);
+			printf ("l: " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 3));
+			printf ("i: " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 3));
 			printf ("r: " VEC4F_FMT "\n", MAT4_ROW(res, 0));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 1));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 2));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 3));
 			return 1;
 		}
-		puts (h->name.a[i]);
-		printf ("l: " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 0));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 1));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 2));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localMatrix.a[i], 3));
-		printf ("i: " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 0));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 1));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 2));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->localInverse.a[i], 3));
+		puts (name[i]);
+		printf ("l: " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 0));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 1));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 2));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localMatrix[i], 3));
+		printf ("i: " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 0));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 1));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 2));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(localInverse[i], 3));
 	}
-	for (size_t i = 0; i < h->transform.size; i++) {
+	for (uint32_t i = 0; i < h->num_objects; i++) {
 		mat4f_t     res;
-		mmulf (res, h->worldMatrix.a[i], h->worldInverse.a[i]);
+		mmulf (res, worldMatrix[i], worldInverse[i]);
 		if (!mat4_equal (res, identity)) {
 			printf ("%s: worldInverse not inverse of worldMatrix\n",
-					h->name.a[i]);
-			printf ("l: " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 0));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 1));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 2));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 3));
-			printf ("i: " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 0));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 1));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 2));
-			printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 3));
+					name[i]);
+			printf ("l: " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 3));
+			printf ("i: " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 3));
 			printf ("r: " VEC4F_FMT "\n", MAT4_ROW(res, 0));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 1));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 2));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(res, 3));
 			return 1;
 		}
-		puts (h->name.a[i]);
-		printf ("l: " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 0));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 1));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 2));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldMatrix.a[i], 3));
-		printf ("i: " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 0));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 1));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 2));
-		printf ("   " VEC4F_FMT "\n", MAT4_ROW(h->worldInverse.a[i], 3));
+		puts (name[i]);
+		printf ("l: " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 0));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 1));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 2));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldMatrix[i], 3));
+		printf ("i: " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 0));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 1));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 2));
+		printf ("   " VEC4F_FMT "\n", MAT4_ROW(worldInverse[i], 3));
 	}
 
 	if (!check_vector (root, Transform_GetLocalPosition,
