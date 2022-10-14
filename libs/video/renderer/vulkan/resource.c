@@ -110,7 +110,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 						   resource->name, obj->name, obj->type);
 		}
 		size = QFV_NextOffset (size, &req);
-		size += req.size;
+		size += QFV_NextOffset (req.size, &req);
 	}
 	VkMemoryPropertyFlags properties = resource->memory_properties;
 	for (uint32_t type = 0; type < memprops->memoryTypeCount; type++) {
@@ -178,7 +178,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 			case qfv_res_image_view:
 				break;
 		}
-		offset += req.size;
+		offset = QFV_NextOffset (offset, &req);
+		offset += QFV_NextOffset (req.size, &req);
 	}
 
 	for (unsigned i = 0; i < resource->num_objects; i++) {
