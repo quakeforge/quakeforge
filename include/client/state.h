@@ -31,6 +31,8 @@
 #ifndef __client_state_h
 #define __client_state_h
 
+#include "QF/qdefs.h" // FIXME for MAX_CL_STATS
+
 typedef struct player_info_s {
 	int         userid;
 	struct info_s *userinfo;

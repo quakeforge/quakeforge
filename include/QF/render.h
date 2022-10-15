@@ -30,7 +30,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "QF/qdefs.h" // FIXME
+#include "QF/qdefs.h" // FIXME for MAX_STYLESTRING
 #include "QF/vid.h"
 #include "QF/simd/types.h"
 #include "QF/ui/vrect.h"
