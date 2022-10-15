@@ -109,9 +109,6 @@ _PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
-		if (i < 2) { //XXX FIXME what the what?!?
-			memcpy (pr->pr_real_params[i], params->param_ptrs[0], size);
-		}
 	}
 	params->argc = pr->pr_argc;
 	return params;
