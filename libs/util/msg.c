@@ -529,7 +529,7 @@ MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles)
 VISIBLE int
 MSG_ReadUTF8 (qmsg_t *msg)
 {
-	byte       *buf, *start, c;
+	byte       *buf, *start, c, min_follow = 0x80;
 	int         val = 0;
 	unsigned    count;
 
@@ -543,7 +543,7 @@ MSG_ReadUTF8 (qmsg_t *msg)
 	if (c < 0x80) {			// 0x00 - 0x7f 1,7,7
 		val = c;
 		count = 1;
-	} else if (c < 0xc0) {	// 0x80 - 0xbf not a valid first byte
+	} else if (c < 0xc2) {	// 0x80 - 0xc1 not a valid first byte
 		msg->badread = true;
 		return -1;
 	} else if (c < 0xe0) {	// 0xc0 - 0xdf 2,5,11
@@ -552,20 +552,28 @@ MSG_ReadUTF8 (qmsg_t *msg)
 	} else if (c < 0xf0) {	// 0xe0 - 0xef 3,4,16
 		count = 3;
 		val = c & 0x0f;
+		min_follow = val == 0xe0 ? 0xa0 : 0x80;
 	} else if (c < 0xf8) {	// 0xf0 - 0xf7 4,3,21
 		count = 4;
 		val = c & 0x07;
+		min_follow = val == 0xf0 ? 0x90 : 0x80;
 	} else if (c < 0xfc) {	// 0xf8 - 0xfb 5,2,26
 		count = 5;
 		val = c & 0x03;
+		min_follow = val == 0xf8 ? 0x88 : 0x80;
 	} else if (c < 0xfe) {	// 0xfc - 0xfd 6,1,31
 		count = 6;
 		val = c & 0x01;
+		min_follow = val == 0xfc ? 0x84 : 0x80;
 	} else {				// 0xfe - 0xff never valid
 		msg->badread = true;
 		return -1;
 	}
 	if (count > (msg->message->cursize - msg->readcount)) {
+		msg->badread = true;
+		return -1;
+	}
+	if (count > 2 && *buf < min_follow) {
 		msg->badread = true;
 		return -1;
 	}
