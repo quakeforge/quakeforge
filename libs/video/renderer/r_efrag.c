@@ -239,7 +239,7 @@ R_StoreEfrags (const efrag_t *efrag)
 				EntQueue_AddEntity (r_ent_queue, ent, model->type);
 				break;
 			default:
-				(void)0;//FIXME for clang
+				break;
 		}
 		efrag = efrag->leafnext;
 	}
