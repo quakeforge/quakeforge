@@ -134,7 +134,6 @@ SCR_DrawRam (void)
 	if (!r_cache_thrash)
 		return;
 
-	//FIXME view
 	r_funcs->Draw_Pic (cl_screen_view->xpos + 32, cl_screen_view->ypos,
 					   scr_ram);
 }
@@ -156,7 +155,6 @@ SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
-	//FIXME view
 	r_funcs->Draw_Pic (cl_screen_view->xpos, cl_screen_view->ypos,
 					   scr_turtle);
 }
@@ -172,7 +170,6 @@ SCR_DrawPause (void)
 	if (!r_data->paused)
 		return;
 
-	//FIXME view conwidth
 	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
 	r_funcs->Draw_Pic ((cl_screen_view->xlen - pic->width) / 2,
 					   (cl_screen_view->ylen - 48 - pic->height) / 2,

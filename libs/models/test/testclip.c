@@ -218,7 +218,7 @@ do_trace (box_t *box, hull_t *hull, vec3_t start, vec3_t end)
 	trace.inwater = false;
 	trace.fraction = 1;
 	VectorCopy (box->extents, trace.extents);
-	// FIXME specify tract type in test spec
+	// FIXME specify trace type in test spec
 	trace.type = box == &point ? tr_point : tr_box;
 	VectorCopy (end, trace.endpos);
 	MOD_TraceLine (hull, 0, start, end, &trace);

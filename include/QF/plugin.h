@@ -108,8 +108,6 @@ qboolean PI_UnloadPlugin (plugin_t *);
 void PI_RegisterPlugins (plugin_list_t *);
 void PI_Init (void);
 
-// FIXME: we need a generic function to initialize unused fields
-
 ///@}
 
 #endif//__QF_plugin_h
