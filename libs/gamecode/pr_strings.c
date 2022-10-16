@@ -1056,7 +1056,6 @@ fmt_state_conversion (fmt_state_t *state)
 	switch ((conv = *state->c++)) {
 		case '@':
 			// object
-			(void)0;// silly clang
 			pr_ptr_t    at_param = P_UINT (pr, state->fmt_count);
 			if (state->at_handler) {
 				const char *at_str = state->at_handler (pr, at_param,
