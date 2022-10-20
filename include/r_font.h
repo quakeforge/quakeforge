@@ -39,13 +39,6 @@
 
 #include "r_scrap.h"
 
-typedef struct rglyph_s {
-	struct rfont_s *font;
-	vrect_t    *rect;
-	vec2i_t     bearing;
-	int         advance;
-	int         charcode;
-} rglyph_t;
 
 typedef struct rfont_s {
 	void       *font_resource;
@@ -53,7 +46,8 @@ typedef struct rfont_s {
 	rscrap_t    scrap;
 	byte       *scrap_bitmap;
 	FT_Long     num_glyphs;
-	rglyph_t   *glyphs;
+	vrect_t    *glyph_rects;
+	vec2i_t    *glyph_bearings;
 } rfont_t;
 
 void R_FontInit (void);

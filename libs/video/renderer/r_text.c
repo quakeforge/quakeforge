@@ -97,16 +97,16 @@ RText_RenderText (rshaper_t *shaper, rtext_t *text, int x, int y,
 
 	rfont_t    *font = shaper->rfont;
 	for (unsigned i = 0; i < count; i++) {
-		rglyph_t   *glyph = &font->glyphs[glyphInfo[i].codepoint];
+		vec2i_t     bearing = font->glyph_bearings[glyphInfo[i].codepoint];
 
 		int         xp = x + glyphPos[i].x_offset / 64;
 		int         yp = y + glyphPos[i].y_offset / 64;
 		int         xa = glyphPos[i].x_advance / 64;
 		int         ya = glyphPos[i].y_advance / 64;
 
-		xp += glyph->bearing[0];
-		yp -= glyph->bearing[1];
-		render (glyph, xp, yp, data);
+		xp += bearing[0];
+		yp -= bearing[1];
+		render (glyphInfo[i].codepoint, xp, yp, data);
 		x += xa;
 		y += ya;
 	}

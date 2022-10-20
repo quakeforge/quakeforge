@@ -43,10 +43,10 @@
 static FT_Library ft;
 
 static void
-copy_glyph (rglyph_t *glyph, FT_GlyphSlot src_glyph)
+copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, rfont_t *font)
 {
-	int         dst_pitch = glyph->font->scrap.width;
-	byte       *dst = glyph->font->scrap_bitmap + glyph->rect->x + glyph->rect->y * dst_pitch;
+	int         dst_pitch = font->scrap.width;
+	byte       *dst = font->scrap_bitmap + rect->x + rect->y * dst_pitch;
 	int         src_pitch = src_glyph->bitmap.pitch;
 	byte       *src = src_glyph->bitmap.buffer;
 
@@ -74,7 +74,8 @@ R_FontFree (rfont_t *font)
 	if (font->scrap.rects || font->scrap.free_rects) {
 		R_ScrapDelete (&font->scrap);
 	}
-	free (font->glyphs);
+	free (font->glyph_rects);
+	free (font->glyph_bearings);
 	free (font->scrap_bitmap);
 	free (font->font_resource);
 	free (font);
@@ -108,22 +109,21 @@ R_FontLoad (QFile *font_file, int size)
 	R_ScrapInit (&font->scrap, pixels, pixels);
 	font->scrap_bitmap = calloc (1, pixels * pixels);
 	font->num_glyphs = font->face->num_glyphs;
-	font->glyphs = malloc (font->num_glyphs * sizeof (rglyph_t));
+	font->glyph_rects = malloc (font->num_glyphs * sizeof (vrect_t));
+	font->glyph_bearings = malloc (font->num_glyphs * sizeof (vec2i_t));
 
 	for (FT_Long gind = 0; gind < font->face->num_glyphs; gind++) {
-		rglyph_t   *glyph = &font->glyphs[gind];
+		vrect_t    *rect = &font->glyph_rects[gind];
+		vec2i_t    *bearing = &font->glyph_bearings[gind];
 		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
 		__auto_type slot = font->face->glyph;
 		FT_Render_Glyph (slot, FT_RENDER_MODE_NORMAL);
 		int     width = slot->bitmap.width;
 		int     height = slot->bitmap.rows;
-		glyph->font = font;
-		glyph->rect = R_ScrapAlloc (&font->scrap, width, height);
-		glyph->bearing = (vec2i_t) { slot->bitmap_left, slot->bitmap_top };
-		glyph->advance = slot->advance.x;
-		glyph->charcode = gind;
+		*rect = *R_ScrapAlloc (&font->scrap, width, height);
+		*bearing = (vec2i_t) { slot->bitmap_left, slot->bitmap_top };
 
-		copy_glyph (glyph, slot);
+		copy_glyph (rect, slot, font);
 	}
 
 	return font;

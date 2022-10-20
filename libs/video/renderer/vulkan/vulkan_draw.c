@@ -1209,30 +1209,30 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	glyphvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
-		rglyph_t   *glyph = &rfont->glyphs[i];
-		float       x = 0;//glyph->bearing[0];
-		float       y = 0;//-glyph->bearing[1];	// glyph +Y goes up
-		float       w = glyph->rect->width;
-		float       h = glyph->rect->height;
-		float       u = glyph->rect->x;
-		float       v = glyph->rect->y;
-		// assumes the glyph image is square
+		vrect_t    *rect = &rfont->glyph_rects[i];
+		float       x = 0;
+		float       y = 0;
+		float       w = rect->width;
+		float       h = rect->height;
+		float       u = rect->x;
+		float       v = rect->y;
 		float       s = 1.0 / rfont->scrap.width;
+		float       t = 1.0 / rfont->scrap.height;
 		verts[i * 4 + 0] = (glyphvert_t) {
 			.offset = { x + 0,       y + 0 },
-			.uv     = {(u + 0.25) * s, (v + 0.25) * s },
+			.uv     = {(u + 0.25) * s, (v + 0.25) * t },
 		};
 		verts[i * 4 + 1] = (glyphvert_t) {
 			.offset = { x + 0,       y + h },
-			.uv     = {(u + 0.25) * s, (v + h - 0.25) * s },
+			.uv     = {(u + 0.25) * s, (v + h - 0.25) * t },
 		};
 		verts[i * 4 + 2] = (glyphvert_t) {
 			.offset = { x + w,       y + 0 },
-			.uv     = {(u + w - 0.25) * s, (v + 0.25) * s },
+			.uv     = {(u + w - 0.25) * s, (v + 0.25) * t },
 		};
 		verts[i * 4 + 3] = (glyphvert_t) {
 			.offset = { x + w,       y + h },
-			.uv     = {(u + w - 0.25) * s, (v + h - 0.25) * s },
+			.uv     = {(u + w - 0.25) * s, (v + h - 0.25) * t },
 		};
 	}
 	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer,
@@ -1280,7 +1280,7 @@ typedef struct {
 } rgctx_t;
 
 static void
-vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
+vulkan_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 {
 	rgctx_t    *rgctx = _rgctx;
 	glyphqueue_t *queue = &rgctx->dframe->glyph_insts;;
@@ -1291,7 +1291,7 @@ vulkan_render_glyph (rglyph_t *glyph, int x, int y, void *_rgctx)
 
 	rgctx->batch->count++;
 	glyphinst_t *inst = &queue->glyphs[queue->count++];
-	inst->index = glyph->charcode;
+	inst->index = glyphid;
 	QuatCopy (rgctx->color, inst->color);
 	inst->position[0] = x;
 	inst->position[1] = y;

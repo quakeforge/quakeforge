@@ -47,7 +47,7 @@ typedef struct r_hb_featureset_s DARRAY_TYPE (hb_feature_t) r_hb_featureset_t;
 
 struct rfont_s;
 struct rglyph_s;
-typedef void rtext_render_t (struct rglyph_s *glyph, int x, int y, void *data);
+typedef void rtext_render_t (uint32_t glyphid, int x, int y, void *data);
 
 typedef struct rshaper_s {
 	struct rfont_s *rfont;
