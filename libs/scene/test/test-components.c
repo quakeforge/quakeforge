@@ -70,7 +70,7 @@ check_ent_components (const uint32_t *ents, uint32_t count, uint32_t comp,
 	}
 	uint32_t    num_entities = 0;
 	for (uint32_t i = 0; i < reg->max_entities; i++) {
-		if (pool->sparse[i] == ~0u) {
+		if (pool->sparse[i] == nullent) {
 			continue;
 		}
 		if (pool->sparse[i] < pool->count) {
@@ -88,7 +88,7 @@ check_ent_components (const uint32_t *ents, uint32_t count, uint32_t comp,
 	}
 
 	for (uint32_t i = 0; i < count; i++) {
-		if (pool->sparse[Ent_Index (ents[i])] == ~0u) {
+		if (pool->sparse[Ent_Index (ents[i])] == nullent) {
 			printf ("ent not in %s sparse: %x\n", component->name, ents[i]);
 			return 0;
 		}

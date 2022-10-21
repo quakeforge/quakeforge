@@ -103,7 +103,7 @@ test_entities (void)
 		printf ("not 2 available entity for recycling\n");
 		return 0;
 	}
-	for (uint32_t i = reg->next, c = 0; i != Ent_Index (~0);
+	for (uint32_t i = reg->next, c = 0; i != Ent_Index (nullent);
 		 i = Ent_Index (reg->entities[i]), c++) {
 		if (c >= reg->available || i >= reg->num_entities) {
 			printf ("invalid deleted entity chain\n");

@@ -37,7 +37,7 @@ VISIBLE ecs_registry_t *
 ECS_NewRegistry (void)
 {
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
-	reg->next = Ent_Index (~0);
+	reg->next = Ent_Index (nullent);
 	return reg;
 }
 
@@ -64,7 +64,7 @@ ECS_RegisterComponents (ecs_registry_t *registry,
 	size_t      size = registry->max_entities * sizeof (uint32_t);
 	for (uint32_t i = 0; i < registry->num_components; i++) {
 		registry->comp_pools[i].sparse = malloc (size);
-		memset (registry->comp_pools[i].sparse, ~0, size);
+		memset (registry->comp_pools[i].sparse, nullent, size);
 	}
 }
 
@@ -108,7 +108,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 									ind, last, 1);
 		}
 		pool->count--;
-		pool->sparse[id] = ~0;
+		pool->sparse[id] = nullent;
 	}
 }
 
@@ -123,7 +123,7 @@ ECS_NewEntity (ecs_registry_t *registry)
 		registry->next = Ent_Index (registry->entities[next]);
 		registry->entities[next] = ent;
 	} else {
-		if (registry->num_entities == Ent_Index (~0)) {
+		if (registry->num_entities == Ent_Index (nullent)) {
 			Sys_Error ("ECS_NewEntity: out of entities");
 		}
 		if (registry->num_entities == registry->max_entities) {
@@ -133,7 +133,7 @@ ECS_NewEntity (ecs_registry_t *registry)
 			for (uint32_t i = 0; i < registry->num_components; i++) {
 				uint32_t   *sparse = registry->comp_pools[i].sparse;
 				sparse = realloc (sparse, size);
-				memset (sparse + registry->max_entities - ENT_GROW, ~0,
+				memset (sparse + registry->max_entities - ENT_GROW, nullent,
 						ENT_GROW * sizeof (uint32_t));
 				registry->comp_pools[i].sparse = sparse;
 			}

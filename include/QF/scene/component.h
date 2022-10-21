@@ -44,6 +44,7 @@
 #define ENT_GROW 1024
 #define COMP_GROW 128
 #define ENT_IDBITS 20
+#define nullent (~0u)
 
 typedef struct ecs_pool_s {
 	uint32_t   *sparse;		// indexed by entity id, holds index to dense/data
@@ -90,7 +91,11 @@ COMPINLINE void Component_DestroyElements (const component_t *component,
 										   uint32_t index, uint32_t count);
 COMPINLINE uint32_t Ent_Index (uint32_t id);
 COMPINLINE uint32_t Ent_Generation (uint32_t id);
-COMPINLINE uint32_t Ent_NextGen(uint32_t id);
+COMPINLINE uint32_t Ent_NextGen (uint32_t id);
+COMPINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
+								 ecs_registry_t *reg);
+COMPINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
+								   ecs_registry_t *reg);
 
 #undef COMPINLINE
 #ifndef IMPLEMENT_COMPONENT_Funcs
@@ -170,6 +175,22 @@ COMPINLINE uint32_t
 Ent_NextGen(uint32_t id)
 {
 	return id + (1 << ENT_IDBITS);
+}
+
+COMPINLINE int
+Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
+	return ind != nullent;
+}
+
+COMPINLINE void *
+Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	const component_t *component = &reg->components[comp];
+	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
+	byte       *data = reg->comp_pools[comp].data;
+	return data + ind * component->size;
 }
 
 ecs_registry_t *ECS_NewRegistry (void);
