@@ -260,9 +260,11 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 		.pClearValues = lctx->qfv_renderpass->clearValues->a,
 	};
 	__auto_type subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-	dfunc->vkCmdBeginRenderPass (cmd, &renderPassInfo, subpassContents);
-	//...
-	dfunc->vkCmdEndRenderPass (cmd);
+	if (renderPassInfo.renderPass) {
+		dfunc->vkCmdBeginRenderPass (cmd, &renderPassInfo, subpassContents);
+		//...
+		dfunc->vkCmdEndRenderPass (cmd);
+	}
 	QFV_CmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
