@@ -100,6 +100,16 @@ CL_GetEntity (int num)
 	return cl_entities[num];
 }
 
+static entity_t *
+CL_GetFlagEnt (int key)
+{
+	if (!cl_flag_ents[key]) {
+		cl_flag_ents[key] = Scene_CreateEntity (cl_world.scene);
+		CL_Init_Entity (cl_flag_ents[key]);
+	}
+	return cl_flag_ents[key];
+}
+
 // Hack hack hack
 static inline int
 is_dead_body (entity_state_t *s1)
@@ -305,7 +315,7 @@ CL_UpdateFlagModels (entity_t *ent, int key)
 	float       f;
 	entity_t   *fent;
 
-	fent = cl_flag_ents[key];
+	fent = CL_GetFlagEnt (key);
 
 	if (!fent->active) {
 		return;
@@ -325,13 +335,9 @@ CL_UpdateFlagModels (entity_t *ent, int key)
 	vec4f_t     scale = { 1, 1, 1, 1 };
 	// -45 degree roll (x is forward)
 	vec4f_t     rotation = { -0.382683432, 0, 0, 0.923879533 };
-	vec4f_t     position = { -f, -22, 0, 1};
+	vec4f_t     position = { -f, -22, -16, 1};
 
-	Transform_SetLocalPosition (fent->transform, position);
 	Transform_SetLocalTransform (fent->transform, scale, rotation, position);
-	position = Transform_GetWorldPosition (fent->transform);
-	position[3] -= 16;
-	Transform_SetWorldPosition (fent->transform, position);
 }
 
 static entity_t *
@@ -339,7 +345,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 {
 	entity_t   *fent;
 
-	fent = cl_flag_ents[key];
+	fent = CL_GetFlagEnt (key);
 
 	if (cl_flagindex == -1) {
 		fent->active = 0;
@@ -349,7 +355,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	fent->active = 1;
 
 	if (!Transform_GetParent (fent->transform)) {
-		Transform_SetParent (fent->transform, ent->transform);
+		Transform_SetParent (cl_world.scene, fent->transform, ent->transform);
 	}
 	CL_UpdateFlagModels (ent, key);
 
@@ -364,9 +370,9 @@ CL_RemoveFlagModels (int key)
 {
 	entity_t   *fent;
 
-	fent = cl_flag_ents[key];
+	fent = CL_GetFlagEnt (key);
 	fent->active = 0;
-	Transform_SetParent (fent->transform, 0);
+	Transform_SetParent (cl_world.scene, fent->transform, 0);
 }
 
 /*
