@@ -49,8 +49,6 @@ typedef struct hierarchy_type_s {
 	const struct component_s *components;
 } hierarchy_type_t;
 
-#define null_transform (~0u)
-
 typedef struct hierref_s {
 	struct hierarchy_s *hierarchy;
 	uint32_t    index;	///< index in hierarchy
@@ -63,7 +61,7 @@ typedef struct hierarchy_s {
 	struct scene_s *scene;
 	uint32_t    num_objects;
 	uint32_t    max_objects;
-	struct transform_s **transform;	//FIXME use hierref_t
+	hierref_t **ref;
 	struct entity_s **entity;		//FIXME should not exist
 	uint32_t   *childCount;
 	uint32_t   *childIndex;

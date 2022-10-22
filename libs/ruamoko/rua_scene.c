@@ -93,9 +93,8 @@ rua__scene_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
 	rua_scene_t *scene = 0;
 
-	if (id <= 0xffffffffu) {
-		scene = PR_RESGET (res->scene_map, (pr_int_t) id);
-	}
+	id &= 0xffffffffu;
+	scene = PR_RESGET (res->scene_map, (pr_int_t) id);
 
 	// scene->prev will be null if the handle is unallocated
 	if (!scene || !scene->prev) {
@@ -288,7 +287,7 @@ bi_Entity_GetTransform (progs_t *pr, void *_res)
 	entity_t   *ent = rua_entity_get (res, ent_id);
 
 	// ent_id contains scene id
-	R_ULONG (pr) = MAKE_ID (ent->transform->id, ent_id);
+	R_ULONG (pr) = MAKE_ID (ent->transform->ref.id, ent_id);
 }
 
 static void
@@ -324,7 +323,7 @@ bi_Transform_GetChild (progs_t *pr, void *_res)
 	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
 	transform_t *child = Transform_GetChild (transform, P_UINT (pr, 2));
 
-	R_UINT (pr) = child ? child->id : 0;
+	R_UINT (pr) = child ? child->ref.id : 0;
 }
 
 static void
@@ -333,8 +332,9 @@ bi_Transform_SetParent (progs_t *pr, void *_res)
 	rua_scene_resources_t *res = _res;
 	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
 	transform_t *parent = rua_transform_get (res, P_ULONG (pr, 1));
+	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 1));
 
-	Transform_SetParent (transform, parent);
+	Transform_SetParent (scene->scene, transform, parent);
 }
 
 static void
@@ -346,7 +346,7 @@ bi_Transform_GetParent (progs_t *pr, void *_res)
 	transform_t *parent = Transform_GetParent (transform);
 
 	// transform_id contains scene id
-	R_ULONG (pr) = parent ? MAKE_ID (parent->id, transform_id) : 0;
+	R_ULONG (pr) = parent ? MAKE_ID (parent->ref.id, transform_id) : 0;
 }
 
 static void

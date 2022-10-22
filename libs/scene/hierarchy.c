@@ -41,7 +41,7 @@
 
 #include "scn_internal.h"
 
-static component_t transform_component = { .size = sizeof (transform_t *) };
+static component_t ref_component = { .size = sizeof (hierref_t *) };
 static component_t entity_component = { .size = sizeof (entity_t *) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
 static component_t childIndex_component = { .size = sizeof (uint32_t) };
@@ -52,8 +52,8 @@ hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
-		if (hierarchy->transform[i]) {
-			hierarchy->transform[i]->index += offset;
+		if (hierarchy->ref[i]) {
+			hierarchy->ref[i]->index += offset;
 		}
 	}
 }
@@ -84,8 +84,8 @@ Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
 		new_max += 15;
 		new_max &= ~15;
 
-		Component_ResizeArray (&transform_component,
-							   (void **) &hierarchy->transform, new_max);
+		Component_ResizeArray (&ref_component,
+							   (void **) &hierarchy->ref, new_max);
 		Component_ResizeArray (&entity_component,
 							   (void **) &hierarchy->entity, new_max);
 		Component_ResizeArray (&childCount_component,
@@ -111,8 +111,8 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	hierarchy->num_objects += count;
 	uint32_t    dstIndex = index + count;
 	count = hierarchy->num_objects - index - count;
-	Component_MoveElements (&transform_component,
-							hierarchy->transform, dstIndex, index, count);
+	Component_MoveElements (&ref_component,
+							hierarchy->ref, dstIndex, index, count);
 	Component_MoveElements (&entity_component,
 							hierarchy->entity, dstIndex, index, count);
 	Component_MoveElements (&childCount_component,
@@ -137,8 +137,8 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	hierarchy->num_objects -= count;
 	uint32_t    srcIndex = index + count;
 	count = hierarchy->num_objects - index;
-	Component_MoveElements (&transform_component,
-							hierarchy->transform, index, srcIndex, count);
+	Component_MoveElements (&ref_component,
+							hierarchy->ref, index, srcIndex, count);
 	Component_MoveElements (&entity_component,
 							hierarchy->entity, index, srcIndex, count);
 	Component_MoveElements (&childCount_component,
@@ -158,20 +158,20 @@ static void
 hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 				uint32_t dstIndex, uint32_t srcIndex, uint32_t count)
 {
-	Component_CopyElements (&transform_component,
-							dst->transform, dstIndex,
-							src->transform, srcIndex, count);
+	Component_CopyElements (&ref_component,
+							dst->ref, dstIndex,
+							src->ref, srcIndex, count);
 	Component_CopyElements (&entity_component,
 							dst->entity, dstIndex,
 							src->entity, srcIndex, count);
 	// Actually move (as in C++ move semantics) source hierarchy object
 	// references so that their indices do not get updated when the objects
 	// are removed from the source hierarcy
-	memset (&src->transform[srcIndex], 0, count * sizeof(dst->transform[0]));
+	memset (&src->ref[srcIndex], 0, count * sizeof(dst->ref[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
-		dst->transform[dstIndex + i]->hierarchy = dst;
-		dst->transform[dstIndex + i]->index = dstIndex + i;
+		dst->ref[dstIndex + i]->hierarchy = dst;
+		dst->ref[dstIndex + i]->index = dstIndex + i;
 	}
 	for (uint32_t i = 0; i < dst->type->num_components; i++) {
 		Component_CopyElements (&dst->type->components[i],
@@ -184,8 +184,7 @@ static void
 hierarchy_init (hierarchy_t *dst, uint32_t index,
 				uint32_t parentIndex, uint32_t childIndex, uint32_t count)
 {
-	memset (&dst->transform[index], 0,
-			count * sizeof(dst->transform[0]));
+	memset (&dst->ref[index], 0, count * sizeof(dst->ref[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
 		dst->parentIndex[index + i] = parentIndex;
@@ -271,13 +270,13 @@ Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 {
 	uint32_t    insertIndex;
 
-	if (dstParent == null_transform) {
+	if (dstParent == nullent) {
 		if (dst->num_objects) {
 			Sys_Error ("attempt to insert root in non-empty hierarchy");
 		}
 		hierarchy_open (dst, 0, 1);
 		hierarchy_move (dst, src, 0, srcRoot, 1);
-		dst->parentIndex[0] = null_transform;
+		dst->parentIndex[0] = nullent;
 		dst->childIndex[0] = 1;
 		dst->childCount[0] = 0;
 		insertIndex = 0;
@@ -300,9 +299,9 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index)
 	uint32_t    childIndex = hierarchy->childIndex[index];
 	uint32_t    childCount = hierarchy->childCount[index];
 	uint32_t    parentIndex = hierarchy->parentIndex[index];
-	uint32_t    nieceIndex = null_transform;
+	uint32_t    nieceIndex = nullent;
 
-	if (parentIndex != null_transform) {
+	if (parentIndex != nullent) {
 		uint32_t    siblingIndex = hierarchy->childIndex[parentIndex];
 		siblingIndex += hierarchy->childCount[parentIndex] - 1;
 		nieceIndex = hierarchy->childIndex[siblingIndex];
@@ -316,7 +315,7 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index)
 	if (childCount) {
 		hierarchy_UpdateTransformIndices (hierarchy, childIndex, -childCount);
 		hierarchy_UpdateChildIndices (hierarchy, index, -childCount);
-		if (nieceIndex != null_transform) {
+		if (nieceIndex != nullent) {
 			hierarchy_UpdateParentIndices (hierarchy, nieceIndex, -childCount);
 		}
 	}
@@ -327,13 +326,13 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
 {
 	uint32_t    parentIndex = hierarchy->parentIndex[index];
 	uint32_t    childIndex = hierarchy->childIndex[index];
-	uint32_t    siblingIndex = null_transform;
-	if (parentIndex != null_transform) {
+	uint32_t    siblingIndex = nullent;
+	if (parentIndex != nullent) {
 		siblingIndex = hierarchy->childIndex[parentIndex];
 	}
 	hierarchy_remove_children (hierarchy, index);
 	hierarchy_close (hierarchy, index, 1);
-	if (siblingIndex != null_transform) {
+	if (siblingIndex != nullent) {
 		hierarchy_UpdateTransformIndices (hierarchy, index, -1);
 		hierarchy_UpdateChildIndices (hierarchy, siblingIndex, -1);
 		hierarchy_UpdateParentIndices (hierarchy, childIndex - 1, -1);
@@ -360,7 +359,7 @@ Hierarchy_New (scene_t *scene, const hierarchy_type_t *type, int createRoot)
 
 	if (createRoot) {
 		hierarchy_open (hierarchy, 0, 1);
-		hierarchy_init (hierarchy, 0, null_transform, 1, 1);
+		hierarchy_init (hierarchy, 0, nullent, 1, 1);
 	}
 
 	return hierarchy;
@@ -376,9 +375,9 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 
 	scene_resources_t *res = hierarchy->scene->resources;
 	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
-		PR_RESFREE (res->transforms, hierarchy->transform[i]);
+		PR_RESFREE (res->transforms, hierarchy->ref[i]);
 	}
-	free (hierarchy->transform);
+	free (hierarchy->ref);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
 	free (hierarchy->parentIndex);
@@ -399,9 +398,9 @@ Hierarchy_Copy (scene_t *scene, const hierarchy_t *src)
 	Hierarchy_Reserve (dst, count);
 
 	for (size_t i = 0; i < count; i++) {
-		dst->transform[i] = __transform_alloc (scene);
-		dst->transform[i]->hierarchy = dst;
-		dst->transform[i]->index = i;
+		dst->ref[i] = __transform_alloc (scene);
+		dst->ref[i]->hierarchy = dst;
+		dst->ref[i]->index = i;
 	}
 
 	Component_CopyElements (&childCount_component,

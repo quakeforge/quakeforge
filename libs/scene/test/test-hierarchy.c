@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "QF/scene/component.h"
 #include "QF/scene/hierarchy.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
@@ -49,7 +50,7 @@ check_hierarchy_size (hierarchy_t *h, uint32_t size)
 	}
 	char      **name = h->components[transform_type_name];
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		if (h->transform[i]->hierarchy != h) {
+		if (h->ref[i]->hierarchy != h) {
 			printf ("transform %d (%s) does not point to hierarchy\n",
 					i, name[i]);
 		}
@@ -63,7 +64,7 @@ dump_hierarchy (hierarchy_t *h)
 	char      **name = h->components[transform_type_name];
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		printf ("%2d: %5s %2u %2u %2u %2u\n", i, name[i],
-				h->transform[i]->index, h->parentIndex[i],
+				h->ref[i]->index, h->parentIndex[i],
 				h->childIndex[i], h->childCount[i]);
 	}
 	puts ("");
@@ -73,12 +74,13 @@ static int
 check_indices (transform_t *transform, uint32_t index, uint32_t parentIndex,
 			   uint32_t childIndex, uint32_t childCount)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = &transform->ref;
+	hierarchy_t *h = ref->hierarchy;
 	char      **name = h->components[transform_type_name];
-	if (transform->index != index) {
+	if (ref->index != index) {
 		printf ("%s/%s index incorrect: expect %u got %u\n",
-				name[transform->index], name[index],
-				index, transform->index);
+				name[ref->index], name[index],
+				index, ref->index);
 		return 0;
 	}
 	if (h->parentIndex[index] != parentIndex) {
@@ -109,7 +111,7 @@ test_single_transform (void)
 		printf ("Transform_New returned null\n");
 		return 1;
 	}
-	if (!(h = transform->hierarchy)) {
+	if (!(h = transform->ref.hierarchy)) {
 		printf ("New transform has no hierarchy\n");
 		return 1;
 	}
@@ -120,7 +122,7 @@ test_single_transform (void)
 	vec4f_t    *localRotation = h->components[transform_type_localRotation];
 	vec4f_t    *localScale = h->components[transform_type_localScale];
 	if (!check_hierarchy_size (h, 1)) { return 1; }
-	if (!check_indices (transform, 0, null_transform, 1, 0)) { return 1; }
+	if (!check_indices (transform, 0, nullent, 1, 0)) { return 1; }
 
 	if (!mat4_equal (localMatrix[0], identity)
 		|| !mat4_equal (localInverse[0], identity)
@@ -137,7 +139,7 @@ test_single_transform (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (transform->hierarchy);
+	Hierarchy_Delete (transform->ref.hierarchy);
 
 	return 0;
 }
@@ -148,17 +150,17 @@ test_parent_child_init (void)
 	transform_t *parent = Transform_New (scene, 0);
 	transform_t *child = Transform_New (scene, parent);
 
-	if (parent->hierarchy != child->hierarchy) {
+	if (parent->ref.hierarchy != child->ref.hierarchy) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
 
-	if (!check_hierarchy_size (parent->hierarchy, 2)) { return 1; }
+	if (!check_hierarchy_size (parent->ref.hierarchy, 2)) { return 1; }
 
-	if (!check_indices (parent, 0, null_transform, 1, 1)) { return 1; }
+	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
-	hierarchy_t *h = parent->hierarchy;
+	hierarchy_t *h = parent->ref.hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -194,7 +196,7 @@ test_parent_child_init (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (parent->hierarchy);
+	Hierarchy_Delete (parent->ref.hierarchy);
 
 	return 0;
 }
@@ -208,28 +210,28 @@ test_parent_child_setparent (void)
 	Transform_SetName (parent, "parent");
 	Transform_SetName (child, "child");
 
-	if (!check_indices (parent, 0, null_transform, 1, 0)) { return 1; }
-	if (!check_indices (child,  0, null_transform, 1, 0)) { return 1; }
+	if (!check_indices (parent, 0, nullent, 1, 0)) { return 1; }
+	if (!check_indices (child,  0, nullent, 1, 0)) { return 1; }
 
-	if (parent->hierarchy == child->hierarchy) {
+	if (parent->ref.hierarchy == child->ref.hierarchy) {
 		printf ("parent and child transforms have same hierarchy before"
 				" set paret\n");
 		return 1;
 	}
 
-	Transform_SetParent (child, parent);
+	Transform_SetParent (scene,child, parent);
 
-	if (parent->hierarchy != child->hierarchy) {
+	if (parent->ref.hierarchy != child->ref.hierarchy) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
 
-	if (!check_hierarchy_size (parent->hierarchy, 2)) { return 1; }
+	if (!check_hierarchy_size (parent->ref.hierarchy, 2)) { return 1; }
 
-	if (!check_indices (parent, 0, null_transform, 1, 1)) { return 1; }
+	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
-	hierarchy_t *h = parent->hierarchy;
+	hierarchy_t *h = parent->ref.hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -265,7 +267,7 @@ test_parent_child_setparent (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (parent->hierarchy);
+	Hierarchy_Delete (parent->ref.hierarchy);
 
 	return 0;
 }
@@ -280,14 +282,14 @@ test_build_hierarchy (void)
 	transform_t *B = Transform_NewNamed (scene, root, "B");
 	transform_t *C = Transform_NewNamed (scene, root, "C");
 
-	if (!check_indices (root, 0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (A, 1, 0, 4, 0)) { return 1; }
 	if (!check_indices (B, 2, 0, 4, 0)) { return 1; }
 	if (!check_indices (C, 3, 0, 4, 0)) { return 1; }
 
 	transform_t *B1 = Transform_NewNamed (scene, B, "B1");
 
-	if (!check_indices (root, 0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices ( A, 1, 0, 4, 0)) { return 1; }
 	if (!check_indices ( B, 2, 0, 4, 1)) { return 1; }
 	if (!check_indices ( C, 3, 0, 5, 0)) { return 1; }
@@ -295,7 +297,7 @@ test_build_hierarchy (void)
 
 	transform_t *A1 = Transform_NewNamed (scene, A, "A1");
 
-	if (!check_indices (root, 0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices ( A, 1, 0, 4, 1)) { return 1; }
 	if (!check_indices ( B, 2, 0, 5, 1)) { return 1; }
 	if (!check_indices ( C, 3, 0, 6, 0)) { return 1; }
@@ -307,9 +309,9 @@ test_build_hierarchy (void)
 	transform_t *B3 = Transform_NewNamed (scene, B, "B3");
 	transform_t *B2a = Transform_NewNamed (scene, B2, "B2a");
 
-	if (!check_hierarchy_size (root->hierarchy, 11)) { return 1; }
+	if (!check_hierarchy_size (root->ref.hierarchy, 11)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (  A,  1, 0,  4, 2)) { return 1; }
 	if (!check_indices (  B,  2, 0,  6, 3)) { return 1; }
 	if (!check_indices (  C,  3, 0,  9, 0)) { return 1; }
@@ -323,9 +325,9 @@ test_build_hierarchy (void)
 
 	transform_t *D = Transform_NewNamed (scene, root, "D");
 
-	if (!check_hierarchy_size (root->hierarchy, 12)) { return 1; }
+	if (!check_hierarchy_size (root->ref.hierarchy, 12)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 4)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
 	if (!check_indices (  C,  3, 0, 10, 0)) { return 1; }
@@ -338,12 +340,12 @@ test_build_hierarchy (void)
 	if (!check_indices (A1a, 10, 5, 12, 0)) { return 1; }
 	if (!check_indices (B2a, 11, 8, 12, 0)) { return 1; }
 
-	dump_hierarchy (root->hierarchy);
+	dump_hierarchy (root->ref.hierarchy);
 	transform_t *C1 = Transform_NewNamed (scene, C, "C1");
-	dump_hierarchy (root->hierarchy);
-	if (!check_hierarchy_size (root->hierarchy, 13)) { return 1; }
+	dump_hierarchy (root->ref.hierarchy);
+	if (!check_hierarchy_size (root->ref.hierarchy, 13)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 4)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
 	if (!check_indices (  C,  3, 0, 10, 1)) { return 1; }
@@ -358,7 +360,7 @@ test_build_hierarchy (void)
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (root->hierarchy);
+	Hierarchy_Delete (root->ref.hierarchy);
 
 	return 0;
 }
@@ -382,9 +384,9 @@ test_build_hierarchy2 (void)
 	transform_t *D = Transform_NewNamed (scene, root, "D");
 	transform_t *C1 = Transform_NewNamed (scene, C, "C1");
 
-	if (!check_hierarchy_size (root->hierarchy, 13)) { return 1; }
+	if (!check_hierarchy_size (root->ref.hierarchy, 13)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 4)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
 	if (!check_indices (  C,  3, 0, 10, 1)) { return 1; }
@@ -411,10 +413,10 @@ test_build_hierarchy2 (void)
 	transform_t *Y2a = Transform_NewNamed (scene, Y2, "Y2a");
 	transform_t *Z1 = Transform_NewNamed (scene, Z, "Z1");
 
-	dump_hierarchy (T->hierarchy);
-	if (!check_hierarchy_size (T->hierarchy, 12)) { return 1; }
+	dump_hierarchy (T->ref.hierarchy);
+	if (!check_hierarchy_size (T->ref.hierarchy, 12)) { return 1; }
 
-	if (!check_indices (  T,  0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (  T,  0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (  X,  1, 0,  4, 2)) { return 1; }
 	if (!check_indices (  Y,  2, 0,  6, 3)) { return 1; }
 	if (!check_indices (  Z,  3, 0,  9, 1)) { return 1; }
@@ -427,13 +429,13 @@ test_build_hierarchy2 (void)
 	if (!check_indices (X1a, 10, 4, 12, 0)) { return 1; }
 	if (!check_indices (Y2a, 11, 7, 12, 0)) { return 1; }
 
-	Transform_SetParent (T, B);
+	Transform_SetParent (scene,T, B);
 
-	dump_hierarchy (root->hierarchy);
+	dump_hierarchy (root->ref.hierarchy);
 
-	if (!check_hierarchy_size (root->hierarchy, 25)) { return 1; }
+	if (!check_hierarchy_size (root->ref.hierarchy, 25)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 4)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2,  0,  7, 4)) { return 1; }
 	if (!check_indices (  C,  3,  0, 11, 1)) { return 1; }
@@ -459,14 +461,14 @@ test_build_hierarchy2 (void)
 	if (!check_indices (X1a, 23, 17, 25, 0)) { return 1; }
 	if (!check_indices (Y2a, 24, 20, 25, 0)) { return 1; }
 
-	Transform_SetParent (Y, 0);
+	Transform_SetParent (scene,Y, 0);
 
-	dump_hierarchy (root->hierarchy);
-	dump_hierarchy (Y->hierarchy);
-	if (!check_hierarchy_size (root->hierarchy, 20)) { return 1; }
-	if (!check_hierarchy_size (Y->hierarchy, 5)) { return 1; }
+	dump_hierarchy (root->ref.hierarchy);
+	dump_hierarchy (Y->ref.hierarchy);
+	if (!check_hierarchy_size (root->ref.hierarchy, 20)) { return 1; }
+	if (!check_hierarchy_size (Y->ref.hierarchy, 5)) { return 1; }
 
-	if (!check_indices (root, 0, null_transform, 1, 4)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2,  0,  7, 4)) { return 1; }
 	if (!check_indices (  C,  3,  0, 11, 1)) { return 1; }
@@ -487,15 +489,15 @@ test_build_hierarchy2 (void)
 	if (!check_indices ( Z1, 18, 15, 20, 0)) { return 1; }
 	if (!check_indices (X1a, 19, 16, 20, 0)) { return 1; }
 
-	if (!check_indices (  Y, 0, null_transform, 1, 3)) { return 1; }
+	if (!check_indices (  Y, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices ( Y1, 1, 0, 4, 0)) { return 1; }
 	if (!check_indices ( Y2, 2, 0, 4, 1)) { return 1; }
 	if (!check_indices ( Y3, 3, 0, 5, 0)) { return 1; }
 	if (!check_indices (Y2a, 4, 2, 5, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (root->hierarchy);
-	Hierarchy_Delete (Y->hierarchy);
+	Hierarchy_Delete (root->ref.hierarchy);
+	Hierarchy_Delete (Y->ref.hierarchy);
 
 	return 0;
 }
@@ -534,7 +536,7 @@ test_frames (void)
 	Transform_SetLocalPosition (B1, (vec4f_t) { 0, 1, 0, 1 });
 	Transform_SetLocalRotation (B1, (vec4f_t) { -0.5, 0.5, -0.5, 0.5 });
 
-	hierarchy_t *h = root->hierarchy;
+	hierarchy_t *h = root->ref.hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -704,7 +706,7 @@ test_frames (void)
 		return 1;
 	}
 
-	Transform_Delete (root);
+	Transform_Delete (scene,root);
 
 	return 0;
 }

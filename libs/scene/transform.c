@@ -133,16 +133,15 @@ static const hierarchy_type_t transform_type = {
 	.components = transform_components,
 };
 
-transform_t *
+hierref_t *
 __transform_alloc (scene_t *scene)
 {
 	scene_resources_t *res = scene->resources;
-	transform_t *transform = PR_RESNEW_NC (res->transforms);
-	transform->scene = scene;
-	transform->id = PR_RESINDEX (res->transforms, transform);
-	transform->hierarchy = 0;
-	transform->index = 0;
-	return transform;
+	hierref_t *ref = PR_RESNEW_NC (res->transforms);
+	ref->id = PR_RESINDEX (res->transforms, ref);
+	ref->hierarchy = 0;
+	ref->index = 0;
+	return ref;
 }
 
 static void
@@ -235,31 +234,32 @@ Transform_UpdateMatrices (hierarchy_t *h)
 transform_t *
 Transform_New (scene_t *scene, transform_t *parent)
 {
-	transform_t *transform = __transform_alloc (scene);
+	hierref_t  *transform = __transform_alloc (scene);
+	__auto_type ref = (hierref_t *) transform;
 
 	if (parent) {
-		transform->hierarchy = parent->hierarchy;
-		transform->index = Hierarchy_InsertHierarchy (parent->hierarchy, 0,
-													  parent->index, 0);
+		ref->hierarchy = parent->ref.hierarchy;
+		ref->index = Hierarchy_InsertHierarchy (parent->ref.hierarchy, 0,
+													  parent->ref.index, 0);
 	} else {
-		transform->hierarchy = Hierarchy_New (scene, &transform_type, 1);
-		transform->index = 0;
+		ref->hierarchy = Hierarchy_New (scene, &transform_type, 1);
+		ref->index = 0;
 	}
-	transform->hierarchy->transform[transform->index] = transform;
-	Transform_UpdateMatrices (transform->hierarchy);
-	return transform;
+	ref->hierarchy->ref[ref->index] = transform;
+	Transform_UpdateMatrices (ref->hierarchy);
+	return (transform_t *) transform;
 }
 
 void
-Transform_Delete (transform_t *transform)
+Transform_Delete (scene_t *scene, transform_t *transform)
 {
-	if (transform->index != 0) {
+	if (transform->ref.index != 0) {
 		// The transform is not the root, so pull it out of its current
 		// hierarchy so deleting it is easier
-		Transform_SetParent (transform, 0);
+		Transform_SetParent (scene, transform, 0);
 	}
 	// Takes care of freeing the transforms
-	Hierarchy_Delete (transform->hierarchy);
+	Hierarchy_Delete (transform->ref.hierarchy);
 }
 
 transform_t *
@@ -271,118 +271,125 @@ Transform_NewNamed (scene_t *scene, transform_t *parent, const char *name)
 }
 
 void
-Transform_SetParent (transform_t *transform, transform_t *parent)
+Transform_SetParent (scene_t *scene, transform_t *transform,
+					 transform_t *parent)
 {
 	if (parent) {
-		hierarchy_t *hierarchy = transform->hierarchy;
-		uint32_t    index = transform->index;
-		Hierarchy_InsertHierarchy (parent->hierarchy, hierarchy,
-								   parent->index, index);
+		hierarchy_t *hierarchy = transform->ref.hierarchy;
+		uint32_t    index = transform->ref.index;
+		Hierarchy_InsertHierarchy (parent->ref.hierarchy, hierarchy,
+								   parent->ref.index, index);
 		Hierarchy_RemoveHierarchy (hierarchy, index);
 		if (!hierarchy->num_objects) {
 			Hierarchy_Delete (hierarchy);
 		}
 	} else {
 		// null parent -> make transform root
-		if (!transform->index) {
+		if (!transform->ref.index) {
 			// already root
 			return;
 		}
-		hierarchy_t *hierarchy = transform->hierarchy;
-		uint32_t    index = transform->index;
+		hierarchy_t *hierarchy = transform->ref.hierarchy;
+		uint32_t    index = transform->ref.index;
 
-		hierarchy_t *new_hierarchy = Hierarchy_New (transform->scene,
-													&transform_type, 0);
-		Hierarchy_InsertHierarchy (new_hierarchy, hierarchy, null_transform,
+		hierarchy_t *new_hierarchy = Hierarchy_New (scene, &transform_type, 0);
+		Hierarchy_InsertHierarchy (new_hierarchy, hierarchy, nullent,
 								   index);
 		Hierarchy_RemoveHierarchy (hierarchy, index);
 	}
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	byte       *modified = h->components[transform_type_modified];
-	modified[transform->index] = 1;
+	modified[ref->index] = 1;
 	Transform_UpdateMatrices (h);
 }
 
 void
 Transform_SetName (transform_t *transform, const char *_name)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	char      **name = h->components[transform_type_name];
 	//FIXME create a string pool (similar to qfcc's, or even move that to util)
-	if (name[transform->index]) {
-		free (name[transform->index]);
+	if (name[ref->index]) {
+		free (name[ref->index]);
 	}
-	name[transform->index] = strdup (_name);
+	name[ref->index] = strdup (_name);
 }
 
 void
 Transform_SetTag (transform_t *transform, uint32_t _tag)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	uint32_t   *tag = h->components[transform_type_tag];
-	tag[transform->index] = _tag;
+	tag[ref->index] = _tag;
 }
 
 void
 Transform_SetLocalPosition (transform_t *transform, vec4f_t position)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	byte       *modified = h->components[transform_type_modified];
-	localMatrix[transform->index][3] = position;
-	modified[transform->index] = 1;
+	localMatrix[ref->index][3] = position;
+	modified[ref->index] = 1;
 	Transform_UpdateMatrices (h);
 }
 
 void
 Transform_SetLocalRotation (transform_t *transform, vec4f_t rotation)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	vec4f_t    *localRotation = h->components[transform_type_localRotation];
 	vec4f_t    *localScale = h->components[transform_type_localScale];
 	byte       *modified = h->components[transform_type_modified];
-	vec4f_t     scale = localScale[transform->index];
+	vec4f_t     scale = localScale[ref->index];
 
 	mat4f_t     mat;
 	mat4fquat (mat, rotation);
 
-	localRotation[transform->index] = rotation;
-	localMatrix[transform->index][0] = mat[0] * scale[0];
-	localMatrix[transform->index][1] = mat[1] * scale[1];
-	localMatrix[transform->index][2] = mat[2] * scale[2];
-	modified[transform->index] = 1;
+	localRotation[ref->index] = rotation;
+	localMatrix[ref->index][0] = mat[0] * scale[0];
+	localMatrix[ref->index][1] = mat[1] * scale[1];
+	localMatrix[ref->index][2] = mat[2] * scale[2];
+	modified[ref->index] = 1;
 	Transform_UpdateMatrices (h);
 }
 
 void
 Transform_SetLocalScale (transform_t *transform, vec4f_t scale)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	vec4f_t    *localRotation = h->components[transform_type_localRotation];
 	vec4f_t    *localScale = h->components[transform_type_localScale];
 	byte       *modified = h->components[transform_type_modified];
-	vec4f_t     rotation = localRotation[transform->index];
+	vec4f_t     rotation = localRotation[ref->index];
 
 	mat4f_t     mat;
 	mat4fquat (mat, rotation);
 
-	localScale[transform->index] = scale;
-	localMatrix[transform->index][0] = mat[0] * scale[0];
-	localMatrix[transform->index][1] = mat[1] * scale[1];
-	localMatrix[transform->index][2] = mat[2] * scale[2];
-	modified[transform->index] = 1;
+	localScale[ref->index] = scale;
+	localMatrix[ref->index][0] = mat[0] * scale[0];
+	localMatrix[ref->index][1] = mat[1] * scale[1];
+	localMatrix[ref->index][2] = mat[2] * scale[2];
+	modified[ref->index] = 1;
 	Transform_UpdateMatrices (h);
 }
 
 void
 Transform_SetWorldPosition (transform_t *transform, vec4f_t position)
 {
-	if (transform->index) {
-		hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	if (ref->index) {
+		hierarchy_t *h = ref->hierarchy;
 		mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
-		uint32_t    parent = h->parentIndex[transform->index];
+		uint32_t    parent = h->parentIndex[ref->index];
 		position = mvmulf (worldInverse[parent], position);
 	}
 	Transform_SetLocalPosition (transform, position);
@@ -391,10 +398,11 @@ Transform_SetWorldPosition (transform_t *transform, vec4f_t position)
 void
 Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation)
 {
-	if (transform->index) {
-		hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	if (ref->index) {
+		hierarchy_t *h = ref->hierarchy;
 		vec4f_t    *worldRotation = h->components[transform_type_worldRotation];
-		uint32_t    parent = h->parentIndex[transform->index];
+		uint32_t    parent = h->parentIndex[ref->index];
 		rotation = qmulf (qconjf (worldRotation[parent]), rotation);
 	}
 	Transform_SetLocalRotation (transform, rotation);
@@ -404,7 +412,8 @@ void
 Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 							 vec4f_t rotation, vec4f_t position)
 {
-	hierarchy_t *h = transform->hierarchy;
+	__auto_type ref = (const hierref_t *) transform;
+	hierarchy_t *h = ref->hierarchy;
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	vec4f_t    *localRotation = h->components[transform_type_localRotation];
 	vec4f_t    *localScale = h->components[transform_type_localScale];
@@ -413,12 +422,12 @@ Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 	mat4fquat (mat, rotation);
 
 	position[3] = 1;
-	localRotation[transform->index] = rotation;
-	localScale[transform->index] = scale;
-	localMatrix[transform->index][0] = mat[0] * scale[0];
-	localMatrix[transform->index][1] = mat[1] * scale[1];
-	localMatrix[transform->index][2] = mat[2] * scale[2];
-	localMatrix[transform->index][3] = position;
-	modified[transform->index] = 1;
+	localRotation[ref->index] = rotation;
+	localScale[ref->index] = scale;
+	localMatrix[ref->index][0] = mat[0] * scale[0];
+	localMatrix[ref->index][1] = mat[1] * scale[1];
+	localMatrix[ref->index][2] = mat[2] * scale[2];
+	localMatrix[ref->index][3] = position;
+	modified[ref->index] = 1;
 	Transform_UpdateMatrices (h);
 }

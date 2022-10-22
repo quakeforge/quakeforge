@@ -140,8 +140,8 @@ Scene_CreateEntity (scene_t *scene)
 	ent->transform = Transform_New (scene, 0);
 	ent->id = PR_RESINDEX (res->entities, ent);
 
-	hierarchy_t *h = ent->transform->hierarchy;
-	h->entity[ent->transform->index] = ent;
+	hierarchy_t *h = ent->transform->ref.hierarchy;
+	h->entity[ent->transform->ref.index] = ent;
 
 	QuatSet (1, 1, 1, 1, ent->renderer.colormod);
 
@@ -164,13 +164,13 @@ destroy_entity (scene_t *scene, entity_t *ent)
 
 	// Transform_Delete takes care of all hierarchy stuff (transforms
 	// themselves, name strings, hierarchy table)
-	hierarchy_t *h = transform->hierarchy;
+	hierarchy_t *h = transform->ref.hierarchy;
 	for (size_t i = 0; i < h->num_objects; i++) {
 		entity_t   *e = h->entity[0];
 		e->transform = 0;
 		PR_RESFREE (res->entities, ent);
 	}
-	Transform_Delete (transform);
+	Transform_Delete (scene, transform);
 }
 
 void
@@ -183,7 +183,7 @@ Scene_DestroyEntity (scene_t *scene, entity_t *ent)
 	}
 	// pull the transform out of the hierarchy to make it easier to destory
 	// all the child entities
-	Transform_SetParent (ent->transform, 0);
+	Transform_SetParent (scene, ent->transform, 0);
 	destroy_entity (scene, ent);
 }
 
@@ -204,5 +204,5 @@ transform_t *
 Scene_GetTransform (scene_t *scene, int id)
 {
 	scene_resources_t *res = scene->resources;
-	return PR_RESGET (res->transforms, id);
+	return (transform_t *) PR_RESGET (res->transforms, id);
 }
