@@ -242,6 +242,9 @@ CL_RelinkEntities (void)
 			|| new->modelindex != old->modelindex) {
 			old->modelindex = new->modelindex;
 			set_entity_model (i, new->modelindex);
+			if (visibility->efrag) {
+				R_RemoveEfrags (ent);
+			}
 		}
 		animation->frame = new->frame;
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
