@@ -41,8 +41,7 @@
 
 #include "scn_internal.h"
 
-static component_t ref_component = { .size = sizeof (hierref_t *) };
-static component_t entity_component = { .size = sizeof (entity_t *) };
+static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
 static component_t childIndex_component = { .size = sizeof (uint32_t) };
 static component_t parentIndex_component = { .size = sizeof (uint32_t) };
@@ -51,10 +50,10 @@ static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
+	ecs_registry_t *reg = hierarchy->scene->reg;
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
-		if (hierarchy->ref[i]) {
-			hierarchy->ref[i]->index += offset;
-		}
+		hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], scene_href, reg);
+		ref->index += offset;
 	}
 }
 
@@ -84,10 +83,8 @@ Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
 		new_max += 15;
 		new_max &= ~15;
 
-		Component_ResizeArray (&ref_component,
-							   (void **) &hierarchy->ref, new_max);
-		Component_ResizeArray (&entity_component,
-							   (void **) &hierarchy->entity, new_max);
+		Component_ResizeArray (&ent_component,
+							   (void **) &hierarchy->ent, new_max);
 		Component_ResizeArray (&childCount_component,
 							   (void **) &hierarchy->childCount, new_max);
 		Component_ResizeArray (&childIndex_component,
@@ -111,10 +108,8 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	hierarchy->num_objects += count;
 	uint32_t    dstIndex = index + count;
 	count = hierarchy->num_objects - index - count;
-	Component_MoveElements (&ref_component,
-							hierarchy->ref, dstIndex, index, count);
-	Component_MoveElements (&entity_component,
-							hierarchy->entity, dstIndex, index, count);
+	Component_MoveElements (&ent_component,
+							hierarchy->ent, dstIndex, index, count);
 	Component_MoveElements (&childCount_component,
 							hierarchy->childCount, dstIndex, index, count);
 	Component_MoveElements (&childIndex_component,
@@ -137,10 +132,8 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	hierarchy->num_objects -= count;
 	uint32_t    srcIndex = index + count;
 	count = hierarchy->num_objects - index;
-	Component_MoveElements (&ref_component,
-							hierarchy->ref, index, srcIndex, count);
-	Component_MoveElements (&entity_component,
-							hierarchy->entity, index, srcIndex, count);
+	Component_MoveElements (&ent_component,
+							hierarchy->ent, index, srcIndex, count);
 	Component_MoveElements (&childCount_component,
 							hierarchy->childCount, index, srcIndex, count);
 	Component_MoveElements (&childIndex_component,
@@ -158,20 +151,20 @@ static void
 hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 				uint32_t dstIndex, uint32_t srcIndex, uint32_t count)
 {
-	Component_CopyElements (&ref_component,
-							dst->ref, dstIndex,
-							src->ref, srcIndex, count);
-	Component_CopyElements (&entity_component,
-							dst->entity, dstIndex,
-							src->entity, srcIndex, count);
+	ecs_registry_t *reg = dst->scene->reg;
+	Component_CopyElements (&ent_component,
+							dst->ent, dstIndex,
+							src->ent, srcIndex, count);
 	// Actually move (as in C++ move semantics) source hierarchy object
 	// references so that their indices do not get updated when the objects
 	// are removed from the source hierarcy
-	memset (&src->ref[srcIndex], 0, count * sizeof(dst->ref[0]));
+	memset (&src->ent[srcIndex], 0, count * sizeof(dst->ent[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
-		dst->ref[dstIndex + i]->hierarchy = dst;
-		dst->ref[dstIndex + i]->index = dstIndex + i;
+		uint32_t    ent = dst->ent[dstIndex + i];
+		hierref_t  *ref = Ent_GetComponent (ent, scene_href, reg);
+		ref->hierarchy = dst;
+		ref->index = dstIndex + i;
 	}
 	for (uint32_t i = 0; i < dst->type->num_components; i++) {
 		Component_CopyElements (&dst->type->components[i],
@@ -184,7 +177,7 @@ static void
 hierarchy_init (hierarchy_t *dst, uint32_t index,
 				uint32_t parentIndex, uint32_t childIndex, uint32_t count)
 {
-	memset (&dst->ref[index], 0, count * sizeof(dst->ref[0]));
+	memset (&dst->ent[index], nullent, count * sizeof(uint32_t));
 
 	for (uint32_t i = 0; i < count; i++) {
 		dst->parentIndex[index + i] = parentIndex;
@@ -207,7 +200,7 @@ hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
 	// The newly added objects are always last children of the parent
 	// object
 	insertIndex = dst->childIndex[dstParent] + dst->childCount[dstParent];
-	// By design, all of a object's children are in one contiguous block,
+	// By design, all of an object's children are in one contiguous block,
 	// and the blocks of children for each object are ordered by their
 	// parents. Thus the child index of each object increases monotonically
 	// for each child index in the array, regardless of the level of the owning
@@ -373,11 +366,7 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	}
 	*hierarchy->prev = hierarchy->next;
 
-	scene_resources_t *res = hierarchy->scene->resources;
-	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
-		PR_RESFREE (res->transforms, hierarchy->ref[i]);
-	}
-	free (hierarchy->ref);
+	free (hierarchy->ent);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
 	free (hierarchy->parentIndex);
@@ -386,21 +375,25 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	}
 	free (hierarchy->components);
 
+	scene_resources_t *res = hierarchy->scene->resources;
 	PR_RESFREE (res->hierarchies, hierarchy);
 }
 
 hierarchy_t *
 Hierarchy_Copy (scene_t *scene, const hierarchy_t *src)
 {
+	ecs_registry_t *dstReg = scene->reg;
+	//ecs_registry_t *srcReg = src->scene->reg;
 	hierarchy_t *dst = Hierarchy_New (scene, src->type, 0);
 	size_t      count = src->num_objects;
 
 	Hierarchy_Reserve (dst, count);
 
 	for (size_t i = 0; i < count; i++) {
-		dst->ref[i] = __transform_alloc (scene);
-		dst->ref[i]->hierarchy = dst;
-		dst->ref[i]->index = i;
+		dst->ent[i] = ECS_NewEntity (dstReg);
+		hierref_t  *ref = Ent_AddComponent (dst->ent[i], scene_href, dstReg);
+		ref->hierarchy = dst;
+		ref->index = i;
 	}
 
 	Component_CopyElements (&childCount_component,

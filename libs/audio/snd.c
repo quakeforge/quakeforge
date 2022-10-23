@@ -35,6 +35,8 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
 static char *snd_output;
@@ -187,7 +189,7 @@ S_PrecacheSound (const char *sample)
 }
 
 VISIBLE void
-S_Update (struct transform_s *ear, const byte *ambient_sound_level)
+S_Update (transform_t ear, const byte *ambient_sound_level)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->update (ear, ambient_sound_level);

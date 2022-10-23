@@ -99,7 +99,7 @@ typedef struct surf_s {
 									//  start)
 	int			flags;				// currentface flags
 	void		*data;				// associated data like msurface_t
-	struct entity_s	*entity;
+	entity_t	entity;
 	float		nearzi;				// nearest 1/z on surface, for mipmapping
 	qboolean	insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;

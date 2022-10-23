@@ -8,11 +8,7 @@
 #include "QF/scene/transform.h"
 
 typedef struct scene_resources_s {
-	PR_RESMAP (entity_t) entities;
 	PR_RESMAP (hierarchy_t) hierarchies;
-	PR_RESMAP (hierref_t) transforms;
 } scene_resources_t;
-
-hierref_t *__transform_alloc (struct scene_s *scene);
 
 #endif//__scn_internal_h

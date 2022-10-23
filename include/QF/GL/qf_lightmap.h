@@ -52,7 +52,7 @@ void GL_BuildLightmaps (struct model_s **models, int num_models);
 void gl_R_BlendLightmaps (void);
 void gl_R_CalcLightmaps (void);
 struct transform_s;
-extern void (*gl_R_BuildLightMap) (const struct transform_s *transform,
+extern void (*gl_R_BuildLightMap) (const vec4f_t *transform,
 								   mod_brush_t *brush, msurface_t *surf);
 int gl_R_LightmapTexture (void) __attribute__((pure));
 void gl_R_FlushLightmaps (void);

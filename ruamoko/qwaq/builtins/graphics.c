@@ -114,7 +114,7 @@ bi_refresh (progs_t *pr, void *_res)
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
-	SCR_UpdateScreen (0, con_realtime, bi_2dfuncs);
+	SCR_UpdateScreen (nulltransform, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
 

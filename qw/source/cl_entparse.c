@@ -41,6 +41,8 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
+#include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
 #include "compat.h"
@@ -482,13 +484,15 @@ CL_ParsePlayerinfo (void)
 		// QSG2
 		int         bits;
 		byte        val;
-		entity_t   *ent;
+		entity_t    ent;
 
 		ent = CL_GetEntity (num + 1);
+		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												  cl_world.scene->reg);
 		bits = MSG_ReadByte (net_message);
 		if (bits & PF_ALPHA) {
 			val = MSG_ReadByte (net_message);
-			ent->renderer.colormod[3] = val / 255.0;
+			renderer->colormod[3] = val / 255.0;
 		}
 		if (bits & PF_SCALE) {
 			val = MSG_ReadByte (net_message);
@@ -511,7 +515,7 @@ CL_ParsePlayerinfo (void)
 				g = (float) ((val >> 2) & 7) * (1.0 / 7.0);
 				b = (float) (val & 3) * (1.0 / 3.0);
 			}
-			VectorSet (r, g, b, ent->renderer.colormod);
+			VectorSet (r, g, b, renderer->colormod);
 		}
 		if (bits & PF_FRAME2) {
 			state->pls.es.frame |= MSG_ReadByte (net_message) << 8;

@@ -37,7 +37,9 @@
 #include "QF/iqm.h"
 #include "QF/va.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_matrices.h"
@@ -77,7 +79,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   iqm_t *iqm, qfv_renderframe_t *rFrame, entity_t *ent)
+			   iqm_t *iqm, qfv_renderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -126,22 +128,27 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 #define a(x) ((x) & ~0x3f)
 
 void
-Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
 	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
-	model_t    *model = ent->renderer.model;
+	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
 	qfv_iqm_skin_t *skins = mesh->skins;
 	iqm_push_constants_t constants = {};
 	iqmframe_t *frame;
 
-	constants.blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
+	constants.blend = R_IQMGetLerpedFrames (animation, iqm);
+	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  constants.blend, 0);
 
 	vec4f_t    *bone_data;
@@ -170,7 +177,7 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, mat),
-			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (ent->transform) },
+			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, blend),
 			sizeof (float), &constants.blend },
@@ -188,16 +195,16 @@ Vulkan_DrawIQM (entity_t *ent, qfv_renderframe_t *rFrame)
 			sizeof (constants.fog), &constants.fog },
 	};
 
-	QuatCopy (ent->renderer.colormod, constants.base_color);
+	QuatCopy (renderer->colormod, constants.base_color);
 	QuatCopy (skins[0].colora, constants.colorA);
 	QuatCopy (skins[0].colorb, constants.colorB);
 	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_iqmDepth],
-				   ent->animation.pose1, ent->animation.pose2,
+				   animation->pose1, animation->pose2,
 				   0, 2, push_constants, iqm, rFrame, ent);
 	emit_commands (aframe->cmdSet.a[QFV_iqmGBuffer],
-				   ent->animation.pose1, ent->animation.pose2,
+				   animation->pose1, animation->pose2,
 				   skins, 6, push_constants, iqm, rFrame, ent);
 }
 

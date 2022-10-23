@@ -49,7 +49,9 @@
 #include "QF/GL/qf_iqm.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "r_internal.h"
 
@@ -86,21 +88,26 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 }
 
 void
-gl_R_DrawIQMModel (entity_t *ent)
+gl_R_DrawIQMModel (entity_t ent)
 {
-	model_t    *model = ent->renderer.model;
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
+	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
 	float       blend;
 	iqmframe_t *frame;
 	int         i;
 
-	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendPalette (iqm, ent->animation.pose1, ent->animation.pose2,
+	blend = R_IQMGetLerpedFrames (animation, iqm);
+	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, 0, gl->blend_palette, gl->palette_size);
 
 	qfglPushMatrix ();
-	gl_R_RotateForEntity (ent);
+	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
 	for (i = 0; i < iqm->num_meshes; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, gl->textures[i]);

@@ -34,8 +34,9 @@
 #include "QF/screen.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/transform.h"
+#include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
 #include "compat.h"
@@ -672,7 +673,8 @@ CalcGunAngle (viewstate_t *vs)
 {
 	vec4f_t     rotation = Transform_GetWorldRotation (vs->camera_transform);
 	//FIXME make child of camera
-	Transform_SetWorldRotation (vs->weapon_entity->transform, rotation);
+	transform_t wep_form = Entity_Transform (vs->weapon_entity);
+	Transform_SetWorldRotation (wep_form, rotation);
 }
 
 static void
@@ -726,9 +728,9 @@ V_AddIdle (viewstate_t *vs)
 	Transform_SetWorldRotation (vs->camera_transform, qmulf (rot, rotation));
 
 	// counter-rotate the weapon
-	rot = qmulf (qconjf (rot),
-				 Transform_GetWorldRotation (vs->weapon_entity->transform));
-	Transform_SetWorldRotation (vs->weapon_entity->transform, rot);
+	transform_t wep_form = Entity_Transform (vs->weapon_entity);
+	rot = qmulf (qconjf (rot), Transform_GetWorldRotation (wep_form));
+	Transform_SetWorldRotation (wep_form, rot);
 }
 
 /*
@@ -765,18 +767,20 @@ static void
 V_CalcIntermissionRefdef (viewstate_t *vs)
 {
 	// vs->player_entity is the player model (visible when out of body)
-	entity_t   *ent = vs->player_entity;
-	entity_t   *view;
+	entity_t    ent = vs->player_entity;
+	entity_t    view;
 	float       old;
-    vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
-    vec4f_t     rotation = Transform_GetWorldRotation (ent->transform);
+	transform_t transform = Entity_Transform (ent);
+    vec4f_t     origin = Transform_GetWorldPosition (transform);
+    vec4f_t     rotation = Transform_GetWorldRotation (transform);
 
 	// view is the weapon model (visible only from inside body)
 	view = vs->weapon_entity;
 
 	Transform_SetWorldPosition (vs->camera_transform, origin);
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
-	view->renderer.model = NULL;
+	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, cl_world.scene->reg);
+	renderer->model = NULL;
 
 	// always idle in intermission
 	old = v_idlescale;
@@ -789,12 +793,15 @@ static void
 V_CalcRefdef (viewstate_t *vs)
 {
 	// view is the weapon model (visible only from inside body)
-	entity_t   *view = vs->weapon_entity;
+	entity_t    view = vs->weapon_entity;
 	float       bob;
 	static float oldz = 0;
 	vec4f_t     forward = {}, right = {}, up = {};
 	vec4f_t     origin = vs->player_origin;
 	vec_t      *viewangles = vs->player_angles;
+
+	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, cl_world.scene->reg);
+	animation_t *animation = Ent_GetComponent (view.id, scene_animation, cl_world.scene->reg);
 
 	V_DriftPitch (vs);
 
@@ -851,12 +858,12 @@ V_CalcRefdef (viewstate_t *vs)
 	if (vs->flags & (VF_GIB | VF_DEAD)) {
 		model = NULL;
 	}
-	if (view->renderer.model != model) {
-		view->animation.pose2 = -1;
+	if (renderer->model != model) {
+		animation->pose2 = -1;
 	}
-	view->renderer.model = model;
-	view->animation.frame = vs->weaponframe;
-	view->renderer.skin = 0;
+	renderer->model = model;
+	animation->frame = vs->weaponframe;
+	renderer->skin = 0;
 
 	// set up the refresh position
 	Transform_SetWorldRotation (vs->camera_transform,
@@ -954,7 +961,7 @@ V_Init (viewstate_t *viewstate)
 					"Used when you are underwater, hit, have the Ring of "
 					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 
-	viewstate->camera_transform = Transform_New (cl_world.scene, 0);
+	viewstate->camera_transform = Transform_New (cl_world.scene, nulltransform);
 }
 
 void

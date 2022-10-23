@@ -48,7 +48,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -238,8 +240,8 @@ static struct {
 
 typedef struct glslbspctx_s {
 	mod_brush_t *brush;
-	entity_t   *entity;
-	vec_t      *transform;
+	animation_t *animation;
+	vec4f_t    *transform;
 	float      *color;
 } glslbspctx_t;
 
@@ -376,7 +378,7 @@ update_lightmap (glslbspctx_t *bctx, msurface_t *surf)
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
 		if (r_dynamic)
-			glsl_R_BuildLightMap (bctx->entity->transform, bctx->brush, surf);
+			glsl_R_BuildLightMap (bctx->transform, bctx->brush, surf);
 	}
 }
 
@@ -397,7 +399,7 @@ chain_surface (glslbspctx_t *bctx, msurface_t *surf)
 		if (!surf->texinfo->texture->anim_total)
 			tx = surf->texinfo->texture;
 		else
-			tx = R_TextureAnimation (bctx->entity, surf);
+			tx = R_TextureAnimation (bctx->animation, surf);
 		tex = tx->render;
 		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
@@ -648,11 +650,16 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 }
 
 static void
-R_DrawBrushModel (entity_t *e)
+R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
 	unsigned    k;
-	model_t    *model = e->renderer.model;
+	transform_t transform = Entity_Transform (e);
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
+											   r_refdef.scene->reg);
+	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	plane_t    *plane;
 	msurface_t *surf;
@@ -661,14 +668,14 @@ R_DrawBrushModel (entity_t *e)
 	vec4f_t     org;
 	glslbspctx_t bctx = {
 		brush,
-		e,
-		e->renderer.full_transform,
-		e->renderer.colormod,
+		animation,
+		renderer->full_transform,
+		renderer->colormod,
 	};
 
 	mat4f_t mat;
-	Transform_GetWorldMatrix (e->transform, mat);
-	memcpy (e->renderer.full_transform, mat, sizeof (mat));//FIXME
+	Transform_GetWorldMatrix (transform, mat);
+	memcpy (renderer->full_transform, mat, sizeof (mat));//FIXME
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
@@ -846,7 +853,7 @@ static void
 draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 			   int colloc)
 {
-	mat4_t      mat;
+	mat4f_t     mat;
 	elements_t *el;
 	int         count;
 	float      *color;
@@ -861,8 +868,8 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		}
 	}
 	if (ec->transform) {
-		Mat4Mult ((vec_t*)&bsp_vp[0], ec->transform, mat);//FIXME
-		qfeglUniformMatrix4fv (matloc, 1, false, mat);
+		mmulf (mat, bsp_vp, ec->transform);
+		qfeglUniformMatrix4fv (matloc, 1, false, (vec_t*)&mat[0]);//FIXME
 	} else {
 		qfeglUniformMatrix4fv (matloc, 1, false, (vec_t*)&bsp_vp[0]);//FIXME
 	}
@@ -1140,22 +1147,19 @@ build_tex_elechain (glsltex_t *tex)
 void
 glsl_R_DrawWorld (void)
 {
-	entity_t    worldent;
+	animation_t animation = {};
 	glslbspctx_t bctx = { };
 	int         i;
 
 	clear_texture_chains ();	// do this first for water and skys
 
-	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_refdef.worldmodel;
-
-	bctx.brush = &worldent.renderer.model->brush;
-	bctx.entity = &worldent;
+	bctx.brush = &r_refdef.worldmodel->brush;
+	bctx.animation = &animation;
 
 	R_VisitWorldNodes (&bctx);
 	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			R_DrawBrushModel (ent);
 		}
 	}

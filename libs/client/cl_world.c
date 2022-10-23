@@ -46,6 +46,7 @@
 #include "QF/progs.h"
 #include "QF/msg.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -105,7 +106,7 @@ CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 void
 CL_ParseStatic (qmsg_t *msg, int version)
 {
-	entity_t	   *ent;
+	entity_t	    ent;
 	entity_state_t	es;
 
 	ent = Scene_CreateEntity (cl_world.scene);
@@ -114,10 +115,13 @@ CL_ParseStatic (qmsg_t *msg, int version)
 	CL_ParseBaseline (msg, &es, version);
 	DARRAY_APPEND (&cl_static_entities, es);
 
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+
 	// copy it to the current state
-	ent->renderer.model = cl_world.models.a[es.modelindex];
-	ent->animation.frame = es.frame;
-	ent->renderer.skinnum = es.skinnum;
+	renderer->model = cl_world.models.a[es.modelindex];
+	animation->frame = es.frame;
+	renderer->skinnum = es.skinnum;
 
 	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 

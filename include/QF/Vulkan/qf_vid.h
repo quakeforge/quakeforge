@@ -91,7 +91,7 @@ VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
 
 struct entity_s;
 void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
-							  struct entity_s *ent);
+							  struct entity_s ent);
 
 struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
 

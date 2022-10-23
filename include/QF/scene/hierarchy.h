@@ -52,7 +52,6 @@ typedef struct hierarchy_type_s {
 typedef struct hierref_s {
 	struct hierarchy_s *hierarchy;
 	uint32_t    index;	///< index in hierarchy
-	int32_t     id;		///< scene id
 } hierref_t;
 
 typedef struct hierarchy_s {
@@ -61,8 +60,7 @@ typedef struct hierarchy_s {
 	struct scene_s *scene;
 	uint32_t    num_objects;
 	uint32_t    max_objects;
-	hierref_t **ref;
-	struct entity_s **entity;		//FIXME should not exist
+	uint32_t   *ent;
 	uint32_t   *childCount;
 	uint32_t   *childIndex;
 	uint32_t   *parentIndex;

@@ -226,7 +226,7 @@ render_side (int side)
 }
 
 void
-SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
 	if (scr_skipupdate || !scr_initialized) {
 		return;
@@ -241,7 +241,7 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 	}
 
 	refdef_t   *refdef = r_data->refdef;
-	if (camera) {
+	if (Transform_Valid (camera)) {
 		Transform_GetWorldMatrix (camera, refdef->camera);
 		Transform_GetWorldInverse (camera, refdef->camera_inverse);
 	} else {

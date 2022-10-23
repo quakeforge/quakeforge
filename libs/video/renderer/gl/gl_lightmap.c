@@ -77,7 +77,7 @@ glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
-void (*gl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+void (*gl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
 							msurface_t *surf);
 
 void
@@ -92,7 +92,7 @@ gl_lightmap_init (void)
 }
 
 static inline void
-R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
+R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -110,7 +110,7 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 
 	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (transform);
+		entorigin = transform[3];
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -163,7 +163,7 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 }
 
 static inline void
-R_AddDynamicLights_3 (const transform_t *transform, msurface_t *surf)
+R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -180,7 +180,7 @@ R_AddDynamicLights_3 (const transform_t *transform, msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 
 	if (transform) {
-		entorigin = Transform_GetWorldPosition (transform);
+		entorigin = transform[3];
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -236,7 +236,7 @@ R_AddDynamicLights_3 (const transform_t *transform, msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
 	byte		   *dest;
@@ -292,7 +292,7 @@ R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
 }
 
 static void
-R_BuildLightMap_3 (const transform_t *transform, mod_brush_t *brush,
+R_BuildLightMap_3 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
 	byte		   *dest;
@@ -354,7 +354,7 @@ R_BuildLightMap_3 (const transform_t *transform, mod_brush_t *brush,
 }
 
 static void
-R_BuildLightMap_4 (const transform_t *transform, mod_brush_t *brush,
+R_BuildLightMap_4 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
 	byte		   *dest;
@@ -432,7 +432,7 @@ gl_R_BlendLightmaps (void)
 	for (sc = gl_lightmap_polys; sc; sc = sc->lm_chain) {
 		if (sc->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (sc->transform);
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
 		for (p = sc->surface->polys; p; p = p->next) {
 			qfglBegin (GL_POLYGON);

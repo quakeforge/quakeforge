@@ -45,7 +45,9 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
@@ -67,8 +69,8 @@ static instsurf_t **sky_chain_tail;
 
 typedef struct glbspctx_s {
 	mod_brush_t *brush;
-	entity_t   *entity;
-	vec_t      *transform;
+	animation_t *animation;
+	vec4f_t    *transform;
 	float      *color;
 } glbspctx_t;
 
@@ -192,7 +194,7 @@ R_RenderFullbrights (void)
 		for (sc = tex->tex_chain; sc; sc = sc->tex_chain) {
 			if (sc->transform) {
 				qfglPushMatrix ();
-				qfglLoadMatrixf (sc->transform);
+				qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 			}
 			if (sc->color)
 				qfglColor4fv (sc->color);
@@ -291,7 +293,7 @@ R_AddToLightmapChain (glbspctx_t *bctx, msurface_t *surf, instsurf_t *sc)
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 	  dynamic:
 		if (r_dynamic) {
-			gl_R_BuildLightMap (bctx->entity->transform, bctx->brush, surf);
+			gl_R_BuildLightMap (bctx->transform, bctx->brush, surf);
 		}
 	}
 }
@@ -319,7 +321,7 @@ gl_R_DrawWaterSurfaces (void)
 		surf = s->surface;
 		if (s->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (s->transform);
+			qfglLoadMatrixf ((vec_t*)&s->transform[0]);//FIXME
 		}
 		tex = surf->texinfo->texture->render;
 		if (i != tex->gl_texturenum) {
@@ -374,7 +376,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 					surf = s->surface;
 					if (s->transform) {
 						qfglPushMatrix ();
-						qfglLoadMatrixf (s->transform);
+						qfglLoadMatrixf ((vec_t*)&s->transform[0]);//FIXME
 					}
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
@@ -397,7 +399,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 
 					if (s->transform) {
 						qfglPushMatrix ();
-						qfglLoadMatrixf (s->transform);
+						qfglLoadMatrixf ((vec_t*)&s->transform[0]);//FIXME
 					}
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
@@ -432,7 +434,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 			for (s = tex->tex_chain; s; s = s->tex_chain) {
 				if (s->transform) {
 					qfglPushMatrix ();
-					qfglLoadMatrixf (s->transform);
+					qfglLoadMatrixf ((vec_t*)&s->transform[0]);//FIXME
 				}
 				R_RenderBrushPoly_1 (s->surface);
 
@@ -484,7 +486,7 @@ chain_surface (glbspctx_t *bctx, msurface_t *surf)
 		if (!surf->texinfo->texture->anim_total)
 			tx = surf->texinfo->texture;
 		else
-			tx = R_TextureAnimation (bctx->entity, surf);
+			tx = R_TextureAnimation (bctx->animation, surf);
 		tex = tx->render;
 		sc = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
@@ -495,23 +497,28 @@ chain_surface (glbspctx_t *bctx, msurface_t *surf)
 }
 
 void
-gl_R_DrawBrushModel (entity_t *e)
+gl_R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
+	transform_t transform = Entity_Transform (e);
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
+											   r_refdef.scene->reg);
 	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
-	model_t    *model = e->renderer.model;
+	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	glbspctx_t  bspctx = {
 		brush,
-		e,
-		e->renderer.full_transform,
-		e->renderer.colormod,
+		animation,
+		renderer->full_transform,
+		renderer->colormod,
 	};
 
-	Transform_GetWorldMatrix (e->transform, worldMatrix);
+	Transform_GetWorldMatrix (transform, worldMatrix);
 	if (worldMatrix[0][0] != 1 || worldMatrix[1][1] != 1
 		|| worldMatrix[2][2] != 1) {
 		rotated = true;
@@ -562,8 +569,8 @@ gl_R_DrawBrushModel (entity_t *e)
 	}
 
 	qfglPushMatrix ();
-	gl_R_RotateForEntity (e);
-	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->renderer.full_transform);
+	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&renderer->full_transform[0]);
 	qfglPopMatrix ();
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
@@ -702,11 +709,8 @@ R_VisitWorldNodes (glbspctx_t *bctx)
 void
 gl_R_DrawWorld (void)
 {
-	entity_t    worldent;
+	animation_t animation = {};
 	glbspctx_t  bctx = { };
-
-	memset (&worldent, 0, sizeof (worldent));
-	worldent.renderer.model = r_refdef.worldmodel;
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
@@ -714,8 +718,8 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	bctx.brush = &worldent.renderer.model->brush;
-	bctx.entity = &worldent;
+	bctx.brush = &r_refdef.worldmodel->brush;
+	bctx.animation = &animation;
 
 	R_VisitWorldNodes (&bctx);
 
@@ -723,7 +727,7 @@ gl_R_DrawWorld (void)
 
 	if (r_drawentities) {
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
-			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
 			gl_R_DrawBrushModel (ent);
 		}
 	}

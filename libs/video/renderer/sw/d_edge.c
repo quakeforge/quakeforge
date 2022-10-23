@@ -31,7 +31,9 @@
 #include "QF/cvar.h"
 #include "QF/render.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "d_local.h"
 #include "r_internal.h"
@@ -143,6 +145,19 @@ D_CalcGradients (msurface_t *pface)
 	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
 
+static void
+transform_submodel_poly (surf_t *s)
+{
+	// FIXME: we don't want to do all this for every polygon!
+	// TODO: store once at start of frame
+	transform_t transform = Entity_Transform (s->entity);
+	vec4f_t     local_modelorg = r_refdef.frame.position -
+								 Transform_GetWorldPosition (transform);
+	TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
+
+	R_RotateBmodel (transform);	// FIXME: don't mess with the
+								// frustum, make entity passed in
+}
 
 void
 D_DrawSurfaces (void)
@@ -151,7 +166,6 @@ D_DrawSurfaces (void)
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
 	vec3_t      world_transformed_modelorg;
-	vec4f_t     local_modelorg;
 
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
@@ -204,16 +218,7 @@ D_DrawSurfaces (void)
 				cachewidth = 64;
 
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					transform_t *transform = s->entity->transform;
-					transform = s->entity->transform;
-					local_modelorg = r_refdef.frame.position -
-						Transform_GetWorldPosition (transform);
-					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
-
-					R_RotateBmodel (transform);	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
 				D_CalcGradients (pface);
@@ -236,15 +241,7 @@ D_DrawSurfaces (void)
 				}
 			} else {
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					transform_t *transform = s->entity->transform;
-					local_modelorg = r_refdef.frame.position -
-						Transform_GetWorldPosition (transform);
-					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
-
-					R_RotateBmodel (transform);	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
 				pface = s->data;

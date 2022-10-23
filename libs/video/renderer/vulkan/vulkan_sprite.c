@@ -51,7 +51,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_renderpass.h"
@@ -82,7 +84,7 @@ static QFV_Subpass subpass_map[] = {
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   qfv_renderframe_t *rFrame, entity_t *ent)
+			   qfv_renderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -103,14 +105,18 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 }
 
 void
-Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
 	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-	model_t    *model = ent->renderer.model;
+	model_t    *model = renderer->model;
 	msprite_t  *sprite = model->cache.data;
-	animation_t *animation = &ent->animation;
 
 	mat4f_t     mat = {};
 	uint32_t    frame;
@@ -122,9 +128,9 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
-	mat[3] = Transform_GetWorldPosition (ent->transform);
+	mat[3] = Transform_GetWorldPosition (transform);
 	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
-	R_BillboardFrame (ent, sprite->type, cameravec,
+	R_BillboardFrame (transform, sprite->type, cameravec,
 					  &mat[2], &mat[1], &mat[0]);
 	mat[0] = -mat[0];
 

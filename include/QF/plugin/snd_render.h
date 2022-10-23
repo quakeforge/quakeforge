@@ -55,7 +55,7 @@ typedef struct snd_render_funcs_s {
 	struct sfx_s *(*precache_sound) (const char *sample);
 	struct sfx_s *(*load_sound) (const char *name);
 
-	void      (*update) (struct transform_s *ear,
+	void      (*update) (struct transform_s ear,
 						 const byte *ambient_sound_levels);
 	void      (*stop_all_sounds) (void);
 	void      (*extra_update) (void);

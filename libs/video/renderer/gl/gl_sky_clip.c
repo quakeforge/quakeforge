@@ -692,7 +692,7 @@ draw_black_sky_polys (const instsurf_t *sky_chain)
 
 		if (sc->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (sc->transform);
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
 		while (p) {
 			draw_poly (p);
@@ -778,7 +778,7 @@ draw_z_sky_polys (const instsurf_t *sky_chain)
 
 		if (sc->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (sc->transform);
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
 		while (p) {
 			draw_poly (p);
@@ -829,7 +829,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 
 				if (sc->transform) {
 					qfglPushMatrix ();
-					qfglLoadMatrixf (sc->transform);
+					qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 				}
 				while (p) {
 					int         i;
@@ -855,7 +855,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 
 				if (sc->transform) {
 					qfglPushMatrix ();
-					qfglLoadMatrixf (sc->transform);
+					qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 				}
 				while (p) {
 					int         i;

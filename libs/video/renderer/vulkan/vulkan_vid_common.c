@@ -42,7 +42,9 @@
 #include "QF/heapsort.h"
 #include "QF/plist.h"
 #include "QF/va.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -582,16 +584,17 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd,
-						 entity_t *ent)
+Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 {
 	qfv_device_t *device = ctx->device;
-	int         entaddr = (intptr_t) ent & 0xfffff;
-	vec4f_t     pos = Transform_GetWorldPosition (ent->transform);
+	uint32_t    entgen = Ent_Generation (ent.id);
+	uint32_t    entind = Ent_Index (ent.id);
+	transform_t transform = Entity_Transform (ent);
+	vec4f_t     pos = Transform_GetWorldPosition (transform);
 	vec4f_t     dir = normalf (pos - (vec4f_t) { 0, 0, 0, 1 });
 	vec4f_t     color = 0.5 * dir + (vec4f_t) {0.5, 0.5, 0.5, 1 };
 
 	QFV_CmdBeginLabel (device, cmd,
-					   va (ctx->va_ctx, "ent %05x [%g, %g, %g]", entaddr,
-						   VectorExpand (pos)), color);
+					   va (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
+						   entgen, entind, VectorExpand (pos)), color);
 }

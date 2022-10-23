@@ -165,6 +165,7 @@ gl_R_NewScene (scene_t *scene)
 	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
+	r_refdef.scene = scene;
 	r_refdef.worldmodel = scene->worldmodel;
 	brush = &scene->worldmodel->brush;
 

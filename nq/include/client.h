@@ -35,6 +35,9 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 
+#include "QF/scene/component.h"
+#include "QF/scene/entity.h"
+
 #include "client/chase.h"
 #include "client/entities.h"
 #include "client/input.h"
@@ -218,7 +221,7 @@ extern int noskins;
 
 extern	client_state_t	cl;
 
-extern struct entity_s *cl_entities[MAX_EDICTS];
+extern struct entity_s cl_entities[MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
 extern struct set_s cl_forcelink;
 
@@ -278,7 +281,7 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
-struct entity_s *CL_GetEntity (int num);
+struct entity_s CL_GetEntity (int num);
 
 extern	double			realtime;
 

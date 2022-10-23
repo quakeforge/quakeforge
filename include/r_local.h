@@ -145,33 +145,34 @@ void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
 				   float fov_x, float fov_y);
 
 struct entity_s;
+struct animation_s;
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
-void R_DrawSprite (struct entity_s *ent);
-void R_RenderFace (struct entity_s *ent, msurface_t *fa, int clipflags);
-void R_RenderPoly (struct entity_s *ent, msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (struct entity_s *ent, bedge_t *pedges, msurface_t *psurf);
+void R_DrawSprite (struct entity_s ent);
+void R_RenderFace (struct entity_s ent, msurface_t *fa, int clipflags);
+void R_RenderPoly (struct entity_s ent, msurface_t *fa, int clipflags);
+void R_RenderBmodelFace (struct entity_s ent, bedge_t *pedges, msurface_t *psurf);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-struct texture_s *R_TextureAnimation (const struct entity_s *entity, msurface_t *surf) __attribute__((pure));
+struct texture_s *R_TextureAnimation (const struct animation_s *animation, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (struct entity_s *ent, model_t *pmodel, int clipflags, struct mleaf_s *topleaf);
-void R_DrawSolidClippedSubmodelPolygons (struct entity_s *ent, model_t *pmodel, struct mnode_s *topnode);
+void R_DrawSubmodelPolygons (struct entity_s ent, model_t *pmodel, int clipflags, struct mleaf_s *topleaf);
+void R_DrawSolidClippedSubmodelPolygons (struct entity_s ent, model_t *pmodel, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (struct entity_s *ent, alight_t *plighting);
-void R_IQMDrawModel (struct entity_s *ent, alight_t *plighting);
+void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
+void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
 struct animation_s;
 maliasskindesc_t *R_AliasGetSkindesc (struct animation_s *animation, int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (struct animation_s *animation, aliashdr_t *hdr);
 float R_AliasGetLerpedFrames (struct animation_s *animation, aliashdr_t *hdr);
-float R_IQMGetLerpedFrames (struct entity_s *ent, iqm_t *hdr);
+float R_IQMGetLerpedFrames (struct animation_s *animation, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);
 iqmframe_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
@@ -197,7 +198,7 @@ extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 
 struct transform_s;
-extern void R_RotateBmodel (struct transform_s *transform);
+extern void R_RotateBmodel (struct transform_s transform);
 
 extern int	c_faceclip;
 extern int	r_polycount;
@@ -229,7 +230,7 @@ typedef struct btofpoly_s {
 extern int			numbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (struct entity_s *ent, model_t *clmodel);
+void	R_ZDrawSubmodelPolys (struct entity_s ent, model_t *clmodel);
 
 // Alias models ===========================================
 
@@ -244,7 +245,7 @@ extern auxvert_t		*pauxverts;
 extern float            ziscale;
 extern float            aliastransform[3][4];
 
-qboolean R_AliasCheckBBox (struct entity_s *ent);
+qboolean R_AliasCheckBBox (struct entity_s ent);
 
 // turbulence stuff =======================================
 

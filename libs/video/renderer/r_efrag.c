@@ -101,11 +101,12 @@ R_ClearEfrags (void)
   Call when removing an object from the world or moving it to another position
 */
 void
-R_RemoveEfrags (entity_t *ent)
+R_RemoveEfrags (entity_t ent)
 {
 	efrag_t    *ef, *old, *walk, **prev;
+	visibility_t *vis = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
 
-	ef = ent->visibility.efrag;
+	ef = vis->efrag;
 
 	while (ef) {
 		prev = &ef->leaf->efrags;
@@ -128,12 +129,12 @@ R_RemoveEfrags (entity_t *ent)
 		r_free_efrags = old;
 	}
 
-	ent->visibility.efrag = 0;
+	vis->efrag = 0;
 }
 
 static void
-R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
-					 vec3_t emins, vec3_t emaxs)
+R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
+					 visibility_t *visibility, vec3_t emins, vec3_t emaxs)
 {
 	efrag_t    *ef;
 	plane_t    *splitplane;
@@ -146,7 +147,7 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 	node_stack = alloca ((brush->depth + 2) * sizeof (mnode_t *));
 	node_ptr = node_stack;
 
-	lastlink = &ent->visibility.efrag;
+	lastlink = &visibility->efrag;
 
 	*node_ptr++ = brush->numnodes;
 
@@ -154,8 +155,8 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 	while (node_id != (int) brush->numnodes) {
 		// add an efrag if the node is a leaf
 		if (__builtin_expect (node_id < 0, 0)) {
-			if (ent->visibility.topnode_id == -1) {
-				ent->visibility.topnode_id = node_id;
+			if (visibility->topnode_id == -1) {
+				visibility->topnode_id = node_id;
 			}
 
 			leaf = brush->leafs + ~node_id;
@@ -164,6 +165,7 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 
 			// add the link to the chain of links on the entity
 			ef->entity = ent;
+			ef->queue_num = queue;
 			*lastlink = ef;
 			lastlink = &ef->entnext;
 
@@ -182,8 +184,8 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 			if (sides == 3) {
 				// split on this plane
 				// if this is the first splitter of this bmodel, remember it
-				if (ent->visibility.topnode_id == -1) {
-					ent->visibility.topnode_id = node_id;
+				if (visibility->topnode_id == -1) {
+					visibility->topnode_id = node_id;
 				}
 			}
 			// recurse down the contacted sides
@@ -202,45 +204,34 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 }
 
 void
-R_AddEfrags (mod_brush_t *brush, entity_t *ent)
+R_AddEfrags (mod_brush_t *brush, entity_t ent)
 {
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *rend = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	visibility_t *vis = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
 
-	if (!ent->renderer.model) {
+	if (!rend->model) {
 		return;
 	}
 
-	entmodel = ent->renderer.model;
+	entmodel = rend->model;
 
-	vec4f_t     org = Transform_GetWorldPosition (ent->transform);
+	vec4f_t     org = Transform_GetWorldPosition (transform);
 	VectorAdd (org, entmodel->mins, emins);
 	VectorAdd (org, entmodel->maxs, emaxs);
 
-	ent->visibility.topnode_id = -1;	// leaf 0 (solid space)
-	R_SplitEntityOnNode (brush, ent, emins, emaxs);
+	vis->topnode_id = -1;	// leaf 0 (solid space)
+	R_SplitEntityOnNode (brush, ent, rend->model->type, vis, emins, emaxs);
 }
 
 void
 R_StoreEfrags (const efrag_t *efrag)
 {
-	entity_t   *ent;
-	model_t    *model;
-
 	while (efrag) {
-		ent = efrag->entity;
-		model = ent->renderer.model;
-
-		switch (model->type) {
-			case mod_alias:
-			case mod_brush:
-			case mod_sprite:
-			case mod_iqm:
-				EntQueue_AddEntity (r_ent_queue, ent, model->type);
-				break;
-			default:
-				break;
-		}
+		entity_t    ent = efrag->entity;
+		EntQueue_AddEntity (r_ent_queue, ent, efrag->queue_num);
 		efrag = efrag->leafnext;
 	}
 }

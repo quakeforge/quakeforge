@@ -40,9 +40,23 @@
 */
 ///@{
 
+enum scene_components {
+	scene_href,			//hierarchical transform
+	scene_animation,
+	scene_visibility,
+	scene_renderer,
+	scene_active,
+	scene_old_origin,	//XXX FIXME XXX should not be here
+
+	scene_num_components
+};
+
 typedef struct scene_s {
+	struct ecs_registry_s *reg;
+
 	struct scene_resources_s *const resources;
 	struct hierarchy_s *hierarchies;
+
 	struct model_s *worldmodel;
 	int         num_models;
 	struct model_s **models;
@@ -52,10 +66,8 @@ typedef struct scene_s {
 
 scene_t *Scene_NewScene (void);
 void Scene_DeleteScene (scene_t *scene);
-struct entity_s *Scene_CreateEntity (scene_t *scene);
-struct entity_s *Scene_GetEntity (scene_t *scene, int id) __attribute__((pure));
-struct transform_s *Scene_GetTransform (scene_t *scene, int id) __attribute__((pure));
-void Scene_DestroyEntity (scene_t *scene, struct entity_s *entity);
+struct entity_s Scene_CreateEntity (scene_t *scene);
+void Scene_DestroyEntity (scene_t *scene, struct entity_s entity);
 void Scene_FreeAllEntities (scene_t *scene);
 
 

@@ -83,15 +83,17 @@ COMPINLINE void Component_CopyElements (const component_t *component,
 										void *dstArray, uint32_t dstIndex,
 										const void *srcArray, uint32_t srcIndex,
 										uint32_t count);
-COMPINLINE void Component_CreateElements (const component_t *component,
-										  void *array,
-										  uint32_t index, uint32_t count);
+COMPINLINE void *Component_CreateElements (const component_t *component,
+										   void *array,
+										   uint32_t index, uint32_t count);
 COMPINLINE void Component_DestroyElements (const component_t *component,
 										   void *array,
 										   uint32_t index, uint32_t count);
 COMPINLINE uint32_t Ent_Index (uint32_t id);
 COMPINLINE uint32_t Ent_Generation (uint32_t id);
 COMPINLINE uint32_t Ent_NextGen (uint32_t id);
+
+COMPINLINE int ECS_EntValid (uint32_t id, ecs_registry_t *reg);
 COMPINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
 								 ecs_registry_t *reg);
 COMPINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
@@ -132,7 +134,7 @@ Component_CopyElements (const component_t *component,
 	memcpy (dst, src, count * component->size);
 }
 
-COMPINLINE void
+COMPINLINE void *
 Component_CreateElements (const component_t *component, void *array,
 						  uint32_t index, uint32_t count)
 {
@@ -145,6 +147,7 @@ Component_CreateElements (const component_t *component, void *array,
 		__auto_type dst = (byte *) array + index * component->size;
 		memset (dst, 0, count * component->size);
 	}
+	return (byte *) array + index * component->size;
 }
 
 COMPINLINE void
@@ -178,6 +181,13 @@ Ent_NextGen(uint32_t id)
 }
 
 COMPINLINE int
+ECS_EntValid (uint32_t id, ecs_registry_t *reg)
+{
+	uint32_t    ind = Ent_Index (id);
+	return ind < reg->num_entities && reg->entities[ind] == id;
+}
+
+COMPINLINE int
 Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
 	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
@@ -201,7 +211,7 @@ void ECS_RegisterComponents (ecs_registry_t *registry,
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 
-void Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
+void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,
 						  ecs_registry_t *registry);
 

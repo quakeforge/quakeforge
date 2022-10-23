@@ -166,6 +166,7 @@ typedef struct {
 	int			ambientlight;
 	int			drawflat;
 
+	struct scene_s *scene;
 	struct model_s *worldmodel;
 } refdef_t;
 

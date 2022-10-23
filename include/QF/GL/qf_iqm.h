@@ -45,6 +45,6 @@ typedef struct glsliqm_s {
 } gliqm_t;
 
 struct entity_s;
-void gl_R_DrawIQMModel (struct entity_s *ent);
+void gl_R_DrawIQMModel (struct entity_s ent);
 
 #endif//__QF_GL_qf_iqm_h

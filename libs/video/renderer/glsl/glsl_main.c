@@ -45,6 +45,7 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
@@ -97,7 +98,7 @@ glsl_R_RenderEntities (entqueue_t *queue)
 		begun = 0; \
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
+			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
@@ -116,11 +117,13 @@ glsl_R_RenderEntities (entqueue_t *queue)
 static void
 R_DrawViewModel (void)
 {
-	entity_t   *ent = vr_data.view_model;
+	entity_t    ent = vr_data.view_model;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
-		|| !ent->renderer.model)
+		|| !renderer->model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -143,7 +146,7 @@ glsl_R_RenderView (void)
 	R_SetupView ();
 	glsl_R_DrawWorld ();
 	glsl_R_DrawSky ();
-	if (vr_data.view_model) {
+	if (Entity_Valid (vr_data.view_model)) {
 		R_DrawViewModel ();
 	}
 }
@@ -196,6 +199,7 @@ glsl_R_NewScene (scene_t *scene)
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
+	r_refdef.scene = scene;
 	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update

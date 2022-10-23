@@ -42,6 +42,7 @@
 
 #include "QF/cmd.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
@@ -151,6 +152,7 @@ R_NewScene (scene_t *scene)
 	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
+	r_refdef.scene = scene;
 	r_refdef.worldmodel = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
@@ -217,13 +219,13 @@ R_SetColormap (const byte *cmap)
 }
 
 static inline void
-draw_sprite_entity (entity_t *ent)
+draw_sprite_entity (entity_t ent)
 {
 	R_DrawSprite (ent);
 }
 
 static inline void
-setup_lighting (entity_t *ent, alight_t *lighting)
+setup_lighting (entity_t ent, alight_t *lighting)
 {
 	float       minlight = 0;
 	int         j;
@@ -232,7 +234,9 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 	float       add;
 	float       lightvec[3] = { -1, 0, 0 };
 
-	minlight = max (ent->renderer.model->min_light, ent->renderer.min_light);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	// 128 instead of 255 due to clamping below
 	j = max (R_LightPoint (&r_refdef.worldmodel->brush, r_entorigin),
@@ -261,11 +265,13 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 }
 
 static inline void
-draw_alias_entity (entity_t *ent)
+draw_alias_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	ent->visibility.trivial_accept = 0;	//FIXME
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 r_refdef.scene->reg);
+	visibility->trivial_accept = 0;	//FIXME
 	if (R_AliasCheckBBox (ent)) {
 		alight_t    lighting;
 		setup_lighting (ent, &lighting);
@@ -274,11 +280,13 @@ draw_alias_entity (entity_t *ent)
 }
 
 static inline void
-draw_iqm_entity (entity_t *ent)
+draw_iqm_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	ent->visibility.trivial_accept = 0;	//FIXME
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 r_refdef.scene->reg);
+	visibility->trivial_accept = 0;	//FIXME
 
 	alight_t    lighting;
 	setup_lighting (ent, &lighting);
@@ -296,8 +304,9 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 	do { \
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
-			r_entorigin = Transform_GetWorldPosition (ent->transform); \
+			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
+			transform_t transform = Entity_Transform (ent); \
+			r_entorigin = Transform_GetWorldPosition (transform); \
 			draw_##type_name##_entity (ent); \
 		} \
 	} while (0)
@@ -319,7 +328,7 @@ R_DrawViewModel (void)
 	float       add;
 	float       minlight;
 	dlight_t   *dl;
-	entity_t   *viewent;
+	entity_t    viewent;
 	alight_t    lighting;
 
 	if (vr_data.inhibit_viewmodel
@@ -328,15 +337,18 @@ R_DrawViewModel (void)
 		return;
 
 	viewent = vr_data.view_model;
-	if (!viewent->renderer.model)
+
+	renderer_t *renderer = Ent_GetComponent (viewent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	transform_t transform = Entity_Transform (viewent);
+	if (!renderer->model)
 		return;
 
-	VectorCopy (Transform_GetWorldPosition (viewent->transform), r_entorigin);
+	VectorCopy (Transform_GetWorldPosition (transform), r_entorigin);
 
 	VectorNegate (vup, lighting.lightvec);
 
-	minlight = max (viewent->renderer.min_light,
-					viewent->renderer.model->min_light);
+	minlight = max (renderer->min_light, renderer->model->min_light);
 
 	j = max (R_LightPoint (&r_refdef.worldmodel->brush,
 						   r_entorigin), minlight * 128);
@@ -370,7 +382,7 @@ R_DrawViewModel (void)
 }
 
 static int
-R_BmodelCheckBBox (entity_t *ent, model_t *clmodel, float *minmaxs)
+R_BmodelCheckBBox (entity_t ent, model_t *clmodel, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
@@ -379,7 +391,8 @@ R_BmodelCheckBBox (entity_t *ent, model_t *clmodel, float *minmaxs)
 
 	clipflags = 0;
 
-	Transform_GetWorldMatrix (ent->transform, mat);
+	transform_t transform = Entity_Transform (ent);
+	Transform_GetWorldMatrix (transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
 			d = DotProduct (mat[3], view_clipplanes[i].normal);
@@ -439,10 +452,15 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	insubmodel = true;
 
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
-		entity_t   *ent = queue->ent_queues[mod_brush].a[i];
+		entity_t    ent = queue->ent_queues[mod_brush].a[i];
 
-		VectorCopy (Transform_GetWorldPosition (ent->transform), origin);
-		clmodel = ent->renderer.model;
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												 r_refdef.scene->reg);
+		transform_t transform = Entity_Transform (ent);
+		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+													 r_refdef.scene->reg);
+		VectorCopy (Transform_GetWorldPosition (transform), origin);
+		clmodel = renderer->model;
 
 		// see if the bounding box lets us trivially reject, also
 		// sets trivial accept status
@@ -461,7 +479,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			r_pcurrentvertbase = brush->vertexes;
 
 			// FIXME: stop transforming twice
-			R_RotateBmodel (ent->transform);
+			R_RotateBmodel (transform);
 
 			// calculate dynamic lighting for bmodel if it's not an
 			// instanced model
@@ -486,7 +504,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			if (r_drawpolys | r_drawculledpolys) {
 				R_ZDrawSubmodelPolys (ent, clmodel);
 			} else {
-				int         topnode_id = ent->visibility.topnode_id;
+				int         topnode_id = visibility->topnode_id;
 				mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
 				if (topnode_id >= 0) {
@@ -583,7 +601,7 @@ R_RenderView_ (void)
 
 	R_EdgeDrawing (r_ent_queue);
 
-	if (vr_data.view_model) {
+	if (Entity_Valid (vr_data.view_model)) {
 		R_DrawViewModel ();
 	}
 

@@ -29,6 +29,7 @@
 #define __QF_GL_rmain_h
 
 #include "QF/qtypes.h"
+#include "QF/simd/types.h"
 
 struct cvar_s;
 struct entity_s;
@@ -41,7 +42,7 @@ extern float gl_modelalpha;
 extern void gl_multitexture_f (void *data, const struct cvar_s *var);
 
 void glrmain_init (void);
-void gl_R_RotateForEntity (struct entity_s *e);
+void gl_R_RotateForEntity (const vec4f_t *mat);
 
 struct model_s;
 struct entqueue_s;

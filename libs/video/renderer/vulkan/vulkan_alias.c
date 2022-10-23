@@ -38,7 +38,9 @@
 #include "QF/cvar.h"
 #include "QF/va.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_matrices.h"
@@ -76,7 +78,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   aliashdr_t *hdr, qfv_renderframe_t *rFrame, entity_t *ent)
+			   aliashdr_t *hdr, qfv_renderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -116,15 +118,19 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 }
 
 void
-Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
-	model_t    *model = ent->renderer.model;
+	model_t    *model = renderer->model;
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
-	animation_t *animation = &ent->animation;
 	alias_push_constants_t constants = {};
 
 	if (!(hdr = model->aliashdr)) {
@@ -136,7 +142,7 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (alias_push_constants_t, mat),
-			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (ent->transform) },
+			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (alias_push_constants_t, blend),
 			sizeof (float), &constants.blend },
@@ -158,19 +164,19 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 		//skin = ent->skin->tex;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
-	QuatCopy (ent->renderer.colormod, constants.base_color);
+	QuatCopy (renderer->colormod, constants.base_color);
 	QuatCopy (skin->colora, constants.colorA);
 	QuatCopy (skin->colorb, constants.colorB);
 	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
-				   ent->animation.pose1, ent->animation.pose2,
+				   animation->pose1, animation->pose2,
 				   0, 2, push_constants, hdr, rFrame, ent);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
-				   ent->animation.pose1, ent->animation.pose2,
+				   animation->pose1, animation->pose2,
 				   skin, 6, push_constants, hdr, rFrame, ent);
 }
 

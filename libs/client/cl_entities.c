@@ -39,8 +39,13 @@
 
 #include "QF/plugin/vid_render.h"	//FIXME
 
+#include "QF/scene/component.h"
+#include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
+
 #include "client/entities.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
 entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
@@ -353,7 +358,7 @@ vec3_t ent_colormod[256] = {
 };
 
 void
-CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
+CL_TransformEntity (entity_t ent, float scale, const vec3_t angles,
 					vec4f_t position)
 {
 	vec4f_t     rotation;
@@ -364,7 +369,9 @@ CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
 	} else {
 		vec3_t      ang;
 		VectorCopy (angles, ang);
-		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
+		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												  ent.reg);
+		if (renderer->model && renderer->model->type == mod_alias) {
 			// stupid quake bug
 			// why, oh, why, do alias models pitch in the opposite direction
 			// to everything else?
@@ -372,5 +379,6 @@ CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
 		}
 		AngleQuat (ang, (vec_t*)&rotation);//FIXME
 	}
-	Transform_SetLocalTransform (ent->transform, scalevec, rotation, position);
+	transform_t transform = Entity_Transform (ent);
+	Transform_SetLocalTransform (transform, scalevec, rotation, position);
 }

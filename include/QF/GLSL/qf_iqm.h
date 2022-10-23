@@ -41,7 +41,7 @@ typedef struct glsliqm_s {
 
 void glsl_R_InitIQM (void);
 struct entity_s;
-void glsl_R_DrawIQM (struct entity_s *ent);
+void glsl_R_DrawIQM (struct entity_s ent);
 void glsl_R_IQMBegin (void);
 void glsl_R_IQMEnd (void);
 

@@ -112,7 +112,7 @@ void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 
 void Vulkan_IQMBegin (struct qfv_renderframe_s *rFrame);
-void Vulkan_DrawIQM (struct entity_s *ent, struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawIQM (struct entity_s ent, struct qfv_renderframe_s *rFrame);
 void Vulkan_IQMEnd (struct qfv_renderframe_s *rFrame);
 
 void Vulkan_IQM_Init (struct vulkan_ctx_s *ctx);

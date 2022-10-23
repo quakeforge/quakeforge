@@ -33,7 +33,9 @@
 #include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "d_local.h"
@@ -225,12 +227,14 @@ D_SCDump (void)
 #endif
 
 surfcache_t *
-D_CacheSurface (entity_t *ent, msurface_t *surface, int miplevel)
+D_CacheSurface (entity_t ent, msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, r_refdef.scene->reg);
+	transform_t transform = Entity_Transform (ent);
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (ent, surface);
+	r_drawsurf.texture = R_TextureAnimation (animation, surface);
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
@@ -281,7 +285,7 @@ D_CacheSurface (entity_t *ent, msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
-	R_DrawSurface (ent->transform);
+	R_DrawSurface (transform);
 
 	return surface->cachespots[miplevel];
 }

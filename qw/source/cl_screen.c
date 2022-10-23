@@ -46,6 +46,7 @@
 
 #include "QF/plugin/console.h"
 
+#include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"

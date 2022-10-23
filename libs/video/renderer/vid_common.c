@@ -31,6 +31,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/component.h"
+
 #include "QF/ui/view.h"
 
 #include "mod_internal.h"
@@ -54,7 +56,7 @@ vid_render_data_t vid_render_data = {
 	.inhibit_viewmodel = false,
 	.paused = false,
 	.lineadj = 0,
-	.view_model = 0,
+	.view_model = nullentity,
 	.frametime = 0.0,
 	.realtime = 0.0,
 	.lightstyle = 0,

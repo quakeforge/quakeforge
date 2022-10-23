@@ -91,6 +91,7 @@
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
+#include "QF/scene/component.h"
 #include "QF/scene/transform.h"
 #include "QF/scene/scene.h"
 
@@ -652,7 +653,7 @@ CL_ClearState (void)
 
 	S_StopAllSounds ();
 
-	if (cl.viewstate.weapon_entity) {
+	if (Entity_Valid (cl.viewstate.weapon_entity)) {
 		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
 	}
 	// wipe the entire cl structure
@@ -2003,7 +2004,7 @@ Host_Frame (float time)
 		S_Update (cl.viewstate.camera_transform, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (0, 0);
+		S_Update (nulltransform, 0);
 
 	CDAudio_Update ();
 

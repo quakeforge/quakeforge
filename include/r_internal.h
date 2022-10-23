@@ -72,6 +72,7 @@ int R_InitGraphTextures (int base);
 
 struct entity_s;
 struct animation_s;
+struct transform_s;
 void R_DrawAliasModel (struct entity_s *e);
 
 void R_MarkLeaves (struct mleaf_s *viewleaf, int *node_visframes,
@@ -83,7 +84,7 @@ extern int *r_face_visframes;
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);
 
-int R_BillboardFrame (struct entity_s *ent, int orientation,
+int R_BillboardFrame (struct transform_s transform, int orientation,
 					  vec4f_t cameravec,
 					  vec4f_t *bbup, vec4f_t *bbright, vec4f_t *bbfwd);
 mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,

@@ -282,8 +282,8 @@ extern int hud_scoreboard_uid;
 
 extern	client_state_t	cl;
 
-extern	entity_t	*cl_entities[512];
-extern	byte			cl_entity_valid[2][512];
+extern entity_t cl_entities[512];
+extern byte cl_entity_valid[2][512];
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to

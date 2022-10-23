@@ -31,6 +31,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/simd/types.h"
+#include "QF/scene/entity.h"
 
 typedef struct {
 	int     destcolor[3];
@@ -58,7 +59,7 @@ typedef struct viewstate_s {
 	vec4f_t     velocity;
 	vec4f_t     punchangle;
 	float       frametime;
-	struct transform_s *camera_transform;
+	transform_t camera_transform;
 	double      time;
 	float       height;
 	int         weaponframe;
@@ -85,8 +86,8 @@ typedef struct viewstate_s {
 	double      laststop;
 
 	struct model_s *weapon_model;
-	struct entity_s *weapon_entity;
-	struct entity_s *player_entity;
+	entity_t    weapon_entity;
+	entity_t    player_entity;
 
 	struct chasestate_s *chasestate;
 } viewstate_t;

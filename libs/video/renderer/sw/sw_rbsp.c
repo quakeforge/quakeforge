@@ -36,13 +36,15 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "r_internal.h"
 
 typedef struct glbspctx_s {
 	mod_brush_t *brush;
-	entity_t   *entity;
+	entity_t    entity;
 } swbspctx_t;
 
 // current entity info
@@ -83,7 +85,7 @@ R_EntityRotate (vec3_t vec)
 
 
 void
-R_RotateBmodel (transform_t *transform)
+R_RotateBmodel (transform_t transform)
 {
 	mat4f_t     mat;
 	Transform_GetWorldMatrix (transform, mat);
@@ -102,7 +104,7 @@ R_RotateBmodel (transform_t *transform)
 
 
 static void
-R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
+R_RecursiveClipBPoly (entity_t ent, bedge_t *pedges, mnode_t *pnode,
 					  msurface_t *psurf)
 {
 	bedge_t    *psideedges[2], *pnextedge, *ptedge;
@@ -250,7 +252,7 @@ R_RecursiveClipBPoly (entity_t *ent, bedge_t *pedges, mnode_t *pnode,
 
 
 void
-R_DrawSolidClippedSubmodelPolygons (entity_t *ent, model_t *model,
+R_DrawSolidClippedSubmodelPolygons (entity_t ent, model_t *model,
 									mnode_t *topnode)
 {
 	int         i, j, lindex;
@@ -321,7 +323,7 @@ R_DrawSolidClippedSubmodelPolygons (entity_t *ent, model_t *model,
 
 
 void
-R_DrawSubmodelPolygons (entity_t *ent, model_t *model, int clipflags,
+R_DrawSubmodelPolygons (entity_t ent, model_t *model, int clipflags,
 						mleaf_t *topleaf)
 {
 	int         i;
@@ -377,8 +379,8 @@ visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 {
 	int         c;
 	msurface_t *surf;
-	entity_t   *ent = bctx->entity;
-	mod_brush_t *brush = &ent->renderer.model->brush;
+	entity_t    ent = bctx->entity;
+	mod_brush_t *brush = bctx->brush;
 
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
 	side = (~side + 1) & SURF_PLANEBACK;
@@ -474,7 +476,7 @@ R_VisitWorldNodes (swbspctx_t *bctx, int clipflags)
 	int         front;
 	int         side, cf;
 	int         node_id;
-	mod_brush_t *brush = &bctx->entity->renderer.model->brush;
+	mod_brush_t *brush = bctx->brush;
 
 	// +2 for paranoia
 	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
@@ -531,14 +533,12 @@ R_RenderWorld (void)
 {
 	int         i;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
-	static entity_t    worldent = {};
-	entity_t   *ent = &worldent;
+	entity_t    ent = nullentity;
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 	swbspctx_t  bspctx = {
 		brush,
 		ent,
 	};
-	worldent.renderer.model = r_refdef.worldmodel;
 
 	pbtofpolys = btofpolys;
 

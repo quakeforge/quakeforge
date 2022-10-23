@@ -236,8 +236,9 @@ CL_ClearMemory (void)
 	cls.signon = 0;
 	SZ_Clear (&cls.message);
 
-	if (cl.viewstate.weapon_entity) {
+	if (Entity_Valid (cl.viewstate.weapon_entity)) {
 		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+		cl.viewstate.weapon_entity = nullentity;
 	}
 	if (cl.players) {
 		int         i;
@@ -479,16 +480,19 @@ CL_PrintEntities_f (void)
 	int         i;
 
 	for (i = 0; i < cl.num_entities; i++) {
-		entity_t   *ent = cl_entities[i];
+		entity_t    ent = cl_entities[i];
+		transform_t transform = Entity_Transform (ent);
+		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
 		Sys_Printf ("%3i:", i);
-		if (!ent || !ent->renderer.model) {
+		if (!Entity_Valid (ent) || !renderer->model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		vec4f_t     org = Transform_GetWorldPosition (ent->transform);
-		vec4f_t     rot = Transform_GetWorldRotation (ent->transform);
+		vec4f_t     org = Transform_GetWorldPosition (transform);
+		vec4f_t     rot = Transform_GetWorldRotation (transform);
 		Sys_Printf ("%s:%2i  "VEC4F_FMT" "VEC4F_FMT"\n",
-					ent->renderer.model->path, ent->animation.frame,
+					renderer->model->path, animation->frame,
 					VEC4_EXP (org), VEC4_EXP (rot));
 	}
 }
@@ -674,7 +678,7 @@ CL_Frame (void)
 		S_Update (cl.viewstate.camera_transform, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (0, 0);
+		S_Update (nulltransform, 0);
 
 	CDAudio_Update ();
 

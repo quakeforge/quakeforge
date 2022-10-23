@@ -40,7 +40,9 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "r_internal.h"
 
@@ -241,13 +243,18 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 }
 
 void
-R_DrawSprite (entity_t *ent)
+R_DrawSprite (entity_t ent)
 {
-	msprite_t  *sprite = ent->renderer.model->cache.data;
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
+	msprite_t  *sprite = renderer->model->cache.data;
 
 	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
 
-	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, &ent->animation);
+	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, animation);
 
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
@@ -255,7 +262,8 @@ R_DrawSprite (entity_t *ent)
 	vec4f_t     up = {};
 	vec4f_t     right = {};
 	vec4f_t     fwd = {};
-	if (!R_BillboardFrame (ent, sprite->type, cameravec, &up, &right, &fwd)) {
+	if (!R_BillboardFrame (transform, sprite->type, cameravec,
+						   &up, &right, &fwd)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}

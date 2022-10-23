@@ -396,7 +396,7 @@ void SND_SetAmbient (snd_t *snd, int amb_channel, sfx_t *sfx);
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */
-void SND_SetListener (snd_t *snd, struct transform_s *ear,
+void SND_SetListener (snd_t *snd, struct transform_s ear,
 					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.

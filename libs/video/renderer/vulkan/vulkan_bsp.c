@@ -52,7 +52,9 @@
 #include "QF/va.h"
 
 #include "QF/math/bitop.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
@@ -583,16 +585,20 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 }
 
 static int
-R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
+R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 	float       radius;
-	model_t    *model;
+	model_t    *model = renderer->model;
 	vec3_t      mins, maxs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	model = e->renderer.model;
 	mat4f_t mat;
-	Transform_GetWorldMatrix (e->transform, mat);
+	Transform_GetWorldMatrix (transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		radius = model->radius;
 		if (R_CullSphere (pass->frustum, (vec_t*)&mat[3], radius)) { //FIXME
@@ -604,13 +610,13 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		if (R_CullBox (pass->frustum, mins, maxs))
 			return 1;
 	}
-	if (Vulkan_Scene_AddEntity (ctx, e) < 0) {
+	if (Vulkan_Scene_AddEntity (ctx, ent) < 0) {
 		return 0;
 	}
 
-	pass->ent_frame = e->animation.frame & 1;
+	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
-	pass->inst_id |= e->renderer.colormod[3] < 1 ? INST_ALPHA : 0;
+	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;
 	if (!pass->instances[model->render_id].entities.size) {
 		bsp_model_t *m = &bctx->models[model->render_id];
 		bsp_face_t *face = &bctx->faces[m->first_face];
@@ -620,7 +626,7 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		}
 	}
 	DARRAY_APPEND (&pass->instances[model->render_id].entities,
-				   e->renderer.render_id);
+				   renderer->render_id);
 	return 1;
 }
 
@@ -1028,9 +1034,13 @@ draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
 static int
 ent_model_cmp (const void *_a, const void *_b)
 {
-	const entity_t * const *a = _a;
-	const entity_t * const *b = _b;
-	return (*a)->renderer.model->render_id - (*b)->renderer.model->render_id;
+	const entity_t *a = _a;
+	const entity_t *b = _b;
+	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer,
+									   r_refdef.scene->reg);
+	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer,
+									   r_refdef.scene->reg);
+	return ra->model->render_id - rb->model->render_id;
 }
 
 void
@@ -1057,22 +1067,15 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
 	bframe->index_count = 0;
 
-	entity_t    worldent = {
-		.renderer = {
-			.model = r_refdef.worldmodel,
-			.colormod = { 1, 1, 1, 1 },
-		},
-	};
+	entity_t    worldent = nullentity;
 
-	Vulkan_Scene_AddEntity (ctx, &worldent);
+	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
 
-	int         world_id = worldent.renderer.model->render_id;
 	bctx->main_pass.ent_frame = 0;	// world is always frame 0
 	bctx->main_pass.inst_id = world_id;
-	bctx->main_pass.brush = &worldent.renderer.model->brush;
+	bctx->main_pass.brush = &r_refdef.worldmodel->brush;
 	if (bctx->main_pass.instances) {
-		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
-					   worldent.renderer.render_id);
+		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities, world_id);
 	}
 	R_VisitWorldNodes (&bctx->main_pass, ctx);
 	if (!bctx->vertex_buffer) {
@@ -1081,9 +1084,9 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	if (r_drawentities) {
 		heapsort (r_ent_queue->ent_queues[mod_brush].a,
 				  r_ent_queue->ent_queues[mod_brush].size,
-				  sizeof (entity_t *), ent_model_cmp);
+				  sizeof (entity_t), ent_model_cmp);
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			if (!R_DrawBrushModel (ent, &bctx->main_pass, ctx)) {
 				Sys_Printf ("Too many entities!\n");
 				break;

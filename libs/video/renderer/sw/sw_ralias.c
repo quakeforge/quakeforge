@@ -36,7 +36,9 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "d_ifacea.h"
 #include "r_internal.h"
@@ -83,10 +85,10 @@ static aedge_t aedges[12] = {
 	{0, 5}, {1, 4}, {2, 7}, {3, 6}
 };
 
-static void R_AliasSetUpTransform (entity_t *ent, int trivial_accept);
+static void R_AliasSetUpTransform (entity_t ent, int trivial_accept);
 
 qboolean
-R_AliasCheckBBox (entity_t *ent)
+R_AliasCheckBBox (entity_t ent)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -97,10 +99,16 @@ R_AliasCheckBBox (entity_t *ent)
 	qboolean    zclipped, zfullyclipped;
 	unsigned int anyclip, allclip;
 	int         minz;
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 
 	// expand, rotate, and translate points into worldspace
-	ent->visibility.trivial_accept = 0;
-	pmodel = ent->renderer.model;
+	visibility->trivial_accept = 0;
+	pmodel = renderer->model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
@@ -108,7 +116,7 @@ R_AliasCheckBBox (entity_t *ent)
 	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
-	frame = ent->animation.frame;
+	frame = animation->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
@@ -223,11 +231,11 @@ R_AliasCheckBBox (entity_t *ent)
 		return false;					// trivial reject off one side
 	}
 
-	ent->visibility.trivial_accept = !anyclip & !zclipped;
+	visibility->trivial_accept = !anyclip & !zclipped;
 
-	if (ent->visibility.trivial_accept) {
+	if (visibility->trivial_accept) {
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
-			ent->visibility.trivial_accept |= 2;
+			visibility->trivial_accept |= 2;
 		}
 	}
 
@@ -354,13 +362,14 @@ R_AliasPreparePoints (void)
 }
 
 static void
-R_AliasSetUpTransform (entity_t *ent, int trivial_accept)
+R_AliasSetUpTransform (entity_t ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
-	mat4f_t     mat;
+	transform_t transform = Entity_Transform (ent);
 
-	Transform_GetWorldMatrix (ent->transform, mat);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (transform, mat);
 	VectorCopy (mat[0], alias_forward);
 	VectorCopy (mat[1], alias_left);
 	VectorCopy (mat[2], alias_up);
@@ -520,18 +529,22 @@ R_AliasPrepareUnclippedPoints (void)
 }
 
 static void
-R_AliasSetupSkin (entity_t *ent)
+R_AliasSetupSkin (entity_t ent)
 {
 	int         skinnum;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
 
-	skinnum = ent->renderer.skinnum;
+	skinnum = renderer->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
 		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}
 
-	pskindesc = R_AliasGetSkindesc (&ent->animation, skinnum, paliashdr);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
+	pskindesc = R_AliasGetSkindesc (animation, skinnum, paliashdr);
 
 	a_skinwidth = pmdl->skinwidth;
 
@@ -541,16 +554,16 @@ R_AliasSetupSkin (entity_t *ent)
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
 	acolormap = r_colormap;
-	if (ent->renderer.skin) {
+	if (renderer->skin) {
 		tex_t      *base;
 
-		base = ent->renderer.skin->texels;
+		base = renderer->skin->texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
 			r_affinetridesc.skinwidth = base->width;
 			r_affinetridesc.skinheight = base->height;
 		}
-		acolormap = ent->renderer.skin->colormap;
+		acolormap = renderer->skin->colormap;
 	}
 }
 
@@ -589,25 +602,31 @@ R_AliasSetupLighting (alight_t *lighting)
 	set r_apverts
 */
 static void
-R_AliasSetupFrame (entity_t *ent)
+R_AliasSetupFrame (entity_t ent)
 {
 	maliasframedesc_t *frame;
 
-	frame = R_AliasGetFramedesc (&ent->animation, paliashdr);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
+	frame = R_AliasGetFramedesc (animation, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
 
 void
-R_AliasDrawModel (entity_t *ent, alight_t *lighting)
+R_AliasDrawModel (entity_t ent, alight_t *lighting)
 {
 	int          size;
 	finalvert_t *finalverts;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 r_refdef.scene->reg);
 
 	r_amodels_drawn++;
 
-	if (!(paliashdr = ent->renderer.model->aliashdr))
-		paliashdr = Cache_Get (&ent->renderer.model->cache);
+	if (!(paliashdr = renderer->model->aliashdr))
+		paliashdr = Cache_Get (&renderer->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
@@ -623,11 +642,11 @@ R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
-	R_AliasSetUpTransform (ent, ent->visibility.trivial_accept);
+	R_AliasSetUpTransform (ent, visibility->trivial_accept);
 	R_AliasSetupLighting (lighting);
 	R_AliasSetupFrame (ent);
 
-	r_affinetridesc.drawtype = ((ent->visibility.trivial_accept == 3)
+	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
@@ -641,18 +660,19 @@ R_AliasDrawModel (entity_t *ent, alight_t *lighting)
 #endif
 	}
 
-	if (ent != vr_data.view_model)
+	//FIXME depth hack
+	if (ent.id != vr_data.view_model.id)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (ent->visibility.trivial_accept && pmdl->ident != HEADER_MDL16) {
+	if (visibility->trivial_accept && pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
 	} else {
 		R_AliasPreparePoints ();
 	}
 
-	if (!ent->renderer.model->aliashdr) {
-		Cache_Release (&ent->renderer.model->cache);
+	if (!renderer->model->aliashdr) {
+		Cache_Release (&renderer->model->cache);
 	}
 }

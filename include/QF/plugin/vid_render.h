@@ -33,6 +33,8 @@
 #include <QF/render.h>
 #include <QF/screen.h>
 
+#include "QF/scene/entity.h"//FIXME
+
 struct plitem_s;
 struct cvar_s;
 struct scene_s;
@@ -154,7 +156,7 @@ typedef struct vid_render_data_s {
 	qboolean    inhibit_viewmodel;
 	qboolean    paused;
 	int         lineadj;
-	struct entity_s *view_model;
+	entity_t    view_model;	//FIXME still?!?
 	double      frametime;
 	double      realtime;
 	lightstyle_t *lightstyle;

@@ -29,7 +29,9 @@
 #endif
 
 #include "QF/render.h"
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "r_internal.h"
 
@@ -345,7 +347,7 @@ R_EmitCachedEdge (void)
 
 
 void
-R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
+R_RenderFace (entity_t ent, msurface_t *fa, int clipflags)
 {
 	int         i, lindex;
 	unsigned int mask;
@@ -354,7 +356,9 @@ R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
-	mod_brush_t *brush = &ent->renderer.model->brush;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	mod_brush_t *brush = &renderer->model->brush;
 
 	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
@@ -511,7 +515,7 @@ R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
 
 
 void
-R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
+R_RenderBmodelFace (entity_t ent, bedge_t *pedges, msurface_t *psurf)
 {
 	int         i;
 	unsigned int mask;
@@ -610,7 +614,7 @@ R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
 
 
 void
-R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
+R_RenderPoly (entity_t ent, msurface_t *fa, int clipflags)
 {
 	int         i, lindex, lnumverts, s_axis, t_axis;
 	float       dist, lastdist, lzi, scale, u, v, frac;
@@ -623,7 +627,9 @@ R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
-	mod_brush_t *brush = &ent->renderer.model->brush;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	mod_brush_t *brush = &renderer->model->brush;
 
 	// FIXME: clean this up and make it faster
 	// FIXME: guard against running out of vertices
@@ -778,7 +784,7 @@ R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
 
 
 void
-R_ZDrawSubmodelPolys (entity_t *ent, model_t *model)
+R_ZDrawSubmodelPolys (entity_t ent, model_t *model)
 {
 	int         i, numsurfaces;
 	msurface_t *psurf;

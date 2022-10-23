@@ -44,7 +44,9 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -149,7 +151,7 @@ glsl_R_InitAlias (void)
 }
 
 static void
-calc_lighting (entity_t *ent, float *ambient, float *shadelight,
+calc_lighting (entity_t ent, float *ambient, float *shadelight,
 			   vec3_t lightvec)
 {
 	unsigned    i;
@@ -157,13 +159,16 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	vec3_t      dist;
 	vec4f_t     entorigin;
 	int         light;
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
 
-	entorigin = Transform_GetWorldPosition (ent->transform);
+	entorigin = Transform_GetWorldPosition (transform);
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
 	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
-	*ambient = max (light, max (ent->renderer.model->min_light,
-								ent->renderer.min_light) * 128);
+	*ambient = max (light, max (renderer->model->min_light,
+								renderer->min_light) * 128);
 	*shadelight = *ambient;
 
 	for (i = 0; i < r_maxdlights; i++) {
@@ -208,7 +213,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 }
 //#define TETRAHEDRON
 void
-glsl_R_DrawAlias (entity_t *ent)
+glsl_R_DrawAlias (entity_t ent)
 {
 #ifdef TETRAHEDRON
 	static aliasvrt_t debug_verts[] = {
@@ -230,8 +235,6 @@ glsl_R_DrawAlias (entity_t *ent)
 	float       shadelight;
 	float       skin_size[2];
 	float       blend;
-	animation_t *animation = &ent->animation;
-	model_t    *model = ent->renderer.model;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
 	int         skin_tex;
@@ -240,12 +243,18 @@ glsl_R_DrawAlias (entity_t *ent)
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 	mat4f_t     worldMatrix;
 
+	calc_lighting (ent, &ambient, &shadelight, lightvec);
+
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
+	model_t    *model = renderer->model;
 	if (!(hdr = model->aliashdr))
 		hdr = Cache_Get (&model->cache);
 
-	calc_lighting (ent, &ambient, &shadelight, lightvec);
-
-	Transform_GetWorldMatrix (ent->transform, worldMatrix);
+	Transform_GetWorldMatrix (transform, worldMatrix);
 	// we need only the rotation for normals.
 	VectorCopy (worldMatrix[0], norm_mat + 0);
 	VectorCopy (worldMatrix[1], norm_mat + 3);
@@ -263,14 +272,14 @@ glsl_R_DrawAlias (entity_t *ent)
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
 	colormap = glsl_colormap;
-	if (ent->renderer.skin && ent->renderer.skin->auxtex)
-		colormap = ent->renderer.skin->auxtex;
-	if (ent->renderer.skin && ent->renderer.skin->texnum) {
-		skin_t     *skin = ent->renderer.skin;
+	if (renderer->skin && renderer->skin->auxtex)
+		colormap = renderer->skin->auxtex;
+	if (renderer->skin && renderer->skin->texnum) {
+		skin_t     *skin = renderer->skin;
 		skin_tex = skin->texnum;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin_tex = skindesc->texnum;
 	}
 	blend = R_AliasGetLerpedFrames (animation, hdr);

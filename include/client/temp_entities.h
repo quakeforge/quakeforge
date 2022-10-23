@@ -104,7 +104,7 @@ struct entity_s;
 
 void CL_TEnts_Init (void);
 void CL_TEnts_Precache (void);
-void CL_Init_Entity (struct entity_s *ent);
+void CL_Init_Entity (struct entity_s ent);
 void CL_ClearTEnts (void);
 void CL_UpdateTEnts (double time, TEntContext_t *ctx);
 void CL_ParseTEnt_nq (struct msg_s *net_message, double time,

@@ -44,7 +44,9 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -202,10 +204,15 @@ set_arrays (iqm_t *iqm)
 }
 
 void
-glsl_R_DrawIQM (entity_t *ent)
+glsl_R_DrawIQM (entity_t ent)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+											 r_refdef.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   r_refdef.scene->reg);
 	static quat_t color = { 1, 1, 1, 1};
-	model_t    *model = ent->renderer.model;
+	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	dlight_t   *lights[MAX_IQM_LIGHTS];
@@ -218,7 +225,7 @@ glsl_R_DrawIQM (entity_t *ent)
 
 	// we need only the rotation for normals.
 	mat4f_t mat;
-	Transform_GetWorldMatrix (ent->transform, mat);
+	Transform_GetWorldMatrix (transform, mat);
 	VectorCopy (mat[0], norm_mat + 0);
 	VectorCopy (mat[1], norm_mat + 3);
 	VectorCopy (mat[2], norm_mat + 6);
@@ -229,8 +236,8 @@ glsl_R_DrawIQM (entity_t *ent)
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
-	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
+	blend = R_IQMGetLerpedFrames (animation, iqm);
+	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  blend, 0);
 
 	qfeglUniform3fv (iqm_shader.ambient.location, 1, ambientcolor);

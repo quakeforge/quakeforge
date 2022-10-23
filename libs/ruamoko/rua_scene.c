@@ -44,6 +44,7 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -110,38 +111,38 @@ rua_scene_index (rua_scene_resources_t *res, rua_scene_t *scene)
 	return PR_RESINDEX (res->scene_map, scene);
 }
 
-static entity_t * __attribute__((pure))
+static entity_t __attribute__((pure))
 rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
 	pr_ulong_t  scene_id = id & 0xffffffff;
-	entity_t   *ent = 0;
+	entity_t    ent = nullentity;
 
 	rua_scene_t *scene = rua__scene_get (res, scene_id, name);
 	if (scene) {
 		pr_int_t     entity_id = id >> 32;
-		ent = Scene_GetEntity (scene->scene, entity_id);
+		ent.id = entity_id;
 	}
 
-	if (!ent) {
+	if (!Entity_Valid (ent)) {
 		PR_RunError (res->pr, "invalid entity passed to %s", name + 3);
 	}
 	return ent;
 }
 #define rua_entity_get(res, id) rua__entity_get(res, id, __FUNCTION__)
 
-static transform_t * __attribute__((pure))
+static transform_t  __attribute__((pure))
 rua__transform_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
 	pr_ulong_t  scene_id = id & 0xffffffff;
-	transform_t *transform = 0;
+	transform_t transform = nulltransform;
 
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	if (scene) {
-		pr_int_t     transform_id = id >> 32;
-		transform = Scene_GetTransform (scene->scene, transform_id);
+		entity_t    transform_id = { .reg = scene->scene->reg, .id = id >> 32 };
+		transform = Entity_Transform (transform_id);
 	}
 
-	if (!transform) {
+	if (!Transform_Valid (transform)) {
 		PR_RunError (res->pr, "invalid transform passed to %s", name + 3);
 	}
 	return transform;
@@ -245,8 +246,8 @@ bi_Scene_CreateEntity (progs_t *pr, void *_res)
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t   scene_id = P_ULONG (pr, 0);
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
-	entity_t   *ent = Scene_CreateEntity (scene->scene);
-	R_ULONG (pr) = MAKE_ID (ent->id, scene_id);
+	entity_t    ent = Scene_CreateEntity (scene->scene);
+	R_ULONG (pr) = MAKE_ID (ent.id, scene_id);
 }
 
 static void
@@ -254,12 +255,12 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  id = P_ULONG (pr, 0);
-	entity_t   *ent = rua_entity_get (res, id);
+	entity_t    ent = rua_entity_get (res, id);
 	pr_ulong_t  scene_id = id & 0xffffffff;
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
 	R_RemoveEfrags (ent);
 	// bad scene caught above
-	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	Scene_DestroyEntity (scene->scene, ent);
 }
 
@@ -282,12 +283,10 @@ bi_Scene_SetLighting (progs_t *pr, void *_res)
 static void
 bi_Entity_GetTransform (progs_t *pr, void *_res)
 {
-	rua_scene_resources_t *res = _res;
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
-	entity_t   *ent = rua_entity_get (res, ent_id);
 
-	// ent_id contains scene id
-	R_ULONG (pr) = MAKE_ID (ent->transform->ref.id, ent_id);
+	// ent_id is used to fetch the transform every time
+	R_ULONG (pr) = ent_id;
 }
 
 static void
@@ -296,14 +295,15 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 	pr_int_t    model_id = P_INT (pr, 1);
-	entity_t   *ent = rua_entity_get (res, ent_id);
+	entity_t    ent = rua_entity_get (res, ent_id);
 	model_t    *model = Model_GetModel (pr, model_id);
 	pr_ulong_t  scene_id = ent_id & 0xffffffff;
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
 	R_RemoveEfrags (ent);
-	ent->renderer.model = model;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, scene->scene->reg);
+	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
 
@@ -311,7 +311,7 @@ static void
 bi_Transform_ChildCount (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 
 	R_UINT (pr) = Transform_ChildCount (transform);
 }
@@ -320,18 +320,19 @@ static void
 bi_Transform_GetChild (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
-	transform_t *child = Transform_GetChild (transform, P_UINT (pr, 2));
-
-	R_UINT (pr) = child ? child->ref.id : 0;
+	pr_ulong_t  transform_id = P_ULONG (pr, 0);
+	transform_t transform = rua_transform_get (res, transform_id);
+	transform_t child = Transform_GetChild (transform, P_UINT (pr, 2));
+	R_ULONG (pr) = Transform_Valid (child) ? MAKE_ID (child.id, transform_id)
+										   : 0;
 }
 
 static void
 bi_Transform_SetParent (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
-	transform_t *parent = rua_transform_get (res, P_ULONG (pr, 1));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t parent = rua_transform_get (res, P_ULONG (pr, 1));
 	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 1));
 
 	Transform_SetParent (scene->scene, transform, parent);
@@ -342,18 +343,19 @@ bi_Transform_GetParent (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  transform_id = P_ULONG (pr, 0);
-	transform_t *transform = rua_transform_get (res, transform_id);
-	transform_t *parent = Transform_GetParent (transform);
+	transform_t transform = rua_transform_get (res, transform_id);
+	transform_t parent = Transform_GetParent (transform);
 
 	// transform_id contains scene id
-	R_ULONG (pr) = parent ? MAKE_ID (parent->ref.id, transform_id) : 0;
+	R_ULONG (pr) = Transform_Valid (parent) ? MAKE_ID (parent.id, transform_id)
+											: 0;
 }
 
 static void
 bi_Transform_SetTag (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	pr_uint_t   tag = P_UINT (pr, 2);
 	Transform_SetTag (transform, tag);
 }
@@ -362,7 +364,7 @@ static void
 bi_Transform_GetTag (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 
 	R_UINT (pr) = Transform_GetTag (transform);
 }
@@ -371,7 +373,7 @@ static void
 bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetLocalMatrix (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
@@ -379,7 +381,7 @@ static void
 bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetLocalInverse (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
@@ -387,7 +389,7 @@ static void
 bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetWorldMatrix (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
@@ -395,7 +397,7 @@ static void
 bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetWorldInverse (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
@@ -403,7 +405,7 @@ static void
 bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
@@ -411,7 +413,7 @@ static void
 bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalPosition (transform);
 }
 
@@ -419,7 +421,7 @@ static void
 bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
@@ -427,7 +429,7 @@ static void
 bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalRotation (transform);
 }
 
@@ -435,7 +437,7 @@ static void
 bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalScale (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
@@ -443,7 +445,7 @@ static void
 bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalScale (transform);
 }
 
@@ -451,7 +453,7 @@ static void
 bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetWorldPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
@@ -459,7 +461,7 @@ static void
 bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldPosition (transform);
 }
 
@@ -467,7 +469,7 @@ static void
 bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetWorldRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
@@ -475,7 +477,7 @@ static void
 bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldRotation (transform);
 }
 
@@ -483,7 +485,7 @@ static void
 bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldScale (transform);
 }
 
@@ -491,7 +493,7 @@ static void
 bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalTransform (transform, P_PACKED (pr, pr_vec4_t, 1),
 			P_PACKED (pr, pr_vec4_t, 2), P_PACKED (pr, pr_vec4_t, 3));
 }
@@ -500,7 +502,7 @@ static void
 bi_Transform_Forward (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Forward (transform);
 }
 
@@ -508,7 +510,7 @@ static void
 bi_Transform_Right (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Right (transform);
 }
 
@@ -516,7 +518,7 @@ static void
 bi_Transform_Up (progs_t *pr, void *_res)
 {
 	rua_scene_resources_t *res = _res;
-	transform_t *transform = rua_transform_get (res, P_ULONG (pr, 0));
+	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Up (transform);
 }
 

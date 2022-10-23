@@ -60,11 +60,11 @@ static scrap_t *light_scrap;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*glsl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+void (*glsl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
 							  msurface_t *surf);
 
 static void
-R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
+R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
 	unsigned    lnum;
 	int         sd, td;
@@ -81,7 +81,7 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 
 	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (transform);
+		entorigin = transform[3];
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -126,7 +126,7 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
 	int         smax, tmax, size;

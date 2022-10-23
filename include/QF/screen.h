@@ -37,7 +37,7 @@ void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
-void SCR_UpdateScreen (struct transform_s *camera, double realtime,
+void SCR_UpdateScreen (struct transform_s camera, double realtime,
 					   SCR_Func *scr_funcs);
 void SCR_SetFOV (float fov);
 // control whether the 3d viewport is user-controlled or always fullscreen
