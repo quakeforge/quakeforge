@@ -86,8 +86,14 @@ CL_ClearEnts (void)
 	// clear other arrays
 	i = nq_entstates.num_frames * nq_entstates.num_entities;
 	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
-	memset (cl_msgtime, 0, sizeof (cl_msgtime));
+	memset (cl_msgtime, -1, sizeof (cl_msgtime));
 	set_empty (&cl_forcelink);
+}
+
+static entity_t
+CL_GetInvalidEntity (int num)
+{
+	return cl_entities[num];
 }
 
 entity_t
@@ -200,28 +206,33 @@ CL_RelinkEntities (void)
 	for (i = 1; i < cl.num_entities; i++) {
 		new = &nq_entstates.frame[0 + cl.frameIndex][i];
 		old = &nq_entstates.frame[1 - cl.frameIndex][i];
-		ent = CL_GetEntity (i);
-		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, cl_world.scene->reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
 
 		// if the object wasn't included in the last packet, remove it
 		entvalid = cl_msgtime[i] == cl.mtime[0];
 		if (entvalid && !new->modelindex) {
+			ent = CL_GetEntity (i);
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
 			entvalid = 0;
 		}
 		if (!entvalid) {
-			renderer->model = NULL;
-			animation->pose1 = animation->pose2 = -1;
-			if (visibility->efrag) {
-				R_RemoveEfrags (ent);	// just became empty
+			ent = CL_GetInvalidEntity (i);
+			if (Entity_Valid (ent)) {
+				visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
+				if (visibility->efrag) {
+					R_RemoveEfrags (ent);	// just became empty
+				}
+				Scene_DestroyEntity (cl_world.scene, ent);
 			}
 			continue;
 		}
+
+		ent = CL_GetEntity (i);
+		transform_t transform = Entity_Transform (ent);
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
+		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			*old = *new;
