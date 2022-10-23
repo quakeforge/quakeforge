@@ -75,21 +75,20 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
 	entdata_t  *entdata = 0;
+	int         render_id = -1;
 	//lock
-	int         id = Ent_Index (entity.id + 1);//nullent -> 0
-	if (!set_is_member (sframe->pooled_entities, id)) {
+	int         ent_id = Ent_Index (entity.id + 1);//nullent -> 0
+	if (!set_is_member (sframe->pooled_entities, ent_id)) {
 		if (sframe->entity_pool.size < sframe->entity_pool.maxSize) {
-			set_add (sframe->pooled_entities, id);
-			id = sframe->entity_pool.size++;
-			entdata = sframe->entity_pool.a + id;
-		} else {
-			id = -1;
+			set_add (sframe->pooled_entities, ent_id);
+			render_id = sframe->entity_pool.size++;
+			entdata = sframe->entity_pool.a + render_id;
 		}
 	}
 	if (Entity_Valid (entity)) {
 		renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
-												 r_refdef.scene->reg);
-		renderer->render_id = -1;
+												 entity.reg);
+		renderer->render_id = render_id;
 	}
 	//unlock
 	if (entdata) {
@@ -98,7 +97,7 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		if (Entity_Valid (entity)) { //FIXME give world entity an entity :P
 			transform_t transform = Entity_Transform (entity);
 			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
-													 r_refdef.scene->reg);
+													 entity.reg);
 			mat4ftranspose (f, Transform_GetWorldMatrixPtr (transform));
 			entdata->xform[0] = f[0];
 			entdata->xform[1] = f[1];
@@ -112,7 +111,7 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		}
 		entdata->color = color;
 	}
-	return id;
+	return render_id;
 }
 
 void
