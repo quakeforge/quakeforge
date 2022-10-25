@@ -68,15 +68,14 @@ ECS_RegisterComponents (ecs_registry_t *registry,
 	}
 }
 
-VISIBLE void*
+VISIBLE void *
 Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
 	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
-	if (pool->sparse[id] < pool->count) {
-		//Sys_Error ("Ent_AddComponent: component %s already on entity %x\n",
-		//		   registry->components[i].name, ent);
-		return 0;
+	if (pool->sparse[id] < pool->count
+		&& pool->dense[pool->sparse[id]] == ent) {
+		return Ent_GetComponent (ent, comp, registry);
 	}
 	if (pool->count == pool->max_count) {
 		pool->max_count += COMP_GROW;
