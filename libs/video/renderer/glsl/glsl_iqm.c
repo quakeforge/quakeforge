@@ -206,13 +206,9 @@ set_arrays (iqm_t *iqm)
 void
 glsl_R_DrawIQM (entity_t ent)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
-	static quat_t color = { 1, 1, 1, 1};
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
+	static quat_t color = { 1, 1, 1, 1};
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	dlight_t   *lights[MAX_IQM_LIGHTS];
@@ -225,6 +221,7 @@ glsl_R_DrawIQM (entity_t ent)
 
 	// we need only the rotation for normals.
 	mat4f_t mat;
+	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, mat);
 	VectorCopy (mat[0], norm_mat + 0);
 	VectorCopy (mat[1], norm_mat + 3);
@@ -236,6 +233,8 @@ glsl_R_DrawIQM (entity_t ent)
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  blend, 0);

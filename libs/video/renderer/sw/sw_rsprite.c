@@ -245,23 +245,19 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 void
 R_DrawSprite (entity_t ent)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	msprite_t  *sprite = renderer->model->cache.data;
 
-	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
-
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, animation);
 
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-	vec4f_t     up = {};
-	vec4f_t     right = {};
-	vec4f_t     fwd = {};
+	vec4f_t     up = {}, right = {}, fwd = {};
+	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
+	transform_t transform = Entity_Transform (ent);
 	if (!R_BillboardFrame (transform, sprite->type, cameravec,
 						   &up, &right, &fwd)) {
 		// the orientation is undefined so can't draw the sprite

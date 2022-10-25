@@ -118,8 +118,7 @@ static void
 R_DrawViewModel (void)
 {
 	entity_t    ent = vr_data.view_model;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
@@ -199,7 +198,6 @@ glsl_R_NewScene (scene_t *scene)
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	r_refdef.scene = scene;
 	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update

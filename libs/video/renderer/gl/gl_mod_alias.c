@@ -274,15 +274,13 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *paliashdr,
 static inline vert_order_t *
 GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
-	float         blend;
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	float         blend = R_AliasGetLerpedFrames (animation, paliashdr);
 	int           count, i;
 	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	blend = R_AliasGetLerpedFrames (animation, paliashdr);
 
 	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
@@ -341,15 +339,13 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
 static inline vert_order_t *
 GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
-	float       blend;
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	float       blend = R_AliasGetLerpedFrames (animation, paliashdr);
 	int         count, i;
 	trivertx_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	blend = R_AliasGetLerpedFrames (animation, paliashdr);
 
 	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
@@ -417,17 +413,14 @@ gl_R_DrawAliasModel (entity_t e)
 	unsigned    lnum;
 	aliashdr_t *paliashdr;
 	dlight_t   *l;
-	model_t    *model;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
-	transform_t transform = Entity_Transform (e);
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
-											 r_refdef.scene->reg);
-
-	model = renderer->model;
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	model_t    *model = renderer->model;
 
 	radius = model->radius;
+	transform_t transform = Entity_Transform (e);
 	origin = Transform_GetWorldPosition (transform);
 	VectorCopy (Transform_GetWorldScale (transform), scale);
 	//FIXME assumes uniform scale
@@ -570,9 +563,8 @@ gl_R_DrawAliasModel (entity_t e)
 	} else {
 		maliasskindesc_t *skindesc;
 		animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-												   r_refdef.scene->reg);
-		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum,
-									   paliashdr);
+												   e.reg);
+		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, paliashdr);
 		texture = skindesc->texnum;
 		if (gl_fb_models && !is_fullbright) {
 			fb_texture = skindesc->fb_texnum;

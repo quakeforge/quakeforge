@@ -230,8 +230,8 @@ surfcache_t *
 D_CacheSurface (entity_t ent, msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, r_refdef.scene->reg);
-	transform_t transform = Entity_Transform (ent);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 
 	// if the surface is animating or flashing, flush the cache
 	r_drawsurf.texture = R_TextureAnimation (animation, surface);
@@ -285,6 +285,7 @@ D_CacheSurface (entity_t ent, msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
+	transform_t transform = Entity_Transform (ent);
 	R_DrawSurface (transform);
 
 	return surface->cachespots[miplevel];

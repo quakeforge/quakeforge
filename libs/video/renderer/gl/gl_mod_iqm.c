@@ -90,11 +90,7 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 void
 gl_R_DrawIQMModel (entity_t ent)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
@@ -102,11 +98,14 @@ gl_R_DrawIQMModel (entity_t ent)
 	iqmframe_t *frame;
 	int         i;
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, 0, gl->blend_palette, gl->palette_size);
 
 	qfglPushMatrix ();
+	transform_t transform = Entity_Transform (ent);
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
 	for (i = 0; i < iqm->num_meshes; i++) {

@@ -107,14 +107,10 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 void
 Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
 	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	msprite_t  *sprite = model->cache.data;
 
@@ -126,8 +122,11 @@ Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
 			64, sizeof (frame), &frame },
 	};
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
+	transform_t transform = Entity_Transform (ent);
 	mat[3] = Transform_GetWorldPosition (transform);
 	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
 	R_BillboardFrame (transform, sprite->type, cameravec,

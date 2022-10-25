@@ -120,14 +120,10 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 void
 Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
@@ -137,8 +133,11 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 		hdr = Cache_Get (&model->cache);
 	}
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	constants.blend = R_AliasGetLerpedFrames (animation, hdr);
 
+	transform_t transform = Entity_Transform (ent);
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (alias_push_constants_t, mat),

@@ -99,15 +99,13 @@ R_AliasCheckBBox (entity_t ent)
 	qboolean    zclipped, zfullyclipped;
 	unsigned int anyclip, allclip;
 	int         minz;
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												 r_refdef.scene->reg);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
 
 	// expand, rotate, and translate points into worldspace
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
 	visibility->trivial_accept = 0;
+
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	pmodel = renderer->model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
@@ -116,6 +114,8 @@ R_AliasCheckBBox (entity_t ent)
 	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	frame = animation->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
@@ -531,11 +531,8 @@ R_AliasPrepareUnclippedPoints (void)
 static void
 R_AliasSetupSkin (entity_t ent)
 {
-	int         skinnum;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-
-	skinnum = renderer->skinnum;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	int         skinnum = renderer->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
 		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
@@ -543,7 +540,7 @@ R_AliasSetupSkin (entity_t ent)
 	}
 
 	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
+											   ent.reg);
 	pskindesc = R_AliasGetSkindesc (animation, skinnum, paliashdr);
 
 	a_skinwidth = pmdl->skinwidth;
@@ -607,7 +604,7 @@ R_AliasSetupFrame (entity_t ent)
 	maliasframedesc_t *frame;
 
 	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
+											   ent.reg);
 	frame = R_AliasGetFramedesc (animation, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
@@ -618,13 +615,10 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 {
 	int          size;
 	finalvert_t *finalverts;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												 r_refdef.scene->reg);
 
 	r_amodels_drawn++;
 
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (!(paliashdr = renderer->model->aliashdr))
 		paliashdr = Cache_Get (&renderer->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
@@ -642,6 +636,8 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
 	R_AliasSetUpTransform (ent, visibility->trivial_accept);
 	R_AliasSetupLighting (lighting);
 	R_AliasSetupFrame (ent);

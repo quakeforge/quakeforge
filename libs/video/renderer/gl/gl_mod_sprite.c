@@ -60,22 +60,20 @@ void (*gl_R_DrawSpriteModel) (struct entity_s ent);
 static void
 R_DrawSpriteModel_f (entity_t e)
 {
-	transform_t transform = Entity_Transform (e);
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	msprite_t		*sprite = renderer->model->cache.data;
 	float			 modelalpha, color[4];
 	vec4f_t          cameravec = {};
 	vec4f_t          up = {}, right = {}, pn = {};
 	vec4f_t          origin, point;
-	msprite_t		*sprite = renderer->model->cache.data;
 	mspriteframe_t	*frame;
 
+	transform_t transform = Entity_Transform (e);
 	origin = Transform_GetWorldPosition (transform);
 	cameravec = r_refdef.frame.position - origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
 	frame = R_GetSpriteFrame (sprite, animation);
 
 	if (!R_BillboardFrame (transform, sprite->type, cameravec,
@@ -122,27 +120,25 @@ R_DrawSpriteModel_f (entity_t e)
 static void
 R_DrawSpriteModel_VA_f (entity_t e)
 {
-	transform_t transform = Entity_Transform (e);
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	msprite_t		*psprite = renderer->model->cache.data;
 	unsigned char	 modelalpha, color[4];
 	vec4f_t          up = {}, right = {};
 	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
-	msprite_t		*psprite = renderer->model->cache.data;
 	mspriteframe_t	*frame;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
+	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
 	frame = R_GetSpriteFrame (psprite, animation);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
 
+	transform_t transform = Entity_Transform (e);
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
 		up = Transform_Up (transform);
 		right = Transform_Right (transform);

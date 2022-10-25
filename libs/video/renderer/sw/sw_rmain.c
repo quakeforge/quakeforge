@@ -152,7 +152,6 @@ R_NewScene (scene_t *scene)
 	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
-	r_refdef.scene = scene;
 	r_refdef.worldmodel = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
@@ -234,8 +233,7 @@ setup_lighting (entity_t ent, alight_t *lighting)
 	float       add;
 	float       lightvec[3] = { -1, 0, 0 };
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	// 128 instead of 255 due to clamping below
@@ -270,7 +268,7 @@ draw_alias_entity (entity_t ent)
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
 	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												 r_refdef.scene->reg);
+												 ent.reg);
 	visibility->trivial_accept = 0;	//FIXME
 	if (R_AliasCheckBBox (ent)) {
 		alight_t    lighting;
@@ -285,7 +283,7 @@ draw_iqm_entity (entity_t ent)
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
 	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												 r_refdef.scene->reg);
+												 ent.reg);
 	visibility->trivial_accept = 0;	//FIXME
 
 	alight_t    lighting;
@@ -339,11 +337,11 @@ R_DrawViewModel (void)
 	viewent = vr_data.view_model;
 
 	renderer_t *renderer = Ent_GetComponent (viewent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	transform_t transform = Entity_Transform (viewent);
+											 viewent.reg);
 	if (!renderer->model)
 		return;
 
+	transform_t transform = Entity_Transform (viewent);
 	VectorCopy (Transform_GetWorldPosition (transform), r_entorigin);
 
 	VectorNegate (vup, lighting.lightvec);
@@ -382,7 +380,7 @@ R_DrawViewModel (void)
 }
 
 static int
-R_BmodelCheckBBox (entity_t ent, model_t *clmodel, float *minmaxs)
+R_BmodelCheckBBox (transform_t transform, model_t *clmodel, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
@@ -391,7 +389,6 @@ R_BmodelCheckBBox (entity_t ent, model_t *clmodel, float *minmaxs)
 
 	clipflags = 0;
 
-	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
@@ -443,7 +440,6 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	int         j, clipflags;
 	unsigned int k;
 	vec3_t      origin;
-	model_t    *clmodel;
 	float       minmaxs[6];
 
 	if (!r_drawentities)
@@ -454,25 +450,23 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_brush].a[i];
 
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-												 r_refdef.scene->reg);
 		transform_t transform = Entity_Transform (ent);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-													 r_refdef.scene->reg);
 		VectorCopy (Transform_GetWorldPosition (transform), origin);
-		clmodel = renderer->model;
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												 ent.reg);
+		model_t    *model = renderer->model;
 
 		// see if the bounding box lets us trivially reject, also
 		// sets trivial accept status
 		for (j = 0; j < 3; j++) {
-			minmaxs[j] = origin[j] + clmodel->mins[j];
-			minmaxs[3 + j] = origin[j] + clmodel->maxs[j];
+			minmaxs[j] = origin[j] + model->mins[j];
+			minmaxs[3 + j] = origin[j] + model->maxs[j];
 		}
 
-		clipflags = R_BmodelCheckBBox (ent, clmodel, minmaxs);
+		clipflags = R_BmodelCheckBBox (transform, model, minmaxs);
 
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
-			mod_brush_t *brush = &clmodel->brush;
+			mod_brush_t *brush = &model->brush;
 			VectorCopy (origin, r_entorigin);
 			VectorSubtract (r_refdef.frame.position, r_entorigin, modelorg);
 
@@ -502,8 +496,11 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// Z-buffering is on at this point, so no clipping to the
 			// world tree is needed, just frustum clipping
 			if (r_drawpolys | r_drawculledpolys) {
-				R_ZDrawSubmodelPolys (ent, clmodel);
+				R_ZDrawSubmodelPolys (ent, model);
 			} else {
+				visibility_t *visibility = Ent_GetComponent (ent.id,
+															 scene_visibility,
+															 ent.reg);
 				int         topnode_id = visibility->topnode_id;
 				mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
@@ -512,13 +509,13 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 					// BSP
 					mnode_t    *node = brush->nodes + topnode_id;
 					r_clipflags = clipflags;
-					R_DrawSolidClippedSubmodelPolygons (ent, clmodel, node);
+					R_DrawSolidClippedSubmodelPolygons (ent, model, node);
 				} else {
 					// falls entirely in one leaf, so we just put
 					// all the edges in the edge list and let 1/z
 					// sorting handle drawing order
 					mleaf_t    *leaf = brush->leafs + ~topnode_id;
-					R_DrawSubmodelPolygons (ent, clmodel, clipflags, leaf);
+					R_DrawSubmodelPolygons (ent, model, clipflags, leaf);
 				}
 			}
 

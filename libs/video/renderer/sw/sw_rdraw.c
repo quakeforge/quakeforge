@@ -356,8 +356,7 @@ R_RenderFace (entity_t ent, msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	mod_brush_t *brush = &renderer->model->brush;
 
 	// skip out if no more surfs
@@ -627,8 +626,7 @@ R_RenderPoly (entity_t ent, msurface_t *fa, int clipflags)
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	mod_brush_t *brush = &renderer->model->brush;
 
 	// FIXME: clean this up and make it faster

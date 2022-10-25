@@ -130,16 +130,12 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 void
 Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
 {
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
 	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
@@ -147,6 +143,8 @@ Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
 	iqm_push_constants_t constants = {};
 	iqmframe_t *frame;
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	constants.blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  constants.blend, 0);
@@ -173,7 +171,7 @@ Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
 
-
+	transform_t transform = Entity_Transform (ent);
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, mat),

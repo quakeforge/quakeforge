@@ -588,12 +588,9 @@ static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
 	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
-	float       radius;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
+	float       radius;
 	vec3_t      mins, maxs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
@@ -614,6 +611,8 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
 	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;
@@ -1036,10 +1035,8 @@ ent_model_cmp (const void *_a, const void *_b)
 {
 	const entity_t *a = _a;
 	const entity_t *b = _b;
-	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer,
-									   r_refdef.scene->reg);
-	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer,
-									   r_refdef.scene->reg);
+	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer, a->reg);
+	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer, b->reg);
 	return ra->model->render_id - rb->model->render_id;
 }
 

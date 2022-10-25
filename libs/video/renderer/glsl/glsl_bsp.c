@@ -654,11 +654,7 @@ R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
 	unsigned    k;
-	transform_t transform = Entity_Transform (e);
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	plane_t    *plane;
@@ -668,12 +664,13 @@ R_DrawBrushModel (entity_t e)
 	vec4f_t     org;
 	glslbspctx_t bctx = {
 		brush,
-		animation,
+		Ent_GetComponent (e.id, scene_animation, e.reg),
 		renderer->full_transform,
 		renderer->colormod,
 	};
 
 	mat4f_t mat;
+	transform_t transform = Entity_Transform (e);
 	Transform_GetWorldMatrix (transform, mat);
 	memcpy (renderer->full_transform, mat, sizeof (mat));//FIXME
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {

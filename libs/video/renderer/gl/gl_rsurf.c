@@ -501,19 +501,16 @@ gl_R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
 	transform_t transform = Entity_Transform (e);
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-											   r_refdef.scene->reg);
 	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
+	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	glbspctx_t  bspctx = {
 		brush,
-		animation,
+		Ent_GetComponent (e.id, scene_animation, e.reg),
 		renderer->full_transform,
 		renderer->colormod,
 	};

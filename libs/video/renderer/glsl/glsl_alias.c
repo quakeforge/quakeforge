@@ -157,16 +157,14 @@ calc_lighting (entity_t ent, float *ambient, float *shadelight,
 	unsigned    i;
 	float       add;
 	vec3_t      dist;
-	vec4f_t     entorigin;
 	int         light;
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
 
-	entorigin = Transform_GetWorldPosition (transform);
+	transform_t transform = Entity_Transform (ent);
+	vec4f_t     entorigin = Transform_GetWorldPosition (transform);
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
 	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	*ambient = max (light, max (renderer->model->min_light,
 								renderer->min_light) * 128);
 	*shadelight = *ambient;
@@ -245,15 +243,12 @@ glsl_R_DrawAlias (entity_t ent)
 
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
-	transform_t transform = Entity_Transform (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	if (!(hdr = model->aliashdr))
 		hdr = Cache_Get (&model->cache);
 
+	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);
 	// we need only the rotation for normals.
 	VectorCopy (worldMatrix[0], norm_mat + 0);
@@ -271,6 +266,8 @@ glsl_R_DrawAlias (entity_t ent)
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	colormap = glsl_colormap;
 	if (renderer->skin && renderer->skin->auxtex)
 		colormap = renderer->skin->auxtex;

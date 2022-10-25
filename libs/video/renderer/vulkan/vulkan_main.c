@@ -108,8 +108,7 @@ static void
 Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
 	entity_t    ent = vr_data.view_model;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 r_refdef.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
@@ -148,7 +147,6 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 		d_lightstylevalue[i] = 264;		// normal light value
 	}
 
-	r_refdef.scene = scene;
 	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
