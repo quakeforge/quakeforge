@@ -146,12 +146,58 @@ sw_R_Init (void)
 	Skin_Init ();
 }
 
+uint32_t
+SW_AddEntity (entity_t ent)
+{
+	// This takes advantage of the implicit (FIXME, make explicit) grouping of
+	// the sw components: as all entities that get added here will always have
+	// all three components, the three component pools are always in sync, thus
+	// the pool count can be used as a render id which can in turn be used to
+	// index the components within the pools.
+	ecs_registry_t *reg = ent.reg;
+	ecs_pool_t *pool = &reg->comp_pools[scene_sw_matrix];
+	uint32_t    render_id = pool->count;
+
+	transform_t transform = Entity_Transform (ent);
+	Ent_SetComponent (ent.id, scene_sw_matrix, reg,
+					  Transform_GetWorldMatrixPtr (transform));
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, reg);
+	Ent_SetComponent (ent.id, scene_sw_frame, reg, &animation->frame);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, reg);
+	mod_brush_t *brush = &renderer->model->brush;
+	Ent_SetComponent (ent.id, scene_sw_brush, reg, &brush);
+
+	return render_id;
+}
+
+static void
+reset_sw_components (ecs_registry_t *reg)
+{
+	static uint32_t sw_comps[] = {
+		scene_sw_matrix,
+		scene_sw_frame,
+		scene_sw_brush,
+	};
+
+	for (int i = 0; i < 3; i++) {
+		ecs_pool_t *pool = &reg->comp_pools[sw_comps[i]];
+		pool->count = 0;	// remove component from every entity
+		// reserve first component object (render id 0) for the world
+		// pseudo-entity.
+		Ent_SetComponent (0, sw_comps[i], reg, 0);
+		// make sure entity 0 gets allocated a new component object as the
+		// world pseudo-entity currently has no actual entity (FIXME)
+		pool->dense[0] = nullent;
+	}
+}
+
 void
 R_NewScene (scene_t *scene)
 {
 	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
+	r_refdef.registry = scene->reg;
 	r_refdef.worldmodel = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
@@ -380,25 +426,23 @@ R_DrawViewModel (void)
 }
 
 static int
-R_BmodelCheckBBox (transform_t transform, model_t *clmodel, float *minmaxs)
+R_BmodelCheckBBox (const vec4f_t *transform, float radius, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
-	mat4f_t     mat;
 
 	clipflags = 0;
 
-	Transform_GetWorldMatrix (transform, mat);
-	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
+	if (transform[0][0] != 1 || transform[1][1] != 1 || transform[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
-			d = DotProduct (mat[3], view_clipplanes[i].normal);
+			d = DotProduct (transform[3], view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 
-			if (d <= -clmodel->radius)
+			if (d <= -radius)
 				return BMODEL_FULLY_CLIPPED;
 
-			if (d <= clmodel->radius)
+			if (d <= radius)
 				clipflags |= (1 << i);
 		}
 	} else {
@@ -449,9 +493,11 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_brush].a[i];
+		uint32_t    render_id = SW_AddEntity (ent);
 
-		transform_t transform = Entity_Transform (ent);
-		VectorCopy (Transform_GetWorldPosition (transform), origin);
+		vec4f_t    *transform = Ent_GetComponent (ent.id, scene_sw_matrix,
+												  ent.reg);
+		VectorCopy (transform[3], origin);
 		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
 												 ent.reg);
 		model_t    *model = renderer->model;
@@ -463,7 +509,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			minmaxs[3 + j] = origin[j] + model->maxs[j];
 		}
 
-		clipflags = R_BmodelCheckBBox (transform, model, minmaxs);
+		clipflags = R_BmodelCheckBBox (transform, model->radius, minmaxs);
 
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
 			mod_brush_t *brush = &model->brush;
@@ -496,26 +542,26 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// Z-buffering is on at this point, so no clipping to the
 			// world tree is needed, just frustum clipping
 			if (r_drawpolys | r_drawculledpolys) {
-				R_ZDrawSubmodelPolys (ent, model);
+				R_ZDrawSubmodelPolys (render_id, brush);
 			} else {
 				visibility_t *visibility = Ent_GetComponent (ent.id,
 															 scene_visibility,
 															 ent.reg);
 				int         topnode_id = visibility->topnode_id;
-				mod_brush_t *brush = &r_refdef.worldmodel->brush;
+				mod_brush_t *world_brush = &r_refdef.worldmodel->brush;
 
 				if (topnode_id >= 0) {
 					// not a leaf; has to be clipped to the world
 					// BSP
-					mnode_t    *node = brush->nodes + topnode_id;
+					mnode_t    *node = world_brush->nodes + topnode_id;
 					r_clipflags = clipflags;
-					R_DrawSolidClippedSubmodelPolygons (ent, model, node);
+					R_DrawSolidClippedSubmodelPolygons (render_id, brush, node);
 				} else {
 					// falls entirely in one leaf, so we just put
 					// all the edges in the edge list and let 1/z
 					// sorting handle drawing order
-					mleaf_t    *leaf = brush->leafs + ~topnode_id;
-					R_DrawSubmodelPolygons (ent, model, clipflags, leaf);
+					mleaf_t    *leaf = world_brush->leafs + ~topnode_id;
+					R_DrawSubmodelPolygons (render_id, brush, clipflags, leaf);
 				}
 			}
 
@@ -588,6 +634,8 @@ R_RenderView_ (void)
 		return;
 	}
 
+	reset_sw_components (r_refdef.registry);
+	*(mod_brush_t **) SW_COMP (scene_sw_brush, 0) = &r_refdef.worldmodel->brush;
 	R_SetupFrame ();
 
 // make FDIV fast. This reduces timing precision after we've been running for a

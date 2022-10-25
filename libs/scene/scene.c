@@ -60,6 +60,27 @@ create_old_origin (void *_old_origin)
 	*old_origin = (vec4f_t) {0, 0, 0, 1};
 }
 
+static void
+sw_identity_matrix (void *_mat)
+{
+	mat4f_t    *mat = _mat;
+	mat4fidentity (*mat);
+}
+
+static void
+sw_frame_0 (void *_frame)
+{
+	byte       *frame = _frame;
+	*frame = 0;
+}
+
+static void
+sw_null_brush (void *_brush)
+{
+	struct mod_brush_s **brush = _brush;
+	*brush = 0;
+}
+
 static const component_t scene_components[] = {
 	[scene_href] = {
 		.size = sizeof (hierref_t),
@@ -90,6 +111,22 @@ static const component_t scene_components[] = {
 		.size = sizeof (vec4f_t),
 		.create = create_old_origin,
 		.name = "old_origin",
+	},
+
+	[scene_sw_matrix] = {
+		.size = sizeof (mat4f_t),
+		.create = sw_identity_matrix,
+		.name = "sw world transform",
+	},
+	[scene_sw_frame] = {
+		.size = sizeof (byte),
+		.create = sw_frame_0,
+		.name = "sw brush model animation frame",
+	},
+	[scene_sw_brush] = {
+		.size = sizeof (struct mod_brush_s *),
+		.create = sw_null_brush,
+		.name = "sw brush model data pointer",
 	},
 };
 

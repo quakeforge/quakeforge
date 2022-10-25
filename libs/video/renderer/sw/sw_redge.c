@@ -89,7 +89,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (s->entity, pface, 15);
+				R_RenderPoly (s->render_id, pface, 15);
 			}
 		}
 	} else {
@@ -99,7 +99,7 @@ R_DrawCulledPolys (void)
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (s->entity, pface, 15);
+				R_RenderPoly (s->render_id, pface, 15);
 			}
 		}
 	}

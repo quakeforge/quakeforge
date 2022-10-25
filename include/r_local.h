@@ -150,18 +150,18 @@ struct animation_s;
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
 void R_DrawSprite (struct entity_s ent);
-void R_RenderFace (struct entity_s ent, msurface_t *fa, int clipflags);
-void R_RenderPoly (struct entity_s ent, msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (struct entity_s ent, bedge_t *pedges, msurface_t *psurf);
+void R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags);
+void R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags);
+void R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-struct texture_s *R_TextureAnimation (const struct animation_s *animation, msurface_t *surf) __attribute__((pure));
+struct texture_s *R_TextureAnimation (int frame, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (struct entity_s ent, model_t *pmodel, int clipflags, struct mleaf_s *topleaf);
-void R_DrawSolidClippedSubmodelPolygons (struct entity_s ent, model_t *pmodel, struct mnode_s *topnode);
+void R_DrawSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, int clipflags, struct mleaf_s *topleaf);
+void R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
@@ -198,7 +198,7 @@ extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 
 struct transform_s;
-extern void R_RotateBmodel (struct transform_s transform);
+extern void R_RotateBmodel (vec4f_t *mat);
 
 extern int	c_faceclip;
 extern int	r_polycount;
@@ -230,7 +230,7 @@ typedef struct btofpoly_s {
 extern int			numbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (struct entity_s ent, model_t *clmodel);
+void	R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush);
 
 // Alias models ===========================================
 

@@ -227,14 +227,13 @@ D_SCDump (void)
 #endif
 
 surfcache_t *
-D_CacheSurface (entity_t ent, msurface_t *surface, int miplevel)
+D_CacheSurface (uint32_t render_id, msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	byte frame = *(byte *) SW_COMP (scene_sw_frame, render_id);
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (animation, surface);
+	r_drawsurf.texture = R_TextureAnimation (frame, surface);
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
@@ -285,8 +284,7 @@ D_CacheSurface (entity_t ent, msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
-	transform_t transform = Entity_Transform (ent);
-	R_DrawSurface (transform);
+	R_DrawSurface (render_id);
 
 	return surface->cachespots[miplevel];
 }

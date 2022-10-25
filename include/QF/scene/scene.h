@@ -48,6 +48,13 @@ enum scene_components {
 	scene_active,
 	scene_old_origin,	//XXX FIXME XXX should not be here
 
+	//FIXME these should probably be private to the sw renderer (and in a
+	//group, which needs to be implemented), but need to sort out a good
+	//scheme for semi-dynamic components
+	scene_sw_matrix,	// world transform matrix
+	scene_sw_frame,		// animation frame
+	scene_sw_brush,		// brush model data pointer
+
 	scene_num_components
 };
 

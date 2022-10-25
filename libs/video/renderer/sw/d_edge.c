@@ -150,12 +150,11 @@ transform_submodel_poly (surf_t *s)
 {
 	// FIXME: we don't want to do all this for every polygon!
 	// TODO: store once at start of frame
-	transform_t transform = Entity_Transform (s->entity);
-	vec4f_t     local_modelorg = r_refdef.frame.position -
-								 Transform_GetWorldPosition (transform);
+	vec4f_t    *transform = SW_COMP(scene_sw_matrix, s->render_id);
+	vec4f_t     local_modelorg = r_refdef.frame.position - transform[3];
 	TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
 
-	R_RotateBmodel (transform);	// FIXME: don't mess with the
+	R_RotateBmodel (transform);		// FIXME: don't mess with the
 								// frustum, make entity passed in
 }
 
@@ -249,7 +248,7 @@ D_DrawSurfaces (void)
 											   * pface->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (s->entity, pface, miplevel);
+				pcurrentcache = D_CacheSurface (s->render_id, pface, miplevel);
 
 				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;

@@ -399,7 +399,7 @@ chain_surface (glslbspctx_t *bctx, msurface_t *surf)
 		if (!surf->texinfo->texture->anim_total)
 			tx = surf->texinfo->texture;
 		else
-			tx = R_TextureAnimation (bctx->animation, surf);
+			tx = R_TextureAnimation (bctx->animation->frame, surf);
 		tex = tx->render;
 		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
