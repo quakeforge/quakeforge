@@ -97,7 +97,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
 	uint32_t    ind = pool->sparse[id];
-	if (ind < pool->count) {
+	if (ind < pool->count && pool->dense[ind] == ent) {
 		uint32_t    last = pool->count - 1;
 		Component_DestroyElements (&registry->components[comp], pool->data,
 								   ind, 1);
