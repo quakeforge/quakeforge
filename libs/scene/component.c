@@ -71,24 +71,22 @@ ECS_RegisterComponents (ecs_registry_t *registry,
 VISIBLE void *
 Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
-	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
-	if (pool->sparse[id] < pool->count
-		&& pool->dense[pool->sparse[id]] == ent) {
-		return Ent_GetComponent (ent, comp, registry);
+	uint32_t    id = Ent_Index (ent);
+	uint32_t    ind = pool->sparse[id];
+	if (ind >= pool->count || pool->dense[ind] != ent) {
+		if (pool->count == pool->max_count) {
+			pool->max_count += COMP_GROW;
+			pool->dense = realloc (pool->dense,
+								   pool->max_count * sizeof (uint32_t));
+			Component_ResizeArray (&registry->components[comp], &pool->data,
+								   pool->max_count);
+		}
+		uint32_t    ind = pool->count++;
+		pool->sparse[id] = ind;
+		pool->dense[ind] = ent;
 	}
-	if (pool->count == pool->max_count) {
-		pool->max_count += COMP_GROW;
-		pool->dense = realloc (pool->dense,
-							   pool->max_count * sizeof (uint32_t));
-		Component_ResizeArray (&registry->components[comp], &pool->data,
-							   pool->max_count);
-	}
-	uint32_t    ind = pool->count++;
-	pool->sparse[id] = ind;
-	pool->dense[ind] = ent;
-	return Component_CreateElements (&registry->components[comp], pool->data,
-									 ind, 1);
+	return Ent_GetComponent (ent, comp, registry);
 }
 
 VISIBLE void

@@ -76,13 +76,14 @@ typedef struct ecs_registry_s {
 
 COMPINLINE void Component_ResizeArray (const component_t *component,
 									   void **array, uint32_t count);
-COMPINLINE void Component_MoveElements (const component_t *component,
-										void *array, uint32_t dstIndex,
-										uint32_t srcIndex, uint32_t count);
-COMPINLINE void Component_CopyElements (const component_t *component,
-										void *dstArray, uint32_t dstIndex,
-										const void *srcArray, uint32_t srcIndex,
-										uint32_t count);
+COMPINLINE void *Component_MoveElements (const component_t *component,
+										 void *array, uint32_t dstIndex,
+										 uint32_t srcIndex, uint32_t count);
+COMPINLINE void *Component_CopyElements (const component_t *component,
+										 void *dstArray, uint32_t dstIndex,
+										 const void *srcArray,
+										 uint32_t srcIndex,
+										 uint32_t count);
 COMPINLINE void *Component_CreateElements (const component_t *component,
 										   void *array,
 										   uint32_t index, uint32_t count);
@@ -98,6 +99,8 @@ COMPINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
 								 ecs_registry_t *reg);
 COMPINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
 								   ecs_registry_t *reg);
+COMPINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
+								   ecs_registry_t *registry, const void *data);
 
 #undef COMPINLINE
 #ifndef IMPLEMENT_COMPONENT_Funcs
@@ -113,17 +116,17 @@ Component_ResizeArray (const component_t *component,
 	*array = realloc (*array, count * component->size);
 }
 
-COMPINLINE void
+COMPINLINE void *
 Component_MoveElements (const component_t *component,
 						void *array, uint32_t dstIndex, uint32_t srcIndex,
 						uint32_t count)
 {
 	__auto_type dst = (byte *) array + dstIndex * component->size;
 	__auto_type src = (byte *) array + srcIndex * component->size;
-	memmove (dst, src, count * component->size);
+	return memmove (dst, src, count * component->size);
 }
 
-COMPINLINE void
+COMPINLINE void *
 Component_CopyElements (const component_t *component,
 						void *dstArray, uint32_t dstIndex,
 						const void *srcArray, uint32_t srcIndex,
@@ -131,7 +134,7 @@ Component_CopyElements (const component_t *component,
 {
 	__auto_type dst = (byte *) dstArray + dstIndex * component->size;
 	__auto_type src = (byte *) srcArray + srcIndex * component->size;
-	memcpy (dst, src, count * component->size);
+	return memcpy (dst, src, count * component->size);
 }
 
 COMPINLINE void *
@@ -214,6 +217,20 @@ void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,
 						  ecs_registry_t *registry);
+
+COMPINLINE void *
+Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
+				  const void *data)
+{
+	void       *dst = Ent_AddComponent (ent, comp, registry);
+	if (data) {
+		return Component_CopyElements (&registry->components[comp],
+									   dst, 0, data, 0, 1);
+	} else {
+		return Component_CreateElements (&registry->components[comp],
+										 dst, 0, 1);
+	}
+}
 
 ///@}
 

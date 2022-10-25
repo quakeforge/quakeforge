@@ -176,15 +176,16 @@ Scene_DeleteScene (scene_t *scene)
 entity_t
 Scene_CreateEntity (scene_t *scene)
 {
+	// Transform_New creates an entity and adds a scene_href component to the
+	// entity
 	transform_t trans = Transform_New (scene, nulltransform);
 	uint32_t    id = trans.id;
 
-	Ent_AddComponent (id, scene_href, scene->reg);
-	Ent_AddComponent (id, scene_animation, scene->reg);
-	Ent_AddComponent (id, scene_visibility, scene->reg);
-	Ent_AddComponent (id, scene_renderer, scene->reg);
-	Ent_AddComponent (id, scene_active, scene->reg);
-	Ent_AddComponent (id, scene_old_origin, scene->reg);
+	Ent_SetComponent (id, scene_animation, scene->reg, 0);
+	Ent_SetComponent (id, scene_visibility, scene->reg, 0);
+	Ent_SetComponent (id, scene_renderer, scene->reg, 0);
+	Ent_SetComponent (id, scene_active, scene->reg, 0);
+	Ent_SetComponent (id, scene_old_origin, scene->reg, 0);
 
 	renderer_t *renderer = Ent_GetComponent (id, scene_renderer, scene->reg);
 	QuatSet (1, 1, 1, 1, renderer->colormod);
