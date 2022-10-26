@@ -168,10 +168,6 @@ gl_R_NewScene (scene_t *scene)
 	r_refdef.worldmodel = scene->worldmodel;
 	brush = &scene->worldmodel->brush;
 
-	// clear out efrags in case the level hasn't been reloaded
-	for (unsigned i = 0; i < brush->modleafs; i++)
-		brush->leafs[i].efrags = NULL;
-
 	// Force a vis update
 	R_MarkLeaves (0, 0, 0, 0);
 

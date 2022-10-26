@@ -200,10 +200,6 @@ R_NewScene (scene_t *scene)
 	r_refdef.registry = scene->reg;
 	r_refdef.worldmodel = worldmodel;
 
-	// clear out efrags in case the level hasn't been reloaded
-	for (unsigned i = 0; i < brush->modleafs; i++)
-		brush->leafs[i].efrags = NULL;
-
 	if (brush->skytexture)
 		R_InitSky (brush->skytexture);
 
