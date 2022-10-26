@@ -598,7 +598,7 @@ in vec2 uv;
 void
 main ()
 {
-	// slight offset on y is to avoid the singularity straight aheat
+	// slight offset on y is to avoid the singularity straight ahead
 	vec2        xy = (2.0 * uv - vec2 (1, 1.00002)) * (vec2(1, -aspect));
 	float       r = sqrt (dot (xy, xy));
 	vec2        cs = vec2 (cos (r * fov), sin (r * fov));

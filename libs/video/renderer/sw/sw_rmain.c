@@ -184,6 +184,8 @@ reset_sw_components (ecs_registry_t *reg)
 		pool->count = 0;	// remove component from every entity
 		// reserve first component object (render id 0) for the world
 		// pseudo-entity.
+		//FIXME takes advantage of the lack of checks for the validity of the
+		//entity id.
 		Ent_SetComponent (0, sw_comps[i], reg, 0);
 		// make sure entity 0 gets allocated a new component object as the
 		// world pseudo-entity currently has no actual entity (FIXME)
