@@ -120,6 +120,7 @@ rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 	if (scene) {
 		pr_int_t     entity_id = id >> 32;
 		ent.id = entity_id;
+		ent.reg = scene->scene->reg;
 	}
 
 	if (!Entity_Valid (ent)) {
