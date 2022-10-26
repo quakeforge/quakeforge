@@ -194,7 +194,7 @@ COMPINLINE int
 Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
 	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
-	return ind != nullent;
+	return reg->comp_pools[comp].dense[ind] == ent;
 }
 
 COMPINLINE void *
