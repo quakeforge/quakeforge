@@ -32,7 +32,6 @@
 #endif
 
 #include "QF/scene/camera.h"
-#include "QF/scene/component.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 

@@ -1,0 +1,12 @@
+include libs/ecs/test/Makemodule.am
+
+ecs_deps=libs/models/libQFmodels.la libs/util/libQFutil.la
+
+lib_LTLIBRARIES += libs/ecs/libQFecs.la
+
+libs_ecs_libQFecs_la_LDFLAGS=		$(lib_ldflags)
+libs_ecs_libQFecs_la_LIBADD=		$(ecs_deps)
+libs_ecs_libQFecs_la_DEPENDENCIES=	$(ecs_deps)
+libs_ecs_libQFecs_la_SOURCES= \
+	libs/ecs/component.c \
+	libs/ecs/hierarchy.c

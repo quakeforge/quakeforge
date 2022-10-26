@@ -34,7 +34,6 @@
 #include "QF/screen.h"
 
 #include "QF/plugin/vid_render.h"
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
@@ -961,7 +960,8 @@ V_Init (viewstate_t *viewstate)
 					"Used when you are underwater, hit, have the Ring of "
 					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 
-	viewstate->camera_transform = Transform_New (cl_world.scene, nulltransform);
+	viewstate->camera_transform = Transform_New (cl_world.scene->reg,
+												 nulltransform);
 }
 
 void

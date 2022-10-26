@@ -44,7 +44,6 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -333,9 +332,8 @@ bi_Transform_SetParent (progs_t *pr, void *_res)
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	transform_t parent = rua_transform_get (res, P_ULONG (pr, 1));
-	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 1));
 
-	Transform_SetParent (scene->scene, transform, parent);
+	Transform_SetParent (transform, parent);
 }
 
 static void

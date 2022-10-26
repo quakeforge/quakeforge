@@ -75,6 +75,10 @@ include_qf = \
 	include/QF/winding.h \
 	include/QF/zone.h
 
+include_qf_ecs = \
+	include/QF/ecs/component.h \
+	include/QF/ecs/hierarchy.h
+
 include_qf_gl = \
 	include/QF/GL/ati.h \
 	include/QF/GL/defines.h \
@@ -148,7 +152,6 @@ include_qf_progs = \
 include_qf_scene = \
 	include/QF/scene/camera.h \
 	include/QF/scene/entity.h \
-	include/QF/scene/hierarchy.h \
 	include/QF/scene/light.h \
 	include/QF/scene/transform.h \
 	include/QF/scene/scene.h \
@@ -246,6 +249,7 @@ ruamoko_qf_progs_include_HEADERS = @qfac_qfcc_include_qf_progs@
 
 EXTRA_DIST += \
 	$(include_qf) \
+	$(include_qf_ecs) \
 	$(include_qf_gl) \
 	$(include_qf_glsl) \
 	$(include_qf_input) \

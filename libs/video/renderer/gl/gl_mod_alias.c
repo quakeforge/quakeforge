@@ -41,9 +41,7 @@
 
 #include "QF/skin.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"

@@ -98,6 +98,7 @@ qw_client_LIBS= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/ui/libQFui.la \
 		libs/input/libQFinput.la \
+		libs/ecs/libQFecs.la \
 		libs/util/libQFutil.la
 qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \
 			libs/client/libQFclient.la

@@ -31,7 +31,7 @@
 #include "QF/sys.h"
 
 #define IMPLEMENT_COMPONENT_Funcs
-#include "QF/scene/component.h"
+#include "QF/ecs/component.h"
 
 VISIBLE ecs_registry_t *
 ECS_NewRegistry (void)

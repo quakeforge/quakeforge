@@ -41,7 +41,6 @@
 #include "QF/render.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 

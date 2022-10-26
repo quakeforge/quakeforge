@@ -33,8 +33,9 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
-#include "QF/scene/component.h"
-#include "QF/scene/hierarchy.h"
+#include "QF/ecs/component.h"
+#include "QF/ecs/hierarchy.h"
+#include "QF/ecs/hierarchy.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
@@ -71,17 +72,16 @@ typedef struct transform_s {
 
 XFORMINLINE int Transform_Valid (transform_t transform);
 
-transform_t Transform_New (struct scene_s *scene, transform_t parent);
+transform_t Transform_New (ecs_registry_t *reg, transform_t parent);
 /* Deletes all child transforms, and transform names */
-void Transform_Delete (struct scene_s *scene, transform_t transform);
-transform_t Transform_NewNamed (struct scene_s *scene, transform_t parent,
+void Transform_Delete (transform_t transform);
+transform_t Transform_NewNamed (ecs_registry_t *reg, transform_t parent,
 								const char *name);
 XFORMINLINE hierref_t *Transform_GetRef (transform_t transform);
 XFORMINLINE uint32_t Transform_ChildCount (transform_t transform);
 XFORMINLINE transform_t Transform_GetChild (transform_t transform,
 										 uint32_t childIndex);
-void Transform_SetParent (struct scene_s *scene,
-						  transform_t transform, transform_t parent);
+void Transform_SetParent (transform_t transform, transform_t parent);
 XFORMINLINE transform_t Transform_GetParent (transform_t transform);
 void Transform_SetName (transform_t transform, const char *name);
 XFORMINLINE const char *Transform_GetName (transform_t transform);

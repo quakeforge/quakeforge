@@ -35,7 +35,6 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 
 #include "client/chase.h"

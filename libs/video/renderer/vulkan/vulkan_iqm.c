@@ -37,9 +37,7 @@
 #include "QF/iqm.h"
 #include "QF/va.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_matrices.h"

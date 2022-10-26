@@ -39,7 +39,6 @@
 #include "QF/sys.h"
 #include "QF/model.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
@@ -192,6 +191,7 @@ Scene_NewScene (void)
 
 	scene->reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (scene->reg, scene_components, scene_num_components);
+	scene->reg->href_comp = scene_href;
 
 	scene_resources_t *res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;
@@ -215,7 +215,7 @@ Scene_CreateEntity (scene_t *scene)
 {
 	// Transform_New creates an entity and adds a scene_href component to the
 	// entity
-	transform_t trans = Transform_New (scene, nulltransform);
+	transform_t trans = Transform_New (scene->reg, nulltransform);
 	uint32_t    id = trans.id;
 
 	Ent_SetComponent (id, scene_animation, scene->reg, 0);

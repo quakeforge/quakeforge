@@ -28,14 +28,10 @@
 
 */
 
-#ifndef __QF_scene_hierarchy_h
-#define __QF_scene_hierarchy_h
+#ifndef __QF_ecs_hierarchy_h
+#define __QF_ecs_hierarchy_h
 
-#include "QF/darray.h"
 #include "QF/qtypes.h"
-#include "QF/scene/types.h"
-#include "QF/simd/vec4f.h"
-#include "QF/simd/mat4f.h"
 
 /** \defgroup entity Hierarchy management
 	\ingroup utils
@@ -55,9 +51,7 @@ typedef struct hierref_s {
 } hierref_t;
 
 typedef struct hierarchy_s {
-	struct hierarchy_s *next;
-	struct hierarchy_s **prev;
-	struct scene_s *scene;
+	struct ecs_registry_s *reg;
 	uint32_t    num_objects;
 	uint32_t    max_objects;
 	uint32_t   *ent;
@@ -68,10 +62,11 @@ typedef struct hierarchy_s {
 	void      **components;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (struct scene_s *scene,
+hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg,
 							const hierarchy_type_t *type, int createRoot);
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
-hierarchy_t *Hierarchy_Copy (struct scene_s *scene, const hierarchy_t *src);
+hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg,
+							 const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 
 uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
@@ -79,4 +74,4 @@ uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);
 ///@}
 
-#endif//__QF_scene_hierarchy_h
+#endif//__QF_ecs_hierarchy_h

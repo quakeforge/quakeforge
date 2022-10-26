@@ -28,13 +28,16 @@
 
 */
 
-#ifndef __QF_scene_component_h
-#define __QF_scene_component_h
+#ifndef __QF_ecs_component_h
+#define __QF_ecs_component_h
 
 #include <string.h>
 #include <stdlib.h>
 
 #include "QF/qtypes.h"
+#include "QF/progs.h"//FIXME for PR_RESMAP
+
+#include "QF/ecs/hierarchy.h"
 
 /** \defgroup component Entity Component System
 	\ingroup utils
@@ -70,6 +73,8 @@ typedef struct ecs_registry_s {
 	const component_t *components;
 	ecs_pool_t *comp_pools;
 	uint32_t    num_components;
+	uint32_t    href_comp;//FIXME find a better way
+	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 } ecs_registry_t;
 
 #define COMPINLINE GNU89INLINE inline
@@ -234,4 +239,4 @@ Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
 
 ///@}
 
-#endif//__QF_scene_component_h
+#endif//__QF_ecs_component_h

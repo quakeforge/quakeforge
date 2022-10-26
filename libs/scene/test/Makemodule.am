@@ -1,7 +1,5 @@
 libs_scene_tests = \
-	libs/scene/test/test-components \
-	libs/scene/test/test-hierarchy \
-	libs/scene/test/test-registry
+	libs/scene/test/test-hierarchy
 
 TESTS += $(libs_scene_tests)
 
@@ -9,25 +7,12 @@ check_PROGRAMS += $(libs_scene_tests)
 
 libs_scene_test_libs= \
 	libs/scene/libQFscene.la \
+	libs/ecs/libQFecs.la \
 	libs/util/libQFutil.la
-
-libs_scene_test_test_components_SOURCES= 		\
-	libs/scene/test/test-components.c
-libs_scene_test_test_components_LDADD=			\
-	$(libs_scene_test_libs)
-libs_scene_test_test_components_DEPENDENCIES=	\
-	$(libs_scene_test_libs)
 
 libs_scene_test_test_hierarchy_SOURCES= 		\
 	libs/scene/test/test-hierarchy.c
 libs_scene_test_test_hierarchy_LDADD=			\
 	$(libs_scene_test_libs)
 libs_scene_test_test_hierarchy_DEPENDENCIES=	\
-	$(libs_scene_test_libs)
-
-libs_scene_test_test_registry_SOURCES= 		\
-	libs/scene/test/test-registry.c
-libs_scene_test_test_registry_LDADD=			\
-	$(libs_scene_test_libs)
-libs_scene_test_test_registry_DEPENDENCIES=	\
 	$(libs_scene_test_libs)

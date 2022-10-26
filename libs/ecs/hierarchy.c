@@ -35,11 +35,10 @@
 # include <strings.h>
 #endif
 
-#include "QF/scene/component.h"
-#include "QF/scene/hierarchy.h"
-#include "QF/scene/transform.h"
+#include "QF/sys.h"
 
-#include "scn_internal.h"
+#include "QF/ecs/component.h"
+#include "QF/ecs/hierarchy.h"
 
 static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
@@ -50,9 +49,10 @@ static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
-	ecs_registry_t *reg = hierarchy->scene->reg;
+	ecs_registry_t *reg = hierarchy->reg;
+	uint32_t    href = reg->href_comp;
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], scene_href, reg);
+		hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
 		ref->index += offset;
 	}
 }
@@ -151,7 +151,8 @@ static void
 hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 				uint32_t dstIndex, uint32_t srcIndex, uint32_t count)
 {
-	ecs_registry_t *reg = dst->scene->reg;
+	ecs_registry_t *reg = dst->reg;
+	uint32_t    href = reg->href_comp;
 	Component_CopyElements (&ent_component,
 							dst->ent, dstIndex,
 							src->ent, srcIndex, count);
@@ -162,7 +163,7 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 
 	for (uint32_t i = 0; i < count; i++) {
 		uint32_t    ent = dst->ent[dstIndex + i];
-		hierref_t  *ref = Ent_GetComponent (ent, scene_href, reg);
+		hierref_t  *ref = Ent_GetComponent (ent, href, reg);
 		ref->hierarchy = dst;
 		ref->index = dstIndex + i;
 	}
@@ -333,18 +334,11 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
 }
 
 hierarchy_t *
-Hierarchy_New (scene_t *scene, const hierarchy_type_t *type, int createRoot)
+Hierarchy_New (ecs_registry_t *reg, const hierarchy_type_t *type,
+			   int createRoot)
 {
-	scene_resources_t *res = scene->resources;
-	hierarchy_t *hierarchy = PR_RESNEW (res->hierarchies);
-	hierarchy->scene = scene;
-
-	hierarchy->prev = &scene->hierarchies;
-	hierarchy->next = scene->hierarchies;
-	if (scene->hierarchies) {
-		scene->hierarchies->prev = &hierarchy->next;
-	}
-	scene->hierarchies = hierarchy;
+	hierarchy_t *hierarchy = PR_RESNEW (reg->hierarchies);
+	hierarchy->reg = reg;
 
 	hierarchy->type = type;
 	hierarchy->components = calloc (hierarchy->type->num_components,
@@ -361,11 +355,6 @@ Hierarchy_New (scene_t *scene, const hierarchy_type_t *type, int createRoot)
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
-	if (hierarchy->next) {
-		hierarchy->next->prev = hierarchy->prev;
-	}
-	*hierarchy->prev = hierarchy->next;
-
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
@@ -375,23 +364,23 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	}
 	free (hierarchy->components);
 
-	scene_resources_t *res = hierarchy->scene->resources;
-	PR_RESFREE (res->hierarchies, hierarchy);
+	ecs_registry_t *reg = hierarchy->reg;
+	PR_RESFREE (reg->hierarchies, hierarchy);
 }
 
 hierarchy_t *
-Hierarchy_Copy (scene_t *scene, const hierarchy_t *src)
+Hierarchy_Copy (ecs_registry_t *dstReg, const hierarchy_t *src)
 {
-	ecs_registry_t *dstReg = scene->reg;
-	//ecs_registry_t *srcReg = src->scene->reg;
-	hierarchy_t *dst = Hierarchy_New (scene, src->type, 0);
+	uint32_t    href = dstReg->href_comp;
+	//ecs_registry_t *srcReg = src->reg;
+	hierarchy_t *dst = Hierarchy_New (dstReg, src->type, 0);
 	size_t      count = src->num_objects;
 
 	Hierarchy_Reserve (dst, count);
 
 	for (size_t i = 0; i < count; i++) {
 		dst->ent[i] = ECS_NewEntity (dstReg);
-		hierref_t  *ref = Ent_AddComponent (dst->ent[i], scene_href, dstReg);
+		hierref_t  *ref = Ent_AddComponent (dst->ent[i], href, dstReg);
 		ref->hierarchy = dst;
 		ref->index = i;
 	}

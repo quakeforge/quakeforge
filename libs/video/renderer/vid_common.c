@@ -31,7 +31,7 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
-#include "QF/scene/component.h"
+#include "QF/scene/entity.h"
 
 #include "QF/ui/view.h"
 

@@ -63,6 +63,7 @@ nq_common_LIBFILES= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/gamecode/libQFgamecode.la \
 		libs/ui/libQFui.la \
+		libs/ecs/libQFecs.la \
 		libs/util/libQFutil.la
 
 nq_client_LIBS=	$(nq_client_LIBFILES) $(nq_common_LIBFILES)

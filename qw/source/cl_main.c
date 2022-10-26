@@ -91,9 +91,7 @@
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
-#include "QF/scene/component.h"
 #include "QF/scene/transform.h"
-#include "QF/scene/scene.h"
 
 #include "buildnum.h"
 #include "compat.h"

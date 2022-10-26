@@ -41,9 +41,7 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "compat.h"
 
@@ -369,7 +367,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	transform_t ftransform = Entity_Transform (fent);
 	transform_t transform = Entity_Transform (ent);
 	if (!Transform_Valid (Transform_GetParent (ftransform))) {
-		Transform_SetParent (cl_world.scene, ftransform, transform);
+		Transform_SetParent (ftransform, transform);
 	}
 	CL_UpdateFlagModels (ent, key);
 
@@ -391,7 +389,7 @@ CL_RemoveFlagModels (int key)
 										   cl_world.scene->reg);
 	transform_t transform = Entity_Transform (fent);
 	*active = 0;
-	Transform_SetParent (cl_world.scene, transform, nulltransform);
+	Transform_SetParent (transform, nulltransform);
 }
 
 /*

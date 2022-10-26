@@ -36,9 +36,7 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "d_ifacea.h"
 #include "r_internal.h"

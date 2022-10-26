@@ -37,8 +37,6 @@
 
 #define IMPLEMENT_TRANSFORM_Funcs
 
-#include "QF/scene/component.h"
-#include "QF/scene/hierarchy.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
@@ -221,9 +219,8 @@ Transform_UpdateMatrices (hierarchy_t *h)
 }
 
 transform_t
-Transform_New (scene_t *scene, transform_t parent)
+Transform_New (ecs_registry_t *reg, transform_t parent)
 {
-	ecs_registry_t *reg = scene->reg;
 	uint32_t    transform = ECS_NewEntity (reg);
 	hierref_t  *ref = Ent_AddComponent (transform, scene_href, reg);
 
@@ -233,7 +230,7 @@ Transform_New (scene_t *scene, transform_t parent)
 		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
 												pref->index, 0);
 	} else {
-		ref->hierarchy = Hierarchy_New (scene, &transform_type, 1);
+		ref->hierarchy = Hierarchy_New (reg, &transform_type, 1);
 		ref->index = 0;
 	}
 	ref->hierarchy->ent[ref->index] = transform;
@@ -242,29 +239,28 @@ Transform_New (scene_t *scene, transform_t parent)
 }
 
 void
-Transform_Delete (scene_t *scene, transform_t transform)
+Transform_Delete (transform_t transform)
 {
 	hierref_t  *ref = Transform_GetRef (transform);
 	if (ref->index != 0) {
 		// The transform is not the root, so pull it out of its current
 		// hierarchy so deleting it is easier
-		Transform_SetParent (scene, transform, (transform_t) {});
+		Transform_SetParent (transform, (transform_t) {});
 	}
 	// Takes care of freeing the transforms
 	Hierarchy_Delete (ref->hierarchy);
 }
 
 transform_t
-Transform_NewNamed (scene_t *scene, transform_t parent, const char *name)
+Transform_NewNamed (ecs_registry_t *reg, transform_t parent, const char *name)
 {
-	transform_t transform = Transform_New (scene, parent);
+	transform_t transform = Transform_New (reg, parent);
 	Transform_SetName (transform, name);
 	return transform;
 }
 
 void
-Transform_SetParent (scene_t *scene, transform_t transform,
-					 transform_t parent)
+Transform_SetParent (transform_t transform, transform_t parent)
 {
 	if (parent.reg && parent.id != nullent) {
 		__auto_type ref = Transform_GetRef (transform);
@@ -286,7 +282,7 @@ Transform_SetParent (scene_t *scene, transform_t transform,
 			// already root
 			return;
 		}
-		ref->hierarchy = Hierarchy_New (scene, &transform_type, 0);
+		ref->hierarchy = Hierarchy_New (transform.reg, &transform_type, 0);
 		Hierarchy_InsertHierarchy (ref->hierarchy, tref.hierarchy, nullent,
 								   tref.index);
 		Hierarchy_RemoveHierarchy (tref.hierarchy, tref.index);

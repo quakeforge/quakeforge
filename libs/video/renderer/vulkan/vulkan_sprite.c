@@ -51,9 +51,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "QF/scene/component.h"
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_renderpass.h"
