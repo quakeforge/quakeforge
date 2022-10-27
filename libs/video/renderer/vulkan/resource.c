@@ -37,6 +37,26 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 
+static void
+create_image (qfv_device_t *device, qfv_resobj_t *image_obj)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type image = &image_obj->image;
+	VkImageCreateInfo createInfo = {
+		VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, 0,
+		image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
+		image->type, image->format, image->extent, image->num_mipmaps,
+		image->num_layers,
+		image->samples,
+		VK_IMAGE_TILING_OPTIMAL,
+		image->usage,
+		VK_SHARING_MODE_EXCLUSIVE,
+		0, 0,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+	};
+	dfunc->vkCreateImage (device->dev, &createInfo, 0, &image->image);
+}
+
 int
 QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
@@ -76,16 +96,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 			case qfv_res_image:
 				{
+					create_image (device, obj);
 					__auto_type image = &obj->image;
-					image->image = QFV_CreateImage (device,
-													image->cubemap,
-													image->type,
-													image->format,
-													image->extent,
-													image->num_mipmaps,
-													image->num_layers,
-													image->samples,
-													image->usage);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
 										 image->image,
 										 va (resource->va_ctx, "image:%s:%s",
