@@ -711,13 +711,13 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				maps[numMaps++] = (mapdesc_t) {
 					.size = size,
 					.layers = numLayers,
-					.cube = 0,
+					.cube = 1,
 				};
 				numLayers = 0;
 			}
 			size = abs ((int) lights[li].color[3]);
 		}
-		imageMap[li] = lctx->light_images.size;
+		imageMap[li] = numMaps;
 		lr->size = size;
 		lr->layer = numLayers;
 		lr->numLayers = layers;
@@ -728,7 +728,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		maps[numMaps++] = (mapdesc_t) {
 			.size = size,
 			.layers = numLayers,
-			.cube = 0,
+			.cube = 1,
 		};
 	}
 
@@ -750,7 +750,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			};
 			numLayers = 0;
 		}
-		imageMap[li] = lctx->light_images.size;
+		imageMap[li] = numMaps;
 		lr->size = size;
 		lr->layer = numLayers;
 		lr->numLayers = layers;
