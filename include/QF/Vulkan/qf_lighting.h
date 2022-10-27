@@ -100,7 +100,7 @@ typedef struct lightingctx_s {
 	VkPipelineLayout layout;
 	VkSampler    sampler;
 	VkDeviceMemory light_memory;
-	VkDeviceMemory shadow_memory;
+	struct qfv_resource_s *shadow_resources;
 	qfv_lightmatset_t light_mats;
 	qfv_imageset_t light_images;
 	light_renderer_set_t light_renderers;
