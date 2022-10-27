@@ -8,7 +8,7 @@
 
 #include "QF/simd/types.h"
 #include "QF/mathlib.h"
-#include "QF/scene/component.h"
+#include "QF/ecs/component.h"
 
 enum test_components {
 	test_position,

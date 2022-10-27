@@ -52,8 +52,10 @@ hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 	ecs_registry_t *reg = hierarchy->reg;
 	uint32_t    href = reg->href_comp;
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
-		ref->index += offset;
+		if (ECS_EntValid (hierarchy->ent[i], reg)) {
+			hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
+			ref->index += offset;
+		}
 	}
 }
 
@@ -159,7 +161,7 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 	// Actually move (as in C++ move semantics) source hierarchy object
 	// references so that their indices do not get updated when the objects
 	// are removed from the source hierarcy
-	memset (&src->ent[srcIndex], 0, count * sizeof(dst->ent[0]));
+	memset (&src->ent[srcIndex], nullent, count * sizeof(dst->ent[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
 		uint32_t    ent = dst->ent[dstIndex + i];

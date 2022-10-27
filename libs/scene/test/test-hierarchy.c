@@ -6,12 +6,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "QF/scene/component.h"
-#include "QF/scene/hierarchy.h"
+#include "QF/ecs/component.h"
+#include "QF/ecs/hierarchy.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-scene_t *scene;
+ecs_registry_t *reg;
 
 // NOTE: these are the columns of the matrix! (not that it matters for a
 // symmetrical matrix, but...)
@@ -50,7 +50,7 @@ check_hierarchy_size (transform_t t, uint32_t size)
 		return 0;
 	}
 	char      **name = h->components[transform_type_name];
-	ecs_registry_t *reg = h->scene->reg;
+	ecs_registry_t *reg = h->reg;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		hierref_t  *ref = Ent_GetComponent (h->ent[i], scene_href, reg);
 		if (ref->hierarchy != h) {
@@ -66,7 +66,7 @@ dump_hierarchy (transform_t t)
 {
 	hierarchy_t *h = Transform_GetRef (t)->hierarchy;
 	char      **name = h->components[transform_type_name];
-	ecs_registry_t *reg = h->scene->reg;
+	ecs_registry_t *reg = h->reg;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		hierref_t  *ref = Ent_GetComponent (h->ent[i], scene_href, reg);
 		printf ("%2d: %5s %2u %2u %2u %2u %2u\n", i, name[i], h->ent[i],
@@ -110,7 +110,7 @@ check_indices (transform_t transform, uint32_t index, uint32_t parentIndex,
 static int
 test_single_transform (void)
 {
-	transform_t transform = Transform_New (scene, (transform_t) {});
+	transform_t transform = Transform_New (reg, (transform_t) {});
 	hierarchy_t *h;
 
 	if (!transform.reg || transform.id == nullent) {
@@ -157,8 +157,8 @@ test_single_transform (void)
 static int
 test_parent_child_init (void)
 {
-	transform_t parent = Transform_New (scene, (transform_t) {});
-	transform_t child = Transform_New (scene, parent);
+	transform_t parent = Transform_New (reg, (transform_t) {});
+	transform_t child = Transform_New (reg, parent);
 
 	if (Transform_GetRef (parent)->hierarchy
 		!= Transform_GetRef (child)->hierarchy) {
@@ -215,8 +215,8 @@ test_parent_child_init (void)
 static int
 test_parent_child_setparent (void)
 {
-	transform_t parent = Transform_New (scene, (transform_t) {});
-	transform_t child = Transform_New (scene, (transform_t) {});
+	transform_t parent = Transform_New (reg, (transform_t) {});
+	transform_t child = Transform_New (reg, (transform_t) {});
 
 	Transform_SetName (parent, "parent");
 	Transform_SetName (child, "child");
@@ -231,7 +231,7 @@ test_parent_child_setparent (void)
 		return 1;
 	}
 
-	Transform_SetParent (scene, child, parent);
+	Transform_SetParent (child, parent);
 
 	if (Transform_GetRef (parent)->hierarchy
 		!= Transform_GetRef (child)->hierarchy) {
@@ -290,17 +290,17 @@ test_build_hierarchy (void)
 {
 	printf ("test_build_hierarchy\n");
 
-	transform_t root = Transform_NewNamed (scene, (transform_t) {}, "root");
-	transform_t A = Transform_NewNamed (scene, root, "A");
-	transform_t B = Transform_NewNamed (scene, root, "B");
-	transform_t C = Transform_NewNamed (scene, root, "C");
+	transform_t root = Transform_NewNamed (reg, (transform_t) {}, "root");
+	transform_t A = Transform_NewNamed (reg, root, "A");
+	transform_t B = Transform_NewNamed (reg, root, "B");
+	transform_t C = Transform_NewNamed (reg, root, "C");
 
 	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (A, 1, 0, 4, 0)) { return 1; }
 	if (!check_indices (B, 2, 0, 4, 0)) { return 1; }
 	if (!check_indices (C, 3, 0, 4, 0)) { return 1; }
 
-	transform_t B1 = Transform_NewNamed (scene, B, "B1");
+	transform_t B1 = Transform_NewNamed (reg, B, "B1");
 
 	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices ( A, 1, 0, 4, 0)) { return 1; }
@@ -308,7 +308,7 @@ test_build_hierarchy (void)
 	if (!check_indices ( C, 3, 0, 5, 0)) { return 1; }
 	if (!check_indices (B1, 4, 2, 5, 0)) { return 1; }
 
-	transform_t A1 = Transform_NewNamed (scene, A, "A1");
+	transform_t A1 = Transform_NewNamed (reg, A, "A1");
 
 	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices ( A, 1, 0, 4, 1)) { return 1; }
@@ -316,11 +316,11 @@ test_build_hierarchy (void)
 	if (!check_indices ( C, 3, 0, 6, 0)) { return 1; }
 	if (!check_indices (A1, 4, 1, 6, 0)) { return 1; }
 	if (!check_indices (B1, 5, 2, 6, 0)) { return 1; }
-	transform_t A1a = Transform_NewNamed (scene, A1, "A1a");
-	transform_t B2 = Transform_NewNamed (scene, B, "B2");
-	transform_t A2 = Transform_NewNamed (scene, A, "A2");
-	transform_t B3 = Transform_NewNamed (scene, B, "B3");
-	transform_t B2a = Transform_NewNamed (scene, B2, "B2a");
+	transform_t A1a = Transform_NewNamed (reg, A1, "A1a");
+	transform_t B2 = Transform_NewNamed (reg, B, "B2");
+	transform_t A2 = Transform_NewNamed (reg, A, "A2");
+	transform_t B3 = Transform_NewNamed (reg, B, "B3");
+	transform_t B2a = Transform_NewNamed (reg, B2, "B2a");
 
 	if (!check_hierarchy_size (root, 11)) { return 1; }
 
@@ -336,7 +336,7 @@ test_build_hierarchy (void)
 	if (!check_indices (A1a,  9, 4, 11, 0)) { return 1; }
 	if (!check_indices (B2a, 10, 7, 11, 0)) { return 1; }
 
-	transform_t D = Transform_NewNamed (scene, root, "D");
+	transform_t D = Transform_NewNamed (reg, root, "D");
 
 	if (!check_hierarchy_size (root, 12)) { return 1; }
 
@@ -354,7 +354,7 @@ test_build_hierarchy (void)
 	if (!check_indices (B2a, 11, 8, 12, 0)) { return 1; }
 
 	dump_hierarchy (root);
-	transform_t C1 = Transform_NewNamed (scene, C, "C1");
+	transform_t C1 = Transform_NewNamed (reg, C, "C1");
 	dump_hierarchy (root);
 	if (!check_hierarchy_size (root, 13)) { return 1; }
 
@@ -383,19 +383,19 @@ test_build_hierarchy2 (void)
 {
 	printf ("test_build_hierarchy2\n");
 
-	transform_t root = Transform_NewNamed (scene, (transform_t) {}, "root");
-	transform_t A = Transform_NewNamed (scene, root, "A");
-	transform_t B = Transform_NewNamed (scene, root, "B");
-	transform_t C = Transform_NewNamed (scene, root, "C");
-	transform_t B1 = Transform_NewNamed (scene, B, "B1");
-	transform_t A1 = Transform_NewNamed (scene, A, "A1");
-	transform_t A1a = Transform_NewNamed (scene, A1, "A1a");
-	transform_t B2 = Transform_NewNamed (scene, B, "B2");
-	transform_t A2 = Transform_NewNamed (scene, A, "A2");
-	transform_t B3 = Transform_NewNamed (scene, B, "B3");
-	transform_t B2a = Transform_NewNamed (scene, B2, "B2a");
-	transform_t D = Transform_NewNamed (scene, root, "D");
-	transform_t C1 = Transform_NewNamed (scene, C, "C1");
+	transform_t root = Transform_NewNamed (reg, (transform_t) {}, "root");
+	transform_t A = Transform_NewNamed (reg, root, "A");
+	transform_t B = Transform_NewNamed (reg, root, "B");
+	transform_t C = Transform_NewNamed (reg, root, "C");
+	transform_t B1 = Transform_NewNamed (reg, B, "B1");
+	transform_t A1 = Transform_NewNamed (reg, A, "A1");
+	transform_t A1a = Transform_NewNamed (reg, A1, "A1a");
+	transform_t B2 = Transform_NewNamed (reg, B, "B2");
+	transform_t A2 = Transform_NewNamed (reg, A, "A2");
+	transform_t B3 = Transform_NewNamed (reg, B, "B3");
+	transform_t B2a = Transform_NewNamed (reg, B2, "B2a");
+	transform_t D = Transform_NewNamed (reg, root, "D");
+	transform_t C1 = Transform_NewNamed (reg, C, "C1");
 
 	if (!check_hierarchy_size (root, 13)) { return 1; }
 
@@ -413,18 +413,18 @@ test_build_hierarchy2 (void)
 	if (!check_indices (A1a, 11, 5, 13, 0)) { return 1; }
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
-	transform_t T = Transform_NewNamed (scene, (transform_t) {}, "T");
-	transform_t X = Transform_NewNamed (scene, T, "X");
-	transform_t Y = Transform_NewNamed (scene, T, "Y");
-	transform_t Z = Transform_NewNamed (scene, T, "Z");
-	transform_t Y1 = Transform_NewNamed (scene, Y, "Y1");
-	transform_t X1 = Transform_NewNamed (scene, X, "X1");
-	transform_t X1a = Transform_NewNamed (scene, X1, "X1a");
-	transform_t Y2 = Transform_NewNamed (scene, Y, "Y2");
-	transform_t X2 = Transform_NewNamed (scene, X, "X2");
-	transform_t Y3 = Transform_NewNamed (scene, Y, "Y3");
-	transform_t Y2a = Transform_NewNamed (scene, Y2, "Y2a");
-	transform_t Z1 = Transform_NewNamed (scene, Z, "Z1");
+	transform_t T = Transform_NewNamed (reg, (transform_t) {}, "T");
+	transform_t X = Transform_NewNamed (reg, T, "X");
+	transform_t Y = Transform_NewNamed (reg, T, "Y");
+	transform_t Z = Transform_NewNamed (reg, T, "Z");
+	transform_t Y1 = Transform_NewNamed (reg, Y, "Y1");
+	transform_t X1 = Transform_NewNamed (reg, X, "X1");
+	transform_t X1a = Transform_NewNamed (reg, X1, "X1a");
+	transform_t Y2 = Transform_NewNamed (reg, Y, "Y2");
+	transform_t X2 = Transform_NewNamed (reg, X, "X2");
+	transform_t Y3 = Transform_NewNamed (reg, Y, "Y3");
+	transform_t Y2a = Transform_NewNamed (reg, Y2, "Y2a");
+	transform_t Z1 = Transform_NewNamed (reg, Z, "Z1");
 
 	dump_hierarchy (T);
 	if (!check_hierarchy_size (T, 12)) { return 1; }
@@ -442,7 +442,7 @@ test_build_hierarchy2 (void)
 	if (!check_indices (X1a, 10, 4, 12, 0)) { return 1; }
 	if (!check_indices (Y2a, 11, 7, 12, 0)) { return 1; }
 
-	Transform_SetParent (scene, T, B);
+	Transform_SetParent (T, B);
 
 	dump_hierarchy (root);
 
@@ -474,7 +474,7 @@ test_build_hierarchy2 (void)
 	if (!check_indices (X1a, 23, 17, 25, 0)) { return 1; }
 	if (!check_indices (Y2a, 24, 20, 25, 0)) { return 1; }
 
-	Transform_SetParent (scene, Y, (transform_t) {});
+	Transform_SetParent (Y, (transform_t) {});
 
 	dump_hierarchy (root);
 	dump_hierarchy (Y);
@@ -533,11 +533,11 @@ check_vector (transform_t transform,
 static int
 test_frames (void)
 {
-	transform_t root = Transform_NewNamed (scene, (transform_t) {}, "root");
-	transform_t A = Transform_NewNamed (scene, root, "A");
-	transform_t B = Transform_NewNamed (scene, root, "B");
-	transform_t A1 = Transform_NewNamed (scene, A, "A1");
-	transform_t B1 = Transform_NewNamed (scene, B, "B1");
+	transform_t root = Transform_NewNamed (reg, (transform_t) {}, "root");
+	transform_t A = Transform_NewNamed (reg, root, "A");
+	transform_t B = Transform_NewNamed (reg, root, "B");
+	transform_t A1 = Transform_NewNamed (reg, A, "A1");
+	transform_t B1 = Transform_NewNamed (reg, B, "B1");
 
 	Transform_SetLocalPosition (root, (vec4f_t) { 0, 0, 1, 1 });
 	Transform_SetLocalPosition (A, (vec4f_t) { 1, 0, 0, 1 });
@@ -719,7 +719,7 @@ test_frames (void)
 		return 1;
 	}
 
-	Transform_Delete (scene,root);
+	Transform_Delete (root);
 
 	return 0;
 }
@@ -727,7 +727,8 @@ test_frames (void)
 int
 main (void)
 {
-	scene = Scene_NewScene ();
+	scene_t    *scene = Scene_NewScene ();
+	reg = scene->reg;
 
 	if (test_single_transform ()) { return 1; }
 	if (test_parent_child_init ()) { return 1; }

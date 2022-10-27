@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "QF/scene/component.h"
+#include "QF/ecs/component.h"
 
 static int
 test_new_del (void)
