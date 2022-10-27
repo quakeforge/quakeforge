@@ -473,6 +473,7 @@ clear_shadows (vulkan_ctx_t *ctx)
 	}
 	if (lctx->shadow_resources) {
 		QFV_DestroyResource (device, lctx->shadow_resources);
+		free (lctx->shadow_resources);
 		lctx->shadow_resources = 0;
 	}
 	lctx->light_images.size = 0;
