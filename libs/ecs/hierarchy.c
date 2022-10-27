@@ -271,7 +271,9 @@ Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 			Sys_Error ("attempt to insert root in non-empty hierarchy");
 		}
 		hierarchy_open (dst, 0, 1);
-		hierarchy_move (dst, src, 0, srcRoot, 1);
+		if (src) {
+			hierarchy_move (dst, src, 0, srcRoot, 1);
+		}
 		dst->parentIndex[0] = nullent;
 		dst->childIndex[0] = 1;
 		dst->childCount[0] = 0;
