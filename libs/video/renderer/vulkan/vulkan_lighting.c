@@ -669,7 +669,6 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	int         numLayers = 0;
 	int         totalLayers = 0;
 	int        *imageMap = alloca (numLights * sizeof (int));
-	size_t      memsize = 0;
 	int        *lightMap = alloca (numLights * sizeof (int));
 	int         numMaps = 0;
 	mapdesc_t  *maps = alloca (numLights * sizeof (mapdesc_t));
@@ -828,7 +827,8 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	Sys_MaskPrintf (SYS_vulkan,
 					"shadow maps: %d layers in %zd images: %zd\n",
-					totalLayers, lctx->light_images.size, memsize);
+					totalLayers, lctx->light_images.size,
+					lctx->shadow_resources->size);
 }
 
 void

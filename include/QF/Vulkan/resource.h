@@ -59,6 +59,7 @@ typedef struct qfv_resource_s {
 	unsigned    num_objects;
 	qfv_resobj_t *objects;
 	VkDeviceMemory memory;
+	VkDeviceSize size;
 } qfv_resource_t;
 
 struct qfv_device_s;

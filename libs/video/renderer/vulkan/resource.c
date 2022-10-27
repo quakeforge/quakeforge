@@ -129,6 +129,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 			}
 		}
 	}
+	resource->size = size;
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
 						 resource->memory, va (resource->va_ctx, "memory:%s",
 											   resource->name));
