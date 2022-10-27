@@ -377,6 +377,9 @@ R_DrawViewModel (void)
 		return;
 
 	viewent = vr_data.view_model;
+	if (!Entity_Valid (viewent)) {
+		return;
+	}
 
 	renderer_t *renderer = Ent_GetComponent (viewent.id, scene_renderer,
 											 viewent.reg);

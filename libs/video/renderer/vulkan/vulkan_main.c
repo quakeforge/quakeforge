@@ -108,6 +108,9 @@ static void
 Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
 	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
