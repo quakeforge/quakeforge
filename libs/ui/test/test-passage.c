@@ -5,6 +5,7 @@
 
 #include "QF/ui/view.h"
 #include "QF/ui/passage.h"
+#include "QF/ecs/component.h"
 
 static const char test_text[] = {
 	"Guarding the entrance to the Grendal "
@@ -49,61 +50,61 @@ int
 main (void)
 {
 	int         ret = 0;
+	ecs_registry_t *registry = ECS_NewRegistry ();
 
-	passage_t  *passage = Passage_ParseText (test_text);
-	if (passage->view->num_children != 3) {
+	passage_t  *passage = Passage_ParseText (test_text, registry);
+	if (passage->hierarchy->childCount[0] != 3) {
 		ret = 1;
 		printf ("incorrect number of paragraphs: %d\n",
-				passage->view->num_children);
+				passage->hierarchy->childCount[0]);
 	}
-	if (passage->num_text_objects != 140) {
+	if (passage->hierarchy->num_objects != 144) {
 		ret = 1;
 		printf ("incorrect number of text objects: %d\n",
-				passage->num_text_objects);
+				passage->hierarchy->num_objects);
 	}
-	if (passage->view->children[0]->num_children != 49) {
+	if (passage->hierarchy->childCount[1] != 49) {
 		ret = 1;
 		printf ("incorrect number of text objects in first paragraph: %d\n",
-				passage->view->children[0]->num_children);
+				passage->hierarchy->childCount[1]);
 	}
-	if (passage->view->children[1]->num_children != 90) {
+	if (passage->hierarchy->childCount[2] != 90) {
 		ret = 1;
 		printf ("incorrect number of text objects in second paragraph: %d\n",
-				passage->view->children[1]->num_children);
+				passage->hierarchy->childCount[2]);
 	}
-	if (passage->view->children[2]->num_children != 1) {
+	if (passage->hierarchy->childCount[3] != 1) {
 		ret = 1;
 		printf ("incorrect number of text objects in third paragraph: %d\n",
-				passage->view->children[1]->num_children);
+				passage->hierarchy->childCount[3]);
 	}
-	view_t     *text_view = passage->view->children[1]->children[0];
-	psg_text_t *to = text_view->data;
+	uint32_t   *childIndex = passage->hierarchy->childIndex;
+	psg_text_t *text_objs = passage->hierarchy->components[0];
+	psg_text_t *to = &text_objs[childIndex[2] + 0];
 	if (to->size != 2 && (passage->text[to->text] != ' '
 						  && passage->text[to->text + 1] != ' ')) {
 		ret = 1;
 		printf ("second paragram does not begin with double space: %d '%.*s'\n",
 				to->size, to->size, passage->text + to->text);
 	}
-	if (text_view->bol_suppress) {
-		ret = 1;
-		printf ("second paragram indent suppressed\n");
-	}
-	for (int i = 0; i < passage->view->num_children; i++) {
-		view_t     *paragraph_view = passage->view->children[i];
-		for (int j = 0; j < paragraph_view->num_children; j++) {
-			view_t     *text_view = paragraph_view->children[j];
-			psg_text_t *to = text_view->data;
+	//if (text_view->bol_suppress) {
+	//	ret = 1;
+	//	printf ("second paragram indent suppressed\n");
+	//}
+	for (uint32_t i = 0; i < passage->hierarchy->childCount[0]; i++) {
+		for (uint32_t j = 0; j < passage->hierarchy->childCount[1 + i]; j++) {
+			psg_text_t *to = &text_objs[childIndex[1 + i] + j];
 			unsigned    is_space = Passage_IsSpace (passage->text + to->text);
 			if (i == 1 && j == 0) {
 				// second paragraph indent, tested above
 				continue;
 			}
-			if ((!!is_space) != text_view->bol_suppress) {
-				ret = 1;
-				printf ("text/suppress mismatch %d [%d '%.*s'] %d %d\n",
-						text_view->bol_suppress, to->size, to->size,
-						passage->text + to->text, i, j);
-			}
+			//if ((!!is_space) != text_view->bol_suppress) {
+			//	ret = 1;
+			//	printf ("text/suppress mismatch %d [%d '%.*s'] %d %d\n",
+			//			text_view->bol_suppress, to->size, to->size,
+			//			passage->text + to->text, i, j);
+			//}
 			if (is_space) {
 				if (!check_non_space (passage->text, to)) {
 					continue;
@@ -120,5 +121,6 @@ main (void)
 	}
 	Passage_Delete (passage);
 
+	ECS_DelRegistry (registry);
 	return ret;
 }

@@ -18,8 +18,8 @@ libs_ui_test_test_flow_size_LDADD=libs/ui/libQFui.la
 libs_ui_test_test_flow_size_DEPENDENCIES=libs/ui/libQFui.la
 
 libs_ui_test_test_passage_SOURCES=libs/ui/test/test-passage.c
-libs_ui_test_test_passage_LDADD=libs/ui/libQFui.la
-libs_ui_test_test_passage_DEPENDENCIES=libs/ui/libQFui.la
+libs_ui_test_test_passage_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
+libs_ui_test_test_passage_DEPENDENCIES=libs/ui/libQFui.la libs/ecs/libQFecs.la
 
 libs_ui_test_test_txtbuffer_SOURCES=libs/ui/test/test-txtbuffer.c
 libs_ui_test_test_txtbuffer_LDADD=libs/ui/libQFui.la

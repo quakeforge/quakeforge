@@ -39,8 +39,29 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "QF/ui/view.h"
+#include "QF/ecs/component.h"
+
 #include "QF/ui/passage.h"
+#include "QF/ui/view.h"
+
+enum {
+	passage_type_text_obj,
+
+	passage_type_count
+};
+
+static const component_t passage_components[passage_type_count] = {
+	[passage_type_text_obj] = {
+		.size = sizeof (psg_text_t),
+		.name = "Text",
+	},
+};
+
+static const hierarchy_type_t passage_type = {
+	.num_components = passage_type_count,
+	.components = passage_components,
+};
+
 
 VISIBLE int
 Passage_IsSpace (const char *text)
@@ -69,110 +90,100 @@ Passage_IsSpace (const char *text)
 	return 0;
 }
 
-static void
-add_text_view (view_t *paragraph_view, psg_text_t *text_object, int suppress)
-{
-	view_t     *text_view = view_new (0, 0, 0, 0, grav_flow);
-	text_view->data = text_object;
-	text_view->bol_suppress = suppress;
-	view_add (paragraph_view, text_view);
-}
-
 VISIBLE passage_t *
-Passage_ParseText (const char *text)
+Passage_ParseText (const char *text, ecs_registry_t *reg)
 {
 	passage_t  *passage = malloc (sizeof (passage_t));
 	passage->text = text;
-	passage->num_text_objects = 0;
-	passage->view = view_new (0, 0, 10, 10, grav_northwest);
-	passage->text_objects = 0;
+	passage->reg = reg;
 
 	if (!*text) {
 		return passage;
 	}
 
 	unsigned    num_paragraphs = 1;
+	unsigned    num_text_objects = 1;
 	int         parsing_space = Passage_IsSpace (text);
-	passage->num_text_objects = 1;
 	for (const char *c = text; *c; c++) {
 		int         size;
 		if ((size = Passage_IsSpace (c))) {
 			if (!parsing_space) {
-				passage->num_text_objects++;
+				num_text_objects++;
 			}
 			parsing_space = 1;
 			c += size - 1;
 		} else if (*c == '\n') {
 			if (c[1]) {
 				num_paragraphs++;
-				passage->num_text_objects += !Passage_IsSpace (c + 1);
+				num_text_objects += !Passage_IsSpace (c + 1);
 			}
 		} else {
 			if (parsing_space) {
-				passage->num_text_objects++;
+				num_text_objects++;
 			}
 			parsing_space = 0;
 		}
 	}
+	passage->hierarchy = Hierarchy_New (reg, &passage_type, 0);
+	Hierarchy_Reserve (passage->hierarchy,
+					   1 + num_paragraphs + num_text_objects);
 #if 0
 	printf ("num_paragraphs %d, num_text_objects %d\n", num_paragraphs,
 			passage->num_text_objects);
 #endif
-	passage->text_objects = malloc (passage->num_text_objects
-									* sizeof (psg_text_t));
+	Hierarchy_InsertHierarchy (passage->hierarchy, 0, nullent, 0);
 	for (unsigned i = 0; i < num_paragraphs; i++) {
-		view_t     *view = view_new (0, 0, 10, 10, grav_northwest);
-		view->flow_size = 1;
-		view_add (passage->view, view);
+		Hierarchy_InsertHierarchy (passage->hierarchy, 0, 0, 0);
 	}
 
 	num_paragraphs = 0;
+	hierarchy_t *h = passage->hierarchy;
+	psg_text_t *passage_obj = h->components[passage_type_text_obj];
+	psg_text_t *par_obj = &passage_obj[h->childIndex[0]];
+	psg_text_t *text_obj = &passage_obj[h->childIndex[1]];
+	*par_obj = *text_obj = (psg_text_t) { };
+
+	Hierarchy_InsertHierarchy (h, 0, par_obj - passage_obj, 0);
+
 	parsing_space = Passage_IsSpace (text);
-	psg_text_t *text_object = passage->text_objects;
-	text_object->text = 0;
-	text_object->size = 0;
-	view_t     *paragraph_view = passage->view->children[num_paragraphs++];
-	add_text_view (paragraph_view, text_object, parsing_space);
 	for (const char *c = text; *c; c++) {
 		int         size;
 		if ((size = Passage_IsSpace (c))) {
 			if (!parsing_space) {
-				text_object->size = c - text - text_object->text;
-				(++text_object)->text = c - text;
-				add_text_view (paragraph_view, text_object, 1);
+				Hierarchy_InsertHierarchy (h, 0, par_obj - passage_obj, 0);
+				text_obj->size = c - text - text_obj->text;
+				(++text_obj)->text = c - text;
 			}
 			parsing_space = 1;
 			c += size - 1;
 		} else if (*c == '\n') {
-			text_object->size = c - text - text_object->text;
+			text_obj->size = c - text - text_obj->text;
+			par_obj->size = c - text - par_obj->text;
 			if (c[1]) {
-				(++text_object)->text = c + 1 - text;
-				paragraph_view = passage->view->children[num_paragraphs++];
-				add_text_view (paragraph_view, text_object, 0);
+				(++par_obj)->text = c + 1 - text;
+				Hierarchy_InsertHierarchy (h, 0, par_obj - passage_obj, 0);
+				(++text_obj)->text = c + 1 - text;
 				parsing_space = Passage_IsSpace (c + 1);
 			}
 		} else {
 			if (parsing_space) {
-				text_object->size = c - text - text_object->text;
-				(++text_object)->text = c - text;
-				add_text_view (paragraph_view, text_object, 0);
+				Hierarchy_InsertHierarchy (h, 0, par_obj - passage_obj, 0);
+				text_obj->size = c - text - text_obj->text;
+				(++text_obj)->text = c - text;
 			}
 			parsing_space = 0;
 			if (!c[1]) {
-				text_object->size = c + 1 - text - text_object->text;
+				text_obj->size = c + 1 - text - text_obj->text;
+				par_obj->size = c + 1 - text - par_obj->text;
+				passage_obj->size = c + 1 - text - passage_obj->text;
 			}
 		}
 	}
 #if 0
-	for (int i = 0; i < passage->view->num_children; i++) {
-		paragraph_view = passage->view->children[i];
-		for (int j = 0; j < paragraph_view->num_children; j++) {
-			view_t     *text_view = paragraph_view->children[j];
-			psg_text_t *to = text_view->data;
-			printf ("%3d %3d %d %4d %4d '%.*s'\n", i, j,
-					text_view->bol_suppress,
-					to->text, to->size, to->size, text + to->text);
-		}
+	for (uint32_t i = 0; i < passage->hierarchy->num_objects; i++) {
+		psg_text_t *to = &passage_obj[i];
+		printf ("%3d %4d %4d '%.*s'\n", i,
+				to->text, to->size, to->size, text + to->text);
 	}
 #endif
 	return passage;
@@ -181,9 +192,6 @@ Passage_ParseText (const char *text)
 VISIBLE void
 Passage_Delete (passage_t *passage)
 {
-	if (passage->view) {
-		view_delete (passage->view);
-	}
-	free (passage->text_objects);
+	Hierarchy_Delete (passage->hierarchy);
 	free (passage);
 }

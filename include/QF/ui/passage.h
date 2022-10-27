@@ -44,12 +44,12 @@ typedef struct psg_text_s {
 
 typedef struct passage_s {
 	const char *text;			///< Not owned by passage
-	struct view_s *view;		///< hierarchy of views representing passage
-	psg_text_t *text_objects;	///< all text objects in passage
-	unsigned    num_text_objects;	///< number of text objects in passage
+
+	struct ecs_registry_s *reg;	///< Owning ECS registry
+	struct hierarchy_s *hierarchy;	///< hierarchy of text objects
 } passage_t;
 
-passage_t *Passage_ParseText (const char *text);
+passage_t *Passage_ParseText (const char *text, struct ecs_registry_s *reg);
 void Passage_Delete (passage_t *passage);
 int Passage_IsSpace (const char *text) __attribute__((pure));
 
