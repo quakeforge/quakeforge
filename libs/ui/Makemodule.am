@@ -2,7 +2,9 @@ include libs/ui/test/Makemodule.am
 
 lib_LTLIBRARIES += libs/ui/libQFui.la
 
-ui_deps = libs/util/libQFutil.la
+ui_deps = \
+	libs/ecs/libQFecs.la \
+	libs/util/libQFutil.la
 
 libs_ui_libQFui_la_LDFLAGS=		$(lib_ldflags)
 libs_ui_libQFui_la_LIBADD=		$(ui_deps)
