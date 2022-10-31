@@ -84,6 +84,8 @@ COMPINLINE void Component_ResizeArray (const component_t *component,
 COMPINLINE void *Component_MoveElements (const component_t *component,
 										 void *array, uint32_t dstIndex,
 										 uint32_t srcIndex, uint32_t count);
+COMPINLINE void Component_SwapElements (const component_t *component,
+										void *a, void *b);
 COMPINLINE void *Component_CopyElements (const component_t *component,
 										 void *dstArray, uint32_t dstIndex,
 										 const void *srcArray,
@@ -129,6 +131,16 @@ Component_MoveElements (const component_t *component,
 	__auto_type dst = (byte *) array + dstIndex * component->size;
 	__auto_type src = (byte *) array + srcIndex * component->size;
 	return memmove (dst, src, count * component->size);
+}
+
+COMPINLINE void
+Component_SwapElements (const component_t *component, void *a, void *b)
+{
+	size_t      size = component->size;
+	byte        tmp[size];
+	memcpy (tmp, a, size);
+	memcpy (a, b, size);
+	memcpy (b, tmp, size);
 }
 
 COMPINLINE void *
@@ -216,6 +228,13 @@ ecs_registry_t *ECS_NewRegistry (void);
 void ECS_DelRegistry (ecs_registry_t *registry);
 void ECS_RegisterComponents (ecs_registry_t *registry,
 							 const component_t *components, uint32_t count);
+
+#ifndef __compar_d_fn_t_defined
+#define __compar_d_fn_t_defined
+typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
+#endif
+void ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
+							__compar_d_fn_t cmp, void *arg);
 
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);

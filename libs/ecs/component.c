@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/heapsort.h"
 #include "QF/sys.h"
 
 #define IMPLEMENT_COMPONENT_Funcs
@@ -67,6 +68,64 @@ ECS_RegisterComponents (ecs_registry_t *registry,
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
 	}
+}
+
+typedef struct {
+	__compar_d_fn_t cmp;
+	void       *arg;
+	ecs_pool_t *pool;
+	const component_t *comp;
+} ecs_sort_t;
+
+static int
+ecs_compare (const void *a, const void *b, void *arg)
+{
+	ecs_sort_t *sortctx = arg;
+	return sortctx->cmp (a, b, sortctx->arg);
+}
+
+static void
+swap_uint32 (uint32_t *a, uint32_t *b)
+{
+	uint32_t    t = *a;
+	*a = *b;
+	*b = t;
+}
+
+static void
+ecs_swap (void *_a, void *_b, void *arg)
+{
+	ecs_sort_t *sortctx = arg;
+	size_t      size = sortctx->comp->size;
+	ecs_pool_t *pool = sortctx->pool;
+	uint32_t   *a = _a;
+	uint32_t   *b = _b;
+	uint32_t    a_ind = a - pool->dense;
+	uint32_t    b_ind = b - pool->dense;
+	uint32_t    a_ent_ind = Ent_Index (pool->dense[a_ind]);
+	uint32_t    b_ent_ind = Ent_Index (pool->dense[b_ind]);
+	__auto_type a_data = (byte *) pool->data + a_ind * size;
+	__auto_type b_data = (byte *) pool->data + b_ind * size;
+	Component_SwapElements (sortctx->comp, a_data, b_data);
+	swap_uint32 (a, b);
+	swap_uint32 (&pool->sparse[a_ent_ind], &pool->sparse[b_ent_ind]);
+}
+
+VISIBLE void
+ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
+					   __compar_d_fn_t cmp, void *arg)
+{
+	if (component >= registry->num_components) {
+		Sys_Error ("ECS_SortComponentPool: invalid component: %u", component);
+	}
+	ecs_pool_t *pool = &registry->comp_pools[component];
+	if (!pool->count) {
+		return;
+	}
+	__auto_type comp = &registry->components[component];
+	ecs_sort_t sortctx = { .cmp = cmp, .arg = arg, .pool = pool, .comp = comp };
+	heapsort_s (pool->dense, pool->count, sizeof (uint32_t),
+				ecs_compare, ecs_swap, &sortctx);
 }
 
 VISIBLE void *
