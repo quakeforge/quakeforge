@@ -583,11 +583,11 @@ CL_ParseClientdata (void)
 	i = MSG_ReadLong (net_message);
 
 	if (cl.stats[STAT_ITEMS] != i) {				// set flash times
-		Sbar_Changed ();
 		for (j = 0; j < 32; j++)
 			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
 				cl.item_gettime[j] = cl.time;
 		cl.stats[STAT_ITEMS] = i;
+		Sbar_Changed (sbc_items);
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
 		cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS] & IT_POWER) >> 19;
 	}
@@ -607,7 +607,7 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_ARMOR] != i) {
 		cl.stats[STAT_ARMOR] = i;
-		Sbar_Changed ();
+		Sbar_Changed (sbc_armor);
 	}
 
 	if (bits & SU_WEAPON)
@@ -616,27 +616,27 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_WEAPON] != i) {
 		cl.stats[STAT_WEAPON] = i;
-		Sbar_Changed ();
 		cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+		Sbar_Changed (sbc_weapon);
 	}
 
 	i = (short) MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i) {
 		cl.stats[STAT_HEALTH] = i;
-		Sbar_Changed ();
+		Sbar_Changed (sbc_health);
 	}
 
 	i = MSG_ReadByte (net_message);
 	if (cl.stats[STAT_AMMO] != i) {
 		cl.stats[STAT_AMMO] = i;
-		Sbar_Changed ();
+		Sbar_Changed (sbc_ammo);
 	}
 
 	for (i = 0; i < 4; i++) {
 		j = MSG_ReadByte (net_message);
 		if (cl.stats[STAT_SHELLS + i] != j) {
 			cl.stats[STAT_SHELLS + i] = j;
-			Sbar_Changed ();
+			Sbar_Changed (sbc_ammo);
 		}
 	}
 
@@ -645,13 +645,13 @@ CL_ParseClientdata (void)
 	if (standard_quake) {
 		if (cl.stats[STAT_ACTIVEWEAPON] != i) {
 			cl.stats[STAT_ACTIVEWEAPON] = i;
-			Sbar_Changed ();
+			Sbar_Changed (sbc_weapon);
 		}
 	} else {
 		// hipnotic/rogue weapon "bit field" (stupid idea)
 		if (cl.stats[STAT_ACTIVEWEAPON] != (1 << i)) {
 			cl.stats[STAT_ACTIVEWEAPON] = (1 << i);
-			Sbar_Changed ();
+			Sbar_Changed (sbc_weapon);
 		}
 	}
 
@@ -872,7 +872,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatename:
-				Sbar_Changed ();
+				Sbar_Changed (sbc_info);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
@@ -882,7 +882,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatefrags:
-				Sbar_Changed ();
+				Sbar_Changed (sbc_frags);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
@@ -900,7 +900,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatecolors:
-				Sbar_Changed ();
+				Sbar_Changed (sbc_info);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients) {
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "

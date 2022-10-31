@@ -143,6 +143,8 @@ static cvar_t cl_conmode_cvar = {
 	.value = { .type = &cl_conmode_type, .value = &con_data.exec_line },
 };
 
+static ecs_registry_t *client_reg;
+
 static con_state_t con_state;
 static int  con_event_id;
 static int  con_saved_focos;
@@ -153,35 +155,91 @@ static qboolean chat_team;
 typedef struct {
 	const char *prompt;
 	inputline_t *input_line;
-	view_t     *view;
 	draw_charbuffer_t *buffer;
 } con_input_t;
+
+enum {
+	client_href,
+	client_input,
+	client_charbuff,
+	client_cursor,
+
+	client_comp_count
+};
+
+static const component_t client_components[client_comp_count] = {
+	[client_href] = {
+		.size = sizeof (hierref_t),
+		.name = "href",
+	},
+	[client_input] = {
+		.size = sizeof (con_input_t *),
+		.name = "input",
+	},
+	[client_charbuff] = {
+		.size = sizeof (draw_charbuffer_t *),
+		.name = "charbuff",
+	},
+	[client_cursor] = {
+		.size = sizeof (con_input_t *),
+		.name = "cursor",
+	},
+};
 
 #define	MAXCMDLINE 256
 
 static con_input_t cmd_line;
 static con_input_t say_line;
-static con_input_t team_line;
+static inputline_t *chat_input;
+static inputline_t *team_input;
+
+static view_t screen_view;
+static view_t   console_view;
+static view_t     buffer_view;
+static view_t     command_view;
+static view_t     download_view;
+static view_t   notify_view;
+static view_t   say_view;
 
 #define CON_BUFFER_SIZE 32768
 #define CON_LINES 1024
-static view_t *console_view;
 static draw_charbuffer_t *console_buffer;
 static con_buffer_t *con_main;
 static int view_offset;
+static draw_charbuffer_t *download_buffer;
 
 #define	NOTIFY_LINES 4
-static view_t *notify_view;
 static draw_charbuffer_t *notify_buffer;
 // ring buffer holding realtime time the line was generated
 static float notify_times[NOTIFY_LINES + 1];
 static int notify_head;
 static int notify_tail;
 
-static view_t *menu_view;
-static view_t *hud_view;
-
 static qboolean con_initialized;
+
+static inline void *
+con_getcomponent (view_t view, uint32_t comp)
+{
+	return Ent_GetComponent (view.id, comp, view.reg);
+}
+
+static inline int
+con_hascomponent (view_t view, uint32_t comp)
+{
+	return Ent_HasComponent (view.id, comp, view.reg);
+}
+
+static inline void *
+con_setcomponent (view_t view, uint32_t comp, void *data)
+{
+	return Ent_SetComponent (view.id, comp, view.reg, data);
+}
+
+static inline void
+con_remcomponent (view_t view, uint32_t comp)
+{
+	Ent_RemoveComponent (view.id, comp, view.reg);
+}
 
 static void
 ClearNotify (void)
@@ -204,11 +262,15 @@ C_SetState (con_state_t state)
 
 	if (state == con_message) {
 		say_line.prompt = "say:";
+		say_line.input_line = chat_input;
 		if (chat_team) {
 			say_line.prompt = "say_team:";
+			say_line.input_line = team_input;
 		}
-		say_line.buffer->cursx = 0;
-		Draw_PrintBuffer (say_line.buffer, say_line.prompt);
+		__auto_type buffer = say_line.buffer;
+		buffer->cursx = 0;
+		Draw_PrintBuffer (buffer, say_line.prompt);
+		say_line.input_line->width = buffer->width - buffer->cursx;
 	}
 
 	if (con_state == con_menu && old_state != con_menu) {
@@ -374,19 +436,7 @@ C_Print (const char *fmt, va_list args)
 /* DRAWING */
 
 static void
-draw_cursor (int x, int y, inputline_t *il)
-{
-	if (!con_data.realtime) {
-		return;
-	}
-
-	float       t = *con_data.realtime * con_cursorspeed;
-	int         ch = 10 + ((int) (t) & 1);
-	r_funcs->Draw_Character (x + ((il->linepos - il->scroll) * 8), y, ch);
-}
-
-static void
-DrawInputLine (int x, int y, int cursor, inputline_t *il)
+DrawInputLine (int x, int y, inputline_t *il)
 {
 	const char *s = il->lines[il->edit_line] + il->scroll;
 
@@ -396,9 +446,6 @@ DrawInputLine (int x, int y, int cursor, inputline_t *il)
 	} else {
 		r_funcs->Draw_nString (x, y, s, il->width - 1);
 	}
-	if (cursor) {
-		draw_cursor (x, y, il);
-	}
 	if (strlen (s) >= il->width)
 		r_funcs->Draw_Character (x + ((il->width - 1) * 8), y, '>' | 0x80);
 }
@@ -406,7 +453,7 @@ DrawInputLine (int x, int y, int cursor, inputline_t *il)
 void
 C_DrawInputLine (inputline_t *il)
 {
-	DrawInputLine (il->x, il->y, il->cursor, il);
+	DrawInputLine (il->x, il->y, il);
 }
 
 static void
@@ -427,16 +474,6 @@ draw_input_line (inputline_t *il, draw_charbuffer_t *buffer)
 }
 
 static void
-draw_input (view_t *view)
-{
-	__auto_type inp = (con_input_t *) view->data;
-
-	Draw_CharBuffer (view->xabs, view->yabs, inp->buffer);
-	draw_cursor (view->xabs + inp->buffer->cursx * 8, view->yabs,
-				 inp->input_line);
-}
-
-static void
 input_line_draw (inputline_t *il)
 {
 	__auto_type inp = (con_input_t *) il->user_data;
@@ -444,28 +481,33 @@ input_line_draw (inputline_t *il)
 }
 
 static void
-resize_input (view_t *view)
+resize_input (view_t view, view_pos_t len)
 {
-	__auto_type inp = (con_input_t *) view->data;
+	if (!con_hascomponent (view, client_input)) {
+		return;
+	}
+	__auto_type inp = *(con_input_t **) con_getcomponent (view, client_input);
 
 	if (inp->buffer) {
 		Draw_DestroyBuffer (inp->buffer);
 	}
-	inp->buffer = Draw_CreateBuffer (view->xlen / 8, 1);
+	inp->buffer = Draw_CreateBuffer (len.x / 8, 1);
 	Draw_ClearBuffer (inp->buffer);
 	Draw_PrintBuffer (inp->buffer, inp->prompt);
-	inp->buffer->chars[inp->buffer->cursx] = inp->input_line->prompt_char;
-	inp->input_line->width = inp->buffer->width - inp->buffer->cursx;
+	if (inp->input_line) {
+		inp->input_line->width = inp->buffer->width - inp->buffer->cursx;
+		printf ("resize_input: %d %zd %d %d %d\n", view.id,
+				inp->input_line->width,
+				len.x, inp->buffer->width, inp->buffer->cursx);
+		inp->buffer->chars[inp->buffer->cursx] = inp->input_line->prompt_char;
+	}
 }
 
 static void
-draw_download (view_t *view)
+update_download (void)
 {
 	static dstring_t *dlbar;
 	const char *text;
-
-	if (!con_data.dl_name || !*con_data.dl_name->str)
-		return;
 
 	if (!dlbar) {
 		dlbar = dstring_new ();
@@ -500,15 +542,14 @@ draw_download (view_t *view)
 
 	dsprintf (dlbar, "%.*s%s: \x80%s\x82 %02d%%",
 			  txt_size, text, ellipsis, dots, *con_data.dl_percent);
-
 	// draw it
-	r_funcs->Draw_String (view->xabs, view->yabs, dlbar->str);
-}
-
-static void
-draw_console_text (view_t *view)
-{
-	Draw_CharBuffer (view->xabs, view->yabs, console_buffer);
+	int         i;
+	for (i = 0; i < download_buffer->width && dlbar->str[i]; i++) {
+		download_buffer->chars[i] = dlbar->str[i];
+	}
+	for (; i < download_buffer->width; i++) {
+		download_buffer->chars[i] = ' ';
+	}
 }
 
 static void
@@ -519,15 +560,16 @@ clear_console_text (void)
 }
 
 static void
-resize_console_text (view_t *view)
+resize_console_text (view_t view, view_pos_t len)
 {
-	int			width = view->xlen / 8;
-	int         height = view->ylen / 8;
+	int			width = len.x / 8;
+	int         height = len.y / 8;
 
 	if (console_buffer->width != width || console_buffer->height != height) {
 		con_linewidth = width;
 		Draw_DestroyBuffer (console_buffer);
 		console_buffer = Draw_CreateBuffer (width, height);
+		con_setcomponent (buffer_view, client_charbuff, &console_buffer);
 		clear_console_text ();
 	}
 }
@@ -556,26 +598,49 @@ draw_con_scrollback (void)
 }
 
 static void
-draw_console (view_t *view)
+draw_cursor (void)
 {
-	byte        alpha;
-
-	if (con_state == con_fullscreen) {
-		alpha = 255;
-	} else {
-		float       y = con_data.screen_view->ylen * con_size;
-		alpha = 255 * con_alpha * view->ylen / y;
-		alpha = min (alpha, 255);
+	if (!con_data.realtime) {
+		return;
 	}
-	// draw the background
-	r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
 
-	// draw everything else
-	view_draw (view);
+	float       t = *con_data.realtime * con_cursorspeed;
+	int         ch = 10 + ((int) (t) & 1);
+
+	ecs_pool_t *pool = &client_reg->comp_pools[client_cursor];
+	con_input_t **inp = pool->data;
+	uint32_t   *id = pool->dense;
+
+	for (uint32_t i = pool->count; i-- > 0; ) {
+		__auto_type buff = (*inp)->buffer;
+		__auto_type il = (*inp++)->input_line;
+		view_t      v = { .reg = client_reg, .id = *id++,
+						  .comp = screen_view.comp };
+		if (!il->cursor) {
+			continue;
+		}
+		view_pos_t  pos = View_GetAbs (v);
+		int         x = (buff->cursx + il->linepos - il->scroll) * 8;
+		r_funcs->Draw_Character (pos.x + x, pos.y, ch);
+	}
 }
 
 static void
-draw_notify (view_t *view)
+draw_buffer (void)
+{
+	ecs_pool_t *pool = &client_reg->comp_pools[client_charbuff];
+	draw_charbuffer_t **buffer = pool->data;
+	uint32_t   *id = pool->dense;
+	for (uint32_t i = pool->count; i-- > 0; ) {
+		view_t      v = { .reg = client_reg, .id = *id++,
+						  .comp = screen_view.comp };
+		view_pos_t  pos = View_GetAbs (v);
+		Draw_CharBuffer (pos.x, pos.y, *buffer++);
+	}
+}
+
+static void
+update_notify (void)
 {
 	if (con_data.realtime && notify_tail != notify_head
 		&& *con_data.realtime - notify_times[notify_tail] > con_notifytime) {
@@ -586,21 +651,53 @@ draw_notify (view_t *view)
 			notify_tail -= NOTIFY_LINES + 1;
 		}
 	}
-	Draw_CharBuffer (view->xabs, view->yabs, notify_buffer);
 }
 
 static void
-resize_notify (view_t *view)
+draw_console (view_t view)
+{
+	byte        alpha;
+
+	if (con_state == con_fullscreen) {
+		alpha = 255;
+	} else {
+		view_pos_t  len = View_GetLen (screen_view);
+		float       y = len.y * con_size;
+		alpha = 255 * con_alpha * len.y / y;
+		alpha = min (alpha, 255);
+	}
+	// draw the background
+	r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
+
+	update_notify ();
+	// draw everything else
+	draw_buffer ();
+	draw_cursor ();
+}
+
+static void
+resize_notify (view_t view, view_pos_t len)
 {
 	Draw_DestroyBuffer (notify_buffer);
-	notify_buffer = Draw_CreateBuffer (view->xlen / 8, NOTIFY_LINES + 1);
+	notify_buffer = Draw_CreateBuffer (len.x / 8, NOTIFY_LINES + 1);
+	con_setcomponent (notify_view, client_charbuff, &notify_buffer);
 	ClearNotify ();
+}
+
+static void
+resize_download (view_t view, view_pos_t len)
+{
+	if (download_buffer) {
+		Draw_DestroyBuffer (download_buffer);
+		download_buffer = Draw_CreateBuffer (len.x / 8, 1);
+	}
 }
 
 static void
 setup_console (void)
 {
 	float       lines = 0;
+	view_pos_t  screen_len = View_GetLen (screen_view);
 
 	switch (con_state) {
 		case con_message:
@@ -609,11 +706,10 @@ setup_console (void)
 			lines = 0;
 			break;
 		case con_active:
-			lines = con_data.screen_view->ylen * bound (0.2, con_size,
-														1);
+			lines = screen_len.y * bound (0.2, con_size, 1);
 			break;
 		case con_fullscreen:
-			lines = con_data.lines = con_data.screen_view->ylen;
+			lines = con_data.lines = screen_len.y;
 			break;
 	}
 
@@ -628,10 +724,10 @@ setup_console (void)
 	} else {
 		con_data.lines = lines;
 	}
-	if (con_data.lines > con_data.screen_view->ylen) {
-		con_data.lines = con_data.screen_view->ylen;
+	if (con_data.lines > screen_len.y) {
+		con_data.lines = screen_len.y;
 	}
-	if (con_data.lines >= con_data.screen_view->ylen - r_data->lineadj)
+	if (con_data.lines >= screen_len.y - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
 }
 
@@ -639,18 +735,44 @@ static void
 C_DrawConsole (void)
 {
 	setup_console ();
+	view_pos_t  screen_len = View_GetLen (screen_view);
 
-	int         ypos = con_data.lines - con_data.screen_view->ylen;
-	if (console_view->ypos != ypos) {
-		view_move (console_view, 0, ypos);
+	view_pos_t  pos = View_GetPos (console_view);
+	int         ypos = con_data.lines - screen_len.y;
+	if (pos.y != ypos) {
+		View_SetPos (console_view, pos.x, ypos);
+		View_UpdateHierarchy (console_view);
 	}
 
-	say_line.view->visible = con_state == con_message ? !chat_team : 0;
-	team_line.view->visible = con_state == con_message ? chat_team : 0;
-	console_view->visible = con_data.lines != 0;
-	menu_view->visible = con_state == con_menu;
+	if (con_state == con_message) {
+		con_setcomponent (say_view, client_charbuff, &say_line.buffer);
+		con_input_t *inp = &say_line;
+		con_setcomponent (say_view, client_cursor, &inp);
+	} else {
+		con_remcomponent (say_view, client_charbuff);
+		con_remcomponent (say_view, client_cursor);
+	}
+	if (con_data.lines) {
+		con_setcomponent (command_view, client_charbuff, &cmd_line.buffer);
+		con_input_t *inp = &cmd_line;
+		con_setcomponent (command_view, client_cursor, &inp);
+	} else {
+		con_remcomponent (command_view, client_charbuff);
+		con_remcomponent (command_view, client_cursor);
+	}
+	if (con_data.dl_name && *con_data.dl_name->str) {
+		if (!download_buffer) {
+			view_pos_t  len = View_GetLen (download_view);
+			download_buffer = Draw_CreateBuffer (len.x / 8, 1);
+			con_setcomponent (download_view, client_charbuff, &download_buffer);
+		}
+		update_download ();
+	} else if (download_buffer) {
+		Draw_DestroyBuffer (download_buffer);
+		con_remcomponent (download_view, client_charbuff);
+	}
 
-	con_data.view->draw (con_data.view);
+	draw_console (screen_view);
 }
 
 static void
@@ -668,13 +790,13 @@ C_NewMap (void)
 static void
 C_GIB_HUD_Enable_f (void)
 {
-	hud_view->visible = 1;
+	//hud_view->visible = 1;
 }
 
 static void
 C_GIB_HUD_Disable_f (void)
 {
-	hud_view->visible = 0;
+	//hud_view->visible = 0;
 }
 
 static void
@@ -690,14 +812,15 @@ exec_line (inputline_t *il)
 static void
 con_app_window (const IE_event_t *event)
 {
-	static int  old_xlen;
-	static int  old_ylen;
+	static int  old_xlen = -1;
+	static int  old_ylen = -1;
 	if (old_xlen != event->app_window.xlen
 		|| old_ylen != event->app_window.ylen) {
 		old_xlen = event->app_window.xlen;
 		old_ylen = event->app_window.ylen;
 
-		view_resize (con_data.view, old_xlen, old_ylen);
+		View_SetLen (screen_view, old_xlen, old_ylen);
+		View_UpdateHierarchy (screen_view);
 	}
 }
 
@@ -723,9 +846,9 @@ con_key_event (const IE_event_t *event)
 #endif
 	if (con_state == con_message) {
 		if (chat_team) {
-			il = team_line.input_line;
+			il = team_input;
 		} else {
-			il = say_line.input_line;
+			il = chat_input;
 		}
 		if (key->code == QFK_ESCAPE) {
 			con_end_message (il);
@@ -862,7 +985,9 @@ Condump_f (void)
 static void
 C_Init (void)
 {
-	view_t     *view;
+	client_reg = ECS_NewRegistry ();
+	ECS_RegisterComponents (client_reg, client_components, client_comp_count);
+	client_reg->href_comp = client_href;
 
 #ifdef __QNXNTO__
 	setlocale (LC_ALL, "C-TRADITIONAL");
@@ -882,11 +1007,45 @@ C_Init (void)
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	// The console will get resized, so assume initial size is 320x200
-	con_data.view = view_new (0, 0, 320, 200, grav_northeast);
-	console_view = view_new (0, 0, 320, 200, grav_northwest);
-	notify_view  = view_new (8, 8, 312, NOTIFY_LINES * 8, grav_northwest);
-	menu_view    = view_new (0, 0, 320, 200, grav_center);
-	hud_view     = view_new (0, 0, 320, 200, grav_northeast);
+	screen_view   = View_New (client_reg, nullview);
+	console_view  = View_New (client_reg, screen_view);
+	buffer_view   = View_New (client_reg, console_view);
+	command_view  = View_New (client_reg, console_view);
+	download_view = View_New (client_reg, console_view);
+	notify_view   = View_New (client_reg, screen_view);
+	say_view      = View_New (client_reg, screen_view);
+
+	View_SetGravity (screen_view,   grav_northwest);
+	View_SetGravity (console_view,  grav_northwest);
+	View_SetGravity (buffer_view,   grav_southwest);
+	View_SetGravity (command_view,  grav_southwest);
+	View_SetGravity (download_view, grav_southwest);
+	View_SetGravity (notify_view,   grav_northwest);
+	View_SetGravity (say_view,      grav_northwest);
+
+	View_SetResize (screen_view,   1, 1);
+	View_SetResize (console_view,  1, 1);
+	View_SetResize (buffer_view,   1, 1);
+	View_SetResize (command_view,  1, 0);
+	View_SetResize (download_view, 1, 0);
+	View_SetResize (notify_view,   1, 0);
+	View_SetResize (say_view,      1, 0);
+
+	View_SetPos (screen_view,   0, 0);
+	View_SetPos (console_view,  0, 0);
+	View_SetPos (buffer_view,   0, 24);
+	View_SetPos (command_view,  0, 0);
+	View_SetPos (download_view, 0, 2);
+	View_SetPos (notify_view,   8, 8);
+	View_SetPos (say_view,      0, 0);
+
+	View_SetLen (screen_view,   320, 200);
+	View_SetLen (console_view,  320, 200);
+	View_SetLen (buffer_view,   320, 176);
+	View_SetLen (command_view,  320, 12);
+	View_SetLen (download_view, 320, 8);
+	View_SetLen (notify_view,   312, NOTIFY_LINES * 8);
+	View_SetLen (say_view,      320, 8);
 
 	cmd_line.prompt = "";
 	cmd_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
@@ -895,82 +1054,66 @@ C_Init (void)
 	cmd_line.input_line->width = con_linewidth;
 	cmd_line.input_line->user_data = &cmd_line;
 	cmd_line.input_line->draw = input_line_draw;
-	cmd_line.view = view_new_data (0, 12, 320, 10, grav_southwest, &cmd_line);
-	cmd_line.view->draw = draw_input;
-	cmd_line.view->setgeometry = resize_input;
-	cmd_line.view->resize_x = 1;
-	view_add (console_view, cmd_line.view);
 
 	say_line.prompt = "say:";
-	say_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
-	say_line.input_line->complete = 0;
-	say_line.input_line->enter = C_Say;
-	say_line.input_line->width = con_linewidth - 5;
-	say_line.input_line->user_data = &say_line;
-	say_line.input_line->draw = input_line_draw;
-	say_line.view = view_new_data (0, 0, 320, 8, grav_northwest, &say_line);
-	say_line.view->draw = draw_input;
-	say_line.view->setgeometry = resize_input;
-	say_line.view->visible = 0;
-	say_line.view->resize_x = 1;
-	view_add (con_data.view, say_line.view);
+	chat_input = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	chat_input->complete = 0;
+	chat_input->enter = C_Say;
+	chat_input->width = con_linewidth - 5;
+	chat_input->user_data = &say_line;
+	chat_input->draw = input_line_draw;
 
-	team_line.prompt = "say_team:";
-	team_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
-	team_line.input_line->complete = 0;
-	team_line.input_line->enter = C_SayTeam;
-	team_line.input_line->width = con_linewidth - 10;
-	team_line.input_line->user_data = &team_line;
-	team_line.input_line->draw = input_line_draw;
-	team_line.view = view_new_data (0, 0, 320, 8, grav_northwest, &team_line);
-	team_line.view->draw = draw_input;
-	team_line.view->setgeometry = resize_input;
-	team_line.view->visible = 0;
-	team_line.view->resize_x = 1;
-	view_add (con_data.view, team_line.view);
+	team_input = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	team_input->complete = 0;
+	team_input->enter = C_SayTeam;
+	team_input->width = con_linewidth - 10;
+	team_input->user_data = &say_line;
+	team_input->draw = input_line_draw;
 
-	view_add (con_data.view, notify_view);
-	view_add (con_data.view, hud_view);
-	view_add (con_data.view, console_view);
-	view_add (con_data.view, menu_view);
+	{
+		con_input_t *inp = &say_line;
+		con_setcomponent (say_view, client_input, &inp);
+	}
+	{
+		con_input_t *inp = &cmd_line;
+		con_setcomponent (command_view, client_input, &inp);
+	}
 
-	console_buffer = Draw_CreateBuffer (console_view->xlen / 8,
-										console_view->ylen / 8);
+
+	view_pos_t  len;
+
+	len = View_GetLen (buffer_view);
+	console_buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
 	Draw_ClearBuffer (console_buffer);
+	con_setcomponent (buffer_view, client_charbuff, &console_buffer);
 	con_main = Con_CreateBuffer (CON_BUFFER_SIZE, CON_LINES);
-	console_view->draw = draw_console;
-	console_view->visible = 0;
-	console_view->resize_x = console_view->resize_y = 1;
 
+	len = View_GetLen (command_view);
+	cmd_line.buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
+	Draw_ClearBuffer (cmd_line.buffer);
+	con_setcomponent (command_view, client_charbuff, &cmd_line.buffer);
 
-	notify_buffer = Draw_CreateBuffer (notify_view->xlen / 8, NOTIFY_LINES + 1);
+	len = View_GetLen (notify_view);
+	notify_buffer = Draw_CreateBuffer (len.x / 8, NOTIFY_LINES + 1);
 	Draw_ClearBuffer (notify_buffer);
-	notify_view->draw = draw_notify;
-	notify_view->setgeometry = resize_notify;
-	notify_view->resize_x = 1;
+	con_setcomponent (notify_view, client_charbuff, &notify_buffer);
 
-	menu_view->draw = Menu_Draw;
-	menu_view->visible = 0;
+	len = View_GetLen (say_view);
+	say_line.buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
+	Draw_ClearBuffer (say_line.buffer);
 
-	hud_view->draw = Menu_Draw_Hud;
-	hud_view->visible = 0;
+	View_UpdateHierarchy (screen_view);
 
-	view = view_new (8, 16, 320, 168, grav_southwest);
-	view->draw = draw_console_text;
-	view->setgeometry = resize_console_text;
-	view->resize_x = view->resize_y = 1;
-	view_add (console_view, view);
-
-	view = view_new (0, 2, 320, 11, grav_southwest);
-	view->draw = draw_download;
-	view->resize_x = 1;
-	view_add (console_view, view);
+	// set onresize after View_UpdateHierarchy so the callbacks are NOT called
+	// during init
+	View_SetOnResize (buffer_view,   resize_console_text);
+	View_SetOnResize (command_view,  resize_input);
+	View_SetOnResize (download_view, resize_download);
+	View_SetOnResize (notify_view,   resize_notify);
+	View_SetOnResize (say_view,      resize_input);
 
 	con = con_main;
 	con_linewidth = -1;
-
-
-
 
 	Sys_Printf ("Console initialized.\n");
 

@@ -39,6 +39,9 @@
 
 #include "r_scrap.h"
 
+typedef struct fontent_s {
+	uint32_t    id;
+} fontent_t;
 
 typedef struct rfont_s {
 	void       *font_resource;

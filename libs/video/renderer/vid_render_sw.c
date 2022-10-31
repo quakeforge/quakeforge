@@ -208,10 +208,10 @@ sw_end_frame (void)
 		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
 	} else {
-		vrect.x = vr_data.scr_view->xpos;
-		vrect.y = vr_data.scr_view->ypos;
-		vrect.width = vr_data.scr_view->xlen;
-		vrect.height = vr_data.scr_view->ylen;
+		vrect.x = vr_data.refdef->vrect.x;
+		vrect.y = vr_data.refdef->vrect.y;
+		vrect.width = vr_data.refdef->vrect.width;
+		vrect.height = vr_data.refdef->vrect.height;
 		vrect.next = 0;
 	}
 	sw_ctx->update (sw_ctx, &vrect);

@@ -40,7 +40,17 @@ void Sbar_Init (void);
 struct cvar_s;
 void Sbar_DMO_Init_f (void *data, const struct cvar_s *var);
 
-void Sbar_Changed (void);
+typedef enum {
+	sbc_ammo,
+	sbc_armor,
+	sbc_frags,
+	sbc_health,
+	sbc_info,
+	sbc_items,
+	sbc_weapon,
+} sbar_changed;
+
+void Sbar_Changed (sbar_changed change);
 // call whenever any of the client stats represented on the sbar changes
 
 void Sbar_Draw (void);

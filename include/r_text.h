@@ -36,6 +36,14 @@
 
 #include "QF/darray.h"
 
+#include "QF/ecs/component.h"
+
+typedef struct script_component_s {
+	hb_language_t language;
+	hb_script_t script;
+	hb_direction_t direction;
+} script_component_t;
+
 typedef struct rtext_s {
 	const char *text;
 	const char *language;
@@ -56,8 +64,8 @@ typedef struct rshaper_s {
 	r_hb_featureset_t features;
 } rshaper_t;
 
-extern hb_feature_t LiagureOff;
-extern hb_feature_t LiagureOn;
+extern hb_feature_t LigatureOff;
+extern hb_feature_t LigatureOn;
 extern hb_feature_t KerningOff;
 extern hb_feature_t KerningOn;
 extern hb_feature_t CligOff;

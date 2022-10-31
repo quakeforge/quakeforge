@@ -1031,7 +1031,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 											player->skinname->value);
 	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
 
-	Sbar_Changed ();
+	Sbar_Changed (sbc_info);
 }
 
 static void
@@ -1150,13 +1150,13 @@ CL_SetStat (int stat, int value)
 			return;
 	}
 
-	Sbar_Changed ();
+	Sbar_Changed (~0);
 
 	switch (stat) {
 		case STAT_ITEMS:
-			Sbar_Changed ();
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
 			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
+			Sbar_Changed (sbc_items);
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
@@ -1378,12 +1378,12 @@ CL_ParseServerMessage (void)
 			//   svc_updatename
 
 			case svc_updatefrags:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
 				cl.players[i].frags = (short) MSG_ReadShort (net_message);
+				Sbar_Changed (sbc_frags);
 				break;
 
 			//   svc_clientdata

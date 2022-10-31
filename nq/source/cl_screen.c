@@ -55,6 +55,7 @@
 
 #include "r_local.h"	//FIXME for r_cache_thrash
 
+#include "client/hud.h"
 #include "client/world.h"
 
 #include "nq/include/client.h"
@@ -87,27 +88,14 @@ static cvar_t scr_showturtle_cvar = {
 	.value = { .type = &cexpr_int, .value = &scr_showturtle },
 };
 
-view_t *cl_screen_view;
-static view_t  *net_view;
-static view_t  *timegraph_view;
-static view_t  *zgraph_view;
-static view_t  *loading_view;
-
-static qpic_t *scr_ram;
-static qpic_t *scr_turtle;
-
-static void
-draw_pic (view_t *view)
-{
-	r_funcs->Draw_Pic (view->xabs, view->yabs, view->data);
-}
-
-static void
-draw_cachepic (view_t *view)
-{
-	qpic_t     *pic = r_funcs->Draw_CachePic (view->data, 1);
-	r_funcs->Draw_Pic (view->xabs, view->yabs, pic);
-}
+view_t cl_screen_view;
+static view_t net_view;
+static view_t timegraph_view;
+static view_t zgraph_view;
+static view_t loading_view;
+static view_t ram_view;
+static view_t turtle_view;
+static view_t pause_view;
 
 static void
 SCR_CShift (void)
@@ -126,74 +114,35 @@ SCR_CShift (void)
 }
 
 static void
-SCR_DrawRam (void)
-{
-	if (!scr_showram)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	r_funcs->Draw_Pic (cl_screen_view->xpos + 32, cl_screen_view->ypos,
-					   scr_ram);
-}
-
-static void
-SCR_DrawTurtle (void)
-{
-	static int  count;
-
-	if (!scr_showturtle)
-		return;
-
-	if (r_data->frametime < 0.1) {
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-
-	r_funcs->Draw_Pic (cl_screen_view->xpos, cl_screen_view->ypos,
-					   scr_turtle);
-}
-
-static void
-SCR_DrawPause (void)
-{
-	qpic_t     *pic;
-
-	if (!scr_showpause)		// turn off for screenshots
-		return;
-
-	if (!r_data->paused)
-		return;
-
-	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	r_funcs->Draw_Pic ((cl_screen_view->xlen - pic->width) / 2,
-					   (cl_screen_view->ylen - 48 - pic->height) / 2,
-					   pic);
-}
-
-static void
 scr_draw_views (void)
 {
-	net_view->visible = (!cls.demoplayback
-						 && realtime - cl.last_servermessage >= 0.3);
-	loading_view->visible = cl.loading;
-	timegraph_view->visible = r_timegraph;
-	zgraph_view->visible = r_zgraph;
+	if (scr_showturtle) {
+		static int  count;
+		if (r_data->frametime < 0.1) {
+			count = 0;
+		} else {
+			count++;
+		}
+		View_SetVisible (turtle_view, count > 2);
+	}
 
-	view_draw (cl_screen_view);
+	// turn off for screenshots
+	View_SetVisible (pause_view, scr_showpause && r_data->paused);
+
+	View_SetVisible (ram_view, scr_showram && r_cache_thrash);
+	View_SetVisible (net_view,
+			 (!cls.demoplayback && realtime - cl.last_servermessage >= 0.3));
+	View_SetVisible (loading_view, cl.loading);
+	// FIXME cvar callbacks
+	View_SetVisible (timegraph_view, r_timegraph);
+	View_SetVisible (zgraph_view, r_zgraph);
+
 }
 
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
-	SCR_DrawRam,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
 	Sbar_Draw,
+	HUD_Draw_Views,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,
 	scr_draw_views,
@@ -219,45 +168,90 @@ static SCR_Func *scr_funcs[] = {
 	scr_funcs_finale,
 };
 
+static void
+cl_vidsize_listener (void *data, const viddef_t *vdef)
+{
+	View_SetLen (cl_screen_view, vdef->width, vdef->height);
+	View_UpdateHierarchy (cl_screen_view);
+}
+
 void
 CL_Init_Screen (void)
 {
 	qpic_t     *pic;
 
-	cl_screen_view = r_data->scr_view;
-	con_module->data->console->screen_view = cl_screen_view;
+	VID_OnVidResize_AddListener (cl_vidsize_listener, 0);
 
-	scr_ram = r_funcs->Draw_PicFromWad ("ram");
-	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
+	HUD_Init ();
+
+	cl_screen_view = View_New (hud_registry, nullview);
+	con_module->data->console->screen_view = &cl_screen_view;
+
+	View_SetPos (cl_screen_view, 0, 0);
+	View_SetLen (cl_screen_view, viddef.width, viddef.height);
+	View_SetGravity (cl_screen_view, grav_northwest);
+	View_SetVisible (cl_screen_view, 1);
+
+	pic = r_funcs->Draw_PicFromWad ("ram");
+	ram_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (ram_view, 32, 0);
+	View_SetLen (ram_view, pic->width, pic->height);
+	View_SetGravity (ram_view, grav_northwest);
+	Ent_SetComponent (ram_view.id, hud_pic, ram_view.reg, &pic);
+	View_SetVisible (ram_view, 0);
+
+	pic = r_funcs->Draw_PicFromWad ("turtle");
+	turtle_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (turtle_view, 32, 0);
+	View_SetLen (turtle_view, pic->width, pic->height);
+	View_SetGravity (turtle_view, grav_northwest);
+	Ent_SetComponent (turtle_view.id, hud_pic, turtle_view.reg, &pic);
+	View_SetVisible (turtle_view, 0);
 
 	Cvar_Register (&scr_showpause_cvar, 0, 0);
 	Cvar_Register (&scr_showram_cvar, 0, 0);
 	Cvar_Register (&scr_showturtle_cvar, 0, 0);
 
 	pic = r_funcs->Draw_PicFromWad ("net");
-	net_view = view_new (64, 0, pic->width, pic->height, grav_northwest);
-	net_view->draw = draw_pic;
-	net_view->data = pic;
-	net_view->visible = 0;
-	view_add (cl_screen_view, net_view);
+	net_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (net_view, 64, 0);
+	View_SetLen (net_view, pic->width, pic->height);
+	View_SetGravity (net_view, grav_northwest);
+	Ent_SetComponent (net_view.id, hud_pic, net_view.reg, &pic);
+	View_SetVisible (net_view, 0);
 
-	timegraph_view = view_new (0, 0, cl_screen_view->xlen, 100, grav_southwest);
-	timegraph_view->draw = R_TimeGraph;
-	timegraph_view->visible = 0;
-	view_add (cl_screen_view, timegraph_view);
+	timegraph_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (timegraph_view, 0, 0);
+	View_SetLen (timegraph_view, r_data->vid->width, 100);
+	View_SetGravity (timegraph_view, grav_southwest);
+	Ent_SetComponent (timegraph_view.id, hud_func, timegraph_view.reg,
+					  R_TimeGraph);
+	View_SetVisible (timegraph_view, r_timegraph);
 
-	zgraph_view = view_new (0, 0, cl_screen_view->xlen, 100, grav_southwest);
-	zgraph_view->draw = R_ZGraph;
-	zgraph_view->visible = 0;
-	view_add (cl_screen_view, zgraph_view);
+	zgraph_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (zgraph_view, 0, 0);
+	View_SetLen (zgraph_view, r_data->vid->width, 100);
+	View_SetGravity (zgraph_view, grav_southwest);
+	Ent_SetComponent (zgraph_view.id, hud_func, zgraph_view.reg, R_ZGraph);
+	View_SetVisible (zgraph_view, r_zgraph);
 
 	const char *name = "gfx/loading.lmp";
 	pic = r_funcs->Draw_CachePic (name, 1);
-	loading_view = view_new (0, -24, pic->width, pic->height, grav_center);
-	loading_view->draw = draw_cachepic;
-	loading_view->data = (void *) name;
-	loading_view->visible = 0;
-	view_add (cl_screen_view, loading_view);
+	loading_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (loading_view, 0, -24);
+	View_SetLen (loading_view, pic->width, pic->height);
+	View_SetGravity (loading_view, grav_center);
+	Ent_SetComponent (loading_view.id, hud_cachepic, loading_view.reg, &name);
+	View_SetVisible (loading_view, 0);
+
+	name = "gfx/pause.lmp";
+	pic = r_funcs->Draw_CachePic (name, 1);
+	pause_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (pause_view, 0, -24);
+	View_SetLen (pause_view, pic->width, pic->height);
+	View_SetGravity (pause_view, grav_center);
+	Ent_SetComponent (pause_view.id, hud_cachepic, pause_view.reg, &name);
+	View_SetVisible (pause_view, 0);
 }
 
 void

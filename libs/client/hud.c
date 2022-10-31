@@ -41,6 +41,42 @@
 
 #include "client/hud.h"
 
+static const component_t hud_components[hud_comp_count] = {
+	[hud_href] = {
+		.size = sizeof (hierref_t),
+		.name = "href",
+	},
+	[hud_tile] = {
+		.size = sizeof (byte),
+		.name = "pic",
+	},
+	[hud_pic] = {
+		.size = sizeof (qpic_t *),
+		.name = "pic",
+	},
+	[hud_subpic] = {
+		.size = sizeof (hud_subpic_t),
+		.name = "subpic",
+	},
+	[hud_cachepic] = {
+		.size = sizeof (const char *),
+		.name = "cachepic",
+	},
+	[hud_fill] = {
+		.size = sizeof (uint32_t),
+		.name = "fill",
+	},
+	[hud_charbuff] = {
+		.size = sizeof (draw_charbuffer_t *),
+		.name = "charbuffer",
+	},
+	[hud_func] = {
+		.size = sizeof (void (*)(view_pos_t)),
+		.name = "func",
+	},
+};
+
+ecs_registry_t *hud_registry;
 int hud_sb_lines;
 
 int hud_sbar;
@@ -72,24 +108,25 @@ static cvar_t hud_swap_cvar = {
 	.value = { .type = &cexpr_int, .value = &hud_swap },
 };
 
-view_t *sbar_view;
-view_t *sbar_inventory_view;
-view_t *sbar_frags_view;
+view_t sbar_view;
+view_t sbar_inventory_view;
+view_t sbar_frags_view;
 
-view_t *hud_view;
-view_t *hud_inventory_view;
-view_t *hud_armament_view;
-view_t *hud_frags_view;
+view_t hud_view;
+view_t hud_inventory_view;
+view_t hud_armament_view;
+view_t hud_frags_view;
 
-view_t *hud_overlay_view;
-view_t *hud_stuff_view;
-view_t *hud_main_view;
+view_t hud_overlay_view;
+view_t hud_stuff_view;
+view_t hud_main_view;
 
 static void
 hud_sbar_f (void *data, const cvar_t *cvar)
 {
 	HUD_Calc_sb_lines (*r_data->scr_viewsize);
 	SCR_SetBottomMargin (hud_sbar ? hud_sb_lines : 0);
+#if 0//XXX
 	if (hud_sbar) {
 		view_remove (hud_main_view, hud_main_view->children[0]);
 		view_insert (hud_main_view, sbar_view, 0);
@@ -97,11 +134,13 @@ hud_sbar_f (void *data, const cvar_t *cvar)
 		view_remove (hud_main_view, hud_main_view->children[0]);
 		view_insert (hud_main_view, hud_view, 0);
 	}
+#endif
 }
 
 static void
 hud_swap_f (void *data, const cvar_t *cvar)
 {
+#if 0//XXX
 	if (hud_swap) {
 		//FIXME why is this needed for nq but not for qw?
 		hud_armament_view->children[0]->gravity = grav_northwest;
@@ -118,12 +157,25 @@ hud_swap_f (void *data, const cvar_t *cvar)
 	view_move (hud_armament_view, hud_armament_view->xpos,
 			   hud_armament_view->ypos);
 	view_move (hud_stuff_view, hud_stuff_view->xpos, hud_stuff_view->ypos);
+#endif
 }
 
 static void
 hud_scoreboard_gravity_f (void *data, const cvar_t *cvar)
 {
+#if 0//XXX
 	view_setgravity (hud_overlay_view, hud_scoreboard_gravity);
+#endif
+}
+
+void
+HUD_Init (void)
+{
+	hud_registry = ECS_NewRegistry ();
+	ECS_RegisterComponents (hud_registry, hud_components, hud_comp_count);
+	hud_registry->href_comp = hud_href;
+
+	hud_view = View_New (hud_registry, nullview);
 }
 
 void
@@ -137,6 +189,7 @@ HUD_Init_Cvars (void)
 void
 HUD_Calc_sb_lines (int view_size)
 {
+#if 0//XXX
 	int        stuff_y;
 
 	if (view_size >= 120) {
@@ -165,4 +218,139 @@ HUD_Calc_sb_lines (int view_size)
 		hud_view->visible = 0;
 	}
 	view_move (hud_stuff_view, hud_stuff_view->xpos, stuff_y);
+#endif
+}
+
+static void
+draw_tile_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			view_pos_t  len = View_GetLen (view);
+			r_funcs->Draw_TileClear (pos.x, pos.y, len.x, len.y);
+		}
+	}
+}
+
+static void
+draw_pic_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	qpic_t    **pic = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			r_funcs->Draw_Pic (pos.x, pos.y, *pic);
+		}
+		pic++;
+	}
+}
+
+static void
+draw_subpic_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	hud_subpic_t *subpic = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			r_funcs->Draw_SubPic (pos.x, pos.y, subpic->pic,
+								  subpic->x, subpic->y, subpic->w, subpic->h);
+		}
+		subpic++;
+	}
+}
+
+static void
+draw_cachepic_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	const char **name = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			qpic_t     *pic = r_funcs->Draw_CachePic (*name, 1);
+			r_funcs->Draw_Pic (pos.x, pos.y, pic);
+		}
+		name++;
+	}
+}
+
+static void
+draw_fill_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	uint32_t   *fill = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			view_pos_t  len = View_GetLen (view);
+			r_funcs->Draw_Fill (pos.x, pos.y, len.x, len.y, *fill);
+		}
+		fill++;
+	}
+}
+
+static void
+draw_charbuff_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	draw_charbuffer_t **charbuff = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			r_funcs->Draw_CharBuffer (pos.x, pos.y, *charbuff);
+		}
+		charbuff++;
+	}
+}
+
+static void
+draw_func_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	void     (**func) (view_pos_t, view_pos_t) = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			view_pos_t  len = View_GetLen (view);
+			(*func) (pos, len);
+		}
+		func++;
+	}
+}
+
+void
+HUD_Draw_Views (void)
+{
+	static void (*draw_func[hud_comp_count]) (ecs_pool_t *) = {
+		[hud_tile]     = draw_tile_views,
+		[hud_pic]      = draw_pic_views,
+		[hud_subpic]   = draw_subpic_views,
+		[hud_cachepic] = draw_cachepic_views,
+		[hud_fill]     = draw_fill_views,
+		[hud_charbuff] = draw_charbuff_views,
+		[hud_func]     = draw_func_views,
+	};
+	for (int i = 0; i < hud_comp_count; i++) {
+		if (draw_func[i]) {
+			draw_func[i] (&hud_registry->comp_pools[i]);
+		}
+	}
 }

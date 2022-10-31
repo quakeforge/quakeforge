@@ -174,12 +174,7 @@ SCR_SetFOV (float fov)
 static void
 SCR_CalcRefdef (void)
 {
-	view_t     *view = r_data->scr_view;
-	const vrect_t *rect = &r_data->refdef->vrect;
-
 	r_data->vid->recalc_refdef = 0;
-
-	view_setgeometry (view, rect->x, rect->y, rect->width, rect->height);
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
@@ -317,7 +312,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		}
 	}
 	r_funcs->set_2d (0);
-	view_draw (r_data->scr_view);
+	//view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
@@ -453,8 +448,8 @@ vidsize_listener (void *data, const viddef_t *vdef)
 void
 SCR_Init (void)
 {
-	r_data->scr_view->xlen = r_data->vid->width;
-	r_data->scr_view->ylen = r_data->vid->height;
+	//r_data->scr_view->xlen = r_data->vid->width;
+	//r_data->scr_view->ylen = r_data->vid->height;
 
 	// register our commands
 	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "

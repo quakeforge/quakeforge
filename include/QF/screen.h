@@ -53,8 +53,8 @@ extern int r_zgraph;
 extern int         scr_copytop;
 extern qboolean    scr_skipupdate;
 
-struct view_s;
-void R_TimeGraph (struct view_s *view);
-void R_ZGraph (struct view_s *view);
+struct view_pos_s;
+void R_TimeGraph (struct view_pos_s abs);
+void R_ZGraph (struct view_pos_s abs);
 
 #endif//__QF_screen_h

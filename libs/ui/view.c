@@ -41,6 +41,8 @@
 
 #include "QF/cexpr.h"
 #include "QF/mathlib.h"
+
+#define IMPLEMENT_VIEW_Funcs
 #include "QF/ui/view.h"
 
 static exprenum_t grav_t_enum;
@@ -81,6 +83,211 @@ static exprenum_t grav_t_enum = {
 	&grav_t_symtab,
 };
 
+static void
+view_modified_init (void *_modified)
+{
+	byte       *modified = _modified;
+	*modified = 1;
+}
+
+static const component_t view_components[view_type_count] = {
+	[view_pos] = {
+		.size = sizeof (view_pos_t),
+		.name = "pos",
+	},
+	[view_len] = {
+		.size = sizeof (view_pos_t),
+		.name = "len",
+	},
+	[view_abs] = {
+		.size = sizeof (view_pos_t),
+		.name = "abs",
+	},
+	[view_rel] = {
+		.size = sizeof (view_pos_t),
+		.name = "rel",
+	},
+	[view_oldlen] = {
+		.size = sizeof (view_pos_t),
+		.name = "oldlen",
+	},
+	[view_control] = {
+		.size = sizeof (viewcont_t),
+		.name = "control",
+	},
+	[view_modified] = {
+		.size = sizeof (byte),
+		.create = view_modified_init,
+		.name = "modified",
+	},
+	[view_onresize] = {
+		.size = sizeof (view_resize_f),
+		.name = "onresize",
+	},
+	[view_onmove] = {
+		.size = sizeof (view_move_f),
+		.name = "onmove",
+	},
+};
+
+static const hierarchy_type_t view_type = {
+	.num_components = view_type_count,
+	.components = view_components,
+};
+
+view_t
+View_New (ecs_registry_t *reg, view_t parent)
+{
+	uint32_t    view = ECS_NewEntity (reg);
+	hierref_t  *ref = Ent_AddComponent (view, reg->href_comp, reg);
+
+	if (parent.reg && parent.id != nullent) {
+		hierref_t  *pref = View_GetRef (parent);
+		ref->hierarchy = pref->hierarchy;
+		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
+												pref->index, 0);
+	} else {
+		ref->hierarchy = Hierarchy_New (reg, &view_type, 1);
+		ref->index = 0;
+	}
+	ref->hierarchy->ent[ref->index] = view;
+	return (view_t) { .reg = reg, .id = view, .comp = reg->href_comp };
+}
+
+void
+View_UpdateHierarchy (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+
+	byte       *modified = h->components[view_modified];
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	view_pos_t *abs = h->components[view_abs];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *oldlen = h->components[view_oldlen];
+	viewcont_t *cont = h->components[view_control];
+	view_resize_f *onresize = h->components[view_onresize];
+	view_resize_f *onmove = h->components[view_onmove];
+	uint32_t   *parent = h->parentIndex;
+	uint32_t   *id = h->ent;
+
+	if (abs[0].x != pos[0].x || abs[0].y != pos[0].y) {
+		modified[0] = 1;
+		abs[0] = pos[0];
+		rel[0] = pos[0];
+	}
+	for (uint32_t i = 1; i < h->num_objects; i++) {
+		uint32_t    par = parent[i];
+		if (!(modified[i] & 2) && (modified[par] & 2)
+			&& (cont[i].resize_x || cont[i].resize_y)) {
+			int         dx = len[par].x - oldlen[par].x;
+			int         dy = len[par].y - oldlen[par].y;
+			if (cont[i].resize_x) {
+				len[i].x += dx;
+			}
+			if (cont[i].resize_y) {
+				len[i].y += dy;
+			}
+			modified[i] |= 2;
+		}
+		if (modified[i] || modified[par]) {
+			switch (cont[i].gravity) {
+				case grav_center:
+					rel[i].x = pos[i].x + (len[par].x - len[i].x) / 2;
+					rel[i].y = pos[i].y + (len[par].y - len[i].y) / 2;
+					break;
+				case grav_north:
+					rel[i].x = pos[i].x + (len[par].x - len[i].x) / 2;
+					rel[i].y = pos[i].y;
+					break;
+				case grav_northeast:
+					rel[i].x = len[par].x - pos[i].x - len[i].x;
+					rel[i].y = pos[i].y;
+					break;
+				case grav_east:
+					rel[i].x = len[par].x - pos[i].x - len[i].x;
+					rel[i].y = pos[i].y + (len[par].y - len[i].y) / 2;
+					break;
+				case grav_southeast:
+					rel[i].x = len[par].x - pos[i].x - len[i].x;
+					rel[i].y = len[par].y - pos[i].y - len[i].y;
+					break;
+				case grav_south:
+					rel[i].x = pos[i].x + (len[par].x - len[i].x) / 2;
+					rel[i].y = len[par].y - pos[i].y - len[i].y;
+					break;
+				case grav_southwest:
+					rel[i].x = pos[i].x;
+					rel[i].y = len[par].y - pos[i].y - len[i].y;
+					break;
+				case grav_west:
+					rel[i].x = pos[i].x;
+					rel[i].y = pos[i].y + (len[par].y - len[i].y) / 2;
+					break;
+				case grav_northwest:
+					rel[i].x = pos[i].x;
+					rel[i].y = pos[i].y;
+					break;
+				case grav_flow:
+					break;
+			}
+			abs[i].x = abs[par].x + rel[i].x;
+			abs[i].y = abs[par].y + rel[i].y;
+		}
+	}
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if ((modified[i] & 2) && onresize[i]) {
+			view_t      v = { .reg = view.reg, .id = id[i], .comp = view.comp };
+			onresize[i] (v, len[i]);
+		}
+		if (modified[i] & 2) {
+			oldlen[i] = len[i];
+		}
+		if ((modified[i] & 1) && onmove[i]) {
+			view_t      v = { .reg = view.reg, .id = id[i], .comp = view.comp };
+			onresize[i] (v, abs[i]);
+		}
+		modified[i] = 0;
+	}
+}
+
+void
+View_SetParent (view_t view, view_t parent)
+{
+	if (parent.reg && parent.id != nullent) {
+		__auto_type ref = View_GetRef (view);
+		__auto_type vref = *ref;
+		__auto_type pref = View_GetRef (parent);
+		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy,
+												vref.hierarchy,
+												pref->index, vref.index);
+		ref->hierarchy = pref->hierarchy;
+		Hierarchy_RemoveHierarchy (vref.hierarchy, vref.index);
+		if (!vref.hierarchy->num_objects) {
+			Hierarchy_Delete (vref.hierarchy);
+		}
+	} else {
+		__auto_type ref = View_GetRef (view);
+		__auto_type vref = *ref;
+		if (!vref.index) {
+			return;
+		}
+		ref->hierarchy = Hierarchy_New (view.reg, &view_type, 0);
+		Hierarchy_InsertHierarchy (ref->hierarchy, vref.hierarchy, nullent,
+								   vref.index);
+		Hierarchy_RemoveHierarchy (vref.hierarchy, vref.index);
+		if (!vref.hierarchy->num_objects) {
+			Hierarchy_Delete (vref.hierarchy);
+		}
+	}
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	byte       *modified = h->components[view_modified];
+	modified[ref->index] = 1;
+	View_UpdateHierarchy (view);
+}
+#if 0
 static void
 setgeometry (view_t *view)
 {
@@ -525,3 +732,4 @@ view_flow_up_left (view_t *view)
 {
 	flow_up (view, set_columns_left);
 }
+#endif

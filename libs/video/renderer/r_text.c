@@ -46,6 +46,7 @@ RText_NewShaper (rfont_t *font)
 	rshaper_t  *shaper = malloc (sizeof (rshaper_t));
 	shaper->rfont = font;
 	shaper->font = hb_ft_font_create (font->face, 0);
+	hb_ft_font_set_funcs (shaper->font);
 	shaper->buffer = hb_buffer_create ();
 	shaper->features = (r_hb_featureset_t) DARRAY_STATIC_INIT (4);
 

@@ -53,10 +53,10 @@ D_WarpScreen (framebuffer_t *src)
 	sw_framebuffer_t *buffer = src->buffer;
 	int         w, h;
 	int         u, v;
-	int         scr_x = vr_data.scr_view->xpos;
-	int         scr_y = vr_data.scr_view->ypos;
-	int         scr_w = vr_data.scr_view->xlen;
-	int         scr_h = vr_data.scr_view->ylen;
+	int         scr_x = vr_data.refdef->vrect.x;
+	int         scr_y = vr_data.refdef->vrect.y;
+	int         scr_w = vr_data.refdef->vrect.width;
+	int         scr_h = vr_data.refdef->vrect.height;
 	byte       *dest;
 	int        *turb;
 	int        *col;

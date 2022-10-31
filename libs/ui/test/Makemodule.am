@@ -1,13 +1,17 @@
 libs_ui_tests = \
-	libs/ui/test/test-flow \
-	libs/ui/test/test-flow-size \
 	libs/ui/test/test-passage \
 	libs/ui/test/test-txtbuffer \
 	libs/ui/test/test-vrect
 
-TESTS += $(libs_ui_tests)
+libs_ui_xfail_tests = \
+	libs/ui/test/test-flow \
+	libs/ui/test/test-flow-size
 
-check_PROGRAMS += $(libs_ui_tests)
+TESTS += $(libs_ui_tests) $(libs_ui_xfail_tests)
+
+XFAIL_TESTS += $(libs_ui_xfail_tests)
+
+check_PROGRAMS += $(libs_ui_tests) $(libs_ui_xfail_tests)
 
 libs_ui_test_test_flow_SOURCES=libs/ui/test/test-flow.c
 libs_ui_test_test_flow_LDADD=libs/ui/libQFui.la

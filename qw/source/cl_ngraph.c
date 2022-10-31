@@ -84,13 +84,13 @@ static cvar_t cl_netgraph_height_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &cl_netgraph_height },
 };
-view_t     *cl_netgraph_view;
+view_t      cl_netgraph_view;
 
 static void
 cl_netgraph_f (void *data, const cvar_t *cvar)
 {
-	if (cl_netgraph_view) {
-		cl_netgraph_view->visible = cl_netgraph != 0;
+	if (View_Valid (cl_netgraph_view)) {
+		View_SetVisible (cl_netgraph_view, cl_netgraph != 0);
 	}
 }
 
@@ -98,34 +98,34 @@ static void
 cl_netgraph_height_f (void *data, const cvar_t *cvar)
 {
 	cl_netgraph_height = max (32, cl_netgraph_height);
-	if (cl_netgraph_view) {
-		view_resize (cl_netgraph_view, cl_netgraph_view->xlen,
-					 cl_netgraph_height + 25);
+	if (View_Valid (cl_netgraph_view)) {
+		view_pos_t  len = View_GetLen (cl_netgraph_view);
+		View_SetLen (cl_netgraph_view, len.x, cl_netgraph_height + 25);
+		View_UpdateHierarchy (cl_netgraph_view);
 	}
 }
 
 void
-CL_NetGraph (view_t *view)
+CL_NetGraph (view_t view)
 {
 	int         lost, a, l, x, y, i, o;
 	int         timings[NET_TIMINGS];
-
-	x = view->xabs;
-	y = view->yabs;
+	view_pos_t  abs = View_GetAbs (view);
+	view_pos_t  len = View_GetLen (view);
 
 	if (cl_netgraph_box) {
-		r_funcs->Draw_TextBox (x, y, NET_TIMINGS / 8,
+		r_funcs->Draw_TextBox (abs.x, abs.y, NET_TIMINGS / 8,
 							   cl_netgraph_height / 8 + 1,
 							   cl_netgraph_alpha * 255);
 	}
 
 	lost = CL_CalcNet ();
-	x = view->xabs + 8;
-	y = view->yabs + view->ylen - 9;
+	x = abs.x + 8;
+	y = abs.y + len.y - 9;
 
 	l = NET_TIMINGS;
-	if (l > view->xlen - 8)
-		l = view->xlen - 8;
+	if (l > len.x - 8)
+		l = len.x - 8;
 	i = cls.netchan.outgoing_sequence & NET_TIMINGSMASK;
 	a = i - l;
 	o = 0;
@@ -140,9 +140,15 @@ CL_NetGraph (view_t *view)
 	r_funcs->R_LineGraph (x, y, timings,
 						  NET_TIMINGS, cl_netgraph_height);
 
-	x = view->xabs + 8;
-	y = view->yabs + 8;
+	x = abs.x + 8;
+	y = abs.y + 8;
 	r_funcs->Draw_String (x, y, va (0, "%3i%% packet loss", lost));
+/*
+	//FIXME don't do every frame
+	view_move (cl_netgraph_view, cl_netgraph_view->xpos, hud_sb_lines);
+	view_setgravity (cl_netgraph_view,
+					 hud_swap ? grav_southeast : grav_southwest);
+*/
 }
 
 void

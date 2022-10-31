@@ -28,25 +28,48 @@
 #ifndef __client_hud_h
 #define __client_hud_h
 
+enum {
+	hud_href,
+	hud_tile,
+	hud_pic,
+	hud_subpic,
+	hud_cachepic,
+	hud_fill,
+	hud_charbuff,
+	hud_func,
+
+	hud_comp_count
+};
+
+typedef struct hud_subpic_s {
+	struct qpic_s *pic;
+	uint32_t    x, y;
+	uint32_t    w, h;
+} hud_subpic_t;
+
+extern struct ecs_registry_s *hud_registry;
+
 extern int hud_sb_lines;
 
 extern int hud_sbar;
 extern int hud_swap;
 
-extern struct view_s *sbar_view;
-extern struct view_s *sbar_inventory_view;
-extern struct view_s *sbar_frags_view;
+//extern struct view_s sbar_view;
+//extern struct view_s sbar_inventory_view;
+//extern struct view_s sbar_frags_view;
 
-extern struct view_s *hud_view;
-extern struct view_s *hud_inventory_view;
-extern struct view_s *hud_armament_view;
-extern struct view_s *hud_frags_view;
+extern struct view_s hud_view;
+extern struct view_s hud_inventory_view;
+extern struct view_s hud_armament_view;
+extern struct view_s hud_frags_view;
 
-extern struct view_s *hud_overlay_view;
-extern struct view_s *hud_stuff_view;
-extern struct view_s *hud_main_view;
+extern struct view_s hud_overlay_view;
+extern struct view_s hud_stuff_view;
+extern struct view_s hud_main_view;
 
+void HUD_Init (void);
 void HUD_Init_Cvars (void);
 void HUD_Calc_sb_lines (int view_size);
+void HUD_Draw_Views (void);
 
 #endif//__client_hud_h

@@ -64,7 +64,59 @@
 #include "nq/include/server.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
+static int sb_update_flags;
 static int sb_view_size;
+
+static view_t sbar_main;
+static view_t   sbar_inventory;
+static view_t     sbar_frags;
+static view_t     sbar_sigils;
+static view_t     sbar_items;
+static view_t     sbar_armament;
+static view_t       sbar_weapons;
+static view_t       sbar_miniammo;
+static view_t   sbar_statusbar;
+static view_t     sbar_armor;
+static view_t     sbar_face;
+static view_t     sbar_health;
+static view_t     sbar_ammo;
+//static view_t   sbar_status;
+static view_t sbar_tile[2];
+
+static view_t
+sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
+{
+	view_t      view = View_New (hud_registry, parent);
+	View_SetPos (view, x, y);
+	View_SetLen (view, w, h);
+	View_SetGravity (view, gravity);
+	View_SetVisible (view, 1);
+	return view;
+}
+
+static inline void
+sbar_setcomponent (view_t view, uint32_t comp, void *data)
+{
+	Ent_SetComponent (view.id, comp, view.reg, data);
+}
+
+static inline int
+sbar_hascomponent (view_t view, uint32_t comp)
+{
+	return Ent_HasComponent (view.id, comp, view.reg);
+}
+
+static inline void *
+sbar_getcomponent (view_t view, uint32_t comp)
+{
+	return Ent_GetComponent (view.id, comp, view.reg);
+}
+
+static inline void
+sbar_remcomponent (view_t view, uint32_t comp)
+{
+	Ent_RemoveComponent (view.id, comp, view.reg);
+}
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
 
@@ -137,8 +189,7 @@ viewsize_f (int view_size)
 	}
 }
 
-
-static int
+static int __attribute__((used))
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
@@ -162,79 +213,18 @@ Sbar_DontShowScores (void)
 }
 
 void
-Sbar_Changed (void)
+Sbar_Changed (sbar_changed change)
 {
+	sb_update_flags |= 1 << change;
 	sb_updates = 0;						// update next frame
 }
 
 static void
-draw_pic (view_t *view, int x, int y, qpic_t *pic)
-{
-	r_funcs->Draw_Pic (view->xabs + x, view->yabs + y, pic);
-}
-
-static inline void
-draw_cachepic (view_t *view, int x, int y, const char *name, int cent)
-{
-	qpic_t *pic = r_funcs->Draw_CachePic (name, true);
-	if (cent)
-		x += (view->xlen - pic->width) / 2;
-	r_funcs->Draw_Pic (view->xabs + x, view->yabs + y, pic);
-}
-
-static inline void
-draw_subpic (view_t *view, int x, int y, qpic_t *pic,
-		     int srcx, int srcy, int width, int height)
-{
-	r_funcs->Draw_SubPic (view->xabs + x, view->yabs + y, pic,
-				 srcx, srcy, width, height);
-}
-
-static inline void
-draw_transpic (view_t *view, int x, int y, qpic_t *pic)
-{
-	r_funcs->Draw_Pic (view->xabs + x, view->yabs + y, pic);
-}
-
-
-// drawing routines are reletive to the status bar location
-
-static inline void
-draw_character (view_t *view, int x, int y, int c)
-{
-	r_funcs->Draw_Character (view->xabs + x, view->yabs + y, c);
-}
-
-static inline void
-draw_string (view_t *view, int x, int y, const char *str)
-{
-	r_funcs->Draw_String (view->xabs + x, view->yabs + y, str);
-}
-#if 0
-static inline void
-draw_altstring (view_t *view, int x, int y, const char *str)
-{
-	r_funcs->Draw_AltString (view->xabs + x, view->yabs + y, str);
-}
-#endif
-static inline void
-draw_nstring (view_t *view, int x, int y, const char *str, int n)
-{
-	r_funcs->Draw_nString (view->xabs + x, view->yabs + y, str, n);
-}
-
-static inline void
-draw_fill (view_t *view, int x, int y, int w, int h, int col)
-{
-	r_funcs->Draw_Fill (view->xabs + x, view->yabs + y, w, h, col);
-}
-
-static void
-draw_num (view_t *view, int x, int y, int num, int digits, int color)
+draw_num (view_t *view, int num, int digits, int color)
 {
 	char        str[12];
 	char       *ptr;
-	int         l, frame;
+	int         l, frame, x = 0;
 
 	if (num > 999999999)
 		num = 999999999;
@@ -243,8 +233,10 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 	ptr = str;
 	if (l > digits)
 		ptr += (l - digits);
-	if (l < digits)
-		x += (digits - l) * 24;
+	while (digits > l) {
+		sbar_remcomponent (view[x++], hud_pic);
+		digits--;
+	}
 
 	while (*ptr) {
 		if (*ptr == '-')
@@ -252,65 +244,66 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 		else
 			frame = *ptr - '0';
 
-		draw_transpic (view, x, y, sb_nums[color][frame]);
-		x += 24;
+		sbar_setcomponent (view[x++], hud_pic, &sb_nums[color][frame]);
 		ptr++;
 	}
 }
 
 static inline void
-draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
+draw_smallnum (view_t view, int x, int y, int n, int packed, int colored)
 {
-	char        num[12];
+	void       *comp = sbar_getcomponent (view, hud_charbuff);
+	__auto_type charbuff = *(draw_charbuffer_t **) comp;
+	char        num[4];
 
 	packed = packed != 0;				// ensure 0 or 1
 
-	if (n > 999)
-		n = 999;
-
+	n = bound (-99, n, 999);
 	snprintf (num, sizeof (num), "%3d", n);
-	if (colored) {
-		if (num[0] != ' ')
-			num[0] = 18 + num[0] - '0';
-		if (num[1] != ' ')
-			num[1] = 18 + num[1] - '0';
-		if (num[2] != ' ')
-			num[2] = 18 + num[2] - '0';
+	for (int i = 0; i < 3; i++) {
+		charbuff->chars[i] = num[i] - (colored && num[i] != ' ' ? '0' - 18 : 0);
 	}
-	draw_character (view, x + packed, y, num[0]);
-	draw_character (view, x + 8, y, num[1]);
-	draw_character (view, x + 16 - packed, y, num[2]);
 }
 
 static void
-draw_tile (view_t *view)
-{
-	r_funcs->Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
-}
-
-static void
-draw_ammo_sbar (view_t *view)
+draw_miniammo (view_t view)
 {
 	int         i, count;
 
 	// ammo counts
 	for (i = 0; i < 4; i++) {
+		view_t      v = View_GetChild (view, i);
 		count = cl.stats[STAT_SHELLS + i];
-		draw_smallnum (view, (6 * i + 1) * 8 + 2, 0, count, 0, 1);
+		draw_smallnum (v, (6 * i + 1) * 8 + 2, 0, count, 0, 1);
 	}
 }
 
 static void
-draw_ammo_hud (view_t *view)
+draw_ammo (view_t view)
 {
-	int         i, count;
+	qpic_t     *pic = 0;
+	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
+		pic = sb_ammo[0];
+	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
+		pic = sb_ammo[1];
+	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
+		pic = sb_ammo[2];
+	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
+		pic = sb_ammo[3];
 
-	// ammo counts
-	for (i = 0; i < 4; i++) {
-		count = cl.stats[STAT_SHELLS + i];
-		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
-		draw_smallnum (view, 7, i * 11, count, 0, 1);
+	view_t      ammo = View_GetChild (view, 0);
+	if (pic) {
+		sbar_setcomponent (ammo, hud_pic, &pic);
+	} else {
+		sbar_remcomponent (ammo, hud_pic);
 	}
+
+	view_t      num[3] = {
+		View_GetChild (view, 1),
+		View_GetChild (view, 2),
+		View_GetChild (view, 3),
+	};
+	draw_num (num, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
 static int
@@ -332,46 +325,33 @@ calc_flashon (float time, int mask)
 }
 
 static void
-draw_weapons_sbar (view_t *view)
+draw_weapons_sbar (view_t view)
 {
 	int         flashon, i;
 
 	for (i = 0; i < 7; i++) {
+		view_t      weap = View_GetChild (view, i);
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
+			sbar_setcomponent (weap, hud_pic, &sb_weapons[flashon][i]);
+		} else {
+			sbar_remcomponent (weap, hud_pic);
 		}
 	}
 }
 
 static void
-draw_weapons_hud (view_t *view)
+draw_items (view_t view)
 {
-	int         flashon, i, x = 0;
+	//float       time;
+	//int         flashon = 0, i;
 
-	if (view->parent->gravity == grav_southeast)
-		x = view->xlen - 24;
-
-	for (i = cl_screen_view->ylen < 204; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-}
-
-static void
-draw_items (view_t *view)
-{
-	float       time;
-	int         flashon = 0, i;
-
-	for (i = 0; i < 6; i++) {
+	for (int i = 0; i < 6; i++) {
+		view_t      item = View_GetChild (view, i);
 		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
+#if 0
 			time = cl.item_gettime[17 + i];
 			if (time && time > cl.time - 2 && flashon) {	// Flash frame
 				sb_updates = 0;
@@ -380,18 +360,24 @@ draw_items (view_t *view)
 			}
 			if (time && time > cl.time - 2)
 				sb_updates = 0;
+#endif
+			sbar_setcomponent (item, hud_pic, &sb_items[i]);
+		} else {
+			sbar_remcomponent (item, hud_pic);
 		}
 	}
 }
 
 static void
-draw_sigils (view_t *view)
+draw_sigils (view_t view)
 {
-	float       time;
-	int         flashon = 0, i;
+	//float       time;
+	//int         flashon = 0, i;
 
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
+		view_t      sigil = View_GetChild (view, i);
 		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
+#if 0
 			time = cl.item_gettime[28 + i];
 			if (time && time > cl.time - 2 && flashon) {	// flash frame
 				sb_updates = 0;
@@ -400,15 +386,12 @@ draw_sigils (view_t *view)
 			}
 			if (time && time > cl.time - 2)
 				sb_updates = 0;
+#endif
+			sbar_setcomponent (sigil, hud_pic, &sb_sigil[i]);
+		} else {
+			sbar_remcomponent (sigil, hud_pic);
 		}
 	}
-}
-
-static void
-draw_inventory_sbar (view_t *view)
-{
-	draw_pic (view, 0, 0, sb_ibar);
-	view_draw (view);
 }
 
 typedef struct {
@@ -428,7 +411,7 @@ int         scoreboardcount[MAX_SCOREBOARD];
 int         scoreboardlines, scoreboardteams;
 
 
-static void
+static void __attribute__((used))
 Sbar_SortFrags (void)
 {
 	int         i, j, k;
@@ -454,7 +437,7 @@ Sbar_SortFrags (void)
 	}
 }
 
-static void
+static void __attribute__((used))
 Sbar_SortTeams (void)
 {
 	char        t[16 + 1];
@@ -520,9 +503,10 @@ Sbar_SortTeams (void)
 	}
 }
 
-static void
+static void __attribute__((used))
 draw_solo (view_t *view)
 {
+#if 0
 	char        str[80];
 	int         minutes, seconds;
 	int         l;
@@ -547,11 +531,13 @@ draw_solo (view_t *view)
 	l = strlen (cl.levelname);
 	l = 232 - l * 4;
 	draw_string (view, max (l, 152), 12, cl.levelname);
+#endif
 }
 
 static void
-draw_frags (view_t *view)
+draw_frags (view_t view)
 {
+#if 0
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
@@ -591,11 +577,13 @@ draw_frags (view_t *view)
 		draw_character (view, p * 32, 0, 16);
 		draw_character (view, p * 32 + 26, 0, 17);
 	}
+#endif
 }
 
 static void
-draw_face (view_t *view)
+draw_face (view_t view)
 {
+#if 0
 	int         f, anim;
 
 	if ((cl.stats[STAT_ITEMS] & (IT_INVISIBILITY | IT_INVULNERABILITY))
@@ -627,53 +615,44 @@ draw_face (view_t *view)
 	} else
 		anim = 0;
 	draw_pic (view, 112, 0, sb_faces[f][anim]);
-}
-
-static void
-draw_status_bar (view_t *view)
-{
-	draw_pic (view, 0, 0, sb_sbar);
+#endif
 }
 
 static inline void
-draw_armor (view_t *view)
+draw_armor (view_t view)
 {
+	view_t      armor = View_GetChild (view, 0);
+	view_t      num[3] = {
+		View_GetChild (view, 1),
+		View_GetChild (view, 2),
+		View_GetChild (view, 3),
+	};
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		draw_num (view, 24, 0, 666, 3, 1);
+		draw_num (num, 666, 3, 1);
 	} else {
-		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
-				  cl.stats[STAT_ARMOR] <= 25);
+		draw_num (num, cl.stats[STAT_ARMOR], 3, cl.stats[STAT_ARMOR] <= 25);
 		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-			draw_pic (view, 0, 0, sb_armor[2]);
+			sbar_setcomponent (armor, hud_pic, &sb_armor[2]);
 		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-			draw_pic (view, 0, 0, sb_armor[1]);
+			sbar_setcomponent (armor, hud_pic, &sb_armor[1]);
 		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-			draw_pic (view, 0, 0, sb_armor[0]);
+			sbar_setcomponent (armor, hud_pic, &sb_armor[0]);
+		else
+			sbar_remcomponent (armor, hud_pic);
 	}
 }
 
 static inline void
-draw_health (view_t *view)
+draw_health (view_t view)
 {
-	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
-			  cl.stats[STAT_HEALTH] <= 25);
+	view_t      num[3] = {
+		View_GetChild (view, 0),
+		View_GetChild (view, 1),
+		View_GetChild (view, 2),
+	};
+	draw_num (num, cl.stats[STAT_HEALTH], 3, cl.stats[STAT_HEALTH] <= 25);
 }
-
-static inline void
-draw_ammo (view_t *view)
-{
-	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
-		draw_pic (view, 224, 0, sb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
-		draw_pic (view, 224, 0, sb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
-		draw_pic (view, 224, 0, sb_ammo[2]);
-	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
-		draw_pic (view, 224, 0, sb_ammo[3]);
-
-	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
-}
-
+#if 0
 static void
 draw_status (view_t *view)
 {
@@ -682,15 +661,16 @@ draw_status (view_t *view)
 		return;
 	}
 
-	draw_armor (view);
-	draw_face (view);
-	draw_health (view);
-	draw_ammo (view);
+	draw_armor (sbar_status_armor);
+	draw_face (sbar_status_face);
+	draw_health (sbar_status_health);
+	draw_ammo (sbar_status_ammo);
 }
-
-static void
+#endif
+static void __attribute__((used))
 draw_rogue_weapons_sbar (view_t *view)
 {
+#if 0
 	int         i;
 
 	draw_weapons_sbar (view);
@@ -703,11 +683,13 @@ draw_rogue_weapons_sbar (view_t *view)
 			}
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_weapons_hud (view_t *view)
 {
+#if 0
 	int         flashon, i, j;
 	qpic_t     *pic;
 
@@ -728,11 +710,13 @@ draw_rogue_weapons_hud (view_t *view)
 				sb_updates = 0;			// force update to remove flash
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_ammo_hud (view_t *view)
 {
+#if 0
 	int         i, count;
 	qpic_t     *pic;
 
@@ -746,11 +730,13 @@ draw_rogue_ammo_hud (view_t *view)
 		draw_subpic (view, 0, i * 11, pic, 3 + (i * 48), 0, 42, 11);
 		draw_smallnum (view, 7, i * 11, count, 0, 1);
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_items (view_t *view)
 {
+#if 0
 	int         i;
 	float       time;
 
@@ -764,22 +750,26 @@ draw_rogue_items (view_t *view)
 				sb_updates = 0;
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_inventory_sbar (view_t *view)
 {
+#if 0
 	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
 		draw_pic (view, 0, 0, rsb_invbar[0]);
 	else
 		draw_pic (view, 0, 0, rsb_invbar[1]);
 
 	view_draw (view);
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_face (view_t *view)
 {
+#if 0
 	int         top, bottom;
 	player_info_t *s;
 
@@ -795,11 +785,13 @@ draw_rogue_face (view_t *view)
 	draw_fill (view, 113, 12, 22, 9, bottom);
 
 	draw_smallnum (view, 108, 3, s->frags, 1, top == 8);
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_rogue_status (view_t *view)
 {
+#if 0
 	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
@@ -837,11 +829,13 @@ draw_rogue_status (view_t *view)
 	else if (cl.stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
 		draw_pic (view, 224, 0, rsb_ammo[2]);
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_hipnotic_weapons_sbar (view_t *view)
 {
+#if 0
 	static int  x[] = {0, 24, 48, 72, 96, 120, 144, 176, 200, 96};
 	static int  h[] = {0, 1, 3};
 	int         flashon, i;
@@ -876,11 +870,13 @@ draw_hipnotic_weapons_sbar (view_t *view)
 				sb_updates = 0;		// force update to remove flash
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_hipnotic_weapons_hud (view_t *view)
 {
+#if 0
 	int         flashon, i;
 	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80};
 	static int  h[] = {0, 1, 3};
@@ -911,11 +907,13 @@ draw_hipnotic_weapons_hud (view_t *view)
 				sb_updates = 0;		// force update to remove flash
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_hipnotic_items (view_t *view)
 {
+#if 0
 	int         i;
 	float       time;
 
@@ -938,18 +936,22 @@ draw_hipnotic_items (view_t *view)
 				sb_updates = 0;
 		}
 	}
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_hipnotic_inventory_sbar (view_t *view)
 {
+#if 0
 	draw_pic (view, 0, 0, sb_ibar);
 	view_draw (view);
+#endif
 }
 
-static void
+static void __attribute__((used))
 draw_hipnotic_status (view_t *view)
 {
+#if 0
 	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
@@ -964,11 +966,13 @@ draw_hipnotic_status (view_t *view)
 		draw_pic (view, 209, 3, sb_items[0]);
 	if (cl.stats[STAT_ITEMS] & IT_KEY2)
 		draw_pic (view, 209, 12, sb_items[1]);
+#endif
 }
 
 static void
 sbar_update_vis (void)
 {
+#if 0
 	qboolean    headsup;
 
 	if (r_data->scr_copyeverything)
@@ -998,21 +1002,13 @@ sbar_update_vis (void)
 
 	r_data->scr_copyeverything = 1;
 	sb_updates++;
-}
-
-void
-Sbar_Draw (void)
-{
-	if (cls.state != ca_active) {
-		return;
-	}
-	sbar_update_vis ();
-	hud_main_view->draw (hud_main_view);
+#endif
 }
 
 static void
 Sbar_DeathmatchOverlay (view_t *view)
 {
+#if 0
 	int         i, k, l;
 	int         top, bottom;
 	int         x, y;
@@ -1054,14 +1050,17 @@ Sbar_DeathmatchOverlay (view_t *view)
 
 		y += 10;
 	}
+#endif
 }
 
 static void
 Sbar_DrawScoreboard (void)
 {
+#if 0
 	//Sbar_SoloScoreboard ();
 	if (cl.gametype == GAME_DEATHMATCH)
 		Sbar_DeathmatchOverlay (hud_overlay_view);
+#endif
 }
 
 static void
@@ -1075,6 +1074,7 @@ draw_overlay (view_t *view)
 static void
 draw_time (view_t *view)
 {
+#if 0
 	struct tm  *local = 0;
 	time_t      utc = 0;
 	char        st[80];		//FIXME: overflow
@@ -1099,11 +1099,13 @@ draw_time (view_t *view)
 		strftime (st, sizeof (st), HOUR12":%M "PM, local);
 		draw_string (view, 8, 0, st);
 	}
+#endif
 }
 
 static void
 draw_fps (view_t *view)
 {
+#if 0
 	static char   st[80];
 	double        t;
 	static double lastframetime;
@@ -1117,6 +1119,7 @@ draw_fps (view_t *view)
 		snprintf (st, sizeof (st), "%5.1f FPS", lastfps);
 	}
 	draw_string (view, 80, 8, st);
+#endif
 }
 
 static void
@@ -1131,6 +1134,7 @@ draw_stuff (view_t *view)
 static void
 draw_intermission (view_t *view)
 {
+#if 0
 	int         dig;
 	int         num;
 
@@ -1156,11 +1160,13 @@ draw_intermission (view_t *view)
 	draw_num (view, 160, 144, cl.stats[STAT_MONSTERS], 3, 0);
 	draw_pic (view, 232, 144, sb_slash);
 	draw_num (view, 240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
+#endif
 }
 
 void
 Sbar_IntermissionOverlay (void)
 {
+#if 0
 	r_data->scr_copyeverything = 1;
 	r_data->scr_fullupdate = 0;
 
@@ -1169,6 +1175,7 @@ Sbar_IntermissionOverlay (void)
 		return;
 	}
 	draw_intermission (hud_overlay_view);
+#endif
 }
 
 /* CENTER PRINTING */
@@ -1205,8 +1212,9 @@ Sbar_CenterPrint (const char *str)
 }
 
 static void
-Sbar_DrawCenterString (view_t *view, int remaining)
+Sbar_DrawCenterString (view_t view, int remaining)
 {
+#if 0
 	const char *start;
 	int         j, l, x, y;
 
@@ -1237,11 +1245,13 @@ Sbar_DrawCenterString (view_t *view, int remaining)
 			break;
 		start++;						// skip the \n
 	} while (1);
+#endif
 }
 
 void
 Sbar_FinaleOverlay (void)
 {
+#if 0
 	int         remaining;
 
 	r_data->scr_copyeverything = 1;
@@ -1250,6 +1260,7 @@ Sbar_FinaleOverlay (void)
 	// the finale prints the characters one at a time
 	remaining = scr_printspeed * (realtime - centertime_start);
 	Sbar_DrawCenterString (hud_overlay_view, remaining);
+#endif
 }
 
 void
@@ -1274,6 +1285,7 @@ Sbar_DrawCenterPrint (void)
 static void
 draw_minifrags (view_t *view)
 {
+#if 0
 	int         numlines, top, bottom, f, i, k, x, y;
 	char        num[20];
 	player_info_t *s;
@@ -1343,11 +1355,13 @@ draw_minifrags (view_t *view)
 			draw_nstring (view, x + 48, y, s->name->value, 16);
 		y += 8;
 	}
+#endif
 }
 
 static void
 draw_miniteam (view_t *view)
 {
+#if 0
 	int         i, k, x, y;
 	char        num[12];
 	info_key_t *player_team = cl.players[cl.playernum].team;
@@ -1376,68 +1390,179 @@ draw_miniteam (view_t *view)
 
 		y += 8;
 	}
+#endif
+}
+
+void
+Sbar_Draw (void)
+{
+	if (cls.state != ca_active) {
+		return;
+	}
+	sb_update_flags = ~0;
+	if (sb_update_flags & (1 << sbc_ammo)) {
+		draw_miniammo (sbar_miniammo);
+		draw_ammo (sbar_ammo);
+	}
+	if (sb_update_flags & (1 << sbc_armor)) draw_armor (sbar_armor);
+	if (sb_update_flags & (1 << sbc_frags)) draw_frags (sbar_frags);
+	if (sb_update_flags & (1 << sbc_health)) draw_health (sbar_health);
+	if (sb_update_flags & (1 << sbc_info)) {
+		draw_miniteam (0);
+		draw_minifrags (0);
+		draw_stuff (0);
+		draw_overlay (0);
+		draw_intermission (0);
+		Sbar_DeathmatchOverlay (0);
+		sbar_update_vis ();
+	}
+	if (sb_update_flags & (1 << sbc_items)) {
+		draw_items (sbar_items);
+		draw_sigils (sbar_items);
+	}
+	if (sb_update_flags & (1 << sbc_weapon)) draw_weapons_sbar (sbar_weapons);
+	if (sb_update_flags & ((1 << sbc_health) | (1 << sbc_items))) {
+		draw_face (sbar_face);
+	}
+#if 0
+	sbar_update_vis ();
+	hud_main_view->draw (hud_main_view);
+#endif
+	sb_update_flags = 0;
+}
+
+static void
+sbar_hud_swap_f (void *data, const cvar_t *cvar)
+{
+	if (hud_sbar) {
+		return;
+	}
+}
+
+static void
+sbar_hud_sbar_f (void *data, const cvar_t *cvar)
+{
+	view_t      v;
+	if (hud_swap) {
+		View_SetParent (sbar_armament, hud_view);
+		View_SetPos (sbar_armament, 0, 48);
+		View_SetLen (sbar_armament, 42, 156);
+		View_SetGravity (sbar_armament,
+						 hud_swap ? grav_southwest : grav_southeast);
+
+		View_SetLen (sbar_weapons, 24, 112);
+		View_SetGravity (sbar_weapons,
+						 hud_swap ? grav_northwest : grav_northeast);
+
+		View_SetLen (sbar_miniammo, 42, 44);
+		View_SetGravity (sbar_weapons, grav_southeast);
+
+		for (int i = 0; i < 7; i++) {
+			v = View_GetChild (sbar_weapons, i);
+			View_SetPos (v, 0, i * 16);
+			View_SetLen (v, 24, 16);
+			if (sbar_hascomponent (v, hud_subpic)) {
+				hud_subpic_t subpic = {
+					sbar_getcomponent (v, hud_pic), 0, 0, 24, 16
+				};
+				sbar_setcomponent (v, hud_subpic, &subpic);
+				sbar_remcomponent (v, hud_pic);
+			}
+		}
+		for (int i = 0; i < 4; i++) {
+			v = View_GetChild (sbar_miniammo, i);
+			View_SetPos (v, 0, i * 11);
+			View_SetLen (v, 42, 11);
+			hud_subpic_t subpic = { sb_ibar, 3 + (i * 48), 0, 42, 11 };
+			sbar_setcomponent (v, hud_subpic, &subpic);
+		}
+	} else {
+		View_SetParent (sbar_armament, sbar_inventory);
+		View_SetPos (sbar_armament, 0, 0);
+		View_SetLen (sbar_armament, 202, 24);
+		View_SetGravity (sbar_armament, grav_northwest);
+
+		View_SetLen (sbar_weapons, 32, 192);
+		View_SetGravity (sbar_weapons, grav_southwest);
+
+		View_SetLen (sbar_miniammo, 42, 44);
+		View_SetGravity (sbar_weapons, grav_southeast);
+
+		for (int i = 0; i < 7; i++) {
+			v = View_GetChild (sbar_weapons, i);
+			View_SetPos (v, i * 24, 0);
+			View_SetLen (v, 24 + 24 * (i == 6), 16);
+
+			if (sbar_hascomponent (v, hud_subpic)) {
+				hud_subpic_t *subpic = sbar_getcomponent(v, hud_subpic);
+				sbar_setcomponent (v, hud_pic, &subpic->pic);
+				sbar_remcomponent (v, hud_subpic);
+			}
+		}
+	}
 }
 
 static void
 init_sbar_views (void)
 {
-	view_t     *view;
+	sbar_main      = sbar_view ( 0, 0, 320, 48, grav_south, cl_screen_view);
+	sbar_inventory = sbar_view ( 0, 0, 320, 24, grav_northwest, sbar_main);
+	sbar_frags     = sbar_view ( 0, 0, 130,  8, grav_northeast, sbar_inventory);
+	sbar_sigils    = sbar_view ( 0, 0,  32, 16, grav_southeast, sbar_inventory);
+	sbar_items     = sbar_view (32, 0,  96, 16, grav_southeast, sbar_inventory);
+	sbar_armament  = sbar_view ( 0, 0, 202, 24, grav_northwest, sbar_inventory);
+	sbar_weapons   = sbar_view ( 0, 0, 192, 16, grav_southwest, sbar_armament);
+	sbar_miniammo  = sbar_view ( 0, 0,  32,  8, grav_northwest, sbar_armament);
+	sbar_statusbar = sbar_view ( 0, 0, 320, 24, grav_southwest, sbar_main);
+	sbar_armor     = sbar_view (  0, 0, 96, 24, grav_northwest, sbar_statusbar);
+	sbar_face      = sbar_view (112, 0, 24, 24, grav_northwest, sbar_statusbar);
+	sbar_health    = sbar_view (136, 0, 72, 24, grav_northwest, sbar_statusbar);
+	sbar_ammo      = sbar_view (224, 0, 96, 24, grav_northwest, sbar_statusbar);
+	sbar_tile[0]   = sbar_view ( 0, 0,   0, 48, grav_southwest, sbar_main);
+	sbar_tile[1]   = sbar_view ( 0, 0,   0, 48, grav_southeast, sbar_main);
 
-	sbar_view = view_new (0, 0, 320, 48, grav_south);
+	View_SetResize (sbar_main, 1, 1);
 
-	sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	sbar_frags_view->draw = draw_frags;
+	for (int i = 0; i < 4; i++) {
+		sbar_view (i * 8, 0, 8, 16, grav_northwest, sbar_sigils);
 
-	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	sbar_inventory_view->draw = draw_inventory_sbar;
+		sbar_view (i * 24, 0, 24, 24, grav_northwest, sbar_armor);
+		sbar_view (i * 24, 0, 24, 24, grav_northwest, sbar_ammo);
+	}
+	for (int i = 0; i < 6; i++) {
+		sbar_view (i * 16, 0, 16, 16, grav_northwest, sbar_items);
+	}
+	for (int i = 0; i < 7; i++) {
+		sbar_view (i * 24, 0, 24, 16, grav_northwest, sbar_weapons);
+	}
+	for (int i = 0; i < 4; i++) {
+		sbar_view (i * 24, 0, 24, 16, grav_northwest, sbar_health);
+	}
+	for (int i = 0; i < 4; i++) {
+		view_t v = sbar_view (i * 48 + 10, 0, 8, 8, grav_northwest,
+							  sbar_miniammo);
+		draw_charbuffer_t *buffer = Draw_CreateBuffer (3, 1);
+		sbar_setcomponent (v, hud_charbuff, &buffer);
+	}
 
-	view = view_new (0, 0, 32, 16, grav_southwest);
-	view->draw = draw_weapons_sbar;
-	view_add (sbar_inventory_view, view);
+	sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
+	sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
 
-	view = view_new (0, 0, 32, 8, grav_northwest);
-	view->draw = draw_ammo_sbar;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (32, 0, 96, 16, grav_southeast);
-	view->draw = draw_items;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 32, 16, grav_southeast);
-	view->draw = draw_sigils;
-	view_add (sbar_inventory_view, view);
-
-	if (sbar_frags_view)
-		view_add (sbar_inventory_view, sbar_frags_view);
-
-	view_add (sbar_view, sbar_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_status_bar;
-	view_add (sbar_view, view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_status;
-	view_add (sbar_view, view);
-
-	if (cl_screen_view->xlen > 320) {
-		int         l = (cl_screen_view->xlen - 320) / 2;
-
-		view = view_new (-l, 0, l, 48, grav_southwest);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
-
-		view = view_new (-l, 0, l, 48, grav_southeast);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
+	if (r_data->vid->width > 320) {
+		int         l = (r_data->vid->width - 320) / 2;
+		View_SetPos (sbar_tile[0], -l, 0);
+		View_SetLen (sbar_tile[0], l, 48);
+		View_SetPos (sbar_tile[1], -l, 0);
+		View_SetLen (sbar_tile[1], l, 48);
+		sbar_setcomponent (sbar_tile[0], hud_tile, 0);
+		sbar_setcomponent (sbar_tile[1], hud_tile, 0);
 	}
 }
 
 static void
 init_hud_views (void)
 {
+#if 0
 	view_t     *view;
 	view_t     *minifrags_view = 0;
 	view_t     *miniteam_view = 0;
@@ -1507,11 +1632,13 @@ init_hud_views (void)
 	view_add (hud_view, hud_armament_view);
 
 	view_insert (hud_main_view, hud_view, 0);
+#endif
 }
 
 static void
 init_hipnotic_sbar_views (void)
 {
+#if 0
 	view_t     *view;
 
 	sbar_view = view_new (0, 0, 320, 48, grav_south);
@@ -1564,11 +1691,13 @@ init_hipnotic_sbar_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
+#endif
 }
 
 static void
 init_hipnotic_hud_views (void)
 {
+#if 0
 	view_t     *view;
 
 	hud_view = view_new (0, 0, 320, 48, grav_south);
@@ -1618,11 +1747,13 @@ init_hipnotic_hud_views (void)
 	view_add (hud_view, hud_armament_view);
 
 	view_insert (hud_main_view, hud_view, 0);
+#endif
 }
 
 static void
 init_rogue_sbar_views (void)
 {
+#if 0
 	view_t     *view;
 
 	sbar_view = view_new (0, 0, 320, 48, grav_south);
@@ -1671,11 +1802,13 @@ init_rogue_sbar_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
+#endif
 }
 
 static void
 init_rogue_hud_views (void)
 {
+#if 0
 	view_t     *view;
 
 	hud_view = view_new (0, 0, 320, 48, grav_south);
@@ -1716,11 +1849,13 @@ init_rogue_hud_views (void)
 	view_add (hud_view, hud_armament_view);
 
 	view_insert (hud_main_view, hud_view, 0);
+#endif
 }
 
 static void
 init_views (void)
 {
+#if 0
 	hud_main_view = view_new (0, 0, cl_screen_view->xlen, cl_screen_view->ylen,
 							  grav_northwest);
 	view_insert (cl_screen_view, hud_main_view, 0);
@@ -1740,7 +1875,7 @@ init_views (void)
 
 	view_insert (hud_main_view, hud_overlay_view, 0);
 	view_insert (hud_main_view, hud_stuff_view, 0);
-
+#endif
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
 		init_hipnotic_hud_views ();
@@ -1762,14 +1897,10 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
-void
-Sbar_Init (void)
+static void
+load_pics (void)
 {
-	int         i;
-
-	init_views ();
-
-	for (i = 0; i < 10; i++) {
+	for (int i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
 		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va (0, "anum_%i", i));
 	}
@@ -1796,7 +1927,7 @@ Sbar_Init (void)
 	sb_weapons[1][5] = r_funcs->Draw_PicFromWad ("inv2_srlaunch");
 	sb_weapons[1][6] = r_funcs->Draw_PicFromWad ("inv2_lightng");
 
-	for (i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; i++) {
 		sb_weapons[2 + i][0] =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_shotgun", i + 1));
 		sb_weapons[2 + i][1] =
@@ -1873,7 +2004,7 @@ Sbar_Init (void)
 		hsb_weapons[1][3] = r_funcs->Draw_PicFromWad ("inv2_prox_gren");
 		hsb_weapons[1][4] = r_funcs->Draw_PicFromWad ("inv2_prox");
 
-		for (i = 0; i < 5; i++) {
+		for (int i = 0; i < 5; i++) {
 			hsb_weapons[2 + i][0] =
 				r_funcs->Draw_PicFromWad (va (0, "inva%i_laser", i + 1));
 			hsb_weapons[2 + i][1] =
@@ -1912,9 +2043,20 @@ Sbar_Init (void)
 		rsb_ammo[1] = r_funcs->Draw_PicFromWad ("r_ammomulti");
 		rsb_ammo[2] = r_funcs->Draw_PicFromWad ("r_ammoplasma");
 	}
+}
+
+void
+Sbar_Init (void)
+{
+	HUD_Init_Cvars ();
+	Cvar_AddListener (Cvar_FindVar ("hud_sbar"), sbar_hud_sbar_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);
+
+	load_pics ();
+	init_views ();
+	View_UpdateHierarchy (sbar_main);
 
 	r_data->viewsize_callback = viewsize_f;
-	HUD_Init_Cvars ();
 	Cvar_Register (&scr_centertime_cvar, 0, 0);
 	Cvar_Register (&scr_printspeed_cvar, 0, 0);
 

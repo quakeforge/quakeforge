@@ -50,7 +50,7 @@ int          graphval;
 	Performance monitoring tool
 */
 void
-R_TimeGraph (view_t *view)
+R_TimeGraph (view_pos_t abs)
 {
 	static int  timex;
 	int         a;
@@ -78,14 +78,14 @@ R_TimeGraph (view_t *view)
 		a = 0;
 	}
 	memcpy (timings + o, r_timings + a, l * sizeof (timings[0]));
-	r_funcs->R_LineGraph (view->xabs, view->yabs, r_timings,
-						  MAX_TIMINGS, 200);//r_data->graphheight->int_val);
+	r_funcs->R_LineGraph (abs.x, abs.y, r_timings, MAX_TIMINGS, 200);
+	//r_data->graphheight->int_val);
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
 
 void
-R_ZGraph (view_t *view)
+R_ZGraph (view_pos_t abs)
 {
 	int         w;
 	static int  height[256];
@@ -97,6 +97,5 @@ R_ZGraph (view_t *view)
 
 	height[r_framecount & 255] = ((int) r_refdef.frame.position[2]) & 31;
 
-	r_funcs->R_LineGraph (view->xabs, view->yabs, height,
-						  w, *r_data->graphheight);
+	r_funcs->R_LineGraph (abs.x, abs.y, height, w, *r_data->graphheight);
 }

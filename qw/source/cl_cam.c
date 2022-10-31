@@ -199,7 +199,7 @@ Cam_Unlock (void)
 		}
 		autocam = CAM_NONE;
 		locked = false;
-		Sbar_Changed ();
+		Sbar_Changed (~0);
 	}
 }
 
@@ -221,7 +221,7 @@ Cam_Lock (int playernum)
 	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
-	Sbar_Changed ();
+	Sbar_Changed (~0);
 }
 
 static trace_t

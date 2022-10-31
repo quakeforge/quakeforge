@@ -679,8 +679,8 @@ Menu_Draw (view_t *view)
 	if (!menu)
 		return;
 
-	x = view->xabs;
-	y = view->yabs;
+	x = 0;//view->xabs;
+	y = 0;//view->yabs;
 
 	if (menu->fadescreen)
 		r_funcs->Draw_FadeScreen ();

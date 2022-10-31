@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "QF/ui/view.h"
-
+#if 0
 typedef struct {
 	struct {
 		int         xlen, ylen;
@@ -281,4 +281,12 @@ main (void)
 		ret = 1;
 	}
 	return ret;
+}
+#endif
+
+int
+main (void)
+{
+	printf ("FIXME: redo for ECS\n");
+	return 1;
 }

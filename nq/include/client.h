@@ -289,7 +289,7 @@ extern qboolean recording;
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct view_s *cl_screen_view;
+extern struct view_s cl_screen_view;
 void CL_Init_Screen (void);
 void CL_UpdateScreen (double realtime);
 

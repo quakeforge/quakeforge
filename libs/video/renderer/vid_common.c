@@ -39,12 +39,10 @@
 #include "r_internal.h"
 
 viddef_t    vid;					// global video state
-view_t      scr_view;
 
 vid_render_data_t vid_render_data = {
 	.vid = &vid,
 	.refdef = &r_refdef,
-	.scr_view = &scr_view,
 	.scr_copytop = 0,
 	.scr_copyeverything = 0,
 	.scr_fullupdate = 0,
