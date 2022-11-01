@@ -350,7 +350,7 @@ BI_Graphics_Init (progs_t *pr)
 		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = quit_f;
 		con_module->data->console->cbuf = qwaq_cbuf;
-		con_module->data->console->screen_view = r_data->scr_view;
+		//con_module->data->console->screen_view = r_data->scr_view;
 	}
 	//Key_SetKeyDest (key_game);
 
