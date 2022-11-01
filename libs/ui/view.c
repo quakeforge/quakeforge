@@ -183,13 +183,14 @@ View_UpdateHierarchy (view_t view)
 			&& (cont[i].resize_x || cont[i].resize_y)) {
 			int         dx = len[par].x - oldlen[par].x;
 			int         dy = len[par].y - oldlen[par].y;
+			modified[i] |= 2;	// propogate resize modifications
+			oldlen[i] = len[i];	// for child resize calculations
 			if (cont[i].resize_x) {
 				len[i].x += dx;
 			}
 			if (cont[i].resize_y) {
 				len[i].y += dy;
 			}
-			modified[i] |= 2;	// propogate resize modifications
 		}
 		if (modified[i] || modified[par]) {
 			modified[i] |= 1;	// propogate motion modifications
