@@ -189,9 +189,10 @@ View_UpdateHierarchy (view_t view)
 			if (cont[i].resize_y) {
 				len[i].y += dy;
 			}
-			modified[i] |= 2;
+			modified[i] |= 2;	// propogate resize modifications
 		}
 		if (modified[i] || modified[par]) {
+			modified[i] |= 1;	// propogate motion modifications
 			switch (cont[i].gravity) {
 				case grav_center:
 					rel[i].x = pos[i].x + (len[par].x - len[i].x) / 2;

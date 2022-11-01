@@ -1521,8 +1521,6 @@ init_sbar_views (void)
 	sbar_tile[0]   = sbar_view ( 0, 0,   0, 48, grav_southwest, sbar_main);
 	sbar_tile[1]   = sbar_view ( 0, 0,   0, 48, grav_southeast, sbar_main);
 
-	View_SetResize (sbar_main, 1, 1);
-
 	for (int i = 0; i < 4; i++) {
 		sbar_view (i * 8, 0, 8, 16, grav_northwest, sbar_sigils);
 
