@@ -45,8 +45,8 @@
 #include "QF/screen.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
-#include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/view.h"
@@ -56,7 +56,6 @@
 #include "r_local.h"	//FIXME for r_cache_thrash
 
 #include "client/hud.h"
-#include "client/view.h"
 #include "client/world.h"
 
 #include "qw/include/client.h"
@@ -132,9 +131,12 @@ scr_draw_views (void)
 	View_SetVisible (pause_view, scr_showpause && r_data->paused);
 
 	View_SetVisible (ram_view, scr_showram && r_cache_thrash);
-	View_SetVisible (net_view,
-			(!cls.demoplayback && realtime - cl.last_servermessage >= 0.3));
+	View_SetVisible (net_view, (!cls.demoplayback
+								&& realtime - cl.last_servermessage >= 0.3));
 	View_SetVisible (loading_view, cl.loading);
+	// FIXME cvar callbacks
+	View_SetVisible (timegraph_view, r_timegraph);
+	View_SetVisible (zgraph_view, r_zgraph);
 }
 
 static SCR_Func scr_funcs_normal[] = {

@@ -130,13 +130,12 @@ scr_draw_views (void)
 	View_SetVisible (pause_view, scr_showpause && r_data->paused);
 
 	View_SetVisible (ram_view, scr_showram && r_cache_thrash);
-	View_SetVisible (net_view,
-			 (!cls.demoplayback && realtime - cl.last_servermessage >= 0.3));
+	View_SetVisible (net_view, (!cls.demoplayback
+								&& realtime - cl.last_servermessage >= 0.3));
 	View_SetVisible (loading_view, cl.loading);
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);
 	View_SetVisible (zgraph_view, r_zgraph);
-
 }
 
 static SCR_Func scr_funcs_normal[] = {
@@ -153,12 +152,14 @@ static SCR_Func scr_funcs_normal[] = {
 static SCR_Func scr_funcs_intermission[] = {
 	Sbar_IntermissionOverlay,
 	Con_DrawConsole,
+	scr_draw_views,
 	0
 };
 
 static SCR_Func scr_funcs_finale[] = {
 	Sbar_FinaleOverlay,
 	Con_DrawConsole,
+	scr_draw_views,
 	0,
 };
 

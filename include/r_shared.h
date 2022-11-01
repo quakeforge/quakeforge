@@ -163,6 +163,7 @@ typedef struct edge_s
 extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
 extern vec3_t ambientcolor;
 
-uint32_t SW_AddEntity (entity_t ent);
+struct entity_s;
+uint32_t SW_AddEntity (struct entity_s ent);
 
 #endif	// _R_SHARED_H
