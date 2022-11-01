@@ -496,9 +496,6 @@ resize_input (view_t view, view_pos_t len)
 	Draw_PrintBuffer (inp->buffer, inp->prompt);
 	if (inp->input_line) {
 		inp->input_line->width = inp->buffer->width - inp->buffer->cursx;
-		printf ("resize_input: %d %zd %d %d %d\n", view.id,
-				inp->input_line->width,
-				len.x, inp->buffer->width, inp->buffer->cursx);
 		inp->buffer->chars[inp->buffer->cursx] = inp->input_line->prompt_char;
 	}
 }
