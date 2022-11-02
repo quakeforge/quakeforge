@@ -778,7 +778,7 @@ V_CalcIntermissionRefdef (viewstate_t *vs)
 
 	Transform_SetWorldPosition (vs->camera_transform, origin);
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
-	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, cl_world.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, view.reg);
 	renderer->model = NULL;
 
 	// always idle in intermission
@@ -799,8 +799,8 @@ V_CalcRefdef (viewstate_t *vs)
 	vec4f_t     origin = vs->player_origin;
 	vec_t      *viewangles = vs->player_angles;
 
-	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (view.id, scene_animation, cl_world.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, view.reg);
+	animation_t *animation = Ent_GetComponent (view.id, scene_animation, view.reg);
 
 	V_DriftPitch (vs);
 
