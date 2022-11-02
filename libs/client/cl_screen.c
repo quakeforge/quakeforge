@@ -56,10 +56,11 @@
 #include "r_local.h"	//FIXME for r_cache_thrash
 
 #include "client/hud.h"
+#include "client/screen.h"
+#include "client/view.h"
 #include "client/world.h"
 
-#include "qw/include/client.h"
-#include "qw/include/cl_parse.h"
+//#include "nq/include/client.h"
 
 int scr_showpause;
 static cvar_t scr_showpause_cvar = {
@@ -98,20 +99,22 @@ static view_t ram_view;
 static view_t turtle_view;
 static view_t pause_view;
 
+static viewstate_t *_vs;//FIXME ick
+
 static void
 SCR_CShift (void)
 {
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.state == ca_active && cl_world.scene->worldmodel) {
+	if (_vs->active && cl_world.scene->worldmodel) {
 		vec4f_t     origin;
-		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		origin = Transform_GetWorldPosition (_vs->camera_transform);
 		leaf = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
 		contents = leaf->contents;
 	}
-	V_SetContentsColor (&cl.viewstate, contents);
-	r_funcs->Draw_BlendScreen (cl.viewstate.cshift_color);
+	V_SetContentsColor (_vs, contents);
+	r_funcs->Draw_BlendScreen (_vs->cshift_color);
 }
 
 static void
@@ -131,9 +134,9 @@ scr_draw_views (void)
 	View_SetVisible (pause_view, scr_showpause && r_data->paused);
 
 	View_SetVisible (ram_view, scr_showram && r_cache_thrash);
-	View_SetVisible (net_view, (!cls.demoplayback
-								&& realtime - cl.last_servermessage >= 0.3));
-	View_SetVisible (loading_view, cl.loading);
+	View_SetVisible (net_view, (!_vs->demoplayback
+								&& _vs->time - _vs->last_servermessage >= 0.3));
+	View_SetVisible (loading_view, _vs->loading);
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);
 	View_SetVisible (zgraph_view, r_zgraph);
@@ -257,25 +260,24 @@ CL_Init_Screen (void)
 }
 
 void
-CL_UpdateScreen (double realtime)
+CL_UpdateScreen (viewstate_t *vs)
 {
-	unsigned    index = cl.intermission;
+	unsigned    index = vs->intermission;
+	_vs = vs;
 
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
 
 	//FIXME not every time
-	if (cls.state == ca_active) {
-		if (cl.watervis)
+	if (vs->active) {
+		if (vs->watervis)
 			r_data->min_wateralpha = 0.0;
 		else
 			r_data->min_wateralpha = 1.0;
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
 
-	cl.viewstate.intermission = cl.intermission != 0;
-	V_PrepBlend (&cl.viewstate);
-	V_RenderView (&cl.viewstate);
-	SCR_UpdateScreen (cl.viewstate.camera_transform,
-					  realtime, scr_funcs[index]);
+	V_PrepBlend (vs);
+	V_RenderView (vs);
+	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs[index]);
 }

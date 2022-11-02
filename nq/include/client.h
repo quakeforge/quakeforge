@@ -127,8 +127,6 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every server signon
 */
 typedef struct client_state_s {
-	qboolean    loading;
-
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
@@ -167,7 +165,6 @@ typedef struct client_state_s {
 								// to decay light values and smooth step ups
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
@@ -186,7 +183,6 @@ typedef struct client_state_s {
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
-	int         watervis;
 	int         fpd;
 	int         fbskins;
 
@@ -288,10 +284,6 @@ extern qboolean recording;
 
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);
-
-extern struct view_s cl_screen_view;
-void CL_Init_Screen (void);
-void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
 

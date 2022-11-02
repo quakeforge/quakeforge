@@ -43,6 +43,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "client/screen.h"
 #include "compat.h"
 
 #include "qw/include/cl_parse.h"
@@ -99,7 +100,8 @@ Skin_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking skins...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 	}
 	cls.downloadtype = dl_skin;
 

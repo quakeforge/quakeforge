@@ -59,6 +59,7 @@
 
 #include "client/chase.h"
 #include "client/particles.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
 
@@ -297,7 +298,7 @@ CL_ClearState (void)
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
 	cl.chasestate.viewstate = &cl.viewstate;
-	cl.watervis = 1;
+	cl.viewstate.watervis = 1;
 	SCR_SetFullscreen (0);
 	r_data->lightstyle = cl.lightstyle;
 
@@ -434,7 +435,7 @@ CL_SignonReply (void)
 		break;
 
 	case so_active:
-		cl.loading = false;
+		cl.viewstate.loading = false;
 		CL_SetState (ca_active);
 		break;
 	}
@@ -451,8 +452,9 @@ CL_NextDemo (void)
 	if (cls.demonum == -1)
 		return;							// don't play demos
 
-	cl.loading = true;
-	CL_UpdateScreen(cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	CL_UpdateScreen(&cl.viewstate);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
@@ -589,25 +591,25 @@ CL_SetState (cactive_t state)
 			case ca_disconnected:
 				CL_ClearState ();
 				cls.signon = so_none;
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				VID_SetCaption ("Disconnected");
 				break;
 			case ca_connected:
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
-				cl.loading = true;
+				cl.viewstate.loading = true;
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				IN_ClearStates ();
 				VID_SetCaption ("");
 				S_AmbientOn ();
 				break;
 		}
-		CL_UpdateScreen (cl.time);
+		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
@@ -660,7 +662,8 @@ CL_Frame (void)
 								 || cl.stats[STAT_HEALTH] <= 0);
 	r_data->frametime = host_frametime;
 
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.intermission = cl.intermission != 0;
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
 		time2 = Sys_DoubleTime ();

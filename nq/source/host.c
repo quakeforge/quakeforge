@@ -309,7 +309,7 @@ Host_Error (const char *error, ...)
 
 	inerror = true;
 
-	cl.loading = false;
+	cl.viewstate.loading = false;
 
 	va_start (argptr, error);
 	dvsprintf (str, error, argptr);

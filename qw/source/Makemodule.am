@@ -106,7 +106,7 @@ qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \
 qw_source_libqw_client_a_SOURCES= \
 		qw/source/cl_cam.c qw/source/cl_chat.c qw/source/cl_cmd.c qw/source/cl_cvar.c qw/source/cl_demo.c \
 		qw/source/cl_entparse.c qw/source/cl_ents.c qw/source/cl_http.c qw/source/cl_input.c qw/source/cl_main.c qw/source/cl_ngraph.c \
-		qw/source/cl_parse.c qw/source/cl_pred.c qw/source/cl_rss.c qw/source/cl_screen.c qw/source/cl_skin.c qw/source/cl_slist.c \
+		qw/source/cl_parse.c qw/source/cl_pred.c qw/source/cl_rss.c qw/source/cl_skin.c qw/source/cl_slist.c \
 		qw/source/sbar.c qw/source/teamplay.c
 
 # Software-rendering clients

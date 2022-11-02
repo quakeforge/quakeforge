@@ -48,6 +48,7 @@
 #include "netmain.h"
 
 //FIXME these should not be here!!!
+#include "client/screen.h"
 #include "../nq/include/client.h"
 #include "../nq/include/server.h"
 
@@ -1020,7 +1021,8 @@ _Datagram_Connect (const char *host)
 
 	// send the connection request
 	Sys_Printf ("trying...\n");
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.time = cl.time;
+	CL_UpdateScreen (&cl.viewstate);
 	start_time = net_time;
 
 	for (reps = 0; reps < 3; reps++) {
@@ -1081,7 +1083,8 @@ _Datagram_Connect (const char *host)
 			break;
 		}
 		Sys_Printf ("still trying...\n");
-		CL_UpdateScreen (cl.time);
+		cl.viewstate.time = cl.time;
+		CL_UpdateScreen (&cl.viewstate);
 		start_time = SetNetTime ();
 	}
 

@@ -98,6 +98,7 @@
 #include "sbar.h"
 
 #include "client/particles.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -909,7 +910,7 @@ CL_FullServerinfo_f (void)
 		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
-		cl.watervis = atoi (p);
+		cl.viewstate.watervis = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "fpd")) && *p) {
 		cl.fpd = atoi (p);
@@ -1985,7 +1986,8 @@ Host_Frame (float time)
 								 || cl.stats[STAT_HEALTH] <= 0);
 	r_data->frametime = host_frametime;
 
-	CL_UpdateScreen (realtime);
+	cl.viewstate.time = realtime;
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
 		time2 = Sys_DoubleTime ();
@@ -2126,8 +2128,9 @@ Host_Init (void)
 
 	CL_Init ();
 
-	CL_UpdateScreen (realtime);
-	CL_UpdateScreen (realtime);
+	cl.viewstate.time = realtime;
+	CL_UpdateScreen (&cl.viewstate);
+	CL_UpdateScreen (&cl.viewstate);
 
 	Host_ExecConfig (cl_cbuf, !cl_quakerc);
 
@@ -2144,10 +2147,10 @@ Host_Init (void)
 
 	host_initialized = true;
 
-	CL_UpdateScreen (realtime);
+	CL_UpdateScreen (&cl.viewstate);
 	Con_NewMap ();							// force the menus to be loaded
-	CL_UpdateScreen (realtime);
-	CL_UpdateScreen (realtime);
+	CL_UpdateScreen (&cl.viewstate);
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (connect_time == -1) {
 		Cbuf_AddText (cl_cbuf, "echo Type connect <internet address> or use a "

@@ -43,6 +43,7 @@
 #include "QF/ui/view.h"
 
 #include "client/hud.h"
+#include "client/screen.h"
 
 #include "compat.h"
 

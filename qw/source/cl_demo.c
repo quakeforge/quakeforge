@@ -187,6 +187,7 @@ CL_StopPlayback (void)
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
 	cls.demoplayback2 = 0;
+	cl.viewstate.demoplayback = 0;
 	demotime_cached = 0;
 	net_blocksend = 0;
 
@@ -1052,6 +1053,7 @@ CL_StartDemo (void)
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 
 	cls.demoplayback = true;
+	cl.viewstate.demoplayback = 1;
 	net_blocksend = 1;
 	if (type == 2) {
 		cls.demoplayback2 = true;

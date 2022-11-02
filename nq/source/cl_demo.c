@@ -167,6 +167,7 @@ CL_StopPlayback (void)
 	CL_SetState (ca_disconnected);
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
+	cl.viewstate.demoplayback = 0;
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -515,6 +516,7 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
+	cl.viewstate.demoplayback = 1;
 	CL_SetState (ca_connected);
 	cls.forcetrack = 0;
 

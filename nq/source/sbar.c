@@ -58,6 +58,7 @@
 #include "sbar.h"
 
 #include "client/hud.h"
+#include "client/screen.h"
 
 #include "nq/include/client.h"
 #include "nq/include/game.h"

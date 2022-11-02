@@ -68,6 +68,7 @@
 
 #include "client/effects.h"
 #include "client/particles.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -284,7 +285,8 @@ Model_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking models...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -373,7 +375,8 @@ Sound_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking sounds...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -1121,7 +1124,7 @@ CL_ServerInfo (void)
 		cl.teamplay = atoi (value);
 		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
 	} else if (strequal (key, "watervis")) {
-		cl.watervis = atoi (value);
+		cl.viewstate.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
 		cl.fpd = atoi (value);
 	} else if (strequal (key, "fbskins")) {
@@ -1219,7 +1222,7 @@ CL_ParseServerMessage (void)
 	};
 
 	received_framecount = host_framecount;
-	cl.last_servermessage = realtime;
+	cl.viewstate.last_servermessage = realtime;
 	CL_ClearProjectiles ();
 
 	// if recording demos, copy the message out

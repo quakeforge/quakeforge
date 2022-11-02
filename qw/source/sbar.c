@@ -60,6 +60,7 @@
 #include "compat.h"
 
 #include "client/hud.h"
+#include "client/screen.h"
 #include "client/world.h"
 
 #include "qw/bothdefs.h"

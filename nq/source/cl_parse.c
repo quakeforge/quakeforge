@@ -722,7 +722,7 @@ CL_ParseServerMessage (void)
 	static dstring_t *stuffbuf;
 	signon_t    so;
 
-	cl.last_servermessage = realtime;
+	cl.viewstate.last_servermessage = realtime;
 	TEntContext_t tentCtx = {
 		cl.viewstate.player_origin,
 		cl.viewentity
