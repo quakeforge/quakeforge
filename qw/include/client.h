@@ -297,8 +297,7 @@ extern struct cbuf_s *cl_stbuf;
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct view_s cl_netgraph_view;
-void CL_NetGraph (struct view_s view);
+void CL_NetGraph_Init (void);
 void CL_NetGraph_Init_Cvars (void);
 
 extern struct view_s cl_screen_view;

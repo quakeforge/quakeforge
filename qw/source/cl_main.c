@@ -1510,6 +1510,7 @@ CL_Init (void)
 		Cbuf_DeleteStack (con_module->data->console->cbuf);
 		con_module->data->console->cbuf = cl_cbuf;
 	}
+	CL_NetGraph_Init ();
 
 	S_Init (&cl.viewentity, &host_frametime);
 	CDAudio_Init ();

@@ -254,14 +254,6 @@ CL_Init_Screen (void)
 	View_SetGravity (pause_view, grav_center);
 	Ent_SetComponent (pause_view.id, hud_cachepic, pause_view.reg, &name);
 	View_SetVisible (pause_view, 0);
-
-	cl_netgraph_view = View_New (hud_registry, cl_screen_view);
-	View_SetPos (cl_netgraph_view, 0, hud_sb_lines);
-	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
-	View_SetGravity (cl_netgraph_view, grav_southwest);
-	Ent_SetComponent (cl_netgraph_view.id, hud_func, cl_netgraph_view.reg,
-					  CL_NetGraph);
-	View_SetVisible (cl_netgraph_view, cl_netgraph);
 }
 
 void

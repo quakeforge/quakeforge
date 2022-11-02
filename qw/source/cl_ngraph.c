@@ -42,6 +42,8 @@
 #include "QF/va.h"
 #include "QF/ui/view.h"
 
+#include "client/hud.h"
+
 #include "compat.h"
 
 #include "qw/include/cl_parse.h"
@@ -84,7 +86,8 @@ static cvar_t cl_netgraph_height_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &cl_netgraph_height },
 };
-view_t      cl_netgraph_view;
+
+static view_t cl_netgraph_view;
 
 static void
 cl_netgraph_f (void *data, const cvar_t *cvar)
@@ -105,13 +108,11 @@ cl_netgraph_height_f (void *data, const cvar_t *cvar)
 	}
 }
 
-void
-CL_NetGraph (view_t view)
+static void
+CL_NetGraph (view_pos_t abs, view_pos_t len)
 {
 	int         lost, a, l, x, y, i, o;
 	int         timings[NET_TIMINGS];
-	view_pos_t  abs = View_GetAbs (view);
-	view_pos_t  len = View_GetLen (view);
 
 	if (cl_netgraph_box) {
 		r_funcs->Draw_TextBox (abs.x, abs.y, NET_TIMINGS / 8,
@@ -149,6 +150,18 @@ CL_NetGraph (view_t view)
 	view_setgravity (cl_netgraph_view,
 					 hud_swap ? grav_southeast : grav_southwest);
 */
+}
+
+void
+CL_NetGraph_Init (void)
+{
+	cl_netgraph_view = View_New (hud_registry, cl_screen_view);
+	View_SetPos (cl_netgraph_view, 0, hud_sb_lines);
+	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
+	View_SetGravity (cl_netgraph_view, grav_southwest);
+	void       *f = CL_NetGraph;
+	Ent_SetComponent (cl_netgraph_view.id, hud_func, cl_netgraph_view.reg, &f);
+	View_SetVisible (cl_netgraph_view, cl_netgraph);
 }
 
 void
