@@ -283,9 +283,6 @@ CL_UpdateScreen (double realtime)
 
 	cl.viewstate.intermission = cl.intermission != 0;
 	V_PrepBlend (&cl.viewstate);
-	int         seq = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
-	frame_t    *frame = &cl.frames[seq];
-	cl.viewstate.movecmd[FORWARD] = frame->cmd.forwardmove;
 	V_RenderView (&cl.viewstate);
 	SCR_UpdateScreen (cl.viewstate.camera_transform,
 					  realtime, scr_funcs[index]);

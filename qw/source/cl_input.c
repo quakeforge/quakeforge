@@ -316,6 +316,8 @@ CL_SendCmd (void)
 	if (cls.demorecording)
 		CL_WriteDemoCmd (cmd);
 
+	cl.viewstate.movecmd[FORWARD] = cmd->forwardmove;
+
 	// deliver the message
 	if (pps_check (dontdrop))
 		Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
