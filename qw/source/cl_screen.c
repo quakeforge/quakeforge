@@ -281,16 +281,6 @@ CL_UpdateScreen (double realtime)
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
 
-	if (cl.viewstate.flags & VF_GIB) {
-		cl.viewstate.height = 8;			// gib view height
-	} else if (cl.viewstate.flags & VF_DEAD) {
-		cl.viewstate.height = -16;			// corpse view height
-	} else {
-		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
-		if (cl.stdver)
-			cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
-	}
-
 	cl.viewstate.intermission = cl.intermission != 0;
 	V_PrepBlend (&cl.viewstate);
 	int         seq = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;

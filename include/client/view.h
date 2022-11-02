@@ -58,9 +58,9 @@ typedef struct viewstate_s {
 	vec4f_t     movecmd;
 	vec4f_t     velocity;
 	vec4f_t     punchangle;
-	float       frametime;
 	transform_t camera_transform;
 	double      time;
+	float       frametime;
 	float       height;
 	int         weaponframe;
 	int         onground;		// -1 when in air

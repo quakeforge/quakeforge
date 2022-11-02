@@ -807,7 +807,13 @@ V_CalcRefdef (viewstate_t *vs)
 	bob = V_CalcBob (vs);
 
 	// refresh position
-	origin[2] += vs->height + bob;
+	if (vs->flags & VF_GIB) {
+		origin[2] += 8;					// gib view height
+	} else if (vs->flags & VF_DEAD) {
+		origin[2] += -16;				// corpse view height
+	} else {
+		origin[2] += vs->height + bob;
+	}
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.

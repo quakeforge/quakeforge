@@ -1168,6 +1168,11 @@ CL_SetStat (int stat, int value)
 	}
 	cl.stats[stat] = value;
 	cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+	if (cl.stdver) {
+		cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
+	} else {
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
+	}
 }
 
 static void
