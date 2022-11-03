@@ -30,6 +30,8 @@
 
 enum {
 	hud_href,
+	hud_update,
+	hud_updateonce,
 	hud_tile,
 	hud_pic,
 	hud_subpic,
@@ -53,6 +55,10 @@ extern int hud_sb_lines;
 
 extern int hud_sbar;
 extern int hud_swap;
+extern int hud_fps;
+extern int hud_pl;
+extern int hud_ping;
+extern int hud_time;
 
 //extern struct view_s sbar_view;
 //extern struct view_s sbar_inventory_view;
@@ -65,6 +71,8 @@ extern struct view_s hud_frags_view;
 
 extern struct view_s hud_overlay_view;
 extern struct view_s hud_stuff_view;
+extern struct view_s hud_time_view;
+extern struct view_s hud_fps_view;
 extern struct view_s hud_main_view;
 
 void HUD_Init (void);

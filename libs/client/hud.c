@@ -46,6 +46,14 @@ static const component_t hud_components[hud_comp_count] = {
 		.size = sizeof (hierref_t),
 		.name = "href",
 	},
+	[hud_update] = {
+		.size = sizeof (void (*)(view_t)),
+		.name = "update",
+	},
+	[hud_updateonce] = {
+		.size = sizeof (void (*)(view_t)),
+		.name = "updateonce",
+	},
 	[hud_tile] = {
 		.size = sizeof (byte),
 		.name = "pic",
@@ -107,6 +115,42 @@ static cvar_t hud_swap_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &hud_swap },
 };
+int hud_fps;
+static cvar_t hud_fps_cvar = {
+	.name = "hud_fps",
+	.description =
+		"display realtime frames per second",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_fps },
+};
+int hud_ping;
+static cvar_t hud_ping_cvar = {
+	.name = "hud_ping",
+	.description =
+		"display current ping to server",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_ping },
+};
+int hud_pl;
+static cvar_t hud_pl_cvar = {
+	.name = "hud_pl",
+	.description =
+		"display current packet loss to server",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_pl },
+};
+int hud_time;
+static cvar_t hud_time_cvar = {
+	.name = "hud_time",
+	.description =
+		"display the current time",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &hud_time },
+};
 
 view_t sbar_view;
 view_t sbar_inventory_view;
@@ -119,6 +163,8 @@ view_t hud_frags_view;
 
 view_t hud_overlay_view;
 view_t hud_stuff_view;
+view_t hud_time_view;
+view_t hud_fps_view;
 view_t hud_main_view;
 
 static void
@@ -181,6 +227,12 @@ HUD_Init (void)
 void
 HUD_Init_Cvars (void)
 {
+	Cvar_Register (&hud_fps_cvar, 0, 0);
+	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
+	Cvar_Register (&hud_ping_cvar, 0, 0);
+	Cvar_Register (&hud_pl_cvar, 0, 0);
+	Cvar_Register (&hud_time_cvar, 0, 0);
+
 	Cvar_Register (&hud_sbar_cvar, hud_sbar_f, 0);
 	Cvar_Register (&hud_swap_cvar, hud_swap_f, 0);
 	Cvar_Register (&hud_scoreboard_gravity_cvar, hud_scoreboard_gravity_f, 0);
@@ -219,6 +271,25 @@ HUD_Calc_sb_lines (int view_size)
 	}
 	view_move (hud_stuff_view, hud_stuff_view->xpos, stuff_y);
 #endif
+}
+
+static void
+draw_update (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	void     (**func) (view_t) = pool->data;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		(*func++) (view);
+	}
+}
+
+static void
+draw_updateonce (ecs_pool_t *pool)
+{
+	draw_update (pool);
+	pool->count = 0;
 }
 
 static void
@@ -340,13 +411,15 @@ void
 HUD_Draw_Views (void)
 {
 	static void (*draw_func[hud_comp_count]) (ecs_pool_t *) = {
-		[hud_tile]     = draw_tile_views,
-		[hud_pic]      = draw_pic_views,
-		[hud_subpic]   = draw_subpic_views,
-		[hud_cachepic] = draw_cachepic_views,
-		[hud_fill]     = draw_fill_views,
-		[hud_charbuff] = draw_charbuff_views,
-		[hud_func]     = draw_func_views,
+		[hud_update]     = draw_update,
+		[hud_updateonce] = draw_updateonce,
+		[hud_tile]       = draw_tile_views,
+		[hud_pic]        = draw_pic_views,
+		[hud_subpic]     = draw_subpic_views,
+		[hud_cachepic]   = draw_cachepic_views,
+		[hud_fill]       = draw_fill_views,
+		[hud_charbuff]   = draw_charbuff_views,
+		[hud_func]       = draw_func_views,
 	};
 	for (int i = 0; i < hud_comp_count; i++) {
 		if (draw_func[i]) {

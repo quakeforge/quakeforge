@@ -89,6 +89,9 @@ static view_t     sbar_solo_anchor;
 static view_t       sbar_solo_name;
 static view_t sbar_tile[2];
 
+static draw_charbuffer_t *time_buff;
+static draw_charbuffer_t *fps_buff;
+
 static draw_charbuffer_t *solo_monsters;
 static draw_charbuffer_t *solo_secrets;
 static draw_charbuffer_t *solo_time;
@@ -1078,7 +1081,6 @@ draw_overlay (view_t *view)
 static void
 draw_time (view_t *view)
 {
-#if 0
 	struct tm  *local = 0;
 	time_t      utc = 0;
 	char        st[80];		//FIXME: overflow
@@ -1098,18 +1100,15 @@ draw_time (view_t *view)
 #endif
 	if (hud_time == 1) {  // Use international format
 		strftime (st, sizeof (st), HOUR24":%M", local);
-		draw_string (view, 8, 0, st);
 	} else if (hud_time >= 2) {   // US AM/PM display
 		strftime (st, sizeof (st), HOUR12":%M "PM, local);
-		draw_string (view, 8, 0, st);
 	}
-#endif
+	write_charbuff (time_buff, 0, 0, st);
 }
 
 static void
-draw_fps (view_t *view)
+draw_fps (view_t view)
 {
-#if 0
 	static char   st[80];
 	double        t;
 	static double lastframetime;
@@ -1120,19 +1119,10 @@ draw_fps (view_t *view)
 		lastfps = fps_count / (t - lastframetime);
 		fps_count = 0;
 		lastframetime = t;
-		snprintf (st, sizeof (st), "%5.1f FPS", lastfps);
+		int         prec = lastfps < 1000 ? 1 : 0;
+		snprintf (st, sizeof (st), "%5.*f FPS", prec, lastfps);
 	}
-	draw_string (view, 80, 8, st);
-#endif
-}
-
-static void
-draw_stuff (view_t *view)
-{
-	if (hud_time > 0)
-		draw_time (view);
-	if (hud_fps > 0)
-		draw_fps (view);
+	write_charbuff (fps_buff, 0, 0, st);
 }
 
 static void
@@ -1414,7 +1404,6 @@ Sbar_Draw (void)
 	if (sb_update_flags & (1 << sbc_info)) {
 		draw_miniteam (0);
 		draw_minifrags (0);
-		draw_stuff (0);
 		draw_overlay (0);
 		draw_intermission (0);
 		Sbar_DeathmatchOverlay (0);
@@ -1506,6 +1495,32 @@ sbar_hud_sbar_f (void *data, const cvar_t *cvar)
 				sbar_remcomponent (v, hud_subpic);
 			}
 		}
+	}
+}
+
+static void
+sbar_hud_fps_f (void *data, const cvar_t *cvar)
+{
+	if (hud_fps) {
+		void       *f = draw_fps;
+		sbar_setcomponent (hud_fps_view, hud_update, &f);
+		sbar_setcomponent (hud_fps_view, hud_charbuff, &fps_buff);
+	} else {
+		sbar_remcomponent (hud_fps_view, hud_update);
+		sbar_remcomponent (hud_fps_view, hud_charbuff);
+	}
+}
+
+static void
+sbar_hud_time_f (void *data, const cvar_t *cvar)
+{
+	if (hud_time) {
+		void       *f = draw_time;
+		sbar_setcomponent (hud_time_view, hud_update, &f);
+		sbar_setcomponent (hud_time_view, hud_charbuff, &time_buff);
+	} else {
+		sbar_remcomponent (hud_time_view, hud_update);
+		sbar_remcomponent (hud_time_view, hud_charbuff);
 	}
 }
 
@@ -1892,6 +1907,13 @@ init_views (void)
 	view_insert (hud_main_view, hud_overlay_view, 0);
 	view_insert (hud_main_view, hud_stuff_view, 0);
 #endif
+	hud_stuff_view = sbar_view (0, 48, 152, 16, grav_southwest, cl_screen_view);
+	hud_time_view = sbar_view (8, 0, 64, 8, grav_northwest, hud_stuff_view);
+	hud_fps_view = sbar_view (80, 0, 72, 8, grav_northwest, hud_stuff_view);
+
+	time_buff = Draw_CreateBuffer (8, 1);
+	fps_buff = Draw_CreateBuffer (11, 1);
+
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
 		init_hipnotic_hud_views ();
@@ -2097,10 +2119,16 @@ Sbar_Init (void)
 	HUD_Init_Cvars ();
 	Cvar_AddListener (Cvar_FindVar ("hud_sbar"), sbar_hud_sbar_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("hud_fps"), sbar_hud_fps_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("hud_time"), sbar_hud_time_f, 0);
 
 	load_pics ();
 	init_views ();
+
 	View_UpdateHierarchy (sbar_main);
+
+	sbar_hud_fps_f (0, 0);
+	sbar_hud_time_f (0, 0);
 
 	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
 					"Display information on everyone playing");

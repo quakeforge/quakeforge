@@ -445,42 +445,6 @@ static cvar_t host_speeds_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &host_speeds },
 };
-int hud_fps;
-static cvar_t hud_fps_cvar = {
-	.name = "hud_fps",
-	.description =
-		"display realtime frames per second",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_fps },
-};
-int hud_ping;
-static cvar_t hud_ping_cvar = {
-	.name = "hud_ping",
-	.description =
-		"display current ping to server",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_ping },
-};
-int hud_pl;
-static cvar_t hud_pl_cvar = {
-	.name = "hud_pl",
-	.description =
-		"display current packet loss to server",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_pl },
-};
-int hud_time;
-static cvar_t hud_time_cvar = {
-	.name = "hud_time",
-	.description =
-		"display the current time",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_time },
-};
 
 int         fps_count;
 
@@ -1676,11 +1640,6 @@ CL_Init_Cvars (void)
 	Cvar_Register (&host_speeds_cvar, 0, 0);
 	Cvar_Register (&rcon_password_cvar, 0, 0);
 	Cvar_Register (&rcon_address_cvar, 0, 0);
-	Cvar_Register (&hud_fps_cvar, 0, 0);
-	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
-	Cvar_Register (&hud_ping_cvar, 0, 0);
-	Cvar_Register (&hud_pl_cvar, 0, 0);
-	Cvar_Register (&hud_time_cvar, 0, 0);
 	Cvar_Register (&cl_predict_players_cvar, 0, 0);
 	Cvar_Register (&cl_solid_players_cvar, 0, 0);
 	Cvar_Register (&localid_cvar, 0, 0);

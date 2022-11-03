@@ -122,25 +122,6 @@ static cvar_t cl_nolerp_cvar = {
 	.value = { .type = &cexpr_int, .value = &cl_nolerp },
 };
 
-int hud_fps;
-static cvar_t hud_fps_cvar = {
-	.name = "hud_fps",
-	.description =
-		"display realtime frames per second",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_fps },
-};
-int hud_time;
-static cvar_t hud_time_cvar = {
-	.name = "hud_time",
-	.description =
-		"display the current time",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_time },
-};
-
 static int r_ambient;
 static cvar_t r_ambient_cvar = {
 	.name = "r_ambient",
@@ -277,9 +258,6 @@ CL_InitCvars (void)
 	Cvar_Register (&cl_writecfg_cvar, 0, 0);
 	Cvar_Register (&cl_shownet_cvar, 0, 0);
 	Cvar_Register (&cl_nolerp_cvar, 0, 0);
-	Cvar_Register (&hud_fps_cvar, 0, 0);
-	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
-	Cvar_Register (&hud_time_cvar, 0, 0);
 
 	//FIXME not hooked up (don't do anything), but should not work in
 	//multi-player

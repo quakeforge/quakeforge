@@ -267,9 +267,6 @@ extern int cl_model_crcs;
 
 extern float rate;
 
-extern int hud_ping;
-extern int hud_pl;
-
 extern char *skin;
 
 extern float cl_fb_players;

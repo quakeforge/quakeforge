@@ -46,8 +46,6 @@ void SCR_SetBottomMargin (int lines);
 
 void SCR_NewScene (struct scene_s *scene);
 
-extern int hud_fps;
-extern int hud_time;
 extern int r_timegraph;
 extern int r_zgraph;
 extern int         scr_copytop;
