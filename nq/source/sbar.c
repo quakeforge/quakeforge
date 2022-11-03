@@ -87,7 +87,55 @@ static view_t     sbar_solo_secrets;
 static view_t     sbar_solo_time;
 static view_t     sbar_solo_anchor;
 static view_t       sbar_solo_name;
-static view_t sbar_tile[2];
+static view_t   sbar_tile[2];
+
+typedef struct {
+	view_t     *view;
+	struct {
+		int         x;
+		int         y;
+		int         w;
+		int         h;
+	}           rect;
+	grav_t      gravity;
+	view_t     *parent;
+	int         count;
+	int         xstep;
+	int         ystep;
+} view_def_t;
+
+static view_def_t view_defs[] = {
+	{&sbar_main,          {  0, 0,320, 48}, grav_south,     &cl_screen_view},
+	{&sbar_inventory,     {  0, 0,320, 24}, grav_northwest, &sbar_main},
+	{&sbar_frags,         {  0, 0,130,  8}, grav_northeast, &sbar_inventory},
+	{&sbar_sigils,        {  0, 0, 32, 16}, grav_southeast, &sbar_inventory},
+	{&sbar_items,         { 32, 0, 96, 16}, grav_southeast, &sbar_inventory},
+	{&sbar_armament,      {  0, 0,202, 24}, grav_northwest, &sbar_inventory},
+	{&sbar_weapons,       {  0, 0,192, 16}, grav_southwest, &sbar_armament},
+	{&sbar_miniammo,      {  0, 0, 32,  8}, grav_northwest, &sbar_armament},
+	{&sbar_statusbar,     {  0, 0,320, 24}, grav_southwest, &sbar_main},
+	{&sbar_armor,         {  0, 0, 96, 24}, grav_northwest, &sbar_statusbar},
+	{&sbar_face,          {112, 0, 24, 24}, grav_northwest, &sbar_statusbar},
+	{&sbar_health,        {136, 0, 72, 24}, grav_northwest, &sbar_statusbar},
+	{&sbar_ammo,          {224, 0, 96, 24}, grav_northwest, &sbar_statusbar},
+	{&sbar_tile[0],       {  0, 0,  0, 48}, grav_southwest, &sbar_main},
+	{&sbar_tile[1],       {  0, 0,  0, 48}, grav_southeast, &sbar_main},
+	{&sbar_solo,          {  0, 0,320, 24}, grav_southwest, &sbar_main},
+	{&sbar_solo_monsters, {  8, 4,136,  8}, grav_northwest, &sbar_solo},
+	{&sbar_solo_secrets,  {  8,12,136,  8}, grav_northwest, &sbar_solo},
+	{&sbar_solo_time,     {184, 4, 96,  8}, grav_northwest, &sbar_solo},
+	{&sbar_solo_anchor,   {232,12,  0,  8}, grav_northwest, &sbar_solo},
+	{&sbar_solo_name,     {  0, 0,  0,  8}, grav_center,    &sbar_solo_anchor},
+	{0, { 0, 0,  8, 16}, grav_northwest, &sbar_sigils,   4,  8, 0},
+	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_armor,    4, 24, 0},
+	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
+	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    6, 16, 0},
+	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
+	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   4, 24, 0},
+	{0, {10, 0, 24, 24}, grav_northwest, &sbar_miniammo, 4, 48, 0},
+
+	{}
+};
 
 static draw_charbuffer_t *time_buff;
 static draw_charbuffer_t *fps_buff;
@@ -1527,46 +1575,25 @@ sbar_hud_time_f (void *data, const cvar_t *cvar)
 static void
 init_sbar_views (void)
 {
-	sbar_main      = sbar_view ( 0, 0, 320, 48, grav_south, cl_screen_view);
-	sbar_inventory = sbar_view ( 0, 0, 320, 24, grav_northwest, sbar_main);
-	sbar_frags     = sbar_view ( 0, 0, 130,  8, grav_northeast, sbar_inventory);
-	sbar_sigils    = sbar_view ( 0, 0,  32, 16, grav_southeast, sbar_inventory);
-	sbar_items     = sbar_view (32, 0,  96, 16, grav_southeast, sbar_inventory);
-	sbar_armament  = sbar_view ( 0, 0, 202, 24, grav_northwest, sbar_inventory);
-	sbar_weapons   = sbar_view ( 0, 0, 192, 16, grav_southwest, sbar_armament);
-	sbar_miniammo  = sbar_view ( 0, 0,  32,  8, grav_northwest, sbar_armament);
-	sbar_statusbar = sbar_view ( 0, 0, 320, 24, grav_southwest, sbar_main);
-	sbar_armor     = sbar_view (  0, 0, 96, 24, grav_northwest, sbar_statusbar);
-	sbar_face      = sbar_view (112, 0, 24, 24, grav_northwest, sbar_statusbar);
-	sbar_health    = sbar_view (136, 0, 72, 24, grav_northwest, sbar_statusbar);
-	sbar_ammo      = sbar_view (224, 0, 96, 24, grav_northwest, sbar_statusbar);
-	sbar_tile[0]   = sbar_view ( 0, 0,   0, 48, grav_southwest, sbar_main);
-	sbar_tile[1]   = sbar_view ( 0, 0,   0, 48, grav_southeast, sbar_main);
-	sbar_solo      = sbar_view ( 0, 0, 320, 24, grav_southwest, sbar_main);
-	sbar_solo_monsters = sbar_view (  8,  4, 136, 8, grav_northwest, sbar_solo);
-	sbar_solo_secrets  = sbar_view (  8, 12, 136, 8, grav_northwest, sbar_solo);
-	sbar_solo_time     = sbar_view (184,  4,  96, 8, grav_northwest, sbar_solo);
-	sbar_solo_anchor   = sbar_view (232, 12,   0, 8, grav_northwest, sbar_solo);
-	sbar_solo_name     = sbar_view (0, 0, 0, 8, grav_center, sbar_solo_anchor);
-
-	for (int i = 0; i < 4; i++) {
-		sbar_view (i * 8, 0, 8, 16, grav_northwest, sbar_sigils);
-
-		sbar_view (i * 24, 0, 24, 24, grav_northwest, sbar_armor);
-		sbar_view (i * 24, 0, 24, 24, grav_northwest, sbar_ammo);
-	}
-	for (int i = 0; i < 6; i++) {
-		sbar_view (i * 16, 0, 16, 16, grav_northwest, sbar_items);
-	}
-	for (int i = 0; i < 7; i++) {
-		sbar_view (i * 24, 0, 24, 16, grav_northwest, sbar_weapons);
+	for (int i = 0; view_defs[i].view || view_defs[i].parent; i++) {
+		view_def_t *def = &view_defs[i];
+		view_t      parent = def->parent ? *def->parent : nullview;
+		int         x = def->rect.x;
+		int         y = def->rect.y;
+		int         w = def->rect.w;
+		int         h = def->rect.h;
+		if (def->view) {
+			*def->view = sbar_view (x, y, w, h, def->gravity, parent);
+		} else {
+			for (int j = 0; j < def->count; j++) {
+				sbar_view (x, y, w, h, def->gravity, parent);
+				x += def->xstep;
+				y += def->ystep;
+			}
+		}
 	}
 	for (int i = 0; i < 4; i++) {
-		sbar_view (i * 24, 0, 24, 16, grav_northwest, sbar_health);
-	}
-	for (int i = 0; i < 4; i++) {
-		view_t v = sbar_view (i * 48 + 10, 0, 8, 8, grav_northwest,
-							  sbar_miniammo);
+		view_t      v = View_GetChild (sbar_miniammo, i);
 		draw_charbuffer_t *buffer = Draw_CreateBuffer (3, 1);
 		sbar_setcomponent (v, hud_charbuff, &buffer);
 	}
