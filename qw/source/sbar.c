@@ -1620,10 +1620,10 @@ draw_stuff (view_t *view)
 		draw_net (view);
 }
 
+#if 0
 void
 Sbar_IntermissionOverlay (void)
 {
-#if 0
 	r_data->scr_copyeverything = 1;
 	r_data->scr_fullupdate = 0;
 
@@ -1631,8 +1631,8 @@ Sbar_IntermissionOverlay (void)
 		Sbar_TeamOverlay (hud_overlay_view);
 	else
 		Sbar_DeathmatchOverlay (hud_overlay_view, 0);
-#endif
 }
+#endif
 
 /* CENTER PRINTING */
 static dstring_t center_string = {&dstring_default_mem};

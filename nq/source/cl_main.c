@@ -231,6 +231,7 @@ CL_ClearMemory (void)
 	// wipe the entire cl structure
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	Sbar_Intermission (cl.intermission = 0);
 	cl.viewstate.camera_transform = cam;
 
 	CL_ClearTEnts ();
@@ -338,7 +339,7 @@ CL_Disconnect (void)
 	}
 
 	cl_world.scene->worldmodel = NULL;
-	cl.intermission = 0;
+	Sbar_Intermission (cl.intermission = 0);
 	cl.viewstate.intermission = 0;
 }
 

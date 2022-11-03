@@ -154,23 +154,15 @@ static SCR_Func scr_funcs_normal[] = {
 };
 
 static SCR_Func scr_funcs_intermission[] = {
-	Sbar_IntermissionOverlay,
+	HUD_Draw_Views,
 	Con_DrawConsole,
 	scr_draw_views,
 	0
 };
 
-static SCR_Func scr_funcs_finale[] = {
-	Sbar_FinaleOverlay,
-	Con_DrawConsole,
-	scr_draw_views,
-	0,
-};
-
 static SCR_Func *scr_funcs[] = {
 	scr_funcs_normal,
 	scr_funcs_intermission,
-	scr_funcs_finale,
 };
 
 static void

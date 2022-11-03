@@ -986,13 +986,13 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				cl.intermission = 1;
+				Sbar_Intermission (cl.intermission = 1);
 				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
 				break;
 
 			case svc_finale:
-				cl.intermission = 2;
+				Sbar_Intermission (cl.intermission = 2);
 				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);
@@ -1018,7 +1018,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cutscene:
-				cl.intermission = 3;
+				Sbar_Intermission (cl.intermission = 3);
 				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);

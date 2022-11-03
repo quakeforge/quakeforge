@@ -89,6 +89,11 @@ static view_t     sbar_solo_anchor;
 static view_t       sbar_solo_name;
 static view_t   sbar_tile[2];
 
+static view_t intermission_view;
+static view_t   intermission_time;
+static view_t   intermission_secr;
+static view_t   intermission_kill;
+
 typedef struct {
 	view_t     *view;
 	struct {
@@ -105,6 +110,23 @@ typedef struct {
 } view_def_t;
 
 static view_def_t view_defs[] = {
+	{&hud_overlay_view,  {  0, 0,320,200}, grav_center, &cl_screen_view},
+	{&intermission_view, {  0, 0,320,200}, grav_northwest, &hud_overlay_view},
+	{0, {64, 24, 24, 24}, grav_northwest, &intermission_view, 1, 0, 0},
+	{0, {0, 56, 24, 24}, grav_northwest, &intermission_view, 1, 0, 0},
+	{&intermission_time, {160,64,134,24}, grav_northwest, &intermission_view},
+	{0, {0, 0, 24, 24}, grav_northwest, &intermission_time, 3, 24, 0},
+	{0, {74, 0, 16, 24}, grav_northwest, &intermission_time, 1, 0, 0},
+	{0, {86, 0, 24, 24}, grav_northwest, &intermission_time, 2, 24, 0},
+	{&intermission_secr, {160,104,152,24}, grav_northwest, &intermission_view},
+	{0, {0, 0, 24, 24}, grav_northwest, &intermission_secr, 3, 24, 0},
+	{0, {72, 0, 16, 24}, grav_northwest, &intermission_secr, 1, 0, 0},
+	{0, {80, 0, 24, 24}, grav_northwest, &intermission_secr, 3, 24, 0},
+	{&intermission_kill, {160,144,152,24}, grav_northwest, &intermission_view},
+	{0, {0, 0, 24, 24}, grav_northwest, &intermission_kill, 3, 24, 0},
+	{0, {72, 0, 16, 24}, grav_northwest, &intermission_kill, 1, 0, 0},
+	{0, {80, 0, 24, 24}, grav_northwest, &intermission_kill, 3, 24, 0},
+
 	{&sbar_main,          {  0, 0,320, 48}, grav_south,     &cl_screen_view},
 	{&sbar_inventory,     {  0, 0,320, 24}, grav_northwest, &sbar_main},
 	{&sbar_frags,         {  0, 0,130,  8}, grav_northeast, &sbar_inventory},
@@ -1174,50 +1196,89 @@ draw_fps (view_t view)
 }
 
 static void
-draw_intermission (view_t *view)
+draw_intermission (view_t view)
 {
-#if 0
-	int         dig;
-	int         num;
+	const char *n;
 
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
+	n = "gfx/complete.lmp";
+	sbar_setcomponent (View_GetChild (view, 0), hud_cachepic, &n);
+	n = "gfx/inter.lmp";
+	sbar_setcomponent (View_GetChild (view, 1), hud_cachepic, &n);
 
-	draw_cachepic (view, 64, 24, "gfx/complete.lmp", 0);
+	view_t      time_views[] = {
+		View_GetChild (intermission_time, 0),
+		View_GetChild (intermission_time, 1),
+		View_GetChild (intermission_time, 2),
+		View_GetChild (intermission_time, 3),
+		View_GetChild (intermission_time, 4),
+		View_GetChild (intermission_time, 5),
+	};
+	int         dig = cl.completed_time / 60;
+	int         num = cl.completed_time - dig * 60;
+	draw_num (time_views + 0, dig, 3, 0);
+	sbar_setcomponent (time_views[3], hud_pic, &sb_colon);
+	draw_num (time_views + 4, num, 2, 0);
 
-	draw_cachepic (view, 0, 56, "gfx/inter.lmp", 0);
+	view_t      secr_views[] = {
+		View_GetChild (intermission_secr, 0),
+		View_GetChild (intermission_secr, 1),
+		View_GetChild (intermission_secr, 2),
+		View_GetChild (intermission_secr, 3),
+		View_GetChild (intermission_secr, 4),
+		View_GetChild (intermission_secr, 5),
+		View_GetChild (intermission_secr, 6),
+	};
+	draw_num (secr_views + 0, cl.stats[STAT_SECRETS], 3, 0);
+	sbar_setcomponent (secr_views[3], hud_pic, &sb_slash);
+	draw_num (secr_views + 4, cl.stats[STAT_TOTALSECRETS], 3, 0);
 
-	// time
-	dig = cl.completed_time / 60;
-	draw_num (view, 160, 64, dig, 3, 0);
-	num = cl.completed_time - dig * 60;
-	draw_pic (view, 234, 64, sb_colon);
-	draw_pic (view, 246, 64, sb_nums[0][num / 10]);
-	draw_pic (view, 266, 64, sb_nums[0][num % 10]);
-
-	draw_num (view, 160, 104, cl.stats[STAT_SECRETS], 3, 0);
-	draw_pic (view, 232, 104, sb_slash);
-	draw_num (view, 240, 104, cl.stats[STAT_TOTALSECRETS], 3, 0);
-
-	draw_num (view, 160, 144, cl.stats[STAT_MONSTERS], 3, 0);
-	draw_pic (view, 232, 144, sb_slash);
-	draw_num (view, 240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
-#endif
+	view_t      kill_views[] = {
+		View_GetChild (intermission_kill, 0),
+		View_GetChild (intermission_kill, 1),
+		View_GetChild (intermission_kill, 2),
+		View_GetChild (intermission_kill, 3),
+		View_GetChild (intermission_kill, 4),
+		View_GetChild (intermission_kill, 5),
+		View_GetChild (intermission_kill, 6),
+	};
+	draw_num (kill_views + 0, cl.stats[STAT_MONSTERS], 3, 0);
+	sbar_setcomponent (kill_views[3], hud_pic, &sb_slash);
+	draw_num (kill_views + 4, cl.stats[STAT_TOTALMONSTERS], 3, 0);
 }
 
+static void
+clear_views (view_t view)
+{
+	sbar_remcomponent (view, hud_cachepic);
+	sbar_remcomponent (view, hud_pic);
+
+	for (uint32_t i = 0; i < View_ChildCount (view); i++) {
+		clear_views (View_GetChild (view, i));
+	}
+}
+
+#if 0
 void
 Sbar_IntermissionOverlay (void)
 {
-#if 0
 	r_data->scr_copyeverything = 1;
 	r_data->scr_fullupdate = 0;
-
 	if (cl.gametype == GAME_DEATHMATCH) {
 		Sbar_DeathmatchOverlay (hud_overlay_view);
 		return;
 	}
-	draw_intermission (hud_overlay_view);
+	draw_intermission (intermission_view);
+}
 #endif
+
+void
+Sbar_Intermission (int mode)
+{
+	void       *f = clear_views;
+	if (mode == 1) {
+		f = draw_intermission;
+	}
+	sbar_setcomponent (intermission_view, hud_updateonce, &f);
 }
 
 /* CENTER PRINTING */
@@ -1453,7 +1514,6 @@ Sbar_Draw (void)
 		draw_miniteam (0);
 		draw_minifrags (0);
 		draw_overlay (0);
-		draw_intermission (0);
 		Sbar_DeathmatchOverlay (0);
 		sbar_update_vis ();
 	}
@@ -1595,6 +1655,7 @@ init_sbar_views (void)
 	for (int i = 0; i < 4; i++) {
 		view_t      v = View_GetChild (sbar_miniammo, i);
 		draw_charbuffer_t *buffer = Draw_CreateBuffer (3, 1);
+		Draw_ClearBuffer (buffer);
 		sbar_setcomponent (v, hud_charbuff, &buffer);
 	}
 

@@ -209,9 +209,9 @@ hud_swap_f (void *data, const cvar_t *cvar)
 static void
 hud_scoreboard_gravity_f (void *data, const cvar_t *cvar)
 {
-#if 0//XXX
-	view_setgravity (hud_overlay_view, hud_scoreboard_gravity);
-#endif
+	if (View_Valid (hud_overlay_view)) {
+		View_SetGravity (hud_overlay_view, hud_scoreboard_gravity);
+	}
 }
 
 void

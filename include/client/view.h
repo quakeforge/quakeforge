@@ -65,15 +65,15 @@ typedef struct viewstate_s {
 	float       height;
 	int         weaponframe;
 	int         onground;		// -1 when in air
-	int         active:1;
-	int         loading:1;
-	int         watervis:1;
-	int         demoplayback:1;
-	int         drift_enabled:1;
-	int         voffs_enabled:1;
-	int         bob_enabled:1;
-	int         intermission:1;
-	int         decay_punchangle:1;
+	unsigned    active:1;
+	unsigned    loading:1;
+	unsigned    watervis:1;
+	unsigned    demoplayback:1;
+	unsigned    drift_enabled:1;
+	unsigned    voffs_enabled:1;
+	unsigned    bob_enabled:1;
+	unsigned    intermission:1;
+	unsigned    decay_punchangle:1;
 	int         force_cshifts;	// bitfield of server enforced cshifts
 	uint32_t    flags;
 
