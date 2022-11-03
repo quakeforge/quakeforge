@@ -33,7 +33,7 @@
 
 #define	SBAR_HEIGHT		24
 
-extern int sb_lines;	// scan lines to draw
+//extern int sb_lines;	// scan lines to draw
 
 void Sbar_Init (void);
 

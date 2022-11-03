@@ -81,8 +81,18 @@ static view_t     sbar_armor;
 static view_t     sbar_face;
 static view_t     sbar_health;
 static view_t     sbar_ammo;
-//static view_t   sbar_status;
+static view_t   sbar_solo;
+static view_t     sbar_solo_monsters;
+static view_t     sbar_solo_secrets;
+static view_t     sbar_solo_time;
+static view_t     sbar_solo_anchor;
+static view_t       sbar_solo_name;
 static view_t sbar_tile[2];
+
+static draw_charbuffer_t *solo_monsters;
+static draw_charbuffer_t *solo_secrets;
+static draw_charbuffer_t *solo_time;
+static draw_charbuffer_t *solo_name;
 
 static view_t
 sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
@@ -121,43 +131,43 @@ sbar_remcomponent (view_t view, uint32_t comp)
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
 
-qpic_t     *sb_nums[2][11];
-qpic_t     *sb_colon, *sb_slash;
-qpic_t     *sb_ibar;
-qpic_t     *sb_sbar;
-qpic_t     *sb_scorebar;
+static qpic_t *sb_nums[2][11];
+static qpic_t *sb_colon, *sb_slash;
+static qpic_t *sb_ibar;
+static qpic_t *sb_sbar;
+static qpic_t *sb_scorebar;
 
-qpic_t     *sb_weapons[7][8];		// 0 is active, 1 is owned, 2-5 are flashes
-qpic_t     *sb_ammo[4];
-qpic_t     *sb_sigil[4];
-qpic_t     *sb_armor[3];
-qpic_t     *sb_items[32];
+static qpic_t *sb_weapons[7][8];	// 0 is active, 1 is owned, 2-5 are flashes
+static qpic_t *sb_ammo[4];
+static qpic_t *sb_sigil[4];
+static qpic_t *sb_armor[3];
+static qpic_t *sb_items[32];
 
-qpic_t     *sb_faces[7][2];			// 0 is gibbed, 1 is dead, 2-6 are alive
+static qpic_t *sb_faces[7][2];		// 0 is gibbed, 1 is dead, 2-6 are alive
 									// 0 is static, 1 is temporary animation
-qpic_t     *sb_face_invis;
-qpic_t     *sb_face_quad;
-qpic_t     *sb_face_invuln;
-qpic_t     *sb_face_invis_invuln;
+static qpic_t *sb_face_invis;
+static qpic_t *sb_face_quad;
+static qpic_t *sb_face_invuln;
+static qpic_t *sb_face_invis_invuln;
 
-qboolean    sb_showscores;
+static qboolean sb_showscores;
 
-int         sb_lines;				// scan lines to draw
+static int sb_lines;				// scan lines to draw
 
-qpic_t     *rsb_invbar[2];
-qpic_t     *rsb_weapons[5];
-qpic_t     *rsb_items[2];
-qpic_t     *rsb_ammo[3];
-qpic_t     *rsb_teambord;			// PGM 01/19/97 - team color border
+static qpic_t *rsb_invbar[2];
+static qpic_t *rsb_weapons[5];
+static qpic_t *rsb_items[2];
+static qpic_t *rsb_ammo[3];
+static qpic_t *rsb_teambord;		// PGM 01/19/97 - team color border
 
 								// MED 01/04/97 added two more weapons + 3
 								// alternates for grenade launcher
-qpic_t     *hsb_weapons[7][5];	// 0 is active, 1 is owned, 2-5 are flashes
+static qpic_t *hsb_weapons[7][5];	// 0 is active, 1 is owned, 2-5 are flashes
 
 								// MED 01/04/97 added array to simplify
 								// weapon parsing
-int         hipweapons[4] =
-	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
+//static int hipweapons[4] =
+//	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
 float scr_centertime;
@@ -194,23 +204,6 @@ static int __attribute__((used))
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
-}
-
-static void
-Sbar_ShowScores (void)
-{
-	if (sb_showscores)
-		return;
-
-	sb_showscores = true;
-	sb_updates = 0;
-}
-
-static void
-Sbar_DontShowScores (void)
-{
-	sb_showscores = false;
-	sb_updates = 0;
 }
 
 void
@@ -504,35 +497,45 @@ Sbar_SortTeams (void)
 	}
 }
 
-static void __attribute__((used))
-draw_solo (view_t *view)
+static int
+write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
 {
-#if 0
-	char        str[80];
-	int         minutes, seconds;
-	int         l;
+	char       *dst = buffer->chars;
+	int         count = buffer->width - x;
+	int         chars = 0;
+	dst += y * buffer->width + x;
+	while (*str && count-- > 0) {
+		*dst++ = *str++;
+		chars++;
+	}
+	while (count-- > 0) {
+		*dst++ = ' ';
+	}
+	return chars;
+}
 
-	draw_pic (view, 0, 0, sb_scorebar);
+static void
+draw_solo_time (void)
+{
+	int         minutes = cl.time / 60;
+	int         seconds = cl.time - 60 * minutes;
+	write_charbuff (solo_time, 0, 0,
+					va (0, "Time :%3i:%02i", minutes, seconds));
+}
 
-	snprintf (str, sizeof (str), "Monsters:%3i /%3i", cl.stats[STAT_MONSTERS],
-			  cl.stats[STAT_TOTALMONSTERS]);
-	draw_string (view, 8, 4, str);
-
-	snprintf (str, sizeof (str), "Secrets :%3i /%3i", cl.stats[STAT_SECRETS],
-			  cl.stats[STAT_TOTALSECRETS]);
-	draw_string (view, 8, 12, str);
-
-	// time
-	minutes = cl.time / 60;
-	seconds = cl.time - 60 * minutes;
-	snprintf (str, sizeof (str), "Time :%3i:%02i", minutes, seconds);
-	draw_string (view, 184, 4, str);
-
-	// draw level name
-	l = strlen (cl.levelname);
-	l = 232 - l * 4;
-	draw_string (view, max (l, 152), 12, cl.levelname);
-#endif
+static void
+draw_solo (void)
+{
+	write_charbuff (solo_monsters, 0, 0,
+					va (0, "Monsters:%3i /%3i",
+						cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]));
+	write_charbuff (solo_secrets, 0, 0,
+					va (0, "Secrets :%3i /%3i",
+						cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]));
+	draw_solo_time ();
+	view_pos_t len = View_GetLen (sbar_solo_name);
+	len.x = 8 * write_charbuff (solo_name, 0, 0, cl.levelname);
+	View_SetLen (sbar_solo_name, len.x, len.y);
 }
 
 static void
@@ -1425,6 +1428,9 @@ Sbar_Draw (void)
 	if (sb_update_flags & ((1 << sbc_health) | (1 << sbc_items))) {
 		draw_face (sbar_face);
 	}
+	if (sb_showscores) {
+		draw_solo_time ();
+	}
 #if 0
 	sbar_update_vis ();
 	hud_main_view->draw (hud_main_view);
@@ -1521,6 +1527,12 @@ init_sbar_views (void)
 	sbar_ammo      = sbar_view (224, 0, 96, 24, grav_northwest, sbar_statusbar);
 	sbar_tile[0]   = sbar_view ( 0, 0,   0, 48, grav_southwest, sbar_main);
 	sbar_tile[1]   = sbar_view ( 0, 0,   0, 48, grav_southeast, sbar_main);
+	sbar_solo      = sbar_view ( 0, 0, 320, 24, grav_southwest, sbar_main);
+	sbar_solo_monsters = sbar_view (  8,  4, 136, 8, grav_northwest, sbar_solo);
+	sbar_solo_secrets  = sbar_view (  8, 12, 136, 8, grav_northwest, sbar_solo);
+	sbar_solo_time     = sbar_view (184,  4,  96, 8, grav_northwest, sbar_solo);
+	sbar_solo_anchor   = sbar_view (232, 12,   0, 8, grav_northwest, sbar_solo);
+	sbar_solo_name     = sbar_view (0, 0, 0, 8, grav_center, sbar_solo_anchor);
 
 	for (int i = 0; i < 4; i++) {
 		sbar_view (i * 8, 0, 8, 16, grav_northwest, sbar_sigils);
@@ -1556,6 +1568,11 @@ init_sbar_views (void)
 		sbar_setcomponent (sbar_tile[0], hud_tile, 0);
 		sbar_setcomponent (sbar_tile[1], hud_tile, 0);
 	}
+
+	solo_monsters = Draw_CreateBuffer (17, 1);
+	solo_secrets = Draw_CreateBuffer (17, 1);
+	solo_time = Draw_CreateBuffer (12, 1);
+	solo_name = Draw_CreateBuffer (20, 1);
 }
 
 static void
@@ -1980,11 +1997,6 @@ load_pics (void)
 	sb_face_invis_invuln = r_funcs->Draw_PicFromWad ("face_inv2");
 	sb_face_quad = r_funcs->Draw_PicFromWad ("face_quad");
 
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
-					"Display information on everyone playing");
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
-					"Stop displaying information on everyone playing");
-
 	sb_sbar = r_funcs->Draw_PicFromWad ("sbar");
 	sb_ibar = r_funcs->Draw_PicFromWad ("ibar");
 	sb_scorebar = r_funcs->Draw_PicFromWad ("scorebar");
@@ -2044,6 +2056,41 @@ load_pics (void)
 	}
 }
 
+static void
+Sbar_ShowScores (void)
+{
+	if (sb_showscores)
+		return;
+
+	sb_showscores = true;
+	sb_updates = 0;
+
+	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
+	sbar_setcomponent (sbar_solo_monsters, hud_charbuff, &solo_monsters);
+	sbar_setcomponent (sbar_solo_secrets, hud_charbuff, &solo_secrets);
+	sbar_setcomponent (sbar_solo_time, hud_charbuff, &solo_time);
+	sbar_setcomponent (sbar_solo_name, hud_charbuff, &solo_name);
+
+	draw_solo ();
+	View_UpdateHierarchy (sbar_solo);
+}
+
+static void
+Sbar_DontShowScores (void)
+{
+	if (!sb_showscores)
+		return;
+
+	sb_showscores = false;
+	sb_updates = 0;
+
+	sbar_remcomponent (sbar_solo, hud_pic);
+	sbar_remcomponent (sbar_solo_monsters, hud_charbuff);
+	sbar_remcomponent (sbar_solo_secrets, hud_charbuff);
+	sbar_remcomponent (sbar_solo_time, hud_charbuff);
+	sbar_remcomponent (sbar_solo_name, hud_charbuff);
+}
+
 void
 Sbar_Init (void)
 {
@@ -2054,6 +2101,11 @@ Sbar_Init (void)
 	load_pics ();
 	init_views ();
 	View_UpdateHierarchy (sbar_main);
+
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
+					"Display information on everyone playing");
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
+					"Stop displaying information on everyone playing");
 
 	r_data->viewsize_callback = viewsize_f;
 	Cvar_Register (&scr_centertime_cvar, 0, 0);
