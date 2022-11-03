@@ -552,8 +552,9 @@ main (void)
 	gl_FragColor = fogBlend (col);
 }
 
--- Vertex.fstri
+-- version.130
 #version 130
+-- Vertex.fstri
 
 out vec2 uv;
 
@@ -582,8 +583,9 @@ const vec2 B = vec2 (1, 1);
 void
 main ()
 {
-	uv = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
-	vec4        c = texture2D (screenTex, uv);
+	vec2 st;
+	st = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
+	vec4        c = texture2D (screenTex, st);
 	gl_FragColor = c;//vec4(uv, c.x, 1);
 }
 
