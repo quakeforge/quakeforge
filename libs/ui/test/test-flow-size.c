@@ -4,7 +4,21 @@
 #include <stdio.h>
 
 #include "QF/ui/view.h"
-#if 0
+
+static ecs_registry_t *test_reg;
+
+enum {
+	test_href,
+};
+
+static const component_t test_components[] = {
+	[test_href] = {
+		.size = sizeof (hierref_t),
+		.create = 0,//create_href,
+		.name = "href",
+	},
+};
+
 typedef struct {
 	struct {
 		int         xlen, ylen;
@@ -194,50 +208,66 @@ static testdata_t up_left_views[] = {
 #define up_left_count array_size(up_left_views)
 
 static void
-print_view (view_t *view)
+print_view (view_t view)
 {
+	view_t      parent = View_GetParent (view);
+	view_pos_t  pos = View_GetPos (view);
+	view_pos_t  len = View_GetLen (view);
+	view_pos_t  rel = View_GetRel (view);
+	view_pos_t  abs = View_GetAbs (view);
 	printf ("%s[%3d %3d %3d %3d %3d %3d %3d %3d]\n",
-			view->parent ? "    " : "****",
-			view->xpos, view->ypos, view->xlen, view->ylen,
-			view->xrel, view->yrel, view->xabs, view->yabs);
-	view_draw (view);
+			View_Valid (parent) ? "    " : "****",
+			pos.x, pos.y, len.x, len.y, rel.x, rel.y, abs.x, abs.y);
 }
 
 static int
-test_flow (testdata_t *child_views, int count, void (*flow) (view_t *))
+test_flow (testdata_t *child_views, int count, void (flow) (view_t, view_pos_t))
 {
-	view_t     *flow_view = view_new (0, 0, 256, 256, grav_northwest);
-	flow_view->setgeometry = flow;
-	flow_view->flow_size = 1;
-	flow_view->draw = print_view;
+	view_t      flow_view = View_New (test_reg, nullview);
+	View_SetPos (flow_view, 0, 0);
+	View_SetLen (flow_view, 256, 256);
+	View_SetGravity (flow_view, grav_northwest);
+	View_SetOnResize (flow_view, flow);
+	View_Control (flow_view)->flow_size = 1;
 
 	for (int i = 0; i < count; i++) {
 		testdata_t *td = &child_views[i];
-		view_t     *child = view_new (0, 0, td->xlen, td->ylen, grav_flow);
-		child->bol_suppress = td->bol_suppress;
-		child->draw = print_view;
-		view_add (flow_view, child);
+		view_t      child = View_New (test_reg, flow_view);
+		View_SetPos (child, 0, 0);
+		View_SetLen (child, td->xlen, td->ylen);
+		View_SetGravity (child, grav_flow);
+		View_Control (child)->bol_suppress = td->bol_suppress;
 	}
 
-	view_move (flow_view, 8, 16);
-	int         ret = 0;
+	View_SetPos (flow_view, 8, 16);
+	View_UpdateHierarchy (flow_view);
 
-	for (int i = 0; i < flow_view->num_children; i++) {
+	int         ret = 0;
+	__auto_type ref = View_GetRef (flow_view);
+	hierarchy_t *h = ref->hierarchy;
+	uint32_t   *childIndex = h->childIndex;
+	uint32_t   *childCount = h->childCount;
+	uint32_t   *ent = h->ent;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *abs = h->components[view_abs];
+	for (uint32_t i = 0; i < childCount[ref->index]; i++) {
 		testdata_t *td = &child_views[i];
-		view_t     *child = flow_view->children[i];
-		if (child->xpos != td->expect.xpos
-			|| child->ypos != td->expect.ypos
-			|| child->xrel != td->expect.xrel
-			|| child->yrel != td->expect.yrel
-			|| child->xabs != td->expect.xabs
-			|| child->yabs != td->expect.yabs) {
+		uint32_t    child = childIndex[ref->index] + i;
+		if (pos[child].x != td->expect.xpos
+			|| pos[child].y != td->expect.ypos
+			|| rel[child].x != td->expect.xrel
+			|| rel[child].y != td->expect.yrel
+			|| abs[child].x != td->expect.xabs
+			|| abs[child].y != td->expect.yabs) {
 			ret = 1;
 			printf ("child %d misflowed:\n"
 					"    [%3d %3d         %3d %3d %3d %3d]\n", i,
 					td->expect.xpos, td->expect.ypos,
 					td->expect.xrel, td->expect.yrel,
 					td->expect.xabs, td->expect.yabs);
-			print_view (child);
+			print_view ((view_t) { .reg = test_reg, .id = ent[child],
+									.comp = flow_view.comp});
 		}
 	}
 	return ret;
@@ -247,6 +277,10 @@ int
 main (void)
 {
 	int         ret = 0;
+
+	test_reg = ECS_NewRegistry ();
+	ECS_RegisterComponents (test_reg, test_components, 1);
+	test_reg->href_comp = test_href;
 
 	if (test_flow (right_down_views, right_down_count, view_flow_right_down)) {
 		printf ("right-down failed\n");
@@ -282,12 +316,4 @@ main (void)
 		ret = 1;
 	}
 	return ret;
-}
-#endif
-
-int
-main (void)
-{
-	printf ("FIXME: redo for ECS\n");
-	return 1;
 }

@@ -127,6 +127,15 @@ view_t View_New (ecs_registry_t *reg, view_t parent);
 void View_SetParent (view_t view, view_t parent);
 void View_UpdateHierarchy (view_t view);
 
+void view_flow_right_down (view_t view, view_pos_t len);
+void view_flow_right_up (view_t view, view_pos_t len);
+void view_flow_left_down (view_t view, view_pos_t len);
+void view_flow_left_up (view_t view, view_pos_t len);
+void view_flow_down_right (view_t view, view_pos_t len);
+void view_flow_up_right (view_t view, view_pos_t len);
+void view_flow_down_left (view_t view, view_pos_t len);
+void view_flow_up_left (view_t view, view_pos_t len);
+
 VIEWINLINE hierref_t *View_GetRef (view_t view);
 VIEWINLINE int View_Valid (view_t view);
 
@@ -140,6 +149,7 @@ VIEWINLINE view_pos_t View_GetAbs (view_t view);
 VIEWINLINE view_pos_t View_GetRel (view_t view);
 VIEWINLINE void View_SetLen (view_t view, int x, int y);
 VIEWINLINE view_pos_t View_GetLen (view_t view);
+VIEWINLINE viewcont_t* View_Control (view_t view);
 VIEWINLINE void View_SetGravity (view_t view, grav_t grav);
 VIEWINLINE grav_t View_GetGravity (view_t view);
 VIEWINLINE void View_SetVisible (view_t view, int visible);
@@ -277,6 +287,16 @@ View_GetLen (view_t view)
 	hierarchy_t *h = ref->hierarchy;
 	view_pos_t *len = h->components[view_len];
 	return len[ref->index];
+}
+
+VIEWINLINE
+viewcont_t *
+View_Control (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	return &cont[ref->index];
 }
 
 VIEWINLINE

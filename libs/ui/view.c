@@ -173,9 +173,16 @@ View_UpdateHierarchy (view_t view)
 	uint32_t   *id = h->ent;
 
 	if (abs[0].x != pos[0].x || abs[0].y != pos[0].y) {
-		modified[0] = 1;
+		modified[0] |= 1;
 		abs[0] = pos[0];
 		rel[0] = pos[0];
+	}
+	if (oldlen[0].x != len[0].x || oldlen[0].y != len[0].y) {
+		modified[0] |= 2;
+		if (onresize[0]) {
+			view_t      v = { .reg = view.reg, .id = id[0], .comp = view.comp };
+			onresize[0] (v, len[0]);
+		}
 	}
 	for (uint32_t i = 1; i < h->num_objects; i++) {
 		uint32_t    par = parent[i];
@@ -190,6 +197,11 @@ View_UpdateHierarchy (view_t view)
 			}
 			if (cont[i].resize_y) {
 				len[i].y += dy;
+			}
+			if (onresize[i]) {
+				view_t      v = { .reg = view.reg, .id = id[i],
+								  .comp = view.comp };
+				onresize[i] (v, len[i]);
 			}
 		}
 		if (modified[i] || modified[par]) {
@@ -239,16 +251,12 @@ View_UpdateHierarchy (view_t view)
 		}
 	}
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		if ((modified[i] & 2) && onresize[i]) {
-			view_t      v = { .reg = view.reg, .id = id[i], .comp = view.comp };
-			onresize[i] (v, len[i]);
-		}
 		if (modified[i] & 2) {
 			oldlen[i] = len[i];
 		}
 		if ((modified[i] & 1) && onmove[i]) {
 			view_t      v = { .reg = view.reg, .id = id[i], .comp = view.comp };
-			onresize[i] (v, abs[i]);
+			onmove[i] (v, abs[i]);
 		}
 		modified[i] = 0;
 	}
@@ -289,213 +297,6 @@ View_SetParent (view_t view, view_t parent)
 	modified[ref->index] = 1;
 	View_UpdateHierarchy (view);
 }
-#if 0
-static void
-setgeometry (view_t *view)
-{
-	int         i;
-	view_t     *par = view->parent;
-
-	if (!par) {
-		view->xabs = view->xrel = view->xpos;
-		view->yabs = view->yrel = view->ypos;
-		if (view->setgeometry)
-			view->setgeometry (view);
-		for (i = 0; i < view->num_children; i++)
-			setgeometry (view->children[i]);
-		return;
-	}
-
-	switch (view->gravity) {
-		case grav_center:
-			view->xrel = view->xpos + (par->xlen - view->xlen) / 2;
-			view->yrel = view->ypos + (par->ylen - view->ylen) / 2;
-			break;
-		case grav_north:
-			view->xrel = view->xpos + (par->xlen - view->xlen) / 2;
-			view->yrel = view->ypos;
-			break;
-		case grav_northeast:
-			view->xrel = par->xlen - view->xpos - view->xlen;
-			view->yrel = view->ypos;
-			break;
-		case grav_east:
-			view->xrel = par->xlen - view->xpos - view->xlen;
-			view->yrel = view->ypos + (par->ylen - view->ylen) / 2;
-			break;
-		case grav_southeast:
-			view->xrel = par->xlen - view->xpos - view->xlen;
-			view->yrel = par->ylen - view->ypos - view->ylen;
-			break;
-		case grav_south:
-			view->xrel = view->xpos + (par->xlen - view->xlen) / 2;
-			view->yrel = par->ylen - view->ypos - view->ylen;
-			break;
-		case grav_southwest:
-			view->xrel = view->xpos;
-			view->yrel = par->ylen - view->ypos - view->ylen;
-			break;
-		case grav_west:
-			view->xrel = view->xpos;
-			view->yrel = view->ypos + (par->ylen - view->ylen) / 2;
-			break;
-		case grav_northwest:
-			view->xrel = view->xpos;
-			view->yrel = view->ypos;
-			break;
-		case grav_flow:
-			break;
-	}
-	view->xabs = par->xabs + view->xrel;
-	view->yabs = par->yabs + view->yrel;
-	if (view->setgeometry)
-		view->setgeometry (view);
-	for (i = 0; i < view->num_children; i++)
-		setgeometry (view->children[i]);
-}
-
-VISIBLE view_t *
-view_new_data (int xp, int yp, int xl, int yl, grav_t grav, void *data)
-{
-	view_t     *view = calloc (1, sizeof (view_t));
-	view->xpos = xp;
-	view->ypos = yp;
-	view->xlen = xl;
-	view->ylen = yl;
-	view->gravity = grav;
-	view->visible = 1;
-	view->draw = view_draw;
-	view->data = data;
-	setgeometry (view);
-	return view;
-}
-
-VISIBLE view_t *
-view_new (int xp, int yp, int xl, int yl, grav_t grav)
-{
-	return view_new_data (xp, yp, xl, yl, grav, 0);
-}
-
-VISIBLE void
-view_insert (view_t *par, view_t *view, int pos)
-{
-	view->parent = par;
-	if (pos < 0)
-		pos = par->num_children + 1 + pos;
-	if (pos < 0)
-		pos = 0;
-	if (pos > par->num_children)
-		pos = par->num_children;
-	if (par->num_children == par->max_children) {
-		par->max_children += 8;
-		par->children = realloc (par->children,
-								 par->max_children * sizeof (view_t *));
-		memset (par->children + par->num_children, 0,
-				(par->max_children - par->num_children) * sizeof (view_t *));
-	}
-	memmove (par->children + pos + 1, par->children + pos,
-			 (par->num_children - pos) * sizeof (view_t *));
-	par->num_children++;
-	par->children[pos] = view;
-	setgeometry (view);
-}
-
-VISIBLE void
-view_add (view_t *par, view_t *view)
-{
-	view_insert (par, view, -1);
-}
-
-VISIBLE void
-view_remove (view_t *par, view_t *view)
-{
-	int        i;
-
-	for (i = 0; i < par->num_children; i++) {
-		if (par->children[i] == view) {
-			memmove (par->children + i, par->children + i + 1,
-					 (par->num_children - i - 1) * sizeof (view_t *));
-			par->children [--par->num_children] = 0;
-			break;
-		}
-	}
-}
-
-VISIBLE void
-view_delete (view_t *view)
-{
-	if (view->parent)
-		view_remove (view->parent, view);
-	while (view->num_children)
-		view_delete (view->children[0]);
-	free (view->children);
-	free (view);
-}
-
-VISIBLE void
-view_draw (view_t *view)
-{
-	int         i;
-
-	for (i = 0; i < view->num_children; i++) {
-		view_t     *v = view->children[i];
-		if (v->visible && v->draw)
-			v->draw (v);
-	}
-}
-
-static void
-_resize (view_t *view, int xl, int yl)
-{
-	int         i, xd, yd;
-
-	xd = xl - view->xlen;
-	yd = yl - view->ylen;
-	view->xlen = xl;
-	view->ylen = yl;
-	for (i = 0; i < view->num_children; i++) {
-		view_t     *v = view->children[i];
-
-		if (v->resize_x && v->resize_y) {
-			_resize (v, v->xlen + xd, v->ylen + yd);
-		} else if (v->resize_x) {
-			_resize (v, v->xlen + xd, v->ylen);
-		} else if (v->resize_y) {
-			_resize (v, v->xlen, v->ylen + yd);
-		}
-	}
-}
-
-VISIBLE void
-view_resize (view_t *view, int xl, int yl)
-{
-	_resize (view, xl, yl);
-	setgeometry (view);
-}
-
-VISIBLE void
-view_move (view_t *view, int xp, int yp)
-{
-	view->xpos = xp;
-	view->ypos = yp;
-	setgeometry (view);
-}
-
-VISIBLE void
-view_setgeometry (view_t *view, int xp, int yp, int xl, int yl)
-{
-	view->xpos = xp;
-	view->ypos = yp;
-	_resize (view, xl, yl);
-	setgeometry (view);
-}
-
-VISIBLE void
-view_setgravity (view_t *view, grav_t grav)
-{
-	view->gravity = grav;
-	setgeometry (view);
-}
 
 typedef struct flowline_s {
 	struct flowline_s *next;
@@ -514,224 +315,287 @@ typedef struct flowline_s {
 	} while (0)
 
 static void
-flow_right (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+flow_right (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	flowline_t  flowline = {};
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
 	flowline_t *line = &flowline;
-	for (int i = 0; i < view->num_children; i++) {
-		view_t     *child = view->children[i];
-		if (line->cursor && line->cursor + child->xlen > view->xlen) {
-			NEXT_LINE(line, i);
+	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
+		uint32_t    child = h->childIndex[vind] + i;
+		if (line->cursor && line->cursor + len[child].x > len[vind].x) {
+			NEXT_LINE(line, child);
 		}
-		child->xpos = line->cursor;
-		if (child->xpos || !child->bol_suppress) {
-			line->cursor += child->xlen;
+		pos[child].x = line->cursor;
+		if (pos[child].x || !cont[child].bol_suppress) {
+			line->cursor += len[child].x;
 		}
-		line->height = max (child->ylen, line->height);
+		line->height = max (len[child].y, line->height);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
 }
 
 static void
-flow_left (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+flow_left (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	flowline_t  flowline = {};
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
 	flowline_t *line = &flowline;
-	line->cursor = view->xlen;
-	for (int i = 0; i < view->num_children; i++) {
-		view_t     *child = view->children[i];
-		if (line->cursor < view->xlen && line->cursor - child->xlen < 0) {
-			NEXT_LINE(line, i);
-			line->cursor = view->xlen;
+	line->cursor = len[vind].x;
+	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
+		uint32_t    child = h->childIndex[ref->index] + i;
+		if (line->cursor < len[vind].x && line->cursor - len[child].x < 0) {
+			NEXT_LINE(line, child);
+			line->cursor = len[vind].x;
 		}
-		if (child->xpos < view->xlen || !child->bol_suppress) {
-			line->cursor -= child->xlen;
+		if (pos[child].x < len[vind].x || !cont[child].bol_suppress) {
+			line->cursor -= len[child].x;
 		}
-		child->xpos = line->cursor;
-		line->height = max (child->ylen, line->height);
+		pos[child].x = line->cursor;
+		line->height = max (len[child].y, line->height);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
 }
 
 static void
-flow_down (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+flow_down (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	flowline_t  flowline = {};
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
 	flowline_t *line = &flowline;
-	for (int i = 0; i < view->num_children; i++) {
-		view_t     *child = view->children[i];
-		if (line->cursor && line->cursor + child->ylen > view->ylen) {
-			NEXT_LINE(line, i);
+	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
+		uint32_t    child = h->childIndex[vind] + i;
+		if (line->cursor && line->cursor + len[child].y > len[vind].y) {
+			NEXT_LINE(line, child);
 		}
-		child->ypos = line->cursor;
-		if (child->ypos || !child->bol_suppress) {
-			line->cursor += child->ylen;
+		pos[child].y = line->cursor;
+		if (pos[child].y || !cont[child].bol_suppress) {
+			line->cursor += len[child].y;
 		}
-		line->height = max (child->xlen, line->height);
+		line->height = max (len[child].x, line->height);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
 }
 
 static void
-flow_up (view_t *view, void (*set_rows) (view_t *, flowline_t *))
+flow_up (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	flowline_t  flowline = {};
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
 	flowline_t *line = &flowline;
-	line->cursor = view->ylen;
-	for (int i = 0; i < view->num_children; i++) {
-		view_t     *child = view->children[i];
-		if (line->cursor < view->ylen && line->cursor - child->ylen < 0) {
-			NEXT_LINE(line, i);
-			line->cursor = view->ylen;
+	line->cursor = len[vind].y;
+	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
+		uint32_t    child = h->childIndex[ref->index] + i;
+		if (line->cursor < len[vind].y && line->cursor - len[child].y < 0) {
+			NEXT_LINE(line, child);
+			line->cursor = len[vind].y;
 		}
-		if (child->ypos < view->ylen || !child->bol_suppress) {
-			line->cursor -= child->ylen;
+		if (pos[child].y < len[vind].y || !cont[child].bol_suppress) {
+			line->cursor -= len[child].y;
 		}
-		child->ypos = line->cursor;
-		line->height = max (child->xlen, line->height);
+		pos[child].y = line->cursor;
+		line->height = max (len[child].x, line->height);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
 }
 
 static void
-flow_view_height (view_t *view, flowline_t *flowlines)
+flow_view_height (view_pos_t *len, flowline_t *flowlines)
 {
-	if (view->flow_size) {
-		view->ylen = 0;
-		for (flowline_t *line = flowlines; line; line = line->next) {
-			view->ylen += line->height;
-		}
+	len->y = 0;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		len->y += line->height;
 	}
 }
 
 static void
-flow_view_width (view_t *view, flowline_t *flowlines)
+flow_view_width (view_pos_t *len, flowline_t *flowlines)
 {
-	if (view->flow_size) {
-		view->xlen = 0;
-		for (flowline_t *line = flowlines; line; line = line->next) {
-			view->xlen += line->height;
-		}
+	len->x = 0;
+	for (flowline_t *line = flowlines; line; line = line->next) {
+		len->x += line->height;
 	}
 }
 
 static void
-set_rows_down (view_t *view, flowline_t *flowlines)
+set_rows_down (view_t view, flowline_t *flowlines)
 {
-	flow_view_height (view, flowlines);
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	if (cont[vind].flow_size) {
+		flow_view_height (&len[ref->index], flowlines);
+	}
 
 	int         cursor = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		cursor += line->height;
 		for (int i = 0; i < line->child_count; i++) {
-			view_t     *child = view->children[line->first_child + i];
+			uint32_t    child = line->first_child + i;
 
-			child->xrel = child->xpos;
-			child->yrel = cursor + child->ypos - child->ylen;
+			rel[child].x = pos[child].x;
+			rel[child].y = cursor + pos[child].y - len[child].y;
 		}
 	}
 }
 
 static void
-set_rows_up (view_t *view, flowline_t *flowlines)
+set_rows_up (view_t view, flowline_t *flowlines)
 {
-	flow_view_height (view, flowlines);
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
 
-	int         cursor = view->ylen;
+	if (cont[vind].flow_size) {
+		flow_view_height (&len[ref->index], flowlines);
+	}
+
+	int         cursor = len[vind].y;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		for (int i = 0; i < line->child_count; i++) {
-			view_t     *child = view->children[line->first_child + i];
+			uint32_t    child = line->first_child + i;
 
-			child->xrel = child->xpos;
-			child->yrel = cursor + child->ypos - child->ylen;
+			rel[child].x = pos[child].x;
+			rel[child].y = cursor + pos[child].y - len[child].y;
 		}
 		cursor -= line->height;
 	}
 }
 
 static void
-set_columns_right (view_t *view, flowline_t *flowlines)
+set_columns_right (view_t view, flowline_t *flowlines)
 {
-	flow_view_width (view, flowlines);
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
+
+	if (cont[vind].flow_size) {
+		flow_view_width (&len[ref->index], flowlines);
+	}
 
 	int         cursor = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		for (int i = 0; i < line->child_count; i++) {
-			view_t     *child = view->children[line->first_child + i];
+			uint32_t    child = line->first_child + i;
 
-			child->xrel = cursor + child->xpos;
-			child->yrel = child->ypos;
+			rel[child].x = cursor + pos[child].x;
+			rel[child].y = pos[child].y;
 		}
 		cursor += line->height;
 	}
 }
 
 static void
-set_columns_left (view_t *view, flowline_t *flowlines)
+set_columns_left (view_t view, flowline_t *flowlines)
 {
-	flow_view_width (view, flowlines);
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    vind = ref->index;
 
-	int         cursor = view->xlen;
+	if (cont[vind].flow_size) {
+		flow_view_width (&len[ref->index], flowlines);
+	}
+
+	int         cursor = len[vind].x;
 	for (flowline_t *line = flowlines; line; line = line->next) {
 		cursor -= line->height;
 		for (int i = 0; i < line->child_count; i++) {
-			view_t     *child = view->children[line->first_child + i];
+			uint32_t    child = line->first_child + i;
 
-			child->xrel = cursor + child->xpos;
-			child->yrel = child->ypos;
+			rel[child].x = cursor + pos[child].x;
+			rel[child].y = pos[child].y;
 		}
 	}
 }
 
 VISIBLE void
-view_flow_right_down (view_t *view)
+view_flow_right_down (view_t view, view_pos_t len)
 {
 	flow_right (view, set_rows_down);
 }
 
 VISIBLE void
-view_flow_right_up (view_t *view)
+view_flow_right_up (view_t view, view_pos_t len)
 {
 	flow_right (view, set_rows_up);
 }
 
 VISIBLE void
-view_flow_left_down (view_t *view)
+view_flow_left_down (view_t view, view_pos_t len)
 {
 	flow_left (view, set_rows_down);
 }
 
 VISIBLE void
-view_flow_left_up (view_t *view)
+view_flow_left_up (view_t view, view_pos_t len)
 {
 	flow_left (view, set_rows_up);
 }
 
 VISIBLE void
-view_flow_down_right (view_t *view)
+view_flow_down_right (view_t view, view_pos_t len)
 {
 	flow_down (view, set_columns_right);
 }
 
 VISIBLE void
-view_flow_up_right (view_t *view)
+view_flow_up_right (view_t view, view_pos_t len)
 {
 	flow_up (view, set_columns_right);
 }
 
 VISIBLE void
-view_flow_down_left (view_t *view)
+view_flow_down_left (view_t view, view_pos_t len)
 {
 	flow_down (view, set_columns_left);
 }
 
 VISIBLE void
-view_flow_up_left (view_t *view)
+view_flow_up_left (view_t view, view_pos_t len)
 {
 	flow_up (view, set_columns_left);
 }
-#endif

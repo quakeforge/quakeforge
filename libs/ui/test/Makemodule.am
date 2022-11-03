@@ -1,13 +1,11 @@
 libs_ui_tests = \
+	libs/ui/test/test-flow \
+	libs/ui/test/test-flow-size \
 	libs/ui/test/test-passage \
 	libs/ui/test/test-txtbuffer \
 	libs/ui/test/test-vrect
 
-libs_ui_xfail_tests = \
-	libs/ui/test/test-flow \
-	libs/ui/test/test-flow-size
-
-TESTS += $(libs_ui_tests) $(libs_ui_xfail_tests)
+TESTS += $(libs_ui_tests)
 
 XFAIL_TESTS += $(libs_ui_xfail_tests)
 
