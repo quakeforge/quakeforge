@@ -44,12 +44,6 @@
 #include "QF/ui/passage.h"
 #include "QF/ui/view.h"
 
-enum {
-	passage_type_text_obj,
-
-	passage_type_count
-};
-
 static const component_t passage_components[passage_type_count] = {
 	[passage_type_text_obj] = {
 		.size = sizeof (psg_text_t),
@@ -112,6 +106,7 @@ Passage_ParseText (passage_t *passage, const char *text)
 
 	unsigned    num_paragraphs = 1;
 	unsigned    num_text_objects = 1;
+	psg_text_t  root_text = {};
 	int         parsing_space = Passage_IsSpace (text);
 	for (const char *c = text; *c; c++) {
 		int         size;
@@ -132,6 +127,7 @@ Passage_ParseText (passage_t *passage, const char *text)
 			}
 			parsing_space = 0;
 		}
+		root_text.size = c - text;
 	}
 	passage->hierarchy = Hierarchy_New (passage->reg, &passage_type, 0);
 	Hierarchy_Reserve (passage->hierarchy,
@@ -152,6 +148,7 @@ Passage_ParseText (passage_t *passage, const char *text)
 	psg_text_t *text_obj = &passage_obj[h->childIndex[1]];
 	*par_obj = *text_obj = (psg_text_t) { };
 
+	*passage_obj = root_text;
 	add_entity (passage->hierarchy, par_obj - passage_obj);
 
 	parsing_space = Passage_IsSpace (text);

@@ -35,6 +35,12 @@
 */
 ///@{
 
+enum {
+	passage_type_text_obj,
+
+	passage_type_count
+};
+
 typedef struct psg_text_s {
 	/// beginning of text for this segment relative to passage_t.text
 	uint32_t    text;
