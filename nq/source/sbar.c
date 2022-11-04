@@ -660,39 +660,38 @@ draw_frags (view_t view)
 static void
 draw_face (view_t view)
 {
-#if 0
-	int         f, anim;
+	qpic_t     *face;
 
+	if (cl.stats[STAT_HEALTH] <= 0) {//FIXME hide_Face or hide_sbar
+		sbar_remcomponent (sbar_face, hud_pic);
+		return;
+	}
 	if ((cl.stats[STAT_ITEMS] & (IT_INVISIBILITY | IT_INVULNERABILITY))
 		== (IT_INVISIBILITY | IT_INVULNERABILITY)) {
-		draw_pic (view, 112, 0, sb_face_invis_invuln);
-		return;
-	}
-	if (cl.stats[STAT_ITEMS] & IT_QUAD) {
-		draw_pic (view, 112, 0, sb_face_quad);
-		return;
-	}
-	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
-		draw_pic (view, 112, 0, sb_face_invis);
-		return;
-	}
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		draw_pic (view, 112, 0, sb_face_invuln);
-		return;
-	}
+		face = sb_face_invis_invuln;
+	} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
+		face = sb_face_quad;
+	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
+		face = sb_face_invis;
+	} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		face = sb_face_invuln;
+	} else {
+		int         f, anim;
+		if (cl.stats[STAT_HEALTH] >= 100) {
+			f = 4;
+		} else {
+			f = cl.stats[STAT_HEALTH] / 20;
+		}
 
-	if (cl.stats[STAT_HEALTH] >= 100)
-		f = 4;
-	else
-		f = cl.stats[STAT_HEALTH] / 20;
-
-	if (cl.time <= cl.faceanimtime) {
-		anim = 1;
-		sb_updates = 0;					// make sure the anim gets drawn over
-	} else
-		anim = 0;
-	draw_pic (view, 112, 0, sb_faces[f][anim]);
-#endif
+		if (cl.time <= cl.faceanimtime) {
+			anim = 1;
+			sb_updates = 0;				// make sure the anim gets drawn over
+		} else {
+			anim = 0;
+		}
+		face = sb_faces[f][anim];
+	}
+	sbar_setcomponent (view, hud_pic, &face);
 }
 
 static inline void
