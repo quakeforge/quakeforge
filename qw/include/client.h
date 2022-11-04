@@ -303,6 +303,4 @@ void CL_RSShot_f (void);
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
-extern struct dstring_s *centerprint;
-
 #endif // _CLIENT_H

@@ -664,8 +664,7 @@ CL_ClearState (void)
 
 	SZ_Clear (&cls.netchan.message);
 
-	if (centerprint)
-		dstring_clearstr (centerprint);
+	Sbar_CenterPrint (0);
 }
 
 /*
@@ -1435,7 +1434,6 @@ CL_Shutdown (void *data)
 	}
 	Info_Destroy (cls.userinfo);
 	Cbuf_DeleteStack (cl_stbuf);
-	dstring_delete (centerprint);
 	dstring_delete (cls.servername);
 	dstring_delete (cls.downloadtempname);
 	dstring_delete (cls.downloadname);
@@ -1500,7 +1498,6 @@ CL_Init (void)
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
-	centerprint = dstring_newstr ();
 	cls.servername = dstring_newstr ();
 	cls.downloadtempname = dstring_newstr ();
 	cls.downloadname = dstring_newstr ();

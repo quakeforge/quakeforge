@@ -163,7 +163,6 @@ const char *svc_strings[] = {
 	"NEW PROTOCOL"
 };
 
-dstring_t  *centerprint;
 int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
@@ -1437,10 +1436,6 @@ CL_ParseServerMessage (void)
 
 			case svc_centerprint:
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
@@ -1486,10 +1481,6 @@ CL_ParseServerMessage (void)
 				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 

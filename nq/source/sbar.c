@@ -1288,14 +1288,18 @@ Sbar_CenterPrint (const char *str)
 {
 	if (!str) {
 		centertime_off = 0;
-		dstring_clearstr (&center_string);
+		return;
+	}
+
+	centertime_off = scr_centertime;
+	centertime_start = realtime;
+
+	if (center_string.str && !strcmp (str, center_string.str)) {
+		// same string as last time, no need to lay out the text again
 		return;
 	}
 
 	dstring_copystr (&center_string, str);
-
-	centertime_off = scr_centertime;
-	centertime_start = realtime;
 
 	// count the number of lines for centering
 	center_lines = 1;

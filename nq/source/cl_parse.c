@@ -127,8 +127,6 @@ const char *svc_strings[] = {
 	"svc_spawnstaticsound2",
 };
 
-dstring_t  *centerprint;
-
 /*
 	CL_EntityNum
 
@@ -371,10 +369,7 @@ CL_ParseServerInfo (void)
 	}
 
 	// local state
-	if (!centerprint)
-		centerprint = dstring_newstr ();
-	else
-		dstring_clearstr (centerprint);
+	Sbar_CenterPrint (0);
 	CL_NewMap (model_precache[1]);
 
 	noclip_anglehack = false;			// noclip is turned off at start
@@ -966,10 +961,6 @@ CL_ParseServerMessage (void)
 
 			case svc_centerprint:
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
@@ -996,10 +987,6 @@ CL_ParseServerMessage (void)
 				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
@@ -1022,10 +1009,6 @@ CL_ParseServerMessage (void)
 				SCR_SetFullscreen (1);
 				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
