@@ -66,7 +66,8 @@ main (void)
 	ECS_RegisterComponents (registry, test_components, 1);
 	registry->href_comp = test_href;
 
-	passage_t  *passage = Passage_ParseText (test_text, registry);
+	passage_t  *passage = Passage_New (registry);
+	Passage_ParseText (passage, test_text);
 	if (passage->hierarchy->childCount[0] != 3) {
 		ret = 1;
 		printf ("incorrect number of paragraphs: %d\n",

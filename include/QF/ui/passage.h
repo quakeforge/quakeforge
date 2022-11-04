@@ -49,7 +49,8 @@ typedef struct passage_s {
 	struct hierarchy_s *hierarchy;	///< hierarchy of text objects
 } passage_t;
 
-passage_t *Passage_ParseText (const char *text, struct ecs_registry_s *reg);
+void Passage_ParseText (passage_t *passage, const char *text);
+passage_t *Passage_New (struct ecs_registry_s *reg);
 void Passage_Delete (passage_t *passage);
 int Passage_IsSpace (const char *text) __attribute__((pure));
 

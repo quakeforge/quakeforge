@@ -99,16 +99,16 @@ add_entity (hierarchy_t *h, uint32_t parent)
 	ref->index = i;
 }
 
-VISIBLE passage_t *
-Passage_ParseText (const char *text, ecs_registry_t *reg)
+VISIBLE void
+Passage_ParseText (passage_t *passage, const char *text)
 {
-	passage_t  *passage = malloc (sizeof (passage_t));
-	passage->text = text;
-	passage->reg = reg;
-
-	if (!*text) {
-		return passage;
+	if (passage->hierarchy) {//FIXME just empty hierarchy
+		Hierarchy_Delete (passage->hierarchy);
 	}
+	if (!*text) {
+		return;
+	}
+	passage->text = text;
 
 	unsigned    num_paragraphs = 1;
 	unsigned    num_text_objects = 1;
@@ -133,7 +133,7 @@ Passage_ParseText (const char *text, ecs_registry_t *reg)
 			parsing_space = 0;
 		}
 	}
-	passage->hierarchy = Hierarchy_New (reg, &passage_type, 0);
+	passage->hierarchy = Hierarchy_New (passage->reg, &passage_type, 0);
 	Hierarchy_Reserve (passage->hierarchy,
 					   1 + num_paragraphs + num_text_objects);
 #if 0
@@ -197,6 +197,15 @@ Passage_ParseText (const char *text, ecs_registry_t *reg)
 				to->text, to->size, to->size, text + to->text);
 	}
 #endif
+}
+
+VISIBLE passage_t *
+Passage_New (ecs_registry_t *reg)
+{
+	passage_t  *passage = malloc (sizeof (passage_t));
+	passage->text = 0;
+	passage->reg = reg;
+	passage->hierarchy = 0;
 	return passage;
 }
 
