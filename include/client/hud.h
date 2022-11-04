@@ -28,6 +28,8 @@
 #ifndef __client_hud_h
 #define __client_hud_h
 
+struct view_s;
+
 enum {
 	hud_href,
 	hud_update,
@@ -42,6 +44,8 @@ enum {
 
 	hud_comp_count
 };
+
+typedef void (*hud_update_f) (struct view_s);
 
 typedef struct hud_subpic_s {
 	struct qpic_s *pic;

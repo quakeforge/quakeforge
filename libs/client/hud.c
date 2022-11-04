@@ -278,7 +278,7 @@ draw_update (ecs_pool_t *pool)
 {
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
-	void     (**func) (view_t) = pool->data;
+	hud_update_f *func = pool->data;
 	while (count-- > 0) {
 		view_t      view = { .id = *ent++, .reg = hud_registry };
 		(*func++) (view);
