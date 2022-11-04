@@ -52,6 +52,7 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/passage.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
@@ -1275,6 +1276,7 @@ Sbar_Intermission (int mode)
 
 /* CENTER PRINTING */
 static dstring_t center_string = {&dstring_default_mem};
+static passage_t center_passage;
 static float centertime_start;				// for slow victory printing
 static float centertime_off;
 static int   center_lines;
@@ -1286,7 +1288,7 @@ static int   center_lines;
 void
 Sbar_CenterPrint (const char *str)
 {
-	if (!str) {
+	if (!str || !*str) {
 		centertime_off = 0;
 		return;
 	}
@@ -1300,66 +1302,53 @@ Sbar_CenterPrint (const char *str)
 	}
 
 	dstring_copystr (&center_string, str);
-
-	// count the number of lines for centering
-	center_lines = 1;
-	while (*str) {
-		if (*str == '\n')
-			center_lines++;
-		str++;
-	}
+	Passage_ParseText (&center_passage, center_string.str);
+	// Standard centerprint strings are pre-flowed so each line in the message
+	// is a paragraph in the passage.
+	center_lines = center_passage.hierarchy->childCount[0];
 }
 
 static void
-Sbar_DrawCenterString (view_t view, int remaining)
+Sbar_DrawCenterString (view_t view, unsigned remaining)
 {
-#if 0
-	const char *start;
-	int         j, l, x, y;
+	view_pos_t  abs = View_GetAbs (view);
+	view_pos_t  len = View_GetLen (view);
 
-	start = center_string.str;
+	int         x, y;
 
 	if (center_lines <= 4)
-		y = view->yabs + view->ylen * 0.35;
+		y = abs.y + len.y * 0.35;
 	else
-		y = view->yabs + 48;
+		y = abs.y + 48;
 
-	do {
-		// scan the width of the line
-		for (l = 0; l < 40; l++)
-			if (start[l] == '\n' || !start[l])
-				break;
-		x = view->xabs + (view->xlen - l * 8) / 2;
-		for (j = 0; j < l; j++, x += 8) {
-			r_funcs->Draw_Character (x, y, start[j]);
-			if (!remaining--)
-				return;
-		}
-
+	__auto_type h = center_passage.hierarchy;
+	psg_text_t *line = h->components[passage_type_text_obj];
+	int         line_count = center_lines;
+	while (line_count-- > 0 && remaining > 0) {
+		line++;
+		const char *text = center_passage.text + line->text;
+		unsigned    count = min (40, line->size);
+		x = abs.x + (len.x - count * 8) / 2;
+		count = min (count, remaining);
+		remaining -= count;
+		r_funcs->Draw_nString (x, y, text, count);
 		y += 8;
-
-		while (*start && *start != '\n')
-			start++;
-		if (!*start)
-			break;
-		start++;						// skip the \n
-	} while (1);
-#endif
+	}
 }
 
 void
 Sbar_FinaleOverlay (void)
 {
-#if 0
 	int         remaining;
 
 	r_data->scr_copyeverything = 1;
 
+#if 0
 	draw_cachepic (hud_overlay_view, 0, 16, "gfx/finale.lmp", 1);
+#endif
 	// the finale prints the characters one at a time
 	remaining = scr_printspeed * (realtime - centertime_start);
 	Sbar_DrawCenterString (hud_overlay_view, remaining);
-#endif
 }
 
 void
@@ -2245,6 +2234,7 @@ Sbar_DontShowScores (void)
 void
 Sbar_Init (void)
 {
+	center_passage.reg = hud_registry;
 	HUD_Init_Cvars ();
 	Cvar_AddListener (Cvar_FindVar ("hud_sbar"), sbar_hud_sbar_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);
