@@ -670,7 +670,7 @@ Menu_Load (void)
 }
 
 void
-Menu_Draw (view_t *view)
+Menu_Draw (view_t view)
 {
 	menu_pic_t *m_pic;
 	int         i, x, y;
@@ -679,8 +679,9 @@ Menu_Draw (view_t *view)
 	if (!menu)
 		return;
 
-	x = 0;//view->xabs;
-	y = 0;//view->yabs;
+	view_pos_t  abs = View_GetAbs (view);
+	x = abs.x;
+	y = abs.y;
 
 	if (menu->fadescreen)
 		r_funcs->Draw_FadeScreen ();
@@ -743,7 +744,7 @@ Menu_Draw (view_t *view)
 }
 
 void
-Menu_Draw_Hud (view_t *view)
+Menu_Draw_Hud (view_t view)
 {
 	run_menu_pre ();
 	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time

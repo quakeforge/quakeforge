@@ -200,6 +200,7 @@ static view_t     command_view;
 static view_t     download_view;
 static view_t   notify_view;
 static view_t   say_view;
+static view_t   menu_view;
 
 #define CON_BUFFER_SIZE 32768
 #define CON_LINES 1024
@@ -740,6 +741,10 @@ C_DrawConsole (void)
 		View_SetPos (console_view, pos.x, ypos);
 		View_UpdateHierarchy (console_view);
 	}
+	if (con_state == con_menu) {
+		Menu_Draw (menu_view);
+		return;
+	}
 
 	if (con_state == con_message) {
 		con_setcomponent (say_view, client_charbuff, &say_line.buffer);
@@ -1011,6 +1016,7 @@ C_Init (void)
 	download_view = View_New (client_reg, console_view);
 	notify_view   = View_New (client_reg, screen_view);
 	say_view      = View_New (client_reg, screen_view);
+	menu_view     = View_New (client_reg, screen_view);
 
 	View_SetGravity (screen_view,   grav_northwest);
 	View_SetGravity (console_view,  grav_northwest);
@@ -1019,6 +1025,7 @@ C_Init (void)
 	View_SetGravity (download_view, grav_southwest);
 	View_SetGravity (notify_view,   grav_northwest);
 	View_SetGravity (say_view,      grav_northwest);
+	View_SetGravity (menu_view,     grav_center);
 
 	View_SetResize (screen_view,   1, 1);
 	View_SetResize (console_view,  1, 1);
@@ -1027,6 +1034,7 @@ C_Init (void)
 	View_SetResize (download_view, 1, 0);
 	View_SetResize (notify_view,   1, 0);
 	View_SetResize (say_view,      1, 0);
+	View_SetResize (menu_view,     0, 0);
 
 	View_SetPos (screen_view,   0, 0);
 	View_SetPos (console_view,  0, 0);
@@ -1043,6 +1051,7 @@ C_Init (void)
 	View_SetLen (download_view, 320, 8);
 	View_SetLen (notify_view,   312, NOTIFY_LINES * 8);
 	View_SetLen (say_view,      320, 8);
+	View_SetLen (menu_view,     320, 200);
 
 	cmd_line.prompt = "";
 	cmd_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
