@@ -48,6 +48,8 @@ typedef enum {
 	sbc_info,
 	sbc_items,
 	sbc_weapon,
+
+	sbc_num_changed
 } sbar_changed;
 
 void Sbar_Changed (sbar_changed change);

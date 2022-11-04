@@ -179,7 +179,7 @@ sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
 }
 
 static inline void
-sbar_setcomponent (view_t view, uint32_t comp, void *data)
+sbar_setcomponent (view_t view, uint32_t comp, const void *data)
 {
 	Ent_SetComponent (view.id, comp, view.reg, data);
 }
@@ -277,13 +277,6 @@ static int __attribute__((used))
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
-}
-
-void
-Sbar_Changed (sbar_changed change)
-{
-	sb_update_flags |= 1 << change;
-	sb_updates = 0;						// update next frame
 }
 
 static void
@@ -1495,34 +1488,79 @@ draw_miniteam (view_t *view)
 #endif
 }
 
+typedef struct {
+	hud_update_f update;
+	view_t     *view;
+} sb_updater_t;
+
+static const sb_updater_t ammo_update[] = {
+	{draw_miniammo, &sbar_miniammo},
+	{draw_ammo, &sbar_ammo},
+	{}
+};
+static const sb_updater_t armor_update[] = {
+	{draw_armor, &sbar_armor},
+	{}
+};
+static const sb_updater_t frags_update[] = {
+	{draw_frags, &sbar_frags},
+	{}
+};
+static const sb_updater_t health_update[] = {
+	{draw_health, &sbar_health},
+	{draw_face, &sbar_face},
+	{}
+};
+static const sb_updater_t info_update[] = {
+	{}
+};
+static const sb_updater_t items_update[] = {
+	{draw_items, &sbar_items},
+	{draw_sigils, &sbar_sigils},
+	{}
+};
+static const sb_updater_t weapon_update[] = {
+	{draw_weapons_sbar, &sbar_weapons},
+	{}
+};
+
+static const sb_updater_t * const sb_updaters[sbc_num_changed] = {
+	[sbc_ammo]   = ammo_update,
+	[sbc_armor]  = armor_update,
+	[sbc_frags]  = frags_update,
+	[sbc_health] = health_update,
+	[sbc_info]   = info_update,
+	[sbc_items]  = items_update,
+	[sbc_weapon] = weapon_update,
+};
+
+void
+Sbar_Changed (sbar_changed change)
+{
+	sb_update_flags |= 1 << change;
+	sb_updates = 0;						// update next frame
+	if ((unsigned) change >= (unsigned) sbc_num_changed) {
+		Sys_Error ("invalid sbar changed enum");
+	}
+	const sb_updater_t *ud = sb_updaters[change];
+	while (ud->update) {
+		sbar_setcomponent (*ud->view, hud_updateonce, &ud->update);
+		ud++;
+	}
+}
+
 void
 Sbar_Draw (void)
 {
 	if (cls.state != ca_active) {
 		return;
 	}
-	sb_update_flags = ~0;
-	if (sb_update_flags & (1 << sbc_ammo)) {
-		draw_miniammo (sbar_miniammo);
-		draw_ammo (sbar_ammo);
-	}
-	if (sb_update_flags & (1 << sbc_armor)) draw_armor (sbar_armor);
-	if (sb_update_flags & (1 << sbc_frags)) draw_frags (sbar_frags);
-	if (sb_update_flags & (1 << sbc_health)) draw_health (sbar_health);
 	if (sb_update_flags & (1 << sbc_info)) {
 		draw_miniteam (0);
 		draw_minifrags (0);
 		draw_overlay (0);
 		Sbar_DeathmatchOverlay (0);
 		sbar_update_vis ();
-	}
-	if (sb_update_flags & (1 << sbc_items)) {
-		draw_items (sbar_items);
-		draw_sigils (sbar_items);
-	}
-	if (sb_update_flags & (1 << sbc_weapon)) draw_weapons_sbar (sbar_weapons);
-	if (sb_update_flags & ((1 << sbc_health) | (1 << sbc_items))) {
-		draw_face (sbar_face);
 	}
 	if (sb_showscores) {
 		draw_solo_time ();
