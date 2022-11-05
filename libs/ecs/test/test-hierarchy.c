@@ -53,12 +53,24 @@ static void
 dump_hierarchy (hierarchy_t *h)
 {
 	ecs_registry_t *reg = h->reg;
+	puts ("in: ri pa ci cc en name");
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
-		char      **name = Ent_GetComponent (h->ent[i], test_name, reg);;
-		printf ("%2d: %5s %2d %2d %2d %2d %2d\n", i, *name, h->ent[i],
-				ref->index, h->parentIndex[i],
-				h->childIndex[i], h->childCount[i]);
+		if (ECS_EntValid (h->ent[i], reg)) {
+			hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
+			static char fake_name[] = "?";
+			static char *fake_nameptr = fake_name;
+			char      **name = &fake_nameptr;
+			if (Ent_HasComponent (h->ent[i], test_name, reg)) {
+				name = Ent_GetComponent (h->ent[i], test_name, reg);
+			}
+			printf ("%2d: %2d %2d %2d %2d %2d %s\n", i,
+					ref->index, h->parentIndex[i],
+					h->childIndex[i], h->childCount[i], h->ent[i], *name);
+		} else {
+			printf ("%2d: %2d %2d %2d %2d %2d %s\n", i,
+					-1, h->parentIndex[i],
+					h->childIndex[i], h->childCount[i], h->ent[i], "null");
+		}
 	}
 	puts ("");
 }
@@ -70,14 +82,20 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level)
 		printf ("index %d out of bounds (%d)\n", ind, h->num_objects);
 		return;
 	}
-	ecs_registry_t *reg = h->reg;
-	char      **name = Ent_GetComponent (h->ent[ind], test_name, reg);;
 	if (!level) {
-		puts ("in: en pa ci cc |name");
+		puts ("in: pa ci cc en|name");
 	}
-	printf ("%2d: %2d %2d %2d %2d |%*s%s\n", ind, h->ent[ind],
-			h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
-			level * 3, "", *name);
+	ecs_registry_t *reg = h->reg;
+	if (ECS_EntValid (h->ent[ind], reg)) {
+		char      **name = Ent_GetComponent (h->ent[ind], test_name, reg);;
+		printf ("%2d: %2d %2d %2d %2d|%*s%s\n", ind,
+				h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
+				h->ent[ind], level * 3, "", *name);
+	} else {
+		printf ("%2d: %2d %2d %2d %2d|%*s%s\n", ind,
+				h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
+				h->ent[ind], level * 3, "", "null");
+	}
 
 	for (uint32_t i = 0; i < h->childCount[ind]; i++) {
 		dump_tree (h, h->childIndex[ind] + i, level + 1);
@@ -520,7 +538,7 @@ test_build_hierarchy3 (void)
 	if (!check_indices (A1a, 11, 5, 13, 0)) { return 1; }
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
-	set_parent (B2, C);
+	set_parent (B2, C1);
 	dump_hierarchy (ref->hierarchy);
 	dump_tree (ref->hierarchy, 0, 0);
 
@@ -529,16 +547,77 @@ test_build_hierarchy3 (void)
 	if (!check_indices (root, 0,  nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2,  0,  7, 2)) { return 1; }
-	if (!check_indices (  C,  3,  0,  9, 2)) { return 1; }
-	if (!check_indices (  D,  4,  0, 11, 0)) { return 1; }
-	if (!check_indices ( A1,  5,  1, 11, 1)) { return 1; }
-	if (!check_indices ( A2,  6,  1, 12, 0)) { return 1; }
-	if (!check_indices ( B1,  7,  2, 12, 0)) { return 1; }
-	if (!check_indices ( B3,  8,  2, 12, 0)) { return 1; }
-	if (!check_indices ( C1,  9,  3, 12, 0)) { return 1; }
-	if (!check_indices ( B2, 10,  3, 12, 1)) { return 1; }
-	if (!check_indices (A1a, 11,  5, 13, 0)) { return 1; }
-	if (!check_indices (B2a, 12, 10, 13, 0)) { return 1; }
+	if (!check_indices (  C,  3,  0,  9, 1)) { return 1; }
+	if (!check_indices (  D,  4,  0, 10, 0)) { return 1; }
+	if (!check_indices ( A1,  5,  1, 10, 1)) { return 1; }
+	if (!check_indices ( A2,  6,  1, 11, 0)) { return 1; }
+	if (!check_indices ( B1,  7,  2, 11, 0)) { return 1; }
+	if (!check_indices ( B3,  8,  2, 11, 0)) { return 1; }
+	if (!check_indices ( C1,  9,  3, 11, 1)) { return 1; }
+	if (!check_indices (A1a, 10,  5, 12, 0)) { return 1; }
+	if (!check_indices ( B2, 11,  9, 12, 1)) { return 1; }
+	if (!check_indices (B2a, 12, 11, 13, 0)) { return 1; }
+
+	uint32_t    A1b = create_ent (A1, "A1b");
+	uint32_t    A1c = create_ent (A1, "A1c");
+	uint32_t    B2a1 = create_ent (B2a, "B2a1");
+	uint32_t    B2a2 = create_ent (B2a, "B2a2");
+	uint32_t    B2b = create_ent (B2, "B2b");
+	uint32_t    B2b1 = create_ent (B2b, "B2b1");
+	uint32_t    B2b2 = create_ent (B2b, "B2b2");
+
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+
+	if (!check_hierarchy_size (ref->hierarchy, 20)) { return 1; }
+
+	if (!check_indices (root,  0,  nullent, 1, 4)) { return 1; }
+	if (!check_indices (  A,   1,  0,  5, 2)) { return 1; }
+	if (!check_indices (  B,   2,  0,  7, 2)) { return 1; }
+	if (!check_indices (  C,   3,  0,  9, 1)) { return 1; }
+	if (!check_indices (  D,   4,  0, 10, 0)) { return 1; }
+	if (!check_indices ( A1,   5,  1, 10, 3)) { return 1; }
+	if (!check_indices ( A2,   6,  1, 13, 0)) { return 1; }
+	if (!check_indices ( B1,   7,  2, 13, 0)) { return 1; }
+	if (!check_indices ( B3,   8,  2, 13, 0)) { return 1; }
+	if (!check_indices ( C1,   9,  3, 13, 1)) { return 1; }
+	if (!check_indices (A1a,  10,  5, 14, 0)) { return 1; }
+	if (!check_indices (A1b,  11,  5, 14, 0)) { return 1; }
+	if (!check_indices (A1c,  12,  5, 14, 0)) { return 1; }
+	if (!check_indices ( B2,  13,  9, 14, 2)) { return 1; }
+	if (!check_indices (B2a,  14, 13, 16, 2)) { return 1; }
+	if (!check_indices (B2b,  15, 13, 18, 2)) { return 1; }
+	if (!check_indices (B2a1, 16, 14, 20, 0)) { return 1; }
+	if (!check_indices (B2a2, 17, 14, 20, 0)) { return 1; }
+	if (!check_indices (B2b1, 18, 15, 20, 0)) { return 1; }
+	if (!check_indices (B2b2, 19, 15, 20, 0)) { return 1; }
+
+	set_parent (B2, root);
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+
+	if (!check_hierarchy_size (ref->hierarchy, 20)) { return 1; }
+
+	if (!check_indices (root,  0, nullent, 1, 5)) { return 1; }
+	if (!check_indices (  A,   1,  0,  6, 2)) { return 1; }
+	if (!check_indices (  B,   2,  0,  8, 2)) { return 1; }
+	if (!check_indices (  C,   3,  0, 10, 1)) { return 1; }
+	if (!check_indices (  D,   4,  0, 11, 0)) { return 1; }
+	if (!check_indices ( B2,   5,  0, 11, 2)) { return 1; }
+	if (!check_indices ( A1,   6,  1, 13, 3)) { return 1; }
+	if (!check_indices ( A2,   7,  1, 16, 0)) { return 1; }
+	if (!check_indices ( B1,   8,  2, 16, 0)) { return 1; }
+	if (!check_indices ( B3,   9,  2, 16, 0)) { return 1; }
+	if (!check_indices ( C1,  10,  3, 16, 0)) { return 1; }
+	if (!check_indices (B2a,  11,  5, 16, 2)) { return 1; }
+	if (!check_indices (B2b,  12,  5, 18, 2)) { return 1; }
+	if (!check_indices (A1a,  13,  6, 20, 0)) { return 1; }
+	if (!check_indices (A1b,  14,  6, 20, 0)) { return 1; }
+	if (!check_indices (A1c,  15,  6, 20, 0)) { return 1; }
+	if (!check_indices (B2a1, 16, 11, 20, 0)) { return 1; }
+	if (!check_indices (B2a2, 17, 11, 20, 0)) { return 1; }
+	if (!check_indices (B2b1, 18, 12, 20, 0)) { return 1; }
+	if (!check_indices (B2b2, 19, 12, 20, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
 	Hierarchy_Delete (ref->hierarchy);
