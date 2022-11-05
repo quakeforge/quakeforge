@@ -155,6 +155,15 @@ static cvar_t hud_time_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &hud_time },
 };
+int hud_debug;
+static cvar_t hud_debug_cvar = {
+	.name = "hud_debug",
+	.description =
+		"display hud view outlines for debugging",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &hud_debug },
+};
 
 view_t sbar_view;
 view_t sbar_inventory_view;
@@ -169,6 +178,40 @@ view_t hud_overlay_view;
 view_t hud_stuff_view;
 view_t hud_time_view;
 view_t hud_fps_view;
+
+static void
+hud_add_outlines (view_t view)
+{
+	byte        color = 0x6f;
+	Ent_SetComponent (view.id, hud_outline, view.reg, &color);
+	uint32_t    count = View_ChildCount (view);
+	for (uint32_t i = 0; i < count; i++) {
+		hud_add_outlines (View_GetChild (view, i));
+	}
+}
+
+static void
+hud_remove_outlines (view_t view)
+{
+	Ent_RemoveComponent (view.id, hud_outline, view.reg);
+	uint32_t    count = View_ChildCount (view);
+	for (uint32_t i = 0; i < count; i++) {
+		hud_remove_outlines (View_GetChild (view, i));
+	}
+}
+
+static void
+hud_debug_f (void *data, const cvar_t *cvar)
+{
+	if (!View_Valid (hud_view)) {
+		return;
+	}
+	if (hud_debug) {
+		hud_add_outlines (hud_view);
+	} else {
+		hud_remove_outlines (hud_view);
+	}
+}
 view_t hud_main_view;
 
 static void
@@ -236,6 +279,7 @@ HUD_Init_Cvars (void)
 	Cvar_Register (&hud_ping_cvar, 0, 0);
 	Cvar_Register (&hud_pl_cvar, 0, 0);
 	Cvar_Register (&hud_time_cvar, 0, 0);
+	Cvar_Register (&hud_debug_cvar, hud_debug_f, 0);
 
 	Cvar_Register (&hud_sbar_cvar, hud_sbar_f, 0);
 	Cvar_Register (&hud_swap_cvar, hud_swap_f, 0);
