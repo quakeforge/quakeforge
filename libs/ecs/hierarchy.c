@@ -332,19 +332,18 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index)
 void
 Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
 {
-	uint32_t    parentIndex = hierarchy->parentIndex[index];
 	uint32_t    childIndex = hierarchy->childIndex[index];
-	uint32_t    siblingIndex = nullent;
-	if (parentIndex != nullent) {
-		siblingIndex = hierarchy->childIndex[parentIndex];
-	}
+	uint32_t    parentIndex = hierarchy->parentIndex[index];
+
 	hierarchy_remove_children (hierarchy, index);
 	hierarchy_close (hierarchy, index, 1);
-	if (siblingIndex != nullent) {
-		hierarchy_UpdateTransformIndices (hierarchy, index, -1);
-		hierarchy_UpdateChildIndices (hierarchy, siblingIndex, -1);
-		hierarchy_UpdateParentIndices (hierarchy, childIndex - 1, -1);
+
+	hierarchy_UpdateTransformIndices (hierarchy, index, -1);
+	if (parentIndex != nullent) {
+		hierarchy_UpdateChildIndices (hierarchy, parentIndex + 1, -1);
+		hierarchy->childCount[parentIndex] -= 1;
 	}
+	hierarchy_UpdateParentIndices (hierarchy, childIndex - 1, -1);
 }
 
 hierarchy_t *
