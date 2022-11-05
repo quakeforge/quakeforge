@@ -262,34 +262,22 @@ Transform_NewNamed (ecs_registry_t *reg, transform_t parent, const char *name)
 void
 Transform_SetParent (transform_t transform, transform_t parent)
 {
-	if (parent.reg && parent.id != nullent) {
-		__auto_type ref = Transform_GetRef (transform);
-		__auto_type tref = *ref;
-		__auto_type pref = Transform_GetRef (parent);
-		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy,
-												tref.hierarchy,
-												pref->index, tref.index);
-		ref->hierarchy = pref->hierarchy;
-		Hierarchy_RemoveHierarchy (tref.hierarchy, tref.index);
-		if (!tref.hierarchy->num_objects) {
-			Hierarchy_Delete (tref.hierarchy);
-		}
-	} else {
-		__auto_type ref = Transform_GetRef (transform);
-		__auto_type tref = *ref;
-		// null parent -> make transform root
-		if (!tref.index) {
-			// already root
-			return;
-		}
-		ref->hierarchy = Hierarchy_New (transform.reg, &transform_type, 0);
-		Hierarchy_InsertHierarchy (ref->hierarchy, tref.hierarchy, nullent,
-								   tref.index);
-		Hierarchy_RemoveHierarchy (tref.hierarchy, tref.index);
-		if (!tref.hierarchy->num_objects) {
-			Hierarchy_Delete (tref.hierarchy);
-		}
+	hierarchy_t *dst = 0;
+	uint32_t    dstParent = nullent;
+	hierarchy_t *src = 0;
+	uint32_t    srcIndex = 0;
+	if (Transform_Valid (parent)) {
+		__auto_type ref = Transform_GetRef (parent);
+		dst = ref->hierarchy;
+		dstParent = ref->index;
 	}
+	{
+		__auto_type ref = Transform_GetRef (transform);
+		src = ref->hierarchy;
+		srcIndex = ref->index;
+	}
+	Hierarchy_SetParent (dst, dstParent, src, srcIndex);
+
 	__auto_type ref = Transform_GetRef (transform);
 	hierarchy_t *h = ref->hierarchy;
 	byte       *modified = h->components[transform_type_modified];

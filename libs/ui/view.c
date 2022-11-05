@@ -265,32 +265,22 @@ View_UpdateHierarchy (view_t view)
 void
 View_SetParent (view_t view, view_t parent)
 {
-	if (parent.reg && parent.id != nullent) {
-		__auto_type ref = View_GetRef (view);
-		__auto_type vref = *ref;
-		__auto_type pref = View_GetRef (parent);
-		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy,
-												vref.hierarchy,
-												pref->index, vref.index);
-		ref->hierarchy = pref->hierarchy;
-		Hierarchy_RemoveHierarchy (vref.hierarchy, vref.index);
-		if (!vref.hierarchy->num_objects) {
-			Hierarchy_Delete (vref.hierarchy);
-		}
-	} else {
-		__auto_type ref = View_GetRef (view);
-		__auto_type vref = *ref;
-		if (!vref.index) {
-			return;
-		}
-		ref->hierarchy = Hierarchy_New (view.reg, &view_type, 0);
-		Hierarchy_InsertHierarchy (ref->hierarchy, vref.hierarchy, nullent,
-								   vref.index);
-		Hierarchy_RemoveHierarchy (vref.hierarchy, vref.index);
-		if (!vref.hierarchy->num_objects) {
-			Hierarchy_Delete (vref.hierarchy);
-		}
+	hierarchy_t *dst = 0;
+	uint32_t    dstParent = nullent;
+	hierarchy_t *src = 0;
+	uint32_t    srcIndex = 0;
+	if (View_Valid (parent)) {
+		__auto_type ref = View_GetRef (parent);
+		dst = ref->hierarchy;
+		dstParent = ref->index;
 	}
+	{
+		__auto_type ref = View_GetRef (view);
+		src = ref->hierarchy;
+		srcIndex = ref->index;
+	}
+	Hierarchy_SetParent (dst, dstParent, src, srcIndex);
+
 	__auto_type ref = View_GetRef (view);
 	hierarchy_t *h = ref->hierarchy;
 	byte       *modified = h->components[view_modified];

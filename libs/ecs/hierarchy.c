@@ -400,7 +400,31 @@ Hierarchy_Copy (ecs_registry_t *dstReg, const hierarchy_t *src)
 							    dst->components[i], 0,
 								src->components[i], 0, count);
 	}
-	// Just in case the source hierarchy has modified objects
-	//Hierarchy_UpdateMatrices (dst);
 	return dst;
+}
+
+hierref_t
+Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
+					 hierarchy_t *src, uint32_t srcRoot)
+{
+	hierref_t   r = {};
+	if (dst && dstParent != nullent) {
+		if (dst->type != src->type) {
+			Sys_Error ("Can't set parent in hierarcy of different type");
+		}
+	} else {
+		if (!srcRoot) {
+			r.hierarchy = src;
+			r.index = 0;
+			return r;
+		}
+		dst = Hierarchy_New (src->reg, src->type, 0);
+	}
+	r.hierarchy = dst;
+	r.index = Hierarchy_InsertHierarchy (dst, src, dstParent, srcRoot);
+	Hierarchy_RemoveHierarchy (src, srcRoot);
+	if (!src->num_objects) {
+		Hierarchy_Delete (src);
+	}
+	return r;
 }

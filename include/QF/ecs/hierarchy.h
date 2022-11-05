@@ -72,6 +72,9 @@ void Hierarchy_Delete (hierarchy_t *hierarchy);
 uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 									uint32_t dstParent, uint32_t srcRoot);
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);
+
+hierref_t Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
+							   hierarchy_t *src, uint32_t srcIndex);
 ///@}
 
 #endif//__QF_ecs_hierarchy_h
