@@ -66,20 +66,12 @@ extern int hud_pl;
 extern int hud_ping;
 extern int hud_time;
 
-//extern struct view_s sbar_view;
-//extern struct view_s sbar_inventory_view;
-//extern struct view_s sbar_frags_view;
-
 extern struct view_s hud_view;
-extern struct view_s hud_inventory_view;
-extern struct view_s hud_armament_view;
-extern struct view_s hud_frags_view;
 
 extern struct view_s hud_overlay_view;
 extern struct view_s hud_stuff_view;
 extern struct view_s hud_time_view;
 extern struct view_s hud_fps_view;
-extern struct view_s hud_main_view;
 
 void HUD_Init (void);
 void HUD_Init_Cvars (void);

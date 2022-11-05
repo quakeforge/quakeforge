@@ -170,9 +170,6 @@ view_t sbar_inventory_view;
 view_t sbar_frags_view;
 
 view_t hud_view;
-view_t hud_inventory_view;
-view_t hud_armament_view;
-view_t hud_frags_view;
 
 view_t hud_overlay_view;
 view_t hud_stuff_view;
@@ -212,7 +209,6 @@ hud_debug_f (void *data, const cvar_t *cvar)
 		hud_remove_outlines (hud_view);
 	}
 }
-view_t hud_main_view;
 
 static void
 hud_sbar_f (void *data, const cvar_t *cvar)
@@ -267,8 +263,6 @@ HUD_Init (void)
 	hud_registry = ECS_NewRegistry ();
 	ECS_RegisterComponents (hud_registry, hud_components, hud_comp_count);
 	hud_registry->href_comp = hud_href;
-
-	hud_view = View_New (hud_registry, nullview);
 }
 
 void
