@@ -56,11 +56,35 @@ dump_hierarchy (hierarchy_t *h)
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
 		char      **name = Ent_GetComponent (h->ent[i], test_name, reg);;
-		printf ("%2d: %5s %2u %2u %2u %2u %2u\n", i, *name, h->ent[i],
+		printf ("%2d: %5s %2d %2d %2d %2d %2d\n", i, *name, h->ent[i],
 				ref->index, h->parentIndex[i],
 				h->childIndex[i], h->childCount[i]);
 	}
 	puts ("");
+}
+
+static void
+dump_tree (hierarchy_t *h, uint32_t ind, int level)
+{
+	if (ind >= h->num_objects) {
+		printf ("index %d out of bounds (%d)\n", ind, h->num_objects);
+		return;
+	}
+	ecs_registry_t *reg = h->reg;
+	char      **name = Ent_GetComponent (h->ent[ind], test_name, reg);;
+	if (!level) {
+		puts ("in: en pa ci cc |name");
+	}
+	printf ("%2d: %2d %2d %2d %2d |%*s%s\n", ind, h->ent[ind],
+			h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
+			level * 3, "", *name);
+
+	for (uint32_t i = 0; i < h->childCount[ind]; i++) {
+		dump_tree (h, h->childIndex[ind] + i, level + 1);
+	}
+	if (!level) {
+		puts ("");
+	}
 }
 
 static int
@@ -458,6 +482,75 @@ test_build_hierarchy2 (void)
 	return 0;
 }
 
+static int
+test_build_hierarchy3 (void)
+{
+	printf ("test_build_hierarchy3\n");
+
+	uint32_t    root = create_ent (nullent, "root");
+	uint32_t    A = create_ent (root, "A");
+	uint32_t    B = create_ent (root, "B");
+	uint32_t    C = create_ent (root, "C");
+	uint32_t    B1 = create_ent (B, "B1");
+	uint32_t    A1 = create_ent (A, "A1");
+	uint32_t    A1a = create_ent (A1, "A1a");
+	uint32_t    B2 = create_ent (B, "B2");
+	uint32_t    A2 = create_ent (A, "A2");
+	uint32_t    B3 = create_ent (B, "B3");
+	uint32_t    B2a = create_ent (B2, "B2a");
+	uint32_t    D = create_ent (root, "D");
+	uint32_t    C1 = create_ent (C, "C1");
+
+	hierref_t  *ref = Ent_GetComponent (root, test_href, test_reg);
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+
+	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
+	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
+	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
+	if (!check_indices (  C,  3, 0, 10, 1)) { return 1; }
+	if (!check_indices (  D,  4, 0, 11, 0)) { return 1; }
+	if (!check_indices ( A1,  5, 1, 11, 1)) { return 1; }
+	if (!check_indices ( A2,  6, 1, 12, 0)) { return 1; }
+	if (!check_indices ( B1,  7, 2, 12, 0)) { return 1; }
+	if (!check_indices ( B2,  8, 2, 12, 1)) { return 1; }
+	if (!check_indices ( B3,  9, 2, 13, 0)) { return 1; }
+	if (!check_indices ( C1, 10, 3, 13, 0)) { return 1; }
+	if (!check_indices (A1a, 11, 5, 13, 0)) { return 1; }
+	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
+
+	set_parent (B2, nullent);
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+	hierref_t  *B2ref = Ent_GetComponent (B2, test_href, test_reg);
+	dump_hierarchy (B2ref->hierarchy);
+	dump_tree (B2ref->hierarchy, 0, 0);
+
+	if (!check_hierarchy_size (ref->hierarchy, 11)) { return 1; }
+	if (!check_hierarchy_size (B2ref->hierarchy, 2)) { return 1; }
+
+	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
+	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
+	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
+	if (!check_indices (  C,  3, 0,  9, 1)) { return 1; }
+	if (!check_indices (  D,  4, 0, 10, 0)) { return 1; }
+	if (!check_indices ( A1,  5, 1, 10, 1)) { return 1; }
+	if (!check_indices ( A2,  6, 1, 11, 0)) { return 1; }
+	if (!check_indices ( B1,  7, 2, 11, 0)) { return 1; }
+	if (!check_indices ( B3,  8, 2, 11, 0)) { return 1; }
+	if (!check_indices ( C1,  9, 3, 11, 0)) { return 1; }
+	if (!check_indices (A1a, 10, 5, 11, 0)) { return 1; }
+
+	if (!check_indices ( B2, 0, nullent, 1, 1)) { return 1; }
+	if (!check_indices (B2a, 1, 0, 2, 0)) { return 1; }
+
+	// Delete the hierarchy directly as setparent isn't fully tested
+	Hierarchy_Delete (ref->hierarchy);
+
+	return 0;
+}
+
 int
 main (void)
 {
@@ -470,6 +563,7 @@ main (void)
 	if (test_parent_child_setparent ()) { return 1; }
 	if (test_build_hierarchy ()) { return 1; }
 	if (test_build_hierarchy2 ()) { return 1; }
+	if (test_build_hierarchy3 ()) { return 1; }
 
 	ECS_DelRegistry (test_reg);
 
