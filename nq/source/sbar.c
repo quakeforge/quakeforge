@@ -69,7 +69,10 @@ int         sb_updates;				// if >= vid.numpages, no update needed
 static int sb_update_flags;
 static int sb_view_size;
 
+//     view_t hud_view;
+static view_t   hud_miniteam;
 static view_t sbar_main;
+static view_t   hud_minifrags;		// child of sbar_main for positioning
 static view_t   sbar_inventory;
 static view_t     sbar_frags;
 static view_t     sbar_sigils;
@@ -95,7 +98,7 @@ static view_t   intermission_time;
 static view_t   intermission_secr;
 static view_t   intermission_kill;
 
-typedef struct {
+typedef struct view_def_s {
 	view_t     *view;
 	struct {
 		int         x;
@@ -108,9 +111,38 @@ typedef struct {
 	int         count;
 	int         xstep;
 	int         ystep;
+	struct view_def_s *subviews;
 } view_def_t;
 
-static view_def_t view_defs[] = {
+// used for "current view"
+static view_t pseudo_parent = nullview;
+static view_def_t frags_defs[] = {
+	{0, {4, 1, 28, 4}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {4, 5, 28, 3}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {6, 0, 24, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {0, 0, 34, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{}
+};
+static view_def_t minifrags_defs[] = {
+	{0, { 2, 1, 37, 3}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, { 2, 4, 37, 4}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, { 8, 0, 24, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, { 0, 0, 40, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	// teamplay team, name
+	{0, {48, 0, 32, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {88, 0,104, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	// name
+	{0, {48, 0,128, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{}
+};
+static view_def_t miniteam_defs[] = {
+	{0, { 0, 0, 32, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {40, 0, 40, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{0, {-8, 0, 48, 8}, grav_northwest, &pseudo_parent, 1, 0, 0},
+	{}
+};
+
+static view_def_t sbar_defs[] = {
 	{&hud_overlay_view,  {  0, 0,320,200}, grav_center, &cl_screen_view},
 	{&intermission_view, {  0, 0,320,200}, grav_northwest, &hud_overlay_view},
 	{0, {64, 24, 24, 24}, grav_northwest, &intermission_view, 1, 0, 0},
@@ -128,14 +160,22 @@ static view_def_t view_defs[] = {
 	{0, {72, 0, 16, 24}, grav_northwest, &intermission_kill, 1, 0, 0},
 	{0, {80, 0, 24, 24}, grav_northwest, &intermission_kill, 3, 24, 0},
 
-	{&sbar_main,          {  0, 0,320, 48}, grav_south,     &cl_screen_view},
+	{&hud_view,           {  0, 0,320, 48}, grav_south,     &cl_screen_view},
+	{&hud_miniteam,       {  0, 0, 96, 48}, grav_southeast, &hud_view},
+	{0, {0,0,96,8}, grav_northwest, &hud_miniteam, 6, 0, 8, miniteam_defs},
+	{&sbar_main,          {  0, 0,320, 48}, grav_south,     &hud_view},
+	{&hud_minifrags,     {-192, 0,192, 48}, grav_southeast, &sbar_main},
+	{0, {0,0,192,8}, grav_northwest, &hud_minifrags, 6, 0, 8, minifrags_defs},
+
 	{&sbar_inventory,     {  0, 0,320, 24}, grav_northwest, &sbar_main},
 	{&sbar_frags,         {  0, 0,130,  8}, grav_northeast, &sbar_inventory},
 	{&sbar_sigils,        {  0, 0, 32, 16}, grav_southeast, &sbar_inventory},
 	{&sbar_items,         { 32, 0, 96, 16}, grav_southeast, &sbar_inventory},
+	//NOTE sbar_armament moves and gets layed out again on hud_sbar change
 	{&sbar_armament,      {  0, 0,202, 24}, grav_northwest, &sbar_inventory},
 	{&sbar_weapons,       {  0, 0,192, 16}, grav_southwest, &sbar_armament},
 	{&sbar_miniammo,      {  0, 0, 32,  8}, grav_northwest, &sbar_armament},
+
 	{&sbar_statusbar,     {  0, 0,320, 24}, grav_southwest, &sbar_main},
 	{&sbar_armor,         {  0, 0, 96, 24}, grav_northwest, &sbar_statusbar},
 	{&sbar_face,          {112, 0, 24, 24}, grav_northwest, &sbar_statusbar},
@@ -149,13 +189,14 @@ static view_def_t view_defs[] = {
 	{&sbar_solo_time,     {184, 4, 96,  8}, grav_northwest, &sbar_solo},
 	{&sbar_solo_anchor,   {232,12,  0,  8}, grav_northwest, &sbar_solo},
 	{&sbar_solo_name,     {  0, 0,  0,  8}, grav_center,    &sbar_solo_anchor},
+	{0, { 0, 0, 32,  8}, grav_northwest, &sbar_frags,    4, 32, 0, frags_defs},
 	{0, { 0, 0,  8, 16}, grav_northwest, &sbar_sigils,   4,  8, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_armor,    4, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
 	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    6, 16, 0},
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   4, 24, 0},
-	{0, {10, 0, 24, 24}, grav_northwest, &sbar_miniammo, 4, 48, 0},
+	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
 
 	{}
 };
@@ -211,7 +252,8 @@ static qpic_t *sb_ibar;
 static qpic_t *sb_sbar;
 static qpic_t *sb_scorebar;
 
-static qpic_t *sb_weapons[7][8];	// 0 is active, 1 is owned, 2-5 are flashes
+// 0 is active, 1 is owned, 2-6 are flashes
+static hud_subpic_t sb_weapons[7][8];
 static qpic_t *sb_ammo[4];
 static qpic_t *sb_sigil[4];
 static qpic_t *sb_armor[3];
@@ -311,7 +353,7 @@ draw_num (view_t *view, int num, int digits, int color)
 }
 
 static inline void
-draw_smallnum (view_t view, int x, int y, int n, int packed, int colored)
+draw_smallnum (view_t view, int n, int packed, int colored)
 {
 	void       *comp = sbar_getcomponent (view, hud_charbuff);
 	__auto_type charbuff = *(draw_charbuffer_t **) comp;
@@ -335,7 +377,7 @@ draw_miniammo (view_t view)
 	for (i = 0; i < 4; i++) {
 		view_t      v = View_GetChild (view, i);
 		count = cl.stats[STAT_SHELLS + i];
-		draw_smallnum (v, (6 * i + 1) * 8 + 2, 0, count, 0, 1);
+		draw_smallnum (v, count, 0, 1);
 	}
 }
 
@@ -386,7 +428,7 @@ calc_flashon (float time, int mask)
 }
 
 static void
-draw_weapons_sbar (view_t view)
+draw_weapons (view_t view)
 {
 	int         flashon, i;
 
@@ -396,9 +438,9 @@ draw_weapons_sbar (view_t view)
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
-			sbar_setcomponent (weap, hud_pic, &sb_weapons[flashon][i]);
+			sbar_setcomponent (weap, hud_subpic, &sb_weapons[flashon][i]);
 		} else {
-			sbar_remcomponent (weap, hud_pic);
+			sbar_remcomponent (weap, hud_subpic);
 		}
 	}
 }
@@ -465,31 +507,33 @@ typedef struct {
 team_t      teams[MAX_CLIENTS];
 int         teamsort[MAX_CLIENTS];
 int         fragsort[MAX_SCOREBOARD];
-char        scoreboardtext[MAX_SCOREBOARD][20];
-int         scoreboardtop[MAX_SCOREBOARD];
-int         scoreboardbottom[MAX_SCOREBOARD];
-int         scoreboardcount[MAX_SCOREBOARD];
+static draw_charbuffer_t *frags_buff[MAX_SCOREBOARD];
+static draw_charbuffer_t *team_buff[MAX_SCOREBOARD];
+static draw_charbuffer_t *name_buff[MAX_SCOREBOARD];
+static draw_charbuffer_t *team_frags[MAX_SCOREBOARD];
 int         scoreboardlines, scoreboardteams;
 
-
 static void __attribute__((used))
-Sbar_SortFrags (void)
+Sbar_SortFrags (qboolean includespec)
 {
 	int         i, j, k;
 
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < cl.maxclients; i++) {
-		if (cl.players[i].name->value[0]) {
+		if (cl.players[i].name && cl.players[i].name->value[0]
+			&& (!cl.players[i].spectator || includespec)) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
+			if (cl.players[i].spectator)
+				cl.players[i].frags = -999;
 		}
 	}
 
+	player_info_t *p = cl.players;
 	for (i = 0; i < scoreboardlines; i++) {
 		for (j = 0; j < scoreboardlines - 1 - i; j++) {
-			if (cl.players[fragsort[j]].frags
-				< cl.players[fragsort[j + 1]].frags) {
+			if (p[fragsort[j]].frags < p[fragsort[j + 1]].frags) {
 				k = fragsort[j];
 				fragsort[j] = fragsort[j + 1];
 				fragsort[j + 1] = k;
@@ -606,49 +650,185 @@ draw_solo (void)
 }
 
 static void
+clear_frags_bar (view_t view)
+{
+	sbar_remcomponent (View_GetChild (view, 0), hud_fill);
+	sbar_remcomponent (View_GetChild (view, 1), hud_fill);
+	sbar_remcomponent (View_GetChild (view, 2), hud_charbuff);
+	sbar_remcomponent (View_GetChild (view, 3), hud_func);
+}
+
+static void
+clear_minifrags_bar (view_t view)
+{
+	clear_frags_bar (view);
+	sbar_remcomponent (View_GetChild (view, 4), hud_charbuff);
+	sbar_remcomponent (View_GetChild (view, 5), hud_charbuff);
+	sbar_remcomponent (View_GetChild (view, 6), hud_charbuff);
+}
+
+static void
+set_frags_bar (view_t view, byte top, byte bottom, draw_charbuffer_t *buff,
+			   hud_func_f func)
+{
+	sbar_setcomponent (View_GetChild (view, 0), hud_fill, &top);
+	sbar_setcomponent (View_GetChild (view, 1), hud_fill, &bottom);
+	sbar_setcomponent (View_GetChild (view, 2), hud_charbuff, &buff);
+	if (func) {
+		sbar_setcomponent (View_GetChild (view, 3), hud_func, &func);
+	} else {
+		sbar_remcomponent (View_GetChild (view, 3), hud_func);
+	}
+}
+
+static void
+set_minifrags_bar (view_t view, byte top, byte bottom, draw_charbuffer_t *buff,
+				   hud_func_f func, draw_charbuffer_t *team,
+				   draw_charbuffer_t *name)
+{
+	set_frags_bar (view, top, bottom, buff, func);
+	if (team) {
+		sbar_setcomponent (View_GetChild (view, 4), hud_charbuff, &team);
+		sbar_setcomponent (View_GetChild (view, 5), hud_charbuff, &name);
+		sbar_remcomponent (View_GetChild (view, 6), hud_charbuff);
+	} else {
+		sbar_remcomponent (View_GetChild (view, 4), hud_charbuff);
+		sbar_remcomponent (View_GetChild (view, 5), hud_charbuff);
+		sbar_setcomponent (View_GetChild (view, 6), hud_charbuff, &name);
+	}
+}
+
+static void
+frags_marker (view_pos_t pos, view_pos_t len)
+{
+	r_funcs->Draw_Character (pos.x, pos.y, 16);
+	r_funcs->Draw_Character (pos.x + len.x - 8, pos.y, 17);
+}
+
+static void
 draw_frags (view_t view)
 {
-#if 0
-	int         i, k, l, p = -1;
-	int         top, bottom;
-	int         x;
-	player_info_t *s;
-
-	if (cl.maxclients == 1)
+	if (cl.maxclients == 1) {
 		return;
-
-	Sbar_SortFrags ();
-
-	// draw the text
-	l = scoreboardlines <= 4 ? scoreboardlines : 4;
-
-	x = 0;
-
-	for (i = 0; i < l; i++) {
-		k = fragsort[i];
-		s = &cl.players[k];
-		if (!s->name || !s->name->value[0])
-			continue;
-
-		// draw background
-		top = Sbar_ColorForMap (s->topcolor);
-		bottom = Sbar_ColorForMap (s->bottomcolor);
-
-		draw_fill (view, x + 4, 1, 28, 4, top);
-		draw_fill (view, x + 4, 5, 28, 3, bottom);
-
-		draw_smallnum (view, x + 6, 0, s->frags, 0, 0);
-
-		if (k == cl.viewentity - 1)
-			p = i;
-
-		x += 32;
 	}
-	if (p != -1) {
-		draw_character (view, p * 32, 0, 16);
-		draw_character (view, p * 32 + 26, 0, 17);
+	Sbar_SortFrags (0);
+
+	int         numbars = 4;
+	int         count = min (scoreboardlines, numbars);
+	int         i;
+
+	for (i = 0; i < count; i++) {
+		int         k = fragsort[i];
+		__auto_type s = &cl.players[k];
+		view_t      bar = View_GetChild (view, i);
+		set_frags_bar (bar,
+					   Sbar_ColorForMap (s->topcolor),
+					   Sbar_ColorForMap (s->bottomcolor),
+					   frags_buff[i],
+					   (k == cl.viewentity - 1) ? frags_marker : 0);
+		draw_smallnum (View_GetChild (bar, 2), s->frags, 0, 0);
 	}
-#endif
+	for (; i < numbars; i++) {
+		clear_frags_bar (View_GetChild (view, i));
+	}
+}
+
+static void
+draw_minifrags (view_t view)
+{
+	if (cl.maxclients == 1) {
+		return;
+	}
+	Sbar_SortFrags (0);
+
+	// find us
+	view_pos_t  len = View_GetLen (view);
+	int         numbars = len.y / 8;
+	int         start = 0;
+	int         i;
+
+	for (i = 0; i < scoreboardlines; i++) {
+		if (fragsort[i] == cl.playernum) {
+			start = min (i - numbars / 2, scoreboardlines - numbars);
+			start = max (0, start);
+		}
+	}
+
+	int         count = min (scoreboardlines - start, numbars);
+
+	for (i = 0; i < count; i++) {
+		int         k = fragsort[i + start];
+		__auto_type s = &cl.players[k];
+		view_t      bar = View_GetChild (view, i);
+		set_minifrags_bar (bar,
+						   Sbar_ColorForMap (s->topcolor),
+						   Sbar_ColorForMap (s->bottomcolor),
+						   frags_buff[i],
+						   (k == cl.viewentity - 1) ? frags_marker : 0,
+						   cl.teamplay ? team_buff[i] : 0,
+						   name_buff[i]);
+		if (cl.teamplay) {
+			write_charbuff (team_buff[i], 0, 0, s->team->value);
+		}
+		write_charbuff (name_buff[i], 0, 0, s->name->value);
+		draw_smallnum (View_GetChild (bar, 2), s->frags, 0, 0);
+	}
+	for (; i < numbars; i++) {
+		clear_minifrags_bar (View_GetChild (view, i));
+	}
+}
+
+static void
+clear_miniteam_bar (view_t view)
+{
+	sbar_remcomponent (View_GetChild (view, 0), hud_charbuff);
+	sbar_remcomponent (View_GetChild (view, 1), hud_charbuff);
+	sbar_remcomponent (View_GetChild (view, 2), hud_func);
+}
+
+static void
+set_miniteam_bar (view_t view, draw_charbuffer_t *team,
+				  draw_charbuffer_t *frags, hud_func_f func)
+{
+	sbar_setcomponent (View_GetChild (view, 0), hud_charbuff, &team);
+	sbar_setcomponent (View_GetChild (view, 1), hud_charbuff, &frags);
+	if (func) {
+		sbar_setcomponent (View_GetChild (view, 2), hud_func, &func);
+	} else {
+		sbar_remcomponent (View_GetChild (view, 2), hud_func);
+	}
+}
+
+static void
+draw_miniteam (view_t view)
+{
+	if (!cl.teamplay) {
+		return;
+	}
+	Sbar_SortTeams ();
+
+	view_pos_t  len = View_GetLen (view);
+	int         numbars = len.y / 8;
+	int         count = min (scoreboardteams, numbars);
+	int         i;
+	info_key_t *player_team = cl.players[cl.playernum].team;
+
+	for (i = 0; i < count; i++) {
+		int         k = teamsort[i];
+		team_t     *tm = teams + k;
+		__auto_type s = &cl.players[k];
+		view_t      bar = View_GetChild (view, i);
+		hud_func_f  func = 0;
+		if (player_team && strnequal (player_team->value, tm->team, 16)) {
+			func = frags_marker;
+		}
+		set_miniteam_bar (bar, team_buff[i], team_frags[i], func);
+		write_charbuff (team_buff[i], 0, 0, s->team->value);
+		write_charbuff (team_frags[i], 0, 0, va (0, "%5d", tm->frags));
+	}
+	for (; i < numbars; i++) {
+		clear_miniteam_bar (View_GetChild (view, i));
+	}
 }
 
 static void
@@ -1040,42 +1220,6 @@ draw_hipnotic_status (view_t *view)
 }
 
 static void
-sbar_update_vis (void)
-{
-#if 0
-	qboolean    headsup;
-
-	if (r_data->scr_copyeverything)
-		Sbar_Changed ();
-
-	sbar_view->visible = 0;
-
-	headsup = !(hud_sbar || sb_view_size < 100);
-
-	if ((sb_updates >= r_data->vid->numpages) && !headsup)
-		return;
-
-	if (con_module &&
-		con_module->data->console->lines == cl_screen_view->ylen)
-		return;							// console is full screen
-
-	if (cls.state == ca_active
-		&& ((cl.stats[STAT_HEALTH] <= 0) || sb_showscores))
-		hud_overlay_view->visible = 1;
-	else
-		hud_overlay_view->visible = 0;
-
-	if (!sb_lines)
-		return;
-
-	sbar_view->visible = 1;
-
-	r_data->scr_copyeverything = 1;
-	sb_updates++;
-#endif
-}
-
-static void
 Sbar_DeathmatchOverlay (view_t *view)
 {
 #if 0
@@ -1363,124 +1507,6 @@ Sbar_DrawCenterPrint (void)
 	Sbar_DrawCenterString (hud_overlay_view, -1);
 }
 
-/*
-	draw_minifrags
-
-	frags name
-	frags team name
-	displayed to right of status bar if there's room
-*/
-static void
-draw_minifrags (view_t *view)
-{
-#if 0
-	int         numlines, top, bottom, f, i, k, x, y;
-	char        num[20];
-	player_info_t *s;
-
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
-
-	// scores
-	Sbar_SortFrags ();
-
-	if (!scoreboardlines)
-		return;							// no one there?
-
-	numlines = view->ylen / 8;
-	if (numlines < 3)
-		return;							// not enough room
-
-	// find us
-	for (i = 0; i < scoreboardlines; i++)
-		if (fragsort[i] == cl.playernum)
-			break;
-
-	if (i == scoreboardlines)			// we're not there, we are probably a
-										// spectator, just display top
-		i = 0;
-	else								// figure out start
-		i = i - numlines / 2;
-
-	if (i > scoreboardlines - numlines)
-		i = scoreboardlines - numlines;
-	if (i < 0)
-		i = 0;
-
-	x = 4;
-	y = 0;
-
-	for (; i < scoreboardlines && y < view->ylen - 8 + 1; i++) {
-		k = fragsort[i];
-		s = &cl.players[k];
-		if (!s->name || !s->name->value[0])
-			continue;
-
-		// draw ping
-		top = s->topcolor;
-		bottom = s->bottomcolor;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
-		draw_fill (view, x + 2, y + 1, 37, 3, top);
-		draw_fill (view, x + 2, y + 4, 37, 4, bottom);
-
-		// draw number
-		f = s->frags;
-		if (k != cl.playernum) {
-			snprintf (num, sizeof (num), " %3i ", f);
-		} else {
-			snprintf (num, sizeof (num), "\x10%3i\x11", f);
-		}
-
-		draw_nstring (view, x, y, num, 5);
-
-		// team
-		if (cl.teamplay) {
-			draw_nstring (view, x + 48, y, s->team->value, 4);
-			draw_nstring (view, x + 48 + 40, y, s->name->value, 16);
-		} else
-			draw_nstring (view, x + 48, y, s->name->value, 16);
-		y += 8;
-	}
-#endif
-}
-
-static void
-draw_miniteam (view_t *view)
-{
-#if 0
-	int         i, k, x, y;
-	char        num[12];
-	info_key_t *player_team = cl.players[cl.playernum].team;
-	team_t     *tm;
-
-	if (!cl.teamplay)
-		return;
-	Sbar_SortTeams ();
-
-	x = 0;
-	y = 0;
-	for (i = 0; i < scoreboardteams && y <= view->ylen; i++) {
-		k = teamsort[i];
-		tm = teams + k;
-
-		// draw pings
-		draw_nstring (view, x, y, tm->team, 4);
-		// draw total
-		snprintf (num, sizeof (num), "%5i", tm->frags);
-		draw_string (view, x + 40, y, num);
-
-		if (player_team && strnequal (player_team->value, tm->team, 16)) {
-			draw_character (view, x - 8, y, 16);
-			draw_character (view, x + 32, y, 17);
-		}
-
-		y += 8;
-	}
-#endif
-}
-
 typedef struct {
 	hud_update_f update;
 	view_t     *view;
@@ -1497,6 +1523,8 @@ static const sb_updater_t armor_update[] = {
 };
 static const sb_updater_t frags_update[] = {
 	{draw_frags, &sbar_frags},
+	{draw_minifrags, &hud_minifrags},
+	{draw_miniteam, &hud_miniteam},
 	{}
 };
 static const sb_updater_t health_update[] = {
@@ -1505,6 +1533,9 @@ static const sb_updater_t health_update[] = {
 	{}
 };
 static const sb_updater_t info_update[] = {
+	{draw_frags, &sbar_frags},
+	{draw_minifrags, &hud_minifrags},
+	{draw_miniteam, &hud_miniteam},
 	{}
 };
 static const sb_updater_t items_update[] = {
@@ -1513,7 +1544,8 @@ static const sb_updater_t items_update[] = {
 	{}
 };
 static const sb_updater_t weapon_update[] = {
-	{draw_weapons_sbar, &sbar_weapons},
+	{draw_weapons, &sbar_weapons},
+	{draw_ammo, &sbar_ammo},
 	{}
 };
 
@@ -1549,19 +1581,12 @@ Sbar_Draw (void)
 		return;
 	}
 	if (sb_update_flags & (1 << sbc_info)) {
-		draw_miniteam (0);
-		draw_minifrags (0);
 		draw_overlay (0);
 		Sbar_DeathmatchOverlay (0);
-		sbar_update_vis ();
 	}
 	if (sb_showscores) {
 		draw_solo_time ();
 	}
-#if 0
-	sbar_update_vis ();
-	hud_main_view->draw (hud_main_view);
-#endif
 	sb_update_flags = 0;
 }
 
@@ -1571,36 +1596,79 @@ sbar_hud_swap_f (void *data, const cvar_t *cvar)
 	if (hud_sbar) {
 		return;
 	}
+	grav_t      armament_grav = hud_swap ? grav_southwest : grav_southeast;
+	grav_t      weapons_grav = hud_swap ? grav_northwest : grav_northeast;
+	View_SetGravity (sbar_armament, armament_grav);
+	View_SetGravity (sbar_weapons, weapons_grav);
+	View_UpdateHierarchy (hud_view);
 }
 
 static void
-sbar_hud_sbar_f (void *data, const cvar_t *cvar)
+set_hud_sbar (void)
 {
 	view_t      v;
-	if (hud_swap) {
+
+	if (hud_sbar) {
+		View_SetParent (sbar_armament, nullview);//FIXME workaround for same-h
+		View_SetParent (sbar_armament, sbar_inventory);
+		View_SetPos (sbar_armament, 0, 0);
+		View_SetLen (sbar_armament, 202, 24);
+		View_SetGravity (sbar_armament, grav_northwest);
+
+		View_SetLen (sbar_weapons, 192, 16);
+		View_SetGravity (sbar_weapons, grav_southwest);
+
+		View_SetLen (sbar_miniammo, 202, 8);
+		View_SetGravity (sbar_miniammo, grav_northwest);
+
+		for (int i = 0; i < 7; i++) {
+			v = View_GetChild (sbar_weapons, i);
+			View_SetPos (v, i * 24, 0);
+			View_SetLen (v, 24 + 24 * (i == 6), 16);
+
+			if (sbar_hascomponent (v, hud_subpic)) {
+				hud_subpic_t *subpic = sbar_getcomponent(v, hud_subpic);
+				subpic->w = subpic->pic->width;
+			}
+		}
+		for (int i = 0; i < 4; i++) {
+			v = View_GetChild (sbar_miniammo, i);
+			View_SetPos (v, i * 48 + 10, 0);
+			View_SetLen (v, 42, 8);
+			sbar_remcomponent (v, hud_subpic);
+		}
+		for (int i = 0; i < 7; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (sb_weapons[i][j].pic) {
+					sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
+					sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
+				}
+			}
+		}
+
+		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
+		sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
+	} else {
+		View_SetParent (sbar_armament, nullview);//FIXME workaround for same-h
 		View_SetParent (sbar_armament, hud_view);
 		View_SetPos (sbar_armament, 0, 48);
 		View_SetLen (sbar_armament, 42, 156);
-		View_SetGravity (sbar_armament,
-						 hud_swap ? grav_southwest : grav_southeast);
+		View_SetGravity (sbar_armament, grav_southeast);
 
 		View_SetLen (sbar_weapons, 24, 112);
-		View_SetGravity (sbar_weapons,
-						 hud_swap ? grav_northwest : grav_northeast);
+		View_SetGravity (sbar_weapons, grav_northeast);
 
 		View_SetLen (sbar_miniammo, 42, 44);
-		View_SetGravity (sbar_weapons, grav_southeast);
+		View_SetGravity (sbar_miniammo, grav_southeast);
 
 		for (int i = 0; i < 7; i++) {
 			v = View_GetChild (sbar_weapons, i);
 			View_SetPos (v, 0, i * 16);
 			View_SetLen (v, 24, 16);
+
 			if (sbar_hascomponent (v, hud_subpic)) {
-				hud_subpic_t subpic = {
-					sbar_getcomponent (v, hud_pic), 0, 0, 24, 16
-				};
-				sbar_setcomponent (v, hud_subpic, &subpic);
-				sbar_remcomponent (v, hud_pic);
+				hud_subpic_t *subpic = sbar_getcomponent(v, hud_subpic);
+				subpic->w = 24;
 			}
 		}
 		for (int i = 0; i < 4; i++) {
@@ -1610,30 +1678,25 @@ sbar_hud_sbar_f (void *data, const cvar_t *cvar)
 			hud_subpic_t subpic = { sb_ibar, 3 + (i * 48), 0, 42, 11 };
 			sbar_setcomponent (v, hud_subpic, &subpic);
 		}
-	} else {
-		View_SetParent (sbar_armament, sbar_inventory);
-		View_SetPos (sbar_armament, 0, 0);
-		View_SetLen (sbar_armament, 202, 24);
-		View_SetGravity (sbar_armament, grav_northwest);
-
-		View_SetLen (sbar_weapons, 32, 192);
-		View_SetGravity (sbar_weapons, grav_southwest);
-
-		View_SetLen (sbar_miniammo, 42, 44);
-		View_SetGravity (sbar_weapons, grav_southeast);
-
 		for (int i = 0; i < 7; i++) {
-			v = View_GetChild (sbar_weapons, i);
-			View_SetPos (v, i * 24, 0);
-			View_SetLen (v, 24 + 24 * (i == 6), 16);
-
-			if (sbar_hascomponent (v, hud_subpic)) {
-				hud_subpic_t *subpic = sbar_getcomponent(v, hud_subpic);
-				sbar_setcomponent (v, hud_pic, &subpic->pic);
-				sbar_remcomponent (v, hud_subpic);
+			for (int j = 0; j < 8; j++) {
+				if (sb_weapons[i][j].pic) {
+					sb_weapons[i][j].w = 24;
+					sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
+				}
 			}
 		}
+
+		sbar_remcomponent (sbar_inventory, hud_pic);
+		sbar_remcomponent (sbar_statusbar, hud_pic);
 	}
+}
+
+static void
+sbar_hud_sbar_f (void *data, const cvar_t *cvar)
+{
+	set_hud_sbar ();
+	View_UpdateHierarchy (hud_view);
 }
 
 static void
@@ -1663,34 +1726,51 @@ sbar_hud_time_f (void *data, const cvar_t *cvar)
 }
 
 static void
-init_sbar_views (void)
+create_views (view_def_t *view_defs, view_t parent)
 {
 	for (int i = 0; view_defs[i].view || view_defs[i].parent; i++) {
 		view_def_t *def = &view_defs[i];
-		view_t      parent = def->parent ? *def->parent : nullview;
+		view_t      p = parent;
 		int         x = def->rect.x;
 		int         y = def->rect.y;
 		int         w = def->rect.w;
 		int         h = def->rect.h;
+		if (def->parent != &pseudo_parent) {
+			p = def->parent ? *def->parent : nullview;
+		}
 		if (def->view) {
-			*def->view = sbar_view (x, y, w, h, def->gravity, parent);
+			*def->view = sbar_view (x, y, w, h, def->gravity, p);
+			if (def->subviews) {
+				create_views (def->subviews, *def->view);
+			}
 		} else {
 			for (int j = 0; j < def->count; j++) {
-				sbar_view (x, y, w, h, def->gravity, parent);
+				view_t      v = sbar_view (x, y, w, h, def->gravity, p);
+				if (def->subviews) {
+					create_views (def->subviews, v);
+				}
 				x += def->xstep;
 				y += def->ystep;
 			}
 		}
 	}
+}
+
+static void
+init_sbar_views (void)
+{
+	create_views (sbar_defs, nullview);
+	view_pos_t  slen = View_GetLen (cl_screen_view);
+	view_pos_t  hlen = View_GetLen (hud_view);
+	View_SetLen (hud_view, slen.x, hlen.y);
+	View_SetResize (hud_view, 1, 0);
+
 	for (int i = 0; i < 4; i++) {
 		view_t      v = View_GetChild (sbar_miniammo, i);
 		draw_charbuffer_t *buffer = Draw_CreateBuffer (3, 1);
 		Draw_ClearBuffer (buffer);
 		sbar_setcomponent (v, hud_charbuff, &buffer);
 	}
-
-	sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
-	sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
 
 	if (r_data->vid->width > 320) {
 		int         l = (r_data->vid->width - 320) / 2;
@@ -1706,82 +1786,6 @@ init_sbar_views (void)
 	solo_secrets = Draw_CreateBuffer (17, 1);
 	solo_time = Draw_CreateBuffer (12, 1);
 	solo_name = Draw_CreateBuffer (20, 1);
-}
-
-static void
-init_hud_views (void)
-{
-#if 0
-	view_t     *view;
-	view_t     *minifrags_view = 0;
-	view_t     *miniteam_view = 0;
-
-	if (cl_screen_view->xlen < 512) {
-		hud_view = view_new (0, 0, 320, 48, grav_south);
-
-		hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-		hud_frags_view->draw = draw_frags;
-	} else if (cl_screen_view->xlen < 640) {
-		hud_view = view_new (0, 0, 512, 48, grav_south);
-
-		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
-		minifrags_view->draw = draw_minifrags;
-		minifrags_view->resize_y = 1;
-	} else {
-		hud_view = view_new (0, 0, 640, 48, grav_south);
-
-		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
-		minifrags_view->draw = draw_minifrags;
-		minifrags_view->resize_y = 1;
-
-		miniteam_view = view_new (0, 0, 96, 48, grav_southeast);
-		miniteam_view->draw = draw_miniteam;
-		miniteam_view->resize_y = 1;
-	}
-	hud_view->resize_y = 1;
-
-	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
-
-	view = view_new (0, 0, 42, 112, grav_northeast);
-	view->draw = draw_weapons_hud;
-	view_add (hud_armament_view, view);
-
-	view = view_new (0, 0, 42, 44, grav_southeast);
-	view->draw = draw_ammo_hud;
-	view_add (hud_armament_view, view);
-
-	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	view_add (hud_view, hud_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_status;
-	view_add (hud_view, view);
-
-	view = view_new (32, 0, 96, 16, grav_southeast);
-	view->draw = draw_items;
-	view_add (hud_inventory_view, view);
-
-	view = view_new (0, 0, 32, 16, grav_southeast);
-	view->draw = draw_sigils;
-	view_add (hud_inventory_view, view);
-
-	if (hud_frags_view)
-		view_add (hud_inventory_view, hud_frags_view);
-
-	if (minifrags_view)
-		view_add (hud_view, minifrags_view);
-	if (miniteam_view)
-		view_add (hud_view, miniteam_view);
-
-	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
-	view->resize_x = 1;
-	view_add (view, hud_view);
-	hud_view = view;
-
-	view_add (hud_view, hud_armament_view);
-
-	view_insert (hud_main_view, hud_view, 0);
-#endif
 }
 
 static void
@@ -2004,33 +2008,18 @@ init_rogue_hud_views (void)
 static void
 init_views (void)
 {
-#if 0
-	hud_main_view = view_new (0, 0, cl_screen_view->xlen, cl_screen_view->ylen,
-							  grav_northwest);
-	view_insert (cl_screen_view, hud_main_view, 0);
-	hud_main_view->resize_x = 1;	// get resized if the 2d view resizes
-	hud_main_view->resize_y = 1;
-	hud_main_view->visible = 0;		// but don't let the console draw our stuff
-	if (cl_screen_view->ylen > 300)
-		hud_overlay_view = view_new (0, 0, 320, 300, grav_center);
-	else
-		hud_overlay_view = view_new (0, 0, 320, cl_screen_view->ylen,
-									 grav_center);
-	hud_overlay_view->draw = draw_overlay;
-	hud_overlay_view->visible = 0;
-
-	hud_stuff_view = view_new (0, 48, 152, 16, grav_southwest);
-	hud_stuff_view->draw = draw_stuff;
-
-	view_insert (hud_main_view, hud_overlay_view, 0);
-	view_insert (hud_main_view, hud_stuff_view, 0);
-#endif
 	hud_stuff_view = sbar_view (0, 48, 152, 16, grav_southwest, cl_screen_view);
 	hud_time_view = sbar_view (8, 0, 64, 8, grav_northwest, hud_stuff_view);
 	hud_fps_view = sbar_view (80, 0, 72, 8, grav_northwest, hud_stuff_view);
 
 	time_buff = Draw_CreateBuffer (8, 1);
 	fps_buff = Draw_CreateBuffer (11, 1);
+	for (int i = 0; i < MAX_SCOREBOARD; i++) {
+		frags_buff[i] = Draw_CreateBuffer (3, 1);
+		team_buff[i] = Draw_CreateBuffer (4, 1);
+		name_buff[i] = Draw_CreateBuffer (16, 1);
+		team_frags[i] = Draw_CreateBuffer (5, 1);
+	}
 
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
@@ -2040,7 +2029,6 @@ init_views (void)
 		init_rogue_hud_views ();
 	} else {
 		init_sbar_views ();
-		init_hud_views ();
 	}
 }
 
@@ -2067,37 +2055,45 @@ load_pics (void)
 	sb_colon = r_funcs->Draw_PicFromWad ("num_colon");
 	sb_slash = r_funcs->Draw_PicFromWad ("num_slash");
 
-	sb_weapons[0][0] = r_funcs->Draw_PicFromWad ("inv_shotgun");
-	sb_weapons[0][1] = r_funcs->Draw_PicFromWad ("inv_sshotgun");
-	sb_weapons[0][2] = r_funcs->Draw_PicFromWad ("inv_nailgun");
-	sb_weapons[0][3] = r_funcs->Draw_PicFromWad ("inv_snailgun");
-	sb_weapons[0][4] = r_funcs->Draw_PicFromWad ("inv_rlaunch");
-	sb_weapons[0][5] = r_funcs->Draw_PicFromWad ("inv_srlaunch");
-	sb_weapons[0][6] = r_funcs->Draw_PicFromWad ("inv_lightng");
+	sb_weapons[0][0].pic = r_funcs->Draw_PicFromWad ("inv_shotgun");
+	sb_weapons[0][1].pic = r_funcs->Draw_PicFromWad ("inv_sshotgun");
+	sb_weapons[0][2].pic = r_funcs->Draw_PicFromWad ("inv_nailgun");
+	sb_weapons[0][3].pic = r_funcs->Draw_PicFromWad ("inv_snailgun");
+	sb_weapons[0][4].pic = r_funcs->Draw_PicFromWad ("inv_rlaunch");
+	sb_weapons[0][5].pic = r_funcs->Draw_PicFromWad ("inv_srlaunch");
+	sb_weapons[0][6].pic = r_funcs->Draw_PicFromWad ("inv_lightng");
 
-	sb_weapons[1][0] = r_funcs->Draw_PicFromWad ("inv2_shotgun");
-	sb_weapons[1][1] = r_funcs->Draw_PicFromWad ("inv2_sshotgun");
-	sb_weapons[1][2] = r_funcs->Draw_PicFromWad ("inv2_nailgun");
-	sb_weapons[1][3] = r_funcs->Draw_PicFromWad ("inv2_snailgun");
-	sb_weapons[1][4] = r_funcs->Draw_PicFromWad ("inv2_rlaunch");
-	sb_weapons[1][5] = r_funcs->Draw_PicFromWad ("inv2_srlaunch");
-	sb_weapons[1][6] = r_funcs->Draw_PicFromWad ("inv2_lightng");
+	sb_weapons[1][0].pic = r_funcs->Draw_PicFromWad ("inv2_shotgun");
+	sb_weapons[1][1].pic = r_funcs->Draw_PicFromWad ("inv2_sshotgun");
+	sb_weapons[1][2].pic = r_funcs->Draw_PicFromWad ("inv2_nailgun");
+	sb_weapons[1][3].pic = r_funcs->Draw_PicFromWad ("inv2_snailgun");
+	sb_weapons[1][4].pic = r_funcs->Draw_PicFromWad ("inv2_rlaunch");
+	sb_weapons[1][5].pic = r_funcs->Draw_PicFromWad ("inv2_srlaunch");
+	sb_weapons[1][6].pic = r_funcs->Draw_PicFromWad ("inv2_lightng");
 
 	for (int i = 0; i < 5; i++) {
-		sb_weapons[2 + i][0] =
+		sb_weapons[2 + i][0].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_shotgun", i + 1));
-		sb_weapons[2 + i][1] =
+		sb_weapons[2 + i][1].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_sshotgun", i + 1));
-		sb_weapons[2 + i][2] =
+		sb_weapons[2 + i][2].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_nailgun", i + 1));
-		sb_weapons[2 + i][3] =
+		sb_weapons[2 + i][3].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_snailgun", i + 1));
-		sb_weapons[2 + i][4] =
+		sb_weapons[2 + i][4].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_rlaunch", i + 1));
-		sb_weapons[2 + i][5] =
+		sb_weapons[2 + i][5].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_srlaunch", i + 1));
-		sb_weapons[2 + i][6] =
+		sb_weapons[2 + i][6].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_lightng", i + 1));
+	}
+	for (int i = 0; i < 7; i++) {
+		for (int j = 0; j < 8; j++) {
+			if (sb_weapons[i][j].pic) {
+				sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
+				sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
+			}
+		}
 	}
 
 	sb_ammo[0] = r_funcs->Draw_PicFromWad ("sb_shells");
@@ -2244,6 +2240,7 @@ Sbar_Init (void)
 	load_pics ();
 	init_views ();
 
+	set_hud_sbar ();
 	View_UpdateHierarchy (sbar_main);
 
 	sbar_hud_fps_f (0, 0);
