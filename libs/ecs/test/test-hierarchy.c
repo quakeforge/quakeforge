@@ -520,30 +520,25 @@ test_build_hierarchy3 (void)
 	if (!check_indices (A1a, 11, 5, 13, 0)) { return 1; }
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
-	set_parent (B2, nullent);
+	set_parent (B2, C);
 	dump_hierarchy (ref->hierarchy);
 	dump_tree (ref->hierarchy, 0, 0);
-	hierref_t  *B2ref = Ent_GetComponent (B2, test_href, test_reg);
-	dump_hierarchy (B2ref->hierarchy);
-	dump_tree (B2ref->hierarchy, 0, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 11)) { return 1; }
-	if (!check_hierarchy_size (B2ref->hierarchy, 2)) { return 1; }
+	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
 
-	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
-	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
-	if (!check_indices (  B,  2, 0,  7, 2)) { return 1; }
-	if (!check_indices (  C,  3, 0,  9, 1)) { return 1; }
-	if (!check_indices (  D,  4, 0, 10, 0)) { return 1; }
-	if (!check_indices ( A1,  5, 1, 10, 1)) { return 1; }
-	if (!check_indices ( A2,  6, 1, 11, 0)) { return 1; }
-	if (!check_indices ( B1,  7, 2, 11, 0)) { return 1; }
-	if (!check_indices ( B3,  8, 2, 11, 0)) { return 1; }
-	if (!check_indices ( C1,  9, 3, 11, 0)) { return 1; }
-	if (!check_indices (A1a, 10, 5, 11, 0)) { return 1; }
-
-	if (!check_indices ( B2, 0, nullent, 1, 1)) { return 1; }
-	if (!check_indices (B2a, 1, 0, 2, 0)) { return 1; }
+	if (!check_indices (root, 0,  nullent, 1, 4)) { return 1; }
+	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
+	if (!check_indices (  B,  2,  0,  7, 2)) { return 1; }
+	if (!check_indices (  C,  3,  0,  9, 2)) { return 1; }
+	if (!check_indices (  D,  4,  0, 11, 0)) { return 1; }
+	if (!check_indices ( A1,  5,  1, 11, 1)) { return 1; }
+	if (!check_indices ( A2,  6,  1, 12, 0)) { return 1; }
+	if (!check_indices ( B1,  7,  2, 12, 0)) { return 1; }
+	if (!check_indices ( B3,  8,  2, 12, 0)) { return 1; }
+	if (!check_indices ( C1,  9,  3, 12, 0)) { return 1; }
+	if (!check_indices ( B2, 10,  3, 12, 1)) { return 1; }
+	if (!check_indices (A1a, 11,  5, 13, 0)) { return 1; }
+	if (!check_indices (B2a, 12, 10, 13, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
 	Hierarchy_Delete (ref->hierarchy);
