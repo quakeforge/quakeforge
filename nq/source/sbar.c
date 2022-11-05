@@ -1603,6 +1603,20 @@ sbar_hud_swap_f (void *data, const cvar_t *cvar)
 	View_UpdateHierarchy (hud_view);
 }
 
+static int
+href_cmp (const void *_a, const void *_b, void *arg)
+{
+	uint32_t    enta = *(const uint32_t *)_a;
+	uint32_t    entb = *(const uint32_t *)_b;
+	hierref_t  *ref_a = Ent_GetComponent (enta, hud_href, hud_registry);
+	hierref_t  *ref_b = Ent_GetComponent (entb, hud_href, hud_registry);
+	if (ref_a->hierarchy == ref_b->hierarchy) {
+		return ref_a->index - ref_b->index;
+	}
+	ptrdiff_t  diff = ref_a->hierarchy - ref_b->hierarchy;
+	return diff > 0 ? 1 : diff < 0 ? -1 : 0;
+}
+
 static void
 set_hud_sbar (void)
 {
@@ -1690,6 +1704,7 @@ set_hud_sbar (void)
 		sbar_remcomponent (sbar_inventory, hud_pic);
 		sbar_remcomponent (sbar_statusbar, hud_pic);
 	}
+	ECS_SortComponentPool (hud_registry, hud_pic, href_cmp, 0);
 }
 
 static void
@@ -2240,6 +2255,7 @@ Sbar_Init (void)
 	load_pics ();
 	init_views ();
 
+	View_UpdateHierarchy (sbar_main);
 	set_hud_sbar ();
 	View_UpdateHierarchy (sbar_main);
 
