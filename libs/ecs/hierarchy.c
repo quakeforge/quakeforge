@@ -94,9 +94,11 @@ Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
 		Component_ResizeArray (&parentIndex_component,
 							   (void **) &hierarchy->parentIndex, new_max);
 
-		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
-			Component_ResizeArray (&hierarchy->type->components[i],
-								   &hierarchy->components[i], new_max);
+		if (hierarchy->type) {
+			for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
+				Component_ResizeArray (&hierarchy->type->components[i],
+									   &hierarchy->components[i], new_max);
+			}
 		}
 		hierarchy->max_objects = new_max;
 	}
@@ -118,10 +120,12 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 							hierarchy->childIndex, dstIndex, index, count);
 	Component_MoveElements (&parentIndex_component,
 							hierarchy->parentIndex, dstIndex, index, count);
-	for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
-		Component_MoveElements (&hierarchy->type->components[i],
-							    hierarchy->components[i],
-								dstIndex, index, count);
+	if (hierarchy->type) {
+		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
+			Component_MoveElements (&hierarchy->type->components[i],
+									hierarchy->components[i],
+									dstIndex, index, count);
+		}
 	}
 }
 
@@ -142,10 +146,12 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 							hierarchy->childIndex, index, srcIndex, count);
 	Component_MoveElements (&parentIndex_component,
 							hierarchy->parentIndex, index, srcIndex, count);
-	for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
-		Component_MoveElements (&hierarchy->type->components[i],
-							    hierarchy->components[i],
-								index, srcIndex, count);
+	if (hierarchy->type) {
+		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
+			Component_MoveElements (&hierarchy->type->components[i],
+									hierarchy->components[i],
+									index, srcIndex, count);
+		}
 	}
 }
 
@@ -169,10 +175,12 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 		ref->hierarchy = dst;
 		ref->index = dstIndex + i;
 	}
-	for (uint32_t i = 0; i < dst->type->num_components; i++) {
-		Component_CopyElements (&dst->type->components[i],
-							    dst->components[i], dstIndex,
-								src->components[i], srcIndex, count);
+	if (dst->type) {
+		for (uint32_t i = 0; i < dst->type->num_components; i++) {
+			Component_CopyElements (&dst->type->components[i],
+									dst->components[i], dstIndex,
+									src->components[i], srcIndex, count);
+		}
 	}
 }
 
@@ -187,9 +195,11 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 		dst->childCount[index + i] = 0;
 		dst->childIndex[index + i] = childIndex;
 	}
-	for (uint32_t i = 0; i < dst->type->num_components; i++) {
-		Component_CreateElements (&dst->type->components[i],
-								  dst->components[i], index, count);
+	if (dst->type) {
+		for (uint32_t i = 0; i < dst->type->num_components; i++) {
+			Component_CreateElements (&dst->type->components[i],
+									  dst->components[i], index, count);
+		}
 	}
 }
 
@@ -344,9 +354,12 @@ Hierarchy_New (ecs_registry_t *reg, const hierarchy_type_t *type,
 	hierarchy_t *hierarchy = PR_RESNEW (reg->hierarchies);
 	hierarchy->reg = reg;
 
+	hierarchy->components = 0;
 	hierarchy->type = type;
-	hierarchy->components = calloc (hierarchy->type->num_components,
-									sizeof (void *));
+	if (type) {
+		hierarchy->components = calloc (hierarchy->type->num_components,
+										sizeof (void *));
+	}
 
 	if (createRoot) {
 		hierarchy_open (hierarchy, 0, 1);
@@ -363,10 +376,12 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
 	free (hierarchy->parentIndex);
-	for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
-		free (hierarchy->components[i]);
+	if (hierarchy->type) {
+		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
+			free (hierarchy->components[i]);
+		}
+		free (hierarchy->components);
 	}
-	free (hierarchy->components);
 
 	ecs_registry_t *reg = hierarchy->reg;
 	PR_RESFREE (reg->hierarchies, hierarchy);
@@ -395,10 +410,12 @@ Hierarchy_Copy (ecs_registry_t *dstReg, const hierarchy_t *src)
 							dst->childIndex, 0, src->childIndex, 0, count);
 	Component_CopyElements (&parentIndex_component,
 							dst->parentIndex, 0, src->parentIndex, 0, count);
-	for (uint32_t i = 0; i < dst->type->num_components; i++) {
-		Component_CopyElements (&dst->type->components[i],
-							    dst->components[i], 0,
-								src->components[i], 0, count);
+	if (dst->type) {
+		for (uint32_t i = 0; i < dst->type->num_components; i++) {
+			Component_CopyElements (&dst->type->components[i],
+									dst->components[i], 0,
+									src->components[i], 0, count);
+		}
 	}
 	return dst;
 }

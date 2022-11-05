@@ -1,5 +1,6 @@
 libs_ecs_tests = \
 	libs/ecs/test/test-components \
+	libs/ecs/test/test-hierarchy \
 	libs/ecs/test/test-registry
 
 TESTS += $(libs_ecs_tests)
@@ -15,6 +16,13 @@ libs_ecs_test_test_components_SOURCES= 		\
 libs_ecs_test_test_components_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_components_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_hierarchy_SOURCES= 		\
+	libs/ecs/test/test-hierarchy.c
+libs_ecs_test_test_hierarchy_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_hierarchy_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_registry_SOURCES= 		\
