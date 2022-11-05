@@ -532,7 +532,7 @@ test_build_hierarchy3 (void)
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
-	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
+	if (!check_indices (  B,  2, 0,  7, 2)) { return 1; }
 	if (!check_indices (  C,  3, 0,  9, 1)) { return 1; }
 	if (!check_indices (  D,  4, 0, 10, 0)) { return 1; }
 	if (!check_indices ( A1,  5, 1, 10, 1)) { return 1; }
