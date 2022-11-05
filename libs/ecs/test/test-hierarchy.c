@@ -458,10 +458,10 @@ test_build_hierarchy2 (void)
 	if (!check_indices ( B1,  7,  2, 13, 0)) { return 1; }
 	if (!check_indices ( B2,  8,  2, 13, 1)) { return 1; }
 	if (!check_indices ( B3,  9,  2, 14, 0)) { return 1; }
-	if (!check_indices (  T, 10,  2, 14, 3)) { return 1; }
-	if (!check_indices ( C1, 11,  3, 17, 0)) { return 1; }
-	if (!check_indices (A1a, 12,  5, 17, 0)) { return 1; }
-	if (!check_indices (B2a, 13,  8, 17, 0)) { return 1; }
+	if (!check_indices (  T, 10,  2, 14, 2)) { return 1; }
+	if (!check_indices ( C1, 11,  3, 16, 0)) { return 1; }
+	if (!check_indices (A1a, 12,  5, 16, 0)) { return 1; }
+	if (!check_indices (B2a, 13,  8, 16, 0)) { return 1; }
 	if (!check_indices (  X, 14, 10, 16, 2)) { return 1; }
 	if (!check_indices (  Z, 15, 10, 18, 1)) { return 1; }
 	if (!check_indices ( X1, 16, 14, 19, 1)) { return 1; }
