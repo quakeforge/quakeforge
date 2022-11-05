@@ -41,11 +41,13 @@ enum {
 	hud_fill,
 	hud_charbuff,
 	hud_func,
+	hud_outline,
 
 	hud_comp_count
 };
 
 typedef void (*hud_update_f) (struct view_s);
+typedef void (*hud_func_f) (struct view_pos_s, struct view_pos_s);
 
 typedef struct hud_subpic_s {
 	struct qpic_s *pic;

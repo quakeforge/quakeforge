@@ -47,11 +47,11 @@ static const component_t hud_components[hud_comp_count] = {
 		.name = "href",
 	},
 	[hud_update] = {
-		.size = sizeof (void (*)(view_t)),
+		.size = sizeof (hud_update_f),
 		.name = "update",
 	},
 	[hud_updateonce] = {
-		.size = sizeof (void (*)(view_t)),
+		.size = sizeof (hud_update_f),
 		.name = "updateonce",
 	},
 	[hud_tile] = {
@@ -71,7 +71,7 @@ static const component_t hud_components[hud_comp_count] = {
 		.name = "cachepic",
 	},
 	[hud_fill] = {
-		.size = sizeof (uint32_t),
+		.size = sizeof (byte),
 		.name = "fill",
 	},
 	[hud_charbuff] = {
@@ -79,8 +79,12 @@ static const component_t hud_components[hud_comp_count] = {
 		.name = "charbuffer",
 	},
 	[hud_func] = {
-		.size = sizeof (void (*)(view_pos_t)),
+		.size = sizeof (hud_func_f),
 		.name = "func",
+	},
+	[hud_outline] = {
+		.size = sizeof (byte),
+		.name = "outline",
 	},
 };
 
@@ -362,7 +366,7 @@ draw_fill_views (ecs_pool_t *pool)
 {
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
-	uint32_t   *fill = pool->data;
+	byte       *fill = pool->data;
 	while (count-- > 0) {
 		view_t      view = { .id = *ent++, .reg = hud_registry };
 		if (View_GetVisible (view)) {
@@ -395,7 +399,7 @@ draw_func_views (ecs_pool_t *pool)
 {
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
-	void     (**func) (view_pos_t, view_pos_t) = pool->data;
+	hud_func_f *func = pool->data;
 	while (count-- > 0) {
 		view_t      view = { .id = *ent++, .reg = hud_registry };
 		if (View_GetVisible (view)) {
@@ -404,6 +408,28 @@ draw_func_views (ecs_pool_t *pool)
 			(*func) (pos, len);
 		}
 		func++;
+	}
+}
+
+static void
+draw_outline_views (ecs_pool_t *pool)
+{
+	uint32_t    count = pool->count;
+	uint32_t   *ent = pool->dense;
+	byte       *col = pool->data;
+	__auto_type line = r_funcs->Draw_Line;
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = hud_registry };
+		byte        c = *col++;
+		if (View_GetVisible (view)) {
+			view_pos_t  p = View_GetAbs (view);
+			view_pos_t  l = View_GetLen (view);
+			view_pos_t  q = { p.x + l.x - 1, p.y + l.y - 1 };
+			line (p.x, p.y, q.x, p.y, c);
+			line (p.x, q.y, q.x, q.y, c);
+			line (p.x, p.y, p.x, q.y, c);
+			line (q.x, p.y, q.x, q.y, c);
+		}
 	}
 }
 
@@ -420,6 +446,7 @@ HUD_Draw_Views (void)
 		[hud_fill]       = draw_fill_views,
 		[hud_charbuff]   = draw_charbuff_views,
 		[hud_func]       = draw_func_views,
+		[hud_outline]    = draw_outline_views,
 	};
 	for (int i = 0; i < hud_comp_count; i++) {
 		if (draw_func[i]) {
