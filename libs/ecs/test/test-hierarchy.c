@@ -699,6 +699,141 @@ test_build_hierarchy3 (void)
 	return 0;
 }
 
+static int
+test_build_hierarchy4 (void)
+{
+	printf ("test_build_hierarchy4\n");
+
+	uint32_t    hud          = create_ent (nullent,     "hud");
+	uint32_t    mt           = create_ent (hud,         "mt");
+	uint32_t    mt_b         = create_ent (mt,          "mt_b");
+	uint32_t    mt_b3        = create_ent (mt_b,        "mt_b3");
+	uint32_t    main         = create_ent (hud,         "main");
+	uint32_t    main_mf      = create_ent (main,        "main_mf");
+	uint32_t    main_mf_b    = create_ent (main_mf,     "main_mf_b");
+	uint32_t    main_mf_b7   = create_ent (main_mf_b,   "main_mf_b7");
+	uint32_t    main_i       = create_ent (main,        "main_i");
+	uint32_t    main_i_f     = create_ent (main_i,      "main_i_f");
+	uint32_t    main_i_f_b   = create_ent (main_i_f,    "main_i_f_b");
+	uint32_t    main_i_f_b4  = create_ent (main_i_f_b,  "main_i_f_b4");
+	uint32_t    main_i_s     = create_ent (main_i,      "main_i_s");
+	uint32_t    main_i_s4    = create_ent (main_i_s,    "main_i_s4");
+	uint32_t    main_i_i     = create_ent (main_i,      "main_i_i");
+	uint32_t    main_i_i4    = create_ent (main_i_i,    "main_i_i4");
+	uint32_t    main_i_a     = create_ent (main_i,      "main_i_a");
+	uint32_t    main_i_a_w   = create_ent (main_i_a,    "main_i_a_w");
+	uint32_t    main_i_a_w4  = create_ent (main_i_a_w,  "main_i_a_w4");
+	uint32_t    main_i_a_ma  = create_ent (main_i_a,    "main_i_a_ma");
+	uint32_t    main_i_a_ma4 = create_ent (main_i_a_ma, "main_i_a_ma4");
+	uint32_t    main_sb      = create_ent (main,        "main_sb");
+	uint32_t    main_sb_a    = create_ent (main_sb,     "main_sb_a");
+	uint32_t    main_sb_a4   = create_ent (main_sb_a,   "main_sb_a4");
+	uint32_t    main_sb_f    = create_ent (main_sb,     "main_sb_f");
+	uint32_t    main_sb_h    = create_ent (main_sb,     "main_sb_h");
+	uint32_t    main_sb_h3   = create_ent (main_sb_h,   "main_sb_h3");
+	uint32_t    main_sb_A    = create_ent (main_sb,     "main_sb_A");
+	uint32_t    main_sb_A4   = create_ent (main_sb_A,   "main_sb_A4");
+	uint32_t    main_t0      = create_ent (main,        "main_t0");
+	uint32_t    main_t1      = create_ent (main,        "main_t1");
+	uint32_t    main_S       = create_ent (main,        "main_S");
+	uint32_t    main_S_m     = create_ent (main_S,      "main_S_m");
+	uint32_t    main_S_s     = create_ent (main_S,      "main_S_s");
+	uint32_t    main_S_t     = create_ent (main_S,      "main_S_t");
+	uint32_t    main_S_a     = create_ent (main_S,      "main_S_a");
+	uint32_t    main_S_a_n   = create_ent (main_S_a,    "main_S_a_n");
+
+	hierref_t  *ref = Ent_GetComponent (hud, test_href, test_reg);
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+
+	if (!check_hierarchy_size (ref->hierarchy, 37)) { return 1; }
+
+	if (!check_indices (hud,       0, nullent, 1, 2)) { return 1; }
+	if (!check_indices (mt,            1,  0,  3, 1)) { return 1; }
+	if (!check_indices (main,          2,  0,  4, 6)) { return 1; }
+	if (!check_indices (mt_b,          3,  1, 10, 1)) { return 1; }
+	if (!check_indices (main_mf,       4,  2, 11, 1)) { return 1; }
+	if (!check_indices (main_i,        5,  2, 12, 4)) { return 1; }
+	if (!check_indices (main_sb,       6,  2, 16, 4)) { return 1; }
+	if (!check_indices (main_t0,       7,  2, 20, 0)) { return 1; }
+	if (!check_indices (main_t1,       8,  2, 20, 0)) { return 1; }
+	if (!check_indices (main_S,        9,  2, 20, 4)) { return 1; }
+	if (!check_indices (mt_b3,        10,  3, 24, 0)) { return 1; }
+	if (!check_indices (main_mf_b,    11,  4, 24, 1)) { return 1; }
+	if (!check_indices (main_i_f,     12,  5, 25, 1)) { return 1; }
+	if (!check_indices (main_i_s,     13,  5, 26, 1)) { return 1; }
+	if (!check_indices (main_i_i,     14,  5, 27, 1)) { return 1; }
+	if (!check_indices (main_i_a,     15,  5, 28, 2)) { return 1; }
+	if (!check_indices (main_sb_a,    16,  6, 30, 1)) { return 1; }
+	if (!check_indices (main_sb_f,    17,  6, 31, 0)) { return 1; }
+	if (!check_indices (main_sb_h,    18,  6, 31, 1)) { return 1; }
+	if (!check_indices (main_sb_A,    19,  6, 32, 1)) { return 1; }
+	if (!check_indices (main_S_m,     20,  9, 33, 0)) { return 1; }
+	if (!check_indices (main_S_s,     21,  9, 33, 0)) { return 1; }
+	if (!check_indices (main_S_t,     22,  9, 33, 0)) { return 1; }
+	if (!check_indices (main_S_a,     23,  9, 33, 1)) { return 1; }
+	if (!check_indices (main_mf_b7,   24, 11, 34, 0)) { return 1; }
+	if (!check_indices (main_i_f_b,   25, 12, 34, 1)) { return 1; }
+	if (!check_indices (main_i_s4,    26, 13, 35, 0)) { return 1; }
+	if (!check_indices (main_i_i4,    27, 14, 35, 0)) { return 1; }
+	if (!check_indices (main_i_a_w,   28, 15, 35, 1)) { return 1; }
+	if (!check_indices (main_i_a_ma,  29, 15, 36, 1)) { return 1; }
+	if (!check_indices (main_sb_a4,   30, 16, 37, 0)) { return 1; }
+	if (!check_indices (main_sb_h3,   31, 18, 37, 0)) { return 1; }
+	if (!check_indices (main_sb_A4,   32, 19, 37, 0)) { return 1; }
+	if (!check_indices (main_S_a_n,   33, 23, 37, 0)) { return 1; }
+	if (!check_indices (main_i_f_b4,  34, 25, 37, 0)) { return 1; }
+	if (!check_indices (main_i_a_w4,  35, 28, 37, 0)) { return 1; }
+	if (!check_indices (main_i_a_ma4, 36, 29, 37, 0)) { return 1; }
+
+	set_parent (main_i_a, hud);
+	dump_hierarchy (ref->hierarchy);
+	dump_tree (ref->hierarchy, 0, 0);
+
+	if (!check_indices (hud,       0, nullent, 1, 3)) { return 1; }
+	if (!check_indices (mt,            1,  0,  4, 1)) { return 1; }
+	if (!check_indices (main,          2,  0,  5, 6)) { return 1; }
+	if (!check_indices (main_i_a,      3,  0, 11, 2)) { return 1; }
+	if (!check_indices (mt_b,          4,  1, 13, 1)) { return 1; }
+	if (!check_indices (main_mf,       5,  2, 14, 1)) { return 1; }
+	if (!check_indices (main_i,        6,  2, 15, 3)) { return 1; }
+	if (!check_indices (main_sb,       7,  2, 18, 4)) { return 1; }
+	if (!check_indices (main_t0,       8,  2, 22, 0)) { return 1; }
+	if (!check_indices (main_t1,       9,  2, 22, 0)) { return 1; }
+	if (!check_indices (main_S,       10,  2, 22, 4)) { return 1; }
+	if (!check_indices (main_i_a_w,   11,  3, 26, 1)) { return 1; }
+	if (!check_indices (main_i_a_ma,  12,  3, 27, 1)) { return 1; }
+	if (!check_indices (mt_b3,        13,  4, 28, 0)) { return 1; }
+	if (!check_indices (main_mf_b,    14,  5, 28, 1)) { return 1; }
+	if (!check_indices (main_i_f,     15,  6, 29, 1)) { return 1; }
+	if (!check_indices (main_i_s,     16,  6, 30, 1)) { return 1; }
+	if (!check_indices (main_i_i,     17,  6, 31, 1)) { return 1; }
+	if (!check_indices (main_sb_a,    18,  7, 32, 1)) { return 1; }
+	if (!check_indices (main_sb_f,    19,  7, 33, 0)) { return 1; }
+	if (!check_indices (main_sb_h,    20,  7, 33, 1)) { return 1; }
+	if (!check_indices (main_sb_A,    21,  7, 34, 1)) { return 1; }
+	if (!check_indices (main_S_m,     22, 10, 35, 0)) { return 1; }
+	if (!check_indices (main_S_s,     23, 10, 35, 0)) { return 1; }
+	if (!check_indices (main_S_t,     24, 10, 35, 0)) { return 1; }
+	if (!check_indices (main_S_a,     25, 10, 35, 1)) { return 1; }
+	if (!check_indices (main_i_a_w4,  26, 11, 36, 0)) { return 1; }
+	if (!check_indices (main_i_a_ma4, 27, 12, 36, 0)) { return 1; }
+	if (!check_indices (main_mf_b7,   28, 14, 36, 0)) { return 1; }
+	if (!check_indices (main_i_f_b,   29, 15, 36, 1)) { return 1; }
+	if (!check_indices (main_i_s4,    30, 16, 37, 0)) { return 1; }
+	if (!check_indices (main_i_i4,    31, 17, 37, 0)) { return 1; }
+	if (!check_indices (main_sb_a4,   32, 18, 37, 0)) { return 1; }
+	if (!check_indices (main_sb_h3,   33, 20, 37, 0)) { return 1; }
+	if (!check_indices (main_sb_A4,   34, 21, 37, 0)) { return 1; }
+	if (!check_indices (main_S_a_n,   35, 25, 37, 0)) { return 1; }
+	if (!check_indices (main_i_f_b4,  36, 29, 37, 0)) { return 1; }
+
+	// Delete the hierarchy directly as setparent isn't fully tested
+	Hierarchy_Delete (ref->hierarchy);
+
+	return 0;
+}
+
 int
 main (void)
 {
@@ -712,6 +847,7 @@ main (void)
 	if (test_build_hierarchy ()) { return 1; }
 	if (test_build_hierarchy2 ()) { return 1; }
 	if (test_build_hierarchy3 ()) { return 1; }
+	if (test_build_hierarchy4 ()) { return 1; }
 
 	ECS_DelRegistry (test_reg);
 
