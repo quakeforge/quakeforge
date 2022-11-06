@@ -170,10 +170,12 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 	memset (&src->ent[srcIndex], nullent, count * sizeof(dst->ent[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
-		uint32_t    ent = dst->ent[dstIndex + i];
-		hierref_t  *ref = Ent_GetComponent (ent, href, reg);
-		ref->hierarchy = dst;
-		ref->index = dstIndex + i;
+		if (dst->ent[dstIndex + i] != nullent) {
+			uint32_t    ent = dst->ent[dstIndex + i];
+			hierref_t  *ref = Ent_GetComponent (ent, href, reg);
+			ref->hierarchy = dst;
+			ref->index = dstIndex + i;
+		}
 	}
 	if (dst->type) {
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
@@ -205,7 +207,7 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 
 static uint32_t
 hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
-				  uint32_t dstParent, uint32_t srcRoot, uint32_t count)
+				  uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
 {
 	uint32_t    insertIndex;	// where the objects will be inserted
 	uint32_t    childIndex;		// where the objects' children will inserted
@@ -237,8 +239,11 @@ hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
 	childIndex += count;
 
 	hierarchy_open (dst, insertIndex, count);
+	if (dst == src && insertIndex <= *srcRoot) {
+		*srcRoot += count;
+	}
 	if (src) {
-		hierarchy_move (dst, src, insertIndex, srcRoot, count);
+		hierarchy_move (dst, src, insertIndex, *srcRoot, count);
 	} else {
 		hierarchy_init (dst, insertIndex, dstParent, childIndex, count);
 	}
@@ -254,25 +259,27 @@ hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
 
 static void
 hierarchy_insert_children (hierarchy_t *dst, const hierarchy_t *src,
-						   uint32_t dstParent, uint32_t srcRoot)
+						   uint32_t dstParent, uint32_t *srcRoot)
 {
 	uint32_t    insertIndex;
-	uint32_t    childIndex = src->childIndex[srcRoot];
-	uint32_t    childCount = src->childCount[srcRoot];
+	uint32_t    childIndex = src->childIndex[*srcRoot];
+	uint32_t    childCount = src->childCount[*srcRoot];
 
 	if (childCount) {
 		insertIndex = hierarchy_insert (dst, src, dstParent,
-										childIndex, childCount);
-		for (uint32_t i = 0; i < childCount; i++) {
-			hierarchy_insert_children (dst, src, insertIndex + i,
-									   childIndex + i);
+										&childIndex, childCount);
+		if (dst == src && insertIndex <= *srcRoot) {
+			*srcRoot += childCount;
+		}
+		for (uint32_t i = 0; i < childCount; i++, childIndex++) {
+			hierarchy_insert_children (dst, src, insertIndex + i, &childIndex);
 		}
 	}
 }
 
-uint32_t
-Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
-						   uint32_t dstParent, uint32_t srcRoot)
+static uint32_t
+hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
+						   uint32_t dstParent, uint32_t *srcRoot)
 {
 	uint32_t    insertIndex;
 
@@ -282,7 +289,7 @@ Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 		}
 		hierarchy_open (dst, 0, 1);
 		if (src) {
-			hierarchy_move (dst, src, 0, srcRoot, 1);
+			hierarchy_move (dst, src, 0, *srcRoot, 1);
 		}
 		dst->parentIndex[0] = nullent;
 		dst->childIndex[0] = 1;
@@ -299,6 +306,13 @@ Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 		hierarchy_insert_children (dst, src, insertIndex, srcRoot);
 	}
 	return insertIndex;
+}
+
+uint32_t
+Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
+						   uint32_t dstParent, uint32_t srcRoot)
+{
+	return hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);
 }
 
 static void
@@ -437,7 +451,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 		dst = Hierarchy_New (src->reg, src->type, 0);
 	}
 	r.hierarchy = dst;
-	r.index = Hierarchy_InsertHierarchy (dst, src, dstParent, srcRoot);
+	r.index = hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);
 	Hierarchy_RemoveHierarchy (src, srcRoot);
 	if (!src->num_objects) {
 		Hierarchy_Delete (src);
