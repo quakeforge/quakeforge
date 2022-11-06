@@ -1623,7 +1623,6 @@ set_hud_sbar (void)
 	view_t      v;
 
 	if (hud_sbar) {
-		View_SetParent (sbar_armament, nullview);//FIXME workaround for same-h
 		View_SetParent (sbar_armament, sbar_inventory);
 		View_SetPos (sbar_armament, 0, 0);
 		View_SetLen (sbar_armament, 202, 24);
@@ -1663,7 +1662,6 @@ set_hud_sbar (void)
 		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
 		sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
 	} else {
-		View_SetParent (sbar_armament, nullview);//FIXME workaround for same-h
 		View_SetParent (sbar_armament, hud_view);
 		View_SetPos (sbar_armament, 0, 48);
 		View_SetLen (sbar_armament, 42, 156);
