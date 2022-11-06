@@ -30,6 +30,16 @@ static const component_t test_components[] = {
 
 ecs_registry_t *test_reg;
 
+#define DFL "\e[39;49m"
+#define BLK "\e[30;40m"
+#define RED "\e[31;40m"
+#define GRN "\e[32;40m"
+#define ONG "\e[33;40m"
+#define BLU "\e[34;40m"
+#define MAG "\e[35;40m"
+#define CYN "\e[36;40m"
+#define WHT "\e[37;40m"
+
 static int
 check_hierarchy_size (hierarchy_t *h, uint32_t size)
 {
@@ -49,28 +59,84 @@ check_hierarchy_size (hierarchy_t *h, uint32_t size)
 	return 1;
 }
 
+static const char *
+ref_index_color (uint32_t i, uint32_t rind)
+{
+	return rind != i ? RED : DFL;
+}
+
+static const char *
+parent_index_color (hierarchy_t *h, uint32_t i)
+{
+	if (!i && h->parentIndex[i] == nullent) {
+		return GRN;
+	}
+	if (h->parentIndex[i] >= i) {
+		return RED;
+	}
+	uint32_t    ci = h->childIndex[h->parentIndex[i]];
+	uint32_t    cc = h->childCount[h->parentIndex[i]];
+	if (i < ci || i >= ci + cc) {
+		return ONG;
+	}
+	return DFL;
+}
+
+static const char *
+child_index_color (hierarchy_t *h, uint32_t i)
+{
+	if (h->childIndex[i] > h->num_objects
+		|| h->childCount[i] > h->num_objects
+		|| h->childIndex[i] + h->childCount[i] > h->num_objects) {
+		return RED;
+	}
+	if (h->childIndex[i] <= i) {
+		return ONG;
+	}
+	return DFL;
+}
+
+static const char *
+child_count_color (hierarchy_t *h, uint32_t i)
+{
+	if (h->childIndex[i] > h->num_objects
+		|| h->childCount[i] > h->num_objects
+		|| h->childIndex[i] + h->childCount[i] > h->num_objects) {
+		return RED;
+	}
+	return DFL;
+}
+
+static const char *
+entity_color (hierarchy_t *h, uint32_t i)
+{
+	return h->ent[i] == nullent ? MAG : DFL;
+}
+
 static void
 dump_hierarchy (hierarchy_t *h)
 {
 	ecs_registry_t *reg = h->reg;
 	puts ("in: ri pa ci cc en name");
 	for (uint32_t i = 0; i < h->num_objects; i++) {
+		uint32_t    rind = nullent;
+		static char fake_name[] = ONG "null" DFL;
+		static char *fake_nameptr = fake_name;
+		char      **name = &fake_nameptr;
 		if (ECS_EntValid (h->ent[i], reg)) {
 			hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
-			static char fake_name[] = "?";
-			static char *fake_nameptr = fake_name;
-			char      **name = &fake_nameptr;
+			rind = ref->index;
 			if (Ent_HasComponent (h->ent[i], test_name, reg)) {
 				name = Ent_GetComponent (h->ent[i], test_name, reg);
 			}
-			printf ("%2d: %2d %2d %2d %2d %2d %s\n", i,
-					ref->index, h->parentIndex[i],
-					h->childIndex[i], h->childCount[i], h->ent[i], *name);
-		} else {
-			printf ("%2d: %2d %2d %2d %2d %2d %s\n", i,
-					-1, h->parentIndex[i],
-					h->childIndex[i], h->childCount[i], h->ent[i], "null");
 		}
+		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %s\n", i,
+				ref_index_color (i, rind), rind,
+				parent_index_color (h, i), h->parentIndex[i],
+				child_index_color (h, i), h->childIndex[i],
+				child_count_color (h, i), h->childCount[i],
+				entity_color (h, i), h->ent[i],
+				*name);
 	}
 	puts ("");
 }
@@ -85,20 +151,28 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level)
 	if (!level) {
 		puts ("in: pa ci cc en|name");
 	}
+	static char fake_name[] = ONG "null" DFL;
+	static char *fake_nameptr = fake_name;
+	char      **name = &fake_nameptr;
 	ecs_registry_t *reg = h->reg;
-	if (ECS_EntValid (h->ent[ind], reg)) {
-		char      **name = Ent_GetComponent (h->ent[ind], test_name, reg);;
-		printf ("%2d: %2d %2d %2d %2d|%*s%s\n", ind,
-				h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
-				h->ent[ind], level * 3, "", *name);
-	} else {
-		printf ("%2d: %2d %2d %2d %2d|%*s%s\n", ind,
-				h->parentIndex[ind], h->childIndex[ind], h->childCount[ind],
-				h->ent[ind], level * 3, "", "null");
+	if (ECS_EntValid (h->ent[ind], reg)
+		&& Ent_HasComponent (h->ent[ind], test_name, reg)) {
+		name = Ent_GetComponent (h->ent[ind], test_name, reg);;
 	}
+	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL"|%*s%s\n", ind,
+			parent_index_color (h, ind), h->parentIndex[ind],
+			child_index_color (h, ind), h->childIndex[ind],
+			child_count_color (h, ind), h->childCount[ind],
+			entity_color (h, ind), h->ent[ind],
+			level * 3, "", *name);
 
-	for (uint32_t i = 0; i < h->childCount[ind]; i++) {
-		dump_tree (h, h->childIndex[ind] + i, level + 1);
+	if (h->childIndex[ind] > ind) {
+		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
+			if (h->childIndex[ind] + i >= h->num_objects) {
+				break;
+			}
+			dump_tree (h, h->childIndex[ind] + i, level + 1);
+		}
 	}
 	if (!level) {
 		puts ("");
