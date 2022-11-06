@@ -195,7 +195,7 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
 	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    6, 16, 0},
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
-	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   4, 24, 0},
+	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
 
 	{}
