@@ -12,6 +12,7 @@
 enum {
 	test_href,
 	test_name,
+	test_highlight,
 
 	test_num_components
 };
@@ -25,6 +26,10 @@ static const component_t test_components[] = {
 	[test_name] = {
 		.size = sizeof (const char *),
 		.name = "name",
+	},
+	[test_highlight] = {
+		.size = sizeof (byte),
+		.name = "highlight",
 	},
 };
 
@@ -113,6 +118,25 @@ entity_color (hierarchy_t *h, uint32_t i)
 	return h->ent[i] == nullent ? MAG : DFL;
 }
 
+static const char *
+highlight_color (hierarchy_t *h, uint32_t i)
+{
+	uint32_t    ent = h->ent[i];
+	if (ECS_EntValid (ent, test_reg)
+		&& Ent_HasComponent (ent, test_highlight, test_reg)) {
+		static char color_str[] = "\e[3.;4.m";
+		byte       *color = Ent_GetComponent (ent, test_highlight, test_reg);
+		if (*color) {
+			byte        fg = *color & 0x0f;
+			byte        bg = *color >> 4;
+			color_str[3] = fg < 8 ? '0' + fg : '9';
+			color_str[6] = bg < 8 ? '0' + bg : '9';
+			return color_str;
+		}
+	}
+	return "";
+}
+
 static void
 dump_hierarchy (hierarchy_t *h)
 {
@@ -130,13 +154,13 @@ dump_hierarchy (hierarchy_t *h)
 				name = Ent_GetComponent (h->ent[i], test_name, reg);
 			}
 		}
-		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %s\n", i,
+		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %s%s"DFL"\n", i,
 				ref_index_color (i, rind), rind,
 				parent_index_color (h, i), h->parentIndex[i],
 				child_index_color (h, i), h->childIndex[i],
 				child_count_color (h, i), h->childCount[i],
 				entity_color (h, i), h->ent[i],
-				*name);
+				highlight_color (h, i), *name);
 	}
 	puts ("");
 }
@@ -159,12 +183,12 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level)
 		&& Ent_HasComponent (h->ent[ind], test_name, reg)) {
 		name = Ent_GetComponent (h->ent[ind], test_name, reg);;
 	}
-	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL"|%*s%s\n", ind,
+	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL"|%*s%s%s"DFL"\n", ind,
 			parent_index_color (h, ind), h->parentIndex[ind],
 			child_index_color (h, ind), h->childIndex[ind],
 			child_count_color (h, ind), h->childCount[ind],
 			entity_color (h, ind), h->ent[ind],
-			level * 3, "", *name);
+			level * 3, "", highlight_color (h, ind), *name);
 
 	if (h->childIndex[ind] > ind) {
 		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
@@ -230,6 +254,12 @@ create_ent (uint32_t parent, const char *name)
 	}
 	ref->hierarchy->ent[ref->index] = ent;
 	return ent;
+}
+
+static void
+highlight_ent (uint32_t ent, byte color)
+{
+	Ent_SetComponent (ent, test_highlight, test_reg, &color);
 }
 
 static void
@@ -722,7 +752,7 @@ test_build_hierarchy4 (void)
 	uint32_t    main_i_i4    = create_ent (main_i_i,    "main_i_i4");
 	uint32_t    main_i_a     = create_ent (main_i,      "main_i_a");
 	uint32_t    main_i_a_w   = create_ent (main_i_a,    "main_i_a_w");
-	uint32_t    main_i_a_w4  = create_ent (main_i_a_w,  "main_i_a_w4");
+	uint32_t    main_i_a_w7  = create_ent (main_i_a_w,  "main_i_a_w7");
 	uint32_t    main_i_a_ma  = create_ent (main_i_a,    "main_i_a_ma");
 	uint32_t    main_i_a_ma4 = create_ent (main_i_a_ma, "main_i_a_ma4");
 	uint32_t    main_sb      = create_ent (main,        "main_sb");
@@ -741,6 +771,23 @@ test_build_hierarchy4 (void)
 	uint32_t    main_S_t     = create_ent (main_S,      "main_S_t");
 	uint32_t    main_S_a     = create_ent (main_S,      "main_S_a");
 	uint32_t    main_S_a_n   = create_ent (main_S_a,    "main_S_a_n");
+
+	highlight_ent (main_i_a, 0x06);
+	highlight_ent (main_i_a_w, 0x05);
+	highlight_ent (main_i_a_ma, 0x05);
+	highlight_ent (main_i_a_w7, 0x02);
+	highlight_ent (main_i_a_ma4, 0x02);
+
+	highlight_ent (main_sb_a, 0x03);
+	highlight_ent (main_sb_h, 0x03);
+	highlight_ent (main_sb_A, 0x03);
+	highlight_ent (main_S_a, 0x03);
+	highlight_ent (main_i_f_b, 0x03);
+	highlight_ent (main_sb_a4, 0x01);
+	highlight_ent (main_sb_h3, 0x01);
+	highlight_ent (main_sb_A4, 0x01);
+	highlight_ent (main_S_a_n, 0x01);
+	highlight_ent (main_i_f_b4, 0x01);
 
 	hierref_t  *ref = Ent_GetComponent (hud, test_href, test_reg);
 	dump_hierarchy (ref->hierarchy);
@@ -783,7 +830,7 @@ test_build_hierarchy4 (void)
 	if (!check_indices (main_sb_A4,   32, 19, 37, 0)) { return 1; }
 	if (!check_indices (main_S_a_n,   33, 23, 37, 0)) { return 1; }
 	if (!check_indices (main_i_f_b4,  34, 25, 37, 0)) { return 1; }
-	if (!check_indices (main_i_a_w4,  35, 28, 37, 0)) { return 1; }
+	if (!check_indices (main_i_a_w7,  35, 28, 37, 0)) { return 1; }
 	if (!check_indices (main_i_a_ma4, 36, 29, 37, 0)) { return 1; }
 
 	set_parent (main_i_a, hud);
@@ -816,7 +863,7 @@ test_build_hierarchy4 (void)
 	if (!check_indices (main_S_s,     23, 10, 35, 0)) { return 1; }
 	if (!check_indices (main_S_t,     24, 10, 35, 0)) { return 1; }
 	if (!check_indices (main_S_a,     25, 10, 35, 1)) { return 1; }
-	if (!check_indices (main_i_a_w4,  26, 11, 36, 0)) { return 1; }
+	if (!check_indices (main_i_a_w7,  26, 11, 36, 0)) { return 1; }
 	if (!check_indices (main_i_a_ma4, 27, 12, 36, 0)) { return 1; }
 	if (!check_indices (main_mf_b7,   28, 14, 36, 0)) { return 1; }
 	if (!check_indices (main_i_f_b,   29, 15, 36, 1)) { return 1; }
