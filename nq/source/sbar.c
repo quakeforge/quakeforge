@@ -69,34 +69,36 @@ int         sb_updates;				// if >= vid.numpages, no update needed
 static int sb_update_flags;
 static int sb_view_size;
 
-//     view_t hud_view;
-static view_t   hud_miniteam;
-static view_t sbar_main;
-static view_t   hud_minifrags;		// child of sbar_main for positioning
-static view_t   sbar_inventory;
-static view_t     sbar_frags;
-static view_t     sbar_sigils;
-static view_t     sbar_items;
-static view_t     sbar_armament;
-static view_t       sbar_weapons;
-static view_t       sbar_miniammo;
-static view_t   sbar_statusbar;
-static view_t     sbar_armor;
-static view_t     sbar_face;
-static view_t     sbar_health;
-static view_t     sbar_ammo;
-static view_t   sbar_solo;
-static view_t     sbar_solo_monsters;
-static view_t     sbar_solo_secrets;
-static view_t     sbar_solo_time;
-static view_t     sbar_solo_anchor;
-static view_t       sbar_solo_name;
-static view_t   sbar_tile[2];
 
 static view_t intermission_view;
 static view_t   intermission_time;
 static view_t   intermission_secr;
 static view_t   intermission_kill;
+//     view_t hud_view;
+static view_t   hud_miniteam;
+static view_t   sbar_main;
+static view_t     hud_minifrags;		// child of sbar_main for positioning
+static view_t     sbar_inventory;
+static view_t       sbar_frags;
+static view_t       sbar_sigils;
+static view_t       sbar_items;
+static view_t       sbar_armament;
+static view_t         sbar_weapons;
+static view_t         sbar_miniammo;
+static view_t     sbar_statusbar;
+static view_t       sbar_armor;
+static view_t       sbar_face;
+static view_t       sbar_health;
+static view_t       sbar_ammo;
+static view_t     sbar_solo;
+static view_t       sbar_solo_monsters;
+static view_t       sbar_solo_secrets;
+static view_t       sbar_solo_time;
+static view_t       sbar_solo_anchor;
+static view_t         sbar_solo_name;
+static view_t     sbar_tile[2];
+static view_t     sbar_tile[2];
+static view_t dmo_view;
 
 typedef struct view_def_s {
 	view_t     *view;
@@ -197,6 +199,8 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
+
+	{&dmo_view,           {  0, 0,320, 200}, grav_north,     &cl_screen_view},
 
 	{}
 };
@@ -506,14 +510,21 @@ typedef struct {
 
 team_t      teams[MAX_CLIENTS];
 int         teamsort[MAX_CLIENTS];
-int         fragsort[MAX_SCOREBOARD];
-static draw_charbuffer_t *frags_buff[MAX_SCOREBOARD];
-static draw_charbuffer_t *team_buff[MAX_SCOREBOARD];
-static draw_charbuffer_t *name_buff[MAX_SCOREBOARD];
-static draw_charbuffer_t *team_frags[MAX_SCOREBOARD];
+int         fragsort[MAX_CLIENTS];
+static view_t sb_views[MAX_CLIENTS];
+static draw_charbuffer_t *sb_fph[MAX_CLIENTS];
+static draw_charbuffer_t *sb_time[MAX_CLIENTS];
+static draw_charbuffer_t *sb_frags[MAX_CLIENTS];
+static draw_charbuffer_t *sb_team[MAX_CLIENTS];
+static draw_charbuffer_t *sb_ping[MAX_CLIENTS];
+static draw_charbuffer_t *sb_pl[MAX_CLIENTS];
+static draw_charbuffer_t *sb_uid[MAX_CLIENTS];
+static draw_charbuffer_t *sb_name[MAX_CLIENTS];
+static draw_charbuffer_t *sb_team_frags[MAX_CLIENTS];
+static draw_charbuffer_t *sb_spectator;
 int         scoreboardlines, scoreboardteams;
 
-static void __attribute__((used))
+static void
 Sbar_SortFrags (qboolean includespec)
 {
 	int         i, j, k;
@@ -724,7 +735,7 @@ draw_frags (view_t view)
 		set_frags_bar (bar,
 					   Sbar_ColorForMap (s->topcolor),
 					   Sbar_ColorForMap (s->bottomcolor),
-					   frags_buff[i],
+					   sb_frags[k],
 					   (k == cl.viewentity - 1) ? frags_marker : 0);
 		draw_smallnum (View_GetChild (bar, 2), s->frags, 0, 0);
 	}
@@ -763,14 +774,14 @@ draw_minifrags (view_t view)
 		set_minifrags_bar (bar,
 						   Sbar_ColorForMap (s->topcolor),
 						   Sbar_ColorForMap (s->bottomcolor),
-						   frags_buff[i],
+						   sb_frags[k],
 						   (k == cl.viewentity - 1) ? frags_marker : 0,
-						   cl.teamplay ? team_buff[i] : 0,
-						   name_buff[i]);
+						   cl.teamplay ? sb_team[k] : 0,
+						   sb_name[k]);
 		if (cl.teamplay) {
-			write_charbuff (team_buff[i], 0, 0, s->team->value);
+			write_charbuff (sb_team[k], 0, 0, s->team->value);
 		}
-		write_charbuff (name_buff[i], 0, 0, s->name->value);
+		write_charbuff (sb_name[k], 0, 0, s->name->value);
 		draw_smallnum (View_GetChild (bar, 2), s->frags, 0, 0);
 	}
 	for (; i < numbars; i++) {
@@ -822,9 +833,9 @@ draw_miniteam (view_t view)
 		if (player_team && strnequal (player_team->value, tm->team, 16)) {
 			func = frags_marker;
 		}
-		set_miniteam_bar (bar, team_buff[i], team_frags[i], func);
-		write_charbuff (team_buff[i], 0, 0, s->team->value);
-		write_charbuff (team_frags[i], 0, 0, va (0, "%5d", tm->frags));
+		set_miniteam_bar (bar, sb_team[k], sb_team_frags[k], func);
+		write_charbuff (sb_team[k], 0, 0, s->team->value);
+		write_charbuff (sb_team_frags[k], 0, 0, va (0, "%5d", tm->frags));
 	}
 	for (; i < numbars; i++) {
 		clear_miniteam_bar (View_GetChild (view, i));
@@ -1219,52 +1230,121 @@ draw_hipnotic_status (view_t *view)
 #endif
 }
 
+static view_t
+nq_dmo_line (view_t parent, int player)
+{
+	view_t      line = sbar_view (0, 0, 192, 8, grav_north, parent);
+	view_t      frags = sbar_view (0, 0, 40, 8, grav_northwest, line);
+	view_t      name = sbar_view (64, 0, 128, 8, grav_northwest, line);
+	sbar_view (0, 0, 40, 4, grav_northwest, frags);
+	sbar_view (0, 4, 40, 4, grav_northwest, frags);
+	sbar_view (8, 0, 24, 8, grav_northwest, frags);
+	sbar_view (0, 0, 40, 8, grav_northwest, frags);
+	player_info_t *p = &cl.players[player];
+	set_frags_bar (frags,
+				   Sbar_ColorForMap (p->topcolor),
+				   Sbar_ColorForMap (p->bottomcolor),
+				   sb_frags[player],
+				   (player == cl.viewentity - 1) ? frags_marker : 0);
+	sbar_setcomponent (name, hud_charbuff, &sb_name[player]);
+	return line;
+}
+
 static void
-Sbar_DeathmatchOverlay (view_t *view)
+Sbar_DeathmatchOverlay (view_t view)
 {
 #if 0
-	int         i, k, l;
-	int         top, bottom;
-	int         x, y;
-	player_info_t *s;
+	// this should be on a timer and needs nq/qw specific variants
+	// request new ping times every two seconds
+	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+	if (hud_ping) {
+		int ping = cl.players[cl.playernum].ping;
 
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
+		ping = bound (0, ping, 999);
+		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
+	}
 
-	draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
+	if (hud_ping && hud_pl)
+		draw_character (view, 48, 0, '/');
 
-	// scores
-	Sbar_SortFrags ();
+	if (hud_pl) {
+		int lost = CL_CalcNet ();
 
-	// draw the text
-	l = scoreboardlines;
-
-	x = 80;
-	y = 40;
-	for (i = 0; i < l; i++) {
-		k = fragsort[i];
-		s = &cl.players[k];
-		if (!s->name->value[0])
-			continue;
-
-		// draw background
-		top = Sbar_ColorForMap (s->topcolor);
-		bottom = Sbar_ColorForMap (s->bottomcolor);
-
-		draw_fill (view, x, y, 40, 4, top);
-		draw_fill (view, x, y + 4, 40, 4, bottom);
-
-		draw_smallnum (view, x + 12, y, s->frags, 0, 0);
-
-		if (k == cl.viewentity - 1)
-			draw_character (view, x - 4, y, 12);
-
-		// draw name
-		draw_string (view, x + 64, y, s->name->value);
-
-		y += 10;
+		lost = bound (0, lost, 999);
+		draw_string (view, 56, 0, va (0, "%3d pl", lost));
 	}
 #endif
+	// 0, 0 "gfx/ranking.lmp"
+	// 80, 40
+	//
+	// qw t 2+ [
+	//     ping   pl  main  team   uid name
+	//      0,y 32,y  64,y 184,y 224,y 264,y
+	//     24,8 24,8 112,8  32,8  32,8  80,8
+	// ]
+	// qw t 1 [
+	//     uid   pl  main  team name
+	//     0,y 32,y  64,y 184,y 224,y
+	//    32,8 24,8 112,8  32,8  96,8
+	// ]
+	// qw t 0 [
+	//     ping   pl  main  team name
+	//      0,y 32,y  64,y 184,y 224,y
+	//     24,8 24,8 112,8  32,8  96,8
+	// ]
+	// qw 2+ [
+	//     ping   pl  main   uid  name
+	//      0,y 32,y  64,y 184,y 224,y
+	//     24,8 24,8 112,8  32,8  96,8
+	// ]
+	// qw 1 [
+	//     ping   pl  main name
+	//      0,y 32,y  64,y 184,y
+	//     24,8 24,8 112,8 136,8
+	// ]
+	// qw 0 [
+	//     uid   pl  main name
+	//     0,y 32,y  64,y 184,y
+	//    32,8 24,8 112,8 136,8
+	// ]
+	// for all qw, spectator replaces main, team at 72,0 88,8
+
+	Sbar_SortFrags (0);
+	printf ("dmo: %d\n", scoreboardlines);
+
+	int         y = 40;
+	view_pos_t  len = View_GetLen (view);
+	int         numbars = (len.y - y) / 10;
+	int         count = min (scoreboardlines, numbars);
+	int         i;
+
+	if (cl.stats[STAT_HEALTH] > 0) {
+		count = 0;
+	}
+
+	for (i = 0; i < count; i++, y += 10) {
+		int         k = fragsort[i];
+		if (!View_Valid (sb_views[k])) {
+			sb_views[k] = nq_dmo_line (view, k);
+		}
+		player_info_t *p = &cl.players[k];
+		//FIXME update top/bottom color
+		write_charbuff (sb_frags[k], 0, 0, va (0, "%3d", p->frags));
+		write_charbuff (sb_name[k], 0, 0, p->name->value);
+		view_pos_t  pos = View_GetPos (sb_views[k]);
+		View_SetPos (sb_views[k], pos.x, y);
+	}
+	for (; i < MAX_CLIENTS; i++) {
+		int         k = fragsort[i];
+		if (View_Valid (sb_views[k])) {
+			View_Delete (sb_views[k]);
+		}
+	}
+	View_UpdateHierarchy (view);
 }
 
 static void
@@ -1525,6 +1605,7 @@ static const sb_updater_t frags_update[] = {
 	{draw_frags, &sbar_frags},
 	{draw_minifrags, &hud_minifrags},
 	{draw_miniteam, &hud_miniteam},
+	{Sbar_DeathmatchOverlay, &dmo_view},
 	{}
 };
 static const sb_updater_t health_update[] = {
@@ -1536,6 +1617,7 @@ static const sb_updater_t info_update[] = {
 	{draw_frags, &sbar_frags},
 	{draw_minifrags, &hud_minifrags},
 	{draw_miniteam, &hud_miniteam},
+	{Sbar_DeathmatchOverlay, &dmo_view},
 	{}
 };
 static const sb_updater_t items_update[] = {
@@ -1582,7 +1664,6 @@ Sbar_Draw (void)
 	}
 	if (sb_update_flags & (1 << sbc_info)) {
 		draw_overlay (0);
-		Sbar_DeathmatchOverlay (0);
 	}
 	if (sb_showscores) {
 		draw_solo_time ();
@@ -2027,12 +2108,19 @@ init_views (void)
 
 	time_buff = Draw_CreateBuffer (8, 1);
 	fps_buff = Draw_CreateBuffer (11, 1);
-	for (int i = 0; i < MAX_SCOREBOARD; i++) {
-		frags_buff[i] = Draw_CreateBuffer (3, 1);
-		team_buff[i] = Draw_CreateBuffer (4, 1);
-		name_buff[i] = Draw_CreateBuffer (16, 1);
-		team_frags[i] = Draw_CreateBuffer (5, 1);
+	for (int i = 0; i < MAX_CLIENTS; i++) {
+		sb_fph[i] = Draw_CreateBuffer (3, 1);
+		sb_time[i] = Draw_CreateBuffer (4, 1);
+		sb_frags[i] = Draw_CreateBuffer (3, 1);
+		sb_team[i] = Draw_CreateBuffer (4, 1);
+		sb_ping[i] = Draw_CreateBuffer (3, 1);
+		sb_pl[i] = Draw_CreateBuffer (3, 1);
+		sb_uid[i] = Draw_CreateBuffer (4, 1);
+		sb_name[i] = Draw_CreateBuffer (16, 1);
+		sb_team_frags[i] = Draw_CreateBuffer (5, 1);
 	}
+	sb_spectator = Draw_CreateBuffer (11, 1);
+	write_charbuff (sb_spectator, 0, 0, "(spectator)");
 
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
