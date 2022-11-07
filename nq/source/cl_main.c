@@ -233,6 +233,7 @@ CL_ClearMemory (void)
 	memset (&cl, 0, sizeof (cl));
 	Sbar_Intermission (cl.intermission = 0);
 	cl.viewstate.camera_transform = cam;
+	cl.viewstate.demoplayback = cls.demoplayback;
 
 	CL_ClearTEnts ();
 
