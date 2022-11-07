@@ -316,13 +316,19 @@ Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 }
 
 static void
-hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index)
+hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index,
+						   int delEntities)
 {
 	uint32_t    childIndex = hierarchy->childIndex[index];
 	uint32_t    childCount = hierarchy->childCount[index];
 
 	for (uint32_t i = childCount; i-- > 0; ) {
-		hierarchy_remove_children (hierarchy, childIndex + i);
+		hierarchy_remove_children (hierarchy, childIndex + i, delEntities);
+	}
+	if (delEntities) {
+		for (uint32_t i = 0; i < childCount; i++) {
+			ECS_DelEntity (hierarchy->reg, hierarchy->ent[childIndex + i]);
+		}
 	}
 	hierarchy_close (hierarchy, childIndex, childCount);
 	hierarchy->childCount[index] = 0;
@@ -337,11 +343,15 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index)
 }
 
 void
-Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index)
+Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
+						   int delEntities)
 {
 	uint32_t    parentIndex = hierarchy->parentIndex[index];
 
-	hierarchy_remove_children (hierarchy, index);
+	hierarchy_remove_children (hierarchy, index, delEntities);
+	if (delEntities) {
+		ECS_DelEntity (hierarchy->reg, hierarchy->ent[index]);
+	}
 	hierarchy_close (hierarchy, index, 1);
 
 	hierarchy_UpdateTransformIndices (hierarchy, index, -1);
@@ -442,7 +452,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 	}
 	r.hierarchy = dst;
 	r.index = hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);
-	Hierarchy_RemoveHierarchy (src, srcRoot);
+	Hierarchy_RemoveHierarchy (src, srcRoot, 0);
 	if (!src->num_objects) {
 		Hierarchy_Delete (src);
 	}
