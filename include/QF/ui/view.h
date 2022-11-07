@@ -124,6 +124,7 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 #define VIEWINLINE GNU89INLINE inline
 
 view_t View_New (ecs_registry_t *reg, view_t parent);
+VIEWINLINE void View_Delete (view_t view);
 void View_SetParent (view_t view, view_t parent);
 void View_UpdateHierarchy (view_t view);
 
@@ -177,6 +178,17 @@ int
 View_Valid (view_t view)
 {
 	return view.reg && ECS_EntValid (view.id, view.reg);
+}
+
+VIEWINLINE
+void
+View_Delete (view_t view)
+{
+	__auto_type ref = *View_GetRef (view);
+	Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
+	if (!ref.hierarchy->num_objects) {
+		Hierarchy_Delete (ref.hierarchy);
+	}
 }
 
 VIEWINLINE
