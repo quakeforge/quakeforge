@@ -540,6 +540,9 @@ Sbar_SortFrags (qboolean includespec)
 				cl.players[i].frags = -999;
 		}
 	}
+	for (i = scoreboardlines; i < cl.maxclients; i++) {
+		fragsort[i] = -1;
+	}
 
 	player_info_t *p = cl.players;
 	for (i = 0; i < scoreboardlines; i++) {
@@ -1474,7 +1477,6 @@ Sbar_DeathmatchOverlay (view_t view)
 	// for all qw, spectator replaces main, team at 72,0 88,8
 
 	Sbar_SortFrags (0);
-	printf ("dmo: %d\n", scoreboardlines);
 
 	int         y = 40;
 	view_pos_t  len = View_GetLen (view);
@@ -1488,10 +1490,10 @@ Sbar_DeathmatchOverlay (view_t view)
 
 	for (i = 0; i < count; i++, y += 10) {
 		int         k = fragsort[i];
+		player_info_t *p = &cl.players[k];
 		if (!View_Valid (sb_views[k])) {
 			sb_views[k] = make_dmo_line (view, k);
 		}
-		player_info_t *p = &cl.players[k];
 		write_charbuff (sb_ping[k], 0, 0, va (0, "%3d", p->ping));
 		write_charbuff (sb_pl[k], 0, 0, va (0, "%3d", p->pl));
 		int         total = (cl.intermission ? cl.completed_time : realtime)
@@ -1503,12 +1505,11 @@ Sbar_DeathmatchOverlay (view_t view)
 		write_charbuff (sb_frags[k], 0, 0, va (0, "%3d", p->frags));
 		write_charbuff (sb_uid[k], 0, 0, va (0, "%3d", p->userid));
 		write_charbuff (sb_name[k], 0, 0, p->name->value);
-		view_pos_t  pos = View_GetPos (sb_views[k]);
-		View_SetPos (sb_views[k], pos.x, y);
+		View_SetPos (sb_views[k], 0, y);
 	}
 	for (; i < MAX_CLIENTS; i++) {
 		int         k = fragsort[i];
-		if (View_Valid (sb_views[k])) {
+		if (k >= 0 && View_Valid (sb_views[k])) {
 			View_Delete (sb_views[k]);
 		}
 	}
@@ -2286,6 +2287,7 @@ init_views (void)
 		sb_uid[i] = Draw_CreateBuffer (4, 1);
 		sb_name[i] = Draw_CreateBuffer (16, 1);
 		sb_team_frags[i] = Draw_CreateBuffer (5, 1);
+		fragsort[i] = -1;
 	}
 	sb_spectator = Draw_CreateBuffer (11, 1);
 	write_charbuff (sb_spectator, 0, 0, "(spectator)");
