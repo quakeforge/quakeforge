@@ -60,6 +60,7 @@
 
 #include "client/hud.h"
 #include "client/screen.h"
+#include "client/world.h"
 
 #include "nq/include/client.h"
 #include "nq/include/game.h"
@@ -271,6 +272,7 @@ static qpic_t *sb_face_invuln;
 static qpic_t *sb_face_invis_invuln;
 
 static qboolean sb_showscores;
+static qboolean sb_showteamscores;
 
 static int sb_lines;				// scan lines to draw
 
@@ -290,6 +292,35 @@ static qpic_t *hsb_weapons[7][5];	// 0 is active, 1 is owned, 2-5 are flashes
 //	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
+//static qboolean largegame = false;
+
+char *fs_fraglog;
+static cvar_t fs_fraglog_cvar = {
+	.name = "fs_fraglog",
+	.description =
+		"Filename of the automatic frag-log.",
+	.default_value = "qw-scores.log",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &fs_fraglog },
+};
+int cl_fraglog;
+static cvar_t cl_fraglog_cvar = {
+	.name = "cl_fraglog",
+	.description =
+		"Automatic fraglogging, non-zero value will switch it on.",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_fraglog },
+};
+int hud_scoreboard_uid;
+static cvar_t hud_scoreboard_uid_cvar = {
+	.name = "hud_scoreboard_uid",
+	.description =
+		"Set to 1 to show uid instead of ping. Set to 2 to show both.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &hud_scoreboard_uid },
+};
 float scr_centertime;
 static cvar_t scr_centertime_cvar = {
 	.name = "scr_centertime",
@@ -882,6 +913,29 @@ draw_face (view_t view)
 	sbar_setcomponent (view, hud_pic, &face);
 }
 
+static void __attribute__((used))
+draw_spectator (view_t *view)
+{
+#if 0
+	char        st[512];
+
+	if (autocam != CAM_TRACK) {
+		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
+		draw_string (view, 160 - 14 * 8 + 4, 12,
+					 "Press [ATTACK] for AutoCamera");
+	} else {
+//		Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
+		if (cl.players[spec_track].name) {
+			snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
+					  cl.players[spec_track].name->value);
+		} else {
+			snprintf (st, sizeof (st), "Lost player, [JUMP] for next");
+		}
+		draw_string (view, 0, -8, st);
+	}
+#endif
+}
+
 static inline void
 draw_armor (view_t view)
 {
@@ -920,6 +974,11 @@ draw_health (view_t view)
 static void
 draw_status (view_t *view)
 {
+	if (cl.spectator) {
+		draw_spectator (view);
+		if (autocam != CAM_TRACK)
+			return;
+	}
 	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
@@ -931,6 +990,7 @@ draw_status (view_t *view)
 	draw_ammo (sbar_status_ammo);
 }
 #endif
+
 static void __attribute__((used))
 draw_rogue_weapons_sbar (view_t *view)
 {
@@ -1516,6 +1576,82 @@ Sbar_DeathmatchOverlay (view_t view)
 	View_UpdateHierarchy (view);
 }
 
+static void __attribute__((used))
+Sbar_TeamOverlay (view_t *view)
+{
+#if 0
+	char        num[20];
+	int         pavg, plow, phigh, i, k, x, y;
+	team_t     *tm;
+	info_key_t *player_team = cl.players[cl.playernum].team;
+
+	if (!cl.teamplay) { // FIXME: if not teamplay, why teamoverlay?
+		Sbar_DeathmatchOverlay (view, 0);
+		return;
+	}
+
+	r_data->scr_copyeverything = 1;
+	r_data->scr_fullupdate = 0;
+
+	draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
+
+	y = 24;
+	x = 36;
+	draw_string (view, x, y, "low/avg/high team total players");
+	y += 8;
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
+
+	// sort the teams
+	Sbar_SortTeams ();
+
+	// draw the text
+	for (i = 0; i < scoreboardteams && y <= view->ylen - 10; i++) {
+		k = teamsort[i];
+		tm = teams + k;
+
+		// draw pings
+		plow = tm->plow;
+		if (plow < 0 || plow > 999)
+			plow = 999;
+		phigh = tm->phigh;
+		if (phigh < 0 || phigh > 999)
+			phigh = 999;
+		if (!tm->players)
+			pavg = 999;
+		else
+			pavg = tm->ptotal / tm->players;
+		if (pavg < 0 || pavg > 999)
+			pavg = 999;
+
+		snprintf (num, sizeof (num), "%3i/%3i/%3i", plow, pavg, phigh);
+		draw_string (view, x, y, num);
+
+		// draw team
+		draw_nstring (view, x + 104, y, tm->team, 4);
+
+		// draw total
+		snprintf (num, sizeof (num), "%5i", tm->frags);
+		draw_string (view, x + 104 + 40, y, num);
+
+		// draw players
+		snprintf (num, sizeof (num), "%5i", tm->players);
+		draw_string (view, x + 104 + 88, y, num);
+
+		if (player_team && strnequal (player_team->value, tm->team, 16)) {
+			draw_character (view, x + 104 - 8, y, 16);
+			draw_character (view, x + 104 + 32, y, 17);
+		}
+
+		y += 8;
+	}
+	y += 8;
+	Sbar_DeathmatchOverlay (view, y);
+#endif
+}
+
 static void
 Sbar_DrawScoreboard (void)
 {
@@ -1532,6 +1668,123 @@ draw_overlay (view_t *view)
 	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
 		Sbar_DrawScoreboard ();
 	}
+#if 0
+	if (cls.state != ca_active
+		|| !((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+			 || sb_showscores || sb_showteamscores))
+		return;
+	// main screen deathmatch rankings
+	// if we're dead show team scores in team games
+	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+		if (cl.teamplay > 0 && !sb_showscores)
+			Sbar_TeamOverlay (view);
+		else
+			Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showscores)
+		Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showteamscores)
+		Sbar_TeamOverlay (view);
+#endif
+}
+
+/*
+	Sbar_LogFrags
+
+	autologging of frags after a match ended
+	(called by recived network packet with command scv_intermission)
+	TODO: Find a new and better place for this function
+		  (i am nearly shure this is wrong place)
+	added by Elmex
+*/
+void
+Sbar_LogFrags (void)
+{
+	char       *name;
+	char       *team;
+	byte       *cp = NULL;
+	QFile      *file = NULL;
+	int         minutes, fph, total, d, f, i, k, l, p;
+	player_info_t *s = NULL;
+	const char *t = NULL;
+	time_t      tt = time (NULL);
+
+	if (!cl_fraglog)
+		return;
+
+	if ((file = QFS_Open (fs_fraglog, "a")) == NULL)
+		return;
+
+	t = ctime (&tt);
+	if (t)
+		Qwrite (file, t, strlen (t));
+
+	Qprintf (file, "%s\n%s %s\n", "FIXME",//FIXME cls.servername->str,
+			 cl_world.scene->worldmodel->path, cl.levelname);
+
+	// scores
+	Sbar_SortFrags (true);
+
+	// draw the text
+	l = scoreboardlines;
+
+	if (cl.teamplay) {
+		// TODO: test if the teamplay does correct output
+		Qwrite (file, "pl   fph time frags team name\n",
+				strlen ("pl   fph time frags team name\n"));
+	} else {
+		Qwrite (file, "pl   fph time frags name\n",
+				strlen ("pl   fph time frags name\n"));
+	}
+
+	for (i = 0; i < l; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name || !s->name->value[0])
+			continue;
+
+		// draw pl
+		p = s->pl;
+		(void) p; //FIXME
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = total / 60;
+
+		// get frags
+		f = s->frags;
+
+		fph = calc_fph (f, total);
+
+		name = malloc (strlen (s->name->value) + 1);
+		for (cp = (byte *) s->name->value, d = 0; *cp; cp++, d++)
+			name[d] = sys_char_map[*cp];
+		name[d] = 0;
+
+		if (s->spectator) {
+			Qprintf (file, "%-3i%% %s (spectator)", s->pl, name);
+		} else {
+			if (cl.teamplay) {
+				team = malloc (strlen (s->team->value) + 1);
+				for (cp = (byte *) s->team, d = 0; *cp; cp++, d++)
+					team[d] = sys_char_map[*cp];
+				team[d] = 0;
+
+				Qprintf (file, "%-3i%% %-3i %-4i %-3i    %-4s %s",
+						 s->pl, fph, minutes, f, team, name);
+				free (team);
+			} else {
+				Qprintf (file, "%-3i%% %-3i %-4i %-3i   %s",
+						  s->pl, fph, minutes, f, name);
+			}
+		}
+		free (name);
+		Qwrite (file, "\n\n", 1);
+	}
+
+	Qclose (file);
 }
 
 static void
@@ -1580,6 +1833,36 @@ draw_fps (view_t view)
 	}
 	write_charbuff (fps_buff, 0, 0, st);
 }
+
+#if 0
+static void
+draw_net (view_t *view)
+{
+	// request new ping times every two seconds
+	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+	if (hud_ping) {
+		int ping = cl.players[cl.playernum].ping;
+
+		ping = bound (0, ping, 999);
+		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
+	}
+
+	if (hud_ping && hud_pl)
+		draw_character (view, 48, 0, '/');
+
+	if (hud_pl) {
+		int lost = CL_CalcNet ();
+
+		lost = bound (0, lost, 999);
+		draw_string (view, 56, 0, va (0, "%3d pl", lost));
+	}
+}
+if (cls.state == ca_active && (hud_ping || hud_pl))
+#endif
 
 static void
 draw_intermission (view_t view)
@@ -1819,9 +2102,11 @@ Sbar_Changed (sbar_changed change)
 		Sys_Error ("invalid sbar changed enum");
 	}
 	const sb_updater_t *ud = sb_updaters[change];
-	while (ud->update) {
-		sbar_setcomponent (*ud->view, hud_updateonce, &ud->update);
-		ud++;
+	if (ud) {
+		while (ud->update) {
+			sbar_setcomponent (*ud->view, hud_updateonce, &ud->update);
+			ud++;
+		}
 	}
 }
 
@@ -2498,6 +2783,23 @@ Sbar_DontShowScores (void)
 	sbar_remcomponent (sbar_solo_name, hud_charbuff);
 }
 
+static void
+Sbar_ShowTeamScores (void)
+{
+	if (sb_showteamscores)
+		return;
+
+	sb_showteamscores = true;
+	sb_updates = 0;
+}
+
+static void
+Sbar_DontShowTeamScores (void)
+{
+	sb_showteamscores = false;
+	sb_updates = 0;
+}
+
 void
 Sbar_Init (void)
 {
@@ -2522,8 +2824,15 @@ Sbar_Init (void)
 					"Display information on everyone playing");
 	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
 					"Stop displaying information on everyone playing");
+	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores,
+					"Display information for your team");
+	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores,
+					"Stop displaying information for your team");
 
 	r_data->viewsize_callback = viewsize_f;
+	Cvar_Register (&hud_scoreboard_uid_cvar, 0/*FIXME Sbar_DMO_Init_f*/, 0);
+	Cvar_Register (&fs_fraglog_cvar, 0, 0);
+	Cvar_Register (&cl_fraglog_cvar, 0, 0);
 	Cvar_Register (&scr_centertime_cvar, 0, 0);
 	Cvar_Register (&scr_printspeed_cvar, 0, 0);
 

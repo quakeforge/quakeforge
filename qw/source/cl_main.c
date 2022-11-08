@@ -870,7 +870,7 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
-		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
+		Sbar_Changed (sbc_server);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.viewstate.watervis = atoi (p);

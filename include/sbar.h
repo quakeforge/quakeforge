@@ -37,9 +37,6 @@
 
 void Sbar_Init (void);
 
-struct cvar_s;
-void Sbar_DMO_Init_f (void *data, const struct cvar_s *var);
-
 typedef enum {
 	sbc_ammo,
 	sbc_armor,
@@ -48,6 +45,7 @@ typedef enum {
 	sbc_info,
 	sbc_items,
 	sbc_weapon,
+	sbc_server,
 
 	sbc_num_changed
 } sbar_changed;

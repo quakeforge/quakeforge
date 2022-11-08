@@ -73,7 +73,7 @@ nq_server_LIB_DEPS=$(nq_server_LIBFILES) $(nq_common_LIBFILES)
 
 nq_source_libnq_client_a_SOURCES= \
 		nq/source/cl_cmd.c nq/source/cl_demo.c nq/source/cl_ents.c nq/source/cl_input.c nq/source/cl_main.c \
-		nq/source/cl_parse.c nq/source/sbar.c
+		nq/source/cl_parse.c
 
 nq_source_libnq_server_a_SOURCES= \
 		nq/source/host.c nq/source/host_cmd.c nq/source/sv_cl_phys.c nq/source/sv_cvar.c nq/source/sv_main.c \

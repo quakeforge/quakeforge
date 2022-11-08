@@ -1121,7 +1121,7 @@ CL_ServerInfo (void)
 		cl.no_pogo_stick = no_pogo_stick;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
+		Sbar_Changed (sbc_server);
 	} else if (strequal (key, "watervis")) {
 		cl.viewstate.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
@@ -1152,8 +1152,6 @@ CL_SetStat (int stat, int value)
 			return;
 	}
 
-	Sbar_Changed (~0);
-
 	switch (stat) {
 		case STAT_ITEMS:
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
@@ -1166,6 +1164,13 @@ CL_SetStat (int stat, int value)
 									va (0, "%i", value));
 			if (value <= 0)
 				Team_Dead ();
+			break;
+		default:
+			//FIXME smarter checks
+			Sbar_Changed (sbc_ammo);
+			Sbar_Changed (sbc_armor);
+			Sbar_Changed (sbc_frags);
+			Sbar_Changed (sbc_weapon);
 			break;
 	}
 	cl.stats[stat] = value;
