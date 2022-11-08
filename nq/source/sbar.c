@@ -200,7 +200,7 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
 
-	{&dmo_view,           {  0, 0,320, 200}, grav_north,     &cl_screen_view},
+	{&dmo_view,           {  0, 0,320, 200}, grav_center,   &cl_screen_view},
 
 	{}
 };
@@ -1230,24 +1230,214 @@ draw_hipnotic_status (view_t *view)
 #endif
 }
 
-static view_t
-nq_dmo_line (view_t parent, int player)
+static void
+setup_frags (view_t frags, int player)
 {
-	view_t      line = sbar_view (0, 0, 192, 8, grav_north, parent);
-	view_t      frags = sbar_view (0, 0, 40, 8, grav_northwest, line);
-	view_t      name = sbar_view (64, 0, 128, 8, grav_northwest, line);
 	sbar_view (0, 0, 40, 4, grav_northwest, frags);
 	sbar_view (0, 4, 40, 4, grav_northwest, frags);
 	sbar_view (8, 0, 24, 8, grav_northwest, frags);
 	sbar_view (0, 0, 40, 8, grav_northwest, frags);
+
 	player_info_t *p = &cl.players[player];
 	set_frags_bar (frags,
 				   Sbar_ColorForMap (p->topcolor),
 				   Sbar_ColorForMap (p->bottomcolor),
 				   sb_frags[player],
 				   (player == cl.viewentity - 1) ? frags_marker : 0);
-	sbar_setcomponent (name, hud_charbuff, &sb_name[player]);
+}
+
+static void
+setup_spect (view_t spect, int player)
+{
+	view_t      v = sbar_view (0, 0, 88, 4, grav_north, spect);
+	sbar_setcomponent (v, hud_charbuff, &sb_spectator);
+}
+
+typedef struct dmo_def_s {
+	int         width;			// in pixels
+	draw_charbuffer_t **buffer;
+	void      (*setup) (view_t, int);
+} dmo_def_t;
+
+static dmo_def_t ping_def      = { .width =  24, .buffer = sb_ping, };
+static dmo_def_t pl_def        = { .width =  24, .buffer = sb_pl, };
+static dmo_def_t fph_def       = { .width =  24, .buffer = sb_fph, };
+static dmo_def_t time_def      = { .width =  32, .buffer = sb_time, };
+static dmo_def_t frags_def     = { .width =  40,     .setup = setup_frags, };
+static dmo_def_t team_def      = { .width =  32, .buffer = sb_uid, };
+static dmo_def_t uid_def       = { .width =  32, .buffer = sb_uid, };
+static dmo_def_t name_def      = { .width = 128, .buffer = sb_name, };
+static dmo_def_t spectator_def = { .width = 112,     .setup = setup_spect, };
+static dmo_def_t spec_team_def = { .width =  32, };
+
+static dmo_def_t *nq_dmo_defs[] = {
+	&frags_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_team_uid_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&team_def,
+	&uid_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_team_uid_defs[] = {
+	&uid_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&team_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_team_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&team_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_uid_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&uid_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_uid_defs[] = {
+	&ping_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_ping_defs[] = {
+	&uid_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_team_uid_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&spec_team_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_team_uid_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&spec_team_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_team_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&spec_team_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_uid_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_uid_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_ping_defs[] = {
+	&ping_def,
+	&pl_def,
+	&spectator_def,
+	&name_def,
+	0
+};
+static dmo_def_t **dmo_defs[] = {
+	nq_dmo_defs,
+	qw_dmo_ping_defs,
+	qw_dmo_uid_defs,
+	qw_dmo_uid_ping_defs,
+	qw_dmo_team_ping_defs,
+	qw_dmo_team_uid_defs,
+	qw_dmo_team_uid_ping_defs,
+	qw_dmo_spect_ping_defs,
+	qw_dmo_spect_uid_defs,
+	qw_dmo_spect_uid_ping_defs,
+	qw_dmo_spect_team_ping_defs,
+	qw_dmo_spect_team_uid_defs,
+	qw_dmo_spect_team_uid_ping_defs,
+};
+
+static view_t
+make_dmo_line (view_t parent, int player)
+{
+	dmo_def_t **defs = dmo_defs[3];	//FIXME nq/qw/team/spec/cvar
+	int         x = -8;
+	view_t      line = sbar_view (0, 0, 0, 0, grav_north, parent);
+
+	while (*defs) {
+		dmo_def_t  *d = *defs++;
+		x += 8 + d->width;
+		if (d->buffer || d->setup) {
+			view_t      v = sbar_view (x - d->width, 0, d->width, 8,
+									   grav_northwest, line);
+			if (d->buffer) {
+				draw_charbuffer_t *buff = d->buffer[player];
+				sbar_setcomponent (v, hud_charbuff, &buff);
+			} else if (d->setup) {
+				d->setup (v, player);
+			}
+		}
+	}
+	View_SetLen (line, x, 8);
 	return line;
+}
+
+static inline int
+calc_fph (int frags, int total)
+{
+	int     fph;
+
+	if (total != 0) {
+		fph = (3600 * frags) / total;
+
+		if (fph >= 999) {
+			fph = 999;
+		} else if (fph <= -999) {
+			fph = -999;
+		}
+	} else {
+		fph = 0;
+	}
+
+	return fph;
 }
 
 static void
@@ -1281,36 +1471,6 @@ Sbar_DeathmatchOverlay (view_t view)
 	// 0, 0 "gfx/ranking.lmp"
 	// 80, 40
 	//
-	// qw t 2+ [
-	//     ping   pl  main  team   uid name
-	//      0,y 32,y  64,y 184,y 224,y 264,y
-	//     24,8 24,8 112,8  32,8  32,8  80,8
-	// ]
-	// qw t 1 [
-	//     uid   pl  main  team name
-	//     0,y 32,y  64,y 184,y 224,y
-	//    32,8 24,8 112,8  32,8  96,8
-	// ]
-	// qw t 0 [
-	//     ping   pl  main  team name
-	//      0,y 32,y  64,y 184,y 224,y
-	//     24,8 24,8 112,8  32,8  96,8
-	// ]
-	// qw 2+ [
-	//     ping   pl  main   uid  name
-	//      0,y 32,y  64,y 184,y 224,y
-	//     24,8 24,8 112,8  32,8  96,8
-	// ]
-	// qw 1 [
-	//     ping   pl  main name
-	//      0,y 32,y  64,y 184,y
-	//     24,8 24,8 112,8 136,8
-	// ]
-	// qw 0 [
-	//     uid   pl  main name
-	//     0,y 32,y  64,y 184,y
-	//    32,8 24,8 112,8 136,8
-	// ]
 	// for all qw, spectator replaces main, team at 72,0 88,8
 
 	Sbar_SortFrags (0);
@@ -1329,11 +1489,19 @@ Sbar_DeathmatchOverlay (view_t view)
 	for (i = 0; i < count; i++, y += 10) {
 		int         k = fragsort[i];
 		if (!View_Valid (sb_views[k])) {
-			sb_views[k] = nq_dmo_line (view, k);
+			sb_views[k] = make_dmo_line (view, k);
 		}
 		player_info_t *p = &cl.players[k];
+		write_charbuff (sb_ping[k], 0, 0, va (0, "%3d", p->ping));
+		write_charbuff (sb_pl[k], 0, 0, va (0, "%3d", p->pl));
+		int         total = (cl.intermission ? cl.completed_time : realtime)
+							- p->entertime;
+		write_charbuff (sb_fph[k], 0, 0, va (0, "%3d",
+											 calc_fph (p->frags, total)));
+		write_charbuff (sb_time[k], 0, 0, va (0, "%3d", total / 60));
 		//FIXME update top/bottom color
 		write_charbuff (sb_frags[k], 0, 0, va (0, "%3d", p->frags));
+		write_charbuff (sb_uid[k], 0, 0, va (0, "%3d", p->userid));
 		write_charbuff (sb_name[k], 0, 0, p->name->value);
 		view_pos_t  pos = View_GetPos (sb_views[k]);
 		View_SetPos (sb_views[k], pos.x, y);
