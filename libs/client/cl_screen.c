@@ -144,7 +144,6 @@ scr_draw_views (void)
 
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
-	Sbar_Draw,
 	HUD_Draw_Views,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,

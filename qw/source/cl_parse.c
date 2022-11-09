@@ -779,6 +779,7 @@ CL_ParseServerData (void)
 	// get the full level name
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	Sbar_SetLevelName (cl.levelname, cls.servername->str);
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
@@ -1121,7 +1122,7 @@ CL_ServerInfo (void)
 		cl.no_pogo_stick = no_pogo_stick;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_Changed (sbc_server);
+		Sbar_SetTeamplay (cl.teamplay);
 	} else if (strequal (key, "watervis")) {
 		cl.viewstate.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
@@ -1411,7 +1412,7 @@ CL_ParseServerMessage (void)
 			case svc_damage:
 				V_ParseDamage (net_message, &cl.viewstate);
 				// put sbar face into pain frame
-				cl.faceanimtime = cl.time + 0.2;
+				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
@@ -1478,7 +1479,7 @@ CL_ParseServerMessage (void)
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
 				if (!cls.demoplayback)
-					Sbar_LogFrags ();
+					Sbar_LogFrags (cl.time);
 				break;
 
 			case svc_finale:

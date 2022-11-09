@@ -35,8 +35,6 @@
 
 //extern int sb_lines;	// scan lines to draw
 
-void Sbar_Init (void);
-
 typedef enum {
 	sbc_ammo,
 	sbc_armor,
@@ -50,19 +48,28 @@ typedef enum {
 	sbc_num_changed
 } sbar_changed;
 
+struct player_info_s;
+void Sbar_Init (int *stats, float *item_gettime);
+void Sbar_SetPlayers (struct player_info_s *players, int maxplayers);
+void Sbar_SetLevelName (const char *levelname, const char *servername);
+void Sbar_SetPlayerNum (int playernum, int spectator);
+void Sbar_SetViewEntity (int viewentity);
+void Sbar_SetTeamplay (int teamplay);
+void Sbar_SetActive (int active);
+
+void Sbar_Update (double time);
+void Sbar_Damage (double time);
+
 void Sbar_Changed (sbar_changed change);
 // call whenever any of the client stats represented on the sbar changes
 
-void Sbar_Draw (void);
-// called every frame by screen
-
-void Sbar_Intermission (int mode);
+void Sbar_Intermission (int mode, double completed_time);
 // called each frame after the level has been completed
 
 void Sbar_FinaleOverlay (void);
 void Sbar_DrawCenterPrint (void);
 void Sbar_CenterPrint (const char *str);
 
-void Sbar_LogFrags (void);
+void Sbar_LogFrags (double time);
 
 #endif

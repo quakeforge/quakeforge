@@ -141,8 +141,6 @@ static cvar_t r_drawflat_cvar = {
 	.value = { .type = &cexpr_int, .value = &r_drawflat },
 };
 
-int         fps_count;
-
 client_static_t cls;
 client_state_t cl;
 
@@ -231,7 +229,7 @@ CL_ClearMemory (void)
 	// wipe the entire cl structure
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
-	Sbar_Intermission (cl.intermission = 0);
+	Sbar_Intermission (cl.intermission = 0, cl.time);
 	cl.viewstate.camera_transform = cam;
 	cl.viewstate.demoplayback = cls.demoplayback;
 
@@ -340,7 +338,7 @@ CL_Disconnect (void)
 	}
 
 	cl_world.scene->worldmodel = NULL;
-	Sbar_Intermission (cl.intermission = 0);
+	Sbar_Intermission (cl.intermission = 0, cl.time);
 	cl.viewstate.intermission = 0;
 }
 
@@ -589,6 +587,7 @@ CL_SetState (cactive_t state)
 				S_AmbientOn ();
 				break;
 		}
+		Sbar_SetActive (state == ca_active);
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
@@ -643,6 +642,7 @@ CL_Frame (void)
 	r_data->frametime = host_frametime;
 
 	cl.viewstate.intermission = cl.intermission != 0;
+	Sbar_Update (cl.time);
 	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
@@ -677,7 +677,6 @@ CL_Frame (void)
 	if (cls.demo_capture) {
 		r_funcs->capture_screen (write_capture, 0);
 	}
-	fps_count++;
 }
 
 static void
@@ -714,7 +713,7 @@ CL_Init (cbuf_t *cbuf)
 
 	CDAudio_Init ();
 
-	Sbar_Init ();
+	Sbar_Init (cl.stats, cl.item_gettime);
 
 	CL_Init_Input (cbuf);
 	CL_Particles_Init ();

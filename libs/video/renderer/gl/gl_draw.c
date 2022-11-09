@@ -60,7 +60,6 @@
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
 #include "varrays.h"
 
 #define CELL_SIZE (1.0 / 16.0)	// conchars is 16x16

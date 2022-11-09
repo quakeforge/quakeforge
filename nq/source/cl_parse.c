@@ -304,6 +304,8 @@ CL_ParseServerInfo (void)
 		cl.players[i].topcolor = 0;
 		cl.players[i].bottomcolor = 0;
 	}
+	Sbar_SetPlayers (cl.players, cl.maxclients);
+	Sbar_SetTeamplay (0);
 
 	// parse gametype
 	cl.gametype = MSG_ReadByte (net_message);
@@ -311,6 +313,7 @@ CL_ParseServerInfo (void)
 	// parse signon message
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	Sbar_SetLevelName (cl.levelname, 0);
 
 	// separate the printfs so the server message can have a color
 	Sys_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
@@ -923,7 +926,7 @@ CL_ParseServerMessage (void)
 			case svc_damage:
 				V_ParseDamage (net_message, &cl.viewstate);
 				// put sbar face into pain frame
-				cl.faceanimtime = cl.time + 0.2;
+				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
@@ -977,15 +980,13 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				Sbar_Intermission (cl.intermission = 1);
+				Sbar_Intermission (cl.intermission = 1, cl.time);
 				SCR_SetFullscreen (1);
-				cl.completed_time = cl.time;
 				break;
 
 			case svc_finale:
-				Sbar_Intermission (cl.intermission = 2);
+				Sbar_Intermission (cl.intermission = 2, cl.time);
 				SCR_SetFullscreen (1);
-				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
 				break;
@@ -1005,9 +1006,8 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cutscene:
-				Sbar_Intermission (cl.intermission = 3);
+				Sbar_Intermission (cl.intermission = 3, cl.time);
 				SCR_SetFullscreen (1);
-				cl.completed_time = cl.time;
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
 				break;

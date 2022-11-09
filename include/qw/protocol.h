@@ -31,6 +31,8 @@
 
 #include "QF/mathlib.h"
 
+#include "gamedefs.h"
+
 #define	PROTOCOL_VERSION	28
 
 #define QW_CHECK_HASH 0x5157
@@ -294,7 +296,7 @@
 
 // ELEMENTS COMMUNICATED ACROSS THE NET =======================================
 
-#define	MAX_CLIENTS		32
+#define	MAX_CLIENTS		MAX_PLAYERS
 
 #define	UPDATE_BACKUP	64	// copies of entity_state_t to keep buffered
 							// must be power of two

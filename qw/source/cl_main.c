@@ -622,12 +622,11 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
-	if (cl.players)
-		free (cl.players);
+	__auto_type players = cl.players;
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
-	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
+	cl.players = players;
 	SCR_SetFullscreen (0);
 
 	cl.maxclients = MAX_CLIENTS;
@@ -870,7 +869,7 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
-		Sbar_Changed (sbc_server);
+		Sbar_SetTeamplay (cl.teamplay);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.viewstate.watervis = atoi (p);
@@ -1405,6 +1404,7 @@ CL_SetState (cactive_t state)
 				&& !cls.demorecording)
 				CL_Record (0, -1);
 		}
+		Sbar_SetActive (state == ca_active);
 	}
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
 	if (state != old_state && state == ca_active) {
@@ -1478,7 +1478,7 @@ CL_Init (void)
 	S_Init (&cl.viewentity, &host_frametime);
 	CDAudio_Init ();
 
-	Sbar_Init ();
+	Sbar_Init (cl.stats, cl.item_gettime);
 
 	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
@@ -1506,6 +1506,7 @@ CL_Init (void)
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 	free (cl.players);
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
+	Sbar_SetPlayers (cl.players, MAX_CLIENTS);
 
 	// register our commands
 	Cmd_AddCommand ("pointfile", pointfile_f,
@@ -1943,6 +1944,7 @@ Host_Frame (float time)
 	r_data->frametime = host_frametime;
 
 	cl.viewstate.time = realtime;
+	Sbar_Update (cl.time);
 	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
