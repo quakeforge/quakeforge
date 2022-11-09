@@ -1034,7 +1034,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 											player->skinname->value);
 	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
 
-	Sbar_Changed (sbc_info);
+	Sbar_UpdateInfo (slot);
 }
 
 static void
@@ -1157,7 +1157,6 @@ CL_SetStat (int stat, int value)
 		case STAT_ITEMS:
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
 			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
-			Sbar_Changed (sbc_items);
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
@@ -1165,13 +1164,6 @@ CL_SetStat (int stat, int value)
 									va (0, "%i", value));
 			if (value <= 0)
 				Team_Dead ();
-			break;
-		default:
-			//FIXME smarter checks
-			Sbar_Changed (sbc_ammo);
-			Sbar_Changed (sbc_armor);
-			Sbar_Changed (sbc_frags);
-			Sbar_Changed (sbc_weapon);
 			break;
 	}
 	cl.stats[stat] = value;
@@ -1181,6 +1173,7 @@ CL_SetStat (int stat, int value)
 	} else {
 		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
 	}
+	Sbar_UpdateStats (stat);
 }
 
 static void
@@ -1220,6 +1213,7 @@ void
 CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
+	int         update_pings = 0;
 	const char *str;
 	static dstring_t *stuffbuf;
 	TEntContext_t tentCtx = {
@@ -1396,7 +1390,7 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
 				cl.players[i].frags = (short) MSG_ReadShort (net_message);
-				Sbar_Changed (sbc_frags);
+				Sbar_UpdateFrags (i);
 				break;
 
 			//   svc_clientdata
@@ -1521,6 +1515,7 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updateping > "
 								"MAX_SCOREBOARD");
 				cl.players[i].ping = MSG_ReadShort (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_updateentertime:
@@ -1604,12 +1599,16 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatepl > "
 								"MAX_SCOREBOARD");
 				cl.players[i].pl = MSG_ReadByte (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_nails2:			// FIXME from qwex
 				CL_ParseProjectiles (net_message, true, &tentCtx);
 				break;
 		}
+	}
+	if (update_pings) {
+		Sbar_UpdatePings ();
 	}
 
 	CL_SetSolidEntities ();

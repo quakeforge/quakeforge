@@ -585,9 +585,9 @@ CL_ParseClientdata (void)
 			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
 				cl.item_gettime[j] = cl.time;
 		cl.stats[STAT_ITEMS] = i;
-		Sbar_Changed (sbc_items);
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
 		cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS] & IT_POWER) >> 19;
+		Sbar_UpdateStats (STAT_ITEMS);
 	}
 
 	cl.viewstate.onground = (bits & SU_ONGROUND) ? 0 : -1;
@@ -605,7 +605,7 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_ARMOR] != i) {
 		cl.stats[STAT_ARMOR] = i;
-		Sbar_Changed (sbc_armor);
+		Sbar_UpdateStats (STAT_ITEMS);
 	}
 
 	if (bits & SU_WEAPON)
@@ -615,26 +615,26 @@ CL_ParseClientdata (void)
 	if (cl.stats[STAT_WEAPON] != i) {
 		cl.stats[STAT_WEAPON] = i;
 		cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
-		Sbar_Changed (sbc_weapon);
+		Sbar_UpdateStats (STAT_WEAPON);
 	}
 
 	i = (short) MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i) {
 		cl.stats[STAT_HEALTH] = i;
-		Sbar_Changed (sbc_health);
+		Sbar_UpdateStats (STAT_HEALTH);
 	}
 
 	i = MSG_ReadByte (net_message);
 	if (cl.stats[STAT_AMMO] != i) {
 		cl.stats[STAT_AMMO] = i;
-		Sbar_Changed (sbc_ammo);
+		Sbar_UpdateStats (STAT_AMMO);
 	}
 
 	for (i = 0; i < 4; i++) {
 		j = MSG_ReadByte (net_message);
 		if (cl.stats[STAT_SHELLS + i] != j) {
 			cl.stats[STAT_SHELLS + i] = j;
-			Sbar_Changed (sbc_ammo);
+			Sbar_UpdateStats (STAT_SHELLS + i);
 		}
 	}
 
@@ -643,13 +643,13 @@ CL_ParseClientdata (void)
 	if (standard_quake) {
 		if (cl.stats[STAT_ACTIVEWEAPON] != i) {
 			cl.stats[STAT_ACTIVEWEAPON] = i;
-			Sbar_Changed (sbc_weapon);
+			Sbar_UpdateStats (STAT_ACTIVEWEAPON);
 		}
 	} else {
 		// hipnotic/rogue weapon "bit field" (stupid idea)
 		if (cl.stats[STAT_ACTIVEWEAPON] != (1 << i)) {
 			cl.stats[STAT_ACTIVEWEAPON] = (1 << i);
-			Sbar_Changed (sbc_weapon);
+			Sbar_UpdateStats (STAT_ACTIVEWEAPON);
 		}
 	}
 
@@ -870,22 +870,22 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatename:
-				Sbar_Changed (sbc_info);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
 				Info_SetValueForKey (cl.players[i].userinfo, "name",
 									 MSG_ReadString (net_message), 0);
+				Sbar_UpdateInfo (i);
 				break;
 
 			case svc_updatefrags:
-				Sbar_Changed (sbc_frags);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
 				cl.players[i].frags = (short) MSG_ReadShort (net_message);
+				Sbar_UpdateFrags (i);
 				break;
 
 			case svc_clientdata:
@@ -898,7 +898,6 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatecolors:
-				Sbar_Changed (sbc_info);
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients) {
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
@@ -916,6 +915,7 @@ CL_ParseServerMessage (void)
 					cl.players[i].bottomcolor = bot;
 					renderer->skin
 						= mod_funcs->Skin_SetColormap (renderer->skin, i + 1);
+					Sbar_UpdateInfo (i);
 				}
 				break;
 

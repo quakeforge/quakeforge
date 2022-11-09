@@ -1565,23 +1565,17 @@ Sbar_DeathmatchOverlay (view_t view)
 		count = 0;
 	}
 
+	double      cur_time = sbar_intermission ? sbar_completed_time : sbar_time;
 	for (i = 0; i < count; i++, y += 10) {
 		int         k = fragsort[i];
 		player_info_t *p = &sbar_players[k];
 		if (!View_Valid (sb_views[k])) {
 			sb_views[k] = make_dmo_line (view, k);
 		}
-		write_charbuff (sb_ping[k], 0, 0, va (0, "%3d", p->ping));
-		write_charbuff (sb_pl[k], 0, 0, va (0, "%3d", p->pl));
-		int         total = (sbar_intermission ? sbar_completed_time : sbar_time)
-							- p->entertime;
+		int         total = cur_time - p->entertime;
 		write_charbuff (sb_fph[k], 0, 0, va (0, "%3d",
 											 calc_fph (p->frags, total)));
 		write_charbuff (sb_time[k], 0, 0, va (0, "%3d", total / 60));
-		//FIXME update top/bottom color
-		write_charbuff (sb_frags[k], 0, 0, va (0, "%3d", p->frags));
-		write_charbuff (sb_uid[k], 0, 0, va (0, "%3d", p->userid));
-		write_charbuff (sb_name[k], 0, 0, p->name->value);
 		View_SetPos (sb_views[k], 0, y);
 	}
 	for (; i < MAX_PLAYERS; i++) {
@@ -2146,6 +2140,46 @@ Sbar_Update (double time)
 }
 
 void
+Sbar_UpdatePings ()
+{
+	for (int i = 0; i < sbar_maxplayers; i++) {
+		player_info_t *p = &sbar_players[i];
+		if (!p->name || !p->name->value) {
+			continue;
+		}
+		write_charbuff (sb_ping[i], 0, 0, va (0, "%3d", p->ping));
+		write_charbuff (sb_pl[i], 0, 0, va (0, "%3d", p->pl));
+	}
+}
+
+void
+Sbar_UpdateFrags (int playernum)
+{
+	player_info_t *p = &sbar_players[playernum];
+	write_charbuff (sb_frags[playernum], 0, 0, va (0, "%3d", p->frags));
+}
+
+void
+Sbar_UpdateInfo (int playernum)
+{
+	player_info_t *p = &sbar_players[playernum];
+	//FIXME update top/bottom color
+	write_charbuff (sb_uid[playernum], 0, 0, va (0, "%3d", p->userid));
+	write_charbuff (sb_name[playernum], 0, 0, p->name->value);
+	if (sbar_teamplay) {
+		write_charbuff (sb_team[playernum], 0, 0, p->team->value);
+	}
+}
+
+void
+Sbar_UpdateStats (int stat)
+{
+	if (stat == -1) {
+	} else {
+	}
+}
+
+void
 Sbar_Damage (double time)
 {
 	sbar_faceanimtime = time + 0.2;
@@ -2167,16 +2201,20 @@ Sbar_SetViewEntity (int viewentity)
 void
 Sbar_SetLevelName (const char *levelname, const char *servername)
 {
+	sbar_levelname = levelname;
+	sbar_servername = servername;
 }
 
 void
 Sbar_SetTeamplay (int teamplay)
 {
+	sbar_teamplay = teamplay;
 }
 
 void
 Sbar_SetActive (int active)
 {
+	sbar_active = active;
 }
 
 static void

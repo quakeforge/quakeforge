@@ -58,6 +58,10 @@ void Sbar_SetTeamplay (int teamplay);
 void Sbar_SetActive (int active);
 
 void Sbar_Update (double time);
+void Sbar_UpdatePings (void);
+void Sbar_UpdateFrags (int playernum);
+void Sbar_UpdateInfo (int playernum);
+void Sbar_UpdateStats (int stat);
 void Sbar_Damage (double time);
 
 void Sbar_Changed (sbar_changed change);

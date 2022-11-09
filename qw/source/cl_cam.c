@@ -199,14 +199,7 @@ Cam_Unlock (void)
 		}
 		autocam = CAM_NONE;
 		locked = false;
-		Sbar_Changed (sbc_ammo);
-		Sbar_Changed (sbc_armor);
-		Sbar_Changed (sbc_frags);
-		Sbar_Changed (sbc_health);
-		Sbar_Changed (sbc_info);
-		Sbar_Changed (sbc_items);
-		Sbar_Changed (sbc_weapon);
-		Sbar_Changed (sbc_server);
+		Sbar_UpdateStats (-1);	// update all stats
 	}
 }
 
@@ -228,14 +221,7 @@ Cam_Lock (int playernum)
 	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
-	Sbar_Changed (sbc_ammo);
-	Sbar_Changed (sbc_armor);
-	Sbar_Changed (sbc_frags);
-	Sbar_Changed (sbc_health);
-	Sbar_Changed (sbc_info);
-	Sbar_Changed (sbc_items);
-	Sbar_Changed (sbc_weapon);
-	Sbar_Changed (sbc_server);
+	Sbar_UpdateStats (-1);	// update all stats
 }
 
 static trace_t
