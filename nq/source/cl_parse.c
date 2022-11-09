@@ -605,7 +605,7 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_ARMOR] != i) {
 		cl.stats[STAT_ARMOR] = i;
-		Sbar_UpdateStats (STAT_ITEMS);
+		Sbar_UpdateStats (STAT_ARMOR);
 	}
 
 	if (bits & SU_WEAPON)
@@ -706,6 +706,7 @@ CL_SetStat (int stat, int value)
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 	cl.stats[stat] = value;
+	Sbar_UpdateStats (stat);
 }
 
 #define SHOWNET(x) \
@@ -969,10 +970,12 @@ CL_ParseServerMessage (void)
 
 			case svc_killedmonster:
 				cl.stats[STAT_MONSTERS]++;
+				Sbar_UpdateStats (STAT_MONSTERS);
 				break;
 
 			case svc_foundsecret:
 				cl.stats[STAT_SECRETS]++;
+				Sbar_UpdateStats (STAT_SECRETS);
 				break;
 
 			case svc_spawnstaticsound:

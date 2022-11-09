@@ -671,7 +671,7 @@ Sbar_SortTeams (void)
 }
 
 static int
-write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
+write_charbuff_cl (draw_charbuffer_t *buffer, int x, int y, const char *str)
 {
 	char       *dst = buffer->chars;
 	int         count = buffer->width - x;
@@ -683,6 +683,20 @@ write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
 	}
 	while (count-- > 0) {
 		*dst++ = ' ';
+	}
+	return chars;
+}
+
+static int
+write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
+{
+	char       *dst = buffer->chars;
+	int         count = buffer->width - x;
+	int         chars = 0;
+	dst += y * buffer->width + x;
+	while (*str && count-- > 0) {
+		*dst++ = *str++;
+		chars++;
 	}
 	return chars;
 }
@@ -699,15 +713,9 @@ draw_solo_time (void)
 static void
 draw_solo (void)
 {
-	write_charbuff (solo_monsters, 0, 0,
-					va (0, "Monsters:%3i /%3i",
-						sbar_stats[STAT_MONSTERS], sbar_stats[STAT_TOTALMONSTERS]));
-	write_charbuff (solo_secrets, 0, 0,
-					va (0, "Secrets :%3i /%3i",
-						sbar_stats[STAT_SECRETS], sbar_stats[STAT_TOTALSECRETS]));
 	draw_solo_time ();
 	view_pos_t len = View_GetLen (sbar_solo_name);
-	len.x = 8 * write_charbuff (solo_name, 0, 0, sbar_levelname);
+	len.x = 8 * solo_name->cursx;
 	View_SetLen (sbar_solo_name, len.x, len.y);
 }
 
@@ -830,9 +838,9 @@ draw_minifrags (view_t view)
 						   sbar_teamplay ? sb_team[k] : 0,
 						   sb_name[k]);
 		if (sbar_teamplay) {
-			write_charbuff (sb_team[k], 0, 0, s->team->value);
+			write_charbuff_cl (sb_team[k], 0, 0, s->team->value);
 		}
-		write_charbuff (sb_name[k], 0, 0, s->name->value);
+		write_charbuff_cl (sb_name[k], 0, 0, s->name->value);
 		draw_smallnum (View_GetChild (bar, 2), s->frags, 0, 0);
 	}
 	for (; i < numbars; i++) {
@@ -885,7 +893,7 @@ draw_miniteam (view_t view)
 			func = frags_marker;
 		}
 		set_miniteam_bar (bar, sb_team[k], sb_team_frags[k], func);
-		write_charbuff (sb_team[k], 0, 0, s->team->value);
+		write_charbuff_cl (sb_team[k], 0, 0, s->team->value);
 		write_charbuff (sb_team_frags[k], 0, 0, va (0, "%5d", tm->frags));
 	}
 	for (; i < numbars; i++) {
@@ -1823,7 +1831,7 @@ draw_time (view_t *view)
 	} else if (hud_time >= 2) {   // US AM/PM display
 		strftime (st, sizeof (st), HOUR12":%M "PM, local);
 	}
-	write_charbuff (time_buff, 0, 0, st);
+	write_charbuff_cl (time_buff, 0, 0, st);
 }
 
 static void
@@ -2051,77 +2059,6 @@ Sbar_DrawCenterPrint (void)
 	Sbar_DrawCenterString (hud_overlay_view, -1);
 }
 
-typedef struct {
-	hud_update_f update;
-	view_t     *view;
-} sb_updater_t;
-
-static const sb_updater_t ammo_update[] = {
-	{draw_miniammo, &sbar_miniammo},
-	{draw_ammo, &sbar_ammo},
-	{}
-};
-static const sb_updater_t armor_update[] = {
-	{draw_armor, &sbar_armor},
-	{}
-};
-static const sb_updater_t frags_update[] = {
-	{draw_frags, &sbar_frags},
-	{draw_minifrags, &hud_minifrags},
-	{draw_miniteam, &hud_miniteam},
-	{Sbar_DeathmatchOverlay, &dmo_view},
-	{}
-};
-static const sb_updater_t health_update[] = {
-	{draw_health, &sbar_health},
-	{draw_face, &sbar_face},
-	{}
-};
-static const sb_updater_t info_update[] = {
-	{draw_frags, &sbar_frags},
-	{draw_minifrags, &hud_minifrags},
-	{draw_miniteam, &hud_miniteam},
-	{Sbar_DeathmatchOverlay, &dmo_view},
-	{}
-};
-static const sb_updater_t items_update[] = {
-	{draw_items, &sbar_items},
-	{draw_sigils, &sbar_sigils},
-	{}
-};
-static const sb_updater_t weapon_update[] = {
-	{draw_weapons, &sbar_weapons},
-	{draw_ammo, &sbar_ammo},
-	{}
-};
-
-static const sb_updater_t * const sb_updaters[sbc_num_changed] = {
-	[sbc_ammo]   = ammo_update,
-	[sbc_armor]  = armor_update,
-	[sbc_frags]  = frags_update,
-	[sbc_health] = health_update,
-	[sbc_info]   = info_update,
-	[sbc_items]  = items_update,
-	[sbc_weapon] = weapon_update,
-};
-
-void
-Sbar_Changed (sbar_changed change)
-{
-	sb_update_flags |= 1 << change;
-	sb_updates = 0;						// update next frame
-	if ((unsigned) change >= (unsigned) sbc_num_changed) {
-		Sys_Error ("invalid sbar changed enum");
-	}
-	const sb_updater_t *ud = sb_updaters[change];
-	if (ud) {
-		while (ud->update) {
-			sbar_setcomponent (*ud->view, hud_updateonce, &ud->update);
-			ud++;
-		}
-	}
-}
-
 void
 Sbar_Update (double time)
 {
@@ -2164,18 +2101,131 @@ Sbar_UpdateInfo (int playernum)
 {
 	player_info_t *p = &sbar_players[playernum];
 	//FIXME update top/bottom color
-	write_charbuff (sb_uid[playernum], 0, 0, va (0, "%3d", p->userid));
-	write_charbuff (sb_name[playernum], 0, 0, p->name->value);
+	write_charbuff (sb_uid[playernum], 0, 0, va (0, "%4d", p->userid));
+	write_charbuff_cl (sb_name[playernum], 0, 0, p->name->value);
 	if (sbar_teamplay) {
-		write_charbuff (sb_team[playernum], 0, 0, p->team->value);
+		write_charbuff_cl (sb_team[playernum], 0, 0, p->team->value);
 	}
 }
+
+static inline void
+set_update (view_t view, hud_update_f func)
+{
+	sbar_setcomponent (view, hud_updateonce, &func);
+}
+
+static void
+update_health (int stat)
+{
+	set_update (sbar_health, draw_health);
+	set_update (sbar_face, draw_face);
+}
+
+static void
+update_frags (int stat)
+{
+	write_charbuff (sb_frags[sbar_playernum], 0, 0,
+					va (0, "%3d", sbar_stats[stat]));
+	set_update (sbar_frags, draw_frags);//FIXME
+	set_update (hud_minifrags, draw_minifrags);//FIXME
+	set_update (dmo_view, Sbar_DeathmatchOverlay);//FIXME
+	if (sbar_teamplay) {
+		set_update (hud_miniteam, draw_miniteam);//FIXME
+	}
+}
+
+static void
+update_weapon (int stat)
+{
+	set_update (sbar_weapons, draw_weapons);
+}
+
+static void
+update_ammo (int stat)
+{
+	set_update (sbar_ammo, draw_ammo);
+}
+
+static void
+update_miniammo (int stat)
+{
+	set_update (sbar_miniammo, draw_miniammo);//FIXME
+}
+
+static void
+update_armor (int stat)
+{
+	set_update (sbar_armor, draw_armor);
+}
+
+static void
+update_totalsecrets (int stat)
+{
+	write_charbuff (solo_secrets, 14, 0,
+					va (0, "%3i", sbar_stats[STAT_TOTALSECRETS]));
+}
+
+static void
+update_secrets (int stat)
+{
+	write_charbuff (solo_secrets, 9, 0,
+					va (0, "%3i", sbar_stats[STAT_SECRETS]));
+}
+
+static void
+update_totalmonsters (int stat)
+{
+	write_charbuff (solo_monsters, 14, 0,
+					va (0, "%3i", sbar_stats[STAT_TOTALMONSTERS]));
+}
+
+static void
+update_monsters (int stat)
+{
+	write_charbuff (solo_monsters, 9, 0,
+					va (0, "%3i", sbar_stats[STAT_MONSTERS]));
+}
+
+static void
+update_items (int stat)
+{
+	set_update (sbar_items, draw_items);//FIXME
+	set_update (sbar_sigils, draw_sigils);//FIXME
+	set_update (sbar_weapons, draw_weapons);//FIXME
+}
+
+typedef void (*stat_update_f) (int stat);
+
+static stat_update_f stat_update[MAX_CL_STATS] = {
+	[STAT_HEALTH] = update_health,
+	[STAT_FRAGS] = update_frags,
+	[STAT_AMMO] = update_ammo,
+	[STAT_ARMOR] = update_armor,
+	[STAT_SHELLS] = update_miniammo,
+	[STAT_NAILS] = update_miniammo,
+	[STAT_ROCKETS] = update_miniammo,
+	[STAT_CELLS] = update_miniammo,
+	[STAT_ACTIVEWEAPON] = update_weapon,
+	[STAT_TOTALSECRETS] = update_totalsecrets,
+	[STAT_TOTALMONSTERS] = update_totalmonsters,
+	[STAT_SECRETS] = update_secrets,
+	[STAT_MONSTERS] = update_monsters,
+	[STAT_ITEMS] = update_items,
+};
 
 void
 Sbar_UpdateStats (int stat)
 {
 	if (stat == -1) {
+		for (int i = 0; i < MAX_CL_STATS; i++) {
+			if (stat_update[i]) {
+				stat_update[i] (i);
+			}
+		}
 	} else {
+		if ((unsigned) stat < MAX_CL_STATS && stat_update[stat]) {
+			stat_update[stat] (stat);
+		}
 	}
 }
 
@@ -2203,6 +2253,7 @@ Sbar_SetLevelName (const char *levelname, const char *servername)
 {
 	sbar_levelname = levelname;
 	sbar_servername = servername;
+	solo_name->cursx = write_charbuff_cl (solo_name, 0, 0, sbar_levelname);
 }
 
 void
@@ -2288,6 +2339,8 @@ set_hud_sbar (void)
 
 		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
 		sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
+		sbar_setcomponent (sbar_tile[0], hud_tile, 0);
+		sbar_setcomponent (sbar_tile[1], hud_tile, 0);
 	} else {
 		View_SetParent (sbar_armament, hud_view);
 		View_SetPos (sbar_armament, 0, 48);
@@ -2328,6 +2381,8 @@ set_hud_sbar (void)
 
 		sbar_remcomponent (sbar_inventory, hud_pic);
 		sbar_remcomponent (sbar_statusbar, hud_pic);
+		sbar_remcomponent (sbar_tile[0], hud_tile);
+		sbar_remcomponent (sbar_tile[1], hud_tile);
 	}
 	ECS_SortComponentPool (hud_registry, hud_pic, href_cmp, 0);
 }
@@ -2424,6 +2479,8 @@ init_sbar_views (void)
 
 	solo_monsters = Draw_CreateBuffer (17, 1);
 	solo_secrets = Draw_CreateBuffer (17, 1);
+	write_charbuff (solo_monsters, 0, 0, "Monsters:xxx /xxx");
+	write_charbuff (solo_secrets, 0, 0, "Secrets :xxx /xxx");
 	solo_time = Draw_CreateBuffer (12, 1);
 	solo_name = Draw_CreateBuffer (20, 1);
 }

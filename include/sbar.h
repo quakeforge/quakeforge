@@ -64,7 +64,6 @@ void Sbar_UpdateInfo (int playernum);
 void Sbar_UpdateStats (int stat);
 void Sbar_Damage (double time);
 
-void Sbar_Changed (sbar_changed change);
 // call whenever any of the client stats represented on the sbar changes
 
 void Sbar_Intermission (int mode, double completed_time);
