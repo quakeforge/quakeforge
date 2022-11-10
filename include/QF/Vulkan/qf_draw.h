@@ -85,4 +85,7 @@ void Vulkan_End2D (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawReset (struct vulkan_ctx_s *ctx);
 void Vulkan_FlushText (struct qfv_renderframe_s *rFrame);
 
+void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
+					   struct vulkan_ctx_s *ctx);
+
 #endif//__QF_Vulkan_qf_draw_h

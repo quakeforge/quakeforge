@@ -136,6 +136,7 @@ vulkan_R_NewScene (scene_t *scene)
 static void
 vulkan_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
+	Vulkan_LineGraph (x, y, h_vals, count, height, vulkan_ctx);
 }
 
 static void

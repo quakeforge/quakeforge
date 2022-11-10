@@ -1330,3 +1330,18 @@ Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 	RText_RenderText (shaper, &text, x, y, vulkan_render_glyph, &rgctx);
 	RText_DeleteShaper (shaper);
 }
+
+void
+Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
+				  vulkan_ctx_t *ctx)
+{
+	static int colors[] = { 0xd0, 0x4f, 0x6f };
+
+	while (count-- > 0) {
+		int         h = *h_vals++;
+		int         c = h < 9998 || h > 10000 ? 0xfe : colors[h - 9998];
+		h = min (h, height);
+		Vulkan_Draw_Line (x, y, x, y - h, c, ctx);
+		x++;
+	}
+}
