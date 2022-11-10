@@ -173,3 +173,19 @@ CL_NetGraph_Init_Cvars (void)
 	Cvar_Register (&cl_netgraph_box_cvar, 0, 0);
 	Cvar_Register (&cl_netgraph_height_cvar, cl_netgraph_height_f, 0);
 }
+
+void
+CL_NetUpdate (void)
+{
+	if ((hud_ping || sbar_showscores)
+		&& realtime - cl.last_ping_request > 2) {
+		// FIXME this should be on a timer
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+
+	if (hud_pl) {
+		Sbar_UpdatePL (CL_CalcNet ());
+	}
+}

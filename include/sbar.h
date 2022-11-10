@@ -48,6 +48,8 @@ typedef enum {
 	sbc_num_changed
 } sbar_changed;
 
+extern qboolean sbar_showscores;
+
 struct player_info_s;
 void Sbar_Init (int *stats, float *item_gettime);
 void Sbar_SetPlayers (struct player_info_s *players, int maxplayers);
@@ -59,6 +61,7 @@ void Sbar_SetActive (int active);
 
 void Sbar_Update (double time);
 void Sbar_UpdatePings (void);
+void Sbar_UpdatePL (int pl);
 void Sbar_UpdateFrags (int playernum);
 void Sbar_UpdateInfo (int playernum);
 void Sbar_UpdateStats (int stat);

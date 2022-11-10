@@ -292,6 +292,7 @@ void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 void CL_NetGraph_Init (void);
 void CL_NetGraph_Init_Cvars (void);
+void CL_NetUpdate (void);
 
 void CL_SetState (cactive_t state);
 

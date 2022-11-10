@@ -175,6 +175,8 @@ view_t hud_overlay_view;
 view_t hud_stuff_view;
 view_t hud_time_view;
 view_t hud_fps_view;
+view_t hud_ping_view;
+view_t hud_pl_view;
 
 static void
 hud_add_outlines (view_t view)

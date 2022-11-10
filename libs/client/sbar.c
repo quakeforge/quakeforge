@@ -68,7 +68,6 @@
 #include "gamedefs.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
-static int sb_update_flags;
 static int sb_view_size;
 static int fps_count;
 
@@ -225,6 +224,8 @@ static view_def_t sbar_defs[] = {
 
 static draw_charbuffer_t *time_buff;
 static draw_charbuffer_t *fps_buff;
+static draw_charbuffer_t *ping_buff;
+static draw_charbuffer_t *pl_buff;
 
 static draw_charbuffer_t *solo_monsters;
 static draw_charbuffer_t *solo_secrets;
@@ -288,7 +289,7 @@ static qpic_t *sb_face_quad;
 static qpic_t *sb_face_invuln;
 static qpic_t *sb_face_invis_invuln;
 
-static qboolean sb_showscores;
+qboolean sbar_showscores;
 static qboolean sb_showteamscores;
 
 static int sb_lines;				// scan lines to draw
@@ -1004,7 +1005,7 @@ draw_status (view_t *view)
 		if (autocam != CAM_TRACK)
 			return;
 	}
-	if (sb_showscores || sbar_stats[STAT_HEALTH] <= 0) {
+	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
 	}
@@ -1141,7 +1142,7 @@ static void __attribute__((used))
 draw_rogue_status (view_t *view)
 {
 #if 0
-	if (sb_showscores || sbar_stats[STAT_HEALTH] <= 0) {
+	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
 	}
@@ -1301,7 +1302,7 @@ static void __attribute__((used))
 draw_hipnotic_status (view_t *view)
 {
 #if 0
-	if (sb_showscores || sbar_stats[STAT_HEALTH] <= 0) {
+	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
 		draw_solo (view);
 		return;
 	}
@@ -1531,36 +1532,6 @@ calc_fph (int frags, int total)
 static void
 Sbar_DeathmatchOverlay (view_t view)
 {
-#if 0
-	// this should be on a timer and needs nq/qw specific variants
-	// request new ping times every two seconds
-	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
-		cl.last_ping_request = realtime;
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, "pings");
-	}
-	if (hud_ping) {
-		int ping = sbar_players[sbar_playernum].ping;
-
-		ping = bound (0, ping, 999);
-		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
-	}
-
-	if (hud_ping && hud_pl)
-		draw_character (view, 48, 0, '/');
-
-	if (hud_pl) {
-		int lost = CL_CalcNet ();
-
-		lost = bound (0, lost, 999);
-		draw_string (view, 56, 0, va (0, "%3d pl", lost));
-	}
-#endif
-	// 0, 0 "gfx/ranking.lmp"
-	// 80, 40
-	//
-	// for all qw, spectator replaces main, team at 72,0 88,8
-
 	Sbar_SortFrags (0);
 
 	int         y = 40;
@@ -1671,45 +1642,32 @@ Sbar_TeamOverlay (view_t *view)
 #endif
 }
 
+#if 0
 static void
 Sbar_DrawScoreboard (void)
 {
-#if 0
 	//Sbar_SoloScoreboard ();
 	if (cl.gametype == GAME_DEATHMATCH)
 		Sbar_DeathmatchOverlay (hud_overlay_view);
-#endif
-}
-
-static void
-draw_overlay (view_t *view)
-{
-	if (sb_showscores || sbar_stats[STAT_HEALTH] <= 0) {
-		Sbar_DrawScoreboard ();
-	}
-#if 0
 	if (!sbar_active
 		|| !((sbar_stats[STAT_HEALTH] <= 0 && !sbar_spectator)
-			 || sb_showscores || sb_showteamscores))
+			 || sbar_showscores || sb_showteamscores))
 		return;
 	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
 	if (sbar_stats[STAT_HEALTH] <= 0 && !sbar_spectator)
-		if (sbar_teamplay > 0 && !sb_showscores)
+		if (sbar_teamplay > 0 && !sbar_showscores)
 			Sbar_TeamOverlay (view);
 		else
 			Sbar_DeathmatchOverlay (view, 0);
-	else if (sb_showscores)
+	else if (sbar_showscores)
 		Sbar_DeathmatchOverlay (view, 0);
 	else if (sb_showteamscores)
 		Sbar_TeamOverlay (view);
-#endif
 }
+#endif
 
-/*
-	Sbar_LogFrags
-
-	autologging of frags after a match ended
+/*	 autologging of frags after a match ended
 	(called by recived network packet with command scv_intermission)
 	TODO: Find a new and better place for this function
 		  (i am nearly shure this is wrong place)
@@ -1852,36 +1810,6 @@ draw_fps (view_t view)
 	}
 	write_charbuff (fps_buff, 0, 0, st);
 }
-
-#if 0
-static void
-draw_net (view_t *view)
-{
-	// request new ping times every two seconds
-	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
-		cl.last_ping_request = realtime;
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, "pings");
-	}
-	if (hud_ping) {
-		int ping = sbar_players[sbar_playernum].ping;
-
-		ping = bound (0, ping, 999);
-		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
-	}
-
-	if (hud_ping && hud_pl)
-		draw_character (view, 48, 0, '/');
-
-	if (hud_pl) {
-		int lost = CL_CalcNet ();
-
-		lost = bound (0, lost, 999);
-		draw_string (view, 56, 0, va (0, "%3d pl", lost));
-	}
-}
-if (sbar_active && (hud_ping || hud_pl))
-#endif
 
 static void
 draw_intermission (view_t view)
@@ -2067,17 +1995,13 @@ Sbar_Update (double time)
 	if (!sbar_active) {
 		return;
 	}
-	if (sb_update_flags & (1 << sbc_info)) {
-		draw_overlay (0);
-	}
-	if (sb_showscores) {
+	if (sbar_showscores) {
 		draw_solo_time ();
 	}
-	sb_update_flags = 0;
 }
 
 void
-Sbar_UpdatePings ()
+Sbar_UpdatePings (void)
 {
 	for (int i = 0; i < sbar_maxplayers; i++) {
 		player_info_t *p = &sbar_players[i];
@@ -2087,6 +2011,14 @@ Sbar_UpdatePings ()
 		write_charbuff (sb_ping[i], 0, 0, va (0, "%3d", p->ping));
 		write_charbuff (sb_pl[i], 0, 0, va (0, "%3d", p->pl));
 	}
+	write_charbuff (ping_buff, 0, 0,
+					va (0, "%3d ms", sbar_players[sbar_playernum].ping));
+}
+
+void
+Sbar_UpdatePL (int pl)
+{
+	write_charbuff (pl_buff, 0, 0, va (0, "%3d pl", pl));
 }
 
 void
@@ -2408,6 +2340,26 @@ sbar_hud_fps_f (void *data, const cvar_t *cvar)
 }
 
 static void
+sbar_hud_ping_f (void *data, const cvar_t *cvar)
+{
+	if (hud_ping) {
+		sbar_setcomponent (hud_ping_view, hud_charbuff, &ping_buff);
+	} else {
+		sbar_remcomponent (hud_ping_view, hud_charbuff);
+	}
+}
+
+static void
+sbar_hud_pl_f (void *data, const cvar_t *cvar)
+{
+	if (hud_pl) {
+		sbar_setcomponent (hud_pl_view, hud_charbuff, &pl_buff);
+	} else {
+		sbar_remcomponent (hud_pl_view, hud_charbuff);
+	}
+}
+
+static void
 sbar_hud_time_f (void *data, const cvar_t *cvar)
 {
 	if (hud_time) {
@@ -2708,9 +2660,13 @@ init_views (void)
 	hud_stuff_view = sbar_view (0, 48, 152, 16, grav_southwest, cl_screen_view);
 	hud_time_view = sbar_view (8, 0, 64, 8, grav_northwest, hud_stuff_view);
 	hud_fps_view = sbar_view (80, 0, 72, 8, grav_northwest, hud_stuff_view);
+	hud_ping_view = sbar_view (0, 0, 48, 0, grav_northwest, hud_stuff_view);
+	hud_pl_view = sbar_view (56, 0, 72, 0, grav_northwest, hud_stuff_view);
 
 	time_buff = Draw_CreateBuffer (8, 1);
 	fps_buff = Draw_CreateBuffer (11, 1);
+	ping_buff = Draw_CreateBuffer (11, 1);
+	pl_buff = Draw_CreateBuffer (11, 1);
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		sb_fph[i] = Draw_CreateBuffer (3, 1);
 		sb_time[i] = Draw_CreateBuffer (4, 1);
@@ -2900,10 +2856,10 @@ load_pics (void)
 static void
 Sbar_ShowScores (void)
 {
-	if (sb_showscores)
+	if (sbar_showscores)
 		return;
 
-	sb_showscores = true;
+	sbar_showscores = true;
 	sb_updates = 0;
 
 	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
@@ -2919,10 +2875,10 @@ Sbar_ShowScores (void)
 static void
 Sbar_DontShowScores (void)
 {
-	if (!sb_showscores)
+	if (!sbar_showscores)
 		return;
 
-	sb_showscores = false;
+	sbar_showscores = false;
 	sb_updates = 0;
 
 	sbar_remcomponent (sbar_solo, hud_pic);
@@ -2968,6 +2924,8 @@ Sbar_Init (int *stats, float *item_gettime)
 	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_fps"), sbar_hud_fps_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_time"), sbar_hud_time_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("hud_pl"), sbar_hud_pl_f, 0);
+	Cvar_AddListener (Cvar_FindVar ("hud_ping"), sbar_hud_ping_f, 0);
 
 	load_pics ();
 	init_views ();
@@ -2978,6 +2936,8 @@ Sbar_Init (int *stats, float *item_gettime)
 
 	sbar_hud_fps_f (0, 0);
 	sbar_hud_time_f (0, 0);
+	sbar_hud_pl_f (0, 0);
+	sbar_hud_ping_f (0, 0);
 
 	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
 					"Display information on everyone playing");
