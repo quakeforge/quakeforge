@@ -1787,7 +1787,7 @@ draw_fps (view_t view)
 		fps_count = 0;
 		lastframetime = t;
 		int         prec = lastfps < 1000 ? 1 : 0;
-		snprintf (st, sizeof (st), "%5.*f FPS", prec, lastfps);
+		snprintf (st, sizeof (st), "%6.*f FPS", prec, lastfps);
 	}
 	write_charbuff (fps_buff, 0, 0, st);
 }
@@ -2646,14 +2646,14 @@ init_views (void)
 {
 	hud_stuff_view = sbar_view (0, 48, 152, 16, grav_southwest, cl_screen_view);
 	hud_time_view = sbar_view (8, 0, 64, 8, grav_northwest, hud_stuff_view);
-	hud_fps_view = sbar_view (80, 0, 72, 8, grav_northwest, hud_stuff_view);
-	hud_ping_view = sbar_view (0, 0, 48, 0, grav_northwest, hud_stuff_view);
-	hud_pl_view = sbar_view (56, 0, 72, 0, grav_northwest, hud_stuff_view);
+	hud_fps_view = sbar_view (80, 0, 80, 8, grav_northwest, hud_stuff_view);
+	hud_ping_view = sbar_view (0, 8, 48, 0, grav_northwest, hud_stuff_view);
+	hud_pl_view = sbar_view (56, 8, 48, 0, grav_northwest, hud_stuff_view);
 
 	time_buff = Draw_CreateBuffer (8, 1);
-	fps_buff = Draw_CreateBuffer (11, 1);
-	ping_buff = Draw_CreateBuffer (11, 1);
-	pl_buff = Draw_CreateBuffer (11, 1);
+	fps_buff = Draw_CreateBuffer (10, 1);
+	ping_buff = Draw_CreateBuffer (6, 1);
+	pl_buff = Draw_CreateBuffer (6, 1);
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		sb_fph[i] = Draw_CreateBuffer (3, 1);
 		sb_time[i] = Draw_CreateBuffer (4, 1);
