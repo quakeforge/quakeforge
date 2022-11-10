@@ -280,7 +280,8 @@ static hud_subpic_t sb_weapons[7][8];
 static qpic_t *sb_ammo[4];
 static qpic_t *sb_sigil[4];
 static qpic_t *sb_armor[3];
-static qpic_t *sb_items[32];
+// 0 is owned, 1-5 are flashes
+static qpic_t *sb_items[6][32];
 
 static qpic_t *sb_faces[7][2];		// 0 is gibbed, 1 is dead, 2-6 are alive
 									// 0 is static, 1 is temporary animation
@@ -463,7 +464,7 @@ draw_ammo (view_t view)
 }
 
 static int
-calc_flashon (float time, int mask)
+calc_flashon (float time, int mask, int base)
 {
 	int         flashon;
 
@@ -475,8 +476,9 @@ calc_flashon (float time, int mask)
 			flashon = 1;
 		else
 			flashon = 0;
-	} else
-		flashon = (flashon % 5) + 2;
+	} else {
+		flashon = (flashon % 5) + base;
+	}
 	return flashon;
 }
 
@@ -488,7 +490,7 @@ draw_weapons (view_t view)
 	for (i = 0; i < 7; i++) {
 		view_t      weap = View_GetChild (view, i);
 		if (sbar_stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i);
+			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i, 2);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
 			sbar_setcomponent (weap, hud_subpic, &sb_weapons[flashon][i]);
@@ -501,23 +503,15 @@ draw_weapons (view_t view)
 static void
 draw_items (view_t view)
 {
-	//float       time;
-	//int         flashon = 0, i;
-
 	for (int i = 0; i < 6; i++) {
 		view_t      item = View_GetChild (view, i);
-		if (sbar_stats[STAT_ITEMS] & (1 << (17 + i))) {
-#if 0
-			time = sbar_item_gettime[17 + i];
-			if (time && time > sbar_time - 2 && flashon) {	// Flash frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, i * 16, 0, sb_items[i]);
-			}
-			if (time && time > sbar_time - 2)
-				sb_updates = 0;
-#endif
-			sbar_setcomponent (item, hud_pic, &sb_items[i]);
+		int         item_ind = 17 + i;
+		if (sbar_stats[STAT_ITEMS] & (1 << item_ind)) {
+			int         flashon = calc_flashon (sbar_item_gettime[item_ind],
+												-1, 1);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+			sbar_setcomponent (item, hud_pic, &sb_items[flashon][i]);
 		} else {
 			sbar_remcomponent (item, hud_pic);
 		}
@@ -527,22 +521,9 @@ draw_items (view_t view)
 static void
 draw_sigils (view_t view)
 {
-	//float       time;
-	//int         flashon = 0, i;
-
 	for (int i = 0; i < 4; i++) {
 		view_t      sigil = View_GetChild (view, i);
 		if (sbar_stats[STAT_ITEMS] & (1 << (28 + i))) {
-#if 0
-			time = sbar_item_gettime[28 + i];
-			if (time && time > sbar_time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, i * 8, 0, sb_sigil[i]);
-			}
-			if (time && time > sbar_time - 2)
-				sb_updates = 0;
-#endif
 			sbar_setcomponent (sigil, hud_pic, &sb_sigil[i]);
 		} else {
 			sbar_remcomponent (sigil, hud_pic);
@@ -1045,7 +1026,7 @@ draw_rogue_weapons_hud (view_t *view)
 
 	for (i = cl_screen_view->ylen < 204; i < 7; i++) {
 		if (sbar_stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i);
+			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i, 2);
 			if (i >= 2) {
 				j = i - 2;
 				if (sbar_stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << j))
@@ -1202,7 +1183,7 @@ draw_hipnotic_weapons_sbar (view_t *view)
 			time = sbar_item_gettime[hipweapons[h[i - 7]]];
 		}
 		if (sbar_stats[STAT_ITEMS] & mask) {
-			flashon = calc_flashon (time, mask);
+			flashon = calc_flashon (time, mask, 2);
 
 			if (i == 4 && sbar_stats[STAT_ACTIVEWEAPON] == (1 << hipweapons[3]))
 				continue;
@@ -1243,7 +1224,7 @@ draw_hipnotic_weapons_hud (view_t *view)
 			time = sbar_item_gettime[hipweapons[h[i - 7]]];
 		}
 		if (sbar_stats[STAT_ITEMS] & mask) {
-			flashon = calc_flashon (time, mask);
+			flashon = calc_flashon (time, mask, 2);
 
 			if (i < 7) {
 				pic = sb_weapons[flashon][i];
@@ -1997,6 +1978,12 @@ Sbar_Update (double time)
 	}
 	if (sbar_showscores) {
 		draw_solo_time ();
+	}
+	if (sb_updates < r_data->vid->numpages) {
+		//FIXME find a better way to support animations
+		sb_updates++;
+		draw_weapons (sbar_weapons);
+		draw_items (sbar_items);
 	}
 }
 
@@ -2766,12 +2753,20 @@ load_pics (void)
 	sb_armor[1] = r_funcs->Draw_PicFromWad ("sb_armor2");
 	sb_armor[2] = r_funcs->Draw_PicFromWad ("sb_armor3");
 
-	sb_items[0] = r_funcs->Draw_PicFromWad ("sb_key1");
-	sb_items[1] = r_funcs->Draw_PicFromWad ("sb_key2");
-	sb_items[2] = r_funcs->Draw_PicFromWad ("sb_invis");
-	sb_items[3] = r_funcs->Draw_PicFromWad ("sb_invuln");
-	sb_items[4] = r_funcs->Draw_PicFromWad ("sb_suit");
-	sb_items[5] = r_funcs->Draw_PicFromWad ("sb_quad");
+	sb_items[0][0] = r_funcs->Draw_PicFromWad ("sb_key1");
+	sb_items[0][1] = r_funcs->Draw_PicFromWad ("sb_key2");
+	sb_items[0][2] = r_funcs->Draw_PicFromWad ("sb_invis");
+	sb_items[0][3] = r_funcs->Draw_PicFromWad ("sb_invuln");
+	sb_items[0][4] = r_funcs->Draw_PicFromWad ("sb_suit");
+	sb_items[0][5] = r_funcs->Draw_PicFromWad ("sb_quad");
+	for (int i = 1; i <= 5; i++) {
+		sb_items[i][0] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key1", i));
+		sb_items[i][1] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key2", i));
+		sb_items[i][2] = r_funcs->Draw_PicFromWad (va (0, "sba%d_invis", i));
+		sb_items[i][3] = r_funcs->Draw_PicFromWad (va (0, "sba%d_invul", i));
+		sb_items[i][4] = r_funcs->Draw_PicFromWad (va (0, "sba%d_suit", i));
+		sb_items[i][5] = r_funcs->Draw_PicFromWad (va (0, "sba%d_quad", i));
+	}
 
 	sb_sigil[0] = r_funcs->Draw_PicFromWad ("sb_sigil1");
 	sb_sigil[1] = r_funcs->Draw_PicFromWad ("sb_sigil2");
