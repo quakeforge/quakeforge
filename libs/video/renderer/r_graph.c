@@ -50,7 +50,7 @@ int          graphval;
 	Performance monitoring tool
 */
 void
-R_TimeGraph (view_pos_t abs)
+R_TimeGraph (view_pos_t abs, view_pos_t len)
 {
 	static int  timex;
 	int         a;
@@ -85,7 +85,7 @@ R_TimeGraph (view_pos_t abs)
 }
 
 void
-R_ZGraph (view_pos_t abs)
+R_ZGraph (view_pos_t abs, view_pos_t len)
 {
 	int         w;
 	static int  height[256];

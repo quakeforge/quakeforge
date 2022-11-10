@@ -220,15 +220,16 @@ CL_Init_Screen (void)
 	View_SetPos (timegraph_view, 0, 0);
 	View_SetLen (timegraph_view, r_data->vid->width, 100);
 	View_SetGravity (timegraph_view, grav_southwest);
-	Ent_SetComponent (timegraph_view.id, hud_func, timegraph_view.reg,
-					  R_TimeGraph);
+	void       *rtg = R_TimeGraph;
+	Ent_SetComponent (timegraph_view.id, hud_func, timegraph_view.reg, &rtg);
 	View_SetVisible (timegraph_view, r_timegraph);
 
 	zgraph_view = View_New (hud_registry, cl_screen_view);
 	View_SetPos (zgraph_view, 0, 0);
 	View_SetLen (zgraph_view, r_data->vid->width, 100);
 	View_SetGravity (zgraph_view, grav_southwest);
-	Ent_SetComponent (zgraph_view.id, hud_func, zgraph_view.reg, R_ZGraph);
+	void       *rzg = R_ZGraph;
+	Ent_SetComponent (zgraph_view.id, hud_func, zgraph_view.reg, &rzg);
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	const char *name = "gfx/loading.lmp";
