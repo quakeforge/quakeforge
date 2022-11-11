@@ -212,8 +212,12 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0,  8, 16}, grav_northwest, &sbar_sigils,   4,  8, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_armor,    4, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
-	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    6, 16, 0},
+	// hipnotic and rogue have 8 item slots and no sigils, so the two extra
+	// items overlap the sigils view
+	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    8, 16, 0},
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
+	// hipnotic adds two extra weapons that overlapp the keys views (which
+	// get moved for hipnotic).
 	{0, { 0, 0,176, 16}, grav_northwest, &sbar_weapons,  2, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
@@ -286,7 +290,8 @@ static qpic_t *sb_ammo[4];
 static qpic_t *sb_sigil[4];
 static qpic_t *sb_armor[3];
 // 0 is owned, 1-5 are flashes
-static qpic_t *sb_items[6][32];
+static int sb_item_count;
+static qpic_t *sb_items[8][32];
 
 static qpic_t *sb_faces[7][2];		// 0 is gibbed, 1 is dead, 2-6 are alive
 									// 0 is static, 1 is temporary animation
@@ -301,15 +306,8 @@ static qboolean sb_showteamscores;
 static int sb_lines;				// scan lines to draw
 
 static qpic_t *rsb_invbar[2];
-static qpic_t *rsb_items[2];
 static qpic_t *rsb_ammo[3];
 static qpic_t *rsb_teambord;		// PGM 01/19/97 - team color border
-
-								// MED 01/04/97 added two more weapons + 3
-								// alternates for grenade launcher
-//static int hipweapons[4] =
-//	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
-qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
 //static qboolean largegame = false;
 
@@ -527,9 +525,13 @@ draw_weapons (view_t view)
 static void
 draw_items (view_t view)
 {
-	for (int i = 0; i < 6; i++) {
+	static byte ind_map[2][8] = {
+		{ 17, 18, 19, 20, 21, 22, 25, 26 },	// id/hipnotic
+		{ 17, 18, 19, 20, 21, 22, 29, 30 },	// rogue
+	};
+	for (int i = 0; i < sb_item_count; i++) {
 		view_t      item = View_GetChild (view, i);
-		int         item_ind = 17 + i;
+		int         item_ind = ind_map[sb_game][i];
 		if (sbar_stats[STAT_ITEMS] & (1 << item_ind)) {
 			int         flashon = calc_flashon (sbar_item_gettime[item_ind],
 												-1, 1);
@@ -1043,26 +1045,6 @@ draw_rogue_ammo_hud (view_t *view)
 }
 
 static void __attribute__((used))
-draw_rogue_items (view_t *view)
-{
-#if 0
-	int         i;
-	float       time;
-
-	draw_items (view);
-
-	for (i = 0; i < 2; i++) {
-		if (sbar_stats[STAT_ITEMS] & (1 << (29 + i))) {
-			time = sbar_item_gettime[29 + i];
-			draw_pic (view, 96 + i * 16, 0, rsb_items[i]);
-			if (time && time > (sbar_time - 2))
-				sb_updates = 0;
-		}
-	}
-#endif
-}
-
-static void __attribute__((used))
 draw_rogue_inventory_sbar (view_t *view)
 {
 #if 0
@@ -1138,65 +1120,6 @@ draw_rogue_status (view_t *view)
 	else if (sbar_stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
 		draw_pic (view, 224, 0, rsb_ammo[2]);
 	draw_num (view, 248, 0, sbar_stats[STAT_AMMO], 3, sbar_stats[STAT_AMMO] <= 10);
-#endif
-}
-
-static void __attribute__((used))
-draw_hipnotic_items (view_t *view)
-{
-#if 0
-	int         i;
-	float       time;
-
-	// items
-	for (i = 2; i < 6; i++) {
-		if (sbar_stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = sbar_item_gettime[17 + i];
-			draw_pic (view, 192 + i * 16, 0, sb_items[i]);
-			if (time && time > sbar_time - 2)
-				sb_updates = 0;
-		}
-	}
-
-	// hipnotic items
-	for (i = 0; i < 2; i++) {
-		if (sbar_stats[STAT_ITEMS] & (1 << (24 + i))) {
-			time = sbar_item_gettime[24 + i];
-			draw_pic (view, 288 + i * 16, 0, hsb_items[i]);
-			if (time && time > (sbar_time - 2))
-				sb_updates = 0;
-		}
-	}
-#endif
-}
-
-static void __attribute__((used))
-draw_hipnotic_inventory_sbar (view_t *view)
-{
-#if 0
-	draw_pic (view, 0, 0, sb_ibar);
-	view_draw (view);
-#endif
-}
-
-static void __attribute__((used))
-draw_hipnotic_status (view_t *view)
-{
-#if 0
-	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-
-	draw_armor (view);
-	draw_face (view);
-	draw_health (view);
-	draw_ammo (view);
-
-	if (sbar_stats[STAT_ITEMS] & IT_KEY1)
-		draw_pic (view, 209, 3, sb_items[0]);
-	if (sbar_stats[STAT_ITEMS] & IT_KEY2)
-		draw_pic (view, 209, 12, sb_items[1]);
 #endif
 }
 
@@ -2009,7 +1932,10 @@ static void
 update_items (int stat)
 {
 	set_update (sbar_items, draw_items);//FIXME
-	set_update (sbar_sigils, draw_sigils);//FIXME
+	if (sb_item_count < 7) {
+		// hipnotic and rogue don't use sigils
+		set_update (sbar_sigils, draw_sigils);//FIXME
+	}
 	set_update (sbar_weapons, draw_weapons);//FIXME
 }
 
@@ -2324,122 +2250,21 @@ init_sbar_views (void)
 	write_charbuff (solo_secrets, 0, 0, "Secrets :xxx /xxx");
 	solo_time = Draw_CreateBuffer (12, 1);
 	solo_name = Draw_CreateBuffer (20, 1);
-}
 
-#if 0
-static void
-init_hipnotic_sbar_views (void)
-{
-	view_t     *view;
-
-	sbar_view = view_new (0, 0, 320, 48, grav_south);
-
-	sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	sbar_frags_view->draw = draw_frags;
-
-	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	sbar_inventory_view->draw = draw_hipnotic_inventory_sbar;
-
-	view = view_new (0, 0, 224, 16, grav_southwest);
-	view->draw = draw_hipnotic_weapons_sbar;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 32, 8, grav_northwest);
-	view->draw = draw_ammo_sbar;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 96, 16, grav_southeast);
-	view->draw = draw_hipnotic_items;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 32, 16, grav_southeast);
-	view->draw = draw_sigils;
-	view_add (sbar_inventory_view, view);
-
-	if (sbar_frags_view)
-		view_add (sbar_inventory_view, sbar_frags_view);
-
-	view_add (sbar_view, sbar_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_status_bar;
-	view_add (sbar_view, view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_hipnotic_status;
-	view_add (sbar_view, view);
-
-	if (cl_screen_view->xlen > 320) {
-		int         l = (cl_screen_view->xlen - 320) / 2;
-
-		view = view_new (-l, 0, l, 48, grav_southwest);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
-
-		view = view_new (-l, 0, l, 48, grav_southeast);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
+	sb_item_count = 6;
+	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
+		sb_item_count = 8;
+		// adjust key view locations and sizes
+		for (int i = 0; i < 2; i++) {
+			view_t      v = View_GetChild (sbar_items, i);
+			View_SetPos (v, 16, 16 + 3 + 9 * i);
+			View_SetLen (v, 16, 9);
+		}
+	}
+	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
+		sb_item_count = 8;
 	}
 }
-#endif
-
-#if 0
-static void
-init_hipnotic_hud_views (void)
-{
-	view_t     *view;
-
-	hud_view = view_new (0, 0, 320, 48, grav_south);
-	hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	hud_frags_view->draw = draw_frags;
-
-	hud_view->resize_y = 1;
-
-	if (cl_screen_view->ylen < 252) {
-		hud_armament_view = view_new (0, min (cl_screen_view->ylen - 160, 48),
-									  66, 160, grav_southeast);
-	} else {
-		hud_armament_view = view_new (0, 48, 42, 204, grav_southeast);
-	}
-
-	view = view_new (0, 0, 24, 160, grav_northeast);
-	view->draw = draw_hipnotic_weapons_hud;
-	view_add (hud_armament_view, view);
-
-	view = view_new (0, 0, 42, 44, grav_southeast);
-	view->draw = draw_ammo_hud;
-	view_add (hud_armament_view, view);
-
-	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	view_add (hud_view, hud_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_hipnotic_status;
-	view_add (hud_view, view);
-
-	view = view_new (0, 0, 96, 16, grav_southeast);
-	view->draw = draw_hipnotic_items;
-	view_add (hud_inventory_view, view);
-
-	view = view_new (0, 0, 32, 16, grav_southeast);
-	view->draw = draw_sigils;
-	view_add (hud_inventory_view, view);
-
-	if (hud_frags_view)
-		view_add (hud_inventory_view, hud_frags_view);
-
-	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
-	view->resize_x = 1;
-	view_add (view, hud_view);
-	hud_view = view;
-
-	view_add (hud_view, hud_armament_view);
-
-	view_insert (hud_main_view, hud_view, 0);
-}
-#endif
 
 #if 0
 static void
@@ -2645,7 +2470,7 @@ load_pics (void)
 	sb_items[0][3] = r_funcs->Draw_PicFromWad ("sb_invuln");
 	sb_items[0][4] = r_funcs->Draw_PicFromWad ("sb_suit");
 	sb_items[0][5] = r_funcs->Draw_PicFromWad ("sb_quad");
-	for (int i = 1; i <= 5; i++) {
+	for (int i = 1; i < 6; i++) {
 		sb_items[i][0] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key1", i));
 		sb_items[i][1] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key2", i));
 		sb_items[i][2] = r_funcs->Draw_PicFromWad (va (0, "sba%d_invis", i));
@@ -2711,8 +2536,8 @@ load_pics (void)
 			//	r_funcs->Draw_PicFromWad (va (0, "inva%i_prox", i + 1));
 		}
 
-		hsb_items[0] = r_funcs->Draw_PicFromWad ("sb_wsuit");
-		hsb_items[1] = r_funcs->Draw_PicFromWad ("sb_eshld");
+		sb_items[0][6] = r_funcs->Draw_PicFromWad ("sb_wsuit");
+		sb_items[0][7] = r_funcs->Draw_PicFromWad ("sb_eshld");
 	}
 
 	// FIXME: MISSIONHUD
@@ -2735,8 +2560,8 @@ load_pics (void)
 			sb_weapons[i][11].pic = sb_weapons[0][11].pic;
 		}
 
-		rsb_items[0] = r_funcs->Draw_PicFromWad ("r_shield1");
-		rsb_items[1] = r_funcs->Draw_PicFromWad ("r_agrav1");
+		sb_items[0][6] = r_funcs->Draw_PicFromWad ("r_shield1");
+		sb_items[0][7] = r_funcs->Draw_PicFromWad ("r_agrav1");
 
 		// PGM 01/19/97 - team color border
 		rsb_teambord = r_funcs->Draw_PicFromWad ("r_teambord");
@@ -2752,6 +2577,13 @@ load_pics (void)
 			if (sb_weapons[i][j].pic) {
 				sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
 				sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
+			}
+		}
+	}
+	for (int i = 1; i < 6; i++) {
+		for (int j = 0; j < 32; j++) {
+			if (!sb_items[i][j]) {
+				sb_items[i][j] = sb_items[0][j];
 			}
 		}
 	}
