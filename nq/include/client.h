@@ -177,7 +177,6 @@ typedef struct client_state_s {
 	int         viewentity;		// cl_entitites[cl.viewentity] = player
 	unsigned    protocol;
 	float       stdver;
-	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
 	int         sv_cshifts;

@@ -308,7 +308,7 @@ CL_ParseServerInfo (void)
 	Sbar_SetTeamplay (teamplay);//FIXME updates?
 
 	// parse gametype
-	cl.gametype = MSG_ReadByte (net_message);
+	Sbar_SetGameType (MSG_ReadByte (net_message));
 
 	// parse signon message
 	str = MSG_ReadString (net_message);
@@ -988,10 +988,10 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_finale:
-				Sbar_Intermission (cl.intermission = 2, cl.time);
-				SCR_SetFullscreen (1);
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
+				Sbar_Intermission (cl.intermission = 2, cl.time);
+				SCR_SetFullscreen (1);
 				break;
 
 			case svc_cdtrack:
@@ -1009,10 +1009,10 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cutscene:
-				Sbar_Intermission (cl.intermission = 3, cl.time);
-				SCR_SetFullscreen (1);
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
+				Sbar_Intermission (cl.intermission = 3, cl.time);
+				SCR_SetFullscreen (1);
 				break;
 
 			//   svc_smallkick (same value as svc_cutscene)

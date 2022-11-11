@@ -154,8 +154,9 @@ static SCR_Func scr_funcs_normal[] = {
 
 static SCR_Func scr_funcs_intermission[] = {
 	HUD_Draw_Views,
-	Con_DrawConsole,
+	Sbar_DrawCenterPrint,
 	scr_draw_views,
+	Con_DrawConsole,
 	0
 };
 
@@ -254,7 +255,7 @@ CL_Init_Screen (void)
 void
 CL_UpdateScreen (viewstate_t *vs)
 {
-	unsigned    index = vs->intermission;
+	unsigned    index = !!vs->intermission;
 	_vs = vs;
 
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))

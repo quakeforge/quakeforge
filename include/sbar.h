@@ -31,23 +31,6 @@
 #ifndef _SBAR_H
 #define _SBAR_H
 
-#define	SBAR_HEIGHT		24
-
-//extern int sb_lines;	// scan lines to draw
-
-typedef enum {
-	sbc_ammo,
-	sbc_armor,
-	sbc_frags,
-	sbc_health,
-	sbc_info,
-	sbc_items,
-	sbc_weapon,
-	sbc_server,
-
-	sbc_num_changed
-} sbar_changed;
-
 extern qboolean sbar_showscores;
 
 struct player_info_s;
@@ -57,6 +40,7 @@ void Sbar_SetLevelName (const char *levelname, const char *servername);
 void Sbar_SetPlayerNum (int playernum, int spectator);
 void Sbar_SetViewEntity (int viewentity);
 void Sbar_SetTeamplay (int teamplay);
+void Sbar_SetGameType (int gametype);
 void Sbar_SetActive (int active);
 
 void Sbar_Update (double time);
@@ -67,12 +51,8 @@ void Sbar_UpdateInfo (int playernum);
 void Sbar_UpdateStats (int stat);
 void Sbar_Damage (double time);
 
-// call whenever any of the client stats represented on the sbar changes
-
 void Sbar_Intermission (int mode, double completed_time);
-// called each frame after the level has been completed
 
-void Sbar_FinaleOverlay (void);
 void Sbar_DrawCenterPrint (void);
 void Sbar_CenterPrint (const char *str);
 

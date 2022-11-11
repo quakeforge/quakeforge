@@ -84,6 +84,7 @@ static int sbar_playernum;
 static int sbar_viewplayer;
 static int sbar_spectator;
 static int sbar_teamplay;
+static int sbar_gametype;
 static int sbar_active;
 static int sbar_intermission;
 
@@ -164,8 +165,9 @@ static view_def_t miniteam_defs[] = {
 static view_def_t sbar_defs[] = {
 	{&hud_overlay_view,  {  0, 0,320,200}, grav_center, &cl_screen_view},
 	{&intermission_view, {  0, 0,320,200}, grav_northwest, &hud_overlay_view},
-	{0, {64, 24, 24, 24}, grav_northwest, &intermission_view, 1, 0, 0},
-	{0, {0, 56, 24, 24}, grav_northwest, &intermission_view, 1, 0, 0},
+	{0, {0, 24, 192, 24}, grav_north, &intermission_view, 1, 0, 0},
+	{0, {0, 56, 160, 144}, grav_northwest, &intermission_view, 1, 0, 0},
+	{0, {0, 16, 288, 24}, grav_north,  &intermission_view, 1, 0, 0},
 	{&intermission_time, {160,64,134,24}, grav_northwest, &intermission_view},
 	{0, {0, 0, 24, 24}, grav_northwest, &intermission_time, 3, 24, 0},
 	{0, {74, 0, 16, 24}, grav_northwest, &intermission_time, 1, 0, 0},
@@ -745,6 +747,7 @@ draw_solo (void)
 	view_pos_t len = View_GetLen (sbar_solo_name);
 	len.x = 8 * solo_name->cursx;
 	View_SetLen (sbar_solo_name, len.x, len.y);
+	View_UpdateHierarchy (sbar_solo);
 }
 
 static void
@@ -1027,26 +1030,39 @@ draw_health (view_t view)
 	};
 	draw_num (num, sbar_stats[STAT_HEALTH], 3, sbar_stats[STAT_HEALTH] <= 25);
 }
-#if 0
+
 static void
-draw_status (view_t *view)
+draw_status (void )
 {
+	sb_updates = 0;
+
+	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
+	sbar_setcomponent (sbar_solo_monsters, hud_charbuff, &solo_monsters);
+	sbar_setcomponent (sbar_solo_secrets, hud_charbuff, &solo_secrets);
+	sbar_setcomponent (sbar_solo_time, hud_charbuff, &solo_time);
+	sbar_setcomponent (sbar_solo_name, hud_charbuff, &solo_name);
+
+	draw_solo ();
+#if 0
 	if (sbar_spectator) {
 		draw_spectator (view);
 		if (autocam != CAM_TRACK)
 			return;
 	}
-	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-
-	draw_armor (sbar_status_armor);
-	draw_face (sbar_status_face);
-	draw_health (sbar_status_health);
-	draw_ammo (sbar_status_ammo);
-}
 #endif
+}
+
+static void
+hide_status (void)
+{
+	sb_updates = 0;
+
+	sbar_remcomponent (sbar_solo, hud_pic);
+	sbar_remcomponent (sbar_solo_monsters, hud_charbuff);
+	sbar_remcomponent (sbar_solo_secrets, hud_charbuff);
+	sbar_remcomponent (sbar_solo_time, hud_charbuff);
+	sbar_remcomponent (sbar_solo_name, hud_charbuff);
+}
 
 static void
 draw_rogue_ctf_face (view_t view)
@@ -1553,93 +1569,6 @@ draw_fps (view_t view)
 	write_charbuff (fps_buff, 0, 0, st);
 }
 
-static void
-draw_intermission (view_t view)
-{
-	const char *n;
-
-	n = "gfx/complete.lmp";
-	sbar_setcomponent (View_GetChild (view, 0), hud_cachepic, &n);
-	n = "gfx/inter.lmp";
-	sbar_setcomponent (View_GetChild (view, 1), hud_cachepic, &n);
-
-	view_t      time_views[] = {
-		View_GetChild (intermission_time, 0),
-		View_GetChild (intermission_time, 1),
-		View_GetChild (intermission_time, 2),
-		View_GetChild (intermission_time, 3),
-		View_GetChild (intermission_time, 4),
-		View_GetChild (intermission_time, 5),
-	};
-	int         dig = sbar_completed_time / 60;
-	int         num = sbar_completed_time - dig * 60;
-	draw_num (time_views + 0, dig, 3, 0);
-	sbar_setcomponent (time_views[3], hud_pic, &sb_colon);
-	draw_num (time_views + 4, num, 2, 0);
-
-	view_t      secr_views[] = {
-		View_GetChild (intermission_secr, 0),
-		View_GetChild (intermission_secr, 1),
-		View_GetChild (intermission_secr, 2),
-		View_GetChild (intermission_secr, 3),
-		View_GetChild (intermission_secr, 4),
-		View_GetChild (intermission_secr, 5),
-		View_GetChild (intermission_secr, 6),
-	};
-	draw_num (secr_views + 0, sbar_stats[STAT_SECRETS], 3, 0);
-	sbar_setcomponent (secr_views[3], hud_pic, &sb_slash);
-	draw_num (secr_views + 4, sbar_stats[STAT_TOTALSECRETS], 3, 0);
-
-	view_t      kill_views[] = {
-		View_GetChild (intermission_kill, 0),
-		View_GetChild (intermission_kill, 1),
-		View_GetChild (intermission_kill, 2),
-		View_GetChild (intermission_kill, 3),
-		View_GetChild (intermission_kill, 4),
-		View_GetChild (intermission_kill, 5),
-		View_GetChild (intermission_kill, 6),
-	};
-	draw_num (kill_views + 0, sbar_stats[STAT_MONSTERS], 3, 0);
-	sbar_setcomponent (kill_views[3], hud_pic, &sb_slash);
-	draw_num (kill_views + 4, sbar_stats[STAT_TOTALMONSTERS], 3, 0);
-}
-
-static void
-clear_views (view_t view)
-{
-	sbar_remcomponent (view, hud_cachepic);
-	sbar_remcomponent (view, hud_pic);
-
-	for (uint32_t i = 0; i < View_ChildCount (view); i++) {
-		clear_views (View_GetChild (view, i));
-	}
-}
-
-#if 0
-void
-Sbar_IntermissionOverlay (void)
-{
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
-	if (cl.gametype == GAME_DEATHMATCH) {
-		Sbar_DeathmatchOverlay (hud_overlay_view);
-		return;
-	}
-	draw_intermission (intermission_view);
-}
-#endif
-
-void
-Sbar_Intermission (int mode, double completed_time)
-{
-	sbar_completed_time = completed_time;
-	void       *f = clear_views;
-	if (mode == 1) {
-		f = draw_intermission;
-	}
-	sbar_setcomponent (intermission_view, hud_updateonce, &f);
-}
-
 /* CENTER PRINTING */
 static dstring_t center_string = {&dstring_default_mem};
 static passage_t center_passage;
@@ -1702,19 +1631,104 @@ Sbar_DrawCenterString (view_t view, unsigned remaining)
 	}
 }
 
-void
-Sbar_FinaleOverlay (void)
+static void
+clear_views (view_t view)
 {
-	int         remaining;
+	sbar_remcomponent (view, hud_cachepic);
+	sbar_remcomponent (view, hud_pic);
+
+	for (uint32_t i = 0; i < View_ChildCount (view); i++) {
+		clear_views (View_GetChild (view, i));
+	}
+}
+
+static void
+draw_intermission (view_t view)
+{
+	clear_views (view);
+	const char *n;
+	n = "gfx/complete.lmp";
+	sbar_setcomponent (View_GetChild (view, 0), hud_cachepic, &n);
+	n = "gfx/inter.lmp";
+	sbar_setcomponent (View_GetChild (view, 1), hud_cachepic, &n);
+
+	view_t      time_views[] = {
+		View_GetChild (intermission_time, 0),
+		View_GetChild (intermission_time, 1),
+		View_GetChild (intermission_time, 2),
+		View_GetChild (intermission_time, 3),
+		View_GetChild (intermission_time, 4),
+		View_GetChild (intermission_time, 5),
+	};
+	int         dig = sbar_completed_time / 60;
+	int         num = sbar_completed_time - dig * 60;
+	draw_num (time_views + 0, dig, 3, 0);
+	sbar_setcomponent (time_views[3], hud_pic, &sb_colon);
+	draw_num (time_views + 4, num, 2, 0);
+
+	view_t      secr_views[] = {
+		View_GetChild (intermission_secr, 0),
+		View_GetChild (intermission_secr, 1),
+		View_GetChild (intermission_secr, 2),
+		View_GetChild (intermission_secr, 3),
+		View_GetChild (intermission_secr, 4),
+		View_GetChild (intermission_secr, 5),
+		View_GetChild (intermission_secr, 6),
+	};
+	draw_num (secr_views + 0, sbar_stats[STAT_SECRETS], 3, 0);
+	sbar_setcomponent (secr_views[3], hud_pic, &sb_slash);
+	draw_num (secr_views + 4, sbar_stats[STAT_TOTALSECRETS], 3, 0);
+
+	view_t      kill_views[] = {
+		View_GetChild (intermission_kill, 0),
+		View_GetChild (intermission_kill, 1),
+		View_GetChild (intermission_kill, 2),
+		View_GetChild (intermission_kill, 3),
+		View_GetChild (intermission_kill, 4),
+		View_GetChild (intermission_kill, 5),
+		View_GetChild (intermission_kill, 6),
+	};
+	draw_num (kill_views + 0, sbar_stats[STAT_MONSTERS], 3, 0);
+	sbar_setcomponent (kill_views[3], hud_pic, &sb_slash);
+	draw_num (kill_views + 4, sbar_stats[STAT_TOTALMONSTERS], 3, 0);
+}
+
+static void
+draw_finale (view_t view)
+{
+	clear_views (view);
 
 	r_data->scr_copyeverything = 1;
 
-#if 0
-	draw_cachepic (hud_overlay_view, 0, 16, "gfx/finale.lmp", 1);
-#endif
-	// the finale prints the characters one at a time
-	remaining = scr_printspeed * (sbar_time - centertime_start);
-	Sbar_DrawCenterString (hud_overlay_view, remaining);
+	const char *n = "gfx/finale.lmp";
+	sbar_setcomponent (View_GetChild (view, 2), hud_cachepic, &n);
+}
+
+static void
+draw_cutscene (view_t view)
+{
+	clear_views (view);
+}
+
+static inline void
+set_update (view_t view, hud_update_f func)
+{
+	sbar_setcomponent (view, hud_updateonce, &func);
+}
+
+void
+Sbar_Intermission (int mode, double completed_time)
+{
+	static hud_update_f intermission_funcs[2][4] = {
+		{ clear_views, draw_intermission, draw_finale, draw_cutscene, },
+		{ clear_views, Sbar_DeathmatchOverlay, draw_finale, draw_cutscene, },
+	};
+	sbar_completed_time = completed_time;
+	if ((unsigned) mode > 3) {
+		mode = 0;
+	}
+	sbar_intermission = mode;
+	set_update (intermission_view, intermission_funcs[sbar_gametype][mode]);
 }
 
 void
@@ -1723,10 +1737,17 @@ Sbar_DrawCenterPrint (void)
 	r_data->scr_copytop = 1;
 
 	centertime_off -= r_data->frametime;
-	if (centertime_off <= 0)
+	if (!center_passage.hierarchy
+		|| (centertime_off <= 0 && !sbar_intermission))
 		return;
 
-	Sbar_DrawCenterString (hud_overlay_view, -1);
+
+	int         remaining = -1;
+	if (sbar_intermission) {
+		// the finale prints the characters one at a time
+		remaining = scr_printspeed * (sbar_time - centertime_start);
+	}
+	Sbar_DrawCenterString (hud_overlay_view, remaining);
 }
 
 void
@@ -1776,12 +1797,6 @@ Sbar_UpdateFrags (int playernum)
 	write_charbuff (sb_frags[playernum], 0, 0, va (0, "%3d", p->frags));
 }
 
-static inline void
-set_update (view_t view, hud_update_f func)
-{
-	sbar_setcomponent (view, hud_updateonce, &func);
-}
-
 void
 Sbar_UpdateInfo (int playernum)
 {
@@ -1803,6 +1818,11 @@ update_health (int stat)
 {
 	set_update (sbar_health, draw_health);
 	set_update (sbar_face, draw_face);
+	if (sbar_stats[STAT_HEALTH] <= 0) {
+		draw_status ();
+	} else if (!sbar_showscores) {
+		hide_status ();
+	}
 }
 
 static void
@@ -1964,6 +1984,12 @@ Sbar_SetTeamplay (int teamplay)
 		&& sbar_teamplay > 3 && sbar_teamplay < 7) {
 		set_update (sbar_face, draw_rogue_ctf_face);
 	}
+}
+
+void
+Sbar_SetGameType (int gametype)
+{
+	sbar_gametype = gametype;
 }
 
 void
@@ -2465,32 +2491,20 @@ Sbar_ShowScores (void)
 		return;
 
 	sbar_showscores = true;
-	sb_updates = 0;
 
-	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
-	sbar_setcomponent (sbar_solo_monsters, hud_charbuff, &solo_monsters);
-	sbar_setcomponent (sbar_solo_secrets, hud_charbuff, &solo_secrets);
-	sbar_setcomponent (sbar_solo_time, hud_charbuff, &solo_time);
-	sbar_setcomponent (sbar_solo_name, hud_charbuff, &solo_name);
-
-	draw_solo ();
-	View_UpdateHierarchy (sbar_solo);
+	draw_status ();
 }
 
 static void
 Sbar_DontShowScores (void)
 {
-	if (!sbar_showscores)
+	if (!sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
 		return;
+	}
 
 	sbar_showscores = false;
-	sb_updates = 0;
 
-	sbar_remcomponent (sbar_solo, hud_pic);
-	sbar_remcomponent (sbar_solo_monsters, hud_charbuff);
-	sbar_remcomponent (sbar_solo_secrets, hud_charbuff);
-	sbar_remcomponent (sbar_solo_time, hud_charbuff);
-	sbar_remcomponent (sbar_solo_name, hud_charbuff);
+	hide_status ();
 }
 
 static void

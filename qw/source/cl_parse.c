@@ -1139,6 +1139,7 @@ CL_ServerInfo (void)
 //		movevars.ktjump = atof (value);
 //		FIXME: need to set to 0.5 otherwise, outside of else structure
 	}
+	Sbar_SetGameType (0);
 }
 
 static void
