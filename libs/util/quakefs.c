@@ -1756,6 +1756,9 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 		for (search = vpath->user; search; search = search->next) {
 			qfs_filelistfill_do (list, search, cp, ext, strip);
 		}
+		for (search = vpath->share; search; search = search->next) {
+			qfs_filelistfill_do (list, search, cp, ext, strip);
+		}
 	}
 	free (cpath);
 }
