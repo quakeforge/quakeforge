@@ -276,7 +276,9 @@ sbar_remcomponent (view_t view, uint32_t comp)
 
 static qpic_t *sb_nums[2][11];
 static qpic_t *sb_colon, *sb_slash;
-static qpic_t *sb_ibar;
+static qpic_t *sb_ibar[2];
+static int sb_ibar_index;
+static hud_subpic_t sb_miniammo[4];
 static qpic_t *sb_sbar;
 static qpic_t *sb_scorebar;
 
@@ -286,7 +288,7 @@ static int sb_weapon_count;
 static int sb_weapon_view_count;
 static int sb_game;
 static hud_subpic_t sb_weapons[7][12];
-static qpic_t *sb_ammo[4];
+static qpic_t *sb_ammo[7];			// rogue adds 3 ammo types
 static qpic_t *sb_sigil[4];
 static qpic_t *sb_armor[3];
 // 0 is owned, 1-5 are flashes
@@ -305,8 +307,6 @@ static qboolean sb_showteamscores;
 
 static int sb_lines;				// scan lines to draw
 
-static qpic_t *rsb_invbar[2];
-static qpic_t *rsb_ammo[3];
 static qpic_t *rsb_teambord;		// PGM 01/19/97 - team color border
 
 //static qboolean largegame = false;
@@ -437,14 +437,31 @@ static void
 draw_ammo (view_t view)
 {
 	qpic_t     *pic = 0;
-	if (sbar_stats[STAT_ITEMS] & IT_SHELLS)
-		pic = sb_ammo[0];
-	else if (sbar_stats[STAT_ITEMS] & IT_NAILS)
-		pic = sb_ammo[1];
-	else if (sbar_stats[STAT_ITEMS] & IT_ROCKETS)
-		pic = sb_ammo[2];
-	else if (sbar_stats[STAT_ITEMS] & IT_CELLS)
-		pic = sb_ammo[3];
+	if (sb_game) {
+		if (sbar_stats[STAT_ITEMS] & RIT_SHELLS)
+			pic = sb_ammo[0];
+		else if (sbar_stats[STAT_ITEMS] & RIT_NAILS)
+			pic = sb_ammo[1];
+		else if (sbar_stats[STAT_ITEMS] & RIT_ROCKETS)
+			pic = sb_ammo[2];
+		else if (sbar_stats[STAT_ITEMS] & RIT_CELLS)
+			pic = sb_ammo[3];
+		else if (sbar_stats[STAT_ITEMS] & RIT_LAVA_NAILS)
+			pic = sb_ammo[4];
+		else if (sbar_stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
+			pic = sb_ammo[5];
+		else if (sbar_stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
+			pic = sb_ammo[6];
+	} else {
+		if (sbar_stats[STAT_ITEMS] & IT_SHELLS)
+			pic = sb_ammo[0];
+		else if (sbar_stats[STAT_ITEMS] & IT_NAILS)
+			pic = sb_ammo[1];
+		else if (sbar_stats[STAT_ITEMS] & IT_ROCKETS)
+			pic = sb_ammo[2];
+		else if (sbar_stats[STAT_ITEMS] & IT_CELLS)
+			pic = sb_ammo[3];
+	}
 
 	view_t      ammo = View_GetChild (view, 0);
 	if (pic) {
@@ -1025,39 +1042,6 @@ draw_status (view_t *view)
 #endif
 
 static void __attribute__((used))
-draw_rogue_ammo_hud (view_t *view)
-{
-#if 0
-	int         i, count;
-	qpic_t     *pic;
-
-	if (sbar_stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
-		pic = rsb_invbar[0];
-	else
-		pic = rsb_invbar[1];
-
-	for (i = 0; i < 4; i++) {
-		count = sbar_stats[STAT_SHELLS + i];
-		draw_subpic (view, 0, i * 11, pic, 3 + (i * 48), 0, 42, 11);
-		draw_smallnum (view, 7, i * 11, count, 0, 1);
-	}
-#endif
-}
-
-static void __attribute__((used))
-draw_rogue_inventory_sbar (view_t *view)
-{
-#if 0
-	if (sbar_stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
-		draw_pic (view, 0, 0, rsb_invbar[0]);
-	else
-		draw_pic (view, 0, 0, rsb_invbar[1]);
-
-	view_draw (view);
-#endif
-}
-
-static void __attribute__((used))
 draw_rogue_face (view_t *view)
 {
 #if 0
@@ -1076,50 +1060,6 @@ draw_rogue_face (view_t *view)
 	draw_fill (view, 113, 12, 22, 9, bottom);
 
 	draw_smallnum (view, 108, 3, s->frags, 1, top == 8);
-#endif
-}
-
-static void __attribute__((used))
-draw_rogue_status (view_t *view)
-{
-#if 0
-	if (sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-
-	draw_num (view, 24, 0, sbar_stats[STAT_ARMOR], 3,
-			  sbar_stats[STAT_ARMOR] <= 25);
-	if (sbar_stats[STAT_ITEMS] & RIT_ARMOR3)
-		draw_pic (view, 0, 0, sb_armor[2]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_ARMOR2)
-		draw_pic (view, 0, 0, sb_armor[1]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_ARMOR1)
-		draw_pic (view, 0, 0, sb_armor[0]);
-
-	// PGM 03/02/97 - fixed so color swatch appears in only CTF modes
-	if (sbar_maxplayers != 1 && teamplay > 3 && teamplay < 7)
-		draw_rogue_face (view);
-	else
-		draw_face (view);
-
-	draw_health (view);
-
-	if (sbar_stats[STAT_ITEMS] & RIT_SHELLS)
-		draw_pic (view, 224, 0, sb_ammo[0]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_NAILS)
-		draw_pic (view, 224, 0, sb_ammo[1]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_ROCKETS)
-		draw_pic (view, 224, 0, sb_ammo[2]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_CELLS)
-		draw_pic (view, 224, 0, sb_ammo[3]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_LAVA_NAILS)
-		draw_pic (view, 224, 0, rsb_ammo[0]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
-		draw_pic (view, 224, 0, rsb_ammo[1]);
-	else if (sbar_stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
-		draw_pic (view, 224, 0, rsb_ammo[2]);
-	draw_num (view, 248, 0, sbar_stats[STAT_AMMO], 3, sbar_stats[STAT_AMMO] <= 10);
 #endif
 }
 
@@ -1880,6 +1820,19 @@ static void
 update_weapon (int stat)
 {
 	set_update (sbar_weapons, draw_weapons);
+	sb_ibar_index = (sb_game
+					 && sbar_stats[STAT_ACTIVEWEAPON] < RIT_LAVA_NAILGUN);
+	if (hud_sbar) {
+		// shouldn't need to sort the pics because the component is already
+		// on the entity, so the position in the pool won't be affected
+		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar[sb_ibar_index]);
+	} else {
+		for (int i = 0; i < 4; i++) {
+			view_t      v = View_GetChild (sbar_miniammo, i);
+			sb_miniammo[i].pic = sb_ibar[sb_ibar_index];
+			sbar_setcomponent (v, hud_subpic, &sb_miniammo[i]);
+		}
+	}
 }
 
 static void
@@ -2084,7 +2037,7 @@ set_hud_sbar (void)
 			}
 		}
 
-		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar);
+		sbar_setcomponent (sbar_inventory, hud_pic, &sb_ibar[sb_ibar_index]);
 		sbar_setcomponent (sbar_statusbar, hud_pic, &sb_sbar);
 		sbar_setcomponent (sbar_tile[0], hud_tile, 0);
 		sbar_setcomponent (sbar_tile[1], hud_tile, 0);
@@ -2114,8 +2067,7 @@ set_hud_sbar (void)
 			v = View_GetChild (sbar_miniammo, i);
 			View_SetPos (v, 0, i * 11);
 			View_SetLen (v, 42, 11);
-			hud_subpic_t subpic = { sb_ibar, 3 + (i * 48), 0, 42, 11 };
-			sbar_setcomponent (v, hud_subpic, &subpic);
+			sbar_setcomponent (v, hud_subpic, &sb_miniammo[i]);
 		}
 		for (int i = 0; i < 7; i++) {
 			for (int j = 0; j < sb_weapon_view_count; j++) {
@@ -2266,108 +2218,6 @@ init_sbar_views (void)
 	}
 }
 
-#if 0
-static void
-init_rogue_sbar_views (void)
-{
-	view_t     *view;
-
-	sbar_view = view_new (0, 0, 320, 48, grav_south);
-
-	sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	sbar_frags_view->draw = draw_frags;
-
-	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	sbar_inventory_view->draw = draw_rogue_inventory_sbar;
-
-	view = view_new (0, 0, 224, 16, grav_southwest);
-	view->draw = draw_rogue_weapons_sbar;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 32, 8, grav_northwest);
-	view->draw = draw_ammo_sbar;
-	view_add (sbar_inventory_view, view);
-
-	view = view_new (0, 0, 128, 16, grav_southeast);
-	view->draw = draw_rogue_items;
-	view_add (sbar_inventory_view, view);
-
-	if (sbar_frags_view)
-		view_add (sbar_inventory_view, sbar_frags_view);
-
-	view_add (sbar_view, sbar_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_status_bar;
-	view_add (sbar_view, view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_rogue_status;
-	view_add (sbar_view, view);
-
-	if (cl_screen_view->xlen > 320) {
-		int         l = (cl_screen_view->xlen - 320) / 2;
-
-		view = view_new (-l, 0, l, 48, grav_southwest);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
-
-		view = view_new (-l, 0, l, 48, grav_southeast);
-		view->draw = draw_tile;
-		view->resize_y = 1;
-		view_add (sbar_view, view);
-	}
-}
-#endif
-
-#if 0
-static void
-init_rogue_hud_views (void)
-{
-	view_t     *view;
-
-	hud_view = view_new (0, 0, 320, 48, grav_south);
-	hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
-	hud_frags_view->draw = draw_frags;
-
-	hud_view->resize_y = 1;
-
-	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
-
-	view = view_new (0, 0, 24, 112, grav_northeast);
-	view->draw = draw_rogue_weapons_hud;
-	view_add (hud_armament_view, view);
-
-	view = view_new (0, 0, 42, 44, grav_southeast);
-	view->draw = draw_rogue_ammo_hud;
-	view_add (hud_armament_view, view);
-
-	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	view_add (hud_view, hud_inventory_view);
-
-	view = view_new (0, 0, 320, 24, grav_southwest);
-	view->draw = draw_rogue_status;
-	view_add (hud_view, view);
-
-	view = view_new (0, 0, 128, 16, grav_southeast);
-	view->draw = draw_rogue_items;
-	view_add (hud_inventory_view, view);
-
-	if (hud_frags_view)
-		view_add (hud_inventory_view, hud_frags_view);
-
-	view = view_new (0, 0, cl_screen_view->xlen, 48, grav_south);
-	view->resize_x = 1;
-	view_add (view, hud_view);
-	hud_view = view;
-
-	view_add (hud_view, hud_armament_view);
-
-	view_insert (hud_main_view, hud_view, 0);
-}
-#endif
-
 static void
 init_views (void)
 {
@@ -2501,7 +2351,7 @@ load_pics (void)
 	sb_face_quad = r_funcs->Draw_PicFromWad ("face_quad");
 
 	sb_sbar = r_funcs->Draw_PicFromWad ("sbar");
-	sb_ibar = r_funcs->Draw_PicFromWad ("ibar");
+	sb_ibar[0] = r_funcs->Draw_PicFromWad ("ibar");
 	sb_scorebar = r_funcs->Draw_PicFromWad ("scorebar");
 	sb_weapon_count = 7;
 	sb_weapon_view_count = 7;
@@ -2544,8 +2394,8 @@ load_pics (void)
 	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
 		sb_weapon_count = 12;
 		sb_game = 1;
-		rsb_invbar[0] = r_funcs->Draw_PicFromWad ("r_invbar1");
-		rsb_invbar[1] = r_funcs->Draw_PicFromWad ("r_invbar2");
+		sb_ibar[0] = r_funcs->Draw_PicFromWad ("r_invbar1");
+		sb_ibar[1] = r_funcs->Draw_PicFromWad ("r_invbar2");
 
 		sb_weapons[0][7].pic = r_funcs->Draw_PicFromWad ("r_lava");
 		sb_weapons[0][8].pic = r_funcs->Draw_PicFromWad ("r_superlava");
@@ -2567,9 +2417,10 @@ load_pics (void)
 		rsb_teambord = r_funcs->Draw_PicFromWad ("r_teambord");
 		// PGM 01/19/97 - team color border
 
-		rsb_ammo[0] = r_funcs->Draw_PicFromWad ("r_ammolava");
-		rsb_ammo[1] = r_funcs->Draw_PicFromWad ("r_ammomulti");
-		rsb_ammo[2] = r_funcs->Draw_PicFromWad ("r_ammoplasma");
+		// It seems the pics for plasma and multi-rockets are swapped
+		sb_ammo[4] = r_funcs->Draw_PicFromWad ("r_ammolava");
+		sb_ammo[5] = r_funcs->Draw_PicFromWad ("r_ammoplasma");
+		sb_ammo[6] = r_funcs->Draw_PicFromWad ("r_ammomulti");
 	}
 
 	for (int i = 0; i < 7; i++) {
@@ -2586,6 +2437,18 @@ load_pics (void)
 				sb_items[i][j] = sb_items[0][j];
 			}
 		}
+	}
+	if (!sb_ibar[1]) {
+		sb_ibar[1] = sb_ibar[0];
+	}
+	for (int i = 0; i < 4; i++) {
+		sb_miniammo[i] = (hud_subpic_t) {
+			.pic = sb_ibar[0],
+			.x = 3 + (i * 48),
+			.y = 0,
+			.w = 42,
+			.h = 11,
+		};
 	}
 }
 
