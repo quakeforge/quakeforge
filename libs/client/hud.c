@@ -207,8 +207,10 @@ hud_debug_f (void *data, const cvar_t *cvar)
 	}
 	if (hud_debug) {
 		hud_add_outlines (hud_view);
+		hud_add_outlines (hud_overlay_view);
 	} else {
 		hud_remove_outlines (hud_view);
+		hud_remove_outlines (hud_overlay_view);
 	}
 }
 
