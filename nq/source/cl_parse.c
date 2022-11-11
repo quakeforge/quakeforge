@@ -305,7 +305,7 @@ CL_ParseServerInfo (void)
 		cl.players[i].bottomcolor = 0;
 	}
 	Sbar_SetPlayers (cl.players, cl.maxclients);
-	Sbar_SetTeamplay (0);
+	Sbar_SetTeamplay (teamplay);//FIXME updates?
 
 	// parse gametype
 	cl.gametype = MSG_ReadByte (net_message);

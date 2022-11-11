@@ -210,13 +210,16 @@ static view_def_t sbar_defs[] = {
 	{&sbar_solo_name,     {  0, 0,  0,  8}, grav_center,    &sbar_solo_anchor},
 	{0, { 0, 0, 32,  8}, grav_northwest, &sbar_frags,    4, 32, 0, frags_defs},
 	{0, { 0, 0,  8, 16}, grav_northwest, &sbar_sigils,   4,  8, 0},
+	// for rogue ctf "face"
+	{0, { 1, 3, 22,  9}, grav_northwest, &sbar_face,     2,  0, 9},
+	{0, { 0, 3, 24,  8}, grav_northwest, &sbar_face,     1,  0, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_armor,    4, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
 	// hipnotic and rogue have 8 item slots and no sigils, so the two extra
 	// items overlap the sigils view
 	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    8, 16, 0},
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
-	// hipnotic adds two extra weapons that overlapp the keys views (which
+	// hipnotic adds two extra weapons that overlap the keys views (which
 	// get moved for hipnotic).
 	{0, { 0, 0,176, 16}, grav_northwest, &sbar_weapons,  2, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
@@ -931,6 +934,10 @@ draw_face (view_t view)
 {
 	qpic_t     *face;
 
+	if (sb_game && sbar_maxplayers > 1
+		&& sbar_teamplay > 3 && sbar_teamplay < 7) {
+		return;
+	}
 	if (sbar_stats[STAT_HEALTH] <= 0) {//FIXME hide_Face or hide_sbar
 		sbar_remcomponent (sbar_face, hud_pic);
 		return;
@@ -1041,26 +1048,17 @@ draw_status (view_t *view)
 }
 #endif
 
-static void __attribute__((used))
-draw_rogue_face (view_t *view)
+static void
+draw_rogue_ctf_face (view_t view)
 {
-#if 0
-	int         top, bottom;
-	player_info_t *s;
-
-	// PGM 01/19/97 - team color drawing
-
-	s = &sbar_players[sbar_viewplayer];
-
-	top = Sbar_ColorForMap (s->topcolor);
-	bottom = Sbar_ColorForMap (s->bottomcolor);
-
-	draw_pic (view, 112, 0, rsb_teambord);
-	draw_fill (view, 113, 3, 22, 9, top);
-	draw_fill (view, 113, 12, 22, 9, bottom);
-
-	draw_smallnum (view, 108, 3, s->frags, 1, top == 8);
-#endif
+	__auto_type p = &sbar_players[sbar_viewplayer];
+	byte        top = Sbar_ColorForMap (p->topcolor);
+	byte        bottom = Sbar_ColorForMap (p->bottomcolor);
+	sbar_setcomponent (View_GetChild (view, 0), hud_fill, &top);
+	sbar_setcomponent (View_GetChild (view, 1), hud_fill, &bottom);
+	sbar_setcomponent (View_GetChild (view, 2), hud_charbuff,
+					   &sb_frags[sbar_viewplayer]);
+	sbar_setcomponent (view, hud_pic, &rsb_teambord);
 }
 
 static void
@@ -1778,6 +1776,12 @@ Sbar_UpdateFrags (int playernum)
 	write_charbuff (sb_frags[playernum], 0, 0, va (0, "%3d", p->frags));
 }
 
+static inline void
+set_update (view_t view, hud_update_f func)
+{
+	sbar_setcomponent (view, hud_updateonce, &func);
+}
+
 void
 Sbar_UpdateInfo (int playernum)
 {
@@ -1785,15 +1789,13 @@ Sbar_UpdateInfo (int playernum)
 	//FIXME update top/bottom color
 	write_charbuff (sb_uid[playernum], 0, 0, va (0, "%4d", p->userid));
 	write_charbuff_cl (sb_name[playernum], 0, 0, p->name->value);
-	if (sbar_teamplay) {
+	if (sbar_teamplay && p->team) {
 		write_charbuff_cl (sb_team[playernum], 0, 0, p->team->value);
 	}
-}
-
-static inline void
-set_update (view_t view, hud_update_f func)
-{
-	sbar_setcomponent (view, hud_updateonce, &func);
+	if (sb_game && sbar_maxplayers > 1
+		&& sbar_teamplay > 3 && sbar_teamplay < 7) {
+		set_update (sbar_face, draw_rogue_ctf_face);
+	}
 }
 
 static void
@@ -1958,6 +1960,10 @@ void
 Sbar_SetTeamplay (int teamplay)
 {
 	sbar_teamplay = teamplay;
+	if (sb_game && sbar_maxplayers > 1
+		&& sbar_teamplay > 3 && sbar_teamplay < 7) {
+		set_update (sbar_face, draw_rogue_ctf_face);
+	}
 }
 
 void
