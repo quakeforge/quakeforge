@@ -214,6 +214,7 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_ammo,     4, 24, 0},
 	{0, { 0, 0, 16, 16}, grav_northwest, &sbar_items,    6, 16, 0},
 	{0, { 0, 0, 24, 16}, grav_northwest, &sbar_weapons,  7, 24, 0},
+	{0, { 0, 0,176, 16}, grav_northwest, &sbar_weapons,  2, 24, 0},
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
 
@@ -276,7 +277,11 @@ static qpic_t *sb_sbar;
 static qpic_t *sb_scorebar;
 
 // 0 is active, 1 is owned, 2-6 are flashes
-static hud_subpic_t sb_weapons[7][8];
+// 0-6 id, 7-9 hip (laser, mjolnir, prox), 7-11 rogue powerups
+static int sb_weapon_count;
+static int sb_weapon_view_count;
+static int sb_game;
+static hud_subpic_t sb_weapons[7][12];
 static qpic_t *sb_ammo[4];
 static qpic_t *sb_sigil[4];
 static qpic_t *sb_armor[3];
@@ -296,17 +301,12 @@ static qboolean sb_showteamscores;
 static int sb_lines;				// scan lines to draw
 
 static qpic_t *rsb_invbar[2];
-static qpic_t *rsb_weapons[5];
 static qpic_t *rsb_items[2];
 static qpic_t *rsb_ammo[3];
 static qpic_t *rsb_teambord;		// PGM 01/19/97 - team color border
 
 								// MED 01/04/97 added two more weapons + 3
 								// alternates for grenade launcher
-static qpic_t *hsb_weapons[7][5];	// 0 is active, 1 is owned, 2-5 are flashes
-
-								// MED 01/04/97 added array to simplify
-								// weapon parsing
 //static int hipweapons[4] =
 //	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
@@ -486,14 +486,38 @@ static void
 draw_weapons (view_t view)
 {
 	int         flashon, i;
+	static byte view_map[2][12] = {
+		{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 4 },		// id/hipnotic
+		{ 0, 1, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6 },	// rogue
+	};
+	static byte item_map[2][12] = {
+		{ 0, 1, 2, 3, 4, 5, 6,	// id/hipnotic
+		  HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, HIT_PROXIMITY_GUN_BIT },
+		{ 0, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16 },	// rogue
+	};
+	static int  active_map[2][12] = {
+		{ [9] = HIT_PROXIMITY_GUN },	// id/hipnotic
+		{ [7] = RIT_LAVA_NAILGUN,
+		  [8] = RIT_LAVA_SUPER_NAILGUN,
+		  [9] = RIT_MULTI_GRENADE,
+		  [10] = RIT_MULTI_ROCKET,
+		  [11] = RIT_PLASMA_GUN,
+		},	// rogue
+	};
 
-	for (i = 0; i < 7; i++) {
-		view_t      weap = View_GetChild (view, i);
-		if (sbar_stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i, 2);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-			sbar_setcomponent (weap, hud_subpic, &sb_weapons[flashon][i]);
+	for (i = 0; i < sb_weapon_count; i++) {
+		view_t      weap = View_GetChild (view, view_map[sb_game][i]);
+		int         mask = 1 << item_map[sb_game][i];
+		float       time = sbar_item_gettime[item_map[sb_game][i]];
+		int         active = active_map[sb_game][i];
+
+		if (sbar_stats[STAT_ITEMS] & mask) {
+			if ((sbar_stats[STAT_ACTIVEWEAPON] & active) == active) {
+				flashon = calc_flashon (time, mask, 2);
+				if (flashon > 1)
+					sb_updates = 0;			// force update to remove flash
+				sbar_setcomponent (weap, hud_subpic, &sb_weapons[flashon][i]);
+			}
 		} else {
 			sbar_remcomponent (weap, hud_subpic);
 		}
@@ -999,52 +1023,6 @@ draw_status (view_t *view)
 #endif
 
 static void __attribute__((used))
-draw_rogue_weapons_sbar (view_t *view)
-{
-#if 0
-	int         i;
-
-	draw_weapons_sbar (view);
-
-	// check for powered up weapon.
-	if (sbar_stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
-		for (i = 0; i < 5; i++) {
-			if (sbar_stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
-				draw_pic (view, (i + 2) * 24, 0, rsb_weapons[i]);
-			}
-		}
-	}
-#endif
-}
-
-static void __attribute__((used))
-draw_rogue_weapons_hud (view_t *view)
-{
-#if 0
-	int         flashon, i, j;
-	qpic_t     *pic;
-
-	for (i = cl_screen_view->ylen < 204; i < 7; i++) {
-		if (sbar_stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (sbar_item_gettime[i], IT_SHOTGUN << i, 2);
-			if (i >= 2) {
-				j = i - 2;
-				if (sbar_stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << j))
-					pic = rsb_weapons[j];
-				else
-					pic = sb_weapons[flashon][i];
-			} else {
-				pic = sb_weapons[flashon][i];
-			}
-			draw_subpic (view, 0, i * 16, pic, 0, 0, 24, 16);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-#endif
-}
-
-static void __attribute__((used))
 draw_rogue_ammo_hud (view_t *view)
 {
 #if 0
@@ -1160,84 +1138,6 @@ draw_rogue_status (view_t *view)
 	else if (sbar_stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
 		draw_pic (view, 224, 0, rsb_ammo[2]);
 	draw_num (view, 248, 0, sbar_stats[STAT_AMMO], 3, sbar_stats[STAT_AMMO] <= 10);
-#endif
-}
-
-static void __attribute__((used))
-draw_hipnotic_weapons_sbar (view_t *view)
-{
-#if 0
-	static int  x[] = {0, 24, 48, 72, 96, 120, 144, 176, 200, 96};
-	static int  h[] = {0, 1, 3};
-	int         flashon, i;
-	qpic_t     *pic;
-	int         mask;
-	float       time;
-
-	for (i = 0; i < 10; i++) {
-		if (i < 7) {
-			mask = IT_SHOTGUN << i;
-			time = sbar_item_gettime[i];
-		} else {
-			mask = 1 << hipweapons[h[i - 7]];
-			time = sbar_item_gettime[hipweapons[h[i - 7]]];
-		}
-		if (sbar_stats[STAT_ITEMS] & mask) {
-			flashon = calc_flashon (time, mask, 2);
-
-			if (i == 4 && sbar_stats[STAT_ACTIVEWEAPON] == (1 << hipweapons[3]))
-				continue;
-			if (i == 9 && sbar_stats[STAT_ACTIVEWEAPON] != (1 << hipweapons[3]))
-				continue;
-			if (i < 7) {
-				pic = sb_weapons[flashon][i];
-			} else {
-				pic = hsb_weapons[flashon][h[i - 7]];
-			}
-
-			draw_subpic (view, x[i], 0, pic, 0, 0, 24, 16);
-
-			if (flashon > 1)
-				sb_updates = 0;		// force update to remove flash
-		}
-	}
-#endif
-}
-
-static void __attribute__((used))
-draw_hipnotic_weapons_hud (view_t *view)
-{
-#if 0
-	int         flashon, i;
-	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80};
-	static int  h[] = {0, 1, 3};
-	qpic_t     *pic;
-	int         mask;
-	float       time;
-
-	for (i = 0; i < 10; i++) {
-		if (i < 7) {
-			mask = IT_SHOTGUN << i;
-			time = sbar_item_gettime[i];
-		} else {
-			mask = 1 << hipweapons[h[i - 7]];
-			time = sbar_item_gettime[hipweapons[h[i - 7]]];
-		}
-		if (sbar_stats[STAT_ITEMS] & mask) {
-			flashon = calc_flashon (time, mask, 2);
-
-			if (i < 7) {
-				pic = sb_weapons[flashon][i];
-			} else {
-				pic = hsb_weapons[flashon][h[i - 7]];
-			}
-
-			draw_subpic (view, 0, y[i], pic, 0, 0, 24, 16);
-
-			if (flashon > 1)
-				sb_updates = 0;		// force update to remove flash
-		}
-	}
 #endif
 }
 
@@ -2231,10 +2131,12 @@ set_hud_sbar (void)
 		View_SetLen (sbar_miniammo, 202, 8);
 		View_SetGravity (sbar_miniammo, grav_northwest);
 
-		for (int i = 0; i < 7; i++) {
+		int         x = 0;
+		for (int i = 0; i < sb_weapon_view_count; i++) {
 			v = View_GetChild (sbar_weapons, i);
-			View_SetPos (v, i * 24, 0);
-			View_SetLen (v, 24 + 24 * (i == 6), 16);
+			View_SetPos (v, x, 0);
+			View_SetLen (v, sb_weapons[0][i].pic->width, 16);
+			x += sb_weapons[0][i].pic->width;
 
 			if (sbar_hascomponent (v, hud_subpic)) {
 				hud_subpic_t *subpic = sbar_getcomponent(v, hud_subpic);
@@ -2248,7 +2150,7 @@ set_hud_sbar (void)
 			sbar_remcomponent (v, hud_subpic);
 		}
 		for (int i = 0; i < 7; i++) {
-			for (int j = 0; j < 8; j++) {
+			for (int j = 0; j < sb_weapon_view_count; j++) {
 				if (sb_weapons[i][j].pic) {
 					sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
 					sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
@@ -2263,16 +2165,16 @@ set_hud_sbar (void)
 	} else {
 		View_SetParent (sbar_armament, hud_view);
 		View_SetPos (sbar_armament, 0, 48);
-		View_SetLen (sbar_armament, 42, 156);
+		View_SetLen (sbar_armament, 42, 44 + 16 * sb_weapon_view_count);
 		View_SetGravity (sbar_armament, grav_southeast);
 
-		View_SetLen (sbar_weapons, 24, 112);
+		View_SetLen (sbar_weapons, 24, 16 * sb_weapon_view_count);
 		View_SetGravity (sbar_weapons, grav_northeast);
 
 		View_SetLen (sbar_miniammo, 42, 44);
 		View_SetGravity (sbar_miniammo, grav_southeast);
 
-		for (int i = 0; i < 7; i++) {
+		for (int i = 0; i < sb_weapon_view_count; i++) {
 			v = View_GetChild (sbar_weapons, i);
 			View_SetPos (v, 0, i * 16);
 			View_SetLen (v, 24, 16);
@@ -2290,7 +2192,7 @@ set_hud_sbar (void)
 			sbar_setcomponent (v, hud_subpic, &subpic);
 		}
 		for (int i = 0; i < 7; i++) {
-			for (int j = 0; j < 8; j++) {
+			for (int j = 0; j < sb_weapon_view_count; j++) {
 				if (sb_weapons[i][j].pic) {
 					sb_weapons[i][j].w = 24;
 					sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
@@ -2424,10 +2326,10 @@ init_sbar_views (void)
 	solo_name = Draw_CreateBuffer (20, 1);
 }
 
+#if 0
 static void
 init_hipnotic_sbar_views (void)
 {
-#if 0
 	view_t     *view;
 
 	sbar_view = view_new (0, 0, 320, 48, grav_south);
@@ -2480,13 +2382,13 @@ init_hipnotic_sbar_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
-#endif
 }
+#endif
 
+#if 0
 static void
 init_hipnotic_hud_views (void)
 {
-#if 0
 	view_t     *view;
 
 	hud_view = view_new (0, 0, 320, 48, grav_south);
@@ -2536,13 +2438,13 @@ init_hipnotic_hud_views (void)
 	view_add (hud_view, hud_armament_view);
 
 	view_insert (hud_main_view, hud_view, 0);
-#endif
 }
+#endif
 
+#if 0
 static void
 init_rogue_sbar_views (void)
 {
-#if 0
 	view_t     *view;
 
 	sbar_view = view_new (0, 0, 320, 48, grav_south);
@@ -2591,13 +2493,13 @@ init_rogue_sbar_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
-#endif
 }
+#endif
 
+#if 0
 static void
 init_rogue_hud_views (void)
 {
-#if 0
 	view_t     *view;
 
 	hud_view = view_new (0, 0, 320, 48, grav_south);
@@ -2638,8 +2540,8 @@ init_rogue_hud_views (void)
 	view_add (hud_view, hud_armament_view);
 
 	view_insert (hud_main_view, hud_view, 0);
-#endif
 }
+#endif
 
 static void
 init_views (void)
@@ -2669,15 +2571,7 @@ init_views (void)
 	sb_spectator = Draw_CreateBuffer (11, 1);
 	write_charbuff (sb_spectator, 0, 0, "(spectator)");
 
-	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
-		init_hipnotic_sbar_views ();
-		init_hipnotic_hud_views ();
-	} else if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
-		init_rogue_sbar_views ();
-		init_rogue_hud_views ();
-	} else {
-		init_sbar_views ();
-	}
+	init_sbar_views ();
 }
 
 static void
@@ -2735,14 +2629,6 @@ load_pics (void)
 		sb_weapons[2 + i][6].pic =
 			r_funcs->Draw_PicFromWad (va (0, "inva%i_lightng", i + 1));
 	}
-	for (int i = 0; i < 7; i++) {
-		for (int j = 0; j < 8; j++) {
-			if (sb_weapons[i][j].pic) {
-				sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
-				sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
-			}
-		}
-	}
 
 	sb_ammo[0] = r_funcs->Draw_PicFromWad ("sb_shells");
 	sb_ammo[1] = r_funcs->Draw_PicFromWad ("sb_nails");
@@ -2792,32 +2678,37 @@ load_pics (void)
 	sb_sbar = r_funcs->Draw_PicFromWad ("sbar");
 	sb_ibar = r_funcs->Draw_PicFromWad ("ibar");
 	sb_scorebar = r_funcs->Draw_PicFromWad ("scorebar");
+	sb_weapon_count = 7;
+	sb_weapon_view_count = 7;
+	sb_game = 0;
 
 	// MED 01/04/97 added new hipnotic weapons
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
-		hsb_weapons[0][0] = r_funcs->Draw_PicFromWad ("inv_laser");
-		hsb_weapons[0][1] = r_funcs->Draw_PicFromWad ("inv_mjolnir");
-		hsb_weapons[0][2] = r_funcs->Draw_PicFromWad ("inv_gren_prox");
-		hsb_weapons[0][3] = r_funcs->Draw_PicFromWad ("inv_prox_gren");
-		hsb_weapons[0][4] = r_funcs->Draw_PicFromWad ("inv_prox");
+		sb_weapon_count = 10;
+		sb_weapon_view_count = 9;
+		sb_weapons[0][7].pic = r_funcs->Draw_PicFromWad ("inv_laser");
+		sb_weapons[0][8].pic = r_funcs->Draw_PicFromWad ("inv_mjolnir");
+		sb_weapons[0][9].pic = r_funcs->Draw_PicFromWad ("inv_prox_gren");
+		//sb_weapons[0][3].pic = r_funcs->Draw_PicFromWad ("inv_gren_prox");
+		//sb_weapons[0][4] = r_funcs->Draw_PicFromWad ("inv_prox");
 
-		hsb_weapons[1][0] = r_funcs->Draw_PicFromWad ("inv2_laser");
-		hsb_weapons[1][1] = r_funcs->Draw_PicFromWad ("inv2_mjolnir");
-		hsb_weapons[1][2] = r_funcs->Draw_PicFromWad ("inv2_gren_prox");
-		hsb_weapons[1][3] = r_funcs->Draw_PicFromWad ("inv2_prox_gren");
-		hsb_weapons[1][4] = r_funcs->Draw_PicFromWad ("inv2_prox");
+		sb_weapons[1][7].pic = r_funcs->Draw_PicFromWad ("inv2_laser");
+		sb_weapons[1][8].pic = r_funcs->Draw_PicFromWad ("inv2_mjolnir");
+		sb_weapons[1][9].pic = r_funcs->Draw_PicFromWad ("inv2_prox_gren");
+		//sb_weapons[1][3].pic = r_funcs->Draw_PicFromWad ("inv2_gren_prox");
+		//sb_weapons[1][4] = r_funcs->Draw_PicFromWad ("inv2_prox");
 
 		for (int i = 0; i < 5; i++) {
-			hsb_weapons[2 + i][0] =
+			sb_weapons[2 + i][7].pic =
 				r_funcs->Draw_PicFromWad (va (0, "inva%i_laser", i + 1));
-			hsb_weapons[2 + i][1] =
+			sb_weapons[2 + i][8].pic =
 				r_funcs->Draw_PicFromWad (va (0, "inva%i_mjolnir", i + 1));
-			hsb_weapons[2 + i][2] =
-				r_funcs->Draw_PicFromWad (va (0, "inva%i_gren_prox", i + 1));
-			hsb_weapons[2 + i][3] =
+			sb_weapons[2 + i][9].pic =
 				r_funcs->Draw_PicFromWad (va (0, "inva%i_prox_gren", i + 1));
-			hsb_weapons[2 + i][4] =
-				r_funcs->Draw_PicFromWad (va (0, "inva%i_prox", i + 1));
+			//sb_weapons[2 + i][2] =
+			//	r_funcs->Draw_PicFromWad (va (0, "inva%i_gren_prox", i + 1));
+			//sb_weapons[2 + i][4] =
+			//	r_funcs->Draw_PicFromWad (va (0, "inva%i_prox", i + 1));
 		}
 
 		hsb_items[0] = r_funcs->Draw_PicFromWad ("sb_wsuit");
@@ -2826,14 +2717,23 @@ load_pics (void)
 
 	// FIXME: MISSIONHUD
 	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
+		sb_weapon_count = 12;
+		sb_game = 1;
 		rsb_invbar[0] = r_funcs->Draw_PicFromWad ("r_invbar1");
 		rsb_invbar[1] = r_funcs->Draw_PicFromWad ("r_invbar2");
 
-		rsb_weapons[0] = r_funcs->Draw_PicFromWad ("r_lava");
-		rsb_weapons[1] = r_funcs->Draw_PicFromWad ("r_superlava");
-		rsb_weapons[2] = r_funcs->Draw_PicFromWad ("r_gren");
-		rsb_weapons[3] = r_funcs->Draw_PicFromWad ("r_multirock");
-		rsb_weapons[4] = r_funcs->Draw_PicFromWad ("r_plasma");
+		sb_weapons[0][7].pic = r_funcs->Draw_PicFromWad ("r_lava");
+		sb_weapons[0][8].pic = r_funcs->Draw_PicFromWad ("r_superlava");
+		sb_weapons[0][9].pic = r_funcs->Draw_PicFromWad ("r_gren");
+		sb_weapons[0][10].pic = r_funcs->Draw_PicFromWad ("r_multirock");
+		sb_weapons[0][11].pic = r_funcs->Draw_PicFromWad ("r_plasma");
+		for (int i = 1; i < 7; i++) {
+			sb_weapons[i][7].pic = sb_weapons[0][7].pic;
+			sb_weapons[i][8].pic = sb_weapons[0][8].pic;
+			sb_weapons[i][9].pic = sb_weapons[0][9].pic;
+			sb_weapons[i][10].pic = sb_weapons[0][10].pic;
+			sb_weapons[i][11].pic = sb_weapons[0][11].pic;
+		}
 
 		rsb_items[0] = r_funcs->Draw_PicFromWad ("r_shield1");
 		rsb_items[1] = r_funcs->Draw_PicFromWad ("r_agrav1");
@@ -2845,6 +2745,15 @@ load_pics (void)
 		rsb_ammo[0] = r_funcs->Draw_PicFromWad ("r_ammolava");
 		rsb_ammo[1] = r_funcs->Draw_PicFromWad ("r_ammomulti");
 		rsb_ammo[2] = r_funcs->Draw_PicFromWad ("r_ammoplasma");
+	}
+
+	for (int i = 0; i < 7; i++) {
+		for (int j = 0; j < 12; j++) {
+			if (sb_weapons[i][j].pic) {
+				sb_weapons[i][j].w = sb_weapons[i][j].pic->width;
+				sb_weapons[i][j].h = sb_weapons[i][j].pic->height;
+			}
+		}
 	}
 }
 
