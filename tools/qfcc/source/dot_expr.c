@@ -354,6 +354,8 @@ print_jump (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	_print_expr (dstr, e->e.branch.target, level, id, next);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   "jump", e->line);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->e.branch.target);
 }
 
 static void
