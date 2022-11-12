@@ -1944,7 +1944,7 @@ Host_Frame (float time)
 	r_data->frametime = host_frametime;
 
 	cl.viewstate.time = realtime;
-	if (!cls.demoplayback) {
+	if (!cls.demoplayback && cls.state == ca_active) {
 		CL_NetUpdate ();
 	}
 	Sbar_Update (cl.time);
