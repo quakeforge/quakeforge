@@ -425,7 +425,8 @@ Cam_Track (usercmd_t *cmd)
 		return;
 
 	if (locked
-		&& (!cl.players[spec_track].name->value[0]
+		&& (!cl.players[spec_track].name
+			|| !cl.players[spec_track].name->value[0]
 			|| cl.players[spec_track].spectator)) {
 		locked = false;
 		if (cl_hightrack)
