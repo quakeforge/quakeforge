@@ -62,7 +62,7 @@
 /**
 	Print a string to the console if the "developer" Cvar is nonzero.
 */
-@extern void dprint (.../*string str*/);
+@extern void dprint (string str);
 
 /**
 	Abort (crash) the server. "str" is the message the server crashes with.
