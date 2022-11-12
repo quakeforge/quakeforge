@@ -85,7 +85,7 @@ VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
 	},
-	[OP_MUL_V_v6p] = {"mul", "mul.v",
+	[OP_MUL_V_v6p] = {"vdot", "mul.v",
 	 ev_vector, ev_vector, ev_float,
 	 PROG_ID_VERSION,
 	},

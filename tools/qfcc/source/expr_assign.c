@@ -212,6 +212,55 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	return type_mismatch (dst, src, '=');
 }
 
+static void
+copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
+{
+	expr_t     *dx, *sx;
+	expr_t     *dy, *sy;
+	expr_t     *dz, *sz;
+	expr_t     *dw, *sw;
+	expr_t     *ds, *ss;
+	expr_t     *dv, *sv;
+
+	if (is_vector (src->e.vector.type)) {
+		// guaranteed to have three elements
+		sx = src->e.vector.list;
+		sy = sx->next;
+		sz = sy->next;
+		dx = field_expr (dst, new_name_expr ("x"));
+		dy = field_expr (dst, new_name_expr ("y"));
+		dz = field_expr (dst, new_name_expr ("z"));
+		append_expr (block, assign_expr (dx, sx));
+		append_expr (block, assign_expr (dy, sy));
+		append_expr (block, assign_expr (dz, sz));
+	} else {
+		// guaranteed to have two or four elements
+		if (src->e.vector.list->next->next) {
+			// four vals: x, y, z, w
+			sx = src->e.vector.list;
+			sy = sx->next;
+			sz = sy->next;
+			sw = sz->next;
+			dx = field_expr (dst, new_name_expr ("x"));
+			dy = field_expr (dst, new_name_expr ("y"));
+			dz = field_expr (dst, new_name_expr ("z"));
+			dw = field_expr (dst, new_name_expr ("w"));
+			append_expr (block, assign_expr (dx, sx));
+			append_expr (block, assign_expr (dy, sy));
+			append_expr (block, assign_expr (dz, sz));
+			append_expr (block, assign_expr (dw, sw));
+		} else {
+			// v, s
+			sv = src->e.vector.list;
+			ss = sv->next;
+			dv = field_expr (dst, new_name_expr ("v"));
+			ds = field_expr (dst, new_name_expr ("s"));
+			append_expr (block, assign_expr (dv, sv));
+			append_expr (block, assign_expr (ds, ss));
+		}
+	}
+}
+
 static int
 copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
 {
@@ -234,7 +283,11 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 	if (src->type == ex_vector && dst->type != ex_vector) {
 		expr_t     *block = new_block_expr ();
 
-		copy_elements (block, dst, src, 0);
+		if (options.code.progsversion <= PROG_VERSION) {
+			copy_qv_elements (block, dst, src);
+		} else {
+			copy_elements (block, dst, src, 0);
+		}
 		block->e.block.result = dst;
 		return block;
 	}
