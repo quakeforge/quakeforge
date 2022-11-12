@@ -591,6 +591,18 @@ print_swizzle (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_extend (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	ex_extend_t extend = e->e.extend;
+
+	_print_expr (dstr, extend.src, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, extend.src);
+	dasprintf (dstr, "%*se_%p [label=\"extend %d\\n%d\"];\n", indent, "", e,
+			   extend.extend, e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -621,6 +633,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_args] = print_args,
 		[ex_horizontal] = print_horizontal,
 		[ex_swizzle] = print_swizzle,
+		[ex_extend] = print_extend,
 	};
 	int         indent = level * 2 + 2;
 
