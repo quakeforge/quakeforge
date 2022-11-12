@@ -146,7 +146,11 @@ enum {
 	sv_cursor	= 8,
 };
 
+#ifdef HAVE_NCURSES
 static int use_curses = 1;
+#else
+static int use_curses = 0;
+#endif
 
 static view_t sv_view;
 static view_t output;
@@ -840,8 +844,10 @@ C_DrawConsole (void)
 {
 	// only the status bar is drawn because the inputline and output views
 	// take care of themselves
-	draw_status (status);
-	sv_refresh_windows ();
+	if (use_curses) {
+		draw_status (status);
+		sv_refresh_windows ();
+	}
 }
 
 static void
