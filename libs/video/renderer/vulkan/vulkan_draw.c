@@ -158,6 +158,7 @@ typedef struct drawctx_s {
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
+	qpic_t     *backtile_pic;
 	// use two separate cmem blocks for pics and strings (cachepic names)
 	// to ensure the names are never in the same cacheline as a pic since the
 	// names are used only for lookup
@@ -526,6 +527,11 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	byte white_block = 0xfe;
 	dctx->white_pic = pic_data ("white", 1, 1, &white_block, dctx);
+
+	dctx->backtile_pic = Vulkan_Draw_PicFromWad ("backtile", ctx);
+	if (!dctx->backtile_pic) {
+		dctx->backtile_pic = dctx->white_pic;
+	}
 
 	flush_draw_scrap (ctx);
 
@@ -902,6 +908,35 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	static quat_t color = { 1, 1, 1, 1};
+	vrect_t    *tile_rect = VRect_New (x, y, w, h);
+	vrect_t    *sub = VRect_New (0, 0, 0, 0);  // filled in later
+	qpic_t     *pic = dctx->backtile_pic;
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	int         sub_sx, sub_sy, sub_ex, sub_ey;
+
+	sub_sx = x / pic->width;
+	sub_sy = y / pic->height;
+	sub_ex = (x + w + pic->width - 1) / pic->width;
+	sub_ey = (y + h + pic->height - 1) / pic->height;
+	for (int j = sub_sy; j < sub_ey; j++) {
+		for (int i = sub_sx; i < sub_ex; i++) {
+			vrect_t    *t = sub;
+
+			sub->x = i * pic->width;
+			sub->y = j * pic->height;
+			sub->width = pic->width;
+			sub->height = pic->height;
+			sub = VRect_Intersect (sub, tile_rect);
+			VRect_Delete (t);
+			draw_pic (sub->x, sub->y, sub->width, sub->height, subpic,
+					  sub->x % pic->width, sub->y % pic->height,
+					  sub->width, sub->height, color, &frame->quad_verts);
+		}
+	}
 }
 
 void
