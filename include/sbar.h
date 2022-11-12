@@ -38,6 +38,7 @@ void Sbar_Init (int *stats, float *item_gettime);
 void Sbar_SetPlayers (struct player_info_s *players, int maxplayers);
 void Sbar_SetLevelName (const char *levelname, const char *servername);
 void Sbar_SetPlayerNum (int playernum, int spectator);
+void Sbar_SetAutotrack (int autotrack);
 void Sbar_SetViewEntity (int viewentity);
 void Sbar_SetTeamplay (int teamplay);
 void Sbar_SetGameType (int gametype);

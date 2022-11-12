@@ -775,11 +775,13 @@ CL_ParseServerData (void)
 
 	cl.viewentity = cl.playernum + 1;
 	cl.viewstate.bob_enabled = !cl.spectator;
+	Sbar_SetPlayerNum (cl.playernum, cl.spectator);
 
 	// get the full level name
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
 	Sbar_SetLevelName (cl.levelname, cls.servername->str);
+	Sbar_SetGameType (1);
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
@@ -1139,7 +1141,6 @@ CL_ServerInfo (void)
 //		movevars.ktjump = atof (value);
 //		FIXME: need to set to 0.5 otherwise, outside of else structure
 	}
-	Sbar_SetGameType (0);
 }
 
 static void

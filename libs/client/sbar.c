@@ -83,6 +83,7 @@ static int sbar_maxplayers;
 static int sbar_playernum;
 static int sbar_viewplayer;
 static int sbar_spectator;
+static int sbar_autotrack = -1;
 static int sbar_teamplay;
 static int sbar_gametype;
 static int sbar_active;
@@ -116,7 +117,8 @@ static view_t       sbar_solo_anchor;
 static view_t         sbar_solo_name;
 static view_t     sbar_tile[2];
 static view_t     sbar_tile[2];
-static view_t dmo_view;
+static view_t spectator_view;
+static view_t deathmatch_view;
 
 typedef struct view_def_s {
 	view_t     *view;
@@ -227,7 +229,12 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 0, 24, 24}, grav_northwest, &sbar_health,   3, 24, 0},
 	{0, {10, 0, 24,  8}, grav_northwest, &sbar_miniammo, 4, 48, 0},
 
-	{&dmo_view,           {  0, 0,320, 200}, grav_center,   &cl_screen_view},
+	{&spectator_view,     {  0, 0,320, 32},  grav_south,    &cl_screen_view},
+	{0, { 0, 0, 312, 8},  grav_north,    &spectator_view, 1, 0, 0},
+	{0, { 0, 8, 320, 24}, grav_northwest, &spectator_view, 1, 0, 0},
+	{0, { 0, 12, 112, 8}, grav_north,    &spectator_view, 1, 0, 0},
+	{0, { 0, 20, 232, 8}, grav_north,    &spectator_view, 1, 0, 0},
+	{&deathmatch_view,    {  0, 0,320, 200}, grav_center,   &cl_screen_view},
 
 	{}
 };
@@ -236,6 +243,8 @@ static draw_charbuffer_t *time_buff;
 static draw_charbuffer_t *fps_buff;
 static draw_charbuffer_t *ping_buff;
 static draw_charbuffer_t *pl_buff;
+
+static draw_charbuffer_t *spec_buff[4];//0,1 no track, 2 lost track, 3 tracking
 
 static draw_charbuffer_t *solo_monsters;
 static draw_charbuffer_t *solo_secrets;
@@ -277,6 +286,12 @@ sbar_remcomponent (view_t view, uint32_t comp)
 	Ent_RemoveComponent (view.id, comp, view.reg);
 }
 
+static inline void
+set_update (view_t view, hud_update_f func)
+{
+	sbar_setcomponent (view, hud_updateonce, &func);
+}
+
 #define STAT_MINUS		10			// num frame for '-' stats digit
 
 static qpic_t *sb_nums[2][11];
@@ -308,7 +323,7 @@ static qpic_t *sb_face_invuln;
 static qpic_t *sb_face_invis_invuln;
 
 qboolean sbar_showscores;
-static qboolean sb_showteamscores;
+static qboolean sbar_showteamscores;
 
 static int sb_lines;				// scan lines to draw
 
@@ -373,10 +388,41 @@ viewsize_f (int view_size)
 	}
 }
 
-static int __attribute__((used))
+static int
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
+}
+
+static int
+write_charbuff_cl (draw_charbuffer_t *buffer, int x, int y, const char *str)
+{
+	char       *dst = buffer->chars;
+	int         count = buffer->width - x;
+	int         chars = 0;
+	dst += y * buffer->width + x;
+	while (*str && count-- > 0) {
+		*dst++ = *str++;
+		chars++;
+	}
+	while (count-- > 0) {
+		*dst++ = ' ';
+	}
+	return chars;
+}
+
+static int
+write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
+{
+	char       *dst = buffer->chars;
+	int         count = buffer->width - x;
+	int         chars = 0;
+	dst += y * buffer->width + x;
+	while (*str && count-- > 0) {
+		*dst++ = *str++;
+		chars++;
+	}
+	return chars;
 }
 
 static void
@@ -409,7 +455,7 @@ draw_num (view_t *view, int num, int digits, int color)
 	}
 }
 
-static inline void
+static void
 draw_smallnum (view_t view, int n, int packed, int colored)
 {
 	void       *comp = sbar_getcomponent (view, hud_charbuff);
@@ -599,6 +645,8 @@ static draw_charbuffer_t *sb_pl[MAX_PLAYERS];
 static draw_charbuffer_t *sb_uid[MAX_PLAYERS];
 static draw_charbuffer_t *sb_name[MAX_PLAYERS];
 static draw_charbuffer_t *sb_team_frags[MAX_PLAYERS];
+static draw_charbuffer_t *sb_team_players[MAX_PLAYERS];
+static draw_charbuffer_t *sb_team_stats[MAX_PLAYERS];
 static draw_charbuffer_t *sb_spectator;
 int         scoreboardlines, scoreboardteams;
 
@@ -634,7 +682,7 @@ Sbar_SortFrags (qboolean includespec)
 	}
 }
 
-static void __attribute__((used))
+static void
 Sbar_SortTeams (void)
 {
 	char        t[16 + 1];
@@ -644,15 +692,13 @@ Sbar_SortTeams (void)
 	// request new ping times every two second
 	scoreboardteams = 0;
 
-	if (!sbar_teamplay)
-		return;
 
 	// sort the teams
 	memset (teams, 0, sizeof (teams));
-	for (i = 0; i < MAX_PLAYERS; i++)
+	for (i = 0; i < sbar_maxplayers; i++)
 		teams[i].plow = 999;
 
-	for (i = 0; i < MAX_PLAYERS; i++) {
+	for (i = 0; i < sbar_maxplayers; i++) {
 		s = &sbar_players[i];
 		if (!s->name || !s->name->value[0])
 			continue;
@@ -661,7 +707,8 @@ Sbar_SortTeams (void)
 
 		// find his team in the list
 		t[16] = 0;
-		strncpy (t, s->team->value, 16);
+		if (s->team)
+			strncpy (t, s->team->value, 16);
 		if (!t[0])
 			continue;					// not on team
 		for (j = 0; j < scoreboardteams; j++)
@@ -683,6 +730,24 @@ Sbar_SortTeams (void)
 			teams[j].ptotal += s->ping;
 		}
 	}
+	for (i = 0; i < sbar_maxplayers; i++) {
+		team_t     *tm = teams + i;
+		int         plow = tm->plow;
+		if (plow < 0 || plow > 999)
+			plow = 999;
+		int         phigh = tm->phigh;
+		if (phigh < 0 || phigh > 999)
+			phigh = 999;
+		int         pavg = !tm->players ? 999 : tm->ptotal / tm->players;
+		if (pavg < 0 || pavg > 999)
+			pavg = 999;
+
+		write_charbuff (sb_team_stats[i], 0, 0,
+						va (0, "%3i/%3i/%3i", plow, pavg, phigh));
+		write_charbuff (sb_team[i], 0, 0, tm->team);
+		write_charbuff (sb_team_frags[i], 0, 0, va (0, "%5d", tm->frags));
+		write_charbuff (sb_team_players[i], 0, 0, va (0, "%5d", tm->players));
+	}
 
 	// sort
 	for (i = 0; i < scoreboardteams; i++)
@@ -700,37 +765,6 @@ Sbar_SortTeams (void)
 	}
 }
 
-static int
-write_charbuff_cl (draw_charbuffer_t *buffer, int x, int y, const char *str)
-{
-	char       *dst = buffer->chars;
-	int         count = buffer->width - x;
-	int         chars = 0;
-	dst += y * buffer->width + x;
-	while (*str && count-- > 0) {
-		*dst++ = *str++;
-		chars++;
-	}
-	while (count-- > 0) {
-		*dst++ = ' ';
-	}
-	return chars;
-}
-
-static int
-write_charbuff (draw_charbuffer_t *buffer, int x, int y, const char *str)
-{
-	char       *dst = buffer->chars;
-	int         count = buffer->width - x;
-	int         chars = 0;
-	dst += y * buffer->width + x;
-	while (*str && count-- > 0) {
-		*dst++ = *str++;
-		chars++;
-	}
-	return chars;
-}
-
 static void
 draw_solo_time (void)
 {
@@ -741,13 +775,23 @@ draw_solo_time (void)
 }
 
 static void
-draw_solo (void)
+draw_solo (view_t view)
 {
-	draw_solo_time ();
-	view_pos_t len = View_GetLen (sbar_solo_name);
-	len.x = 8 * solo_name->cursx;
-	View_SetLen (sbar_solo_name, len.x, len.y);
-	View_UpdateHierarchy (sbar_solo);
+	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
+	sbar_setcomponent (sbar_solo_monsters, hud_charbuff, &solo_monsters);
+	sbar_setcomponent (sbar_solo_secrets, hud_charbuff, &solo_secrets);
+	sbar_setcomponent (sbar_solo_time, hud_charbuff, &solo_time);
+	sbar_setcomponent (sbar_solo_name, hud_charbuff, &solo_name);
+}
+
+static void
+hide_solo (view_t view)
+{
+	sbar_remcomponent (sbar_solo, hud_pic);
+	sbar_remcomponent (sbar_solo_monsters, hud_charbuff);
+	sbar_remcomponent (sbar_solo_secrets, hud_charbuff);
+	sbar_remcomponent (sbar_solo_time, hud_charbuff);
+	sbar_remcomponent (sbar_solo_name, hud_charbuff);
 }
 
 static void
@@ -973,30 +1017,46 @@ draw_face (view_t view)
 	sbar_setcomponent (view, hud_pic, &face);
 }
 
-static void __attribute__((used))
-draw_spectator (view_t *view)
+static void
+draw_spectator (view_t view)
 {
-#if 0
-	char        st[512];
+	view_t      tracking = View_GetChild (view, 0);
+	view_t      back = View_GetChild (view, 1);
+	view_t      notrack[] = {
+		View_GetChild (view, 2),
+		View_GetChild (view, 3),
+	};
 
-	if (autocam != CAM_TRACK) {
-		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
-		draw_string (view, 160 - 14 * 8 + 4, 12,
-					 "Press [ATTACK] for AutoCamera");
+	if (sbar_autotrack < 0) {
+		sbar_setcomponent (back, hud_pic, &sb_scorebar);
+		sbar_setcomponent (notrack[0], hud_charbuff, &spec_buff[0]);
+		sbar_setcomponent (notrack[1], hud_charbuff, &spec_buff[1]);
+		sbar_remcomponent (tracking, hud_charbuff);
 	} else {
-//		Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
-		if (sbar_players[spec_track].name) {
-			snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
-					  sbar_players[spec_track].name->value);
+		sbar_remcomponent (back, hud_pic);
+		sbar_remcomponent (notrack[0], hud_charbuff);
+		sbar_remcomponent (notrack[1], hud_charbuff);
+		if (sbar_players[sbar_autotrack].name) {
+			write_charbuff_cl (spec_buff[3], 0, 0,
+							   va (0, "Tracking %.13s, [JUMP] for next",
+								   sbar_players[sbar_autotrack].name->value));
+			sbar_setcomponent (tracking, hud_charbuff, &spec_buff[3]);
 		} else {
-			snprintf (st, sizeof (st), "Lost player, [JUMP] for next");
+			sbar_setcomponent (tracking, hud_charbuff, &spec_buff[2]);
 		}
-		draw_string (view, 0, -8, st);
 	}
-#endif
 }
 
-static inline void
+static void
+hide_spectator (view_t view)
+{
+	for (int i = 0; i < 4; i++) {
+		sbar_remcomponent (View_GetChild (view, i), hud_charbuff);
+		sbar_remcomponent (View_GetChild (view, i), hud_pic);
+	}
+}
+
+static void
 draw_armor (view_t view)
 {
 	view_t      armor = View_GetChild (view, 0);
@@ -1020,7 +1080,7 @@ draw_armor (view_t view)
 	}
 }
 
-static inline void
+static void
 draw_health (view_t view)
 {
 	view_t      num[3] = {
@@ -1029,39 +1089,6 @@ draw_health (view_t view)
 		View_GetChild (view, 2),
 	};
 	draw_num (num, sbar_stats[STAT_HEALTH], 3, sbar_stats[STAT_HEALTH] <= 25);
-}
-
-static void
-draw_status (void )
-{
-	sb_updates = 0;
-
-	sbar_setcomponent (sbar_solo, hud_pic, &sb_scorebar);
-	sbar_setcomponent (sbar_solo_monsters, hud_charbuff, &solo_monsters);
-	sbar_setcomponent (sbar_solo_secrets, hud_charbuff, &solo_secrets);
-	sbar_setcomponent (sbar_solo_time, hud_charbuff, &solo_time);
-	sbar_setcomponent (sbar_solo_name, hud_charbuff, &solo_name);
-
-	draw_solo ();
-#if 0
-	if (sbar_spectator) {
-		draw_spectator (view);
-		if (autocam != CAM_TRACK)
-			return;
-	}
-#endif
-}
-
-static void
-hide_status (void)
-{
-	sb_updates = 0;
-
-	sbar_remcomponent (sbar_solo, hud_pic);
-	sbar_remcomponent (sbar_solo_monsters, hud_charbuff);
-	sbar_remcomponent (sbar_solo_secrets, hud_charbuff);
-	sbar_remcomponent (sbar_solo_time, hud_charbuff);
-	sbar_remcomponent (sbar_solo_name, hud_charbuff);
 }
 
 static void
@@ -1106,16 +1133,19 @@ typedef struct dmo_def_s {
 	void      (*setup) (view_t, int);
 } dmo_def_t;
 
-static dmo_def_t ping_def      = { .width =  24, .buffer = sb_ping, };
-static dmo_def_t pl_def        = { .width =  24, .buffer = sb_pl, };
-static dmo_def_t fph_def       = { .width =  24, .buffer = sb_fph, };
-static dmo_def_t time_def      = { .width =  32, .buffer = sb_time, };
-static dmo_def_t frags_def     = { .width =  40,     .setup = setup_frags, };
-static dmo_def_t team_def      = { .width =  32, .buffer = sb_uid, };
-static dmo_def_t uid_def       = { .width =  32, .buffer = sb_uid, };
-static dmo_def_t name_def      = { .width = 128, .buffer = sb_name, };
-static dmo_def_t spectator_def = { .width = 112,     .setup = setup_spect, };
+static dmo_def_t ping_def      = { .width =  24, .buffer = sb_ping };
+static dmo_def_t pl_def        = { .width =  24, .buffer = sb_pl };
+static dmo_def_t fph_def       = { .width =  24, .buffer = sb_fph };
+static dmo_def_t time_def      = { .width =  32, .buffer = sb_time };
+static dmo_def_t frags_def     = { .width =  40,     .setup = setup_frags };
+static dmo_def_t team_def      = { .width =  32, .buffer = sb_uid };
+static dmo_def_t uid_def       = { .width =  32, .buffer = sb_uid };
+static dmo_def_t name_def      = { .width = 128, .buffer = sb_name };
+static dmo_def_t spectator_def = { .width = 112,     .setup = setup_spect };
 static dmo_def_t spec_team_def = { .width =  32, };
+static dmo_def_t team_frags_def = { .width = 40, .buffer = sb_team_frags };
+static dmo_def_t team_stats_def = { .width = 88, .buffer = sb_team_stats };
+static dmo_def_t team_players_def = { .width = 40, .buffer = sb_team_players };
 
 static dmo_def_t *nq_dmo_defs[] = {
 	&frags_def,
@@ -1164,15 +1194,6 @@ static dmo_def_t *qw_dmo_uid_ping_defs[] = {
 	0
 };
 static dmo_def_t *qw_dmo_uid_defs[] = {
-	&ping_def,
-	&pl_def,
-	&fph_def,
-	&time_def,
-	&frags_def,
-	&name_def,
-	0
-};
-static dmo_def_t *qw_dmo_ping_defs[] = {
 	&uid_def,
 	&pl_def,
 	&fph_def,
@@ -1181,16 +1202,26 @@ static dmo_def_t *qw_dmo_ping_defs[] = {
 	&name_def,
 	0
 };
-static dmo_def_t *qw_dmo_spect_team_uid_ping_defs[] = {
+static dmo_def_t *qw_dmo_ping_defs[] = {
 	&ping_def,
+	&pl_def,
+	&fph_def,
+	&time_def,
+	&frags_def,
+	&name_def,
+	0
+};
+static dmo_def_t *qw_dmo_spect_team_uid_ping_defs[] = {
+	&uid_def,
 	&pl_def,
 	&spectator_def,
 	&spec_team_def,
+	&ping_def,
 	&name_def,
 	0
 };
 static dmo_def_t *qw_dmo_spect_team_uid_defs[] = {
-	&ping_def,
+	&uid_def,
 	&pl_def,
 	&spectator_def,
 	&spec_team_def,
@@ -1209,11 +1240,12 @@ static dmo_def_t *qw_dmo_spect_uid_ping_defs[] = {
 	&ping_def,
 	&pl_def,
 	&spectator_def,
+	&uid_def,
 	&name_def,
 	0
 };
 static dmo_def_t *qw_dmo_spect_uid_defs[] = {
-	&ping_def,
+	&uid_def,
 	&pl_def,
 	&spectator_def,
 	&name_def,
@@ -1226,26 +1258,38 @@ static dmo_def_t *qw_dmo_spect_ping_defs[] = {
 	&name_def,
 	0
 };
+static dmo_def_t *team_overlay_defs[] = {
+	&team_stats_def,
+	&team_def,
+	&team_frags_def,
+	&team_players_def,
+	0
+};
 static dmo_def_t **dmo_defs[] = {
 	nq_dmo_defs,
+	team_overlay_defs,
+
 	qw_dmo_ping_defs,
 	qw_dmo_uid_defs,
 	qw_dmo_uid_ping_defs,
+
 	qw_dmo_team_ping_defs,
 	qw_dmo_team_uid_defs,
 	qw_dmo_team_uid_ping_defs,
+
 	qw_dmo_spect_ping_defs,
 	qw_dmo_spect_uid_defs,
 	qw_dmo_spect_uid_ping_defs,
+
 	qw_dmo_spect_team_ping_defs,
 	qw_dmo_spect_team_uid_defs,
 	qw_dmo_spect_team_uid_ping_defs,
 };
 
 static view_t
-make_dmo_line (view_t parent, int player)
+make_dmo_line (view_t parent, int player, int line_type)
 {
-	dmo_def_t **defs = dmo_defs[3];	//FIXME nq/qw/team/spec/cvar
+	dmo_def_t **defs = dmo_defs[line_type];
 	int         x = -8;
 	view_t      line = sbar_view (0, 0, 0, 0, grav_north, parent);
 
@@ -1272,14 +1316,9 @@ calc_fph (int frags, int total)
 {
 	int     fph;
 
-	if (total != 0) {
+	if (total) {
 		fph = (3600 * frags) / total;
-
-		if (fph >= 999) {
-			fph = 999;
-		} else if (fph <= -999) {
-			fph = -999;
-		}
+		fph = bound (-999, fph, 999);
 	} else {
 		fph = 0;
 	}
@@ -1287,32 +1326,46 @@ calc_fph (int frags, int total)
 	return fph;
 }
 
+static int
+dmo_line_type (void)
+{
+	if (!sbar_servername) {
+		return 0;
+	} else if (sbar_showteamscores) {
+		return 1;
+	} else {
+		int         team = !!sbar_teamplay;
+		int         spect = !!sbar_spectator;
+		int         mode = bound (0, hud_scoreboard_uid, 2);
+
+		return 2 + mode + team * 3 + spect * mode;
+	}
+}
+
 static void
-Sbar_DeathmatchOverlay (view_t view)
+draw_deathmatch (view_t view)
 {
 	Sbar_SortFrags (0);
+	Sbar_SortTeams ();
 
 	int         y = 40;
 	view_pos_t  len = View_GetLen (view);
 	int         numbars = (len.y - y) / 10;
 	int         count = min (scoreboardlines, numbars);
+	int         line_type = dmo_line_type ();
 	int         i;
-
-	if (sbar_stats[STAT_HEALTH] > 0) {
-		count = 0;
-	}
 
 	double      cur_time = sbar_intermission ? sbar_completed_time : sbar_time;
 	for (i = 0; i < count; i++, y += 10) {
 		int         k = fragsort[i];
 		player_info_t *p = &sbar_players[k];
 		if (!View_Valid (sb_views[k])) {
-			sb_views[k] = make_dmo_line (view, k);
+			sb_views[k] = make_dmo_line (view, k, line_type);
 		}
 		int         total = cur_time - p->entertime;
 		write_charbuff (sb_fph[k], 0, 0, va (0, "%3d",
 											 calc_fph (p->frags, total)));
-		write_charbuff (sb_time[k], 0, 0, va (0, "%3d", total / 60));
+		write_charbuff (sb_time[k], 0, 0, va (0, "%4d", total / 60));
 		View_SetPos (sb_views[k], 0, y);
 	}
 	for (; i < MAX_PLAYERS; i++) {
@@ -1324,106 +1377,40 @@ Sbar_DeathmatchOverlay (view_t view)
 	View_UpdateHierarchy (view);
 }
 
-static void __attribute__((used))
-Sbar_TeamOverlay (view_t *view)
-{
-#if 0
-	char        num[20];
-	int         pavg, plow, phigh, i, k, x, y;
-	team_t     *tm;
-	info_key_t *player_team = sbar_players[sbar_playernum].team;
-
-	if (!sbar_teamplay) { // FIXME: if not teamplay, why teamoverlay?
-		Sbar_DeathmatchOverlay (view, 0);
-		return;
-	}
-
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
-
-	draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
-
-	y = 24;
-	x = 36;
-	draw_string (view, x, y, "low/avg/high team total players");
-	y += 8;
-	draw_string (view, x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
-				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1f");
-	y += 8;
-
-	// sort the teams
-	Sbar_SortTeams ();
-
-	// draw the text
-	for (i = 0; i < scoreboardteams && y <= view->ylen - 10; i++) {
-		k = teamsort[i];
-		tm = teams + k;
-
-		// draw pings
-		plow = tm->plow;
-		if (plow < 0 || plow > 999)
-			plow = 999;
-		phigh = tm->phigh;
-		if (phigh < 0 || phigh > 999)
-			phigh = 999;
-		if (!tm->players)
-			pavg = 999;
-		else
-			pavg = tm->ptotal / tm->players;
-		if (pavg < 0 || pavg > 999)
-			pavg = 999;
-
-		snprintf (num, sizeof (num), "%3i/%3i/%3i", plow, pavg, phigh);
-		draw_string (view, x, y, num);
-
-		// draw team
-		draw_nstring (view, x + 104, y, tm->team, 4);
-
-		// draw total
-		snprintf (num, sizeof (num), "%5i", tm->frags);
-		draw_string (view, x + 104 + 40, y, num);
-
-		// draw players
-		snprintf (num, sizeof (num), "%5i", tm->players);
-		draw_string (view, x + 104 + 88, y, num);
-
-		if (player_team && strnequal (player_team->value, tm->team, 16)) {
-			draw_character (view, x + 104 - 8, y, 16);
-			draw_character (view, x + 104 + 32, y, 17);
-		}
-
-		y += 8;
-	}
-	y += 8;
-	Sbar_DeathmatchOverlay (view, y);
-#endif
-}
-
-#if 0
 static void
-Sbar_DrawScoreboard (void)
+hide_deathmatch (view_t view)
 {
-	//Sbar_SoloScoreboard ();
-	if (cl.gametype == GAME_DEATHMATCH)
-		Sbar_DeathmatchOverlay (hud_overlay_view);
-	if (!sbar_active
-		|| !((sbar_stats[STAT_HEALTH] <= 0 && !sbar_spectator)
-			 || sbar_showscores || sb_showteamscores))
-		return;
-	// main screen deathmatch rankings
-	// if we're dead show team scores in team games
-	if (sbar_stats[STAT_HEALTH] <= 0 && !sbar_spectator)
-		if (sbar_teamplay > 0 && !sbar_showscores)
-			Sbar_TeamOverlay (view);
-		else
-			Sbar_DeathmatchOverlay (view, 0);
-	else if (sbar_showscores)
-		Sbar_DeathmatchOverlay (view, 0);
-	else if (sb_showteamscores)
-		Sbar_TeamOverlay (view);
+	uint32_t    count = View_ChildCount (view);
+	while (count-- > 0) {
+		View_Delete (View_GetChild (view, count));
+	}
 }
-#endif
+
+static void
+draw_status (void )
+{
+	sb_updates = 0;
+
+
+	if (sbar_gametype) {
+		draw_deathmatch (deathmatch_view);
+	} else {
+		if (sbar_spectator) {
+			if (sbar_autotrack < 0) {
+				return;
+			}
+		}
+		draw_solo (sbar_solo);
+	}
+}
+
+static void
+hide_status (void)
+{
+	sb_updates = 0;
+	hide_solo (sbar_solo);
+	hide_deathmatch (deathmatch_view);
+}
 
 /*	 autologging of frags after a match ended
 	(called by recived network packet with command scv_intermission)
@@ -1710,25 +1697,28 @@ draw_cutscene (view_t view)
 	clear_views (view);
 }
 
-static inline void
-set_update (view_t view, hud_update_f func)
-{
-	sbar_setcomponent (view, hud_updateonce, &func);
-}
-
 void
 Sbar_Intermission (int mode, double completed_time)
 {
-	static hud_update_f intermission_funcs[2][4] = {
-		{ clear_views, draw_intermission, draw_finale, draw_cutscene, },
-		{ clear_views, Sbar_DeathmatchOverlay, draw_finale, draw_cutscene, },
+	static hud_update_f intermission_funcs[2][3] = {
+		{ draw_intermission, draw_finale, draw_cutscene, },
+		{ draw_deathmatch, draw_finale, draw_cutscene, },
+	};
+	static view_t *views[2][3] = {
+		{ &intermission_view, &intermission_view, &intermission_view },
+		{ &deathmatch_view, &intermission_view, &intermission_view },
 	};
 	sbar_completed_time = completed_time;
 	if ((unsigned) mode > 3) {
 		mode = 0;
 	}
 	sbar_intermission = mode;
-	set_update (intermission_view, intermission_funcs[sbar_gametype][mode]);
+	set_update (intermission_view, clear_views);
+	set_update (deathmatch_view, clear_views);
+	if (mode > 0) {
+		set_update (*views[sbar_gametype][mode - 1],
+					intermission_funcs[sbar_gametype][mode - 1]);
+	}
 }
 
 void
@@ -1766,6 +1756,7 @@ Sbar_Update (double time)
 		sb_updates++;
 		draw_weapons (sbar_weapons);
 		draw_items (sbar_items);
+		draw_face (sbar_face);
 	}
 }
 
@@ -1820,7 +1811,7 @@ update_health (int stat)
 	set_update (sbar_face, draw_face);
 	if (sbar_stats[STAT_HEALTH] <= 0) {
 		draw_status ();
-	} else if (!sbar_showscores) {
+	} else if (1||!sbar_showscores) {
 		hide_status ();
 	}
 }
@@ -1832,7 +1823,7 @@ update_frags (int stat)
 					va (0, "%3d", sbar_stats[stat]));
 	set_update (sbar_frags, draw_frags);//FIXME
 	set_update (hud_minifrags, draw_minifrags);//FIXME
-	set_update (dmo_view, Sbar_DeathmatchOverlay);//FIXME
+	set_update (deathmatch_view, draw_deathmatch);//FIXME
 	if (sbar_teamplay) {
 		set_update (hud_miniteam, draw_miniteam);//FIXME
 	}
@@ -1906,12 +1897,12 @@ update_monsters (int stat)
 static void
 update_items (int stat)
 {
-	set_update (sbar_items, draw_items);//FIXME
+	set_update (sbar_items, draw_items);
+	set_update (sbar_weapons, draw_weapons);
 	if (sb_item_count < 7) {
 		// hipnotic and rogue don't use sigils
-		set_update (sbar_sigils, draw_sigils);//FIXME
+		set_update (sbar_sigils, draw_sigils);
 	}
-	set_update (sbar_weapons, draw_weapons);//FIXME
 }
 
 typedef void (*stat_update_f) (int stat);
@@ -1936,16 +1927,11 @@ static stat_update_f stat_update[MAX_CL_STATS] = {
 void
 Sbar_UpdateStats (int stat)
 {
-	if (stat == -1) {
-		for (int i = 0; i < MAX_CL_STATS; i++) {
-			if (stat_update[i]) {
-				stat_update[i] (i);
-			}
-		}
-	} else {
-		if ((unsigned) stat < MAX_CL_STATS && stat_update[stat]) {
-			stat_update[stat] (stat);
-		}
+	if ((unsigned) stat >= MAX_CL_STATS) {
+		Sys_Error ("Sbar_UpdateStats: invalid stat: %d", stat);
+	}
+	if (stat_update[stat]) {
+		stat_update[stat] (stat);
 	}
 }
 
@@ -1960,6 +1946,23 @@ Sbar_SetPlayerNum (int playernum, int spectator)
 {
 	sbar_playernum = playernum;
 	sbar_spectator = spectator;
+
+	if (sbar_spectator) {
+		set_update (spectator_view, draw_spectator);
+	} else {
+		set_update (spectator_view, hide_spectator);
+	}
+}
+
+void
+Sbar_SetAutotrack (int autotrack)
+{
+	sbar_autotrack = autotrack;
+	if (sbar_spectator) {
+		set_update (spectator_view, draw_spectator);
+	} else {
+		set_update (spectator_view, hide_spectator);
+	}
 }
 
 void
@@ -1974,6 +1977,11 @@ Sbar_SetLevelName (const char *levelname, const char *servername)
 	sbar_levelname = levelname;
 	sbar_servername = servername;
 	solo_name->cursx = write_charbuff_cl (solo_name, 0, 0, sbar_levelname);
+
+	view_pos_t len = View_GetLen (sbar_solo_name);
+	len.x = 8 * solo_name->cursx;
+	View_SetLen (sbar_solo_name, len.x, len.y);
+	View_UpdateHierarchy (sbar_solo);
 }
 
 void
@@ -2263,20 +2271,32 @@ init_views (void)
 	fps_buff = Draw_CreateBuffer (10, 1);
 	ping_buff = Draw_CreateBuffer (6, 1);
 	pl_buff = Draw_CreateBuffer (6, 1);
+
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		sb_fph[i] = Draw_CreateBuffer (3, 1);
 		sb_time[i] = Draw_CreateBuffer (4, 1);
 		sb_frags[i] = Draw_CreateBuffer (3, 1);
-		sb_team[i] = Draw_CreateBuffer (4, 1);
 		sb_ping[i] = Draw_CreateBuffer (3, 1);
 		sb_pl[i] = Draw_CreateBuffer (3, 1);
 		sb_uid[i] = Draw_CreateBuffer (4, 1);
 		sb_name[i] = Draw_CreateBuffer (16, 1);
+
+		sb_team[i] = Draw_CreateBuffer (4, 1);
+		sb_team_stats[i] = Draw_CreateBuffer (11, 1);
 		sb_team_frags[i] = Draw_CreateBuffer (5, 1);
+		sb_team_players[i] = Draw_CreateBuffer (5, 1);
 		fragsort[i] = -1;
 	}
 	sb_spectator = Draw_CreateBuffer (11, 1);
 	write_charbuff (sb_spectator, 0, 0, "(spectator)");
+
+	spec_buff[0] = Draw_CreateBuffer (14, 1);
+	spec_buff[1] = Draw_CreateBuffer (29, 1);
+	spec_buff[2] = Draw_CreateBuffer (28, 1);
+	spec_buff[3] = Draw_CreateBuffer (39, 1);
+	write_charbuff (spec_buff[0], 0, 0, "SPECTATOR MODE");
+	write_charbuff (spec_buff[1], 0, 0, "Press [ATTACK] for AutoCamera");
+	write_charbuff (spec_buff[2], 0, 0, "Lost player, [JUMP] for next");
 
 	init_sbar_views ();
 }
@@ -2487,40 +2507,34 @@ load_pics (void)
 static void
 Sbar_ShowScores (void)
 {
-	if (sbar_showscores)
-		return;
-
 	sbar_showscores = true;
-
 	draw_status ();
 }
 
 static void
 Sbar_DontShowScores (void)
 {
-	if (!sbar_showscores || sbar_stats[STAT_HEALTH] <= 0) {
+	if (sbar_autotrack >= 0 && sbar_stats[STAT_HEALTH] <= 0) {
 		return;
 	}
-
 	sbar_showscores = false;
-
 	hide_status ();
 }
 
 static void
 Sbar_ShowTeamScores (void)
 {
-	if (sb_showteamscores)
+	if (sbar_showteamscores)
 		return;
 
-	sb_showteamscores = true;
+	sbar_showteamscores = true;
 	sb_updates = 0;
 }
 
 static void
 Sbar_DontShowTeamScores (void)
 {
-	sb_showteamscores = false;
+	sbar_showteamscores = false;
 	sb_updates = 0;
 }
 

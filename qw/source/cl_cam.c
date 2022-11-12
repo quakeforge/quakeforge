@@ -199,7 +199,7 @@ Cam_Unlock (void)
 		}
 		autocam = CAM_NONE;
 		locked = false;
-		Sbar_UpdateStats (-1);	// update all stats
+		Sbar_SetAutotrack (-1);
 	}
 }
 
@@ -221,7 +221,7 @@ Cam_Lock (int playernum)
 	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
-	Sbar_UpdateStats (-1);	// update all stats
+	Sbar_SetAutotrack (spec_track);
 }
 
 static trace_t
@@ -681,6 +681,7 @@ Cam_Reset (void)
 	autocam = CAM_NONE;
 	spec_track = 0;
 	ideal_track = 0;
+	Sbar_SetAutotrack (-1);
 }
 
 void
