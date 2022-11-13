@@ -157,12 +157,10 @@ void
 CL_Init_Entity (entity_t ent)
 {
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, cl_world.scene->reg);
 	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
 	byte       *active = Ent_GetComponent (ent.id, scene_active, cl_world.scene->reg);
 	vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
 	memset (animation, 0, sizeof (*animation));
-	memset (visibility, 0, sizeof (*visibility));
 	memset (renderer, 0, sizeof (*renderer));
 	*active = 1;
 	*old_origin = (vec4f_t) {0, 0, 0, 1};
@@ -223,11 +221,6 @@ static inline void
 beam_clear (beam_t *b)
 {
 	if (b->tents) {
-		tent_t     *t;
-
-		for (t = b->tents; t; t = t->next) {
-			R_RemoveEfrags (t->ent);
-		}
 		free_temp_entities (b->tents);
 		b->tents = 0;
 	}
@@ -635,11 +628,9 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
 		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, cl_world.scene->reg);
 		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
 		if (f >= renderer->model->numframes) {
 			tent_obj_t *_to;
-			R_RemoveEfrags (ent);
 			free_temp_entities (ex->tent);
 			_to = *to;
 			*to = _to->next;
@@ -649,9 +640,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		to = &(*to)->next;
 
 		animation->frame = f;
-		if (!visibility->efrag) {
-			R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
-		}
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 	}
 }
 
@@ -688,11 +677,6 @@ CL_ParseParticleEffect (qmsg_t *net_message)
 void
 CL_ClearProjectiles (void)
 {
-	tent_t     *tent;
-
-	for (tent = cl_projectiles; tent; tent = tent->next) {
-		R_RemoveEfrags (tent->ent);
-	}
 	free_temp_entities (cl_projectiles);
 	cl_projectiles = 0;
 }

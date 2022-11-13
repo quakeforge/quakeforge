@@ -147,8 +147,8 @@ static void
 set_entity_model (int ent_ind, int modelindex)
 {
 	entity_t    ent = cl_entities[ent_ind];
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -158,10 +158,10 @@ set_entity_model (int ent_ind, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
-	} else {
-		// hack to make null model players work
-		SET_ADD (&cl_forcelink, ent_ind);
 	}
+	// Changing the model can change the visibility of the entity and even
+	// the model type
+	SET_ADD (&cl_forcelink, ent_ind);
 	animation->nolerp = 1; // don't try to lerp when the model has changed
 	if (ent_ind <= cl.maxclients) {
 		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, ent_ind);
@@ -175,7 +175,6 @@ CL_RelinkEntities (void)
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f;
 	int         i, j;
-	int         entvalid;
 	int         model_flags;
 
 	// determine partial update time
@@ -207,31 +206,23 @@ CL_RelinkEntities (void)
 		new = &nq_entstates.frame[0 + cl.frameIndex][i];
 		old = &nq_entstates.frame[1 - cl.frameIndex][i];
 
-		// if the object wasn't included in the last packet, remove it
-		entvalid = cl_msgtime[i] == cl.mtime[0];
-		if (entvalid && !new->modelindex) {
-			ent = CL_GetEntity (i);
-			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
-								new->origin);
-			entvalid = 0;
-		}
-		if (!entvalid) {
-			ent = CL_GetInvalidEntity (i);
+		ent = CL_GetInvalidEntity (i);
+		// if the object wasn't included in the last packet, or the model
+		// has been removed, remove the entity
+		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
 			if (Entity_Valid (ent)) {
-				visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
-				if (visibility->efrag) {
-					R_RemoveEfrags (ent);	// just became empty
-				}
 				Scene_DestroyEntity (cl_world.scene, ent);
 			}
 			continue;
 		}
 
-		ent = CL_GetEntity (i);
+		if (!Entity_Valid (ent)) {
+			ent = CL_GetEntity (i);
+			SET_ADD (&cl_forcelink, i);
+		}
 		transform_t transform = Entity_Transform (ent);
 		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
 		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
@@ -242,9 +233,6 @@ CL_RelinkEntities (void)
 			|| new->modelindex != old->modelindex) {
 			old->modelindex = new->modelindex;
 			set_entity_model (i, new->modelindex);
-			if (visibility->efrag) {
-				R_RemoveEfrags (ent);
-			}
 		}
 		animation->frame = new->frame;
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
@@ -280,9 +268,6 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
 			if (i != cl.viewentity || chase_active) {
-				if (visibility->efrag) {
-					R_RemoveEfrags (ent);
-				}
 				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 			*old_origin = new->origin;
@@ -315,12 +300,7 @@ CL_RelinkEntities (void)
 			}
 			if (i != cl.viewentity || chase_active) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
-				if (visibility->efrag) {
-					if (!VectorCompare (org, *old_origin)) {//FIXME
-						R_RemoveEfrags (ent);
-						R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
-					}
-				} else {
+				if (!VectorCompare (org, *old_origin)) {//FIXME
 					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}

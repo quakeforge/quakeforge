@@ -259,7 +259,6 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 	pr_ulong_t  scene_id = id & 0xffffffff;
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
-	R_RemoveEfrags (ent);
 	// bad scene caught above
 	Scene_DestroyEntity (scene->scene, ent);
 }
@@ -301,8 +300,7 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
-	R_RemoveEfrags (ent);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, scene->scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }

@@ -146,7 +146,7 @@ Entity_Transform (entity_t ent)
 
 struct mod_brush_s;
 void R_AddEfrags (struct mod_brush_s *, entity_t ent);
-void R_RemoveEfrags (entity_t ent);
+void R_ClearEfragChain (efrag_t *ef);
 
 ///@}
 

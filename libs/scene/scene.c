@@ -60,6 +60,15 @@ create_old_origin (void *_old_origin)
 }
 
 static void
+destroy_visibility (void *_visibility)
+{
+	visibility_t *visibility = _visibility;
+	if (visibility->efrag) {
+		R_ClearEfragChain (visibility->efrag);
+	}
+}
+
+static void
 sw_identity_matrix (void *_mat)
 {
 	mat4f_t    *mat = _mat;
@@ -94,6 +103,7 @@ static const component_t scene_components[] = {
 	[scene_visibility] = {
 		.size = sizeof (visibility_t),
 		.create = 0,//create_visibility,
+		.destroy = destroy_visibility,
 		.name = "visibility",
 	},
 	[scene_renderer] = {
@@ -219,7 +229,6 @@ Scene_CreateEntity (scene_t *scene)
 	uint32_t    id = trans.id;
 
 	Ent_SetComponent (id, scene_animation, scene->reg, 0);
-	Ent_SetComponent (id, scene_visibility, scene->reg, 0);
 	Ent_SetComponent (id, scene_renderer, scene->reg, 0);
 	Ent_SetComponent (id, scene_active, scene->reg, 0);
 	Ent_SetComponent (id, scene_old_origin, scene->reg, 0);

@@ -234,10 +234,9 @@ CL_ClearMemory (void)
 	cl.viewstate.demoplayback = cls.demoplayback;
 
 	CL_ClearTEnts ();
+	CL_ClearEnts ();
 
 	SCR_NewScene (0);
-
-	CL_ClearEnts ();
 }
 
 void

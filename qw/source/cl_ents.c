@@ -89,6 +89,12 @@ CL_ClearEnts (void)
 	memset (cl_entity_valid, 0, sizeof (cl_entity_valid));
 }
 
+static entity_t
+CL_GetInvalidEntity (int num)
+{
+	return cl_entities[num];
+}
+
 entity_t
 CL_GetEntity (int num)
 {
@@ -163,41 +169,36 @@ CL_LinkPacketEntities (void)
 	for (i = MAX_CLIENTS + 1; i < 512; i++) {
 		new = &qw_entstates.frame[cl.link_sequence & UPDATE_MASK][i];
 		old = &qw_entstates.frame[cl.prev_sequence & UPDATE_MASK][i];
-		ent = CL_GetEntity (i);
-		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-												 cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-												   cl_world.scene->reg);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												   cl_world.scene->reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin,
-												   cl_world.scene->reg);
+
+		ent = CL_GetInvalidEntity (i);
 		forcelink = cl_entity_valid[0][i] != cl_entity_valid[1][i];
 		cl_entity_valid[1][i] = cl_entity_valid[0][i];
-		// if the object wasn't included in the last packet, remove it
-		if (!cl_entity_valid[0][i]) {
-			renderer->model = NULL;
-			animation->pose1 = animation->pose2 = -1;
-			if (visibility->efrag) {
-				R_RemoveEfrags (ent);	// just became empty
+		// if the object wasn't included in the last packet, or set
+		// to invisible, remove it
+		if (!cl_entity_valid[0][i]
+			|| !new->modelindex
+			|| (cl_deadbodyfilter && is_dead_body (new))
+			|| (cl_gibfilter && is_gib (new))) {
+			if (Entity_Valid (ent)) {
+				Scene_DestroyEntity (cl_world.scene, ent);
 			}
 			continue;
 		}
+		if (!Entity_Valid (ent)) {
+			ent = CL_GetEntity (i);
+			forcelink = true;
+		}
+		transform_t transform = Entity_Transform (ent);
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												 ent.reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+												   ent.reg);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin,
+												   ent.reg);
 
 		// spawn light flashes, even ones coming from invisible objects
 		CL_NewDlight (i, new->origin, new->effects, new->glow_size,
 					  new->glow_color, cl.time);
-
-		// if set to invisible, skip
-		if (!new->modelindex
-			|| (cl_deadbodyfilter && is_dead_body (new))
-			|| (cl_gibfilter && is_gib (new))) {
-			if (visibility->efrag) {
-				R_RemoveEfrags (ent);
-			}
-			continue;
-		}
 
 		if (forcelink)
 			*old = *new;
@@ -246,9 +247,6 @@ CL_LinkPacketEntities (void)
 			CL_TransformEntity (ent, new->scale / 16, new->angles,
 								new->origin);
 			if (i != cl.viewentity || chase_active) {
-				if (visibility->efrag) {
-					R_RemoveEfrags (ent);
-				}
 				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 		} else {
@@ -277,18 +275,10 @@ CL_LinkPacketEntities (void)
 			}
 			if (i != cl.viewentity || chase_active) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
-				if (visibility->efrag) {
-					if (!VectorCompare (org, *old_origin)) {//FIXME
-						R_RemoveEfrags (ent);
-						R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
-					}
-				} else {
+				if (!VectorCompare (org, *old_origin)) {//FIXME
 					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
-		}
-		if (!visibility->efrag) {
-			R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 		}
 
 		// rotate binary objects locally
@@ -420,28 +410,23 @@ CL_LinkPlayers (void)
 
 	for (j = 0, player = cl.players, state = frame->playerstate;
 		 j < MAX_CLIENTS; j++, player++, state++) {
-		ent = CL_GetEntity (j + 1);
-		visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
-												   cl_world.scene->reg);
+		ent = CL_GetInvalidEntity (j + 1);
+		if (state->messagenum != cl.parsecount
+			|| !player->name || !player->name->value[0]) {
+			// not present this frame
+			if (Entity_Valid (ent)) {
+				Scene_DestroyEntity (cl_world.scene, ent);
+			}
+			continue;
+		}
+
+		if (!Entity_Valid (ent)) {
+			ent = CL_GetEntity (j + 1);
+		}
 		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
 												 cl_world.scene->reg);
 		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
 												   cl_world.scene->reg);
-		if (visibility->efrag)
-			R_RemoveEfrags (ent);
-		if (Entity_Valid (player->flag_ent)) {
-			visibility_t *fvis = Ent_GetComponent (player->flag_ent.id,
-												   scene_visibility,
-												   cl_world.scene->reg);
-			if (fvis->efrag) {
-				R_RemoveEfrags (player->flag_ent);
-			}
-		}
-		if (state->messagenum != cl.parsecount)
-			continue;							// not present this frame
-
-		if (!player->name || !player->name->value[0])
-			continue;
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
