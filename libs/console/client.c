@@ -70,6 +70,16 @@ static con_buffer_t *con;
 
 static float con_cursorspeed = 4;
 
+static int con_scale;
+static cvar_t con_scale_cvar = {
+	.name = "con_scale",
+	.description =
+		"Pixel scale factor for the console and all 2D user interface "
+		"elements",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &con_scale },
+};
 static float con_notifytime;
 static cvar_t con_notifytime_cvar = {
 	.name = "con_notifytime",
@@ -807,6 +817,24 @@ exec_line (inputline_t *il)
 	Con_ExecLine (il->line);
 }
 
+static int  win_xlen = -1;
+static int  win_ylen = -1;
+
+static void
+con_set_size (void)
+{
+	int         xlen = win_xlen / con_scale;
+	int         ylen = win_ylen / con_scale;
+	if (xlen > 0 && ylen > 0) {
+		View_SetLen (screen_view, xlen, ylen);
+		View_UpdateHierarchy (screen_view);
+		if (con_data.screen_view) {
+			View_SetLen (*con_data.screen_view, xlen, ylen);
+			View_UpdateHierarchy (*con_data.screen_view);
+		}
+	}
+}
+
 // The console view is not a child of the client's screen view, so it won't
 // get resized automatically when the screen changes size. However, since the
 // console has to process input events anyway, handling ie_app_window is a
@@ -814,15 +842,21 @@ exec_line (inputline_t *il)
 static void
 con_app_window (const IE_event_t *event)
 {
-	static int  old_xlen = -1;
-	static int  old_ylen = -1;
-	if (old_xlen != event->app_window.xlen
-		|| old_ylen != event->app_window.ylen) {
-		old_xlen = event->app_window.xlen;
-		old_ylen = event->app_window.ylen;
+	if (win_xlen != event->app_window.xlen
+		|| win_ylen != event->app_window.ylen) {
+		win_xlen = event->app_window.xlen;
+		win_ylen = event->app_window.ylen;
+		con_set_size ();
+	}
+}
 
-		View_SetLen (screen_view, old_xlen, old_ylen);
-		View_UpdateHierarchy (screen_view);
+static void
+con_scale_f (void *data, const cvar_t *cvar)
+{
+	con_scale = bound (1, con_scale, Draw_MaxScale ());
+	Draw_SetScale (con_scale);
+	if (con_initialized) {
+		con_set_size ();
 	}
 }
 
@@ -1001,6 +1035,7 @@ C_Init (void)
 
 	Cvar_Register (&con_notifytime_cvar, 0, 0);
 
+	Cvar_Register (&con_scale_cvar, con_scale_f, 0);
 	Cvar_Register (&con_alpha_cvar, 0, 0);
 	Cvar_Register (&con_size_cvar, 0, 0);
 	Cvar_Register (&con_speed_cvar, 0, 0);

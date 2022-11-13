@@ -165,19 +165,10 @@ static SCR_Func *scr_funcs[] = {
 	scr_funcs_intermission,
 };
 
-static void
-cl_vidsize_listener (void *data, const viddef_t *vdef)
-{
-	View_SetLen (cl_screen_view, vdef->width, vdef->height);
-	View_UpdateHierarchy (cl_screen_view);
-}
-
 void
 CL_Init_Screen (void)
 {
 	qpic_t     *pic;
-
-	VID_OnVidResize_AddListener (cl_vidsize_listener, 0);
 
 	HUD_Init ();
 

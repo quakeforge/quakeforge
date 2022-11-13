@@ -98,6 +98,7 @@ typedef struct vulkan_ctx_s {
 	// size of window
 	int         window_width;
 	int         window_height;
+	int         twod_scale;
 
 	//FIXME this is for the parser
 	qfv_output_t output;

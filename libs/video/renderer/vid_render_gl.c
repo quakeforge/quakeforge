@@ -502,6 +502,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	.init = gl_vid_render_init,
 
 	.Draw_CharBuffer        = gl_Draw_CharBuffer,
+	.Draw_SetScale          = gl_Draw_SetScale,
 	.Draw_Character         = gl_Draw_Character,
 	.Draw_String            = gl_Draw_String,
 	.Draw_nString           = gl_Draw_nString,

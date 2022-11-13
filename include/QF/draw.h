@@ -61,6 +61,9 @@ void Draw_ScrollBuffer (draw_charbuffer_t *buffer, int lines);
 void Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer);
 int Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str);
 
+void Draw_SetScale (int scale);
+int Draw_MaxScale (void) __attribute__((pure));
+
 extern byte *draw_chars;
 
 /** Initialize the draw stuff.

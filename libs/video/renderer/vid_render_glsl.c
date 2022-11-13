@@ -446,6 +446,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.init = glsl_vid_render_init,
 
 	.Draw_CharBuffer        = glsl_Draw_CharBuffer,
+	.Draw_SetScale          = glsl_Draw_SetScale,
 	.Draw_Character         = glsl_Draw_Character,
 	.Draw_String            = glsl_Draw_String,
 	.Draw_nString           = glsl_Draw_nString,

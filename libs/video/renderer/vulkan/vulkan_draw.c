@@ -897,10 +897,11 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	quat_t      color = { a, a, a, a};
 	qpic_t     *cpic;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
-	float       frac = (vid.height - lines) / (float) vid.height;
+	int         s = ctx->twod_scale;
+	float       frac = (vid.height - s * lines) / (float) vid.height;
 	int         ofs = frac * cpic->height;
 	subpic_t   *subpic = *(subpic_t **) cpic->data;
-	draw_pic (0, 0, vid.width, lines, subpic,
+	draw_pic (0, 0, vid.width / s, lines, subpic,
 			  0, ofs, cpic->width, cpic->height - ofs, color,
 			  &frame->quad_verts);
 }

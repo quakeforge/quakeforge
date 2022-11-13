@@ -141,3 +141,17 @@ Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
 	}
 	return lines;
 }
+
+void
+Draw_SetScale (int scale)
+{
+	if (r_funcs->Draw_SetScale) {
+		r_funcs->Draw_SetScale (scale);
+	}
+}
+
+int
+Draw_MaxScale (void)
+{
+	return r_funcs->Draw_SetScale ? 20 : 1;
+}

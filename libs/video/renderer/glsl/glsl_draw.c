@@ -112,6 +112,7 @@ static qpic_t *white_pic;
 static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
 static int glsl_conback_texnum;
+static int glsl_2d_scale = 1;
 static cvar_t glsl_conback_texnum_cvar = {
 	.name = "glsl_conback_texnum",
 	.description =
@@ -647,15 +648,16 @@ glsl_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 glsl_Draw_ConsoleBackground (int lines, byte alpha)
 {
-	float       ofs = (vid.height - lines) / (float) vid.height;
+	int         s = glsl_2d_scale;
+	float       ofs = (vid.height - s * lines) / (float) vid.height;
 	quat_t      color = {1, 1, 1, bound (0, alpha, 255) / 255.0};
 	drawvert_t  verts[] = {
-		{{        0,     0, 0, ofs}},
-		{{vid.width,     0, 1, ofs}},
-		{{vid.width, lines, 1,   1}},
-		{{        0,     0, 0, ofs}},
-		{{vid.width, lines, 1,   1}},
-		{{        0, lines, 0,   1}},
+		{{            0,     0, 0, ofs}},
+		{{vid.width / s,     0, 1, ofs}},
+		{{vid.width / s, lines, 1,   1}},
+		{{            0,     0, 0, ofs}},
+		{{vid.width / s, lines, 1,   1}},
+		{{            0, lines, 0,   1}},
 	};
 
 	GLSL_FlushText (); // Flush text that should be rendered before the console
@@ -828,7 +830,13 @@ GLSL_Set2D (void)
 void
 GLSL_Set2DScaled (void)
 {
-    set_2d (vid.width, vid.height);
+	set_2d (vid.width / glsl_2d_scale, vid.height / glsl_2d_scale);
+}
+
+void
+glsl_Draw_SetScale (int scale)
+{
+	glsl_2d_scale = scale;
 }
 
 void

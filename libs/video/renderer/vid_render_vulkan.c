@@ -146,6 +146,12 @@ vulkan_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
 }
 
 static void
+vulkan_Draw_SetScale (int scale)
+{
+	vulkan_ctx->twod_scale = max (1, scale);
+}
+
+static void
 vulkan_Draw_Character (int x, int y, unsigned ch)
 {
 	Vulkan_Draw_Character (x, y, ch, vulkan_ctx);
@@ -360,11 +366,12 @@ vulkan_set_2d (int scaled)
 	//FIXME this should not be done every frame
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
+	int         scale = vulkan_ctx->twod_scale;
 
 	float       left = -0.5;
 	float       top = -0.5;
-	float       right = left + vid.width;	//FIXME vid
-	float       bottom = top + vid.height;
+	float       right = left + vid.width / scale;
+	float       bottom = top + vid.height / scale;
 	QFV_Orthographic (mat->Projection2d, left, right, top, bottom, 0, 99999);
 
 	mctx->dirty = mctx->frames.size;
@@ -780,6 +787,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.init = vulkan_vid_render_init,
 
 	.Draw_CharBuffer        = vulkan_Draw_CharBuffer,
+	.Draw_SetScale          = vulkan_Draw_SetScale,
 	.Draw_Character         = vulkan_Draw_Character,
 	.Draw_String            = vulkan_Draw_String,
 	.Draw_nString           = vulkan_Draw_nString,

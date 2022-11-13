@@ -115,6 +115,7 @@ static int		numcachepics;
 
 static byte		menuplyr_pixels[4096];
 
+static int gl_2d_scale = 1;
 
 static void
 Draw_InitText (void)
@@ -836,7 +837,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	if (gl_constretch) {
 		ofs = 0;
 	} else
-		ofs = (vid.height - lines) / (float) vid.height;
+		ofs = (vid.height - gl_2d_scale * lines) / (float) vid.height;
 
 	color_0_8[3] = alpha;
 	qfglColor4ubv (color_0_8);
@@ -851,9 +852,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	qfglTexCoord2f (0, 0 + ofs);
 	qfglVertex2f (0, 0);
 	qfglTexCoord2f (1, 0 + ofs);
-	qfglVertex2f (vid.width, 0);
+	qfglVertex2f (vid.width / gl_2d_scale, 0);
 	qfglTexCoord2f (1, 1);
-	qfglVertex2f (vid.width, lines);
+	qfglVertex2f (vid.width / gl_2d_scale, lines);
 	qfglTexCoord2f (0, 1);
 	qfglVertex2f (0, lines);
 	qfglEnd ();
@@ -995,7 +996,13 @@ GL_Set2D (void)
 void
 GL_Set2DScaled (void)
 {
-	set_2d (vid.width, vid.height);
+	set_2d (vid.width / gl_2d_scale, vid.height / gl_2d_scale);
+}
+
+void
+gl_Draw_SetScale (int scale)
+{
+	gl_2d_scale = scale;
 }
 
 void

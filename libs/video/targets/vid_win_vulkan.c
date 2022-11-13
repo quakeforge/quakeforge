@@ -185,6 +185,7 @@ Win_Vulkan_Context (void)
 	ctx->create_surface = win_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
 	ctx->va_ctx = va_create_context (4);
+	ctx->twod_scale = 1;
 	return ctx;
 }
 
