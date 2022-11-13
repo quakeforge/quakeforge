@@ -50,7 +50,7 @@ typedef struct entity_s {
 	uint32_t    id;
 } entity_t;
 
-#define nullentity ((entity_t) {})
+#define nullentity ((entity_t) { .id = nullent })
 
 typedef struct animation_s {
 	int         frame;
