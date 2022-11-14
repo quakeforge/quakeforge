@@ -27,8 +27,8 @@ main (void)
 	int         i;
 	vec3        light = vec3 (0);
 	c = texture (Skin, vec3 (st, 0)) * base_color;
-	c += texture (Skin, vec3 (st, 1)) * unpackUnorm4x8(colorA);
-	c += texture (Skin, vec3 (st, 2)) * unpackUnorm4x8(colorB);
+	c += texture (Skin, vec3 (st, 1)) * unpackUnorm4x8(colorA) * 2;
+	c += texture (Skin, vec3 (st, 2)) * unpackUnorm4x8(colorB) * 2;
 	e = texture (Skin, vec3 (st, 3));
 
 	frag_color = c;
