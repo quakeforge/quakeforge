@@ -71,6 +71,7 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
+void VID_SetPalette (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
 void VID_ClearMemory (void);
 

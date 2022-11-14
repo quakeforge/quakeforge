@@ -246,7 +246,11 @@ VID_InitGamma (const byte *pal)
 {
 	int 	i;
 	double	gamma = 1.0;
+	static int cvar_initialized;
 
+	free (viddef.gammatable);
+	free (viddef.palette);
+	free (viddef.palette32);
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);
@@ -256,9 +260,13 @@ VID_InitGamma (const byte *pal)
 	}
 	gamma = bound (0.1, gamma, 9.9);
 
-	Cvar_Register (&vid_gamma_cvar, vid_gamma_f, 0);
+	if (!cvar_initialized) {
+		cvar_initialized = 1;
+		Cvar_Register (&vid_gamma_cvar, vid_gamma_f, 0);
+	}
 
-	VID_BuildGammaTable (vid_gamma);
+	//VID_BuildGammaTable (vid_gamma);
+	VID_UpdateGamma ();
 
 	if (viddef.onPaletteChanged) {
 		LISTENER_INVOKE (viddef.onPaletteChanged, &viddef);
@@ -313,6 +321,12 @@ VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
 	vid_system.init (palette, colormap);
+}
+
+VISIBLE void
+VID_SetPalette (byte *palette, byte *colormap)
+{
+	vid_system.set_palette (palette, colormap);
 }
 
 static void

@@ -125,6 +125,14 @@ bi_refresh_2d (progs_t *pr, void *_res)
 }
 
 static void
+bi_setpalette (progs_t *pr, void *_res)
+{
+	byte       *palette = (byte *) P_GPOINTER (pr, 0);
+	byte       *colormap = (byte *) P_GPOINTER (pr, 1);
+	VID_SetPalette (palette, colormap);
+}
+
+static void
 bi_shutdown (progs_t *pr, void *_res)
 {
 	Sys_Shutdown ();
@@ -136,6 +144,7 @@ static builtin_t builtins[] = {
 	bi(newscene,   -1, 1, p(long)),
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
+	bi(setpalette, -1, 2, p(ptr), p(ptr)),
 	bi(shutdown,   -1, 0),
 	{0}
 };

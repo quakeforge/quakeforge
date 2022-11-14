@@ -6,6 +6,7 @@
 
 typedef struct vid_system_s {
 	void      (*init) (byte *palette, byte *colormap);
+	void      (*set_palette) (byte *palette, byte *colormap);
 	void      (*init_cvars) (void);
 	void      (*update_fullscreen) (int fullscreen);
 } vid_system_t;
