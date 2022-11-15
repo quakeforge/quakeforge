@@ -60,6 +60,13 @@ create_old_origin (void *_old_origin)
 }
 
 static void
+create_colormap (void *_colormap)
+{
+	colormap_t *colormap = _colormap;
+	*colormap = (colormap_t) {1, 6};
+}
+
+static void
 destroy_visibility (void *_visibility)
 {
 	visibility_t *visibility = _visibility;
@@ -120,6 +127,11 @@ static const component_t scene_components[] = {
 		.size = sizeof (vec4f_t),
 		.create = create_old_origin,
 		.name = "old_origin",
+	},
+	[scene_colormap] = {
+		.size = sizeof (colormap_t),
+		.create = create_colormap,
+		.name = "colormap",
 	},
 
 	[scene_sw_matrix] = {

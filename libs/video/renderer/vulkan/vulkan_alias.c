@@ -163,6 +163,11 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 	}
 	QuatCopy (renderer->colormod, constants.base_color);
 	QuatCopy (skin->colors, constants.colors);
+	if (Ent_HasComponent (ent.id, scene_colormap, ent.reg)) {
+		colormap_t *colormap=Ent_GetComponent (ent.id, scene_colormap, ent.reg);
+		constants.colors[0] = colormap->top * 16 + 8;
+		constants.colors[1] = colormap->bottom * 16 + 8;
+	}
 	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],

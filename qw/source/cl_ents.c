@@ -218,6 +218,11 @@ CL_LinkPacketEntities (void)
 				&& cl.players[new->colormap - 1].name->value[0]
 				&& new->modelindex == cl_playerindex) {
 				player_info_t *player = &cl.players[new->colormap - 1];
+				colormap_t  colormap = {
+					.top = player->topcolor,
+					.bottom = player->bottomcolor,
+				};
+				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
 				renderer->skin
 					= mod_funcs->Skin_SetSkin (renderer->skin, new->colormap,
 											   player->skinname->value);
@@ -226,6 +231,7 @@ CL_LinkPacketEntities (void)
 			} else {
 				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 															  0);
+				Ent_RemoveComponent (ent.id, scene_colormap, ent.reg);
 			}
 		}
 
@@ -461,6 +467,12 @@ CL_LinkPlayers (void)
 			&& state->pls.es.modelindex == cl_playerindex
 			&& is_dead_body (&state->pls.es))
 			continue;
+
+		colormap_t  colormap = {
+			.top = player->topcolor,
+			.bottom = player->bottomcolor,
+		};
+		Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);

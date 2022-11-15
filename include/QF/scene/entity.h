@@ -99,6 +99,11 @@ typedef struct entqueue_s {
 	int         num_queues;
 } entqueue_t;
 
+typedef struct colormap_s {
+	byte        top;
+	byte        bottom;
+} colormap_t;
+
 #define ENTINLINE GNU89INLINE inline
 
 entqueue_t *EntQueue_New (int num_queues);

@@ -246,6 +246,11 @@ CL_RelinkEntities (void)
 			old->skinnum = new->skinnum;
 			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
+				colormap_t  colormap = {
+					.top = cl.players[i - 1].topcolor,
+					.bottom = cl.players[i - 1].bottomcolor,
+				};
+				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
 				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 															  i);
 				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,
