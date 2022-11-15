@@ -94,6 +94,7 @@ get_op_string (int op)
 		case 'C':	return "<cast>";
 		case CROSS:	return "@cross";
 		case DOT:	return "@dot";
+		case HADAMARD:	return "@hadamard";
 		case SCALE:	return "@scale";
 		default:
 			return "unknown";

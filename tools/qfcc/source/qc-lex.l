@@ -428,6 +428,7 @@ static keyword_t qf_keywords[] = {
 
 	{"@cross",		CROSS,	0	},
 	{"@dot",		DOT,	0	},
+	{"@hadamard",	HADAMARD,	0	},
 };
 
 // These keywors are always available. Other than the @ keywords, they

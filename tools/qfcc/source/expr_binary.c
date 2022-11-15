@@ -150,6 +150,7 @@ static expr_type_t vector_vector[] = {
 	{'-',	&type_vector},
 	{DOT,	&type_vector},
 	{CROSS,	&type_vector},
+	{HADAMARD,	&type_vector},
 	{'*',	0, 0, 0, vector_multiply},
 	{EQ,	0, 0, 0, vector_compare},
 	{NE,	0, 0, 0, vector_compare},
@@ -1100,11 +1101,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				t2 = pt2;
 			}
 		}
+		int         scalar_op = 0;
 		if (type_width (t1) == 1) {
 			// scalar op vec
 			if (!(e = convert_scalar (e1, op, e2))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
+			scalar_op = 1;
 			e1 = e;
 			t1 = get_type (e1);
 		}
@@ -1113,8 +1116,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			if (!(e = convert_scalar (e2, op, e1))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
+			scalar_op = 1;
 			e2 = e;
 			t2 = get_type (e2);
+		}
+		if (scalar_op && op == '*') {
+			op = HADAMARD;
 		}
 		if (type_width (t1) != type_width (t2)) {
 			// vec op vec of different widths
