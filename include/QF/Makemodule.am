@@ -199,6 +199,7 @@ include_qf_vulkan = \
 	include/QF/Vulkan/qf_main.h \
 	include/QF/Vulkan/qf_matrices.h \
 	include/QF/Vulkan/qf_model.h \
+	include/QF/Vulkan/qf_palette.h \
 	include/QF/Vulkan/qf_particles.h \
 	include/QF/Vulkan/qf_renderpass.h \
 	include/QF/Vulkan/qf_scene.h \

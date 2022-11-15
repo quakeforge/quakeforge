@@ -50,6 +50,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
@@ -89,6 +90,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
+	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
@@ -669,9 +671,9 @@ vulkan_Skin_InitTranslations (void)
 static void
 set_palette (void *data, const byte *palette)
 {
-	//FIXME really don't want this here: need an application domain
-	//so Quake can be separated from QuakeForge (ie, Quake itself becomes
-	//an app using the QuakeForge engine)
+	if (vulkan_ctx->palette_context) {
+		Vulkan_Palette_Update (vulkan_ctx, palette);
+	}
 }
 
 static void
@@ -774,6 +776,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
+	Vulkan_Palette_Shutdown (vulkan_ctx);
 	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
 
