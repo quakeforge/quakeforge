@@ -125,8 +125,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	int         w, h;
 
 	skin = Hunk_Alloc (0, sizeof (qfv_alias_skin_t));
-	QuatCopy (vid.palette32 + (TOP_RANGE + 15) * 4, skin->colora);
-	QuatCopy (vid.palette32 + (BOTTOM_RANGE + 15) * 4, skin->colorb);
+	QuatSet (TOP_RANGE + 7, BOTTOM_RANGE + 7, 0, 0, skin->colors);
 	skindesc->skin = (byte *) skin - (byte *) header;
 	//FIXME move all skins into arrays(?)
 	w = header->mdl.skinwidth;
@@ -175,13 +174,31 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 						  skinsize);
 	Mod_ClearFullbright (tskin, tskin, skinsize);
 
+	static byte map_palette[] = {
+		0x08, 0x00, 0x00,
+		0x18, 0xff, 0x00,
+		0x28, 0xff, 0x00,
+		0x38, 0xff, 0x00,
+		0x48, 0xff, 0x00,
+		0x58, 0xff, 0x00,
+		0x68, 0xff, 0x00,
+		0x78, 0xff, 0x00,
+		0x88, 0xff, 0x00,
+		0x98, 0xff, 0x00,
+		0xa8, 0xff, 0x00,
+		0xb8, 0xff, 0x00,
+		0xc8, 0xff, 0x00,
+		0xd8, 0xff, 0x00,
+		0xe8, 0xff, 0x00,
+		0xf8, 0xff, 0x00,
+	};
 	Skin_CalcTopColors (tskin + skinsize, tskin, skinsize);
-	Vulkan_ExpandPalette (cola_data, tskin + skinsize, vid.palette, 1,
+	Vulkan_ExpandPalette (cola_data, tskin + skinsize, map_palette, 1,
 						  skinsize);
 	Skin_ClearTopColors (tskin, tskin, skinsize);
 
 	Skin_CalcBottomColors (tskin + skinsize, tskin, skinsize);
-	Vulkan_ExpandPalette (colb_data, tskin + skinsize, vid.palette, 1,
+	Vulkan_ExpandPalette (colb_data, tskin + skinsize, map_palette, 1,
 						  skinsize);
 	Skin_ClearBottomColors (tskin, tskin, skinsize);
 

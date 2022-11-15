@@ -426,7 +426,7 @@
 			);
 		};
 		alias_layout = {
-			setLayouts = (matrix_set, texture_set);
+			setLayouts = (matrix_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;

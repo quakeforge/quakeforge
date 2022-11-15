@@ -78,6 +78,9 @@ Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 		.data = (byte *) palette,
 	};
 	pctx->palette = Vulkan_LoadTex (ctx, &tex, 0, "palette");
+	pctx->descriptor = Vulkan_CreateCombinedImageSampler (ctx,
+														  pctx->palette->view,
+														  pctx->sampler);
 
 	qfvPopDebug (ctx);
 }
@@ -93,4 +96,11 @@ Vulkan_Palette_Shutdown (vulkan_ctx_t *ctx)
 	free (pctx);
 
 	qfvPopDebug (ctx);
+}
+
+VkDescriptorSet
+Vulkan_Palette_Descriptor (struct vulkan_ctx_s *ctx)
+{
+	__auto_type pctx = ctx->palette_context;
+	return pctx->descriptor;
 }

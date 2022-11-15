@@ -38,6 +38,7 @@
 typedef struct palettectx_s {
 	struct qfv_tex_s *palette;
 	VkSampler    sampler;
+	VkDescriptorSet descriptor;
 } palettectx_t;
 
 struct vulkan_ctx_s;
@@ -45,5 +46,6 @@ struct vulkan_ctx_s;
 void Vulkan_Palette_Update (struct vulkan_ctx_s *ctx, const byte *palette);
 void Vulkan_Palette_Init (struct vulkan_ctx_s *ctx, const byte *palette);
 void Vulkan_Palette_Shutdown (struct vulkan_ctx_s *ctx);
+VkDescriptorSet Vulkan_Palette_Descriptor (struct vulkan_ctx_s *ctx) __attribute__((pure));
 
 #endif//__QF_Vulkan_qf_palette_h

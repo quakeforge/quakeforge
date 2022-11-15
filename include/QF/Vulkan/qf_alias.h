@@ -58,8 +58,7 @@ typedef struct qfv_alias_skin_s {
 	VkDeviceMemory memory;
 	VkImage     image;
 	VkImageView view;
-	byte        colora[4];
-	byte        colorb[4];
+	byte        colors[4];
 	VkDescriptorSet descriptor;
 } qfv_alias_skin_t;
 

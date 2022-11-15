@@ -42,6 +42,7 @@
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
@@ -54,8 +55,7 @@
 typedef struct {
 	mat4f_t     mat;
 	float       blend;
-	byte        colorA[4];
-	byte        colorB[4];
+	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
 } alias_push_constants_t;
@@ -108,7 +108,7 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			skin->descriptor,
 		};
 		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										actx->layout, 1, 1, sets, 0, 0);
+										actx->layout, 2, 1, sets, 0, 0);
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 
@@ -144,11 +144,8 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 			field_offset (alias_push_constants_t, blend),
 			sizeof (float), &constants.blend },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (alias_push_constants_t, colorA),
-			sizeof (constants.colorA), constants.colorA },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (alias_push_constants_t, colorB),
-			sizeof (constants.colorB), constants.colorB },
+			field_offset (alias_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			field_offset (alias_push_constants_t, base_color),
 			sizeof (constants.base_color), &constants.base_color },
@@ -165,8 +162,7 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
 	QuatCopy (renderer->colormod, constants.base_color);
-	QuatCopy (skin->colora, constants.colorA);
-	QuatCopy (skin->colorb, constants.colorB);
+	QuatCopy (skin->colors, constants.colors);
 	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
@@ -174,7 +170,7 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 				   0, 2, push_constants, hdr, rFrame, ent);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
 				   animation->pose1, animation->pose2,
-				   skin, 6, push_constants, hdr, rFrame, ent);
+				   skin, 5, push_constants, hdr, rFrame, ent);
 }
 
 static void
@@ -210,9 +206,10 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Palette_Descriptor (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									actx->layout, 0, 1, sets, 0, 0);
+									actx->layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
