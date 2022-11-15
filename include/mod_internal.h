@@ -109,8 +109,10 @@ void Skin_Free (skin_t *skin);
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
 skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
 void Skin_SetTranslation (int cmap, int top, int bottom);
-int Skin_CalcTopColors (byte *out, const byte *in, size_t pixels);
-int Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels);
+int Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride);
+int Skin_CalcTopMask (byte *out, const byte *in, size_t pixels, int stride);
+int Skin_CalcBottomColors(byte *out, const byte *in, size_t pixels, int stride);
+int Skin_CalcBottomMask (byte *out, const byte *in, size_t pixels, int stride);
 int Skin_ClearTopColors (byte *out, const byte *in, size_t pixels);
 int Skin_ClearBottomColors (byte *out, const byte *in, size_t pixels);
 

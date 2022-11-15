@@ -24,17 +24,12 @@ main (void)
 {
 	vec4        c;
 	vec4        e;
-	int         i;
-	vec3        light = vec3 (0);
-	vec4        rows = unpackUnorm4x8(colors);
-	vec2        cols = vec2 (texture (Skin, vec3 (st, 1)).r,
-							 texture (Skin, vec3 (st, 2)).r);
-	vec2        mask = vec2 (texture (Skin, vec3 (st, 1)).g,
-							 texture (Skin, vec3 (st, 2)).g);
 	c = texture (Skin, vec3 (st, 0)) * base_color;
-	c += texture (Palette, vec2 (cols.x, rows.x)) * mask.x;
-	c += texture (Palette, vec2 (cols.y, rows.y)) * mask.y;
-	e = texture (Skin, vec3 (st, 3));
+	e = texture (Skin, vec3 (st, 1));
+	vec4        rows = unpackUnorm4x8(colors);
+	vec4        cmap = texture (Skin, vec3 (st, 2));
+	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
+	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
 
 	frag_color = c;
 	frag_emission = e;
