@@ -411,6 +411,55 @@ Vulkan_TexImageView (qfv_tex_t *tex)
 }
 
 void
+Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
+				  int x, int y, int layer, int mip)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	int         bpp;
+	VkFormat    format;
+	if (!tex_format (src, &format, &bpp)) {
+		return;
+	}
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
+	ib.barrier.image = tex->image;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+
+	VkBufferImageCopy copy = {
+		.bufferOffset = stage_tex_data (packet, src, bpp),
+		.imageSubresource = {
+			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.mipLevel = mip,
+			.baseArrayLayer = layer,
+			.layerCount = 1,
+		},
+		.imageOffset = { .x = x, .y = y, .z = 0 },
+		.imageExtent = {
+			.width = src->width,
+			.height = src->height,
+			.depth = 1,
+		},
+	};
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   tex->image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &copy);
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib.barrier.image = tex->image;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+	QFV_PacketSubmit (packet);
+}
+
+void
 Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 {
 	qfv_device_t *device = ctx->device;
