@@ -64,6 +64,7 @@ test_progs_dat=\
 	tools/qfcc/test/unaryminus.dat \
 	tools/qfcc/test/vecaddr.dat \
 	tools/qfcc/test/vecexpr.dat \
+	tools/qfcc/test/vecconst.dat \
 	tools/qfcc/test/vecinit.dat \
 	tools/qfcc/test/voidfor.dat \
 	tools/qfcc/test/while.dat \
@@ -719,6 +720,16 @@ tools/qfcc/test/vecexpr.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(vecexpr_dep) # am--include-marker
 r_depfiles_remade += $(vecexpr_dep)
+
+tools_qfcc_test_vecconst_dat_SOURCES=tools/qfcc/test/vecconst.r
+vecconst_obj=$(tools_qfcc_test_vecconst_dat_SOURCES:.r=.o)
+vecconst_dep=$(call qcautodep,$(tools_qfcc_test_vecconst_dat_SOURCES))
+tools/qfcc/test/vecconst.dat$(EXEEXT): $(vecconst_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(vecconst_obj)
+tools/qfcc/test/vecconst.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(vecconst_dep) # am--include-marker
+r_depfiles_remade += $(vecconst_dep)
 
 tools_qfcc_test_vecinit_dat_SOURCES=tools/qfcc/test/vecinit.r
 vecinit_obj=$(tools_qfcc_test_vecinit_dat_SOURCES:.r=.o)
