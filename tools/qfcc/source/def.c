@@ -637,7 +637,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					warning (init, "assigning double to %s in initializer "
 							 "(use a cast)", sym->type->name);
 				}
-				if (is_scalar (sym->type))
+				if (!type_same (sym->type, init_type))
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {
 					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
