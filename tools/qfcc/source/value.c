@@ -637,7 +637,7 @@ convert_value (ex_value_t *value, type_t *type)
 	int         conv = TYPE_CAST_CODE (from, to, width);
 	int         addr = value_functions[vf_convert].first_statement;
 	value_statements[addr + 0].b = conv;
-	value_statements[addr + 1].c = width; // width is actual width - 1
+	value_statements[addr + 1].c = type_size (type) - 1;
 	memcpy (value_globals, &value->v,
 			type_size (value->type) * sizeof (pr_type_t));
 	value_pr.pr_trace = options.verbosity > 1;
@@ -697,6 +697,8 @@ emit_value (ex_value_t *value, def_t *def)
 		case ev_vector:
 		case ev_quaternion:
 		case ev_double:
+		case ev_long:
+		case ev_ulong:
 			tab = value_imm_defs;
 			type = val.type;
 			break;
