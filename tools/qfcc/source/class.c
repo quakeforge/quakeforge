@@ -1075,7 +1075,7 @@ finish_class (class_t *class)
 	space = class->def->space;
 	cls = &D_STRUCT (pr_class_t, class->def);
 
-	meta = &G_STRUCT (space, pr_class_t, cls->class_pointer);
+	meta = &Q_STRUCT (space, pr_class_t, cls->class_pointer);
 
 	EMIT_DEF (space, meta->methods, emit_methods (class->methods,
 												  class->name, 0));
