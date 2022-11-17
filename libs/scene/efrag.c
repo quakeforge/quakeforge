@@ -102,15 +102,13 @@ R_ClearEfragChain (efrag_t *ef)
 
 	while (ef) {
 		prev = &ef->leaf->efrags;
-		while (1) {
-			walk = *prev;
-			if (!walk)
-				break;
+		while ((walk = *prev)) {
 			if (walk == ef) {			// remove this fragment
 				*prev = ef->leafnext;
 				break;
-			} else
+			} else {
 				prev = &walk->leafnext;
+			}
 		}
 
 		old = ef;
