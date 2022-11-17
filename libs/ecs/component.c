@@ -216,3 +216,18 @@ ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 		Ent_RemoveComponent (ent, i, registry);
 	}
 }
+
+VISIBLE void
+ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
+{
+	ecs_pool_t *pool = &registry->comp_pools[component];
+	const component_t *comp = &registry->components[component];
+	__auto_type destroy = comp->destroy;
+	if (destroy) {
+		byte       *data = registry->comp_pools[component].data;
+		for (uint32_t i = 0; i < pool->count; i++) {
+			destroy (data + i * comp->size);
+		}
+	}
+	pool->count = 0;
+}

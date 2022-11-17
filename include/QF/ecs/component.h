@@ -238,6 +238,7 @@ void ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
+void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
 
 void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,
