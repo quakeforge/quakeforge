@@ -694,7 +694,6 @@ void
 R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
 }

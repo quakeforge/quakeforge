@@ -117,7 +117,6 @@ vulkan_R_ClearState (void)
 {
 	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	r_refdef.worldmodel = 0;
-	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
 	Vulkan_LoadLights (0, vulkan_ctx);
