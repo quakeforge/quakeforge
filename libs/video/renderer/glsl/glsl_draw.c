@@ -55,10 +55,6 @@
 
 #include "r_internal.h"
 
-typedef struct {
-	subpic_t   *subpic;
-} glpic_t;
-
 typedef struct cachepic_s {
 	struct cachepic_s *next;
 	char       *name;
@@ -126,16 +122,14 @@ static qpic_t *
 make_glpic (const char *name, qpic_t *p)
 {
 	qpic_t     *pic = 0;
-	glpic_t    *gl;
 
 	if (p) {
-		// FIXME is alignment ok?
-		pic = malloc (sizeof (qpic_t) + sizeof (glpic_t));
+		pic = malloc (sizeof (qpic_t) + sizeof (subpic_t *));
 		pic->width = p->width;
 		pic->height = p->height;
-		gl = (glpic_t *) pic->data;
-		gl->subpic = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
-		GLSL_SubpicUpdate (gl->subpic, p->data, 1);
+		subpic_t   *sp = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
+		*(subpic_t **) pic->data = sp;
+		GLSL_SubpicUpdate (sp, p->data, 1);
 	}
 	return pic;
 }
@@ -143,9 +137,9 @@ make_glpic (const char *name, qpic_t *p)
 static void
 pic_free (qpic_t *pic)
 {
-	glpic_t    *gl = (glpic_t *) pic->data;
+	subpic_t   *subpic = *(subpic_t **) pic->data;
 
-	GLSL_SubpicDelete (gl->subpic);
+	GLSL_SubpicDelete (subpic);
 	free (pic);
 }
 
@@ -196,12 +190,8 @@ make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
 		   float *color)
 {
-	glpic_t    *gl;
-	subpic_t   *sp;
+	subpic_t   *sp = *(subpic_t **) pic->data;
 	float       sl, sh, tl, th;
-
-	gl = (glpic_t *) pic->data;
-	sp = gl->subpic;
 
 	srcx += sp->rect->x;
 	srcy += sp->rect->y;
@@ -381,7 +371,6 @@ glsl_Draw_Init (void)
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
-	//FIXME glpic_t    *gl;
 
 	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
 	QFS_GamedirCallback (Draw_ClearCache, 0);
@@ -444,10 +433,6 @@ glsl_Draw_Init (void)
 	if (!backtile_pic) {
 		backtile_pic = white_pic;
 	}
-	//FIXME gl = (glpic_t *) backtile_pic->data;
-	//FIXME qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
-	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	Cvar_Register (&glsl_conback_texnum_cvar, 0, 0);
 }
@@ -689,8 +674,7 @@ glsl_Draw_TileClear (int x, int y, int w, int h)
 	static quat_t color = { 1, 1, 1, 1 };
 	vrect_t     *tile_rect = VRect_New (x, y, w, h);
 	vrect_t     *sub = VRect_New (0, 0, 0, 0);	// filled in later;
-	glpic_t     *gl = (glpic_t *) backtile_pic->data;
-	subpic_t    *sp = gl->subpic;
+	subpic_t    *sp = *(subpic_t **) backtile_pic->data;
 	int          sub_sx, sub_sy, sub_ex, sub_ey;
 	int          i, j;
 
@@ -731,8 +715,7 @@ glsl_Draw_Fill (int x, int y, int w, int h, int c)
 void
 glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 {
-	glpic_t    *gl = (glpic_t *) white_pic->data;
-	subpic_t   *sp = gl->subpic;
+	subpic_t    *sp = *(subpic_t **) white_pic->data;
 	float       sl = sp->rect->x * sp->size;
 	float       sh = sp->rect->x * sp->size;
 	float       tl = sp->rect->y * sp->size;
