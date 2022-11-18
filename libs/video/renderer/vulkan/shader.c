@@ -39,6 +39,8 @@
 #include "QF/Vulkan/shader.h"
 
 static
+#include "libs/video/renderer/vulkan/shader/slice.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/glyph.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/glyph_color.frag.spvc"
@@ -120,6 +122,7 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "slice.vert", slice_vert, sizeof (slice_vert) },
 	{ "glyph.vert", glyph_vert, sizeof (glyph_vert) },
 	{ "glyph_color.frag", glyph_color_frag, sizeof (glyph_color_frag) },
 	{ "glyph_coverage.frag", glyph_coverage_frag, sizeof (glyph_coverage_frag) },

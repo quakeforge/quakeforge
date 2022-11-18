@@ -582,6 +582,21 @@
 				{ location = 2; binding = 1; format = r32_uint; offset = 0; },
 			);
 		};
+		slice = {
+			bindings = (
+				{ binding = 0; stride = "4 + 4 + 4 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				// 9-slice index
+				{ location = 0; binding = 0; format = r32_uint;       offset = 0; },
+				// 9-slice color
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				// 9-slice position (2d)
+				{ location = 2; binding = 0; format = r32g32_sfloat;  offset = 8; },
+				// 9-slice size delta (2d)
+				{ location = 3; binding = 0; format = r32g32_sfloat;  offset = 16; },
+			);
+		};
 		glyph = {
 			bindings = (
 				{ binding = 0; stride = "4 + 4 + 2 * 4"; inputRate = instance; },
@@ -1114,6 +1129,25 @@
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
 			};
 			layout = twod_layout;
+		};
+		slice = {
+			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+			stages = (
+				{ stage = vertex;   name = main; module = $builtin/slice.vert; },
+				{ stage = fragment; name = main; module = $builtin/glyph_color.frag; },
+			);
+			vertexInput   = $properties.vertexInput.slice;
+			inputAssembly = {
+				// slices are drawn using instanced slice triples
+				topology = triangle_strip;
+				primitiveRestartEnable = true;
+			};
+			rasterization = $properties.rasterization.counter_cw_cull_back;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ($properties.attachmentBlendOp.alpha_blend);
+			};
+			layout = glyph_layout;//slices use the same descriptors as glyphs
 		};
 		glyph = {
 			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate

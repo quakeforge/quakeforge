@@ -275,6 +275,8 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+slice_src = $(vkshaderpath)/slice.vert
+slice_c = $(vkshaderpath)/slice.vert.spvc
 glyph_src = $(vkshaderpath)/glyph.vert
 glyph_c = $(vkshaderpath)/glyph.vert.spvc
 glyph_color_src = $(vkshaderpath)/glyph_color.frag
@@ -351,6 +353,8 @@ fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 
+$(slice_vert_c): $(slice_vert_src)
+
 $(glyph_vert_c): $(glyph_vert_src)
 $(glyph_color_c): $(glyph_color_src)
 $(glyph_coverage_c): $(glyph_coverage_src)
@@ -419,6 +423,7 @@ $(fstriangle_c): $(fstriangle_src)
 $(pushcolor_c): $(pushcolor_src)
 
 vkshader_c = \
+	$(slice_c) \
 	$(glyph_c) \
 	$(glyph_color_c) \
 	$(glyph_coverage_c) \
