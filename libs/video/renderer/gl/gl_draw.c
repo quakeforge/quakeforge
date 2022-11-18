@@ -711,8 +711,9 @@ gl_Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.width / 2 + cl_crossx;
-	y = vid.height / 2 + cl_crossy;
+	int         s = 2 * gl_2d_scale;
+	x = vid.width / s + cl_crossx;
+	y = vid.height / s + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }

@@ -852,9 +852,10 @@ void
 Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
 	int         x, y;
+	int         s = 2 * ctx->twod_scale;
 
-	x = vid.width / 2 + cl_crossx;
-	y = vid.height / 2 + cl_crossy;
+	x = vid.width / s + cl_crossx;
+	y = vid.height / s + cl_crossy;
 
 	Vulkan_Draw_CrosshairAt (crosshair, x, y, ctx);
 }

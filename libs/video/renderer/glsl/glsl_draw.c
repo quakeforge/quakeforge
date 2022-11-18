@@ -614,9 +614,10 @@ void
 glsl_Draw_Crosshair (void)
 {
 	int         x, y;
+	int         s = 2 * glsl_2d_scale;
 
-	x = vid.width / 2 + cl_crossx;
-	y = vid.height / 2 + cl_crossy;
+	x = vid.width / s + cl_crossx;
+	y = vid.height / s + cl_crossy;
 
 	glsl_Draw_CrosshairAt (crosshair, x, y);
 }
