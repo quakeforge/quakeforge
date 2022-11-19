@@ -386,6 +386,13 @@ R_DrawViewModel (void)
 	if (!renderer->model)
 		return;
 
+	if (!Ent_HasComponent (viewent.id, scene_visibility, viewent.reg)) {
+		// ensure the view model has a visibility component because one won't
+		// be added automatically, and the model rendering code expects there
+		// to be one
+		Ent_SetComponent (viewent.id, scene_visibility, viewent.reg, 0);
+	}
+
 	transform_t transform = Entity_Transform (viewent);
 	VectorCopy (Transform_GetWorldPosition (transform), r_entorigin);
 
