@@ -369,8 +369,8 @@ vulkan_set_2d (int scaled)
 	__auto_type mat = &mctx->matrices;
 	int         scale = vulkan_ctx->twod_scale;
 
-	float       left = -0.5;
-	float       top = -0.5;
+	float       left = 0;
+	float       top = 0;
 	float       right = left + vid.width / scale;
 	float       bottom = top + vid.height / scale;
 	QFV_Orthographic (mat->Projection2d, left, right, top, bottom, 0, 99999);
