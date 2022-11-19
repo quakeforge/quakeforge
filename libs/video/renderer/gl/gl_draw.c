@@ -609,13 +609,13 @@ crosshair_2 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 0);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (0.5, 0);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -633,13 +633,13 @@ crosshair_3 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0.5, 0);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (1, 0);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (1, 0.5);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -657,13 +657,13 @@ crosshair_4 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 5);
 	qfglTexCoord2f (0.5, 1);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0, 1);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -681,13 +681,13 @@ crosshair_5 (int x, int y)	//FIXME don't use until the data is filled in
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (1, 0.5);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (1, 1);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0.5, 1);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);

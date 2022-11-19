@@ -571,8 +571,8 @@ draw_crosshair_pic (int ch, int x, int y)
 	};
 	const int *p = pos[ch - 1];
 
-	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
-			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, crosshair_pic,
+	draw_pic (x - CROSSHAIR_WIDTH / 2 + 1, y - CROSSHAIR_HEIGHT / 2 + 1,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  p[0], p[1], p[2], p[3], crosshair_color);
 }
 

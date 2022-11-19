@@ -824,8 +824,8 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 	const int *p = pos[ch - 1];
 
 	subpic_t   *subpic = *(subpic_t **) dctx->crosshair->data;
-	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
-			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, subpic,
+	draw_pic (x - CROSSHAIR_WIDTH / 2 + 1, y - CROSSHAIR_HEIGHT / 2 + 1,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, subpic,
 			  p[0], p[1], p[2], p[3], crosshair_color, &frame->quad_verts);
 }
 
