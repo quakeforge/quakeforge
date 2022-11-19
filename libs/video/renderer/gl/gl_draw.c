@@ -392,6 +392,8 @@ gl_Draw_Init (void)
 		width = 128;
 		height = 128;
 	}
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// initialize the character cell texture coordinates.
 	for (i = 0; i < 256; i++) {
