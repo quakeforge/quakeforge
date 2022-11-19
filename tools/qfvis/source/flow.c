@@ -151,7 +151,6 @@ calc_plane (vec4f_t v1, vec4f_t v2, int flip, vec4f_t p, vec4f_t *plane)
 	if (length[0] < ON_EPSILON)
 		return 0;
 
-	*plane /= vsqrt4f (length);
 	(*plane)[3] = -dotf (p, *plane)[0];
 	return 1;
 }
