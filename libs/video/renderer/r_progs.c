@@ -474,6 +474,12 @@ bi_Draw_PrintBuffer (progs_t *pr, void *_res)
 	Draw_PrintBuffer (cbuff->buffer, str);
 }
 
+static void
+bi_Draw_SetScale (progs_t *pr, void *_res)
+{
+	Draw_SetScale (P_INT (pr, 0));
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -540,6 +546,9 @@ static builtin_t builtins[] = {
 	bi(Draw_ScrollBuffer,   2, p(ptr), p(int)),
 	bi(Draw_CharBuffer,     3, p(int), p(int), p(ptr)),
 	bi(Draw_PrintBuffer,    2, p(ptr), p(string)),
+
+	bi(Draw_SetScale,   1, p(int)),
+
 	{0}
 };
 

@@ -168,7 +168,8 @@ typedef struct drawfontset_s
 	DARRAY_TYPE (drawfont_t) drawfontset_t;
 
 typedef struct drawctx_s {
-	VkSampler   sampler;
+	VkSampler   pic_sampler;
+	VkSampler   glyph_sampler;
 	scrap_t    *scrap;
 	qfv_stagebuf_t *stage;
 	qpic_t     *crosshair;
@@ -576,7 +577,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
 								   dctx->stage);
-	dctx->sampler = Vulkan_CreateSampler (ctx, "quakepic");
+	dctx->pic_sampler = Vulkan_CreateSampler (ctx, "quakepic");
+	dctx->glyph_sampler = Vulkan_CreateSampler (ctx, "glyph");
 
 	draw_chars = W_GetLumpName ("conchars");
 	if (draw_chars) {
@@ -623,7 +625,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "twod_pool");
 
 	VkDescriptorImageInfo imageInfo = {
-		dctx->sampler,
+		dctx->pic_sampler,
 		QFV_ScrapImageView (dctx->scrap),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
@@ -1369,20 +1371,20 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 		float       s = 1.0 / rfont->scrap.width;
 		float       t = 1.0 / rfont->scrap.height;
 		verts[i * 4 + 0] = (glyphvert_t) {
-			.offset = { x + 0,       y + 0 },
-			.uv     = {(u + 0.25) * s, (v + 0.25) * t },
+			.offset = { x,     y },
+			.uv     = { u * s, v * t },
 		};
 		verts[i * 4 + 1] = (glyphvert_t) {
-			.offset = { x + 0,       y + h },
-			.uv     = {(u + 0.25) * s, (v + h - 0.25) * t },
+			.offset = { x,      y + h },
+			.uv     = { u * s, (v + h) * t },
 		};
 		verts[i * 4 + 2] = (glyphvert_t) {
-			.offset = { x + w,       y + 0 },
-			.uv     = {(u + w - 0.25) * s, (v + 0.25) * t },
+			.offset = { x + w,      y },
+			.uv     = {(u + w) * s, v * t },
 		};
 		verts[i * 4 + 3] = (glyphvert_t) {
 			.offset = { x + w,       y + h },
-			.uv     = {(u + w - 0.25) * s, (v + h - 0.25) * t },
+			.uv     = {(u + w) * s, (v + h) * t },
 		};
 	}
 	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer,
@@ -1403,7 +1405,7 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 	__auto_type glyph_sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	font->set = glyph_sets->a[0];
 	VkDescriptorImageInfo imageInfo = {
-		dctx->sampler,
+		dctx->glyph_sampler,
 		glyph_iview->image_view.view,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};

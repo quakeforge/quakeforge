@@ -102,7 +102,8 @@ R_FontLoad (QFile *font_file, int size)
 		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
 
 		__auto_type g = font->face->glyph;
-		pixels += g->bitmap.width * g->bitmap.rows;
+		// include padding around the glyph to avoid texel leaks
+		pixels += (g->bitmap.width + 1) * (g->bitmap.rows + 1);
 	}
 	pixels = sqrt (5 * pixels / 4);
 	pixels = BITOP_RUP (pixels);
@@ -118,10 +119,15 @@ R_FontLoad (QFile *font_file, int size)
 		FT_Load_Glyph (font->face, gind, FT_LOAD_DEFAULT);
 		__auto_type slot = font->face->glyph;
 		FT_Render_Glyph (slot, FT_RENDER_MODE_NORMAL);
-		int     width = slot->bitmap.width;
-		int     height = slot->bitmap.rows;
+		// add padding to create a buffer around the glyph to prevent texel
+		// leaks
+		int     width = slot->bitmap.width + 1;
+		int     height = slot->bitmap.rows + 1;
 		*rect = *R_ScrapAlloc (&font->scrap, width, height);
 		*bearing = (vec2i_t) { slot->bitmap_left, slot->bitmap_top };
+		// shrink the rect so as to NOT include the padding
+		rect->width -= 1;
+		rect->height -= 1;
 
 		copy_glyph (rect, slot, font);
 	}
