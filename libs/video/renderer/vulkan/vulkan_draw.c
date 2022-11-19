@@ -667,10 +667,10 @@ draw_pic (float x, float y, int w, int h, subpic_t *subpic,
 	srcy += subpic->rect->y;
 
 	float size = subpic->size;
-	float sl = (srcx + 0.03125) * size;
-	float sr = (srcx + srcw - 0.03125) * size;
-	float st = (srcy + 0.03125) * size;
-	float sb = (srcy + srch - 0.03125) * size;
+	float sl = srcx * size;
+	float sr = (srcx + srcw) * size;
+	float st = srcy * size;
+	float sb = (srcy + srch) * size;
 
 	verts[0].xy[0] = x;
 	verts[0].xy[1] = y;
