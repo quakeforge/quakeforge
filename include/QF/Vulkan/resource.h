@@ -47,6 +47,7 @@ typedef struct qfv_resobj_s {
 			VkImageViewType type;
 			VkFormat    format;
 			VkImageAspectFlags aspect;
+			VkComponentMapping components;
 			VkImageView view;
 		}       image_view;
 	};

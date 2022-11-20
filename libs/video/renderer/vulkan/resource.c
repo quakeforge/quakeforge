@@ -57,6 +57,33 @@ create_image (qfv_device_t *device, qfv_resobj_t *image_obj)
 	dfunc->vkCreateImage (device->dev, &createInfo, 0, &image->image);
 }
 
+static void
+create_image_view (qfv_device_t *device, qfv_resobj_t *imgview_obj,
+				   qfv_resobj_t *imgobj)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type view = &imgview_obj->image_view;
+	__auto_type image = &imgobj->image;
+
+	VkImageViewCreateInfo createInfo = {
+		VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 0,
+		//FIXME flags should be input for both image and image view
+		.flags = image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
+		.image = image->image,
+		.viewType = view->type,
+		.format = view->format,
+		.components = view->components,
+		.subresourceRange = {
+			.aspectMask = view->aspect,
+			.baseMipLevel = 0,
+			.levelCount = VK_REMAINING_MIP_LEVELS,
+			.baseArrayLayer = 0,
+			.layerCount = VK_REMAINING_ARRAY_LAYERS,
+		},
+	};
+	dfunc->vkCreateImageView (device->dev, &createInfo, 0, &view->view);
+}
+
 int
 QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
@@ -221,12 +248,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				{
 					__auto_type imgview = &obj->image_view;
 					__auto_type imgobj = &resource->objects[imgview->image];
-					__auto_type image = &imgobj->image;
-					imgview->view = QFV_CreateImageView (device,
-														 image->image,
-														 imgview->type,
-														 imgview->format,
-														 imgview->aspect);
+					create_image_view (device, obj, imgobj);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
 										 imgview->view,
 										 va (resource->va_ctx, "iview:%s:%s",
