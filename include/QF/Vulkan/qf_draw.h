@@ -28,6 +28,13 @@
 #ifndef __QF_Vulkan_qf_draw_h
 #define __QF_Vulkan_qf_draw_h
 
+typedef enum {
+	QFV_drawDepth,
+	QFV_draw2d,
+
+	QFV_drawNumPasses
+} QFV_DrawSubpass;
+
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 struct qpic_s;

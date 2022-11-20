@@ -1452,7 +1452,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 		for (int j = 0; j < QFV_bspNumPasses; j++) {
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 bframe->cmdSet.a[i],
+								 bframe->cmdSet.a[j],
 								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
 									 bsp_pass_names[j]));
 		}
