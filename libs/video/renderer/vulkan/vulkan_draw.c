@@ -191,7 +191,7 @@ typedef struct drawctx_s {
 	qfv_resobj_t *line_objects;
 	VkPipeline  quad_pipeline;
 	VkPipeline  slice_pipeline;
-	VkPipeline  glyph_coverage_pipeline;
+	VkPipeline  glyph_pipeline;
 	VkPipeline  line_pipeline;
 	VkPipelineLayout layout;
 	VkPipelineLayout glyph_layout;//slice pipeline uses same layout
@@ -538,7 +538,7 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->slice_pipeline, 0);
-	dfunc->vkDestroyPipeline (device->dev, dctx->glyph_coverage_pipeline, 0);
+	dfunc->vkDestroyPipeline (device->dev, dctx->glyph_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->line_pipeline, 0);
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
@@ -613,8 +613,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
 	dctx->slice_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
-	dctx->glyph_coverage_pipeline
-		= Vulkan_CreateGraphicsPipeline (ctx, "glyph_coverage");
+	dctx->glyph_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "glyph");
 	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
@@ -1226,7 +1225,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		VkDeviceSize offsets[] = {0};
 		dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &glyph_buffer, offsets);
 		dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-								  dctx->glyph_coverage_pipeline);
+								  dctx->glyph_pipeline);
 		dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 		dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
@@ -1352,6 +1351,12 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 			.type = VK_IMAGE_VIEW_TYPE_2D,
 			.format = font->resource->glyph_image.image.format,
 			.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_R,
+				.g = VK_COMPONENT_SWIZZLE_R,
+				.b = VK_COMPONENT_SWIZZLE_R,
+				.a = VK_COMPONENT_SWIZZLE_R,
+			},
 		},
 	};
 	__auto_type glyph_iview = &font->resource->glyph_iview;
