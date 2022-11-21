@@ -186,15 +186,15 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
-	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+	uint32_t    curFrame = ctx->curFrame;
+	aliasframe_t *aframe = &actx->frames.a[curFrame];
 	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

@@ -22,6 +22,7 @@ typedef struct qfv_renderframe_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	struct qfv_renderpass_s *renderpass;
 	VkSubpassContents subpassContents;
+	VkFramebuffer framebuffer;
 	int         subpassCount;
 	qfv_subpass_t *subpassInfo;
 	struct qfv_cmdbufferset_s *subpassCmdSets;

@@ -162,7 +162,6 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 		update_lights (ctx);
 	}
 
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = lframe->cmd;
 
@@ -172,7 +171,7 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		renderpass->renderpass, QFV_passLighting,
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

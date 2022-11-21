@@ -548,7 +548,6 @@ Vulkan_CreateFrames (vulkan_ctx_t *ctx)
 
 	for (size_t i = 0; i < ctx->frames.size; i++) {
 		__auto_type frame = &ctx->frames.a[i];
-		frame->framebuffer = 0;
 		frame->fence = QFV_CreateFence (device, 1);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
@@ -575,7 +574,6 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-		frame->framebuffer = 0;
 	}
 
 	DARRAY_CLEAR (&ctx->frames);

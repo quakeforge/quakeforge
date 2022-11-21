@@ -41,6 +41,7 @@
 enum {
 	QFV_rp_shadowmap,
 	QFV_rp_main,
+	QFV_rp_output,
 };
 
 //FIXME location

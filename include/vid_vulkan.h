@@ -18,7 +18,6 @@ typedef struct qfv_output_s {
 } qfv_output_t;
 
 typedef struct vulkan_frame_s {
-	VkFramebuffer framebuffer;
 	VkFence     fence;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;

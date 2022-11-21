@@ -333,14 +333,13 @@ vulkan_begin_frame (void)
 static void
 vulkan_render_view (void)
 {
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
 
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 		if (rp->framebuffers) {
-			frame->framebuffer = rp->framebuffers->a[imageIndex];
+			rpFrame->framebuffer = rp->framebuffers->a[imageIndex];
 		}
 		rp->draw (rpFrame);
 	}
@@ -385,8 +384,9 @@ vulkan_end_frame (void)
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_queue_t *queue = &device->queue;
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+	uint32_t    curFrame = vulkan_ctx->curFrame;
+	__auto_type frame = &vulkan_ctx->frames.a[curFrame];
+	uint32_t    imageIndex = vulkan_ctx->swapImageIndex;
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
@@ -402,7 +402,7 @@ vulkan_end_frame (void)
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		__auto_type rpFrame = &rp->frames.a[curFrame];
 
 		if (rp->primary_commands) {
 			for (int j = 0; j < rpFrame->subpassCount; j++) {
@@ -417,7 +417,7 @@ vulkan_end_frame (void)
 
 		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
 		if (rpFrame->renderpass && rp->renderpass) {
-			renderPassInfo.framebuffer = frame->framebuffer,
+			renderPassInfo.framebuffer = rp->framebuffers->a[imageIndex];
 			renderPassInfo.renderPass = rp->renderpass;
 			renderPassInfo.clearValueCount = rp->clearValues->size;
 			renderPassInfo.pClearValues = rp->clearValues->a;
@@ -464,7 +464,7 @@ vulkan_end_frame (void)
 	if (vulkan_ctx->capture_callback) {
 		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
 		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
-												vulkan_ctx->curFrame);
+												curFrame);
 		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
 	}
 	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
@@ -487,7 +487,7 @@ vulkan_end_frame (void)
 		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
 								1000000000ull);
 		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
-													   vulkan_ctx->curFrame),
+													   curFrame),
 									  vulkan_ctx->capture->extent.width,
 									  vulkan_ctx->capture->extent.height);
 		vulkan_ctx->capture_callback = 0;

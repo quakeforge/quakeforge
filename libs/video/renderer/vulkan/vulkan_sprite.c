@@ -147,7 +147,6 @@ sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = sframe->cmdSet.a[subpass];
 
@@ -155,7 +154,7 @@ sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

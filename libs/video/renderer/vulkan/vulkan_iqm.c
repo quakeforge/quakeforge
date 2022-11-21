@@ -212,7 +212,6 @@ iqm_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
 
@@ -220,7 +219,7 @@ iqm_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

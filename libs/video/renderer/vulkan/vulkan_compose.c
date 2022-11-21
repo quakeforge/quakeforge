@@ -64,7 +64,6 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	qfv_renderpass_t *renderpass = rFrame->renderpass;
 
 	composectx_t *cctx = ctx->compose_context;
-	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = cframe->cmd;
 
@@ -74,7 +73,7 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		renderpass->renderpass, QFV_passCompose,
-		frame->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

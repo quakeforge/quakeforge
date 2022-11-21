@@ -1137,7 +1137,6 @@ draw_begin_subpass (QFV_DrawSubpass subpass, qfv_renderframe_t *rFrame)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = dframe->cmdSet.a[subpass];
 
@@ -1145,7 +1144,7 @@ draw_begin_subpass (QFV_DrawSubpass subpass, qfv_renderframe_t *rFrame)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {
