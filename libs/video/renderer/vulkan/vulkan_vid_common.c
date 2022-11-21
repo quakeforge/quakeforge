@@ -69,15 +69,15 @@ static exprsym_t builtin_plist_syms[] = {
 		},
 	{ .name = "deferred",
 	  .value = (void *)
-#include "libs/video/renderer/vulkan/deferred.plc"
+#include "libs/video/renderer/vulkan/rp_deferred.plc"
 		},
 	{ .name = "shadow",
 	  .value = (void *)
-#include "libs/video/renderer/vulkan/shadow.plc"
+#include "libs/video/renderer/vulkan/rp_shadow.plc"
 		},
 	{ .name = "forward",
 	  .value = (void *)
-#include "libs/video/renderer/vulkan/forward.plc"
+#include "libs/video/renderer/vulkan/rp_forward.plc"
 		},
 	{}
 };
