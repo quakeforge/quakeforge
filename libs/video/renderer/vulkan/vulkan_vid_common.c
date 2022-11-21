@@ -63,9 +63,9 @@
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 
 static exprsym_t builtin_plist_syms[] = {
-	{ .name = "qfpipeline",
+	{ .name = "quake_deferred",
 	  .value = (void *)
-#include "libs/video/renderer/vulkan/qfpipeline.plc"
+#include "libs/video/renderer/vulkan/pl_quake_def.plc"
 		},
 	{ .name = "deferred",
 	  .value = (void *)
@@ -355,7 +355,7 @@ static plitem_t *
 qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	if (!ctx->pipelineDef) {
-		ctx->pipelineDef = Vulkan_GetConfig (ctx, "qfpipeline");
+		ctx->pipelineDef = Vulkan_GetConfig (ctx, "quake_deferred");
 	}
 
 	plitem_t   *item = ctx->pipelineDef;

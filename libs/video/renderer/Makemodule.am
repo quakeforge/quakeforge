@@ -193,8 +193,8 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/transform.S \
 	libs/video/renderer/sw/vid_common_sw.c
 
-pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
-pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
+pl_quake_def_src = libs/video/renderer/vulkan/pl_quake_def.plist
+pl_quake_def_gen = libs/video/renderer/vulkan/pl_quake_def.plc
 rp_deferred_src = libs/video/renderer/vulkan/rp_deferred.plist
 rp_deferred_gen = libs/video/renderer/vulkan/rp_deferred.plc
 rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
@@ -258,7 +258,7 @@ libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vksh
 libs/video/renderer/vulkan/vulkan_vid_common.lo: \
 	libs/video/renderer/vulkan/vulkan_vid_common.c \
 	$(vkparse_src) \
-	$(pipeline_gen) \
+	$(pl_quake_def_gen) \
 	${rp_deferred_gen} \
 	${rp_shadow_gen} \
 	$(rp_forward_gen)
@@ -495,7 +495,7 @@ EXTRA_DIST += \
 	$(rp_deferred_src) \
 	$(rp_shadow_src) \
 	$(rp_forward_src) \
-	$(pipeline_src) \
+	$(pl_quake_def_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	libs/video/renderer/vulkan/shader/alias.frag \
