@@ -3,12 +3,9 @@
 
 #include "entity.h"
 
-layout (set = 0, binding = 0) uniform Matrices {
-	mat4 Projection3d;
-	mat4 View;
-	mat4 Sky;
-	mat4 Projection2d;
-};
+layout (set = 0, binding = 0) uniform
+#include "matrices.h"
+;
 
 layout (set = 1, binding = 0) buffer Entities {
 	Entity      entities[];
