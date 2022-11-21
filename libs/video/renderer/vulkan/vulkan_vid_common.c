@@ -370,9 +370,9 @@ qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 static int
 renderpass_cmp (const void *_a, const void *_b)
 {
-	const qfv_renderpass_t *a = _a;
-	const qfv_renderpass_t *b = _b;
-	return a->order - b->order;
+	__auto_type a = (const qfv_renderpass_t **) _a;
+	__auto_type b = (const qfv_renderpass_t **) _b;
+	return (*a)->order - (*b)->order;
 }
 
 void
