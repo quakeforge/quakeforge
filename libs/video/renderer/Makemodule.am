@@ -195,10 +195,14 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 
 pl_quake_def_src = libs/video/renderer/vulkan/pl_quake_def.plist
 pl_quake_def_gen = libs/video/renderer/vulkan/pl_quake_def.plc
+pl_output_src = libs/video/renderer/vulkan/pl_output.plist
+pl_output_gen = libs/video/renderer/vulkan/pl_output.plc
 rp_deferred_src = libs/video/renderer/vulkan/rp_deferred.plist
 rp_deferred_gen = libs/video/renderer/vulkan/rp_deferred.plc
 rp_forward_src = libs/video/renderer/vulkan/rp_forward.plist
 rp_forward_gen = libs/video/renderer/vulkan/rp_forward.plc
+rp_output_src = libs/video/renderer/vulkan/rp_output.plist
+rp_output_gen = libs/video/renderer/vulkan/rp_output.plc
 rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
 rp_shadow_gen = libs/video/renderer/vulkan/rp_shadow.plc
 
@@ -243,6 +247,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
+	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
 	libs/video/renderer/vulkan/vulkan_renderpass.c \
@@ -259,8 +264,10 @@ libs/video/renderer/vulkan/vulkan_vid_common.lo: \
 	libs/video/renderer/vulkan/vulkan_vid_common.c \
 	$(vkparse_src) \
 	$(pl_quake_def_gen) \
+	$(pl_output_gen) \
 	${rp_deferred_gen} \
 	$(rp_forward_gen) \
+	$(rp_output_gen) \
 	${rp_shadow_gen}
 
 
@@ -346,6 +353,8 @@ iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
 iqmf_src = $(vkshaderpath)/iqm.frag
 iqmf_c = $(vkshaderpath)/iqm.frag.spvc
+output_src = $(vkshaderpath)/output.frag
+output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
@@ -417,6 +426,8 @@ $(iqmv_c): $(iqmv_src)
 
 $(iqmf_c): $(iqmf_src)
 
+$(output_c): $(output_src)
+
 $(passthrough_c): $(passthrough_src)
 
 $(fstriangle_c): $(fstriangle_src)
@@ -457,6 +468,7 @@ vkshader_c = \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
 	$(iqmf_c) \
+	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
 	$(pushcolor_c) \
@@ -494,8 +506,10 @@ BUILT_SOURCES += $(shader_gen)
 EXTRA_DIST += \
 	$(rp_deferred_src) \
 	$(rp_forward_src) \
+	$(rp_output_src) \
 	$(rp_shadow_src) \
 	$(pl_quake_def_src) \
+	$(pl_output_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	libs/video/renderer/vulkan/shader/alias.frag \

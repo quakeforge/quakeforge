@@ -50,6 +50,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
@@ -94,7 +95,9 @@ vulkan_R_Init (void)
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
+
 	Vulkan_CreateRenderPasses (vulkan_ctx);
+	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Scene_Init (vulkan_ctx);
@@ -318,11 +321,11 @@ vulkan_begin_frame (void)
 			.format    = vulkan_ctx->swapchain->format,
 			.view_list = vulkan_ctx->swapchain->imageViews->a,
 		};
-		vulkan_ctx->main_renderpass->viewport.width = output.extent.width;
-		vulkan_ctx->main_renderpass->viewport.height = output.extent.height;
-		vulkan_ctx->main_renderpass->scissor.extent = output.extent;
+		vulkan_ctx->output_renderpass->viewport.width = output.extent.width;
+		vulkan_ctx->output_renderpass->viewport.height = output.extent.height;
+		vulkan_ctx->output_renderpass->scissor.extent = output.extent;
 		vulkan_ctx->output = output;
-		Vulkan_CreateAttachments (vulkan_ctx, vulkan_ctx->main_renderpass);
+		Vulkan_CreateAttachments (vulkan_ctx, vulkan_ctx->output_renderpass);
 		QFV_AcquireNextImage (vulkan_ctx->swapchain,
 								   frame->imageAvailableSemaphore,
 								   0, &imageIndex);
@@ -373,7 +376,7 @@ vulkan_set_2d (int scaled)
 	float       right = left + vid.width / scale;
 	float       bottom = top + vid.height / scale;
 	QFV_Orthographic (mat->Projection2d, left, right, top, bottom, 0, 99999);
-
+	mat->ScreenSize = (vec2f_t) { 1.0 / vid.width, 1.0 / vid.height };
 	mctx->dirty = mctx->frames.size;
 }
 
@@ -776,6 +779,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
+	Vulkan_Output_Shutdown (vulkan_ctx);
 
 	Vulkan_Palette_Shutdown (vulkan_ctx);
 	Vulkan_Texture_Shutdown (vulkan_ctx);

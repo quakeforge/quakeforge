@@ -40,6 +40,7 @@
 
 enum {
 	QFV_rp_shadowmap,
+	QFV_rp_preoutput,
 	QFV_rp_main,
 	QFV_rp_output,
 };

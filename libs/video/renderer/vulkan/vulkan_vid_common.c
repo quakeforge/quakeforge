@@ -53,6 +53,7 @@
 
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_main.h"
+#include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
 
@@ -67,6 +68,10 @@ static exprsym_t builtin_plist_syms[] = {
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/pl_quake_def.plc"
 		},
+	{ .name = "qf_output",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/pl_output.plc"
+		},
 	{ .name = "deferred",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_deferred.plc"
@@ -78,6 +83,10 @@ static exprsym_t builtin_plist_syms[] = {
 	{ .name = "forward",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_forward.plc"
+		},
+	{ .name = "output",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_output.plc"
 		},
 	{}
 };
@@ -378,6 +387,7 @@ renderpass_cmp (const void *_a, const void *_b)
 void
 Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
+	Vulkan_Output_CreateRenderPasses (ctx);
 	Vulkan_Main_CreateRenderPasses (ctx);
 	Vulkan_Lighting_CreateRenderPasses (ctx);
 

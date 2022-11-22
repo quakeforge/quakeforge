@@ -1,0 +1,90 @@
+{
+	flat_color_image_template = {
+		imageType = `2d;
+		samples = 1;
+		extent = {
+			width = $output.extent.width;
+			height = $output.extent.height;
+			depth = 1;
+		};
+		mipLevels = 1;
+		arrayLayers = 1;
+		tiling = optimal;
+		usage = color_attachment|sampled;
+		initialLayout = undefined;
+	};
+	images = {
+		color = {
+			@inherit = $properties.flat_color_image_template;
+			format = r16g16b16a16_sfloat;
+		};
+	};
+	flat_color_view_template = {
+		viewType = VK_IMAGE_VIEW_TYPE_2D;
+		components = {
+			r = identity;
+			g = identity;
+			b = identity;
+			a = identity;
+		};
+		subresourceRange = {
+			aspectMask = color;
+			levelCount = 1;
+			layerCount = 1;
+		};
+	};
+	imageViews = {
+		color = {
+			@inherit = $properties.flat_color_view_template;
+			image = color;
+			format = $properties.images.color.format;
+		};
+	};
+	framebuffer = {
+		renderPass = output;
+		attachments = ($output.view);
+		width = $output.extent.width;
+		height = $output.extent.height;
+		layers = 1;
+	};
+	clearValues = (
+		{ color = "[0, 0, 0, 1]"; },	// output
+	);
+	attachment_template = {
+		samples = 1;
+		loadOp = dont_care;
+		storeOp = dont_care;
+		stencilLoadOp = dont_care;
+		stencilStoreOp = dont_care;
+		initialLayout = undefined;
+		finalLayout = color_attachment_optimal;
+	};
+	info = {
+		color = "[0.9, 0.9, 0.9, 1]";
+		subpass_info = (
+			{ name = compose; color = "[ 0.9,  0.9,  0.9, 1]" },
+		);
+	};
+	renderpass = {
+		attachments = (
+			{
+				@inherit = $properties.attachment_template;
+				format = $output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = present_src_khr;
+			},
+		);
+		subpasses = (
+			{	// 0 output
+				pipelineBindPoint = graphics;
+				colorAttachments = (
+					{	// output
+						attachment = 0;
+						layout = color_attachment_optimal;
+					},
+				);
+			},
+		);
+	};
+}

@@ -109,6 +109,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/output.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
@@ -157,6 +159,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
 	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
+	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },

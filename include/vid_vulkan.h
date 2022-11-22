@@ -75,14 +75,14 @@ typedef struct vulkan_ctx_s {
 	struct drawctx_s *draw_context;
 	struct lightingctx_s *lighting_context;
 	struct composectx_s *compose_context;
+	struct outputctx_s *output_context;
 
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	size_t      curFrame;
 	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
-	//FIXME for resize, but should be a set
-	struct qfv_renderpass_s *main_renderpass;
+	struct qfv_renderpass_s *output_renderpass;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);
