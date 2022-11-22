@@ -290,6 +290,22 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 	return rp;
 }
 
+qfv_renderpass_t *
+Vulkan_CreateFunctionPass (vulkan_ctx_t *ctx, const char *name,
+						   qfv_draw_t function)
+{
+	qfv_renderpass_t *rp = calloc (1, sizeof (qfv_renderpass_t));
+	rp->name = name;
+	rp->draw = function;
+
+	DARRAY_INIT (&rp->frames, 4);
+	DARRAY_RESIZE (&rp->frames, ctx->frames.size);
+	for (size_t i = 0; i < rp->frames.size; i++) {
+		init_renderframe (ctx, rp, &rp->frames.a[i]);
+	}
+	return rp;
+}
+
 void
 Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 {

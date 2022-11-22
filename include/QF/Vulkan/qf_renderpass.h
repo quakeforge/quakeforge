@@ -64,6 +64,9 @@ qfv_renderpass_t *Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx,
 										   const char *name,
 										   struct qfv_output_s *output,
 										   qfv_draw_t draw);
+qfv_renderpass_t *Vulkan_CreateFunctionPass (struct vulkan_ctx_s *ctx,
+											 const char *name,
+											 qfv_draw_t function);
 void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx,
 							   qfv_renderpass_t *renderpass);
 void Vulkan_CreateAttachments (struct vulkan_ctx_s *ctx,
