@@ -775,9 +775,10 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
+	Vulkan_DestroyRenderPasses (vulkan_ctx);
+
 	Vulkan_Palette_Shutdown (vulkan_ctx);
 	Vulkan_Texture_Shutdown (vulkan_ctx);
-	Vulkan_DestroyRenderPasses (vulkan_ctx);
 
 	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
