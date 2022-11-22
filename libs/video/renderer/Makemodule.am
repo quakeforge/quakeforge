@@ -197,10 +197,10 @@ pl_quake_def_src = libs/video/renderer/vulkan/pl_quake_def.plist
 pl_quake_def_gen = libs/video/renderer/vulkan/pl_quake_def.plc
 rp_deferred_src = libs/video/renderer/vulkan/rp_deferred.plist
 rp_deferred_gen = libs/video/renderer/vulkan/rp_deferred.plc
-rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
-rp_shadow_gen = libs/video/renderer/vulkan/rp_shadow.plc
 rp_forward_src = libs/video/renderer/vulkan/rp_forward.plist
 rp_forward_gen = libs/video/renderer/vulkan/rp_forward.plc
+rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
+rp_shadow_gen = libs/video/renderer/vulkan/rp_shadow.plc
 
 video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
@@ -260,8 +260,8 @@ libs/video/renderer/vulkan/vulkan_vid_common.lo: \
 	$(vkparse_src) \
 	$(pl_quake_def_gen) \
 	${rp_deferred_gen} \
-	${rp_shadow_gen} \
-	$(rp_forward_gen)
+	$(rp_forward_gen) \
+	${rp_shadow_gen}
 
 
 qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
@@ -493,8 +493,8 @@ BUILT_SOURCES += $(shader_gen)
 
 EXTRA_DIST += \
 	$(rp_deferred_src) \
-	$(rp_shadow_src) \
 	$(rp_forward_src) \
+	$(rp_shadow_src) \
 	$(pl_quake_def_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
