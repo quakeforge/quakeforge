@@ -152,8 +152,9 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 			 void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
+	parsectx_t *pctx = context;
 	__auto_type etype = (exprtype_t *) field->data;
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { etype, data };
 	ectx.result = &result;
 	ectx.item = item;
@@ -184,8 +185,9 @@ parse_int32_t (const plfield_t *field, const plitem_t *item,
 	// use size_t (and cexpr_size_t) for val so references to array sizes
 	// can be used
 	size_t      val = 0;
+	parsectx_t *pctx = context;
 	exprval_t   result = { &cexpr_size_t, &val };
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	ectx.result = &result;
 	ectx.item = item;
 	const char *valstr = PL_String (item);
@@ -212,8 +214,9 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 	// use size_t (and cexpr_size_t) for val so references to array sizes
 	// can be used
 	size_t      val = 0;
+	parsectx_t *pctx = context;
 	exprval_t   result = { &cexpr_size_t, &val };
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	ectx.result = &result;
 	ectx.item = item;
 	const char *valstr = PL_String (item);
@@ -246,9 +249,10 @@ parse_enum (const plfield_t *field, const plitem_t *item,
 {
 	int         ret = 1;
 	__auto_type enm = (exprenum_t *) field->data;
-	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { enm->type, data };
-	ectx.parent = ((parsectx_t *)context)->ectx;
+	ectx.parent = pctx->ectx;
 	ectx.symtab = enm->symtab;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
@@ -416,7 +420,8 @@ static int
 parse_inherit (const plfield_t *field, const plitem_t *item,
 			   void *data, plitem_t *messages, void *context)
 {
-	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
 	plitem_t   *inheritItem = 0;
 	exprval_t   result = { &cexpr_plitem, &inheritItem };
 	ectx.result = &result;
@@ -509,11 +514,10 @@ resource_path (vulkan_ctx_t *ctx, const char *prefix, const char *name)
 
 static int
 parse_VkRenderPass (const plitem_t *item, void **data,
-					plitem_t *messages, parsectx_t *context)
+					plitem_t *messages, parsectx_t *pctx)
 {
 	__auto_type handle = (VkRenderPass *) data[0];
 	int         ret = 1;
-	parsectx_t *pctx = context;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
 
@@ -545,10 +549,10 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 
 static int
 parse_VkShaderModule (const plitem_t *item, void **data,
-					  plitem_t *messages, parsectx_t *context)
+					  plitem_t *messages, parsectx_t *pctx)
 {
 	__auto_type handle = (VkShaderModule *) data[0];
-	vulkan_ctx_t *ctx = context->vctx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 	qfv_device_t *device = ctx->device;
 
 	const char *name = PL_String (item);
@@ -607,12 +611,12 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 
 static int
 parse_VkPipelineLayout (const plitem_t *item, void **data,
-						plitem_t *messages, parsectx_t *context)
+						plitem_t *messages, parsectx_t *pctx)
 {
 	__auto_type handle = (VkPipelineLayout *) data[0];
 	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "pipelineLayouts", name);
@@ -630,7 +634,7 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkPipelineLayout layout;
-		layout = QFV_ParsePipelineLayout (ctx, setItem, context->properties);
+		layout = QFV_ParsePipelineLayout (ctx, setItem, pctx->properties);
 		*handle = (VkPipelineLayout) layout;
 
 		// path not guaranteed to survive cexpr_eval_string due to va
@@ -642,12 +646,12 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 
 static int
 parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
-			   parsectx_t *context)
+			   parsectx_t *pctx)
 {
 	__auto_type handle = (VkImage *) data[0];
 	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "images", name);
@@ -665,7 +669,7 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkImage image;
-		image = QFV_ParseImage (ctx, imageItem, context->properties);
+		image = QFV_ParseImage (ctx, imageItem, pctx->properties);
 		*handle = (VkImage) image;
 
 		// path not guaranteed to survive cexpr_eval_string due to va
@@ -685,13 +689,13 @@ exprtype_t VkImageView_type = {
 
 static int
 parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
-				   plitem_t *messages, void *_context)
+				   plitem_t *messages, void *context)
 {
-	parsectx_t *context = _context;
+	parsectx_t *pctx = context;
 	__auto_type handle = (VkImageView *) data;
 	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "imageViews", name);
@@ -715,7 +719,7 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 			imageView = *(VkImageView *) value->value;
 		} else if (value->type == &cexpr_plitem) {
 			imageView = QFV_ParseImageView (ctx, imageViewItem,
-											context->properties);
+											pctx->properties);
 			// path not guaranteed to survive cexpr_eval_string due to va
 			path = resource_path (ctx, "imageViews", name);
 			QFV_AddHandle (ctx->imageViews, path, (uint64_t) imageView);
@@ -866,7 +870,7 @@ static hashtab_t *enum_symtab;
 
 static int
 parse_BasePipeline (const plitem_t *item, void **data,
-					plitem_t *messages, parsectx_t *context)
+					plitem_t *messages, parsectx_t *pctx)
 {
 	*(VkPipeline *) data = 0;
 	PL_Message (messages, item, "not implemented");
@@ -914,7 +918,7 @@ static exprtab_t data_array_symtab = {
 
 static int
 parse_specialization_data (const plitem_t *item, void **data,
-						   plitem_t *messages, parsectx_t *context)
+						   plitem_t *messages, parsectx_t *pctx)
 {
 	size_t     *size_ptr = (size_t *) data[0];
 	void      **data_ptr = (void **) data[1];
@@ -923,16 +927,16 @@ parse_specialization_data (const plitem_t *item, void **data,
 		const void *bindata = PL_BinaryData (item);
 		size_t      binsize = PL_BinarySize (item);
 
-		*data_ptr = vkparse_alloc (context, binsize);
+		*data_ptr = vkparse_alloc (pctx, binsize);
 		memcpy (*data_ptr, bindata, binsize);
 		*size_ptr = binsize;
 		return 1;
 	}
 
 	data_array_t *da= 0;
-	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { &data_array_type, &da };
-	ectx.parent = ((parsectx_t *)context)->ectx;
+	ectx.parent = pctx->ectx;
 	ectx.symtab = &data_array_symtab;
 	ectx.result = &result;
 	ectx.item = item;
@@ -1025,14 +1029,14 @@ root_symtab_init (void)
 void
 QFV_InitParse (vulkan_ctx_t *ctx)
 {
-	exprctx_t   context = {};
+	exprctx_t   ectx = {};
 	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &ctx->hashctx);
 	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &ctx->hashctx);
-	context.hashctx = &ctx->hashctx;
-	vkgen_init_symtabs (&context);
-	cexpr_init_symtab (&qfv_output_t_symtab, &context);
-	cexpr_init_symtab (&vulkan_frameset_t_symtab, &context);
-	cexpr_init_symtab (&data_array_symtab, &context);
+	ectx.hashctx = &ctx->hashctx;
+	vkgen_init_symtabs (&ectx);
+	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
+	cexpr_init_symtab (&vulkan_frameset_t_symtab, &ectx);
+	cexpr_init_symtab (&data_array_symtab, &ectx);
 
 	if (!ctx->setLayouts) {
 		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
