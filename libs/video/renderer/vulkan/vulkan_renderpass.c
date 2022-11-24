@@ -159,7 +159,7 @@ Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 	rp->framebuffers = QFV_AllocFrameBuffers (ctx->swapchain->numImages,
 											  malloc);
 	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		ctx->output.view = ctx->output.view_list[i];
+		ctx->script_context->output.view = ctx->script_context->output.view_list[i];
 		rp->framebuffers->a[i] = QFV_ParseFramebuffer (ctx, item,
 													   rp->renderpassDef);
 	}
@@ -230,14 +230,14 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 
 	plitem_t   *rp_cfg = get_rp_item (ctx, rp, "renderpass");
 	if (rp_cfg) {
-		hashtab_t  *tab = ctx->renderpasses;
+		hashtab_t  *tab = ctx->script_context->renderpasses;
 		const char *path;
 		path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
 		__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
 		if (renderpass) {
 			rp->renderpass = renderpass;
 		} else {
-			ctx->output = *output;
+			Vulkan_Script_SetOutput (ctx, output);
 			rp->renderpass =  QFV_ParseRenderPass (ctx, rp_cfg,
 												   rp->renderpassDef);
 			QFV_AddHandle (tab, path, (uint64_t) rp->renderpass);

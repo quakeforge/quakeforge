@@ -67,6 +67,14 @@ enum {
 	QFV_attachSwapchain,
 };
 
+//FIXME name
+typedef struct qfv_output_s {
+	VkExtent2D  extent;
+	VkImageView view;
+	VkFormat    format;
+	VkImageView *view_list;	// per frame
+} qfv_output_t;
+
 struct vulkan_ctx_s;
 void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);

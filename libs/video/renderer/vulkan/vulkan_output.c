@@ -54,6 +54,7 @@
 #include "QF/Vulkan/swapchain.h"
 
 #include "vid_vulkan.h"
+#include "vkparse.h"//FIXME
 
 static void
 update_input (qfv_renderframe_t *rFrame)
@@ -165,8 +166,8 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&octx->frames, frames);
 	octx->frames.grow = 0;
 
-	__auto_type pld = ctx->pipelineDef;
-	ctx->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
+	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
+	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
 
 	octx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "output");
 	octx->layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
@@ -192,7 +193,7 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 							 oframe->cmd, "cmd:output");
 	}
 
-	ctx->pipelineDef = pld;
+	ctx->script_context->pipelineDef = pld;
 
 	free (sets);
 	qfvPopDebug (ctx);

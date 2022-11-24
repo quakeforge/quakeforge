@@ -59,144 +59,7 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
-
 #include "vkparse.h"
-#include "libs/video/renderer/vulkan/vkparse.hinc"
-
-static exprsym_t builtin_plist_syms[] = {
-	{ .name = "quake_deferred",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/pl_quake_def.plc"
-		},
-	{ .name = "qf_output",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/pl_output.plc"
-		},
-	{ .name = "deferred",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_deferred.plc"
-		},
-	{ .name = "shadow",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_shadow.plc"
-		},
-	{ .name = "forward",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_forward.plc"
-		},
-	{ .name = "output",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_output.plc"
-		},
-	{}
-};
-static plitem_t **builtin_plists;
-static exprtab_t builtin_configs = { .symbols = builtin_plist_syms };
-
-int vulkan_frame_count;
-static cvar_t vulkan_frame_count_cvar = {
-	.name = "vulkan_frame_count",
-	.description =
-		"Number of frames to render in the background. More frames can "
-		"increase performance, but at the cost of latency. The default of 3 is"
-		" recommended.",
-	.default_value = "3",
-	.flags = CVAR_NONE,
-	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
-};
-int vulkan_presentation_mode;
-static cvar_t vulkan_presentation_mode_cvar = {
-	.name = "vulkan_presentation_mode",
-	.description =
-		"desired presentation mode (may fall back to fifo).",
-	.default_value = "mailbox",
-	.flags = CVAR_NONE,
-	.value = {
-		.type = &VkPresentModeKHR_type,
-		.value = &vulkan_presentation_mode,
-	},
-};
-int msaaSamples;
-static cvar_t msaaSamples_cvar = {
-	.name = "msaaSamples",
-	.description =
-		"desired MSAA sample size.",
-	.default_value = "VK_SAMPLE_COUNT_1_BIT",
-	.flags = CVAR_NONE,
-	.value = { .type = &VkSampleCountFlagBits_type, .value = &msaaSamples },
-};
-static exprenum_t validation_enum;
-static exprtype_t validation_type = {
-	.name = "vulkan_use_validation",
-	.size = sizeof (int),
-	.binops = cexpr_flag_binops,
-	.unops = cexpr_flag_unops,
-	.data = &validation_enum,
-	.get_string = cexpr_flags_get_string,
-};
-
-static int validation_values[] = {
-	0,
-	VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
-};
-static exprsym_t validation_symbols[] = {
-	{"none", &validation_type, validation_values + 0},
-	{"all", &validation_type, validation_values + 1},
-	{}
-};
-static exprtab_t validation_symtab = {
-	validation_symbols,
-};
-static exprenum_t validation_enum = {
-	&validation_type,
-	&validation_symtab,
-};
-static cvar_t vulkan_use_validation_cvar = {
-	.name = "vulkan_use_validation",
-	.description =
-		"enable KRONOS Validation Layer if available (requires instance "
-		"restart).",
-	.default_value = "error|warning",
-	.flags = CVAR_NONE,
-	.value = { .type = &validation_type, .value = &vulkan_use_validation },
-};
-
-static void
-vulkan_frame_count_f (void *data, const cvar_t *cvar)
-{
-	if (vulkan_frame_count < 1) {
-		Sys_Printf ("Invalid frame count: %d. Setting to 1\n",
-					vulkan_frame_count);
-		vulkan_frame_count = 1;
-	}
-}
-
-static void
-Vulkan_Init_Cvars (void)
-{
-	int         num_syms = 0;
-	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
-		 sym->name; sym++, num_syms++) {
-	}
-	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
-	}
-	validation_symtab.symbols = calloc (num_syms + 1, sizeof (exprsym_t));
-	num_syms = 0;
-	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
-		 sym->name; sym++, num_syms++) {
-		validation_symtab.symbols[num_syms] = *sym;
-		validation_symtab.symbols[num_syms].type = &validation_type;
-	}
-	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
-		validation_symtab.symbols[num_syms] = *sym;
-	}
-	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
-	// FIXME implement fallback choices (instead of just fifo)
-	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
-	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);
-	Cvar_Register (&msaaSamples_cvar, 0, 0);
-	R_Init_Cvars ();
-}
 
 static const char *instance_extensions[] = {
 	VK_KHR_SURFACE_EXTENSION_NAME,
@@ -214,27 +77,17 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
 	Sys_MaskPrintf (SYS_vulkan, "Vulkan_Init_Common\n");
 
-	QFV_InitParse (ctx);
 	Vulkan_Init_Cvars ();
+	R_Init_Cvars ();
+	Vulkan_Script_Init (ctx);
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0,
 										instance_extensions);//FIXME version
 	DARRAY_INIT (&ctx->renderPasses, 4);
 }
 
-static void
-clear_table (hashtab_t **table)
-{
-	if (*table) {
-		hashtab_t  *tab = *table;
-		*table = 0;
-		Hash_DelTable (tab);
-	}
-}
-
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
-	PL_Free (ctx->pipelineDef);
 	if (ctx->capture) {
 		QFV_DestroyCapture (ctx->capture);
 	}
@@ -246,11 +99,7 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	}
 	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
 											   ctx->surface, 0);
-	clear_table (&ctx->pipelineLayouts);
-	clear_table (&ctx->setLayouts);
-	clear_table (&ctx->shaderModules);
-	clear_table (&ctx->descriptorPools);
-	clear_table (&ctx->samplers);
+	Vulkan_Script_Shutdown (ctx);
 	if (ctx->device) {
 		QFV_DestroyDevice (ctx->device);
 	}
@@ -304,78 +153,6 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
 }
 
-static void
-build_configs (vulkan_ctx_t *ctx)
-{
-	int         num_plists = 0;
-	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		num_plists++;
-	}
-	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
-	num_plists = 0;
-	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		plitem_t   *item = PL_GetPropertyList (sym->value, &ctx->hashctx);
-		if (!item) {
-			// Syntax errors in the compiled-in plists are unrecoverable
-			Sys_Error ("Error parsing plist for %s", sym->name);
-		}
-		builtin_plists[num_plists] = item;
-		sym->value = &builtin_plists[num_plists];
-		sym->type = &cexpr_plitem;
-		num_plists++;
-	}
-	exprctx_t   ectx = { .hashctx = &ctx->hashctx };
-	cexpr_init_symtab (&builtin_configs, &ectx);
-}
-
-plitem_t *
-Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
-{
-	if (!builtin_configs.tab) {
-		build_configs (ctx);
-	}
-
-	plitem_t   *config = 0;
-	exprval_t   result = { .type = &cexpr_plitem, .value = &config };
-	exprctx_t   ectx = {
-		.result = &result,
-		.symtab = &builtin_configs,
-		.memsuper = new_memsuper (),
-		.hashctx = &ctx->hashctx,
-		.messages = PL_NewArray (),
-	};
-	if (cexpr_eval_string (name, &ectx)) {
-		dstring_t  *msg = dstring_newstr ();
-
-		for (int i = 0; i < PL_A_NumObjects (ectx.messages); i++) {
-			dasprintf (msg, "%s\n",
-					   PL_String (PL_ObjectAtIndex (ectx.messages, i)));
-		}
-		Sys_Printf ("%s", msg->str);
-		dstring_delete (msg);
-		config = 0;
-	}
-	PL_Free (ectx.messages);
-	delete_memsuper (ectx.memsuper);
-	return config;
-}
-
-static plitem_t *
-qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
-{
-	if (!ctx->pipelineDef) {
-		ctx->pipelineDef = Vulkan_GetConfig (ctx, "quake_deferred");
-	}
-
-	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading %s\n", name);
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found %s def\n", name);
-	}
-	return item;
-}
-
 static int
 renderpass_cmp (const void *_a, const void *_b)
 {
@@ -401,143 +178,6 @@ Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < ctx->renderPasses.size; i++) {
 		Vulkan_DestroyRenderPass (ctx, ctx->renderPasses.a[i]);
 	}
-}
-
-VkPipeline
-Vulkan_CreateComputePipeline (vulkan_ctx_t *ctx, const char *name)
-{
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
-	}
-	VkPipeline pipeline = QFV_ParseComputePipeline (ctx, item,
-													 ctx->pipelineDef);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
-						 va (ctx->va_ctx, "pipeline:%s", name));
-	return pipeline;
-}
-
-VkPipeline
-Vulkan_CreateGraphicsPipeline (vulkan_ctx_t *ctx, const char *name)
-{
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
-	}
-	VkPipeline pipeline = QFV_ParseGraphicsPipeline (ctx, item,
-													 ctx->pipelineDef);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
-						 va (ctx->va_ctx, "pipeline:%s", name));
-	return pipeline;
-}
-
-VkDescriptorPool
-Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
-{
-	hashtab_t  *tab = ctx->descriptorPools;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".descriptorPools.%s", name);
-	__auto_type pool = (VkDescriptorPool) QFV_GetHandle (tab, path);
-	if (pool) {
-		return pool;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "descriptorPools");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading descriptor pool %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor pool def %s\n",
-						name);
-	}
-	pool = QFV_ParseDescriptorPool (ctx, item, ctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) pool);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool,
-						 va (ctx->va_ctx, "descriptor_pool:%s", name));
-	return pool;
-}
-
-VkPipelineLayout
-Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
-{
-	hashtab_t  *tab = ctx->pipelineLayouts;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
-	__auto_type layout = (VkPipelineLayout) QFV_GetHandle (tab, path);
-	if (layout) {
-		return layout;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelineLayouts");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline layout %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline layout def %s\n",
-						name);
-	}
-	layout = QFV_ParsePipelineLayout (ctx, item, ctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) layout);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout,
-						 va (ctx->va_ctx, "pipeline_layout:%s", name));
-	return layout;
-}
-
-VkSampler
-Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
-{
-	hashtab_t  *tab = ctx->samplers;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".samplers.%s", name);
-	__auto_type sampler = (VkSampler) QFV_GetHandle (tab, path);
-	if (sampler) {
-		return sampler;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "samplers");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading sampler %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found sampler def %s\n", name);
-	}
-	sampler = QFV_ParseSampler (ctx, item, ctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) sampler);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_SAMPLER, sampler,
-						 va (ctx->va_ctx, "sampler:%s", name));
-	return sampler;
-}
-
-VkDescriptorSetLayout
-Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
-{
-	hashtab_t  *tab = ctx->setLayouts;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
-	__auto_type set = (VkDescriptorSetLayout) QFV_GetHandle (tab, path);
-	if (set) {
-		return set;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "setLayouts");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading descriptor set %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor set def %s\n",
-						name);
-	}
-	set = QFV_ParseDescriptorSetLayout (ctx, item, ctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) set);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
-	return set;
 }
 
 void

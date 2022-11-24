@@ -328,7 +328,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	// lighting_context initialized in Vulkan_Lighting_CreateRenderPasses
 
-	ctx->output = (qfv_output_t) {.format = VK_FORMAT_X8_D24_UNORM_PACK32 };
+	Vulkan_Script_SetOutput (ctx,
+			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
 	lightingctx_t *lctx = ctx->lighting_context;
 	plitem_t   *rp_def = lctx->qfv_renderpass->renderpassDef;
 	plitem_t   *rp_cfg = PL_ObjectForKey (rp_def, "renderpass_6");

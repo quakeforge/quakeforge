@@ -256,12 +256,8 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_texture.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
-libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
-
-libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
-
-libs/video/renderer/vulkan/vulkan_vid_common.lo: \
-	libs/video/renderer/vulkan/vulkan_vid_common.c \
+libs/video/renderer/vulkan/vkparse.lo: \
+	libs/video/renderer/vulkan/vkparse.c \
 	$(vkparse_src) \
 	$(pl_quake_def_gen) \
 	$(pl_output_gen) \
@@ -269,6 +265,10 @@ libs/video/renderer/vulkan/vulkan_vid_common.lo: \
 	$(rp_forward_gen) \
 	$(rp_output_gen) \
 	${rp_shadow_gen}
+
+libs/video/renderer/vulkan/shader.lo: \
+	libs/video/renderer/vulkan/shader.c \
+	$(vkshader_c)
 
 
 qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)

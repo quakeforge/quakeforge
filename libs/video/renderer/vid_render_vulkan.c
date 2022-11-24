@@ -76,6 +76,7 @@
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_vulkan.h"
+#include "vulkan/vkparse.h"
 
 static vulkan_ctx_t *vulkan_ctx;
 
@@ -324,7 +325,7 @@ vulkan_begin_frame (void)
 		vulkan_ctx->output_renderpass->viewport.width = output.extent.width;
 		vulkan_ctx->output_renderpass->viewport.height = output.extent.height;
 		vulkan_ctx->output_renderpass->scissor.extent = output.extent;
-		vulkan_ctx->output = output;
+		Vulkan_Script_SetOutput (vulkan_ctx, &output);
 		Vulkan_CreateAttachments (vulkan_ctx, vulkan_ctx->output_renderpass);
 		QFV_AcquireNextImage (vulkan_ctx->swapchain,
 								   frame->imageAvailableSemaphore,

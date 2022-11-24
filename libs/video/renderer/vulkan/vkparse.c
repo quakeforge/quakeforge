@@ -32,6 +32,7 @@
 
 #include "QF/cmem.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/va.h"
@@ -520,12 +521,13 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 	int         ret = 1;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, 0, name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkRenderPass: %s\n", path);
 
-	*handle = (VkRenderPass) QFV_GetHandle (ctx->renderpasses, path);
+	*handle = (VkRenderPass) QFV_GetHandle (sctx->renderpasses, path);
 	if (*handle) {
 		return 1;
 	}
@@ -542,7 +544,7 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 
 		// path not guaranteed to survive cexpr_eval_string due to va
 		path = resource_path (ctx, 0, name);
-		QFV_AddHandle (ctx->renderpasses, path, (uint64_t) setLayout);
+		QFV_AddHandle (sctx->renderpasses, path, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -554,9 +556,10 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	__auto_type handle = (VkShaderModule *) data[0];
 	vulkan_ctx_t *ctx = pctx->vctx;
 	qfv_device_t *device = ctx->device;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
-	*handle = (VkShaderModule) QFV_GetHandle (ctx->shaderModules, name);
+	*handle = (VkShaderModule) QFV_GetHandle (sctx->shaderModules, name);
 	if (*handle) {
 		return 1;
 	}
@@ -567,7 +570,7 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 		PL_Message (messages, item, "could not find shader %s", name);
 		return 0;
 	}
-	QFV_AddHandle (ctx->shaderModules, name, (uint64_t) *handle);
+	QFV_AddHandle (sctx->shaderModules, name, (uint64_t) *handle);
 	return 1;
 }
 
@@ -580,13 +583,14 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 	parsectx_t *pctx = context;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "setLayouts", name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkDescriptorSetLayout: %s\n",
 					path);
 
-	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, path);
+	*handle = (VkDescriptorSetLayout) QFV_GetHandle (sctx->setLayouts, path);
 	if (*handle) {
 		return 1;
 	}
@@ -604,7 +608,7 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 
 		// path not guaranteed to survive cexpr_eval_string due to va
 		path = resource_path (ctx, "setLayouts", name);
-		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
+		QFV_AddHandle (sctx->setLayouts, path, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -617,12 +621,13 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	int         ret = 1;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "pipelineLayouts", name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkPipelineLayout: %s\n", path);
 
-	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, path);
+	*handle = (VkPipelineLayout) QFV_GetHandle (sctx->pipelineLayouts, path);
 	if (*handle) {
 		return 1;
 	}
@@ -639,7 +644,7 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 
 		// path not guaranteed to survive cexpr_eval_string due to va
 		path = resource_path (ctx, "pipelineLayouts", name);
-		QFV_AddHandle (ctx->pipelineLayouts, path, (uint64_t) layout);
+		QFV_AddHandle (sctx->pipelineLayouts, path, (uint64_t) layout);
 	}
 	return ret;
 }
@@ -652,12 +657,13 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	int         ret = 1;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "images", name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImage: %s\n", path);
 
-	*handle = (VkImage) QFV_GetHandle (ctx->images, path);
+	*handle = (VkImage) QFV_GetHandle (sctx->images, path);
 	if (*handle) {
 		return 1;
 	}
@@ -674,7 +680,7 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 
 		// path not guaranteed to survive cexpr_eval_string due to va
 		path = resource_path (ctx, "images", name);
-		QFV_AddHandle (ctx->images, path, (uint64_t) image);
+		QFV_AddHandle (sctx->images, path, (uint64_t) image);
 	}
 	return ret;
 }
@@ -696,12 +702,13 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 	int         ret = 1;
 	exprctx_t   ectx = *pctx->ectx;
 	vulkan_ctx_t *ctx = pctx->vctx;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
 	const char *path = resource_path (ctx, "imageViews", name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImageView: %s\n", path);
 
-	*handle = (VkImageView) QFV_GetHandle (ctx->imageViews, path);
+	*handle = (VkImageView) QFV_GetHandle (sctx->imageViews, path);
 	if (*handle) {
 		return 1;
 	}
@@ -722,7 +729,7 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 											pctx->properties);
 			// path not guaranteed to survive cexpr_eval_string due to va
 			path = resource_path (ctx, "imageViews", name);
-			QFV_AddHandle (ctx->imageViews, path, (uint64_t) imageView);
+			QFV_AddHandle (sctx->imageViews, path, (uint64_t) imageView);
 		} else {
 			PL_Message (messages, item, "not a VkImageView");
 			return 0;
@@ -749,9 +756,10 @@ handleref_free (void *hr, void *_ctx)
 static void
 setLayout_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type layout = (VkDescriptorSetLayout) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -764,9 +772,10 @@ setLayout_free (void *hr, void *_ctx)
 static void
 shaderModule_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type module = (VkShaderModule) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -779,9 +788,10 @@ shaderModule_free (void *hr, void *_ctx)
 static void
 pipelineLayout_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type layout = (VkPipelineLayout) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -794,9 +804,10 @@ pipelineLayout_free (void *hr, void *_ctx)
 static void
 descriptorPool_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type pool = (VkDescriptorPool) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -809,9 +820,10 @@ descriptorPool_free (void *hr, void *_ctx)
 static void
 sampler_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type sampler = (VkSampler) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -824,9 +836,10 @@ sampler_free (void *hr, void *_ctx)
 static void
 image_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type image = (VkImage) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -839,9 +852,10 @@ image_free (void *hr, void *_ctx)
 static void
 imageView_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type imageView = (VkImageView) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -854,9 +868,10 @@ imageView_free (void *hr, void *_ctx)
 static void
 renderpass_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type renderpass = (VkRenderPass) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -995,9 +1010,10 @@ exprtype_t vulkan_frameset_t_type = {
 };
 
 static hashtab_t *
-handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
+handlref_symtab (void (*free_func)(void*,void*), scriptctx_t *sctx)
 {
-	return Hash_NewTable (23, handleref_getkey, free_func, ctx, &ctx->hashctx);
+	return Hash_NewTable (23, handleref_getkey, free_func, sctx,
+						  &sctx->hashctx);
 }
 
 static const char *
@@ -1026,30 +1042,6 @@ root_symtab_init (void)
 	cexpr_init_symtab (&root_symtab, &root_context);
 }
 
-void
-QFV_InitParse (vulkan_ctx_t *ctx)
-{
-	exprctx_t   ectx = {};
-	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &ctx->hashctx);
-	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &ctx->hashctx);
-	ectx.hashctx = &ctx->hashctx;
-	vkgen_init_symtabs (&ectx);
-	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
-	cexpr_init_symtab (&vulkan_frameset_t_symtab, &ectx);
-	cexpr_init_symtab (&data_array_symtab, &ectx);
-
-	if (!ctx->setLayouts) {
-		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
-		ctx->setLayouts = handlref_symtab (setLayout_free, ctx);
-		ctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, ctx);
-		ctx->descriptorPools = handlref_symtab (descriptorPool_free, ctx);
-		ctx->samplers = handlref_symtab (sampler_free, ctx);
-		ctx->images = handlref_symtab (image_free, ctx);
-		ctx->imageViews = handlref_symtab (imageView_free, ctx);
-		ctx->renderpasses = handlref_symtab (renderpass_free, ctx);
-	}
-}
-
 exprenum_t *
 QFV_GetEnum (const char *name)
 {
@@ -1060,11 +1052,12 @@ static int
 parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 			  plparser_t parser, void *object, plitem_t *properties)
 {
+	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
 	exprsym_t   var_syms[] = {
-		{"output", &qfv_output_t_type, &ctx->output},
+		{"output", &qfv_output_t_type, &sctx->output},
 		{"frames", &vulkan_frameset_t_type, &ctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
@@ -1076,7 +1069,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 
 	exprctx.external_variables = &vars_tab;
 	exprctx.messages = messages;
-	exprctx.hashctx = &ctx->hashctx;
+	exprctx.hashctx = &sctx->hashctx;
 	exprctx.memsuper = memsuper;
 
 	cexpr_init_symtab (&vars_tab, &exprctx);
@@ -1395,6 +1388,7 @@ parse_imageviewcreate_dict (const plfield_t *field, const plitem_t *item,
 qfv_imageset_t *
 QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 {
+	scriptctx_t *sctx = ctx->script_context;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	memsuper_t *memsuper = new_memsuper ();
@@ -1426,7 +1420,7 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 							 va (ctx->va_ctx, "image:%s", name));
 		qfvPopDebug (ctx);
 		name = resource_path (ctx, "images", name);
-		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
+		QFV_AddHandle (sctx->images, name, (uint64_t) set->a[i]);
 	}
 
 	delete_memsuper (memsuper);
@@ -1437,6 +1431,7 @@ qfv_imageviewset_t *
 QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 					   plitem_t *properties)
 {
+	scriptctx_t *sctx = ctx->script_context;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	memsuper_t *memsuper = new_memsuper ();
@@ -1465,7 +1460,7 @@ QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 
 		const char *name = PL_KeyAtIndex (item, i);
 		name = resource_path (ctx, "imageViews", name);
-		QFV_AddHandle (ctx->imageViews, name, (uint64_t) set->a[i]);
+		QFV_AddHandle (sctx->imageViews, name, (uint64_t) set->a[i]);
 	}
 
 	delete_memsuper (memsuper);
@@ -1593,4 +1588,410 @@ QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
 	}
 	delete_memsuper (memsuper);
 	return ret;
+}
+
+int vulkan_frame_count;
+static cvar_t vulkan_frame_count_cvar = {
+	.name = "vulkan_frame_count",
+	.description =
+		"Number of frames to render in the background. More frames can "
+		"increase performance, but at the cost of latency. The default of 3 is"
+		" recommended.",
+	.default_value = "3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
+};
+int vulkan_presentation_mode;
+static cvar_t vulkan_presentation_mode_cvar = {
+	.name = "vulkan_presentation_mode",
+	.description =
+		"desired presentation mode (may fall back to fifo).",
+	.default_value = "mailbox",
+	.flags = CVAR_NONE,
+	.value = {
+		.type = &VkPresentModeKHR_type,
+		.value = &vulkan_presentation_mode,
+	},
+};
+int msaaSamples;
+static cvar_t msaaSamples_cvar = {
+	.name = "msaaSamples",
+	.description =
+		"desired MSAA sample size.",
+	.default_value = "VK_SAMPLE_COUNT_1_BIT",
+	.flags = CVAR_NONE,
+	.value = { .type = &VkSampleCountFlagBits_type, .value = &msaaSamples },
+};
+static exprenum_t validation_enum;
+static exprtype_t validation_type = {
+	.name = "vulkan_use_validation",
+	.size = sizeof (int),
+	.binops = cexpr_flag_binops,
+	.unops = cexpr_flag_unops,
+	.data = &validation_enum,
+	.get_string = cexpr_flags_get_string,
+};
+
+static int validation_values[] = {
+	0,
+	VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
+};
+static exprsym_t validation_symbols[] = {
+	{"none", &validation_type, validation_values + 0},
+	{"all", &validation_type, validation_values + 1},
+	{}
+};
+static exprtab_t validation_symtab = {
+	validation_symbols,
+};
+static exprenum_t validation_enum = {
+	&validation_type,
+	&validation_symtab,
+};
+static cvar_t vulkan_use_validation_cvar = {
+	.name = "vulkan_use_validation",
+	.description =
+		"enable KRONOS Validation Layer if available (requires instance "
+		"restart).",
+	.default_value = "error|warning",
+	.flags = CVAR_NONE,
+	.value = { .type = &validation_type, .value = &vulkan_use_validation },
+};
+
+static void
+vulkan_frame_count_f (void *data, const cvar_t *cvar)
+{
+	if (vulkan_frame_count < 1) {
+		Sys_Printf ("Invalid frame count: %d. Setting to 1\n",
+					vulkan_frame_count);
+		vulkan_frame_count = 1;
+	}
+}
+
+void
+Vulkan_Init_Cvars (void)
+{
+	int         num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+	}
+	validation_symtab.symbols = calloc (num_syms + 1, sizeof (exprsym_t));
+	num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+		validation_symtab.symbols[num_syms].type = &validation_type;
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+	}
+	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
+	// FIXME implement fallback choices (instead of just fifo)
+	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
+	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);
+	Cvar_Register (&msaaSamples_cvar, 0, 0);
+}
+
+static exprsym_t builtin_plist_syms[] = {
+	{ .name = "quake_deferred",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/pl_quake_def.plc"
+		},
+	{ .name = "qf_output",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/pl_output.plc"
+		},
+	{ .name = "deferred",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_deferred.plc"
+		},
+	{ .name = "shadow",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_shadow.plc"
+		},
+	{ .name = "forward",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_forward.plc"
+		},
+	{ .name = "output",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_output.plc"
+		},
+	{}
+};
+static plitem_t **builtin_plists;
+static exprtab_t builtin_configs = { .symbols = builtin_plist_syms };
+
+static void
+build_configs (scriptctx_t *sctx)
+{
+	int         num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		num_plists++;
+	}
+	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
+	num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		plitem_t   *item = PL_GetPropertyList (sym->value, &sctx->hashctx);
+		if (!item) {
+			// Syntax errors in the compiled-in plists are unrecoverable
+			Sys_Error ("Error parsing plist for %s", sym->name);
+		}
+		builtin_plists[num_plists] = item;
+		sym->value = &builtin_plists[num_plists];
+		sym->type = &cexpr_plitem;
+		num_plists++;
+	}
+	exprctx_t   ectx = { .hashctx = &sctx->hashctx };
+	cexpr_init_symtab (&builtin_configs, &ectx);
+}
+
+static plitem_t *
+qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	if (!sctx->pipelineDef) {
+		sctx->pipelineDef = Vulkan_GetConfig (ctx, "quake_deferred");
+	}
+
+	plitem_t   *item = sctx->pipelineDef;
+	if (!item || !(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading %s\n", name);
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found %s def\n", name);
+	}
+	return item;
+}
+
+plitem_t *
+Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	if (!builtin_configs.tab) {
+		build_configs (sctx);
+	}
+
+	plitem_t   *config = 0;
+	exprval_t   result = { .type = &cexpr_plitem, .value = &config };
+	exprctx_t   ectx = {
+		.result = &result,
+		.symtab = &builtin_configs,
+		.memsuper = new_memsuper (),
+		.hashctx = &sctx->hashctx,
+		.messages = PL_NewArray (),
+	};
+	if (cexpr_eval_string (name, &ectx)) {
+		dstring_t  *msg = dstring_newstr ();
+
+		for (int i = 0; i < PL_A_NumObjects (ectx.messages); i++) {
+			dasprintf (msg, "%s\n",
+					   PL_String (PL_ObjectAtIndex (ectx.messages, i)));
+		}
+		Sys_Printf ("%s", msg->str);
+		dstring_delete (msg);
+		config = 0;
+	}
+	PL_Free (ectx.messages);
+	delete_memsuper (ectx.memsuper);
+	return config;
+}
+
+void Vulkan_Script_Init (vulkan_ctx_t *ctx)
+{
+	scriptctx_t *sctx = calloc (1, sizeof (scriptctx_t));
+	sctx->vctx = ctx;
+	ctx->script_context = sctx;
+
+	exprctx_t   ectx = {};
+	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &sctx->hashctx);
+	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &sctx->hashctx);
+	ectx.hashctx = &sctx->hashctx;
+	vkgen_init_symtabs (&ectx);
+	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
+	cexpr_init_symtab (&vulkan_frameset_t_symtab, &ectx);
+	cexpr_init_symtab (&data_array_symtab, &ectx);
+
+	sctx->shaderModules = handlref_symtab (shaderModule_free, sctx);
+	sctx->setLayouts = handlref_symtab (setLayout_free, sctx);
+	sctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, sctx);
+	sctx->descriptorPools = handlref_symtab (descriptorPool_free, sctx);
+	sctx->samplers = handlref_symtab (sampler_free, sctx);
+	sctx->images = handlref_symtab (image_free, sctx);
+	sctx->imageViews = handlref_symtab (imageView_free, sctx);
+	sctx->renderpasses = handlref_symtab (renderpass_free, sctx);
+}
+
+static void
+clear_table (hashtab_t **table)
+{
+	if (*table) {
+		hashtab_t  *tab = *table;
+		*table = 0;
+		Hash_DelTable (tab);
+	}
+}
+
+void Vulkan_Script_Shutdown (vulkan_ctx_t *ctx)
+{
+	scriptctx_t *sctx = ctx->script_context;
+
+	PL_Free (sctx->pipelineDef);
+	clear_table (&sctx->pipelineLayouts);
+	clear_table (&sctx->setLayouts);
+	clear_table (&sctx->shaderModules);
+	clear_table (&sctx->descriptorPools);
+	clear_table (&sctx->samplers);
+
+	free (sctx);
+}
+
+void Vulkan_Script_SetOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	sctx->output = *output;
+}
+
+VkPipeline
+Vulkan_CreateComputePipeline (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
+	}
+	VkPipeline pipeline = QFV_ParseComputePipeline (ctx, item,
+													sctx->pipelineDef);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
+						 va (ctx->va_ctx, "pipeline:%s", name));
+	return pipeline;
+}
+
+VkPipeline
+Vulkan_CreateGraphicsPipeline (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
+	}
+	VkPipeline pipeline = QFV_ParseGraphicsPipeline (ctx, item,
+													 sctx->pipelineDef);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
+						 va (ctx->va_ctx, "pipeline:%s", name));
+	return pipeline;
+}
+
+VkDescriptorPool
+Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	hashtab_t  *tab = sctx->descriptorPools;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".descriptorPools.%s", name);
+	__auto_type pool = (VkDescriptorPool) QFV_GetHandle (tab, path);
+	if (pool) {
+		return pool;
+	}
+
+	plitem_t   *item = qfv_load_pipeline (ctx, "descriptorPools");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading descriptor pool %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor pool def %s\n",
+						name);
+	}
+	pool = QFV_ParseDescriptorPool (ctx, item, sctx->pipelineDef);
+	QFV_AddHandle (tab, path, (uint64_t) pool);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool,
+						 va (ctx->va_ctx, "descriptor_pool:%s", name));
+	return pool;
+}
+
+VkPipelineLayout
+Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	hashtab_t  *tab = sctx->pipelineLayouts;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
+	__auto_type layout = (VkPipelineLayout) QFV_GetHandle (tab, path);
+	if (layout) {
+		return layout;
+	}
+
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelineLayouts");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline layout %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline layout def %s\n",
+						name);
+	}
+	layout = QFV_ParsePipelineLayout (ctx, item, sctx->pipelineDef);
+	QFV_AddHandle (tab, path, (uint64_t) layout);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout,
+						 va (ctx->va_ctx, "pipeline_layout:%s", name));
+	return layout;
+}
+
+VkSampler
+Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	hashtab_t  *tab = sctx->samplers;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".samplers.%s", name);
+	__auto_type sampler = (VkSampler) QFV_GetHandle (tab, path);
+	if (sampler) {
+		return sampler;
+	}
+
+	plitem_t   *item = qfv_load_pipeline (ctx, "samplers");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading sampler %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found sampler def %s\n", name);
+	}
+	sampler = QFV_ParseSampler (ctx, item, sctx->pipelineDef);
+	QFV_AddHandle (tab, path, (uint64_t) sampler);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_SAMPLER, sampler,
+						 va (ctx->va_ctx, "sampler:%s", name));
+	return sampler;
+}
+
+VkDescriptorSetLayout
+Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	hashtab_t  *tab = sctx->setLayouts;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
+	__auto_type set = (VkDescriptorSetLayout) QFV_GetHandle (tab, path);
+	if (set) {
+		return set;
+	}
+
+	plitem_t   *item = qfv_load_pipeline (ctx, "setLayouts");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading descriptor set %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor set def %s\n",
+						name);
+	}
+	set = QFV_ParseDescriptorSetLayout (ctx, item, sctx->pipelineDef);
+	QFV_AddHandle (tab, path, (uint64_t) set);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
+	return set;
 }
