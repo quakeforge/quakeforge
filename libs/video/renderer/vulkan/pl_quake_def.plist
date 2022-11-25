@@ -229,7 +229,7 @@
 			bindings = (
 				{
 					type = combined_image_sampler;
-					descriptorCount = 768;//"$frames.size * size_t($properties.limits.maxSamplers)";
+					descriptorCount = "$frames.size * size_t(32)";
 				},
 			);
 		};
@@ -378,7 +378,7 @@
 				{
 					binding = 0;
 					descriptorType = combined_image_sampler;
-					descriptorCount = 768;//$properties.limits.maxSamplers;
+					descriptorCount = 32;
 					stageFlags = fragment;
 				},
 			);

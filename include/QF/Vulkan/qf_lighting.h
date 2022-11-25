@@ -58,7 +58,7 @@ typedef struct qfv_light_buffer_s {
 
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_ATTACH_INFOS 5
-#define LIGHTING_SHADOW_INFOS MaxLights
+#define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
 typedef struct lightingframe_s {
