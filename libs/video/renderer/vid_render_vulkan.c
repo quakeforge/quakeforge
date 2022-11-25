@@ -297,7 +297,6 @@ vulkan_Draw_FontString (int x, int y, int fontid, const char *str)
 static void
 vulkan_begin_frame (void)
 {
-	uint32_t imageIndex = 0;
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	VkDevice    dev = device->dev;
@@ -305,43 +304,16 @@ vulkan_begin_frame (void)
 	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	if (!QFV_AcquireNextImage (vulkan_ctx->swapchain,
-							   frame->imageAvailableSemaphore,
-							   0, &imageIndex)) {
-		QFV_DeviceWaitIdle (device);
-		if (vulkan_ctx->capture) {
-			QFV_DestroyCapture (vulkan_ctx->capture);
-		}
-		Vulkan_CreateSwapchain (vulkan_ctx);
-		Vulkan_CreateCapture (vulkan_ctx);
-
-		//FIXME
-		qfv_output_t output = {
-			.extent    = vulkan_ctx->swapchain->extent,
-			.view      = vulkan_ctx->swapchain->imageViews->a[0],
-			.format    = vulkan_ctx->swapchain->format,
-			.view_list = vulkan_ctx->swapchain->imageViews->a,
-		};
-		vulkan_ctx->output_renderpass->viewport.width = output.extent.width;
-		vulkan_ctx->output_renderpass->viewport.height = output.extent.height;
-		vulkan_ctx->output_renderpass->scissor.extent = output.extent;
-		Vulkan_Script_SetOutput (vulkan_ctx, &output);
-		Vulkan_CreateAttachments (vulkan_ctx, vulkan_ctx->output_renderpass);
-		QFV_AcquireNextImage (vulkan_ctx->swapchain,
-								   frame->imageAvailableSemaphore,
-								   0, &imageIndex);
-	}
-	vulkan_ctx->swapImageIndex = imageIndex;
 }
 
 static void
 vulkan_render_view (void)
 {
-	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
-
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		// swapImageIndex may be updated by a render pass
+		uint32_t imageIndex = vulkan_ctx->swapImageIndex;
 		if (rp->framebuffers) {
 			rpFrame->framebuffer = rp->framebuffers->a[imageIndex];
 		}

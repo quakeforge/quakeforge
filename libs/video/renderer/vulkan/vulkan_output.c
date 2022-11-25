@@ -46,6 +46,7 @@
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -55,6 +56,45 @@
 
 #include "vid_vulkan.h"
 #include "vkparse.h"//FIXME
+
+static void
+acquire_image (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	//qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type frame = &ctx->frames.a[ctx->curFrame];
+	//outputctx_t *octx = ctx->output_context;
+	//uint32_t    curFrame = ctx->curFrame;
+	//outputframe_t *oframe = &octx->frames.a[curFrame];
+	//qfv_renderpass_t *rp = ctx->output_renderpass;
+
+	uint32_t imageIndex = 0;
+	while (!QFV_AcquireNextImage (ctx->swapchain,
+								  frame->imageAvailableSemaphore,
+								  0, &imageIndex)) {
+		QFV_DeviceWaitIdle (device);
+		if (ctx->capture) {
+			QFV_DestroyCapture (ctx->capture);
+		}
+		Vulkan_CreateSwapchain (ctx);
+		Vulkan_CreateCapture (ctx);
+
+		//FIXME
+		qfv_output_t output = {
+			.extent    = ctx->swapchain->extent,
+			.view      = ctx->swapchain->imageViews->a[0],
+			.format    = ctx->swapchain->format,
+			.view_list = ctx->swapchain->imageViews->a,
+		};
+		ctx->output_renderpass->viewport.width = output.extent.width;
+		ctx->output_renderpass->viewport.height = output.extent.height;
+		ctx->output_renderpass->scissor.extent = output.extent;
+		Vulkan_Script_SetOutput (ctx, &output);
+		Vulkan_CreateAttachments (ctx, ctx->output_renderpass);
+	}
+	ctx->swapImageIndex = imageIndex;
+}
 
 static void
 update_input (qfv_renderframe_t *rFrame)
@@ -83,6 +123,13 @@ update_input (qfv_renderframe_t *rFrame)
 		  &imageInfo, 0, 0 }
 	};
 	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+}
+
+static void
+preoutput_draw (qfv_renderframe_t *rFrame)
+{
+	acquire_image (rFrame);
+	update_input (rFrame);
 }
 
 static void
@@ -164,7 +211,7 @@ Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 	DARRAY_APPEND (&ctx->renderPasses, out);
 
 	__auto_type pre = Vulkan_CreateFunctionPass (ctx, "preoutput",
-												 update_input);
+												 preoutput_draw);
 	pre->order = QFV_rp_preoutput;
 	DARRAY_APPEND (&ctx->renderPasses, pre);
 }
