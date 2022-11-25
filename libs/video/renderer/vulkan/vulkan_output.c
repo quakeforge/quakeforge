@@ -62,7 +62,7 @@ acquire_image (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
-	//qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 	//outputctx_t *octx = ctx->output_context;
 	//uint32_t    curFrame = ctx->curFrame;
@@ -92,6 +92,10 @@ acquire_image (qfv_renderframe_t *rFrame)
 		ctx->output_renderpass->scissor.extent = output.extent;
 		Vulkan_Script_SetOutput (ctx, &output);
 		Vulkan_CreateAttachments (ctx, ctx->output_renderpass);
+
+		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
+								   0);
+		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 	}
 	ctx->swapImageIndex = imageIndex;
 }
