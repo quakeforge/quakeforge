@@ -37,7 +37,6 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
-#include "QF/Vulkan/swapchain.h"
 #include "QF/Vulkan/qf_renderpass.h"
 
 #include "vid_vulkan.h"
@@ -93,6 +92,7 @@ Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rp = renderpass;
+	scriptctx_t *sctx = ctx->script_context;
 
 	plitem_t   *item = get_rp_item (ctx, rp, "images");
 	if (!item) {
@@ -156,10 +156,9 @@ Vulkan_CreateAttachments (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
 		return;
 	}
 
-	rp->framebuffers = QFV_AllocFrameBuffers (ctx->swapchain->numImages,
-											  malloc);
+	rp->framebuffers = QFV_AllocFrameBuffers (sctx->output.frames, malloc);
 	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		ctx->script_context->output.view = ctx->script_context->output.view_list[i];
+		sctx->output.view = sctx->output.view_list[i];
 		rp->framebuffers->a[i] = QFV_ParseFramebuffer (ctx, item,
 													   rp->renderpassDef);
 	}

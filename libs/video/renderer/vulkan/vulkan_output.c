@@ -95,6 +95,8 @@ output_draw (qfv_renderframe_t *rFrame)
 	outputframe_t *oframe = &octx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = oframe->cmd;
 
+	DARRAY_APPEND (&rFrame->subpassCmdSets[0], cmd);
+
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
@@ -133,17 +135,33 @@ output_draw (qfv_renderframe_t *rFrame)
 void
 Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
+	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
+	ctx->output_context = octx;
+
 	qfv_output_t output = {
 		.extent    = ctx->swapchain->extent,
 		.view      = ctx->swapchain->imageViews->a[0],
 		.format    = ctx->swapchain->format,
+		.frames    = ctx->swapchain->numImages,
 		.view_list = ctx->swapchain->imageViews->a,
 	};
 	__auto_type out = Vulkan_CreateRenderPass (ctx, "output",
 											   &output, output_draw);
-	out->order = QFV_rp_output;
-	DARRAY_APPEND (&ctx->renderPasses, out);
 	ctx->output_renderpass = out;
+
+
+	out->order = QFV_rp_output;
+	octx->output = (qfv_output_t) {
+		.extent    = ctx->swapchain->extent,
+		.view      = out->attachment_views->a[0],
+		.format    = VK_FORMAT_R16G16B16A16_SFLOAT,//FIXME
+		.frames    = ctx->swapchain->numImages,
+		.view_list = malloc (sizeof (VkImageView) * ctx->swapchain->numImages),
+	};
+	for (int i = 0; i < ctx->swapchain->numImages; i++) {
+		octx->output.view_list[i] = octx->output.view;
+	}
+	DARRAY_APPEND (&ctx->renderPasses, out);
 
 	__auto_type pre = Vulkan_CreateFunctionPass (ctx, "preoutput",
 												 update_input);
@@ -158,8 +176,7 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 
 	qfvPushDebug (ctx, "output init");
 
-	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
-	ctx->output_context = octx;
+	outputctx_t *octx = ctx->output_context;
 
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&octx->frames, frames);
@@ -209,4 +226,11 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	dfunc->vkDestroyPipeline (device->dev, octx->pipeline, 0);
 	free (octx->frames.a);
 	free (octx);
+}
+
+qfv_output_t *
+Vulkan_Output_Get (vulkan_ctx_t *ctx)
+{
+	outputctx_t *octx = ctx->output_context;
+	return &octx->output;
 }

@@ -56,6 +56,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
@@ -175,14 +176,9 @@ main_draw (qfv_renderframe_t *rFrame)
 void
 Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	qfv_output_t output = {
-		.extent    = ctx->swapchain->extent,
-		.view      = ctx->swapchain->imageViews->a[0],
-		.format    = ctx->swapchain->format,
-		.view_list = ctx->swapchain->imageViews->a,
-	};
+	qfv_output_t *output = Vulkan_Output_Get (ctx);
 	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
-											  &output, main_draw);
+											  output, main_draw);
 	rp->order = QFV_rp_main;
 	DARRAY_APPEND (&ctx->renderPasses, rp);
 }

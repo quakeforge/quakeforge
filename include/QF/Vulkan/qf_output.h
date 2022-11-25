@@ -48,6 +48,7 @@ typedef struct outputctx_s {
 	VkPipeline   pipeline;
 	VkPipelineLayout layout;
 	VkSampler    sampler;
+	qfv_output_t output;
 } outputctx_t;
 
 struct vulkan_ctx_s;
@@ -55,5 +56,6 @@ struct vulkan_ctx_s;
 void Vulkan_Output_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_CreateRenderPasses (struct vulkan_ctx_s *ctx);
+qfv_output_t *Vulkan_Output_Get (struct vulkan_ctx_s *ctx)__attribute__((pure));
 
 #endif//__QF_Vulkan_qf_output_h

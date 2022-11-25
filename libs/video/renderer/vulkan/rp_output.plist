@@ -14,7 +14,7 @@
 		initialLayout = undefined;
 	};
 	images = {
-		color = {
+		ocolor = {
 			@inherit = $properties.flat_color_image_template;
 			format = r16g16b16a16_sfloat;
 		};
@@ -34,10 +34,10 @@
 		};
 	};
 	imageViews = {
-		color = {
+		ocolor = {
 			@inherit = $properties.flat_color_view_template;
-			image = color;
-			format = $properties.images.color.format;
+			image = ocolor;
+			format = $properties.images.ocolor.format;
 		};
 	};
 	framebuffer = {

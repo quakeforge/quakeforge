@@ -175,7 +175,7 @@
 				format = $output.format;
 				loadOp = clear;
 				storeOp = store;
-				finalLayout = present_src_khr;
+				finalLayout = shader_read_only_optimal;
 			},
 		);
 		subpasses = (

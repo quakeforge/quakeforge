@@ -72,6 +72,7 @@ typedef struct qfv_output_s {
 	VkExtent2D  extent;
 	VkImageView view;
 	VkFormat    format;
+	uint32_t    frames;
 	VkImageView *view_list;	// per frame
 } qfv_output_t;
 
