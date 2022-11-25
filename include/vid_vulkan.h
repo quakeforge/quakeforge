@@ -61,7 +61,7 @@ typedef struct vulkan_ctx_s {
 
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
-	size_t      curFrame;
+	uint32_t    curFrame;
 	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
 	struct qfv_renderpass_s *output_renderpass;

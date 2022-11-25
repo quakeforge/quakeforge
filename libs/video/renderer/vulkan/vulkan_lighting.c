@@ -245,7 +245,7 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 	QFV_AllocateCommandBuffers (device, lctx->cmdpool, 0, bufferset);
 	VkCommandBuffer cmd = bufferset->a[0];
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-						 cmd, va (ctx->va_ctx, "lighting:%zd", ctx->curFrame));
+						 cmd, va (ctx->va_ctx, "lighting:%d", ctx->curFrame));
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
