@@ -449,6 +449,8 @@ vkshader_c = \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \
 	$(sprite_depthf_c) \
+	$(twodv_c) \
+	$(twodf_c) \
 	$(twod_depthf_c) \
 	$(quakebspv_c) \
 	$(quakebspf_c) \

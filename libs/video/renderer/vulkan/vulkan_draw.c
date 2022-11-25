@@ -1292,6 +1292,8 @@ draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 	VkPipelineLayout layout = dctx->layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 1, set, 0, 0);
+	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
+					  1, 0, 0);
 }
 
 void
