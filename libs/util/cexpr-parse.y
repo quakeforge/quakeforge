@@ -186,7 +186,7 @@ arg_expr
 exprval_t *
 cexpr_assign_value (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 {
-	binop_t    *binop;
+	binop_t    *binop = 0;
 	if (!dst || !src) {
 		return 0;
 	}
@@ -194,17 +194,24 @@ cexpr_assign_value (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 		*(exprval_t **) dst->value = (exprval_t *) src;
 		return dst;
 	}
-	binop = cexpr_find_cast (dst->type, src->type);
+	if (dst->type) {
+		binop = cexpr_find_cast (dst->type, src->type);
+	}
 	if (binop && binop->op) {
 		binop->func (dst, src, dst, context);
 	} else {
-		if (dst->type != src->type) {
-			cexpr_error (context,
-						 "type mismatch in expression result: %s = %s",
-						 dst->type->name, src->type->name);
-			return dst;
+		if (!dst->type) {
+			dst->type = src->type;
+			dst->value = src->value;
+		} else {
+			if (dst->type != src->type) {
+				cexpr_error (context,
+							 "type mismatch in expression result: %s = %s",
+							 dst->type->name, src->type->name);
+				return dst;
+			}
+			memcpy (dst->value, src->value, dst->type->size);
 		}
-		memcpy (dst->value, src->value, dst->type->size);
 	}
 	return dst;
 }
