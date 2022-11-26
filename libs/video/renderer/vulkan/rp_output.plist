@@ -1,45 +1,4 @@
 {
-	flat_color_image_template = {
-		imageType = `2d;
-		samples = 1;
-		extent = {
-			width = $output.extent.width;
-			height = $output.extent.height;
-			depth = 1;
-		};
-		mipLevels = 1;
-		arrayLayers = 1;
-		tiling = optimal;
-		usage = color_attachment|sampled;
-		initialLayout = undefined;
-	};
-	images = {
-		ocolor = {
-			@inherit = $properties.flat_color_image_template;
-			format = r16g16b16a16_sfloat;
-		};
-	};
-	flat_color_view_template = {
-		viewType = VK_IMAGE_VIEW_TYPE_2D;
-		components = {
-			r = identity;
-			g = identity;
-			b = identity;
-			a = identity;
-		};
-		subresourceRange = {
-			aspectMask = color;
-			levelCount = 1;
-			layerCount = 1;
-		};
-	};
-	imageViews = {
-		ocolor = {
-			@inherit = $properties.flat_color_view_template;
-			image = ocolor;
-			format = $properties.images.ocolor.format;
-		};
-	};
 	framebuffer = {
 		renderPass = output;
 		attachments = ($output.view);

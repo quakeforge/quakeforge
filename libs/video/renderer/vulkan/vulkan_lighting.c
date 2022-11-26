@@ -283,9 +283,8 @@ Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 
 	// extents are dynamic and filled in for each light
 	// frame buffers are highly dynamic
-	qfv_output_t output = {};
-	__auto_type rp = Vulkan_CreateRenderPass (ctx, "shadow",
-											  &output, lighting_draw_maps);
+	__auto_type rp = QFV_RenderPass_New (ctx, "shadow", lighting_draw_maps);
+	QFV_RenderPass_CreateRenderPass (rp);
 	rp->primary_commands = 1;
 	rp->order = QFV_rp_shadowmap;
 	DARRAY_APPEND (&ctx->renderPasses, rp);

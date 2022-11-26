@@ -176,7 +176,7 @@ void
 Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
 {
 	for (size_t i = 0; i < ctx->renderPasses.size; i++) {
-		Vulkan_DestroyRenderPass (ctx, ctx->renderPasses.a[i]);
+		QFV_RenderPass_Delete (ctx->renderPasses.a[i]);
 	}
 }
 

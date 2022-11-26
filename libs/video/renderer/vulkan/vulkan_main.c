@@ -176,9 +176,16 @@ main_draw (qfv_renderframe_t *rFrame)
 void
 Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	qfv_output_t *output = Vulkan_Output_Get (ctx);
-	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
-											  output, main_draw);
+	__auto_type rp = QFV_RenderPass_New (ctx, "deferred", main_draw);
+	rp->output = (qfv_output_t) {
+		.extent    = ctx->swapchain->extent,
+		.frames    = ctx->swapchain->numImages,
+	};
+	QFV_RenderPass_CreateAttachments (rp);
+	QFV_RenderPass_CreateRenderPass (rp);
+	QFV_RenderPass_CreateFramebuffer (rp);
 	rp->order = QFV_rp_main;
 	DARRAY_APPEND (&ctx->renderPasses, rp);
+
+	Vulkan_Output_SetInput (ctx, rp->output.view);
 }

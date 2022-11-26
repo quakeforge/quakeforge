@@ -367,11 +367,6 @@ vulkan_end_frame (void)
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 
-	VkRenderPassBeginInfo renderPassInfo = {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
-	};
-
 	__auto_type cmdBufs = (qfv_cmdbufferset_t) DARRAY_STATIC_INIT (4);
 	DARRAY_APPEND (&cmdBufs, frame->cmdBuffer);
 
@@ -393,10 +388,14 @@ vulkan_end_frame (void)
 
 		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
 		if (rpFrame->renderpass && rp->renderpass) {
-			renderPassInfo.framebuffer = rp->framebuffers->a[imageIndex];
-			renderPassInfo.renderPass = rp->renderpass;
-			renderPassInfo.clearValueCount = rp->clearValues->size;
-			renderPassInfo.pClearValues = rp->clearValues->a;
+			VkRenderPassBeginInfo renderPassInfo = {
+				.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+				.renderPass = rp->renderpass,
+				.framebuffer = rp->framebuffers->a[imageIndex],
+				.renderArea = rp->renderArea,
+				.clearValueCount = rp->clearValues->size,
+				.pClearValues = rp->clearValues->a,
+			};
 
 			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
 										 rpFrame->subpassContents);

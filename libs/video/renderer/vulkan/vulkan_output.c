@@ -80,18 +80,17 @@ acquire_image (qfv_renderframe_t *rFrame)
 		Vulkan_CreateSwapchain (ctx);
 		Vulkan_CreateCapture (ctx);
 
-		//FIXME
-		qfv_output_t output = {
+		__auto_type out = ctx->output_renderpass;
+		out->output = (qfv_output_t) {
 			.extent    = ctx->swapchain->extent,
-			.view      = ctx->swapchain->imageViews->a[0],
 			.format    = ctx->swapchain->format,
+			.frames    = ctx->swapchain->numImages,
 			.view_list = ctx->swapchain->imageViews->a,
 		};
-		ctx->output_renderpass->viewport.width = output.extent.width;
-		ctx->output_renderpass->viewport.height = output.extent.height;
-		ctx->output_renderpass->scissor.extent = output.extent;
-		Vulkan_Script_SetOutput (ctx, &output);
-		Vulkan_CreateAttachments (ctx, ctx->output_renderpass);
+		out->viewport.width = out->output.extent.width;
+		out->viewport.height = out->output.extent.height;
+		out->scissor.extent = out->output.extent;
+		QFV_RenderPass_CreateFramebuffer (out);
 
 		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
 								   0);
@@ -109,15 +108,14 @@ update_input (qfv_renderframe_t *rFrame)
 	outputctx_t *octx = ctx->output_context;
 	uint32_t    curFrame = ctx->curFrame;
 	outputframe_t *oframe = &octx->frames.a[curFrame];
-	qfv_renderpass_t *rp = ctx->output_renderpass;
 
-	if (rp->attachment_views->a[0] == oframe->view) {
+	if (oframe->input == octx->input) {
 		return;
 	}
-	oframe->view = rp->attachment_views->a[0];
+	oframe->input = octx->input;
 
 	VkDescriptorImageInfo imageInfo = {
-		octx->sampler, oframe->view,
+		octx->sampler, oframe->input,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
 	VkWriteDescriptorSet write[] = {
@@ -189,33 +187,22 @@ Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
-	qfv_output_t output = {
+	__auto_type out = QFV_RenderPass_New (ctx, "output", output_draw);
+	out->output = (qfv_output_t) {
 		.extent    = ctx->swapchain->extent,
-		.view      = ctx->swapchain->imageViews->a[0],
 		.format    = ctx->swapchain->format,
 		.frames    = ctx->swapchain->numImages,
 		.view_list = ctx->swapchain->imageViews->a,
 	};
-	__auto_type out = Vulkan_CreateRenderPass (ctx, "output",
-											   &output, output_draw);
+	QFV_RenderPass_CreateRenderPass (out);
+	QFV_RenderPass_CreateFramebuffer (out);
 	ctx->output_renderpass = out;
 
 
 	out->order = QFV_rp_output;
-	octx->output = (qfv_output_t) {
-		.extent    = ctx->swapchain->extent,
-		.view      = out->attachment_views->a[0],
-		.format    = VK_FORMAT_R16G16B16A16_SFLOAT,//FIXME
-		.frames    = ctx->swapchain->numImages,
-		.view_list = malloc (sizeof (VkImageView) * ctx->swapchain->numImages),
-	};
-	for (int i = 0; i < ctx->swapchain->numImages; i++) {
-		octx->output.view_list[i] = octx->output.view;
-	}
 	DARRAY_APPEND (&ctx->renderPasses, out);
 
-	__auto_type pre = Vulkan_CreateFunctionPass (ctx, "preoutput",
-												 preoutput_draw);
+	__auto_type pre = QFV_RenderPass_New (ctx, "preoutput", preoutput_draw);
 	pre->order = QFV_rp_preoutput;
 	DARRAY_APPEND (&ctx->renderPasses, pre);
 }
@@ -279,9 +266,9 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	free (octx);
 }
 
-qfv_output_t *
-Vulkan_Output_Get (vulkan_ctx_t *ctx)
+void
+Vulkan_Output_SetInput (vulkan_ctx_t *ctx, VkImageView input)
 {
 	outputctx_t *octx = ctx->output_context;
-	return &octx->output;
+	octx->input = input;
 }
