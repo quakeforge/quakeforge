@@ -6,6 +6,7 @@
 #include "vkfieldcustom.h"
 #include "vkfielddata.h"
 #include "vkfielddef.h"
+#include "vkfieldreadonly.h"
 #include "vkfieldsingle.h"
 #include "vkfieldstring.h"
 #include "vkstruct.h"
@@ -42,6 +43,8 @@
 			return [[[SingleField alloc] init:item struct:strct field:fname] autorelease];
 		case "array":
 			return [[[ArrayField alloc] init:item struct:strct field:fname] autorelease];
+		case "readonly":
+			return [[[ReadOnlyField alloc] init:item struct:strct field:fname] autorelease];
 	}
 	return nil;
 }
