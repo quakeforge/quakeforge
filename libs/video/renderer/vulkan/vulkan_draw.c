@@ -74,12 +74,10 @@
 #include "vid_vulkan.h"
 
 static const char * __attribute__((used)) draw_pass_names[] = {
-	"depth",
 	"2d",
 };
 
 static QFV_Subpass subpass_map[] = {
-	[QFV_drawDepth] = QFV_passDepth,
 	[QFV_draw2d]    = QFV_passTranslucent,
 };
 
@@ -199,7 +197,6 @@ typedef struct drawctx_s {
 	qfv_resobj_t *slice_objects;
 	qfv_resobj_t *glyph_objects;
 	qfv_resobj_t *line_objects;
-	VkPipeline  depth_pipeline;
 	VkPipeline  quad_pipeline;
 	VkPipeline  slice_pipeline;
 	VkPipeline  glyph_pipeline;
@@ -547,7 +544,6 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 		free (dctx->fonts.a[i].resource);
 	}
 
-	dfunc->vkDestroyPipeline (device->dev, dctx->depth_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->slice_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->glyph_pipeline, 0);
@@ -623,7 +619,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	flush_draw_scrap (ctx);
 
-	dctx->depth_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod_depth");
 	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
 	dctx->slice_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
 	dctx->glyph_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "glyph");
@@ -1333,19 +1328,12 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 #undef a
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 3, ranges);
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[subpass_map[QFV_drawDepth]],
-				   dframe->cmdSet.a[QFV_drawDepth]);
 	DARRAY_APPEND (&rFrame->subpassCmdSets[subpass_map[QFV_draw2d]],
 				   dframe->cmdSet.a[QFV_draw2d]);
 
-	draw_begin_subpass (QFV_drawDepth, rFrame);
 	draw_begin_subpass (QFV_draw2d, rFrame);
 
 	if (dframe->quad_verts.count) {
-		bind_pipeline (rFrame, dctx->depth_pipeline,
-					   dframe->cmdSet.a[QFV_drawDepth]);
-		draw_quads (rFrame, dframe->cmdSet.a[QFV_drawDepth]);
-
 		bind_pipeline (rFrame, dctx->quad_pipeline,
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_quads (rFrame, dframe->cmdSet.a[QFV_draw2d]);
@@ -1365,7 +1353,6 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_lines (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
-	draw_end_subpass (dframe->cmdSet.a[QFV_drawDepth], ctx);
 	draw_end_subpass (dframe->cmdSet.a[QFV_draw2d], ctx);
 
 	dframe->quad_verts.count = 0;
