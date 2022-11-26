@@ -293,6 +293,13 @@ vkparse_alloc (void *context, size_t size)
 }
 
 static int
+parse_ignore (const plfield_t *field, const plitem_t *item,
+			  void *data, plitem_t *messages, void *context)
+{
+	return 1;
+}
+
+static int
 parse_single (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
 {
@@ -649,6 +656,22 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	return ret;
 }
 
+exprtype_t VkImage_type = {
+	.name = "VkImage",
+	.size = sizeof (VkImage),
+	.binops = 0,
+	.unops = 0,
+	.data = 0
+};
+
+exprtype_t VkImageView_type = {
+	.name = "VkImageView",
+	.size = sizeof (VkImageView),
+	.binops = 0,
+	.unops = 0,
+	.data = 0
+};
+
 static int
 parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 			   parsectx_t *pctx)
@@ -668,30 +691,28 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 		return 1;
 	}
 
-	plitem_t   *imageItem = 0;
-	exprval_t   result = { &cexpr_plitem, &imageItem };
+	exprval_t   result = { };
 	ectx.result = &result;
 	ectx.item = item;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
-		VkImage image;
-		image = QFV_ParseImage (ctx, imageItem, pctx->properties);
-		*handle = (VkImage) image;
+		if (result.type == &cexpr_plitem) {
+			plitem_t   *imageItem = *(plitem_t **) result.value;
+			VkImage image;
+			image = QFV_ParseImage (ctx, imageItem, pctx->properties);
+			*handle = (VkImage) image;
 
-		// path not guaranteed to survive cexpr_eval_string due to va
-		path = resource_path (ctx, "images", name);
-		QFV_AddHandle (sctx->images, path, (uint64_t) image);
+			// path not guaranteed to survive cexpr_eval_string due to va
+			path = resource_path (ctx, "images", name);
+			QFV_AddHandle (sctx->images, path, (uint64_t) image);
+		} else if (result.type == &VkImage_type) {
+			*handle = *(VkImage *) result.value;
+		} else {
+			ret = 0;
+		}
 	}
 	return ret;
 }
-
-exprtype_t VkImageView_type = {
-	.name = "VkImageView",
-	.size = sizeof (VkImageView),
-	.binops = 0,
-	.unops = 0,
-	.data = 0
-};
 
 static int
 parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
@@ -976,23 +997,6 @@ parse_specialization_data (const plitem_t *item, void **data,
 }
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
-
-static exprsym_t qfv_output_t_symbols[] = {
-	{"format", &VkFormat_type, (void *)field_offset (qfv_output_t, format)},
-	{"extent", &VkExtent2D_type, (void *)field_offset (qfv_output_t, extent)},
-	{"view", &VkImageView_type, (void *)field_offset (qfv_output_t, view)},
-	{ }
-};
-static exprtab_t qfv_output_t_symtab = {
-	qfv_output_t_symbols,
-};
-exprtype_t qfv_output_t_type = {
-	.name = "qfv_output_t",
-	.size = sizeof (qfv_output_t),
-	.binops = cexpr_struct_binops,
-	.unops = 0,
-	.data = &qfv_output_t_symtab,
-};
 
 static exprsym_t vulkan_frameset_t_symbols[] = {
 	{"size", &cexpr_size_t, (void *)field_offset (vulkan_frameset_t, size)},
@@ -1584,6 +1588,23 @@ QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
 
 	if (parse_object (ctx, memsuper, plist, parse_rgba, &color, properties)) {
 		memcpy (rgba, &color, sizeof (color));
+		ret = 1;
+	}
+	delete_memsuper (memsuper);
+	return ret;
+}
+
+int
+QFV_ParseOutput (vulkan_ctx_t *ctx, qfv_output_t *output, plitem_t *plist,
+				 plitem_t *properties)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	int         ret = 0;
+	qfv_output_t op = {};
+
+	if (parse_object (ctx, memsuper, plist, parse_qfv_output_t, &op,
+					  properties)) {
+		memcpy (output, &op, sizeof (*output));
 		ret = 1;
 	}
 	delete_memsuper (memsuper);
