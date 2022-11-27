@@ -52,7 +52,9 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	stage->device = device;
 	stage->cmdPool = cmdPool;
 	stage->buffer = QFV_CreateBuffer (device, size,
-									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+									  //FIXME make a param
+									  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
 						 dsprintf (str, "staging:buffer:%s", name));
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
