@@ -44,15 +44,24 @@
 
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_renderpass.h"
 
+#include "r_internal.h"
 #include "vid_vulkan.h"
 
 //FIXME make dynamic
 #define MaxParticles 2048
+
+typedef struct {
+	vec4f_t     gravity;
+	float       dT;
+} particle_push_constants_t;
 
 static const char * __attribute__((used)) particle_pass_names[] = {
 	"draw",
@@ -69,48 +78,90 @@ create_buffers (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;
-	size_t      size = 0;
 	size_t      mp = MaxParticles;
+	size_t      frames = ctx->frames.size;
 
-	VkMemoryRequirements stReq, parmReq, sysReq;
-	for (size_t i = 0; i < pctx->frames.size; i++) {
-		__auto_type pframe = &pctx->frames.a[i];
-		pframe->state
-			= QFV_CreateBuffer (device, sizeof (qfv_particle_t) * mp,
-								VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		pframe->params
-			= QFV_CreateBuffer (device, sizeof (qfv_particle_t) * mp,
-								VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		pframe->system
-			= QFV_CreateBuffer (device, sizeof (qfv_particle_t) * mp,
-								VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-								| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
-		dfunc->vkGetBufferMemoryRequirements (device->dev, pframe->state,
-											  &stReq);
-		dfunc->vkGetBufferMemoryRequirements (device->dev, pframe->params,
-											  &parmReq);
-		dfunc->vkGetBufferMemoryRequirements (device->dev, pframe->system,
-											  &sysReq);
-		size = QFV_NextOffset (size + stReq.size, &stReq);
-		size = QFV_NextOffset (size + parmReq.size, &parmReq);
-		size = QFV_NextOffset (size + sysReq.size, &sysReq);
+	pctx->resources = malloc (sizeof (qfv_resource_t)
+							  // states buffer
+							  + frames * sizeof (qfv_resobj_t)
+							  // params buffer
+							  + frames * sizeof (qfv_resobj_t)
+							  // system buffer
+							  + frames * sizeof (qfv_resobj_t));
+	__auto_type state_objs = (qfv_resobj_t *) &pctx->resources[1];
+	__auto_type param_objs = &state_objs[frames];
+	__auto_type system_objs = &param_objs[frames];
+	pctx->resources[0] = (qfv_resource_t) {
+		.name = "particles",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 3 * frames,
+		.objects = state_objs,
+	};
+	for (size_t i = 0; i < frames; i++) {
+		state_objs[i] = (qfv_resobj_t) {
+			.name = "states",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = mp * sizeof (qfv_particle_t),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			},
+		};
+		param_objs[i] = (qfv_resobj_t) {
+			.name = "params",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = mp * sizeof (qfv_parameters_t),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			},
+		};
+		system_objs[i] = (qfv_resobj_t) {
+			.name = "system",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (qfv_particle_system_t),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+			},
+		};
 	}
-	size_t      stageSize = (size / pctx->frames.size)*(pctx->frames.size + 1);
+	QFV_CreateResource (device, pctx->resources);
+
+	size_t      stageSize = (pctx->resources->size / frames)*(frames + 1);
 	pctx->stage = QFV_CreateStagingBuffer (device, "particles", stageSize,
 										   ctx->cmdpool);
-	pctx->memory = QFV_AllocBufferMemory (device, pctx->frames.a[0].state,
-										  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-										  size, 0);
-	size_t      offset = 0;
-	for (size_t i = 0; i < pctx->frames.size; i++) {
+	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
-		QFV_BindBufferMemory (device, pframe->state, pctx->memory, offset);
-		offset = QFV_NextOffset (offset + stReq.size, &parmReq);
-		QFV_BindBufferMemory (device, pframe->params, pctx->memory, offset);
-		offset = QFV_NextOffset (offset + parmReq.size, &sysReq);
-		QFV_BindBufferMemory (device, pframe->system, pctx->memory, offset);
-		offset = QFV_NextOffset (offset + sysReq.size, &stReq);
+		pframe->states = state_objs[i].buffer.buffer;
+		pframe->params = param_objs[i].buffer.buffer;
+		pframe->system = system_objs[i].buffer.buffer;
+	}
+
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type curr = &pctx->frames.a[i];
+		__auto_type prev = &pctx->frames.a[(i + frames - 1) % frames];
+		VkDescriptorBufferInfo bufferInfo[] = {
+			{ curr->states, 0, VK_WHOLE_SIZE },
+			{ curr->params, 0, VK_WHOLE_SIZE },
+			{ curr->system, 0, VK_WHOLE_SIZE },
+			{ prev->states, 0, VK_WHOLE_SIZE },
+			{ prev->params, 0, VK_WHOLE_SIZE },
+			{ prev->system, 0, VK_WHOLE_SIZE },
+		};
+		VkWriteDescriptorSet write[] = {
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+				curr->curDescriptors, 0, 0, 3,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = bufferInfo + 0
+			},
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+				curr->inDescriptors, 0, 0, 3,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = bufferInfo + 3
+			},
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 	}
 }
 
@@ -118,6 +169,7 @@ void
 Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfvPushDebug (ctx, "particles init");
 
@@ -141,8 +193,18 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 	pctx->pool = Vulkan_CreateDescriptorPool (ctx, "particle_pool");
 	pctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "particle_set");
 
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (3 * frames, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = pctx->setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, pctx->pool, layouts);
+
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
+
+		pframe->curDescriptors = sets->a[i * 3 + 0];
+		pframe->inDescriptors  = sets->a[i * 3 + 1];
+		pframe->newDescriptors = sets->a[i * 3 + 2];
 
 		DARRAY_INIT (&pframe->cmdSet, QFV_particleNumPasses);
 		DARRAY_RESIZE (&pframe->cmdSet, QFV_particleNumPasses);
@@ -156,7 +218,18 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 								 va (ctx->va_ctx, "cmd:particle:%zd:%s", i,
 									 particle_pass_names[j]));
 		}
+
+		VkEventCreateInfo event = { VK_STRUCTURE_TYPE_EVENT_CREATE_INFO };
+		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->physicsEvent);
+		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->updateEvent);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
+							 pframe->physicsEvent,
+							 va (ctx->va_ctx, "event:particle:physics:%zd", i));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
+							 pframe->updateEvent,
+							 va (ctx->va_ctx, "event:particle:update:%zd", i));
 	}
+	free (sets);
 	create_buffers (ctx);
 	qfvPopDebug (ctx);
 }
@@ -167,16 +240,17 @@ Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;
+	size_t      frames = ctx->frames.size;
 
-	for (size_t i = 0; i < pctx->frames.size; i++) {
+	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
-		free (pframe->cmdSet.a);
-		dfunc->vkDestroyBuffer (device->dev, pframe->state, 0);
-		dfunc->vkDestroyBuffer (device->dev, pframe->params, 0);
-		dfunc->vkDestroyBuffer (device->dev, pframe->system, 0);
+		dfunc->vkDestroyEvent (device->dev, pframe->updateEvent, 0);
+		dfunc->vkDestroyEvent (device->dev, pframe->physicsEvent, 0);
 	}
-	dfunc->vkFreeMemory (device->dev, pctx->memory, 0);
+
 	QFV_DestroyStagingBuffer (pctx->stage);
+	QFV_DestroyResource (device, pctx->resources);
+	free (pctx->resources);
 
 	dfunc->vkDestroyPipeline (device->dev, pctx->physics, 0);
 	dfunc->vkDestroyPipeline (device->dev, pctx->update, 0);
@@ -189,4 +263,126 @@ psystem_t *__attribute__((pure))//FIXME?
 Vulkan_ParticleSystem (vulkan_ctx_t *ctx)
 {
 	return &ctx->particle_context->psystem;	//FIXME support more
+}
+
+static void
+particles_update (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	particlectx_t *pctx = ctx->particle_context;
+	__auto_type pframe = &pctx->frames.a[ctx->curFrame];
+
+	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
+
+	__auto_type limits = &device->physDev->properties->limits;
+	VkMemoryRequirements req = {
+		.alignment = limits->minStorageBufferOffsetAlignment
+	};
+	uint32_t    numParticles = min (MaxParticles, pctx->psystem.numparticles);
+	size_t      syssize = sizeof (qfv_particle_system_t);
+	size_t      partoffs = QFV_NextOffset (syssize, &req);
+	size_t      partsize = sizeof (qfv_particle_t) * numParticles;
+	size_t      paramoffs = QFV_NextOffset (partoffs + partsize, &req);
+	size_t      paramsize = sizeof (qfv_parameters_t) * numParticles;
+	size_t      size = paramoffs + paramsize;
+
+	qfv_particle_system_t *system = QFV_PacketExtend (packet, size);
+	*system = (qfv_particle_system_t) {
+		.vertexCount = 1,
+		.particleCount = numParticles,
+	};
+	__auto_type particles = (qfv_particle_t *) ((byte *)system + partoffs);
+	memcpy (particles, pctx->psystem.particles, partsize);
+	qfv_parameters_t *params = (qfv_parameters_t *)((byte *)system + paramoffs);
+	memcpy (params, pctx->psystem.partparams, paramsize);
+
+	VkDescriptorBufferInfo bufferInfo[] = {
+		{ packet->stage->buffer, 0, syssize },
+		{ packet->stage->buffer, partoffs, partsize ? partsize : 1},
+		{ packet->stage->buffer, paramoffs, paramsize ? paramsize : 1},
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			pframe->newDescriptors, 0, 0, 3,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = bufferInfo
+		},
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+
+	dfunc->vkResetEvent (device->dev, pframe->updateEvent);
+	dfunc->vkResetEvent (device->dev, pframe->physicsEvent);
+
+	dfunc->vkCmdBindPipeline (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+							  pctx->update);
+	VkDescriptorSet set[3] = {
+		pframe->curDescriptors,
+		pframe->inDescriptors,
+		pframe->newDescriptors,
+	};
+	dfunc->vkCmdBindDescriptorSets (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+									pctx->update_layout, 0, 3, set, 0, 0);
+	dfunc->vkCmdDispatch (packet->cmd, 1, 1, 1);
+	dfunc->vkCmdSetEvent (packet->cmd, pframe->updateEvent,
+							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+	VkBufferMemoryBarrier barrier[] = {
+		{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_SHADER_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT
+			| VK_ACCESS_SHADER_WRITE_BIT,
+			0, 0,
+			pframe->states, 0, VK_WHOLE_SIZE },
+		{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_SHADER_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT
+			| VK_ACCESS_SHADER_WRITE_BIT,
+			0, 0,
+			pframe->params, 0, VK_WHOLE_SIZE },
+		{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_SHADER_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT
+			| VK_ACCESS_SHADER_WRITE_BIT,
+			0, 0,
+			pframe->system, 0, VK_WHOLE_SIZE },
+	};
+	dfunc->vkCmdWaitEvents (packet->cmd, 1, &pframe->updateEvent,
+							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+							0, 0,
+							3, barrier,
+							0, 0);
+	dfunc->vkCmdBindPipeline (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+							  pctx->physics);
+	dfunc->vkCmdBindDescriptorSets (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+									pctx->physics_layout, 0, 1, set, 0, 0);
+
+	particle_push_constants_t constants = {
+		.gravity = pctx->psystem.gravity,
+		.dT = vr_data.frametime,
+	};
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_COMPUTE_BIT,
+			field_offset (particle_push_constants_t, gravity),
+			sizeof (vec4f_t), &constants.gravity },
+		{ VK_SHADER_STAGE_COMPUTE_BIT,
+			field_offset (particle_push_constants_t, dT),
+			sizeof (float), &constants.dT },
+	};
+	QFV_PushConstants (device, packet->cmd, pctx->physics_layout,
+					   2, push_constants);
+	dfunc->vkCmdDispatch (packet->cmd, 8, 8, 8);
+	dfunc->vkCmdSetEvent (packet->cmd, pframe->physicsEvent,
+							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	QFV_PacketSubmit (packet);
+}
+
+void
+Vulkan_Particles_CreateRenderPasses (vulkan_ctx_t *ctx)
+{
+	__auto_type rp = QFV_RenderPass_New (ctx, "particles", particles_update);
+	rp->order = QFV_rp_particles;
+	DARRAY_APPEND (&ctx->renderPasses, rp);
 }

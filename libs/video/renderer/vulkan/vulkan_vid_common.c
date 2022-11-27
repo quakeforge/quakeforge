@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_output.h"
+#include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
 
@@ -166,6 +167,7 @@ Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
 	Vulkan_Output_CreateRenderPasses (ctx);
 	Vulkan_Main_CreateRenderPasses (ctx);
+	Vulkan_Particles_CreateRenderPasses (ctx);
 	Vulkan_Lighting_CreateRenderPasses (ctx);
 
 	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,

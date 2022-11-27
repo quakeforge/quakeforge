@@ -3,6 +3,7 @@
 
 #include "QF/darray.h"
 #include "QF/image.h"
+#include "QF/render.h"
 
 #include "QF/Vulkan/command.h"
 
@@ -37,14 +38,15 @@ typedef enum {
 
 typedef struct particleframe_s {
 	VkCommandBuffer compute;
-	VkSemaphore physSem;
-	VkSemaphore drawSem;
-	VkSemaphore updateSem;
-	VkBuffer    state;
+	VkEvent     physicsEvent;
+	VkEvent     updateEvent;
+	VkBuffer    states;
 	VkBuffer    params;
 	VkBuffer    system;
 
-	VkDescriptorSet descriptors;
+	VkDescriptorSet curDescriptors;
+	VkDescriptorSet inDescriptors;
+	VkDescriptorSet newDescriptors;
 
 	qfv_cmdbufferset_t cmdSet;
 } particleframe_t;
@@ -58,7 +60,7 @@ typedef struct particlectx_s {
 	VkPipeline  update;
 	VkPipeline  draw;
 
-	VkDeviceMemory memory;
+	struct qfv_resource_s *resources;
 	struct qfv_stagebuf_s *stage;
 
 	VkDescriptorPool pool;
@@ -77,5 +79,6 @@ struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawParticles (struct vulkan_ctx_s *ctx);
+void Vulkan_Particles_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h

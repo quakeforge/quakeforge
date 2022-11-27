@@ -178,11 +178,11 @@
 		};
 		particle_pool = {
 			flags = 0;
-			maxSets = $frames.size;
+			maxSets = "3z * $frames.size";
 			bindings = (
 				{
 					type = storage_buffer;
-					descriptorCount = 3;
+					descriptorCount = "3z * 3z * $frames.size";
 				},
 			);
 		};
@@ -499,7 +499,7 @@
 				{
 					stageFlags = compute;
 					offset = 0;
-					size = "16 * 4 + 4";
+					size = "4 * 4 + 4";
 				},
 			);
 		};
