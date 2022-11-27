@@ -359,8 +359,12 @@ passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
 fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
+fstrianglest_src = $(vkshaderpath)/fstrianglest.vert
+fstrianglest_c = $(vkshaderpath)/fstrianglest.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+waterwarp_src = $(vkshaderpath)/waterwarp.frag
+waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
 
 $(slice_vert_c): $(slice_vert_src)
 
@@ -432,7 +436,11 @@ $(passthrough_c): $(passthrough_src)
 
 $(fstriangle_c): $(fstriangle_src)
 
+$(fstrianglest_c): $(fstrianglest_src)
+
 $(pushcolor_c): $(pushcolor_src)
+
+$(waterwarp_c): $(waterwarp_src)
 
 vkshader_c = \
 	$(slice_c) \
@@ -473,8 +481,10 @@ vkshader_c = \
 	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
+	$(fstrianglest_c) \
 	$(pushcolor_c) \
-	$(shadow_c)
+	$(shadow_c) \
+	$(waterwarp_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
@@ -532,6 +542,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/lighting.frag \
 	libs/video/renderer/vulkan/shader/passthrough.vert \
 	libs/video/renderer/vulkan/shader/fstriangle.vert \
+	libs/video/renderer/vulkan/shader/fstrianglest.vert \
 	libs/video/renderer/vulkan/shader/partphysics.comp \
 	libs/video/renderer/vulkan/shader/partupdate.comp \
 	libs/video/renderer/vulkan/shader/particle.vert \
@@ -547,4 +558,5 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/sprite_gbuf.frag \
 	libs/video/renderer/vulkan/shader/twod_depth.frag \
 	libs/video/renderer/vulkan/shader/twod.frag \
-	libs/video/renderer/vulkan/shader/twod.vert
+	libs/video/renderer/vulkan/shader/twod.vert \
+	libs/video/renderer/vulkan/shader/waterwarp.frag

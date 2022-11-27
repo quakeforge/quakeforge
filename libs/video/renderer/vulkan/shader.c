@@ -115,7 +115,11 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/waterwarp.frag.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -162,7 +166,9 @@ static shaderdata_t builtin_shaders[] = {
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
+	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
+	{ "waterwarp.frag", waterwarp_frag, sizeof (waterwarp_frag) },
 	{}
 };
 
