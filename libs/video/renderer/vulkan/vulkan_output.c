@@ -42,6 +42,7 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_renderpass.h"
@@ -135,7 +136,7 @@ preoutput_draw (qfv_renderframe_t *rFrame)
 }
 
 static void
-output_draw (qfv_renderframe_t *rFrame)
+process_input (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -179,6 +180,14 @@ output_draw (qfv_renderframe_t *rFrame)
 
 	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
+
+}
+
+static void
+output_draw (qfv_renderframe_t *rFrame)
+{
+	process_input (rFrame);
+	Vulkan_FlushText (rFrame);
 }
 
 void

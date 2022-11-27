@@ -78,7 +78,7 @@ static const char * __attribute__((used)) draw_pass_names[] = {
 };
 
 static QFV_Subpass subpass_map[] = {
-	[QFV_draw2d]    = QFV_passTranslucent,
+	[QFV_draw2d]    = 0,
 };
 
 typedef struct descbatch_s {

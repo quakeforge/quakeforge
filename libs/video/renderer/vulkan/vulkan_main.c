@@ -50,7 +50,6 @@
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
-#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
@@ -168,7 +167,6 @@ main_draw (qfv_renderframe_t *rFrame)
 {
 	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
-	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
 	Vulkan_Lighting_Draw (rFrame);
 	Vulkan_Compose_Draw (rFrame);
 }

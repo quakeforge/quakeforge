@@ -1124,31 +1124,10 @@
 			inputAssembly = $properties.inputAssembly.alias;
 			layout = sprite_layout;
 		};
-		twod_depth = {
-			@inherit = $properties.pipelines.depth_base;
-			stages = (
-				{
-					stage = vertex;
-					name = main;
-					module = $builtin/twod.vert;
-				},
-				{
-					stage = fragment;
-					name = main;
-					module = $builtin/twod_depth.frag;
-				},
-			);
-			vertexInput   = $properties.vertexInput.twod;
-			inputAssembly = $properties.inputAssembly.twod;
-			rasterization = $properties.rasterization.counter_cw_cull_back;
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = ($properties.attachmentBlendOp.alpha_blend);
-			};
-			layout = twod_layout;
-		};
 		twod = {
-			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+			@inherit = $properties.pipelines.trans_base;
+			renderPass = output;
+			subpass = 0;
 			stages = (
 				{
 					stage = vertex;
@@ -1172,7 +1151,9 @@
 			layout = twod_layout;
 		};
 		slice = {
-			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+			@inherit = $properties.pipelines.trans_base;
+			renderPass = output;
+			subpass = 0;
 			stages = (
 				{ stage = vertex;   name = main; module = $builtin/slice.vert; },
 				{ stage = fragment; name = main; module = $builtin/glyph.frag; },
@@ -1191,7 +1172,9 @@
 			layout = glyph_layout;//slices use the same descriptors as glyphs
 		};
 		glyph = {
-			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+			@inherit = $properties.pipelines.trans_base;
+			renderPass = output;
+			subpass = 0;
 			stages = (
 				{ stage = vertex;   name = main; module = $builtin/glyph.vert; },
 				{ stage = fragment; name = main; module = $builtin/glyph.frag; },
