@@ -449,7 +449,7 @@ particles_update (qfv_renderframe_t *rFrame)
 	};
 	QFV_PushConstants (device, packet->cmd, pctx->physics_layout,
 					   2, push_constants);
-	dfunc->vkCmdDispatch (packet->cmd, 8, 8, 8);
+	dfunc->vkCmdDispatch (packet->cmd, MaxParticles, 1, 1);
 	dfunc->vkCmdSetEvent (packet->cmd, pframe->physicsEvent,
 							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	QFV_PacketSubmit (packet);
