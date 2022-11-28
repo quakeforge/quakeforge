@@ -567,6 +567,10 @@
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
 		};
+		point = {
+			topology = point_list;
+			primitiveRestartEnable = false;
+		};
 	};
 
 	vertexInput = {
@@ -646,13 +650,13 @@
 		};
 		particle = {
 			bindings = (
-				{ binding = 0; stride = "4 * 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "4 * 4 * 4"; inputRate = instance; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 32; },
+				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
 			);
 		};
 		twod = {
@@ -1085,7 +1089,7 @@
 				},
 			);
 			vertexInput   = $properties.vertexInput.particle;
-			inputAssembly = $properties.inputAssembly.sprite;
+			inputAssembly = $properties.inputAssembly.point;
 			layout = partdraw_layout;
 		};
 		sprite_gbuf = {

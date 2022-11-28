@@ -49,6 +49,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 
@@ -67,9 +68,83 @@ static const char * __attribute__((used)) particle_pass_names[] = {
 	"draw",
 };
 
-void
-Vulkan_DrawParticles (vulkan_ctx_t *ctx)
+static void
+particle_begin_subpass (VkPipeline pipeline, qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	particlectx_t *pctx = ctx->particle_context;
+	uint32_t    curFrame = ctx->curFrame;
+	particleframe_t *pframe = &pctx->frames.a[curFrame];
+	VkCommandBuffer cmd = pframe->cmdSet.a[0];
+
+	dfunc->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferInheritanceInfo inherit = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
+		rFrame->renderpass->renderpass, QFV_passTranslucent,
+		rFrame->framebuffer,
+		0, 0, 0,
+	};
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "particles:%s", "draw"),
+						 { 0.6, 0.5, 0, 1});
+
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									pctx->draw_layout, 0, 1, sets, 0, 0);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
+}
+
+static void
+particle_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	QFV_duCmdEndLabel (device, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
+}
+
+void
+Vulkan_DrawParticles (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	particlectx_t *pctx = ctx->particle_context;
+	uint32_t    curFrame = ctx->curFrame;
+	particleframe_t *pframe = &pctx->frames.a[curFrame];
+	VkCommandBuffer cmd = pframe->cmdSet.a[0];
+
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+				   pframe->cmdSet.a[0]);
+
+	particle_begin_subpass (pctx->draw, rFrame);
+
+	mat4f_t     mat;
+	mat4fidentity (mat);
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat4f_t), &mat },
+	};
+	QFV_PushConstants (device, cmd, pctx->draw_layout, 1, push_constants);
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer    buffers[] = {
+		pframe->states,
+	};
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, buffers, offsets);
+	dfunc->vkCmdDrawIndirect (cmd, pframe->system, 0, 1,
+							  sizeof (qfv_particle_system_t));
+	particle_end_subpass (cmd, ctx);
 }
 
 static void
@@ -175,6 +250,7 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 
 	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
 	ctx->particle_context = pctx;
+	pctx->psystem = &r_psystem;
 
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
@@ -262,7 +338,7 @@ Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 psystem_t *__attribute__((pure))//FIXME?
 Vulkan_ParticleSystem (vulkan_ctx_t *ctx)
 {
-	return &ctx->particle_context->psystem;	//FIXME support more
+	return ctx->particle_context->psystem;	//FIXME support more
 }
 
 static void
@@ -280,7 +356,7 @@ particles_update (qfv_renderframe_t *rFrame)
 	VkMemoryRequirements req = {
 		.alignment = limits->minStorageBufferOffsetAlignment
 	};
-	uint32_t    numParticles = min (MaxParticles, pctx->psystem.numparticles);
+	uint32_t    numParticles = min (MaxParticles, pctx->psystem->numparticles);
 	size_t      syssize = sizeof (qfv_particle_system_t);
 	size_t      partoffs = QFV_NextOffset (syssize, &req);
 	size_t      partsize = sizeof (qfv_particle_t) * numParticles;
@@ -294,14 +370,14 @@ particles_update (qfv_renderframe_t *rFrame)
 		.particleCount = numParticles,
 	};
 	__auto_type particles = (qfv_particle_t *) ((byte *)system + partoffs);
-	memcpy (particles, pctx->psystem.particles, partsize);
+	memcpy (particles, pctx->psystem->particles, partsize);
 	qfv_parameters_t *params = (qfv_parameters_t *)((byte *)system + paramoffs);
-	memcpy (params, pctx->psystem.partparams, paramsize);
+	memcpy (params, pctx->psystem->partparams, paramsize);
 
 	VkDescriptorBufferInfo bufferInfo[] = {
-		{ packet->stage->buffer, 0, syssize },
 		{ packet->stage->buffer, partoffs, partsize ? partsize : 1},
 		{ packet->stage->buffer, paramoffs, paramsize ? paramsize : 1},
+		{ packet->stage->buffer, 0, syssize },
 	};
 	VkWriteDescriptorSet write[] = {
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
@@ -360,7 +436,7 @@ particles_update (qfv_renderframe_t *rFrame)
 									pctx->physics_layout, 0, 1, set, 0, 0);
 
 	particle_push_constants_t constants = {
-		.gravity = pctx->psystem.gravity,
+		.gravity = pctx->psystem->gravity,
 		.dT = vr_data.frametime,
 	};
 	qfv_push_constants_t push_constants[] = {
@@ -377,6 +453,8 @@ particles_update (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdSetEvent (packet->cmd, pframe->physicsEvent,
 							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	QFV_PacketSubmit (packet);
+
+	pctx->psystem->numparticles = 0;
 }
 
 void

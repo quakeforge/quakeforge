@@ -8,7 +8,7 @@ layout (location = 0) out vec4 frag_color;
 void
 main (void)
 {
-	vec4        c = color;
+	vec4        c = vec4 (1,1,1,1);//color;
 	vec2        x = uv_tr.xy;
 
 	float       a = 1 - dot (x, x);

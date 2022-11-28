@@ -43,13 +43,9 @@ fogBlend (vec4 color)
 void
 main (void)
 {
-	vec4        c = vec4 (0);
-	vec4        e;
-	vec3        t_st = vec3 (warp_st (tl_st.xy, time), 0);
-	vec3        e_st = vec3 (warp_st (tl_st.xy, time), 1);
-
-	c = texture (Texture, t_st);
-	e = texture (Texture, e_st);
+	vec2        st = warp_st (tl_st.xy, time);
+	vec4        c = texture (Texture, vec3(st, 0));
+	vec4        e = texture (Texture, vec3(st, 1));
 	float       a = c.a * e.a * alpha;
 	c += e;
 	c.a = a;

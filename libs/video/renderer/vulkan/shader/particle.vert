@@ -21,9 +21,9 @@ layout (location = 2) out vec4 o_ramp;
 void
 main (void)
 {
-	// geometry shader will take care of Projection and View
-	gl_Position = Model * position;
-	o_velocity = Model * velocity;
+	// geometry shader will take care of Projection
+	gl_Position = View * (Model * position);
+	o_velocity = View * (Model * velocity);
 	o_color = color;
 	o_ramp = ramp;
 }
