@@ -405,10 +405,11 @@ particles_update (qfv_renderframe_t *rFrame)
 	partsize = max (1, partsize);
 	paramsize = max (1, paramsize);
 
+	size_t      sysoffs = packet->offset;
 	VkDescriptorBufferInfo bufferInfo[] = {
-		{ packet->stage->buffer, partoffs, partsize},
-		{ packet->stage->buffer, paramoffs, paramsize},
-		{ packet->stage->buffer, 0, syssize },
+		{ packet->stage->buffer, sysoffs + partoffs, partsize},
+		{ packet->stage->buffer, sysoffs + paramoffs, paramsize},
+		{ packet->stage->buffer, sysoffs, syssize },
 	};
 	VkWriteDescriptorSet write[] = {
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
@@ -427,7 +428,7 @@ particles_update (qfv_renderframe_t *rFrame)
 			0,
 			VK_ACCESS_SHADER_READ_BIT,
 			0, 0,
-			packet->stage->buffer, 0, paramoffs + paramsize },
+			packet->stage->buffer, sysoffs, paramoffs + paramsize },
 	};
 	dfunc->vkCmdPipelineBarrier (packet->cmd,
 								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
