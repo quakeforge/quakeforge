@@ -130,7 +130,7 @@ Vulkan_DrawParticles (qfv_renderframe_t *rFrame)
 				   pframe->cmdSet.a[0]);
 
 	particle_begin_subpass (pctx->draw, rFrame);
-
+/*
 	VkBufferMemoryBarrier barrier[] = {
 		{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
 			VK_ACCESS_SHADER_READ_BIT
@@ -158,7 +158,7 @@ Vulkan_DrawParticles (qfv_renderframe_t *rFrame)
 							0, 0,
 							3, barrier,
 							0, 0);
-
+*/
 	mat4f_t     mat;
 	mat4fidentity (mat);
 	qfv_push_constants_t push_constants[] = {
@@ -449,7 +449,7 @@ particles_update (qfv_renderframe_t *rFrame)
 									pctx->update_layout, 0, 3, set, 0, 0);
 	dfunc->vkCmdDispatch (packet->cmd, 1, 1, 1);
 	dfunc->vkCmdSetEvent (packet->cmd, pframe->updateEvent,
-							VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 	VkBufferMemoryBarrier ev_barrier[] = {
 		{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
@@ -497,8 +497,8 @@ particles_update (qfv_renderframe_t *rFrame)
 	QFV_PushConstants (device, packet->cmd, pctx->physics_layout,
 					   2, push_constants);
 	dfunc->vkCmdDispatch (packet->cmd, MaxParticles, 1, 1);
-	dfunc->vkCmdSetEvent (packet->cmd, pframe->physicsEvent,
-						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	//dfunc->vkCmdSetEvent (packet->cmd, pframe->physicsEvent,
+	//					  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 	QFV_PacketSubmit (packet);
 
 	pctx->psystem->numparticles = 0;
