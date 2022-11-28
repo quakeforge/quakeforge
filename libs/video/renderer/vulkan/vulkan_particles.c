@@ -50,6 +50,7 @@
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 
@@ -98,9 +99,10 @@ particle_begin_subpass (VkPipeline pipeline, qfv_renderframe_t *rFrame)
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Palette_Descriptor (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									pctx->draw_layout, 0, 1, sets, 0, 0);
+									pctx->draw_layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 }

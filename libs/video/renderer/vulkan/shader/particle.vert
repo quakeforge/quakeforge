@@ -4,6 +4,7 @@
 layout (set = 0, binding = 0) uniform
 #include "matrices.h"
 ;
+layout (set = 1, binding = 0) uniform sampler2D Palette;
 
 layout (push_constant) uniform PushConstants {
 	mat4 Model;
@@ -24,6 +25,9 @@ main (void)
 	// geometry shader will take care of Projection
 	gl_Position = View * (Model * position);
 	o_velocity = View * (Model * velocity);
-	o_color = color;
+	uint        c = floatBitsToInt (color.x);
+	uint        x = c & 0x0f;
+	uint        y = (c >> 4) & 0x0f;
+	o_color = texture (Palette, vec2 (x, y) / 15.0);
 	o_ramp = ramp;
 }

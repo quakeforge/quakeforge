@@ -289,7 +289,7 @@
 					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
-					stageFlags = fragment;
+					stageFlags = fragment|vertex;
 				},
 			);
 		};
@@ -507,7 +507,7 @@
 			setLayouts = (particle_set, particle_set, particle_set);
 		};
 		partdraw_layout = {
-			setLayouts = (matrix_set);
+			setLayouts = (matrix_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
