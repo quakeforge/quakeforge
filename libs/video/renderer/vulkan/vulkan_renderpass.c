@@ -348,6 +348,9 @@ QFV_RenderPass_New (vulkan_ctx_t *ctx, const char *name, qfv_draw_t function)
 			QFV_ParseRGBA (ctx, (float *)&rp->color, color, rp->renderpassDef);
 		}
 	}
+	if (!rp->subpassCount) {
+		rp->subpassCount = 1;
+	}
 
 	DARRAY_INIT (&rp->frames, 4);
 	DARRAY_RESIZE (&rp->frames, ctx->frames.size);
