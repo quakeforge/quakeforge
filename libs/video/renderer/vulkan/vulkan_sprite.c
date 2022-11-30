@@ -76,7 +76,7 @@ static const char * __attribute__((used)) sprite_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	QFV_passDepth,			// QFV_spriteDepth
 	QFV_passGBuffer,		// QFV_spriteGBuffer
-	QFV_passTranslucent,	// QFV_spriteTranslucent
+	QFV_passTranslucentFrag,// QFV_spriteTranslucent
 };
 
 static void

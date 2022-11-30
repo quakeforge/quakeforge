@@ -146,6 +146,7 @@
 			{ name = translucent; color = "[ 0.25, 0.25, 0.6, 1]" },
 			{ name = g-buffef;    color = "[ 0.3,  0.7,  0.3, 1]" },
 			{ name = lighting;    color = "[ 0.8,  0.8,  0.8, 1]" },
+			{ name = translucent; color = "[ 0.25, 0.6, 0.25, 1]" },
 			{ name = compose;     color = "[ 0.7,  0.3,  0.3, 1]" },
 		);
 	};
@@ -200,14 +201,8 @@
 					layout = depth_stencil_attachment_optimal;
 				};
 			},
-			{	// 1 translucent
+			{	// 1 translucent-frags
 				pipelineBindPoint = graphics;
-				colorAttachments = (
-					{	// translucent
-						attachment = 6;
-						layout = color_attachment_optimal;
-					},
-				);
 				depthStencilAttachment = {
 					attachment = 0;
 					layout = depth_stencil_read_only_optimal;
@@ -272,7 +267,17 @@
 				);
 				preserveAttachments = (6);
 			},
-			{	// 4 compose
+			{	// 4 translucent-final
+				pipelineBindPoint = graphics;
+				colorAttachments = (
+					{	// translucent
+						attachment = 6;
+						layout = color_attachment_optimal;
+					},
+				);
+				preserveAttachments = (1, 2, 3, 4, 5);
+			},
+			{	// 5 compose
 				pipelineBindPoint = graphics;
 				inputAttachments = (
 					{	// opaque
@@ -305,11 +310,11 @@
 			},
 			/*{
 				srcSubpass = ~0u;	// external
-				dstSubpass = 1; // translucent
-				srcStageMask = compute_shader;
-				dstStageMask = vertex_input|draw_indirect;
-				srcAccessMask = shader_write;
-				dstAccessMask = vertex_attribute_read|indirect_command_read;
+				dstSubpass = 1; // translucent-frags
+				srcStageMask = transfer;
+				dstStageMask = fragment_shader|early_fragment_tests;
+				srcAccessMask = transfer_write;
+				dstAccessMask = shader_read|shader_write;
 			},*/
 			{
 				srcSubpass = 0;	// depth
@@ -331,7 +336,7 @@
 			},
 			{
 				srcSubpass = 3;	// lighting
-				dstSubpass = 4;	// compose
+				dstSubpass = 5;	// compose
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
@@ -339,8 +344,17 @@
 				dependencyFlags = by_region;
 			},
 			{
-				srcSubpass = 1;	// translucent
-				dstSubpass = 4;	// compose
+				srcSubpass = 1;	// translucent-frags
+				dstSubpass = 4;	// translucent-final
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = input_attachment_read;
+				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = 4;	// translucent-final
+				dstSubpass = 5;	// compose
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;

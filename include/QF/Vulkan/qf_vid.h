@@ -42,17 +42,19 @@ enum {
 	QFV_rp_particles,
 	QFV_rp_shadowmap,
 	QFV_rp_preoutput,
+	QFV_rp_translucent,
 	QFV_rp_main,
 	QFV_rp_output,
 };
 
 //FIXME location
 typedef enum {
-	QFV_passDepth,			// geometry
-	QFV_passTranslucent,	// geometry
-	QFV_passGBuffer,		// geometry
-	QFV_passLighting,		// single triangle
-	QFV_passCompose,		// single triangle
+	QFV_passDepth,				// geometry
+	QFV_passTranslucentFrag,	// geometry
+	QFV_passGBuffer,			// geometry
+	QFV_passLighting,			// single triangle
+	QFV_passTranslucentFinal,	// single triangle
+	QFV_passCompose,			// single triangle
 
 	QFV_NumPasses
 } QFV_Subpass;

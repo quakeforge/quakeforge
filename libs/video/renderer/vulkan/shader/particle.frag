@@ -1,9 +1,11 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "oit_store.finc"
 
 layout (location = 0) in vec4 uv_tr;
 layout (location = 1) in vec4 color;
 
-layout (location = 0) out vec4 frag_color;
+layout(early_fragment_tests) in;
 
 void
 main (void)
@@ -16,5 +18,5 @@ main (void)
 		discard;
 	}
 	c *= (a);
-	frag_color = c;
+	StoreFrag (c, gl_FragCoord.z);
 }

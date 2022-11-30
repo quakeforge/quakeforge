@@ -69,7 +69,7 @@ static const char * __attribute__((used)) alias_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	QFV_passDepth,			// QFV_aliasDepth
 	QFV_passGBuffer,		// QFV_aliasGBuffer
-	QFV_passTranslucent,	// QFV_aliasTranslucent
+	QFV_passTranslucentFrag,// QFV_aliasTranslucent
 };
 
 static void

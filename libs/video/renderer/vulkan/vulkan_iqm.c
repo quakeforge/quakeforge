@@ -70,7 +70,7 @@ static const char * __attribute__((used)) iqm_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	QFV_passDepth,			// QFV_iqmDepth
 	QFV_passGBuffer,		// QFV_iqmGBuffer
-	QFV_passTranslucent,	// QFV_iqmTranslucent
+	QFV_passTranslucentFrag,// QFV_iqmTranslucent
 };
 
 static void

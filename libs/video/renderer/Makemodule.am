@@ -254,6 +254,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_scene.c \
 	libs/video/renderer/vulkan/vulkan_sprite.c \
 	libs/video/renderer/vulkan/vulkan_texture.c \
+	libs/video/renderer/vulkan/vulkan_translucent.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
 libs/video/renderer/vulkan/vkparse.lo: \
@@ -339,6 +340,10 @@ lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+oit_store = $(vkshaderpath)/oit_store.finc
+oit_h = $(vkshaderpath)/oit.h
+oit_blendf_src = $(vkshaderpath)/oit_blend.frag
+oit_blendf_c = $(vkshaderpath)/oit_blend.frag.spvc
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -378,7 +383,7 @@ $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src)
 $(particleg_c): $(particleg_src)
-$(particlef_c): $(particlef_src)
+$(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src)
 
@@ -408,13 +413,15 @@ $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_shadow_c): $(bsp_shadow_src)
 
-$(bsp_skyf_c): $(bsp_skyf_src)
+$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
-$(bsp_turbf_c): $(bsp_turbf_src)
+$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
 $(lightingf_c): $(lightingf_src)
 
 $(composef_c): $(composef_src)
+
+$(oit_blendf_c): $(oit_blendf_src) $(oit_h)
 
 $(aliasv_c): $(aliasv_src)
 
@@ -471,6 +478,7 @@ vkshader_c = \
 	$(bsp_turbf_c) \
 	$(lightingf_c) \
 	$(composef_c) \
+	$(oit_blendf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \
@@ -537,6 +545,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/bsp_sky.frag \
 	libs/video/renderer/vulkan/shader/bsp_turb.frag \
 	libs/video/renderer/vulkan/shader/compose.frag \
+	libs/video/renderer/vulkan/shader/oit_blend.frag \
 	libs/video/renderer/vulkan/shader/iqm.frag \
 	libs/video/renderer/vulkan/shader/iqm.vert \
 	libs/video/renderer/vulkan/shader/lighting.frag \

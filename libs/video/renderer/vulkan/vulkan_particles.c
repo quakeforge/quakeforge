@@ -53,6 +53,7 @@
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
+#include "QF/Vulkan/qf_translucent.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -83,7 +84,7 @@ particle_begin_subpass (VkPipeline pipeline, qfv_renderframe_t *rFrame)
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		rFrame->renderpass->renderpass, QFV_passTranslucent,
+		rFrame->renderpass->renderpass, QFV_passTranslucentFrag,
 		rFrame->framebuffer,
 		0, 0, 0,
 	};
@@ -100,9 +101,10 @@ particle_begin_subpass (VkPipeline pipeline, qfv_renderframe_t *rFrame)
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		Vulkan_Palette_Descriptor (ctx),
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									pctx->draw_layout, 0, 2, sets, 0, 0);
+									pctx->draw_layout, 0, 3, sets, 0, 0);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 }
@@ -128,7 +130,7 @@ Vulkan_DrawParticles (qfv_renderframe_t *rFrame)
 	particleframe_t *pframe = &pctx->frames.a[curFrame];
 	VkCommandBuffer cmd = pframe->cmdSet.a[0];
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFrag],
 				   pframe->cmdSet.a[0]);
 
 	particle_begin_subpass (pctx->draw, rFrame);

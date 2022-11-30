@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
@@ -75,6 +76,9 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
+
+#define TEX_SET 3
+#define SKYBOX_SET 4
 
 typedef struct bsp_push_constants_s {
 	quat_t      fog;
@@ -93,8 +97,8 @@ static const char * __attribute__((used)) bsp_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	[QFV_bspDepth]   = QFV_passDepth,
 	[QFV_bspGBuffer] = QFV_passGBuffer,
-	[QFV_bspSky]     = QFV_passTranslucent,
-	[QFV_bspTurb]    = QFV_passTranslucent,
+	[QFV_bspSky]     = QFV_passTranslucentFrag,
+	[QFV_bspTurb]    = QFV_passTranslucentFrag,
 };
 
 static void
@@ -828,9 +832,10 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		Vulkan_Scene_Descriptors (ctx),
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, sets, 0, 0);
+									layout, 0, 3, sets, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -884,7 +889,7 @@ turb_begin (qfv_renderframe_t *rFrame)
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFrag],
 				   bframe->cmdSet.a[QFV_bspTurb]);
 
 	qfvPushDebug (ctx, "bsp_begin_subpass");
@@ -909,7 +914,7 @@ sky_begin (qfv_renderframe_t *rFrame)
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFrag],
 				   bframe->cmdSet.a[QFV_bspSky]);
 
 	qfvPushDebug (ctx, "bsp_begin_subpass");
@@ -1020,7 +1025,7 @@ draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
 		__auto_type d = pass->draw_queues[queue].a[i];
 		if (pass->textures) {
 			vulktex_t  *tex = pass->textures->a[d.tex_id];
-			bind_texture (tex, 2, layout, dfunc, cmd);
+			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
 		}
 		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
 								 d.first_index, 0, d.first_instance);
@@ -1189,7 +1194,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 
 	sky_begin (rFrame);
 	vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
-	bind_texture (&skybox, 3, bctx->layout, dfunc,
+	bind_texture (&skybox, SKYBOX_SET, bctx->layout, dfunc,
 				  bframe->cmdSet.a[QFV_bspSky]);
 	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,

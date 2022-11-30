@@ -233,6 +233,20 @@
 				},
 			);
 		};
+		oit_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = "2z * $frames.size";
+				},
+				{
+					type = storage_image;
+					descriptorCount = "1z * $frames.size";
+				},
+			);
+		};
 		compose_attach_pool = {
 			flags = 0;
 			maxSets = $frames.size;
@@ -290,6 +304,28 @@
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment|vertex;
+				},
+			);
+		};
+		oit_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = fragment;
 				},
 			);
 		};
@@ -433,7 +469,7 @@
 			setLayouts = (matrix_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (matrix_set, entity_set, texture_set, texture_set);
+			setLayouts = (matrix_set, entity_set, oit_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = fragment;
@@ -490,6 +526,9 @@
 		lighting_layout = {
 			setLayouts = (lighting_attach, lighting_lights, lighting_shadow);
 		};
+		oit_layout = {
+			setLayouts = (oit_set);
+		};
 		compose_layout = {
 			setLayouts = (compose_attach);
 		};
@@ -507,7 +546,7 @@
 			setLayouts = (particle_set, particle_set, particle_set);
 		};
 		partdraw_layout = {
-			setLayouts = (matrix_set, texture_set);
+			setLayouts = (matrix_set, texture_set, oit_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -1225,9 +1264,22 @@
 			);
 			layout = lighting_layout;
 		};
-		compose = {
+		oit = {
 			@inherit = $properties.pipelines.comp_base;
 			subpass = 4;
+			stages = (
+				$properties.fstriangle.vertexStage,
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/oit_blend.frag;
+				},
+			);
+			layout = oit_layout;
+		};
+		compose = {
+			@inherit = $properties.pipelines.comp_base;
+			subpass = 5;
 			stages = (
 				$properties.fstriangle.vertexStage,
 				{

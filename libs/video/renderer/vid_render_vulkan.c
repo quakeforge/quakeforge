@@ -57,6 +57,7 @@
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
@@ -109,6 +110,7 @@ vulkan_R_Init (void)
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
+	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
 	Skin_Init ();
@@ -740,6 +742,7 @@ vulkan_vid_render_shutdown (void)
 	Mod_ClearAll ();
 
 	Vulkan_Compose_Shutdown (vulkan_ctx);
+	Vulkan_Translucent_Shutdown (vulkan_ctx);
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Sprite_Shutdown (vulkan_ctx);

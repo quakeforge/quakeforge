@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/swapchain.h"
 
@@ -140,6 +141,7 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 	Vulkan_Bsp_Flush (ctx);
 	Vulkan_RenderEntities (r_ent_queue, rFrame);
 	Vulkan_Scene_Flush (ctx);
+	Vulkan_Translucent_Draw (rFrame);
 }
 
 void
@@ -187,4 +189,5 @@ Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 	DARRAY_APPEND (&ctx->renderPasses, rp);
 
 	Vulkan_Output_SetInput (ctx, rp->output.view);
+	Vulkan_Translucent_CreateBuffers (ctx, rp->output.extent);
 }
