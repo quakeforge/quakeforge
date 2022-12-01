@@ -57,11 +57,11 @@
 #include "QF/scene/entity.h"
 
 #include "client/particles.h"
+#include "client/sbar.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
 
 #include "compat.h"
-#include "sbar.h"
 
 #include "nq/include/client.h"
 #include "nq/include/host.h"
@@ -721,7 +721,7 @@ CL_ParseServerMessage (void)
 	static dstring_t *stuffbuf;
 	signon_t    so;
 
-	cl.viewstate.last_servermessage = realtime;
+	cl.viewstate.last_servermessage = cl.time;
 	TEntContext_t tentCtx = {
 		cl.viewstate.player_origin,
 		cl.viewentity

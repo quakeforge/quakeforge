@@ -46,7 +46,8 @@
 #include "QF/msg.h"
 
 #include "compat.h"
-#include "sbar.h"
+
+#include "client/sbar.h"
 
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_input.h"

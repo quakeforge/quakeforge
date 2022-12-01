@@ -28,8 +28,8 @@
 // the status bar is redrawn only if something has changed, but if anything
 // does, the entire thing will be redrawn for the next vid.numpages frames.
 
-#ifndef _SBAR_H
-#define _SBAR_H
+#ifndef __client_sbar_h
+#define __client_sbar_h
 
 extern qboolean sbar_showscores;
 
@@ -59,4 +59,4 @@ void Sbar_CenterPrint (const char *str);
 
 void Sbar_LogFrags (double time);
 
-#endif
+#endif//__client_sbar_h

@@ -64,10 +64,10 @@
 #include "QF/scene/scene.h"
 
 #include "compat.h"
-#include "sbar.h"
 
 #include "client/effects.h"
 #include "client/particles.h"
+#include "client/sbar.h"
 #include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"

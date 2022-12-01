@@ -49,7 +49,7 @@
 
 #include "qw/include/cl_parse.h"
 #include "qw/include/client.h"
-#include "sbar.h"
+#include "client/sbar.h"
 
 int cl_netgraph;
 static cvar_t cl_netgraph_cvar = {

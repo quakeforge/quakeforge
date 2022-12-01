@@ -69,7 +69,6 @@ EXTRA_DIST += \
 	include/r_text.h \
 	include/regex.h \
 	include/rua_internal.h \
-	include/sbar.h \
 	include/skin_stencil.h \
 	include/scn_internal.h \
 	include/snd_internal.h \
@@ -90,6 +89,7 @@ EXTRA_DIST += \
 	include/client/input.h \
 	include/client/locs.h \
 	include/client/particles.h \
+	include/client/sbar.h \
 	include/client/state.h \
 	include/client/temp_entities.h \
 	include/client/view.h \

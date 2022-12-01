@@ -55,7 +55,6 @@
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
 
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;

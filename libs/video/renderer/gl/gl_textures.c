@@ -53,7 +53,6 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "r_scrap.h"
-#include "sbar.h"
 #include "vid_internal.h"
 
 struct scrap_s {
