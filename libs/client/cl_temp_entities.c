@@ -350,25 +350,8 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->BloodPuffEffect (position, count);
 			break;
-		case TE_Explosion:
+		case TE_Explosion1:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
-
-			// particles
-			clp_funcs->ParticleExplosion (position);
-
-			// light
-			dl = R_AllocDlight (0);
-			if (dl) {
-				VectorCopy (position, dl->origin);
-				dl->radius = 350;
-				dl->die = time + 0.5;
-				dl->decay = 300;
-				QuatSet (0.86, 0.31, 0.24, 0.7, dl->color);
-				//FIXME? nq: QuatSet (1.0, 0.5, 0.25, 0.7, dl->color);
-			}
-
-			// sound
-			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 
 			// sprite
 			to = new_tent_object ();
@@ -386,6 +369,26 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, scene_renderer, cl_world.scene->reg);
 			renderer->model = cl_spr_explod;
 			Transform_SetLocalPosition (transform, position);
+			goto TE_Explosion_no_sprite;
+		case TE_Explosion:
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
+TE_Explosion_no_sprite:
+			// particles
+			clp_funcs->ParticleExplosion (position);
+
+			// light
+			dl = R_AllocDlight (0);
+			if (dl) {
+				VectorCopy (position, dl->origin);
+				dl->radius = 350;
+				dl->die = time + 0.5;
+				dl->decay = 300;
+				QuatSet (0.86, 0.31, 0.24, 0.7, dl->color);
+				//FIXME? nq: QuatSet (1.0, 0.5, 0.25, 0.7, dl->color);
+			}
+
+			// sound
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			break;
 		case TE_Explosion2:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
@@ -548,7 +551,7 @@ static const TE_Effect qwEffects[256] = {
 	[TE_qwSpike]          = TE_Spike,
 	[TE_qwSuperSpike]     = TE_SuperSpike,
 	[TE_qwGunshot]        = TE_Gunshot2,
-	[TE_qwExplosion]      = TE_Explosion,
+	[TE_qwExplosion]      = TE_Explosion1,
 	[TE_qwTarExplosion]   = TE_TarExplosion,
 	[TE_qwLightning1]     = TE_Lightning1,
 	[TE_qwLightning2]     = TE_Lightning2,
