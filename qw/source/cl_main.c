@@ -1944,6 +1944,7 @@ Host_Frame (float time)
 	r_data->frametime = host_frametime;
 
 	cl.viewstate.time = realtime;
+	cl.viewstate.realtime = realtime;
 	if (!cls.demoplayback && cls.state == ca_active) {
 		CL_NetUpdate ();
 	}
@@ -2090,6 +2091,7 @@ Host_Init (void)
 	CL_Init ();
 
 	cl.viewstate.time = realtime;
+	cl.viewstate.realtime = realtime;
 	CL_UpdateScreen (&cl.viewstate);
 	CL_UpdateScreen (&cl.viewstate);
 

@@ -101,6 +101,7 @@ Skin_NextDownload (void)
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking skins...\n");
 		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	cls.downloadtype = dl_skin;

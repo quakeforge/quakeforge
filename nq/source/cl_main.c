@@ -431,6 +431,7 @@ CL_NextDemo (void)
 
 	cl.viewstate.loading = true;
 	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
 	CL_UpdateScreen(&cl.viewstate);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {

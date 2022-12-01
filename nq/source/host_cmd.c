@@ -297,6 +297,7 @@ Host_Map_f (void)
 
 	cl.viewstate.loading = true;
 	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
 	CL_UpdateScreen (&cl.viewstate);
 
 	svs.serverflags = 0;				// haven't completed an episode yet
@@ -628,6 +629,7 @@ Host_Loadgame_f (void)
 
 	cl.viewstate.loading = true;
 	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
 	CL_UpdateScreen (&cl.viewstate);
 
 	Sys_Printf ("Loading game from %s...\n", name->str);

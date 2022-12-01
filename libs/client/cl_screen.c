@@ -133,8 +133,8 @@ scr_draw_views (void)
 	View_SetVisible (pause_view, scr_showpause && r_data->paused);
 
 	View_SetVisible (ram_view, scr_showram && r_cache_thrash);
-	View_SetVisible (net_view, (!_vs->demoplayback
-								&& _vs->time - _vs->last_servermessage >= 0.3));
+	double msg_time = _vs->realtime - _vs->last_servermessage;
+	View_SetVisible (net_view, (!_vs->demoplayback && msg_time >= 0.3));
 	View_SetVisible (loading_view, _vs->loading);
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);

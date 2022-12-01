@@ -60,6 +60,7 @@ typedef struct viewstate_s {
 	vec4f_t     punchangle;
 	transform_t camera_transform;
 	double      time;
+	double      realtime;
 	double      last_servermessage;
 	float       frametime;
 	float       height;

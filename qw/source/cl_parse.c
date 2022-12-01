@@ -285,6 +285,7 @@ Model_NextDownload (void)
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking models...\n");
 		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
@@ -375,6 +376,7 @@ Sound_NextDownload (void)
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking sounds...\n");
 		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
