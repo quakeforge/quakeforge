@@ -427,12 +427,6 @@
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
-				{
-					binding = 1;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
 			);
 		};
 		particle_set = {
@@ -526,11 +520,8 @@
 		lighting_layout = {
 			setLayouts = (lighting_attach, lighting_lights, lighting_shadow);
 		};
-		oit_layout = {
-			setLayouts = (oit_set);
-		};
 		compose_layout = {
-			setLayouts = (compose_attach);
+			setLayouts = (compose_attach, oit_set);
 		};
 		partphysics_layout = {
 			setLayouts = (particle_set);
@@ -1264,22 +1255,9 @@
 			);
 			layout = lighting_layout;
 		};
-		oit = {
-			@inherit = $properties.pipelines.comp_base;
-			subpass = 4;
-			stages = (
-				$properties.fstriangle.vertexStage,
-				{
-					stage = fragment;
-					name = main;
-					module = $builtin/oit_blend.frag;
-				},
-			);
-			layout = oit_layout;
-		};
 		compose = {
 			@inherit = $properties.pipelines.comp_base;
-			subpass = 5;
+			subpass = 4;
 			stages = (
 				$properties.fstriangle.vertexStage,
 				{

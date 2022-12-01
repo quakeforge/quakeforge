@@ -46,6 +46,7 @@
 
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_renderpass.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -90,16 +91,15 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 
 	cframe->imageInfo[0].imageView
 		= renderpass->attachment_views->a[QFV_attachOpaque];
-	cframe->imageInfo[1].imageView
-		= renderpass->attachment_views->a[QFV_attachTranslucent];
 	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
 								   cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									cctx->layout, 0, 1, sets, 0, 0);
+									cctx->layout, 0, 2, sets, 0, 0);
 
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);

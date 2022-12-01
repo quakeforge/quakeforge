@@ -340,10 +340,9 @@ lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
-oit_blendf_src = $(vkshaderpath)/oit_blend.frag
-oit_blendf_c = $(vkshaderpath)/oit_blend.frag.spvc
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -419,9 +418,7 @@ $(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
 $(lightingf_c): $(lightingf_src)
 
-$(composef_c): $(composef_src)
-
-$(oit_blendf_c): $(oit_blendf_src) $(oit_h)
+$(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
 $(aliasv_c): $(aliasv_src)
 
@@ -478,7 +475,6 @@ vkshader_c = \
 	$(bsp_turbf_c) \
 	$(lightingf_c) \
 	$(composef_c) \
-	$(oit_blendf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \
@@ -530,6 +526,9 @@ EXTRA_DIST += \
 	$(rp_shadow_src) \
 	$(pl_quake_def_src) \
 	$(pl_output_src) \
+	$(oit_blend) \
+	$(oit_store) \
+	$(oit_h) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	libs/video/renderer/vulkan/shader/alias.frag \
@@ -545,7 +544,6 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/bsp_sky.frag \
 	libs/video/renderer/vulkan/shader/bsp_turb.frag \
 	libs/video/renderer/vulkan/shader/compose.frag \
-	libs/video/renderer/vulkan/shader/oit_blend.frag \
 	libs/video/renderer/vulkan/shader/iqm.frag \
 	libs/video/renderer/vulkan/shader/iqm.vert \
 	libs/video/renderer/vulkan/shader/lighting.frag \

@@ -95,8 +95,6 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/oit_blend.frag.spvc"
-static
 #include "libs/video/renderer/vulkan/shader/alias.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/alias_depth.vert.spvc"
@@ -158,7 +156,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
-	{ "oit_blend.frag", oit_blend_frag, sizeof (oit_blend_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
 	{ "alias.frag", alias_frag, sizeof (alias_frag) },

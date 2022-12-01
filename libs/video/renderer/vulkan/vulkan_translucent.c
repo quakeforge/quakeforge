@@ -67,54 +67,6 @@ static const char * __attribute__((used)) translucent_pass_names[] = {
 };
 
 void
-Vulkan_Translucent_Draw (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_renderpass_t *renderpass = rFrame->renderpass;
-
-	translucentctx_t *tctx = ctx->translucent_context;
-	translucentframe_t *tframe = &tctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = tframe->cmdSet.a[QFV_translucentBlend];
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFinal], cmd);
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		renderpass->renderpass, QFV_passTranslucentFinal,
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, "translucent", { 0, 0.2, 0.6, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  tctx->pipeline);
-	VkDescriptorSet set[] = {
-		tframe->descriptors,
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									tctx->layout, 0, 1, set, 0, 0);
-
-
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
-void
 Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 {
 	if (ctx->translucent_context) {//FIXME
@@ -131,9 +83,6 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&tctx->frames, frames);
 	DARRAY_RESIZE (&tctx->frames, frames);
 	tctx->frames.grow = 0;
-
-	tctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "oit");
-	tctx->layout = Vulkan_CreatePipelineLayout (ctx, "oit_layout");
 
 	__auto_type setLayout = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < frames; i++) {
@@ -168,7 +117,6 @@ void
 Vulkan_Translucent_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	translucentctx_t *tctx = ctx->translucent_context;
 
 	if (tctx->resources) {
@@ -177,7 +125,6 @@ Vulkan_Translucent_Shutdown (vulkan_ctx_t *ctx)
 		tctx->resources = 0;
 	}
 
-	dfunc->vkDestroyPipeline (device->dev, tctx->pipeline, 0);
 	free (tctx->frames.a);
 	free (tctx);
 }

@@ -40,8 +40,6 @@ typedef struct translucentctx_s {
 
 	struct qfv_resource_s *resources;
 
-	VkPipeline pipeline;
-	VkPipelineLayout layout;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
 } translucentctx_t;

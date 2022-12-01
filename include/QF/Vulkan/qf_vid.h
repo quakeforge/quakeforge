@@ -53,7 +53,6 @@ typedef enum {
 	QFV_passTranslucentFrag,	// geometry
 	QFV_passGBuffer,			// geometry
 	QFV_passLighting,			// single triangle
-	QFV_passTranslucentFinal,	// single triangle
 	QFV_passCompose,			// single triangle
 
 	QFV_NumPasses
@@ -66,7 +65,6 @@ enum {
 	QFV_attachNormal,
 	QFV_attachPosition,
 	QFV_attachOpaque,
-	QFV_attachTranslucent,
 	QFV_attachSwapchain,
 };
 
