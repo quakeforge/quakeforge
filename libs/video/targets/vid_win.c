@@ -117,7 +117,7 @@ VID_shutdown (void *data)
 	Win_CloseDisplay ();
 }
 
-static v oid
+static void
 Win_VID_SetPalette (byte *palette, byte *colormap)
 {
 	viddef.colormap8 = colormap;

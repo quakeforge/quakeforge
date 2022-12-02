@@ -823,7 +823,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		lr->framebuffer = create_framebuffer(lr, ctx);
 	}
 	Sys_MaskPrintf (SYS_vulkan,
-					"shadow maps: %d layers in %zd images: %zd\n",
+					"shadow maps: %d layers in %zd images: %"PRId64"\n",
 					totalLayers, lctx->light_images.size,
 					lctx->shadow_resources->size);
 }
