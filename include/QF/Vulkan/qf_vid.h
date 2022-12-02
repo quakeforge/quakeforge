@@ -98,4 +98,7 @@ void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
 
 struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
 
+extern int vulkan_frame_width;
+extern int vulkan_frame_height;
+
 #endif // __QF_Vulkan_vid_h

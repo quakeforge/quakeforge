@@ -63,6 +63,26 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
+int vulkan_frame_width;
+static cvar_t vulkan_frame_width_cvar = {
+	.name = "vulkan_frame_width",
+	.description =
+		"Width of 3D view buffer. Set to 0 for automatic sizing.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vulkan_frame_width },
+};
+
+int vulkan_frame_height;
+static cvar_t vulkan_frame_height_cvar = {
+	.name = "vulkan_frame_height",
+	.description =
+		"Height of 3D view buffer. Set to 0 for automatic sizing.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vulkan_frame_height },
+};
+
 static const char *instance_extensions[] = {
 	VK_KHR_SURFACE_EXTENSION_NAME,
 	VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
@@ -79,6 +99,8 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
 	Sys_MaskPrintf (SYS_vulkan, "Vulkan_Init_Common\n");
 
+	Cvar_Register (&vulkan_frame_width_cvar, 0, 0);
+	Cvar_Register (&vulkan_frame_height_cvar, 0, 0);
 	Vulkan_Init_Cvars ();
 	R_Init_Cvars ();
 	Vulkan_Script_Init (ctx);

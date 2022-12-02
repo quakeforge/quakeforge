@@ -181,6 +181,12 @@ Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 		.extent    = ctx->swapchain->extent,
 		.frames    = ctx->swapchain->numImages,
 	};
+	if (vulkan_frame_width > 0) {
+		rp->output.extent.width = vulkan_frame_width;
+	}
+	if (vulkan_frame_height > 0) {
+		rp->output.extent.height = vulkan_frame_height;
+	}
 	QFV_RenderPass_CreateAttachments (rp);
 	QFV_RenderPass_CreateRenderPass (rp);
 	QFV_RenderPass_CreateFramebuffer (rp);
