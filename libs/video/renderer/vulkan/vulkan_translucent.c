@@ -59,8 +59,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-#define MAX_FRAGMENTS (1<<24)
-
 static const char * __attribute__((used)) translucent_pass_names[] = {
 	"clear",
 	"blend",
@@ -83,6 +81,8 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&tctx->frames, frames);
 	DARRAY_RESIZE (&tctx->frames, frames);
 	tctx->frames.grow = 0;
+
+	tctx->maxFragments = vulkan_oit_fragments * 1024 * 1024;
 
 	__auto_type setLayout = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < frames; i++) {
@@ -201,7 +201,7 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 			.name = va (ctx->va_ctx, "frags:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (qfv_transfrag_t) * MAX_FRAGMENTS,
+				.size = sizeof (qfv_transfrag_t) * tctx->maxFragments,
 				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			},
 		};
@@ -290,7 +290,7 @@ translucent_clear (qfv_renderframe_t *rFrame)
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
-	*state = (qfv_transtate_t) { 0, MAX_FRAGMENTS };
+	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
 	__auto_type bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
 	QFV_PacketCopyBuffer (packet, tframe->state, bb);
 	QFV_PacketSubmit (packet);

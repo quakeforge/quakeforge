@@ -100,5 +100,6 @@ struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
 
 extern int vulkan_frame_width;
 extern int vulkan_frame_height;
+extern int vulkan_oit_fragments;
 
 #endif // __QF_Vulkan_vid_h

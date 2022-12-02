@@ -40,6 +40,7 @@ typedef struct translucentctx_s {
 
 	struct qfv_resource_s *resources;
 
+	int         maxFragments;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
 } translucentctx_t;

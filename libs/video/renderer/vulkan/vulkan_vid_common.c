@@ -82,6 +82,15 @@ static cvar_t vulkan_frame_height_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &vulkan_frame_height },
 };
+int vulkan_oit_fragments;
+static cvar_t vulkan_oit_fragments_cvar = {
+	.name = "vulkan_oit_fragments",
+	.description =
+		"Size of fragment buffer (M) for order independent transparency.",
+	.default_value = "16",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &vulkan_oit_fragments },
+};
 
 static const char *instance_extensions[] = {
 	VK_KHR_SURFACE_EXTENSION_NAME,
@@ -101,6 +110,7 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 
 	Cvar_Register (&vulkan_frame_width_cvar, 0, 0);
 	Cvar_Register (&vulkan_frame_height_cvar, 0, 0);
+	Cvar_Register (&vulkan_oit_fragments_cvar, 0, 0);
 	Vulkan_Init_Cvars ();
 	R_Init_Cvars ();
 	Vulkan_Script_Init (ctx);
