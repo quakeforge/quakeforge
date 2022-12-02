@@ -40,7 +40,7 @@
 #include "r_internal.h"
 
 
-#define MAX_TIMINGS 100
+#define MAX_TIMINGS 200
 int          graphval;
 
 
@@ -79,6 +79,13 @@ R_TimeGraph (view_pos_t abs, view_pos_t len)
 	}
 	memcpy (timings + o, r_timings + a, l * sizeof (timings[0]));
 	r_funcs->R_LineGraph (abs.x, abs.y, r_timings, MAX_TIMINGS, 200);
+	r_funcs->Draw_Line (abs.x, abs.y, abs.x + MAX_TIMINGS, abs.y, 0x0f);
+	r_funcs->Draw_Line (abs.x, abs.y - 10, abs.x + MAX_TIMINGS, abs.y - 10, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 20, abs.x + MAX_TIMINGS, abs.y - 20, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 25, abs.x + MAX_TIMINGS, abs.y - 25, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 33, abs.x + MAX_TIMINGS, abs.y - 33, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 50, abs.x + MAX_TIMINGS, abs.y - 50, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 100, abs.x + MAX_TIMINGS, abs.y - 100, 0x3f);
 	//r_data->graphheight->int_val);
 
 	timex = (timex + 1) % MAX_TIMINGS;
