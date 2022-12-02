@@ -406,8 +406,17 @@ particles_update (qfv_renderframe_t *rFrame)
 	qfv_parameters_t *params = (qfv_parameters_t *)((byte *)system + paramoffs);
 	memcpy (params, pctx->psystem->partparams, paramsize);
 
-	partsize = max (1, partsize);
-	paramsize = max (1, paramsize);
+	if (!numParticles) {
+		// if there are no particles, then no space for the particle states or
+		// parameters has been allocated in the staging buffer, so map the
+		// two buffers over the system buffer. This avoids either buffer being
+		// just past the end of the staging buffer (which the validation layers
+		// (correctly) do not like).
+		// This is fine because the two buffers are only read by the the
+		// compute shader.
+		partsize = paramsize = syssize;
+		partoffs = paramoffs = 0;
+	}
 
 	size_t      sysoffs = packet->offset;
 	VkDescriptorBufferInfo bufferInfo[] = {
