@@ -343,6 +343,8 @@ composef_c = $(vkshaderpath)/compose.frag.spvc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
+matrices_h = $(vkshaderpath)/matrices.h
+entity_h = $(vkshaderpath)/entity.h
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -370,47 +372,47 @@ pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 waterwarp_src = $(vkshaderpath)/waterwarp.frag
 waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
 
-$(slice_vert_c): $(slice_vert_src)
+$(slice_vert_c): $(slice_vert_src) $(matrices_h)
 
-$(glyphv_c): $(glyphv_src)
+$(glyphv_c): $(glyphv_src) $(matrices_h)
 $(glyphf_c): $(glyphf_src)
 
-$(linev_c): $(linev_src)
+$(linev_c): $(linev_src) $(matrices_h)
 $(linef_c): $(linef_src)
 
 $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
-$(particlev_c): $(particlev_src)
+$(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src)
 $(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
 
-$(sprite_gbufv_c): $(sprite_gbufv_src)
+$(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
 $(sprite_gbuff_c): $(sprite_gbuff_src)
 
-$(sprite_depthv_c): $(sprite_depthv_src)
+$(sprite_depthv_c): $(sprite_depthv_src) $(matrices_h)
 
 $(sprite_depthf_c): $(sprite_depthf_src)
 
 $(twod_depthf_c): $(twod_depthf_src)
 
-$(twodv_c): $(twodv_src)
+$(twodv_c): $(twodv_src) $(matrices_h)
 
 $(twodf_c): $(twodf_src)
 
-$(quakebspv_c): $(quakebspv_src)
+$(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
 $(quakebspf_c): $(quakebspf_src)
 
-$(bsp_depth_c): $(bsp_depth_src)
+$(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
-$(bsp_gbufv_c): $(bsp_gbufv_src)
+$(bsp_gbufv_c): $(bsp_gbufv_src) $(entity_h) $(matrices_h)
 
 $(bsp_gbufg_c): $(bsp_gbufg_src)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
-$(bsp_shadow_c): $(bsp_shadow_src)
+$(bsp_shadow_c): $(bsp_shadow_src) $(entity_h)
 
 $(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
@@ -420,9 +422,9 @@ $(lightingf_c): $(lightingf_src)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
-$(aliasv_c): $(aliasv_src)
+$(aliasv_c): $(aliasv_src) $(matrices_h)
 
-$(alias_depth_c): $(alias_depth_src)
+$(alias_depth_c): $(alias_depth_src) $(matrices_h)
 
 $(aliasf_c): $(aliasf_src)
 
@@ -430,11 +432,11 @@ $(alias_gbuf_c): $(alias_gbuf_src)
 
 $(alias_shadow_c): $(alias_shadow_src)
 
-$(iqmv_c): $(iqmv_src)
+$(iqmv_c): $(iqmv_src) $(matrices_h)
 
 $(iqmf_c): $(iqmf_src)
 
-$(output_c): $(output_src)
+$(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
 
@@ -444,7 +446,7 @@ $(fstrianglest_c): $(fstrianglest_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
-$(waterwarp_c): $(waterwarp_src)
+$(waterwarp_c): $(waterwarp_src) $(matrices_h)
 
 vkshader_c = \
 	$(slice_c) \
@@ -520,6 +522,8 @@ BUILT_SOURCES += $(shader_gen)
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
 EXTRA_DIST += \
+	libs/video/renderer/vulkan/vkparse.plist \
+	libs/video/renderer/vulkan/vkparse.h \
 	$(rp_deferred_src) \
 	$(rp_forward_src) \
 	$(rp_output_src) \
@@ -529,41 +533,46 @@ EXTRA_DIST += \
 	$(oit_blend) \
 	$(oit_store) \
 	$(oit_h) \
-	libs/video/renderer/vulkan/vkparse.plist \
-	libs/video/renderer/vulkan/vkparse.h \
-	libs/video/renderer/vulkan/shader/alias.frag \
-	libs/video/renderer/vulkan/shader/alias.vert \
-	libs/video/renderer/vulkan/shader/alias_depth.vert \
-	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
-	libs/video/renderer/vulkan/shader/alias_shadow.vert \
-	libs/video/renderer/vulkan/shader/bsp_depth.vert \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.vert \
-	libs/video/renderer/vulkan/shader/bsp_shadow.vert \
-	libs/video/renderer/vulkan/shader/bsp_sky.frag \
-	libs/video/renderer/vulkan/shader/bsp_turb.frag \
-	libs/video/renderer/vulkan/shader/compose.frag \
-	libs/video/renderer/vulkan/shader/iqm.frag \
-	libs/video/renderer/vulkan/shader/iqm.vert \
-	libs/video/renderer/vulkan/shader/lighting.frag \
-	libs/video/renderer/vulkan/shader/passthrough.vert \
-	libs/video/renderer/vulkan/shader/fstriangle.vert \
-	libs/video/renderer/vulkan/shader/fstrianglest.vert \
-	libs/video/renderer/vulkan/shader/partphysics.comp \
-	libs/video/renderer/vulkan/shader/partupdate.comp \
-	libs/video/renderer/vulkan/shader/particle.vert \
-	libs/video/renderer/vulkan/shader/particle.geom \
-	libs/video/renderer/vulkan/shader/particle.frag \
-	libs/video/renderer/vulkan/shader/pushcolor.frag \
-	libs/video/renderer/vulkan/shader/quakebsp.frag \
-	libs/video/renderer/vulkan/shader/quakebsp.vert \
-	libs/video/renderer/vulkan/shader/shadow.geom \
-	libs/video/renderer/vulkan/shader/sprite_depth.vert \
-	libs/video/renderer/vulkan/shader/sprite_depth.frag \
-	libs/video/renderer/vulkan/shader/sprite_gbuf.vert \
-	libs/video/renderer/vulkan/shader/sprite_gbuf.frag \
-	libs/video/renderer/vulkan/shader/twod_depth.frag \
-	libs/video/renderer/vulkan/shader/twod.frag \
-	libs/video/renderer/vulkan/shader/twod.vert \
-	libs/video/renderer/vulkan/shader/waterwarp.frag
+	$(matrices_h) \
+	$(entity_h) \
+	$(slice_src) \
+	$(glyphv_src) \
+	$(glyphf_src) \
+	$(linev_src) \
+	$(linef_src) \
+	$(partphysicsc_src) \
+	$(partupdatec_src) \
+	$(particlev_src) \
+	$(particleg_src) \
+	$(particlef_src) \
+	$(sprite_gbufv_src) \
+	$(sprite_gbuff_src) \
+	$(sprite_depthv_src) \
+	$(sprite_depthf_src) \
+	$(twod_depthf_src) \
+	$(twodv_src) \
+	$(twodf_src) \
+	$(quakebspv_src) \
+	$(quakebspf_src) \
+	$(bsp_depth_src) \
+	$(bsp_gbufv_src) \
+	$(bsp_gbufg_src) \
+	$(bsp_gbuff_src) \
+	$(bsp_shadow_src) \
+	$(bsp_skyf_src) \
+	$(bsp_turbf_src) \
+	$(lightingf_src) \
+	$(composef_src) \
+	$(aliasv_src) \
+	$(aliasf_src) \
+	$(alias_depth_src) \
+	$(alias_gbuf_src) \
+	$(alias_shadow_src) \
+	$(iqmv_src) \
+	$(iqmf_src) \
+	$(output_src) \
+	$(passthrough_src) \
+	$(fstriangle_src) \
+	$(fstrianglest_src) \
+	$(pushcolor_src) \
+	$(waterwarp_src)

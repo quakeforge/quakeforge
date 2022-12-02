@@ -12,11 +12,11 @@ XFAIL_TESTS += $(libs_ui_xfail_tests)
 check_PROGRAMS += $(libs_ui_tests) $(libs_ui_xfail_tests)
 
 libs_ui_test_test_flow_SOURCES=libs/ui/test/test-flow.c
-libs_ui_test_test_flow_LDADD=libs/ui/libQFui.la
+libs_ui_test_test_flow_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
 libs_ui_test_test_flow_DEPENDENCIES=libs/ui/libQFui.la
 
 libs_ui_test_test_flow_size_SOURCES=libs/ui/test/test-flow-size.c
-libs_ui_test_test_flow_size_LDADD=libs/ui/libQFui.la
+libs_ui_test_test_flow_size_LDADD=libs/ui/libQFui.la libs/ecs/libQFecs.la
 libs_ui_test_test_flow_size_DEPENDENCIES=libs/ui/libQFui.la
 
 libs_ui_test_test_passage_SOURCES=libs/ui/test/test-passage.c
