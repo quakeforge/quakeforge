@@ -211,11 +211,6 @@ glsl_R_NewScene (scene_t *scene)
 }
 
 void
-glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
-{
-}
-
-void
 glsl_R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;

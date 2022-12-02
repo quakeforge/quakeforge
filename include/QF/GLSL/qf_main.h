@@ -36,6 +36,5 @@ void glsl_R_RenderEntities (struct entqueue_s *queue);
 void glsl_R_RenderView (void);
 void glsl_R_ClearState (void);
 void glsl_R_ViewChanged (void);
-void glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height);
 
 #endif//__QF_GLSL_qf_main_h

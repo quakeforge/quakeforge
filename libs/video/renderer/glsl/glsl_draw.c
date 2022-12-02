@@ -737,6 +737,20 @@ glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 	memcpy (v, verts, size);
 }
 
+void
+glsl_LineGraph (int x, int y, int *h_vals, int count, int height)
+{
+	static int colors[] = { 0xd0, 0x4f, 0x6f };
+
+	while (count-- > 0) {
+		int         h = *h_vals++;
+		int         c = h < 9998 || h > 10000 ? 0xfe : colors[h - 9998];
+		h = min (h, height);
+		glsl_Draw_Line (x, y, x, y - h, c);
+		x++;
+	}
+}
+
 static inline void
 draw_blendscreen (quat_t color)
 {
