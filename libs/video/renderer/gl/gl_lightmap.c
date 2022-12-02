@@ -119,6 +119,8 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 
 		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
+		if (dist > min (1024, r_dlights[lnum].radius))
+			continue;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);
 
@@ -150,7 +152,7 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 			if (td < maxdist3) {		// ensure part is visible on this line
 				maxdist2 = maxdist - td;
 				for (s = 0; s < smax; s++) {
-					if (sdtable[s] < maxdist2) {
+					if (sdtable[s] + td < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
 						*bl++ += (grey * j) >> 7;
 					} else
@@ -189,6 +191,8 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 
 		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
+		if (dist > min (1024, r_dlights[lnum].radius))
+			continue;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);
 
@@ -221,7 +225,7 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 			if (td < maxdist3) {		// ensure part is visible on this line
 				maxdist2 = maxdist - td;
 				for (s = 0; s < smax; s++) {
-					if (sdtable[s] < maxdist2) {
+					if (sdtable[s] + td < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
 						*bl++ += (red * j) >> 7;
 						*bl++ += (green * j) >> 7;
