@@ -247,6 +247,10 @@ Draw_Init (void)
 	if (!draw_chars) {
 		qpic_t     *pic = Draw_Font8x8Pic ();
 		draw_chars = pic->data;	// FIXME indirect hold on the memory
+		//FIXME param to Draw_Font8x8Pic
+		for (int i = 0; i < pic->width * pic->height; i++) {
+			pic->data[i] = pic->data[i] == 255 ? 0 : pic->data[i];
+		}
 	}
 	if (draw_backtile) {
 		r_rectdesc.width = draw_backtile->width;
