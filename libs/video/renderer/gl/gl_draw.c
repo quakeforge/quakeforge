@@ -59,6 +59,8 @@
 #include "QF/ui/view.h"
 
 #include "compat.h"
+#include "r_font.h"
+#include "r_text.h"
 #include "r_internal.h"
 #include "varrays.h"
 
@@ -116,6 +118,16 @@ static int		numcachepics;
 static byte		menuplyr_pixels[4096];
 
 static int gl_2d_scale = 1;
+
+typedef struct glfont_s {
+	rfont_t    *font;
+	GLuint      texid;
+} glfont_t;
+
+typedef struct glfontset_s
+    DARRAY_TYPE (glfont_t) glfontset_t;
+
+static glfontset_t gl_fonts = DARRAY_STATIC_INIT (16);
 
 static void
 Draw_InitText (void)
@@ -1047,12 +1059,71 @@ gl_Draw_BlendScreen (quat_t color)
 }
 
 int
-gl_Draw_AddFont (struct rfont_s *font)
+gl_Draw_AddFont (struct rfont_s *rfont)
 {
-	return 0;
+	int         fontid = gl_fonts.size;
+	DARRAY_OPEN_AT (&gl_fonts, fontid, 1);
+	glfont_t   *font = &gl_fonts.a[fontid];
+
+	font->font = rfont;
+	font->texid = GL_LoadTexture ("", rfont->scrap.width, rfont->scrap.height,
+								  rfont->scrap_bitmap, 0, 1, 1);
+	return fontid;
+}
+
+typedef struct {
+	int         fontid;
+	byte        color[4];
+} glrgctx_t;
+
+static void
+gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+{
+	glrgctx_t  *rgctx = _rgctx;
+	glfont_t   *font = &gl_fonts.a[rgctx->fontid];
+	rfont_t    *rfont = font->font;
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+
+	float       w = rect->width;
+	float       h = rect->height;
+	float       u = rect->x;
+	float       v = rect->y;
+	float       s = 1.0 / rfont->scrap.width;
+	float       t = 1.0 / rfont->scrap.height;
+	qfglTexCoord2f (u * s, v * t);
+	qfglVertex2f (x, y);
+	qfglTexCoord2f ((u + w) * s, v * t);
+	qfglVertex2f (x + w, y);
+	qfglTexCoord2f ((u + w) * s, (v + h) * t);
+	qfglVertex2f (x + w, y + h);
+	qfglTexCoord2f (u * s, (v + h) * t);
+	qfglVertex2f (x, y + h);
 }
 
 void
 gl_Draw_FontString (int x, int y, int fontid, const char *str)
 {
+	if (fontid < 0 || (unsigned) fontid > gl_fonts.size) {
+		return;
+	}
+	glrgctx_t   rgctx = {
+		.fontid = fontid,
+		.color = { 127, 255, 153, 255 },
+	};
+	//FIXME ewwwwwww
+	rtext_t     text = {
+		.text = str,
+		.language = "en",
+		.script = HB_SCRIPT_LATIN,
+		.direction = HB_DIRECTION_LTR,
+	};
+
+	qfglBindTexture (GL_TEXTURE_2D, gl_fonts.a[fontid].texid);
+	qfglBegin (GL_QUADS);
+
+	rshaper_t  *shaper = RText_NewShaper (gl_fonts.a[fontid].font);
+	RText_RenderText (shaper, &text, x, y, gl_render_glyph, &rgctx);
+	RText_DeleteShaper (shaper);
+
+	qfglEnd ();
 }
