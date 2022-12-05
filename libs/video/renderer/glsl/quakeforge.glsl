@@ -432,6 +432,23 @@ main (void)
 	gl_FragColor = palettedColor (pix) * color;
 }
 
+-- Fragment.2d.alpha
+
+uniform sampler2D   texture;
+varying vec4 color;
+varying vec2 st;
+
+void
+main (void)
+{
+	float       alpha;
+
+	alpha = texture2D (texture, st).r;
+	if (alpha == 0.0)
+		discard;
+	gl_FragColor = alpha * color;
+}
+
 -- Vertex.iqm
 
 uniform mat4 mvp_mat;

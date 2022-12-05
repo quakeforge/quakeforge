@@ -42,6 +42,7 @@
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
@@ -53,6 +54,8 @@
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
+#include "r_font.h"
+#include "r_text.h"
 #include "r_internal.h"
 
 typedef struct cachepic_s {
@@ -65,6 +68,16 @@ typedef struct {
 	float       xyst[4];
 	float       color[4];
 } drawvert_t;
+
+typedef struct glslfont_s {
+	rfont_t    *font;
+	GLuint      texid;
+} glslfont_t;
+
+typedef struct glfontset_s
+    DARRAY_TYPE (glslfont_t) glslfontset_t;
+
+static glslfontset_t glsl_fonts = DARRAY_STATIC_INIT (16);
 
 static const char *twod_vert_effects[] =
 {
@@ -79,6 +92,12 @@ static const char *twod_frag_effects[] =
 	0
 };
 
+static const char *twod_alpha_frag_effects[] =
+{
+	"QuakeForge.Fragment.2d.alpha",
+	0
+};
+
 static float proj_matrix[16];
 
 static struct {
@@ -89,17 +108,30 @@ static struct {
 	shaderparam_t vertex;
 	shaderparam_t color;
 } quake_2d = {
-	0,
-	{"texture", 1},
-	{"palette", 1},
-	{"mvp_mat", 1},
-	{"vertex", 0},
-	{"vcolor", 0},
+	.texture = {"texture", 1},
+	.palette = {"palette", 1},
+	.matrix = {"mvp_mat", 1},
+	.vertex = {"vertex", 0},
+	.color = {"vcolor", 0},
+};
+
+static struct {
+	int         program;
+	shaderparam_t texture;
+	shaderparam_t matrix;
+	shaderparam_t vertex;
+	shaderparam_t color;
+} alpha_2d = {
+	.texture = {"texture", 1},
+	.matrix = {"mvp_mat", 1},
+	.vertex = {"vertex", 0},
+	.color = {"vcolor", 0},
 };
 
 static scrap_t *draw_scrap;		// hold all 2d images
 static byte white_block[8 * 8];
 static dstring_t *draw_queue;
+static dstring_t *glyph_queue;
 static dstring_t *line_queue;
 static qpic_t *conchars;
 static int  conback_texture;
@@ -380,6 +412,7 @@ glsl_Draw_Init (void)
 
 	draw_queue = dstring_new ();
 	line_queue = dstring_new ();
+	glyph_queue = dstring_new ();
 
 	vert_shader = GLSL_BuildShader (twod_vert_effects);
 	frag_shader = GLSL_BuildShader (twod_frag_effects);
@@ -393,6 +426,20 @@ glsl_Draw_Init (void)
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.matrix);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.vertex);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.color);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
+
+	vert_shader = GLSL_BuildShader (twod_vert_effects);
+	frag_shader = GLSL_BuildShader (twod_alpha_frag_effects);
+	vert = GLSL_CompileShader ("quakeico.vert", vert_shader,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("alpha2d.frag", frag_shader,
+							   GL_FRAGMENT_SHADER);
+	alpha_2d.program = GLSL_LinkProgram ("alpha2d", vert, frag);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.texture);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.matrix);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.vertex);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.color);
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
 
@@ -866,12 +913,121 @@ glsl_Draw_BlendScreen (quat_t color)
 }
 
 int
-glsl_Draw_AddFont (struct rfont_s *font)
+glsl_Draw_AddFont (struct rfont_s *rfont)
 {
-	return 0;
+	int         fontid = glsl_fonts.size;
+	DARRAY_OPEN_AT (&glsl_fonts, fontid, 1);
+	glslfont_t *font = &glsl_fonts.a[fontid];
+
+	font->font = rfont;
+	tex_t       tex = {
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+		.format = tex_a,
+		.loaded = 1,
+		.data = rfont->scrap_bitmap,
+	};
+	font->texid = GLSL_LoadTex ("", 1, &tex);
+	return fontid;
+}
+
+typedef struct {
+	vrect_t    *glyph_rects;
+	dstring_t  *batch;
+	int         width;
+	int         height;
+	float       color[4];
+} glslrgctx_t;
+
+static void
+glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+{
+	glslrgctx_t *rgctx = _rgctx;
+	vrect_t    *rect = &rgctx->glyph_rects[glyphid];
+	dstring_t  *batch = rgctx->batch;
+	int         size = 6 * sizeof (drawvert_t);
+
+	batch->size += size;
+	dstring_adjust (batch);
+	drawvert_t *verts = (drawvert_t *) (batch->str + batch->size - size);
+
+	float       w = rect->width;
+	float       h = rect->height;
+	float       u = rect->x;
+	float       v = rect->y;
+	float       s = 1.0 / rgctx->width;
+	float       t = 1.0 / rgctx->height;
+
+	verts[0] = (drawvert_t) {
+		.xyst = { x, y, u * s, v * t },
+	};
+	verts[1] = (drawvert_t) {
+		.xyst = { x + w, y, (u + w) * s, v * t },
+	};
+	verts[2] = (drawvert_t) {
+		.xyst = { x + w, y + h, (u + w) * s, (v + h) * t },
+	};
+	verts[3] = (drawvert_t) {
+		.xyst = { x, y, u * s, v * t },
+	};
+	verts[4] = (drawvert_t) {
+		.xyst = { x + w, y + h, (u + w) * s, (v + h) * t },
+	};
+	verts[5] = (drawvert_t) {
+		.xyst = { x, y + h, u * s, (v + h) * t },
+	};
+
+	QuatCopy (rgctx->color, verts[0].color);
+	QuatCopy (rgctx->color, verts[1].color);
+	QuatCopy (rgctx->color, verts[2].color);
+	QuatCopy (rgctx->color, verts[3].color);
+	QuatCopy (rgctx->color, verts[4].color);
+	QuatCopy (rgctx->color, verts[5].color);
 }
 
 void
 glsl_Draw_FontString (int x, int y, int fontid, const char *str)
 {
+	if (fontid < 0 || (unsigned) fontid > glsl_fonts.size) {
+		return;
+	}
+	glslfont_t *font = &glsl_fonts.a[fontid];
+	rfont_t    *rfont = font->font;
+	glslrgctx_t rgctx = {
+		.glyph_rects = rfont->glyph_rects,
+		.batch = glyph_queue,
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+	};
+	quat_t      color = { 127, 255, 153, 255 };
+	QuatScale (color, 1.0f/255.0f, rgctx.color);
+	//FIXME ewwwwwww
+	rtext_t     text = {
+		.text = str,
+		.language = "en",
+		.script = HB_SCRIPT_LATIN,
+		.direction = HB_DIRECTION_LTR,
+	};
+
+	rshaper_t  *shaper = RText_NewShaper (rfont);
+	RText_RenderText (shaper, &text, x, y, glsl_render_glyph, &rgctx);
+	RText_DeleteShaper (shaper);
+
+	qfeglUseProgram (alpha_2d.program);
+	qfeglEnableVertexAttribArray (alpha_2d.vertex.location);
+	qfeglEnableVertexAttribArray (alpha_2d.color.location);
+	qfeglUniformMatrix4fv (alpha_2d.matrix.location, 1, false, proj_matrix);
+	qfeglBindTexture (GL_TEXTURE_2D, font->texid);
+	qfeglBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	if (glyph_queue->size) {
+		qfeglVertexAttribPointer (alpha_2d.vertex.location, 4, GL_FLOAT,
+								 0, 32, glyph_queue->str);
+		qfeglVertexAttribPointer (alpha_2d.color.location, 4, GL_FLOAT,
+								 0, 32, glyph_queue->str + 16);
+
+		qfeglDrawArrays (GL_TRIANGLES, 0, glyph_queue->size / 32);
+	}
+	glyph_queue->size = 0;
+	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfeglUseProgram (quake_2d.program);
 }

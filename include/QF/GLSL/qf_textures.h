@@ -31,6 +31,7 @@
 #include "QF/qtypes.h"
 
 typedef struct scrap_s scrap_t;
+struct tex_s;
 
 int GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
 						   const byte *data);
@@ -40,6 +41,7 @@ int GLSL_LoadRGBTexture (const char *identifier, int width, int height,
 						 const byte *data);
 int GLSL_LoadRGBATexture (const char *identifier, int width, int height,
 						  const byte *data);
+int GLSL_LoadTex (const char *identifier, int mips, struct tex_s *tex);
 void GLSL_ReleaseTexture (int tex);
 void GLSL_TextureInit (void);
 

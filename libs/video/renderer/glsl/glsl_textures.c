@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
+#include "QF/image.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/render.h"
@@ -235,6 +236,47 @@ GLSL_LoadRGBATexture (const char *identifier, int width, int height,
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfeglGenerateMipmap (GL_TEXTURE_2D);
 
+	return tnum;
+}
+
+int
+GLSL_LoadTex (const char *identifier, int linear, tex_t *tex)
+{
+	GLuint      tnum;
+	qfeglGenTextures (1, &tnum);
+	int         format = GL_RGB;
+
+	switch (tex->format) {
+		case tex_l:
+		case tex_a:
+			format = GL_LUMINANCE;
+			break;
+		case tex_la:
+			format = GL_LUMINANCE_ALPHA;
+			break;
+		case tex_rgb:
+			format = GL_RGB;
+			break;
+		case tex_rgba:
+			format = GL_RGBA;
+			break;
+		default:
+			Sys_Error ("GL_CreateScrap: Invalid texture format");
+	}
+
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, format, tex->width, tex->height,
+					 0, format, GL_UNSIGNED_BYTE, tex->data);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if (linear) {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
 	return tnum;
 }
 
