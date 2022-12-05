@@ -119,11 +119,6 @@ static const component_t transform_components[transform_type_count] = {
 		.create = transform_rotation_identity,
 		.name = "World Rotation",
 	},
-	[transform_type_worldScale] = {
-		.size = sizeof (vec4f_t),
-		.create = transform_scale_identity,
-		.name = "World Scale",
-	},
 };
 
 static const hierarchy_type_t transform_type = {
@@ -166,9 +161,7 @@ Transform_UpdateMatrices (hierarchy_t *h)
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
 	mat4f_t    *worldInverse = h->components[transform_type_worldInverse];
 	vec4f_t    *localRotation = h->components[transform_type_localRotation];
-	vec4f_t    *localScale = h->components[transform_type_localScale];
 	vec4f_t    *worldRotation = h->components[transform_type_worldRotation];
-	vec4f_t    *worldScale = h->components[transform_type_worldScale];
 	byte       *modified = h->components[transform_type_modified];
 
 	for (uint32_t i = 0; i < h->num_objects; i++) {
@@ -182,7 +175,6 @@ Transform_UpdateMatrices (hierarchy_t *h)
 		memcpy (worldInverse[0],
 				localInverse[0], sizeof (mat4_t));
 		worldRotation[0] = localRotation[0];
-		worldScale[0] = localScale[0];
 	}
 	for (size_t i = 1; i < h->num_objects; i++) {
 		uint32_t    parent = h->parentIndex[i];
@@ -206,13 +198,6 @@ Transform_UpdateMatrices (hierarchy_t *h)
 		if (modified[i] || modified[parent]) {
 			worldRotation[i] = qmulf (worldRotation[parent],
 										   localRotation[i]);
-		}
-	}
-	for (size_t i = 1; i < h->num_objects; i++) {
-		uint32_t    parent = h->parentIndex[i];
-		if (modified[i] || modified[parent]) {
-			worldScale[i] = m3vmulf (worldMatrix[parent],
-										  localScale[i]);
 		}
 	}
 	memset (modified, 0, h->num_objects);

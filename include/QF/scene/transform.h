@@ -55,7 +55,6 @@ enum {
 	transform_type_localRotation,
 	transform_type_localScale,
 	transform_type_worldRotation,
-	transform_type_worldScale,
 
 	transform_type_count
 };
@@ -321,8 +320,15 @@ Transform_GetWorldScale (transform_t transform)
 {
 	__auto_type ref = Transform_GetRef (transform);
 	hierarchy_t *h = ref->hierarchy;
-	vec4f_t     *worldScale = h->components[transform_type_worldScale];
-	return worldScale[ref->index];
+	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
+	vec4f_t     *m = worldMatrix[ref->index];
+	vec4f_t     s = {
+		dotf (m[0], m[0])[0],
+		dotf (m[1], m[1])[0],
+		dotf (m[2], m[2])[0],
+		0,
+	};
+	return vsqrt4f (s);
 }
 
 XFORMINLINE
