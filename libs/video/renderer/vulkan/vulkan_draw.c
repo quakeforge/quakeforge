@@ -1423,7 +1423,7 @@ Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
 	tex_t       tex = {
 		.width = rfont->scrap.width,
 		.height = rfont->scrap.height,
-		.format = tex_l,
+		.format = tex_a,
 		.loaded = 1,
 		.data = rfont->scrap_bitmap,
 	};
