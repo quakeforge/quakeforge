@@ -1066,8 +1066,14 @@ gl_Draw_AddFont (struct rfont_s *rfont)
 	glfont_t   *font = &gl_fonts.a[fontid];
 
 	font->font = rfont;
-	font->texid = GL_LoadTexture ("", rfont->scrap.width, rfont->scrap.height,
-								  rfont->scrap_bitmap, 0, 1, 1);
+	tex_t       tex = {
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+		.format = tex_a,
+		.loaded = 1,
+		.data = rfont->scrap_bitmap,
+	};
+	font->texid = GL_LoadTex ("", 0, &tex);
 	return fontid;
 }
 
@@ -1090,6 +1096,7 @@ gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	float       v = rect->y;
 	float       s = 1.0 / rfont->scrap.width;
 	float       t = 1.0 / rfont->scrap.height;
+	qfglColor4ubv (rgctx->color);
 	qfglTexCoord2f (u * s, v * t);
 	qfglVertex2f (x, y);
 	qfglTexCoord2f ((u + w) * s, v * t);
@@ -1126,4 +1133,5 @@ gl_Draw_FontString (int x, int y, int fontid, const char *str)
 	RText_DeleteShaper (shaper);
 
 	qfglEnd ();
+	qfglColor4ubv (color_white);
 }
