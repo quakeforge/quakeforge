@@ -42,8 +42,19 @@
 
 #include "d_iface.h"
 #include "d_local.h"
+#include "r_font.h"
+#include "r_text.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+
+typedef struct swfont_s {
+	rfont_t    *font;
+} swfont_t;
+
+typedef struct swfontset_s
+    DARRAY_TYPE (swfont_t) swfontset_t;
+
+static swfontset_t sw_fonts = DARRAY_STATIC_INIT (16);
 
 typedef struct {
 	int         width;
@@ -988,12 +999,73 @@ Draw_BlendScreen (quat_t color)
 }
 
 int
-Draw_AddFont (struct rfont_s *font)
+Draw_AddFont (struct rfont_s *rfont)
 {
-	return 0;
+	int         fontid = sw_fonts.size;
+	DARRAY_OPEN_AT (&sw_fonts, fontid, 1);
+	swfont_t   *font = &sw_fonts.a[fontid];
+
+	font->font = rfont;
+	return fontid;
+}
+
+typedef struct {
+	vrect_t    *glyph_rects;
+	byte       *bitmap;
+	int         width;
+	byte        color;
+} swrgctx_t;
+
+static void
+sw_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+{
+	swrgctx_t  *rgctx = _rgctx;
+	vrect_t    *rect = &rgctx->glyph_rects[glyphid];
+
+	float       w = rect->width;
+	float       h = rect->height;
+	if (x < 0 || y < 0 || x + w > vid.width || y + h > vid.height) {
+		return;
+	}
+	int         u = rect->x;
+	int         v = rect->y;
+	byte        c = rgctx->color;
+	byte       *src = rgctx->bitmap + v * rgctx->width + u;
+	byte       *dst = d_viewbuffer + y * d_rowbytes + x;
+	while (h-- > 0) {
+		for (int i = 0; i < w; i++) {
+			if (src[i] > 127) {
+				dst[i] = c;
+			}
+		}
+		src += rgctx->width;
+		dst += d_rowbytes;
+	}
 }
 
 void
 Draw_FontString (int x, int y, int fontid, const char *str)
 {
+	if (fontid < 0 || (unsigned) fontid > sw_fonts.size) {
+		return;
+	}
+	swfont_t   *font = &sw_fonts.a[fontid];
+	rfont_t    *rfont = font->font;
+	swrgctx_t   rgctx = {
+		.glyph_rects = rfont->glyph_rects,
+		.bitmap = rfont->scrap_bitmap,
+		.width = rfont->scrap.width,
+		.color = 63,
+	};
+	//FIXME ewwwwwww
+	rtext_t     text = {
+		.text = str,
+		.language = "en",
+		.script = HB_SCRIPT_LATIN,
+		.direction = HB_DIRECTION_LTR,
+	};
+
+	rshaper_t  *shaper = RText_NewShaper (rfont);
+	RText_RenderText (shaper, &text, x, y, sw_render_glyph, &rgctx);
+	RText_DeleteShaper (shaper);
 }
