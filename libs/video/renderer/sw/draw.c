@@ -38,17 +38,17 @@
 #include <stdlib.h>
 
 #include "QF/quakefs.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "d_iface.h"
 #include "d_local.h"
-#include "r_font.h"
 #include "r_text.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 
 typedef struct swfont_s {
-	rfont_t    *font;
+	font_t     *font;
 } swfont_t;
 
 typedef struct swfontset_s
@@ -1003,7 +1003,7 @@ Draw_BlendScreen (quat_t color)
 }
 
 int
-Draw_AddFont (struct rfont_s *rfont)
+Draw_AddFont (struct font_s *rfont)
 {
 	int         fontid = sw_fonts.size;
 	DARRAY_OPEN_AT (&sw_fonts, fontid, 1);
@@ -1054,7 +1054,7 @@ Draw_FontString (int x, int y, int fontid, const char *str)
 		return;
 	}
 	swfont_t   *font = &sw_fonts.a[fontid];
-	rfont_t    *rfont = font->font;
+	font_t     *rfont = font->font;
 	swrgctx_t   rgctx = {
 		.glyph_rects = rfont->glyph_rects,
 		.bitmap = rfont->scrap_bitmap,

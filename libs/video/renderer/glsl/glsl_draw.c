@@ -46,6 +46,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "QF/GLSL/defines.h"
@@ -54,7 +55,6 @@
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_font.h"
 #include "r_text.h"
 #include "r_internal.h"
 
@@ -70,7 +70,7 @@ typedef struct {
 } drawvert_t;
 
 typedef struct glslfont_s {
-	rfont_t    *font;
+	font_t     *font;
 	GLuint      texid;
 } glslfont_t;
 
@@ -913,7 +913,7 @@ glsl_Draw_BlendScreen (quat_t color)
 }
 
 int
-glsl_Draw_AddFont (struct rfont_s *rfont)
+glsl_Draw_AddFont (font_t *rfont)
 {
 	int         fontid = glsl_fonts.size;
 	DARRAY_OPEN_AT (&glsl_fonts, fontid, 1);
@@ -992,7 +992,7 @@ glsl_Draw_FontString (int x, int y, int fontid, const char *str)
 		return;
 	}
 	glslfont_t *font = &glsl_fonts.a[fontid];
-	rfont_t    *rfont = font->font;
+	font_t     *rfont = font->font;
 	glslrgctx_t rgctx = {
 		.glyph_rects = rfont->glyph_rects,
 		.batch = glyph_queue,

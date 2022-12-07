@@ -37,7 +37,7 @@ typedef enum {
 struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 struct qpic_s;
-struct rfont_s;
+struct font_s;
 struct draw_charbuffer_s;
 
 void Vulkan_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer,
@@ -81,7 +81,7 @@ void Vulkan_Draw_Picf (float x, float y, struct qpic_s *pic,
 void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 						int srcx, int srcy, int width, int height,
 						struct vulkan_ctx_s *ctx);
-int Vulkan_Draw_AddFont (struct rfont_s *font, struct vulkan_ctx_s *ctx);
+int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 							 struct vulkan_ctx_s *ctx);
 

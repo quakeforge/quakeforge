@@ -56,10 +56,10 @@
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/types.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
-#include "r_font.h"
 #include "r_text.h"
 #include "r_internal.h"
 #include "varrays.h"
@@ -120,7 +120,7 @@ static byte		menuplyr_pixels[4096];
 static int gl_2d_scale = 1;
 
 typedef struct glfont_s {
-	rfont_t    *font;
+	font_t     *font;
 	GLuint      texid;
 } glfont_t;
 
@@ -1059,7 +1059,7 @@ gl_Draw_BlendScreen (quat_t color)
 }
 
 int
-gl_Draw_AddFont (struct rfont_s *rfont)
+gl_Draw_AddFont (font_t *rfont)
 {
 	int         fontid = gl_fonts.size;
 	DARRAY_OPEN_AT (&gl_fonts, fontid, 1);
@@ -1087,7 +1087,7 @@ gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 {
 	glrgctx_t  *rgctx = _rgctx;
 	glfont_t   *font = &gl_fonts.a[rgctx->fontid];
-	rfont_t    *rfont = font->font;
+	font_t     *rfont = font->font;
 	vrect_t    *rect = &rfont->glyph_rects[glyphid];
 
 	float       w = rect->width;

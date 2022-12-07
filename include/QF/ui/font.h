@@ -1,7 +1,7 @@
 /*
-	r_font.h
+	font.h
 
-	Renderer font management
+	Font management
 
 	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
 
@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __r_font_h
-#define __r_font_h
+#ifndef __QF_ui_font_h
+#define __QF_ui_font_h
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -43,7 +43,7 @@ typedef struct fontent_s {
 	uint32_t    id;
 } fontent_t;
 
-typedef struct rfont_s {
+typedef struct font_s {
 	void       *font_resource;
 	FT_Face     face;
 	rscrap_t    scrap;
@@ -51,10 +51,10 @@ typedef struct rfont_s {
 	FT_Long     num_glyphs;
 	vrect_t    *glyph_rects;
 	vec2i_t    *glyph_bearings;
-} rfont_t;
+} font_t;
 
-void R_FontInit (void);
-void R_FontFree (rfont_t *font);
-rfont_t *R_FontLoad (QFile *font_file, int size);
+void Font_Init (void);
+void Font_Free (font_t *font);
+font_t *Font_Load (QFile *font_file, int size);
 
-#endif//__r_font_h
+#endif//__QF_ui_font_h

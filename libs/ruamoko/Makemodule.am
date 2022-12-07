@@ -30,12 +30,15 @@ libs_ruamoko_libQFruamoko_la_SOURCES= \
 
 libs_ruamoko_libQFruamoko_client_la_LDFLAGS= $(lib_ldflags)
 libs_ruamoko_libQFruamoko_client_la_LIBADD= \
-	libs/ruamoko/libQFruamoko.la
+	libs/ruamoko/libQFruamoko.la \
+	libs/ui/libQFgui.la
 libs_ruamoko_libQFruamoko_client_la_DEPENDENCIES= \
 	libs/ruamoko/libQFruamoko.la \
+	libs/ui/libQFgui.la \
 	$(ruamoko_rua_libs)
 libs_ruamoko_libQFruamoko_client_la_SOURCES= \
 	libs/ruamoko/rua_game_init.c \
+	libs/ruamoko/rua_gui.c \
 	libs/ruamoko/rua_input.c \
 	libs/ruamoko/rua_mersenne.c \
 	libs/ruamoko/rua_model.c \

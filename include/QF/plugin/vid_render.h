@@ -80,7 +80,7 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 struct tex_s;
-struct rfont_s;
+struct font_s;
 struct draw_charbuffer_s;
 
 typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
@@ -110,7 +110,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Pic) (int x, int y, qpic_t *pic);
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-	int (*Draw_AddFont) (struct rfont_s *font);
+	int (*Draw_AddFont) (struct font_s *font);
 	void (*Draw_FontString) (int x, int y, int fontid, const char *str);
 
 

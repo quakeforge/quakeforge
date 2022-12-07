@@ -285,7 +285,7 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 }
 
 static int
-vulkan_Draw_AddFont (struct rfont_s *font)
+vulkan_Draw_AddFont (struct font_s *font)
 {
 	return Vulkan_Draw_AddFont (font, vulkan_ctx);
 }

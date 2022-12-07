@@ -66,9 +66,9 @@
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
-#include "r_font.h"
 #include "r_text.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -169,7 +169,7 @@ typedef struct drawfontres_s {
 typedef struct drawfont_s {
 	VkDescriptorSet set;
 	drawfontres_t *resource;
-	rfont_t    *font;
+	font_t     *font;
 } drawfont_t;
 
 typedef struct drawfontset_s
@@ -1377,7 +1377,7 @@ Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 }
 
 int
-Vulkan_Draw_AddFont (rfont_t *rfont, vulkan_ctx_t *ctx)
+Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;

@@ -1,10 +1,21 @@
 include libs/ui/test/Makemodule.am
 
-lib_LTLIBRARIES += libs/ui/libQFui.la
+lib_LTLIBRARIES += \
+	libs/ui/libQFgui.la \
+	libs/ui/libQFui.la
+
+gui_deps = \
+	libs/ui/libQFui.la
 
 ui_deps = \
 	libs/ecs/libQFecs.la \
 	libs/util/libQFutil.la
+
+libs_ui_libQFgui_la_LDFLAGS=		$(lib_ldflags)
+libs_ui_libQFgui_la_LIBADD=			$(gui_deps) $(ui_deps)
+libs_ui_libQFgui_la_DEPENDENCIES=	$(gui_deps) $(ui_deps)
+libs_ui_libQFgui_la_SOURCES= \
+	libs/ui/font.c
 
 libs_ui_libQFui_la_LDFLAGS=		$(lib_ldflags)
 libs_ui_libQFui_la_LIBADD=		$(ui_deps)

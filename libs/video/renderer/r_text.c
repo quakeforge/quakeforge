@@ -1,7 +1,7 @@
 /*
-	r_font.c
+	r_text.c
 
-	Renderer font management management
+	Renderer font text management
 
 	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
 
@@ -35,13 +35,14 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "r_font.h"
+#include "QF/ui/font.h"
+
 #include "r_text.h"
 
 #include "compat.h"
 
 rshaper_t *
-RText_NewShaper (rfont_t *font)
+RText_NewShaper (font_t *font)
 {
 	rshaper_t  *shaper = malloc (sizeof (rshaper_t));
 	shaper->rfont = font;
@@ -96,7 +97,7 @@ RText_RenderText (rshaper_t *shaper, rtext_t *text, int x, int y,
 	__auto_type glyphPos = hb_buffer_get_glyph_positions (shaper->buffer,
 														  &count);
 
-	rfont_t    *font = shaper->rfont;
+	font_t     *font = shaper->rfont;
 	for (unsigned i = 0; i < count; i++) {
 		vec2i_t     bearing = font->glyph_bearings[glyphInfo[i].codepoint];
 

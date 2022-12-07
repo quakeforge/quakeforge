@@ -53,7 +53,6 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_cvar.c \
 	libs/video/renderer/r_draw.c \
 	libs/video/renderer/r_fog.c \
-	libs/video/renderer/r_font.c \
 	libs/video/renderer/r_graph.c \
 	libs/video/renderer/r_init.c \
 	libs/video/renderer/r_light.c \

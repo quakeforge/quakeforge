@@ -46,7 +46,6 @@
 #include "QF/ui/view.h"
 
 #include "r_internal.h"
-#include "r_font.h"
 
 typedef struct {
 	pr_int_t    width;
@@ -383,27 +382,6 @@ bi_Draw_Height (progs_t *pr, void *_res)
 }
 
 static void
-bi_Font_Load (progs_t *pr, void *_res)
-{
-	const char *font_path = P_GSTRING (pr, 0);
-	int         font_size = P_INT (pr, 1);
-
-	QFile      *font_file = QFS_FOpenFile (font_path);
-	rfont_t    *font = R_FontLoad (font_file, font_size);
-	R_INT (pr) = r_funcs->Draw_AddFont (font);
-}
-
-static void
-bi_Font_String (progs_t *pr, void *_res)
-{
-	int         x = P_INT (pr, 0);
-	int         y = P_INT (pr, 1);
-	int         fontid = P_INT (pr, 2);
-	const char *str = P_GSTRING (pr, 3);
-	r_funcs->Draw_FontString (x, y, fontid, str);
-}
-
-static void
 bi_Draw_CreateBuffer (progs_t *pr, void *_res)
 {
 	draw_resources_t *res = _res;
@@ -536,9 +514,6 @@ static builtin_t builtins[] = {
 	bi(Draw_Fill,       5, p(int), p(int), p(int), p(int), p(int)),
 	bi(Draw_Line,       5, p(int), p(int), p(int), p(int), p(int)),
 	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
-
-	bi(Font_Load,       2, p(string), p(int)),
-	bi(Font_String,     4, p(int), p(int), p(int), p(string)),
 
 	bi(Draw_CreateBuffer,   2, p(int), p(int)),
 	bi(Draw_DestroyBuffer,  1, p(ptr)),

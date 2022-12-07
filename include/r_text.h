@@ -44,6 +44,11 @@ typedef struct script_component_s {
 	hb_direction_t direction;
 } script_component_t;
 
+typedef struct glyph_component_s {
+	int         id;
+	int         x, y;
+} glyph_component_t;
+
 typedef struct rtext_s {
 	const char *text;
 	const char *language;
@@ -53,12 +58,12 @@ typedef struct rtext_s {
 
 typedef struct r_hb_featureset_s DARRAY_TYPE (hb_feature_t) r_hb_featureset_t;
 
-struct rfont_s;
+struct font_s;
 struct rglyph_s;
 typedef void rtext_render_t (uint32_t glyphid, int x, int y, void *data);
 
 typedef struct rshaper_s {
-	struct rfont_s *rfont;
+	struct font_s *rfont;
 	hb_font_t  *font;
 	hb_buffer_t *buffer;
 	r_hb_featureset_t features;
@@ -71,7 +76,7 @@ extern hb_feature_t KerningOn;
 extern hb_feature_t CligOff;
 extern hb_feature_t CligOn;
 
-rshaper_t *RText_NewShaper (struct rfont_s *font);
+rshaper_t *RText_NewShaper (struct font_s *font);
 void RText_DeleteShaper (rshaper_t *shaper);
 void RText_AddFeature (rshaper_t *shaper, hb_feature_t feature);
 void RText_ShapeText (rshaper_t *shaper, rtext_t *text);

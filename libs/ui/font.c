@@ -1,7 +1,7 @@
 /*
-	r_font.c
+	font.c
 
-	Renderer font management management
+	Font management
 
 	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
 
@@ -36,14 +36,14 @@
 #include "QF/sys.h"
 #include "QF/math/bitop.h"
 
-#include "r_font.h"
+#include "QF/ui/font.h"
 
 #include "compat.h"
 
 static FT_Library ft;
 
 static void
-copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, rfont_t *font)
+copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, font_t *font)
 {
 	int         dst_pitch = font->scrap.width;
 	byte       *dst = font->scrap_bitmap + rect->x + rect->y * dst_pitch;
@@ -58,7 +58,7 @@ copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, rfont_t *font)
 }
 
 VISIBLE void
-R_FontInit (void)
+Font_Init (void)
 {
 	if (FT_Init_FreeType (&ft)) {
 		Sys_Error ("Could not init FreeType library");
@@ -66,7 +66,7 @@ R_FontInit (void)
 }
 
 VISIBLE void
-R_FontFree (rfont_t *font)
+Font_Free (font_t *font)
 {
 	if (font->face) {
 		FT_Done_Face (font->face);
@@ -81,18 +81,18 @@ R_FontFree (rfont_t *font)
 	free (font);
 }
 
-VISIBLE rfont_t *
-R_FontLoad (QFile *font_file, int size)
+VISIBLE font_t *
+Font_Load (QFile *font_file, int size)
 {
 	byte       *font_data = QFS_LoadFile (font_file, 0);
 	if (!font_data) {
 		return 0;
 	}
 	size_t      font_size = qfs_filesize;
-	rfont_t    *font = calloc (1, sizeof (rfont_t));
+	font_t     *font = calloc (1, sizeof (font_t));
 	font->font_resource = font_data;
 	if (FT_New_Memory_Face (ft, font_data, font_size, 0, &font->face)) {
-		R_FontFree (font);
+		Font_Free (font);
 		return 0;
 	}
 
