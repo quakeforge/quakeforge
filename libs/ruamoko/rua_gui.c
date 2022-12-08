@@ -60,7 +60,7 @@ bi (Font_Load)
 
 	QFile      *font_file = QFS_FOpenFile (font_path);
 	font_t     *font = Font_Load (font_file, font_size);
-	R_INT (pr) = r_funcs->Draw_AddFont (font);
+	R_INT (pr) = font->fontid;
 }
 
 bi (Font_String)

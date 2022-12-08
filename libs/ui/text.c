@@ -165,6 +165,7 @@ Text_View (font_t *font, passage_t *passage)
 					.glyphid = glyphid,
 					.x = xp + bearing[0],
 					.y = yp - bearing[1],
+					.fontid = font->fontid,
 				};
 				x += xa;
 				y += ya;

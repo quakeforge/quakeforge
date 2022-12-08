@@ -36,6 +36,8 @@
 #include "QF/sys.h"
 #include "QF/math/bitop.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "QF/ui/font.h"
 
 #include "compat.h"
@@ -131,6 +133,7 @@ Font_Load (QFile *font_file, int size)
 
 		copy_glyph (rect, slot, font);
 	}
+	font->fontid = r_funcs->Draw_AddFont (font);
 
 	return font;
 }

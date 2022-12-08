@@ -51,6 +51,7 @@ typedef struct font_s {
 	FT_Long     num_glyphs;
 	vrect_t    *glyph_rects;
 	vec2i_t    *glyph_bearings;
+	uint32_t    fontid;
 } font_t;
 
 void Font_Init (void);
