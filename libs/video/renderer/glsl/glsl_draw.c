@@ -55,7 +55,6 @@
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_text.h"
 #include "r_internal.h"
 
 typedef struct cachepic_s {
@@ -930,7 +929,7 @@ glsl_Draw_AddFont (font_t *rfont)
 	font->texid = GLSL_LoadTex ("", 1, &tex);
 	return fontid;
 }
-
+#if 0
 typedef struct {
 	vrect_t    *glyph_rects;
 	dstring_t  *batch;
@@ -984,10 +983,11 @@ glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	QuatCopy (rgctx->color, verts[4].color);
 	QuatCopy (rgctx->color, verts[5].color);
 }
-
+#endif
 void
 glsl_Draw_FontString (int x, int y, int fontid, const char *str)
 {
+#if 0
 	if (fontid < 0 || (unsigned) fontid > glsl_fonts.size) {
 		return;
 	}
@@ -1030,4 +1030,5 @@ glsl_Draw_FontString (int x, int y, int fontid, const char *str)
 	glyph_queue->size = 0;
 	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qfeglUseProgram (quake_2d.program);
+#endif
 }

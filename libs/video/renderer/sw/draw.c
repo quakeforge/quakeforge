@@ -43,7 +43,6 @@
 
 #include "d_iface.h"
 #include "d_local.h"
-#include "r_text.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 
@@ -1012,7 +1011,7 @@ Draw_AddFont (struct font_s *rfont)
 	font->font = rfont;
 	return fontid;
 }
-
+#if 0
 typedef struct {
 	vrect_t    *glyph_rects;
 	byte       *bitmap;
@@ -1046,10 +1045,11 @@ sw_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 		dst += d_rowbytes;
 	}
 }
-
+#endif
 void
 Draw_FontString (int x, int y, int fontid, const char *str)
 {
+#if 0
 	if (fontid < 0 || (unsigned) fontid > sw_fonts.size) {
 		return;
 	}
@@ -1072,4 +1072,5 @@ Draw_FontString (int x, int y, int fontid, const char *str)
 	rshaper_t  *shaper = RText_NewShaper (rfont);
 	RText_RenderText (shaper, &text, x, y, sw_render_glyph, &rgctx);
 	RText_DeleteShaper (shaper);
+#endif
 }

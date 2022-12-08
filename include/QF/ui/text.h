@@ -1,7 +1,7 @@
 /*
-	r_text.h
+	text.h
 
-	Renderer text management
+	Text management
 
 	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
 
@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __r_text_h
-#define __r_text_h
+#ifndef __QF_ui_text_h
+#define __QF_ui_text_h
 
 #include <hb.h>
 #include <hb-ft.h>
@@ -44,30 +44,54 @@ typedef struct script_component_s {
 	hb_direction_t direction;
 } script_component_t;
 
-typedef struct glyph_component_s {
-	int         id;
+typedef struct glyphobj_s {
+	int         glyphid;
 	int         x, y;
-} glyph_component_t;
+	int         fontid;
+} glyphobj_t;
 
-typedef struct rtext_s {
+typedef struct glyphref_s {
+	uint32_t    start;
+	uint32_t    count;
+} glyphref_t;
+
+typedef struct glyphset_s {
+	glyphobj_t *glyphs;
+	uint32_t    count;
+} glyphset_t;
+
+typedef struct text_s {
 	const char *text;
 	const char *language;
 	hb_script_t script;
 	hb_direction_t direction;
-} rtext_t;
+} text_t;
 
-typedef struct r_hb_featureset_s DARRAY_TYPE (hb_feature_t) r_hb_featureset_t;
+enum {
+	// covers both view and passage text object hierarcies
+	text_href,
+	// all the glyhphs in a passage
+	text_passage,
+	text_glyphs,
+	text_script,
+	text_font,
+	text_features,
+
+	text_type_count
+};
+
+typedef struct featureset_s DARRAY_TYPE (hb_feature_t) featureset_t;
 
 struct font_s;
 struct rglyph_s;
-typedef void rtext_render_t (uint32_t glyphid, int x, int y, void *data);
+typedef void text_render_t (uint32_t glyphid, int x, int y, void *data);
 
-typedef struct rshaper_s {
+typedef struct shaper_s {
 	struct font_s *rfont;
 	hb_font_t  *font;
 	hb_buffer_t *buffer;
-	r_hb_featureset_t features;
-} rshaper_t;
+	featureset_t features;
+} shaper_t;
 
 extern hb_feature_t LigatureOff;
 extern hb_feature_t LigatureOn;
@@ -76,11 +100,16 @@ extern hb_feature_t KerningOn;
 extern hb_feature_t CligOff;
 extern hb_feature_t CligOn;
 
-rshaper_t *RText_NewShaper (struct font_s *font);
-void RText_DeleteShaper (rshaper_t *shaper);
-void RText_AddFeature (rshaper_t *shaper, hb_feature_t feature);
-void RText_ShapeText (rshaper_t *shaper, rtext_t *text);
-void RText_RenderText (rshaper_t *shaper, rtext_t *text, int x, int y,
-					   rtext_render_t *render, void *data);
+struct font_s;
+struct passage_s;
 
-#endif//__r_text_h
+shaper_t *Text_NewShaper (struct font_s *font);
+void Text_DeleteShaper (shaper_t *shaper);
+void Text_AddFeature (shaper_t *shaper, hb_feature_t feature);
+void Text_ShapeText (shaper_t *shaper, text_t *text);
+void Text_RenderText (shaper_t *shaper, text_t *text, int x, int y,
+					  text_render_t *render, void *data);
+void Text_Init (void);
+struct view_s Text_View (struct font_s *font, struct passage_s *passage);
+
+#endif//__QF_ui_text_h

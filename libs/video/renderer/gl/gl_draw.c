@@ -60,7 +60,6 @@
 #include "QF/ui/view.h"
 
 #include "compat.h"
-#include "r_text.h"
 #include "r_internal.h"
 #include "varrays.h"
 
@@ -1076,7 +1075,7 @@ gl_Draw_AddFont (font_t *rfont)
 	font->texid = GL_LoadTex ("", 0, &tex);
 	return fontid;
 }
-
+#if 0
 typedef struct {
 	int         fontid;
 	byte        color[4];
@@ -1106,10 +1105,11 @@ gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	qfglTexCoord2f (u * s, (v + h) * t);
 	qfglVertex2f (x, y + h);
 }
-
+#endif
 void
 gl_Draw_FontString (int x, int y, int fontid, const char *str)
 {
+#if 0
 	if (fontid < 0 || (unsigned) fontid > gl_fonts.size) {
 		return;
 	}
@@ -1134,4 +1134,5 @@ gl_Draw_FontString (int x, int y, int fontid, const char *str)
 
 	qfglEnd ();
 	qfglColor4ubv (color_white);
+#endif
 }

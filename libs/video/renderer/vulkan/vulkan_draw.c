@@ -69,7 +69,6 @@
 #include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
-#include "r_text.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
@@ -1516,7 +1515,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 
 	return fontid;
 }
-
+#if 0
 typedef struct {
 	drawframe_t *dframe;
 	descbatch_t *batch;
@@ -1540,11 +1539,12 @@ vulkan_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	inst->position[0] = x;
 	inst->position[1] = y;
 }
-
+#endif
 void
 Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 						vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	if (fontid < 0 || (unsigned) fontid > dctx->fonts.size) {
 		return;
@@ -1573,6 +1573,7 @@ Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
 	rshaper_t  *shaper = RText_NewShaper (dctx->fonts.a[fontid].font);
 	RText_RenderText (shaper, &text, x, y, vulkan_render_glyph, &rgctx);
 	RText_DeleteShaper (shaper);
+#endif
 }
 
 void

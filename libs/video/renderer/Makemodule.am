@@ -32,7 +32,6 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_ent.c \
 	libs/video/renderer/r_iqm.c \
 	libs/video/renderer/r_sprite.c \
-	libs/video/renderer/r_text.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
