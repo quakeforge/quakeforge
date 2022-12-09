@@ -84,6 +84,7 @@ Text_Init (void)
 {
 	text_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (text_reg, text_components, text_type_count);
+	text_reg->href_comp = text_href;
 }
 
 typedef struct glyphnode_s {
@@ -110,9 +111,6 @@ Text_View (font_t *font, passage_t *passage)
 	/*XXX*/hb_script_t script = HB_SCRIPT_LATIN;
 	/*XXX*/hb_direction_t direction = HB_DIRECTION_LTR;
 	/*XXX*/hb_language_t language = hb_language_from_string ("en", 2);
-	hb_buffer_set_direction (buffer, direction);
-	hb_buffer_set_script (buffer, script);
-	hb_buffer_set_language (buffer, language);
 
 	uint32_t    glyph_count = 0;
 
@@ -121,12 +119,15 @@ Text_View (font_t *font, passage_t *passage)
 	for (uint32_t i = 0; i < h->childCount[0]; i++) {
 		uint32_t    paragraph = h->childIndex[0] + i;
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++) {
-			uint32_t    textind = h->childIndex[0] + j;
+			uint32_t    textind = h->childIndex[paragraph] + j;
 			psg_text_t *textobj = &text_objects[textind];
 			const char *str = passage->text + textobj->text;
 			uint32_t    len = textobj->size;
 
 			hb_buffer_reset (buffer);
+			hb_buffer_set_direction (buffer, direction);
+			hb_buffer_set_script (buffer, script);
+			hb_buffer_set_language (buffer, language);
 			hb_buffer_add_utf8 (buffer, str, len, 0, len);
 			hb_shape (fnt, buffer, 0, 0);
 

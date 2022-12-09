@@ -209,6 +209,8 @@ Passage_New (ecs_registry_t *reg)
 VISIBLE void
 Passage_Delete (passage_t *passage)
 {
-	Hierarchy_Delete (passage->hierarchy);
+	if (passage->hierarchy) {
+		Hierarchy_Delete (passage->hierarchy);
+	}
 	free (passage);
 }
