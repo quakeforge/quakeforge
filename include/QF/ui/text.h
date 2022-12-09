@@ -38,10 +38,22 @@
 
 #include "QF/ecs/component.h"
 
+// These can be converted to hb_direction_t simply by oring with 4
+typedef enum {
+	text_right_down,	// left to right, then down horizontal text
+	text_left_down,		// right to left, then down horizontal text
+	text_down_right,	// top to bottom, then right vertical text
+	text_up_right,		// bottom to top, then right vertical text
+	text_right_up,		// left to right, then up horizontal text
+	text_left_up,		// right to left, then up horizontal text
+	text_down_left,		// top to bottom, then left vertical text
+	text_up_left,		// bottom to top, then left vertical text
+} text_dir_e;
+
 typedef struct script_component_s {
 	hb_language_t language;
 	hb_script_t script;
-	hb_direction_t direction;
+	text_dir_e  direction;
 } script_component_t;
 
 typedef struct glyphobj_s {
@@ -70,28 +82,25 @@ typedef struct text_s {
 enum {
 	// covers both view and passage text object hierarcies
 	text_href,
-	// all the glyhphs in a passage
-	text_passage,
+	// all the glyphs in a passage. Always on only the root view of the passage.
+	text_passage_glyphs,
+	// glyphs for a single text object
 	text_glyphs,
+	// text_script, text_font and text_features on the passage root object set
+	// the defaults for all text objects in the passage. The settings can be
+	// overridden at the paragraph level or individiual text object level by
+	// adding the appropriate component to that text object.
+	// script settings for the text object
 	text_script,
+	// font id for the text object
 	text_font,
+	// harfbuzz font features for the text object
 	text_features,
 
 	text_type_count
 };
 
 typedef struct featureset_s DARRAY_TYPE (hb_feature_t) featureset_t;
-
-struct font_s;
-struct rglyph_s;
-typedef void text_render_t (uint32_t glyphid, int x, int y, void *data);
-
-typedef struct shaper_s {
-	struct font_s *rfont;
-	hb_font_t  *font;
-	hb_buffer_t *buffer;
-	featureset_t features;
-} shaper_t;
 
 extern hb_feature_t LigatureOff;
 extern hb_feature_t LigatureOn;
@@ -104,13 +113,12 @@ struct font_s;
 struct passage_s;
 extern struct ecs_registry_s *text_reg;
 
-shaper_t *Text_NewShaper (struct font_s *font);
-void Text_DeleteShaper (shaper_t *shaper);
-void Text_AddFeature (shaper_t *shaper, hb_feature_t feature);
-void Text_ShapeText (shaper_t *shaper, text_t *text);
-void Text_RenderText (shaper_t *shaper, text_t *text, int x, int y,
-					  text_render_t *render, void *data);
 void Text_Init (void);
 struct view_s Text_View (struct font_s *font, struct passage_s *passage);
+void Text_SetScript (int textid, const char *lang, hb_script_t script,
+					 text_dir_e dir);
+void Text_SetFont (int textid, struct font_s *font);
+void Text_SetFeatures (int textid, featureset_t *features);
+void Text_AddFeature (int textid, hb_feature_t feature);
 
 #endif//__QF_ui_text_h
