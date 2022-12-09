@@ -77,7 +77,7 @@ static const component_t text_components[text_type_count] = {
 		.create = text_features_create,
 	},
 };
-static ecs_registry_t *text_reg;
+ecs_registry_t *text_reg;
 
 void
 Text_Init (void)

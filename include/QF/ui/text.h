@@ -102,6 +102,7 @@ extern hb_feature_t CligOn;
 
 struct font_s;
 struct passage_s;
+extern struct ecs_registry_s *text_reg;
 
 shaper_t *Text_NewShaper (struct font_s *font);
 void Text_DeleteShaper (shaper_t *shaper);
