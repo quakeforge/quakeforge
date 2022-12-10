@@ -244,6 +244,7 @@ View_UpdateHierarchy (view_t view)
 					rel[i].y = pos[i].y;
 					break;
 				case grav_flow:
+					//rel is set by the flow functions
 					break;
 			}
 			abs[i].x = abs[par].x + rel[i].x;

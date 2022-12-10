@@ -128,7 +128,7 @@ Text_View (font_t *font, passage_t *passage)
 	hb_buffer_allocation_successful (buffer);
 
 	hb_script_t psg_script = HB_SCRIPT_LATIN;
-	text_dir_e psg_direction = HB_DIRECTION_LTR;
+	text_dir_e psg_direction = text_right_down;
 	hb_language_t psg_language = hb_language_from_string ("en", 2);
 	featureset_t passage_features = DARRAY_STATIC_INIT (0);
 	featureset_t *psg_features = &passage_features;
@@ -197,6 +197,8 @@ Text_View (font_t *font, passage_t *passage)
 				.ent = h->ent[textind],
 				.count = c,
 				.glyphs = alloca (c * sizeof (glyphobj_t)),
+				.mins = { 0, 0 },
+				.maxs = { INT32_MIN, INT32_MIN },
 			};
 			glyph_count += c;
 
@@ -205,24 +207,30 @@ Text_View (font_t *font, passage_t *passage)
 				uint32_t    glyphid = glyphInfo[k].codepoint;
 				vec2i_t     bearing = font->glyph_bearings[glyphid];
 
-				int         xp = x + glyphPos[k].x_offset / 64;
-				int         yp = y + glyphPos[k].y_offset / 64;
+				int         xp = glyphPos[k].x_offset / 64;
+				int         yp = glyphPos[k].y_offset / 64;
 				int         xa = glyphPos[k].x_advance / 64;
 				int         ya = glyphPos[k].y_advance / 64;
 				xp += bearing[0];
-				yp -= bearing[1];
+				yp += bearing[1];
 				int         xm = xp + font->glyph_rects[glyphid].width;
-				int         ym = yp + font->glyph_rects[glyphid].height;
+				int         ym = yp - font->glyph_rects[glyphid].height;
 
-				(*head)->mins[0] = min ((*head)->mins[0], xp);
-				(*head)->mins[1] = min ((*head)->mins[1], yp);
-				(*head)->maxs[0] = max ((*head)->maxs[0], xm);
-				(*head)->maxs[1] = max ((*head)->maxs[1], ym);
+				if (xm - xp == 0) {
+					xm = xa;
+				}
+				if (ym - yp == 0) {
+					ym = ya;
+				}
+				(*head)->mins[0] = min ((*head)->mins[0], xp + x);
+				(*head)->mins[1] = min ((*head)->mins[1], ym + y);
+				(*head)->maxs[0] = max ((*head)->maxs[0], xm + x);
+				(*head)->maxs[1] = max ((*head)->maxs[1], yp + y);
 
 				(*head)->glyphs[k] = (glyphobj_t) {
 					.glyphid = glyphid,
-					.x = xp + bearing[0],
-					.y = yp - bearing[1],
+					.x = x + xp,
+					.y = y - yp,
 					.fontid = font->fontid,
 				};
 				x += xa;
@@ -248,10 +256,17 @@ Text_View (font_t *font, passage_t *passage)
 				.start = passage_ref.count,
 				.count = g->count,
 			};
-			memcpy (glyphs + passage_ref.count, g->glyphs,
-					g->count * sizeof (glyphobj_t));
+			for (uint32_t k = 0; k < g->count; k++) {
+				glyphobj_t *go = g->glyphs + k;
+				glyphs[passage_ref.count + k] = (glyphobj_t) {
+					.glyphid = go->glyphid,
+					.x = go->x + g->mins[0],
+					.y = go->y + g->maxs[1],
+					.fontid = go->fontid,
+				};
+			}
 			Ent_SetComponent (textview.id, text_glyphs, text_reg, &glyph_ref);
-			View_SetPos (textview, g->mins[0], g->mins[1]);
+			View_SetPos (textview, g->mins[0], -g->mins[1]);
 			View_SetLen (textview, g->maxs[0] - g->mins[0],
 								   g->maxs[1] - g->mins[1]);
 			View_SetGravity (textview, grav_flow);
@@ -268,7 +283,9 @@ Text_View (font_t *font, passage_t *passage)
 			para_direction = s->direction;
 		}
 		View_SetOnResize (paraview, text_flow_funcs[para_direction]);
-		View_SetResize (paraview, psg_vertical, !psg_vertical);
+		View_SetResize (paraview, !psg_vertical, psg_vertical);
+		View_SetGravity (paraview, grav_northwest);
+		View_Control (paraview)->flow_size = 1;
 	}
 	Ent_SetComponent (passage_view.id, text_glyphs, text_reg, &passage_ref);
 	glyphset_t glyphset = {
