@@ -1023,7 +1023,6 @@ static void
 sw_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 {
 	swrgctx_t  *rgctx = _rgctx;
-	vrect_t    *rect = &rgctx->glyph_rects[glyphid];
 
 	float       w = rect->width;
 	float       h = rect->height;
@@ -1047,30 +1046,32 @@ sw_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 }
 #endif
 void
-Draw_FontString (int x, int y, int fontid, const char *str)
+Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 {
-#if 0
 	if (fontid < 0 || (unsigned) fontid > sw_fonts.size) {
 		return;
 	}
 	swfont_t   *font = &sw_fonts.a[fontid];
 	font_t     *rfont = font->font;
-	swrgctx_t   rgctx = {
-		.glyph_rects = rfont->glyph_rects,
-		.bitmap = rfont->scrap_bitmap,
-		.width = rfont->scrap.width,
-		.color = 63,
-	};
-	//FIXME ewwwwwww
-	rtext_t     text = {
-		.text = str,
-		.language = "en",
-		.script = HB_SCRIPT_LATIN,
-		.direction = HB_DIRECTION_LTR,
-	};
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+	int         width = rfont->scrap.width;
 
-	rshaper_t  *shaper = RText_NewShaper (rfont);
-	RText_RenderText (shaper, &text, x, y, sw_render_glyph, &rgctx);
-	RText_DeleteShaper (shaper);
-#endif
+	float       w = rect->width;
+	float       h = rect->height;
+	if (x < 0 || y < 0 || x + w > vid.width || y + h > vid.height) {
+		return;
+	}
+	int         u = rect->x;
+	int         v = rect->y;
+	byte       *src = rfont->scrap_bitmap + v * width + u;
+	byte       *dst = d_viewbuffer + y * d_rowbytes + x;
+	while (h-- > 0) {
+		for (int i = 0; i < w; i++) {
+			if (src[i] > 127) {
+				dst[i] = c;
+			}
+		}
+		src += width;
+		dst += d_rowbytes;
+	}
 }

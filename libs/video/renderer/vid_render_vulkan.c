@@ -291,9 +291,9 @@ vulkan_Draw_AddFont (struct font_s *font)
 }
 
 static void
-vulkan_Draw_FontString (int x, int y, int fontid, const char *str)
+vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 {
-	Vulkan_Draw_FontString (x, y, fontid, str, vulkan_ctx);
+	Vulkan_Draw_Glyph (x, y, fontid, glyphid, c, vulkan_ctx);
 }
 
 static void
@@ -792,7 +792,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.Draw_Picf              = vulkan_Draw_Picf,
 	.Draw_SubPic            = vulkan_Draw_SubPic,
 	.Draw_AddFont           = vulkan_Draw_AddFont,
-	.Draw_FontString        = vulkan_Draw_FontString,
+	.Draw_Glyph             = vulkan_Draw_Glyph,
 
 	.ParticleSystem   = vulkan_ParticleSystem,
 	.R_Init           = vulkan_R_Init,

@@ -1075,17 +1075,15 @@ gl_Draw_AddFont (font_t *rfont)
 	font->texid = GL_LoadTex ("", 0, &tex);
 	return fontid;
 }
-#if 0
-typedef struct {
-	int         fontid;
-	byte        color[4];
-} glrgctx_t;
 
-static void
-gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+void
+gl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 {
-	glrgctx_t  *rgctx = _rgctx;
-	glfont_t   *font = &gl_fonts.a[rgctx->fontid];
+	if (fontid < 0 || (unsigned) fontid > gl_fonts.size) {
+		return;
+	}
+
+	glfont_t   *font = &gl_fonts.a[fontid];
 	font_t     *rfont = font->font;
 	vrect_t    *rect = &rfont->glyph_rects[glyphid];
 
@@ -1095,7 +1093,12 @@ gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	float       v = rect->y;
 	float       s = 1.0 / rfont->scrap.width;
 	float       t = 1.0 / rfont->scrap.height;
-	qfglColor4ubv (rgctx->color);
+
+	qfglBindTexture (GL_TEXTURE_2D, gl_fonts.a[fontid].texid);
+	qfglBegin (GL_QUADS);
+
+	byte        color[4] = { VectorExpand (vid.palette + c * 3), 255 };
+	qfglColor4ubv (color);
 	qfglTexCoord2f (u * s, v * t);
 	qfglVertex2f (x, y);
 	qfglTexCoord2f ((u + w) * s, v * t);
@@ -1104,35 +1107,7 @@ gl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	qfglVertex2f (x + w, y + h);
 	qfglTexCoord2f (u * s, (v + h) * t);
 	qfglVertex2f (x, y + h);
-}
-#endif
-void
-gl_Draw_FontString (int x, int y, int fontid, const char *str)
-{
-#if 0
-	if (fontid < 0 || (unsigned) fontid > gl_fonts.size) {
-		return;
-	}
-	glrgctx_t   rgctx = {
-		.fontid = fontid,
-		.color = { 127, 255, 153, 255 },
-	};
-	//FIXME ewwwwwww
-	rtext_t     text = {
-		.text = str,
-		.language = "en",
-		.script = HB_SCRIPT_LATIN,
-		.direction = HB_DIRECTION_LTR,
-	};
-
-	qfglBindTexture (GL_TEXTURE_2D, gl_fonts.a[fontid].texid);
-	qfglBegin (GL_QUADS);
-
-	rshaper_t  *shaper = RText_NewShaper (gl_fonts.a[fontid].font);
-	RText_RenderText (shaper, &text, x, y, gl_render_glyph, &rgctx);
-	RText_DeleteShaper (shaper);
 
 	qfglEnd ();
 	qfglColor4ubv (color_white);
-#endif
 }

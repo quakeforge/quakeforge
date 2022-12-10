@@ -59,7 +59,7 @@ void gl_Draw_Picf (float x, float y, struct qpic_s *pic);
 void gl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);
 int gl_Draw_AddFont (struct font_s *font);
-void gl_Draw_FontString (int x, int y, int fontid, const char *str);
+void gl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c);
 
 void GL_Set2D (void);
 void GL_Set2DScaled (void);

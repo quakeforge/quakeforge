@@ -82,8 +82,8 @@ void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 						int srcx, int srcy, int width, int height,
 						struct vulkan_ctx_s *ctx);
 int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
-							 struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
+						struct vulkan_ctx_s *ctx);
 
 void Vulkan_Set2D (struct vulkan_ctx_s *ctx);
 void Vulkan_Set2DScaled (struct vulkan_ctx_s *ctx);

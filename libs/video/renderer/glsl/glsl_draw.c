@@ -944,8 +944,21 @@ glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	glslrgctx_t *rgctx = _rgctx;
 	vrect_t    *rect = &rgctx->glyph_rects[glyphid];
 	dstring_t  *batch = rgctx->batch;
-	int         size = 6 * sizeof (drawvert_t);
 
+}
+#endif
+void
+glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
+{
+	if (fontid < 0 || (unsigned) fontid > glsl_fonts.size) {
+		return;
+	}
+	glslfont_t *font = &glsl_fonts.a[fontid];
+	font_t     *rfont = font->font;
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+
+	dstring_t  *batch = glyph_queue;
+	int         size = 6 * sizeof (drawvert_t);
 	batch->size += size;
 	dstring_adjust (batch);
 	drawvert_t *verts = (drawvert_t *) (batch->str + batch->size - size);
@@ -954,8 +967,8 @@ glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 	float       h = rect->height;
 	float       u = rect->x;
 	float       v = rect->y;
-	float       s = 1.0 / rgctx->width;
-	float       t = 1.0 / rgctx->height;
+	float       s = 1.0 / rfont->scrap.width;
+	float       t = 1.0 / rfont->scrap.height;
 
 	verts[0] = (drawvert_t) {
 		.xyst = { x, y, u * s, v * t },
@@ -976,42 +989,14 @@ glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
 		.xyst = { x, y + h, u * s, (v + h) * t },
 	};
 
-	QuatCopy (rgctx->color, verts[0].color);
-	QuatCopy (rgctx->color, verts[1].color);
-	QuatCopy (rgctx->color, verts[2].color);
-	QuatCopy (rgctx->color, verts[3].color);
-	QuatCopy (rgctx->color, verts[4].color);
-	QuatCopy (rgctx->color, verts[5].color);
-}
-#endif
-void
-glsl_Draw_FontString (int x, int y, int fontid, const char *str)
-{
-#if 0
-	if (fontid < 0 || (unsigned) fontid > glsl_fonts.size) {
-		return;
-	}
-	glslfont_t *font = &glsl_fonts.a[fontid];
-	font_t     *rfont = font->font;
-	glslrgctx_t rgctx = {
-		.glyph_rects = rfont->glyph_rects,
-		.batch = glyph_queue,
-		.width = rfont->scrap.width,
-		.height = rfont->scrap.height,
-	};
-	quat_t      color = { 127, 255, 153, 255 };
-	QuatScale (color, 1.0f/255.0f, rgctx.color);
-	//FIXME ewwwwwww
-	rtext_t     text = {
-		.text = str,
-		.language = "en",
-		.script = HB_SCRIPT_LATIN,
-		.direction = HB_DIRECTION_LTR,
-	};
-
-	rshaper_t  *shaper = RText_NewShaper (rfont);
-	RText_RenderText (shaper, &text, x, y, glsl_render_glyph, &rgctx);
-	RText_DeleteShaper (shaper);
+	quat_t      color = { VectorExpand (vid.palette + c * 3), 255 };
+	QuatScale (color, 1.0f/255.0f, color);
+	QuatCopy (color, verts[0].color);
+	QuatCopy (color, verts[1].color);
+	QuatCopy (color, verts[2].color);
+	QuatCopy (color, verts[3].color);
+	QuatCopy (color, verts[4].color);
+	QuatCopy (color, verts[5].color);
 
 	qfeglUseProgram (alpha_2d.program);
 	qfeglEnableVertexAttribArray (alpha_2d.vertex.location);
@@ -1030,5 +1015,4 @@ glsl_Draw_FontString (int x, int y, int fontid, const char *str)
 	glyph_queue->size = 0;
 	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qfeglUseProgram (quake_2d.program);
-#endif
 }

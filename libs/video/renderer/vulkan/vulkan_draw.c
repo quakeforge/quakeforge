@@ -1515,65 +1515,33 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 
 	return fontid;
 }
-#if 0
-typedef struct {
-	drawframe_t *dframe;
-	descbatch_t *batch;
-	byte        color[4];
-} rgctx_t;
 
-static void
-vulkan_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+void
+Vulkan_Draw_Glyph (int x, int y, int fontid, int glyph, int c,
+						vulkan_ctx_t *ctx)
 {
-	rgctx_t    *rgctx = _rgctx;
-	glyphqueue_t *queue = &rgctx->dframe->glyph_insts;;
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
+	glyphqueue_t *queue = &dframe->glyph_insts;;
 	if (queue->count >= queue->size) {
 		return;
 	}
 
-	rgctx->batch->count++;
-	glyphinst_t *inst = &queue->glyphs[queue->count++];
-	inst->index = glyphid;
-	QuatCopy (rgctx->color, inst->color);
-	inst->position[0] = x;
-	inst->position[1] = y;
-}
-#endif
-void
-Vulkan_Draw_FontString (int x, int y, int fontid, const char *str,
-						vulkan_ctx_t *ctx)
-{
-#if 0
-	drawctx_t  *dctx = ctx->draw_context;
-	if (fontid < 0 || (unsigned) fontid > dctx->fonts.size) {
-		return;
-	}
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	rgctx_t     rgctx = {
-		.dframe = dframe,
-		.color = { 127, 255, 153, 255 },
-	};
-	//FIXME ewwwwwww
-	rtext_t     text = {
-		.text = str,
-		.language = "en",
-		.script = HB_SCRIPT_LATIN,
-		.direction = HB_DIRECTION_LTR,
-	};
-
-	rgctx.batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
-	if (!dframe->glyph_batch.size || rgctx.batch->descid != fontid) {
+	descbatch_t *batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
+	if (!dframe->glyph_batch.size || batch->descid != fontid) {
 		DARRAY_APPEND(&dframe->glyph_batch,
 					  ((descbatch_t) { .descid = fontid }));
-		rgctx.batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
+		batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
 	}
 
-	rshaper_t  *shaper = RText_NewShaper (dctx->fonts.a[fontid].font);
-	RText_RenderText (shaper, &text, x, y, vulkan_render_glyph, &rgctx);
-	RText_DeleteShaper (shaper);
-#endif
+	batch->count++;
+	glyphinst_t *inst = &queue->glyphs[queue->count++];
+	inst->index = glyph;
+	VectorCopy (vid.palette + c * 3, inst->color);
+	inst->color[3] = 255;
+	inst->position[0] = x;
+	inst->position[1] = y;
 }
 
 void

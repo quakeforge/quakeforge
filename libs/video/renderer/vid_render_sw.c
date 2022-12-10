@@ -482,7 +482,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	.Draw_Picf              = Draw_Picf,
 	.Draw_SubPic            = Draw_SubPic,
 	.Draw_AddFont           = Draw_AddFont,
-	.Draw_FontString        = Draw_FontString,
+	.Draw_Glyph             = Draw_Glyph,
 
 	.ParticleSystem   = sw_ParticleSystem,
 	.R_Init           = sw_R_Init,
