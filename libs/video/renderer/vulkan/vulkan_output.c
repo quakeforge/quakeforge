@@ -249,6 +249,7 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type oframe = &octx->frames.a[i];
 
+		oframe->input = 0;
 		oframe->set = sets->a[i];
 
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
