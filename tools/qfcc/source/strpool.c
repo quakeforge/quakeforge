@@ -411,6 +411,7 @@ make_string (char *token, char **end)
 			unicount = 0;
 		} else {
 			s[0] = c;
+			s[1] = 0;
 		}
 		dstring_appendstr (str, s);
 	} while (1);
