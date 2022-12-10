@@ -294,7 +294,8 @@ typedef struct flowline_s {
 	int         first_child;
 	int         child_count;
 	int         cursor;
-	int         height;
+	int         height;	// from baseline
+	int         depth;	// from baseline
 } flowline_t;
 
 #define NEXT_LINE(line, child_index) \
@@ -326,7 +327,8 @@ flow_right (view_t view, void (*set_rows) (view_t, flowline_t *))
 		if (pos[child].x || !cont[child].bol_suppress) {
 			line->cursor += len[child].x;
 		}
-		line->height = max (len[child].y, line->height);
+		line->height = max (len[child].y - pos[child].y, line->height);
+		line->depth = max (pos[child].y, line->depth);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
@@ -355,7 +357,8 @@ flow_left (view_t view, void (*set_rows) (view_t, flowline_t *))
 			line->cursor -= len[child].x;
 		}
 		pos[child].x = line->cursor;
-		line->height = max (len[child].y, line->height);
+		line->height = max (len[child].y - pos[child].y, line->height);
+		line->depth = max (pos[child].y, line->depth);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
@@ -382,7 +385,8 @@ flow_down (view_t view, void (*set_rows) (view_t, flowline_t *))
 		if (pos[child].y || !cont[child].bol_suppress) {
 			line->cursor += len[child].y;
 		}
-		line->height = max (len[child].x, line->height);
+		line->height = max (len[child].x - pos[child].x, line->height);
+		line->depth = max (pos[child].x, line->depth);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
@@ -411,7 +415,8 @@ flow_up (view_t view, void (*set_rows) (view_t, flowline_t *))
 			line->cursor -= len[child].y;
 		}
 		pos[child].y = line->cursor;
-		line->height = max (len[child].x, line->height);
+		line->height = max (len[child].x - pos[child].x, line->height);
+		line->depth = max (pos[child].x, line->depth);
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
@@ -422,7 +427,7 @@ flow_view_height (view_pos_t *len, flowline_t *flowlines)
 {
 	len->y = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
-		len->y += line->height;
+		len->y += line->height + line->depth;
 	}
 }
 
@@ -431,7 +436,7 @@ flow_view_width (view_pos_t *len, flowline_t *flowlines)
 {
 	len->x = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
-		len->x += line->height;
+		len->x += line->height + line->depth;
 	}
 }
 
@@ -459,6 +464,7 @@ set_rows_down (view_t view, flowline_t *flowlines)
 			rel[child].x = pos[child].x;
 			rel[child].y = cursor + pos[child].y - len[child].y;
 		}
+		cursor += line->depth;
 	}
 }
 
@@ -479,6 +485,7 @@ set_rows_up (view_t view, flowline_t *flowlines)
 
 	int         cursor = len[vind].y;
 	for (flowline_t *line = flowlines; line; line = line->next) {
+		cursor -= line->depth;
 		for (int i = 0; i < line->child_count; i++) {
 			uint32_t    child = line->first_child + i;
 
@@ -506,6 +513,7 @@ set_columns_right (view_t view, flowline_t *flowlines)
 
 	int         cursor = 0;
 	for (flowline_t *line = flowlines; line; line = line->next) {
+		cursor += line->depth;
 		for (int i = 0; i < line->child_count; i++) {
 			uint32_t    child = line->first_child + i;
 
@@ -540,6 +548,7 @@ set_columns_left (view_t view, flowline_t *flowlines)
 			rel[child].x = cursor + pos[child].x;
 			rel[child].y = pos[child].y;
 		}
+		cursor -= line->depth;
 	}
 }
 
