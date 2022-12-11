@@ -689,32 +689,6 @@ in_x11_send_focus_event (int gain)
 }
 
 static void
-event_focusout (XEvent *event)
-{
-	if (x_have_focus) {
-		x_have_focus = false;
-		in_x11_send_focus_event (0);
-		if (in_snd_block) {
-			S_BlockSound ();
-			CDAudio_Pause ();
-		}
-		X11_RestoreGamma ();
-	}
-}
-
-static void
-event_focusin (XEvent *event)
-{
-	in_x11_send_focus_event (1);
-	x_have_focus = true;
-	if (in_snd_block) {
-		S_UnblockSound ();
-		CDAudio_Resume ();
-	}
-	VID_UpdateGamma ();
-}
-
-static void
 center_pointer (void)
 {
 	XEvent      event = {};
@@ -1044,9 +1018,7 @@ xi_barrier_hit (void *event)
 		return;
 	}
 
-	if (!x11_have_pointer || !input_grabbed) {
-		XIBarrierReleasePointer (x_disp, be.deviceid, be.barrier, be.eventid);
-	}
+	center_pointer ();
 }
 
 static void
@@ -1156,6 +1128,41 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 												     BarrierNegativeY, 0, 0);
 }
 #endif
+
+static void
+event_focusout (XEvent *event)
+{
+	if (x_have_focus) {
+		x_have_focus = false;
+#ifdef HAVE_XFIXES
+		in_x11_remove_barriers ();
+#endif
+		in_x11_send_focus_event (0);
+		if (in_snd_block) {
+			S_BlockSound ();
+			CDAudio_Pause ();
+		}
+		X11_RestoreGamma ();
+	}
+}
+
+static void
+event_focusin (XEvent *event)
+{
+	in_x11_send_focus_event (1);
+	x_have_focus = true;
+	if (in_snd_block) {
+		S_UnblockSound ();
+		CDAudio_Resume ();
+	}
+	if (input_grabbed) {
+#ifdef HAVE_XFIXES
+		in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+							   x11_aw.xlen, x11_aw.ylen);
+#endif
+	}
+	VID_UpdateGamma ();
+}
 
 static void
 in_x11_grab_input (void *data, int grab)
