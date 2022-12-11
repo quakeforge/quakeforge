@@ -118,21 +118,21 @@ SV_Sbar_Init (void)
 	sv_view_t   sv_view = *(sv_view_t *) comp;
 	sv_view.setgeometry = 0;
 
-	view = View_New (status.reg, status);
+	view = View_New (status.reg, status.comp, status);
 	View_SetPos (view, 0, 0);
 	View_SetLen (view, 11, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_cpu;
 	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
 
-	view = View_New (status.reg, status);
+	view = View_New (status.reg, status.comp, status);
 	View_SetPos (view, 11, 0);
 	View_SetLen (view, 8, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_rec;
 	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
 
-	view = View_New (status.reg, status);
+	view = View_New (status.reg, status.comp, status);
 	View_SetPos (view, 19, 0);
 	View_SetLen (view, 18, 1);
 	View_SetGravity (view, grav_northwest);

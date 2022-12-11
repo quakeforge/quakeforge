@@ -88,7 +88,7 @@ add_entity (hierarchy_t *h, uint32_t parent)
 {
 	uint32_t    i = Hierarchy_InsertHierarchy (h, 0, parent, 0);
 	h->ent[i] = ECS_NewEntity (h->reg);
-	hierref_t  *ref = Ent_AddComponent (h->ent[i], h->reg->href_comp, h->reg);
+	hierref_t  *ref = Ent_AddComponent (h->ent[i], h->href_comp, h->reg);
 	ref->hierarchy = h;
 	ref->index = i;
 }
@@ -129,7 +129,8 @@ Passage_ParseText (passage_t *passage, const char *text)
 		}
 		root_text.size = c - text;
 	}
-	passage->hierarchy = Hierarchy_New (passage->reg, &passage_type, 0);
+	passage->hierarchy = Hierarchy_New (passage->reg, passage->href_comp,
+										&passage_type, 0);
 	Hierarchy_Reserve (passage->hierarchy,
 					   1 + num_paragraphs + num_text_objects);
 #if 0
@@ -189,7 +190,7 @@ Passage_ParseText (passage_t *passage, const char *text)
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		psg_text_t *to = &passage_obj[i];
 		uint32_t    ent = h->ent[i];
-		hierref_t  *ref = Ent_GetComponent (ent, reg->href_comp, reg);
+		hierref_t  *ref = Ent_GetComponent (ent, h->href_comp, reg);
 		printf ("%3d %8x %3d %4d %4d '%.*s'\n", i, ent, ref->index,
 				to->text, to->size, to->size, text + to->text);
 	}
@@ -197,11 +198,12 @@ Passage_ParseText (passage_t *passage, const char *text)
 }
 
 VISIBLE passage_t *
-Passage_New (ecs_registry_t *reg)
+Passage_New (ecs_registry_t *reg, uint32_t href_comp)
 {
 	passage_t  *passage = malloc (sizeof (passage_t));
 	passage->text = 0;
 	passage->reg = reg;
+	passage->href_comp = href_comp;
 	passage->hierarchy = 0;
 	return passage;
 }

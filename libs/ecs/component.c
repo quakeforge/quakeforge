@@ -39,7 +39,6 @@ ECS_NewRegistry (void)
 {
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
 	reg->next = Ent_Index (nullent);
-	reg->href_comp = nullent;
 	return reg;
 }
 

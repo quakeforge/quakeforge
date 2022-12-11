@@ -92,7 +92,6 @@ Text_Init (void)
 {
 	text_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (text_reg, text_components, text_type_count);
-	text_reg->href_comp = text_href;
 }
 
 typedef struct glyphnode_s {
@@ -240,7 +239,7 @@ Text_View (font_t *font, passage_t *passage)
 			head = &(*head)->next;
 		}
 	}
-	view_t      passage_view = View_New (text_reg, nullview);
+	view_t      passage_view = View_New (text_reg, text_href, nullview);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
@@ -248,10 +247,10 @@ Text_View (font_t *font, passage_t *passage)
 	int         psg_vertical = !!(psg_direction & 2);
 	for (uint32_t i = 0; i < h->childCount[0]; i++) {
 		uint32_t    paragraph = h->childIndex[0] + i;
-		view_t      paraview = View_New (text_reg, passage_view);
+		view_t      paraview = View_New (text_reg, text_href, passage_view);
 		glyphref_t  pararef = { .start = passage_ref.count };
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++, g = g->next) {
-			view_t      textview = View_New (text_reg, paraview);
+			view_t      textview = View_New (text_reg, text_href, paraview);
 			glyphref_t  glyph_ref = {
 				.start = passage_ref.count,
 				.count = g->count,

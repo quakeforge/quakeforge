@@ -73,7 +73,6 @@ typedef struct ecs_registry_s {
 	const component_t *components;
 	ecs_pool_t *comp_pools;
 	uint32_t    num_components;
-	uint32_t    href_comp;//FIXME find a better way
 	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 } ecs_registry_t;
 

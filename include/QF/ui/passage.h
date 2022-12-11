@@ -52,11 +52,12 @@ typedef struct passage_s {
 	const char *text;			///< Not owned by passage
 
 	struct ecs_registry_s *reg;	///< Owning ECS registry
+	uint32_t    href_comp;		///< Component for passage hierarcy reference
 	struct hierarchy_s *hierarchy;	///< hierarchy of text objects
 } passage_t;
 
 void Passage_ParseText (passage_t *passage, const char *text);
-passage_t *Passage_New (struct ecs_registry_s *reg);
+passage_t *Passage_New (struct ecs_registry_s *reg, uint32_t href_comp);
 void Passage_Delete (passage_t *passage);
 int Passage_IsSpace (const char *text) __attribute__((pure));
 

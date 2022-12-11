@@ -215,7 +215,7 @@ Transform_New (ecs_registry_t *reg, transform_t parent)
 		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
 												pref->index, 0);
 	} else {
-		ref->hierarchy = Hierarchy_New (reg, &transform_type, 1);
+		ref->hierarchy = Hierarchy_New (reg, scene_href, &transform_type, 1);
 		ref->index = 0;
 	}
 	ref->hierarchy->ent[ref->index] = transform;

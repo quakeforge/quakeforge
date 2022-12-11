@@ -171,7 +171,7 @@ CL_Init_Screen (void)
 
 	HUD_Init ();
 
-	cl_screen_view = View_New (hud_registry, nullview);
+	cl_screen_view = View_New (hud_registry, hud_href, nullview);
 	con_module->data->console->screen_view = &cl_screen_view;
 
 	View_SetPos (cl_screen_view, 0, 0);
@@ -180,7 +180,7 @@ CL_Init_Screen (void)
 	View_SetVisible (cl_screen_view, 1);
 
 	pic = r_funcs->Draw_PicFromWad ("ram");
-	ram_view = View_New (hud_registry, cl_screen_view);
+	ram_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (ram_view, 32, 0);
 	View_SetLen (ram_view, pic->width, pic->height);
 	View_SetGravity (ram_view, grav_northwest);
@@ -188,7 +188,7 @@ CL_Init_Screen (void)
 	View_SetVisible (ram_view, 0);
 
 	pic = r_funcs->Draw_PicFromWad ("turtle");
-	turtle_view = View_New (hud_registry, cl_screen_view);
+	turtle_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (turtle_view, 32, 0);
 	View_SetLen (turtle_view, pic->width, pic->height);
 	View_SetGravity (turtle_view, grav_northwest);
@@ -200,14 +200,14 @@ CL_Init_Screen (void)
 	Cvar_Register (&scr_showturtle_cvar, 0, 0);
 
 	pic = r_funcs->Draw_PicFromWad ("net");
-	net_view = View_New (hud_registry, cl_screen_view);
+	net_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (net_view, 64, 0);
 	View_SetLen (net_view, pic->width, pic->height);
 	View_SetGravity (net_view, grav_northwest);
 	Ent_SetComponent (net_view.id, hud_pic, net_view.reg, &pic);
 	View_SetVisible (net_view, 0);
 
-	timegraph_view = View_New (hud_registry, cl_screen_view);
+	timegraph_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (timegraph_view, 0, 0);
 	View_SetLen (timegraph_view, r_data->vid->width, 100);
 	View_SetGravity (timegraph_view, grav_southwest);
@@ -215,7 +215,7 @@ CL_Init_Screen (void)
 	Ent_SetComponent (timegraph_view.id, hud_func, timegraph_view.reg, &rtg);
 	View_SetVisible (timegraph_view, r_timegraph);
 
-	zgraph_view = View_New (hud_registry, cl_screen_view);
+	zgraph_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (zgraph_view, 0, 0);
 	View_SetLen (zgraph_view, r_data->vid->width, 100);
 	View_SetGravity (zgraph_view, grav_southwest);
@@ -225,7 +225,7 @@ CL_Init_Screen (void)
 
 	const char *name = "gfx/loading.lmp";
 	pic = r_funcs->Draw_CachePic (name, 1);
-	loading_view = View_New (hud_registry, cl_screen_view);
+	loading_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (loading_view, 0, -24);
 	View_SetLen (loading_view, pic->width, pic->height);
 	View_SetGravity (loading_view, grav_center);
@@ -234,7 +234,7 @@ CL_Init_Screen (void)
 
 	name = "gfx/pause.lmp";
 	pic = r_funcs->Draw_CachePic (name, 1);
-	pause_view = View_New (hud_registry, cl_screen_view);
+	pause_view = View_New (hud_registry, hud_href, cl_screen_view);
 	View_SetPos (pause_view, 0, -24);
 	View_SetLen (pause_view, pic->width, pic->height);
 	View_SetGravity (pause_view, grav_center);

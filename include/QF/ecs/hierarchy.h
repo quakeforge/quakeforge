@@ -60,12 +60,13 @@ typedef struct hierarchy_s {
 	uint32_t   *parentIndex;
 	const hierarchy_type_t *type;
 	void      **components;
+	uint32_t    href_comp;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg,
+hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
 							const hierarchy_type_t *type, int createRoot);
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
-hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg,
+hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
 							 const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 

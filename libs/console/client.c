@@ -1023,7 +1023,6 @@ C_Init (void)
 {
 	client_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (client_reg, client_components, client_comp_count);
-	client_reg->href_comp = client_href;
 
 #ifdef __QNXNTO__
 	setlocale (LC_ALL, "C-TRADITIONAL");
@@ -1044,14 +1043,14 @@ C_Init (void)
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	// The console will get resized, so assume initial size is 320x200
-	screen_view   = View_New (client_reg, nullview);
-	console_view  = View_New (client_reg, screen_view);
-	buffer_view   = View_New (client_reg, console_view);
-	command_view  = View_New (client_reg, console_view);
-	download_view = View_New (client_reg, console_view);
-	notify_view   = View_New (client_reg, screen_view);
-	say_view      = View_New (client_reg, screen_view);
-	menu_view     = View_New (client_reg, screen_view);
+	screen_view   = View_New (client_reg, client_href, nullview);
+	console_view  = View_New (client_reg, client_href, screen_view);
+	buffer_view   = View_New (client_reg, client_href, console_view);
+	command_view  = View_New (client_reg, client_href, console_view);
+	download_view = View_New (client_reg, client_href, console_view);
+	notify_view   = View_New (client_reg, client_href, screen_view);
+	say_view      = View_New (client_reg, client_href, screen_view);
+	menu_view     = View_New (client_reg, client_href, screen_view);
 
 	View_SetGravity (screen_view,   grav_northwest);
 	View_SetGravity (console_view,  grav_northwest);

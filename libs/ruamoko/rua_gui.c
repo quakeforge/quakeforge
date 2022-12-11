@@ -225,7 +225,7 @@ bi (Font_Load)
 bi (Passage_New)
 {
 	gui_resources_t *res = _res;
-	passage_t  *passage = Passage_New (text_reg);
+	passage_t  *passage = Passage_New (text_reg, text_href);
 	R_INT (pr) = alloc_passage (res, passage);
 }
 
@@ -321,7 +321,7 @@ bi (Text_Draw)
 
 	while (count-- > 0) {
 		view_t      psg_view = { .id = *ent++, .reg = text_reg,
-								.comp = text_reg->href_comp};
+								.comp = text_href};
 		// first child is always a paragraph view, and all vies after the
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);

@@ -213,7 +213,6 @@ Scene_NewScene (void)
 
 	scene->reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (scene->reg, scene_components, scene_num_components);
-	scene->reg->href_comp = scene_href;
 
 	scene_resources_t *res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;

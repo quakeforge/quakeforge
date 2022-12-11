@@ -64,9 +64,8 @@ main (void)
 	int         ret = 0;
 	ecs_registry_t *registry = ECS_NewRegistry ();
 	ECS_RegisterComponents (registry, test_components, 1);
-	registry->href_comp = test_href;
 
-	passage_t  *passage = Passage_New (registry);
+	passage_t  *passage = Passage_New (registry, test_href);
 	Passage_ParseText (passage, test_text);
 	if (passage->hierarchy->childCount[0] != 3) {
 		ret = 1;

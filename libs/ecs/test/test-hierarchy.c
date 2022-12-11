@@ -249,7 +249,7 @@ create_ent (uint32_t parent, const char *name)
 		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
 												pref->index, 0);
 	} else {
-		ref->hierarchy = Hierarchy_New (test_reg, 0, 1);
+		ref->hierarchy = Hierarchy_New (test_reg, test_href, 0, 1);
 		ref->index = 0;
 	}
 	ref->hierarchy->ent[ref->index] = ent;
@@ -886,7 +886,6 @@ main (void)
 {
 	test_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (test_reg, test_components, test_num_components);
-	test_reg->href_comp = test_href;
 
 	if (test_single_transform ()) { return 1; }
 	if (test_parent_child_init ()) { return 1; }

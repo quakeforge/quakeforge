@@ -50,7 +50,7 @@ hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
 	ecs_registry_t *reg = hierarchy->reg;
-	uint32_t    href = reg->href_comp;
+	uint32_t    href = hierarchy->href_comp;
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
 		if (ECS_EntValid (hierarchy->ent[i], reg)) {
 			hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
@@ -160,7 +160,7 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 				uint32_t dstIndex, uint32_t srcIndex, uint32_t count)
 {
 	ecs_registry_t *reg = dst->reg;
-	uint32_t    href = reg->href_comp;
+	uint32_t    href = dst->href_comp;
 	Component_CopyElements (&ent_component,
 							dst->ent, dstIndex,
 							src->ent, srcIndex, count);
@@ -362,11 +362,12 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 }
 
 hierarchy_t *
-Hierarchy_New (ecs_registry_t *reg, const hierarchy_type_t *type,
-			   int createRoot)
+Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
+			   const hierarchy_type_t *type, int createRoot)
 {
 	hierarchy_t *hierarchy = PR_RESNEW (reg->hierarchies);
 	hierarchy->reg = reg;
+	hierarchy->href_comp = href_comp;
 
 	hierarchy->components = 0;
 	hierarchy->type = type;
@@ -402,17 +403,17 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 }
 
 hierarchy_t *
-Hierarchy_Copy (ecs_registry_t *dstReg, const hierarchy_t *src)
+Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
+				const hierarchy_t *src)
 {
-	uint32_t    href = dstReg->href_comp;
-	hierarchy_t *dst = Hierarchy_New (dstReg, src->type, 0);
+	hierarchy_t *dst = Hierarchy_New (dstReg, href_comp, src->type, 0);
 	size_t      count = src->num_objects;
 
 	Hierarchy_Reserve (dst, count);
 
 	for (size_t i = 0; i < count; i++) {
 		dst->ent[i] = ECS_NewEntity (dstReg);
-		hierref_t  *ref = Ent_AddComponent (dst->ent[i], href, dstReg);
+		hierref_t  *ref = Ent_AddComponent (dst->ent[i], href_comp, dstReg);
 		ref->hierarchy = dst;
 		ref->index = i;
 	}
@@ -448,7 +449,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 			r.index = 0;
 			return r;
 		}
-		dst = Hierarchy_New (src->reg, src->type, 0);
+		dst = Hierarchy_New (src->reg, src->href_comp, src->type, 0);
 	}
 	r.hierarchy = dst;
 	r.index = hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);

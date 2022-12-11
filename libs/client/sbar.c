@@ -254,7 +254,7 @@ static draw_charbuffer_t *solo_name;
 static view_t
 sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
 {
-	view_t      view = View_New (hud_registry, parent);
+	view_t      view = View_New (hud_registry, hud_href, parent);
 	View_SetPos (view, x, y);
 	View_SetLen (view, w, h);
 	View_SetGravity (view, gravity);

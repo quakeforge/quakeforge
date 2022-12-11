@@ -616,7 +616,7 @@ create_window (view_t parent, int xpos, int ypos, int xlen, int ylen,
 			   grav_t grav, void *obj, int opts, void (*draw) (view_t),
 			   void (*setgeometry) (view_t))
 {
-	view_t      view = View_New (server_reg, parent);
+	view_t      view = View_New (server_reg, server_href, parent);
 	View_SetPos (view, xpos, ypos);
 	View_SetLen (view, xlen, ylen);
 	View_SetGravity (view, grav);
@@ -679,11 +679,10 @@ init (void)
 
 	server_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (server_reg, server_components, server_comp_count);
-	server_reg->href_comp = server_href;
 
 	get_size (&screen_x, &screen_y);
 
-	sv_view = View_New (server_reg, nullview);
+	sv_view = View_New (server_reg, server_href, nullview);
 	View_SetPos (sv_view, 0, 0);
 	View_SetLen (sv_view, screen_x, screen_y);
 	View_SetGravity (sv_view, grav_northwest);
