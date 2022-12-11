@@ -836,8 +836,8 @@ event_motion (XEvent *event)
 			if (!event->xmotion.send_event) {
 				int         center_x = viddef.width / 2;
 				int         center_y = viddef.height / 2;
-				unsigned    dist_x = abs (center_x / 2 - event->xmotion.x);
-				unsigned    dist_y = abs (center_y / 2 - event->xmotion.y);
+				unsigned    dist_x = abs (center_x - event->xmotion.x);
+				unsigned    dist_y = abs (center_y - event->xmotion.y);
 
 				x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
 				x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
