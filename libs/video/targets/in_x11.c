@@ -1029,6 +1029,7 @@ xi_raw_button_resease (void *event)
 	xi_raw_button (event, 0);
 }
 
+#ifdef HAVE_XFIXES
 static void
 xi_barrier_hit (void *event)
 {
@@ -1052,6 +1053,7 @@ static void
 xi_barrier_leave (void *event)
 {
 }
+#endif
 
 static void
 event_generic (XEvent *event)
@@ -1063,8 +1065,10 @@ event_generic (XEvent *event)
 		[XI_RawMotion] = xi_raw_motion,
 		[XI_RawButtonPress] = xi_raw_button_press,
 		[XI_RawButtonRelease] = xi_raw_button_resease,
+#ifdef HAVE_XFIXES
 		[XI_BarrierHit] = xi_barrier_hit,
 		[XI_BarrierLeave] = xi_barrier_leave,
+#endif
 	};
 	XGenericEventCookie *cookie = &event->xcookie;
 
@@ -1438,6 +1442,7 @@ in_x11_check_xi2 (void)
 	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d err: %d\n",
 					major, minor, xi_opcode, error);
 
+#ifdef HAVE_XFIXES
 	if (!XQueryExtension (x_disp, "XFIXES", &xf_opcode, &event, &error)) {
 		Sys_MaskPrintf (SYS_vid, "X fixes extenions not available.\n");
 		return 0;
@@ -1451,6 +1456,7 @@ in_x11_check_xi2 (void)
 	Sys_MaskPrintf (SYS_vid,
 					"XFixes supported: version %d.%d, op: %d err: %d\n",
 					major, minor, xf_opcode, error);
+#endif
 	return 1;
 }
 
