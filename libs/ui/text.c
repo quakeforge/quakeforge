@@ -57,7 +57,7 @@ text_features_destroy (void *_features)
 	DARRAY_CLEAR (features);
 }
 
-static const component_t text_components[text_type_count] = {
+static const component_t text_components[text_comp_count] = {
 	[text_href] = {
 		.size = sizeof (hierref_t),
 		.name = "href",
@@ -91,7 +91,7 @@ void
 Text_Init (void)
 {
 	text_reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (text_reg, text_components, text_type_count);
+	ECS_RegisterComponents (text_reg, text_components, text_comp_count);
 }
 
 typedef struct glyphnode_s {

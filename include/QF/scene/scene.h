@@ -56,7 +56,7 @@ enum scene_components {
 	scene_sw_frame,		// animation frame
 	scene_sw_brush,		// brush model data pointer
 
-	scene_num_components
+	scene_comp_count
 };
 
 typedef struct scene_s {

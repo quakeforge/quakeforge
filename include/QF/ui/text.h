@@ -97,7 +97,7 @@ enum {
 	// harfbuzz font features for the text object
 	text_features,
 
-	text_type_count
+	text_comp_count
 };
 
 typedef struct featureset_s DARRAY_TYPE (hb_feature_t) featureset_t;

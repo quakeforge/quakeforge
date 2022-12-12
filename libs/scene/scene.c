@@ -96,7 +96,7 @@ sw_null_brush (void *_brush)
 	*brush = 0;
 }
 
-static const component_t scene_components[] = {
+static const component_t scene_components[scene_comp_count] = {
 	[scene_href] = {
 		.size = sizeof (hierref_t),
 		.create = 0,//create_href,
@@ -212,7 +212,7 @@ Scene_NewScene (void)
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
 	scene->reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (scene->reg, scene_components, scene_num_components);
+	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
 
 	scene_resources_t *res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;
