@@ -36,7 +36,7 @@
 
 #include "QF/darray.h"
 
-#include "QF/ecs/component.h"
+#include "QF/ecs.h"
 
 // These can be converted to hb_direction_t simply by oring with 4
 typedef enum {

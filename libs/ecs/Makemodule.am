@@ -9,4 +9,6 @@ libs_ecs_libQFecs_la_LIBADD=		$(ecs_deps)
 libs_ecs_libQFecs_la_DEPENDENCIES=	$(ecs_deps)
 libs_ecs_libQFecs_la_SOURCES= \
 	libs/ecs/component.c \
+	libs/ecs/ecs.c \
+	libs/ecs/entity.c \
 	libs/ecs/hierarchy.c

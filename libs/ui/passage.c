@@ -39,7 +39,7 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "QF/ecs/component.h"
+#include "QF/ecs.h"
 
 #include "QF/ui/passage.h"
 #include "QF/ui/view.h"

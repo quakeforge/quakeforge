@@ -1,7 +1,7 @@
 /*
 	hierarchy.h
 
-	Hierarchy management
+	ECS Hierarchy management
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 

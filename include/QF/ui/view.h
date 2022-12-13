@@ -31,8 +31,7 @@
 #ifndef __QF_ui_view_h
 #define __QF_ui_view_h
 
-#include "QF/ecs/component.h"
-#include "QF/ecs/hierarchy.h"
+#include "QF/ecs.h"
 
 /** \defgroup console_view Console View Objects
 	\ingroup console

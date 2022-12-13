@@ -15,6 +15,7 @@ include_qf = \
 	include/QF/darray.h \
 	include/QF/dstring.h \
 	include/QF/draw.h \
+	include/QF/ecs.h \
 	include/QF/fbsearch.h \
 	include/QF/gib.h \
 	include/QF/hash.h \
@@ -77,6 +78,7 @@ include_qf = \
 
 include_qf_ecs = \
 	include/QF/ecs/component.h \
+	include/QF/ecs/entity.h \
 	include/QF/ecs/hierarchy.h
 
 include_qf_gl = \

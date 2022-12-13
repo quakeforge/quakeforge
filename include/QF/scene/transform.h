@@ -32,10 +32,8 @@
 #define __QF_scene_transform_h
 
 #include "QF/darray.h"
+#include "QF/ecs.h"
 #include "QF/qtypes.h"
-#include "QF/ecs/component.h"
-#include "QF/ecs/hierarchy.h"
-#include "QF/ecs/hierarchy.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 

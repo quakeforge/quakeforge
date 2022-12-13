@@ -1,7 +1,7 @@
 /*
 	hierarchy.c
 
-	General hierarchy handling
+	ECS hierarchy handling
 
 	Copyright (C) 2021 Bill Currke
 
@@ -37,8 +37,7 @@
 
 #include "QF/sys.h"
 
-#include "QF/ecs/component.h"
-#include "QF/ecs/hierarchy.h"
+#include "QF/ecs.h"
 
 static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
