@@ -64,6 +64,7 @@ main (void)
 	int         ret = 0;
 	ecs_registry_t *registry = ECS_NewRegistry ();
 	ECS_RegisterComponents (registry, test_components, 1);
+	ECS_CreateComponentPools (registry);
 
 	passage_t  *passage = Passage_New (registry, test_href);
 	Passage_ParseText (passage, test_text);

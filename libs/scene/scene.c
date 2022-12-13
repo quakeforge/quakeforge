@@ -213,6 +213,7 @@ Scene_NewScene (void)
 
 	scene->reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	ECS_CreateComponentPools (scene->reg);
 
 	scene_resources_t *res = calloc (1, sizeof (scene_resources_t));
 	*(scene_resources_t **)&scene->resources = res;

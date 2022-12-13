@@ -1023,6 +1023,7 @@ C_Init (void)
 {
 	client_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (client_reg, client_components, client_comp_count);
+	ECS_CreateComponentPools (client_reg);
 
 #ifdef __QNXNTO__
 	setlocale (LC_ALL, "C-TRADITIONAL");

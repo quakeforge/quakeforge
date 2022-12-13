@@ -97,7 +97,7 @@ Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 ENTINLINE void *
 Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
-	const component_t *component = &reg->components[comp];
+	const component_t *component = &reg->components.a[comp];
 	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
 	byte       *data = reg->comp_pools[comp].data;
 	return data + ind * component->size;
@@ -113,10 +113,10 @@ Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
 {
 	void       *dst = Ent_AddComponent (ent, comp, registry);
 	if (data) {
-		return Component_CopyElements (&registry->components[comp],
+		return Component_CopyElements (&registry->components.a[comp],
 									   dst, 0, data, 0, 1);
 	} else {
-		return Component_CreateElements (&registry->components[comp],
+		return Component_CreateElements (&registry->components.a[comp],
 										 dst, 0, 1);
 	}
 }

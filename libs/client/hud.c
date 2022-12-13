@@ -266,6 +266,7 @@ HUD_Init (void)
 {
 	hud_registry = ECS_NewRegistry ();
 	ECS_RegisterComponents (hud_registry, hud_components, hud_comp_count);
+	ECS_CreateComponentPools (hud_registry);
 }
 
 void

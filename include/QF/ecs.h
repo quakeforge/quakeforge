@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "QF/darray.h"
 #include "QF/qtypes.h"
 #include "QF/progs.h"//FIXME for PR_RESMAP
 
@@ -58,22 +59,26 @@ typedef struct ecs_pool_s {
 	uint32_t    max_count;	// current capacity for components/entity ids
 } ecs_pool_t;
 
+typedef struct DARRAY_TYPE(component_t) componentset_t;
+
 typedef struct ecs_registry_s {
 	uint32_t   *entities;
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_entities;
 	uint32_t    max_entities;
-	const component_t *components;
+	componentset_t components;
 	ecs_pool_t *comp_pools;
-	uint32_t    num_components;
 	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 } ecs_registry_t;
 
 ecs_registry_t *ECS_NewRegistry (void);
 void ECS_DelRegistry (ecs_registry_t *registry);
-void ECS_RegisterComponents (ecs_registry_t *registry,
-							 const component_t *components, uint32_t count);
+uint32_t ECS_RegisterComponents (ecs_registry_t *registry,
+								 const component_t *components,
+								 uint32_t count);
+void ECS_CreateComponentPools (ecs_registry_t *registry);
+
 
 #ifndef __compar_d_fn_t_defined
 #define __compar_d_fn_t_defined

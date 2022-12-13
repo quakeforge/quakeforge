@@ -92,6 +92,7 @@ Text_Init (void)
 {
 	text_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (text_reg, text_components, text_comp_count);
+	ECS_CreateComponentPools (text_reg);
 }
 
 typedef struct glyphnode_s {

@@ -6,8 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "QF/ecs/component.h"
-#include "QF/ecs/hierarchy.h"
+#include "QF/ecs.h"
 
 enum {
 	test_href,
@@ -886,6 +885,7 @@ main (void)
 {
 	test_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (test_reg, test_components, test_num_components);
+	ECS_CreateComponentPools (test_reg);
 
 	if (test_single_transform ()) { return 1; }
 	if (test_parent_child_init ()) { return 1; }

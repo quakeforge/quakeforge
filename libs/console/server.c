@@ -679,6 +679,7 @@ init (void)
 
 	server_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (server_reg, server_components, server_comp_count);
+	ECS_CreateComponentPools (server_reg);
 
 	get_size (&screen_x, &screen_y);
 

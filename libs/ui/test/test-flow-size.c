@@ -280,6 +280,7 @@ main (void)
 
 	test_reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (test_reg, test_components, 1);
+	ECS_CreateComponentPools (test_reg);
 
 	if (test_flow (right_down_views, right_down_count, view_flow_right_down)) {
 		printf ("right-down failed\n");

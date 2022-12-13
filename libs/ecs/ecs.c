@@ -38,6 +38,7 @@ VISIBLE ecs_registry_t *
 ECS_NewRegistry (void)
 {
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
+	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
 	reg->next = Ent_Index (nullent);
 	return reg;
 }
@@ -46,7 +47,7 @@ VISIBLE void
 ECS_DelRegistry (ecs_registry_t *registry)
 {
 	free (registry->entities);
-	for (uint32_t i = 0; i < registry->num_components; i++) {
+	for (uint32_t i = 0; i < registry->components.size; i++) {
 		free (registry->comp_pools[i].sparse);
 		free (registry->comp_pools[i].dense);
 		free (registry->comp_pools[i].data);
@@ -55,15 +56,24 @@ ECS_DelRegistry (ecs_registry_t *registry)
 	free (registry);
 }
 
-VISIBLE void
+VISIBLE uint32_t
 ECS_RegisterComponents (ecs_registry_t *registry,
 						const component_t *components, uint32_t count)
 {
-	registry->num_components = count;
-	registry->components = components;
+	uint32_t    base = registry->components.size;
+	DARRAY_RESIZE (&registry->components, base + count);
+	memcpy (registry->components.a + base, components,
+			count * sizeof (component_t));
+	return base;
+}
+
+VISIBLE void
+ECS_CreateComponentPools (ecs_registry_t *registry)
+{
+	uint32_t    count = registry->components.size;
 	registry->comp_pools = calloc (count, sizeof (ecs_pool_t));
 	size_t      size = registry->max_entities * sizeof (uint32_t);
-	for (uint32_t i = 0; i < registry->num_components; i++) {
+	for (uint32_t i = 0; i < count; i++) {
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
 	}
@@ -114,14 +124,14 @@ VISIBLE void
 ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 					   __compar_d_fn_t cmp, void *arg)
 {
-	if (component >= registry->num_components) {
+	if (component >= registry->components.size) {
 		Sys_Error ("ECS_SortComponentPool: invalid component: %u", component);
 	}
 	ecs_pool_t *pool = &registry->comp_pools[component];
 	if (!pool->count) {
 		return;
 	}
-	__auto_type comp = &registry->components[component];
+	__auto_type comp = &registry->components.a[component];
 	ecs_sort_t sortctx = { .cmp = cmp, .arg = arg, .pool = pool, .comp = comp };
 	heapsort_s (pool->dense, pool->count, sizeof (uint32_t),
 				ecs_compare, ecs_swap, &sortctx);
@@ -145,7 +155,7 @@ ECS_NewEntity (ecs_registry_t *registry)
 			registry->max_entities += ENT_GROW;
 			size_t      size = registry->max_entities * sizeof (uint32_t);
 			registry->entities = realloc (registry->entities, size);
-			for (uint32_t i = 0; i < registry->num_components; i++) {
+			for (uint32_t i = 0; i < registry->components.size; i++) {
 				uint32_t   *sparse = registry->comp_pools[i].sparse;
 				sparse = realloc (sparse, size);
 				memset (sparse + registry->max_entities - ENT_GROW, nullent,
@@ -169,7 +179,7 @@ ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 	registry->next = id;
 	registry->available++;
 
-	for (uint32_t i = 0; i < registry->num_components; i++) {
+	for (uint32_t i = 0; i < registry->components.size; i++) {
 		Ent_RemoveComponent (ent, i, registry);
 	}
 }
@@ -178,7 +188,7 @@ VISIBLE void
 ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
 {
 	ecs_pool_t *pool = &registry->comp_pools[component];
-	const component_t *comp = &registry->components[component];
+	const component_t *comp = &registry->components.a[component];
 	__auto_type destroy = comp->destroy;
 	if (destroy) {
 		byte       *data = registry->comp_pools[component].data;

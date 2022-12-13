@@ -45,7 +45,7 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 			pool->max_count += COMP_GROW;
 			pool->dense = realloc (pool->dense,
 								   pool->max_count * sizeof (uint32_t));
-			Component_ResizeArray (&registry->components[comp], &pool->data,
+			Component_ResizeArray (&registry->components.a[comp], &pool->data,
 								   pool->max_count);
 		}
 		uint32_t    ind = pool->count++;
@@ -63,12 +63,12 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	uint32_t    ind = pool->sparse[id];
 	if (ind < pool->count && pool->dense[ind] == ent) {
 		uint32_t    last = pool->count - 1;
-		Component_DestroyElements (&registry->components[comp], pool->data,
+		Component_DestroyElements (&registry->components.a[comp], pool->data,
 								   ind, 1);
 		if (last > ind) {
 			pool->sparse[Ent_Index (pool->dense[last])] = ind;
 			pool->dense[ind] = pool->dense[last];
-			Component_MoveElements (&registry->components[comp], pool->data,
+			Component_MoveElements (&registry->components.a[comp], pool->data,
 									ind, last, 1);
 		}
 		pool->count--;

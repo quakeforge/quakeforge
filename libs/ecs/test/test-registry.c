@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "QF/ecs/component.h"
+#include "QF/ecs.h"
 
 static int
 test_new_del (void)
