@@ -72,6 +72,16 @@ typedef struct ecs_registry_s {
 	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 } ecs_registry_t;
 
+/** Tie an ECS system to a registry.
+
+	Keeps the registry using the system and the system's component base
+	together.
+*/
+typedef struct ecs_system_s {
+	ecs_registry_t *reg;
+	uint32_t    base;
+} ecs_system_t;
+
 ecs_registry_t *ECS_NewRegistry (void);
 void ECS_DelRegistry (ecs_registry_t *registry);
 uint32_t ECS_RegisterComponents (ecs_registry_t *registry,
