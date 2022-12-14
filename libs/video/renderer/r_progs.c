@@ -194,7 +194,7 @@ bi_Draw_MakePic (progs_t *pr, void *_res)
 	qp = qpic_new (res);
 	qp->name = 0;
 	qp->pic = pic;
-	qp->cached = 1;
+	qp->cached = 0;
 	bq = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
 	bq->width = pic->width;
 	bq->height = pic->height;
