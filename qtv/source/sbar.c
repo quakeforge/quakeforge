@@ -88,14 +88,16 @@ qtv_sbar_init (void)
 	sv_view_t   sv_view = *(sv_view_t *) comp;
 	sv_view.setgeometry = 0;
 
-	view = View_New (status.reg, status.comp, status);
+	ecs_system_t viewsys = { .reg = status.reg,
+							 .base = status.comp - view_href };
+	view = View_New (viewsys, status);
 	View_SetPos (view, 0, 0);
 	View_SetLen (view, 8, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_servers;
 	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
 
-	view = View_New (status.reg, status.comp, status);
+	view = View_New (viewsys, status);
 	View_SetPos (view, 8, 0);
 	View_SetLen (view, 9, 1);
 	View_SetGravity (view, grav_northwest);

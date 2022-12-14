@@ -161,6 +161,8 @@ static volatile sig_atomic_t interrupted;
 static int batch_print;
 
 static ecs_registry_t *server_reg;
+static uint32_t server_base;
+static uint32_t view_base;
 
 #define     MAXCMDLINE  256
 
@@ -246,8 +248,9 @@ draw_fun_char (WINDOW *win, byte c, int blue)
 static inline void
 sv_refresh_windows (void)
 {
-	sv_view_t  *window = server_reg->comp_pools[server_window].data;
-	uint32_t    count = server_reg->comp_pools[server_window].count;
+	uint32_t    window_comp = server_base + server_window;
+	sv_view_t  *window = server_reg->comp_pools[window_comp].data;
+	uint32_t    count = server_reg->comp_pools[window_comp].count;
 	while (count-- > 0) {
 		wnoutrefresh ((WINDOW *) (window++)->win);
 	}
@@ -616,7 +619,8 @@ create_window (view_t parent, int xpos, int ypos, int xlen, int ylen,
 			   grav_t grav, void *obj, int opts, void (*draw) (view_t),
 			   void (*setgeometry) (view_t))
 {
-	view_t      view = View_New (server_reg, server_href, parent);
+	view_t      view = View_New ((ecs_system_t) { server_reg, view_base },
+							     parent);
 	View_SetPos (view, xpos, ypos);
 	View_SetLen (view, xlen, ylen);
 	View_SetGravity (view, grav);
@@ -678,12 +682,15 @@ init (void)
 	nonl ();
 
 	server_reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (server_reg, server_components, server_comp_count);
+	server_base = ECS_RegisterComponents (server_reg, server_components,
+										  server_comp_count);
+	view_base = ECS_RegisterComponents (server_reg, view_components,
+										view_comp_count);
 	ECS_CreateComponentPools (server_reg);
 
 	get_size (&screen_x, &screen_y);
 
-	sv_view = View_New (server_reg, server_href, nullview);
+	sv_view = View_New ((ecs_system_t) { server_reg, view_base }, nullview);
 	View_SetPos (sv_view, 0, 0);
 	View_SetLen (sv_view, screen_x, screen_y);
 	View_SetGravity (sv_view, grav_northwest);

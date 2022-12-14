@@ -72,15 +72,8 @@ typedef struct glyphset_s {
 	uint32_t    count;
 } glyphset_t;
 
-typedef struct text_s {
-	const char *text;
-	const char *language;
-	hb_script_t script;
-	hb_direction_t direction;
-} text_t;
-
 enum {
-	// covers both view and passage text object hierarcies
+	// passage text object hierarcies
 	text_href,
 	// all the glyphs in a passage. Always on only the root view of the passage.
 	text_passage_glyphs,
@@ -100,6 +93,8 @@ enum {
 	text_comp_count
 };
 
+extern const component_t text_components[text_comp_count];
+
 typedef struct featureset_s DARRAY_TYPE (hb_feature_t) featureset_t;
 
 extern hb_feature_t LigatureOff;
@@ -111,14 +106,16 @@ extern hb_feature_t CligOn;
 
 struct font_s;
 struct passage_s;
-extern struct ecs_registry_s *text_reg;
 
-void Text_Init (void);
-struct view_s Text_View (struct font_s *font, struct passage_s *passage);
-void Text_SetScript (int textid, const char *lang, hb_script_t script,
-					 text_dir_e dir);
-void Text_SetFont (int textid, struct font_s *font);
-void Text_SetFeatures (int textid, featureset_t *features);
-void Text_AddFeature (int textid, hb_feature_t feature);
+struct view_s Text_View (ecs_system_t viewsys,
+						 struct font_s *font, struct passage_s *passage);
+void Text_SetScript (ecs_system_t textsys, uint32_t textid,
+					 const char *lang, hb_script_t script, text_dir_e dir);
+void Text_SetFont (ecs_system_t textsys, uint32_t textid,
+				   struct font_s *font);
+void Text_SetFeatures (ecs_system_t textsys, uint32_t textid,
+					   featureset_t *features);
+void Text_AddFeature (ecs_system_t textsys, uint32_t textid,
+					  hb_feature_t feature);
 
 #endif//__QF_ui_text_h

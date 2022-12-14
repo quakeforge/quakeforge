@@ -156,7 +156,7 @@ CL_NetGraph (view_pos_t abs, view_pos_t len)
 void
 CL_NetGraph_Init (void)
 {
-	cl_netgraph_view = View_New (hud_registry, hud_href, cl_screen_view);
+	cl_netgraph_view = View_New (hud_viewsys, cl_screen_view);
 	View_SetPos (cl_netgraph_view, 0, 64);
 	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
 	View_SetGravity (cl_netgraph_view, grav_southwest);

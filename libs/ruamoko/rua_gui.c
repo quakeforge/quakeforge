@@ -68,6 +68,10 @@ typedef struct {
 	rua_passage_t *passages;
 	PR_RESMAP (rua_font_t) font_map;
 	rua_font_t *fonts;
+
+	ecs_registry_t *reg;
+	uint32_t    text_base;
+	uint32_t    view_base;
 } gui_resources_t;
 
 static rua_passage_t *
@@ -206,6 +210,7 @@ static void
 bi_gui_destroy (progs_t *pr, void *_res)
 {
 	gui_resources_t *res = _res;
+	ECS_DelRegistry (res->reg);
 	free (res);
 }
 
@@ -225,7 +230,7 @@ bi (Font_Load)
 bi (Passage_New)
 {
 	gui_resources_t *res = _res;
-	passage_t  *passage = Passage_New (text_reg, text_href);
+	passage_t  *passage = Passage_New (res->reg, res->text_base + text_href);
 	R_INT (pr) = alloc_passage (res, passage);
 }
 
@@ -272,17 +277,20 @@ bi (Text_View)
 	gui_resources_t *res = _res;
 	rua_font_t *font = get_font (res, P_INT (pr, 0));
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 1));
-	view_t      view = Text_View (font->font, psg->passage);
+	ecs_system_t viewsys = { .reg = res->reg, .base = res->view_base };
+	view_t      view = Text_View (viewsys, font->font, psg->passage);
 	R_INT (pr) = view.id;//FIXME
 }
 
 bi (Text_SetScript)
 {
+	gui_resources_t *res = _res;
 	uint32_t    textent = P_UINT (pr, 0);
 	const char *lang = P_GSTRING (pr, 1);
 	int         script = P_INT (pr, 1);
 	int         dir = P_INT (pr, 1);
-	Text_SetScript (textent, lang, script, dir);
+	ecs_system_t textsys = { .reg = res->reg, .base = res->text_base };
+	Text_SetScript (textsys, textent, lang, script, dir);
 }
 
 static void
@@ -313,15 +321,18 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 
 bi (Text_Draw)
 {
-	ecs_pool_t *pool = &text_reg->comp_pools[text_passage_glyphs];
+	gui_resources_t *res = _res;
+	uint32_t    passage_glyphs = res->text_base + text_passage_glyphs;
+	uint32_t    glyphs = res->text_base + text_glyphs;
+	uint32_t    vhref = res->view_base + view_href;
+	ecs_pool_t *pool = &res->reg->comp_pools[passage_glyphs];
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
 	glyphset_t *glyphset = pool->data;
 
 
 	while (count-- > 0) {
-		view_t      psg_view = { .id = *ent++, .reg = text_reg,
-								.comp = text_href};
+		view_t      psg_view = { .id = *ent++, .reg = res->reg, .comp = vhref};
 		// first child is always a paragraph view, and all vies after the
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);
@@ -332,8 +343,7 @@ bi (Text_Draw)
 		view_pos_t *len = h->components[view_len];
 
 		for (uint32_t i = href->index; i < h->num_objects; i++) {
-			glyphref_t *gref = Ent_GetComponent (h->ent[i], text_glyphs,
-												 text_reg);
+			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, res->reg);
 			draw_glyphs (&abs[i], glyphset, gref);
 
 			if (0) draw_box (abs, len, i, 253);
@@ -348,49 +358,61 @@ bi (Text_Draw)
 
 bi (View_ChildCount)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	R_UINT (pr) = View_ChildCount (view);
 }
 
 bi (View_GetChild)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	uint32_t    index = P_UINT (pr, 1);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	R_UINT (pr) = View_GetChild (view, index).id;
 }
 
 bi (View_SetPos)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	View_SetPos (view, x, y);
 }
 
 bi (View_SetLen)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	View_SetLen (view, x, y);
 }
 
 bi (View_GetLen)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	view_pos_t  l = View_GetLen (view);
 	R_var (pr, ivec2) = (pr_ivec2_t) { l.x, l.y };
 }
 
 bi (View_UpdateHierarchy)
 {
+	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = text_reg };
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
 	View_UpdateHierarchy (view);
 }
 
@@ -429,4 +451,11 @@ RUA_GUI_Init (progs_t *pr, int secure)
 
 	PR_Resources_Register (pr, "Draw", res, bi_gui_clear, bi_gui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
+
+	res->reg = ECS_NewRegistry ();
+	res->text_base = ECS_RegisterComponents (res->reg, text_components,
+											 text_comp_count);
+	res->view_base = ECS_RegisterComponents (res->reg, view_components,
+											 view_comp_count);
+	ECS_CreateComponentPools (res->reg);
 }

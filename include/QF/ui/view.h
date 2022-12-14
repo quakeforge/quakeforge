@@ -86,6 +86,15 @@ typedef struct viewcont_s {
 } viewcont_t;
 
 enum {
+	view_href,
+
+	view_comp_count
+};
+
+extern const struct component_s view_components[view_comp_count];
+
+// components in the view hierarchy
+enum {
 	/// Coordinates of view's origin relative to parent's gravity point.
 	view_pos,
 	/// Size of the view.
@@ -122,7 +131,9 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
 #define VIEWINLINE GNU89INLINE inline
 
-view_t View_New (ecs_registry_t *reg, uint32_t href_comp, view_t parent);
+VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
+view_t View_New (ecs_system_t viewsys, view_t parent);
+view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent);
 VIEWINLINE void View_Delete (view_t view);
 void View_SetParent (view_t view, view_t parent);
 void View_UpdateHierarchy (view_t view);
@@ -164,6 +175,17 @@ VIEWINLINE void View_SetOnMove (view_t view, view_move_f onmove);
 #else
 #define VIEWINLINE VISIBLE
 #endif
+
+VIEWINLINE
+view_t
+View_FromEntity (ecs_system_t viewsys, uint32_t ent)
+{
+	return (view_t) {
+		.id = ent,
+		.reg = viewsys.reg,
+		.comp = viewsys.base + view_href,
+	};
+}
 
 VIEWINLINE
 hierref_t *

@@ -154,6 +154,8 @@ static cvar_t cl_conmode_cvar = {
 };
 
 static ecs_registry_t *client_reg;
+static uint32_t client_base;
+static uint32_t view_base;
 
 static con_state_t con_state;
 static int  con_event_id;
@@ -1022,7 +1024,10 @@ static void
 C_Init (void)
 {
 	client_reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (client_reg, client_components, client_comp_count);
+	client_base = ECS_RegisterComponents (client_reg, client_components,
+										  client_comp_count);
+	view_base = ECS_RegisterComponents (client_reg, view_components,
+										view_comp_count);
 	ECS_CreateComponentPools (client_reg);
 
 #ifdef __QNXNTO__
@@ -1044,14 +1049,15 @@ C_Init (void)
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	// The console will get resized, so assume initial size is 320x200
-	screen_view   = View_New (client_reg, client_href, nullview);
-	console_view  = View_New (client_reg, client_href, screen_view);
-	buffer_view   = View_New (client_reg, client_href, console_view);
-	command_view  = View_New (client_reg, client_href, console_view);
-	download_view = View_New (client_reg, client_href, console_view);
-	notify_view   = View_New (client_reg, client_href, screen_view);
-	say_view      = View_New (client_reg, client_href, screen_view);
-	menu_view     = View_New (client_reg, client_href, screen_view);
+	ecs_system_t sys = { client_reg, view_base };
+	screen_view   = View_New (sys, nullview);
+	console_view  = View_New (sys, screen_view);
+	buffer_view   = View_New (sys, console_view);
+	command_view  = View_New (sys, console_view);
+	download_view = View_New (sys, console_view);
+	notify_view   = View_New (sys, screen_view);
+	say_view      = View_New (sys, screen_view);
+	menu_view     = View_New (sys, screen_view);
 
 	View_SetGravity (screen_view,   grav_northwest);
 	View_SetGravity (console_view,  grav_northwest);

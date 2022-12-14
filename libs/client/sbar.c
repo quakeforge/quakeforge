@@ -254,7 +254,7 @@ static draw_charbuffer_t *solo_name;
 static view_t
 sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
 {
-	view_t      view = View_New (hud_registry, hud_href, parent);
+	view_t      view = View_New (hud_viewsys, parent);
 	View_SetPos (view, x, y);
 	View_SetLen (view, w, h);
 	View_SetGravity (view, gravity);
@@ -2024,8 +2024,10 @@ href_cmp (const void *_a, const void *_b, void *arg)
 {
 	uint32_t    enta = *(const uint32_t *)_a;
 	uint32_t    entb = *(const uint32_t *)_b;
-	hierref_t  *ref_a = Ent_GetComponent (enta, hud_href, hud_registry);
-	hierref_t  *ref_b = Ent_GetComponent (entb, hud_href, hud_registry);
+	ecs_registry_t *reg = hud_viewsys.reg;
+	uint32_t    href = hud_viewsys.base + hud_href;
+	hierref_t  *ref_a = Ent_GetComponent (enta, href, reg);
+	hierref_t  *ref_b = Ent_GetComponent (entb, href, reg);
 	if (ref_a->hierarchy == ref_b->hierarchy) {
 		return ref_a->index - ref_b->index;
 	}
@@ -2123,7 +2125,8 @@ set_hud_sbar (void)
 		sbar_remcomponent (sbar_tile[0], hud_tile);
 		sbar_remcomponent (sbar_tile[1], hud_tile);
 	}
-	ECS_SortComponentPool (hud_registry, hud_pic, href_cmp, 0);
+	ECS_SortComponentPool (hud_system.reg, hud_system.base + hud_pic,
+						   href_cmp, 0);
 }
 
 static void
@@ -2551,7 +2554,7 @@ Sbar_Init (int *stats, float *item_gettime)
 	sbar_stats = stats;
 	sbar_item_gettime = item_gettime;
 
-	center_passage.reg = hud_registry;
+	center_passage.reg = hud_viewsys.reg;
 	HUD_Init_Cvars ();
 	Cvar_AddListener (Cvar_FindVar ("hud_sbar"), sbar_hud_sbar_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);

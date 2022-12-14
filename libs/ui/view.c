@@ -90,7 +90,14 @@ view_modified_init (void *_modified)
 	*modified = 1;
 }
 
-static const component_t view_components[view_type_count] = {
+const component_t view_components[view_comp_count] = {
+	[view_href] = {
+		.size = sizeof (hierref_t),
+		.name = "view href",
+	},
+};
+
+static const component_t view_type_components[view_type_count] = {
 	[view_pos] = {
 		.size = sizeof (view_pos_t),
 		.name = "pos",
@@ -132,14 +139,14 @@ static const component_t view_components[view_type_count] = {
 
 static const hierarchy_type_t view_type = {
 	.num_components = view_type_count,
-	.components = view_components,
+	.components = view_type_components,
 };
 
 view_t
-View_New (ecs_registry_t *reg, uint32_t href_comp, view_t parent)
+View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent)
 {
-	uint32_t    view = ECS_NewEntity (reg);
-	hierref_t  *ref = Ent_AddComponent (view, href_comp, reg);
+	uint32_t    href_comp = viewsys.base + view_href;
+	hierref_t  *ref = Ent_AddComponent (ent, href_comp, viewsys.reg);
 
 	if (parent.reg && parent.id != nullent) {
 		hierref_t  *pref = View_GetRef (parent);
@@ -147,11 +154,18 @@ View_New (ecs_registry_t *reg, uint32_t href_comp, view_t parent)
 		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
 												pref->index, 0);
 	} else {
-		ref->hierarchy = Hierarchy_New (reg, href_comp, &view_type, 1);
+		ref->hierarchy = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
 		ref->index = 0;
 	}
-	ref->hierarchy->ent[ref->index] = view;
-	return (view_t) { .reg = reg, .id = view, .comp = href_comp };
+	ref->hierarchy->ent[ref->index] = ent;
+	return (view_t) { .reg = viewsys.reg, .id = ent, .comp = href_comp };
+}
+
+view_t
+View_New (ecs_system_t viewsys, view_t parent)
+{
+	uint32_t    view = ECS_NewEntity (viewsys.reg);
+	return View_AddToEntity (view, viewsys, parent);
 }
 
 void

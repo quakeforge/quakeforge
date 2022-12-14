@@ -346,7 +346,6 @@ BI_Graphics_Init (progs_t *pr)
 	Mod_Init ();
 	R_Init ();
 	Font_Init ();
-	Text_Init ();
 
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);

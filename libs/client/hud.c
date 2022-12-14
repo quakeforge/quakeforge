@@ -88,7 +88,8 @@ static const component_t hud_components[hud_comp_count] = {
 	},
 };
 
-ecs_registry_t *hud_registry;
+ecs_system_t hud_system;
+ecs_system_t hud_viewsys;
 int hud_sb_lines;
 
 int hud_sbar;
@@ -264,9 +265,13 @@ hud_scoreboard_gravity_f (void *data, const cvar_t *cvar)
 void
 HUD_Init (void)
 {
-	hud_registry = ECS_NewRegistry ();
-	ECS_RegisterComponents (hud_registry, hud_components, hud_comp_count);
-	ECS_CreateComponentPools (hud_registry);
+	hud_system.reg = ECS_NewRegistry ();
+	hud_viewsys.reg = hud_system.reg;
+	hud_system.base = ECS_RegisterComponents (hud_system.reg, hud_components,
+											  hud_comp_count);
+	hud_viewsys.base = ECS_RegisterComponents (hud_system.reg, view_components,
+											   view_comp_count);
+	ECS_CreateComponentPools (hud_system.reg);
 }
 
 void
@@ -326,8 +331,7 @@ draw_update (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	hud_update_f *func = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
-		(*func++) (view);
+		(*func++) (View_FromEntity (hud_viewsys, *ent++));
 	}
 }
 
@@ -344,7 +348,7 @@ draw_tile_views (ecs_pool_t *pool)
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
@@ -360,7 +364,7 @@ draw_pic_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	qpic_t    **pic = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			r_funcs->Draw_Pic (pos.x, pos.y, *pic);
@@ -376,7 +380,7 @@ draw_subpic_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	hud_subpic_t *subpic = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			r_funcs->Draw_SubPic (pos.x, pos.y, subpic->pic,
@@ -393,7 +397,7 @@ draw_cachepic_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	const char **name = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			qpic_t     *pic = r_funcs->Draw_CachePic (*name, 1);
@@ -410,7 +414,7 @@ draw_fill_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	byte       *fill = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
@@ -427,7 +431,7 @@ draw_charbuff_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	draw_charbuffer_t **charbuff = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			r_funcs->Draw_CharBuffer (pos.x, pos.y, *charbuff);
@@ -443,7 +447,7 @@ draw_func_views (ecs_pool_t *pool)
 	uint32_t   *ent = pool->dense;
 	hud_func_f *func = pool->data;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
@@ -461,7 +465,7 @@ draw_outline_views (ecs_pool_t *pool)
 	byte       *col = pool->data;
 	__auto_type line = r_funcs->Draw_Line;
 	while (count-- > 0) {
-		view_t      view = { .id = *ent++, .reg = hud_registry };
+		view_t      view = View_FromEntity (hud_viewsys, *ent++);
 		byte        c = *col++;
 		if (View_GetVisible (view)) {
 			view_pos_t  p = View_GetAbs (view);
@@ -492,7 +496,7 @@ HUD_Draw_Views (void)
 	};
 	for (int i = 0; i < hud_comp_count; i++) {
 		if (draw_func[i]) {
-			draw_func[i] (&hud_registry->comp_pools[i]);
+			draw_func[i] (&hud_system.reg->comp_pools[i + hud_system.base]);
 		}
 	}
 }

@@ -5,10 +5,12 @@
 
 #include "QF/ui/view.h"
 
-static ecs_registry_t *test_reg;
+static ecs_system_t test_sys;
 
 enum {
 	test_href,
+
+	test_comp_count
 };
 
 static const component_t test_components[] = {
@@ -224,7 +226,7 @@ static int
 test_flow (testdata_t *child_views, int count,
 		   void (*flow) (view_t, view_pos_t))
 {
-	view_t      flow_view = View_New (test_reg, test_href, nullview);
+	view_t      flow_view = View_New (test_sys, nullview);
 	View_SetPos (flow_view, 0, 0);
 	View_SetLen (flow_view, 256, 256);
 	View_SetGravity (flow_view, grav_northwest);
@@ -232,7 +234,7 @@ test_flow (testdata_t *child_views, int count,
 
 	for (int i = 0; i < count; i++) {
 		testdata_t *td = &child_views[i];
-		view_t      child = View_New (test_reg, test_href, flow_view);
+		view_t      child = View_New (test_sys, flow_view);
 		View_SetPos (child, 0, 0);
 		View_SetLen (child, td->xlen, td->ylen);
 		View_SetGravity (child, grav_flow);
@@ -266,8 +268,7 @@ test_flow (testdata_t *child_views, int count,
 					td->expect.xpos, td->expect.ypos,
 					td->expect.xrel, td->expect.yrel,
 					td->expect.xabs, td->expect.yabs);
-			print_view ((view_t) { .reg = test_reg, .id = ent[child],
-									.comp = flow_view.comp});
+			print_view (View_FromEntity (test_sys, ent[child]));
 		}
 	}
 	return ret;
@@ -278,9 +279,10 @@ main (void)
 {
 	int         ret = 0;
 
-	test_reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (test_reg, test_components, 1);
-	ECS_CreateComponentPools (test_reg);
+	test_sys.reg = ECS_NewRegistry ();
+	test_sys.base = ECS_RegisterComponents (test_sys.reg, test_components,
+											test_comp_count);
+	ECS_CreateComponentPools (test_sys.reg);
 
 	if (test_flow (right_down_views, right_down_count, view_flow_right_down)) {
 		printf ("right-down failed\n");
