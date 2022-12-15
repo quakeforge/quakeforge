@@ -31,7 +31,6 @@
 struct view_s;
 
 enum {
-	hud_href,
 	hud_update,
 	hud_updateonce,
 	hud_tile,

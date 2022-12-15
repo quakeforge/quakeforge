@@ -42,10 +42,6 @@
 #include "client/hud.h"
 
 static const component_t hud_components[hud_comp_count] = {
-	[hud_href] = {
-		.size = sizeof (hierref_t),
-		.name = "href",
-	},
 	[hud_update] = {
 		.size = sizeof (hud_update_f),
 		.name = "update",

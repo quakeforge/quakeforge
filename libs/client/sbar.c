@@ -2025,7 +2025,7 @@ href_cmp (const void *_a, const void *_b, void *arg)
 	uint32_t    enta = *(const uint32_t *)_a;
 	uint32_t    entb = *(const uint32_t *)_b;
 	ecs_registry_t *reg = hud_viewsys.reg;
-	uint32_t    href = hud_viewsys.base + hud_href;
+	uint32_t    href = hud_viewsys.base + view_href;
 	hierref_t  *ref_a = Ent_GetComponent (enta, href, reg);
 	hierref_t  *ref_b = Ent_GetComponent (entb, href, reg);
 	if (ref_a->hierarchy == ref_b->hierarchy) {
