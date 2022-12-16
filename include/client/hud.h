@@ -56,6 +56,7 @@ typedef struct hud_subpic_s {
 
 extern struct ecs_system_s hud_system;
 extern struct ecs_system_s hud_viewsys;
+extern struct ecs_system_s hud_psgsys;
 
 extern int hud_sb_lines;
 

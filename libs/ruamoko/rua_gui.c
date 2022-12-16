@@ -72,6 +72,7 @@ typedef struct {
 	ecs_registry_t *reg;
 	uint32_t    text_base;
 	uint32_t    view_base;
+	uint32_t    passage_base;
 } gui_resources_t;
 
 static rua_passage_t *
@@ -230,7 +231,8 @@ bi (Font_Load)
 bi (Passage_New)
 {
 	gui_resources_t *res = _res;
-	passage_t  *passage = Passage_New (res->reg, res->text_base + text_href);
+	ecs_system_t passage_sys = { .reg = res->reg, .base = res->passage_base };
+	passage_t  *passage = Passage_New (passage_sys);
 	R_INT (pr) = alloc_passage (res, passage);
 }
 
@@ -457,5 +459,7 @@ RUA_GUI_Init (progs_t *pr, int secure)
 											 text_comp_count);
 	res->view_base = ECS_RegisterComponents (res->reg, view_components,
 											 view_comp_count);
+	res->passage_base = ECS_RegisterComponents (res->reg, passage_components,
+												passage_comp_count);
 	ECS_CreateComponentPools (res->reg);
 }

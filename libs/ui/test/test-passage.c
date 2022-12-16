@@ -7,18 +7,6 @@
 #include "QF/ui/passage.h"
 #include "QF/ecs/component.h"
 
-enum {
-	test_href,
-};
-
-static const component_t test_components[] = {
-	[test_href] = {
-		.size = sizeof (hierref_t),
-		.create = 0,//create_href,
-		.name = "href",
-	},
-};
-
 static const char test_text[] = {
 	"Guarding the entrance to the Grendal "
 	"Gorge is the Shadow Gate, a small keep "
@@ -62,11 +50,14 @@ int
 main (void)
 {
 	int         ret = 0;
-	ecs_registry_t *registry = ECS_NewRegistry ();
-	ECS_RegisterComponents (registry, test_components, 1);
-	ECS_CreateComponentPools (registry);
+	ecs_system_t psg_sys = {
+		.reg = ECS_NewRegistry (),
+		.base = ECS_RegisterComponents (psg_sys.reg, passage_components,
+										passage_comp_count),
+	};
+	ECS_CreateComponentPools (psg_sys.reg);
 
-	passage_t  *passage = Passage_New (registry, test_href);
+	passage_t  *passage = Passage_New (psg_sys);
 	Passage_ParseText (passage, test_text);
 	if (passage->hierarchy->childCount[0] != 3) {
 		ret = 1;
@@ -136,6 +127,6 @@ main (void)
 	}
 	Passage_Delete (passage);
 
-	ECS_DelRegistry (registry);
+	ECS_DelRegistry (psg_sys.reg);
 	return ret;
 }

@@ -2554,7 +2554,8 @@ Sbar_Init (int *stats, float *item_gettime)
 	sbar_stats = stats;
 	sbar_item_gettime = item_gettime;
 
-	center_passage.reg = hud_viewsys.reg;
+	center_passage.reg = hud_psgsys.reg;
+	center_passage.comp_base = hud_psgsys.base;
 	HUD_Init_Cvars ();
 	Cvar_AddListener (Cvar_FindVar ("hud_sbar"), sbar_hud_sbar_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("hud_swap"), sbar_hud_swap_f, 0);

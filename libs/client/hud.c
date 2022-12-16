@@ -35,6 +35,7 @@
 #include "QF/screen.h"
 #include "QF/render.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/ui/passage.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
@@ -52,7 +53,7 @@ static const component_t hud_components[hud_comp_count] = {
 	},
 	[hud_tile] = {
 		.size = sizeof (byte),
-		.name = "pic",
+		.name = "tile",
 	},
 	[hud_pic] = {
 		.size = sizeof (qpic_t *),
@@ -86,6 +87,7 @@ static const component_t hud_components[hud_comp_count] = {
 
 ecs_system_t hud_system;
 ecs_system_t hud_viewsys;
+ecs_system_t hud_psgsys;
 int hud_sb_lines;
 
 int hud_sbar;
@@ -263,10 +265,14 @@ HUD_Init (void)
 {
 	hud_system.reg = ECS_NewRegistry ();
 	hud_viewsys.reg = hud_system.reg;
+	hud_psgsys.reg = hud_system.reg;
 	hud_system.base = ECS_RegisterComponents (hud_system.reg, hud_components,
 											  hud_comp_count);
 	hud_viewsys.base = ECS_RegisterComponents (hud_system.reg, view_components,
 											   view_comp_count);
+	hud_psgsys.base = ECS_RegisterComponents (hud_system.reg,
+											  passage_components,
+											  passage_comp_count);
 	ECS_CreateComponentPools (hud_system.reg);
 }
 

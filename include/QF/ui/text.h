@@ -73,8 +73,6 @@ typedef struct glyphset_s {
 } glyphset_t;
 
 enum {
-	// passage text object hierarcies
-	text_href,
 	// all the glyphs in a passage. Always on only the root view of the passage.
 	text_passage_glyphs,
 	// glyphs for a single text object

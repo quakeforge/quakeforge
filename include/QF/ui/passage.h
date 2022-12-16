@@ -30,10 +30,20 @@
 
 #include <stdint.h>
 
+#include "QF/ecs.h"
+
 /** \defgroup passage Text passages
 	\ingroup utils
 */
 ///@{
+
+enum {
+	passage_href,
+
+	passage_comp_count
+};
+
+extern const component_t passage_components[passage_comp_count];
 
 enum {
 	passage_type_text_obj,
@@ -52,12 +62,12 @@ typedef struct passage_s {
 	const char *text;			///< Not owned by passage
 
 	struct ecs_registry_s *reg;	///< Owning ECS registry
-	uint32_t    href_comp;		///< Component for passage hierarcy reference
+	uint32_t    comp_base;		///< Passage base component
 	struct hierarchy_s *hierarchy;	///< hierarchy of text objects
 } passage_t;
 
 void Passage_ParseText (passage_t *passage, const char *text);
-passage_t *Passage_New (struct ecs_registry_s *reg, uint32_t href_comp);
+passage_t *Passage_New (ecs_system_t passage_sys);
 void Passage_Delete (passage_t *passage);
 int Passage_IsSpace (const char *text) __attribute__((pure));
 

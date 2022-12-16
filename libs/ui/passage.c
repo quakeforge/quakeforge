@@ -44,7 +44,14 @@
 #include "QF/ui/passage.h"
 #include "QF/ui/view.h"
 
-static const component_t passage_components[passage_type_count] = {
+const component_t passage_components[passage_comp_count] = {
+	[passage_href] = {
+		.size = sizeof (hierref_t),
+		.name = "passage href",
+	},
+};
+
+static const component_t passage_type_components[passage_type_count] = {
 	[passage_type_text_obj] = {
 		.size = sizeof (psg_text_t),
 		.name = "Text",
@@ -53,7 +60,7 @@ static const component_t passage_components[passage_type_count] = {
 
 static const hierarchy_type_t passage_type = {
 	.num_components = passage_type_count,
-	.components = passage_components,
+	.components = passage_type_components,
 };
 
 VISIBLE int
@@ -129,7 +136,8 @@ Passage_ParseText (passage_t *passage, const char *text)
 		}
 		root_text.size = c - text;
 	}
-	passage->hierarchy = Hierarchy_New (passage->reg, passage->href_comp,
+	passage->hierarchy = Hierarchy_New (passage->reg,
+										passage->comp_base + passage_href,
 										&passage_type, 0);
 	Hierarchy_Reserve (passage->hierarchy,
 					   1 + num_paragraphs + num_text_objects);
@@ -198,12 +206,12 @@ Passage_ParseText (passage_t *passage, const char *text)
 }
 
 VISIBLE passage_t *
-Passage_New (ecs_registry_t *reg, uint32_t href_comp)
+Passage_New (ecs_system_t passage_sys)
 {
 	passage_t  *passage = malloc (sizeof (passage_t));
 	passage->text = 0;
-	passage->reg = reg;
-	passage->href_comp = href_comp;
+	passage->reg = passage_sys.reg;
+	passage->comp_base = passage_sys.base;
 	passage->hierarchy = 0;
 	return passage;
 }

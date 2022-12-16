@@ -58,10 +58,6 @@ text_features_destroy (void *_features)
 }
 
 const component_t text_components[text_comp_count] = {
-	[text_href] = {
-		.size = sizeof (hierref_t),
-		.name = "href",
-	},
 	[text_passage_glyphs] = {
 		.size = sizeof (glyphset_t),
 		.name = "passage glyphs",
