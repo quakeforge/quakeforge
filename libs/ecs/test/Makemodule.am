@@ -1,7 +1,8 @@
 libs_ecs_tests = \
 	libs/ecs/test/test-components \
 	libs/ecs/test/test-hierarchy \
-	libs/ecs/test/test-registry
+	libs/ecs/test/test-registry \
+	libs/ecs/test/test-subpools
 
 TESTS += $(libs_ecs_tests)
 
@@ -30,4 +31,11 @@ libs_ecs_test_test_registry_SOURCES= 		\
 libs_ecs_test_test_registry_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_registry_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_subpools_SOURCES= 		\
+	libs/ecs/test/test-subpools.c
+libs_ecs_test_test_subpools_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_subpools_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)

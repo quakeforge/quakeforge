@@ -48,6 +48,7 @@
 
 #define ENT_GROW 1024
 #define COMP_GROW 128
+#define RANGE_GROW 32
 #define ENT_IDBITS 20
 #define nullent (~0u)
 
@@ -61,14 +62,29 @@ typedef struct ecs_pool_s {
 
 typedef struct DARRAY_TYPE(component_t) componentset_t;
 
+typedef struct ecs_range_s {
+	uint32_t    end;
+} ecs_range_t;
+
+typedef struct ecs_subpool_s {
+	ecs_range_t *ranges;
+	uint32_t   *rangeids;
+	uint32_t   *sorted;
+	uint32_t    next;
+	uint32_t    available;
+	uint32_t    num_ranges;
+	uint32_t    max_ranges;
+} ecs_subpool_t;
+
 typedef struct ecs_registry_s {
+	ecs_pool_t *comp_pools;
 	uint32_t   *entities;
+	ecs_subpool_t *subpools;
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_entities;
 	uint32_t    max_entities;
 	componentset_t components;
-	ecs_pool_t *comp_pools;
 	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 } ecs_registry_t;
 
@@ -100,6 +116,10 @@ void ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
+
+uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
+void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
+						  uint32_t id);
 
 #undef ECSINLINE
 

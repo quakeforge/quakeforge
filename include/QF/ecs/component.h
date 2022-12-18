@@ -42,10 +42,14 @@
 */
 ///@{
 
+struct ecs_registry_s;
 typedef struct component_s {
 	size_t      size;
 	void      (*create) (void *);
 	void      (*destroy) (void *);
+	// comp is the registry component id (base + system component id)
+	uint32_t  (*rangeid) (struct ecs_registry_s *reg, uint32_t ent,
+						  uint32_t comp);
 	const char *name;
 } component_t;
 

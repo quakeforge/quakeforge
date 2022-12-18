@@ -51,7 +51,11 @@ ECS_DelRegistry (ecs_registry_t *registry)
 		free (registry->comp_pools[i].sparse);
 		free (registry->comp_pools[i].dense);
 		free (registry->comp_pools[i].data);
+
+		free (registry->subpools[i].ranges);
+		free (registry->subpools[i].rangeids);
 	}
+	free (registry->subpools);
 	free (registry->comp_pools);
 	free (registry);
 }
@@ -77,6 +81,7 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
 	}
+	registry->subpools = calloc (count, sizeof (ecs_subpool_t));
 }
 
 typedef struct {

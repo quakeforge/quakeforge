@@ -34,10 +34,21 @@
 #define IMPLEMENT_ECS_ENTITY_Funcs
 #include "QF/ecs.h"
 
+#include "compat.h"
+
+static void swap_inds (uint32_t *a, uint32_t *b)
+{
+	uint32_t    t = *a;
+	*a = *b;
+	*b = t;
+}
+
 VISIBLE void *
 Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
 	ecs_pool_t *pool = &registry->comp_pools[comp];
+	ecs_subpool_t *subpool = &registry->subpools[comp];
+	component_t *c = &registry->components.a[comp];
 	uint32_t    id = Ent_Index (ent);
 	uint32_t    ind = pool->sparse[id];
 	if (ind >= pool->count || pool->dense[ind] != ent) {
@@ -45,14 +56,55 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 			pool->max_count += COMP_GROW;
 			pool->dense = realloc (pool->dense,
 								   pool->max_count * sizeof (uint32_t));
-			Component_ResizeArray (&registry->components.a[comp], &pool->data,
-								   pool->max_count);
+			Component_ResizeArray (c, &pool->data, pool->max_count);
 		}
 		uint32_t    ind = pool->count++;
 		pool->sparse[id] = ind;
 		pool->dense[ind] = ent;
+		uint32_t    rind = subpool->num_ranges - subpool->available;
+		if (rind && c->rangeid) {
+			uint32_t    rangeid = c->rangeid (registry, ent, comp);
+			uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
+			printf ("ent:%d rangeid:%d rangeind:%d\n", ent, rangeid, rangeind);
+			while (rind-- > rangeind) {
+				if (subpool->ranges[rind].end == ind) {
+					subpool->ranges[rind].end++;
+					continue;
+				}
+				uint32_t    end = subpool->ranges[rind].end++;
+				Component_MoveElements (c, pool->data, ind, end, 1);
+				swap_inds (&pool->sparse[Ent_Index (pool->dense[end])],
+						   &pool->sparse[Ent_Index (pool->dense[ind])]);
+				swap_inds (&pool->dense[ind], &pool->dense[end]);
+				ind = end;
+			}
+		}
 	}
 	return Ent_GetComponent (ent, comp, registry);
+}
+
+static int
+range_cmp (const void *_key, const void *_range, void *_subpool)
+{
+	const uint32_t *key = _key;
+	const ecs_range_t *range = _range;
+	ecs_subpool_t *subpool = _subpool;
+
+	if (*key >= range->end) {
+		return -1;
+	}
+	if (range - subpool->ranges > 0) {
+		return *key >= range[-1].end ? 0 : -1;
+	}
+	return 0;
+}
+
+static ecs_range_t *
+find_range (ecs_subpool_t *subpool, uint32_t ind)
+{
+	return bsearch_r (&ind, subpool->ranges,
+					  subpool->num_ranges - subpool->available,
+					  sizeof (ecs_range_t), range_cmp, subpool);
 }
 
 VISIBLE void
@@ -60,16 +112,29 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
 	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
+	ecs_subpool_t *subpool = &registry->subpools[comp];
 	uint32_t    ind = pool->sparse[id];
+	component_t *c = &registry->components.a[comp];
 	if (ind < pool->count && pool->dense[ind] == ent) {
 		uint32_t    last = pool->count - 1;
-		Component_DestroyElements (&registry->components.a[comp], pool->data,
+		Component_DestroyElements (c, pool->data,
 								   ind, 1);
+		if (subpool->num_ranges - subpool->available) {
+			uint32_t    range_count = subpool->num_ranges - subpool->available;
+			ecs_range_t *range = find_range (subpool, ind);
+			while (range - subpool->ranges < range_count) {
+				uint32_t    end = --range->end;
+				range++;
+				pool->sparse[Ent_Index (pool->dense[end])] = ind;
+				pool->dense[ind] = pool->dense[end];
+				Component_MoveElements (c, pool->data, ind, end, 1);
+				ind = end;
+			}
+		}
 		if (last > ind) {
 			pool->sparse[Ent_Index (pool->dense[last])] = ind;
 			pool->dense[ind] = pool->dense[last];
-			Component_MoveElements (&registry->components.a[comp], pool->data,
-									ind, last, 1);
+			Component_MoveElements (c, pool->data, ind, last, 1);
 		}
 		pool->count--;
 		pool->sparse[id] = nullent;

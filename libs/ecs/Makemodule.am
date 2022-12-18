@@ -11,4 +11,5 @@ libs_ecs_libQFecs_la_SOURCES= \
 	libs/ecs/component.c \
 	libs/ecs/ecs.c \
 	libs/ecs/entity.c \
-	libs/ecs/hierarchy.c
+	libs/ecs/hierarchy.c \
+	libs/ecs/subpool.c

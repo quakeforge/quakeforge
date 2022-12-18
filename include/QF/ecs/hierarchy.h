@@ -51,7 +51,6 @@ typedef struct hierref_s {
 } hierref_t;
 
 typedef struct hierarchy_s {
-	struct ecs_registry_s *reg;
 	uint32_t    num_objects;
 	uint32_t    max_objects;
 	uint32_t   *ent;
@@ -60,6 +59,7 @@ typedef struct hierarchy_s {
 	uint32_t   *parentIndex;
 	const hierarchy_type_t *type;
 	void      **components;
+	struct ecs_registry_s *reg;
 	uint32_t    href_comp;
 } hierarchy_t;
 
