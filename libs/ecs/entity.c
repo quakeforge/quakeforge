@@ -117,8 +117,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	component_t *c = &registry->components.a[comp];
 	if (ind < pool->count && pool->dense[ind] == ent) {
 		uint32_t    last = pool->count - 1;
-		Component_DestroyElements (c, pool->data,
-								   ind, 1);
+		Component_DestroyElements (c, pool->data, ind, 1);
 		if (subpool->num_ranges - subpool->available) {
 			uint32_t    range_count = subpool->num_ranges - subpool->available;
 			ecs_range_t *range = find_range (subpool, ind);
