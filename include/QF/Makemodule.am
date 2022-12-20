@@ -170,8 +170,11 @@ include_qf_simd = \
 	include/QF/simd/vec4i.h
 
 include_qf_ui = \
+	include/QF/ui/canvas.h \
+	include/QF/ui/font.h \
 	include/QF/ui/inputline.h \
 	include/QF/ui/passage.h \
+	include/QF/ui/text.h \
 	include/QF/ui/txtbuffer.h \
 	include/QF/ui/view.h \
 	include/QF/ui/vrect.h

@@ -15,6 +15,7 @@ libs_ui_libQFgui_la_LDFLAGS=		$(lib_ldflags)
 libs_ui_libQFgui_la_LIBADD=			$(gui_deps) $(ui_deps)
 libs_ui_libQFgui_la_DEPENDENCIES=	$(gui_deps) $(ui_deps)
 libs_ui_libQFgui_la_SOURCES= \
+	libs/ui/canvas.c \
 	libs/ui/font.c \
 	libs/ui/text.c
 
