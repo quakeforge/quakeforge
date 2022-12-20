@@ -52,13 +52,13 @@ static int
 check_subpool_ranges (ecs_subpool_t *subpool, uint32_t *expect)
 {
 	uint32_t    count = subpool->num_ranges - subpool->available;
-	ecs_range_t *range = subpool->ranges;
+	uint32_t   *range = subpool->ranges;
 
 	while (count--) {
-		ecs_range_t *r = range++;
-		uint32_t     e = *expect++;
-		printf ("%d: %d %d\n", (int)(r - subpool->ranges), r->end, e);
-		if (r->end != e++) {
+		uint32_t   *r = range++;
+		uint32_t    e = *expect++;
+		printf ("%d: %d %d\n", (int)(r - subpool->ranges), *r, e);
+		if (*r != e++) {
 			return 1;
 		}
 	}
@@ -109,9 +109,9 @@ main (void)
 		return 1;
 	}
 	for (uint32_t i = 0; i < reg->subpools[base + test_obj].num_ranges; i++) {
-		if (reg->subpools[base + test_obj].ranges[i].end != 0) {
+		if (reg->subpools[base + test_obj].ranges[i] != 0) {
 			printf ("end %d not 0 count: %d\n", i,
-					reg->subpools[base + test_obj].ranges[i].end);
+					reg->subpools[base + test_obj].ranges[i]);
 			return 1;
 		}
 	}
@@ -234,6 +234,11 @@ main (void)
 
 	sp2 = ECS_NewSubpoolRange (reg, base + test_obj);
 	printf ("sp2: %d\n", sp2);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4, 4 })) {
+		printf ("oops\n");
+		return 1;
+	}
 	Ent_SetComponent (entc, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (entf, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (entg, base + test_subpool, reg, &sp2);

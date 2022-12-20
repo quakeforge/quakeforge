@@ -63,13 +63,14 @@ typedef struct ecs_pool_s {
 typedef struct DARRAY_TYPE(component_t) componentset_t;
 
 typedef struct ecs_range_s {
+	uint32_t    start;
 	uint32_t    end;
 } ecs_range_t;
 
 typedef struct ecs_subpool_s {
-	ecs_range_t *ranges;
 	uint32_t   *rangeids;
 	uint32_t   *sorted;
+	uint32_t   *ranges;
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_ranges;
@@ -98,6 +99,10 @@ typedef struct ecs_system_s {
 	uint32_t    base;
 } ecs_system_t;
 
+#include "QF/ecs/entity.h"
+
+#define ECSINLINE GNU89INLINE inline
+
 ecs_registry_t *ECS_NewRegistry (void);
 void ECS_DelRegistry (ecs_registry_t *registry);
 uint32_t ECS_RegisterComponents (ecs_registry_t *registry,
@@ -120,11 +125,31 @@ void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
 uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
 void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
+ECSINLINE ecs_range_t ECS_GetSubpoolRange (ecs_registry_t *registry,
+										   uint32_t component, uint32_t id);
+
+#undef ECSINLINE
+#ifndef IMPLEMENT_ECS_Funcs
+#define ECSINLINE GNU89INLINE inline
+#else
+#define ECSINLINE VISIBLE
+#endif
+
+ECSINLINE
+ecs_range_t
+ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
+{
+	ecs_subpool_t *subpool = &registry->subpools[component];
+	uint32_t    ind = subpool->sorted[Ent_Index (id)];
+	ecs_range_t range = {
+		.start = ind ? subpool->ranges[ind - 1] : 0,
+		.end = subpool->ranges[ind],
+	};
+	return range;
+}
 
 #undef ECSINLINE
 
 ///@}
-
-#include "QF/ecs/entity.h"
 
 #endif//__QF_ecs_h

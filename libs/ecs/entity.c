@@ -67,11 +67,11 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 			uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
 			printf ("ent:%d rangeid:%d rangeind:%d\n", ent, rangeid, rangeind);
 			while (rind-- > rangeind) {
-				if (subpool->ranges[rind].end == ind) {
-					subpool->ranges[rind].end++;
+				if (subpool->ranges[rind] == ind) {
+					subpool->ranges[rind]++;
 					continue;
 				}
-				uint32_t    end = subpool->ranges[rind].end++;
+				uint32_t    end = subpool->ranges[rind]++;
 				Component_MoveElements (c, pool->data, ind, end, 1);
 				swap_inds (&pool->sparse[Ent_Index (pool->dense[end])],
 						   &pool->sparse[Ent_Index (pool->dense[ind])]);
@@ -87,24 +87,24 @@ static int
 range_cmp (const void *_key, const void *_range, void *_subpool)
 {
 	const uint32_t *key = _key;
-	const ecs_range_t *range = _range;
+	const uint32_t *range = _range;
 	ecs_subpool_t *subpool = _subpool;
 
-	if (*key >= range->end) {
+	if (*key >= *range) {
 		return -1;
 	}
 	if (range - subpool->ranges > 0) {
-		return *key >= range[-1].end ? 0 : -1;
+		return *key >= range[-1] ? 0 : -1;
 	}
 	return 0;
 }
 
-static ecs_range_t *
+static uint32_t *
 find_range (ecs_subpool_t *subpool, uint32_t ind)
 {
 	return bsearch_r (&ind, subpool->ranges,
 					  subpool->num_ranges - subpool->available,
-					  sizeof (ecs_range_t), range_cmp, subpool);
+					  sizeof (uint32_t), range_cmp, subpool);
 }
 
 VISIBLE void
@@ -120,9 +120,9 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		Component_DestroyElements (c, pool->data, ind, 1);
 		if (subpool->num_ranges - subpool->available) {
 			uint32_t    range_count = subpool->num_ranges - subpool->available;
-			ecs_range_t *range = find_range (subpool, ind);
+			uint32_t   *range = find_range (subpool, ind);
 			while (range - subpool->ranges < range_count) {
-				uint32_t    end = --range->end;
+				uint32_t    end = --*range;
 				range++;
 				pool->sparse[Ent_Index (pool->dense[end])] = ind;
 				pool->dense[ind] = pool->dense[end];

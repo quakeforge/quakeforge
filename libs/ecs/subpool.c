@@ -64,11 +64,9 @@ ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
 	}
 	uint32_t    end = 0;
 	if (num_ranges) {
-		end = subpool->ranges[num_ranges - 1].end;
+		end = subpool->ranges[num_ranges - 1];
 	}
-	subpool->ranges[Ent_Index (id)] = (ecs_range_t) {
-		.end = end,
-	};
+	subpool->ranges[subpool->sorted[Ent_Index (id)]] = end;
 	return id;
 }
 
