@@ -296,7 +296,7 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 }
 
 void
-Canvas_Draw (uint32_t canvas_base, canvas_system_t canvas_sys)
+Canvas_Draw (canvas_system_t canvas_sys)
 {
 	static canvas_sysfunc_f draw_func[canvas_comp_count] = {
 		[canvas_update]     = draw_update,
@@ -311,7 +311,7 @@ Canvas_Draw (uint32_t canvas_base, canvas_system_t canvas_sys)
 		[canvas_outline]    = draw_outline_views,
 	};
 
-	uint32_t    comp = canvas_base + canvas_canvas;
+	uint32_t    comp = canvas_sys.base + canvas_canvas;
 	ecs_pool_t *pool = &canvas_sys.reg->comp_pools[comp];
 	uint32_t    count = pool->count;
 	//uint32_t   *entities = pool->dense;
@@ -322,7 +322,7 @@ Canvas_Draw (uint32_t canvas_base, canvas_system_t canvas_sys)
 		//uint32_t    ent = *entities++;
 
 		for (int i = 0; i < canvas_comp_count; i++) {
-			uint32_t    c = canvas_base + i;
+			uint32_t    c = canvas_sys.base + i;
 			uint32_t    rid = canvas->range[i];
 			ecs_range_t range = ECS_GetSubpoolRange (canvas_sys.reg, c, rid);
 			if (draw_func[i]) {
@@ -331,23 +331,19 @@ Canvas_Draw (uint32_t canvas_base, canvas_system_t canvas_sys)
 			}
 		}
 	}
-	for (int i = 0; i < canvas_comp_count; i++) {
-	}
 }
 
 void
-Canvas_AddToEntity (ecs_system_t canvas_sys, uint32_t text_base,
-					uint32_t view_base, uint32_t ent)
+Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 {
-	canvas_t    canvas = {
-		.reg = canvas_sys.reg,
-		.ent = ent,
-		.text_base = text_base,
-		.view_base = view_base,
-	};
+	canvas_t    canvas = { };
 	for (uint32_t i = 0; i < canvas_comp_count; i++) {
-		canvas.range[i] = ECS_NewSubpoolRange (canvas.reg, canvas.base + i);
+		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
+											   canvas_sys.base + i);
 	}
-	Ent_SetComponent (ent, canvas.base + canvas_canvas, canvas.reg, &canvas);
-	View_AddToEntity (ent, (ecs_system_t) { canvas.reg, view_base }, nullview);
+	Ent_SetComponent (ent, canvas_sys.base + canvas_canvas, canvas_sys.reg,
+					  &canvas);
+	View_AddToEntity (ent,
+					  (ecs_system_t) { canvas_sys.reg, canvas_sys.view_base },
+					  nullview);
 }

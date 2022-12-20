@@ -52,11 +52,6 @@ enum {
 };
 
 typedef struct canvas_s {
-	ecs_registry_t *reg;
-	uint32_t    ent;
-	uint32_t    base;
-	uint32_t    text_base;
-	uint32_t    view_base;
 	uint32_t    range[canvas_comp_count];
 } canvas_t;
 
@@ -64,6 +59,7 @@ extern const struct component_s canvas_components[canvas_comp_count];
 
 typedef struct canvas_system_s {
 	ecs_registry_t *reg;
+	uint32_t    base;
 	uint32_t    text_base;
 	uint32_t    view_base;
 } canvas_system_t;
@@ -80,8 +76,7 @@ typedef struct canvas_subpic_s {
 	uint32_t    w, h;
 } canvas_subpic_t;
 
-void Canvas_AddToEntity (ecs_system_t canvas_sys, uint32_t text_base,
-						 uint32_t view_base, uint32_t ent);
-void Canvas_Draw (uint32_t canvas_base, canvas_system_t canvas_sys);
+void Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent);
+void Canvas_Draw (canvas_system_t canvas_sys);
 
 #endif//__QF_scene_canvas_h
