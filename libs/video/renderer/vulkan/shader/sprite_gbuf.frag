@@ -14,6 +14,8 @@ layout (location = 0) in vec2 st;
 layout (location = 1) in vec4 position;
 layout (location = 2) in vec3 normal;
 
+layout(early_fragment_tests) in;
+
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
 layout (location = 2) out vec4 frag_normal;

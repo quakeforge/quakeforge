@@ -1155,7 +1155,7 @@
 				},
 			);
 			vertexInput   = $properties.vertexInput.index_only;
-			inputAssembly = $properties.inputAssembly.alias;
+			inputAssembly = $properties.inputAssembly.sprite;
 			layout = sprite_layout;
 		};
 		twod = {
