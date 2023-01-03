@@ -332,21 +332,21 @@ bi (Text_Draw)
 	uint32_t   *ent = pool->dense;
 	glyphset_t *glyphset = pool->data;
 
-
 	while (count-- > 0) {
 		view_t      psg_view = { .id = *ent++, .reg = res->reg, .comp = vhref};
-		// first child is always a paragraph view, and all vies after the
+		// first child is always a paragraph view, and all views after the
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);
 		view_t      text_view = View_GetChild (para_view, 0);
 		hierref_t  *href = View_GetRef (text_view);
+		glyphset_t *gs = glyphset++;
 		hierarchy_t *h = href->hierarchy;
 		view_pos_t *abs = h->components[view_abs];
 		view_pos_t *len = h->components[view_len];
 
 		for (uint32_t i = href->index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, res->reg);
-			draw_glyphs (&abs[i], glyphset, gref);
+			draw_glyphs (&abs[i], gs, gref);
 
 			if (0) draw_box (abs, len, i, 253);
 		}
