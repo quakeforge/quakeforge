@@ -43,8 +43,6 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/glyph.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/glyph.frag.spvc"
-static
 #include "libs/video/renderer/vulkan/shader/line.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/line.frag.spvc"
@@ -130,7 +128,6 @@ typedef struct shaderdata_s {
 static shaderdata_t builtin_shaders[] = {
 	{ "slice.vert", slice_vert, sizeof (slice_vert) },
 	{ "glyph.vert", glyph_vert, sizeof (glyph_vert) },
-	{ "glyph.frag", glyph_frag, sizeof (glyph_frag) },
 	{ "line.vert", line_vert, sizeof (line_vert) },
 	{ "line.frag", line_frag, sizeof (line_frag) },
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },

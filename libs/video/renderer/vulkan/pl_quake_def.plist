@@ -1190,7 +1190,7 @@
 			subpass = 0;
 			stages = (
 				{ stage = vertex;   name = main; module = $builtin/slice.vert; },
-				{ stage = fragment; name = main; module = $builtin/glyph.frag; },
+				{ stage = fragment; name = main; module = $builtin/twod.frag; },
 			);
 			vertexInput   = $properties.vertexInput.slice;
 			inputAssembly = {
@@ -1211,7 +1211,7 @@
 			subpass = 0;
 			stages = (
 				{ stage = vertex;   name = main; module = $builtin/glyph.vert; },
-				{ stage = fragment; name = main; module = $builtin/glyph.frag; },
+				{ stage = fragment; name = main; module = $builtin/twod.frag; },
 			);
 			vertexInput   = $properties.vertexInput.glyph;
 			inputAssembly = {
