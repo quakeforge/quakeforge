@@ -4,7 +4,7 @@
 layout (set = 0, binding = 0) uniform
 #include "matrices.h"
 ;
-layout (set = 1, binding = 0) uniform textureBuffer glyph_data;
+layout (set = 1, binding = 1) uniform textureBuffer glyph_data;
 
 // per instance data
 layout (location = 0) in uint glyph_index;

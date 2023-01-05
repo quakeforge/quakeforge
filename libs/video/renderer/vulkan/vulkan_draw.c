@@ -1503,12 +1503,12 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	VkWriteDescriptorSet write[] = {
 		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
 		  font->set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-		  0, 0, &glyph_bview->buffer_view.view },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  font->set, 1, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo, 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  font->set, 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+		  0, 0, &glyph_bview->buffer_view.view },
 	};
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 	free (glyph_sets);

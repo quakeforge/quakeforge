@@ -282,18 +282,18 @@
 		glyph_data_set = {
 			bindings = (
 				{
-					// glyph geometry data (offset and uv)
-					binding = 0;
-					descriptorType = uniform_texel_buffer;
-					descriptorCount = 1;
-					stageFlags = vertex;
-				},
-				{
 					// glyph texture data
-					binding = 1;
+					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
+				},
+				{
+					// glyph geometry data (offset and uv)
+					binding = 1;
+					descriptorType = uniform_texel_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
 				},
 			);
 		};
