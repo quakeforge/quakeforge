@@ -283,8 +283,6 @@ vkshaderpath = libs/video/renderer/vulkan/shader
 
 slice_src = $(vkshaderpath)/slice.vert
 slice_c = $(vkshaderpath)/slice.vert.spvc
-glyphv_src = $(vkshaderpath)/glyph.vert
-glyphv_c = $(vkshaderpath)/glyph.vert.spvc
 linev_src = $(vkshaderpath)/line.vert
 linev_c = $(vkshaderpath)/line.vert.spvc
 linef_src = $(vkshaderpath)/line.frag
@@ -370,8 +368,6 @@ waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
 
 $(slice_vert_c): $(slice_vert_src) $(matrices_h)
 
-$(glyphv_c): $(glyphv_src) $(matrices_h)
-
 $(linev_c): $(linev_src) $(matrices_h)
 $(linef_c): $(linef_src)
 
@@ -445,7 +441,6 @@ $(waterwarp_c): $(waterwarp_src) $(matrices_h)
 
 vkshader_c = \
 	$(slice_c) \
-	$(glyphv_c) \
 	$(linev_c) \
 	$(linef_c) \
 	$(partphysicsc_c) \
@@ -530,7 +525,6 @@ EXTRA_DIST += \
 	$(matrices_h) \
 	$(entity_h) \
 	$(slice_src) \
-	$(glyphv_src) \
 	$(linev_src) \
 	$(linef_src) \
 	$(partphysicsc_src) \

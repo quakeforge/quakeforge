@@ -102,12 +102,6 @@ typedef struct {
 } sliceinst_t;
 
 typedef struct {
-	uint32_t    index;
-	byte        color[4];
-	float       position[2];
-} glyphinst_t;
-
-typedef struct {
 	float       offset[2];
 	float       uv[2];
 } glyphvert_t;
@@ -130,7 +124,7 @@ typedef struct slicequeue_s {
 } slicequeue_t;
 
 typedef struct glyphqueue_s {
-	glyphinst_t *glyphs;
+	sliceinst_t *glyphs;
 	int         count;
 	int         size;
 } glyphqueue_t;
@@ -198,7 +192,6 @@ typedef struct drawctx_s {
 	qfv_resobj_t *line_objects;
 	VkPipeline  quad_pipeline;
 	VkPipeline  slice_pipeline;
-	VkPipeline  glyph_pipeline;
 	VkPipeline  line_pipeline;
 	VkPipelineLayout layout;
 	VkPipelineLayout glyph_layout;//slice pipeline uses same layout
@@ -338,7 +331,7 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 			.name = "glyphs.inst",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = MAX_GLYPHS * sizeof (glyphinst_t),
+				.size = MAX_GLYPHS * sizeof (sliceinst_t),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			},
@@ -382,7 +375,7 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 		};
 		DARRAY_INIT (&frame->slice_batch, 16);
 		frame->glyph_insts = (glyphqueue_t) {
-			.glyphs = (glyphinst_t *) ((byte *)data + frame->glyph_offset),
+			.glyphs = (sliceinst_t *) ((byte *)data + frame->glyph_offset),
 			.size = MAX_QUADS,
 		};
 		DARRAY_INIT (&frame->glyph_batch, 16);
@@ -545,7 +538,6 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->slice_pipeline, 0);
-	dfunc->vkDestroyPipeline (device->dev, dctx->glyph_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->line_pipeline, 0);
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
@@ -620,7 +612,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
 	dctx->slice_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
-	dctx->glyph_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "glyph");
 	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
@@ -1319,7 +1310,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		  a(dframe->slice_insts.count * sizeof (sliceinst_t)) },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  memory, dframe->glyph_offset,
-		  a(dframe->glyph_insts.count * sizeof (glyphinst_t)) },
+		  a(dframe->glyph_insts.count * sizeof (sliceinst_t)) },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  memory, dframe->line_offset,
 		  a(dframe->line_verts.count * VERTS_PER_LINE * sizeof (drawvert_t)) },
@@ -1343,7 +1334,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		draw_slices (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
 	if (dframe->glyph_insts.count) {
-		bind_pipeline (rFrame, dctx->glyph_pipeline,
+		bind_pipeline (rFrame, dctx->slice_pipeline,
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_glyphs (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
@@ -1536,12 +1527,14 @@ Vulkan_Draw_Glyph (int x, int y, int fontid, int glyph, int c,
 	}
 
 	batch->count++;
-	glyphinst_t *inst = &queue->glyphs[queue->count++];
-	inst->index = glyph;
+	sliceinst_t *inst = &queue->glyphs[queue->count++];
+	inst->index = glyph * 4;	// index is actual vertex index
 	VectorCopy (vid.palette + c * 3, inst->color);
 	inst->color[3] = 255;
 	inst->position[0] = x;
 	inst->position[1] = y;
+	inst->offset[0] = 0;
+	inst->offset[1] = 0;
 }
 
 void
