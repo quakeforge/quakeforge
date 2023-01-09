@@ -162,7 +162,6 @@ typedef struct drawfontres_s {
 typedef struct drawfont_s {
 	VkDescriptorSet set;
 	drawfontres_t *resource;
-	font_t     *font;
 } drawfont_t;
 
 typedef struct drawfontset_s
@@ -1095,26 +1094,6 @@ Vulkan_Draw_FadeScreen (vulkan_ctx_t *ctx)
 	draw_blendscreen (color, ctx);
 }
 
-void
-Vulkan_Set2D (vulkan_ctx_t *ctx)
-{
-}
-
-void
-Vulkan_Set2DScaled (vulkan_ctx_t *ctx)
-{
-}
-
-void
-Vulkan_End2D (vulkan_ctx_t *ctx)
-{
-}
-
-void
-Vulkan_DrawReset (vulkan_ctx_t *ctx)
-{
-}
-
 static void
 draw_begin_subpass (QFV_DrawSubpass subpass, qfv_renderframe_t *rFrame)
 {
@@ -1375,8 +1354,6 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	int         fontid = dctx->fonts.size;
 	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
 	drawfont_t *font = &dctx->fonts.a[fontid];
-
-	font->font = rfont;
 
 	font->resource = malloc (sizeof (drawfontres_t));
 	font->resource->resource = (qfv_resource_t) {
