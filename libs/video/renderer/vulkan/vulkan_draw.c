@@ -128,7 +128,7 @@ typedef struct drawframe_s {
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
 	VkBufferView dvert_view;
-	VkDescriptorSet core_quad_set;
+	VkDescriptorSet dyn_quad_set;
 
 	descbatchset_t quad_batch;
 	quadqueue_t quad_insts;
@@ -174,7 +174,7 @@ typedef struct drawctx_s {
 	hashtab_t  *pic_cache;
 	qfv_resource_t *draw_resource;
 	qfv_resobj_t *index_object;
-	qfv_resobj_t *svertex_object;
+	qfv_resobj_t *svertex_objects;
 	qfv_resobj_t *instance_objects;
 	qfv_resobj_t *dvertex_objects;
 	uint32_t    svertex_index;
@@ -185,6 +185,7 @@ typedef struct drawctx_s {
 	VkPipelineLayout quad_layout;
 	VkDescriptorSetLayout quad_data_set_layout;
 	VkDescriptorPool quad_pool;
+	VkDescriptorSet core_quad_set;
 	drawframeset_t frames;
 	drawfontset_t fonts;
 } drawctx_t;
@@ -239,8 +240,8 @@ create_buffers (vulkan_ctx_t *ctx)
 								  // frames instance buffers
 								  + (frames) * sizeof (qfv_resobj_t));
 	dctx->index_object = (qfv_resobj_t *) &dctx->draw_resource[2];
-	dctx->svertex_object = &dctx->index_object[1];
-	dctx->dvertex_objects = &dctx->svertex_object[2];
+	dctx->svertex_objects = &dctx->index_object[1];
+	dctx->dvertex_objects = &dctx->svertex_objects[2];
 	dctx->instance_objects = &dctx->dvertex_objects[2 * frames];
 
 	dctx->svertex_index = 0;
@@ -250,7 +251,7 @@ create_buffers (vulkan_ctx_t *ctx)
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2,	// quad and 9-slice indices
+		.num_objects = 1 + 2,	// quad and 9-slice indices, and static verts
 		.objects = dctx->index_object,
 	};
 	dctx->draw_resource[1] = (qfv_resource_t) {
@@ -270,7 +271,7 @@ create_buffers (vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		},
 	};
-	dctx->svertex_object[0] = (qfv_resobj_t) {
+	dctx->svertex_objects[0] = (qfv_resobj_t) {
 		.name = "sverts",
 		.type = qfv_res_buffer,
 		.buffer = {
@@ -279,14 +280,14 @@ create_buffers (vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 		},
 	};
-	dctx->svertex_object[1] = (qfv_resobj_t) {
+	dctx->svertex_objects[1] = (qfv_resobj_t) {
 		.name = "sverts",
 		.type = qfv_res_buffer_view,
 		.buffer_view = {
 			.buffer = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 			.offset = 0,
-			.size = dctx->svertex_object[0].buffer.size,
+			.size = dctx->svertex_objects[0].buffer.size,
 		},
 	};
 
@@ -492,9 +493,10 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	QFV_DestroyResource (device, &dctx->draw_resource[0]);
 	QFV_DestroyResource (device, &dctx->draw_resource[1]);
-	// the first "font" is reserved for the core quad data set and is dynamic
-	// and thus does not have its own resources
-	for (size_t i = 1; i < dctx->fonts.size; i++) {
+	// the first two "fonts" are reserved for the dynamic and core quad data
+	// sets and thus does not have its own resources (they are created
+	// separately)
+	for (size_t i = 2; i < dctx->fonts.size; i++) {
 		QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);
 		free (dctx->fonts.a[i].resource);
 	}
@@ -534,7 +536,7 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 
 	int         ind = dctx->svertex_index;
 	dctx->svertex_index += VERTS_PER_QUAD;
-	QFV_PacketCopyBuffer (packet, dctx->svertex_object[0].buffer.buffer,
+	QFV_PacketCopyBuffer (packet, dctx->svertex_objects[0].buffer.buffer,
 						  ind * sizeof (quadvert_t),
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
@@ -630,7 +632,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	dctx->quad_data_set_layout = sl;
 	dctx->quad_pool = Vulkan_CreateDescriptorPool (ctx, "quad_pool");
 
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
+	// core set + dynamic sets
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1 + frames, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
 		layouts->a[i] = dctx->quad_data_set_layout;
 	}
@@ -643,24 +646,38 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	__auto_type pool = dctx->quad_pool;
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
-	for (size_t i = 0; i < sets->size; i++) {
-		__auto_type frame = &dctx->frames.a[i];
-		frame->core_quad_set = sets->a[i];
+	for (size_t i = 1; i < sets->size; i++) {
+		__auto_type frame = &dctx->frames.a[i - 1];
+		frame->dyn_quad_set = sets->a[i];
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->core_quad_set, 0, 0, 1,
+			  frame->dyn_quad_set, 0, 0, 1,
 			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			  &imageInfo, 0, 0 },
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->core_quad_set, 1, 0, 1,
+			  frame->dyn_quad_set, 1, 0, 1,
 			  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
 			  0, 0, &frame->dvert_view },
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 	}
+	dctx->core_quad_set = sets->a[0];
 	free (sets);
 
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  dctx->core_quad_set, 0, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo, 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  dctx->core_quad_set, 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+
 	DARRAY_APPEND (&dctx->fonts, (drawfont_t) {});
+	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_quad_set });
 
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type dframe = &dctx->frames.a[i];
@@ -723,7 +740,7 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte        color[4] = {255, 255, 255, 255};
-	draw_quad (x, y, 0, dctx->conchar_inds[chr], color, frame);
+	draw_quad (x, y, 1, dctx->conchar_inds[chr], color, frame);
 }
 
 void
@@ -1166,7 +1183,6 @@ draw_quads (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 		uint32_t    inst_count = dframe->quad_batch.a[i].count;
 		uint32_t    ind_count = inst_count >> 24;
 		inst_count &= 0xffffff;
-		printf ("%zd %d %d %d\n", i, fontid, inst_count, ind_count);
 		VkDescriptorSet set[2] = {
 			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 			dctx->fonts.a[fontid].set,
@@ -1218,7 +1234,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		return;
 	}
 
-	dctx->fonts.a[0].set = dframe->core_quad_set;
+	dctx->fonts.a[0].set = dframe->dyn_quad_set;
 
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
