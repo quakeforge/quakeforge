@@ -72,7 +72,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char * __attribute__((used)) draw_pass_names[] = {
+static const char *draw_pass_names[] = {
 	"2d",
 };
 
@@ -91,59 +91,47 @@ typedef struct descbatchset_s
 typedef struct {
 	float       xy[2];
 	float       st[2];
-	float       color[4];
-} drawvert_t;
+	byte        color[4];
+} linevert_t;
 
 typedef struct {
 	uint32_t    index;
 	byte        color[4];
 	float       position[2];
 	float       offset[2];
-} sliceinst_t;
+} quadinst_t;
 
 typedef struct {
 	float       offset[2];
 	float       uv[2];
-} glyphvert_t;
+} quadvert_t;
+
+typedef struct vertqueue_s {
+	linevert_t *verts;
+	int         count;
+	int         size;
+} vertqueue_t;
+
+typedef struct quadqueue_s {
+	quadinst_t *quads;
+	int         count;
+	int         size;
+} quadqueue_t;
 
 typedef struct cachepic_s {
 	char       *name;
 	qpic_t     *pic;
 } cachepic_t;
 
-typedef struct vertqueue_s {
-	drawvert_t *verts;
-	int         count;
-	int         size;
-} vertqueue_t;
-
-typedef struct slicequeue_s {
-	sliceinst_t *slices;
-	int         count;
-	int         size;
-} slicequeue_t;
-
-typedef struct glyphqueue_s {
-	sliceinst_t *glyphs;
-	int         count;
-	int         size;
-} glyphqueue_t;
-
 typedef struct drawframe_s {
-	size_t      quad_offset;
-	size_t      slice_offset;
-	size_t      glyph_offset;
+	size_t      instance_offset;
 	size_t      line_offset;
-	VkBuffer    quad_buffer;
+	VkBuffer    instance_buffer;
+	VkBufferView dvert_view;
+	VkDescriptorSet core_quad_set;
+
 	descbatchset_t quad_batch;
-	VkBuffer    slice_buffer;
-	descbatchset_t slice_batch;
-	VkBuffer    glyph_buffer;
-	descbatchset_t glyph_batch;
-	VkBuffer    line_buffer;
-	vertqueue_t quad_verts;
-	slicequeue_t slice_insts;
-	glyphqueue_t glyph_insts;
+	quadqueue_t quad_insts;
 	vertqueue_t line_verts;
 	qfv_cmdbufferset_t cmdSet;
 } drawframe_t;
@@ -173,6 +161,7 @@ typedef struct drawctx_s {
 	scrap_t    *scrap;
 	qfv_stagebuf_t *stage;
 	qpic_t     *crosshair;
+	int        *conchar_inds;
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
@@ -184,53 +173,37 @@ typedef struct drawctx_s {
 	memsuper_t *string_memsuper;
 	hashtab_t  *pic_cache;
 	qfv_resource_t *draw_resource;
-	qfv_resobj_t *ind_objects;
-	qfv_resobj_t *quad_objects;
-	qfv_resobj_t *slice_objects;
-	qfv_resobj_t *glyph_objects;
-	qfv_resobj_t *line_objects;
+	qfv_resobj_t *index_object;
+	qfv_resobj_t *svertex_object;
+	qfv_resobj_t *instance_objects;
+	qfv_resobj_t *dvertex_objects;
+	uint32_t    svertex_index;
+	uint32_t    svertex_max;
 	VkPipeline  quad_pipeline;
-	VkPipeline  slice_pipeline;
 	VkPipeline  line_pipeline;
-	VkPipelineLayout layout;
-	VkPipelineLayout glyph_layout;//slice pipeline uses same layout
-	VkDescriptorSet quad_set;
+	VkPipelineLayout lines_layout;
+	VkPipelineLayout quad_layout;
+	VkDescriptorSetLayout quad_data_set_layout;
+	VkDescriptorPool quad_pool;
 	drawframeset_t frames;
 	drawfontset_t fonts;
 } drawctx_t;
 
-// enough for a full screen of 8x8 chars at 1920x1080 plus some extras (368)
 #define MAX_QUADS (32768)
 #define VERTS_PER_QUAD (4)
-#define INDS_PER_QUAD (5)	// one per vert plus primitive reset
+#define BYTES_PER_QUAD (VERTS_PER_QUAD * sizeof (quadvert_t))
+#define VERTS_PER_SLICE (16)
+#define BYTES_PER_SLICE (VERTS_PER_SLICE * sizeof (quadvert_t))
+#define INDS_PER_QUAD (4)
+#define INDS_PER_SLICE (26)
 
-#define MAX_GLYPHS (32768)
+#define MAX_INSTANCES (1024*1024)
 
 #define MAX_LINES (32768)
 #define VERTS_PER_LINE (2)
+#define BYTES_PER_LINE (VERTS_PER_LINE * sizeof (linevert_t))
 
-#define QUADS_OFFSET 0
-#define IAQUADS_OFFSET (MAX_QUADS * VERTS_PER_QUAD)
-#define LINES_OFFSET (IAQUADS_OFFSET + (MAX_QUADS * VERTS_PER_QUAD))
-
-#define VERTS_PER_FRAME (LINES_OFFSET + MAX_LINES*VERTS_PER_LINE)
-
-static void
-generate_quad_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
-{
-	qfv_packet_t *packet = QFV_PacketAcquire (staging);
-	uint32_t   *ind = QFV_PacketExtend (packet, ind_buffer->buffer.size);
-	for (int i = 0; i < MAX_QUADS; i++) {
-		for (int j = 0; j < VERTS_PER_QUAD; j++) {
-			*ind++ = i * VERTS_PER_QUAD + j;
-		}
-		// mark end of primitive
-		*ind++ = -1;
-	}
-	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketSubmit (packet);
-}
+#define DVERTS_PER_FRAME (LINES_OFFSET + MAX_LINES*VERTS_PER_LINE)
 
 static void
 generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
@@ -249,7 +222,7 @@ generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 }
 
 static void
-create_quad_buffers (vulkan_ctx_t *ctx)
+create_buffers (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -257,89 +230,92 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 	size_t      frames = ctx->frames.size;
 
 	dctx->draw_resource = malloc (2 * sizeof (qfv_resource_t)
-								  // index buffers
+								  // index buffer
+								  + sizeof (qfv_resobj_t)
+								  // svertex buffer and view
 								  + 2 * sizeof (qfv_resobj_t)
-								  // quads: frames vertex buffers
-								  + (frames) * sizeof (qfv_resobj_t)
-								  // slicess: frames instance vertex buffers
-								  + (frames) * sizeof (qfv_resobj_t)
-								  // glyphs: frames instance vertex buffers
-								  + (frames) * sizeof (qfv_resobj_t)
-								  // lines: frames vertex buffers
+								  // frames dynamic vertex buffers and views
+								  + (frames) * 2 * sizeof (qfv_resobj_t)
+								  // frames instance buffers
 								  + (frames) * sizeof (qfv_resobj_t));
-	dctx->ind_objects = (qfv_resobj_t *) &dctx->draw_resource[2];
-	dctx->quad_objects = &dctx->ind_objects[2];
-	dctx->slice_objects = &dctx->quad_objects[frames];
-	dctx->glyph_objects = &dctx->slice_objects[frames];
-	dctx->line_objects = &dctx->glyph_objects[frames];
+	dctx->index_object = (qfv_resobj_t *) &dctx->draw_resource[2];
+	dctx->svertex_object = &dctx->index_object[1];
+	dctx->dvertex_objects = &dctx->svertex_object[2];
+	dctx->instance_objects = &dctx->dvertex_objects[2 * frames];
+
+	dctx->svertex_index = 0;
+	dctx->svertex_max = MAX_QUADS * VERTS_PER_QUAD;
 
 	dctx->draw_resource[0] = (qfv_resource_t) {
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 2,	// quad and 9-slice indices
-		.objects = dctx->ind_objects,
+		.objects = dctx->index_object,
 	};
 	dctx->draw_resource[1] = (qfv_resource_t) {
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-		.num_objects = (frames) + (frames) + (frames) + (frames),
-		.objects = dctx->quad_objects,
+		.num_objects = (2 * frames) + (frames),
+		.objects = dctx->dvertex_objects,
 	};
 
-	dctx->ind_objects[0] = (qfv_resobj_t) {
+	dctx->index_object[0] = (qfv_resobj_t) {
 		.name = "quads.index",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = MAX_QUADS * INDS_PER_QUAD * sizeof (uint32_t),
+			.size = INDS_PER_SLICE * sizeof (uint32_t),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		},
 	};
-	dctx->ind_objects[1] = (qfv_resobj_t) {
-		.name = "9-slice.index",
+	dctx->svertex_object[0] = (qfv_resobj_t) {
+		.name = "sverts",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = 26 * sizeof (uint32_t),
+			.size = MAX_QUADS * BYTES_PER_QUAD,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+		},
+	};
+	dctx->svertex_object[1] = (qfv_resobj_t) {
+		.name = "sverts",
+		.type = qfv_res_buffer_view,
+		.buffer_view = {
+			.buffer = 1,
+			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			.offset = 0,
+			.size = dctx->svertex_object[0].buffer.size,
 		},
 	};
 
 	for (size_t i = 0; i < frames; i++) {
-		dctx->quad_objects[i] = (qfv_resobj_t) {
-			.name = "quads.geom",
+		dctx->dvertex_objects[i * 2 + 0] = (qfv_resobj_t) {
+			.name = "dverts",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = MAX_QUADS * VERTS_PER_QUAD * sizeof (drawvert_t),
+				.size = MAX_QUADS * BYTES_PER_QUAD,
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+						| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 			},
 		};
-		dctx->slice_objects[i] = (qfv_resobj_t) {
-			.name = "slices.inst",
-			.type = qfv_res_buffer,
-			.buffer = {
-				.size = MAX_GLYPHS * sizeof (sliceinst_t),
-				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		dctx->dvertex_objects[i * 2 + 1] = (qfv_resobj_t) {
+			.name = "dverts",
+			.type = qfv_res_buffer_view,
+			.buffer_view = {
+				.buffer = &dctx->dvertex_objects[i * 2 + 0]
+						- dctx->draw_resource[1].objects,
+				.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				.offset = 0,
+				.size = dctx->dvertex_objects[i * 2 + 0].buffer.size,
 			},
 		};
-		dctx->glyph_objects[i] = (qfv_resobj_t) {
-			.name = "glyphs.inst",
+		dctx->instance_objects[i] = (qfv_resobj_t) {
+			.name = "inst",
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = MAX_GLYPHS * sizeof (sliceinst_t),
-				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-			},
-		};
-		dctx->line_objects[i] = (qfv_resobj_t) {
-			.name = "lines.geom",
-			.type = qfv_res_buffer,
-			.buffer = {
-				.size = MAX_LINES * VERTS_PER_LINE * sizeof (drawvert_t),
+				.size = MAX_INSTANCES * sizeof (quadinst_t),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			},
@@ -354,39 +330,25 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 
 	for (size_t f = 0; f < frames; f++) {
 		drawframe_t *frame = &dctx->frames.a[f];
-		frame->quad_buffer = dctx->quad_objects[f].buffer.buffer;
-		frame->quad_offset = dctx->quad_objects[f].buffer.offset;
-		frame->slice_buffer = dctx->slice_objects[f].buffer.buffer;
-		frame->slice_offset = dctx->slice_objects[f].buffer.offset;
-		frame->glyph_buffer = dctx->glyph_objects[f].buffer.buffer;
-		frame->glyph_offset = dctx->glyph_objects[f].buffer.offset;
-		frame->line_buffer = dctx->line_objects[f].buffer.buffer;
-		frame->line_offset = dctx->line_objects[f].buffer.offset;
+		frame->instance_buffer = dctx->instance_objects[f].buffer.buffer;
+		frame->instance_offset = dctx->instance_objects[f].buffer.offset;
+		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
+		frame->line_offset = dctx->dvertex_objects[f * 2].buffer.offset;
 
-		frame->quad_verts = (vertqueue_t) {
-			.verts = (drawvert_t *) ((byte *)data + frame->quad_offset),
-			.size = MAX_QUADS,
-		};
 		DARRAY_INIT (&frame->quad_batch, 16);
-		frame->slice_insts = (slicequeue_t) {
-			.slices = (sliceinst_t *) ((byte *)data + frame->slice_offset),
-			.size = MAX_QUADS,
+		frame->quad_insts = (quadqueue_t) {
+			.quads = (quadinst_t *) ((byte *)data + frame->instance_offset),
+			.size = MAX_INSTANCES,
 		};
-		DARRAY_INIT (&frame->slice_batch, 16);
-		frame->glyph_insts = (glyphqueue_t) {
-			.glyphs = (sliceinst_t *) ((byte *)data + frame->glyph_offset),
-			.size = MAX_QUADS,
-		};
-		DARRAY_INIT (&frame->glyph_batch, 16);
+
 		frame->line_verts = (vertqueue_t) {
-			.verts = (drawvert_t *) ((byte *)data + frame->line_offset),
-			.size = MAX_QUADS,
+			.verts = (linevert_t *) ((byte *)data + frame->line_offset),
+			.size = MAX_INSTANCES,
 		};
 	}
 
 	// The indices will never change so pre-generate and stash them
-	generate_quad_indices (ctx->staging, &dctx->ind_objects[0]);
-	generate_slice_indices (ctx->staging, &dctx->ind_objects[1]);
+	generate_slice_indices (ctx->staging, &dctx->index_object[0]);
 }
 
 static void
@@ -530,19 +492,82 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	QFV_DestroyResource (device, &dctx->draw_resource[0]);
 	QFV_DestroyResource (device, &dctx->draw_resource[1]);
-	for (size_t i = 0; i < dctx->fonts.size; i++) {
+	// the first "font" is reserved for the core quad data set and is dynamic
+	// and thus does not have its own resources
+	for (size_t i = 1; i < dctx->fonts.size; i++) {
 		QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);
 		free (dctx->fonts.a[i].resource);
 	}
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
-	dfunc->vkDestroyPipeline (device->dev, dctx->slice_pipeline, 0);
 	dfunc->vkDestroyPipeline (device->dev, dctx->line_pipeline, 0);
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
 	delete_memsuper (dctx->string_memsuper);
 	QFV_DestroyScrap (dctx->scrap);
 	QFV_DestroyStagingBuffer (dctx->stage);
+}
+
+static int
+create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	//qfv_device_t *device = ctx->device;
+	//qfv_devfuncs_t *dfunc = device->funcs;
+
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+
+	x += subpic->rect->x;
+	y += subpic->rect->y;
+	float size = subpic->size;
+	float sl = (x + 0) * size;
+	float sr = (x + w) * size;
+	float st = (y + 0) * size;
+	float sb = (y + h) * size;
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_QUAD);
+	verts[0] = (quadvert_t) { {0, 0}, {sl, st} };
+	verts[1] = (quadvert_t) { {0, h}, {sl, sb} };
+	verts[2] = (quadvert_t) { {w, 0}, {sr, st} };
+	verts[3] = (quadvert_t) { {w, h}, {sr, sb} };
+
+	int         ind = dctx->svertex_index;
+	dctx->svertex_index += VERTS_PER_QUAD;
+	QFV_PacketCopyBuffer (packet, dctx->svertex_object[0].buffer.buffer,
+						  ind * sizeof (quadvert_t),
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+
+	return ind;
+}
+
+static void
+load_conchars (vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+
+	draw_chars = W_GetLumpName ("conchars");
+	if (draw_chars) {
+		for (int i = 0; i < 256 * 64; i++) {
+			if (draw_chars[i] == 0) {
+				draw_chars[i] = 255;		// proper transparent color
+			}
+		}
+		dctx->conchars = pic_data ("conchars", 128, 128, draw_chars, dctx);
+	} else {
+		qpic_t     *charspic = Draw_Font8x8Pic ();
+		dctx->conchars = pic_data ("conchars", charspic->width,
+								   charspic->height, charspic->data, dctx);
+		free (charspic);
+	}
+	dctx->conchar_inds = malloc (256 * sizeof (int));
+	for (int i = 0; i < 256; i++) {
+		int         cx = i % 16;
+		int         cy = i / 16;
+		dctx->conchar_inds[i] = create_quad (cx * 8, cy * 8, 8, 8,
+											 dctx->conchars, ctx);
+	}
 }
 
 void
@@ -570,7 +595,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	dctx->pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free,
 									 dctx, 0);
 
-	create_quad_buffers (ctx);
+	create_buffers (ctx);
 	dctx->stage = QFV_CreateStagingBuffer (device, "draw", 4 * 1024 * 1024,
 										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
@@ -578,20 +603,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	dctx->pic_sampler = Vulkan_CreateSampler (ctx, "quakepic");
 	dctx->glyph_sampler = Vulkan_CreateSampler (ctx, "glyph");
 
-	draw_chars = W_GetLumpName ("conchars");
-	if (draw_chars) {
-		for (int i = 0; i < 256 * 64; i++) {
-			if (draw_chars[i] == 0) {
-				draw_chars[i] = 255;		// proper transparent color
-			}
-		}
-		dctx->conchars = pic_data ("conchars", 128, 128, draw_chars, dctx);
-	} else {
-		qpic_t     *charspic = Draw_Font8x8Pic ();
-		dctx->conchars = pic_data ("conchars", charspic->width,
-								   charspic->height, charspic->data, dctx);
-		free (charspic);
-	}
+	load_conchars (ctx);
 	{
 		qpic_t     *hairpic = Draw_CrosshairPic ();
 		dctx->crosshair = pic_data ("crosshair", hairpic->width,
@@ -609,16 +621,19 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	flush_draw_scrap (ctx);
 
-	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
-	dctx->slice_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
+	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
 	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
-	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
-	dctx->glyph_layout = Vulkan_CreatePipelineLayout (ctx, "glyph_layout");
+	dctx->lines_layout = Vulkan_CreatePipelineLayout (ctx, "lines_layout");
+	dctx->quad_layout = Vulkan_CreatePipelineLayout (ctx, "quad_layout");
+	__auto_type sl = Vulkan_CreateDescriptorSetLayout (ctx, "quad_data_set");
+	dctx->quad_data_set_layout = sl;
+	dctx->quad_pool = Vulkan_CreateDescriptorPool (ctx, "quad_pool");
 
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
-	layouts->a[0] = Vulkan_CreateDescriptorSetLayout (ctx, "twod_set");
-	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "twod_pool");
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = dctx->quad_data_set_layout;
+	}
 
 	VkDescriptorImageInfo imageInfo = {
 		dctx->pic_sampler,
@@ -626,17 +641,27 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
 
+	__auto_type pool = dctx->quad_pool;
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
-	dctx->quad_set = sets->a[0];
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  dctx->quad_set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo, 0, 0 },
-	};
+	for (size_t i = 0; i < sets->size; i++) {
+		__auto_type frame = &dctx->frames.a[i];
+		frame->core_quad_set = sets->a[i];
+		VkWriteDescriptorSet write[] = {
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			  frame->core_quad_set, 0, 0, 1,
+			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			  &imageInfo, 0, 0 },
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			  frame->core_quad_set, 1, 0, 1,
+			  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+			  0, 0, &frame->dvert_view },
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+	}
 	free (sets);
 
-	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+	DARRAY_APPEND (&dctx->fonts, (drawfont_t) {});
+
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type dframe = &dctx->frames.a[i];
 
@@ -656,50 +681,39 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-static inline void
-draw_pic (float x, float y, int w, int h, subpic_t *subpic,
-		  int srcx, int srcy, int srcw, int srch,
-		  float *color, vertqueue_t *queue)
+static inline descbatch_t *
+get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 {
+	descbatch_t *batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
+	if (!frame->quad_batch.size || batch->descid != descid
+		|| ((batch->count & (0xff << 24)) != (ind_count << 24))) {
+		DARRAY_APPEND(&frame->quad_batch, ((descbatch_t) { .descid = descid }));
+		batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
+		batch->count = ind_count << 24;
+	}
+
+	return batch;
+}
+
+static inline void
+draw_quad (float x, float y, int descid, uint32_t vertid, byte *color,
+		   drawframe_t *frame)
+{
+	__auto_type queue = &frame->quad_insts;
 	if (queue->count >= queue->size) {
 		return;
 	}
 
-	drawvert_t *verts = queue->verts + queue->count * VERTS_PER_QUAD;
-	queue->count++;
+	__auto_type batch = get_desc_batch (frame, descid, INDS_PER_QUAD);
+	batch->count++;
 
-	srcx += subpic->rect->x;
-	srcy += subpic->rect->y;
-
-	float size = subpic->size;
-	float sl = srcx * size;
-	float sr = (srcx + srcw) * size;
-	float st = srcy * size;
-	float sb = (srcy + srch) * size;
-
-	verts[0].xy[0] = x;
-	verts[0].xy[1] = y;
-	verts[0].st[0] = sl;
-	verts[0].st[1] = st;
-	QuatCopy (color, verts[0].color);
-
-	verts[1].xy[0] = x;
-	verts[1].xy[1] = y + h;
-	verts[1].st[0] = sl;
-	verts[1].st[1] = sb;
-	QuatCopy (color, verts[1].color);
-
-	verts[2].xy[0] = x + w;
-	verts[2].xy[1] = y;
-	verts[2].st[0] = sr;
-	verts[2].st[1] = st;
-	QuatCopy (color, verts[2].color);
-
-	verts[3].xy[0] = x + w;
-	verts[3].xy[1] = y + h;
-	verts[3].st[0] = sr;
-	verts[3].st[1] = sb;
-	QuatCopy (color, verts[3].color);
+	quadinst_t *quad = &queue->quads[queue->count++];
+	*quad = (quadinst_t) {
+		.index = vertid,
+		.color = { QuatExpand (color) },
+		.position = { x, y },
+		.offset = { 0, 0 },
+	};
 }
 
 static inline void
@@ -708,14 +722,8 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	quat_t      color = {1, 1, 1, 1};
-	int         cx, cy;
-	cx = chr % 16;
-	cy = chr / 16;
-
-	subpic_t   *subpic = *(subpic_t **) dctx->conchars->data;
-	draw_pic (x, y, 8, 8, subpic, cx * 8, cy * 8, 8, 8, color,
-			  &frame->quad_verts);
+	byte        color[4] = {255, 255, 255, 255};
+	draw_quad (x, y, 0, dctx->conchar_inds[chr], color, frame);
 }
 
 void
@@ -820,18 +828,8 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	static const int pos[CROSSHAIR_COUNT][4] = {
-		{0,               0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
-		{CROSSHAIR_WIDTH, 0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
-		{0,               CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
-		{CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
-	};
-	const int *p = pos[ch - 1];
-
-	subpic_t   *subpic = *(subpic_t **) dctx->crosshair->data;
-	draw_pic (x - CROSSHAIR_WIDTH / 2 + 1, y - CROSSHAIR_HEIGHT / 2 + 1,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, subpic,
-			  p[0], p[1], p[2], p[3], crosshair_color, &frame->quad_verts);
+	byte       *color = &vid.palette32[bound (0, crosshaircolor, 255) * 4];
+	draw_quad (x, y, 0, ch * 4, color, frame);
 }
 
 static void (*crosshair_func[]) (int ch, int x, int y, vulkan_ctx_t *ctx) = {
@@ -869,6 +867,7 @@ void
 Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 					 vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
@@ -927,6 +926,7 @@ Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 	p = Vulkan_Draw_CachePic ("gfx/box_br.lmp", true, ctx);
 	draw (cx, cy + 8, p);
 #undef draw
+#endif
 }
 
 void
@@ -935,10 +935,8 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	static quat_t color = { 1, 1, 1, 1};
-	subpic_t   *subpic = *(subpic_t **) pic->data;
-	draw_pic (x, y, pic->width, pic->height, subpic,
-			  0, 0, pic->width, pic->height, color, &frame->quad_verts);
+	static byte color[4] = { 255, 255, 255, 255};
+	draw_quad (x, y, 0, 0, color, frame);
 }
 
 void
@@ -947,10 +945,8 @@ Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	static quat_t color = { 1, 1, 1, 1};
-	subpic_t   *subpic = *(subpic_t **) pic->data;
-	draw_pic (x, y, pic->width, pic->height, subpic,
-			  0, 0, pic->width, pic->height, color, &frame->quad_verts);
+	static byte color[4] = { 255, 255, 255, 255};
+	draw_quad (x, y, 0, 0, color, frame);
 }
 
 void
@@ -961,15 +957,14 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	static quat_t color = { 1, 1, 1, 1};
-	subpic_t   *subpic = *(subpic_t **) pic->data;
-	draw_pic (x, y, width, height, subpic, srcx, srcy, width, height,
-			  color, &frame->quad_verts);
+	static byte color[4] = { 255, 255, 255, 255};
+	draw_quad (x, y, 0, 0, color, frame);
 }
 
 void
 Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
@@ -985,11 +980,13 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	draw_pic (0, 0, vid.width / s, lines, subpic,
 			  0, ofs, cpic->width, cpic->height - ofs, color,
 			  &frame->quad_verts);
+#endif
 }
 
 void
 Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
@@ -1019,11 +1016,13 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 					  sub->width, sub->height, color, &frame->quad_verts);
 		}
 	}
+#endif
 }
 
 void
 Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
@@ -1034,6 +1033,7 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
 	draw_pic (x, y, w, h, subpic, 0, 0, 1, 1, color,
 			  &frame->quad_verts);
+#endif
 }
 
 void
@@ -1047,10 +1047,6 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	quat_t      color = { VectorExpand (vid.palette + c * 3), 255 };
-	QuatScale (color, 1/255.0, color);
-	drawvert_t *verts = queue->verts + queue->count * VERTS_PER_LINE;
-
 	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
 	int srcx = subpic->rect->x;
 	int srcy = subpic->rect->y;
@@ -1062,15 +1058,16 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 	float st = (srcy + 0.03125) * size;
 	float sb = (srcy + srch - 0.03125) * size;
 
-	verts[0] = (drawvert_t) {
+	linevert_t *verts = queue->verts + queue->count * VERTS_PER_LINE;
+	verts[0] = (linevert_t) {
 		.xy = { x0, y0 },
 		.st = {sl, st},
-		.color = { QuatExpand (color) },
+		.color = { VectorExpand (vid.palette + c * 3), 255 },
 	};
-	verts[1] = (drawvert_t) {
+	verts[1] = (linevert_t) {
 		.xy = { x1, y1 },
 		.st = {sr, sb},
-		.color = { QuatExpand (color) },
+		.color = { VectorExpand (vid.palette + c * 3), 255 },
 	};
 
 	queue->count++;
@@ -1079,12 +1076,14 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 static inline void
 draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 {
+#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
 	draw_pic (0, 0, vid.width, vid.height, subpic,
 			  0, 0, 1, 1, color, &frame->quad_verts);
+#endif
 }
 
 void
@@ -1154,90 +1153,34 @@ draw_quads (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
-	VkBuffer    quad_buffer = dframe->quad_buffer;
-	VkBuffer    ind_buffer = dctx->ind_objects[0].buffer.buffer;
-
+	VkBuffer    instance_buffer = dframe->instance_buffer;
 	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &quad_buffer, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, ind_buffer, 0, VK_INDEX_TYPE_UINT32);
-	VkDescriptorSet set[2] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		dctx->quad_set,
-	};
-	VkPipelineLayout layout = dctx->layout;
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, set, 0, 0);
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &instance_buffer, offsets);
 
-	dfunc->vkCmdDrawIndexed (cmd, dframe->quad_verts.count * INDS_PER_QUAD,
-							 1, 0, 0, 0);
-}
-
-static void
-draw_slices (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	VkBuffer    slice_buffer = dframe->slice_buffer;
-	VkBuffer    ind_buffer = dctx->ind_objects[1].buffer.buffer;
-	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &slice_buffer, offsets);
+	VkBuffer    ind_buffer = dctx->index_object[0].buffer.buffer;
 	dfunc->vkCmdBindIndexBuffer (cmd, ind_buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	uint32_t    inst_start = 0;
-	for (size_t i = 0; i < dframe->slice_batch.size; i++) {
-		int         fontid = dframe->slice_batch.a[i].descid;
-		uint32_t    inst_count = dframe->slice_batch.a[i].count;
+	for (size_t i = 0; i < dframe->quad_batch.size; i++) {
+		int         fontid = dframe->quad_batch.a[i].descid;
+		uint32_t    inst_count = dframe->quad_batch.a[i].count;
+		uint32_t    ind_count = inst_count >> 24;
+		inst_count &= 0xffffff;
+		printf ("%zd %d %d %d\n", i, fontid, inst_count, ind_count);
 		VkDescriptorSet set[2] = {
 			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 			dctx->fonts.a[fontid].set,
 		};
-		VkPipelineLayout layout = dctx->glyph_layout;
-		dfunc->vkCmdBindDescriptorSets (cmd,
-										VK_PIPELINE_BIND_POINT_GRAPHICS,
+		VkPipelineLayout layout = dctx->quad_layout;
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 										layout, 0, 2, set, 0, 0);
 
-		dfunc->vkCmdDrawIndexed (cmd, 26, inst_count, 0, 0, inst_start);
+		dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0, inst_start);
 		inst_start += inst_count;
 	}
-	DARRAY_RESIZE (&dframe->slice_batch, 0);
+	DARRAY_RESIZE (&dframe->quad_batch, 0);
 }
-
-static void
-draw_glyphs (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	VkBuffer    glyph_buffer = dframe->glyph_buffer;
-	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &glyph_buffer, offsets);
-
-	uint32_t    inst_start = 0;
-	for (size_t i = 0; i < dframe->glyph_batch.size; i++) {
-		int         fontid = dframe->glyph_batch.a[i].descid;
-		uint32_t    inst_count = dframe->glyph_batch.a[i].count;
-		VkDescriptorSet set[2] = {
-			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-			dctx->fonts.a[fontid].set,
-		};
-		VkPipelineLayout layout = dctx->glyph_layout;
-		dfunc->vkCmdBindDescriptorSets (cmd,
-										VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 2, set, 0, 0);
-
-		dfunc->vkCmdDraw (cmd, 4, inst_count, 0, inst_start);
-		inst_start += inst_count;
-	}
-	DARRAY_RESIZE (&dframe->glyph_batch, 0);
-}
-
+#if 0
 static void
 draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 {
@@ -1253,13 +1196,13 @@ draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 	VkDescriptorSet set[1] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 	};
-	VkPipelineLayout layout = dctx->layout;
+	VkPipelineLayout layout = dctx->lines_layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 1, set, 0, 0);
 	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
 					  1, 0, 0);
 }
-
+#endif
 void
 Vulkan_FlushText (qfv_renderframe_t *rFrame)
 {
@@ -1271,10 +1214,11 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
-	if (!dframe->quad_verts.count && !dframe->slice_insts.count
-		&& !dframe->glyph_insts.count && !dframe->line_verts.count) {
+	if (!dframe->quad_insts.count && !dframe->line_verts.count) {
 		return;
 	}
+
+	dctx->fonts.a[0].set = dframe->core_quad_set;
 
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
@@ -1282,51 +1226,35 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 #define a(x) (((x) + atom_mask) & ~atom_mask)
 	VkMappedMemoryRange ranges[] = {
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->quad_offset,
-		  a(dframe->quad_verts.count * VERTS_PER_QUAD * sizeof (drawvert_t)) },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->slice_offset,
-		  a(dframe->slice_insts.count * sizeof (sliceinst_t)) },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->glyph_offset,
-		  a(dframe->glyph_insts.count * sizeof (sliceinst_t)) },
+		  memory, dframe->instance_offset,
+		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  memory, dframe->line_offset,
-		  a(dframe->line_verts.count * VERTS_PER_LINE * sizeof (drawvert_t)) },
+		  a(dframe->line_verts.count * VERTS_PER_LINE * sizeof (linevert_t)) },
 	};
 #undef a
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 3, ranges);
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
 
 	DARRAY_APPEND (&rFrame->subpassCmdSets[subpass_map[QFV_draw2d]],
 				   dframe->cmdSet.a[QFV_draw2d]);
 
 	draw_begin_subpass (QFV_draw2d, rFrame);
 
-	if (dframe->quad_verts.count) {
+	if (dframe->quad_insts.count) {
 		bind_pipeline (rFrame, dctx->quad_pipeline,
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_quads (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
-	if (dframe->slice_insts.count) {
-		bind_pipeline (rFrame, dctx->slice_pipeline,
-					   dframe->cmdSet.a[QFV_draw2d]);
-		draw_slices (rFrame, dframe->cmdSet.a[QFV_draw2d]);
-	}
-	if (dframe->glyph_insts.count) {
-		bind_pipeline (rFrame, dctx->slice_pipeline,
-					   dframe->cmdSet.a[QFV_draw2d]);
-		draw_glyphs (rFrame, dframe->cmdSet.a[QFV_draw2d]);
-	}
+#if 0
 	if (dframe->line_verts.count) {
 		bind_pipeline (rFrame, dctx->line_pipeline,
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_lines (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
+#endif
 	draw_end_subpass (dframe->cmdSet.a[QFV_draw2d], ctx);
 
-	dframe->quad_verts.count = 0;
-	dframe->slice_insts.count = 0;
-	dframe->glyph_insts.count = 0;
+	dframe->quad_insts.count = 0;
 	dframe->line_verts.count = 0;
 }
 
@@ -1368,7 +1296,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.name = "geom",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = rfont->num_glyphs * 4 * sizeof (glyphvert_t),
+			.size = rfont->num_glyphs * 4 * sizeof (quadvert_t),
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 		},
@@ -1418,7 +1346,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	QFV_CreateResource (ctx->device, &font->resource->resource);
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	glyphvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
+	quadvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
 		vrect_t    *rect = &rfont->glyph_rects[i];
 		float       x = 0;
@@ -1429,19 +1357,19 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		float       v = rect->y;
 		float       s = 1.0 / rfont->scrap.width;
 		float       t = 1.0 / rfont->scrap.height;
-		verts[i * 4 + 0] = (glyphvert_t) {
+		verts[i * 4 + 0] = (quadvert_t) {
 			.offset = { x,     y },
 			.uv     = { u * s, v * t },
 		};
-		verts[i * 4 + 1] = (glyphvert_t) {
+		verts[i * 4 + 1] = (quadvert_t) {
 			.offset = { x,      y + h },
 			.uv     = { u * s, (v + h) * t },
 		};
-		verts[i * 4 + 2] = (glyphvert_t) {
+		verts[i * 4 + 2] = (quadvert_t) {
 			.offset = { x + w,      y },
 			.uv     = {(u + w) * s, v * t },
 		};
-		verts[i * 4 + 3] = (glyphvert_t) {
+		verts[i * 4 + 3] = (quadvert_t) {
 			.offset = { x + w,       y + h },
 			.uv     = {(u + w) * s, (v + h) * t },
 		};
@@ -1459,8 +1387,8 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	QFV_PacketSubmit (packet);
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
-	layouts->a[0] = Vulkan_CreateDescriptorSetLayout (ctx, "glyph_data_set");
-	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "glyph_pool");
+	layouts->a[0] = Vulkan_CreateDescriptorSetLayout (ctx, "quad_data_set");
+	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "quad_pool");
 	__auto_type glyph_sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	font->set = glyph_sets->a[0];
 	VkDescriptorImageInfo imageInfo = {
@@ -1489,29 +1417,15 @@ Vulkan_Draw_Glyph (int x, int y, int fontid, int glyph, int c,
 						vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	glyphqueue_t *queue = &dframe->glyph_insts;;
+	quadqueue_t *queue = &frame->quad_insts;
 	if (queue->count >= queue->size) {
 		return;
 	}
 
-	descbatch_t *batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
-	if (!dframe->glyph_batch.size || batch->descid != fontid) {
-		DARRAY_APPEND(&dframe->glyph_batch,
-					  ((descbatch_t) { .descid = fontid }));
-		batch = &dframe->glyph_batch.a[dframe->glyph_batch.size - 1];
-	}
-
-	batch->count++;
-	sliceinst_t *inst = &queue->glyphs[queue->count++];
-	inst->index = glyph * 4;	// index is actual vertex index
-	VectorCopy (vid.palette + c * 3, inst->color);
-	inst->color[3] = 255;
-	inst->position[0] = x;
-	inst->position[1] = y;
-	inst->offset[0] = 0;
-	inst->offset[1] = 0;
+	byte        color[4] = { VectorExpand (vid.palette + c * 3), 255 };
+	draw_quad (x, y, fontid, glyph * 4, color, frame);
 }
 
 void
