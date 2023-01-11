@@ -80,6 +80,11 @@ static QFV_Subpass subpass_map[] = {
 	[QFV_draw2d]    = 0,
 };
 
+typedef struct pic_data_s {
+	uint32_t    vert_index;
+	subpic_t   *subpic;
+} picdata_t;
+
 typedef struct descbatch_s {
 	int32_t     descid;		// texture or font descriptor id
 	uint32_t    count;		// number of objects in batch
@@ -361,8 +366,8 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 static void
 pic_free (drawctx_t *dctx, qpic_t *pic)
 {
-	subpic_t   *subpic = *(subpic_t **) &pic->data[0];
-	QFV_SubpicDelete (subpic);
+	__auto_type pd = (picdata_t *) pic->data;
+	QFV_SubpicDelete (pd->subpic);
 	cmemfree (dctx->pic_memsuper, pic);
 }
 
@@ -395,22 +400,54 @@ cachepic_getkey (const void *_cp, void *unused)
 	return ((cachepic_t *) _cp)->name;
 }
 
-static qpic_t *
-pic_data (const char *name, int w, int h, const byte *data, drawctx_t *dctx)
+static int
+create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+
+	__auto_type pd = (picdata_t *) pic->data;
+
+	x += pd->subpic->rect->x;
+	y += pd->subpic->rect->y;
+	float size = pd->subpic->size;
+	float sl = (x + 0) * size;
+	float sr = (x + w) * size;
+	float st = (y + 0) * size;
+	float sb = (y + h) * size;
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_QUAD);
+	verts[0] = (quadvert_t) { {0, 0}, {sl, st} };
+	verts[1] = (quadvert_t) { {0, h}, {sl, sb} };
+	verts[2] = (quadvert_t) { {w, 0}, {sr, st} };
+	verts[3] = (quadvert_t) { {w, h}, {sr, sb} };
+
+	int         ind = dctx->svertex_index;
+	dctx->svertex_index += VERTS_PER_QUAD;
+	QFV_PacketCopyBuffer (packet, dctx->svertex_objects[0].buffer.buffer,
+						  ind * sizeof (quadvert_t),
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+
+	return ind;
+}
+
+static qpic_t *
+pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
 	qpic_t     *pic;
-	subpic_t   *subpic;
 	byte       *picdata;
 
 	pic = cmemalloc (dctx->pic_memsuper,
-					 field_offset (qpic_t, data[sizeof (subpic_t *)]));
+					 field_offset (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = w;
 	pic->height = h;
+	__auto_type pd = (picdata_t *) pic->data;
+	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
+	pd->vert_index = create_quad (0, 0, w, h, pic, ctx);
 
-	subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
-	*(subpic_t **) pic->data = subpic;
-
-	picdata = QFV_SubpicBatch (subpic, dctx->stage);
+	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
 	size_t size = w * h;
 	for (size_t i = 0; i < size; i++) {
 		byte        pix = *data++;
@@ -434,7 +471,7 @@ qpic_t *
 Vulkan_Draw_MakePic (int width, int height, const byte *data,
 					 vulkan_ctx_t *ctx)
 {
-	return pic_data (0, width, height, data, ctx->draw_context);
+	return pic_data (0, width, height, data, ctx);
 }
 
 void
@@ -450,8 +487,7 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 	if (!wadpic) {
 		return 0;
 	}
-	return pic_data (name, wadpic->width, wadpic->height, wadpic->data,
-					 ctx->draw_context);
+	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx);
 }
 
 qpic_t *
@@ -470,7 +506,7 @@ Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
-	pic = pic_data (path, p->width, p->height, p->data, dctx);
+	pic = pic_data (path, p->width, p->height, p->data, ctx);
 	free (p);
 	cpic = new_cachepic (dctx, path, pic);
 	Hash_Add (dctx->pic_cache, cpic);
@@ -510,40 +546,6 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 	QFV_DestroyStagingBuffer (dctx->stage);
 }
 
-static int
-create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
-{
-	drawctx_t  *dctx = ctx->draw_context;
-	//qfv_device_t *device = ctx->device;
-	//qfv_devfuncs_t *dfunc = device->funcs;
-
-	subpic_t   *subpic = *(subpic_t **) pic->data;
-
-	x += subpic->rect->x;
-	y += subpic->rect->y;
-	float size = subpic->size;
-	float sl = (x + 0) * size;
-	float sr = (x + w) * size;
-	float st = (y + 0) * size;
-	float sb = (y + h) * size;
-
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_QUAD);
-	verts[0] = (quadvert_t) { {0, 0}, {sl, st} };
-	verts[1] = (quadvert_t) { {0, h}, {sl, sb} };
-	verts[2] = (quadvert_t) { {w, 0}, {sr, st} };
-	verts[3] = (quadvert_t) { {w, h}, {sr, sb} };
-
-	int         ind = dctx->svertex_index;
-	dctx->svertex_index += VERTS_PER_QUAD;
-	QFV_PacketCopyBuffer (packet, dctx->svertex_objects[0].buffer.buffer,
-						  ind * sizeof (quadvert_t),
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
-	QFV_PacketSubmit (packet);
-
-	return ind;
-}
-
 static void
 load_conchars (vulkan_ctx_t *ctx)
 {
@@ -556,11 +558,11 @@ load_conchars (vulkan_ctx_t *ctx)
 				draw_chars[i] = 255;		// proper transparent color
 			}
 		}
-		dctx->conchars = pic_data ("conchars", 128, 128, draw_chars, dctx);
+		dctx->conchars = pic_data ("conchars", 128, 128, draw_chars, ctx);
 	} else {
 		qpic_t     *charspic = Draw_Font8x8Pic ();
 		dctx->conchars = pic_data ("conchars", charspic->width,
-								   charspic->height, charspic->data, dctx);
+								   charspic->height, charspic->data, ctx);
 		free (charspic);
 	}
 	dctx->conchar_inds = malloc (256 * sizeof (int));
@@ -609,12 +611,12 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	{
 		qpic_t     *hairpic = Draw_CrosshairPic ();
 		dctx->crosshair = pic_data ("crosshair", hairpic->width,
-									hairpic->height, hairpic->data, dctx);
+									hairpic->height, hairpic->data, ctx);
 		free (hairpic);
 	}
 
 	byte white_block = 0xfe;
-	dctx->white_pic = pic_data ("white", 1, 1, &white_block, dctx);
+	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
 
 	dctx->backtile_pic = Vulkan_Draw_PicFromWad ("backtile", ctx);
 	if (!dctx->backtile_pic) {
@@ -953,7 +955,8 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static byte color[4] = { 255, 255, 255, 255};
-	draw_quad (x, y, 0, 0, color, frame);
+	__auto_type pd = (picdata_t *) pic->data;
+	draw_quad (x, y, 1, pd->vert_index, color, frame);
 }
 
 void
@@ -963,7 +966,8 @@ Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static byte color[4] = { 255, 255, 255, 255};
-	draw_quad (x, y, 0, 0, color, frame);
+	__auto_type pd = (picdata_t *) pic->data;
+	draw_quad (x, y, 1, pd->vert_index, color, frame);
 }
 
 void
@@ -975,7 +979,8 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static byte color[4] = { 255, 255, 255, 255};
-	draw_quad (x, y, 0, 0, color, frame);
+	__auto_type pd = (picdata_t *) pic->data;
+	draw_quad (x, y, 1, pd->vert_index, color, frame);
 }
 
 void
@@ -1064,12 +1069,12 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
-	int srcx = subpic->rect->x;
-	int srcy = subpic->rect->y;
-	int srcw = subpic->rect->width;
-	int srch = subpic->rect->height;
-	float size = subpic->size;
+	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	int srcx = pd->subpic->rect->x;
+	int srcy = pd->subpic->rect->y;
+	int srcw = pd->subpic->rect->width;
+	int srch = pd->subpic->rect->height;
+	float size = pd->subpic->size;
 	float sl = (srcx + 0.03125) * size;
 	float sr = (srcx + srcw - 0.03125) * size;
 	float st = (srcy + 0.03125) * size;
