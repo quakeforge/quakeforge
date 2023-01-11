@@ -284,20 +284,27 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 }
 
 void
-QFV_PacketCopyBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
+QFV_PacketCopyBuffer (qfv_packet_t *packet,
+					  VkBuffer dstBuffer, VkDeviceSize offset,
 					  const qfv_bufferbarrier_t *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
 	bb.barrier.size = packet->length;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
-	VkBufferCopy copy_region = { packet->offset, 0, packet->length };
+	VkBufferCopy copy_region = {
+		.srcOffset = packet->offset,
+		.dstOffset = offset,
+		.size = packet->length,
+	};
 	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
 							1, &copy_region);
 	bb = *dstBarrier;
 	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
 	bb.barrier.size = packet->length;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 1, &bb.barrier, 0, 0);

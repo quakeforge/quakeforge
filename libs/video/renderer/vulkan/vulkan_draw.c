@@ -227,7 +227,7 @@ generate_quad_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 		// mark end of primitive
 		*ind++ = -1;
 	}
-	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer,
+	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
 	QFV_PacketSubmit (packet);
 }
@@ -243,7 +243,7 @@ generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 		ind[i + 18] = i + 8;
 	}
 	ind[8] = ind[17] = ~0;
-	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer,
+	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
 	QFV_PacketSubmit (packet);
 }
@@ -1446,7 +1446,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.uv     = {(u + w) * s, (v + h) * t },
 		};
 	}
-	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer,
+	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
 

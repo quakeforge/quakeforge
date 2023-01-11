@@ -35,7 +35,8 @@ qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage);
 void *QFV_PacketExtend (qfv_packet_t *packet, size_t size);
 void QFV_PacketSubmit (qfv_packet_t *packet);
 struct qfv_bufferbarrier_s;
-void QFV_PacketCopyBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
+void QFV_PacketCopyBuffer (qfv_packet_t *packet,
+						   VkBuffer dstBuffer, VkDeviceSize offset,
 						   const struct qfv_bufferbarrier_s *dstBarrier);
 struct qfv_imagebarrier_s;
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,

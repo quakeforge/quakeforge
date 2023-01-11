@@ -292,7 +292,7 @@ translucent_clear (qfv_renderframe_t *rFrame)
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
 	__auto_type bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
-	QFV_PacketCopyBuffer (packet, tframe->state, bb);
+	QFV_PacketCopyBuffer (packet, tframe->state, 0, bb);
 	QFV_PacketSubmit (packet);
 }
 
