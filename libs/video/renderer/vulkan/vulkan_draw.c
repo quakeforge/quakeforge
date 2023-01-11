@@ -132,9 +132,12 @@ typedef struct drawframe_s {
 	size_t      instance_offset;
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
+	VkBuffer    dvert_buffer;
 	VkBufferView dvert_view;
 	VkDescriptorSet dyn_quad_set;
 
+	uint32_t    dvertex_index;
+	uint32_t    dvertex_max;
 	descbatchset_t quad_batch;
 	quadqueue_t quad_insts;
 	vertqueue_t line_verts;
@@ -165,6 +168,7 @@ typedef struct drawctx_s {
 	VkSampler   glyph_sampler;
 	scrap_t    *scrap;
 	qfv_stagebuf_t *stage;
+	int        *crosshair_inds;
 	qpic_t     *crosshair;
 	int        *conchar_inds;
 	qpic_t     *conchars;
@@ -338,8 +342,12 @@ create_buffers (vulkan_ctx_t *ctx)
 		drawframe_t *frame = &dctx->frames.a[f];
 		frame->instance_buffer = dctx->instance_objects[f].buffer.buffer;
 		frame->instance_offset = dctx->instance_objects[f].buffer.offset;
+		frame->dvert_buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer;
 		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
 		frame->line_offset = dctx->dvertex_objects[f * 2].buffer.offset;
+
+		frame->dvertex_index = 0;
+		frame->dvertex_max = MAX_QUADS * VERTS_PER_QUAD;
 
 		DARRAY_INIT (&frame->quad_batch, 16);
 		frame->quad_insts = (quadqueue_t) {
@@ -400,11 +408,10 @@ cachepic_getkey (const void *_cp, void *unused)
 	return ((cachepic_t *) _cp)->name;
 }
 
-static int
-create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
+static uint32_t
+create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
+			 VkBuffer buffer, vulkan_ctx_t *ctx)
 {
-	drawctx_t  *dctx = ctx->draw_context;
-
 	__auto_type pd = (picdata_t *) pic->data;
 
 	x += pd->subpic->rect->x;
@@ -422,14 +429,32 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 	verts[2] = (quadvert_t) { {w, 0}, {sr, st} };
 	verts[3] = (quadvert_t) { {w, h}, {sr, sb} };
 
-	int         ind = dctx->svertex_index;
-	dctx->svertex_index += VERTS_PER_QUAD;
-	QFV_PacketCopyBuffer (packet, dctx->svertex_objects[0].buffer.buffer,
-						  ind * sizeof (quadvert_t),
+	int         ind = *vertex_index;
+	*vertex_index += VERTS_PER_QUAD;
+	QFV_PacketCopyBuffer (packet, buffer, ind * sizeof (quadvert_t),
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
 
 	return ind;
+}
+
+static int
+make_static_quad (int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+
+	return create_quad (0, 0, w, h, pic, &dctx->svertex_index,
+						dctx->svertex_objects[0].buffer.buffer, ctx);
+}
+
+static int
+make_dyn_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	return create_quad (x, y, w, h, pic, &frame->dvertex_index,
+						frame->dvert_buffer, ctx);
 }
 
 static qpic_t *
@@ -445,7 +470,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	pic->height = h;
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
-	pd->vert_index = create_quad (0, 0, w, h, pic, ctx);
+	pd->vert_index = make_static_quad (w, h, pic, ctx);
 
 	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
 	size_t size = w * h;
@@ -566,12 +591,39 @@ load_conchars (vulkan_ctx_t *ctx)
 		free (charspic);
 	}
 	dctx->conchar_inds = malloc (256 * sizeof (int));
+	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
 	for (int i = 0; i < 256; i++) {
 		int         cx = i % 16;
 		int         cy = i / 16;
 		dctx->conchar_inds[i] = create_quad (cx * 8, cy * 8, 8, 8,
-											 dctx->conchars, ctx);
+											 dctx->conchars,
+											 &dctx->svertex_index, buffer, ctx);
 	}
+}
+
+static void
+load_crosshairs (vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	qpic_t     *hairpic = Draw_CrosshairPic ();
+	dctx->crosshair = pic_data ("crosshair", hairpic->width,
+								hairpic->height, hairpic->data, ctx);
+	free (hairpic);
+
+	dctx->crosshair_inds = malloc (4 * sizeof (int));
+	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
+#define W CROSSHAIR_WIDTH
+#define H CROSSHAIR_HEIGHT
+	dctx->crosshair_inds[0] = create_quad (0, 0, W, H, dctx->crosshair,
+										   &dctx->svertex_index, buffer, ctx);
+	dctx->crosshair_inds[1] = create_quad (W, 0, W, H, dctx->crosshair,
+										   &dctx->svertex_index, buffer, ctx);
+	dctx->crosshair_inds[2] = create_quad (0, H, W, H, dctx->crosshair,
+										   &dctx->svertex_index, buffer, ctx);
+	dctx->crosshair_inds[3] = create_quad (W, H, W, H, dctx->crosshair,
+										   &dctx->svertex_index, buffer, ctx);
+#undef W
+#undef H
 }
 
 void
@@ -608,12 +660,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	dctx->glyph_sampler = Vulkan_CreateSampler (ctx, "glyph");
 
 	load_conchars (ctx);
-	{
-		qpic_t     *hairpic = Draw_CrosshairPic ();
-		dctx->crosshair = pic_data ("crosshair", hairpic->width,
-									hairpic->height, hairpic->data, ctx);
-		free (hairpic);
-	}
+	load_crosshairs (ctx);
 
 	byte white_block = 0xfe;
 	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
@@ -848,7 +895,7 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte       *color = &vid.palette32[bound (0, crosshaircolor, 255) * 4];
-	draw_quad (x, y, 0, ch * 4, color, frame);
+	draw_quad (x, y, 1, dctx->crosshair_inds[ch - 1], color, frame);
 }
 
 static void (*crosshair_func[]) (int ch, int x, int y, vulkan_ctx_t *ctx) = {
@@ -978,9 +1025,9 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
+	uint32_t    vind = make_dyn_quad (srcx, srcy, width, height, pic, ctx);
 	static byte color[4] = { 255, 255, 255, 255};
-	__auto_type pd = (picdata_t *) pic->data;
-	draw_quad (x, y, 1, pd->vert_index, color, frame);
+	draw_quad (x, y, 0, vind, color, frame);
 }
 
 void
@@ -1277,6 +1324,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 
 	dframe->quad_insts.count = 0;
 	dframe->line_verts.count = 0;
+	dframe->dvertex_index = 0;
 }
 
 void
