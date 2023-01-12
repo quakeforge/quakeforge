@@ -174,6 +174,7 @@ typedef struct drawctx_s {
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
+	int         white_pic_ind;
 	qpic_t     *backtile_pic;
 	// use two separate cmem blocks for pics and strings (cachepic names)
 	// to ensure the names are never in the same cacheline as a pic since the
@@ -409,6 +410,46 @@ cachepic_getkey (const void *_cp, void *unused)
 }
 
 static uint32_t
+create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
+			  uint32_t *vertex_index, VkBuffer buffer, vulkan_ctx_t *ctx)
+{
+	__auto_type pd = (picdata_t *) pic->data;
+
+	int         x = rect[0] + pd->subpic->rect->x;
+	int         y = rect[1] + pd->subpic->rect->y;
+	int         w = rect[2];
+	int         h = rect[3];
+	int         l = border[0];
+	int         t = border[1];
+	int         r = w - border[2];
+	int         b = h - border[3];
+
+	vec4f_t     p[16] = {
+		{ 0, 0, 0, 0 }, { 0, t, 0, t }, { l, 0, l, 0 }, { l, t, l, t },
+		{ r, 0, r, 0 }, { r, t, r, t }, { w, 0, w, 0 }, { w, t, w, t },
+		{ 0, b, 0, b }, { 0, h, 0, h }, { l, b, l, b }, { l, h, l, h },
+		{ r, b, r, b }, { r, h, r, h }, { w, b, w, b }, { w, h, w, h },
+	};
+
+	float       s = pd->subpic->size;
+	vec4f_t     size = { 1, 1, s, s };
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_SLICE);
+	for (int i = 0; i < VERTS_PER_SLICE; i++) {
+		vec4f_t     v = ((vec4f_t) {0, 0, x, y} + p[i]) * size;
+		verts[i] = (quadvert_t) { {v[0], v[1]}, {v[2], v[3]} };
+	}
+
+	int         ind = *vertex_index;
+	*vertex_index += VERTS_PER_SLICE;
+	QFV_PacketCopyBuffer (packet, buffer, ind * sizeof (quadvert_t),
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+
+	return ind;
+}
+
+static uint32_t
 create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 			 VkBuffer buffer, vulkan_ctx_t *ctx)
 {
@@ -626,6 +667,20 @@ load_crosshairs (vulkan_ctx_t *ctx)
 #undef H
 }
 
+static void
+load_white_pic (vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	byte        white_block = 0xfe;
+	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
+
+	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
+	dctx->white_pic_ind = create_slice ((vec4i_t) {0, 0, 1, 1},
+										(vec4i_t) {0, 0, 0, 0},
+										dctx->white_pic,
+									    &dctx->svertex_index, buffer, ctx);
+}
+
 void
 Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
@@ -661,9 +716,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	load_conchars (ctx);
 	load_crosshairs (ctx);
-
-	byte white_block = 0xfe;
-	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
+	load_white_pic (ctx);
 
 	dctx->backtile_pic = Vulkan_Draw_PicFromWad ("backtile", ctx);
 	if (!dctx->backtile_pic) {
@@ -762,7 +815,28 @@ get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 }
 
 static inline void
-draw_quad (float x, float y, int descid, uint32_t vertid, byte *color,
+draw_slice (float x, float y, float ox, float oy, int descid, uint32_t vertid,
+			const byte *color, drawframe_t *frame)
+{
+	__auto_type queue = &frame->quad_insts;
+	if (queue->count >= queue->size) {
+		return;
+	}
+
+	__auto_type batch = get_desc_batch (frame, descid, INDS_PER_SLICE);
+	batch->count++;
+
+	quadinst_t *quad = &queue->quads[queue->count++];
+	*quad = (quadinst_t) {
+		.index = vertid,
+		.color = { QuatExpand (color) },
+		.position = { x, y },
+		.offset = { ox, oy },
+	};
+}
+
+static inline void
+draw_quad (float x, float y, int descid, uint32_t vertid, const byte *color,
 		   drawframe_t *frame)
 {
 	__auto_type queue = &frame->quad_insts;
@@ -1136,22 +1210,20 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 }
 
 static inline void
-draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
+draw_blendscreen (const byte *color, vulkan_ctx_t *ctx)
 {
-#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+	float       s = 1.0 / ctx->twod_scale;
 
-	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
-	draw_pic (0, 0, vid.width, vid.height, subpic,
-			  0, 0, 1, 1, color, &frame->quad_verts);
-#endif
+	draw_slice (0, 0, vid.width * s - 1, vid.height * s - 1,
+				1, dctx->white_pic_ind, color, frame);
 }
 
 void
 Vulkan_Draw_FadeScreen (vulkan_ctx_t *ctx)
 {
-	static quat_t color = { 0, 0, 0, 0.7 };
+	static byte color[4] =  { 0, 0, 0, 179 };
 	draw_blendscreen (color, ctx);
 }
 
@@ -1324,13 +1396,13 @@ void
 Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 {
 	if (color[3]) {
-		quat_t      c;
+		byte        c[4];
 		// pre-multiply alpha.
 		// FIXME this is kind of silly because q1source pre-multiplies alpha
 		// for blends, but this was un-done early in QF's history in order
 		// to avoid a pair of state changes
-		VectorScale (color, color[3], c);
-		c[3] = color[3];
+		VectorScale (color, color[3] * 255, c);
+		c[3] = color[3] * 255;
 		draw_blendscreen (c, ctx);
 	}
 }
