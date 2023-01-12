@@ -1055,15 +1055,13 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 {
-#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	static quat_t color = { 1, 1, 1, 1};
+	static byte color[4] = { 255, 255, 255, 255};
 	vrect_t    *tile_rect = VRect_New (x, y, w, h);
 	vrect_t    *sub = VRect_New (0, 0, 0, 0);  // filled in later
 	qpic_t     *pic = dctx->backtile_pic;
-	subpic_t   *subpic = *(subpic_t **) pic->data;
 	int         sub_sx, sub_sy, sub_ex, sub_ey;
 
 	sub_sx = x / pic->width;
@@ -1080,29 +1078,24 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 			sub->height = pic->height;
 			sub = VRect_Intersect (sub, tile_rect);
 			VRect_Delete (t);
-			draw_pic (sub->x, sub->y, sub->width, sub->height, subpic,
-					  sub->x % pic->width, sub->y % pic->height,
-					  sub->width, sub->height, color, &frame->quad_verts);
+			int         sx = sub->x % pic->width;
+			int         sy = sub->y % pic->height;
+			int         sw = sub->width;
+			int         sh = sub->height;
+			uint32_t    vind = make_dyn_quad (sx, sy, sw, sh, pic, ctx);
+			draw_quad (sub->x, sub->y, 0, vind, color, frame);
 		}
 	}
-#endif
 }
 
 void
 Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 {
-#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	quat_t      color;
-
-	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
-	color[3] = 1;
-	subpic_t   *subpic = *(subpic_t **) dctx->white_pic->data;
-	draw_pic (x, y, w, h, subpic, 0, 0, 1, 1, color,
-			  &frame->quad_verts);
-#endif
+	byte        color[4] =  {VectorExpand (vid.palette + c * 3), 255 };
+	draw_slice (x, y, w - 1, h - 1, 1, dctx->white_pic_ind, color, frame);
 }
 
 void
