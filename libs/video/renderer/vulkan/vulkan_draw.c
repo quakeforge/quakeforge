@@ -622,7 +622,12 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	__auto_type packet = QFV_PacketAcquire (ctx->staging);
 	int         count = tex.width * tex.height;
 	byte       *texels = QFV_PacketExtend (packet, 4 * count);
-	Vulkan_ExpandPalette (texels, tex.data, vid.palette32, 2, count);
+	byte        palette[256 * 4];
+	memcpy (palette, vid.palette32, sizeof (palette));
+	palette[255*4 + 0] = 0;
+	palette[255*4 + 1] = 0;
+	palette[255*4 + 2] = 0;
+	Vulkan_ExpandPalette (texels, tex.data, palette, 2, count);
 	QFV_PacketCopyImage (packet, cache_image->image.image,
 						 tex.width, tex.height,
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
