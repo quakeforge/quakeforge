@@ -82,6 +82,7 @@ static QFV_Subpass subpass_map[] = {
 
 typedef struct pic_data_s {
 	uint32_t    vert_index;
+	uint32_t    descid;
 	subpic_t   *subpic;
 } picdata_t;
 
@@ -376,7 +377,9 @@ static void
 pic_free (drawctx_t *dctx, qpic_t *pic)
 {
 	__auto_type pd = (picdata_t *) pic->data;
-	QFV_SubpicDelete (pd->subpic);
+	if (pd->subpic) {
+		QFV_SubpicDelete (pd->subpic);
+	}
 	cmemfree (dctx->pic_memsuper, pic);
 }
 
@@ -455,13 +458,17 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 {
 	__auto_type pd = (picdata_t *) pic->data;
 
-	x += pd->subpic->rect->x;
-	y += pd->subpic->rect->y;
-	float size = pd->subpic->size;
-	float sl = (x + 0) * size;
-	float sr = (x + w) * size;
-	float st = (y + 0) * size;
-	float sb = (y + h) * size;
+	float sl = 0, sr = 1, st = 0, sb = 1;
+
+	if (pd->subpic) {
+		x += pd->subpic->rect->x;
+		y += pd->subpic->rect->y;
+		float size = pd->subpic->size;
+		sl = (x + 0) * size;
+		sr = (x + w) * size;
+		st = (y + 0) * size;
+		sb = (y + h) * size;
+	}
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_QUAD);
@@ -512,6 +519,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	pd->vert_index = make_static_quad (w, h, pic, ctx);
+	pd->descid = 1;
 
 	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
 	size_t size = w * h;
@@ -556,24 +564,117 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx);
 }
 
+static qpic_t *
+load_lmp (const char *path, vulkan_ctx_t *ctx)
+{
+	qpic_t     *p;
+	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
+		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
+		return 0;
+	}
+
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	drawctx_t  *dctx = ctx->draw_context;
+	int         fontid = dctx->fonts.size;
+	DARRAY_OPEN_AT (&dctx->fonts, fontid, 1);
+	drawfont_t *font = &dctx->fonts.a[fontid];
+
+	font->resource = malloc (sizeof (drawfontres_t));
+	font->resource->resource = (qfv_resource_t) {
+		.name = va (ctx->va_ctx, "cachepic:%d", fontid),
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2,
+		.objects = &font->resource->glyph_image,
+	};
+
+	tex_t       tex = {
+		.width = p->width,
+		.height = p->height,
+		.format = tex_rgba,
+		.loaded = 1,
+		.data = p->data,
+	};
+	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
+	__auto_type cache_image = &font->resource->glyph_image;
+
+	font->resource->glyph_iview = (qfv_resobj_t) {
+		.name = "image_view",
+		.type = qfv_res_image_view,
+		.image_view = {
+			.image = 0,
+			.type = VK_IMAGE_VIEW_TYPE_2D,
+			.format = font->resource->glyph_image.image.format,
+			.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
+		},
+	};
+	__auto_type cache_iview = &font->resource->glyph_iview;
+
+	QFV_CreateResource (ctx->device, &font->resource->resource);
+
+	__auto_type packet = QFV_PacketAcquire (ctx->staging);
+	int         count = tex.width * tex.height;
+	byte       *texels = QFV_PacketExtend (packet, 4 * count);
+	Vulkan_ExpandPalette (texels, tex.data, vid.palette32, 2, count);
+	QFV_PacketCopyImage (packet, cache_image->image.image,
+						 tex.width, tex.height,
+						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
+	QFV_PacketSubmit (packet);
+
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+	layouts->a[0] = Vulkan_CreateDescriptorSetLayout (ctx, "quad_data_set");
+	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "quad_pool");
+	__auto_type cache_sets = QFV_AllocateDescriptorSet (device, pool, layouts);
+	font->set = cache_sets->a[0];
+	VkDescriptorImageInfo imageInfo = {
+		dctx->pic_sampler,
+		cache_iview->image_view.view,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  font->set, 0, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo, 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  font->set, 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+	free (cache_sets);
+
+	qpic_t *pic;
+	pic = cmemalloc (dctx->pic_memsuper,
+					 field_offset (qpic_t, data[sizeof (picdata_t)]));
+	pic->width = p->width;
+	pic->height = p->height;
+	__auto_type pd = (picdata_t *) pic->data;
+	pd->subpic = 0;
+	pd->vert_index = make_static_quad (p->width, p->height, pic, ctx);
+	pd->descid = fontid;
+
+	free (p);
+	return pic;
+}
+
 qpic_t *
 Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 {
-	qpic_t     *p;
-	qpic_t     *pic;
 	cachepic_t *cpic;
 	drawctx_t  *dctx = ctx->draw_context;
 
 	if ((cpic = Hash_Find (dctx->pic_cache, path))) {
 		return cpic->pic;
 	}
-	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
-		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
-		return 0;
-	}
-
-	pic = pic_data (path, p->width, p->height, p->data, ctx);
-	free (p);
+	qpic_t     *pic = load_lmp (path, ctx);;
 	cpic = new_cachepic (dctx, path, pic);
 	Hash_Add (dctx->pic_cache, cpic);
 	return pic;
@@ -595,12 +696,11 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	QFV_DestroyResource (device, &dctx->draw_resource[0]);
 	QFV_DestroyResource (device, &dctx->draw_resource[1]);
-	// the first two "fonts" are reserved for the dynamic and core quad data
-	// sets and thus does not have its own resources (they are created
-	// separately)
-	for (size_t i = 2; i < dctx->fonts.size; i++) {
-		QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);
-		free (dctx->fonts.a[i].resource);
+	for (size_t i = 0; i < dctx->fonts.size; i++) {
+		if (dctx->fonts.a[i].resource) {
+			QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);
+			free (dctx->fonts.a[i].resource);
+		}
 	}
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->quad_pipeline, 0);
@@ -1077,7 +1177,7 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 
 	static byte color[4] = { 255, 255, 255, 255};
 	__auto_type pd = (picdata_t *) pic->data;
-	draw_quad (x, y, 1, pd->vert_index, color, frame);
+	draw_quad (x, y, pd->descid, pd->vert_index, color, frame);
 }
 
 void
@@ -1088,7 +1188,7 @@ Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 
 	static byte color[4] = { 255, 255, 255, 255};
 	__auto_type pd = (picdata_t *) pic->data;
-	draw_quad (x, y, 1, pd->vert_index, color, frame);
+	draw_quad (x, y, pd->descid, pd->vert_index, color, frame);
 }
 
 void
