@@ -38,7 +38,7 @@ QuakeForge includes several tools for working with Quake data:
   files.
 - qfcc is QuakeForge's version of qcc, but is significantly more
   advanced, with support for standard C syntax, including most C types,
-  as well as Objective-C object oriented programming (Ruamoko). Mmost of
+  as well as Objective-C object oriented programming (Ruamoko). Most of
   the advanced features require the QuakeForge engine, but qfcc can
   produce progs files compatible with the original Quake engine with
   limited support for some of the advanced featuers (C syntax, reduced
