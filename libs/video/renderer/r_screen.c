@@ -183,7 +183,6 @@ SCR_CalcRefdef (void)
 static void
 render_scene (void)
 {
-	r_framecount++;
 	EntQueue_Clear (r_ent_queue);
 	r_funcs->render_view ();
 	r_funcs->draw_particles (&r_psystem);
@@ -280,6 +279,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
 					  r_face_visframes);
 	}
+	r_framecount++;
 	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();
