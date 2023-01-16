@@ -51,7 +51,6 @@ typedef struct console_data_s {
 	int         ormask;
 	void      (*quit) (void);
 	struct cbuf_s *cbuf;
-	struct view_s *screen_view;
 	struct view_s *status_view;
 	float       lines;
 	int       (*exec_line)(void *data, const char *line);

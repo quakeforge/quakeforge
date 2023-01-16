@@ -164,15 +164,45 @@ static SCR_Func *scr_funcs[] = {
 	scr_funcs_intermission,
 };
 
+static int cl_scale;
+static int cl_xlen;
+static int cl_ylen;
+
+static void
+cl_set_size (void)
+{
+	int        xlen = cl_xlen / cl_scale;
+	int        ylen = cl_ylen / cl_scale;
+	printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
+	View_SetLen (cl_screen_view, xlen, ylen);
+	View_UpdateHierarchy (cl_screen_view);
+}
+
+static void
+cl_scale_listener (void *data, const cvar_t *cvar)
+{
+	cl_scale = *(int *) cvar->value.value;
+	cl_set_size ();
+}
+
+static void
+cl_vidsize_listener (void *data, const viddef_t *vdef)
+{
+	cl_xlen = vdef->width;
+	cl_ylen = vdef->height;
+	cl_set_size ();
+}
+
 void
 CL_Init_Screen (void)
 {
 	qpic_t     *pic;
 
 	HUD_Init ();
+	cl_xlen = viddef.width;
+	cl_ylen = viddef.height;
 
 	cl_screen_view = View_New (hud_viewsys, nullview);
-	con_module->data->console->screen_view = &cl_screen_view;
 
 	View_SetPos (cl_screen_view, 0, 0);
 	View_SetLen (cl_screen_view, viddef.width, viddef.height);
@@ -240,6 +270,11 @@ CL_Init_Screen (void)
 	View_SetGravity (pause_view, grav_center);
 	Ent_SetComponent (pause_view.id, hud_cachepic, pause_view.reg, &name);
 	View_SetVisible (pause_view, 0);
+
+	cvar_t     *con_scale = Cvar_FindVar ("con_scale");
+	Cvar_AddListener (con_scale, cl_scale_listener, 0);
+	cl_scale_listener (0, con_scale);
+	VID_OnVidResize_AddListener (cl_vidsize_listener, 0);
 }
 
 void

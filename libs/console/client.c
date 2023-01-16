@@ -830,17 +830,9 @@ con_set_size (void)
 	if (xlen > 0 && ylen > 0) {
 		View_SetLen (screen_view, xlen, ylen);
 		View_UpdateHierarchy (screen_view);
-		if (con_data.screen_view) {
-			View_SetLen (*con_data.screen_view, xlen, ylen);
-			View_UpdateHierarchy (*con_data.screen_view);
-		}
 	}
 }
 
-// The console view is not a child of the client's screen view, so it won't
-// get resized automatically when the screen changes size. However, since the
-// console has to process input events anyway, handling ie_app_window is a
-// reasonable alternative.
 static void
 con_app_window (const IE_event_t *event)
 {
