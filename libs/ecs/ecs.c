@@ -126,6 +126,26 @@ ecs_swap (void *_a, void *_b, void *arg)
 }
 
 VISIBLE void
+ECS_SortComponentPoolRange (ecs_registry_t *registry, uint32_t component,
+						    ecs_range_t range, __compar_d_fn_t cmp, void *arg)
+{
+	if (component >= registry->components.size) {
+		Sys_Error ("ECS_SortComponentPoolRange: invalid component: %u",
+				   component);
+	}
+	ecs_pool_t *pool = &registry->comp_pools[component];
+	if (!pool->count || range.end <= range.start) {
+		return;
+	}
+	uint32_t    count = range.end - range.start;
+	uint32_t   *start = pool->dense + range.start;
+	__auto_type comp = &registry->components.a[component];
+	ecs_sort_t sortctx = { .cmp = cmp, .arg = arg, .pool = pool, .comp = comp };
+	heapsort_s (start, count, sizeof (uint32_t),
+				ecs_compare, ecs_swap, &sortctx);
+}
+
+VISIBLE void
 ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 					   __compar_d_fn_t cmp, void *arg)
 {
@@ -133,13 +153,8 @@ ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 		Sys_Error ("ECS_SortComponentPool: invalid component: %u", component);
 	}
 	ecs_pool_t *pool = &registry->comp_pools[component];
-	if (!pool->count) {
-		return;
-	}
-	__auto_type comp = &registry->components.a[component];
-	ecs_sort_t sortctx = { .cmp = cmp, .arg = arg, .pool = pool, .comp = comp };
-	heapsort_s (pool->dense, pool->count, sizeof (uint32_t),
-				ecs_compare, ecs_swap, &sortctx);
+	ecs_range_t range = { .start = 0, .end = pool->count };
+	ECS_SortComponentPoolRange (registry, component, range, cmp, arg);
 }
 
 VISIBLE uint32_t

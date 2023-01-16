@@ -117,6 +117,9 @@ typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 void ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 							__compar_d_fn_t cmp, void *arg);
+void ECS_SortComponentPoolRange (ecs_registry_t *registry, uint32_t component,
+								 ecs_range_t range,
+								 __compar_d_fn_t cmp, void *arg);
 
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);

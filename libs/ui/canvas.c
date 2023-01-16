@@ -312,10 +312,10 @@ Canvas_Draw (canvas_system_t canvas_sys)
 	};
 
 	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *pool = &canvas_sys.reg->comp_pools[comp];
-	uint32_t    count = pool->count;
-	//uint32_t   *entities = pool->dense;
-	__auto_type canvases = (canvas_t *) pool->data;
+	ecs_pool_t *canvas_pool = &canvas_sys.reg->comp_pools[comp];
+	uint32_t    count = canvas_pool->count;
+	//uint32_t   *entities = canvas_pool->dense;
+	__auto_type canvases = (canvas_t *) canvas_pool->data;
 
 	while (count-- > 0) {
 		canvas_t   *canvas = canvases++;
@@ -346,4 +346,33 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 	View_AddToEntity (ent,
 					  (ecs_system_t) { canvas_sys.reg, canvas_sys.view_base },
 					  nullview);
+}
+
+static int
+canvas_href_cmp (const void *_a, const void *_b, void *arg)
+{
+	uint32_t    enta = *(const uint32_t *)_a;
+	uint32_t    entb = *(const uint32_t *)_b;
+	canvas_system_t *canvas_sys = arg;
+	ecs_registry_t *reg = canvas_sys->reg;
+	uint32_t    href = canvas_sys->view_base + view_href;
+	hierref_t  *ref_a = Ent_GetComponent (enta, href, reg);
+	hierref_t  *ref_b = Ent_GetComponent (entb, href, reg);
+	if (ref_a->hierarchy == ref_b->hierarchy) {
+		return ref_a->index - ref_b->index;
+	}
+	ptrdiff_t  diff = ref_a->hierarchy - ref_b->hierarchy;
+	return diff > 0 ? 1 : diff < 0 ? -1 : 0;
+}
+
+void
+Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
+						  uint32_t component)
+{
+	canvas_t   *canvas = Ent_GetComponent (ent, canvas_sys.base + canvas_canvas,
+										   canvas_sys.reg);
+	uint32_t    rid = canvas->range[component - canvas_sys.base];
+	ecs_range_t range = ECS_GetSubpoolRange (canvas_sys.reg, component, rid);
+	ECS_SortComponentPoolRange (canvas_sys.reg, component, range,
+								canvas_href_cmp, &canvas_sys);
 }

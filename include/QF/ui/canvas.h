@@ -78,5 +78,8 @@ typedef struct canvas_subpic_s {
 
 void Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent);
 void Canvas_Draw (canvas_system_t canvas_sys);
+void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
+							   uint32_t component);
+
 
 #endif//__QF_scene_canvas_h
