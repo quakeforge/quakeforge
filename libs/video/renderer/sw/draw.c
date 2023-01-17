@@ -526,38 +526,13 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	dest = d_viewbuffer + y * d_rowbytes + x;
 
-	if (pic->width & 7) {			// general
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u++)
-				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-					dest[u] = tbyte;
+	for (v = 0; v < pic->height; v++) {
+		for (u = 0; u < pic->width; u++)
+			if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+				dest[u] = tbyte;
 
-			dest += d_rowbytes;
-			source += pic->width;
-		}
-	} else {						// unwound
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u += 8) {
-				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-					dest[u] = tbyte;
-				if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
-					dest[u + 1] = tbyte;
-				if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
-					dest[u + 2] = tbyte;
-				if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
-					dest[u + 3] = tbyte;
-				if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
-					dest[u + 4] = tbyte;
-				if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
-					dest[u + 5] = tbyte;
-				if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
-					dest[u + 6] = tbyte;
-				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
-					dest[u + 7] = tbyte;
-			}
-			dest += d_rowbytes;
-			source += pic->width;
-		}
+		dest += d_rowbytes;
+		source += pic->width;
 	}
 }
 
@@ -660,14 +635,8 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		else {
 			f = 0;
 			fstep = 320 * 0x10000 / vid.width;
-			for (unsigned x = 0; x < vid.width; x += 4) {
+			for (unsigned x = 0; x < vid.width; x++) {
 				dest[x] = src[f >> 16];
-				f += fstep;
-				dest[x + 1] = src[f >> 16];
-				f += fstep;
-				dest[x + 2] = src[f >> 16];
-				f += fstep;
-				dest[x + 3] = src[f >> 16];
 				f += fstep;
 			}
 		}
