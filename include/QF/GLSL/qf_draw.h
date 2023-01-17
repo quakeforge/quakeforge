@@ -56,6 +56,7 @@ struct qpic_s *glsl_Draw_MakePic (int width, int height, const byte *data);
 void glsl_Draw_DestroyPic (struct qpic_s *pic);
 struct qpic_s *glsl_Draw_PicFromWad (const char *name);
 void glsl_Draw_Pic (int x, int y, struct qpic_s *pic);
+void glsl_Draw_FitPic (int x, int y, int width, int height, struct qpic_s *pic);
 void glsl_Draw_Picf (float x, float y, struct qpic_s *pic);
 void glsl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);

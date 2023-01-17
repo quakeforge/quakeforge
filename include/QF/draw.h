@@ -245,6 +245,15 @@ qpic_t *Draw_PicFromWad (const char *name);
 */
 void Draw_Pic (int x, int y, qpic_t *pic);
 
+/** Draw a qpic to the screen, scaled to fit the given width and height
+	\param x	horizontal location of the upper left corner of the qpic
+	\param y	vertical location of the upper left corner of the qpic
+	\param width horizontal size of the output pic
+	\param height vertical size of the output pic
+	\param pic	qpic to draw
+*/
+void Draw_FitPic (int x, int y, int width, int height, qpic_t *pic);
+
 /** Draw a qpic to the screen
 	\param x	horizontal location of the upper left corner of the qpic
 	\param y	vertical location of the upper left corner of the qpic

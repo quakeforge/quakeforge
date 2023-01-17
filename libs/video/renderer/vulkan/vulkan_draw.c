@@ -1186,6 +1186,12 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 }
 
 void
+Vulkan_Draw_FitPic (int x, int y, int widht, int height, qpic_t *pic,
+					vulkan_ctx_t *ctx)
+{
+}
+
+void
 Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;

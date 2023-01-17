@@ -49,6 +49,7 @@ canvas_rangeid(update)
 canvas_rangeid(updateonce)
 canvas_rangeid(tile)
 canvas_rangeid(pic)
+canvas_rangeid(fitpic)
 canvas_rangeid(subpic)
 canvas_rangeid(cachepic)
 canvas_rangeid(fill)
@@ -75,13 +76,18 @@ const component_t canvas_components[canvas_comp_count] = {
 	},
 	[canvas_tile] = {
 		.size = sizeof (byte),
-		.name = "pic",
+		.name = "tile",
 		.rangeid = canvas_tile_rangeid,
 	},
 	[canvas_pic] = {
 		.size = sizeof (qpic_t *),
 		.name = "pic",
 		.rangeid = canvas_pic_rangeid,
+	},
+	[canvas_fitpic] = {
+		.size = sizeof (qpic_t *),
+		.name = "fitpic",
+		.rangeid = canvas_fitpic_rangeid,
 	},
 	[canvas_subpic] = {
 		.size = sizeof (canvas_subpic_t),
@@ -172,6 +178,25 @@ draw_pic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			r_funcs->Draw_Pic (pos.x, pos.y, *pic);
+		}
+		pic++;
+	}
+}
+
+static void
+draw_fitpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
+				   ecs_range_t range)
+{
+	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
+	uint32_t    count = range.end - range.start;
+	uint32_t   *ent = pool->dense;
+	__auto_type pic = (qpic_t **) pool->data + range.start;
+	while (count-- > 0) {
+		view_t      view = View_FromEntity (viewsys, *ent++);
+		if (View_GetVisible (view)) {
+			view_pos_t  pos = View_GetAbs (view);
+			view_pos_t  len = View_GetLen (view);
+			r_funcs->Draw_FitPic (pos.x, pos.y, len.x, len.y, *pic);
 		}
 		pic++;
 	}
@@ -303,6 +328,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		[canvas_updateonce] = draw_updateonce,
 		[canvas_tile]       = draw_tile_views,
 		[canvas_pic]        = draw_pic_views,
+		[canvas_fitpic]     = draw_fitpic_views,
 		[canvas_subpic]     = draw_subpic_views,
 		[canvas_cachepic]   = draw_cachepic_views,
 		[canvas_fill]       = draw_fill_views,

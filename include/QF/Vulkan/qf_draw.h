@@ -76,6 +76,8 @@ struct qpic_s *Vulkan_Draw_PicFromWad (const char *name,
 									   struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Pic (int x, int y, struct qpic_s *pic,
 					  struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_FitPic (int x, int y, int width, int height,
+						 struct qpic_s *pic, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Picf (float x, float y, struct qpic_s *pic,
 					   struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,

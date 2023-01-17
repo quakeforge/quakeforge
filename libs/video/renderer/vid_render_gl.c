@@ -522,6 +522,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	.Draw_DestroyPic        = gl_Draw_DestroyPic,
 	.Draw_PicFromWad        = gl_Draw_PicFromWad,
 	.Draw_Pic               = gl_Draw_Pic,
+	.Draw_FitPic            = gl_Draw_FitPic,
 	.Draw_Picf              = gl_Draw_Picf,
 	.Draw_SubPic            = gl_Draw_SubPic,
 	.Draw_AddFont           = gl_Draw_AddFont,

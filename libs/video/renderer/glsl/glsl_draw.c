@@ -662,6 +662,13 @@ glsl_Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 void
+glsl_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, width, height, pic, 0, 0, pic->width, pic->height, color);
+}
+
+void
 glsl_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};

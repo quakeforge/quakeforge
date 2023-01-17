@@ -479,6 +479,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	.Draw_DestroyPic        = Draw_DestroyPic,
 	.Draw_PicFromWad        = Draw_PicFromWad,
 	.Draw_Pic               = Draw_Pic,
+	.Draw_FitPic            = Draw_FitPic,
 	.Draw_Picf              = Draw_Picf,
 	.Draw_SubPic            = Draw_SubPic,
 	.Draw_AddFont           = Draw_AddFont,

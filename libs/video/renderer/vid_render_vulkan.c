@@ -273,6 +273,12 @@ vulkan_Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 static void
+vulkan_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	Vulkan_Draw_FitPic (x, y, width, height, pic, vulkan_ctx);
+}
+
+static void
 vulkan_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	Vulkan_Draw_Picf (x, y, pic, vulkan_ctx);
@@ -789,6 +795,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.Draw_DestroyPic        = vulkan_Draw_DestroyPic,
 	.Draw_PicFromWad        = vulkan_Draw_PicFromWad,
 	.Draw_Pic               = vulkan_Draw_Pic,
+	.Draw_FitPic            = vulkan_Draw_FitPic,
 	.Draw_Picf              = vulkan_Draw_Picf,
 	.Draw_SubPic            = vulkan_Draw_SubPic,
 	.Draw_AddFont           = vulkan_Draw_AddFont,

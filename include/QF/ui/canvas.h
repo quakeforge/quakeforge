@@ -38,6 +38,7 @@ enum {
 	canvas_updateonce,
 	canvas_tile,
 	canvas_pic,
+	canvas_fitpic,	// pic is scaled to fit the view
 	canvas_subpic,
 	canvas_cachepic,
 	canvas_fill,

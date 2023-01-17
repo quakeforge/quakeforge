@@ -762,6 +762,26 @@ gl_Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 void
+gl_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	glpic_t    *gl;
+
+	gl = (glpic_t *) pic->data;
+
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	qfglBegin (GL_QUADS);
+	qfglTexCoord2f (0, 0);
+	qfglVertex2f (x, y);
+	qfglTexCoord2f (1, 0);
+	qfglVertex2f (x + width, y);
+	qfglTexCoord2f (1, 1);
+	qfglVertex2f (x + width, y + height);
+	qfglTexCoord2f (0, 1);
+	qfglVertex2f (x, y + height);
+	qfglEnd ();
+}
+
+void
 gl_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	glpic_t    *gl;

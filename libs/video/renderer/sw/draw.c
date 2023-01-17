@@ -537,6 +537,58 @@ Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 void
+Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	int         v_width = vid.width;
+	int         v_height = vid.height;
+	if (x > v_width || y > v_width || x + width <= 0 || y + height <= 0) {
+		return;
+	}
+	if (width == pic->width && height == pic->height) {
+		Draw_Pic (x, y, pic);
+		return;
+	}
+	int         sstep = pic->width * 0x10000 / width;
+	int         tstep = pic->height * 0x10000 / height;
+	int         sx = 0, ex = width;
+	int         sy = 0, ey = height;
+
+	if (x < 0) {
+		sx -= x;
+		ex += x;
+	}
+	if (y < 0) {
+		sy -= y;
+		ey += y;
+	}
+	if (x + width > v_width) {
+		ex -= x + width - v_width;
+	}
+	if (y + height > v_height) {
+		ey -= y + height - v_height;
+	}
+	x += sx;
+	y += sy;
+
+	byte       *src, *dst;
+
+	// draw the pic
+	dst = d_viewbuffer + y * d_rowbytes + x;
+
+	for (int y = sy; y < sy + ey; y++, dst += d_rowbytes) {
+		src = pic->data + ((y * tstep) >> 16) * pic->width;
+		if (width == pic->width)
+			memcpy (dst, src, width);
+		else {
+			int         f = sx * sstep;
+			for (int x = 0; x < ex; x++, f += sstep) {
+				dst[x] = src[f >> 16];
+			}
+		}
+	}
+}
+
+void
 Draw_Picf (float x, float y, qpic_t *pic)
 {
 	Draw_Pic (x, y, pic);

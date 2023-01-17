@@ -466,6 +466,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.Draw_DestroyPic        = glsl_Draw_DestroyPic,
 	.Draw_PicFromWad        = glsl_Draw_PicFromWad,
 	.Draw_Pic               = glsl_Draw_Pic,
+	.Draw_FitPic            = glsl_Draw_FitPic,
 	.Draw_Picf              = glsl_Draw_Picf,
 	.Draw_SubPic            = glsl_Draw_SubPic,
 	.Draw_AddFont           = glsl_Draw_AddFont,

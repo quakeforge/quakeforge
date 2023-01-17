@@ -108,6 +108,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_DestroyPic) (qpic_t *pic);
 	qpic_t *(*Draw_PicFromWad) (const char *name);
 	void (*Draw_Pic) (int x, int y, qpic_t *pic);
+	void (*Draw_FitPic) (int x, int y, int width, int height, qpic_t *pic);
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 	int (*Draw_AddFont) (struct font_s *font);
