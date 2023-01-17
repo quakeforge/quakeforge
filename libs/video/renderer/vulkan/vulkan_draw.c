@@ -129,13 +129,26 @@ typedef struct cachepic_s {
 	qpic_t     *pic;
 } cachepic_t;
 
+// core pic atlas + static verts
+#define CORE_DESC 0
+// FIXME must match pool size in pl_quake_def.plist descriptorPools.quad_pool
+// should do some reflection
+#define MAX_DESCIPTORS 64
+
+typedef struct descpool_s {
+	VkDescriptorSet sets[MAX_DESCIPTORS];
+	VkDescriptorPool pool;
+	struct drawctx_s *dctx;
+	uint32_t    users[MAX_DESCIPTORS];// picdata_t.descid
+	int         in_use;
+} descpool_t;
+
 typedef struct drawframe_s {
 	size_t      instance_offset;
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
 	VkBuffer    dvert_buffer;
 	VkBufferView dvert_view;
-	VkDescriptorSet dyn_quad_set;
 
 	uint32_t    dvertex_index;
 	uint32_t    dvertex_max;
@@ -143,6 +156,7 @@ typedef struct drawframe_s {
 	quadqueue_t quad_insts;
 	vertqueue_t line_verts;
 	qfv_cmdbufferset_t cmdSet;
+	descpool_t  dyn_descs;
 } drawframe_t;
 
 typedef struct drawframeset_s
@@ -216,6 +230,46 @@ typedef struct drawctx_s {
 #define BYTES_PER_LINE (VERTS_PER_LINE * sizeof (linevert_t))
 
 #define DVERTS_PER_FRAME (LINES_OFFSET + MAX_LINES*VERTS_PER_LINE)
+
+static int
+get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
+					vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type pd = (picdata_t *) pic->data;
+	uint32_t    id = pd->descid;
+	for (int i = 0; i < pool->in_use; i++) {
+		if (pool->users[i] == id) {
+			return ~i;
+		}
+	}
+	if (pool->in_use >= MAX_DESCIPTORS) {
+		Sys_Error ("get_dyn_descriptor: out of dynamic desciptors");
+	}
+	int         descid = pool->in_use++;
+	pool->users[descid] = id;
+	if (!pool->sets[descid]) {
+		__auto_type layout = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+		layout->a[0] = pool->dctx->quad_data_set_layout;
+		__auto_type set = QFV_AllocateDescriptorSet (device, pool->pool, layout);
+		pool->sets[descid] = set->a[0];;
+		free (set);//FIXME allocation
+	}
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  pool->sets[descid], 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+		  0, 0, &buffer_view },
+	};
+	VkCopyDescriptorSet copy[] = {
+		{ VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET, 0,
+		  pool->dctx->fonts.a[id].set, 0, 0,
+		  pool->sets[descid], 0, 0, 1 },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 1, copy);
+	return ~descid;
+}
 
 static void
 generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
@@ -519,7 +573,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	pd->vert_index = make_static_quad (w, h, pic, ctx);
-	pd->descid = 1;
+	pd->descid = CORE_DESC;
 
 	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
 	size_t size = w * h;
@@ -855,18 +909,10 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 1; i < sets->size; i++) {
 		__auto_type frame = &dctx->frames.a[i - 1];
-		frame->dyn_quad_set = sets->a[i];
-		VkWriteDescriptorSet write[] = {
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->dyn_quad_set, 0, 0, 1,
-			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			  &imageInfo, 0, 0 },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->dyn_quad_set, 1, 0, 1,
-			  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-			  0, 0, &frame->dvert_view },
-		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+		frame->dyn_descs = (descpool_t) {};
+		//FIXME returns same pool every time
+		frame->dyn_descs.pool = Vulkan_CreateDescriptorPool (ctx, "quad_pool");
+		frame->dyn_descs.dctx = dctx;
 	}
 	dctx->core_quad_set = sets->a[0];
 	free (sets);
@@ -883,7 +929,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 
-	DARRAY_APPEND (&dctx->fonts, (drawfont_t) {});
 	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_quad_set });
 
 	for (size_t i = 0; i < frames; i++) {
@@ -968,7 +1013,7 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte        color[4] = {255, 255, 255, 255};
-	draw_quad (x, y, 1, dctx->conchar_inds[chr], color, frame);
+	draw_quad (x, y, CORE_DESC, dctx->conchar_inds[chr], color, frame);
 }
 
 void
@@ -1074,7 +1119,7 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte       *color = &vid.palette32[bound (0, crosshaircolor, 255) * 4];
-	draw_quad (x, y, 1, dctx->crosshair_inds[ch - 1], color, frame);
+	draw_quad (x, y, CORE_DESC, dctx->crosshair_inds[ch - 1], color, frame);
 }
 
 static void (*crosshair_func[]) (int ch, int x, int y, vulkan_ctx_t *ctx) = {
@@ -1212,7 +1257,9 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 
 	uint32_t    vind = make_dyn_quad (srcx, srcy, width, height, pic, ctx);
 	static byte color[4] = { 255, 255, 255, 255};
-	draw_quad (x, y, 0, vind, color, frame);
+	int         descid = get_dyn_descriptor (&frame->dyn_descs, pic,
+											 frame->dvert_view, ctx);
+	draw_quad (x, y, descid, vind, color, frame);
 }
 
 void
@@ -1248,6 +1295,8 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 	vrect_t    *sub = VRect_New (0, 0, 0, 0);  // filled in later
 	qpic_t     *pic = dctx->backtile_pic;
 	int         sub_sx, sub_sy, sub_ex, sub_ey;
+	int         descid = get_dyn_descriptor (&frame->dyn_descs, pic,
+											 frame->dvert_view, ctx);
 
 	sub_sx = x / pic->width;
 	sub_sy = y / pic->height;
@@ -1268,7 +1317,7 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 			int         sw = sub->width;
 			int         sh = sub->height;
 			uint32_t    vind = make_dyn_quad (sx, sy, sw, sh, pic, ctx);
-			draw_quad (sub->x, sub->y, 0, vind, color, frame);
+			draw_quad (sub->x, sub->y, descid, vind, color, frame);
 		}
 	}
 }
@@ -1280,7 +1329,8 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte        color[4] =  {VectorExpand (vid.palette + c * 3), 255 };
-	draw_slice (x, y, w - 1, h - 1, 1, dctx->white_pic_ind, color, frame);
+	draw_slice (x, y, w - 1, h - 1,
+				CORE_DESC, dctx->white_pic_ind, color, frame);
 }
 
 void
@@ -1328,7 +1378,7 @@ draw_blendscreen (const byte *color, vulkan_ctx_t *ctx)
 	float       s = 1.0 / ctx->twod_scale;
 
 	draw_slice (0, 0, vid.width * s - 1, vid.height * s - 1,
-				1, dctx->white_pic_ind, color, frame);
+				CORE_DESC, dctx->white_pic_ind, color, frame);
 }
 
 void
@@ -1413,7 +1463,8 @@ draw_quads (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 		inst_count &= 0xffffff;
 		VkDescriptorSet set[2] = {
 			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-			dctx->fonts.a[fontid].set,
+			fontid < 0 ? dframe->dyn_descs.sets[~fontid]
+					   : dctx->fonts.a[fontid].set,
 		};
 		VkPipelineLayout layout = dctx->quad_layout;
 		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1462,8 +1513,6 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		return;
 	}
 
-	dctx->fonts.a[0].set = dframe->dyn_quad_set;
-
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
@@ -1501,6 +1550,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	dframe->quad_insts.count = 0;
 	dframe->line_verts.count = 0;
 	dframe->dvertex_index = 0;
+	dframe->dyn_descs.in_use = 0;
 }
 
 void
