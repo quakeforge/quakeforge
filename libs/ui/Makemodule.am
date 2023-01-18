@@ -7,12 +7,16 @@ lib_LTLIBRARIES += \
 gui_deps = \
 	libs/ui/libQFui.la
 
+gui_libadd = \
+	$(FREETYPE_LIBS) \
+	$(HARFBUZZ_LIBS)
+
 ui_deps = \
 	libs/ecs/libQFecs.la \
 	libs/util/libQFutil.la
 
 libs_ui_libQFgui_la_LDFLAGS=		$(lib_ldflags)
-libs_ui_libQFgui_la_LIBADD=			$(gui_deps) $(ui_deps)
+libs_ui_libQFgui_la_LIBADD=			$(gui_deps) $(ui_deps) $(gui_libadd)
 libs_ui_libQFgui_la_DEPENDENCIES=	$(gui_deps) $(ui_deps)
 libs_ui_libQFgui_la_SOURCES= \
 	libs/ui/canvas.c \
