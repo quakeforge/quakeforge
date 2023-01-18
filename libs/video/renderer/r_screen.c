@@ -219,6 +219,56 @@ render_side (int side)
 }
 
 void
+SCR_UpdateScreen_legacy (transform_t camera, double realtime,
+						 SCR_Func *scr_funcs)
+{
+	if (scr_fisheye && !fisheye_cube_map) {
+		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
+	}
+	if (r_dowarp && !warp_buffer) {
+		warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
+													r_data->vid->height);
+	}
+
+	r_funcs->begin_frame ();
+	if (r_dowarp) {
+		r_funcs->bind_framebuffer (warp_buffer);
+	}
+	if (scr_fisheye && fisheye_cube_map) {
+		int         side = fisheye_cube_map->width;
+		vrect_t     feye = { 0, 0, side, side };
+		r_funcs->set_viewport (&feye);
+		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
+		switch (scr_fviews) {
+			case 6: render_side (BOX_BEHIND);
+			case 5: render_side (BOX_BOTTOM);
+			case 4: render_side (BOX_TOP);
+			case 3: render_side (BOX_LEFT);
+			case 2: render_side (BOX_RIGHT);
+			default:render_side (BOX_FRONT);
+		}
+		r_funcs->bind_framebuffer (0);
+		r_funcs->set_viewport (&r_refdef.vrect);
+		r_funcs->post_process (fisheye_cube_map);
+	} else {
+		r_funcs->set_viewport (&r_refdef.vrect);
+		render_scene ();
+		if (r_dowarp) {
+			r_funcs->bind_framebuffer (0);
+			r_funcs->post_process (warp_buffer);
+		}
+	}
+	r_funcs->set_2d (0);
+	//view_draw (r_data->scr_view);
+	r_funcs->set_2d (1);
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	r_funcs->end_frame ();
+}
+
+void
 SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
 	if (scr_skipupdate || !scr_initialized) {
@@ -227,10 +277,6 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 
 	if (r_timegraph || r_speeds || r_dspeeds) {
 		r_time1 = Sys_DoubleTime ();
-	}
-
-	if (scr_fisheye && !fisheye_cube_map) {
-		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
 
 	refdef_t   *refdef = r_data->refdef;
@@ -272,52 +318,12 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		if (r_waterwarp) {
 			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		if (r_dowarp && !warp_buffer) {
-			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
-														r_data->vid->height);
-		}
 		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
 					  r_face_visframes);
 	}
 	r_framecount++;
 	R_PushDlights (vec3_origin);
-
-	r_funcs->begin_frame ();
-	if (r_dowarp) {
-		r_funcs->bind_framebuffer (warp_buffer);
-	}
-	if (scr_fisheye && fisheye_cube_map) {
-		int         side = fisheye_cube_map->width;
-		vrect_t     feye = { 0, 0, side, side };
-		r_funcs->set_viewport (&feye);
-		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
-		switch (scr_fviews) {
-			case 6: render_side (BOX_BEHIND);
-			case 5: render_side (BOX_BOTTOM);
-			case 4: render_side (BOX_TOP);
-			case 3: render_side (BOX_LEFT);
-			case 2: render_side (BOX_RIGHT);
-			default:render_side (BOX_FRONT);
-		}
-		r_funcs->bind_framebuffer (0);
-		r_funcs->set_viewport (&r_refdef.vrect);
-		r_funcs->post_process (fisheye_cube_map);
-	} else {
-		r_funcs->set_viewport (&r_refdef.vrect);
-		render_scene ();
-		if (r_dowarp) {
-			r_funcs->bind_framebuffer (0);
-			r_funcs->post_process (warp_buffer);
-		}
-	}
-	r_funcs->set_2d (0);
-	//view_draw (r_data->scr_view);
-	r_funcs->set_2d (1);
-	while (*scr_funcs) {
-		(*scr_funcs) ();
-		scr_funcs++;
-	}
-	r_funcs->end_frame ();
+	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
 }
 
 static void

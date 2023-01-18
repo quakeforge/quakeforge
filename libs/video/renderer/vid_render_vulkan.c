@@ -774,6 +774,8 @@ vulkan_vid_render_shutdown (void)
 vid_render_funcs_t vulkan_vid_render_funcs = {
 	.init = vulkan_vid_render_init,
 
+	.UpdateScreen = SCR_UpdateScreen_legacy,
+
 	.Draw_CharBuffer        = vulkan_Draw_CharBuffer,
 	.Draw_SetScale          = vulkan_Draw_SetScale,
 	.Draw_Character         = vulkan_Draw_Character,

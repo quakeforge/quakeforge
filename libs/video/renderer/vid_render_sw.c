@@ -459,6 +459,8 @@ sw_capture_screen (capfunc_t callback, void *data)
 vid_render_funcs_t sw_vid_render_funcs = {
 	.init = sw_vid_render_init,
 
+	.UpdateScreen = SCR_UpdateScreen_legacy,
+
 	.Draw_CharBuffer        = sw_Draw_CharBuffer,
 	.Draw_Character         = Draw_Character,
 	.Draw_String            = Draw_String,

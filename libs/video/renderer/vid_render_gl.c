@@ -501,6 +501,8 @@ gl_capture_screen (capfunc_t callback, void *data)
 vid_render_funcs_t gl_vid_render_funcs = {
 	.init = gl_vid_render_init,
 
+	.UpdateScreen = SCR_UpdateScreen_legacy,
+
 	.Draw_CharBuffer        = gl_Draw_CharBuffer,
 	.Draw_SetScale          = gl_Draw_SetScale,
 	.Draw_Character         = gl_Draw_Character,
