@@ -82,6 +82,7 @@ static QFV_Subpass subpass_map[] = {
 
 typedef struct pic_data_s {
 	uint32_t    vert_index;
+	uint32_t    slice_index;
 	uint32_t    descid;
 	subpic_t   *subpic;
 } picdata_t;
@@ -189,7 +190,6 @@ typedef struct drawctx_s {
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
-	int         white_pic_ind;
 	qpic_t     *backtile_pic;
 	// use two separate cmem blocks for pics and strings (cachepic names)
 	// to ensure the names are never in the same cacheline as a pic since the
@@ -245,7 +245,7 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 		}
 	}
 	if (pool->in_use >= MAX_DESCIPTORS) {
-		Sys_Error ("get_dyn_descriptor: out of dynamic desciptors");
+		Sys_Error ("get_dyn_descriptor: out of dynamic descriptors");
 	}
 	int         descid = pool->in_use++;
 	pool->users[descid] = id;
@@ -472,14 +472,22 @@ create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
 {
 	__auto_type pd = (picdata_t *) pic->data;
 
-	int         x = rect[0] + pd->subpic->rect->x;
-	int         y = rect[1] + pd->subpic->rect->y;
+	int         x = rect[0];
+	int         y = rect[1];
 	int         w = rect[2];
 	int         h = rect[3];
 	int         l = border[0];
 	int         t = border[1];
 	int         r = w - border[2];
 	int         b = h - border[3];
+
+	float       sx = 1.0 / pic->width;
+	float       sy = 1.0 / pic->height;
+	if (pd->subpic) {
+		x += pd->subpic->rect->x;
+		y += pd->subpic->rect->y;
+		sx = sy = pd->subpic->size;
+	}
 
 	vec4f_t     p[16] = {
 		{ 0, 0, 0, 0 }, { 0, t, 0, t }, { l, 0, l, 0 }, { l, t, l, t },
@@ -488,8 +496,7 @@ create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
 		{ r, b, r, b }, { r, h, r, h }, { w, b, w, b }, { w, h, w, h },
 	};
 
-	float       s = pd->subpic->size;
-	vec4f_t     size = { 1, 1, s, s };
+	vec4f_t     size = { 1, 1, sx, sy };
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_SLICE);
 	for (int i = 0; i < VERTS_PER_SLICE; i++) {
@@ -504,6 +511,15 @@ create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
 	QFV_PacketSubmit (packet);
 
 	return ind;
+}
+
+static uint32_t
+make_static_slice (vec4i_t rect, vec4i_t border, qpic_t *pic, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
+
+	return create_slice (rect, border, pic, &dctx->svertex_index, buffer, ctx);
 }
 
 static uint32_t
@@ -540,7 +556,7 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 	return ind;
 }
 
-static int
+static uint32_t
 make_static_quad (int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
@@ -573,6 +589,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	pd->vert_index = make_static_quad (w, h, pic, ctx);
+	pd->slice_index = ~0;
 	pd->descid = CORE_DESC;
 
 	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
@@ -718,6 +735,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = 0;
 	pd->vert_index = make_static_quad (p->width, p->height, pic, ctx);
+	pd->slice_index = ~0;
 	pd->descid = fontid;
 
 	free (p);
@@ -831,13 +849,12 @@ load_white_pic (vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	byte        white_block = 0xfe;
-	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
 
 	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
-	dctx->white_pic_ind = create_slice ((vec4i_t) {0, 0, 1, 1},
-										(vec4i_t) {0, 0, 0, 0},
-										dctx->white_pic,
-									    &dctx->svertex_index, buffer, ctx);
+	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	pd->slice_index = make_static_slice ((vec4i_t) {0, 0, 1, 1},
+										 (vec4i_t) {0, 0, 0, 0},
+										 dctx->white_pic, ctx);
 }
 
 void
@@ -1231,9 +1248,20 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Draw_FitPic (int x, int y, int widht, int height, qpic_t *pic,
+Vulkan_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic,
 					vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+	__auto_type pd = (picdata_t *) pic->data;
+	if (pd->slice_index == ~0u) {
+		vec4i_t     rect = (vec4i_t) {0, 0, pic->width, pic->height};
+		vec4i_t     border = (vec4i_t) {0, 0, 0, 0};
+		pd->slice_index = make_static_slice (rect, border, pic, ctx);
+	}
+	static byte color[4] = { 255, 255, 255, 255};
+	draw_slice (x, y, width - pic->width, height - pic->height,
+				pd->descid, pd->slice_index, color, frame);
 }
 
 void
@@ -1329,8 +1357,8 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte        color[4] =  {VectorExpand (vid.palette + c * 3), 255 };
-	draw_slice (x, y, w - 1, h - 1,
-				CORE_DESC, dctx->white_pic_ind, color, frame);
+	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	draw_slice (x, y, w - 1, h - 1, pd->descid, pd->slice_index, color, frame);
 }
 
 void
@@ -1377,8 +1405,9 @@ draw_blendscreen (const byte *color, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 	float       s = 1.0 / ctx->twod_scale;
 
+	__auto_type pd = (picdata_t *) dctx->white_pic->data;
 	draw_slice (0, 0, vid.width * s - 1, vid.height * s - 1,
-				CORE_DESC, dctx->white_pic_ind, color, frame);
+				pd->descid, pd->slice_index, color, frame);
 }
 
 void
