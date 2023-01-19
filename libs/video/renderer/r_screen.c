@@ -271,6 +271,8 @@ SCR_UpdateScreen_legacy (transform_t camera, double realtime,
 void
 SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
+	R_RunParticles (r_data->frametime);
+
 	if (scr_skipupdate || !scr_initialized) {
 		return;
 	}
@@ -308,7 +310,6 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 	}
 
-	R_RunParticles (r_data->frametime);
 	R_AnimateLight ();
 	if (scr_scene && scr_scene->worldmodel) {
 		scr_scene->viewleaf = 0;
