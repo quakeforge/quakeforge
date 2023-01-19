@@ -177,7 +177,9 @@ SCR_CalcRefdef (void)
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
-	r_funcs->bind_framebuffer (0);
+	if (r_funcs->bind_framebuffer) {
+		r_funcs->bind_framebuffer (0);
+	}
 }
 
 static void

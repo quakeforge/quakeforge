@@ -330,21 +330,6 @@ vulkan_render_view (void)
 }
 
 static void
-vulkan_draw_particles (struct psystem_s *psystem)
-{
-}
-
-static void
-vulkan_draw_transparent (void)
-{
-}
-
-static void
-vulkan_post_process (framebuffer_t *src)
-{
-}
-
-static void
 vulkan_set_2d (int scaled)
 {
 	//FIXME this should not be done every frame
@@ -493,40 +478,13 @@ vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
 	EntQueue_Clear (r_ent_queue);
 	vulkan_begin_frame ();
-	r_funcs->set_2d (1);
+	vulkan_set_2d (1);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;
 	}
 	vulkan_render_view ();
 	vulkan_end_frame ();
-}
-
-static framebuffer_t *
-vulkan_create_cube_map (int size)
-{
-	return 0;
-}
-
-static framebuffer_t *
-vulkan_create_frame_buffer (int width, int height)
-{
-	return 0;
-}
-
-static void
-vulkan_destroy_frame_buffer (framebuffer_t *framebuffer)
-{
-}
-
-static void
-vulkan_bind_framebuffer (framebuffer_t *framebuffer)
-{
-}
-
-static void
-vulkan_set_viewport (const vrect_t *view)
-{
 }
 
 static void
@@ -823,19 +781,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.R_LoadSkys       = vulkan_R_LoadSkys,
 	.R_NewScene       = vulkan_R_NewScene,
 	.R_LineGraph      = vulkan_R_LineGraph,
-	.begin_frame      = vulkan_begin_frame,
-	.render_view      = vulkan_render_view,
-	.draw_particles   = vulkan_draw_particles,
-	.draw_transparent = vulkan_draw_transparent,
-	.post_process     = vulkan_post_process,
-	.set_2d           = vulkan_set_2d,
-	.end_frame        = vulkan_end_frame,
 
-	.create_cube_map      = vulkan_create_cube_map,
-	.create_frame_buffer  = vulkan_create_frame_buffer,
-	.destroy_frame_buffer = vulkan_destroy_frame_buffer,
-	.bind_framebuffer     = vulkan_bind_framebuffer,
-	.set_viewport         = vulkan_set_viewport,
 	.set_fov              = vulkan_set_fov,
 
 	.capture_screen = vulkan_capture_screen,
