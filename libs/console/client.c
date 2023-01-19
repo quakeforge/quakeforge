@@ -678,9 +678,7 @@ draw_console (view_t view)
 			alpha = 255 * con_alpha * len.y / y;
 			alpha = min (alpha, 255);
 		}
-		//r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
-		qpic_t *pic = r_funcs->Draw_CachePic ("gfx/conback.lmp", false);
-		r_funcs->Draw_FitPic (0, con_data.lines - len.y, len.x, len.y, pic);
+		r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
 	}
 
 	update_notify ();
