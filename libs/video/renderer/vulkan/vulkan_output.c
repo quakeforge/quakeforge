@@ -55,6 +55,8 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
+#include "r_local.h"
+#include "r_internal.h"
 #include "vid_vulkan.h"
 #include "vkparse.h"//FIXME
 
@@ -163,8 +165,9 @@ process_input (qfv_renderframe_t *rFrame)
 
 	QFV_duCmdBeginLabel (device, cmd, "output:output");
 
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  octx->pipeline);
+	__auto_type pipeline = r_dowarp ? octx->waterwarp : octx->output;
+	__auto_type layout = r_dowarp ? octx->warp_layout : octx->output_layout;
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
 
@@ -173,7 +176,14 @@ process_input (qfv_renderframe_t *rFrame)
 		oframe->set,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									octx->layout, 0, 2, set, 0, 0);
+									layout, 0, 2, set, 0, 0);
+	if (r_dowarp) {
+		float       time = vr_data.realtime;
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
+		};
+		QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	}
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 
@@ -233,8 +243,10 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
 	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
 
-	octx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "output");
-	octx->layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
+	octx->output = Vulkan_CreateGraphicsPipeline (ctx, "output");
+	octx->waterwarp = Vulkan_CreateGraphicsPipeline (ctx, "waterwarp");
+	octx->output_layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
+	octx->warp_layout = Vulkan_CreatePipelineLayout (ctx, "waterwarp_layout");
 	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
@@ -271,7 +283,8 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	outputctx_t *octx = ctx->output_context;
 
-	dfunc->vkDestroyPipeline (device->dev, octx->pipeline, 0);
+	dfunc->vkDestroyPipeline (device->dev, octx->output, 0);
+	dfunc->vkDestroyPipeline (device->dev, octx->waterwarp, 0);
 	free (octx->frames.a);
 	free (octx);
 }

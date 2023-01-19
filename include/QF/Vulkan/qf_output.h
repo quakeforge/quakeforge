@@ -45,8 +45,10 @@ typedef struct outputframeset_s
 
 typedef struct outputctx_s {
 	outputframeset_t frames;
-	VkPipeline   pipeline;
-	VkPipelineLayout layout;
+	VkPipeline   output;
+	VkPipeline   waterwarp;
+	VkPipelineLayout output_layout;
+	VkPipelineLayout warp_layout;
 	VkSampler    sampler;
 	VkImageView  input;
 } outputctx_t;
