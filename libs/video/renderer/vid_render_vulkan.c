@@ -488,6 +488,20 @@ vulkan_end_frame (void)
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
 }
 
+static void
+vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+{
+	EntQueue_Clear (r_ent_queue);
+	vulkan_begin_frame ();
+	r_funcs->set_2d (1);
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	vulkan_render_view ();
+	vulkan_end_frame ();
+}
+
 static framebuffer_t *
 vulkan_create_cube_map (int size)
 {
@@ -774,7 +788,7 @@ vulkan_vid_render_shutdown (void)
 vid_render_funcs_t vulkan_vid_render_funcs = {
 	.init = vulkan_vid_render_init,
 
-	.UpdateScreen = SCR_UpdateScreen_legacy,
+	.UpdateScreen = vulkan_UpdateScreen,
 
 	.Draw_CharBuffer        = vulkan_Draw_CharBuffer,
 	.Draw_SetScale          = vulkan_Draw_SetScale,
