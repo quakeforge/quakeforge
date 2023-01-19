@@ -644,6 +644,12 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
+	if (p->width < 32 && p->height < 32) {
+		qpic_t     *pic = pic_data (path, p->width, p->height, p->data, ctx);
+		free (p);
+		return pic;
+	}
+
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
@@ -751,7 +757,7 @@ Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 	if ((cpic = Hash_Find (dctx->pic_cache, path))) {
 		return cpic->pic;
 	}
-	qpic_t     *pic = load_lmp (path, ctx);;
+	qpic_t     *pic = load_lmp (path, ctx);
 	cpic = new_cachepic (dctx, path, pic);
 	Hash_Add (dctx->pic_cache, cpic);
 	return pic;
@@ -874,7 +880,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	dctx->frames.grow = 0;
 	DARRAY_INIT (&dctx->fonts, 16);
 	DARRAY_RESIZE (&dctx->fonts, 16);
-	dctx->fonts.grow = 0;
 	dctx->fonts.size = 0;
 
 	dctx->pic_memsuper = new_memsuper ();
@@ -1174,18 +1179,16 @@ void
 Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 					 vulkan_ctx_t *ctx)
 {
-#if 0
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	quat_t      color = {1, 1, 1, 1};
+	byte        color[4] = {255, 255, 255, 255};
 	qpic_t     *p;
 	int         cx, cy, n;
 #define draw(px, py, pp)													\
 	do {																	\
-		subpic_t   *subpic = *(subpic_t **) (pp)->data;						\
-		draw_pic (px, py, pp->width, pp->height, subpic,					\
-				  0, 0, pp->width, pp->height, color, &frame->quad_verts);	\
+		__auto_type pd = (picdata_t *) pp->data;							\
+		draw_quad (px, py, pd->descid, pd->vert_index, color, frame);		\
 	} while (0)
 
 	color[3] = alpha;
@@ -1233,7 +1236,6 @@ Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 	p = Vulkan_Draw_CachePic ("gfx/box_br.lmp", true, ctx);
 	draw (cx, cy + 8, p);
 #undef draw
-#endif
 }
 
 void
@@ -1293,23 +1295,14 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 void
 Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 {
-#if 0
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
-
-	float       a = bound (0, alpha, 255) / 255.0;
+	//FIXME fitpic with color
+	//float       a = bound (0, alpha, 255) / 255.0;
 	// use pre-multiplied alpha
-	quat_t      color = { a, a, a, a};
+	//quat_t      color = { a, a, a, a};
 	qpic_t     *cpic;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
-	int         s = ctx->twod_scale;
-	float       frac = (vid.height - s * lines) / (float) vid.height;
-	int         ofs = frac * cpic->height;
-	subpic_t   *subpic = *(subpic_t **) cpic->data;
-	draw_pic (0, 0, vid.width / s, lines, subpic,
-			  0, ofs, cpic->width, cpic->height - ofs, color,
-			  &frame->quad_verts);
-#endif
+	float       s = 1.0 / ctx->twod_scale;
+	Vulkan_Draw_FitPic (0, -lines, vid.width * s, vid.height * s, cpic, ctx);
 }
 
 void
