@@ -566,10 +566,6 @@
 			topology = line_list;
 			primitiveRestartEnable = false;
 		};
-		twod = {
-			topology = triangle_strip;
-			primitiveRestartEnable = true;
-		};
 		sprite = {
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
@@ -666,14 +662,13 @@
 				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
 			);
 		};
-		twod = {
+		lines = {
 			bindings = (
-				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "2 * 4 + 4"; inputRate = vertex; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32_sfloat;       offset = 0;  },
-				{ location = 1; binding = 0; format = r32g32_sfloat;       offset = 8;  },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 8; },
 			);
 		};
 	};
@@ -1135,8 +1130,6 @@
 			inputAssembly = $properties.inputAssembly.sprite;
 			layout = sprite_layout;
 		};
-		twod = {
-		};
 		slice = {
 			@inherit = $properties.pipelines.trans_base;
 			renderPass = output;
@@ -1166,7 +1159,7 @@
 				{ stage = vertex;   name = main; module = $builtin/line.vert; },
 				{ stage = fragment; name = main; module = $builtin/line.frag; },
 			);
-			vertexInput   = $properties.vertexInput.twod;
+			vertexInput   = $properties.vertexInput.lines;
 			rasterization = $properties.rasterization.counter_cw_cull_back;
 			depthStencil  = $properties.depthStencil.disable;
 			colorBlend = {

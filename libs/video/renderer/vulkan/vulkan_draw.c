@@ -97,7 +97,6 @@ typedef struct descbatchset_s
 
 typedef struct {
 	float       xy[2];
-	float       st[2];
 	byte        color[4];
 } linevert_t;
 
@@ -113,11 +112,11 @@ typedef struct {
 	float       uv[2];
 } quadvert_t;
 
-typedef struct vertqueue_s {
+typedef struct linequeue_s {
 	linevert_t *verts;
 	int         count;
 	int         size;
-} vertqueue_t;
+} linequeue_t;
 
 typedef struct quadqueue_s {
 	quadinst_t *quads;
@@ -146,16 +145,18 @@ typedef struct descpool_s {
 
 typedef struct drawframe_s {
 	size_t      instance_offset;
+	size_t      dvert_offset;
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
 	VkBuffer    dvert_buffer;
+	VkBuffer    line_buffer;
 	VkBufferView dvert_view;
 
 	uint32_t    dvertex_index;
 	uint32_t    dvertex_max;
 	descbatchset_t quad_batch;
 	quadqueue_t quad_insts;
-	vertqueue_t line_verts;
+	linequeue_t line_verts;
 	qfv_cmdbufferset_t cmdSet;
 	descpool_t  dyn_descs;
 } drawframe_t;
@@ -202,6 +203,7 @@ typedef struct drawctx_s {
 	qfv_resobj_t *svertex_objects;
 	qfv_resobj_t *instance_objects;
 	qfv_resobj_t *dvertex_objects;
+	qfv_resobj_t *lvertex_objects;
 	uint32_t    svertex_index;
 	uint32_t    svertex_max;
 	VkPipeline  quad_pipeline;
@@ -228,8 +230,6 @@ typedef struct drawctx_s {
 #define MAX_LINES (32768)
 #define VERTS_PER_LINE (2)
 #define BYTES_PER_LINE (VERTS_PER_LINE * sizeof (linevert_t))
-
-#define DVERTS_PER_FRAME (LINES_OFFSET + MAX_LINES*VERTS_PER_LINE)
 
 static int
 get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
@@ -302,12 +302,15 @@ create_buffers (vulkan_ctx_t *ctx)
 								  + 2 * sizeof (qfv_resobj_t)
 								  // frames dynamic vertex buffers and views
 								  + (frames) * 2 * sizeof (qfv_resobj_t)
+								  // frames line vertex buffers
+								  + (frames) * sizeof (qfv_resobj_t)
 								  // frames instance buffers
 								  + (frames) * sizeof (qfv_resobj_t));
 	dctx->index_object = (qfv_resobj_t *) &dctx->draw_resource[2];
 	dctx->svertex_objects = &dctx->index_object[1];
 	dctx->dvertex_objects = &dctx->svertex_objects[2];
-	dctx->instance_objects = &dctx->dvertex_objects[2 * frames];
+	dctx->lvertex_objects = &dctx->dvertex_objects[2 * frames];
+	dctx->instance_objects = &dctx->lvertex_objects[frames];
 
 	dctx->svertex_index = 0;
 	dctx->svertex_max = MAX_QUADS * VERTS_PER_QUAD;
@@ -323,7 +326,7 @@ create_buffers (vulkan_ctx_t *ctx)
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-		.num_objects = (2 * frames) + (frames),
+		.num_objects = (2 * frames) + (frames) + (frames),
 		.objects = dctx->dvertex_objects,
 	};
 
@@ -377,6 +380,15 @@ create_buffers (vulkan_ctx_t *ctx)
 				.size = dctx->dvertex_objects[i * 2 + 0].buffer.size,
 			},
 		};
+		dctx->lvertex_objects[i] = (qfv_resobj_t) {
+			.name = "line",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = MAX_LINES * BYTES_PER_LINE,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			},
+		};
 		dctx->instance_objects[i] = (qfv_resobj_t) {
 			.name = "inst",
 			.type = qfv_res_buffer,
@@ -400,7 +412,8 @@ create_buffers (vulkan_ctx_t *ctx)
 		frame->instance_offset = dctx->instance_objects[f].buffer.offset;
 		frame->dvert_buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer;
 		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
-		frame->line_offset = dctx->dvertex_objects[f * 2].buffer.offset;
+		frame->line_buffer = dctx->lvertex_objects[f].buffer.buffer;
+		frame->line_offset = dctx->lvertex_objects[f].buffer.offset;
 
 		frame->dvertex_index = 0;
 		frame->dvertex_max = MAX_QUADS * VERTS_PER_QUAD;
@@ -411,7 +424,7 @@ create_buffers (vulkan_ctx_t *ctx)
 			.size = MAX_INSTANCES,
 		};
 
-		frame->line_verts = (vertqueue_t) {
+		frame->line_verts = (linequeue_t) {
 			.verts = (linevert_t *) ((byte *)data + frame->line_offset),
 			.size = MAX_INSTANCES,
 		};
@@ -1359,32 +1372,19 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
-	vertqueue_t *queue = &frame->line_verts;
+	linequeue_t *queue = &frame->line_verts;
 
 	if (queue->count >= queue->size) {
 		return;
 	}
 
-	__auto_type pd = (picdata_t *) dctx->white_pic->data;
-	int srcx = pd->subpic->rect->x;
-	int srcy = pd->subpic->rect->y;
-	int srcw = pd->subpic->rect->width;
-	int srch = pd->subpic->rect->height;
-	float size = pd->subpic->size;
-	float sl = (srcx + 0.03125) * size;
-	float sr = (srcx + srcw - 0.03125) * size;
-	float st = (srcy + 0.03125) * size;
-	float sb = (srcy + srch - 0.03125) * size;
-
 	linevert_t *verts = queue->verts + queue->count * VERTS_PER_LINE;
 	verts[0] = (linevert_t) {
 		.xy = { x0, y0 },
-		.st = {sl, st},
 		.color = { VectorExpand (vid.palette + c * 3), 255 },
 	};
 	verts[1] = (linevert_t) {
 		.xy = { x1, y1 },
-		.st = {sr, sb},
 		.color = { VectorExpand (vid.palette + c * 3), 255 },
 	};
 
@@ -1497,7 +1497,7 @@ draw_quads (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 	}
 	DARRAY_RESIZE (&dframe->quad_batch, 0);
 }
-#if 0
+
 static void
 draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 {
@@ -1519,7 +1519,7 @@ draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
 	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
 					  1, 0, 0);
 }
-#endif
+
 void
 Vulkan_FlushText (qfv_renderframe_t *rFrame)
 {
@@ -1544,8 +1544,11 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 		  memory, dframe->instance_offset,
 		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  memory, dframe->dvert_offset,
+		  a(dframe->dvertex_index * sizeof (quadvert_t)) },
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		  memory, dframe->line_offset,
-		  a(dframe->line_verts.count * VERTS_PER_LINE * sizeof (linevert_t)) },
+		  a(dframe->line_verts.count * BYTES_PER_LINE) },
 	};
 #undef a
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
@@ -1560,13 +1563,12 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_quads (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
-#if 0
 	if (dframe->line_verts.count) {
 		bind_pipeline (rFrame, dctx->line_pipeline,
 					   dframe->cmdSet.a[QFV_draw2d]);
 		draw_lines (rFrame, dframe->cmdSet.a[QFV_draw2d]);
 	}
-#endif
+
 	draw_end_subpass (dframe->cmdSet.a[QFV_draw2d], ctx);
 
 	dframe->quad_insts.count = 0;

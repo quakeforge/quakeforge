@@ -5,8 +5,7 @@ layout (set = 0, binding = 0) uniform
 #include "matrices.h"
 ;
 layout (location = 0) in vec2 vertex;
-layout (location = 1) in vec2 uv;
-layout (location = 2) in vec4 vcolor;
+layout (location = 1) in vec4 vcolor;
 
 layout (location = 0) out vec4 color;
 
