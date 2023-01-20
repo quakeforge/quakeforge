@@ -35,8 +35,6 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-#include "scn_internal.h"
-
 void
 Camera_GetViewMatrix (const camera_t *camera, mat4f_t view)
 {

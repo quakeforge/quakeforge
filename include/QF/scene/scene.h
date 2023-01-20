@@ -62,9 +62,6 @@ enum scene_components {
 typedef struct scene_s {
 	struct ecs_registry_s *reg;
 
-	struct scene_resources_s *const resources;
-	struct hierarchy_s *hierarchies;
-
 	struct model_s *worldmodel;
 	int         num_models;
 	struct model_s **models;

@@ -43,8 +43,6 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-#include "scn_internal.h"
-
 static void
 create_active (void *_active)
 {
@@ -215,9 +213,6 @@ Scene_NewScene (void)
 	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
 	ECS_CreateComponentPools (scene->reg);
 
-	scene_resources_t *res = calloc (1, sizeof (scene_resources_t));
-	*(scene_resources_t **)&scene->resources = res;
-
 	scene->worldmodel = &empty_world;
 
 	return scene;
@@ -228,7 +223,6 @@ Scene_DeleteScene (scene_t *scene)
 {
 	ECS_DelRegistry (scene->reg);
 
-	free (scene->resources);
 	free (scene);
 }
 

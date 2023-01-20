@@ -40,8 +40,6 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-#include "scn_internal.h"
-
 static void
 transform_mat4f_identity (void *_mat)
 {
