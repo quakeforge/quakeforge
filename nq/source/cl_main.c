@@ -708,8 +708,9 @@ CL_Init (cbuf_t *cbuf)
 	S_Init (&cl.viewentity, &host_frametime);
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
+	Con_Load ("client");
 	CL_Init_Screen ();
+	Con_Init ();
 
 	CDAudio_Init ();
 

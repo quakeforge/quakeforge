@@ -354,7 +354,7 @@ BI_Graphics_Init (progs_t *pr)
 	event_handler_id = IE_Add_Handler (event_handler, pr);
 	IE_Set_Focus (event_handler_id);
 
-	Con_Init ("client");
+	Con_Load ("client");
 	if (con_module) {
 		con_module->data->console->realtime = &con_realtime;
 		con_module->data->console->frametime = &con_frametime;
@@ -363,6 +363,7 @@ BI_Graphics_Init (progs_t *pr)
 		//con_module->data->console->screen_view = r_data->scr_view;
 	}
 	//Key_SetKeyDest (key_game);
+	Con_Init ();
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();

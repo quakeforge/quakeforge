@@ -1015,6 +1015,17 @@ Condump_f (void)
 }
 
 static void
+C_InitCvars (void)
+{
+	Cvar_Register (&con_notifytime_cvar, 0, 0);
+	Cvar_Register (&con_scale_cvar, con_scale_f, 0);
+	Cvar_Register (&con_alpha_cvar, 0, 0);
+	Cvar_Register (&con_size_cvar, 0, 0);
+	Cvar_Register (&con_speed_cvar, 0, 0);
+	Cvar_Register (&cl_conmode_cvar, 0, 0);
+}
+
+static void
 C_Init (void)
 {
 	client_reg = ECS_NewRegistry ();
@@ -1031,14 +1042,6 @@ C_Init (void)
 	con_event_id = IE_Add_Handler (con_event_handler, 0);
 
 	Menu_Init ();
-
-	Cvar_Register (&con_notifytime_cvar, 0, 0);
-
-	Cvar_Register (&con_scale_cvar, con_scale_f, 0);
-	Cvar_Register (&con_alpha_cvar, 0, 0);
-	Cvar_Register (&con_size_cvar, 0, 0);
-	Cvar_Register (&con_speed_cvar, 0, 0);
-	Cvar_Register (&cl_conmode_cvar, 0, 0);
 
 	con_debuglog = COM_CheckParm ("-condebug");
 
@@ -1185,11 +1188,12 @@ C_shutdown (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	.init = C_Init,
+	.init = C_InitCvars,
 	.shutdown = C_shutdown,
 };
 
 static console_funcs_t plugin_info_console_funcs = {
+	.init = C_Init,
 	.print = C_Print,
 	.draw_console = C_DrawConsole,
 	.new_map = C_NewMap,

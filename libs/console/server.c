@@ -776,9 +776,16 @@ sv_exec_line_chat (void *data, const char *line)
 }
 
 static void
-C_Init (void)
+C_InitCvars (void)
 {
 	Cvar_Register (&sv_use_curses_cvar, 0, 0);
+	Cvar_Register (&sv_logfile_cvar, sv_logfile_f, 0);
+	Cvar_Register (&sv_conmode_cvar, 0, 0);
+}
+
+static void
+C_Init (void)
+{
 #ifdef HAVE_NCURSES
 	use_curses = sv_use_curses;
 	if (use_curses) {
@@ -786,8 +793,6 @@ C_Init (void)
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
-	Cvar_Register (&sv_logfile_cvar, sv_logfile_f, 0);
-	Cvar_Register (&sv_conmode_cvar, 0, 0);
 }
 
 static void
@@ -863,12 +868,13 @@ C_NewMap (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	.init = C_Init,
+	.init = C_InitCvars,
 	.shutdown = C_shutdown,
 };
 static general_data_t plugin_info_general_data;
 
 static console_funcs_t plugin_info_console_funcs = {
+	.init = C_Init,
 	.print = C_Print,
 	.process_input = C_ProcessInput,
 	.draw_console = C_DrawConsole,

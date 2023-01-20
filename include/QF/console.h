@@ -90,7 +90,8 @@ void Con_BufferAddText (con_buffer_t *buf, const char *text);
 void Con_ClearBuffer (con_buffer_t *buffer);
 
 // init/shutdown functions
-void Con_Init (const char *plugin_name);
+void Con_Load (const char *plugin_name);
+void Con_Init (void);
 void Con_ExecLine (const char *line);
 
 void Con_ProcessInput (void);

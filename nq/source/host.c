@@ -926,7 +926,8 @@ Host_Init (void)
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);
-		Con_Init ("server");
+		Con_Load ("server");
+		Con_Init ();
 	}
 
 	Host_InitVCR (&host_parms);

@@ -1461,7 +1461,7 @@ CL_Init (void)
 	r_data->lightstyle = cl.lightstyle;
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
+	Con_Load ("client");
 	CL_Init_Screen ();
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;
@@ -1473,6 +1473,7 @@ CL_Init (void)
 		Cbuf_DeleteStack (con_module->data->console->cbuf);
 		con_module->data->console->cbuf = cl_cbuf;
 	}
+	Con_Init ();
 	CL_NetGraph_Init ();
 
 	S_Init (&cl.viewentity, &host_frametime);

@@ -108,16 +108,23 @@ Con_shutdown (void *data)
 }
 
 VISIBLE void
-Con_Init (const char *plugin_name)
+Con_Load (const char *plugin_name)
 {
 	Sys_RegisterShutdown (Con_shutdown, 0);
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
+	if (!con_module) {
+		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
+	}
+}
+
+VISIBLE void
+Con_Init (void)
+{
 	if (con_module) {
 		__auto_type funcs = con_module->functions->console;
+		funcs->init ();
 		saved_sys_printf = Sys_SetStdPrintf (funcs->print);
-	} else {
-		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
 	Cvar_Register (&con_interpreter_cvar, Con_Interp_f, 0);
 }
