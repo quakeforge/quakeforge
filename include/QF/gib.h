@@ -196,7 +196,7 @@ void GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...);
 
 // Interpreter interface (for creating GIB cbufs)
 
-cbuf_interpreter_t *GIB_Interpreter (void) __attribute__((const));
+struct cbuf_interpreter_s *GIB_Interpreter (void) __attribute__((const));
 
 // Thread interface
 
