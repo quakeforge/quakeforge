@@ -65,7 +65,6 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		if (rind && c->rangeid) {
 			uint32_t    rangeid = c->rangeid (registry, ent, comp);
 			uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
-			printf ("ent:%d rangeid:%d rangeind:%d\n", ent, rangeid, rangeind);
 			while (rind-- > rangeind) {
 				if (subpool->ranges[rind] == ind) {
 					subpool->ranges[rind]++;
