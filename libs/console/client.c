@@ -46,7 +46,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/gib.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -804,18 +803,6 @@ C_NewMap (void)
 }
 
 static void
-C_GIB_HUD_Enable_f (void)
-{
-	//hud_view->visible = 1;
-}
-
-static void
-C_GIB_HUD_Disable_f (void)
-{
-	//hud_view->visible = 0;
-}
-
-static void
 exec_line (inputline_t *il)
 {
 	Con_ExecLine (il->line);
@@ -1173,10 +1160,6 @@ C_Init (void)
 	Cmd_AddCommand ("clear", Clear_f, "Clear the console");
 	Cmd_AddCommand ("condump", Condump_f, "dump the console text to a "
 					"file");
-
-	// register GIB builtins
-	GIB_Builtin_Add ("HUD::enable", C_GIB_HUD_Enable_f);
-	GIB_Builtin_Add ("HUD::disable", C_GIB_HUD_Disable_f);
 
 	con_initialized = true;
 }

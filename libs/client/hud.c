@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "QF/cvar.h"
+#include "QF/gib.h"
 #include "QF/screen.h"
 #include "QF/render.h"
 #include "QF/plugin/vid_render.h"
@@ -259,6 +260,17 @@ hud_scoreboard_gravity_f (void *data, const cvar_t *cvar)
 		View_SetGravity (hud_overlay_view, hud_scoreboard_gravity);
 	}
 }
+static void
+C_GIB_HUD_Enable_f (void)
+{
+	//hud_canvas_view->visible = 1;
+}
+
+static void
+C_GIB_HUD_Disable_f (void)
+{
+	//hud_canvas_view->visible = 0;
+}
 
 void
 HUD_Init (void)
@@ -274,6 +286,9 @@ HUD_Init (void)
 											  passage_components,
 											  passage_comp_count);
 	ECS_CreateComponentPools (hud_system.reg);
+	// register GIB builtins
+	GIB_Builtin_Add ("HUD::enable", C_GIB_HUD_Enable_f);
+	GIB_Builtin_Add ("HUD::disable", C_GIB_HUD_Disable_f);
 }
 
 void
