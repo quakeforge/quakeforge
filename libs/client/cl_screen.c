@@ -49,7 +49,7 @@
 
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
-#include "QF/ui/view.h"
+#include "QF/ui/canvas.h"
 
 #include "r_local.h"	//FIXME for r_cache_thrash
 
@@ -90,6 +90,7 @@ static cvar_t scr_showturtle_cvar = {
 };
 
 view_t cl_screen_view;
+uint32_t cl_canvas;
 static view_t net_view;
 static view_t timegraph_view;
 static view_t zgraph_view;
@@ -99,6 +100,8 @@ static view_t turtle_view;
 static view_t pause_view;
 
 static viewstate_t *_vs;//FIXME ick
+
+canvas_system_t cl_canvas_sys;
 
 static void
 SCR_CShift (void)
@@ -139,29 +142,19 @@ scr_draw_views (void)
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);
 	View_SetVisible (zgraph_view, r_zgraph);
+
+	if (!_vs->intermission) {
+		r_funcs->Draw_Crosshair ();//FIXME canvas_func
+	}
+	Canvas_Draw (cl_canvas_sys);
+	SCR_CShift ();//FIXME canvas_func
+	Sbar_DrawCenterPrint ();//FIXME canvas_func
+	Con_DrawConsole ();//FIXME canvas_func
 }
 
-static SCR_Func scr_funcs_normal[] = {
-	0, //Draw_Crosshair,
-	HUD_Draw_Views,
-	SCR_CShift,
-	Sbar_DrawCenterPrint,
+static SCR_Func scr_funcs[] = {
 	scr_draw_views,
-	Con_DrawConsole,
 	0
-};
-
-static SCR_Func scr_funcs_intermission[] = {
-	HUD_Draw_Views,
-	Sbar_DrawCenterPrint,
-	scr_draw_views,
-	Con_DrawConsole,
-	0
-};
-
-static SCR_Func *scr_funcs[] = {
-	scr_funcs_normal,
-	scr_funcs_intermission,
 };
 
 static int cl_scale;
@@ -174,8 +167,9 @@ cl_set_size (void)
 	int        xlen = cl_xlen / cl_scale;
 	int        ylen = cl_ylen / cl_scale;
 	printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
-	View_SetLen (cl_screen_view, xlen, ylen);
-	View_UpdateHierarchy (cl_screen_view);
+	//View_SetLen (cl_screen_view, xlen, ylen);
+	//View_UpdateHierarchy (cl_screen_view);
+	Canvas_SetLen (cl_canvas_sys, (view_pos_t) { xlen, ylen });
 }
 
 static void
@@ -198,31 +192,43 @@ CL_Init_Screen (void)
 {
 	qpic_t     *pic;
 
-	HUD_Init ();
+	__auto_type reg = ECS_NewRegistry ();
+	Canvas_InitSys (&cl_canvas_sys, reg);
+	HUD_Init (reg);
+	ECS_CreateComponentPools (reg);
+
 	cl_xlen = viddef.width;
 	cl_ylen = viddef.height;
 
-	cl_screen_view = View_New (hud_viewsys, nullview);
+	ecs_system_t vsys = {
+		.reg = reg,
+		.base = cl_canvas_sys.view_base,
+	};
+
+	HUD_CreateCanvas (cl_canvas_sys);
+
+	cl_canvas = Canvas_New (cl_canvas_sys);
+	cl_screen_view = Canvas_GetRootView (cl_canvas_sys, cl_canvas);
 
 	View_SetPos (cl_screen_view, 0, 0);
-	View_SetLen (cl_screen_view, viddef.width, viddef.height);
+	View_SetLen (cl_screen_view, cl_xlen, cl_ylen);
 	View_SetGravity (cl_screen_view, grav_northwest);
 	View_SetVisible (cl_screen_view, 1);
 
 	pic = r_funcs->Draw_PicFromWad ("ram");
-	ram_view = View_New (hud_viewsys, cl_screen_view);
+	ram_view = View_New (vsys, cl_screen_view);
 	View_SetPos (ram_view, 32, 0);
 	View_SetLen (ram_view, pic->width, pic->height);
 	View_SetGravity (ram_view, grav_northwest);
-	Ent_SetComponent (ram_view.id, hud_pic, ram_view.reg, &pic);
+	Ent_SetComponent (ram_view.id, canvas_pic, ram_view.reg, &pic);
 	View_SetVisible (ram_view, 0);
 
 	pic = r_funcs->Draw_PicFromWad ("turtle");
-	turtle_view = View_New (hud_viewsys, cl_screen_view);
+	turtle_view = View_New (vsys, cl_screen_view);
 	View_SetPos (turtle_view, 32, 0);
 	View_SetLen (turtle_view, pic->width, pic->height);
 	View_SetGravity (turtle_view, grav_northwest);
-	Ent_SetComponent (turtle_view.id, hud_pic, turtle_view.reg, &pic);
+	Ent_SetComponent (turtle_view.id, canvas_pic, turtle_view.reg, &pic);
 	View_SetVisible (turtle_view, 0);
 
 	Cvar_Register (&scr_showpause_cvar, 0, 0);
@@ -230,45 +236,46 @@ CL_Init_Screen (void)
 	Cvar_Register (&scr_showturtle_cvar, 0, 0);
 
 	pic = r_funcs->Draw_PicFromWad ("net");
-	net_view = View_New (hud_viewsys, cl_screen_view);
+	net_view = View_New (vsys, cl_screen_view);
 	View_SetPos (net_view, 64, 0);
 	View_SetLen (net_view, pic->width, pic->height);
 	View_SetGravity (net_view, grav_northwest);
-	Ent_SetComponent (net_view.id, hud_pic, net_view.reg, &pic);
+	Ent_SetComponent (net_view.id, canvas_pic, net_view.reg, &pic);
 	View_SetVisible (net_view, 0);
 
-	timegraph_view = View_New (hud_viewsys, cl_screen_view);
+	timegraph_view = View_New (vsys, cl_screen_view);
 	View_SetPos (timegraph_view, 0, 0);
 	View_SetLen (timegraph_view, r_data->vid->width, 100);
 	View_SetGravity (timegraph_view, grav_southwest);
 	void       *rtg = R_TimeGraph;
-	Ent_SetComponent (timegraph_view.id, hud_func, timegraph_view.reg, &rtg);
+	Ent_SetComponent (timegraph_view.id, canvas_func, timegraph_view.reg, &rtg);
 	View_SetVisible (timegraph_view, r_timegraph);
 
-	zgraph_view = View_New (hud_viewsys, cl_screen_view);
+	zgraph_view = View_New (vsys, cl_screen_view);
 	View_SetPos (zgraph_view, 0, 0);
 	View_SetLen (zgraph_view, r_data->vid->width, 100);
 	View_SetGravity (zgraph_view, grav_southwest);
 	void       *rzg = R_ZGraph;
-	Ent_SetComponent (zgraph_view.id, hud_func, zgraph_view.reg, &rzg);
+	Ent_SetComponent (zgraph_view.id, canvas_func, zgraph_view.reg, &rzg);
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	const char *name = "gfx/loading.lmp";
 	pic = r_funcs->Draw_CachePic (name, 1);
-	loading_view = View_New (hud_viewsys, cl_screen_view);
+	loading_view = View_New (vsys, cl_screen_view);
 	View_SetPos (loading_view, 0, -24);
 	View_SetLen (loading_view, pic->width, pic->height);
 	View_SetGravity (loading_view, grav_center);
-	Ent_SetComponent (loading_view.id, hud_cachepic, loading_view.reg, &name);
+	Ent_SetComponent (loading_view.id, canvas_cachepic,
+					  loading_view.reg, &name);
 	View_SetVisible (loading_view, 0);
 
 	name = "gfx/pause.lmp";
 	pic = r_funcs->Draw_CachePic (name, 1);
-	pause_view = View_New (hud_viewsys, cl_screen_view);
+	pause_view = View_New (vsys, cl_screen_view);
 	View_SetPos (pause_view, 0, -24);
 	View_SetLen (pause_view, pic->width, pic->height);
 	View_SetGravity (pause_view, grav_center);
-	Ent_SetComponent (pause_view.id, hud_cachepic, pause_view.reg, &name);
+	Ent_SetComponent (pause_view.id, canvas_cachepic, pause_view.reg, &name);
 	View_SetVisible (pause_view, 0);
 
 	cvar_t     *con_scale = Cvar_FindVar ("con_scale");
@@ -280,11 +287,7 @@ CL_Init_Screen (void)
 void
 CL_UpdateScreen (viewstate_t *vs)
 {
-	unsigned    index = !!vs->intermission;
 	_vs = vs;
-
-	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
-		index = 0;
 
 	//FIXME not every time
 	if (vs->active) {
@@ -293,9 +296,8 @@ CL_UpdateScreen (viewstate_t *vs)
 		else
 			r_data->min_wateralpha = 1.0;
 	}
-	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
 
 	V_PrepBlend (vs);
 	V_RenderView (vs);
-	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs[index]);
+	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs);
 }

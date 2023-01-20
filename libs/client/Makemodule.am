@@ -1,7 +1,10 @@
 noinst_LTLIBRARIES += libs/client/libQFclient.la
 
 libs_client_libQFclient_la_LDFLAGS=	@STATIC@
-libs_client_libQFclient_la_LIBADD=	libs/gamecode/libQFgamecode.la libs/util/libQFutil.la
+libs_client_libQFclient_la_LIBADD=	\
+	libs/ui/libQFgui.la \
+	libs/gamecode/libQFgamecode.la \
+	libs/util/libQFutil.la
 libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_chase.c \
 		libs/client/cl_effects.c \

@@ -40,6 +40,7 @@
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/va.h"
+#include "QF/ui/canvas.h"
 #include "QF/ui/view.h"
 
 #include "client/hud.h"
@@ -156,12 +157,17 @@ CL_NetGraph (view_pos_t abs, view_pos_t len)
 void
 CL_NetGraph_Init (void)
 {
-	cl_netgraph_view = View_New (hud_viewsys, cl_screen_view);
+	ecs_system_t vsys = {
+		.reg = cl_canvas_sys.reg,
+		.base = cl_canvas_sys.view_base,
+	};
+	cl_netgraph_view = View_New (vsys, cl_screen_view);
 	View_SetPos (cl_netgraph_view, 0, 64);
 	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
 	View_SetGravity (cl_netgraph_view, grav_southwest);
 	void       *f = CL_NetGraph;
-	Ent_SetComponent (cl_netgraph_view.id, hud_func, cl_netgraph_view.reg, &f);
+	Ent_SetComponent (cl_netgraph_view.id, canvas_func,
+					  cl_netgraph_view.reg, &f);
 	View_SetVisible (cl_netgraph_view, cl_netgraph);
 }
 

@@ -30,34 +30,9 @@
 
 struct view_s;
 
-enum {
-	hud_update,
-	hud_updateonce,
-	hud_tile,
-	hud_pic,
-	hud_subpic,
-	hud_cachepic,
-	hud_fill,
-	hud_charbuff,
-	hud_func,
-	hud_outline,
-
-	hud_comp_count
-};
-
-typedef void (*hud_update_f) (struct view_s);
-typedef void (*hud_func_f) (struct view_pos_s, struct view_pos_s);
-
-typedef struct hud_subpic_s {
-	struct qpic_s *pic;
-	uint32_t    x, y;
-	uint32_t    w, h;
-} hud_subpic_t;
-
-extern struct ecs_system_s hud_system;
-extern struct ecs_system_s hud_viewsys;
 extern struct ecs_system_s hud_psgsys;
 
+extern uint32_t hud_canvas;
 extern int hud_sb_lines;
 
 extern int hud_sbar;
@@ -67,18 +42,15 @@ extern int hud_pl;
 extern int hud_ping;
 extern int hud_time;
 
-extern struct view_s hud_view;
+//root view of the hud canvas
+extern struct view_s hud_canvas_view;
 
-extern struct view_s hud_overlay_view;
-extern struct view_s hud_stuff_view;
-extern struct view_s hud_time_view;
-extern struct view_s hud_fps_view;
-extern struct view_s hud_ping_view;
-extern struct view_s hud_pl_view;
+struct ecs_registry_s;
+struct canvas_system_s;
 
-void HUD_Init (void);
+void HUD_Init (struct ecs_registry_s *reg);
 void HUD_Init_Cvars (void);
+void HUD_CreateCanvas (struct canvas_system_s canvas_sys);
 void HUD_Calc_sb_lines (int view_size);
-void HUD_Draw_Views (void);
 
 #endif//__client_hud_h
