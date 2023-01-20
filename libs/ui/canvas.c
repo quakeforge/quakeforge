@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 
+#define IMPLEMENT_CANVAS_Funcs
 #include "QF/ui/canvas.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
@@ -372,6 +373,14 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 	View_AddToEntity (ent,
 					  (ecs_system_t) { canvas_sys.reg, canvas_sys.view_base },
 					  nullview);
+}
+
+uint32_t
+Canvas_New (canvas_system_t canvas_sys)
+{
+	uint32_t    ent = ECS_NewEntity (canvas_sys.reg);
+	Canvas_AddToEntity (canvas_sys, ent);
+	return ent;
 }
 
 static int

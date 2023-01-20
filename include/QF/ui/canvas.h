@@ -32,6 +32,7 @@
 #define __QF_scene_canvas_h
 
 #include "QF/ecs.h"
+#include "QF/ui/view.h"
 
 enum {
 	canvas_update,
@@ -77,10 +78,31 @@ typedef struct canvas_subpic_s {
 	uint32_t    w, h;
 } canvas_subpic_t;
 
+#define CANVASINLINE GNU89INLINE inline
+
 void Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent);
+uint32_t Canvas_New (canvas_system_t canvas_sys);
 void Canvas_Draw (canvas_system_t canvas_sys);
 void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 							   uint32_t component);
+CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
+										uint32_t ent);
 
+#undef CANVASINLINE
+#ifndef IMPLEMENT_CANVAS_Funcs
+#define CANVASINLINE GNU89INLINE inline
+#else
+#define CANVASINLINE VISIBLE
+#endif
+
+CANVASINLINE
+view_t
+Canvas_GetRootView (canvas_system_t canvas_sys, uint32_t ent)
+{
+	ecs_system_t viewsys = { canvas_sys.reg, canvas_sys.view_base };
+	return View_FromEntity (viewsys, ent);
+}
+
+#undef CANVASINLINE
 
 #endif//__QF_scene_canvas_h
