@@ -62,8 +62,8 @@ extern const struct component_s canvas_components[canvas_comp_count];
 typedef struct canvas_system_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
-	uint32_t    text_base;
 	uint32_t    view_base;
+	uint32_t    text_base;
 } canvas_system_t;
 
 struct view_s;
@@ -80,11 +80,13 @@ typedef struct canvas_subpic_s {
 
 #define CANVASINLINE GNU89INLINE inline
 
+void Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg);
 void Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent);
 uint32_t Canvas_New (canvas_system_t canvas_sys);
 void Canvas_Draw (canvas_system_t canvas_sys);
 void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 							   uint32_t component);
+void Canvas_SetLen (canvas_system_t canvas_sys, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
 
