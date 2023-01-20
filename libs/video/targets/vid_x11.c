@@ -54,7 +54,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/screen.h"

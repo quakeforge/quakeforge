@@ -38,7 +38,6 @@
 #include <stdio.h>
 
 #include "QF/clip_hull.h"
-#include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/sys.h"
 

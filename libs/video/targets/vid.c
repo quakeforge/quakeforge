@@ -36,7 +36,6 @@
 #endif
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"

@@ -55,7 +55,6 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
