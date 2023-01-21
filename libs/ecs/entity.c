@@ -123,10 +123,12 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 			while (range - subpool->ranges < range_count) {
 				uint32_t    end = --*range;
 				range++;
-				pool->sparse[Ent_Index (pool->dense[end])] = ind;
-				pool->dense[ind] = pool->dense[end];
-				Component_MoveElements (c, pool->data, ind, end, 1);
-				ind = end;
+				if (ind < end) {
+					pool->sparse[Ent_Index (pool->dense[end])] = ind;
+					pool->dense[ind] = pool->dense[end];
+					Component_MoveElements (c, pool->data, ind, end, 1);
+					ind = end;
+				}
 			}
 		}
 		if (last > ind) {
