@@ -1312,7 +1312,8 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	qpic_t     *cpic;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	float       s = 1.0 / ctx->twod_scale;
-	Vulkan_Draw_FitPic (0, -lines, vid.width * s, vid.height * s, cpic, ctx);
+	int         y = lines - vid.height * s;
+	Vulkan_Draw_FitPic (0, y, vid.width * s, vid.height * s, cpic, ctx);
 }
 
 void
