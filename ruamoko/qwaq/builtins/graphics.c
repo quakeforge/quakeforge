@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/text.h"
 
@@ -84,6 +85,7 @@ quit_f (void)
 static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static int event_handler_id;
+static canvas_system_t canvas_sys;
 
 static void
 bi_2d (void)
@@ -94,7 +96,7 @@ bi_2d (void)
 
 static SCR_Func bi_2dfuncs[] = {
 	bi_2d,
-	Con_DrawConsole,
+//	Con_DrawConsole,
 	0,
 };
 
@@ -355,13 +357,19 @@ BI_Graphics_Init (progs_t *pr)
 	IE_Set_Focus (event_handler_id);
 
 	Con_Load ("client");
+	__auto_type reg = ECS_NewRegistry ();
+	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
-		con_module->data->console->realtime = &con_realtime;
-		con_module->data->console->frametime = &con_frametime;
-		con_module->data->console->quit = quit_f;
-		con_module->data->console->cbuf = qwaq_cbuf;
-		//con_module->data->console->screen_view = r_data->scr_view;
+		__auto_type cd = con_module->data->console;
+		cd->realtime = &con_realtime;
+		cd->frametime = &con_frametime;
+		cd->quit = quit_f;
+		cd->cbuf = qwaq_cbuf;
+		cd->component_base = ECS_RegisterComponents (reg, cd->components,
+													 cd->num_components);
+		cd->canvas_sys = &canvas_sys;
 	}
+	ECS_CreateComponentPools (reg);
 	//Key_SetKeyDest (key_game);
 	Con_Init ();
 

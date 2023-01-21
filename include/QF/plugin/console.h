@@ -52,6 +52,10 @@ typedef struct console_data_s {
 	void      (*quit) (void);
 	struct cbuf_s *cbuf;
 	struct view_s *status_view;
+	const struct component_s *components;
+	uint32_t    num_components;
+	uint32_t    component_base;
+	struct canvas_system_s *canvas_sys;
 	float       lines;
 	int       (*exec_line)(void *data, const char *line);
 	void       *exec_data;

@@ -45,6 +45,7 @@
 #include "QF/screen.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
 #include "QF/scene/scene.h"
@@ -146,10 +147,10 @@ scr_draw_views (void)
 	if (!_vs->intermission) {
 		r_funcs->Draw_Crosshair ();//FIXME canvas_func
 	}
+	Con_DrawConsole ();
 	Canvas_Draw (cl_canvas_sys);
 	SCR_CShift ();//FIXME canvas_func
 	Sbar_DrawCenterPrint ();//FIXME canvas_func
-	Con_DrawConsole ();//FIXME canvas_func
 }
 
 static SCR_Func scr_funcs[] = {
@@ -194,6 +195,12 @@ CL_Init_Screen (void)
 
 	__auto_type reg = ECS_NewRegistry ();
 	Canvas_InitSys (&cl_canvas_sys, reg);
+	if (con_module) {
+		__auto_type cd = con_module->data->console;
+		cd->component_base = ECS_RegisterComponents (reg, cd->components,
+													 cd->num_components);
+		cd->canvas_sys = &cl_canvas_sys;
+	}
 	HUD_Init (reg);
 	ECS_CreateComponentPools (reg);
 

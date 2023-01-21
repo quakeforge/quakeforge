@@ -57,13 +57,11 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/canvas.h"
 #include "QF/ui/inputline.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
-
-static general_data_t plugin_info_general_data;
-console_data_t con_data;
 
 static con_buffer_t *con;
 
@@ -152,8 +150,8 @@ static cvar_t cl_conmode_cvar = {
 	.value = { .type = &cl_conmode_type, .value = &con_data.exec_line },
 };
 
-static ecs_registry_t *client_reg;
 static uint32_t client_base;
+static uint32_t canvas_base;
 static uint32_t view_base;
 
 static con_state_t con_state;
@@ -170,26 +168,16 @@ typedef struct {
 } con_input_t;
 
 enum {
-	client_href,
 	client_input,
-	client_charbuff,
 	client_cursor,
 
 	client_comp_count
 };
 
 static const component_t client_components[client_comp_count] = {
-	[client_href] = {
-		.size = sizeof (hierref_t),
-		.name = "href",
-	},
 	[client_input] = {
 		.size = sizeof (con_input_t *),
 		.name = "input",
-	},
-	[client_charbuff] = {
-		.size = sizeof (draw_charbuffer_t *),
-		.name = "charbuff",
 	},
 	[client_cursor] = {
 		.size = sizeof (con_input_t *),
@@ -197,13 +185,20 @@ static const component_t client_components[client_comp_count] = {
 	},
 };
 
+console_data_t con_data = {
+	.components = client_components,
+	.num_components = client_comp_count,
+};
+
 #define	MAXCMDLINE 256
 
+static qpic_t  *conback;
 static con_input_t cmd_line;
 static con_input_t say_line;
 static inputline_t *chat_input;
 static inputline_t *team_input;
 
+static uint32_t screen_canvas;
 static view_t screen_view;
 static view_t   console_view;
 static view_t     buffer_view;
@@ -247,10 +242,82 @@ con_setcomponent (view_t view, uint32_t comp, void *data)
 	return Ent_SetComponent (view.id, comp, view.reg, data);
 }
 
+static void
+con_setfunc (view_t view, uint32_t comp, canvas_update_f func)
+{
+	con_setcomponent (view, canvas_base + comp, &func);
+}
+
+static void
+con_setinput (view_t view, con_input_t *input)
+{
+	con_setcomponent (view, client_base + client_input, &input);
+}
+
+static con_input_t *
+con_getinput (view_t view)
+{
+	return *(con_input_t**)con_getcomponent (view, client_base + client_input);
+}
+
+static int
+con_hasinput (view_t view)
+{
+	return con_hascomponent (view, client_base + client_input);
+}
+
+static void
+con_setfitpic (view_t view, qpic_t *pic)
+{
+	con_setcomponent (view, canvas_base + canvas_fitpic, &pic);
+}
+
+static void
+con_setcharbuf (view_t view, draw_charbuffer_t *buffer)
+{
+	con_setcomponent (view, canvas_base + canvas_charbuff, &buffer);
+}
+
+static void
+con_setcursor (view_t view, con_input_t *input)
+{
+	con_setcomponent (view, client_base + client_cursor, &input);
+}
+
 static inline void
 con_remcomponent (view_t view, uint32_t comp)
 {
 	Ent_RemoveComponent (view.id, comp, view.reg);
+}
+
+static void
+con_remfunc (view_t view, uint32_t comp)
+{
+	con_remcomponent (view, canvas_base + comp);
+}
+
+static inline void
+con_remcharbuf (view_t view)
+{
+	con_remcomponent (view, canvas_base + canvas_charbuff);
+}
+
+static inline void
+con_remcursor (view_t view)
+{
+	con_remcomponent (view, client_base + client_cursor);
+}
+
+static void
+load_conback (const char *path)
+{
+	qpic_t     *p;
+	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
+		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
+		return;
+	}
+	conback = r_funcs->Draw_MakePic (p->width, p->height, p->data);
+	free (p);
 }
 
 static void
@@ -495,10 +562,10 @@ input_line_draw (inputline_t *il)
 static void
 resize_input (view_t view, view_pos_t len)
 {
-	if (!con_hascomponent (view, client_input)) {
+	if (!con_hasinput (view)) {
 		return;
 	}
-	__auto_type inp = *(con_input_t **) con_getcomponent (view, client_input);
+	__auto_type inp = con_getinput (view);
 
 	if (inp->buffer) {
 		Draw_DestroyBuffer (inp->buffer);
@@ -578,7 +645,7 @@ resize_console_text (view_t view, view_pos_t len)
 		con_linewidth = width;
 		Draw_DestroyBuffer (console_buffer);
 		console_buffer = Draw_CreateBuffer (width, height);
-		con_setcomponent (buffer_view, client_charbuff, &console_buffer);
+		con_setcharbuf (buffer_view, console_buffer);
 		clear_console_text ();
 	}
 }
@@ -607,45 +674,20 @@ draw_con_scrollback (void)
 }
 
 static void
-draw_cursor (void)
+draw_cursor (view_t view)
 {
-	if (!con_data.realtime) {
-		return;
-	}
-
 	float       t = *con_data.realtime * con_cursorspeed;
 	int         ch = 10 + ((int) (t) & 1);
 
-	ecs_pool_t *pool = &client_reg->comp_pools[client_cursor];
-	con_input_t **inp = pool->data;
-	uint32_t   *id = pool->dense;
-
-	for (uint32_t i = pool->count; i-- > 0; ) {
-		__auto_type buff = (*inp)->buffer;
-		__auto_type il = (*inp++)->input_line;
-		view_t      v = { .reg = client_reg, .id = *id++,
-						  .comp = screen_view.comp };
-		if (!il->cursor) {
-			continue;
-		}
-		view_pos_t  pos = View_GetAbs (v);
-		int         x = (buff->cursx + il->linepos - il->scroll) * 8;
-		r_funcs->Draw_Character (pos.x + x, pos.y, ch);
+	__auto_type inp = con_getinput (view);
+	__auto_type buff = inp->buffer;
+	__auto_type il = inp->input_line;
+	if (!il->cursor) {
+		return;
 	}
-}
-
-static void
-draw_buffer (void)
-{
-	ecs_pool_t *pool = &client_reg->comp_pools[client_charbuff];
-	draw_charbuffer_t **buffer = pool->data;
-	uint32_t   *id = pool->dense;
-	for (uint32_t i = pool->count; i-- > 0; ) {
-		view_t      v = { .reg = client_reg, .id = *id++,
-						  .comp = screen_view.comp };
-		view_pos_t  pos = View_GetAbs (v);
-		Draw_CharBuffer (pos.x, pos.y, *buffer++);
-	}
+	view_pos_t  pos = View_GetAbs (view);
+	int         x = (buff->cursx + il->linepos - il->scroll) * 8;
+	r_funcs->Draw_Character (pos.x + x, pos.y, ch);
 }
 
 static void
@@ -663,35 +705,11 @@ update_notify (void)
 }
 
 static void
-draw_console (view_t view)
-{
-	byte        alpha;
-	view_pos_t  len = View_GetLen (screen_view);
-
-	if (con_data.lines > 0) {
-		// draw the background
-		if (con_state == con_fullscreen) {
-			alpha = 255;
-		} else {
-			float       y = len.y * con_size;
-			alpha = 255 * con_alpha * len.y / y;
-			alpha = min (alpha, 255);
-		}
-		r_funcs->Draw_ConsoleBackground (con_data.lines, alpha);
-	}
-
-	update_notify ();
-	// draw everything else
-	draw_buffer ();
-	draw_cursor ();
-}
-
-static void
 resize_notify (view_t view, view_pos_t len)
 {
 	Draw_DestroyBuffer (notify_buffer);
 	notify_buffer = Draw_CreateBuffer (len.x / 8, NOTIFY_LINES + 1);
-	con_setcomponent (notify_view, client_charbuff, &notify_buffer);
+	con_setcharbuf (notify_view, notify_buffer);
 	ClearNotify ();
 }
 
@@ -759,35 +777,39 @@ C_DrawConsole (void)
 		return;
 	}
 
-	if (con_state == con_message) {
-		con_setcomponent (say_view, client_charbuff, &say_line.buffer);
-		con_input_t *inp = &say_line;
-		con_setcomponent (say_view, client_cursor, &inp);
+	if (!con_data.lines && con_state == con_message) {
+		con_setcharbuf (say_view, say_line.buffer);
+		con_setcursor (say_view, &say_line);
+		con_setfunc (say_view, canvas_lateupdate, draw_cursor);
 	} else {
-		con_remcomponent (say_view, client_charbuff);
-		con_remcomponent (say_view, client_cursor);
+		con_remcharbuf (say_view);
+		con_remcursor (say_view);
+		con_remfunc (say_view, canvas_lateupdate);
 	}
 	if (con_data.lines) {
-		con_setcomponent (command_view, client_charbuff, &cmd_line.buffer);
-		con_input_t *inp = &cmd_line;
-		con_setcomponent (command_view, client_cursor, &inp);
+		con_remcharbuf (notify_view);
+		con_setcharbuf (command_view, cmd_line.buffer);
+		con_setcursor (command_view, &cmd_line);
+		con_setfunc (command_view, canvas_lateupdate, draw_cursor);
 	} else {
-		con_remcomponent (command_view, client_charbuff);
-		con_remcomponent (command_view, client_cursor);
+		con_setcharbuf (notify_view, notify_buffer);
+		con_remcharbuf (command_view);
+		con_remcursor (command_view);
+		con_remfunc (command_view, canvas_lateupdate);
 	}
 	if (con_data.dl_name && *con_data.dl_name->str) {
 		if (!download_buffer) {
 			view_pos_t  len = View_GetLen (download_view);
 			download_buffer = Draw_CreateBuffer (len.x / 8, 1);
-			con_setcomponent (download_view, client_charbuff, &download_buffer);
+			con_setcharbuf (download_view, download_buffer);
 		}
 		update_download ();
 	} else if (download_buffer) {
 		Draw_DestroyBuffer (download_buffer);
-		con_remcomponent (download_view, client_charbuff);
+		con_remcharbuf (download_view);
 	}
 
-	draw_console (screen_view);
+	update_notify ();
 }
 
 static void
@@ -1015,13 +1037,9 @@ C_InitCvars (void)
 static void
 C_Init (void)
 {
-	client_reg = ECS_NewRegistry ();
-	client_base = ECS_RegisterComponents (client_reg, client_components,
-										  client_comp_count);
-	view_base = ECS_RegisterComponents (client_reg, view_components,
-										view_comp_count);
-	ECS_CreateComponentPools (client_reg);
-
+	client_base = con_data.component_base;
+	canvas_base = con_data.canvas_sys->base;
+	view_base = con_data.canvas_sys->view_base;
 #ifdef __QNXNTO__
 	setlocale (LC_ALL, "C-TRADITIONAL");
 #endif
@@ -1033,8 +1051,9 @@ C_Init (void)
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	// The console will get resized, so assume initial size is 320x200
-	ecs_system_t sys = { client_reg, view_base };
-	screen_view   = View_New (sys, nullview);
+	ecs_system_t sys = { con_data.canvas_sys->reg, view_base };
+	screen_canvas = Canvas_New (*con_data.canvas_sys);
+	screen_view   = Canvas_GetRootView (*con_data.canvas_sys, screen_canvas);
 	console_view  = View_New (sys, screen_view);
 	buffer_view   = View_New (sys, console_view);
 	command_view  = View_New (sys, console_view);
@@ -1042,6 +1061,15 @@ C_Init (void)
 	notify_view   = View_New (sys, screen_view);
 	say_view      = View_New (sys, screen_view);
 	menu_view     = View_New (sys, screen_view);
+
+	View_SetVisible (screen_view, 1);
+	View_SetVisible (console_view, 1);
+	View_SetVisible (buffer_view, 1);
+	View_SetVisible (command_view, 1);
+	View_SetVisible (download_view, 1);
+	View_SetVisible (notify_view, 1);
+	View_SetVisible (say_view, 1);
+	View_SetVisible (menu_view, 1);
 
 	View_SetGravity (screen_view,   grav_northwest);
 	View_SetGravity (console_view,  grav_northwest);
@@ -1078,6 +1106,11 @@ C_Init (void)
 	View_SetLen (say_view,      320, 8);
 	View_SetLen (menu_view,     320, 200);
 
+	load_conback ("gfx/conback.lmp");
+	if (conback) {
+		con_setfitpic (console_view, conback);
+	}
+
 	cmd_line.prompt = "";
 	cmd_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
 	cmd_line.input_line->complete = Con_BasicCompleteCommandLine;
@@ -1101,14 +1134,8 @@ C_Init (void)
 	team_input->user_data = &say_line;
 	team_input->draw = input_line_draw;
 
-	{
-		con_input_t *inp = &say_line;
-		con_setcomponent (say_view, client_input, &inp);
-	}
-	{
-		con_input_t *inp = &cmd_line;
-		con_setcomponent (command_view, client_input, &inp);
-	}
+	con_setinput (say_view, &say_line);
+	con_setinput (command_view, &cmd_line);
 
 
 	view_pos_t  len;
@@ -1116,18 +1143,17 @@ C_Init (void)
 	len = View_GetLen (buffer_view);
 	console_buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
 	Draw_ClearBuffer (console_buffer);
-	con_setcomponent (buffer_view, client_charbuff, &console_buffer);
+	con_setcharbuf (buffer_view, console_buffer);
 	con_main = Con_CreateBuffer (CON_BUFFER_SIZE, CON_LINES);
 
 	len = View_GetLen (command_view);
 	cmd_line.buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
 	Draw_ClearBuffer (cmd_line.buffer);
-	con_setcomponent (command_view, client_charbuff, &cmd_line.buffer);
+	con_setcharbuf (command_view, cmd_line.buffer);
 
 	len = View_GetLen (notify_view);
 	notify_buffer = Draw_CreateBuffer (len.x / 8, NOTIFY_LINES + 1);
 	Draw_ClearBuffer (notify_buffer);
-	con_setcomponent (notify_view, client_charbuff, &notify_buffer);
 
 	len = View_GetLen (say_view);
 	say_line.buffer = Draw_CreateBuffer (len.x / 8, len.y / 8);
@@ -1169,6 +1195,8 @@ C_shutdown (void)
 {
 	IE_Remove_Handler (con_event_id);
 }
+
+static general_data_t plugin_info_general_data;
 
 static general_funcs_t plugin_info_general_funcs = {
 	.init = C_InitCvars,
