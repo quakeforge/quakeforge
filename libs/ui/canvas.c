@@ -319,7 +319,7 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 	while (count-- > 0) {
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		byte        c = *col++;
-		if (1 || View_GetVisible (view)) {
+		if (View_GetVisible (view)) {
 			view_pos_t  p = View_GetAbs (view);
 			view_pos_t  l = View_GetLen (view);
 			view_pos_t  q = { p.x + l.x - 1, p.y + l.y - 1 };

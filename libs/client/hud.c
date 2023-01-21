@@ -154,11 +154,9 @@ hud_debug_f (void *data, const cvar_t *cvar)
 		return;
 	}
 	if (hud_debug) {
-		hud_add_outlines (cl_screen_view, 0xfb);
 		hud_add_outlines (hud_canvas_view, 0x6f);
 	} else {
 		hud_remove_outlines (hud_canvas_view);
-		hud_remove_outlines (cl_screen_view);
 	}
 }
 
