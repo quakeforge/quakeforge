@@ -90,7 +90,7 @@ range_cmp (const void *_key, const void *_range, void *_subpool)
 	ecs_subpool_t *subpool = _subpool;
 
 	if (*key >= *range) {
-		return -1;
+		return 1;
 	}
 	if (range - subpool->ranges > 0) {
 		return *key >= range[-1] ? 0 : -1;
