@@ -886,6 +886,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&dctx->frames, frames);
 	DARRAY_RESIZE (&dctx->frames, frames);
 	dctx->frames.grow = 0;
+	memset (dctx->frames.a, 0, dctx->frames.size * sizeof (drawframe_t));
+
 	DARRAY_INIT (&dctx->fonts, 16);
 	DARRAY_RESIZE (&dctx->fonts, 16);
 	dctx->fonts.size = 0;
