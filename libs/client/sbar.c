@@ -2264,10 +2264,10 @@ init_views (void)
 	hud_ping_view = sbar_view (0, 8, 48, 0, grav_northwest, hud_stuff_view);
 	hud_pl_view = sbar_view (56, 8, 48, 0, grav_northwest, hud_stuff_view);
 
-	time_buff = Draw_CreateBuffer (8, 1);
-	fps_buff = Draw_CreateBuffer (10, 1);
-	ping_buff = Draw_CreateBuffer (6, 1);
-	pl_buff = Draw_CreateBuffer (6, 1);
+	Draw_ClearBuffer (time_buff = Draw_CreateBuffer (8, 1));
+	Draw_ClearBuffer (fps_buff = Draw_CreateBuffer (10, 1));
+	Draw_ClearBuffer (ping_buff = Draw_CreateBuffer (6, 1));
+	Draw_ClearBuffer (pl_buff = Draw_CreateBuffer (6, 1));
 
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		sb_fph[i] = Draw_CreateBuffer (3, 1);
