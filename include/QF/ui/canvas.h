@@ -46,6 +46,7 @@ enum {
 	canvas_charbuff,
 	canvas_func,
 	canvas_outline,
+	canvas_lateupdate,
 
 	// last so deleting an entity removes the grouped components first
 	canvas_canvas,

@@ -67,6 +67,7 @@ canvas_rangeid(cachepic)
 canvas_rangeid(fill)
 canvas_rangeid(charbuff)
 canvas_rangeid(func)
+canvas_rangeid(lateupdate)
 canvas_rangeid(outline)
 #undef canvas_rangeid
 
@@ -126,6 +127,11 @@ const component_t canvas_components[canvas_comp_count] = {
 		.name = "func",
 		.rangeid = canvas_func_rangeid,
 	},
+	[canvas_lateupdate] = {
+		.size = sizeof (canvas_update_f),
+		.name = "lateupdate",
+		.rangeid = canvas_lateupdate_rangeid,
+	},
 	[canvas_outline] = {
 		.size = sizeof (byte),
 		.name = "outline",
@@ -150,13 +156,6 @@ draw_update (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 	while (count-- > 0) {
 		(*func++) (View_FromEntity (viewsys, *ent++));
 	}
-}
-
-static void
-draw_updateonce (canvas_system_t *canvas_sys, ecs_pool_t *pool,
-				 ecs_range_t range)
-{
-	draw_update (canvas_sys, pool, range);
 }
 
 static void
@@ -336,7 +335,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 {
 	static canvas_sysfunc_f draw_func[canvas_comp_count] = {
 		[canvas_update]     = draw_update,
-		[canvas_updateonce] = draw_updateonce,
+		[canvas_updateonce] = draw_update,
 		[canvas_tile]       = draw_tile_views,
 		[canvas_pic]        = draw_pic_views,
 		[canvas_fitpic]     = draw_fitpic_views,
@@ -345,6 +344,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		[canvas_fill]       = draw_fill_views,
 		[canvas_charbuff]   = draw_charbuff_views,
 		[canvas_func]       = draw_func_views,
+		[canvas_lateupdate] = draw_update,
 		[canvas_outline]    = draw_outline_views,
 	};
 
