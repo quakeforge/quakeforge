@@ -38,7 +38,6 @@ typedef struct console_funcs_s {
 	void (*print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 	void (*process_input) (void);
 	void (*draw_console) (void);
-	void (*check_resize) (void);
 	void (*new_map) (void);
 	void (*set_state) (con_state_t state);
 } console_funcs_t;
@@ -52,8 +51,11 @@ typedef struct console_data_s {
 	int         ormask;
 	void      (*quit) (void);
 	struct cbuf_s *cbuf;
-	struct view_s *view;
 	struct view_s *status_view;
+	const struct component_s *components;
+	uint32_t    num_components;
+	uint32_t    component_base;
+	struct canvas_system_s *canvas_sys;
 	float       lines;
 	int       (*exec_line)(void *data, const char *line);
 	void       *exec_data;

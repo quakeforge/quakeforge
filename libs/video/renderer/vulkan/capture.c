@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
@@ -41,8 +42,6 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 {
 	qfv_instfuncs_t *ifunc = device->physDev->instance->funcs;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkFormat    format = VK_FORMAT_R8G8B8A8_UNORM;
-	int         canBlit = 1;
 
 	VkFormatProperties format_props;
 	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev,
@@ -52,66 +51,42 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 		Sys_Printf ("Swapchain does not support reading. FIXME\n");
 		return 0;
 	}
-	if (!(format_props.optimalTilingFeatures
-		  & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
-		Sys_MaskPrintf (SYS_vulkan,
-						"Device does not support blitting from optimal tiled "
-						"images.\n");
-		canBlit = 0;
-	}
-	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev, format,
-												&format_props);
-	if (!(format_props.linearTilingFeatures
-		  & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-		Sys_MaskPrintf (SYS_vulkan,
-						"Device does not support blitting from optimal tiled "
-						"images.\n");
-		canBlit = 0;
-	}
 
 	qfv_capture_t *capture = malloc (sizeof (qfv_capture_t));
 	capture->device = device;
-	capture->canBlit = canBlit;
 	capture->extent = swapchain->extent;
 	capture->image_set = QFV_AllocCaptureImageSet (numframes, malloc);
 
 	__auto_type cmdset = QFV_AllocCommandBufferSet (numframes, alloca);
 	QFV_AllocateCommandBuffers (device, cmdPool, 1, cmdset);
 
-	VkImageCreateInfo createInfo = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = format,
-		.extent = { swapchain->extent.width, swapchain->extent.height, 1 },
-		.arrayLayers = 1,
-		.mipLevels = 1,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.tiling = VK_IMAGE_TILING_LINEAR,
-		.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-	};
+	//FIXME assumes the swapchain is 32bpp
+	capture->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
 
 	for (int i = 0; i < numframes; i++) {
 		__auto_type image = &capture->image_set->a[i];
-		dfunc->vkCreateImage (device->dev, &createInfo, 0, &image->image);
-		image->layout = VK_IMAGE_LAYOUT_UNDEFINED;
-		image->cmd = cmdset->a[i];
+		image->buffer = QFV_CreateBuffer (device, capture->imgsize,
+										  VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 	}
-	capture->imgsize = QFV_GetImageSize (device,
-										 capture->image_set->a[0].image);
+	VkMemoryRequirements req;
+	dfunc->vkGetBufferMemoryRequirements (device->dev,
+										  capture->image_set->a[0].buffer,
+										  &req);
+	capture->imgsize = QFV_NextOffset (capture->imgsize, &req);
 	capture->memsize = numframes * capture->imgsize;
-	capture->memory = QFV_AllocImageMemory (device,
-											capture->image_set->a[0].image,
-											VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-											capture->memsize, 0);
+	capture->memory = QFV_AllocBufferMemory (device,
+											 capture->image_set->a[0].buffer,
+											 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+											 capture->memsize, 0);
 	dfunc->vkMapMemory (device->dev, capture->memory, 0, capture->memsize, 0,
 						(void **) &capture->data);
 
 	for (int i = 0; i < numframes; i++) {
 		__auto_type image = &capture->image_set->a[i];
+		image->cmd = cmdset->a[i];
 		image->data = capture->data + i * capture->imgsize;
-		dfunc->vkBindImageMemory (device->dev, image->image, capture->memory,
-								  image->data - capture->data);
+		QFV_BindBufferMemory (device, image->buffer, capture->memory,
+							  i * capture->imgsize);
 	}
 	return capture;
 }
@@ -124,7 +99,7 @@ QFV_DestroyCapture (qfv_capture_t *capture)
 
 	for (size_t i = 0; i < capture->image_set->size; i++) {
 		__auto_type image = &capture->image_set->a[i];
-		dfunc->vkDestroyImage (device->dev, image->image, 0);
+		dfunc->vkDestroyBuffer (device->dev, image->buffer, 0);
 	}
 	dfunc->vkUnmapMemory (device->dev, capture->memory);
 	dfunc->vkFreeMemory (device->dev, capture->memory, 0);
@@ -133,34 +108,20 @@ QFV_DestroyCapture (qfv_capture_t *capture)
 }
 
 static void
-blit_image (qfv_capture_t *capture, qfv_devfuncs_t *dfunc,
-			VkImage scImage, qfv_capture_image_t *image)
-{
-	VkImageBlit blit = {
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		{ { }, { capture->extent.width, capture->extent.height, 1 } },
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		{ { }, { capture->extent.width, capture->extent.height, 1 } },
-	};
-	dfunc->vkCmdBlitImage (image->cmd,
-						   scImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						   image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						   1, &blit, VK_FILTER_NEAREST);
-}
-
-static void
 copy_image (qfv_capture_t *capture, qfv_devfuncs_t *dfunc,
 			VkImage scImage, qfv_capture_image_t *image)
 {
-	VkImageCopy copy = {
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 }, { },
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 }, { },
-		{ capture->extent.width, capture->extent.height, 1 },
+	VkBufferImageCopy copy = {
+		.bufferOffset = 0,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		.imageOffset = { },
+		.imageExtent = { capture->extent.width, capture->extent.height, 1 },
 	};
-	dfunc->vkCmdCopyImage (image->cmd,
-						   scImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						   image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						   1, &copy);
+	dfunc->vkCmdCopyImageToBuffer (image->cmd, scImage,
+								   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+								   image->buffer, 1, &copy);
 }
 
 VkCommandBuffer
@@ -181,16 +142,17 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 	};
 	dfunc->vkBeginCommandBuffer (image->cmd, &beginInfo);
 
-	VkImageMemoryBarrier start_barriers[] = {
+	VkBufferMemoryBarrier start_buffer_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = 0,
 			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.oldLayout = image->layout,
-			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			.image = image->image,
-			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+			.buffer = image->buffer,
+			.offset = 0,
+			.size = VK_WHOLE_SIZE,
 		},
+	};
+	VkImageMemoryBarrier start_image_barriers[] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT,
@@ -201,16 +163,17 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
 		},
 	};
-	VkImageMemoryBarrier end_barriers[] = {
+	VkBufferMemoryBarrier end_buffer_barriers[] = {
 		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
 			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			.newLayout = VK_IMAGE_LAYOUT_GENERAL,
-			.image = image->image,
-			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+			.buffer = image->buffer,
+			.offset = 0,
+			.size = VK_WHOLE_SIZE,
 		},
+	};
+	VkImageMemoryBarrier end_image_barriers[] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
@@ -225,21 +188,18 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 	dfunc->vkCmdPipelineBarrier (image->cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 0, 0,
-								 2, start_barriers);
+								 0, 0, 0,
+								 1, start_buffer_barriers,
+								 1, start_image_barriers);
 
-	if (capture->canBlit) {
-		blit_image (capture, dfunc, scImage, image);
-	} else {
-		copy_image (capture, dfunc, scImage, image);
-	}
+	copy_image (capture, dfunc, scImage, image);
 
 	dfunc->vkCmdPipelineBarrier (image->cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 0, 0,
-								 2, end_barriers);
-	image->layout = VK_IMAGE_LAYOUT_GENERAL;
+								 0, 0, 0,
+								 1, end_buffer_barriers,
+								 1, end_image_barriers);
 
 	dfunc->vkEndCommandBuffer (image->cmd);
 

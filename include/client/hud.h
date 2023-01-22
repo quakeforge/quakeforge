@@ -28,25 +28,29 @@
 #ifndef __client_hud_h
 #define __client_hud_h
 
+struct view_s;
+
+extern struct ecs_system_s hud_psgsys;
+
+extern uint32_t hud_canvas;
 extern int hud_sb_lines;
 
 extern int hud_sbar;
 extern int hud_swap;
+extern int hud_fps;
+extern int hud_pl;
+extern int hud_ping;
+extern int hud_time;
 
-extern struct view_s *sbar_view;
-extern struct view_s *sbar_inventory_view;
-extern struct view_s *sbar_frags_view;
+//root view of the hud canvas
+extern struct view_s hud_canvas_view;
 
-extern struct view_s *hud_view;
-extern struct view_s *hud_inventory_view;
-extern struct view_s *hud_armament_view;
-extern struct view_s *hud_frags_view;
+struct ecs_registry_s;
+struct canvas_system_s;
 
-extern struct view_s *hud_overlay_view;
-extern struct view_s *hud_stuff_view;
-extern struct view_s *hud_main_view;
-
+void HUD_Init (struct ecs_registry_s *reg);
 void HUD_Init_Cvars (void);
+void HUD_CreateCanvas (struct canvas_system_s canvas_sys);
 void HUD_Calc_sb_lines (int view_size);
 
 #endif//__client_hud_h

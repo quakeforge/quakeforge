@@ -31,18 +31,18 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/ui/view.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
 
 viddef_t    vid;					// global video state
-view_t      scr_view;
 
 vid_render_data_t vid_render_data = {
 	.vid = &vid,
 	.refdef = &r_refdef,
-	.scr_view = &scr_view,
 	.scr_copytop = 0,
 	.scr_copyeverything = 0,
 	.scr_fullupdate = 0,
@@ -54,7 +54,7 @@ vid_render_data_t vid_render_data = {
 	.inhibit_viewmodel = false,
 	.paused = false,
 	.lineadj = 0,
-	.view_model = 0,
+	.view_model = nullentity,
 	.frametime = 0.0,
 	.realtime = 0.0,
 	.lightstyle = 0,

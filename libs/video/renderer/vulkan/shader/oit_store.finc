@@ -1,0 +1,14 @@
+#include "oit.h"
+
+void
+StoreFrag (vec4 color, float depth)
+{
+	int         index = atomicAdd (numFragments, 1);
+	ivec2       coord = ivec2(gl_FragCoord.xy);
+	if (index < maxFragments) {
+		int         prevIndex = imageAtomicExchange (heads, coord, index);
+		fragments[index].color = color;
+		fragments[index].depth = depth;
+		fragments[index].next = prevIndex;
+	}
+}

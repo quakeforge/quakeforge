@@ -100,47 +100,17 @@ vulkan_iqm_init_image (iqm_t *iqm, int meshnum, qfv_resobj_t *image)
 	dstring_copystr (str, material);
 	QFS_StripExtension (str->str, str->str);
 
+	tex_t       dummy_tex;
 	tex_t      *tex;
-	if ((tex = LoadImage (va (0, "textures/%s", str->str), 0))) {
-		*image = (qfv_resobj_t) {
-			.name = material,
-			.type = qfv_res_image,
-			.image = {
-				.type = VK_IMAGE_TYPE_2D,
-				.format = QFV_ImageFormat (tex->format, 0),
-				.extent = {
-					.width = tex->width,
-					.height = tex->height,
-					.depth = 1,
-				},
-				.num_mipmaps = QFV_MipLevels (tex->width, tex->height),
-				.num_layers = 1,
-				.samples = VK_SAMPLE_COUNT_1_BIT,
-				.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
-						| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-						| VK_IMAGE_USAGE_SAMPLED_BIT,
-			},
+	if (!(tex = LoadImage (va (0, "textures/%s", str->str), 0))) {
+		dummy_tex = (tex_t) {
+			.width = 2,
+			.height = 2,
+			.format = tex_rgba,
 		};
-	} else {
-		*image = (qfv_resobj_t) {
-			.name = material,
-			.type = qfv_res_image,
-			.image = {
-				.type = VK_IMAGE_TYPE_2D,
-				.format = QFV_ImageFormat (tex_rgba, 0),
-				.extent = {
-					.width = 2,
-					.height = 2,
-					.depth = 1,
-				},
-				.num_mipmaps = QFV_MipLevels (2, 2),
-				.num_layers = 1,
-				.samples = VK_SAMPLE_COUNT_1_BIT,
-				.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
-						| VK_IMAGE_USAGE_SAMPLED_BIT,
-			},
-		};
+		tex = &dummy_tex;
 	}
+	QFV_ResourceInitTexImage (image, material, 1, tex);
 	dstring_delete (str);
 }
 

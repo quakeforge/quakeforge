@@ -39,17 +39,21 @@
 */
 
 enum {
+	QFV_rp_particles,
 	QFV_rp_shadowmap,
+	QFV_rp_preoutput,
+	QFV_rp_translucent,
 	QFV_rp_main,
+	QFV_rp_output,
 };
 
 //FIXME location
 typedef enum {
-	QFV_passDepth,			// geometry
-	QFV_passTranslucent,	// geometry
-	QFV_passGBuffer,		// geometry
-	QFV_passLighting,		// single triangle
-	QFV_passCompose,		// single triangle
+	QFV_passDepth,				// geometry
+	QFV_passTranslucentFrag,	// geometry
+	QFV_passGBuffer,			// geometry
+	QFV_passLighting,			// single triangle
+	QFV_passCompose,			// single triangle
 
 	QFV_NumPasses
 } QFV_Subpass;
@@ -61,7 +65,6 @@ enum {
 	QFV_attachNormal,
 	QFV_attachPosition,
 	QFV_attachOpaque,
-	QFV_attachTranslucent,
 	QFV_attachSwapchain,
 };
 
@@ -91,8 +94,12 @@ VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
 
 struct entity_s;
 void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
-							  struct entity_s *ent);
+							  struct entity_s ent);
 
 struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
+
+extern int vulkan_frame_width;
+extern int vulkan_frame_height;
+extern int vulkan_oit_fragments;
 
 #endif // __QF_Vulkan_vid_h

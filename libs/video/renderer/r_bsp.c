@@ -103,12 +103,12 @@ R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (const entity_t *entity, msurface_t *surf)
+R_TextureAnimation (int frame, msurface_t *surf)
 {
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (entity->animation.frame) {
+	if (frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}

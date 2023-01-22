@@ -35,13 +35,11 @@ struct tex_s;
 
 void SCR_Init (void);
 
-void SCR_DrawRam (void);
-void SCR_DrawTurtle (void);
-void SCR_DrawPause (void);
-
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
-void SCR_UpdateScreen (struct transform_s *camera, double realtime,
+void SCR_UpdateScreen (struct transform_s camera, double realtime,
+					   SCR_Func *scr_funcs);
+void SCR_UpdateScreen_legacy (struct transform_s camera, double realtime,
 					   SCR_Func *scr_funcs);
 void SCR_SetFOV (float fov);
 // control whether the 3d viewport is user-controlled or always fullscreen
@@ -50,15 +48,13 @@ void SCR_SetBottomMargin (int lines);
 
 void SCR_NewScene (struct scene_s *scene);
 
-extern int hud_fps;
-extern int hud_time;
 extern int r_timegraph;
 extern int r_zgraph;
 extern int         scr_copytop;
 extern qboolean    scr_skipupdate;
 
-struct view_s;
-void R_TimeGraph (struct view_s *view);
-void R_ZGraph (struct view_s *view);
+struct view_pos_s;
+void R_TimeGraph (struct view_pos_s abs, struct view_pos_s len);
+void R_ZGraph (struct view_pos_s abs, struct view_pos_s len);
 
 #endif//__QF_screen_h

@@ -243,23 +243,34 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 	internal_error (e1, 0);
 }
 
+static int __attribute__((pure))
+has_block_expr (expr_t *e)
+{
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
+	}
+	return e->type == ex_block;
+}
+
 expr_t *
 convert_bool (expr_t *e, int block)
 {
 	expr_t     *b;
 
 	if (e->type == ex_assign) {
-		expr_t     *src;
+		expr_t     *tst;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		src = e->e.assign.src;
-		if (src->type == ex_block) {
-			src = new_temp_def_expr (get_type (src));
+		tst = e->e.assign.src;
+		if (has_block_expr (tst) && has_block_expr (e->e.assign.dst)) {
+			tst = new_temp_def_expr (get_type (tst));
 			e = new_assign_expr (e->e.assign.dst,
-								 assign_expr (src, e->e.assign.src));
+								 assign_expr (tst, e->e.assign.src));
+		} else if (has_block_expr (tst)) {
+			tst = e->e.assign.dst;
 		}
-		b = convert_bool (src, 1);
+		b = convert_bool (tst, 1);
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the bool's block

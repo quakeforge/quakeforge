@@ -1,13 +1,11 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
 
 layout (constant_id = 0) const bool IQMDepthOnly = false;
 
-layout (set = 0, binding = 0) uniform Matrices {
-	mat4 Projection3d;
-	mat4 View;
-	mat4 Sky;
-	mat4 Projection2d;
-};
+layout (set = 0, binding = 0) uniform
+#include "matrices.h"
+;
 
 layout (set = 2, binding = 0) buffer Bones {
 	// NOTE these are transposed, so v * m

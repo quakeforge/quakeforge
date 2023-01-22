@@ -8,7 +8,9 @@
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
+#include "QF/va.h"
 
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -91,7 +93,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (physDev,
 												  ctx->surface,
 												  &numFormats, formats);
-	VkSurfaceFormatKHR useFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+	VkSurfaceFormatKHR useFormat = {VK_FORMAT_B8G8R8A8_UNORM,
 									VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 	if (numFormats > 1) {
 		uint32_t i;
@@ -146,10 +148,16 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	sc->imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc);
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, sc->images->a);
 	for (uint32_t i = 0; i < numImages; i++) {
+		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE,
+							 sc->images->a[i],
+							 va (ctx->va_ctx, "image:swapchain:%d", i));
 		sc->imageViews->a[i]
 			= QFV_CreateImageView (ctx->device, sc->images->a[i],
 								   VK_IMAGE_VIEW_TYPE_2D, sc->format,
 								   VK_IMAGE_ASPECT_COLOR_BIT);
+		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE_VIEW,
+							 sc->imageViews->a[i],
+							 va (ctx->va_ctx, "iview:swapchain:%d", i));
 	}
 	return sc;
 }

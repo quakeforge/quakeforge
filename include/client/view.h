@@ -31,6 +31,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/simd/types.h"
+#include "QF/scene/entity.h"
 
 typedef struct {
 	int     destcolor[3];
@@ -57,18 +58,23 @@ typedef struct viewstate_s {
 	vec4f_t     movecmd;
 	vec4f_t     velocity;
 	vec4f_t     punchangle;
-	float       frametime;
-	struct transform_s *camera_transform;
+	transform_t camera_transform;
 	double      time;
+	double      realtime;
+	double      last_servermessage;
+	float       frametime;
 	float       height;
 	int         weaponframe;
 	int         onground;		// -1 when in air
-	int         active:1;
-	int         drift_enabled:1;
-	int         voffs_enabled:1;
-	int         bob_enabled:1;
-	int         intermission:1;
-	int         decay_punchangle:1;
+	unsigned    active:1;
+	unsigned    loading:1;
+	unsigned    watervis:1;
+	unsigned    demoplayback:1;
+	unsigned    drift_enabled:1;
+	unsigned    voffs_enabled:1;
+	unsigned    bob_enabled:1;
+	unsigned    intermission:1;
+	unsigned    decay_punchangle:1;
 	int         force_cshifts;	// bitfield of server enforced cshifts
 	uint32_t    flags;
 
@@ -85,8 +91,8 @@ typedef struct viewstate_s {
 	double      laststop;
 
 	struct model_s *weapon_model;
-	struct entity_s *weapon_entity;
-	struct entity_s *player_entity;
+	entity_t    weapon_entity;
+	entity_t    player_entity;
 
 	struct chasestate_s *chasestate;
 } viewstate_t;

@@ -66,6 +66,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
 #include "compat.h"
@@ -122,7 +123,7 @@ update_lights (vulkan_ctx_t *ctx)
 		}
 	}
 	if (developer & SYS_lighting) {
-		Vulkan_Draw_String (vid.conview->xlen - 32, 8,
+		Vulkan_Draw_String (vid.width - 32, 8,
 							va (ctx->va_ctx, "%3d", light_data->lightCount),
 							ctx);
 	}
@@ -161,7 +162,6 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 		update_lights (ctx);
 	}
 
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = lframe->cmd;
 
@@ -171,7 +171,7 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		renderpass->renderpass, QFV_passLighting,
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {
@@ -233,7 +233,11 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 		sets->size = 0;
 	}
 
-	if (!lctx->ldata) {
+	if (!lctx->ldata || !lctx->ldata->lights.size) {
+		return;
+	}
+	if (!lctx->light_renderers.a[0].renderPass) {
+		//FIXME goes away when lighting implemented properly
 		return;
 	}
 
@@ -241,7 +245,7 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 	QFV_AllocateCommandBuffers (device, lctx->cmdpool, 0, bufferset);
 	VkCommandBuffer cmd = bufferset->a[0];
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-						 cmd, va (ctx->va_ctx, "lighting:%zd", ctx->curFrame));
+						 cmd, va (ctx->va_ctx, "lighting:%d", ctx->curFrame));
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -260,9 +264,11 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 		.pClearValues = lctx->qfv_renderpass->clearValues->a,
 	};
 	__auto_type subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-	dfunc->vkCmdBeginRenderPass (cmd, &renderPassInfo, subpassContents);
-	//...
-	dfunc->vkCmdEndRenderPass (cmd);
+	if (renderPassInfo.renderPass) {
+		dfunc->vkCmdBeginRenderPass (cmd, &renderPassInfo, subpassContents);
+		//...
+		dfunc->vkCmdEndRenderPass (cmd);
+	}
 	QFV_CmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
@@ -277,9 +283,8 @@ Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 
 	// extents are dynamic and filled in for each light
 	// frame buffers are highly dynamic
-	qfv_output_t output = {};
-	__auto_type rp = Vulkan_CreateRenderPass (ctx, "shadow",
-											  &output, lighting_draw_maps);
+	__auto_type rp = QFV_RenderPass_New (ctx, "shadow", lighting_draw_maps);
+	QFV_RenderPass_CreateRenderPass (rp);
 	rp->primary_commands = 1;
 	rp->order = QFV_rp_shadowmap;
 	DARRAY_APPEND (&ctx->renderPasses, rp);
@@ -322,7 +327,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	// lighting_context initialized in Vulkan_Lighting_CreateRenderPasses
 
-	ctx->output = (qfv_output_t) {.format = VK_FORMAT_X8_D24_UNORM_PACK32 };
+	Vulkan_Script_SetOutput (ctx,
+			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
 	lightingctx_t *lctx = ctx->lighting_context;
 	plitem_t   *rp_def = lctx->qfv_renderpass->renderpassDef;
 	plitem_t   *rp_cfg = PL_ObjectForKey (rp_def, "renderpass_6");
@@ -441,9 +447,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		lframe->shadowWrite = base_image_write;
 		lframe->shadowWrite.dstSet = shadow_set->a[i];
 		lframe->shadowWrite.dstBinding = 0;
-		lframe->shadowWrite.descriptorCount
-			= min (MaxLights,
-			device->physDev->properties->limits.maxPerStageDescriptorSamplers);
+		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
 	free (shadow_set);
@@ -459,17 +463,15 @@ clear_shadows (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	lightingctx_t *lctx = ctx->lighting_context;
 
-	if (lctx->shadow_memory) {
-		dfunc->vkFreeMemory (device->dev, lctx->shadow_memory, 0);
-		lctx->shadow_memory = 0;
-	}
 	for (size_t i = 0; i < lctx->light_renderers.size; i++) {
 		__auto_type lr = &lctx->light_renderers.a[i];
 		dfunc->vkDestroyFramebuffer (device->dev, lr->framebuffer, 0);
 		dfunc->vkDestroyImageView (device->dev, lr->view, 0);
 	}
-	for (size_t i = 0; i < lctx->light_images.size; i++) {
-		dfunc->vkDestroyImage (device->dev, lctx->light_images.a[i], 0);
+	if (lctx->shadow_resources) {
+		QFV_DestroyResource (device, lctx->shadow_resources);
+		free (lctx->shadow_resources);
+		lctx->shadow_resources = 0;
 	}
 	lctx->light_images.size = 0;
 	lctx->light_renderers.size = 0;
@@ -532,7 +534,6 @@ create_light_matrices (lightingctx_t *lctx)
 				break;
 			case ST_CASCADE:
 			case ST_PLANE:
-				(void)0;//FIXME for clang
 				//FIXME will fail for -ref_direction
 				vec4f_t     dir = light->direction;
 				dir[3] = 0;
@@ -576,35 +577,6 @@ light_compare (const void *_li2, const void *_li1, void *_ldata)
 			&& (l1->direction[3] > -0.5) == (l2->direction[3] > -0.5);
 	}
 	return s1 - s2;
-}
-
-static VkImage
-create_map (int size, int layers, int cube, vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	if (layers < 6) {
-		cube = 0;
-	}
-
-	VkImageCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, 0,
-		cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0, VK_IMAGE_TYPE_2D,
-		VK_FORMAT_X8_D24_UNORM_PACK32,
-		{ size, size, 1 }, 1, layers,
-		VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-		| VK_IMAGE_USAGE_SAMPLED_BIT, VK_SHARING_MODE_EXCLUSIVE,
-		0, 0,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-	};
-	VkImage     image;
-	dfunc->vkCreateImage (device->dev, &createInfo, 0, &image);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, image,
-						 va (ctx->va_ctx, "image:shadowmap:%d:%d",
-							 size, layers));
-	return image;
 }
 
 static VkImageView
@@ -678,8 +650,13 @@ create_framebuffer (const light_renderer_t *lr, vulkan_ctx_t *ctx)
 static void
 build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 {
+	typedef struct {
+		int         size;
+		int         layers;
+		int         cube;
+	} mapdesc_t;
+
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physDev = device->physDev;
 	int         maxLayers = physDev->properties->limits.maxImageArrayLayers;
 	lightingdata_t *ldata = lctx->ldata;
@@ -689,8 +666,9 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	int         numLayers = 0;
 	int         totalLayers = 0;
 	int        *imageMap = alloca (numLights * sizeof (int));
-	size_t      memsize = 0;
 	int        *lightMap = alloca (numLights * sizeof (int));
+	int         numMaps = 0;
+	mapdesc_t  *maps = alloca (numLights * sizeof (mapdesc_t));
 
 	for (int i = 0; i < numLights; i++) {
 		lightMap[i] = i;
@@ -727,13 +705,16 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		if (size != abs ((int) lights[li].color[3])
 			|| numLayers + layers > maxLayers) {
 			if (numLayers) {
-				VkImage     shadow_map = create_map (size, numLayers, 1, ctx);
-				DARRAY_APPEND (&lctx->light_images, shadow_map);
+				maps[numMaps++] = (mapdesc_t) {
+					.size = size,
+					.layers = numLayers,
+					.cube = 1,
+				};
 				numLayers = 0;
 			}
 			size = abs ((int) lights[li].color[3]);
 		}
-		imageMap[li] = lctx->light_images.size;
+		imageMap[li] = numMaps;
 		lr->size = size;
 		lr->layer = numLayers;
 		lr->numLayers = layers;
@@ -741,8 +722,11 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		totalLayers += layers;
 	}
 	if (numLayers) {
-		VkImage     shadow_map = create_map (size, numLayers, 1, ctx);
-		DARRAY_APPEND (&lctx->light_images, shadow_map);
+		maps[numMaps++] = (mapdesc_t) {
+			.size = size,
+			.layers = numLayers,
+			.cube = 1,
+		};
 	}
 
 	numLayers = 0;
@@ -756,11 +740,14 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			continue;
 		}
 		if (numLayers + layers > maxLayers) {
-			VkImage     shadow_map = create_map (size, numLayers, 0, ctx);
-			DARRAY_APPEND (&lctx->light_images, shadow_map);
+			maps[numMaps++] = (mapdesc_t) {
+				.size = size,
+				.layers = numLayers,
+				.cube = 0,
+			};
 			numLayers = 0;
 		}
-		imageMap[li] = lctx->light_images.size;
+		imageMap[li] = numMaps;
 		lr->size = size;
 		lr->layer = numLayers;
 		lr->numLayers = layers;
@@ -768,24 +755,45 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		totalLayers += layers;
 	}
 	if (numLayers) {
-		VkImage     shadow_map = create_map (size, numLayers, 0, ctx);
-		DARRAY_APPEND (&lctx->light_images, shadow_map);
+		maps[numMaps++] = (mapdesc_t) {
+			.size = size,
+			.layers = numLayers,
+			.cube = 0,
+		};
 	}
 
-	for (size_t i = 0; i < lctx->light_images.size; i++) {
-		memsize += QFV_GetImageSize (device, lctx->light_images.a[i]);
-	}
-	lctx->shadow_memory = QFV_AllocImageMemory (device, lctx->light_images.a[0],
-										VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-												memsize, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 lctx->shadow_memory, "memory:shadowmap");
-
-	size_t      offset = 0;
-	for (size_t i = 0; i < lctx->light_images.size; i++) {
-		dfunc->vkBindImageMemory (device->dev, lctx->light_images.a[i],
-								  lctx->shadow_memory, offset);
-		offset += QFV_GetImageSize (device, lctx->light_images.a[i]);
+	if (numMaps) {
+		qfv_resource_t *shad = calloc (1, sizeof (qfv_resource_t)
+									   + numMaps * sizeof (qfv_resobj_t));
+		lctx->shadow_resources = shad;
+		*shad = (qfv_resource_t) {
+			.name = "shadow",
+			.va_ctx = ctx->va_ctx,
+			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			.num_objects = numMaps,
+			.objects = (qfv_resobj_t *) &shad[1],
+		};
+		for (int i = 0; i < numMaps; i++) {
+			shad->objects[i] = (qfv_resobj_t) {
+				.name = "map",
+				.type = qfv_res_image,
+				.image = {
+					.cubemap = maps[i].layers < 6 ? 0 : maps[i].cube,
+					.type = VK_IMAGE_TYPE_2D,
+					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.extent = { maps[i].size, maps[i].size, 1 },
+					.num_mipmaps = 1,
+					.num_layers = maps[i].layers,
+					.samples = VK_SAMPLE_COUNT_1_BIT,
+					.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+							| VK_IMAGE_USAGE_SAMPLED_BIT,
+				},
+			};
+		}
+		QFV_CreateResource (device, shad);
+		for (int i = 0; i < numMaps; i++) {
+			DARRAY_APPEND (&lctx->light_images, shad->objects[i].image.image);
+		}
 	}
 
 	for (int i = 0; i < numLights; i++) {
@@ -815,8 +823,9 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		lr->framebuffer = create_framebuffer(lr, ctx);
 	}
 	Sys_MaskPrintf (SYS_vulkan,
-					"shadow maps: %d layers in %zd images: %zd\n",
-					totalLayers, lctx->light_images.size, memsize);
+					"shadow maps: %d layers in %zd images: %"PRId64"\n",
+					totalLayers, lctx->light_images.size,
+					lctx->shadow_resources->size);
 }
 
 void

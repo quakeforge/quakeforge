@@ -128,10 +128,11 @@ glsl_R_InitSprites (void)
 }
 
 static void
-R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
+R_GetSpriteFrames (entity_t ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	animation_t *animation = &ent->animation;
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	int         framenum = animation->frame;
 	int         pose;
 	int         i, numframes;
@@ -206,9 +207,10 @@ make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t sright, vec4f_t sup, f
 }
 
 void
-glsl_R_DrawSprite (entity_t *ent)
+glsl_R_DrawSprite (entity_t ent)
 {
-	msprite_t  *sprite = (msprite_t *) ent->renderer.model->cache.data;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	msprite_t  *sprite = (msprite_t *) renderer->model->cache.data;
 	mspriteframe_t *frame1, *frame2;
 	float       blend;
 	vec4f_t     cameravec = {};
@@ -224,10 +226,12 @@ glsl_R_DrawSprite (entity_t *ent)
 		{ 0, 1, 0, 1 },
 	};
 
-	vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
+	transform_t transform = Entity_Transform (ent);
+	vec4f_t     origin = Transform_GetWorldPosition (transform);
 	cameravec = r_refdef.frame.position - origin;
 
-	if (!R_BillboardFrame (ent, sprite->type, cameravec, &sup, &sright, &spn)) {
+	if (!R_BillboardFrame (transform, sprite->type, cameravec,
+						   &sup, &sright, &spn)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}

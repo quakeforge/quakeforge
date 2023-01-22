@@ -29,9 +29,13 @@
 #define __gl_draw_h
 
 struct qpic_s;
+struct font_s;
+struct draw_charbuffer_s;
 
 void gl_Draw_Init (void);
 void gl_Draw_Shutdown (void);
+void gl_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer);
+void gl_Draw_SetScale (int scale);
 void gl_Draw_Character (int x, int y, unsigned ch);
 void gl_Draw_String (int x, int y, const char *str);
 void gl_Draw_nString (int x, int y, const char *str, int count);
@@ -51,9 +55,12 @@ struct qpic_s *gl_Draw_MakePic (int width, int height, const byte *data);
 void gl_Draw_DestroyPic (struct qpic_s *pic);
 struct qpic_s *gl_Draw_PicFromWad (const char *name);
 void gl_Draw_Pic (int x, int y, struct qpic_s *pic);
+void gl_Draw_FitPic (int x, int y, int width, int height, struct qpic_s *pic);
 void gl_Draw_Picf (float x, float y, struct qpic_s *pic);
 void gl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);
+int gl_Draw_AddFont (struct font_s *font);
+void gl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c);
 
 void GL_Set2D (void);
 void GL_Set2DScaled (void);

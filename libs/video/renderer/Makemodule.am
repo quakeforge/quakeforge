@@ -38,13 +38,19 @@ renderer_libs= \
 	@vid_render_static_plugin_libs@ \
 	libs/util/libQFutil.la
 
+renderer_libadd= \
+	$(FREETYPE_LIBS) \
+	$(HARFBUZZ_LIBS)
+
 libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
-libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)
+libs_video_renderer_libQFrenderer_la_LIBADD=\
+	$(renderer_libs) \
+	$(renderer_libadd)
 libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_bsp.c \
 	libs/video/renderer/r_cvar.c \
-	libs/video/renderer/r_efrag.c \
+	libs/video/renderer/r_draw.c \
 	libs/video/renderer/r_fog.c \
 	libs/video/renderer/r_graph.c \
 	libs/video/renderer/r_init.c \
@@ -59,7 +65,9 @@ video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
 	libs/models/libmodels_gl.la
 libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
+libs_video_renderer_vid_render_gl_la_LIBADD=\
+	$(video_renderer_gl_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -100,7 +108,9 @@ video_renderer_glsl_libs= \
 	libs/video/renderer/librender_glsl.la \
 	libs/models/libmodels_glsl.la
 libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
+libs_video_renderer_vid_render_glsl_la_LIBADD=\
+	$(video_renderer_glsl_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -127,7 +137,9 @@ video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
+libs_video_renderer_vid_render_sw_la_LIBADD=\
+	$(video_renderer_sw_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -179,20 +191,26 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/transform.S \
 	libs/video/renderer/sw/vid_common_sw.c
 
-pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
-pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
-deferred_src = libs/video/renderer/vulkan/deferred.plist
-deferred_gen = libs/video/renderer/vulkan/deferred.plc
-shadow_src = libs/video/renderer/vulkan/shadow.plist
-shadow_gen = libs/video/renderer/vulkan/shadow.plc
-forward_src = libs/video/renderer/vulkan/forward.plist
-forward_gen = libs/video/renderer/vulkan/forward.plc
+pl_quake_def_src = libs/video/renderer/vulkan/pl_quake_def.plist
+pl_quake_def_gen = libs/video/renderer/vulkan/pl_quake_def.plc
+pl_output_src = libs/video/renderer/vulkan/pl_output.plist
+pl_output_gen = libs/video/renderer/vulkan/pl_output.plc
+rp_deferred_src = libs/video/renderer/vulkan/rp_deferred.plist
+rp_deferred_gen = libs/video/renderer/vulkan/rp_deferred.plc
+rp_forward_src = libs/video/renderer/vulkan/rp_forward.plist
+rp_forward_gen = libs/video/renderer/vulkan/rp_forward.plc
+rp_output_src = libs/video/renderer/vulkan/rp_output.plist
+rp_output_gen = libs/video/renderer/vulkan/rp_output.plc
+rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
+rp_shadow_gen = libs/video/renderer/vulkan/rp_shadow.plc
 
 video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
 	libs/models/libmodels_vulkan.la
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
-libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(video_renderer_vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=\
+	$(video_renderer_vulkan_libs) \
+	$(renderer_libadd)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
@@ -227,24 +245,29 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
+	libs/video/renderer/vulkan/vulkan_output.c \
+	libs/video/renderer/vulkan/vulkan_palette.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
 	libs/video/renderer/vulkan/vulkan_renderpass.c \
 	libs/video/renderer/vulkan/vulkan_scene.c \
 	libs/video/renderer/vulkan/vulkan_sprite.c \
 	libs/video/renderer/vulkan/vulkan_texture.c \
+	libs/video/renderer/vulkan/vulkan_translucent.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
-libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
-
-libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
-
-libs/video/renderer/vulkan/vulkan_vid_common.lo: \
-	libs/video/renderer/vulkan/vulkan_vid_common.c \
+libs/video/renderer/vulkan/vkparse.lo: \
+	libs/video/renderer/vulkan/vkparse.c \
 	$(vkparse_src) \
-	$(pipeline_gen) \
-	${deferred_gen} \
-	${shadow_gen} \
-	$(forward_gen)
+	$(pl_quake_def_gen) \
+	$(pl_output_gen) \
+	${rp_deferred_gen} \
+	$(rp_forward_gen) \
+	$(rp_output_gen) \
+	${rp_shadow_gen}
+
+libs/video/renderer/vulkan/shader.lo: \
+	libs/video/renderer/vulkan/shader.c \
+	$(vkshader_c)
 
 
 qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
@@ -258,6 +281,12 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+slice_src = $(vkshaderpath)/slice.vert
+slice_c = $(vkshaderpath)/slice.vert.spvc
+linev_src = $(vkshaderpath)/line.vert
+linev_c = $(vkshaderpath)/line.vert.spvc
+linef_src = $(vkshaderpath)/line.frag
+linef_c = $(vkshaderpath)/line.frag.spvc
 partphysicsc_src = $(vkshaderpath)/partphysics.comp
 partphysicsc_c = $(vkshaderpath)/partphysics.comp.spvc
 partupdatec_src = $(vkshaderpath)/partupdate.comp
@@ -276,6 +305,8 @@ sprite_depthv_src = $(vkshaderpath)/sprite_depth.vert
 sprite_depthv_c = $(vkshaderpath)/sprite_depth.vert.spvc
 sprite_depthf_src = $(vkshaderpath)/sprite_depth.frag
 sprite_depthf_c = $(vkshaderpath)/sprite_depth.frag.spvc
+twod_depthf_src = $(vkshaderpath)/twod_depth.frag
+twod_depthf_c = $(vkshaderpath)/twod_depth.frag.spvc
 twodv_src = $(vkshaderpath)/twod.vert
 twodv_c = $(vkshaderpath)/twod.vert.spvc
 twodf_src = $(vkshaderpath)/twod.frag
@@ -303,6 +334,11 @@ lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+oit_blend = $(vkshaderpath)/oit_blend.finc
+oit_store = $(vkshaderpath)/oit_store.finc
+oit_h = $(vkshaderpath)/oit.h
+matrices_h = $(vkshaderpath)/matrices.h
+entity_h = $(vkshaderpath)/entity.h
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -317,56 +353,69 @@ iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
 iqmf_src = $(vkshaderpath)/iqm.frag
 iqmf_c = $(vkshaderpath)/iqm.frag.spvc
+output_src = $(vkshaderpath)/output.frag
+output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
 fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
+fstrianglest_src = $(vkshaderpath)/fstrianglest.vert
+fstrianglest_c = $(vkshaderpath)/fstrianglest.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+waterwarp_src = $(vkshaderpath)/waterwarp.frag
+waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
+
+$(slice_vert_c): $(slice_vert_src) $(matrices_h)
+
+$(linev_c): $(linev_src) $(matrices_h)
+$(linef_c): $(linef_src)
 
 $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
-$(particlev_c): $(particlev_src)
+$(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src)
-$(particlef_c): $(particlef_src)
+$(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
 
-$(sprite_gbufv_c): $(sprite_gbufv_src)
+$(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
 $(sprite_gbuff_c): $(sprite_gbuff_src)
 
-$(sprite_depthv_c): $(sprite_depthv_src)
+$(sprite_depthv_c): $(sprite_depthv_src) $(matrices_h)
 
 $(sprite_depthf_c): $(sprite_depthf_src)
 
-$(twodv_c): $(twodv_src)
+$(twod_depthf_c): $(twod_depthf_src)
+
+$(twodv_c): $(twodv_src) $(matrices_h)
 
 $(twodf_c): $(twodf_src)
 
-$(quakebspv_c): $(quakebspv_src)
+$(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
 $(quakebspf_c): $(quakebspf_src)
 
-$(bsp_depth_c): $(bsp_depth_src)
+$(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
-$(bsp_gbufv_c): $(bsp_gbufv_src)
+$(bsp_gbufv_c): $(bsp_gbufv_src) $(entity_h) $(matrices_h)
 
 $(bsp_gbufg_c): $(bsp_gbufg_src)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
-$(bsp_shadow_c): $(bsp_shadow_src)
+$(bsp_shadow_c): $(bsp_shadow_src) $(entity_h)
 
-$(bsp_skyf_c): $(bsp_skyf_src)
+$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
-$(bsp_turbf_c): $(bsp_turbf_src)
+$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
 $(lightingf_c): $(lightingf_src)
 
-$(composef_c): $(composef_src)
+$(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
-$(aliasv_c): $(aliasv_src)
+$(aliasv_c): $(aliasv_src) $(matrices_h)
 
-$(alias_depth_c): $(alias_depth_src)
+$(alias_depth_c): $(alias_depth_src) $(matrices_h)
 
 $(aliasf_c): $(aliasf_src)
 
@@ -374,17 +423,26 @@ $(alias_gbuf_c): $(alias_gbuf_src)
 
 $(alias_shadow_c): $(alias_shadow_src)
 
-$(iqmv_c): $(iqmv_src)
+$(iqmv_c): $(iqmv_src) $(matrices_h)
 
 $(iqmf_c): $(iqmf_src)
+
+$(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
 
 $(fstriangle_c): $(fstriangle_src)
 
+$(fstrianglest_c): $(fstrianglest_src)
+
 $(pushcolor_c): $(pushcolor_src)
 
+$(waterwarp_c): $(waterwarp_src) $(matrices_h)
+
 vkshader_c = \
+	$(slice_c) \
+	$(linev_c) \
+	$(linef_c) \
 	$(partphysicsc_c) \
 	$(partupdatec_c) \
 	$(particlev_c) \
@@ -396,6 +454,7 @@ vkshader_c = \
 	$(sprite_depthf_c) \
 	$(twodv_c) \
 	$(twodf_c) \
+	$(twod_depthf_c) \
 	$(quakebspv_c) \
 	$(quakebspf_c) \
 	$(bsp_depth_c) \
@@ -414,10 +473,13 @@ vkshader_c = \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
 	$(iqmf_c) \
+	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
+	$(fstrianglest_c) \
 	$(pushcolor_c) \
-	$(shadow_c)
+	$(shadow_c) \
+	$(waterwarp_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
@@ -449,42 +511,55 @@ BUILT_SOURCES += $(shader_gen)
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
 EXTRA_DIST += \
-	$(deferred_src) \
-	$(shadow_src) \
-	$(forward_src) \
-	$(pipeline_src) \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
-	libs/video/renderer/vulkan/shader/alias.frag \
-	libs/video/renderer/vulkan/shader/alias.vert \
-	libs/video/renderer/vulkan/shader/alias_depth.vert \
-	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
-	libs/video/renderer/vulkan/shader/alias_shadow.vert \
-	libs/video/renderer/vulkan/shader/bsp_depth.vert \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
-	libs/video/renderer/vulkan/shader/bsp_gbuf.vert \
-	libs/video/renderer/vulkan/shader/bsp_shadow.vert \
-	libs/video/renderer/vulkan/shader/bsp_sky.frag \
-	libs/video/renderer/vulkan/shader/bsp_turb.frag \
-	libs/video/renderer/vulkan/shader/compose.frag \
-	libs/video/renderer/vulkan/shader/iqm.frag \
-	libs/video/renderer/vulkan/shader/iqm.vert \
-	libs/video/renderer/vulkan/shader/lighting.frag \
-	libs/video/renderer/vulkan/shader/passthrough.vert \
-	libs/video/renderer/vulkan/shader/fstriangle.vert \
-	libs/video/renderer/vulkan/shader/partphysics.comp \
-	libs/video/renderer/vulkan/shader/partupdate.comp \
-	libs/video/renderer/vulkan/shader/particle.vert \
-	libs/video/renderer/vulkan/shader/particle.geom \
-	libs/video/renderer/vulkan/shader/particle.frag \
-	libs/video/renderer/vulkan/shader/pushcolor.frag \
-	libs/video/renderer/vulkan/shader/quakebsp.frag \
-	libs/video/renderer/vulkan/shader/quakebsp.vert \
-	libs/video/renderer/vulkan/shader/shadow.geom \
-	libs/video/renderer/vulkan/shader/sprite_depth.vert \
-	libs/video/renderer/vulkan/shader/sprite_depth.frag \
-	libs/video/renderer/vulkan/shader/sprite_gbuf.vert \
-	libs/video/renderer/vulkan/shader/sprite_gbuf.frag \
-	libs/video/renderer/vulkan/shader/twod.frag \
-	libs/video/renderer/vulkan/shader/twod.vert
+	$(rp_deferred_src) \
+	$(rp_forward_src) \
+	$(rp_output_src) \
+	$(rp_shadow_src) \
+	$(pl_quake_def_src) \
+	$(pl_output_src) \
+	$(oit_blend) \
+	$(oit_store) \
+	$(oit_h) \
+	$(matrices_h) \
+	$(entity_h) \
+	$(slice_src) \
+	$(linev_src) \
+	$(linef_src) \
+	$(partphysicsc_src) \
+	$(partupdatec_src) \
+	$(particlev_src) \
+	$(particleg_src) \
+	$(particlef_src) \
+	$(sprite_gbufv_src) \
+	$(sprite_gbuff_src) \
+	$(sprite_depthv_src) \
+	$(sprite_depthf_src) \
+	$(twod_depthf_src) \
+	$(twodv_src) \
+	$(twodf_src) \
+	$(quakebspv_src) \
+	$(quakebspf_src) \
+	$(bsp_depth_src) \
+	$(bsp_gbufv_src) \
+	$(bsp_gbufg_src) \
+	$(bsp_gbuff_src) \
+	$(bsp_shadow_src) \
+	$(bsp_skyf_src) \
+	$(bsp_turbf_src) \
+	$(lightingf_src) \
+	$(composef_src) \
+	$(aliasv_src) \
+	$(aliasf_src) \
+	$(alias_depth_src) \
+	$(alias_gbuf_src) \
+	$(alias_shadow_src) \
+	$(iqmv_src) \
+	$(iqmf_src) \
+	$(output_src) \
+	$(passthrough_src) \
+	$(fstriangle_src) \
+	$(fstrianglest_src) \
+	$(pushcolor_src) \
+	$(waterwarp_src)

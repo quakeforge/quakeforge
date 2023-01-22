@@ -6,13 +6,13 @@
 #endif
 #include <vulkan/vulkan.h>
 
-typedef struct {
+typedef struct qfv_imagebarrier_s {
 	VkPipelineStageFlags srcStages;
 	VkPipelineStageFlags dstStages;
 	VkImageMemoryBarrier barrier;
 } qfv_imagebarrier_t;
 
-typedef struct {
+typedef struct qfv_bufferbarrier_s {
 	VkPipelineStageFlags srcStages;
 	VkPipelineStageFlags dstStages;
 	VkBufferMemoryBarrier barrier;
@@ -21,7 +21,9 @@ typedef struct {
 // image layout transitions
 enum {
 	qfv_LT_Undefined_to_TransferDst,
+	qfv_LT_Undefined_to_General,
 	qfv_LT_TransferDst_to_TransferSrc,
+	qfv_LT_TransferDst_to_General,
 	qfv_LT_TransferDst_to_ShaderReadOnly,
 	qfv_LT_TransferSrc_to_ShaderReadOnly,
 	qfv_LT_ShaderReadOnly_to_TransferDst,
@@ -35,6 +37,7 @@ enum {
 	qfv_BB_TransferWrite_to_VertexAttrRead,
 	qfv_BB_TransferWrite_to_IndexRead,
 	qfv_BB_TransferWrite_to_UniformRead,
+	qfv_BB_TransferWrite_to_ShaderRW,
 	qfv_BB_ShaderRW_to_ShaderRO,
 	qfv_BB_ShaderRW_to_ShaderRO_VA,
 	qfv_BB_ShaderRO_to_ShaderWrite,

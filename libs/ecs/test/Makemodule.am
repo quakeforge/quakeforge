@@ -1,0 +1,41 @@
+libs_ecs_tests = \
+	libs/ecs/test/test-components \
+	libs/ecs/test/test-hierarchy \
+	libs/ecs/test/test-registry \
+	libs/ecs/test/test-subpools
+
+TESTS += $(libs_ecs_tests)
+
+check_PROGRAMS += $(libs_ecs_tests)
+
+libs_ecs_test_libs= \
+	libs/ecs/libQFecs.la \
+	libs/util/libQFutil.la
+
+libs_ecs_test_test_components_SOURCES= 		\
+	libs/ecs/test/test-components.c
+libs_ecs_test_test_components_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_components_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_hierarchy_SOURCES= 		\
+	libs/ecs/test/test-hierarchy.c
+libs_ecs_test_test_hierarchy_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_hierarchy_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_registry_SOURCES= 		\
+	libs/ecs/test/test-registry.c
+libs_ecs_test_test_registry_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_registry_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_subpools_SOURCES= 		\
+	libs/ecs/test/test-subpools.c
+libs_ecs_test_test_subpools_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_subpools_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)

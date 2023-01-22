@@ -73,30 +73,31 @@ sw_vid_render_set_colormap (void *data, const byte *colormap)
 }
 
 static vid_model_funcs_t model_funcs = {
-	0,
-	sw_Mod_LoadLighting,
-	0,//Mod_SubdivideSurface,
-	0,//Mod_ProcessTexture,
+	.texture_render_size = 0,
 
-	Mod_LoadIQM,
-	Mod_LoadAliasModel,
-	Mod_LoadSpriteModel,
+	.Mod_LoadLighting     = sw_Mod_LoadLighting,
+	.Mod_SubdivideSurface = 0,
+	.Mod_ProcessTexture   = 0,
 
-	sw_Mod_MakeAliasModelDisplayLists,
-	sw_Mod_LoadAllSkins,
-	0,
-	0,
-	sw_Mod_IQMFinish,
-	1,
-	sw_Mod_SpriteLoadFrames,
+	.Mod_LoadIQM         = Mod_LoadIQM,
+	.Mod_LoadAliasModel  = Mod_LoadAliasModel,
+	.Mod_LoadSpriteModel = Mod_LoadSpriteModel,
 
-	Skin_Free,
-	Skin_SetColormap,
-	Skin_SetSkin,
-	sw_Skin_SetupSkin,
-	Skin_SetTranslation,
-	sw_Skin_ProcessTranslation,
-	sw_Skin_InitTranslations,
+	.Mod_MakeAliasModelDisplayLists = sw_Mod_MakeAliasModelDisplayLists,
+	.Mod_LoadAllSkins               = sw_Mod_LoadAllSkins,
+	.Mod_FinalizeAliasModel         = 0,
+	.Mod_LoadExternalSkins          = 0,
+	.Mod_IQMFinish                  = sw_Mod_IQMFinish,
+	.alias_cache                    = 1,
+	.Mod_SpriteLoadFrames           = sw_Mod_SpriteLoadFrames,
+
+	.Skin_Free               = Skin_Free,
+	.Skin_SetColormap        = Skin_SetColormap,
+	.Skin_SetSkin            = Skin_SetSkin,
+	.Skin_SetupSkin          = sw_Skin_SetupSkin,
+	.Skin_SetTranslation     = Skin_SetTranslation,
+	.Skin_ProcessTranslation = sw_Skin_ProcessTranslation,
+	.Skin_InitTranslations   = sw_Skin_InitTranslations,
 };
 
 static void
@@ -207,10 +208,10 @@ sw_end_frame (void)
 		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
 	} else {
-		vrect.x = vr_data.scr_view->xpos;
-		vrect.y = vr_data.scr_view->ypos;
-		vrect.width = vr_data.scr_view->xlen;
-		vrect.height = vr_data.scr_view->ylen;
+		vrect.x = vr_data.refdef->vrect.x;
+		vrect.y = vr_data.refdef->vrect.y;
+		vrect.width = vr_data.refdef->vrect.width;
+		vrect.height = vr_data.refdef->vrect.height;
 		vrect.next = 0;
 	}
 	sw_ctx->update (sw_ctx, &vrect);
@@ -261,6 +262,12 @@ sw_create_frame_buffer (int width, int height)
 	buffer->depth = (short *) (buffer->color + pixels);
 	buffer->rowbytes = width;
 	return fb;
+}
+
+static void
+sw_destroy_frame_buffer (framebuffer_t *framebuffer)
+{
+	free (framebuffer);
 }
 
 static void sw_set_viewport (const vrect_t *view);
@@ -450,52 +457,60 @@ sw_capture_screen (capfunc_t callback, void *data)
 }
 
 vid_render_funcs_t sw_vid_render_funcs = {
-	sw_vid_render_init,
-	Draw_Character,
-	Draw_String,
-	Draw_nString,
-	Draw_AltString,
-	Draw_ConsoleBackground,
-	Draw_Crosshair,
-	Draw_CrosshairAt,
-	Draw_TileClear,
-	Draw_Fill,
-	Draw_Line,
-	Draw_TextBox,
-	Draw_FadeScreen,
-	Draw_BlendScreen,
-	Draw_CachePic,
-	Draw_UncachePic,
-	Draw_MakePic,
-	Draw_DestroyPic,
-	Draw_PicFromWad,
-	Draw_Pic,
-	Draw_Picf,
-	Draw_SubPic,
+	.init = sw_vid_render_init,
 
-	sw_ParticleSystem,
-	sw_R_Init,
-	R_ClearState,
-	R_LoadSkys,
-	R_NewScene,
-	R_LineGraph,
-	sw_begin_frame,
-	sw_render_view,
-	R_DrawParticles,
-	sw_draw_transparent,
-	sw_post_process,
-	sw_set_2d,
-	sw_end_frame,
+	.UpdateScreen = SCR_UpdateScreen_legacy,
 
-	sw_create_cube_map,
-	sw_create_frame_buffer,
-	sw_bind_framebuffer,
-	sw_set_viewport,
-	sw_set_fov,
+	.Draw_CharBuffer        = sw_Draw_CharBuffer,
+	.Draw_Character         = Draw_Character,
+	.Draw_String            = Draw_String,
+	.Draw_nString           = Draw_nString,
+	.Draw_AltString         = Draw_AltString,
+	.Draw_ConsoleBackground = Draw_ConsoleBackground,
+	.Draw_Crosshair         = Draw_Crosshair,
+	.Draw_CrosshairAt       = Draw_CrosshairAt,
+	.Draw_TileClear         = Draw_TileClear,
+	.Draw_Fill              = Draw_Fill,
+	.Draw_Line              = Draw_Line,
+	.Draw_TextBox           = Draw_TextBox,
+	.Draw_FadeScreen        = Draw_FadeScreen,
+	.Draw_BlendScreen       = Draw_BlendScreen,
+	.Draw_CachePic          = Draw_CachePic,
+	.Draw_UncachePic        = Draw_UncachePic,
+	.Draw_MakePic           = Draw_MakePic,
+	.Draw_DestroyPic        = Draw_DestroyPic,
+	.Draw_PicFromWad        = Draw_PicFromWad,
+	.Draw_Pic               = Draw_Pic,
+	.Draw_FitPic            = Draw_FitPic,
+	.Draw_Picf              = Draw_Picf,
+	.Draw_SubPic            = Draw_SubPic,
+	.Draw_AddFont           = Draw_AddFont,
+	.Draw_Glyph             = Draw_Glyph,
 
-	sw_capture_screen,
+	.ParticleSystem   = sw_ParticleSystem,
+	.R_Init           = sw_R_Init,
+	.R_ClearState     = R_ClearState,
+	.R_LoadSkys       = R_LoadSkys,
+	.R_NewScene       = R_NewScene,
+	.R_LineGraph      = R_LineGraph,
+	.begin_frame      = sw_begin_frame,
+	.render_view      = sw_render_view,
+	.draw_particles   = R_DrawParticles,
+	.draw_transparent = sw_draw_transparent,
+	.post_process     = sw_post_process,
+	.set_2d           = sw_set_2d,
+	.end_frame        = sw_end_frame,
 
-	&model_funcs
+	.create_cube_map      = sw_create_cube_map,
+	.create_frame_buffer  = sw_create_frame_buffer,
+	.destroy_frame_buffer = sw_destroy_frame_buffer,
+	.bind_framebuffer     = sw_bind_framebuffer,
+	.set_viewport         = sw_set_viewport,
+	.set_fov              = sw_set_fov,
+
+	.capture_screen = sw_capture_screen,
+
+	.model_funcs = &model_funcs
 };
 
 static general_funcs_t plugin_info_general_funcs = {

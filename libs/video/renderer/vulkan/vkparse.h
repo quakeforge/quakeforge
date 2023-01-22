@@ -8,12 +8,33 @@ typedef struct parsectx_s {
 	void       *data;
 } parsectx_t;
 
+typedef struct scriptctx_s {
+	struct vulkan_ctx_s *vctx;
+	struct hashctx_s *hashctx;
+
+	struct plitem_s  *pipelineDef;
+	struct hashtab_s *shaderModules;
+	struct hashtab_s *setLayouts;
+	struct hashtab_s *pipelineLayouts;
+	struct hashtab_s *descriptorPools;
+	struct hashtab_s *samplers;
+	struct hashtab_s *images;
+	struct hashtab_s *imageViews;
+	struct hashtab_s *renderpasses;
+
+	qfv_output_t output;
+} scriptctx_t;
+
+void Vulkan_Init_Cvars (void);
+void Vulkan_Script_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Script_Shutdown (struct vulkan_ctx_s *ctx);
+void Vulkan_Script_SetOutput (struct vulkan_ctx_s *ctx, qfv_output_t *output);
+
 #include "QF/cexpr.h"
 #include "QF/plist.h"
 
 #define QFV_PROPERTIES "properties"
 
-void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);
 
 uint64_t QFV_GetHandle (struct hashtab_s *tab, const char *name);
@@ -54,4 +75,6 @@ struct qfv_subpassset_s *QFV_ParseSubpasses (vulkan_ctx_t *ctx,
 											 plitem_t *properties);
 int QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
 				   plitem_t *properties);
+int QFV_ParseOutput (vulkan_ctx_t *ctx, qfv_output_t *output, plitem_t *plist,
+					 plitem_t *properties);
 #endif//__vkparse_h

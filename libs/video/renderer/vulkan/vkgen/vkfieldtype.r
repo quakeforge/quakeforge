@@ -65,9 +65,24 @@ parseItemType (PLItem *item)
 	return self;
 }
 
+-(string) exprType
+{
+	return "&" + type + "_type";
+}
+
 -(string) parseType
 {
 	return parse_type;
+}
+
++(string) anyType
+{
+	string      mask = "QFMultiType"
+						" | (1 << QFString)"
+						" | (1 << QFBinary)"
+						" | (1 << QFArray)"
+						" | (1 << QFDictionary)";
+	return mask;
 }
 
 @end

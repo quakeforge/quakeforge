@@ -32,6 +32,7 @@
 		VkRenderPassMultiviewCreateInfo,
 
 		qfv_subpass_t,
+		qfv_output_t,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -391,6 +392,22 @@
 				type = string;
 				string = name;
 			};
+		};
+
+		qfv_output_s = {
+			.name = qfv_output_t;
+			extent = auto;
+			image = {
+				type = (readonly, VkImage);
+				value = image;
+			};
+			view = {
+				type = (readonly, VkImageView);
+				value = view;
+			};
+			format = auto;
+			frames = auto;
+			finalLayout = auto;
 		};
 	};
 }

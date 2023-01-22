@@ -9,16 +9,7 @@
 #include "QF/darray.h"
 #include "QF/simd/types.h"
 
-//FIXME name
-typedef struct qfv_output_s {
-	VkExtent2D  extent;
-	VkImageView view;
-	VkFormat    format;
-	VkImageView *view_list;	// per frame
-} qfv_output_t;
-
 typedef struct vulkan_frame_s {
-	VkFramebuffer framebuffer;
 	VkFence     fence;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
@@ -49,38 +40,32 @@ typedef struct vulkan_ctx_s {
 	struct qfv_device_s *device;
 	struct qfv_swapchain_s *swapchain;
 	VkSampleCountFlagBits msaaSamples;	// FIXME not here?
-	struct hashctx_s *hashctx;	//FIXME want per thread
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
-	struct plitem_s  *pipelineDef;
 
 	uint32_t    swapImageIndex;
 
-	struct hashtab_s *shaderModules;
-	struct hashtab_s *setLayouts;
-	struct hashtab_s *pipelineLayouts;
-	struct hashtab_s *descriptorPools;
-	struct hashtab_s *samplers;
-	struct hashtab_s *images;
-	struct hashtab_s *imageViews;
-	struct hashtab_s *renderpasses;
-
+	struct scriptctx_s *script_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
+	struct translucentctx_s *translucent_context;
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
 	struct iqmctx_s *iqm_context;
 	struct scenectx_s *scene_context;
+	struct palettectx_s *palette_context;
 	struct particlectx_s *particle_context;
 	struct spritectx_s *sprite_context;
 	struct drawctx_s *draw_context;
 	struct lightingctx_s *lighting_context;
 	struct composectx_s *compose_context;
+	struct outputctx_s *output_context;
 
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
-	size_t      curFrame;
+	uint32_t    curFrame;
 	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
+	struct qfv_renderpass_s *output_renderpass;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);
@@ -96,9 +81,7 @@ typedef struct vulkan_ctx_s {
 	// size of window
 	int         window_width;
 	int         window_height;
-
-	//FIXME this is for the parser
-	qfv_output_t output;
+	int         twod_scale;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;

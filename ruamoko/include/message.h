@@ -34,8 +34,8 @@
 #define MULTICAST_PHS_R 4
 #define MULTICAST_PVS_R 5
 
-@extern void bprint (...);
-@extern void sprint (.../*entity client, string s*/);
+@extern void bprint (float level, string s);
+@extern void sprint (entity client, float level, string s);
 @extern void WriteBytes (float to, ...);
 @extern void WriteByte (float to, float f);
 @extern void WriteChar (float to, float f);
@@ -47,6 +47,6 @@
 @extern void WriteAngleV (float to, vector v);
 @extern void WriteString (float to, string s);
 @extern void WriteEntity (float to, entity s);
-@extern void centerprint (...);
+@extern void centerprint (entity client, string s);
 
 #endif//__ruamoko_message_h

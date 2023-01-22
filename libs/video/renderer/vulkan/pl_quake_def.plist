@@ -23,6 +23,40 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
+		glyph = {
+			magFilter = linear;
+			minFilter = linear;
+			mipmapMode = linear;
+			addressModeU = clamp_to_edge;
+			addressModeV = clamp_to_edge;
+			addressModeW = clamp_to_edge;
+			mipLodBias = 0;
+			anisotropyEnable = false;
+			maxAnisotropy = 0;
+			compareEnable = false;
+			compareOp = always;
+			minLod = 0;
+			maxLod = 0;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = false;
+		};
+		palette_sampler = {
+			magFilter = nearest;
+			minFilter = nearest;
+			mipmapMode = nearest;
+			addressModeU = clamp_to_edge;
+			addressModeV = clamp_to_edge;
+			addressModeW = clamp_to_edge;
+			mipLodBias = 0;
+			anisotropyEnable = false;
+			maxAnisotropy = 0;
+			compareEnable = false;
+			compareOp = always;
+			minLod = 0;
+			maxLod = 4;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = false;
+		};
 		quakebsp_sampler = {
 			magFilter = linear;
 			minFilter = linear;
@@ -87,13 +121,18 @@
 				},
 			);
 		};
-		twod_pool = {
-			flags = 0;
-			maxSets = $frames.size;
+		quad_pool = {
+			maxSets = 64;
 			bindings = (
 				{
+					// quad geometry data (offset and uv)
+					type = uniform_texel_buffer;
+					descriptorCount = 64;
+				},
+				{
+					// quad texture data
 					type = combined_image_sampler;
-					descriptorCount = $frames.size;
+					descriptorCount = 64;
 				},
 			);
 		};
@@ -129,11 +168,11 @@
 		};
 		particle_pool = {
 			flags = 0;
-			maxSets = $frames.size;
+			maxSets = "3z * $frames.size";
 			bindings = (
 				{
 					type = storage_buffer;
-					descriptorCount = 3;
+					descriptorCount = "3z * 3z * $frames.size";
 				},
 			);
 		};
@@ -180,7 +219,21 @@
 			bindings = (
 				{
 					type = combined_image_sampler;
-					descriptorCount = 768;//"$frames.size * size_t($properties.limits.maxSamplers)";
+					descriptorCount = "$frames.size * size_t(32)";
+				},
+			);
+		};
+		oit_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = "2z * $frames.size";
+				},
+				{
+					type = storage_image;
+					descriptorCount = "1z * $frames.size";
 				},
 			);
 		};
@@ -206,13 +259,21 @@
 				},
 			);
 		};
-		twod_set = {
+		quad_data_set = {
 			bindings = (
 				{
+					// glyph texture data
 					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
+				},
+				{
+					// glyph geometry data (offset and uv)
+					binding = 1;
+					descriptorType = uniform_texel_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
 				},
 			);
 		};
@@ -221,6 +282,28 @@
 				{
 					binding = 0;
 					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment|vertex;
+				},
+			);
+		};
+		oit_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_image;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
@@ -311,7 +394,7 @@
 				{
 					binding = 0;
 					descriptorType = combined_image_sampler;
-					descriptorCount = 768;//$properties.limits.maxSamplers;
+					descriptorCount = 32;
 					stageFlags = fragment;
 				},
 			);
@@ -320,12 +403,6 @@
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = input_attachment;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
 					descriptorType = input_attachment;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -356,11 +433,14 @@
 		};
 	};
 	pipelineLayouts = {
-		twod_layout = {
-			setLayouts = (matrix_set, twod_set);
+		quad_layout = {
+			setLayouts = (matrix_set, quad_data_set);
+		};
+		lines_layout = {
+			setLayouts = (matrix_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (matrix_set, entity_set, texture_set, texture_set);
+			setLayouts = (matrix_set, entity_set, oit_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = fragment;
@@ -370,7 +450,7 @@
 			);
 		};
 		alias_layout = {
-			setLayouts = (matrix_set, texture_set);
+			setLayouts = (matrix_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -380,7 +460,7 @@
 				{
 					stageFlags = fragment;
 					offset = 68;
-					size = "3 * 4 + 2 * 4 * 4 + 4";
+					size = "3 * 4 + 2 * 4 * 4";
 				},
 			);
 		};
@@ -418,7 +498,7 @@
 			setLayouts = (lighting_attach, lighting_lights, lighting_shadow);
 		};
 		compose_layout = {
-			setLayouts = (compose_attach);
+			setLayouts = (compose_attach, oit_set);
 		};
 		partphysics_layout = {
 			setLayouts = (particle_set);
@@ -426,7 +506,7 @@
 				{
 					stageFlags = compute;
 					offset = 0;
-					size = "16 * 4 + 4";
+					size = "4 * 4 + 4";
 				},
 			);
 		};
@@ -434,7 +514,7 @@
 			setLayouts = (particle_set, particle_set, particle_set);
 		};
 		partdraw_layout = {
-			setLayouts = (matrix_set);
+			setLayouts = (matrix_set, texture_set, oit_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -486,13 +566,13 @@
 			topology = line_list;
 			primitiveRestartEnable = false;
 		};
-		twod = {
-			topology = triangle_strip;
-			primitiveRestartEnable = true;
-		};
 		sprite = {
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
+		};
+		point = {
+			topology = point_list;
+			primitiveRestartEnable = false;
 		};
 	};
 
@@ -526,6 +606,34 @@
 				{ location = 2; binding = 1; format = r32_uint; offset = 0; },
 			);
 		};
+		slice = {
+			bindings = (
+				{ binding = 0; stride = "4 + 4 + 4 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				// 9-slice index
+				{ location = 0; binding = 0; format = r32_uint;       offset = 0; },
+				// 9-slice color
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				// 9-slice position (2d)
+				{ location = 2; binding = 0; format = r32g32_sfloat;  offset = 8; },
+				// 9-slice size delta (2d)
+				{ location = 3; binding = 0; format = r32g32_sfloat;  offset = 16; },
+			);
+		};
+		glyph = {
+			bindings = (
+				{ binding = 0; stride = "4 + 4 + 2 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				// glyph index
+				{ location = 0; binding = 0; format = r32_uint;       offset = 0; },
+				// glyph color
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				// glyph position (2d)
+				{ location = 2; binding = 0; format = r32g32_sfloat;  offset = 8; },
+			);
+		};
 		iqm = {
 			bindings = (
 				{ binding = 0; stride = 20; inputRate = vertex; },
@@ -545,23 +653,22 @@
 		};
 		particle = {
 			bindings = (
-				{ binding = 0; stride = "4 * 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "4 * 4 * 4"; inputRate = instance; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
-				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 32; },
+				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
 			);
 		};
-		twod = {
+		lines = {
 			bindings = (
-				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 0; stride = "2 * 4 + 4"; inputRate = vertex; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32_sfloat;       offset = 0;  },
-				{ location = 1; binding = 0; format = r32g32_sfloat;       offset = 8;  },
-				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 8; },
 			);
 		};
 	};
@@ -624,10 +731,10 @@
 		};
 		alpha_blend = {
 			blendEnable = true;
-			srcColorBlendFactor = src_alpha;
+			srcColorBlendFactor = one;
 			dstColorBlendFactor = one_minus_src_alpha;
 			colorBlendOp = add;
-			srcAlphaBlendFactor = src_alpha;
+			srcAlphaBlendFactor = one;
 			dstAlphaBlendFactor = one_minus_src_alpha;
 			alphaBlendOp = add;
 			colorWriteMask = r|g|b|a;
@@ -695,9 +802,6 @@
 			subpass = 2;
 			rasterization = $properties.rasterization.cw_cull_back;
 			depthStencil  = $properties.depthStencil.test_only;
-			dynamic = {//FIXME why?
-				dynamicState = ( viewport, scissor );
-			};
 		};
 		comp_base = {
 			@inherit = $properties.pipelines.base;
@@ -987,7 +1091,7 @@
 				},
 			);
 			vertexInput   = $properties.vertexInput.particle;
-			inputAssembly = $properties.inputAssembly.sprite;
+			inputAssembly = $properties.inputAssembly.point;
 			layout = partdraw_layout;
 		};
 		sprite_gbuf = {
@@ -1023,35 +1127,47 @@
 				},
 			);
 			vertexInput   = $properties.vertexInput.index_only;
-			inputAssembly = $properties.inputAssembly.alias;
+			inputAssembly = $properties.inputAssembly.sprite;
 			layout = sprite_layout;
 		};
-		twod = {
-			@inherit = $properties.pipelines.trans_base;//FIXME should be sparate
+		slice = {
+			@inherit = $properties.pipelines.trans_base;
+			renderPass = output;
+			subpass = 0;
 			stages = (
-				{
-					stage = vertex;
-					name = main;
-					module = $builtin/twod.vert;
-				},
-				{
-					stage = fragment;
-					name = main;
-					module = $builtin/twod.frag;
-				},
+				{ stage = vertex;   name = main; module = $builtin/slice.vert; },
+				{ stage = fragment; name = main; module = $builtin/twod.frag; },
 			);
-			vertexInput   = $properties.vertexInput.twod;
-			inputAssembly = $properties.inputAssembly.twod;
+			vertexInput   = $properties.vertexInput.slice;
+			inputAssembly = {
+				// slices are drawn using instanced slice triples
+				topology = triangle_strip;
+				primitiveRestartEnable = true;
+			};
 			rasterization = $properties.rasterization.counter_cw_cull_back;
 			colorBlend = {
 				logicOpEnable = false;
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
 			};
-			layout = twod_layout;
+			layout = quad_layout;
 		};
 		lines = {
-			@inherit = $properties.pipelines.twod;
+			@inherit = $properties.pipelines.trans_base;
+			renderPass = output;
+			subpass = 0;
+			stages = (
+				{ stage = vertex;   name = main; module = $builtin/line.vert; },
+				{ stage = fragment; name = main; module = $builtin/line.frag; },
+			);
+			vertexInput   = $properties.vertexInput.lines;
+			rasterization = $properties.rasterization.counter_cw_cull_back;
+			depthStencil  = $properties.depthStencil.disable;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ($properties.attachmentBlendOp.alpha_blend);
+			};
 			inputAssembly = $properties.inputAssembly.lines;
+			layout = lines_layout;
 		};
 		lighting = {
 			@inherit = $properties.pipelines.comp_base;

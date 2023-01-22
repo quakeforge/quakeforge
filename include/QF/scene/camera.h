@@ -33,6 +33,7 @@
 
 #include "QF/qtypes.h"
 #include "QF/simd/mat4f.h"
+#include "QF/scene/transform.h"
 
 /** \defgroup scene_camera Camera data
 	\ingroup scene
@@ -43,7 +44,7 @@ typedef struct camera_s {
 	struct scene_s *scene;	///< owning scene
 	struct framebuffer_s *framebuffer;
 	int32_t     id;			///< id in scene
-	int32_t     transform;
+	transform_t transform;
 	float       field_of_view;
 	float       aspect;
 	float       near_clip;

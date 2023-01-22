@@ -37,6 +37,53 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 
+static void
+create_image (qfv_device_t *device, qfv_resobj_t *image_obj)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type image = &image_obj->image;
+	VkImageCreateInfo createInfo = {
+		VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, 0,
+		image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
+		image->type, image->format, image->extent, image->num_mipmaps,
+		image->num_layers,
+		image->samples,
+		VK_IMAGE_TILING_OPTIMAL,
+		image->usage,
+		VK_SHARING_MODE_EXCLUSIVE,
+		0, 0,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+	};
+	dfunc->vkCreateImage (device->dev, &createInfo, 0, &image->image);
+}
+
+static void
+create_image_view (qfv_device_t *device, qfv_resobj_t *imgview_obj,
+				   qfv_resobj_t *imgobj)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type view = &imgview_obj->image_view;
+	__auto_type image = &imgobj->image;
+
+	VkImageViewCreateInfo createInfo = {
+		VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 0,
+		//FIXME flags should be input for both image and image view
+		.flags = image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
+		.image = image->image,
+		.viewType = view->type,
+		.format = view->format,
+		.components = view->components,
+		.subresourceRange = {
+			.aspectMask = view->aspect,
+			.baseMipLevel = 0,
+			.levelCount = VK_REMAINING_MIP_LEVELS,
+			.baseArrayLayer = 0,
+			.layerCount = VK_REMAINING_ARRAY_LAYERS,
+		},
+	};
+	dfunc->vkCreateImageView (device->dev, &createInfo, 0, &view->view);
+}
+
 int
 QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
@@ -55,13 +102,12 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					buffer->buffer = QFV_CreateBuffer (device,
 													   buffer->size,
 													   buffer->usage);
-					const char *name = va (resource->va_ctx, "buffer:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-										 buffer->buffer, name);
+										 buffer->buffer,
+										 va (resource->va_ctx, "buffer:%s:%s",
+											 resource->name, obj->name));
 					dfunc->vkGetBufferMemoryRequirements (device->dev,
 														  buffer->buffer, &req);
-					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_buffer_view:
@@ -77,23 +123,14 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 			case qfv_res_image:
 				{
+					create_image (device, obj);
 					__auto_type image = &obj->image;
-					image->image = QFV_CreateImage (device,
-													image->cubemap,
-													image->type,
-													image->format,
-													image->extent,
-													image->num_mipmaps,
-													image->num_layers,
-													image->samples,
-													image->usage);
-					const char *name = va (resource->va_ctx, "image:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
-										 image->image, name);
+										 image->image,
+										 va (resource->va_ctx, "image:%s:%s",
+											 resource->name, obj->name));
 					dfunc->vkGetImageMemoryRequirements (device->dev,
 														 image->image, &req);
-					(void) name;	// for when QFV_duSetObjectName is empty
 				}
 				break;
 			case qfv_res_image_view:
@@ -112,7 +149,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 						   resource->name, obj->name, obj->type);
 		}
 		size = QFV_NextOffset (size, &req);
-		size += req.size;
+		size += QFV_NextOffset (req.size, &req);
 	}
 	VkMemoryPropertyFlags properties = resource->memory_properties;
 	for (uint32_t type = 0; type < memprops->memoryTypeCount; type++) {
@@ -131,6 +168,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 			}
 		}
 	}
+	resource->size = size;
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
 						 resource->memory, va (resource->va_ctx, "memory:%s",
 											   resource->name));
@@ -165,6 +203,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					__auto_type buffer = &obj->buffer;
 					QFV_BindBufferMemory (device, buffer->buffer,
 										  resource->memory, offset);
+					buffer->offset = offset;
 				}
 				break;
 			case qfv_res_image:
@@ -172,13 +211,15 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					__auto_type image = &obj->image;
 					QFV_BindImageMemory (device, image->image,
 										 resource->memory, offset);
+					image->offset = offset;
 				}
 				break;
 			case qfv_res_buffer_view:
 			case qfv_res_image_view:
 				break;
 		}
-		offset += req.size;
+		offset = QFV_NextOffset (offset, &req);
+		offset += QFV_NextOffset (req.size, &req);
 	}
 
 	for (unsigned i = 0; i < resource->num_objects; i++) {
@@ -197,28 +238,21 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 														   buffview->format,
 														   buffview->offset,
 														   buffview->size);
-					const char *name = va (resource->va_ctx, "bview:%s:%s",
-										   resource->name, obj->name);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER_VIEW,
-										 buffview->view, name);
-					(void) name;	// for when QFV_duSetObjectName is empty
+										 buffview->view,
+										 va (resource->va_ctx, "bview:%s:%s",
+											 resource->name, obj->name));
 				}
 				break;
 			case qfv_res_image_view:
 				{
 					__auto_type imgview = &obj->image_view;
 					__auto_type imgobj = &resource->objects[imgview->image];
-					__auto_type image = &imgobj->image;
-					imgview->view = QFV_CreateImageView (device,
-														 image->image,
-														 imgview->type,
-														 imgview->format,
-														 imgview->aspect);
-					const char *name = va (resource->va_ctx, "iview:%s:%s",
-										   resource->name, obj->name);
+					create_image_view (device, obj, imgobj);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
-										 imgview->view, name);
-					(void) name;	// for when QFV_duSetObjectName is empty
+										 imgview->view,
+										 va (resource->va_ctx, "iview:%s:%s",
+											 resource->name, obj->name));
 				}
 				break;
 		}
@@ -272,4 +306,29 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 		}
 	}
 	dfunc->vkFreeMemory (device->dev, resource->memory, 0);
+}
+
+void
+QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
+						  int mips, const tex_t *tex)
+{
+	*image = (qfv_resobj_t) {
+		.name = name,
+		.type = qfv_res_image,
+		.image = {
+			.type = VK_IMAGE_TYPE_2D,
+			.format = QFV_ImageFormat (tex->format, 0),
+			.extent = {
+				.width = tex->width,
+				.height = tex->height,
+				.depth = 1,
+			},
+			.num_mipmaps = mips ? QFV_MipLevels (tex->width, tex->height) : 1,
+			.num_layers = 1,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+					| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+					| VK_IMAGE_USAGE_SAMPLED_BIT,
+		},
+	};
 }

@@ -689,32 +689,6 @@ in_x11_send_focus_event (int gain)
 }
 
 static void
-event_focusout (XEvent *event)
-{
-	if (x_have_focus) {
-		x_have_focus = false;
-		in_x11_send_focus_event (0);
-		if (in_snd_block) {
-			S_BlockSound ();
-			CDAudio_Pause ();
-		}
-		X11_RestoreGamma ();
-	}
-}
-
-static void
-event_focusin (XEvent *event)
-{
-	in_x11_send_focus_event (1);
-	x_have_focus = true;
-	if (in_snd_block) {
-		S_UnblockSound ();
-		CDAudio_Resume ();
-	}
-	VID_UpdateGamma ();
-}
-
-static void
 center_pointer (void)
 {
 	XEvent      event = {};
@@ -836,8 +810,8 @@ event_motion (XEvent *event)
 			if (!event->xmotion.send_event) {
 				int         center_x = viddef.width / 2;
 				int         center_y = viddef.height / 2;
-				unsigned    dist_x = abs (center_x / 2 - event->xmotion.x);
-				unsigned    dist_y = abs (center_y / 2 - event->xmotion.y);
+				unsigned    dist_x = abs (center_x - event->xmotion.x);
+				unsigned    dist_y = abs (center_y - event->xmotion.y);
 
 				x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
 				x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
@@ -1029,6 +1003,7 @@ xi_raw_button_resease (void *event)
 	xi_raw_button (event, 0);
 }
 
+#ifdef HAVE_XFIXES
 static void
 xi_barrier_hit (void *event)
 {
@@ -1043,15 +1018,14 @@ xi_barrier_hit (void *event)
 		return;
 	}
 
-	if (!x11_have_pointer || !input_grabbed) {
-		XIBarrierReleasePointer (x_disp, be.deviceid, be.barrier, be.eventid);
-	}
+	center_pointer ();
 }
 
 static void
 xi_barrier_leave (void *event)
 {
 }
+#endif
 
 static void
 event_generic (XEvent *event)
@@ -1063,8 +1037,10 @@ event_generic (XEvent *event)
 		[XI_RawMotion] = xi_raw_motion,
 		[XI_RawButtonPress] = xi_raw_button_press,
 		[XI_RawButtonRelease] = xi_raw_button_resease,
+#ifdef HAVE_XFIXES
 		[XI_BarrierHit] = xi_barrier_hit,
 		[XI_BarrierLeave] = xi_barrier_leave,
+#endif
 	};
 	XGenericEventCookie *cookie = &event->xcookie;
 
@@ -1152,6 +1128,41 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 												     BarrierNegativeY, 0, 0);
 }
 #endif
+
+static void
+event_focusout (XEvent *event)
+{
+	if (x_have_focus) {
+		x_have_focus = false;
+#ifdef HAVE_XFIXES
+		in_x11_remove_barriers ();
+#endif
+		in_x11_send_focus_event (0);
+		if (in_snd_block) {
+			S_BlockSound ();
+			CDAudio_Pause ();
+		}
+		X11_RestoreGamma ();
+	}
+}
+
+static void
+event_focusin (XEvent *event)
+{
+	in_x11_send_focus_event (1);
+	x_have_focus = true;
+	if (in_snd_block) {
+		S_UnblockSound ();
+		CDAudio_Resume ();
+	}
+	if (input_grabbed) {
+#ifdef HAVE_XFIXES
+		in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+							   x11_aw.xlen, x11_aw.ylen);
+#endif
+	}
+	VID_UpdateGamma ();
+}
 
 static void
 in_x11_grab_input (void *data, int grab)
@@ -1438,6 +1449,7 @@ in_x11_check_xi2 (void)
 	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d err: %d\n",
 					major, minor, xi_opcode, error);
 
+#ifdef HAVE_XFIXES
 	if (!XQueryExtension (x_disp, "XFIXES", &xf_opcode, &event, &error)) {
 		Sys_MaskPrintf (SYS_vid, "X fixes extenions not available.\n");
 		return 0;
@@ -1451,6 +1463,7 @@ in_x11_check_xi2 (void)
 	Sys_MaskPrintf (SYS_vid,
 					"XFixes supported: version %d.%d, op: %d err: %d\n",
 					major, minor, xf_opcode, error);
+#endif
 	return 1;
 }
 

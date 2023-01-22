@@ -55,7 +55,6 @@
 #include "compat.h"
 #include "d_iface.h"
 #include "r_internal.h"
-#include "sbar.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200

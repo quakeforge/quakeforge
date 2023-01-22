@@ -72,30 +72,41 @@ R_ScrapDelete (rscrap_t *scrap)
 VISIBLE vrect_t *
 R_ScrapAlloc (rscrap_t *scrap, int width, int height)
 {
-	int         w, h;
 	vrect_t   **t, **best;
 	vrect_t    *old, *frags, *rect;
 
-	w = pow2rup (width);
-	h = pow2rup (height);
-
 	best = 0;
 	for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-		if ((*t)->width < w || (*t)->height < h)
+		if ((*t)->width < width || (*t)->height < height)
 			continue;						// won't fit
 		if (!best) {
 			best = t;
 			continue;
 		}
-		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height)
+		if ((*t)->width == width && (*t)->height == height) {
+			// exact fit
 			best = t;
+			break;
+		}
+		if ((*best)->height == height) {
+			if ((*t)->height == height && (*t)->width < (*best)->width) {
+				best = t;
+			}
+		} else if ((*best)->width == width) {
+			if ((*t)->width == width && (*t)->height < (*best)->height) {
+				best = t;
+			}
+		}
+		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height) {
+			best = t;
+		}
 	}
 	if (!best)
 		return 0;							// couldn't find a spot
 	old = *best;
 	*best = old->next;
-	rect = VRect_New (old->x, old->y, w, h);
-	frags = VRect_Difference (old, rect);
+	rect = VRect_SubRect (old, width, height);
+	frags = rect->next;
 	VRect_Delete (old);
 	if (frags) {
 		// old was bigger than the requested size
@@ -161,13 +172,18 @@ R_ScrapClear (rscrap_t *scrap)
 }
 
 VISIBLE size_t
-R_ScrapArea (rscrap_t *scrap)
+R_ScrapArea (rscrap_t *scrap, int *count)
 {
 	vrect_t    *rect;
 	size_t      area;
+	int         c = 0;
 
 	for (rect = scrap->free_rects, area = 0; rect; rect = rect->next) {
 		area += rect->width * rect->height;
+		c++;
+	}
+	if (count) {
+		*count = c;
 	}
 	return area;
 }

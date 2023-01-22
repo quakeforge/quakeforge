@@ -428,6 +428,7 @@ static keyword_t qf_keywords[] = {
 
 	{"@cross",		CROSS,	0	},
 	{"@dot",		DOT,	0	},
+	{"@hadamard",	HADAMARD,	0	},
 };
 
 // These keywors are always available. Other than the @ keywords, they
@@ -587,6 +588,11 @@ parse_int_vector (const char *token, int width)
 	}
 	t1 = tolower (t1);
 	t2 = tolower (t2);
+	if (options.code.progsversion < PROG_VERSION) {
+		if (!t1) {
+			t1 = 'f';
+		}
+	}
 	expr_t     *expr = 0;
 	switch (t1) {
 		case 'u':
@@ -703,6 +709,11 @@ parse_float_vector (const char *token, int width)
 					&double_data.d[0], &double_data.d[1], &t);
 			type = (t == 'f' || t == 'F') ? &type_vec2 : &type_dvec2;
 			break;
+	}
+	if (options.code.progsversion < PROG_VERSION) {
+		if (!t) {
+			t = 'f';
+		}
 	}
 	if (t == 'f' || t == 'F') {
 		volatile union {

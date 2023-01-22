@@ -46,7 +46,8 @@
 #include "QF/msg.h"
 
 #include "compat.h"
-#include "sbar.h"
+
+#include "client/sbar.h"
 
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_input.h"
@@ -199,7 +200,7 @@ Cam_Unlock (void)
 		}
 		autocam = CAM_NONE;
 		locked = false;
-		Sbar_Changed ();
+		Sbar_SetAutotrack (-1);
 	}
 }
 
@@ -221,7 +222,7 @@ Cam_Lock (int playernum)
 	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
-	Sbar_Changed ();
+	Sbar_SetAutotrack (spec_track);
 }
 
 static trace_t
@@ -425,7 +426,8 @@ Cam_Track (usercmd_t *cmd)
 		return;
 
 	if (locked
-		&& (!cl.players[spec_track].name->value[0]
+		&& (!cl.players[spec_track].name
+			|| !cl.players[spec_track].name->value[0]
 			|| cl.players[spec_track].spectator)) {
 		locked = false;
 		if (cl_hightrack)
@@ -680,6 +682,7 @@ Cam_Reset (void)
 	autocam = CAM_NONE;
 	spec_track = 0;
 	ideal_track = 0;
+	Sbar_SetAutotrack (-1);
 }
 
 void

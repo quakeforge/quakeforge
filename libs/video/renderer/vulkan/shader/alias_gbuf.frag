@@ -1,11 +1,11 @@
 #version 450
 
-layout (set = 1, binding = 0) uniform sampler2DArray Skin;
+layout (set = 1, binding = 0) uniform sampler2D Palette;
+layout (set = 2, binding = 0) uniform sampler2DArray Skin;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 68)
-	uint        colorA;
-	uint        colorB;
+	uint        colors;
 	vec4        base_color;
 	vec4        fog;
 };
@@ -24,12 +24,12 @@ main (void)
 {
 	vec4        c;
 	vec4        e;
-	int         i;
-	vec3        light = vec3 (0);
 	c = texture (Skin, vec3 (st, 0)) * base_color;
-	c += texture (Skin, vec3 (st, 1)) * unpackUnorm4x8(colorA);
-	c += texture (Skin, vec3 (st, 2)) * unpackUnorm4x8(colorB);
-	e = texture (Skin, vec3 (st, 3));
+	e = texture (Skin, vec3 (st, 1));
+	vec4        rows = unpackUnorm4x8(colors);
+	vec4        cmap = texture (Skin, vec3 (st, 2));
+	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
+	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
 
 	frag_color = c;
 	frag_emission = e;

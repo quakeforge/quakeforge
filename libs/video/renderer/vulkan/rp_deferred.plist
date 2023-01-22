@@ -39,10 +39,6 @@
 			@inherit = $properties.flat_color_image_template;
 			format = r16g16b16a16_sfloat;
 		};
-		translucent = {
-			@inherit = $properties.flat_color_image_template;
-			format = r8g8b8a8_unorm;
-		};
 	};
 	flat_color_view_template = {
 		viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -92,16 +88,25 @@
 			image = opaque;
 			format = $properties.images.opaque.format;
 		};
-		translucent = {
-			@inherit = $properties.flat_color_view_template;
-			image = translucent;
-			format = $properties.images.translucent.format;
+	};
+	output = {
+		image = {
+			@inherit = $properties.flat_color_image_template;
+			usage = color_attachment|input_attachment|sampled;
+			format = $output.format;
 		};
+		view = {
+			@inherit = $properties.flat_color_view_template;
+			image = $output.image;
+			format = $output.format;
+		};
+		format = r16g16b16a16_sfloat;
+		finalLayout = shader_read_only_optimal;
 	};
 	framebuffer = {
 		renderPass = deferred;
 		attachments = (depth, color, emission, normal, position, opaque,
-					   translucent, $output.view);
+					   $output.view);
 		width = $output.extent.width;
 		height = $output.extent.height;
 		layers = 1;
@@ -113,7 +118,6 @@
 		{ color = "[0, 0, 0, 1]"; },	// normal
 		{ color = "[0, 0, 0, 1]"; },	// position
 		{ color = "[0, 0, 0, 1]"; },	// opaque
-		{ color = "[0, 0, 0, 0]"; },	// translucent
 		{ color = "[0, 0, 0, 1]"; },	// output
 	);
 	attachment_template = {
@@ -167,15 +171,10 @@
 			},
 			{
 				@inherit = $properties.attachment_template;
-				format = $properties.images.translucent.format;
-				loadOp = clear;
-			},
-			{
-				@inherit = $properties.attachment_template;
 				format = $output.format;
 				loadOp = clear;
 				storeOp = store;
-				finalLayout = present_src_khr;
+				finalLayout = $output.finalLayout;
 			},
 		);
 		subpasses = (
@@ -186,14 +185,8 @@
 					layout = depth_stencil_attachment_optimal;
 				};
 			},
-			{	// 1 translucent
+			{	// 1 translucent-frags
 				pipelineBindPoint = graphics;
-				colorAttachments = (
-					{	// translucent
-						attachment = 6;
-						layout = color_attachment_optimal;
-					},
-				);
 				depthStencilAttachment = {
 					attachment = 0;
 					layout = depth_stencil_read_only_optimal;
@@ -265,14 +258,10 @@
 						attachment = 5;
 						layout = shader_read_only_optimal;
 					},
-					{	// translucent
-						attachment = 6;
-						layout = shader_read_only_optimal;
-					},
 				);
 				colorAttachments = (
 					{	// output
-						attachment = 7;
+						attachment = 6;
 						layout = color_attachment_optimal;
 					},
 				);
@@ -288,14 +277,6 @@
 				srcAccessMask = depth_stencil_attachment_write;
 				dstAccessMask = input_attachment_read|depth_stencil_attachment_read;
 				dependencyFlags = by_region;
-			},
-			{
-				srcSubpass = ~0u;	// external
-				dstSubpass = 1; // translucent
-				srcStageMask = compute_shader;
-				dstStageMask = vertex_input|draw_indirect;
-				srcAccessMask = shader_write;
-				dstAccessMask = vertex_attribute_read|indirect_command_read;
 			},
 			{
 				srcSubpass = 0;	// depth
@@ -325,8 +306,8 @@
 				dependencyFlags = by_region;
 			},
 			{
-				srcSubpass = 1;	// translucent
-				dstSubpass = 4;	// compose
+				srcSubpass = 1;	// translucent-frags
+				dstSubpass = 4;	// translucent-final/compose
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;

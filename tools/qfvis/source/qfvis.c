@@ -372,8 +372,8 @@ ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
 		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
 			continue;
 		}
-		vec4f_t     mid = split_edge (in->points, dists, i,
-									  (i + 1) % in->numpoints, split);
+		unsigned    j = (i + 1) == in->numpoints ? 0 : i + 1;
+		vec4f_t     mid = split_edge (in->points, dists, i, j, split);
 		neww->points[neww->numpoints++] = mid;
 	}
 

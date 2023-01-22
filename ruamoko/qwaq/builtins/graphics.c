@@ -55,6 +55,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/math/bitop.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
+#include "QF/ui/canvas.h"
+#include "QF/ui/font.h"
+#include "QF/ui/text.h"
 
 #include "rua_internal.h"
 
@@ -81,6 +85,7 @@ quit_f (void)
 static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static int event_handler_id;
+static canvas_system_t canvas_sys;
 
 static void
 bi_2d (void)
@@ -91,7 +96,7 @@ bi_2d (void)
 
 static SCR_Func bi_2dfuncs[] = {
 	bi_2d,
-	Con_DrawConsole,
+//	Con_DrawConsole,
 	0,
 };
 
@@ -112,7 +117,7 @@ bi_refresh (progs_t *pr, void *_res)
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
-	SCR_UpdateScreen (0, con_realtime, bi_2dfuncs);
+	SCR_UpdateScreen (nulltransform, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
 
@@ -120,6 +125,14 @@ static void
 bi_refresh_2d (progs_t *pr, void *_res)
 {
 	qc2d = P_FUNCTION (pr, 0);
+}
+
+static void
+bi_setpalette (progs_t *pr, void *_res)
+{
+	byte       *palette = (byte *) P_GPOINTER (pr, 0);
+	byte       *colormap = (byte *) P_GPOINTER (pr, 1);
+	VID_SetPalette (palette, colormap);
 }
 
 static void
@@ -134,6 +147,7 @@ static builtin_t builtins[] = {
 	bi(newscene,   -1, 1, p(long)),
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
+	bi(setpalette, -1, 2, p(ptr), p(ptr)),
 	bi(shutdown,   -1, 0),
 	{0}
 };
@@ -301,7 +315,10 @@ generate_colormap (void)
 		memcpy (colors[i][224], colors[31][224], 32 * 3);
 	}
 	tex_t     *cmap = ConvertImage (&tex, default_palette[0]);
-	memcpy (default_colormap, cmap->data, sizeof (default_colormap));
+	// the colormap has an extra byte indicating the number of fullbright
+	// entries, but that byte is not in the image, so don't try to copy it,
+	// thus the - 1
+	memcpy (default_colormap, cmap->data, sizeof (default_colormap) - 1);
 	free (cmap);
 }
 
@@ -330,6 +347,8 @@ BI_Graphics_Init (progs_t *pr)
 	IN_Init ();
 	Mod_Init ();
 	R_Init ();
+	Font_Init ();
+
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);
 	S_Progs_Init (pr);
@@ -337,14 +356,22 @@ BI_Graphics_Init (progs_t *pr)
 	event_handler_id = IE_Add_Handler (event_handler, pr);
 	IE_Set_Focus (event_handler_id);
 
-	Con_Init ("client");
+	Con_Load ("client");
+	__auto_type reg = ECS_NewRegistry ();
+	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
-		con_module->data->console->realtime = &con_realtime;
-		con_module->data->console->frametime = &con_frametime;
-		con_module->data->console->quit = quit_f;
-		con_module->data->console->cbuf = qwaq_cbuf;
+		__auto_type cd = con_module->data->console;
+		cd->realtime = &con_realtime;
+		cd->frametime = &con_frametime;
+		cd->quit = quit_f;
+		cd->cbuf = qwaq_cbuf;
+		cd->component_base = ECS_RegisterComponents (reg, cd->components,
+													 cd->num_components);
+		cd->canvas_sys = &canvas_sys;
 	}
+	ECS_CreateComponentPools (reg);
 	//Key_SetKeyDest (key_game);
+	Con_Init ();
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();

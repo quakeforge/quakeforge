@@ -56,13 +56,6 @@ extern struct vid_model_funcs_s *mod_funcs;
 
 // BRUSH MODELS ===============================================================
 
-typedef struct efrag_s {
-	struct mleaf_s		*leaf;
-	struct efrag_s		*leafnext;
-	struct entity_s		*entity;
-	struct efrag_s		*entnext;
-} efrag_t;
-
 // in memory representation ===================================================
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -86,7 +79,7 @@ typedef struct instsurf_s {
 	struct instsurf_s *tex_chain;	///< next in texture chain
 	struct instsurf_s *lm_chain;	///< next in lightmap chain
 	struct msurface_s *surface;		///< surface to render
-	vec_t      *transform;
+	vec4f_t    *transform;
 	float      *color;
 } instsurf_t;
 
@@ -199,7 +192,7 @@ typedef struct mleaf_s {
 
 // leaf specific
 	byte		*compressed_vis;
-	efrag_t		*efrags;
+	struct efrag_s *efrags;
 
 	int         firstmarksurface;
 	int			nummarksurfaces;

@@ -42,9 +42,11 @@
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "QF/GLSL/defines.h"
@@ -54,10 +56,6 @@
 #include "QF/GLSL/qf_vid.h"
 
 #include "r_internal.h"
-
-typedef struct {
-	subpic_t   *subpic;
-} glpic_t;
 
 typedef struct cachepic_s {
 	struct cachepic_s *next;
@@ -69,6 +67,16 @@ typedef struct {
 	float       xyst[4];
 	float       color[4];
 } drawvert_t;
+
+typedef struct glslfont_s {
+	font_t     *font;
+	GLuint      texid;
+} glslfont_t;
+
+typedef struct glfontset_s
+    DARRAY_TYPE (glslfont_t) glslfontset_t;
+
+static glslfontset_t glsl_fonts = DARRAY_STATIC_INIT (16);
 
 static const char *twod_vert_effects[] =
 {
@@ -83,6 +91,12 @@ static const char *twod_frag_effects[] =
 	0
 };
 
+static const char *twod_alpha_frag_effects[] =
+{
+	"QuakeForge.Fragment.2d.alpha",
+	0
+};
+
 static float proj_matrix[16];
 
 static struct {
@@ -93,17 +107,30 @@ static struct {
 	shaderparam_t vertex;
 	shaderparam_t color;
 } quake_2d = {
-	0,
-	{"texture", 1},
-	{"palette", 1},
-	{"mvp_mat", 1},
-	{"vertex", 0},
-	{"vcolor", 0},
+	.texture = {"texture", 1},
+	.palette = {"palette", 1},
+	.matrix = {"mvp_mat", 1},
+	.vertex = {"vertex", 0},
+	.color = {"vcolor", 0},
+};
+
+static struct {
+	int         program;
+	shaderparam_t texture;
+	shaderparam_t matrix;
+	shaderparam_t vertex;
+	shaderparam_t color;
+} alpha_2d = {
+	.texture = {"texture", 1},
+	.matrix = {"mvp_mat", 1},
+	.vertex = {"vertex", 0},
+	.color = {"vcolor", 0},
 };
 
 static scrap_t *draw_scrap;		// hold all 2d images
 static byte white_block[8 * 8];
 static dstring_t *draw_queue;
+static dstring_t *glyph_queue;
 static dstring_t *line_queue;
 static qpic_t *conchars;
 static int  conback_texture;
@@ -112,6 +139,7 @@ static qpic_t *white_pic;
 static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
 static int glsl_conback_texnum;
+static int glsl_2d_scale = 1;
 static cvar_t glsl_conback_texnum_cvar = {
 	.name = "glsl_conback_texnum",
 	.description =
@@ -125,16 +153,14 @@ static qpic_t *
 make_glpic (const char *name, qpic_t *p)
 {
 	qpic_t     *pic = 0;
-	glpic_t    *gl;
 
 	if (p) {
-		// FIXME is alignment ok?
-		pic = malloc (sizeof (qpic_t) + sizeof (glpic_t));
+		pic = malloc (sizeof (qpic_t) + sizeof (subpic_t *));
 		pic->width = p->width;
 		pic->height = p->height;
-		gl = (glpic_t *) pic->data;
-		gl->subpic = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
-		GLSL_SubpicUpdate (gl->subpic, p->data, 1);
+		subpic_t   *sp = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
+		*(subpic_t **) pic->data = sp;
+		GLSL_SubpicUpdate (sp, p->data, 1);
 	}
 	return pic;
 }
@@ -142,9 +168,9 @@ make_glpic (const char *name, qpic_t *p)
 static void
 pic_free (qpic_t *pic)
 {
-	glpic_t    *gl = (glpic_t *) pic->data;
+	subpic_t   *subpic = *(subpic_t **) pic->data;
 
-	GLSL_SubpicDelete (gl->subpic);
+	GLSL_SubpicDelete (subpic);
 	free (pic);
 }
 
@@ -195,12 +221,8 @@ make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
 		   float *color)
 {
-	glpic_t    *gl;
-	subpic_t   *sp;
+	subpic_t   *sp = *(subpic_t **) pic->data;
 	float       sl, sh, tl, th;
-
-	gl = (glpic_t *) pic->data;
-	sp = gl->subpic;
 
 	srcx += sp->rect->x;
 	srcy += sp->rect->y;
@@ -380,7 +402,6 @@ glsl_Draw_Init (void)
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
-	//FIXME glpic_t    *gl;
 
 	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
 	QFS_GamedirCallback (Draw_ClearCache, 0);
@@ -390,6 +411,7 @@ glsl_Draw_Init (void)
 
 	draw_queue = dstring_new ();
 	line_queue = dstring_new ();
+	glyph_queue = dstring_new ();
 
 	vert_shader = GLSL_BuildShader (twod_vert_effects);
 	frag_shader = GLSL_BuildShader (twod_frag_effects);
@@ -403,6 +425,20 @@ glsl_Draw_Init (void)
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.matrix);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.vertex);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.color);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
+
+	vert_shader = GLSL_BuildShader (twod_vert_effects);
+	frag_shader = GLSL_BuildShader (twod_alpha_frag_effects);
+	vert = GLSL_CompileShader ("quakeico.vert", vert_shader,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("alpha2d.frag", frag_shader,
+							   GL_FRAGMENT_SHADER);
+	alpha_2d.program = GLSL_LinkProgram ("alpha2d", vert, frag);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.texture);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.matrix);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.vertex);
+	GLSL_ResolveShaderParam (alpha_2d.program, &alpha_2d.color);
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
 
@@ -440,10 +476,9 @@ glsl_Draw_Init (void)
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
 	backtile_pic = glsl_Draw_PicFromWad ("backtile");
-	//FIXME gl = (glpic_t *) backtile_pic->data;
-	//FIXME qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
-	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	if (!backtile_pic) {
+		backtile_pic = white_pic;
+	}
 
 	Cvar_Register (&glsl_conback_texnum_cvar, 0, 0);
 }
@@ -483,6 +518,21 @@ flush_2d (void)
 	}
 	draw_queue->size = 0;
 	line_queue->size = 0;
+}
+
+void
+glsl_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			glsl_Draw_Character (x + i * 8, y, line[i]);
+		}
+		line += width;
+		y += 8;
+	}
 }
 
 void
@@ -567,8 +617,8 @@ draw_crosshair_pic (int ch, int x, int y)
 	};
 	const int *p = pos[ch - 1];
 
-	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
-			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, crosshair_pic,
+	draw_pic (x - CROSSHAIR_WIDTH / 2 + 1, y - CROSSHAIR_HEIGHT / 2 + 1,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  p[0], p[1], p[2], p[3], crosshair_color);
 }
 
@@ -595,9 +645,10 @@ void
 glsl_Draw_Crosshair (void)
 {
 	int         x, y;
+	int         s = 2 * glsl_2d_scale;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	x = vid.width / s + cl_crossx;
+	y = vid.height / s + cl_crossy;
 
 	glsl_Draw_CrosshairAt (crosshair, x, y);
 }
@@ -608,6 +659,13 @@ glsl_Draw_Pic (int x, int y, qpic_t *pic)
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,
 			  0, 0, pic->width, pic->height, color);
+}
+
+void
+glsl_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, width, height, pic, 0, 0, pic->width, pic->height, color);
 }
 
 void
@@ -629,15 +687,16 @@ glsl_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 glsl_Draw_ConsoleBackground (int lines, byte alpha)
 {
-	float       ofs = (vid.conview->ylen - lines) / (float) vid.conview->ylen;
+	int         s = glsl_2d_scale;
+	float       ofs = (vid.height - s * lines) / (float) vid.height;
 	quat_t      color = {1, 1, 1, bound (0, alpha, 255) / 255.0};
 	drawvert_t  verts[] = {
-		{{           0,     0, 0, ofs}},
-		{{vid.conview->xlen,     0, 1, ofs}},
-		{{vid.conview->xlen, lines, 1,   1}},
-		{{           0,     0, 0, ofs}},
-		{{vid.conview->xlen, lines, 1,   1}},
-		{{           0, lines, 0,   1}},
+		{{            0,     0, 0, ofs}},
+		{{vid.width / s,     0, 1, ofs}},
+		{{vid.width / s, lines, 1,   1}},
+		{{            0,     0, 0, ofs}},
+		{{vid.width / s, lines, 1,   1}},
+		{{            0, lines, 0,   1}},
 	};
 
 	GLSL_FlushText (); // Flush text that should be rendered before the console
@@ -668,8 +727,7 @@ glsl_Draw_TileClear (int x, int y, int w, int h)
 	static quat_t color = { 1, 1, 1, 1 };
 	vrect_t     *tile_rect = VRect_New (x, y, w, h);
 	vrect_t     *sub = VRect_New (0, 0, 0, 0);	// filled in later;
-	glpic_t     *gl = (glpic_t *) backtile_pic->data;
-	subpic_t    *sp = gl->subpic;
+	subpic_t    *sp = *(subpic_t **) backtile_pic->data;
 	int          sub_sx, sub_sy, sub_ex, sub_ey;
 	int          i, j;
 
@@ -710,8 +768,7 @@ glsl_Draw_Fill (int x, int y, int w, int h, int c)
 void
 glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 {
-	glpic_t    *gl = (glpic_t *) white_pic->data;
-	subpic_t   *sp = gl->subpic;
+	subpic_t    *sp = *(subpic_t **) white_pic->data;
 	float       sl = sp->rect->x * sp->size;
 	float       sh = sp->rect->x * sp->size;
 	float       tl = sp->rect->y * sp->size;
@@ -733,11 +790,24 @@ glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 	memcpy (v, verts, size);
 }
 
+void
+glsl_LineGraph (int x, int y, int *h_vals, int count, int height)
+{
+	static int colors[] = { 0xd0, 0x4f, 0x6f };
+
+	while (count-- > 0) {
+		int         h = *h_vals++;
+		int         c = h < 9998 || h > 10000 ? 0xfe : colors[h - 9998];
+		h = min (h, height);
+		glsl_Draw_Line (x, y, x, y - h, c);
+		x++;
+	}
+}
+
 static inline void
 draw_blendscreen (quat_t color)
 {
-	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, white_pic,
-			  0, 0, 8, 8, color);
+	draw_pic (0, 0, vid.width, vid.height, white_pic, 0, 0, 8, 8, color);
 }
 
 void
@@ -810,7 +880,13 @@ GLSL_Set2D (void)
 void
 GLSL_Set2DScaled (void)
 {
-    set_2d (vid.conview->xlen, vid.conview->ylen);
+	set_2d (vid.width / glsl_2d_scale, vid.height / glsl_2d_scale);
+}
+
+void
+glsl_Draw_SetScale (int scale)
+{
+	glsl_2d_scale = scale;
 }
 
 void
@@ -840,4 +916,110 @@ glsl_Draw_BlendScreen (quat_t color)
 	if (!color[3])
 		return;
 	draw_blendscreen (color);
+}
+
+int
+glsl_Draw_AddFont (font_t *rfont)
+{
+	int         fontid = glsl_fonts.size;
+	DARRAY_OPEN_AT (&glsl_fonts, fontid, 1);
+	glslfont_t *font = &glsl_fonts.a[fontid];
+
+	font->font = rfont;
+	tex_t       tex = {
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+		.format = tex_a,
+		.loaded = 1,
+		.data = rfont->scrap_bitmap,
+	};
+	font->texid = GLSL_LoadTex ("", 1, &tex);
+	return fontid;
+}
+#if 0
+typedef struct {
+	vrect_t    *glyph_rects;
+	dstring_t  *batch;
+	int         width;
+	int         height;
+	float       color[4];
+} glslrgctx_t;
+
+static void
+glsl_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+{
+	glslrgctx_t *rgctx = _rgctx;
+	vrect_t    *rect = &rgctx->glyph_rects[glyphid];
+	dstring_t  *batch = rgctx->batch;
+
+}
+#endif
+void
+glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
+{
+	if (fontid < 0 || (unsigned) fontid > glsl_fonts.size) {
+		return;
+	}
+	glslfont_t *font = &glsl_fonts.a[fontid];
+	font_t     *rfont = font->font;
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+
+	dstring_t  *batch = glyph_queue;
+	int         size = 6 * sizeof (drawvert_t);
+	batch->size += size;
+	dstring_adjust (batch);
+	drawvert_t *verts = (drawvert_t *) (batch->str + batch->size - size);
+
+	float       w = rect->width;
+	float       h = rect->height;
+	float       u = rect->x;
+	float       v = rect->y;
+	float       s = 1.0 / rfont->scrap.width;
+	float       t = 1.0 / rfont->scrap.height;
+
+	verts[0] = (drawvert_t) {
+		.xyst = { x, y, u * s, v * t },
+	};
+	verts[1] = (drawvert_t) {
+		.xyst = { x + w, y, (u + w) * s, v * t },
+	};
+	verts[2] = (drawvert_t) {
+		.xyst = { x + w, y + h, (u + w) * s, (v + h) * t },
+	};
+	verts[3] = (drawvert_t) {
+		.xyst = { x, y, u * s, v * t },
+	};
+	verts[4] = (drawvert_t) {
+		.xyst = { x + w, y + h, (u + w) * s, (v + h) * t },
+	};
+	verts[5] = (drawvert_t) {
+		.xyst = { x, y + h, u * s, (v + h) * t },
+	};
+
+	quat_t      color = { VectorExpand (vid.palette + c * 3), 255 };
+	QuatScale (color, 1.0f/255.0f, color);
+	QuatCopy (color, verts[0].color);
+	QuatCopy (color, verts[1].color);
+	QuatCopy (color, verts[2].color);
+	QuatCopy (color, verts[3].color);
+	QuatCopy (color, verts[4].color);
+	QuatCopy (color, verts[5].color);
+
+	qfeglUseProgram (alpha_2d.program);
+	qfeglEnableVertexAttribArray (alpha_2d.vertex.location);
+	qfeglEnableVertexAttribArray (alpha_2d.color.location);
+	qfeglUniformMatrix4fv (alpha_2d.matrix.location, 1, false, proj_matrix);
+	qfeglBindTexture (GL_TEXTURE_2D, font->texid);
+	qfeglBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	if (glyph_queue->size) {
+		qfeglVertexAttribPointer (alpha_2d.vertex.location, 4, GL_FLOAT,
+								 0, 32, glyph_queue->str);
+		qfeglVertexAttribPointer (alpha_2d.color.location, 4, GL_FLOAT,
+								 0, 32, glyph_queue->str + 16);
+
+		qfeglDrawArrays (GL_TRIANGLES, 0, glyph_queue->size / 32);
+	}
+	glyph_queue->size = 0;
+	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfeglUseProgram (quake_2d.program);
 }

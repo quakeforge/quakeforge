@@ -309,7 +309,7 @@ Host_Error (const char *error, ...)
 
 	inerror = true;
 
-	cl.loading = false;
+	cl.viewstate.loading = false;
 
 	va_start (argptr, error);
 	dvsprintf (str, error, argptr);
@@ -926,7 +926,8 @@ Host_Init (void)
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);
-		Con_Init ("server");
+		Con_Load ("server");
+		Con_Init ();
 	}
 
 	Host_InitVCR (&host_parms);

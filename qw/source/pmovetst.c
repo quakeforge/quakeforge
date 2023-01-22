@@ -35,7 +35,6 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"

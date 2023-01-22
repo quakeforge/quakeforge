@@ -39,6 +39,12 @@
 #include "QF/Vulkan/shader.h"
 
 static
+#include "libs/video/renderer/vulkan/shader/slice.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/particle.geom.spvc"
@@ -56,6 +62,8 @@ static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/twod_depth.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
@@ -97,11 +105,17 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/output.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/waterwarp.frag.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -110,6 +124,9 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "slice.vert", slice_vert, sizeof (slice_vert) },
+	{ "line.vert", line_vert, sizeof (line_vert) },
+	{ "line.frag", line_frag, sizeof (line_frag) },
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },
 	{ "particle.geom", particle_geom, sizeof (particle_geom) },
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
@@ -119,6 +136,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
 	{ "sprite_depth.frag", sprite_depth_frag, sizeof (sprite_depth_frag) },
+	{ "twod_depth.frag", twod_depth_frag, sizeof (twod_depth_frag) },
 	{ "twod.vert", twod_vert, sizeof (twod_vert) },
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
@@ -139,9 +157,12 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
 	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
+	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
+	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
+	{ "waterwarp.frag", waterwarp_frag, sizeof (waterwarp_frag) },
 	{}
 };
 

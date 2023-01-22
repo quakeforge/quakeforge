@@ -211,7 +211,7 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 }
 
 static void
-R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
+R_IQMSetupLighting (entity_t ent, alight_t *plighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
@@ -234,7 +234,8 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 
 	// rotate the lighting vector into the model's frame of reference
 	mat4f_t     mat;
-	Transform_GetWorldMatrix (ent->transform, mat);
+	transform_t transform = Entity_Transform (ent);
+	Transform_GetWorldMatrix (transform, mat);
 	//FIXME vectorize
 	r_lightvec[0] = DotProduct (plighting->lightvec, mat[0]);
 	r_lightvec[1] = DotProduct (plighting->lightvec, mat[1]);
@@ -242,14 +243,15 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 }
 
 static void
-R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
+R_IQMSetUpTransform (entity_t ent, int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4];
 	vec3_t      forward, left, up;
 
 	mat4f_t     mat;
-	Transform_GetWorldMatrix (ent->transform, mat);
+	transform_t transform = Entity_Transform (ent);
+	Transform_GetWorldMatrix (transform, mat);
 	VectorCopy (mat[0], forward);
 	VectorCopy (mat[1], left);
 	VectorCopy (mat[2], up);
@@ -286,9 +288,10 @@ R_IQMSetUpTransform (entity_t *ent, int trivial_accept)
 }
 
 void
-R_IQMDrawModel (entity_t *ent, alight_t *plighting)
+R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
-	model_t    *model = ent->renderer.model;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         size;
@@ -298,8 +301,11 @@ R_IQMDrawModel (entity_t *ent, alight_t *plighting)
 	size = (CACHE_SIZE - 1)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
-	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendPalette (iqm, ent->animation.pose1, ent->animation.pose2,
+
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	blend = R_IQMGetLerpedFrames (animation, iqm);
+	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, size, sw->blend_palette,
 							   sw->palette_size);
 
@@ -308,21 +314,24 @@ R_IQMDrawModel (entity_t *ent, alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	R_IQMSetUpTransform (ent, ent->visibility.trivial_accept);
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
+	R_IQMSetUpTransform (ent, visibility->trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
-	r_affinetridesc.drawtype = (ent->visibility.trivial_accept == 3) &&
+	r_affinetridesc.drawtype = (visibility->trivial_accept == 3) &&
 			r_recursiveaffinetriangles;
 
 	//if (!acolormap)
 		acolormap = r_colormap;
 
-	if (ent != vr_data.view_model)
+	//FIXME depth hack
+	if (ent.id != vr_data.view_model.id)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (ent->visibility.trivial_accept)
+	if (visibility->trivial_accept)
 		R_IQMPrepareUnclippedPoints (iqm, sw, frame);
 	else
 		R_IQMPreparePoints (iqm, sw, frame);

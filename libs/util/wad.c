@@ -132,7 +132,7 @@ W_GetLumpName (const char *name)
 	}
 	lump = W_GetLumpinfo (name);
 
-	return (void *) (wad_base + lump->filepos);
+	return lump ? (wad_base + lump->filepos) : 0;
 }
 
 VISIBLE void

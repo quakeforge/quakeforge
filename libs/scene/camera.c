@@ -35,15 +35,11 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-#include "scn_internal.h"
-
 void
 Camera_GetViewMatrix (const camera_t *camera, mat4f_t view)
 {
-	scene_resources_t *res = camera->scene->resources;
-	transform_t *transform = PR_RESGET (res->transforms, camera->transform);
-	vec4f_t     rotation = Transform_GetWorldRotation (transform);
-	vec4f_t     position = Transform_GetWorldPosition (transform);
+	vec4f_t     rotation = Transform_GetWorldRotation (camera->transform);
+	vec4f_t     position = Transform_GetWorldPosition (camera->transform);
 	mat4fquat (view, qconjf (rotation));
 	// qconjf negates xyz but leaves w alone, which is what we want for
 	// inverting the translation (essentially, rotation+position form a

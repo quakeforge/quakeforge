@@ -578,9 +578,9 @@ s_combine_channel (channel_t *combine, channel_t *ch)
 }
 
 void
-SND_SetListener (snd_t *snd, transform_t *ear, const byte *ambient_sound_level)
+SND_SetListener (snd_t *snd, transform_t ear, const byte *ambient_sound_level)
 {
-	if (ear) {
+	if (Transform_Valid (ear)) {
 		listener_origin  = Transform_GetWorldPosition (ear);
 		listener_forward = Transform_Forward (ear);
 		listener_right   = Transform_Right (ear);

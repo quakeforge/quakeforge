@@ -44,7 +44,6 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_subexit:
 			break;
 		case prd_trace:
-			(void)0;//FIXME for clang
 			dstatement_t *st = test_pr.pr_statements + test_pr.pr_xstatement;
 			if (verbose > 1) {
 				printf ("---\n");

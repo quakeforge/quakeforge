@@ -50,11 +50,14 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_output.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
@@ -74,6 +77,7 @@
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_vulkan.h"
+#include "vulkan/vkparse.h"
 
 static vulkan_ctx_t *vulkan_ctx;
 
@@ -87,11 +91,15 @@ static void
 vulkan_R_Init (void)
 {
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
-	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
-	Vulkan_CreateCapture (vulkan_ctx);
-	Vulkan_CreateRenderPasses (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
+	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
+
+	Vulkan_CreateSwapchain (vulkan_ctx);
+	Vulkan_CreateCapture (vulkan_ctx);
+
+	Vulkan_CreateRenderPasses (vulkan_ctx);
+	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Scene_Init (vulkan_ctx);
@@ -102,6 +110,7 @@ vulkan_R_Init (void)
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
+	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
 	Skin_Init ();
@@ -114,7 +123,6 @@ vulkan_R_ClearState (void)
 {
 	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	r_refdef.worldmodel = 0;
-	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
 	Vulkan_LoadLights (0, vulkan_ctx);
@@ -135,6 +143,19 @@ vulkan_R_NewScene (scene_t *scene)
 static void
 vulkan_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
+	Vulkan_LineGraph (x, y, h_vals, count, height, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	Vulkan_Draw_CharBuffer (x, y, buffer, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_SetScale (int scale)
+{
+	vulkan_ctx->twod_scale = max (1, scale);
 }
 
 static void
@@ -252,6 +273,12 @@ vulkan_Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 static void
+vulkan_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	Vulkan_Draw_FitPic (x, y, width, height, pic, vulkan_ctx);
+}
+
+static void
 vulkan_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	Vulkan_Draw_Picf (x, y, pic, vulkan_ctx);
@@ -263,10 +290,21 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 	Vulkan_Draw_SubPic (x, y, pic, srcx, srcy, width, height, vulkan_ctx);
 }
 
+static int
+vulkan_Draw_AddFont (struct font_s *font)
+{
+	return Vulkan_Draw_AddFont (font, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
+{
+	Vulkan_Draw_Glyph (x, y, fontid, glyphid, c, vulkan_ctx);
+}
+
 static void
 vulkan_begin_frame (void)
 {
-	uint32_t imageIndex = 0;
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	VkDevice    dev = device->dev;
@@ -274,41 +312,21 @@ vulkan_begin_frame (void)
 	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-						  frame->imageAvailableSemaphore,
-						  0, &imageIndex);
-	vulkan_ctx->swapImageIndex = imageIndex;
 }
 
 static void
 vulkan_render_view (void)
 {
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
-
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		// swapImageIndex may be updated by a render pass
+		uint32_t imageIndex = vulkan_ctx->swapImageIndex;
 		if (rp->framebuffers) {
-			frame->framebuffer = rp->framebuffers->a[imageIndex];
+			rpFrame->framebuffer = rp->framebuffers->a[imageIndex];
 		}
 		rp->draw (rpFrame);
 	}
-}
-
-static void
-vulkan_draw_particles (struct psystem_s *psystem)
-{
-}
-
-static void
-vulkan_draw_transparent (void)
-{
-}
-
-static void
-vulkan_post_process (framebuffer_t *src)
-{
 }
 
 static void
@@ -317,11 +335,14 @@ vulkan_set_2d (int scaled)
 	//FIXME this should not be done every frame
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
+	int         scale = vulkan_ctx->twod_scale;
 
-	int width = vid.conview->xlen;	//FIXME vid
-	int height = vid.conview->ylen;
-	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
-
+	float       left = 0;
+	float       top = 0;
+	float       right = left + vid.width / scale;
+	float       bottom = top + vid.height / scale;
+	QFV_Orthographic (mat->Projection2d, left, right, top, bottom, 0, 99999);
+	mat->ScreenSize = (vec2f_t) { 1.0 / vid.width, 1.0 / vid.height };
 	mctx->dirty = mctx->frames.size;
 }
 
@@ -332,16 +353,12 @@ vulkan_end_frame (void)
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_queue_t *queue = &device->queue;
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-	uint32_t imageIndex = vulkan_ctx->swapImageIndex;
+	uint32_t    curFrame = vulkan_ctx->curFrame;
+	__auto_type frame = &vulkan_ctx->frames.a[curFrame];
+	uint32_t    imageIndex = vulkan_ctx->swapImageIndex;
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-
-	VkRenderPassBeginInfo renderPassInfo = {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
-	};
 
 	__auto_type cmdBufs = (qfv_cmdbufferset_t) DARRAY_STATIC_INIT (4);
 	DARRAY_APPEND (&cmdBufs, frame->cmdBuffer);
@@ -349,7 +366,7 @@ vulkan_end_frame (void)
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
 	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		__auto_type rpFrame = &rp->frames.a[curFrame];
 
 		if (rp->primary_commands) {
 			for (int j = 0; j < rpFrame->subpassCount; j++) {
@@ -364,10 +381,14 @@ vulkan_end_frame (void)
 
 		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
 		if (rpFrame->renderpass && rp->renderpass) {
-			renderPassInfo.framebuffer = frame->framebuffer,
-			renderPassInfo.renderPass = rp->renderpass;
-			renderPassInfo.clearValueCount = rp->clearValues->size;
-			renderPassInfo.pClearValues = rp->clearValues->a;
+			VkRenderPassBeginInfo renderPassInfo = {
+				.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+				.renderPass = rp->renderpass,
+				.framebuffer = rp->framebuffers->a[imageIndex],
+				.renderArea = rp->renderArea,
+				.clearValueCount = rp->clearValues->size,
+				.pClearValues = rp->clearValues->a,
+			};
 
 			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
 										 rpFrame->subpassContents);
@@ -411,7 +432,7 @@ vulkan_end_frame (void)
 	if (vulkan_ctx->capture_callback) {
 		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
 		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
-												vulkan_ctx->curFrame);
+												curFrame);
 		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
 	}
 	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
@@ -434,7 +455,7 @@ vulkan_end_frame (void)
 		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
 								1000000000ull);
 		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
-													   vulkan_ctx->curFrame),
+													   curFrame),
 									  vulkan_ctx->capture->extent.width,
 									  vulkan_ctx->capture->extent.height);
 		vulkan_ctx->capture_callback = 0;
@@ -452,26 +473,18 @@ vulkan_end_frame (void)
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
 }
 
-static framebuffer_t *
-vulkan_create_cube_map (int size)
-{
-	return 0;
-}
-
-static framebuffer_t *
-vulkan_create_frame_buffer (int width, int height)
-{
-	return 0;
-}
-
 static void
-vulkan_bind_framebuffer (framebuffer_t *framebuffer)
+vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
-}
-
-static void
-vulkan_set_viewport (const vrect_t *view)
-{
+	EntQueue_Clear (r_ent_queue);
+	vulkan_begin_frame ();
+	vulkan_set_2d (1);
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	vulkan_render_view ();
+	vulkan_end_frame ();
 }
 
 static void
@@ -511,8 +524,7 @@ capture_screenshot (const byte *data, int width, int height)
 		tex->flagbits = 0;
 		tex->loaded = 1;
 
-		if (!vulkan_ctx->capture->canBlit ||
-			is_bgr (vulkan_ctx->swapchain->format)) {
+		if (is_bgr (vulkan_ctx->swapchain->format)) {
 			tex->bgr = 1;
 		}
 		const byte *src = data;
@@ -613,9 +625,9 @@ vulkan_Skin_InitTranslations (void)
 static void
 set_palette (void *data, const byte *palette)
 {
-	//FIXME really don't want this here: need an application domain
-	//so Quake can be separated from QuakeForge (ie, Quake itself becomes
-	//an app using the QuakeForge engine)
+	if (vulkan_ctx->palette_context) {
+		Vulkan_Palette_Update (vulkan_ctx, palette);
+	}
 }
 
 static void
@@ -647,30 +659,31 @@ vulkan_vid_render_create_context (void *data)
 }
 
 static vid_model_funcs_t model_funcs = {
-	sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
-	vulkan_Mod_LoadLighting,
-	vulkan_Mod_SubdivideSurface,
-	vulkan_Mod_ProcessTexture,
+	.texture_render_size  = sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 
-	Mod_LoadIQM,
-	Mod_LoadAliasModel,
-	Mod_LoadSpriteModel,
+	.Mod_LoadLighting     = vulkan_Mod_LoadLighting,
+	.Mod_SubdivideSurface = vulkan_Mod_SubdivideSurface,
+	.Mod_ProcessTexture   = vulkan_Mod_ProcessTexture,
 
-	vulkan_Mod_MakeAliasModelDisplayLists,
-	vulkan_Mod_LoadAllSkins,
-	vulkan_Mod_FinalizeAliasModel,
-	vulkan_Mod_LoadExternalSkins,
-	vulkan_Mod_IQMFinish,
-	0,
-	vulkan_Mod_SpriteLoadFrames,
+	.Mod_LoadIQM         = Mod_LoadIQM,
+	.Mod_LoadAliasModel  = Mod_LoadAliasModel,
+	.Mod_LoadSpriteModel = Mod_LoadSpriteModel,
 
-	Skin_Free,
-	Skin_SetColormap,
-	Skin_SetSkin,
-	vulkan_Skin_SetupSkin,
-	Skin_SetTranslation,
-	vulkan_Skin_ProcessTranslation,
-	vulkan_Skin_InitTranslations,
+	.Mod_MakeAliasModelDisplayLists = vulkan_Mod_MakeAliasModelDisplayLists,
+	.Mod_LoadAllSkins               = vulkan_Mod_LoadAllSkins,
+	.Mod_FinalizeAliasModel         = vulkan_Mod_FinalizeAliasModel,
+	.Mod_LoadExternalSkins          = vulkan_Mod_LoadExternalSkins,
+	.Mod_IQMFinish                  = vulkan_Mod_IQMFinish,
+	.alias_cache                    = 0,
+	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
+
+	.Skin_Free               = Skin_Free,
+	.Skin_SetColormap        = Skin_SetColormap,
+	.Skin_SetSkin            = Skin_SetSkin,
+	.Skin_SetupSkin          = vulkan_Skin_SetupSkin,
+	.Skin_SetTranslation     = Skin_SetTranslation,
+	.Skin_ProcessTranslation = vulkan_Skin_ProcessTranslation,
+	.Skin_InitTranslations   = vulkan_Skin_InitTranslations,
 };
 
 static void
@@ -707,6 +720,7 @@ vulkan_vid_render_shutdown (void)
 	Mod_ClearAll ();
 
 	Vulkan_Compose_Shutdown (vulkan_ctx);
+	Vulkan_Translucent_Shutdown (vulkan_ctx);
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Sprite_Shutdown (vulkan_ctx);
@@ -717,8 +731,11 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
-	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_DestroyRenderPasses (vulkan_ctx);
+	Vulkan_Output_Shutdown (vulkan_ctx);
+
+	Vulkan_Palette_Shutdown (vulkan_ctx);
+	Vulkan_Texture_Shutdown (vulkan_ctx);
 
 	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
@@ -727,52 +744,49 @@ vulkan_vid_render_shutdown (void)
 }
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
-	vulkan_vid_render_init,
-	vulkan_Draw_Character,
-	vulkan_Draw_String,
-	vulkan_Draw_nString,
-	vulkan_Draw_AltString,
-	vulkan_Draw_ConsoleBackground,
-	vulkan_Draw_Crosshair,
-	vulkan_Draw_CrosshairAt,
-	vulkan_Draw_TileClear,
-	vulkan_Draw_Fill,
-	vulkan_Draw_Line,
-	vulkan_Draw_TextBox,
-	vulkan_Draw_FadeScreen,
-	vulkan_Draw_BlendScreen,
-	vulkan_Draw_CachePic,
-	vulkan_Draw_UncachePic,
-	vulkan_Draw_MakePic,
-	vulkan_Draw_DestroyPic,
-	vulkan_Draw_PicFromWad,
-	vulkan_Draw_Pic,
-	vulkan_Draw_Picf,
-	vulkan_Draw_SubPic,
+	.init = vulkan_vid_render_init,
 
-	vulkan_ParticleSystem,
-	vulkan_R_Init,
-	vulkan_R_ClearState,
-	vulkan_R_LoadSkys,
-	vulkan_R_NewScene,
-	vulkan_R_LineGraph,
-	vulkan_begin_frame,
-	vulkan_render_view,
-	vulkan_draw_particles,
-	vulkan_draw_transparent,
-	vulkan_post_process,
-	vulkan_set_2d,
-	vulkan_end_frame,
+	.UpdateScreen = vulkan_UpdateScreen,
 
-	vulkan_create_cube_map,
-	vulkan_create_frame_buffer,
-	vulkan_bind_framebuffer,
-	vulkan_set_viewport,
-	vulkan_set_fov,
+	.Draw_CharBuffer        = vulkan_Draw_CharBuffer,
+	.Draw_SetScale          = vulkan_Draw_SetScale,
+	.Draw_Character         = vulkan_Draw_Character,
+	.Draw_String            = vulkan_Draw_String,
+	.Draw_nString           = vulkan_Draw_nString,
+	.Draw_AltString         = vulkan_Draw_AltString,
+	.Draw_ConsoleBackground = vulkan_Draw_ConsoleBackground,
+	.Draw_Crosshair         = vulkan_Draw_Crosshair,
+	.Draw_CrosshairAt       = vulkan_Draw_CrosshairAt,
+	.Draw_TileClear         = vulkan_Draw_TileClear,
+	.Draw_Fill              = vulkan_Draw_Fill,
+	.Draw_Line              = vulkan_Draw_Line,
+	.Draw_TextBox           = vulkan_Draw_TextBox,
+	.Draw_FadeScreen        = vulkan_Draw_FadeScreen,
+	.Draw_BlendScreen       = vulkan_Draw_BlendScreen,
+	.Draw_CachePic          = vulkan_Draw_CachePic,
+	.Draw_UncachePic        = vulkan_Draw_UncachePic,
+	.Draw_MakePic           = vulkan_Draw_MakePic,
+	.Draw_DestroyPic        = vulkan_Draw_DestroyPic,
+	.Draw_PicFromWad        = vulkan_Draw_PicFromWad,
+	.Draw_Pic               = vulkan_Draw_Pic,
+	.Draw_FitPic            = vulkan_Draw_FitPic,
+	.Draw_Picf              = vulkan_Draw_Picf,
+	.Draw_SubPic            = vulkan_Draw_SubPic,
+	.Draw_AddFont           = vulkan_Draw_AddFont,
+	.Draw_Glyph             = vulkan_Draw_Glyph,
 
-	vulkan_capture_screen,
+	.ParticleSystem   = vulkan_ParticleSystem,
+	.R_Init           = vulkan_R_Init,
+	.R_ClearState     = vulkan_R_ClearState,
+	.R_LoadSkys       = vulkan_R_LoadSkys,
+	.R_NewScene       = vulkan_R_NewScene,
+	.R_LineGraph      = vulkan_R_LineGraph,
 
-	&model_funcs
+	.set_fov              = vulkan_set_fov,
+
+	.capture_screen = vulkan_capture_screen,
+
+	.model_funcs = &model_funcs
 };
 
 static general_funcs_t plugin_info_general_funcs = {

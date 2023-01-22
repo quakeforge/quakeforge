@@ -538,6 +538,7 @@ convert_op (int op)
 		case '.':	return "load";
 		case CROSS:	return "cross";
 		case DOT:	return "dot";
+		case HADAMARD:	return "mul";
 		case SCALE:	return "scale";
 		default:
 			return 0;

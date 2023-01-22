@@ -201,7 +201,7 @@ typedef struct
 
 extern drawsurf_t	r_drawsurf;
 struct transform_s;
-void R_DrawSurface (struct transform_s *transform);
+void R_DrawSurface (uint32_t render_id);
 void R_GenTile (msurface_t *psurf, void *pdest);
 
 // !!! if this is changed, it must be changed in d_iface.h too !!!
@@ -225,5 +225,8 @@ extern float	r_skyspeed;
 extern float	r_skytime;
 
 extern int		c_surf;
+
+struct draw_charbuffer_s;
+void sw_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer);
 
 #endif // _D_IFACE_H

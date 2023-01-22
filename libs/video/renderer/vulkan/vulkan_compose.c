@@ -46,6 +46,7 @@
 
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_renderpass.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -64,7 +65,6 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	qfv_renderpass_t *renderpass = rFrame->renderpass;
 
 	composectx_t *cctx = ctx->compose_context;
-	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = cframe->cmd;
 
@@ -74,7 +74,7 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		renderpass->renderpass, QFV_passCompose,
-		frame->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {
@@ -91,16 +91,15 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 
 	cframe->imageInfo[0].imageView
 		= renderpass->attachment_views->a[QFV_attachOpaque];
-	cframe->imageInfo[1].imageView
-		= renderpass->attachment_views->a[QFV_attachTranslucent];
 	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
 								   cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									cctx->layout, 0, 1, sets, 0, 0);
+									cctx->layout, 0, 2, sets, 0, 0);
 
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);

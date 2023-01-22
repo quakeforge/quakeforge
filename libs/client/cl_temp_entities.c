@@ -45,6 +45,7 @@
 #include "QF/sound.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
+									//
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
@@ -56,7 +57,7 @@
 
 typedef struct tent_s {
 	struct tent_s *next;
-	entity_t   *ent;
+	entity_t    ent;
 } tent_t;
 
 typedef struct {
@@ -153,17 +154,20 @@ CL_TEnts_Init (void)
 }
 
 void
-CL_Init_Entity (entity_t *ent)
+CL_Init_Entity (entity_t ent)
 {
-	memset (&ent->animation, 0, sizeof (ent->animation));
-	memset (&ent->visibility, 0, sizeof (ent->visibility));
-	memset (&ent->renderer, 0, sizeof (ent->renderer));
-	ent->active = 1;
-	ent->old_origin = (vec4f_t) {};
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+	byte       *active = Ent_GetComponent (ent.id, scene_active, cl_world.scene->reg);
+	vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
+	memset (animation, 0, sizeof (*animation));
+	memset (renderer, 0, sizeof (*renderer));
+	*active = 1;
+	*old_origin = (vec4f_t) {0, 0, 0, 1};
 
-	ent->renderer.skin = 0;
-	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
-	ent->animation.pose1 = ent->animation.pose2 = -1;
+	renderer->skin = 0;
+	QuatSet (1.0, 1.0, 1.0, 1.0, renderer->colormod);
+	animation->pose1 = animation->pose2 = -1;
 }
 
 static tent_t *
@@ -217,19 +221,13 @@ static inline void
 beam_clear (beam_t *b)
 {
 	if (b->tents) {
-		tent_t     *t;
-
-		for (t = b->tents; t; t = t->next) {
-			R_RemoveEfrags (t->ent);
-			t->ent->visibility.efrag = 0;
-		}
 		free_temp_entities (b->tents);
 		b->tents = 0;
 	}
 }
 
 static inline void
-beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
+beam_setup (beam_t *b, qboolean settransform, double time, TEntContext_t *ctx)
 {
 	tent_t     *tent;
 	float       d;
@@ -268,15 +266,17 @@ beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 
 		vec4f_t     position = org + d * dist;
 		d += 1.0;
-		tent->ent->renderer.model = b->model;
-		if (transform) {
+		transform_t transform = Entity_Transform (tent->ent);
+		renderer_t *renderer = Ent_GetComponent (tent->ent.id, scene_renderer, cl_world.scene->reg);
+		renderer->model = b->model;
+		if (settransform) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalTransform (tent->ent->transform, scale,
+			Transform_SetLocalTransform (transform, scale,
 										 qmulf (rotation,
 												beam_rolls[seed % 360]),
 										 position);
 		} else {
-			Transform_SetLocalPosition (tent->ent->transform, position);
+			Transform_SetLocalPosition (transform, position);
 		}
 		R_AddEfrags (&cl_world.scene->worldmodel->brush, tent->ent);
 	}
@@ -350,9 +350,29 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 			clp_funcs->BloodPuffEffect (position, count);
 			break;
-		case TE_Explosion:
+		case TE_Explosion1:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 
+			// sprite
+			to = new_tent_object ();
+			to->next = cl_explosions;
+			cl_explosions = to;
+			ex = &to->to.ex;
+			ex->tent = new_temp_entity ();
+
+			ex->start = time;
+			//FIXME need better model management
+			if (!cl_spr_explod->cache.data) {
+				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
+			}
+			transform_t transform = Entity_Transform (ex->tent->ent);
+			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, scene_renderer, cl_world.scene->reg);
+			renderer->model = cl_spr_explod;
+			Transform_SetLocalPosition (transform, position);
+			goto TE_Explosion_no_sprite;
+		case TE_Explosion:
+			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
+TE_Explosion_no_sprite:
 			// particles
 			clp_funcs->ParticleExplosion (position);
 
@@ -369,22 +389,6 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 
 			// sound
 			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
-
-			// sprite
-			to = new_tent_object ();
-			to->next = cl_explosions;
-			cl_explosions = to;
-			ex = &to->to.ex;
-			ex->tent = new_temp_entity ();
-
-			ex->start = time;
-			//FIXME need better model management
-			if (!cl_spr_explod->cache.data) {
-				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
-			}
-			ex->tent->ent->renderer.model = cl_spr_explod;
-			Transform_SetLocalPosition (ex->tent->ent->transform,//FIXME
-										(vec4f_t) {VectorExpand (position), 1});
 			break;
 		case TE_Explosion2:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
@@ -547,7 +551,7 @@ static const TE_Effect qwEffects[256] = {
 	[TE_qwSpike]          = TE_Spike,
 	[TE_qwSuperSpike]     = TE_SuperSpike,
 	[TE_qwGunshot]        = TE_Gunshot2,
-	[TE_qwExplosion]      = TE_Explosion,
+	[TE_qwExplosion]      = TE_Explosion1,
 	[TE_qwTarExplosion]   = TE_TarExplosion,
 	[TE_qwLightning1]     = TE_Lightning1,
 	[TE_qwLightning2]     = TE_Lightning2,
@@ -606,7 +610,8 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
-			Transform_SetLocalRotation (t->ent->transform,
+			transform_t transform = Entity_Transform (t->ent);
+			Transform_SetLocalRotation (transform,
 										qmulf (b->rotation,
 											   beam_rolls[seed % 360]));
 		}
@@ -619,16 +624,16 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 	int         f;
 	tent_obj_t **to;
 	explosion_t *ex;
-	entity_t   *ent;
+	entity_t    ent;
 
 	for (to = &cl_explosions; *to; ) {
 		ex = &(*to)->to.ex;
 		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
-		if (f >= ent->renderer.model->numframes) {
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+		if (f >= renderer->model->numframes) {
 			tent_obj_t *_to;
-			R_RemoveEfrags (ent);
-			ent->visibility.efrag = 0;
 			free_temp_entities (ex->tent);
 			_to = *to;
 			*to = _to->next;
@@ -637,10 +642,8 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		}
 		to = &(*to)->next;
 
-		ent->animation.frame = f;
-		if (!ent->visibility.efrag) {
-			R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
-		}
+		animation->frame = f;
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 	}
 }
 
@@ -677,12 +680,6 @@ CL_ParseParticleEffect (qmsg_t *net_message)
 void
 CL_ClearProjectiles (void)
 {
-	tent_t     *tent;
-
-	for (tent = cl_projectiles; tent; tent = tent->next) {
-		R_RemoveEfrags (tent->ent);
-		tent->ent->visibility.efrag = 0;
-	}
 	free_temp_entities (cl_projectiles);
 	cl_projectiles = 0;
 }
@@ -697,7 +694,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 	tent_t     *head = 0, **tail = &head;
 	byte		bits[6];
 	int			i, c, j, num;
-	entity_t   *pr;
+	entity_t    pr;
 	vec4f_t     position = { 0, 0, 0, 1 };
 	vec3_t      angles;
 
@@ -718,8 +715,9 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		tail = &tent->next;
 
 		pr = tent->ent;
-		pr->renderer.model = cl_spike;
-		pr->renderer.skin = 0;
+		renderer_t *renderer = Ent_GetComponent (pr.id, scene_renderer, cl_world.scene->reg);
+		renderer->model = cl_spike;
+		renderer->skin = 0;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		position[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
 		position[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
@@ -728,7 +726,7 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		angles[2] = 0;
 		CL_TransformEntity (tent->ent, 1, angles, position);
 
-		R_AddEfrags (&cl_world.scene->worldmodel->brush, tent->ent);
+		R_AddEfrags (&cl_world.scene->worldmodel->brush, pr);
 	}
 
 	*tail = cl_projectiles;

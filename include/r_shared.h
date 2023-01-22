@@ -99,7 +99,7 @@ typedef struct surf_s {
 									//  start)
 	int			flags;				// currentface flags
 	void		*data;				// associated data like msurface_t
-	struct entity_s	*entity;
+	uint32_t    render_id;
 	float		nearzi;				// nearest 1/z on surface, for mipmapping
 	qboolean	insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
@@ -162,5 +162,8 @@ typedef struct edge_s
 #define NUMVERTEXNORMALS        162
 extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
 extern vec3_t ambientcolor;
+
+struct entity_s;
+uint32_t SW_AddEntity (struct entity_s ent);
 
 #endif	// _R_SHARED_H

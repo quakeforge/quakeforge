@@ -345,7 +345,7 @@ R_EmitCachedEdge (void)
 
 
 void
-R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
+R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 {
 	int         i, lindex;
 	unsigned int mask;
@@ -354,7 +354,7 @@ R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
-	mod_brush_t *brush = &ent->renderer.model->brush;
+	mod_brush_t *brush = *(mod_brush_t **) SW_COMP (scene_sw_brush, render_id);
 
 	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
@@ -491,7 +491,7 @@ R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
 	surface_p->flags = fa->flags;
 	surface_p->insubmodel = insubmodel;
 	surface_p->spanstate = 0;
-	surface_p->entity = ent;
+	surface_p->render_id = render_id;
 	surface_p->key = r_currentkey++;
 	surface_p->spans = NULL;
 
@@ -511,7 +511,7 @@ R_RenderFace (entity_t *ent, msurface_t *fa, int clipflags)
 
 
 void
-R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
+R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
 {
 	int         i;
 	unsigned int mask;
@@ -590,7 +590,7 @@ R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
 	surface_p->flags = psurf->flags;
 	surface_p->insubmodel = true;
 	surface_p->spanstate = 0;
-	surface_p->entity = ent;
+	surface_p->render_id = render_id;
 	surface_p->key = r_currentbkey;
 	surface_p->spans = NULL;
 
@@ -610,7 +610,7 @@ R_RenderBmodelFace (entity_t *ent, bedge_t *pedges, msurface_t *psurf)
 
 
 void
-R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
+R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 {
 	int         i, lindex, lnumverts, s_axis, t_axis;
 	float       dist, lastdist, lzi, scale, u, v, frac;
@@ -623,7 +623,7 @@ R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
-	mod_brush_t *brush = &ent->renderer.model->brush;
+	mod_brush_t *brush = *(mod_brush_t **) SW_COMP (scene_sw_brush, render_id);
 
 	// FIXME: clean this up and make it faster
 	// FIXME: guard against running out of vertices
@@ -778,13 +778,12 @@ R_RenderPoly (entity_t *ent, msurface_t *fa, int clipflags)
 
 
 void
-R_ZDrawSubmodelPolys (entity_t *ent, model_t *model)
+R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush)
 {
 	int         i, numsurfaces;
 	msurface_t *psurf;
 	float       dot;
 	plane_t    *pplane;
-	mod_brush_t *brush = &model->brush;
 
 	psurf = &brush->surfaces[brush->firstmodelsurface];
 	numsurfaces = brush->nummodelsurfaces;
@@ -799,7 +798,7 @@ R_ZDrawSubmodelPolys (entity_t *ent, model_t *model)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderPoly (ent, psurf, 15);
+			R_RenderPoly (render_id, psurf, 15);
 		}
 	}
 }

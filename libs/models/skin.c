@@ -256,7 +256,7 @@ Skin_Init (void)
 }
 
 VISIBLE int
-Skin_CalcTopColors (byte *out, const byte *in, size_t pixels)
+Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride)
 {
 	byte        tc = 0;
 
@@ -264,16 +264,35 @@ Skin_CalcTopColors (byte *out, const byte *in, size_t pixels)
 		byte        pix = *in++;
 		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
 			tc = 1;
-			*out++ = pix - TOP_RANGE;
+			*out = (pix - TOP_RANGE) * 16 + 8;
 		} else {
-			*out++ = 0;
+			*out = 0;
 		}
+		out += stride;
 	}
 	return tc;
 }
 
 VISIBLE int
-Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels)
+Skin_CalcTopMask (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        tc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			tc = 1;
+			*out = 0xff;
+		} else {
+			*out = 0;
+		}
+		out += stride;
+	}
+	return tc;
+}
+
+VISIBLE int
+Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels, int stride)
 {
 	byte        bc = 0;
 
@@ -281,10 +300,29 @@ Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels)
 		byte        pix = *in++;
 		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
 			bc = 1;
-			*out++ = pix - BOTTOM_RANGE;
+			*out = (pix - BOTTOM_RANGE) * 16 + 8;
 		} else {
-			*out++ = 0;
+			*out = 0;
 		}
+		out += stride;
+	}
+	return bc;
+}
+
+VISIBLE int
+Skin_CalcBottomMask (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        bc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			bc = 1;
+			*out = 0xff;
+		} else {
+			*out = 0;
+		}
+		out += stride;
 	}
 	return bc;
 }

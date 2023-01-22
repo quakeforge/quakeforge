@@ -49,10 +49,10 @@ typedef struct {
 	unsigned		 height;
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
-	struct view_s   *conview;
 	struct vid_internal_s *vid_internal;
 
 	struct viddef_listener_set_s *onPaletteChanged;
+	struct viddef_listener_set_s *onVidResize;
 } viddef_t;
 
 typedef struct viddef_listener_set_s LISTENER_SET_TYPE (viddef_t)
@@ -71,11 +71,14 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
+void VID_SetPalette (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
 void VID_ClearMemory (void);
 
 void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
 void VID_OnPaletteChange_RemoveListener (viddef_listener_t listener,
 										 void *data);
+void VID_OnVidResize_AddListener (viddef_listener_t listener, void *data);
+void VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data);
 
 #endif//__QF_vid_h

@@ -153,30 +153,31 @@ gl_vid_render_create_context (void *data)
 }
 
 static vid_model_funcs_t model_funcs = {
-	sizeof (gltex_t),
-	gl_Mod_LoadLighting,
-	gl_Mod_SubdivideSurface,
-	gl_Mod_ProcessTexture,
+	.texture_render_size = sizeof (gltex_t),
 
-	Mod_LoadIQM,
-	Mod_LoadAliasModel,
-	Mod_LoadSpriteModel,
+	.Mod_LoadLighting     = gl_Mod_LoadLighting,
+	.Mod_SubdivideSurface = gl_Mod_SubdivideSurface,
+	.Mod_ProcessTexture   = gl_Mod_ProcessTexture,
 
-	gl_Mod_MakeAliasModelDisplayLists,
-	gl_Mod_LoadAllSkins,
-	gl_Mod_FinalizeAliasModel,
-	gl_Mod_LoadExternalSkins,
-	gl_Mod_IQMFinish,
-	1,
-	gl_Mod_SpriteLoadFrames,
+	.Mod_LoadIQM         = Mod_LoadIQM,
+	.Mod_LoadAliasModel  = Mod_LoadAliasModel,
+	.Mod_LoadSpriteModel = Mod_LoadSpriteModel,
 
-	Skin_Free,
-	Skin_SetColormap,
-	Skin_SetSkin,
-	gl_Skin_SetupSkin,
-	Skin_SetTranslation,
-	gl_Skin_ProcessTranslation,
-	gl_Skin_InitTranslations,
+	.Mod_MakeAliasModelDisplayLists = gl_Mod_MakeAliasModelDisplayLists,
+	.Mod_LoadAllSkins               = gl_Mod_LoadAllSkins,
+	.Mod_FinalizeAliasModel         = gl_Mod_FinalizeAliasModel,
+	.Mod_LoadExternalSkins          = gl_Mod_LoadExternalSkins,
+	.Mod_IQMFinish                  = gl_Mod_IQMFinish,
+	.alias_cache                    = 1,
+	.Mod_SpriteLoadFrames           = gl_Mod_SpriteLoadFrames,
+
+	.Skin_Free               = Skin_Free,
+	.Skin_SetColormap        = Skin_SetColormap,
+	.Skin_SetSkin            = Skin_SetSkin,
+	.Skin_SetupSkin          = gl_Skin_SetupSkin,
+	.Skin_SetTranslation     = Skin_SetTranslation,
+	.Skin_ProcessTranslation = gl_Skin_ProcessTranslation,
+	.Skin_InitTranslations   = gl_Skin_InitTranslations,
 };
 
 static void
@@ -408,6 +409,18 @@ gl_create_frame_buffer (int width, int height)
 }
 
 static void
+gl_destroy_frame_buffer (framebuffer_t *framebuffer)
+{
+	__auto_type fb = (gl_framebuffer_t *) framebuffer->buffer;
+
+	qfglDeleteFramebuffers (1, &fb->handle);
+
+	GLuint      tex[2] = { fb->color, fb->depth };
+	qfglDeleteTextures (2, tex);
+	free (framebuffer);
+}
+
+static void
 gl_bind_framebuffer (framebuffer_t *framebuffer)
 {
 	unsigned    width = vr_data.vid->width;
@@ -486,52 +499,61 @@ gl_capture_screen (capfunc_t callback, void *data)
 }
 
 vid_render_funcs_t gl_vid_render_funcs = {
-	gl_vid_render_init,
-	gl_Draw_Character,
-	gl_Draw_String,
-	gl_Draw_nString,
-	gl_Draw_AltString,
-	gl_Draw_ConsoleBackground,
-	gl_Draw_Crosshair,
-	gl_Draw_CrosshairAt,
-	gl_Draw_TileClear,
-	gl_Draw_Fill,
-	gl_Draw_Line,
-	gl_Draw_TextBox,
-	gl_Draw_FadeScreen,
-	gl_Draw_BlendScreen,
-	gl_Draw_CachePic,
-	gl_Draw_UncachePic,
-	gl_Draw_MakePic,
-	gl_Draw_DestroyPic,
-	gl_Draw_PicFromWad,
-	gl_Draw_Pic,
-	gl_Draw_Picf,
-	gl_Draw_SubPic,
+	.init = gl_vid_render_init,
 
-	gl_ParticleSystem,
-	gl_R_Init,
-	gl_R_ClearState,
-	gl_R_LoadSkys,
-	gl_R_NewScene,
-	gl_R_LineGraph,
-	gl_begin_frame,
-	gl_render_view,
-	gl_R_DrawParticles,
-	gl_draw_transparent,
-	gl_post_process,
-	gl_set_2d,
-	gl_end_frame,
+	.UpdateScreen = SCR_UpdateScreen_legacy,
 
-	gl_create_cube_map,
-	gl_create_frame_buffer,
-	gl_bind_framebuffer,
-	gl_set_viewport,
-	gl_set_fov,
+	.Draw_CharBuffer        = gl_Draw_CharBuffer,
+	.Draw_SetScale          = gl_Draw_SetScale,
+	.Draw_Character         = gl_Draw_Character,
+	.Draw_String            = gl_Draw_String,
+	.Draw_nString           = gl_Draw_nString,
+	.Draw_AltString         = gl_Draw_AltString,
+	.Draw_ConsoleBackground = gl_Draw_ConsoleBackground,
+	.Draw_Crosshair         = gl_Draw_Crosshair,
+	.Draw_CrosshairAt       = gl_Draw_CrosshairAt,
+	.Draw_TileClear         = gl_Draw_TileClear,
+	.Draw_Fill              = gl_Draw_Fill,
+	.Draw_Line              = gl_Draw_Line,
+	.Draw_TextBox           = gl_Draw_TextBox,
+	.Draw_FadeScreen        = gl_Draw_FadeScreen,
+	.Draw_BlendScreen       = gl_Draw_BlendScreen,
+	.Draw_CachePic          = gl_Draw_CachePic,
+	.Draw_UncachePic        = gl_Draw_UncachePic,
+	.Draw_MakePic           = gl_Draw_MakePic,
+	.Draw_DestroyPic        = gl_Draw_DestroyPic,
+	.Draw_PicFromWad        = gl_Draw_PicFromWad,
+	.Draw_Pic               = gl_Draw_Pic,
+	.Draw_FitPic            = gl_Draw_FitPic,
+	.Draw_Picf              = gl_Draw_Picf,
+	.Draw_SubPic            = gl_Draw_SubPic,
+	.Draw_AddFont           = gl_Draw_AddFont,
+	.Draw_Glyph             = gl_Draw_Glyph,
 
-	gl_capture_screen,
+	.ParticleSystem   = gl_ParticleSystem,
+	.R_Init           = gl_R_Init,
+	.R_ClearState     = gl_R_ClearState,
+	.R_LoadSkys       = gl_R_LoadSkys,
+	.R_NewScene       = gl_R_NewScene,
+	.R_LineGraph      = gl_R_LineGraph,
+	.begin_frame      = gl_begin_frame,
+	.render_view      = gl_render_view,
+	.draw_particles   = gl_R_DrawParticles,
+	.draw_transparent = gl_draw_transparent,
+	.post_process     = gl_post_process,
+	.set_2d           = gl_set_2d,
+	.end_frame        = gl_end_frame,
 
-	&model_funcs
+	.create_cube_map      = gl_create_cube_map,
+	.create_frame_buffer  = gl_create_frame_buffer,
+	.destroy_frame_buffer = gl_destroy_frame_buffer,
+	.bind_framebuffer     = gl_bind_framebuffer,
+	.set_viewport         = gl_set_viewport,
+	.set_fov              = gl_set_fov,
+
+	.capture_screen = gl_capture_screen,
+
+	.model_funcs = &model_funcs
 };
 
 static general_funcs_t plugin_info_general_funcs = {

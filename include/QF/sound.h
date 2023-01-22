@@ -119,7 +119,7 @@ void S_StopAllSounds(void);
 	\param ambient_sound_level NUM_AMBIENTS bytes indicating current ambient
 					sound levels
 */
-void S_Update (struct transform_s *ear, const byte *ambient_sound_level);
+void S_Update (struct transform_s ear, const byte *ambient_sound_level);
 
 /** Render some more sound without updating the client's position/orientation.
 */

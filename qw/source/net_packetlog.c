@@ -99,6 +99,8 @@ const char *svc_string[] = {
 	"svc_updatename",					// [byte] [string]
 	"svc_updatefrags",					// [byte] [short]
 	"svc_clientdata",					// <shortbits + data>
+
+	//0x10
 	"svc_stopsound",					// <see code>
 	"svc_updatecolors",					// [byte] [byte]
 	"svc_particle",						// [vec3] <variable>
@@ -116,6 +118,8 @@ const char *svc_string[] = {
 	"svc_spawnstaticsound",
 	"svc_intermission",
 	"svc_finale",						// [string] music [string] text
+
+	//0x20
 	"svc_cdtrack",						// [byte] track [byte] looptrack
 	"svc_sellscreen",
 	"svc_smallkick",					// Quake svc_cutscene
@@ -132,6 +136,8 @@ const char *svc_string[] = {
 	"svc_modellist",
 	"svc_soundlist",
 	"svc_packetentities",
+
+	//0x30
 	"svc_deltapacketentities",
 	"svc_maxspeed",
 	"svc_entgravity",
@@ -148,9 +154,7 @@ const char *svc_string[] = {
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL"
+
 };
 
 const char *clc_string[] = {
@@ -405,7 +409,7 @@ Parse_Server_Packet (int has_sequence)
 				break;
 			Net_LogPrintf ("<%06x> [0x%02x] ", MSG_GetReadCount (&packet), c);
 
-			if (c < 53)
+			if (c < 0x40)
 				Net_LogPrintf ("%s: ", svc_string[c]);
 
 			if (MSG_GetReadCount (&packet) > packet.message->cursize)

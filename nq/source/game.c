@@ -94,6 +94,8 @@ Game_Init (memhunk_t *hunk)
 	const char *game = "nq";
 
 	// FIXME: make this dependant on QF metadata in the mission packs
+	// better yet, make its actions part of the metadata and remove
+	// entirely
 	standard_quake = true;
 
 	if ((i = COM_CheckParm ("-hipnotic"))) {

@@ -46,7 +46,7 @@
 
 
 int
-R_BillboardFrame (entity_t *ent, int orientation, vec4f_t cameravec,
+R_BillboardFrame (transform_t transform, int orientation, vec4f_t cameravec,
 				  vec4f_t *bbup, vec4f_t *bbright, vec4f_t *bbfwd)
 {
 	vec4f_t     tvec;
@@ -90,7 +90,7 @@ R_BillboardFrame (entity_t *ent, int orientation, vec4f_t cameravec,
 				// The billboard's orientation is fully specified by the
 				// entity's orientation.
 				mat4f_t     mat;
-				Transform_GetWorldMatrix (ent->transform, mat);
+				Transform_GetWorldMatrix (transform, mat);
 				*bbfwd = mat[0];
 				*bbright = mat[1];
 				*bbup = mat[2];
@@ -102,7 +102,7 @@ R_BillboardFrame (entity_t *ent, int orientation, vec4f_t cameravec,
 				// the entity's local rotation.
 				mat4f_t     entmat;
 				mat4f_t     spmat;
-				Transform_GetLocalMatrix (ent->transform, entmat);
+				Transform_GetLocalMatrix (transform, entmat);
 				// FIXME needs proper testing (need to find, make, or fake a
 				// parallel oriented sprite)
 				mmulf (spmat, r_refdef.camera, entmat);

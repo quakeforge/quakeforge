@@ -8,7 +8,7 @@ void remove (entity e) = #15;
 #ifdef __VERSION6__
 entity find (entity start, .string field, string match) = #18;
 #else
-entity find (entity start, ...) = #18;
+entity @attribute(no_va_list) find (entity start, ...) = #18;
 #endif
 entity findradius (vector origin, float radius) = #22;
 entity nextent (entity e) = #47;

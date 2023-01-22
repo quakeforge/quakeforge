@@ -10,9 +10,8 @@
 #include "QF/qtypes.h"
 
 typedef struct qfv_capture_image_s {
-	VkImage     image;
-	VkImageLayout layout;
 	VkCommandBuffer cmd;
+	VkBuffer    buffer;
 	byte       *data;
 } qfv_capture_image_t;
 
@@ -25,7 +24,6 @@ typedef struct qfv_capture_image_set_s
 typedef struct qfv_capture_s {
 	struct qfv_device_s *device;
 
-	int         canBlit;
 	VkExtent2D  extent;
 	qfv_capture_image_set_t *image_set;
 	size_t      imgsize;

@@ -77,10 +77,8 @@ glrmain_init (void)
 }
 
 void
-gl_R_RotateForEntity (entity_t *e)
+gl_R_RotateForEntity (const vec4f_t *mat)
 {
-	mat4f_t     mat;
-	Transform_GetWorldMatrix (e->transform, mat);
 	qfglMultMatrixf ((vec_t*)&mat[0]);//FIXME
 }
 
@@ -113,7 +111,7 @@ gl_R_RenderEntities (entqueue_t *queue)
 	}
 
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
-		entity_t   *ent = queue->ent_queues[mod_alias].a[i];
+		entity_t    ent = queue->ent_queues[mod_alias].a[i];
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -142,7 +140,7 @@ gl_R_RenderEntities (entqueue_t *queue)
 	}
 
 	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) { \
-		entity_t   *ent = queue->ent_queues[mod_iqm].a[i]; \
+		entity_t    ent = queue->ent_queues[mod_iqm].a[i]; \
 		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -152,7 +150,7 @@ gl_R_RenderEntities (entqueue_t *queue)
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 	for (size_t i = 0; i < queue->ent_queues[mod_sprite].size; i++) { \
-		entity_t   *ent = queue->ent_queues[mod_sprite].a[i]; \
+		entity_t    ent = queue->ent_queues[mod_sprite].a[i]; \
 		gl_R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
@@ -161,11 +159,15 @@ gl_R_RenderEntities (entqueue_t *queue)
 static void
 R_DrawViewModel (void)
 {
-	entity_t   *ent = vr_data.view_model;
+	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
-		|| !ent->renderer.model)
+		|| !renderer->model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -267,7 +269,7 @@ gl_R_RenderView (void)
 
 	gl_R_DrawWorld ();
 	gl_R_RenderDlights ();
-	if (vr_data.view_model) {
+	if (Entity_Valid (vr_data.view_model)) {
 		R_DrawViewModel ();
 	}
 
@@ -278,7 +280,6 @@ void
 gl_R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
 }

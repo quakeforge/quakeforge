@@ -1,7 +1,7 @@
 /*
-	hierarch.h
+	hierarchy.h
 
-	Hierarchy management
+	ECS Hierarchy management
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -28,53 +28,55 @@
 
 */
 
-#ifndef __QF_scene_hierarch_h
-#define __QF_scene_hierarch_h
+#ifndef __QF_ecs_hierarchy_h
+#define __QF_ecs_hierarchy_h
 
-#include "QF/darray.h"
 #include "QF/qtypes.h"
-#include "QF/scene/types.h"
-#include "QF/simd/vec4f.h"
-#include "QF/simd/mat4f.h"
 
 /** \defgroup entity Hierarchy management
 	\ingroup utils
 */
 ///@{
 
-#define null_transform (~0u)
+/** Descriptors for components attached to every entity in the hierarchy.
+*/
+typedef struct hierarchy_type_s {
+	uint32_t    num_components;
+	const struct component_s *components;
+} hierarchy_type_t;
+
+typedef struct hierref_s {
+	struct hierarchy_s *hierarchy;
+	uint32_t    index;	///< index in hierarchy
+} hierref_t;
 
 typedef struct hierarchy_s {
-	struct hierarchy_s *next;
-	struct hierarchy_s **prev;
-	struct scene_s *scene;
-	xformset_t  transform;
-	entityset_t entity;
-	uint32set_t childCount;
-	uint32set_t childIndex;
-	uint32set_t parentIndex;
-	stringset_t name;
-	uint32set_t tag;
-	byteset_t   modified;
-	mat4fset_t  localMatrix;
-	mat4fset_t  localInverse;
-	mat4fset_t  worldMatrix;
-	mat4fset_t  worldInverse;
-	vec4fset_t  localRotation;
-	vec4fset_t  localScale;
-	vec4fset_t  worldRotation;
-	vec4fset_t  worldScale;
+	uint32_t    num_objects;
+	uint32_t    max_objects;
+	uint32_t   *ent;
+	uint32_t   *childCount;
+	uint32_t   *childIndex;
+	uint32_t   *parentIndex;
+	const hierarchy_type_t *type;
+	void      **components;
+	struct ecs_registry_s *reg;
+	uint32_t    href_comp;
 } hierarchy_t;
 
-hierarchy_t *Hierarchy_New (struct scene_s *scene, int createRoot);
+hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
+							const hierarchy_type_t *type, int createRoot);
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
-hierarchy_t *Hierarchy_Copy (struct scene_s *scene, const hierarchy_t *src);
+hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
+							 const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
 
-void Hierarchy_UpdateMatrices (hierarchy_t *hierarchy);
 uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 									uint32_t dstParent, uint32_t srcRoot);
-void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);
+void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
+								int delEntities);
+
+hierref_t Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
+							   hierarchy_t *src, uint32_t srcIndex);
 ///@}
 
-#endif//__QF_scene_hierarch_h
+#endif//__QF_ecs_hierarchy_h

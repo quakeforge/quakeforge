@@ -224,6 +224,7 @@ X11_Vulkan_Context (void)
 	ctx->create_surface = x11_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
 	ctx->va_ctx = va_create_context (32);
+	ctx->twod_scale = 1;
 	return ctx;
 }
 

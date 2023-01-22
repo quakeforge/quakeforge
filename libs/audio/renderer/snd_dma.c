@@ -50,6 +50,8 @@
 #include "QF/va.h"
 #include "QF/quakefs.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
 static int      snd_blocked = 0;
@@ -252,7 +254,7 @@ s_update_ (void)
 	Called once each time through the main loop
 */
 static void
-s_update (struct transform_s *ear, const byte *ambient_sound_level)
+s_update (transform_t ear, const byte *ambient_sound_level)
 {
 	if (!sound_started || (snd_blocked > 0))
 		return;

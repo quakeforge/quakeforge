@@ -53,12 +53,14 @@
 
 static const char *fisheye_vert_effects[] =
 {
+	"QuakeForge.version.130",
 	"QuakeForge.Vertex.fstri",
 	0
 };
 
 static const char *fisheye_frag_effects[] =
 {
+	"QuakeForge.version.130",
 	"QuakeForge.Math.const",
 	"QuakeForge.Fragment.screen.fisheye",
 	0

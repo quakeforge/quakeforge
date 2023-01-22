@@ -150,6 +150,7 @@ static expr_type_t vector_vector[] = {
 	{'-',	&type_vector},
 	{DOT,	&type_vector},
 	{CROSS,	&type_vector},
+	{HADAMARD,	&type_vector},
 	{'*',	0, 0, 0, vector_multiply},
 	{EQ,	0, 0, 0, vector_compare},
 	{NE,	0, 0, 0, vector_compare},
@@ -532,6 +533,48 @@ static expr_type_t double_double[] = {
 	{0, 0}
 };
 
+static expr_type_t long_long[] = {
+	{'+',	&type_long},
+	{'-',	&type_long},
+	{'*',	&type_long},
+	{'/',	&type_long},
+	{'&',	&type_long},
+	{'|',	&type_long},
+	{'^',	&type_long},
+	{'%',	&type_long},
+	{MOD,	&type_long},
+	{SHL,	&type_long},
+	{SHR,	&type_long},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
+	{0, 0}
+};
+
+static expr_type_t ulong_ulong[] = {
+	{'+',	&type_long},
+	{'-',	&type_long},
+	{'*',	&type_long},
+	{'/',	&type_long},
+	{'&',	&type_long},
+	{'|',	&type_long},
+	{'^',	&type_long},
+	{'%',	&type_long},
+	{MOD,	&type_long},
+	{SHL,	&type_long},
+	{SHR,	&type_long},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
+	{0, 0}
+};
+
 static expr_type_t *string_x[ev_type_count] = {
 	[ev_string] = string_string,
 };
@@ -627,6 +670,14 @@ static expr_type_t *double_x[ev_type_count] = {
 	[ev_double] = double_double,
 };
 
+static expr_type_t *long_x[ev_type_count] = {
+	[ev_long] = long_long,
+};
+
+static expr_type_t *ulong_x[ev_type_count] = {
+	[ev_ulong] = ulong_ulong,
+};
+
 static expr_type_t **binary_expr_types[ev_type_count] = {
 	[ev_string] = string_x,
 	[ev_float] = float_x,
@@ -639,7 +690,9 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 	[ev_int] = int_x,
 	[ev_uint] = uint_x,
 	[ev_short] = short_x,
-	[ev_double] = double_x
+	[ev_double] = double_x,
+	[ev_long] = long_x,
+	[ev_ulong] = ulong_x,
 };
 
 // supported operators for scalar-vector expressions
@@ -1100,11 +1153,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				t2 = pt2;
 			}
 		}
+		int         scalar_op = 0;
 		if (type_width (t1) == 1) {
 			// scalar op vec
 			if (!(e = convert_scalar (e1, op, e2))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
+			scalar_op = 1;
 			e1 = e;
 			t1 = get_type (e1);
 		}
@@ -1113,8 +1168,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			if (!(e = convert_scalar (e2, op, e1))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
+			scalar_op = 1;
 			e2 = e;
 			t2 = get_type (e2);
+		}
+		if (scalar_op && op == '*') {
+			op = HADAMARD;
 		}
 		if (type_width (t1) != type_width (t2)) {
 			// vec op vec of different widths

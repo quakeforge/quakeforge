@@ -36,7 +36,6 @@
 #endif
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
@@ -68,24 +67,6 @@ static cvar_t vid_system_gamma_cvar = {
 	.default_value = "1",
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &vid_system_gamma },
-};
-int con_width;
-static cvar_t con_width_cvar = {
-	.name = "con_width",
-	.description =
-		"console effective width (GL only)",
-	.default_value = 0,
-	.flags = CVAR_ROM,
-	.value = { .type = &cexpr_int, .value = &con_width },
-};
-int con_height;
-static cvar_t con_height_cvar = {
-	.name = "con_height",
-	.description =
-		"console effective height (GL only)",
-	.default_value = 0,
-	.flags = CVAR_ROM,
-	.value = { .type = &cexpr_int, .value = &con_height },
 };
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
@@ -121,12 +102,10 @@ static cvar_t vid_fullscreen_cvar = {
 	.value = { .type = &cexpr_int, .value = &vid_fullscreen },
 };
 
-static view_t conview;
-
 void
 VID_GetWindowSize (int def_w, int def_h)
 {
-	int pnum, conheight;
+	int pnum;
 
 	vid_width_cvar.default_value = nva ("%d", def_w);
 	vid_height_cvar.default_value = nva ("%d", def_h);
@@ -168,32 +147,21 @@ VID_GetWindowSize (int def_w, int def_h)
 
 	viddef.width = vid_width;
 	viddef.height = vid_height;
-	viddef.conview = &conview;
+}
 
-	con_width_cvar.default_value = nva ("%d", vid_width);
-	Cvar_Register (&con_width_cvar, 0, 0);
-	if ((pnum = COM_CheckParm ("-conwidth"))) {
-		if (pnum >= com_argc - 1)
-			Sys_Error ("VID: -conwidth <width>");
-		con_width = atoi(com_argv[pnum + 1]);
+void
+VID_SetWindowSize (int width, int height)
+{
+	if (width < 0 || height < 0) {
+		Sys_Error ("VID_SetWindowSize: invalid size: %d, %d", width, height);
 	}
-	con_width = max (con_width & ~7, 320);
-	// make con_width a multiple of 8 and >= 320
-	viddef.conview->xlen = con_width;
-
-	conheight = (viddef.conview->xlen * viddef.height) / viddef.width;
-	con_height_cvar.default_value = nva ("%d", conheight);
-	Cvar_Register (&con_height_cvar, 0, 0);
-	if ((pnum = COM_CheckParm ("-conheight"))) {
-		if (pnum >= com_argc - 1)
-			Sys_Error ("VID: -conheight <width>");
-		con_height = atoi (com_argv[pnum + 1]);
+	if (width != (int) viddef.width || height != (int) viddef.height) {
+		viddef.width = width;
+		viddef.height = height;
+		if (viddef.onVidResize) {
+			LISTENER_INVOKE (viddef.onVidResize, &viddef);
+		}
 	}
-	// make con_height >= 200
-	con_height = max (con_height & ~7, 200);
-	viddef.conview->ylen = con_height;
-
-	Con_CheckResize ();     // Now that we have a window size, fix console
 }
 
 /* GAMMA FUNCTIONS */
@@ -277,7 +245,11 @@ VID_InitGamma (const byte *pal)
 {
 	int 	i;
 	double	gamma = 1.0;
+	static int cvar_initialized;
 
+	free (viddef.gammatable);
+	free (viddef.palette);
+	free (viddef.palette32);
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);
@@ -287,9 +259,13 @@ VID_InitGamma (const byte *pal)
 	}
 	gamma = bound (0.1, gamma, 9.9);
 
-	Cvar_Register (&vid_gamma_cvar, vid_gamma_f, 0);
+	if (!cvar_initialized) {
+		cvar_initialized = 1;
+		Cvar_Register (&vid_gamma_cvar, vid_gamma_f, 0);
+	}
 
-	VID_BuildGammaTable (vid_gamma);
+	//VID_BuildGammaTable (vid_gamma);
+	VID_UpdateGamma ();
 
 	if (viddef.onPaletteChanged) {
 		LISTENER_INVOKE (viddef.onPaletteChanged, &viddef);
@@ -323,9 +299,33 @@ VID_OnPaletteChange_RemoveListener (viddef_listener_t listener, void *data)
 }
 
 VISIBLE void
+VID_OnVidResize_AddListener (viddef_listener_t listener, void *data)
+{
+	if (!viddef.onVidResize) {
+		viddef.onVidResize = malloc (sizeof (*viddef.onVidResize));
+		LISTENER_SET_INIT (viddef.onVidResize, 8);
+	}
+	LISTENER_ADD (viddef.onVidResize, listener, data);
+}
+
+VISIBLE void
+VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data)
+{
+	if (viddef.onVidResize) {
+		LISTENER_REMOVE (viddef.onVidResize, listener, data);
+	}
+}
+
+VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
 	vid_system.init (palette, colormap);
+}
+
+VISIBLE void
+VID_SetPalette (byte *palette, byte *colormap)
+{
+	vid_system.set_palette (palette, colormap);
 }
 
 static void

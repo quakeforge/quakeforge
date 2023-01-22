@@ -68,6 +68,7 @@ m4_include(config.d/x11.m4)
 m4_include(config.d/sdl.m4)
 
 m4_include(config.d/curses.m4)
+m4_include(config.d/freetype.m4)
 
 dnl ==================================================================
 dnl Checks for system type

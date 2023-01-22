@@ -110,8 +110,8 @@ extern	pr_info_t	pr;
 #define D_POINTER(t,d)		(&D_PACKED (t, d))
 #define D_STRUCT(t,d)		(*D_POINTER (t, d))
 
-#define G_POINTER(s,t,o)	((t *)((s)->data + o))
-#define G_STRUCT(s,t,o)		(*G_POINTER (s, t, o))
+#define Q_POINTER(s,t,o)	((t *)((s)->data + o))
+#define Q_STRUCT(s,t,o)		(*Q_POINTER (s, t, o))
 
 #define POINTER_OFS(s,p)	((pr_type_t *) (p) - (s)->data)
 

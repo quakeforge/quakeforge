@@ -58,8 +58,7 @@ typedef struct qfv_alias_skin_s {
 	VkDeviceMemory memory;
 	VkImage     image;
 	VkImageView view;
-	byte        colora[4];
-	byte        colorb[4];
+	byte        colors[4];
 	VkDescriptorSet descriptor;
 } qfv_alias_skin_t;
 
@@ -108,7 +107,7 @@ void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 
 void Vulkan_AliasBegin (struct qfv_renderframe_s *rFrame);
-void Vulkan_DrawAlias (struct entity_s *ent, struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawAlias (struct entity_s ent, struct qfv_renderframe_s *rFrame);
 void Vulkan_AliasEnd (struct qfv_renderframe_s *rFrame);
 
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);

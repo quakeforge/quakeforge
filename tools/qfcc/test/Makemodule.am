@@ -29,6 +29,7 @@ test_progs_dat=\
 	tools/qfcc/test/func-expr2.dat \
 	tools/qfcc/test/func-static.dat \
 	tools/qfcc/test/gcd.dat \
+	tools/qfcc/test/ifsuper.dat \
 	tools/qfcc/test/infloop.dat \
 	tools/qfcc/test/iterfunc.dat \
 	tools/qfcc/test/ivar-struct-return.dat \
@@ -63,6 +64,7 @@ test_progs_dat=\
 	tools/qfcc/test/unaryminus.dat \
 	tools/qfcc/test/vecaddr.dat \
 	tools/qfcc/test/vecexpr.dat \
+	tools/qfcc/test/vecconst.dat \
 	tools/qfcc/test/vecinit.dat \
 	tools/qfcc/test/voidfor.dat \
 	tools/qfcc/test/while.dat \
@@ -368,6 +370,16 @@ tools/qfcc/test/gcd.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(gcd_dep) # am--include-marker
 pas_depfiles_remade += $(gcd_dep)
+
+tools_qfcc_test_ifsuper_dat_SOURCES=tools/qfcc/test/ifsuper.r
+ifsuper_obj=$(tools_qfcc_test_ifsuper_dat_SOURCES:.r=.o)
+ifsuper_dep=$(call qcautodep,$(tools_qfcc_test_ifsuper_dat_SOURCES))
+tools/qfcc/test/ifsuper.dat$(EXEEXT): $(ifsuper_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) --advanced -o $@ $(ifsuper_obj)
+tools/qfcc/test/ifsuper.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ifsuper_dep) # am--include-marker
+r_depfiles_remade += $(ifsuper_dep)
 
 tools_qfcc_test_infloop_dat_SOURCES=tools/qfcc/test/infloop.r
 infloop_obj=$(tools_qfcc_test_infloop_dat_SOURCES:.r=.o)
@@ -708,6 +720,16 @@ tools/qfcc/test/vecexpr.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(vecexpr_dep) # am--include-marker
 r_depfiles_remade += $(vecexpr_dep)
+
+tools_qfcc_test_vecconst_dat_SOURCES=tools/qfcc/test/vecconst.r
+vecconst_obj=$(tools_qfcc_test_vecconst_dat_SOURCES:.r=.o)
+vecconst_dep=$(call qcautodep,$(tools_qfcc_test_vecconst_dat_SOURCES))
+tools/qfcc/test/vecconst.dat$(EXEEXT): $(vecconst_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(vecconst_obj)
+tools/qfcc/test/vecconst.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(vecconst_dep) # am--include-marker
+r_depfiles_remade += $(vecconst_dep)
 
 tools_qfcc_test_vecinit_dat_SOURCES=tools/qfcc/test/vecinit.r
 vecinit_obj=$(tools_qfcc_test_vecinit_dat_SOURCES:.r=.o)

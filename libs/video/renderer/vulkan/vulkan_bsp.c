@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
@@ -75,6 +76,9 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
+
+#define TEX_SET 3
+#define SKYBOX_SET 4
 
 typedef struct bsp_push_constants_s {
 	quat_t      fog;
@@ -93,8 +97,8 @@ static const char * __attribute__((used)) bsp_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	[QFV_bspDepth]   = QFV_passDepth,
 	[QFV_bspGBuffer] = QFV_passGBuffer,
-	[QFV_bspSky]     = QFV_passTranslucent,
-	[QFV_bspTurb]    = QFV_passTranslucent,
+	[QFV_bspSky]     = QFV_passTranslucentFrag,
+	[QFV_bspTurb]    = QFV_passTranslucentFrag,
 };
 
 static void
@@ -583,16 +587,17 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 }
 
 static int
-R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
+R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
+	transform_t transform = Entity_Transform (ent);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	model_t    *model = renderer->model;
 	float       radius;
-	model_t    *model;
 	vec3_t      mins, maxs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	model = e->renderer.model;
 	mat4f_t mat;
-	Transform_GetWorldMatrix (e->transform, mat);
+	Transform_GetWorldMatrix (transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		radius = model->radius;
 		if (R_CullSphere (pass->frustum, (vec_t*)&mat[3], radius)) { //FIXME
@@ -604,13 +609,15 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		if (R_CullBox (pass->frustum, mins, maxs))
 			return 1;
 	}
-	if (Vulkan_Scene_AddEntity (ctx, e) < 0) {
+	if (Vulkan_Scene_AddEntity (ctx, ent) < 0) {
 		return 0;
 	}
 
-	pass->ent_frame = e->animation.frame & 1;
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
-	pass->inst_id |= e->renderer.colormod[3] < 1 ? INST_ALPHA : 0;
+	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;
 	if (!pass->instances[model->render_id].entities.size) {
 		bsp_model_t *m = &bctx->models[model->render_id];
 		bsp_face_t *face = &bctx->faces[m->first_face];
@@ -620,7 +627,7 @@ R_DrawBrushModel (entity_t *e, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		}
 	}
 	DARRAY_APPEND (&pass->instances[model->render_id].entities,
-				   e->renderer.render_id);
+				   renderer->render_id);
 	return 1;
 }
 
@@ -790,7 +797,6 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = bframe->cmdSet.a[subpass];
 
@@ -798,7 +804,7 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {
@@ -826,9 +832,10 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		Vulkan_Scene_Descriptors (ctx),
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, sets, 0, 0);
+									layout, 0, 3, sets, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -882,7 +889,7 @@ turb_begin (qfv_renderframe_t *rFrame)
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFrag],
 				   bframe->cmdSet.a[QFV_bspTurb]);
 
 	qfvPushDebug (ctx, "bsp_begin_subpass");
@@ -907,7 +914,7 @@ sky_begin (qfv_renderframe_t *rFrame)
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucentFrag],
 				   bframe->cmdSet.a[QFV_bspSky]);
 
 	qfvPushDebug (ctx, "bsp_begin_subpass");
@@ -1018,7 +1025,7 @@ draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
 		__auto_type d = pass->draw_queues[queue].a[i];
 		if (pass->textures) {
 			vulktex_t  *tex = pass->textures->a[d.tex_id];
-			bind_texture (tex, 2, layout, dfunc, cmd);
+			bind_texture (tex, TEX_SET, layout, dfunc, cmd);
 		}
 		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
 								 d.first_index, 0, d.first_instance);
@@ -1028,9 +1035,11 @@ draw_queue (bsp_pass_t *pass, int queue, VkPipelineLayout layout,
 static int
 ent_model_cmp (const void *_a, const void *_b)
 {
-	const entity_t * const *a = _a;
-	const entity_t * const *b = _b;
-	return (*a)->renderer.model->render_id - (*b)->renderer.model->render_id;
+	const entity_t *a = _a;
+	const entity_t *b = _b;
+	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer, a->reg);
+	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer, b->reg);
+	return ra->model->render_id - rb->model->render_id;
 }
 
 void
@@ -1057,22 +1066,15 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
 	bframe->index_count = 0;
 
-	entity_t    worldent = {
-		.renderer = {
-			.model = r_refdef.worldmodel,
-			.colormod = { 1, 1, 1, 1 },
-		},
-	};
+	entity_t    worldent = nullentity;
 
-	Vulkan_Scene_AddEntity (ctx, &worldent);
+	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
 
-	int         world_id = worldent.renderer.model->render_id;
 	bctx->main_pass.ent_frame = 0;	// world is always frame 0
 	bctx->main_pass.inst_id = world_id;
-	bctx->main_pass.brush = &worldent.renderer.model->brush;
+	bctx->main_pass.brush = &r_refdef.worldmodel->brush;
 	if (bctx->main_pass.instances) {
-		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities,
-					   worldent.renderer.render_id);
+		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities, world_id);
 	}
 	R_VisitWorldNodes (&bctx->main_pass, ctx);
 	if (!bctx->vertex_buffer) {
@@ -1081,9 +1083,9 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	if (r_drawentities) {
 		heapsort (r_ent_queue->ent_queues[mod_brush].a,
 				  r_ent_queue->ent_queues[mod_brush].size,
-				  sizeof (entity_t *), ent_model_cmp);
+				  sizeof (entity_t), ent_model_cmp);
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-			entity_t   *ent = r_ent_queue->ent_queues[mod_brush].a[i];
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			if (!R_DrawBrushModel (ent, &bctx->main_pass, ctx)) {
 				Sys_Printf ("Too many entities!\n");
 				break;
@@ -1192,7 +1194,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 
 	sky_begin (rFrame);
 	vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
-	bind_texture (&skybox, 3, bctx->layout, dfunc,
+	bind_texture (&skybox, SKYBOX_SET, bctx->layout, dfunc,
 				  bframe->cmdSet.a[QFV_bspSky]);
 	bsp_push_constants_t frag_constants = { .time = vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, device,
@@ -1454,7 +1456,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 		for (int j = 0; j < QFV_bspNumPasses; j++) {
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 bframe->cmdSet.a[i],
+								 bframe->cmdSet.a[j],
 								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
 									 bsp_pass_names[j]));
 		}

@@ -432,6 +432,23 @@ main (void)
 	gl_FragColor = palettedColor (pix) * color;
 }
 
+-- Fragment.2d.alpha
+
+uniform sampler2D   texture;
+varying vec4 color;
+varying vec2 st;
+
+void
+main (void)
+{
+	float       alpha;
+
+	alpha = texture2D (texture, st).r;
+	if (alpha == 0.0)
+		discard;
+	gl_FragColor = alpha * color;
+}
+
 -- Vertex.iqm
 
 uniform mat4 mvp_mat;
@@ -552,8 +569,9 @@ main (void)
 	gl_FragColor = fogBlend (col);
 }
 
--- Vertex.fstri
+-- version.130
 #version 130
+-- Vertex.fstri
 
 out vec2 uv;
 
@@ -582,8 +600,9 @@ const vec2 B = vec2 (1, 1);
 void
 main ()
 {
-	uv = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
-	vec4        c = texture2D (screenTex, uv);
+	vec2 st;
+	st = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
+	vec4        c = texture2D (screenTex, st);
 	gl_FragColor = c;//vec4(uv, c.x, 1);
 }
 
@@ -598,7 +617,7 @@ in vec2 uv;
 void
 main ()
 {
-	// slight offset on y is to avoid the singularity straight aheat
+	// slight offset on y is to avoid the singularity straight ahead
 	vec2        xy = (2.0 * uv - vec2 (1, 1.00002)) * (vec2(1, -aspect));
 	float       r = sqrt (dot (xy, xy));
 	vec2        cs = vec2 (cos (r * fov), sin (r * fov));

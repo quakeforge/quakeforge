@@ -42,8 +42,15 @@
 */
 ///@{
 
-#include "QF/scene/hierarchy.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
+
+typedef struct entity_s {
+	ecs_registry_t *reg;
+	uint32_t    id;
+} entity_t;
+
+#define nullentity ((entity_t) { .id = nullent })
 
 typedef struct animation_s {
 	int         frame;
@@ -57,7 +64,6 @@ typedef struct animation_s {
 } animation_t;
 
 typedef struct visibility_s {
-	struct entity_s *entity;	// owning entity
 	struct efrag_s *efrag;		// linked list of efrags
 	int         topnode_id;		// bmodels, first world node that
 								// splits bmodel, or NULL if not split
@@ -74,20 +80,18 @@ typedef struct renderer_s {
 	int         fullbright;
 	float       min_light;
 	int         render_id;
-	mat4_t      full_transform;
+	mat4f_t     full_transform;
 } renderer_t;
 
-typedef struct entity_s {
-	struct entity_s *next;
-	struct transform_s *transform;
-	int         id;		///< scene id
-	animation_t animation;
-	visibility_t visibility;
-	renderer_t  renderer;
-	int         active;
-	//XXX FIXME XXX should not be here
-	vec4f_t     old_origin;
-} entity_t;
+typedef struct entityset_s DARRAY_TYPE (entity_t) entityset_t;
+
+typedef struct efrag_s {
+	struct mleaf_s *leaf;
+	struct efrag_s *leafnext;
+	entity_t    entity;
+	uint32_t    queue_num;
+	struct efrag_s *entnext;
+} efrag_t;
 
 typedef struct entqueue_s {
 	set_t      *queued_ents;
@@ -95,13 +99,20 @@ typedef struct entqueue_s {
 	int         num_queues;
 } entqueue_t;
 
+typedef struct colormap_s {
+	byte        top;
+	byte        bottom;
+} colormap_t;
+
 #define ENTINLINE GNU89INLINE inline
 
 entqueue_t *EntQueue_New (int num_queues);
 void EntQueue_Delete (entqueue_t *queue);
-ENTINLINE void EntQueue_AddEntity (entqueue_t *queue, entity_t *ent,
+ENTINLINE void EntQueue_AddEntity (entqueue_t *queue, entity_t ent,
 								   int queue_num);
 void EntQueue_Clear (entqueue_t *queue);
+ENTINLINE int Entity_Valid (entity_t ent);
+ENTINLINE transform_t Entity_Transform (entity_t ent);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -112,18 +123,35 @@ void EntQueue_Clear (entqueue_t *queue);
 
 ENTINLINE
 void
-EntQueue_AddEntity (entqueue_t *queue, entity_t *ent, int queue_num)
+EntQueue_AddEntity (entqueue_t *queue, entity_t ent, int queue_num)
 {
-	int         id = -ent->id;//FIXME use ~
+	int         id = Ent_Index (ent.id);
 	if (!set_is_member (queue->queued_ents, id)) {
 		// entity ids are negative (ones-complement)
 		set_add (queue->queued_ents, id);
 		DARRAY_APPEND (&queue->ent_queues[queue_num], ent);
 	}
 }
+
+ENTINLINE
+int
+Entity_Valid (entity_t ent)
+{
+	return ent.reg && ECS_EntValid (ent.id, ent.reg);
+}
+
+ENTINLINE
+transform_t
+Entity_Transform (entity_t ent)
+{
+	// The transform hierarchy reference is a component on the entity thus
+	// the entity id is the transform id.
+	return (transform_t) { .reg = ent.reg, .id = ent.id, .comp = scene_href };
+}
+
 struct mod_brush_s;
-void R_AddEfrags (struct mod_brush_s *, entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
+void R_AddEfrags (struct mod_brush_s *, entity_t ent);
+void R_ClearEfragChain (efrag_t *ef);
 
 ///@}
 

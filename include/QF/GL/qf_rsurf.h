@@ -44,7 +44,7 @@ struct mod_brush_s;
 void GL_BuildSurfaceDisplayList (struct mod_brush_s *brush,
 								 struct msurface_s *fa);
 
-void gl_R_DrawBrushModel (struct entity_s *e);
+void gl_R_DrawBrushModel (struct entity_s e);
 void gl_R_DrawWorld (void);
 void gl_R_DrawWaterSurfaces (void);
 

@@ -55,7 +55,6 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -640,13 +639,19 @@ x11_init_buffers (void *data)
 	if (x_visinfo->depth != 8) {
 		if (swfb.color)
 			free (swfb.color);
+		if (swfb.depth)
+			free (swfb.depth);
 		swfb.rowbytes = viddef.width;
 		swfb.color = calloc (swfb.rowbytes, viddef.height);
+		swfb.depth = 0;
 		if (!swfb.color)
 			Sys_Error ("Not enough memory for video mode");
 	} else {
 		swfb.rowbytes = x_framebuffer[current_framebuffer]->bytes_per_line;
 		swfb.color = (byte *) x_framebuffer[current_framebuffer]->data;
+		if (swfb.depth)
+			free (swfb.depth);
+		swfb.depth = 0;
 	}
 }
 
@@ -681,12 +686,6 @@ x11_create_context (sw_ctx_t *ctx)
 	if (doShm) {
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
-
-	// FIXME this really shouldn't be here (ideally, scale console in sw)
-	// No console scaling in the sw renderer
-	viddef.conview->xlen = viddef.width;
-	viddef.conview->ylen = viddef.height;
-	Con_CheckResize ();
 
 	viddef.vid_internal->init_buffers = x11_init_buffers;
 //  XSynchronize (x_disp, False);

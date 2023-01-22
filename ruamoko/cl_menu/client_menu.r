@@ -598,12 +598,12 @@ void () main_menu =
 	Menu_LeaveHook (menu_leave_sound);
 	Menu_KeyEvent (menu_key_sound);
 	Menu_FadeScreen (1);
-	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
 	if (do_single_player)
 		Menu_Pic (71,32, "gfx/mainmenu.lmp");
 	else
 		Menu_SubPic (71,52, "gfx/mainmenu.lmp", 0, 20, 240, 92);
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_Cursor (spinner);
 	if (do_single_player)
 		single_player_menu ();

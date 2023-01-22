@@ -222,7 +222,6 @@ static qboolean startwindowed = 0;
 //static qboolean windowed_mode_set;
 //static int  vid_fulldib_on_focus_mode;
 static qboolean force_minimized;
-static qboolean in_mode_set;
 static qboolean force_mode_set;
 static qboolean vid_mode_set;
 //static HICON hIcon;
@@ -663,7 +662,6 @@ VID_RestoreOldMode (int original_mode)
 	if (inerror)
 		return;
 
-	in_mode_set = false;
 	inerror = true;
 	// make sure mode set happens (video mode changes)
 	vid_modenum = original_mode - 1;
@@ -738,8 +736,6 @@ VID_SetMode (int modenum, const byte *palette)
 	if (!force_mode_set && (modenum == vid_modenum))
 		return true;
 
-	// so Con_Printfs don't mess us up by forcing vid and snd updates
-	in_mode_set = true;
 //FIXME CDAudio_Pause ();
 //FIXME S_ClearBuffer ();
 
@@ -812,8 +808,6 @@ VID_SetMode (int modenum, const byte *palette)
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
 
-	in_mode_set = false;
-
 	viddef.recalc_refdef = 1;
 
 //FIXME SCR_StretchInit();
@@ -885,8 +879,6 @@ Win_CreateWindow (int width, int height)
 	IN_ClearStates ();
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
-
-	in_mode_set = false;
 
 	viddef.recalc_refdef = 1;
 }

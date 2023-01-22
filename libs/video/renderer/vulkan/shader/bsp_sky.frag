@@ -1,10 +1,12 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "oit_store.finc"
 
 layout (constant_id = 0) const bool doSkyBox = false;
 layout (constant_id = 1) const bool doSkySheet = false;
 
-layout (set = 2, binding = 0) uniform sampler2DArray SkySheet;
-layout (set = 3, binding = 0) uniform samplerCube SkyBox;
+layout (set = 3, binding = 0) uniform sampler2DArray SkySheet;
+layout (set = 4, binding = 0) uniform samplerCube SkyBox;
 
 layout (push_constant) uniform PushConstants {
 	vec4        fog;
@@ -17,7 +19,8 @@ layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec4 color;
 
-layout (location = 0) out vec4 frag_color;
+layout(early_fragment_tests) in;
+//layout (location = 0) out vec4 frag_color;
 
 const float SCALE = 189.0 / 64.0;
 
@@ -95,5 +98,6 @@ main (void)
 	} else {
 		c = vec4 (0, 0, 0, 1);
 	}
-	frag_color = c;//fogBlend (c);
+	//frag_color = c;//fogBlend (c);
+	StoreFrag (c, gl_FragCoord.z);
 }

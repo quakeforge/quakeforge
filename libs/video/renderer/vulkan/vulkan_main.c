@@ -46,21 +46,21 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
-#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/swapchain.h"
 
@@ -73,24 +73,26 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities)
 		return;
+	//FIXME need a better way (components? but HasComponent isn't free)
+	int         vmod = Entity_Valid (vr_data.view_model);
 #define RE_LOOP(type_name, Type) \
 	do { \
 		int         begun = 0; \
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
+			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
 			} \
-			/* hack the depth range to prevent view model */\
+			/* FIXME hack the depth range to prevent view model */\
 			/* from poking into walls */\
-			if (ent == vr_data.view_model) { \
+			if (vmod && ent.id == vr_data.view_model.id) { \
 				Vulkan_AliasDepthRange (rFrame, 0, 0.3); \
 			} \
 			Vulkan_Draw##Type (ent, rFrame); \
 			/* unhack in case the view_model is not the last */\
-			if (ent == vr_data.view_model) { \
+			if (vmod && ent.id == vr_data.view_model.id) { \
 				Vulkan_AliasDepthRange (rFrame, 0, 1); \
 			} \
 		} \
@@ -106,14 +108,18 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
 static void
 Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
-	entity_t   *ent = vr_data.view_model;
+	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
-		|| !ent->renderer.model)
+		|| !renderer->model)
 		return;
 
-	EntQueue_AddEntity (r_ent_queue, ent, ent->renderer.model->type);
+	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
 }
 
 void
@@ -127,10 +133,11 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 
 	Vulkan_DrawWorld (rFrame);
 	Vulkan_DrawSky (rFrame);
-	if (vr_data.view_model) {
+	if (Entity_Valid (vr_data.view_model)) {
 		Vulkan_DrawViewModel (ctx);
 	}
 	Vulkan_DrawWaterSurfaces (rFrame);
+	Vulkan_DrawParticles (rFrame);
 	Vulkan_Bsp_Flush (ctx);
 	Vulkan_RenderEntities (r_ent_queue, rFrame);
 	Vulkan_Scene_Flush (ctx);
@@ -162,7 +169,6 @@ main_draw (qfv_renderframe_t *rFrame)
 {
 	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
-	Vulkan_FlushText (rFrame);//FIXME delayed by a frame?
 	Vulkan_Lighting_Draw (rFrame);
 	Vulkan_Compose_Draw (rFrame);
 }
@@ -170,14 +176,23 @@ main_draw (qfv_renderframe_t *rFrame)
 void
 Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	qfv_output_t output = {
+	__auto_type rp = QFV_RenderPass_New (ctx, "deferred", main_draw);
+	rp->output = (qfv_output_t) {
 		.extent    = ctx->swapchain->extent,
-		.view      = ctx->swapchain->imageViews->a[0],
-		.format    = ctx->swapchain->format,
-		.view_list = ctx->swapchain->imageViews->a,
+		.frames    = ctx->swapchain->numImages,
 	};
-	__auto_type rp = Vulkan_CreateRenderPass (ctx, "deferred",
-											  &output, main_draw);
+	if (vulkan_frame_width > 0) {
+		rp->output.extent.width = vulkan_frame_width;
+	}
+	if (vulkan_frame_height > 0) {
+		rp->output.extent.height = vulkan_frame_height;
+	}
+	QFV_RenderPass_CreateAttachments (rp);
+	QFV_RenderPass_CreateRenderPass (rp);
+	QFV_RenderPass_CreateFramebuffer (rp);
 	rp->order = QFV_rp_main;
 	DARRAY_APPEND (&ctx->renderPasses, rp);
+
+	Vulkan_Output_SetInput (ctx, rp->output.view);
+	Vulkan_Translucent_CreateBuffers (ctx, rp->output.extent);
 }

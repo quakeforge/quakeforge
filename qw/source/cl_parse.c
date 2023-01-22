@@ -64,10 +64,11 @@
 #include "QF/scene/scene.h"
 
 #include "compat.h"
-#include "sbar.h"
 
 #include "client/effects.h"
 #include "client/particles.h"
+#include "client/sbar.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -162,7 +163,6 @@ const char *svc_strings[] = {
 	"NEW PROTOCOL"
 };
 
-dstring_t  *centerprint;
 int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
@@ -284,7 +284,9 @@ Model_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking models...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -373,7 +375,9 @@ Sound_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking sounds...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -773,10 +777,13 @@ CL_ParseServerData (void)
 
 	cl.viewentity = cl.playernum + 1;
 	cl.viewstate.bob_enabled = !cl.spectator;
+	Sbar_SetPlayerNum (cl.playernum, cl.spectator);
 
 	// get the full level name
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	Sbar_SetLevelName (cl.levelname, cls.servername->str);
+	Sbar_SetGameType (1);
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
@@ -1031,7 +1038,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 											player->skinname->value);
 	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
 
-	Sbar_Changed ();
+	Sbar_UpdateInfo (slot);
 }
 
 static void
@@ -1119,9 +1126,9 @@ CL_ServerInfo (void)
 		cl.no_pogo_stick = no_pogo_stick;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
+		Sbar_SetTeamplay (cl.teamplay);
 	} else if (strequal (key, "watervis")) {
-		cl.watervis = atoi (value);
+		cl.viewstate.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
 		cl.fpd = atoi (value);
 	} else if (strequal (key, "fbskins")) {
@@ -1150,11 +1157,8 @@ CL_SetStat (int stat, int value)
 			return;
 	}
 
-	Sbar_Changed ();
-
 	switch (stat) {
 		case STAT_ITEMS:
-			Sbar_Changed ();
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
 			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
 			break;
@@ -1168,6 +1172,12 @@ CL_SetStat (int stat, int value)
 	}
 	cl.stats[stat] = value;
 	cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+	if (cl.stdver) {
+		cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
+	} else {
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
+	}
+	Sbar_UpdateStats (stat);
 }
 
 static void
@@ -1207,6 +1217,7 @@ void
 CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
+	int         update_pings = 0;
 	const char *str;
 	static dstring_t *stuffbuf;
 	TEntContext_t tentCtx = {
@@ -1214,7 +1225,7 @@ CL_ParseServerMessage (void)
 	};
 
 	received_framecount = host_framecount;
-	cl.last_servermessage = realtime;
+	cl.viewstate.last_servermessage = realtime;
 	CL_ClearProjectiles ();
 
 	// if recording demos, copy the message out
@@ -1378,12 +1389,12 @@ CL_ParseServerMessage (void)
 			//   svc_updatename
 
 			case svc_updatefrags:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
 				cl.players[i].frags = (short) MSG_ReadShort (net_message);
+				Sbar_UpdateFrags (i);
 				break;
 
 			//   svc_clientdata
@@ -1399,7 +1410,7 @@ CL_ParseServerMessage (void)
 			case svc_damage:
 				V_ParseDamage (net_message, &cl.viewstate);
 				// put sbar face into pain frame
-				cl.faceanimtime = cl.time + 0.2;
+				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
@@ -1429,19 +1440,17 @@ CL_ParseServerMessage (void)
 
 			case svc_centerprint:
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
 			case svc_killedmonster:
 				cl.stats[STAT_MONSTERS]++;
+				Sbar_UpdateStats (STAT_MONSTERS);
 				break;
 
 			case svc_foundsecret:
 				cl.stats[STAT_SECRETS]++;
+				Sbar_UpdateStats (STAT_SECRETS);
 				break;
 
 			case svc_spawnstaticsound:
@@ -1470,7 +1479,7 @@ CL_ParseServerMessage (void)
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
 				if (!cls.demoplayback)
-					Sbar_LogFrags ();
+					Sbar_LogFrags (cl.time);
 				break;
 
 			case svc_finale:
@@ -1478,10 +1487,6 @@ CL_ParseServerMessage (void)
 				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
@@ -1516,6 +1521,7 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updateping > "
 								"MAX_SCOREBOARD");
 				cl.players[i].ping = MSG_ReadShort (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_updateentertime:
@@ -1599,12 +1605,16 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatepl > "
 								"MAX_SCOREBOARD");
 				cl.players[i].pl = MSG_ReadByte (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_nails2:			// FIXME from qwex
 				CL_ParseProjectiles (net_message, true, &tentCtx);
 				break;
 		}
+	}
+	if (update_pings) {
+		Sbar_UpdatePings ();
 	}
 
 	CL_SetSolidEntities ();

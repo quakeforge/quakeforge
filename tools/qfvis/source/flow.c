@@ -139,16 +139,11 @@ calc_plane (vec4f_t v1, vec4f_t v2, int flip, vec4f_t p, vec4f_t *plane)
 
 	if (flip < 0) {
 		//CrossProduct (v2, v1, plane.normal);
-		(*plane)[0] = v2[1] * v1[2] - v2[2] * v1[1];
-		(*plane)[1] = v2[2] * v1[0] - v2[0] * v1[2];
-		(*plane)[2] = v2[0] * v1[1] - v2[1] * v1[0];
+		*plane = crossf (v2, v1);
 	} else {
 		//CrossProduct (v1, v2, plane.normal);
-		(*plane)[0] = v1[1] * v2[2] - v1[2] * v2[1];
-		(*plane)[1] = v1[2] * v2[0] - v1[0] * v2[2];
-		(*plane)[2] = v1[0] * v2[1] - v1[1] * v2[0];
+		*plane = crossf (v1, v2);
 	}
-	(*plane)[3] = 0;
 
 	length = dotf (*plane, *plane);
 
@@ -156,22 +151,21 @@ calc_plane (vec4f_t v1, vec4f_t v2, int flip, vec4f_t p, vec4f_t *plane)
 	if (length[0] < ON_EPSILON)
 		return 0;
 
-	*plane /= vsqrt4f (length);
 	(*plane)[3] = -dotf (p, *plane)[0];
 	return 1;
 }
 
 static inline int
-test_plane (vec4f_t plane, const winding_t *pass, int index)
+test_plane (vec4f_t plane, const winding_t *pass, unsigned index)
 {
 	int         s1, s2;
 	int         k;
 	vec4f_t     d;
 
-	k = (index + 1) % pass->numpoints;
+	k = index + 1 == pass->numpoints ? 0 : index + 1;
 	d = dotf (pass->points[k], plane);
 	s1 = test_zero (d[0]);
-	k = (index + pass->numpoints - 1) % pass->numpoints;
+	k = (index == 0 ? pass->numpoints : index) - 1;
 	d = dotf (pass->points[k], plane);
 	s2 = test_zero (d[0]);
 	if (s1 == 0 && s2 == 0)
@@ -239,7 +233,7 @@ FindSeparators (threaddata_t *thread,
 	sep_t      *separators = 0, *sep;
 
 	for (i = 0; i < source->numpoints; i++) {
-		l = (i + 1) % source->numpoints;
+		l = (i + 1) == source->numpoints ? 0 : i + 1;
 		v1 = source->points[l] - source->points[i];
 
 		for (j = 0; j < pass->numpoints; j++) {

@@ -33,6 +33,8 @@
 #include <QF/render.h>
 #include <QF/screen.h>
 
+#include "QF/scene/entity.h"//FIXME
+
 struct plitem_s;
 struct cvar_s;
 struct scene_s;
@@ -78,10 +80,17 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 struct tex_s;
+struct font_s;
+struct draw_charbuffer_s;
+
 typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
 
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
+	void (*UpdateScreen) (struct transform_s camera, double realtime,
+						  SCR_Func *scr_funcs);
+	void (*Draw_CharBuffer) (int x, int y, struct draw_charbuffer_s *buffer);
+	void (*Draw_SetScale) (int scale);
 	void (*Draw_Character) (int x, int y, unsigned ch);
 	void (*Draw_String) (int x, int y, const char *str);
 	void (*Draw_nString) (int x, int y, const char *str, int count);
@@ -101,8 +110,11 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_DestroyPic) (qpic_t *pic);
 	qpic_t *(*Draw_PicFromWad) (const char *name);
 	void (*Draw_Pic) (int x, int y, qpic_t *pic);
+	void (*Draw_FitPic) (int x, int y, int width, int height, qpic_t *pic);
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
+	int (*Draw_AddFont) (struct font_s *font);
+	void (*Draw_Glyph) (int x, int y, int fontid, int glyphid, int c);
 
 
 	struct psystem_s *(*ParticleSystem) (void);
@@ -122,6 +134,7 @@ typedef struct vid_render_funcs_s {
 
 	struct framebuffer_s *(*create_cube_map) (int side);
 	struct framebuffer_s *(*create_frame_buffer) (int width, int height);
+	void (*destroy_frame_buffer) (struct framebuffer_s *framebuffer);
 	void (*bind_framebuffer) (struct framebuffer_s *framebuffer);
 	void (*set_viewport) (const struct vrect_s *view);
 	// x and y are tan(f/2) for fov_x and fov_y
@@ -135,7 +148,6 @@ typedef struct vid_render_funcs_s {
 typedef struct vid_render_data_s {
 	viddef_t   *vid;
 	refdef_t   *refdef;
-	struct view_s *scr_view;
 	int         scr_copytop;
 	int         scr_copyeverything;
 	int         scr_fullupdate;	// set to 0 to force full redraw
@@ -147,7 +159,7 @@ typedef struct vid_render_data_s {
 	qboolean    inhibit_viewmodel;
 	qboolean    paused;
 	int         lineadj;
-	struct entity_s *view_model;
+	entity_t    view_model;	//FIXME still?!?
 	double      frametime;
 	double      realtime;
 	lightstyle_t *lightstyle;

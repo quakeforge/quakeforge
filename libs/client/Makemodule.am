@@ -1,7 +1,10 @@
 noinst_LTLIBRARIES += libs/client/libQFclient.la
 
 libs_client_libQFclient_la_LDFLAGS=	@STATIC@
-libs_client_libQFclient_la_LIBADD=	libs/gamecode/libQFgamecode.la libs/util/libQFutil.la
+libs_client_libQFclient_la_LIBADD=	\
+	libs/ui/libQFgui.la \
+	libs/gamecode/libQFgamecode.la \
+	libs/util/libQFutil.la
 libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_chase.c \
 		libs/client/cl_effects.c \
@@ -9,12 +12,14 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_input.c \
 		libs/client/cl_light.c \
 		libs/client/cl_particles.c \
+		libs/client/cl_screen.c \
 		libs/client/cl_temp_entities.c \
 		libs/client/cl_view.c \
 		libs/client/cl_world.c \
 		libs/client/hud.c \
 		libs/client/locs.c \
-		libs/client/old_keys.c
+		libs/client/old_keys.c \
+		libs/client/sbar.c
 
 default_input_src = libs/client/default_input.plist
 default_input_gen = libs/client/default_input.plc

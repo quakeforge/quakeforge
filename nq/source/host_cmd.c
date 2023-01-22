@@ -50,6 +50,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "client/screen.h"
 #include "client/world.h"
 
 #include "compat.h"
@@ -294,8 +295,10 @@ Host_Map_f (void)
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
-	cl.loading = true;
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen (&cl.viewstate);
 
 	svs.serverflags = 0;				// haven't completed an episode yet
 	strcpy (name, Cmd_Argv (1));
@@ -624,8 +627,10 @@ Host_Loadgame_f (void)
 	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	cl.loading = true;
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen (&cl.viewstate);
 
 	Sys_Printf ("Loading game from %s...\n", name->str);
 	f = QFS_Open (name->str, "rz");

@@ -143,6 +143,18 @@ D_CalcGradients (msurface_t *pface)
 	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
 
+static void
+transform_submodel_poly (surf_t *s)
+{
+	// FIXME: we don't want to do all this for every polygon!
+	// TODO: store once at start of frame
+	vec4f_t    *transform = SW_COMP(scene_sw_matrix, s->render_id);
+	vec4f_t     local_modelorg = r_refdef.frame.position - transform[3];
+	TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
+
+	R_RotateBmodel (transform);		// FIXME: don't mess with the
+								// frustum, make entity passed in
+}
 
 void
 D_DrawSurfaces (void)
@@ -151,7 +163,6 @@ D_DrawSurfaces (void)
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
 	vec3_t      world_transformed_modelorg;
-	vec4f_t     local_modelorg;
 
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
@@ -204,16 +215,7 @@ D_DrawSurfaces (void)
 				cachewidth = 64;
 
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					transform_t *transform = s->entity->transform;
-					transform = s->entity->transform;
-					local_modelorg = r_refdef.frame.position -
-						Transform_GetWorldPosition (transform);
-					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
-
-					R_RotateBmodel (transform);	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
 				D_CalcGradients (pface);
@@ -236,15 +238,7 @@ D_DrawSurfaces (void)
 				}
 			} else {
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					transform_t *transform = s->entity->transform;
-					local_modelorg = r_refdef.frame.position -
-						Transform_GetWorldPosition (transform);
-					TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
-
-					R_RotateBmodel (transform);	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
 				pface = s->data;
@@ -252,7 +246,7 @@ D_DrawSurfaces (void)
 											   * pface->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (s->entity, pface, miplevel);
+				pcurrentcache = D_CacheSurface (s->render_id, pface, miplevel);
 
 				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;

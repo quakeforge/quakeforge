@@ -31,6 +31,8 @@
 #ifndef __client_state_h
 #define __client_state_h
 
+#include "QF/qdefs.h" // FIXME for MAX_CL_STATS
+
 typedef struct player_info_s {
 	int         userid;
 	struct info_s *userinfo;
@@ -50,7 +52,7 @@ typedef struct player_info_s {
 	struct info_key_s *skinname;
 	struct skin_s *skin;
 
-	struct entity_s *flag_ent;
+	entity_t    flag_ent;
 
 	int         spectator;
 	int         stats[MAX_CL_STATS];	// health, etc

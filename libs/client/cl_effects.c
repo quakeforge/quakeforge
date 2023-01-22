@@ -42,10 +42,12 @@
 
 #include "QF/plugin/vid_render.h"	//FIXME
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "client/entities.h"
 #include "client/effects.h"
 #include "client/particles.h"
+#include "client/world.h"
 
 void
 CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
@@ -115,12 +117,14 @@ CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
 }
 
 void
-CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
+CL_ModelEffects (entity_t ent, int num, int glow_color, double time)
 {
 	dlight_t   *dl;
-	model_t    *model = ent->renderer.model;
-	vec4f_t     old_origin = ent->old_origin;
-	vec4f_t     ent_origin = Transform_GetWorldPosition (ent->transform);
+	transform_t transform = Entity_Transform (ent);
+	renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+	model_t    *model = renderer->model;
+	vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
+	vec4f_t     ent_origin = Transform_GetWorldPosition (transform);
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
@@ -133,21 +137,21 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 			VectorSet (0.9, 0.7, 0.0, dl->color);
 			dl->color[3] = 0.7;
 		}
-		clp_funcs->RocketTrail (old_origin, ent_origin);
+		clp_funcs->RocketTrail (*old_origin, ent_origin);
 	} else if (model->flags & EF_GRENADE)
-		clp_funcs->GrenadeTrail (old_origin, ent_origin);
+		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_GIB)
-		clp_funcs->BloodTrail (old_origin, ent_origin);
+		clp_funcs->BloodTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_ZOMGIB)
-		clp_funcs->SlightBloodTrail (old_origin, ent_origin);
+		clp_funcs->SlightBloodTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_TRACER)
-		clp_funcs->WizTrail (old_origin, ent_origin);
+		clp_funcs->WizTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_TRACER2)
-		clp_funcs->FlameTrail (old_origin, ent_origin);
+		clp_funcs->FlameTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_TRACER3)
-		clp_funcs->VoorTrail (old_origin, ent_origin);
+		clp_funcs->VoorTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_GLOWTRAIL)
-		clp_funcs->GlowTrail (old_origin, ent_origin, glow_color);
+		clp_funcs->GlowTrail (*old_origin, ent_origin, glow_color);
 }
 
 void
@@ -170,13 +174,14 @@ CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
 }
 
 void
-CL_EntityEffects (int num, entity_t *ent, entity_state_t *state, double time)
+CL_EntityEffects (int num, entity_t ent, entity_state_t *state, double time)
 {
-	vec4f_t     position = Transform_GetWorldPosition (ent->transform);
+	transform_t transform = Entity_Transform (ent);
+	vec4f_t     position = Transform_GetWorldPosition (transform);
 	if (state->effects & EF_BRIGHTFIELD)
 		clp_funcs->EntityParticles (position);
 	if (state->effects & EF_MUZZLEFLASH) {
-		vec4f_t     fv = Transform_Forward (ent->transform);
+		vec4f_t     fv = Transform_Forward (transform);
 		CL_MuzzleFlash (position, fv, 16, num, time);
 	}
 }

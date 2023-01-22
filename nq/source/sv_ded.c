@@ -38,6 +38,7 @@
 
 #include "client/world.h"
 
+#include "client/screen.h"
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
@@ -78,7 +79,7 @@ CL_SetState (cactive_t state)
 }
 
 void
-CL_UpdateScreen (double realtime)
+CL_UpdateScreen (struct viewstate_s *)
 {
 }
 

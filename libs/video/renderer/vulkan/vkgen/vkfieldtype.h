@@ -14,7 +14,9 @@
 +fieldType:(PLItem *)item;
 -initWithItem:(PLItem *)item;
 -writeParseData;
+-(string)exprType;
 -(string)parseType;
++(string)anyType;
 @end
 
 string parseItemType (PLItem *item);

@@ -41,10 +41,12 @@ extern int gl_filter_max;
 extern qboolean gl_Anisotropy;
 extern float gl_aniso;
 extern GLuint gl_part_tex;
+struct tex_s;
 
 void GL_Upload8 (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_LoadTex (const char *identifier, int mips, struct tex_s *tex);
 int GL_FindTexture (const char *identifier);
 
 void GL_TextureMode_f (void);
@@ -59,9 +61,7 @@ scrap_t *GL_CreateScrap (int size, int format, int linear);
 void GL_DestroyScrap (scrap_t *scrap);
 void GL_ScrapClear (scrap_t *scrap);
 int GL_ScrapTexture (scrap_t *scrap) __attribute__((pure));
-//XXX slow!
 struct subpic_s *GL_ScrapSubpic (scrap_t *scrap, int width, int height);
-//XXX slow!
 void GL_SubpicDelete (struct subpic_s *subpic);
 void GL_SubpicUpdate (struct subpic_s *subpic, byte *data, int batch);
 void GL_ScrapFlush (scrap_t *scrap);

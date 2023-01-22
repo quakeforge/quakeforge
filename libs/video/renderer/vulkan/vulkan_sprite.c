@@ -76,13 +76,13 @@ static const char * __attribute__((used)) sprite_pass_names[] = {
 static QFV_Subpass subpass_map[] = {
 	QFV_passDepth,			// QFV_spriteDepth
 	QFV_passGBuffer,		// QFV_spriteGBuffer
-	QFV_passTranslucent,	// QFV_spriteTranslucent
+	QFV_passTranslucentFrag,// QFV_spriteTranslucent
 };
 
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   qfv_renderframe_t *rFrame, entity_t *ent)
+			   qfv_renderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -103,14 +103,14 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 }
 
 void
-Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
 	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-	model_t    *model = ent->renderer.model;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	model_t    *model = renderer->model;
 	msprite_t  *sprite = model->cache.data;
-	animation_t *animation = &ent->animation;
 
 	mat4f_t     mat = {};
 	uint32_t    frame;
@@ -120,11 +120,14 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 			64, sizeof (frame), &frame },
 	};
 
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
-	mat[3] = Transform_GetWorldPosition (ent->transform);
+	transform_t transform = Entity_Transform (ent);
+	mat[3] = Transform_GetWorldPosition (transform);
 	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
-	R_BillboardFrame (ent, sprite->type, cameravec,
+	R_BillboardFrame (transform, sprite->type, cameravec,
 					  &mat[2], &mat[1], &mat[0]);
 	mat[0] = -mat[0];
 
@@ -144,7 +147,6 @@ sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = sframe->cmdSet.a[subpass];
 
@@ -152,7 +154,7 @@ sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
+		rFrame->framebuffer,
 		0, 0, 0,
 	};
 	VkCommandBufferBeginInfo beginInfo = {

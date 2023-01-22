@@ -55,10 +55,11 @@
 #include "QF/scene/scene.h"
 
 #include "compat.h"
-#include "sbar.h"
 
 #include "client/chase.h"
 #include "client/particles.h"
+#include "client/sbar.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
 
@@ -121,25 +122,6 @@ static cvar_t cl_nolerp_cvar = {
 	.value = { .type = &cexpr_int, .value = &cl_nolerp },
 };
 
-int hud_fps;
-static cvar_t hud_fps_cvar = {
-	.name = "hud_fps",
-	.description =
-		"display realtime frames per second",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_fps },
-};
-int hud_time;
-static cvar_t hud_time_cvar = {
-	.name = "hud_time",
-	.description =
-		"display the current time",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_time },
-};
-
 static int r_ambient;
 static cvar_t r_ambient_cvar = {
 	.name = "r_ambient",
@@ -158,8 +140,6 @@ static cvar_t r_drawflat_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &r_drawflat },
 };
-
-int         fps_count;
 
 client_static_t cls;
 client_state_t cl;
@@ -236,8 +216,9 @@ CL_ClearMemory (void)
 	cls.signon = 0;
 	SZ_Clear (&cls.message);
 
-	if (cl.viewstate.weapon_entity) {
+	if (Entity_Valid (cl.viewstate.weapon_entity)) {
 		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+		cl.viewstate.weapon_entity = nullentity;
 	}
 	if (cl.players) {
 		int         i;
@@ -248,13 +229,14 @@ CL_ClearMemory (void)
 	// wipe the entire cl structure
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
+	Sbar_Intermission (cl.intermission = 0, cl.time);
 	cl.viewstate.camera_transform = cam;
+	cl.viewstate.demoplayback = cls.demoplayback;
 
 	CL_ClearTEnts ();
+	CL_ClearEnts ();
 
 	SCR_NewScene (0);
-
-	CL_ClearEnts ();
 }
 
 void
@@ -275,9 +257,6 @@ CL_InitCvars (void)
 	Cvar_Register (&cl_writecfg_cvar, 0, 0);
 	Cvar_Register (&cl_shownet_cvar, 0, 0);
 	Cvar_Register (&cl_nolerp_cvar, 0, 0);
-	Cvar_Register (&hud_fps_cvar, 0, 0);
-	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
-	Cvar_Register (&hud_time_cvar, 0, 0);
 
 	//FIXME not hooked up (don't do anything), but should not work in
 	//multi-player
@@ -296,7 +275,7 @@ CL_ClearState (void)
 	cl.viewstate.chase = 1;
 	cl.viewstate.chasestate = &cl.chasestate;
 	cl.chasestate.viewstate = &cl.viewstate;
-	cl.watervis = 1;
+	cl.viewstate.watervis = 1;
 	SCR_SetFullscreen (0);
 	r_data->lightstyle = cl.lightstyle;
 
@@ -358,7 +337,7 @@ CL_Disconnect (void)
 	}
 
 	cl_world.scene->worldmodel = NULL;
-	cl.intermission = 0;
+	Sbar_Intermission (cl.intermission = 0, cl.time);
 	cl.viewstate.intermission = 0;
 }
 
@@ -433,7 +412,7 @@ CL_SignonReply (void)
 		break;
 
 	case so_active:
-		cl.loading = false;
+		cl.viewstate.loading = false;
 		CL_SetState (ca_active);
 		break;
 	}
@@ -450,8 +429,10 @@ CL_NextDemo (void)
 	if (cls.demonum == -1)
 		return;							// don't play demos
 
-	cl.loading = true;
-	CL_UpdateScreen(cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen(&cl.viewstate);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
@@ -479,16 +460,19 @@ CL_PrintEntities_f (void)
 	int         i;
 
 	for (i = 0; i < cl.num_entities; i++) {
-		entity_t   *ent = cl_entities[i];
+		entity_t    ent = cl_entities[i];
+		transform_t transform = Entity_Transform (ent);
+		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
 		Sys_Printf ("%3i:", i);
-		if (!ent || !ent->renderer.model) {
+		if (!Entity_Valid (ent) || !renderer->model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		vec4f_t     org = Transform_GetWorldPosition (ent->transform);
-		vec4f_t     rot = Transform_GetWorldRotation (ent->transform);
+		vec4f_t     org = Transform_GetWorldPosition (transform);
+		vec4f_t     rot = Transform_GetWorldRotation (transform);
 		Sys_Printf ("%s:%2i  "VEC4F_FMT" "VEC4F_FMT"\n",
-					ent->renderer.model->path, ent->animation.frame,
+					renderer->model->path, animation->frame,
 					VEC4_EXP (org), VEC4_EXP (rot));
 	}
 }
@@ -585,25 +569,26 @@ CL_SetState (cactive_t state)
 			case ca_disconnected:
 				CL_ClearState ();
 				cls.signon = so_none;
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				VID_SetCaption ("Disconnected");
 				break;
 			case ca_connected:
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
-				cl.loading = true;
+				cl.viewstate.loading = true;
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				IN_ClearStates ();
 				VID_SetCaption ("");
 				S_AmbientOn ();
 				break;
 		}
-		CL_UpdateScreen (cl.time);
+		Sbar_SetActive (state == ca_active);
+		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
@@ -656,7 +641,9 @@ CL_Frame (void)
 								 || cl.stats[STAT_HEALTH] <= 0);
 	r_data->frametime = host_frametime;
 
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.intermission = cl.intermission != 0;
+	Sbar_Update (cl.time);
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
 		time2 = Sys_DoubleTime ();
@@ -674,7 +661,7 @@ CL_Frame (void)
 		S_Update (cl.viewstate.camera_transform, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (0, 0);
+		S_Update (nulltransform, 0);
 
 	CDAudio_Update ();
 
@@ -690,7 +677,6 @@ CL_Frame (void)
 	if (cls.demo_capture) {
 		r_funcs->capture_screen (write_capture, 0);
 	}
-	fps_count++;
 }
 
 static void
@@ -722,11 +708,13 @@ CL_Init (cbuf_t *cbuf)
 	S_Init (&cl.viewentity, &host_frametime);
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
+	Con_Load ("client");
+	CL_Init_Screen ();
+	Con_Init ();
 
 	CDAudio_Init ();
 
-	Sbar_Init ();
+	Sbar_Init (cl.stats, cl.item_gettime);
 
 	CL_Init_Input (cbuf);
 	CL_Particles_Init ();

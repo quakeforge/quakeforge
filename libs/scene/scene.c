@@ -36,7 +36,6 @@
 #endif
 
 #include "QF/mathlib.h"
-#include "QF/progs.h"	// for PR_RESMAP
 #include "QF/sys.h"
 #include "QF/model.h"
 
@@ -44,7 +43,111 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-#include "scn_internal.h"
+static void
+create_active (void *_active)
+{
+	byte       *active = _active;
+	*active = 1;
+}
+
+static void
+create_old_origin (void *_old_origin)
+{
+	vec4f_t    *old_origin = _old_origin;
+	*old_origin = (vec4f_t) {0, 0, 0, 1};
+}
+
+static void
+create_colormap (void *_colormap)
+{
+	colormap_t *colormap = _colormap;
+	*colormap = (colormap_t) {1, 6};
+}
+
+static void
+destroy_visibility (void *_visibility)
+{
+	visibility_t *visibility = _visibility;
+	if (visibility->efrag) {
+		R_ClearEfragChain (visibility->efrag);
+	}
+}
+
+static void
+sw_identity_matrix (void *_mat)
+{
+	mat4f_t    *mat = _mat;
+	mat4fidentity (*mat);
+}
+
+static void
+sw_frame_0 (void *_frame)
+{
+	byte       *frame = _frame;
+	*frame = 0;
+}
+
+static void
+sw_null_brush (void *_brush)
+{
+	struct mod_brush_s **brush = _brush;
+	*brush = 0;
+}
+
+static const component_t scene_components[scene_comp_count] = {
+	[scene_href] = {
+		.size = sizeof (hierref_t),
+		.create = 0,//create_href,
+		.name = "href",
+	},
+	[scene_animation] = {
+		.size = sizeof (animation_t),
+		.create = 0,//create_animation,
+		.name = "animation",
+	},
+	[scene_visibility] = {
+		.size = sizeof (visibility_t),
+		.create = 0,//create_visibility,
+		.destroy = destroy_visibility,
+		.name = "visibility",
+	},
+	[scene_renderer] = {
+		.size = sizeof (renderer_t),
+		.create = 0,//create_renderer,
+		.name = "renderer",
+	},
+	[scene_active] = {
+		.size = sizeof (byte),
+		.create = create_active,
+		.name = "active",
+	},
+	[scene_old_origin] = {
+		.size = sizeof (vec4f_t),
+		.create = create_old_origin,
+		.name = "old_origin",
+	},
+	[scene_colormap] = {
+		.size = sizeof (colormap_t),
+		.create = create_colormap,
+		.name = "colormap",
+	},
+
+	[scene_sw_matrix] = {
+		.size = sizeof (mat4f_t),
+		.create = sw_identity_matrix,
+		.name = "sw world transform",
+	},
+	[scene_sw_frame] = {
+		.size = sizeof (byte),
+		.create = sw_frame_0,
+		.name = "sw brush model animation frame",
+	},
+	[scene_sw_brush] = {
+		.size = sizeof (struct mod_brush_s *),
+		.create = sw_null_brush,
+		.name = "sw brush model data pointer",
+	},
+};
 
 static byte empty_visdata[] = { 0x01 };
 
@@ -104,12 +207,11 @@ static model_t empty_world = {
 scene_t *
 Scene_NewScene (void)
 {
-	scene_t    *scene;
-	scene_resources_t *res;
+	scene_t    *scene = calloc (1, sizeof (scene_t));
 
-	scene = calloc (1, sizeof (scene_t));
-	res = calloc (1, sizeof (scene_resources_t));
-	*(scene_resources_t **)&scene->resources = res;
+	scene->reg = ECS_NewRegistry ();
+	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;
 
@@ -119,90 +221,37 @@ Scene_NewScene (void)
 void
 Scene_DeleteScene (scene_t *scene)
 {
-	Scene_FreeAllEntities (scene);
+	ECS_DelRegistry (scene->reg);
 
-	scene_resources_t *res = scene->resources;
-	for (unsigned i = 0; i < res->entities._size; i++) {
-		free (res->entities._map[i]);
-	}
-	free (res->entities._map);
-
-	free (scene->resources);
 	free (scene);
 }
 
-entity_t *
+entity_t
 Scene_CreateEntity (scene_t *scene)
 {
-	scene_resources_t *res = scene->resources;
+	// Transform_New creates an entity and adds a scene_href component to the
+	// entity
+	transform_t trans = Transform_New (scene->reg, nulltransform);
+	uint32_t    id = trans.id;
 
-	entity_t   *ent = PR_RESNEW (res->entities);
-	ent->transform = Transform_New (scene, 0);
-	ent->id = PR_RESINDEX (res->entities, ent);
+	Ent_SetComponent (id, scene_animation, scene->reg, 0);
+	Ent_SetComponent (id, scene_renderer, scene->reg, 0);
+	Ent_SetComponent (id, scene_active, scene->reg, 0);
+	Ent_SetComponent (id, scene_old_origin, scene->reg, 0);
 
-	hierarchy_t *h = ent->transform->hierarchy;
-	h->entity.a[ent->transform->index] = ent;
+	renderer_t *renderer = Ent_GetComponent (id, scene_renderer, scene->reg);
+	QuatSet (1, 1, 1, 1, renderer->colormod);
 
-	QuatSet (1, 1, 1, 1, ent->renderer.colormod);
-
-	return ent;
-}
-
-entity_t *
-Scene_GetEntity (scene_t *scene, int id)
-{
-	scene_resources_t *res = scene->resources;
-	return PR_RESGET (res->entities, id);
-}
-
-static void
-destroy_entity (scene_t *scene, entity_t *ent)
-{
-	scene_resources_t *res = scene->resources;
-	// ent->transform will be trampled by the loop below
-	transform_t *transform = ent->transform;
-
-	// Transform_Delete takes care of all hierarchy stuff (transforms
-	// themselves, name strings, hierarchy table)
-	hierarchy_t *h = transform->hierarchy;
-	for (size_t i = 0; i < h->entity.size; i++) {
-		entity_t   *e = h->entity.a[0];
-		e->transform = 0;
-		PR_RESFREE (res->entities, ent);
-	}
-	Transform_Delete (transform);
+	return (entity_t) { .reg = scene->reg, .id = id };
 }
 
 void
-Scene_DestroyEntity (scene_t *scene, entity_t *ent)
+Scene_DestroyEntity (scene_t *scene, entity_t ent)
 {
-	scene_resources_t *res = scene->resources;
-
-	if (PR_RESGET (res->entities, ent->id) != ent) {
-		Sys_Error ("Scene_DestroyEntity: entity not owned by scene");
-	}
-	// pull the transform out of the hierarchy to make it easier to destory
-	// all the child entities
-	Transform_SetParent (ent->transform, 0);
-	destroy_entity (scene, ent);
+	ECS_DelEntity (scene->reg, ent.id);
 }
 
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
-	while (scene->hierarchies) {
-		hierarchy_t *h = scene->hierarchies;
-		// deleting the root entity deletes all child entities
-		entity_t   *ent = h->entity.a[0];
-		destroy_entity (scene, ent);
-	}
-	scene_resources_t *res = scene->resources;
-	PR_RESRESET (res->entities);
-}
-
-transform_t *
-Scene_GetTransform (scene_t *scene, int id)
-{
-	scene_resources_t *res = scene->resources;
-	return PR_RESGET (res->transforms, id);
 }

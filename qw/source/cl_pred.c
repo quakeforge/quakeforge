@@ -136,6 +136,7 @@ CL_PredictMove (void)
 	cl.time = realtime - cls.latency - cl_pushlatency * 0.001;
 	if (cl.time > realtime)
 		cl.time = realtime;
+	cl.viewstate.time = cl.time;
 
 	if (cl.intermission) {
 		return;

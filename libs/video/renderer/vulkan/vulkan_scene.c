@@ -46,6 +46,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 
+#include "r_internal.h"
 #include "vid_vulkan.h"
 
 static const int qfv_max_entities = 4096;	//FIXME should make dynamic
@@ -66,39 +67,49 @@ Vulkan_Scene_Descriptors (vulkan_ctx_t *ctx)
 }
 
 int
-Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t *entity)
+Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 {
 	scenectx_t *sctx = ctx->scene_context;
 	scnframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
 	entdata_t  *entdata = 0;
+	int         render_id = -1;
 	//lock
-	int         id = -entity->id;
-	if (!set_is_member (sframe->pooled_entities, id)) {
+	int         ent_id = Ent_Index (entity.id + 1);//nullent -> 0
+	if (!set_is_member (sframe->pooled_entities, ent_id)) {
 		if (sframe->entity_pool.size < sframe->entity_pool.maxSize) {
-			set_add (sframe->pooled_entities, id);
-			entity->renderer.render_id = sframe->entity_pool.size++;
-			entdata = sframe->entity_pool.a + entity->renderer.render_id;
-		} else {
-			entity->renderer.render_id = -1;
+			set_add (sframe->pooled_entities, ent_id);
+			render_id = sframe->entity_pool.size++;
+			entdata = sframe->entity_pool.a + render_id;
 		}
+	}
+	if (Entity_Valid (entity)) {
+		renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+												 entity.reg);
+		renderer->render_id = render_id;
 	}
 	//unlock
 	if (entdata) {
 		mat4f_t     f;
-		if (entity->transform) { //FIXME give world entity an entity :P
-			mat4ftranspose (f, Transform_GetWorldMatrixPtr (entity->transform));
+		vec4f_t     color;
+		if (Entity_Valid (entity)) { //FIXME give world entity an entity :P
+			transform_t transform = Entity_Transform (entity);
+			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+													 entity.reg);
+			mat4ftranspose (f, Transform_GetWorldMatrixPtr (transform));
 			entdata->xform[0] = f[0];
 			entdata->xform[1] = f[1];
 			entdata->xform[2] = f[2];
+			color = (vec4f_t) { QuatExpand (renderer->colormod) };
 		} else {
 			entdata->xform[0] = (vec4f_t) { 1, 0, 0, 0 };
 			entdata->xform[1] = (vec4f_t) { 0, 1, 0, 0 };
 			entdata->xform[2] = (vec4f_t) { 0, 0, 1, 0 };
+			color = (vec4f_t) { 1, 1, 1, 1 };
 		}
-		entdata->color = (vec4f_t) { QuatExpand (entity->renderer.colormod) };
+		entdata->color = color;
 	}
-	return entity->renderer.render_id;
+	return render_id;
 }
 
 void

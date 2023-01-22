@@ -100,6 +100,7 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/scene/libQFscene.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/ui/libQFui.la \
+	$(top_builddir)/libs/ecs/libQFecs.la \
 	$(top_builddir)/libs/input/libQFinput.la \
 	$(top_builddir)/libs/audio/libQFcd.la \
 	$(top_builddir)/libs/audio/libQFsound.la \
@@ -109,6 +110,7 @@ qwaq_x11_libs= \
 	$(qwaq_cl_plugin_libs) \
 	${top_builddir}/libs/gib/libQFgib.la \
     ${top_builddir}/libs/ruamoko/libQFruamoko_client.la \
+	$(top_builddir)/libs/ui/libQFgui.la \
 	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 	$(top_builddir)/libs/models/libQFmodels.la \
 	$(top_builddir)/libs/video/targets/libQFx11.la \

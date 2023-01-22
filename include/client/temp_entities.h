@@ -36,7 +36,8 @@ typedef enum TE_Effect {
 	TE_NoEffect,		// for invalid nq/qw -> qf mapping
 	TE_Beam,			// grappling hook beam
 	TE_Blood,			// bullet hitting body
-	TE_Explosion,		// rocket explosion
+	TE_Explosion,		// rocket explosion (nq)
+	TE_Explosion1,		// rocket explosion (qw)
 	TE_Explosion2,		// color mapped explosion
 	TE_Explosion3,		// Nehahra colored light explosion
 	TE_Gunshot1,		// NQ gunshot (20 particles)
@@ -104,7 +105,7 @@ struct entity_s;
 
 void CL_TEnts_Init (void);
 void CL_TEnts_Precache (void);
-void CL_Init_Entity (struct entity_s *ent);
+void CL_Init_Entity (struct entity_s ent);
 void CL_ClearTEnts (void);
 void CL_UpdateTEnts (double time, TEntContext_t *ctx);
 void CL_ParseTEnt_nq (struct msg_s *net_message, double time,

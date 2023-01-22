@@ -30,6 +30,7 @@
 #ifndef __QF_GLSL_qf_bsp_h
 #define __QF_GLSL_qf_bsp_h
 
+#include "QF/simd/types.h"
 #include "QF/GLSL/types.h"
 
 typedef struct glsltex_s {
@@ -59,7 +60,7 @@ typedef struct elechain_s {
 	struct elechain_s *next;
 	int         model_index;
 	elements_t *elements;
-	vec_t      *transform;
+	vec4f_t    *transform;
 	float      *color;
 } elechain_t;
 

@@ -1,3 +1,5 @@
+include libs/console/test/Makemodule.am
+
 lib_LTLIBRARIES += libs/console/libQFconsole.la
 plugin_LTLIBRARIES += @console_plugins@
 noinst_LTLIBRARIES += @client_static_plugins@ @server_static_plugins@

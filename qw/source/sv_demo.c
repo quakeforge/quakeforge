@@ -76,7 +76,7 @@ float sv_demofps;
 static cvar_t sv_demofps_cvar = {
 	.name = "sv_demofps",
 	.description =
-		"FIXME",
+		"Minimum frame rate of packets written to the demo",
 	.default_value = "20",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &sv_demofps },
@@ -85,7 +85,7 @@ float sv_demoPings;
 static cvar_t sv_demoPings_cvar = {
 	.name = "sv_demoPings",
 	.description =
-		"FIXME",
+		"Time in seconds between player ping updates. 0 disables.",
 	.default_value = "3",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &sv_demoPings },
@@ -94,7 +94,7 @@ int sv_demoMaxSize;
 static cvar_t sv_demoMaxSize_cvar = {
 	.name = "sv_demoMaxSize",
 	.description =
-		"FIXME",
+		"FIXME not used",
 	.default_value = "20480",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &sv_demoMaxSize },
@@ -103,7 +103,7 @@ static int sv_demoUseCache;
 static cvar_t sv_demoUseCache_cvar = {
 	.name = "sv_demoUseCache",
 	.description =
-		"FIXME",
+		"FIXME not used",
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &sv_demoUseCache },
@@ -112,7 +112,7 @@ int sv_demoCacheSize;
 static cvar_t sv_demoCacheSize_cvar = {
 	.name = "sv_demoCacheSize",
 	.description =
-		"FIXME",
+		"FIXME not used",
 	.default_value = 0,
 	.flags = CVAR_ROM,
 	.value = { .type = &cexpr_int, .value = &sv_demoCacheSize },
@@ -121,7 +121,7 @@ int sv_demoMaxDirSize;
 static cvar_t sv_demoMaxDirSize_cvar = {
 	.name = "sv_demoMaxDirSize",
 	.description =
-		"FIXME",
+		"FIXME not used",
 	.default_value = "102400",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &sv_demoMaxDirSize },
@@ -130,7 +130,7 @@ static char *sv_demoDir;
 static cvar_t sv_demoDir_cvar = {
 	.name = "sv_demoDir",
 	.description =
-		"FIXME",
+		"Name of subdirectory in which demos will be saved",
 	.default_value = "demos",
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_demoDir },
@@ -139,7 +139,7 @@ int sv_demoNoVis;
 static cvar_t sv_demoNoVis_cvar = {
 	.name = "sv_demoNoVis",
 	.description =
-		"FIXME",
+		"FIXME not used",
 	.default_value = "1",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &sv_demoNoVis },
@@ -148,7 +148,7 @@ static char *sv_demoPrefix;
 static cvar_t sv_demoPrefix_cvar = {
 	.name = "sv_demoPrefix",
 	.description =
-		"FIXME",
+		"Prefix for demo file names",
 	.default_value = "",
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_demoPrefix },
@@ -157,7 +157,7 @@ static char *sv_demoSuffix;
 static cvar_t sv_demoSuffix_cvar = {
 	.name = "sv_demoSuffix",
 	.description =
-		"FIXME",
+		"Suffix for demo file names",
 	.default_value = "",
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_demoSuffix },
@@ -166,7 +166,7 @@ static char *sv_onrecordfinish;
 static cvar_t sv_onrecordfinish_cvar = {
 	.name = "sv_onrecordfinish",
 	.description =
-		"FIXME",
+		"Command to execute when recording has finished. FIXME not used",
 	.default_value = "",
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_onrecordfinish },
@@ -175,7 +175,7 @@ static char *sv_ondemoremove;
 static cvar_t sv_ondemoremove_cvar = {
 	.name = "sv_ondemoremove",
 	.description =
-		"FIXME",
+		"Command to execute when a demo is removed. FIXME not used",
 	.default_value = "",
 	.flags = CVAR_NONE,
 	.value = { .type = 0, .value = &sv_ondemoremove },
@@ -184,7 +184,7 @@ static int sv_demotxt;
 static cvar_t sv_demotxt_cvar = {
 	.name = "sv_demotxt",
 	.description =
-		"FIXME",
+		"Write brief description of demo to text file",
 	.default_value = "1",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &sv_demotxt },
@@ -193,7 +193,7 @@ static char *serverdemo;
 static cvar_t serverdemo_cvar = {
 	.name = "serverdemo",
 	.description =
-		"FIXME",
+		"Cvar for passing server demo file name to progs",
 	.default_value = "",
 	.flags = CVAR_SERVERINFO,
 	.value = { .type = 0, .value = &serverdemo },

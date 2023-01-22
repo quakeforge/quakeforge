@@ -1,6 +1,8 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "oit_store.finc"
 
-layout (set = 2, binding = 0) uniform sampler2DArray Texture;
+layout (set = 3, binding = 0) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
 	vec4        fog;
@@ -13,7 +15,8 @@ layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec4 color;
 
-layout (location = 0) out vec4 frag_color;
+layout(early_fragment_tests) in;
+//layout (location = 0) out vec4 frag_color;
 
 const float PI = 3.14159265;
 const float SPEED = 20.0;
@@ -43,15 +46,12 @@ fogBlend (vec4 color)
 void
 main (void)
 {
-	vec4        c = vec4 (0);
-	vec4        e;
-	vec3        t_st = vec3 (warp_st (tl_st.xy, time), 0);
-	vec3        e_st = vec3 (warp_st (tl_st.xy, time), 1);
-
-	c = texture (Texture, t_st);
-	e = texture (Texture, e_st);
+	vec2        st = warp_st (tl_st.xy, time);
+	vec4        c = texture (Texture, vec3(st, 0));
+	vec4        e = texture (Texture, vec3(st, 1));
 	float       a = c.a * e.a * alpha;
 	c += e;
 	c.a = a;
-	frag_color = c * color;//fogBlend (c);
+	//frag_color = c * color;//fogBlend (c);
+	StoreFrag (c * color, gl_FragCoord.z);
 }

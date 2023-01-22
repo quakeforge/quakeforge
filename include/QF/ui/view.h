@@ -31,6 +31,8 @@
 #ifndef __QF_ui_view_h
 #define __QF_ui_view_h
 
+#include "QF/ecs.h"
+
 /** \defgroup console_view Console View Objects
 	\ingroup console
 */
@@ -64,180 +66,344 @@ typedef enum {
 	grav_southwest,	///< +ve X right, +ve Y up,   -X left,  -ve Y down
 	grav_west,		///< +ve X right, +ve Y down, -X left,  -ve Y up
 	grav_northwest,	///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_flow,		///< controlled by view_flow
 } grav_t;
 
 extern struct exprtype_s grav_t_type;
 
-/** The view object.
-*/
-typedef struct view_s view_t;
-struct view_s {
-	/// Coordinates of view's origin relative to parent's gravity point.
-	//@{
-	int     xpos, ypos;
-	//@}
-	/// Size of the view.
-	//@{
-	int     xlen, ylen;
-	//@}
-	/** Absolute coordinates of the top left (northwest) corner of the view.
-		Set interally.
-	*/
-	//@{
-	int     xabs, yabs;
-	//@}
-	/** Coordinates of the top left (northwest) corner of the view relative to
-		the parent view's top left corner. Set internally.
-	*/
-	//@{
-	int     xrel, yrel;
-	//@}
+typedef struct view_pos_s {
+	int         x;
+	int         y;
+} view_pos_t;
+
+typedef struct viewcont_s {
 	grav_t  gravity;			///< The gravity of the view.
-	view_t *parent;				///< The parent view.
-	view_t **children;			///< The child views.
-	int     num_children;		///< Number of child views in view.
-	int     max_children;		///< Size of children array.
-	/** Callback for drawing the view. defaults to view_draw(). if overridden,
-		the supplied callback should call view_draw() to draw any child views
-		unless the view is a leaf view.
-
-		\note All coordinates are set appropriately before this is called.
-
-		\param view		This view.
-	*/
-	void    (*draw)(view_t *view);
-	/** Callback for when the position and/or size of the view changes. Set
-		this if the underlying drawing system needs to take any action when
-		the view's geometry changes (eg, moving/resizing the window in curses).
-
-		\note All coordinates are set appropriately before this is called.
-
-		\param view		This view.
-	*/
-	void    (*setgeometry)(view_t *view);
-	/** User supplied data. Purely for external use. The view functions do not
-		touch this at all except view_new(), which just sets it to 0.
-	*/
-	void   *data;
 	unsigned visible:1;			///< If false, view_draw() skips this view.
 	unsigned resize_x:1;		///< If true, view's width follows parent's.
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
+	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
+	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
+} viewcont_t;
+
+enum {
+	view_href,
+
+	view_comp_count
 };
 
-/** Create a new view. view_t::draw is set to view_draw() and the view is made
-	visible. All coordinates are set appropriately for the new view being a
-	root view. All other fields not set by the parameters are 0.
+extern const struct component_s view_components[view_comp_count];
 
-	\param xp		The X coordinate of the view's origin.
-	\param yp		The Y coordinate of the view's origin.
-	\param xl		The width of the view.
-	\param yl		The height of the view.
-	\param grav		The gravity of the view. determines the view's origin and
-					its positioning within the view's parent.
+// components in the view hierarchy
+enum {
+	/// Coordinates of view's origin relative to parent's gravity point.
+	view_pos,
+	/// Size of the view.
+	view_len,
+	/** Absolute coordinates of the top left (northwest) corner of the view.
+		Set interally.
+	*/
+	view_abs,
+	/** Coordinates of the top left (northwest) corner of the view relative to
+		the parent view's top left corner. Set internally.
+	*/
+	view_rel,
+	view_oldlen,
+	view_control,
+	view_modified,
+	view_onresize,
+	view_onmove,
+
+	view_type_count
+};
+
+/** The view object.
 */
-view_t *view_new (int xp, int yp, int xl, int yl, grav_t grav);
+typedef struct view_s {
+	ecs_registry_t *reg;
+	uint32_t    id;
+	uint32_t    comp;
+} view_t;
 
-/** Insert a view into a parent view at the specified location. If \c pos is
-	negative, it is taken to be relative to the end of the parent's list of
-	views (view_insert (par, view, -1) is equivalent to view_add (par, view)).
-	\c pos is clipped to be within the correct range.
+#define nullview ((view_t) {})
 
-	The absolute X and Y coordianates of the inserted view and its child views
-	are updated based on the view's gravity.
+typedef void (*view_resize_f) (view_t view, view_pos_t len);
+typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
-	The position of the view within the parent view's child view list
-	determines the draw order (and thus Z order) of the view, with position 0
-	being drawn first.
+#define VIEWINLINE GNU89INLINE inline
 
-	\param par		The parent view into which the view is to be inserted.
-	\param view		The view to insert.
-	\param pos		The position at which to insert the view into the parent.
-*/
-void view_insert (view_t *par, view_t *view, int pos);
+VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
+view_t View_New (ecs_system_t viewsys, view_t parent);
+view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent);
+VIEWINLINE void View_Delete (view_t view);
+void View_SetParent (view_t view, view_t parent);
+void View_UpdateHierarchy (view_t view);
 
-/** Add a view to a parent view at the end of the parents view list.
+void view_flow_right_down (view_t view, view_pos_t len);
+void view_flow_right_up (view_t view, view_pos_t len);
+void view_flow_left_down (view_t view, view_pos_t len);
+void view_flow_left_up (view_t view, view_pos_t len);
+void view_flow_down_right (view_t view, view_pos_t len);
+void view_flow_up_right (view_t view, view_pos_t len);
+void view_flow_down_left (view_t view, view_pos_t len);
+void view_flow_up_left (view_t view, view_pos_t len);
 
-	The absolute X and Y coordianates of the inserted view and its child views
-	are updated based on the view's gravity.
+VIEWINLINE hierref_t *View_GetRef (view_t view);
+VIEWINLINE int View_Valid (view_t view);
 
-	The added view will be drawn last (and thus on top of earlier views).
+VIEWINLINE view_t View_GetParent (view_t view);
+VIEWINLINE uint32_t View_ChildCount (view_t view);
+VIEWINLINE view_t View_GetChild (view_t view, uint32_t index);
 
-	\param par		The parent view to which the view is to be added.
-	\param view		The view to add.
-*/
-void view_add (view_t *par, view_t *view);
+VIEWINLINE void View_SetPos (view_t view, int x, int y);
+VIEWINLINE view_pos_t View_GetPos (view_t view);
+VIEWINLINE view_pos_t View_GetAbs (view_t view);
+VIEWINLINE view_pos_t View_GetRel (view_t view);
+VIEWINLINE void View_SetLen (view_t view, int x, int y);
+VIEWINLINE view_pos_t View_GetLen (view_t view);
+VIEWINLINE viewcont_t* View_Control (view_t view);
+VIEWINLINE void View_SetGravity (view_t view, grav_t grav);
+VIEWINLINE grav_t View_GetGravity (view_t view);
+VIEWINLINE void View_SetVisible (view_t view, int visible);
+VIEWINLINE int View_GetVisible (view_t view);
+VIEWINLINE void View_SetResize (view_t view, int resize_x, int resize_y);
+VIEWINLINE void View_SetOnResize (view_t view, view_resize_f onresize);
+VIEWINLINE void View_SetOnMove (view_t view, view_move_f onmove);
 
-/** Remove a view from its parent.
+#undef VIEWINLINE
+#ifndef IMPLEMENT_VIEW_Funcs
+#define VIEWINLINE GNU89INLINE inline
+#else
+#define VIEWINLINE VISIBLE
+#endif
 
-	\param par		The parent view from which the view is to be removed.
-	\param view		The view to remove.
-*/
-void view_remove (view_t *par, view_t *view);
+VIEWINLINE
+view_t
+View_FromEntity (ecs_system_t viewsys, uint32_t ent)
+{
+	return (view_t) {
+		.id = ent,
+		.reg = viewsys.reg,
+		.comp = viewsys.base + view_href,
+	};
+}
 
-/** Delete a view and all its child views. If the view has a parent, the view
-	will be removed from its parent.
+VIEWINLINE
+hierref_t *
+View_GetRef (view_t view)
+{
+	return Ent_GetComponent (view.id, view.comp, view.reg);
+}
 
-	\param view		The view to delete.
-*/
-void view_delete (view_t *view);
+VIEWINLINE
+int
+View_Valid (view_t view)
+{
+	return view.reg && ECS_EntValid (view.id, view.reg);
+}
 
-/** Draw the child views of a view. If a child view is not visible
-	(view_t::visible is 0), the child will be skipped.
+VIEWINLINE
+void
+View_Delete (view_t view)
+{
+	__auto_type ref = *View_GetRef (view);
+	Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
+	if (!ref.hierarchy->num_objects) {
+		Hierarchy_Delete (ref.hierarchy);
+	}
+}
 
-	\note	It is best to always use view_t::draw() to draw a view rather than
-			calling this directly. This function is really for the view's draw
-			callback to call to draw its sub-views.
+VIEWINLINE
+view_t
+View_GetParent (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	if (ref->index == 0) {
+		return nullview;
+	}
+	hierarchy_t *h = ref->hierarchy;
+	return (view_t) {
+		.reg = view.reg,
+		.id = h->ent[h->parentIndex[ref->index]],
+		.comp = view.comp,
+	};
+}
 
-	\param view		The view of which to draw the children.
-*/
-void view_draw (view_t *view);
+VIEWINLINE
+uint32_t
+View_ChildCount (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	return h->childCount[ref->index];
+}
 
-/** Change the size of a view. The view's children are also resized based on
-	their view_t::resize_x and view_t::resize_y flags.
+VIEWINLINE
+view_t
+View_GetChild (view_t view, uint32_t childIndex)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	if (childIndex >= h->childCount[ref->index]) {
+		return nullview;
+	}
+	return (view_t) {
+		.reg = view.reg,
+		.id = h->ent[h->childIndex[ref->index] + childIndex],
+		.comp = view.comp,
+	};
+}
 
-	The absolute X and Y coorinates of the view are updated as necessary to
-	keep the coordinates of the view's origin correct relative to the view's
-	geometry.
 
-	\param view		The view to resize.
-	\param xl		The new width of the view.
-	\param yl		The new height of the view.
-*/
-void view_resize (view_t *view, int xl, int yl);
+VIEWINLINE
+void
+View_SetPos (view_t view, int x, int y)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	byte       *modified = h->components[view_modified];
+	pos[ref->index] = (view_pos_t) { x, y };
+	modified[ref->index] |= 1;
+}
 
-/** Chage the location of a view.
+VIEWINLINE
+view_pos_t
+View_GetPos (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *pos = h->components[view_pos];
+	return pos[ref->index];
+}
 
-	The absolute X and Y coorinates of the view are updated as necessary to
-	keep the coordinates of the view's origin correct relative to the view's
-	geometry.
+VIEWINLINE
+view_pos_t
+View_GetAbs (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *abs = h->components[view_abs];
+	return abs[ref->index];
+}
 
-	\param view		The view to move.
-	\param xp		The new X coordinate of the view relative to its gravity.
-	\param yp		The new Y coordinate of the view relative to its gravity.
-*/
-void view_move (view_t *view, int xp, int yp);
+VIEWINLINE
+view_pos_t
+View_GetRel (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *rel = h->components[view_rel];
+	return rel[ref->index];
+}
 
-/** Chage the location and size of a view in a single operation.
+VIEWINLINE
+void
+View_SetLen (view_t view, int x, int y)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *len = h->components[view_len];
+	view_pos_t *oldlen = h->components[view_oldlen];
+	byte       *modified = h->components[view_modified];
+	if (!(modified[ref->index] & 2)) {
+		oldlen[ref->index] = len[ref->index];
+	}
+	len[ref->index] = (view_pos_t) { x, y };
+	modified[ref->index] |= 2;
+}
 
-	The absolute X and Y coorinates of the view are updated as necessary to
-	keep the coordinates of the view's origin correct relative to the view's
-	geometry.
+VIEWINLINE
+view_pos_t
+View_GetLen (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_pos_t *len = h->components[view_len];
+	return len[ref->index];
+}
 
-	\param view		The view to move.
-	\param xp		The new X coordinate of the view relative to its gravity.
-	\param yp		The new Y coordinate of the view relative to its gravity.
-	\param xl		The new width of the view.
-	\param yl		The new height of the view.
-*/
-void view_setgeometry (view_t *view, int xp, int yp, int xl, int yl);
+VIEWINLINE
+viewcont_t *
+View_Control (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	return &cont[ref->index];
+}
 
-/** Change the gravity of a view, adjusting its position appropriately
+VIEWINLINE
+void
+View_SetGravity (view_t view, grav_t grav)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	byte       *modified = h->components[view_modified];
+	cont[ref->index].gravity = grav;
+	modified[ref->index] |= 1;
+}
 
-	\param view		The view which will have its gravity set..
-	\param grav		The gravity of the view. determines the view's origin and
-					its positioning within the view's parent.
-*/
-void view_setgravity (view_t *view, grav_t grav);
+VIEWINLINE
+grav_t
+View_GetGravity (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	return cont[ref->index].gravity;
+}
+
+VIEWINLINE
+void
+View_SetVisible (view_t view, int visible)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	cont[ref->index].visible = !!visible;
+}
+
+VIEWINLINE
+int
+View_GetVisible (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	return cont[ref->index].visible;
+}
+
+VIEWINLINE
+void
+View_SetResize (view_t view, int resize_x, int resize_y)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	viewcont_t *cont = h->components[view_control];
+	cont[ref->index].resize_x = resize_x;
+	cont[ref->index].resize_y = resize_y;
+}
+
+VIEWINLINE
+void
+View_SetOnResize (view_t view, view_resize_f onresize)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_resize_f *resize = h->components[view_onresize];
+	resize[ref->index] = onresize;
+}
+
+VIEWINLINE
+void
+View_SetOnMove (view_t view, view_move_f onmove)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	view_move_f *move = h->components[view_onmove];
+	move[ref->index] = onmove;
+}
 
 ///@}
 

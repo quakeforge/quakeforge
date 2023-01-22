@@ -43,7 +43,6 @@
 #include "QF/cmd.h"
 
 #include "QF/scene/entity.h"
-#include "QF/scene/scene.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -145,17 +144,61 @@ sw_R_Init (void)
 	Skin_Init ();
 }
 
+uint32_t
+SW_AddEntity (entity_t ent)
+{
+	// This takes advantage of the implicit (FIXME, make explicit) grouping of
+	// the sw components: as all entities that get added here will always have
+	// all three components, the three component pools are always in sync, thus
+	// the pool count can be used as a render id which can in turn be used to
+	// index the components within the pools.
+	ecs_registry_t *reg = ent.reg;
+	ecs_pool_t *pool = &reg->comp_pools[scene_sw_matrix];
+	uint32_t    render_id = pool->count;
+
+	transform_t transform = Entity_Transform (ent);
+	Ent_SetComponent (ent.id, scene_sw_matrix, reg,
+					  Transform_GetWorldMatrixPtr (transform));
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, reg);
+	Ent_SetComponent (ent.id, scene_sw_frame, reg, &animation->frame);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, reg);
+	mod_brush_t *brush = &renderer->model->brush;
+	Ent_SetComponent (ent.id, scene_sw_brush, reg, &brush);
+
+	return render_id;
+}
+
+static void
+reset_sw_components (ecs_registry_t *reg)
+{
+	static uint32_t sw_comps[] = {
+		scene_sw_matrix,
+		scene_sw_frame,
+		scene_sw_brush,
+	};
+
+	for (int i = 0; i < 3; i++) {
+		ecs_pool_t *pool = &reg->comp_pools[sw_comps[i]];
+		pool->count = 0;	// remove component from every entity
+		// reserve first component object (render id 0) for the world
+		// pseudo-entity.
+		//FIXME takes advantage of the lack of checks for the validity of the
+		//entity id.
+		Ent_SetComponent (0, sw_comps[i], reg, 0);
+		// make sure entity 0 gets allocated a new component object as the
+		// world pseudo-entity currently has no actual entity (FIXME)
+		pool->dense[0] = nullent;
+	}
+}
+
 void
 R_NewScene (scene_t *scene)
 {
 	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
+	r_refdef.registry = scene->reg;
 	r_refdef.worldmodel = worldmodel;
-
-	// clear out efrags in case the level hasn't been reloaded
-	for (unsigned i = 0; i < brush->modleafs; i++)
-		brush->leafs[i].efrags = NULL;
 
 	if (brush->skytexture)
 		R_InitSky (brush->skytexture);
@@ -217,13 +260,13 @@ R_SetColormap (const byte *cmap)
 }
 
 static inline void
-draw_sprite_entity (entity_t *ent)
+draw_sprite_entity (entity_t ent)
 {
 	R_DrawSprite (ent);
 }
 
 static inline void
-setup_lighting (entity_t *ent, alight_t *lighting)
+setup_lighting (entity_t ent, alight_t *lighting)
 {
 	float       minlight = 0;
 	int         j;
@@ -232,7 +275,8 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 	float       add;
 	float       lightvec[3] = { -1, 0, 0 };
 
-	minlight = max (ent->renderer.model->min_light, ent->renderer.min_light);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	// 128 instead of 255 due to clamping below
 	j = max (R_LightPoint (&r_refdef.worldmodel->brush, r_entorigin),
@@ -261,11 +305,13 @@ setup_lighting (entity_t *ent, alight_t *lighting)
 }
 
 static inline void
-draw_alias_entity (entity_t *ent)
+draw_alias_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	ent->visibility.trivial_accept = 0;	//FIXME
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
+	visibility->trivial_accept = 0;	//FIXME
 	if (R_AliasCheckBBox (ent)) {
 		alight_t    lighting;
 		setup_lighting (ent, &lighting);
@@ -274,11 +320,13 @@ draw_alias_entity (entity_t *ent)
 }
 
 static inline void
-draw_iqm_entity (entity_t *ent)
+draw_iqm_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	ent->visibility.trivial_accept = 0;	//FIXME
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
+	visibility->trivial_accept = 0;	//FIXME
 
 	alight_t    lighting;
 	setup_lighting (ent, &lighting);
@@ -296,8 +344,9 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 	do { \
 		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
 			 i++) { \
-			entity_t   *ent = queue->ent_queues[mod_##type_name].a[i]; \
-			r_entorigin = Transform_GetWorldPosition (ent->transform); \
+			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
+			transform_t transform = Entity_Transform (ent); \
+			r_entorigin = Transform_GetWorldPosition (transform); \
 			draw_##type_name##_entity (ent); \
 		} \
 	} while (0)
@@ -319,7 +368,7 @@ R_DrawViewModel (void)
 	float       add;
 	float       minlight;
 	dlight_t   *dl;
-	entity_t   *viewent;
+	entity_t    viewent;
 	alight_t    lighting;
 
 	if (vr_data.inhibit_viewmodel
@@ -328,15 +377,28 @@ R_DrawViewModel (void)
 		return;
 
 	viewent = vr_data.view_model;
-	if (!viewent->renderer.model)
+	if (!Entity_Valid (viewent)) {
+		return;
+	}
+
+	renderer_t *renderer = Ent_GetComponent (viewent.id, scene_renderer,
+											 viewent.reg);
+	if (!renderer->model)
 		return;
 
-	VectorCopy (Transform_GetWorldPosition (viewent->transform), r_entorigin);
+	if (!Ent_HasComponent (viewent.id, scene_visibility, viewent.reg)) {
+		// ensure the view model has a visibility component because one won't
+		// be added automatically, and the model rendering code expects there
+		// to be one
+		Ent_SetComponent (viewent.id, scene_visibility, viewent.reg, 0);
+	}
+
+	transform_t transform = Entity_Transform (viewent);
+	VectorCopy (Transform_GetWorldPosition (transform), r_entorigin);
 
 	VectorNegate (vup, lighting.lightvec);
 
-	minlight = max (viewent->renderer.min_light,
-					viewent->renderer.model->min_light);
+	minlight = max (renderer->min_light, renderer->model->min_light);
 
 	j = max (R_LightPoint (&r_refdef.worldmodel->brush,
 						   r_entorigin), minlight * 128);
@@ -370,25 +432,23 @@ R_DrawViewModel (void)
 }
 
 static int
-R_BmodelCheckBBox (entity_t *ent, model_t *clmodel, float *minmaxs)
+R_BmodelCheckBBox (const vec4f_t *transform, float radius, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
-	mat4f_t     mat;
 
 	clipflags = 0;
 
-	Transform_GetWorldMatrix (ent->transform, mat);
-	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
+	if (transform[0][0] != 1 || transform[1][1] != 1 || transform[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
-			d = DotProduct (mat[3], view_clipplanes[i].normal);
+			d = DotProduct (transform[3], view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 
-			if (d <= -clmodel->radius)
+			if (d <= -radius)
 				return BMODEL_FULLY_CLIPPED;
 
-			if (d <= clmodel->radius)
+			if (d <= radius)
 				clipflags |= (1 << i);
 		}
 	} else {
@@ -430,7 +490,6 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	int         j, clipflags;
 	unsigned int k;
 	vec3_t      origin;
-	model_t    *clmodel;
 	float       minmaxs[6];
 
 	if (!r_drawentities)
@@ -439,29 +498,34 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 	insubmodel = true;
 
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
-		entity_t   *ent = queue->ent_queues[mod_brush].a[i];
+		entity_t    ent = queue->ent_queues[mod_brush].a[i];
+		uint32_t    render_id = SW_AddEntity (ent);
 
-		VectorCopy (Transform_GetWorldPosition (ent->transform), origin);
-		clmodel = ent->renderer.model;
+		vec4f_t    *transform = Ent_GetComponent (ent.id, scene_sw_matrix,
+												  ent.reg);
+		VectorCopy (transform[3], origin);
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												 ent.reg);
+		model_t    *model = renderer->model;
 
 		// see if the bounding box lets us trivially reject, also
 		// sets trivial accept status
 		for (j = 0; j < 3; j++) {
-			minmaxs[j] = origin[j] + clmodel->mins[j];
-			minmaxs[3 + j] = origin[j] + clmodel->maxs[j];
+			minmaxs[j] = origin[j] + model->mins[j];
+			minmaxs[3 + j] = origin[j] + model->maxs[j];
 		}
 
-		clipflags = R_BmodelCheckBBox (ent, clmodel, minmaxs);
+		clipflags = R_BmodelCheckBBox (transform, model->radius, minmaxs);
 
 		if (clipflags != BMODEL_FULLY_CLIPPED) {
-			mod_brush_t *brush = &clmodel->brush;
+			mod_brush_t *brush = &model->brush;
 			VectorCopy (origin, r_entorigin);
 			VectorSubtract (r_refdef.frame.position, r_entorigin, modelorg);
 
 			r_pcurrentvertbase = brush->vertexes;
 
 			// FIXME: stop transforming twice
-			R_RotateBmodel (ent->transform);
+			R_RotateBmodel (transform);
 
 			// calculate dynamic lighting for bmodel if it's not an
 			// instanced model
@@ -484,23 +548,26 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// Z-buffering is on at this point, so no clipping to the
 			// world tree is needed, just frustum clipping
 			if (r_drawpolys | r_drawculledpolys) {
-				R_ZDrawSubmodelPolys (ent, clmodel);
+				R_ZDrawSubmodelPolys (render_id, brush);
 			} else {
-				int         topnode_id = ent->visibility.topnode_id;
-				mod_brush_t *brush = &r_refdef.worldmodel->brush;
+				visibility_t *visibility = Ent_GetComponent (ent.id,
+															 scene_visibility,
+															 ent.reg);
+				int         topnode_id = visibility->topnode_id;
+				mod_brush_t *world_brush = &r_refdef.worldmodel->brush;
 
 				if (topnode_id >= 0) {
 					// not a leaf; has to be clipped to the world
 					// BSP
-					mnode_t    *node = brush->nodes + topnode_id;
+					mnode_t    *node = world_brush->nodes + topnode_id;
 					r_clipflags = clipflags;
-					R_DrawSolidClippedSubmodelPolygons (ent, clmodel, node);
+					R_DrawSolidClippedSubmodelPolygons (render_id, brush, node);
 				} else {
 					// falls entirely in one leaf, so we just put
 					// all the edges in the edge list and let 1/z
 					// sorting handle drawing order
-					mleaf_t    *leaf = brush->leafs + ~topnode_id;
-					R_DrawSubmodelPolygons (ent, clmodel, clipflags, leaf);
+					mleaf_t    *leaf = world_brush->leafs + ~topnode_id;
+					R_DrawSubmodelPolygons (render_id, brush, clipflags, leaf);
 				}
 			}
 
@@ -573,6 +640,8 @@ R_RenderView_ (void)
 		return;
 	}
 
+	reset_sw_components (r_refdef.registry);
+	*(mod_brush_t **) SW_COMP (scene_sw_brush, 0) = &r_refdef.worldmodel->brush;
 	R_SetupFrame ();
 
 // make FDIV fast. This reduces timing precision after we've been running for a
@@ -583,7 +652,7 @@ R_RenderView_ (void)
 
 	R_EdgeDrawing (r_ent_queue);
 
-	if (vr_data.view_model) {
+	if (Entity_Valid (vr_data.view_model)) {
 		R_DrawViewModel ();
 	}
 
@@ -632,7 +701,6 @@ void
 R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
 }

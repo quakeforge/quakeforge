@@ -1,0 +1,45 @@
+#include <PropertyList.h>
+
+#include "vkfieldreadonly.h"
+#include "vkfieldtype.h"
+#include "vkgen.h"
+#include "vktype.h"
+
+@implementation ReadOnlyField
+
+-init:(PLItem *) item struct:(Struct *)strct field:(string)fname
+{
+	self = [super init:item struct:strct field:fname];
+	if (!self) {
+		return self;
+	}
+
+	PLItem     *desc = [item getObjectForKey:"type"];
+	type = [[FieldType fieldType:[desc getObjectAtIndex:1]] retain];
+
+	value_field = [[item getObjectForKey:"value"] string];
+	return self;
+}
+
+-writeParseData
+{
+	return self;
+}
+
+-writeField
+{
+	string      parse_type = [FieldType anyType];
+	fprintf (output_file, "\t{\"%s\", 0, %s, parse_%s, 0},\n",
+			 field_name, parse_type, "ignore");
+	return self;
+}
+
+-writeSymbol
+{
+	fprintf (output_file,
+			 "\t{\"%s\", %s, (void *) field_offset (%s, %s)},\n",
+			 field_name, [type exprType], struct_name, value_field);
+	return self;
+}
+
+@end

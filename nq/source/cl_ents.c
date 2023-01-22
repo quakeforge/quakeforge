@@ -59,7 +59,7 @@
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
-entity_t   *cl_entities[MAX_EDICTS];
+entity_t    cl_entities[MAX_EDICTS];
 double      cl_msgtime[MAX_EDICTS];
 static byte forcelink_bytes[SET_SIZE(MAX_EDICTS)];
 #define alloc_forcelink(s) (set_bits_t *)forcelink_bytes
@@ -72,24 +72,34 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		if (cl_entities[i]) {
-			mod_funcs->Skin_Free (cl_entities[i]->renderer.skin);
+		if (Entity_Valid (cl_entities[i])) {
+			entity_t    ent = cl_entities[i];
+			renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+			if (renderer && renderer->skin) {
+				mod_funcs->Skin_Free (renderer->skin);
+			}
 			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
-			cl_entities[i] = 0;
+			cl_entities[i] = nullentity;
 		}
 	}
 
 	// clear other arrays
 	i = nq_entstates.num_frames * nq_entstates.num_entities;
 	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
-	memset (cl_msgtime, 0, sizeof (cl_msgtime));
+	memset (cl_msgtime, -1, sizeof (cl_msgtime));
 	set_empty (&cl_forcelink);
 }
 
-entity_t *
+static entity_t
+CL_GetInvalidEntity (int num)
+{
+	return cl_entities[num];
+}
+
+entity_t
 CL_GetEntity (int num)
 {
-	if (!cl_entities[num]) {
+	if (!Entity_Valid (cl_entities[num])) {
 		cl_entities[num] = Scene_CreateEntity (cl_world.scene);
 		CL_Init_Entity (cl_entities[num]);
 	}
@@ -136,9 +146,9 @@ CL_LerpPoint (void)
 static void
 set_entity_model (int ent_ind, int modelindex)
 {
-	entity_t   *ent = cl_entities[ent_ind];
-	renderer_t *renderer = &ent->renderer;
-	animation_t *animation = &ent->animation;
+	entity_t    ent = cl_entities[ent_ind];
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -148,10 +158,10 @@ set_entity_model (int ent_ind, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
-	} else {
-		// hack to make null model players work
-		SET_ADD (&cl_forcelink, ent_ind);
 	}
+	// Changing the model can change the visibility of the entity and even
+	// the model type
+	SET_ADD (&cl_forcelink, ent_ind);
 	animation->nolerp = 1; // don't try to lerp when the model has changed
 	if (ent_ind <= cl.maxclients) {
 		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, ent_ind);
@@ -161,13 +171,10 @@ set_entity_model (int ent_ind, int modelindex)
 void
 CL_RelinkEntities (void)
 {
-	entity_t   *ent;
+	entity_t    ent;
 	entity_state_t *new, *old;
-	renderer_t *renderer;
-	animation_t *animation;
 	float       bobjrotate, frac, f;
 	int         i, j;
-	int         entvalid;
 	int         model_flags;
 
 	// determine partial update time
@@ -198,25 +205,25 @@ CL_RelinkEntities (void)
 	for (i = 1; i < cl.num_entities; i++) {
 		new = &nq_entstates.frame[0 + cl.frameIndex][i];
 		old = &nq_entstates.frame[1 - cl.frameIndex][i];
-		ent = CL_GetEntity (i);
-		renderer = &ent->renderer;
-		animation = &ent->animation;
 
-		// if the object wasn't included in the last packet, remove it
-		entvalid = cl_msgtime[i] == cl.mtime[0];
-		if (entvalid && !new->modelindex) {
-			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
-								new->origin);
-			entvalid = 0;
-		}
-		if (!entvalid) {
-			renderer->model = NULL;
-			animation->pose1 = animation->pose2 = -1;
-			if (ent->visibility.efrag) {
-				R_RemoveEfrags (ent);	// just became empty
+		ent = CL_GetInvalidEntity (i);
+		// if the object wasn't included in the last packet, or the model
+		// has been removed, remove the entity
+		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
+			if (Entity_Valid (ent)) {
+				Scene_DestroyEntity (cl_world.scene, ent);
 			}
 			continue;
 		}
+
+		if (!Entity_Valid (ent)) {
+			ent = CL_GetEntity (i);
+			SET_ADD (&cl_forcelink, i);
+		}
+		transform_t transform = Entity_Transform (ent);
+		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			*old = *new;
@@ -239,6 +246,11 @@ CL_RelinkEntities (void)
 			old->skinnum = new->skinnum;
 			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
+				colormap_t  colormap = {
+					.top = cl.players[i - 1].topcolor,
+					.bottom = cl.players[i - 1].bottomcolor,
+				};
+				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
 				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 															  i);
 				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,
@@ -261,16 +273,13 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
 			if (i != cl.viewentity || chase_active) {
-				if (ent->visibility.efrag) {
-					R_RemoveEfrags (ent);
-				}
 				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
-			ent->old_origin = new->origin;
+			*old_origin = new->origin;
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
 			f = frac;
-			ent->old_origin = Transform_GetWorldPosition (ent->transform);
+			*old_origin = Transform_GetWorldPosition (transform);
 			// If the delta is large, assume a teleport and don't lerp
 			if (fabs (delta[0]) > 100 || fabs (delta[1]) > 100
 				|| fabs (delta[2]) > 100) {
@@ -295,14 +304,8 @@ CL_RelinkEntities (void)
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
 			if (i != cl.viewentity || chase_active) {
-				if (ent->visibility.efrag) {
-					vec4f_t     org
-						= Transform_GetWorldPosition (ent->transform);
-					if (!VectorCompare (org, ent->old_origin)) {//FIXME
-						R_RemoveEfrags (ent);
-						R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
-					}
-				} else {
+				vec4f_t     org = Transform_GetWorldPosition (transform);
+				if (!VectorCompare (org, *old_origin)) {//FIXME
 					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
@@ -316,7 +319,7 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
 		CL_EntityEffects (i, ent, new, cl.time);
-		vec4f_t org = Transform_GetWorldPosition (ent->transform);
+		vec4f_t org = Transform_GetWorldPosition (transform);
 		int effects = new->effects;
 		if (cl.maxclients == 1 && effects) {
 			// Enable blue and red lights for quad and invulnerability,
@@ -340,7 +343,10 @@ CL_RelinkEntities (void)
 
 		SET_REMOVE (&cl_forcelink, i);
 	}
-	cl.viewstate.player_entity = CL_GetEntity (cl.viewentity);
-	cl.viewstate.player_origin
-		= Transform_GetWorldPosition (cl.viewstate.player_entity->transform);
+	{
+		entity_t    player_entity = CL_GetEntity (cl.viewentity);
+		transform_t transform = Entity_Transform (player_entity);
+		cl.viewstate.player_entity = player_entity;
+		cl.viewstate.player_origin = Transform_GetWorldPosition (transform);
+	}
 }

@@ -26,6 +26,8 @@ qfv_tex_t *Vulkan_LoadEnvMap (struct vulkan_ctx_s *ctx, tex_t *tex,
 qfv_tex_t *Vulkan_LoadEnvSides (struct vulkan_ctx_s *ctx, tex_t **tex,
 								const char *name);
 VkImageView Vulkan_TexImageView (qfv_tex_t *tex) __attribute__((pure));
+void Vulkan_UpdateTex (struct vulkan_ctx_s *ctx, qfv_tex_t *tex, tex_t *src,
+					   int x, int  y, int layer, int mip);
 void Vulkan_UnloadTex (struct vulkan_ctx_s *ctx, qfv_tex_t *tex);
 void Vulkan_Texture_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Texture_Shutdown (struct vulkan_ctx_s *ctx);

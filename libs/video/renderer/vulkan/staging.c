@@ -30,6 +30,7 @@
 
 #include "QF/dstring.h"
 
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -51,7 +52,9 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	stage->device = device;
 	stage->cmdPool = cmdPool;
 	stage->buffer = QFV_CreateBuffer (device, size,
-									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+									  //FIXME make a param
+									  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
 						 dsprintf (str, "staging:buffer:%s", name));
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
@@ -278,4 +281,62 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 	};
 	// The fence was reset when the packet was acquired
 	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, packet->fence);
+}
+
+void
+QFV_PacketCopyBuffer (qfv_packet_t *packet,
+					  VkBuffer dstBuffer, VkDeviceSize offset,
+					  const qfv_bufferbarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
+	bb.barrier.size = packet->length;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	VkBufferCopy copy_region = {
+		.srcOffset = packet->offset,
+		.dstOffset = offset,
+		.size = packet->length,
+	};
+	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
+							1, &copy_region);
+	bb = *dstBarrier;
+	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
+	bb.barrier.size = packet->length;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+}
+
+void
+QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
+					 int width, int height,
+					 const qfv_imagebarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = dstImage;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	VkBufferImageCopy copy_region = {
+		.bufferOffset = packet->offset,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{0, 0, 0}, {width, height, 1},
+	};
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   dstImage,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &copy_region);
+	ib = *dstBarrier;
+	ib.barrier.image = dstImage;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0, 1, &ib.barrier);
 }

@@ -56,11 +56,11 @@
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/types.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
 #include "varrays.h"
 
 #define CELL_SIZE (1.0 / 16.0)	// conchars is 16x16
@@ -116,6 +116,17 @@ static int		numcachepics;
 
 static byte		menuplyr_pixels[4096];
 
+static int gl_2d_scale = 1;
+
+typedef struct glfont_s {
+	font_t     *font;
+	GLuint      texid;
+} glfont_t;
+
+typedef struct glfontset_s
+    DARRAY_TYPE (glfont_t) glfontset_t;
+
+static glfontset_t gl_fonts = DARRAY_STATIC_INIT (16);
 
 static void
 Draw_InitText (void)
@@ -392,6 +403,8 @@ gl_Draw_Init (void)
 		width = 128;
 		height = 128;
 	}
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// initialize the character cell texture coordinates.
 	for (i = 0; i < 256; i++) {
@@ -484,6 +497,21 @@ tVA_increment (void)
 	tVAcount += 4;
 	if (tVAcount + 4 > tVAsize)
 		flush_text ();
+}
+
+void
+gl_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			gl_Draw_Character (x + i * 8, y, line[i]);
+		}
+		line += width;
+		y += 8;
+	}
 }
 
 /*
@@ -594,13 +622,13 @@ crosshair_2 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 0);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (0.5, 0);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -618,13 +646,13 @@ crosshair_3 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0.5, 0);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (1, 0);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (1, 0.5);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -642,13 +670,13 @@ crosshair_4 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 5);
 	qfglTexCoord2f (0.5, 1);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0, 1);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -666,13 +694,13 @@ crosshair_5 (int x, int y)	//FIXME don't use until the data is filled in
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0.5, 0.5);
-	qfglVertex2f (x - 7, y - 7);
+	qfglVertex2f (x - 3, y - 3);
 	qfglTexCoord2f (1, 0.5);
-	qfglVertex2f (x + 9, y - 7);
+	qfglVertex2f (x + 5, y - 3);
 	qfglTexCoord2f (1, 1);
-	qfglVertex2f (x + 9, y + 9);
+	qfglVertex2f (x + 5, y + 5);
 	qfglTexCoord2f (0.5, 1);
-	qfglVertex2f (x - 7, y + 9);
+	qfglVertex2f (x - 3, y + 5);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -696,8 +724,9 @@ gl_Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	int         s = 2 * gl_2d_scale;
+	x = vid.width / s + cl_crossx;
+	y = vid.height / s + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }
@@ -729,6 +758,26 @@ gl_Draw_Pic (int x, int y, qpic_t *pic)
 	qfglVertex2f (x + pic->width, y + pic->height);
 	qfglTexCoord2f (0, 1);
 	qfglVertex2f (x, y + pic->height);
+	qfglEnd ();
+}
+
+void
+gl_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	glpic_t    *gl;
+
+	gl = (glpic_t *) pic->data;
+
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	qfglBegin (GL_QUADS);
+	qfglTexCoord2f (0, 0);
+	qfglVertex2f (x, y);
+	qfglTexCoord2f (1, 0);
+	qfglVertex2f (x + width, y);
+	qfglTexCoord2f (1, 1);
+	qfglVertex2f (x + width, y + height);
+	qfglTexCoord2f (0, 1);
+	qfglVertex2f (x, y + height);
 	qfglEnd ();
 }
 
@@ -822,7 +871,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	if (gl_constretch) {
 		ofs = 0;
 	} else
-		ofs = (vid.conview->ylen - lines) / (float) vid.conview->ylen;
+		ofs = (vid.height - gl_2d_scale * lines) / (float) vid.height;
 
 	color_0_8[3] = alpha;
 	qfglColor4ubv (color_0_8);
@@ -837,9 +886,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	qfglTexCoord2f (0, 0 + ofs);
 	qfglVertex2f (0, 0);
 	qfglTexCoord2f (1, 0 + ofs);
-	qfglVertex2f (vid.conview->xlen, 0);
+	qfglVertex2f (vid.width / gl_2d_scale, 0);
 	qfglTexCoord2f (1, 1);
-	qfglVertex2f (vid.conview->xlen, lines);
+	qfglVertex2f (vid.width / gl_2d_scale, lines);
 	qfglTexCoord2f (0, 1);
 	qfglVertex2f (0, lines);
 	qfglEnd ();
@@ -856,7 +905,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	}
 
 	int         len = strlen (cl_verstring);
-	gl_Draw_AltString (vid.conview->xlen - len * 8 - 11, lines - 14,
+	gl_Draw_AltString (vid.width - len * 8 - 11, lines - 14,
 					   cl_verstring);
 	qfglColor3ubv (color_white);
 }
@@ -870,6 +919,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 void
 gl_Draw_TileClear (int x, int y, int w, int h)
 {
+	if (!draw_backtile) {
+		return;
+	}
 	glpic_t    *gl;
 	qfglColor3ubv (color_0_8);
 	gl = (glpic_t *) draw_backtile->data;
@@ -936,9 +988,9 @@ gl_Draw_FadeScreen (void)
 	qfglBegin (GL_QUADS);
 
 	qfglVertex2f (0, 0);
-	qfglVertex2f (vid.conview->xlen, 0);
-	qfglVertex2f (vid.conview->xlen, vid.conview->ylen);
-	qfglVertex2f (0, vid.conview->ylen);
+	qfglVertex2f (vid.width, 0);
+	qfglVertex2f (vid.width, vid.height);
+	qfglVertex2f (0, vid.height);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -978,7 +1030,13 @@ GL_Set2D (void)
 void
 GL_Set2DScaled (void)
 {
-	set_2d (vid.conview->xlen, vid.conview->ylen);
+	set_2d (vid.width / gl_2d_scale, vid.height / gl_2d_scale);
+}
+
+void
+gl_Draw_SetScale (int scale)
+{
+	gl_2d_scale = scale;
 }
 
 void
@@ -1009,12 +1067,67 @@ gl_Draw_BlendScreen (quat_t color)
 
 	qfglColor4fv (color);
 	qfglVertex2f (0, 0);
-	qfglVertex2f (vid.conview->xlen, 0);
-	qfglVertex2f (vid.conview->xlen, vid.conview->ylen);
-	qfglVertex2f (0, vid.conview->ylen);
+	qfglVertex2f (vid.width, 0);
+	qfglVertex2f (vid.width, vid.height);
+	qfglVertex2f (0, vid.height);
 
 	qfglEnd ();
 
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
+}
+
+int
+gl_Draw_AddFont (font_t *rfont)
+{
+	int         fontid = gl_fonts.size;
+	DARRAY_OPEN_AT (&gl_fonts, fontid, 1);
+	glfont_t   *font = &gl_fonts.a[fontid];
+
+	font->font = rfont;
+	tex_t       tex = {
+		.width = rfont->scrap.width,
+		.height = rfont->scrap.height,
+		.format = tex_a,
+		.loaded = 1,
+		.data = rfont->scrap_bitmap,
+	};
+	font->texid = GL_LoadTex ("", 0, &tex);
+	return fontid;
+}
+
+void
+gl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
+{
+	if (fontid < 0 || (unsigned) fontid > gl_fonts.size) {
+		return;
+	}
+
+	glfont_t   *font = &gl_fonts.a[fontid];
+	font_t     *rfont = font->font;
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+
+	float       w = rect->width;
+	float       h = rect->height;
+	float       u = rect->x;
+	float       v = rect->y;
+	float       s = 1.0 / rfont->scrap.width;
+	float       t = 1.0 / rfont->scrap.height;
+
+	qfglBindTexture (GL_TEXTURE_2D, gl_fonts.a[fontid].texid);
+	qfglBegin (GL_QUADS);
+
+	byte        color[4] = { VectorExpand (vid.palette + c * 3), 255 };
+	qfglColor4ubv (color);
+	qfglTexCoord2f (u * s, v * t);
+	qfglVertex2f (x, y);
+	qfglTexCoord2f ((u + w) * s, v * t);
+	qfglVertex2f (x + w, y);
+	qfglTexCoord2f ((u + w) * s, (v + h) * t);
+	qfglVertex2f (x + w, y + h);
+	qfglTexCoord2f (u * s, (v + h) * t);
+	qfglVertex2f (x, y + h);
+
+	qfglEnd ();
+	qfglColor4ubv (color_white);
 }

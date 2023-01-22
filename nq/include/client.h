@@ -35,6 +35,8 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 
+#include "QF/scene/entity.h"
+
 #include "client/chase.h"
 #include "client/entities.h"
 #include "client/input.h"
@@ -125,8 +127,6 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every server signon
 */
 typedef struct client_state_s {
-	qboolean    loading;
-
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
@@ -165,7 +165,6 @@ typedef struct client_state_s {
 								// to decay light values and smooth step ups
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
@@ -178,13 +177,11 @@ typedef struct client_state_s {
 	int         viewentity;		// cl_entitites[cl.viewentity] = player
 	unsigned    protocol;
 	float       stdver;
-	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
-	int         watervis;
 	int         fpd;
 	int         fbskins;
 
@@ -218,7 +215,7 @@ extern int noskins;
 
 extern	client_state_t	cl;
 
-extern struct entity_s *cl_entities[MAX_EDICTS];
+extern struct entity_s cl_entities[MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
 extern struct set_s cl_forcelink;
 
@@ -278,7 +275,7 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
-struct entity_s *CL_GetEntity (int num);
+struct entity_s CL_GetEntity (int num);
 
 extern	double			realtime;
 
@@ -286,8 +283,6 @@ extern qboolean recording;
 
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);
-
-void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
 

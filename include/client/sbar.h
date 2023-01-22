@@ -28,31 +28,35 @@
 // the status bar is redrawn only if something has changed, but if anything
 // does, the entire thing will be redrawn for the next vid.numpages frames.
 
-#ifndef _SBAR_H
-#define _SBAR_H
+#ifndef __client_sbar_h
+#define __client_sbar_h
 
-#define	SBAR_HEIGHT		24
+extern qboolean sbar_showscores;
 
-extern int sb_lines;	// scan lines to draw
+struct player_info_s;
+void Sbar_Init (int *stats, float *item_gettime);
+void Sbar_SetPlayers (struct player_info_s *players, int maxplayers);
+void Sbar_SetLevelName (const char *levelname, const char *servername);
+void Sbar_SetPlayerNum (int playernum, int spectator);
+void Sbar_SetAutotrack (int autotrack);
+void Sbar_SetViewEntity (int viewentity);
+void Sbar_SetTeamplay (int teamplay);
+void Sbar_SetGameType (int gametype);
+void Sbar_SetActive (int active);
 
-void Sbar_Init (void);
+void Sbar_Update (double time);
+void Sbar_UpdatePings (void);
+void Sbar_UpdatePL (int pl);
+void Sbar_UpdateFrags (int playernum);
+void Sbar_UpdateInfo (int playernum);
+void Sbar_UpdateStats (int stat);
+void Sbar_Damage (double time);
 
-struct cvar_s;
-void Sbar_DMO_Init_f (void *data, const struct cvar_s *var);
+void Sbar_Intermission (int mode, double completed_time);
 
-void Sbar_Changed (void);
-// call whenever any of the client stats represented on the sbar changes
-
-void Sbar_Draw (void);
-// called every frame by screen
-
-void Sbar_IntermissionOverlay (void);
-// called each frame after the level has been completed
-
-void Sbar_FinaleOverlay (void);
 void Sbar_DrawCenterPrint (void);
 void Sbar_CenterPrint (const char *str);
 
-void Sbar_LogFrags (void);
+void Sbar_LogFrags (double time);
 
-#endif
+#endif//__client_sbar_h

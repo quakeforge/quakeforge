@@ -54,7 +54,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/screen.h"
@@ -89,6 +88,19 @@ VID_shutdown (void *data)
 	X11_CloseDisplay ();
 }
 
+static void
+X11_VID_SetPalette (byte *palette, byte *colormap)
+{
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.data, colormap);
+	}
+
+	VID_InitGamma (palette);
+	vid_internal.set_palette (vid_internal.data, viddef.palette);
+}
+
 /*
 	Set up color translation tables and the window.  Takes a 256-color 8-bit
 	palette.  Palette data will go away after the call, so copy it if you'll
@@ -108,11 +120,6 @@ X11_VID_Init (byte *palette, byte *colormap)
 	R_LoadModule (&vid_internal);
 
 	viddef.numpages = 2;
-	viddef.colormap8 = colormap;
-	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
-	if (vid_internal.set_colormap) {
-		vid_internal.set_colormap (vid_internal.data, colormap);
-	}
 
 	srandom (getpid ());
 
@@ -124,8 +131,7 @@ X11_VID_Init (byte *palette, byte *colormap)
 	X11_CreateNullCursor ();	// hide mouse pointer
 	vid_internal.create_context (vid_internal.data);
 
-	VID_InitGamma (palette);
-	vid_internal.set_palette (vid_internal.data, viddef.palette);
+	X11_VID_SetPalette (palette, colormap);
 
 	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
@@ -149,6 +155,7 @@ vid_system_t vid_system = {
 	.init = X11_VID_Init,
 	.init_cvars = X11_VID_Init_Cvars,
 	.update_fullscreen = X11_UpdateFullscreen,
+	.set_palette = X11_VID_SetPalette,
 };
 
 #if 0

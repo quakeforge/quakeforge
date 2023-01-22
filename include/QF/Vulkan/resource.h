@@ -21,6 +21,7 @@ typedef struct qfv_resobj_s {
 			VkDeviceSize size;
 			VkBufferUsageFlags usage;
 			VkBuffer    buffer;
+			VkDeviceSize offset;
 		}       buffer;
 		struct {
 			unsigned    buffer;
@@ -39,12 +40,14 @@ typedef struct qfv_resobj_s {
 			VkSampleCountFlags samples;
 			VkImageUsageFlags usage;
 			VkImage     image;
+			VkDeviceSize offset;
 		}       image;
 		struct {
 			unsigned    image;
 			VkImageViewType type;
 			VkFormat    format;
 			VkImageAspectFlags aspect;
+			VkComponentMapping components;
 			VkImageView view;
 		}       image_view;
 	};
@@ -57,6 +60,7 @@ typedef struct qfv_resource_s {
 	unsigned    num_objects;
 	qfv_resobj_t *objects;
 	VkDeviceMemory memory;
+	VkDeviceSize size;
 } qfv_resource_t;
 
 struct qfv_device_s;
@@ -64,5 +68,8 @@ struct qfv_device_s;
 int QFV_CreateResource (struct qfv_device_s *device, qfv_resource_t *resource);
 void QFV_DestroyResource (struct qfv_device_s *device,
 						  qfv_resource_t *resource);
+struct tex_s;
+void QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
+							   int mips, const struct tex_s *tex);
 
 #endif//__QF_Vulkan_resource_h

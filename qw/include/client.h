@@ -176,8 +176,6 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every server signon
 */
 typedef struct client_state_s {
-	qboolean    loading;
-
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
@@ -215,7 +213,6 @@ typedef struct client_state_s {
 								// can't render a frame yet
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
@@ -238,7 +235,6 @@ typedef struct client_state_s {
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
-	int         watervis;
 	int         fpd;
 	int         fbskins;
 
@@ -271,9 +267,6 @@ extern int cl_model_crcs;
 
 extern float rate;
 
-extern int hud_ping;
-extern int hud_pl;
-
 extern char *skin;
 
 extern float cl_fb_players;
@@ -282,8 +275,8 @@ extern int hud_scoreboard_uid;
 
 extern	client_state_t	cl;
 
-extern	entity_t	*cl_entities[512];
-extern	byte			cl_entity_valid[2][512];
+extern entity_t cl_entities[512];
+extern byte cl_entity_valid[2][512];
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to
@@ -297,11 +290,9 @@ extern struct cbuf_s *cl_stbuf;
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct view_s *cl_netgraph_view;
-void CL_NetGraph (struct view_s *view);
+void CL_NetGraph_Init (void);
 void CL_NetGraph_Init_Cvars (void);
-
-void CL_UpdateScreen (double realtime);
+void CL_NetUpdate (void);
 
 void CL_SetState (cactive_t state);
 
@@ -312,7 +303,5 @@ void CL_RSShot_f (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
-
-extern struct dstring_s *centerprint;
 
 #endif // _CLIENT_H

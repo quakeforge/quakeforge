@@ -545,9 +545,10 @@ main (int argc, const char **argv)
 
 	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (sv_console_plugin);
+	Con_Load (sv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = mst_cbuf;
+	Con_Init ();
 	con_list_print = Sys_Printf;
 
 	SV_InitNet ();

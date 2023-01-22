@@ -38,12 +38,22 @@
 #include <stdlib.h>
 
 #include "QF/quakefs.h"
+#include "QF/ui/font.h"
 #include "QF/ui/view.h"
 
 #include "d_iface.h"
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+
+typedef struct swfont_s {
+	font_t     *font;
+} swfont_t;
+
+typedef struct swfontset_s
+    DARRAY_TYPE (swfont_t) swfontset_t;
+
+static swfontset_t sw_fonts = DARRAY_STATIC_INIT (16);
 
 typedef struct {
 	int         width;
@@ -236,6 +246,10 @@ Draw_Init (void)
 	if (!draw_chars) {
 		qpic_t     *pic = Draw_Font8x8Pic ();
 		draw_chars = pic->data;	// FIXME indirect hold on the memory
+		//FIXME param to Draw_Font8x8Pic
+		for (int i = 0; i < pic->width * pic->height; i++) {
+			pic->data[i] = pic->data[i] == 255 ? 0 : pic->data[i];
+		}
 	}
 	if (draw_backtile) {
 		r_rectdesc.width = draw_backtile->width;
@@ -244,7 +258,6 @@ Draw_Init (void)
 		r_rectdesc.rowbytes = draw_backtile->width;
 	}
 }
-
 
 /*
 	Draw_Character
@@ -266,7 +279,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.conview->ylen - 8 || x < 0 || x > vid.conview->xlen - 8)
+	if (y > (int) vid.height - 8 || x < 0 || x > (int) vid.width - 8)
 		return;
 	if (chr > 255)
 		return;
@@ -303,6 +316,21 @@ Draw_Character (int x, int y, unsigned int chr)
 			dest[7] = source[7];
 		source += 128;
 		dest += d_rowbytes;
+	}
+}
+
+void
+sw_Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
+{
+	const byte *line = (byte *) buffer->chars;
+	int         width = buffer->width;
+	int         height = buffer->height;
+	while (height-- > 0) {
+		for (int i = 0; i < width; i++) {
+			Draw_Character (x + i * 8, y, line[i]);
+		}
+		line += width;
+		y += 8;
 	}
 }
 
@@ -464,8 +492,8 @@ Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conview->xlen / 2 + cl_crossx;
-	y = vid.conview->ylen / 2 + cl_crossy;
+	x = vid.width / 2 + cl_crossx;
+	y = vid.height / 2 + cl_crossy;
 
 	crosshair_func[ch] (x, y);
 }
@@ -487,8 +515,8 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *dest, *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (x + pic->width) > vid.conview->xlen
-		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
+	if (x < 0 || (x + pic->width) > (int) vid.width
+		|| y < 0 || (y + pic->height) > (int) vid.height) {
 		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
@@ -498,37 +526,64 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	dest = d_viewbuffer + y * d_rowbytes + x;
 
-	if (pic->width & 7) {			// general
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u++)
-				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-					dest[u] = tbyte;
+	for (v = 0; v < pic->height; v++) {
+		for (u = 0; u < pic->width; u++)
+			if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+				dest[u] = tbyte;
 
-			dest += d_rowbytes;
-			source += pic->width;
-		}
-	} else {						// unwound
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u += 8) {
-				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-					dest[u] = tbyte;
-				if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
-					dest[u + 1] = tbyte;
-				if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
-					dest[u + 2] = tbyte;
-				if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
-					dest[u + 3] = tbyte;
-				if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
-					dest[u + 4] = tbyte;
-				if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
-					dest[u + 5] = tbyte;
-				if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
-					dest[u + 6] = tbyte;
-				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
-					dest[u + 7] = tbyte;
+		dest += d_rowbytes;
+		source += pic->width;
+	}
+}
+
+void
+Draw_FitPic (int x, int y, int width, int height, qpic_t *pic)
+{
+	int         v_width = vid.width;
+	int         v_height = vid.height;
+	if (x > v_width || y > v_width || x + width <= 0 || y + height <= 0) {
+		return;
+	}
+	if (width == pic->width && height == pic->height) {
+		Draw_Pic (x, y, pic);
+		return;
+	}
+	int         sstep = pic->width * 0x10000 / width;
+	int         tstep = pic->height * 0x10000 / height;
+	int         sx = 0, ex = width;
+	int         sy = 0, ey = height;
+
+	if (x < 0) {
+		sx -= x;
+		ex += x;
+	}
+	if (y < 0) {
+		sy -= y;
+		ey += y;
+	}
+	if (x + width > v_width) {
+		ex -= x + width - v_width;
+	}
+	if (y + height > v_height) {
+		ey -= y + height - v_height;
+	}
+	x += sx;
+	y += sy;
+
+	byte       *src, *dst;
+
+	// draw the pic
+	dst = d_viewbuffer + y * d_rowbytes + x;
+
+	for (int y = sy; y < sy + ey; y++, dst += d_rowbytes) {
+		src = pic->data + ((y * tstep) >> 16) * pic->width;
+		if (width == pic->width)
+			memcpy (dst, src, width);
+		else {
+			int         f = sx * sstep;
+			for (int x = 0; x < ex; x++, f += sstep) {
+				dst[x] = src[f >> 16];
 			}
-			dest += d_rowbytes;
-			source += pic->width;
 		}
 	}
 }
@@ -546,8 +601,8 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *dest, *source, tbyte;
 	int         u, v;
 
-	if ((x < 0) || (x + width > vid.conview->xlen)
-		|| (y < 0) || (y + height > vid.conview->ylen)) {
+	if ((x < 0) || (x + width > (int) vid.width)
+		|| (y < 0) || (y + height > (int) vid.height)) {
 		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
@@ -615,7 +670,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
-	int         x, y, v;
 	byte       *src, *dest;
 	int         f, fstep;
 	qpic_t     *conback;
@@ -625,28 +679,22 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	// draw the pic
 	dest = d_viewbuffer;
 
-	for (y = 0; y < lines; y++, dest += d_rowbytes) {
-		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
+	for (int y = 0; y < lines; y++, dest += d_rowbytes) {
+		int         v = (vid.height - lines + y) * 200 / vid.height;
 		src = conback->data + v * 320;
-		if (vid.conview->xlen == 320)
-			memcpy (dest, src, vid.conview->xlen);
+		if (vid.width == 320)
+			memcpy (dest, src, vid.width);
 		else {
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conview->xlen;
-			for (x = 0; x < vid.conview->xlen; x += 4) {
+			fstep = 320 * 0x10000 / vid.width;
+			for (unsigned x = 0; x < vid.width; x++) {
 				dest[x] = src[f >> 16];
-				f += fstep;
-				dest[x + 1] = src[f >> 16];
-				f += fstep;
-				dest[x + 2] = src[f >> 16];
-				f += fstep;
-				dest[x + 3] = src[f >> 16];
 				f += fstep;
 			}
 		}
 	}
 
-	Draw_AltString (vid.conview->xlen - strlen (cl_verstring) * 8 - 11,
+	Draw_AltString (vid.width - strlen (cl_verstring) * 8 - 11,
 					lines - 14, cl_verstring);
 }
 
@@ -753,8 +801,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	byte       *dest;
 	int         u, v;
 
-	if (x < 0 || x + w > vid.conview->xlen
-		|| y < 0 || y + h > vid.conview->ylen) {
+	if (x < 0 || x + w > (int) vid.width || y < 0 || y + h > (int) vid.height) {
 		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
@@ -885,12 +932,12 @@ test_point (int x, int y)
 
 	if (x < 0) {
 		c |= 1;
-	} else if (x >= vid.conview->xlen) {
+	} else if (x >= (int) vid.width) {
 		c |= 2;
 	}
 	if (y < 0) {
 		c |= 4;
-	} else if (y >= vid.conview->ylen) {
+	} else if (y >= (int) vid.height) {
 		c |= 8;
 	}
 	return c;
@@ -901,8 +948,8 @@ Draw_Line (int x0, int y0, int x1, int y1, int c)
 {
 	byte        c0 = test_point (x0, y0);
 	byte        c1 = test_point (x1, y1);
-	int         xmax = vid.conview->xlen - 1;
-	int         ymax = vid.conview->ylen - 1;
+	int         xmax = vid.width - 1;
+	int         ymax = vid.height - 1;
 
 	while (c0 | c1) {
 		// Cohen-Sutherland line clipping
@@ -930,8 +977,8 @@ void
 Draw_FadeScreen (void)
 {
 	int         x, y;
-	int         height = vid.conview->ylen;
-	int         width = vid.conview->xlen / 4;
+	int         height = vid.height;
+	int         width = vid.width / 4;
 	uint32_t   *pbuf;
 
 	for (y = 0; y < height; y++) {
@@ -973,4 +1020,79 @@ Draw_BlendScreen (quat_t color)
 		newpal += 3;
 	}
 	vid.vid_internal->set_palette (vid.vid_internal->data, pal);
+}
+
+int
+Draw_AddFont (struct font_s *rfont)
+{
+	int         fontid = sw_fonts.size;
+	DARRAY_OPEN_AT (&sw_fonts, fontid, 1);
+	swfont_t   *font = &sw_fonts.a[fontid];
+
+	font->font = rfont;
+	return fontid;
+}
+#if 0
+typedef struct {
+	vrect_t    *glyph_rects;
+	byte       *bitmap;
+	int         width;
+	byte        color;
+} swrgctx_t;
+
+static void
+sw_render_glyph (uint32_t glyphid, int x, int y, void *_rgctx)
+{
+	swrgctx_t  *rgctx = _rgctx;
+
+	float       w = rect->width;
+	float       h = rect->height;
+	if (x < 0 || y < 0 || x + w > vid.width || y + h > vid.height) {
+		return;
+	}
+	int         u = rect->x;
+	int         v = rect->y;
+	byte        c = rgctx->color;
+	byte       *src = rgctx->bitmap + v * rgctx->width + u;
+	byte       *dst = d_viewbuffer + y * d_rowbytes + x;
+	while (h-- > 0) {
+		for (int i = 0; i < w; i++) {
+			if (src[i] > 127) {
+				dst[i] = c;
+			}
+		}
+		src += rgctx->width;
+		dst += d_rowbytes;
+	}
+}
+#endif
+void
+Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
+{
+	if (fontid < 0 || (unsigned) fontid > sw_fonts.size) {
+		return;
+	}
+	swfont_t   *font = &sw_fonts.a[fontid];
+	font_t     *rfont = font->font;
+	vrect_t    *rect = &rfont->glyph_rects[glyphid];
+	int         width = rfont->scrap.width;
+
+	float       w = rect->width;
+	float       h = rect->height;
+	if (x < 0 || y < 0 || x + w > vid.width || y + h > vid.height) {
+		return;
+	}
+	int         u = rect->x;
+	int         v = rect->y;
+	byte       *src = rfont->scrap_bitmap + v * width + u;
+	byte       *dst = d_viewbuffer + y * d_rowbytes + x;
+	while (h-- > 0) {
+		for (int i = 0; i < w; i++) {
+			if (src[i] > 127) {
+				dst[i] = c;
+			}
+		}
+		src += width;
+		dst += d_rowbytes;
+	}
 }

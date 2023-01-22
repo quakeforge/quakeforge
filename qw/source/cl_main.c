@@ -92,13 +92,13 @@
 
 #include "QF/plugin/console.h"
 #include "QF/scene/transform.h"
-#include "QF/scene/scene.h"
 
 #include "buildnum.h"
 #include "compat.h"
-#include "sbar.h"
 
 #include "client/particles.h"
+#include "client/sbar.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -445,42 +445,6 @@ static cvar_t host_speeds_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &host_speeds },
 };
-int hud_fps;
-static cvar_t hud_fps_cvar = {
-	.name = "hud_fps",
-	.description =
-		"display realtime frames per second",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_fps },
-};
-int hud_ping;
-static cvar_t hud_ping_cvar = {
-	.name = "hud_ping",
-	.description =
-		"display current ping to server",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_ping },
-};
-int hud_pl;
-static cvar_t hud_pl_cvar = {
-	.name = "hud_pl",
-	.description =
-		"display current packet loss to server",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_pl },
-};
-int hud_time;
-static cvar_t hud_time_cvar = {
-	.name = "hud_time",
-	.description =
-		"display the current time",
-	.default_value = "0",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &hud_time },
-};
 
 int         fps_count;
 
@@ -652,18 +616,17 @@ CL_ClearState (void)
 
 	S_StopAllSounds ();
 
-	if (cl.viewstate.weapon_entity) {
+	if (Entity_Valid (cl.viewstate.weapon_entity)) {
 		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
 	}
 	// wipe the entire cl structure
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
-	if (cl.players)
-		free (cl.players);
+	__auto_type players = cl.players;
 	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	cl.viewstate.camera_transform = cam;
-	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
+	cl.players = players;
 	SCR_SetFullscreen (0);
 
 	cl.maxclients = MAX_CLIENTS;
@@ -700,8 +663,7 @@ CL_ClearState (void)
 
 	SZ_Clear (&cls.netchan.message);
 
-	if (centerprint)
-		dstring_clearstr (centerprint);
+	Sbar_CenterPrint (0);
 }
 
 /*
@@ -907,10 +869,10 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
-		Sbar_DMO_Init_f (0, 0); // HUD setup, cl.teamplay changed
+		Sbar_SetTeamplay (cl.teamplay);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
-		cl.watervis = atoi (p);
+		cl.viewstate.watervis = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "fpd")) && *p) {
 		cl.fpd = atoi (p);
@@ -1442,6 +1404,7 @@ CL_SetState (cactive_t state)
 				&& !cls.demorecording)
 				CL_Record (0, -1);
 		}
+		Sbar_SetActive (state == ca_active);
 	}
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
 	if (state != old_state && state == ca_active) {
@@ -1471,7 +1434,6 @@ CL_Shutdown (void *data)
 	}
 	Info_Destroy (cls.userinfo);
 	Cbuf_DeleteStack (cl_stbuf);
-	dstring_delete (centerprint);
 	dstring_delete (cls.servername);
 	dstring_delete (cls.downloadtempname);
 	dstring_delete (cls.downloadname);
@@ -1499,7 +1461,8 @@ CL_Init (void)
 	r_data->lightstyle = cl.lightstyle;
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
+	Con_Load ("client");
+	CL_Init_Screen ();
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;
 		con_module->data->console->dl_percent = &cls.downloadpercent;
@@ -1510,11 +1473,13 @@ CL_Init (void)
 		Cbuf_DeleteStack (con_module->data->console->cbuf);
 		con_module->data->console->cbuf = cl_cbuf;
 	}
+	Con_Init ();
+	CL_NetGraph_Init ();
 
 	S_Init (&cl.viewentity, &host_frametime);
 	CDAudio_Init ();
 
-	Sbar_Init ();
+	Sbar_Init (cl.stats, cl.item_gettime);
 
 	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
@@ -1534,7 +1499,6 @@ CL_Init (void)
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
-	centerprint = dstring_newstr ();
 	cls.servername = dstring_newstr ();
 	cls.downloadtempname = dstring_newstr ();
 	cls.downloadname = dstring_newstr ();
@@ -1543,6 +1507,7 @@ CL_Init (void)
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 	free (cl.players);
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
+	Sbar_SetPlayers (cl.players, MAX_CLIENTS);
 
 	// register our commands
 	Cmd_AddCommand ("pointfile", pointfile_f,
@@ -1674,11 +1639,6 @@ CL_Init_Cvars (void)
 	Cvar_Register (&host_speeds_cvar, 0, 0);
 	Cvar_Register (&rcon_password_cvar, 0, 0);
 	Cvar_Register (&rcon_address_cvar, 0, 0);
-	Cvar_Register (&hud_fps_cvar, 0, 0);
-	Cvar_MakeAlias ("show_fps", &hud_fps_cvar);
-	Cvar_Register (&hud_ping_cvar, 0, 0);
-	Cvar_Register (&hud_pl_cvar, 0, 0);
-	Cvar_Register (&hud_time_cvar, 0, 0);
 	Cvar_Register (&cl_predict_players_cvar, 0, 0);
 	Cvar_Register (&cl_solid_players_cvar, 0, 0);
 	Cvar_Register (&localid_cvar, 0, 0);
@@ -1984,7 +1944,13 @@ Host_Frame (float time)
 								 || cl.stats[STAT_HEALTH] <= 0);
 	r_data->frametime = host_frametime;
 
-	CL_UpdateScreen (realtime);
+	cl.viewstate.time = realtime;
+	cl.viewstate.realtime = realtime;
+	if (!cls.demoplayback && cls.state == ca_active) {
+		CL_NetUpdate ();
+	}
+	Sbar_Update (cl.time);
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
 		time2 = Sys_DoubleTime ();
@@ -2002,7 +1968,7 @@ Host_Frame (float time)
 		S_Update (cl.viewstate.camera_transform, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (0, 0);
+		S_Update (nulltransform, 0);
 
 	CDAudio_Update ();
 
@@ -2125,8 +2091,10 @@ Host_Init (void)
 
 	CL_Init ();
 
-	CL_UpdateScreen (realtime);
-	CL_UpdateScreen (realtime);
+	cl.viewstate.time = realtime;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen (&cl.viewstate);
+	CL_UpdateScreen (&cl.viewstate);
 
 	Host_ExecConfig (cl_cbuf, !cl_quakerc);
 
@@ -2143,10 +2111,10 @@ Host_Init (void)
 
 	host_initialized = true;
 
-	CL_UpdateScreen (realtime);
+	CL_UpdateScreen (&cl.viewstate);
 	Con_NewMap ();							// force the menus to be loaded
-	CL_UpdateScreen (realtime);
-	CL_UpdateScreen (realtime);
+	CL_UpdateScreen (&cl.viewstate);
+	CL_UpdateScreen (&cl.viewstate);
 
 	if (connect_time == -1) {
 		Cbuf_AddText (cl_cbuf, "echo Type connect <internet address> or use a "

@@ -37,7 +37,6 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
-#include "QF/Vulkan/swapchain.h"
 #include "QF/Vulkan/qf_renderpass.h"
 
 #include "vid_vulkan.h"
@@ -46,9 +45,7 @@
 static plitem_t *
 get_rp_item (vulkan_ctx_t *ctx, qfv_renderpass_t *rp, const char *name)
 {
-	if (!rp->renderpassDef) {
-		rp->renderpassDef = Vulkan_GetConfig (ctx, rp->name);
-	}
+	rp->renderpassDef = Vulkan_GetConfig (ctx, rp->name);
 
 	plitem_t   *item = rp->renderpassDef;
 	if (!item) {
@@ -75,64 +72,199 @@ get_image_size (VkImage image, qfv_device_t *device)
 }
 
 static void
-create_attachements (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
-	plitem_t   *item = get_rp_item (ctx, rp, "images");
-	if (!item) {
-		return;
-	}
-
-	__auto_type images = QFV_ParseImageSet (ctx, item, rp->renderpassDef);
-	rp->attachment_images = images;
-	size_t      memSize = 0;
-	for (size_t i = 0; i < images->size; i++) {
-		memSize += get_image_size (images->a[i], device);
-	}
-	VkDeviceMemory mem;
-	mem = QFV_AllocImageMemory (device, images->a[0],
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-								memSize, 0);
-	rp->attachmentMemory = mem;
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 mem, "memory:framebuffers");
-	size_t      offset = 0;
-	for (size_t i = 0; i < images->size; i++) {
-		QFV_BindImageMemory (device, images->a[i], mem, offset);
-		offset += get_image_size (images->a[i], device);
-	}
-
-	item = get_rp_item (ctx, rp, "imageViews");
-	if (!item) {
-		return;
-	}
-
-	__auto_type views = QFV_ParseImageViewSet (ctx, item, rp->renderpassDef);
-	rp->attachment_views = views;
-
-	item = get_rp_item (ctx, rp, "framebuffer");
-	if (!item) {
-		return;
-	}
-
-	rp->framebuffers = QFV_AllocFrameBuffers (ctx->swapchain->numImages,
-											  malloc);
 	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		ctx->output.view = ctx->output.view_list[i];
-		rp->framebuffers->a[i] = QFV_ParseFramebuffer (ctx, item,
-													   rp->renderpassDef);
+		dfunc->vkDestroyFramebuffer (device->dev, rp->framebuffers->a[i], 0);
 	}
+	free (rp->framebuffers);
+	rp->framebuffers = 0;
+}
+
+void
+QFV_RenderPass_CreateAttachments (qfv_renderpass_t *renderpass)
+{
+	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type rp = renderpass;
+
+	if (rp->output.image) {
+		// if output has an image, then the view is owned by the renderpass
+		dfunc->vkDestroyImageView (device->dev, rp->output.view, 0);
+		dfunc->vkDestroyImage (device->dev, rp->output.image, 0);
+		free (rp->output.view_list);
+		rp->output.view_list = 0;
+		rp->output.view = 0;
+		rp->output.image = 0;
+	}
+	if (rp->attachment_views) {
+		for (size_t i = 0; i < rp->attachment_views->size; i++) {
+			dfunc->vkDestroyImageView (device->dev,
+									   rp->attachment_views->a[i], 0);
+		}
+		free (rp->attachment_views);
+		rp->attachment_views = 0;
+	}
+	if (rp->attachment_images) {
+		for (size_t i = 0; i < rp->attachment_images->size; i++) {
+			dfunc->vkDestroyImage (device->dev, rp->attachment_images->a[i], 0);
+		}
+		free (rp->attachment_images);
+		rp->attachment_images = 0;
+	}
+
+	plitem_t   *output_def = get_rp_item (ctx, rp, "output");
+	plitem_t   *images_def = get_rp_item (ctx, rp, "images");
+	plitem_t   *views_def = get_rp_item (ctx, rp, "imageViews");
+
+	plitem_t   *rp_def = rp->renderpassDef;
+
+	size_t      memSize = 0;
+	VkImage     ref_image = 0;
+	if (output_def) {
+		// QFV_ParseOutput clears the structure, but extent and frames need to
+		// be preserved
+		qfv_output_t output = rp->output;
+		QFV_ParseOutput (ctx, &output, output_def, rp_def);
+		rp->output.format = output.format;
+		rp->output.finalLayout = output.finalLayout;
+
+		plitem_t   *image = PL_ObjectForKey (output_def, "image");
+		Vulkan_Script_SetOutput (ctx, &rp->output);
+		rp->output.image = QFV_ParseImage (ctx, image, rp_def);
+		memSize += get_image_size (rp->output.image, device);
+		ref_image = rp->output.image;
+	}
+	if (images_def) {
+		__auto_type images = QFV_ParseImageSet (ctx, images_def, rp_def);
+		rp->attachment_images = images;
+		ref_image = images->a[0];
+		for (size_t i = 0; i < images->size; i++) {
+			memSize += get_image_size (images->a[i], device);
+		}
+	}
+	VkDeviceMemory mem = rp->attachmentMemory;
+	if (memSize > rp->attachmentMemory_size) {
+		if (rp->attachmentMemory) {
+			dfunc->vkFreeMemory (device->dev, rp->attachmentMemory, 0);
+		}
+		rp->attachmentMemory_size = memSize;
+		mem = QFV_AllocImageMemory (device, ref_image,
+									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+									memSize, 0);
+		rp->attachmentMemory = mem;
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+							 mem, "memory:framebuffers");
+	}
+	size_t      offset = 0;
+	if (rp->output.image) {
+		QFV_BindImageMemory (device, rp->output.image, mem, offset);
+		offset += get_image_size (rp->output.image, device);
+
+		plitem_t   *view = PL_ObjectForKey (output_def, "view");
+		Vulkan_Script_SetOutput (ctx, &rp->output);
+		rp->output.view = QFV_ParseImageView (ctx, view, rp_def);
+		rp->output.view_list = malloc (rp->output.frames
+									   * sizeof (VkImageView));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
+							 rp->output.image,
+							 va (ctx->va_ctx, "image:%s:output", rp->name));
+		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE_VIEW,
+							 rp->output.view,
+							 va (ctx->va_ctx, "iview:%s:output", rp->name));
+		for (uint32_t i = 0; i < rp->output.frames; i++) {
+			rp->output.view_list[i] = rp->output.view;
+		}
+	}
+	if (rp->attachment_images) {
+		__auto_type images = rp->attachment_images;
+		for (size_t i = 0; i < images->size; i++) {
+			QFV_BindImageMemory (device, images->a[i], mem, offset);
+			offset += get_image_size (images->a[i], device);
+		}
+	}
+
+	if (views_def) {
+		__auto_type views = QFV_ParseImageViewSet (ctx, views_def, rp_def);
+		rp->attachment_views = views;
+	}
+}
+
+void
+QFV_RenderPass_CreateRenderPass (qfv_renderpass_t *renderpass)
+{
+	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
+	__auto_type rp = renderpass;
+
+	plitem_t   *rp_cfg = get_rp_item (ctx, rp, "renderpass");
+	if (rp_cfg) {
+		hashtab_t  *tab = ctx->script_context->renderpasses;
+		const char *path;
+		path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", rp->name);
+		__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
+		if (renderpass) {
+			rp->renderpass = renderpass;
+		} else {
+			Vulkan_Script_SetOutput (ctx, &rp->output);
+			rp->renderpass =  QFV_ParseRenderPass (ctx, rp_cfg,
+												   rp->renderpassDef);
+			QFV_AddHandle (tab, path, (uint64_t) rp->renderpass);
+			QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
+								 rp->renderpass, va (ctx->va_ctx,
+													 "renderpass:%s",
+													 rp->name));
+		}
+		rp->subpassCount = PL_A_NumObjects (PL_ObjectForKey (rp_cfg,
+															 "subpasses"));
+	}
+
+
+	plitem_t   *item = get_rp_item (ctx, rp, "clearValues");
+	rp->clearValues = QFV_ParseClearValues (ctx, item, rp->renderpassDef);
+}
+
+void
+QFV_RenderPass_CreateFramebuffer (qfv_renderpass_t *renderpass)
+{
+	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
+	__auto_type rp = renderpass;
+
+	if (renderpass->framebuffers) {
+		destroy_framebuffers (ctx, renderpass);
+	}
+
+	plitem_t   *fb_def = get_rp_item (ctx, rp, "framebuffer");
+	plitem_t   *rp_def = rp->renderpassDef;
+	if (fb_def) {
+		rp->framebuffers = QFV_AllocFrameBuffers (rp->output.frames, malloc);
+		for (size_t i = 0; i < rp->framebuffers->size; i++) {
+			rp->output.view = rp->output.view_list[i];
+			Vulkan_Script_SetOutput (ctx, &rp->output);
+			rp->framebuffers->a[i] = QFV_ParseFramebuffer (ctx, fb_def, rp_def);
+		}
+	}
+
+	int         width = rp->output.extent.width;
+	int         height = rp->output.extent.height;
+	rp->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
+	rp->scissor = (VkRect2D) { {0, 0}, {width, height} };
+	rp->renderArea = (VkRect2D) { {0, 0}, {width, height} };
 }
 
 static void
 init_renderframe (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 				  qfv_renderframe_t *rFrame)
 {
-	rFrame->subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	rFrame->vulkan_ctx = ctx;
 	rFrame->renderpass = rp;
+	rFrame->subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+	rFrame->framebuffer = 0;
 	rFrame->subpassCount = rp->subpassCount;
+	rFrame->subpassInfo = 0;
 	if (rp->subpass_info) {
 		rFrame->subpassInfo = rp->subpass_info->a;
 	}
@@ -149,6 +281,15 @@ destroy_attachments (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	if (rp->output.image) {
+		// if output has an image, then the view is owned by the renderpass
+		dfunc->vkDestroyImageView (device->dev, rp->output.view, 0);
+		dfunc->vkDestroyImage (device->dev, rp->output.image, 0);
+		free (rp->output.view_list);
+		rp->output.view_list = 0;
+		rp->output.view = 0;
+		rp->output.image = 0;
+	}
 	if (rp->attachment_views) {
 		for (size_t i = 0; i < rp->attachment_views->size; i++) {
 			dfunc->vkDestroyImageView (device->dev,
@@ -178,48 +319,15 @@ destroy_renderframes (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	}
 }
 
-static void
-destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	for (size_t i = 0; i < rp->framebuffers->size; i++) {
-		dfunc->vkDestroyFramebuffer (device->dev, rp->framebuffers->a[i], 0);
-	}
-	free (rp->framebuffers);
-}
-
 qfv_renderpass_t *
-Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
-						 qfv_output_t *output, qfv_draw_t draw)
+QFV_RenderPass_New (vulkan_ctx_t *ctx, const char *name, qfv_draw_t function)
 {
-	plitem_t   *item;
-
 	qfv_renderpass_t *rp = calloc (1, sizeof (qfv_renderpass_t));
-
+	rp->vulkan_ctx = ctx;
 	rp->name = name;
+	rp->draw = function;
+	rp->renderpassDef = Vulkan_GetConfig (ctx, rp->name);
 
-	plitem_t   *rp_cfg = get_rp_item (ctx, rp, "renderpass");
-	if (rp_cfg) {
-		hashtab_t  *tab = ctx->renderpasses;
-		const char *path;
-		path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
-		__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
-		if (renderpass) {
-			rp->renderpass = renderpass;
-		} else {
-			ctx->output = *output;
-			rp->renderpass =  QFV_ParseRenderPass (ctx, rp_cfg,
-												   rp->renderpassDef);
-			QFV_AddHandle (tab, path, (uint64_t) rp->renderpass);
-			QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
-								 rp->renderpass, va (ctx->va_ctx,
-													 "renderpass:%s", name));
-		}
-		rp->subpassCount = PL_A_NumObjects (PL_ObjectForKey (rp_cfg,
-															 "subpasses"));
-	}
 	plitem_t   *rp_info = get_rp_item (ctx, rp, "info");
 	if (rp_info) {
 		plitem_t   *subpass_info = PL_ObjectForKey (rp_info, "subpass_info");
@@ -228,7 +336,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 												   rp->renderpassDef);
 			if (rp->subpass_info->size < rp->subpassCount) {
 				Sys_Printf ("warning:%s:%d: insufficient entries in "
-							"subpass_info\n", name, PL_Line (subpass_info));
+							"subpass_info\n", rp->name, PL_Line (subpass_info));
 			}
 			if (!rp->subpassCount) {
 				rp->subpassCount = rp->subpass_info->size;
@@ -240,31 +348,22 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx, const char *name,
 			QFV_ParseRGBA (ctx, (float *)&rp->color, color, rp->renderpassDef);
 		}
 	}
-
-	int         width = output->extent.width;
-	int         height = output->extent.height;
-	rp->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
-	rp->scissor = (VkRect2D) { {0, 0}, {width, height} };
+	if (!rp->subpassCount) {
+		rp->subpassCount = 1;
+	}
 
 	DARRAY_INIT (&rp->frames, 4);
 	DARRAY_RESIZE (&rp->frames, ctx->frames.size);
 	for (size_t i = 0; i < rp->frames.size; i++) {
 		init_renderframe (ctx, rp, &rp->frames.a[i]);
 	}
-
-	create_attachements (ctx, rp);
-
-	item = get_rp_item (ctx, rp, "clearValues");
-	rp->clearValues = QFV_ParseClearValues (ctx, item, rp->renderpassDef);
-
-	rp->draw = draw;
-
 	return rp;
 }
 
 void
-Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass)
+QFV_RenderPass_Delete (qfv_renderpass_t *renderpass)
 {
+	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 

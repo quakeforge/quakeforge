@@ -297,9 +297,10 @@ qtv_init (void)
 
 	Cvar_Register (&qtv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (qtv_console_plugin);
+	Con_Load (qtv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = qtv_cbuf;
+	Con_Init ();
 	Sys_SetStdPrintf (qtv_print);
 
 	qtv_sbar_init ();

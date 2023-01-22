@@ -118,6 +118,19 @@ VID_shutdown (void *data)
 }
 
 static void
+Win_VID_SetPalette (byte *palette, byte *colormap)
+{
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.data, colormap);
+	}
+
+	VID_InitGamma (palette);
+	viddef.vid_internal->set_palette (win_sw_context, palette);
+}
+
+static void
 Win_VID_Init (byte *palette, byte *colormap)
 {
 	Sys_RegisterShutdown (VID_shutdown, 0);
@@ -131,11 +144,6 @@ Win_VID_Init (byte *palette, byte *colormap)
 	R_LoadModule (&vid_internal);
 
 	viddef.numpages = 1;
-	viddef.colormap8 = colormap;
-	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
-	if (vid_internal.set_colormap) {
-		vid_internal.set_colormap (vid_internal.data, colormap);
-	}
 
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();
@@ -144,8 +152,7 @@ Win_VID_Init (byte *palette, byte *colormap)
 	Win_CreateWindow (viddef.width, viddef.height);
 	vid_internal.create_context (win_sw_context);
 
-	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (win_sw_context, palette);
+	Win_VID_SetPalette (palette, colormap);
 
 	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
@@ -166,6 +173,7 @@ Win_VID_Init_Cvars (void)
 
 vid_system_t vid_system = {
 	.init = Win_VID_Init,
+	.set_palette = Win_VID_SetPalette,
 	.init_cvars = Win_VID_Init_Cvars,
 };
 

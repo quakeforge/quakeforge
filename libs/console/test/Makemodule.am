@@ -1,0 +1,15 @@
+libs_console_tests = \
+	libs/console/test/test-buffer
+
+TESTS += $(libs_console_tests)
+
+check_PROGRAMS += $(libs_console_tests)
+
+test_console_libs= \
+	libs/console/libQFconsole.la \
+	libs/util/libQFutil.la
+
+libs_console_test_test_buffer_SOURCES= \
+	libs/console/test/test-buffer.c
+libs_console_test_test_buffer_LDADD=		$(test_console_libs)
+libs_console_test_test_buffer_DEPENDENCIES=$(test_console_libs)

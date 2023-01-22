@@ -32,6 +32,6 @@
 
 struct entity_s;
 void gl_R_InitSprites (void);
-extern void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
+extern void (*gl_R_DrawSpriteModel) (struct entity_s ent);
 
 #endif//__QF_GL_qf_sprite_h

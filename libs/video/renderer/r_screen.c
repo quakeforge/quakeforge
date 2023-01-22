@@ -55,7 +55,6 @@
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
 
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
@@ -67,8 +66,6 @@ int        *r_face_visframes;	//FIXME per renderer
 
 qboolean    scr_skipupdate;
 static qboolean scr_initialized;// ready to draw
-static qpic_t *scr_ram;
-static qpic_t *scr_turtle;
 
 static framebuffer_t *fisheye_cube_map;
 static framebuffer_t *warp_buffer;
@@ -176,21 +173,18 @@ SCR_SetFOV (float fov)
 static void
 SCR_CalcRefdef (void)
 {
-	view_t     *view = r_data->scr_view;
-	const vrect_t *rect = &r_data->refdef->vrect;
-
 	r_data->vid->recalc_refdef = 0;
-
-	view_setgeometry (view, rect->x, rect->y, rect->width, rect->height);
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
+	if (r_funcs->bind_framebuffer) {
+		r_funcs->bind_framebuffer (0);
+	}
 }
 
 static void
 render_scene (void)
 {
-	r_framecount++;
 	EntQueue_Clear (r_ent_queue);
 	r_funcs->render_view ();
 	r_funcs->draw_particles (&r_psystem);
@@ -227,67 +221,16 @@ render_side (int side)
 }
 
 void
-SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen_legacy (transform_t camera, double realtime,
+						 SCR_Func *scr_funcs)
 {
-	if (scr_skipupdate || !scr_initialized) {
-		return;
-	}
-
-	if (r_timegraph || r_speeds || r_dspeeds) {
-		r_time1 = Sys_DoubleTime ();
-	}
-
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
 	}
-
-	refdef_t   *refdef = r_data->refdef;
-	if (camera) {
-		Transform_GetWorldMatrix (camera, refdef->camera);
-		Transform_GetWorldInverse (camera, refdef->camera_inverse);
-	} else {
-		mat4fidentity (refdef->camera);
-		mat4fidentity (refdef->camera_inverse);
+	if (r_dowarp && !warp_buffer) {
+		warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
+													r_data->vid->height);
 	}
-
-	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
-	// camera forward vector (camera Y) points along the world +X axis and the
-	// camera right vector (camera X) points along the world -Y axis. This
-	// should not be necessary here but is due to AngleVectors (and thus
-	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
-	// as right). Fixing this would take an audit of the usage of both, but is
-	// probably worthwhile in the long run.
-	refdef->frame.mat[0] = -refdef->camera[1];
-	refdef->frame.mat[1] =  refdef->camera[0];
-	refdef->frame.mat[2] =  refdef->camera[2];
-	refdef->frame.mat[3] =  refdef->camera[3];
-	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
-
-	r_data->realtime = realtime;
-	scr_copytop = r_data->scr_copyeverything = 0;
-
-	if (r_data->vid->recalc_refdef) {
-		SCR_CalcRefdef ();
-	}
-
-	R_RunParticles (r_data->frametime);
-	R_AnimateLight ();
-	if (scr_scene && scr_scene->worldmodel) {
-		scr_scene->viewleaf = 0;
-		vec4f_t     position = refdef->frame.position;
-		scr_scene->viewleaf = Mod_PointInLeaf (position, scr_scene->worldmodel);
-		r_dowarpold = r_dowarp;
-		if (r_waterwarp) {
-			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
-		}
-		if (r_dowarp && !warp_buffer) {
-			warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
-														r_data->vid->height);
-		}
-		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
-					  r_face_visframes);
-	}
-	R_PushDlights (vec3_origin);
 
 	r_funcs->begin_frame ();
 	if (r_dowarp) {
@@ -318,13 +261,72 @@ SCR_UpdateScreen (transform_t *camera, double realtime, SCR_Func *scr_funcs)
 		}
 	}
 	r_funcs->set_2d (0);
-	view_draw (r_data->scr_view);
+	//view_draw (r_data->scr_view);
 	r_funcs->set_2d (1);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;
 	}
 	r_funcs->end_frame ();
+}
+
+void
+SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+{
+	R_RunParticles (r_data->frametime);
+
+	if (scr_skipupdate || !scr_initialized) {
+		return;
+	}
+
+	if (r_timegraph || r_speeds || r_dspeeds) {
+		r_time1 = Sys_DoubleTime ();
+	}
+
+	refdef_t   *refdef = r_data->refdef;
+	if (Transform_Valid (camera)) {
+		Transform_GetWorldMatrix (camera, refdef->camera);
+		Transform_GetWorldInverse (camera, refdef->camera_inverse);
+	} else {
+		mat4fidentity (refdef->camera);
+		mat4fidentity (refdef->camera_inverse);
+	}
+
+	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
+	// camera forward vector (camera Y) points along the world +X axis and the
+	// camera right vector (camera X) points along the world -Y axis. This
+	// should not be necessary here but is due to AngleVectors (and thus
+	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
+	// as right). Fixing this would take an audit of the usage of both, but is
+	// probably worthwhile in the long run.
+	refdef->frame.mat[0] = -refdef->camera[1];
+	refdef->frame.mat[1] =  refdef->camera[0];
+	refdef->frame.mat[2] =  refdef->camera[2];
+	refdef->frame.mat[3] =  refdef->camera[3];
+	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
+
+	r_data->realtime = realtime;
+	scr_copytop = r_data->scr_copyeverything = 0;
+
+	if (r_data->vid->recalc_refdef) {
+		SCR_CalcRefdef ();
+	}
+
+	R_AnimateLight ();
+	if (scr_scene && scr_scene->worldmodel) {
+		scr_scene->viewleaf = 0;
+		vec4f_t     position = refdef->frame.position;
+		scr_scene->viewleaf = Mod_PointInLeaf (position, scr_scene->worldmodel);
+		r_dowarpold = r_dowarp;
+		if (r_waterwarp) {
+			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
+		}
+		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
+					  r_face_visframes);
+	}
+	r_framecount++;
+	R_PushDlights (vec3_origin);
+	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
 }
 
 static void
@@ -430,77 +432,38 @@ SCR_SizeDown_f (void)
 	r_data->vid->recalc_refdef = 1;
 }
 
-void
-SCR_DrawRam (void)
-{
-	if (!scr_showram)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	//FIXME view
-	r_funcs->Draw_Pic (r_data->scr_view->xpos + 32, r_data->scr_view->ypos,
-					   scr_ram);
-}
-
-void
-SCR_DrawTurtle (void)
-{
-	static int  count;
-
-	if (!scr_showturtle)
-		return;
-
-	if (r_data->frametime < 0.1) {
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-
-	//FIXME view
-	r_funcs->Draw_Pic (r_data->scr_view->xpos, r_data->scr_view->ypos,
-					   scr_turtle);
-}
-
-void
-SCR_DrawPause (void)
-{
-	qpic_t     *pic;
-
-	if (!scr_showpause)		// turn off for screenshots
-		return;
-
-	if (!r_data->paused)
-		return;
-
-	//FIXME view conwidth
-	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	r_funcs->Draw_Pic ((r_data->vid->conview->xlen - pic->width) / 2,
-					   (r_data->vid->conview->ylen - 48 - pic->height) / 2,
-					   pic);
-}
-
 static void
 viewsize_listener (void *data, const cvar_t *cvar)
 {
 	update_vrect ();
 }
 
+static void
+vidsize_listener (void *data, const viddef_t *vdef)
+{
+	update_vrect ();
+	if (fisheye_cube_map) {
+		r_funcs->destroy_frame_buffer (fisheye_cube_map);
+		fisheye_cube_map = 0;
+	}
+	if (warp_buffer) {
+		r_funcs->destroy_frame_buffer (warp_buffer);
+		warp_buffer = 0;
+	}
+	r_funcs->set_fov (tan_fov_x, tan_fov_y);
+}
+
 void
 SCR_Init (void)
 {
+	//r_data->scr_view->xlen = r_data->vid->width;
+	//r_data->scr_view->ylen = r_data->vid->height;
+
 	// register our commands
 	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "
 					"saves as qfxxxx.png in the QF directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
-
-	scr_ram = r_funcs->Draw_PicFromWad ("ram");
-	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
 
 	scr_initialized = true;
 
@@ -508,12 +471,17 @@ SCR_Init (void)
 
 	cvar_t     *var = Cvar_FindVar ("viewsize");
 	Cvar_AddListener (var, viewsize_listener, 0);
+	VID_OnVidResize_AddListener (vidsize_listener, 0);
 	update_vrect ();
 }
 
 void
 SCR_NewScene (scene_t *scene)
 {
+	if (scr_scene) {
+		ECS_RemoveEntities (scr_scene->reg, scene_visibility);
+		R_ClearEfrags ();
+	}
 	scr_scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &scr_scene->worldmodel->brush;

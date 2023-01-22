@@ -46,6 +46,7 @@
 #include "QF/zone.h"
 
 #include "QF/sound.h"
+#include "QF/scene/transform.h"
 
 #ifdef _WIN32
 # include "winquake.h"
@@ -88,7 +89,7 @@ main (int argc, const char *argv[])
 	while (1) {
 		Cbuf_Execute_Stack (testsound_cbuf);
 
-		S_Update (0, 0);
+		S_Update (nulltransform, 0);
 		usleep(20 * 1000);
 	}
 	Sys_Quit ();

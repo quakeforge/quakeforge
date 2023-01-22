@@ -42,12 +42,10 @@ typedef struct qfv_matrix_buffer_s {
 	mat4f_t     View;
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
+	vec2f_t     ScreenSize;
+	vec2f_t     pad;		//FIXME shouldn't need this (for gpu align)
+	vec4f_t     pad2[3];
 } qfv_matrix_buffer_t;
-
-#define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_ATTACH_INFOS 5
-#define LIGHTING_SHADOW_INFOS MaxLights
-#define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
 typedef struct matrixframe_s {
 	//VkCommandBuffer cmd;

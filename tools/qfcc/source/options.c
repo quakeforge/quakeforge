@@ -742,7 +742,7 @@ DecodeArgs (int argc, char **argv)
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
 		if (options.math.vector_mult == 0)
-			options.math.vector_mult = options.advanced == 1 ? DOT : '*';
+			options.math.vector_mult = options.advanced == 1 ? DOT : HADAMARD;
 	} else {
 		options.code.promote_float = 0;
 	}

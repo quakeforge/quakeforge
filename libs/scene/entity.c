@@ -35,8 +35,6 @@
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 
-#include "scn_internal.h"
-
 entqueue_t *
 EntQueue_New (int num_queues)
 {
