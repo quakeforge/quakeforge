@@ -366,7 +366,7 @@ pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 waterwarp_src = $(vkshaderpath)/waterwarp.frag
 waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
 
-$(slice_vert_c): $(slice_vert_src) $(matrices_h)
+$(slice_c): $(slice_src) $(matrices_h)
 
 $(linev_c): $(linev_src) $(matrices_h)
 $(linef_c): $(linef_src)
@@ -374,7 +374,7 @@ $(linef_c): $(linef_src)
 $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
-$(particleg_c): $(particleg_src)
+$(particleg_c): $(particleg_src) $(matrices_h)
 $(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
@@ -399,7 +399,7 @@ $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
 $(bsp_gbufv_c): $(bsp_gbufv_src) $(entity_h) $(matrices_h)
 
-$(bsp_gbufg_c): $(bsp_gbufg_src)
+$(bsp_gbufg_c): $(bsp_gbufg_src) $(matrices_h)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
