@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
 layout (set = 0, binding = 0) uniform
 #include "matrices.h"
@@ -28,7 +29,7 @@ main()
 
 	for (int vert = 0; vert < 3; vert++) {
 		vec4        p = gl_in[vert].gl_Position;
-		gl_Position = Projection3d * (View * (p));
+		gl_Position = Projection3d * (View[gl_ViewIndex] * (p));
 		tl_st = v_tl_st[vert];
 		direction = v_direction[vert];
 		color = v_color[vert];

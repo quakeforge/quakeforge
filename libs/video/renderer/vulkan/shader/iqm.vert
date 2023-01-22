@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
 layout (constant_id = 0) const bool IQMDepthOnly = false;
 
@@ -40,7 +41,7 @@ main (void)
 	m += bones[vbones.z] * vweights.z;
 	m += bones[vbones.w] * vweights.w;
 	vec4        pos = Model * vec4 (vec4(vposition, 1) * m, 1);
-	gl_Position = Projection3d * (View * pos);
+	gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 
 	if (!IQMDepthOnly) {
 		position = pos;

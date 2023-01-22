@@ -103,8 +103,8 @@ Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
 {
 	__auto_type mctx = ctx->matrix_context;
 
-	if (memcmp (mctx->matrices.View, view, sizeof (mat4f_t))) {
-		memcpy (mctx->matrices.View, view, sizeof (mat4f_t));
+	if (memcmp (mctx->matrices.View[0], view, sizeof (mat4f_t))) {
+		memcpy (mctx->matrices.View[0], view, sizeof (mat4f_t));
 		mctx->dirty = mctx->frames.size;
 	}
 }
@@ -238,7 +238,9 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 	mctx->sky_time = vr_data.realtime;
 
 	mat4fidentity (mctx->matrices.Projection3d);
-	mat4fidentity (mctx->matrices.View);
+	for (int i = 0; i < 6; i++) {
+		mat4fidentity (mctx->matrices.View[i]);
+	}
 	mat4fidentity (mctx->matrices.Sky);
 	mat4fidentity (mctx->matrices.Projection2d);
 

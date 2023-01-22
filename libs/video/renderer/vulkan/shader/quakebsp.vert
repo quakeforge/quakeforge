@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
 #include "entity.h"
 
@@ -23,7 +24,7 @@ void
 main (void)
 {
 	vec3        vert = vertex * entities[entid].transform;
-	gl_Position = Projection3d * (View * vec4 (vert, 1));
+	gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
 	direction = (Sky * vertex).xyz;
 	tl_st = tl_uv;
 	color = entities[entid].color;

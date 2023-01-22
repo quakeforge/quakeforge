@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
 layout (set = 0, binding = 0) uniform
 #include "matrices.h"
@@ -23,5 +24,5 @@ main (void)
 
 	vertex = mix (vertexa, vertexb, blend);
 	pos = (Model * vertex);
-	gl_Position = Projection3d * (View * pos);
+	gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 }

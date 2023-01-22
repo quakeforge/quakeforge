@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
 layout (set = 0, binding = 0) uniform
 #include "matrices.h"
@@ -23,8 +24,8 @@ void
 main (void)
 {
 	// geometry shader will take care of Projection
-	gl_Position = View * (Model * position);
-	o_velocity = View * (Model * velocity);
+	gl_Position = View[gl_ViewIndex] * (Model * position);
+	o_velocity = View[gl_ViewIndex] * (Model * velocity);
 	uint        c = floatBitsToInt (color.x);
 	uint        x = c & 0x0f;
 	uint        y = (c >> 4) & 0x0f;

@@ -39,7 +39,7 @@
 typedef struct qfv_matrix_buffer_s {
 	// projection and view matrices (model is push constant)
 	mat4f_t     Projection3d;
-	mat4f_t     View;
+	mat4f_t     View[6];
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
 	vec2f_t     ScreenSize;
