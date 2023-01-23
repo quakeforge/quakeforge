@@ -589,26 +589,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
-	transform_t transform = Entity_Transform (ent);
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
-	float       radius;
-	vec3_t      mins, maxs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	mat4f_t mat;
-	Transform_GetWorldMatrix (transform, mat);
-	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
-		radius = model->radius;
-		if (R_CullSphere (pass->frustum, (vec_t*)&mat[3], radius)) { //FIXME
-			return 1;
-		}
-	} else {
-		VectorAdd (mat[3], model->mins, mins);
-		VectorAdd (mat[3], model->maxs, maxs);
-		if (R_CullBox (pass->frustum, mins, maxs))
-			return 1;
-	}
 	if (Vulkan_Scene_AddEntity (ctx, ent) < 0) {
 		return 0;
 	}
@@ -686,9 +670,6 @@ test_node (const bsp_pass_t *pass, int node_id)
 	if (node_id < 0)
 		return 0;
 	if (pass->node_frames[node_id] != pass->vis_frame)
-		return 0;
-	mnode_t    *node = pass->brush->nodes + node_id;
-	if (R_CullBox (pass->frustum, node->minmaxs, node->minmaxs + 3))
 		return 0;
 	return 1;
 }
@@ -1053,7 +1034,6 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 
 	bctx->main_pass.bsp_context = bctx;
 	bctx->main_pass.position = r_refdef.frame.position;
-	bctx->main_pass.frustum = r_refdef.frustum;
 	bctx->main_pass.vis_frame = r_visframecount;
 	bctx->main_pass.face_frames = r_face_visframes;
 	bctx->main_pass.leaf_frames = r_leaf_visframes;
