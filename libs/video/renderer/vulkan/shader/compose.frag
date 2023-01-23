@@ -1,5 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
+
 #define OIT_SET 1
 #include "oit_blend.finc"
 

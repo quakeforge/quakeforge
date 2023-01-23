@@ -66,6 +66,16 @@
 				}
 			);
 		};
+		fisheye_layout = {
+			@inherit = $properties.pipelineLayouts.output_layout;
+			pushConstantRanges = (
+				{
+					stageFlags = fragment;
+					offset = 0;
+					size = "2 * 4";
+				}
+			);
+		};
 	};
 
 	depthStencil = {
@@ -232,6 +242,19 @@
 				},
 			);
 			layout = waterwarp_layout;
+		};
+		fisheye = {
+			@inherit = $properties.pipelines.output_base;
+			subpass = 0;
+			stages = (
+				$properties.fstriangle.vertexStageST,
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/fisheye.frag;
+				},
+			);
+			layout = fisheye_layout;
 		};
 	};
 }

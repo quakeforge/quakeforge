@@ -1724,6 +1724,10 @@ static exprsym_t builtin_plist_syms[] = {
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/pl_output.plc"
 		},
+	{ .name = "defcube",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_defcube.plc"
+		},
 	{ .name = "deferred",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_deferred.plc"

@@ -195,6 +195,8 @@ pl_quake_def_src = libs/video/renderer/vulkan/pl_quake_def.plist
 pl_quake_def_gen = libs/video/renderer/vulkan/pl_quake_def.plc
 pl_output_src = libs/video/renderer/vulkan/pl_output.plist
 pl_output_gen = libs/video/renderer/vulkan/pl_output.plc
+rp_defcube_src = libs/video/renderer/vulkan/rp_defcube.plist
+rp_defcube_gen = libs/video/renderer/vulkan/rp_defcube.plc
 rp_deferred_src = libs/video/renderer/vulkan/rp_deferred.plist
 rp_deferred_gen = libs/video/renderer/vulkan/rp_deferred.plc
 rp_forward_src = libs/video/renderer/vulkan/rp_forward.plist
@@ -260,6 +262,7 @@ libs/video/renderer/vulkan/vkparse.lo: \
 	$(vkparse_src) \
 	$(pl_quake_def_gen) \
 	$(pl_output_gen) \
+	${rp_defcube_gen} \
 	${rp_deferred_gen} \
 	$(rp_forward_gen) \
 	$(rp_output_gen) \
@@ -363,6 +366,8 @@ fstrianglest_src = $(vkshaderpath)/fstrianglest.vert
 fstrianglest_c = $(vkshaderpath)/fstrianglest.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+fisheye_src = $(vkshaderpath)/fisheye.frag
+fisheye_c = $(vkshaderpath)/fisheye.frag.spvc
 waterwarp_src = $(vkshaderpath)/waterwarp.frag
 waterwarp_c = $(vkshaderpath)/waterwarp.frag.spvc
 
@@ -437,6 +442,8 @@ $(fstrianglest_c): $(fstrianglest_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
+$(fisheye_c): $(fisheye_src) $(matrices_h)
+
 $(waterwarp_c): $(waterwarp_src) $(matrices_h)
 
 vkshader_c = \
@@ -479,6 +486,7 @@ vkshader_c = \
 	$(fstrianglest_c) \
 	$(pushcolor_c) \
 	$(shadow_c) \
+	$(fisheye_c) \
 	$(waterwarp_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
@@ -513,6 +521,7 @@ BUILT_SOURCES += $(shader_gen)
 EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
+	$(rp_defcube_src) \
 	$(rp_deferred_src) \
 	$(rp_forward_src) \
 	$(rp_output_src) \
@@ -562,4 +571,5 @@ EXTRA_DIST += \
 	$(fstriangle_src) \
 	$(fstrianglest_src) \
 	$(pushcolor_src) \
+	$(fisheye_src) \
 	$(waterwarp_src)

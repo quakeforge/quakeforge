@@ -152,6 +152,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		VkPhysicalDeviceMultiviewFeatures multiview_features = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
 			.multiview = 1,
+			.multiviewGeometryShader = 1,
 		};
 		VkPhysicalDeviceFeatures features = {
 			.geometryShader = 1,

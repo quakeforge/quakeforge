@@ -47,8 +47,10 @@ typedef struct outputctx_s {
 	outputframeset_t frames;
 	VkPipeline   output;
 	VkPipeline   waterwarp;
+	VkPipeline   fisheye;
 	VkPipelineLayout output_layout;
 	VkPipelineLayout warp_layout;
+	VkPipelineLayout fish_layout;
 	VkSampler    sampler;
 	VkImageView  input;
 } outputctx_t;

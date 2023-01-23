@@ -245,8 +245,10 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 
 	octx->output = Vulkan_CreateGraphicsPipeline (ctx, "output");
 	octx->waterwarp = Vulkan_CreateGraphicsPipeline (ctx, "waterwarp");
+	octx->fisheye = Vulkan_CreateGraphicsPipeline (ctx, "fisheye");
 	octx->output_layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
 	octx->warp_layout = Vulkan_CreatePipelineLayout (ctx, "waterwarp_layout");
+	octx->fish_layout = Vulkan_CreatePipelineLayout (ctx, "fisheye_layout");
 	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
@@ -285,6 +287,7 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 
 	dfunc->vkDestroyPipeline (device->dev, octx->output, 0);
 	dfunc->vkDestroyPipeline (device->dev, octx->waterwarp, 0);
+	dfunc->vkDestroyPipeline (device->dev, octx->fisheye, 0);
 	free (octx->frames.a);
 	free (octx);
 }

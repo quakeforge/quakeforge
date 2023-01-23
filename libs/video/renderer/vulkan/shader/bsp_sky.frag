@@ -1,5 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
+
 #include "oit_store.finc"
 
 layout (constant_id = 0) const bool doSkyBox = false;
