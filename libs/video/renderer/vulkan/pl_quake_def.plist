@@ -811,6 +811,7 @@
 		};
 		shadow_base = {
 			@inherit      = $properties.pipelines.depth_base;
+			renderPass = shadow;
 		};
 
 		alias_shadow = {
