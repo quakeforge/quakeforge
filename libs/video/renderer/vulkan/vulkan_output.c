@@ -184,13 +184,7 @@ process_input (qfv_renderframe_t *rFrame)
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, set, 0, 0);
-	if (r_dowarp) {
-		float       time = vr_data.realtime;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
-		};
-		QFV_PushConstants (device, cmd, layout, 1, push_constants);
-	} else if (scr_fisheye) {
+	if (scr_fisheye) {
 		float       width = r_refdef.vrect.width;
 		float       height = r_refdef.vrect.height;
 
@@ -201,6 +195,12 @@ process_input (qfv_renderframe_t *rFrame)
 			{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
 		};
 		QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	} else if (r_dowarp) {
+		float       time = vr_data.realtime;
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
+		};
+		QFV_PushConstants (device, cmd, layout, 1, push_constants);
 	}
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
