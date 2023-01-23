@@ -165,8 +165,15 @@ process_input (qfv_renderframe_t *rFrame)
 
 	QFV_duCmdBeginLabel (device, cmd, "output:output");
 
-	__auto_type pipeline = r_dowarp ? octx->waterwarp : octx->output;
-	__auto_type layout = r_dowarp ? octx->warp_layout : octx->output_layout;
+	__auto_type pipeline = octx->output;
+	__auto_type layout = octx->output_layout;
+	if (scr_fisheye) {
+		pipeline = octx->fisheye;
+		layout = octx->fish_layout;
+	} else if (r_dowarp) {
+		pipeline = octx->waterwarp;
+		layout = octx->warp_layout;
+	}
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
@@ -183,6 +190,17 @@ process_input (qfv_renderframe_t *rFrame)
 			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
 		};
 		QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	} else if (scr_fisheye) {
+		float       width = r_refdef.vrect.width;
+		float       height = r_refdef.vrect.height;
+
+		float       ffov = scr_ffov * M_PI / 360;
+		float       aspect = height / width;
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
+		};
+		QFV_PushConstants (device, cmd, layout, 2, push_constants);
 	}
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
