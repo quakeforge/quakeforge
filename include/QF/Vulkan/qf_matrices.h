@@ -77,7 +77,8 @@ struct vulkan_ctx_s;
 struct qfv_renderframe_s;
 
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
-void Vulkan_SetViewMatrix (struct vulkan_ctx_s *ctx, mat4f_t view);
+void Vulkan_SetViewMatrices (struct vulkan_ctx_s *ctx, mat4f_t views[],
+							 int count);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 

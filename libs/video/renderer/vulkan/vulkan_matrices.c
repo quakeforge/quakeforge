@@ -50,26 +50,82 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/staging.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+//FIXME? The box rotations (in particular top/bottom) for vulkan are not
+//compatible with the other renderers, so need a local version
+static mat4f_t box_rotations[] = {
+	[BOX_FRONT] = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_RIGHT] = {
+		{ 0,-1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BEHIND] = {
+		{-1, 0, 0, 0},
+		{ 0,-1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_LEFT] = {
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BOTTOM] = {
+		{ 0, 0, 1, 0},
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_TOP] = {
+		{ 0, 0,-1, 0},
+		{ 0, 1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+};
+
+// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
+// z-forward, x-right, y-down.
+static mat4f_t z_up = {
+	{ 0, 0, 1, 0},
+	{-1, 0, 0, 0},
+	{ 0,-1, 0, 0},
+	{ 0, 0, 0, 1},
+};
+
 static void
 setup_view (vulkan_ctx_t *ctx)
 {
-	mat4f_t     view;
-	// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
-	// z-forward, x-right, y-down.
-	static mat4f_t z_up = {
-		{ 0, 0, 1, 0},
-		{-1, 0, 0, 0},
-		{ 0,-1, 0, 0},
-		{ 0, 0, 0, 1},
-	};
-
-	mmulf (view, z_up, r_refdef.camera_inverse);
-	Vulkan_SetViewMatrix (ctx, view);
+	//FIXME this should check for cube map rather than fisheye
+	if (scr_fisheye) {
+		__auto_type mctx = ctx->matrix_context;
+		QFV_PerspectiveTan (mctx->matrices.Projection3d, 1, 1);
+		mat4f_t     views[6];
+		for (int i = 0; i < 6; i++) {
+			mat4f_t     rotinv;
+			mat4ftranspose (rotinv, box_rotations[i]);
+			mmulf (views[i], rotinv, r_refdef.camera_inverse);
+			mmulf (views[i], z_up, views[i]);
+		}
+		Vulkan_SetViewMatrices (ctx, views, 6);
+	} else {
+		mat4f_t     view;
+		mmulf (view, z_up, r_refdef.camera_inverse);
+		Vulkan_SetViewMatrices (ctx, &view, 1);
+	}
 }
 
 static void
@@ -99,14 +155,12 @@ setup_sky (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
+Vulkan_SetViewMatrices (vulkan_ctx_t *ctx, mat4f_t views[], int count)
 {
 	__auto_type mctx = ctx->matrix_context;
 
-	if (memcmp (mctx->matrices.View[0], view, sizeof (mat4f_t))) {
-		memcpy (mctx->matrices.View[0], view, sizeof (mat4f_t));
-		mctx->dirty = mctx->frames.size;
-	}
+	memcpy (mctx->matrices.View, views, count * sizeof (mat4f_t));
+	mctx->dirty = mctx->frames.size;
 }
 
 void
