@@ -6,7 +6,7 @@ BlendFrags (vec4 color)
 	#define MAX_FRAGMENTS 64
 	FragData    frags[MAX_FRAGMENTS];
 	int         numFrags = 0;
-	ivec2       coord = ivec2(gl_FragCoord.xy);
+	ivec3       coord = ivec3(gl_FragCoord.xy, gl_ViewIndex);
 	int         index = imageLoad (heads, coord).r;
 
 	//FIXME use a heap and prioritize closer fragments

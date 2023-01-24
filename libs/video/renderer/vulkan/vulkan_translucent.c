@@ -192,7 +192,7 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 			.type = qfv_res_image_view,
 			.image_view = {
 				.image = i,
-				.type = VK_IMAGE_VIEW_TYPE_2D,
+				.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				.format = VK_FORMAT_R32_SINT,
 				.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
 			},
@@ -268,6 +268,7 @@ translucent_clear (qfv_renderframe_t *rFrame)
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = tframe->heads;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
@@ -275,13 +276,14 @@ translucent_clear (qfv_renderframe_t *rFrame)
 		{ .int32 = {-1, -1, -1, -1} },
 	};
 	VkImageSubresourceRange ranges[] = {
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS },
 	};
 	dfunc->vkCmdClearColorImage (cmd, tframe->heads,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
 	ib = imageBarriers[qfv_LT_TransferDst_to_General];
 	ib.barrier.image = tframe->heads;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
