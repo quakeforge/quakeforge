@@ -283,7 +283,7 @@
 				dstStageMask = fragment_shader|early_fragment_tests;
 				srcAccessMask = depth_stencil_attachment_write;
 				dstAccessMask = input_attachment_read|depth_stencil_attachment_read;
-				dependencyFlags = by_region;
+				dependencyFlags = by_region|view_local;
 			},
 			{
 				srcSubpass = 0;	// depth
@@ -292,7 +292,7 @@
 				dstStageMask = early_fragment_tests;
 				srcAccessMask = depth_stencil_attachment_write;
 				dstAccessMask = depth_stencil_attachment_read;
-				dependencyFlags = by_region;
+				dependencyFlags = by_region|view_local;
 			},
 			{
 				srcSubpass = 2;	// g-buffer
@@ -301,7 +301,7 @@
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
 				dstAccessMask = input_attachment_read;
-				dependencyFlags = by_region;
+				dependencyFlags = by_region|view_local;
 			},
 			{
 				srcSubpass = 3;	// lighting
@@ -310,7 +310,7 @@
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
 				dstAccessMask = input_attachment_read;
-				dependencyFlags = by_region;
+				dependencyFlags = by_region|view_local;
 			},
 			{
 				srcSubpass = 1;	// translucent-frags
@@ -319,17 +319,12 @@
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
 				dstAccessMask = input_attachment_read;
-				dependencyFlags = by_region;
+				dependencyFlags = by_region|view_local;
 			},
 		);
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks = (
-				0x0000003fu,
-				0x0000003fu,
-				0x0000003fu,
-				0x0000003fu,
-				0x0000003fu,
-			);
+			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+			viewOffsets = (    0,     0,     0,     0,     0);
 		});
 	};
 }
