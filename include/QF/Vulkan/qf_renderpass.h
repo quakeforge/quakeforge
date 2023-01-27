@@ -1,5 +1,5 @@
-#ifndef __QF_Vulkan_renderpass_h
-#define __QF_Vulkan_renderpass_h
+#ifndef __QF_Vulkan_qf_renderpass_h
+#define __QF_Vulkan_qf_renderpass_h
 
 #ifndef VK_NO_PROTOTYPES
 #define VK_NO_PROTOTYPES
@@ -85,4 +85,4 @@ void QFV_RenderPass_CreateRenderPass (qfv_renderpass_t *renderpass);
 void QFV_RenderPass_CreateFramebuffer (qfv_renderpass_t *renderpass);
 
 
-#endif//__QF_Vulkan_renderpass_h
+#endif//__QF_Vulkan_qf_renderpass_h
