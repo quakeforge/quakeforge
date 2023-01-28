@@ -1086,6 +1086,7 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	__auto_type pass = &bctx->main_pass;
 	pass->textures = 0;
 	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspDepth]);
+	draw_queue (pass, 1, layout, device, bframe->cmdSet.a[QFV_bspDepth]);
 	pass->textures = &bctx->registered_textures;
 	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspGBuffer]);
 	bsp_end (ctx);
