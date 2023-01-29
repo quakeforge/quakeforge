@@ -216,6 +216,12 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		}
 	}
 
+	// The light's intensity is calculated as
+	// I = (1 - a.w * r.y) / dot (a, r)
+	// where a is attenuation and r = vec4 (d*d, d, 1, 0)
+	// thus giving linear falloff for a = vec4 (0, 0, 1, 1/maxdist)
+	// and 1/(A*d*d + B*d + C) for a = vec4 (A, B, C, 0)
+	// Other factors contribute to the final intensity (cone angle etc)
 	vec4f_t     attenuation = { 	// inverse square
 		1, 0, 0,
 		0,
