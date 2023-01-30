@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "QF/darray.h"
+#include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
 typedef struct vulkan_frame_s {

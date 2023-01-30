@@ -49,7 +49,7 @@ int QFV_QueueSubmit (struct qfv_queue_s *queue,
 					 qfv_semaphoreset_t *signalSemaphores, VkFence fence);
 int QFV_QueueWaitIdle (struct qfv_queue_s *queue);
 
-typedef struct {
+typedef struct qfv_push_constants_s {
 	VkShaderStageFlags stageFlags;
 	uint32_t    offset;
 	uint32_t    size;

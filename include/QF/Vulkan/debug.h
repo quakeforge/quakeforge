@@ -25,10 +25,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkCmdBeginDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkCmdBeginDebugUtilsLabelEXT (cmd, &label); \
+			dfunc->vkCmdBeginDebugUtilsLabelEXT (cmd, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -44,10 +44,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkCmdInsertDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkCmdInsertDebugUtilsLabelEXT (cmd, &label); \
+			dfunc->vkCmdInsertDebugUtilsLabelEXT (cmd, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -74,10 +74,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkQueueBeginDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkQueueBeginDebugUtilsLabelEXT (queue, &label); \
+			dfunc->vkQueueBeginDebugUtilsLabelEXT (queue, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -93,10 +93,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkQueueInsertDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkQueueInsertDebugUtilsLabelEXT (queue, &label); \
+			dfunc->vkQueueInsertDebugUtilsLabelEXT (queue, &qfv_du_label); \
 		} \
 	} while (0)
 
