@@ -1,0 +1,371 @@
+properties {
+	color = {
+		bsp = "[0, 0.5, 0.6, 1]";
+		alias = "[0.6, 0.5, 0, 1]";
+		iqm = "[0.6, 0.5, 0, 1]";
+		sprite = "[0.6, 0.5, 0, 1]";
+	};
+	color_dependency = {
+		src = {
+			stage = color_attachment_output;
+			access = color_attachment_write;
+		};
+		dst = {
+			stage = fragment_shader;
+			access = input_attachment_read;
+		};
+		flags = by_region;
+	};
+	depth_dependency = {
+		src = {
+			stage = late_fragment_tests;
+			access = depth_stencil_attachment_write;
+		};
+		dst = {
+			stage = fragment_shader|early_fragment_tests;
+			access = input_attachment_read|depth_stencil_attachment_read;
+		};
+		flags = by_region;
+	};
+	image_base = {
+		imageType = `2d;
+		samples = 1;
+		extent = {
+			width = $output.extent.width;
+			height = $output.extent.height;
+			depth = 1;
+		};
+		mipLevels = 1;
+		arrayLayers = 1;
+		tiling = optimal;
+		usage = color_attachment|input_attachment|transient_attachment;
+		initialLayout = undefined;
+	};
+	view_base = {
+		viewType = `2d;
+		components = {
+			r = identity;
+			g = identity;
+			b = identity;
+			a = identity;
+		};
+		subresourceRange = {
+			aspectMask = color;
+			levelCount = 1;
+			layerCount = 1;
+		};
+	};
+	attachment_base = {
+		samples = 1;
+		loadOp = dont_care;
+		storeOp = dont_care;
+		stencilLoadOp = dont_care;
+		stencilStoreOp = dont_care;
+		initialLayout = undefined;
+		finalLayout = color_attachment_optimal;
+		clearValue = { color = "[0, 0, 0, 1]"; };
+	};
+};
+images = {
+	depth = {
+		@inherit = image_base;
+		format = x8_d24_unorm_pack32;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
+	color = {
+		@inherit = image_base;
+		format = r8g8b8a8_unorm;
+	};
+	emission = {
+		@inherit = image_base;
+		format = r16g16b16a16_sfloat;
+	};
+	normal = {
+		@inherit = image_base;
+		format = r16g16b16a16_sfloat;
+	};
+	position = {
+		@inherit = image_base;
+		format = r32g32b32a32_sfloat;
+	};
+	opaque = {
+		@inherit = image_base;
+		format = r16g16b16a16_sfloat;
+	};
+};
+views = {
+	depth = {
+		@inherit = view_base;
+		image = depth;
+		format = $images.depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
+	};
+	color = {
+		@inherit = view_base;
+		image = color;
+		format = $images.color.format;
+	};
+	emission = {
+		@inherit = view_base;
+		image = color;
+		format = $images.color.format;
+	};
+	normal = {
+		@inherit = view_base;
+		image = color;
+		format = $images.color.format;
+	};
+	position = {
+		@inherit = view_base;
+		image = color;
+		format = $images.color.format;
+	};
+	opaque = {
+		@inherit = view_base;
+		image = color;
+		format = $images.color.format;
+	};
+	output = {
+		@inherit = view_base;
+		image = $output.image;
+		format = $output.format;
+	}
+};
+renderpasses = {
+	deferred = {
+		attachments = {
+			depth = {
+				@inherit = $attachment_base;
+				format = $images.depth.format;
+				loadOp = clear;
+				finalLayout = depth_stencil_attachment_optimal;
+				clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+			};
+			color = {
+				@inherit = $attachment_base;
+				format = $images.color.format;
+				loadOp = clear;
+				finalLayout = depth_stencil_attachment_optimal;
+			};
+			emission = {
+				@inherit = $attachment_base;
+				format = $images.emission.format;
+				loadOp = clear;
+			};
+			normal = {
+				@inherit = $attachment_base;
+				format = $images.normal.format;
+			};
+			position = {
+				@inherit = $attachment_base;
+				format = $images.position.format;
+			};
+			opaque = {
+				@inherit = $attachment_base;
+				format = $images.opaque.format;
+			};
+			output = {
+				@inherit = $attachment_base;
+				format = $images.output.format;
+				loadOp = clear;
+				storeOp = store;
+				$output.finalLayout;
+			};
+		};
+		framebuffer = {
+			attachments = (depth, color, emission, normal, position, opaque,
+						   $output.view);
+			width = $output.extent.width;
+			height = $output.extent.height;
+			layers = 1;
+		};
+		subpasses = {
+			depth = {
+				color = "[ 0.5,  0.5,  0.5, 1]";
+				attachments = {
+					depth = depth_stencil_read_only_optimal;
+					preserve = (color, emission, normal, position, output);
+				};
+				pipelines = {
+					bsp:depth = {
+						color = $color.bsp;
+						pipeline = bsp_depth;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky); },
+						);
+					};
+					alias:depth = {
+						color = $color.alias;
+						pipeline = alias_depth;
+						tasks = (
+							{ func = "alias_draw"; },
+						);
+					};
+					iqm:depth = {
+						color = $color.iqm;
+						pipeline = iqm_depth;
+						tasks = (
+							{ func = "iqm_draw"; },
+						);
+					};
+					sprite:depth = {
+						color = $color.sprite;
+						pipeline = sprite_depth;
+						tasks = (
+							{ func = "sprite_draw"; },
+						);
+					};
+				};
+			};
+			translucent = {
+				color = "[ 0.25, 0.25, 0.6, 1]";
+				depend = {
+					depth = $depth_dependency;
+				}
+				attachments = {
+					depth = depth_stencil_read_only_optimal;
+					preserve = (color, emission, normal, position, output);
+				};
+				pipelines = {
+					bsp:sky = {
+						color = $color.bsp;
+						pipeline = $bsp_sky_pipeline;
+						tasks = (
+							// FIXME sky should not use OIT
+							{ func = bsp_draw_queue;
+							  params = (main, sky); },
+						);
+					};
+					bsp:trans = {
+						color = $color.bsp;
+						pipeline = bsp_turb;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, translucent); },
+							{ func = bsp_draw_queue;
+							  params = (main, turbulent); },
+						);
+					};
+					particles:trans {
+						color = $color.particles;
+						pipline = partdraw;
+						{ func = particles_draw; },
+					};
+				};
+			};
+			gbuffer = {
+				color = "[ 0.3,  0.7,  0.3, 1]";
+				depend = {
+					depth = $depth_dependency;
+				}
+				attachments = {
+					color = {
+						color = color_attachment_optimal;
+						emission = color_attachment_optimal;
+						normal = color_attachment_optimal;
+						position = color_attachment_optimal;
+					};
+					depth = depth_stencil_read_only_optimal;
+					preserve = (output);
+				};
+				pipelines = {
+					bsp:gbuffer = {
+						color = $color.bsp;
+						pipeline = bsp_gbuf;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky); },
+						);
+					};
+					alias:gbuffer = {
+						color = $color.alias;
+						pipeline = alias_gbuf;
+						tasks = (
+							{ func = "alias_draw"; },
+						);
+					};
+					iqm:gbuffer = {
+						color = $color.iqm;
+						pipeline = iqm_gbuf;
+						tasks = (
+							{ func = "iqm_draw"; },
+						);
+					};
+					sprite:gbuffer = {
+						color = $color.sprite;
+						pipeline = sprite_gbuf;
+						tasks = (
+							{ func = "sprite_draw"; },
+						);
+					};
+				};
+			};
+			lighting = {
+				color = "[ 0.8,  0.8,  0.8, 1]";
+				depend = {
+					gbuffer = $color_dependency;
+				}
+				attachments = {
+					input = {
+						depth = shader_read_only_optimal;
+						color = shader_read_only_optimal;
+						emission = shader_read_only_optimal;
+						normal = shader_read_only_optimal;
+						position = shader_read_only_optimal;
+					};
+					color = {
+						opaque = color_attachment_optimal;
+					};
+					preserve = (output);
+				};
+				pipelines = {
+					lights = {
+						color = $color.lights
+						pipeline = lighting;
+						tasks = (
+							{ func = "lights_draw"; },
+						);
+					};
+				};
+			};
+			compose = {
+				color = "[ 0.7,  0.3,  0.3, 1]";
+				depend = {
+					lighting = $color_dependency;
+				}
+				attachments = {
+					input = {
+						opaque = shader_read_only_optimal;
+					};
+					color = {
+						output = color_attachment_optimal;
+					};
+					preserve = (depth, color, emission, normal, position);
+				};
+				pipelines = {
+					compose = {
+						color = $color.compose
+						pipeline = compose;
+						tasks = (
+							{ func = "lights_draw"; },
+						);
+					};
+				};
+			};
+		};
+	};
+	deferred_cube = {
+		@inherit = deferred;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+			viewOffsets = (    0,     0,     0,     0,     0);
+		});
+	};
+};
