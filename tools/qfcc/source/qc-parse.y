@@ -399,7 +399,14 @@ use_type_name (specifier_t spec)
 	spec.sym = new_symbol (spec.sym->name);
 	spec.sym->type = spec.type;
 	spec.sym->sy_type = sy_var;
-	symtab_addsymbol (current_symtab, spec.sym);
+	symbol_t   *s = symtab_addsymbol (current_symtab, spec.sym);
+	// a different symbol being returned means that this is a redefinition
+	// of that symbol in the same scope. However, typedefs to the same type
+	// are allowed.
+	if (s != spec.sym && spec.is_typedef && s->sy_type == sy_type
+		&& type_same (s->type, spec.type)) {
+		spec.sym = s;
+	}
 	return !!spec.sym->table;
 }
 
@@ -420,7 +427,8 @@ check_specifiers (specifier_t spec)
 			bug (0, "wha? %p %p", spec.type, spec.sym);
 		} else {
 			// a type name (id, typedef, etc) was used as a variable name.
-			// this is allowed in C, so long as it's in a different scope
+			// this is allowed in C, so long as it's in a different scope,
+			// or the types are the same
 			if (!use_type_name (spec)) {
 				error (0, "%s redeclared as different kind of symbol",
 					   spec.sym->name);
