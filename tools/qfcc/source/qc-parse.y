@@ -153,10 +153,9 @@ int yylex (void);
 %token				RETURN AT_RETURN ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token				UNSIGNED SIGNED LONG SHORT
 %token	<op>		STRUCT
-%token	<type>		TYPE
-%token	<symbol>	OBJECT TYPE_NAME
+%token	<spec>		TYPE_SPEC TYPE_NAME
+%token	<symbol>	OBJECT
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
@@ -700,37 +699,10 @@ type_specifier_or_storage_class
 	;
 
 type_specifier
-	: TYPE
-		{
-			$$ = make_spec ($1, 0, 0, 0);
-		}
-	| UNSIGNED
-		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.is_unsigned = 1;
-		}
-	| SIGNED
-		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.is_signed = 1;
-		}
-	| LONG
-		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.is_long = 1;
-		}
-	| SHORT
-		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.is_short = 1;
-		}
+	: TYPE_SPEC
 	| enum_specifier
 	| struct_specifier
 	| TYPE_NAME
-		{
-			$$ = make_spec ($1->type, 0, 0, 0);
-			$$.sym = $1;
-		}
 	| OBJECT protocolrefs
 		{
 			if ($2) {
@@ -1023,9 +995,9 @@ function_params
 qc_func_params
 	: '(' ')'								{ $$ = 0; }
 	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
-	| '(' ps TYPE ')'
+	| '(' ps TYPE_SPEC ')'
 		{
-			if (!is_void ($3))
+			if (!is_void ($3.type))
 				PARSE_ERROR;
 			$$ = 0;
 		}
@@ -1631,7 +1603,7 @@ unary_expr
 ident_expr
 	: OBJECT					{ $$ = new_symbol_expr ($1); }
 	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
-	| TYPE_NAME					{ $$ = new_symbol_expr ($1); }
+	| TYPE_NAME					{ $$ = new_symbol_expr ($1.sym); }
 	;
 
 vector_expr
@@ -1742,7 +1714,7 @@ identifier
 	: NAME
 	| OBJECT
 	| CLASS_NAME
-	| TYPE_NAME
+	| TYPE_NAME { $$ = $1.sym; }
 	;
 
 // Objective-QC stuff
@@ -2241,8 +2213,8 @@ selector
 	: NAME						{ $$ = $1; }
 	| CLASS_NAME				{ $$ = $1; }
 	| OBJECT					{ $$ = new_symbol (qc_yytext); }
-	| TYPE						{ $$ = new_symbol (qc_yytext); }
-	| TYPE_NAME					{ $$ = $1; }
+	| TYPE_SPEC					{ $$ = new_symbol (qc_yytext); }
+	| TYPE_NAME					{ $$ = $1.sym; }
 	| reserved_word
 	;
 

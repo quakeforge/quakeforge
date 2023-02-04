@@ -340,13 +340,14 @@ yywrap (void)
 typedef struct {
 	const char *name;
 	int         value;
-	type_t     *type;
+	specifier_t spec;
 } keyword_t;
 
 // These keywords are part of the Ruamoko language and require the QuakeForge
 // Ruamoko VM.
 static keyword_t rua_keywords[] = {
-#define VEC_TYPE(type_name, base_type) { #type_name, TYPE, &type_##type_name },
+#define VEC_TYPE(type_name, base_type) \
+	{ #type_name, TYPE_SPEC, .spec = { .type = &type_##type_name } },
 #include "tools/qfcc/include/vec_types.h"
 };
 
@@ -356,12 +357,12 @@ static keyword_t rua_keywords[] = {
 // If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
 // then they will be unavailable as keywords.
 static keyword_t obj_keywords[] = {
-	{"id",				OBJECT,	&type_id		},
-	{"Class",			TYPE,	&type_Class		},
-	{"Method",			TYPE,	&type_method	},
-	{"Super",			TYPE,	&type_super		},
-	{"SEL",				TYPE,	&type_SEL		},
-	{"IMP",				TYPE,	&type_IMP		},
+	{"id",				OBJECT,	.spec = { .type = &type_id } 		},
+	{"Class",			TYPE_SPEC, .spec = { .type = &type_Class } 		},
+	{"Method",			TYPE_SPEC, .spec = { .type = &type_method } 	},
+	{"Super",			TYPE_SPEC, .spec = { .type = &type_super } 		},
+	{"SEL",				TYPE_SPEC, .spec = { .type = &type_SEL } 		},
+	{"IMP",				TYPE_SPEC, .spec = { .type = &type_IMP } 		},
 
 	{"@class",			CLASS					},
 	{"@defs",			DEFS					},
@@ -412,42 +413,42 @@ static keyword_t at_keywords[] = {
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
 // be supported (sanely) by v6 progs.
 static keyword_t qf_keywords[] = {
-	{"quaternion",	TYPE,	&type_quaternion},
-	{"double",		TYPE,	&type_double},
-	{"int",			TYPE,	&type_int	},
-	{"unsigned",	UNSIGNED,	0	},
-	{"signed",		SIGNED,	0	},
-	{"long",		LONG,	0	},
-	{"short",		SHORT,	0	},
+	{"quaternion",	TYPE_SPEC, .spec = { .type = &type_quaternion } },
+	{"double",		TYPE_SPEC, .spec = { .type = &type_double } },
+	{"int",			TYPE_SPEC, .spec = { .type = &type_int } 	},
+	{"unsigned",	TYPE_SPEC, .spec = { .is_unsigned = 1 } },
+	{"signed",		TYPE_SPEC, .spec = { .is_signed = 1 } },
+	{"long",		TYPE_SPEC, .spec = { .is_long = 1 } },
+	{"short",		TYPE_SPEC, .spec = { .is_short = 1 } },
 
-	{"@function",	TYPE,	&type_func	},
-	{"@args",		ARGS,	0				},
-	{"@va_list",	TYPE,	&type_va_list	},
-	{"@param",		TYPE,	&type_param		},
-	{"@return",     AT_RETURN,	0	},
+	{"@function",	TYPE_SPEC, .spec = { .type = &type_func } 	},
+	{"@args",		ARGS,					},
+	{"@va_list",	TYPE_SPEC, .spec = { .type = &type_va_list } 	},
+	{"@param",		TYPE_SPEC, .spec = { .type = &type_param } 		},
+	{"@return",     AT_RETURN,		},
 
-	{"@cross",		CROSS,	0	},
-	{"@dot",		DOT,	0	},
-	{"@hadamard",	HADAMARD,	0	},
+	{"@cross",		CROSS,		},
+	{"@dot",		DOT,		},
+	{"@hadamard",	HADAMARD,		},
 };
 
 // These keywors are always available. Other than the @ keywords, they
 // form traditional QuakeC.
 static keyword_t keywords[] = {
-	{"void",		TYPE,		&type_void	},
-	{"float",		TYPE,		&type_float	},
-	{"string",		TYPE,		&type_string},
-	{"vector",		TYPE,		&type_vector},
-	{"entity",		TYPE,		&type_entity},
-	{"local",		LOCAL,		0			},
-	{"return",		RETURN,		0			},
-	{"while",		WHILE,		0			},
-	{"do",			DO,			0			},
-	{"if",			IF,			0			},
-	{"else",		ELSE,		0			},
-	{"@system",		SYSTEM,		0			},
-	{"@overload",	OVERLOAD,	0			},
-	{"@attribute",  ATTRIBUTE,	0			},
+	{"void",		TYPE_SPEC, .spec = { .type = &type_void } 	},
+	{"float",		TYPE_SPEC, .spec = { .type = &type_float } 	},
+	{"string",		TYPE_SPEC, .spec = { .type = &type_string } },
+	{"vector",		TYPE_SPEC, .spec = { .type = &type_vector } },
+	{"entity",		TYPE_SPEC, .spec = { .type = &type_entity } },
+	{"local",		LOCAL,					},
+	{"return",		RETURN,					},
+	{"while",		WHILE,					},
+	{"do",			DO,						},
+	{"if",			IF,						},
+	{"else",		ELSE,					},
+	{"@system",		SYSTEM,					},
+	{"@overload",	OVERLOAD,				},
+	{"@attribute",  ATTRIBUTE,				},
 };
 
 static const char *
@@ -474,12 +475,16 @@ process_keyword (keyword_t *keyword, const char *token)
 			return OBJECT;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
+			qc_yylval.spec = (specifier_t) {
+				.type = sym->type,
+				.sym = sym,
+			};
 			return TYPE_NAME;
 		}
 		// id has been redelcared as a variable (hopefully)
 		return NAME;
 	} else {
-		qc_yylval.type = keyword->type;
+		qc_yylval.spec = keyword->spec;
 	}
 	return keyword->value;
 }
@@ -550,8 +555,13 @@ keyword_or_id (const char *token)
 	if (!sym)
 		sym = new_symbol (token);
 	qc_yylval.symbol = sym;
-	if (sym->sy_type == sy_type)
+	if (sym->sy_type == sy_type) {
+		qc_yylval.spec = (specifier_t) {
+			.type = sym->type,
+			.sym = sym,
+		};
 		return TYPE_NAME;
+	}
 	if (sym->sy_type == sy_class)
 		return CLASS_NAME;
 	return NAME;
