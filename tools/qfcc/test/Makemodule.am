@@ -72,6 +72,10 @@ test_progs_dat=\
 
 fail_progs_dat=
 
+test_build_passes=\
+	tools/qfcc/test/typeredef1.r \
+	tools/qfcc/test/typeredef2.r
+
 test_build_errors=\
 	tools/qfcc/test/classarray.r \
 	tools/qfcc/test/dealloc-warn.r \
@@ -96,6 +100,7 @@ test_defspace_src=\
 TESTS += \
 	$(test_bins) \
 	$(test_progs_dat:.dat=.run) \
+	$(test_build_passes:.r=.run) \
 	$(test_build_errors:.r=.run)
 XFAIL_TESTS += \
 	$(fail_bins) \
@@ -118,6 +123,7 @@ tools_qfcc_test_test_harness_LDADD=			$(QFCC_TEST_LIBS)
 tools_qfcc_test_test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 
 qfcc_test_run_deps = Makefile tools/qfcc/test/build-run
+qfcc_comp_run_deps = Makefile tools/qfcc/test/build-compile-pass-run
 qfcc_fail_run_deps = Makefile tools/qfcc/test/build-compile-fail-run
 tools_qfcc_test_address_cast_dat_SOURCES=tools/qfcc/test/address-cast.r
 address_cast_obj=$(tools_qfcc_test_address_cast_dat_SOURCES:.r=.o)
@@ -300,6 +306,12 @@ tools/qfcc/test/double-int-compare.run$(EXEEXT): tools/qfcc/test/double-int-comp
 
 tools/qfcc/test/double-float-compare.run$(EXEEXT): tools/qfcc/test/double-float-compare.r $(qfcc_fail_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+tools/qfcc/test/typeredef1.run$(EXEEXT): tools/qfcc/test/typeredef1.r $(qfcc_comp_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
+
+tools/qfcc/test/typeredef2.run$(EXEEXT): tools/qfcc/test/typeredef2.r $(qfcc_comp_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
 
 tools_qfcc_test_enum_dat_SOURCES=tools/qfcc/test/enum.r
 enum_obj=$(tools_qfcc_test_enum_dat_SOURCES:.r=.o)
@@ -773,6 +785,8 @@ r_depfiles_remade += $(zerolinker_dep)
 
 EXTRA_DIST += \
 	$(test_build_errors) \
+	$(test_build_passes) \
+	tools/qfcc/test/build-compile-pass-run \
 	tools/qfcc/test/build-compile-fail-run \
 	tools/qfcc/test/test-bi.h \
 	tools/qfcc/test/build-run \

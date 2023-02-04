@@ -1,0 +1,15 @@
+#! /bin/sh
+
+script=$1
+shift
+
+cat > $script <<EOF
+#! /bin/sh
+# compile must pass
+$@
+if test \$? != 0; then
+	exit 1
+fi
+exit 0
+EOF
+chmod +x $script
