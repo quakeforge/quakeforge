@@ -71,6 +71,8 @@ void _bug (struct expr_s *e, const char *file, int line, const char *fmt, ...)
 	__attribute__ ((format (PRINTF, 4, 5)));
 #define bug(e, fmt...) _bug(e, __FILE__, __LINE__, fmt)
 
+void print_srcline (int rep, const struct expr_s *e);
+
 ///@}
 
 #endif//__diagnostic_h

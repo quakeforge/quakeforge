@@ -77,6 +77,21 @@ report_function (const expr_t *e)
 	last_func = current_func;
 }
 
+void
+print_srcline (int rep, const expr_t *e)
+{
+	pr_string_t file = pr.source_file;
+	int         line = pr.source_line;
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	if (rep) {
+		report_function (e);
+	}
+	printf ("%s:%d\n", GETSTR (file), line);
+}
+
 static __attribute__((format(PRINTF, 4, 0))) void
 format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 				const char *fmt, va_list args)
