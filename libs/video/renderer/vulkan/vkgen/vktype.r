@@ -86,6 +86,13 @@ static string get_type_key (void *type, void *unused)
 	return type.encoding;
 }
 
+-(void) setAlias: (Type *) alias
+{
+	if (!self.alias) {
+		self.alias = alias;
+	}
+}
+
 -(void) addToQueue
 {
 	string name = [self name];

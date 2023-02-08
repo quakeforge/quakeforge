@@ -6,6 +6,15 @@
 #include "vkstruct.h"
 
 @implementation Alias
+-initWithType: (qfot_type_t *) type
+{
+	if (!(self = [super initWithType: type])) {
+		return nil;
+	}
+	[[self resolveType] setAlias: self];
+	return self;
+}
+
 -(string) name
 {
 	return type.alias.name;

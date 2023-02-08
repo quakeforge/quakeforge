@@ -7,6 +7,7 @@
 @interface Type: Object
 {
 	qfot_type_t *type;
+	Type       *alias;
 }
 +fromType: (qfot_type_t *) type;
 /**	\warning	returned string is ephemeral
@@ -15,6 +16,7 @@
 /**	\warning	returned string is ephemeral
 */
 -(string) name;
+-(void) setAlias: (Type *) alias;
 -(void) addToQueue;
 -(Type *) resolveType;
 +(Type *) findType: (qfot_type_t *) type;

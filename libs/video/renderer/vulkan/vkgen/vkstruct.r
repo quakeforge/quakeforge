@@ -245,6 +245,9 @@
 	if (outname) {
 		return outname;
 	}
+	if (alias) {
+		return [alias name];
+	}
 	return [self name];
 }
 
