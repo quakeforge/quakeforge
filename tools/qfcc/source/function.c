@@ -100,7 +100,7 @@ new_param (const char *selector, type_t *type, const char *name)
 	ALLOC (4096, param_t, params, param);
 	param->next = 0;
 	param->selector = selector;
-	param->type = type;
+	param->type = find_type (type);
 	param->name = name;
 
 	return param;
@@ -173,23 +173,23 @@ copy_params (param_t *params)
 }
 
 type_t *
-parse_params (type_t *type, param_t *parms)
+parse_params (type_t *return_type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
 	type_t     *ptype;
 	int         count = 0;
 
-	if (type && is_class (type)) {
+	if (return_type && is_class (return_type)) {
 		error (0, "cannot return an object (forgot *?)");
-		type = &type_id;
+		return_type = &type_id;
 	}
 
 	new = new_type ();
 	new->type = ev_func;
 	new->alignment = 1;
 	new->width = 1;
-	new->t.func.type = type;
+	new->t.func.type = return_type;
 	new->t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {

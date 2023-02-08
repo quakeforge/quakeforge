@@ -90,10 +90,10 @@ typedef struct type_s {
 	struct def_s *type_def;	///< offset of qfo encodoing
 } type_t;
 
-typedef struct {
+typedef struct specifier_s {
 	type_t     *type;
 	struct param_s *params;
-	struct symbol_s *sym;	///< for dealing with "int id" etc
+	struct symbol_s *sym;
 	storage_class_t storage;
 	union {
 		struct {
@@ -105,6 +105,7 @@ typedef struct {
 			unsigned    is_long:1;
 			unsigned    is_typedef:1;
 			unsigned    is_overload:1;
+			unsigned    is_function:1;//FIXME do proper void(*)() -> ev_func
 			unsigned    nosave:1;
 			unsigned    no_va_list:1;
 			unsigned    void_return:1;
@@ -156,6 +157,8 @@ void chain_type (type_t *type);
 					level.
 */
 type_t *append_type (type_t *type, type_t *new);
+void set_func_type_attrs (type_t *func, specifier_t spec);
+specifier_t default_type (specifier_t spec, struct symbol_s *sym);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);

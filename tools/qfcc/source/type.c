@@ -436,6 +436,82 @@ types_same (type_t *a, type_t *b)
 	internal_error (0, "we be broke");
 }
 
+void
+set_func_type_attrs (type_t *func, specifier_t spec)
+{
+	func->t.func.no_va_list = spec.no_va_list;
+	func->t.func.void_return = spec.void_return;
+}
+
+specifier_t
+default_type (specifier_t spec, symbol_t *sym)
+{
+	if (spec.type) {
+		if (is_float (spec.type) && !spec.multi_type) {
+			// no modifieres allowed
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and float in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and float in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and float in declaration specifiers");
+			} else if (spec.is_long) {
+				spec.multi_type = 1;
+				error (0, "both long and float in declaration specifiers");
+			}
+		}
+		if (is_double (spec.type)) {
+			// long is allowed but ignored
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and double in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and double in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and double in declaration specifiers");
+			}
+		}
+		if (is_int (spec.type)) {
+			// signed and short are ignored
+			if (spec.is_unsigned && spec.is_long) {
+				spec.type = &type_ulong;
+			} else if (spec.is_long) {
+				spec.type = &type_long;
+			}
+		}
+	} else {
+		if (spec.is_long) {
+			if (spec.is_unsigned) {
+				spec.type = type_ulong_uint;
+			} else {
+				spec.type = type_long_int;
+			}
+		} else {
+			if (spec.is_unsigned) {
+				spec.type = &type_uint;
+			} else if (spec.is_signed || spec.is_short) {
+				spec.type = &type_int;
+			}
+		}
+	}
+	if (!spec.type) {
+		spec.type = type_default;
+		if (sym) {
+			warning (0, "type defaults to '%s' in declaration of '%s'",
+					 type_default->name, sym->name);
+		} else {
+			warning (0, "type defaults to '%s' in abstract declaration",
+					 type_default->name);
+		}
+	}
+	return spec;
+}
+
 /*
 	find_type
 

@@ -10,7 +10,7 @@ $frame frame0 frame1 frame2 frame3
 
 void
 state0 (void)
-[$frame1, state1]
+>> [$frame1, state1]
 {
 	if (self.frame != $frame1 || self.think != state1
 		|| self.nextthink != 0.1f) {
@@ -21,7 +21,7 @@ state0 (void)
 
 void
 state1 (void)
-[$frame2, state2, 0.2f]
+>> [$frame2, state2, 0.2f]
 {
 	if (self.frame != $frame2 || self.think != state2
 		|| self.nextthink != 0.2f) {
@@ -32,7 +32,7 @@ state1 (void)
 
 void
 state2 (void)
-[$frame0, state0, 0.5f]
+>> [$frame0, state0, 0.5f]
 {
 	if (self.frame != $frame0 || self.think != state0
 		|| self.nextthink != 0.5f) {

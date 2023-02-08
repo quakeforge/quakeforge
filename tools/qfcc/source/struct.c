@@ -98,6 +98,33 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	return sym;
 }
 
+symtab_t *
+start_struct (int *su, symbol_t *tag, symtab_t *parent)
+{
+	symbol_t   *sym;
+	sym = find_struct (*su, tag, 0);
+	if (!sym->table) {
+		symtab_addsymbol (parent, sym);
+	} else {
+		if (!sym->type) {
+			internal_error (0, "broken structure symbol?");
+		}
+		if (tag) {
+			tag->type = sym->type;
+		}
+		if (sym->type->meta == ty_enum
+			|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
+			error (0, "%s %s redefined",
+				   *su == 's' ? "struct" : "union", tag->name);
+		   *su = 0;
+	   } else if (sym->type->meta != ty_struct) {
+		   internal_error (0, "%s is not a struct or union",
+						   tag->name);
+	   }
+   }
+   return new_symtab (parent, stab_struct);
+}
+
 symbol_t *
 find_struct (int su, symbol_t *tag, type_t *type)
 {

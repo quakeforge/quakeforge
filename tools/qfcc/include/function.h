@@ -148,7 +148,7 @@ param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
 param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
-struct type_s *parse_params (struct type_s *type, param_t *params);
+struct type_s *parse_params (struct type_s *return_type, param_t *params);
 param_t *check_params (param_t *params);
 
 enum storage_class_e;

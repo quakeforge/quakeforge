@@ -44,6 +44,7 @@
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -242,4 +243,57 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 	}
 	sym->sy_type = sy_var;
 	return sym;
+}
+
+symbol_t *
+declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
+{
+	symbol_t   *s = spec.sym;
+	defspace_t *space = symtab->space;
+
+	if (s->table) {
+		// due to the way declarations work, we need a new symbol at all times.
+		// redelcarations will be checked later
+		s = new_symbol (s->name);
+	}
+
+	spec = default_type (spec, s);
+	if (!spec.storage) {
+		spec.storage = current_storage;
+	}
+	if (spec.storage == sc_static) {
+		space = pr.near_data;
+	}
+
+	//FIXME is_function is bad (this whole implementation of handling
+	//function prototypes is bad)
+	if (spec.is_function && is_func (spec.type)) {
+		set_func_type_attrs (spec.type, spec);
+	}
+	s->type = spec.type;
+
+	if (spec.is_typedef) {
+		if (init) {
+			error (0, "typedef %s is initialized", s->name);
+		}
+		s->sy_type = sy_type;
+		s->type = find_type (s->type);
+		s->type = find_type (alias_type (s->type, s->type, s->name));
+		symtab_addsymbol (symtab, s);
+	} else {
+		if (spec.is_function && is_func (s->type)) {
+			if (init) {
+				error (0, "function %s is initialized", s->name);
+			}
+			s->type = find_type (s->type);
+			s = function_symbol (s, spec.is_overload, 1);
+		} else {
+			s->type = find_type (s->type);
+			initialize_def (s, init, space, spec.storage, symtab);
+			if (s->s.def) {
+				s->s.def->nosave |= spec.nosave;
+			}
+		}
+	}
+	return s;
 }

@@ -244,6 +244,10 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
+struct specifier_s;
+symbol_t *declare_symbol (struct specifier_s spec, struct expr_s *init,
+						  symtab_t *symtab);
+
 ///@}
 
 #endif//__symtab_h

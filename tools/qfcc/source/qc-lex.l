@@ -357,7 +357,7 @@ static keyword_t rua_keywords[] = {
 // If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
 // then they will be unavailable as keywords.
 static keyword_t obj_keywords[] = {
-	{"id",				OBJECT,	.spec = { .type = &type_id } 		},
+	{"id",				OBJECT_NAME, .spec = { .type = &type_id } 		},
 	{"Class",			TYPE_SPEC, .spec = { .type = &type_Class } 		},
 	{"Method",			TYPE_SPEC, .spec = { .type = &type_method } 	},
 	{"Super",			TYPE_SPEC, .spec = { .type = &type_super } 		},
@@ -462,7 +462,7 @@ process_keyword (keyword_t *keyword, const char *token)
 {
 	if (keyword->value == STRUCT) {
 		qc_yylval.op = token[0];
-	} else if (keyword->value == OBJECT) {
+	} else if (keyword->value == OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
@@ -472,7 +472,11 @@ process_keyword (keyword_t *keyword, const char *token)
 		// be redefinable when in an enclosing scope.
 		if (sym->sy_type == sy_name) {
 			// this is the global id (object)
-			return OBJECT;
+			qc_yylval.spec = (specifier_t) {
+				.type = sym->type,
+				.sym = sym,
+			};
+			return OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
 			qc_yylval.spec = (specifier_t) {
