@@ -1330,6 +1330,7 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		plitem_t   *item = plarray->values[i];
 		void       *eledata = &arr->a[i * element->stride];
 
+		f.offset = i;
 		if (!PL_CheckType (element->type, item->type)) {
 			char        index[16];
 			snprintf (index, sizeof(index) - 1, "%d", i);
@@ -1381,6 +1382,8 @@ PL_ParseLabeledArray (const plfield_t *field, const plitem_t *item,
 		plitem_t   *item = current->value;
 		void       *eledata = &arr->a[i * element->stride];
 
+		f.name = current->key;
+		f.offset = i;
 		if (!PL_CheckType (element->type, item->type)) {
 			char        index[16];
 			snprintf (index, sizeof(index) - 1, "%zd", i);

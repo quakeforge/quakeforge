@@ -107,6 +107,16 @@ typedef int (*plparser_t) (const struct plfield_s *field,
 	point to a \a plelement_t object. This allows all the parse functions to
 	be used directly as either a \a plfield_t or \a plelement_t object's
 	\a parser.
+
+	\a PL_ParseLabeledArray and \a PL_ParseSymtab pass to the parser a field
+	with \a name set to the key of the current item and \a offset set to 0.
+	For \a PL_ParseArray, \a name is set to null and \a offset is set to the
+	current index. \a PL_ParseLabeledArray also sets \a offset to the current
+	index. \a type, \a parser, and \a data are taken from the \a plelement_t
+	passed in to them.
+
+	\a PL_ParseStruct passes the currently parsed field without any
+	modifications.
 */
 typedef struct plfield_s {
 	const char *name;		///< matched by dictionary key
