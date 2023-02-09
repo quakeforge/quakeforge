@@ -17,6 +17,7 @@ vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkfieldtype.r \
 	libs/video/renderer/vulkan/vkgen/vkfixedarray.r \
 	libs/video/renderer/vulkan/vkgen/vkgen.r \
+	libs/video/renderer/vulkan/vkgen/vkstring.r \
 	libs/video/renderer/vulkan/vkgen/vkstruct.r \
 	libs/video/renderer/vulkan/vkgen/vktype.r \
 	libs/video/renderer/vulkan/vkgen/vulkan.r
@@ -60,6 +61,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/vkfieldtype.h \
 	libs/video/renderer/vulkan/vkgen/vkfixedarray.h \
 	libs/video/renderer/vulkan/vkgen/vkgen.h \
+	libs/video/renderer/vulkan/vkgen/vkstring.h \
 	libs/video/renderer/vulkan/vkgen/vkstruct.h \
 	libs/video/renderer/vulkan/vkgen/vktype.h
 

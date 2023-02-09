@@ -4,6 +4,9 @@
 #include <types.h>
 #include <Object.h>
 
+@class FieldDef;
+@class Struct;
+
 @interface Type: Object
 {
 	qfot_type_t *type;
@@ -25,6 +28,8 @@
 -(string) parseType;
 -(string) parseFunc;
 -(string) parseData;
+
+-(FieldDef *)fielddef:(Struct *)strct field:(string)fname;
 
 -(int) isPointer;
 -(Type *) dereference;

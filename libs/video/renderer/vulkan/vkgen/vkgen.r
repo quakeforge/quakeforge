@@ -200,7 +200,9 @@ main(int argc, string *argv)
 		id obj = [queue objectAtIndex:0];
 		[queue removeObjectAtIndex:0];
 		if ([obj class] == [Struct class]) {
-			if ([[parse getObjectForKey:[obj name]] string] == "skip") {
+			string name = [obj name];
+			if (name == "char" // char type faked via a struct
+				|| [[parse getObjectForKey:name] string] == "skip") {
 				continue;
 			}
 			[obj queueFieldTypes];

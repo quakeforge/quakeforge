@@ -12,8 +12,17 @@
 		return self;
 	}
 
-	value_field = [[item getObjectForKey:"string"] string];
+	value_field = fname;
+	if (item) {
+		value_field = [[item getObjectForKey:"string"] string];
+	}
 	return self;
+}
+
++fielddef:(PLItem *)item struct:(Struct *)strct field:(string)fname
+{
+		return [[[StringField alloc] init:item struct:strct field:fname]
+				autorelease];
 }
 
 -writeParseData

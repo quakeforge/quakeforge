@@ -124,9 +124,13 @@
 			if (field.name == "sType" || field.name == "pNext") {
 				continue;
 			}
-			FieldDef   *field_def = [FieldDef fielddef:nil
-												struct:self
-												 field:field.name];
+			Type       *field_type = [Type findType: field.type];
+			FieldDef   *field_def = [field_type fielddef:self field:field.name];
+			if (!field_def) {
+				field_def = [FieldDef fielddef:nil
+										struct:self
+										 field:field.name];
+			}
 			[field_defs addObject: field_def];
 		}
 	}
@@ -197,7 +201,8 @@
 			Type       *field_type = [Type findType: field.type];
 			fprintf (output_file,
 					 "\t{\"%s\", &%s, (void *) field_offset (%s, %s)},\n",
-					 field.name, [field_type cexprType], [self outname], field.name);
+					 field.name, [field_type cexprType], [self outname],
+					 field.name);
 		}
 	}
 	fprintf (output_file, "\t{ }\n");
