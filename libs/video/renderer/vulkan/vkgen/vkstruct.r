@@ -31,6 +31,11 @@
 {
 	qfot_struct_t *strct =&type.strct;
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
+	int         readonly = [field_dict string] == "readonly";
+
+	if (readonly) {
+		return;
+	}
 
 	for (int i = 0; i < strct.num_fields; i++) {
 		qfot_var_t *var = &strct.fields[i];
@@ -78,6 +83,18 @@
 	return str_upper (s);
 }
 
+-(void) writeForward
+{
+	PLItem     *field_dict = [parse getObjectForKey:[self name]];
+	int         readonly = [field_dict string] == "readonly";
+	if (!readonly) {
+		fprintf (output_file, "static int %s (const plfield_t *field,"
+				 " const plitem_t *item, void *data, plitem_t *messages,"
+				 " void *context);\n",
+				 [self parseFunc]);
+	}
+}
+
 -(void) writeTable
 {
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
@@ -85,6 +102,7 @@
 	Array      *field_defs = [Array array];
 	int         have_sType = 0;
 	int         have_pNext = 0;
+	int         readonly = [field_dict string] == "readonly";
 
 	if ([parse string] == "skip") {
 		return;
@@ -138,6 +156,7 @@
 		FieldDef   *field_def = [field_defs objectAtIndex:i];
 		[field_def writeParseData];
 	}
+	if (!readonly) {
 	fprintf (output_file, "static plfield_t %s_fields[] = {\n", [self outname]);
 	fprintf (output_file,
 			 "\t{\"@inherit\", 0, QFString, parse_inherit, &%s_fields},\n",
@@ -154,33 +173,30 @@
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
 
-	fprintf (header_file, "int %s (const plfield_t *field,"
-			 " const plitem_t *item, void *data, plitem_t *messages,"
-			 " void *context);\n",
-			 [self parseFunc]);
-	fprintf (output_file, "int %s (const plfield_t *field,"
+	fprintf (output_file, "static int %s (const plfield_t *field,"
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context)\n",
 			 [self parseFunc]);
-	fprintf (output_file, "{\n");
-	if (have_sType) {
-		fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
-		fprintf (output_file, " = %s;\n", [self sTypeName]);
-	}
-	fprintf (output_file,
-			 "\tif (PL_Type (item) == QFString\n"
-			 "\t\t&& !(item = parse_reference (item, \"%s\", messages, context))) {\n"
-			 "\t\treturn 0;\n"
-			 "\t}\n"
-			 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
-			 " context);\n",
-			 [self outname], [self outname]);
-	fprintf (output_file, "}\n");
-	if (have_pNext) {
-		fprintf (output_file, "static parserref_t %s_parser = ",
-				 [self outname]);
-		fprintf (output_file, "{\"%s\", %s, sizeof(%s)};\n",
-				 [self outname], [self parseFunc], [self outname]);
+		fprintf (output_file, "{\n");
+		if (have_sType) {
+			fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
+			fprintf (output_file, " = %s;\n", [self sTypeName]);
+		}
+		fprintf (output_file,
+				 "\tif (PL_Type (item) == QFString\n"
+				 "\t\t&& !(item = parse_reference (item, \"%s\", messages, context))) {\n"
+				 "\t\treturn 0;\n"
+				 "\t}\n"
+				 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
+				 " context);\n",
+				 [self outname], [self outname]);
+		fprintf (output_file, "}\n");
+		if (have_pNext) {
+			fprintf (output_file, "static parserref_t %s_parser = ",
+					 [self outname]);
+			fprintf (output_file, "{\"%s\", %s, sizeof(%s)};\n",
+					 [self outname], [self parseFunc], [self outname]);
+		}
 	}
 
 	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self outname]);

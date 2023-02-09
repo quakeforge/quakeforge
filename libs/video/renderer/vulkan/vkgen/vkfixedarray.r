@@ -37,6 +37,10 @@
 	}
 }
 
+-(void) writeForward
+{
+}
+
 -(void) writeTable
 {
 	fprintf (output_file, "static parse_fixed_array_t parse_%s_data = {\n",

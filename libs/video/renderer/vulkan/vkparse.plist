@@ -74,6 +74,7 @@
 				values = pPreserveAttachments;
 			};
 		};
+		VkPhysicalDeviceLimits = readonly;
 		VkRenderPassCreateInfo = {
 			//flags = auto; reserved for future use (Bits enum does not exist)
 			attachments = {

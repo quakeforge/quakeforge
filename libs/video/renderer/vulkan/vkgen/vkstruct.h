@@ -15,6 +15,7 @@
 }
 -(void) queueFieldTypes;
 -(qfot_var_t *)findField:(string) fieldName;
+-(void) writeForward;
 -(void) writeTable;
 -(void) writeSymtabInit;
 -(void) writeSymtabEntry;

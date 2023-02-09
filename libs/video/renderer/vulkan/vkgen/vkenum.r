@@ -83,6 +83,11 @@ skip_value(string name)
 	return !num_values;
 }
 
+-(void) writeForward
+{
+	fprintf (output_file, "static exprenum_t %s_enum;\n", [self name]);
+}
+
 -(void) writeTable
 {
 	int         strip_bit = 0;
@@ -123,7 +128,7 @@ skip_value(string name)
 		}
 		fprintf (output_file, "};\n");
 	}
-	fprintf (output_file, "exprsym_t %s_symbols[] = {\n", [self name]);
+	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self name]);
 	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *var = &type.strct.fields[i];
 		if (skip_value (var.name)) {
@@ -151,10 +156,10 @@ skip_value(string name)
 	}
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
-	fprintf (output_file, "exprtab_t %s_symtab = {\n", [self name]);
+	fprintf (output_file, "static exprtab_t %s_symtab = {\n", [self name]);
 	fprintf (output_file, "\t%s_symbols,\n", [self name]);
 	fprintf (output_file, "};\n");
-	fprintf (output_file, "exprenum_t %s_enum = {\n", [self name]);
+	fprintf (output_file, "static exprenum_t %s_enum = {\n", [self name]);
 	fprintf (output_file, "\t&%s_type,\n", [self name]);
 	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
 	fprintf (output_file, "};\n");
@@ -177,10 +182,7 @@ skip_value(string name)
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context);\n",
 			 [self name]);
-	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
 	fprintf (header_file, "extern exprtype_t %s_type;\n", [self name]);
-	fprintf (header_file, "extern exprtab_t %s_symtab;\n", [self name]);
-	fprintf (header_file, "extern exprsym_t %s_symbols[];\n", [self name]);
 }
 
 -(void) writeSymtabInit

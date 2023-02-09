@@ -9,6 +9,7 @@
 {
 	int          prefix_length;
 }
+-(void) writeForward;
 -(void) writeTable;
 -(void) writeSymtabInit;
 -(void) writeSymtabEntry;

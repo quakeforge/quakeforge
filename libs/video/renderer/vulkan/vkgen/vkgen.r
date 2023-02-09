@@ -223,33 +223,14 @@ main(int argc, string *argv)
 		if ([obj name] == "VkStructureType") {
 			continue;
 		}
-		if ([obj class] != [Enum class]) {
-			continue;
-		}
 
 		arp_start ();
-		[obj writeTable];
+		[obj writeForward];
 		arp_end ();
 	}
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
-			continue;
-		}
-		if ([obj class] != [FixedArray class]) {
-			continue;
-		}
-
-		arp_start ();
-		[obj writeTable];
-		arp_end ();
-	}
-	for (int i = [output_types count]; i-- > 0; ) {
-		id obj = [output_types objectAtIndex:i];
-		if ([obj name] == "VkStructureType") {
-			continue;
-		}
-		if ([obj class] != [Struct class]) {
 			continue;
 		}
 
