@@ -30,6 +30,11 @@ typedef struct qfot_fldptr_s {
 	struct qfot_type_s *aux_type;
 } qfot_fldptr_t;
 
+typedef struct qfot_basic_s {
+	etype_t     type;
+	int         width;
+} qfot_basic_t;
+
 typedef struct qfot_func_s {
 	etype_t     type;
 	struct qfot_type_s *return_type;
@@ -61,6 +66,7 @@ typedef struct qfot_type_s {
 	string      encoding;
 	union {
 		etype_t     type;
+		qfot_basic_t basic;
 		qfot_fldptr_t fldptr;
 		qfot_func_t func;
 		qfot_struct_t strct;
