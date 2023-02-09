@@ -80,6 +80,9 @@
 	if (name == "uint32_t") {
 		return "cexpr_uint";
 	}
+	if (name == "vec4f_t") {
+		return "cexpr_vector";
+	}
 	if (name == "size_t") {
 		return "cexpr_size_t";
 	}
@@ -102,7 +105,7 @@
 		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 		return [enumObj parseType];
 	}
-	if (name == "uint32_t" || name == "size_t") {
+	if (name == "uint32_t" || name == "size_t" || name == "vec4f_t") {
 		return "QFString";
 	}
 	return [alias parseType];
@@ -148,6 +151,9 @@
 	}
 	if (name == "uint32_t") {
 		return "0";
+	}
+	if (name == "vec4f_t") {
+		return "&cexpr_vector";
 	}
 	if (name == "size_t") {
 		return "&cexpr_size_t";
