@@ -42,6 +42,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/shader.h"
 
 #include "QF/Vulkan/qf_renderpass.h"
@@ -994,6 +995,22 @@ parse_specialization_data (const plitem_t *item, void **data,
 		//Sys_Printf ("\n");
 	}
 	return ret;
+}
+
+static int
+parse_task_function (const plitem_t *item, void **data,
+					 plitem_t *messages, parsectx_t *pctx)
+{
+	PL_Message (messages, item, "parse_task_function: not implemented");
+	return 0;
+}
+
+static int
+parse_task_params (const plitem_t *item, void **data,
+				   plitem_t *messages, parsectx_t *pctx)
+{
+	PL_Message (messages, item, "parse_task_params: not implemented");
+	return 0;
 }
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"

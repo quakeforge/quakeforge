@@ -6,8 +6,111 @@
 #endif
 #include <vulkan/vulkan.h>
 
-#include "QF/darray.h"
 #include "QF/simd/types.h"
+
+typedef struct qfv_imageinfo_s {
+	const char *name;
+	VkImageCreateFlags flags;
+	VkImageType imageType;
+	VkFormat    format;
+	VkExtent3D  extent;
+	uint32_t    mipLevels;
+	uint32_t    arrayLayers;
+	VkSampleCountFlagBits samples;
+	VkImageTiling tiling;
+	VkImageUsageFlags usage;
+} qfv_imageinfo_t;
+
+typedef struct qfv_imageviewinfo_s {
+	const char *name;
+	VkImageViewCreateFlags flags;
+	//VkImage     image;
+	const char *image;
+	VkImageViewType viewType;
+	VkFormat    format;
+	VkComponentMapping components;
+	VkImageSubresourceRange subresourceRange;
+} qfv_imageviewinfo_t;
+
+typedef struct qfv_dependencymask_s {
+	VkPipelineStageFlags stage;
+	VkAccessFlags access;
+} qfv_dependencymask_t;
+
+typedef struct qfv_dependencyinfo_s {
+	const char *name;
+	qfv_dependencymask_t src;
+	qfv_dependencymask_t dst;
+	VkDependencyFlags flags;
+} qfv_dependencyinfo_t;
+
+typedef struct qfv_attachmentinfo_s {
+	vec4f_t     color;
+	const char *name;
+	VkAttachmentDescriptionFlags flags;
+	VkFormat    format;
+	VkSampleCountFlagBits samples;
+	VkAttachmentLoadOp loadOp;
+	VkAttachmentStoreOp storeOp;
+	VkAttachmentLoadOp stencilLoadOp;
+	VkAttachmentStoreOp stencilStoreOp;
+	VkImageLayout initialLayout;
+	VkImageLayout finalLayout;
+} qfv_attachmentinfo_t;
+
+typedef struct qfv_taskinfo_s {
+	struct exprfunc_s *func;
+	void       *params;
+} qfv_taskinfo_t;
+
+typedef struct qfv_attachmentrefinfo_s {
+	uint32_t     num_input;
+	const char **input;
+	uint32_t     num_color;
+	const char **color;
+	const char **resolve;
+	const char **depth;
+	uint32_t     num_preserve;
+	const char **preserve;
+} qfv_attachmentrefinfo_t;
+
+typedef struct qfv_pipelineinfo_s {
+	vec4f_t     color;
+	const char *name;
+	VkGraphicsPipelineCreateInfo *pipeline;
+	uint32_t    num_tasks;
+	qfv_taskinfo_t *tasks;
+} qfv_pipelineinfo_t;
+
+typedef struct qfv_subpassinfo_s {
+	vec4f_t     color;
+	const char *name;
+	uint32_t    num_dependencies;
+	qfv_dependencyinfo_t *dependencies;
+	uint32_t    num_attachments;
+	qfv_attachmentrefinfo_t *attachments;
+	uint32_t    num_pipelines;
+	qfv_pipelineinfo_t *pipelines;
+} qfv_subpassinfo_t;
+
+typedef struct qfv_renderpassinfo_s {
+	const char *name;
+	uint32_t    num_attachments;
+	qfv_attachmentinfo_t *attachments;
+	VkFramebufferCreateInfo framebuffer;
+	uint32_t    num_subpasses;
+	qfv_subpassinfo_t *subpasses;
+} qfv_renderpassinfo_t;
+
+typedef struct qfv_renderinfo_s {
+	struct plitem_s *properties;
+	uint32_t    num_images;
+	qfv_imageinfo_t *images;
+	uint32_t    num_views;
+	qfv_imageviewinfo_t *views;
+	uint32_t    num_renderpasses;
+	qfv_renderpassinfo_t *renderpasses;
+} qfv_renderinfo_t;
 
 typedef struct qfv_label_s {
 	vec4f_t     color;
@@ -35,15 +138,15 @@ typedef struct qfv_pipeline_s {
 	VkDescriptorSet *descriptor_sets;
 } qfv_pipeline_t;
 
-typedef struct qfv_subpass_s {
+typedef struct qfv_subpass_s_ {
 	qfv_label_t label;
 	VkCommandBufferBeginInfo beginInfo;
 	VkCommandBuffer cmd;
 	uint32_t    pipline_count;
 	qfv_pipeline_t *pipelines;
-} qfv_subpass_t;
+} qfv_subpass_t_;
 
-typedef struct qfv_renderpass_s {
+typedef struct qfv_renderpass_s_ {
 	struct vulkan_ctx_s *vulkan_ctx;
 	qfv_label_t label;		// for debugging
 
@@ -58,9 +161,9 @@ typedef struct qfv_renderpass_s {
 	//qfv_output_t output;
 
 	uint32_t    subpass_count;
-	qfv_subpass_t *subpasses;
-} qfv_renderpass_t;
+	qfv_subpass_t_ *subpasses;
+} qfv_renderpass_t_;
 
-void QFV_RunRenderPass (qfv_renderpass_t *rp, struct vulkan_ctx_s *ctx)m
+void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_render_h

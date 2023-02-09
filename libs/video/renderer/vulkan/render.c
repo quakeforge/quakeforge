@@ -70,7 +70,7 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
 static void
-run_subpass (qfv_subpass_t *sp, vulkan_ctx_t *ctx)
+run_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -90,7 +90,7 @@ run_subpass (qfv_subpass_t *sp, vulkan_ctx_t *ctx)
 }
 
 void
-QFV_RunRenderPass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
+QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;

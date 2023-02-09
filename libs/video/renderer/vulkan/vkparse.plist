@@ -33,6 +33,17 @@
 
 		qfv_subpass_t,
 		qfv_output_t,
+
+		qfv_imageinfo_t,
+		qfv_imageviewinfo_t,
+		qfv_dependencyinfo_t,
+		qfv_attachmentinfo_t,
+		qfv_attachmentrefinfo_t,
+		qfv_taskinfo_t,
+		qfv_pipelineinfo_t,
+		qfv_subpassinfo_t,
+		qfv_renderpassinfo_t,
+		qfv_renderinfo_t,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -393,7 +404,6 @@
 				string = name;
 			};
 		};
-
 		qfv_output_s = {
 			.name = qfv_output_t;
 			extent = auto;
@@ -409,5 +419,135 @@
 			frames = auto;
 			finalLayout = auto;
 		};
+
+		qfv_taskinfo_s = {
+			.name = qfv_taskinfo_t;
+			func = {
+				type = (custom, QFString, parse_task_function);
+				fields = (func);
+			};
+			params = {
+				type = (custom,	QFArray, parse_task_params);
+				fields = (params, func);
+			};
+		};
+		qfv_attachmentrefinfo_s = {
+			.name = qfv_attachmentrefinfo_t;
+			input = {
+				type = (array,	{
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+								});
+				size = num_input;
+				values = input;
+			};
+			color = {
+				type = (array,	{
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+								});
+				size = num_color;
+				values = color;
+			};
+			resolve = {
+				type = (array,	{
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+								});
+				values = resolve;
+				matchSize = color;
+			};
+			depth = {
+				type = (single,	{
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+								});
+				value = depth;
+			};
+			preserve = {
+				type = (array,	{
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+								});
+				size = num_preserve;
+				values = preserve;
+			};
+		};
+		qfv_pipelineinfo_s = {
+			.name = qfv_pipelineinfo_t;
+			color = auto;
+			name = {
+				type = string;
+				string = name;
+			};
+			pipeline = {
+				type = (single, VkGraphicsPipelineCreateInfo);
+				value = pipeline;
+			};
+			tasks = {
+				type = (array, qfv_taskinfo_t);
+				size = num_tasks;
+				values = tasks;
+			}
+		};
+		qfv_subpassinfo_s = {
+			.name = qfv_subpassinfo_t;
+			name = {
+				type = string;
+				string = name;
+			};
+			dependencies = {
+				type = (array, qfv_dependencyinfo_t);
+				size = num_dependencies;
+				values = dependencies;
+			};
+			attachments = {
+				type = (single, qfv_attachmentrefinfo_t);
+				value = attachments;
+			};
+			pipelines = {
+				type = (array, qfv_pipelineinfo_t);
+				size = num_pipelines;
+				values = pipelines;
+			};
+		};
+		qfv_renderpassinfo_s = {
+			.name = qfv_renderpassinfo_t;
+			attachments = {
+				type = (array, qfv_attachmentinfo_t);
+				size = num_attachments;
+				values = attachments;
+			};
+			framebuffer = auto;
+			subpasses = {
+				type = (array, qfv_subpassinfo_t);
+				size = num_subpasses;
+				values = subpasses;
+			};
+		};
+		qfv_renderinfo_s = {
+			.name = qfv_renderinfo_t;
+			//properties = auto;
+			images = {
+				type = (array, qfv_imageinfo_t);
+				size = num_images;
+				values = images;
+			};
+			views = {
+				type = (array, qfv_imageviewinfo_t);
+				size = num_views;
+				values = views;
+			};
+			renderpasses = {
+				type = (array, qfv_renderpassinfo_t);
+				size = num_renderpasses;
+				values = renderpasses;
+			};
+		}
 	};
 }

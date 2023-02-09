@@ -224,7 +224,7 @@ renderpasses = {
 			};
 			translucent = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
-				depend = {
+				dependencies = {
 					depth = $depth_dependency;
 				}
 				attachments = {
@@ -260,7 +260,7 @@ renderpasses = {
 			};
 			gbuffer = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
-				depend = {
+				dependencies = {
 					depth = $depth_dependency;
 				}
 				attachments = {
@@ -309,7 +309,7 @@ renderpasses = {
 			};
 			lighting = {
 				color = "[ 0.8,  0.8,  0.8, 1]";
-				depend = {
+				dependencies = {
 					gbuffer = $color_dependency;
 				}
 				attachments = {
@@ -337,7 +337,7 @@ renderpasses = {
 			};
 			compose = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
-				depend = {
+				dependencies = {
 					lighting = $color_dependency;
 				}
 				attachments = {
