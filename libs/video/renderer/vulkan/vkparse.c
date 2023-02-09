@@ -365,7 +365,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
-static int
+static int __attribute__((used))
 parse_fixed_array (const plfield_t *field, const plitem_t *item,
 				   void *data, plitem_t *messages, void *context)
 {
@@ -2036,4 +2036,84 @@ Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
 						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
 	return set;
+}
+
+qfv_renderinfo_t *
+QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_renderinfo_t *ri = cmemalloc (memsuper, sizeof (qfv_renderinfo_t));
+	*ri = (qfv_renderinfo_t) { .memsuper = memsuper };
+
+	plitem_t   *properties = PL_ObjectForKey (item, "properties");
+	int         num_keys = PL_D_NumKeys (properties);
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+	exprctx_t   exprctx = { .symtab = &root_symtab };
+	parsectx_t  parsectx = { &exprctx, ctx, properties };
+	plitem_t   *pl_items[num_keys + 2];
+	exprsym_t   var_syms[num_keys + 6 + 1];
+	var_syms[num_keys + 6] = (exprsym_t) {};
+	exprtab_t   vars_tab = { var_syms, 0 };
+
+	for (int i = 0; i < num_keys; i++) {
+		var_syms[i] = (exprsym_t) {
+			.name = PL_KeyAtIndex (properties, i),
+			.type = &cexpr_plitem,
+			.value = pl_items + i,
+		};
+		pl_items[i] = PL_ObjectForKey (properties, var_syms[i + 6].name);
+	}
+	pl_items[num_keys + 0] = PL_ObjectForKey (item, "images");
+	pl_items[num_keys + 1] = PL_ObjectForKey (item, "views");
+
+	var_syms[num_keys + 0] = (exprsym_t) {
+		.name = "images",
+		.type = &cexpr_plitem,
+		.value = pl_items + 0,
+	},
+	var_syms[num_keys + 1] = (exprsym_t) {
+		.name = "views",
+		.type = &cexpr_plitem,
+		.value = pl_items + 1,
+	},
+	var_syms[num_keys + 2] = (exprsym_t) {
+		.name = "output",
+		.type = &qfv_output_t_type,
+		.value = &sctx->output,
+	};
+	var_syms[num_keys + 3] = (exprsym_t) {
+		.name = "frames",
+		.type = &vulkan_frameset_t_type,
+		.value = &ctx->frames,
+	};
+	var_syms[num_keys + 4] = (exprsym_t) {
+		.name = "msaaSamples",
+		.type = &VkSampleCountFlagBits_type,
+		.value = &ctx->msaaSamples,
+	};
+	var_syms[num_keys + 5] = (exprsym_t) {
+		.name = "physDevLimits",
+		.type = &VkPhysicalDeviceLimits_type,
+		.value = &ctx->device->physDev->properties->limits,
+	};
+
+	exprctx.external_variables = &vars_tab;
+	exprctx.messages = messages;
+	exprctx.hashctx = &sctx->hashctx;
+	exprctx.memsuper = memsuper;
+
+	cexpr_init_symtab (&vars_tab, &exprctx);
+
+	int         ret;
+	if (!(ret = parse_qfv_renderinfo_t (0, item, ri, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	Hash_DelTable (vars_tab.tab);
+	PL_Free (messages);
+
+	return 0;
 }

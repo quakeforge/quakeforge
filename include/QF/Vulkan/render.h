@@ -103,7 +103,7 @@ typedef struct qfv_renderpassinfo_s {
 } qfv_renderpassinfo_t;
 
 typedef struct qfv_renderinfo_s {
-	struct plitem_s *properties;
+	struct memsuper_s *memsuper;
 	uint32_t    num_images;
 	qfv_imageinfo_t *images;
 	uint32_t    num_views;
