@@ -303,6 +303,34 @@ parse_ignore (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
+static int __attribute__((used))
+parse_labeledsingle (const plfield_t *field, const plitem_t *item,
+					 void *data, plitem_t *messages, void *context)
+{
+	__auto_type single = (parse_single_t *) field->data;
+	void       *flddata = (byte *)data + single->value_offset;
+
+	//Sys_MaskPrintf (SYS_vulkan_parse,"parse_labeledsingle: %s %zd %d %p %p\n",
+	//				field->name, field->offset,
+	//				field->type, field->parser, field->data);
+
+	if (!PL_CheckType (single->type, PL_Type (item))) {
+		PL_TypeMismatch (messages, item, field->name, single->type,
+						 PL_Type (item));
+		return 0;
+	}
+
+	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
+	void       *value = vkparse_alloc (context, single->stride);
+	memset (value, 0, single->stride);
+	if (!single->parser (&f, item, value, messages, context)) {
+		return 0;
+	}
+
+	*(void **) flddata = value;
+	return 1;
+}
+
 static int
 parse_single (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
@@ -328,6 +356,43 @@ parse_single (const plfield_t *field, const plitem_t *item,
 	}
 
 	*(void **) flddata = value;
+	return 1;
+}
+
+static int __attribute__((used))
+parse_labeledarray (const plfield_t *field, const plitem_t *item,
+					void *data, plitem_t *messages, void *context)
+{
+	__auto_type array = (parse_array_t *) field->data;
+	__auto_type value = (void **) ((byte *)data + array->value_offset);
+	__auto_type size = (uint32_t *) ((byte *)data + array->size_offset);
+
+	plelement_t element = {
+		array->type,
+		array->stride,
+		vkparse_alloc,
+		array->parser,
+		array->data,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_array: %s %zd %d %p %p %p\n",
+	//				field->name, field->offset, field->type, field->parser,
+	//				field->data, data);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    %d %zd %p %zd %zd\n", array->type,
+	//				array->stride, array->parser, array->value_offset,
+	//				array->size_offset);
+	if (!PL_ParseLabeledArray (&f, item, &arr, messages, context)) {
+		return 0;
+	}
+	*value = vkparse_alloc (context, array->stride * arr->size);
+	memcpy (*value, arr->a, array->stride * arr->size);
+	if ((void *) size >= data) {
+		*size = arr->size;
+	}
 	return 1;
 }
 
@@ -395,6 +460,15 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
+static char *
+vkstrdup (parsectx_t *context, const char *str)
+{
+	size_t      len = strlen (str) + 1;
+	char       *dup = vkparse_alloc (context, len);
+	memcpy (dup, str, len);
+	return dup;
+}
+
 static int
 parse_string (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
@@ -410,9 +484,7 @@ parse_string (const plfield_t *field, const plitem_t *item,
 	//Sys_MaskPrintf (SYS_vulkan_parse, "    %zd\n", string->value_offset);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "    %s\n", str);
 
-	size_t      len = strlen (str) + 1;
-	*value = vkparse_alloc (context, len);
-	memcpy (*value, str, len);
+	*value = vkstrdup (context, str);
 	return 1;
 }
 

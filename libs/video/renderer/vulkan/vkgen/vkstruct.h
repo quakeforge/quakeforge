@@ -11,10 +11,12 @@
 @interface Struct: Type
 {
 	string outname;
+	string label_field;
 	int write_symtab;
 }
 -(void) queueFieldTypes;
 -(qfot_var_t *)findField:(string) fieldName;
+-(void) setLabelField:(string) label_field;
 -(void) writeForward;
 -(void) writeTable;
 -(void) writeSymtabInit;

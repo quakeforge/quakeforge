@@ -7,6 +7,8 @@
 #include "vkfielddata.h"
 #include "vkfielddef.h"
 #include "vkfieldignore.h"
+#include "vkfieldlabeledarray.h"
+#include "vkfieldlabeledsingle.h"
 #include "vkfieldreadonly.h"
 #include "vkfieldsingle.h"
 #include "vkfieldstring.h"
@@ -44,6 +46,10 @@
 			return [[[SingleField alloc] init:item struct:strct field:fname] autorelease];
 		case "array":
 			return [[[ArrayField alloc] init:item struct:strct field:fname] autorelease];
+		case "labeledarray":
+			return [[[LabeledArrayField alloc] init:item struct:strct field:fname] autorelease];
+		case "labeledsingle":
+			return [[[LabeledSingleField alloc] init:item struct:strct field:fname] autorelease];
 		case "readonly":
 			return [[[ReadOnlyField alloc] init:item struct:strct field:fname] autorelease];
 		case "ignore":

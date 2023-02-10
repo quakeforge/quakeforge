@@ -12,6 +12,8 @@ vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkfielddata.r \
 	libs/video/renderer/vulkan/vkgen/vkfielddef.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldignore.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldsingle.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldstring.r \
@@ -57,6 +59,8 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/vkfielddata.h \
 	libs/video/renderer/vulkan/vkgen/vkfielddef.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldignore.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldsingle.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldstring.h \

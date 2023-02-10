@@ -12,6 +12,12 @@
 
 @implementation Struct
 
+-(void) dealloc
+{
+	str_free (outname);
+	str_free (label_field);
+}
+
 -(string) name
 {
 	return str_mid(type.strct.tag, 4);
@@ -67,7 +73,7 @@
 -(string)sTypeName
 {
 	string s = "VK_STRUCTURE_TYPE";
-	string      name = str_hold ([self outname]);
+	string      name = [self outname];
 	int         length = strlen (name);
 	int         start, end, c;
 	for (start = 2; start < length; start = end) {
@@ -81,6 +87,11 @@
 	}
 	str_free (name);
 	return str_upper (s);
+}
+
+-(void) setLabelField:(string)label_field
+{
+	self.label_field = label_field;
 }
 
 -(void) writeForward
@@ -182,6 +193,11 @@
 			if (have_sType) {
 				fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
 				fprintf (output_file, " = %s;\n", [self sTypeName]);
+			}
+			if (label_field) {
+				fprintf (output_file, "\t((%s *) data)->%s", [self outname],
+						 label_field);
+				fprintf (output_file, " = vkstrdup (context, field->name);\n");
 			}
 			fprintf (output_file,
 					 "\tif (PL_Type (item) == QFString\n"
