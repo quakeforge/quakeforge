@@ -39,6 +39,7 @@
 		qfv_dependencyinfo_t,
 		qfv_attachmentinfo_t,
 		qfv_attachmentrefinfo_t,
+		qfv_attachmentsetinfo_t,
 		qfv_taskinfo_t,
 		qfv_pipelineinfo_t,
 		qfv_subpassinfo_t,
@@ -434,47 +435,31 @@
 		};
 		qfv_attachmentrefinfo_s = {
 			.name = qfv_attachmentrefinfo_t;
+			.only = layout;
+		};
+		qfv_attachmentsetinfo_s = {
+			.name = qfv_attachmentsetinfo_t;
 			input = {
-				type = (array,	{
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-								});
+				type = (labeledarray, qfv_attachmentrefinfo_t, name);
 				size = num_input;
 				values = input;
 			};
 			color = {
-				type = (array,	{
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-								});
+				type = (labeledarray, qfv_attachmentrefinfo_t, name);
 				size = num_color;
 				values = color;
 			};
 			resolve = {
-				type = (array,	{
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-								});
+				type = (labeledarray, qfv_attachmentrefinfo_t, name);
 				values = resolve;
 				matchSize = color;
 			};
 			depth = {
-				type = (single,	{
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-								});
+				type = (labeledsingle, qfv_attachmentrefinfo_t, name);
 				value = depth;
 			};
 			preserve = {
-				type = (array,	{
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-								});
+				type = (labeledarray, qfv_attachmentrefinfo_t, name);
 				size = num_preserve;
 				values = preserve;
 			};
@@ -502,17 +487,18 @@
 				type = string;
 				string = name;
 			};
+			color = auto;
 			dependencies = {
-				type = (array, qfv_dependencyinfo_t);
+				type = (labeledarray, qfv_dependencyinfo_t, name);
 				size = num_dependencies;
 				values = dependencies;
 			};
 			attachments = {
-				type = (single, qfv_attachmentrefinfo_t);
+				type = (single, qfv_attachmentsetinfo_t);
 				value = attachments;
 			};
 			pipelines = {
-				type = (array, qfv_pipelineinfo_t);
+				type = (labeledarray, qfv_pipelineinfo_t, name);
 				size = num_pipelines;
 				values = pipelines;
 			};
@@ -520,13 +506,13 @@
 		qfv_renderpassinfo_s = {
 			.name = qfv_renderpassinfo_t;
 			attachments = {
-				type = (array, qfv_attachmentinfo_t);
+				type = (labeledarray, qfv_attachmentinfo_t, name);
 				size = num_attachments;
 				values = attachments;
 			};
 			framebuffer = auto;
 			subpasses = {
-				type = (array, qfv_subpassinfo_t);
+				type = (labeledarray, qfv_subpassinfo_t, name);
 				size = num_subpasses;
 				values = subpasses;
 			};
@@ -535,17 +521,17 @@
 			.name = qfv_renderinfo_t;
 			properties = ignore;
 			images = {
-				type = (array, qfv_imageinfo_t);
+				type = (labeledarray, qfv_imageinfo_t, name);
 				size = num_images;
 				values = images;
 			};
 			views = {
-				type = (array, qfv_imageviewinfo_t);
+				type = (labeledarray, qfv_imageviewinfo_t, name);
 				size = num_views;
 				values = views;
 			};
 			renderpasses = {
-				type = (array, qfv_renderpassinfo_t);
+				type = (labeledarray, qfv_renderpassinfo_t, name);
 				size = num_renderpasses;
 				values = renderpasses;
 			};

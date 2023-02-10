@@ -2150,12 +2150,12 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	var_syms[num_keys + 0] = (exprsym_t) {
 		.name = "images",
 		.type = &cexpr_plitem,
-		.value = pl_items + 0,
+		.value = pl_items + num_keys + 0,
 	},
 	var_syms[num_keys + 1] = (exprsym_t) {
 		.name = "views",
 		.type = &cexpr_plitem,
-		.value = pl_items + 1,
+		.value = pl_items + num_keys + 1,
 	},
 	var_syms[num_keys + 2] = (exprsym_t) {
 		.name = "output",

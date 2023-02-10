@@ -19,6 +19,7 @@ typedef struct qfv_imageinfo_s {
 	VkSampleCountFlagBits samples;
 	VkImageTiling tiling;
 	VkImageUsageFlags usage;
+	VkImageLayout initialLayout;
 } qfv_imageinfo_t;
 
 typedef struct qfv_imageviewinfo_s {
@@ -56,6 +57,7 @@ typedef struct qfv_attachmentinfo_s {
 	VkAttachmentStoreOp stencilStoreOp;
 	VkImageLayout initialLayout;
 	VkImageLayout finalLayout;
+	VkClearValue clearValue;
 } qfv_attachmentinfo_t;
 
 typedef struct qfv_taskinfo_s {
@@ -64,15 +66,20 @@ typedef struct qfv_taskinfo_s {
 } qfv_taskinfo_t;
 
 typedef struct qfv_attachmentrefinfo_s {
+	const char *name;
+	VkImageLayout layout;
+} qfv_attachmentrefinfo_t;
+
+typedef struct qfv_attachmentsetinfo_s {
 	uint32_t     num_input;
-	const char **input;
+	qfv_attachmentrefinfo_t *input;
 	uint32_t     num_color;
-	const char **color;
-	const char **resolve;
-	const char **depth;
+	qfv_attachmentrefinfo_t *color;
+	qfv_attachmentrefinfo_t *resolve;
+	qfv_attachmentrefinfo_t *depth;
 	uint32_t     num_preserve;
 	const char **preserve;
-} qfv_attachmentrefinfo_t;
+} qfv_attachmentsetinfo_t;
 
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;

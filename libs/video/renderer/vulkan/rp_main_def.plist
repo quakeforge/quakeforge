@@ -69,34 +69,34 @@ properties = {
 };
 images = {
 	depth = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = x8_d24_unorm_pack32;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	color = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = r8g8b8a8_unorm;
 	};
 	emission = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
 	normal = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
 	position = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = r32g32b32a32_sfloat;
 	};
 	opaque = {
-		@inherit = image_base;
+		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
 };
 views = {
 	depth = {
-		@inherit = view_base;
+		@inherit = $view_base;
 		image = depth;
 		format = $images.depth.format;
 		subresourceRange = {
@@ -104,32 +104,32 @@ views = {
 		};
 	};
 	color = {
-		@inherit = view_base;
+		@inherit = $view_base;
 		image = color;
 		format = $images.color.format;
 	};
 	emission = {
-		@inherit = view_base;
-		image = color;
-		format = $images.color.format;
+		@inherit = $view_base;
+		image = emission;
+		format = $images.emission.format;
 	};
 	normal = {
-		@inherit = view_base;
-		image = color;
-		format = $images.color.format;
+		@inherit = $view_base;
+		image = normal;
+		format = $images.normal.format;
 	};
 	position = {
-		@inherit = view_base;
-		image = color;
-		format = $images.color.format;
+		@inherit = $view_base;
+		image = position;
+		format = $images.position.format;
 	};
 	opaque = {
-		@inherit = view_base;
-		image = color;
-		format = $images.color.format;
+		@inherit = $view_base;
+		image = opaque;
+		format = $images.opaque.format;
 	};
 	output = {
-		@inherit = view_base;
+		@inherit = $view_base;
 		image = $output.image;
 		format = $output.format;
 	}
@@ -169,7 +169,7 @@ renderpasses = {
 			};
 			output = {
 				@inherit = $attachment_base;
-				format = $images.output.format;
+				format = $output.format;
 				loadOp = clear;
 				storeOp = store;
 				finalLayout = $output.finalLayout;
