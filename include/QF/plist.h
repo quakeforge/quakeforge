@@ -234,7 +234,7 @@ const char *PL_KeyAtIndex (const plitem_t *dict, int index) __attribute__((pure)
 	\param array	The array to get the value from
 	\param index	The index within the array to retrieve
 	\return the value at the specified index, or NULL if \a index is out of
-	range or \a array is not an array (includes in \a array is null).
+	range or \a array is not an array (includes if \a array is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
