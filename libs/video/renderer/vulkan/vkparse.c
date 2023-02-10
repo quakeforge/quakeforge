@@ -115,6 +115,7 @@ typedef struct parse_single_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      value_offset;
 } parse_single_t;
 
@@ -122,6 +123,7 @@ typedef struct parse_array_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      value_offset;
 	size_t      size_offset;
 } parse_array_t;
@@ -130,6 +132,7 @@ typedef struct parse_fixed_array_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      size;
 } parse_fixed_array_t;
 
@@ -341,7 +344,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 		array->stride,
 		vkparse_alloc,
 		array->parser,
-		0,
+		array->data,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
@@ -376,7 +379,7 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 		array->stride,
 		vkparse_alloc,
 		array->parser,
-		0,
+		array->data,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };
 

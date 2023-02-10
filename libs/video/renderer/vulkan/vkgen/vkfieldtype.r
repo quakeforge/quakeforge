@@ -31,6 +31,7 @@ parseItemType (PLItem *item)
 {
 	str_free (type);
 	str_free (parser);
+	str_free (data);
 	str_free (parse_type);
 	[super dealloc];
 }
@@ -52,6 +53,7 @@ parseItemType (PLItem *item)
 		parse_type = str_hold (parseItemType(typeItem));
 		type = str_hold ([[item getObjectForKey:"type"] string]);
 		parser = str_hold ([[item getObjectForKey:"parser"] string]);
+		data = str_hold ([[item getObjectForKey:"data"] string]);
 	}
 
 	return self;
@@ -62,7 +64,17 @@ parseItemType (PLItem *item)
 	fprintf (output_file, "\t%s,\n", parse_type);
 	fprintf (output_file, "\tsizeof (%s),\n", type);
 	fprintf (output_file, "\t%s,\n", parser);
+	if (data) {
+		fprintf (output_file, "\t&%s,\n", data);
+	} else {
+		fprintf (output_file, "\t0,\n");
+	}
 	return self;
+}
+
+-(string) type
+{
+	return type;
 }
 
 -(string) exprType
