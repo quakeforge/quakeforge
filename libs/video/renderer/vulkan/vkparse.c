@@ -314,13 +314,20 @@ parse_labeledsingle (const plfield_t *field, const plitem_t *item,
 	//				field->name, field->offset,
 	//				field->type, field->parser, field->data);
 
+	const char *key = PL_KeyAtIndex (item, 0);
+	if (!key) {
+		PL_Message (messages, item, "missing item");
+		return 0;
+	}
+	item = PL_ObjectForKey (item, key);
+
 	if (!PL_CheckType (single->type, PL_Type (item))) {
 		PL_TypeMismatch (messages, item, field->name, single->type,
 						 PL_Type (item));
 		return 0;
 	}
 
-	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
+	plfield_t   f = { field->name, 0, single->type, single->parser, 0 };
 	void       *value = vkparse_alloc (context, single->stride);
 	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {
@@ -468,6 +475,8 @@ vkstrdup (parsectx_t *context, const char *str)
 	memcpy (dup, str, len);
 	return dup;
 }
+
+static parse_string_t parse_string_array = { 0 };
 
 static int
 parse_string (const plfield_t *field, const plitem_t *item,

@@ -459,7 +459,12 @@
 				value = depth;
 			};
 			preserve = {
-				type = (labeledarray, qfv_attachmentrefinfo_t, name);
+				type = (array,  {
+									parse_type = QFString;
+									type = "char *";
+									parser = parse_string;
+									data = parse_string_array;
+								});
 				size = num_preserve;
 				values = preserve;
 			};

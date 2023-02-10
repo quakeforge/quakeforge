@@ -1,10 +1,13 @@
 {
 properties = {
 	color = {
-		bsp = "[0, 0.5, 0.6, 1]";
-		alias = "[0.6, 0.5, 0, 1]";
-		iqm = "[0.6, 0.5, 0, 1]";
-		sprite = "[0.6, 0.5, 0, 1]";
+		bsp       = "[0.0, 0.5, 0.6, 1]";
+		alias     = "[0.6, 0.5, 0.0, 1]";
+		iqm       = "[0.6, 0.5, 0.0, 1]";
+		sprite    = "[0.6, 0.5, 0.0, 1]";
+		particles = "[0.4, 0.5, 0.8, 1]";
+		lights    = "[0.8, 0.6, 0.2, 1]";
+		compose   = "[0.7, 0.7, 0.7, 1]";
 	};
 	color_dependency = {
 		src = {
@@ -186,7 +189,9 @@ renderpasses = {
 			depth = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
 				attachments = {
-					depth = depth_stencil_read_only_optimal;
+					depth = {
+						depth = depth_stencil_attachment_optimal;
+					};
 					preserve = (color, emission, normal, position, output);
 				};
 				pipelines = {
@@ -229,7 +234,9 @@ renderpasses = {
 					depth = $depth_dependency;
 				};
 				attachments = {
-					depth = depth_stencil_read_only_optimal;
+					depth = {
+						depth = depth_stencil_read_only_optimal;
+					};
 					preserve = (color, emission, normal, position, output);
 				};
 				pipelines = {
@@ -254,7 +261,7 @@ renderpasses = {
 					};
 					particles:trans = {
 						color = $color.particles;
-						pipline = partdraw;
+						pipeline = partdraw;
 						tasks = (
 							{ func = particles_draw; },
 						);
@@ -273,7 +280,9 @@ renderpasses = {
 						normal = color_attachment_optimal;
 						position = color_attachment_optimal;
 					};
-					depth = depth_stencil_read_only_optimal;
+					depth = {
+						depth = depth_stencil_read_only_optimal;
+					};
 					preserve = (output);
 				};
 				pipelines = {
