@@ -6,6 +6,7 @@
 #include "vkfieldcustom.h"
 #include "vkfielddata.h"
 #include "vkfielddef.h"
+#include "vkfieldignore.h"
 #include "vkfieldreadonly.h"
 #include "vkfieldsingle.h"
 #include "vkfieldstring.h"
@@ -45,6 +46,8 @@
 			return [[[ArrayField alloc] init:item struct:strct field:fname] autorelease];
 		case "readonly":
 			return [[[ReadOnlyField alloc] init:item struct:strct field:fname] autorelease];
+		case "ignore":
+			return [[[IgnoreField alloc] init:item struct:strct field:fname] autorelease];
 	}
 	return nil;
 }
