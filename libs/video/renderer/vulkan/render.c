@@ -45,6 +45,9 @@
 #include "QF/Vulkan/pipeline.h"
 #include "vid_vulkan.h"
 
+#include "QF/Vulkan/qf_renderpass.h"//FIXME
+#include "vkparse.h"
+
 static void
 run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
@@ -119,4 +122,12 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 		}
 	}
 	QFV_CmdEndLabel (device, cmd);
+}
+
+void
+QFV_LoadRenderPass (vulkan_ctx_t *ctx)
+{
+	plitem_t   *item = Vulkan_GetConfig (ctx, "main_def");
+	__auto_type ri = QFV_ParseRenderInfo (ctx, item);
+	printf ("%p\n", ri);
 }

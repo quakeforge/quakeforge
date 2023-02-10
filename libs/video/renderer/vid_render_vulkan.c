@@ -66,6 +66,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
 #include "QF/ui/view.h"
@@ -98,6 +99,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 
+	QFV_LoadRenderPass (vulkan_ctx);
 	Vulkan_CreateRenderPasses (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 

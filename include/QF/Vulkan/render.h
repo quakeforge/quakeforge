@@ -165,5 +165,6 @@ typedef struct qfv_renderpass_s_ {
 } qfv_renderpass_t_;
 
 void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);
+void QFV_LoadRenderPass (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_render_h

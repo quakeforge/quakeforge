@@ -1757,6 +1757,10 @@ static exprsym_t builtin_plist_syms[] = {
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_forward.plc"
 		},
+	{ .name = "main_def",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_main_def.plc"
+		},
 	{ .name = "output",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_output.plc"
@@ -2063,7 +2067,7 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 			.type = &cexpr_plitem,
 			.value = pl_items + i,
 		};
-		pl_items[i] = PL_ObjectForKey (properties, var_syms[i + 6].name);
+		pl_items[i] = PL_ObjectForKey (properties, var_syms[i].name);
 	}
 	pl_items[num_keys + 0] = PL_ObjectForKey (item, "images");
 	pl_items[num_keys + 1] = PL_ObjectForKey (item, "views");

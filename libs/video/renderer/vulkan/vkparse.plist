@@ -533,7 +533,7 @@
 		};
 		qfv_renderinfo_s = {
 			.name = qfv_renderinfo_t;
-			//properties = auto;
+			properties = ignore;
 			images = {
 				type = (array, qfv_imageinfo_t);
 				size = num_images;

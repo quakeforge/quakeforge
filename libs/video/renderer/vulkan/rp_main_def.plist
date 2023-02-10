@@ -1,4 +1,5 @@
-properties {
+{
+properties = {
 	color = {
 		bsp = "[0, 0.5, 0.6, 1]";
 		alias = "[0.6, 0.5, 0, 1]";
@@ -171,7 +172,7 @@ renderpasses = {
 				format = $images.output.format;
 				loadOp = clear;
 				storeOp = store;
-				$output.finalLayout;
+				finalLayout = $output.finalLayout;
 			};
 		};
 		framebuffer = {
@@ -226,7 +227,7 @@ renderpasses = {
 				color = "[ 0.25, 0.25, 0.6, 1]";
 				dependencies = {
 					depth = $depth_dependency;
-				}
+				};
 				attachments = {
 					depth = depth_stencil_read_only_optimal;
 					preserve = (color, emission, normal, position, output);
@@ -251,10 +252,12 @@ renderpasses = {
 							  params = (main, turbulent); },
 						);
 					};
-					particles:trans {
+					particles:trans = {
 						color = $color.particles;
 						pipline = partdraw;
-						{ func = particles_draw; },
+						tasks = (
+							{ func = particles_draw; },
+						);
 					};
 				};
 			};
@@ -262,7 +265,7 @@ renderpasses = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				dependencies = {
 					depth = $depth_dependency;
-				}
+				};
 				attachments = {
 					color = {
 						color = color_attachment_optimal;
@@ -311,7 +314,7 @@ renderpasses = {
 				color = "[ 0.8,  0.8,  0.8, 1]";
 				dependencies = {
 					gbuffer = $color_dependency;
-				}
+				};
 				attachments = {
 					input = {
 						depth = shader_read_only_optimal;
@@ -327,7 +330,7 @@ renderpasses = {
 				};
 				pipelines = {
 					lights = {
-						color = $color.lights
+						color = $color.lights;
 						pipeline = lighting;
 						tasks = (
 							{ func = "lights_draw"; },
@@ -339,7 +342,7 @@ renderpasses = {
 				color = "[ 0.7,  0.3,  0.3, 1]";
 				dependencies = {
 					lighting = $color_dependency;
-				}
+				};
 				attachments = {
 					input = {
 						opaque = shader_read_only_optimal;
@@ -351,7 +354,7 @@ renderpasses = {
 				};
 				pipelines = {
 					compose = {
-						color = $color.compose
+						color = $color.compose;
 						pipeline = compose;
 						tasks = (
 							{ func = "lights_draw"; },
@@ -368,4 +371,5 @@ renderpasses = {
 			viewOffsets = (    0,     0,     0,     0,     0);
 		});
 	};
+};
 };
