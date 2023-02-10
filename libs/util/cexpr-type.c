@@ -582,6 +582,7 @@ binop_t vector_binops[] = {
 	{ '%', &cexpr_vector, &cexpr_vector, vector_rem },
 	{ MOD, &cexpr_vector, &cexpr_vector, vector_mod },
 	{ '.', &cexpr_field, &cexpr_exprval, vector_swizzle },
+	{ '=', &cexpr_plitem, &cexpr_vector, cexpr_cast_plitem },
 	{}
 };
 
