@@ -110,6 +110,7 @@
 {
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
 	PLItem     *new_name = [field_dict getObjectForKey:".name"];
+	PLItem     *only = [field_dict getObjectForKey:".only"];
 	Array      *field_defs = [Array array];
 	int         have_sType = 0;
 	int         have_pNext = 0;
@@ -132,7 +133,25 @@
 			write_symtab = 1;
 		}
 	}
-	if (field_dict) {
+	if (only) {
+		string      field_name = [only string];
+		qfot_var_t *field = nil;
+		for (int i = 0; i < type.strct.num_fields; i++) {
+			qfot_var_t *f = &type.strct.fields[i];
+			if (f.name == field_name) {
+				field = f;
+				break;
+			}
+		}
+		Type       *field_type = [Type findType: field.type];
+		FieldDef   *field_def = [field_type fielddef:self field:field.name];
+		if (!field_def) {
+			field_def = [FieldDef fielddef:nil
+									struct:self
+									 field:field.name];
+		}
+		[field_defs addObject: field_def];
+	} else if (field_dict) {
 		PLItem     *field_keys = [field_dict allKeys];
 
 		for (int i = [field_keys count]; i-- > 0; ) {
@@ -170,9 +189,11 @@
 	if (!readonly) {
 		fprintf (output_file, "static plfield_t %s_fields[] = {\n",
 				 [self outname]);
-		fprintf (output_file,
-				 "\t{\"@inherit\", 0, QFString, parse_inherit, &%s_fields},\n",
-				 [self outname]);
+		if (!only) {
+			fprintf (output_file,
+					 "\t{\"@inherit\", 0, QFString, parse_inherit, "
+					 "&%s_fields},\n", [self outname]);
+		}
 		if (have_pNext) {
 			fprintf (output_file,
 					"\t{\"@next\", field_offset (%s, pNext), "
@@ -199,14 +220,29 @@
 						 label_field);
 				fprintf (output_file, " = vkstrdup (context, field->name);\n");
 			}
-			fprintf (output_file,
-					 "\tif (PL_Type (item) == QFString\n"
-					 "\t\t&& !(item = parse_reference (item, \"%s\", messages, context))) {\n"
-					 "\t\treturn 0;\n"
-					 "\t}\n"
-					 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
-					 " context);\n",
-					 [self outname], [self outname]);
+			if (only) {
+				fprintf (output_file, "\tplfield_t  *f = &%s_fields[0];\n",
+						 [self outname]);
+				fprintf (output_file,
+						 "\tif (!PL_CheckType (PL_Type (item), f->type)) {\n"
+						 "\t\tPL_TypeMismatch (messages, item, "
+						 "f->name, f->type, PL_Type (item));\n"
+						 "\t\treturn 0;\n"
+						 "\t}\n"
+						 "\tvoid       *flddata = (byte *)data + f->offset;\n"
+						 "\treturn f->parser (f, item, flddata, messages, "
+						 "context);\n");
+			} else {
+				fprintf (output_file,
+						 "\tif (PL_Type (item) == QFString\n"
+						 "\t\t&& !(item = parse_reference (item, \"%s\", "
+						 "messages, context))) {\n"
+						 "\t\treturn 0;\n"
+						 "\t}\n"
+						 "\treturn PL_ParseStruct (%s_fields, item, data, "
+						 "messages, context);\n",
+						 [self outname], [self outname]);
+			 }
 			fprintf (output_file, "}\n");
 			if (have_pNext) {
 				fprintf (output_file, "static parserref_t %s_parser = ",
