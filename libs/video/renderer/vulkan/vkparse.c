@@ -2140,9 +2140,8 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
-	plitem_t   *pl_items[num_keys + 2];
-	exprsym_t   var_syms[num_keys + 6 + 1];
-	var_syms[num_keys + 6] = (exprsym_t) {};
+	plitem_t   *pl_items[num_keys + 3];
+	exprsym_t   var_syms[num_keys + 7 + 1];
 	exprtab_t   vars_tab = { var_syms, 0 };
 
 	for (int i = 0; i < num_keys; i++) {
@@ -2155,6 +2154,7 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	}
 	pl_items[num_keys + 0] = PL_ObjectForKey (item, "images");
 	pl_items[num_keys + 1] = PL_ObjectForKey (item, "views");
+	pl_items[num_keys + 2] = PL_ObjectForKey (item, "renderpasses");
 
 	var_syms[num_keys + 0] = (exprsym_t) {
 		.name = "images",
@@ -2167,25 +2167,31 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 		.value = pl_items + num_keys + 1,
 	},
 	var_syms[num_keys + 2] = (exprsym_t) {
+		.name = "renderpasses",
+		.type = &cexpr_plitem,
+		.value = pl_items + num_keys + 2,
+	},
+	var_syms[num_keys + 3] = (exprsym_t) {
 		.name = "output",
 		.type = &qfv_output_t_type,
 		.value = &sctx->output,
 	};
-	var_syms[num_keys + 3] = (exprsym_t) {
+	var_syms[num_keys + 4] = (exprsym_t) {
 		.name = "frames",
 		.type = &vulkan_frameset_t_type,
 		.value = &ctx->frames,
 	};
-	var_syms[num_keys + 4] = (exprsym_t) {
+	var_syms[num_keys + 5] = (exprsym_t) {
 		.name = "msaaSamples",
 		.type = &VkSampleCountFlagBits_type,
 		.value = &ctx->msaaSamples,
 	};
-	var_syms[num_keys + 5] = (exprsym_t) {
+	var_syms[num_keys + 6] = (exprsym_t) {
 		.name = "physDevLimits",
 		.type = &VkPhysicalDeviceLimits_type,
 		.value = &ctx->device->physDev->properties->limits,
 	};
+	var_syms[num_keys + 7] = (exprsym_t) {};
 
 	exprctx.external_variables = &vars_tab;
 	exprctx.messages = messages;
@@ -2202,6 +2208,9 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	}
 	Hash_DelTable (vars_tab.tab);
 	PL_Free (messages);
+	if (!ri) {
+		delete_memsuper (memsuper);
+	}
 
-	return 0;
+	return ri;
 }

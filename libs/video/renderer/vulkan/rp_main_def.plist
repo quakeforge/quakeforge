@@ -374,7 +374,7 @@ renderpasses = {
 		};
 	};
 	deferred_cube = {
-		@inherit = deferred;
+		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			viewOffsets = (    0,     0,     0,     0,     0);
