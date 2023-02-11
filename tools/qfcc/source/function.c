@@ -218,6 +218,26 @@ parse_params (type_t *return_type, param_t *parms)
 	return new;
 }
 
+specifier_t
+parse_qc_params (specifier_t spec, param_t *params)
+{
+	type_t    **type;
+	// .float () foo; is a field holding a function variable rather
+	// than a function that returns a float field.
+	for (type = &spec.type; *type && is_field (*type);
+		 type = &(*type)->t.fldptr.type) {
+	}
+	type_t     *ret_type = *type;
+	*type = 0;
+	*type = parse_params (ret_type, params);
+	set_func_type_attrs ((*type), spec);
+	if (spec.type->type != ev_field) {
+		spec.is_function = 1; //FIXME do proper void(*)() -> ev_func
+		spec.params = params;
+	}
+	return spec;
+}
+
 param_t *
 check_params (param_t *params)
 {

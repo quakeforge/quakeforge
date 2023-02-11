@@ -423,21 +423,7 @@ datadef
 	| declspecs_ts qc_func_params
 		{
 			specifier_t spec = default_type ($1, 0);
-			type_t    **type;
-			// .float () foo; is a field holding a function variable rather
-			// than a function that returns a float field.
-			for (type = &spec.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type)
-				;
-			type_t     *ret_type = *type;
-			*type = 0;
-			*type = parse_params (ret_type, $2);
-			set_func_type_attrs ((*type), spec);
-			if (spec.type->type != ev_field) {
-				spec.is_function = 1; //FIXME do proper void(*)() -> ev_func
-				spec.params = $2;
-			}
-			$<spec>$ = spec;
+			$<spec>$ = parse_qc_params (spec, $2);
 		}
 	  qc_func_decls
 	| declspecs ';'
@@ -476,9 +462,8 @@ qc_first_param
 		}
 	| typespec_reserved qc_func_params identifier
 		{
-			specifier_t spec = default_type ($1, $3);
-			$3->params = $2;
-			spec.type = parse_params (spec.type, $2);
+			specifier_t spec = default_type ($1, 0);
+			spec = parse_qc_params (spec, $2);
 
 			$$ = new_param (0, spec.type, $3->name);
 		}
@@ -492,9 +477,8 @@ qc_param
 		}
 	| typespec qc_func_params identifier
 		{
-			specifier_t spec = default_type ($1, $3);
-			$3->params = $2;
-			spec.type = parse_params (spec.type, $2);
+			specifier_t spec = default_type ($1, 0);
+			spec = parse_qc_params (spec, $2);
 
 			$$ = new_param (0, spec.type, $3->name);
 		}
