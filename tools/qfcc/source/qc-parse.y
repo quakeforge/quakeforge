@@ -260,6 +260,12 @@ parse_attributes (attribute_t *attr_list)
 	return spec;
 }
 
+static int
+storage_auto (specifier_t spec)
+{
+	return spec.storage == sc_global || spec.storage == sc_local;
+}
+
 static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
@@ -275,8 +281,8 @@ spec_merge (specifier_t spec, specifier_t new)
 			spec.multi_type = 1;
 		}
 	}
-	if (new.is_typedef || new.storage) {
-		if ((spec.is_typedef || spec.storage) && !spec.multi_store) {
+	if (new.is_typedef || !storage_auto (new)) {
+		if ((spec.is_typedef || !storage_auto (spec)) && !spec.multi_store) {
 			error (0, "multiple storage classes in declaration specifiers");
 			spec.multi_store = 1;
 		}
@@ -774,16 +780,16 @@ typespec
 	: typespec_reserved
 		{
 			$$ = $1;
-			//if (!$$.storage) {
-			//	$$.storage = current_storage;
-			//}
+			if (!$$.storage) {
+				$$.storage = current_storage;
+			}
 		}
 	| typespec_nonreserved
 		{
 			$$ = $1;
-			//if (!$$.storage) {
-			//	$$.storage = current_storage;
-			//}
+			if (!$$.storage) {
+				$$.storage = current_storage;
+			}
 		}
 	;
 
@@ -1566,7 +1572,7 @@ vector_expr
 cast_expr
 	: '(' typename ')' cast_expr
 		{
-			$$ = cast_expr ($2.type, $4);
+			$$ = cast_expr (find_type ($2.type), $4);
 		}
 	| unary_expr %prec LOW
 	;
