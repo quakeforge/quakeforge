@@ -394,13 +394,15 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *v1, *v2;
 	vec3_t      v, float_vec;
-	static int  valid[] = {'+', '-', '*', HADAMARD, SCALE, EQ, NE, 0};
+	static int  vv_valid[] = {'+', '-', DOT, HADAMARD, EQ, NE, 0};
+	static int  vs_valid[] = {SCALE, 0};
+	static int  sv_valid[] = {SCALE, '/', 0};
 	expr_t     *t;
 
 	if (!is_vector(get_type (e1))) {
 
-		if (op != '*')
-			return error (e1, "invalid operator for vector");
+		if (!valid_op (op, sv_valid))
+			return error (e1, "invalid operator for scalar-vector");
 
 		t = e1;
 		e->e.expr.e1 = e1 = e2;
@@ -408,10 +410,10 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (!is_vector(get_type (e2))) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
-		if (op != SCALE && op != '/')
+		if (!valid_op (op, vs_valid))
 			return error (e1, "invalid operator for vector");
 	} else {
-		if (!valid_op (op, valid))
+		if (!valid_op (op, vv_valid))
 			return error (e1, "invalid operator for vector");
 	}
 	if (is_compare (op) || is_logic (op)) {
@@ -419,7 +421,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
-	} else if (op == '*' && is_vector(get_type (e2))) {
+	} else if (op == DOT && is_vector(get_type (e2))) {
 		e->e.expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
 		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
@@ -428,9 +430,9 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_vector;
 	}
 
-	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
+	if (op == SCALE && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '*' && is_float_val (e2) && expr_float (e2) == 0)
+	if (op == SCALE && is_float_val (e2) && expr_float (e2) == 0)
 		return new_vector_expr (vec3_origin);
 	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
@@ -483,13 +485,12 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			VectorScale (v1, 1 / v2[0], v);
 			e = new_vector_expr (v);
 			break;
-		case '*':
-			if (is_vector(get_type (e2))) {
-				e = new_float_expr (DotProduct (v1, v2));
-			} else {
-				VectorScale (v1, v2[0], v);
-				e = new_vector_expr (v);
-			}
+		case DOT:
+			e = new_float_expr (DotProduct (v1, v2));
+			break;
+		case SCALE:
+			VectorScale (v1, v2[0], v);
+			e = new_vector_expr (v);
 			break;
 		case EQ:
 			e = cmp_result_expr (VectorCompare (v1, v2));
