@@ -323,6 +323,18 @@ bi_PL_D_NumKeys (progs_t *pr, void *_res)
 }
 
 static void
+bi_PL_KeyAtIndex (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	int         handle = P_INT (pr, 0);
+	int         index = P_INT (pr, 1);
+	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
+	const char *key = PL_KeyAtIndex (plist->plitem, index);
+
+	RETURN_STRING (pr, key);
+}
+
+static void
 bi_PL_D_AddObject (progs_t *pr, void *_res)
 {
 	plist_resources_t *res = _res;
@@ -474,6 +486,7 @@ static builtin_t builtins[] = {
 	bi(PL_ObjectAtIndex,         2, p(ptr), p(int)),
 	bi(PL_D_AllKeys,             1, p(ptr)),
 	bi(PL_D_NumKeys,             1, p(ptr)),
+	bi(PL_KeyAtIndex,            2, p(ptr), p(int)),
 	bi(PL_D_AddObject,           3, p(ptr), p(string), p(ptr)),
 	bi(PL_A_AddObject,           2, p(ptr), p(ptr)),
 	bi(PL_A_NumObjects,          1, p(ptr)),

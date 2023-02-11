@@ -10,6 +10,7 @@ plitem_t *PL_ObjectForKey (plitem_t *item, string key) = #0;
 plitem_t *PL_RemoveObjectForKey (plitem_t *item, string key) = #0;
 plitem_t *PL_ObjectAtIndex (plitem_t *item, int index) = #0;
 plitem_t *PL_D_AllKeys (plitem_t *item) = #0;
+string PL_KeyAtIndex (plitem_t *item, int index) = #0;
 int PL_D_NumKeys (plitem_t *item) = #0;
 int PL_D_AddObject (plitem_t *dict, string key, plitem_t *value) = #0;
 int PL_A_AddObject (plitem_t *array_item, plitem_t *item) = #0;

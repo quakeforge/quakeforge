@@ -128,6 +128,11 @@
 	return [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
 }
 
+- (string) keyAtIndex:(int) index
+{
+	return PL_KeyAtIndex (item, index);
+}
+
 - addKey:(string) key value:(PLItem *) value
 {
 	if (!value.own) {

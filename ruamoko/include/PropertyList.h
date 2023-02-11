@@ -11,6 +11,7 @@
 - (int) numKeys;
 - (PLItem *) getObjectForKey:(string) key;
 - (PLItem *) allKeys;
+- (string) keyAtIndex:(int) index;
 - addKey:(string) key value:(PLItem *) value;
 @end
 

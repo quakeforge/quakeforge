@@ -16,6 +16,7 @@ typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible t
 @extern plitem_t *PL_RemoveObjectForKey (plitem_t *item, string key);
 @extern plitem_t *PL_ObjectAtIndex (plitem_t *item, int index);
 @extern plitem_t *PL_D_AllKeys (plitem_t *item);
+@extern string PL_KeyAtIndex (plitem_t *item, int index);
 @extern int PL_D_NumKeys (plitem_t *item);
 @extern int PL_D_AddObject (plitem_t *dict, string key, plitem_t *value);
 @extern int PL_A_AddObject (plitem_t *array_item, plitem_t *item);
