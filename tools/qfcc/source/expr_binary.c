@@ -796,6 +796,9 @@ func_compare (int op, expr_t *e1, expr_t *e2)
 							 new_alias_expr (&type_int, e2));
 	}
 	e->e.expr.type = &type_int;
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		e->e.expr.type = &type_float;
+	}
 	return e;
 }
 
@@ -814,6 +817,9 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 	if (options.code.progsversion < PROG_VERSION) {
 		expr_t     *e = new_binary_expr (op, e1, e2);
 		e->e.expr.type = &type_int;
+		if (options.code.progsversion == PROG_ID_VERSION) {
+			e->e.expr.type = &type_float;
+		}
 		return e;
 	}
 	int         hop = op == EQ ? '&' : '|';
@@ -903,6 +909,9 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 	}
 	expr_t     *e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = &type_int;
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		e->e.expr.type = &type_float;
+	}
 	return e;
 }
 
