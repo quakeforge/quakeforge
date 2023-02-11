@@ -1259,6 +1259,16 @@ decl
 			$$ = local_expr;
 			local_expr = 0;
 		}
+	| declspecs_ts local_expr qc_func_params
+		{
+			specifier_t spec = default_type ($1, 0);
+			$<spec>$ = parse_qc_params (spec, $3);
+		}
+	  qc_func_decls
+		{
+			$$ = local_expr;
+			local_expr = 0;
+		}
 	| declspecs ';' { $$ = 0; }
 	;
 
