@@ -8,6 +8,11 @@
 
 #include "QF/simd/types.h"
 
+typedef struct qfv_reference_s {
+	const char *name;
+	int         line;
+} qfv_reference_t;
+
 typedef struct qfv_imageinfo_s {
 	const char *name;
 	VkImageCreateFlags flags;
@@ -84,7 +89,7 @@ typedef struct qfv_attachmentsetinfo_s {
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;
 	const char *name;
-	VkGraphicsPipelineCreateInfo *pipeline;
+	qfv_reference_t pipeline;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
 } qfv_pipelineinfo_t;
@@ -100,11 +105,19 @@ typedef struct qfv_subpassinfo_s {
 	qfv_pipelineinfo_t *pipelines;
 } qfv_subpassinfo_t;
 
+typedef struct qfv_framebufferinfo_s {
+	qfv_reference_t *attachments;
+	uint32_t    num_attachments;
+	uint32_t    width;
+	uint32_t    height;
+	uint32_t    layers;
+} qfv_framebufferinfo_t;
+
 typedef struct qfv_renderpassinfo_s {
 	const char *name;
 	uint32_t    num_attachments;
 	qfv_attachmentinfo_t *attachments;
-	VkFramebufferCreateInfo framebuffer;
+	qfv_framebufferinfo_t framebuffer;
 	uint32_t    num_subpasses;
 	qfv_subpassinfo_t *subpasses;
 } qfv_renderpassinfo_t;

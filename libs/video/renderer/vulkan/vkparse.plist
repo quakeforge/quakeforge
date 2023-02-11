@@ -43,6 +43,7 @@
 		qfv_taskinfo_t,
 		qfv_pipelineinfo_t,
 		qfv_subpassinfo_t,
+		qfv_framebufferinfo_t,
 		qfv_renderpassinfo_t,
 		qfv_renderinfo_t,
 	);
@@ -476,10 +477,7 @@
 				type = string;
 				string = name;
 			};
-			pipeline = {
-				type = (single, VkGraphicsPipelineCreateInfo);
-				value = pipeline;
-			};
+			pipeline = auto;
 			tasks = {
 				type = (array, qfv_taskinfo_t);
 				size = num_tasks;
@@ -506,6 +504,25 @@
 				type = (labeledarray, qfv_pipelineinfo_t, name);
 				size = num_pipelines;
 				values = pipelines;
+			};
+		};
+		qfv_framebufferinfo_s = {
+			.name = qfv_framebufferinfo_t;
+			attachments = {
+				type = (array, qfv_reference_t);
+				size = num_attachments;
+				values = attachments;
+			};
+			width = auto;
+			height = auto;
+			layers = auto;
+		};
+		qfv_reference_s = {
+			.name = qfv_reference_t;
+			.type = QFString;
+			.string = {
+				name = $item.string;
+				line = $item.line;
 			};
 		};
 		qfv_renderpassinfo_s = {
