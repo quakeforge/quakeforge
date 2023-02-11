@@ -536,6 +536,10 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
 
+	if (check && symtab->parent && check->table == symtab->parent->parent
+		&& symtab->parent->parent->type == stab_param) {
+		error (0, "%s shadows a parameter", sym->name);
+	}
 	if (check && check->table == symtab) {
 		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
