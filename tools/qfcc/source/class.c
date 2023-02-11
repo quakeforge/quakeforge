@@ -1320,7 +1320,7 @@ class_new_ivars (class_t *class)
 
 	if (class->super_class)
 		super_ivars = class->super_class->ivars;
-	ivars = new_symtab (super_ivars, stab_local);
+	ivars = new_symtab (super_ivars, stab_ivars);
 	ivars->class = class;
 	return ivars;
 }
@@ -1903,7 +1903,7 @@ class_to_struct (class_t *class, symtab_t *symtab)
 	// connect the ivars symbol table chain to the struct symbol table
 	ancestor->parent = symtab;
 	// create a new struct symbol table from the ivars symbol table chain
-	symtab = symtab_flat_copy (ivars, 0);
+	symtab = symtab_flat_copy (ivars, 0, stab_struct);
 	// disconnect the ivars symbol table chain
 	ancestor->parent = 0;
 	// connect the new struct symbol table to the scope
@@ -1917,7 +1917,7 @@ class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 	class_t    *class = extract_class (class_type);
 	if (!class->ivars)
 		return 0;
-	return symtab_flat_copy (class->ivars, parent);
+	return symtab_flat_copy (class->ivars, parent, stab_ivars);
 }
 
 static expr_t *

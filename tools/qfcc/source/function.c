@@ -598,9 +598,9 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	check_function (fsym);
 
-	fsym->s.func->label_scope = new_symtab (0, stab_local);
+	fsym->s.func->label_scope = new_symtab (0, stab_label);
 
-	parameters = new_symtab (parent, stab_local);
+	parameters = new_symtab (parent, stab_param);
 	parameters->space = defspace_new (ds_virtual);
 	fsym->s.func->parameters = parameters;
 

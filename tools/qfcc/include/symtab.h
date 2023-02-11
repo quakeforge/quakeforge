@@ -84,10 +84,13 @@ typedef struct symbol_s {
 
 typedef enum {
 	stab_global,				///< global (many symbols)
+	stab_param,					///< local (few symbols: func)
 	stab_local,					///< local (few symbols: func)
+	stab_ivars,
 	stab_struct,
 	stab_union,
 	stab_enum,
+	stab_label,
 } stab_type_e;
 
 typedef struct symtab_s {
@@ -131,7 +134,7 @@ symbol_t *new_symbol_type (const char *name, struct type_s *type);
 	supports both code block scoping and ivar inheritance.
 
 	\param parent	Pointer to parent scope symbol table.
-	\param type		The type of symbol table. Currently governs expected size.
+	\param type		The type of symbol table.
 	\return			The new, empty symbol table.
 */
 symtab_t *new_symtab (symtab_t *parent, stab_type_e type);
@@ -194,6 +197,7 @@ symbol_t *copy_symbol (symbol_t *symbol);
 	\param symtab	The symbol table chain to be copied.
 	\param parent	The parent symbol table of the new symbol table, or
 					null.
+	\param type		The type of symbol table.
 	\return			The new symbol table.
 
 	\dot
@@ -221,7 +225,8 @@ symbol_t *copy_symbol (symbol_t *symbol);
 	}
 	\enddot
 */
-symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
+symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent,
+							stab_type_e type);
 
 /**	Create a global symbol and allocate space for a variable.
 

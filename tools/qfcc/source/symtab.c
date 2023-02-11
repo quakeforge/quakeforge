@@ -178,13 +178,13 @@ copy_symbol (symbol_t *symbol)
 }
 
 symtab_t *
-symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
+symtab_flat_copy (symtab_t *symtab, symtab_t *parent, stab_type_e type)
 {
 	symtab_t   *newtab;
 	symbol_t   *newsym;
 	symbol_t   *symbol;
 
-	newtab = new_symtab (parent, stab_local);
+	newtab = new_symtab (parent, type);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
 			if (symbol->visibility == vis_anonymous

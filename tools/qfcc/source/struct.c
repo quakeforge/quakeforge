@@ -220,7 +220,7 @@ start_enum (symbol_t *sym)
 		error (0, "%s defined as wrong kind of tag", sym->name);
 		sym = find_enum (0);
 	}
-	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
+	sym->type->t.symtab = new_symtab (current_symtab, stab_enum);
 	sym->type->alignment = 1;
 	sym->type->width = 1;
 	return sym->type->t.symtab;
