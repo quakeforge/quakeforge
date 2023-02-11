@@ -312,6 +312,13 @@ parse_name (const char *name, exprctx_t *context)
 
 		sym = Hash_Find (symtab->tab, name);
 	}
+	if (!sym) {
+		sym = cmemalloc (context->memsuper, sizeof (exprsym_t));
+		size_t      size = strlen (name) + 1;
+		char       *sym_name = cmemalloc (context->memsuper, size);
+		memcpy (sym_name, name, size);
+		*sym = (exprsym_t) { .name = sym_name };
+	}
 	return sym;
 }
 

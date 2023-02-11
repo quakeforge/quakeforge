@@ -113,13 +113,13 @@ start
 uexpr
 	: NAME
 		{
-			if ($1) {
+			if ($1->value) {
 				$$ = (exprval_t *) cmemalloc (context->memsuper, sizeof (*$$));
 				$$->type = $1->type;
 				$$->value = $1->value;
 			} else {
-				cexpr_error (context, "undefined identifier %s",
-							 cexpr_yyget_text (scanner));
+				cexpr_error (context, "undefined identifier %s", $1->name);
+				$$ = 0;
 			}
 		}
 	| VALUE
