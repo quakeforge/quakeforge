@@ -366,19 +366,19 @@ renderpasses = {
 						color = $color.compose;
 						pipeline = compose;
 						tasks = (
-							{ func = "lights_draw"; },
+							{ func = "compose_draw"; },
 						);
 					};
 				};
 			};
 		};
 	};
-	deferred_cube = {
+/*	deferred_cube = {
 		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			viewOffsets = (    0,     0,     0,     0,     0);
 		});
-	};
+	};*/
 };
 };

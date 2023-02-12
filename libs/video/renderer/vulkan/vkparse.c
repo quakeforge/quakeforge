@@ -520,7 +520,7 @@ parse_inherit (const plfield_t *field, const plitem_t *item,
 	ectx.result = &result;
 	ectx.item = item;
 	const char *inheritstr = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_inherit: %s\n", inheritstr);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_inherit: %s\n", inheritstr);
 	int         ret = !cexpr_eval_string (inheritstr, &ectx);
 	if (ret) {
 		ret = PL_ParseStruct (field->data, inheritItem, data, messages,
@@ -566,10 +566,10 @@ parse_RGBA (const plitem_t *item, void **data,
 	ectx.result = &result;
 	ectx.item = item;
 	const char *valstr = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
 	ret = !cexpr_eval_string (valstr, &ectx);
-	Sys_MaskPrintf (SYS_vulkan_parse, "    "VEC4F_FMT"\n",
-					VEC4_EXP (*(vec4f_t *)data[0]));
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    "VEC4F_FMT"\n",
+	//				VEC4_EXP (*(vec4f_t *)data[0]));
 	return ret;
 }
 
@@ -1085,8 +1085,58 @@ static int
 parse_task_function (const plitem_t *item, void **data,
 					 plitem_t *messages, parsectx_t *pctx)
 {
-	PL_Message (messages, item, "parse_task_function: not implemented");
-	return 0;
+	qfv_renderctx_t *rctx = pctx->data;
+	const char *fname = PL_String (item);
+	exprsym_t  *fsym = Hash_Find (rctx->task_functions->tab, fname);
+
+	if (!fsym) {
+		PL_Message (messages, item, "undefined task function %s", fname);
+		return 0;
+	}
+	if (fsym->type != &cexpr_function) {
+		PL_Message (messages, item, "not a function type %s", fname);
+		return 0;
+	}
+	exprfunc_t *func;
+	for (func = fsym->value; func->func; func++) {
+		if (!func->result) {
+			break;
+		}
+	}
+	if (!func->func) {
+		PL_Message (messages, item, "%s does not have a void implementation",
+					fname);
+		return 0;
+	}
+	size_t      size = func->num_params * sizeof (exprval_t);
+	size += func->num_params * sizeof (exprval_t *);
+	size_t      base = size;
+	for (int i = 0; i < func->num_params; i++) {
+		exprtype_t *type = func->param_types[i];
+		size = ((size + type->size - 1) & ~(type->size - 1));
+		if (i == 0) {
+			base = size;
+		}
+	}
+	exprval_t **param_ptrs = vkparse_alloc (pctx, size);
+	exprval_t  *params = (exprval_t *) &param_ptrs[func->num_params];
+	byte       *param_data = (byte *) param_ptrs + base;
+	memset (params, 0, size);
+	size_t      offs = 0;
+	for (int i = 0; i < func->num_params; i++) {
+		exprtype_t *type = func->param_types[i];
+		param_ptrs[i] = &params[i];
+		params[i] = (exprval_t) {
+			.type = type,
+			.value = param_data + offs,
+		};
+		offs = ((offs + type->size - 1) & ~(type->size - 1));
+		offs += type->size;
+	}
+	*(exprfunc_t **) data[0] = func;
+	*(exprval_t ***) data[1] = param_ptrs;
+	*(void **) data[2] = param_data;
+	return 1;
 }
 
 static int
@@ -2127,7 +2177,7 @@ Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 }
 
 qfv_renderinfo_t *
-QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
+QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
 	memsuper_t *memsuper = new_memsuper ();
 	qfv_renderinfo_t *ri = cmemalloc (memsuper, sizeof (qfv_renderinfo_t));
@@ -2139,7 +2189,12 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = { .symtab = &root_symtab };
-	parsectx_t  parsectx = { &exprctx, ctx, properties };
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.properties = properties,
+		.data = rctx
+	};
 	plitem_t   *pl_items[num_keys + 3];
 	exprsym_t   var_syms[num_keys + 7 + 1];
 	exprtab_t   vars_tab = { var_syms, 0 };
@@ -2208,8 +2263,9 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 	}
 	Hash_DelTable (vars_tab.tab);
 	PL_Free (messages);
-	if (!ri) {
+	if (!ret) {
 		delete_memsuper (memsuper);
+		ri = 0;
 	}
 
 	return ri;

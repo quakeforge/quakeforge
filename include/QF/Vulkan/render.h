@@ -67,7 +67,8 @@ typedef struct qfv_attachmentinfo_s {
 
 typedef struct qfv_taskinfo_s {
 	struct exprfunc_s *func;
-	void       *params;
+	const struct exprval_s **params;
+	void       *param_data;
 } qfv_taskinfo_t;
 
 typedef struct qfv_attachmentrefinfo_s {
@@ -131,6 +132,10 @@ typedef struct qfv_renderinfo_s {
 	uint32_t    num_renderpasses;
 	qfv_renderpassinfo_t *renderpasses;
 } qfv_renderinfo_t;
+
+typedef struct qfv_renderctx_s {
+	struct exprtab_s *task_functions;
+} qfv_renderctx_t;
 
 typedef struct qfv_label_s {
 	vec4f_t     color;

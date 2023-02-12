@@ -427,11 +427,11 @@
 			.name = qfv_taskinfo_t;
 			func = {
 				type = (custom, QFString, parse_task_function);
-				fields = (func);
+				fields = (func, params, param_data);
 			};
 			params = {
 				type = (custom,	QFArray, parse_task_params);
-				fields = (params, func);
+				fields = (func, params, param_data);
 			};
 		};
 		qfv_attachmentrefinfo_s = {

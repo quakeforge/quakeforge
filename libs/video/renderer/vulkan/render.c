@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/hash.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -124,10 +125,27 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 	QFV_CmdEndLabel (device, cmd);
 }
 
+static exprsym_t qfv_renderpass_task_symbols[] = {
+
+	{}
+};
+
 void
 QFV_LoadRenderPass (vulkan_ctx_t *ctx)
 {
+
+	exprtab_t   task_tab = { qfv_renderpass_task_symbols, 0 };
+	exprctx_t   ectx = {
+		.symtab = &task_tab,
+		.hashctx = &ctx->script_context->hashctx,
+	};
+	cexpr_init_symtab (&task_tab, &ectx);
+
+	qfv_renderctx_t rctx = { .task_functions = &task_tab };
+
 	plitem_t   *item = Vulkan_GetConfig (ctx, "main_def");
-	__auto_type ri = QFV_ParseRenderInfo (ctx, item);
+	__auto_type ri = QFV_ParseRenderInfo (ctx, item, &rctx);
 	printf ("%p\n", ri);
+
+	Hash_DelTable (task_tab.tab);
 }
