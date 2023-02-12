@@ -390,7 +390,10 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		*(int *) result->value = 0;
 		return result;
 	}
-	for (exprfunc_t *f = fsym->value; f->result; f++) {
+	for (exprfunc_t *f = fsym->value; f->func; f++) {
+		if (!f->result) {
+			continue;
+		}
 		int         num_params = f->num_params;
 		if (num_params >= 0 && num_args == num_params) {
 		} else if (num_params < 0 && num_args >= ~num_params) {
