@@ -1143,8 +1143,29 @@ static int
 parse_task_params (const plitem_t *item, void **data,
 				   plitem_t *messages, parsectx_t *pctx)
 {
-	PL_Message (messages, item, "parse_task_params: not implemented");
-	return 0;
+	exprfunc_t *func = *(exprfunc_t **) data[0];
+	exprval_t **params = *(exprval_t ***) data[1];
+	if (PL_A_NumObjects (item) != func->num_params) {
+		PL_Message (messages, item, "incorrect number of parameters");
+		return 0;
+	}
+	for (int i = 0; i < func->num_params; i++) {
+		const char *paramstr = PL_String (PL_ObjectAtIndex (item, i));
+		exprval_t  *param = params[func->num_params - i - 1];
+		exprctx_t   ectx = *pctx->ectx;
+		if (param->type->data) {
+			ectx.parent = pctx->ectx;
+			ectx.symtab = ((exprenum_t *) param->type->data)->symtab;
+		}
+		// cexpr params are in reverse order
+		ectx.result = param;
+
+		if (cexpr_eval_string (paramstr, &ectx)) {
+			PL_Message (messages, item, "error parsing param %d", i);
+			return 0;
+		}
+	}
+	return 1;
 }
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
