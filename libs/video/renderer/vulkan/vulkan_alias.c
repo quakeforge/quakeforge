@@ -48,6 +48,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -295,12 +296,27 @@ Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
 	skin->descriptor = 0;
 }
 
+static void
+alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t alias_draw_func[] = {
+	{ .func = alias_draw },
+	{}
+};
+static exprsym_t alias_task_syms[] = {
+	{ "alias_draw", &cexpr_function, alias_draw_func },
+	{}
+};
+
 void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "alias init");
+	QFV_Render_AddTasks (ctx, alias_task_syms);
 
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;

@@ -69,6 +69,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
@@ -1361,6 +1362,64 @@ create_notexture (vulkan_ctx_t *ctx)
 	bctx->notexture.tex = Vulkan_LoadTexArray (ctx, tex, 2, 1, "notexture");
 }
 
+static void
+bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprenum_t bsp_stage_enum;
+static exprtype_t bsp_stage_type = {
+	.name = "bsp_stage",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &bsp_stage_enum,
+};
+static int bsp_stage_values[] = { 0, };
+static exprsym_t bsp_stage_symbols[] = {
+	{"main", &bsp_stage_type, bsp_stage_values + 0},
+	{}
+};
+static exprtab_t bsp_stage_symtab = { .symbols = bsp_stage_symbols };
+static exprenum_t bsp_stage_enum = {
+	&bsp_stage_type,
+	&bsp_stage_symtab,
+};
+
+static exprenum_t bsp_queue_enum;
+static exprtype_t bsp_queue_type = {
+	.name = "bsp_queue",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &bsp_queue_enum,
+};
+static int bsp_queue_values[] = { 0, 1, 2, 3, };
+static exprsym_t bsp_queue_symbols[] = {
+	{"solid",       &bsp_queue_type, bsp_queue_values + 0},
+	{"sky",         &bsp_queue_type, bsp_queue_values + 1},
+	{"translucent", &bsp_queue_type, bsp_queue_values + 2},
+	{"turbulent",   &bsp_queue_type, bsp_queue_values + 3},
+	{}
+};
+static exprtab_t bsp_queue_symtab = { .symbols = bsp_queue_symbols };
+static exprenum_t bsp_queue_enum = {
+	&bsp_queue_type,
+	&bsp_queue_symtab,
+};
+
+static exprtype_t *bsp_draw_queue_params[] = {
+	&bsp_queue_type,
+	&bsp_stage_type,
+};
+
+static exprfunc_t bsp_draw_queue_func[] = {
+	{ 0, 2, bsp_draw_queue_params, bsp_draw_queue },
+	{}
+};
+static exprsym_t bsp_task_syms[] = {
+	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
+	{}
+};
+
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
@@ -1368,6 +1427,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfvPushDebug (ctx, "bsp init");
+	QFV_Render_AddTasks (ctx, bsp_task_syms);
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;

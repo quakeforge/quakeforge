@@ -47,6 +47,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/qf_matrices.h"
@@ -272,6 +273,20 @@ create_buffers (vulkan_ctx_t *ctx)
 	}
 }
 
+static void
+particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t particles_draw_func[] = {
+	{ .func = particles_draw },
+	{}
+};
+static exprsym_t particles_task_syms[] = {
+	{ "particles_draw", &cexpr_function, particles_draw_func },
+	{}
+};
+
 void
 Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 {
@@ -279,6 +294,7 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfvPushDebug (ctx, "particles init");
+	QFV_Render_AddTasks (ctx, particles_task_syms);
 
 	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
 	ctx->particle_context = pctx;

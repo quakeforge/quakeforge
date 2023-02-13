@@ -63,6 +63,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -284,12 +285,27 @@ Vulkan_Sprint_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 								 &sprite->descriptors);
 }
 
+static void
+sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t sprite_draw_func[] = {
+	{ .func = sprite_draw },
+	{}
+};
+static exprsym_t sprite_task_syms[] = {
+	{ "sprite_draw", &cexpr_function, sprite_draw_func },
+	{}
+};
+
 void
 Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "sprite init");
+	QFV_Render_AddTasks (ctx, sprite_task_syms);
 
 	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
 	ctx->sprite_context = sctx;

@@ -146,3 +146,21 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	cexpr_init_symtab (&rctx->task_functions, &ectx);
 	rctx->task_functions.symbols = 0;
 }
+
+void
+QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
+{
+	__auto_type rctx = ctx->render_context;
+	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
+	for (exprsym_t *sym = task_syms; sym->name; sym++) {
+		Hash_Add (rctx->task_functions.tab, sym);
+		for (exprfunc_t *f = sym->value; f->func; f++) {
+			for (int i = 0; i < f->num_params; i++) {
+				exprenum_t *e = f->param_types[i]->data;
+				if (e && !e->symtab->tab) {
+					cexpr_init_symtab (e->symtab, &ectx);
+				}
+			}
+		}
+	}
+}

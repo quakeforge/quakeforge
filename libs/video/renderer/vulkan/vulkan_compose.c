@@ -52,6 +52,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -120,12 +121,27 @@ static VkWriteDescriptorSet base_image_write = {
 	0, 0, 0
 };
 
+static void
+compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t compose_draw_func[] = {
+	{ .func = compose_draw },
+	{}
+};
+static exprsym_t compose_task_syms[] = {
+	{ "compose_draw", &cexpr_function, compose_draw_func },
+	{}
+};
+
 void
 Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "compose init");
+	QFV_Render_AddTasks (ctx, compose_task_syms);
 
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
 	ctx->compose_context = cctx;

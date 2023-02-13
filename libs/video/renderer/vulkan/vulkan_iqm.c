@@ -48,6 +48,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
+#include "QF/Vulkan/render.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -360,12 +361,27 @@ Vulkan_IQMRemoveSkin (vulkan_ctx_t *ctx, qfv_iqm_skin_t *skin)
 	skin->descriptor = 0;
 }
 
+static void
+iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t iqm_draw_func[] = {
+	{ .func = iqm_draw },
+	{}
+};
+static exprsym_t iqm_task_syms[] = {
+	{ "iqm_draw", &cexpr_function, iqm_draw_func },
+	{}
+};
+
 void
 Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "iqm init");
+	QFV_Render_AddTasks (ctx, iqm_task_syms);
 
 	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
 	ctx->iqm_context = ictx;

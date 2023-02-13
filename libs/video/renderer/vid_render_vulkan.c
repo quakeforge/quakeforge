@@ -101,7 +101,6 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 
-	QFV_LoadRenderPass (vulkan_ctx);
 	Vulkan_CreateRenderPasses (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 
@@ -116,6 +115,8 @@ vulkan_R_Init (void)
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
+
+	QFV_LoadRenderPass (vulkan_ctx);
 
 	Skin_Init ();
 

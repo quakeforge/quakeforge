@@ -66,6 +66,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
@@ -317,6 +318,20 @@ static VkWriteDescriptorSet base_image_write = {
 	0, 0, 0
 };
 
+static void
+lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t lights_draw_func[] = {
+	{ .func = lights_draw },
+	{}
+};
+static exprsym_t lighting_task_syms[] = {
+	{ "lights_draw", &cexpr_function, lights_draw_func },
+	{}
+};
+
 void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
@@ -324,6 +339,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfvPushDebug (ctx, "lighting init");
+	QFV_Render_AddTasks (ctx, lighting_task_syms);
 
 	// lighting_context initialized in Vulkan_Lighting_CreateRenderPasses
 
