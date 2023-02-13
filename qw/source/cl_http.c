@@ -47,8 +47,8 @@ static CURL *easy_handle;
 static CURLM *multi_handle;
 
 static int
-http_progress (void *clientp, double dltotal, double dlnow,
-			   double ultotal, double uplow)
+http_progress (void *clientp, curl_off_t dltotal, curl_off_t dlnow,
+			   curl_off_t ultotal, curl_off_t uplow)
 {
 	return 0;	//non-zero = abort
 }
@@ -87,7 +87,7 @@ CL_HTTP_StartDownload (void)
 
 	curl_easy_setopt (easy_handle, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt (easy_handle, CURLOPT_NOSIGNAL, 1L);
-	curl_easy_setopt (easy_handle, CURLOPT_PROGRESSFUNCTION, http_progress);
+	curl_easy_setopt (easy_handle, CURLOPT_XFERINFOFUNCTION, http_progress);
 	curl_easy_setopt (easy_handle, CURLOPT_WRITEFUNCTION, http_write);
 
 	curl_easy_setopt (easy_handle, CURLOPT_URL, cls.downloadurl->str);
