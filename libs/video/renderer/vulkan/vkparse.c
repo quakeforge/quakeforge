@@ -1087,7 +1087,7 @@ parse_task_function (const plitem_t *item, void **data,
 {
 	qfv_renderctx_t *rctx = pctx->data;
 	const char *fname = PL_String (item);
-	exprsym_t  *fsym = Hash_Find (rctx->task_functions->tab, fname);
+	exprsym_t  *fsym = Hash_Find (rctx->task_functions.tab, fname);
 
 	if (!fsym) {
 		PL_Message (messages, item, "undefined task function %s", fname);
@@ -1145,6 +1145,10 @@ parse_task_params (const plitem_t *item, void **data,
 {
 	exprfunc_t *func = *(exprfunc_t **) data[0];
 	exprval_t **params = *(exprval_t ***) data[1];
+	if (!func) {
+		PL_Message (messages, item, "task function not set");
+		return 0;
+	}
 	if (PL_A_NumObjects (item) != func->num_params) {
 		PL_Message (messages, item, "incorrect number of parameters");
 		return 0;

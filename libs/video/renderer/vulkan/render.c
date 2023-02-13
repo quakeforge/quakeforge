@@ -125,27 +125,24 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 	QFV_CmdEndLabel (device, cmd);
 }
 
-static exprsym_t qfv_renderpass_task_symbols[] = {
-
-	{}
-};
-
 void
 QFV_LoadRenderPass (vulkan_ctx_t *ctx)
 {
-
-	exprtab_t   task_tab = { qfv_renderpass_task_symbols, 0 };
-	exprctx_t   ectx = {
-		.symtab = &task_tab,
-		.hashctx = &ctx->script_context->hashctx,
-	};
-	cexpr_init_symtab (&task_tab, &ectx);
-
-	qfv_renderctx_t rctx = { .task_functions = &task_tab };
+	__auto_type rctx = ctx->render_context;
 
 	plitem_t   *item = Vulkan_GetConfig (ctx, "main_def");
-	__auto_type ri = QFV_ParseRenderInfo (ctx, item, &rctx);
-	printf ("%p\n", ri);
+	QFV_ParseRenderInfo (ctx, item, rctx);
+}
 
-	Hash_DelTable (task_tab.tab);
+void
+QFV_Render_Init (vulkan_ctx_t *ctx)
+{
+	qfv_renderctx_t *rctx = calloc (1, sizeof (*rctx));
+	ctx->render_context = rctx;
+
+	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
+	exprsym_t   syms[] = { {} };
+	rctx->task_functions.symbols = syms;
+	cexpr_init_symtab (&rctx->task_functions, &ectx);
+	rctx->task_functions.symbols = 0;
 }

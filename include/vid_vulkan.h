@@ -46,6 +46,7 @@ typedef struct vulkan_ctx_s {
 	uint32_t    swapImageIndex;
 
 	struct scriptctx_s *script_context;
+	struct qfv_renderctx_s *render_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct translucentctx_s *translucent_context;

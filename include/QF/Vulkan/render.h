@@ -6,6 +6,7 @@
 #endif
 #include <vulkan/vulkan.h>
 
+#include "QF/cexpr.h"
 #include "QF/simd/types.h"
 
 typedef struct qfv_reference_s {
@@ -66,8 +67,8 @@ typedef struct qfv_attachmentinfo_s {
 } qfv_attachmentinfo_t;
 
 typedef struct qfv_taskinfo_s {
-	struct exprfunc_s *func;
-	const struct exprval_s **params;
+	exprfunc_t *func;
+	const exprval_t **params;
 	void       *param_data;
 } qfv_taskinfo_t;
 
@@ -134,7 +135,8 @@ typedef struct qfv_renderinfo_s {
 } qfv_renderinfo_t;
 
 typedef struct qfv_renderctx_s {
-	struct exprtab_s *task_functions;
+	struct hashctx_s *hashctx;
+	exprtab_t   task_functions;
 } qfv_renderctx_t;
 
 typedef struct qfv_label_s {
@@ -191,5 +193,6 @@ typedef struct qfv_renderpass_s_ {
 
 void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderPass (struct vulkan_ctx_s *ctx);
+void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_render_h
