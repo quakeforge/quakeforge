@@ -46,6 +46,7 @@
 		qfv_framebufferinfo_t,
 		qfv_renderpassinfo_t,
 		qfv_renderinfo_t,
+		qfv_pipelinespec_t,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -436,7 +437,16 @@
 		};
 		qfv_attachmentrefinfo_s = {
 			.name = qfv_attachmentrefinfo_t;
-			.only = layout;
+			.type = (QFString, QFDictionary);
+			.string = {
+				name = $name;
+				layout = $auto;
+			};
+			.dictionary = {
+				.parse = auto;
+			};
+			layout = auto;
+			blend = auto;
 		};
 		qfv_attachmentsetinfo_s = {
 			.name = qfv_attachmentsetinfo_t;
@@ -477,12 +487,58 @@
 				type = string;
 				string = name;
 			};
-			pipeline = auto;
 			tasks = {
 				type = (array, qfv_taskinfo_t);
 				size = num_tasks;
 				values = tasks;
-			}
+			};
+
+			flags = auto;
+			stages = {
+				type = (array, VkPipelineShaderStageCreateInfo);
+				size = num_graph_stages;
+				values = graph_stages;
+			};
+			vertexInput = {
+				type = (single, VkPipelineVertexInputStateCreateInfo);
+				value = vertexInput;
+			};
+			inputAssembly = {
+				type = (single, VkPipelineInputAssemblyStateCreateInfo);
+				value = inputAssembly;
+			};
+			tessellation = {
+				type = (single, VkPipelineTessellationStateCreateInfo);
+				value = tessellation;
+			};
+			viewport = {
+				type = (single, VkPipelineViewportStateCreateInfo);
+				value = viewport;
+			};
+			rasterization = {
+				type = (single, VkPipelineRasterizationStateCreateInfo);
+				value = rasterization;
+			};
+			multisample = {
+				type = (single, VkPipelineMultisampleStateCreateInfo);
+				value = multisample;
+			};
+			depthStencil = {
+				type = (single, VkPipelineDepthStencilStateCreateInfo);
+				value = depthStencil;
+			};
+			colorBlend = {
+				type = (single, VkPipelineColorBlendStateCreateInfo);
+				value = colorBlend;
+			};
+			dynamic = {
+				type = (single, VkPipelineDynamicStateCreateInfo);
+				value = dynamic;
+			};
+			layout = {
+				type = (single, qfv_reference_t);
+				value = layout;
+			};
 		};
 		qfv_subpassinfo_s = {
 			.name = qfv_subpassinfo_t;
@@ -504,6 +560,11 @@
 				type = (labeledarray, qfv_pipelineinfo_t, name);
 				size = num_pipelines;
 				values = pipelines;
+			};
+			base_pipeline = {
+				//type = (labeledsingle, qfv_pipelineinfo_t, name);
+				type = (single, qfv_pipelineinfo_t, name);
+				value = base_pipeline;
 			};
 		};
 		qfv_framebufferinfo_s = {
@@ -557,6 +618,6 @@
 				size = num_renderpasses;
 				values = renderpasses;
 			};
-		}
+		};
 	};
 }

@@ -152,6 +152,19 @@ typedef struct parse_custom_s {
 	size_t      num_offsets;
 } parse_custom_t;
 
+static plfield_t *__attribute__((used))
+find_field (plfield_t *fields, const char *field_name,
+			const plitem_t *item, plitem_t *messages)
+{
+	for (plfield_t *f = fields; f->name; f++) {
+		if (strcmp (f->name, field_name) == 0) {
+			return f;
+		}
+	}
+	PL_Message (messages, item, "error: unknown field %s", field_name);
+	return 0;
+}
+
 static int
 parse_basic (const plfield_t *field, const plitem_t *item,
 			 void *data, plitem_t *messages, void *context)
@@ -355,7 +368,7 @@ parse_single (const plfield_t *field, const plitem_t *item,
 		return 0;
 	}
 
-	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
+	plfield_t   f = { field->name, 0, single->type, single->parser, 0 };
 	void       *value = vkparse_alloc (context, single->stride);
 	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {

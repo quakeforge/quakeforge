@@ -75,6 +75,7 @@ typedef struct qfv_taskinfo_s {
 typedef struct qfv_attachmentrefinfo_s {
 	const char *name;
 	VkImageLayout layout;
+	VkPipelineColorBlendAttachmentState blend;
 } qfv_attachmentrefinfo_t;
 
 typedef struct qfv_attachmentsetinfo_s {
@@ -94,6 +95,20 @@ typedef struct qfv_pipelineinfo_s {
 	qfv_reference_t pipeline;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
+
+	VkPipelineCreateFlags flags;
+	uint32_t    num_graph_stages;
+	const VkPipelineShaderStageCreateInfo *graph_stages;
+	const VkPipelineVertexInputStateCreateInfo *vertexInput;
+	const VkPipelineInputAssemblyStateCreateInfo *inputAssembly;
+	const VkPipelineTessellationStateCreateInfo *tessellation;
+	const VkPipelineViewportStateCreateInfo *viewport;
+	const VkPipelineRasterizationStateCreateInfo *rasterization;
+	const VkPipelineMultisampleStateCreateInfo *multisample;
+	const VkPipelineDepthStencilStateCreateInfo *depthStencil;
+	const VkPipelineColorBlendStateCreateInfo *colorBlend;
+	const VkPipelineDynamicStateCreateInfo *dynamic;
+	qfv_reference_t *layout;
 } qfv_pipelineinfo_t;
 
 typedef struct qfv_subpassinfo_s {
@@ -105,6 +120,7 @@ typedef struct qfv_subpassinfo_s {
 	qfv_attachmentrefinfo_t *attachments;
 	uint32_t    num_pipelines;
 	qfv_pipelineinfo_t *pipelines;
+	qfv_pipelineinfo_t *base_pipeline;
 } qfv_subpassinfo_t;
 
 typedef struct qfv_framebufferinfo_s {
@@ -137,6 +153,7 @@ typedef struct qfv_renderinfo_s {
 typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
+	qfv_renderinfo_t *renderinfo;
 } qfv_renderctx_t;
 
 typedef struct qfv_label_s {

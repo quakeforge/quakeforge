@@ -69,6 +69,431 @@ properties = {
 		finalLayout = color_attachment_optimal;
 		clearValue = { color = "[0, 0, 0, 1]"; };
 	};
+
+	cw_cull_back = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = back;
+		frontFace = clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
+	counter_cw_cull_back = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = back;
+		frontFace = counter_clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
+	depth_test_and_write = {
+		depthTestEnable = true;
+		depthWriteEnable = true;
+		depthCompareOp = less_or_equal;
+		depthBoundsTestEnable = false;
+		stencilTestEnable = false;
+	};
+	depth_test_only = {
+		depthTestEnable = true;
+		depthWriteEnable = false;
+		depthCompareOp = less_or_equal;
+		depthBoundsTestEnable = false;
+		stencilTestEnable = false;
+	};
+	depth_disable = {
+		depthTestEnable = false;
+		depthWriteEnable = false;
+		depthCompareOp = less_or_equal;
+		depthBoundsTestEnable = false;
+		stencilTestEnable = false;
+	};
+	blend_disable = {
+		blendEnable = false;
+		srcColorBlendFactor = src_alpha;
+		dstColorBlendFactor = one_minus_src_alpha;
+		colorBlendOp = add;
+		srcAlphaBlendFactor = src_alpha;
+		dstAlphaBlendFactor = one_minus_src_alpha;
+		alphaBlendOp = add;
+		colorWriteMask = r|g|b|a;
+	};
+	pipeline_base = {
+		viewport = {
+			viewports = (
+				{
+					x = 0; y = 0;
+					width = 640; height = 480;
+					minDepth = 0; maxDepth = 1;
+				}
+			);
+			scissors = (
+				{
+					offset = { x = 0; y = 0; };
+					extent = { width = 640; height = 480; };
+				},
+			);
+		};
+		rasterization = $cw_cull_back;
+		multisample = {
+			rasterizationSamples = $msaaSamples;
+			sampleShadingEnable = false;
+			minSampleShading = 0.5f;
+			alphaToCoverageEnable = false;
+			alphaToOneEnable = false;
+		};
+		depthStencil = $depth_test_only;
+		colorBlend = {
+			logicOpEnable = false;
+		};
+		dynamic = {
+			dynamicState = ( viewport, scissor );
+		};
+	};
+	compose_base = {
+		@inherit = $pipeline_base;
+		vertexInput = {
+			bindings = ();
+			attributes = ();
+		};
+		inputAssembly = {
+			topology = triangle_list;
+			primitiveRestartEnable = false;
+		};
+	};
+
+	brush = {
+		shader = {
+			depth_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/bsp_depth.vert;
+			};
+			gbuf_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/bsp_gbuf.vert;
+			};
+			gbuf_geometry = {
+				stage = geometry;
+				name = main;
+				module = $builtin/bsp_gbuf.geom;
+			};
+			gbuf_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/bsp_gbuf.frag;
+			};
+			quake_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/quakebsp.vert;
+			};
+			sky_specialization = {
+				mapEntries = (
+					// doSkyBox
+					{ size = 4; offset = 0; constantID = 0; },
+					// doSkySheet
+					{ size = 4; offset = 4; constantID = 1; },
+				);
+			};
+			skybox_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/bsp_sky.frag;
+				specializationInfo = {
+					@inherit = $brush.shader.sky_specialization;
+					// doSkyBox, doSkySheet
+					data = "array(1, 0)";
+				};
+			};
+			skysheet_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/bsp_sky.frag;
+				specializationInfo = {
+					@inherit = $brush.shader.sky_specialization;
+					// doSkyBox, doSkySheet
+					data = "array(0, 1)";
+				};
+			};
+			turb_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/bsp_turb.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 1; stride = "4"; inputRate = instance; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 1; format = r32_uint; offset = 0; },
+			);
+		};
+		inputAssembly = {
+			topology = triangle_fan;
+			primitiveRestartEnable = true;
+		};
+		layout = {
+			setLayouts = (matrix_set, entity_set, oit_set, texture_set, texture_set);
+			pushConstantRanges = (
+				{
+					stageFlags = fragment;
+					offset = 0;
+					size = "4 * 4 + 4 + 4 + 4";
+				},
+			);
+		};
+	};
+	alias = {
+		shader = {
+			depth_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/alias_depth.vert;
+			};
+			gbuf_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/alias.vert;
+			};
+			gbuf_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/alias_gbuf.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 1; stride = "2 * 4 * 4"; inputRate = vertex; },
+				{ binding = 2; stride = "2 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 1; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 3; binding = 1; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 4; binding = 2; format = r32g32_sfloat; offset = 0; },
+			);
+		};
+		inputAssembly = {
+			topology = triangle_list;
+			primitiveRestartEnable = false;
+		};
+		layout = {
+			setLayouts = (matrix_set, texture_set, texture_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 68;
+					size = "3 * 4 + 2 * 4 * 4";
+				},
+			);
+		};
+	};
+	iqm = {
+		shader = {
+			specialization = {
+				mapEntries = (
+					// IQMDepthOnly
+					{ size = 4; offset = 0; constantID = 0; },
+				);
+			};
+			depth_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/iqm.vert;
+				specializationInfo = {
+					@inherit = $iqm.shader.specialization;
+					// IQMDepthOnly
+					data = "array(1)";
+				};
+			};
+			gbuf_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/iqm.vert;
+				specializationInfo = {
+					@inherit = $iqm.shader.specialization;
+					// IQMDepthOnly
+					data = "array(0)";
+				};
+			};
+			gbuf_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/iqm.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = 20; inputRate = vertex; },
+				{ binding = 1; stride = 40; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32_sfloat;    offset = 0;  },	// position
+				{ location = 1; binding = 0; format = r8g8b8a8_uint;       offset = 12; },	// bonindices
+				{ location = 2; binding = 0; format = r8g8b8a8_unorm;      offset = 16; },	// boneweights
+
+				{ location = 3; binding = 1; format = r32g32_sfloat;       offset = 0;  },	// texcoord
+				{ location = 4; binding = 1; format = r32g32b32_sfloat;    offset = 8;  },	// normal
+				{ location = 5; binding = 1; format = r32g32b32a32_sfloat; offset = 20; },	// tangent
+				{ location = 6; binding = 1; format = r8g8b8a8_unorm;      offset = 36; },	// color
+
+			);
+		};
+		inputAssembly = {
+			topology = triangle_list;
+			primitiveRestartEnable = false;
+		};
+		layout = {
+			setLayouts = (matrix_set, texture_set, bone_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 68;
+					size = "3 * 4 + 2 * 4 * 4 + 4";
+				},
+			);
+		};
+	};
+	sprite = {
+		shader = {
+			depth_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/sprite_depth.vert;
+			};
+			depth_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/sprite_depth.frag;
+			};
+			gbuf_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/sprite_gbuf.vert;
+			};
+			gbuf_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/sprite_gbuf.frag;
+			};
+		};
+		vertexInput = {
+			bindings = ();
+			attributes = ();
+		};
+		inputAssembly = {
+			topology = triangle_strip;
+			// never draw more than 4 verts
+			primitiveRestartEnable = false;
+		};
+		layout = {
+			setLayouts = (matrix_set, sprite_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					// note: overlap with fragment is for the frame number
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 64;
+					// note: overlap with vertex to share frame number
+					size = "2 * 4 + 2 * 4 + 4";
+				},
+			);
+		};
+	};
+	particle = {
+		shader = {
+			vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/particle.vert;
+			};
+			geometry = {
+				stage = geometry;
+				name = main;
+				module = $builtin/particle.geom;
+			};
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/particle.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = "4 * 4 * 4"; inputRate = instance; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 32; },
+				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 48; },
+			);
+		};
+		inputAssembly = {
+			topology = point_list;
+			primitiveRestartEnable = false;
+		};
+		layout = {
+			setLayouts = (matrix_set, texture_set, oit_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4";
+				},
+			);
+		};
+	};
+	fstriangle = {
+		shader = {
+			vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/fstriangle.vert;
+			};
+		};
+	};
+	lighting = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting.frag;
+			};
+		};
+	};
+	compose = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/compose.frag;
+			};
+		};
+	}
 };
 images = {
 	depth = {
@@ -194,37 +619,88 @@ renderpasses = {
 					};
 					preserve = (color, emission, normal, position, output);
 				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+				};
 				pipelines = {
 					bsp:depth = {
 						color = $color.bsp;
-						pipeline = bsp_depth;
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, solid); },
 							{ func = bsp_draw_queue;
 							  params = (main, sky); },
 						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[1]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
 					};
 					alias:depth = {
 						color = $color.alias;
-						pipeline = alias_depth;
 						tasks = (
 							{ func = "alias_draw"; },
 						);
+
+						stages = (
+							$alias.shader.depth_vertex,
+						);
+						vertexInput = {
+							// depth pass doesn't use UVs
+							bindings = (
+								"$alias.vertexInput.bindings[0]",
+								"$alias.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$alias.vertexInput.attributes[0]",
+								"$alias.vertexInput.attributes[1]",
+								"$alias.vertexInput.attributes[2]",
+								"$alias.vertexInput.attributes[3]",
+							);
+						};
+						inputAssembly = $alias.inputAssembly;
+						layout = $alias.layout;
 					};
 					iqm:depth = {
 						color = $color.iqm;
-						pipeline = iqm_depth;
 						tasks = (
 							{ func = "iqm_draw"; },
 						);
+
+						stages = (
+							$iqm.shader.depth_vertex,
+						);
+						vertexInput = $iqm.vertexInput;
+						inputAssembly = $iqm.inputAssembly;
+						layout = $iqm.layout;
 					};
 					sprite:depth = {
 						color = $color.sprite;
-						pipeline = sprite_depth;
 						tasks = (
 							{ func = "sprite_draw"; },
 						);
+
+						stages = (
+							$sprite.shader.depth_vertex,
+							$sprite.shader.depth_fragment,
+						);
+						vertexInput = $sprite.vertexInput;
+						inputAssembly = $sprite.inputAssembly;
+						layout = $sprite.layout;
 					};
 				};
 			};
@@ -239,32 +715,71 @@ renderpasses = {
 					};
 					preserve = (color, emission, normal, position, output);
 				};
+				base_pipeline = $pipeline_base;
 				pipelines = {
-					bsp:sky = {
+					bsp:skybox = {
 						color = $color.bsp;
-						pipeline = $bsp_sky_pipeline;
 						tasks = (
 							// FIXME sky should not use OIT
 							{ func = bsp_draw_queue;
 							  params = (main, sky); },
 						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.skybox_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+					bsp:skysheet = {
+						color = $color.bsp;
+						tasks = (
+							// FIXME sky should not use OIT
+							{ func = bsp_draw_queue;
+							  params = (main, sky); },
+						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.skysheet_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
 					};
 					bsp:trans = {
 						color = $color.bsp;
-						pipeline = bsp_turb;
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, translucent); },
 							{ func = bsp_draw_queue;
 							  params = (main, turbulent); },
 						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.turb_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
 					};
 					particles:trans = {
 						color = $color.particles;
-						pipeline = partdraw;
 						tasks = (
 							{ func = particles_draw; },
 						);
+
+						stages = (
+							$particle.shader.vertex,
+							$particle.shader.geometry,
+							$particle.shader.fragment,
+						);
+						vertexInput = $particle.vertexInput;
+						inputAssembly = $particle.inputAssembly;
+						layout = $particle.layout;
 					};
 				};
 			};
@@ -275,47 +790,89 @@ renderpasses = {
 				};
 				attachments = {
 					color = {
-						color = color_attachment_optimal;
-						emission = color_attachment_optimal;
-						normal = color_attachment_optimal;
-						position = color_attachment_optimal;
+						color = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+						emission = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+						normal = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+						position = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
 					};
 					depth = {
 						depth = depth_stencil_read_only_optimal;
 					};
 					preserve = (output);
 				};
+				base_pipeline = $pipeline_base;
 				pipelines = {
 					bsp:gbuffer = {
 						color = $color.bsp;
-						pipeline = bsp_gbuf;
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, solid); },
 							{ func = bsp_draw_queue;
 							  params = (main, sky); },
 						);
+
+						stages = (
+							$brush.shader.gbuf_vertex,
+							$brush.shader.gbuf_geometry,
+							$brush.shader.gbuf_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
 					};
 					alias:gbuffer = {
 						color = $color.alias;
-						pipeline = alias_gbuf;
 						tasks = (
 							{ func = "alias_draw"; },
 						);
+
+						stages = (
+							$alias.shader.gbuf_vertex,
+							$alias.shader.gbuf_fragment,
+						);
+						vertexInput = $alias.vertexInput;
+						inputAssembly = $alias.inputAssembly;
+						layout = $alias.layout;
 					};
 					iqm:gbuffer = {
 						color = $color.iqm;
-						pipeline = iqm_gbuf;
 						tasks = (
 							{ func = "iqm_draw"; },
 						);
+
+						stages = (
+							$iqm.shader.gbuf_vertex,
+							$iqm.shader.gbuf_fragment,
+						);
+						vertexInput = $iqm.vertexInput;
+						inputAssembly = $iqm.inputAssembly;
+						layout = $iqm.layout;
 					};
 					sprite:gbuffer = {
 						color = $color.sprite;
-						pipeline = sprite_gbuf;
 						tasks = (
 							{ func = "sprite_draw"; },
 						);
+
+						stages = (
+							$sprite.shader.gbuf_vertex,
+							$sprite.shader.gbuf_fragment,
+						);
+						vertexInput = $sprite.vertexInput;
+						inputAssembly = $sprite.inputAssembly;
+						layout = $sprite.layout;
 					};
 				};
 			};
@@ -333,17 +890,27 @@ renderpasses = {
 						position = shader_read_only_optimal;
 					};
 					color = {
-						opaque = color_attachment_optimal;
+						opaque = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
 					};
 					preserve = (output);
 				};
 				pipelines = {
 					lights = {
+						@inherit = $compose_base;
+
 						color = $color.lights;
-						pipeline = lighting;
 						tasks = (
 							{ func = "lights_draw"; },
 						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment,
+						);
+						layout = lighting.layout;
 					};
 				};
 			};
@@ -363,17 +930,24 @@ renderpasses = {
 				};
 				pipelines = {
 					compose = {
+						@inherit = $compose_base;
+
 						color = $color.compose;
-						pipeline = compose;
 						tasks = (
 							{ func = "compose_draw"; },
 						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$compose.shader.fragment,
+						);
+						layout = compose.layout;
 					};
 				};
 			};
 		};
 	};
-/*	deferred_cube = {
+	/*deferred_cube = {
 		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);

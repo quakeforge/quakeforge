@@ -1034,16 +1034,6 @@
 				},
 			);
 			vertexInput   = $properties.vertexInput.iqm;
-			/*vertexInput = {
-				bindings = (
-					"$properties.vertexInput.iqm.bindings[0]",
-				);
-				attributes = (
-					"$properties.vertexInput.iqm.attributes[0]",
-					"$properties.vertexInput.iqm.attributes[1]",
-					"$properties.vertexInput.iqm.attributes[2]",
-				);
-			};*/
 			inputAssembly = $properties.inputAssembly.iqm;
 			layout = iqm_layout;
 		};

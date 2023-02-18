@@ -131,7 +131,7 @@ QFV_LoadRenderPass (vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 
 	plitem_t   *item = Vulkan_GetConfig (ctx, "main_def");
-	QFV_ParseRenderInfo (ctx, item, rctx);
+	rctx->renderinfo = QFV_ParseRenderInfo (ctx, item, rctx);
 }
 
 void

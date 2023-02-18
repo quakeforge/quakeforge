@@ -124,6 +124,57 @@ write_function_tail (Struct *self)
 }
 
 static void
+write_parse_type (Struct *self)
+{
+	fprintf (output_file, "\t\treturn PL_ParseStruct (%s_fields, item, data, "
+			 "messages, context);\n", [self outname]);
+}
+
+static void
+write_auto_parse (Struct *self, string field)
+{
+	fprintf (output_file, "\t\tdo {\n");
+	fprintf (output_file, "\t\t\tplfield_t  *f = find_field (%s_fields, %s, "
+			 "item, messages);\n", [self outname], sprintf ("\"%s\"", field));
+	fprintf (output_file, "\t\t\tif (!f) {\n");
+	fprintf (output_file, "\t\t\t\treturn 0;");
+	fprintf (output_file, "\t\t\t};\n");
+	fprintf (output_file, "\t\t\tf->parser (f, item, &%s, messages, context);\n",
+			 sprintf ("((%s *) data)->%s", [self outname], field));
+	fprintf (output_file, "\t\t} while (0);\n");
+}
+
+static int
+check_need_table (Struct *self, PLItem *field_dict, string type)
+{
+	string      key = nil;
+	switch (type) {
+		case "QFDictionary": key = ".dictionary"; break;
+		case "QFArray":      key = ".array";      break;
+		case "QFBinary":     key = ".binary";     break;
+		case "QFString":     key = ".string";     break;
+	}
+	PLItem     *type_obj = [field_dict getObjectForKey:key];
+	int         count = [type_obj numKeys];
+	if (!count) {
+		return 0;
+	}
+	for (int i = 0; i < count; i++) {
+		string      field = [type_obj keyAtIndex:i];
+		PLItem     *item = [type_obj getObjectForKey:field];
+		string      str = [item string];
+
+		if (field == ".parse") {
+			return 1;
+		}
+		if (str == "$auto") {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void
 write_type (Struct *self, PLItem *field_dict, string type)
 {
 	string      key = nil;
@@ -145,6 +196,11 @@ write_type (Struct *self, PLItem *field_dict, string type)
 		PLItem     *item = [type_obj getObjectForKey:field];
 		string      str = [item string];
 
+		if (field == ".parse") {
+			write_parse_type (self);
+			continue;
+		}
+
 		switch (str) {
 			case "$item.string":
 				str = "vkstrdup (context, PL_String (item))";
@@ -158,12 +214,54 @@ write_type (Struct *self, PLItem *field_dict, string type)
 			case "$index":
 				str = "field->offset";
 				break;
+			case "$auto":
+				write_auto_parse (self, field);
+				continue;
 		}
 		fprintf (output_file, "\t\t((%s *) data)->%s = %s;\n", [self outname],
 				 field, str);
 	}
 	fprintf (output_file, "\t\treturn 1;\n");
 	fprintf (output_file, "\t}\n");
+}
+
+static void
+write_parser (Struct *self, int have_sType, PLItem *only)
+{
+	write_function_head (self);
+	if (have_sType) {
+		fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
+		fprintf (output_file, " = %s;\n", [self sTypeName]);
+	}
+	if (self.label_field) {
+		fprintf (output_file, "\t((%s *) data)->%s", [self outname],
+				 self.label_field);
+		fprintf (output_file, " = vkstrdup (context, field->name);\n");
+	}
+	if (only) {
+		fprintf (output_file, "\tplfield_t  *f = &%s_fields[0];\n",
+				 [self outname]);
+		fprintf (output_file,
+				 "\tif (!PL_CheckType (PL_Type (item), f->type)) {\n"
+				 "\t\tPL_TypeMismatch (messages, item, "
+				 "f->name, f->type, PL_Type (item));\n"
+				 "\t\treturn 0;\n"
+				 "\t}\n"
+				 "\tvoid       *flddata = (byte *)data + f->offset;\n"
+				 "\treturn f->parser (f, item, flddata, messages, "
+				 "context);\n");
+	} else {
+		fprintf (output_file,
+				 "\tif (PL_Type (item) == QFString\n"
+				 "\t\t&& !(item = parse_reference (item, \"%s\", "
+				 "messages, context))) {\n"
+				 "\t\treturn 0;\n"
+				 "\t}\n"
+				 "\treturn PL_ParseStruct (%s_fields, item, data, "
+				 "messages, context);\n",
+				 [self outname], [self outname]);
+	}
+	write_function_tail (self);
 }
 
 static void
@@ -208,6 +306,61 @@ write_cexpr (Struct *self, Array *field_defs)
 	fprintf (output_file, "};\n");
 	fprintf (output_file, "\n");
 	fprintf (header_file, "extern exprtype_t %s_type;\n", [self outname]);
+}
+
+static void
+write_table (Struct *self, PLItem *field_dict, Array *field_defs,
+			 PLItem *only, int need_parser)
+{
+	qfot_type_t *type = self.type;
+	int         have_sType = 0;
+	int         have_pNext = 0;
+	int         readonly = [field_dict string] == "readonly";
+
+	for (int i = 0; i < type.strct.num_fields; i++) {
+		qfot_var_t *field = &type.strct.fields[i];
+		if (field.name == "sType") {
+			have_sType = 1;
+		}
+		if (field.name == "pNext") {
+			have_pNext = 1;
+			self.write_symtab = 1;
+		}
+	}
+	for (int i = [field_defs count]; i-- > 0; ) {
+		FieldDef   *field_def = [field_defs objectAtIndex:i];
+		[field_def writeParseData];
+	}
+	if (!readonly) {
+		fprintf (output_file, "static plfield_t %s_fields[] = {\n",
+				 [self outname]);
+		if (!only) {
+			fprintf (output_file,
+					 "\t{\"@inherit\", 0, QFString, parse_inherit, "
+					 "&%s_fields},\n", [self outname]);
+		}
+		if (have_pNext) {
+			fprintf (output_file,
+					"\t{\"@next\", field_offset (%s, pNext), "
+					"QFArray, parse_next, 0},", [self outname]);
+		}
+		for (int i = [field_defs count]; i-- > 0; ) {
+			FieldDef   *field_def = [field_defs objectAtIndex:i];
+			[field_def writeField];
+		}
+		fprintf (output_file, "\t{ }\n");
+		fprintf (output_file, "};\n");
+
+		if (need_parser) {
+			write_parser (self, have_sType, only);
+		}
+		if (have_pNext) {
+			fprintf (output_file, "static parserref_t %s_parser = ",
+					 [self outname]);
+			fprintf (output_file, "{\"%s\", %s, sizeof(%s)};\n",
+					 [self outname], [self parseFunc], [self outname]);
+		}
+	}
 }
 
 -(void) writeTable
@@ -278,7 +431,19 @@ write_cexpr (Struct *self, Array *field_defs)
 	if ([field_dict getObjectForKey:".type"]) {
 		PLItem     *type = [field_dict getObjectForKey:".type"];
 		string      str = [type string];
+		int         need_table = 0;
 
+		if (str) {
+			need_table |= check_need_table (self, field_dict, str);
+		} else {
+			for (int i = [type count]; i-- > 0; ) {
+				string      str = [[type getObjectAtIndex:i] string];
+				need_table |= check_need_table (self, field_dict, str);
+			}
+		}
+		if (need_table) {
+			write_table (self, field_dict, field_defs, only, 0);
+		}
 		write_function_head (self);
 		fprintf (output_file, "\tpltype_t    type = PL_Type (item);\n");
 		if (str) {
@@ -298,85 +463,7 @@ write_cexpr (Struct *self, Array *field_defs)
 		return;
 	}
 
-	int         have_sType = 0;
-	int         have_pNext = 0;
-	int         readonly = [field_dict string] == "readonly";
-
-	for (int i = 0; i < type.strct.num_fields; i++) {
-		qfot_var_t *field = &type.strct.fields[i];
-		if (field.name == "sType") {
-			have_sType = 1;
-		}
-		if (field.name == "pNext") {
-			have_pNext = 1;
-			write_symtab = 1;
-		}
-	}
-	for (int i = [field_defs count]; i-- > 0; ) {
-		FieldDef   *field_def = [field_defs objectAtIndex:i];
-		[field_def writeParseData];
-	}
-	if (!readonly) {
-		fprintf (output_file, "static plfield_t %s_fields[] = {\n",
-				 [self outname]);
-		if (!only) {
-			fprintf (output_file,
-					 "\t{\"@inherit\", 0, QFString, parse_inherit, "
-					 "&%s_fields},\n", [self outname]);
-		}
-		if (have_pNext) {
-			fprintf (output_file,
-					"\t{\"@next\", field_offset (%s, pNext), "
-					"QFArray, parse_next, 0},", [self outname]);
-		}
-		for (int i = [field_defs count]; i-- > 0; ) {
-			FieldDef   *field_def = [field_defs objectAtIndex:i];
-			[field_def writeField];
-		}
-		fprintf (output_file, "\t{ }\n");
-		fprintf (output_file, "};\n");
-
-		write_function_head (self);
-		if (have_sType) {
-			fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
-			fprintf (output_file, " = %s;\n", [self sTypeName]);
-		}
-		if (label_field) {
-			fprintf (output_file, "\t((%s *) data)->%s", [self outname],
-					 label_field);
-			fprintf (output_file, " = vkstrdup (context, field->name);\n");
-		}
-		if (only) {
-			fprintf (output_file, "\tplfield_t  *f = &%s_fields[0];\n",
-					 [self outname]);
-			fprintf (output_file,
-					 "\tif (!PL_CheckType (PL_Type (item), f->type)) {\n"
-					 "\t\tPL_TypeMismatch (messages, item, "
-					 "f->name, f->type, PL_Type (item));\n"
-					 "\t\treturn 0;\n"
-					 "\t}\n"
-					 "\tvoid       *flddata = (byte *)data + f->offset;\n"
-					 "\treturn f->parser (f, item, flddata, messages, "
-					 "context);\n");
-		} else {
-			fprintf (output_file,
-					 "\tif (PL_Type (item) == QFString\n"
-					 "\t\t&& !(item = parse_reference (item, \"%s\", "
-					 "messages, context))) {\n"
-					 "\t\treturn 0;\n"
-					 "\t}\n"
-					 "\treturn PL_ParseStruct (%s_fields, item, data, "
-					 "messages, context);\n",
-					 [self outname], [self outname]);
-		}
-		write_function_tail (self);
-		if (have_pNext) {
-			fprintf (output_file, "static parserref_t %s_parser = ",
-					 [self outname]);
-			fprintf (output_file, "{\"%s\", %s, sizeof(%s)};\n",
-					 [self outname], [self parseFunc], [self outname]);
-		}
-	}
+	write_table (self, field_dict, field_defs, only, 1);
 
 	write_cexpr (self, field_defs);
 }
