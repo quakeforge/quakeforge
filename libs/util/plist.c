@@ -1232,7 +1232,7 @@ PL_TypeMismatch (plitem_t *messages, const plitem_t *item, const char *name,
 	const int num_types = sizeof (pl_types) / sizeof (pl_types[0]);
 	if (field_type & QFMultiType) {
 		PL_Message (messages, item,
-					"error: %s is the wrong type. Got %s, expected on of:",
+					"error: %s is the wrong type. Got %s, expected one of:",
 					name, pl_types[item_type]);
 		field_type &= ~QFMultiType;
 		for (int type = 0; field_type && type < num_types;
