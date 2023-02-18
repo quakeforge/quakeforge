@@ -116,8 +116,7 @@ typedef struct qfv_subpassinfo_s {
 	const char *name;
 	uint32_t    num_dependencies;
 	qfv_dependencyinfo_t *dependencies;
-	uint32_t    num_attachments;
-	qfv_attachmentrefinfo_t *attachments;
+	qfv_attachmentsetinfo_t *attachments;
 	uint32_t    num_pipelines;
 	qfv_pipelineinfo_t *pipelines;
 	qfv_pipelineinfo_t *base_pipeline;
