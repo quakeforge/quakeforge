@@ -9,6 +9,8 @@
 #include "QF/darray.h"
 #include "QF/simd/types.h"
 
+#include "QF/Vulkan/render.h"
+
 typedef struct qfv_framebufferset_s
 	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
 
@@ -40,16 +42,6 @@ typedef struct clearvalueset_s
 	DARRAY_TYPE (VkClearValue) clearvalueset_t;
 
 typedef void (*qfv_draw_t) (qfv_renderframe_t *rFrame);
-
-typedef struct qfv_output_s {
-	VkExtent2D  extent;
-	VkImage     image;		// only if owned
-	VkImageView view;
-	VkFormat    format;
-	uint32_t    frames;
-	VkImageView *view_list;	// per frame
-	VkImageLayout finalLayout;
-} qfv_output_t;
 
 typedef struct qfv_renderpass_s {
 	struct vulkan_ctx_s *vulkan_ctx;

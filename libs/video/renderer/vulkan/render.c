@@ -46,7 +46,6 @@
 #include "QF/Vulkan/pipeline.h"
 #include "vid_vulkan.h"
 
-#include "QF/Vulkan/qf_renderpass.h"//FIXME
 #include "vkparse.h"
 
 static void

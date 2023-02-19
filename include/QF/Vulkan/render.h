@@ -9,6 +9,16 @@
 #include "QF/cexpr.h"
 #include "QF/simd/types.h"
 
+typedef struct qfv_output_s {
+	VkExtent2D  extent;
+	VkImage     image;		// only if owned
+	VkImageView view;
+	VkFormat    format;
+	uint32_t    frames;
+	VkImageView *view_list;	// per frame
+	VkImageLayout finalLayout;
+} qfv_output_t;
+
 typedef struct qfv_reference_s {
 	const char *name;
 	int         line;
