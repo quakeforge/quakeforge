@@ -790,11 +790,12 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			.objects = (qfv_resobj_t *) &shad[1],
 		};
 		for (int i = 0; i < numMaps; i++) {
+			int         cube = maps[i].layers < 6 ? 0 : maps[i].cube;
 			shad->objects[i] = (qfv_resobj_t) {
 				.name = "map",
 				.type = qfv_res_image,
 				.image = {
-					.cubemap = maps[i].layers < 6 ? 0 : maps[i].cube,
+					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
 					.type = VK_IMAGE_TYPE_2D,
 					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
 					.extent = { maps[i].size, maps[i].size, 1 },

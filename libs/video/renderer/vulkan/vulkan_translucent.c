@@ -194,7 +194,11 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 				.image = i,
 				.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				.format = VK_FORMAT_R32_SINT,
-				.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+				.subresourceRange = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.levelCount = VK_REMAINING_MIP_LEVELS,
+					.layerCount = VK_REMAINING_ARRAY_LAYERS,
+				},
 			},
 		};
 		buffer_objs[i] = (qfv_resobj_t) {

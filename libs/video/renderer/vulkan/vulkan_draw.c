@@ -691,7 +691,11 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 			.image = 0,
 			.type = VK_IMAGE_VIEW_TYPE_2D,
 			.format = font->resource->glyph_image.image.format,
-			.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.levelCount = VK_REMAINING_MIP_LEVELS,
+				.layerCount = VK_REMAINING_ARRAY_LAYERS,
+			},
 			.components = {
 				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
 				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -1649,7 +1653,11 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.image = 2,
 			.type = VK_IMAGE_VIEW_TYPE_2D,
 			.format = font->resource->glyph_image.image.format,
-			.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.levelCount = VK_REMAINING_MIP_LEVELS,
+				.layerCount = VK_REMAINING_ARRAY_LAYERS,
+			},
 			.components = {
 				.r = VK_COMPONENT_SWIZZLE_R,
 				.g = VK_COMPONENT_SWIZZLE_R,

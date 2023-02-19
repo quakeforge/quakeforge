@@ -439,7 +439,11 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 				.image = image_ind,
 				.type = VK_IMAGE_VIEW_TYPE_2D,
 				.format = mesh->mesh->objects[image_ind].image.format,
-				.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+				.subresourceRange = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.levelCount = VK_REMAINING_MIP_LEVELS,
+					.layerCount = VK_REMAINING_ARRAY_LAYERS,
+				},
 			},
 		};
 	}
