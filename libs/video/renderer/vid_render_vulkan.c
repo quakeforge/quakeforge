@@ -116,7 +116,8 @@ vulkan_R_Init (void)
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
-	QFV_LoadRenderPass (vulkan_ctx);
+	QFV_LoadRenderInfo (vulkan_ctx);
+	QFV_BuildRender (vulkan_ctx);
 
 	Skin_Init ();
 
@@ -741,6 +742,8 @@ vulkan_vid_render_shutdown (void)
 
 	Vulkan_Palette_Shutdown (vulkan_ctx);
 	Vulkan_Texture_Shutdown (vulkan_ctx);
+
+	QFV_Render_Shutdown (vulkan_ctx);
 
 	QFV_DestroyStagingBuffer (vulkan_ctx->staging);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);

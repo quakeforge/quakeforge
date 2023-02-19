@@ -521,6 +521,11 @@ images = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
+	output = {
+		@inherit = $image_base;
+		usage = color_attachment|input_attachment|sampled;
+		format = $output.format;
+	};
 };
 views = {
 	depth = {
@@ -558,9 +563,14 @@ views = {
 	};
 	output = {
 		@inherit = $view_base;
-		image = $output.image;
+		image = output;
 		format = $output.format;
 	}
+};
+output = {
+	view = $output;
+	format = r16g16b16a16_sfloat;
+	finalLayout = shader_read_only_optimal;
 };
 renderpasses = {
 	deferred = {

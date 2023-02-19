@@ -604,6 +604,7 @@
 		qfv_renderinfo_s = {
 			.name = qfv_renderinfo_t;
 			properties = ignore;
+			output = ignore;
 			images = {
 				type = (labeledarray, qfv_imageinfo_t, name);
 				size = num_images;

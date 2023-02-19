@@ -41,8 +41,7 @@ typedef struct qfv_imageinfo_s {
 typedef struct qfv_imageviewinfo_s {
 	const char *name;
 	VkImageViewCreateFlags flags;
-	//VkImage     image;
-	const char *image;
+	qfv_reference_t image;
 	VkImageViewType viewType;
 	VkFormat    format;
 	VkComponentMapping components;
@@ -102,7 +101,6 @@ typedef struct qfv_attachmentsetinfo_s {
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;
 	const char *name;
-	qfv_reference_t pipeline;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
 
@@ -118,7 +116,7 @@ typedef struct qfv_pipelineinfo_s {
 	const VkPipelineDepthStencilStateCreateInfo *depthStencil;
 	const VkPipelineColorBlendStateCreateInfo *colorBlend;
 	const VkPipelineDynamicStateCreateInfo *dynamic;
-	qfv_reference_t *layout;
+	qfv_reference_t layout;
 } qfv_pipelineinfo_t;
 
 typedef struct qfv_subpassinfo_s {
@@ -157,13 +155,8 @@ typedef struct qfv_renderinfo_s {
 	qfv_imageviewinfo_t *views;
 	uint32_t    num_renderpasses;
 	qfv_renderpassinfo_t *renderpasses;
+	qfv_output_t output;
 } qfv_renderinfo_t;
-
-typedef struct qfv_renderctx_s {
-	struct hashctx_s *hashctx;
-	exprtab_t   task_functions;
-	qfv_renderinfo_t *renderinfo;
-} qfv_renderctx_t;
 
 typedef struct qfv_label_s {
 	vec4f_t     color;
@@ -217,9 +210,24 @@ typedef struct qfv_renderpass_s_ {
 	qfv_subpass_t_ *subpasses;
 } qfv_renderpass_t_;
 
+typedef struct qfv_render_s {
+	struct qfv_resource_s *resources;
+	struct qfv_resobj_s *images;
+	struct qfv_resobj_s *image_views;
+} qfv_render_t;
+
+typedef struct qfv_renderctx_s {
+	struct hashctx_s *hashctx;
+	exprtab_t   task_functions;
+	qfv_renderinfo_t *renderinfo;
+	qfv_render_t *render;
+} qfv_renderctx_t;
+
 void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);
-void QFV_LoadRenderPass (struct vulkan_ctx_s *ctx);
+void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx);
+void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
+void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
 
 #endif//__QF_Vulkan_render_h

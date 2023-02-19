@@ -38,11 +38,13 @@
 # include <strings.h>
 #endif
 
+#include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/pipeline.h"
 #include "vid_vulkan.h"
 
@@ -124,13 +126,199 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 	QFV_CmdEndLabel (device, cmd);
 }
 
+static qfv_output_t
+get_output (vulkan_ctx_t *ctx, plitem_t *item)
+{
+	qfv_output_t output = {};
+	Vulkan_ConfigOutput (ctx, &output);
+
+	plitem_t   *output_def = PL_ObjectForKey (item, "output");
+	if (output_def) {
+		// QFV_ParseOutput clears the structure, but extent and frames need to
+		// be preserved
+		qfv_output_t o = output;
+		QFV_ParseOutput (ctx, &o, output_def, item);
+		output.format = o.format;
+		output.finalLayout = o.finalLayout;
+	}
+	return output;
+}
+
 void
-QFV_LoadRenderPass (vulkan_ctx_t *ctx)
+QFV_LoadRenderInfo (vulkan_ctx_t *ctx)
 {
 	__auto_type rctx = ctx->render_context;
 
 	plitem_t   *item = Vulkan_GetConfig (ctx, "main_def");
+	__auto_type output = get_output (ctx, item);
+	Vulkan_Script_SetOutput (ctx, &output);
 	rctx->renderinfo = QFV_ParseRenderInfo (ctx, item, rctx);
+}
+
+typedef struct {
+	uint32_t    num_images;
+	uint32_t    num_views;
+
+	uint32_t    num_renderpasses;
+	uint32_t    num_attachments;
+	uint32_t    num_subpasses;
+	uint32_t    num_dependencies;
+	uint32_t    num_attachmentrefs;
+	uint32_t    num_colorblend;
+	uint32_t    num_preserve;
+	uint32_t    num_pipelines;
+	uint32_t    num_tasks;
+	uint32_t    num_stages;
+} objcount_t;
+
+static void
+count_pl_stuff (qfv_pipelineinfo_t *pli, objcount_t *counts)
+{
+	counts->num_tasks += pli->num_tasks;
+	counts->num_stages += pli->num_graph_stages;
+}
+
+static void
+count_as_stuff (qfv_attachmentsetinfo_t *as, objcount_t *counts)
+{
+	counts->num_attachmentrefs += as->num_input;
+	counts->num_attachmentrefs += as->num_color;
+	counts->num_colorblend += as->num_color;
+	if (as->resolve) {
+		counts->num_attachmentrefs += as->num_color;
+	}
+	if (as->depth) {
+		counts->num_attachmentrefs += 1;
+	}
+	counts->num_preserve += as->num_preserve;
+}
+
+static void
+count_sp_stuff (qfv_subpassinfo_t *spi, objcount_t *counts)
+{
+	counts->num_dependencies += spi->num_dependencies;
+	if (spi->attachments) {
+		count_as_stuff (spi->attachments, counts);
+	}
+	counts->num_pipelines += spi->num_pipelines;
+	for (uint32_t i = 0; i < spi->num_pipelines; i++) {
+		count_pl_stuff (spi->pipelines, counts);
+	}
+}
+
+static void
+count_rp_stuff (qfv_renderpassinfo_t *rpi, objcount_t *counts)
+{
+	counts->num_attachments += rpi->num_attachments;
+	counts->num_subpasses += rpi->num_subpasses;
+	for (uint32_t i = 0; i < rpi->num_subpasses; i++) {
+		count_sp_stuff (&rpi->subpasses[i], counts);
+	}
+}
+
+static void
+count_stuff (qfv_renderinfo_t *renderinfo, objcount_t *counts)
+{
+	counts->num_images += renderinfo->num_images;
+	counts->num_views += renderinfo->num_views;
+	counts->num_renderpasses += renderinfo->num_renderpasses;
+	for (uint32_t i = 0; i < renderinfo->num_renderpasses; i++) {
+		count_rp_stuff (&renderinfo->renderpasses[i], counts);
+	}
+}
+
+static void
+create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
+{
+	__auto_type rctx = ctx->render_context;
+	__auto_type rinfo = rctx->renderinfo;
+	__auto_type render = rctx->render;
+
+	render->resources = malloc (sizeof(qfv_resource_t)
+								+ counts->num_images * sizeof (qfv_resobj_t)
+								+ counts->num_views * sizeof (qfv_resobj_t));
+	render->images = (qfv_resobj_t *) &render->resources[1];
+	render->image_views = &render->images[counts->num_images];
+
+	render->resources[0] = (qfv_resource_t) {
+		.name = "render",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = counts->num_images + counts->num_views,
+		.objects = render->images,
+	};
+	for (uint32_t i = 0; i < counts->num_images; i++) {
+		__auto_type img = &rinfo->images[i];
+		render->images[i] = (qfv_resobj_t) {
+			.name = img->name,
+			.type = qfv_res_image,
+			.image = {
+				.flags = img->flags,
+				.type = img->imageType,
+				.format = img->format,
+				.extent = img->extent,
+				.num_mipmaps = img->mipLevels,
+				.num_layers = img->arrayLayers,
+				.samples = img->samples,
+				.tiling = img->tiling,
+				.usage = img->usage,
+				.initialLayout = img->initialLayout,
+			},
+		};
+	}
+	int         error = 0;
+	for (uint32_t i = 0; i < counts->num_views; i++) {
+		__auto_type view = &rinfo->views[i];
+		render->image_views[i] = (qfv_resobj_t) {
+			.name = view->name,
+			.type = qfv_res_image_view,
+			.image_view = {
+				.flags = view->flags,
+				.type = view->viewType,
+				.format = view->format,
+				.components = view->components,
+				.subresourceRange = view->subresourceRange,
+			},
+		};
+		if (strcmp (view->image.name, "$output.image") == 0) {
+			__auto_type image = rinfo->output.image;
+			render->image_views[i].image_view.external_image = image;
+			render->image_views[i].image_view.image = -1;
+		} else {
+			qfv_resobj_t *img = 0;
+			for (uint32_t j = 0; j < rinfo->num_images; j++) {
+				if (strcmp (view->image.name, rinfo->images[j].name) == 0) {
+					img = &render->images[j];
+				}
+			}
+			if (img) {
+				uint32_t    ind = img - render->resources->objects;
+				render->image_views[i].image_view.image = ind;
+			} else {
+				Sys_Printf ("%d: unknown image reference: %s\n",
+							view->image.line, view->image.name);
+				error = 1;
+			}
+		}
+	}
+	if (error) {
+		free (render->resources);
+		render->resources = 0;
+		return;
+	}
+	QFV_CreateResource (ctx->device, render->resources);
+}
+
+void
+QFV_BuildRender (vulkan_ctx_t *ctx)
+{
+	__auto_type rctx = ctx->render_context;
+
+	rctx->render = calloc (1, sizeof (qfv_render_t));
+
+	objcount_t  counts = {};
+	count_stuff (rctx->renderinfo, &counts);
+	create_resources (ctx, &counts);
 }
 
 void
@@ -144,6 +332,25 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	rctx->task_functions.symbols = syms;
 	cexpr_init_symtab (&rctx->task_functions, &ectx);
 	rctx->task_functions.symbols = 0;
+}
+
+void
+QFV_Render_Shutdown (vulkan_ctx_t *ctx)
+{
+	__auto_type rctx = ctx->render_context;
+	if (rctx->render) {
+		if (rctx->render->resources) {
+			QFV_DestroyResource (ctx->device, rctx->render->resources);
+			free (rctx->render->resources);
+		}
+		free (rctx->render);
+	}
+	if (rctx->renderinfo) {
+		delete_memsuper (rctx->renderinfo->memsuper);
+	}
+	if (rctx->task_functions.tab) {
+		Hash_DelTable (rctx->task_functions.tab);
+	}
 }
 
 void
