@@ -80,6 +80,10 @@ void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateStagingBuffers (struct vulkan_ctx_s *ctx);
 
+struct qfv_output_s;
+void Vulkan_ConfigOutput (struct vulkan_ctx_s *ctx,
+						  struct qfv_output_s *output);
+
 VkPipeline Vulkan_CreateComputePipeline (struct vulkan_ctx_s *ctx,
 										 const char *name);
 VkPipeline Vulkan_CreateGraphicsPipeline (struct vulkan_ctx_s *ctx,

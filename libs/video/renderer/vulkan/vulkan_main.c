@@ -177,16 +177,7 @@ void
 Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
 	__auto_type rp = QFV_RenderPass_New (ctx, "deferred", main_draw);
-	rp->output = (qfv_output_t) {
-		.extent    = ctx->swapchain->extent,
-		.frames    = ctx->swapchain->numImages,
-	};
-	if (vulkan_frame_width > 0) {
-		rp->output.extent.width = vulkan_frame_width;
-	}
-	if (vulkan_frame_height > 0) {
-		rp->output.extent.height = vulkan_frame_height;
-	}
+	Vulkan_ConfigOutput (ctx, &rp->output);
 	QFV_RenderPass_CreateAttachments (rp);
 	QFV_RenderPass_CreateRenderPass (rp);
 	QFV_RenderPass_CreateFramebuffer (rp);

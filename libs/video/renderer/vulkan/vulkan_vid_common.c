@@ -280,3 +280,18 @@ Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 					   va (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
 						   entgen, entind, VectorExpand (pos)), color);
 }
+
+void
+Vulkan_ConfigOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
+{
+	*output = (qfv_output_t) {
+		.extent    = ctx->swapchain->extent,
+		.frames    = ctx->swapchain->numImages,
+	};
+	if (vulkan_frame_width > 0) {
+		output->extent.width = vulkan_frame_width;
+	}
+	if (vulkan_frame_height > 0) {
+		output->extent.height = vulkan_frame_height;
+	}
+}
