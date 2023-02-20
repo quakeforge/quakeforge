@@ -61,7 +61,6 @@ typedef struct qfv_dependencyinfo_s {
 } qfv_dependencyinfo_t;
 
 typedef struct qfv_attachmentinfo_s {
-	vec4f_t     color;
 	const char *name;
 	VkAttachmentDescriptionFlags flags;
 	VkFormat    format;
@@ -83,6 +82,7 @@ typedef struct qfv_taskinfo_s {
 
 typedef struct qfv_attachmentrefinfo_s {
 	const char *name;
+	int         line;
 	VkImageLayout layout;
 	VkPipelineColorBlendAttachmentState blend;
 } qfv_attachmentrefinfo_t;
@@ -95,7 +95,7 @@ typedef struct qfv_attachmentsetinfo_s {
 	qfv_attachmentrefinfo_t *resolve;
 	qfv_attachmentrefinfo_t *depth;
 	uint32_t     num_preserve;
-	const char **preserve;
+	qfv_reference_t *preserve;
 } qfv_attachmentsetinfo_t;
 
 typedef struct qfv_pipelineinfo_s {
@@ -139,6 +139,7 @@ typedef struct qfv_framebufferinfo_s {
 } qfv_framebufferinfo_t;
 
 typedef struct qfv_renderpassinfo_s {
+	vec4f_t     color;
 	const char *name;
 	uint32_t    num_attachments;
 	qfv_attachmentinfo_t *attachments;
@@ -182,13 +183,16 @@ typedef struct qfv_pipeline_s {
 	uint32_t    num_descriptor_sets;
 	uint32_t    first_descriptor_set;
 	VkDescriptorSet *descriptor_sets;
+
+	uint32_t    task_count;
+	qfv_taskinfo_t *tasks;
 } qfv_pipeline_t;
 
 typedef struct qfv_subpass_s_ {
 	qfv_label_t label;
 	VkCommandBufferBeginInfo beginInfo;
 	VkCommandBuffer cmd;
-	uint32_t    pipline_count;
+	uint32_t    pipeline_count;
 	qfv_pipeline_t *pipelines;
 } qfv_subpass_t_;
 
@@ -214,6 +218,11 @@ typedef struct qfv_render_s {
 	struct qfv_resource_s *resources;
 	struct qfv_resobj_s *images;
 	struct qfv_resobj_s *image_views;
+	VkRenderPass *renderpass_res;
+	VkPipeline *pipelines;
+
+	uint32_t    num_renderpasses;
+	qfv_renderpass_t_ *renderpasses;
 } qfv_render_t;
 
 typedef struct qfv_renderctx_s {

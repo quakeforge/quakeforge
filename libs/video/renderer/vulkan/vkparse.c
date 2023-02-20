@@ -489,7 +489,7 @@ vkstrdup (parsectx_t *context, const char *str)
 	return dup;
 }
 
-static parse_string_t parse_string_array = { 0 };
+static __attribute__((used)) parse_string_t parse_string_array = { 0 };
 
 static int
 parse_string (const plfield_t *field, const plitem_t *item,

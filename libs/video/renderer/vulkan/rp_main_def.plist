@@ -586,7 +586,6 @@ renderpasses = {
 				@inherit = $attachment_base;
 				format = $images.color.format;
 				loadOp = clear;
-				finalLayout = depth_stencil_attachment_optimal;
 			};
 			emission = {
 				@inherit = $attachment_base;

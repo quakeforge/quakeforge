@@ -40,6 +40,7 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/va.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -85,7 +86,7 @@ run_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx)
 	QFV_duCmdBeginLabel (device, cmd, sp->label.name,
 						 {VEC4_EXP (sp->label.color)});
 
-	for (uint32_t i = 0; i < sp->pipline_count; i++) {
+	for (uint32_t i = 0; i < sp->pipeline_count; i++) {
 		__auto_type pipeline = &sp->pipelines[i];
 		run_pipeline (pipeline, cmd, ctx);
 	}
@@ -167,16 +168,7 @@ typedef struct {
 	uint32_t    num_colorblend;
 	uint32_t    num_preserve;
 	uint32_t    num_pipelines;
-	uint32_t    num_tasks;
-	uint32_t    num_stages;
 } objcount_t;
-
-static void
-count_pl_stuff (qfv_pipelineinfo_t *pli, objcount_t *counts)
-{
-	counts->num_tasks += pli->num_tasks;
-	counts->num_stages += pli->num_graph_stages;
-}
 
 static void
 count_as_stuff (qfv_attachmentsetinfo_t *as, objcount_t *counts)
@@ -201,9 +193,6 @@ count_sp_stuff (qfv_subpassinfo_t *spi, objcount_t *counts)
 		count_as_stuff (spi->attachments, counts);
 	}
 	counts->num_pipelines += spi->num_pipelines;
-	for (uint32_t i = 0; i < spi->num_pipelines; i++) {
-		count_pl_stuff (spi->pipelines, counts);
-	}
 }
 
 static void
@@ -309,6 +298,396 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 	QFV_CreateResource (ctx->device, render->resources);
 }
 
+static uint32_t __attribute__((pure))
+find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
+			  qfv_subpassinfo_t *subpasses)
+{
+	if (strcmp (d->name, "$external") == 0) {
+		return VK_SUBPASS_EXTERNAL;
+	}
+	for (uint32_t i = 0; i <= spind; i++) {
+		__auto_type s = &subpasses[i];
+		if (strcmp (d->name, s->name) == 0) {
+			return i;
+		}
+	}
+	Sys_Error ("invalid dependency: [%d] %s", spind, d->name);
+}
+
+static void
+init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli)
+{
+	if (pli->num_graph_stages) {
+		plc->stageCount = pli->num_graph_stages;
+	}
+	if (pli->graph_stages) {
+		plc->pStages = pli->graph_stages;
+	}
+	if (pli->vertexInput) {
+		plc->pVertexInputState = pli->vertexInput;
+	}
+	if (pli->inputAssembly) {
+		plc->pInputAssemblyState = pli->inputAssembly;
+	}
+	if (pli->tessellation) {
+		plc->pTessellationState = pli->tessellation;
+	}
+	if (pli->viewport) {
+		plc->pViewportState = pli->viewport;
+	}
+	if (pli->rasterization) {
+		plc->pRasterizationState = pli->rasterization;
+	}
+	if (pli->multisample) {
+		plc->pMultisampleState = pli->multisample;
+	}
+	if (pli->depthStencil) {
+		plc->pDepthStencilState = pli->depthStencil;
+	}
+	if (pli->colorBlend) {
+		VkPipelineColorBlendStateCreateInfo *cb;
+		cb = (VkPipelineColorBlendStateCreateInfo *) plc->pColorBlendState;
+		*cb = *pli->colorBlend;
+	}
+	if (pli->dynamic) {
+		plc->pDynamicState = pli->dynamic;
+	}
+	if (pli->layout.name) {
+		//plc->layout = find_layout (&pli->layoyout);
+	}
+}
+
+typedef struct {
+	VkRenderPassCreateInfo *rpCreate;
+	VkAttachmentDescription *attach;
+	VkClearValue *clear;
+	VkSubpassDescription *subpass;
+	VkSubpassDependency *depend;
+	VkAttachmentReference *attachref;
+	VkPipelineColorBlendAttachmentState *cbAttach;
+	uint32_t   *preserve;
+	VkGraphicsPipelineCreateInfo *plCreate;
+	VkPipelineColorBlendStateCreateInfo *cbState;
+} objptr_t;
+
+typedef struct {
+	objcount_t  inds;
+	objptr_t    ptr;
+	qfv_renderpassinfo_t *rpi;
+	VkRenderPassCreateInfo *rpc;
+	qfv_subpassinfo_t *spi;
+	VkSubpassDescription *spc;
+	qfv_pipelineinfo_t *pli;
+	VkGraphicsPipelineCreateInfo *plc;
+} objstate_t;
+
+static uint32_t __attribute__((pure))
+find_attachment (qfv_reference_t *ref, objstate_t *s)
+{
+	for (uint32_t i = 0; i < s->rpi->num_attachments; i++) {
+		__auto_type a = &s->rpi->attachments[i];
+		if (strcmp (ref->name, a->name) == 0) {
+			return i;
+		}
+	}
+	Sys_Error ("%s.%s:%d: invalid attachment: %s",
+			   s->rpi->name, s->spi->name, ref->line, ref->name);
+}
+
+static void
+init_arCreate (const qfv_attachmentrefinfo_t *ari, objstate_t *s)
+{
+	__auto_type arc = &s->ptr.attachref[s->inds.num_attachmentrefs];
+	qfv_reference_t ref = {
+		.name = ari->name,
+		.line = ari->line,
+	};
+
+	*arc = (VkAttachmentReference) {
+		.attachment = find_attachment (&ref, s),
+		.layout = ari->layout,
+	};
+}
+
+static void
+init_cbCreate (const qfv_attachmentrefinfo_t *ari, objstate_t *s)
+{
+	__auto_type cbc = &s->ptr.cbAttach[s->inds.num_colorblend];
+
+	*cbc = ari->blend;
+}
+
+static void
+init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
+{
+	s->spi = &sub[index];
+	s->plc = &s->ptr.plCreate[s->inds.num_pipelines];
+	s->spc = &s->ptr.subpass[s->inds.num_subpasses];
+
+	*s->spc = (VkSubpassDescription) {
+		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+	};
+	for (uint32_t i = 0; i < s->spi->num_dependencies; i++) {
+		__auto_type d = &s->spi->dependencies[i];
+		__auto_type dep = &s->ptr.depend[s->inds.num_dependencies++];
+		*dep = (VkSubpassDependency) {
+			.srcSubpass = find_subpass (d, index, s->rpi->subpasses),
+			.dstSubpass = index,
+			.srcStageMask = d->src.stage,
+			.dstStageMask = d->dst.stage,
+			.srcAccessMask = d->src.access,
+			.dstAccessMask = d->dst.access,
+			.dependencyFlags = d->flags,
+		};
+	}
+
+	for (uint32_t i = 0; i < s->spi->num_pipelines; i++) {
+		s->plc[i] = (VkGraphicsPipelineCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			.pColorBlendState = &s->ptr.cbState[s->inds.num_pipelines],
+			.subpass = index,
+		};
+		if (s->spi->base_pipeline) {
+			init_plCreate (&s->plc[i], s->spi->base_pipeline);
+		}
+		init_plCreate (&s->plc[i], &s->spi->pipelines[i]);
+		s->inds.num_pipelines++;
+	}
+
+	__auto_type att = s->spi->attachments;
+	if (!att) {
+		return;
+	}
+	s->spc->inputAttachmentCount = att->num_input;
+	s->spc->pInputAttachments = &s->ptr.attachref[s->inds.num_attachmentrefs];
+	for (uint32_t i = 0; i < att->num_input; i++) {
+		init_arCreate (&att->input[i], s);
+		s->inds.num_attachmentrefs++;
+	}
+	s->spc->colorAttachmentCount = att->num_color;
+	s->spc->pColorAttachments = &s->ptr.attachref[s->inds.num_attachmentrefs];
+	for (uint32_t i = 0; i < att->num_color; i++) {
+		init_arCreate (&att->color[i], s);
+		s->inds.num_attachmentrefs++;
+		init_cbCreate (&att->color[i], s);
+		s->inds.num_colorblend++;
+	}
+	if (att->resolve) {
+		s->spc->pResolveAttachments
+			= &s->ptr.attachref[s->inds.num_attachmentrefs];
+		for (uint32_t i = 0; i < att->num_color; i++) {
+			init_arCreate (&att->resolve[i], s);
+			s->inds.num_attachmentrefs++;
+		}
+	}
+	if (att->depth) {
+		s->spc->pDepthStencilAttachment
+			= &s->ptr.attachref[s->inds.num_attachmentrefs];
+		init_arCreate (att->depth, s);
+		s->inds.num_attachmentrefs++;
+	}
+	s->spc->preserveAttachmentCount = att->num_preserve;
+	s->spc->pPreserveAttachments = &s->ptr.preserve[s->inds.num_preserve];
+	for (uint32_t i = 0; i < att->num_preserve; i++) {
+		s->ptr.preserve[s->inds.num_preserve]
+			= find_attachment (&att->preserve[i], s);
+		s->inds.num_preserve++;
+	}
+}
+
+static void
+init_atCreate (uint32_t index, qfv_attachmentinfo_t *attachments, objstate_t *s)
+{
+	__auto_type ati = &attachments[index];
+	__auto_type atc = &s->ptr.attach[s->inds.num_attachments];
+	__auto_type cvc = &s->ptr.clear[s->inds.num_attachments];
+
+	*atc = (VkAttachmentDescription) {
+		.flags = ati->flags,
+		.format = ati->format,
+		.samples = ati->samples,
+		.loadOp = ati->loadOp,
+		.storeOp = ati->storeOp,
+		.stencilLoadOp = ati->stencilLoadOp,
+		.stencilStoreOp = ati->stencilStoreOp,
+		.initialLayout = ati->initialLayout,
+		.finalLayout = ati->finalLayout,
+	};
+	*cvc = ati->clearValue;
+}
+
+static void
+init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
+{
+	s->rpi = &rinfo->renderpasses[index];
+	s->rpc = &s->ptr.rpCreate[s->inds.num_renderpasses];
+
+	__auto_type attachments = &s->ptr.attach[s->inds.num_attachments];
+	__auto_type subpasses = &s->ptr.subpass[s->inds.num_subpasses];
+	__auto_type dependencies = &s->ptr.depend[s->inds.num_dependencies];
+
+	for (uint32_t i = 0; i < s->rpi->num_attachments; i++) {
+		init_atCreate (i, s->rpi->attachments, s);
+		s->inds.num_attachments++;
+	}
+
+	uint32_t    num_dependencies = s->inds.num_dependencies;
+	for (uint32_t i = 0; i < s->rpi->num_subpasses; i++) {
+		init_spCreate (i, s->rpi->subpasses, s);
+		s->inds.num_subpasses++;
+	}
+	num_dependencies = s->inds.num_dependencies - num_dependencies;
+
+	*s->rpc = (VkRenderPassCreateInfo) {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+		.attachmentCount = s->rpi->num_attachments,
+		.pAttachments = attachments,
+		.subpassCount = s->rpi->num_subpasses,
+		.pSubpasses = subpasses,
+		.dependencyCount = num_dependencies,
+		.pDependencies = dependencies,
+	};
+}
+
+static void
+create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
+{
+	__auto_type rctx = ctx->render_context;
+	__auto_type rinfo = rctx->renderinfo;
+
+	size_t      size = 0;
+#if 0
+	size += counts->num_renderpasses * sizeof (VkRenderPass);
+	size += counts->num_pipelines * sizeof (VkPipeline);
+	__auto_type rp = (VkRenderPass *) malloc (size);
+	__auto_type pl = (VkPipeline *) &rp[counts->num_renderpasses];
+#endif
+
+	size = 0;
+	size += counts->num_renderpasses * sizeof (VkRenderPassCreateInfo);
+	size += counts->num_attachments * sizeof (VkAttachmentDescription);
+	size += counts->num_attachments * sizeof (VkClearValue);
+	size += counts->num_subpasses * sizeof (VkSubpassDescription);
+	size += counts->num_dependencies * sizeof (VkSubpassDependency);
+	size += counts->num_attachmentrefs * sizeof (VkAttachmentReference);
+	size += counts->num_colorblend*sizeof (VkPipelineColorBlendAttachmentState);
+	size += counts->num_preserve * sizeof (uint32_t);
+	size += counts->num_pipelines * sizeof (VkGraphicsPipelineCreateInfo);
+	size += counts->num_pipelines *sizeof (VkPipelineColorBlendStateCreateInfo);
+
+	objstate_t  s = {
+		.ptr = {
+			.rpCreate  = alloca (size),
+			.attach    = (void *) &s.ptr.rpCreate [counts->num_renderpasses],
+			.clear     = (void *) &s.ptr.attach   [counts->num_attachments],
+			.subpass   = (void *) &s.ptr.clear    [counts->num_attachments],
+			.depend    = (void *) &s.ptr.subpass  [counts->num_subpasses],
+			.attachref = (void *) &s.ptr.depend   [counts->num_dependencies],
+			.cbAttach  = (void *) &s.ptr.attachref[counts->num_attachmentrefs],
+			.preserve  = (void *) &s.ptr.cbAttach [counts->num_colorblend],
+			.plCreate  = (void *) &s.ptr.preserve [counts->num_preserve],
+			.cbState   = (void *) &s.ptr.plCreate [counts->num_pipelines],
+		},
+	};
+	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
+		init_rpCreate (i, rinfo, &s);
+		s.inds.num_renderpasses++;
+	}
+	if (s.inds.num_renderpasses != counts->num_renderpasses
+		|| s.inds.num_attachments != counts->num_attachments
+		|| s.inds.num_subpasses != counts->num_subpasses
+		|| s.inds.num_dependencies != counts->num_dependencies
+		|| s.inds.num_attachmentrefs != counts->num_attachmentrefs
+		|| s.inds.num_colorblend != counts->num_colorblend
+		|| s.inds.num_preserve != counts->num_preserve
+		|| s.inds.num_pipelines != counts->num_pipelines) {
+		Sys_Error ("create_renderpasses: something was missed");
+	}
+
+#if 0
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	uint32_t    plInd = 0;
+	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
+		dfunc->vkCreateRenderPass (device->dev, &s.ptr.rpCreate[i], 0, &rp[i]);
+		__auto_type rpi = &rinfo->renderpasses[i];
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_RENDER_PASS, rp[i],
+							 va (ctx->va_ctx, "renderpass:%s", rpi->name));
+		for (uint32_t j = 0; j < rpi->num_subpasses; j++) {
+			__auto_type spi = &rpi->subpasses[j];
+			for (uint32_t k = 0; k < spi->num_pipelines; k++) {
+				s.ptr.plCreate[plInd++].renderPass = rp[i];
+			}
+		}
+	}
+	dfunc->vkCreateGraphicsPipelines (device->dev, 0, 1,
+									  s.ptr.plCreate, 0, pl);
+#endif
+}
+
+static void
+init_pipeline (qfv_pipeline_t *pl, vulkan_ctx_t *ctx, qfv_pipelineinfo_t *ipl,
+			   objcount_t *inds)
+{
+	pl->label.name = ipl->name;
+	pl->label.color = ipl->color;
+	pl->task_count = ipl->num_tasks;
+	pl->tasks = ipl->tasks;
+}
+
+static void
+init_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx, qfv_subpassinfo_t *isp,
+			  qfv_pipeline_t *pl, objcount_t *inds)
+{
+	sp->label.name = isp->name;
+	sp->label.color = isp->color;
+	sp->pipeline_count = isp->num_pipelines;
+	sp->pipelines = &pl[inds->num_pipelines];
+	for (uint32_t i = 0; i < isp->num_pipelines; i++) {
+		init_pipeline (&sp->pipelines[i], ctx, &isp->pipelines[i], inds);
+		inds->num_pipelines++;
+	}
+}
+
+static void
+init_renderpass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx,
+				 qfv_renderpassinfo_t *irp,
+				 qfv_subpass_t_ *sp, qfv_pipeline_t *pl, objcount_t *inds)
+{
+	rp->vulkan_ctx = ctx;
+	rp->label.name = irp->name;
+	rp->label.color = irp->color;
+	rp->subpass_count = irp->num_subpasses;
+	rp->subpasses = &sp[inds->num_subpasses];
+	for (uint32_t i = 0; i < irp->num_subpasses; i++) {
+		init_subpass (&rp->subpasses[i], ctx, &irp->subpasses[i], pl, inds);
+		inds->num_subpasses++;
+	}
+}
+
+static void
+init_render (vulkan_ctx_t *ctx, objcount_t *counts)
+{
+	__auto_type rctx = ctx->render_context;
+	__auto_type rinfo = rctx->renderinfo;
+	__auto_type render = rctx->render;
+	size_t      size = 0;
+	size += counts->num_renderpasses * sizeof (qfv_renderpass_t_);
+	size += counts->num_subpasses * sizeof (qfv_subpass_t_);
+	size += counts->num_pipelines * sizeof (qfv_pipeline_t);
+
+	__auto_type rp = (qfv_renderpass_t_ *) calloc (1, size);
+	__auto_type sp = (qfv_subpass_t_ *) &rp[counts->num_renderpasses];
+	__auto_type pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
+	objcount_t inds = {};
+	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
+		init_renderpass (&rp[i], ctx, &rinfo->renderpasses[i], sp, pl, &inds);
+		inds.num_renderpasses++;
+	}
+
+	render->renderpasses = rp;
+}
+
 void
 QFV_BuildRender (vulkan_ctx_t *ctx)
 {
@@ -319,6 +698,8 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 	objcount_t  counts = {};
 	count_stuff (rctx->renderinfo, &counts);
 	create_resources (ctx, &counts);
+	create_renderpasses (ctx, &counts);
+	init_render (ctx, &counts);
 }
 
 void

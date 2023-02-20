@@ -440,11 +440,14 @@
 			.type = (QFString, QFDictionary);
 			.string = {
 				name = $name;
+				line = $item.line;
 				layout = $auto;
 				blend = "(VkPipelineColorBlendAttachmentState) { .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT }"
 			};
 			.dictionary = {
 				.parse = auto;
+				name = $name;
+				line = $item.line;
 			};
 			layout = auto;
 			blend = auto;
@@ -471,12 +474,7 @@
 				value = depth;
 			};
 			preserve = {
-				type = (array,  {
-									parse_type = QFString;
-									type = "char *";
-									parser = parse_string;
-									data = parse_string_array;
-								});
+				type = (array, qfv_reference_t);
 				size = num_preserve;
 				values = preserve;
 			};
@@ -589,6 +587,11 @@
 		};
 		qfv_renderpassinfo_s = {
 			.name = qfv_renderpassinfo_t;
+			name = {
+				type = string;
+				string = name;
+			};
+			color = auto;
 			attachments = {
 				type = (labeledarray, qfv_attachmentinfo_t, name);
 				size = num_attachments;
