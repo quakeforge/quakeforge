@@ -126,8 +126,10 @@ write_function_tail (Struct *self)
 static void
 write_parse_type (Struct *self)
 {
-	fprintf (output_file, "\t\treturn PL_ParseStruct (%s_fields, item, data, "
-			 "messages, context);\n", [self outname]);
+	fprintf (output_file, "\t\tif (!PL_ParseStruct (%s_fields, item, data, "
+			 "messages, context)) {\n", [self outname]);
+	fprintf (output_file, "\t\t\treturn 0;\n");
+	fprintf (output_file, "\t\t}\n");
 }
 
 static void
