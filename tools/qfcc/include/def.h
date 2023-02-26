@@ -97,6 +97,7 @@ typedef struct def_s {
 	unsigned    external:1;		///< externally declared def
 	unsigned    local:1;		///< function local def
 	unsigned    param:1;		///< function param def
+	unsigned    argument:1;		///< function argument def
 	unsigned    system:1;		///< system def
 	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
 
@@ -117,7 +118,8 @@ typedef enum storage_class_e {
 	sc_extern,					///< def is externally allocated
 	sc_static,					///< def is private to the current unit
 	sc_param,					///< def is an incoming function parameter
-	sc_local					///< def is local to the current function
+	sc_local,					///< def is local to the current function
+	sc_argument,				///< def is a function argument
 } storage_class_t;
 
 /** Create a new def.

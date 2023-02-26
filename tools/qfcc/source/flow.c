@@ -227,7 +227,8 @@ flowvar_is_global (flowvar_t *var)
  *
  *	For the flowvar to refer to a function parameter, the flowvar's operand
  *	must be a def operand (but the def itself may be an alias of the real def)
- *	and the rel def must have both its def_t::local and def_t::param flags set.
+ *	and the real def must have both its def_t::local and def_t::param flags
+ *	set.
  *
  *	Temp vars are are not represented by op_def, so no mistake can be made.
  */
@@ -248,16 +249,43 @@ flowvar_is_param (flowvar_t *var)
 	return 1;
 }
 
+/**	Check if the flowvar refers to a function argument.
+ *
+ *	For the flowvar to refer to a function argument, the flowvar's operand
+ *	must be a def operand (but the def itself may be an alias of the real def)
+ *	and the real def must have both its def_t::local and def_t::argument flags
+ *	set.
+ *
+ *	Temp vars are are not represented by op_def, so no mistake can be made.
+ */
+static int
+flowvar_is_argument (flowvar_t *var)
+{
+	def_t      *def;
+
+	if (var->op->op_type != op_def)
+		return 0;
+	def = var->op->def;
+	if (def->alias)
+		def = def->alias;
+	if (!def->local)
+		return 0;
+	if (!def->argument)
+		return 0;
+	return 1;
+}
+
 /**	Check if the flowvar refers to a local variable.
  *
- *	As this is simply "neither global nor pamam", all other flowvars are
- *	considered local, in particular actual non-staic function scope variables
- *	and temp vars.
+ *	As this is simply "neither global nor pamam nor argument", all other
+ *	flowvars are considered local, in particular actual non-staic function
+ *	scope variables and temp vars.
  */
 static int
 flowvar_is_local (flowvar_t *var)
 {
-	return !(flowvar_is_global (var) || flowvar_is_param (var));
+	return !(flowvar_is_global (var) || flowvar_is_param (var)
+			 || flowvar_is_argument (var));
 }
 ///@}
 
@@ -443,6 +471,13 @@ add_operand (function_t *func, operand_t *op)
 			var->flowaddr = get_pseudo_address (func, 1);
 		} else if (op->op_type == op_temp) {
 			var->flowaddr = get_temp_address (func, op);
+		} else if (flowvar_is_param (var)) {
+			var->flowaddr = func->num_statements + def_offset (var->op->def);
+			var->flowaddr += func->locals->space->size;
+		} else if (flowvar_is_argument (var)) {
+			var->flowaddr = func->num_statements + def_offset (var->op->def);
+			var->flowaddr += func->locals->space->size;
+			var->flowaddr += func->parameters->space->size;
 		} else if (flowvar_is_local (var)) {
 			var->flowaddr = func->num_statements + def_offset (var->op->def);
 		}
@@ -609,7 +644,12 @@ flow_build_vars (function_t *func)
 
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
-	func->pseudo_addr = func->num_statements + func->locals->space->size;
+	func->pseudo_addr = func->num_statements;
+	func->pseudo_addr += func->locals->space->size;
+	func->pseudo_addr += func->parameters->space->size;
+	if (func->arguments) {
+		func->pseudo_addr += func->arguments->size;
+	}
 
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
