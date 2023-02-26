@@ -2224,12 +2224,16 @@ QFV_CreateSymtab (plitem_t *dict, const char *properties,
 	int         num_extra = 0;
 	int         num_syms = 0;
 
-	for (const char **e = extra_items; *e; e++) {
-		if (PL_ObjectForKey (dict, *e)) {
-			num_extra++;
+	if (extra_items) {
+		for (const char **e = extra_items; *e; e++) {
+			if (PL_ObjectForKey (dict, *e)) {
+				num_extra++;
+			}
 		}
 	}
-	for (exprsym_t *sym = extra_syms; sym->name; sym++, num_syms++) { }
+	if (extra_syms) {
+		for (exprsym_t *sym = extra_syms; sym->name; sym++, num_syms++) { }
+	}
 
 	int         total_items = num_keys + num_extra;
 	int         total_syms = total_items + num_syms;
@@ -2249,7 +2253,7 @@ QFV_CreateSymtab (plitem_t *dict, const char *properties,
 		};
 		items[i] = PL_ObjectForKey (props, symtab->symbols[i].name);
 	}
-	for (int i = 0, j = 0; extra_items[i]; i++) {
+	for (int i = 0, j = 0; num_extra && extra_items[i]; i++) {
 		plitem_t   *val = PL_ObjectForKey (dict, extra_items[i]);
 		if (val) {
 			symtab->symbols[num_keys + j] = (exprsym_t) {
