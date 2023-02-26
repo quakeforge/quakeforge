@@ -42,6 +42,7 @@
 		qfv_attachmentrefinfo_t,
 		qfv_attachmentsetinfo_t,
 		qfv_taskinfo_t,
+		qfv_layoutinfo_t,
 		qfv_pipelineinfo_t,
 		qfv_subpassinfo_t,
 		qfv_framebufferinfo_t,
@@ -480,6 +481,19 @@
 				values = preserve;
 			};
 		};
+		qfv_layoutinfo_s = {
+			.name = qfv_layoutinfo_t;
+			descriptorSets = {
+				type = (array, qfv_reference_t);
+				size = num_sets;
+				values = sets;
+			};
+			pushConstantRanges = {
+				type = (array, VkPushConstantRange);
+				size = num_ranges;
+				values = ranges;
+			};
+		};
 		qfv_pipelineinfo_s = {
 			.name = qfv_pipelineinfo_t;
 			color = auto;
@@ -535,10 +549,7 @@
 				type = (single, VkPipelineDynamicStateCreateInfo);
 				value = dynamic;
 			};
-			layout = {
-				type = (single, qfv_reference_t);
-				value = layout;
-			};
+			layout = auto;
 		};
 		qfv_subpassinfo_s = {
 			.name = qfv_subpassinfo_t;

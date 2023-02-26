@@ -2336,3 +2336,39 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	return ri;
 }
+
+int
+QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, memsuper_t *memsuper,
+					 exprtab_t *symtab, const char *ref,
+					 qfv_layoutinfo_t *layout)
+{
+	*layout = (qfv_layoutinfo_t) {};
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+		.external_variables = symtab,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+	};
+
+	plitem_t   *item = PL_NewString (ref);
+	int         ret;
+	if (!(ret = parse_qfv_layoutinfo_t (0, item, layout, messages,
+										&parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	PL_Free (messages);
+	PL_Free (item);
+
+	return ret;
+}
