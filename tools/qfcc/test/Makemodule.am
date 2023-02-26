@@ -81,6 +81,7 @@ test_build_errors=\
 	tools/qfcc/test/dealloc-warn.r \
 	tools/qfcc/test/dealloc-warn2.r \
 	tools/qfcc/test/dealloc-warn3.r \
+	tools/qfcc/test/dealloc-warn4.r \
 	tools/qfcc/test/double-demote-float.r \
 	tools/qfcc/test/double-demote-float-ainit.r \
 	tools/qfcc/test/double-demote-float-ginit.r \
@@ -275,6 +276,9 @@ tools/qfcc/test/dealloc-warn2.run$(EXEEXT): tools/qfcc/test/dealloc-warn2.r $(qf
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 tools/qfcc/test/dealloc-warn3.run$(EXEEXT): tools/qfcc/test/dealloc-warn3.r $(qfcc_fail_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+tools/qfcc/test/dealloc-warn4.run$(EXEEXT): tools/qfcc/test/dealloc-warn4.r $(qfcc_fail_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 tools/qfcc/test/double-demote-int.run$(EXEEXT): tools/qfcc/test/double-demote-int.r $(qfcc_fail_run_deps)
