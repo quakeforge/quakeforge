@@ -76,30 +76,42 @@ set_storage_bits (def_t *def, storage_class_t storage)
 			def->external = 0;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_extern:
 			def->global = 1;
 			def->external = 1;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_static:
 			def->external = 0;
 			def->global = 0;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_local:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_param:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
 			def->param = 1;
+			def->argument = 0;
+			break;
+		case sc_argument:
+			def->external = 0;
+			def->global = 0;
+			def->local = 1;
+			def->param = 0;
+			def->argument = 1;
 			break;
 	}
 	def->initialized = 0;
