@@ -32,6 +32,15 @@ typedef struct qfv_descriptorsetinfo_s {
 	VkDescriptorSetLayout setLayout;
 } qfv_descriptorsetinfo_t;
 
+typedef struct qfv_layoutinfo_s {
+	const char *name;
+	uint32_t    num_sets;
+	qfv_reference_t *sets;
+	uint32_t    num_ranges;
+	VkPushConstantRange *ranges;
+	VkPipelineLayout layout;
+} qfv_layoutinfo_t;
+
 typedef struct qfv_imageinfo_s {
 	const char *name;
 	VkImageCreateFlags flags;
@@ -158,6 +167,7 @@ typedef struct qfv_renderpassinfo_s {
 
 typedef struct qfv_renderinfo_s {
 	struct memsuper_s *memsuper;
+	struct plitem_s *plitem;
 	uint32_t    num_images;
 	qfv_imageinfo_t *images;
 	uint32_t    num_views;

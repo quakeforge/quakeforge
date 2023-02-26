@@ -240,7 +240,7 @@ properties = {
 			primitiveRestartEnable = true;
 		};
 		layout = {
-			setLayouts = (matrix_set, entity_set, oit_set, texture_set, texture_set);
+			descriptorSets = (matrix_set, entity_set, oit_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = fragment;
@@ -287,7 +287,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			setLayouts = (matrix_set, texture_set, texture_set);
+			descriptorSets = (matrix_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -358,7 +358,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			setLayouts = (matrix_set, texture_set, bone_set);
+			descriptorSets = (matrix_set, texture_set, bone_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -406,7 +406,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			setLayouts = (matrix_set, sprite_set);
+			descriptorSets = (matrix_set, sprite_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -457,7 +457,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			setLayouts = (matrix_set, texture_set, oit_set);
+			descriptorSets = (matrix_set, texture_set, oit_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -484,6 +484,10 @@ properties = {
 				module = $builtin/lighting.frag;
 			};
 		};
+		layout = {
+			descriptorSets = (lighting_attach, lighting_lights,
+							  lighting_shadow);
+		};
 	};
 	compose = {
 		shader = {
@@ -492,6 +496,9 @@ properties = {
 				name = main;
 				module = $builtin/compose.frag;
 			};
+		};
+		layout = {
+			descriptorSets = (compose_attach, oit_set);
 		};
 	}
 };
@@ -837,7 +844,7 @@ renderpasses = {
 							);
 							attributes = (
 								"$brush.vertexInput.attributes[0]",
-								"$brush.vertexInput.attributes[1]",
+								"$brush.vertexInput.attributes[2]",
 							);
 						};
 						inputAssembly = $brush.inputAssembly;
@@ -1103,7 +1110,7 @@ renderpasses = {
 							$fstriangle.shader.vertex,
 							$lighting.shader.fragment,
 						);
-						layout = lighting.layout;
+						layout = $lighting.layout;
 					};
 				};
 			};
@@ -1134,7 +1141,7 @@ renderpasses = {
 							$fstriangle.shader.vertex,
 							$compose.shader.fragment,
 						);
-						layout = compose.layout;
+						layout = $compose.layout;
 					};
 				};
 			};

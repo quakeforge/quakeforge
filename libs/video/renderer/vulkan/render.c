@@ -154,11 +154,15 @@ QFV_LoadRenderInfo (vulkan_ctx_t *ctx)
 	__auto_type output = get_output (ctx, item);
 	Vulkan_Script_SetOutput (ctx, &output);
 	rctx->renderinfo = QFV_ParseRenderInfo (ctx, item, rctx);
+	if (rctx->renderinfo) {
+		rctx->renderinfo->plitem = item;
+	}
 }
 
 typedef struct {
 	uint32_t    num_images;
 	uint32_t    num_views;
+	uint32_t    num_layouts;
 
 	uint32_t    num_renderpasses;
 	uint32_t    num_attachments;
@@ -298,6 +302,34 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 	QFV_CreateResource (ctx->device, render->resources);
 }
 
+typedef struct {
+	VkRenderPassCreateInfo *rpCreate;
+	VkAttachmentDescription *attach;
+	VkClearValue *clear;
+	VkSubpassDescription *subpass;
+	VkSubpassDependency *depend;
+	VkAttachmentReference *attachref;
+	VkPipelineColorBlendAttachmentState *cbAttach;
+	uint32_t   *preserve;
+	VkGraphicsPipelineCreateInfo *plCreate;
+	VkPipelineColorBlendStateCreateInfo *cbState;
+	qfv_layoutinfo_t *layouts;
+} objptr_t;
+
+typedef struct {
+	objcount_t  inds;
+	objptr_t    ptr;
+	vulkan_ctx_t *ctx;
+	qfv_renderinfo_t *rinfo;
+	exprtab_t  *symtab;
+	qfv_renderpassinfo_t *rpi;
+	VkRenderPassCreateInfo *rpc;
+	qfv_subpassinfo_t *spi;
+	VkSubpassDescription *spc;
+	qfv_pipelineinfo_t *pli;
+	VkGraphicsPipelineCreateInfo *plc;
+} objstate_t;
+
 static uint32_t __attribute__((pure))
 find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 			  qfv_subpassinfo_t *subpasses)
@@ -314,8 +346,66 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 	Sys_Error ("invalid dependency: [%d] %s", spind, d->name);
 }
 
+static VkDescriptorSetLayout
+find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
+{
+	for (uint32_t i = 0; i < s->rinfo->num_descriptorsets; i++) {
+		__auto_type ds = &s->rinfo->descriptorsets[i];
+		if (strcmp (ds->name, ref->name) == 0) {
+			if (!ds->setLayout) {
+				VkDescriptorSetLayoutCreateInfo cInfo = {
+					.sType=VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+					.flags = ds->flags,
+					.bindingCount = ds->num_bindings,
+					.pBindings = ds->bindings,
+				};
+				qfv_device_t *device = s->ctx->device;
+				qfv_devfuncs_t *dfunc = device->funcs;
+				dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0,
+													&ds->setLayout);
+			}
+			return ds->setLayout;
+		}
+	}
+	Sys_Error ("%s.%s:%d: invalid descriptor set layout: %s",
+			   s->rpi->name, s->spi->name, ref->line, ref->name);
+}
+
+static VkPipelineLayout
+find_layout (const qfv_reference_t *ref, objstate_t *s)
+{
+	for (uint32_t i = 0; i < s->inds.num_layouts; i++) {
+		if (strcmp (s->ptr.layouts[i].name, ref->name) == 0) {
+			return s->ptr.layouts[i].layout;
+		}
+	}
+	if (!QFV_ParseLayoutInfo (s->ctx, s->rinfo->memsuper, s->symtab, ref->name,
+							  &s->ptr.layouts[s->inds.num_layouts])) {
+		Sys_Error ("%s.%s:%d: invalid layout: %s",
+				   s->rpi->name, s->spi->name, ref->line, ref->name);
+	}
+	__auto_type li = &s->ptr.layouts[s->inds.num_layouts++];
+	li->name = ref->name;
+	VkDescriptorSetLayout sets[li->num_sets];
+	for (uint32_t i = 0; i < li->num_sets; i++) {
+		sets[i] = find_descriptorSet (&li->sets[i], s);
+	}
+	VkPipelineLayoutCreateInfo cInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount = li->num_sets,
+		.pSetLayouts = sets,
+		.pushConstantRangeCount = li->num_ranges,
+		.pPushConstantRanges = li->ranges,
+	};
+	qfv_device_t *device = s->ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &li->layout);
+	return li->layout;
+}
+
 static void
-init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli)
+init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
+			   objstate_t *s)
 {
 	if (pli->num_graph_stages) {
 		plc->stageCount = pli->num_graph_stages;
@@ -353,33 +443,9 @@ init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli)
 		plc->pDynamicState = pli->dynamic;
 	}
 	if (pli->layout.name) {
-		//plc->layout = find_layout (&pli->layoyout);
+		plc->layout = find_layout (&pli->layout, s);
 	}
 }
-
-typedef struct {
-	VkRenderPassCreateInfo *rpCreate;
-	VkAttachmentDescription *attach;
-	VkClearValue *clear;
-	VkSubpassDescription *subpass;
-	VkSubpassDependency *depend;
-	VkAttachmentReference *attachref;
-	VkPipelineColorBlendAttachmentState *cbAttach;
-	uint32_t   *preserve;
-	VkGraphicsPipelineCreateInfo *plCreate;
-	VkPipelineColorBlendStateCreateInfo *cbState;
-} objptr_t;
-
-typedef struct {
-	objcount_t  inds;
-	objptr_t    ptr;
-	qfv_renderpassinfo_t *rpi;
-	VkRenderPassCreateInfo *rpc;
-	qfv_subpassinfo_t *spi;
-	VkSubpassDescription *spc;
-	qfv_pipelineinfo_t *pli;
-	VkGraphicsPipelineCreateInfo *plc;
-} objstate_t;
 
 static uint32_t __attribute__((pure))
 find_attachment (qfv_reference_t *ref, objstate_t *s)
@@ -448,9 +514,9 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 			.subpass = index,
 		};
 		if (s->spi->base_pipeline) {
-			init_plCreate (&s->plc[i], s->spi->base_pipeline);
+			init_plCreate (&s->plc[i], s->spi->base_pipeline, s);
 		}
-		init_plCreate (&s->plc[i], &s->spi->pipelines[i]);
+		init_plCreate (&s->plc[i], &s->spi->pipelines[i], s);
 		s->inds.num_pipelines++;
 	}
 
@@ -556,12 +622,10 @@ create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
 	__auto_type rinfo = rctx->renderinfo;
 
 	size_t      size = 0;
-#if 0
 	size += counts->num_renderpasses * sizeof (VkRenderPass);
 	size += counts->num_pipelines * sizeof (VkPipeline);
 	__auto_type rp = (VkRenderPass *) malloc (size);
 	__auto_type pl = (VkPipeline *) &rp[counts->num_renderpasses];
-#endif
 
 	size = 0;
 	size += counts->num_renderpasses * sizeof (VkRenderPassCreateInfo);
@@ -574,7 +638,11 @@ create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
 	size += counts->num_preserve * sizeof (uint32_t);
 	size += counts->num_pipelines * sizeof (VkGraphicsPipelineCreateInfo);
 	size += counts->num_pipelines *sizeof (VkPipelineColorBlendStateCreateInfo);
+	size += counts->num_pipelines *sizeof (qfv_layoutinfo_t);
 
+	exprctx_t   ectx = {
+		.hashctx = &ctx->script_context->hashctx,
+	};
 	objstate_t  s = {
 		.ptr = {
 			.rpCreate  = alloca (size),
@@ -587,7 +655,11 @@ create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
 			.preserve  = (void *) &s.ptr.cbAttach [counts->num_colorblend],
 			.plCreate  = (void *) &s.ptr.preserve [counts->num_preserve],
 			.cbState   = (void *) &s.ptr.plCreate [counts->num_pipelines],
+			.layouts   = (void *) &s.ptr.cbState  [counts->num_pipelines],
 		},
+		.ctx = ctx,
+		.rinfo = rinfo,
+		.symtab = QFV_CreateSymtab (rinfo->plitem, "properties", 0, 0, &ectx),
 	};
 	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
 		init_rpCreate (i, rinfo, &s);
@@ -604,7 +676,6 @@ create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
 		Sys_Error ("create_renderpasses: something was missed");
 	}
 
-#if 0
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	uint32_t    plInd = 0;
@@ -622,7 +693,6 @@ create_renderpasses (vulkan_ctx_t *ctx, objcount_t *counts)
 	}
 	dfunc->vkCreateGraphicsPipelines (device->dev, 0, 1,
 									  s.ptr.plCreate, 0, pl);
-#endif
 }
 
 static void
