@@ -34,6 +34,7 @@
 		qfv_subpass_t,
 		qfv_output_t,
 
+		qfv_descriptorsetinfo_t,
 		qfv_imageinfo_t,
 		qfv_imageviewinfo_t,
 		qfv_dependencyinfo_t,
@@ -587,10 +588,6 @@
 		};
 		qfv_renderpassinfo_s = {
 			.name = qfv_renderpassinfo_t;
-			name = {
-				type = string;
-				string = name;
-			};
 			color = auto;
 			attachments = {
 				type = (labeledarray, qfv_attachmentinfo_t, name);
@@ -602,6 +599,15 @@
 				type = (labeledarray, qfv_subpassinfo_t, name);
 				size = num_subpasses;
 				values = subpasses;
+			};
+		};
+		qfv_descriptorsetinfo_s = {
+			.name = qfv_descriptorsetinfo_t;
+			flags = auto;
+			bindings = {
+				type = (array, VkDescriptorSetLayoutBinding);
+				size = num_bindings;
+				values = bindings;
 			};
 		};
 		qfv_renderinfo_s = {
@@ -622,6 +628,11 @@
 				type = (labeledarray, qfv_renderpassinfo_t, name);
 				size = num_renderpasses;
 				values = renderpasses;
+			};
+			descriptorSetLayouts = {
+				type = (labeledarray, qfv_descriptorsetinfo_t, name);
+				size = num_descriptorsets;
+				values = descriptorsets;
 			};
 		};
 	};

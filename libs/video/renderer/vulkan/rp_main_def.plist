@@ -495,6 +495,190 @@ properties = {
 		};
 	}
 };
+descriptorSetLayouts = {
+	matrix_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = uniform_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|geometry;
+			},
+		);
+	};
+	quad_data_set = {
+		bindings = (
+			{
+				// glyph texture data
+				binding = 0;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				// glyph geometry data (offset and uv)
+				binding = 1;
+				descriptorType = uniform_texel_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
+			},
+		);
+	};
+	texture_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 1;
+				stageFlags = fragment|vertex;
+			},
+		);
+	};
+	oit_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_image;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
+	entity_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
+			},
+		);
+	};
+	bone_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
+			},
+		);
+	};
+	sprite_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = uniform_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
+			},
+			{
+				binding = 1;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
+	lighting_attach = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 3;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 4;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
+	lighting_lights = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = uniform_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
+	lighting_shadow = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 32;
+				stageFlags = fragment;
+			},
+		);
+	};
+	compose_attach = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
+	particle_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+		);
+	};
+};
 images = {
 	depth = {
 		@inherit = $image_base;

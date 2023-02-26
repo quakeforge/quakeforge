@@ -24,6 +24,14 @@ typedef struct qfv_reference_s {
 	int         line;
 } qfv_reference_t;
 
+typedef struct qfv_descriptorsetinfo_s {
+	const char *name;
+	VkDescriptorSetLayoutCreateFlags flags;
+	uint32_t    num_bindings;
+	VkDescriptorSetLayoutBinding *bindings;
+	VkDescriptorSetLayout setLayout;
+} qfv_descriptorsetinfo_t;
+
 typedef struct qfv_imageinfo_s {
 	const char *name;
 	VkImageCreateFlags flags;
@@ -157,6 +165,8 @@ typedef struct qfv_renderinfo_s {
 	uint32_t    num_renderpasses;
 	qfv_renderpassinfo_t *renderpasses;
 	qfv_output_t output;
+	uint32_t    num_descriptorsets;
+	qfv_descriptorsetinfo_t *descriptorsets;
 } qfv_renderinfo_t;
 
 typedef struct qfv_label_s {
