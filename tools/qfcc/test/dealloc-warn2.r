@@ -1,5 +1,9 @@
 #pragma warn error
 
+void __obj_exec_class (struct obj_module *msg) = #0;
+id obj_msgSend_super (Super *class, SEL op, ...) = #0;
+id obj_msgSend (Super *class, SEL op, ...) = #0;
+
 @interface Object
 {
 	Class		isa;
@@ -36,9 +40,6 @@
 	[something dealloc];
 }
 @end
-
-void __obj_exec_class (struct obj_module *msg) = #0;
-id obj_msgSend_super (Super *class, SEL op, ...) = #0;
 
 int main ()
 {
