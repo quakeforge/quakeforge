@@ -15,8 +15,12 @@
 
 -(void) dealloc
 {
+	[field_dict release];
+	[field_defs release];
+	[only release];
 	str_free (outname);
 	str_free (label_field);
+	[super dealloc];
 }
 
 -(string) name
@@ -365,21 +369,23 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 	}
 }
 
--(void) writeTable
+-(void) initParse:(PLItem *)parse
 {
 	if ([parse string] == "skip") {
+		skip = 1;
 		return;
 	}
 
-	PLItem     *field_dict = [parse getObjectForKey:[self name]];
+	field_dict = [parse retain];
 
 	PLItem     *new_name = [field_dict getObjectForKey:".name"];
 	if (new_name) {
 		outname = str_hold ([new_name string]);
 	}
 
-	Array      *field_defs = [Array array];
-	PLItem     *only = [field_dict getObjectForKey:".only"];
+	field_defs = [[Array array] retain];
+
+	only = [[field_dict getObjectForKey:".only"] retain];
 	if (only) {
 		string      field_name = [only string];
 		qfot_var_t *field = nil;
@@ -428,6 +434,13 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 			}
 			[field_defs addObject: field_def];
 		}
+	}
+}
+
+-(void) writeTable
+{
+	if (skip) {
+		return;
 	}
 
 	if ([field_dict getObjectForKey:".type"]) {

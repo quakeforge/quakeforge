@@ -226,6 +226,7 @@ main(int argc, string *argv)
 
 		arp_start ();
 		[obj writeForward];
+		[obj initParse:[parse getObjectForKey:[obj name]]];
 		arp_end ();
 	}
 	for (int i = [output_types count]; i-- > 0; ) {

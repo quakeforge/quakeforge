@@ -110,6 +110,10 @@ static string get_type_key (void *type, void *unused)
 	}
 }
 
+-(void) initParse:(PLItem *)parse
+{
+}
+
 -(Type *) resolveType
 {
 	return self;

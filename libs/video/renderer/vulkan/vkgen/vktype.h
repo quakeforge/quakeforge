@@ -6,6 +6,7 @@
 
 @class FieldDef;
 @class Struct;
+@class PLItem;
 
 @interface Type: Object
 {
@@ -21,6 +22,7 @@
 -(string) name;
 -(void) setAlias: (Type *) alias;
 -(void) addToQueue;
+-(void) initParse:(PLItem *)parse;
 -(Type *) resolveType;
 +(Type *) findType: (qfot_type_t *) type;
 +(Type *) lookup: (string) name;
