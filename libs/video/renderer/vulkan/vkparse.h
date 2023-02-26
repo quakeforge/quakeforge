@@ -77,6 +77,11 @@ int QFV_ParseRGBA (vulkan_ctx_t *ctx, float *rgba, plitem_t *plist,
 				   plitem_t *properties);
 int QFV_ParseOutput (vulkan_ctx_t *ctx, qfv_output_t *output, plitem_t *plist,
 					 plitem_t *properties);
+exprtab_t *QFV_CreateSymtab (plitem_t *dict, const char *properties,
+							 const char **extra_items, exprsym_t *extra_syms,
+						     exprctx_t *ectx);
+void QFV_DestroySymtab (exprtab_t *tab);
+
 struct qfv_renderctx_s;
 struct qfv_renderinfo_s *QFV_ParseRenderInfo (vulkan_ctx_t *ctx,
 											  plitem_t *item,

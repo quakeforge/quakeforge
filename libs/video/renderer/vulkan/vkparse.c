@@ -2214,6 +2214,69 @@ Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 	return set;
 }
 
+exprtab_t *
+QFV_CreateSymtab (plitem_t *dict, const char *properties,
+				  const char **extra_items, exprsym_t *extra_syms,
+				  exprctx_t *ectx)
+{
+	plitem_t   *props = PL_ObjectForKey (dict, properties);
+	int         num_keys = PL_D_NumKeys (props);
+	int         num_extra = 0;
+	int         num_syms = 0;
+
+	for (const char **e = extra_items; *e; e++) {
+		if (PL_ObjectForKey (dict, *e)) {
+			num_extra++;
+		}
+	}
+	for (exprsym_t *sym = extra_syms; sym->name; sym++, num_syms++) { }
+
+	int         total_items = num_keys + num_extra;
+	int         total_syms = total_items + num_syms;
+	size_t      size = (sizeof (exprtab_t)
+						+ (total_syms + 1) * sizeof (exprsym_t)
+						+ total_items * sizeof (plitem_t *));
+	exprtab_t  *symtab = malloc (size);
+	*symtab = (exprtab_t) {
+		.symbols = (exprsym_t *) &symtab[1],
+	};
+	plitem_t  **items = (plitem_t **) &symtab->symbols[total_syms + 1];
+	for (int i = 0; i < num_keys; i++) {
+		symtab->symbols[i] = (exprsym_t) {
+			.name = PL_KeyAtIndex (props, i),
+			.type = &cexpr_plitem,
+			.value = items + i,
+		};
+		items[i] = PL_ObjectForKey (props, symtab->symbols[i].name);
+	}
+	for (int i = 0, j = 0; extra_items[i]; i++) {
+		plitem_t   *val = PL_ObjectForKey (dict, extra_items[i]);
+		if (val) {
+			symtab->symbols[num_keys + j] = (exprsym_t) {
+				.name = extra_items[i],
+				.type = &cexpr_plitem,
+				.value = items + num_keys + i,
+			};
+			items[num_keys + j] = val;
+			j++;
+		}
+	}
+	for (int i = 0; i < num_syms; i++) {
+		symtab->symbols[total_items + i] = extra_syms[i];
+	}
+	symtab->symbols[total_syms] = (exprsym_t) { };
+
+	cexpr_init_symtab (symtab, ectx);
+	return symtab;
+}
+
+void
+QFV_DestroySymtab (exprtab_t *tab)
+{
+	Hash_DelTable (tab->tab);
+	free (tab);
+}
+
 qfv_renderinfo_t *
 QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
@@ -2221,77 +2284,38 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	qfv_renderinfo_t *ri = cmemalloc (memsuper, sizeof (qfv_renderinfo_t));
 	*ri = (qfv_renderinfo_t) { .memsuper = memsuper };
 
-	plitem_t   *properties = PL_ObjectForKey (item, "properties");
-	int         num_keys = PL_D_NumKeys (properties);
-
 	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
-	exprctx_t   exprctx = { .symtab = &root_symtab };
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
 	parsectx_t  parsectx = {
 		.ectx = &exprctx,
 		.vctx = ctx,
-		.properties = properties,
-		.data = rctx
+		.data = rctx,
 	};
-	plitem_t   *pl_items[num_keys + 3];
-	exprsym_t   var_syms[num_keys + 7 + 1];
-	exprtab_t   vars_tab = { var_syms, 0 };
 
-	for (int i = 0; i < num_keys; i++) {
-		var_syms[i] = (exprsym_t) {
-			.name = PL_KeyAtIndex (properties, i),
-			.type = &cexpr_plitem,
-			.value = pl_items + i,
-		};
-		pl_items[i] = PL_ObjectForKey (properties, var_syms[i].name);
-	}
-	pl_items[num_keys + 0] = PL_ObjectForKey (item, "images");
-	pl_items[num_keys + 1] = PL_ObjectForKey (item, "views");
-	pl_items[num_keys + 2] = PL_ObjectForKey (item, "renderpasses");
-
-	var_syms[num_keys + 0] = (exprsym_t) {
-		.name = "images",
-		.type = &cexpr_plitem,
-		.value = pl_items + num_keys + 0,
-	},
-	var_syms[num_keys + 1] = (exprsym_t) {
-		.name = "views",
-		.type = &cexpr_plitem,
-		.value = pl_items + num_keys + 1,
-	},
-	var_syms[num_keys + 2] = (exprsym_t) {
-		.name = "renderpasses",
-		.type = &cexpr_plitem,
-		.value = pl_items + num_keys + 2,
-	},
-	var_syms[num_keys + 3] = (exprsym_t) {
-		.name = "output",
-		.type = &qfv_output_t_type,
-		.value = &sctx->output,
+	static const char *extra_items[] = {
+		"images",
+		"view",
+		"renderpasses",
+		0
 	};
-	var_syms[num_keys + 4] = (exprsym_t) {
-		.name = "frames",
-		.type = &vulkan_frameset_t_type,
-		.value = &ctx->frames,
+	exprsym_t   var_syms[] = {
+		{"output", &qfv_output_t_type, &sctx->output},
+		{"frames", &vulkan_frameset_t_type, &ctx->frames},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{"physDevLimits", &VkPhysicalDeviceLimits_type,
+			&ctx->device->physDev->properties->limits },
+		{}
 	};
-	var_syms[num_keys + 5] = (exprsym_t) {
-		.name = "msaaSamples",
-		.type = &VkSampleCountFlagBits_type,
-		.value = &ctx->msaaSamples,
-	};
-	var_syms[num_keys + 6] = (exprsym_t) {
-		.name = "physDevLimits",
-		.type = &VkPhysicalDeviceLimits_type,
-		.value = &ctx->device->physDev->properties->limits,
-	};
-	var_syms[num_keys + 7] = (exprsym_t) {};
-
-	exprctx.external_variables = &vars_tab;
-	exprctx.messages = messages;
-	exprctx.hashctx = &sctx->hashctx;
-	exprctx.memsuper = memsuper;
-
-	cexpr_init_symtab (&vars_tab, &exprctx);
+	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
+												   extra_items, var_syms,
+												   &exprctx);
 
 	int         ret;
 	if (!(ret = parse_qfv_renderinfo_t (0, item, ri, messages, &parsectx))) {
@@ -2299,7 +2323,7 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
 	}
-	Hash_DelTable (vars_tab.tab);
+	QFV_DestroySymtab (exprctx.external_variables);
 	PL_Free (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);
