@@ -1131,7 +1131,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** \internal
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
-	\param t		typename prefix (see pr_type_u)
 	\return			lvalue of the appropriate type
 
 	\hideinitializer
