@@ -2259,7 +2259,7 @@ QFV_CreateSymtab (plitem_t *dict, const char *properties,
 			symtab->symbols[num_keys + j] = (exprsym_t) {
 				.name = extra_items[i],
 				.type = &cexpr_plitem,
-				.value = items + num_keys + i,
+				.value = items + num_keys + j,
 			};
 			items[num_keys + j] = val;
 			j++;
@@ -2305,7 +2305,7 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	static const char *extra_items[] = {
 		"images",
-		"view",
+		"views",
 		"renderpasses",
 		0
 	};
