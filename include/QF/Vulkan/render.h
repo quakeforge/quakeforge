@@ -158,6 +158,7 @@ typedef struct qfv_framebufferinfo_s {
 typedef struct qfv_renderpassinfo_s {
 	vec4f_t     color;
 	const char *name;
+	void       *pNext;
 	uint32_t    num_attachments;
 	qfv_attachmentinfo_t *attachments;
 	qfv_framebufferinfo_t framebuffer;
