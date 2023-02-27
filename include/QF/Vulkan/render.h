@@ -177,6 +177,8 @@ typedef struct qfv_renderinfo_s {
 	qfv_output_t output;
 	uint32_t    num_descriptorsets;
 	qfv_descriptorsetinfo_t *descriptorsets;
+	uint32_t    num_layouts;
+	qfv_layoutinfo_t *layouts;
 } qfv_renderinfo_t;
 
 typedef struct qfv_label_s {
@@ -238,8 +240,6 @@ typedef struct qfv_render_s {
 	struct qfv_resource_s *resources;
 	struct qfv_resobj_s *images;
 	struct qfv_resobj_s *image_views;
-	VkRenderPass *renderpass_res;
-	VkPipeline *pipelines;
 
 	uint32_t    num_renderpasses;
 	qfv_renderpass_t_ *renderpasses;
