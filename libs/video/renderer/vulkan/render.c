@@ -654,10 +654,23 @@ static void
 init_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx, qfv_subpassinfo_t *isp,
 			  qfv_pipeline_t *pl, objstate_t *s)
 {
-	sp->label.name = isp->name;
-	sp->label.color = isp->color;
-	sp->pipeline_count = isp->num_pipelines;
-	sp->pipelines = &pl[s->inds.num_pipelines];
+	*sp = (qfv_subpass_t_) {
+		.label = {
+			.name = isp->name,
+			.color = isp->color,
+		},
+		.inherit = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+		},
+		.beginInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+				| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
+			.pInheritanceInfo = &sp->inherit,
+		},
+		.pipeline_count = isp->num_pipelines,
+		.pipelines = &pl[s->inds.num_pipelines],
+	};
 	for (uint32_t i = 0; i < isp->num_pipelines; i++) {
 		init_pipeline (&sp->pipelines[i], ctx, &isp->pipelines[i], s);
 		s->inds.num_pipelines++;
@@ -666,20 +679,28 @@ init_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx, qfv_subpassinfo_t *isp,
 
 static void
 init_renderpass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx,
-				 qfv_renderpassinfo_t *irp,
+				 qfv_renderpassinfo_t *irp, VkClearValue *cv,
 				 qfv_subpass_t_ *sp, qfv_pipeline_t *pl, objstate_t *s)
 {
-	rp->vulkan_ctx = ctx;
-	rp->label.name = irp->name;
-	rp->label.color = irp->color;
-	rp->subpass_count = irp->num_subpasses;
-	rp->subpasses = &sp[s->inds.num_subpasses];
-	rp->beginInfo = (VkRenderPassBeginInfo) {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderPass = s->ptr.rp[s->inds.num_renderpasses],
+	*rp = (qfv_renderpass_t_) {
+		.vulkan_ctx = ctx,
+		.label.name = irp->name,
+		.label.color = irp->color,
+		.subpass_count = irp->num_subpasses,
+		.subpasses = &sp[s->inds.num_subpasses],
+		.beginInfo = (VkRenderPassBeginInfo) {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
+			.clearValueCount = irp->num_attachments,
+			.pClearValues = &cv[s->inds.num_attachments],
+		},
+		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
 	};
+	s->inds.num_attachments += irp->num_attachments;
 	for (uint32_t i = 0; i < irp->num_subpasses; i++) {
 		init_subpass (&rp->subpasses[i], ctx, &irp->subpasses[i], pl, s);
+		rp->subpasses[i].inherit.renderPass = rp->beginInfo.renderPass;
+		rp->subpasses[i].inherit.subpass = i;
 		s->inds.num_subpasses++;
 	}
 }
@@ -692,17 +713,20 @@ init_render (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	__auto_type render = rctx->render;
 	size_t      size = 0;
 	size += counts->num_renderpasses * sizeof (qfv_renderpass_t_);
+	size += counts->num_attachments * sizeof (VkClearValue);
 	size += counts->num_subpasses * sizeof (qfv_subpass_t_);
 	size += counts->num_pipelines * sizeof (qfv_pipeline_t);
 
 	__auto_type rp = (qfv_renderpass_t_ *) calloc (1, size);
-	__auto_type sp = (qfv_subpass_t_ *) &rp[counts->num_renderpasses];
+	__auto_type cv = (VkClearValue *) &rp[counts->num_renderpasses];
+	__auto_type sp = (qfv_subpass_t_ *) &cv[counts->num_attachments];
 	__auto_type pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
+	memcpy (cv, s.ptr.clear, counts->num_attachments * sizeof (VkClearValue));
 	uint32_t    num_layouts = s.inds.num_layouts;
 	s.inds = (objcount_t) {};
 	s.inds.num_layouts = num_layouts;
 	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
-		init_renderpass (&rp[i], ctx, &rinfo->renderpasses[i], sp, pl, &s);
+		init_renderpass (&rp[i], ctx, &rinfo->renderpasses[i], cv, sp, pl, &s);
 		s.inds.num_renderpasses++;
 	}
 

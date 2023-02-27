@@ -765,6 +765,7 @@ output = {
 };
 renderpasses = {
 	deferred = {
+		color = "[0, 1, 0, 1]";
 		attachments = {
 			depth = {
 				@inherit = $attachment_base;

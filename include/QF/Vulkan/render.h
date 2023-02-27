@@ -213,6 +213,7 @@ typedef struct qfv_pipeline_s {
 
 typedef struct qfv_subpass_s_ {
 	qfv_label_t label;
+	VkCommandBufferInheritanceInfo inherit;
 	VkCommandBufferBeginInfo beginInfo;
 	VkCommandBuffer cmd;
 	uint32_t    pipeline_count;
