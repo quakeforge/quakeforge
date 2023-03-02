@@ -428,8 +428,8 @@ particles_update (qfv_renderframe_t *rFrame)
 		// two buffers over the system buffer. This avoids either buffer being
 		// just past the end of the staging buffer (which the validation layers
 		// (correctly) do not like).
-		// This is fine because the two buffers are only read by the the
-		// compute shader.
+		// This is fine because the two buffers are only read by the compute
+		// shader.
 		partsize = paramsize = syssize;
 		partoffs = paramoffs = 0;
 	}
