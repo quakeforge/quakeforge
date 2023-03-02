@@ -580,11 +580,6 @@
 		};
 		qfv_framebufferinfo_s = {
 			.name = qfv_framebufferinfo_t;
-			attachments = {
-				type = (array, qfv_reference_t);
-				size = num_attachments;
-				values = attachments;
-			};
 			width = auto;
 			height = auto;
 			layers = auto;

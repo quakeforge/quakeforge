@@ -773,28 +773,34 @@ renderpasses = {
 				loadOp = clear;
 				finalLayout = depth_stencil_attachment_optimal;
 				clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+				view = $views.depth;
 			};
 			color = {
 				@inherit = $attachment_base;
 				format = $images.color.format;
 				loadOp = clear;
+				view = $views.color;
 			};
 			emission = {
 				@inherit = $attachment_base;
 				format = $images.emission.format;
 				loadOp = clear;
+				view = $views.emission;
 			};
 			normal = {
 				@inherit = $attachment_base;
 				format = $images.normal.format;
+				view = $views.normal;
 			};
 			position = {
 				@inherit = $attachment_base;
 				format = $images.position.format;
+				view = $views.position;
 			};
 			opaque = {
 				@inherit = $attachment_base;
 				format = $images.opaque.format;
+				view = $views.opaque;
 			};
 			output = {
 				@inherit = $attachment_base;
@@ -802,11 +808,10 @@ renderpasses = {
 				loadOp = clear;
 				storeOp = store;
 				finalLayout = $output.finalLayout;
+				view = $views.output;
 			};
 		};
 		framebuffer = {
-			attachments = (depth, color, emission, normal, position, opaque,
-						   $output.view);
 			width = $output.extent.width;
 			height = $output.extent.height;
 			layers = 1;
