@@ -111,6 +111,9 @@ bi_plist_destroy (progs_t *pr, void *_res)
 {
 	__auto_type res = (plist_resources_t *) _res;
 	Hash_DelTable (res->plist_tab);
+
+	PR_RESDELMAP (res->plist_map);
+
 	free (res);
 }
 

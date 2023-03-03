@@ -240,8 +240,15 @@ pr_strings_destroy (progs_t *pr, void *_res)
 	__auto_type res = (prstr_resources_t *) _res;
 	dstring_delete (res->print_str);
 	Hash_DelTable (res->strref_hash);
-	pr->pr_string_resources = 0;
+	free (res->static_strings);
+	res->static_strings = 0;
 
+	for (unsigned i = 0; i < res->dyn_str_size; i++) {
+		free (res->string_map[i]);
+	}
+	free (res->string_map);
+
+	pr->pr_string_resources = 0;
 	free (res);
 }
 

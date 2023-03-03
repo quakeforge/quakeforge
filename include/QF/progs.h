@@ -1792,6 +1792,14 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 */
 #define PR_RESMAP(type) struct { type *_free; type **_map; unsigned _size; }
 
+#define PR_RESDELMAP(map)								\
+	do {												\
+		for (unsigned i = 0; i < (map)._size; i++) {	\
+			free ((map)._map[i]);						\
+		}												\
+		free ((map)._map);								\
+	} while (0)
+
 /** Allocate a new resource from the resource map.
 
 	\param map		The resource map.

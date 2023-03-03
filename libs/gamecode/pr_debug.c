@@ -406,6 +406,8 @@ pr_debug_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (res->debug_syms);
 	Hash_DelTable (res->compunits);
 
+	PR_RESDELMAP (res->compmap);
+
 	pr->pr_debug_resources = 0;
 
 	free (res);

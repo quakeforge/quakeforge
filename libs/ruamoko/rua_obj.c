@@ -2333,6 +2333,16 @@ rua_obj_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (probj->protocols);
 	Hash_DelTable (probj->load_methods);
 
+	free (probj->selector_sels);
+	free (probj->selector_names);
+	free (probj->selector_argc);
+	//FIXME free (probj->obj_list_free_list);
+
+	//FIXME free (class_tree_free_list);
+	//FIXME class_tree_free_list = 0;
+
+	PR_RESDELMAP (probj->dtables);
+
 	free (probj);
 }
 
