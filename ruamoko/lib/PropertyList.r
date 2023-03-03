@@ -51,12 +51,16 @@
 
 + (PLItem *) fromString:(string) str
 {
-	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
+	PLItem *item = [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
+	item.own = 1;
+	return item;
 }
 
 + (PLItem *) fromFile:(QFile) file
 {
-	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
+	PLItem *item = [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
+	item.own = 1;
+	return item;
 }
 
 - initWithItem:(plitem_t *) item
@@ -211,7 +215,9 @@
 
 - (PLItem *) allKeys
 {
-	return [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
+	PLItem *item = [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
+	item.own = 1;
+	return item;
 }
 
 - addKey:(string) key value:(PLItem *) value
