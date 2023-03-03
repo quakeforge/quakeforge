@@ -121,6 +121,14 @@ void *Hash_Find (hashtab_t *tab, const char *key);
 
 /** find an element within a hash table.
 	\param tab	the table to search
+	\param key	the key string identifying the element being searched for
+	\param sz   the maximum length of the key string
+	\return		pointer to the element if found, otherwise 0.
+*/
+void *Hash_nFind (hashtab_t *tab, const char *key, size_t sz);
+
+/** find an element within a hash table.
+	\param tab	the table to search
 	\param ele	element with info identifying the element being searched for
 	\return		pointer to the element if found, otherwise 0.
 */
@@ -188,6 +196,15 @@ void Hash_Free (hashtab_t *tab, void *ele);
 	this is the same function as used internally.
 */
 uintptr_t Hash_String (const char *str) __attribute__((pure));
+
+/** hash a string.
+	\param str	the string to hash
+	\param sz   the maximum length of the string
+	\return		the hash value of the string.
+
+	this is the same function as used internally.
+*/
+uintptr_t Hash_nString (const char *str, size_t sz) __attribute__((pure));
 
 /** hash a buffer.
 	\param buf	the buffer to hash

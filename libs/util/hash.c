@@ -120,6 +120,32 @@ Hash_String (const char *str)
 }
 
 VISIBLE uintptr_t
+Hash_nString (const char *str, size_t sz)
+{
+#if 0
+	uintptr_t   h = 0;
+	while (*str && sz-- > 0) {
+		h = (h << 4) + (unsigned char)*str++;
+		if (h&0xf0000000)
+			h = (h ^ (h >> 24)) & 0xfffffff;
+	}
+	return h;
+#else
+	// dx_hack_hash
+	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
+	// from his post to lkml
+	uint32_t hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
+	while (sz-- > 0 && *str) {
+		uint32_t hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
+		if (hash & 0x80000000) hash -= 0x7fffffff;
+		hash1 = hash0;
+		hash0 = hash;
+	}
+	return hash0;
+#endif
+}
+
+VISIBLE uintptr_t
 Hash_Buffer (const void *_buf, int len)
 {
 	const unsigned char *buf = _buf;
@@ -283,6 +309,21 @@ Hash_Find (hashtab_t *tab, const char *key)
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
+			return lnk->data;
+		lnk = lnk->next;
+	}
+	return 0;
+}
+
+VISIBLE void *
+Hash_nFind (hashtab_t *tab, const char *key, size_t sz)
+{
+	uintptr_t   h = Hash_nString (key, sz);
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
+	hashlink_t *lnk = tab->tab[ind];
+
+	while (lnk) {
+		if (strncmp (key, tab->get_key (lnk->data, tab->user_data), sz) == 0)
 			return lnk->data;
 		lnk = lnk->next;
 	}
