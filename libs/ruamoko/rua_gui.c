@@ -84,6 +84,10 @@ passage_new (gui_resources_t *res)
 static void
 passage_free (gui_resources_t *res, rua_passage_t *passage)
 {
+	if (passage->next) {
+		passage->next->prev = passage->prev;
+	}
+	*passage->prev = passage->next;
 	PR_RESFREE (res->passage_map, passage);
 }
 
@@ -192,8 +196,7 @@ bi_gui_clear (progs_t *pr, void *_res)
 {
 	gui_resources_t *res = _res;
 
-	rua_passage_t *psg;
-	for (psg = res->passages; psg; psg = psg->next) {
+	for (rua_passage_t *psg = res->passages; psg; psg = psg->next) {
 		Passage_Delete (psg->passage);
 	}
 	res->passages = 0;
