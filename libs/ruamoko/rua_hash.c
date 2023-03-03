@@ -385,6 +385,7 @@ bi_hash_clear (progs_t *pr, void *_res)
 static void
 bi_hash_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}

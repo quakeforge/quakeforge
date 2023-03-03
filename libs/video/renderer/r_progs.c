@@ -491,6 +491,8 @@ bi_draw_destroy (progs_t *pr, void *_res)
 {
 	draw_resources_t *res = (draw_resources_t *) _res;
 	Hash_DelTable (res->pic_hash);
+
+	free (res);
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}

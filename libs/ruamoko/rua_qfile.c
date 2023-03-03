@@ -98,6 +98,7 @@ bi_qfile_clear (progs_t *pr, void *_res)
 static void
 bi_qfile_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static int

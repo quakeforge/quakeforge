@@ -486,6 +486,8 @@ bi_input_destroy (progs_t *pr, void *_res)
 	input_resources_t *res = _res;
 	Hash_DelTable (res->cookies);
 	delete_memsuper (res->cookie_super);
+
+	free (res);
 }
 
 static uintptr_t

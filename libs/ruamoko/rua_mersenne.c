@@ -150,6 +150,7 @@ bi_mtwist_clear (progs_t *pr, void *_res)
 static void
 bi_mtwist_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}

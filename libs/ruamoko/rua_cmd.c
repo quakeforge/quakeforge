@@ -130,6 +130,7 @@ bi_cmd_destroy (progs_t *pr, void *data)
 	if (!--bi_cmds_refs) {
 		Hash_DelTable (bi_cmds);
 	}
+	free (data);
 }
 
 static void

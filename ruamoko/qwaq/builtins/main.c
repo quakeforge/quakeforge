@@ -200,6 +200,7 @@ qwaq_thread_clear (progs_t *pr, void *_thread)
 static void
 qwaq_thread_destroy (progs_t *pr, void *_res)
 {
+	// resource block is the thread data: don't own it
 }
 
 static progs_t *

@@ -116,8 +116,9 @@ bi_gib_builtin_clear (progs_t *progs, void *_res)
 static void
 bi_gib_builtin_destroy (progs_t *progs, void *_res)
 {
-	//bi_gib_resources_t *res = (bi_gib_resources_t *) _res;
+	bi_gib_resources_t *res = (bi_gib_resources_t *) _res;
 	Hash_DelTable (bi_gib_builtins);
+	free (res);
 }
 
 static void

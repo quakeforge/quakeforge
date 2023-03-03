@@ -105,6 +105,7 @@ bi_il_clear (progs_t *pr, void *_res)
 static void
 bi_il_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static il_data_t * __attribute__((pure))

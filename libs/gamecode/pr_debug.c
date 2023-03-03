@@ -407,6 +407,8 @@ pr_debug_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (res->compunits);
 
 	pr->pr_debug_resources = 0;
+
+	free (res);
 }
 
 static file_t *

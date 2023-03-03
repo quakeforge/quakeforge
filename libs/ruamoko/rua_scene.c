@@ -657,6 +657,7 @@ bi_scene_clear (progs_t *pr, void *_res)
 static void
 bi_scene_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 void

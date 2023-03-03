@@ -96,6 +96,7 @@ bi_cbuf_clear (progs_t *pr, void *data)
 static void
 bi_cbuf_destroy (progs_t *pr, void *data)
 {
+	free (data);
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}

@@ -167,6 +167,7 @@ qwaq_debug_clear (progs_t *pr, void *_res)
 static void
 qwaq_debug_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static void
@@ -181,6 +182,7 @@ qwaq_target_clear (progs_t *pr, void *_res)
 static void
 qwaq_target_destroy (progs_t *pr, void *_res)
 {
+	// no block to free
 }
 
 static int

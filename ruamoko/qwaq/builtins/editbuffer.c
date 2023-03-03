@@ -1020,6 +1020,7 @@ qwaq_ebresources_clear (progs_t *pr, void *_res)
 static void
 qwaq_ebresources_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}

@@ -2332,6 +2332,8 @@ rua_obj_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (probj->classes);
 	Hash_DelTable (probj->protocols);
 	Hash_DelTable (probj->load_methods);
+
+	free (probj);
 }
 
 void

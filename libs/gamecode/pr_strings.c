@@ -241,6 +241,8 @@ pr_strings_destroy (progs_t *pr, void *_res)
 	dstring_delete (res->print_str);
 	Hash_DelTable (res->strref_hash);
 	pr->pr_string_resources = 0;
+
+	free (res);
 }
 
 VISIBLE int

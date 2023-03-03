@@ -806,6 +806,7 @@ res_set_clear (progs_t *pr, void *_res)
 static void
 res_set_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
