@@ -255,5 +255,7 @@ main(int argc, string *argv)
 	fprintf (output_file, "}\n");
 	Qclose (output_file);
 	Qclose (header_file);
+	Hash_DelTable (available_types);
+	[plist release];
 	return 0;
 }
