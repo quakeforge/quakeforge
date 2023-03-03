@@ -837,7 +837,7 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 	create_renderpasses (ctx, &counts);
 }
 
-static VkImageView
+static VkImageView __attribute__((pure))
 find_view (qfv_reference_t *ref, qfv_renderctx_t *rctx)
 {
 	__auto_type rinfo = rctx->renderinfo;
