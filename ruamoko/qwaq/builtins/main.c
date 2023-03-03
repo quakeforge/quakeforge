@@ -317,6 +317,9 @@ run_progs (void *data)
 		thread->pr->debug_handler (prd_terminate, &thread->return_code,
 								   thread->pr->debug_data);
 	}
+	PR_Shutdown (thread->pr);
+	free (thread->pr);
+	thread->pr = 0;
 	return thread;
 }
 
@@ -473,6 +476,7 @@ main (int argc, char **argv)
 		ret = thread_data.a[main_ind]->return_code;
 	}
 
+	Cbuf_Delete (qwaq_cbuf);
 	Sys_Shutdown ();
 	return ret;
 }
