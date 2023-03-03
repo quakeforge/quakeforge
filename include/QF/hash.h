@@ -93,6 +93,8 @@ void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
 */
 void Hash_DelTable (hashtab_t *tab);
 
+void Hash_DelContext (hashctx_t *hashctx);
+
 /** clean out all the entries from a hash table, starting over again.
 	\param tab	the table to be cleared
 */

@@ -42,6 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/gib.h"
+#include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
@@ -320,6 +321,8 @@ run_progs (void *data)
 	PR_Shutdown (thread->pr);
 	free (thread->pr);
 	thread->pr = 0;
+	Hash_DelContext (thread->hashctx);
+	thread->hashctx = 0;
 	return thread;
 }
 
