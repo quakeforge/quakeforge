@@ -140,13 +140,13 @@ font_new (gui_resources_t *res)
 {
 	return PR_RESNEW (res->font_map);
 }
-/*
+
 static void
 font_free (gui_resources_t *res, rua_font_t *font)
 {
 	PR_RESFREE (res->font_map, font);
 }
-*/
+
 static void
 font_reset (gui_resources_t *res)
 {
@@ -168,16 +168,16 @@ font_index (gui_resources_t *res, rua_font_t *font)
 static int
 alloc_font (gui_resources_t *res, font_t *font)
 {
-	rua_font_t *psg = font_new (res);
+	rua_font_t *fnt = font_new (res);
 
-	psg->next = res->fonts;
-	psg->prev = &res->fonts;
+	fnt->next = res->fonts;
+	fnt->prev = &res->fonts;
 	if (res->fonts) {
-		res->fonts->prev = &psg->next;
+		res->fonts->prev = &fnt->next;
 	}
-	res->fonts = psg;
-	psg->font = font;
-	return font_index (res, psg);
+	res->fonts = fnt;
+	fnt->font = font;
+	return font_index (res, fnt);
 }
 
 static rua_font_t * __attribute__((pure))
@@ -215,6 +215,8 @@ bi_gui_destroy (progs_t *pr, void *_res)
 {
 	gui_resources_t *res = _res;
 	ECS_DelRegistry (res->reg);
+	PR_RESDELMAP (res->passage_map);
+	PR_RESDELMAP (res->font_map);
 	free (res);
 }
 
@@ -229,6 +231,15 @@ bi (Font_Load)
 	QFile      *font_file = QFS_FOpenFile (font_path);
 	font_t     *font = Font_Load (font_file, font_size);
 	R_INT (pr) = alloc_font (res, font);
+}
+
+bi (Font_Free)
+{
+	gui_resources_t *res = _res;
+	rua_font_t *font = get_font (res, P_INT (pr, 0));
+
+	Font_Free (font->font);
+	font_free (res, font);
 }
 
 bi (Passage_New)
@@ -361,6 +372,15 @@ bi (Text_Draw)
 	}
 }
 
+bi (View_Delete)
+{
+	gui_resources_t *res = _res;
+	uint32_t    viewid = P_UINT (pr, 0);
+	view_t      view = { .id = viewid, .reg = res->reg,
+						 .comp = res->view_base + view_href };
+	View_Delete (view);
+}
+
 bi (View_ChildCount)
 {
 	gui_resources_t *res = _res;
@@ -427,6 +447,7 @@ bi (View_UpdateHierarchy)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
 	bi(Font_Load,           2, p(string), p(int)),
+	bi(Font_Free,           2, p(int)),
 	bi(Passage_New,         0),
 	bi(Passage_ParseText,   2, p(ptr), p(string)),
 	bi(Passage_Delete,      1, p(ptr)),
@@ -436,6 +457,7 @@ static builtin_t builtins[] = {
 	bi(Text_View,           2, p(ptr), p(int)),
 	bi(Text_SetScript,      4, p(uint), p(string), p(int), p (int)),
 
+	bi(View_Delete,         1, p(uint)),
 	bi(View_ChildCount,     1, p(uint)),
 	bi(View_GetChild,       2, p(uint), p(uint)),
 	bi(View_SetPos,         3, p(uint), p(int), p(int)),

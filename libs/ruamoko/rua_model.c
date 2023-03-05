@@ -106,7 +106,9 @@ bi_rua_model_clear (progs_t *pr, void *_res)
 static void
 bi_rua_model_destroy (progs_t *pr, void *_res)
 {
-	free (_res);
+	rua_model_resources_t *res = _res;
+	PR_RESDELMAP (res->model_map);
+	free (res);
 }
 
 static int

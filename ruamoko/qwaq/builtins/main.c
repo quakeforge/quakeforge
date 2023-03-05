@@ -480,6 +480,12 @@ main (int argc, char **argv)
 		ret = thread_data.a[main_ind]->return_code;
 	}
 
+	for (size_t i = 0; i < thread_data.size; i++) {
+		qwaq_thread_t *thread = thread_data.a[i];
+		DARRAY_CLEAR (&thread->args);
+		free (thread_data.a[i]);
+	}
+	DARRAY_CLEAR (&thread_data);
 	Cbuf_Delete (qwaq_cbuf);
 	Sys_Shutdown ();
 	return ret;
