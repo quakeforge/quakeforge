@@ -89,6 +89,7 @@ range_cmp (const void *_key, const void *_range, void *_subpool)
 	const uint32_t *range = _range;
 	ecs_subpool_t *subpool = _subpool;
 
+	// range is the first index for the next subpool range
 	if (*key >= *range) {
 		return 1;
 	}
@@ -117,8 +118,9 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	if (ind < pool->count && pool->dense[ind] == ent) {
 		uint32_t    last = pool->count - 1;
 		Component_DestroyElements (c, pool->data, ind, 1);
-		if (subpool->num_ranges - subpool->available) {
-			uint32_t    range_count = subpool->num_ranges - subpool->available;
+		uint32_t    range_count = subpool->num_ranges - subpool->available;
+		// if ind >= the last range, then it is outside the subpools
+		if (range_count && ind < subpool->ranges[range_count - 1]) {
 			uint32_t   *range = find_range (subpool, ind);
 			while (range - subpool->ranges < range_count) {
 				uint32_t    end = --*range;
