@@ -162,6 +162,7 @@ static void
 BI_shutdown (void *data)
 {
 	ECS_DelRegistry (canvas_sys.reg);
+	ColorCache_Shutdown ();
 }
 
 static byte default_palette[256][3];

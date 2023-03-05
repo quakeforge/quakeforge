@@ -105,6 +105,13 @@ ColorCache_Delete (colcache_t *cache)
 	FREE (colcache, cache);
 }
 
+void
+ColorCache_Shutdown (void)
+{
+	ALLOC_FREE_BLOCKS (colcache);
+	ALLOC_FREE_BLOCKS (colcache_color);
+}
+
 byte
 ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache)
 {
