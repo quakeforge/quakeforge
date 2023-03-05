@@ -94,6 +94,7 @@ const component_t view_components[view_comp_count] = {
 	[view_href] = {
 		.size = sizeof (hierref_t),
 		.name = "view href",
+		.destroy = Hierref_DestroyComponent,
 	},
 };
 

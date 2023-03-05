@@ -59,6 +59,21 @@ hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 }
 
 static void
+hierarchy_InvalidateReferences (hierarchy_t *hierarchy, uint32_t start,
+								uint32_t count)
+{
+	ecs_registry_t *reg = hierarchy->reg;
+	uint32_t    href = hierarchy->href_comp;
+	for (size_t i = start; count-- > 0; i++) {
+		if (ECS_EntValid (hierarchy->ent[i], reg)) {
+			hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
+			ref->hierarchy = 0;
+			ref->index = -1;
+		}
+	}
+}
+
+static void
 hierarchy_UpdateChildIndices (hierarchy_t *hierarchy, uint32_t start,
 							  int offset)
 {
@@ -165,7 +180,7 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 							src->ent, srcIndex, count);
 	// Actually move (as in C++ move semantics) source hierarchy object
 	// references so that their indices do not get updated when the objects
-	// are removed from the source hierarcy
+	// are removed from the source hierarchy
 	memset (&src->ent[srcIndex], nullent, count * sizeof(dst->ent[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
@@ -325,6 +340,7 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index,
 		hierarchy_remove_children (hierarchy, childIndex + i, delEntities);
 	}
 	if (delEntities) {
+		hierarchy_InvalidateReferences (hierarchy, childIndex, childCount);
 		for (uint32_t i = 0; i < childCount; i++) {
 			ECS_DelEntity (hierarchy->reg, hierarchy->ent[childIndex + i]);
 		}
@@ -349,6 +365,7 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 
 	hierarchy_remove_children (hierarchy, index, delEntities);
 	if (delEntities) {
+		hierarchy_InvalidateReferences (hierarchy, index, 1);
 		ECS_DelEntity (hierarchy->reg, hierarchy->ent[index]);
 	}
 	hierarchy_close (hierarchy, index, 1);
@@ -386,6 +403,7 @@ Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 void
 Hierarchy_Delete (hierarchy_t *hierarchy)
 {
+	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
@@ -440,7 +458,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 	hierref_t   r = {};
 	if (dst && dstParent != nullent) {
 		if (dst->type != src->type) {
-			Sys_Error ("Can't set parent in hierarcy of different type");
+			Sys_Error ("Can't set parent in hierarchy of different type");
 		}
 	} else {
 		if (!srcRoot) {
@@ -457,4 +475,16 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 		Hierarchy_Delete (src);
 	}
 	return r;
+}
+
+void
+Hierref_DestroyComponent (void *href)
+{
+	hierref_t   ref = *(hierref_t *) href;
+	if (ref.hierarchy) {
+		Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
+		if (!ref.hierarchy->num_objects) {
+			Hierarchy_Delete (ref.hierarchy);
+		}
+	}
 }

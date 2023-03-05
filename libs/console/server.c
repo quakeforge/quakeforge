@@ -224,6 +224,7 @@ static const component_t server_components[server_comp_count] = {
 	[server_href] = {
 		.size = sizeof (hierref_t),
 		.name = "href",
+		.destroy = Hierref_DestroyComponent,
 	},
 	[server_view] = {
 		.size = sizeof (sv_view_t),

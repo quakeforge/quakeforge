@@ -99,6 +99,7 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (hierref_t),
 		.create = 0,//create_href,
 		.name = "href",
+		.destroy = Hierref_DestroyComponent,
 	},
 	[scene_animation] = {
 		.size = sizeof (animation_t),
