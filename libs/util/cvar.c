@@ -774,6 +774,7 @@ cvar_free_memory (void *ele, void *data)
 		exprenum_t *enm = cvar->value.type->data;
 		if (enm->symtab && enm->symtab->tab) {
 			Hash_DelTable (enm->symtab->tab);
+			enm->symtab->tab = 0;
 		}
 	}
 
