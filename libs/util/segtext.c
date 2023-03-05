@@ -163,6 +163,7 @@ Segtext_new (const char *source_string)
 		// If tags are duplicated, the first one takes precedence
 		if ((*chunk)->tag && !Hash_Find (text->tab, (*chunk)->tag))
 			Hash_Add (text->tab, *chunk);
+		chunk = &(*chunk)->next;
 	}
 	return text;
 }
@@ -177,8 +178,9 @@ Segtext_delete (segtext_t *st)
 	while (st->chunk_list) {
 		chunk = st->chunk_list;
 		st->chunk_list = chunk->next;
-		if (chunk->tag)
+		if (chunk->tag) {
 			free ((char *) chunk->tag);
+		}
 		delete_chunk (chunk);
 	}
 	Hash_DelTable (st->tab);
