@@ -229,6 +229,9 @@ hash_shutdown (void *data)
 VISIBLE void
 Hash_DelContext (hashctx_t *hashctx)
 {
+	if (!hashctx) {
+		return;
+	}
 	while (hashctx->linksets) {
 		hlinkset_t *l = hashctx->linksets->next;
 		free (hashctx->linksets);
