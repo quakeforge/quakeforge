@@ -401,6 +401,7 @@ s_shutdown (void)
 	sound_started = 0;
 	snd_shutdown = 1;
 
+	SND_SFX_Shutdown (&snd);
 	snd_output_funcs->shutdown (&snd);
 }
 

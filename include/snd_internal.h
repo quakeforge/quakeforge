@@ -326,6 +326,7 @@ sfx_t *SND_LoadSound (snd_t *snd, const char *name);
 	\param snd		sound system state
 */
 void SND_SFX_Init (snd_t *snd);
+void SND_SFX_Shutdown (snd_t *snd);
 
 ///@}
 

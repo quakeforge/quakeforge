@@ -229,3 +229,9 @@ SND_SFX_Init (snd_t *snd)
 	Cmd_AddCommand ("soundlist", s_soundlist_f,
 					"Reports a list of loaded sounds");
 }
+
+void
+SND_SFX_Shutdown (snd_t *snd)
+{
+	Hash_DelTable (snd_sfx_hash);
+}
