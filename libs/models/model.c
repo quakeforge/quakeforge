@@ -103,6 +103,7 @@ static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 static void
 mod_shutdown (void *data)
 {
+	Mod_ClearAll ();
 	for (size_t i = 0; i < mod_blocks.size; i++) {
 		free (mod_blocks.a[i]);
 	}
