@@ -486,7 +486,7 @@ main (int argc, char **argv)
 		free (thread_data.a[i]);
 	}
 	DARRAY_CLEAR (&thread_data);
-	Cbuf_Delete (qwaq_cbuf);
+	Cbuf_DeleteStackReverse (qwaq_cbuf);
 	Sys_Shutdown ();
 	return ret;
 }
