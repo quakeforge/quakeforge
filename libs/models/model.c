@@ -55,6 +55,7 @@ vid_model_funcs_t *mod_funcs;
 
 #define	MOD_BLOCK	16					// allocate 16 models at a time
 static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static struct DARRAY_TYPE (model_t *) mod_blocks = {0, 0, MOD_BLOCK};
 static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
@@ -99,12 +100,24 @@ static cvar_t gl_textures_external_cvar = {
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
+static void
+mod_shutdown (void *data)
+{
+	for (size_t i = 0; i < mod_blocks.size; i++) {
+		free (mod_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&mod_known);
+	DARRAY_CLEAR (&mod_blocks);
+}
+
 VISIBLE void
 Mod_Init (void)
 {
 	byte   *dest;
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
+
+	Sys_RegisterShutdown (mod_shutdown, 0);
 
 	r_notexture_mip = Hunk_AllocName (0,
 									  sizeof (texture_t) + mip0size + mip1size
@@ -187,6 +200,7 @@ Mod_FindName (const char *name)
 				DARRAY_APPEND (&mod_known, &block[i]);
 			}
 			mod = &mod_known.a[mod_numknown];
+			DARRAY_APPEND (&mod_blocks, block);
 		}
 		memset ((*mod), 0, sizeof (model_t));
 		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
