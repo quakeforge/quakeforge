@@ -323,6 +323,7 @@ run_progs (void *data)
 	thread->pr = 0;
 	Hash_DelContext (thread->hashctx);
 	thread->hashctx = 0;
+	Sys_Shutdown ();
 	return thread;
 }
 
