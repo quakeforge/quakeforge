@@ -29,16 +29,19 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "QF/fbsearch.h"
 #include "bsearch.h"
 
 // will be prefix-summed
-int data[] = {
+int srcdata[] = {
 	2, 1, 3, 1, 2, 2, 5, 4,
 	2, 1, 3, 1, 2, 2, 5, 4,
 };
-#define nele ((int) (sizeof (data) / sizeof (data[0])))
+#define nele ((int) (sizeof (srcdata) / sizeof (srcdata[0])))
+int *data;
 
 static int
 compare (const void *a, const void *b)
@@ -83,6 +86,9 @@ main(int argc, const char **argv)
 	int         ret = 0;
 	int        *p;
 
+	data = malloc (nele * sizeof (int));
+	memcpy (data, srcdata, nele * sizeof (int));
+
 	for (int i = 1; i < nele; i++) {
 		data[i] += data[i - 1];
 	}
@@ -99,18 +105,19 @@ main(int argc, const char **argv)
 			ret |= 1;
 		}
 		if (p && i == *p) {
-			p = _bsearch (&i, data, nele, sizeof (int), compared, 0);
+			p = QF_bsearch_r (&i, data, nele, sizeof (int), compared, 0);
 			if (!p || *p != i) {
-				printf ("_bsearch did not find %d, but should have\n", i);
+				printf ("QF_bsearch_r did not find %d, but should have\n", i);
 				ret |= 1;
 			}
 		} else {
-			p = _bsearch (&i, data, nele, sizeof (int), compared, 0);
+			p = QF_bsearch_r (&i, data, nele, sizeof (int), compared, 0);
 			if (p) {
-				printf ("_bsearch found %d, but should not have\n", i);
+				printf ("QF_bsearch_r found %d, but should not have\n", i);
 				ret |= 1;
 			}
 		}
 	}
+	free (data);
 	return ret;
 }
