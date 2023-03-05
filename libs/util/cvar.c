@@ -770,6 +770,11 @@ cvar_free_memory (void *ele, void *data)
 		char      **str_value = cvar->value.value;
 		free (*str_value);
 		*str_value = 0;
+	} else if (cvar->value.type->data) {
+		exprenum_t *enm = cvar->value.type->data;
+		if (enm->symtab && enm->symtab->tab) {
+			Hash_DelTable (enm->symtab->tab);
+		}
 	}
 
 	if (cvar->listeners) {
