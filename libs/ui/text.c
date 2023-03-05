@@ -44,6 +44,13 @@
 #include "compat.h"
 
 static void
+text_passage_glyphs_destroy (void *_glyphset)
+{
+	glyphset_t *glyphset = _glyphset;
+	free (glyphset->glyphs);
+}
+
+static void
 text_features_create (void *_features)
 {
 	featureset_t *features = _features;
@@ -61,6 +68,7 @@ const component_t text_components[text_comp_count] = {
 	[text_passage_glyphs] = {
 		.size = sizeof (glyphset_t),
 		.name = "passage glyphs",
+		.destroy = text_passage_glyphs_destroy,
 	},
 	[text_glyphs] = {
 		.size = sizeof (glyphref_t),
@@ -282,6 +290,8 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 		.count = glyph_count,
 	};
 	Ent_SetComponent (passage_view.id, text_passage_glyphs, reg, &glyphset);
+	hb_buffer_destroy (buffer);
+	hb_font_destroy (fnt);
 	return passage_view;
 }
 

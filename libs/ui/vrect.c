@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 
+#include "QF/darray.h"
 #include "QF/mathlib.h"
 
 #include "QF/ui/vrect.h"
@@ -42,6 +43,7 @@
 #define RECT_BLOCK 128
 #ifndef TEST_MEMORY
 static vrect_t *free_rects;
+static struct DARRAY_TYPE(vrect_t *) rect_sets = DARRAY_STATIC_INIT (32);
 #endif
 
 VISIBLE vrect_t *
@@ -56,6 +58,7 @@ VRect_New (int x, int y, int width, int height)
 		for (i = 0; i < RECT_BLOCK - 1; i++)
 			free_rects[i].next = &free_rects[i + 1];
 		free_rects[i].next = 0;
+		DARRAY_APPEND (&rect_sets, free_rects);
 	}
 	r = free_rects;
 	free_rects = free_rects->next;
@@ -319,3 +322,20 @@ VRect_SubRect (const vrect_t *rect, int width, int height)
 	VRect_Delete (r);
 	return s;
 }
+
+#ifndef TEST_MEMORY
+static void
+vrect_shutdown (void *data)
+{
+	for (size_t i = 0; i < rect_sets.size; i++) {
+		free (rect_sets.a[i]);
+	}
+	DARRAY_CLEAR (&rect_sets);
+}
+
+static void __attribute__((constructor))
+vrect_init (void)
+{
+	Sys_RegisterShutdown (vrect_shutdown, 0);
+}
+#endif
