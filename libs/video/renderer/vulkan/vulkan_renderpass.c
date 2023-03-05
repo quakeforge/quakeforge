@@ -367,8 +367,6 @@ QFV_RenderPass_Delete (qfv_renderpass_t *renderpass)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	PL_Free (renderpass->renderpassDef);
-
 	destroy_attachments (ctx, renderpass);
 	dfunc->vkDestroyRenderPass (device->dev, renderpass->renderpass, 0);
 	destroy_renderframes (ctx, renderpass);

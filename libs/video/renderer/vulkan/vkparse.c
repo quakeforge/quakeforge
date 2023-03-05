@@ -1226,6 +1226,13 @@ parser_getkey (const void *e, void *unused)
 static exprtab_t root_symtab = {
 	.symbols = cexpr_lib_symbols,
 };
+
+static void
+root_symtab_shutdown (void *data)
+{
+	Hash_DelTable (root_symtab.tab);
+}
+
 static void __attribute__((constructor))
 root_symtab_init (void)
 {
@@ -1233,6 +1240,7 @@ root_symtab_init (void)
 	// main and thus before any possibility of threading.
 	exprctx_t root_context = { .symtab = &root_symtab };
 	cexpr_init_symtab (&root_symtab, &root_context);
+	Sys_RegisterShutdown (root_symtab_shutdown, 0);
 }
 
 exprenum_t *
@@ -1966,6 +1974,17 @@ build_configs (scriptctx_t *sctx)
 	cexpr_init_symtab (&builtin_configs, &ectx);
 }
 
+static void
+delete_configs (void)
+{
+	int         num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		PL_Free (builtin_plists[num_plists]);
+		num_plists++;
+	}
+	free (builtin_plists);
+}
+
 static plitem_t *
 qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 {
@@ -2025,7 +2044,10 @@ void Vulkan_Script_Init (vulkan_ctx_t *ctx)
 	exprctx_t   ectx = {};
 	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &sctx->hashctx);
 	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &sctx->hashctx);
-	ectx.hashctx = &sctx->hashctx;
+	//FIXME using the script context's hashctx causes the cvar system to access
+	//freed hash links due to shutdown order issues. The proper fix would be to
+	//create a symtabs shutdown (for thread safety), but this works for now.
+	ectx.hashctx = 0;//&sctx->hashctx;
 	vkgen_init_symtabs (&ectx);
 	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
 	cexpr_init_symtab (&vulkan_frameset_t_symtab, &ectx);
@@ -2055,12 +2077,15 @@ void Vulkan_Script_Shutdown (vulkan_ctx_t *ctx)
 {
 	scriptctx_t *sctx = ctx->script_context;
 
-	PL_Free (sctx->pipelineDef);
 	clear_table (&sctx->pipelineLayouts);
 	clear_table (&sctx->setLayouts);
 	clear_table (&sctx->shaderModules);
 	clear_table (&sctx->descriptorPools);
 	clear_table (&sctx->samplers);
+
+	delete_configs ();
+
+	Hash_DelContext (sctx->hashctx);
 
 	free (sctx);
 }

@@ -966,6 +966,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	if (rctx->task_functions.tab) {
 		Hash_DelTable (rctx->task_functions.tab);
 	}
+	Hash_DelContext (rctx->hashctx);
 }
 
 void
