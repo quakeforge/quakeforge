@@ -242,3 +242,16 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 		}
 	}
 }
+
+static void
+qargs_shutdown (void *data)
+{
+	free (largv);
+	free ((char *) com_cmdline);
+}
+
+static void __attribute__((constructor))
+qargs_init (void)
+{
+	Sys_RegisterShutdown (qargs_shutdown, 0);
+}

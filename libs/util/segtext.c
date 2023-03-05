@@ -213,3 +213,16 @@ Segtext_Find (const segtext_t *st, const char *tag)
 		return chunk->text;
 	return 0;
 }
+
+static void
+segtext_shutdown (void *data)
+{
+	ALLOC_FREE_BLOCKS (chunks);
+	ALLOC_FREE_BLOCKS (texts);
+}
+
+static void __attribute__((constructor))
+segtext_init (void)
+{
+	Sys_RegisterShutdown (segtext_shutdown, 0);
+}

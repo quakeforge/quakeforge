@@ -536,22 +536,6 @@ Sys_Init_Cvars (void)
 	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
-void
-Sys_Shutdown (void)
-{
-	shutdown_list_t *t;
-
-	while (shutdown_list) {
-		void      (*func) (void *) = shutdown_list->func;
-		void       *data = shutdown_list->data;
-		t = shutdown_list;
-		shutdown_list = shutdown_list->next;
-		free (t);
-
-		func (data);
-	}
-}
-
 VISIBLE void
 Sys_Quit (void)
 {
@@ -1229,5 +1213,47 @@ Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
 			return -err;
 		}
 		seq++;
+	}
+}
+
+void
+Sys_Shutdown (void)
+{
+	shutdown_list_t *t;
+
+	while (shutdown_list) {
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
+		t = shutdown_list;
+		shutdown_list = shutdown_list->next;
+		free (t);
+
+		func (data);
+	}
+	while (free_sh) {
+		__auto_type t = free_sh->next;
+		free (free_sh);
+		free_sh = t;
+	}
+	while (sh_stack) {
+		__auto_type t = sh_stack->next;
+		free (sh_stack);
+		sh_stack = t;
+	}
+	while (error_handler_freelist) {
+		__auto_type t = error_handler_freelist->next;
+		free (error_handler_freelist);
+		error_handler_freelist = t;
+	}
+	while (error_handler) {
+		__auto_type t = error_handler->next;
+		free (error_handler);
+		error_handler = t;
+	}
+	if (sys_print_msg) {
+		dstring_delete (sys_print_msg);
+	}
+	if (sys_debuglog_data) {
+		dstring_delete (sys_debuglog_data);
 	}
 }

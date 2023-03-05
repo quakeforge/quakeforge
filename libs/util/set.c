@@ -721,3 +721,16 @@ set_as_string (const set_t *set)
 	dstring_clearstr (str);
 	return set_to_dstring_r (&static_set_pool, str, set);
 }
+
+static void
+set_shutdown (void *data)
+{
+	ALLOC_FREE_BLOCKS (static_set_pool.set);
+	ALLOC_FREE_BLOCKS (static_set_pool.set_iter);
+}
+
+static void __attribute__((constructor))
+set_init (void)
+{
+	Sys_RegisterShutdown (set_shutdown, 0);
+}

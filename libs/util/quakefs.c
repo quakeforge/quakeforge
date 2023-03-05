@@ -572,6 +572,42 @@ qfs_process_path (const char *path, const char *gamedir)
 }
 
 static void
+qfs_free_gamedir (void)
+{
+	if (qfs_gamedir) {
+		if (qfs_gamedir->name)
+			free ((char *)qfs_gamedir->name);
+		if (qfs_gamedir->gamedir)
+			free ((char *)qfs_gamedir->gamedir);
+		if (qfs_gamedir->path)
+			free ((char *)qfs_gamedir->path);
+		if (qfs_gamedir->gamecode)
+			free ((char *)qfs_gamedir->gamecode);
+		if (qfs_gamedir->hudtype)
+			free ((char *)qfs_gamedir->hudtype);
+		if (qfs_gamedir->dir.def)
+			free ((char *)qfs_gamedir->dir.def);
+		if (qfs_gamedir->dir.skins)
+			free ((char *)qfs_gamedir->dir.skins);
+		if (qfs_gamedir->dir.models)
+			free ((char *)qfs_gamedir->dir.models);
+		if (qfs_gamedir->dir.sound)
+			free ((char *)qfs_gamedir->dir.sound);
+		if (qfs_gamedir->dir.maps)
+			free ((char *)qfs_gamedir->dir.maps);
+		if (qfs_gamedir->dir.shots)
+			free ((char *)qfs_gamedir->dir.shots);
+		free (qfs_gamedir);
+	}
+
+	while (qfs_vpaths) {
+		vpath_t    *next = qfs_vpaths->next;
+		delete_vpath (qfs_vpaths);
+		qfs_vpaths = next;
+	}
+}
+
+static void
 qfs_build_gamedir (const char **list)
 {
 	int         j;
@@ -584,33 +620,7 @@ qfs_build_gamedir (const char **list)
 
 	qfs_set_var (vars, "game", qfs_game);
 
-	if (qfs_gamedir) {
-		if (qfs_gamedir->name)
-			free ((char *)qfs_gamedir->name);
-		if (qfs_gamedir->gamedir)
-			free ((char *)qfs_gamedir->gamedir);
-		if (qfs_gamedir->path)
-			free ((char *)qfs_gamedir->path);
-		if (qfs_gamedir->gamecode)
-			free ((char *)qfs_gamedir->gamecode);
-		if (qfs_gamedir->dir.def)
-			free ((char *)qfs_gamedir->dir.def);
-		if (qfs_gamedir->dir.skins)
-			free ((char *)qfs_gamedir->dir.skins);
-		if (qfs_gamedir->dir.models)
-			free ((char *)qfs_gamedir->dir.models);
-		if (qfs_gamedir->dir.sound)
-			free ((char *)qfs_gamedir->dir.sound);
-		if (qfs_gamedir->dir.maps)
-			free ((char *)qfs_gamedir->dir.maps);
-		free (qfs_gamedir);
-	}
-
-	while (qfs_vpaths) {
-		vpath_t    *next = qfs_vpaths->next;
-		delete_vpath (qfs_vpaths);
-		qfs_vpaths = next;
-	}
+	qfs_free_gamedir ();
 
 	for (j = 0; list[j]; j++)
 		;
@@ -829,13 +839,10 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 	Qclose (f);
 }
 
-static int_findfile_t *
-qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
-					 const char **fnames)
+static int_findfile_t found;
+static void
+clear_findfile (void)
 {
-	static int_findfile_t found;
-	const char **fn;
-
 	found.ff.vpath = 0;
 	found.ff.in_pak = false;
 	found.pack = 0;
@@ -849,6 +856,15 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 		free ((char *) found.path);
 		found.path = 0;
 	}
+}
+
+static int_findfile_t *
+qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
+					 const char **fnames)
+{
+	const char **fn;
+
+	clear_findfile ();
 	// is the element a pak file?
 	if (sp->pack) {
 		dpackfile_t *packfile = 0;
@@ -1456,11 +1472,13 @@ qfs_path_cvar (void *data, const cvar_t *cvar)
 static void
 qfs_shutdown (void *data)
 {
-	while (qfs_vpaths) {
-		vpath_t    *next = qfs_vpaths->next;
-		delete_vpath (qfs_vpaths);
-		qfs_vpaths = next;
-	}
+	clear_findfile ();
+	qfs_free_gamedir ();
+	PL_Free (qfs_gd_plist);
+	free ((char *) qfs_userpath);
+	free (gamedir_callbacks);
+	ALLOC_FREE_BLOCKS (vpaths);
+	ALLOC_FREE_BLOCKS (searchpaths);
 }
 
 VISIBLE void
