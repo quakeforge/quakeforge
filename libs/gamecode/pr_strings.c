@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
@@ -88,6 +89,7 @@ typedef struct prstr_resources_s {
 	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int         num_strings;
+	struct DARRAY_TYPE (fmt_item_t *) fmt_item_blocks;
 	fmt_item_t *free_fmt_items;
 	dstring_t  *print_str;
 	prstr_at_handler_t at_handler;
@@ -247,6 +249,11 @@ pr_strings_destroy (progs_t *pr, void *_res)
 		free (res->string_map[i]);
 	}
 	free (res->string_map);
+
+	for (size_t i = 0; i < res->fmt_item_blocks.size; i++) {
+		free (res->fmt_item_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&res->fmt_item_blocks);
 
 	pr->pr_string_resources = 0;
 	free (res);
@@ -848,6 +855,7 @@ new_fmt_item (prstr_resources_t *res)
 		for (i = 0; i < 15; i++)
 			res->free_fmt_items[i].next = res->free_fmt_items + i + 1;
 		res->free_fmt_items[i].next = 0;
+		DARRAY_APPEND (&res->fmt_item_blocks, res->free_fmt_items);
 	}
 
 	fi = res->free_fmt_items;
@@ -1300,6 +1308,7 @@ PR_Strings_Init (progs_t *pr)
 	res->print_str = dstring_new ();
 	res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
 									  res, pr->hashctx);
+	DARRAY_INIT (&res->fmt_item_blocks, 8);
 
 	PR_Resources_Register (pr, "Strings", res, pr_strings_clear,
 						   pr_strings_destroy);

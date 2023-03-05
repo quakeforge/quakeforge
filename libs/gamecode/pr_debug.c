@@ -1988,9 +1988,17 @@ PR_Debug_Init (progs_t *pr)
 	pr->pr_debug_resources = res;
 }
 
+static void
+pr_debug_shutdown (void *data)
+{
+	free (source_paths);
+	free (source_path_string);
+}
+
 void
 PR_Debug_Init_Cvars (void)
 {
+	Sys_RegisterShutdown (pr_debug_shutdown, 0);
 	Cvar_Register (&pr_debug_cvar, 0, 0);
 	Cvar_Register (&pr_source_path_cvar, source_path_f, 0);
 }
