@@ -209,13 +209,13 @@ ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 	}
 	uint32_t    next = registry->next | Ent_NextGen (Ent_Generation (ent));
 	uint32_t    id = Ent_Index (ent);
+	registry->entities[id] = next;
+	registry->next = id;
+	registry->available++;
 
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		Ent_RemoveComponent (ent, i, registry);
 	}
-	registry->entities[id] = next;
-	registry->next = id;
-	registry->available++;
 }
 
 VISIBLE void
