@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -230,16 +232,19 @@ norm_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderb
 void
 norm_glGenBuffers (GLsizei n, GLuint* buffers)
 {
+	memset (buffers, 0, n * sizeof (GLuint));
 }
 
 void
 norm_glGenFramebuffers (GLsizei n, GLuint* framebuffers)
 {
+	memset (framebuffers, 0, n * sizeof (GLuint));
 }
 
 void
 norm_glGenRenderbuffers (GLsizei n, GLuint* renderbuffers)
 {
+	memset (renderbuffers, 0, n * sizeof (GLuint));
 }
 
 void
@@ -281,11 +286,15 @@ norm_glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GL
 void
 norm_glGetProgramInfoLog (GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
 norm_glGetProgramiv (GLuint program, GLenum pname, GLint* params)
 {
+	*params = 0;
 }
 
 void
@@ -296,6 +305,9 @@ norm_glGetRenderbufferParameteriv (GLuint shader, GLenum pname, GLint* params)
 void
 norm_glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
@@ -311,6 +323,7 @@ norm_glGetShaderSource (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar*
 void
 norm_glGetShaderiv (GLuint shader, GLenum pname, GLint* params)
 {
+	*params = 0;
 }
 
 int
@@ -1111,6 +1124,7 @@ norm_glGenLists (GLsizei range)
 void
 norm_glGenTextures (GLsizei n, GLuint * textures)
 {
+	memset (textures, 0, n * sizeof (GLuint));
 }
 
 void
