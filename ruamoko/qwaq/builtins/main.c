@@ -448,10 +448,8 @@ main (int argc, char **argv)
 		COM_InitArgv (qargs->args.size, qargs->args.a);
 		num_sys++;
 	} else {
-		qwaq_thread_t qargs = {};
-		DARRAY_INIT (&qargs.args, 2);
-		DARRAY_APPEND (&qargs.args, this_program);
-		COM_InitArgv (qargs.args.size, qargs.args.a);
+		const char *args[] = { this_program, 0 };
+		COM_InitArgv (1, args);
 	}
 
 	init_qf ();
