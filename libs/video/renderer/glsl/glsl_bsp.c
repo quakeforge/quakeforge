@@ -1350,6 +1350,13 @@ glsl_R_InitBsp (void)
 	GLSL_FreeShader (frag_shader);
 }
 
+void
+glsl_R_ShutdownBsp (void)
+{
+	free (r_texture_chains);
+	r_texture_chains = 0;
+}
+
 static inline __attribute__((const)) int
 is_pow2 (unsigned x)
 {

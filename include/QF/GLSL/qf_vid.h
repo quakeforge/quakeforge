@@ -46,6 +46,7 @@ extern int glsl_palette;
 extern int glsl_colormap;
 
 void GLSL_Init_Common (void);
+void GLSL_Shutdown_Common (void);
 
 int GLSL_CompileShader (const char *name, const shader_t *shader, int type);
 int GLSL_LinkProgram (const char *name, int vert, int frag);
@@ -62,6 +63,7 @@ void GLSL_DumpAttribArrays (void);
 	\return			0 for failure, 1 for success.
 */
 int GLSL_RegisterEffect (const char *name, const char *src);
+void GLSL_ShaderShutdown (void);
 
 /*	Build a shader program script from a list of effect keys.
 

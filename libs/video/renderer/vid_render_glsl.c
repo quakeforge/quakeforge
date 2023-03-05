@@ -112,6 +112,10 @@ glsl_vid_render_init (void)
 static void
 glsl_vid_render_shutdown (void)
 {
+	glsl_R_Shutdown ();
+	GLSL_Shutdown_Common ();
+
+	glsl_ctx->unload_gl (glsl_ctx);
 }
 
 static unsigned int GLErr_InvalidEnum;

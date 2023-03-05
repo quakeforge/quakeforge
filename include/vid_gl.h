@@ -9,6 +9,7 @@ typedef struct GL_context *GL_context;
 typedef struct gl_ctx_s {
 	GL_context  context;
 	void        (*load_gl) (void);
+	void        (*unload_gl) (struct gl_ctx_s *ctx);
 	void        (*choose_visual) (struct gl_ctx_s *ctx);
 	void        (*create_context) (struct gl_ctx_s *ctx, int core);
 	void        (*init_gl) (void);

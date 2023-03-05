@@ -143,6 +143,12 @@ GLSL_SetPalette (void *data, const byte *palette)
 }
 
 void
+GLSL_Shutdown_Common (void)
+{
+	GLSL_ShaderShutdown ();
+}
+
+void
 GLSL_Init_Common (void)
 {
 	EGLF_FindFunctions ();

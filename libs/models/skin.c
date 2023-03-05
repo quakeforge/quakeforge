@@ -255,6 +255,12 @@ Skin_Init (void)
 	m_funcs->Skin_InitTranslations ();
 }
 
+void
+Skin_Shutdown (void)
+{
+	Hash_DelTable (skin_cache);
+}
+
 VISIBLE int
 Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride)
 {

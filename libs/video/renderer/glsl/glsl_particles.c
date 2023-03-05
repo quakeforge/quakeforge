@@ -163,6 +163,13 @@ glsl_particles_f (void *data, const cvar_t *cvar)
 }
 
 void
+glsl_R_ShutdownParticles (void)
+{
+	free (particleVertexArray);
+	free (pVAindices);
+}
+
+void
 glsl_R_InitParticles (void)
 {
 	shader_t   *vert_shader, *frag_shader;

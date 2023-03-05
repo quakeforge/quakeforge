@@ -85,6 +85,7 @@ glsl_iqm_clear (model_t *mod, void *data)
 		GLSL_ReleaseTexture (glsl->textures[i]);
 		GLSL_ReleaseTexture (glsl->normmaps[i]);
 	}
+	free (glsl->textures);
 	free (glsl);
 	Mod_FreeIQM (iqm);
 }

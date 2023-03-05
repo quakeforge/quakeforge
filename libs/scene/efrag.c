@@ -96,6 +96,16 @@ R_ClearEfrags (void)
 }
 
 void
+R_ShutdownEfrags (void)
+{
+	while (efrag_list) {
+		t_efrag_list *efl = efrag_list->next;
+		free (efrag_list);
+		efrag_list = efl;
+	}
+}
+
+void
 R_ClearEfragChain (efrag_t *ef)
 {
 	efrag_t    *old, *walk, **prev;

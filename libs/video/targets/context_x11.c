@@ -342,8 +342,8 @@ X11_CreateNullCursor (void)
 		return;
 
 	cursormask = XCreatePixmap (x_disp, x_root, 1, 1, 1);
-	xgc.function = GXclear;
 
+	xgc.function = GXclear;
 	gc = XCreateGC (x_disp, cursormask, GCFunction, &xgc);
 
 	XFillRectangle (x_disp, cursormask, gc, 0, 0, 1, 1);

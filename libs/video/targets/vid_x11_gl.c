@@ -248,11 +248,19 @@ glx_load_gl (void)
 	qfglFinish = QFGL_ProcAddress ("glFinish", true);
 }
 
+static void
+glx_unload_gl (gl_ctx_t *ctx)
+{
+	dlclose (libgl_handle);
+	free (ctx);
+}
+
 gl_ctx_t *
 X11_GL_Context (void)
 {
 	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
 	ctx->load_gl = glx_load_gl;
+	ctx->unload_gl = glx_unload_gl;
 	ctx->choose_visual = glx_choose_visual;
 	ctx->create_context = glx_create_context;
 	ctx->get_proc_address = QFGL_ProcAddress;

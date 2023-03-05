@@ -82,9 +82,9 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 static void
-VID_shutdown (void *data)
+X11_VID_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "X11_VID_shutdown\n");
 	X11_CloseDisplay ();
 }
 
@@ -109,8 +109,6 @@ X11_VID_SetPalette (byte *palette, byte *colormap)
 static void
 X11_VID_Init (byte *palette, byte *colormap)
 {
-	Sys_RegisterShutdown (VID_shutdown, 0);
-
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
 #ifdef HAVE_VULKAN
@@ -153,6 +151,7 @@ X11_VID_Init_Cvars (void)
 
 vid_system_t vid_system = {
 	.init = X11_VID_Init,
+	.shutdown = X11_VID_Shutdown,
 	.init_cvars = X11_VID_Init_Cvars,
 	.update_fullscreen = X11_UpdateFullscreen,
 	.set_palette = X11_VID_SetPalette,

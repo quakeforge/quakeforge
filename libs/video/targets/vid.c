@@ -316,9 +316,28 @@ VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data)
 	}
 }
 
+static void
+VID_shutdown (void *data)
+{
+	if (vid_system.shutdown) {
+		vid_system.shutdown ();
+	}
+	free ((char *) vid_width_cvar.default_value);
+	free ((char *) vid_height_cvar.default_value);
+	free (viddef.gammatable);
+	free (viddef.palette);
+	free (viddef.palette32);
+
+	DARRAY_CLEAR (viddef.onPaletteChanged);
+	DARRAY_CLEAR (viddef.onVidResize);
+	free (viddef.onPaletteChanged);
+	free (viddef.onVidResize);
+}
+
 VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
+	Sys_RegisterShutdown (VID_shutdown, 0);
 	vid_system.init (palette, colormap);
 }
 

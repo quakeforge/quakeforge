@@ -483,6 +483,26 @@ glsl_Draw_Init (void)
 	Cvar_Register (&glsl_conback_texnum_cvar, 0, 0);
 }
 
+void
+glsl_Draw_Shutdown (void)
+{
+	pic_free (conchars);
+	pic_free (crosshair_pic);
+	if (backtile_pic != white_pic) {
+		pic_free (backtile_pic);
+	}
+	pic_free (white_pic);
+
+	dstring_delete (draw_queue);
+	dstring_delete (line_queue);
+	dstring_delete (glyph_queue);
+
+	Hash_DelTable (pic_cache);
+
+	GLSL_DestroyScrap (draw_scrap);
+	DARRAY_CLEAR (&glsl_fonts);
+}
+
 static inline void
 queue_character (int x, int y, byte chr)
 {

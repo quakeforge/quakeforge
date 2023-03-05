@@ -114,7 +114,7 @@ R_MaxDlightsCheck (int max_dlights)
 	if (r_dlights)
 		free (r_dlights);
 
-	r_dlights=0;
+	r_dlights = 0;
 
 	if (r_maxdlights)
 		r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));

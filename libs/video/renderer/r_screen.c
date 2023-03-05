@@ -476,6 +476,12 @@ SCR_Init (void)
 }
 
 void
+SCR_Shutdown (void)
+{
+	EntQueue_Delete (r_ent_queue);
+}
+
+void
 SCR_NewScene (scene_t *scene)
 {
 	if (scr_scene) {

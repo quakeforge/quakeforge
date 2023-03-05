@@ -34,6 +34,7 @@ struct transform_s;
 struct tex_s;
 
 void SCR_Init (void);
+void SCR_Shutdown (void);
 
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
