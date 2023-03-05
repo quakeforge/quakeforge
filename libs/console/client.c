@@ -160,6 +160,10 @@ static int  con_saved_focos;
 
 static qboolean con_debuglog;
 static qboolean chat_team;
+static dstring_t *c_print_buffer;
+static dstring_t *dlbar;
+static dstring_t *old_gamedir = 0;
+
 
 typedef struct {
 	const char *prompt;
@@ -448,26 +452,25 @@ static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	char       *s;
-	static dstring_t *buffer;
 	int         mask, c;
 
-	if (!buffer)
-		buffer = dstring_new ();
+	if (!c_print_buffer)
+		c_print_buffer = dstring_new ();
 
-	dvsprintf (buffer, fmt, args);
+	dvsprintf (c_print_buffer, fmt, args);
 
 	// log all messages to file
 	if (con_debuglog)
 		Sys_DebugLog (va (0, "%s/%s/qconsole.log", qfs_userpath,//FIXME
-					  qfs_gamedir->dir.def), "%s", buffer->str);
+					  qfs_gamedir->dir.def), "%s", c_print_buffer->str);
 
 	if (!con_initialized)
 		return;
 
-	s = buffer->str;
+	s = c_print_buffer->str;
 
 	mask = 0;
-	if (buffer->str[0] == 1 || buffer->str[0] == 2) {
+	if (s[0] == 1 || s[0] == 2) {
 		mask = 128;						// go to colored text
 		s++;
 	}
@@ -506,10 +509,10 @@ C_Print (const char *fmt, va_list args)
 
 	// echo to debugging console
 	// but don't print the highchars flag (leading \x01)
-	if ((byte)buffer->str[0] > 2)
-		fputs (buffer->str, stdout);
-	else if ((byte)buffer->str[0])
-		fputs (buffer->str + 1, stdout);
+	if ((byte)c_print_buffer->str[0] > 2)
+		fputs (c_print_buffer->str, stdout);
+	else if ((byte)c_print_buffer->str[0])
+		fputs (c_print_buffer->str + 1, stdout);
 }
 
 /* DRAWING */
@@ -582,7 +585,6 @@ resize_input (view_t view, view_pos_t len)
 static void
 update_download (void)
 {
-	static dstring_t *dlbar;
 	const char *text;
 
 	if (!dlbar) {
@@ -815,8 +817,6 @@ C_DrawConsole (void)
 static void
 C_NewMap (void)
 {
-	static dstring_t *old_gamedir = 0;
-
 	if (!old_gamedir || !strequal (old_gamedir->str, qfs_gamedir->gamedir))
 		Menu_Load ();
 	if (!old_gamedir)
@@ -1193,7 +1193,32 @@ C_Init (void)
 static void
 C_shutdown (void)
 {
+	r_funcs->Draw_DestroyPic (conback);
 	IE_Remove_Handler (con_event_id);
+	Menu_Shutdown ();
+
+	Con_DestroyInputLine (cmd_line.input_line);
+	Con_DestroyInputLine (team_input);
+	Con_DestroyInputLine (chat_input);
+	Con_DestroyBuffer (con_main);
+
+	if (download_buffer) {
+		Draw_DestroyBuffer (download_buffer);
+	}
+	Draw_DestroyBuffer (console_buffer);
+	Draw_DestroyBuffer (cmd_line.buffer);
+	Draw_DestroyBuffer (notify_buffer);
+	Draw_DestroyBuffer (say_line.buffer);
+
+	if (c_print_buffer) {
+		dstring_delete (c_print_buffer);
+	}
+	if (dlbar) {
+		dstring_delete (dlbar);
+	}
+	if (old_gamedir) {
+		dstring_delete (old_gamedir);
+	}
 }
 
 static general_data_t plugin_info_general_data;

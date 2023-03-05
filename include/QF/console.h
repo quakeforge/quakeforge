@@ -110,6 +110,7 @@ void C_DrawInputLine (struct inputline_s *il);
 
 struct view_s;
 void Menu_Init (void);
+void Menu_Shutdown (void);
 void Menu_Load (void);
 void Menu_Draw (struct view_s view);
 void Menu_Draw_Hud (struct view_s view);

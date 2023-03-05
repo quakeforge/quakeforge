@@ -161,6 +161,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 static void
 BI_shutdown (void *data)
 {
+	ECS_DelRegistry (canvas_sys.reg);
 }
 
 static byte default_palette[256][3];

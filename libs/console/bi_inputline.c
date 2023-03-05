@@ -105,7 +105,9 @@ bi_il_clear (progs_t *pr, void *_res)
 static void
 bi_il_destroy (progs_t *pr, void *_res)
 {
-	free (_res);
+	il_resources_t *res = _res;
+	PR_RESDELMAP (res->line_map);
+	free (res);
 }
 
 static il_data_t * __attribute__((pure))

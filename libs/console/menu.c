@@ -99,7 +99,7 @@ static pr_func_t menu_quit;
 static pr_func_t menu_draw_hud;
 static pr_func_t menu_pre;
 static pr_func_t menu_post;
-static const char *top_menu;
+static char *top_menu;
 
 typedef struct menu_func_s {
 	const char *name;
@@ -365,7 +365,7 @@ bi_Menu_TopMenu (progs_t *pr, void *data)
 	const char *name = P_GSTRING (pr, 0);
 
 	if (top_menu)
-		free ((char *) top_menu);
+		free (top_menu);
 	top_menu = strdup (name);
 }
 
@@ -591,6 +591,13 @@ Menu_Next_f (void)
 	Menu_KeyEvent (QFK_DOWN, '\0', true);
 }
 
+void
+Menu_Shutdown (void)
+{
+	PR_Shutdown (&menu_pr_state);
+	Hash_DelTable (menu_hash);
+	free (top_menu);
+}
 
 void
 Menu_Init (void)

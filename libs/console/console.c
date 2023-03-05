@@ -102,7 +102,6 @@ Con_shutdown (void *data)
 		Sys_SetStdPrintf (saved_sys_printf);
 	}
 	if (con_module) {
-		con_module->functions->general->shutdown ();
 		PI_UnloadPlugin (con_module);
 	}
 }
