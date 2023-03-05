@@ -80,10 +80,10 @@ static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
 /**	\name Flow analysis memory management */
 ///@{
-static flowvar_t *vars_freelist;		///< flowvar pool
-static flowloop_t *loops_freelist;		///< flow loop pool
-static flownode_t *nodes_freelist;		///< flow node pool
-static flowgraph_t *graphs_freelist;	///< flow graph pool
+ALLOC_STATE (flowvar_t, vars);			///< flowvar pool
+ALLOC_STATE (flowloop_t, loops);		///< flow loop pool
+ALLOC_STATE (flownode_t, nodes);		///< flow node pool
+ALLOC_STATE (flowgraph_t, graphs);		///< flow graph pool
 
 /**	Allocate a new flow var.
  *

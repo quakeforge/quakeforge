@@ -48,7 +48,7 @@ typedef struct glsl_effect_s {
 } glsl_effect_t;
 
 static hashtab_t *effect_tab;
-static glsl_effect_t *effects_freelist;
+ALLOC_STATE (glsl_effect_t, effects);
 
 static glsl_effect_t *
 new_effect (void)

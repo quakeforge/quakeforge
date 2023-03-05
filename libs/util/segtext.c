@@ -38,8 +38,8 @@
 #include "QF/qtypes.h"
 #include "QF/segtext.h"
 
-static segchunk_t *chunks_freelist;
-static segtext_t *texts_freelist;
+ALLOC_STATE (segchunk_t, chunks);
+ALLOC_STATE (segtext_t, texts);
 
 static segchunk_t *
 new_chunk (void)

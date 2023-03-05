@@ -38,7 +38,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/strpool.h"
 
-static attribute_t *attributes_freelist;
+ALLOC_STATE (attribute_t, attributes);
 
 attribute_t *new_attribute(const char *name, expr_t *value)
 {

@@ -60,9 +60,9 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static daglabel_t *labels_freelist;
-static dagnode_t *nodes_freelist;
-static dag_t *dags_freelist;
+ALLOC_STATE (daglabel_t, labels);
+ALLOC_STATE (dagnode_t, nodes);
+ALLOC_STATE (dag_t, dags);
 
 static daglabel_t *daglabel_chain;
 

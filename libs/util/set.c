@@ -45,7 +45,11 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-static set_pool_t static_set_pool = {0, 0};
+static set_pool_t static_set_pool = {
+	0, 0,
+	DARRAY_STATIC_INIT (8),
+	DARRAY_STATIC_INIT (8),
+};
 
 static set_iter_t *
 new_setiter (set_pool_t *set_pool)

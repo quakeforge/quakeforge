@@ -51,7 +51,7 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-static element_t *elements_freelist;
+ALLOC_STATE (element_t, elements);
 
 element_t *
 new_element (expr_t *expr, symbol_t *symbol)

@@ -58,7 +58,7 @@
 
 int         lineno_base;
 
-static srcline_t *srclines_freelist;
+ALLOC_STATE (srcline_t, srclines);
 
 static void
 push_source_file (void)

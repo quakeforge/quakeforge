@@ -32,6 +32,7 @@
 #define __QF_set_h
 
 #include "QF/qtypes.h"
+#include "QF/darray.h"
 
 /**	\defgroup set Set handling
 	\ingroup utils
@@ -116,6 +117,8 @@ typedef struct set_iter_s {
 typedef struct set_pool_s {
 	set_t      *set_freelist;
 	set_iter_t *set_iter_freelist;
+	struct DARRAY_TYPE (set_t *) set_blocks;
+	struct DARRAY_TYPE (set_iter_t *) set_iter_blocks;
 } set_pool_t;
 
 void set_pool_init (set_pool_t *set_pool);

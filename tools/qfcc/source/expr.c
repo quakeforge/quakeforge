@@ -65,7 +65,7 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
-static expr_t *exprs_freelist;
+ALLOC_STATE (expr_t, exprs);
 
 void
 convert_name (expr_t *e)

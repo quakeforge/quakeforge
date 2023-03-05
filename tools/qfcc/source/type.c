@@ -161,7 +161,7 @@ int type_cast_map[ev_type_count] = {
 	//[ev_bool64] = 7,
 };
 
-static type_t *types_freelist;
+ALLOC_STATE (type_t, types);
 
 etype_t
 low_level_type (type_t *type)

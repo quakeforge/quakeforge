@@ -64,7 +64,7 @@ typedef struct frame_s {
 	int			num;
 } frame_t;
 
-static frame_t *frames_freelist;
+ALLOC_STATE (frame_t, frames);
 static frame_t *frame_list;
 static frame_t **frame_tail = &frame_list;
 

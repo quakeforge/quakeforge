@@ -62,7 +62,7 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static def_t *defs_freelist;
+ALLOC_STATE (def_t, defs);
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)

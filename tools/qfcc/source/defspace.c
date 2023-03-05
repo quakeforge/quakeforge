@@ -54,8 +54,8 @@ typedef struct locref_s {
 	int         size;
 } locref_t;
 
-static defspace_t *spaces_freelist;
-static locref_t *locrefs_freelist;
+ALLOC_STATE (defspace_t, spaces);
+ALLOC_STATE (locref_t, locrefs);
 
 static locref_t *
 new_locref (int ofs, int size, locref_t *next)

@@ -564,9 +564,15 @@ VISIBLE void
 Sys_PushErrorHandler (sys_error_t func, void *data)
 {
 	error_handler_t *eh;
-	ALLOC (16, error_handler_t, error_handler, eh);
+	if (error_handler_freelist) {
+		eh = error_handler_freelist;
+	} else {
+		eh = malloc (sizeof (error_handler_t));
+		eh->next = 0;
+	}
 	eh->func = func;
 	eh->data = data;
+	error_handler_freelist = eh->next;
 	eh->next = error_handler;
 	error_handler = eh;
 }
@@ -581,7 +587,8 @@ Sys_PopErrorHandler (void)
 	}
 	eh = error_handler;
 	error_handler = eh->next;
-	FREE (error_handler, eh);
+	eh->next = error_handler_freelist;
+	error_handler_freelist = eh;
 }
 
 

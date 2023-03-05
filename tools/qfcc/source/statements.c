@@ -218,10 +218,10 @@ print_statement (statement_t *s)
 	print_operand_chain ("kill", s->kill);
 }
 
-static pseudoop_t *pseudoops_freelist;
-static sblock_t *sblocks_freelist;
-static statement_t *statements_freelist;
-static operand_t *operands_freelist;
+ALLOC_STATE (pseudoop_t, pseudoops);
+ALLOC_STATE (sblock_t, sblocks);
+ALLOC_STATE (statement_t, statements);
+ALLOC_STATE (operand_t, operands);
 
 sblock_t *
 new_sblock (void)

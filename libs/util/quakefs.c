@@ -186,8 +186,8 @@ typedef struct int_findfile_s {
 	int         fname_index;
 } int_findfile_t;
 
-static searchpath_t *searchpaths_freelist;
-static vpath_t *vpaths_freelist;
+ALLOC_STATE (searchpath_t, searchpaths);
+ALLOC_STATE (vpath_t, vpaths);
 static vpath_t *qfs_vpaths;
 
 //QFS
