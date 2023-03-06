@@ -178,6 +178,7 @@ Mod_ClearAll (void)
 	for (i = 0; i < mod_numknown; i++) {
 		mod_unload_model (i);
 	}
+	mod_numknown = 0;
 }
 
 model_t *

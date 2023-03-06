@@ -725,6 +725,7 @@ vulkan_vid_render_shutdown (void)
 	QFV_DeviceWaitIdle (device);
 
 	SCR_Shutdown ();
+	Mod_ClearAll ();
 
 	Vulkan_Compose_Shutdown (vulkan_ctx);
 	Vulkan_Translucent_Shutdown (vulkan_ctx);
