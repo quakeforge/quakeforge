@@ -205,6 +205,9 @@ ECS_NewEntity (ecs_registry_t *registry)
 VISIBLE void
 ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 {
+	if (!ECS_EntValid (ent, registry)) {
+		return;
+	}
 	if (registry->locked) {
 		// the registry is being deleted and mass entity and component
 		// deletions are going on

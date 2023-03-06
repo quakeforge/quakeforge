@@ -482,6 +482,7 @@ Hierref_DestroyComponent (void *href)
 {
 	hierref_t   ref = *(hierref_t *) href;
 	if (ref.hierarchy) {
+		ref.hierarchy->ent[ref.index] = -1;
 		Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
 		if (!ref.hierarchy->num_objects) {
 			Hierarchy_Delete (ref.hierarchy);
