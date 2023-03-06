@@ -394,7 +394,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	}
 
 	*yyin = preprocess_file (file, 0);
-	if (!*yyin)
+	if (options.preprocess_only || !*yyin)
 		return !options.preprocess_only;
 
 	InitData ();
@@ -568,7 +568,7 @@ separate_compile (void)
 	}
 	dstring_delete (output_file);
 	dstring_delete (extension);
-	if (!err && !options.compile) {
+	if (!err && !options.compile && !options.preprocess_only) {
 		InitData ();
 		chain_initial_types ();
 		linker_begin ();
@@ -659,7 +659,7 @@ compile_file (const char *filename)
 	int       (*yyparse) (void) = qc_yyparse;
 
 	*yyin = preprocess_file (filename, 0);
-	if (!*yyin)
+	if (options.preprocess_only || !*yyin)
 		return !options.preprocess_only;
 
 	add_source_file (filename);
@@ -716,6 +716,9 @@ progs_src_compile (void)
 			perror (single_name->str);
 			exit (1);
 		}
+	}
+	if (options.preprocess_only) {
+		return 0;
 	}
 
 	src = load_file (filename->str);
