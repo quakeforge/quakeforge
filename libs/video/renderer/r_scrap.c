@@ -65,6 +65,9 @@ R_ScrapInit (rscrap_t *scrap, int width, int height)
 VISIBLE void
 R_ScrapDelete (rscrap_t *scrap)
 {
+	if (!scrap) {
+		return;
+	}
 	R_ScrapClear (scrap);
 	VRect_Delete (scrap->free_rects);
 }

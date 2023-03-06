@@ -52,6 +52,9 @@ EntQueue_New (int num_queues)
 void
 EntQueue_Delete (entqueue_t *queue)
 {
+	if (!queue) {
+		return;
+	}
 	for (int i = 0; i < queue->num_queues; i++) {
 		DARRAY_CLEAR (&queue->ent_queues[i]);
 	}

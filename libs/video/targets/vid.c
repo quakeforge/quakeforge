@@ -328,10 +328,14 @@ VID_shutdown (void *data)
 	free (viddef.palette);
 	free (viddef.palette32);
 
-	DARRAY_CLEAR (viddef.onPaletteChanged);
-	DARRAY_CLEAR (viddef.onVidResize);
-	free (viddef.onPaletteChanged);
-	free (viddef.onVidResize);
+	if (viddef.onPaletteChanged) {
+		DARRAY_CLEAR (viddef.onPaletteChanged);
+		free (viddef.onPaletteChanged);
+	}
+	if (viddef.onVidResize) {
+		DARRAY_CLEAR (viddef.onVidResize);
+		free (viddef.onVidResize);
+	}
 }
 
 VISIBLE void

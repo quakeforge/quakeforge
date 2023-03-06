@@ -283,6 +283,9 @@ Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
 VISIBLE void
 Hash_DelTable (hashtab_t *tab)
 {
+	if (!tab) {
+		return;
+	}
 	Hash_FlushTable (tab);
 	free (tab);
 }

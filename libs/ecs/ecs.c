@@ -46,6 +46,9 @@ ECS_NewRegistry (void)
 VISIBLE void
 ECS_DelRegistry (ecs_registry_t *registry)
 {
+	if (!registry) {
+		return;
+	}
 	registry->locked = 1;
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		__auto_type comp = &registry->components.a[i];

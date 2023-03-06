@@ -168,6 +168,10 @@ make_glpic (const char *name, qpic_t *p)
 static void
 pic_free (qpic_t *pic)
 {
+	if (!pic) {
+		return;
+	}
+
 	subpic_t   *subpic = *(subpic_t **) pic->data;
 
 	GLSL_SubpicDelete (subpic);
