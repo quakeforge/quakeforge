@@ -699,15 +699,15 @@ vulkan_vid_render_init (void)
 	if (!vr_data.vid->vid_internal->vulkan_context) {
 		Sys_Error ("Sorry, Vulkan not supported by this program.");
 	}
-	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
+	vid_internal_t *vi = vr_data.vid->vid_internal;
+	vulkan_ctx = vi->vulkan_context (vi);
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
 	Vulkan_Init_Common (vulkan_ctx);
 
-	vr_data.vid->vid_internal->data = vulkan_ctx;
-	vr_data.vid->vid_internal->set_palette = set_palette;
-	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = vulkan_vid_render_create_context;
+	vi->set_palette = set_palette;
+	vi->choose_visual = vulkan_vid_render_choose_visual;
+	vi->create_context = vulkan_vid_render_create_context;
 
 	vr_funcs = &vulkan_vid_render_funcs;
 	m_funcs = &model_funcs;

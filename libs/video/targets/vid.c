@@ -224,7 +224,7 @@ VID_UpdateGamma (void)
 		}
 		p32[-1] = 0;	// color 255 is transparent
 		// update with the new palette
-		vi->set_palette (vi->data, viddef.palette);
+		vi->set_palette (vi->ctx, viddef.palette);
 	}
 }
 
@@ -276,7 +276,7 @@ void
 VID_ClearMemory (void)
 {
 	if (vi->flush_caches) {
-		vi->flush_caches (vi->data);
+		vi->flush_caches (vi->ctx);
 	}
 }
 

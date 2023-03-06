@@ -86,6 +86,9 @@ X11_VID_Shutdown (void)
 {
 	Sys_MaskPrintf (SYS_vid, "X11_VID_shutdown\n");
 	X11_CloseDisplay ();
+	if (vid_internal.unload) {
+		vid_internal.unload (vid_internal.ctx);
+	}
 }
 
 static void
@@ -94,11 +97,11 @@ X11_VID_SetPalette (byte *palette, byte *colormap)
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	if (vid_internal.set_colormap) {
-		vid_internal.set_colormap (vid_internal.data, colormap);
+		vid_internal.set_colormap (vid_internal.ctx, colormap);
 	}
 
 	VID_InitGamma (palette);
-	vid_internal.set_palette (vid_internal.data, viddef.palette);
+	vid_internal.set_palette (vid_internal.ctx, viddef.palette);
 }
 
 /*
@@ -123,11 +126,11 @@ X11_VID_Init (byte *palette, byte *colormap)
 
 	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
-	vid_internal.choose_visual (vid_internal.data);
+	vid_internal.choose_visual (vid_internal.ctx);
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	vid_internal.create_context (vid_internal.data);
+	vid_internal.create_context (vid_internal.ctx);
 
 	X11_VID_SetPalette (palette, colormap);
 

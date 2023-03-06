@@ -103,6 +103,7 @@ static GLXContext (*qfglXCreateContextAttribsARB) (Display *dpy,
 												   GLXContext ctx,
 												   Bool direct,
 												   const int *attribs);
+static void (*qfglXDestroyContext) ( Display *dpy, GLXContext ctx );
 static GLXFBConfig *(*qfglXChooseFBConfig) (Display *dpy, int screen,
 											const int *attribs, int *nitems);
 static XVisualInfo *(*qfglXGetVisualFromFBConfig) (Display *dpy,
@@ -191,8 +192,8 @@ glx_choose_visual (gl_ctx_t *ctx)
 	}
 	Sys_MaskPrintf (SYS_vid, "Found %d matching FB configs.\n", fbcount);
 	glx_cfg = fbc[0];
-	XFree (fbc);
 	x_visinfo = qfglXGetVisualFromFBConfig (x_disp, glx_cfg);
+	XFree (fbc);
 	if (!x_visinfo) {
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
@@ -225,7 +226,7 @@ glx_end_rendering (void)
 }
 
 static void
-glx_load_gl (void)
+glx_load_gl (gl_ctx_t *ctx)
 {
 	libgl_handle = dlopen (gl_driver, RTLD_NOW);
 	if (!libgl_handle) {
@@ -241,6 +242,7 @@ glx_load_gl (void)
 	qfglXGetVisualFromFBConfig = QFGL_ProcAddress ("glXGetVisualFromFBConfig", true);
 	qfglXGetFBConfigAttrib = QFGL_ProcAddress ("glXGetFBConfigAttrib", true);
 	qfglXCreateContextAttribsARB = QFGL_ProcAddress ("glXCreateContextAttribsARB", true);
+	qfglXDestroyContext = QFGL_ProcAddress ("glXDestroyContext", true);
 	qfglXMakeCurrent = QFGL_ProcAddress ("glXMakeCurrent", true);
 
 	use_gl_procaddress = 1;
@@ -249,22 +251,28 @@ glx_load_gl (void)
 }
 
 static void
-glx_unload_gl (gl_ctx_t *ctx)
+glx_unload_gl (void *_ctx)
 {
-	dlclose (libgl_handle);
+	gl_ctx_t   *ctx = _ctx;
+	if (libgl_handle) {
+		dlclose (libgl_handle);
+		libgl_handle = 0;
+	}
 	free (ctx);
 }
 
 gl_ctx_t *
-X11_GL_Context (void)
+X11_GL_Context (vid_internal_t *vi)
 {
 	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
 	ctx->load_gl = glx_load_gl;
-	ctx->unload_gl = glx_unload_gl;
 	ctx->choose_visual = glx_choose_visual;
 	ctx->create_context = glx_create_context;
 	ctx->get_proc_address = QFGL_ProcAddress;
 	ctx->end_rendering = glx_end_rendering;
+
+	vi->unload = glx_unload_gl;
+	vi->ctx = ctx;
 	return ctx;
 }
 

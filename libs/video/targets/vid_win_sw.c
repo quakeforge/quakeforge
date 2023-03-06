@@ -233,7 +233,7 @@ VID_CreateGDIDriver (int width, int height, const byte *palette, byte **buffer,
 
 	// create a palette
 	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (viddef.vid_internal->data, palette);
+	viddef.vid_internal->set_palette (viddef.vid_internal->ctx, palette);
 }
 
 void
@@ -478,13 +478,15 @@ win_create_context (sw_ctx_t *ctx)
 }
 
 sw_ctx_t *
-Win_SW_Context (void)
+Win_SW_Context (vid_internal_t *vi)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
 	ctx->set_palette = win_set_palette;
 	ctx->choose_visual = win_choose_visual;
 	ctx->create_context = win_create_context;
 	ctx->update = win_sw_update;
+
+	vi->ctx = ctx;
 	return ctx;
 }
 

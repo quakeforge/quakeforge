@@ -106,9 +106,8 @@ sw_vid_render_init (void)
 	if (!vr_data.vid->vid_internal->sw_context) {
 		Sys_Error ("Sorry, software rendering not supported by this program.");
 	}
-	sw_ctx = vr_data.vid->vid_internal->sw_context ();
+	sw_ctx = vr_data.vid->vid_internal->sw_context (vr_data.vid->vid_internal);
 
-	vr_data.vid->vid_internal->data = sw_ctx;
 	vr_data.vid->vid_internal->set_palette = sw_vid_render_set_palette;
 	vr_data.vid->vid_internal->set_colormap = sw_vid_render_set_colormap;
 	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;

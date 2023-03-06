@@ -57,13 +57,14 @@ void Win_UpdateWindowStatus (int x, int y);
 void Win_SetCaption (const char *text);
 qboolean Win_SetGamma (double gamma);
 
-struct gl_ctx_s *Win_GL_Context (void);
+struct vid_internal_s;
+struct gl_ctx_s *Win_GL_Context (struct vid_internal_s *);
 void Win_GL_Init_Cvars (void);
 
-struct sw_ctx_s *Win_SW_Context (void);
+struct sw_ctx_s *Win_SW_Context (struct vid_internal_s *);
 void Win_SW_Init_Cvars (void);
 
-struct vulkan_ctx_s *Win_Vulkan_Context (void);
+struct vulkan_ctx_s *Win_Vulkan_Context (struct vid_internal_s *);
 void Win_Vulkan_Init_Cvars (void);
 
 void IN_UpdateClipCursor (void);

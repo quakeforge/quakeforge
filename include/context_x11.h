@@ -80,13 +80,14 @@ void X11_SaveMouseAcceleration (void);
 void X11_RemoveMouseAcceleration (void);
 void X11_RestoreMouseAcceleration (void);
 
-struct gl_ctx_s *X11_GL_Context (void);
+struct vid_internal_s;
+struct gl_ctx_s *X11_GL_Context (struct vid_internal_s *);
 void X11_GL_Init_Cvars (void);
 
-struct sw_ctx_s *X11_SW_Context (void);
+struct sw_ctx_s *X11_SW_Context (struct vid_internal_s *);
 void X11_SW_Init_Cvars (void);
 
-struct vulkan_ctx_s *X11_Vulkan_Context (void);
+struct vulkan_ctx_s *X11_Vulkan_Context (struct vid_internal_s *);
 void X11_Vulkan_Init_Cvars (void);
 
 #endif	// __context_x11_h_

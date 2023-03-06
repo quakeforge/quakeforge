@@ -183,17 +183,17 @@ static vid_model_funcs_t model_funcs = {
 static void
 gl_vid_render_init (void)
 {
-	if (!vr_data.vid->vid_internal->sw_context) {
+	if (!vr_data.vid->vid_internal->gl_context) {
 		Sys_Error ("Sorry, OpenGL not supported by this program.");
 	}
-	gl_ctx = vr_data.vid->vid_internal->gl_context ();
+	vid_internal_t *vi = vr_data.vid->vid_internal;
+	gl_ctx = vi->gl_context (vi);
 	gl_ctx->init_gl = GL_Init_Common;
-	gl_ctx->load_gl ();
+	gl_ctx->load_gl (gl_ctx);
 
-	vr_data.vid->vid_internal->data = gl_ctx;
-	vr_data.vid->vid_internal->set_palette = GL_SetPalette;
-	vr_data.vid->vid_internal->choose_visual = gl_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = gl_vid_render_create_context;
+	vi->set_palette = GL_SetPalette;
+	vi->choose_visual = gl_vid_render_choose_visual;
+	vi->create_context = gl_vid_render_create_context;
 
 	vr_funcs = &gl_vid_render_funcs;
 	m_funcs = &model_funcs;

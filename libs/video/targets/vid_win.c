@@ -123,7 +123,7 @@ Win_VID_SetPalette (byte *palette, byte *colormap)
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	if (vid_internal.set_colormap) {
-		vid_internal.set_colormap (vid_internal.data, colormap);
+		vid_internal.set_colormap (vid_internal.ctx, colormap);
 	}
 
 	VID_InitGamma (palette);
