@@ -149,7 +149,6 @@ param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *return_type, param_t *params);
-struct specifier_s parse_qc_params (struct specifier_s spec, param_t *params);
 
 param_t *check_params (param_t *params);
 

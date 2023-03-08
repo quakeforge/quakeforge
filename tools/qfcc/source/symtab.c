@@ -267,10 +267,10 @@ declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
 
 	//FIXME is_function is bad (this whole implementation of handling
 	//function prototypes is bad)
-	if (spec.is_function && is_func (spec.type)) {
-		set_func_type_attrs (spec.type, spec);
+	s->type = append_type (spec.sym->type, spec.type);
+	if (spec.is_function && is_func (s->type)) {
+		set_func_type_attrs (s->type, spec);
 	}
-	s->type = spec.type;
 
 	if (spec.is_typedef) {
 		if (init) {
@@ -294,6 +294,21 @@ declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
 				s->s.def->nosave |= spec.nosave;
 			}
 		}
+	}
+	return s;
+}
+
+symbol_t *
+declare_field (specifier_t spec, symtab_t *symtab)
+{
+	symbol_t   *s = spec.sym;
+	spec = default_type (spec, s);
+	s->type = find_type (append_type (s->type, spec.type));
+	s->sy_type = sy_var;
+	s->visibility = current_visibility;
+	symtab_addsymbol (current_symtab, s);
+	if (!s->table) {
+		error (0, "duplicate field `%s'", s->name);
 	}
 	return s;
 }
