@@ -862,15 +862,18 @@ print_type_str (dstring_t *str, const type_t *type)
 					}
 					return;
 				case ev_ptr:
-					if (is_id (type)) {
-						dasprintf (str, "id");
-						if (type->t.fldptr.type->protos)
-							print_protocollist (str, type->t.fldptr.type->protos);
-						return;
-					}
-					if (is_SEL(type)) {
-						dasprintf (str, "SEL");
-						return;
+					if (type->t.fldptr.type) {
+						if (is_id (type)) {
+							__auto_type ptr = type->t.fldptr.type;
+							dasprintf (str, "id");
+							if (ptr->protos)
+								print_protocollist (str, ptr->protos);
+							return;
+						}
+						if (is_SEL(type)) {
+							dasprintf (str, "SEL");
+							return;
+						}
 					}
 					dasprintf (str, "(*");
 					print_type_str (str, type->t.fldptr.type);

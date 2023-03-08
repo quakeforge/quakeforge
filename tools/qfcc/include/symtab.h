@@ -252,6 +252,7 @@ symbol_t *make_symbol (const char *name, struct type_s *type,
 struct specifier_s;
 symbol_t *declare_symbol (struct specifier_s spec, struct expr_s *init,
 						  symtab_t *symtab);
+symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab);
 
 ///@}
 
