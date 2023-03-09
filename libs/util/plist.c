@@ -135,8 +135,8 @@ init_quotables (void)
 
 static plitem_t *pl_parsepropertylistitem (pldata_t *);
 static qboolean pl_skipspace (pldata_t *);
-static char *pl_parsequotedstring (pldata_t *);
-static char *pl_parseunquotedstring (pldata_t *);
+static plitem_t *pl_parsequotedstring (pldata_t *);
+static plitem_t *pl_parseunquotedstring (pldata_t *);
 static char *pl_parsedata (pldata_t *, int *);
 
 static const char *
@@ -196,18 +196,20 @@ PL_NewData (void *data, size_t size)
 }
 
 static plitem_t *
-new_string (char *str, int line)
+new_string (const char *str, size_t len, pldata_t *pl)
 {
 	plitem_t   *item = pl_newitem (QFString);
-	item->data = str;
-	item->line = line;
+	item->data = malloc (len + 1);
+	memcpy (item->data, str, len);
+	((char *) item->data)[len] = 0;
+	item->line = pl ? pl->line : 0;
 	return item;
 }
 
 VISIBLE plitem_t *
 PL_NewString (const char *str)
 {
-	return new_string (strdup (str), 0);
+	return new_string (str, strlen (str), 0);
 }
 
 VISIBLE void
@@ -595,7 +597,7 @@ pl_parsedata (pldata_t *pl, int *len)
 	return NULL;
 }
 
-static char *
+static plitem_t *
 pl_parsequotedstring (pldata_t *pl)
 {
 	unsigned int	start = ++pl->pos;
@@ -603,7 +605,7 @@ pl_parsequotedstring (pldata_t *pl)
 	unsigned int	shrink = 0;
 	qboolean		hex = false;
 	qboolean        long_string = false;
-	char			*str;
+	plitem_t       *str;
 
 	if (pl->ptr[pl->pos] == '"' &&
 		pl->ptr[pl->pos + 1] == '"') {
@@ -664,7 +666,7 @@ pl_parsequotedstring (pldata_t *pl)
 	}
 
 	if (pl->pos - start - shrink == 0) {
-		str = strdup ("");
+		str = new_string ("", 0, pl);
 	} else {
 		char			*chars = alloca(pl->pos - start - shrink);
 		unsigned int	j;
@@ -740,8 +742,7 @@ pl_parsequotedstring (pldata_t *pl)
 				}
 			}
 		}
-		str = strncat (calloc ((pl->pos - start - shrink) + 1, 1), chars,
-					   pl->pos - start - shrink);
+		str = new_string (chars, pl->pos - start - shrink, pl);
 	}
 	if (long_string)
 		pl->pos += 2;
@@ -749,20 +750,17 @@ pl_parsequotedstring (pldata_t *pl)
 	return str;
 }
 
-static char *
+static plitem_t *
 pl_parseunquotedstring (pldata_t *pl)
 {
 	unsigned int	start = pl->pos;
-	char			*str;
 
 	while (pl->pos < pl->end) {
 		if (is_quotable (pl->ptr[pl->pos]))
 			break;
 		pl->pos++;
 	}
-	str = strncat (calloc ((pl->pos - start) + 1, 1), &pl->ptr[start],
-				   pl->pos - start);
-	return str;
+	return new_string (&pl->ptr[start], pl->pos - start, pl);
 }
 
 static plitem_t *
@@ -909,27 +907,11 @@ pl_parsepropertylistitem (pldata_t *pl)
 		}
 	}
 
-	case '"': {
-		int line = pl->line;
-		char *str = pl_parsequotedstring (pl);
+	case '"':
+		return pl_parsequotedstring (pl);
 
-		if (!str) {
-			return NULL;
-		} else {
-			return new_string (str, line);
-		}
-	}
-
-	default: {
-		int line = pl->line;
-		char *str = pl_parseunquotedstring (pl);
-
-		if (!str) {
-			return NULL;
-		} else {
-			return new_string (str, line);
-		}
-	}
+	default:
+		return pl_parseunquotedstring (pl);
 	} // switch
 }
 
