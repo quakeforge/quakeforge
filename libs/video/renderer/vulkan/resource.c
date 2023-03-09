@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/mathlib.h"
 #include "QF/va.h"
 
 #include "QF/Vulkan/buffer.h"
@@ -91,10 +92,19 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physdev = device->physDev;
+	size_t      atom = physdev->properties->limits.nonCoherentAtomSize;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
 	VkMemoryRequirements req;
 	VkDeviceSize size = 0;
 
+	if (!(resource->memory_properties
+		  & (VK_MEMORY_PROPERTY_HOST_CACHED_BIT
+			 | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+			 | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))) {
+		// if the memory isn't host visible then there's no need to worry about
+		// alignment with nonCoherentAtomSize
+		atom = 0;
+	}
 	for (unsigned i = 0; i < resource->num_objects; i++) {
 		__auto_type obj = &resource->objects[i];
 		switch (obj->type) {
@@ -151,6 +161,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				Sys_Error ("%s:%s invalid resource type %d",
 						   resource->name, obj->name, obj->type);
 		}
+		req.alignment = max (req.alignment, atom);
 		size = QFV_NextOffset (size, &req);
 		size += QFV_NextOffset (req.size, &req);
 	}
@@ -199,6 +210,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 		}
 
+		req.alignment = max (req.alignment, atom);
 		offset = QFV_NextOffset (offset, &req);
 		switch (obj->type) {
 			case qfv_res_buffer:
@@ -221,6 +233,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 			case qfv_res_image_view:
 				break;
 		}
+		req.alignment = max (req.alignment, atom);
 		offset = QFV_NextOffset (offset, &req);
 		offset += QFV_NextOffset (req.size, &req);
 	}
