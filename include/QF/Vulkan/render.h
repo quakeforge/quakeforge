@@ -123,6 +123,9 @@ typedef struct qfv_pipelineinfo_s {
 	qfv_taskinfo_t *tasks;
 
 	VkPipelineCreateFlags flags;
+	VkPipelineShaderStageCreateInfo *compute_stage;
+	uint32_t    dispatch[3];
+
 	uint32_t    num_graph_stages;
 	const VkPipelineShaderStageCreateInfo *graph_stages;
 	const VkPipelineVertexInputStateCreateInfo *vertexInput;
@@ -167,7 +170,18 @@ typedef struct qfv_renderpassinfo_s {
 	qfv_subpassinfo_t *subpasses;
 } qfv_renderpassinfo_t;
 
+typedef struct qfv_computeinfo_s {
+	vec4f_t     color;
+	const char *name;
+
+	uint32_t    num_pipelines;
+	qfv_pipelineinfo_t *pipelines;
+} qfv_computeinfo_t;
+
 typedef struct qfv_renderinfo_s {
+	vec4f_t     color;
+	const char *name;
+
 	struct memsuper_s *memsuper;
 	struct plitem_s *plitem;
 	uint32_t    num_images;
@@ -182,6 +196,33 @@ typedef struct qfv_renderinfo_s {
 	uint32_t    num_layouts;
 	qfv_layoutinfo_t *layouts;
 } qfv_renderinfo_t;
+
+typedef struct qfv_processinfo_s {
+	vec4f_t     color;
+	const char *name;
+
+	uint32_t    num_tasks;
+	qfv_taskinfo_t *tasks;
+} qfv_processinfo_t;
+
+typedef struct qfv_stepinfo_s {
+	vec4f_t     color;
+	const char *name;
+
+	uint32_t     num_dependencies;
+	qfv_reference_t *dependencies;
+
+	qfv_renderinfo_t *render;
+	qfv_computeinfo_t *compute;
+	qfv_processinfo_t *process;
+} qfv_stepinfo_t;
+
+typedef struct qfv_jobinfo_s {
+	struct memsuper_s *memsuper;
+
+	uint32_t     num_steps;
+	qfv_stepinfo_t *steps;
+} qfv_jobinfo_t;
 
 typedef struct qfv_label_s {
 	vec4f_t     color;

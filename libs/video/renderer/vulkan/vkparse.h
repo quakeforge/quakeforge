@@ -90,4 +90,6 @@ struct memsuper_s;
 int QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, struct memsuper_s *memsuper,
 						 exprtab_t *symtab, const char *ref,
 						 qfv_layoutinfo_t *layout);
+struct qfv_jobinfo_s *QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item,
+										struct qfv_renderctx_s *rctx);
 #endif//__vkparse_h

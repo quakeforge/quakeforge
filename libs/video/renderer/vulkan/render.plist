@@ -1,0 +1,91 @@
+properties = {
+	partphysics_layout = {
+		setLayouts = (particle_set);
+		pushConstantRanges = (
+			{
+				stageFlags = compute;
+				offset = 0;
+				size = "4 * 4 + 4";
+			},
+		);
+	};
+	partupdate_layout = {
+		setLayouts = (particle_set, particle_set, particle_set);
+	};
+};
+descriptorSetLayouts = {
+	particle_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+		);
+	};
+};
+tasks = {
+	particles = {
+		compute = {
+			pipelines = {
+				part:update = {
+					color = "[0.3, 0.8, 0.9]";
+					tasks = (
+						{ func = "update_particles"; }
+					);
+					stage = {
+						name = main;
+						module = $builtin/partupdate.comp;
+					};
+					layout = partupdate_layout;
+				};
+				part:physics = {
+					color = "[0.6, 0.8, 0.9]";
+					tasks = (
+						{ func = "particle_physics"; }
+					);
+					stage = {
+						name = main;
+						module = $builtin/partphysics.comp;
+					};
+					layout = partphysics_layout;
+				};
+			};
+		};
+	};
+	shadow = {
+		//currently empty
+	};
+	translucent = {
+		tasks = (
+			{ func = "clear_translucent"; },
+		)
+	};
+	main = {
+		depenencies = (particles, shadow, translucent);
+		renderpass = main_def;
+	};
+	preoutput = {
+		tasks = (
+			{ func = "acquire_output"; },
+			{ func = "update_input"; },
+		);
+	};
+	output = {
+		depenencies = (main, preoutput);
+		renderpass = output;
+	};
+};

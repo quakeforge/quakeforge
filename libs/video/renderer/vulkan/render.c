@@ -196,7 +196,15 @@ count_sp_stuff (qfv_subpassinfo_t *spi, objcount_t *counts)
 	if (spi->attachments) {
 		count_as_stuff (spi->attachments, counts);
 	}
-	counts->num_pipelines += spi->num_pipelines;
+	for (uint32_t i = 0; i < spi->num_pipelines; i++) {
+		__auto_type pli = &spi->pipelines[i];
+		if (pli->num_graph_stages && !pli->compute_stage) {
+			counts->num_pipelines++;
+		} else {
+			Sys_Error ("%s:%s: invalid graphics pipeline",
+					   spi->name, pli->name);
+		}
+	}
 }
 
 static void

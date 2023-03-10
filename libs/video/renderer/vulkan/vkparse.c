@@ -2362,6 +2362,62 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	return ri;
 }
 
+struct qfv_jobinfo_s *
+QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_jobinfo_t *ri = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
+	*ri = (qfv_jobinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	static const char *extra_items[] = {
+		"images",
+		"views",
+		"renderpasses",
+		0
+	};
+	exprsym_t   var_syms[] = {
+		{"output", &qfv_output_t_type, &sctx->output},
+		{"frames", &vulkan_frameset_t_type, &ctx->frames},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{"physDevLimits", &VkPhysicalDeviceLimits_type,
+			&ctx->device->physDev->properties->limits },
+		{}
+	};
+	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
+												   extra_items, var_syms,
+												   &exprctx);
+
+	int         ret;
+	if (!(ret = parse_qfv_jobinfo_t (0, item, ri, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Free (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		ri = 0;
+	}
+
+	return ri;
+}
+
 int
 QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, memsuper_t *memsuper,
 					 exprtab_t *symtab, const char *ref,

@@ -48,7 +48,10 @@
 		qfv_framebufferinfo_t,
 		qfv_renderpassinfo_t,
 		qfv_renderinfo_t,
-		qfv_pipelinespec_t,
+		qfv_computeinfo_t,
+		qfv_processinfo_t,
+		qfv_stepinfo_t,
+		qfv_jobinfo_t,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -513,6 +516,11 @@
 				size = num_graph_stages;
 				values = graph_stages;
 			};
+			stage = {
+				type = (single, VkPipelineShaderStageCreateInfo);
+				value = compute_stage;
+			};
+			dispatch = auto;
 			vertexInput = {
 				type = (single, VkPipelineVertexInputStateCreateInfo);
 				value = vertexInput;
@@ -616,8 +624,18 @@
 				values = bindings;
 			};
 		};
+		qfv_computeinfo_s = {
+			.name = qfv_computeinfo_t;
+			color = auto;
+			pipelines = {
+				type = (labeledarray, qfv_pipelineinfo_t, name);
+				size = num_pipelines;
+				values = pipelines;
+			};
+		};
 		qfv_renderinfo_s = {
 			.name = qfv_renderinfo_t;
+			color = auto;
 			properties = ignore;
 			output = ignore;
 			images = {
@@ -639,6 +657,44 @@
 				type = (labeledarray, qfv_descriptorsetinfo_t, name);
 				size = num_descriptorsets;
 				values = descriptorsets;
+			};
+		};
+		qfv_processinfo_s = {
+			.name = qfv_processinfo_t;
+			color = auto;
+			tasks = {
+				type = (array, qfv_taskinfo_t);
+				size = num_tasks;
+				values = tasks;
+			};
+		};
+		qfv_stepinfo_s = {
+			.name = qfv_stepinfo_t;
+			color = auto;
+			dependencies = {
+				type = (array, qfv_reference_t);
+				size = num_dependencies;
+				values = dependencies;
+			};
+			render = {
+				type = (single, qfv_renderinfo_t);
+				value = render;
+			};
+			compute = {
+				type = (single, qfv_computeinfo_t);
+				value = compute;
+			};
+			process = {
+				type = (single, qfv_processinfo_t);
+				value = process;
+			};
+		};
+		qfv_jobinfo_s = {
+			.name = qfv_jobinfo_t;
+			steps = {
+				type = (array, qfv_stepinfo_t);
+				size = num_steps;
+				values = steps;
 			};
 		};
 	};
