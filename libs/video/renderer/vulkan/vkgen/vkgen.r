@@ -160,7 +160,7 @@ main(int argc, string *argv)
 		printf ("could not open property list file: %s\n", plist_filename);
 		return 1;
 	}
-	plist = [[PLItem fromFile: plist_file] retain];
+	plist = [[PLDictionary fromFile: plist_file] retain];
 	if (!plist) {
 		printf ("error parsing: %s\n", plist_filename);
 		return 1;
@@ -168,6 +168,7 @@ main(int argc, string *argv)
 	Qclose (plist_file);
 	if ([plist class] != [PLDictionary class]) {
 		printf ("%s not a dictionary\n", plist_filename);
+		return 1;
 	}
 	search = [[plist getObjectForKey: "search"] retain];
 	handles = [[plist getObjectForKey: "handles"] retain];
