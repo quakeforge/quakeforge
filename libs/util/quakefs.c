@@ -700,18 +700,14 @@ qfs_load_config (void)
 		goto no_config;
 
 	len = Qfilesize (f);
-	buf = malloc (len + 3); // +3 for { } and \0
+	buf = malloc (len + 1); // +1 for nul
 
-	Qread (f, buf + 1, len);
+	Qread (f, buf, len);
 	Qclose (f);
 
-	// convert the config file to a plist dictionary
-	buf[0] = '{';
-	buf[len + 1] = '}';
-	buf[len + 2] = 0;
 	if (qfs_gd_plist)
 		PL_Free (qfs_gd_plist);
-	qfs_gd_plist = PL_GetPropertyList (buf, 0);
+	qfs_gd_plist = PL_GetDictionary (buf, 0);
 	free (buf);
 	if (qfs_gd_plist && PL_Type (qfs_gd_plist) == QFDictionary)
 		return;		// done

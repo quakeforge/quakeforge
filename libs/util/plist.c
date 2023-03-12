@@ -936,8 +936,9 @@ pl_parsepropertylistitem (pldata_t *pl)
 	}
 }
 
-VISIBLE plitem_t *
-PL_GetPropertyList (const char *string, hashctx_t **hashctx)
+static plitem_t *
+pl_parseitem (const char *string, hashctx_t **hashctx,
+			  plitem_t *(*parse) (pldata_t *))
 {
 	plitem_t	*newpl = NULL;
 
@@ -951,7 +952,7 @@ PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 		.hashctx = hashctx,
 	};
 
-	if (!(newpl = pl_parsepropertylistitem (&pl))) {
+	if (!(newpl = parse (&pl))) {
 		if (pl.errmsg) {
 			Sys_Printf ("plist: %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
 						pl.errmsg->str);
@@ -960,6 +961,57 @@ PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 		return NULL;
 	}
 	return newpl;
+}
+
+VISIBLE plitem_t *
+PL_GetPropertyList (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_parsepropertylistitem);
+}
+
+
+static plitem_t *
+pl_getdictionary (pldata_t *pl)
+{
+	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
+	dict->line = pl->line;
+
+	while (pl_skipspace (pl, 1)) {
+		if (!pl_parsekeyvalue (pl, dict, 1)) {
+			PL_Free (dict);
+			return NULL;
+		}
+	}
+
+	return dict;
+}
+
+VISIBLE plitem_t *
+PL_GetDictionary (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_getdictionary);
+}
+
+static plitem_t *
+pl_getarray (pldata_t *pl)
+{
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	while (pl_skipspace (pl, 1)) {
+		if (!pl_parsevalue (pl, array, 1)) {
+			PL_Free (array);
+			return NULL;
+		}
+	}
+
+	return array;
+}
+
+VISIBLE plitem_t *
+PL_GetArray (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_getarray);
 }
 
 static void

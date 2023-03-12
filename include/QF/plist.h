@@ -143,8 +143,34 @@ typedef struct plelement_s {
 	\return Returns an object equivalent to the passed-in string.
 	\note You are responsible for freeing the returned object.
 */
-plitem_t *PL_GetPropertyList (const char *string,
-							  struct hashctx_s **hashctx);
+plitem_t *PL_GetPropertyList (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare dictionary list.
+
+	The input is treated as a list of dictionary key-value pairs without the
+	enclosing { or }.
+
+	\param string	dicitionary list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns a dictionary object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetDictionary (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare array list.
+
+	The input is treated as a list of array values without the enclosing ( or ).
+
+	\param string	array list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns an array object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetArray (const char *string, struct hashctx_s **hashctx);
 
 /** Create a property list string from the in-memory representation.
 

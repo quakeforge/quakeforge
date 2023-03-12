@@ -188,9 +188,9 @@ plist_retain (plist_resources_t *res, plitem_t *plitem)
 }
 
 static void
-bi_PL_GetFromFile (progs_t *pr, void *_res)
+bi_pl_getfromfile (progs_t *pr, plist_resources_t *res,
+				   plitem_t *get (const char *, struct hashctx_s **))
 {
-	plist_resources_t *res = _res;
 	QFile      *file = QFile_GetFile (pr, P_INT (pr, 0));
 	plitem_t   *plitem;
 	long        offset;
@@ -205,19 +205,61 @@ bi_PL_GetFromFile (progs_t *pr, void *_res)
 	Qread (file, buf, len);
 	buf[len] = 0;
 
-	plitem = PL_GetPropertyList (buf, pr->hashctx);
+	plitem = get (buf, pr->hashctx);
 	free (buf);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
+bi_pl_get (progs_t *pr, plist_resources_t *res,
+		   plitem_t *get (const char *, struct hashctx_s **))
+{
+	plitem_t   *plitem = get (P_GSTRING (pr, 0), pr->hashctx);
+
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
+bi_PL_GetFromFile (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	bi_pl_getfromfile (pr, res, PL_GetPropertyList);
+}
+
+static void
 bi_PL_GetPropertyList (progs_t *pr, void *_res)
 {
 	plist_resources_t *res = _res;
-	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0), pr->hashctx);
+	bi_pl_get (pr, res, PL_GetPropertyList);
+}
 
-	R_INT (pr) = plist_retain (res, plitem);
+static void
+bi_PL_GetDictionaryFromFile (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	bi_pl_getfromfile (pr, res, PL_GetDictionary);
+}
+
+static void
+bi_PL_GetDictionary (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	bi_pl_get (pr, res, PL_GetDictionary);
+}
+
+static void
+bi_PL_GetArrayFromFile (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	bi_pl_getfromfile (pr, res, PL_GetArray);
+}
+
+static void
+bi_PL_GetArray (progs_t *pr, void *_res)
+{
+	plist_resources_t *res = _res;
+	bi_pl_get (pr, res, PL_GetArray);
 }
 
 static void
@@ -481,6 +523,10 @@ plist_compare (const void *k1, const void *k2, void *unused)
 static builtin_t builtins[] = {
 	bi(PL_GetFromFile,           1, p(ptr)),
 	bi(PL_GetPropertyList,       1, p(string)),
+	bi(PL_GetDictionary,         1, p(string)),
+	bi(PL_GetDictionaryFromFile, 1, p(string)),
+	bi(PL_GetArray,              1, p(string)),
+	bi(PL_GetArrayFromFile,      1, p(string)),
 	bi(PL_WritePropertyList,     1, p(ptr)),
 	bi(PL_Type,                  1, p(ptr)),
 	bi(PL_Line,                  1, p(ptr)),
