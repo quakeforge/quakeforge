@@ -1960,7 +1960,7 @@ build_configs (scriptctx_t *sctx)
 	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
 	num_plists = 0;
 	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		plitem_t   *item = PL_GetPropertyList (sym->value, &sctx->hashctx);
+		plitem_t   *item = PL_GetDictionary (sym->value, &sctx->hashctx);
 		if (!item) {
 			// Syntax errors in the compiled-in plists are unrecoverable
 			Sys_Error ("Error parsing plist for %s", sym->name);
