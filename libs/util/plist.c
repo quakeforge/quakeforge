@@ -44,7 +44,6 @@
 #include "QF/plist.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 
 /*
 	Generic property list item.
@@ -96,8 +95,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    pos;
 	unsigned    line;
 	unsigned    line_start;
-	plitem_t   *error;
-	va_ctx_t   *va_ctx;
+	dstring_t  *errmsg;
 	hashctx_t **hashctx;
 } pldata_t;
 
@@ -133,11 +131,7 @@ init_quotables (void)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
 }
 
-static plitem_t *pl_parsepropertylistitem (pldata_t *);
-static qboolean pl_skipspace (pldata_t *);
-static plitem_t *pl_parsequotedstring (pldata_t *);
-static plitem_t *pl_parseunquotedstring (pldata_t *);
-static char *pl_parsedata (pldata_t *, int *);
+static plitem_t *pl_parsepropertylistitem (pldata_t *pl);
 
 static const char *
 dict_get_key (const void *i, void *unused)
@@ -489,8 +483,21 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 	return item;
 }
 
+static void __attribute__((format(printf, 2, 3)))
+pl_error (pldata_t *pl, const char *fmt, ...)
+{
+	if (!pl->errmsg) {
+		pl->errmsg = dstring_new ();
+	}
+
+	va_list     args;
+	va_start (args, fmt);
+	dvsprintf (pl->errmsg, fmt, args);
+	va_end (args);
+}
+
 static qboolean
-pl_skipspace (pldata_t *pl)
+pl_skipspace (pldata_t *pl, int end_ok)
 {
 	while (pl->pos < pl->end) {
 		char	c = pl->ptr[pl->pos];
@@ -508,7 +515,9 @@ pl_skipspace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = PL_NewString ("Reached end of string in comment");
+						// end of string in a single-line comment is always
+						// an error
+						pl_error (pl, "Reached end of string in comment");
 						return false;
 					}
 				} else if (pl->ptr[pl->pos + 1] == '*') {	// "/*" comments
@@ -528,7 +537,9 @@ pl_skipspace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = PL_NewString ("Reached end of string in comment");
+						// end of string in a multi-line comment is always
+						// an error
+						pl_error (pl, "Reached end of string in comment");
 						return false;
 					}
 				} else {
@@ -544,8 +555,38 @@ pl_skipspace (pldata_t *pl)
 		}
 		pl->pos++;
 	}
-	pl->error = PL_NewString ("Reached end of string");
+	if (!end_ok) {
+		pl_error (pl, "Reached end of string");
+	}
 	return false;
+}
+
+static int
+pl_checknext (pldata_t *pl, const char *valid, int end_ok)
+{
+	if (!pl_skipspace (pl, end_ok)) {
+		return end_ok;
+	}
+
+	char        ch = pl->ptr[pl->pos];
+	if (strchr (valid, ch)) {
+		return 1;
+	}
+
+	size_t      len = strlen (valid);
+	size_t      size = 3 + (strlen (valid) - 1) * 7 + 1;
+	char        expected[size], *p = expected;
+	p[0] = '\'';
+	p[1] = valid[0];
+	p[2] = '\'';
+	p += 3;
+	for (size_t i = 1; i < len; i++, p++) {
+		memcpy (p, " or 'x'", 7);
+		p[5] = valid[i];
+	}
+	p[0] = 0;
+	pl_error (pl, "Unexpected character %c (wanted %s)", ch, expected);
+	return 0;
 }
 
 static inline byte
@@ -564,8 +605,122 @@ make_byte (byte h, byte l)
 	return (from_hex (h) << 4) | from_hex (l);
 }
 
-static char *
-pl_parsedata (pldata_t *pl, int *len)
+static int
+pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
+{
+	plitem_t	*key = 0;
+	plitem_t	*value = 0;
+
+	if (!(key = pl_parsepropertylistitem (pl))) {
+		return 0;
+	}
+	if (key->type != QFString) {
+		pl_error (pl, "Key is not a string");
+		goto error;
+	}
+
+	if (!pl_checknext (pl, "=", 0)) {
+		goto error;
+	}
+	pl->pos++;
+
+	if (!(value = pl_parsepropertylistitem (pl))) {
+		goto error;
+	}
+
+	if (!PL_D_AddObject (dict, PL_String (key), value)) {
+		goto error;
+	}
+	PL_Free (key);	// don't need the key item
+
+	if (!pl_checknext (pl, end_ok ? ";" : ";}", end_ok)) {
+		return 0;
+	}
+
+	if (pl->ptr[pl->pos] == ';') {
+		pl->pos++;
+	}
+	return 1;
+error:
+	PL_Free (key);
+	PL_Free (value);
+	return 0;
+}
+
+static plitem_t *
+pl_parsedictionary (pldata_t *pl)
+{
+	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
+	dict->line = pl->line;
+
+	pl->pos++;	// skip over opening {
+	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != '}') {
+		if (!pl_parsekeyvalue (pl, dict, 0)) {
+			PL_Free (dict);
+			return NULL;
+		}
+	}
+	if (pl->pos >= pl->end) {
+		pl_error (pl, "Unexpected end of string when parsing dictionary");
+		PL_Free (dict);
+		return NULL;
+	}
+	pl->pos++;	// skip over closing }
+
+	return dict;
+}
+
+static int
+pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
+{
+	plitem_t	*value;
+
+	if (!(value = pl_parsepropertylistitem (pl))) {
+		return 0;
+	}
+	if (!PL_A_AddObject (array, value)) {
+		pl_error (pl, "too many items in array");
+		PL_Free (value);
+		return 0;
+	}
+
+	if (!pl_checknext (pl, end_ok ? "," : ",)", end_ok)) {
+		return 0;
+	}
+
+	if (pl->ptr[pl->pos] == ',') {
+		pl->pos++;
+	}
+
+	return 1;
+}
+
+static plitem_t *
+pl_parsearray (pldata_t *pl)
+{
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	pl->pos++;	// skip over opening (
+
+	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != ')') {
+		if (!pl_parsevalue (pl, array, 0)) {
+			PL_Free (array);
+			return NULL;
+		}
+	}
+	if (pl->pos >= pl->end) {
+		pl_error (pl, "Unexpected end of string when parsing array");
+		PL_Free (array);
+		return NULL;
+	}
+	pl->pos++;	// skip over opening )
+
+	return array;
+}
+
+static plitem_t *
+pl_parsebinary (pldata_t *pl)
 {
 	unsigned    start = ++pl->pos;
 	int         nibbles = 0, i;
@@ -579,21 +734,23 @@ pl_parsedata (pldata_t *pl, int *len)
 		}
 		if (c == '>') {
 			if (nibbles & 1) {
-				pl->error = PL_NewString ("invalid data, missing nibble");
+				pl_error (pl, "invalid data, missing nibble");
 				return NULL;
 			}
-			*len = nibbles / 2;
-			str = malloc (*len);
-			for (i = 0; i < *len; i++)
+			int         len = nibbles / 2;
+			str = malloc (len);
+			for (i = 0; i < len; i++) {
 				str[i] = make_byte (pl->ptr[start + i * 2],
 									pl->ptr[start + i * 2 + 1]);
-			return str;
+			}
+			plitem_t   *item = PL_NewData (str, len);
+			item->line = pl->line;
+			return item;
 		}
-		pl->error = PL_NewString (va (pl->va_ctx,
-									  "invalid character in data: %02x", c));
+		pl_error (pl, "invalid character in data: %02x", c);
 		return NULL;
 	}
-	pl->error = PL_NewString ("Reached end of string while parsing data");
+	pl_error (pl, "Reached end of string while parsing data");
 	return NULL;
 }
 
@@ -661,7 +818,7 @@ pl_parsequotedstring (pldata_t *pl)
 	}
 
 	if (pl->pos >= pl->end) {
-		pl->error = PL_NewString ("Reached end of string while parsing quoted string");
+		pl_error (pl, "Reached end of string while parsing quoted string");
 		return NULL;
 	}
 
@@ -766,153 +923,17 @@ pl_parseunquotedstring (pldata_t *pl)
 static plitem_t *
 pl_parsepropertylistitem (pldata_t *pl)
 {
-	plitem_t	*item = NULL;
-
-	if (!pl_skipspace (pl))
+	if (!pl_skipspace (pl, 0)) {
 		return NULL;
+	}
 
 	switch (pl->ptr[pl->pos]) {
-	case '{':
-	{
-		item = PL_NewDictionary (pl->hashctx);
-		item->line = pl->line;
-
-		pl->pos++;
-
-		while (pl_skipspace (pl) && pl->ptr[pl->pos] != '}') {
-			plitem_t	*key;
-			plitem_t	*value;
-
-			if (!(key = pl_parsepropertylistitem (pl))) {
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (key->type != QFString) {
-				pl->error = PL_NewString ("Key is not a string");
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] != '=') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (expected '=')", pl->ptr[pl->pos]));
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-			pl->pos++;
-
-			// If there is no value, lose the key
-			if (!(value = pl_parsepropertylistitem (pl))) {
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] == ';') {
-				pl->pos++;
-			} else if (pl->ptr[pl->pos] != '}') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ';' or '}')", pl->ptr[pl->pos]));
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			// Add the key/value pair to the dictionary
-			if (!PL_D_AddObject (item, PL_String (key), value)) {
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-			PL_Free (key);
-		}
-
-		if (pl->pos >= pl->end) {	// Catch the error
-			pl->error = PL_NewString ("Unexpected end of string when parsing dictionary");
-			PL_Free (item);
-			return NULL;
-		}
-		pl->pos++;
-
-		return item;
+		case '{': return pl_parsedictionary (pl);
+		case '(': return pl_parsearray (pl);
+		case '<': return pl_parsebinary (pl);
+		case '"': return pl_parsequotedstring (pl);
+		default:  return pl_parseunquotedstring (pl);
 	}
-
-	case '(': {
-		item = PL_NewArray ();
-		item->line = pl->line;
-
-		pl->pos++;
-
-		while (pl_skipspace (pl) && pl->ptr[pl->pos] != ')') {
-			plitem_t	*value;
-
-			if (!(value = pl_parsepropertylistitem (pl))) {
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] == ',') {
-				pl->pos++;
-			} else if (pl->ptr[pl->pos] != ')') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ',' or ')')", pl->ptr[pl->pos]));
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!PL_A_AddObject (item, value)) {
-				pl->error = PL_NewString ("Unexpected character (too many items in array)");
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-		}
-		pl->pos++;
-
-		return item;
-	}
-
-	case '<': {
-		int len;
-		char *str = pl_parsedata (pl, &len);
-
-		if (!str) {
-			return NULL;
-		} else {
-			item = PL_NewData (str, len);
-			item->line = pl->line;
-			return item;
-		}
-	}
-
-	case '"':
-		return pl_parsequotedstring (pl);
-
-	default:
-		return pl_parseunquotedstring (pl);
-	} // switch
 }
 
 VISIBLE plitem_t *
@@ -927,22 +948,17 @@ PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 		.ptr = string,
 		.end = strlen (string),
 		.line = 1,
-		.va_ctx = va_create_context (4),
 		.hashctx = hashctx,
 	};
 
 	if (!(newpl = pl_parsepropertylistitem (&pl))) {
-		if (pl.error) {
-			const char *error = PL_String (pl.error);
-			if (error[0]) {
-				Sys_Printf ("plist: %d,%d: %s\n", pl.line,
-							pl.pos - pl.line_start, error);
-			}
-			PL_Free (pl.error);
+		if (pl.errmsg) {
+			Sys_Printf ("plist: %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
+						pl.errmsg->str);
+			dstring_delete (pl.errmsg);
 		}
 		return NULL;
 	}
-	va_destroy_context (pl.va_ctx);
 	return newpl;
 }
 
