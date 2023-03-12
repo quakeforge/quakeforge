@@ -49,10 +49,12 @@
 	Generic property list item.
 */
 struct plitem_s {
-	pltype_t	type;
+	pltype_t    type;
+	unsigned    users;
+	void       *data;
+	void       *user_data;
 	int         line;
-	void		*data;
-};
+};//plitem_t
 
 /*
 	Dictionaries
@@ -146,7 +148,7 @@ dict_free (void *i, void *unused)
 	dictkey_t	*item = (dictkey_t *) i;
 	free (item->key);
 	if (item->value)		// Make descended stuff get freed
-		PL_Free (item->value);
+		PL_Release (item->value);
 	free (item);
 }
 
@@ -206,14 +208,23 @@ PL_NewString (const char *str)
 	return new_string (str, strlen (str), 0);
 }
 
-VISIBLE void
-PL_Free (plitem_t *item)
+VISIBLE plitem_t *
+PL_Retain (plitem_t *item)
+{
+	if (item) {
+		item->users++;
+	}
+	return item;
+}
+
+VISIBLE plitem_t *
+PL_Release (plitem_t *item)
 {
 	pldict_t   *dict;
 	plarray_t  *array;
 
-	if (!item) {
-		return;
+	if (!item || (item->users && --item->users > 0)) {
+		return item;
 	}
 	switch (item->type) {
 		case QFDictionary:
@@ -229,7 +240,7 @@ PL_Free (plitem_t *item)
 				int 	i = array->numvals;
 
 				while (i-- > 0) {
-					PL_Free (array->values[i]);
+					PL_Release (array->values[i]);
 				}
 				free (array->values);
 				free (item->data);
@@ -248,6 +259,19 @@ PL_Free (plitem_t *item)
 			break;
 	}
 	free (item);
+	return 0;
+}
+
+VISIBLE void
+PL_SetUserData (plitem_t *item, void *data)
+{
+	item->user_data = data;
+}
+
+VISIBLE void *
+PL_GetUserData (plitem_t *item)
+{
+	return item->user_data;
 }
 
 VISIBLE size_t
@@ -308,11 +332,11 @@ PL_KeyAtIndex (const plitem_t *item, int index)
 	return dict->keys.a[index]->key;
 }
 
-VISIBLE plitem_t *
+VISIBLE void
 PL_RemoveObjectForKey (plitem_t *item, const char *key)
 {
 	if (!item || item->type != QFDictionary) {
-		return NULL;
+		return;
 	}
 
 	pldict_t   *dict = (pldict_t *) item->data;
@@ -320,8 +344,9 @@ PL_RemoveObjectForKey (plitem_t *item, const char *key)
 	plitem_t   *value;
 
 	k = (dictkey_t *) Hash_Del (dict->tab, key);
-	if (!k)
-		return NULL;
+	if (!k) {
+		return;
+	}
 	value = k->value;
 	k->value = 0;
 	for (size_t i = 0; i < dict->keys.size; i++) {
@@ -331,7 +356,7 @@ PL_RemoveObjectForKey (plitem_t *item, const char *key)
 		}
 	}
 	dict_free (k, 0);
-	return value;
+	value->users--;
 }
 
 VISIBLE plitem_t *
@@ -389,7 +414,8 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 	dictkey_t	*k;
 
 	if ((k = Hash_Find (dict->tab, key))) {
-		PL_Free ((plitem_t *) k->value);
+		value->users++;
+		PL_Release (k->value);
 		k->value = value;
 	} else {
 		k = malloc (sizeof (dictkey_t));
@@ -397,6 +423,7 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 		if (!k)
 			return false;
 
+		value->users++;
 		k->key = strdup (key);
 		k->value = value;
 
@@ -438,6 +465,8 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 
 	memmove (arr->values + index + 1, arr->values + index,
 			 (arr->numvals - index) * sizeof (plitem_t *));
+
+	item->users++;
 	arr->values[index] = item;
 	arr->numvals++;
 	return true;
@@ -458,11 +487,11 @@ PL_A_NumObjects (const plitem_t *array)
 	return ((plarray_t *) array->data)->numvals;
 }
 
-VISIBLE plitem_t *
+VISIBLE void
 PL_RemoveObjectAtIndex (plitem_t *array, int index)
 {
 	if (!array || array->type != QFArray) {
-		return 0;
+		return;
 	}
 
 	plarray_t  *arr;
@@ -471,7 +500,7 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 	arr = (plarray_t *)array->data;
 
 	if (index < 0 || index >= arr->numvals)
-		return 0;
+		return;
 
 	item = arr->values[index];
 	arr->numvals--;
@@ -480,7 +509,7 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 		index++;
 	}
 
-	return item;
+	item->users--;
 }
 
 static void __attribute__((format(printf, 2, 3)))
@@ -631,7 +660,7 @@ pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
 	if (!PL_D_AddObject (dict, PL_String (key), value)) {
 		goto error;
 	}
-	PL_Free (key);	// don't need the key item
+	PL_Release (key);	// don't need the key item
 
 	if (!pl_checknext (pl, end_ok ? ";" : ";}", end_ok)) {
 		return 0;
@@ -642,8 +671,8 @@ pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
 	}
 	return 1;
 error:
-	PL_Free (key);
-	PL_Free (value);
+	PL_Release (key);
+	PL_Release (value);
 	return 0;
 }
 
@@ -656,13 +685,13 @@ pl_parsedictionary (pldata_t *pl)
 	pl->pos++;	// skip over opening {
 	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != '}') {
 		if (!pl_parsekeyvalue (pl, dict, 0)) {
-			PL_Free (dict);
+			PL_Release (dict);
 			return NULL;
 		}
 	}
 	if (pl->pos >= pl->end) {
 		pl_error (pl, "Unexpected end of string when parsing dictionary");
-		PL_Free (dict);
+		PL_Release (dict);
 		return NULL;
 	}
 	pl->pos++;	// skip over closing }
@@ -680,7 +709,7 @@ pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
 	}
 	if (!PL_A_AddObject (array, value)) {
 		pl_error (pl, "too many items in array");
-		PL_Free (value);
+		PL_Release (value);
 		return 0;
 	}
 
@@ -705,13 +734,13 @@ pl_parsearray (pldata_t *pl)
 
 	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != ')') {
 		if (!pl_parsevalue (pl, array, 0)) {
-			PL_Free (array);
+			PL_Release (array);
 			return NULL;
 		}
 	}
 	if (pl->pos >= pl->end) {
 		pl_error (pl, "Unexpected end of string when parsing array");
-		PL_Free (array);
+		PL_Release (array);
 		return NULL;
 	}
 	pl->pos++;	// skip over opening )
@@ -978,7 +1007,7 @@ pl_getdictionary (pldata_t *pl)
 
 	while (pl_skipspace (pl, 1)) {
 		if (!pl_parsekeyvalue (pl, dict, 1)) {
-			PL_Free (dict);
+			PL_Release (dict);
 			return NULL;
 		}
 	}
@@ -1000,7 +1029,7 @@ pl_getarray (pldata_t *pl)
 
 	while (pl_skipspace (pl, 1)) {
 		if (!pl_parsevalue (pl, array, 1)) {
-			PL_Free (array);
+			PL_Release (array);
 			return NULL;
 		}
 	}

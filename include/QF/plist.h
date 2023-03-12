@@ -238,11 +238,8 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 
 	\param dict	The Dictionary to remove the value from
 	\param key	The unique key associated with the value to be removed
-	\return the value associated with the key, or NULL if not found or \a dict
-	isn't a dictionary (includes if \a dict is null).
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
+void PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a key from a dictionary object.
 
@@ -332,15 +329,12 @@ int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
 /** Remove a value from an array object.
-	The array items will be shuffled to fill the resulting hole.
+	The array items will be shifted to fill the resulting hole.
 
 	\param array	The array from which to remove the value
 	\param index	The index within the array to remove
-	\return the value associated with the index, or NULL if not found or array
-	is noll or an array.
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
+void PL_RemoveObjectAtIndex (plitem_t *array, int index);
 
 /** Create a new dictionary object.
 	The dictionary will be empty.
@@ -372,14 +366,32 @@ plitem_t *PL_NewData (void *data, size_t size);
 */
 plitem_t *PL_NewString (const char *str);
 
-/** Free a property list object.
+/** Retain ownership of a property list object.
 
-	This function takes care of freeing any referenced property list data, so
-	call it only on top-level objects. Safe to call with a null argument.
+	Use prior to removal to ensure the property list object is not freed when
+	removed from an array or dictionary. Adding an object to a dictionary or
+	array automatically retains the object.
 
-	\param item the property list object to be freed
+	\param item the property list object to be retained
+	\return the item
+	\note item may be null, in which case nothing is done but to return null
 */
-void PL_Free (plitem_t *item);
+plitem_t *PL_Retain (plitem_t *item);
+
+/** Release ownership of a property list object.
+
+	If the number of owners is reduced to 0 (or is already 0) then the object
+	will be freed. If the object contains other objects, then those objects
+	will be released.
+
+	\param item the property list object to be released
+	\return the item if it is still valid, otherwise null
+	\note item may be null, in which case nothing is done but to return null
+*/
+plitem_t *PL_Release (plitem_t *item);
+
+void PL_SetUserData (plitem_t *item, void *data);
+void *PL_GetUserData (plitem_t *item) __attribute__((pure));
 
 int PL_CheckType (pltype_t field_type, pltype_t item_type) __attribute__((const));
 void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,

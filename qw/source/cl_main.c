@@ -1734,7 +1734,7 @@ Host_WriteConfiguration (void)
 			free (cfg);
 			Qclose (f);
 		}
-		PL_Free (config);
+		PL_Release (config);
 	}
 }
 
@@ -1761,7 +1761,7 @@ Host_ReadConfiguration (const char *cfg_name)
 	Cvar_LoadConfig (config);
 	IN_LoadConfig (config);
 
-	PL_Free (config);
+	PL_Release (config);
 	return 1;
 }
 

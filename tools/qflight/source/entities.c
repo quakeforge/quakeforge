@@ -274,7 +274,7 @@ LoadEntities (void)
 					entity->persistence = 1;
 			}
 		}
-		PL_Free (dict);
+		PL_Release (dict);
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,

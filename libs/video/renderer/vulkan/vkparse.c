@@ -1283,7 +1283,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 		return 0;
 	}
 	Hash_DelTable (vars_tab.tab);
-	PL_Free (messages);
+	PL_Release (messages);
 
 	return 1;
 }
@@ -1979,7 +1979,7 @@ delete_configs (void)
 {
 	int         num_plists = 0;
 	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		PL_Free (builtin_plists[num_plists]);
+		PL_Release (builtin_plists[num_plists]);
 		num_plists++;
 	}
 	free (builtin_plists);
@@ -2030,7 +2030,7 @@ Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
 		dstring_delete (msg);
 		config = 0;
 	}
-	PL_Free (ectx.messages);
+	PL_Release (ectx.messages);
 	delete_memsuper (ectx.memsuper);
 	return config;
 }
@@ -2353,7 +2353,7 @@ QFV_ParseRenderInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 		}
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
-	PL_Free (messages);
+	PL_Release (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);
 		ri = 0;
@@ -2409,7 +2409,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 		}
 	}
 	QFV_DestroySymtab (exprctx.external_variables);
-	PL_Free (messages);
+	PL_Release (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);
 		ri = 0;
@@ -2448,8 +2448,8 @@ QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, memsuper_t *memsuper,
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
 	}
-	PL_Free (messages);
-	PL_Free (item);
+	PL_Release (messages);
+	PL_Release (item);
 
 	return ret;
 }

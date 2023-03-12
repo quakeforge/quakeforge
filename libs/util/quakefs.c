@@ -543,7 +543,7 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 			}
 		}
 		free (list);
-		PL_Free (keys);
+		PL_Release (keys);
 	}
 	return gdpl;
 }
@@ -706,7 +706,7 @@ qfs_load_config (void)
 	Qclose (f);
 
 	if (qfs_gd_plist)
-		PL_Free (qfs_gd_plist);
+		PL_Release (qfs_gd_plist);
 	qfs_gd_plist = PL_GetDictionary (buf, 0);
 	free (buf);
 	if (qfs_gd_plist && PL_Type (qfs_gd_plist) == QFDictionary)
@@ -714,7 +714,7 @@ qfs_load_config (void)
 	Sys_Printf ("not a dictionary\n");
 no_config:
 	if (qfs_gd_plist)
-		PL_Free (qfs_gd_plist);
+		PL_Release (qfs_gd_plist);
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf, 0);
 }
 
@@ -1470,7 +1470,7 @@ qfs_shutdown (void *data)
 {
 	clear_findfile ();
 	qfs_free_gamedir ();
-	PL_Free (qfs_gd_plist);
+	PL_Release (qfs_gd_plist);
 	free ((char *) qfs_userpath);
 	free (gamedir_callbacks);
 	ALLOC_FREE_BLOCKS (vpaths);

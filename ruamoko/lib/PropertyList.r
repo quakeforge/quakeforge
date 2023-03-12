@@ -49,47 +49,28 @@
 	return [[class alloc] initWithItem: item];
 }
 
-+ (PLItem *) ownItemClass:(plitem_t *) item
-{
-	PLItem *plitem = [PLItem itemClass:item];
-	if (plitem) {
-		plitem.own = 1;
-	}
-	return plitem;
-}
-
 + (PLItem *) fromString:(string) str
 {
-	return [[PLItem ownItemClass: PL_GetPropertyList (str)] autorelease];
+	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
 }
 
 + (PLItem *) fromFile:(QFile) file
 {
-	return [[PLItem ownItemClass: PL_GetFromFile (file)] autorelease];
+	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
 - initWithItem:(plitem_t *) item
 {
 	if (!(self = [super init]))
 		return self;
+	PL_Retain (item);
 	self.item = item;
-	own = 0;
-	return self;
-}
-
--initWithOwnItem:(plitem_t *) item
-{
-	if (!(self = [super init]))
-		return self;
-	self.item = item;
-	own = 1;
 	return self;
 }
 
 - (void) dealloc
 {
-	if (own)
-		PL_Free (item);
+	PL_Release (item);
 	[super dealloc];
 }
 
@@ -144,13 +125,7 @@
 
 - addKey:(string) key value:(PLItem *) value
 {
-	if (!value.own) {
-		obj_error (self, 0, "add of unowned key/value to PLDictionary");
-		return self;
-	}
 	PL_D_AddObject (item, key, value.item);
-	value.own = 0;
-	[value release];
 	return self;
 }
 
@@ -166,25 +141,13 @@
 
 - addObject:(PLItem *) object
 {
-	if (!object.own) {
-		obj_error (self, 0, "add of unowned object to PLArray");
-		return self;
-	}
 	PL_A_AddObject (item, object.item);
-	object.own = 0;
-	[object release];
 	return self;
 }
 
 - insertObject:(PLItem *) object atIndex:(int) index
 {
-	if (!object.own) {
-		obj_error (self, 0, "add of unowned object to PLArray");
-		return self;
-	}
 	PL_A_InsertObjectAtIndex (item, object.item, index);
-	object.own = 0;
-	[object release];
 	return self;
 }
 
@@ -200,17 +163,17 @@
 
 + (PLDictionary *) new
 {
-	return [[PLDictionary alloc] initWithOwnItem: PL_NewDictionary ()];
+	return [[PLDictionary alloc] initWithItem: PL_NewDictionary ()];
 }
 
 + (PLItem *) fromString:(string) str
 {
-	return [[PLItem ownItemClass: PL_GetDictionary (str)] autorelease];
+	return [[PLItem itemClass: PL_GetDictionary (str)] autorelease];
 }
 
 + (PLItem *) fromFile:(QFile) file
 {
-	return [[PLItem ownItemClass: PL_GetDictionaryFromFile (file)] autorelease];
+	return [[PLItem itemClass: PL_GetDictionaryFromFile (file)] autorelease];
 }
 
 - (int) count
@@ -230,20 +193,12 @@
 
 - (PLItem *) allKeys
 {
-	PLItem *item = [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
-	item.own = 1;
-	return item;
+	return [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
 }
 
 - addKey:(string) key value:(PLItem *) value
 {
-	if (!value.own) {
-		obj_error (self, 0, "add of unowned key/value to PLDictionary");
-		return self;
-	}
 	PL_D_AddObject (item, key, value.item);
-	value.own = 0;
-	[value release];
 	return self;
 }
 
@@ -253,17 +208,17 @@
 
 + (PLArray *) new
 {
-	return [[PLArray alloc] initWithOwnItem: PL_NewArray ()];
+	return [[PLArray alloc] initWithItem: PL_NewArray ()];
 }
 
 + (PLItem *) fromString:(string) str
 {
-	return [[PLItem ownItemClass: PL_GetArray (str)] autorelease];
+	return [[PLItem itemClass: PL_GetArray (str)] autorelease];
 }
 
 + (PLItem *) fromFile:(QFile) file
 {
-	return [[PLItem ownItemClass: PL_GetArrayFromFile (file)] autorelease];
+	return [[PLItem itemClass: PL_GetArrayFromFile (file)] autorelease];
 }
 
 - (int) count
@@ -283,25 +238,13 @@
 
 - addObject:(PLItem *) object
 {
-	if (!object.own) {
-		obj_error (self, 0, "add of unowned object to PLArray");
-		return self;
-	}
 	PL_A_AddObject (item, object.item);
-	object.own = 0;
-	[object release];
 	return self;
 }
 
 - insertObject:(PLItem *) object atIndex:(int) index
 {
-	if (!object.own) {
-		obj_error (self, 0, "add of unowned object to PLArray");
-		return self;
-	}
 	PL_A_InsertObjectAtIndex (item, object.item, index);
-	object.own = 0;
-	[object release];
 	return self;
 }
 
@@ -311,7 +254,7 @@
 
 + (PLData *) new:(void*) data size:(int) len
 {
-	return [[PLData alloc] initWithOwnItem: PL_NewData (data, len)];
+	return [[PLData alloc] initWithItem: PL_NewData (data, len)];
 }
 
 @end
@@ -320,7 +263,7 @@
 
 + (PLString *) new: (string) str
 {
-	return [[PLString alloc] initWithOwnItem: PL_NewString (str)];
+	return [[PLString alloc] initWithItem: PL_NewString (str)];
 }
 
 - (string) string

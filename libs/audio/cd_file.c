@@ -142,7 +142,7 @@ I_OGGMus_Shutdown (void)
 {
 	if (tracklist) {
 		I_OGGMus_Stop ();
-		PL_Free (tracklist);
+		PL_Release (tracklist);
 		tracklist = NULL;
 	}
 	mus_enabled = false;
@@ -184,7 +184,7 @@ Load_Tracklist (void)
 	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 
-	PL_Free (tracklist);
+	PL_Release (tracklist);
 	tracklist = PL_GetPropertyList (buffile, 0);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");

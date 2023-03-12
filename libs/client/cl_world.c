@@ -217,7 +217,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 
 	if (cl_world.models.a[1] && cl_world.models.a[1]->brush.entities) {
 		if (cl_world.edicts) {
-			PL_Free (cl_world.edicts);
+			PL_Release (cl_world.edicts);
 		}
 		cl_world.edicts = map_ent (mapname);
 		if (cl_world.edicts) {

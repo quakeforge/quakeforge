@@ -495,7 +495,7 @@ CL_Legacy_Init (void)
 	Cmd_AddCommand ("unbind", cl_unbind_f, "compatibility wrapper for in_bind");
 	plitem_t   *cfg = PL_GetPropertyList (default_input_config, 0);
 	IN_LoadConfig (cfg);
-	PL_Free (cfg);
+	PL_Release (cfg);
 }
 
 void

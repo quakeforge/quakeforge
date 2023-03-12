@@ -506,9 +506,10 @@ convert_to_game_dict (script_t *script)
 
 	// load the edicts out of the savegame file
 	list = ED_ConvertToPlist (script, 0, 0);
-	item = PL_RemoveObjectAtIndex (list, 0);
+	item = PL_ObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);
+	PL_RemoveObjectAtIndex (list, 0);
 
 	return game;
 }
@@ -728,7 +729,7 @@ Host_Loadgame_f (void)
 	}
 end:
 	if (game)
-		PL_Free (game);
+		PL_Release (game);
 	if (mapname)
 		free (mapname);
 	if (script)
