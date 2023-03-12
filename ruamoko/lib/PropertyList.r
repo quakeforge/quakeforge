@@ -49,18 +49,23 @@
 	return [[class alloc] initWithItem: item];
 }
 
++ (PLItem *) ownItemClass:(plitem_t *) item
+{
+	PLItem *plitem = [PLItem itemClass:item];
+	if (plitem) {
+		plitem.own = 1;
+	}
+	return plitem;
+}
+
 + (PLItem *) fromString:(string) str
 {
-	PLItem *item = [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
-	item.own = 1;
-	return item;
+	return [[PLItem ownItemClass: PL_GetPropertyList (str)] autorelease];
 }
 
 + (PLItem *) fromFile:(QFile) file
 {
-	PLItem *item = [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
-	item.own = 1;
-	return item;
+	return [[PLItem ownItemClass: PL_GetFromFile (file)] autorelease];
 }
 
 - initWithItem:(plitem_t *) item
@@ -198,6 +203,16 @@
 	return [[PLDictionary alloc] initWithOwnItem: PL_NewDictionary ()];
 }
 
++ (PLItem *) fromString:(string) str
+{
+	return [[PLItem ownItemClass: PL_GetDictionary (str)] autorelease];
+}
+
++ (PLItem *) fromFile:(QFile) file
+{
+	return [[PLItem ownItemClass: PL_GetDictionaryFromFile (file)] autorelease];
+}
+
 - (int) count
 {
 	return PL_D_NumKeys (item);
@@ -239,6 +254,16 @@
 + (PLArray *) new
 {
 	return [[PLArray alloc] initWithOwnItem: PL_NewArray ()];
+}
+
++ (PLItem *) fromString:(string) str
+{
+	return [[PLItem ownItemClass: PL_GetArray (str)] autorelease];
+}
+
++ (PLItem *) fromFile:(QFile) file
+{
+	return [[PLItem ownItemClass: PL_GetArrayFromFile (file)] autorelease];
 }
 
 - (int) count

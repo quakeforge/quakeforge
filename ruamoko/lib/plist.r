@@ -2,6 +2,10 @@
 
 plitem_t *PL_GetFromFile (QFile file) = #0;
 plitem_t *PL_GetPropertyList (string str) = #0;
+plitem_t *PL_GetDictionaryFromFile (QFile file) = #0;
+plitem_t *PL_GetDictionary (string str) = #0;
+plitem_t *PL_GetArrayFromFile (QFile file) = #0;
+plitem_t *PL_GetArray (string str) = #0;
 string PL_WritePropertyList (plitem_t *pl) = #0;
 pltype_t PL_Type (plitem_t *str) = #0;
 int PL_Line (plitem_t *str) = #0;

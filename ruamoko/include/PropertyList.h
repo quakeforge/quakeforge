@@ -49,10 +49,14 @@
 
 @interface PLDictionary: PLItem <PLDictionary>
 + (PLDictionary *) new;
++ (PLItem *) fromString:(string) str;
++ (PLItem *) fromFile:(QFile) file;
 @end
 
 @interface PLArray: PLItem <PLArray>
 + (PLArray *) new;
++ (PLItem *) fromString:(string) str;
++ (PLItem *) fromFile:(QFile) file;
 @end
 
 @interface PLData: PLItem

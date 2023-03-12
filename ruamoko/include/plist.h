@@ -8,6 +8,10 @@ typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible t
 
 @extern plitem_t *PL_GetFromFile (QFile file);
 @extern plitem_t *PL_GetPropertyList (string str);
+@extern plitem_t *PL_GetDictionaryFromFile (QFile file);
+@extern plitem_t *PL_GetDictionary (string str);
+@extern plitem_t *PL_GetArrayFromFile (QFile file);
+@extern plitem_t *PL_GetArray (string str);
 @extern string PL_WritePropertyList (plitem_t *pl);
 @extern pltype_t PL_Type (plitem_t *str);
 @extern int PL_Line (plitem_t *str);
