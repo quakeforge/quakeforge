@@ -131,6 +131,12 @@ get_object_key (void *obj, void *unused)
 	return [(id)obj name];
 }
 
+static void
+free_object (void *obj, void *unused)
+{
+	[(id)obj release];
+}
+
 void
 usage (string name)
 {
@@ -181,7 +187,7 @@ main(int argc, string *argv)
 	}
 	queue = [[Array array] retain];
 	output_types = [[Array array] retain];
-	available_types = Hash_NewTable (127, get_object_key, nil, nil);
+	available_types = Hash_NewTable (127, get_object_key, free_object, nil);
 	processed_types = Hash_NewTable (127, get_string_key, nil, nil);
 	scan_types ();
 
@@ -258,5 +264,10 @@ main(int argc, string *argv)
 	Qclose (header_file);
 	Hash_DelTable (available_types);
 	[plist release];
+	[search release];
+	[handles release];
+	[parse release];
+	[queue release];
+	[output_types release];
 	return 0;
 }
