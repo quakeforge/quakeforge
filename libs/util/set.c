@@ -80,8 +80,10 @@ set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter)
 void
 set_pool_init (set_pool_t *set_pool)
 {
-	set_pool->set_freelist = 0;
-	set_pool->set_iter_freelist = 0;
+	*set_pool = (set_pool_t) {
+		.set_blocks = DARRAY_STATIC_INIT (8),
+		.set_iter_blocks = DARRAY_STATIC_INIT (8),
+	};
 }
 
 inline set_t *
