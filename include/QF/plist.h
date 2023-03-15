@@ -294,6 +294,20 @@ int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 */
 qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
+/** Copy contents of one dictionary into another.
+
+	The contents of \a srcDict are added to \a dstDict without affecting
+	\a srcDict. Any collisions in \a dstDict result in those values in
+	\a dstDict being replaced by the the values from \a srcDict: the new
+	key-value pairs override the old.
+
+	\param dstDict  The dictionary to extend
+	\param srcDict  The dictionary from which key-value pairs will be copied
+	\return true if values were copied, false if nothing was copied (either
+	dictionary is null, or not a dictionary, or if \a srcDict was empty)
+*/
+qboolean PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
+
 /** Add an item to an array.
 
 	\param array The array to which the item will be added
@@ -305,6 +319,18 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 	\note the array becomes the owner of the added item.
 */
 qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
+
+/** Append contents of one array to another.
+
+	The contents of \a srcArray are added to \a dstArray without affecting
+	\a srcArray. Those values are appended to the destination array values.
+
+	\param dstArray The array to extend
+	\param srcArray The array from which values will be copied
+	\return true if values were copied, false if nothing was copied (either
+	array is null, or not an array, or if \a srcArray was empty)
+*/
+qboolean PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray);
 
 /** Retrieve the number of items in an array.
 

@@ -414,7 +414,7 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 	dictkey_t	*k;
 
 	if ((k = Hash_Find (dict->tab, key))) {
-		value->users++;
+		PL_Retain (value);
 		PL_Release (k->value);
 		k->value = value;
 	} else {
@@ -423,12 +423,66 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 		if (!k)
 			return false;
 
-		value->users++;
+		PL_Retain (value);
 		k->key = strdup (key);
 		k->value = value;
 
 		Hash_Add (dict->tab, k);
 		DARRAY_APPEND (&dict->keys, k);
+	}
+	return true;
+}
+
+VISIBLE qboolean
+PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict)
+{
+	if (!dstDict || dstDict->type != QFDictionary
+		|| !srcDict || srcDict->type != QFDictionary
+		|| ((pldict_t *) srcDict->data)->keys.size < 1) {
+		return false;
+	}
+	pldict_t   *dst = dstDict->data;
+	pldict_t   *src = srcDict->data;
+	size_t      count = dst->keys.size;
+	DARRAY_RESIZE (&dst->keys, dst->keys.size + src->keys.size);// open space
+	DARRAY_RESIZE (&dst->keys, count);	// put size back so it's correct
+	for (size_t i = 0; i < src->keys.size; i++) {
+		dictkey_t  *key = src->keys.a[i];
+		dictkey_t  *k;
+		if ((k = Hash_Find (dst->tab, key->key))) {
+			PL_Retain (key->value);
+			PL_Release (k->value);
+			k->value = key->value;
+		} else {
+			k = malloc (sizeof (dictkey_t));
+
+			if (!k)
+				return false;
+
+			PL_Retain (key->value);
+			k->key = strdup (key->key);
+			k->value = key->value;
+
+			Hash_Add (dst->tab, k);
+			DARRAY_APPEND (&dst->keys, k);
+		}
+	}
+	return true;
+}
+
+static qboolean
+check_array_size (plarray_t *arr, int count)
+{
+	if (count > arr->maxvals) {
+		int         newmax = (count + 127) & ~127;
+		int         size = newmax * sizeof (plitem_t *);
+		plitem_t  **tmp = realloc (arr->values, size);
+
+		if (!tmp)
+			return false;
+
+		arr->maxvals = newmax;
+		arr->values = tmp;
 	}
 	return true;
 }
@@ -444,17 +498,8 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 
 	arr = (plarray_t *)array->data;
 
-	if (arr->numvals == arr->maxvals) {
-		int         size = (arr->maxvals + 128) * sizeof (plitem_t *);
-		plitem_t  **tmp = realloc (arr->values, size);
-
-		if (!tmp)
-			return false;
-
-		arr->maxvals += 128;
-		arr->values = tmp;
-		memset (arr->values + arr->numvals, 0,
-				(arr->maxvals - arr->numvals) * sizeof (plitem_t *));
+	if (!check_array_size (arr, arr->numvals + 1)) {
+		return false;
 	}
 
 	if (index == -1)
@@ -466,7 +511,7 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 	memmove (arr->values + index + 1, arr->values + index,
 			 (arr->numvals - index) * sizeof (plitem_t *));
 
-	item->users++;
+	PL_Retain (item);
 	arr->values[index] = item;
 	arr->numvals++;
 	return true;
@@ -476,6 +521,26 @@ VISIBLE qboolean
 PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array, item, -1);
+}
+
+VISIBLE qboolean
+PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray)
+{
+	if (!dstArray || dstArray->type != QFArray
+		|| !srcArray || srcArray->type != QFArray
+		|| ((plarray_t *) srcArray->data)->numvals < 1) {
+		return false;
+	}
+	plarray_t  *dst = dstArray->data;
+	plarray_t  *src = srcArray->data;
+	if (!check_array_size (dst, dst->numvals + src->numvals)) {
+		return false;
+	}
+	for (int i = 0; i < src->numvals; i++) {
+		PL_Retain (src->values[i]);
+		dst->values[dst->numvals++] = src->values[i];
+	}
+	return true;
 }
 
 VISIBLE int
