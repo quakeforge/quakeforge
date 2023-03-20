@@ -45,6 +45,14 @@
 #include "d_iface.h"
 #include "mod_internal.h"
 
+static void
+sw_alias_clear (model_t *m, void *data)
+{
+	m->needload = true;
+
+	Cache_Free (&m->cache);
+}
+
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
@@ -64,6 +72,12 @@ sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 		skin->skindesc->skin = texels - (byte *) header;
 		memcpy (texels, skin->texels, skinsize);
 	}
+}
+
+void
+sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
+{
+	alias_ctx->mod->clear = sw_alias_clear;
 }
 
 static void

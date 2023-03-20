@@ -73,6 +73,7 @@ void glsl_Mod_IQMFinish (model_t *mod);
 void sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
 void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
+void sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);

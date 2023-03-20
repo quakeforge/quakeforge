@@ -85,7 +85,7 @@ static vid_model_funcs_t model_funcs = {
 
 	.Mod_MakeAliasModelDisplayLists = sw_Mod_MakeAliasModelDisplayLists,
 	.Mod_LoadAllSkins               = sw_Mod_LoadAllSkins,
-	.Mod_FinalizeAliasModel         = 0,
+	.Mod_FinalizeAliasModel         = sw_Mod_FinalizeAliasModel,
 	.Mod_LoadExternalSkins          = 0,
 	.Mod_IQMFinish                  = sw_Mod_IQMFinish,
 	.alias_cache                    = 1,
