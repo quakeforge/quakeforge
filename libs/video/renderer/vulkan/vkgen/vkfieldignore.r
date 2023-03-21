@@ -9,27 +9,18 @@
 
 -init:(PLItem *)item struct:(Struct *)strct field:(string)fname
 {
-	self = [super init];
+	self = [super init:item struct:strct field:fname];
 	if (!self) {
 		return self;
 	}
 
 	line = [item line];
-	struct_name = str_hold ([strct outname]);
-	field_name = str_hold (fname);
 	return self;
 }
 
 -fromField:(qfot_var_t *)field struct:(Struct *)strct
 {
 	return self;
-}
-
--(void)dealloc
-{
-	str_free (struct_name);
-	str_free (field_name);
-	[super dealloc];
 }
 
 -writeParseData
