@@ -244,12 +244,47 @@ Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 	DARRAY_APPEND (&ctx->renderPasses, pre);
 }
 
+static void
+acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static void
+_update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static void
+_output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t acquire_output_func[] = {
+	{ .func = acquire_output },
+	{}
+};
+static exprfunc_t update_input_func[] = {
+	{ .func = _update_input },
+	{}
+};
+static exprfunc_t output_draw_func[] = {
+	{ .func = _output_draw },
+	{}
+};
+static exprsym_t output_task_syms[] = {
+	{ "acquire_output", &cexpr_function, acquire_output_func },
+	{ "update_input", &cexpr_function, update_input_func },
+	{ "output_draw", &cexpr_function, output_draw_func },
+	{}
+};
+
 void
 Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "output init");
+	QFV_Render_AddTasks (ctx, output_task_syms);
 
 	outputctx_t *octx = ctx->output_context;
 

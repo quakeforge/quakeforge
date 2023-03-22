@@ -182,19 +182,9 @@ typedef struct qfv_renderinfo_s {
 	vec4f_t     color;
 	const char *name;
 
-	struct memsuper_s *memsuper;
-	struct plitem_s *plitem;
-	uint32_t    num_images;
-	qfv_imageinfo_t *images;
-	uint32_t    num_views;
-	qfv_imageviewinfo_t *views;
 	uint32_t    num_renderpasses;
 	qfv_renderpassinfo_t *renderpasses;
 	qfv_output_t output;
-	uint32_t    num_descriptorsets;
-	qfv_descriptorsetinfo_t *descriptorsets;
-	uint32_t    num_layouts;
-	qfv_layoutinfo_t *layouts;
 } qfv_renderinfo_t;
 
 typedef struct qfv_processinfo_s {
@@ -220,8 +210,17 @@ typedef struct qfv_stepinfo_s {
 typedef struct qfv_jobinfo_s {
 	struct memsuper_s *memsuper;
 
+	struct plitem_s *plitem;
 	uint32_t     num_steps;
 	qfv_stepinfo_t *steps;
+
+	uint32_t    num_images;
+	qfv_imageinfo_t *images;
+	uint32_t    num_views;
+	qfv_imageviewinfo_t *views;
+
+	uint32_t    num_descriptorsets;
+	qfv_descriptorsetinfo_t *descriptorsets;
 } qfv_jobinfo_t;
 
 typedef struct qfv_label_s {
@@ -280,20 +279,24 @@ typedef struct qfv_renderpass_s_ {
 	qfv_subpass_t_ *subpasses;
 } qfv_renderpass_t_;
 
-typedef struct qfv_render_s {
+typedef struct qfv_job_s {
 	struct qfv_resource_s *resources;
 	struct qfv_resobj_s *images;
 	struct qfv_resobj_s *image_views;
 
 	uint32_t    num_renderpasses;
-	qfv_renderpass_t_ *renderpasses;
-} qfv_render_t;
+	uint32_t    num_pipelines;
+	uint32_t    num_layouts;
+	VkRenderPass *renderpasses;
+	VkPipeline *pipelines;
+	VkPipelineLayout *layouts;
+} qfv_job_t;
 
 typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
-	qfv_renderinfo_t *renderinfo;
-	qfv_render_t *render;
+	qfv_jobinfo_t *jobinfo;
+	qfv_job_t *job;
 } qfv_renderctx_t;
 
 void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);

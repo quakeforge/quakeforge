@@ -278,12 +278,32 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 }
 
+static void
+update_particles (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static void
+particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
 static exprfunc_t particles_draw_func[] = {
 	{ .func = particles_draw },
 	{}
 };
+static exprfunc_t update_particles_func[] = {
+	{ .func = update_particles },
+	{}
+};
+static exprfunc_t particle_physics_func[] = {
+	{ .func = particle_physics },
+	{}
+};
 static exprsym_t particles_task_syms[] = {
 	{ "particles_draw", &cexpr_function, particles_draw_func },
+	{ "update_particles", &cexpr_function, update_particles_func },
+	{ "particle_physics", &cexpr_function, particle_physics_func },
 	{}
 };
 

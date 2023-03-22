@@ -7,6 +7,10 @@ properties = {
 		particles = "[0.4, 0.5, 0.8, 1]";
 		lights    = "[0.8, 0.6, 0.2, 1]";
 		compose   = "[0.7, 0.7, 0.7, 1]";
+
+		output    = "[0.0, 0.7, 0.7, 1]";
+		waterwarp = "[0.0, 0.7, 0.7, 1]";
+		fisheye   = "[0.0, 0.7, 0.7, 1]";
 	};
 	color_dependency = {
 		src = {
@@ -34,8 +38,8 @@ properties = {
 		imageType = `2d;
 		samples = 1;
 		extent = {
-			width = $output.extent.width;
-			height = $output.extent.height;
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
 			depth = 1;
 		};
 		mipLevels = 1;
@@ -152,6 +156,7 @@ properties = {
 	};
 	compose_base = {
 		@inherit = $pipeline_base;
+		rasterization = $counter_cw_cull_back;
 		vertexInput = {
 			bindings = ();
 			attributes = ();
@@ -456,14 +461,29 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			descriptorSets = (matrix_set, texture_set, oit_set);
-			pushConstantRanges = (
-				{
-					stageFlags = vertex;
-					offset = 0;
-					size = "16 * 4";
-				},
-			);
+			draw = {
+				descriptorSets = (matrix_set, texture_set, oit_set);
+				pushConstantRanges = (
+					{
+						stageFlags = vertex;
+						offset = 0;
+						size = "16 * 4";
+					},
+				);
+			};
+			physics = {
+				descriptorSets = (particle_set);
+				pushConstantRanges = (
+					{
+						stageFlags = compute;
+						offset = 0;
+						size = "4 * 4 + 4";
+					},
+				);
+			};
+			update = {
+				descriptorSets = (particle_set, particle_set, particle_set);
+			};
 		};
 	};
 	fstriangle = {
@@ -499,7 +519,60 @@ properties = {
 		layout = {
 			descriptorSets = (compose_attach, oit_set);
 		};
-	}
+	};
+	output = {
+		@inherit = $compose_base;
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/output.frag;
+			};
+		};
+		layout = {
+			descriptorSets = (matrix_set, output_set);
+		};
+	};
+	waterwarp = {
+		@inherit = $compose_base;
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/waterwarp.frag;
+			};
+		};
+		layout = {
+			descriptorSets = (matrix_set, output_set);
+			pushConstantRanges = (
+				{
+					stageFlags = fragment;
+					offset = 0;
+					size = "4";
+				}
+			);
+		};
+	};
+	fisheye = {
+		@inherit = $compose_base;
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/fisheye.frag;
+			};
+		};
+		layout = {
+			descriptorSets = (matrix_set, output_set);
+			pushConstantRanges = (
+				{
+					stageFlags = fragment;
+					offset = 0;
+					size = "2 * 4";
+				}
+			);
+		};
+	};
 };
 descriptorSetLayouts = {
 	matrix_set = {
@@ -508,7 +581,7 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = uniform_buffer;
 				descriptorCount = 1;
-				stageFlags = vertex|geometry;
+				stageFlags = vertex|geometry|fragment;
 			},
 		);
 	};
@@ -684,6 +757,38 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	particle_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = compute;
+			},
+		);
+	};
+	output_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = combined_image_sampler;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
 };
 images = {
 	depth = {
@@ -714,7 +819,7 @@ images = {
 	output = {
 		@inherit = $image_base;
 		usage = color_attachment|input_attachment|sampled;
-		format = $output.format;
+		format = $render_output.format;
 	};
 };
 views = {
@@ -754,7 +859,7 @@ views = {
 	output = {
 		@inherit = $view_base;
 		image = output;
-		format = $output.format;
+		format = $render_output.format;
 	}
 };
 output = {
@@ -803,16 +908,16 @@ renderpasses = {
 			};
 			output = {
 				@inherit = $attachment_base;
-				format = $output.format;
+				format = $render_output.format;
 				loadOp = clear;
 				storeOp = store;
-				finalLayout = $output.finalLayout;
+				finalLayout = $render_output.finalLayout;
 				view = $views.output;
 			};
 		};
 		framebuffer = {
-			width = $output.extent.width;
-			height = $output.extent.height;
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
 			layers = 1;
 		};
 		subpasses = {
@@ -984,7 +1089,7 @@ renderpasses = {
 						);
 						vertexInput = $particle.vertexInput;
 						inputAssembly = $particle.inputAssembly;
-						layout = $particle.layout;
+						layout = $particle.layout.draw;
 					};
 				};
 			};
@@ -1158,5 +1263,114 @@ renderpasses = {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			viewOffsets = (    0,     0,     0,     0,     0);
 		});
+	};
+	output = {
+		color = "[0, 1, 1, 1]";
+		attachments = {
+			output = {
+				@inherit = $attachment_base;
+				format = $render_output.format;
+				loadOp = clear;
+				storeOp = store;
+				finalLayout = present_src_khr;
+				view = $render_output.view;
+			};
+		};
+		framebuffer = {
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
+			layers = 1;
+		};
+		subpasses = {
+			compose = {
+				color = "[ 0,  0.5,  0.5, 1]";
+				attachments = {
+					color = {
+						output = color_attachment_optimal;
+					};
+				};
+				pipelines = {
+					output = {
+						@inherit = $compose_base;
+
+						color = $color.output;
+						tasks = (
+							{ func = "output_draw"; },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$output.shader.fragment,
+						);
+						layout = $output.layout;
+					};
+				};
+			};
+		};
+	};
+};
+steps = {
+	particles = {
+		compute = {
+			pipelines = {
+				part:update = {
+					color = "[0.3, 0.8, 0.9]";
+					tasks = (
+						{ func = "update_particles"; }
+					);
+					stage = {
+						name = main;
+						module = $builtin/partupdate.comp;
+					};
+					layout = $particle.layout.update;
+				};
+				part:physics = {
+					color = "[0.6, 0.8, 0.9]";
+					tasks = (
+						{ func = "particle_physics"; }
+					);
+					stage = {
+						name = main;
+						module = $builtin/partphysics.comp;
+					};
+					layout = $particle.layout.physics;
+				};
+			};
+		};
+	};
+	shadow = {
+		//currently empty
+	};
+	translucent = {
+		process = {
+			tasks = (
+				{ func = "clear_translucent"; },
+			);
+		};
+	};
+	main = {
+		dependencies = (particles, shadow, translucent);
+		render = {
+			renderpasses = {
+				deferred = $renderpasses.deferred;
+				deferred_cube = $renderpasses.deferred_cube;
+			};
+		};
+	};
+	preoutput = {
+		process = {
+			tasks = (
+				{ func = "acquire_output"; },
+				{ func = "update_input"; },
+			);
+		};
+	};
+	output = {
+		dependencies = (main, preoutput);
+		render = {
+			renderpasses = {
+				output = $renderpasses.output;
+			};
+		};
 	};
 };

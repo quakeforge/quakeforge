@@ -83,9 +83,6 @@ exprtab_t *QFV_CreateSymtab (plitem_t *dict, const char *properties,
 void QFV_DestroySymtab (exprtab_t *tab);
 
 struct qfv_renderctx_s;
-struct qfv_renderinfo_s *QFV_ParseRenderInfo (vulkan_ctx_t *ctx,
-											  plitem_t *item,
-											  struct qfv_renderctx_s *rctx);
 struct memsuper_s;
 int QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, struct memsuper_s *memsuper,
 						 exprtab_t *symtab, const char *ref,

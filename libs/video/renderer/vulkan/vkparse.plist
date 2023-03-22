@@ -635,27 +635,11 @@ parse = {
 	qfv_renderinfo_s = {
 		.name = qfv_renderinfo_t;
 		color = auto;
-		properties = ignore;
 		output = ignore;
-		images = {
-			type = (labeledarray, qfv_imageinfo_t, name);
-			size = num_images;
-			values = images;
-		};
-		views = {
-			type = (labeledarray, qfv_imageviewinfo_t, name);
-			size = num_views;
-			values = views;
-		};
 		renderpasses = {
 			type = (labeledarray, qfv_renderpassinfo_t, name);
 			size = num_renderpasses;
 			values = renderpasses;
-		};
-		descriptorSetLayouts = {
-			type = (labeledarray, qfv_descriptorsetinfo_t, name);
-			size = num_descriptorsets;
-			values = descriptorsets;
 		};
 	};
 	qfv_processinfo_s = {
@@ -676,24 +660,44 @@ parse = {
 			values = dependencies;
 		};
 		render = {
-			type = (single, qfv_renderinfo_t);
+			type = (single, qfv_renderinfo_t, name);
 			value = render;
 		};
 		compute = {
-			type = (single, qfv_computeinfo_t);
+			type = (single, qfv_computeinfo_t, name);
 			value = compute;
 		};
 		process = {
-			type = (single, qfv_processinfo_t);
+			type = (single, qfv_processinfo_t, name);
 			value = process;
 		};
 	};
 	qfv_jobinfo_s = {
 		.name = qfv_jobinfo_t;
+		properties = ignore;
+		output = ignore;
+		images = ignore;
+		views = ignore;
+		renderpasses = ignore;
+		images = {
+			type = (labeledarray, qfv_imageinfo_t, name);
+			size = num_images;
+			values = images;
+		};
+		views = {
+			type = (labeledarray, qfv_imageviewinfo_t, name);
+			size = num_views;
+			values = views;
+		};
 		steps = {
-			type = (array, qfv_stepinfo_t);
+			type = (labeledarray, qfv_stepinfo_t, name);
 			size = num_steps;
 			values = steps;
+		};
+		descriptorSetLayouts = {
+			type = (labeledarray, qfv_descriptorsetinfo_t, name);
+			size = num_descriptorsets;
+			values = descriptorsets;
 		};
 	};
 };

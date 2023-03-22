@@ -64,6 +64,20 @@ static const char * __attribute__((used)) translucent_pass_names[] = {
 	"blend",
 };
 
+static void
+clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+}
+
+static exprfunc_t clear_translucent_func[] = {
+	{ .func = clear_translucent },
+	{}
+};
+static exprsym_t translucent_task_syms[] = {
+	{ "clear_translucent", &cexpr_function, clear_translucent_func },
+	{}
+};
+
 void
 Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 {
@@ -73,6 +87,7 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 
 	qfvPushDebug (ctx, "translucent init");
+	QFV_Render_AddTasks (ctx, translucent_task_syms);
 
 	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
 	ctx->translucent_context = tctx;
