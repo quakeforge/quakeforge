@@ -14,6 +14,7 @@ export MINGW_USR=$MINGW/usr/i686-w64-mingw32.static
 export PKG_CONFIG_LIBDIR=$MINGW_USR/lib/pkgconfig
 export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
 export PATH=$MINGW/usr/bin:$PATH
+export QCSYSPREFIX=$MINGW_USR
 ../../configure \
 	--host=i686-w64-mingw32.static \
 	--disable-shared \

@@ -16,7 +16,7 @@ if test "x$HAVE_VULKAN" != xno; then
 			VULKAN_QCFLAGS="-I$VULKAN_SDK/include"
 			VULKAN_LDFLAGS="-L$VULKAN_SDK/lib"
 		],[
-			VULKAN_QCFLAGS="-I/usr/include"
+			VULKAN_QCFLAGS="-I${QCSYSPREFIX-/usr}/include"
 		])
 	  ], [HAVE_VULKAN=no])
 	CPPFLAGS="$save_CPPFLAGS"

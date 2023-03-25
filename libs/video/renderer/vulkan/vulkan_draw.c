@@ -72,7 +72,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char *draw_pass_names[] = {
+static const char * __attribute__((used)) draw_pass_names[] = {
 	"2d",
 };
 

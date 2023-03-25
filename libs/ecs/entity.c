@@ -120,7 +120,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		if (subpool->num_ranges - subpool->available) {
 			uint32_t    range_count = subpool->num_ranges - subpool->available;
 			uint32_t   *range = find_range (subpool, ind);
-			while (range - subpool->ranges < range_count) {
+			while ((size_t) (range - subpool->ranges) < range_count) {
 				uint32_t    end = --*range;
 				range++;
 				if (ind < end) {
