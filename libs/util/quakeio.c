@@ -412,7 +412,7 @@ VISIBLE char *
 Qgets (QFile *file, char *buf, int count)
 {
 	char       *ret = buf;
-	char        c;
+	int         c;
 
 	while (buf - ret < count - 1) {
 		c = Qgetc (file);
