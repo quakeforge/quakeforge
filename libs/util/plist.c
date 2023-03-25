@@ -577,7 +577,7 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 	item->users--;
 }
 
-static void __attribute__((format(printf, 2, 3)))
+static void __attribute__((format(PRINTF, 2, 3)))
 pl_error (pldata_t *pl, const char *fmt, ...)
 {
 	if (!pl->errmsg) {
