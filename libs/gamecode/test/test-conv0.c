@@ -4,11 +4,11 @@
 
 static pr_ivec4_t int_conv_init[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
-	{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float 1e30, -1e30
+	{ 0x3fc00000, 0xbfc00000, 0x40100000, 0xc0100000},	//float 1.5, -1.5, 2.25, -2.25
 	{         99, 0x80000000, 0x80000000,         99},	//long
 	{        256,          0, 0x7fffffff,          0},	//long
-	{ 0x39a08cea, 0x46293e59, 0x39a08cea, 0xc6293e59},	//double 1e30, -1e30
 	{          0, 0x3ff80000,          0, 0xbff80000},	//double 1.5, -1.5
+	{          0, 0x40020000,          0, 0xc0020000},	//double 2.25, -2.25
 	{          5,         -5, 0x80000000, 0x7fffffff},	//uint
 	{         ~0,          1, 0x80000000,          0},	//bool32
 	{         99, 0x80000000, 0x80000000,         99},	//ulong
@@ -27,11 +27,11 @@ static pr_ivec4_t int_conv_init[] = {
 
 static pr_ivec4_t int_conv_expect[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
-	{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float
+	{ 0x3fc00000, 0xbfc00000, 0x40100000, 0xc0100000},	//float 1.5, -1.5, 2.25, -2.25
 	{         99, 0x80000000, 0x80000000,         99},	//long
 	{        256,          0, 0x7fffffff,          0},	//long
-	{ 0x39a08cea, 0x46293e59, 0x39a08cea, 0xc6293e59},	//double 1e30, -1e30
 	{          0, 0x3ff80000,          0, 0xbff80000},	//double 1.5, -1.5
+	{          0, 0x40020000,          0, 0xc0020000},	//double 2.25, -2.25
 	{          5,         -5, 0x80000000, 0x7fffffff},	//uint
 	{         ~0,          1, 0x80000000,          0},	//bool32
 	{         99, 0x80000000, 0x80000000,         99},	//ulong
@@ -39,9 +39,9 @@ static pr_ivec4_t int_conv_expect[] = {
 	{         ~0,         ~0,         ~0,          0},	//bool64
 	{          0,         ~0,          0,          0},	//bool64
 	{          5,         -5, 0x80000000, 0x7fffffff},	// int
-	{          1,         -1, 0x80000000, 0x80000000},	// float undef?
+	{          1,         -1,          2,         -2},	// float
 	{         99, 0x80000000,        256, 0x7fffffff},	// long
-	{ 0x80000000, 0x80000000,          1,         -1},	// double undef?
+	{          1,         -1,          2,         -2},	// double
 	{          5,         -5, 0x80000000, 0x7fffffff},	// uint
 	{          1,          1,          1,          0},	// bool32
 	{         99, 0x80000000,        256, 0x7fffffff},	// ulong
