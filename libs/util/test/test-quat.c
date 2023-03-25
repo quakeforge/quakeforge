@@ -352,7 +352,7 @@ static struct {
 		{0, 0, 1,
 		 1, 0, 0,
 		 0, 1, 0}},
-#if defined(__i686__) && defined(__OPTIMIZE__)
+#if (defined(__i686__) || defined(__aarch64__)) && defined(__OPTIMIZE__)
 	// the fp unit carries more precision than a 32-bit float, so
 	// the close-to-zero errors are different
 	{{s05, 0.0, 0.0, s05},
