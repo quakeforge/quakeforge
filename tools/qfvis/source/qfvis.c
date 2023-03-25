@@ -242,14 +242,13 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	// "nan" because 0x7fffffff is nan when viewed as a float
 	static const vec4i_t onenan = {0x3f800000,0x3f800000,0x3f800000,~0u >> 1};
 	static const vec4i_t nan = { ~0u >> 1, ~0u >> 1, ~0u >> 1, ~0u >> 1};
-	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == (__m128) onenan;
+	vec4i_t     x = ((vec4i_t) split & nan) == onenan;
 	// plane vector has -dist in w
-	vec4f_t     y = _mm_and_ps (split, (__m128) x) * -split[3];
+	vec4f_t     y = (vec4f_t) ((vec4i_t) split & x) * -split[3];
 #ifdef __SSE3__
 	mid = _mm_blendv_ps (mid, y, (__m128) x);
 #else
-	mid = (vec4f_t) ((vec4i_t) _mm_and_ps (y, (__m128) x) |
-					 (vec4i_t) _mm_and_ps (mid, (__m128) ~x));
+	mid = (vec4f_t) (((vec4i_t) y & x) | ((vec4i_t) mid & ~x));
 #endif
 //	if (isnan (mid[0])) *(int *) 0 = 0;
 	return mid;

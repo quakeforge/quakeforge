@@ -98,37 +98,41 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
-AC_ARG_ENABLE(simd,
-	AS_HELP_STRING([--enable-simd@<:@=arg@:.@],
-		[enable SIMD support (default auto)]),
-	[],
-	[enable_simd=yes]
-)
+if test "x$host_cpu" = xaarch64; then
+	simd=neon
+else
+	AC_ARG_ENABLE(simd,
+		AS_HELP_STRING([--enable-simd@<:@=arg@:.@],
+			[enable SIMD support (default auto)]),
+		[],
+		[enable_simd=yes]
+	)
 
-case "$enable_simd" in
-	no)
-		simd=no
-		;;
-	sse|sse2|avx|avx2)
-		QF_CC_OPTION(-m$enable_simd)
-		simd=$enable_simd
-		;;
-	yes)
-		for simd in avx2 avx sse2 sse; do
-			if lscpu | grep -q -w $simd; then
-				QF_CC_OPTION(-m$simd)
-				break
-			fi
-		done
-		;;
-esac
-case "$simd" in
-	avx*)
-		;;
-	*)
-		QF_CC_OPTION(-Wno-psabi)
-		;;
-esac
+	case "$enable_simd" in
+		no)
+			simd=no
+			;;
+		sse|sse2|avx|avx2)
+			QF_CC_OPTION(-m$enable_simd)
+			simd=$enable_simd
+			;;
+		yes)
+			for simd in avx2 avx sse2 sse; do
+				if lscpu | grep -q -w $simd; then
+					QF_CC_OPTION(-m$simd)
+					break
+				fi
+			done
+			;;
+	esac
+	case "$simd" in
+		avx*)
+			;;
+		*)
+			QF_CC_OPTION(-Wno-psabi)
+			;;
+	esac
+fi
 
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then

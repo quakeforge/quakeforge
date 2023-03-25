@@ -28,8 +28,6 @@
 #ifndef __QF_simd_vec2i_h
 #define __QF_simd_vec2i_h
 
-#include <immintrin.h>
-#include <math.h>
 
 #include "QF/simd/types.h"
 
@@ -59,7 +57,7 @@ VISIBLE
 int
 any2i (vec2i_t v)
 {
-	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+	vec2i_t     t = v == (vec2i_t) {0, 0};
 #ifndef __SSSE3__
 	return (t[0] + t[1]) > -2;
 #else
@@ -75,7 +73,7 @@ VISIBLE
 int
 all2i (vec2i_t v)
 {
-	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+	vec2i_t     t = v == (vec2i_t) {0, 0};
 #ifndef __SSSE3__
 	return (t[0] + t[1]) == 0;
 #else
@@ -91,7 +89,7 @@ VISIBLE
 int
 none2i (vec2i_t v)
 {
-	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+	vec2i_t     t = v == (vec2i_t) {0, 0};
 #ifndef __SSSE3__
 	return (t[0] + t[1]) == -2;
 #else

@@ -28,7 +28,11 @@
 #ifndef __QF_simd_vec4d_h
 #define __QF_simd_vec4d_h
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
 #include <immintrin.h>
+#endif
 
 #include "QF/simd/types.h"
 #include "QF/simd/vec2d.h"
