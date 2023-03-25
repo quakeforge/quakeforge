@@ -26,7 +26,7 @@ static pr_int_t string_globals_expect[] = {
 	-1,  0,  0,  0,   0, -1,  0, -1,   0,  0, -1,  0,   0, -1,  0, -1,	// eq
 	 0, -1, -1, -1,   0,  0, -1,  0,   0,  0,  0,  0,   0,  0, -1,  0,	// lt
 	 0,  0,  0,  0,  -1,  0,  0,  0,  -1, -1,  0, -1,  -1,  0,  0,  0,	// gt
-	 0,-97,-100,-97, 97,  0, -3,  0, 100,  3,  0,  3,  97,  0, -3,  0,	// cmp
+	 0, -1, -1, -1,   1,  0, -1,  0,   1,  1,  0,  1,   1,  0, -1,  0,	// cmp
 	-1,  0,  0,  0,  -1, -1,  0, -1,  -1, -1, -1, -1,  -1, -1,  0, -1,	// ge
 	-1, -1, -1, -1,   0, -1, -1, -1,   0,  0, -1,  0,   0, -1, -1, -1,	// le
 	-1, -1, -1, -1,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,	// not
@@ -59,18 +59,22 @@ static dstatement_t string_statements[] = {
 	{ OP(1, 2, 3, OP_LT_S),  0, 0, 16 },
 	{ OP(1, 2, 3, OP_GT_S),  0, 0, 32 },
 	{ OP(1, 2, 3, OP_CMP_S), 0, 0, 48 },
+	{ OP(3, 0, 0, OP_LT_I_1),  48, 0, 7 },	// convert < 0, 0, > 0 to -1, 0, 1
+	{ OP(3, 0, 3, OP_GT_I_1),  48, 0, 48 },	// ...
+	{ OP(0, 3, 3, OP_SUB_I_1), 7, 48, 48 },	// ...
 	{ OP(1, 2, 3, OP_GE_S),  0, 0, 64 },
 	{ OP(1, 2, 3, OP_LE_S),  0, 0, 80 },
 	{ OP(1, 2, 3, OP_NOT_S), 0, 0, 96 },
 
 //      }
-	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_A), -16, 0, 0 },
 //  }
 };
 
 test_t tests[] = {
 	{
 		.desc = "string",
+		.extra_globals = 4 * 1,
 		.num_globals = num_globals (string_globals_init, string_globals_expect),
 		.num_statements = num_statements (string_statements),
 		.statements = string_statements,

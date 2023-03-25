@@ -4,13 +4,11 @@
 
 static pr_ivec4_t ulong_conv_init[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
-	//XXX{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float 1e30, -1e30
-	{ 0x3fc00000, 0xbfc00000, 0, 0},	//float 1e30, -1e30
+	{ 0x3fc00000, 0x40100000, 0x40700000, 0x40a00000},	//float 1.5, 2.25, 3.75, 5
 	{         99, 0x80000000, 0x80000000,         99},	//long
 	{        256,          0, 0x7fffffff,          0},	//long
-	//XXX{ 0x39a08cea, 0x46293e59, 0x39a08cea, 0xc6293e59},	//double 1e30, -1e30
-	{ 0, 0, 0, 0},	//double 1e30, -1e30
-	{          0, 0x3ff80000,          0, 0xbff80000},	//double 1.5, -1.5
+	{          0, 0x3ff80000,          0, 0x40020000},	//double 1.5, 2.25, 3.75, 5
+	{          0, 0x400e0000,          0, 0x40140000},
 	{          5,         -5, 0x80000000, 0x7fffffff},	//uint
 	{         ~0,          1, 0x80000000,          0},	//bool32
 	{         99, 0x80000000, 0x80000000,         99},	//ulong
@@ -35,37 +33,32 @@ static pr_ivec4_t ulong_conv_init[] = {
 	{  0,  0, 0, 0},
 };
 
-/* Note that these tests fail when compiled with clang due to difference
- * between clang and gcc. However, unlike test-conv4, the failure is
- * consistent between optimized and unoptimized: all tests fail either way.
- * Inspecting the results, it seems that clang sets negative floats and doubles
- * to 0 when casting to unsigned long.
- */
 static pr_ivec4_t ulong_conv_expect[] = {
 	{          5,         -5, 0x80000000, 0x7fffffff},	//int
 	//XXX{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	//float 1e30, -1e30
-	{ 0x3fc00000, 0xbfc00000, 0, 0},	//float 1e30, -1e30
+	{ 0x3fc00000, 0x40100000, 0x40700000, 0x40a00000},	//float 1.5, 2.25, 3.75, 5
 	{         99, 0x80000000, 0x80000000,         99},	//long
 	{        256,          0, 0x7fffffff,          0},	//long
-	//XXX{ 0x39a08cea, 0x46293e59, 0x39a08cea, 0xc6293e59},	//double 1e30, -1e30
-	{ 0, 0, 0, 0},	//double 1e30, -1e30
-	{          0, 0x3ff80000,          0, 0xbff80000},	//double 1.5, -1.5
+
+	{          0, 0x3ff80000,          0, 0x40020000},	//double 1.5, 2.25, 3.75, 5
+	{          0, 0x400e0000,          0, 0x40140000},
 	{          5,         -5, 0x80000000, 0x7fffffff},	//uint
 	{         ~0,          1, 0x80000000,          0},	//bool32
+
 	{         99, 0x80000000, 0x80000000,         99},	//ulong
 	{        256,          0, 0x7fffffff,          0},	//ulong
 	{         ~0,         ~0,         ~0,          0},	//bool64
 	{          0,         ~0,          0,          0},	//bool64
+
 	{          5,          0,         -5, 0xffffffff},	// int
 	{ 0x80000000, 0xffffffff, 0x7fffffff,          0},
-	{          1,          0,         -1,         -1},	// float
-	//XXX{          0,          0,          0, 0x80000000},	// undef?
-	{          0,          0,          0, 0},	// undef?
+	{          1,          0,          2,          0},	// float
+	{          3,          0,          5,          0},
+
 	{         99, 0x80000000, 0x80000000,         99},	// long
 	{        256,          0, 0x7fffffff,          0},
-	//XXX{          0,          0,          0, 0x80000000},	// double undef?
-	{          0,          0,          0, 0},	// double undef?
-	{          1,          0,         -1,         -1},
+	{          1,          0,          2,          0},	// double
+	{          3,          0,          5,          0},
 	{          5,          0,         -5,          0},	// uint
 	{ 0x80000000,          0, 0x7fffffff,          0},
 	{          1,          0,          1,          0},	// bool32
