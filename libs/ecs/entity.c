@@ -126,7 +126,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		// if ind >= the last range, then it is outside the subpools
 		if (range_count && ind < subpool->ranges[range_count - 1]) {
 			uint32_t   *range = find_range (subpool, ind);
-			while (range - subpool->ranges < range_count) {
+			while ((size_t) (range - subpool->ranges) < range_count) {
 				uint32_t    end = --*range;
 				range++;
 				if (ind < end) {
