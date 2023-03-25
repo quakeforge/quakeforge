@@ -29,7 +29,11 @@
 #ifndef __QF_simd_vec2f_h
 #define __QF_simd_vec2f_h
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
 #include <immintrin.h>
+#endif
 #include <math.h>
 
 #include "QF/simd/types.h"
@@ -67,9 +71,13 @@ VISIBLE
 vec2f_t
 vsqrt2f (vec2f_t v)
 {
+#ifdef __aarch64__
+	return vsqrt_f32 (v);
+#else
 	vec4f_t     t = { v[0], v[1], 0, 0 };
 	t = _mm_sqrt_ps (t);
 	return (vec2f_t) { t[0], t[1] };
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs

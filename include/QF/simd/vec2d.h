@@ -29,7 +29,11 @@
 #ifndef __QF_simd_vec2d_h
 #define __QF_simd_vec2d_h
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
 #include <immintrin.h>
+#endif
 
 #include "QF/simd/types.h"
 
@@ -50,7 +54,11 @@ VISIBLE
 vec2d_t
 vsqrt2d (vec2d_t v)
 {
+#ifdef __aarch64__
+	return vsqrtq_f64 (v);
+#else
 	return _mm_sqrt_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2D_Funcs

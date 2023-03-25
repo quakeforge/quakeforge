@@ -28,7 +28,11 @@
 #ifndef __QF_simd_vec4f_h
 #define __QF_simd_vec4f_h
 
+#ifdef __aarch64__
+#include <arm_neon.h>
+#else
 #include <immintrin.h>
+#endif
 #include <math.h>
 
 #include "QF/simd/types.h"
@@ -121,11 +125,15 @@ VISIBLE
 vec4f_t
 vsqrt4f (vec4f_t v)
 {
+#ifdef __aarch64__
+	return vsqrtq_f32 (v);
+#else
 #ifndef __SSE__
 	vec4f_t     r = { sqrtf (v[0]), sqrtf (v[1]), sqrtf (v[2]), sqrtf (v[3]) };
 	return r;
 #else
 	return _mm_sqrt_ps (v);
+#endif
 #endif
 }
 

@@ -28,8 +28,6 @@
 #ifndef __QF_simd_mat4f_h
 #define __QF_simd_mat4f_h
 
-#include <immintrin.h>
-
 #include "QF/simd/types.h"
 
 GNU89INLINE inline void maddf (mat4f_t c, const mat4f_t a, const mat4f_t b);
@@ -172,27 +170,27 @@ mat4fquat (mat4f_t m, vec4f_t q)
 #undef m
 	{
 		vec4f_t a = xq;
-		vec4f_t b = _mm_xor_ps (shuff103 (yq), (__m128) mpm);
-		vec4f_t c = _mm_xor_ps (shuff230 (zq), (__m128) pmm);
-		vec4f_t d = _mm_xor_ps (shuff321 (wq), (__m128) mmp);
+		vec4f_t b = (vec4f_t) ((vec4i_t) shuff103 (yq) ^ mpm);
+		vec4f_t c = (vec4f_t) ((vec4i_t) shuff230 (zq) ^ pmm);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff321 (wq) ^ mmp);
 		// column: ww + xx - yy - zz // 2xy + 2wz // 2zx - 2wy // 0
-		m[0] = _mm_and_ps (a + b - c - d, (__m128) mask);
+		m[0] = (vec4f_t) ((vec4i_t) (a + b - c - d) & mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (shuff103 (xq), (__m128) mpm);
+		vec4f_t a = (vec4f_t) ((vec4i_t) shuff103 (xq) ^ mpm);
 		vec4f_t b = yq;
-		vec4f_t c = _mm_xor_ps (shuff321 (zq), (__m128) mmp);
-		vec4f_t d = _mm_xor_ps (shuff230 (wq), (__m128) pmm);
+		vec4f_t c = (vec4f_t) ((vec4i_t) shuff321 (zq) ^ mmp);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff230 (wq) ^ pmm);
 		// column: 2xy - 2wz // ww - xx + yy - zz // 2yz + 2wx // 0
-		m[1] = _mm_and_ps (b + c - a - d, (__m128) mask);
+		m[1] = (vec4f_t) ((vec4i_t) (b + c - a - d) & mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (shuff230 (xq), (__m128) pmm);
-		vec4f_t b = _mm_xor_ps (shuff321 (yq), (__m128) mmp);
+		vec4f_t a = (vec4f_t) ((vec4i_t) shuff230 (xq) ^ pmm);
+		vec4f_t b = (vec4f_t) ((vec4i_t) shuff321 (yq) ^ mmp);
 		vec4f_t c = zq;
-		vec4f_t d = _mm_xor_ps (shuff103 (wq), (__m128) mpm);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff103 (wq) ^ mpm);
 		// column: 2xz + 2wy // 2yz - 2wx // ww - xx - yy + zz // 0
-		m[2] = _mm_and_ps (a - b + c - d, (__m128) mask);
+		m[2] = (vec4f_t) ((vec4i_t) (a - b + c - d) & mask);
 	}
 	m[3] = (vec4f_t) { 0, 0, 0, 1 };
 }

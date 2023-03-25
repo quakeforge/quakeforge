@@ -105,30 +105,4 @@ typedef struct vspheref_s {
 	float       radius;
 } vspheref_t;
 
-#include <immintrin.h>
-#ifndef __SSE__
-#define _mm_xor_ps __qf_mm_xor_ps
-#define _mm_and_ps __qf_mm_and_ps
-GNU89INLINE inline __m128 _mm_xor_ps (__m128 a, __m128 b);
-GNU89INLINE inline __m128 _mm_and_ps (__m128 a, __m128 b);
-#ifndef IMPLEMENT_MAT4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-__m128 _mm_xor_ps (__m128 a, __m128 b)
-{
-	return (__m128) ((vec4i_t) a ^ (vec4i_t) b);
-}
-#ifndef IMPLEMENT_MAT4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-__m128 _mm_and_ps (__m128 a, __m128 b)
-{
-	return (__m128) ((vec4i_t) a & (vec4i_t) b);
-}
-#endif
-
 #endif//__QF_simd_types_h

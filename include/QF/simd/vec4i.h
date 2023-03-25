@@ -28,7 +28,6 @@
 #ifndef __QF_simd_vec4i_h
 #define __QF_simd_vec4i_h
 
-#include <immintrin.h>
 #include <math.h>
 
 #include "QF/simd/types.h"
