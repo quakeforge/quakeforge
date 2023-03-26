@@ -238,8 +238,10 @@ typedef struct qfv_bar_s {
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	VkPipelineBindPoint bindPoint;
+	uint32_t    dispatch[3];
 	VkPipeline  pipeline;
 	VkPipelineLayout layout;
+
 	VkViewport  viewport;
 	VkRect2D    scissor;
 	struct qfv_push_constants_s *push_constants;
@@ -279,7 +281,34 @@ typedef struct qfv_renderpass_s_ {
 	qfv_subpass_t_ *subpasses;
 } qfv_renderpass_t_;
 
+typedef struct qfv_render_s {
+	qfv_label_t label;
+	qfv_renderpass_t_ *active;
+	qfv_renderpass_t_ *renderpasses;
+	uint32_t    num_renderpasses;
+} qfv_render_t;
+
+typedef struct qfv_compute_s {
+	qfv_label_t label;
+	qfv_pipeline_t *pipelines;
+	uint32_t    pipeline_count;
+} qfv_compute_t;
+
+typedef struct qfv_process_s {
+	qfv_label_t label;
+	qfv_taskinfo_t *tasks;
+	uint32_t    num_tasks;
+} qfv_process_t;
+
+typedef struct qfv_step_s {
+	qfv_label_t label;
+	qfv_render_t *render;
+	qfv_compute_t *compute;
+	qfv_process_t *process;
+} qfv_step_t;
+
 typedef struct qfv_job_s {
+	qfv_label_t label;
 	struct qfv_resource_s *resources;
 	struct qfv_resobj_s *images;
 	struct qfv_resobj_s *image_views;
@@ -287,9 +316,11 @@ typedef struct qfv_job_s {
 	uint32_t    num_renderpasses;
 	uint32_t    num_pipelines;
 	uint32_t    num_layouts;
+	uint32_t    num_steps;
 	VkRenderPass *renderpasses;
 	VkPipeline *pipelines;
 	VkPipelineLayout *layouts;
+	qfv_step_t *steps;
 } qfv_job_t;
 
 typedef struct qfv_renderctx_s {
