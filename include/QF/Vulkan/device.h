@@ -12,7 +12,7 @@ typedef struct qfv_devfuncs_s {
 typedef struct qfv_queue_s {
 	struct qfv_device_s *device;
 
-	int32_t     queueFamily;
+	uint32_t    queueFamily;
 	VkQueue     queue;
 } qfv_queue_t;
 
