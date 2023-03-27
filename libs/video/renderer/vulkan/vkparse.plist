@@ -36,6 +36,8 @@ search = (
 	qfv_descriptorsetinfo_t,
 	qfv_imageinfo_t,
 	qfv_imageviewinfo_t,
+	qfv_bufferinfo_t,
+	qfv_bufferviewinfo_t,
 	qfv_dependencyinfo_t,
 	qfv_attachmentinfo_t,
 	qfv_attachmentrefinfo_t,
@@ -623,6 +625,13 @@ parse = {
 			values = bindings;
 		};
 	};
+	qfv_bufferviewinfo_s = {
+		.name = qfv_bufferviewinfo_t;
+		buffer = auto;
+		format = auto;
+		offset = auto;
+		range = auto;
+	};
 	qfv_computeinfo_s = {
 		.name = qfv_computeinfo_t;
 		color = auto;
@@ -684,10 +693,20 @@ parse = {
 			size = num_images;
 			values = images;
 		};
-		views = {
+		imageviews = {
 			type = (labeledarray, qfv_imageviewinfo_t, name);
-			size = num_views;
-			values = views;
+			size = num_imageviews;
+			values = imageviews;
+		};
+		buffers = {
+			type = (labeledarray, qfv_bufferinfo_t, name);
+			size = num_buffers;
+			values = buffers;
+		};
+		bufferviews = {
+			type = (labeledarray, qfv_bufferviewinfo_t, name);
+			size = num_bufferviews;
+			values = bufferviews;
 		};
 		steps = {
 			type = (labeledarray, qfv_stepinfo_t, name);

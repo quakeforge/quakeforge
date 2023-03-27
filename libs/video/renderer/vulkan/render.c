@@ -161,7 +161,9 @@ QFV_LoadRenderInfo (vulkan_ctx_t *ctx)
 
 typedef struct {
 	uint32_t    num_images;
-	uint32_t    num_views;
+	uint32_t    num_imageviews;
+	uint32_t    num_buffers;
+	uint32_t    num_bufferviews;
 	uint32_t    num_layouts;
 
 	uint32_t    num_steps;
@@ -272,7 +274,9 @@ static void
 count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 {
 	counts->num_images += jobinfo->num_images;
-	counts->num_views += jobinfo->num_views;
+	counts->num_imageviews += jobinfo->num_imageviews;
+	counts->num_buffers += jobinfo->num_buffers;
+	counts->num_bufferviews += jobinfo->num_bufferviews;
 	for (uint32_t i = 0; i < jobinfo->num_steps; i++) {
 		count_step_stuff (&jobinfo->steps[i], counts);
 	}
@@ -287,7 +291,7 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 
 	job->resources = malloc (sizeof(qfv_resource_t)
 								+ counts->num_images * sizeof (qfv_resobj_t)
-								+ counts->num_views * sizeof (qfv_resobj_t));
+								+ counts->num_imageviews * sizeof (qfv_resobj_t));
 	job->images = (qfv_resobj_t *) &job->resources[1];
 	job->image_views = &job->images[counts->num_images];
 
@@ -295,7 +299,7 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 		.name = "render",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = counts->num_images + counts->num_views,
+		.num_objects = counts->num_images + counts->num_imageviews,
 		.objects = job->images,
 	};
 	for (uint32_t i = 0; i < counts->num_images; i++) {
@@ -318,8 +322,8 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 		};
 	}
 	int         error = 0;
-	for (uint32_t i = 0; i < counts->num_views; i++) {
-		__auto_type view = &jinfo->views[i];
+	for (uint32_t i = 0; i < counts->num_imageviews; i++) {
+		__auto_type view = &jinfo->imageviews[i];
 		job->image_views[i] = (qfv_resobj_t) {
 			.name = view->name,
 			.type = qfv_res_image_view,
@@ -1125,24 +1129,24 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 }
 
 static VkImageView __attribute__((pure, used))
-find_view (qfv_reference_t *ref, qfv_renderctx_t *rctx)
+find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
 {
 	__auto_type jinfo = rctx->jobinfo;
 	__auto_type job = rctx->job;
 	const char *name = ref->name;
 
-	if (strncmp (name, "$views.", 7) == 0) {
+	if (strncmp (name, "$imageviews.", 7) == 0) {
 		name += 7;
 	}
 
-	for (uint32_t i = 0; i < jinfo->num_views; i++) {
-		__auto_type vi = &jinfo->views[i];
+	for (uint32_t i = 0; i < jinfo->num_imageviews; i++) {
+		__auto_type vi = &jinfo->imageviews[i];
 		__auto_type vo = &job->image_views[i];
 		if (strcmp (name, vi->name) == 0) {
 			return vo->image_view.view;
 		}
 	}
-	Sys_Error ("%d:invalid view: %s", ref->line, ref->name);
+	Sys_Error ("%d:invalid imageview: %s", ref->line, ref->name);
 }
 
 void
@@ -1184,7 +1188,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx)
 		.layers = rpInfo->framebuffer.layers,
 	};
 	for (uint32_t i = 0; i < rpInfo->num_attachments; i++) {
-		attachments[i] = find_view (&rpInfo->attachments[i].view, rctx);
+		attachments[i] = find_imageview (&rpInfo->attachments[i].view, rctx);
 	}
 
 	qfv_device_t *device = ctx->device;

@@ -822,7 +822,7 @@ images = {
 		format = $render_output.format;
 	};
 };
-views = {
+imageviews = {
 	depth = {
 		@inherit = $view_base;
 		image = depth;
@@ -877,34 +877,34 @@ renderpasses = {
 				loadOp = clear;
 				finalLayout = depth_stencil_attachment_optimal;
 				clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
-				view = $views.depth;
+				view = $imageviews.depth;
 			};
 			color = {
 				@inherit = $attachment_base;
 				format = $images.color.format;
 				loadOp = clear;
-				view = $views.color;
+				view = $imageviews.color;
 			};
 			emission = {
 				@inherit = $attachment_base;
 				format = $images.emission.format;
 				loadOp = clear;
-				view = $views.emission;
+				view = $imageviews.emission;
 			};
 			normal = {
 				@inherit = $attachment_base;
 				format = $images.normal.format;
-				view = $views.normal;
+				view = $imageviews.normal;
 			};
 			position = {
 				@inherit = $attachment_base;
 				format = $images.position.format;
-				view = $views.position;
+				view = $imageviews.position;
 			};
 			opaque = {
 				@inherit = $attachment_base;
 				format = $images.opaque.format;
-				view = $views.opaque;
+				view = $imageviews.opaque;
 			};
 			output = {
 				@inherit = $attachment_base;
@@ -912,7 +912,7 @@ renderpasses = {
 				loadOp = clear;
 				storeOp = store;
 				finalLayout = $render_output.finalLayout;
-				view = $views.output;
+				view = $imageviews.output;
 			};
 		};
 		framebuffer = {

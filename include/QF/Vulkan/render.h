@@ -65,6 +65,23 @@ typedef struct qfv_imageviewinfo_s {
 	VkImageSubresourceRange subresourceRange;
 } qfv_imageviewinfo_t;
 
+typedef struct qfv_bufferinfo_s {
+	const char *name;
+	VkBufferCreateFlags flags;
+	VkDeviceSize size;
+	VkBufferUsageFlags usage;
+	VkSharingMode sharingMode;
+} qfv_bufferinfo_t;
+
+typedef struct qfv_bufferviewinfo_s {
+	const char *name;
+	VkBufferViewCreateFlags flags;
+	qfv_reference_t buffer;
+	VkFormat    format;
+	VkDeviceSize offset;
+	VkDeviceSize range;
+} qfv_bufferviewinfo_t;
+
 typedef struct qfv_dependencymask_s {
 	VkPipelineStageFlags stage;
 	VkAccessFlags access;
@@ -215,9 +232,13 @@ typedef struct qfv_jobinfo_s {
 	qfv_stepinfo_t *steps;
 
 	uint32_t    num_images;
+	uint32_t    num_imageviews;
 	qfv_imageinfo_t *images;
-	uint32_t    num_views;
-	qfv_imageviewinfo_t *views;
+	qfv_imageviewinfo_t *imageviews;
+	uint32_t    num_buffers;
+	uint32_t    num_bufferviews;
+	qfv_imageinfo_t *buffers;
+	qfv_imageviewinfo_t *bufferviews;
 
 	uint32_t    num_descriptorsets;
 	qfv_descriptorsetinfo_t *descriptorsets;
