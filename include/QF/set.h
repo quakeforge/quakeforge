@@ -40,7 +40,7 @@
 ///@{
 
 //FIXME other archs
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 typedef uint64_t set_bits_t;
 #else
 typedef uint32_t set_bits_t;
