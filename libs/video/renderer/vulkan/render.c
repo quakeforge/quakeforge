@@ -51,6 +51,34 @@
 
 #include "vkparse.h"
 
+static VkCommandBuffer
+get_cmd_buffer (vulkan_ctx_t *ctx, int secondary)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type rctx = ctx->render_context;
+	__auto_type job = rctx->job;
+
+	VkCommandBufferAllocateInfo cinfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.commandPool = job->command_pool,
+		.level = secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY
+						   : VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+	};
+	VkCommandBuffer cmd;
+	dfunc->vkAllocateCommandBuffers (device->dev, &cinfo, &cmd);
+	return cmd;
+}
+
+static void
+run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, void *ctx)
+{
+	for (uint32_t i = 0; i < task_count; i++) {
+		tasks[i].func->func (tasks[i].params, 0, ctx);
+	}
+}
+
 static void
 run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
@@ -59,12 +87,19 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &pipeline->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &pipeline->scissor);
-	if (pipeline->num_descriptor_sets) {
+
+	qfv_taskctx_t taskctx = {
+		.ctx = ctx,
+		.pipeline = pipeline,
+	};
+	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
+
+	if (pipeline->num_descriptorsets) {
 		dfunc->vkCmdBindDescriptorSets (cmd, pipeline->bindPoint,
 										pipeline->layout,
-										pipeline->first_descriptor_set,
-										pipeline->num_descriptor_sets,
-										pipeline->descriptor_sets,
+										pipeline->first_descriptorset,
+										pipeline->num_descriptorsets,
+										pipeline->descriptorsets,
 										0, 0);
 	}
 	if (pipeline->num_push_constants) {
@@ -76,11 +111,10 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
 static void
-run_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx)
+run_subpass (qfv_subpass_t_ *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type cmd = sp->cmd;
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	dfunc->vkBeginCommandBuffer (cmd, &sp->beginInfo);
 	QFV_duCmdBeginLabel (device, cmd, sp->label.name,
@@ -95,13 +129,15 @@ run_subpass (qfv_subpass_t_ *sp, vulkan_ctx_t *ctx)
 	dfunc->vkEndCommandBuffer (cmd);
 }
 
-void
-QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
+static void
+run_renderpass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 {
+	printf ("run_renderpass: %s\n", rp->label.name);
+
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type cmd = rp->cmd;
 
+	VkCommandBuffer cmd = get_cmd_buffer (ctx, 1);
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -112,8 +148,9 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
-		run_subpass (sp, ctx);
-		dfunc->vkCmdExecuteCommands (cmd, 1, &sp->cmd);
+		VkCommandBuffer subcmd = get_cmd_buffer (ctx, 1);
+		run_subpass (sp, subcmd, ctx);
+		dfunc->vkCmdExecuteCommands (cmd, 1, &subcmd);
 		//FIXME comment is a bit off as exactly one buffer is always submitted
 		//
 		//Regardless of whether any commands were submitted for this
@@ -125,6 +162,92 @@ QFV_RunRenderPass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
 		}
 	}
 	QFV_CmdEndLabel (device, cmd);
+}
+
+static void
+run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
+					  vulkan_ctx_t *ctx)
+{
+	printf ("run_compute_pipeline: %s\n", pipeline->label.name);
+
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
+
+	qfv_taskctx_t taskctx = {
+		.ctx = ctx,
+		.pipeline = pipeline,
+	};
+	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
+
+	if (pipeline->num_descriptorsets) {
+		dfunc->vkCmdBindDescriptorSets (cmd, pipeline->bindPoint,
+										pipeline->layout,
+										pipeline->first_descriptorset,
+										pipeline->num_descriptorsets,
+										pipeline->descriptorsets,
+										0, 0);
+	}
+	if (pipeline->num_push_constants) {
+		QFV_PushConstants (device, cmd, pipeline->layout,
+						   pipeline->num_push_constants,
+						   pipeline->push_constants);
+	}
+	uint32_t   *d = pipeline->dispatch;
+	dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
+}
+
+static void
+run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type rctx = ctx->render_context;
+	__auto_type job = rctx->job;
+
+	VkCommandBuffer cmd = get_cmd_buffer (ctx, 0);
+
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+	for (uint32_t i = 0; i < comp->pipeline_count; i++) {
+		__auto_type pipeline = &comp->pipelines[i];
+		run_compute_pipeline (pipeline, cmd, ctx);
+	}
+	dfunc->vkEndCommandBuffer (cmd);
+	DARRAY_APPEND (&job->commands, cmd);
+}
+
+static void
+run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
+{
+	qfv_taskctx_t taskctx = {
+		.ctx = ctx,
+	};
+	run_tasks (proc->task_count, proc->tasks, &taskctx);
+}
+
+void
+QFV_RunRenderJob (vulkan_ctx_t *ctx)
+{
+	__auto_type rctx = ctx->render_context;
+	__auto_type job = rctx->job;
+
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		__auto_type step = &job->steps[i];
+		printf ("run_step: %s\n", step->label.name);
+		if (step->render) {
+			run_renderpass (step->render->active, ctx);
+		}
+		if (step->compute) {
+			run_compute (step->compute, ctx);
+		}
+		if (step->process) {
+			run_process (step->process, ctx);
+		}
+	}
 }
 
 static qfv_output_t
@@ -181,6 +304,8 @@ typedef struct {
 	uint32_t    num_preserve;
 	uint32_t    num_graph_pipelines;
 	uint32_t    num_comp_pipelines;
+
+	uint32_t    num_descriptorsets;
 } objcount_t;
 
 static void
@@ -448,12 +573,12 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 			   s->rpi->name, s->spi->name, ref->line, ref->name);
 }
 
-static VkPipelineLayout
+static qfv_layoutinfo_t *
 find_layout (const qfv_reference_t *ref, objstate_t *s)
 {
 	for (uint32_t i = 0; i < s->inds.num_layouts; i++) {
 		if (strcmp (s->ptr.layouts[i].name, ref->name) == 0) {
-			return s->ptr.layouts[i].layout;
+			return &s->ptr.layouts[i];
 		}
 	}
 	if (!QFV_ParseLayoutInfo (s->ctx, s->jinfo->memsuper, s->symtab, ref->name,
@@ -479,7 +604,7 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &li->layout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, li->layout,
 						 va (s->ctx->va_ctx, "layout:%s", li->name));
-	return li->layout;
+	return li;
 }
 
 static void
@@ -522,7 +647,9 @@ init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
 		plc->pDynamicState = pli->dynamic;
 	}
 	if (pli->layout.name) {
-		plc->layout = find_layout (&pli->layout, s);
+		__auto_type li = find_layout (&pli->layout, s);
+		plc->layout = li->layout;
+		s->inds.num_descriptorsets += li->num_sets;
 	}
 }
 
@@ -714,12 +841,14 @@ typedef struct {
 	qfv_subpass_t_ *subpasses;
 	qfv_pipeline_t *pipelines;
 	qfv_taskinfo_t *tasks;
+	VkDescriptorSet *descriptorsets;
 } jobptr_t;
 
 static void
 init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 			   jobptr_t *jp, objstate_t *s, int is_compute)
 {
+	__auto_type li = find_layout (&plinfo->layout, s);
 	*pl = (qfv_pipeline_t) {
 		.label = {
 			.name = plinfo->name,
@@ -729,11 +858,16 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 								: VK_PIPELINE_BIND_POINT_GRAPHICS,
 		.pipeline = is_compute ? s->ptr.cpl[s->inds.num_comp_pipelines]
 							   : s->ptr.gpl[s->inds.num_graph_pipelines],
-		.layout = find_layout (&plinfo->layout, s),
+		.layout = li->layout,
 		.task_count = plinfo->num_tasks,
 		.tasks = &jp->tasks[s->inds.num_tasks],
+		.descriptorsets = &jp->descriptorsets[s->inds.num_descriptorsets],
 	};
 	s->inds.num_tasks += plinfo->num_tasks;
+	s->inds.num_descriptorsets += li->num_sets;
+	for (uint32_t i = 0; i < li->num_sets; i++) {
+		pl->descriptorsets[i] = 0;
+	}
 	for (uint32_t i = 0; i < pl->task_count; i++) {
 		pl->tasks[i] = plinfo->tasks[i];
 	}
@@ -809,6 +943,7 @@ init_render (qfv_render_t *rend, qfv_renderinfo_t *rinfo,
 		init_renderpass (&rend->renderpasses[i], &rinfo->renderpasses[i],
 						 jp, s);
 	}
+	rend->active = &rend->renderpasses[0];
 }
 
 static void
@@ -836,10 +971,10 @@ init_process (qfv_process_t *proc, qfv_processinfo_t *pinfo,
 		.label.color = pinfo->color,
 		.label.name = pinfo->name,
 		.tasks = &jp->tasks[s->inds.num_tasks],
-		.num_tasks = pinfo->num_tasks,
+		.task_count = pinfo->num_tasks,
 	};
 	s->inds.num_tasks += pinfo->num_tasks;
-	for (uint32_t i = 0; i < proc->num_tasks; i++) {
+	for (uint32_t i = 0; i < proc->task_count; i++) {
 		proc->tasks[i] = pinfo->tasks[i];
 	}
 }
@@ -890,6 +1025,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	size += counts->num_graph_pipelines * sizeof (qfv_pipeline_t);
 	size += counts->num_comp_pipelines * sizeof (qfv_pipeline_t);
 	size += counts->num_tasks * sizeof (qfv_taskinfo_t);
+	size += counts->num_descriptorsets * sizeof (VkDescriptorSet);
 
 	rctx->job = malloc (size);
 	__auto_type job = rctx->job;
@@ -899,6 +1035,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 						 + counts->num_comp_pipelines,
 		.num_layouts = s.inds.num_layouts,
 		.num_steps = counts->num_steps,
+		.commands = DARRAY_STATIC_INIT (16),
 	};
 	job->renderpasses = (VkRenderPass *) &job[1];
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
@@ -912,6 +1049,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	__auto_type sp = (qfv_subpass_t_ *) &cv[counts->num_attachments];
 	__auto_type pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
 	__auto_type ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
+	__auto_type ds = (VkDescriptorSet *) &ti[counts->num_tasks];
 	jobptr_t jp = {
 		.steps = job->steps,
 		.renders = rn,
@@ -922,6 +1060,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.subpasses = sp,
 		.pipelines = pl,
 		.tasks = ti,
+		.descriptorsets = ds,
 	};
 
 	for (uint32_t i = 0; i < job->num_renderpasses; i++) {
@@ -942,15 +1081,15 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		init_step (i, &jp, &s);
 	}
-#if 0
-	__auto_type rinfo = rctx->renderinfo;
-	size_t      size = 0;
 
-	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
-		init_renderpass (&rp[i], ctx, &rinfo->renderpasses[i], cv, sp, pl, &s);
-		s.inds.num_renderpasses++;
-	}
-#endif
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkCommandPoolCreateInfo poolCInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+		.queueFamilyIndex = device->queue.queueFamily,
+	};
+	dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0, &job->command_pool);
 }
 
 static void
@@ -981,15 +1120,17 @@ create_step_compute_objects (uint32_t index, const qfv_stepinfo_t *step,
 	for (uint32_t i = 0; i < cinfo->num_pipelines; i++) {
 		__auto_type pli = &cinfo->pipelines[i];
 		__auto_type plc = &s->ptr.cplCreate[s->inds.num_comp_pipelines];
+		__auto_type li = find_layout (&pli->layout, s);
 		s->ptr.plName[base + s->inds.num_comp_pipelines] = pli->name;
 		*plc = (VkComputePipelineCreateInfo) {
 			.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 			.flags = pli->flags,
 			.stage = *pli->compute_stage,
-			.layout = find_layout (&pli->layout, s),
+			.layout = li->layout,
 		};
 		plc->stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		s->inds.num_comp_pipelines++;
+		s->inds.num_descriptorsets += li->num_sets;
 	}
 }
 
@@ -1108,11 +1249,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 							 va (ctx->va_ctx, "pipeline:%s", plName[i]));
 	}
 
-//	rinfo->num_layouts = s.inds.num_layouts;
-//	size_t      layout_size = rinfo->num_layouts * sizeof (qfv_layoutinfo_t);
-//	rinfo->layouts = cmemalloc (rinfo->memsuper, layout_size);
-//	memcpy (rinfo->layouts, s.ptr.layouts, layout_size);
-
+	counts->num_descriptorsets = s.inds.num_descriptorsets;
 	init_job (ctx, counts, s);
 }
 
@@ -1241,6 +1378,10 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 			QFV_DestroyResource (ctx->device, job->resources);
 			free (job->resources);
 		}
+		if (job->command_pool) {
+			dfunc->vkDestroyCommandPool (device->dev, job->command_pool, 0);
+		}
+		DARRAY_CLEAR (&job->commands);
 		free (rctx->job);
 	}
 	if (rctx->jobinfo) {

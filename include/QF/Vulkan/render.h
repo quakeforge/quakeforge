@@ -8,6 +8,9 @@
 
 #include "QF/cexpr.h"
 #include "QF/simd/types.h"
+#ifndef __QFCC__
+#include "QF/Vulkan/command.h"
+#endif
 
 typedef struct qfv_output_s {
 	VkExtent2D  extent;
@@ -244,6 +247,7 @@ typedef struct qfv_jobinfo_s {
 	qfv_descriptorsetinfo_t *descriptorsets;
 } qfv_jobinfo_t;
 
+#ifndef __QFCC__
 typedef struct qfv_label_s {
 	vec4f_t     color;
 	const char *name;
@@ -267,9 +271,9 @@ typedef struct qfv_pipeline_s {
 	VkRect2D    scissor;
 	struct qfv_push_constants_s *push_constants;
 	uint32_t    num_push_constants;
-	uint32_t    num_descriptor_sets;
-	uint32_t    first_descriptor_set;
-	VkDescriptorSet *descriptor_sets;
+	uint32_t    num_descriptorsets;
+	uint32_t    first_descriptorset;
+	VkDescriptorSet *descriptorsets;
 
 	uint32_t    task_count;
 	qfv_taskinfo_t *tasks;
@@ -279,7 +283,6 @@ typedef struct qfv_subpass_s_ {
 	qfv_label_t label;
 	VkCommandBufferInheritanceInfo inherit;
 	VkCommandBufferBeginInfo beginInfo;
-	VkCommandBuffer cmd;
 	uint32_t    pipeline_count;
 	qfv_pipeline_t *pipelines;
 } qfv_subpass_t_;
@@ -288,7 +291,6 @@ typedef struct qfv_renderpass_s_ {
 	struct vulkan_ctx_s *vulkan_ctx;
 	qfv_label_t label;		// for debugging
 
-	VkCommandBuffer cmd;
 	VkRenderPassBeginInfo beginInfo;
 	VkSubpassContents subpassContents;
 
@@ -318,7 +320,7 @@ typedef struct qfv_compute_s {
 typedef struct qfv_process_s {
 	qfv_label_t label;
 	qfv_taskinfo_t *tasks;
-	uint32_t    num_tasks;
+	uint32_t    task_count;
 } qfv_process_t;
 
 typedef struct qfv_step_s {
@@ -342,6 +344,8 @@ typedef struct qfv_job_s {
 	VkPipeline *pipelines;
 	VkPipelineLayout *layouts;
 	qfv_step_t *steps;
+	qfv_cmdbufferset_t commands;
+	VkCommandPool command_pool;
 } qfv_job_t;
 
 typedef struct qfv_renderctx_s {
@@ -351,7 +355,12 @@ typedef struct qfv_renderctx_s {
 	qfv_job_t *job;
 } qfv_renderctx_t;
 
-void QFV_RunRenderPass (qfv_renderpass_t_ *rp, struct vulkan_ctx_s *ctx);
+typedef struct qfv_taskctx_s {
+	struct vulkan_ctx_s *ctx;
+	qfv_pipeline_t *pipeline;
+} qfv_taskctx_t;
+
+void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx);
@@ -359,5 +368,6 @@ void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
+#endif//__QFCC__
 
 #endif//__QF_Vulkan_render_h
