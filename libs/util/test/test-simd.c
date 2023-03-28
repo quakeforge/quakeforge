@@ -193,7 +193,9 @@ static vec4d_test_t vec4d_tests[] = {
 	// used): ulp errors in z and w
 	T(crossd, qtest,   qtest,   {0, 0, 0, 0},
 #if defined(__aarch64__)
+# ifdef __OPTIMIZE__
 		   {0, 0, -2.1938006966593093e-17, 1.3322676295501878e-17},
+# endif
 #endif
 	),
 
@@ -219,7 +221,9 @@ static vec4d_test_t vec4d_tests[] = {
 	// used): ulp error in z
 	T(qmuld, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
 #if defined(__aarch64__)
+# ifdef __OPTIMIZE__
 		   {0, 0, -2.1938006966593093e-17, 0},
+# endif
 #endif
 	),
 
@@ -325,15 +329,19 @@ static vec4f_test_t vec4f_tests[] = {
 	T(crossf, one,     forward, {-1,  0,  1} ),
 	T(crossf, one,     up,      { 1, -1,  0} ),
 #ifdef __aarch64__
+# ifdef __OPTIMIZE__
 	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, -1.43051153e-08} ),
+# else
+	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
+# endif
 #else
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+# if !defined(__SSE__) && !defined(__OPTIMIZE__)
 	// when not optimizing and SSE is not available (but ok when
 	// optimizing)
 	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, 0} ),
-#else
+# else
 	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
-#endif
+# endif
 #endif
 
 	T(qmulf, qident,  qident,   qident  ),
@@ -356,15 +364,19 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qmulf, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	T(qmulf, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
 #ifdef __aarch64__
+# ifdef __OPTIMIZE__
 				   {0, 6e-8, -1.47819534e-09, 2.98023224e-08}
+# else
+				   {0, 5.96046448e-08, 0, 2.98023224e-08}
+# endif
 #else
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+# if !defined(__SSE__) && !defined(__OPTIMIZE__)
 	// when not optimizing and SSE is not available (but ok when
 	// optimizing)
 	                           {0, 6e-8, -1.47819534e-09, 3e-8}
-#elif  !defined(__SSE__)
+# elif  !defined(__SSE__)
 	                           {0, 6e-8, 0, 6e-8}
-#else
+# else
 	                           {0, 6e-8, 0, 3e-8}
 #endif
 #endif
