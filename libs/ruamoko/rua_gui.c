@@ -228,9 +228,13 @@ bi (Font_Load)
 	const char *font_path = P_GSTRING (pr, 0);
 	int         font_size = P_INT (pr, 1);
 
+	R_INT (pr) = 0;
+
 	QFile      *font_file = QFS_FOpenFile (font_path);
 	font_t     *font = Font_Load (font_file, font_size);
-	R_INT (pr) = alloc_font (res, font);
+	if (font) {
+		R_INT (pr) = alloc_font (res, font);
+	}
 }
 
 bi (Font_Free)
