@@ -311,8 +311,10 @@ generate_colormap (void)
 				}
 			}
 		}
-		// fullbrights
-		memcpy (colors[i][224], colors[31][224], 32 * 3);
+		// fullbrights, but avoid copying the source row to itself
+		if (i != 31) {
+			memcpy (colors[i][224], colors[31][224], 32 * 3);
+		}
 	}
 	tex_t     *cmap = ConvertImage (&tex, default_palette[0]);
 	// the colormap has an extra byte indicating the number of fullbright
