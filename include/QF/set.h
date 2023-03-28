@@ -51,6 +51,7 @@ typedef uint32_t set_bits_t;
 						  - sizeof (int) - sizeof (unsigned))\
 						 / sizeof (set_bits_t))
 #define SET_BITS (sizeof (set_bits_t) * 8)
+#define SET_DEFMAP_BITS (SET_DEFMAP_SIZE * SET_BITS)
 //NOTE: x is the element number, so size is x + 1
 #define SET_SIZE(x) (((x) + SET_BITS) & ~(SET_BITS - 1))
 #define SET_WORDS_STATIC(x) (SET_SIZE (x) / SET_BITS)
@@ -63,9 +64,11 @@ typedef uint32_t set_bits_t;
 	(((byte *)(s)->map)[(x) / 8] |= (SET_ONE << ((x) % 8)))
 #define SET_REMOVE(s, x) \
 	(((byte *)(s)->map)[(x) / 8] &= ~(SET_ONE << ((x) % 8)))
+#define SET_LARGE_SET(x) (SET_SIZE (x) > SET_DEFMAP_BITS)
+#define SET_SAFE_SIZE(x) (SET_LARGE_SET (x) ? SET_SIZE (x) : SET_DEFMAP_BITS)
 #define SET_STATIC_INIT(x, alloc) { \
-	.size = SET_SIZE (x), \
-	.map = alloc (SET_SIZE (x) / 8), \
+	.size = SET_SAFE_SIZE (x), \
+	.map = alloc (SET_SAFE_SIZE (x) / 8), \
 }
 #define SET_STATIC_ARRAY(array) { \
 	.size = 8 * __builtin_choose_expr ( \
