@@ -546,8 +546,8 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 static VkDescriptorSetLayout
 find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 {
-	for (uint32_t i = 0; i < s->jinfo->num_descriptorsets; i++) {
-		__auto_type ds = &s->jinfo->descriptorsets[i];
+	for (uint32_t i = 0; i < s->jinfo->num_descriptorsetlayouts; i++) {
+		__auto_type ds = &s->jinfo->descriptorsetlayouts[i];
 		if (strcmp (ds->name, ref->name) == 0) {
 			if (!ds->setLayout) {
 				VkDescriptorSetLayoutCreateInfo cInfo = {
@@ -1386,8 +1386,8 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	}
 	if (rctx->jobinfo) {
 		__auto_type jinfo = rctx->jobinfo;
-		for (uint32_t i = 0; i < jinfo->num_descriptorsets; i++) {
-			__auto_type setLayout = jinfo->descriptorsets[i].setLayout;
+		for (uint32_t i = 0; i < jinfo->num_descriptorsetlayouts; i++) {
+			__auto_type setLayout = jinfo->descriptorsetlayouts[i].setLayout;
 			dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout, 0);
 		}
 		delete_memsuper (jinfo->memsuper);

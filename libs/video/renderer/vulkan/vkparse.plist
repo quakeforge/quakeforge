@@ -33,7 +33,7 @@ search = (
 	qfv_subpass_t,
 	qfv_output_t,
 
-	qfv_descriptorsetinfo_t,
+	qfv_descriptorsetlayoutinfo_t,
 	qfv_imageinfo_t,
 	qfv_imageviewinfo_t,
 	qfv_bufferinfo_t,
@@ -616,8 +616,8 @@ parse = {
 			values = subpasses;
 		};
 	};
-	qfv_descriptorsetinfo_s = {
-		.name = qfv_descriptorsetinfo_t;
+	qfv_descriptorsetlayoutinfo_s = {
+		.name = qfv_descriptorsetlayoutinfo_t;
 		flags = auto;
 		bindings = {
 			type = (array, VkDescriptorSetLayoutBinding);
@@ -714,9 +714,9 @@ parse = {
 			values = steps;
 		};
 		descriptorSetLayouts = {
-			type = (labeledarray, qfv_descriptorsetinfo_t, name);
-			size = num_descriptorsets;
-			values = descriptorsets;
+			type = (labeledarray, qfv_descriptorsetlayoutinfo_t, name);
+			size = num_descriptorsetlayouts;
+			values = descriptorsetlayouts;
 		};
 	};
 };

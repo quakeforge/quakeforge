@@ -27,13 +27,13 @@ typedef struct qfv_reference_s {
 	int         line;
 } qfv_reference_t;
 
-typedef struct qfv_descriptorsetinfo_s {
+typedef struct qfv_descriptorsetlayoutinfo_s {
 	const char *name;
 	VkDescriptorSetLayoutCreateFlags flags;
 	uint32_t    num_bindings;
 	VkDescriptorSetLayoutBinding *bindings;
 	VkDescriptorSetLayout setLayout;
-} qfv_descriptorsetinfo_t;
+} qfv_descriptorsetlayoutinfo_t;
 
 typedef struct qfv_layoutinfo_s {
 	const char *name;
@@ -243,8 +243,8 @@ typedef struct qfv_jobinfo_s {
 	qfv_imageinfo_t *buffers;
 	qfv_imageviewinfo_t *bufferviews;
 
-	uint32_t    num_descriptorsets;
-	qfv_descriptorsetinfo_t *descriptorsets;
+	uint32_t    num_descriptorsetlayouts;
+	qfv_descriptorsetlayoutinfo_t *descriptorsetlayouts;
 } qfv_jobinfo_t;
 
 #ifndef __QFCC__
