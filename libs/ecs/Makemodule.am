@@ -1,6 +1,6 @@
 include libs/ecs/test/Makemodule.am
 
-ecs_deps=libs/models/libQFmodels.la libs/util/libQFutil.la
+ecs_deps=libs/util/libQFutil.la
 
 lib_LTLIBRARIES += libs/ecs/libQFecs.la
 
