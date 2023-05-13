@@ -204,10 +204,18 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 	dasprintf (dstr, "%*sfv_%p [shape=none,label=<\n", indent, "", graph);
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 					 "cellspacing=\"0\">\n", indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"3\">flow vars</td></tr>\n",
+			   indent + 4, "");
+	dasprintf (dstr, "%*s<tr><td>#</td><td>name</td>"
+							"<td>addr</td><td>define</td></tr>\n",
+			   indent + 4, "");
 	for (i = 0; i < graph->func->num_vars; i++) {
 		var = graph->func->vars[i];
-		dasprintf (dstr, "%*s<tr><td>(%d) %s %s</td></tr>\n", indent + 4, "",
+		dasprintf (dstr, "%*s<tr><td>%d</td><td>%s</td>"
+								"<td>%d</td><td>%s</td></tr>\n",
+				   indent + 4, "",
 				   var->number, html_string(operand_string (var->op)),
+				   var->flowaddr,
 				   set_as_string (var->define));
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
