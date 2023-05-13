@@ -278,7 +278,7 @@ flowvar_is_argument (flowvar_t *var)
 /**	Check if the flowvar refers to a local variable.
  *
  *	As this is simply "neither global nor pamam nor argument", all other
- *	flowvars are considered local, in particular actual non-staic function
+ *	flowvars are considered local, in particular actual non-static function
  *	scope variables and temp vars.
  */
 static int
@@ -553,7 +553,7 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
  *
  *	# Local variable representation
  *	Defined local vars add their address in local space to the number of
- *	statements in the function. Thus their flow analysis address in in the
+ *	statements in the function. Thus their flow analysis address is in the
  *	range:
  *
  *		([num_statements ... num_statements+localsize])
@@ -573,7 +573,7 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
  *
  *	# Pseudo Address Space
  *	Temporary variables are _effectively_ local variables and thus will
- *	be treated as such by the analizer in that their addresses and sizes
+ *	be treated as such by the analyzer in that their addresses and sizes
  *	will be used to determine which and how many set elements to use.
  *
  *	However, at this stage, temporary variables do not have any address
@@ -642,7 +642,7 @@ flow_build_vars (function_t *func)
 	stuse = set_new ();
 	stdef = set_new ();
 
-	// set up pseudo address space for temp vars so accessing tmp vars
+	// set up the pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
 	func->pseudo_addr = func->num_statements;
 	func->pseudo_addr += func->locals->space->size;
@@ -667,7 +667,7 @@ flow_build_vars (function_t *func)
 		add_operand_chain (func, s->kill);
 	}
 	// and set the use/def sets for the vars (has to be a separate pass
-	// because the allias handling reqruires the flow address to be valid
+	// because the alias handling reqruires the flow address to be valid
 	// (ie, not -1)
 	for (i = 0; i < func->num_statements; i++) {
 		s = func->statements[i];
@@ -1701,7 +1701,7 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
 
 /**	Build the flow graph for the function.
  *
- *	In addition to the nodes create by the statement blocks, there are two
+ *	In addition to the nodes created by the statement blocks, there are two
  *	dummy blocks:
  *
  *	\dot
@@ -1724,7 +1724,7 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
  *
  *	The exit block, which also is empty of statements, has its live vars
  *	\a use set initilized to the set of global defs, which are simply numbered
- *	by their index in the functions list of flowvars. All other exit node sets
+ *	by their index in the function's list of flowvars. All other exit node sets
  *	are initialized to empty.
  *	\f[ use_{live}=globals \f]
  */
