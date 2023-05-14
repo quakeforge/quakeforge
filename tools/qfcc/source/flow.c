@@ -545,6 +545,14 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
 	return 0;
 }
 
+static void
+add_var_addrs (set_t *set, flowvar_t *var)
+{
+	for (int i = 0; i < var->op->size; i++) {
+		set_add (set, var->flowaddr + i);
+	}
+}
+
 /**	Build an array of all the variables used by a function
  *
  *	The array exists so variables can be referenced by number and thus used
@@ -682,23 +690,24 @@ flow_build_vars (function_t *func)
 		}
 	}
 	func->global_vars = set_new ();
-	// mark all global vars (except .return and .param_N)
+	func->param_vars = set_new ();
+	// mark all global vars (except .return and .param_N), and param vars
 	for (i = num_flow_params; i < func->num_vars; i++) {
-		if (flowvar_is_global (func->vars[i]))
+		if (flowvar_is_global (func->vars[i])) {
 			set_add (func->global_vars, i);
+		}
+		if (flowvar_is_param (func->vars[i])) {
+			add_var_addrs (func->param_vars, func->vars[i]);
+		}
 	}
 	// Put the local varibals in their place (set var->defined to the addresses
 	// spanned by the var)
 	for (i = 0; i < func->num_vars; i++) {
-		int         j;
-
 		var = func->vars[i];
-		if (flowvar_is_global (var) || flowvar_is_param (var)) {
+		if (flowvar_is_global (var)) {// || flowvar_is_param (var)) {
 			continue;
 		}
-		for (j = 0; j < var->op->size; j++) {
-			set_add (var->define, var->flowaddr + j);
-		}
+		add_var_addrs (var->define, var);
 	}
 
 	set_delete (stuse);
@@ -759,6 +768,7 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	}
 	// merge the alias kills with the current def's kills
 	set_union (kill, tmp);
+	set_delete (tmp);
 }
 
 /**	Compute reaching defs
@@ -1036,6 +1046,8 @@ flow_uninitialized (flowgraph_t *graph)
 	uninitialized = set_new ();
 	node = graph->nodes[graph->num_nodes];
 	set_assign (uninitialized, node->reaching_defs.out);
+	// parameters are, by definition, initialized
+	set_difference (uninitialized, graph->func->param_vars);
 	defs = set_new ();
 
 	for (i = 0; i < graph->num_nodes; i++) {
@@ -1058,6 +1070,7 @@ flow_uninitialized (flowgraph_t *graph)
 			flow_uninit_scan_statements (node, defs, uninitialized);
 	}
 	set_delete (defs);
+	set_delete (uninitialized);
 }
 
 static void
