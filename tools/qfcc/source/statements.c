@@ -677,6 +677,11 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 										lvalue->e.alias.expr,
 										expr_int (offset));
 		offset = 0;
+	} else if (offset && is_constant (offset)) {
+		int         o = expr_int (offset);
+		if (o < 32768 && o >= -32768) {
+			offset = expr_file_line (new_short_expr (o), offset);
+		}
 	}
 
 	s = new_statement (st_address, "lea", e);
