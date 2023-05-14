@@ -1253,7 +1253,8 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 1;
 	// pointer = array
 	if (is_ptr (dst) && is_array (src)) {
-		if (dst->t.fldptr.type == src->t.array.type)
+		if (is_void (dst->t.fldptr.type)
+			|| dst->t.fldptr.type == src->t.array.type)
 			return 1;
 		return 0;
 	}
