@@ -317,7 +317,8 @@ static flow_print_t live_print[] = {
 	{ 0 }
 };
 static flow_print_t reaching_print[] = {
-	{	print_flow_node_reaching,	print_flow_edge},
+	{	print_flow_node_reaching,	print_flow_edge, print_flow_vars},
+	{	print_flow_node_statements,	print_flow_edge_statements},
 	{ 0 }
 };
 static flow_print_t statements_print[] = {
