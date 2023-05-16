@@ -2503,6 +2503,11 @@ array_expr (expr_t *array, expr_t *index)
 		base = new_int_expr (0);
 	} else {
 		ele_type = ev_types[array_type->type];
+		if (array->type == ex_uexpr && array->e.expr.op == '.') {
+			expr_t     *vec = offset_pointer_expr (array->e.expr.e1, index);
+			vec = cast_expr (pointer_type (ele_type), vec);
+			return unary_expr ('.', vec);
+		}
 		base = new_int_expr (0);
 	}
 	scale = new_int_expr (type_size (ele_type));
