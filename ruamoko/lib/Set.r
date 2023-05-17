@@ -80,6 +80,11 @@ string set_as_string (set_t *set) = #0;
 	[super dealloc];
 }
 
+- (string) describe
+{
+	return set_as_string (set);
+}
+
 - (Set *) add: (unsigned) x = #0;
 - (Set *) remove: (unsigned) x = #0;
 - (Set *) invert = #0;
