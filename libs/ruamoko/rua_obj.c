@@ -1470,6 +1470,9 @@ rua_obj_set_error_handler (progs_t *pr, void *data)
 static const char *
 rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 {
+	if (!at_param) {
+		return "nil";
+	}
 	probj_t    *probj = _probj;
 	pr_id_t    *obj = &G_STRUCT (pr, pr_id_t, at_param);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
