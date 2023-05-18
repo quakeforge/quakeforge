@@ -1,0 +1,35 @@
+noinst_PROGRAMS += ruamoko/gatest/gatest.dat$(EXEEXT)
+
+gatest_dat_src= \
+	ruamoko/gatest/algebra.r \
+	ruamoko/gatest/basisblade.r \
+	ruamoko/gatest/basisgroup.r \
+	ruamoko/gatest/basislayout.r \
+	ruamoko/gatest/main.r \
+	ruamoko/gatest/metric.r \
+	ruamoko/gatest/multivector.r \
+	ruamoko/gatest/util.r
+
+ruamoko_gatest_gatest_dat_SOURCES=$(gatest_dat_src)
+ruamoko_gatest_gatest_obj=$(ruamoko_gatest_gatest_dat_SOURCES:.r=.o)
+ruamoko_gatest_gatest_dep=$(call qcautodep,$(ruamoko_gatest_gatest_dat_SOURCES:.o=.Qo))
+ruamoko/gatest/gatest.dat$(EXEEXT): $(ruamoko_gatest_gatest_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_gatest_gatest_obj) $(libui) -lr
+include $(ruamoko_gatest_gatest_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_gatest_gatest_dep)
+
+EXTRA_PROGRAMS += \
+	ruamoko/gatest/gatest
+
+EXTRA_DIST += \
+	$(gatest_dat_src) \
+	ruamoko/gatest/algebra.h \
+	ruamoko/gatest/basisblade.h \
+	ruamoko/gatest/basisgroup.h \
+	ruamoko/gatest/basislayout.h \
+	ruamoko/gatest/metric.h \
+	ruamoko/gatest/multivector.h \
+	ruamoko/gatest/util.h
+CLEANFILES += \
+	ruamoko/gatest/*.dat \
+	ruamoko/gatest/*.sym
