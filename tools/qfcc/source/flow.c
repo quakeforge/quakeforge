@@ -760,7 +760,7 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->tempop, 1, flow_tempop_kill_aliases, tmp);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->def, 1, flow_def_kill_aliases, tmp);
+		def_visit_all (op->def, 4 | 1, flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	if (uninit) {
@@ -1153,10 +1153,9 @@ flow_def_add_aliases (def_t *def, void *_set)
 }
 
 static void
-flow_add_op_var (set_t *set, operand_t *op, int is_use)
+flow_add_op_var (set_t *set, operand_t *op, int ol)
 {
 	flowvar_t  *var;
-	int         ol = is_use ? 1 : 2;
 
 	if (!set)
 		return;
@@ -1164,10 +1163,6 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 		return;
 	set_add (set, var->number);
 
-	// FIXME XXX I think the curent implementation will have problems
-	// for the def set when assigning to an alias as right now the real
-	// var is being treated as assigned as well. Want to handle partial
-	// defs properly, but I am as yet uncertain of how.
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
 	} else if (op->op_type == op_def) {
@@ -1191,7 +1186,7 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 			op = ptrop->value->v.pointer.tempop;
 		}
 		if (op) {
-			flow_add_op_var (def, op, 0);
+			flow_add_op_var (def, op, 6);
 		}
 	}
 	return op;
@@ -1217,13 +1212,13 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	if (def) {
 		set_empty (def);
 		for (operand_t *op = s->def; op; op = op->next) {
-			flow_add_op_var (def, op, 0);
+			flow_add_op_var (def, op, 6);
 		}
 	}
 	if (kill) {
 		set_empty (kill);
 		for (operand_t *op = s->kill; op; op = op->next) {
-			flow_add_op_var (kill, op, 0);
+			flow_add_op_var (kill, op, 6);
 		}
 	}
 	if (operands) {
@@ -1239,7 +1234,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				flow_add_op_var (use, s->opa, 1);
 				flow_add_op_var (use, s->opb, 1);
 			}
-			flow_add_op_var (def, s->opc, 0);
+			flow_add_op_var (def, s->opc, 6);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -1247,7 +1242,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_expr:
-			flow_add_op_var (def, s->opc, 0);
+			flow_add_op_var (def, s->opc, 6);
 			flow_add_op_var (use, s->opa, 1);
 			if (s->opb)
 				flow_add_op_var (use, s->opb, 1);
@@ -1258,7 +1253,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opa, 0);
+			flow_add_op_var (def, s->opa, 6);
 			flow_add_op_var (use, s->opc, 1);
 			if (operands) {
 				operands[0] = s->opa;
@@ -1275,17 +1270,17 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			aux_op1 = s->opb;
 			if (!strcmp (s->opcode, "move")
 				|| !strcmp (s->opcode, "memset")) {
-				flow_add_op_var (def, s->opc, 0);
+				flow_add_op_var (def, s->opc, 6);
 				src_op = s->opa;
 				res_op = s->opc;
 			} else if (!strcmp (s->opcode, "movep")) {
-				flow_add_op_var (use, s->opc, 0);
+				flow_add_op_var (use, s->opc, 6);
 				aux_op3 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "memsetp")) {
-				flow_add_op_var (use, s->opc, 0);
+				flow_add_op_var (use, s->opc, 6);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;
@@ -1346,7 +1341,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				// call uses opc to specify the destination of the return value
 				// parameter usage is taken care of by the statement's use
 				// list
-				flow_add_op_var (def, s->opc, 0);
+				flow_add_op_var (def, s->opc, 6);
 				// don't want old argument processing
 				calln = -1;
 				if (operands && s->opc->op_type != op_value) {
@@ -1372,7 +1367,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				}
 				if (def) {
 					for (i = 0; i < num_flow_params; i++) {
-						flow_add_op_var (def, &flow_params[i].op, 0);
+						flow_add_op_var (def, &flow_params[i].op, 6);
 					}
 				}
 				if (kill) {

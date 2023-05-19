@@ -732,8 +732,9 @@ def_visit_all (def_t *def, int overlap,
 		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if ((ret = visit (def, data)))
+		if (!(overlap & 4) && (ret = visit (def, data)))
 			return ret;
+		overlap &= ~4;
 	} else {
 		overlap = 0;
 	}
