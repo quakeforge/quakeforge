@@ -5,6 +5,7 @@
 #include "basisblade.h"
 #include "basisgroup.h"
 #include "basislayout.h"
+#include "multivector.h"
 #include "util.h"
 
 @implementation Algebra
@@ -117,6 +118,26 @@
 -(int)dimension
 {
 	return dimension;
+}
+
+-(MultiVector *) group:(int)group
+{
+	return [MultiVector new:self group:[layout group:group]];
+}
+
+-(MultiVector *) group:(int)group values:(double *)values
+{
+	return [MultiVector new:self group:[layout group:group] values:values];
+}
+
+-(MultiVector *) ofGrade:(int)grade
+{
+	return [MultiVector new:self group:grades[grade]];
+}
+
+-(MultiVector *) ofGrade:(int)grade values:(double *)values
+{
+	return [MultiVector new:self group:grades[grade] values:values];
 }
 
 -(void) print

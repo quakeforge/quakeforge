@@ -109,7 +109,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 			if (!s) {
 				continue;
 			}
-			int ind = [rhs.layout bladeIndex:[b mask]];
+			int ind = [prod.layout bladeIndex:[b mask]];
 			prod.components[ind] += s * lc * rc;
 		}
 	}
@@ -136,7 +136,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 			if (!s) {
 				continue;
 			}
-			int ind = [rhs.layout bladeIndex:[b mask]];
+			int ind = [prod.layout bladeIndex:[b mask]];
 			prod.components[ind] += s * lc * rc;
 		}
 	}
@@ -172,7 +172,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 			if (!s) {
 				continue;
 			}
-			int ind = [rhs.layout bladeIndex:[b mask]];
+			int ind = [prod.layout bladeIndex:[b mask]];
 			prod.components[ind] += s * lc * rc;
 		}
 	}

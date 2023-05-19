@@ -6,6 +6,7 @@
 @class Metric;
 @class BasisGroup;
 @class BasisLayout;
+@class MultiVector;
 
 @interface Algebra : Object
 {
@@ -23,6 +24,11 @@
 -(Metric *) metric;
 -(int)count;
 -(int)dimension;
+
+-(MultiVector *) group:(int)group;
+-(MultiVector *) group:(int)group values:(double *)values;
+-(MultiVector *) ofGrade:(int)grade;
+-(MultiVector *) ofGrade:(int)grade values:(double *)values;
 @end
 
 #endif//__algebra_h
