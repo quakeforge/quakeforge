@@ -2537,8 +2537,7 @@ search_for_super_dealloc (sblock_t *sblock)
 		for (statement_t *st = sblock->statements; st; st = st->next) {
 			if (statement_is_return (st)) {
 				op = pseudo_operand (super_dealloc, st->expr);
-				op->next = st->use;
-				st->use = op;
+				statement_add_use (st, op);
 				continue;
 			}
 			if (!statement_is_call (st)) {
@@ -2559,8 +2558,7 @@ search_for_super_dealloc (sblock_t *sblock)
 				selector_t *sel = get_selector (st->expr->e.branch.args);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
 					op = pseudo_operand (super_dealloc, st->expr);
-					op->next = st->use;
-					st->def = op;
+					statement_add_def (st, op);
 					super_dealloc_found++;
 				}
 			}
