@@ -108,12 +108,12 @@ typedef enum {
 typedef struct statement_s {
 	struct statement_s *next;
 	st_type_t   type;
+	int         number;			///< number of this statement in function
 	const char *opcode;
 	operand_t  *opa;
 	operand_t  *opb;
 	operand_t  *opc;
 	struct expr_s *expr;		///< source expression for this statement
-	int         number;			///< number of this statement in function
 	operand_t  *use;			///< list of auxiliary operands used
 	operand_t  *def;			///< list of auxiliary operands defined
 	operand_t  *kill;			///< list of auxiliary operands killed

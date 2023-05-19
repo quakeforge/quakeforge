@@ -118,6 +118,7 @@ typedef struct function_s {
 	int                 num_vars;	///< total number of variables referenced
 	struct set_s       *global_vars;///< set indicating which vars are global
 	struct set_s       *param_vars;	///< set indicating which vars are params
+	struct set_s       *real_statements;///< actual statements for ud-chaining
 	struct statement_s **statements;
 	int                 num_statements;
 	int                 pseudo_addr;///< pseudo address space for flow analysis

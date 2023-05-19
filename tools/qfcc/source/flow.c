@@ -530,9 +530,12 @@ flow_build_statements (function_t *func)
 
 	func->statements = malloc (num_statements * sizeof (statement_t *));
 	func->num_statements = num_statements;
+	func->real_statements = set_new ();
 	for (sblock = func->sblock; sblock; sblock = sblock->next) {
-		for (s = sblock->statements; s; s = s->next)
+		for (s = sblock->statements; s; s = s->next) {
 			func->statements[s->number] = s;
+			set_add (func->real_statements, s->number);
+		}
 	}
 }
 
