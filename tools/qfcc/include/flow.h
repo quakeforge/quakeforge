@@ -44,10 +44,17 @@ typedef struct flowvar_s {
 	struct flowvar_s *next;		///< for ALLOC
 	struct set_s *use;			///< set of statements that use this var
 	struct set_s *define;		///< set of statements that define this var
+	struct set_s *udchains;		///< set of ud chains for this var
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
 	int         flowaddr;		///< psuedo address for local and temp vars
 } flowvar_t;
+
+typedef struct udchain_s {
+	int         var;
+	int         usest;
+	int         defst;
+} udchain_t;
 
 typedef struct flowloop_s {
 	struct flowloop_s *next;

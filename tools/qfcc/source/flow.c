@@ -96,6 +96,7 @@ new_flowvar (void)
 	ALLOC (256, flowvar_t, vars, var);
 	var->use = set_new ();
 	var->define = set_new ();
+	var->udchains = set_new ();
 	return var;
 }
 
@@ -106,6 +107,7 @@ delete_flowvar (flowvar_t *var)
 {
 	set_delete (var->use);
 	set_delete (var->define);
+	set_delete (var->udchains);
 	FREE (vars, var);
 }
 
@@ -774,6 +776,37 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	set_delete (tmp);
 }
 
+typedef struct {
+	set_t      *gen;
+	set_t      *kill;
+	set_t      *stgen;
+	set_t      *stkill;
+	set_t      *stdef;
+	set_t      *uninit;
+	flowvar_t **vars;
+} reachint_t;
+
+static void
+flow_statement_reaching (statement_t *st, reachint_t *r)
+{
+	set_empty (r->stgen);
+	set_empty (r->stkill);
+
+	set_iter_t *var_i;
+	for (var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
+		flowvar_t  *var = r->vars[var_i->element];
+		flow_kill_aliases (r->stkill, var, r->uninit);
+		set_remove (r->stkill, st->number);
+		set_add (r->stgen, st->number);
+	}
+
+	set_difference (r->gen, r->stkill);
+	set_union (r->gen, r->stgen);
+
+	set_difference (r->kill, r->stgen);
+	set_union (r->kill, r->stkill);
+}
+
 /**	Compute reaching defs
  */
 static void
@@ -783,12 +816,13 @@ flow_reaching_defs (flowgraph_t *graph)
 	int         changed;
 	flownode_t *node;
 	statement_t *st;
-	set_t      *stdef = set_new ();
-	set_t      *stgen = set_new ();
-	set_t      *stkill = set_new ();
-	set_t      *oldout = set_new ();
-	set_t      *gen, *kill, *in, *out, *uninit;
-	set_iter_t *var_i;
+	reachint_t  reach = {
+		.stgen = set_new (),
+		.stkill = set_new (),
+		.stdef = set_new (),
+		.vars = graph->func->vars,
+	};
+	set_t      *in, *out, *uninit;
 	set_iter_t *pred_i;
 	flowvar_t  *var;
 
@@ -808,10 +842,6 @@ flow_reaching_defs (flowgraph_t *graph)
 	 *
 	 *	All other entry node sets are initialized to empty.
 	 */
-	// kill represents the set of all statements in the function
-	kill = set_new ();
-	for (i = 0; i < graph->func->num_statements; i++)
-		set_add (kill, i);
 	// uninit
 	uninit = set_new ();
 	for (i = 0; i < graph->func->num_vars; i++) {
@@ -822,7 +852,8 @@ flow_reaching_defs (flowgraph_t *graph)
 	 *	\a uninit set (which becomes the \a out set of the entry node's
 	 *	reaching defs) in order to prevent them leaking into the real nodes.
 	 */
-	set_difference (uninit, kill);	// remove any gens from the function
+	// remove any gens from the function
+	set_difference (uninit, graph->func->real_statements);
 	// initialize the reaching defs sets in the entry node
 	graph->nodes[graph->num_nodes]->reaching_defs.out = uninit;
 	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
@@ -832,32 +863,21 @@ flow_reaching_defs (flowgraph_t *graph)
 	// Calculate gen and kill for each block, and initialize in and out
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
-		gen = set_new ();
-		kill = set_new ();
+		reach.gen = set_new ();
+		reach.kill = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, 0, stdef, 0, 0);
-			set_empty (stgen);
-			set_empty (stkill);
-			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->element];
-				flow_kill_aliases (stkill, var, uninit);
-				set_remove (stkill, st->number);
-				set_add (stgen, st->number);
-			}
-
-			set_difference (gen, stkill);
-			set_union (gen, stgen);
-
-			set_difference (kill, stgen);
-			set_union (kill, stkill);
+			flow_analyze_statement (st, 0, reach.stdef, 0, 0);
+			flow_statement_reaching (st, &reach);
 		}
-		node->reaching_defs.gen = gen;
-		node->reaching_defs.kill = kill;
+		node->reaching_defs.gen = reach.gen;
+		node->reaching_defs.kill = reach.kill;
 		node->reaching_defs.in = set_new ();
 		node->reaching_defs.out = set_new ();
+		reach.gen = reach.kill = 0;
 	}
 
 	changed = 1;
+	set_t      *oldout = set_new ();
 	while (changed) {
 		changed = 0;
 		// flow down the graph
@@ -865,8 +885,6 @@ flow_reaching_defs (flowgraph_t *graph)
 			node = graph->nodes[graph->depth_first[i]];
 			in = node->reaching_defs.in;
 			out = node->reaching_defs.out;
-			gen = node->reaching_defs.gen;
-			kill = node->reaching_defs.kill;
 			for (pred_i = set_first (node->predecessors); pred_i;
 				 pred_i = set_next (pred_i)) {
 				flownode_t *pred = graph->nodes[pred_i->element];
@@ -874,16 +892,71 @@ flow_reaching_defs (flowgraph_t *graph)
 			}
 			set_assign (oldout, out);
 			set_assign (out, in);
-			set_difference (out, kill);
-			set_union (out, gen);
+			set_difference (out, node->reaching_defs.kill);
+			set_union (out, node->reaching_defs.gen);
 			if (!set_is_equivalent (out, oldout))
 				changed = 1;
 		}
 	}
 	set_delete (oldout);
-	set_delete (stdef);
-	set_delete (stgen);
-	set_delete (stkill);
+
+	reach.gen = set_new ();
+	reach.kill = set_new ();
+	set_t *use = set_new ();
+	set_t *tmp = set_new ();
+	int num_ud = 0;
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		set_empty (reach.kill);
+		set_assign (reach.gen, node->reaching_defs.in);
+		for (st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, use, reach.stdef, 0, 0);
+			set_empty (tmp);
+			for (set_iter_t *vi = set_first (use); vi; vi = set_next (vi)) {
+				flowvar_t *var = reach.vars[vi->element];
+				set_assign (tmp, var->define);
+				set_intersection (tmp, reach.gen);
+				num_ud += set_count (tmp);
+			}
+			flow_statement_reaching (st, &reach);
+		}
+	}
+	graph->func->ud_chains = malloc (num_ud * sizeof (udchain_t));
+	graph->func->num_ud_chains = num_ud;
+	num_ud = 0;
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		set_empty (reach.kill);
+		set_assign (reach.gen, node->reaching_defs.in);
+		for (st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, use, reach.stdef, 0, 0);
+			set_empty (tmp);
+			st->first_use = num_ud;
+			for (set_iter_t *vi = set_first (use); vi; vi = set_next (vi)) {
+				flowvar_t *var = reach.vars[vi->element];
+				set_assign (tmp, var->define);
+				set_intersection (tmp, reach.gen);
+				for (set_iter_t *ud = set_first (tmp); ud; ud = set_next (ud)) {
+					set_add (var->udchains, num_ud);
+					udchain_t *udc = &graph->func->ud_chains[num_ud++];
+					udc->var = vi->element;
+					udc->usest = st->number;
+					udc->defst = ud->element;
+				}
+			}
+			st->num_use = num_ud - st->first_use;
+			flow_statement_reaching (st, &reach);
+		}
+	}
+	set_delete (use);
+	set_delete (tmp);
+	set_delete (reach.gen);
+	set_delete (reach.kill);
+	reach.gen = reach.kill = 0;
+
+	set_delete (reach.stdef);
+	set_delete (reach.stgen);
+	set_delete (reach.stkill);
 }
 
 /**	Update the node's \a use set from the statement's \a use set
@@ -1335,9 +1408,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					if (s->opa) {
 						flow_add_op_var (use, s->opa, 1);
 					}
-				}
-				if (use) {
-					flow_add_op_var (use, &flow_params[0].op, 1);
+					if (use) {
+						flow_add_op_var (use, &flow_params[0].op, 1);
+					}
 				}
 			}
 			if (strcmp (s->opcode, "call") == 0) {

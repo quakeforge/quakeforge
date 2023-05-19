@@ -117,6 +117,8 @@ typedef struct statement_s {
 	operand_t  *use;			///< list of auxiliary operands used
 	operand_t  *def;			///< list of auxiliary operands defined
 	operand_t  *kill;			///< list of auxiliary operands killed
+	int         first_use;
+	int         num_use;
 } statement_t;
 
 typedef struct sblock_s {

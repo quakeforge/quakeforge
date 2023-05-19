@@ -121,6 +121,8 @@ typedef struct function_s {
 	struct set_s       *real_statements;///< actual statements for ud-chaining
 	struct statement_s **statements;
 	int                 num_statements;
+	int                 num_ud_chains;
+	struct udchain_s   *ud_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 } function_t;
