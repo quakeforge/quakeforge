@@ -751,6 +751,15 @@ static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
 static statement_t *lea_statement (operand_t *pointer, operand_t *offset,
 								   expr_t *e);
 
+static statement_t *
+assign_statement (operand_t *dst, operand_t *src, expr_t *e)
+{
+	statement_t *s = new_statement (st_assign, "assign", e);
+	s->opa = dst;
+	s->opc = src;
+	return s;
+}
+
 static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 {
@@ -796,7 +805,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
-			// (there may be more chains somwhere within src_expr, but they
+			// (there may be more chains somewhere within src_expr, but they
 			// are not part of this chain as they are separated by another
 			// expression).
 			sblock = statement_subexpr (sblock, src_expr, &src);
@@ -837,6 +846,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 			// FIXME this probably needs to be more agressive
 			// shouldn't emit code...
 			sblock = statement_subexpr (sblock, dst_expr, &def);
+			//FIXME is this even necessary? if it is, should use copy_operand
 			sblock = statement_subexpr (sblock, dst_expr, &kill);
 		}
 		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
@@ -1045,9 +1055,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 				arg = p;
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
-					s = new_statement (st_assign, "assign", a);
-					s->opa = p;
-					s->opc = arg;
+					s = assign_statement (p, arg, a);
 					sblock_add_statement (sblock, s);
 				}
 			}
@@ -1500,15 +1508,6 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 	s->opa = ptr;
 	s->opb = offs;
 	s->opc = op;
-	return s;
-}
-
-static statement_t *
-assign_statement (operand_t *dst, operand_t *src, expr_t *e)
-{
-	statement_t *s = new_statement (st_assign, "assign", e);
-	s->opa = dst;
-	s->opc = src;
 	return s;
 }
 
