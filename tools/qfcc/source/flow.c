@@ -551,6 +551,23 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
 }
 
 static void
+clear_operand (operand_t *op)
+{
+	if (op && op->op_type == op_def) {
+		def_visit_all (op->def, 0, flow_def_clear_flowvars, 0);
+	}
+}
+
+static void
+clear_operand_chain (operand_t *op)
+{
+	while (op) {
+		clear_operand (op);
+		op = op->next;
+	}
+}
+
+static void
 add_var_addrs (set_t *set, flowvar_t *var)
 {
 	for (int i = 0; i < var->op->size; i++) {
@@ -622,11 +639,11 @@ flow_build_vars (function_t *func)
 		s = func->statements[i];
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < FLOW_OPERANDS; j++) {
-			if (operands[j] && operands[j]->op_type == op_def) {
-				def_visit_all (operands[j]->def, 0,
-							   flow_def_clear_flowvars, 0);
-			}
+			clear_operand (operands[j]);
 		}
+		clear_operand_chain (s->use);
+		clear_operand_chain (s->def);
+		clear_operand_chain (s->kill);
 	}
 	// count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
