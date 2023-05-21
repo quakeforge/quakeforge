@@ -87,7 +87,7 @@ ALLOC_STATE (flowgraph_t, graphs);		///< flow graph pool
 
 /**	Allocate a new flow var.
  *
- *	The var's use and define sets are initialized to empty.
+ *	The var's use, define and udchain sets are initialized to empty.
  */
 static flowvar_t *
 new_flowvar (void)
@@ -793,6 +793,139 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	set_delete (tmp);
 }
 
+static int
+flow_tempop_add_aliases (tempop_t *tempop, void *_set)
+{
+	set_t      *set = (set_t *) _set;
+	flowvar_t  *var;
+	var = tempop->flowvar;
+	if (var)
+		set_add (set, var->number);
+	return 0;
+}
+
+static int
+flow_def_add_aliases (def_t *def, void *_set)
+{
+	set_t      *set = (set_t *) _set;
+	flowvar_t  *var;
+	var = def->flowvar;
+	if (var)
+		set_add (set, var->number);
+	return 0;
+}
+
+static void
+flow_add_op_var (set_t *set, operand_t *op, int ol)
+{
+	flowvar_t  *var;
+
+	if (!set)
+		return;
+	if (!(var = flow_get_var (op)))
+		return;
+	set_add (set, var->number);
+
+	if (op->op_type == op_temp) {
+		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
+	} else if (op->op_type == op_def) {
+		def_visit_all (op->def, ol, flow_def_add_aliases, set);
+	}
+}
+
+static int
+flowvar_def_add_use (def_t *def, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = def->flowvar;
+	if (var) {
+		set_add (var->use, st->number);
+	}
+	return 0;
+}
+
+static void
+flowvar_add_use (flowvar_t *var, statement_t *st)
+{
+	set_add (var->use, st->number);
+
+	if (var->op->op_type != op_def) {
+		return;
+	}
+	def_t      *def = var->op->def->alias;
+	if (def && is_array (def->type)) {
+		def_visit_all (def, 0, flowvar_def_add_use, st);
+	}
+}
+
+static void
+follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
+{
+	statement_t *st = func->statements[ud.defst];
+	if (set_is_member (visited, st->number)) {
+		return;
+	}
+	set_add (visited, st->number);
+	if (st->type == st_address) {
+		flowvar_t  *var = flow_get_var (st->opa);
+		set_add (ptr, var->number);
+		return;
+	}
+	for (int j = 0; j < st->num_use; j++) {
+		udchain_t   c = func->ud_chains[j + st->first_use];
+		if (c.defst < func->num_statements) {
+			operand_t  *op = func->vars[c.var]->op;
+			if (is_ptr (op->type)) {
+				follow_ud_chain (c, func, ptr, visited);
+			} else {
+			}
+		}
+	}
+}
+
+static void
+flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
+{
+	set_t      *use_ptr = set_new ();
+	set_t      *def_ptr = set_new ();
+	set_t      *ptr = set_new ();
+	set_t      *visited = set_new ();
+
+	int         have_use = 0;
+	for (operand_t *op = st->use; op; op = op->next) {
+		if (op->op_type == op_def && is_ptr (op->type)) {
+			flowvar_t  *var = flow_get_var (op);
+			set_add (use_ptr, var->number);
+			have_use = 1;
+			const char *name = op->def->name;
+			if (!strncmp (name,".arg", 4) || !strncmp (name, ".param_", 7)) {
+				set_add (def_ptr, var->number);
+			}
+		}
+	}
+	if (have_use) {
+		for (int i = 0; i < st->num_use; i++) {
+			udchain_t   ud = func->ud_chains[i + st->first_use];
+			set_empty (visited);
+			set_add (visited, st->number);
+			if (set_is_member (use_ptr, ud.var)) {
+				set_empty (ptr);
+				follow_ud_chain (ud, func, ptr, visited);
+				for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
+					flowvar_t  *var = func->vars[p->element];
+					flow_add_op_var (use, var->op, 0);
+					flowvar_add_use (var, st);
+				}
+			}
+		}
+	}
+
+	set_delete (visited);
+	set_delete (use_ptr);
+	set_delete (def_ptr);
+	set_delete (ptr);
+}
+
 typedef struct {
 	set_t      *gen;
 	set_t      *kill;
@@ -955,7 +1088,7 @@ flow_reaching_defs (flowgraph_t *graph)
 				set_intersection (tmp, reach.gen);
 				for (set_iter_t *ud = set_first (tmp); ud; ud = set_next (ud)) {
 					set_add (var->udchains, num_ud);
-					udchain_t *udc = &graph->func->ud_chains[num_ud++];
+					udchain_t  *udc = &graph->func->ud_chains[num_ud++];
 					udc->var = vi->element;
 					udc->usest = st->number;
 					udc->defst = ud->element;
@@ -1018,6 +1151,9 @@ flow_live_vars (flowgraph_t *graph)
 		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			if (st->type == st_func && statement_is_call (st)) {
+				flow_check_params (st, stuse, stdef, graph->func);
+			}
 			live_set_use (stuse, use, def);
 			live_set_def (stdef, use, def);
 		}
@@ -1221,46 +1357,6 @@ flow_generate (flowgraph_t *graph)
 	if (options.block_dot.post)
 		dump_dot ("post", code, dump_dot_sblock);
 	return code;
-}
-
-static int
-flow_tempop_add_aliases (tempop_t *tempop, void *_set)
-{
-	set_t      *set = (set_t *) _set;
-	flowvar_t  *var;
-	var = tempop->flowvar;
-	if (var)
-		set_add (set, var->number);
-	return 0;
-}
-
-static int
-flow_def_add_aliases (def_t *def, void *_set)
-{
-	set_t      *set = (set_t *) _set;
-	flowvar_t  *var;
-	var = def->flowvar;
-	if (var)
-		set_add (set, var->number);
-	return 0;
-}
-
-static void
-flow_add_op_var (set_t *set, operand_t *op, int ol)
-{
-	flowvar_t  *var;
-
-	if (!set)
-		return;
-	if (!(var = flow_get_var (op)))
-		return;
-	set_add (set, var->number);
-
-	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
-	} else if (op->op_type == op_def) {
-		def_visit_all (op->def, ol, flow_def_add_aliases, set);
-	}
 }
 
 static operand_t *
