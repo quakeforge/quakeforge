@@ -1289,7 +1289,7 @@ void
 flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[FLOW_OPERANDS])
 {
-	int         i, start, calln = -1;
+	int         i, calln = -1;
 	operand_t  *src_op = 0;
 	operand_t  *res_op = 0;
 	operand_t  *aux_op1 = 0;
@@ -1441,33 +1441,23 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					operands[0] = s->opc;
 				}
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
-				start = 0;
-				calln = s->opcode[5] - '0';
+				calln = s->opcode[4] - '0';
 				flow_add_op_var (use, s->opa, 1);
 			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
-				start = 2;
-				calln = s->opcode[6] - '0';
+				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa, 1);
 				flow_add_op_var (use, s->opb, 1);
 				if (s->opc)
 					flow_add_op_var (use, s->opc, 1);
 			}
 			if (calln >= 0) {
-				if (use) {
-					for (i = start; i < calln; i++) {
-						flow_add_op_var (use, &flow_params[i + 1].op, 1);
-					}
-				}
 				if (def) {
-					for (i = 0; i < num_flow_params; i++) {
-						flow_add_op_var (def, &flow_params[i].op, 6);
-					}
+					flow_add_op_var (def, &flow_params[0].op, 6);
 				}
 				if (kill) {
-					for (i = 0; i < num_flow_params; i++) {
-						flow_kill_aliases (kill,
-										   flow_get_var (&flow_params[i].op),
-										   0);
+					for (i = 1; i < num_flow_params; i++) {
+						flowvar_t  *var = flow_get_var (&flow_params[i].op);
+						flow_kill_aliases (kill, var, 0);
 					}
 				}
 			}

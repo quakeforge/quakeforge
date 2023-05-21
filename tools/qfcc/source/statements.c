@@ -1012,6 +1012,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	const char *opcode;
 	const char *pref = "";
 	statement_t *s;
+	operand_t  *use = 0;
 
 	// function arguments are in reverse order
 	for (a = args; a; a = a->next) {
@@ -1037,6 +1038,10 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
+			operand_t  *p;
+			sblock = statement_subexpr (sblock, param, &p);
+			p->next = use;
+			use = p;
 			continue;
 		}
 		if (is_struct (get_type (param))) {
@@ -1045,13 +1050,13 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			mov->file = a->file;
 			sblock = statement_slist (sblock, mov);
 		} else {
+			operand_t  *p = 0;
+			sblock = statement_subexpr (sblock, param, &p);
 			if (options.code.vector_calls && a->type == ex_value
 				&& a->e.value->lltype == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
-				operand_t  *p = 0;
-				operand_t  *arg;
-				sblock = statement_subexpr (sblock, param, &p);
+				operand_t  *arg = p;
 				arg = p;
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
@@ -1059,6 +1064,8 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 					sblock_add_statement (sblock, s);
 				}
 			}
+			p->next = use;
+			use = p;
 		}
 	}
 	opcode = va (0, "%scall%d", pref, count);
@@ -1066,6 +1073,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
+	s->use = use;
 	if (op) {
 		*op = return_operand (call->e.branch.ret_type, call);
 	}
