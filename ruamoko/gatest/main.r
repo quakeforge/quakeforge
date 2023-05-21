@@ -81,11 +81,11 @@ main ()
 			names[0], names[3], names[0], names[3], prod);
 
 	Algebra *alg = [Algebra R:3, 0, 1];
-	double vals1[32] = {1, 0, 0, 8};
-	static double vals2[32] = {0, 1, 0, 8};//FIXME qfcc bug (static)
-	static double origin_vals[32] = {0, 0, 0, 1};
-	MultiVector *plane1 = [alg group:0 values:vals1];
-	MultiVector *plane2 = [alg group:0 values:vals2];
+	double plane1_vals[4] = {1, 0, 0, 8};
+	double plane2_vals[4] = {0, 1, 0, 8};
+	double origin_vals[4] = {0, 0, 0, 1};
+	MultiVector *plane1 = [alg group:0 values:plane1_vals];
+	MultiVector *plane2 = [alg group:0 values:plane2_vals];
 	MultiVector *origin = [alg group:3 values:origin_vals];
 
 	MultiVector *line = [plane1 wedge:plane2];
