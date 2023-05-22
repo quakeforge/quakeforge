@@ -160,7 +160,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 			double rc = rhs.components[j];
 			BasisBlade *rb = [rhs.layout bladeAt:j];
 			int         rg = [rb grade];
-			BasisBlade *b = [lb geometricProduct:rb];
+			BasisBlade *b = [lb geometricProduct:rb metric:[algebra metric]];
 			int         g = [b grade];
 			if ((lg <= rg) && (g != rg - lg)) {
 				continue;
