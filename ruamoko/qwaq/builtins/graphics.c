@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/draw.h"
 #include "QF/image.h"
 #include "QF/input.h"
+#include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -86,17 +87,20 @@ static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static int event_handler_id;
 static canvas_system_t canvas_sys;
+static view_t screen_view;
+static uint32_t canvas;
 
 static void
 bi_2d (void)
 {
 	if (qc2d)
 		PR_ExecuteProgram (bi_rprogs, qc2d);
+	Con_DrawConsole ();
+	Canvas_Draw (canvas_sys);
 }
 
 static SCR_Func bi_2dfuncs[] = {
 	bi_2d,
-//	Con_DrawConsole,
 	0,
 };
 
@@ -155,6 +159,11 @@ static builtin_t builtins[] = {
 static int
 event_handler (const IE_event_t *ie_event, void *_pr)
 {
+	// FIXME rethink event handling for qwaq
+	if (ie_event->type == ie_key && ie_event->key.code == QFK_ESCAPE) {
+		Con_SetState (con_active);
+		return 1;
+	}
 	return IN_Binding_HandleEvent (ie_event);
 }
 
@@ -326,6 +335,12 @@ generate_colormap (void)
 	free (cmap);
 }
 
+static void
+vidsize_listener (void *data, const viddef_t *vdef)
+{
+	Canvas_SetLen (canvas_sys, (view_pos_t) { vdef->width, vdef->height });
+}
+
 void
 BI_Graphics_Init (progs_t *pr)
 {
@@ -374,8 +389,19 @@ BI_Graphics_Init (progs_t *pr)
 		cd->canvas_sys = &canvas_sys;
 	}
 	ECS_CreateComponentPools (reg);
+
+	canvas = Canvas_New (canvas_sys);
+	screen_view = Canvas_GetRootView (canvas_sys, canvas);
+	View_SetPos (screen_view, 0, 0);
+	View_SetLen (screen_view, viddef.width, viddef.height);
+	View_SetGravity (screen_view, grav_northwest);
+	View_SetVisible (screen_view, 1);
+
+	VID_OnVidResize_AddListener (vidsize_listener, 0);
+
 	//Key_SetKeyDest (key_game);
 	Con_Init ();
+	vidsize_listener (0, &viddef); //FIXME this probably shouldn't be needed
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();
