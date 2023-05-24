@@ -89,7 +89,7 @@ main ()
 	MultiVector *origin = [alg group:3 values:origin_vals];
 
 	MultiVector *line = [plane1 wedge:plane2];
-	MultiVector *point = [[line dot:origin] product:line];
+	MultiVector *point = [[line dot:origin] product:[line reverse]];
 	printf ("plane1:%@\nplane2:%@\nline:%@\norigin:%@\n", plane1, plane2, line, origin);
 	printf ("point:%@\n", point);
 

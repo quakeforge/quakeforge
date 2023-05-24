@@ -23,6 +23,7 @@
 -(MultiVector *) wedge:(MultiVector *) rhs;
 -(MultiVector *) dot:(MultiVector *) rhs;
 -(MultiVector *) dual;
+-(MultiVector *) reverse;
 @end
 
 #endif//__multivector_h

@@ -198,4 +198,22 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 	}
 	return dual;
 }
+
+-(MultiVector *) reverse
+{
+	MultiVector *reverse = new_mv (algebra, nil);
+	for (int i = 0; i < num_components; i++) {
+		if (!components[i]) {
+			continue;
+		}
+		double c = components[i];
+		BasisBlade *b = [layout bladeAt:i];
+		int         g = [b grade];
+		unsigned    mask = [b mask];
+		double s = g & 2 ? -1 : 1;//FIXME do in BasisBlade?
+		int ind = [layout bladeIndex:mask];
+		reverse.components[ind] += s * c;
+	}
+	return reverse;
+}
 @end
