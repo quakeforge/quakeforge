@@ -247,7 +247,7 @@ int (int key, int unicode, int down) load_quickbup_keyevent =
 			if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
-				Cbuf_AddText (sprintf ("load quick%i.sav\n", load_cursor));
+				Cbuf_AddText (nil, sprintf ("load quick%i.sav\n", load_cursor));
 				load_cursor = MAX_SAVEGAMES;
 			}
 			return 1;
@@ -279,7 +279,7 @@ int (int key, int unicode, int down) load_keyevent =
 			} else if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
-				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
+				Cbuf_AddText (nil, sprintf ("load s%i.sav\n", load_cursor));
 			}
 			return 1;
 	}
@@ -304,7 +304,7 @@ int (int key, int unicode, int down) save_keyevent =
 		case QFK_RETURN:
 		//case QFM_BUTTON1:
 			Menu_SelectMenu (nil);
-			Cbuf_AddText (sprintf ("save s%i.sav\n", save_cursor));
+			Cbuf_AddText (nil, sprintf ("save s%i.sav\n", save_cursor));
 			return 1;
 	}
 	return 0;
@@ -398,15 +398,15 @@ void () quit_menu =
 int (string text, int key) sp_start =
 {
 	Menu_SelectMenu (nil);
-	Cbuf_AddText ("disconnect\n");
-	Cbuf_AddText ("maxplayers 1\n");
-	Cbuf_AddText ("coop 0\n");
-	Cbuf_AddText ("deathmatch 0\n");
-	Cbuf_AddText ("teamplay 0\n");
-	Cbuf_AddText ("listen 0\n");
-	Cbuf_AddText ("noexit 0\n");
-	Cbuf_AddText ("samelevel 0\n");
-	Cbuf_AddText ("map start\n");
+	Cbuf_AddText (nil, "disconnect\n");
+	Cbuf_AddText (nil, "maxplayers 1\n");
+	Cbuf_AddText (nil, "coop 0\n");
+	Cbuf_AddText (nil, "deathmatch 0\n");
+	Cbuf_AddText (nil, "teamplay 0\n");
+	Cbuf_AddText (nil, "listen 0\n");
+	Cbuf_AddText (nil, "noexit 0\n");
+	Cbuf_AddText (nil, "samelevel 0\n");
+	Cbuf_AddText (nil, "map start\n");
 	return 0;
 };
 
