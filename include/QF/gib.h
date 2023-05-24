@@ -1,12 +1,9 @@
 /*
-	#FILENAME#
+	gib.h
 
-	#DESCRIPTION#
+	GIB scripting language
 
-	Copyright (C) 2003 #AUTHOR#
-
-	Author: #AUTHOR#
-	Date: #DATE#
+	Copyright (C) 2003 Brian Koropoff
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
