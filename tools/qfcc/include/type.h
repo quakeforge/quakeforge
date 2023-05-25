@@ -218,6 +218,7 @@ int is_scalar (const type_t *type) __attribute__((pure));
 int is_nonscalar (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
+int is_union (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));

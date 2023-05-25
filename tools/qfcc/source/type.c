@@ -174,9 +174,7 @@ low_level_type (type_t *type)
 		return type->type;
 	if (is_enum (type))
 		return type_default->type;
-	if (is_struct (type))
-		return ev_void;
-	if (is_array (type))
+	if (is_structural (type))
 		return ev_void;
 	internal_error (0, "invalid complex type");
 }
@@ -1210,8 +1208,16 @@ int
 is_struct (const type_t *type)
 {
 	type = unalias_type (type);
-	if (type->type == ev_invalid
-		&& (type->meta == ty_struct || type->meta == ty_union))
+	if (type->type == ev_invalid && type->meta == ty_struct)
+		return 1;
+	return 0;
+}
+
+int
+is_union (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->type == ev_invalid && type->meta == ty_union)
 		return 1;
 	return 0;
 }
@@ -1229,7 +1235,7 @@ int
 is_structural (const type_t *type)
 {
 	type = unalias_type (type);
-	return is_struct (type) || is_array (type);
+	return is_struct (type) || is_union (type) || is_array (type);
 }
 
 int

@@ -1013,6 +1013,8 @@ do_op_compound (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	type_t     *t2 = get_type (e2);
 	if (is_struct (t1) && is_struct (t2))
 		return do_op_struct (op, e, e1, e2);
+	if (is_union (t1) && is_union (t2))
+		return do_op_struct (op, e, e1, e2);
 	if (is_scalar (t1) && is_scalar (t2)) {
 		if (is_enum (t1)) {
 			if (t2->type == ev_double)

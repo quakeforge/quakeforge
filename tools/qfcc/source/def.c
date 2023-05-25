@@ -605,10 +605,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
-	if ((is_array (sym->type) || is_struct (sym->type)
-		 || is_nonscalar (sym->type))
-		&& ((init->type == ex_compound)
-			|| init->type == ex_nil)) {
+	if ((is_structural (sym->type) || is_nonscalar (sym->type))
+		&& (init->type == ex_compound || init->type == ex_nil)) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {

@@ -436,7 +436,7 @@ is_anonymous_struct (specifier_t spec)
 	if (spec.sym) {
 		return 0;
 	}
-	if (!is_struct (spec.type)) {
+	if (!is_struct (spec.type) && !is_union (spec.type)) {
 		return 0;
 	}
 	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
@@ -484,7 +484,8 @@ check_specifiers (specifier_t spec)
 			if (is_anonymous_struct (spec)){
 				warning (0, "unnamed struct/union that defines "
 						 "no instances");
-			} else if (!is_enum (spec.type) && !is_struct (spec.type)) {
+			} else if (!is_enum (spec.type)
+					   && !is_struct (spec.type) && !is_union (spec.type)) {
 				warning (0, "useless type name in empty declaration");
 			}
 		} else if (!spec.type && spec.sym) {

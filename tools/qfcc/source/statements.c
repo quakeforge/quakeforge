@@ -1044,7 +1044,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			use = p;
 			continue;
 		}
-		if (is_struct (get_type (param))) {
+		if (is_struct (get_type (param)) || is_union (get_type (param))) {
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
@@ -1946,7 +1946,7 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *size;
 	statement_t *s;
 
-	if (!is_struct (nil) && !is_array (nil)) {
+	if (!is_structural (nil)) {
 		*op = value_operand (new_nil_val (nil), e);
 		return sblock;
 	}
