@@ -277,6 +277,19 @@ qfo_encode_alias (type_t *type, defspace_t *space)
 	return def;
 }
 
+static def_t *
+qfo_encode_handle (type_t *type, defspace_t *space)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+
+	def = qfo_new_encoding (type, sizeof (enc->handle), space);
+	enc = D_POINTER (qfot_type_t, def);
+	enc->handle.type = type->type;
+	ENC_STR (enc->handle.tag, type->name);
+	return def;
+}
+
 def_t *
 qfo_encode_type (type_t *type, defspace_t *space)
 {
@@ -290,6 +303,7 @@ qfo_encode_type (type_t *type, defspace_t *space)
 		qfo_encode_array,	// ty_array
 		qfo_encode_class,	// ty_class
 		qfo_encode_alias,	// ty_alias
+		qfo_encode_handle,	// ty_handle
 	};
 
 	if (type->type_def && type->type_def->external) {

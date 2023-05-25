@@ -237,6 +237,7 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_basic:
+		case ty_handle:
 			return pr_type_size[type->type];
 		case ty_struct:
 		case ty_union:
@@ -1052,6 +1053,7 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_handle:
 		case ty_basic:
 			switch (type->type) {
 #define EV_TYPE(t) \

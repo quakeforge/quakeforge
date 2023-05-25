@@ -126,6 +126,18 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 }
 
 symbol_t *
+find_handle (symbol_t *tag, type_t *type)
+{
+	symbol_t   *sym = find_tag (ty_handle, tag, type);
+	if (sym->type->type == ev_invalid) {
+		sym->type->type = ev_func;
+		sym->type->width = 1;
+		sym->type->alignment = 1;
+	}
+	return sym;
+}
+
+symbol_t *
 find_struct (int su, symbol_t *tag, type_t *type)
 {
 	ty_meta_e   meta = ty_struct;

@@ -95,6 +95,9 @@ void print_type (qfot_type_t *type)
 			//printf (" %d %s ", type.alias.type, type.alias.name);
 			print_type (type.alias.aux_type);
 			break;
+		case ty_handle:
+			//printf (" %s\n", type.handle.tag);
+			break;
 	}
 }
 

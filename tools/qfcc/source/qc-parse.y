@@ -153,7 +153,7 @@ int yylex (void);
 %token				RETURN AT_RETURN ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token	<op>		STRUCT
+%token	<op>		STRUCT HANDLE
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
@@ -1075,6 +1075,19 @@ struct_specifier
 			symbol_t   *sym;
 
 			sym = find_struct ($1, $2, 0);
+			sym->type = find_type (sym->type);
+			$$ = make_spec (sym->type, 0, 0, 0);
+			if (!sym->table) {
+				symtab_t   *tab = current_symtab;
+				while (tab->parent && tab->type == stab_struct) {
+					tab = tab->parent;
+				}
+				symtab_addsymbol (tab, sym);
+			}
+		}
+	| HANDLE tag
+		{
+			symbol_t   *sym = find_handle ($2, 0);
 			sym->type = find_type (sym->type);
 			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table) {

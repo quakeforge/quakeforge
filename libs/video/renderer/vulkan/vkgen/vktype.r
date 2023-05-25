@@ -60,6 +60,8 @@ static string get_type_key (void *type, void *unused)
 					return [[String alloc] initWithType: type];
 				}
 			}
+			// fallthrough
+		case ty_handle:
 		case ty_class:
 			return [[Type alloc] initWithType: type];
 		case ty_array:

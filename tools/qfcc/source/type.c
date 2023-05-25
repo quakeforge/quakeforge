@@ -308,6 +308,7 @@ copy_chain (type_t *type, type_t *append)
 			case ty_enum:
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
+			case ty_handle:
 				internal_error (0, "copy object type %d", type->meta);
 		}
 	}
@@ -365,6 +366,7 @@ append_type (type_t *type, type_t *new)
 			case ty_enum:
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
+			case ty_handle:
 				internal_error (0, "append to object type");
 		}
 	}
@@ -432,6 +434,9 @@ types_same (type_t *a, type_t *b)
 			return (a->name == b->name
 					&& a->t.alias.aux_type == b->t.alias.aux_type
 					&& a->t.alias.full_type == b->t.alias.full_type);
+		case ty_handle:
+			// names have gone through save_string
+			return a->name == b->name;
 	}
 	internal_error (0, "we be broke");
 }
@@ -559,6 +564,8 @@ find_type (type_t *type)
 				break;
 			case ty_alias:
 				type->t.alias.aux_type = find_type (type->t.alias.aux_type);
+				break;
+			case ty_handle:
 				break;
 		}
 	}
@@ -807,6 +814,9 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_handle:
+			dasprintf (str, " handle %s", type->name);
+			return;
 		case ty_alias:
 			dasprintf (str, "({%s=", type->name);
 			print_type_str (str, type->t.alias.aux_type);
@@ -996,6 +1006,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_handle:
+			dasprintf (encoding, "{%s$}", type->name);
+			return;
 		case ty_alias:
 			dasprintf (encoding, "{%s>", type->name ? type->name : "");
 			encode_type (encoding, type->t.alias.aux_type);
@@ -1331,6 +1344,7 @@ int
 type_size (const type_t *type)
 {
 	switch (type->meta) {
+		case ty_handle:
 		case ty_basic:
 			return pr_type_size[type->type] * type->width;
 		case ty_struct:
@@ -1373,6 +1387,7 @@ type_width (const type_t *type)
 				return 4;
 			}
 			return type->width;
+		case ty_handle:
 		case ty_struct:
 		case ty_union:
 			return 1;
