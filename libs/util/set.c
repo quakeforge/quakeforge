@@ -194,7 +194,10 @@ _set_remove (set_t *set, unsigned x)
 static inline void
 _set_add_range (set_t *set, unsigned start, unsigned count)
 {
-	if (!count || start + count > set->size) {
+	if (!count) {
+		return;
+	}
+	if (start + count > set->size) {
 		set_expand (set, start + count);
 	}
 	unsigned    end = start + count - 1;
@@ -216,7 +219,10 @@ _set_add_range (set_t *set, unsigned start, unsigned count)
 static inline void
 _set_remove_range (set_t *set, unsigned start, unsigned count)
 {
-	if (!count || start >= set->size) {
+	if (!count) {
+		return;
+	}
+	if (start >= set->size) {
 		return;
 	}
 	if (start + count > set->size) {
