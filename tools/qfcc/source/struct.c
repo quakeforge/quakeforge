@@ -202,6 +202,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 					s = s->next;
 					s->s.offset += offset;
 					s->table = symtab;
+					s->no_auto_init = 1;
 					Hash_Add (symtab->tab, s);
 				}
 			}

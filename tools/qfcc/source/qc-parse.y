@@ -114,6 +114,7 @@ int yylex (void);
 	struct symbol_s *symbol;
 	struct symtab_s *symtab;
 	struct attribute_s *attribute;
+	struct designator_s *designator;
 }
 
 // these tokens are common between qc and qp
@@ -194,6 +195,7 @@ int yylex (void);
 
 %type	<expr>		opt_init_semi opt_expr comma_expr expr
 %type	<expr>		compound_init element_list
+%type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		ose optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
@@ -1146,6 +1148,9 @@ struct_defs
 component_decl_list
 	: component_decl_list2
 	| component_decl_list2 component_decl
+		{
+			warning (0, "no semicolon at end of struct or union");
+		}
 	;
 
 component_decl_list2
@@ -1405,8 +1410,29 @@ element_list
 	;
 
 element
-	: compound_init								{ $$ = new_element ($1, 0); }
+	: designator '=' compound_init				{ $$ = new_element ($3, $1); }
+	| designator '=' expr 						{ $$ = new_element ($3, $1); }
+	| compound_init								{ $$ = new_element ($1, 0); }
 	| expr										{ $$ = new_element ($1, 0); }
+	;
+
+designator
+	: designator_spec
+	| designator designator_spec
+		{
+			designator_t *des = $1;
+			while (des->next) {
+				des = des->next;
+			}
+			des->next = $2;
+			$$ = $1;
+		}
+	;
+
+designator_spec
+	: '.' ident_expr	{ $$ = new_designator ($2, 0); }
+	| '.' NAME			{ $$ = new_designator (new_symbol_expr ($2), 0); }
+	| '[' expr ']'      { $$ = new_designator (0, $2); }
 	;
 
 optional_comma

@@ -74,12 +74,18 @@ typedef struct {
 	ex_label_t *label;
 } ex_labelref_t;
 
+typedef struct designator_s {
+	struct designator_s *next;
+	struct expr_s *field;
+	struct expr_s *index;
+} designator_t;
+
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
 	struct type_s *type;
 	struct expr_s *expr;		///< initializer expression
-	struct symbol_s *symbol;	///< for labeled initializers
+	designator_t *designator;	///< for labeled initializers
 } element_t;
 
 typedef struct element_chain_s {
@@ -448,7 +454,8 @@ expr_t *new_block_expr (void);
 */
 expr_t *build_block_expr (expr_t *expr_list);
 
-element_t *new_element (expr_t *expr, struct symbol_s *symbol);
+designator_t *new_designator (expr_t *field, expr_t *index);
+element_t *new_element (expr_t *expr, designator_t *designator);
 expr_t *new_compound_init (void);
 expr_t *append_element (expr_t *compound, element_t *element);
 expr_t *initialized_temp_expr (const struct type_s *type, expr_t *compound);

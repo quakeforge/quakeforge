@@ -370,7 +370,7 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			for (element_t *i = e->e.compound.head; i; i = i->next) {
-				append_element (n, new_element (i->expr, i->symbol));
+				append_element (n, new_element (i->expr, i->designator));
 			}
 			return n;
 		case ex_memset:
