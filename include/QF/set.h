@@ -428,6 +428,9 @@ set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 set_iter_t *set_next (set_iter_t *set_iter);
 set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
+set_iter_t *set_while (set_iter_t *set_iter);
+set_iter_t *set_while_r (set_pool_t *set_pool, set_iter_t *set_iter);
+
 struct dstring_s;
 /** Return a human-readable string representing the set.
 

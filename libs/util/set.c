@@ -734,6 +734,36 @@ set_next (set_iter_t *set_iter)
 	return set_next_r (&static_set_pool, set_iter);
 }
 
+set_iter_t *
+set_while_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	unsigned    x;
+
+	if (_set_is_member (set_iter->set, set_iter->element)) {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (!_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	} else {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	}
+	delete_setiter (set_pool, set_iter);
+	return 0;
+}
+
+set_iter_t *
+set_while (set_iter_t *set_iter)
+{
+	return set_while_r (&static_set_pool, set_iter);
+}
+
 const char *
 set_to_dstring_r (set_pool_t *set_pool, dstring_t *str, const set_t *set)
 {
