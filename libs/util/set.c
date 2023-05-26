@@ -191,6 +191,53 @@ _set_remove (set_t *set, unsigned x)
 	SET_REMOVE(set, x);
 }
 
+static inline void
+_set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count || start + count > set->size) {
+		set_expand (set, start + count);
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] |= start_mask & end_mask;
+	} else {
+		set->map[start_ind] |= start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = ~SET_ZERO;
+		}
+		set->map[end_ind] |= end_mask;
+	}
+}
+
+static inline void
+_set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count || start >= set->size) {
+		return;
+	}
+	if (start + count > set->size) {
+		count = set->size - start;
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] &= ~(start_mask & end_mask);
+	} else {
+		set->map[start_ind] &= ~start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = SET_ZERO;
+		}
+		set->map[end_ind] &= ~end_mask;
+	}
+}
+
 set_t *
 set_add (set_t *set, unsigned x)
 {
@@ -202,12 +249,32 @@ set_add (set_t *set, unsigned x)
 }
 
 set_t *
+set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_remove_range (set, start, count);
+	else
+		_set_add_range (set, start, count);
+	return set;
+}
+
+set_t *
 set_remove (set_t *set, unsigned x)
 {
 	if (set->inverted)
 		_set_add (set, x);
 	else
 		_set_remove (set, x);
+	return set;
+}
+
+set_t *
+set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_add_range (set, start, count);
+	else
+		_set_remove_range (set, start, count);
 	return set;
 }
 

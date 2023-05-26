@@ -198,6 +198,19 @@ void set_trim (set_t *set);
 */
 set_t *set_add (set_t *set, unsigned x);
 
+/** Add a range of elements to a set.
+
+	It is not an error to add elements that are already members of the set.
+
+	\note \a set is modified.
+
+	\param set		The set to which the element will be added.
+	\param start	The first element to be added.
+	\param count	The number of elements to be added.
+	\return			The modified set.
+*/
+set_t *set_add_range (set_t *set, unsigned start, unsigned count);
+
 /** Remove an element from a set.
 
 	It is not an error to remove an element that is not a member of the set.
@@ -209,6 +222,19 @@ set_t *set_add (set_t *set, unsigned x);
 	\return			The modified set.
 */
 set_t *set_remove (set_t *set, unsigned x);
+
+/** Remove a range of elements from a set.
+
+	It is not an error to remove elements that not members of the set.
+
+	\note \a set is modified.
+
+	\param set		The set from which the element will be removed.
+	\param start	The first element to be removed.
+	\param count	The number of elements to be removed.
+	\return			The modified set.
+*/
+set_t *set_remove_range (set_t *set, unsigned start, unsigned count);
 
 /** Compute the inverse of a set.
 
