@@ -140,7 +140,7 @@ get_type (expr_t *e)
 		case ex_with:
 			return &type_void;
 		case ex_memset:
-			return e->e.memset.type;
+			return 0;
 		case ex_error:
 			return 0;
 		case ex_return:
@@ -1372,6 +1372,17 @@ expr_t *
 new_param_expr (type_t *type, int num)
 {
 	return param_expr (va (0, ".param_%d", num), type);
+}
+
+expr_t *
+new_memset_expr (expr_t *dst, expr_t *val, expr_t *count)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_memset;
+	e->e.memset.dst = dst;
+	e->e.memset.val = val;
+	e->e.memset.count = count;
+	return e;
 }
 
 expr_t *

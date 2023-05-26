@@ -42,6 +42,7 @@
 #include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -189,6 +190,8 @@ assign_elements (expr_t *local_expr, expr_t *init,
 				 element_chain_t *element_chain)
 {
 	element_t  *element;
+	type_t     *init_type = get_type (init);
+	set_t      *initialized = set_new_size (type_size (init_type));
 
 	for (element = element_chain->head; element; element = element->next) {
 		int         offset = element->offset;
@@ -206,7 +209,25 @@ assign_elements (expr_t *local_expr, expr_t *init,
 			c = convert_nil (c, type);
 		}
 		append_expr (local_expr, assign_expr (alias, c));
+		set_add_range (initialized, offset, type_size (type));
 	}
+
+	unsigned    start = 0;
+	for (set_iter_t *in = set_first (initialized); in; in = set_next (in)) {
+		unsigned    end = in->element;
+		if (end > start) {
+			expr_t     *dst = new_offset_alias_expr (&type_int, init, start);
+			expr_t     *zero = new_int_expr (0);
+			expr_t     *count = new_int_expr (end - start);
+			append_expr (local_expr, new_memset_expr (dst, zero, count));
+		}
+		// skip over all the initialized locations
+		in = set_while (in);
+		if (in) {
+			start = in->element;
+		}
+	}
+	set_delete (initialized);
 }
 
 expr_t *

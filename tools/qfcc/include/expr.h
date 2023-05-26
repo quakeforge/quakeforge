@@ -142,7 +142,6 @@ typedef struct ex_memset_s {
 	struct expr_s *dst;
 	struct expr_s *val;
 	struct expr_s *count;
-	struct type_s *type;
 } ex_memset_t;
 
 /**	State expression used for think function state-machines.
@@ -777,6 +776,8 @@ expr_t *new_with_expr (int mode, int reg, expr_t *val);
 	\return			A new expression referencing the parameter slot.
 */
 expr_t *new_param_expr (struct type_s *type, int num);
+
+expr_t *new_memset_expr (expr_t *dst, expr_t *val, expr_t *count);
 
 /**	Convert a name to an expression of the appropriate type.
 
