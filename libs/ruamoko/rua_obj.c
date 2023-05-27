@@ -1100,10 +1100,14 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 			pr_type_t **args)
 {
 	progs_t    *pr = probj->pr;
-	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+	const char *name = "nil";
+	if (object) {
+		__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+		name = PR_GetString (pr, class->name);
+	}
 
 	PR_Sprintf (pr, probj->msg, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), probj->msg->str);
+	PR_RunError (pr, "%s: %s", name, probj->msg->str);
 }
 
 static void
