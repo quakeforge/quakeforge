@@ -89,6 +89,21 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 	return str;
 }
 
+-(double *) components
+{
+	return components;
+}
+
+-(int)indexFor:(unsigned)mask
+{
+	return [layout bladeIndex:mask];
+}
+
+-(double *) componentFor:(BasisBlade *) blade
+{
+	return &components[[layout bladeIndex:[blade mask]]];
+}
+
 -(MultiVector *) product:(MultiVector *) rhs
 {
 	MultiVector *prod = new_mv (algebra, nil);
@@ -177,6 +192,54 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		}
 	}
 	return prod;
+}
+
+-(MultiVector *) plus:(MultiVector *) rhs
+{
+	MultiVector *plus = new_mv (algebra, nil);
+	for (int i = 0; i < num_components; i++) {
+		double c = components[i];
+		if (!c) {
+			continue;
+		}
+		BasisBlade *b = [layout bladeAt:i];
+		int ind = [plus.layout bladeIndex:[b mask]];
+		plus.components[ind] += c;
+	}
+	for (int i = 0; i < rhs.num_components; i++) {
+		double c = rhs.components[i];
+		if (!c) {
+			continue;
+		}
+		BasisBlade *b = [rhs.layout bladeAt:i];
+		int ind = [plus.layout bladeIndex:[b mask]];
+		plus.components[ind] += c;
+	}
+	return plus;
+}
+
+-(MultiVector *) minus:(MultiVector *) rhs
+{
+	MultiVector *minus = new_mv (algebra, nil);
+	for (int i = 0; i < num_components; i++) {
+		double c = components[i];
+		if (!c) {
+			continue;
+		}
+		BasisBlade *b = [layout bladeAt:i];
+		int ind = [minus.layout bladeIndex:[b mask]];
+		minus.components[ind] += c;
+	}
+	for (int i = 0; i < rhs.num_components; i++) {
+		double c = rhs.components[i];
+		if (!c) {
+			continue;
+		}
+		BasisBlade *b = [rhs.layout bladeAt:i];
+		int ind = [minus.layout bladeIndex:[b mask]];
+		minus.components[ind] -= c;
+	}
+	return minus;
 }
 
 -(MultiVector *) dual

@@ -36,7 +36,7 @@
 	for (int i = 0; i < d + 1; i++) {
 		int         c = counts[i];
 		int         ind = indices[i];
-		a.grades[i] = [BasisGroup new:c basis:blades + ind - c];
+		a.grades[i] = [[BasisGroup new:c basis:blades + ind - c] retain];
 	}
 
 	if (p == 3 && m == 0 && z == 1) {
