@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "qfalloca.h"
 
@@ -117,6 +118,12 @@ static void
 bi_str_new (progs_t *pr, void *data)
 {
 	R_STRING (pr) = PR_NewMutableString (pr);
+}
+
+static void
+bi_str_unmutable (progs_t *pr, void *data)
+{
+	RETURN_STRING (pr, P_GSTRING (pr, 0));
 }
 
 static void
@@ -315,6 +322,54 @@ bi_str_upper (progs_t *pr, void *data)
 	RETURN_STRING (pr, upper);
 }
 
+static void
+bi_strtod (progs_t *pr, void *data)
+{
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_DOUBLE (pr) = strtod (str, &end_ptr);
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtof (progs_t *pr, void *data)
+{
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_FLOAT (pr) = strtof (str, &end_ptr);
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtol (progs_t *pr, void *data)
+{
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_LONG (pr) = strtol (str, &end_ptr, P_INT (pr, 2));
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtoul (progs_t *pr, void *data)
+{
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_ULONG (pr) = strtoul (str, &end_ptr, P_INT (pr, 2));
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -323,6 +378,7 @@ static builtin_t builtins[] = {
 	bi(sprintf,     -2, p(string)),
 	bi(vsprintf,    2, p(string), P(1, 2)),
 	bi(str_new,     0),
+	bi(str_unmutable,   1, p(string)),
 	bi(str_free,    1, p(string)),
 	bi(str_hold,    1, p(string)),
 	bi(str_valid,   1, p(string)),
@@ -337,6 +393,10 @@ static builtin_t builtins[] = {
 	bi(str_quote,   1, p(string)),
 	bi(str_lower,   1, p(string)),
 	bi(str_upper,   1, p(string)),
+	bi(strtod,      1, p(string)),
+	bi(strtof,      1, p(string)),
+	bi(strtol,      1, p(string)),
+	bi(strtoul,     1, p(string)),
 	{0}
 };
 
