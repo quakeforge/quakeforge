@@ -22,7 +22,7 @@ string str_lower (string str);
 string str_upper (string str);
 double strtod (string str, int *end);
 float strtof (string str, int *end);
-long strtol (string str, int *end);
-unsigned long strtoul (string str, int *end);
+long strtol (string str, int *end, int base);
+unsigned long strtoul (string str, int *end, int base);
 
 #endif//__ruamoko_string_h
