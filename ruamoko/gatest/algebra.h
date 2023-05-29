@@ -15,6 +15,7 @@
 	BasisLayout *layout;
 	int         num_components;
 	int         dimension;
+	int         plus, minus, zero;
 }
 +(Algebra *) R:(int)p, int m, int z;
 +(Algebra *) PGA:(int)n;

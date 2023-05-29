@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "algebra.h"
 #include "metric.h"
@@ -14,6 +15,9 @@
 	Algebra    *a = [[[Algebra alloc] init] autorelease];
 	a.metric = [[Metric R:p, m, z] retain];
 
+	a.plus = p;
+	a.minus = m;
+	a.zero = z;
 	int         d = p + m + z;
 	a.dimension = d;
 	a.num_components = 1 << d;
@@ -151,6 +155,11 @@
 			printf ("    %@\n", [g bladeAt:j]);
 		}
 	}
+}
+
+-(string) describe
+{
+	return sprintf ("R(%d,%d,%d)", plus, minus, zero);
 }
 
 @end

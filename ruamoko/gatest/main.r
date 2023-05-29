@@ -396,6 +396,35 @@ get_symtab_key (void *var, void *unused)
 	return ((var_t *) var).name;
 }
 
+static Algebra *
+parse_algebra (string spec)
+{
+	ivec3       R = {};
+	string      s = spec;
+	if (is_digit (str_mid (spec, 0, 1))) {
+		for (int i = 0; i < 3; i++) {
+			int         end = 0;
+			R[i] = strtol (s, &end, 0);
+			string      e = str_mid (s, end, end + 1);
+			if (!e) {
+				break;
+			}
+			if (e != ",") {
+				goto bad_spec;
+			}
+			s = str_mid (s, end + 1);
+		}
+		if (!R[0] && !R[1] && !R[2]) {
+			goto bad_spec;
+		}
+		return [Algebra R:R[0], R[1], R[2]];
+	} else {
+	}
+bad_spec:
+	printf ("bad algebra spec: %s\n", spec);
+	return nil;
+}
+
 int
 main (int argc, string *argv)
 {
@@ -412,10 +441,22 @@ main (int argc, string *argv)
 		arp_end ();
 		arp_start ();
 		for (int i = 1; i < argc; i++) {
+			if (argv[i] == "-a") {
+				Algebra *a = [parse_algebra (argv[++i]) retain];
+				if (!a) {
+					return 1;
+				}
+				[algebra release];
+				algebra = a;
+				[minus_one release];
+				minus_one = [[algebra ofGrade:0 values:&m1] retain];
+				continue;
+			}
 			QFile       file = Qopen (argv[i], "rt");
 			if (file) {
 				arp_end ();
 				arp_start ();
+				printf ("Using algebra %@\n", algebra);
 				int         res = parse_script (argv[i], file);
 				Qclose (file);
 				if (!res) {
