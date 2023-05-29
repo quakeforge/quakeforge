@@ -131,6 +131,17 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 	return prod;
 }
 
+-(MultiVector *) divide:(MultiVector *) rhs
+{
+	MultiVector *sqr = [rhs product:rhs];
+	double      smag = sqr.components[[sqr indexFor:0]];
+	MultiVector *div = [self product:rhs];
+	for (int i = 0; i < div.num_components; i++) {
+		div.components[i] /= smag;
+	}
+	return div;
+}
+
 -(MultiVector *) wedge:(MultiVector *) rhs
 {
 	MultiVector *prod = new_mv (algebra, nil);
@@ -246,7 +257,6 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 {
 	MultiVector *dual = new_mv (algebra, nil);
 	unsigned dual_mask = (1 << [algebra dimension]) - 1;
-	printf ("dual: %x %d\n", dual_mask, [algebra dimension]);
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
@@ -256,7 +266,6 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		unsigned mask = [lb mask] ^ dual_mask;
 		double s = 1;
 		int ind = [layout bladeIndex:mask];
-		printf ("    : %x %d\n", mask, ind);
 		dual.components[ind] += s * lc;
 	}
 	return dual;

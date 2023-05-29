@@ -117,7 +117,7 @@ typedef enum {
 	OPENS, CLOSES,
 	MUL, DIV, PLUS, MINUS,
 	WEDGE, ANTIWEDGE, DOT,
-	REVERSE,
+	REVERSE, DUAL,
 } token_e;
 
 script_t script;
@@ -157,6 +157,7 @@ get_token ()
 		case "&":   return {ANTIWEDGE, nil};
 		case ".":   return {DOT, nil};
 		case "~":   return {REVERSE, nil};
+		case "!":   return {DUAL, nil};
 	}
 	return {ID, .name = token_str };
 }
@@ -164,7 +165,8 @@ get_token ()
 static void
 syntax_error ()
 {
-	obj_error (nil, 0, "syntax error: %d\n", Script_GetLine (script));
+	obj_error (nil, 0, "syntax error before `%s': %d\n", token_str,
+			   Script_GetLine (script));
 }
 
 static int
@@ -206,10 +208,13 @@ factor ()
 	MultiVector *vec;
 	if (match (REVERSE)) {
 		advance ();
-		vec = [expression () reverse];
+		vec = [factor () reverse];
+	} else if (match (DUAL)) {
+		advance ();
+		vec = [factor () dual];
 	} else if (match (MINUS)) {
 		advance ();
-		vec = [minus_one product:expression ()];
+		vec = [minus_one product:factor ()];
 	} else if (match (OPENP)) {
 		advance ();
 		vec = expression ();
@@ -289,10 +294,11 @@ term ()
 		} else {
 			vec = high_term ();
 		}
-		if (match (REVERSE) || match (OPENP) || match (ID)) {
+		if (match (REVERSE) || match (DUAL) || match (OPENP) || match (ID)) {
 			op = @selector(product:);
-//		} else if (match (DIV)) {
-//			advance ();
+		} else if (match (DIV)) {
+			op = @selector(divide:);
+			advance ();
 		} else {
 			return vec;
 		}
@@ -362,7 +368,7 @@ static int
 parse_script (string name, QFile file)
 {
 	script = Script_New ();
-	Script_SetSingle (script, "()[]{}/+-^&.~=;");
+	Script_SetSingle (script, "()[]{}/+-^&.~=;!");
 	token_str = Script_FromFile (script, name, file);
 
 	while (!match (EOF)) {

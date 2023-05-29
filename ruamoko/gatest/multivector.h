@@ -26,6 +26,7 @@
 -(double *) componentFor:(BasisBlade *) blade;
 
 -(MultiVector *) product:(MultiVector *) rhs;
+-(MultiVector *) divide:(MultiVector *) rhs;
 -(MultiVector *) wedge:(MultiVector *) rhs;
 -(MultiVector *) dot:(MultiVector *) rhs;
 -(MultiVector *) plus:(MultiVector *) rhs;
