@@ -368,7 +368,7 @@ static int
 parse_script (string name, QFile file)
 {
 	script = Script_New ();
-	Script_SetSingle (script, "()[]{}/+-^&.~=;!");
+	Script_SetSingle (script, "()[]{}/+-^&~=;!");
 	token_str = Script_FromFile (script, name, file);
 
 	while (!match (EOF)) {
