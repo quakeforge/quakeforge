@@ -204,11 +204,11 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 	dasprintf (dstr, "%*sfv_%p [shape=none,label=<\n", indent, "", graph);
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 					 "cellspacing=\"0\">\n", indent + 2, "");
-	dasprintf (dstr, "%*s<tr><td colspan=\"6\">flow vars</td></tr>\n",
+	dasprintf (dstr, "%*s<tr><td colspan=\"7\">flow vars</td></tr>\n",
 			   indent + 4, "");
 	dasprintf (dstr, "%*s<tr><td>#</td><td>name</td>"
-			   "<td>addr</td><td>define</td><td>use</td><td>ud</td></tr>\n",
-			   indent + 4, "");
+			   "<td>addr</td><td>define</td><td>use</td><td>ud</td><td>du</td>"
+			   "</tr>\n", indent + 4, "");
 	for (i = 0; i < graph->func->num_vars; i++) {
 		var = graph->func->vars[i];
 		dasprintf (dstr, "%*s<tr><td>%d</td><td>%s</td><td>%d</td><td>%s</td>",
@@ -218,6 +218,7 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 				   set_as_string (var->define));
 		dasprintf (dstr, "<td>%s</td>", set_as_string (var->use));
 		dasprintf (dstr, "<td>%s</td>", set_as_string (var->udchains));
+		dasprintf (dstr, "<td>%s</td>", set_as_string (var->duchains));
 		dasprintf (dstr, "</tr>\n");
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
@@ -235,6 +236,22 @@ print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 		dasprintf (dstr, "%*s<tr><td>%d</td><td>%d</td>"
 				   "<td>%d</td><td>%d</td></tr>",
 				   indent + 4, "", i, ud.var, ud.usest, ud.defst);
+	}
+	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
+
+	dasprintf (dstr, "%*sdu_%p [shape=none,label=<\n", indent, "", graph);
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+					 "cellspacing=\"0\">\n", indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"4\">du chains</td></tr>\n",
+			   indent + 4, "");
+	dasprintf (dstr, "%*s<tr><td>#</td><td>var</td>"
+			   "<td>def</td><td>use</td></tr>\n",
+			   indent + 4, "");
+	for (i = 0; i < graph->func->num_ud_chains; i++) {
+		udchain_t   du = graph->func->du_chains[i];
+		dasprintf (dstr, "%*s<tr><td>%d</td><td>%d</td>"
+				   "<td>%d</td><td>%d</td></tr>",
+				   indent + 4, "", i, du.var, du.defst, du.usest);
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
 }

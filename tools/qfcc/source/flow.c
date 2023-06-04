@@ -40,7 +40,7 @@
 #include <stdlib.h>
 
 #include "QF/alloc.h"
-#include "QF/dstring.h"
+#include "QF/heapsort.h"
 #include "QF/set.h"
 #include "QF/va.h"
 
@@ -87,7 +87,7 @@ ALLOC_STATE (flowgraph_t, graphs);		///< flow graph pool
 
 /**	Allocate a new flow var.
  *
- *	The var's use, define and udchain sets are initialized to empty.
+ *	The var's use, define, udchain and duchain sets are initialized to empty.
  */
 static flowvar_t *
 new_flowvar (void)
@@ -97,6 +97,7 @@ new_flowvar (void)
 	var->use = set_new ();
 	var->define = set_new ();
 	var->udchains = set_new ();
+	var->duchains = set_new ();
 	return var;
 }
 
@@ -108,6 +109,7 @@ delete_flowvar (flowvar_t *var)
 	set_delete (var->use);
 	set_delete (var->define);
 	set_delete (var->udchains);
+	set_delete (var->duchains);
 	FREE (vars, var);
 }
 
@@ -1078,6 +1080,14 @@ live_set_def (set_t *stdef, set_t *use, set_t *def)
 	set_union (def, stdef);
 }
 
+static  int
+duchain_cmp (const void *_a, const void *_b)
+{
+	const udchain_t *a = _a;
+	const udchain_t *b = _b;
+	return a->defst - b->defst;
+}
+
 static void
 flow_build_chains (flowgraph_t *graph)
 {
@@ -1100,9 +1110,10 @@ flow_build_chains (flowgraph_t *graph)
 	for (int i = 0; i < graph->func->num_vars; i++) {
 		udchains[i] = set_new ();
 	}
+	int num_ud_chains;
 	while (1) {
 		udchain_t  *ud_chains = 0;
-		int num_ud_chains = 0;
+		num_ud_chains = 0;
 
 		// count use-def chain elements
 		for (int i = 0; i < graph->num_nodes; i++) {
@@ -1189,6 +1200,25 @@ flow_build_chains (flowgraph_t *graph)
 	set_delete (reach.gen);
 	set_delete (reach.kill);
 	set_delete (reach.stdef);
+
+	graph->func->du_chains = malloc (num_ud_chains * sizeof (udchain_t));
+	memcpy (graph->func->du_chains, graph->func->ud_chains,
+			num_ud_chains * sizeof (udchain_t));
+	heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
+			  duchain_cmp);
+	for (int i = 0; i < num_ud_chains; i++) {
+		udchain_t   du = graph->func->du_chains[i];
+
+		flowvar_t  *var = graph->func->vars[du.var];
+		set_add (var->duchains, i);
+
+		if (du.defst < graph->func->num_statements) {
+			statement_t *st = graph->func->statements[du.defst];
+			if (!st->num_def++) {
+				st->first_def = i;
+			}
+		}
+	}
 }
 
 static void

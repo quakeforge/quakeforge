@@ -123,6 +123,7 @@ typedef struct function_s {
 	int                 num_statements;
 	int                 num_ud_chains;
 	struct udchain_s   *ud_chains;
+	struct udchain_s   *du_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 } function_t;
