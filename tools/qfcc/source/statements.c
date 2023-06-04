@@ -971,8 +971,10 @@ dereference_dst:
 	s->opa = dst;
 	s->opb = ofs;
 	s->opc = src;
-	statement_add_def (s, copy_operand (target));
-	statement_add_kill (s, target);
+	if (type != st_ptrassign) {
+		statement_add_def (s, copy_operand (target));
+		statement_add_kill (s, target);
+	}
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
