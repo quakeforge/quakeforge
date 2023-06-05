@@ -452,8 +452,9 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->tempop;
-		if ((ret = visit (tempop, data)))
+		if (!(overlap & 4) && (ret = visit (tempop, data)))
 			return ret;
+		overlap &= ~4;
 	} else {
 		overlap = 0;
 	}
