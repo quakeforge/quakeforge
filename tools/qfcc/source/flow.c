@@ -1237,12 +1237,30 @@ flow_live_vars (flowgraph_t *graph)
 
 	// first, calculate use and def for each block, and initialize the in and
 	// out sets.
+	set_t      *node_statements = set_new ();
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
 		use = set_new ();
 		def = set_new ();
+		set_empty (node_statements);
 		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			set_add (node_statements, st->number);
+		}
+		for (st = node->sblock->statements; st; st = st->next) {
+			set_empty (stuse);
+			set_empty (stdef);
+			for (int i = 0; i < st->num_use; i++) {
+				udchain_t   ud = graph->func->ud_chains[st->first_use + i];
+				if (!set_is_member (node_statements, ud.defst)) {
+					set_add (stuse, ud.var);
+				}
+			}
+			for (int i = 0; i < st->num_def; i++) {
+				udchain_t   du = graph->func->du_chains[st->first_def + i];
+				if (!set_is_member (node_statements, du.usest)) {
+					set_add (stdef, du.var);
+				}
+			}
 			live_set_use (stuse, use, def);
 			live_set_def (stdef, use, def);
 		}
@@ -1251,6 +1269,7 @@ flow_live_vars (flowgraph_t *graph)
 		node->live_vars.in = set_new ();
 		node->live_vars.out = set_new ();
 	}
+	set_delete (node_statements);
 	// create in for the exit dummy block using the global vars used by the
 	// function
 	use = set_new ();
