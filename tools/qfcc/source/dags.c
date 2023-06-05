@@ -196,7 +196,7 @@ operand_label (dag_t *dag, operand_t *op)
 		label->op = op;
 		op->label->daglabel = label;
 	} else {
-		internal_error (op->expr, "unexpected operand type: %d", op->op_type);
+		internal_error (op->expr, "unexpected operand type: %s", op_type_names[op->op_type]);
 	}
 	return label;
 }
@@ -483,7 +483,18 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 			}
 			label->live = 1;
 		}
-		// ensure all operantions on global variables are completed before
+		for (int i = 0; i < s->num_use; i++) {
+			udchain_t   ud = func->ud_chains[s->first_use + i];
+			flowvar_t  *var = func->vars[ud.var];
+			if (var->op->op_type == op_pseudo) {
+				continue;
+			}
+			daglabel_t *l = operand_label (dag, var->op);
+			if (l) {
+				l->live = 1;
+			}
+		}
+		// ensure all operations on global variables are completed before
 		// the st_func statement executes
 		for (set_iter_t *g = set_first (func->global_vars); g;
 			 g = set_next (g)) {
