@@ -33,6 +33,12 @@
 	for (int i = 0; i < a.num_components; i++) {
 		int         grade = count_bits (i);
 		int         ind = indices[grade]++;
+		unsigned    mask = i;
+		if (!z) {
+			// e0 is best for the null vector, but this geometry has no null
+			// vectors, so skip it;
+			mask <<= 1;
+		}
 		blades[ind] = [BasisBlade basis:i];
 	}
 
@@ -47,13 +53,13 @@
 		// 3d PGA (w squares to 0, x y z square to +1):
 		// : x   y   z   w
 		// : yz  zx  xy  1
-		// : xw  yw  zw  xyzw
-		// : zyw xzw yxw xyz
+		// : wx  wy  wz  wxyz
+		// : wzy wxz wyx xyz
 		BasisBlade *pga_blades[16] = {
-			blades[1],  blades[2],  blades[3],  blades[4],
-			blades[7],  blades[6],  blades[5],  blades[0],
-			blades[8],  blades[9],  blades[10], blades[15],
-			blades[14], blades[13], blades[12], blades[11],
+			blades[2],  blades[3],  blades[4],  blades[1],
+			blades[10], blades[9],  blades[7],  blades[0],
+			blades[5],  blades[6],  blades[8],  blades[15],
+			blades[13], blades[12], blades[11], blades[14],
 		};
 		BasisGroup *pga_groups[4] = {
 			[BasisGroup new:4 basis:pga_blades +  0],
@@ -65,10 +71,10 @@
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
 		// : x   y   w  1
-		// : yw  wx  xy xyw
+		// : yw  wx  xy wxy
 		BasisBlade *pga_blades[8] = {
-			blades[1], blades[2], blades[3], blades[0],
-			blades[6], blades[5], blades[4], blades[7],
+			blades[2], blades[3], blades[1], blades[0],
+			blades[5], blades[4], blades[6], blades[7],
 		};
 		BasisGroup *pga_groups[2] = {
 			[BasisGroup new:4 basis:pga_blades + 0],
