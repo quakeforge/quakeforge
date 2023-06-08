@@ -263,9 +263,11 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		}
 		double lc = components[i];
 		BasisBlade *lb = [layout bladeAt:i];
-		unsigned mask = [lb mask] ^ dual_mask;
-		double s = 1;
-		int ind = [layout bladeIndex:mask];
+		unsigned lb_mask = [lb mask];
+		unsigned mask = lb_mask ^ dual_mask;
+		double ls = [lb scale];
+		double s = count_flips (lb_mask, mask) & 1 ? -1 : 1;
+		int ind = [dual.layout bladeIndex:mask];
 		dual.components[ind] += s * lc;
 	}
 	return dual;
