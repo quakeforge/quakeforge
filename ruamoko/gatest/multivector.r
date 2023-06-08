@@ -106,7 +106,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) product:(MultiVector *) rhs
 {
-	MultiVector *prod = new_mv (algebra, nil);
+	MultiVector *prod = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
@@ -144,7 +144,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) wedge:(MultiVector *) rhs
 {
-	MultiVector *prod = new_mv (algebra, nil);
+	MultiVector *prod = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
@@ -171,7 +171,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) dot:(MultiVector *) rhs
 {
-	MultiVector *prod = new_mv (algebra, nil);
+	MultiVector *prod = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
@@ -207,7 +207,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) plus:(MultiVector *) rhs
 {
-	MultiVector *plus = new_mv (algebra, nil);
+	MultiVector *plus = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		double c = components[i];
 		if (!c) {
@@ -231,7 +231,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) minus:(MultiVector *) rhs
 {
-	MultiVector *minus = new_mv (algebra, nil);
+	MultiVector *minus = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		double c = components[i];
 		if (!c) {
@@ -255,7 +255,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) dual
 {
-	MultiVector *dual = new_mv (algebra, nil);
+	MultiVector *dual = [MultiVector new:algebra];
 	unsigned dual_mask = (1 << [algebra dimension]) - 1;
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
@@ -273,7 +273,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 
 -(MultiVector *) reverse
 {
-	MultiVector *reverse = new_mv (algebra, nil);
+	MultiVector *reverse = [MultiVector new:algebra];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
