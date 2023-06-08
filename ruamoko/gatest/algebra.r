@@ -70,11 +70,11 @@
 		a.layout = [[BasisLayout new:4 groups: pga_groups] retain];
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
-		// : x   y   w  1
-		// : yw  wx  xy wxy
+		// : 1  xy  wx  wy
+		// : x  y   w   wxy
 		BasisBlade *pga_blades[8] = {
-			blades[2], blades[3], blades[1], blades[0],
-			blades[5], blades[4], blades[6], blades[7],
+			blades[0], blades[6], blades[4], blades[5],
+			blades[2], blades[3], blades[1], blades[7],
 		};
 		BasisGroup *pga_groups[2] = {
 			[BasisGroup new:4 basis:pga_blades + 0],
