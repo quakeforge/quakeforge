@@ -237,7 +237,7 @@ factor ()
 			BasisBlade *blade = [BasisBlade basis:0];
 			pos = 0;
 			while (is_digit (str_mid (blade_str, pos, pos + 1))) {
-				int x = str_char (blade_str, pos++) - '1';
+				int x = str_char (blade_str, pos++) - '0';
 				BasisBlade *new = [BasisBlade basis:1 << x];
 				blade = [blade outerProduct:new];
 			}

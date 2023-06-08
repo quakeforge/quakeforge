@@ -4,9 +4,9 @@
 +(Metric *)R:(int)p, int m, int z
 {
 	Metric     *metric = [[[Metric alloc] init] autorelease];
-	metric.plus = (1 << p) - 1;
-	metric.minus = ((1 << m) - 1) << p;
-	metric.zero = ((1 << z) - 1) << (p + m);
+	metric.plus = ((1 << p) - 1) << z;
+	metric.minus = ((1 << m) - 1) << (z + p);
+	metric.zero = (1 << z) - 1;
 	return metric;
 }
 

@@ -90,7 +90,7 @@
 
 	for (int i = 0; i < 32; i++) {
 		if (mask & (1 << i)) {
-			basis += sprintf("%x", i + 1);
+			basis += sprintf("%x", i);
 		}
 	}
 	if (basis) {
