@@ -57,6 +57,10 @@
 
 #include "r_internal.h"
 
+typedef struct pic_data_s {
+	subpic_t   *subpic;
+} picdata_t;
+
 typedef struct cachepic_s {
 	struct cachepic_s *next;
 	char       *name;
@@ -155,12 +159,12 @@ make_glpic (const char *name, qpic_t *p)
 	qpic_t     *pic = 0;
 
 	if (p) {
-		pic = malloc (sizeof (qpic_t) + sizeof (subpic_t *));
+		pic = malloc (field_offset (qpic_t, data[sizeof (picdata_t)]));
 		pic->width = p->width;
 		pic->height = p->height;
-		subpic_t   *sp = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
-		*(subpic_t **) pic->data = sp;
-		GLSL_SubpicUpdate (sp, p->data, 1);
+		__auto_type pd = (picdata_t *) pic->data;
+		pd->subpic = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
+		GLSL_SubpicUpdate (pd->subpic, p->data, 1);
 	}
 	return pic;
 }
@@ -172,9 +176,9 @@ pic_free (qpic_t *pic)
 		return;
 	}
 
-	subpic_t   *subpic = *(subpic_t **) pic->data;
+	__auto_type pd = (picdata_t *) pic->data;
 
-	GLSL_SubpicDelete (subpic);
+	GLSL_SubpicDelete (pd->subpic);
 	free (pic);
 }
 
@@ -225,7 +229,8 @@ make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
 		   float *color)
 {
-	subpic_t   *sp = *(subpic_t **) pic->data;
+	__auto_type pd = (picdata_t *) pic->data;
+	subpic_t   *sp = pd->subpic;
 	float       sl, sh, tl, th;
 
 	srcx += sp->rect->x;
@@ -749,11 +754,12 @@ void
 glsl_Draw_TileClear (int x, int y, int w, int h)
 {
 	static quat_t color = { 1, 1, 1, 1 };
-	vrect_t     *tile_rect = VRect_New (x, y, w, h);
-	vrect_t     *sub = VRect_New (0, 0, 0, 0);	// filled in later;
-	subpic_t    *sp = *(subpic_t **) backtile_pic->data;
-	int          sub_sx, sub_sy, sub_ex, sub_ey;
-	int          i, j;
+	vrect_t    *tile_rect = VRect_New (x, y, w, h);
+	vrect_t    *sub = VRect_New (0, 0, 0, 0);	// filled in later;
+	__auto_type pd = (picdata_t *) backtile_pic->data;
+	subpic_t   *sp = pd->subpic;
+	int         sub_sx, sub_sy, sub_ex, sub_ey;
+	int         i, j;
 
 	sub_sx = x / sp->width;
 	sub_sy = y / sp->height;
@@ -792,7 +798,8 @@ glsl_Draw_Fill (int x, int y, int w, int h, int c)
 void
 glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 {
-	subpic_t    *sp = *(subpic_t **) white_pic->data;
+	__auto_type pd = (picdata_t *) white_pic->data;
+	subpic_t   *sp = pd->subpic;
 	float       sl = sp->rect->x * sp->size;
 	float       sh = sp->rect->x * sp->size;
 	float       tl = sp->rect->y * sp->size;
