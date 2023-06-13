@@ -86,7 +86,7 @@ extern pthread_rwlock_t *stats_lock;
 
 typedef struct winding_s {
 	struct winding_s *next;
-	qboolean    original;	// don't free, it's part of the portal
+	bool        original;	// don't free, it's part of the portal
 	unsigned    numpoints;
 	int         id;
 	int         thread;
@@ -209,7 +209,7 @@ extern byte *uncompressed;
 
 winding_t *NewWinding (threaddata_t *thread, int points);
 winding_t *ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
-						qboolean keepon);
+						bool keepon);
 winding_t *CopyWinding (threaddata_t *thread, const winding_t *w);
 
 void ClusterFlow (int clusternum);

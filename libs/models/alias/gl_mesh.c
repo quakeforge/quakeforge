@@ -49,7 +49,7 @@
 
 // ALIAS MODEL DISPLAY LIST GENERATION ========================================
 
-static qboolean   *used;
+static int        *used;
 static int         used_size;
 
 // the command list holds counts and s/t values that are valid for every frame
@@ -344,8 +344,8 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	int         i, j;
 	int        *cmds;
 	QFile      *f;
-	qboolean    remesh = true;
-	qboolean    do_cache = false;
+	bool        remesh = true;
+	bool        do_cache = false;
 
 	cache = dstring_new ();
 	fullpath = dstring_new ();

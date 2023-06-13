@@ -163,7 +163,7 @@ static unsigned int g_fpa_argc;
 static hashtab_t *g_fpa_zero = 0;
 static unsigned int g_fpa_i, g_fpa_ind;
 
-static qboolean fpa_iterate (char *arg, llist_node_t *node)
+static bool fpa_iterate (char *arg, llist_node_t *node)
 {
 	gib_var_t *var = GIB_Var_Get_Complex (&GIB_DATA(g_fpa_cbuf)->locals, &g_fpa_zero,
 		arg, &g_fpa_ind, true);
@@ -210,7 +210,7 @@ static unsigned int g_fpad_argc;
 static hashtab_t *g_fpad_zero = 0;
 static unsigned int g_fpad_i, g_fpad_ind;
 
-static qboolean fpad_iterate (char *arg, llist_node_t *node)
+static bool fpad_iterate (char *arg, llist_node_t *node)
 {
 	gib_var_t  *var;
 

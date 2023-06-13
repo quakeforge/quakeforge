@@ -34,7 +34,7 @@
 
 #define SKY_TEX 2000	// Quake 2 environment sky
 
-extern qboolean gl_skyloaded;
+extern bool gl_skyloaded;
 extern vec5_t gl_skyvec[6][4];
 extern GLuint gl_solidskytexture;
 extern GLuint gl_alphaskytexture;

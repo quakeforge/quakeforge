@@ -68,7 +68,7 @@ static cvar_t vid_system_gamma_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &vid_system_gamma },
 };
-qboolean	vid_gamma_avail;		// hardware gamma availability
+bool		vid_gamma_avail;		// hardware gamma availability
 
 VISIBLE unsigned int	d_8to24table[256];
 

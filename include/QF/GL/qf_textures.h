@@ -38,14 +38,14 @@ extern int gl_solid_format;
 extern int gl_lightmap_format;
 extern int gl_filter_min;
 extern int gl_filter_max;
-extern qboolean gl_Anisotropy;
+extern bool gl_Anisotropy;
 extern float gl_aniso;
 extern GLuint gl_part_tex;
 struct tex_s;
 
-void GL_Upload8 (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8_EXT (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+void GL_Upload8 (const byte *data, int width, int height,  bool mipmap, bool alpha);
+void GL_Upload8_EXT (const byte *data, int width, int height,  bool mipmap, bool alpha);
+int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, bool mipmap, bool alpha, int bytesperpixel);
 int GL_LoadTex (const char *identifier, int mips, struct tex_s *tex);
 int GL_FindTexture (const char *identifier);
 

@@ -92,7 +92,7 @@ void NET_Init (int port);
 
 	\return			True if successfully read, otherwise false.
 */
-qboolean NET_GetPacket (void);
+bool NET_GetPacket (void);
 
 /**	Send a data packet out to the network.
 
@@ -110,7 +110,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
+bool NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Compare two network addresses.
 
@@ -120,7 +120,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
+bool NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Convert an address to a string.
 
@@ -157,7 +157,7 @@ const char *NET_BaseAdrToString (netadr_t a);
 	\param[out] a	The resulting address of the conversion.
 	\return			True if the conversion is successful, otherwise false.
 */
-qboolean NET_StringToAdr (const char *s, netadr_t *a);
+bool NET_StringToAdr (const char *s, netadr_t *a);
 
 ///@}
 
@@ -225,7 +225,7 @@ typedef enum {
 } ncqport_e;
 
 typedef struct netchan_s {
-	qboolean	fatal_error;	///< True if the message overflowed
+	bool		fatal_error;	///< True if the message overflowed
 
 	double      last_received;	///< Time the last packet was received.
 
@@ -343,7 +343,7 @@ void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 
 	\param chan		The netchan representing the connection.
 */
-qboolean Netchan_Process (netchan_t *chan);
+bool Netchan_Process (netchan_t *chan);
 
 /** Initialize a new connection.
 
@@ -360,7 +360,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 	\param chan     The netchan representing the connection.
 	\return			True if the connection isn't chocked.
 */
-qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
+bool Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 
 /** Check if a reliable packet can be sent to the connection.
 
@@ -368,7 +368,7 @@ qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 	\return			True if there is no outstanding reliable packet and the
 					connection isn't chocked.
 */
-qboolean Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
+bool Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 
 /** Send a packet.
 

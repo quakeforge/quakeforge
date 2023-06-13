@@ -308,7 +308,7 @@ glsl_Draw_PicFromWad (const char *name)
 }
 
 qpic_t *
-glsl_Draw_CachePic (const char *path, qboolean alpha)
+glsl_Draw_CachePic (const char *path, bool alpha)
 {
 	qpic_t     *p, *pic;
 	cachepic_t *cpic;

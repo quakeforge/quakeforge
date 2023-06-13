@@ -114,7 +114,7 @@ void CL_ParseTEnt_qw (struct msg_s *net_message, double time,
 					  TEntContext_t *ctx);
 void CL_ParseParticleEffect (struct msg_s *net_message);
 void CL_ClearProjectiles (void);
-void CL_ParseProjectiles (struct msg_s *net_message, qboolean nail2,
+void CL_ParseProjectiles (struct msg_s *net_message, bool nail2,
 						  TEntContext_t *ctx);
 
 #endif//__client_temp_entities_h

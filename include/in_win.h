@@ -30,7 +30,7 @@
 
 #include "QF/qtypes.h"
 
-extern qboolean      mouseactive;
+extern bool          mouseactive;
 extern float         mouse_x, mouse_y;
 
 void IN_UpdateClipCursor (void);

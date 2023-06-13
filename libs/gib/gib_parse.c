@@ -54,7 +54,7 @@
 	escaped with a backslash (and the backslash
 	is not itself escaped).
 */
-inline qboolean
+inline bool
 GIB_Escaped (const char *str, int i)
 {
 	int         n, c;
@@ -186,7 +186,7 @@ GIB_Parse_Match_Var (const char *str, unsigned int *i)
 	return 0;
 }
 
-VISIBLE qboolean    gib_parse_error;
+VISIBLE bool        gib_parse_error;
 unsigned int gib_parse_error_pos;
 const char *gib_parse_error_msg;
 

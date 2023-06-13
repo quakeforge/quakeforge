@@ -50,7 +50,7 @@ void glsl_LineGraph (int x, int y, int *h_vals, int count, int height);
 void glsl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 void glsl_Draw_FadeScreen (void);
 void glsl_Draw_BlendScreen (quat_t color);
-struct qpic_s *glsl_Draw_CachePic (const char *path, qboolean alpha);
+struct qpic_s *glsl_Draw_CachePic (const char *path, bool alpha);
 void glsl_Draw_UncachePic (const char *path);
 struct qpic_s *glsl_Draw_MakePic (int width, int height, const byte *data);
 void glsl_Draw_DestroyPic (struct qpic_s *pic);

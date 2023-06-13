@@ -987,7 +987,7 @@ SV_BeginDownload_f (void *unused)
 //=============================================================================
 
 static void
-SV_Say (qboolean team)
+SV_Say (bool team)
 {
 	char       *i, *p;
 	dstring_t  *text;
@@ -1823,7 +1823,7 @@ check_usecs (usercmd_t *ucmd)
 }
 
 void
-SV_RunCmd (usercmd_t *ucmd, qboolean inside)
+SV_RunCmd (usercmd_t *ucmd, bool inside)
 {
 	int			oldmsec, i, n;
 	edict_t    *ent;
@@ -2024,7 +2024,7 @@ SV_ExecuteClientMessage (client_t *cl)
 	client_frame_t *frame;
 	int         checksumIndex, seq_hash, c;
 	usercmd_t   oldest, oldcmd, newcmd;
-	qboolean    move_issued = false;	// allow only one move command
+	bool        move_issued = false;	// allow only one move command
 	vec3_t      o;
 
 	// make sure the reply sequence number matches the incoming

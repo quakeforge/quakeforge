@@ -467,7 +467,7 @@ sizebuf_t *
 SVR_WriteBegin (byte type, int to, unsigned size)
 {
 	byte       *p;
-	qboolean    move = false;
+	bool        move = false;
 
 	// will it fit?
 	while (rec.dbuf->bufsize + size + HEADER > rec.dbuf->sz.maxsize) {

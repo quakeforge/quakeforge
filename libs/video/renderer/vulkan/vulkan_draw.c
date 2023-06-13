@@ -761,7 +761,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 }
 
 qpic_t *
-Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
+Vulkan_Draw_CachePic (const char *path, bool alpha, vulkan_ctx_t *ctx)
 {
 	cachepic_t *cpic;
 	drawctx_t  *dctx = ctx->draw_context;

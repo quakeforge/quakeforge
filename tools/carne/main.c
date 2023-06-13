@@ -21,7 +21,7 @@
 #include "gib_thread.h"
 #include "gib_parse.h"
 
-static qboolean carne_done = false;
+static bool carne_done = false;
 static int carne_exitcode = 0;
 
 static void

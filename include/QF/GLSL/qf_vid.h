@@ -38,7 +38,7 @@ typedef struct shader_s {
 
 typedef struct shaderparam_s {
 	const char *name;
-	qboolean    uniform;
+	bool        uniform;
 	int         location;
 } shaderparam_t;
 

@@ -71,11 +71,11 @@ typedef struct vpath_s vpath_t;
 
 typedef struct findfile_s {
 	const vpath_t *vpath;		///< vpath in which file was found
-	qboolean    in_pak;			///< if true, path refers to a pak file rather
-								///< than a directory
 	const char *realname;		///< the name of the file as found (may have
 								///< .gz appended, or .ogg substituded for
 								///< .wav) does not include the path
+	bool        in_pak;			///< if true, path refers to a pak file rather
+								///< than a directory
 } findfile_t;
 
 /**	Cached information about the current game directory. \see \ref dirconf.

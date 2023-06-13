@@ -58,7 +58,7 @@ typedef struct {
 	backbuf_t   backbuf;
 	info_t     *info;
 	info_key_t *name_key;
-	qboolean    packet;
+	bool        packet;
 	recorder_t *recorder;
 	sizebuf_t   datagram;
 	byte        datagram_buf[MAX_DATAGRAM];

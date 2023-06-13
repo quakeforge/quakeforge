@@ -158,8 +158,8 @@ static con_state_t con_state;
 static int  con_event_id;
 static int  con_saved_focos;
 
-static qboolean con_debuglog;
-static qboolean chat_team;
+static bool con_debuglog;
+static bool chat_team;
 static dstring_t *c_print_buffer;
 static dstring_t *dlbar;
 static dstring_t *old_gamedir = 0;
@@ -226,7 +226,7 @@ static float notify_times[NOTIFY_LINES + 1];
 static int notify_head;
 static int notify_tail;
 
-static qboolean con_initialized;
+static bool con_initialized;
 
 static inline void *
 con_getcomponent (view_t view, uint32_t comp)

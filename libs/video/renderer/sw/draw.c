@@ -127,7 +127,7 @@ Draw_PicFromWad (const char *name)
 
 
 qpic_t *
-Draw_CachePic (const char *path, qboolean alpha)
+Draw_CachePic (const char *path, bool alpha)
 {
 	cachepic_t *pic;
 	int         i;

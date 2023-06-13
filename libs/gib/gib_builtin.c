@@ -116,7 +116,7 @@ GIB_Builtin_Remove (const char *name)
 		Hash_Free (gib_builtins, del);
 }
 
-VISIBLE qboolean
+VISIBLE bool
 GIB_Builtin_Exists (const char *name)
 {
 	return Hash_Find (gib_builtins, name) ? true : false;
@@ -1046,7 +1046,7 @@ gib_builtin_shutdown (void *data)
 }
 
 void
-GIB_Builtin_Init (qboolean sandbox)
+GIB_Builtin_Init (bool sandbox)
 {
 
 	if (sandbox)

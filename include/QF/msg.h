@@ -59,7 +59,7 @@ void MSG_PokeLongBE (sizebuf_t *sb, unsigned offset, int c);
 
 typedef struct msg_s {
 	unsigned    readcount;
-	qboolean    badread;		// set if a read goes beyond end of message
+	bool        badread;		// set if a read goes beyond end of message
 	sizebuf_t  *message;
 	size_t      badread_string_size;
 	char       *badread_string;

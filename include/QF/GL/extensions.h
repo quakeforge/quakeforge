@@ -326,7 +326,7 @@ typedef void *(GLAPIENTRY *QF_glXGetProcAddressARB) (const GLubyte *procName);
 typedef const GLubyte *(GLAPIENTRY *QF_wglGetExtensionsStringEXT) (void);
 
 /* QuakeForge extension functions */
-qboolean QFGL_ExtensionPresent (const char *);
+bool QFGL_ExtensionPresent (const char *);
 void *QFGL_ExtensionAddress (const char *);
 
 #endif	// __qfgl_ext_h_

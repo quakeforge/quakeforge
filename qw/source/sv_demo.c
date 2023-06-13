@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static QFile   *demo_file;
 static byte    *demo_mfile;
-static qboolean demo_disk;
+static bool demo_disk;
 static dstring_t *demo_name;		// filename of mvd
 static dstring_t *demo_text;		// filename of description file
 static void    *demo_dest;
@@ -334,7 +334,7 @@ SV_Cancel_f (void)
 	SV_Stop (2);
 }
 
-static qboolean
+static bool
 SV_InitRecord (void)
 {
 	if (!USECACHE) {
@@ -783,7 +783,7 @@ Dem_Team (int num)
 {
 	int         i;
 	static const char *lastteam[2];
-	qboolean    first = true;
+	bool        first = true;
 	client_t   *client;
 	static int  index = 0;
 	const char *team;

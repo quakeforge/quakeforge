@@ -244,7 +244,7 @@ vulkan_Draw_BlendScreen (quat_t color)
 }
 
 static qpic_t *
-vulkan_Draw_CachePic (const char *path, qboolean alpha)
+vulkan_Draw_CachePic (const char *path, bool alpha)
 {
 	return Vulkan_Draw_CachePic (path, alpha, vulkan_ctx);
 }

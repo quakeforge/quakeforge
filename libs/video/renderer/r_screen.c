@@ -59,13 +59,13 @@
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
 byte       *draw_chars;			// 8*8 graphic characters FIXME location
-qboolean    r_cache_thrash;		// set if surface cache is thrashing
+bool        r_cache_thrash;		// set if surface cache is thrashing
 int        *r_node_visframes;	//FIXME per renderer
 int        *r_leaf_visframes;	//FIXME per renderer
 int        *r_face_visframes;	//FIXME per renderer
 
-qboolean    scr_skipupdate;
-static qboolean scr_initialized;// ready to draw
+bool        scr_skipupdate;
+static bool scr_initialized;// ready to draw
 
 static framebuffer_t *fisheye_cube_map;
 static framebuffer_t *warp_buffer;
@@ -347,7 +347,7 @@ update_vrect (void)
 }
 
 void
-SCR_SetFullscreen (qboolean fullscreen)
+SCR_SetFullscreen (bool fullscreen)
 {
 	if (r_data->force_fullscreen == fullscreen) {
 		return;

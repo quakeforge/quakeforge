@@ -292,7 +292,7 @@ UDP_Shutdown (void)
 }
 
 void
-UDP_Listen (qboolean state)
+UDP_Listen (bool state)
 {
 	// enable listening
 	if (state) {

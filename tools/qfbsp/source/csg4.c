@@ -128,7 +128,7 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 	\param precedence	XXX
 */
 static void
-ClipInside (int splitplane, int frontside, qboolean precedence)
+ClipInside (int splitplane, int frontside, bool precedence)
 {
 	face_t     *insidelist, *next, *f;
 	face_t     *frags[2];
@@ -176,7 +176,7 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 	\param mirror	If true, add extra faces that face the opposite direction.
 */
 static void
-SaveOutside (qboolean mirror)
+SaveOutside (bool mirror)
 {
 	face_t     *f, *next, *newf;
 	int         planenum;
@@ -298,7 +298,7 @@ CSGFaces (brushset_t *bs)
 	brush_t    *b1, *b2;
 	face_t     *f;
 	int         i;
-	qboolean    overwrite;
+	bool        overwrite;
 	surface_t  *surfhead;
 
 	qprintf ("---- CSGFaces ----\n");

@@ -47,7 +47,7 @@ extern int pausable;
 extern int viewentity;
 
 extern int host_speeds;
-extern	qboolean	host_initialized;		// true if into command execution
+extern bool host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	int			host_in_game;		// input focus goes to the game
@@ -67,6 +67,6 @@ void Host_EndGame (const char *message, ...) __attribute__((format(PRINTF,1,2), 
 void Host_Frame (float time);
 void Host_Quit_f (void) __attribute__((noreturn));
 void Host_ClientCommands (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
-void Host_ShutdownServer (qboolean crash);
+void Host_ShutdownServer (bool crash);
 
 #endif // __host_h

@@ -70,7 +70,7 @@ int         valid;
 
 char       *argv0;						// changed after fork();
 
-qboolean    worldmodel;
+bool        worldmodel;
 
 int         hullnum;
 

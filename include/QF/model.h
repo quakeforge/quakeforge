@@ -161,7 +161,7 @@ typedef struct msurface_s {
 
 	byte		styles[MAXLIGHTMAPS];
 	int			cached_light[MAXLIGHTMAPS];	// values currently used in lightmap
-	qboolean	cached_dlight;				// true if dynamic light in cache
+	bool		cached_dlight;				// true if dynamic light in cache
 
 	int         model_index;	///< < 0: instance, 0 main, > 0: sub
 } msurface_t;
@@ -387,9 +387,9 @@ typedef struct model_s {
 	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
-	qboolean	 needload;		// bmodels and sprites don't cache normally
+	bool		 needload;		// bmodels and sprites don't cache normally
 	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
-	qboolean	 hasfullbrights;
+	bool		 hasfullbrights;
 
 	modtype_t	 type;
 	int			 numframes;
@@ -408,7 +408,7 @@ typedef struct model_s {
 	vec3_t		 mins, maxs;
 
 // solid volume for clipping
-	qboolean	 clipbox;
+	bool		 clipbox;
 	vec3_t		 clipmins, clipmaxs;
 
 // brush model
@@ -428,7 +428,7 @@ typedef struct model_s {
 void Mod_Init (void);
 void Mod_Init_Cvars (void);
 void Mod_ClearAll (void);
-model_t *Mod_ForName (const char *name, qboolean crash);
+model_t *Mod_ForName (const char *name, bool crash);
 void Mod_TouchModel (const char *name);
 void Mod_UnloadModel (model_t *model);
 // brush specific

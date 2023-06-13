@@ -33,11 +33,11 @@
 
 void CL_SetSolidPlayers (int playernum);
 void CL_ClearPredict (void);
-void CL_SetUpPlayerPrediction(qboolean dopred);
+void CL_SetUpPlayerPrediction(bool dopred);
 void CL_ClearEnts (void);
 void CL_EmitEntities (void);
 void CL_ClearProjectiles (void);
-void CL_ParsePacketEntities (qboolean delta);
+void CL_ParsePacketEntities (bool delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);
 void CL_Ents_Init (void);

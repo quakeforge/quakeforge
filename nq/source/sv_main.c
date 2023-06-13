@@ -774,7 +774,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, SVdata (ent)->alpha); //for now, weaponalpha = client entity alpha
 }
 
-static qboolean
+static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];

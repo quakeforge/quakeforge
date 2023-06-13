@@ -47,7 +47,7 @@ typedef struct varray_t2f_c4f_n3f_v3f_s {
 	 GLfloat	vertex[3];
 } varray_t2f_c4f_n3f_v3f_t;
 
-extern qboolean gl_va_capable;
+extern bool gl_va_capable;
 extern int vaelements;
 
 extern varray_t2f_c4ub_v3f_t *gl_spriteVertexArray;

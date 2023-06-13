@@ -160,7 +160,7 @@ static __thread error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
-qboolean    stdin_ready;
+bool        stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
@@ -375,7 +375,7 @@ Sys_StartTime (void)
 VISIBLE int64_t
 Sys_LongTime (void)
 {
-	static qboolean first = true;
+	static bool first = true;
 #ifdef _WIN32
 # if 0
 	static DWORD starttime;

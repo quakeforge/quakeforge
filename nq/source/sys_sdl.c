@@ -59,7 +59,7 @@
 #endif
 
 int qf_sdl_link;
-qboolean    isDedicated = false;
+bool        isDedicated = false;
 
 static void
 startup (void)

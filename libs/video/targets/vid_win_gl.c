@@ -77,7 +77,7 @@ QFGL_GetProcAddress (void *handle, const char *name)
 }
 
 static void *
-QFGL_ProcAddress (const char *name, qboolean crit)
+QFGL_ProcAddress (const char *name, bool crit)
 {
 	void       *glfunc = NULL;
 

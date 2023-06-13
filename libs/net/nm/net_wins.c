@@ -73,7 +73,7 @@ static netadr_t broadcastaddr;
 
 static unsigned long myAddr;
 
-qboolean    winsock_lib_initialized;
+bool        winsock_lib_initialized;
 
 int         (PASCAL FAR * pWSAStartup) (WORD wVersionRequired,
 
@@ -318,7 +318,7 @@ WINS_Shutdown (void)
 //=============================================================================
 
 void
-WINS_Listen (qboolean state)
+WINS_Listen (bool state)
 {
 	// enable listening
 	if (state) {

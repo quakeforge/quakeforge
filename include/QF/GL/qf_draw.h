@@ -49,7 +49,7 @@ void gl_Draw_Line (int x0, int y0, int x1, int y1, int c);
 void gl_Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 void gl_Draw_FadeScreen (void);
 void gl_Draw_BlendScreen (quat_t color);
-struct qpic_s *gl_Draw_CachePic (const char *path, qboolean alpha);
+struct qpic_s *gl_Draw_CachePic (const char *path, bool alpha);
 void gl_Draw_UncachePic (const char *path);
 struct qpic_s *gl_Draw_MakePic (int width, int height, const byte *data);
 void gl_Draw_DestroyPic (struct qpic_s *pic);

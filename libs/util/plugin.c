@@ -393,7 +393,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	return plugin;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PI_UnloadPlugin (plugin_t *plugin)
 {
 	// Remove the plugin from the set of loaded plugins to ensure that a

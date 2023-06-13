@@ -292,7 +292,7 @@ int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 
 	\note the dictionary becomes the owner of the value.
 */
-qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
+bool PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
 /** Copy contents of one dictionary into another.
 
@@ -306,7 +306,7 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 	\return true if values were copied, false if nothing was copied (either
 	dictionary is null, or not a dictionary, or if \a srcDict was empty)
 */
-qboolean PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
+bool PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
 
 /** Add an item to an array.
 
@@ -318,7 +318,7 @@ qboolean PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
+bool PL_A_AddObject (plitem_t *array, plitem_t *item);
 
 /** Append contents of one array to another.
 
@@ -330,7 +330,7 @@ qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 	\return true if values were copied, false if nothing was copied (either
 	array is null, or not an array, or if \a srcArray was empty)
 */
-qboolean PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray);
+bool PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray);
 
 /** Retrieve the number of items in an array.
 
@@ -352,7 +352,7 @@ int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
+bool PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
 /** Remove a value from an array object.
 	The array items will be shifted to fill the resulting hole.

@@ -112,8 +112,8 @@ netadr_t    master_adr[MAX_MASTERS];	// address of group servers
 
 quakeparms_t host_parms;
 
-qboolean    host_initialized;			// true if into command execution
-qboolean    rcon_from_user;
+bool        host_initialized;			// true if into command execution
+bool        rcon_from_user;
 
 // DoS protection
 // FLOOD_PING, FLOOD_LOG, FLOOD_CONNECT, FLOOD_STATUS, FLOOD_RCON, FLOOD_BAN
@@ -574,7 +574,7 @@ SV_Shutdown (void *data)
 static __attribute__((format(PRINTF, 1, 0))) void
 SV_Error (const char *error, va_list argptr)
 {
-	static qboolean inerror = false;
+	static bool inerror = false;
 	dstring_t  *string;
 
 	if (inerror)
@@ -793,7 +793,7 @@ CheckForFlood (flood_enum_t cmdtype)
 	static double lastmessagetime = 0;
 	static flood_t floodstatus[DOSFLOODCMDS][DOSFLOODIP];
 	int         oldest, i;
-	static qboolean firsttime = true;
+	static bool firsttime = true;
 
 	if (!sv_netdosprotect)
 		return 0;
@@ -1080,7 +1080,7 @@ SVC_DirectConnect (void)
 	int         challenge, version, i, qtv = 0;
 	int         qport;
 	netadr_t    adr;
-	qboolean    spectator;
+	bool        spectator;
 	client_frame_t *frames;
 
 	if (CheckForFlood (FLOOD_CONNECT))
@@ -1305,8 +1305,8 @@ SVC_RemoteCommand (void)
 {
 	const char *command;
 	char       *name;
-	qboolean    admin_cmd = false;
-	qboolean    do_cmd = false;
+	bool        admin_cmd = false;
+	bool        do_cmd = false;
 
 	if (CheckForFlood (FLOOD_RCON))
 		return;
@@ -1539,7 +1539,7 @@ SV_MaskIPTrim (byte *ip, int mask)
 }
 
 // assumes b has already been masked
-static inline __attribute__((pure)) qboolean
+static inline __attribute__((pure)) bool
 SV_MaskIPCompare (byte *a, byte *b, int mask)
 {
 	int i;
@@ -1562,7 +1562,7 @@ SV_MaskIPCompare (byte *a, byte *b, int mask)
 	return true;
 }
 
-static inline qboolean
+static inline bool
 SV_IPCompare (byte *a, byte *b)
 {
 	int i;
@@ -1593,7 +1593,7 @@ SV_IPCopy (byte *dest, byte *src)
 		((unsigned int *)dest)[i] = ((unsigned int *)src)[i];
 }
 
-static qboolean
+static bool
 SV_StringToFilter (const char *address, ipfilter_t *f)
 {
 #ifdef HAVE_IPV6
@@ -1976,7 +1976,7 @@ SV_SendBan (double till)
 	// FIXME: this should send a disconnect to the client!
 }
 
-static qboolean
+static bool
 SV_FilterIP (byte *ip, double *until)
 {
 	int         i;
@@ -2478,7 +2478,7 @@ Master_Heartbeat (void)
 		}
 }
 
-static inline qboolean
+static inline bool
 iswhitespace (char c)
 {
 	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
@@ -2499,7 +2499,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 	char        newname[MAX_NAME];
 	client_t   *client;
 	int         i;
-	qboolean	badname = false;
+	bool		badname = false;
 
 	// name from the info string
 	val = Info_ValueForKey (cl->userinfo, "name");

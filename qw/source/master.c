@@ -161,12 +161,12 @@ typedef struct sockaddr_in msghdr_t;
 typedef struct {
 	struct		sockaddr_in addr;
 	time_t		updated;
-	qboolean	notimeout;
+	bool		notimeout;
 } server_t;
 
 static int
 QW_AddHeartbeat (server_t **servers_p, int slen,
-				 struct sockaddr_in *addr, const char *buf, qboolean notimeout)
+				 struct sockaddr_in *addr, const char *buf, bool notimeout)
 {
 	server_t *servers = *servers_p;
 	int freeslot = -1;

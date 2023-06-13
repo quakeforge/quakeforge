@@ -113,7 +113,7 @@ int			numnails;
 int         nailcount;
 
 
-static qboolean
+static bool
 SV_AddNailUpdate (edict_t *ent)
 {
 	if (SVfloat (ent, modelindex) != sv_nailmodel
@@ -127,7 +127,7 @@ SV_AddNailUpdate (edict_t *ent)
 }
 
 static void
-SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
+SV_EmitNailUpdate (sizebuf_t *msg, bool recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
@@ -175,7 +175,7 @@ SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 */
 static void
 SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			   qboolean force, int stdver)
+			   bool force, int stdver)
 {
 	int			bits, i;
 	float		miss;

@@ -58,7 +58,7 @@
 #include "qw/include/sv_qtv.h"
 #include "qw/include/sv_recorder.h"
 
-qboolean    sv_allow_cheats;
+bool        sv_allow_cheats;
 
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
@@ -72,7 +72,7 @@ static cvar_t sv_leetnickmatch_cvar = {
 	.value = { .type = &cexpr_int, .value = &sv_leetnickmatch },
 };
 
-static qboolean
+static bool
 match_char (char a, char b)
 {
 	a = tolower ((byte) sys_char_map[(byte) a]);
@@ -272,7 +272,7 @@ SV_Fraglogfile_f (void)
 
 	Sets host_client and sv_player to the player with idnum Cmd_Argv (1)
 */
-static qboolean
+static bool
 SV_SetPlayer (void)
 {
 	client_t   *cl;
@@ -631,7 +631,7 @@ SV_Punish (int mode)
 {
 	int         i;
 	double      mins = 0.5;
-	qboolean    all = false, done = false;
+	bool        all = false, done = false;
 	client_t    *cl = 0;
 	dstring_t  *text = dstring_new();
 	const char *cmd = 0;

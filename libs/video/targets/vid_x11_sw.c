@@ -71,7 +71,7 @@ int XShmGetEventBase (Display *x);	// for broken X11 headers
 
 static GC		x_gc;
 
-static qboolean doShm;
+static bool doShm;
 static XShmSegmentInfo x_shminfo[2];
 
 static int	current_framebuffer;

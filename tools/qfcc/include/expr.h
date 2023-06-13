@@ -295,7 +295,7 @@ typedef struct expr_s {
 		ex_label_t  label;				///< label expression
 		ex_labelref_t labelref;			///< label reference expression (&)
 		ex_state_t  state;				///< state expression
-		ex_bool_t   bool;				///< boolean logic expression
+		ex_bool_t   boolean;			///< boolean logic expression
 		ex_block_t  block;				///< statement block expression
 		ex_expr_t   expr;				///< binary or unary expression
 		struct def_s *def;				///< def reference expression

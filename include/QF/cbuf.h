@@ -65,7 +65,7 @@ typedef struct cbuf_s {
 	} state;
 
 	int	      (*unknown_command)(void);	// handle unkown commands. !0 = handled
-	qboolean    strict;			// Should we tolerate unknown commands?
+	bool        strict;			// Should we tolerate unknown commands?
 	double      resumetime;		// Time when stack can be executed again
 
 	void       *data;			// Pointer to interpreter data

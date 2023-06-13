@@ -33,7 +33,7 @@ typedef struct ignore_s {
 	const char *lastname;
 } ignore_t;
 
-qboolean CL_Chat_Allow_Message (const char *str);
+bool CL_Chat_Allow_Message (const char *str);
 void CL_Chat_User_Disconnected (int uid);
 void CL_Chat_Check_Name (const char *name, int slot);
 void CL_Chat_Flush_Ignores (void);

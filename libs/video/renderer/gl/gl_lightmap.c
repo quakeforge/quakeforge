@@ -71,7 +71,7 @@ static unsigned *blocklights;
 static int bl_extents[2];
 static int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
-qboolean	 gl_lightmap_modified[MAX_LIGHTMAPS];
+bool		 gl_lightmap_modified[MAX_LIGHTMAPS];
 instsurf_t	*gl_lightmap_polys;
 glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 

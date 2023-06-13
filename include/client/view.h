@@ -86,7 +86,7 @@ typedef struct viewstate_s {
 // pitch drifting vars
 	float       idealpitch;
 	float       pitchvel;
-	qboolean    nodrift;
+	bool        nodrift;
 	float       driftmove;
 	double      laststop;
 
@@ -112,6 +112,6 @@ void V_SetContentsColor (viewstate_t *vs, int contents);
 void V_ParseDamage (struct msg_s *net_message, viewstate_t *vs);
 void V_PrepBlend (viewstate_t *vs);
 
-extern qboolean noclip_anglehack;
+extern bool noclip_anglehack;
 
 #endif // __client_view_h

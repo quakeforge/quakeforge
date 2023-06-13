@@ -83,7 +83,7 @@ SV_CheckStuck (edict_t *ent)
 	Sys_MaskPrintf (SYS_dev, "player is stuck.\n");
 }
 
-static qboolean
+static bool
 SV_CheckWater (edict_t *ent)
 {
 	int         cont;

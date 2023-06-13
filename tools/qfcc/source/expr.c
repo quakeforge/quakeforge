@@ -285,23 +285,23 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->line = pr.source_line;
 			n->file = pr.source_file;
-			if (e->e.bool.true_list) {
-				int         count = e->e.bool.true_list->size;
+			if (e->e.boolean.true_list) {
+				int         count = e->e.boolean.true_list->size;
 				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
-				n->e.bool.true_list = malloc (size);
+				n->e.boolean.true_list = malloc (size);
 				while (count--)
-					n->e.bool.true_list->e[count] =
-						copy_expr (e->e.bool.true_list->e[count]);
+					n->e.boolean.true_list->e[count] =
+						copy_expr (e->e.boolean.true_list->e[count]);
 			}
-			if (e->e.bool.false_list) {
-				int         count = e->e.bool.false_list->size;
+			if (e->e.boolean.false_list) {
+				int         count = e->e.boolean.false_list->size;
 				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
-				n->e.bool.false_list = malloc (size);
+				n->e.boolean.false_list = malloc (size);
 				while (count--)
-					n->e.bool.false_list->e[count] =
-						copy_expr (e->e.bool.false_list->e[count]);
+					n->e.boolean.false_list->e[count] =
+						copy_expr (e->e.boolean.false_list->e[count]);
 			}
-			n->e.bool.e = copy_expr (e->e.bool.e);
+			n->e.boolean.e = copy_expr (e->e.boolean.e);
 			return n;
 		case ex_label:
 			/// Create a fresh label
@@ -491,9 +491,9 @@ new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e)
 	expr_t     *b = new_expr ();
 
 	b->type = ex_bool;
-	b->e.bool.true_list = true_list;
-	b->e.bool.false_list = false_list;
-	b->e.bool.e = e;
+	b->e.boolean.true_list = true_list;
+	b->e.boolean.false_list = false_list;
+	b->e.boolean.e = e;
 	return b;
 }
 
@@ -1570,7 +1570,7 @@ convert_from_bool (expr_t *e, type_t *type)
 		one = new_uint_expr (1);
 		zero = new_uint_expr (0);
 	} else {
-		return error (e, "can't convert from bool value");
+		return error (e, "can't convert from boolean value");
 	}
 	cond = new_expr ();
 	*cond = *e;
@@ -1619,7 +1619,7 @@ has_function_call (expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			return has_function_call (e->e.bool.e);
+			return has_function_call (e->e.boolean.e);
 		case ex_block:
 			if (e->e.block.is_call)
 				return 1;
@@ -1880,8 +1880,8 @@ unary_expr (int op, expr_t *e)
 				case ex_args:
 					internal_error (e, "unexpected expression type");
 				case ex_bool:
-					return new_bool_expr (e->e.bool.false_list,
-										  e->e.bool.true_list, e);
+					return new_bool_expr (e->e.boolean.false_list,
+										  e->e.boolean.true_list, e);
 				case ex_block:
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary !");
@@ -2415,12 +2415,12 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 	if (cond->type == ex_error)
 		return cond;
 
-	backpatch (cond->e.bool.true_list, tlabel);
-	backpatch (cond->e.bool.false_list, flabel);
+	backpatch (cond->e.boolean.true_list, tlabel);
+	backpatch (cond->e.boolean.false_list, flabel);
 
 	block->e.block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
 	append_expr (block, cond);
-	append_expr (cond->e.bool.e, flabel);
+	append_expr (cond->e.boolean.e, flabel);
 	if (block->e.block.result)
 		append_expr (block, assign_expr (block->e.block.result, e2));
 	else
@@ -2703,13 +2703,13 @@ build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
 		if (not) {
-			backpatch (test->e.bool.true_list, fl);
-			backpatch (test->e.bool.false_list, tl);
+			backpatch (test->e.boolean.true_list, fl);
+			backpatch (test->e.boolean.false_list, tl);
 		} else {
-			backpatch (test->e.bool.true_list, tl);
-			backpatch (test->e.bool.false_list, fl);
+			backpatch (test->e.boolean.true_list, tl);
+			backpatch (test->e.boolean.false_list, fl);
 		}
-		append_expr (test->e.bool.e, tl);
+		append_expr (test->e.boolean.e, tl);
 		append_expr (if_expr, test);
 	}
 	append_expr (if_expr, s1);
@@ -2759,13 +2759,13 @@ build_while_statement (int not, expr_t *test, expr_t *statement,
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
 		if (not) {
-			backpatch (test->e.bool.true_list, l2);
-			backpatch (test->e.bool.false_list, l1);
+			backpatch (test->e.boolean.true_list, l2);
+			backpatch (test->e.boolean.false_list, l1);
 		} else {
-			backpatch (test->e.bool.true_list, l1);
-			backpatch (test->e.bool.false_list, l2);
+			backpatch (test->e.boolean.true_list, l1);
+			backpatch (test->e.boolean.false_list, l2);
 		}
-		append_expr (test->e.bool.e, l2);
+		append_expr (test->e.boolean.e, l2);
 		append_expr (while_expr, test);
 	}
 
@@ -2801,13 +2801,13 @@ build_do_while_statement (expr_t *statement, int not, expr_t *test,
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
 		if (not) {
-			backpatch (test->e.bool.true_list, break_label);
-			backpatch (test->e.bool.false_list, l1);
+			backpatch (test->e.boolean.true_list, break_label);
+			backpatch (test->e.boolean.false_list, l1);
 		} else {
-			backpatch (test->e.bool.true_list, l1);
-			backpatch (test->e.bool.false_list, break_label);
+			backpatch (test->e.boolean.true_list, l1);
+			backpatch (test->e.boolean.false_list, break_label);
 		}
-		append_expr (test->e.bool.e, break_label);
+		append_expr (test->e.boolean.e, break_label);
 		append_expr (do_while_expr, test);
 	}
 
@@ -2856,9 +2856,9 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 		append_expr (for_expr, l1);
 		test = convert_bool (test, 1);
 		if (test->type != ex_error) {
-			backpatch (test->e.bool.true_list, tl);
-			backpatch (test->e.bool.false_list, fl);
-			append_expr (test->e.bool.e, fl);
+			backpatch (test->e.boolean.true_list, tl);
+			backpatch (test->e.boolean.false_list, fl);
+			append_expr (test->e.boolean.e, fl);
 			append_expr (for_expr, test);
 		}
 	} else {

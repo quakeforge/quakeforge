@@ -72,8 +72,8 @@ struct joy_axis {
 	struct joy_axis_button *axis_buttons;	// if axis button
 };
 
-extern qboolean joy_found;					// Joystick present?
-extern qboolean joy_active; 				// Joystick in use?
+extern bool joy_found;					// Joystick present?
+extern bool joy_active; 				// Joystick in use?
 
 struct joy_button {
 	int         old;

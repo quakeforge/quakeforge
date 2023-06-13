@@ -76,7 +76,7 @@ const char *lighttargets[32];
 
 
 static int
-LightStyleForTargetname (const char *targetname, qboolean alloc)
+LightStyleForTargetname (const char *targetname, bool alloc)
 {
 	int		i;
 

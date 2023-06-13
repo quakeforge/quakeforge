@@ -161,7 +161,7 @@ PM_PointContents (const vec3_t p)
 
 	Returns false if the given player position is not valid (in solid)
 */
-qboolean
+bool
 PM_TestPlayerPosition (const vec3_t pos)
 {
 	hull_t     *hull;

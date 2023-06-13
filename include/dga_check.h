@@ -38,7 +38,7 @@
 
   Check for the presence of the XFree86-DGA support in the X server
 */
-qboolean VID_CheckDGA (Display *, int *, int *, int *)
+bool VID_CheckDGA (Display *, int *, int *, int *)
 #ifndef HAVE_DGA	// FIXME
 	__attribute__((const))
 #endif
@@ -50,7 +50,7 @@ qboolean VID_CheckDGA (Display *, int *, int *, int *)
 
   Check for the presence of the XFree86-VMode X server extension
 */
-qboolean VID_CheckVMode (Display *, int *, int *)
+bool VID_CheckVMode (Display *, int *, int *)
 #ifndef HAVE_DGA	// FIXME
 	__attribute__((const))
 #endif

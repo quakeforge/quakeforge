@@ -52,7 +52,7 @@
 static void Cache_FreeLow (memhunk_t *hunk, size_t new_low_hunk);
 static void Cache_FreeHigh (memhunk_t *hunk, size_t new_high_hunk);
 static void Cache_Profile_r (memhunk_t *hunk);
-static qboolean Cache_FreeLRU (memhunk_t *hunk);
+static bool Cache_FreeLRU (memhunk_t *hunk);
 
 #define	ZONEID			0x1d4a11
 #define	HUNK_SENTINAL	0x1df001ed
@@ -521,7 +521,7 @@ struct memhunk_s {
 	size_t      low_used;
 	size_t      high_used;
 	size_t      tempmark;
-	qboolean    tempactive;
+	bool        tempactive;
 	cache_system_t cache_head[1];
 } __attribute__((aligned (64)));
 
@@ -611,7 +611,7 @@ Hunk_Check (memhunk_t *hunk)
 */
 
 VISIBLE void
-Hunk_Print (memhunk_t *hunk, qboolean all)
+Hunk_Print (memhunk_t *hunk, bool all)
 {
 	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	hunkblk_t  *h, *next, *endlow, *starthigh, *endhigh;
@@ -1065,7 +1065,7 @@ Cache_FreeHigh (memhunk_t *hunk, size_t new_high_hunk)
 	}
 }
 
-static qboolean
+static bool
 Cache_FreeLRU (memhunk_t *hunk)
 {
 	cache_system_t *cs;

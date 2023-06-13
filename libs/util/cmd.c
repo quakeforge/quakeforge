@@ -209,7 +209,7 @@ Cmd_RemoveCommand (const char *name)
 }
 
 /* Checks for the existance of a command */
-VISIBLE qboolean
+VISIBLE bool
 Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;

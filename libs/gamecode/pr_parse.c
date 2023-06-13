@@ -212,7 +212,7 @@ ED_NewString (progs_t *pr, const char *string)
 	Can parse either fields or globals
 	returns false if error
 */
-VISIBLE qboolean
+VISIBLE bool
 ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 {
 	pr_def_t    *def;

@@ -165,8 +165,8 @@ dump_queue (const int *data, size_t count)
 	return 1;
 }
 
-static int true = 1;
-static int false = 0;
+static int true_v = 1;
+static int false_v = 0;
 
 static int data[] = { 3, 2, 5, 6, 8, 1, 9 };
 static int data1[] = { 3, 7, 5, 6, 8, 1, 9 };
@@ -184,18 +184,18 @@ typedef struct {
 } test_t;
 
 static test_t tests[] = {
-	{ &true,    1, test_is_empty },
-	{ &false,   1, test_is_full  },
+	{ &true_v,  1, test_is_empty },
+	{ &false_v, 1, test_is_full  },
 	{ 0,        0, test_size     },
 
 	{ data + 0, 1, test_insert   },
 	{ 0,        1, test_size     },
-	{ &false,   1, test_is_empty },
-	{ &false,   1, test_is_full  },
+	{ &false_v, 1, test_is_empty },
+	{ &false_v, 1, test_is_full  },
 	{ data + 0, 1, test_peek     },
 	{ data + 0, 1, test_remove   },
-	{ &true,    1, test_is_empty },
-	{ &false,   1, test_is_full  },
+	{ &true_v,  1, test_is_empty },
+	{ &false_v, 1, test_is_full  },
 	{ 0,        0, test_size     },
 
 	{ data + 0, 3, test_insert   },
@@ -204,12 +204,12 @@ static test_t tests[] = {
 	{ data + 2, 1, test_remove   },
 	{ data + 0, 1, test_remove   },
 	{ data + 1, 1, test_remove   },
-	{ &true,    1, test_is_empty },
+	{ &true_v,  1, test_is_empty },
 
 	{ data + 0,  SIZEOF(data), test_insert   },
 	{ 0,         SIZEOF(data), test_size     },
-	{ &false,    1,            test_is_empty },
-	{ &true,     1,            test_is_full  },
+	{ &false_v,  1,            test_is_empty },
+	{ &true_v,   1,            test_is_full  },
 	{ 0,         0,            dump_queue    },
 	{ sort1 + 2, 3,            test_adjust   },
 	{ 0,         0,            dump_queue    },

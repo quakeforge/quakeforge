@@ -46,7 +46,7 @@ typedef struct glbspctx_s {
 } swbspctx_t;
 
 // current entity info
-qboolean    insubmodel;
+bool        insubmodel;
 vec3_t      r_worldmodelorg;
 mvertex_t  *r_pcurrentvertbase;
 static float       entity_rotation[3][3];
@@ -67,7 +67,7 @@ static btofpoly_t *pbtofpolys;
 
 static mvertex_t *pfrontenter, *pfrontexit;
 
-static qboolean makeclippededge;
+static bool makeclippededge;
 
 
 static void

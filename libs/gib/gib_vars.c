@@ -95,7 +95,7 @@ GIB_Var_Get (hashtab_t * first, hashtab_t * second, const char *key)
 /* Alters key, but restores it */
 gib_var_t *
 GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
-					 unsigned int *ind, qboolean create)
+					 unsigned int *ind, bool create)
 {
 	static hashtab_t *zero = 0;
 	unsigned int i, n, index = 0, len, start;
@@ -155,7 +155,7 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 /* Mangles the hell out of key */
 gib_var_t *
 GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *key, unsigned int start,
-					 unsigned int *ind, qboolean create)
+					 unsigned int *ind, bool create)
 {
 	static hashtab_t *zero = 0;
 	hashtab_t *one = *first, *two = *second;
@@ -164,7 +164,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 	cvar_t *cvar;
 	char c;
 	const char *str;
-	qboolean done = false;
+	bool done = false;
 
 	for (i = start, protect = 0; !done; i++) {
 		if (key->str[i] == '.' || key->str[i] == 0) {
@@ -244,7 +244,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 
 void
 GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
-				unsigned int numv, qboolean shrink)
+				unsigned int numv, bool shrink)
 {
 	unsigned int i, len;
 

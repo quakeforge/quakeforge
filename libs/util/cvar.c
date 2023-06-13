@@ -429,7 +429,7 @@ Cvar_Set (const char *var_name, const char *value)
 
 	Handles variable inspection and changing from the console
 */
-VISIBLE qboolean
+VISIBLE bool
 Cvar_Command (void)
 {
 	cvar_t     *v;

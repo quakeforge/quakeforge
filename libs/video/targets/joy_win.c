@@ -272,7 +272,7 @@ static cvar_t joy_debug_cvar = {
 	.value = { .type = &cexpr_int, .value = &joy_debug },
 };
 
-qboolean joy_advancedinit, joy_haspov;
+bool joy_advancedinit, joy_haspov;
 DWORD joy_oldbuttonstate, joy_oldpovstate;
 int  joy_id;
 DWORD joy_flags;
@@ -298,7 +298,7 @@ RawValuePointer (int axis)
 	return NULL;
 }
 
-static qboolean
+static bool
 _JOY_Read (void)
 {
 	memset (&ji, 0, sizeof (ji));

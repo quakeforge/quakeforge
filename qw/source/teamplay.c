@@ -61,7 +61,7 @@
 #include "qw/include/cl_input.h"
 #include "qw/include/client.h"
 
-static qboolean died = false, recorded_location = false;
+static bool died = false, recorded_location = false;
 static vec4f_t  death_location, last_recorded_location;
 
 int cl_deadbodyfilter;

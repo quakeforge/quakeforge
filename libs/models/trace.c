@@ -64,9 +64,9 @@ typedef struct {
 } clipbox_t;
 
 typedef struct {
-	qboolean    seen_empty;
-	qboolean    seen_solid;
-	qboolean    moved;
+	bool        seen_empty;
+	bool        seen_solid;
+	bool        moved;
 	plane_t    *split_plane;
 	vec3_t      dist;
 	const vec_t *origin;
@@ -197,7 +197,7 @@ calc_offset (const trace_t *trace, const plane_t *plane)
 	return d;
 }
 
-static qboolean
+static bool
 point_inside_portal (const clipport_t *portal, const plane_t *plane,
 					  const vec3_t p)
 {
@@ -218,7 +218,7 @@ point_inside_portal (const clipport_t *portal, const plane_t *plane,
 	return true;
 }
 
-static qboolean
+static bool
 edges_intersect (const vec3_t p1, const vec3_t p2,
 				 const vec3_t r1, const vec3_t r2)
 {
@@ -242,7 +242,7 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 	return true;
 }
 
-static qboolean
+static bool
 trace_hits_portal (const hull_t *hull, const trace_t *trace,
 				   clipport_t *portal, const vec3_t start, const vec3_t vel)
 {
@@ -274,7 +274,7 @@ trace_hits_portal (const hull_t *hull, const trace_t *trace,
 	return true;
 }
 
-static qboolean
+static bool
 trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 				   plane_t *plane, const vec3_t vel, const vec3_t org)
 {
@@ -529,7 +529,7 @@ finish_impact:
 	}
 }
 
-static qboolean
+static bool
 portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
 				  const vec3_t origin)
 {
@@ -670,7 +670,7 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 	int         side;
 	vec_t       frac = 1;
 	vec_t       t1, t2, offset, f;
-	qboolean    clipped = false;
+	bool        clipped = false;
 	clipleaf_t *l;
 	trace_state_t lstate = *state;
 

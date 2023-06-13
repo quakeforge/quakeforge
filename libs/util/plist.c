@@ -403,7 +403,7 @@ PL_ObjectAtIndex (const plitem_t *array, int index)
 	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 {
 	if (!item || item->type != QFDictionary || !value) {
@@ -433,7 +433,7 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 	return true;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict)
 {
 	if (!dstDict || dstDict->type != QFDictionary
@@ -470,7 +470,7 @@ PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict)
 	return true;
 }
 
-static qboolean
+static bool
 check_array_size (plarray_t *arr, int count)
 {
 	if (count > arr->maxvals) {
@@ -487,7 +487,7 @@ check_array_size (plarray_t *arr, int count)
 	return true;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 {
 	if (!array || array->type != QFArray || !item) {
@@ -517,13 +517,13 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 	return true;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array, item, -1);
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray)
 {
 	if (!dstArray || dstArray->type != QFArray
@@ -590,7 +590,7 @@ pl_error (pldata_t *pl, const char *fmt, ...)
 	va_end (args);
 }
 
-static qboolean
+static bool
 pl_skipspace (pldata_t *pl, int end_ok)
 {
 	while (pl->pos < pl->end) {
@@ -854,8 +854,8 @@ pl_parsequotedstring (pldata_t *pl)
 	unsigned int	start = ++pl->pos;
 	unsigned int	escaped = 0;
 	unsigned int	shrink = 0;
-	qboolean		hex = false;
-	qboolean        long_string = false;
+	bool			hex = false;
+	bool            long_string = false;
 	plitem_t       *str;
 
 	if (pl->ptr[pl->pos] == '"' &&

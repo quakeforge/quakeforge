@@ -76,9 +76,9 @@ typedef enum {MS_WINDOWED, MS_FULLSCREEN, MS_FULLDIB, MS_UNINIT} modestate_t;
 
 extern modestate_t	modestate;
 
-extern qboolean	WinNT;
+extern bool	WinNT;
 
-extern qboolean	winsock_lib_initialized;
+extern bool	winsock_lib_initialized;
 
 #ifdef SPLASH_SCREEN
 extern HWND		hwnd_dialog;

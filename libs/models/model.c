@@ -215,7 +215,7 @@ Mod_FindName (const char *name)
 }
 
 static model_t *
-Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
+Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 {
 	uint32_t   *buf;
 
@@ -293,7 +293,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	Loads a model into the cache
 */
 static model_t *
-Mod_LoadModel (model_t *mod, qboolean crash)
+Mod_LoadModel (model_t *mod, bool crash)
 {
 	if (!mod->needload) {
 		if (mod->type == mod_alias && !mod->aliashdr) {
@@ -325,7 +325,7 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 	Loads in a model for the given name
 */
 VISIBLE model_t *
-Mod_ForName (const char *name, qboolean crash)
+Mod_ForName (const char *name, bool crash)
 {
 	model_t    *mod;
 

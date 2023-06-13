@@ -99,7 +99,7 @@ static ret (*qf##func) params;
 #include "alsa_funcs_list.h"
 #undef QF_ALSA_NEED
 
-static qboolean
+static bool
 load_libasound (void)
 {
 	if (!(alsa_handle = dlopen ("libasound.so.2", RTLD_GLOBAL | RTLD_NOW))) {

@@ -52,21 +52,19 @@
 typedef uint8_t byte;
 #endif
 
+#if __STDC_VERSION__ < 202000
 #ifndef _DEF_BOOL_
 # define _DEF_BOOL_
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
-#ifdef __cplusplus
-# define __bool_true_false_are_defined
-#endif
-# ifdef __bool_true_false_are_defined
-typedef enum    {q_false = false, q_true = true} qboolean;
-//#define true q_true;
-//#define false q_false;
-# else
-#undef true
-#undef false
-typedef	enum	{false, true} qboolean;
+# ifdef __cplusplus
+#  define __bool_true_false_are_defined
 # endif
+# ifndef __bool_true_false_are_defined
+#  undef true
+#  undef false
+typedef	enum	{false, true} bool;
+# endif
+#endif
 #endif
 
 // From mathlib...

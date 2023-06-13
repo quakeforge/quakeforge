@@ -59,7 +59,7 @@ typedef enum {
 // initializing (precache commands, static sounds / objects, etc)
 
 typedef struct {
-	qboolean	active;				// false when server is going down
+	bool		active;				// false when server is going down
 	server_state_t	state;			// precache commands are valid only during load
 
 	double		time;
@@ -67,7 +67,7 @@ typedef struct {
 	int			lastcheck;			// used by PF_checkclient
 	double		lastchecktime;		// for monster ai
 
-	qboolean	paused;				// are we paused?
+	bool		paused;				// are we paused?
 
 	//check player/eyes models for hacks
 	unsigned int	model_player_checksum;
@@ -142,7 +142,7 @@ typedef struct {
 	double				senttime;
 	float				ping_time;
 	vec3_t              playerpositions[MAX_CLIENTS];
-	qboolean            playerpresent[MAX_CLIENTS];
+	bool                playerpresent[MAX_CLIENTS];
 	packet_entities_t	entities;
 	packet_players_t	players;
 } client_frame_t;
@@ -183,17 +183,17 @@ typedef enum {
 typedef struct client_s {
 	sv_client_state_t	state;
 	int				ping;				// fake ping for server clients
-	qboolean		prespawned;
-	qboolean		spawned;
+	bool			prespawned;
+	bool			spawned;
 
 	int				spectator;			// non-interactive
 
-	qboolean		sendinfo;			// at end of frame, send info to all
+	bool			sendinfo;			// at end of frame, send info to all
 										// this prevents malicious multiple
 										// broadcasts
 	float			lastnametime;		// time of last name change
 	int				lastnamecount;		// time of last name change
-	qboolean		drop;				// lose this guy next opportunity
+	bool			drop;				// lose this guy next opportunity
 	int				lossage;			// loss percentage
 
 	int				userid;				// identifying number
@@ -223,7 +223,7 @@ typedef struct client_s {
 	char			stufftext_buf[MAX_STUFFTEXT];
 
 	double			connection_started;	// or time of disconnect for zombies
-	qboolean		send_message;		// set on frames a datagram arived on
+	bool			send_message;		// set on frames a datagram arived on
 
 	//antilag stuff
 	laggedentinfo_t laggedents[MAX_CLIENTS];
@@ -254,7 +254,7 @@ typedef struct client_s {
 	struct dstring_s *uploadfn;
 	int             upload_started;
 	netadr_t		snap_from;
-	qboolean		remote_snap;
+	bool			remote_snap;
 
 //===== NETWORK ============
 	int				chokecount;
@@ -271,7 +271,7 @@ typedef struct client_s {
 // getting kicked off by the server operator
 // a program error, like an overflowed reliable buffer
 
-extern qboolean rcon_from_user;			// current command is a from a user
+extern bool rcon_from_user;			// current command is a from a user
 
 //============================================================================
 
@@ -503,9 +503,8 @@ void SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf);
 
 int SV_ModelIndex (const char *name) __attribute__((pure));
 
-qboolean SV_CheckBottom (struct edict_s *ent);
-qboolean SV_movestep (struct edict_s *ent, const vec3_t move,
-					  qboolean relink);
+bool SV_CheckBottom (struct edict_s *ent);
+bool SV_movestep (struct edict_s *ent, const vec3_t move, bool relink);
 
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
@@ -517,7 +516,7 @@ void SV_SaveSpawnparms (void);
 void SV_Physics_Client (struct edict_s	*ent);
 
 void SV_PreRunCmd (void);
-void SV_RunCmd (usercmd_t *ucmd, qboolean inside);
+void SV_RunCmd (usercmd_t *ucmd, bool inside);
 void SV_PostRunCmd (void);
 void SV_SetupUserCommands (void);
 void SV_ExecuteUserCommand (const char *s);
@@ -547,7 +546,7 @@ void SV_Physics_Init_Cvars (void);
 void SV_CheckVelocity (struct edict_s *ent);
 void SV_AddGravity (struct edict_s *ent);
 void SV_FinishGravity (struct edict_s *ent, vec3_t move);
-qboolean SV_RunThink (struct edict_s *ent);
+bool SV_RunThink (struct edict_s *ent);
 void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);
 void SV_SetMoveVars(void);
@@ -663,7 +662,7 @@ extern int fp_messages;
 extern int fp_persecond;
 extern int fp_secondsdead;
 extern int pausable;
-extern qboolean nouse;
+extern bool nouse;
 
 extern char fp_msg[255];
 

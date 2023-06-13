@@ -100,7 +100,7 @@ GIB_Exec_Override_f (void)
 }
 
 VISIBLE void
-GIB_Init (qboolean sandbox)
+GIB_Init (bool sandbox)
 {
 	// Override the exec command with a GIB-aware one
 	if (Cmd_Exists ("exec")) {

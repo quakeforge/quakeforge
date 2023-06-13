@@ -2048,7 +2048,7 @@ build_bool_block (expr_t *block, expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			build_bool_block (block, e->e.bool.e);
+			build_bool_block (block, e->e.boolean.e);
 			return;
 		case ex_label:
 			e->next = 0;

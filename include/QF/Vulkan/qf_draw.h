@@ -66,7 +66,7 @@ void Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 						  struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_FadeScreen (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_BlendScreen (quat_t color, struct vulkan_ctx_s *ctx);
-struct qpic_s *Vulkan_Draw_CachePic (const char *path, qboolean alpha,
+struct qpic_s *Vulkan_Draw_CachePic (const char *path, bool alpha,
 									 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_UncachePic (const char *path, struct vulkan_ctx_s *ctx);
 struct qpic_s *Vulkan_Draw_MakePic (int width, int height, const byte *data,

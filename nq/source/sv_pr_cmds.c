@@ -144,7 +144,7 @@ PF_setorigin (progs_t *pr, void *data)
 
 static void
 SetMinMaxSize (progs_t *pr, edict_t *e, const vec3_t min, const vec3_t max,
-			   qboolean rotate)
+			   bool rotate)
 {
 	float       a;
 	float       bounds[2][3];

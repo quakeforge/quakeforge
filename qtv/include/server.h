@@ -52,7 +52,7 @@ typedef struct player_s {
 
 typedef struct frame_s {
 	int         delta_sequence;
-	qboolean    invalid;
+	bool        invalid;
 	packet_players_t players;
 	packet_entities_t entities;
 } frame_t;

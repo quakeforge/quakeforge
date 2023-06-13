@@ -197,7 +197,7 @@ VID_SetCaption (const char *text)
 	}
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return X11_SetGamma (gamma);

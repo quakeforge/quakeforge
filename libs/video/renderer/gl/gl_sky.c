@@ -60,7 +60,7 @@ GLuint      gl_solidskytexture;
 GLuint      gl_alphaskytexture;
 
 // Set to true if a valid skybox is loaded --KB
-qboolean    gl_skyloaded = false;
+bool        gl_skyloaded = false;
 
 
 vec5_t      gl_skyvec[6][4] = {

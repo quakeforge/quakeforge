@@ -201,8 +201,8 @@ typedef struct sv_data_s {
 	edict_leaf_t *leafs;
 	entity_state_t state;
 	byte        alpha;
-	qboolean    sendinterval;
-	qboolean    add_grav;
+	bool        sendinterval;
+	bool        add_grav;
 } sv_data_t;
 
 #define SVdata(e)		((sv_data_t *) ((e)->edata))

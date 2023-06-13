@@ -227,7 +227,7 @@ beam_clear (beam_t *b)
 }
 
 static inline void
-beam_setup (beam_t *b, qboolean settransform, double time, TEntContext_t *ctx)
+beam_setup (beam_t *b, bool settransform, double time, TEntContext_t *ctx)
 {
 	tent_t     *tent;
 	float       d;
@@ -688,7 +688,7 @@ CL_ClearProjectiles (void)
 	Nails are passed as efficient temporary entities
 */
 void
-CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
+CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 {
 	tent_t     *tent;
 	tent_t     *head = 0, **tail = &head;

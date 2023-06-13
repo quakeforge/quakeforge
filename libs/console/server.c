@@ -137,7 +137,7 @@ static cvar_t sv_use_curses_cvar = {
 
 #ifdef HAVE_NCURSES
 
-static void key_event (knum_t key, short unicode, qboolean down);
+static void key_event (knum_t key, short unicode, bool down);
 
 enum {
 	sv_resize_x = 1,
@@ -563,7 +563,7 @@ process_input (void)
 }
 
 static void
-key_event (knum_t key, short unicode, qboolean down)
+key_event (knum_t key, short unicode, bool down)
 {
 	int         ovf = view_offset;
 	sv_view_t  *window;

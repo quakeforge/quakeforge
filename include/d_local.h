@@ -65,7 +65,7 @@ typedef struct sspan_s {
 
 extern float	scale_for_mip;
 
-extern qboolean		d_roverwrapped;
+extern bool		d_roverwrapped;
 extern surfcache_t	*sc_rover;
 extern surfcache_t	*d_initial_rover;
 

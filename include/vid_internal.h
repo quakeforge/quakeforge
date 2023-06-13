@@ -40,7 +40,7 @@ void VID_GetWindowSize (int def_w, int def_h);
 void VID_SetWindowSize (int width, int height);
 
 void VID_InitGamma (const byte *);
-qboolean VID_SetGamma (double);
+bool VID_SetGamma (double);
 void VID_UpdateGamma (void);
 
 void VID_MakeColormaps (void);

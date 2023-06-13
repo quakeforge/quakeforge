@@ -57,12 +57,12 @@ extern int		x_height;
 extern int		x_shmeventtype;
 extern Time		x_time;
 extern Time		x_mouse_time;
-extern qboolean oktodraw;
-extern qboolean x_have_focus;
+extern bool     oktodraw;
+extern bool     x_have_focus;
 
-qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
-qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
-qboolean X11_SetGamma (double);
+bool X11_AddEvent (int event, void (*event_handler)(XEvent *));
+bool X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
+bool X11_SetGamma (double);
 void X11_CloseDisplay (void);
 void X11_CreateNullCursor (void);
 void X11_CreateWindow (int, int);

@@ -377,7 +377,7 @@ get_string (progs_t *pr, pr_string_t num)
 	}
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PR_StringValid (progs_t *pr, pr_string_t num)
 {
 	if (num >= 0) {
@@ -386,7 +386,7 @@ PR_StringValid (progs_t *pr, pr_string_t num)
 	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PR_StringMutable (progs_t *pr, pr_string_t num)
 {
 	strref_t   *sr;
@@ -770,7 +770,7 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 	fmt_item_t		*current = formatting;
 
 	while (current) {
-		qboolean	doPrecision, doWidth;
+		bool        doPrecision, doWidth;
 
 		doPrecision = -1 != current->precision;
 		doWidth = 0 != (current->flags & FMT_WIDTH);

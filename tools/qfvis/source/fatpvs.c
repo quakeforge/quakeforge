@@ -208,7 +208,7 @@ compress_thread (void *d)
 {
 	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
-	qboolean    rle = options.utf8;
+	bool        rle = options.utf8;
 	set_t       vis = { };
 
 	if (num_leafs != num_clusters) {

@@ -35,8 +35,8 @@
 #define VID_GRADES	(1 << VID_CBITS)
 
 typedef struct {
-	qboolean		 initialized;
-	qboolean		 is8bit;
+	bool			 initialized;
+	bool			 is8bit;
 	byte			*gammatable;	// 256
 	const byte      *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
@@ -48,7 +48,7 @@ typedef struct {
 	unsigned		 width;
 	unsigned		 height;
 	int				 numpages;
-	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
+	bool			 recalc_refdef;	// if true, recalc vid-based stuff
 	struct vid_internal_s *vid_internal;
 
 	struct viddef_listener_set_s *onPaletteChanged;
@@ -63,7 +63,7 @@ typedef void (*viddef_listener_t) (void *data, const viddef_t *viddef);
 
 extern unsigned int 	d_8to24table[256];	//FIXME nq/qw uses
 
-extern qboolean			vid_gamma_avail;
+extern bool				vid_gamma_avail;
 
 void VID_Init_Cvars (void);
 

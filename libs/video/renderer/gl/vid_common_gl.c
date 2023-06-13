@@ -84,28 +84,28 @@ int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
 // Multitexture
-qboolean			gl_mtex_capable = false;
+bool				gl_mtex_capable = false;
 static int			gl_mtex_tmus = 0;
 GLenum				gl_mtex_enum;
 int					gl_mtex_active_tmus = 0;
-qboolean			gl_mtex_fullbright = false;
+bool				gl_mtex_fullbright = false;
 
 // Combine
-qboolean			gl_combine_capable = false;
+bool				gl_combine_capable = false;
 int					lm_src_blend, lm_dest_blend;
 float				gl_rgb_scale = 1.0;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 
-qboolean			gl_feature_mach64 = false;
+bool				gl_feature_mach64 = false;
 
 // GL_EXT_texture_filter_anisotropic
-qboolean 			gl_Anisotropy;
+bool 			gl_Anisotropy;
 static float		aniso_max;
 float				gl_aniso;
 
 // GL_ATI_pn_triangles
-static qboolean		TruForm;
+static bool			TruForm;
 static int			tess_max;
 int			gl_tess;
 
@@ -943,7 +943,7 @@ GL_SetPalette (void *data, const byte *palette)
 	unsigned int r, g, b, v;
 	unsigned short i;
 	unsigned int *table;
-	static qboolean palflag = false;
+	static bool palflag = false;
 	QFile      *f;
 	static int  inited_8 = 0;
 

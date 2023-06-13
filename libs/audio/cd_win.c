@@ -48,12 +48,12 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
-static qboolean cdValid = false;
-static qboolean playing = false;
-static qboolean wasPlaying = false;
-static qboolean initialized = false;
-static qboolean enabled = false;
-static qboolean playLooping = false;
+static bool cdValid = false;
+static bool playing = false;
+static bool wasPlaying = false;
+static bool initialized = false;
+static bool enabled = false;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
@@ -61,7 +61,7 @@ static byte maxTrack;
 
 static UINT        wDeviceID;
 
-static void I_CDAudio_Play (int track, qboolean looping);
+static void I_CDAudio_Play (int track, bool looping);
 static void I_CDAudio_Stop (void);
 
 static float bgmvolume;
@@ -201,7 +201,7 @@ I_CDAudio_Pause (void)
 }
 
 static void
-I_CDAudio_Play (int track, qboolean looping)
+I_CDAudio_Play (int track, bool looping)
 {
 	DWORD       dwReturn;
 	MCI_PLAY_PARMS mciPlayParms;

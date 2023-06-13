@@ -50,7 +50,7 @@ llist_newnode (llist_t *list, void *data)
 }
 
 VISIBLE llist_t *
-llist_new (void (*freedata)(void *element, void *userdata), qboolean (*cmpdata)(const void *element, const void *comparison, void *userdata), void *userdata)
+llist_new (void (*freedata)(void *element, void *userdata), bool (*cmpdata)(const void *element, const void *comparison, void *userdata), void *userdata)
 {
 	llist_t *new = calloc (1, sizeof (llist_t));
 

@@ -59,8 +59,8 @@ Script_Start (script_t *script, const char *file, const char *data)
 	script->error = 0;
 }
 
-VISIBLE qboolean
-Script_TokenAvailable (script_t *script, qboolean crossline)
+VISIBLE bool
+Script_TokenAvailable (script_t *script, bool crossline)
 {
 	if (script->error) {
 		return false;
@@ -98,8 +98,8 @@ Script_TokenAvailable (script_t *script, qboolean crossline)
 	return true;
 }
 
-VISIBLE qboolean
-Script_GetToken (script_t *script, qboolean crossline)
+VISIBLE bool
+Script_GetToken (script_t *script, bool crossline)
 {
 	const char *token_p;
 

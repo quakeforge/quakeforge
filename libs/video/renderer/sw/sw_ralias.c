@@ -85,7 +85,7 @@ static aedge_t aedges[12] = {
 
 static void R_AliasSetUpTransform (entity_t ent, int trivial_accept);
 
-qboolean
+bool
 R_AliasCheckBBox (entity_t ent)
 {
 	int         i, flags, frame, numv;
@@ -94,7 +94,7 @@ R_AliasCheckBBox (entity_t ent)
 	finalvert_t *pv0, *pv1, viewpts[16];
 	auxvert_t  *pa0, *pa1, viewaux[16];
 	maliasframedesc_t *pframedesc;
-	qboolean    zclipped, zfullyclipped;
+	bool        zclipped, zfullyclipped;
 	unsigned int anyclip, allclip;
 	int         minz;
 

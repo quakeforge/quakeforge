@@ -56,7 +56,7 @@ typedef struct visfacet_s {
 	struct visfacet_s *original;///< face on node
 	int         outputnumber;	///< valid only for original faces after
 								///< write surfaces
-	qboolean    detail;			///< is a detail face
+	bool        detail;			///< is a detail face
 
 	struct winding_s *points;
 	int        *edges;
@@ -68,10 +68,10 @@ typedef struct surface_s {
 	int         planenum;
 	int         outputplanenum;	///< valid only after WriteSurfacePlanes
 	vec3_t      mins, maxs;
-	qboolean    onnode;			///< true if surface has already been used
+	bool        onnode;			///< true if surface has already been used
 								///< as a splitting node
-	qboolean    has_detail;		///< true if the surface has detail brushes
-	qboolean    has_struct;		///< true if the surface has non-detail
+	bool        has_detail;		///< true if the surface has detail brushes
+	bool        has_struct;		///< true if the surface has non-detail
 								///< brushes
 	face_t     *faces;			///< links to all the faces on either side
 								///< of the surf
@@ -115,7 +115,7 @@ void qprintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
 
 extern int  valid;
 
-extern qboolean worldmodel;
+extern bool worldmodel;
 
 // misc functions
 

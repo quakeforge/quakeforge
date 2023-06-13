@@ -500,7 +500,7 @@ gl_R_DrawBrushModel (entity_t e)
 	float       dot, radius;
 	transform_t transform = Entity_Transform (e);
 	msurface_t *surf;
-	qboolean    rotated;
+	bool        rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
 	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);

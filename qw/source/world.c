@@ -443,7 +443,7 @@ SV_FindTouchedLeafs (edict_t *ent, int node_id)
 }
 
 void
-SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
+SV_LinkEdict (edict_t *ent, bool touch_triggers)
 {
 	areanode_t *node;
 

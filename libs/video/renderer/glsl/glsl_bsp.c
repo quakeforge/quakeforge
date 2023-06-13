@@ -95,7 +95,7 @@ static GLuint   bsp_vbo;
 static mat4f_t  bsp_vp;
 
 static GLuint   skybox_tex;
-static qboolean skybox_loaded;
+static bool skybox_loaded;
 static quat_t   sky_rotation[2];
 static quat_t   sky_velocity;
 static quat_t   sky_fix;
@@ -657,7 +657,7 @@ R_DrawBrushModel (entity_t e)
 	mod_brush_t *brush = &model->brush;
 	plane_t    *plane;
 	msurface_t *surf;
-	qboolean    rotated;
+	bool        rotated;
 	vec3_t      mins, maxs;
 	vec4f_t     org;
 	glslbspctx_t bctx = {

@@ -55,7 +55,7 @@ void Win_CreateWindow (int width, int height);
 void Win_Init_Cvars (void);
 void Win_UpdateWindowStatus (int x, int y);
 void Win_SetCaption (const char *text);
-qboolean Win_SetGamma (double gamma);
+bool Win_SetGamma (double gamma);
 
 struct vid_internal_s;
 struct gl_ctx_s *Win_GL_Context (struct vid_internal_s *);

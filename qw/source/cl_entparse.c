@@ -62,7 +62,7 @@
 
 static struct predicted_player {
 	int         flags;
-	qboolean    active;
+	bool        active;
 	vec3_t      origin;					// predicted origin
 } predicted_players[MAX_CLIENTS];
 
@@ -204,12 +204,12 @@ copy_state (packet_entities_t *newp, packet_entities_t *oldp, int newindex,
 }
 
 void
-CL_ParsePacketEntities (qboolean delta)
+CL_ParsePacketEntities (bool delta)
 {
 	byte        from;
 	int         oldindex, newindex, newnum, oldnum, oldpacket, word;
 	packet_entities_t *oldp, *newp, dummy;
-	qboolean    full;
+	bool        full;
 
 	cl.prev_sequence = cl.link_sequence;
 	cl.link_sequence = cls.netchan.incoming_sequence;
@@ -584,7 +584,7 @@ CL_ClearPredict (void)
 	This sets up the first phase.
 */
 void
-CL_SetUpPlayerPrediction (qboolean dopred)
+CL_SetUpPlayerPrediction (bool dopred)
 {
 	double			playertime;
 	frame_t		   *frame;

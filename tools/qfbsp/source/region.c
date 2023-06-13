@@ -81,7 +81,7 @@ AddFaceToRegionSize (face_t *f)
 		AddPointToRegion (f->points->points[i]);
 }
 
-static qboolean
+static bool
 CanJoinFaces (face_t *f, face_t *f2)
 {
 	int         i;

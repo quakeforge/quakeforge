@@ -45,15 +45,15 @@
 
 #include "r_internal.h"
 
-qboolean    r_dowarp, r_dowarpold;
-qboolean    r_inhibit_viewmodel;
-qboolean    r_force_fullscreen;
-qboolean    r_paused;
+bool        r_dowarp, r_dowarpold;
+bool        r_inhibit_viewmodel;
+bool        r_force_fullscreen;
+bool        r_paused;
 double      r_realtime;
 double      r_frametime;
 double      r_time1;
 int         r_lineadj;
-qboolean    r_active;
+bool        r_active;
 int			r_init;
 
 int         r_visframecount;			// bumped when going to a new PVS

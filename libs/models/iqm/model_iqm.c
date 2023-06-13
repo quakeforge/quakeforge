@@ -140,7 +140,7 @@ get_joints (const iqmheader *hdr, byte *buffer)
 	return joint;
 }
 
-static qboolean
+static bool
 load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
@@ -328,7 +328,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 	return true;
 }
 
-static qboolean
+static bool
 load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
@@ -375,7 +375,7 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 	return true;
 }
 
-static qboolean
+static bool
 load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;

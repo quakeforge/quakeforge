@@ -93,7 +93,7 @@ FloodEntDist_r (node_t *n, int dist)
 	\param headnode	The root of the map's bsp tree.
 	\return			true if the entity could be placed, false otherwise.
 */
-static qboolean
+static bool
 PlaceOccupant (int num, const vec3_t point, node_t *headnode)
 {
 	node_t     *n;
@@ -233,12 +233,12 @@ int         hit_occupied;
 	\return			\c true if an occupied leaf is reached, otherwise
 					\c false.
 */
-static qboolean
-RecursiveFillOutside (node_t *l, qboolean fill)
+static bool
+RecursiveFillOutside (node_t *l, bool fill)
 {
 	portal_t   *p;
 	int         s;
-	qboolean    res = false;
+	bool        res = false;
 
 	if (l->contents == CONTENTS_SOLID || l->contents == CONTENTS_SKY)
 		return false;
@@ -308,11 +308,11 @@ ClearOutFaces (node_t *node)
 	node->faces = NULL;
 }
 
-qboolean
+bool
 FillOutside (node_t *node)
 {
 	int         i, s;
-	qboolean    inside;
+	bool        inside;
 	vec_t      *v;
 
 	qprintf ("----- FillOutside ----\n");

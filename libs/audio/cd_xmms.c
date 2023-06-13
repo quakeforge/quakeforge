@@ -79,15 +79,15 @@ static int sessionNo;
 //static int xmmsPid = '0';
 //static int sigNo = '2';
 
-static qboolean playing = false;
+static bool playing = false;
 
 // no idea why I have wasPlaying, pbly this code was based on cd_linux.c :/
-static qboolean wasPlaying = false;
-static qboolean musEnabled = true;
+static bool wasPlaying = false;
+static bool musEnabled = true;
 
 static void I_XMMS_Running(void);
 static void I_XMMS_Stop(void);
-static void I_XMMS_Play(int, qboolean);
+static void I_XMMS_Play(int, bool);
 static void I_XMMS_Pause(void);
 static void I_XMMS_Resume(void);
 static void I_XMMS_Next(void);
@@ -178,7 +178,7 @@ I_XMMS_Stop (void)						// stop playing
 // Play
 // start it playing, (unless disabled)
 static void
-I_XMMS_Play (int track, qboolean looping)		// looping for compatability
+I_XMMS_Play (int track, bool looping)		// looping for compatability
 {
 	if (!musEnabled)
 		return;
