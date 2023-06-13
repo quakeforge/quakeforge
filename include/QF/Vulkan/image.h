@@ -110,6 +110,6 @@ int QFV_MipLevels (int width, int height) __attribute__((const));
  *	\note For tex_palette, VK_FORMAT_R8_UINT is returned. If \a format is
  *	not a valid QFFormat, then VK_FORMAT_R8_SRGB is returned.
  */
-VkFormat QFV_ImageFormat (QFFormat format, int srgb);
+VkFormat QFV_ImageFormat (QFFormat format, int srgb) __attribute__((const));
 
 #endif//__QF_Vulkan_image_h
