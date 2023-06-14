@@ -44,6 +44,7 @@ typedef void (*axis_listener_t) (void *data, in_axis_t *axis);//FIXME const
 int IMT_CreateContext (string name);
 int IMT_GetContext (void);
 void IMT_SetContext (int ctx);
+void IMT_SetContextCbuf (int ctx, @handle cbuf_h cbuf);
 /*bool*/int IN_Binding_HandleEvent (/*const*/ struct IE_event_s *ie_event);
 
 #endif//__ruamoko_input_h

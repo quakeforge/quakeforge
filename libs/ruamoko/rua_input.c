@@ -500,6 +500,11 @@ bi_IMT_SetContext (progs_t *pr, void *_res)
 }
 
 static void
+bi_IMT_SetContextCbuf (progs_t *pr, void *_res)
+{
+}
+
+static void
 bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -568,6 +573,7 @@ static builtin_t builtins[] = {
 	bi(IMT_CreateContext,   1, p(string)),
 	bi(IMT_GetContext,      0),
 	bi(IMT_SetContext,      1, p(int)),
+	bi(IMT_SetContextCbuf,  2, p(int), p(int)),
 
 	bi(IN_Binding_HandleEvent,  1, p(ptr)),
 

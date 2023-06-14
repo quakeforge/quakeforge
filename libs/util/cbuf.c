@@ -90,16 +90,26 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 }
 
 VISIBLE cbuf_t *
+_Cbuf_New (cbuf_interpreter_t *interp, void *data)
+{
+	cbuf_t		*cbuf = malloc (sizeof (cbuf_t));
+	*cbuf = (cbuf_t) {
+		.args = Cbuf_ArgsNew (),
+		.interpreter = interp,
+		.data = data,
+	};
+
+	if (interp->construct) {
+		interp->construct (cbuf);
+	}
+	return cbuf;
+}
+
+VISIBLE cbuf_t *
 Cbuf_New (cbuf_interpreter_t *interp)
 {
 	qfZoneScoped (true);
-	cbuf_t		*cbuf = calloc (1, sizeof (cbuf_t));
-
-	cbuf->args = Cbuf_ArgsNew ();
-	cbuf->interpreter = interp;
-	if (interp->construct)
-			interp->construct (cbuf);
-	return cbuf;
+	return _Cbuf_New (interp, nullptr);
 }
 
 VISIBLE void

@@ -42,6 +42,7 @@ void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj) = #0;
 int IMT_CreateContext (string name) = #0;
 int IMT_GetContext (void) = #0;
 void IMT_SetContext (int ctx) = #0;
+void IMT_SetContextCbuf (int ctx, @handle cbuf_h cbuf) = #0;
 
 /*bool*/int IN_Binding_HandleEvent (/*const*/ struct IE_event_s *ie_event) = #0;
 
