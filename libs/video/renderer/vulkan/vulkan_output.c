@@ -259,6 +259,20 @@ _output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 }
 
+static void
+wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	__auto_type taskctx = (qfv_taskctx_t *) ectx;
+	vulkan_ctx_t *ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkDevice    dev = device->dev;
+
+	__auto_type frame = &ctx->frames.a[ctx->curFrame];
+
+	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
+}
+
 static exprfunc_t acquire_output_func[] = {
 	{ .func = acquire_output },
 	{}
@@ -271,10 +285,15 @@ static exprfunc_t output_draw_func[] = {
 	{ .func = _output_draw },
 	{}
 };
+static exprfunc_t wait_on_fence_func[] = {
+	{ .func = wait_on_fence },
+	{}
+};
 static exprsym_t output_task_syms[] = {
 	{ "acquire_output", &cexpr_function, acquire_output_func },
 	{ "update_input", &cexpr_function, update_input_func },
 	{ "output_draw", &cexpr_function, output_draw_func },
+	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{}
 };
 

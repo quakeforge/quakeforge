@@ -67,6 +67,57 @@ static const char * __attribute__((used)) translucent_pass_names[] = {
 static void
 clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	__auto_type taskctx = (qfv_taskctx_t *) ectx;
+	vulkan_ctx_t *ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	translucentctx_t *tctx = ctx->translucent_context;
+	__auto_type tframe = &tctx->frames.a[ctx->curFrame];
+
+	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
+
+	VkCommandBufferInheritanceInfo inherit = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
+		0, 0, 0,
+		0, 0, 0,
+	};
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &inherit,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = tframe->heads;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+	VkClearColorValue clear_color[] = {
+		{ .int32 = {-1, -1, -1, -1} },
+	};
+	VkImageSubresourceRange ranges[] = {
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS },
+	};
+	dfunc->vkCmdClearColorImage (cmd, tframe->heads,
+								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								 clear_color, 1, ranges);
+	ib = imageBarriers[qfv_LT_TransferDst_to_General];
+	ib.barrier.image = tframe->heads;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
+	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
+	__auto_type bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
+	QFV_PacketCopyBuffer (packet, tframe->state, 0, bb);
+	QFV_PacketSubmit (packet);
 }
 
 static exprfunc_t clear_translucent_func[] = {

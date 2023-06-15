@@ -308,7 +308,8 @@ vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 {
 	Vulkan_Draw_Glyph (x, y, fontid, glyphid, c, vulkan_ctx);
 }
-
+//#define TEST_RENDER
+#ifndef TEST_RENDER
 static void
 vulkan_begin_frame (void)
 {
@@ -479,10 +480,17 @@ vulkan_end_frame (void)
 	vulkan_ctx->curFrame++;
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
 }
-
+#endif
 static void
 vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
+#ifdef TEST_RENDER
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	QFV_RunRenderJob (vulkan_ctx);
+#else
 	EntQueue_Clear (r_ent_queue);
 	vulkan_begin_frame ();
 	vulkan_set_2d (1);
@@ -492,6 +500,7 @@ vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	}
 	vulkan_render_view ();
 	vulkan_end_frame ();
+#endif
 }
 
 static void

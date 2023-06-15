@@ -263,7 +263,7 @@ typedef struct qfv_bar_s {
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	VkPipelineBindPoint bindPoint;
-	uint32_t    dispatch[3];
+	vec4u_t     dispatch;
 	VkPipeline  pipeline;
 	VkPipelineLayout layout;
 
@@ -359,6 +359,9 @@ typedef struct qfv_taskctx_s {
 	struct vulkan_ctx_s *ctx;
 	qfv_pipeline_t *pipeline;
 } qfv_taskctx_t;
+
+VkCommandBuffer QFV_GetCmdBufffer (struct vulkan_ctx_s *ctx, bool secondary);
+void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
 
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx);

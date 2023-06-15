@@ -51,8 +51,8 @@
 
 #include "vkparse.h"
 
-static VkCommandBuffer
-get_cmd_buffer (vulkan_ctx_t *ctx, int secondary)
+VkCommandBuffer
+QFV_GetCmdBufffer (vulkan_ctx_t *ctx, bool secondary)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -71,11 +71,19 @@ get_cmd_buffer (vulkan_ctx_t *ctx, int secondary)
 	return cmd;
 }
 
+void
+QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+{
+	__auto_type rctx = ctx->render_context;
+	__auto_type job = rctx->job;
+	DARRAY_APPEND (&job->commands, cmd);
+}
+
 static void
-run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, void *ctx)
+run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, qfv_taskctx_t *ctx)
 {
 	for (uint32_t i = 0; i < task_count; i++) {
-		tasks[i].func->func (tasks[i].params, 0, ctx);
+		tasks[i].func->func (tasks[i].params, 0, (exprctx_t *) ctx);
 	}
 }
 
@@ -136,19 +144,20 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	__auto_type rctx = ctx->render_context;
+	__auto_type job = rctx->job;
 
-	VkCommandBuffer cmd = get_cmd_buffer (ctx, 1);
+	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
-	dfunc->vkResetCommandBuffer (cmd, 0);
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
 						 {VEC4_EXP (rp->label.color)});
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
-		VkCommandBuffer subcmd = get_cmd_buffer (ctx, 1);
+		VkCommandBuffer subcmd = QFV_GetCmdBufffer (ctx, true);
 		run_subpass (sp, subcmd, ctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &subcmd);
 		//FIXME comment is a bit off as exactly one buffer is always submitted
@@ -162,6 +171,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 		}
 	}
 	QFV_CmdEndLabel (device, cmd);
+	DARRAY_APPEND (&job->commands, cmd);
 }
 
 static void
@@ -193,7 +203,7 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 						   pipeline->num_push_constants,
 						   pipeline->push_constants);
 	}
-	uint32_t   *d = pipeline->dispatch;
+	vec4u_t     d = pipeline->dispatch;
 	dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
 }
 
@@ -205,7 +215,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 	__auto_type job = rctx->job;
 
-	VkCommandBuffer cmd = get_cmd_buffer (ctx, 0);
+	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

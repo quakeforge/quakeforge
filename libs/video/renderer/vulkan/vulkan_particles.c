@@ -276,16 +276,121 @@ create_buffers (vulkan_ctx_t *ctx)
 static void
 particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	puts ("particles_draw");
 }
 
 static void
-update_particles (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+update_particles (const exprval_t **_params, exprval_t *result, exprctx_t *ectx)
 {
+	__auto_type taskctx = (qfv_taskctx_t *) ectx;
+	vulkan_ctx_t *ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+//	VkDevice    dev = device->dev;
+
+	particlectx_t *pctx = ctx->particle_context;
+	__auto_type pframe = &pctx->frames.a[ctx->curFrame];
+
+	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
+
+	__auto_type limits = &device->physDev->properties->limits;
+	VkMemoryRequirements req = {
+		.alignment = limits->minStorageBufferOffsetAlignment
+	};
+	uint32_t    numParticles = min (MaxParticles, pctx->psystem->numparticles);
+	size_t      syssize = sizeof (qfv_particle_system_t);
+	size_t      partoffs = QFV_NextOffset (syssize, &req);
+	size_t      partsize = sizeof (qfv_particle_t) * numParticles;
+	size_t      paramoffs = QFV_NextOffset (partoffs + partsize, &req);
+	size_t      paramsize = sizeof (qfv_parameters_t) * numParticles;
+	size_t      size = paramoffs + paramsize;
+
+	qfv_particle_system_t *system = QFV_PacketExtend (packet, size);
+	*system = (qfv_particle_system_t) {
+		.vertexCount = 1,
+		.particleCount = numParticles,
+	};
+	__auto_type particles = (qfv_particle_t *) ((byte *)system + partoffs);
+	memcpy (particles, pctx->psystem->particles, partsize);
+	qfv_parameters_t *params = (qfv_parameters_t *)((byte *)system + paramoffs);
+	memcpy (params, pctx->psystem->partparams, paramsize);
+
+	if (!numParticles) {
+		// if there are no particles, then no space for the particle states or
+		// parameters has been allocated in the staging buffer, so map the
+		// two buffers over the system buffer. This avoids either buffer being
+		// just past the end of the staging buffer (which the validation layers
+		// (correctly) do not like).
+		// This is fine because the two buffers are only read by the compute
+		// shader.
+		partsize = paramsize = syssize;
+		partoffs = paramoffs = 0;
+	}
+
+	size_t      sysoffs = packet->offset;
+	VkDescriptorBufferInfo bufferInfo[] = {
+		{ packet->stage->buffer, sysoffs + partoffs, partsize},
+		{ packet->stage->buffer, sysoffs + paramoffs, paramsize},
+		{ packet->stage->buffer, sysoffs, syssize },
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			pframe->newDescriptors, 0, 0, 3,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = bufferInfo
+		},
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+
+	__auto_type pipeline = taskctx->pipeline;
+	pipeline->dispatch = (vec4u_t) {1, 1, 1};
+	pipeline->num_descriptorsets = 3;
+	pipeline->descriptorsets[0] = pframe->curDescriptors;
+	pipeline->descriptorsets[1] = pframe->inDescriptors;
+	pipeline->descriptorsets[2] = pframe->newDescriptors;
+
+	QFV_PacketSubmit (packet);
+
+	pctx->psystem->numparticles = 0;
 }
 
 static void
 particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	__auto_type taskctx = (qfv_taskctx_t *) ectx;
+	vulkan_ctx_t *ctx = taskctx->ctx;
+
+	particlectx_t *pctx = ctx->particle_context;
+	__auto_type pframe = &pctx->frames.a[ctx->curFrame];
+
+	__auto_type pipeline = taskctx->pipeline;
+	pipeline->dispatch = (vec4u_t) {MaxParticles, 1, 1};
+	pipeline->num_descriptorsets = 1;
+	pipeline->descriptorsets[0] = pframe->curDescriptors;
+
+	struct {
+		qfv_push_constants_t push_constants[2];
+		particle_push_constants_t constants;
+	} push = {
+		.push_constants = {
+			{ VK_SHADER_STAGE_COMPUTE_BIT,
+				field_offset (particle_push_constants_t, gravity),
+				sizeof (vec4f_t), &push.constants.gravity },
+			{ VK_SHADER_STAGE_COMPUTE_BIT,
+				field_offset (particle_push_constants_t, dT),
+				sizeof (float), &push.constants.dT },
+		},
+		.constants = {
+			.gravity = pctx->psystem->gravity,
+			.dT = vr_data.frametime,
+		},
+	};
+	if (!pipeline->push_constants) {
+		//FIXME figure out something better for managing push constants
+		pipeline->push_constants = malloc (sizeof (push));
+	}
+	memcpy (pipeline->push_constants, &push, sizeof (push));
+	pipeline->num_push_constants = 2;
 }
 
 static exprfunc_t particles_draw_func[] = {

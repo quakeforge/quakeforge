@@ -1310,7 +1310,15 @@ renderpasses = {
 	};
 };
 steps = {
+	wait_on_fence = {
+		process = {
+			tasks = (
+				{ func = "wait_on_fence"; },
+			);
+		};
+	};
 	particles = {
+		dependencies = (wait_on_fence);
 		compute = {
 			pipelines = {
 				part:update = {
@@ -1339,9 +1347,11 @@ steps = {
 		};
 	};
 	shadow = {
+		dependencies = (wait_on_fence);
 		//currently empty
 	};
 	translucent = {
+		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
 				{ func = "clear_translucent"; },
@@ -1358,6 +1368,7 @@ steps = {
 		};
 	};
 	preoutput = {
+		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
 				{ func = "acquire_output"; },
