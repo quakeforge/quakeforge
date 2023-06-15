@@ -68,6 +68,7 @@ typedef float vec3f_t[3];
 
 QF_VEC_TYPE (float, vec2f_t, 2);
 QF_VEC_TYPE (int, vec2i_t, 2);
+QF_VEC_TYPE (unsigned, vec2u_t, 2);
 
 /** Four element vector type for horizontal (AOS) vector data.
  *
@@ -84,14 +85,18 @@ QF_VEC_TYPE (float, vec4f_t, 4);
  */
 QF_VEC_TYPE (int, vec4i_t, 4);
 
+QF_VEC_TYPE (unsigned, vec4u_t, 4);
+
 #define VEC2D_FMT "[%.17g, %.17g]"
 #define VEC2L_FMT "[%"PRIi64", %"PRIi64"]"
 #define VEC4D_FMT "[%.17g, %.17g, %.17g, %.17g]"
 #define VEC4L_FMT "[%"PRIi64", %"PRIi64", %"PRIi64", %"PRIi64"]"
 #define VEC2F_FMT "[%.9g, %.9g]"
 #define VEC2I_FMT "[%d, %d]"
+#define VEC2U_FMT "[%u, %u]"
 #define VEC4F_FMT "[%.9g, %.9g, %.9g, %.9g]"
 #define VEC4I_FMT "[%d, %d, %d, %d]"
+#define VEC4U_FMT "[%u, %u, %u, %u]"
 #define VEC2_EXP(v) (v)[0], (v)[1]
 #define VEC4_EXP(v) (v)[0], (v)[1], (v)[2], (v)[3]
 
