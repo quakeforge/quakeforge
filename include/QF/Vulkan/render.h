@@ -279,15 +279,15 @@ typedef struct qfv_pipeline_s {
 	qfv_taskinfo_t *tasks;
 } qfv_pipeline_t;
 
-typedef struct qfv_subpass_s_ {
+typedef struct qfv_subpass_s {
 	qfv_label_t label;
 	VkCommandBufferInheritanceInfo inherit;
 	VkCommandBufferBeginInfo beginInfo;
 	uint32_t    pipeline_count;
 	qfv_pipeline_t *pipelines;
-} qfv_subpass_t_;
+} qfv_subpass_t;
 
-typedef struct qfv_renderpass_s_ {
+typedef struct qfv_renderpass_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	qfv_label_t label;		// for debugging
 
@@ -301,13 +301,13 @@ typedef struct qfv_renderpass_s_ {
 	//qfv_output_t output;
 
 	uint32_t    subpass_count;
-	qfv_subpass_t_ *subpasses;
-} qfv_renderpass_t_;
+	qfv_subpass_t *subpasses;
+} qfv_renderpass_t;
 
 typedef struct qfv_render_s {
 	qfv_label_t label;
-	qfv_renderpass_t_ *active;
-	qfv_renderpass_t_ *renderpasses;
+	qfv_renderpass_t *active;
+	qfv_renderpass_t *renderpasses;
 	uint32_t    num_renderpasses;
 } qfv_render_t;
 

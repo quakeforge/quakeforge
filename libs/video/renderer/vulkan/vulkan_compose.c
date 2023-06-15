@@ -63,7 +63,7 @@ Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_renderpass_t *renderpass = rFrame->renderpass;
+	qfv_orenderpass_t *renderpass = rFrame->renderpass;
 
 	composectx_t *cctx = ctx->compose_context;
 	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];

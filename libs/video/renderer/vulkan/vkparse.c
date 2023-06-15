@@ -1735,9 +1735,9 @@ parse_subpassset (const plfield_t *field, const plitem_t *item, void *data,
 {
 	plelement_t element = {
 		QFDictionary,
-		sizeof (qfv_subpass_t),
+		sizeof (qfv_osubpass_t),
 		vkparse_alloc,
-		parse_qfv_subpass_t,
+		parse_qfv_osubpass_t,
 		0,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };

@@ -43,7 +43,7 @@
 #include "vkparse.h"
 
 static plitem_t *
-get_rp_item (vulkan_ctx_t *ctx, qfv_renderpass_t *rp, const char *name)
+get_rp_item (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp, const char *name)
 {
 	rp->renderpassDef = Vulkan_GetConfig (ctx, rp->name);
 
@@ -72,7 +72,7 @@ get_image_size (VkImage image, qfv_device_t *device)
 }
 
 static void
-destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+destroy_framebuffers (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -85,7 +85,7 @@ destroy_framebuffers (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 }
 
 void
-QFV_RenderPass_CreateAttachments (qfv_renderpass_t *renderpass)
+QFV_RenderPass_CreateAttachments (qfv_orenderpass_t *renderpass)
 {
 	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -195,7 +195,7 @@ QFV_RenderPass_CreateAttachments (qfv_renderpass_t *renderpass)
 }
 
 void
-QFV_RenderPass_CreateRenderPass (qfv_renderpass_t *renderpass)
+QFV_RenderPass_CreateRenderPass (qfv_orenderpass_t *renderpass)
 {
 	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
 	__auto_type rp = renderpass;
@@ -228,7 +228,7 @@ QFV_RenderPass_CreateRenderPass (qfv_renderpass_t *renderpass)
 }
 
 void
-QFV_RenderPass_CreateFramebuffer (qfv_renderpass_t *renderpass)
+QFV_RenderPass_CreateFramebuffer (qfv_orenderpass_t *renderpass)
 {
 	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
 	__auto_type rp = renderpass;
@@ -256,7 +256,7 @@ QFV_RenderPass_CreateFramebuffer (qfv_renderpass_t *renderpass)
 }
 
 static void
-init_renderframe (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
+init_renderframe (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp,
 				  qfv_renderframe_t *rFrame)
 {
 	rFrame->vulkan_ctx = ctx;
@@ -276,7 +276,7 @@ init_renderframe (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 }
 
 static void
-destroy_attachments (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+destroy_attachments (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -308,7 +308,7 @@ destroy_attachments (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 }
 
 static void
-destroy_renderframes (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+destroy_renderframes (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp)
 {
 	for (size_t i = 0; i < rp->frames.size; i++) {
 		__auto_type rFrame = &rp->frames.a[i];
@@ -319,10 +319,10 @@ destroy_renderframes (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	}
 }
 
-qfv_renderpass_t *
+qfv_orenderpass_t *
 QFV_RenderPass_New (vulkan_ctx_t *ctx, const char *name, qfv_draw_t function)
 {
-	qfv_renderpass_t *rp = calloc (1, sizeof (qfv_renderpass_t));
+	qfv_orenderpass_t *rp = calloc (1, sizeof (qfv_orenderpass_t));
 	rp->vulkan_ctx = ctx;
 	rp->name = name;
 	rp->draw = function;
@@ -361,7 +361,7 @@ QFV_RenderPass_New (vulkan_ctx_t *ctx, const char *name, qfv_draw_t function)
 }
 
 void
-QFV_RenderPass_Delete (qfv_renderpass_t *renderpass)
+QFV_RenderPass_Delete (qfv_orenderpass_t *renderpass)
 {
 	vulkan_ctx_t *ctx = renderpass->vulkan_ctx;
 	qfv_device_t *device = ctx->device;

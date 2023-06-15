@@ -105,7 +105,7 @@ typedef struct lightingctx_s {
 	qfv_imageset_t light_images;
 	light_renderer_set_t light_renderers;
 
-	qfv_renderpass_t *qfv_renderpass;
+	qfv_orenderpass_t *qfv_renderpass;
 	VkRenderPass renderpass_6;
 	VkRenderPass renderpass_4;
 	VkRenderPass renderpass_1;

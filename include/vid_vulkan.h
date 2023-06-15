@@ -21,7 +21,7 @@ typedef struct vulkan_frameset_s
 	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
 typedef struct qfv_renderpassset_s
-	DARRAY_TYPE (struct qfv_renderpass_s *) qfv_renderpassset_t;
+	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -67,7 +67,7 @@ typedef struct vulkan_ctx_s {
 	uint32_t    curFrame;
 	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
-	struct qfv_renderpass_s *output_renderpass;
+	struct qfv_orenderpass_s *output_renderpass;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);

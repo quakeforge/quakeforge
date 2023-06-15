@@ -111,7 +111,7 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
 static void
-run_subpass (qfv_subpass_t_ *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -130,7 +130,7 @@ run_subpass (qfv_subpass_t_ *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 static void
-run_renderpass (qfv_renderpass_t_ *rp, vulkan_ctx_t *ctx)
+run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 {
 	printf ("run_renderpass: %s\n", rp->label.name);
 
@@ -836,9 +836,9 @@ typedef struct {
 	qfv_render_t *renders;
 	qfv_compute_t *computes;
 	qfv_process_t *processes;
-	qfv_renderpass_t_ *renderpasses;
+	qfv_renderpass_t *renderpasses;
 	VkClearValue *clearvalues;
-	qfv_subpass_t_ *subpasses;
+	qfv_subpass_t *subpasses;
 	qfv_pipeline_t *pipelines;
 	qfv_taskinfo_t *tasks;
 	VkDescriptorSet *descriptorsets;
@@ -874,11 +874,11 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 }
 
 static void
-init_subpass (qfv_subpass_t_ *sp, qfv_subpassinfo_t *isp,
+init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 			  jobptr_t *jp, objstate_t *s)
 {
 	uint32_t    np = s->inds.num_graph_pipelines + s->inds.num_comp_pipelines;
-	*sp = (qfv_subpass_t_) {
+	*sp = (qfv_subpass_t) {
 		.label = {
 			.name = isp->name,
 			.color = isp->color,
@@ -902,10 +902,10 @@ init_subpass (qfv_subpass_t_ *sp, qfv_subpassinfo_t *isp,
 }
 
 static void
-init_renderpass (qfv_renderpass_t_ *rp, qfv_renderpassinfo_t *rpinfo,
+init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 				 jobptr_t *jp, objstate_t *s)
 {
-	*rp = (qfv_renderpass_t_) {
+	*rp = (qfv_renderpass_t) {
 		.vulkan_ctx = s->ctx,
 		.label.name = rpinfo->name,
 		.label.color = rpinfo->color,
@@ -1019,9 +1019,9 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	size += counts->num_render * sizeof (qfv_render_t);
 	size += counts->num_compute * sizeof (qfv_compute_t);
 	size += counts->num_process * sizeof (qfv_process_t);
-	size += counts->num_renderpasses * sizeof (qfv_renderpass_t_);
+	size += counts->num_renderpasses * sizeof (qfv_renderpass_t);
 	size += counts->num_attachments * sizeof (VkClearValue);
-	size += counts->num_subpasses * sizeof (qfv_subpass_t_);
+	size += counts->num_subpasses * sizeof (qfv_subpass_t);
 	size += counts->num_graph_pipelines * sizeof (qfv_pipeline_t);
 	size += counts->num_comp_pipelines * sizeof (qfv_pipeline_t);
 	size += counts->num_tasks * sizeof (qfv_taskinfo_t);
@@ -1044,9 +1044,9 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	__auto_type rn = (qfv_render_t *) &job->steps[job->num_steps];
 	__auto_type cp = (qfv_compute_t *) &rn[counts->num_render];
 	__auto_type pr = (qfv_process_t *) &cp[counts->num_compute];
-	__auto_type rp = (qfv_renderpass_t_ *) &pr[counts->num_process];
+	__auto_type rp = (qfv_renderpass_t *) &pr[counts->num_process];
 	__auto_type cv = (VkClearValue *) &rp[counts->num_renderpasses];
-	__auto_type sp = (qfv_subpass_t_ *) &cv[counts->num_attachments];
+	__auto_type sp = (qfv_subpass_t *) &cv[counts->num_attachments];
 	__auto_type pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
 	__auto_type ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
 	__auto_type ds = (VkDescriptorSet *) &ti[counts->num_tasks];

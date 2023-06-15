@@ -30,7 +30,7 @@ search = (
 	VkRenderPassCreateInfo,
 	VkRenderPassMultiviewCreateInfo,
 
-	qfv_subpass_t,
+	qfv_osubpass_t,
 	qfv_output_t,
 
 	qfv_descriptorsetlayoutinfo_t,
@@ -403,8 +403,8 @@ parse = {
 		};
 	};
 
-	qfv_subpass_s = {
-		.name = qfv_subpass_t;
+	qfv_osubpass_s = {
+		.name = qfv_osubpass_t;
 		color = {
 			type = (custom, QFString, parse_RGBA);
 			fields = (color);

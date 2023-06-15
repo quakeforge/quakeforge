@@ -190,8 +190,8 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 static int
 renderpass_cmp (const void *_a, const void *_b)
 {
-	__auto_type a = (const qfv_renderpass_t **) _a;
-	__auto_type b = (const qfv_renderpass_t **) _b;
+	__auto_type a = (const qfv_orenderpass_t **) _a;
+	__auto_type b = (const qfv_orenderpass_t **) _b;
 	return (*a)->order - (*b)->order;
 }
 
@@ -205,7 +205,7 @@ Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
 	Vulkan_Translucent_CreateRenderPasses (ctx);
 
 	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,
-			  sizeof (qfv_renderpass_t *), renderpass_cmp);
+			  sizeof (qfv_orenderpass_t *), renderpass_cmp);
 }
 
 void

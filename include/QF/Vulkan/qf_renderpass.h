@@ -17,21 +17,21 @@ typedef struct qfv_framebufferset_s
 #define QFV_AllocFrameBuffers(num, allocator) \
 	DARRAY_ALLOCFIXED (qfv_framebufferset_t, num, allocator)
 
-typedef struct qfv_subpass_s {
+typedef struct qfv_osubpass_s {
 	vec4f_t     color;
 	const char *name;
-} qfv_subpass_t;
+} qfv_osubpass_t;
 
 typedef struct qfv_subpassset_s
-	DARRAY_TYPE (qfv_subpass_t) qfv_subpassset_t;
+	DARRAY_TYPE (qfv_osubpass_t) qfv_subpassset_t;
 
 typedef struct qfv_renderframe_s {
 	struct vulkan_ctx_s *vulkan_ctx;
-	struct qfv_renderpass_s *renderpass;
+	struct qfv_orenderpass_s *renderpass;
 	VkSubpassContents subpassContents;
 	VkFramebuffer framebuffer;
 	int         subpassCount;
-	qfv_subpass_t *subpassInfo;
+	qfv_osubpass_t *subpassInfo;
 	struct qfv_cmdbufferset_s *subpassCmdSets;
 } qfv_renderframe_t;
 
@@ -43,7 +43,7 @@ typedef struct clearvalueset_s
 
 typedef void (*qfv_draw_t) (qfv_renderframe_t *rFrame);
 
-typedef struct qfv_renderpass_s {
+typedef struct qfv_orenderpass_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	vec4f_t     color;		// for debugging
 	const char *name;		// for debugging
@@ -67,14 +67,14 @@ typedef struct qfv_renderpass_s {
 	qfv_renderframeset_t frames;
 
 	qfv_draw_t  draw;
-} qfv_renderpass_t;
+} qfv_orenderpass_t;
 
-qfv_renderpass_t *QFV_RenderPass_New (struct vulkan_ctx_s *ctx,
+qfv_orenderpass_t *QFV_RenderPass_New (struct vulkan_ctx_s *ctx,
 									  const char *name, qfv_draw_t draw);
-void QFV_RenderPass_Delete (qfv_renderpass_t *renderpass);
-void QFV_RenderPass_CreateAttachments (qfv_renderpass_t *renderpass);
-void QFV_RenderPass_CreateRenderPass (qfv_renderpass_t *renderpass);
-void QFV_RenderPass_CreateFramebuffer (qfv_renderpass_t *renderpass);
+void QFV_RenderPass_Delete (qfv_orenderpass_t *renderpass);
+void QFV_RenderPass_CreateAttachments (qfv_orenderpass_t *renderpass);
+void QFV_RenderPass_CreateRenderPass (qfv_orenderpass_t *renderpass);
+void QFV_RenderPass_CreateFramebuffer (qfv_orenderpass_t *renderpass);
 
 
 #endif//__QF_Vulkan_qf_renderpass_h
