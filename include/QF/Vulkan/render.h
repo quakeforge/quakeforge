@@ -292,8 +292,6 @@ typedef struct qfv_pipeline_s {
 
 	VkViewport  viewport;
 	VkRect2D    scissor;
-	struct qfv_push_constants_s *push_constants;
-	uint32_t    num_push_constants;
 	uint32_t    num_descriptorsets;
 	uint32_t    first_descriptorset;
 	VkDescriptorSet *descriptorsets;

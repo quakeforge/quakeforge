@@ -111,11 +111,6 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 										pipeline->descriptorsets,
 										0, 0);
 	}
-	if (pipeline->num_push_constants) {
-		QFV_PushConstants (device, cmd, pipeline->layout,
-						   pipeline->num_push_constants,
-						   pipeline->push_constants);
-	}
 }
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
@@ -199,11 +194,6 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 										pipeline->num_descriptorsets,
 										pipeline->descriptorsets,
 										0, 0);
-	}
-	if (pipeline->num_push_constants) {
-		QFV_PushConstants (device, cmd, pipeline->layout,
-						   pipeline->num_push_constants,
-						   pipeline->push_constants);
 	}
 	vec4u_t     d = pipeline->dispatch;
 	dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);

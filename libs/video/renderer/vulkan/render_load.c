@@ -873,22 +873,22 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 
 	size_t      size = sizeof (qfv_job_t);
 
-	size += counts->num_renderpasses * sizeof (VkRenderPass);
-	size += counts->num_graph_pipelines * sizeof (VkPipeline);
-	size += counts->num_comp_pipelines * sizeof (VkPipeline);
-	size += s.inds.num_layouts * sizeof (VkPipelineLayout);
+	size += sizeof (VkRenderPass     [counts->num_renderpasses]);
+	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
+	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
+	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
 
-	size += counts->num_steps * sizeof (qfv_step_t);
-	size += counts->num_render * sizeof (qfv_render_t);
-	size += counts->num_compute * sizeof (qfv_compute_t);
-	size += counts->num_process * sizeof (qfv_process_t);
-	size += counts->num_renderpasses * sizeof (qfv_renderpass_t);
-	size += counts->num_attachments * sizeof (VkClearValue);
-	size += counts->num_subpasses * sizeof (qfv_subpass_t);
-	size += counts->num_graph_pipelines * sizeof (qfv_pipeline_t);
-	size += counts->num_comp_pipelines * sizeof (qfv_pipeline_t);
-	size += counts->num_tasks * sizeof (qfv_taskinfo_t);
-	size += counts->num_descriptorsets * sizeof (VkDescriptorSet);
+	size += sizeof (qfv_step_t       [counts->num_steps]);
+	size += sizeof (qfv_render_t     [counts->num_render]);
+	size += sizeof (qfv_compute_t    [counts->num_compute]);
+	size += sizeof (qfv_process_t    [counts->num_process]);
+	size += sizeof (qfv_renderpass_t [counts->num_renderpasses]);
+	size += sizeof (VkClearValue     [counts->num_attachments]);
+	size += sizeof (qfv_subpass_t    [counts->num_subpasses]);
+	size += sizeof (qfv_pipeline_t   [counts->num_graph_pipelines]);
+	size += sizeof (qfv_pipeline_t   [counts->num_comp_pipelines]);
+	size += sizeof (qfv_taskinfo_t   [counts->num_tasks]);
+	size += sizeof (VkDescriptorSet  [counts->num_descriptorsets]);
 
 	rctx->job = malloc (size);
 	__auto_type job = rctx->job;
