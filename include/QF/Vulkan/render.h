@@ -381,6 +381,7 @@ typedef struct qfv_renderctx_s {
 typedef struct qfv_taskctx_s {
 	struct vulkan_ctx_s *ctx;
 	qfv_pipeline_t *pipeline;
+	VkCommandBuffer cmd;
 } qfv_taskctx_t;
 
 VkCommandBuffer QFV_GetCmdBufffer (struct vulkan_ctx_s *ctx, bool secondary);

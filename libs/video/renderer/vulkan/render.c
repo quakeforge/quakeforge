@@ -99,6 +99,7 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
 		.pipeline = pipeline,
+		.cmd = cmd,
 	};
 	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
 
@@ -187,6 +188,7 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
 		.pipeline = pipeline,
+		.cmd = cmd,
 	};
 	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
 
