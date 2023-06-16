@@ -17,6 +17,7 @@
 {
 	[field_dict release];
 	[field_defs release];
+	[parse_def release];
 	[only release];
 	str_free (outname);
 	str_free (label_field);
@@ -128,25 +129,39 @@ write_function_tail (Struct *self)
 }
 
 static void
-write_parse_type (Struct *self)
+write_parse_type (Struct *self, PLItem *item)
 {
-	fprintf (output_file, "\t\tif (!PL_ParseStruct (%s_fields, item, data, "
-			 "messages, context)) {\n", [self outname]);
-	fprintf (output_file, "\t\t\treturn 0;\n");
-	fprintf (output_file, "\t\t}\n");
+	if ([item string] == "auto") {
+		fprintf (output_file, "\t\tif (!PL_ParseStruct (%s_fields, item, "
+				 "data, messages, context)) {\n", [self outname]);
+		fprintf (output_file, "\t\t\treturn 0;\n");
+		fprintf (output_file, "\t\t}\n");
+	} else {
+		//FieldDef   *def = [FieldDef fielddef:item struct:self field:".parse"];
+		[self.parse_def writeParse];
+	}
 }
 
 static void
-write_auto_parse (Struct *self, string field)
+write_auto_parse (Struct *self, string field, int name)
 {
+	string      item = name ? "name" : "item";
+
 	fprintf (output_file, "\t\tdo {\n");
 	fprintf (output_file, "\t\t\tplfield_t  *f = find_field (%s_fields, %s, "
 			 "item, messages);\n", [self outname], sprintf ("\"%s\"", field));
 	fprintf (output_file, "\t\t\tif (!f) {\n");
-	fprintf (output_file, "\t\t\t\treturn 0;");
-	fprintf (output_file, "\t\t\t};\n");
-	fprintf (output_file, "\t\t\tf->parser (f, item, &%s, messages, context);\n",
-			 sprintf ("((%s *) data)->%s", [self outname], field));
+	fprintf (output_file, "\t\t\t\treturn 0;\n");
+	fprintf (output_file, "\t\t\t}\n");
+	if (name) {
+		fprintf (output_file, "\t\t\tplitem_t   *name = "
+				 "PL_NewString (field->name);\n");
+	}
+	fprintf (output_file, "\t\t\tf->parser (f, %s, &%s, messages, context);\n",
+			 item, sprintf ("((%s *) data)->%s", [self outname], field));
+	if (name) {
+		fprintf (output_file, "\t\t\tPL_Release (name);\n");
+	}
 	fprintf (output_file, "\t\t} while (0);\n");
 }
 
@@ -171,6 +186,11 @@ check_need_table (Struct *self, PLItem *field_dict, string type)
 		string      str = [item string];
 
 		if (field == ".parse") {
+			if (str != "auto") {
+				self.parse_def = [[FieldDef fielddef:item
+											 struct:self
+											  field:"parse"] retain];
+			}
 			return 1;
 		}
 		if (str == "$auto") {
@@ -203,7 +223,7 @@ write_type (Struct *self, PLItem *field_dict, string type)
 		string      str = [item string];
 
 		if (field == ".parse") {
-			write_parse_type (self);
+			write_parse_type (self, item);
 			continue;
 		}
 
@@ -221,7 +241,10 @@ write_type (Struct *self, PLItem *field_dict, string type)
 				str = "field->offset";
 				break;
 			case "$auto":
-				write_auto_parse (self, field);
+				write_auto_parse (self, field, 0);
+				continue;
+			case "$name.auto":
+				write_auto_parse (self, field, 1);
 				continue;
 		}
 		fprintf (output_file, "\t\t((%s *) data)->%s = %s;\n", [self outname],
@@ -333,10 +356,13 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 			self.write_symtab = 1;
 		}
 	}
+
 	for (int i = [field_defs count]; i-- > 0; ) {
 		FieldDef   *field_def = [field_defs objectAtIndex:i];
 		[field_def writeParseData];
 	}
+	[self.parse_def writeParseData];
+
 	if (!readonly) {
 		fprintf (output_file, "static plfield_t %s_fields[] = {\n",
 				 [self outname]);

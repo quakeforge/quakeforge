@@ -7,6 +7,7 @@
 #include "vktype.h"
 
 @class PLItem;
+@class FieldDef;
 
 @interface Struct: Type
 {
@@ -16,6 +17,7 @@
 	int skip;
 
 	Array *field_defs;
+	FieldDef *parse_def;
 	PLItem *field_dict;
 	PLItem *only;
 }

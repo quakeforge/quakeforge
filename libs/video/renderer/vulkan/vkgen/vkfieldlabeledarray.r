@@ -26,6 +26,21 @@
 	return self;
 }
 
+-writeParse
+{
+	fprintf (output_file, "\t\tplfield_t   %s_field = {\n", field_name);
+	fprintf (output_file, "\t\t\t.name = \"%s\",\n", field_name);
+	fprintf (output_file, "\t\t\t.type = QFDictionary,\n");
+	fprintf (output_file, "\t\t\t.data = &parse_%s_%s_data,\n",
+			 struct_name, field_name);
+	fprintf (output_file, "\t\t};\n");
+	fprintf (output_file, "\t\tif (!parse_labeledarray (&%s_field, item, "
+			 "data, messages, context)) {\n", field_name);
+	fprintf (output_file, "\t\t\treturn 0;\n");
+	fprintf (output_file, "\t\t}\n");
+	return self;
+}
+
 -writeField
 {
 	fprintf (output_file, "\t{\"%s\", 0, %s, parse_%s, &parse_%s_%s_data},\n",

@@ -85,6 +85,12 @@
 
 -writeParseData
 {
+	fprintf (output_file, "undefined record type parse data: %d\n", line);
+	return self;
+}
+
+-writeParse
+{
 	fprintf (output_file, "undefined record type parse: %d\n", line);
 	return self;
 }

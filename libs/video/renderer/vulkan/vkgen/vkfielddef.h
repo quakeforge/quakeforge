@@ -20,6 +20,7 @@
 +fielddef:(PLItem *)item struct:(Struct *)strct field:(string)fname;
 -init:(PLItem *)item struct:(Struct *)strct field:(string)fname;
 -writeParseData;
+-writeParse;
 -writeField;
 -writeSymbol;
 -(string) name;
