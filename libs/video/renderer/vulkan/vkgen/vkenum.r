@@ -22,13 +22,17 @@ typedef enum VkBool32 {
 		end = "_FLAG_BITS_MAX_ENUM_EXT";
 	} else if (str_mid([self name], -3) == "KHR") {
 		end = "_MAX_ENUM_KHR";
+	} else if (str_mid([self name], 0, 4) == "qfv_") {
+		prefix = "qfv_";
 	}
 	len = -strlen (end);
-	for (int i = 0; i < type.strct.num_fields; i++) {
-		qfot_var_t *var = &type.strct.fields[i];
-		if (str_mid (var.name, len) == end) {
-			// len is negative so +1 consumes 1 more char (_)
-			prefix = str_hold (str_mid (var.name, 0, len + 1));
+	if (!prefix) {
+		for (int i = 0; i < type.strct.num_fields; i++) {
+			qfot_var_t *var = &type.strct.fields[i];
+			if (str_mid (var.name, len) == end) {
+				// len is negative so +1 consumes 1 more char (_)
+				prefix = str_hold (str_mid (var.name, 0, len + 1));
+			}
 		}
 	}
 	if (prefix) {
