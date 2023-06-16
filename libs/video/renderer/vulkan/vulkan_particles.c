@@ -359,6 +359,7 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	__auto_type taskctx = (qfv_taskctx_t *) ectx;
 	vulkan_ctx_t *ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
 
 	particlectx_t *pctx = ctx->particle_context;
 	__auto_type pframe = &pctx->frames.a[ctx->curFrame];
@@ -368,29 +369,20 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pipeline->num_descriptorsets = 1;
 	pipeline->descriptorsets[0] = pframe->curDescriptors;
 
-	struct {
-		qfv_push_constants_t push_constants[2];
-		particle_push_constants_t constants;
-	} push = {
-		.push_constants = {
-			{ VK_SHADER_STAGE_COMPUTE_BIT,
-				field_offset (particle_push_constants_t, gravity),
-				sizeof (vec4f_t), &push.constants.gravity },
-			{ VK_SHADER_STAGE_COMPUTE_BIT,
-				field_offset (particle_push_constants_t, dT),
-				sizeof (float), &push.constants.dT },
-		},
-		.constants = {
-			.gravity = pctx->psystem->gravity,
-			.dT = vr_data.frametime,
-		},
+	particle_push_constants_t constants = {
+		.gravity = pctx->psystem->gravity,
+		.dT = vr_data.frametime,
 	};
-	if (!pipeline->push_constants) {
-		//FIXME figure out something better for managing push constants
-		pipeline->push_constants = malloc (sizeof (push));
-	}
-	memcpy (pipeline->push_constants, &push, sizeof (push));
-	pipeline->num_push_constants = 2;
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_COMPUTE_BIT,
+			field_offset (particle_push_constants_t, gravity),
+			sizeof (vec4f_t), &constants.gravity },
+		{ VK_SHADER_STAGE_COMPUTE_BIT,
+			field_offset (particle_push_constants_t, dT),
+			sizeof (float), &constants.dT },
+	};
+	QFV_PushConstants (device, taskctx->cmd, pipeline->layout,
+					   2, push_constants);
 }
 
 static exprfunc_t particles_draw_func[] = {
