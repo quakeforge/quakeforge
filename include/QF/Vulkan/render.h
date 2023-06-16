@@ -35,12 +35,35 @@ typedef struct qfv_descriptorsetlayoutinfo_s {
 	VkDescriptorSetLayout setLayout;
 } qfv_descriptorsetlayoutinfo_t;
 
+typedef enum qfv_type_t {
+	qfv_float,
+	qfv_int,
+	qfv_uint,
+	qfv_vec3,
+	qfv_vec4,
+	qfv_mat4,
+} qfv_type_t;
+
+typedef struct qfv_pushconstantinfo_s {
+	const char *name;
+	int         line;
+	qfv_type_t  type;
+	uint32_t    offset;
+	uint32_t    size;
+} qfv_pushconstantinfo_t;
+
+typedef struct qfv_pushconstantrangeinfo_s {
+	VkShaderStageFlags stageFlags;
+	uint32_t    num_pushconstants;
+	qfv_pushconstantinfo_t *pushconstants;
+} qfv_pushconstantrangeinfo_t;
+
 typedef struct qfv_layoutinfo_s {
 	const char *name;
 	uint32_t    num_sets;
 	qfv_reference_t *sets;
-	uint32_t    num_ranges;
-	VkPushConstantRange *ranges;
+	uint32_t    num_pushconstantranges;
+	qfv_pushconstantrangeinfo_t *pushconstantranges;
 	VkPipelineLayout layout;
 } qfv_layoutinfo_t;
 

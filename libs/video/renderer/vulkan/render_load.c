@@ -374,6 +374,61 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 			   s->rpi->name, s->spi->name, ref->line, ref->name);
 }
 
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+
+static uint32_t
+parse_pushconstantrange (VkPushConstantRange *range,
+						 qfv_pushconstantrangeinfo_t *pushconstantrange,
+						 uint32_t offset, objstate_t *s)
+{
+	uint32_t    range_offset = ~0u;
+	for (uint32_t i = 0; i < pushconstantrange->num_pushconstants; i++) {
+		__auto_type pushconstant = & pushconstantrange->pushconstants[i];
+		uint32_t    size = 0;
+		if (pushconstant->offset != ~0u) {
+			offset = pushconstant->offset;
+		}
+		if (pushconstant->size != ~0u) {
+			size = pushconstant->size;
+		} else {
+			switch (pushconstant->type) {
+				case qfv_float:
+				case qfv_int:
+				case qfv_uint:
+					size = sizeof (int32_t);
+					offset = RUP (offset, sizeof (int32_t));
+					break;
+				case qfv_vec3:
+					size = sizeof (vec3_t);
+					offset = RUP (offset, sizeof (vec4f_t));
+					break;
+				case qfv_vec4:
+					size = sizeof (vec4f_t);
+					offset = RUP (offset, sizeof (vec4f_t));
+					break;
+				case qfv_mat4:
+					size = sizeof (mat4f_t);
+					offset = RUP (offset, sizeof (vec4f_t));
+					break;
+				default:
+					Sys_Error ("%s.%s:%s:%d invalid type: %d",
+							   s->rpi->name, s->spi->name, pushconstant->name,
+							   pushconstant->line, pushconstant->type);
+			}
+		}
+		if (range_offset == ~0u) {
+			range_offset = offset;
+		}
+		offset += size;
+	}
+	*range = (VkPushConstantRange) {
+		.stageFlags = pushconstantrange->stageFlags,
+		.offset = range_offset,
+		.size = offset - range_offset,
+	};
+	return offset;
+}
+
 static qfv_layoutinfo_t *
 find_layout (const qfv_reference_t *ref, objstate_t *s)
 {
@@ -393,12 +448,19 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	for (uint32_t i = 0; i < li->num_sets; i++) {
 		sets[i] = find_descriptorSet (&li->sets[i], s);
 	}
+	VkPushConstantRange ranges[li->num_pushconstantranges];
+	uint32_t    offset = 0;
+	for (uint32_t i = 0; i < li->num_pushconstantranges; i++) {
+		offset = parse_pushconstantrange (&ranges[i],
+										  &li->pushconstantranges[i],
+										  offset, s);
+	}
 	VkPipelineLayoutCreateInfo cInfo = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.setLayoutCount = li->num_sets,
 		.pSetLayouts = sets,
-		.pushConstantRangeCount = li->num_ranges,
-		.pPushConstantRanges = li->ranges,
+		.pushConstantRangeCount = li->num_pushconstantranges,
+		.pPushConstantRanges = ranges,
 	};
 	qfv_device_t *device = s->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;

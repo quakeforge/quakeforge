@@ -43,6 +43,8 @@ search = (
 	qfv_attachmentrefinfo_t,
 	qfv_attachmentsetinfo_t,
 	qfv_taskinfo_t,
+	qfv_pushconstantinfo_t,
+	qfv_pushconstantrangeinfo_t,
 	qfv_layoutinfo_t,
 	qfv_pipelineinfo_t,
 	qfv_subpassinfo_t,
@@ -485,6 +487,41 @@ parse = {
 			values = preserve;
 		};
 	};
+	qfv_pushconstantinfo_s = {
+		.name = qfv_pushconstantinfo_t;
+		.type = (QFString, QFDictionary);
+		.dictionary = {
+			offset = -1;
+			size = -1;
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		.string = {
+			offset = -1;
+			size = -1;
+			name = $name;
+			line = $item.line;
+			type = $auto;
+		};
+		type = auto;
+		//stageFlags = auto;
+		offset = auto;
+		size = auto;
+	};
+	qfv_pushconstantrangeinfo_s = {
+		.name = qfv_pushconstantrangeinfo_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = {
+				type = (labeledarray, qfv_pushconstantinfo_t, name);
+				size = num_pushconstants;
+				values = pushconstants;
+			};
+			stageFlags = $name.auto;
+		};
+		stageFlags = auto;
+	};
 	qfv_layoutinfo_s = {
 		.name = qfv_layoutinfo_t;
 		descriptorSets = {
@@ -492,10 +529,10 @@ parse = {
 			size = num_sets;
 			values = sets;
 		};
-		pushConstantRanges = {
-			type = (array, VkPushConstantRange);
-			size = num_ranges;
-			values = ranges;
+		pushConstants = {
+			type = (labeledarray, qfv_pushconstantrangeinfo_t, stageFlags);
+			size = num_pushconstantranges;
+			values = pushconstantranges;
 		};
 	};
 	qfv_pipelineinfo_s = {

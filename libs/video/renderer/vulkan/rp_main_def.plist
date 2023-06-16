@@ -244,14 +244,16 @@ properties = {
 			primitiveRestartEnable = true;
 		};
 		layout = {
-			descriptorSets = (matrix_set, entity_set, oit_set, texture_set, texture_set);
-			pushConstantRanges = (
-				{
-					stageFlags = fragment;
-					offset = 0;
-					size = "4 * 4 + 4 + 4 + 4";
-				},
-			);
+			descriptorSets = (matrix_set, entity_set, oit_set, texture_set,
+							  texture_set);
+			pushConstants = {
+				fragment = {
+					fog = vec4;
+					time = float;
+					alpha = float;
+					turb_scale = float;
+				};
+			};
 		};
 	};
 	alias = {
@@ -292,18 +294,10 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, texture_set, texture_set);
-			pushConstantRanges = (
-				{
-					stageFlags = vertex;
-					offset = 0;
-					size = "16 * 4 + 4";
-				},
-				{
-					stageFlags = fragment;
-					offset = 68;
-					size = "3 * 4 + 2 * 4 * 4";
-				},
-			);
+			pushConstants = {
+				vertex   = { Model = mat4; blend = float; };
+				fragment = { colors = uint; base_color = vec4; fog = vec4; };
+			};
 		};
 	};
 	iqm = {
@@ -363,18 +357,18 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, texture_set, bone_set);
-			pushConstantRanges = (
-				{
-					stageFlags = vertex;
-					offset = 0;
-					size = "16 * 4 + 4";
-				},
-				{
-					stageFlags = fragment;
-					offset = 68;
-					size = "3 * 4 + 2 * 4 * 4 + 4";
-				},
-			);
+			pushConstants = {
+				vertex   = {
+					Model = mat4;
+					blend = float;
+				};
+				fragment = {
+					colorA = uint;
+					colorB = uint;
+					base_color = vec4;
+					fog = vec4;
+				};
+			};
 		};
 	};
 	sprite = {
@@ -411,20 +405,18 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, sprite_set);
-			pushConstantRanges = (
-				{
-					stageFlags = vertex;
-					offset = 0;
-					// note: overlap with fragment is for the frame number
-					size = "16 * 4 + 4";
-				},
-				{
-					stageFlags = fragment;
-					offset = 64;
-					// note: overlap with vertex to share frame number
-					size = "2 * 4 + 2 * 4 + 4";
-				},
-			);
+			pushConstants = {
+				vertex   = {
+					Model = mat4;
+					frame = int;
+				};
+				fragment = {
+					overlap   = { offset = 64; type = int; };
+					frame     = int;
+					spriteind = int;
+					fog       = vec4;
+				};
+			};
 		};
 	};
 	particle = {
@@ -463,23 +455,15 @@ properties = {
 		layout = {
 			draw = {
 				descriptorSets = (matrix_set, texture_set, oit_set);
-				pushConstantRanges = (
-					{
-						stageFlags = vertex;
-						offset = 0;
-						size = "16 * 4";
-					},
-				);
+				pushConstants = {
+					vertex = { Model = mat4; };
+				};
 			};
 			physics = {
 				descriptorSets = (particle_set);
-				pushConstantRanges = (
-					{
-						stageFlags = compute;
-						offset = 0;
-						size = "4 * 4 + 4";
-					},
-				);
+				pushConstants = {
+					compute = { gravity = vec4; dT = float; };
+				};
 			};
 			update = {
 				descriptorSets = (particle_set, particle_set, particle_set);
@@ -544,13 +528,9 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, output_set);
-			pushConstantRanges = (
-				{
-					stageFlags = fragment;
-					offset = 0;
-					size = "4";
-				}
-			);
+			pushConstants = {
+				fragment = { time = float; };
+			};
 		};
 	};
 	fisheye = {
@@ -564,13 +544,9 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, output_set);
-			pushConstantRanges = (
-				{
-					stageFlags = fragment;
-					offset = 0;
-					size = "2 * 4";
-				}
-			);
+			pushConstants = {
+				fragment = { fov = float; aspect = float; };
+			};
 		};
 	};
 };
