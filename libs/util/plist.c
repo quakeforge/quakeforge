@@ -1433,7 +1433,7 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *item, void *data,
 			}
 		}
 		if (!f->name) {
-			PL_Message (messages, item, "error: unknown field %s",
+			PL_Message (messages, item, "error: unknown field '%s'",
 						current->key);
 			result = 0;
 		}

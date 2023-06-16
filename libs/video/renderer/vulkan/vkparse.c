@@ -161,7 +161,7 @@ find_field (plfield_t *fields, const char *field_name,
 			return f;
 		}
 	}
-	PL_Message (messages, item, "error: unknown field %s", field_name);
+	PL_Message (messages, item, "error: unknown field '%s'", field_name);
 	return 0;
 }
 
