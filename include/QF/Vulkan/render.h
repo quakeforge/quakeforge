@@ -195,7 +195,7 @@ typedef struct qfv_subpassinfo_s {
 } qfv_subpassinfo_t;
 
 typedef struct qfv_framebufferinfo_s {
-	qfv_reference_t *attachments;
+	qfv_attachmentinfo_t *attachments;
 	uint32_t    num_attachments;
 	uint32_t    width;
 	uint32_t    height;
@@ -206,8 +206,6 @@ typedef struct qfv_renderpassinfo_s {
 	vec4f_t     color;
 	const char *name;
 	void       *pNext;
-	uint32_t    num_attachments;
-	qfv_attachmentinfo_t *attachments;
 	qfv_framebufferinfo_t framebuffer;
 	uint32_t    num_subpasses;
 	qfv_subpassinfo_t *subpasses;

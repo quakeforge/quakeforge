@@ -846,55 +846,55 @@ output = {
 renderpasses = {
 	deferred = {
 		color = "[0, 1, 0, 1]";
-		attachments = {
-			depth = {
-				@inherit = $attachment_base;
-				format = $images.depth.format;
-				loadOp = clear;
-				finalLayout = depth_stencil_attachment_optimal;
-				clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
-				view = $imageviews.depth;
-			};
-			color = {
-				@inherit = $attachment_base;
-				format = $images.color.format;
-				loadOp = clear;
-				view = $imageviews.color;
-			};
-			emission = {
-				@inherit = $attachment_base;
-				format = $images.emission.format;
-				loadOp = clear;
-				view = $imageviews.emission;
-			};
-			normal = {
-				@inherit = $attachment_base;
-				format = $images.normal.format;
-				view = $imageviews.normal;
-			};
-			position = {
-				@inherit = $attachment_base;
-				format = $images.position.format;
-				view = $imageviews.position;
-			};
-			opaque = {
-				@inherit = $attachment_base;
-				format = $images.opaque.format;
-				view = $imageviews.opaque;
-			};
-			output = {
-				@inherit = $attachment_base;
-				format = $render_output.format;
-				loadOp = clear;
-				storeOp = store;
-				finalLayout = $render_output.finalLayout;
-				view = $imageviews.output;
-			};
-		};
 		framebuffer = {
 			width = $render_output.extent.width;
 			height = $render_output.extent.height;
 			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $attachment_base;
+					format = $images.depth.format;
+					loadOp = clear;
+					finalLayout = depth_stencil_attachment_optimal;
+					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					view = $imageviews.depth;
+				};
+				color = {
+					@inherit = $attachment_base;
+					format = $images.color.format;
+					loadOp = clear;
+					view = $imageviews.color;
+				};
+				emission = {
+					@inherit = $attachment_base;
+					format = $images.emission.format;
+					loadOp = clear;
+					view = $imageviews.emission;
+				};
+				normal = {
+					@inherit = $attachment_base;
+					format = $images.normal.format;
+					view = $imageviews.normal;
+				};
+				position = {
+					@inherit = $attachment_base;
+					format = $images.position.format;
+					view = $imageviews.position;
+				};
+				opaque = {
+					@inherit = $attachment_base;
+					format = $images.opaque.format;
+					view = $imageviews.opaque;
+				};
+				output = {
+					@inherit = $attachment_base;
+					format = $render_output.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = $render_output.finalLayout;
+					view = $imageviews.output;
+				};
+			};
 		};
 		subpasses = {
 			depth = {
@@ -1242,20 +1242,20 @@ renderpasses = {
 	};
 	output = {
 		color = "[0, 1, 1, 1]";
-		attachments = {
-			output = {
-				@inherit = $attachment_base;
-				format = $render_output.format;
-				loadOp = clear;
-				storeOp = store;
-				finalLayout = present_src_khr;
-				view = $render_output.view;
-			};
-		};
 		framebuffer = {
 			width = $render_output.extent.width;
 			height = $render_output.extent.height;
 			layers = 1;
+			attachments = {
+				output = {
+					@inherit = $attachment_base;
+					format = $render_output.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = present_src_khr;
+					view = $render_output.view;
+				};
+			};
 		};
 		subpasses = {
 			compose = {

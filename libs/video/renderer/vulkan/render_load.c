@@ -146,7 +146,7 @@ count_sp_stuff (qfv_subpassinfo_t *spi, objcount_t *counts)
 static void
 count_rp_stuff (qfv_renderpassinfo_t *rpi, objcount_t *counts)
 {
-	counts->num_attachments += rpi->num_attachments;
+	counts->num_attachments += rpi->framebuffer.num_attachments;
 	counts->num_subpasses += rpi->num_subpasses;
 	for (uint32_t i = 0; i < rpi->num_subpasses; i++) {
 		count_sp_stuff (&rpi->subpasses[i], counts);
@@ -519,8 +519,8 @@ init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
 static uint32_t __attribute__((pure))
 find_attachment (qfv_reference_t *ref, objstate_t *s)
 {
-	for (uint32_t i = 0; i < s->rpi->num_attachments; i++) {
-		__auto_type a = &s->rpi->attachments[i];
+	for (uint32_t i = 0; i < s->rpi->framebuffer.num_attachments; i++) {
+		__auto_type a = &s->rpi->framebuffer.attachments[i];
 		if (strcmp (ref->name, a->name) == 0) {
 			return i;
 		}
@@ -671,8 +671,8 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 	__auto_type subpasses = &s->ptr.subpass[s->inds.num_subpasses];
 	__auto_type dependencies = &s->ptr.depend[s->inds.num_dependencies];
 
-	for (uint32_t i = 0; i < s->rpi->num_attachments; i++) {
-		init_atCreate (i, s->rpi->attachments, s);
+	for (uint32_t i = 0; i < s->rpi->framebuffer.num_attachments; i++) {
+		init_atCreate (i, s->rpi->framebuffer.attachments, s);
 		s->inds.num_attachments++;
 	}
 
@@ -685,7 +685,7 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 
 	*s->rpc = (VkRenderPassCreateInfo) {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-		.attachmentCount = s->rpi->num_attachments,
+		.attachmentCount = s->rpi->framebuffer.num_attachments,
 		.pAttachments = attachments,
 		.subpassCount = s->rpi->num_subpasses,
 		.pSubpasses = subpasses,
@@ -777,12 +777,12 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.beginInfo = (VkRenderPassBeginInfo) {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
-			.clearValueCount = rpinfo->num_attachments,
+			.clearValueCount = rpinfo->framebuffer.num_attachments,
 			.pClearValues = &jp->clearvalues[s->inds.num_attachments],
 		},
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
 	};
-	s->inds.num_attachments += rpinfo->num_attachments;
+	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
 		init_subpass (&rp->subpasses[i], &rpinfo->subpasses[i], jp, s);
 		rp->subpasses[i].inherit.renderPass = rp->beginInfo.renderPass;

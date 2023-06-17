@@ -629,6 +629,11 @@ parse = {
 		width = auto;
 		height = auto;
 		layers = auto;
+		attachments = {
+			type = (labeledarray, qfv_attachmentinfo_t, name);
+			size = num_attachments;
+			values = attachments;
+		};
 	};
 	qfv_reference_s = {
 		.name = qfv_reference_t;
@@ -641,11 +646,6 @@ parse = {
 	qfv_renderpassinfo_s = {
 		.name = qfv_renderpassinfo_t;
 		color = auto;
-		attachments = {
-			type = (labeledarray, qfv_attachmentinfo_t, name);
-			size = num_attachments;
-			values = attachments;
-		};
 		framebuffer = auto;
 		subpasses = {
 			type = (labeledarray, qfv_subpassinfo_t, name);
