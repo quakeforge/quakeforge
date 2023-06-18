@@ -802,10 +802,10 @@ init_render (qfv_render_t *rend, qfv_renderinfo_t *rinfo,
 		.num_renderpasses = rinfo->num_renderpasses,
 		.renderpasses = &jp->renderpasses[s->inds.num_renderpasses],
 	};
-	s->inds.num_renderpasses += rinfo->num_renderpasses;
 	for (uint32_t i = 0; i < rend->num_renderpasses; i++) {
 		init_renderpass (&rend->renderpasses[i], &rinfo->renderpasses[i],
 						 jp, s);
+		s->inds.num_renderpasses++;
 	}
 	rend->active = &rend->renderpasses[0];
 }
