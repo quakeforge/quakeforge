@@ -76,6 +76,7 @@ static exprval_t *parse_uint (const char *str, exprctx_t *context);
 static exprval_t *parse_size_t (const char *str, exprctx_t *context);
 static exprval_t *parse_float (const char *str, exprctx_t *context);
 static exprval_t *parse_double (const char *str, exprctx_t *context);
+static exprval_t *parse_string (const char *str, exprctx_t *context);
 static exprsym_t *parse_name (const char *str, exprctx_t *context);
 static exprval_t *parse_variable (const char *str, exprctx_t *context);
 
@@ -174,6 +175,8 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 {STRING}			{
+						yylval->value = parse_string (yytext, context);
+						return VALUE;
 					}
 @					return '@';
 
@@ -289,6 +292,19 @@ static exprval_t *parse_double (const char *str, exprctx_t *context)
 {
 	exprval_t  *val = cexpr_value (&cexpr_double, context);
 	*(double *) val->value = strtod (str, 0);
+	return val;
+}
+
+static exprval_t *parse_string (const char *str, exprctx_t *context)
+{
+	exprval_t  *val = cexpr_value (&cexpr_string, context);
+	// str includes the quotes, which add 2 to the length of the string, but
+	// only one byte is needed for the terminating nul
+	size_t      size = strlen (str) - 1;
+	char       *dup = cmemalloc (context->memsuper, size);
+	strncpy (dup, str + 1, size - 1);
+	dup[size - 1] = 0;
+	*(char **) val->value = dup;
 	return val;
 }
 

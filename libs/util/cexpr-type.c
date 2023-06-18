@@ -774,6 +774,16 @@ exprtype_t cexpr_plitem = {
 	.unops = 0,
 };
 
+exprtype_t cexpr_string = {
+	.name = "string",
+	.size = sizeof (char *),
+};
+
+exprtype_t cexpr_voidptr = {
+	.name = "voidptr",
+	.size = sizeof (void *),
+};
+
 VISIBLE binop_t *
 cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type)
 {
