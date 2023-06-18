@@ -313,10 +313,7 @@ typedef struct qfv_renderpass_s {
 	VkRenderPassBeginInfo beginInfo;
 	VkSubpassContents subpassContents;
 
-	//struct qfv_imageset_s *attachment_images;
-	//struct qfv_imageviewset_s *attachment_views;
-	//VkDeviceMemory attachmentMemory;
-	//size_t attachmentMemory_size;
+	qfv_framebufferinfo_t *framebufferinfo;
 	//qfv_output_t output;
 
 	uint32_t    subpass_count;
@@ -386,8 +383,6 @@ void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
 void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
-void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx);
-void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);

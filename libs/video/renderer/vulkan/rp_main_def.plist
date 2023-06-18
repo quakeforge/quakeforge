@@ -857,34 +857,34 @@ renderpasses = {
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
 					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
-					view = $imageviews.depth;
+					view = depth;
 				};
 				color = {
 					@inherit = $attachment_base;
 					format = $images.color.format;
 					loadOp = clear;
-					view = $imageviews.color;
+					view = color;
 				};
 				emission = {
 					@inherit = $attachment_base;
 					format = $images.emission.format;
 					loadOp = clear;
-					view = $imageviews.emission;
+					view = emission;
 				};
 				normal = {
 					@inherit = $attachment_base;
 					format = $images.normal.format;
-					view = $imageviews.normal;
+					view = normal;
 				};
 				position = {
 					@inherit = $attachment_base;
 					format = $images.position.format;
-					view = $imageviews.position;
+					view = position;
 				};
 				opaque = {
 					@inherit = $attachment_base;
 					format = $images.opaque.format;
-					view = $imageviews.opaque;
+					view = opaque;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -892,7 +892,7 @@ renderpasses = {
 					loadOp = clear;
 					storeOp = store;
 					finalLayout = $render_output.finalLayout;
-					view = $imageviews.output;
+					view = output;
 				};
 			};
 		};
@@ -1334,8 +1334,16 @@ steps = {
 			);
 		};
 	};
+	setup_main = {
+		process = {
+			tasks = (
+				{ func = "update_framebuffer";
+				  params = ("\"main\""); },
+			);
+		};
+	};
 	main = {
-		dependencies = (particles, shadow, translucent);
+		dependencies = (setup_main, particles, shadow, translucent);
 		render = {
 			renderpasses = {
 				deferred = $renderpasses.deferred;

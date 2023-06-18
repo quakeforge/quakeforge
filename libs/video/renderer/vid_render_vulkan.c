@@ -118,7 +118,6 @@ vulkan_R_Init (void)
 
 	QFV_LoadRenderInfo (vulkan_ctx);
 	QFV_BuildRender (vulkan_ctx);
-	QFV_CreateFramebuffer (vulkan_ctx);
 
 	Skin_Init ();
 

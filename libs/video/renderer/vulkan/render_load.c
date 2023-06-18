@@ -772,15 +772,16 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.vulkan_ctx = s->ctx,
 		.label.name = rpinfo->name,
 		.label.color = rpinfo->color,
-		.subpass_count = rpinfo->num_subpasses,
-		.subpasses = &jp->subpasses[s->inds.num_subpasses],
 		.beginInfo = (VkRenderPassBeginInfo) {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
 			.clearValueCount = rpinfo->framebuffer.num_attachments,
 			.pClearValues = &jp->clearvalues[s->inds.num_attachments],
 		},
+		.framebufferinfo = &rpinfo->framebuffer,
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
+		.subpass_count = rpinfo->num_subpasses,
+		.subpasses = &jp->subpasses[s->inds.num_subpasses],
 	};
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
@@ -1126,25 +1127,4 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 
 	create_objects (ctx, &counts);
 	create_resources (ctx, &counts);
-}
-
-static VkImageView __attribute__((pure, used))
-find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
-{
-	__auto_type jinfo = rctx->jobinfo;
-	__auto_type job = rctx->job;
-	const char *name = ref->name;
-
-	if (strncmp (name, "$imageviews.", 7) == 0) {
-		name += 7;
-	}
-
-	for (uint32_t i = 0; i < jinfo->num_imageviews; i++) {
-		__auto_type vi = &jinfo->imageviews[i];
-		__auto_type vo = &job->image_views[i];
-		if (strcmp (name, vi->name) == 0) {
-			return vo->image_view.view;
-		}
-	}
-	Sys_Error ("%d:invalid imageview: %s", ref->line, ref->name);
 }

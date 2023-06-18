@@ -252,10 +252,10 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	}
 }
 
+#if 0
 void
 QFV_DestroyFramebuffer (vulkan_ctx_t *ctx)
 {
-#if 0
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
@@ -267,31 +267,48 @@ QFV_DestroyFramebuffer (vulkan_ctx_t *ctx)
 		rp->beginInfo.framebuffer = 0;
 		dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
 	}
+}
 #endif
+
+static VkImageView __attribute__((pure))
+find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
+{
+	__auto_type jinfo = rctx->jobinfo;
+	__auto_type job = rctx->job;
+	const char *name = ref->name;
+
+	if (strncmp (name, "$imageviews.", 7) == 0) {
+		name += 7;
+	}
+
+	for (uint32_t i = 0; i < jinfo->num_imageviews; i++) {
+		__auto_type vi = &jinfo->imageviews[i];
+		__auto_type vo = &job->image_views[i];
+		if (strcmp (name, vi->name) == 0) {
+			return vo->image_view.view;
+		}
+	}
+	Sys_Error ("%d:invalid imageview: %s", ref->line, ref->name);
 }
 
-void
-QFV_CreateFramebuffer (vulkan_ctx_t *ctx)
+static void
+QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
-#if 0
 	__auto_type rctx = ctx->render_context;
-	__auto_type rinfo = rctx->renderinfo;
-	__auto_type job = rctx->job;
-	__auto_type rpInfo = &rinfo->renderpasses[0];
-	__auto_type rp = &job->renderpasses[0];
 
-	VkImageView attachments[rpInfo->num_attachments];
+	auto fb = rp->framebufferinfo;
+	VkImageView attachments[fb->num_attachments];
 	VkFramebufferCreateInfo cInfo = {
 		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-		.attachmentCount = rpInfo->num_attachments,
+		.attachmentCount = fb->num_attachments,
 		.pAttachments = attachments,
 		.renderPass = rp->beginInfo.renderPass,
-		.width = rpInfo->framebuffer.width,
-		.height = rpInfo->framebuffer.height,
-		.layers = rpInfo->framebuffer.layers,
+		.width = fb->width,
+		.height = fb->height,
+		.layers = fb->layers,
 	};
-	for (uint32_t i = 0; i < rpInfo->num_attachments; i++) {
-		attachments[i] = find_imageview (&rpInfo->attachments[i].view, rctx);
+	for (uint32_t i = 0; i < fb->num_attachments; i++) {
+		attachments[i] = find_imageview (&fb->attachments[i].view, rctx);
 	}
 
 	qfv_device_t *device = ctx->device;
@@ -299,15 +316,81 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx)
 	VkFramebuffer framebuffer;
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER, framebuffer,
-						 va (ctx->va_ctx, "framebuffer:%s", rpInfo->name));
+						 va (ctx->va_ctx, "framebuffer:%s", rp->label.name));
 
 	rp->beginInfo.framebuffer = framebuffer;
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
 		sp->inherit.framebuffer = framebuffer;
 	}
-#endif
 }
+
+static void
+wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	__auto_type taskctx = (qfv_taskctx_t *) ectx;
+	vulkan_ctx_t *ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkDevice    dev = device->dev;
+
+	__auto_type frame = &ctx->frames.a[ctx->curFrame];
+
+	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
+}
+
+static void
+update_framebuffer (const exprval_t **params, exprval_t *result,
+					exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto stepref = params[0];
+
+	// cache the render step referenced, using the parameter type as a flag
+	// for whether the caching has been performed.
+	if (stepref->type == &cexpr_string) {
+		if (cexpr_string.size != cexpr_voidptr.size) {
+			Sys_Error ("string and voidptr incompatible sizes");
+		}
+		auto name = *(const char **)stepref->value;
+		((exprval_t *) stepref)->type = &cexpr_voidptr;
+		*(void **)stepref->value = 0;
+		auto job = ctx->render_context->job;
+		for (uint32_t i = 0; i < job->num_steps; i++) {
+			auto step = &job->steps[i];
+			if (!strcmp (step->label.name, name)) {
+				*(void **)stepref->value = step;
+				break;
+			}
+		}
+	}
+	auto step = *(qfv_step_t **)stepref->value;
+	auto render = step->render;
+	auto rp = render->active;
+
+	if (!rp->beginInfo.framebuffer) {
+		QFV_CreateFramebuffer (ctx, rp);
+	}
+}
+
+static exprfunc_t wait_on_fence_func[] = {
+	{ .func = wait_on_fence },
+	{}
+};
+
+static exprtype_t *update_framebuffer_params[] = {
+	&cexpr_string,
+};
+static exprfunc_t update_framebuffer_func[] = {
+	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
+	{}
+};
+static exprsym_t render_task_syms[] = {
+	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
+	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
+	{}
+};
 
 void
 QFV_Render_Init (vulkan_ctx_t *ctx)
@@ -320,6 +403,8 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	rctx->task_functions.symbols = syms;
 	cexpr_init_symtab (&rctx->task_functions, &ectx);
 	rctx->task_functions.symbols = 0;
+
+	QFV_Render_AddTasks (ctx, render_task_syms);
 }
 
 void
@@ -330,7 +415,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 	if (rctx->job) {
 		__auto_type job = rctx->job;
-		QFV_DestroyFramebuffer (ctx); //FIXME do properly
+		//QFV_DestroyFramebuffer (ctx); //FIXME do properly
 		for (uint32_t i = 0; i < job->num_renderpasses; i++) {
 			dfunc->vkDestroyRenderPass (device->dev, job->renderpasses[i], 0);
 		}
