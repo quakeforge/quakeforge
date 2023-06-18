@@ -53,6 +53,7 @@ typedef uint8_t byte;
 #endif
 
 #if __STDC_VERSION__ < 202000
+#define auto __auto_type
 #ifndef _DEF_BOOL_
 # define _DEF_BOOL_
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
