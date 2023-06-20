@@ -44,9 +44,10 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
-#include "QF/Vulkan/pipeline.h"
+#include "QF/Vulkan/swapchain.h"
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
@@ -211,13 +212,15 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 static void
 create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 {
-	__auto_type rctx = ctx->render_context;
-	__auto_type jinfo = rctx->jobinfo;
-	__auto_type job = rctx->job;
+	auto rctx = ctx->render_context;
+	auto jinfo = rctx->jobinfo;
+	auto job = rctx->job;
 
-	job->resources = malloc (sizeof(qfv_resource_t)
-								+ counts->num_images * sizeof (qfv_resobj_t)
-								+ counts->num_imageviews * sizeof (qfv_resobj_t));
+	size_t      size = sizeof (qfv_resource_t);
+	size += sizeof (qfv_resobj_t [counts->num_images]);
+	size += sizeof (qfv_resobj_t [counts->num_imageviews]);
+
+	job->resources = malloc (size);
 	job->images = (qfv_resobj_t *) &job->resources[1];
 	job->image_views = &job->images[counts->num_images];
 
@@ -646,17 +649,32 @@ init_atCreate (uint32_t index, qfv_attachmentinfo_t *attachments, objstate_t *s)
 	__auto_type atc = &s->ptr.attach[s->inds.num_attachments];
 	__auto_type cvc = &s->ptr.clear[s->inds.num_attachments];
 
-	*atc = (VkAttachmentDescription) {
-		.flags = ati->flags,
-		.format = ati->format,
-		.samples = ati->samples,
-		.loadOp = ati->loadOp,
-		.storeOp = ati->storeOp,
-		.stencilLoadOp = ati->stencilLoadOp,
-		.stencilStoreOp = ati->stencilStoreOp,
-		.initialLayout = ati->initialLayout,
-		.finalLayout = ati->finalLayout,
-	};
+	if (ati->external) {
+		if (!strcmp (ati->external, "$swapchain")) {
+			*atc = (VkAttachmentDescription) {
+				.format = s->ctx->swapchain->format,
+				.samples = 1,
+				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			};
+		}
+	} else {
+		*atc = (VkAttachmentDescription) {
+			.flags = ati->flags,
+			.format = ati->format,
+			.samples = ati->samples,
+			.loadOp = ati->loadOp,
+			.storeOp = ati->storeOp,
+			.stencilLoadOp = ati->stencilLoadOp,
+			.stencilStoreOp = ati->stencilStoreOp,
+			.initialLayout = ati->initialLayout,
+			.finalLayout = ati->finalLayout,
+		};
+	}
 	*cvc = ati->clearValue;
 }
 
@@ -937,7 +955,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	for (uint32_t i = 0; i < s.inds.num_layouts; i++) {
 		job->layouts[i] = s.ptr.layouts[i].layout;
 	}
-	memcpy (cv, s.ptr.clear, counts->num_attachments * sizeof (VkClearValue));
+	memcpy (cv, s.ptr.clear, sizeof (VkClearValue [counts->num_attachments ]));
 
 	uint32_t    num_layouts = s.inds.num_layouts;
 	s.inds = (objcount_t) {};

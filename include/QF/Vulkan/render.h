@@ -122,6 +122,7 @@ typedef struct qfv_dependencyinfo_s {
 
 typedef struct qfv_attachmentinfo_s {
 	const char *name;
+	int         line;
 	VkAttachmentDescriptionFlags flags;
 	VkFormat    format;
 	VkSampleCountFlagBits samples;
@@ -133,6 +134,7 @@ typedef struct qfv_attachmentinfo_s {
 	VkImageLayout finalLayout;
 	VkClearValue clearValue;
 	qfv_reference_t view;
+	const char *external;
 } qfv_attachmentinfo_t;
 
 typedef struct qfv_taskinfo_s {
@@ -225,7 +227,6 @@ typedef struct qfv_renderinfo_s {
 
 	uint32_t    num_renderpasses;
 	qfv_renderpassinfo_t *renderpasses;
-	qfv_output_t output;
 } qfv_renderinfo_t;
 
 typedef struct qfv_processinfo_s {
@@ -274,13 +275,6 @@ typedef struct qfv_label_s {
 	const char *name;
 } qfv_label_t;
 
-typedef struct qfv_bar_s {
-	VkBuffer   *buffers;
-	VkDeviceSize *offsets;
-	uint32_t    firstBinding;
-	uint32_t    bindingCount;
-} qfv_bar_t;
-
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
 	VkPipelineBindPoint bindPoint;
@@ -314,7 +308,6 @@ typedef struct qfv_renderpass_s {
 	VkSubpassContents subpassContents;
 
 	qfv_framebufferinfo_t *framebufferinfo;
-	//qfv_output_t output;
 
 	uint32_t    subpass_count;
 	qfv_subpass_t *subpasses;
@@ -325,6 +318,7 @@ typedef struct qfv_render_s {
 	qfv_renderpass_t *active;
 	qfv_renderpass_t *renderpasses;
 	uint32_t    num_renderpasses;
+	qfv_output_t output;
 } qfv_render_t;
 
 typedef struct qfv_compute_s {
@@ -386,6 +380,8 @@ void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
+
+qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 #endif//__QFCC__
 
 #endif//__QF_Vulkan_render_h

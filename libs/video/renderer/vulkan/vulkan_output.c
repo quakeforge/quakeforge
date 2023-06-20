@@ -103,7 +103,7 @@ acquire_image (qfv_renderframe_t *rFrame)
 }
 
 static void
-update_input (qfv_renderframe_t *rFrame)
+output_update_input (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -134,7 +134,7 @@ static void
 preoutput_draw (qfv_renderframe_t *rFrame)
 {
 	acquire_image (rFrame);
-	update_input (rFrame);
+	output_update_input (rFrame);
 }
 
 static void
@@ -212,7 +212,7 @@ process_input (qfv_renderframe_t *rFrame)
 }
 
 static void
-output_draw (qfv_renderframe_t *rFrame)
+draw_output (qfv_renderframe_t *rFrame)
 {
 	process_input (rFrame);
 	Vulkan_FlushText (rFrame);
@@ -224,7 +224,7 @@ Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
-	__auto_type out = QFV_RenderPass_New (ctx, "output", output_draw);
+	__auto_type out = QFV_RenderPass_New (ctx, "output", draw_output);
 	out->output = (qfv_output_t) {
 		.extent    = ctx->swapchain->extent,
 		.format    = ctx->swapchain->format,
@@ -247,28 +247,97 @@ Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
 static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto frame = &ctx->frames.a[ctx->curFrame];
+
+	uint32_t imageIndex = 0;
+	while (!QFV_AcquireNextImage (ctx->swapchain,
+								  frame->imageAvailableSemaphore,
+								  0, &imageIndex)) {
+		QFV_DeviceWaitIdle (device);
+		if (ctx->capture) {
+			QFV_DestroyCapture (ctx->capture);
+		}
+		Vulkan_CreateSwapchain (ctx);
+		Vulkan_CreateCapture (ctx);
+
+		__auto_type out = ctx->output_renderpass;
+		out->output = (qfv_output_t) {
+			.extent    = ctx->swapchain->extent,
+			.format    = ctx->swapchain->format,
+			.frames    = ctx->swapchain->numImages,
+			.view_list = ctx->swapchain->imageViews->a,
+		};
+		out->viewport.width = out->output.extent.width;
+		out->viewport.height = out->output.extent.height;
+		out->scissor.extent = out->output.extent;
+		auto step = QFV_GetStep (params[0], ctx->render_context->job);
+		auto render = step->render;
+		for (uint32_t i = 0; i < render->num_renderpasses; i++) {
+			auto rp = &render->renderpasses[i];
+			if (rp->beginInfo.framebuffer) {
+				dfunc->vkDestroyFramebuffer (device->dev,
+											 rp->beginInfo.framebuffer, 0);
+			}
+			rp->beginInfo.framebuffer = 0; // leave for update_framebuffer
+		}
+
+		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
+								   0);
+		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+	}
+	ctx->swapImageIndex = imageIndex;
 }
 
 static void
-_update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto octx = ctx->output_context;
+	auto oframe = &octx->frames.a[ctx->curFrame];
+
+	if (oframe->input == octx->input) {
+		return;
+	}
+	oframe->input = octx->input;
+
+	VkDescriptorImageInfo imageInfo = {
+		octx->sampler, oframe->input,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  oframe->set, 0, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo, 0, 0 }
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 }
 
 static void
-_output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 }
 
+static exprtype_t *stepref_param[] = {
+	&cexpr_string,
+};
 static exprfunc_t acquire_output_func[] = {
-	{ .func = acquire_output },
+	{ .func = acquire_output, .num_params = 1, stepref_param },
 	{}
 };
 static exprfunc_t update_input_func[] = {
-	{ .func = _update_input },
+	{ .func = update_input, .num_params = 1, stepref_param },
 	{}
 };
 static exprfunc_t output_draw_func[] = {
-	{ .func = _output_draw },
+	{ .func = output_draw },
 	{}
 };
 static exprsym_t output_task_syms[] = {

@@ -939,7 +939,7 @@ renderpasses = {
 					alias:depth = {
 						color = $color.alias;
 						tasks = (
-							{ func = "alias_draw"; },
+							{ func = alias_draw; },
 						);
 
 						stages = (
@@ -964,7 +964,7 @@ renderpasses = {
 					iqm:depth = {
 						color = $color.iqm;
 						tasks = (
-							{ func = "iqm_draw"; },
+							{ func = iqm_draw; },
 						);
 
 						stages = (
@@ -977,7 +977,7 @@ renderpasses = {
 					sprite:depth = {
 						color = $color.sprite;
 						tasks = (
-							{ func = "sprite_draw"; },
+							{ func = sprite_draw; },
 						);
 
 						stages = (
@@ -1121,7 +1121,7 @@ renderpasses = {
 					alias:gbuffer = {
 						color = $color.alias;
 						tasks = (
-							{ func = "alias_draw"; },
+							{ func = alias_draw; },
 						);
 
 						stages = (
@@ -1135,7 +1135,7 @@ renderpasses = {
 					iqm:gbuffer = {
 						color = $color.iqm;
 						tasks = (
-							{ func = "iqm_draw"; },
+							{ func = iqm_draw; },
 						);
 
 						stages = (
@@ -1149,7 +1149,7 @@ renderpasses = {
 					sprite:gbuffer = {
 						color = $color.sprite;
 						tasks = (
-							{ func = "sprite_draw"; },
+							{ func = sprite_draw; },
 						);
 
 						stages = (
@@ -1189,7 +1189,7 @@ renderpasses = {
 
 						color = $color.lights;
 						tasks = (
-							{ func = "lights_draw"; },
+							{ func = lights_draw; },
 						);
 
 						stages = (
@@ -1220,7 +1220,7 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = "compose_draw"; },
+							{ func = compose_draw; },
 						);
 
 						stages = (
@@ -1243,18 +1243,9 @@ renderpasses = {
 	output = {
 		color = "[0, 1, 1, 1]";
 		framebuffer = {
-			width = $render_output.extent.width;
-			height = $render_output.extent.height;
 			layers = 1;
 			attachments = {
-				output = {
-					@inherit = $attachment_base;
-					format = $render_output.format;
-					loadOp = clear;
-					storeOp = store;
-					finalLayout = present_src_khr;
-					view = $render_output.view;
-				};
+				output = $swapchain;
 			};
 		};
 		subpasses = {
@@ -1271,7 +1262,7 @@ renderpasses = {
 
 						color = $color.output;
 						tasks = (
-							{ func = "output_draw"; },
+							{ func = output_draw; },
 						);
 
 						stages = (
@@ -1289,7 +1280,7 @@ steps = {
 	wait_on_fence = {
 		process = {
 			tasks = (
-				{ func = "wait_on_fence"; },
+				{ func = wait_on_fence; },
 			);
 		};
 	};
@@ -1300,7 +1291,7 @@ steps = {
 				part:update = {
 					color = "[0.3, 0.8, 0.9]";
 					tasks = (
-						{ func = "update_particles"; }
+						{ func = update_particles; }
 					);
 					stage = {
 						name = main;
@@ -1311,7 +1302,7 @@ steps = {
 				part:physics = {
 					color = "[0.6, 0.8, 0.9]";
 					tasks = (
-						{ func = "particle_physics"; }
+						{ func = particle_physics; }
 					);
 					stage = {
 						name = main;
@@ -1330,14 +1321,14 @@ steps = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
-				{ func = "clear_translucent"; },
+				{ func = clear_translucent; },
 			);
 		};
 	};
 	setup_main = {
 		process = {
 			tasks = (
-				{ func = "update_framebuffer";
+				{ func = update_framebuffer;
 				  params = ("\"main\""); },
 			);
 		};
@@ -1355,8 +1346,11 @@ steps = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
-				{ func = "acquire_output"; },
-				{ func = "update_input"; },
+				{ func = acquire_output;
+				  params = ("\"output\""); },
+				{ func = update_framebuffer;
+				  params = ("\"output\""); },
+				{ func = update_input; },
 			);
 		};
 	};

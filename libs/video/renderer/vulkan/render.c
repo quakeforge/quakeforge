@@ -44,9 +44,11 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/image.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
-#include "QF/Vulkan/pipeline.h"
+#include "QF/Vulkan/swapchain.h"
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
@@ -119,7 +121,6 @@ run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	dfunc->vkResetCommandBuffer (cmd, 0);
 	dfunc->vkBeginCommandBuffer (cmd, &sp->beginInfo);
 	QFV_duCmdBeginLabel (device, cmd, sp->label.name,
 						 {VEC4_EXP (sp->label.color)});
@@ -308,7 +309,17 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 		.layers = fb->layers,
 	};
 	for (uint32_t i = 0; i < fb->num_attachments; i++) {
-		attachments[i] = find_imageview (&fb->attachments[i].view, rctx);
+		if (fb->attachments[i].external) {
+			attachments[i] = 0;
+			if (!strcmp (fb->attachments[i].external, "$swapchain")) {
+				auto sc = ctx->swapchain;
+				attachments[i] = sc->imageViews->a[ctx->swapImageIndex];
+				cInfo.width = sc->extent.width;
+				cInfo.height = sc->extent.height;
+			}
+		} else {
+			attachments[i] = find_imageview (&fb->attachments[i].view, rctx);
+		}
 	}
 
 	qfv_device_t *device = ctx->device;
@@ -340,34 +351,47 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
+renderpass_update_viewper_sissor (qfv_renderpass_t *rp,
+								  const qfv_output_t *output)
+{
+	rp->beginInfo.renderArea.extent = output->extent;
+	for (uint32_t i = 0; i < rp->subpass_count; i++) {
+		auto sp = &rp->subpasses[i];
+		for (uint32_t j = 0; j < sp->pipeline_count; j++) {
+			auto pl = &sp->pipelines[j];
+			pl->viewport.width = output->extent.width;
+			pl->viewport.height = output->extent.height;
+			pl->scissor.extent = output->extent;
+		}
+	}
+}
+
+static void
+update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
+{
+	for (uint32_t i = 0; i < render->num_renderpasses; i++) {
+		renderpass_update_viewper_sissor (&render->renderpasses[i], output);
+	}
+}
+
+static void
 update_framebuffer (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto stepref = params[0];
-
-	// cache the render step referenced, using the parameter type as a flag
-	// for whether the caching has been performed.
-	if (stepref->type == &cexpr_string) {
-		if (cexpr_string.size != cexpr_voidptr.size) {
-			Sys_Error ("string and voidptr incompatible sizes");
-		}
-		auto name = *(const char **)stepref->value;
-		((exprval_t *) stepref)->type = &cexpr_voidptr;
-		*(void **)stepref->value = 0;
-		auto job = ctx->render_context->job;
-		for (uint32_t i = 0; i < job->num_steps; i++) {
-			auto step = &job->steps[i];
-			if (!strcmp (step->label.name, name)) {
-				*(void **)stepref->value = step;
-				break;
-			}
-		}
-	}
-	auto step = *(qfv_step_t **)stepref->value;
+	auto job = ctx->render_context->job;
+	auto step = QFV_GetStep (params[0], job);
 	auto render = step->render;
 	auto rp = render->active;
+
+	qfv_output_t output = {};
+	Vulkan_ConfigOutput (ctx, &output);
+	if (output.extent.width != render->output.extent.width
+		|| output.extent.height != render->output.extent.height) {
+		//FIXME framebuffer image creation here
+		update_viewport_scissor (render, &output);
+	}
 
 	if (!rp->beginInfo.framebuffer) {
 		QFV_CreateFramebuffer (ctx, rp);
@@ -465,4 +489,31 @@ QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 			}
 		}
 	}
+}
+
+qfv_step_t *
+QFV_GetStep (const exprval_t *param, qfv_job_t *job)
+{
+	// this is a little evil, but need to update the type after resolving
+	// the step name
+	auto stepref = (exprval_t *) param;
+
+	// cache the render step referenced, using the parameter type as a flag
+	// for whether the caching has been performed.
+	if (stepref->type == &cexpr_string) {
+		if (cexpr_string.size != cexpr_voidptr.size) {
+			Sys_Error ("string and voidptr incompatible sizes");
+		}
+		auto name = *(const char **)stepref->value;
+		stepref->type = &cexpr_voidptr;
+		*(void **)stepref->value = 0;
+		for (uint32_t i = 0; i < job->num_steps; i++) {
+			auto step = &job->steps[i];
+			if (!strcmp (step->label.name, name)) {
+				*(void **)stepref->value = step;
+				break;
+			}
+		}
+	}
+	return *(qfv_step_t **)stepref->value;
 }

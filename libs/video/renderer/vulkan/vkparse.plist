@@ -624,6 +624,31 @@ parse = {
 			value = base_pipeline;
 		};
 	};
+	qfv_attachmentinfo_s = {
+		.name = qfv_attachmentinfo_t;
+		.type = (QFString, QFDictionary);
+		.string = {
+			name = $name;
+			line = $item.line;
+			external = $item.string;
+		};
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+			line = $item.line;
+		};
+		flags = auto;
+		format = auto;
+		samples = auto;
+		loadOp = auto;
+		storeOp = auto;
+		stencilLoadOp = auto;
+		stencilStoreOp = auto;
+		initialLayout = auto;
+		finalLayout = auto;
+		clearValue = auto;
+		view = auto;
+	};
 	qfv_framebufferinfo_s = {
 		.name = qfv_framebufferinfo_t;
 		width = auto;
