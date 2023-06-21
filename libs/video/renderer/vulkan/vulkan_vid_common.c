@@ -236,6 +236,9 @@ Vulkan_CreateFrames (vulkan_ctx_t *ctx)
 		__auto_type frame = &ctx->frames.a[i];
 		frame->fence = QFV_CreateFence (device, 1);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 frame->imageAvailableSemaphore,
+							 va (ctx->va_ctx, "sc image:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		frame->cmdBuffer = cmdBuffers->a[i];
 	}

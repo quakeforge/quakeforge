@@ -53,6 +53,7 @@ typedef struct outputctx_s {
 	VkPipelineLayout fish_layout;
 	VkSampler    sampler;
 	VkImageView  input;
+	VkFramebuffer *framebuffers;	// one per swapchain image
 } outputctx_t;
 
 struct vulkan_ctx_s;

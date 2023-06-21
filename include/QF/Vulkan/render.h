@@ -381,6 +381,8 @@ void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
 
+void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
+
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 #endif//__QFCC__
 

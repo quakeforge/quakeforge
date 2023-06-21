@@ -41,6 +41,7 @@
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_matrices.h"
@@ -53,6 +54,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "r_local.h"
@@ -63,14 +65,10 @@
 static void
 acquire_image (qfv_renderframe_t *rFrame)
 {
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type frame = &ctx->frames.a[ctx->curFrame];
-	//outputctx_t *octx = ctx->output_context;
-	//uint32_t    curFrame = ctx->curFrame;
-	//outputframe_t *oframe = &octx->frames.a[curFrame];
-	//qfv_renderpass_t *rp = ctx->output_renderpass;
+	auto ctx = rFrame->vulkan_ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto frame = &ctx->frames.a[ctx->curFrame];
 
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (ctx->swapchain,
@@ -98,6 +96,9 @@ acquire_image (qfv_renderframe_t *rFrame)
 		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
 								   0);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 frame->imageAvailableSemaphore,
+							 va (ctx->va_ctx, "sc image:%d", ctx->curFrame));
 	}
 	ctx->swapImageIndex = imageIndex;
 }
@@ -252,16 +253,24 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto frame = &ctx->frames.a[ctx->curFrame];
+	auto octx = ctx->output_context;
+	auto sc = ctx->swapchain;
 
+	printf ("acquire_output: %d\n", ctx->curFrame);
 	uint32_t imageIndex = 0;
-	while (!QFV_AcquireNextImage (ctx->swapchain,
-								  frame->imageAvailableSemaphore,
+	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  0, &imageIndex)) {
 		QFV_DeviceWaitIdle (device);
 		if (ctx->capture) {
 			QFV_DestroyCapture (ctx->capture);
 		}
+		for (uint32_t i = 0; i < sc->imageViews->size; i++) {
+			dfunc->vkDestroyFramebuffer (device->dev,
+										 octx->framebuffers[i], 0);
+		}
+		octx->framebuffers = 0;
 		Vulkan_CreateSwapchain (ctx);
+		sc = ctx->swapchain;
 		Vulkan_CreateCapture (ctx);
 
 		__auto_type out = ctx->output_renderpass;
@@ -274,22 +283,48 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		out->viewport.width = out->output.extent.width;
 		out->viewport.height = out->output.extent.height;
 		out->scissor.extent = out->output.extent;
-		auto step = QFV_GetStep (params[0], ctx->render_context->job);
-		auto render = step->render;
-		for (uint32_t i = 0; i < render->num_renderpasses; i++) {
-			auto rp = &render->renderpasses[i];
-			if (rp->beginInfo.framebuffer) {
-				dfunc->vkDestroyFramebuffer (device->dev,
-											 rp->beginInfo.framebuffer, 0);
-			}
-			rp->beginInfo.framebuffer = 0; // leave for update_framebuffer
-		}
 
 		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
 								   0);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 frame->imageAvailableSemaphore,
+							 va (ctx->va_ctx, "sc image:%d", ctx->curFrame));
+	}
+
+	//FIXME clean this up
+	auto step = QFV_GetStep (params[0], ctx->render_context->job);
+	auto render = step->render;
+	auto rp = &render->renderpasses[0];
+	if (!octx->framebuffers) {
+		uint32_t    count = ctx->swapchain->imageViews->size;
+		octx->framebuffers = malloc (sizeof (VkFramebuffer [count]));
+		for (uint32_t i = 0; i < count; i++) {
+			rp->beginInfo.framebuffer = 0;
+			//FIXME come up with a better mechanism
+			ctx->swapImageIndex = i;
+			QFV_CreateFramebuffer (ctx, rp);
+			octx->framebuffers[i] = rp->beginInfo.framebuffer;
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER,
+								 octx->framebuffers[i],
+								 va (ctx->va_ctx, "sc fb:%d", i));
+		}
+		for (uint32_t i = 0; i < rp->subpass_count; i++) {
+			auto sp = &rp->subpasses[i];
+			for (uint32_t j = 0; j < sp->pipeline_count; j++) {
+				auto pl = &sp->pipelines[j];
+				pl->viewport.width = sc->extent.width;
+				pl->viewport.height = sc->extent.height;
+				pl->scissor.extent = sc->extent;
+			}
+		}
 	}
 	ctx->swapImageIndex = imageIndex;
+	rp->beginInfo.framebuffer = octx->framebuffers[imageIndex];
+	for (uint32_t i = 0; i < rp->subpass_count; i++) {
+		auto sp = &rp->subpasses[i];
+		sp->inherit.framebuffer = rp->beginInfo.framebuffer;
+	}
 }
 
 static void

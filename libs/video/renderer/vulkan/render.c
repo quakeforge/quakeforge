@@ -137,7 +137,7 @@ run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 static void
 run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 {
-	printf ("run_renderpass: %s\n", rp->label.name);
+	printf ("%10.2f run_renderpass: %s\n", Sys_DoubleTime (), rp->label.name);
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -167,7 +167,9 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 			dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
 		}
 	}
+	dfunc->vkCmdEndRenderPass (cmd);
 	QFV_CmdEndLabel (device, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
 	DARRAY_APPEND (&job->commands, cmd);
 }
 
@@ -235,12 +237,12 @@ run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
-	__auto_type rctx = ctx->render_context;
-	__auto_type job = rctx->job;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		__auto_type step = &job->steps[i];
-		printf ("run_step: %s\n", step->label.name);
+		printf ("%10.2f run_step: %s\n", Sys_DoubleTime (), step->label.name);
 		if (step->render) {
 			run_renderpass (step->render->active, ctx);
 		}
@@ -251,6 +253,31 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 			run_process (step->process, ctx);
 		}
 	}
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto queue = &device->queue;
+	auto frame = &ctx->frames.a[ctx->curFrame];
+	VkPipelineStageFlags waitStage
+		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkSubmitInfo submitInfo = {
+		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
+		1, &frame->imageAvailableSemaphore, &waitStage,
+		job->commands.size, job->commands.a,
+		1, &frame->renderDoneSemaphore,
+	};
+	printf ("%10.2f submit for frame %d: %zd %p\n", Sys_DoubleTime (),
+			ctx->curFrame, job->commands.size, frame->imageAvailableSemaphore);
+	dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+
+	VkPresentInfoKHR presentInfo = {
+		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
+		1, &frame->renderDoneSemaphore,
+		1, &ctx->swapchain->swapchain, &ctx->swapImageIndex,
+		0
+	};
+	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 }
 
 #if 0
@@ -292,7 +319,7 @@ find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
 	Sys_Error ("%d:invalid imageview: %s", ref->line, ref->name);
 }
 
-static void
+void
 QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
 	__auto_type rctx = ctx->render_context;
@@ -339,15 +366,20 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 static void
 wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	__auto_type taskctx = (qfv_taskctx_t *) ectx;
-	vulkan_ctx_t *ctx = taskctx->ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkDevice    dev = device->dev;
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dev = device->dev;
 
 	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
+
+	auto job = ctx->render_context->job;
+	job->command_pool = frame->command_pool;
+	dfunc->vkResetCommandPool (device->dev, job->command_pool, 0);
+	DARRAY_CLEAR (&job->commands);
 }
 
 static void
@@ -453,11 +485,13 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 			QFV_DestroyResource (ctx->device, job->resources);
 			free (job->resources);
 		}
-		if (job->command_pool) {
-			dfunc->vkDestroyCommandPool (device->dev, job->command_pool, 0);
-		}
+		job->command_pool = 0;
 		DARRAY_CLEAR (&job->commands);
 		free (rctx->job);
+	}
+	for (uint32_t i = 0; i < ctx->frames.size; i++) {
+		auto frame = &ctx->frames.a[i];
+		dfunc->vkDestroyCommandPool (device->dev, frame->command_pool, 0);
 	}
 	if (rctx->jobinfo) {
 		__auto_type jinfo = rctx->jobinfo;

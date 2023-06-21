@@ -1348,8 +1348,6 @@ steps = {
 			tasks = (
 				{ func = acquire_output;
 				  params = ("\"output\""); },
-				{ func = update_framebuffer;
-				  params = ("\"output\""); },
 				{ func = update_input; },
 			);
 		};
