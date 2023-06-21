@@ -280,24 +280,6 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 }
 
-#if 0
-void
-QFV_DestroyFramebuffer (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type rctx = ctx->render_context;
-	__auto_type job = rctx->job;
-	__auto_type rp = &job->renderpasses[0];
-
-	if (rp->beginInfo.framebuffer) {
-		VkFramebuffer framebuffer = rp->beginInfo.framebuffer;
-		rp->beginInfo.framebuffer = 0;
-		dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
-	}
-}
-#endif
-
 static VkImageView __attribute__((pure))
 find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
 {
@@ -485,6 +467,18 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 			QFV_DestroyResource (ctx->device, job->resources);
 			free (job->resources);
 		}
+		for (uint32_t i = 0; i < job->num_steps; i++) {
+			if (job->steps[i].render) {
+				auto render = job->steps[i].render;
+				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
+					auto bi = &render->renderpasses[j].beginInfo;
+					if (bi->framebuffer) {
+						dfunc->vkDestroyFramebuffer (device->dev,
+													 bi->framebuffer, 0);
+					}
+				}
+			}
+		}
 		job->command_pool = 0;
 		DARRAY_CLEAR (&job->commands);
 		free (rctx->job);
@@ -526,6 +520,18 @@ QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 }
 
 qfv_step_t *
+QFV_FindStep (const char *name, qfv_job_t *job)
+{
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
+		if (!strcmp (step->label.name, name)) {
+			return step;
+		}
+	}
+	return 0;
+}
+
+qfv_step_t *
 QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 {
 	// this is a little evil, but need to update the type after resolving
@@ -540,14 +546,7 @@ QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 		}
 		auto name = *(const char **)stepref->value;
 		stepref->type = &cexpr_voidptr;
-		*(void **)stepref->value = 0;
-		for (uint32_t i = 0; i < job->num_steps; i++) {
-			auto step = &job->steps[i];
-			if (!strcmp (step->label.name, name)) {
-				*(void **)stepref->value = step;
-				break;
-			}
-		}
+		*(qfv_step_t **)stepref->value = QFV_FindStep (name, job);
 	}
 	return *(qfv_step_t **)stepref->value;
 }

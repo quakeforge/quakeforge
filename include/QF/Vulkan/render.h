@@ -384,6 +384,7 @@ void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
 void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
+qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
 #endif//__QFCC__
 
 #endif//__QF_Vulkan_render_h
