@@ -892,25 +892,25 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 
 	size_t      size = sizeof (qfv_job_t);
 
-	size += sizeof (VkRenderPass     [counts->num_renderpasses]);
-	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
-	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
-	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
-
 	size += sizeof (qfv_step_t       [counts->num_steps]);
 	size += sizeof (qfv_render_t     [counts->num_render]);
 	size += sizeof (qfv_compute_t    [counts->num_compute]);
 	size += sizeof (qfv_process_t    [counts->num_process]);
 	size += sizeof (qfv_renderpass_t [counts->num_renderpasses]);
-	size += sizeof (VkClearValue     [counts->num_attachments]);
 	size += sizeof (qfv_subpass_t    [counts->num_subpasses]);
 	size += sizeof (qfv_pipeline_t   [counts->num_graph_pipelines]);
 	size += sizeof (qfv_pipeline_t   [counts->num_comp_pipelines]);
 	size += sizeof (qfv_taskinfo_t   [counts->num_tasks]);
+
+	size += sizeof (VkClearValue     [counts->num_attachments]);
+	size += sizeof (VkRenderPass     [counts->num_renderpasses]);
+	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
+	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
+	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
 	size += sizeof (VkDescriptorSet  [counts->num_descriptorsets]);
 
 	rctx->job = malloc (size);
-	__auto_type job = rctx->job;
+	auto job = rctx->job;
 	*job = (qfv_job_t) {
 		.num_renderpasses = counts->num_renderpasses,
 		.num_pipelines = counts->num_graph_pipelines
@@ -919,19 +919,20 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
 	};
-	job->renderpasses = (VkRenderPass *) &job[1];
+	job->steps = (qfv_step_t *) &job[1];
+	auto rn = (qfv_render_t *) &job->steps[job->num_steps];
+	auto cp = (qfv_compute_t *) &rn[counts->num_render];
+	auto pr = (qfv_process_t *) &cp[counts->num_compute];
+	auto rp = (qfv_renderpass_t *) &pr[counts->num_process];
+	auto sp = (qfv_subpass_t *) &rp[counts->num_renderpasses];
+	auto pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
+	auto ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
+
+	auto cv = (VkClearValue *) &ti[counts->num_tasks];
+	job->renderpasses = (VkRenderPass *) &cv[counts->num_attachments];
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
-	job->steps = (qfv_step_t *) &job->layouts[job->num_layouts];
-	__auto_type rn = (qfv_render_t *) &job->steps[job->num_steps];
-	__auto_type cp = (qfv_compute_t *) &rn[counts->num_render];
-	__auto_type pr = (qfv_process_t *) &cp[counts->num_compute];
-	__auto_type rp = (qfv_renderpass_t *) &pr[counts->num_process];
-	__auto_type cv = (VkClearValue *) &rp[counts->num_renderpasses];
-	__auto_type sp = (qfv_subpass_t *) &cv[counts->num_attachments];
-	__auto_type pl = (qfv_pipeline_t *) &sp[counts->num_subpasses];
-	__auto_type ti = (qfv_taskinfo_t *) &pl[job->num_pipelines];
-	__auto_type ds = (VkDescriptorSet *) &ti[counts->num_tasks];
+	auto ds = (VkDescriptorSet *) &job->layouts[job->num_layouts];
 	jobptr_t jp = {
 		.steps = job->steps,
 		.renders = rn,
