@@ -15,6 +15,7 @@ typedef struct vulkan_frame_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
+	VkCommandPool command_pool;
 } vulkan_frame_t;
 
 typedef struct vulkan_frameset_s
