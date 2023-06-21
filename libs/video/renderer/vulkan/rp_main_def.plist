@@ -11,6 +11,7 @@ properties = {
 		output    = "[0.0, 0.7, 0.7, 1]";
 		waterwarp = "[0.0, 0.7, 0.7, 1]";
 		fisheye   = "[0.0, 0.7, 0.7, 1]";
+		slice     = "[0.8, 0.7, 0.2, 1]";
 	};
 	color_dependency = {
 		src = {
@@ -547,6 +548,42 @@ properties = {
 			pushConstants = {
 				fragment = { fov = float; aspect = float; };
 			};
+		};
+	};
+	slice = {
+		shader = {
+			vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/slice.vert;
+			};
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/twod.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = "4 + 4 + 4*4"; inputRate = instance; },
+			);
+			attributes = (
+				// 9-slice index
+				{ location = 0; binding = 0; format = r32_uint;       offset = 0; },
+				// 9-slice color
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				// 9-slice position (2d)
+				{ location = 2; binding = 0; format = r32g32_sfloat;  offset = 8; },
+				// 9-slice size delta (2d)
+				{ location = 3; binding = 0; format = r32g32_sfloat;  offset = 16; },
+			);
+		};
+		inputAssembly = {
+			topology = triangle_strip;
+			primitiveRestartEnable = true;
+		};
+		layout = {
+			descriptorSets = (matrix_set, quad_data_set);
 		};
 	};
 };
@@ -1271,6 +1308,22 @@ renderpasses = {
 						);
 						layout = $output.layout;
 					};
+					slice = {
+						@inherit = $compose_base;
+
+						color = $color.slice;
+						tasks = (
+							{ func = slice_draw; },
+						);
+
+						stages = (
+							$slice.shader.vertex,
+							$slice.shader.fragment,
+						);
+						vertexInput = $slice.vertexInput;
+						inputAssembly = $slice.inputAssembly;
+						layout = $slice.layout;
+					};
 				};
 			};
 		};
@@ -1281,9 +1334,11 @@ steps = {
 		process = {
 			tasks = (
 				{ func = wait_on_fence; },
+				{ func = update_matrices; },
 			);
 		};
 	};
+/*
 	particles = {
 		dependencies = (wait_on_fence);
 		compute = {
@@ -1342,6 +1397,7 @@ steps = {
 			};
 		};
 	};
+*/
 	preoutput = {
 		dependencies = (wait_on_fence);
 		process = {
@@ -1349,6 +1405,7 @@ steps = {
 				{ func = acquire_output;
 				  params = ("\"output\""); },
 				{ func = update_input; },
+				{ func = flush_draw; },
 			);
 		};
 	};

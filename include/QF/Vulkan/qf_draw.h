@@ -87,8 +87,6 @@ int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
 						struct vulkan_ctx_s *ctx);
 
-void Vulkan_FlushText (struct qfv_renderframe_s *rFrame);
-
 void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 					   struct vulkan_ctx_s *ctx);
 

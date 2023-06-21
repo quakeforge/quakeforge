@@ -72,14 +72,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char * __attribute__((used)) draw_pass_names[] = {
-	"2d",
-};
-
-static QFV_Subpass subpass_map[] = {
-	[QFV_draw2d]    = 0,
-};
-
 typedef struct pic_data_s {
 	uint32_t    vert_index;
 	uint32_t    slice_index;
@@ -875,9 +867,161 @@ load_white_pic (vulkan_ctx_t *ctx)
 										 dctx->white_pic, ctx);
 }
 
+static void
+draw_quads (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	VkBuffer    instance_buffer = dframe->instance_buffer;
+	VkDeviceSize offsets[] = {0};
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &instance_buffer, offsets);
+
+	VkBuffer    ind_buffer = dctx->index_object[0].buffer.buffer;
+	dfunc->vkCmdBindIndexBuffer (cmd, ind_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	uint32_t    inst_start = 0;
+	for (size_t i = 0; i < dframe->quad_batch.size; i++) {
+		int         fontid = dframe->quad_batch.a[i].descid;
+		uint32_t    inst_count = dframe->quad_batch.a[i].count;
+		uint32_t    ind_count = inst_count >> 24;
+		inst_count &= 0xffffff;
+		VkDescriptorSet set[2] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			fontid < 0 ? dframe->dyn_descs.sets[~fontid]
+					   : dctx->fonts.a[fontid].set,
+		};
+		VkPipelineLayout layout = dctx->quad_layout;
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, set, 0, 0);
+
+		dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0, inst_start);
+		inst_start += inst_count;
+	}
+	DARRAY_RESIZE (&dframe->quad_batch, 0);
+}
+
+static void
+draw_lines (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	VkBuffer    line_buffer = dframe->line_buffer;
+	VkDeviceSize offsets[] = {0};
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &line_buffer, offsets);
+	VkDescriptorSet set[1] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+	};
+	VkPipelineLayout layout = dctx->lines_layout;
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 1, set, 0, 0);
+	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
+					  1, 0, 0);
+}
+
+static void
+flush_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	flush_draw_scrap (ctx);
+}
+
+static void
+slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+	if (!dframe->quad_insts.count) {
+		return;
+	}
+
+	VkDeviceMemory memory = dctx->draw_resource[1].memory;
+	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t      atom_mask = atom - 1;
+#define a(x) (((x) + atom_mask) & ~atom_mask)
+	VkMappedMemoryRange ranges[] = {
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  memory, dframe->instance_offset,
+		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  memory, dframe->dvert_offset,
+		  a(dframe->dvertex_index * sizeof (quadvert_t)) },
+	};
+#undef a
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
+
+	draw_quads (ctx, taskctx->cmd);
+
+	dframe->quad_insts.count = 0;
+	dframe->dvertex_index = 0;
+	dframe->dyn_descs.in_use = 0;
+}
+
+static void
+line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	if (!dframe->line_verts.count) {
+		return;
+	}
+
+	VkDeviceMemory memory = dctx->draw_resource[1].memory;
+	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t      atom_mask = atom - 1;
+#define a(x) (((x) + atom_mask) & ~atom_mask)
+	VkMappedMemoryRange ranges[] = {
+		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		  memory, dframe->line_offset,
+		  a(dframe->line_verts.count * BYTES_PER_LINE) },
+	};
+#undef a
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, ranges);
+
+	draw_lines (ctx, taskctx->cmd);
+
+	dframe->line_verts.count = 0;
+}
+
+static exprfunc_t flush_draw_func[] = {
+	{ .func = flush_draw },
+	{}
+};
+static exprfunc_t slice_draw_func[] = {
+	{ .func = slice_draw },
+	{}
+};
+static exprfunc_t line_draw_func[] = {
+	{ .func = line_draw },
+	{}
+};
+static exprsym_t draw_task_syms[] = {
+	{ "flush_draw", &cexpr_function, flush_draw_func },
+	{ "slice_draw", &cexpr_function, slice_draw_func },
+	{ "line_draw", &cexpr_function, line_draw_func },
+	{}
+};
+
 void
 Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
+	QFV_Render_AddTasks (ctx, draw_task_syms);
+
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -973,15 +1117,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&dframe->cmdSet, QFV_drawNumPasses);
 		DARRAY_RESIZE (&dframe->cmdSet, QFV_drawNumPasses);
 		dframe->cmdSet.grow = 0;
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &dframe->cmdSet);
-
-		for (int j = 0; j < QFV_drawNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 dframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:draw:%zd:%s", i,
-									 draw_pass_names[j]));
-		}
 	}
 	qfvPopDebug (ctx);
 }
@@ -1410,173 +1545,6 @@ Vulkan_Draw_FadeScreen (vulkan_ctx_t *ctx)
 {
 	static byte color[4] =  { 0, 0, 0, 179 };
 	draw_blendscreen (color, ctx);
-}
-
-static void
-draw_begin_subpass (QFV_DrawSubpass subpass, qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = dframe->cmdSet.a[subpass];
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		rFrame->renderpass->renderpass, subpass_map[subpass],
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "draw:%s",
-										  draw_pass_names[subpass]),
-						 {0.5, 0.8, 0.1, 1});
-}
-
-static void
-draw_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
-static void
-bind_pipeline (qfv_renderframe_t *rFrame, VkPipeline pipeline,
-			   VkCommandBuffer cmd)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-}
-
-static void
-draw_quads (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	VkBuffer    instance_buffer = dframe->instance_buffer;
-	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &instance_buffer, offsets);
-
-	VkBuffer    ind_buffer = dctx->index_object[0].buffer.buffer;
-	dfunc->vkCmdBindIndexBuffer (cmd, ind_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	uint32_t    inst_start = 0;
-	for (size_t i = 0; i < dframe->quad_batch.size; i++) {
-		int         fontid = dframe->quad_batch.a[i].descid;
-		uint32_t    inst_count = dframe->quad_batch.a[i].count;
-		uint32_t    ind_count = inst_count >> 24;
-		inst_count &= 0xffffff;
-		VkDescriptorSet set[2] = {
-			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-			fontid < 0 ? dframe->dyn_descs.sets[~fontid]
-					   : dctx->fonts.a[fontid].set,
-		};
-		VkPipelineLayout layout = dctx->quad_layout;
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 2, set, 0, 0);
-
-		dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0, inst_start);
-		inst_start += inst_count;
-	}
-	DARRAY_RESIZE (&dframe->quad_batch, 0);
-}
-
-static void
-draw_lines (qfv_renderframe_t *rFrame, VkCommandBuffer cmd)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	VkBuffer    line_buffer = dframe->line_buffer;
-	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &line_buffer, offsets);
-	VkDescriptorSet set[1] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-	};
-	VkPipelineLayout layout = dctx->lines_layout;
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, set, 0, 0);
-	dfunc->vkCmdDraw (cmd, dframe->line_verts.count * VERTS_PER_LINE,
-					  1, 0, 0);
-}
-
-void
-Vulkan_FlushText (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	flush_draw_scrap (ctx);
-
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	drawctx_t  *dctx = ctx->draw_context;
-	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
-
-	if (!dframe->quad_insts.count && !dframe->line_verts.count) {
-		return;
-	}
-
-	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
-	size_t      atom_mask = atom - 1;
-#define a(x) (((x) + atom_mask) & ~atom_mask)
-	VkMappedMemoryRange ranges[] = {
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->instance_offset,
-		  a(dframe->quad_insts.count * BYTES_PER_QUAD) },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->dvert_offset,
-		  a(dframe->dvertex_index * sizeof (quadvert_t)) },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		  memory, dframe->line_offset,
-		  a(dframe->line_verts.count * BYTES_PER_LINE) },
-	};
-#undef a
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[subpass_map[QFV_draw2d]],
-				   dframe->cmdSet.a[QFV_draw2d]);
-
-	draw_begin_subpass (QFV_draw2d, rFrame);
-
-	if (dframe->quad_insts.count) {
-		bind_pipeline (rFrame, dctx->quad_pipeline,
-					   dframe->cmdSet.a[QFV_draw2d]);
-		draw_quads (rFrame, dframe->cmdSet.a[QFV_draw2d]);
-	}
-	if (dframe->line_verts.count) {
-		bind_pipeline (rFrame, dctx->line_pipeline,
-					   dframe->cmdSet.a[QFV_draw2d]);
-		draw_lines (rFrame, dframe->cmdSet.a[QFV_draw2d]);
-	}
-
-	draw_end_subpass (dframe->cmdSet.a[QFV_draw2d], ctx);
-
-	dframe->quad_insts.count = 0;
-	dframe->line_verts.count = 0;
-	dframe->dvertex_index = 0;
-	dframe->dyn_descs.in_use = 0;
 }
 
 void

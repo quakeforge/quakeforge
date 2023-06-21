@@ -137,7 +137,7 @@ run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 static void
 run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 {
-	printf ("%10.2f run_renderpass: %s\n", Sys_DoubleTime (), rp->label.name);
+	//printf ("%10.2f run_renderpass: %s\n", Sys_DoubleTime (), rp->label.name);
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -177,7 +177,7 @@ static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 					  vulkan_ctx_t *ctx)
 {
-	printf ("run_compute_pipeline: %s\n", pipeline->label.name);
+	//printf ("run_compute_pipeline: %s\n", pipeline->label.name);
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -242,7 +242,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		__auto_type step = &job->steps[i];
-		printf ("%10.2f run_step: %s\n", Sys_DoubleTime (), step->label.name);
+		//printf ("%10.2f run_step: %s\n", Sys_DoubleTime (), step->label.name);
 		if (step->render) {
 			run_renderpass (step->render->active, ctx);
 		}
@@ -266,8 +266,8 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		job->commands.size, job->commands.a,
 		1, &frame->renderDoneSemaphore,
 	};
-	printf ("%10.2f submit for frame %d: %zd %p\n", Sys_DoubleTime (),
-			ctx->curFrame, job->commands.size, frame->imageAvailableSemaphore);
+	//printf ("%10.2f submit for frame %d: %zd %p\n", Sys_DoubleTime (),
+	//		ctx->curFrame, job->commands.size, frame->imageAvailableSemaphore);
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
 
@@ -361,7 +361,7 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto job = ctx->render_context->job;
 	job->command_pool = frame->command_pool;
 	dfunc->vkResetCommandPool (device->dev, job->command_pool, 0);
-	DARRAY_CLEAR (&job->commands);
+	DARRAY_RESIZE (&job->commands, 0);
 }
 
 static void

@@ -167,7 +167,6 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 static void
 main_draw (qfv_renderframe_t *rFrame)
 {
-	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
 	Vulkan_Lighting_Draw (rFrame);
 	Vulkan_Compose_Draw (rFrame);

@@ -63,84 +63,14 @@
 #include "vkparse.h"//FIXME
 
 static void
-acquire_image (qfv_renderframe_t *rFrame)
-{
-	auto ctx = rFrame->vulkan_ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto frame = &ctx->frames.a[ctx->curFrame];
-
-	uint32_t imageIndex = 0;
-	while (!QFV_AcquireNextImage (ctx->swapchain,
-								  frame->imageAvailableSemaphore,
-								  0, &imageIndex)) {
-		QFV_DeviceWaitIdle (device);
-		if (ctx->capture) {
-			QFV_DestroyCapture (ctx->capture);
-		}
-		Vulkan_CreateSwapchain (ctx);
-		Vulkan_CreateCapture (ctx);
-
-		__auto_type out = ctx->output_renderpass;
-		out->output = (qfv_output_t) {
-			.extent    = ctx->swapchain->extent,
-			.format    = ctx->swapchain->format,
-			.frames    = ctx->swapchain->numImages,
-			.view_list = ctx->swapchain->imageViews->a,
-		};
-		out->viewport.width = out->output.extent.width;
-		out->viewport.height = out->output.extent.height;
-		out->scissor.extent = out->output.extent;
-		QFV_RenderPass_CreateFramebuffer (out);
-
-		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
-								   0);
-		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 frame->imageAvailableSemaphore,
-							 va (ctx->va_ctx, "sc image:%d", ctx->curFrame));
-	}
-	ctx->swapImageIndex = imageIndex;
-}
-
-static void
-output_update_input (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	outputctx_t *octx = ctx->output_context;
-	uint32_t    curFrame = ctx->curFrame;
-	outputframe_t *oframe = &octx->frames.a[curFrame];
-
-	if (oframe->input == octx->input) {
-		return;
-	}
-	oframe->input = octx->input;
-
-	VkDescriptorImageInfo imageInfo = {
-		octx->sampler, oframe->input,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	};
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  oframe->set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo, 0, 0 }
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
-}
-
-static void
 preoutput_draw (qfv_renderframe_t *rFrame)
 {
-	acquire_image (rFrame);
-	output_update_input (rFrame);
 }
 
 static void
 process_input (qfv_renderframe_t *rFrame)
 {
+	return;
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -216,7 +146,6 @@ static void
 draw_output (qfv_renderframe_t *rFrame)
 {
 	process_input (rFrame);
-	Vulkan_FlushText (rFrame);
 }
 
 void
@@ -256,7 +185,6 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto octx = ctx->output_context;
 	auto sc = ctx->swapchain;
 
-	printf ("acquire_output: %d\n", ctx->curFrame);
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  0, &imageIndex)) {
@@ -309,6 +237,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 octx->framebuffers[i],
 								 va (ctx->va_ctx, "sc fb:%d", i));
 		}
+		rp->beginInfo.renderArea.extent = sc->extent;
 		for (uint32_t i = 0; i < rp->subpass_count; i++) {
 			auto sp = &rp->subpasses[i];
 			for (uint32_t j = 0; j < sp->pipeline_count; j++) {

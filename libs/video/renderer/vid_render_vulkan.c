@@ -307,34 +307,6 @@ vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 {
 	Vulkan_Draw_Glyph (x, y, fontid, glyphid, c, vulkan_ctx);
 }
-//#define TEST_RENDER
-#ifndef TEST_RENDER
-static void
-vulkan_begin_frame (void)
-{
-	qfv_device_t *device = vulkan_ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkDevice    dev = device->dev;
-
-	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
-
-	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-}
-
-static void
-vulkan_render_view (void)
-{
-	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
-		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
-		// swapImageIndex may be updated by a render pass
-		uint32_t imageIndex = vulkan_ctx->swapImageIndex;
-		if (rp->framebuffers) {
-			rpFrame->framebuffer = rp->framebuffers->a[imageIndex];
-		}
-		rp->draw (rpFrame);
-	}
-}
 
 static void
 vulkan_set_2d (int scaled)
@@ -354,152 +326,14 @@ vulkan_set_2d (int scaled)
 }
 
 static void
-vulkan_end_frame (void)
-{
-	qfv_device_t *device = vulkan_ctx->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_queue_t *queue = &device->queue;
-	uint32_t    curFrame = vulkan_ctx->curFrame;
-	__auto_type frame = &vulkan_ctx->frames.a[curFrame];
-	uint32_t    imageIndex = vulkan_ctx->swapImageIndex;
-
-	VkCommandBufferBeginInfo beginInfo
-		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-
-	__auto_type cmdBufs = (qfv_cmdbufferset_t) DARRAY_STATIC_INIT (4);
-	DARRAY_APPEND (&cmdBufs, frame->cmdBuffer);
-
-	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
-	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
-		__auto_type rp = vulkan_ctx->renderPasses.a[i];
-		__auto_type rpFrame = &rp->frames.a[curFrame];
-
-		if (rp->primary_commands) {
-			for (int j = 0; j < rpFrame->subpassCount; j++) {
-				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-				size_t      base = cmdBufs.size;
-				DARRAY_RESIZE (&cmdBufs, base + cmdSet->size);
-				memcpy (&cmdBufs.a[base], cmdSet->a,
-						cmdSet->size * sizeof (VkCommandBuffer));
-			}
-			continue;
-		}
-
-		QFV_CmdBeginLabel (device, frame->cmdBuffer, rp->name, rp->color);
-		if (rpFrame->renderpass && rp->renderpass) {
-			VkRenderPassBeginInfo renderPassInfo = {
-				.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-				.renderPass = rp->renderpass,
-				.framebuffer = rp->framebuffers->a[imageIndex],
-				.renderArea = rp->renderArea,
-				.clearValueCount = rp->clearValues->size,
-				.pClearValues = rp->clearValues->a,
-			};
-
-			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
-										 rpFrame->subpassContents);
-
-			for (int j = 0; j < rpFrame->subpassCount; j++) {
-				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-				if (cmdSet->size) {
-					QFV_CmdBeginLabel (device, frame->cmdBuffer,
-									   rpFrame->subpassInfo[j].name,
-									   rpFrame->subpassInfo[j].color);
-					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-												 cmdSet->size, cmdSet->a);
-					QFV_CmdEndLabel (device, frame->cmdBuffer);
-				}
-				// reset for next time around
-				cmdSet->size = 0;
-
-				//Regardless of whether any commands were submitted for this
-				//subpass, must step through each and every subpass, otherwise
-				//the attachments won't be transitioned correctly.
-				if (j < rpFrame->subpassCount - 1) {
-					dfunc->vkCmdNextSubpass (frame->cmdBuffer,
-											 rpFrame->subpassContents);
-				}
-			}
-			dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
-		} else {
-			for (int j = 0; j < rpFrame->subpassCount; j++) {
-				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-				if (cmdSet->size) {
-					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-												 cmdSet->size, cmdSet->a);
-				}
-				// reset for next time around
-				cmdSet->size = 0;
-			}
-		}
-		QFV_CmdEndLabel (device, frame->cmdBuffer);
-	}
-
-	if (vulkan_ctx->capture_callback) {
-		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
-		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
-												curFrame);
-		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
-	}
-	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
-
-	VkPipelineStageFlags waitStage
-		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		1, &frame->imageAvailableSemaphore, &waitStage,
-		cmdBufs.size, cmdBufs.a,
-		1, &frame->renderDoneSemaphore,
-	};
-	dfunc->vkResetFences (dev, 1, &frame->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
-
-	DARRAY_CLEAR (&cmdBufs);
-
-	if (vulkan_ctx->capture_callback) {
-		//FIXME look into "threading" this rather than waiting here
-		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
-								1000000000ull);
-		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
-													   curFrame),
-									  vulkan_ctx->capture->extent.width,
-									  vulkan_ctx->capture->extent.height);
-		vulkan_ctx->capture_callback = 0;
-	}
-
-	VkPresentInfoKHR presentInfo = {
-		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frame->renderDoneSemaphore,
-		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
-		0
-	};
-	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
-
-	vulkan_ctx->curFrame++;
-	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
-}
-#endif
-static void
 vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
-#ifdef TEST_RENDER
+	vulkan_set_2d (1);//FIXME
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;
 	}
 	QFV_RunRenderJob (vulkan_ctx);
-#else
-	EntQueue_Clear (r_ent_queue);
-	vulkan_begin_frame ();
-	vulkan_set_2d (1);
-	while (*scr_funcs) {
-		(*scr_funcs) ();
-		scr_funcs++;
-	}
-	vulkan_render_view ();
-	vulkan_end_frame ();
-#endif
 }
 
 static void

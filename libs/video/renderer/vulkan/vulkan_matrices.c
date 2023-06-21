@@ -174,15 +174,15 @@ Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
 	}
 }
 
-void
-Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
+static void
+update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type mctx = ctx->matrix_context;
-	__auto_type mframe = &mctx->frames.a[ctx->curFrame];
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto mctx = ctx->matrix_context;
+	auto mframe = &mctx->frames.a[ctx->curFrame];
 
 	setup_view (ctx);
 	setup_sky (ctx);
@@ -218,9 +218,19 @@ Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
 	QFV_PacketSubmit (packet);
 }
 
+static exprfunc_t update_matrices_func[] = {
+	{ .func = update_matrices },
+	{}
+};
+static exprsym_t matrix_task_syms[] = {
+	{ "update_matrices", &cexpr_function, update_matrices_func },
+	{}
+};
+
 void
 Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 {
+	QFV_Render_AddTasks (ctx, matrix_task_syms);
 	qfvPushDebug (ctx, "matrix init");
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
