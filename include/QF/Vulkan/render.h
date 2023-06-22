@@ -358,11 +358,22 @@ typedef struct qfv_job_s {
 	VkCommandPool command_pool;
 } qfv_job_t;
 
+typedef struct qfv_renderframe_s {
+	VkFence     fence;
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderDoneSemaphore;
+	VkCommandPool command_pool;
+} qfv_renderframe_t;
+
+typedef struct qfv_renderframeset_s
+	DARRAY_TYPE (qfv_renderframe_t) qfv_renderframeset_t;
+
 typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
 	qfv_jobinfo_t *jobinfo;
 	qfv_job_t *job;
+	qfv_renderframeset_t frames;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {

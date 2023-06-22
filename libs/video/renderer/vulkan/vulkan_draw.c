@@ -285,7 +285,8 @@ create_buffers (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	drawctx_t  *dctx = ctx->draw_context;
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 
 	dctx->draw_resource = malloc (2 * sizeof (qfv_resource_t)
 								  // index buffer
@@ -1030,7 +1031,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
 	ctx->draw_context = dctx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&dctx->frames, frames);
 	DARRAY_RESIZE (&dctx->frames, frames);
 	dctx->frames.grow = 0;

@@ -94,7 +94,6 @@ vulkan_R_Init (void)
 	QFV_Render_Init (vulkan_ctx);
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
-	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
 	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
 

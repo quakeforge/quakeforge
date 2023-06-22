@@ -25,7 +25,7 @@ typedef struct qfv_osubpass_s {
 typedef struct qfv_subpassset_s
 	DARRAY_TYPE (qfv_osubpass_t) qfv_subpassset_t;
 
-typedef struct qfv_renderframe_s {
+typedef struct qfv_orenderframe_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	struct qfv_orenderpass_s *renderpass;
 	VkSubpassContents subpassContents;
@@ -33,15 +33,15 @@ typedef struct qfv_renderframe_s {
 	int         subpassCount;
 	qfv_osubpass_t *subpassInfo;
 	struct qfv_cmdbufferset_s *subpassCmdSets;
-} qfv_renderframe_t;
+} qfv_orenderframe_t;
 
-typedef struct qfv_renderframeset_s
-	DARRAY_TYPE (qfv_renderframe_t) qfv_renderframeset_t;
+typedef struct qfv_orenderframeset_s
+	DARRAY_TYPE (qfv_orenderframe_t) qfv_orenderframeset_t;
 
 typedef struct clearvalueset_s
 	DARRAY_TYPE (VkClearValue) clearvalueset_t;
 
-typedef void (*qfv_draw_t) (qfv_renderframe_t *rFrame);
+typedef void (*qfv_draw_t) (qfv_orenderframe_t *rFrame);
 
 typedef struct qfv_orenderpass_s {
 	struct vulkan_ctx_s *vulkan_ctx;
@@ -64,7 +64,7 @@ typedef struct qfv_orenderpass_s {
 	int         primary_commands;
 	size_t      subpassCount;
 	qfv_subpassset_t *subpass_info;
-	qfv_renderframeset_t frames;
+	qfv_orenderframeset_t frames;
 
 	qfv_draw_t  draw;
 } qfv_orenderpass_t;

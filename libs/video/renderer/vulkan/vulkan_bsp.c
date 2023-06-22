@@ -773,7 +773,7 @@ push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
 
 static void
 bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
-				   VkPipelineLayout layout, qfv_renderframe_t *rFrame)
+				   VkPipelineLayout layout, qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -834,7 +834,7 @@ bsp_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 static void
-bsp_begin (qfv_renderframe_t *rFrame)
+bsp_begin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -864,7 +864,7 @@ bsp_end (vulkan_ctx_t *ctx)
 }
 
 static void
-turb_begin (qfv_renderframe_t *rFrame)
+turb_begin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -889,7 +889,7 @@ turb_end (vulkan_ctx_t *ctx)
 }
 
 static void
-sky_begin (qfv_renderframe_t *rFrame)
+sky_begin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1025,7 +1025,7 @@ ent_model_cmp (const void *_a, const void *_b)
 }
 
 void
-Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
+Vulkan_DrawWorld (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -1127,7 +1127,7 @@ Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
+Vulkan_DrawWaterSurfaces (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -1163,7 +1163,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_DrawSky (qfv_renderframe_t *rFrame)
+Vulkan_DrawSky (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -1450,7 +1450,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&bctx->main_pass.draw_queues[i], 64);
 	}
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&bctx->frames, frames);
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;

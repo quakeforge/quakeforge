@@ -63,12 +63,12 @@
 #include "vkparse.h"//FIXME
 
 static void
-preoutput_draw (qfv_renderframe_t *rFrame)
+preoutput_draw (qfv_orenderframe_t *rFrame)
 {
 }
 
 static void
-process_input (qfv_renderframe_t *rFrame)
+process_input (qfv_orenderframe_t *rFrame)
 {
 	return;
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
@@ -143,7 +143,7 @@ process_input (qfv_renderframe_t *rFrame)
 }
 
 static void
-draw_output (qfv_renderframe_t *rFrame)
+draw_output (qfv_orenderframe_t *rFrame)
 {
 	process_input (rFrame);
 }
@@ -181,7 +181,8 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto frame = &ctx->frames.a[ctx->curFrame];
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	auto octx = ctx->output_context;
 	auto sc = ctx->swapchain;
 
@@ -321,7 +322,8 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 
 	outputctx_t *octx = ctx->output_context;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&octx->frames, frames);
 	DARRAY_RESIZE (&octx->frames, frames);
 	octx->frames.grow = 0;

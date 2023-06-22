@@ -44,6 +44,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 
 #include "r_internal.h"
@@ -143,7 +144,8 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 	ctx->scene_context = sctx;
 	sctx->max_entities = qfv_max_entities;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&sctx->frames, frames);
 	DARRAY_RESIZE (&sctx->frames, frames);
 	sctx->frames.grow = 0;

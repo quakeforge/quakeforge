@@ -58,7 +58,7 @@
 #include "vid_vulkan.h"
 
 void
-Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
+Vulkan_Compose_Draw (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -146,7 +146,8 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
 	ctx->compose_context = cctx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&cctx->frames, frames);
 	DARRAY_RESIZE (&cctx->frames, frames);
 	cctx->frames.grow = 0;

@@ -83,7 +83,7 @@ static QFV_Subpass subpass_map[] = {
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   qfv_renderframe_t *rFrame, entity_t ent)
+			   qfv_orenderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -104,7 +104,7 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 }
 
 void
-Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawSprite (entity_t ent, qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
@@ -142,7 +142,7 @@ Vulkan_DrawSprite (entity_t ent, qfv_renderframe_t *rFrame)
 
 static void
 sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
-					 qfv_renderframe_t *rFrame)
+					 qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -193,7 +193,7 @@ sprite_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_SpriteBegin (qfv_renderframe_t *rFrame)
+Vulkan_SpriteBegin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
@@ -210,7 +210,7 @@ Vulkan_SpriteBegin (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_SpriteEnd (qfv_renderframe_t *rFrame)
+Vulkan_SpriteEnd (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
@@ -310,7 +310,8 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
 	ctx->sprite_context = sctx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&sctx->frames, frames);
 	DARRAY_RESIZE (&sctx->frames, frames);
 	sctx->frames.grow = 0;

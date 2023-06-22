@@ -69,8 +69,6 @@ enum {
 };
 
 struct vulkan_ctx_s;
-void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPasses (struct vulkan_ctx_s *ctx);

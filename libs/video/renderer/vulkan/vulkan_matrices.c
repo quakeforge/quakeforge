@@ -238,7 +238,8 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
 	ctx->matrix_context = mctx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&mctx->frames, frames);
 	DARRAY_RESIZE (&mctx->frames, frames);
 	mctx->frames.grow = 0;

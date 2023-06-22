@@ -1187,19 +1187,19 @@ parse_task_params (const plitem_t *item, void **data,
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
-static exprsym_t vulkan_frameset_t_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (vulkan_frameset_t, size)},
+static exprsym_t qfv_renderframeset_t_symbols[] = {
+	{"size", &cexpr_size_t, (void *)field_offset (qfv_renderframeset_t, size)},
 	{ }
 };
-static exprtab_t vulkan_frameset_t_symtab = {
-	vulkan_frameset_t_symbols,
+static exprtab_t qfv_renderframeset_t_symtab = {
+	qfv_renderframeset_t_symbols,
 };
-exprtype_t vulkan_frameset_t_type = {
+exprtype_t qfv_renderframeset_t_type = {
 	.name = "frameset",
-	.size = sizeof (vulkan_frameset_t *),
+	.size = sizeof (qfv_renderframeset_t *),
 	.binops = cexpr_struct_binops,
 	.unops = 0,
-	.data = &vulkan_frameset_t_symtab,
+	.data = &qfv_renderframeset_t_symtab,
 };
 
 static hashtab_t *
@@ -1257,9 +1257,10 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
+	auto rctx = ctx->render_context;
 	exprsym_t   var_syms[] = {
 		{"output", &qfv_output_t_type, &sctx->output},
-		{"frames", &vulkan_frameset_t_type, &ctx->frames},
+		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
 			&ctx->device->physDev->properties->limits },
@@ -2050,7 +2051,7 @@ void Vulkan_Script_Init (vulkan_ctx_t *ctx)
 	ectx.hashctx = 0;//&sctx->hashctx;
 	vkgen_init_symtabs (&ectx);
 	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
-	cexpr_init_symtab (&vulkan_frameset_t_symtab, &ectx);
+	cexpr_init_symtab (&qfv_renderframeset_t_symtab, &ectx);
 	cexpr_init_symtab (&data_array_symtab, &ectx);
 
 	sctx->shaderModules = handlref_symtab (shaderModule_free, sctx);
@@ -2336,7 +2337,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	};
 	exprsym_t   var_syms[] = {
 		{"render_output", &qfv_output_t_type, &sctx->output},
-		{"frames", &vulkan_frameset_t_type, &ctx->frames},
+		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
 			&ctx->device->physDev->properties->limits },

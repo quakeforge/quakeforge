@@ -98,7 +98,7 @@ typedef struct iqmctx_s {
 } iqmctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
+struct qfv_orenderframe_s;
 struct entity_s;
 struct mod_iqm_ctx_s;
 struct iqm_s;
@@ -111,9 +111,9 @@ void Vulkan_IQMRemoveBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
 void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 
-void Vulkan_IQMBegin (struct qfv_renderframe_s *rFrame);
-void Vulkan_DrawIQM (struct entity_s ent, struct qfv_renderframe_s *rFrame);
-void Vulkan_IQMEnd (struct qfv_renderframe_s *rFrame);
+void Vulkan_IQMBegin (struct qfv_orenderframe_s *rFrame);
+void Vulkan_DrawIQM (struct entity_s ent, struct qfv_orenderframe_s *rFrame);
+void Vulkan_IQMEnd (struct qfv_orenderframe_s *rFrame);
 
 void Vulkan_IQM_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_IQM_Shutdown (struct vulkan_ctx_s *ctx);

@@ -69,7 +69,7 @@
 #include "vid_vulkan.h"
 
 void
-Vulkan_RenderEntities (entqueue_t *queue, qfv_renderframe_t *rFrame)
+Vulkan_RenderEntities (entqueue_t *queue, qfv_orenderframe_t *rFrame)
 {
 	if (!r_drawentities)
 		return;
@@ -123,7 +123,7 @@ Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_RenderView (qfv_renderframe_t *rFrame)
+Vulkan_RenderView (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 
@@ -165,7 +165,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 }
 
 static void
-main_draw (qfv_renderframe_t *rFrame)
+main_draw (qfv_orenderframe_t *rFrame)
 {
 	Vulkan_RenderView (rFrame);
 	Vulkan_Lighting_Draw (rFrame);

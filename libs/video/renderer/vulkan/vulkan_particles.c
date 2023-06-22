@@ -72,7 +72,7 @@ static const char * __attribute__((used)) particle_pass_names[] = {
 };
 
 static void
-particle_begin_subpass (VkPipeline pipeline, qfv_renderframe_t *rFrame)
+particle_begin_subpass (VkPipeline pipeline, qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -121,7 +121,7 @@ particle_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_DrawParticles (qfv_renderframe_t *rFrame)
+Vulkan_DrawParticles (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -187,7 +187,8 @@ create_buffers (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;
 	size_t      mp = MaxParticles;
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 
 	pctx->resources = malloc (sizeof (qfv_resource_t)
 							  // states buffer
@@ -417,7 +418,8 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 	ctx->particle_context = pctx;
 	pctx->psystem = &r_psystem;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
 	DARRAY_RESIZE (&pctx->frames, frames);
 	pctx->frames.grow = 0;
@@ -481,7 +483,7 @@ Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;
-	size_t      frames = ctx->frames.size;
+	size_t      frames = pctx->frames.size;
 
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
@@ -507,7 +509,7 @@ Vulkan_ParticleSystem (vulkan_ctx_t *ctx)
 }
 
 static void
-particles_update (qfv_renderframe_t *rFrame)
+particles_update (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;

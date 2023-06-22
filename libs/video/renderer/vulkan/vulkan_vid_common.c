@@ -125,9 +125,6 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->capture) {
 		QFV_DestroyCapture (ctx->capture);
 	}
-	if (ctx->frames.size) {
-		Vulkan_DestroyFrames (ctx);
-	}
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
@@ -217,55 +214,12 @@ Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_CreateFrames (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	VkCommandPool cmdpool = ctx->cmdpool;
-
-	if (!ctx->frames.grow) {
-		DARRAY_INIT (&ctx->frames, 4);
-	}
-
-	DARRAY_RESIZE (&ctx->frames, vulkan_frame_count);
-
-	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->frames.size,
-														alloca);
-	QFV_AllocateCommandBuffers (device, cmdpool, 0, cmdBuffers);
-
-	for (size_t i = 0; i < ctx->frames.size; i++) {
-		__auto_type frame = &ctx->frames.a[i];
-		frame->fence = QFV_CreateFence (device, 1);
-		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 frame->imageAvailableSemaphore,
-							 va (ctx->va_ctx, "sc image:%zd", i));
-		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
-		frame->cmdBuffer = cmdBuffers->a[i];
-	}
-}
-
-void
 Vulkan_CreateCapture (vulkan_ctx_t *ctx)
 {
-	ctx->capture = QFV_CreateCapture (ctx->device, ctx->frames.size,
+	//FIXME this should be in render
+	auto rctx = ctx->render_context;
+	ctx->capture = QFV_CreateCapture (ctx->device, rctx->frames.size,
 									  ctx->swapchain, ctx->cmdpool);
-}
-
-void
-Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *df = device->funcs;
-	VkDevice    dev = device->dev;
-
-	for (size_t i = 0; i < ctx->frames.size; i++) {
-		__auto_type frame = &ctx->frames.a[i];
-		df->vkDestroyFence (dev, frame->fence, 0);
-		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
-		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-	}
-
-	DARRAY_CLEAR (&ctx->frames);
 }
 
 void

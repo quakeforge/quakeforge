@@ -10,17 +10,6 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
-typedef struct vulkan_frame_s {
-	VkFence     fence;
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderDoneSemaphore;
-	VkCommandBuffer cmdBuffer;
-	VkCommandPool command_pool;
-} vulkan_frame_t;
-
-typedef struct vulkan_frameset_s
-	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
-
 typedef struct qfv_renderpassset_s
 	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
 
@@ -66,7 +55,6 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
-	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
 	struct qfv_orenderpass_s *output_renderpass;
 

@@ -148,7 +148,7 @@ update_lights (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
+Vulkan_Lighting_Draw (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -220,7 +220,7 @@ Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 }
 
 static void
-lighting_draw_maps (qfv_renderframe_t *rFrame)
+lighting_draw_maps (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -361,7 +361,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&lctx->light_images, 16);
 	DARRAY_INIT (&lctx->light_renderers, 16);
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&lctx->frames, frames);
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;

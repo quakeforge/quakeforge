@@ -143,7 +143,8 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
 	ctx->translucent_context = tctx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&tctx->frames, frames);
 	DARRAY_RESIZE (&tctx->frames, frames);
 	tctx->frames.grow = 0;
@@ -211,7 +212,7 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type tctx = ctx->translucent_context;
-	size_t      frames = ctx->frames.size;
+	size_t      frames = tctx->frames.size;
 
 	if (tctx->resources) {
 		QFV_DestroyResource (device, tctx->resources);
@@ -314,7 +315,7 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 }
 
 static void
-translucent_clear (qfv_renderframe_t *rFrame)
+translucent_clear (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;

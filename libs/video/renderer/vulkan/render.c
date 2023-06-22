@@ -257,7 +257,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto queue = &device->queue;
-	auto frame = &ctx->frames.a[ctx->curFrame];
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	VkPipelineStageFlags waitStage
 		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {
@@ -354,7 +354,8 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto dev = device->dev;
 
-	__auto_type frame = &ctx->frames.a[ctx->curFrame];
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
 
@@ -443,6 +444,28 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	rctx->task_functions.symbols = 0;
 
 	QFV_Render_AddTasks (ctx, render_task_syms);
+
+	auto device = ctx->device;
+	size_t      frames = vulkan_frame_count;
+	DARRAY_INIT (&rctx->frames, frames);
+	DARRAY_RESIZE (&rctx->frames, frames);
+	for (size_t i = 0; i < rctx->frames.size; i++) {
+		auto frame = &rctx->frames.a[i];
+		frame->fence = QFV_CreateFence (device, 1);
+		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 frame->imageAvailableSemaphore,
+							 va (ctx->va_ctx, "sc image:%zd", i));
+		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
+		VkCommandPoolCreateInfo poolCInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+			.queueFamilyIndex = device->queue.queueFamily,
+		};
+		auto dfunc = device->funcs;
+		dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0,
+									&frame->command_pool);
+	}
 }
 
 void
@@ -483,10 +506,18 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		DARRAY_CLEAR (&job->commands);
 		free (rctx->job);
 	}
-	for (uint32_t i = 0; i < ctx->frames.size; i++) {
-		auto frame = &ctx->frames.a[i];
-		dfunc->vkDestroyCommandPool (device->dev, frame->command_pool, 0);
+
+	for (uint32_t i = 0; i < rctx->frames.size; i++) {
+		auto dev = device->dev;
+		auto df = dfunc;
+		auto frame = &rctx->frames.a[i];
+		df->vkDestroyFence (dev, frame->fence, 0);
+		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
+		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
+		df->vkDestroyCommandPool (dev, frame->command_pool, 0);
 	}
+	DARRAY_CLEAR (&rctx->frames);
+
 	if (rctx->jobinfo) {
 		__auto_type jinfo = rctx->jobinfo;
 		for (uint32_t i = 0; i < jinfo->num_descriptorsetlayouts; i++) {

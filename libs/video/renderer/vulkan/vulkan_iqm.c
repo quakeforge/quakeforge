@@ -78,7 +78,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   iqm_t *iqm, qfv_renderframe_t *rFrame, entity_t ent)
+			   iqm_t *iqm, qfv_orenderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -127,7 +127,7 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 #define a(x) ((x) & ~0x3f)
 
 void
-Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawIQM (entity_t ent, qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -207,7 +207,7 @@ Vulkan_DrawIQM (entity_t ent, qfv_renderframe_t *rFrame)
 
 static void
 iqm_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
-				   qfv_renderframe_t *rFrame)
+				   qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -258,7 +258,7 @@ iqm_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_IQMBegin (qfv_renderframe_t *rFrame)
+Vulkan_IQMBegin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	iqmctx_t   *ictx = ctx->iqm_context;
@@ -275,7 +275,7 @@ Vulkan_IQMBegin (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_IQMEnd (qfv_renderframe_t *rFrame)
+Vulkan_IQMEnd (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	iqmctx_t   *ictx = ctx->iqm_context;
@@ -386,7 +386,8 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
 	ctx->iqm_context = ictx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&ictx->frames, frames);
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;

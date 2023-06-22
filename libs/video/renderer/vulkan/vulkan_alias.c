@@ -77,7 +77,7 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   aliashdr_t *hdr, qfv_renderframe_t *rFrame, entity_t ent)
+			   aliashdr_t *hdr, qfv_orenderframe_t *rFrame, entity_t ent)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -117,7 +117,7 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 }
 
 void
-Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
+Vulkan_DrawAlias (entity_t ent, qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
@@ -181,7 +181,7 @@ Vulkan_DrawAlias (entity_t ent, qfv_renderframe_t *rFrame)
 
 static void
 alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
-					 qfv_renderframe_t *rFrame)
+					 qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -234,7 +234,7 @@ alias_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_AliasBegin (qfv_renderframe_t *rFrame)
+Vulkan_AliasBegin (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
@@ -251,7 +251,7 @@ Vulkan_AliasBegin (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_AliasEnd (qfv_renderframe_t *rFrame)
+Vulkan_AliasEnd (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
@@ -262,7 +262,7 @@ Vulkan_AliasEnd (qfv_renderframe_t *rFrame)
 }
 
 void
-Vulkan_AliasDepthRange (qfv_renderframe_t *rFrame,
+Vulkan_AliasDepthRange (qfv_orenderframe_t *rFrame,
 						float minDepth, float maxDepth)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
@@ -321,7 +321,8 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&actx->frames, frames);
 	DARRAY_RESIZE (&actx->frames, frames);
 	actx->frames.grow = 0;

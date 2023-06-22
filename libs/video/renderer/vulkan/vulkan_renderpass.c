@@ -257,7 +257,7 @@ QFV_RenderPass_CreateFramebuffer (qfv_orenderpass_t *renderpass)
 
 static void
 init_renderframe (vulkan_ctx_t *ctx, qfv_orenderpass_t *rp,
-				  qfv_renderframe_t *rFrame)
+				  qfv_orenderframe_t *rFrame)
 {
 	rFrame->vulkan_ctx = ctx;
 	rFrame->renderpass = rp;
@@ -353,7 +353,7 @@ QFV_RenderPass_New (vulkan_ctx_t *ctx, const char *name, qfv_draw_t function)
 	}
 
 	DARRAY_INIT (&rp->frames, 4);
-	DARRAY_RESIZE (&rp->frames, ctx->frames.size);
+	//DARRAY_RESIZE (&rp->frames, ctx->frames.size);
 	for (size_t i = 0; i < rp->frames.size; i++) {
 		init_renderframe (ctx, rp, &rp->frames.a[i]);
 	}

@@ -1125,17 +1125,6 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 
 	counts->num_descriptorsets = s.inds.num_descriptorsets;
 	init_job (ctx, counts, s);
-
-	for (uint32_t i = 0; i < ctx->frames.size; i++) {
-		VkCommandPoolCreateInfo poolCInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-			.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-			.queueFamilyIndex = device->queue.queueFamily,
-		};
-		auto frame = &ctx->frames.a[i];
-		dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0,
-									&frame->command_pool);
-	}
 }
 
 void

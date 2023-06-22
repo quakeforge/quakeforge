@@ -46,11 +46,11 @@ typedef struct translucentctx_s {
 } translucentctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
+struct qfv_orenderframe_s;
 
 void Vulkan_Translucent_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Translucent_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Translucent_Draw (struct qfv_renderframe_s *rFrame);
+void Vulkan_Translucent_Draw (struct qfv_orenderframe_s *rFrame);
 VkDescriptorSet Vulkan_Translucent_Descriptors (struct vulkan_ctx_s *ctx,
 												int frame)__attribute__((pure));
 void Vulkan_Translucent_CreateBuffers (struct vulkan_ctx_s *ctx,
