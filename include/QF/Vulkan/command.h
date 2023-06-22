@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "QF/darray.h"
+#include "QF/qtypes.h"
 
 typedef struct qfv_cmdbufferset_s
 	DARRAY_TYPE (VkCommandBuffer) qfv_cmdbufferset_t;
@@ -29,8 +30,26 @@ typedef struct qfv_bufferimagecopy_s
 #define QFV_AllocBufferImageCopy(num, allocator) \
 	DARRAY_ALLOCFIXED (qfv_bufferimagecopy_t, num, allocator)
 
+typedef struct qfv_cmdpoolmgr_s {
+	qfv_cmdbufferset_t primary;
+	qfv_cmdbufferset_t secondary;
+	size_t      active_primary;
+	size_t      active_secondary;
+	struct qfv_device_s *device;
+	VkCommandPool pool;
+} qfv_cmdpoolmgr_t;
+
 struct qfv_queue_s;
-struct qfv_device_s;
+
+qfv_cmdpoolmgr_t *QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager,
+										   struct qfv_device_s *device);
+qfv_cmdpoolmgr_t *QFV_CmdPoolManager_New (struct qfv_device_s *device);
+void QFV_CmdPoolManager_Shutdown (qfv_cmdpoolmgr_t *manager);
+void QFV_CmdPoolManager_Delete (qfv_cmdpoolmgr_t *manager);
+void QFV_CmdPoolManager_Reset (qfv_cmdpoolmgr_t *manager);
+VkCommandBuffer QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager,
+											  bool secondary);
+
 VkCommandPool QFV_CreateCommandPool (struct qfv_device_s *device,
 									  uint32_t queueFamily,
 									  int transient, int reset);

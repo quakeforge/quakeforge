@@ -74,7 +74,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	translucentctx_t *tctx = ctx->translucent_context;
 	__auto_type tframe = &tctx->frames.a[ctx->curFrame];
 
-	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,

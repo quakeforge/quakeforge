@@ -355,14 +355,13 @@ typedef struct qfv_job_s {
 	VkPipelineLayout *layouts;
 	qfv_step_t *steps;
 	qfv_cmdbufferset_t commands;
-	VkCommandPool command_pool;
 } qfv_job_t;
 
 typedef struct qfv_renderframe_s {
 	VkFence     fence;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
-	VkCommandPool command_pool;
+	qfv_cmdpoolmgr_t cmdpool;
 } qfv_renderframe_t;
 
 typedef struct qfv_renderframeset_s
@@ -382,7 +381,7 @@ typedef struct qfv_taskctx_s {
 	VkCommandBuffer cmd;
 } qfv_taskctx_t;
 
-VkCommandBuffer QFV_GetCmdBufffer (struct vulkan_ctx_s *ctx, bool secondary);
+VkCommandBuffer QFV_GetCmdBuffer (struct vulkan_ctx_s *ctx, bool secondary);
 void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
 
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);

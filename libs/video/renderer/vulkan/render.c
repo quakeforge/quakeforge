@@ -54,23 +54,11 @@
 #include "vkparse.h"
 
 VkCommandBuffer
-QFV_GetCmdBufffer (vulkan_ctx_t *ctx, bool secondary)
+QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type rctx = ctx->render_context;
-	__auto_type job = rctx->job;
-
-	VkCommandBufferAllocateInfo cinfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		.commandPool = job->command_pool,
-		.level = secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY
-						   : VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = 1,
-	};
-	VkCommandBuffer cmd;
-	dfunc->vkAllocateCommandBuffers (device->dev, &cinfo, &cmd);
-	return cmd;
+	auto rctx = ctx->render_context;
+	auto rframe = &rctx->frames.a[ctx->curFrame];
+	return QFV_CmdPoolManager_CmdBuffer (&rframe->cmdpool, secondary);
 }
 
 void
@@ -144,7 +132,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 	__auto_type job = rctx->job;
 
-	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -154,7 +142,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
-		VkCommandBuffer subcmd = QFV_GetCmdBufffer (ctx, true);
+		VkCommandBuffer subcmd = QFV_GetCmdBuffer (ctx, true);
 		run_subpass (sp, subcmd, ctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &subcmd);
 		//FIXME comment is a bit off as exactly one buffer is always submitted
@@ -210,7 +198,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 	__auto_type job = rctx->job;
 
-	VkCommandBuffer cmd = QFV_GetCmdBufffer (ctx, false);
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -353,15 +341,13 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto dev = device->dev;
-
 	auto rctx = ctx->render_context;
 	auto frame = &rctx->frames.a[ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
 
+	QFV_CmdPoolManager_Reset (&frame->cmdpool);
 	auto job = ctx->render_context->job;
-	job->command_pool = frame->command_pool;
-	dfunc->vkResetCommandPool (device->dev, job->command_pool, 0);
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
@@ -457,14 +443,7 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 							 frame->imageAvailableSemaphore,
 							 va (ctx->va_ctx, "sc image:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
-		VkCommandPoolCreateInfo poolCInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-			.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-			.queueFamilyIndex = device->queue.queueFamily,
-		};
-		auto dfunc = device->funcs;
-		dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0,
-									&frame->command_pool);
+		QFV_CmdPoolManager_Init (&frame->cmdpool, device);
 	}
 }
 
@@ -502,7 +481,6 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				}
 			}
 		}
-		job->command_pool = 0;
 		DARRAY_CLEAR (&job->commands);
 		free (rctx->job);
 	}
@@ -514,7 +492,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-		df->vkDestroyCommandPool (dev, frame->command_pool, 0);
+		QFV_CmdPoolManager_Shutdown (&frame->cmdpool);
 	}
 	DARRAY_CLEAR (&rctx->frames);
 
