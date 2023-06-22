@@ -109,8 +109,10 @@ QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager, bool secondary)
 	dfunc->vkAllocateCommandBuffers (device->dev, &cinfo, &cmd);
 	if (secondary) {
 		DARRAY_APPEND (&manager->secondary, cmd);
+		manager->active_secondary++;
 	} else {
 		DARRAY_APPEND (&manager->primary, cmd);
+		manager->active_primary++;
 	}
 	return cmd;
 }
