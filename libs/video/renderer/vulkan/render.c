@@ -78,20 +78,17 @@ run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, qfv_taskctx_t *ctx)
 }
 
 static void
-run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+run_pipeline (qfv_pipeline_t *pipeline, qfv_taskctx_t *taskctx)
 {
-	qfv_device_t *device = ctx->device;
+	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	auto cmd = taskctx->cmd;
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &pipeline->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &pipeline->scissor);
 
-	qfv_taskctx_t taskctx = {
-		.ctx = ctx,
-		.pipeline = pipeline,
-		.cmd = cmd,
-	};
-	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
+	taskctx->pipeline = pipeline;
+	run_tasks (pipeline->task_count, pipeline->tasks, taskctx);
 
 	if (pipeline->num_descriptorsets) {
 		dfunc->vkCmdBindDescriptorSets (cmd, pipeline->bindPoint,
@@ -105,18 +102,18 @@ run_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
 static void
-run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 {
-	qfv_device_t *device = ctx->device;
+	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	dfunc->vkBeginCommandBuffer (cmd, &sp->beginInfo);
+	dfunc->vkBeginCommandBuffer (taskctx->cmd, &sp->beginInfo);
 
 	for (uint32_t i = 0; i < sp->pipeline_count; i++) {
 		__auto_type pipeline = &sp->pipelines[i];
-		run_pipeline (pipeline, cmd, ctx);
+		run_pipeline (pipeline, taskctx);
 	}
 
-	dfunc->vkEndCommandBuffer (cmd);
+	dfunc->vkEndCommandBuffer (taskctx->cmd);
 }
 
 static void
@@ -139,11 +136,15 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
-		VkCommandBuffer subcmd = QFV_GetCmdBuffer (ctx, true);
 		QFV_duCmdBeginLabel (device, cmd, sp->label.name,
 							 {VEC4_EXP (sp->label.color)});
-		run_subpass (sp, subcmd, ctx);
-		dfunc->vkCmdExecuteCommands (cmd, 1, &subcmd);
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+			.renderpass = rp,
+			.cmd = QFV_GetCmdBuffer (ctx, true),
+		};
+		run_subpass (sp, &taskctx);
+		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		QFV_duCmdEndLabel (device, cmd);
 		//FIXME comment is a bit off as exactly one buffer is always submitted
 		//
@@ -295,7 +296,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 	__auto_type rctx = ctx->render_context;
 
 	auto fb = rp->framebufferinfo;
-	VkImageView attachments[fb->num_attachments];
+	auto attachments = rp->framebuffer.views;
 	VkFramebufferCreateInfo cInfo = {
 		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 		.attachmentCount = fb->num_attachments,

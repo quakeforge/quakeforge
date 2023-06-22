@@ -300,6 +300,14 @@ typedef struct qfv_subpass_s {
 	qfv_pipeline_t *pipelines;
 } qfv_subpass_t;
 
+typedef struct qfv_framebuffer_s {
+	uint32_t    width;
+	uint32_t    height;
+	uint32_t    layers;
+	uint32_t    num_attachments;
+	VkImageView *views;
+} qfv_framebuffer_t;
+
 typedef struct qfv_renderpass_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 	qfv_label_t label;		// for debugging
@@ -307,10 +315,11 @@ typedef struct qfv_renderpass_s {
 	VkRenderPassBeginInfo beginInfo;
 	VkSubpassContents subpassContents;
 
-	qfv_framebufferinfo_t *framebufferinfo;
-
 	uint32_t    subpass_count;
 	qfv_subpass_t *subpasses;
+
+	qfv_framebuffer_t framebuffer;
+	qfv_framebufferinfo_t *framebufferinfo;
 } qfv_renderpass_t;
 
 typedef struct qfv_render_s {
@@ -378,6 +387,7 @@ typedef struct qfv_renderctx_s {
 typedef struct qfv_taskctx_s {
 	struct vulkan_ctx_s *ctx;
 	qfv_pipeline_t *pipeline;
+	qfv_renderpass_t *renderpass;
 	VkCommandBuffer cmd;
 } qfv_taskctx_t;
 

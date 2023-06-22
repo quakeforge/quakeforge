@@ -723,6 +723,7 @@ typedef struct {
 	qfv_pipeline_t *pipelines;
 	qfv_taskinfo_t *tasks;
 	VkDescriptorSet *descriptorsets;
+	VkImageView *attachment_views;
 } jobptr_t;
 
 static void
@@ -796,10 +797,11 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 			.clearValueCount = rpinfo->framebuffer.num_attachments,
 			.pClearValues = &jp->clearvalues[s->inds.num_attachments],
 		},
-		.framebufferinfo = &rpinfo->framebuffer,
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
 		.subpass_count = rpinfo->num_subpasses,
 		.subpasses = &jp->subpasses[s->inds.num_subpasses],
+		.framebuffer.views = &jp->attachment_views[s->inds.num_attachments],
+		.framebufferinfo = &rpinfo->framebuffer,
 	};
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
@@ -908,6 +910,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
 	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
 	size += sizeof (VkDescriptorSet  [counts->num_descriptorsets]);
+	size += sizeof (VkImageView      [counts->num_attachments]);
 
 	rctx->job = malloc (size);
 	auto job = rctx->job;
@@ -933,6 +936,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
 	auto ds = (VkDescriptorSet *) &job->layouts[job->num_layouts];
+	auto av = (VkImageView *) &ds[counts->num_descriptorsets];
 	jobptr_t jp = {
 		.steps = job->steps,
 		.renders = rn,
@@ -944,6 +948,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.pipelines = pl,
 		.tasks = ti,
 		.descriptorsets = ds,
+		.attachment_views = av,
 	};
 
 	for (uint32_t i = 0; i < job->num_renderpasses; i++) {

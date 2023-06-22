@@ -147,78 +147,6 @@ update_lights (vulkan_ctx_t *ctx)
 	QFV_PacketSubmit (packet);
 }
 
-void
-Vulkan_Lighting_Draw (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_orenderpass_t *renderpass = rFrame->renderpass;
-	lightingctx_t *lctx = ctx->lighting_context;
-
-	if (!lctx->scene) {
-		return;
-	}
-	if (lctx->scene->lights) {
-		update_lights (ctx);
-	}
-
-	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = lframe->cmd;
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passLighting], cmd);
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		renderpass->renderpass, QFV_passLighting,
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, "lighting", { 0.6, 0.5, 0.6, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  lctx->pipeline);
-
-	lframe->bufferInfo[0].buffer = lframe->light_buffer;
-	lframe->attachInfo[0].imageView
-		= renderpass->attachment_views->a[QFV_attachDepth];
-	lframe->attachInfo[1].imageView
-		= renderpass->attachment_views->a[QFV_attachColor];
-	lframe->attachInfo[2].imageView
-		= renderpass->attachment_views->a[QFV_attachEmission];
-	lframe->attachInfo[3].imageView
-		= renderpass->attachment_views->a[QFV_attachNormal];
-	lframe->attachInfo[4].imageView
-		= renderpass->attachment_views->a[QFV_attachPosition];
-	dfunc->vkUpdateDescriptorSets (device->dev,
-								   LIGHTING_DESCRIPTORS,
-								   lframe->descriptors, 0, 0);
-
-	VkDescriptorSet sets[] = {
-		lframe->attachWrite[0].dstSet,
-		lframe->bufferWrite[0].dstSet,
-		lframe->shadowWrite.dstSet,
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									lctx->layout, 0, 3, sets, 0, 0);
-
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
 static void
 lighting_draw_maps (qfv_orenderframe_t *rFrame)
 {
@@ -321,6 +249,42 @@ static VkWriteDescriptorSet base_image_write = {
 static void
 lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+
+	if (!lctx->scene) {
+		return;
+	}
+	if (lctx->scene->lights) {
+		update_lights (ctx);
+	}
+
+	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+
+	auto fb = &taskctx->renderpass->framebuffer;
+	lframe->bufferInfo[0].buffer = lframe->light_buffer;
+	lframe->attachInfo[0].imageView = fb->views[QFV_attachDepth];
+	lframe->attachInfo[1].imageView = fb->views[QFV_attachColor];
+	lframe->attachInfo[2].imageView = fb->views[QFV_attachEmission];
+	lframe->attachInfo[3].imageView = fb->views[QFV_attachNormal];
+	lframe->attachInfo[4].imageView = fb->views[QFV_attachPosition];
+	dfunc->vkUpdateDescriptorSets (device->dev,
+								   LIGHTING_DESCRIPTORS,
+								   lframe->descriptors, 0, 0);
+
+	VkDescriptorSet sets[] = {
+		lframe->attachWrite[0].dstSet,
+		lframe->bufferWrite[0].dstSet,
+		lframe->shadowWrite.dstSet,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									lctx->layout, 0, 3, sets, 0, 0);
+
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
 static exprfunc_t lights_draw_func[] = {

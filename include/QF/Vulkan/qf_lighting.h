@@ -122,7 +122,6 @@ struct qfv_orenderframe_s;
 void Vulkan_Lighting_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Lighting_Draw (struct qfv_orenderframe_s *rFrame);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_lighting_h
