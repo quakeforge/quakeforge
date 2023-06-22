@@ -110,15 +110,12 @@ run_subpass (qfv_subpass_t *sp, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkBeginCommandBuffer (cmd, &sp->beginInfo);
-	QFV_duCmdBeginLabel (device, cmd, sp->label.name,
-						 {VEC4_EXP (sp->label.color)});
 
 	for (uint32_t i = 0; i < sp->pipeline_count; i++) {
 		__auto_type pipeline = &sp->pipelines[i];
 		run_pipeline (pipeline, cmd, ctx);
 	}
 
-	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 
@@ -143,8 +140,11 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
 		VkCommandBuffer subcmd = QFV_GetCmdBuffer (ctx, true);
+		QFV_duCmdBeginLabel (device, cmd, sp->label.name,
+							 {VEC4_EXP (sp->label.color)});
 		run_subpass (sp, subcmd, ctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &subcmd);
+		QFV_duCmdEndLabel (device, cmd);
 		//FIXME comment is a bit off as exactly one buffer is always submitted
 		//
 		//Regardless of whether any commands were submitted for this
