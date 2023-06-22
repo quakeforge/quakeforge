@@ -12,6 +12,7 @@ properties = {
 		waterwarp = "[0.0, 0.7, 0.7, 1]";
 		fisheye   = "[0.0, 0.7, 0.7, 1]";
 		slice     = "[0.8, 0.7, 0.2, 1]";
+		lines     = "[0.8, 0.7, 0.4, 1]";
 	};
 	color_dependency = {
 		src = {
@@ -584,6 +585,36 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, quad_data_set);
+		};
+	};
+	lines = {
+		shader = {
+			vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/line.vert;
+			};
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/line.frag;
+			};
+		};
+		vertexInput = {
+			bindings = (
+				{ binding = 0; stride = "2 * 4 + 4"; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32_sfloat;  offset = 0; },
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+			);
+		};
+		inputAssembly = {
+			topology = line_list;
+			primitiveRestartEnable = false;
+		};
+		layout = {
+			descriptorSets = (matrix_set);
 		};
 	};
 };
@@ -1323,6 +1354,22 @@ renderpasses = {
 						vertexInput = $slice.vertexInput;
 						inputAssembly = $slice.inputAssembly;
 						layout = $slice.layout;
+					};
+					lines = {
+						@inherit = $compose_base;
+
+						color = $color.lines;
+						tasks = (
+							{ func = line_draw; },
+						);
+
+						stages = (
+							$lines.shader.vertex,
+							$lines.shader.fragment,
+						);
+						vertexInput = $lines.vertexInput;
+						inputAssembly = $lines.inputAssembly;
+						layout = $lines.layout;
 					};
 				};
 			};
