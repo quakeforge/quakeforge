@@ -364,8 +364,12 @@ renderpass_update_viewper_sissor (qfv_renderpass_t *rp,
 		auto sp = &rp->subpasses[i];
 		for (uint32_t j = 0; j < sp->pipeline_count; j++) {
 			auto pl = &sp->pipelines[j];
-			pl->viewport.width = output->extent.width;
-			pl->viewport.height = output->extent.height;
+			pl->viewport = (VkViewport) {
+				.width = output->extent.width,
+				.height = output->extent.height,
+				.minDepth = 0,
+				.maxDepth = 1,
+			};
 			pl->scissor.extent = output->extent;
 		}
 	}

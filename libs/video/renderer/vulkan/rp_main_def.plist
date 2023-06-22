@@ -977,6 +977,7 @@ renderpasses = {
 				base_pipeline = {
 					@inherit = $pipeline_base;
 					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_back;
 				};
 				pipelines = {
 					bsp:depth = {
@@ -1070,7 +1071,10 @@ renderpasses = {
 					};
 					preserve = (color, emission, normal, position, output);
 				};
-				base_pipeline = $pipeline_base;
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					rasterization = $cw_cull_back;
+				};
 				pipelines = {
 					bsp:skybox = {
 						color = $color.bsp;
@@ -1167,7 +1171,10 @@ renderpasses = {
 					};
 					preserve = (output);
 				};
-				base_pipeline = $pipeline_base;
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					rasterization = $cw_cull_back;
+				};
 				pipelines = {
 					bsp:gbuffer = {
 						color = $color.bsp;
