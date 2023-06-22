@@ -57,60 +57,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-void
-Vulkan_Compose_Draw (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_orenderpass_t *renderpass = rFrame->renderpass;
-
-	composectx_t *cctx = ctx->compose_context;
-	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = cframe->cmd;
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passCompose], cmd);
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		renderpass->renderpass, QFV_passCompose,
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, "compose", { 0, 0.2, 0.6, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  cctx->pipeline);
-
-	cframe->imageInfo[0].imageView
-		= renderpass->attachment_views->a[QFV_attachOpaque];
-	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
-								   cframe->descriptors, 0, 0);
-
-	VkDescriptorSet sets[] = {
-		cframe->descriptors[0].dstSet,
-		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									cctx->layout, 0, 2, sets, 0, 0);
-
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
 static VkDescriptorImageInfo base_image_info = {
 	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 };
@@ -124,6 +70,28 @@ static VkWriteDescriptorSet base_image_write = {
 static void
 compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto cctx = ctx->compose_context;
+	auto cframe = &cctx->frames.a[ctx->curFrame];
+	auto cmd = taskctx->cmd;
+
+	auto fb = &taskctx->renderpass->framebuffer;
+	cframe->imageInfo[0].imageView = fb->views[QFV_attachOpaque];
+	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+								   cframe->descriptors, 0, 0);
+
+	VkDescriptorSet sets[] = {
+		cframe->descriptors[0].dstSet,
+		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									cctx->layout, 0, 2, sets, 0, 0);
+
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
 static exprfunc_t compose_draw_func[] = {

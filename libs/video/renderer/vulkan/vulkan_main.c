@@ -158,7 +158,6 @@ static void
 main_draw (qfv_orenderframe_t *rFrame)
 {
 	Vulkan_RenderView (rFrame);
-	Vulkan_Compose_Draw (rFrame);
 }
 
 void

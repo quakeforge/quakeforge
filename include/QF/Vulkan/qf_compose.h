@@ -58,6 +58,5 @@ struct qfv_orenderframe_s;
 
 void Vulkan_Compose_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Compose_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Compose_Draw (struct qfv_orenderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_compose_h
