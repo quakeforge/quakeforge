@@ -42,8 +42,10 @@ typedef struct qfv_cmdpoolmgr_s {
 struct qfv_queue_s;
 
 qfv_cmdpoolmgr_t *QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager,
-										   struct qfv_device_s *device);
-qfv_cmdpoolmgr_t *QFV_CmdPoolManager_New (struct qfv_device_s *device);
+										   struct qfv_device_s *device,
+										   const char *name);
+qfv_cmdpoolmgr_t *QFV_CmdPoolManager_New (struct qfv_device_s *device,
+										  const char *name);
 void QFV_CmdPoolManager_Shutdown (qfv_cmdpoolmgr_t *manager);
 void QFV_CmdPoolManager_Delete (qfv_cmdpoolmgr_t *manager);
 void QFV_CmdPoolManager_Reset (qfv_cmdpoolmgr_t *manager);

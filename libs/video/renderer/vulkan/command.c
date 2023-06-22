@@ -32,7 +32,8 @@
 #include "QF/Vulkan/device.h"
 
 qfv_cmdpoolmgr_t *
-QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device)
+QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device,
+						 const char *name)
 {
 	*manager = (qfv_cmdpoolmgr_t) {
 		.primary = DARRAY_STATIC_INIT (16),
@@ -51,9 +52,10 @@ QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device)
 }
 
 qfv_cmdpoolmgr_t *
-QFV_CmdPoolManager_New (qfv_device_t *device)
+QFV_CmdPoolManager_New (qfv_device_t *device, const char *name)
 {
-	return QFV_CmdPoolManager_Init (malloc (sizeof (qfv_cmdpoolmgr_t)), device);
+	return QFV_CmdPoolManager_Init (malloc (sizeof (qfv_cmdpoolmgr_t)), device,
+									name);
 }
 
 void

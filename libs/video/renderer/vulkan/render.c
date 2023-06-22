@@ -443,7 +443,8 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 							 frame->imageAvailableSemaphore,
 							 va (ctx->va_ctx, "sc image:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
-		QFV_CmdPoolManager_Init (&frame->cmdpool, device);
+		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
+								 va (ctx->va_ctx, "render pool:%zd", i));
 	}
 }
 
