@@ -211,6 +211,7 @@ typedef struct qfv_renderpassinfo_s {
 	qfv_framebufferinfo_t framebuffer;
 	uint32_t    num_subpasses;
 	qfv_subpassinfo_t *subpasses;
+	qfv_reference_t output;
 } qfv_renderpassinfo_t;
 
 typedef struct qfv_computeinfo_s {
@@ -320,6 +321,8 @@ typedef struct qfv_renderpass_s {
 
 	qfv_framebuffer_t framebuffer;
 	qfv_framebufferinfo_t *framebufferinfo;
+	VkImageView output;
+	qfv_reference_t outputref;
 } qfv_renderpass_t;
 
 typedef struct qfv_render_s {

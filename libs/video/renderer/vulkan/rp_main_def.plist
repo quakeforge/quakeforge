@@ -1302,6 +1302,7 @@ renderpasses = {
 				};
 			};
 		};
+		output = output;
 	};
 	deferred_cube = {
 		@inherit = $renderpasses.deferred;
@@ -1451,7 +1452,8 @@ steps = {
 			tasks = (
 				{ func = acquire_output;
 				  params = ("\"output\""); },
-				{ func = update_input; },
+				{ func = update_input;
+				  params = ("\"main\""); },
 				{ func = flush_draw; },
 			);
 		};

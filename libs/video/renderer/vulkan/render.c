@@ -317,6 +317,9 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 			}
 		} else {
 			attachments[i] = find_imageview (&fb->attachments[i].view, rctx);
+			if (rp->outputref.name) {
+				rp->output = find_imageview (&rp->outputref, rctx);
+			}
 		}
 	}
 
@@ -457,7 +460,6 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	__auto_type rctx = ctx->render_context;
 	if (rctx->job) {
 		__auto_type job = rctx->job;
-		//QFV_DestroyFramebuffer (ctx); //FIXME do properly
 		for (uint32_t i = 0; i < job->num_renderpasses; i++) {
 			dfunc->vkDestroyRenderPass (device->dev, job->renderpasses[i], 0);
 		}

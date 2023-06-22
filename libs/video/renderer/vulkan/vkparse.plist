@@ -677,6 +677,7 @@ parse = {
 			size = num_subpasses;
 			values = subpasses;
 		};
+		output = auto;
 	};
 	qfv_descriptorsetlayoutinfo_s = {
 		.name = qfv_descriptorsetlayoutinfo_t;
@@ -706,7 +707,6 @@ parse = {
 	qfv_renderinfo_s = {
 		.name = qfv_renderinfo_t;
 		color = auto;
-		output = ignore;
 		renderpasses = {
 			type = (labeledarray, qfv_renderpassinfo_t, name);
 			size = num_renderpasses;

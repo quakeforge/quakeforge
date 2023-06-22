@@ -70,76 +70,6 @@ preoutput_draw (qfv_orenderframe_t *rFrame)
 static void
 process_input (qfv_orenderframe_t *rFrame)
 {
-	return;
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	outputctx_t  *octx = ctx->output_context;
-	outputframe_t *oframe = &octx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = oframe->cmd;
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[0], cmd);
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		rFrame->renderpass->renderpass, 0,
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, "output:output");
-
-	__auto_type pipeline = octx->output;
-	__auto_type layout = octx->output_layout;
-	if (scr_fisheye) {
-		pipeline = octx->fisheye;
-		layout = octx->fish_layout;
-	} else if (r_dowarp) {
-		pipeline = octx->waterwarp;
-		layout = octx->warp_layout;
-	}
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	VkDescriptorSet set[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		oframe->set,
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, set, 0, 0);
-	if (scr_fisheye) {
-		float       width = r_refdef.vrect.width;
-		float       height = r_refdef.vrect.height;
-
-		float       ffov = scr_ffov * M_PI / 360;
-		float       aspect = height / width;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
-		};
-		QFV_PushConstants (device, cmd, layout, 2, push_constants);
-	} else if (r_dowarp) {
-		float       time = vr_data.realtime;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
-		};
-		QFV_PushConstants (device, cmd, layout, 1, push_constants);
-	}
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
-
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-
 }
 
 static void
@@ -266,11 +196,12 @@ update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto octx = ctx->output_context;
 	auto oframe = &octx->frames.a[ctx->curFrame];
+	auto input = QFV_GetStep (params[0], ctx->render_context->job);
 
-	if (oframe->input == octx->input) {
+	if (oframe->input == input->render->active->output) {
 		return;
 	}
-	oframe->input = octx->input;
+	oframe->input = input->render->active->output;
 
 	VkDescriptorImageInfo imageInfo = {
 		octx->sampler, oframe->input,
@@ -288,6 +219,50 @@ update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto octx = ctx->output_context;
+	auto oframe = &octx->frames.a[ctx->curFrame];
+	auto cmd = taskctx->cmd;
+
+	auto layout = octx->output_layout;
+	//__auto_type pipeline = octx->output;
+	//if (scr_fisheye) {
+	//	pipeline = octx->fisheye;
+	//	layout = octx->fish_layout;
+	//} else if (r_dowarp) {
+	//	pipeline = octx->waterwarp;
+	//	layout = octx->warp_layout;
+	//}
+
+	VkDescriptorSet set[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		oframe->set,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 2, set, 0, 0);
+	if (scr_fisheye) {
+		float       width = r_refdef.vrect.width;
+		float       height = r_refdef.vrect.height;
+
+		float       ffov = scr_ffov * M_PI / 360;
+		float       aspect = height / width;
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
+		};
+		QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	} else if (r_dowarp) {
+		float       time = vr_data.realtime;
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
+		};
+		QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	}
+
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
 static exprtype_t *stepref_param[] = {

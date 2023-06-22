@@ -800,8 +800,12 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.subpassContents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS,
 		.subpass_count = rpinfo->num_subpasses,
 		.subpasses = &jp->subpasses[s->inds.num_subpasses],
-		.framebuffer.views = &jp->attachment_views[s->inds.num_attachments],
+		.framebuffer = {
+			.num_attachments = rpinfo->framebuffer.num_attachments,
+			.views = &jp->attachment_views[s->inds.num_attachments],
+		},
 		.framebufferinfo = &rpinfo->framebuffer,
+		.outputref = rpinfo->output,
 	};
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
