@@ -277,7 +277,6 @@ create_buffers (vulkan_ctx_t *ctx)
 static void
 particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	puts ("particles_draw");
 }
 
 static void

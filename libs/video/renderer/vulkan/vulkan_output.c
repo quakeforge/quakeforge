@@ -294,11 +294,11 @@ static exprtype_t *stepref_param[] = {
 	&cexpr_string,
 };
 static exprfunc_t acquire_output_func[] = {
-	{ .func = acquire_output, .num_params = 1, stepref_param },
+	{ .func = acquire_output, .num_params = 1, .param_types = stepref_param },
 	{}
 };
 static exprfunc_t update_input_func[] = {
-	{ .func = update_input, .num_params = 1, stepref_param },
+	{ .func = update_input, .num_params = 1, .param_types = stepref_param },
 	{}
 };
 static exprfunc_t output_draw_func[] = {

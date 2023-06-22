@@ -76,14 +76,9 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		0, 0, 0,
-		0, 0, 0,
-	};
 	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &inherit,
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 

@@ -74,7 +74,6 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_orenderframe_t *rFrame)
 	if (!r_drawentities)
 		return;
 	//FIXME need a better way (components? but HasComponent isn't free)
-	int         vmod = Entity_Valid (vr_data.view_model);
 #define RE_LOOP(type_name, Type) \
 	do { \
 		int         begun = 0; \
@@ -85,22 +84,12 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_orenderframe_t *rFrame)
 				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
 			} \
-			/* FIXME hack the depth range to prevent view model */\
-			/* from poking into walls */\
-			if (vmod && ent.id == vr_data.view_model.id) { \
-				Vulkan_AliasDepthRange (rFrame, 0, 0.3); \
-			} \
 			Vulkan_Draw##Type (ent, rFrame); \
-			/* unhack in case the view_model is not the last */\
-			if (vmod && ent.id == vr_data.view_model.id) { \
-				Vulkan_AliasDepthRange (rFrame, 0, 1); \
-			} \
 		} \
 		if (begun) \
 			Vulkan_##Type##End (rFrame); \
 	} while (0)
 
-	RE_LOOP (alias, Alias);
 	RE_LOOP (iqm, IQM);
 	RE_LOOP (sprite, Sprite);
 }
@@ -153,6 +142,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	}
 
 	r_refdef.worldmodel = scene->worldmodel;
+	EntQueue_Clear (r_ent_queue);
 
 	// Force a vis update
 	R_MarkLeaves (0, 0, 0, 0);

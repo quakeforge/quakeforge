@@ -280,7 +280,7 @@ properties = {
 			bindings = (
 				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
 				{ binding = 1; stride = "2 * 4 * 4"; inputRate = vertex; },
-				{ binding = 2; stride = "2 * 4"; inputRate = instance; },
+				{ binding = 2; stride = "2 * 4"; inputRate = vertex; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
@@ -983,9 +983,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, solid); },
+							  params = (main, solid, 0); },
 							{ func = bsp_draw_queue;
-							  params = (main, sky); },
+							  params = (main, sky, 0); },
 						);
 
 						stages = (
@@ -1007,7 +1007,8 @@ renderpasses = {
 					alias:depth = {
 						color = $color.alias;
 						tasks = (
-							{ func = alias_draw; },
+							{ func = alias_draw;
+							  params = (0); },
 						);
 
 						stages = (
@@ -1076,7 +1077,7 @@ renderpasses = {
 						tasks = (
 							// FIXME sky should not use OIT
 							{ func = bsp_draw_queue;
-							  params = (main, sky); },
+							  params = (main, sky, 1); },
 						);
 
 						stages = (
@@ -1092,7 +1093,7 @@ renderpasses = {
 						tasks = (
 							// FIXME sky should not use OIT
 							{ func = bsp_draw_queue;
-							  params = (main, sky); },
+							  params = (main, sky, 1); },
 						);
 
 						stages = (
@@ -1107,9 +1108,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, translucent); },
+							  params = (main, translucent, 2); },
 							{ func = bsp_draw_queue;
-							  params = (main, turbulent); },
+							  params = (main, turbulent, 2); },
 						);
 
 						stages = (
@@ -1172,9 +1173,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, solid); },
+							  params = (main, solid, 1); },
 							{ func = bsp_draw_queue;
-							  params = (main, sky); },
+							  params = (main, sky, 1); },
 						);
 
 						stages = (
@@ -1189,7 +1190,8 @@ renderpasses = {
 					alias:gbuffer = {
 						color = $color.alias;
 						tasks = (
-							{ func = alias_draw; },
+							{ func = alias_draw;
+							  params = (1); },
 						);
 
 						stages = (
@@ -1385,7 +1387,6 @@ steps = {
 			);
 		};
 	};
-/*
 	particles = {
 		dependencies = (wait_on_fence);
 		compute = {
@@ -1444,7 +1445,6 @@ steps = {
 			};
 		};
 	};
-*/
 	preoutput = {
 		dependencies = (wait_on_fence);
 		process = {

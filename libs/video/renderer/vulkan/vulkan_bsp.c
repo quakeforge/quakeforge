@@ -1365,6 +1365,28 @@ create_notexture (vulkan_ctx_t *ctx)
 static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+	int  pass = *(int *) params[2]->value;
+	if (!pass && r_refdef.worldmodel) {
+		bctx->main_pass.bsp_context = bctx;
+		bctx->main_pass.position = r_refdef.frame.position;
+		bctx->main_pass.vis_frame = r_visframecount;
+		bctx->main_pass.face_frames = r_face_visframes;
+		bctx->main_pass.leaf_frames = r_leaf_visframes;
+		bctx->main_pass.node_frames = r_node_visframes;
+		//bctx->main_pass.entid_data = bframe->entid_data;
+		//bctx->main_pass.entid_count = 0;
+
+		clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
+		entity_t    worldent = nullentity;
+		int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
+		bctx->main_pass.ent_frame = 0;	// world is always frame 0
+		bctx->main_pass.inst_id = world_id;
+		bctx->main_pass.brush = &r_refdef.worldmodel->brush;
+		R_VisitWorldNodes (&bctx->main_pass, ctx);
+	}
 }
 
 static exprenum_t bsp_stage_enum;
@@ -1407,12 +1429,13 @@ static exprenum_t bsp_queue_enum = {
 };
 
 static exprtype_t *bsp_draw_queue_params[] = {
+	&cexpr_int,
 	&bsp_queue_type,
 	&bsp_stage_type,
 };
 
 static exprfunc_t bsp_draw_queue_func[] = {
-	{ 0, 2, bsp_draw_queue_params, bsp_draw_queue },
+	{ 0, 3, bsp_draw_queue_params, bsp_draw_queue },
 	{}
 };
 static exprsym_t bsp_task_syms[] = {
