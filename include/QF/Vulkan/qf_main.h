@@ -36,7 +36,5 @@ struct scene_s;
 void Vulkan_Main_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 void Vulkan_RenderView (struct qfv_orenderframe_s *rFrame);
-void Vulkan_RenderEntities (struct entqueue_s *queue,
-							struct qfv_orenderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_main_h

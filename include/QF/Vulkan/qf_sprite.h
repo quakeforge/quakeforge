@@ -88,10 +88,6 @@ void Vulkan_Sprite_DescriptorSet (struct vulkan_ctx_s *ctx,
 void Vulkan_Mod_SpriteLoadFrames (struct mod_sprite_ctx_s *sprite_ctx,
 								  struct vulkan_ctx_s *ctx);
 
-void Vulkan_SpriteBegin (struct qfv_orenderframe_s *rFrame);
-void Vulkan_DrawSprite (struct entity_s ent, struct qfv_orenderframe_s *rFrame);
-void Vulkan_SpriteEnd (struct qfv_orenderframe_s *rFrame);
-
 void Vulkan_Sprite_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Sprite_Shutdown (struct vulkan_ctx_s *ctx);
 

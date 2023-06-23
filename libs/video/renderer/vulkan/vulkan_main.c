@@ -68,31 +68,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-void
-Vulkan_RenderEntities (entqueue_t *queue, qfv_orenderframe_t *rFrame)
-{
-	if (!r_drawentities)
-		return;
-	//FIXME need a better way (components? but HasComponent isn't free)
-#define RE_LOOP(type_name, Type) \
-	do { \
-		int         begun = 0; \
-		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
-			 i++) { \
-			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
-			if (!begun) { \
-				Vulkan_##Type##Begin (rFrame); \
-				begun = 1; \
-			} \
-			Vulkan_Draw##Type (ent, rFrame); \
-		} \
-		if (begun) \
-			Vulkan_##Type##End (rFrame); \
-	} while (0)
-
-	RE_LOOP (sprite, Sprite);
-}
-
 static void
 Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
@@ -127,7 +102,6 @@ Vulkan_RenderView (qfv_orenderframe_t *rFrame)
 	Vulkan_DrawWaterSurfaces (rFrame);
 	Vulkan_DrawParticles (rFrame);
 	Vulkan_Bsp_Flush (ctx);
-	Vulkan_RenderEntities (r_ent_queue, rFrame);
 	Vulkan_Scene_Flush (ctx);
 }
 
