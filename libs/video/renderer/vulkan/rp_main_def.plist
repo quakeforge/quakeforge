@@ -1044,7 +1044,8 @@ renderpasses = {
 					iqm:depth = {
 						color = $color.iqm;
 						tasks = (
-							{ func = iqm_draw; },
+							{ func = iqm_draw;
+							  params = (0); },
 						);
 
 						stages = (
@@ -1222,7 +1223,8 @@ renderpasses = {
 					iqm:gbuffer = {
 						color = $color.iqm;
 						tasks = (
-							{ func = iqm_draw; },
+							{ func = iqm_draw;
+							  params = (1); },
 						);
 
 						stages = (

@@ -62,30 +62,17 @@ typedef struct {
 	vec4f_t     fog;
 } iqm_push_constants_t;
 
-static const char * __attribute__((used)) iqm_pass_names[] = {
-	"depth",
-	"g-buffer",
-	"translucent",
-};
-
-static QFV_Subpass subpass_map[] = {
-	QFV_passDepth,			// QFV_iqmDepth
-	QFV_passGBuffer,		// QFV_iqmGBuffer
-	QFV_passTranslucentFrag,// QFV_iqmTranslucent
-};
-
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   iqm_t *iqm, qfv_orenderframe_t *rFrame, entity_t ent)
+			   iqm_t *iqm, vulkan_ctx_t *ctx, entity_t ent)
 {
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t *ictx = ctx->iqm_context;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto ictx = ctx->iqm_context;
 
-	__auto_type mesh = (qfv_iqm_t *) iqm->extra_data;
+	auto mesh = (qfv_iqm_t *) iqm->extra_data;
 
 	VkDeviceSize offsets[] = { 0, 0, };
 	VkBuffer    buffers[] = {
@@ -122,167 +109,6 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	}
 
 	QFV_CmdEndLabel (device, cmd);
-}
-
-#define a(x) ((x) & ~0x3f)
-
-void
-Vulkan_DrawIQM (entity_t ent, qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	model_t    *model = renderer->model;
-	iqm_t      *iqm = (iqm_t *) model->aliashdr;
-	qfv_iqm_t  *mesh = iqm->extra_data;
-	qfv_iqm_skin_t *skins = mesh->skins;
-	iqm_push_constants_t constants = {};
-	iqmframe_t *frame;
-
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
-	constants.blend = R_IQMGetLerpedFrames (animation, iqm);
-	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
-							  constants.blend, 0);
-
-	vec4f_t    *bone_data;
-	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
-						0, (void **)&bone_data);
-	for (int i = 0; i < iqm->num_joints; i++) {
-		vec4f_t    *b = bone_data + (ctx->curFrame * iqm->num_joints + i) * 3;
-		mat4f_t     f;
-		// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v, but
-		// the shader wants a 3x4 (column x row) matrix for v * m, which is
-		// just a transpose (and drop of the 4th column) away.
-		mat4ftranspose (f, (vec4f_t *) &frame[i]);
-		// copy only the first 3 columns
-		memcpy (b, f, 3 * sizeof (vec4f_t));
-	}
-	VkMappedMemoryRange range = {
-		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		mesh->bones->memory,
-		a(3 * ctx->curFrame * iqm->num_joints * sizeof (vec4f_t)),
-		a(3 * iqm->num_joints * sizeof (vec4f_t) + 0x3f),
-	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
-	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
-
-	transform_t transform = Entity_Transform (ent);
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, mat),
-			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorA),
-			sizeof (constants.colorA), constants.colorA },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorB),
-			sizeof (constants.colorB), constants.colorB },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, base_color),
-			sizeof (constants.base_color), &constants.base_color },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-	};
-
-	QuatCopy (renderer->colormod, constants.base_color);
-	QuatCopy (skins[0].colora, constants.colorA);
-	QuatCopy (skins[0].colorb, constants.colorB);
-	QuatZero (constants.fog);
-
-	emit_commands (aframe->cmdSet.a[QFV_iqmDepth],
-				   animation->pose1, animation->pose2,
-				   0, 2, push_constants, iqm, rFrame, ent);
-	emit_commands (aframe->cmdSet.a[QFV_iqmGBuffer],
-				   animation->pose1, animation->pose2,
-				   skins, 6, push_constants, iqm, rFrame, ent);
-}
-
-static void
-iqm_begin_subpass (QFV_IQMSubpass subpass, VkPipeline pipeline,
-				   qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		rFrame->renderpass->renderpass, subpass_map[subpass],
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "iqm:%s",
-										  iqm_pass_names[subpass]),
-						 { 0.6, 0.5, 0, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									ictx->layout, 0, 1, sets, 0, 0);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
-}
-
-static void
-iqm_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
-void
-Vulkan_IQMBegin (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
-
-	//XXX quat_t      fog;
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
-				   aframe->cmdSet.a[QFV_iqmDepth]);
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
-				   aframe->cmdSet.a[QFV_iqmGBuffer]);
-
-	iqm_begin_subpass (QFV_iqmDepth, ictx->depth, rFrame);
-	iqm_begin_subpass (QFV_iqmGBuffer, ictx->gbuf, rFrame);
-}
-
-void
-Vulkan_IQMEnd (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	iqm_frame_t *aframe = &ictx->frames.a[ctx->curFrame];
-
-	iqm_end_subpass (aframe->cmdSet.a[QFV_iqmDepth], ctx);
-	iqm_end_subpass (aframe->cmdSet.a[QFV_iqmGBuffer], ctx);
 }
 
 static VkWriteDescriptorSet base_buffer_write = {
@@ -362,12 +188,112 @@ Vulkan_IQMRemoveSkin (vulkan_ctx_t *ctx, qfv_iqm_skin_t *skin)
 }
 
 static void
-iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 {
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto model = renderer->model;
+	auto iqm = (iqm_t *) model->aliashdr;
+	qfv_iqm_t  *mesh = iqm->extra_data;
+	auto skins = mesh->skins;
+	iqm_push_constants_t constants = {};
+	iqmframe_t *frame;
+
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	constants.blend = R_IQMGetLerpedFrames (animation, iqm);
+	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
+							  constants.blend, 0);
+
+	vec4f_t    *bone_data;
+	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
+						0, (void **)&bone_data);
+	for (int i = 0; i < iqm->num_joints; i++) {
+		vec4f_t    *b = bone_data + (ctx->curFrame * iqm->num_joints + i) * 3;
+		mat4f_t     f;
+		// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v, but
+		// the shader wants a 3x4 (column x row) matrix for v * m, which is
+		// just a transpose (and drop of the 4th column) away.
+		mat4ftranspose (f, (vec4f_t *) &frame[i]);
+		// copy only the first 3 columns
+		memcpy (b, f, 3 * sizeof (vec4f_t));
+	}
+#define a(x) ((x) & ~0x3f)
+	VkMappedMemoryRange range = {
+		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		mesh->bones->memory,
+		a(3 * ctx->curFrame * iqm->num_joints * sizeof (vec4f_t)),
+		a(3 * iqm->num_joints * sizeof (vec4f_t) + 0x3f),
+	};
+#undef a
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
+
+	transform_t transform = Entity_Transform (ent);
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, mat),
+			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, colorA),
+			sizeof (constants.colorA), constants.colorA },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, colorB),
+			sizeof (constants.colorB), constants.colorB },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+
+	QuatCopy (renderer->colormod, constants.base_color);
+	QuatCopy (skins[0].colora, constants.colorA);
+	QuatCopy (skins[0].colorb, constants.colorB);
+	QuatZero (constants.fog);
+
+	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
+				   pass ? skins : 0,
+				   pass ? 6 : 2, push_constants,
+				   iqm, ctx, ent);
 }
 
+static void
+iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	int  pass = *(int *) params[0]->value;
+
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto ictx = ctx->iqm_context;
+	auto cmd = taskctx->cmd;
+
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									ictx->layout, 0, 1, sets, 0, 0);
+
+	auto queue = r_ent_queue;	//FIXME fetch from scene
+	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_iqm].a[i];
+		iqm_draw_ent (taskctx, ent, pass);
+	}
+}
+
+static exprtype_t *iqm_draw_params[] = {
+	&cexpr_int,
+};
 static exprfunc_t iqm_draw_func[] = {
-	{ .func = iqm_draw },
+	{ .func = iqm_draw, .num_params = 1, .param_types = iqm_draw_params },
 	{}
 };
 static exprsym_t iqm_task_syms[] = {
@@ -378,8 +304,6 @@ static exprsym_t iqm_task_syms[] = {
 void
 Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-
 	qfvPushDebug (ctx, "iqm init");
 	QFV_Render_AddTasks (ctx, iqm_task_syms);
 
@@ -400,22 +324,6 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	ictx->bones_pool = Vulkan_CreateDescriptorPool (ctx, "bone_pool");
 	ictx->bones_setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "bone_set");
 
-	for (size_t i = 0; i < frames; i++) {
-		__auto_type aframe = &ictx->frames.a[i];
-
-		DARRAY_INIT (&aframe->cmdSet, QFV_iqmNumPasses);
-		DARRAY_RESIZE (&aframe->cmdSet, QFV_iqmNumPasses);
-		aframe->cmdSet.grow = 0;
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &aframe->cmdSet);
-
-		for (int j = 0; j < QFV_iqmNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 aframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:iqm:%zd:%s", i,
-									 iqm_pass_names[j]));
-		}
-	}
 	qfvPopDebug (ctx);
 }
 
@@ -425,11 +333,6 @@ Vulkan_IQM_Shutdown (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
-
-	for (size_t i = 0; i < ictx->frames.size; i++) {
-		__auto_type aframe = &ictx->frames.a[i];
-		free (aframe->cmdSet.a);
-	}
 
 	dfunc->vkDestroyPipeline (device->dev, ictx->depth, 0);
 	dfunc->vkDestroyPipeline (device->dev, ictx->gbuf, 0);

@@ -474,7 +474,7 @@ pipelineLayouts = {
 			{
 				stageFlags = fragment;
 				offset = 68;
-				size = "3 * 4 + 2 * 4 * 4 + 4";
+				size = "3 * 4 + 2 * 4 * 4";
 			},
 		);
 	};

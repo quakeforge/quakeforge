@@ -90,7 +90,6 @@ Vulkan_RenderEntities (entqueue_t *queue, qfv_orenderframe_t *rFrame)
 			Vulkan_##Type##End (rFrame); \
 	} while (0)
 
-	RE_LOOP (iqm, IQM);
 	RE_LOOP (sprite, Sprite);
 }
 
