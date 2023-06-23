@@ -1379,6 +1379,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		//bctx->main_pass.entid_data = bframe->entid_data;
 		//bctx->main_pass.entid_count = 0;
 
+		EntQueue_Clear (r_ent_queue);
 		clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
 		entity_t    worldent = nullentity;
 		int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
