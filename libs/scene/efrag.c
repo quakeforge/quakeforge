@@ -140,16 +140,16 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 	int         sides;
 	efrag_t   **lastlink;
 	int        *node_stack;
-	int        *node_ptr;
+	int32_t    *node_ptr;
 
-	node_stack = alloca ((brush->depth + 2) * sizeof (mnode_t *));
+	node_stack = alloca ((brush->depth + 2) * sizeof (int32_t *));
 	node_ptr = node_stack;
 
 	lastlink = &visibility->efrag;
 
 	*node_ptr++ = brush->numnodes;
 
-	int         node_id = 0;
+	int32_t     node_id = 0;
 	while (node_id != (int) brush->numnodes) {
 		// add an efrag if the node is a leaf
 		if (__builtin_expect (node_id < 0, 0)) {
