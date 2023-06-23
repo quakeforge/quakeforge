@@ -207,6 +207,7 @@ typedef struct drawctx_s {
 	VkDescriptorSet core_quad_set;
 	drawframeset_t frames;
 	drawfontset_t fonts;
+	SCR_Func *scr_funcs;
 } drawctx_t;
 
 #define MAX_QUADS (32768)
@@ -229,7 +230,7 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	uint32_t    id = pd->descid;
 	for (int i = 0; i < pool->in_use; i++) {
 		if (pool->users[i] == id) {
@@ -242,9 +243,9 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 	int         descid = pool->in_use++;
 	pool->users[descid] = id;
 	if (!pool->sets[descid]) {
-		__auto_type layout = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+		auto layout = QFV_AllocDescriptorSetLayoutSet (1, alloca);
 		layout->a[0] = pool->dctx->quad_data_set_layout;
-		__auto_type set = QFV_AllocateDescriptorSet (device, pool->pool, layout);
+		auto set = QFV_AllocateDescriptorSet (device, pool->pool, layout);
 		pool->sets[descid] = set->a[0];;
 		free (set);//FIXME allocation
 	}
@@ -999,6 +1000,23 @@ line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dframe->line_verts.count = 0;
 }
 
+static void
+draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto dctx = ctx->draw_context;
+	auto scr_funcs = dctx->scr_funcs;
+	if (!scr_funcs) {
+		return;
+	}
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	dctx->scr_funcs = 0;
+}
+
 static exprfunc_t flush_draw_func[] = {
 	{ .func = flush_draw },
 	{}
@@ -1011,10 +1029,15 @@ static exprfunc_t line_draw_func[] = {
 	{ .func = line_draw },
 	{}
 };
+static exprfunc_t draw_scr_funcs_func[] = {
+	{ .func = draw_scr_funcs },
+	{}
+};
 static exprsym_t draw_task_syms[] = {
 	{ "flush_draw", &cexpr_function, flush_draw_func },
 	{ "slice_draw", &cexpr_function, slice_draw_func },
 	{ "line_draw", &cexpr_function, line_draw_func },
+	{ "draw_scr_funcs", &cexpr_function, draw_scr_funcs_func },
 	{}
 };
 
@@ -1736,4 +1759,11 @@ Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 		Vulkan_Draw_Line (x, y, x, y - h, c, ctx);
 		x++;
 	}
+}
+
+void
+Vulkan_SetScrFuncs (SCR_Func *scr_funcs, vulkan_ctx_t *ctx)
+{
+	auto dctx = ctx->draw_context;
+	dctx->scr_funcs = scr_funcs;
 }

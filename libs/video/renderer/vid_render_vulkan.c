@@ -330,10 +330,7 @@ static void
 vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
 	vulkan_set_2d (1);//FIXME
-	while (*scr_funcs) {
-		(*scr_funcs) ();
-		scr_funcs++;
-	}
+	Vulkan_SetScrFuncs (scr_funcs, vulkan_ctx);
 	QFV_RunRenderJob (vulkan_ctx);
 }
 

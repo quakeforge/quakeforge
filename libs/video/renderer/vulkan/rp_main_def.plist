@@ -1407,6 +1407,7 @@ steps = {
 			tasks = (
 				{ func = wait_on_fence; },
 				{ func = update_matrices; },
+				{ func = draw_scr_funcs; },
 			);
 		};
 	};
