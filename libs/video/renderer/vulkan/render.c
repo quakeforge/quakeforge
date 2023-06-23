@@ -276,6 +276,10 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		0
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
+
+	if (++ctx->curFrame >= rctx->frames.size) {
+		ctx->curFrame = 0;
+	}
 }
 
 static VkImageView __attribute__((pure))
