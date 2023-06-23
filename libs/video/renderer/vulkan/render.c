@@ -127,6 +127,8 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 	__auto_type job = rctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 va (ctx->va_ctx, "cmd:render:%s", rp->label.name));
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -188,11 +190,13 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 										0, 0);
 	}
 	vec4u_t     d = pipeline->dispatch;
-	dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
+	if (d[0] && d[1] && d[2]) {
+		dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
+	}
 }
 
 static void
-run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
+run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -200,6 +204,10 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
 	__auto_type job = rctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 va (ctx->va_ctx, "cmd:compute:%s", step->label.name));
+	QFV_duCmdBeginLabel (device, cmd, step->label.name,
+						 {VEC4_EXP (step->label.color)});
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -210,6 +218,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx)
 		__auto_type pipeline = &comp->pipelines[i];
 		run_compute_pipeline (pipeline, cmd, ctx);
 	}
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 	DARRAY_APPEND (&job->commands, cmd);
 }
@@ -236,7 +245,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 			run_renderpass (step->render->active, ctx);
 		}
 		if (step->compute) {
-			run_compute (step->compute, ctx);
+			run_compute (step->compute, ctx, step);
 		}
 		if (step->process) {
 			run_process (step->process, ctx);

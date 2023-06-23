@@ -100,7 +100,6 @@ Vulkan_RenderView (qfv_orenderframe_t *rFrame)
 		Vulkan_DrawViewModel (ctx);
 	}
 	Vulkan_DrawWaterSurfaces (rFrame);
-	Vulkan_DrawParticles (rFrame);
 	Vulkan_Bsp_Flush (ctx);
 	Vulkan_Scene_Flush (ctx);
 }

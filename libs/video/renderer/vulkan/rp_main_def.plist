@@ -1457,6 +1457,7 @@ steps = {
 			tasks = (
 				{ func = update_framebuffer;
 				  params = ("\"main\""); },
+				{ func = particle_wait_physics; },
 			);
 		};
 	};
