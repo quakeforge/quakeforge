@@ -256,8 +256,9 @@ properties = {
 			primitiveRestartEnable = true;
 		};
 		layout = {
-			descriptorSets = (matrix_set, entity_set, oit_set, texture_set,
-							  texture_set);
+			descriptorSets = (matrix_set, entity_set, oit_set,
+			//				  surface      skybox
+							  texture_set, texture_set);
 			pushConstants = {
 				fragment = {
 					fog = vec4;
@@ -305,6 +306,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
+			//                            palette      skin
 			descriptorSets = (matrix_set, texture_set, texture_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; };
@@ -368,6 +370,7 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
+			//                            skin
 			descriptorSets = (matrix_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = {
@@ -466,6 +469,7 @@ properties = {
 		};
 		layout = {
 			draw = {
+				//                            palette
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
 					vertex = { Model = mat4; };
@@ -478,6 +482,7 @@ properties = {
 				};
 			};
 			update = {
+				//                cur           in            new
 				descriptorSets = (particle_set, particle_set, particle_set);
 			};
 		};
