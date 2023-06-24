@@ -254,7 +254,7 @@ setLayouts = {
 				binding = 0;
 				descriptorType = uniform_buffer;
 				descriptorCount = 1;
-				stageFlags = vertex|geometry;
+				stageFlags = vertex|geometry|fragment;
 			},
 		);
 	};

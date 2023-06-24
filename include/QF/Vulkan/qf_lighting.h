@@ -61,7 +61,6 @@ typedef struct qfv_light_buffer_s {
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
 typedef struct lightingframe_s {
-	VkCommandBuffer cmd;
 	VkBuffer    light_buffer;
 	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
 	VkDescriptorImageInfo attachInfo[LIGHTING_ATTACH_INFOS];
@@ -107,8 +106,6 @@ typedef struct lightingctx_s {
 	VkRenderPass renderpass_6;
 	VkRenderPass renderpass_4;
 	VkRenderPass renderpass_1;
-
-	VkCommandPool cmdpool;
 
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;

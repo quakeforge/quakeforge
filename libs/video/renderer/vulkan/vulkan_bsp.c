@@ -1472,7 +1472,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
 	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);

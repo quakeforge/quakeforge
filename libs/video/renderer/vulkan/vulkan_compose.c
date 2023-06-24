@@ -76,6 +76,7 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto cctx = ctx->compose_context;
 	auto cframe = &cctx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	auto fb = &taskctx->renderpass->framebuffer;
@@ -88,7 +89,7 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									cctx->layout, 0, 2, sets, 0, 0);
+									layout, 0, 2, sets, 0, 0);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -119,10 +120,6 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&cctx->frames, frames);
 	cctx->frames.grow = 0;
 
-	cctx->layout = Vulkan_CreatePipelineLayout (ctx, "compose_layout");
-
-	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
-
 	__auto_type attach = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < frames; i++) {
 		attach->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
@@ -136,11 +133,6 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type cframe = &cctx->frames.a[i];
 
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
-		cframe->cmd = cmdSet->a[0];
-
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 cframe->cmd, "cmd:compose");
 		for (int j = 0; j < COMPOSE_IMAGE_INFOS; j++) {
 			cframe->imageInfo[j] = base_image_info;
 			cframe->imageInfo[j].sampler = 0;
@@ -157,11 +149,8 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Compose_Shutdown (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	composectx_t *cctx = ctx->compose_context;
 
-	dfunc->vkDestroyPipeline (device->dev, cctx->pipeline, 0);
 	free (cctx->frames.a);
 	free (cctx);
 }

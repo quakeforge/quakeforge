@@ -35,7 +35,6 @@
 #include "QF/Vulkan/command.h"
 
 typedef struct outputframe_s {
-	VkCommandBuffer cmd;
 	VkImageView input;
 	VkDescriptorSet set;
 } outputframe_t;
@@ -45,12 +44,6 @@ typedef struct outputframeset_s
 
 typedef struct outputctx_s {
 	outputframeset_t frames;
-	VkPipeline   output;
-	VkPipeline   waterwarp;
-	VkPipeline   fisheye;
-	VkPipelineLayout output_layout;
-	VkPipelineLayout warp_layout;
-	VkPipelineLayout fish_layout;
 	VkSampler    sampler;
 	VkImageView  input;
 	VkFramebuffer *framebuffers;	// one per swapchain image

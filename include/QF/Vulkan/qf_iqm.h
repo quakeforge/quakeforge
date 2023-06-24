@@ -89,9 +89,6 @@ typedef struct iqmindset_s
 
 typedef struct iqmctx_s {
 	iqm_frameset_t frames;
-	VkPipeline   depth;
-	VkPipeline   gbuf;
-	VkPipelineLayout layout;
 	VkSampler    sampler;
 	VkDescriptorPool bones_pool;
 	VkDescriptorSetLayout bones_setLayout;

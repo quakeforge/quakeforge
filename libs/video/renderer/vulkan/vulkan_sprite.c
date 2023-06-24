@@ -70,20 +70,21 @@
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   vulkan_ctx_t *ctx, entity_t ent)
+			   qfv_taskctx_t *taskctx, entity_t ent)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	spritectx_t *sctx = ctx->sprite_context;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto layout = taskctx->pipeline->layout;
 
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
-	QFV_PushConstants (device, cmd, sctx->layout, numPC, constants);
+	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	VkDescriptorSet sets[] = {
 		sprite->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									sctx->layout, 1, 1, sets, 0, 0);
+									layout, 1, 1, sets, 0, 0);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
 
 	QFV_CmdEndLabel (device, cmd);
@@ -157,7 +158,6 @@ Vulkan_Sprint_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 static void
 sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 {
-	auto ctx = taskctx->ctx;
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	auto model = renderer->model;
 	msprite_t *sprite = model->cache.data;
@@ -183,7 +183,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 
 	emit_commands (taskctx->cmd,
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
-				   2, push_constants, ctx, ent);
+				   2, push_constants, taskctx, ent);
 }
 
 static void
@@ -193,14 +193,14 @@ sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto sctx = ctx->sprite_context;
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									sctx->layout, 0, 1, sets, 0, 0);
+									layout, 0, 1, sets, 0, 0);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_sprite].size; i++) {
@@ -227,13 +227,6 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
 	ctx->sprite_context = sctx;
 
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&sctx->frames, frames);
-	DARRAY_RESIZE (&sctx->frames, frames);
-	sctx->frames.grow = 0;
-
-	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
 	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
 
 	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "sprite_pool");
@@ -245,12 +238,7 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
 
-	dfunc->vkDestroyPipeline (device->dev, sctx->depth, 0);
-	dfunc->vkDestroyPipeline (device->dev, sctx->gbuf, 0);
-	free (sctx->frames.a);
 	free (sctx);
 }

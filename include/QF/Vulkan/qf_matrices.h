@@ -48,7 +48,6 @@ typedef struct qfv_matrix_buffer_s {
 } qfv_matrix_buffer_t;
 
 typedef struct matrixframe_s {
-	//VkCommandBuffer cmd;
 	VkBuffer    buffer;
 	VkDescriptorSet descriptors;
 } matrixframe_t;
@@ -58,8 +57,6 @@ typedef struct matrixframeset_s
 
 typedef struct matrixctx_s {
 	matrixframeset_t frames;
-	VkPipeline   pipeline;
-	VkPipelineLayout layout;
 	VkDeviceMemory memory;
 	qfv_matrix_buffer_t matrices;
 	int             dirty;

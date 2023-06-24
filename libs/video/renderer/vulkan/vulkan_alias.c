@@ -64,11 +64,12 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   aliashdr_t *hdr, vulkan_ctx_t *ctx, entity_t ent)
+			   aliashdr_t *hdr, qfv_taskctx_t *taskctx, entity_t ent)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	aliasctx_t *actx = ctx->alias_context;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto layout = taskctx->pipeline->layout;
 
 	__auto_type mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
 
@@ -89,13 +90,13 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	QFV_PushConstants (device, cmd, actx->layout, numPC, constants);
+	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	if (skin) {
 		VkDescriptorSet sets[] = {
 			skin->descriptor,
 		};
 		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										actx->layout, 2, 1, sets, 0, 0);
+										layout, 2, 1, sets, 0, 0);
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 
@@ -134,7 +135,6 @@ Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
 static void
 alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 {
-	auto ctx = taskctx->ctx;
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	auto model = renderer->model;
 	aliashdr_t *hdr;
@@ -187,7 +187,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
 				   pass ? skin : 0,
 				   pass ? 5 : 2, push_constants,
-				   hdr, ctx, ent);
+				   hdr, taskctx, ent);
 }
 
 static void
@@ -200,14 +200,14 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto actx = ctx->alias_context;
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		Vulkan_Palette_Descriptor (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									actx->layout, 0, 2, sets, 0, 0);
+									layout, 0, 2, sets, 0, 0);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
@@ -246,13 +246,6 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
 
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&actx->frames, frames);
-	DARRAY_RESIZE (&actx->frames, frames);
-	actx->frames.grow = 0;
-
-	actx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
 	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 	qfvPopDebug (ctx);
 }
@@ -260,12 +253,9 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Alias_Shutdown (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	//qfv_device_t *device = ctx->device;
+	//qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
 
-	dfunc->vkDestroyPipeline (device->dev, actx->depth, 0);
-	dfunc->vkDestroyPipeline (device->dev, actx->gbuf, 0);
-	free (actx->frames.a);
 	free (actx);
 }

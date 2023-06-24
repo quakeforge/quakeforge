@@ -58,20 +58,9 @@ typedef enum {
 	QFV_spriteNumPasses
 } QFV_SpriteSubpass;
 
-typedef struct spriteframe_s {
-	qfv_cmdbufferset_t cmdSet;
-} spriteframe_t;
-
-typedef struct spriteframeset_s
-    DARRAY_TYPE (spriteframe_t) spriteframeset_t;
-
 typedef struct spritectx_s {
-	spriteframeset_t frames;
-	VkPipeline  depth;
-	VkPipeline  gbuf;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
-	VkPipelineLayout layout;
 	unsigned    maxImages;
 	VkSampler   sampler;
 } spritectx_t;

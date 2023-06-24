@@ -168,6 +168,7 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto pctx = ctx->particle_context;
 	auto pframe = &pctx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	VkDescriptorSet sets[] = {
@@ -176,14 +177,14 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									pctx->draw_layout, 0, 3, sets, 0, 0);
+									layout, 0, 3, sets, 0, 0);
 
 	mat4f_t     mat;
 	mat4fidentity (mat);
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat4f_t), &mat },
 	};
-	QFV_PushConstants (device, cmd, pctx->draw_layout, 1, push_constants);
+	QFV_PushConstants (device, cmd, layout, 1, push_constants);
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer    buffers[] = {
 		pframe->states,
@@ -202,6 +203,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto pctx = ctx->particle_context;
 	auto pframe = &pctx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
 
@@ -281,7 +283,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 		pframe->newDescriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-									pctx->update_layout, 0, 3, set, 0, 0);
+									layout, 0, 3, set, 0, 0);
 	dfunc->vkCmdDispatch (packet->cmd, 1, 1, 1);
 	dfunc->vkCmdSetEvent (packet->cmd, pframe->updateEvent,
 						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -335,6 +337,7 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto pctx = ctx->particle_context;
 	auto pframe = &pctx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	dfunc->vkResetEvent (device->dev, pframe->physicsEvent);
@@ -345,7 +348,7 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		pframe->curDescriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-									pctx->physics_layout, 0, 1, set, 0, 0);
+									layout, 0, 1, set, 0, 0);
 
 	particle_push_constants_t constants = {
 		.gravity = pctx->psystem->gravity,
@@ -359,7 +362,7 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			field_offset (particle_push_constants_t, dT),
 			sizeof (float), &constants.dT },
 	};
-	QFV_PushConstants (device, cmd, pctx->physics_layout, 2, push_constants);
+	QFV_PushConstants (device, cmd, layout, 2, push_constants);
 	dfunc->vkCmdDispatch (cmd, MaxParticles, 1, 1);
 	dfunc->vkCmdSetEvent (cmd, pframe->physicsEvent,
 						  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -435,12 +438,6 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&pctx->frames, frames);
 	pctx->frames.grow = 0;
 
-	pctx->physics_layout = Vulkan_CreatePipelineLayout (ctx,
-														"partphysics_layout");
-	pctx->update_layout = Vulkan_CreatePipelineLayout (ctx,
-													   "partupdate_layout");
-	pctx->draw_layout = Vulkan_CreatePipelineLayout (ctx, "partdraw_layout");
-
 	pctx->pool = Vulkan_CreateDescriptorPool (ctx, "particle_pool");
 	pctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "particle_set");
 
@@ -490,9 +487,6 @@ Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 	QFV_DestroyResource (device, pctx->resources);
 	free (pctx->resources);
 
-	dfunc->vkDestroyPipeline (device->dev, pctx->physics, 0);
-	dfunc->vkDestroyPipeline (device->dev, pctx->update, 0);
-	dfunc->vkDestroyPipeline (device->dev, pctx->draw, 0);
 	free (pctx->frames.a);
 	free (pctx);
 }

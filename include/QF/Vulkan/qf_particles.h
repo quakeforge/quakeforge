@@ -37,7 +37,6 @@ typedef enum {
 } QFV_ParticleSubpass;
 
 typedef struct particleframe_s {
-	VkCommandBuffer compute;
 	VkEvent     physicsEvent;
 	VkEvent     updateEvent;
 	VkBuffer    states;
@@ -47,8 +46,6 @@ typedef struct particleframe_s {
 	VkDescriptorSet curDescriptors;
 	VkDescriptorSet inDescriptors;
 	VkDescriptorSet newDescriptors;
-
-	qfv_cmdbufferset_t cmdSet;
 } particleframe_t;
 
 typedef struct particleframeset_s
@@ -56,18 +53,12 @@ typedef struct particleframeset_s
 
 typedef struct particlectx_s {
 	particleframeset_t frames;
-	VkPipeline  physics;
-	VkPipeline  update;
-	VkPipeline  draw;
 
 	struct qfv_resource_s *resources;
 	struct qfv_stagebuf_s *stage;
 
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
-	VkPipelineLayout physics_layout;
-	VkPipelineLayout update_layout;
-	VkPipelineLayout draw_layout;
 
 	psystem_t  *psystem;
 } particlectx_t;

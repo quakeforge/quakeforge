@@ -366,7 +366,6 @@ typedef struct bspctx_s {
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
 
 	VkSampler    sampler;
-	VkPipelineLayout layout;
 
 	VkDeviceMemory texture_memory;
 	VkPipeline   depth;

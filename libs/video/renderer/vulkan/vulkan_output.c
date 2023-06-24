@@ -171,9 +171,9 @@ output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto octx = ctx->output_context;
 	auto oframe = &octx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
-	auto layout = octx->output_layout;
 	//__auto_type pipeline = octx->output;
 	//if (scr_fisheye) {
 	//	pipeline = octx->fisheye;
@@ -255,9 +255,6 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
 	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
 
-	octx->output_layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
-	octx->warp_layout = Vulkan_CreatePipelineLayout (ctx, "waterwarp_layout");
-	octx->fish_layout = Vulkan_CreatePipelineLayout (ctx, "fisheye_layout");
 	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
@@ -276,9 +273,6 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 		oframe->set = sets->a[i];
 
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
-		oframe->cmd = cmdSet->a[0];
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 oframe->cmd, "cmd:output");
 	}
 
 	ctx->script_context->pipelineDef = pld;
@@ -303,9 +297,6 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	auto rp = &render->renderpasses[0];
 	rp->beginInfo.framebuffer = 0;
 
-	dfunc->vkDestroyPipeline (device->dev, octx->output, 0);
-	dfunc->vkDestroyPipeline (device->dev, octx->waterwarp, 0);
-	dfunc->vkDestroyPipeline (device->dev, octx->fisheye, 0);
 	free (octx->frames.a);
 	free (octx);
 }

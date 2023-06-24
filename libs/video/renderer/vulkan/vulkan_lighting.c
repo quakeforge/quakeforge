@@ -318,8 +318,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	rp_cfg = PL_ObjectForKey (rp_def, "renderpass_1");
 	lctx->renderpass_1 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
 #endif
-	lctx->cmdpool = QFV_CreateCommandPool (device, device->queue.queueFamily,
-										   1, 1);
 
 	DARRAY_INIT (&lctx->light_mats, 16);
 	DARRAY_INIT (&lctx->light_images, 16);
@@ -353,8 +351,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
 						 lctx->light_memory, "memory:lighting");
 
-
-	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
 
 	__auto_type attach = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	__auto_type lights = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
@@ -394,16 +390,11 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 							 shadow_set->a[i],
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
 
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
-		lframe->cmd = cmdSet->a[0];
-
 		lframe->light_buffer = lbuffers->a[i];
 		QFV_BindBufferMemory (device, lbuffers->a[i], lctx->light_memory,
 							  light_offset);
 		light_offset += light_size;
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 lframe->cmd, "cmd:lighting");
 		for (int j = 0; j < LIGHTING_BUFFER_INFOS; j++) {
 			lframe->bufferInfo[j] = base_buffer_info;
 			lframe->bufferWrite[j] = base_buffer_write;
@@ -466,7 +457,6 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 
 	clear_shadows (ctx);
 
-	dfunc->vkDestroyCommandPool (device->dev, lctx->cmdpool, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_6, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_4, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_1, 0);

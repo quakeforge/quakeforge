@@ -65,11 +65,12 @@ static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
 			   uint32_t numPC, qfv_push_constants_t *constants,
-			   iqm_t *iqm, vulkan_ctx_t *ctx, entity_t ent)
+			   iqm_t *iqm, qfv_taskctx_t *taskctx, entity_t ent)
 {
+	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto ictx = ctx->iqm_context;
+	auto layout = taskctx->pipeline->layout;
 
 	auto mesh = (qfv_iqm_t *) iqm->extra_data;
 
@@ -85,7 +86,7 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
 								 VK_INDEX_TYPE_UINT16);
-	QFV_PushConstants (device, cmd, ictx->layout, numPC, constants);
+	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	for (int i = 0; i < iqm->num_meshes; i++) {
 		if (skins) {
 			VkDescriptorSet sets[] = {
@@ -94,14 +95,14 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			};
 			dfunc->vkCmdBindDescriptorSets (cmd,
 											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											ictx->layout, 1, 2, sets, 0, 0);
+											layout, 1, 2, sets, 0, 0);
 		} else {
 			VkDescriptorSet sets[] = {
 				mesh->bones_descriptors[ctx->curFrame],
 			};
 			dfunc->vkCmdBindDescriptorSets (cmd,
 											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											ictx->layout, 2, 1, sets, 0, 0);
+											layout, 2, 1, sets, 0, 0);
 		}
 		dfunc->vkCmdDrawIndexed (cmd, 3 * iqm->meshes[i].num_triangles, 1,
 								 3 * iqm->meshes[i].first_triangle, 0, 0);
@@ -260,7 +261,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
 				   pass ? skins : 0,
 				   pass ? 6 : 2, push_constants,
-				   iqm, ctx, ent);
+				   iqm, taskctx, ent);
 }
 
 static void
@@ -272,14 +273,14 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto ictx = ctx->iqm_context;
+	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									ictx->layout, 0, 1, sets, 0, 0);
+									layout, 0, 1, sets, 0, 0);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) {
@@ -315,7 +316,6 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;
 
-	ictx->layout = Vulkan_CreatePipelineLayout (ctx, "iqm_layout");
 	ictx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 
 	ictx->bones_pool = Vulkan_CreateDescriptorPool (ctx, "bone_pool");
@@ -327,12 +327,8 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_IQM_Shutdown (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	iqmctx_t   *ictx = ctx->iqm_context;
 
-	dfunc->vkDestroyPipeline (device->dev, ictx->depth, 0);
-	dfunc->vkDestroyPipeline (device->dev, ictx->gbuf, 0);
 	free (ictx->frames.a);
 	free (ictx);
 }

@@ -70,21 +70,10 @@ typedef enum {
 	QFV_aliasNumPasses
 } QFV_AliasSubpass;
 
-typedef struct aliasframe_s {
-	qfv_cmdbufferset_t cmdSet;
-} aliasframe_t;
-
-typedef struct aliasframeset_s
-    DARRAY_TYPE (aliasframe_t) aliasframeset_t;
-
 typedef struct aliasindset_s
     DARRAY_TYPE (unsigned) aliasindset_t;
 
 typedef struct aliasctx_s {
-	aliasframeset_t frames;
-	VkPipeline   depth;
-	VkPipeline   gbuf;
-	VkPipelineLayout layout;
 	VkSampler    sampler;
 } aliasctx_t;
 
