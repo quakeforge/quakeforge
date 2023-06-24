@@ -8,7 +8,9 @@
 
 #include "QF/cexpr.h"
 #include "QF/simd/types.h"
+
 #ifndef __QFCC__
+#include "QF/darray.h"
 #include "QF/Vulkan/command.h"
 #endif
 
@@ -266,8 +268,8 @@ typedef struct qfv_jobinfo_s {
 	qfv_imageinfo_t *buffers;
 	qfv_imageviewinfo_t *bufferviews;
 
-	uint32_t    num_descriptorsetlayouts;
-	qfv_descriptorsetlayoutinfo_t *descriptorsetlayouts;
+	uint32_t    num_dslayouts;
+	qfv_descriptorsetlayoutinfo_t *dslayouts;
 } qfv_jobinfo_t;
 
 #ifndef __QFCC__
@@ -285,9 +287,8 @@ typedef struct qfv_pipeline_s {
 
 	VkViewport  viewport;
 	VkRect2D    scissor;
-	uint32_t    num_descriptorsets;
-	uint32_t    first_descriptorset;
-	VkDescriptorSet *descriptorsets;
+	uint32_t    num_indices;
+	uint32_t   *ds_indices;
 
 	uint32_t    task_count;
 	qfv_taskinfo_t *tasks;
@@ -367,6 +368,8 @@ typedef struct qfv_job_s {
 	VkPipelineLayout *layouts;
 	qfv_step_t *steps;
 	qfv_cmdbufferset_t commands;
+	uint32_t    num_dsmanagers;
+	struct qfv_dsmanager_s **dsmanager;
 } qfv_job_t;
 
 typedef struct qfv_renderframe_s {
@@ -408,6 +411,7 @@ void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
+
 #endif//__QFCC__
 
 #endif//__QF_Vulkan_render_h

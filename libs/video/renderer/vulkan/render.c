@@ -44,6 +44,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
@@ -89,15 +90,6 @@ run_pipeline (qfv_pipeline_t *pipeline, qfv_taskctx_t *taskctx)
 
 	taskctx->pipeline = pipeline;
 	run_tasks (pipeline->task_count, pipeline->tasks, taskctx);
-
-	if (pipeline->num_descriptorsets) {
-		dfunc->vkCmdBindDescriptorSets (cmd, pipeline->bindPoint,
-										pipeline->layout,
-										pipeline->first_descriptorset,
-										pipeline->num_descriptorsets,
-										pipeline->descriptorsets,
-										0, 0);
-	}
 }
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
@@ -119,8 +111,6 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 static void
 run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 {
-	//printf ("%10.2f run_renderpass: %s\n", Sys_DoubleTime (), rp->label.name);
-
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
@@ -168,8 +158,6 @@ static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 					  vulkan_ctx_t *ctx)
 {
-	//printf ("run_compute_pipeline: %s\n", pipeline->label.name);
-
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
@@ -181,14 +169,6 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	};
 	run_tasks (pipeline->task_count, pipeline->tasks, &taskctx);
 
-	if (pipeline->num_descriptorsets) {
-		dfunc->vkCmdBindDescriptorSets (cmd, pipeline->bindPoint,
-										pipeline->layout,
-										pipeline->first_descriptorset,
-										pipeline->num_descriptorsets,
-										pipeline->descriptorsets,
-										0, 0);
-	}
 	vec4u_t     d = pipeline->dispatch;
 	if (d[0] && d[1] && d[2]) {
 		dfunc->vkCmdDispatch (cmd, d[0], d[1], d[2]);
@@ -240,7 +220,6 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		__auto_type step = &job->steps[i];
-		//printf ("%10.2f run_step: %s\n", Sys_DoubleTime (), step->label.name);
 		if (step->render) {
 			run_renderpass (step->render->active, ctx);
 		}
@@ -264,8 +243,6 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		job->commands.size, job->commands.a,
 		1, &frame->renderDoneSemaphore,
 	};
-	//printf ("%10.2f submit for frame %d: %zd %p\n", Sys_DoubleTime (),
-	//		ctx->curFrame, job->commands.size, frame->imageAvailableSemaphore);
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
 
@@ -503,6 +480,9 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 			}
 		}
 		DARRAY_CLEAR (&job->commands);
+		for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
+			QFV_DSManager_Destroy (job->dsmanager[i]);
+		}
 		free (rctx->job);
 	}
 
@@ -519,8 +499,8 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 
 	if (rctx->jobinfo) {
 		__auto_type jinfo = rctx->jobinfo;
-		for (uint32_t i = 0; i < jinfo->num_descriptorsetlayouts; i++) {
-			__auto_type setLayout = jinfo->descriptorsetlayouts[i].setLayout;
+		for (uint32_t i = 0; i < jinfo->num_dslayouts; i++) {
+			__auto_type setLayout = jinfo->dslayouts[i].setLayout;
 			dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout, 0);
 		}
 		delete_memsuper (jinfo->memsuper);

@@ -776,8 +776,8 @@ parse = {
 		};
 		descriptorSetLayouts = {
 			type = (labeledarray, qfv_descriptorsetlayoutinfo_t, name);
-			size = num_descriptorsetlayouts;
-			values = descriptorsetlayouts;
+			size = num_dslayouts;
+			values = dslayouts;
 		};
 	};
 };

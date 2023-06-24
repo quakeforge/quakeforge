@@ -44,6 +44,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
@@ -107,7 +108,7 @@ typedef struct {
 	uint32_t    num_graph_pipelines;
 	uint32_t    num_comp_pipelines;
 
-	uint32_t    num_descriptorsets;
+	uint32_t    num_ds_indices;
 } objcount_t;
 
 static void
@@ -347,34 +348,40 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 	Sys_Error ("invalid dependency: [%d] %s", spind, d->name);
 }
 
-static VkDescriptorSetLayout
-find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
+static uint32_t __attribute__((pure))
+find_ds_index (const qfv_reference_t *ref, objstate_t *s)
 {
-	for (uint32_t i = 0; i < s->jinfo->num_descriptorsetlayouts; i++) {
-		__auto_type ds = &s->jinfo->descriptorsetlayouts[i];
+	for (uint32_t i = 0; i < s->jinfo->num_dslayouts; i++) {
+		__auto_type ds = &s->jinfo->dslayouts[i];
 		if (strcmp (ds->name, ref->name) == 0) {
-			if (!ds->setLayout) {
-				VkDescriptorSetLayoutCreateInfo cInfo = {
-					.sType=VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-					.flags = ds->flags,
-					.bindingCount = ds->num_bindings,
-					.pBindings = ds->bindings,
-				};
-				qfv_device_t *device = s->ctx->device;
-				qfv_devfuncs_t *dfunc = device->funcs;
-				dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0,
-													&ds->setLayout);
-				QFV_duSetObjectName (device,
-									 VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-									 ds->setLayout,
-									 va (s->ctx->va_ctx, "descriptorSet:%s",
-										 ds->name));
-			}
-			return ds->setLayout;
+			return i;
 		}
 	}
 	Sys_Error ("%s.%s:%d: invalid descriptor set layout: %s",
 			   s->rpi->name, s->spi->name, ref->line, ref->name);
+}
+
+static VkDescriptorSetLayout
+find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
+{
+	auto ds = &s->jinfo->dslayouts[find_ds_index (ref, s)];
+	if (ds->setLayout) {
+		return ds->setLayout;
+	}
+
+	VkDescriptorSetLayoutCreateInfo cInfo = {
+		.sType=VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.flags = ds->flags,
+		.bindingCount = ds->num_bindings,
+		.pBindings = ds->bindings,
+	};
+	qfv_device_t *device = s->ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &ds->setLayout);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+						 ds->setLayout, va (s->ctx->va_ctx, "descriptorSet:%s",
+											ds->name));
+	return ds->setLayout;
 }
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
@@ -515,7 +522,7 @@ init_plCreate (VkGraphicsPipelineCreateInfo *plc, const qfv_pipelineinfo_t *pli,
 	if (pli->layout.name) {
 		__auto_type li = find_layout (&pli->layout, s);
 		plc->layout = li->layout;
-		s->inds.num_descriptorsets += li->num_sets;
+		s->inds.num_ds_indices += li->num_sets;
 	}
 }
 
@@ -722,7 +729,7 @@ typedef struct {
 	qfv_subpass_t *subpasses;
 	qfv_pipeline_t *pipelines;
 	qfv_taskinfo_t *tasks;
-	VkDescriptorSet *descriptorsets;
+	uint32_t *ds_indices;
 	VkImageView *attachment_views;
 } jobptr_t;
 
@@ -743,12 +750,13 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 		.layout = li->layout,
 		.task_count = plinfo->num_tasks,
 		.tasks = &jp->tasks[s->inds.num_tasks],
-		.descriptorsets = &jp->descriptorsets[s->inds.num_descriptorsets],
+		.num_indices = li->num_sets,
+		.ds_indices = &jp->ds_indices[s->inds.num_ds_indices],
 	};
 	s->inds.num_tasks += plinfo->num_tasks;
-	s->inds.num_descriptorsets += li->num_sets;
-	for (uint32_t i = 0; i < li->num_sets; i++) {
-		pl->descriptorsets[i] = 0;
+	s->inds.num_ds_indices += li->num_sets;
+	for (uint32_t i = 0; i < pl->num_indices; i++) {
+		pl->ds_indices[i] = find_ds_index (&li->sets[i], s);
 	}
 	for (uint32_t i = 0; i < pl->task_count; i++) {
 		pl->tasks[i] = plinfo->tasks[i];
@@ -894,7 +902,8 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 static void
 init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 {
-	__auto_type rctx = ctx->render_context;
+	auto rctx = ctx->render_context;
+	auto jobinfo = rctx->jobinfo;
 
 	size_t      size = sizeof (qfv_job_t);
 
@@ -913,8 +922,9 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
 	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
 	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
-	size += sizeof (VkDescriptorSet  [counts->num_descriptorsets]);
 	size += sizeof (VkImageView      [counts->num_attachments]);
+	size += sizeof (qfv_dsmanager_t *[jobinfo->num_dslayouts]);
+	size += sizeof (uint32_t         [counts->num_ds_indices]);
 
 	rctx->job = malloc (size);
 	auto job = rctx->job;
@@ -925,6 +935,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.num_layouts = s.inds.num_layouts,
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
+		.num_dsmanagers = jobinfo->num_dslayouts,
 	};
 	job->steps = (qfv_step_t *) &job[1];
 	auto rn = (qfv_render_t *) &job->steps[job->num_steps];
@@ -939,8 +950,10 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	job->renderpasses = (VkRenderPass *) &cv[counts->num_attachments];
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
-	auto ds = (VkDescriptorSet *) &job->layouts[job->num_layouts];
-	auto av = (VkImageView *) &ds[counts->num_descriptorsets];
+	auto av = (VkImageView *) &job->layouts[s.inds.num_layouts];
+	job->dsmanager = (qfv_dsmanager_t **) &av[counts->num_attachments];
+	auto ds = (uint32_t *) &job->dsmanager[jobinfo->num_dslayouts];
+
 	jobptr_t jp = {
 		.steps = job->steps,
 		.renders = rn,
@@ -951,7 +964,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.subpasses = sp,
 		.pipelines = pl,
 		.tasks = ti,
-		.descriptorsets = ds,
+		.ds_indices = ds,
 		.attachment_views = av,
 	};
 
@@ -972,6 +985,10 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	s.inds.num_layouts = num_layouts;
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		init_step (i, &jp, &s);
+	}
+	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
+		auto layoutInfo = &jobinfo->dslayouts[i];
+		job->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
 	}
 }
 
@@ -1013,7 +1030,7 @@ create_step_compute_objects (uint32_t index, const qfv_stepinfo_t *step,
 		};
 		plc->stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		s->inds.num_comp_pipelines++;
-		s->inds.num_descriptorsets += li->num_sets;
+		s->inds.num_ds_indices += li->num_sets;
 	}
 }
 
@@ -1132,7 +1149,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 							 va (ctx->va_ctx, "pipeline:%s", plName[i]));
 	}
 
-	counts->num_descriptorsets = s.inds.num_descriptorsets;
+	counts->num_ds_indices = s.inds.num_ds_indices;
 	init_job (ctx, counts, s);
 }
 
