@@ -316,13 +316,13 @@ typedef struct bsp_pass_s {
 /// \ingroup vulkan_bsp
 ///@{
 typedef enum {
-	QFV_bspDepth,
-	QFV_bspGBuffer,
+	QFV_bspSolid,
 	QFV_bspSky,
-	QFV_bspTurb,
+	QFV_bspTrans,	// texture translucency
+	QFV_bspTurb,	// also translucent via r_wateralpha
 
 	QFV_bspNumPasses
-} QFV_BspSubpass;
+} QFV_BspQueue;
 
 typedef struct bspframe_s {
 	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
@@ -380,7 +380,6 @@ typedef struct bspctx_s {
 } bspctx_t;
 
 struct vulkan_ctx_s;
-void Vulkan_Bsp_Flush (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);

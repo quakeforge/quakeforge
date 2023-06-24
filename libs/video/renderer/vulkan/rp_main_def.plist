@@ -1449,6 +1449,15 @@ steps = {
 		dependencies = (wait_on_fence);
 		//currently empty
 	};
+	world = {
+		dependencies = (wait_on_fence);
+		process = {
+			tasks = (
+				{ func = bsp_visit_world;
+				  params = (main); },
+			);
+		};
+	};
 	translucent = {
 		dependencies = (wait_on_fence);
 		process = {
@@ -1468,7 +1477,7 @@ steps = {
 		};
 	};
 	main = {
-		dependencies = (setup_main, particles, shadow, translucent);
+		dependencies = (setup_main, particles, shadow, world, translucent);
 		render = {
 			renderpasses = {
 				deferred = $renderpasses.deferred;
