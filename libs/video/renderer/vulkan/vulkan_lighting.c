@@ -62,6 +62,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
@@ -252,6 +253,7 @@ lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
 	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
 
 	if (!lctx->scene) {
 		return;
@@ -279,7 +281,7 @@ lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		lframe->shadowWrite.dstSet,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									lctx->layout, 0, 3, sets, 0, 0);
+									layout, 0, 3, sets, 0, 0);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -296,16 +298,20 @@ static exprsym_t lighting_task_syms[] = {
 void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
-	qfvPushDebug (ctx, "lighting init");
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
+}
 
-	// lighting_context initialized in Vulkan_Lighting_CreateRenderPasses
+void
+Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "lighting init");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
 
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
@@ -329,7 +335,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
-	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
 	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
 
 	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
@@ -352,42 +357,21 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 						 lctx->light_memory, "memory:lighting");
 
 
-	__auto_type attach = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	__auto_type lights = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	__auto_type shadow = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < frames; i++) {
-		attach->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_attach");
-		lights->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_lights");
-		shadow->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_shadow");
-	}
-	__auto_type attach_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_attach_pool");
-	__auto_type lights_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_lights_pool");
-	__auto_type shadow_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_shadow_pool");
-
-	__auto_type attach_set = QFV_AllocateDescriptorSet (device, attach_pool,
-														attach);
-	__auto_type lights_set = QFV_AllocateDescriptorSet (device, lights_pool,
-														lights);
-	__auto_type shadow_set = QFV_AllocateDescriptorSet (device, shadow_pool,
-														shadow);
+	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
+	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
+	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
 	VkDeviceSize light_offset = 0;
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type lframe = &lctx->frames.a[i];
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 attach_set->a[i],
+		auto attach = QFV_DSManager_AllocSet (attach_mgr);
+		auto lights = QFV_DSManager_AllocSet (lights_mgr);
+		auto shadow = QFV_DSManager_AllocSet (shadow_mgr);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, attach,
 							 va (ctx->va_ctx, "lighting:attach_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 lights_set->a[i],
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, lights,
 							 va (ctx->va_ctx, "lighting:lights_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 shadow_set->a[i],
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, shadow,
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
 
 		lframe->light_buffer = lbuffers->a[i];
@@ -398,7 +382,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		for (int j = 0; j < LIGHTING_BUFFER_INFOS; j++) {
 			lframe->bufferInfo[j] = base_buffer_info;
 			lframe->bufferWrite[j] = base_buffer_write;
-			lframe->bufferWrite[j].dstSet = lights_set->a[i];
+			lframe->bufferWrite[j].dstSet = lights;
 			lframe->bufferWrite[j].dstBinding = j;
 			lframe->bufferWrite[j].pBufferInfo = &lframe->bufferInfo[j];
 		}
@@ -406,7 +390,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 			lframe->attachInfo[j] = base_image_info;
 			lframe->attachInfo[j].sampler = 0;
 			lframe->attachWrite[j] = base_attachment_write;
-			lframe->attachWrite[j].dstSet = attach_set->a[i];
+			lframe->attachWrite[j].dstSet = attach;
 			lframe->attachWrite[j].dstBinding = j;
 			lframe->attachWrite[j].pImageInfo = &lframe->attachInfo[j];
 		}
@@ -416,14 +400,11 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 			lframe->shadowInfo[j].imageView = ctx->default_black->view;
 		}
 		lframe->shadowWrite = base_image_write;
-		lframe->shadowWrite.dstSet = shadow_set->a[i];
+		lframe->shadowWrite.dstSet = shadow;
 		lframe->shadowWrite.dstBinding = 0;
 		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
-	free (shadow_set);
-	free (attach_set);
-	free (lights_set);
 	qfvPopDebug (ctx);
 }
 

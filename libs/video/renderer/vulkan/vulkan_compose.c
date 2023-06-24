@@ -49,6 +49,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
@@ -106,13 +107,18 @@ static exprsym_t compose_task_syms[] = {
 void
 Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-
-	qfvPushDebug (ctx, "compose init");
 	QFV_Render_AddTasks (ctx, compose_task_syms);
 
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
 	ctx->compose_context = cctx;
+}
+
+void
+Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "compose init");
+
+	auto cctx = ctx->compose_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -120,16 +126,7 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&cctx->frames, frames);
 	cctx->frames.grow = 0;
 
-	__auto_type attach = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < frames; i++) {
-		attach->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "compose_attach");
-	}
-	__auto_type attach_pool = Vulkan_CreateDescriptorPool (ctx,
-														"compose_attach_pool");
-
-	__auto_type attach_set = QFV_AllocateDescriptorSet (device, attach_pool,
-														attach);
+	auto dsmanager = QFV_Render_DSManager (ctx, "compose_attach");
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type cframe = &cctx->frames.a[i];
 
@@ -137,12 +134,11 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 			cframe->imageInfo[j] = base_image_info;
 			cframe->imageInfo[j].sampler = 0;
 			cframe->descriptors[j] = base_image_write;
-			cframe->descriptors[j].dstSet = attach_set->a[i];
+			cframe->descriptors[j].dstSet = QFV_DSManager_AllocSet (dsmanager);
 			cframe->descriptors[j].dstBinding = j;
 			cframe->descriptors[j].pImageInfo = &cframe->imageInfo[j];
 		}
 	}
-	free (attach_set);
 	qfvPopDebug (ctx);
 }
 

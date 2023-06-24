@@ -44,8 +44,10 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 
 #include "vid_vulkan.h"
@@ -508,13 +510,18 @@ static tex_t default_magenta_tex = {
 void
 Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 {
-	qfvPushDebug (ctx, "texture init");
-
 	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
 	ctx->texture_context = tctx;
+}
 
-	tctx->pool = Vulkan_CreateDescriptorPool (ctx, "texture_pool");
-	tctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "texture_set");
+void
+Vulkan_Texture_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "texture init");
+
+	auto tctx = ctx->texture_context;
+
+	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
 
 	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1,
 										 "default_black");
@@ -560,18 +567,11 @@ Vulkan_CreateCombinedImageSampler (vulkan_ctx_t *ctx, VkImageView view,
 {
 	qfvPushDebug (ctx, "Vulkan_CreateCombinedImageSampler");
 
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	texturectx_t *tctx = ctx->texture_context;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto tctx = ctx->texture_context;
 
-	//FIXME kinda dumb
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = tctx->setLayout;
-	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, tctx->pool, layouts);
-	VkDescriptorSet descriptor = sets->a[0];
-	free (sets);
+	auto descriptor = QFV_DSManager_AllocSet (tctx->dsmanager);
 
 	VkDescriptorImageInfo imageInfo[1];
 	imageInfo[0] = base_image_info;
@@ -599,9 +599,7 @@ Vulkan_CreateTextureDescriptor (vulkan_ctx_t *ctx, qfv_tex_t *tex,
 void
 Vulkan_FreeTexture (vulkan_ctx_t *ctx, VkDescriptorSet texture)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	texturectx_t *tctx = ctx->texture_context;
+	auto tctx = ctx->texture_context;
 
-	dfunc->vkFreeDescriptorSets (device->dev, tctx->pool, 1, &texture);
+	QFV_DSManager_FreeSet (tctx->dsmanager, texture);
 }

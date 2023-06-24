@@ -368,11 +368,6 @@ typedef struct bspctx_s {
 	VkSampler    sampler;
 
 	VkDeviceMemory texture_memory;
-	VkPipeline   depth;
-	VkPipeline   gbuf;
-	VkPipeline   skysheet;
-	VkPipeline   skybox;
-	VkPipeline   turb;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
@@ -392,6 +387,7 @@ void Vulkan_RegisterTextures (model_t **models, int num_models,
 void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 							   struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
 ///@}
 

@@ -1439,14 +1439,21 @@ static exprsym_t bsp_task_syms[] = {
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	qfvPushDebug (ctx, "bsp init");
 	QFV_Render_AddTasks (ctx, bsp_task_syms);
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
+}
+
+void
+Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "bsp init");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto bctx = ctx->bsp_context;
 
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
 										 tex_frgba, ctx->staging);
@@ -1539,12 +1546,6 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 		__auto_type bframe = &bctx->frames.a[i];
 		free (bframe->cmdSet.a);
 	}
-
-	dfunc->vkDestroyPipeline (device->dev, bctx->depth, 0);
-	dfunc->vkDestroyPipeline (device->dev, bctx->gbuf, 0);
-	dfunc->vkDestroyPipeline (device->dev, bctx->skybox, 0);
-	dfunc->vkDestroyPipeline (device->dev, bctx->skysheet, 0);
-	dfunc->vkDestroyPipeline (device->dev, bctx->turb, 0);
 
 	DARRAY_CLEAR (&bctx->registered_textures);
 	for (int i = 0; i < bctx->main_pass.num_queues; i++) {

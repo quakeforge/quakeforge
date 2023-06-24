@@ -51,6 +51,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
@@ -238,13 +239,26 @@ static exprsym_t output_task_syms[] = {
 void
 Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
-	qfvPushDebug (ctx, "output init");
 	QFV_Render_AddTasks (ctx, output_task_syms);
+
+	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
+	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
+
+	qfvPushDebug (ctx, "output init");
+	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
+	ctx->script_context->pipelineDef = pld;
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Output_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "output init");
+
+	auto octx = ctx->output_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -252,32 +266,14 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&octx->frames, frames);
 	octx->frames.grow = 0;
 
-	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
-	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
-
-	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
-
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	layouts->a[0] = Vulkan_CreateDescriptorSetLayout (ctx, "output_set");
-	for (size_t i = 0; i < frames; i++) {
-		layouts->a[i] = layouts->a[0];
-	}
-	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "output_pool");
-	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
-	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
+	auto dsmanager = QFV_Render_DSManager (ctx, "output_set");
 
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type oframe = &octx->frames.a[i];
-
+		auto oframe = &octx->frames.a[i];
 		oframe->input = 0;
-		oframe->set = sets->a[i];
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
+		oframe->set = QFV_DSManager_AllocSet (dsmanager);
 	}
 
-	ctx->script_context->pipelineDef = pld;
-
-	free (sets);
 	qfvPopDebug (ctx);
 }
 

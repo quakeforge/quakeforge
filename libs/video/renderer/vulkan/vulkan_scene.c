@@ -43,6 +43,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
@@ -133,16 +134,22 @@ static VkWriteDescriptorSet base_buffer_write = {
 void
 Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	qfvPushDebug (ctx, "scene init");
-
 	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
 							   + sizeof (qfv_resource_t)
 							   + sizeof (qfv_resobj_t));
 	ctx->scene_context = sctx;
 	sctx->max_entities = qfv_max_entities;
+}
+
+void
+Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "scene init");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto sctx = ctx->scene_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -169,13 +176,7 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 
 	QFV_CreateResource (device, sctx->entities);
 
-	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "entity_pool");
-	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "entity_set");
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = sctx->setLayout;
-	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, sctx->pool, layouts);
+	auto dsmanager = QFV_Render_DSManager (ctx, "entity_set");
 
 	entdata_t  *entdata;
 	dfunc->vkMapMemory (device->dev, sctx->entities->memory, 0, VK_WHOLE_SIZE,
@@ -186,7 +187,7 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type sframe = &sctx->frames.a[i];
 
-		sframe->descriptors = sets->a[i];
+		sframe->descriptors = QFV_DSManager_AllocSet (dsmanager);;
 		VkDescriptorBufferInfo bufferInfo = {
 			buffer, i * entdata_size, entdata_size
 		};
@@ -202,7 +203,6 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 		};
 		sframe->pooled_entities = set_new ();
 	}
-	free (sets);
 	qfvPopDebug (ctx);
 }
 

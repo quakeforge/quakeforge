@@ -46,6 +46,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
@@ -423,36 +424,35 @@ static exprsym_t particles_task_syms[] = {
 void
 Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	qfvPushDebug (ctx, "particles init");
 	QFV_Render_AddTasks (ctx, particles_task_syms);
 
 	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
 	ctx->particle_context = pctx;
 	pctx->psystem = &r_psystem;
+}
+
+void
+Vulkan_Particles_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "particles init");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto pctx = ctx->particle_context;
 
 	size_t      frames = ctx->render_context->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
 	DARRAY_RESIZE (&pctx->frames, frames);
 	pctx->frames.grow = 0;
 
-	pctx->pool = Vulkan_CreateDescriptorPool (ctx, "particle_pool");
-	pctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "particle_set");
-
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (3 * frames, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = pctx->setLayout;
-	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, pctx->pool, layouts);
+	auto dsmanager = QFV_Render_DSManager (ctx, "particle_set");
 
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
 
-		pframe->curDescriptors = sets->a[i * 3 + 0];
-		pframe->inDescriptors  = sets->a[i * 3 + 1];
-		pframe->newDescriptors = sets->a[i * 3 + 2];
+		pframe->curDescriptors = QFV_DSManager_AllocSet (dsmanager);
+		pframe->inDescriptors  = QFV_DSManager_AllocSet (dsmanager);
+		pframe->newDescriptors = QFV_DSManager_AllocSet (dsmanager);
 
 		VkEventCreateInfo event = { VK_STRUCTURE_TYPE_EVENT_CREATE_INFO };
 		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->physicsEvent);
@@ -464,7 +464,6 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 							 pframe->updateEvent,
 							 va (ctx->va_ctx, "event:particle:update:%zd", i));
 	}
-	free (sets);
 	create_buffers (ctx);
 	qfvPopDebug (ctx);
 }

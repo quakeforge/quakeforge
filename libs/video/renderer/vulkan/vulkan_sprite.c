@@ -61,6 +61,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 
@@ -116,14 +117,10 @@ Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
 
-	//FIXME kinda dumb
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = sctx->setLayout;
+	if (!sctx->dsmanager) {
+		sctx->dsmanager = QFV_Render_DSManager (ctx, "sprite_set");
 	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, sctx->pool, layouts);
-	sprite->descriptors = sets->a[0];
-	free (sets);
+	sprite->descriptors = QFV_DSManager_AllocSet (sctx->dsmanager);
 
 	VkDescriptorBufferInfo bufferInfo[1];
 	bufferInfo[0] = base_buffer_info;
@@ -145,14 +142,10 @@ Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 }
 
 void
-Vulkan_Sprint_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
+Vulkan_Sprite_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
-
-	dfunc->vkFreeDescriptorSets (device->dev, sctx->pool, 1,
-								 &sprite->descriptors);
+	QFV_DSManager_FreeSet (sctx->dsmanager, sprite->descriptors);
 }
 
 static void
@@ -228,9 +221,6 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	ctx->sprite_context = sctx;
 
 	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
-
-	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "sprite_pool");
-	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "sprite_set");
 
 	qfvPopDebug (ctx);
 }

@@ -52,6 +52,7 @@ typedef struct outputctx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_Output_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Output_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_SetInput (struct vulkan_ctx_s *ctx, VkImageView input);
 

@@ -95,7 +95,6 @@ typedef struct light_renderer_set_s
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
 	VkPipeline   pipeline;
-	VkPipelineLayout layout;
 	VkSampler    sampler;
 	VkDeviceMemory light_memory;
 	struct qfv_resource_s *shadow_resources;
@@ -114,6 +113,7 @@ typedef struct lightingctx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Lighting_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 

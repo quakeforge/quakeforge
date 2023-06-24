@@ -36,15 +36,13 @@
 #include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
 
-typedef struct qfv_matrix_buffer_s {
+typedef __attribute__((aligned(64))) struct qfv_matrix_buffer_s {
 	// projection and view matrices (model is push constant)
 	mat4f_t     Projection3d;
 	mat4f_t     View[6];
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
 	vec2f_t     ScreenSize;
-	vec2f_t     pad;		//FIXME shouldn't need this (for gpu align)
-	vec4f_t     pad2[3];
 } qfv_matrix_buffer_t;
 
 typedef struct matrixframe_s {
@@ -56,22 +54,20 @@ typedef struct matrixframeset_s
     DARRAY_TYPE (matrixframe_t) matrixframeset_t;
 
 typedef struct matrixctx_s {
-	matrixframeset_t frames;
-	VkDeviceMemory memory;
 	qfv_matrix_buffer_t matrices;
-	int             dirty;
-	struct qfv_stagebuf_s *stage;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
-
 	vec4f_t      sky_rotation[2];
 	vec4f_t      sky_velocity;
 	vec4f_t      sky_fix;
 	double       sky_time;
+	int             dirty;
+
+	matrixframeset_t frames;
+
+	struct qfv_resource_s *resource;
+	struct qfv_stagebuf_s *stage;
 } matrixctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
 void Vulkan_SetViewMatrices (struct vulkan_ctx_s *ctx, mat4f_t views[],
@@ -80,6 +76,7 @@ void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 
 void Vulkan_Matrix_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Matrix_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Matrix_Shutdown (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Matrix_Descriptors (struct vulkan_ctx_s *ctx, int frame)
 	__attribute__((pure));

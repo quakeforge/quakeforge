@@ -94,7 +94,6 @@ vulkan_R_Init (void)
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
-	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
@@ -115,6 +114,18 @@ vulkan_R_Init (void)
 
 	QFV_LoadRenderInfo (vulkan_ctx);
 	QFV_BuildRender (vulkan_ctx);
+
+	Vulkan_Texture_Setup (vulkan_ctx);
+	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
+	Vulkan_Bsp_Setup (vulkan_ctx);
+	Vulkan_Matrix_Setup (vulkan_ctx);
+	Vulkan_Scene_Setup (vulkan_ctx);
+	Vulkan_Output_Setup (vulkan_ctx);
+	Vulkan_Compose_Setup (vulkan_ctx);
+	Vulkan_Draw_Setup (vulkan_ctx);
+	Vulkan_Particles_Setup (vulkan_ctx);
+	Vulkan_Translucent_Setup (vulkan_ctx);
+	Vulkan_Lighting_Setup (vulkan_ctx);
 
 	Skin_Init ();
 

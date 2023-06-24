@@ -50,6 +50,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
@@ -128,16 +129,18 @@ static exprsym_t translucent_task_syms[] = {
 void
 Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 {
-	if (ctx->translucent_context) {//FIXME
-		return;
-	}
-	qfv_device_t *device = ctx->device;
-
-	qfvPushDebug (ctx, "translucent init");
 	QFV_Render_AddTasks (ctx, translucent_task_syms);
 
 	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
 	ctx->translucent_context = tctx;
+}
+
+void
+Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "translucent init");
+
+	auto tctx = ctx->translucent_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -147,19 +150,12 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 
 	tctx->maxFragments = vulkan_oit_fragments * 1024 * 1024;
 
-	__auto_type setLayout = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < frames; i++) {
-		setLayout->a[i] = Vulkan_CreateDescriptorSetLayout (ctx, "oit_set");
-	}
-	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "oit_pool");
-
-	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, setLayout);
+	auto dsmanager = QFV_Render_DSManager (ctx, "oit_set");
 	for (size_t i = 0; i < frames; i++) {
 		tctx->frames.a[i] = (translucentframe_t) {
-			.descriptors = sets->a[i],
+			.descriptors = QFV_DSManager_AllocSet (dsmanager),
 		};
 	}
-	free (sets);
 	Vulkan_Translucent_CreateBuffers (ctx, ctx->swapchain->extent);//FIXME
 	qfvPopDebug (ctx);
 }

@@ -2021,96 +2021,6 @@ void Vulkan_Script_SetOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
 	sctx->output = *output;
 }
 
-VkPipeline
-Vulkan_CreateComputePipeline (vulkan_ctx_t *ctx, const char *name)
-{
-	scriptctx_t *sctx = ctx->script_context;
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
-	}
-	VkPipeline pipeline = QFV_ParseComputePipeline (ctx, item,
-													sctx->pipelineDef);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
-						 va (ctx->va_ctx, "pipeline:%s", name));
-	return pipeline;
-}
-
-VkPipeline
-Vulkan_CreateGraphicsPipeline (vulkan_ctx_t *ctx, const char *name)
-{
-	scriptctx_t *sctx = ctx->script_context;
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
-	}
-	VkPipeline pipeline = QFV_ParseGraphicsPipeline (ctx, item,
-													 sctx->pipelineDef);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
-						 va (ctx->va_ctx, "pipeline:%s", name));
-	return pipeline;
-}
-
-VkDescriptorPool
-Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
-{
-	scriptctx_t *sctx = ctx->script_context;
-	hashtab_t  *tab = sctx->descriptorPools;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".descriptorPools.%s", name);
-	__auto_type pool = (VkDescriptorPool) QFV_GetHandle (tab, path);
-	if (pool) {
-		return pool;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "descriptorPools");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading descriptor pool %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor pool def %s\n",
-						name);
-	}
-	pool = QFV_ParseDescriptorPool (ctx, item, sctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) pool);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool,
-						 va (ctx->va_ctx, "descriptor_pool:%s", name));
-	return pool;
-}
-
-VkPipelineLayout
-Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
-{
-	scriptctx_t *sctx = ctx->script_context;
-	hashtab_t  *tab = sctx->pipelineLayouts;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
-	__auto_type layout = (VkPipelineLayout) QFV_GetHandle (tab, path);
-	if (layout) {
-		return layout;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "pipelineLayouts");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading pipeline layout %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline layout def %s\n",
-						name);
-	}
-	layout = QFV_ParsePipelineLayout (ctx, item, sctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) layout);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout,
-						 va (ctx->va_ctx, "pipeline_layout:%s", name));
-	return layout;
-}
-
 VkSampler
 Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 {
@@ -2135,33 +2045,6 @@ Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_SAMPLER, sampler,
 						 va (ctx->va_ctx, "sampler:%s", name));
 	return sampler;
-}
-
-VkDescriptorSetLayout
-Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
-{
-	scriptctx_t *sctx = ctx->script_context;
-	hashtab_t  *tab = sctx->setLayouts;
-	const char *path;
-	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
-	__auto_type set = (VkDescriptorSetLayout) QFV_GetHandle (tab, path);
-	if (set) {
-		return set;
-	}
-
-	plitem_t   *item = qfv_load_pipeline (ctx, "setLayouts");
-	if (!(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading descriptor set %s\n", name);
-		return 0;
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor set def %s\n",
-						name);
-	}
-	set = QFV_ParseDescriptorSetLayout (ctx, item, sctx->pipelineDef);
-	QFV_AddHandle (tab, path, (uint64_t) set);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
-	return set;
 }
 
 exprtab_t *

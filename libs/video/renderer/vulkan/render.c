@@ -560,3 +560,16 @@ QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 	}
 	return *(qfv_step_t **)stepref->value;
 }
+
+qfv_dsmanager_t *
+QFV_Render_DSManager (struct vulkan_ctx_s *ctx, const char *setName)
+{
+	auto job = ctx->render_context->job;
+	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
+		auto ds = job->dsmanager[i];
+		if (!strcmp (ds->name, setName)) {
+			return ds;
+		}
+	}
+	return 0;
+}

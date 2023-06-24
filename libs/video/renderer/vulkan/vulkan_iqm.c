@@ -45,6 +45,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/render.h"
@@ -123,26 +124,23 @@ Vulkan_IQMAddBones (vulkan_ctx_t *ctx, iqm_t *iqm)
 {
 	qfvPushDebug (ctx, "Vulkan_IQMAddBones");
 
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	__auto_type mesh = (qfv_iqm_t *) iqm->extra_data;
-	int         num_sets = ictx->frames.size;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto ictx = ctx->iqm_context;
+	auto mesh = (qfv_iqm_t *) iqm->extra_data;
+	int  num_sets = ictx->frames.size;
 
-	//FIXME kinda dumb
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (num_sets, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = ictx->bones_setLayout;
+	if (!ictx->dsmanager) {
+		ictx->dsmanager = QFV_Render_DSManager (ctx, "bone_set");
 	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, ictx->bones_pool,
-												  layouts);
-	for (size_t i = 0; i < sets->size; i++) {
-		mesh->bones_descriptors[i] = sets->a[i];
+
+	for (int i = 0; i < num_sets; i++) {
+		auto set = QFV_DSManager_AllocSet (ictx->dsmanager);
+		mesh->bones_descriptors[i] = set;
 	}
-	free (sets);
 
 	VkDescriptorBufferInfo bufferInfo[num_sets];
-	size_t      bones_size = iqm->num_joints * 3 * sizeof (vec4f_t);
+	size_t      bones_size = sizeof (vec4f_t[iqm->num_joints * 3]);
 	for (int i = 0; i < num_sets; i++) {
 		bufferInfo[i].buffer = mesh->bones_buffer;
 		bufferInfo[i].offset = i * bones_size;
@@ -162,14 +160,13 @@ Vulkan_IQMAddBones (vulkan_ctx_t *ctx, iqm_t *iqm)
 void
 Vulkan_IQMRemoveBones (vulkan_ctx_t *ctx, iqm_t *iqm)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t   *ictx = ctx->iqm_context;
-	__auto_type mesh = (qfv_iqm_t *) iqm->extra_data;
-	int         num_sets = ictx->frames.size;
+	auto ictx = ctx->iqm_context;
+	auto mesh = (qfv_iqm_t *) iqm->extra_data;
+	int  num_sets = ictx->frames.size;
 
-	dfunc->vkFreeDescriptorSets (device->dev, ictx->bones_pool, num_sets,
-								 mesh->bones_descriptors);
+	for (int i = 0; i < num_sets; i++) {
+		QFV_DSManager_FreeSet (ictx->dsmanager, mesh->bones_descriptors[i]);
+	}
 }
 
 void
@@ -317,9 +314,6 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	ictx->frames.grow = 0;
 
 	ictx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
-
-	ictx->bones_pool = Vulkan_CreateDescriptorPool (ctx, "bone_pool");
-	ictx->bones_setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "bone_set");
 
 	qfvPopDebug (ctx);
 }

@@ -29,17 +29,15 @@ typedef struct translucentframeset_s
 
 typedef struct translucentctx_s {
 	translucentframeset_t frames;
-
 	struct qfv_resource_s *resources;
 
 	int         maxFragments;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
 } translucentctx_t;
 
 struct vulkan_ctx_s;
 
 void Vulkan_Translucent_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Translucent_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Translucent_Shutdown (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Translucent_Descriptors (struct vulkan_ctx_s *ctx,
 												int frame)__attribute__((pure));

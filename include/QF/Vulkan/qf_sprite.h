@@ -59,8 +59,7 @@ typedef enum {
 } QFV_SpriteSubpass;
 
 typedef struct spritectx_s {
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
+	struct qfv_dsmanager_s *dsmanager;
 	unsigned    maxImages;
 	VkSampler   sampler;
 } spritectx_t;

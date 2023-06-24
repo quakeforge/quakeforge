@@ -80,17 +80,7 @@ struct qfv_output_s;
 void Vulkan_ConfigOutput (struct vulkan_ctx_s *ctx,
 						  struct qfv_output_s *output);
 
-VkPipeline Vulkan_CreateComputePipeline (struct vulkan_ctx_s *ctx,
-										 const char *name);
-VkPipeline Vulkan_CreateGraphicsPipeline (struct vulkan_ctx_s *ctx,
-										  const char *name);
-VkDescriptorPool Vulkan_CreateDescriptorPool (struct vulkan_ctx_s *ctx,
-											  const char *name);
-VkPipelineLayout Vulkan_CreatePipelineLayout (struct vulkan_ctx_s *ctx,
-											  const char *name);
 VkSampler Vulkan_CreateSampler (struct vulkan_ctx_s *ctx, const char *name);
-VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
-													   const char *name);
 
 struct entity_s;
 void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,

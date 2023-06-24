@@ -48,9 +48,11 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
 #include "r_internal.h"
@@ -231,57 +233,53 @@ void
 Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 {
 	QFV_Render_AddTasks (ctx, matrix_task_syms);
+
+	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
+	ctx->matrix_context = mctx;
+}
+
+void
+Vulkan_Matrix_Setup (vulkan_ctx_t *ctx)
+{
 	qfvPushDebug (ctx, "matrix init");
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
-	ctx->matrix_context = mctx;
-
+	auto mctx = ctx->matrix_context;
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&mctx->frames, frames);
 	DARRAY_RESIZE (&mctx->frames, frames);
 	mctx->frames.grow = 0;
 
-	//__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
-	//QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
-
-	mctx->pool = Vulkan_CreateDescriptorPool (ctx, "matrix_pool");
-	mctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "matrix_set");
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = mctx->setLayout;
-	}
-
+	mctx->resource = malloc (sizeof (qfv_resource_t)
+							 + sizeof (qfv_resobj_t[frames]));	// buffers
+	auto buffers = (qfv_resobj_t *) &mctx->resource[1];
+	*mctx->resource = (qfv_resource_t) {
+		.name = "matrix",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = frames,
+		.objects = buffers,
+	};
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type mframe = &mctx->frames.a[i];
-		//mframe->cmd = cmdBuffers->a[i];
-		mframe->buffer = QFV_CreateBuffer (device, sizeof (qfv_matrix_buffer_t),
-										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-										   | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-							 mframe->buffer, va (ctx->va_ctx,
-												 "buffer:matrices:%zd", i));
+		buffers[i] = (qfv_resobj_t) {
+			.name = va (ctx->va_ctx, "%zd", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (qfv_matrix_buffer_t),
+				.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+						 | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 	}
+	QFV_CreateResource (device, mctx->resource);
 
-	VkMemoryRequirements req;
-	//offset = (offset + req.alignment - 1) & ~(req.alignment - 1);
-	dfunc->vkGetBufferMemoryRequirements (device->dev,
-										  mctx->frames.a[0].buffer, &req);
-	mctx->memory = QFV_AllocBufferMemory (device, mctx->frames.a[0].buffer,
-										  VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										  frames * req.size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 mctx->memory, "memory:matrices");
-
-	__auto_type sets = QFV_AllocateDescriptorSet (device, mctx->pool, layouts);
+	auto dsmanager = QFV_Render_DSManager (ctx, "matrix_set");
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type mframe = &mctx->frames.a[i];
-		QFV_BindBufferMemory (device, mframe->buffer, mctx->memory,
-							  i * req.size);
-
-		mframe->descriptors = sets->a[i];
+		auto mframe = &mctx->frames.a[i];
+		mframe->buffer = buffers[i].buffer.buffer;
+		mframe->descriptors = QFV_DSManager_AllocSet (dsmanager);
 		VkDescriptorBufferInfo bufferInfo = {
 			mframe->buffer, 0, VK_WHOLE_SIZE
 		};
@@ -293,7 +291,6 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 	}
-	free (sets);
 
 	mctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
 	mctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
@@ -322,24 +319,18 @@ void
 Vulkan_Matrix_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, "matrix shutdown");
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type mctx = ctx->matrix_context;
+	auto device = ctx->device;
+	auto mctx = ctx->matrix_context;
 
 	QFV_DestroyStagingBuffer (mctx->stage);
+	QFV_DestroyResource (device, mctx->resource);
 
-	for (size_t i = 0; i < mctx->frames.size; i++) {
-		__auto_type mframe = &mctx->frames.a[i];
-		dfunc->vkDestroyBuffer (device->dev, mframe->buffer, 0);
-	}
-	dfunc->vkFreeMemory (device->dev, mctx->memory, 0);
 	qfvPopDebug (ctx);
 }
 
 VkDescriptorSet
 Vulkan_Matrix_Descriptors (vulkan_ctx_t *ctx, int frame)
 {
-	__auto_type mctx = ctx->matrix_context;
+	auto mctx = ctx->matrix_context;
 	return mctx->frames.a[frame].descriptors;
 }

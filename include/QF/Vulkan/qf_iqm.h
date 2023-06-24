@@ -90,8 +90,7 @@ typedef struct iqmindset_s
 typedef struct iqmctx_s {
 	iqm_frameset_t frames;
 	VkSampler    sampler;
-	VkDescriptorPool bones_pool;
-	VkDescriptorSetLayout bones_setLayout;
+	struct qfv_dsmanager_s *dsmanager;
 } iqmctx_t;
 
 struct vulkan_ctx_s;

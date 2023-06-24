@@ -30,12 +30,6 @@ typedef struct qfv_particle_system_s {
 	uint32_t    firstInstance;	// always 0
 } qfv_particle_system_t;
 
-typedef enum {
-	QFV_particleTranslucent,
-
-	QFV_particleNumPasses
-} QFV_ParticleSubpass;
-
 typedef struct particleframe_s {
 	VkEvent     physicsEvent;
 	VkEvent     updateEvent;
@@ -57,17 +51,14 @@ typedef struct particlectx_s {
 	struct qfv_resource_s *resources;
 	struct qfv_stagebuf_s *stage;
 
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
-
 	psystem_t  *psystem;
 } particlectx_t;
 
-struct cvar_s;
 struct vulkan_ctx_s;
 
 struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Particles_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h
