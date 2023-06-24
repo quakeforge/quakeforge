@@ -53,7 +53,6 @@
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_translucent.h"
 
 #include "r_internal.h"
@@ -275,7 +274,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 								 0, 0);
 
 	dfunc->vkCmdBindPipeline (packet->cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-							  pctx->update);
+							  taskctx->pipeline->pipeline);
 	VkDescriptorSet set[3] = {
 		pframe->curDescriptors,
 		pframe->inDescriptors,
@@ -436,9 +435,6 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&pctx->frames, frames);
 	pctx->frames.grow = 0;
 
-	pctx->physics = Vulkan_CreateComputePipeline (ctx, "partphysics");
-	pctx->update = Vulkan_CreateComputePipeline (ctx, "partupdate");
-	pctx->draw = Vulkan_CreateGraphicsPipeline (ctx, "partdraw");
 	pctx->physics_layout = Vulkan_CreatePipelineLayout (ctx,
 														"partphysics_layout");
 	pctx->update_layout = Vulkan_CreatePipelineLayout (ctx,
@@ -505,17 +501,4 @@ psystem_t *__attribute__((pure))//FIXME?
 Vulkan_ParticleSystem (vulkan_ctx_t *ctx)
 {
 	return ctx->particle_context->psystem;	//FIXME support more
-}
-
-static void
-particles_update (qfv_orenderframe_t *rFrame)
-{
-}
-
-void
-Vulkan_Particles_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	__auto_type rp = QFV_RenderPass_New (ctx, "particles", particles_update);
-	rp->order = QFV_rp_particles;
-	DARRAY_APPEND (&ctx->renderPasses, rp);
 }

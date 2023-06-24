@@ -41,7 +41,6 @@
 
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_matrices.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
@@ -316,8 +315,6 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;
 
-	ictx->depth = Vulkan_CreateGraphicsPipeline (ctx, "iqm_depth");
-	ictx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "iqm_gbuf");
 	ictx->layout = Vulkan_CreatePipelineLayout (ctx, "iqm_layout");
 	ictx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 

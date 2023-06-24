@@ -30,7 +30,6 @@ search = (
 	VkRenderPassCreateInfo,
 	VkRenderPassMultiviewCreateInfo,
 
-	qfv_osubpass_t,
 	qfv_output_t,
 
 	qfv_descriptorsetlayoutinfo_t,

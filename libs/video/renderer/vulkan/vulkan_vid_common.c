@@ -55,7 +55,6 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 
@@ -182,35 +181,6 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 		free (ctx->swapchain);
 	}
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
-}
-
-static int
-renderpass_cmp (const void *_a, const void *_b)
-{
-	__auto_type a = (const qfv_orenderpass_t **) _a;
-	__auto_type b = (const qfv_orenderpass_t **) _b;
-	return (*a)->order - (*b)->order;
-}
-
-void
-Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	Vulkan_Output_CreateRenderPasses (ctx);
-	Vulkan_Main_CreateRenderPasses (ctx);
-	Vulkan_Particles_CreateRenderPasses (ctx);
-	Vulkan_Lighting_CreateRenderPasses (ctx);
-	Vulkan_Translucent_CreateRenderPasses (ctx);
-
-	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,
-			  sizeof (qfv_orenderpass_t *), renderpass_cmp);
-}
-
-void
-Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
-{
-	for (size_t i = 0; i < ctx->renderPasses.size; i++) {
-		QFV_RenderPass_Delete (ctx->renderPasses.a[i]);
-	}
 }
 
 void

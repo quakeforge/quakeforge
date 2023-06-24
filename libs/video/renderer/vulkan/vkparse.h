@@ -1,6 +1,8 @@
 #ifndef __vkparse_h
 #define __vkparse_h
 
+#include "QF/Vulkan/render.h"
+
 typedef struct parsectx_s {
 	struct exprctx_s *ectx;
 	struct vulkan_ctx_s *vctx;
@@ -66,9 +68,6 @@ struct qfv_imageviewset_s *QFV_ParseImageViewSet (vulkan_ctx_t *ctx,
 												  plitem_t *properties);
 VkFramebuffer QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist,
 									plitem_t *properties);
-struct clearvalueset_s *QFV_ParseClearValues (vulkan_ctx_t *ctx,
-											  plitem_t *plist,
-											  plitem_t *properties);
 
 struct qfv_subpassset_s *QFV_ParseSubpasses (vulkan_ctx_t *ctx,
 											 plitem_t *plist,

@@ -54,7 +54,6 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_matrices.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
@@ -234,8 +233,6 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&sctx->frames, frames);
 	sctx->frames.grow = 0;
 
-	sctx->depth = Vulkan_CreateGraphicsPipeline (ctx, "sprite_depth");
-	sctx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "sprite_gbuf");
 	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
 	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
 

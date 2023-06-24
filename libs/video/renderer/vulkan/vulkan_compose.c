@@ -45,7 +45,6 @@
 #include "QF/sys.h"
 
 #include "QF/Vulkan/qf_compose.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
@@ -120,7 +119,6 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&cctx->frames, frames);
 	cctx->frames.grow = 0;
 
-	cctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "compose");
 	cctx->layout = Vulkan_CreatePipelineLayout (ctx, "compose_layout");
 
 	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);

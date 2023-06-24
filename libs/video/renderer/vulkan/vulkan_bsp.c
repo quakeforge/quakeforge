@@ -57,7 +57,6 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_translucent.h"
@@ -88,18 +87,11 @@ typedef struct bsp_push_constants_s {
 	float       turb_scale;
 } bsp_push_constants_t;
 
-static const char * __attribute__((used)) bsp_pass_names[] = {
+static const char *bsp_pass_names[] = {
 	"depth",
 	"g-buffer",
 	"sky",
 	"turb",
-};
-
-static QFV_Subpass subpass_map[] = {
-	[QFV_bspDepth]   = QFV_passDepth,
-	[QFV_bspGBuffer] = QFV_passGBuffer,
-	[QFV_bspSky]     = QFV_passTranslucentFrag,
-	[QFV_bspTurb]    = QFV_passTranslucentFrag,
 };
 
 static void
@@ -586,7 +578,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 
 }
-
+#if 0
 static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
@@ -615,7 +607,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 				   renderer->render_id);
 	return 1;
 }
-
+#endif
 static inline void
 visit_leaf (mleaf_t *leaf)
 {
@@ -737,7 +729,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		break;
 	}
 }
-
+#if 0
 static void
 bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 			  qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
@@ -916,7 +908,7 @@ sky_end (vulkan_ctx_t *ctx)
 
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspSky], ctx);
 }
-
+#endif
 static void
 clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 {
@@ -932,7 +924,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 	}
 	pass->index_count = 0;
 }
-
+#if 0
 static void
 queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
@@ -1092,7 +1084,7 @@ Vulkan_DrawWorld (qfv_orenderframe_t *rFrame)
 	draw_queue (pass, 0, layout, device, bframe->cmdSet.a[QFV_bspGBuffer]);
 	bsp_end (ctx);
 }
-
+#endif
 void
 Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 {
@@ -1125,7 +1117,7 @@ Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
 }
-
+#if 0
 void
 Vulkan_DrawWaterSurfaces (qfv_orenderframe_t *rFrame)
 {
@@ -1189,7 +1181,7 @@ Vulkan_DrawSky (qfv_orenderframe_t *rFrame)
 
 	sky_end (ctx);
 }
-
+#endif
 static void
 create_default_skys (vulkan_ctx_t *ctx)
 {
@@ -1480,11 +1472,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	bctx->depth = Vulkan_CreateGraphicsPipeline (ctx, "bsp_depth");
-	bctx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "bsp_gbuf");
-	bctx->skybox = Vulkan_CreateGraphicsPipeline (ctx, "bsp_skybox");
-	bctx->skysheet = Vulkan_CreateGraphicsPipeline (ctx, "bsp_skysheet");
-	bctx->turb = Vulkan_CreateGraphicsPipeline (ctx, "bsp_turb");
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 

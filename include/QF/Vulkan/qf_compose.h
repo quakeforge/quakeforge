@@ -54,7 +54,6 @@ typedef struct composectx_s {
 } composectx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
 
 void Vulkan_Compose_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Compose_Shutdown (struct vulkan_ctx_s *ctx);

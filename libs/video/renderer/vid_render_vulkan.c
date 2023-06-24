@@ -53,7 +53,6 @@
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -100,7 +99,6 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 
-	Vulkan_CreateRenderPasses (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
@@ -579,7 +577,6 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
-	Vulkan_DestroyRenderPasses (vulkan_ctx);
 	Vulkan_Output_Shutdown (vulkan_ctx);
 
 	Vulkan_Palette_Shutdown (vulkan_ctx);

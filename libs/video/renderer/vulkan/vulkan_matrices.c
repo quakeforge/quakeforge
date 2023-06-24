@@ -43,7 +43,6 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/Vulkan/qf_matrices.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
@@ -51,6 +50,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 
 #include "r_internal.h"

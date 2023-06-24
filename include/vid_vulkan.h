@@ -56,7 +56,6 @@ typedef struct vulkan_ctx_s {
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
 	qfv_renderpassset_t renderPasses;
-	struct qfv_orenderpass_s *output_renderpass;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);

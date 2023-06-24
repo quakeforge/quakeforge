@@ -56,7 +56,6 @@
 
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -146,7 +145,7 @@ update_lights (vulkan_ctx_t *ctx)
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
-
+#if 0
 static void
 lighting_draw_maps (qfv_orenderframe_t *rFrame)
 {
@@ -207,8 +206,6 @@ lighting_draw_maps (qfv_orenderframe_t *rFrame)
 void
 Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
-	ctx->lighting_context = lctx;
 
 	// extents are dynamic and filled in for each light
 	// frame buffers are highly dynamic
@@ -220,7 +217,7 @@ Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 
 	lctx->qfv_renderpass = rp;
 }
-
+#endif
 static VkDescriptorBufferInfo base_buffer_info = {
 	0, 0, VK_WHOLE_SIZE
 };
@@ -302,6 +299,9 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
+	ctx->lighting_context = lctx;
+
 	qfvPushDebug (ctx, "lighting init");
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 
@@ -309,7 +309,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
-	lightingctx_t *lctx = ctx->lighting_context;
+#if 0
 	plitem_t   *rp_def = lctx->qfv_renderpass->renderpassDef;
 	plitem_t   *rp_cfg = PL_ObjectForKey (rp_def, "renderpass_6");
 	lctx->renderpass_6 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
@@ -317,7 +317,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	lctx->renderpass_4 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
 	rp_cfg = PL_ObjectForKey (rp_def, "renderpass_1");
 	lctx->renderpass_1 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
-
+#endif
 	lctx->cmdpool = QFV_CreateCommandPool (device, device->queue.queueFamily,
 										   1, 1);
 
@@ -331,7 +331,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
-	lctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lighting");
 	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
 	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
 
@@ -611,6 +610,7 @@ create_view (const light_renderer_t *lr, int id, vulkan_ctx_t *ctx)
 static VkFramebuffer
 create_framebuffer (const light_renderer_t *lr, vulkan_ctx_t *ctx)
 {
+	return 0;//FIXME
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 

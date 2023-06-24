@@ -1453,6 +1453,7 @@ steps = {
 		};
 	};
 	setup_main = {
+		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
 				{ func = update_framebuffer;

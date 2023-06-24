@@ -45,7 +45,6 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
@@ -53,8 +52,10 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/Vulkan/swapchain.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -154,24 +155,12 @@ Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, setLayout);
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type tframe = &tctx->frames.a[i];
-
-		DARRAY_INIT (&tframe->cmdSet, QFV_translucentNumPasses);
-		DARRAY_RESIZE (&tframe->cmdSet, QFV_translucentNumPasses);
-		tframe->cmdSet.grow = 0;
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &tframe->cmdSet);
-
-		tframe->descriptors = sets->a[i];
-
-		for (int j = 0; j < QFV_translucentNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 tframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:translucent:%zd:%s", i,
-									 translucent_pass_names[j]));
-		}
+		tctx->frames.a[i] = (translucentframe_t) {
+			.descriptors = sets->a[i],
+		};
 	}
 	free (sets);
+	Vulkan_Translucent_CreateBuffers (ctx, ctx->swapchain->extent);//FIXME
 	qfvPopDebug (ctx);
 }
 
@@ -307,67 +296,4 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 	}
-}
-
-static void
-translucent_clear (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	translucentctx_t *tctx = ctx->translucent_context;
-	__auto_type tframe = &tctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = tframe->cmdSet.a[QFV_translucentClear];
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[0], cmd);
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		0, 0, 0,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = tframe->heads;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
-	VkClearColorValue clear_color[] = {
-		{ .int32 = {-1, -1, -1, -1} },
-	};
-	VkImageSubresourceRange ranges[] = {
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS },
-	};
-	dfunc->vkCmdClearColorImage (cmd, tframe->heads,
-								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								 clear_color, 1, ranges);
-	ib = imageBarriers[qfv_LT_TransferDst_to_General];
-	ib.barrier.image = tframe->heads;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
-
-	dfunc->vkEndCommandBuffer (cmd);
-
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
-	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
-	__auto_type bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
-	QFV_PacketCopyBuffer (packet, tframe->state, 0, bb);
-	QFV_PacketSubmit (packet);
-}
-
-void
-Vulkan_Translucent_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	__auto_type rp = QFV_RenderPass_New (ctx, "translucent", translucent_clear);
-	rp->order = QFV_rp_translucent;
-	DARRAY_APPEND (&ctx->renderPasses, rp);
 }

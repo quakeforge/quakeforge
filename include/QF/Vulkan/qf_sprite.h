@@ -77,7 +77,6 @@ typedef struct spritectx_s {
 } spritectx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
 struct entity_s;
 struct mod_sprite_ctx_s;
 

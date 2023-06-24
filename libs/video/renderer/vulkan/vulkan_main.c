@@ -57,7 +57,6 @@
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_translucent.h"
@@ -67,7 +66,7 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
-
+#if 0
 static void
 Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
@@ -103,7 +102,7 @@ Vulkan_RenderView (qfv_orenderframe_t *rFrame)
 	Vulkan_Bsp_Flush (ctx);
 	Vulkan_Scene_Flush (ctx);
 }
-
+#endif
 void
 Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
@@ -124,25 +123,4 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
 	Vulkan_LoadLights (scene, ctx);
-}
-
-static void
-main_draw (qfv_orenderframe_t *rFrame)
-{
-	Vulkan_RenderView (rFrame);
-}
-
-void
-Vulkan_Main_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	__auto_type rp = QFV_RenderPass_New (ctx, "deferred", main_draw);
-	Vulkan_ConfigOutput (ctx, &rp->output);
-	QFV_RenderPass_CreateAttachments (rp);
-	QFV_RenderPass_CreateRenderPass (rp);
-	QFV_RenderPass_CreateFramebuffer (rp);
-	rp->order = QFV_rp_main;
-	DARRAY_APPEND (&ctx->renderPasses, rp);
-
-	Vulkan_Output_SetInput (ctx, rp->output.view);
-	Vulkan_Translucent_CreateBuffers (ctx, rp->output.extent);
 }

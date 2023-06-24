@@ -35,7 +35,6 @@
 #include "QF/modelgen.h"
 #include "QF/scene/light.h"
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
@@ -105,7 +104,6 @@ typedef struct lightingctx_s {
 	qfv_imageset_t light_images;
 	light_renderer_set_t light_renderers;
 
-	qfv_orenderpass_t *qfv_renderpass;
 	VkRenderPass renderpass_6;
 	VkRenderPass renderpass_4;
 	VkRenderPass renderpass_1;
@@ -117,9 +115,7 @@ typedef struct lightingctx_s {
 } lightingctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
 
-void Vulkan_Lighting_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);

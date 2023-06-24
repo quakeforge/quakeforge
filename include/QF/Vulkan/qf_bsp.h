@@ -386,10 +386,6 @@ typedef struct bspctx_s {
 } bspctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
-void Vulkan_DrawWorld (struct qfv_orenderframe_s *rFrame);
-void Vulkan_DrawSky (struct qfv_orenderframe_s *rFrame);
-void Vulkan_DrawWaterSurfaces (struct qfv_orenderframe_s *rFrame);
 void Vulkan_Bsp_Flush (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,

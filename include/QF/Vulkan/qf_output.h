@@ -60,7 +60,6 @@ struct vulkan_ctx_s;
 
 void Vulkan_Output_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Output_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_Output_SetInput (struct vulkan_ctx_s *ctx, VkImageView input);
 
 #endif//__QF_Vulkan_qf_output_h

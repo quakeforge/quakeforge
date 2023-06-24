@@ -98,7 +98,6 @@ typedef struct iqmctx_s {
 } iqmctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
 struct entity_s;
 struct mod_iqm_ctx_s;
 struct iqm_s;

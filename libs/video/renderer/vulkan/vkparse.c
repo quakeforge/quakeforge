@@ -45,8 +45,6 @@
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/shader.h"
 
-#include "QF/Vulkan/qf_renderpass.h"
-
 #include "vid_vulkan.h"
 
 #include "vkparse.h"
@@ -1693,80 +1691,6 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 
 	delete_memsuper (memsuper);
 	return framebuffer;
-}
-
-static int
-parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
-					 plitem_t *messages, void *context)
-{
-	plelement_t element = {
-		QFDictionary,
-		sizeof (VkClearValue),
-		vkparse_alloc,
-		parse_VkClearValue,
-		0,
-	};
-	plfield_t   f = { 0, 0, 0, 0, &element };
-
-	if (!PL_ParseArray (&f, item, data, messages, context)) {
-		return 0;
-	}
-	return 1;
-}
-
-clearvalueset_t *
-QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	clearvalueset_t *cv = 0;
-	memsuper_t *memsuper = new_memsuper ();
-	clearvalueset_t *clearValues = 0;
-
-	if (parse_object (ctx, memsuper, plist, parse_clearvalueset, &clearValues,
-					  properties)) {
-		cv = DARRAY_ALLOCFIXED (clearvalueset_t, clearValues->size, malloc);
-		memcpy (cv->a, clearValues->a, cv->size * sizeof (cv->a[0]));
-	}
-	delete_memsuper (memsuper);
-	return cv;
-}
-
-static int
-parse_subpassset (const plfield_t *field, const plitem_t *item, void *data,
-					 plitem_t *messages, void *context)
-{
-	plelement_t element = {
-		QFDictionary,
-		sizeof (qfv_osubpass_t),
-		vkparse_alloc,
-		parse_qfv_osubpass_t,
-		0,
-	};
-	plfield_t   f = { 0, 0, 0, 0, &element };
-
-	if (!PL_ParseArray (&f, item, data, messages, context)) {
-		return 0;
-	}
-	return 1;
-}
-
-qfv_subpassset_t *
-QFV_ParseSubpasses (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	qfv_subpassset_t *sp = 0;
-	memsuper_t *memsuper = new_memsuper ();
-	qfv_subpassset_t *subpasses = 0;
-
-	if (parse_object (ctx, memsuper, plist, parse_subpassset, &subpasses,
-					  properties)) {
-		sp = DARRAY_ALLOCFIXED (qfv_subpassset_t, subpasses->size, malloc);
-		memcpy (sp->a, subpasses->a, sp->size * sizeof (sp->a[0]));
-		// the name is in memsuper which is about to be freed
-		for (size_t i = 0; i < sp->size; i++) {
-			sp->a[i].name = strdup (sp->a[i].name);
-		}
-	}
-	delete_memsuper (memsuper);
-	return sp;
 }
 
 static int

@@ -89,7 +89,6 @@ typedef struct aliasctx_s {
 } aliasctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_orenderframe_s;
 struct entity_s;
 struct mod_alias_ctx_s;
 

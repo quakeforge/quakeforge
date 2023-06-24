@@ -46,7 +46,6 @@
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_output.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/debug.h"
@@ -61,48 +60,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 #include "vkparse.h"//FIXME
-
-static void
-preoutput_draw (qfv_orenderframe_t *rFrame)
-{
-}
-
-static void
-process_input (qfv_orenderframe_t *rFrame)
-{
-}
-
-static void
-draw_output (qfv_orenderframe_t *rFrame)
-{
-	process_input (rFrame);
-}
-
-void
-Vulkan_Output_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
-	ctx->output_context = octx;
-
-	__auto_type out = QFV_RenderPass_New (ctx, "output", draw_output);
-	out->output = (qfv_output_t) {
-		.extent    = ctx->swapchain->extent,
-		.format    = ctx->swapchain->format,
-		.frames    = ctx->swapchain->numImages,
-		.view_list = ctx->swapchain->imageViews->a,
-	};
-	QFV_RenderPass_CreateRenderPass (out);
-	QFV_RenderPass_CreateFramebuffer (out);
-	ctx->output_renderpass = out;
-
-
-	out->order = QFV_rp_output;
-	DARRAY_APPEND (&ctx->renderPasses, out);
-
-	__auto_type pre = QFV_RenderPass_New (ctx, "preoutput", preoutput_draw);
-	pre->order = QFV_rp_preoutput;
-	DARRAY_APPEND (&ctx->renderPasses, pre);
-}
 
 static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
@@ -131,17 +88,6 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		Vulkan_CreateSwapchain (ctx);
 		sc = ctx->swapchain;
 		Vulkan_CreateCapture (ctx);
-
-		__auto_type out = ctx->output_renderpass;
-		out->output = (qfv_output_t) {
-			.extent    = ctx->swapchain->extent,
-			.format    = ctx->swapchain->format,
-			.frames    = ctx->swapchain->numImages,
-			.view_list = ctx->swapchain->imageViews->a,
-		};
-		out->viewport.width = out->output.extent.width;
-		out->viewport.height = out->output.extent.height;
-		out->scissor.extent = out->output.extent;
 
 		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
 								   0);
@@ -243,6 +189,7 @@ output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, set, 0, 0);
+#if 0
 	if (scr_fisheye) {
 		float       width = r_refdef.vrect.width;
 		float       height = r_refdef.vrect.height;
@@ -261,6 +208,7 @@ output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		};
 		QFV_PushConstants (device, cmd, layout, 1, push_constants);
 	}
+#endif
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -292,10 +240,11 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
+	ctx->output_context = octx;
+
 	qfvPushDebug (ctx, "output init");
 	QFV_Render_AddTasks (ctx, output_task_syms);
-
-	outputctx_t *octx = ctx->output_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -306,9 +255,6 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
 	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
 
-	octx->output = Vulkan_CreateGraphicsPipeline (ctx, "output");
-	octx->waterwarp = Vulkan_CreateGraphicsPipeline (ctx, "waterwarp");
-	octx->fisheye = Vulkan_CreateGraphicsPipeline (ctx, "fisheye");
 	octx->output_layout = Vulkan_CreatePipelineLayout (ctx, "output_layout");
 	octx->warp_layout = Vulkan_CreatePipelineLayout (ctx, "waterwarp_layout");
 	octx->fish_layout = Vulkan_CreatePipelineLayout (ctx, "fisheye_layout");

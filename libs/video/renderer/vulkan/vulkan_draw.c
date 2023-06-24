@@ -52,7 +52,6 @@
 #include "compat.h"
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_matrices.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
@@ -63,6 +62,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
@@ -1088,9 +1088,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	}
 
 	flush_draw_scrap (ctx);
-
-	dctx->quad_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "slice");
-	dctx->line_pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lines");
 
 	dctx->lines_layout = Vulkan_CreatePipelineLayout (ctx, "lines_layout");
 	dctx->quad_layout = Vulkan_CreatePipelineLayout (ctx, "quad_layout");
