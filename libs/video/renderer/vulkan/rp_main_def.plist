@@ -1411,6 +1411,7 @@ steps = {
 		process = {
 			tasks = (
 				{ func = wait_on_fence; },
+				{ func = capture_finalize; },
 				{ func = update_matrices; },
 				{ func = draw_scr_funcs; },
 			);
@@ -1503,6 +1504,14 @@ steps = {
 			renderpasses = {
 				output = $renderpasses.output;
 			};
+		};
+	};
+	capture = {
+		dependencies = (output);
+		process = {
+			tasks = (
+				{ func = capture_initiate; },
+			);
 		};
 	};
 };

@@ -96,8 +96,8 @@ vulkan_R_Init (void)
 	Vulkan_Texture_Init (vulkan_ctx);
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
-	Vulkan_CreateCapture (vulkan_ctx);
 
+	QFV_Capture_Init (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
@@ -357,56 +357,10 @@ vulkan_set_fov (float x, float y)
 	mctx->dirty = mctx->frames.size;
 }
 
-static int
-is_bgr (VkFormat format)
-{
-	return (format >= VK_FORMAT_B8G8R8A8_UNORM
-			&& format <= VK_FORMAT_B8G8R8A8_SRGB);
-}
-
-static void
-capture_screenshot (const byte *data, int width, int height)
-{
-	int         count = width * height;
-	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
-
-	if (tex) {
-		tex->data = (byte *) (tex + 1);
-		tex->flagbits = 0;
-		tex->width = width;
-		tex->height = height;
-		tex->format = tex_rgb;
-		tex->palette = 0;
-		tex->flagbits = 0;
-		tex->loaded = 1;
-
-		if (is_bgr (vulkan_ctx->swapchain->format)) {
-			tex->bgr = 1;
-		}
-		const byte *src = data;
-		byte       *dst = tex->data;
-		for (int count = width * height; count-- > 0; ) {
-			*dst++ = *src++;
-			*dst++ = *src++;
-			*dst++ = *src++;
-			src++;
-		}
-	}
-	capfunc_t   callback = vulkan_ctx->capture_complete;
-	callback (tex, vulkan_ctx->capture_complete_data);;
-}
-
 static void
 vulkan_capture_screen (capfunc_t callback, void *data)
 {
-	if (!vulkan_ctx->capture) {
-		Sys_Printf ("Capture not supported\n");
-		callback (0, data);
-		return;
-	}
-	vulkan_ctx->capture_callback = capture_screenshot;
-	vulkan_ctx->capture_complete = callback;
-	vulkan_ctx->capture_complete_data = data;
+	QFV_Capture_Screen (vulkan_ctx, callback, data);
 }
 
 static void
@@ -588,6 +542,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
+	QFV_Capture_Shutdown (vulkan_ctx);
 	Vulkan_Output_Shutdown (vulkan_ctx);
 
 	Vulkan_Palette_Shutdown (vulkan_ctx);

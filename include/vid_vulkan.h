@@ -37,6 +37,7 @@ typedef struct vulkan_ctx_s {
 
 	struct scriptctx_s *script_context;
 	struct qfv_renderctx_s *render_context;
+	struct qfv_capturectx_s *capture_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct translucentctx_s *translucent_context;
@@ -57,11 +58,6 @@ typedef struct vulkan_ctx_s {
 	uint32_t    curFrame;
 	qfv_renderpassset_t renderPasses;
 
-	struct qfv_capture_s *capture;
-	void      (*capture_callback) (const byte *data, int width, int height);
-	// make a queue?
-	void       *capture_complete;// really capfunc_t
-	void       *capture_complete_data;
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

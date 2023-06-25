@@ -69,7 +69,6 @@ enum {
 };
 
 struct vulkan_ctx_s;
-void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);

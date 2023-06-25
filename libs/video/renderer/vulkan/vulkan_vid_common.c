@@ -121,9 +121,6 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
-	if (ctx->capture) {
-		QFV_DestroyCapture (ctx->capture);
-	}
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
@@ -181,15 +178,6 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 		free (ctx->swapchain);
 	}
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
-}
-
-void
-Vulkan_CreateCapture (vulkan_ctx_t *ctx)
-{
-	//FIXME this should be in render
-	auto rctx = ctx->render_context;
-	ctx->capture = QFV_CreateCapture (ctx->device, rctx->frames.size,
-									  ctx->swapchain, ctx->cmdpool);
 }
 
 void
