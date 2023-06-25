@@ -1,9 +1,6 @@
 search = (
-	VkAttachmentDescription,
 	VkDebugUtilsMessageSeverityFlagBitsEXT,
 	VkPresentModeKHR,
-	VkSubpassDescription,
-	VkSubpassDependency,
 	VkSpecializationInfo,
 	VkPipelineShaderStageCreateInfo,
 	VkPipelineVertexInputStateCreateInfo,
@@ -15,19 +12,8 @@ search = (
 	VkPipelineColorBlendStateCreateInfo,
 	VkPipelineDynamicStateCreateInfo,
 	VkDescriptorSetLayoutBinding,
-	VkDescriptorSetLayoutCreateInfo,
-	VkPushConstantRange,
-	VkPipelineLayoutCreateInfo,
-	VkGraphicsPipelineCreateInfo,
-	VkComputePipelineCreateInfo,
-	VkDescriptorPoolCreateInfo,
-	VkSamplerCreateInfo,
-	VkImageCreateInfo,
-	VkImageViewCreateInfo,
-	VkFramebufferCreateInfo,
 	VkClearValue,
 	VkPhysicalDeviceLimits,
-	VkRenderPassCreateInfo,
 	VkRenderPassMultiviewCreateInfo,
 
 	qfv_output_t,
@@ -58,53 +44,7 @@ search = (
 	qfv_samplerinfo_t,
 );
 parse = {
-	VkSubpassDescription = {
-		flags = auto;
-		pipelineBindPoint = auto;
-		inputAttachments = {
-			type = (array, VkAttachmentReference);
-			size = inputAttachmentCount;
-			values = pInputAttachments;
-		};
-		colorAttachments = {
-			type = (array, VkAttachmentReference);
-			size = colorAttachmentCount;
-			values = pColorAttachments;
-		};
-		resolveAttachments = {
-			type = (array, VkAttachmentReference);
-			values = pResolveAttachments;
-			matchSize = colorAttachments;
-		};
-		depthStencilAttachment = {
-			type = (single, VkAttachmentReference);
-			value = pDepthStencilAttachment;
-		};
-		preserveAttachments = {
-			type = (array, uint32_t);
-			size = preserveAttachmentCount;
-			values = pPreserveAttachments;
-		};
-	};
 	VkPhysicalDeviceLimits = readonly;
-	VkRenderPassCreateInfo = {
-		//flags = auto; reserved for future use (Bits enum does not exist)
-		attachments = {
-			type = (array, VkAttachmentDescription);
-			size = attachmentCount;
-			values = pAttachments;
-		};
-		subpasses = {
-			type = (array, VkSubpassDescription);
-			size = subpassCount;
-			values = pSubpasses;
-		};
-		dependencies = {
-			type = (array, VkSubpassDependency);
-			size = dependencyCount;
-			values = pDependencies;
-		};
-	};
 	VkSpecializationInfo = {
 		mapEntries = {
 			type = (array, VkSpecializationMapEntry);
@@ -140,23 +80,6 @@ parse = {
 		descriptorCount = auto;
 		stageFlags = auto;
 		// skip pImmutableSamplers (default to 0) until I know how it works
-	};
-	VkDescriptorSetLayoutCreateInfo = {
-		flags = auto;
-		bindings = {
-			type = (array, VkDescriptorSetLayoutBinding);
-			size = bindingCount;
-			values = pBindings;
-		};
-	};
-	VkDescriptorPoolCreateInfo = {
-		flags = auto;
-		maxSets = auto;
-		bindings = {
-			type = (array, VkDescriptorPoolSize);
-			size = poolSizeCount;
-			values = pPoolSizes;
-		};
 	};
 	VkPipelineVertexInputStateCreateInfo = {
 		//flags = auto; reserved for future use (Bits enum does not exist)
@@ -246,139 +169,9 @@ parse = {
 			values = pDynamicStates;
 		};
 	};
-	VkPipelineLayoutCreateInfo = {
-		//flags = auto; reserved for future use (Bits enum does not exist)
-		setLayouts = {
-			type = (array,	{
-								parse_type = (QFDictionary, QFString);
-								type = VkDescriptorSetLayout;
-								parser = parse_VkDescriptorSetLayout;
-							});
-			size = setLayoutCount;
-			values = pSetLayouts;
-		};
-		pushConstantRanges = {
-			type = (array, VkPushConstantRange);
-			size = pushConstantRangeCount;
-			values = pPushConstantRanges;
-		};
-	};
 	VkPipelineTessellationStateCreateInfo = {
 		//flags = auto; reserved for future use (Bits enum does not exist)
 		patchControlPoints = auto;
-	};
-	VkGraphicsPipelineCreateInfo = {
-		flags = auto;
-		stages = {
-			type = (array, VkPipelineShaderStageCreateInfo);
-			size = stageCount;
-			values = pStages;
-		};
-		vertexInput = {
-			type = (single, VkPipelineVertexInputStateCreateInfo);
-			value = pVertexInputState;
-		};
-		inputAssembly = {
-			type = (single, VkPipelineInputAssemblyStateCreateInfo);
-			value = pInputAssemblyState;
-		};
-		tessellation = {
-			type = (single, VkPipelineTessellationStateCreateInfo);
-			value = pTessellationState;
-		};
-		viewport = {
-			type = (single, VkPipelineViewportStateCreateInfo);
-			value = pViewportState;
-		};
-		rasterization = {
-			type = (single, VkPipelineRasterizationStateCreateInfo);
-			value = pRasterizationState;
-		};
-		multisample = {
-			type = (single, VkPipelineMultisampleStateCreateInfo);
-			value = pMultisampleState;
-		};
-		depthStencil = {
-			type = (single, VkPipelineDepthStencilStateCreateInfo);
-			value = pDepthStencilState;
-		};
-		colorBlend = {
-			type = (single, VkPipelineColorBlendStateCreateInfo);
-			value = pColorBlendState;
-		};
-		dynamic = {
-			type = (single, VkPipelineDynamicStateCreateInfo);
-			value = pDynamicState;
-		};
-		layout = {
-			type = (custom,	QFString, parse_VkPipelineLayout);
-			fields = (layout);
-		};
-		renderPass = {
-			type = (custom,	QFString, parse_VkRenderPass);
-			fields = (renderPass);
-		};
-		subpass = auto;
-		basePipelineHandle = {
-			type = (custom, QFString, parse_BasePipeline);
-			fields = (basePipelineHandle);
-		};
-		basePipelineIndex = auto;
-	};
-	VkComputePipelineCreateInfo = {
-		flags = auto;
-		stage = auto;
-		layout = {
-			type = (custom,	QFString, parse_VkPipelineLayout);
-			fields = (layout);
-		};
-		basePipelineHandle = {
-			type = (custom, QFString, parse_BasePipeline);
-			fields = (basePipelineHandle);
-		};
-		basePipelineIndex = auto;
-	};
-	VkImageCreateInfo = {
-		flags = auto;
-		imageType = auto;
-		format = auto;
-		extent = auto;
-		mipLevels = auto;
-		arrayLayers = auto;
-		samples = auto;
-		tiling = auto;
-		usage = auto;
-		sharingMode = skip;	// FIXME for now
-		queueFamilyIndexCount = skip;	// FIXME for now
-		pQueueFamilyIndices = skip;	// FIXME for now
-		initialLayout = auto;
-	};
-	VkImageViewCreateInfo = {
-		flags = auto;
-		image = {
-			type = (custom,	(QFDictionary, QFString),
-					parse_VkImage);
-			fields = (image);
-		};
-		viewType = auto;
-		format = auto;
-		components = auto;
-		subresourceRange = auto;
-	};
-	VkFramebufferCreateInfo = {
-		//flags = auto; reserved for future use (Bits enum does not exist)
-		renderPass = {
-			type = (custom,	QFString, parse_VkRenderPass);
-			fields = (renderPass);
-		};
-		attachments = {
-			type = (array, VkImageView);
-			size = attachmentCount;
-			values = pAttachments;
-		};
-		width = auto;
-		height = auto;
-		layers = auto;
 	};
 	VkClearColorValue = skip;
 	VkClearValue = {
@@ -406,28 +199,19 @@ parse = {
 		};
 	};
 
-	qfv_osubpass_s = {
-		.name = qfv_osubpass_t;
-		color = {
-			type = (custom, QFString, parse_RGBA);
-			fields = (color);
-		};
-		name = {
-			type = string;
-			string = name;
-		};
-	};
 	qfv_output_s = {
 		.name = qfv_output_t;
 		extent = auto;
-		image = {
+		image = ignore;
+		view = ignore;
+/*		image = {
 			type = (readonly, VkImage);
 			value = image;
 		};
 		view = {
 			type = (readonly, VkImageView);
 			value = view;
-		};
+		};*/
 		format = auto;
 		frames = auto;
 		finalLayout = auto;

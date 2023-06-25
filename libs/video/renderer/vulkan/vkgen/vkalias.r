@@ -47,11 +47,11 @@
 		if (!type) {
 			// pointer to opaque struct. Probably
 			// VK_DEFINE_NON_DISPATCHABLE_HANDLE or VK_DEFINE_HANDLE
-			string createInfo = name + "CreateInfo";
-			id structObj = (id) Hash_Find (available_types, createInfo);
-			if (structObj) {
-				[structObj addToQueue];
-			}
+			//string createInfo = name + "CreateInfo";
+			//id structObj = (id) Hash_Find (available_types, createInfo);
+			//if (structObj) {
+			//	[structObj addToQueue];
+			//}
 		} else if ([type class] == [Alias class]) {
 			type = [type resolveType];
 			if ([type class] == [Struct class]) {

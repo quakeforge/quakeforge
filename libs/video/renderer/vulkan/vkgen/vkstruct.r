@@ -374,7 +374,7 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 		if (have_pNext) {
 			fprintf (output_file,
 					"\t{\"@next\", field_offset (%s, pNext), "
-					"QFArray, parse_next, 0},", [self outname]);
+					"QFArray, parse_next, 0},\n", [self outname]);
 		}
 		for (int i = [field_defs count]; i-- > 0; ) {
 			FieldDef   *field_def = [field_defs objectAtIndex:i];
