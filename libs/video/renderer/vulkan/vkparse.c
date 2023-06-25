@@ -1866,6 +1866,10 @@ static exprsym_t builtin_plist_syms[] = {
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_main_def.plc"
 		},
+	{ .name = "smp_quake",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/smp_quake.plc"
+		},
 	{ .name = "output",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_output.plc"
@@ -2118,8 +2122,8 @@ struct qfv_jobinfo_s *
 QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
 	memsuper_t *memsuper = new_memsuper ();
-	qfv_jobinfo_t *ri = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
-	*ri = (qfv_jobinfo_t) { .memsuper = memsuper };
+	qfv_jobinfo_t *ji = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
+	*ji = (qfv_jobinfo_t) { .memsuper = memsuper };
 
 	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
@@ -2155,7 +2159,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 												   &exprctx);
 
 	int         ret;
-	if (!(ret = parse_qfv_jobinfo_t (0, item, ri, messages, &parsectx))) {
+	if (!(ret = parse_qfv_jobinfo_t (0, item, ji, messages, &parsectx))) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
@@ -2164,10 +2168,56 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 	PL_Release (messages);
 	if (!ret) {
 		delete_memsuper (memsuper);
-		ri = 0;
+		ji = 0;
 	}
 
-	return ri;
+	return ji;
+}
+
+struct qfv_samplerinfo_s *
+QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_samplerinfo_t *si = cmemalloc (memsuper, sizeof (qfv_samplerinfo_t));
+	*si = (qfv_samplerinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	exprsym_t   var_syms[] = {
+		{"physDevLimits", &VkPhysicalDeviceLimits_type,
+			&ctx->device->physDev->properties->limits },
+		{}
+	};
+	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
+												   0, var_syms, &exprctx);
+
+	int         ret;
+	if (!(ret = parse_qfv_samplerinfo_t (0, item, si, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		si = 0;
+	}
+
+	return si;
 }
 
 int

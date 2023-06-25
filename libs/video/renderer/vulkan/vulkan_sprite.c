@@ -220,9 +220,14 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
 	ctx->sprite_context = sctx;
 
-	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
-
 	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Sprite_Setup (vulkan_ctx_t *ctx)
+{
+	auto sctx = ctx->sprite_context;
+	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
 }
 
 void

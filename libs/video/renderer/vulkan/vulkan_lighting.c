@@ -313,6 +313,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
 
+	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
+
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
 #if 0
@@ -334,8 +336,6 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&lctx->frames, frames);
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
-
-	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
 
 	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
 	for (size_t i = 0; i < frames; i++) {

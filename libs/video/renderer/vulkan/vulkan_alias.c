@@ -246,8 +246,14 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
 
-	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Alias_Setup (vulkan_ctx_t *ctx)
+{
+	auto actx = ctx->alias_context;
+	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
 }
 
 void

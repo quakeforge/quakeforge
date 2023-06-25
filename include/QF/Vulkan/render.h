@@ -272,6 +272,35 @@ typedef struct qfv_jobinfo_s {
 	qfv_descriptorsetlayoutinfo_t *dslayouts;
 } qfv_jobinfo_t;
 
+typedef struct qfv_samplercreateinfo_s {
+	const char *name;
+	VkSamplerCreateFlags flags;
+	VkFilter    magFilter;
+	VkFilter    minFilter;
+	VkSamplerMipmapMode mipmapMode;
+	VkSamplerAddressMode addressModeU;
+	VkSamplerAddressMode addressModeV;
+	VkSamplerAddressMode addressModeW;
+	float       mipLodBias;
+	VkBool32    anisotropyEnable;
+	float       maxAnisotropy;
+	VkBool32    compareEnable;
+	VkCompareOp compareOp;
+	float       minLod;
+	float       maxLod;
+	VkBorderColor borderColor;
+	VkBool32    unnormalizedCoordinates;
+	VkSampler   sampler;
+} qfv_samplercreateinfo_t;
+
+typedef struct qfv_samplerinfo_s {
+	struct memsuper_s *memsuper;
+
+	struct plitem_s *plitem;
+	qfv_samplercreateinfo_t *samplers;
+	uint32_t    num_samplers;
+} qfv_samplerinfo_t;
+
 #ifndef __QFCC__
 typedef struct qfv_label_s {
 	vec4f_t     color;
@@ -386,6 +415,7 @@ typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
 	qfv_jobinfo_t *jobinfo;
+	qfv_samplerinfo_t *samplerinfo;
 	qfv_job_t *job;
 	qfv_renderframeset_t frames;
 } qfv_renderctx_t;
@@ -401,7 +431,8 @@ VkCommandBuffer QFV_GetCmdBuffer (struct vulkan_ctx_s *ctx, bool secondary);
 void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
 
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
-void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx);
+void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, const char *name);
+void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, const char *name);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
@@ -412,6 +443,7 @@ void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 struct qfv_dsmanager_s *
 QFV_Render_DSManager (struct vulkan_ctx_s *ctx,
 					  const char *setName) __attribute__((pure));
+VkSampler QFV_Render_Sampler (struct vulkan_ctx_s *ctx, const char *name);
 
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));

@@ -1046,6 +1046,9 @@ Vulkan_Draw_Setup (vulkan_ctx_t *ctx)
 	auto dfunc = device->funcs;
 	auto dctx = ctx->draw_context;
 
+	dctx->pic_sampler = QFV_Render_Sampler (ctx, "quakepic");
+	dctx->glyph_sampler = QFV_Render_Sampler (ctx, "glyph");
+
 	dctx->dsmanager = QFV_Render_DSManager (ctx, "quad_data_set");
 
 	auto rctx = ctx->render_context;
@@ -1069,8 +1072,6 @@ Vulkan_Draw_Setup (vulkan_ctx_t *ctx)
 										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
 								   dctx->stage);
-	dctx->pic_sampler = Vulkan_CreateSampler (ctx, "quakepic");
-	dctx->glyph_sampler = Vulkan_CreateSampler (ctx, "glyph");
 
 	load_conchars (ctx);
 	load_crosshairs (ctx);

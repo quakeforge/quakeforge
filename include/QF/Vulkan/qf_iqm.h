@@ -107,6 +107,7 @@ void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 
 void Vulkan_IQM_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_IQM_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_IQM_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_iqm_h

@@ -203,6 +203,8 @@ rp_forward_src = libs/video/renderer/vulkan/rp_forward.plist
 rp_forward_gen = libs/video/renderer/vulkan/rp_forward.plc
 rp_main_def_src = libs/video/renderer/vulkan/rp_main_def.plist
 rp_main_def_gen = libs/video/renderer/vulkan/rp_main_def.plc
+smp_quake_src = libs/video/renderer/vulkan/smp_quake.plist
+smp_quake_gen = libs/video/renderer/vulkan/smp_quake.plc
 rp_output_src = libs/video/renderer/vulkan/rp_output.plist
 rp_output_gen = libs/video/renderer/vulkan/rp_output.plc
 rp_shadow_src = libs/video/renderer/vulkan/rp_shadow.plist
@@ -270,6 +272,7 @@ libs/video/renderer/vulkan/vkparse.lo: \
 	${rp_deferred_gen} \
 	$(rp_forward_gen) \
 	$(rp_main_def_gen) \
+	$(smp_quake_gen)
 	$(rp_output_gen) \
 	${rp_shadow_gen}
 
@@ -530,6 +533,7 @@ EXTRA_DIST += \
 	$(rp_deferred_src) \
 	$(rp_forward_src) \
 	$(rp_main_def_src) \
+	$(smp_quake_src) \
 	$(rp_output_src) \
 	$(rp_shadow_src) \
 	$(pl_quake_def_src) \

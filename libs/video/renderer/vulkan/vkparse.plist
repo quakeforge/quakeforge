@@ -54,6 +54,8 @@ search = (
 	qfv_processinfo_t,
 	qfv_stepinfo_t,
 	qfv_jobinfo_t,
+	qfv_samplercreateinfo_t,
+	qfv_samplerinfo_t,
 );
 parse = {
 	VkSubpassDescription = {
@@ -779,5 +781,35 @@ parse = {
 			size = num_dslayouts;
 			values = dslayouts;
 		};
+		plitem = ignore;
+	};
+	qfv_samplercreateinfo_s = {
+		.name = qfv_samplercreateinfo_t;
+		flags = auto;
+		magFilter = auto;
+		minFilter = auto;
+		mipmapMode = auto;
+		addressModeU = auto;
+		addressModeV = auto;
+		addressModeW = auto;
+		mipLodBias = auto;
+		anisotropyEnable = auto;
+		maxAnisotropy = auto;
+		compareEnable = auto;
+		compareOp = auto;
+		minLod = auto;
+		maxLod = auto;
+		borderColor = auto;
+		unnormalizedCoordinates = auto;
+		sampler = ignore;
+	};
+	qfv_samplerinfo_s = {
+		.name = qfv_samplerinfo_t;
+		samplers = {
+			type = (labeledarray, qfv_samplercreateinfo_t, name);
+			size = num_samplers;
+			values = samplers;
+		};
+		plitem = ignore;
 	};
 };

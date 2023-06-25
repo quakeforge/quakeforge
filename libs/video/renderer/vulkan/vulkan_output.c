@@ -240,14 +240,6 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	ctx->output_context = octx;
 
 	QFV_Render_AddTasks (ctx, output_task_syms);
-
-	__auto_type pld = ctx->script_context->pipelineDef;//FIXME
-	ctx->script_context->pipelineDef = Vulkan_GetConfig (ctx, "qf_output");
-
-	qfvPushDebug (ctx, "output init");
-	octx->sampler = Vulkan_CreateSampler (ctx, "linear");
-	ctx->script_context->pipelineDef = pld;
-	qfvPopDebug (ctx);
 }
 
 void
@@ -262,6 +254,8 @@ Vulkan_Output_Setup (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&octx->frames, frames);
 	DARRAY_RESIZE (&octx->frames, frames);
 	octx->frames.grow = 0;
+
+	octx->sampler = QFV_Render_Sampler (ctx, "linear");
 
 	auto dsmanager = QFV_Render_DSManager (ctx, "output_set");
 

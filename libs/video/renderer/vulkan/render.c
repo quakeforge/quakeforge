@@ -508,6 +508,15 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	if (rctx->task_functions.tab) {
 		Hash_DelTable (rctx->task_functions.tab);
 	}
+	if (rctx->samplerinfo) {
+		auto si = rctx->samplerinfo;
+		for (uint32_t i = 0; i < si->num_samplers; i++) {
+			auto sci = &si->samplers[i];
+			if (sci->sampler) {
+				dfunc->vkDestroySampler (device->dev, sci->sampler, 0);
+			}
+		}
+	}
 	Hash_DelContext (rctx->hashctx);
 }
 
@@ -562,7 +571,7 @@ QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 }
 
 qfv_dsmanager_t *
-QFV_Render_DSManager (struct vulkan_ctx_s *ctx, const char *setName)
+QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 {
 	auto job = ctx->render_context->job;
 	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
@@ -571,5 +580,54 @@ QFV_Render_DSManager (struct vulkan_ctx_s *ctx, const char *setName)
 			return ds;
 		}
 	}
+	return 0;
+}
+
+static void
+create_sampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler)
+{
+	VkSamplerCreateInfo create = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.flags = sampler->flags,
+		.magFilter = sampler->magFilter,
+		.minFilter = sampler->minFilter,
+		.mipmapMode = sampler->mipmapMode,
+		.addressModeU = sampler->addressModeU,
+		.addressModeV = sampler->addressModeV,
+		.addressModeW = sampler->addressModeW,
+		.mipLodBias = sampler->mipLodBias,
+		.anisotropyEnable = sampler->anisotropyEnable,
+		.maxAnisotropy = sampler->maxAnisotropy,
+		.compareEnable = sampler->compareEnable,
+		.compareOp = sampler->compareOp,
+		.minLod = sampler->minLod,
+		.maxLod = sampler->maxLod,
+		.borderColor = sampler->borderColor,
+		.unnormalizedCoordinates = sampler->unnormalizedCoordinates,
+	};
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	dfunc->vkCreateSampler (device->dev, &create, 0, &sampler->sampler);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, sampler->sampler,
+						 va (ctx->va_ctx, "sampler:%s", sampler->name));
+}
+
+VkSampler
+QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name)
+{
+	auto si = ctx->render_context->samplerinfo;
+	if (!si) {
+		return 0;
+	}
+	for (uint32_t i = 0; i < si->num_samplers; i++) {
+		auto sci = &si->samplers[i];
+		if (!strcmp (sci->name, name)) {
+			if (!sci->sampler) {
+				create_sampler (ctx, sci);
+			}
+			return sci->sampler;
+		}
+	}
+	printf ("sampler %s not found\n", name);
 	return 0;
 }

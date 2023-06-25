@@ -1284,6 +1284,8 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 
 	auto bctx = ctx->bsp_context;
 
+	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
+
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
 										 tex_frgba, ctx->staging);
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
@@ -1307,8 +1309,6 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&bctx->frames, frames);
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
-
-	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
 	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
 	size_t      entid_size = entid_count * sizeof (uint32_t);

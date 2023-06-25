@@ -42,6 +42,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_texture.h"
 
@@ -69,7 +70,8 @@ Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 	palettectx_t *pctx = calloc (1, sizeof (palettectx_t));
 	ctx->palette_context = pctx;
 
-	pctx->sampler = Vulkan_CreateSampler (ctx, "palette_sampler");
+	pctx->sampler = QFV_Render_Sampler (ctx, "palette_sampler");
+
 	tex_t       tex = {
 		.width = 16,
 		.height = 16,

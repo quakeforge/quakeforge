@@ -313,9 +313,14 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;
 
-	ictx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
-
 	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_IQM_Setup (vulkan_ctx_t *ctx)
+{
+	auto ictx = ctx->iqm_context;
+	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
 }
 
 void

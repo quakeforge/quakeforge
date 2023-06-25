@@ -112,14 +112,18 @@ vulkan_R_Init (void)
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
-	QFV_LoadRenderInfo (vulkan_ctx);
+	QFV_LoadRenderInfo (vulkan_ctx, "main_def");
+	QFV_LoadSamplerInfo (vulkan_ctx, "smp_quake");
 	QFV_BuildRender (vulkan_ctx);
 
 	Vulkan_Texture_Setup (vulkan_ctx);
 	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
+	Vulkan_Alias_Setup (vulkan_ctx);
 	Vulkan_Bsp_Setup (vulkan_ctx);
+	Vulkan_IQM_Setup (vulkan_ctx);
 	Vulkan_Matrix_Setup (vulkan_ctx);
 	Vulkan_Scene_Setup (vulkan_ctx);
+	Vulkan_Sprite_Setup (vulkan_ctx);
 	Vulkan_Output_Setup (vulkan_ctx);
 	Vulkan_Compose_Setup (vulkan_ctx);
 	Vulkan_Draw_Setup (vulkan_ctx);
