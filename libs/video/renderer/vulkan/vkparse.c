@@ -1838,30 +1838,6 @@ Vulkan_Init_Cvars (void)
 }
 
 static exprsym_t builtin_plist_syms[] = {
-	{ .name = "quake_deferred",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/pl_quake_def.plc"
-		},
-	{ .name = "qf_output",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/pl_output.plc"
-		},
-	{ .name = "defcube",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_defcube.plc"
-		},
-	{ .name = "deferred",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_deferred.plc"
-		},
-	{ .name = "shadow",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_shadow.plc"
-		},
-	{ .name = "forward",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_forward.plc"
-		},
 	{ .name = "main_def",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_main_def.plc"
@@ -1869,10 +1845,6 @@ static exprsym_t builtin_plist_syms[] = {
 	{ .name = "smp_quake",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/smp_quake.plc"
-		},
-	{ .name = "output",
-	  .value = (void *)
-#include "libs/video/renderer/vulkan/rp_output.plc"
 		},
 	{}
 };
