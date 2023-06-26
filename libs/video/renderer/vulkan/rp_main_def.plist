@@ -50,6 +50,15 @@ properties = {
 		usage = color_attachment|input_attachment|transient_attachment;
 		initialLayout = undefined;
 	};
+	cube_image_base = {
+		@inherit = $image_base;
+		extent = {
+			width = "min($render_output.extent.width,$render_output.extent.height)";
+			height = "min($render_output.extent.width,$render_output.extent.height)";
+			depth = 1;
+		};
+		arrayLayers = 6;
+	};
 	view_base = {
 		viewType = `2d;
 		components = {
@@ -62,6 +71,13 @@ properties = {
 			aspectMask = color;
 			levelCount = 1;
 			layerCount = 1;
+		};
+	};
+	cube_view_base = {
+		@inherit = $view_base;
+		viewType = `2d_array;
+		subresourceRange = {
+			layerCount = 6;
 		};
 	};
 	attachment_base = {
@@ -494,6 +510,11 @@ properties = {
 				name = main;
 				module = $builtin/fstriangle.vert;
 			};
+			vertexst = {
+				stage = vertex;
+				name = main;
+				module = $builtin/fstrianglest.vert;
+			};
 		};
 	};
 	lighting = {
@@ -880,6 +901,37 @@ images = {
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
+	cube_depth = {
+		@inherit = $cube_image_base;
+		format = x8_d24_unorm_pack32;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
+	cube_color = {
+		@inherit = $cube_image_base;
+		format = r8g8b8a8_unorm;
+	};
+	cube_emission = {
+		@inherit = $cube_image_base;
+		format = r16g16b16a16_sfloat;
+	};
+	cube_normal = {
+		@inherit = $cube_image_base;
+		format = r16g16b16a16_sfloat;
+	};
+	cube_position = {
+		@inherit = $cube_image_base;
+		format = r32g32b32a32_sfloat;
+	};
+	cube_opaque = {
+		@inherit = $cube_image_base;
+		format = r16g16b16a16_sfloat;
+	};
+	cube_output = {
+		@inherit = $cube_image_base;
+		flags = cube_compatible;
+		usage = color_attachment|input_attachment|sampled;
+		format = $render_output.format;
+	};
 };
 imageviews = {
 	depth = {
@@ -919,7 +971,46 @@ imageviews = {
 		@inherit = $view_base;
 		image = output;
 		format = $render_output.format;
-	}
+	};
+	cube_depth = {
+		@inherit = $cube_view_base;
+		image = cube_depth;
+		format = $images.cube_depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
+	};
+	cube_color = {
+		@inherit = $cube_view_base;
+		image = cube_color;
+		format = $images.cube_color.format;
+	};
+	cube_emission = {
+		@inherit = $cube_view_base;
+		image = cube_emission;
+		format = $images.cube_emission.format;
+	};
+	cube_normal = {
+		@inherit = $cube_view_base;
+		image = cube_normal;
+		format = $images.cube_normal.format;
+	};
+	cube_position = {
+		@inherit = $cube_view_base;
+		image = cube_position;
+		format = $images.cube_position.format;
+	};
+	cube_opaque = {
+		@inherit = $cube_view_base;
+		image = cube_opaque;
+		format = $images.cube_opaque.format;
+	};
+	cube_output = {
+		@inherit = $cube_view_base;
+		viewType = cube;
+		image = cube_output;
+		format = $render_output.format;
+	};
 };
 output = {
 	view = $output;
@@ -1334,6 +1425,56 @@ renderpasses = {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 			viewOffsets = (    0,     0,     0,     0,     0);
 		});
+		framebuffer = {
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $attachment_base;
+					format = $images.cube_depth.format;
+					loadOp = clear;
+					finalLayout = depth_stencil_attachment_optimal;
+					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					view = cube_depth;
+				};
+				color = {
+					@inherit = $attachment_base;
+					format = $images.cube_color.format;
+					loadOp = clear;
+					view = cube_color;
+				};
+				emission = {
+					@inherit = $attachment_base;
+					format = $images.cube_emission.format;
+					loadOp = clear;
+					view = cube_emission;
+				};
+				normal = {
+					@inherit = $attachment_base;
+					format = $images.cube_normal.format;
+					view = cube_normal;
+				};
+				position = {
+					@inherit = $attachment_base;
+					format = $images.cube_position.format;
+					view = cube_position;
+				};
+				opaque = {
+					@inherit = $attachment_base;
+					format = $images.cube_opaque.format;
+					view = cube_opaque;
+				};
+				output = {
+					@inherit = $attachment_base;
+					format = $render_output.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = $render_output.finalLayout;
+					view = cube_output;
+				};
+			};
+		};
 	};
 	output = {
 		color = "[0, 1, 1, 1]";
@@ -1360,7 +1501,7 @@ renderpasses = {
 
 						color = $color.output;
 						tasks = (
-							{ func = output_draw; },
+							{ func = output_draw_flat; },
 						);
 
 						stages = (
@@ -1368,6 +1509,36 @@ renderpasses = {
 							$output.shader.fragment,
 						);
 						layout = $output.layout;
+					};
+					waterwarp = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.output;
+						tasks = (
+							{ func = output_draw_waterwarp; },
+						);
+
+						stages = (
+							$fstriangle.shader.vertexst,
+							$waterwarp.shader.fragment,
+						);
+						layout = $waterwarp.layout;
+					};
+					fisheye = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.output;
+						tasks = (
+							{ func = output_draw_fisheye; },
+						);
+
+						stages = (
+							$fstriangle.shader.vertexst,
+							$fisheye.shader.fragment,
+						);
+						layout = $fisheye.layout;
 					};
 					slice = {
 						@inherit = $compose_base;
@@ -1471,6 +1642,8 @@ steps = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
+				{ func = output_select_renderpass;
+				  params = ("\"main\""); },
 				{ func = update_framebuffer;
 				  params = ("\"main\""); },
 				{ func = particle_wait_physics; },
@@ -1494,6 +1667,8 @@ steps = {
 				  params = ("\"output\""); },
 				{ func = update_input;
 				  params = ("\"main\""); },
+				{ func = output_select_pipeline;
+				  params = ("\"output\""); },
 				{ func = flush_draw; },
 			);
 		};

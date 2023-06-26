@@ -161,9 +161,53 @@ update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+output_select_pipeline (const exprval_t **params, exprval_t *result,
+						exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto output = QFV_GetStep (params[0], ctx->render_context->job);
+	// FIXME the output render pass has only one subpass
+	auto sp = output->render->active->subpasses;
+
+	// FIXME the output render pass pipelines are in the order
+	// output, waterwarp, fisheye, followed by any additional pipelines
+	if (scr_fisheye) {
+		sp->pipelines[0].disabled = true;
+		sp->pipelines[1].disabled = true;
+		sp->pipelines[2].disabled = false;
+	} else if (r_dowarp) {
+		sp->pipelines[0].disabled = true;
+		sp->pipelines[1].disabled = false;
+		sp->pipelines[2].disabled = true;
+	} else {
+		sp->pipelines[0].disabled = false;
+		sp->pipelines[1].disabled = true;
+		sp->pipelines[2].disabled = true;
+	}
+}
+
+static void
+output_select_renderpass (const exprval_t **params, exprval_t *result,
+						  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto main = QFV_GetStep (params[0], ctx->render_context->job);
+	// FIXME the main render step has only two renderpasses
+	auto render = main->render;
+
+	if (scr_fisheye) {
+		render->active = &render->renderpasses[1];
+	} else {
+		render->active = &render->renderpasses[0];
+	}
+}
+
+static void
+output_draw (qfv_taskctx_t *taskctx,
+			 int num_push_constants, qfv_push_constants_t *push_constants)
+{
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -172,43 +216,52 @@ output_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
-	//__auto_type pipeline = octx->output;
-	//if (scr_fisheye) {
-	//	pipeline = octx->fisheye;
-	//	layout = octx->fish_layout;
-	//} else if (r_dowarp) {
-	//	pipeline = octx->waterwarp;
-	//	layout = octx->warp_layout;
-	//}
-
 	VkDescriptorSet set[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		oframe->set,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, set, 0, 0);
-#if 0
-	if (scr_fisheye) {
-		float       width = r_refdef.vrect.width;
-		float       height = r_refdef.vrect.height;
-
-		float       ffov = scr_ffov * M_PI / 360;
-		float       aspect = height / width;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
-		};
-		QFV_PushConstants (device, cmd, layout, 2, push_constants);
-	} else if (r_dowarp) {
-		float       time = vr_data.realtime;
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
-		};
-		QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	if (num_push_constants) {
+		QFV_PushConstants (device, cmd, layout,
+						   num_push_constants, push_constants);
 	}
-#endif
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+}
+
+static void
+output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	output_draw (taskctx, 0, 0);
+}
+
+static void
+output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	float time = vr_data.realtime;
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &time },
+	};
+	output_draw (taskctx, 1, push_constants);
+}
+
+static void
+output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	float width = r_refdef.vrect.width;
+	float height = r_refdef.vrect.height;
+
+	float ffov = scr_ffov * M_PI / 360;
+	float aspect = height / width;
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (float), &ffov },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
+	};
+	output_draw (taskctx, 2, push_constants);
 }
 
 static exprtype_t *stepref_param[] = {
@@ -222,14 +275,37 @@ static exprfunc_t update_input_func[] = {
 	{ .func = update_input, .num_params = 1, .param_types = stepref_param },
 	{}
 };
-static exprfunc_t output_draw_func[] = {
-	{ .func = output_draw },
+static exprfunc_t output_select_pipeline_func[] = {
+	{ .func = output_select_pipeline,
+	  .num_params = 1, .param_types = stepref_param },
+	{}
+};
+static exprfunc_t output_select_renderpass_func[] = {
+	{ .func = output_select_renderpass,
+	  .num_params = 1, .param_types = stepref_param },
+	{}
+};
+static exprfunc_t output_draw_flat_func[] = {
+	{ .func = output_draw_flat },
+	{}
+};
+static exprfunc_t output_draw_waterwarp_func[] = {
+	{ .func = output_draw_waterwarp },
+	{}
+};
+static exprfunc_t output_draw_fisheye_func[] = {
+	{ .func = output_draw_fisheye },
 	{}
 };
 static exprsym_t output_task_syms[] = {
 	{ "acquire_output", &cexpr_function, acquire_output_func },
 	{ "update_input", &cexpr_function, update_input_func },
-	{ "output_draw", &cexpr_function, output_draw_func },
+	{ "output_select_pipeline", &cexpr_function, output_select_pipeline_func },
+	{ "output_select_renderpass", &cexpr_function,
+		output_select_renderpass_func },
+	{ "output_draw_flat", &cexpr_function, output_draw_flat_func },
+	{ "output_draw_waterwarp", &cexpr_function, output_draw_waterwarp_func },
+	{ "output_draw_fisheye", &cexpr_function, output_draw_fisheye_func },
 	{}
 };
 
