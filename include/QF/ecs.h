@@ -87,6 +87,7 @@ typedef struct ecs_registry_s {
 	uint32_t    max_entities;
 	componentset_t components;
 	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
+	int         locked;
 } ecs_registry_t;
 
 /** Tie an ECS system to a registry.

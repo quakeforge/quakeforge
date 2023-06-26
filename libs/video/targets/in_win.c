@@ -63,12 +63,12 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 static unsigned uiWheelMessage;
 static unsigned  mouse_buttons;
 static POINT current_pos;
-static qboolean mouseinitialized;
-static qboolean restore_spi;
+static bool mouseinitialized;
+static bool restore_spi;
 static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
-static qboolean mouseparmsvalid, mouseactivatetoggle;
-static qboolean mouseshowtoggle = 1;
-static qboolean dinput_acquired;
+static bool mouseparmsvalid, mouseactivatetoggle;
+static bool mouseshowtoggle = 1;
+static bool dinput_acquired;
 static unsigned int mstate_di;
 
 // misc locals
@@ -77,10 +77,10 @@ static LPDIRECTINPUTDEVICE g_pMouse;
 
 static HINSTANCE hInstDI;
 
-static qboolean dinput;
+static bool dinput;
 
-static qboolean vid_wassuspended = false;
-static qboolean win_in_game = false;
+static bool vid_wassuspended = false;
+static bool win_in_game = false;
 
 typedef struct win_device_s {
 	const char *name;
@@ -506,7 +506,7 @@ IN_DeactivateMouse (void)
 	}
 }
 
-static qboolean
+static bool
 IN_InitDInput (void)
 {
 	HRESULT     hr;

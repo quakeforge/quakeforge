@@ -43,7 +43,9 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 
 #include "r_internal.h"
@@ -129,21 +131,57 @@ static VkWriteDescriptorSet base_buffer_write = {
 	0, 0, 0
 };
 
+static void
+scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	if (vr_data.inhibit_viewmodel
+		|| !r_drawviewmodel
+		|| !r_drawentities
+		|| !renderer->model)
+		return;
+
+	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
+}
+
+static exprfunc_t scene_draw_viewmodel_func[] = {
+	{ .func = scene_draw_viewmodel },
+	{}
+};
+static exprsym_t scene_task_syms[] = {
+	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
+	{}
+};
+
 void
 Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	qfvPushDebug (ctx, "scene init");
+	QFV_Render_AddTasks (ctx, scene_task_syms);
 
 	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
 							   + sizeof (qfv_resource_t)
 							   + sizeof (qfv_resobj_t));
 	ctx->scene_context = sctx;
 	sctx->max_entities = qfv_max_entities;
+}
 
-	size_t      frames = ctx->frames.size;
+void
+Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "scene init");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto sctx = ctx->scene_context;
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&sctx->frames, frames);
 	DARRAY_RESIZE (&sctx->frames, frames);
 	sctx->frames.grow = 0;
@@ -167,13 +205,7 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 
 	QFV_CreateResource (device, sctx->entities);
 
-	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "entity_pool");
-	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "entity_set");
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = sctx->setLayout;
-	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, sctx->pool, layouts);
+	auto dsmanager = QFV_Render_DSManager (ctx, "entity_set");
 
 	entdata_t  *entdata;
 	dfunc->vkMapMemory (device->dev, sctx->entities->memory, 0, VK_WHOLE_SIZE,
@@ -184,7 +216,7 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type sframe = &sctx->frames.a[i];
 
-		sframe->descriptors = sets->a[i];
+		sframe->descriptors = QFV_DSManager_AllocSet (dsmanager);;
 		VkDescriptorBufferInfo bufferInfo = {
 			buffer, i * entdata_size, entdata_size
 		};
@@ -200,7 +232,6 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 		};
 		sframe->pooled_entities = set_new ();
 	}
-	free (sets);
 	qfvPopDebug (ctx);
 }
 

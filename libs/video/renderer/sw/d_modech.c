@@ -51,7 +51,7 @@ D_Patch (void)
 
 #ifdef USE_INTEL_ASM
 
-	static qboolean protectset8 = false;
+	static bool protectset8 = false;
 
 	if (!protectset8) {
 		Sys_MakeCodeWriteable ((int) D_PolysetAff8Start,

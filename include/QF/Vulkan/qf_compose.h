@@ -39,7 +39,6 @@
 #define COMPOSE_IMAGE_INFOS 1
 
 typedef struct composeframe_s {
-	VkCommandBuffer cmd;
 	VkDescriptorImageInfo imageInfo[COMPOSE_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[COMPOSE_IMAGE_INFOS];
 } composeframe_t;
@@ -49,15 +48,12 @@ typedef struct composeframeset_s
 
 typedef struct composectx_s {
 	composeframeset_t frames;
-	VkPipeline   pipeline;
-	VkPipelineLayout layout;
 } composectx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 
 void Vulkan_Compose_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Compose_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Compose_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Compose_Draw (struct qfv_renderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_compose_h

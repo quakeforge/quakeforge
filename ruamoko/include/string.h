@@ -5,6 +5,7 @@
 @extern string sprintf (string fmt, ...);
 @extern string vsprintf (string fmt, @va_list args);
 @extern string str_new (void);
+@extern string str_unmutable (string str);
 @extern void str_free (string str);
 @extern string str_hold (string str);
 @extern int str_valid (string str);
@@ -19,5 +20,9 @@ int str_str (string haystack, string needle);
 string str_quote (string str);
 string str_lower (string str);
 string str_upper (string str);
+double strtod (string str, int *end);
+float strtof (string str, int *end);
+long strtol (string str, int *end, int base);
+unsigned long strtoul (string str, int *end, int base);
 
 #endif//__ruamoko_string_h

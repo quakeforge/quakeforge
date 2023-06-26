@@ -66,8 +66,8 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static param_t *params_freelist;
-static function_t *functions_freelist;
+ALLOC_STATE (param_t, params);
+ALLOC_STATE (function_t, functions);
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 

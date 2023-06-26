@@ -209,7 +209,7 @@ Cmd_RemoveCommand (const char *name)
 }
 
 /* Checks for the existance of a command */
-VISIBLE qboolean
+VISIBLE bool
 Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
@@ -310,6 +310,13 @@ Cmd_CompleteBuildList (const char *partial)
 }
 
 /* Hash table functions for aliases and commands */
+static void
+cmd_free (void *_c, void *unused)
+{
+	cmd_function_t *cmd = _c;
+	free (cmd);
+}
+
 static void
 cmd_alias_free (void *_a, void *unused)
 {
@@ -606,10 +613,20 @@ Cmd_StuffCmds_f (void)
 	Cmd_StuffCmds (cbuf_active);
 }
 
+static void
+cmd_shutdown (void *data)
+{
+	Cbuf_Delete (cmd_cbuf);
+	Hash_DelTable (cmd_hash);
+	Hash_DelTable (cmd_alias_hash);
+	Hash_DelTable (cmd_provider_hash);
+}
+
 VISIBLE void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0, 0);
+	Sys_RegisterShutdown (cmd_shutdown, 0);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, cmd_free, 0, 0);
 	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key,
 									cmd_alias_free, 0, 0);
 	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key,

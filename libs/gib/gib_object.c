@@ -193,7 +193,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 */
 
 gib_object_t *
-GIB_Object_Create (const char *classname, qboolean classobj)
+GIB_Object_Create (const char *classname, bool classobj)
 {
 	gib_class_t *temp, *class = Hash_Find (gib_classes, classname);
 	gib_object_t *obj;

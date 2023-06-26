@@ -103,7 +103,7 @@ typedef struct {
 
 typedef struct cachepic_s {
 	char		name[MAX_QPATH];
-	qboolean	dirty;
+	bool		dirty;
 	union {
 		qpic_t		pic;
 		byte		padding[sizeof (qpic_t) + 32];// for appended glpic FIXME
@@ -229,7 +229,7 @@ Draw_ClearCache (int phase, void *data)
 }
 
 qpic_t *
-gl_Draw_CachePic (const char *path, qboolean alpha)
+gl_Draw_CachePic (const char *path, bool alpha)
 {
 	cachepic_t *pic;
 	int         i;

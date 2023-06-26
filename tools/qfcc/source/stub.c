@@ -47,8 +47,8 @@ __attribute__((const)) def_t *qfo_encode_type (type_t *type, defspace_t *space) 
 __attribute__((const)) int obj_types_assignable (const type_t *dst, const type_t *src) {return 0;}
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist) {}
 int is_id (const type_t *type){return type->type;}
-int is_SEL (const type_t *type){return type->type;}
-int is_Class (const type_t *type){return type->type;}
+int is_SEL (const type_t *type){return 0;}
+int is_Class (const type_t *type){return 0;}
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2){return protos1->count - protos2->count;}
 void dump_dot (const char *stage, void *data,
 		          void (*dump_func) (void *data, const char *fname)){}

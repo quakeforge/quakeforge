@@ -221,7 +221,7 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 }
 
 /*
-static qboolean
+static bool
 NET_AdrIsLoopback (netadr_t a)
 {
 	if (IN6_IS_ADDR_LOOPBACK ((struct in6_addr *) &a.ip))
@@ -234,7 +234,7 @@ NET_AdrIsLoopback (netadr_t a)
 }
 */
 
-qboolean
+bool
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0)
@@ -242,7 +242,7 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 	return false;
 }
 
-qboolean
+bool
 NET_CompareAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0 && a.port == b.port)
@@ -321,7 +321,7 @@ NET_BaseAdrToString (netadr_t a)
 	192.246.40.70
 	192.246.40.70:28000
 */
-qboolean
+bool
 NET_StringToAdr (const char *s, netadr_t *a)
 {
 	static dstring_t *copy;
@@ -400,7 +400,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	return true;
 }
 
-qboolean
+bool
 NET_GetPacket (void)
 {
 	int          ret;

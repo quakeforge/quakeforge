@@ -38,7 +38,7 @@
 
 #include "qw/include/server.h"
 
-qboolean    WinNT;
+bool        WinNT;
 server_static_t svs;
 
 static void

@@ -65,7 +65,7 @@ int		Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
 							void *data, const char *description);
 int		Cmd_RemoveCommand (const char *cmd_name);
 
-qboolean Cmd_Exists (const char *cmd_name);
+bool Cmd_Exists (const char *cmd_name);
 const char 	*Cmd_CompleteCommand (const char *partial) __attribute__((pure));
 int		Cmd_CompleteCountPossible (const char *partial) __attribute__((pure));
 const char	**Cmd_CompleteBuildList (const char *partial);

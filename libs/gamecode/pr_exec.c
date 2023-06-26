@@ -1812,6 +1812,14 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(ptr) + OPB(int);
 			break;
+		case 4:
+			// global access with constant offset (supports -ve offset)
+			mm_offs = op_a - pr->pr_globals + (short) st->b;
+			break;
+		case 5:
+			// global access with variable offset (supports -ve offset)
+			mm_offs = op_a - pr->pr_globals + OPB(int);
+			break;
 	}
 	return pr->pr_globals + mm_offs;
 }
@@ -2346,6 +2354,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1110
 			OP_cmp(LE, <=);
 			// 0 1111
+			case OP_LEA_E:
+				mm = pr_address_mode (pr, st, 4);
+				OPC(ptr) = mm - pr->pr_globals;
+				break;
 			case OP_LOAD64_B_3:
 			case OP_LOAD64_C_3:
 			case OP_LOAD64_D_3:
@@ -2358,6 +2370,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_STORE64_D_3:
 				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_3));
 				VectorCopy (&OPC(long), &MM(long));
+				break;
+			case OP_LEA_F:
+				mm = pr_address_mode (pr, st, 5);
+				OPC(ptr) = mm - pr->pr_globals;
 				break;
 			case OP_LOAD64_B_4:
 			case OP_LOAD64_C_4:
@@ -2372,7 +2388,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				mm = pr_address_mode (pr, st, (st_op - OP_STORE64_A_4));
 				MM(lvec4) = OPC(lvec4);
 				break;
-			// spare
 
 #define OP_op(OP, op) \
 			OP_op_T (OP, I, int, ivec2, ivec4, op); \

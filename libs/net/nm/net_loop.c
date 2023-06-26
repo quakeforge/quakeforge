@@ -37,7 +37,7 @@
 
 #include "../nq/include/server.h"
 
-qboolean    localconnectpending = false;
+bool        localconnectpending = false;
 qsocket_t  *loop_client = NULL;
 qsocket_t  *loop_server = NULL;
 
@@ -57,13 +57,13 @@ Loop_Shutdown (void)
 
 
 void
-Loop_Listen (qboolean state)
+Loop_Listen (bool state)
 {
 }
 
 
 void
-Loop_SearchForHosts (qboolean xmit)
+Loop_SearchForHosts (bool xmit)
 {
 	if (!sv.active)
 		return;
@@ -239,7 +239,7 @@ Loop_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-__attribute__((pure)) qboolean
+__attribute__((pure)) bool
 Loop_CanSendMessage (qsocket_t * sock)
 {
 	if (!sock->driverdata)
@@ -248,7 +248,7 @@ Loop_CanSendMessage (qsocket_t * sock)
 }
 
 
-__attribute__((const)) qboolean
+__attribute__((const)) bool
 Loop_CanSendUnreliableMessage (qsocket_t * sock)
 {
 	return true;

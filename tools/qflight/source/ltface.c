@@ -288,7 +288,7 @@ static void
 SingleLightFace (entity_t *light, lightinfo_t *l)
 {
 	int			mapnum, i;
-	qboolean	hit;
+	bool		hit;
 	vec3_t		incoming, spotvec;
 	vec_t		angle, dist, idist, lightfalloff, lightsubtract, spotcone;
 	vec_t       add = 0.0;

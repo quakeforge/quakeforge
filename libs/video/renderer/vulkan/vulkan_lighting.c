@@ -56,16 +56,17 @@
 
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
@@ -145,81 +146,9 @@ update_lights (vulkan_ctx_t *ctx)
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
-
-void
-Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_renderpass_t *renderpass = rFrame->renderpass;
-	lightingctx_t *lctx = ctx->lighting_context;
-
-	if (!lctx->scene) {
-		return;
-	}
-	if (lctx->scene->lights) {
-		update_lights (ctx);
-	}
-
-	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = lframe->cmd;
-
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passLighting], cmd);
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		renderpass->renderpass, QFV_passLighting,
-		rFrame->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, "lighting", { 0.6, 0.5, 0.6, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  lctx->pipeline);
-
-	lframe->bufferInfo[0].buffer = lframe->light_buffer;
-	lframe->attachInfo[0].imageView
-		= renderpass->attachment_views->a[QFV_attachDepth];
-	lframe->attachInfo[1].imageView
-		= renderpass->attachment_views->a[QFV_attachColor];
-	lframe->attachInfo[2].imageView
-		= renderpass->attachment_views->a[QFV_attachEmission];
-	lframe->attachInfo[3].imageView
-		= renderpass->attachment_views->a[QFV_attachNormal];
-	lframe->attachInfo[4].imageView
-		= renderpass->attachment_views->a[QFV_attachPosition];
-	dfunc->vkUpdateDescriptorSets (device->dev,
-								   LIGHTING_DESCRIPTORS,
-								   lframe->descriptors, 0, 0);
-
-	VkDescriptorSet sets[] = {
-		lframe->attachWrite[0].dstSet,
-		lframe->bufferWrite[0].dstSet,
-		lframe->shadowWrite.dstSet,
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									lctx->layout, 0, 3, sets, 0, 0);
-
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &rFrame->renderpass->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &rFrame->renderpass->scissor);
-
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
+#if 0
 static void
-lighting_draw_maps (qfv_renderframe_t *rFrame)
+lighting_draw_maps (qfv_orenderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -278,8 +207,6 @@ lighting_draw_maps (qfv_renderframe_t *rFrame)
 void
 Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 {
-	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
-	ctx->lighting_context = lctx;
 
 	// extents are dynamic and filled in for each light
 	// frame buffers are highly dynamic
@@ -291,7 +218,7 @@ Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 
 	lctx->qfv_renderpass = rp;
 }
-
+#endif
 static VkDescriptorBufferInfo base_buffer_info = {
 	0, 0, VK_WHOLE_SIZE
 };
@@ -317,19 +244,80 @@ static VkWriteDescriptorSet base_image_write = {
 	0, 0, 0
 };
 
+static void
+lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	if (!lctx->scene) {
+		return;
+	}
+	if (lctx->scene->lights) {
+		update_lights (ctx);
+	}
+
+	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+
+	auto fb = &taskctx->renderpass->framebuffer;
+	lframe->bufferInfo[0].buffer = lframe->light_buffer;
+	lframe->attachInfo[0].imageView = fb->views[QFV_attachDepth];
+	lframe->attachInfo[1].imageView = fb->views[QFV_attachColor];
+	lframe->attachInfo[2].imageView = fb->views[QFV_attachEmission];
+	lframe->attachInfo[3].imageView = fb->views[QFV_attachNormal];
+	lframe->attachInfo[4].imageView = fb->views[QFV_attachPosition];
+	dfunc->vkUpdateDescriptorSets (device->dev,
+								   LIGHTING_DESCRIPTORS,
+								   lframe->descriptors, 0, 0);
+
+	VkDescriptorSet sets[] = {
+		lframe->attachWrite[0].dstSet,
+		lframe->bufferWrite[0].dstSet,
+		lframe->shadowWrite.dstSet,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 3, sets, 0, 0);
+
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+}
+
+static exprfunc_t lights_draw_func[] = {
+	{ .func = lights_draw },
+	{}
+};
+static exprsym_t lighting_task_syms[] = {
+	{ "lights_draw", &cexpr_function, lights_draw_func },
+	{}
+};
+
 void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
+	ctx->lighting_context = lctx;
 
+	QFV_Render_AddTasks (ctx, lighting_task_syms);
+}
+
+void
+Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
+{
 	qfvPushDebug (ctx, "lighting init");
 
-	// lighting_context initialized in Vulkan_Lighting_CreateRenderPasses
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+
+	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
 
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
-	lightingctx_t *lctx = ctx->lighting_context;
+#if 0
 	plitem_t   *rp_def = lctx->qfv_renderpass->renderpassDef;
 	plitem_t   *rp_cfg = PL_ObjectForKey (rp_def, "renderpass_6");
 	lctx->renderpass_6 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
@@ -337,22 +325,17 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	lctx->renderpass_4 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
 	rp_cfg = PL_ObjectForKey (rp_def, "renderpass_1");
 	lctx->renderpass_1 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
-
-	lctx->cmdpool = QFV_CreateCommandPool (device, device->queue.queueFamily,
-										   1, 1);
+#endif
 
 	DARRAY_INIT (&lctx->light_mats, 16);
 	DARRAY_INIT (&lctx->light_images, 16);
 	DARRAY_INIT (&lctx->light_renderers, 16);
 
-	size_t      frames = ctx->frames.size;
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
 	DARRAY_INIT (&lctx->frames, frames);
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
-
-	lctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lighting");
-	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
-	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
 
 	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
 	for (size_t i = 0; i < frames; i++) {
@@ -374,60 +357,32 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 						 lctx->light_memory, "memory:lighting");
 
 
-	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
-
-	__auto_type attach = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	__auto_type lights = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	__auto_type shadow = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < frames; i++) {
-		attach->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_attach");
-		lights->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_lights");
-		shadow->a[i] = Vulkan_CreateDescriptorSetLayout (ctx,
-														 "lighting_shadow");
-	}
-	__auto_type attach_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_attach_pool");
-	__auto_type lights_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_lights_pool");
-	__auto_type shadow_pool = Vulkan_CreateDescriptorPool (ctx,
-														"lighting_shadow_pool");
-
-	__auto_type attach_set = QFV_AllocateDescriptorSet (device, attach_pool,
-														attach);
-	__auto_type lights_set = QFV_AllocateDescriptorSet (device, lights_pool,
-														lights);
-	__auto_type shadow_set = QFV_AllocateDescriptorSet (device, shadow_pool,
-														shadow);
+	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
+	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
+	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
 	VkDeviceSize light_offset = 0;
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type lframe = &lctx->frames.a[i];
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 attach_set->a[i],
+		auto attach = QFV_DSManager_AllocSet (attach_mgr);
+		auto lights = QFV_DSManager_AllocSet (lights_mgr);
+		auto shadow = QFV_DSManager_AllocSet (shadow_mgr);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, attach,
 							 va (ctx->va_ctx, "lighting:attach_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 lights_set->a[i],
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, lights,
 							 va (ctx->va_ctx, "lighting:lights_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
-							 shadow_set->a[i],
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, shadow,
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
-		lframe->cmd = cmdSet->a[0];
 
 		lframe->light_buffer = lbuffers->a[i];
 		QFV_BindBufferMemory (device, lbuffers->a[i], lctx->light_memory,
 							  light_offset);
 		light_offset += light_size;
 
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 lframe->cmd, "cmd:lighting");
 		for (int j = 0; j < LIGHTING_BUFFER_INFOS; j++) {
 			lframe->bufferInfo[j] = base_buffer_info;
 			lframe->bufferWrite[j] = base_buffer_write;
-			lframe->bufferWrite[j].dstSet = lights_set->a[i];
+			lframe->bufferWrite[j].dstSet = lights;
 			lframe->bufferWrite[j].dstBinding = j;
 			lframe->bufferWrite[j].pBufferInfo = &lframe->bufferInfo[j];
 		}
@@ -435,7 +390,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 			lframe->attachInfo[j] = base_image_info;
 			lframe->attachInfo[j].sampler = 0;
 			lframe->attachWrite[j] = base_attachment_write;
-			lframe->attachWrite[j].dstSet = attach_set->a[i];
+			lframe->attachWrite[j].dstSet = attach;
 			lframe->attachWrite[j].dstBinding = j;
 			lframe->attachWrite[j].pImageInfo = &lframe->attachInfo[j];
 		}
@@ -445,14 +400,11 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 			lframe->shadowInfo[j].imageView = ctx->default_black->view;
 		}
 		lframe->shadowWrite = base_image_write;
-		lframe->shadowWrite.dstSet = shadow_set->a[i];
+		lframe->shadowWrite.dstSet = shadow;
 		lframe->shadowWrite.dstBinding = 0;
 		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
-	free (shadow_set);
-	free (attach_set);
-	free (lights_set);
 	qfvPopDebug (ctx);
 }
 
@@ -486,7 +438,6 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 
 	clear_shadows (ctx);
 
-	dfunc->vkDestroyCommandPool (device->dev, lctx->cmdpool, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_6, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_4, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_1, 0);
@@ -630,6 +581,7 @@ create_view (const light_renderer_t *lr, int id, vulkan_ctx_t *ctx)
 static VkFramebuffer
 create_framebuffer (const light_renderer_t *lr, vulkan_ctx_t *ctx)
 {
+	return 0;//FIXME
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -774,11 +726,12 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			.objects = (qfv_resobj_t *) &shad[1],
 		};
 		for (int i = 0; i < numMaps; i++) {
+			int         cube = maps[i].layers < 6 ? 0 : maps[i].cube;
 			shad->objects[i] = (qfv_resobj_t) {
 				.name = "map",
 				.type = qfv_res_image,
 				.image = {
-					.cubemap = maps[i].layers < 6 ? 0 : maps[i].cube,
+					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
 					.type = VK_IMAGE_TYPE_2D,
 					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
 					.extent = { maps[i].size, maps[i].size, 1 },

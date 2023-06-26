@@ -321,12 +321,7 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 			}
 		}
 	}
-	// targets does not own the objects, so need to remove them before
-	// freeing targets
-	for (int i = PL_D_NumKeys (targets); i-- > 0; ) {
-		PL_RemoveObjectForKey (targets, PL_KeyAtIndex (targets, i));
-	}
-	PL_Free (targets);
+	PL_Release (targets);
 
 	for (size_t i = 0; i < ldata->lights.size; i++) {
 		dump_light (&ldata->lights.a[i], ldata->lightleafs.a[i]);

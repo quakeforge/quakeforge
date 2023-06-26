@@ -79,7 +79,6 @@ PR_Resources_Shutdown (progs_t *pr)
 	while (res) {
 		pr_resource_t *t = res->next;
 		res->destroy (pr, res->data);
-		free (res->data);
 		free (res);
 		res = t;
 	}

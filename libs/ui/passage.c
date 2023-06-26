@@ -48,6 +48,7 @@ const component_t passage_components[passage_comp_count] = {
 	[passage_href] = {
 		.size = sizeof (hierref_t),
 		.name = "passage href",
+		.destroy = Hierref_DestroyComponent,
 	},
 };
 

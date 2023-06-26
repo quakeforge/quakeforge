@@ -34,7 +34,7 @@ HullPointContents (hull_t *hull, int num, const vec3_t p)
 #define	DIST_EPSILON	(0.03125)
 #endif
 
-static qboolean
+static bool
 SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2, trace_t *trace)
 {
 	dclipnode_t	*node;

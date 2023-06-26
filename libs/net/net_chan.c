@@ -182,7 +182,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags)
 
 	Returns true if the bandwidth choke isn't active
 */
-qboolean
+bool
 Netchan_CanPacket (netchan_t *chan)
 {
 	if (chan->cleartime < *net_realtime + MAX_BACKUP * chan->rate)
@@ -195,7 +195,7 @@ Netchan_CanPacket (netchan_t *chan)
 
 	Returns true if the bandwidth choke isn't
 */
-qboolean
+bool
 Netchan_CanReliable (netchan_t *chan)
 {
 	if (chan->reliable_length)
@@ -209,7 +209,7 @@ Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	int         i;
 	unsigned int w1, w2;
-	qboolean    send_reliable;
+	bool        send_reliable;
 	sizebuf_t   send;
 
 	// check for message overflow
@@ -288,7 +288,7 @@ Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 	}
 }
 
-qboolean
+bool
 Netchan_Process (netchan_t *chan)
 {
 	unsigned int reliable_ack, reliable_message, sequence, sequence_ack;

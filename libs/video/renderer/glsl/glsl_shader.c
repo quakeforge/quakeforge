@@ -48,7 +48,7 @@ typedef struct glsl_effect_s {
 } glsl_effect_t;
 
 static hashtab_t *effect_tab;
-static glsl_effect_t *effects_freelist;
+ALLOC_STATE (glsl_effect_t, effects);
 
 static glsl_effect_t *
 new_effect (void)
@@ -65,6 +65,21 @@ effect_get_key (const void *e, void *unused)
 	return effect->name;
 }
 
+static void
+effect_free (void *e, void *unused)
+{
+	glsl_effect_t *effect = e;
+	free ((char *) effect->name);
+	Segtext_delete (effect->text);
+}
+
+void
+GLSL_ShaderShutdown (void)
+{
+	Hash_DelTable (effect_tab);
+	ALLOC_FREE_BLOCKS (effects);
+}
+
 int
 GLSL_RegisterEffect (const char *name, const char *src)
 {
@@ -72,7 +87,7 @@ GLSL_RegisterEffect (const char *name, const char *src)
 	segtext_t  *text;
 
 	if (!effect_tab)
-		effect_tab = Hash_NewTable (61, effect_get_key, 0, 0, 0);
+		effect_tab = Hash_NewTable (61, effect_get_key, effect_free, 0, 0);
 
 	if (Hash_Find (effect_tab, name)) {
 		Sys_Printf ("WARNING: ignoring duplicate '%s' effect\n", name);

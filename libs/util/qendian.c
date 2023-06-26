@@ -41,9 +41,9 @@
 */
 
 #ifndef WORDS_BIGENDIAN
-VISIBLE qboolean    bigendien = false;
+VISIBLE bool        bigendien = false;
 #else
-VISIBLE qboolean    bigendien = true;
+VISIBLE bool        bigendien = true;
 #endif
 
 

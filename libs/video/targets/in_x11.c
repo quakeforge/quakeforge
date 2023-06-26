@@ -170,8 +170,8 @@ static cvar_t in_mouse_accel_cvar = {
 	.value = { .type = &cexpr_int, .value = &in_mouse_accel },
 };
 
-static qboolean dga_avail;
-static qboolean dga_active;
+static bool dga_avail;
+static bool dga_active;
 static IE_mouse_event_t x11_mouse;
 static IE_key_event_t x11_key;
 static int input_grabbed = 0;
@@ -191,7 +191,7 @@ static int x11_have_xi;
 static int x11_fd;
 static int x11_driver_handle = -1;
 static int x11_event_handler_id;
-static qboolean x11_have_pointer;
+static bool x11_have_pointer;
 
 static void
 dga_on (void)

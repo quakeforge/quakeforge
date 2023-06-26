@@ -43,7 +43,7 @@ int			Datagram_Init (void);
 
 	\param state	True to enable, false to disable.
 */
-void		Datagram_Listen (qboolean state);
+void		Datagram_Listen (bool state);
 
 /** Search for hosts (servers) on the local network.
 
@@ -54,7 +54,7 @@ void		Datagram_Listen (qboolean state);
 
 	\param xmit		True to send the broadcast, falst to only listen.
 */
-void		Datagram_SearchForHosts (qboolean xmit);
+void		Datagram_SearchForHosts (bool xmit);
 
 /** Connect to the specified host.
 
@@ -104,7 +104,7 @@ int			Datagram_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data);
 	\param sock		The socket to check.
 	\return			True if the packet can be sent.
 */
-qboolean	Datagram_CanSendMessage (qsocket_t *sock);
+bool		Datagram_CanSendMessage (qsocket_t *sock);
 
 /** Check if an unreliable message can be sent to the socket.
 
@@ -113,7 +113,7 @@ qboolean	Datagram_CanSendMessage (qsocket_t *sock);
 	\param sock		The socket to check.
 	\return			True if the packet can be sent.
 */
-qboolean	Datagram_CanSendUnreliableMessage (qsocket_t *sock);
+bool		Datagram_CanSendUnreliableMessage (qsocket_t *sock);
 
 /** Close the socket.
 

@@ -553,7 +553,7 @@ IMT_BindButton (imt_t *imt, int button, const char *binding)
 	}
 }
 
-qboolean
+bool
 IMT_ProcessAxis (int axis, int value)
 {
 	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
@@ -643,7 +643,7 @@ process_binding (int button, int state, const char *cmd)
 	}
 }
 
-qboolean
+bool
 IMT_ProcessButton (int button, int state)
 {
 	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;

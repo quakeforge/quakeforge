@@ -33,7 +33,7 @@
 #include "QF/model.h"
 
 typedef struct {
-	qboolean    present;
+	bool        present;
 	vec3_t      laggedpos;
 } laggedentinfo_t;
 
@@ -44,9 +44,9 @@ typedef enum {
 } trace_e;
 
 typedef struct trace_s {
-	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
-	qboolean	inopen, inwater;
+	bool        allsolid;	// if true, plane is not valid
+	bool        startsolid;	// if true, the initial point was in a solid area
+	bool        inopen, inwater;
 	float		fraction;	// time completed, 1.0 = didn't hit anything
 	vec3_t		extents;	// 1/2 size of traced box
 	trace_e		type;		// type of trace to perform
@@ -92,7 +92,7 @@ void SV_UnlinkEdict (struct edict_s *ent);
 // so it doesn't clip against itself
 // flags ent->v.modified
 
-void SV_LinkEdict (struct edict_s *ent, qboolean touch_triggers);
+void SV_LinkEdict (struct edict_s *ent, bool touch_triggers);
 // Needs to be called any time an entity changes origin, mins, maxs, or solid
 // flags ent->v.modified
 // sets ent->v.absmin and ent->v.absmax

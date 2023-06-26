@@ -237,6 +237,7 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_basic:
+		case ty_handle:
 			return pr_type_size[type->type];
 		case ty_struct:
 		case ty_union:
@@ -406,7 +407,11 @@ pr_debug_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (res->debug_syms);
 	Hash_DelTable (res->compunits);
 
+	PR_RESDELMAP (res->compmap);
+
 	pr->pr_debug_resources = 0;
+
+	free (res);
 }
 
 static file_t *
@@ -1048,6 +1053,7 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_handle:
 		case ty_basic:
 			switch (type->type) {
 #define EV_TYPE(t) \
@@ -1984,9 +1990,17 @@ PR_Debug_Init (progs_t *pr)
 	pr->pr_debug_resources = res;
 }
 
+static void
+pr_debug_shutdown (void *data)
+{
+	free (source_paths);
+	free (source_path_string);
+}
+
 void
 PR_Debug_Init_Cvars (void)
 {
+	Sys_RegisterShutdown (pr_debug_shutdown, 0);
 	Cvar_Register (&pr_debug_cvar, 0, 0);
 	Cvar_Register (&pr_source_path_cvar, source_path_f, 0);
 }

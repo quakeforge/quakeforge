@@ -1,4 +1,5 @@
 #include <PropertyList.h>
+#include <string.h>
 
 #include "vkfieldsingle.h"
 #include "vkfieldtype.h"
@@ -17,8 +18,15 @@
 	PLItem     *desc = [item getObjectForKey:"type"];
 	type = [[FieldType fieldType:[desc getObjectAtIndex:1]] retain];
 
-	value_field = [[item getObjectForKey:"value"] string];
+	value_field = str_hold ([[item getObjectForKey:"value"] string]);
 	return self;
+}
+
+-(void) dealloc
+{
+	[type release];
+	str_free (value_field);
+	[super dealloc];
 }
 
 -writeParseData

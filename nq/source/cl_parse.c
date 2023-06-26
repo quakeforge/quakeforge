@@ -396,7 +396,7 @@ CL_ParseUpdate (int bits)
 	entity_state_t *baseline;
 	entity_state_t *state;
 	int         modnum, num, i;
-	qboolean    forcelink;
+	bool        forcelink;
 
 	if (cls.signon == so_begin) {
 		// first update is the final signon stage

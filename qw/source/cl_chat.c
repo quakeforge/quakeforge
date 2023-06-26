@@ -60,13 +60,13 @@ CL_Ignore_Free (void *ele, void *unused)
 	free (ig);
 }
 
-static qboolean
+static bool
 CL_Ignore_Compare (const void *ele, const void *cmp, void *unused)
 {
 	return *(int *)cmp == ((ignore_t *) ele)->uid;
 }
 
-static qboolean
+static bool
 isc_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (cl.players[ig->slot].userid != ig->uid) // We got out of sync somehow
@@ -80,14 +80,14 @@ CL_Ignore_Sanity_Check (void)
 	llist_iterate (ignore_list, LLIST_ICAST (isc_iterator));
 }
 
-static qboolean live_iterator (ignore_t *ig, llist_node_t *node)
+static bool live_iterator (ignore_t *ig, llist_node_t *node)
 {
 	Sys_Printf ("%5i - %s\n", ig->uid,
 				Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 	return true;
 }
 
-static qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
+static bool dead_iterator (ignore_t *ig, llist_node_t *node)
 {
 	Sys_Printf ("%s\n", ig->lastname);
 	return true;
@@ -158,9 +158,9 @@ CL_Unignore_f (void)
 */
 static const char *g_cam_str;
 static dstring_t *g_cam_test;
-static qboolean g_cam_allowed;
+static bool g_cam_allowed;
 
-static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
+static bool cam_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (cl.players[ig->slot].userid != ig->uid) { // We got out of sync somehow
 		llist_remove (node);
@@ -174,7 +174,7 @@ static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
 		return true;
 }
 
-qboolean
+bool
 CL_Chat_Allow_Message (const char *str)
 {
 	g_cam_str = str;
@@ -206,7 +206,7 @@ CL_Chat_User_Disconnected (int uid)
 static const char *g_ccn_name;
 static ignore_t *g_ccn_found;
 
-static qboolean ccn_iterator (ignore_t *ig, llist_node_t *node)
+static bool ccn_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (!strcmp (ig->lastname, g_ccn_name)) {
 		g_ccn_found = ig;

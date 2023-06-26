@@ -57,7 +57,7 @@
 typedef struct {
 	tex_t      *tex;
 	tex_t      *fb_tex;
-	qboolean    fb;
+	bool        fb;
 } glskin_t;
 
 static GLuint skin_textures[MAX_TRANSLATIONS];
@@ -101,7 +101,7 @@ gl_Skin_SetPlayerSkin (int width, int height, const byte *data)
 
 static void
 build_skin_8 (tex_t *tex, int texnum, byte *translate,
-			  unsigned scaled_width, unsigned scaled_height, qboolean alpha)
+			  unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte        *inrow;
@@ -127,7 +127,7 @@ build_skin_8 (tex_t *tex, int texnum, byte *translate,
 
 static void
 build_skin_32 (tex_t *tex, int texnum, byte *translate,
-			   unsigned scaled_width, unsigned scaled_height, qboolean alpha)
+			   unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte       *inrow;

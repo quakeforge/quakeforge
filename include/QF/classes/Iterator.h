@@ -35,7 +35,7 @@
 
 classDecl (Iterator, Object,
 	Object * methodDecl (Iterator, next);
-	qboolean methodDecl (Iterator, hasNext);
+	bool methodDecl (Iterator, hasNext);
 );
 #define ITERATOR(o) ((Iterator *)(o))
 

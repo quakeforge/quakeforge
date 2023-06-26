@@ -83,7 +83,7 @@ VISIBLE int         com_argc;
 VISIBLE const char **com_argv;
 const char *com_cmdline;
 
-VISIBLE qboolean    nouse = false;		// 1999-10-29 +USE fix by Maddes
+VISIBLE bool        nouse = false;		// 1999-10-29 +USE fix by Maddes
 
 
 /*
@@ -111,7 +111,7 @@ COM_CheckParm (const char *parm)
 VISIBLE void
 COM_InitArgv (int argc, const char **argv)
 {
-	qboolean    safe;
+	bool        safe;
 	int         i, len;
 	char       *cmdline;
 
@@ -241,4 +241,17 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 			Cmd_StuffCmds (cbuf);
 		}
 	}
+}
+
+static void
+qargs_shutdown (void *data)
+{
+	free (largv);
+	free ((char *) com_cmdline);
+}
+
+static void __attribute__((constructor))
+qargs_init (void)
+{
+	Sys_RegisterShutdown (qargs_shutdown, 0);
 }

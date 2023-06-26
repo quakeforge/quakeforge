@@ -462,7 +462,7 @@ in_bind_f (void)
 			IMT_BindAxis (imt, dev->axis_imt_id + num, axis, &recipe);
 		}
 		Hash_DelTable (vars_tab.tab);
-		PL_Free (exprctx.messages);
+		PL_Release (exprctx.messages);
 		delete_memsuper (exprctx.memsuper);
 	} else {
 		// the rest of the command line is the binding

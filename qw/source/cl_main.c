@@ -130,7 +130,7 @@ static plugin_list_t client_plugin_list[] = {
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
 
-qboolean    noclip_anglehack;			// remnant from old quake
+bool        noclip_anglehack;			// remnant from old quake
 
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
@@ -344,7 +344,7 @@ static cvar_t cl_fb_players_cvar = {
 	.value = { .type = &cexpr_float, .value = &cl_fb_players },
 };
 
-static qboolean allowremotecmd = true;
+static bool allowremotecmd = true;
 
 /*  info mirrors */
 char *password;
@@ -422,8 +422,8 @@ entity_state_t cl_baselines[MAX_EDICTS];
 double      connect_time = -1;			// for connection retransmits
 
 quakeparms_t host_parms;
-qboolean    host_initialized;			// true if into command execution
-qboolean    nomaster;
+bool        host_initialized;			// true if into command execution
+bool        nomaster;
 
 double      host_frametime;
 double      realtime;					// without any filtering or bounding
@@ -1415,7 +1415,7 @@ CL_SetState (cactive_t state)
 static void
 CL_Shutdown (void *data)
 {
-	static qboolean isdown = false;
+	static bool isdown = false;
 
 	if (isdown) {
 		printf ("recursive shutdown\n");
@@ -1687,7 +1687,7 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	static qboolean inerror = false;
+	static bool inerror = false;
 	va_list     argptr;
 
 	if (inerror)
@@ -1734,7 +1734,7 @@ Host_WriteConfiguration (void)
 			free (cfg);
 			Qclose (f);
 		}
-		PL_Free (config);
+		PL_Release (config);
 	}
 }
 
@@ -1761,7 +1761,7 @@ Host_ReadConfiguration (const char *cfg_name)
 	Cvar_LoadConfig (config);
 	IN_LoadConfig (config);
 
-	PL_Free (config);
+	PL_Release (config);
 	return 1;
 }
 

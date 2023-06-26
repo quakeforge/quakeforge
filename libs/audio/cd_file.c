@@ -71,10 +71,10 @@ static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
 /* global status variables. */
-static qboolean	playing = false;
-static qboolean	wasPlaying = false;
-static qboolean	mus_enabled = false;
-static qboolean	ogglistvalid = false;
+static bool	playing = false;
+static bool	wasPlaying = false;
+static bool	mus_enabled = false;
+static bool	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
@@ -142,7 +142,7 @@ I_OGGMus_Shutdown (void)
 {
 	if (tracklist) {
 		I_OGGMus_Stop ();
-		PL_Free (tracklist);
+		PL_Release (tracklist);
 		tracklist = NULL;
 	}
 	mus_enabled = false;
@@ -184,7 +184,7 @@ Load_Tracklist (void)
 	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 
-	PL_Free (tracklist);
+	PL_Release (tracklist);
 	tracklist = PL_GetPropertyList (buffile, 0);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
@@ -294,7 +294,7 @@ I_OGGMus_Resume (void)
 /* start playing, if we've got a play_list.
  * cry if we can't find a file to play */
 static void
-I_OGGMus_Play (int track, qboolean looping)
+I_OGGMus_Play (int track, bool looping)
 {
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */

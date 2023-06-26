@@ -64,7 +64,7 @@ static plugin_list_t server_plugin_list[] = {
 		SERVER_PLUGIN_LIST
 };
 
-qboolean	host_initialized;			// true if into command execution
+bool		host_initialized;			// true if into command execution
 
 quakeparms_t host_parms;
 
@@ -298,7 +298,7 @@ void
 Host_Error (const char *error, ...)
 {
 	static dstring_t *str;
-	static qboolean inerror = false;
+	static bool inerror = false;
 	va_list     argptr;
 
 	if (inerror)
@@ -481,7 +481,7 @@ Host_ClientCommands (const char *fmt, ...)
 	if (crash = true), don't bother sending signofs
 */
 void
-SV_DropClient (qboolean crash)
+SV_DropClient (bool crash)
 {
 	client_t   *client;
 	unsigned    i;
@@ -540,7 +540,7 @@ SV_DropClient (qboolean crash)
 	This happens only at the end of a game, not between levels
 */
 void
-Host_ShutdownServer (qboolean crash)
+Host_ShutdownServer (bool crash)
 {
 	byte        message[4];
 	double      start;
@@ -974,7 +974,7 @@ Host_Init (void)
 void
 Host_Shutdown (void *data)
 {
-	static qboolean isdown = false;
+	static bool isdown = false;
 
 	if (isdown) {
 		printf ("recursive shutdown\n");

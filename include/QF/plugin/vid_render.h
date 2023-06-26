@@ -104,7 +104,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_TextBox) (int x, int y, int width, int lines, byte alpha);
 	void (*Draw_FadeScreen) (void);
 	void (*Draw_BlendScreen) (quat_t color);
-	qpic_t *(*Draw_CachePic) (const char *path, qboolean alpha);
+	qpic_t *(*Draw_CachePic) (const char *path, bool alpha);
 	void (*Draw_UncachePic) (const char *path);
 	qpic_t *(*Draw_MakePic) (int width, int height, const byte *data);
 	void (*Draw_DestroyPic) (qpic_t *pic);
@@ -155,9 +155,9 @@ typedef struct vid_render_data_s {
 	int        *scr_viewsize;
 	int        *graphheight;
 	float       min_wateralpha;
-	qboolean    force_fullscreen;
-	qboolean    inhibit_viewmodel;
-	qboolean    paused;
+	bool        force_fullscreen;
+	bool        inhibit_viewmodel;
+	bool        paused;
 	int         lineadj;
 	entity_t    view_model;	//FIXME still?!?
 	double      frametime;

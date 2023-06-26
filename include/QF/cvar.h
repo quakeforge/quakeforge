@@ -110,7 +110,7 @@ const char *Cvar_VarString (const cvar_t *var);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
-qboolean Cvar_Command (void);
+bool Cvar_Command (void);
 
 // Writes lines containing "set variable value" for all variables
 // with the archive flag set to true.

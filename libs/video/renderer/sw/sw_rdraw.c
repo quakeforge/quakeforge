@@ -51,9 +51,9 @@ clipplane_t view_clipplanes[4];
 
 medge_t    *r_pedge;	// FIXME used by asm
 
-qboolean    r_leftclipped, r_rightclipped;
-static qboolean makeleftedge, makerightedge;
-qboolean    r_nearzionly;
+bool        r_leftclipped, r_rightclipped;
+static bool makeleftedge, makerightedge;
+bool        r_nearzionly;
 
 int         sintable[SIN_BUFFER_SIZE];
 int         intsintable[SIN_BUFFER_SIZE];
@@ -71,7 +71,7 @@ float       r_nearzi;
 float       r_u1, r_v1, r_lzi1;
 int         r_ceilv1;
 
-qboolean    r_lastvertvalid;
+bool        r_lastvertvalid;
 
 
 #ifdef PIC
@@ -622,7 +622,7 @@ R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 	mvertex_t   verts[2][100];			// FIXME: do real number
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
-	qboolean    visible;
+	bool        visible;
 	mod_brush_t *brush = *(mod_brush_t **) SW_COMP (scene_sw_brush, render_id);
 
 	// FIXME: clean this up and make it faster

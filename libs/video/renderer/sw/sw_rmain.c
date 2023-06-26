@@ -56,20 +56,20 @@
 
 const byte *r_colormap;
 int         r_numallocatededges;
-qboolean    r_drawpolys;
-qboolean    r_drawculledpolys;
-qboolean    r_worldpolysbacktofront;
-qboolean    r_recursiveaffinetriangles = true;
+bool        r_drawpolys;
+bool        r_drawculledpolys;
+bool        r_worldpolysbacktofront;
+bool        r_recursiveaffinetriangles = true;
 int         r_pixbytes = 1;
 int         r_outofsurfaces;
 int         r_outofedges;
 
-qboolean    r_viewchanged;
+bool        r_viewchanged;
 
 int         c_surf;
 int         r_maxsurfsseen, r_maxedgesseen;
 static int  r_cnumsurfs;
-static qboolean    r_surfsonstack;
+static bool        r_surfsonstack;
 int         r_clipflags;
 
 static byte       *r_stack_start;

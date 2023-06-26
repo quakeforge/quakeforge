@@ -49,7 +49,7 @@ typedef struct
 	struct client_s	*clients;		// [maxclients]
 	void		(*phys_client) (struct edict_s *ent, int num);
 	int			serverflags;		// episode completion information
-	qboolean	changelevel_issued;	// cleared when at SV_SpawnServer
+	bool		changelevel_issued;	// cleared when at SV_SpawnServer
 } server_static_t;
 
 //=============================================================================
@@ -58,10 +58,10 @@ typedef enum {ss_loading, ss_active} server_state_t;
 
 typedef struct
 {
-	qboolean	active;				// false if only a net client
+	bool		active;				// false if only a net client
 
-	qboolean	paused;
-	qboolean	loadgame;			// handle connections specially
+	bool		paused;
+	bool		loadgame;			// handle connections specially
 
 	double		time;
 
@@ -100,11 +100,11 @@ typedef struct
 
 typedef struct client_s
 {
-	qboolean		active;				// false = client is free
-	qboolean		spawned;			// false = don't send datagrams
-	qboolean		dropasap;			// has been told to go to another level
-	qboolean		privileged;			// can execute any host command
-	qboolean		sendsignon;			// valid only before spawned
+	bool			active;				// false = client is free
+	bool			spawned;			// false = don't send datagrams
+	bool			dropasap;			// has been told to go to another level
+	bool			privileged;			// can execute any host command
+	bool			sendsignon;			// valid only before spawned
 
 	double			last_message;		// reliable messages must be sent
 										// periodically
@@ -249,7 +249,7 @@ void SV_StartParticle (const vec3_t org, const vec3_t dir, int color,
 void SV_StartSound (edict_t *entity, int channel, const char *sample,
 					int volume, float attenuation);
 
-void SV_DropClient (qboolean crash);
+void SV_DropClient (bool crash);
 
 void SV_SendClientMessages (void);
 void SV_ClearDatagram (void);
@@ -270,7 +270,7 @@ struct trace_s SV_PushEntity (edict_t *ent, vec3_t push);
 int SV_EntCanSupportJump (edict_t *ent) __attribute__((pure));
 int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
 void SV_CheckVelocity (edict_t *ent);
-qboolean SV_RunThink (edict_t *ent);
+bool SV_RunThink (edict_t *ent);
 void SV_AddGravity (edict_t *ent);
 void SV_FinishGravity (edict_t *ent, vec3_t move);
 void SV_Physics_Toss (edict_t *ent);
@@ -280,8 +280,8 @@ void SV_Physics_Init_Cvars (void);
 void SV_ProgStartFrame (void);
 void SV_RunNewmis (void);
 
-qboolean SV_CheckBottom (edict_t *ent);
-qboolean SV_movestep (edict_t *ent, const vec3_t move, qboolean relink);
+bool SV_CheckBottom (edict_t *ent);
+bool SV_movestep (edict_t *ent, const vec3_t move, bool relink);
 
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 

@@ -102,7 +102,7 @@ static qmsg_t dgrm_message = {
 // FIXME: MENUCODE
 //extern int  m_return_state;
 //extern int  m_state;
-//extern qboolean m_return_onerror;
+//extern bool m_return_onerror;
 //extern char m_return_reason[32];
 
 
@@ -271,7 +271,7 @@ ReSendMessage (qsocket_t *sock)
 }
 
 
-qboolean
+bool
 Datagram_CanSendMessage (qsocket_t *sock)
 {
 	if (sock->sendNext) {
@@ -282,7 +282,7 @@ Datagram_CanSendMessage (qsocket_t *sock)
 }
 
 
-__attribute__((const)) qboolean
+__attribute__((const)) bool
 Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
 	return true;
@@ -573,7 +573,7 @@ Datagram_Close (qsocket_t *sock)
 
 
 void
-Datagram_Listen (qboolean state)
+Datagram_Listen (bool state)
 {
 	int         i;
 
@@ -899,7 +899,7 @@ Datagram_CheckNewConnections (void)
 
 
 static void
-_Datagram_SearchForHosts (qboolean xmit)
+_Datagram_SearchForHosts (bool xmit)
 {
 	int         ret;
 	netadr_t    readaddr;
@@ -973,7 +973,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 }
 
 void
-Datagram_SearchForHosts (qboolean xmit)
+Datagram_SearchForHosts (bool xmit)
 {
 	for (net_landriverlevel = 0; net_landriverlevel < net_numlandrivers;
 		 net_landriverlevel++) {

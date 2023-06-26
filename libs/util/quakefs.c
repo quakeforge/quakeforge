@@ -186,8 +186,8 @@ typedef struct int_findfile_s {
 	int         fname_index;
 } int_findfile_t;
 
-static searchpath_t *searchpaths_freelist;
-static vpath_t *vpaths_freelist;
+ALLOC_STATE (searchpath_t, searchpaths);
+ALLOC_STATE (vpath_t, vpaths);
 static vpath_t *qfs_vpaths;
 
 //QFS
@@ -543,7 +543,7 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 			}
 		}
 		free (list);
-		PL_Free (keys);
+		PL_Release (keys);
 	}
 	return gdpl;
 }
@@ -572,6 +572,42 @@ qfs_process_path (const char *path, const char *gamedir)
 }
 
 static void
+qfs_free_gamedir (void)
+{
+	if (qfs_gamedir) {
+		if (qfs_gamedir->name)
+			free ((char *)qfs_gamedir->name);
+		if (qfs_gamedir->gamedir)
+			free ((char *)qfs_gamedir->gamedir);
+		if (qfs_gamedir->path)
+			free ((char *)qfs_gamedir->path);
+		if (qfs_gamedir->gamecode)
+			free ((char *)qfs_gamedir->gamecode);
+		if (qfs_gamedir->hudtype)
+			free ((char *)qfs_gamedir->hudtype);
+		if (qfs_gamedir->dir.def)
+			free ((char *)qfs_gamedir->dir.def);
+		if (qfs_gamedir->dir.skins)
+			free ((char *)qfs_gamedir->dir.skins);
+		if (qfs_gamedir->dir.models)
+			free ((char *)qfs_gamedir->dir.models);
+		if (qfs_gamedir->dir.sound)
+			free ((char *)qfs_gamedir->dir.sound);
+		if (qfs_gamedir->dir.maps)
+			free ((char *)qfs_gamedir->dir.maps);
+		if (qfs_gamedir->dir.shots)
+			free ((char *)qfs_gamedir->dir.shots);
+		free (qfs_gamedir);
+	}
+
+	while (qfs_vpaths) {
+		vpath_t    *next = qfs_vpaths->next;
+		delete_vpath (qfs_vpaths);
+		qfs_vpaths = next;
+	}
+}
+
+static void
 qfs_build_gamedir (const char **list)
 {
 	int         j;
@@ -584,33 +620,7 @@ qfs_build_gamedir (const char **list)
 
 	qfs_set_var (vars, "game", qfs_game);
 
-	if (qfs_gamedir) {
-		if (qfs_gamedir->name)
-			free ((char *)qfs_gamedir->name);
-		if (qfs_gamedir->gamedir)
-			free ((char *)qfs_gamedir->gamedir);
-		if (qfs_gamedir->path)
-			free ((char *)qfs_gamedir->path);
-		if (qfs_gamedir->gamecode)
-			free ((char *)qfs_gamedir->gamecode);
-		if (qfs_gamedir->dir.def)
-			free ((char *)qfs_gamedir->dir.def);
-		if (qfs_gamedir->dir.skins)
-			free ((char *)qfs_gamedir->dir.skins);
-		if (qfs_gamedir->dir.models)
-			free ((char *)qfs_gamedir->dir.models);
-		if (qfs_gamedir->dir.sound)
-			free ((char *)qfs_gamedir->dir.sound);
-		if (qfs_gamedir->dir.maps)
-			free ((char *)qfs_gamedir->dir.maps);
-		free (qfs_gamedir);
-	}
-
-	while (qfs_vpaths) {
-		vpath_t    *next = qfs_vpaths->next;
-		delete_vpath (qfs_vpaths);
-		qfs_vpaths = next;
-	}
+	qfs_free_gamedir ();
 
 	for (j = 0; list[j]; j++)
 		;
@@ -690,25 +700,21 @@ qfs_load_config (void)
 		goto no_config;
 
 	len = Qfilesize (f);
-	buf = malloc (len + 3); // +3 for { } and \0
+	buf = malloc (len + 1); // +1 for nul
 
-	Qread (f, buf + 1, len);
+	Qread (f, buf, len);
 	Qclose (f);
 
-	// convert the config file to a plist dictionary
-	buf[0] = '{';
-	buf[len + 1] = '}';
-	buf[len + 2] = 0;
 	if (qfs_gd_plist)
-		PL_Free (qfs_gd_plist);
-	qfs_gd_plist = PL_GetPropertyList (buf, 0);
+		PL_Release (qfs_gd_plist);
+	qfs_gd_plist = PL_GetDictionary (buf, 0);
 	free (buf);
 	if (qfs_gd_plist && PL_Type (qfs_gd_plist) == QFDictionary)
 		return;		// done
 	Sys_Printf ("not a dictionary\n");
 no_config:
 	if (qfs_gd_plist)
-		PL_Free (qfs_gd_plist);
+		PL_Release (qfs_gd_plist);
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf, 0);
 }
 
@@ -829,13 +835,10 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 	Qclose (f);
 }
 
-static int_findfile_t *
-qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
-					 const char **fnames)
+static int_findfile_t found;
+static void
+clear_findfile (void)
 {
-	static int_findfile_t found;
-	const char **fn;
-
 	found.ff.vpath = 0;
 	found.ff.in_pak = false;
 	found.pack = 0;
@@ -849,6 +852,15 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 		free ((char *) found.path);
 		found.path = 0;
 	}
+}
+
+static int_findfile_t *
+qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
+					 const char **fnames)
+{
+	const char **fn;
+
+	clear_findfile ();
 	// is the element a pak file?
 	if (sp->pack) {
 		dpackfile_t *packfile = 0;
@@ -1456,11 +1468,13 @@ qfs_path_cvar (void *data, const cvar_t *cvar)
 static void
 qfs_shutdown (void *data)
 {
-	while (qfs_vpaths) {
-		vpath_t    *next = qfs_vpaths->next;
-		delete_vpath (qfs_vpaths);
-		qfs_vpaths = next;
-	}
+	clear_findfile ();
+	qfs_free_gamedir ();
+	PL_Release (qfs_gd_plist);
+	free ((char *) qfs_userpath);
+	free (gamedir_callbacks);
+	ALLOC_FREE_BLOCKS (vpaths);
+	ALLOC_FREE_BLOCKS (searchpaths);
 }
 
 VISIBLE void

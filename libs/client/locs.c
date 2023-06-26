@@ -198,7 +198,7 @@ locs_reset (void)
 }
 
 void
-locs_save (const char *filename, qboolean gz)
+locs_save (const char *filename, bool gz)
 {
 	int i;
 	QFile *locfd;

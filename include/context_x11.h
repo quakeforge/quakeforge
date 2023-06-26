@@ -57,12 +57,12 @@ extern int		x_height;
 extern int		x_shmeventtype;
 extern Time		x_time;
 extern Time		x_mouse_time;
-extern qboolean oktodraw;
-extern qboolean x_have_focus;
+extern bool     oktodraw;
+extern bool     x_have_focus;
 
-qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
-qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
-qboolean X11_SetGamma (double);
+bool X11_AddEvent (int event, void (*event_handler)(XEvent *));
+bool X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
+bool X11_SetGamma (double);
 void X11_CloseDisplay (void);
 void X11_CreateNullCursor (void);
 void X11_CreateWindow (int, int);
@@ -80,13 +80,14 @@ void X11_SaveMouseAcceleration (void);
 void X11_RemoveMouseAcceleration (void);
 void X11_RestoreMouseAcceleration (void);
 
-struct gl_ctx_s *X11_GL_Context (void);
+struct vid_internal_s;
+struct gl_ctx_s *X11_GL_Context (struct vid_internal_s *);
 void X11_GL_Init_Cvars (void);
 
-struct sw_ctx_s *X11_SW_Context (void);
+struct sw_ctx_s *X11_SW_Context (struct vid_internal_s *);
 void X11_SW_Init_Cvars (void);
 
-struct vulkan_ctx_s *X11_Vulkan_Context (void);
+struct vulkan_ctx_s *X11_Vulkan_Context (struct vid_internal_s *);
 void X11_Vulkan_Init_Cvars (void);
 
 #endif	// __context_x11_h_

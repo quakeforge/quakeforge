@@ -11,7 +11,7 @@ bitmap_txt = """
 0 1011 otss udivops
 0 1111 s0mm load64
 0 1111 s1mm store64
-0 1111 n000
+0 1111 m000 lea2
 
 1 0ooo ttss mathops
 1 011r tuss shiftops
@@ -46,20 +46,24 @@ address_types = [
     "ev_entity, ev_field",
     "ev_ptr, ev_short",
     "ev_ptr, ev_int",
+    "ev_void, ev_short",
+    "ev_void, ev_int",
 ]
 address_widths = [
     [ "1, 0", "1, 1", "1, 0", "1, 1", ],
     [ "2, 0", "1, 1", "1, 0", "1, 1", ],
     [ "3, 0", "1, 1", "1, 0", "1, 1", ],
     [ "4, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "-1, 0", "1, 1", "1, 0", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 0", "1, 1", "-1, 0", "-1, 1"],
 ]
-#store, pop and lea
+#store, pop, lea
 store_fmt = [
     "%ga",
     "%Ga.%Gb(%Ea)",
     "*(%Ga + %sb)",
     "*(%Ga + %Gb)",
+    "%ga + %sb",
+    "%ga + %Gb",
 ]
 # load and push
 load_fmt =  [
@@ -262,6 +266,20 @@ lea_formats = {
     "types": "{lea_types[mm]}, ev_ptr",
     "args": {
         "op_mode": address_mode,
+        "lea_fmt": store_fmt,
+        "lea_types": address_types,
+        "lea_widths": address_widths[4],
+    },
+}
+lea2_formats = {
+    "opcode": "OP_LEA_{op_mode[m]}",
+    "mnemonic": "lea",
+    "opname": "lea",
+    "format": "{lea_fmt[m+4]}, %gc",
+    "widths": "{lea_widths[m+4]}, 1",
+    "types": "{lea_types[m+4]}, ev_ptr",
+    "args": {
+        "op_mode": "EF",
         "lea_fmt": store_fmt,
         "lea_types": address_types,
         "lea_widths": address_widths[4],
@@ -579,6 +597,7 @@ group_map = {
     "hops":     hops_formats,
     "jump":     jump_formats,
     "lea":      lea_formats,
+    "lea2":     lea2_formats,
     "load":     load_formats,
     "load64":   load64_formats,
     "mathops":  mathops_formats,

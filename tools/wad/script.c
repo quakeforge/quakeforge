@@ -52,7 +52,7 @@
 #include "wad.h"
 
 static dstring_t destfile = {&dstring_default_mem};
-static qboolean savesingle = false;
+static bool savesingle = false;
 static wad_t *wadfile;
 dstring_t  *lumpname;
 tex_t      *image;

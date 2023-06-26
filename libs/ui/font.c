@@ -59,12 +59,19 @@ copy_glyph (vrect_t *rect, FT_GlyphSlot src_glyph, font_t *font)
 	}
 }
 
+static void
+Font_shutdown (void *data)
+{
+	FT_Done_FreeType (ft);
+}
+
 VISIBLE void
 Font_Init (void)
 {
 	if (FT_Init_FreeType (&ft)) {
 		Sys_Error ("Could not init FreeType library");
 	}
+	Sys_RegisterShutdown (Font_shutdown, 0);
 }
 
 VISIBLE void

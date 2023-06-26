@@ -83,7 +83,7 @@ GIB_Thread_Count (void)
 	return llist_size (gib_threads);
 }
 
-static qboolean te_iterator (cbuf_t *cbuf, llist_node_t *node)
+static bool te_iterator (cbuf_t *cbuf, llist_node_t *node)
 {
 	if (GIB_DATA(cbuf)->program)
 		Cbuf_Execute_Stack (cbuf);

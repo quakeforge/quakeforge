@@ -51,6 +51,15 @@ typedef struct hashlink_s {
 	void *data;
 } hashlink_t;
 
+typedef struct hlinkset_s {
+	struct hlinkset_s *next;
+} hlinkset_t;
+
+struct hashctx_s {
+	hlinkset_t *linksets;
+	hashlink_t *free_hashlinks;
+};
+
 struct hashtab_s {
 	size_t tab_size;
 	unsigned int size_bits;
@@ -60,38 +69,41 @@ struct hashtab_s {
 	uintptr_t (*get_hash)(const void*,void*);
 	const char *(*get_key)(const void*,void*);
 	void (*free_ele)(void*,void*);
-	hashlink_t **hashlink_freelist;
+	hashctx_t  *hashctx;
 	hashlink_t *tab[1];             // variable size
 };
 
 static hashlink_t *
-new_hashlink (hashlink_t **free_hashlinks)
+new_hashlink (hashctx_t *hctx)
 {
 	hashlink_t *link;
 
-	if (!*free_hashlinks) {
+	if (!hctx->free_hashlinks) {
 		int		i;
 
-		if (!(*free_hashlinks = calloc (1024, sizeof (hashlink_t))))
-			return 0;
-		for (i = 0, link = *free_hashlinks; i < 1023; i++, link++)
+		hlinkset_t *linkset = malloc (sizeof (hlinkset_t)
+									  + 1024 * sizeof (hashlink_t));
+		linkset->next = hctx->linksets;
+		hctx->linksets = linkset;
+		hctx->free_hashlinks = (hashlink_t *) &linkset[1];
+		for (i = 0, link = hctx->free_hashlinks; i < 1023; i++, link++)
 			link->next = link + 1;
 		link->next = 0;
 	}
-	link = *free_hashlinks;
-	*free_hashlinks = link->next;
+	link = hctx->free_hashlinks;
+	hctx->free_hashlinks = link->next;
 	link->next = 0;
 	return link;
 }
 
 static void
-free_hashlink (hashlink_t *link, hashlink_t **free_hashlinks)
+free_hashlink (hashlink_t *link, hashctx_t *hctx)
 {
-	link->next = *free_hashlinks;
-	*free_hashlinks = link;
+	link->next = hctx->free_hashlinks;
+	hctx->free_hashlinks = link;
 }
 
-static hashlink_t *default_hashlink_freelist;
+static hashctx_t *default_hashctx;
 
 VISIBLE uintptr_t
 Hash_String (const char *str)
@@ -110,6 +122,32 @@ Hash_String (const char *str)
 	// from his post to lkml
 	uint32_t hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
 	while (*str) {
+		uint32_t hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
+		if (hash & 0x80000000) hash -= 0x7fffffff;
+		hash1 = hash0;
+		hash0 = hash;
+	}
+	return hash0;
+#endif
+}
+
+VISIBLE uintptr_t
+Hash_nString (const char *str, size_t sz)
+{
+#if 0
+	uintptr_t   h = 0;
+	while (*str && sz-- > 0) {
+		h = (h << 4) + (unsigned char)*str++;
+		if (h&0xf0000000)
+			h = (h ^ (h >> 24)) & 0xfffffff;
+	}
+	return h;
+#else
+	// dx_hack_hash
+	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
+	// from his post to lkml
+	uint32_t hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
+	while (sz-- > 0 && *str) {
 		uint32_t hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
 		if (hash & 0x80000000) hash -= 0x7fffffff;
 		hash1 = hash0;
@@ -182,6 +220,26 @@ get_index (uintptr_t hash, size_t size, size_t bits)
 #endif
 }
 
+static void
+hash_shutdown (void *data)
+{
+	Hash_DelContext (default_hashctx);
+}
+
+VISIBLE void
+Hash_DelContext (hashctx_t *hashctx)
+{
+	if (!hashctx) {
+		return;
+	}
+	while (hashctx->linksets) {
+		hlinkset_t *l = hashctx->linksets->next;
+		free (hashctx->linksets);
+		hashctx->linksets = l;
+	}
+	free (hashctx);
+}
+
 VISIBLE hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 			   void (*f)(void*,void*), void *ud, hashctx_t **hctx)
@@ -194,9 +252,15 @@ Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 	tab->get_key = gk;
 	tab->free_ele = f;
 	if (!hctx) {
-		hctx = (hashctx_t **) &default_hashlink_freelist;
+		hctx = &default_hashctx;
+		if (!default_hashctx) {
+			Sys_RegisterShutdown (hash_shutdown, 0);
+		}
 	}
-	tab->hashlink_freelist = (hashlink_t **) hctx;
+	if (!*hctx) {
+		*hctx = calloc (1, sizeof (hashctx_t));
+	}
+	tab->hashctx = *hctx;
 
 	while (tsize) {
 		tab->size_bits++;
@@ -219,6 +283,9 @@ Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
 VISIBLE void
 Hash_DelTable (hashtab_t *tab)
 {
+	if (!tab) {
+		return;
+	}
 	Hash_FlushTable (tab);
 	free (tab);
 }
@@ -233,7 +300,7 @@ Hash_FlushTable (hashtab_t *tab)
 			hashlink_t *t = tab->tab[i]->next;
 			void *data = tab->tab[i]->data;
 
-			free_hashlink (tab->tab[i], tab->hashlink_freelist);
+			free_hashlink (tab->tab[i], tab->hashctx);
 			tab->tab[i] = t;
 			if (tab->free_ele)
 				tab->free_ele (data, tab->user_data);
@@ -246,7 +313,7 @@ static int
 hash_add_element (hashtab_t *tab, uintptr_t h, void *ele)
 {
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
+	hashlink_t *lnk = new_hashlink (tab->hashctx);
 
 	if (!lnk)
 		return -1;
@@ -283,6 +350,21 @@ Hash_Find (hashtab_t *tab, const char *key)
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
+			return lnk->data;
+		lnk = lnk->next;
+	}
+	return 0;
+}
+
+VISIBLE void *
+Hash_nFind (hashtab_t *tab, const char *key, size_t sz)
+{
+	uintptr_t   h = Hash_nString (key, sz);
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
+	hashlink_t *lnk = tab->tab[ind];
+
+	while (lnk) {
+		if (strncmp (key, tab->get_key (lnk->data, tab->user_data), sz) == 0)
 			return lnk->data;
 		lnk = lnk->next;
 	}
@@ -374,7 +456,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free_hashlink (lnk, tab->hashlink_freelist);
+			free_hashlink (lnk, tab->hashctx);
 			tab->num_ele--;
 			return data;
 		}
@@ -397,7 +479,7 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free_hashlink (lnk, tab->hashlink_freelist);
+			free_hashlink (lnk, tab->hashctx);
 			tab->num_ele--;
 			return data;
 		}

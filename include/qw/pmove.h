@@ -58,9 +58,9 @@ typedef struct {
 	int         oldbuttons;
 	int         oldonground;
 	float       waterjumptime;
-	qboolean    dead;
-	qboolean    flying;
-	qboolean    add_grav;
+	bool        dead;
+	bool        flying;
+	bool        add_grav;
 	int         spectator;
 
 	// world state
@@ -109,7 +109,7 @@ void Pmove_Init_Cvars (void);
 int PM_HullPointContents (hull_t *hull, int num, const vec3_t p) __attribute__((pure));
 
 int PM_PointContents (const vec3_t point) __attribute__((pure));
-qboolean PM_TestPlayerPosition (const vec3_t point);
+bool PM_TestPlayerPosition (const vec3_t point);
 trace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
 
 #endif // _PMOVE_H

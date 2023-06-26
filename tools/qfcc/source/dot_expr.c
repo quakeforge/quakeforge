@@ -141,20 +141,20 @@ print_bool (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	int         indent = level * 2 + 2;
 	int         i, count;
 	int         tl_count = 0, fl_count = 0;
-	ex_bool_t  *bool = &e->e.bool;
+	ex_bool_t  *boolean = &e->e.boolean;
 
 	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 			   "cellspacing=\"0\">\n",
 			   indent + 2, "");
-	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;bool&gt;(%d)</td></tr>\n",
+	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;boolean&gt;(%d)</td></tr>\n",
 			   indent + 4, "", e->line);
 	dasprintf (dstr, "%*s<tr><td>true</td><td>false</td></tr>\n",
 			   indent + 4, "");
-	if (bool->true_list)
-		tl_count = bool->true_list->size;
-	if (bool->false_list)
-		fl_count = bool->false_list->size;
+	if (boolean->true_list)
+		tl_count = boolean->true_list->size;
+	if (boolean->false_list)
+		fl_count = boolean->false_list->size;
 	count = min (tl_count, fl_count);
 	for (i = 0; i < count; i++)
 		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>"
@@ -163,27 +163,27 @@ print_bool (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>%s</tr>\n",
 				   indent, "", i,
 				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
-									bool->true_list->size - count)
+									boolean->true_list->size - count)
 							  : "");
 	for ( ; i < fl_count; i++)
 		dasprintf (dstr, "%*s<tr>%s<td port=\"f%d\">f</td></tr>\n",
 				   indent, "",
 				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
-									bool->false_list->size - count)
+									boolean->false_list->size - count)
 							  : "",
 				   i);
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
 	dasprintf (dstr, "%*s>];\n", indent, "");
 	if (e->next)
 		next = e->next;
-	_print_expr (dstr, e->e.bool.e, level, id, next);
+	_print_expr (dstr, e->e.boolean.e, level, id, next);
 	for (i = 0; i < tl_count; i++)
 		dasprintf (dstr, "%*se_%p:t%d -> e_%p;\n", indent, "", e, i,
-				   bool->true_list->e[i]);
+				   boolean->true_list->e[i]);
 	for (i = 0; i < fl_count; i++)
 		dasprintf (dstr, "%*se_%p:f%d -> e_%p;\n", indent, "", e, i,
-				   bool->false_list->e[i]);
-	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
+				   boolean->false_list->e[i]);
+	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.boolean.e);
 }
 
 static void

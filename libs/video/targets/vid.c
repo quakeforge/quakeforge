@@ -68,7 +68,7 @@ static cvar_t vid_system_gamma_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &vid_system_gamma },
 };
-qboolean	vid_gamma_avail;		// hardware gamma availability
+bool		vid_gamma_avail;		// hardware gamma availability
 
 VISIBLE unsigned int	d_8to24table[256];
 
@@ -224,7 +224,7 @@ VID_UpdateGamma (void)
 		}
 		p32[-1] = 0;	// color 255 is transparent
 		// update with the new palette
-		vi->set_palette (vi->data, viddef.palette);
+		vi->set_palette (vi->ctx, viddef.palette);
 	}
 }
 
@@ -276,7 +276,7 @@ void
 VID_ClearMemory (void)
 {
 	if (vi->flush_caches) {
-		vi->flush_caches (vi->data);
+		vi->flush_caches (vi->ctx);
 	}
 }
 
@@ -316,9 +316,32 @@ VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data)
 	}
 }
 
+static void
+VID_shutdown (void *data)
+{
+	if (vid_system.shutdown) {
+		vid_system.shutdown ();
+	}
+	free ((char *) vid_width_cvar.default_value);
+	free ((char *) vid_height_cvar.default_value);
+	free (viddef.gammatable);
+	free (viddef.palette);
+	free (viddef.palette32);
+
+	if (viddef.onPaletteChanged) {
+		DARRAY_CLEAR (viddef.onPaletteChanged);
+		free (viddef.onPaletteChanged);
+	}
+	if (viddef.onVidResize) {
+		DARRAY_CLEAR (viddef.onVidResize);
+		free (viddef.onVidResize);
+	}
+}
+
 VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
+	Sys_RegisterShutdown (VID_shutdown, 0);
 	vid_system.init (palette, colormap);
 }
 

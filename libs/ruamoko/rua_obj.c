@@ -45,6 +45,7 @@
 #include "qfalloca.h"
 
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
@@ -99,12 +100,21 @@ typedef struct obj_list_s {
 	void       *data;
 } obj_list;
 
+typedef struct listset_s DARRAY_TYPE (obj_list *) listset_t;
+
 typedef struct dtable_s {
 	struct dtable_s *next;
 	struct dtable_s **prev;
 	size_t      size;
 	pr_func_t  *imp;
 } dtable_t;
+
+typedef struct class_tree {
+	pr_class_t *class;
+	obj_list   *subclasses;
+} class_tree;
+
+typedef struct treeset_s DARRAY_TYPE (class_tree *) treeset_t;
 
 typedef struct probj_resources_s {
 	progs_t    *pr;
@@ -124,6 +134,7 @@ typedef struct probj_resources_s {
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
 	hashtab_t  *load_methods;
+	listset_t   obj_list_sets;
 	obj_list   *obj_list_free_list;
 	obj_list   *unresolved_classes;
 	obj_list   *unclaimed_categories;
@@ -131,6 +142,9 @@ typedef struct probj_resources_s {
 	obj_list   *unclaimed_proto_list;
 	obj_list   *module_list;
 	obj_list   *class_tree_list;
+
+	class_tree *class_tree_free_list;
+	treeset_t   class_tree_sets;
 } probj_t;
 
 static dtable_t *
@@ -184,8 +198,11 @@ obj_list_new (probj_t *probj)
 
 	if (!probj->obj_list_free_list) {
 		probj->obj_list_free_list = calloc (128, sizeof (obj_list));
-		for (i = 0; i < 127; i++)
-			probj->obj_list_free_list[i].next = &probj->obj_list_free_list[i + 1];
+		for (i = 0; i < 127; i++) {
+			__auto_type next = &probj->obj_list_free_list[i + 1];
+			probj->obj_list_free_list[i].next = next;
+		}
+		DARRAY_APPEND (&probj->obj_list_sets, probj->obj_list_free_list);
 	}
 	l = probj->obj_list_free_list;
 	probj->obj_list_free_list = l->next;
@@ -230,28 +247,22 @@ list_remove (probj_t *probj, obj_list **list)
 	}
 }
 
-typedef struct class_tree {
-	pr_class_t *class;
-	obj_list   *subclasses;
-} class_tree;
-
-class_tree *class_tree_free_list;
-
 static class_tree *
-class_tree_new (void)
+class_tree_new (probj_t *probj)
 {
 	int         i;
 	class_tree *t;
 
-	if (!class_tree_free_list) {
-		class_tree_free_list = calloc (128, sizeof (class_tree));
+	if (!probj->class_tree_free_list) {
+		probj->class_tree_free_list = calloc (128, sizeof (class_tree));
 		for (i = 0; i < 127; i++) {
-			class_tree *x = &class_tree_free_list[i];
+			class_tree *x = &probj->class_tree_free_list[i];
 			x->subclasses = (obj_list *) (x + 1);
 		}
+		DARRAY_APPEND (&probj->class_tree_sets, probj->class_tree_free_list);
 	}
-	t = class_tree_free_list;
-	class_tree_free_list = (class_tree *) t->subclasses;
+	t = probj->class_tree_free_list;
+	probj->class_tree_free_list = (class_tree *) t->subclasses;
 	t->subclasses = 0;
 	return t;
 }
@@ -282,10 +293,10 @@ create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 
 	superclass = bottom->super_class ? Hash_Find (probj->classes, super_class)
 									 : 0;
-	tree = prev = class_tree_new ();
+	tree = prev = class_tree_new (probj);
 	prev->class = bottom;
 	while (superclass != upper) {
-		tree = class_tree_new ();
+		tree = class_tree_new (probj);
 		tree->class = superclass;
 		tree->subclasses = list_cons (probj, prev, tree->subclasses);
 		super_class = PR_GetString (pr, superclass->super_class);
@@ -320,7 +331,7 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 				return tree;
 			list = list->next;
 		}
-		node = class_tree_new ();
+		node = class_tree_new (probj);
 		node->class = class;
 		tree->subclasses = list_cons (probj, node, tree->subclasses);
 		return tree;
@@ -381,8 +392,8 @@ obj_create_classes_tree (probj_t *probj, pr_module_t *module)
 static void
 obj_destroy_class_tree_node (probj_t *probj, class_tree *tree, int level)
 {
-	tree->subclasses = (obj_list *) class_tree_free_list;
-	class_tree_free_list = tree;
+	tree->subclasses = (obj_list *) probj->class_tree_free_list;
+	probj->class_tree_free_list = tree;
 }
 
 static void
@@ -1089,10 +1100,14 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 			pr_type_t **args)
 {
 	progs_t    *pr = probj->pr;
-	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+	const char *name = "nil";
+	if (object) {
+		__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+		name = PR_GetString (pr, class->name);
+	}
 
 	PR_Sprintf (pr, probj->msg, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), probj->msg->str);
+	PR_RunError (pr, "%s: %s", name, probj->msg->str);
 }
 
 static void
@@ -1414,6 +1429,18 @@ rua_obj_error (progs_t *pr, void *data)
 	int         count = pr->pr_argc - 3;
 	pr_type_t **args = &pr->pr_params[3];
 
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 3);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
 	obj_verror (probj, object, code, fmt, count, args);
 }
 
@@ -1447,6 +1474,9 @@ rua_obj_set_error_handler (progs_t *pr, void *data)
 static const char *
 rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 {
+	if (!at_param) {
+		return "nil";
+	}
 	probj_t    *probj = _probj;
 	pr_id_t    *obj = &G_STRUCT (pr, pr_id_t, at_param);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
@@ -2068,6 +2098,18 @@ rua__i_Object_error_error_ (progs_t *pr, void *data)
 	int         count = pr->pr_argc - 3;
 	pr_type_t **args = &pr->pr_params[3];
 
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 3);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
 	dsprintf (probj->msg, "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (probj, self)),
 			  object_is_instance (probj, self) ? "instance" : "class", fmt);
@@ -2332,6 +2374,24 @@ rua_obj_destroy (progs_t *pr, void *_res)
 	Hash_DelTable (probj->classes);
 	Hash_DelTable (probj->protocols);
 	Hash_DelTable (probj->load_methods);
+
+	free (probj->selector_sels);
+	free (probj->selector_names);
+	free (probj->selector_argc);
+
+	for (size_t i = 0; i < probj->obj_list_sets.size; i++) {
+		free (probj->obj_list_sets.a[i]);
+	}
+	DARRAY_CLEAR (&probj->obj_list_sets);
+
+	for (size_t i = 0; i < probj->class_tree_sets.size; i++) {
+		free (probj->class_tree_sets.a[i]);
+	}
+	DARRAY_CLEAR (&probj->class_tree_sets);
+
+	PR_RESDELMAP (probj->dtables);
+
+	free (probj);
 }
 
 void
@@ -2346,9 +2406,11 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj,
 									  pr->hashctx);
 	probj->load_methods = Hash_NewTable (1021, 0, 0, probj, pr->hashctx);
-	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
+	probj->msg = dstring_newstr();
+	DARRAY_INIT (&probj->obj_list_sets, 32);
+	DARRAY_INIT (&probj->class_tree_sets, 32);
 
 	PR_Sprintf_SetAtHandler (pr, rua_at_handler, probj);
 

@@ -109,7 +109,7 @@ char		cdpartial[256];
 char		cddir[256];
 
 int			framecount, skincount;
-qboolean		cdset;
+bool		cdset;
 int			degeneratetris;
 int			firstframe = 1;
 float		totsize, averagesize;

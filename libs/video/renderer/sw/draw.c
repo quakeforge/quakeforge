@@ -127,7 +127,7 @@ Draw_PicFromWad (const char *name)
 
 
 qpic_t *
-Draw_CachePic (const char *path, qboolean alpha)
+Draw_CachePic (const char *path, bool alpha)
 {
 	cachepic_t *pic;
 	int         i;
@@ -1019,7 +1019,7 @@ Draw_BlendScreen (quat_t color)
 		newpal[2] = vid.gammatable[b];
 		newpal += 3;
 	}
-	vid.vid_internal->set_palette (vid.vid_internal->data, pal);
+	vid.vid_internal->set_palette (vid.vid_internal->ctx, pal);
 }
 
 int

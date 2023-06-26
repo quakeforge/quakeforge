@@ -107,11 +107,11 @@ static cvar_t cl_camera_maxyaw_cvar = {
 };
 
 static vec3_t desired_position;			// where the camera wants to be
-static qboolean locked = false;
+static bool locked = false;
 static int  oldbuttons;
 
 double      cam_lastviewtime;
-qboolean    cam_forceview;
+bool        cam_forceview;
 vec3_t      cam_viewangles;
 
 int         spec_track = 0;				// player# of who we are tracking
@@ -148,7 +148,7 @@ vectoangles (vec3_t vec, vec3_t ang)
 }
 
 // returns true if weapon model should be drawn in camera mode
-qboolean
+bool
 Cam_DrawViewModel (void)
 {
 	if (cl.viewstate.chase && chase_active)
@@ -163,7 +163,7 @@ Cam_DrawViewModel (void)
 }
 
 // returns true if we should draw this player, we don't if we are chase camming
-qboolean
+bool
 Cam_DrawPlayer (int playernum)
 {
 	if (playernum == cl.playernum) {						// client player
@@ -243,7 +243,7 @@ Cam_DoTrace (vec4f_t vec1, vec3_t vec2)//FIXME vec2 type
 // Returns distance or 9999 if invalid for some reason
 static float
 Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
-			  qboolean checkvis)
+			  bool checkvis)
 {
 	float       len;
 	trace_t     trace;
@@ -275,7 +275,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 }
 
 // Is player visible?
-static qboolean
+static bool
 Cam_IsVisible (player_state_t *player, vec3_t vec)
 {
 	float       d;
@@ -292,7 +292,7 @@ Cam_IsVisible (player_state_t *player, vec3_t vec)
 	return (d > 16.0);
 }
 
-static qboolean
+static bool
 InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 {
 	float       f, max;

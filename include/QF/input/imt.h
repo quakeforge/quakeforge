@@ -127,8 +127,8 @@ int IMT_CreateSwitcher (const char *switcher_name,
 void IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,
 				   const in_recipe_t *recipe);
 void IMT_BindButton (imt_t *imt, int button, const char *binding);
-qboolean IMT_ProcessAxis (int axis, int value);
-qboolean IMT_ProcessButton (int button, int state);
+bool IMT_ProcessAxis (int axis, int value);
+bool IMT_ProcessButton (int button, int state);
 void IMT_Init (void);
 void IMT_Shutdown (void);
 struct plitem_s;

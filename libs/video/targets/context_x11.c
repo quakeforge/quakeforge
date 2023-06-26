@@ -74,7 +74,7 @@
 #include "vid_internal.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
-qboolean	oktodraw = false;
+bool		oktodraw = false;
 int 		x_shmeventtype;
 
 static int	x_disp_ref_count = 0;
@@ -92,19 +92,19 @@ Colormap	x_cmap;
 Time 		x_time;
 Time		x_mouse_time;
 
-qboolean    x_have_focus = false;
+bool        x_have_focus = false;
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
 static int		nummodes;
 static int		original_mode = 0;
 static vec3_t	x_gamma = {-1, -1, -1};
-static qboolean	vidmode_avail = false;
+static bool		vidmode_avail = false;
 #endif
 
-static qboolean	vidmode_active = false;
+static bool		vidmode_active = false;
 
-static qboolean    vid_context_created = false;
+static bool        vid_context_created = false;
 static int      pos_x, pos_y;
 
 #ifdef HAVE_VIDMODE
@@ -114,7 +114,7 @@ static int	xss_blanking;
 static int	xss_exposures;
 #endif
 
-static qboolean	accel_saved = false;
+static bool		accel_saved = false;
 static int	accel_numerator;
 static int	accel_denominator;
 static int	accel_threshold;
@@ -191,7 +191,7 @@ configure_notify (XEvent *event)
 	VID_SetWindowSize (c->width, c->height);
 }
 
-qboolean
+bool
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
@@ -207,7 +207,7 @@ X11_AddEvent (int event, void (*event_handler) (XEvent *))
 	return true;
 }
 
-qboolean
+bool
 X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent)
@@ -342,8 +342,8 @@ X11_CreateNullCursor (void)
 		return;
 
 	cursormask = XCreatePixmap (x_disp, x_root, 1, 1, 1);
-	xgc.function = GXclear;
 
+	xgc.function = GXclear;
 	gc = XCreateGC (x_disp, cursormask, GCFunction, &xgc);
 
 	XFillRectangle (x_disp, cursormask, gc, 0, 0, 1, 1);
@@ -425,7 +425,7 @@ X11_SetVidMode (int width, int height)
 		if (vid_fullscreen && vidmode_avail) {
 			int 				i, dotclock;
 			int 				best_mode = 0;
-			qboolean			found_mode = false;
+			bool				found_mode = false;
 			XF86VidModeModeLine orig_data;
 
 			XF86VidModeGetAllModeLines (x_disp, x_screen, &nummodes,
@@ -605,7 +605,7 @@ X11_ForceViewPort (void)
 #endif
 }
 
-qboolean
+bool
 X11_SetGamma (double gamma)
 {
 #ifdef HAVE_VIDMODE

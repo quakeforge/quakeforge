@@ -429,7 +429,7 @@ Cvar_Set (const char *var_name, const char *value)
 
 	Handles variable inspection and changing from the console
 */
-VISIBLE qboolean
+VISIBLE bool
 Cvar_Command (void)
 {
 	cvar_t     *v;
@@ -770,6 +770,12 @@ cvar_free_memory (void *ele, void *data)
 		char      **str_value = cvar->value.value;
 		free (*str_value);
 		*str_value = 0;
+	} else if (cvar->value.type->data) {
+		exprenum_t *enm = cvar->value.type->data;
+		if (enm->symtab && enm->symtab->tab) {
+			Hash_DelTable (enm->symtab->tab);
+			enm->symtab->tab = 0;
+		}
 	}
 
 	if (cvar->listeners) {

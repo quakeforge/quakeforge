@@ -55,7 +55,6 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
-#include "QF/Vulkan/qf_renderpass.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/qf_vid.h"
 
@@ -122,12 +121,6 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
-	if (ctx->capture) {
-		QFV_DestroyCapture (ctx->capture);
-	}
-	if (ctx->frames.size) {
-		Vulkan_DestroyFrames (ctx);
-	}
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
@@ -187,84 +180,6 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
 }
 
-static int
-renderpass_cmp (const void *_a, const void *_b)
-{
-	__auto_type a = (const qfv_renderpass_t **) _a;
-	__auto_type b = (const qfv_renderpass_t **) _b;
-	return (*a)->order - (*b)->order;
-}
-
-void
-Vulkan_CreateRenderPasses (vulkan_ctx_t *ctx)
-{
-	Vulkan_Output_CreateRenderPasses (ctx);
-	Vulkan_Main_CreateRenderPasses (ctx);
-	Vulkan_Particles_CreateRenderPasses (ctx);
-	Vulkan_Lighting_CreateRenderPasses (ctx);
-	Vulkan_Translucent_CreateRenderPasses (ctx);
-
-	heapsort (ctx->renderPasses.a, ctx->renderPasses.size,
-			  sizeof (qfv_renderpass_t *), renderpass_cmp);
-}
-
-void
-Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
-{
-	for (size_t i = 0; i < ctx->renderPasses.size; i++) {
-		QFV_RenderPass_Delete (ctx->renderPasses.a[i]);
-	}
-}
-
-void
-Vulkan_CreateFrames (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	VkCommandPool cmdpool = ctx->cmdpool;
-
-	if (!ctx->frames.grow) {
-		DARRAY_INIT (&ctx->frames, 4);
-	}
-
-	DARRAY_RESIZE (&ctx->frames, vulkan_frame_count);
-
-	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->frames.size,
-														alloca);
-	QFV_AllocateCommandBuffers (device, cmdpool, 0, cmdBuffers);
-
-	for (size_t i = 0; i < ctx->frames.size; i++) {
-		__auto_type frame = &ctx->frames.a[i];
-		frame->fence = QFV_CreateFence (device, 1);
-		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
-		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
-		frame->cmdBuffer = cmdBuffers->a[i];
-	}
-}
-
-void
-Vulkan_CreateCapture (vulkan_ctx_t *ctx)
-{
-	ctx->capture = QFV_CreateCapture (ctx->device, ctx->frames.size,
-									  ctx->swapchain, ctx->cmdpool);
-}
-
-void
-Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *df = device->funcs;
-	VkDevice    dev = device->dev;
-
-	for (size_t i = 0; i < ctx->frames.size; i++) {
-		__auto_type frame = &ctx->frames.a[i];
-		df->vkDestroyFence (dev, frame->fence, 0);
-		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
-		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-	}
-
-	DARRAY_CLEAR (&ctx->frames);
-}
-
 void
 Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 {
@@ -279,4 +194,25 @@ Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 	QFV_CmdBeginLabel (device, cmd,
 					   va (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
 						   entgen, entind, VectorExpand (pos)), color);
+}
+
+void
+Vulkan_ConfigOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
+{
+	*output = (qfv_output_t) {
+		.extent    = ctx->swapchain->extent,
+		.frames    = ctx->swapchain->numImages,
+	};
+	if (vulkan_frame_width > 0) {
+		output->extent.width = vulkan_frame_width;
+	}
+	if (vulkan_frame_height > 0) {
+		output->extent.height = vulkan_frame_height;
+	}
+	if (scr_fisheye) {//FIXME
+		auto w = output->extent.width;
+		auto h = output->extent.height;
+		output->extent.width = min (w, h);
+		output->extent.height = min (w, h);
+	}
 }

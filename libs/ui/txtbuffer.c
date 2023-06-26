@@ -43,7 +43,7 @@
 
 #include "compat.h"
 
-static txtbuffer_t *txtbuffers_freelist;
+ALLOC_STATE (txtbuffer_t, txtbuffers);
 
 static char *
 txtbuffer_open_gap (txtbuffer_t *buffer, size_t offset, size_t length)

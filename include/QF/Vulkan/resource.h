@@ -31,23 +31,30 @@ typedef struct qfv_resobj_s {
 			VkBufferView view;
 		}       buffer_view;
 		struct {
-			int         cubemap;
+			VkImageCreateFlags flags;
 			VkImageType type;
 			VkFormat format;
 			VkExtent3D extent;
 			uint32_t num_mipmaps;
 			uint32_t num_layers;
 			VkSampleCountFlags samples;
+			VkImageTiling tiling;
 			VkImageUsageFlags usage;
+			VkSharingMode sharing;
+			uint32_t    num_queue_inds;
+			const uint32_t *queue_inds;
+			VkImageLayout initialLayout;
 			VkImage     image;
 			VkDeviceSize offset;
 		}       image;
 		struct {
 			unsigned    image;
+			VkImage     external_image;
+			VkImageViewCreateFlags flags;
 			VkImageViewType type;
 			VkFormat    format;
-			VkImageAspectFlags aspect;
 			VkComponentMapping components;
+			VkImageSubresourceRange subresourceRange;
 			VkImageView view;
 		}       image_view;
 	};

@@ -56,10 +56,10 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
-static qboolean cdValid = false;
-static qboolean initialized = false;
-static qboolean enabled = true;
-static qboolean playLooping = false;
+static bool cdValid = false;
+static bool initialized = false;
+static bool enabled = true;
+static bool playLooping = false;
 
 static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
@@ -113,7 +113,7 @@ I_CDAudio_Stop (void)
 }
 
 static void
-I_CDAudio_Play (int track, qboolean looping)
+I_CDAudio_Play (int track, bool looping)
 {
 	/* Initialize cd_stat to avoid warning */
 	/* XXX - Does this default value make sense? */

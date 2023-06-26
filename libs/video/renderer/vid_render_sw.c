@@ -85,7 +85,7 @@ static vid_model_funcs_t model_funcs = {
 
 	.Mod_MakeAliasModelDisplayLists = sw_Mod_MakeAliasModelDisplayLists,
 	.Mod_LoadAllSkins               = sw_Mod_LoadAllSkins,
-	.Mod_FinalizeAliasModel         = 0,
+	.Mod_FinalizeAliasModel         = sw_Mod_FinalizeAliasModel,
 	.Mod_LoadExternalSkins          = 0,
 	.Mod_IQMFinish                  = sw_Mod_IQMFinish,
 	.alias_cache                    = 1,
@@ -106,9 +106,8 @@ sw_vid_render_init (void)
 	if (!vr_data.vid->vid_internal->sw_context) {
 		Sys_Error ("Sorry, software rendering not supported by this program.");
 	}
-	sw_ctx = vr_data.vid->vid_internal->sw_context ();
+	sw_ctx = vr_data.vid->vid_internal->sw_context (vr_data.vid->vid_internal);
 
-	vr_data.vid->vid_internal->data = sw_ctx;
 	vr_data.vid->vid_internal->set_palette = sw_vid_render_set_palette;
 	vr_data.vid->vid_internal->set_colormap = sw_vid_render_set_colormap;
 	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;

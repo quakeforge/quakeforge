@@ -77,7 +77,7 @@ QFGL_GetProcAddress (void *handle, const char *name)
 }
 
 static void *
-QFGL_ProcAddress (const char *name, qboolean crit)
+QFGL_ProcAddress (const char *name, bool crit)
 {
 	void       *glfunc = NULL;
 
@@ -177,7 +177,7 @@ wgl_end_rendering (void)
 }
 
 static void
-wgl_load_gl (void)
+wgl_load_gl (gl_ctx_t *ctx)
 {
 	libgl_handle = LoadLibrary (gl_driver);
 	if (!libgl_handle) {
@@ -198,7 +198,7 @@ wgl_load_gl (void)
 }
 
 gl_ctx_t *
-Win_GL_Context (void)
+Win_GL_Context (vid_internal_t *vi)
 {
 	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
 	ctx->load_gl = wgl_load_gl;
@@ -206,6 +206,8 @@ Win_GL_Context (void)
 	ctx->create_context = wgl_create_context;
 	ctx->get_proc_address = QFGL_ProcAddress;
 	ctx->end_rendering = wgl_end_rendering;
+
+	vi->ctx = ctx;
 	return ctx;
 }
 

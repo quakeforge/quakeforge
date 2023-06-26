@@ -218,10 +218,10 @@ print_statement (statement_t *s)
 	print_operand_chain ("kill", s->kill);
 }
 
-static pseudoop_t *pseudoops_freelist;
-static sblock_t *sblocks_freelist;
-static statement_t *statements_freelist;
-static operand_t *operands_freelist;
+ALLOC_STATE (pseudoop_t, pseudoops);
+ALLOC_STATE (sblock_t, sblocks);
+ALLOC_STATE (statement_t, statements);
+ALLOC_STATE (operand_t, operands);
 
 sblock_t *
 new_sblock (void)
@@ -452,8 +452,9 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->tempop;
-		if ((ret = visit (tempop, data)))
+		if (!(overlap & 4) && (ret = visit (tempop, data)))
 			return ret;
+		overlap &= ~4;
 	} else {
 		overlap = 0;
 	}
@@ -677,6 +678,11 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 										lvalue->e.alias.expr,
 										expr_int (offset));
 		offset = 0;
+	} else if (offset && is_constant (offset)) {
+		int         o = expr_int (offset);
+		if (o < 32768 && o >= -32768) {
+			offset = expr_file_line (new_short_expr (o), offset);
+		}
 	}
 
 	s = new_statement (st_address, "lea", e);
@@ -746,6 +752,15 @@ static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
 static statement_t *lea_statement (operand_t *pointer, operand_t *offset,
 								   expr_t *e);
 
+static statement_t *
+assign_statement (operand_t *dst, operand_t *src, expr_t *e)
+{
+	statement_t *s = new_statement (st_assign, "assign", e);
+	s->opa = dst;
+	s->opc = src;
+	return s;
+}
+
 static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 {
@@ -791,7 +806,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
-			// (there may be more chains somwhere within src_expr, but they
+			// (there may be more chains somewhere within src_expr, but they
 			// are not part of this chain as they are separated by another
 			// expression).
 			sblock = statement_subexpr (sblock, src_expr, &src);
@@ -832,6 +847,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 			// FIXME this probably needs to be more agressive
 			// shouldn't emit code...
 			sblock = statement_subexpr (sblock, dst_expr, &def);
+			//FIXME is this even necessary? if it is, should use copy_operand
 			sblock = statement_subexpr (sblock, dst_expr, &kill);
 		}
 		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
@@ -956,8 +972,10 @@ dereference_dst:
 	s->opa = dst;
 	s->opb = ofs;
 	s->opc = src;
-	statement_add_def (s, copy_operand (target));
-	statement_add_kill (s, target);
+	if (type != st_ptrassign) {
+		statement_add_def (s, copy_operand (target));
+		statement_add_kill (s, target);
+	}
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -997,6 +1015,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	const char *opcode;
 	const char *pref = "";
 	statement_t *s;
+	operand_t  *use = 0;
 
 	// function arguments are in reverse order
 	for (a = args; a; a = a->next) {
@@ -1022,30 +1041,34 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
+			operand_t  *p;
+			sblock = statement_subexpr (sblock, param, &p);
+			p->next = use;
+			use = p;
 			continue;
 		}
-		if (is_struct (get_type (param))) {
+		if (is_struct (get_type (param)) || is_union (get_type (param))) {
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
 			sblock = statement_slist (sblock, mov);
 		} else {
+			operand_t  *p = 0;
+			sblock = statement_subexpr (sblock, param, &p);
 			if (options.code.vector_calls && a->type == ex_value
 				&& a->e.value->lltype == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
-				operand_t  *p = 0;
-				operand_t  *arg;
-				sblock = statement_subexpr (sblock, param, &p);
+				operand_t  *arg = p;
 				arg = p;
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
-					s = new_statement (st_assign, "assign", a);
-					s->opa = p;
-					s->opc = arg;
+					s = assign_statement (p, arg, a);
 					sblock_add_statement (sblock, s);
 				}
 			}
+			p->next = use;
+			use = p;
 		}
 	}
 	opcode = va (0, "%scall%d", pref, count);
@@ -1053,6 +1076,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
+	s->use = use;
 	if (op) {
 		*op = return_operand (call->e.branch.ret_type, call);
 	}
@@ -1498,15 +1522,6 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 	return s;
 }
 
-static statement_t *
-assign_statement (operand_t *dst, operand_t *src, expr_t *e)
-{
-	statement_t *s = new_statement (st_assign, "assign", e);
-	s->opa = dst;
-	s->opc = src;
-	return s;
-}
-
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
@@ -1934,7 +1949,7 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *size;
 	statement_t *s;
 
-	if (!is_struct (nil) && !is_array (nil)) {
+	if (!is_structural (nil)) {
 		*op = value_operand (new_nil_val (nil), e);
 		return sblock;
 	}
@@ -2033,7 +2048,7 @@ build_bool_block (expr_t *block, expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			build_bool_block (block, e->e.bool.e);
+			build_bool_block (block, e->e.boolean.e);
 			return;
 		case ex_label:
 			e->next = 0;
@@ -2532,8 +2547,7 @@ search_for_super_dealloc (sblock_t *sblock)
 		for (statement_t *st = sblock->statements; st; st = st->next) {
 			if (statement_is_return (st)) {
 				op = pseudo_operand (super_dealloc, st->expr);
-				op->next = st->use;
-				st->use = op;
+				statement_add_use (st, op);
 				continue;
 			}
 			if (!statement_is_call (st)) {
@@ -2554,8 +2568,7 @@ search_for_super_dealloc (sblock_t *sblock)
 				selector_t *sel = get_selector (st->expr->e.branch.args);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
 					op = pseudo_operand (super_dealloc, st->expr);
-					op->next = st->use;
-					st->def = op;
+					statement_add_def (st, op);
 					super_dealloc_found++;
 				}
 			}

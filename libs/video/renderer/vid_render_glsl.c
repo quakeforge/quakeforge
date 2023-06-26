@@ -94,17 +94,17 @@ static vid_model_funcs_t model_funcs = {
 static void
 glsl_vid_render_init (void)
 {
-	if (!vr_data.vid->vid_internal->sw_context) {
+	if (!vr_data.vid->vid_internal->gl_context) {
 		Sys_Error ("Sorry, OpenGL (GLSL) not supported by this program.");
 	}
-	glsl_ctx = vr_data.vid->vid_internal->gl_context ();
+	vid_internal_t *vi = vr_data.vid->vid_internal;
+	glsl_ctx = vi->gl_context (vi);
 	glsl_ctx->init_gl = GLSL_Init_Common;
-	glsl_ctx->load_gl ();
+	glsl_ctx->load_gl (glsl_ctx);
 
-	vr_data.vid->vid_internal->data = glsl_ctx;
-	vr_data.vid->vid_internal->set_palette = GLSL_SetPalette;
-	vr_data.vid->vid_internal->choose_visual = glsl_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = glsl_vid_render_create_context;
+	vi->set_palette = GLSL_SetPalette;
+	vi->choose_visual = glsl_vid_render_choose_visual;
+	vi->create_context = glsl_vid_render_create_context;
 	vr_funcs = &glsl_vid_render_funcs;
 	m_funcs = &model_funcs;
 }
@@ -112,6 +112,8 @@ glsl_vid_render_init (void)
 static void
 glsl_vid_render_shutdown (void)
 {
+	glsl_R_Shutdown ();
+	GLSL_Shutdown_Common ();
 }
 
 static unsigned int GLErr_InvalidEnum;

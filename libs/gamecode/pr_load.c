@@ -569,6 +569,15 @@ PR_Shutdown (progs_t *pr)
 	pr->global_hash = 0;
 	pr->field_hash = 0;
 	pr->type_hash = 0;
+
+	if (pr->progs) {
+		pr->free_progs_mem (pr, pr->progs);
+	}
+	free (pr->pr_globaldefs);
+	free (pr->pr_fielddefs);
+	pr->progs = 0;
+	pr->pr_globaldefs = 0;
+	pr->pr_fielddefs = 0;
 }
 
 VISIBLE void

@@ -10,18 +10,8 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
-typedef struct vulkan_frame_s {
-	VkFence     fence;
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderDoneSemaphore;
-	VkCommandBuffer cmdBuffer;
-} vulkan_frame_t;
-
-typedef struct vulkan_frameset_s
-	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
-
 typedef struct qfv_renderpassset_s
-	DARRAY_TYPE (struct qfv_renderpass_s *) qfv_renderpassset_t;
+	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -46,6 +36,8 @@ typedef struct vulkan_ctx_s {
 	uint32_t    swapImageIndex;
 
 	struct scriptctx_s *script_context;
+	struct qfv_renderctx_s *render_context;
+	struct qfv_capturectx_s *capture_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct translucentctx_s *translucent_context;
@@ -64,15 +56,8 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
-	vulkan_frameset_t frames;
 	qfv_renderpassset_t renderPasses;
-	struct qfv_renderpass_s *output_renderpass;
 
-	struct qfv_capture_s *capture;
-	void      (*capture_callback) (const byte *data, int width, int height);
-	// make a queue?
-	void       *capture_complete;// really capfunc_t
-	void       *capture_complete_data;
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

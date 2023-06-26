@@ -212,7 +212,7 @@ ED_NewString (progs_t *pr, const char *string)
 	Can parse either fields or globals
 	returns false if error
 */
-VISIBLE qboolean
+VISIBLE bool
 ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 {
 	pr_def_t    *def;
@@ -347,7 +347,7 @@ ED_ConvertToPlist (script_t *script, int nohack, struct hashctx_s **hashctx)
 				value = PL_NewString (token);
 			}
 			PL_D_AddObject (ent, PL_String (key), value);
-			PL_Free (key);
+			PL_Release (key);
 		}
 		PL_A_AddObject (plist, ent);
 	}
@@ -356,7 +356,7 @@ ED_ConvertToPlist (script_t *script, int nohack, struct hashctx_s **hashctx)
 parse_error:
 	Sys_Printf ("%s:%d: %s", script->file, script->line, msg);
 	dstring_delete (dstr);
-	PL_Free (plist);
+	PL_Release (plist);
 	return 0;
 }
 
@@ -406,7 +406,7 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 		if (!ED_ParseEpair (pr, pr->pr_globals, global, value))
 			PR_Error (pr, "ED_InitGlobals: parse error");
 	}
-	PL_Free (keys);
+	PL_Release (keys);
 }
 
 VISIBLE void
@@ -437,7 +437,7 @@ ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 		}
 		init = 1;
 	}
-	PL_Free (keys);
+	PL_Release (keys);
 	if (!init)
 		ent->free = 1;
 }
@@ -539,7 +539,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 	entity_list = ED_Parse (pr, data);
 	if (entity_list) {
 		ED_SpawnEntities (pr, entity_list);
-		PL_Free (entity_list);
+		PL_Release (entity_list);
 	}
 }
 

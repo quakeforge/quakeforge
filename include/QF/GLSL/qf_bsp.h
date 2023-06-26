@@ -73,6 +73,7 @@ void glsl_R_DrawWaterSurfaces (void);
 void glsl_R_RegisterTextures (struct model_s **models, int num_models);
 void glsl_R_BuildDisplayLists (struct model_s **models, int num_models);
 void glsl_R_InitBsp (void);
+void glsl_R_ShutdownBsp (void);
 void glsl_R_LoadSkys (const char *sky);
 
 #endif//__QF_GLSL_qf_bsp_h

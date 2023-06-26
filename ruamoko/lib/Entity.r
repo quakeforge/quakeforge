@@ -99,7 +99,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 			value = PL_String (PL_ObjectForKey (dict, field));
 			PR_SetField (ent, field, value);
 		}
-		PL_Free (keys);
+		PL_Release (keys);
 		if ((func = PR_FindFunction (classname))) {
 			//dprint ("calling " + classname + "\n");
 			@self = ent;
@@ -157,7 +157,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 					else
 						value = PL_NewString (token);
 					PL_D_AddObject (ent, PL_String (key), value);
-					PL_Free (key);
+					PL_Release (key);
 				}
 				PL_A_AddObject (plist, ent);
 			}

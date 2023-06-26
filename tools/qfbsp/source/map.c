@@ -449,7 +449,7 @@ ParseBrush (void)
 		free (verts);
 }
 
-static qboolean
+static bool
 ParseEntity (void)
 {
 	if (!Script_GetToken (map_script, true))

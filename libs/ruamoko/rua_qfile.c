@@ -98,6 +98,11 @@ bi_qfile_clear (progs_t *pr, void *_res)
 static void
 bi_qfile_destroy (progs_t *pr, void *_res)
 {
+	qfile_resources_t *res = _res;
+
+	PR_RESDELMAP (res->handle_map);
+
+	free (res);
 }
 
 static int

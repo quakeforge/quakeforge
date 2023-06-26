@@ -109,7 +109,7 @@ size_t strndup (const char *str, size_t len);
 
 #ifndef HAVE_BSEARCH_R
 # include "bsearch.h"
-# define bsearch_r _bsearch
+# define bsearch_r QF_bsearch_r
 #endif
 
 #ifndef HAVE_QSORT_R

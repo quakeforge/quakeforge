@@ -21,6 +21,7 @@ static const component_t test_components[] = {
 		.size = sizeof (hierref_t),
 		.create = 0,//create_href,
 		.name = "href",
+		.destroy = Hierref_DestroyComponent,
 	},
 	[test_name] = {
 		.size = sizeof (const char *),

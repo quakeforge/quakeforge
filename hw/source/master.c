@@ -69,7 +69,7 @@ static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
 
-qboolean is_server = true;
+bool is_server = true;
 
 static cbuf_t *mst_cbuf;
 

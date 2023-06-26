@@ -51,7 +51,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
 
-static reloc_t *refs_freelist;
+ALLOC_STATE (reloc_t, refs);
 
 const char * const reloc_name[] = {
 	"rel_none",

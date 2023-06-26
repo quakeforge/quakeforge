@@ -45,7 +45,7 @@ VID_SetCaption (const char *text)
 	}
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma);

@@ -33,7 +33,7 @@ typedef struct script_s {
 	/// The current (or next when unget is true) token
 	struct dstring_s  *token;
 	/// True if the last token has been pushed back.
-	qboolean    unget;
+	bool        unget;
 	/// current position within the script
 	const char *p;
 	/// name of the file being processed. used only for error reporting
@@ -79,7 +79,7 @@ void Script_Start (script_t *script, const char *file, const char *data);
 	\return True if a token is available, false if end of file
 	        or end of line (if crossline is false) has been hit
 */
-qboolean Script_TokenAvailable (script_t *script, qboolean crossline);
+bool Script_TokenAvailable (script_t *script, bool crossline);
 
 /** Get the next token. Generates an error and exits the program if no token
 	is available and crossline is false.
@@ -87,7 +87,7 @@ qboolean Script_TokenAvailable (script_t *script, qboolean crossline);
 	\param crossline True to allow passing \n
 	\return True on success, false on failure (no token available)
 */
-qboolean Script_GetToken (script_t *script, qboolean crossline);
+bool Script_GetToken (script_t *script, bool crossline);
 
 /** Unget the current token. Only one level of unget is supported.
 	\param script The script_t object being parsed

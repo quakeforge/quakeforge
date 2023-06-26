@@ -42,6 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/gib.h"
+#include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
@@ -200,6 +201,7 @@ qwaq_thread_clear (progs_t *pr, void *_thread)
 static void
 qwaq_thread_destroy (progs_t *pr, void *_res)
 {
+	// resource block is the thread data: don't own it
 }
 
 static progs_t *
@@ -316,6 +318,12 @@ run_progs (void *data)
 		thread->pr->debug_handler (prd_terminate, &thread->return_code,
 								   thread->pr->debug_data);
 	}
+	PR_Shutdown (thread->pr);
+	free (thread->pr);
+	thread->pr = 0;
+	Hash_DelContext (thread->hashctx);
+	thread->hashctx = 0;
+	Sys_Shutdown ();
 	return thread;
 }
 
@@ -440,10 +448,8 @@ main (int argc, char **argv)
 		COM_InitArgv (qargs->args.size, qargs->args.a);
 		num_sys++;
 	} else {
-		qwaq_thread_t qargs = {};
-		DARRAY_INIT (&qargs.args, 2);
-		DARRAY_APPEND (&qargs.args, this_program);
-		COM_InitArgv (qargs.args.size, qargs.args.a);
+		const char *args[] = { this_program, 0 };
+		COM_InitArgv (1, args);
 	}
 
 	init_qf ();
@@ -472,6 +478,13 @@ main (int argc, char **argv)
 		ret = thread_data.a[main_ind]->return_code;
 	}
 
+	for (size_t i = 0; i < thread_data.size; i++) {
+		qwaq_thread_t *thread = thread_data.a[i];
+		DARRAY_CLEAR (&thread->args);
+		free (thread_data.a[i]);
+	}
+	DARRAY_CLEAR (&thread_data);
+	Cbuf_DeleteStackReverse (qwaq_cbuf);
 	Sys_Shutdown ();
 	return ret;
 }

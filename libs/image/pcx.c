@@ -47,7 +47,7 @@
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
+LoadPCX (QFile *f, bool convert, const byte *pal, int load)
 {
 	pcx_t      *pcx;
 	size_t      pcx_mark;
@@ -154,7 +154,7 @@ LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
 
 VISIBLE pcx_t *
 EncodePCX (const byte *data, int width, int height,
-		   int rowbytes, const byte *palette, qboolean flip, int *length)
+		   int rowbytes, const byte *palette, bool flip, int *length)
 {
 	int         i, run, pix, size;
 	pcx_t      *pcx;

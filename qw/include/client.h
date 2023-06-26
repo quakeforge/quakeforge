@@ -79,7 +79,7 @@ typedef struct {
 												// reflects performing the
 												// usercmd
 	packet_entities_t packet_entities;
-	qboolean    invalid;		// true if the packet_entities delta was invalid
+	bool        invalid;		// true if the packet_entities delta was invalid
 } frame_t;
 
 #define	MAX_DEMOS		8
@@ -135,16 +135,16 @@ typedef struct {
 	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
 	QFile      *demofile;
-	qboolean    demorecording;
+	bool        demorecording;
 	int         demo_capture;
-	qboolean    demoplayback;
-	qboolean    demoplayback2;
-	qboolean    findtrack;
+	bool        demoplayback;
+	bool        demoplayback2;
+	bool        findtrack;
 	int         lastto;
 	int         lasttype;
 	int         prevtime;
 	double      basetime;
-	qboolean    timedemo;
+	bool        timedemo;
 	double      td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	double      td_starttime;		// realtime at second frame of timedemo
@@ -198,9 +198,9 @@ typedef struct client_state_s {
 	movestate_t movestate;
 	chasestate_t chasestate;
 
-	qboolean    paused;			// Sent over by server
+	bool        paused;			// Sent over by server
 	float       crouch;			// Local amount for smoothing stepups
-	qboolean    inwater;
+	bool        inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
 	int         completed_time;	// Latched from time at intermission start
@@ -278,7 +278,7 @@ extern	client_state_t	cl;
 extern entity_t cl_entities[512];
 extern byte cl_entity_valid[2][512];
 
-extern	qboolean	nomaster;
+extern bool nomaster;
 extern char	*server_version;	// version of server we connected to
 
 extern	double		realtime;

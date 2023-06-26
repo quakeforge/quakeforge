@@ -115,7 +115,7 @@ vulkan_alias_clear (model_t *m, void *data)
 
 static void *
 Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
-					 int snum, int gnum, qboolean group,
+					 int snum, int gnum, bool group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, va (ctx->va_ctx, "alias.load_skin: %s", alias_ctx->mod->name));

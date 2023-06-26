@@ -436,7 +436,7 @@ int (string text, int key)
 op_goto_console =
 {
 	Menu_SelectMenu ("");
-	Cbuf_AddText ("toggleconsole\n");
+	Cbuf_AddText (nil, "toggleconsole\n");
 	return 0;
 };
 

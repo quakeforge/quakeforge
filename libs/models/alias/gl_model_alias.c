@@ -53,6 +53,14 @@
 #include "compat.h"
 
 static void
+gl_alias_clear (model_t *m, void *data)
+{
+	m->needload = true;
+
+	Cache_Free (&m->cache);
+}
+
+static void
 gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
 				 int snum, int gnum, maliasskindesc_t *skindesc)
 {
@@ -124,6 +132,8 @@ gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 		header->mdl.scale_origin[2] -= (22 + 8);
 		VectorScale (header->mdl.scale, 2, header->mdl.scale);
 	}
+
+	alias_ctx->mod->clear = gl_alias_clear;
 }
 
 static void

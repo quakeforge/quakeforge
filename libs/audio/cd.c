@@ -64,7 +64,7 @@ CDAudio_Pause (void)
 }
 
 VISIBLE void
-CDAudio_Play (int track, qboolean looping)
+CDAudio_Play (int track, bool looping)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->play (track, looping);

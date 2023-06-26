@@ -73,6 +73,7 @@ void glsl_Mod_IQMFinish (model_t *mod);
 void sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
 void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
+void sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
@@ -105,6 +106,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer,
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
 
 void Skin_Init (void);
+void Skin_Shutdown (void);
 void Skin_Free (skin_t *skin);
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
 skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);

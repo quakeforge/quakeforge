@@ -425,7 +425,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						qboolean    flag = true;
+						bool        flag = true;
 
 						if (!strncasecmp (temp, "no-", 3)) {
 							flag = false;
@@ -485,7 +485,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						qboolean    flag = true;
+						bool        flag = true;
 
 						if (!(strncasecmp (temp, "target=", 7))) {
 							const char *tgt = temp + 7;
@@ -576,7 +576,7 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.redeclared = false;
 							options.warnings.enum_switch = false;
 						} else {
-							qboolean    flag = true;
+							bool        flag = true;
 
 							if (!strncasecmp (temp, "no-", 3)) {
 								flag = false;
@@ -715,13 +715,13 @@ DecodeArgs (int argc, char **argv)
 		options.advanced = false;
 		if (!options.code.progsversion)
 			options.code.progsversion = PROG_ID_VERSION;
-		if (options.code.ifstring == (qboolean) -1)
+		if (options.code.ifstring == (bool) -1)
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (qboolean) -1)
+		if (options.code.short_circuit == (bool) -1)
 			options.code.short_circuit = false;
-		if (options.code.local_merging == (qboolean) -1)
+		if (options.code.local_merging == (bool) -1)
 			options.code.local_merging = false;
-		if (options.code.vector_components == (qboolean) -1)
+		if (options.code.vector_components == (bool) -1)
 			options.code.vector_components = true;
 		if (options.math.vector_mult == 0)
 			options.math.vector_mult = DOT;
@@ -733,13 +733,13 @@ DecodeArgs (int argc, char **argv)
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
 		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
 		add_cpp_def (save_string (ruamoko));
-		if (options.code.ifstring == (qboolean) -1)
+		if (options.code.ifstring == (bool) -1)
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (qboolean) -1)
+		if (options.code.short_circuit == (bool) -1)
 			options.code.short_circuit = true;
-		if (options.code.local_merging == (qboolean) -1)
+		if (options.code.local_merging == (bool) -1)
 			options.code.local_merging = true;
-		if (options.code.vector_components == (qboolean) -1)
+		if (options.code.vector_components == (bool) -1)
 			options.code.vector_components = false;
 		if (options.math.vector_mult == 0)
 			options.math.vector_mult = options.advanced == 1 ? DOT : HADAMARD;
@@ -749,10 +749,10 @@ DecodeArgs (int argc, char **argv)
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = 0;
 		add_cpp_def ("-D__VERSION6__=1");
-		if (options.code.crc == (qboolean) -1)
+		if (options.code.crc == (bool) -1)
 			options.code.crc = true;
 	} else {
-		if (options.code.crc == (qboolean) -1)
+		if (options.code.crc == (bool) -1)
 			options.code.crc = false;
 	}
 

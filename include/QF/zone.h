@@ -118,7 +118,7 @@ void Z_SetTag (memzone_t *zone, void *ptr, int tag);
 
 
 memhunk_t *Hunk_Init (void *buf, size_t size);
-void Hunk_Print (memhunk_t *hunk, qboolean all);
+void Hunk_Print (memhunk_t *hunk, bool all);
 void Hunk_Check (memhunk_t *hunk);
 void *Hunk_RawAlloc (memhunk_t *hunk, size_t size) __attribute__((nonnull(1)));
 void *Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name) __attribute__((nonnull(1)));

@@ -42,6 +42,6 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean GLF_FindFunctions (void);
+bool GLF_FindFunctions (void);
 
 #endif // __QF_GL_funcs_h_

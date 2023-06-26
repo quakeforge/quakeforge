@@ -325,7 +325,7 @@ test_point (vec4f_t split, const vec4f_t *points, int index, vec4f_t *dists,
 */
 winding_t *
 ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
-			 qboolean keepon)
+			 bool keepon)
 {
 	unsigned    maxpts = 0;
 	unsigned    i;
@@ -1112,7 +1112,7 @@ CalcClusterSpheres (void)
 }
 
 #if 0
-static qboolean
+static bool
 PlaneCompare (plane_t *p1, plane_t *p2)
 {
 	int         i;
@@ -1135,7 +1135,7 @@ FindPassages (winding_t *source, winding_t *pass)
 	int         i, j, k, l;
 	int         counts[3];
 	plane_t     plane;
-	qboolean    fliptest;
+	bool        fliptest;
 	sep_t      *sep, *list;
 	vec3_t      v1, v2;
 

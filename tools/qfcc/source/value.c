@@ -80,7 +80,7 @@ typedef struct {
 } immediate_t;
 
 static hashtab_t *value_table;
-static ex_value_t *values_freelist;
+ALLOC_STATE (ex_value_t, values);
 
 //FIXME this (to setup_value_progs) should be in its own file and more
 //general (good for constant folding, too, and maybe some others).

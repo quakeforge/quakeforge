@@ -60,7 +60,7 @@ GLuint      gl_solidskytexture;
 GLuint      gl_alphaskytexture;
 
 // Set to true if a valid skybox is loaded --KB
-qboolean    gl_skyloaded = false;
+bool        gl_skyloaded = false;
 
 
 vec5_t      gl_skyvec[6][4] = {
@@ -413,7 +413,7 @@ gl_R_InitSky (texture_t *mt)
 	// make an average value for the back to avoid a fringe on the top level
 
 	r = g = b = 0;
-	for (i = 0; i < 128; i++)
+	for (i = 0; i < 128; i++) {
 		for (j = 0; j < 128; j++) {
 			p = src[i * 256 + j + 128];
 			rgba = &d_8to24table[p];
@@ -422,11 +422,13 @@ gl_R_InitSky (texture_t *mt)
 			g += ((byte *) rgba)[1];
 			b += ((byte *) rgba)[2];
 		}
+	}
+	r /= 128 * 128;
+	g /= 128 * 128;
+	b /= 128 * 128;
 
-	((byte *) & transpix)[0] = r / (128 * 128);
-	((byte *) & transpix)[1] = g / (128 * 128);
-	((byte *) & transpix)[2] = b / (128 * 128);
-	((byte *) & transpix)[3] = 0;
+	//FIXME assumes little endian
+	transpix = ((b << 16) | (g << 8) | (r << 0)) & 0x00ffffff;
 
 	if (!gl_solidskytexture) {
 		qfglGenTextures (1, &gl_solidskytexture);

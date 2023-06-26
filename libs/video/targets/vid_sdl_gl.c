@@ -77,7 +77,7 @@ static cvar_t gl_driver_cvar = {
 };
 
 static void *
-QFGL_ProcAddress (const char *name, qboolean crit)
+QFGL_ProcAddress (const char *name, bool crit)
 {
 	void    *glfunc = NULL;
 

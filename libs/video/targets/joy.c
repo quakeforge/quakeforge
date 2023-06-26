@@ -79,8 +79,8 @@ static cvar_t joy_pre_amp_cvar = {
 	.value = { .type = &cexpr_float, .value = &joy_pre_amp },
 };
 
-qboolean    joy_found = false;
-qboolean    joy_active = false;
+bool        joy_found = false;
+bool        joy_active = false;
 
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];

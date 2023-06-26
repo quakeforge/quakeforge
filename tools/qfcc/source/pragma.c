@@ -57,7 +57,7 @@ typedef struct pragma_arg_s {
 	const char *arg;
 } pragma_arg_t;
 
-static pragma_arg_t *pragma_args_freelist;
+ALLOC_STATE (pragma_arg_t, pragma_args);
 static pragma_arg_t *pragma_args;
 static pragma_arg_t **pragma_args_tail = &pragma_args;
 

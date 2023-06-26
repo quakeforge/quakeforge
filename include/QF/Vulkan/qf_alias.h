@@ -70,26 +70,14 @@ typedef enum {
 	QFV_aliasNumPasses
 } QFV_AliasSubpass;
 
-typedef struct aliasframe_s {
-	qfv_cmdbufferset_t cmdSet;
-} aliasframe_t;
-
-typedef struct aliasframeset_s
-    DARRAY_TYPE (aliasframe_t) aliasframeset_t;
-
 typedef struct aliasindset_s
     DARRAY_TYPE (unsigned) aliasindset_t;
 
 typedef struct aliasctx_s {
-	aliasframeset_t frames;
-	VkPipeline   depth;
-	VkPipeline   gbuf;
-	VkPipelineLayout layout;
 	VkSampler    sampler;
 } aliasctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 struct entity_s;
 struct mod_alias_ctx_s;
 
@@ -106,13 +94,8 @@ void Vulkan_Mod_MakeAliasModelDisplayLists (struct mod_alias_ctx_s *alias_ctx,
 void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 
-void Vulkan_AliasBegin (struct qfv_renderframe_s *rFrame);
-void Vulkan_DrawAlias (struct entity_s ent, struct qfv_renderframe_s *rFrame);
-void Vulkan_AliasEnd (struct qfv_renderframe_s *rFrame);
-
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Alias_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx);
-
-void Vulkan_AliasDepthRange (struct qfv_renderframe_s *rFrame, float n, float f);
 
 #endif//__QF_Vulkan_qf_alias_h

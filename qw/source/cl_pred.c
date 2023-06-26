@@ -64,7 +64,7 @@ static cvar_t cl_pushlatency_cvar = {
 
 void
 CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u,
-				   qboolean clientplayer)
+				   bool clientplayer)
 {
 	if (!clientplayer) {
 		if (VectorIsZero (from->pls.es.velocity)) {

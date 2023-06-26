@@ -892,6 +892,7 @@ bi_input_clear (progs_t *pr, void *_res)
 static void
 bi_input_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static void

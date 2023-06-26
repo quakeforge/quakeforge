@@ -76,7 +76,7 @@ typedef struct {
 	int         width, height;
 	int         bytesperpixel;
 //	int         texelformat;  // eventually replace bytesperpixel
-	qboolean    mipmap;
+	bool        mipmap;
 	unsigned short crc;  // LordHavoc: CRC for texure validation
 } gltexture_t;
 
@@ -377,8 +377,8 @@ GL_MipMap8Bit (byte *in, int width, int height)
 }
 
 static void
-GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
-			 qboolean alpha)
+GL_Upload32 (unsigned int *data, int width, int height, bool mipmap,
+			 bool alpha)
 {
 	int           scaled_width, scaled_height, intformat;
 	unsigned int *scaled;
@@ -458,8 +458,8 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
         If we don't, this function does nothing.
 */
 void
-GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
-				qboolean alpha)
+GL_Upload8_EXT (const byte *data, int width, int height, bool mipmap,
+				bool alpha)
 {
 	byte       *scaled;
 	int         scaled_width, scaled_height;
@@ -529,8 +529,8 @@ GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 }
 
 void
-GL_Upload8 (const byte *data, int width, int height, qboolean mipmap,
-			qboolean alpha)
+GL_Upload8 (const byte *data, int width, int height, bool mipmap,
+			bool alpha)
 {
 	int           i, s, p;
 	unsigned int *trans;
@@ -568,7 +568,7 @@ GL_Upload8 (const byte *data, int width, int height, qboolean mipmap,
 
 int
 GL_LoadTexture (const char *identifier, int width, int height, const byte *data,
-				qboolean mipmap, qboolean alpha, int bytesperpixel)
+				bool mipmap, bool alpha, int bytesperpixel)
 {
 	int          crc, i;
 	gltexture_t *glt;

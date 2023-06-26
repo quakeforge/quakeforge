@@ -239,7 +239,7 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 	return b;
 }
 
-qboolean
+bool
 PR_EdictValid (progs_t *pr, pr_uint_t e)
 {
 	if (!pr->num_edicts) {

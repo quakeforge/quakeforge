@@ -47,8 +47,8 @@ typedef struct colcache_color_s {
 	byte        col;
 } colcache_color_t;
 
-static colcache_t *colcache_freelist;
-static colcache_color_t *colcache_color_freelist;
+ALLOC_STATE (colcache_t, colcache);
+ALLOC_STATE (colcache_color_t, colcache_color);
 
 static colcache_color_t *
 colcache_new_color (const byte *rgb, byte ind)
@@ -103,6 +103,13 @@ ColorCache_Delete (colcache_t *cache)
 {
 	Hash_DelTable (cache->tab);
 	FREE (colcache, cache);
+}
+
+void
+ColorCache_Shutdown (void)
+{
+	ALLOC_FREE_BLOCKS (colcache);
+	ALLOC_FREE_BLOCKS (colcache_color);
 }
 
 byte

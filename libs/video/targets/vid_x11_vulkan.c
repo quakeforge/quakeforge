@@ -213,7 +213,7 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 }
 
 vulkan_ctx_t *
-X11_Vulkan_Context (void)
+X11_Vulkan_Context (vid_internal_t *vi)
 {
 	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
 	ctx->load_vulkan = load_vulkan_library;
@@ -225,6 +225,8 @@ X11_Vulkan_Context (void)
 	ctx->required_extensions = required_extensions;
 	ctx->va_ctx = va_create_context (32);
 	ctx->twod_scale = 1;
+
+	vi->ctx = ctx;
 	return ctx;
 }
 

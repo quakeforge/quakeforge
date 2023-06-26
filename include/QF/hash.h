@@ -93,6 +93,8 @@ void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
 */
 void Hash_DelTable (hashtab_t *tab);
 
+void Hash_DelContext (hashctx_t *hashctx);
+
 /** clean out all the entries from a hash table, starting over again.
 	\param tab	the table to be cleared
 */
@@ -118,6 +120,14 @@ int Hash_AddElement (hashtab_t *tab, void *ele);
 	\return		pointer to the element if found, otherwise 0.
 */
 void *Hash_Find (hashtab_t *tab, const char *key);
+
+/** find an element within a hash table.
+	\param tab	the table to search
+	\param key	the key string identifying the element being searched for
+	\param sz   the maximum length of the key string
+	\return		pointer to the element if found, otherwise 0.
+*/
+void *Hash_nFind (hashtab_t *tab, const char *key, size_t sz);
 
 /** find an element within a hash table.
 	\param tab	the table to search
@@ -188,6 +198,15 @@ void Hash_Free (hashtab_t *tab, void *ele);
 	this is the same function as used internally.
 */
 uintptr_t Hash_String (const char *str) __attribute__((pure));
+
+/** hash a string.
+	\param str	the string to hash
+	\param sz   the maximum length of the string
+	\return		the hash value of the string.
+
+	this is the same function as used internally.
+*/
+uintptr_t Hash_nString (const char *str, size_t sz) __attribute__((pure));
 
 /** hash a buffer.
 	\param buf	the buffer to hash

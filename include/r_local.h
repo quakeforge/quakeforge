@@ -131,14 +131,14 @@ void R_ClearPolyList (void);
 void R_DrawPolyList (void);
 
 //  Surface cache related ==========
-extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
+extern bool	r_cache_thrash;	// set if thrashing the surface cache
 
 // current entity info
-extern	qboolean		insubmodel;
-extern	vec3_t			r_worldmodelorg;
+extern bool     insubmodel;
+extern vec3_t   r_worldmodelorg;
 
-extern mat4f_t   glsl_projection;
-extern mat4f_t   glsl_view;
+extern mat4f_t  glsl_projection;
+extern mat4f_t  glsl_view;
 
 union refframe_s;
 void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
@@ -245,7 +245,7 @@ extern auxvert_t		*pauxverts;
 extern float            ziscale;
 extern float            aliastransform[3][4];
 
-qboolean R_AliasCheckBBox (struct entity_s ent);
+bool R_AliasCheckBBox (struct entity_s ent);
 
 // turbulence stuff =======================================
 
@@ -290,7 +290,7 @@ void R_AliasClipTriangle (mtriangle_t *ptri);
 extern double	r_time1;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
-extern qboolean	r_dowarpold, r_viewchanged;
+extern bool		r_dowarpold, r_viewchanged;
 
 extern int		r_clipflags;
 

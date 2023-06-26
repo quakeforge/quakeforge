@@ -89,7 +89,7 @@ static set_t    static_channels = SET_STATIC_ARRAY (static_channel_bits);
 
 static channel_t *ambient_channels[NUM_AMBIENTS];
 
-static qboolean snd_ambient = 1;
+static bool snd_ambient = 1;
 static sfx_t   *ambient_sfx[NUM_AMBIENTS];
 
 static vec_t    sound_nominal_clip_dist = 1000.0;

@@ -703,7 +703,7 @@ LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
 {
 	bsp_t      *bsp;
 	int         version;
-	qboolean    bsp2 = false;
+	bool        bsp2 = false;
 
 	bsp = calloc (sizeof (bsp_t), 1);
 
@@ -942,7 +942,7 @@ do { \
 VISIBLE void
 WriteBSPFile (const bsp_t *bsp, QFile *file)
 {
-	qboolean    bsp2 = (   bsp->models[0].mins[0] < -32768.0f
+	bool        bsp2 = (   bsp->models[0].mins[0] < -32768.0f
 						|| bsp->models[0].mins[1] < -32768.0f
 						|| bsp->models[0].mins[2] < -32768.0f
 						|| bsp->models[0].mins[0] >= 32768.0f

@@ -45,7 +45,7 @@
 
 typedef enum { SIS_SUCCESS, SIS_FAILURE, SIS_NOTAVAIL } sndinitstat;
 
-static qboolean snd_firsttime = true;
+static bool snd_firsttime = true;
 
 static int  sample16;
 static int  snd_sent, snd_completed;
@@ -68,7 +68,7 @@ static HWAVEOUT    hWaveOut;
 
 static DWORD       gSndBufSize;
 
-static qboolean    SNDDMA_InitWav (snd_t *snd);
+static bool        SNDDMA_InitWav (snd_t *snd);
 
 static int snd_stereo;
 static cvar_t snd_stereo_cvar = {
@@ -161,7 +161,7 @@ FreeSound (void)
 
 	Crappy windows multimedia base
 */
-static qboolean
+static bool
 SNDDMA_InitWav (snd_t *snd)
 {
 	int			i;

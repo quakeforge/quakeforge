@@ -95,6 +95,9 @@ void print_type (qfot_type_t *type)
 			//printf (" %d %s ", type.alias.type, type.alias.name);
 			print_type (type.alias.aux_type);
 			break;
+		case ty_handle:
+			//printf (" %s\n", type.handle.tag);
+			break;
 	}
 }
 
@@ -131,6 +134,12 @@ get_object_key (void *obj, void *unused)
 	return [(id)obj name];
 }
 
+static void
+free_object (void *obj, void *unused)
+{
+	[(id)obj release];
+}
+
 void
 usage (string name)
 {
@@ -160,7 +169,7 @@ main(int argc, string *argv)
 		printf ("could not open property list file: %s\n", plist_filename);
 		return 1;
 	}
-	plist = [[PLItem fromFile: plist_file] retain];
+	plist = [[PLDictionary fromFile: plist_file] retain];
 	if (!plist) {
 		printf ("error parsing: %s\n", plist_filename);
 		return 1;
@@ -168,6 +177,7 @@ main(int argc, string *argv)
 	Qclose (plist_file);
 	if ([plist class] != [PLDictionary class]) {
 		printf ("%s not a dictionary\n", plist_filename);
+		return 1;
 	}
 	search = [[plist getObjectForKey: "search"] retain];
 	handles = [[plist getObjectForKey: "handles"] retain];
@@ -180,7 +190,7 @@ main(int argc, string *argv)
 	}
 	queue = [[Array array] retain];
 	output_types = [[Array array] retain];
-	available_types = Hash_NewTable (127, get_object_key, nil, nil);
+	available_types = Hash_NewTable (127, get_object_key, free_object, nil);
 	processed_types = Hash_NewTable (127, get_string_key, nil, nil);
 	scan_types ();
 
@@ -200,7 +210,10 @@ main(int argc, string *argv)
 		id obj = [queue objectAtIndex:0];
 		[queue removeObjectAtIndex:0];
 		if ([obj class] == [Struct class]) {
-			if ([[parse getObjectForKey:[obj name]] string] == "skip") {
+			string name = [obj name];
+			if (name == "char" // char type faked via a struct
+				|| name == "bool" // bool type faked via a struct
+				|| [[parse getObjectForKey:name] string] == "skip") {
 				continue;
 			}
 			[obj queueFieldTypes];
@@ -221,33 +234,15 @@ main(int argc, string *argv)
 		if ([obj name] == "VkStructureType") {
 			continue;
 		}
-		if ([obj class] != [Enum class]) {
-			continue;
-		}
 
 		arp_start ();
-		[obj writeTable];
+		[obj writeForward];
+		[obj initParse:[parse getObjectForKey:[obj name]]];
 		arp_end ();
 	}
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
-			continue;
-		}
-		if ([obj class] != [FixedArray class]) {
-			continue;
-		}
-
-		arp_start ();
-		[obj writeTable];
-		arp_end ();
-	}
-	for (int i = [output_types count]; i-- > 0; ) {
-		id obj = [output_types objectAtIndex:i];
-		if ([obj name] == "VkStructureType") {
-			continue;
-		}
-		if ([obj class] != [Struct class]) {
 			continue;
 		}
 
@@ -271,5 +266,12 @@ main(int argc, string *argv)
 	fprintf (output_file, "}\n");
 	Qclose (output_file);
 	Qclose (header_file);
+	Hash_DelTable (available_types);
+	[plist release];
+	[search release];
+	[handles release];
+	[parse release];
+	[queue release];
+	[output_types release];
 	return 0;
 }

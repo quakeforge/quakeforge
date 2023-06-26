@@ -51,9 +51,9 @@ HRESULT (WINAPI * pDirectSoundCreate) (GUID FAR * lpGUID,
 
 typedef enum { SIS_SUCCESS, SIS_FAILURE, SIS_NOTAVAIL } sndinitstat;
 
-static qboolean dsound_init;
-static qboolean snd_firsttime = true;
-static qboolean primary_format_set;
+static bool dsound_init;
+static bool snd_firsttime = true;
+static bool primary_format_set;
 
 static int  sample16;
 
@@ -111,7 +111,7 @@ static cvar_t snd_bits_cvar = {
 	.value = { .type = &cexpr_int, .value = &snd_bits },
 };
 
-static DWORD *DSOUND_LockBuffer (snd_t *snd, qboolean lockit);
+static DWORD *DSOUND_LockBuffer (snd_t *snd, bool lockit);
 
 static void
 SNDDMA_Init_Cvars (void)
@@ -436,7 +436,7 @@ SNDDMA_shutdown (snd_t *snd)
 }
 
 static DWORD *
-DSOUND_LockBuffer (snd_t *snd, qboolean lockit)
+DSOUND_LockBuffer (snd_t *snd, bool lockit)
 {
 	int		reps;
 

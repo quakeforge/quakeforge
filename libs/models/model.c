@@ -55,6 +55,7 @@ vid_model_funcs_t *mod_funcs;
 
 #define	MOD_BLOCK	16					// allocate 16 models at a time
 static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static struct DARRAY_TYPE (model_t *) mod_blocks = {0, 0, MOD_BLOCK};
 static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
@@ -99,12 +100,25 @@ static cvar_t gl_textures_external_cvar = {
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
+static void
+mod_shutdown (void *data)
+{
+	Mod_ClearAll ();
+	for (size_t i = 0; i < mod_blocks.size; i++) {
+		free (mod_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&mod_known);
+	DARRAY_CLEAR (&mod_blocks);
+}
+
 VISIBLE void
 Mod_Init (void)
 {
 	byte   *dest;
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
+
+	Sys_RegisterShutdown (mod_shutdown, 0);
 
 	r_notexture_mip = Hunk_AllocName (0,
 									  sizeof (texture_t) + mip0size + mip1size
@@ -164,6 +178,7 @@ Mod_ClearAll (void)
 	for (i = 0; i < mod_numknown; i++) {
 		mod_unload_model (i);
 	}
+	mod_numknown = 0;
 }
 
 model_t *
@@ -187,6 +202,7 @@ Mod_FindName (const char *name)
 				DARRAY_APPEND (&mod_known, &block[i]);
 			}
 			mod = &mod_known.a[mod_numknown];
+			DARRAY_APPEND (&mod_blocks, block);
 		}
 		memset ((*mod), 0, sizeof (model_t));
 		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
@@ -199,7 +215,7 @@ Mod_FindName (const char *name)
 }
 
 static model_t *
-Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
+Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 {
 	uint32_t   *buf;
 
@@ -277,7 +293,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	Loads a model into the cache
 */
 static model_t *
-Mod_LoadModel (model_t *mod, qboolean crash)
+Mod_LoadModel (model_t *mod, bool crash)
 {
 	if (!mod->needload) {
 		if (mod->type == mod_alias && !mod->aliashdr) {
@@ -309,7 +325,7 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 	Loads in a model for the given name
 */
 VISIBLE model_t *
-Mod_ForName (const char *name, qboolean crash)
+Mod_ForName (const char *name, bool crash)
 {
 	model_t    *mod;
 

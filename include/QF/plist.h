@@ -143,8 +143,34 @@ typedef struct plelement_s {
 	\return Returns an object equivalent to the passed-in string.
 	\note You are responsible for freeing the returned object.
 */
-plitem_t *PL_GetPropertyList (const char *string,
-							  struct hashctx_s **hashctx);
+plitem_t *PL_GetPropertyList (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare dictionary list.
+
+	The input is treated as a list of dictionary key-value pairs without the
+	enclosing { or }.
+
+	\param string	dicitionary list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns a dictionary object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetDictionary (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare array list.
+
+	The input is treated as a list of array values without the enclosing ( or ).
+
+	\param string	array list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns an array object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetArray (const char *string, struct hashctx_s **hashctx);
 
 /** Create a property list string from the in-memory representation.
 
@@ -212,11 +238,8 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 
 	\param dict	The Dictionary to remove the value from
 	\param key	The unique key associated with the value to be removed
-	\return the value associated with the key, or NULL if not found or \a dict
-	isn't a dictionary (includes if \a dict is null).
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
+void PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a key from a dictionary object.
 
@@ -269,7 +292,21 @@ int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 
 	\note the dictionary becomes the owner of the value.
 */
-qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
+bool PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
+
+/** Copy contents of one dictionary into another.
+
+	The contents of \a srcDict are added to \a dstDict without affecting
+	\a srcDict. Any collisions in \a dstDict result in those values in
+	\a dstDict being replaced by the the values from \a srcDict: the new
+	key-value pairs override the old.
+
+	\param dstDict  The dictionary to extend
+	\param srcDict  The dictionary from which key-value pairs will be copied
+	\return true if values were copied, false if nothing was copied (either
+	dictionary is null, or not a dictionary, or if \a srcDict was empty)
+*/
+bool PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
 
 /** Add an item to an array.
 
@@ -281,7 +318,19 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
+bool PL_A_AddObject (plitem_t *array, plitem_t *item);
+
+/** Append contents of one array to another.
+
+	The contents of \a srcArray are added to \a dstArray without affecting
+	\a srcArray. Those values are appended to the destination array values.
+
+	\param dstArray The array to extend
+	\param srcArray The array from which values will be copied
+	\return true if values were copied, false if nothing was copied (either
+	array is null, or not an array, or if \a srcArray was empty)
+*/
+bool PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray);
 
 /** Retrieve the number of items in an array.
 
@@ -303,18 +352,15 @@ int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
+bool PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
 /** Remove a value from an array object.
-	The array items will be shuffled to fill the resulting hole.
+	The array items will be shifted to fill the resulting hole.
 
 	\param array	The array from which to remove the value
 	\param index	The index within the array to remove
-	\return the value associated with the index, or NULL if not found or array
-	is noll or an array.
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
+void PL_RemoveObjectAtIndex (plitem_t *array, int index);
 
 /** Create a new dictionary object.
 	The dictionary will be empty.
@@ -346,14 +392,32 @@ plitem_t *PL_NewData (void *data, size_t size);
 */
 plitem_t *PL_NewString (const char *str);
 
-/** Free a property list object.
+/** Retain ownership of a property list object.
 
-	This function takes care of freeing any referenced property list data, so
-	call it only on top-level objects. Safe to call with a null argument.
+	Use prior to removal to ensure the property list object is not freed when
+	removed from an array or dictionary. Adding an object to a dictionary or
+	array automatically retains the object.
 
-	\param item the property list object to be freed
+	\param item the property list object to be retained
+	\return the item
+	\note item may be null, in which case nothing is done but to return null
 */
-void PL_Free (plitem_t *item);
+plitem_t *PL_Retain (plitem_t *item);
+
+/** Release ownership of a property list object.
+
+	If the number of owners is reduced to 0 (or is already 0) then the object
+	will be freed. If the object contains other objects, then those objects
+	will be released.
+
+	\param item the property list object to be released
+	\return the item if it is still valid, otherwise null
+	\note item may be null, in which case nothing is done but to return null
+*/
+plitem_t *PL_Release (plitem_t *item);
+
+void PL_SetUserData (plitem_t *item, void *data);
+void *PL_GetUserData (plitem_t *item) __attribute__((pure));
 
 int PL_CheckType (pltype_t field_type, pltype_t item_type) __attribute__((const));
 void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,

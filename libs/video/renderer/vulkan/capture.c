@@ -28,126 +28,51 @@
 # include "config.h"
 #endif
 
+#include "QF/cexpr.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/swapchain.h"
 
-qfv_capture_t *
-QFV_CreateCapture (qfv_device_t *device, int numframes,
-				   qfv_swapchain_t *swapchain, VkCommandPool cmdPool)
-{
-	qfv_instfuncs_t *ifunc = device->physDev->instance->funcs;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	VkFormatProperties format_props;
-	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev,
-												swapchain->format,
-												&format_props);
-	if (!(swapchain->usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
-		Sys_Printf ("Swapchain does not support reading. FIXME\n");
-		return 0;
-	}
-
-	qfv_capture_t *capture = malloc (sizeof (qfv_capture_t));
-	capture->device = device;
-	capture->extent = swapchain->extent;
-	capture->image_set = QFV_AllocCaptureImageSet (numframes, malloc);
-
-	__auto_type cmdset = QFV_AllocCommandBufferSet (numframes, alloca);
-	QFV_AllocateCommandBuffers (device, cmdPool, 1, cmdset);
-
-	//FIXME assumes the swapchain is 32bpp
-	capture->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
-
-	for (int i = 0; i < numframes; i++) {
-		__auto_type image = &capture->image_set->a[i];
-		image->buffer = QFV_CreateBuffer (device, capture->imgsize,
-										  VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-	}
-	VkMemoryRequirements req;
-	dfunc->vkGetBufferMemoryRequirements (device->dev,
-										  capture->image_set->a[0].buffer,
-										  &req);
-	capture->imgsize = QFV_NextOffset (capture->imgsize, &req);
-	capture->memsize = numframes * capture->imgsize;
-	capture->memory = QFV_AllocBufferMemory (device,
-											 capture->image_set->a[0].buffer,
-											 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-											 capture->memsize, 0);
-	dfunc->vkMapMemory (device->dev, capture->memory, 0, capture->memsize, 0,
-						(void **) &capture->data);
-
-	for (int i = 0; i < numframes; i++) {
-		__auto_type image = &capture->image_set->a[i];
-		image->cmd = cmdset->a[i];
-		image->data = capture->data + i * capture->imgsize;
-		QFV_BindBufferMemory (device, image->buffer, capture->memory,
-							  i * capture->imgsize);
-	}
-	return capture;
-}
-
-void
-QFV_DestroyCapture (qfv_capture_t *capture)
-{
-	qfv_device_t *device = capture->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	for (size_t i = 0; i < capture->image_set->size; i++) {
-		__auto_type image = &capture->image_set->a[i];
-		dfunc->vkDestroyBuffer (device->dev, image->buffer, 0);
-	}
-	dfunc->vkUnmapMemory (device->dev, capture->memory);
-	dfunc->vkFreeMemory (device->dev, capture->memory, 0);
-	free (capture->image_set);
-	free (capture);
-}
+#include "QF/plugin/vid_render.h"
+#include "vid_vulkan.h"
 
 static void
-copy_image (qfv_capture_t *capture, qfv_devfuncs_t *dfunc,
-			VkImage scImage, qfv_capture_image_t *image)
+capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	VkBufferImageCopy copy = {
-		.bufferOffset = 0,
-		.bufferRowLength = 0,
-		.bufferImageHeight = 0,
-		.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		.imageOffset = { },
-		.imageExtent = { capture->extent.width, capture->extent.height, 1 },
-	};
-	dfunc->vkCmdCopyImageToBuffer (image->cmd, scImage,
-								   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-								   image->buffer, 1, &copy);
-}
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-VkCommandBuffer
-QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
-{
-	qfv_device_t *device = capture->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type image = &capture->image_set->a[frame];
+	auto cap = ctx->capture_context;
+	auto frame = &cap->frames.a[ctx->curFrame];
 
-	dfunc->vkResetCommandBuffer (image->cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		0, 0, 0, 0, 0, 0,
-	};
+	if (!frame->callback) {
+		return;
+	}
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
 	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &inherit,
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	};
-	dfunc->vkBeginCommandBuffer (image->cmd, &beginInfo);
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto sc = ctx->swapchain;
+	auto scImage = sc->images->a[ctx->swapImageIndex];
 
 	VkBufferMemoryBarrier start_buffer_barriers[] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = 0,
 			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.buffer = image->buffer,
+			.buffer = frame->buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
@@ -168,7 +93,7 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
 			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-			.buffer = image->buffer,
+			.buffer = frame->buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
@@ -185,39 +110,224 @@ QFV_CaptureImage (qfv_capture_t *capture, VkImage scImage, int frame)
 		},
 	};
 
-	dfunc->vkCmdPipelineBarrier (image->cmd,
+	dfunc->vkCmdPipelineBarrier (cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 0, 0, 0,
 								 1, start_buffer_barriers,
 								 1, start_image_barriers);
 
-	copy_image (capture, dfunc, scImage, image);
+	VkBufferImageCopy copy = {
+		.bufferOffset = 0,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		.imageOffset = { },
+		.imageExtent = { cap->extent.width, cap->extent.height, 1 },
+	};
+	dfunc->vkCmdCopyImageToBuffer (cmd, scImage,
+								   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+								   frame->buffer, 1, &copy);
 
-	dfunc->vkCmdPipelineBarrier (image->cmd,
+	dfunc->vkCmdPipelineBarrier (cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 0, 0, 0,
 								 1, end_buffer_barriers,
 								 1, end_image_barriers);
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
 
-	dfunc->vkEndCommandBuffer (image->cmd);
-
-	return image->cmd;
+	frame->initiated = true;
+	auto time = Sys_LongTime ();
+	printf ("capture_initiate: %zd.%03zd.%0zd\n",
+			time / 1000000, (time / 1000) % 1000, time % 1000);
 }
 
-const byte *
-QFV_CaptureData (qfv_capture_t *capture, int frame)
+static int
+is_bgr (VkFormat format)
 {
-	qfv_device_t *device = capture->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type image = &capture->image_set->a[frame];
+	return (format >= VK_FORMAT_B8G8R8A8_UNORM
+			&& format <= VK_FORMAT_B8G8R8A8_SRGB);
+}
+
+static void
+capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	auto cap = ctx->capture_context;
+	auto frame = &cap->frames.a[ctx->curFrame];
+
+	if (!frame->callback || !frame->initiated) {
+		return;
+	}
+	auto time = Sys_LongTime ();
+	printf ("capture_finalize: %zd.%03zd.%0zd\n",
+			time / 1000000, (time / 1000) % 1000, time % 1000);
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-		.memory = capture->memory,
-		.offset = image->data - capture->data,
-		.size = capture->imgsize,
+		.memory = cap->memory,
+		.offset = frame->data - cap->data,
+		.size = cap->imgsize,
 	};
 	dfunc->vkInvalidateMappedMemoryRanges (device->dev, 1, &range);
-	return image->data;
+
+	int         count = cap->extent.width * cap->extent.height;
+	tex_t      *tex = malloc (sizeof (tex_t) + count * 3);
+
+	if (tex) {
+		tex->data = (byte *) (tex + 1);
+		tex->flagbits = 0;
+		tex->width = cap->extent.width;
+		tex->height = cap->extent.height;
+		tex->format = tex_rgb;
+		tex->palette = 0;
+		tex->flagbits = 0;
+		tex->loaded = 1;
+
+		if (is_bgr (ctx->swapchain->format)) {
+			tex->bgr = 1;
+		}
+		const byte *src = frame->data;
+		byte       *dst = tex->data;
+		while (count-- > 0) {
+			*dst++ = *src++;
+			*dst++ = *src++;
+			*dst++ = *src++;
+			src++;
+		}
+	}
+
+	frame->callback (tex, frame->callback_data);;
+	frame->callback = 0;
+	frame->callback_data = 0;
+	frame->initiated = false;
+}
+
+static exprfunc_t capture_initiate_func[] = {
+	{ .func = capture_initiate },
+	{}
+};
+static exprfunc_t capture_finalize_func[] = {
+	{ .func = capture_finalize },
+	{}
+};
+static exprsym_t capture_task_syms[] = {
+	{ "capture_initiate", &cexpr_function, capture_initiate_func },
+	{ "capture_finalize", &cexpr_function, capture_finalize_func },
+	{}
+};
+
+void
+QFV_Capture_Init (vulkan_ctx_t *ctx)
+{
+	QFV_Render_AddTasks (ctx, capture_task_syms);
+
+	qfvPushDebug (ctx, "capture init");
+
+	auto device = ctx->device;
+	auto ifunc = device->physDev->instance->funcs;
+	auto dfunc = device->funcs;
+
+	ctx->capture_context = calloc (1, sizeof (qfv_capturectx_t));
+	auto cap = ctx->capture_context;
+
+	auto swapchain = ctx->swapchain;
+	VkFormatProperties format_props;
+	ifunc->vkGetPhysicalDeviceFormatProperties (device->physDev->dev,
+												swapchain->format,
+												&format_props);
+	if (!(swapchain->usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
+		Sys_Printf ("Swapchain does not support reading. FIXME\n");
+		return;
+	}
+
+	cap->device = device;
+	cap->extent = swapchain->extent;
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&cap->frames, frames);
+	DARRAY_RESIZE (&cap->frames, frames);
+	cap->frames.grow = 0;
+
+	//FIXME assumes the swapchain is 32bpp
+	cap->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
+
+	for (size_t i = 0; i < frames; i++) {
+		auto frame = &cap->frames.a[i];
+		*frame = (qfv_capture_frame_t) {
+			.buffer = QFV_CreateBuffer (device, cap->imgsize,
+										VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+		};
+	}
+	VkMemoryRequirements req;
+	dfunc->vkGetBufferMemoryRequirements (device->dev,
+										  cap->frames.a[0].buffer,
+										  &req);
+	cap->imgsize = QFV_NextOffset (cap->imgsize, &req);
+	cap->memsize = frames * cap->imgsize;
+	cap->memory = QFV_AllocBufferMemory (device,
+										 cap->frames.a[0].buffer,
+										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+										 cap->memsize, 0);
+	dfunc->vkMapMemory (device->dev, cap->memory, 0, cap->memsize, 0,
+						(void **) &cap->data);
+
+	for (size_t i = 0; i < frames; i++) {
+		auto frame = &cap->frames.a[i];
+		frame->data = cap->data + i * cap->imgsize;
+		QFV_BindBufferMemory (device, frame->buffer, cap->memory,
+							  i * cap->imgsize);
+	}
+	qfvPopDebug (ctx);
+}
+
+int shut_up_gcc = 1;
+void
+QFV_Capture_Renew (vulkan_ctx_t *ctx)
+{
+	if (shut_up_gcc) {
+		Sys_Error ("QFV_Capture_Renew not implemented");
+	}
+}
+
+void
+QFV_Capture_Shutdown (vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto cap = ctx->capture_context;
+
+	for (size_t i = 0; i < cap->frames.size; i++) {
+		auto frame = &cap->frames.a[i];
+		dfunc->vkDestroyBuffer (device->dev, frame->buffer, 0);
+	}
+	dfunc->vkUnmapMemory (device->dev, cap->memory);
+	dfunc->vkFreeMemory (device->dev, cap->memory, 0);
+	DARRAY_CLEAR (&cap->frames);
+	free (cap);
+}
+
+void
+QFV_Capture_Screen (vulkan_ctx_t *ctx, capfunc_t callback, void *data)
+{
+	auto cap = ctx->capture_context;
+	if (!cap->data) {
+		Sys_Printf ("Capture not supported\n");
+		callback (0, data);
+		return;
+	}
+	auto frame = &cap->frames.a[ctx->curFrame];
+	frame->callback = callback;
+	frame->callback_data = data;
+	auto time = Sys_LongTime ();
+	printf ("capture_request: %zd.%03zd.%0zd\n",
+			time / 1000000, (time / 1000) % 1000, time % 1000);
 }

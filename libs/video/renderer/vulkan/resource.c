@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/mathlib.h"
 #include "QF/va.h"
 
 #include "QF/Vulkan/buffer.h"
@@ -42,17 +43,25 @@ create_image (qfv_device_t *device, qfv_resobj_t *image_obj)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type image = &image_obj->image;
+	if (image->image) {
+		// the image was created externally and is being
+		return;
+	}
 	VkImageCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, 0,
-		image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
-		image->type, image->format, image->extent, image->num_mipmaps,
-		image->num_layers,
-		image->samples,
-		VK_IMAGE_TILING_OPTIMAL,
-		image->usage,
-		VK_SHARING_MODE_EXCLUSIVE,
-		0, 0,
-		VK_IMAGE_LAYOUT_UNDEFINED,
+		.flags = image->flags,
+		.imageType = image->type,
+		.format = image->format,
+		.extent = image->extent,
+		.mipLevels = image->num_mipmaps,
+		.arrayLayers = image->num_layers,
+		.samples = image->samples,
+		.tiling = image->tiling,
+		.usage = image->usage,
+		.sharingMode = image->sharing,
+		.queueFamilyIndexCount = image->num_queue_inds,
+		.pQueueFamilyIndices = image->queue_inds,
+		.initialLayout = image->initialLayout,
 	};
 	dfunc->vkCreateImage (device->dev, &createInfo, 0, &image->image);
 }
@@ -63,23 +72,17 @@ create_image_view (qfv_device_t *device, qfv_resobj_t *imgview_obj,
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type view = &imgview_obj->image_view;
-	__auto_type image = &imgobj->image;
+	VkImage     image = view->external_image ? view->external_image
+											 : imgobj->image.image;
 
 	VkImageViewCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 0,
-		//FIXME flags should be input for both image and image view
-		.flags = image->cubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
-		.image = image->image,
+		.flags = view->flags,
+		.image = image,
 		.viewType = view->type,
 		.format = view->format,
 		.components = view->components,
-		.subresourceRange = {
-			.aspectMask = view->aspect,
-			.baseMipLevel = 0,
-			.levelCount = VK_REMAINING_MIP_LEVELS,
-			.baseArrayLayer = 0,
-			.layerCount = VK_REMAINING_ARRAY_LAYERS,
-		},
+		.subresourceRange = view->subresourceRange,
 	};
 	dfunc->vkCreateImageView (device->dev, &createInfo, 0, &view->view);
 }
@@ -89,10 +92,19 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physdev = device->physDev;
+	size_t      atom = physdev->properties->limits.nonCoherentAtomSize;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
 	VkMemoryRequirements req;
 	VkDeviceSize size = 0;
 
+	if (!(resource->memory_properties
+		  & (VK_MEMORY_PROPERTY_HOST_CACHED_BIT
+			 | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+			 | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))) {
+		// if the memory isn't host visible then there's no need to worry about
+		// alignment with nonCoherentAtomSize
+		atom = 0;
+	}
 	for (unsigned i = 0; i < resource->num_objects; i++) {
 		__auto_type obj = &resource->objects[i];
 		switch (obj->type) {
@@ -137,8 +149,9 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				{
 					__auto_type imgview = &obj->image_view;
 					__auto_type imgobj = &resource->objects[imgview->image];
-					if (imgview->image >= resource->num_objects
-						|| imgobj->type != qfv_res_image) {
+					if (!imgview->external_image
+						&& (imgview->image >= resource->num_objects
+							|| imgobj->type != qfv_res_image)) {
 						Sys_Error ("%s:%s invalid image for view",
 								   resource->name, obj->name);
 					}
@@ -148,6 +161,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				Sys_Error ("%s:%s invalid resource type %d",
 						   resource->name, obj->name, obj->type);
 		}
+		req.alignment = max (req.alignment, atom);
 		size = QFV_NextOffset (size, &req);
 		size += QFV_NextOffset (req.size, &req);
 	}
@@ -196,6 +210,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 		}
 
+		req.alignment = max (req.alignment, atom);
 		offset = QFV_NextOffset (offset, &req);
 		switch (obj->type) {
 			case qfv_res_buffer:
@@ -218,6 +233,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 			case qfv_res_image_view:
 				break;
 		}
+		req.alignment = max (req.alignment, atom);
 		offset = QFV_NextOffset (offset, &req);
 		offset += QFV_NextOffset (req.size, &req);
 	}

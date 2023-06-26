@@ -117,8 +117,13 @@ typedef struct function_s {
 	struct flowvar_s  **vars;
 	int                 num_vars;	///< total number of variables referenced
 	struct set_s       *global_vars;///< set indicating which vars are global
+	struct set_s       *param_vars;	///< set indicating which vars are params
+	struct set_s       *real_statements;///< actual statements for ud-chaining
 	struct statement_s **statements;
 	int                 num_statements;
+	int                 num_ud_chains;
+	struct udchain_s   *ud_chains;
+	struct udchain_s   *du_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 } function_t;

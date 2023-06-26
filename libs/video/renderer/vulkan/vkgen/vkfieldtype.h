@@ -10,10 +10,12 @@
 	string parse_type;
 	string type;
 	string parser;
+	string data;
 }
 +fieldType:(PLItem *)item;
 -initWithItem:(PLItem *)item;
 -writeParseData;
+-(string)type;
 -(string)exprType;
 -(string)parseType;
 +(string)anyType;

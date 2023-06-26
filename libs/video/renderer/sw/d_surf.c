@@ -135,7 +135,7 @@ static surfcache_t *
 D_SCAlloc (int width, int size)
 {
 	surfcache_t *new;
-	qboolean    wrapped_this_time;
+	bool        wrapped_this_time;
 
 	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);

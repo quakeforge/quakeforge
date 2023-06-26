@@ -38,7 +38,7 @@
 #include "nq/include/game.h"
 #include "nq/include/server.h"
 
-qboolean standard_quake = false;
+bool standard_quake = false;
 
 float registered;
 static cvar_t registered_cvar = {

@@ -192,6 +192,18 @@ glsl_R_Init (void)
 }
 
 void
+glsl_R_Shutdown (void)
+{
+	Skin_Shutdown();
+
+	glsl_R_ShutdownParticles ();
+	glsl_Lightmap_Shutdown ();
+	glsl_R_ShutdownBsp ();
+	SCR_Shutdown ();
+	glsl_Draw_Shutdown ();
+}
+
+void
 glsl_R_NewScene (scene_t *scene)
 {
 	int         i;

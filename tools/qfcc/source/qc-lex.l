@@ -449,6 +449,7 @@ static keyword_t keywords[] = {
 	{"@system",		SYSTEM,					},
 	{"@overload",	OVERLOAD,				},
 	{"@attribute",  ATTRIBUTE,				},
+	{"@handle",     HANDLE,					},
 };
 
 static const char *

@@ -58,41 +58,25 @@ typedef enum {
 	QFV_spriteNumPasses
 } QFV_SpriteSubpass;
 
-typedef struct spriteframe_s {
-	qfv_cmdbufferset_t cmdSet;
-} spriteframe_t;
-
-typedef struct spriteframeset_s
-    DARRAY_TYPE (spriteframe_t) spriteframeset_t;
-
 typedef struct spritectx_s {
-	spriteframeset_t frames;
-	VkPipeline  depth;
-	VkPipeline  gbuf;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
-	VkPipelineLayout layout;
+	struct qfv_dsmanager_s *dsmanager;
 	unsigned    maxImages;
 	VkSampler   sampler;
 } spritectx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 struct entity_s;
 struct mod_sprite_ctx_s;
 
-void Vulkan_Sprint_FreeDescriptors (struct vulkan_ctx_s *ctx,
+void Vulkan_Sprite_FreeDescriptors (struct vulkan_ctx_s *ctx,
 									qfv_sprite_t *sprite);
 void Vulkan_Sprite_DescriptorSet (struct vulkan_ctx_s *ctx,
 								  qfv_sprite_t *sprite);
 void Vulkan_Mod_SpriteLoadFrames (struct mod_sprite_ctx_s *sprite_ctx,
 								  struct vulkan_ctx_s *ctx);
 
-void Vulkan_SpriteBegin (struct qfv_renderframe_s *rFrame);
-void Vulkan_DrawSprite (struct entity_s ent, struct qfv_renderframe_s *rFrame);
-void Vulkan_SpriteEnd (struct qfv_renderframe_s *rFrame);
-
 void Vulkan_Sprite_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Sprite_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Sprite_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_sprite_h

@@ -162,7 +162,7 @@ SV_CheckVelocity (edict_t *ent)
 	in a frame.  Not used for pushmove objects, because they must be exact.
 	Returns false if the entity removed itself.
 */
-qboolean
+bool
 SV_RunThink (edict_t *ent)
 {
 	float       thinktime;
@@ -450,7 +450,7 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 	return trace;
 }
 
-static qboolean
+static bool
 SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 {
 	float       solid_save;
@@ -805,7 +805,7 @@ SV_Physics_Toss (edict_t *ent)
 static void
 SV_Physics_Step (edict_t *ent)
 {
-	qboolean    hitsound;
+	bool        hitsound;
 
 	// freefall if not on ground
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {

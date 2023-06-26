@@ -114,6 +114,7 @@ int yylex (void);
 	struct symbol_s *symbol;
 	struct symtab_s *symtab;
 	struct attribute_s *attribute;
+	struct designator_s *designator;
 }
 
 // these tokens are common between qc and qp
@@ -153,7 +154,7 @@ int yylex (void);
 %token				RETURN AT_RETURN ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token	<op>		STRUCT
+%token	<op>		STRUCT HANDLE
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
@@ -194,6 +195,7 @@ int yylex (void);
 
 %type	<expr>		opt_init_semi opt_expr comma_expr expr
 %type	<expr>		compound_init element_list
+%type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		ose optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
@@ -436,7 +438,7 @@ is_anonymous_struct (specifier_t spec)
 	if (spec.sym) {
 		return 0;
 	}
-	if (!is_struct (spec.type)) {
+	if (!is_struct (spec.type) && !is_union (spec.type)) {
 		return 0;
 	}
 	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
@@ -484,7 +486,8 @@ check_specifiers (specifier_t spec)
 			if (is_anonymous_struct (spec)){
 				warning (0, "unnamed struct/union that defines "
 						 "no instances");
-			} else if (!is_enum (spec.type) && !is_struct (spec.type)) {
+			} else if (!is_enum (spec.type)
+					   && !is_struct (spec.type) && !is_union (spec.type)) {
 				warning (0, "useless type name in empty declaration");
 			}
 		} else if (!spec.type && spec.sym) {
@@ -1085,6 +1088,19 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
+	| HANDLE tag
+		{
+			symbol_t   *sym = find_handle ($2, 0);
+			sym->type = find_type (sym->type);
+			$$ = make_spec (sym->type, 0, 0, 0);
+			if (!sym->table) {
+				symtab_t   *tab = current_symtab;
+				while (tab->parent && tab->type == stab_struct) {
+					tab = tab->parent;
+				}
+				symtab_addsymbol (tab, sym);
+			}
+		}
 	;
 
 struct_list
@@ -1132,6 +1148,9 @@ struct_defs
 component_decl_list
 	: component_decl_list2
 	| component_decl_list2 component_decl
+		{
+			warning (0, "no semicolon at end of struct or union");
+		}
 	;
 
 component_decl_list2
@@ -1391,8 +1410,29 @@ element_list
 	;
 
 element
-	: compound_init								{ $$ = new_element ($1, 0); }
+	: designator '=' compound_init				{ $$ = new_element ($3, $1); }
+	| designator '=' expr 						{ $$ = new_element ($3, $1); }
+	| compound_init								{ $$ = new_element ($1, 0); }
 	| expr										{ $$ = new_element ($1, 0); }
+	;
+
+designator
+	: designator_spec
+	| designator designator_spec
+		{
+			designator_t *des = $1;
+			while (des->next) {
+				des = des->next;
+			}
+			des->next = $2;
+			$$ = $1;
+		}
+	;
+
+designator_spec
+	: '.' ident_expr	{ $$ = new_designator ($2, 0); }
+	| '.' NAME			{ $$ = new_designator (new_symbol_expr ($2), 0); }
+	| '[' expr ']'      { $$ = new_designator (0, $2); }
 	;
 
 optional_comma

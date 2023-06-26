@@ -31,7 +31,7 @@
 #ifndef __client_sbar_h
 #define __client_sbar_h
 
-extern qboolean sbar_showscores;
+extern bool sbar_showscores;
 
 struct player_info_s;
 void Sbar_Init (int *stats, float *item_gettime);

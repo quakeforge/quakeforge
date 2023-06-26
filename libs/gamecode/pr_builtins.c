@@ -171,6 +171,9 @@ PR_Builtins_Shutdown (progs_t *pr)
 	pr->builtin_hash = 0;
 	Hash_DelTable (pr->builtin_num_hash);
 	pr->builtin_num_hash = 0;
+
+	free (pr->function_table);
+	pr->function_table = 0;
 }
 
 VISIBLE builtin_t *

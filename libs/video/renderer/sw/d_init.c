@@ -39,7 +39,7 @@
 #define NUM_MIPS	4
 
 surfcache_t *d_initial_rover;
-qboolean     d_roverwrapped;
+bool         d_roverwrapped;
 int          d_minmip;
 float        d_scalemip[NUM_MIPS - 1];
 
@@ -55,12 +55,12 @@ d_vidsize_listener (void *data, const viddef_t *vid)
 	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
 
 	if (surfcache) {
-		D_FlushCaches (vid->vid_internal->data);
+		D_FlushCaches (vid->vid_internal->ctx);
 		free (surfcache);
 		surfcache = 0;
 	}
 	surfcache = calloc (cachesize, 1);
-	vid->vid_internal->init_buffers (vid->vid_internal->data);
+	vid->vid_internal->init_buffers (vid->vid_internal->ctx);
 	D_InitCaches (surfcache, cachesize);
 
 	viddef.recalc_refdef = 1;

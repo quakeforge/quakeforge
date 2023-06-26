@@ -39,7 +39,7 @@
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
-qboolean    isDedicated = false;
+bool        isDedicated = false;
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000
@@ -49,8 +49,8 @@ qboolean    isDedicated = false;
 #define PAUSE_SLEEP		50				// sleep time on pause or minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-qboolean    ActiveApp, Minimized;
-qboolean    WinNT;
+bool        ActiveApp, Minimized;
+bool        WinNT;
 
 static double pfreq;
 static int  lowshift;

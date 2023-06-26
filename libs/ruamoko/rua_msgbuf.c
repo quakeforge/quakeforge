@@ -97,6 +97,7 @@ bi_msgbuf_clear (progs_t *pr, void *data)
 static void
 bi_msgbuf_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static int

@@ -140,6 +140,8 @@ void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx);
 
 char *cexpr_yyget_text (void *scanner);
 
+extern exprenum_t cexpr_bool_enum;
+extern exprtype_t cexpr_bool;
 extern exprtype_t cexpr_int;
 extern exprtype_t cexpr_uint;
 extern exprtype_t cexpr_size_t;
@@ -151,6 +153,9 @@ extern exprtype_t cexpr_exprval;
 extern exprtype_t cexpr_field;
 extern exprtype_t cexpr_function;
 extern exprtype_t cexpr_plitem;
+extern exprtype_t cexpr_string;
+// generic pointer holder, never generated directly by cexpr
+extern exprtype_t cexpr_voidptr;
 
 extern binop_t cexpr_array_binops[];
 extern binop_t cexpr_struct_binops[];

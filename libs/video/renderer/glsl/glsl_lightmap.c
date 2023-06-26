@@ -264,3 +264,12 @@ glsl_R_FlushLightmaps (void)
 {
 	GLSL_ScrapFlush (light_scrap);
 }
+
+void
+glsl_Lightmap_Shutdown (void)
+{
+	if (light_scrap) {
+		GLSL_DestroyScrap (light_scrap);
+	}
+	free (blocklights);
+}

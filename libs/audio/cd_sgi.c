@@ -53,9 +53,9 @@ static general_funcs_t plugin_info_general_funcs;
 
 static cd_funcs_t plugin_info_cd_funcs;
 
-static qboolean initialized = false;
-static qboolean enabled = true;
-static qboolean playLooping = false;
+static bool initialized = false;
+static bool enabled = true;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
@@ -126,7 +126,7 @@ I_SGI_Pause (void)
 }
 
 void
-I_SGI_Play (int track, qboolean looping)
+I_SGI_Play (int track, bool looping)
 {
 	int			maxtrack = I_SGI_MaxTrack ();
 

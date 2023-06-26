@@ -638,7 +638,7 @@ V_PrepBlend (viewstate_t *vs)
 		|| (vs->force_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift (vs);
 
-	qboolean    cshift_changed = false;
+	bool        cshift_changed = false;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (vs->cshifts[i].percent != vs->prev_cshifts[i].percent) {

@@ -544,7 +544,7 @@ VID_SetCaption (const char *text)
 {
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return false;

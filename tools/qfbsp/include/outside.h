@@ -39,7 +39,7 @@ struct node_s;
 	\return			\c true if the outside has been set solid, otherwise
 					\c false.
 */
-qboolean FillOutside (struct node_s *node);
+bool FillOutside (struct node_s *node);
 
 ///@}
 

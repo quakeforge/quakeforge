@@ -206,7 +206,7 @@ void Draw_BlendScreen (quat_t color);
 	\return		pointer qpic data.
 	\note		Up to MAX_CACHED_PICS qpics can be loaded at a time this way
 */
-qpic_t *Draw_CachePic (const char *path, qboolean alpha);
+qpic_t *Draw_CachePic (const char *path, bool alpha);
 
 /** Remove a qpic from the qpic cache.
 

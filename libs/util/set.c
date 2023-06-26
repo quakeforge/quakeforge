@@ -45,7 +45,11 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-static set_pool_t static_set_pool = {0, 0};
+static set_pool_t static_set_pool = {
+	0, 0,
+	DARRAY_STATIC_INIT (8),
+	DARRAY_STATIC_INIT (8),
+};
 
 static set_iter_t *
 new_setiter (set_pool_t *set_pool)
@@ -76,8 +80,10 @@ set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter)
 void
 set_pool_init (set_pool_t *set_pool)
 {
-	set_pool->set_freelist = 0;
-	set_pool->set_iter_freelist = 0;
+	*set_pool = (set_pool_t) {
+		.set_blocks = DARRAY_STATIC_INIT (8),
+		.set_iter_blocks = DARRAY_STATIC_INIT (8),
+	};
 }
 
 inline set_t *
@@ -185,6 +191,59 @@ _set_remove (set_t *set, unsigned x)
 	SET_REMOVE(set, x);
 }
 
+static inline void
+_set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count) {
+		return;
+	}
+	if (start + count > set->size) {
+		set_expand (set, start + count);
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] |= start_mask & end_mask;
+	} else {
+		set->map[start_ind] |= start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = ~SET_ZERO;
+		}
+		set->map[end_ind] |= end_mask;
+	}
+}
+
+static inline void
+_set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count) {
+		return;
+	}
+	if (start >= set->size) {
+		return;
+	}
+	if (start + count > set->size) {
+		count = set->size - start;
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] &= ~(start_mask & end_mask);
+	} else {
+		set->map[start_ind] &= ~start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = SET_ZERO;
+		}
+		set->map[end_ind] &= ~end_mask;
+	}
+}
+
 set_t *
 set_add (set_t *set, unsigned x)
 {
@@ -196,12 +255,32 @@ set_add (set_t *set, unsigned x)
 }
 
 set_t *
+set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_remove_range (set, start, count);
+	else
+		_set_add_range (set, start, count);
+	return set;
+}
+
+set_t *
 set_remove (set_t *set, unsigned x)
 {
 	if (set->inverted)
 		_set_add (set, x);
 	else
 		_set_remove (set, x);
+	return set;
+}
+
+set_t *
+set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_add_range (set, start, count);
+	else
+		_set_remove_range (set, start, count);
 	return set;
 }
 
@@ -661,6 +740,36 @@ set_next (set_iter_t *set_iter)
 	return set_next_r (&static_set_pool, set_iter);
 }
 
+set_iter_t *
+set_while_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	unsigned    x;
+
+	if (_set_is_member (set_iter->set, set_iter->element)) {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (!_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	} else {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	}
+	delete_setiter (set_pool, set_iter);
+	return 0;
+}
+
+set_iter_t *
+set_while (set_iter_t *set_iter)
+{
+	return set_while_r (&static_set_pool, set_iter);
+}
+
 const char *
 set_to_dstring_r (set_pool_t *set_pool, dstring_t *str, const set_t *set)
 {
@@ -716,4 +825,17 @@ set_as_string (const set_t *set)
 	}
 	dstring_clearstr (str);
 	return set_to_dstring_r (&static_set_pool, str, set);
+}
+
+static void
+set_shutdown (void *data)
+{
+	ALLOC_FREE_BLOCKS (static_set_pool.set);
+	ALLOC_FREE_BLOCKS (static_set_pool.set_iter);
+}
+
+static void __attribute__((constructor))
+set_init (void)
+{
+	Sys_RegisterShutdown (set_shutdown, 0);
 }

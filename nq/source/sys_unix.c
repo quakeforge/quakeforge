@@ -52,7 +52,7 @@
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
-qboolean    isDedicated = false;
+bool        isDedicated = false;
 
 static void
 shutdown_f (void *data)

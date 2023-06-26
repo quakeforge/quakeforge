@@ -19,12 +19,13 @@
 	pltype = str_hold (parseItemType ([desc getObjectAtIndex:1]));
 	parser = str_hold ([[desc getObjectAtIndex:2] string]);
 
-	fields = [item getObjectForKey:"fields"];
+	fields = [[item getObjectForKey:"fields"] retain];
 	return self;
 }
 
 -(void)dealloc
 {
+	[fields release];
 	str_free (pltype);
 	str_free (parser);
 	[super dealloc];

@@ -657,6 +657,10 @@ bi_scene_clear (progs_t *pr, void *_res)
 static void
 bi_scene_destroy (progs_t *pr, void *_res)
 {
+	rua_scene_resources_t *res = _res;
+	PR_RESDELMAP (res->scene_map);
+	PR_RESDELMAP (res->lighting_map);
+	free (res);
 }
 
 void

@@ -407,7 +407,7 @@ gl_R_DrawAliasModel (entity_t e)
 				emission[4] = {0.0, 0.0, 0.0, 1.0};
 	int         gl_light, texture;
 	int         fb_texture = 0, used_lights = 0;
-	qboolean    is_fullbright = false;
+	bool        is_fullbright = false;
 	unsigned    lnum;
 	aliashdr_t *paliashdr;
 	dlight_t   *l;

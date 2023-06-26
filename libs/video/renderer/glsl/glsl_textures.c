@@ -394,6 +394,9 @@ GLSL_ScrapClear (scrap_t *scrap)
 void
 GLSL_DestroyScrap (scrap_t *scrap)
 {
+	if (!scrap) {
+		return;
+	}
 	scrap_t   **s;
 
 	for (s = &scrap_list; *s; s = &(*s)->next) {

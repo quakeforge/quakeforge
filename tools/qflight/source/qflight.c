@@ -76,7 +76,7 @@ int bspfileent;			// next entity to dispatch
 
 vec3_t bsp_origin;
 
-qboolean extrasamples;
+bool extrasamples;
 
 int
 GetFileSpace (int size)

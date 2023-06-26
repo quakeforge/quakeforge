@@ -166,7 +166,8 @@ AC_MSG_CHECKING(whether $1 works)
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $1"
 qf_opt_ok=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[qf_opt_ok=yes
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[void func(void);]], [[func();]])],
+[qf_opt_ok=yes
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
 ])
 CFLAGS="$save_CFLAGS"

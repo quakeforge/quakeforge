@@ -76,7 +76,7 @@ const char *lighttargets[32];
 
 
 static int
-LightStyleForTargetname (const char *targetname, qboolean alloc)
+LightStyleForTargetname (const char *targetname, bool alloc)
 {
 	int		i;
 
@@ -274,7 +274,7 @@ LoadEntities (void)
 					entity->persistence = 1;
 			}
 		}
-		PL_Free (dict);
+		PL_Release (dict);
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,

@@ -46,17 +46,29 @@ ECS_NewRegistry (void)
 VISIBLE void
 ECS_DelRegistry (ecs_registry_t *registry)
 {
+	if (!registry) {
+		return;
+	}
+	registry->locked = 1;
+	for (uint32_t i = 0; i < registry->components.size; i++) {
+		__auto_type comp = &registry->components.a[i];
+		__auto_type pool = &registry->comp_pools[i];
+		Component_DestroyElements (comp, pool->data, 0, pool->count);
+	}
 	free (registry->entities);
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		free (registry->comp_pools[i].sparse);
 		free (registry->comp_pools[i].dense);
 		free (registry->comp_pools[i].data);
 
+		free (registry->subpools[i].sorted);
 		free (registry->subpools[i].ranges);
 		free (registry->subpools[i].rangeids);
 	}
+	DARRAY_CLEAR (&registry->components);
 	free (registry->subpools);
 	free (registry->comp_pools);
+	PR_RESDELMAP (registry->hierarchies);
 	free (registry);
 }
 
@@ -193,6 +205,14 @@ ECS_NewEntity (ecs_registry_t *registry)
 VISIBLE void
 ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 {
+	if (!ECS_EntValid (ent, registry)) {
+		return;
+	}
+	if (registry->locked) {
+		// the registry is being deleted and mass entity and component
+		// deletions are going on
+		return;
+	}
 	uint32_t    next = registry->next | Ent_NextGen (Ent_Generation (ent));
 	uint32_t    id = Ent_Index (ent);
 	registry->entities[id] = next;

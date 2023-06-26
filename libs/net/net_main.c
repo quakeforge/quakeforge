@@ -55,18 +55,18 @@ qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;
 int         net_numsockets = 0;
 
-qboolean    tcpipAvailable = false;
+bool        tcpipAvailable = false;
 
 int         net_hostport;
 int         DEFAULTnet_hostport = 26000;
 
 char        my_tcpip_address[NET_NAMELEN];
 
-static qboolean listening = false;
+static bool listening = false;
 
-qboolean    slistInProgress = false;
-qboolean    slistSilent = false;
-qboolean    slistLocal = true;
+bool        slistInProgress = false;
+bool        slistSilent = false;
+bool        slistLocal = true;
 static double slistStartTime;
 static int  slistLastShown;
 
@@ -106,7 +106,7 @@ static cvar_t hostname_cvar = {
 };
 
 QFile      *vcrFile;
-qboolean    recording = false;
+bool        recording = false;
 
 // these two macros are to make the code more readable
 #define sfunc	net_drivers[sock->driver]
@@ -698,7 +698,7 @@ NET_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 }
 
 
-qboolean
+bool
 NET_CanSendMessage (qsocket_t *sock)
 {
 	int         r;
@@ -731,8 +731,8 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 	double      start;
 	unsigned    i;
 	int         count = 0;
-	qboolean    state1[MAX_SCOREBOARD];	/* can we send */
-	qboolean    state2[MAX_SCOREBOARD];	/* did we send */
+	bool        state1[MAX_SCOREBOARD];	/* can we send */
+	bool        state2[MAX_SCOREBOARD];	/* did we send */
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {

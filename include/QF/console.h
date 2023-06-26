@@ -62,7 +62,7 @@ extern struct plugin_s *con_module;
 extern struct console_data_s con_data;
 
 //extern int con_totallines;
-//extern qboolean con_initialized;
+//extern bool con_initialized;
 //extern byte *con_chars;
 
 void Con_DrawConsole (void);
@@ -110,6 +110,7 @@ void C_DrawInputLine (struct inputline_s *il);
 
 struct view_s;
 void Menu_Init (void);
+void Menu_Shutdown (void);
 void Menu_Load (void);
 void Menu_Draw (struct view_s view);
 void Menu_Draw_Hud (struct view_s view);

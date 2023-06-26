@@ -404,7 +404,7 @@ CL_LinkPlayers (void)
 	player_info_t  *player;
 	player_state_t	exact;
 	player_state_t *state;
-	qboolean		clientplayer;
+	bool			clientplayer;
 	vec3_t			ang = {0, 0, 0};
 	vec4f_t         org;
 

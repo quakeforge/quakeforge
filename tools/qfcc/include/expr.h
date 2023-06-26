@@ -74,12 +74,18 @@ typedef struct {
 	ex_label_t *label;
 } ex_labelref_t;
 
+typedef struct designator_s {
+	struct designator_s *next;
+	struct expr_s *field;
+	struct expr_s *index;
+} designator_t;
+
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
 	struct type_s *type;
 	struct expr_s *expr;		///< initializer expression
-	struct symbol_s *symbol;	///< for labeled initializers
+	designator_t *designator;	///< for labeled initializers
 } element_t;
 
 typedef struct element_chain_s {
@@ -142,7 +148,6 @@ typedef struct ex_memset_s {
 	struct expr_s *dst;
 	struct expr_s *val;
 	struct expr_s *count;
-	struct type_s *type;
 } ex_memset_t;
 
 /**	State expression used for think function state-machines.
@@ -290,7 +295,7 @@ typedef struct expr_s {
 		ex_label_t  label;				///< label expression
 		ex_labelref_t labelref;			///< label reference expression (&)
 		ex_state_t  state;				///< state expression
-		ex_bool_t   bool;				///< boolean logic expression
+		ex_bool_t   boolean;			///< boolean logic expression
 		ex_block_t  block;				///< statement block expression
 		ex_expr_t   expr;				///< binary or unary expression
 		struct def_s *def;				///< def reference expression
@@ -449,7 +454,8 @@ expr_t *new_block_expr (void);
 */
 expr_t *build_block_expr (expr_t *expr_list);
 
-element_t *new_element (expr_t *expr, struct symbol_s *symbol);
+designator_t *new_designator (expr_t *field, expr_t *index);
+element_t *new_element (expr_t *expr, designator_t *designator);
 expr_t *new_compound_init (void);
 expr_t *append_element (expr_t *compound, element_t *element);
 expr_t *initialized_temp_expr (const struct type_s *type, expr_t *compound);
@@ -777,6 +783,8 @@ expr_t *new_with_expr (int mode, int reg, expr_t *val);
 	\return			A new expression referencing the parameter slot.
 */
 expr_t *new_param_expr (struct type_s *type, int num);
+
+expr_t *new_memset_expr (expr_t *dst, expr_t *val, expr_t *count);
 
 /**	Convert a name to an expression of the appropriate type.
 

@@ -173,15 +173,15 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-GNU89INLINE inline qboolean R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs) __attribute__((pure));
-GNU89INLINE inline qboolean R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius);
+GNU89INLINE inline bool R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs) __attribute__((pure));
+GNU89INLINE inline bool R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull
 GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
+bool
 R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
@@ -200,7 +200,7 @@ GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
+bool
 R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius)
 {
 	int		i;

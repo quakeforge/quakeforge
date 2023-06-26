@@ -40,6 +40,7 @@
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/idparse.h"
+#include "QF/sys.h"
 
 typedef struct idbuf_s {
 	dstring_t *buf, *line;
@@ -253,3 +254,17 @@ VISIBLE cbuf_interpreter_t id_interp = {
 	COM_execute_sets,
 	NULL
 };
+
+static void
+idparse_shutdown (void *data)
+{
+	if (_com_token) {
+		dstring_delete (_com_token);
+	}
+}
+
+static void __attribute__((constructor))
+idparse_init (void)
+{
+	Sys_RegisterShutdown (idparse_shutdown, 0);
+}

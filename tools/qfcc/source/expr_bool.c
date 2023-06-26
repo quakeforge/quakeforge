@@ -228,16 +228,16 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 
 	switch (op) {
 		case OR:
-			backpatch (e1->e.bool.false_list, label);
-			return new_bool_expr (merge (e1->e.bool.true_list,
-										 e2->e.bool.true_list),
-								  e2->e.bool.false_list, block);
+			backpatch (e1->e.boolean.false_list, label);
+			return new_bool_expr (merge (e1->e.boolean.true_list,
+										 e2->e.boolean.true_list),
+								  e2->e.boolean.false_list, block);
 			break;
 		case AND:
-			backpatch (e1->e.bool.true_list, label);
-			return new_bool_expr (e2->e.bool.true_list,
-								  merge (e1->e.bool.false_list,
-										 e2->e.bool.false_list), block);
+			backpatch (e1->e.boolean.true_list, label);
+			return new_bool_expr (e2->e.boolean.true_list,
+								  merge (e1->e.boolean.false_list,
+										 e2->e.boolean.false_list), block);
 			break;
 	}
 	internal_error (e1, 0);
@@ -273,12 +273,12 @@ convert_bool (expr_t *e, int block)
 		b = convert_bool (tst, 1);
 		if (b->type == ex_error)
 			return b;
-		// insert the assignment into the bool's block
-		e->next = b->e.bool.e->e.block.head;
-		b->e.bool.e->e.block.head = e;
-		if (b->e.bool.e->e.block.tail == &b->e.bool.e->e.block.head) {
+		// insert the assignment into the boolean's block
+		e->next = b->e.boolean.e->e.block.head;
+		b->e.boolean.e->e.block.head = e;
+		if (b->e.boolean.e->e.block.tail == &b->e.boolean.e->e.block.head) {
 			// shouldn't happen, but just in case
-			b->e.bool.e->e.block.tail = &e->next;
+			b->e.boolean.e->e.block.tail = &e->next;
 		}
 		return b;
 	}
@@ -315,10 +315,10 @@ convert_bool (expr_t *e, int block)
 							   make_list (b->e.block.head->next), b);
 		}
 	}
-	if (block && e->e.bool.e->type != ex_block) {
+	if (block && e->e.boolean.e->type != ex_block) {
 		expr_t     *block = new_block_expr ();
-		append_expr (block, e->e.bool.e);
-		e->e.bool.e = block;
+		append_expr (block, e->e.boolean.e);
+		e->e.boolean.e = block;
 	}
 	return e;
 }

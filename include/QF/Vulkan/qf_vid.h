@@ -69,28 +69,17 @@ enum {
 };
 
 struct vulkan_ctx_s;
-void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateRenderPasses (struct vulkan_ctx_s *ctx);
-void Vulkan_DestroyRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateStagingBuffers (struct vulkan_ctx_s *ctx);
 
-VkPipeline Vulkan_CreateComputePipeline (struct vulkan_ctx_s *ctx,
-										 const char *name);
-VkPipeline Vulkan_CreateGraphicsPipeline (struct vulkan_ctx_s *ctx,
-										  const char *name);
-VkDescriptorPool Vulkan_CreateDescriptorPool (struct vulkan_ctx_s *ctx,
-											  const char *name);
-VkPipelineLayout Vulkan_CreatePipelineLayout (struct vulkan_ctx_s *ctx,
-											  const char *name);
+struct qfv_output_s;
+void Vulkan_ConfigOutput (struct vulkan_ctx_s *ctx,
+						  struct qfv_output_s *output);
+
 VkSampler Vulkan_CreateSampler (struct vulkan_ctx_s *ctx, const char *name);
-VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
-													   const char *name);
 
 struct entity_s;
 void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,

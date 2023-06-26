@@ -486,6 +486,8 @@ bi_input_destroy (progs_t *pr, void *_res)
 	input_resources_t *res = _res;
 	Hash_DelTable (res->cookies);
 	delete_memsuper (res->cookie_super);
+
+	free (res);
 }
 
 static uintptr_t
@@ -517,8 +519,7 @@ RUA_Input_Init (progs_t *pr, int secure)
 	input_resources_t *res = calloc (sizeof (input_resources_t), 1);
 
 	res->cookie_super = new_memsuper ();
-	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res,
-								  &res->hashctx);
+	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res, pr->hashctx);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
 	PR_Resources_Register (pr, "input", res, bi_input_clear, bi_input_destroy);

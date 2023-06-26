@@ -43,7 +43,7 @@ extern int lm_src_blend, lm_dest_blend;
 extern model_t *gl_currentmodel;
 
 extern GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
-extern qboolean		gl_lightmap_modified[MAX_LIGHTMAPS];
+extern bool			gl_lightmap_modified[MAX_LIGHTMAPS];
 extern instsurf_t  *gl_lightmap_polys;
 extern glRect_t		gl_lightmap_rectchange[MAX_LIGHTMAPS];
 

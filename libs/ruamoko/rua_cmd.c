@@ -58,6 +58,7 @@ typedef struct {
 } cmd_resources_t;
 
 static hashtab_t *bi_cmds;
+static hashctx_t *bi_cmd_hashctx;
 static int bi_cmds_refs;
 
 static const char *
@@ -129,7 +130,9 @@ bi_cmd_destroy (progs_t *pr, void *data)
 {
 	if (!--bi_cmds_refs) {
 		Hash_DelTable (bi_cmds);
+		Hash_DelContext (bi_cmd_hashctx);
 	}
+	free (data);
 }
 
 static void
@@ -172,8 +175,9 @@ RUA_Cmd_Init (progs_t *pr, int secure)
 	res->cmds = 0;
 
 	if (!bi_cmds) {
+		//FIXME not thread-safe
 		bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0,
-								 pr->hashctx);
+								 &bi_cmd_hashctx);
 	}
 	bi_cmds_refs++;
 

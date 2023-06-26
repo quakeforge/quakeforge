@@ -218,12 +218,12 @@ int  win_center_x, win_center_y;
 RECT win_rect;
 
 DEVMODE     win_gdevmode;
-static qboolean startwindowed = 0;
-//static qboolean windowed_mode_set;
+static bool startwindowed = 0;
+//static bool windowed_mode_set;
 //static int  vid_fulldib_on_focus_mode;
-static qboolean force_minimized;
-static qboolean force_mode_set;
-static qboolean vid_mode_set;
+static bool force_minimized;
+static bool force_mode_set;
+static bool vid_mode_set;
 //static HICON hIcon;
 
 
@@ -327,7 +327,7 @@ Win_UpdateWindowStatus (int window_x, int window_y)
 }
 
 
-static qboolean
+static bool
 VID_CheckAdequateMem (int width, int height)
 {
 	// there will always be enough ;)
@@ -512,7 +512,7 @@ VID_CheckModedescFixup (int mode)
 {
 }
 
-static qboolean
+static bool
 VID_SetWindowedMode (int modenum)
 {
 #if 0
@@ -588,7 +588,7 @@ VID_SetWindowedMode (int modenum)
 }
 
 
-static qboolean
+static bool
 VID_SetFullDIBMode (int modenum)
 {
 #if 0
@@ -657,7 +657,7 @@ VID_SetFullDIBMode (int modenum)
 static void
 VID_RestoreOldMode (int original_mode)
 {
-	static qboolean inerror = false;
+	static bool inerror = false;
 
 	if (inerror)
 		return;
@@ -714,7 +714,7 @@ static int
 VID_SetMode (int modenum, const byte *palette)
 {
 	int         original_mode;			// FIXME, temp;
-	qboolean    stat;
+	bool        stat;
 	MSG         msg;
 	HDC         hdc;
 
@@ -894,7 +894,7 @@ VID_HandlePause
 ================
 */
 static void __attribute__ ((used))
-VID_HandlePause (qboolean pause)
+VID_HandlePause (bool pause)
 {
 	if ((modestate == MS_WINDOWED) && _windowed_mouse) {
 		if (pause) {
@@ -1030,7 +1030,7 @@ VID_DescribeModes_f (void)
 {
 	int         i, lnummodes;
 	char       *pinfo;
-	qboolean    na;
+	bool        na;
 	vmode_t    *pv;
 
 	na = false;
@@ -1119,7 +1119,7 @@ Win_SetCaption (const char *text)
 //static WORD systemgammaramps[3][256];
 static WORD currentgammaramps[3][256];
 
-qboolean
+bool
 Win_SetGamma (double gamma)
 {
 	int         i;

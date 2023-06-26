@@ -49,8 +49,8 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-static symtab_t *symtabs_freelist;
-static symbol_t *symbols_freelist;
+ALLOC_STATE (symtab_t, symtabs);
+ALLOC_STATE (symbol_t, symbols);
 
 static const char * const sy_type_names[] = {
 	"sy_name",

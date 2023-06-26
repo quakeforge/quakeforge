@@ -1,12 +1,9 @@
 /*
-	#FILENAME#
+	gib.h
 
-	#DESCRIPTION#
+	GIB scripting language
 
-	Copyright (C) 2003 #AUTHOR#
-
-	Author: #AUTHOR#
-	Date: #DATE#
+	Copyright (C) 2003 Brian Koropoff
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -111,7 +108,7 @@ typedef struct gib_classdesc_s {
 			(obj), (mesg)))
 
 void GIB_Class_Create (gib_classdesc_t *desc);
-gib_object_t *GIB_Object_Create (const char *classname, qboolean classobj);
+gib_object_t *GIB_Object_Create (const char *classname, bool classobj);
 void GIB_Object_Destroy (gib_object_t *obj);
 void GIB_Object_Incref (gib_object_t *obj);
 void GIB_Object_Decref (gib_object_t *obj);
@@ -145,7 +142,7 @@ typedef struct gib_buffer_data_s {
 	struct gib_script_s *script;
 	struct gib_tree_s *program, *ip;
 	struct dstring_s *arg_composite;
-	qboolean waitret;
+	bool waitret;
 	struct gib_sstack_s {
 		struct gib_dsarray_s {
 			struct dstring_s **dstrs;
@@ -182,7 +179,7 @@ struct dstring_s *GIB_Return (const char *str);
 void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(PRINTF, 2, 3)));
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
-qboolean GIB_Builtin_Exists (const char *name);
+bool GIB_Builtin_Exists (const char *name);
 
 // Event interface
 
@@ -205,7 +202,7 @@ unsigned int GIB_Thread_Count (void) __attribute__((pure));
 
 // Init interface
 
-void GIB_Init (qboolean sandbox);
+void GIB_Init (bool sandbox);
 
 // Handle interface
 

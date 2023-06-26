@@ -4,6 +4,7 @@
 #include "vkenum.h"
 #include "vkfixedarray.h"
 #include "vkgen.h"
+#include "vkstring.h"
 #include "vkstruct.h"
 #include "vktype.h"
 
@@ -51,6 +52,16 @@ static string get_type_key (void *type, void *unused)
 	}
 	switch (type.meta) {
 		case ty_basic:
+			if (type.type == ev_ptr) {
+				Type       *tgt = [Type findType: type.fldptr.aux_type];
+
+				if (tgt.type.meta == ty_alias
+					&& tgt.type.alias.name == "char") {
+					return [[String alloc] initWithType: type];
+				}
+			}
+			// fallthrough
+		case ty_handle:
 		case ty_class:
 			return [[Type alloc] initWithType: type];
 		case ty_array:
@@ -86,12 +97,23 @@ static string get_type_key (void *type, void *unused)
 	return type.encoding;
 }
 
+-(void) setAlias: (Type *) alias
+{
+	if (!self.alias) {
+		self.alias = alias;
+	}
+}
+
 -(void) addToQueue
 {
 	string name = [self name];
 	if (type.meta == ty_basic && type.type == ev_ptr) {
 		[[Type findType: type.fldptr.aux_type] addToQueue];
 	}
+}
+
+-(void) initParse:(PLItem *)parse
+{
 }
 
 -(Type *) resolveType
@@ -129,6 +151,11 @@ static string get_type_key (void *type, void *unused)
 		return "&cexpr_" + pr_type_name[type.type];
 	}
 	return "0";
+}
+
+-(FieldDef *)fielddef:(Struct *)strct field:(string)fname
+{
+	return nil;
 }
 
 -(int) isPointer

@@ -489,7 +489,7 @@ CL_StartDemo (void)
 {
 	dstring_t  *name;
 	int         c;
-	qboolean    neg = false;
+	bool        neg = false;
 
 	// disconnect from server
 	CL_Disconnect ();

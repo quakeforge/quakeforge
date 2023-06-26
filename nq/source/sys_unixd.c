@@ -50,7 +50,7 @@
 
 #include "nq/include/host.h"
 
-qboolean    isDedicated = true;
+bool        isDedicated = true;
 
 static void
 shutdown_f (void *data)

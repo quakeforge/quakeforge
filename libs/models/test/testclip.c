@@ -41,10 +41,10 @@ typedef struct {
 	vec3_t      end;
 	struct {
 		float       frac;
-		qboolean    allsolid;
-		qboolean    startsolid;
-		qboolean    inopen;
-		qboolean    inwater;
+		bool        allsolid;
+		bool        startsolid;
+		bool        inopen;
+		bool        inwater;
 	}           expect;
 } test_t;
 

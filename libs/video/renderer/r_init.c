@@ -76,6 +76,8 @@ static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 static void
 R_shutdown (void *data)
 {
+	R_ShutdownEfrags ();
+	R_MaxDlightsCheck (0);	// frees memory
 	PI_UnloadPlugin (vidrendmodule);
 }
 

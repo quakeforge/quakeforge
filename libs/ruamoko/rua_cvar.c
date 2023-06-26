@@ -79,6 +79,7 @@ bi_cvar_clear (progs_t *pr, void *_res)
 static void
 bi_cvar_destroy (progs_t *pr, void *_res)
 {
+	free (_res);
 }
 
 static void

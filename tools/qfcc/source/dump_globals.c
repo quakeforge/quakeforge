@@ -444,6 +444,7 @@ static const char *ty_meta_names[] = {
 	"ty_array",
 	"ty_class",
 	"ty_alias",
+	"ty_handle",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 const int vector_types =  (1 << ev_float)
@@ -530,6 +531,9 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 						QFO_GETSTR (qfo, type->alias.name),
 						type->alias.type, type->alias.aux_type,
 						type->alias.full_type);
+				break;
+			case ty_handle:
+				printf (" %-5x\n", type->handle.tag);
 				break;
 		}
 	}

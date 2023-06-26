@@ -43,7 +43,7 @@ int         c_yes, c_no;
 	Returns false if any part of the bottom of the entity is off an edge that
 	is not a staircase.
 */
-qboolean
+bool
 SV_CheckBottom (edict_t *ent)
 {
 	float       mid, bottom;
@@ -112,8 +112,8 @@ SV_CheckBottom (edict_t *ent)
 	possible, no move is done, false is returned, and
 	pr_global_struct->trace_normal is set to the normal of the blocking wall
 */
-qboolean
-SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
+bool
+SV_movestep (edict_t *ent, const vec3_t move, bool relink)
 {
 	edict_t    *enemy;
 	float       dz;
@@ -221,7 +221,7 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 	Turns to the movement direction, and walks the current distance if
 	facing it.
 */
-static qboolean
+static bool
 SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
 	float       delta;
@@ -330,7 +330,7 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 		SV_FixCheckBottom (actor);
 }
 
-static qboolean
+static bool
 SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 {
 	int         i;

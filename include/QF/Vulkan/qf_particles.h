@@ -30,14 +30,7 @@ typedef struct qfv_particle_system_s {
 	uint32_t    firstInstance;	// always 0
 } qfv_particle_system_t;
 
-typedef enum {
-	QFV_particleTranslucent,
-
-	QFV_particleNumPasses
-} QFV_ParticleSubpass;
-
 typedef struct particleframe_s {
-	VkCommandBuffer compute;
 	VkEvent     physicsEvent;
 	VkEvent     updateEvent;
 	VkBuffer    states;
@@ -47,8 +40,6 @@ typedef struct particleframe_s {
 	VkDescriptorSet curDescriptors;
 	VkDescriptorSet inDescriptors;
 	VkDescriptorSet newDescriptors;
-
-	qfv_cmdbufferset_t cmdSet;
 } particleframe_t;
 
 typedef struct particleframeset_s
@@ -56,30 +47,18 @@ typedef struct particleframeset_s
 
 typedef struct particlectx_s {
 	particleframeset_t frames;
-	VkPipeline  physics;
-	VkPipeline  update;
-	VkPipeline  draw;
 
 	struct qfv_resource_s *resources;
 	struct qfv_stagebuf_s *stage;
 
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
-	VkPipelineLayout physics_layout;
-	VkPipelineLayout update_layout;
-	VkPipelineLayout draw_layout;
-
 	psystem_t  *psystem;
 } particlectx_t;
 
-struct cvar_s;
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 
 struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Particles_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawParticles (struct qfv_renderframe_s *rFrame);
-void Vulkan_Particles_CreateRenderPasses (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h

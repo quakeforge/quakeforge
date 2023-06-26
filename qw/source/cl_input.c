@@ -234,7 +234,7 @@ CL_SendCmd (void)
 {
 	byte			data[128];
 	int				checksumIndex, lost, seq_hash, frame;
-	qboolean		dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
+	bool			dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
 	sizebuf_t		buf;
 	usercmd_t	   *cmd, *oldcmd;
 

@@ -53,6 +53,9 @@ static void type_free (void *t, void *unused)
 		case ty_alias:
 			str_free (type.alias.name);
 			break;
+		case ty_handle:
+			str_free (type.handle.tag);
+			break;
 	}
 	obj_free (t);
 }
@@ -179,6 +182,11 @@ static void type_free (void *t, void *unused)
 			}
 			type.alias.full_type = t;
 			goto hash_type;
+		case ty_handle:
+			if (!(type.handle.tag = qdb_get_string (target, type.handle.tag))) {
+				goto error;
+			}
+			goto hash_type;
 	}
 	goto error;
 hash_type:
@@ -197,6 +205,7 @@ error:
 	int         size = 0;
 
 	switch (type.meta) {
+		case ty_handle:
 		case ty_basic:
 			size = pr_type_size[type.type];
 			break;

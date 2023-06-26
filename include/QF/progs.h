@@ -321,7 +321,7 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 ///@{
 
 struct edict_s {
-	qboolean    free;
+	bool        free;
 	progs_t    *pr;				///< progs owning this edict
 	pr_uint_t   entnum;			///< number of this entity
 	pr_uint_t   edict;			///< offset of this entity in pr_edict_area
@@ -336,7 +336,7 @@ void ED_Free (progs_t *pr, edict_t *ed);
 edict_t *ED_EdictNum(progs_t *pr, pr_uint_t n) __attribute__((pure));
 pr_uint_t ED_NumForEdict(progs_t *pr, edict_t *e) __attribute__((pure));
 void ED_Count (progs_t *pr);
-qboolean PR_EdictValid (progs_t *pr, pr_uint_t e) __attribute__((pure));
+bool PR_EdictValid (progs_t *pr, pr_uint_t e) __attribute__((pure));
 
 // pr_debug.c
 void ED_Print (progs_t *pr, edict_t *ed, const char *fieldname);
@@ -347,7 +347,7 @@ void ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname);
 struct script_s;
 struct plitem_s;
 struct hashctx_s;
-qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
+bool ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
 						const char *s);
 struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
 struct plitem_s *ED_GlobalsDict (progs_t *pr);
@@ -1131,7 +1131,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** \internal
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
-	\param t		typename prefix (see pr_type_u)
 	\return			lvalue of the appropriate type
 
 	\hideinitializer
@@ -1494,14 +1493,14 @@ int PR_LoadStrings (progs_t *pr);
 	\param num		string index to be validated
 	\return			true if the index is valid, false otherwise
 */
-qboolean PR_StringValid (progs_t *pr, pr_string_t num) __attribute__((pure));
+bool PR_StringValid (progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Check if a string is valid and mutable.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be checked
 	\return			true if the string is valid and mutable, false otherwise
 */
-qboolean PR_StringMutable (progs_t *pr, pr_string_t num) __attribute__((pure));
+bool PR_StringMutable (progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Convert a string index to a C string.
 	\param pr		pointer to ::progs_t VM struct
@@ -1792,6 +1791,14 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 					has multiple objects).
 */
 #define PR_RESMAP(type) struct { type *_free; type **_map; unsigned _size; }
+
+#define PR_RESDELMAP(map)								\
+	do {												\
+		for (unsigned i = 0; i < (map)._size; i++) {	\
+			free ((map)._map[i]);						\
+		}												\
+		free ((map)._map);								\
+	} while (0)
 
 /** Allocate a new resource from the resource map.
 
@@ -2163,7 +2170,7 @@ struct progs_s {
 	///@{
 	int         pr_argc;	//FIXME need a good way to ensure it is correct
 
-	qboolean    pr_trace;
+	bool        pr_trace;
 	int         pr_trace_depth;
 	bfunction_t *pr_xfunction;
 	int         pr_xstatement;

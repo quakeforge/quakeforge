@@ -46,7 +46,7 @@ void CalcSurfaceInfo (struct surface_s *surf);
 	\param midsplit	If true, use the volume balancing heuristic rather than
 					the split balancing heuristic (false).
 */
-struct node_s *SolidBSP (struct surface_s *surfhead, qboolean midsplit);
+struct node_s *SolidBSP (struct surface_s *surfhead, bool midsplit);
 
 ///@}
 

@@ -82,10 +82,13 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 static void
-VID_shutdown (void *data)
+X11_VID_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "X11_VID_shutdown\n");
 	X11_CloseDisplay ();
+	if (vid_internal.unload) {
+		vid_internal.unload (vid_internal.ctx);
+	}
 }
 
 static void
@@ -94,11 +97,11 @@ X11_VID_SetPalette (byte *palette, byte *colormap)
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	if (vid_internal.set_colormap) {
-		vid_internal.set_colormap (vid_internal.data, colormap);
+		vid_internal.set_colormap (vid_internal.ctx, colormap);
 	}
 
 	VID_InitGamma (palette);
-	vid_internal.set_palette (vid_internal.data, viddef.palette);
+	vid_internal.set_palette (vid_internal.ctx, viddef.palette);
 }
 
 /*
@@ -109,8 +112,6 @@ X11_VID_SetPalette (byte *palette, byte *colormap)
 static void
 X11_VID_Init (byte *palette, byte *colormap)
 {
-	Sys_RegisterShutdown (VID_shutdown, 0);
-
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
 #ifdef HAVE_VULKAN
@@ -125,11 +126,11 @@ X11_VID_Init (byte *palette, byte *colormap)
 
 	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
-	vid_internal.choose_visual (vid_internal.data);
+	vid_internal.choose_visual (vid_internal.ctx);
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	vid_internal.create_context (vid_internal.data);
+	vid_internal.create_context (vid_internal.ctx);
 
 	X11_VID_SetPalette (palette, colormap);
 
@@ -153,6 +154,7 @@ X11_VID_Init_Cvars (void)
 
 vid_system_t vid_system = {
 	.init = X11_VID_Init,
+	.shutdown = X11_VID_Shutdown,
 	.init_cvars = X11_VID_Init_Cvars,
 	.update_fullscreen = X11_UpdateFullscreen,
 	.set_palette = X11_VID_SetPalette,
@@ -195,7 +197,7 @@ VID_SetCaption (const char *text)
 	}
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return X11_SetGamma (gamma);

@@ -63,13 +63,12 @@ void *fbsearch_r (const void *key, const void *_base, size_t nmemb, size_t size,
 }
 
 void *
-_bsearch(const void *key, const void *_base, size_t nmemb, size_t size,
-		 __compar_d_fn_t cmp, void *arg)
+QF_bsearch_r(const void *key, const void *_base, size_t nmemb, size_t size,
+			 __compar_d_fn_t cmp, void *arg)
 {
-	// fuzzy bsearh
 	const char *base = (const char *) _base;
 	unsigned    left = 0;
-	unsigned    right = nmemb;
+	unsigned    right = nmemb - 1;
 	unsigned    mid;
 	const void *p = 0;
 	int         c;

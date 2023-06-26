@@ -45,7 +45,7 @@ int         splitnodes;
 
 int         c_solid, c_empty, c_water;
 
-qboolean    usemidsplit;
+bool        usemidsplit;
 
 
 /**	Determine on which side of the plane a face is.
@@ -188,7 +188,7 @@ ChooseMidPlaneFromList (surface_t *surfaces,
 */
 static __attribute__((pure)) surface_t *
 ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
-					 qboolean usefloors, qboolean usedetail)
+					 bool usefloors, bool usedetail)
 {
 	face_t     *f;
 	int         j, k, l, ishint;
@@ -674,7 +674,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 }
 
 node_t *
-SolidBSP (surface_t *surfhead, qboolean midsplit)
+SolidBSP (surface_t *surfhead, bool midsplit)
 {
 	int         i;
 	node_t     *headnode;

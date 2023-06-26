@@ -47,7 +47,7 @@ typedef struct info_key_s {
 	const char			*value;
 } info_key_t;
 
-qboolean Info_FilterForKey (const char *key, const char **filter_list) __attribute__((pure));
+bool Info_FilterForKey (const char *key, const char **filter_list) __attribute__((pure));
 
 void Info_Print (info_t *info);
 int Info_CurrentSize (info_t *info) __attribute__((pure));

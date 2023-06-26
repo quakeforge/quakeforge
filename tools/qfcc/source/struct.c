@@ -126,6 +126,18 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 }
 
 symbol_t *
+find_handle (symbol_t *tag, type_t *type)
+{
+	symbol_t   *sym = find_tag (ty_handle, tag, type);
+	if (sym->type->type == ev_invalid) {
+		sym->type->type = ev_func;
+		sym->type->width = 1;
+		sym->type->alignment = 1;
+	}
+	return sym;
+}
+
+symbol_t *
 find_struct (int su, symbol_t *tag, type_t *type)
 {
 	ty_meta_e   meta = ty_struct;
@@ -174,7 +186,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 			symbol_t   *t = s->next;
 			int         offset = s->s.offset;
 
-			if (!is_struct (s->type)) {
+			if (!is_struct (s->type) && !is_union (s->type)) {
 				internal_error (0, "non-struct/union anonymous field");
 			}
 			anonymous = s->type->t.symtab;
@@ -190,6 +202,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 					s = s->next;
 					s->s.offset += offset;
 					s->table = symtab;
+					s->no_auto_init = 1;
 					Hash_Add (symtab->tab, s);
 				}
 			}
@@ -350,8 +363,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	name = save_string (name);
 	if (!type)
 		type = make_structure (0, su, defs, 0)->type;
-	if (!is_struct (type) || (su == 's' && type->meta != ty_struct)
-		|| (su == 'u' && type->meta != ty_union))
+	if ((su == 's' && !is_struct (type)) || (su == 'u' && !is_union (type)))
 		internal_error (0, "structure %s type mismatch", name);
 	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {

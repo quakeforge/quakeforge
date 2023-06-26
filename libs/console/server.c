@@ -137,7 +137,7 @@ static cvar_t sv_use_curses_cvar = {
 
 #ifdef HAVE_NCURSES
 
-static void key_event (knum_t key, short unicode, qboolean down);
+static void key_event (knum_t key, short unicode, bool down);
 
 enum {
 	sv_resize_x = 1,
@@ -224,6 +224,7 @@ static const component_t server_components[server_comp_count] = {
 	[server_href] = {
 		.size = sizeof (hierref_t),
 		.name = "href",
+		.destroy = Hierref_DestroyComponent,
 	},
 	[server_view] = {
 		.size = sizeof (sv_view_t),
@@ -562,7 +563,7 @@ process_input (void)
 }
 
 static void
-key_event (knum_t key, short unicode, qboolean down)
+key_event (knum_t key, short unicode, bool down)
 {
 	int         ovf = view_offset;
 	sv_view_t  *window;

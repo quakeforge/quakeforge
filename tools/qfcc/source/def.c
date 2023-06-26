@@ -62,7 +62,7 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static def_t *defs_freelist;
+ALLOC_STATE (def_t, defs);
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
@@ -605,10 +605,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
-	if ((is_array (sym->type) || is_struct (sym->type)
-		 || is_nonscalar (sym->type))
-		&& ((init->type == ex_compound)
-			|| init->type == ex_nil)) {
+	if ((is_structural (sym->type) || is_nonscalar (sym->type))
+		&& (init->type == ex_compound || init->type == ex_nil)) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
@@ -732,8 +730,9 @@ def_visit_all (def_t *def, int overlap,
 		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if ((ret = visit (def, data)))
+		if (!(overlap & 4) && (ret = visit (def, data)))
 			return ret;
+		overlap &= ~4;
 	} else {
 		overlap = 0;
 	}

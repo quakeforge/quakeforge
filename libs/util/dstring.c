@@ -83,6 +83,9 @@ dstring_new (void)
 VISIBLE void
 dstring_delete (dstring_t *dstr)
 {
+	if (!dstr) {
+		return;
+	}
 	if (dstr->str)
 		dstr->mem->free (dstr->mem->data, dstr->str);
 	dstr->mem->free (dstr->mem->data, dstr);

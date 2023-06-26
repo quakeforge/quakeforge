@@ -50,7 +50,7 @@
 
 typedef struct skin_s {
 	const char *name;
-	qboolean	valid;		// the skin was found
+	bool		valid;		// the skin was found
 	struct tex_s *texels;
 	byte       *colormap;
 	int         texnum;

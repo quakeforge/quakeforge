@@ -32,6 +32,7 @@
 #define __QF_set_h
 
 #include "QF/qtypes.h"
+#include "QF/darray.h"
 
 /**	\defgroup set Set handling
 	\ingroup utils
@@ -39,7 +40,7 @@
 ///@{
 
 //FIXME other archs
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 typedef uint64_t set_bits_t;
 #else
 typedef uint32_t set_bits_t;
@@ -50,6 +51,7 @@ typedef uint32_t set_bits_t;
 						  - sizeof (int) - sizeof (unsigned))\
 						 / sizeof (set_bits_t))
 #define SET_BITS (sizeof (set_bits_t) * 8)
+#define SET_DEFMAP_BITS (SET_DEFMAP_SIZE * SET_BITS)
 //NOTE: x is the element number, so size is x + 1
 #define SET_SIZE(x) (((x) + SET_BITS) & ~(SET_BITS - 1))
 #define SET_WORDS_STATIC(x) (SET_SIZE (x) / SET_BITS)
@@ -62,9 +64,11 @@ typedef uint32_t set_bits_t;
 	(((byte *)(s)->map)[(x) / 8] |= (SET_ONE << ((x) % 8)))
 #define SET_REMOVE(s, x) \
 	(((byte *)(s)->map)[(x) / 8] &= ~(SET_ONE << ((x) % 8)))
+#define SET_LARGE_SET(x) (SET_SIZE (x) > SET_DEFMAP_BITS)
+#define SET_SAFE_SIZE(x) (SET_LARGE_SET (x) ? SET_SIZE (x) : SET_DEFMAP_BITS)
 #define SET_STATIC_INIT(x, alloc) { \
-	.size = SET_SIZE (x), \
-	.map = alloc (SET_SIZE (x) / 8), \
+	.size = SET_SAFE_SIZE (x), \
+	.map = alloc (SET_SAFE_SIZE (x) / 8), \
 }
 #define SET_STATIC_ARRAY(array) { \
 	.size = 8 * __builtin_choose_expr ( \
@@ -116,6 +120,8 @@ typedef struct set_iter_s {
 typedef struct set_pool_s {
 	set_t      *set_freelist;
 	set_iter_t *set_iter_freelist;
+	struct DARRAY_TYPE (set_t *) set_blocks;
+	struct DARRAY_TYPE (set_iter_t *) set_iter_blocks;
 } set_pool_t;
 
 void set_pool_init (set_pool_t *set_pool);
@@ -192,6 +198,19 @@ void set_trim (set_t *set);
 */
 set_t *set_add (set_t *set, unsigned x);
 
+/** Add a range of elements to a set.
+
+	It is not an error to add elements that are already members of the set.
+
+	\note \a set is modified.
+
+	\param set		The set to which the element will be added.
+	\param start	The first element to be added.
+	\param count	The number of elements to be added.
+	\return			The modified set.
+*/
+set_t *set_add_range (set_t *set, unsigned start, unsigned count);
+
 /** Remove an element from a set.
 
 	It is not an error to remove an element that is not a member of the set.
@@ -203,6 +222,19 @@ set_t *set_add (set_t *set, unsigned x);
 	\return			The modified set.
 */
 set_t *set_remove (set_t *set, unsigned x);
+
+/** Remove a range of elements from a set.
+
+	It is not an error to remove elements that not members of the set.
+
+	\note \a set is modified.
+
+	\param set		The set from which the element will be removed.
+	\param start	The first element to be removed.
+	\param count	The number of elements to be removed.
+	\return			The modified set.
+*/
+set_t *set_remove_range (set_t *set, unsigned start, unsigned count);
 
 /** Compute the inverse of a set.
 
@@ -395,6 +427,9 @@ set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 */
 set_iter_t *set_next (set_iter_t *set_iter);
 set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
+
+set_iter_t *set_while (set_iter_t *set_iter);
+set_iter_t *set_while_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 struct dstring_s;
 /** Return a human-readable string representing the set.

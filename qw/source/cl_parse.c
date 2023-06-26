@@ -210,7 +210,7 @@ CL_CalcNet (void)
 	Returns true if the file exists, otherwise it attempts
 	to start a download from the server.
 */
-qboolean
+bool
 CL_CheckOrDownloadFile (const char *filename)
 {
 	QFile	   *f;
@@ -694,7 +694,7 @@ CL_StartUpload (byte * data, int size)
 	CL_NextUpload ();
 }
 
-qboolean
+bool
 CL_IsUploading (void)
 {
 	if (upload_data)
@@ -734,7 +734,7 @@ CL_ParseServerData (void)
 {
 	const char *str;
 	int			protover;
-	//FIXME qboolean	cflag = false;
+	//FIXME bool		cflag = false;
 
 	Sys_MaskPrintf (SYS_dev, "Serverdata packet received.\n");
 

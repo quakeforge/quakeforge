@@ -28,14 +28,9 @@
 #ifndef __QF_Vulkan_qf_draw_h
 #define __QF_Vulkan_qf_draw_h
 
-typedef enum {
-	QFV_draw2d,
-
-	QFV_drawNumPasses
-} QFV_DrawSubpass;
+#include "QF/screen.h"
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 struct qpic_s;
 struct font_s;
 struct draw_charbuffer_s;
@@ -43,6 +38,7 @@ struct draw_charbuffer_s;
 void Vulkan_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer,
 							 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Character (int x, int y, unsigned ch,
 							struct vulkan_ctx_s *ctx);
@@ -66,7 +62,7 @@ void Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 						  struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_FadeScreen (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_BlendScreen (quat_t color, struct vulkan_ctx_s *ctx);
-struct qpic_s *Vulkan_Draw_CachePic (const char *path, qboolean alpha,
+struct qpic_s *Vulkan_Draw_CachePic (const char *path, bool alpha,
 									 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_UncachePic (const char *path, struct vulkan_ctx_s *ctx);
 struct qpic_s *Vulkan_Draw_MakePic (int width, int height, const byte *data,
@@ -87,9 +83,8 @@ int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
 						struct vulkan_ctx_s *ctx);
 
-void Vulkan_FlushText (struct qfv_renderframe_s *rFrame);
-
 void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 					   struct vulkan_ctx_s *ctx);
+void Vulkan_SetScrFuncs (SCR_Func *scr_funcs, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_draw_h

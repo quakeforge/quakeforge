@@ -188,7 +188,7 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 static const char **g_occ_reply;
 static unsigned int g_occ_i = 0;
 
-static qboolean occ_iterator (gib_class_t *class, void *unused)
+static bool occ_iterator (gib_class_t *class, void *unused)
 {
 	g_occ_reply[g_occ_i++] = class->name;
 	return false;
@@ -282,7 +282,7 @@ typedef struct Thread_class_s {
 typedef struct Thread_s {
 	gib_object_t *obj;
 	cbuf_t *thread;
-	qboolean ended;
+	bool ended;
 } Thread_t;
 
 static int

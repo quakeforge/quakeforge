@@ -43,6 +43,8 @@ typedef struct {
 	void (*emit) (struct def_s *def, void *data, int index);
 } struct_def_t;
 
+struct symbol_s *find_handle (struct symbol_s *tag, struct type_s *type);
+
 struct symtab_s *start_struct (int *su, struct symbol_s *tag,
 							   struct symtab_s *parent);
 struct symbol_s *find_struct (int su, struct symbol_s *tag,

@@ -44,7 +44,7 @@
 										// minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-qboolean    ActiveApp, Minimized, WinNT;
+bool        ActiveApp, Minimized, WinNT;
 
 HWND        hwnd_dialog;				// startup dialog box
 

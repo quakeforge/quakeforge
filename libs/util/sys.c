@@ -138,8 +138,8 @@ static cvar_t sys_sleep_cvar = {
 
 int         sys_checksum;
 
-static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
-static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
+static __thread sys_printf_t sys_std_printf_function = Sys_StdPrintf;
+static __thread sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
@@ -153,14 +153,14 @@ typedef struct error_handler_s {
 	void       *data;
 } error_handler_t;
 
-static shutdown_list_t *shutdown_list;
+static __thread shutdown_list_t *shutdown_list;
 
-static error_handler_t *error_handler_freelist;
-static error_handler_t *error_handler;
+static __thread error_handler_t *error_handler_freelist;
+static __thread error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
-qboolean    stdin_ready;
+bool        stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
@@ -301,26 +301,26 @@ Sys_SetErrPrintf (sys_printf_t func)
 	return prev;
 }
 
+static __thread dstring_t *sys_print_msg;
 void
 Sys_Print (FILE *stream, const char *fmt, va_list args)
 {
-	static dstring_t *msg;
 	unsigned char *p;
 
-	if (!msg)
-		msg = dstring_new ();
+	if (!sys_print_msg)
+		sys_print_msg = dstring_new ();
 
-	dvsprintf (msg, fmt, args);
+	dvsprintf (sys_print_msg, fmt, args);
 
 	if (stream == stderr) {
 #ifdef _WIN32
-		MessageBox (NULL, msg->str, "Fatal Error", 0 /* MB_OK */ );
+		MessageBox (NULL, sys_print_msg->str, "Fatal Error", 0 /* MB_OK */ );
 #endif
 		fputs ("Fatal Error: ", stream);
 	}
 
 	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) msg->str; *p; p++)
+	for (p = (unsigned char *) sys_print_msg->str; *p; p++)
 		putc (sys_char_map[*p], stream);
 
 	if (stream == stderr) {
@@ -375,7 +375,7 @@ Sys_StartTime (void)
 VISIBLE int64_t
 Sys_LongTime (void)
 {
-	static qboolean first = true;
+	static bool first = true;
 #ifdef _WIN32
 # if 0
 	static DWORD starttime;
@@ -536,22 +536,6 @@ Sys_Init_Cvars (void)
 	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
-void
-Sys_Shutdown (void)
-{
-	shutdown_list_t *t;
-
-	while (shutdown_list) {
-		void      (*func) (void *) = shutdown_list->func;
-		void       *data = shutdown_list->data;
-		t = shutdown_list;
-		shutdown_list = shutdown_list->next;
-		free (t);
-
-		func (data);
-	}
-}
-
 VISIBLE void
 Sys_Quit (void)
 {
@@ -564,9 +548,15 @@ VISIBLE void
 Sys_PushErrorHandler (sys_error_t func, void *data)
 {
 	error_handler_t *eh;
-	ALLOC (16, error_handler_t, error_handler, eh);
+	if (error_handler_freelist) {
+		eh = error_handler_freelist;
+	} else {
+		eh = malloc (sizeof (error_handler_t));
+		eh->next = 0;
+	}
 	eh->func = func;
 	eh->data = data;
+	error_handler_freelist = eh->next;
 	eh->next = error_handler;
 	error_handler = eh;
 }
@@ -581,7 +571,8 @@ Sys_PopErrorHandler (void)
 	}
 	eh = error_handler;
 	error_handler = eh->next;
-	FREE (error_handler, eh);
+	eh->next = error_handler_freelist;
+	error_handler_freelist = eh;
 }
 
 
@@ -788,21 +779,22 @@ Sys_ProcessorCount (void)
 	return cpus;
 }
 
+static __thread dstring_t *sys_debuglog_data;
 VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *data;
 	int         fd;
 
-	if (!data)
-		data = dstring_newstr ();
+	if (!sys_debuglog_data)
+		sys_debuglog_data = dstring_newstr ();
 
 	va_start (args, fmt);
-	dvsprintf (data, fmt, args);
+	dvsprintf (sys_debuglog_data, fmt, args);
 	va_end (args);
 	if ((fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0) {
-		if (write (fd, data->str, data->size - 1) != (ssize_t) (data->size - 1))
+		if (write (fd, sys_debuglog_data->str, sys_debuglog_data->size - 1)
+			!= (ssize_t) (sys_debuglog_data->size - 1))
 			Sys_Printf ("Error writing %s: %s\n", file, strerror(errno));
 		close (fd);
 	}
@@ -941,9 +933,9 @@ Sys_ConsoleInput (void)
 }
 
 #ifdef _WIN32
-static jmp_buf  aiee_abort;
+static __thread jmp_buf  aiee_abort;
 #else
-static sigjmp_buf aiee_abort;
+static __thread sigjmp_buf aiee_abort;
 #endif
 
 typedef struct sh_stack_s {
@@ -952,10 +944,10 @@ typedef struct sh_stack_s {
 	void *data;
 } sh_stack_t;
 
-static sh_stack_t *sh_stack;
-static sh_stack_t *free_sh;
-static int (*signal_hook)(int,void*);
-static void *signal_hook_data;
+static __thread sh_stack_t *sh_stack;
+static __thread sh_stack_t *free_sh;
+static __thread int (*signal_hook)(int,void*);
+static __thread void *signal_hook_data;
 
 VISIBLE void
 Sys_PushSignalHook (int (*hook)(int, void *), void *data)
@@ -1050,16 +1042,16 @@ hook_signlas (void)
 }
 #else
 
-static struct sigaction save_hup;
-static struct sigaction save_quit;
-static struct sigaction save_trap;
-static struct sigaction save_iot;
-static struct sigaction save_bus;
-static struct sigaction save_int;
-static struct sigaction save_ill;
-static struct sigaction save_segv;
-static struct sigaction save_term;
-static struct sigaction save_fpe;
+static __thread struct sigaction save_hup;
+static __thread struct sigaction save_quit;
+static __thread struct sigaction save_trap;
+static __thread struct sigaction save_iot;
+static __thread struct sigaction save_bus;
+static __thread struct sigaction save_int;
+static __thread struct sigaction save_ill;
+static __thread struct sigaction save_segv;
+static __thread struct sigaction save_term;
+static __thread struct sigaction save_fpe;
 
 static void
 signal_handler (int sig, siginfo_t *info, void *ucontext)
@@ -1221,5 +1213,47 @@ Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
 			return -err;
 		}
 		seq++;
+	}
+}
+
+void
+Sys_Shutdown (void)
+{
+	shutdown_list_t *t;
+
+	while (shutdown_list) {
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
+		t = shutdown_list;
+		shutdown_list = shutdown_list->next;
+		free (t);
+
+		func (data);
+	}
+	while (free_sh) {
+		__auto_type t = free_sh->next;
+		free (free_sh);
+		free_sh = t;
+	}
+	while (sh_stack) {
+		__auto_type t = sh_stack->next;
+		free (sh_stack);
+		sh_stack = t;
+	}
+	while (error_handler_freelist) {
+		__auto_type t = error_handler_freelist->next;
+		free (error_handler_freelist);
+		error_handler_freelist = t;
+	}
+	while (error_handler) {
+		__auto_type t = error_handler->next;
+		free (error_handler);
+		error_handler = t;
+	}
+	if (sys_print_msg) {
+		dstring_delete (sys_print_msg);
+	}
+	if (sys_debuglog_data) {
+		dstring_delete (sys_debuglog_data);
 	}
 }

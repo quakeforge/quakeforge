@@ -155,7 +155,7 @@ WindingVectors (const winding_t *w, int unit)
 }
 
 winding_t *
-ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
+ClipWinding (winding_t *in, plane_t *split, bool keepon)
 {
 	int         maxpts, i, j;
 	int        *sides;

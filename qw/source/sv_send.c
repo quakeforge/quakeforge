@@ -185,7 +185,7 @@ SV_Print (const char *fmt, va_list args)
 
 	time_t      mytime = 0;
 	struct tm  *local = NULL;
-	qboolean    timestamps = false;
+	bool        timestamps = false;
 
 	char        *in;
 
@@ -298,7 +298,7 @@ SV_Multicast (const vec3_t origin, int to)
 	client_t   *client;
 	int         leafnum, j;
 	mleaf_t    *leaf;
-	qboolean    reliable;
+	bool        reliable;
 	mod_brush_t *brush = &sv.worldmodel->brush;
 
 	vec4f_t     org = { VectorExpand (origin), 1 };
@@ -396,8 +396,8 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
 	int         ent, sound_num, i;
-	qboolean    use_phs;
-	qboolean    reliable = false;
+	bool        use_phs;
+	bool        reliable = false;
 	vec3_t      origin;
 
 	if (volume < 0 || volume > 255)
@@ -613,7 +613,7 @@ SV_UpdateClientStats (client_t *client)
 		}
 }
 
-static qboolean
+static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];

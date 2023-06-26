@@ -529,7 +529,7 @@ client_parse_message (client_t *cl)
 	usercmd_t   oldest, oldcmd, newcmd;
 	byte        checksum, calculatedChecksum;
 	int         checksumIndex, seq_hash;
-	qboolean    move_issued = false;
+	bool        move_issued = false;
 
 	// make sure the reply sequence number matches the incoming
 	// sequence number
@@ -742,7 +742,7 @@ int         numnails;
 int         nailcount;
 
 static void
-emit_nails (sizebuf_t *msg, qboolean recorder)
+emit_nails (sizebuf_t *msg, bool recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
@@ -784,7 +784,7 @@ emit_nails (sizebuf_t *msg, qboolean recorder)
 #endif
 static void
 write_delta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			 qboolean force)//, int stdver)
+			 bool force)//, int stdver)
 {
 	int			bits, i;
 	float		miss;

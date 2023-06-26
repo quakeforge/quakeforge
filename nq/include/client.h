@@ -93,11 +93,11 @@ typedef struct {
 	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
 	QFile      *demofile;
-	qboolean    demorecording;
 	int         demo_capture;
-	qboolean    demoplayback;
 	int         forcetrack;			// -1 = use normal cd track
-	qboolean    timedemo;
+	bool        demorecording;
+	bool        demoplayback;
+	bool        timedemo;
 	int         td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	double      td_starttime;		// realtime at second frame of timedemo
@@ -150,9 +150,9 @@ typedef struct client_state_s {
 	movestate_t movestate;
 	chasestate_t chasestate;
 
-	qboolean    paused;			// Sent over by server
+	bool        paused;			// Sent over by server
+	bool        inwater;
 	float       crouch;			// Local amount for smoothing stepups
-	qboolean    inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
 	int         completed_time;	// Latched from time at intermission start
@@ -279,7 +279,7 @@ struct entity_s CL_GetEntity (int num);
 
 extern	double			realtime;
 
-extern qboolean recording;
+extern bool recording;
 
 struct cvar_s;
 void Cvar_Info (void *data, const struct cvar_s *cvar);

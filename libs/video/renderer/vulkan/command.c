@@ -27,9 +27,97 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
+#include "QF/qtypes.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
+
+qfv_cmdpoolmgr_t *
+QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device,
+						 const char *name)
+{
+	*manager = (qfv_cmdpoolmgr_t) {
+		.primary = DARRAY_STATIC_INIT (16),
+		.secondary = DARRAY_STATIC_INIT (16),
+		.device = device,
+	};
+	auto dfunc = device->funcs;
+
+	VkCommandPoolCreateInfo poolCInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+		.queueFamilyIndex = device->queue.queueFamily,
+	};
+	dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0, &manager->pool);
+	return manager;
+}
+
+qfv_cmdpoolmgr_t *
+QFV_CmdPoolManager_New (qfv_device_t *device, const char *name)
+{
+	return QFV_CmdPoolManager_Init (malloc (sizeof (qfv_cmdpoolmgr_t)), device,
+									name);
+}
+
+void
+QFV_CmdPoolManager_Shutdown (qfv_cmdpoolmgr_t *manager)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+	dfunc->vkDestroyCommandPool (device->dev, manager->pool, 0);
+	DARRAY_CLEAR (&manager->primary);
+	DARRAY_CLEAR (&manager->secondary);
+}
+
+void
+QFV_CmdPoolManager_Delete (qfv_cmdpoolmgr_t *manager)
+{
+	QFV_CmdPoolManager_Shutdown (manager);
+	free (manager);
+}
+
+void
+QFV_CmdPoolManager_Reset (qfv_cmdpoolmgr_t *manager)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+	dfunc->vkResetCommandPool (device->dev, manager->pool, 0);
+	manager->active_primary = 0;
+	manager->active_secondary = 0;
+}
+
+VkCommandBuffer
+QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager, bool secondary)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+
+	if (secondary) {
+		if (manager->active_secondary < manager->secondary.size) {
+			return manager->secondary.a[manager->active_secondary++];
+		}
+	} else {
+		if (manager->active_primary < manager->primary.size) {
+			return manager->primary.a[manager->active_primary++];
+		}
+	}
+	VkCommandBufferAllocateInfo cinfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.commandPool = manager->pool,
+		.level = secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY
+						   : VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+	};
+	VkCommandBuffer cmd;
+	dfunc->vkAllocateCommandBuffers (device->dev, &cinfo, &cmd);
+	if (secondary) {
+		DARRAY_APPEND (&manager->secondary, cmd);
+		manager->active_secondary++;
+	} else {
+		DARRAY_APPEND (&manager->primary, cmd);
+		manager->active_primary++;
+	}
+	return cmd;
+}
 
 VkCommandPool
 QFV_CreateCommandPool (qfv_device_t *device, uint32_t queueFamily,

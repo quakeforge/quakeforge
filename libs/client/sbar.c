@@ -332,14 +332,14 @@ static qpic_t *sb_face_quad;
 static qpic_t *sb_face_invuln;
 static qpic_t *sb_face_invis_invuln;
 
-qboolean sbar_showscores;
-static qboolean sbar_showteamscores;
+bool sbar_showscores;
+static bool sbar_showteamscores;
 
 static int sb_lines;				// scan lines to draw
 
 static qpic_t *rsb_teambord;		// PGM 01/19/97 - team color border
 
-//static qboolean largegame = false;
+//static bool largegame = false;
 
 char *fs_fraglog;
 static cvar_t fs_fraglog_cvar = {
@@ -662,7 +662,7 @@ static draw_charbuffer_t *sb_spectator;
 int         scoreboardlines, scoreboardteams;
 
 static void
-Sbar_SortFrags (qboolean includespec)
+Sbar_SortFrags (bool includespec)
 {
 	int         i, j, k;
 

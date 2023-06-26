@@ -71,7 +71,7 @@ int XShmGetEventBase (Display *x);	// for broken X11 headers
 
 static GC		x_gc;
 
-static qboolean doShm;
+static bool doShm;
 static XShmSegmentInfo x_shminfo[2];
 
 static int	current_framebuffer;
@@ -693,13 +693,15 @@ x11_create_context (sw_ctx_t *ctx)
 }
 
 sw_ctx_t *
-X11_SW_Context (void)
+X11_SW_Context (vid_internal_t *vi)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
 	ctx->set_palette = x11_set_palette;
 	ctx->choose_visual = x11_choose_visual;
 	ctx->create_context = x11_create_context;
 	ctx->update = x11_sw8_8_update;
+
+	vi->ctx = ctx;
 	return ctx;
 }
 

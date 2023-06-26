@@ -66,6 +66,57 @@ pre##_##opname (const exprval_t *a, exprval_t *b, exprctx_t *ctx)	\
 	(*(type *) b->value) = op (*(type *) a->value);					\
 }
 
+BINOP(bool, and, bool, &)
+BINOP(bool, or, bool, |)
+BINOP(bool, xor, bool, ^)
+
+UNOP(bool, not, bool, !)
+
+static const char *
+bool_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return val->value ? "true" : "false";
+}
+
+binop_t bool_binops[] = {
+	{ '&', &cexpr_bool, &cexpr_bool, bool_and },
+	{ '|', &cexpr_bool, &cexpr_bool, bool_or },
+	{ '^', &cexpr_bool, &cexpr_bool, bool_xor },
+	{ '=', &cexpr_plitem, &cexpr_bool, cexpr_cast_plitem },
+	{}
+};
+
+unop_t bool_unops[] = {
+	{ '!', &cexpr_bool, bool_not },
+	{}
+};
+
+exprtype_t cexpr_bool = {
+	.name = "bool",
+	.size = sizeof (bool),
+	.binops = bool_binops,
+	.unops = bool_unops,
+	.data = &cexpr_bool_enum,
+	.get_string = bool_get_string,
+};
+
+static int bool_values[] = {
+	false,
+	true,
+};
+static exprsym_t bool_symbols[] = {
+	{"false", &cexpr_bool, bool_values + 0},
+	{"true", &cexpr_bool, bool_values + 1},
+	{}
+};
+static exprtab_t bool_symtab = {
+	bool_symbols,
+};
+exprenum_t cexpr_bool_enum = {
+	&cexpr_bool,
+	&bool_symtab,
+};
+
 BINOP(int, shl, int, <<)
 BINOP(int, shr, int, >>)
 BINOP(int, add, int, +)
@@ -772,6 +823,16 @@ exprtype_t cexpr_plitem = {
 	.size = sizeof (plitem_t *),
 	.binops = plitem_binops,
 	.unops = 0,
+};
+
+exprtype_t cexpr_string = {
+	.name = "string",
+	.size = sizeof (char *),
+};
+
+exprtype_t cexpr_voidptr = {
+	.name = "voidptr",
+	.size = sizeof (void *),
 };
 
 VISIBLE binop_t *

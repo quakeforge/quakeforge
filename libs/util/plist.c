@@ -44,16 +44,17 @@
 #include "QF/plist.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 
 /*
 	Generic property list item.
 */
 struct plitem_s {
-	pltype_t	type;
+	pltype_t    type;
+	unsigned    users;
+	void       *data;
+	void       *user_data;
 	int         line;
-	void		*data;
-};
+};//plitem_t
 
 /*
 	Dictionaries
@@ -96,8 +97,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    pos;
 	unsigned    line;
 	unsigned    line_start;
-	plitem_t   *error;
-	va_ctx_t   *va_ctx;
+	dstring_t  *errmsg;
 	hashctx_t **hashctx;
 } pldata_t;
 
@@ -133,11 +133,7 @@ init_quotables (void)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
 }
 
-static plitem_t *pl_parsepropertylistitem (pldata_t *);
-static qboolean pl_skipspace (pldata_t *);
-static char *pl_parsequotedstring (pldata_t *);
-static char *pl_parseunquotedstring (pldata_t *);
-static char *pl_parsedata (pldata_t *, int *);
+static plitem_t *pl_parsepropertylistitem (pldata_t *pl);
 
 static const char *
 dict_get_key (const void *i, void *unused)
@@ -152,7 +148,7 @@ dict_free (void *i, void *unused)
 	dictkey_t	*item = (dictkey_t *) i;
 	free (item->key);
 	if (item->value)		// Make descended stuff get freed
-		PL_Free (item->value);
+		PL_Release (item->value);
 	free (item);
 }
 
@@ -196,28 +192,39 @@ PL_NewData (void *data, size_t size)
 }
 
 static plitem_t *
-new_string (char *str, int line)
+new_string (const char *str, size_t len, pldata_t *pl)
 {
 	plitem_t   *item = pl_newitem (QFString);
-	item->data = str;
-	item->line = line;
+	item->data = malloc (len + 1);
+	memcpy (item->data, str, len);
+	((char *) item->data)[len] = 0;
+	item->line = pl ? pl->line : 0;
 	return item;
 }
 
 VISIBLE plitem_t *
 PL_NewString (const char *str)
 {
-	return new_string (strdup (str), 0);
+	return new_string (str, strlen (str), 0);
 }
 
-VISIBLE void
-PL_Free (plitem_t *item)
+VISIBLE plitem_t *
+PL_Retain (plitem_t *item)
+{
+	if (item) {
+		item->users++;
+	}
+	return item;
+}
+
+VISIBLE plitem_t *
+PL_Release (plitem_t *item)
 {
 	pldict_t   *dict;
 	plarray_t  *array;
 
-	if (!item) {
-		return;
+	if (!item || (item->users && --item->users > 0)) {
+		return item;
 	}
 	switch (item->type) {
 		case QFDictionary:
@@ -233,7 +240,7 @@ PL_Free (plitem_t *item)
 				int 	i = array->numvals;
 
 				while (i-- > 0) {
-					PL_Free (array->values[i]);
+					PL_Release (array->values[i]);
 				}
 				free (array->values);
 				free (item->data);
@@ -252,6 +259,19 @@ PL_Free (plitem_t *item)
 			break;
 	}
 	free (item);
+	return 0;
+}
+
+VISIBLE void
+PL_SetUserData (plitem_t *item, void *data)
+{
+	item->user_data = data;
+}
+
+VISIBLE void *
+PL_GetUserData (plitem_t *item)
+{
+	return item->user_data;
 }
 
 VISIBLE size_t
@@ -312,11 +332,11 @@ PL_KeyAtIndex (const plitem_t *item, int index)
 	return dict->keys.a[index]->key;
 }
 
-VISIBLE plitem_t *
+VISIBLE void
 PL_RemoveObjectForKey (plitem_t *item, const char *key)
 {
 	if (!item || item->type != QFDictionary) {
-		return NULL;
+		return;
 	}
 
 	pldict_t   *dict = (pldict_t *) item->data;
@@ -324,8 +344,9 @@ PL_RemoveObjectForKey (plitem_t *item, const char *key)
 	plitem_t   *value;
 
 	k = (dictkey_t *) Hash_Del (dict->tab, key);
-	if (!k)
-		return NULL;
+	if (!k) {
+		return;
+	}
 	value = k->value;
 	k->value = 0;
 	for (size_t i = 0; i < dict->keys.size; i++) {
@@ -335,7 +356,7 @@ PL_RemoveObjectForKey (plitem_t *item, const char *key)
 		}
 	}
 	dict_free (k, 0);
-	return value;
+	value->users--;
 }
 
 VISIBLE plitem_t *
@@ -382,7 +403,7 @@ PL_ObjectAtIndex (const plitem_t *array, int index)
 	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 {
 	if (!item || item->type != QFDictionary || !value) {
@@ -393,7 +414,8 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 	dictkey_t	*k;
 
 	if ((k = Hash_Find (dict->tab, key))) {
-		PL_Free ((plitem_t *) k->value);
+		PL_Retain (value);
+		PL_Release (k->value);
 		k->value = value;
 	} else {
 		k = malloc (sizeof (dictkey_t));
@@ -401,6 +423,7 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 		if (!k)
 			return false;
 
+		PL_Retain (value);
 		k->key = strdup (key);
 		k->value = value;
 
@@ -410,7 +433,61 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 	return true;
 }
 
-VISIBLE qboolean
+VISIBLE bool
+PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict)
+{
+	if (!dstDict || dstDict->type != QFDictionary
+		|| !srcDict || srcDict->type != QFDictionary
+		|| ((pldict_t *) srcDict->data)->keys.size < 1) {
+		return false;
+	}
+	pldict_t   *dst = dstDict->data;
+	pldict_t   *src = srcDict->data;
+	size_t      count = dst->keys.size;
+	DARRAY_RESIZE (&dst->keys, dst->keys.size + src->keys.size);// open space
+	DARRAY_RESIZE (&dst->keys, count);	// put size back so it's correct
+	for (size_t i = 0; i < src->keys.size; i++) {
+		dictkey_t  *key = src->keys.a[i];
+		dictkey_t  *k;
+		if ((k = Hash_Find (dst->tab, key->key))) {
+			PL_Retain (key->value);
+			PL_Release (k->value);
+			k->value = key->value;
+		} else {
+			k = malloc (sizeof (dictkey_t));
+
+			if (!k)
+				return false;
+
+			PL_Retain (key->value);
+			k->key = strdup (key->key);
+			k->value = key->value;
+
+			Hash_Add (dst->tab, k);
+			DARRAY_APPEND (&dst->keys, k);
+		}
+	}
+	return true;
+}
+
+static bool
+check_array_size (plarray_t *arr, int count)
+{
+	if (count > arr->maxvals) {
+		int         newmax = (count + 127) & ~127;
+		int         size = newmax * sizeof (plitem_t *);
+		plitem_t  **tmp = realloc (arr->values, size);
+
+		if (!tmp)
+			return false;
+
+		arr->maxvals = newmax;
+		arr->values = tmp;
+	}
+	return true;
+}
+
+VISIBLE bool
 PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 {
 	if (!array || array->type != QFArray || !item) {
@@ -421,17 +498,8 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 
 	arr = (plarray_t *)array->data;
 
-	if (arr->numvals == arr->maxvals) {
-		int         size = (arr->maxvals + 128) * sizeof (plitem_t *);
-		plitem_t  **tmp = realloc (arr->values, size);
-
-		if (!tmp)
-			return false;
-
-		arr->maxvals += 128;
-		arr->values = tmp;
-		memset (arr->values + arr->numvals, 0,
-				(arr->maxvals - arr->numvals) * sizeof (plitem_t *));
+	if (!check_array_size (arr, arr->numvals + 1)) {
+		return false;
 	}
 
 	if (index == -1)
@@ -442,15 +510,37 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 
 	memmove (arr->values + index + 1, arr->values + index,
 			 (arr->numvals - index) * sizeof (plitem_t *));
+
+	PL_Retain (item);
 	arr->values[index] = item;
 	arr->numvals++;
 	return true;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array, item, -1);
+}
+
+VISIBLE bool
+PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray)
+{
+	if (!dstArray || dstArray->type != QFArray
+		|| !srcArray || srcArray->type != QFArray
+		|| ((plarray_t *) srcArray->data)->numvals < 1) {
+		return false;
+	}
+	plarray_t  *dst = dstArray->data;
+	plarray_t  *src = srcArray->data;
+	if (!check_array_size (dst, dst->numvals + src->numvals)) {
+		return false;
+	}
+	for (int i = 0; i < src->numvals; i++) {
+		PL_Retain (src->values[i]);
+		dst->values[dst->numvals++] = src->values[i];
+	}
+	return true;
 }
 
 VISIBLE int
@@ -462,11 +552,11 @@ PL_A_NumObjects (const plitem_t *array)
 	return ((plarray_t *) array->data)->numvals;
 }
 
-VISIBLE plitem_t *
+VISIBLE void
 PL_RemoveObjectAtIndex (plitem_t *array, int index)
 {
 	if (!array || array->type != QFArray) {
-		return 0;
+		return;
 	}
 
 	plarray_t  *arr;
@@ -475,7 +565,7 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 	arr = (plarray_t *)array->data;
 
 	if (index < 0 || index >= arr->numvals)
-		return 0;
+		return;
 
 	item = arr->values[index];
 	arr->numvals--;
@@ -484,11 +574,24 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 		index++;
 	}
 
-	return item;
+	item->users--;
 }
 
-static qboolean
-pl_skipspace (pldata_t *pl)
+static void __attribute__((format(PRINTF, 2, 3)))
+pl_error (pldata_t *pl, const char *fmt, ...)
+{
+	if (!pl->errmsg) {
+		pl->errmsg = dstring_new ();
+	}
+
+	va_list     args;
+	va_start (args, fmt);
+	dvsprintf (pl->errmsg, fmt, args);
+	va_end (args);
+}
+
+static bool
+pl_skipspace (pldata_t *pl, int end_ok)
 {
 	while (pl->pos < pl->end) {
 		char	c = pl->ptr[pl->pos];
@@ -506,7 +609,9 @@ pl_skipspace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = PL_NewString ("Reached end of string in comment");
+						// end of string in a single-line comment is always
+						// an error
+						pl_error (pl, "Reached end of string in comment");
 						return false;
 					}
 				} else if (pl->ptr[pl->pos + 1] == '*') {	// "/*" comments
@@ -526,7 +631,9 @@ pl_skipspace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = PL_NewString ("Reached end of string in comment");
+						// end of string in a multi-line comment is always
+						// an error
+						pl_error (pl, "Reached end of string in comment");
 						return false;
 					}
 				} else {
@@ -542,8 +649,38 @@ pl_skipspace (pldata_t *pl)
 		}
 		pl->pos++;
 	}
-	pl->error = PL_NewString ("Reached end of string");
+	if (!end_ok) {
+		pl_error (pl, "Reached end of string");
+	}
 	return false;
+}
+
+static int
+pl_checknext (pldata_t *pl, const char *valid, int end_ok)
+{
+	if (!pl_skipspace (pl, end_ok)) {
+		return end_ok;
+	}
+
+	char        ch = pl->ptr[pl->pos];
+	if (strchr (valid, ch)) {
+		return 1;
+	}
+
+	size_t      len = strlen (valid);
+	size_t      size = 3 + (strlen (valid) - 1) * 7 + 1;
+	char        expected[size], *p = expected;
+	p[0] = '\'';
+	p[1] = valid[0];
+	p[2] = '\'';
+	p += 3;
+	for (size_t i = 1; i < len; i++, p++) {
+		memcpy (p, " or 'x'", 7);
+		p[5] = valid[i];
+	}
+	p[0] = 0;
+	pl_error (pl, "Unexpected character %c (wanted %s)", ch, expected);
+	return 0;
 }
 
 static inline byte
@@ -562,8 +699,122 @@ make_byte (byte h, byte l)
 	return (from_hex (h) << 4) | from_hex (l);
 }
 
-static char *
-pl_parsedata (pldata_t *pl, int *len)
+static int
+pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
+{
+	plitem_t	*key = 0;
+	plitem_t	*value = 0;
+
+	if (!(key = pl_parsepropertylistitem (pl))) {
+		return 0;
+	}
+	if (key->type != QFString) {
+		pl_error (pl, "Key is not a string");
+		goto error;
+	}
+
+	if (!pl_checknext (pl, "=", 0)) {
+		goto error;
+	}
+	pl->pos++;
+
+	if (!(value = pl_parsepropertylistitem (pl))) {
+		goto error;
+	}
+
+	if (!PL_D_AddObject (dict, PL_String (key), value)) {
+		goto error;
+	}
+	PL_Release (key);	// don't need the key item
+
+	if (!pl_checknext (pl, end_ok ? ";" : ";}", end_ok)) {
+		return 0;
+	}
+
+	if (pl->ptr[pl->pos] == ';') {
+		pl->pos++;
+	}
+	return 1;
+error:
+	PL_Release (key);
+	PL_Release (value);
+	return 0;
+}
+
+static plitem_t *
+pl_parsedictionary (pldata_t *pl)
+{
+	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
+	dict->line = pl->line;
+
+	pl->pos++;	// skip over opening {
+	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != '}') {
+		if (!pl_parsekeyvalue (pl, dict, 0)) {
+			PL_Release (dict);
+			return NULL;
+		}
+	}
+	if (pl->pos >= pl->end) {
+		pl_error (pl, "Unexpected end of string when parsing dictionary");
+		PL_Release (dict);
+		return NULL;
+	}
+	pl->pos++;	// skip over closing }
+
+	return dict;
+}
+
+static int
+pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
+{
+	plitem_t	*value;
+
+	if (!(value = pl_parsepropertylistitem (pl))) {
+		return 0;
+	}
+	if (!PL_A_AddObject (array, value)) {
+		pl_error (pl, "too many items in array");
+		PL_Release (value);
+		return 0;
+	}
+
+	if (!pl_checknext (pl, end_ok ? "," : ",)", end_ok)) {
+		return 0;
+	}
+
+	if (pl->ptr[pl->pos] == ',') {
+		pl->pos++;
+	}
+
+	return 1;
+}
+
+static plitem_t *
+pl_parsearray (pldata_t *pl)
+{
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	pl->pos++;	// skip over opening (
+
+	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != ')') {
+		if (!pl_parsevalue (pl, array, 0)) {
+			PL_Release (array);
+			return NULL;
+		}
+	}
+	if (pl->pos >= pl->end) {
+		pl_error (pl, "Unexpected end of string when parsing array");
+		PL_Release (array);
+		return NULL;
+	}
+	pl->pos++;	// skip over opening )
+
+	return array;
+}
+
+static plitem_t *
+pl_parsebinary (pldata_t *pl)
 {
 	unsigned    start = ++pl->pos;
 	int         nibbles = 0, i;
@@ -577,33 +828,35 @@ pl_parsedata (pldata_t *pl, int *len)
 		}
 		if (c == '>') {
 			if (nibbles & 1) {
-				pl->error = PL_NewString ("invalid data, missing nibble");
+				pl_error (pl, "invalid data, missing nibble");
 				return NULL;
 			}
-			*len = nibbles / 2;
-			str = malloc (*len);
-			for (i = 0; i < *len; i++)
+			int         len = nibbles / 2;
+			str = malloc (len);
+			for (i = 0; i < len; i++) {
 				str[i] = make_byte (pl->ptr[start + i * 2],
 									pl->ptr[start + i * 2 + 1]);
-			return str;
+			}
+			plitem_t   *item = PL_NewData (str, len);
+			item->line = pl->line;
+			return item;
 		}
-		pl->error = PL_NewString (va (pl->va_ctx,
-									  "invalid character in data: %02x", c));
+		pl_error (pl, "invalid character in data: %02x", c);
 		return NULL;
 	}
-	pl->error = PL_NewString ("Reached end of string while parsing data");
+	pl_error (pl, "Reached end of string while parsing data");
 	return NULL;
 }
 
-static char *
+static plitem_t *
 pl_parsequotedstring (pldata_t *pl)
 {
 	unsigned int	start = ++pl->pos;
 	unsigned int	escaped = 0;
 	unsigned int	shrink = 0;
-	qboolean		hex = false;
-	qboolean        long_string = false;
-	char			*str;
+	bool			hex = false;
+	bool            long_string = false;
+	plitem_t       *str;
 
 	if (pl->ptr[pl->pos] == '"' &&
 		pl->ptr[pl->pos + 1] == '"') {
@@ -659,12 +912,12 @@ pl_parsequotedstring (pldata_t *pl)
 	}
 
 	if (pl->pos >= pl->end) {
-		pl->error = PL_NewString ("Reached end of string while parsing quoted string");
+		pl_error (pl, "Reached end of string while parsing quoted string");
 		return NULL;
 	}
 
 	if (pl->pos - start - shrink == 0) {
-		str = strdup ("");
+		str = new_string ("", 0, pl);
 	} else {
 		char			*chars = alloca(pl->pos - start - shrink);
 		unsigned int	j;
@@ -740,8 +993,7 @@ pl_parsequotedstring (pldata_t *pl)
 				}
 			}
 		}
-		str = strncat (calloc ((pl->pos - start - shrink) + 1, 1), chars,
-					   pl->pos - start - shrink);
+		str = new_string (chars, pl->pos - start - shrink, pl);
 	}
 	if (long_string)
 		pl->pos += 2;
@@ -749,192 +1001,38 @@ pl_parsequotedstring (pldata_t *pl)
 	return str;
 }
 
-static char *
+static plitem_t *
 pl_parseunquotedstring (pldata_t *pl)
 {
 	unsigned int	start = pl->pos;
-	char			*str;
 
 	while (pl->pos < pl->end) {
 		if (is_quotable (pl->ptr[pl->pos]))
 			break;
 		pl->pos++;
 	}
-	str = strncat (calloc ((pl->pos - start) + 1, 1), &pl->ptr[start],
-				   pl->pos - start);
-	return str;
+	return new_string (&pl->ptr[start], pl->pos - start, pl);
 }
 
 static plitem_t *
 pl_parsepropertylistitem (pldata_t *pl)
 {
-	plitem_t	*item = NULL;
-
-	if (!pl_skipspace (pl))
+	if (!pl_skipspace (pl, 0)) {
 		return NULL;
+	}
 
 	switch (pl->ptr[pl->pos]) {
-	case '{':
-	{
-		item = PL_NewDictionary (pl->hashctx);
-		item->line = pl->line;
-
-		pl->pos++;
-
-		while (pl_skipspace (pl) && pl->ptr[pl->pos] != '}') {
-			plitem_t	*key;
-			plitem_t	*value;
-
-			if (!(key = pl_parsepropertylistitem (pl))) {
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (key->type != QFString) {
-				pl->error = PL_NewString ("Key is not a string");
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] != '=') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (expected '=')", pl->ptr[pl->pos]));
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-			pl->pos++;
-
-			// If there is no value, lose the key
-			if (!(value = pl_parsepropertylistitem (pl))) {
-				PL_Free (key);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] == ';') {
-				pl->pos++;
-			} else if (pl->ptr[pl->pos] != '}') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ';' or '}')", pl->ptr[pl->pos]));
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			// Add the key/value pair to the dictionary
-			if (!PL_D_AddObject (item, PL_String (key), value)) {
-				PL_Free (key);
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-			PL_Free (key);
-		}
-
-		if (pl->pos >= pl->end) {	// Catch the error
-			pl->error = PL_NewString ("Unexpected end of string when parsing dictionary");
-			PL_Free (item);
-			return NULL;
-		}
-		pl->pos++;
-
-		return item;
+		case '{': return pl_parsedictionary (pl);
+		case '(': return pl_parsearray (pl);
+		case '<': return pl_parsebinary (pl);
+		case '"': return pl_parsequotedstring (pl);
+		default:  return pl_parseunquotedstring (pl);
 	}
-
-	case '(': {
-		item = PL_NewArray ();
-		item->line = pl->line;
-
-		pl->pos++;
-
-		while (pl_skipspace (pl) && pl->ptr[pl->pos] != ')') {
-			plitem_t	*value;
-
-			if (!(value = pl_parsepropertylistitem (pl))) {
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!(pl_skipspace (pl))) {
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (pl->ptr[pl->pos] == ',') {
-				pl->pos++;
-			} else if (pl->ptr[pl->pos] != ')') {
-				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ',' or ')')", pl->ptr[pl->pos]));
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-
-			if (!PL_A_AddObject (item, value)) {
-				pl->error = PL_NewString ("Unexpected character (too many items in array)");
-				PL_Free (value);
-				PL_Free (item);
-				return NULL;
-			}
-		}
-		pl->pos++;
-
-		return item;
-	}
-
-	case '<': {
-		int len;
-		char *str = pl_parsedata (pl, &len);
-
-		if (!str) {
-			return NULL;
-		} else {
-			item = PL_NewData (str, len);
-			item->line = pl->line;
-			return item;
-		}
-	}
-
-	case '"': {
-		int line = pl->line;
-		char *str = pl_parsequotedstring (pl);
-
-		if (!str) {
-			return NULL;
-		} else {
-			return new_string (str, line);
-		}
-	}
-
-	default: {
-		int line = pl->line;
-		char *str = pl_parseunquotedstring (pl);
-
-		if (!str) {
-			return NULL;
-		} else {
-			return new_string (str, line);
-		}
-	}
-	} // switch
 }
 
-VISIBLE plitem_t *
-PL_GetPropertyList (const char *string, hashctx_t **hashctx)
+static plitem_t *
+pl_parseitem (const char *string, hashctx_t **hashctx,
+			  plitem_t *(*parse) (pldata_t *))
 {
 	plitem_t	*newpl = NULL;
 
@@ -945,23 +1043,69 @@ PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 		.ptr = string,
 		.end = strlen (string),
 		.line = 1,
-		.va_ctx = va_create_context (4),
 		.hashctx = hashctx,
 	};
 
-	if (!(newpl = pl_parsepropertylistitem (&pl))) {
-		if (pl.error) {
-			const char *error = PL_String (pl.error);
-			if (error[0]) {
-				Sys_Printf ("plist: %d,%d: %s\n", pl.line,
-							pl.pos - pl.line_start, error);
-			}
-			PL_Free (pl.error);
+	if (!(newpl = parse (&pl))) {
+		if (pl.errmsg) {
+			Sys_Printf ("plist: %d,%d: %s\n", pl.line, pl.pos - pl.line_start,
+						pl.errmsg->str);
+			dstring_delete (pl.errmsg);
 		}
 		return NULL;
 	}
-	va_destroy_context (pl.va_ctx);
 	return newpl;
+}
+
+VISIBLE plitem_t *
+PL_GetPropertyList (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_parsepropertylistitem);
+}
+
+
+static plitem_t *
+pl_getdictionary (pldata_t *pl)
+{
+	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
+	dict->line = pl->line;
+
+	while (pl_skipspace (pl, 1)) {
+		if (!pl_parsekeyvalue (pl, dict, 1)) {
+			PL_Release (dict);
+			return NULL;
+		}
+	}
+
+	return dict;
+}
+
+VISIBLE plitem_t *
+PL_GetDictionary (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_getdictionary);
+}
+
+static plitem_t *
+pl_getarray (pldata_t *pl)
+{
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	while (pl_skipspace (pl, 1)) {
+		if (!pl_parsevalue (pl, array, 1)) {
+			PL_Release (array);
+			return NULL;
+		}
+	}
+
+	return array;
+}
+
+VISIBLE plitem_t *
+PL_GetArray (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_getarray);
 }
 
 static void
@@ -1232,7 +1376,7 @@ PL_TypeMismatch (plitem_t *messages, const plitem_t *item, const char *name,
 	const int num_types = sizeof (pl_types) / sizeof (pl_types[0]);
 	if (field_type & QFMultiType) {
 		PL_Message (messages, item,
-					"error: %s is the wrong type. Got %s, expected on of:",
+					"error: %s is the wrong type. Got %s, expected one of:",
 					name, pl_types[item_type]);
 		field_type &= ~QFMultiType;
 		for (int type = 0; field_type && type < num_types;
@@ -1289,7 +1433,7 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *item, void *data,
 			}
 		}
 		if (!f->name) {
-			PL_Message (messages, item, "error: unknown field %s",
+			PL_Message (messages, item, "error: unknown field '%s'",
 						current->key);
 			result = 0;
 		}
