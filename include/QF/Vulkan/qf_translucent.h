@@ -19,8 +19,10 @@ typedef struct qfv_transtate_s {
 } qfv_transtate_t;
 
 typedef struct translucentframe_s {
-	VkDescriptorSet descriptors;
+	VkDescriptorSet flat;
+	VkDescriptorSet cube;
 	VkImage     heads;
+	VkImage     cube_heads;
 	VkBuffer    state;
 } translucentframe_t;
 

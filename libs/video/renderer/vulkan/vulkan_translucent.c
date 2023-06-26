@@ -84,8 +84,9 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	auto image = scr_fisheye ? tframe->cube_heads : tframe->heads;
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = tframe->heads;
+	ib.barrier.image = image;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
@@ -96,11 +97,11 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	VkImageSubresourceRange ranges[] = {
 		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS },
 	};
-	dfunc->vkCmdClearColorImage (cmd, tframe->heads,
+	dfunc->vkCmdClearColorImage (cmd, image,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 clear_color, 1, ranges);
 	ib = imageBarriers[qfv_LT_TransferDst_to_General];
-	ib.barrier.image = tframe->heads;
+	ib.barrier.image = image;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
@@ -153,7 +154,8 @@ Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
 	auto dsmanager = QFV_Render_DSManager (ctx, "oit_set");
 	for (size_t i = 0; i < frames; i++) {
 		tctx->frames.a[i] = (translucentframe_t) {
-			.descriptors = QFV_DSManager_AllocSet (dsmanager),
+			.flat = QFV_DSManager_AllocSet (dsmanager),
+			.cube = QFV_DSManager_AllocSet (dsmanager),
 		};
 	}
 	Vulkan_Translucent_CreateBuffers (ctx, ctx->swapchain->extent);//FIXME
@@ -179,8 +181,9 @@ Vulkan_Translucent_Shutdown (vulkan_ctx_t *ctx)
 VkDescriptorSet
 Vulkan_Translucent_Descriptors (vulkan_ctx_t *ctx, int frame)
 {
-	__auto_type tctx = ctx->translucent_context;
-	return tctx->frames.a[frame].descriptors;
+	auto tctx = ctx->translucent_context;
+	auto tframe = &tctx->frames.a[frame];
+	return scr_fisheye ? tframe->cube : tframe->flat;
 }
 
 void
@@ -200,23 +203,25 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 		tctx->resources = 0;
 	}
 	tctx->resources = malloc (sizeof (qfv_resource_t)
-							  // heads image
-							  + frames * sizeof (qfv_resobj_t)
-							  // heads image view
-							  + frames * sizeof (qfv_resobj_t)
+							  // heads images (flat + cube)
+							  + sizeof (qfv_resobj_t[frames]) * 2
+							  // heads image views (flat + cube)
+							  + sizeof (qfv_resobj_t[frames]) * 2
 							  // fragment buffer
-							  + frames * sizeof (qfv_resobj_t)
+							  + sizeof (qfv_resobj_t[frames])
 							  // fragment count
-							  + frames * sizeof (qfv_resobj_t));
-	__auto_type heads_objs = (qfv_resobj_t *) &tctx->resources[1];
-	__auto_type head_views_objs = &heads_objs[frames];
-	__auto_type buffer_objs = &head_views_objs[frames];
-	__auto_type count_objs = &buffer_objs[frames];
+							  + sizeof (qfv_resobj_t[frames]));
+	auto heads_objs = (qfv_resobj_t *) &tctx->resources[1];
+	auto cube_heads_objs = &heads_objs[frames];
+	auto head_views_objs = &cube_heads_objs[frames];
+	auto cube_head_views_objs = &head_views_objs[frames];
+	auto buffer_objs = &cube_head_views_objs[frames];
+	auto count_objs = &buffer_objs[frames];
 	tctx->resources[0] = (qfv_resource_t) {
 		.name = "oit",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 4 * frames,
+		.num_objects = 6 * frames,
 		.objects = heads_objs,
 	};
 	for (size_t i = 0; i < frames; i++) {
@@ -234,8 +239,13 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 						| VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 			},
 		};
+		auto e = min (extent.width, extent.height);
+		cube_heads_objs[i] = heads_objs[i];
+		cube_heads_objs[i].name = va (ctx->va_ctx, "cube_heads:%zd", i);
+		cube_heads_objs[i].image.extent = (VkExtent3D) { e, e, 1 };
+		cube_heads_objs[i].image.num_layers = 6;
 		head_views_objs[i] = (qfv_resobj_t) {
-			.name = "head view",
+			.name = heads_objs[i].name,
 			.type = qfv_res_image_view,
 			.image_view = {
 				.image = i,
@@ -248,6 +258,9 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 				},
 			},
 		};
+		cube_head_views_objs[i] = head_views_objs[i];
+		cube_head_views_objs[i].name = cube_heads_objs[i].name;
+		cube_head_views_objs[i].image_view.image = i + frames;
 		buffer_objs[i] = (qfv_resobj_t) {
 			.name = va (ctx->va_ctx, "frags:%zd", i),
 			.type = qfv_res_buffer,
@@ -271,10 +284,15 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type tframe = &tctx->frames.a[i];
 		tframe->heads = heads_objs[i].image.image;
+		tframe->cube_heads = cube_heads_objs[i].image.image;
 		tframe->state = count_objs[i].buffer.buffer;
 
-		VkDescriptorImageInfo imageInfo[] = {
+		VkDescriptorImageInfo flat_imageInfo[] = {
 			{ 0, head_views_objs[i].image_view.view, VK_IMAGE_LAYOUT_GENERAL },
+		};
+		VkDescriptorImageInfo cube_imageInfo[] = {
+			{ 0, cube_head_views_objs[i].image_view.view,
+				VK_IMAGE_LAYOUT_GENERAL },
 		};
 		VkDescriptorBufferInfo bufferInfo[] = {
 			{ count_objs[i].buffer.buffer, 0, VK_WHOLE_SIZE },
@@ -282,14 +300,22 @@ Vulkan_Translucent_CreateBuffers (vulkan_ctx_t *ctx, VkExtent2D extent)
 		};
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->descriptors, 2, 0, 1,
+				tframe->flat, 2, 0, 1,
 				VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = imageInfo },
+				.pImageInfo = flat_imageInfo },
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->descriptors, 0, 0, 2,
+				tframe->flat, 0, 0, 2,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = bufferInfo },
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+				tframe->cube, 2, 0, 1,
+				VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+				.pImageInfo = cube_imageInfo },
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+				tframe->cube, 0, 0, 2,
 				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.pBufferInfo = bufferInfo },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 4, write, 0, 0);
 	}
 }
