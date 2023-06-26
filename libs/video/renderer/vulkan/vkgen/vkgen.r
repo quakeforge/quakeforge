@@ -212,6 +212,7 @@ main(int argc, string *argv)
 		if ([obj class] == [Struct class]) {
 			string name = [obj name];
 			if (name == "char" // char type faked via a struct
+				|| name == "bool" // bool type faked via a struct
 				|| [[parse getObjectForKey:name] string] == "skip") {
 				continue;
 			}
