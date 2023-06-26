@@ -720,6 +720,7 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 
 	*s->rpc = (VkRenderPassCreateInfo) {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+		.pNext = s->rpi->pNext,
 		.attachmentCount = s->rpi->framebuffer.num_attachments,
 		.pAttachments = attachments,
 		.subpassCount = s->rpi->num_subpasses,

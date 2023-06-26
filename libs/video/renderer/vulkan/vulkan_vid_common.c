@@ -209,4 +209,10 @@ Vulkan_ConfigOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
 	if (vulkan_frame_height > 0) {
 		output->extent.height = vulkan_frame_height;
 	}
+	if (scr_fisheye) {//FIXME
+		auto w = output->extent.width;
+		auto h = output->extent.height;
+		output->extent.width = min (w, h);
+		output->extent.height = min (w, h);
+	}
 }

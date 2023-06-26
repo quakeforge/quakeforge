@@ -1423,11 +1423,10 @@ renderpasses = {
 		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
-			viewOffsets = (    0,     0,     0,     0,     0);
 		});
 		framebuffer = {
-			width = $render_output.extent.width;
-			height = $render_output.extent.height;
+			width = "min($render_output.extent.width,$render_output.extent.height)";
+			height = "min($render_output.extent.width,$render_output.extent.height)";
 			layers = 1;
 			attachments = {
 				depth = {
@@ -1475,6 +1474,7 @@ renderpasses = {
 				};
 			};
 		};
+		output = cube_output;
 	};
 	output = {
 		color = "[0, 1, 1, 1]";

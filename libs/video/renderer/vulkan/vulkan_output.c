@@ -363,10 +363,3 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	free (octx->frames.a);
 	free (octx);
 }
-
-void
-Vulkan_Output_SetInput (vulkan_ctx_t *ctx, VkImageView input)
-{
-	outputctx_t *octx = ctx->output_context;
-	octx->input = input;
-}
