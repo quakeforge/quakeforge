@@ -166,6 +166,7 @@ typedef struct qfv_attachmentsetinfo_s {
 typedef struct qfv_pipelineinfo_s {
 	vec4f_t     color;
 	const char *name;
+	bool        disabled;
 	uint32_t    num_tasks;
 	qfv_taskinfo_t *tasks;
 
@@ -309,6 +310,7 @@ typedef struct qfv_label_s {
 
 typedef struct qfv_pipeline_s {
 	qfv_label_t label;
+	bool        disabled;
 	VkPipelineBindPoint bindPoint;
 	vec4u_t     dispatch;
 	VkPipeline  pipeline;

@@ -327,6 +327,7 @@ parse = {
 			type = string;
 			string = name;
 		};
+		disabled = auto;
 		tasks = {
 			type = (array, qfv_taskinfo_t);
 			size = num_tasks;

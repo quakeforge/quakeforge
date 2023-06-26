@@ -753,6 +753,7 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 			.name = plinfo->name,
 			.color = plinfo->color,
 		},
+		.disabled = plinfo->disabled,
 		.bindPoint = is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE
 								: VK_PIPELINE_BIND_POINT_GRAPHICS,
 		.pipeline = is_compute ? s->ptr.cpl[s->inds.num_comp_pipelines]

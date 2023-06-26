@@ -81,6 +81,9 @@ run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, qfv_taskctx_t *ctx)
 static void
 run_pipeline (qfv_pipeline_t *pipeline, qfv_taskctx_t *taskctx)
 {
+	if (pipeline->disabled) {
+		return;
+	}
 	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto cmd = taskctx->cmd;
@@ -158,6 +161,9 @@ static void
 run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 					  vulkan_ctx_t *ctx)
 {
+	if (pipeline->disabled) {
+		return;
+	}
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
