@@ -140,6 +140,8 @@ void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx);
 
 char *cexpr_yyget_text (void *scanner);
 
+extern exprenum_t cexpr_bool_enum;
+extern exprtype_t cexpr_bool;
 extern exprtype_t cexpr_int;
 extern exprtype_t cexpr_uint;
 extern exprtype_t cexpr_size_t;
