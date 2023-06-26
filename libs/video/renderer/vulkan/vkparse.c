@@ -1431,7 +1431,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	static const char *extra_items[] = {
 		"images",
-		"views",
+		"imageviews",
 		"renderpasses",
 		0
 	};
