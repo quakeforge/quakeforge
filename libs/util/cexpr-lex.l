@@ -326,7 +326,16 @@ parse_name (const char *name, exprctx_t *context)
 		}
 		prev_tab = symtab;
 
-		sym = Hash_Find (symtab->tab, name);
+		if (symtab->tab) {
+			sym = Hash_Find (symtab->tab, name);
+		} else {
+			for (exprsym_t *s = symtab->symbols; s->name; s++) {
+				if (!strcmp (s->name, name)) {
+					sym = s;
+					break;
+				}
+			}
+		}
 	}
 	if (!sym) {
 		sym = cmemalloc (context->memsuper, sizeof (exprsym_t));
