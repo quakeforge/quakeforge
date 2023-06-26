@@ -1627,6 +1627,7 @@ steps = {
 			tasks = (
 				{ func = bsp_visit_world;
 				  params = (main); },
+				{ func = scene_draw_viewmodel; },
 			);
 		};
 	};

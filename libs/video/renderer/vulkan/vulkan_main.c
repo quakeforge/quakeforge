@@ -66,43 +66,7 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
-#if 0
-static void
-Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
-{
-	entity_t    ent = vr_data.view_model;
-	if (!Entity_Valid (ent)) {
-		return;
-	}
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	if (vr_data.inhibit_viewmodel
-		|| !r_drawviewmodel
-		|| !r_drawentities
-		|| !renderer->model)
-		return;
 
-	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
-}
-
-void
-Vulkan_RenderView (qfv_orenderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-
-	if (!r_refdef.worldmodel) {
-		return;
-	}
-
-	Vulkan_DrawWorld (rFrame);
-	Vulkan_DrawSky (rFrame);
-	if (Entity_Valid (vr_data.view_model)) {
-		Vulkan_DrawViewModel (ctx);
-	}
-	Vulkan_DrawWaterSurfaces (rFrame);
-	Vulkan_Bsp_Flush (ctx);
-	Vulkan_Scene_Flush (ctx);
-}
-#endif
 void
 Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {

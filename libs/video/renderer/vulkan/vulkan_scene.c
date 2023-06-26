@@ -131,9 +131,38 @@ static VkWriteDescriptorSet base_buffer_write = {
 	0, 0, 0
 };
 
+static void
+scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	if (vr_data.inhibit_viewmodel
+		|| !r_drawviewmodel
+		|| !r_drawentities
+		|| !renderer->model)
+		return;
+
+	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
+}
+
+static exprfunc_t scene_draw_viewmodel_func[] = {
+	{ .func = scene_draw_viewmodel },
+	{}
+};
+static exprsym_t scene_task_syms[] = {
+	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
+	{}
+};
+
 void
 Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 {
+	QFV_Render_AddTasks (ctx, scene_task_syms);
+
 	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
 							   + sizeof (qfv_resource_t)
 							   + sizeof (qfv_resobj_t));
