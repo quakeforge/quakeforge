@@ -43,6 +43,7 @@
 
 #include "QF/cvar.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_translucent.h"
@@ -81,7 +82,9 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 
 	auto fb = &taskctx->renderpass->framebuffer;
-	cframe->imageInfo[0].imageView = fb->views[QFV_attachOpaque];
+	cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
+	cframe->imageInfo[1].imageView = fb->views[QFV_attachLight];
+	cframe->imageInfo[2].imageView = fb->views[QFV_attachEmission];
 	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
 								   cframe->descriptors, 0, 0);
 
@@ -118,6 +121,7 @@ Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, "compose init");
 
+	auto device = ctx->device;
 	auto cctx = ctx->compose_context;
 
 	auto rctx = ctx->render_context;
@@ -128,13 +132,16 @@ Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 
 	auto dsmanager = QFV_Render_DSManager (ctx, "compose_attach");
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type cframe = &cctx->frames.a[i];
+		auto cframe = &cctx->frames.a[i];
+		auto set = QFV_DSManager_AllocSet (dsmanager);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, set,
+							 va (ctx->va_ctx, "compose:attach_set:%zd", i));
 
 		for (int j = 0; j < COMPOSE_IMAGE_INFOS; j++) {
 			cframe->imageInfo[j] = base_image_info;
 			cframe->imageInfo[j].sampler = 0;
 			cframe->descriptors[j] = base_image_write;
-			cframe->descriptors[j].dstSet = QFV_DSManager_AllocSet (dsmanager);
+			cframe->descriptors[j].dstSet = set;
 			cframe->descriptors[j].dstBinding = j;
 			cframe->descriptors[j].pImageInfo = &cframe->imageInfo[j];
 		}

@@ -91,6 +91,15 @@ properties = {
 		clearValue = { color = "[0, 0, 0, 1]"; };
 	};
 
+	no_cull = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = none;
+		frontFace = counter_clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
 	cw_cull_back = {
 		depthClampEnable = false;
 		rasterizerDiscardEnable = false;
@@ -123,6 +132,13 @@ properties = {
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
+	depth_test_only_reverse = {
+		depthTestEnable = true;
+		depthWriteEnable = false;
+		depthCompareOp = greater;
+		depthBoundsTestEnable = false;
+		stencilTestEnable = false;
+	};
 	depth_disable = {
 		depthTestEnable = false;
 		depthWriteEnable = false;
@@ -147,6 +163,16 @@ properties = {
 		colorBlendOp = add;
 		srcAlphaBlendFactor = one;
 		dstAlphaBlendFactor = one_minus_src_alpha;
+		alphaBlendOp = add;
+		colorWriteMask = r|g|b|a;
+	};
+	additive_blend = {
+		blendEnable = true;
+		srcColorBlendFactor = one;
+		dstColorBlendFactor = one;
+		colorBlendOp = add;
+		srcAlphaBlendFactor = zero;
+		dstAlphaBlendFactor = one;
 		alphaBlendOp = add;
 		colorWriteMask = r|g|b|a;
 	};
@@ -519,15 +545,47 @@ properties = {
 	};
 	lighting = {
 		shader = {
+			vertex_splat = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_splat.vert;
+			};
+			vertex_flat = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_flat.vert;
+			};
 			fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/lighting.frag;
 			};
 		};
+		vertexInput_splat = {
+			bindings = (
+				{ binding = 0; stride = "4"; inputRate = instance; },
+				{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+				{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
+			);
+		};
+		vertexInput_flat = {
+			bindings = (
+				{ binding = 0; stride = "4"; inputRate = instance; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+			);
+		};
+		inputAssembly = {
+			topology = triangle_fan;
+			primitiveRestartEnable = true;
+		};
 		layout = {
-			descriptorSets = (lighting_attach, lighting_lights,
-							  lighting_shadow);
+			descriptorSets = (matrix_set, lighting_lights,
+							  lighting_attach, lighting_shadow);
 		};
 	};
 	compose = {
@@ -791,7 +849,7 @@ descriptorSetLayouts = {
 				binding = 0;
 				descriptorType = uniform_buffer;
 				descriptorCount = 1;
-				stageFlags = fragment;
+				stageFlags = vertex|fragment;
 			},
 		);
 	};
@@ -809,6 +867,18 @@ descriptorSetLayouts = {
 		bindings = (
 			{
 				binding = 0;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 2;
 				descriptorType = input_attachment;
 				descriptorCount = 1;
 				stageFlags = fragment;
@@ -892,7 +962,7 @@ images = {
 		@inherit = $image_base;
 		format = r32g32b32a32_sfloat;
 	};
-	opaque = {
+	light = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -922,7 +992,7 @@ images = {
 		@inherit = $cube_image_base;
 		format = r32g32b32a32_sfloat;
 	};
-	cube_opaque = {
+	cube_light = {
 		@inherit = $cube_image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -962,10 +1032,10 @@ imageviews = {
 		image = position;
 		format = $images.position.format;
 	};
-	opaque = {
+	light = {
 		@inherit = $view_base;
-		image = opaque;
-		format = $images.opaque.format;
+		image = light;
+		format = $images.light.format;
 	};
 	output = {
 		@inherit = $view_base;
@@ -1000,10 +1070,10 @@ imageviews = {
 		image = cube_position;
 		format = $images.cube_position.format;
 	};
-	cube_opaque = {
+	cube_light = {
 		@inherit = $cube_view_base;
-		image = cube_opaque;
-		format = $images.cube_opaque.format;
+		image = cube_light;
+		format = $images.cube_light.format;
 	};
 	cube_output = {
 		@inherit = $cube_view_base;
@@ -1055,10 +1125,11 @@ renderpasses = {
 					format = $images.position.format;
 					view = position;
 				};
-				opaque = {
+				light = {
 					@inherit = $attachment_base;
-					format = $images.opaque.format;
-					view = opaque;
+					format = $images.light.format;
+					loadOp = clear;
+					view = light;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -1361,26 +1432,46 @@ renderpasses = {
 						position = shader_read_only_optimal;
 					};
 					color = {
-						opaque = {
+						light = {
 							layout = color_attachment_optimal;
-							blend = $blend_disable;
+							blend = $additive_blend;
 						};
 					};
 					preserve = (output);
 				};
 				pipelines = {
-					lights = {
+					light_splats = {
 						@inherit = $compose_base;
 
 						color = $color.lights;
 						tasks = (
-							{ func = lights_draw; },
+							{ func = lighting_bind_descriptors; },
+							{ func = lighting_draw_splats; },
 						);
 
 						stages = (
-							$fstriangle.shader.vertex,
+							$lighting.shader.vertex_splat,
 							$lighting.shader.fragment,
 						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.layout;
+						rasterization = $cw_cull_back;
+						//depthStencil = $depth_disable;
+					};
+					light_flat = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_draw_flats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_flat,
+							$lighting.shader.fragment,
+						);
+						vertexInput = $lighting.vertexInput_flat;
 						layout = $lighting.layout;
 					};
 				};
@@ -1392,12 +1483,14 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						opaque = shader_read_only_optimal;
+						color = shader_read_only_optimal;
+						light = shader_read_only_optimal;
+						emission = shader_read_only_optimal;
 					};
 					color = {
 						output = color_attachment_optimal;
 					};
-					preserve = (depth, color, emission, normal, position);
+					preserve = (depth, normal, position);
 				};
 				pipelines = {
 					compose = {
@@ -1459,10 +1552,10 @@ renderpasses = {
 					format = $images.cube_position.format;
 					view = cube_position;
 				};
-				opaque = {
+				light = {
 					@inherit = $attachment_base;
-					format = $images.cube_opaque.format;
-					view = cube_opaque;
+					format = $images.cube_light.format;
+					view = cube_light;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -1628,6 +1721,7 @@ steps = {
 				{ func = bsp_visit_world;
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },
+				{ func = lighting_update_lights; },
 			);
 		};
 	};

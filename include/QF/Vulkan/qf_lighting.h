@@ -61,7 +61,12 @@ typedef struct qfv_light_buffer_s {
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
 typedef struct lightingframe_s {
-	VkBuffer    light_buffer;
+	VkBuffer    data_buffer;
+	VkBuffer    id_buffer;
+	uint32_t    ico_count;
+	uint32_t    cone_count;
+	uint32_t    flat_count;
+
 	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
 	VkDescriptorImageInfo attachInfo[LIGHTING_ATTACH_INFOS];
 	VkDescriptorImageInfo shadowInfo[LIGHTING_SHADOW_INFOS];
@@ -94,17 +99,21 @@ typedef struct light_renderer_set_s
 
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
-	VkPipeline   pipeline;
 	VkSampler    sampler;
-	VkDeviceMemory light_memory;
 	struct qfv_resource_s *shadow_resources;
+	struct qfv_resource_s *light_resources;
+
 	qfv_lightmatset_t light_mats;
 	qfv_imageset_t light_images;
+
 	light_renderer_set_t light_renderers;
 
 	VkRenderPass renderpass_6;
 	VkRenderPass renderpass_4;
 	VkRenderPass renderpass_1;
+
+	VkBuffer splat_verts;
+	VkBuffer splat_inds;
 
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;

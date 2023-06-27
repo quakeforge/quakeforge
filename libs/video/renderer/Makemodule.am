@@ -320,8 +320,13 @@ bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
 bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
+light_flat_src = $(vkshaderpath)/light_flat.vert
+light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
+light_splat_src = $(vkshaderpath)/light_splat.vert
+light_splat_c = $(vkshaderpath)/light_splat.vert.spvc
 lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
+lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
 oit_blend = $(vkshaderpath)/oit_blend.finc
@@ -401,7 +406,11 @@ $(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
 $(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
-$(lightingf_c): $(lightingf_src)
+$(light_flat_c): $(light_flat_src) $(lighting_h)
+
+$(light_splat_c): $(light_splat_src) $(lighting_h)
+
+$(lightingf_c): $(lightingf_src) $(lighting_h)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
@@ -458,6 +467,8 @@ vkshader_c = \
 	$(bsp_shadow_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
+	$(light_flat_c) \
+	$(light_splat_c) \
 	$(lightingf_c) \
 	$(composef_c) \
 	$(aliasv_c) \
@@ -539,7 +550,10 @@ EXTRA_DIST += \
 	$(bsp_shadow_src) \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
+	$(light_flat_src) \
+	$(light_splat_src) \
 	$(lightingf_src) \
+	$(lighting_h) \
 	$(composef_src) \
 	$(aliasv_src) \
 	$(aliasf_src) \

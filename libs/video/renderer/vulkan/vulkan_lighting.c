@@ -56,6 +56,7 @@
 
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -76,76 +77,22 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
-static void
-update_lights (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	lightingctx_t *lctx = ctx->lighting_context;
-	lightingdata_t *ldata = lctx->ldata;
-	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
-
-	Light_FindVisibleLights (ldata);
-
-	dlight_t   *lights[MaxLights];
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
-													   sizeof (*light_data));
-
-	float       style_intensities[NumStyles];
-	for (int i = 0; i < NumStyles; i++) {
-		style_intensities[i] = d_lightstylevalue[i] / 65536.0;
-	}
-
-	light_data->lightCount = 0;
-	R_FindNearLights (r_refdef.frame.position, MaxLights - 1, lights);
-	for (int i = 0; i < MaxLights - 1; i++) {
-		if (!lights[i]) {
-			break;
-		}
-		light_data->lightCount++;
-		VectorCopy (lights[i]->color, light_data->lights[i].color);
-		// dynamic lights seem a tad faint, so 16x map lights
-		light_data->lights[i].color[3] = lights[i]->radius / 16;
-		VectorCopy (lights[i]->origin, light_data->lights[i].position);
-		// dlights are local point sources
-		light_data->lights[i].position[3] = 1;
-		light_data->lights[i].attenuation =
-			(vec4f_t) { 0, 0, 1, 1/lights[i]->radius };
-		// full sphere, normal light (not ambient)
-		light_data->lights[i].direction = (vec4f_t) { 0, 0, 1, 1 };
-	}
-	for (size_t i = 0; (i < ldata->lightvis.size
-						&& light_data->lightCount < MaxLights); i++) {
-		if (ldata->lightvis.a[i]) {
-			light_t    *light = &light_data->lights[light_data->lightCount++];
-			*light = ldata->lights.a[i];
-			light->color[3] *= style_intensities[ldata->lightstyles.a[i]];
-		}
-	}
-	if (developer & SYS_lighting) {
-		Vulkan_Draw_String (vid.width - 32, 8,
-							va (ctx->va_ctx, "%3d", light_data->lightCount),
-							ctx);
-	}
-
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	bb.barrier.buffer = lframe->light_buffer;
-	bb.barrier.size = sizeof (qfv_light_buffer_t);
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-	VkBufferCopy copy_region[] = {
-		{ packet->offset, 0, sizeof (qfv_light_buffer_t) },
-	};
-	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
-							lframe->light_buffer, 1, &copy_region[0]);
-	bb = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	bb.barrier.buffer = lframe->light_buffer;
-	bb.barrier.size = sizeof (qfv_light_buffer_t);
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-	QFV_PacketSubmit (packet);
-}
+#define ico_verts 12
+#define cone_verts 7
+static int ico_inds[] = {
+	0,  4,  6,  9, 2,  8, 4, -1,
+	3,  1, 10, 5,  7, 11, 1, -1,
+	1, 11,  6, 4, 10, -1,
+	9,  6, 11, 7,  2, -1,
+	5, 10,  8, 2,  7, -1,
+	4,  8, 10,
+};
+#define num_ico_inds (sizeof (ico_inds) / sizeof (ico_inds[0]))
+static int cone_inds[] = {
+	0, 1, 2, 3, 4, 5, 6, 1, -1,
+	1, 6, 5, 4, 3, 2,
+};
+#define num_cone_inds (sizeof (cone_inds) / sizeof (cone_inds[0]))
 #if 0
 static void
 lighting_draw_maps (qfv_orenderframe_t *rFrame)
@@ -219,6 +166,103 @@ Vulkan_Lighting_CreateRenderPasses (vulkan_ctx_t *ctx)
 	lctx->qfv_renderpass = rp;
 }
 #endif
+static void
+lighting_update_lights (const exprval_t **params, exprval_t *result,
+						exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto lctx = ctx->lighting_context;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+
+	lframe->ico_count = 0;
+	lframe->cone_count = 0;
+	lframe->flat_count = 0;
+	if (!lctx->scene || !lctx->scene->lights) {
+		return;
+	}
+
+	lightingdata_t *ldata = lctx->ldata;
+
+	Light_FindVisibleLights (ldata);
+
+	dlight_t   *lights[MaxLights];
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
+													   sizeof (*light_data));
+
+	float       style_intensities[NumStyles];
+	for (int i = 0; i < NumStyles; i++) {
+		style_intensities[i] = d_lightstylevalue[i] / 65536.0;
+	}
+
+	uint32_t ico_ids[MaxLights];
+	uint32_t cone_ids[MaxLights];
+	uint32_t flat_ids[MaxLights];
+
+	light_data->lightCount = 0;
+	R_FindNearLights (r_refdef.frame.position, MaxLights - 1, lights);
+	for (int i = 0; i < MaxLights - 1; i++) {
+		if (!lights[i]) {
+			break;
+		}
+		ico_ids[lframe->ico_count++] = light_data->lightCount++;
+
+		VectorCopy (lights[i]->color, light_data->lights[i].color);
+		// dynamic lights seem a tad faint, so 16x map lights
+		light_data->lights[i].color[3] = lights[i]->radius / 16;
+		VectorCopy (lights[i]->origin, light_data->lights[i].position);
+		// dlights are local point sources
+		light_data->lights[i].position[3] = 1;
+		light_data->lights[i].attenuation =
+			(vec4f_t) { 0, 0, 1, 1/lights[i]->radius };
+		// full sphere, normal light (not ambient)
+		light_data->lights[i].direction = (vec4f_t) { 0, 0, 1, 1 };
+	}
+	for (size_t i = 0; (i < ldata->lightvis.size
+						&& light_data->lightCount < MaxLights); i++) {
+		if (ldata->lightvis.a[i]) {
+			uint32_t id = light_data->lightCount++;
+			auto light = &light_data->lights[id];
+			*light = ldata->lights.a[i];
+			light->color[3] *= style_intensities[ldata->lightstyles.a[i]];
+			if (light->position[3] && !VectorIsZero (light->direction)
+				&& light->attenuation[3]) {
+				if (light->direction[3] < 0) {
+					cone_ids[lframe->cone_count++] = id;
+				} else {
+					ico_ids[lframe->ico_count++] = id;
+				}
+			} else {
+				flat_ids[lframe->flat_count++] = id;
+			}
+		}
+	}
+	if (developer & SYS_lighting) {
+		Vulkan_Draw_String (vid.width - 32, 8,
+							va (ctx->va_ctx, "%3d", light_data->lightCount),
+							ctx);
+	}
+
+	QFV_PacketCopyBuffer (packet, lframe->data_buffer, 0,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+
+	packet = QFV_PacketAcquire (ctx->staging);
+	uint32_t id_count = lframe->ico_count + lframe->cone_count
+						+ lframe->flat_count;
+	uint32_t *ids = QFV_PacketExtend (packet, id_count * sizeof (uint32_t));
+	memcpy (ids, ico_ids, lframe->ico_count * sizeof (uint32_t));
+	ids += lframe->ico_count;
+	memcpy (ids, cone_ids, lframe->cone_count * sizeof (uint32_t));
+	ids += lframe->cone_count;
+	memcpy (ids, flat_ids, lframe->flat_count * sizeof (uint32_t));
+	QFV_PacketCopyBuffer (packet, lframe->id_buffer, 0,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketSubmit (packet);
+}
+
 static VkDescriptorBufferInfo base_buffer_info = {
 	0, 0, VK_WHOLE_SIZE
 };
@@ -245,7 +289,8 @@ static VkWriteDescriptorSet base_image_write = {
 };
 
 static void
-lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
+						   exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
@@ -255,17 +300,10 @@ lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	if (!lctx->scene) {
-		return;
-	}
-	if (lctx->scene->lights) {
-		update_lights (ctx);
-	}
-
-	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+	auto lframe = &lctx->frames.a[ctx->curFrame];
 
 	auto fb = &taskctx->renderpass->framebuffer;
-	lframe->bufferInfo[0].buffer = lframe->light_buffer;
+	lframe->bufferInfo[0].buffer = lframe->data_buffer;
 	lframe->attachInfo[0].imageView = fb->views[QFV_attachDepth];
 	lframe->attachInfo[1].imageView = fb->views[QFV_attachColor];
 	lframe->attachInfo[2].imageView = fb->views[QFV_attachEmission];
@@ -276,22 +314,87 @@ lights_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								   lframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
-		lframe->attachWrite[0].dstSet,
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		lframe->bufferWrite[0].dstSet,
+		lframe->attachWrite[0].dstSet,
 		lframe->shadowWrite.dstSet,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 3, sets, 0, 0);
 
-	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+	VkBuffer buffers[] = {
+		lframe->id_buffer,
+		lctx->splat_verts,
+	};
+	VkDeviceSize offsets[] = { 0, 0 };
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
+	dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
+								 VK_INDEX_TYPE_UINT32);
 }
 
-static exprfunc_t lights_draw_func[] = {
-	{ .func = lights_draw },
+static void
+lighting_draw_splats (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+	if (lframe->ico_count) {
+		dfunc->vkCmdDrawIndexed (cmd, num_ico_inds, lframe->ico_count, 0, 0, 0);
+	}
+	if (lframe->cone_count) {
+		dfunc->vkCmdDrawIndexed (cmd, num_cone_inds, lframe->cone_count,
+								 num_ico_inds, 12, lframe->ico_count);
+	}
+}
+
+static void
+lighting_draw_flats (const exprval_t **params, exprval_t *result,
+					 exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+	if (!lframe->flat_count) {
+		return;
+	}
+
+	uint32_t splat_count = lframe->ico_count + lframe->cone_count;
+	dfunc->vkCmdDraw (cmd, 3, lframe->flat_count, 0, splat_count);
+}
+
+static exprfunc_t lighting_update_lights_func[] = {
+	{ .func = lighting_update_lights },
+	{}
+};
+static exprfunc_t lighting_bind_descriptors_func[] = {
+	{ .func = lighting_bind_descriptors },
+	{}
+};
+static exprfunc_t lighting_draw_splats_func[] = {
+	{ .func = lighting_draw_splats },
+	{}
+};
+static exprfunc_t lighting_draw_flats_func[] = {
+	{ .func = lighting_draw_flats },
 	{}
 };
 static exprsym_t lighting_task_syms[] = {
-	{ "lights_draw", &cexpr_function, lights_draw_func },
+	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
+	{ "lighting_bind_descriptors", &cexpr_function,
+		lighting_bind_descriptors_func },
+	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
+	{ "lighting_draw_flats", &cexpr_function, lighting_draw_flats_func },
 	{}
 };
 
@@ -304,13 +407,59 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 }
 
+static void
+make_ico (qfv_packet_t *packet)
+{
+	vec3_t *verts = QFV_PacketExtend (packet, sizeof (vec3_t[ico_verts]));
+	float p = (sqrt(5) + 1) / 2;
+	float a = sqrt (3) / p;
+	float b = a / p;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+			float my = j & 1 ? a : -a;
+			float mz = j & 2 ? b : -b;
+			int   vind = i * 4 + j;
+			int   ix = i;
+			int   iy = (i + 1) % 3;
+			int   iz = (i + 2) % 3;
+			verts[vind][ix] = 0;
+			verts[vind][iy] = my;
+			verts[vind][iz] = mz;
+		}
+	}
+}
+
+static void
+make_cone (qfv_packet_t *packet)
+{
+	vec3_t *verts = QFV_PacketExtend (packet, sizeof (vec3_t[cone_verts]));
+	float a = 2 / sqrt (3);
+	float b = 1 / sqrt (3);
+	VectorSet ( 0,  0,  0, verts[0]);
+	VectorSet ( a,  0, -1, verts[1]);
+	VectorSet ( b,  1, -1, verts[2]);
+	VectorSet (-b,  1, -1, verts[3]);
+	VectorSet (-a,  0, -1, verts[4]);
+	VectorSet (-b, -1, -1, verts[5]);
+	VectorSet ( b, -1, -1, verts[6]);
+}
+
+static void
+write_inds (qfv_packet_t *packet)
+{
+	uint32_t *inds = QFV_PacketExtend (packet, sizeof (ico_inds)
+												+ sizeof (cone_inds));
+	memcpy (inds, ico_inds, sizeof (ico_inds));
+	inds += num_ico_inds;
+	memcpy (inds, cone_inds, sizeof (cone_inds));
+}
+
 void
 Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 {
 	qfvPushDebug (ctx, "lighting init");
 
 	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
 
 	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
@@ -337,32 +486,79 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
-	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
+	lctx->light_resources = malloc (sizeof (qfv_resource_t)
+									// splat vertices
+									+ sizeof (qfv_resobj_t)
+									// splat indices
+									+ sizeof (qfv_resobj_t)
+									// light data
+									+ sizeof (qfv_resobj_t[frames])
+									// light indices
+									+ sizeof (qfv_resobj_t[frames]));
+	auto splat_verts = (qfv_resobj_t *) &lctx->light_resources[1];
+	auto splat_inds = &splat_verts[1];
+	auto light_data = &splat_inds[1];
+	auto light_ids = &light_data[frames];
+	lctx->light_resources[0] = (qfv_resource_t) {
+		.name = "lights",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 2 + 2 * frames,
+		.objects = splat_verts,
+	};
+	splat_verts[0] = (qfv_resobj_t) {
+		.name = "splat:vertices",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = (20 + 7) * sizeof (vec3_t),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		},
+	};
+	splat_inds[0] = (qfv_resobj_t) {
+		.name = "splat:indices",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (ico_inds) + sizeof (cone_inds),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		},
+	};
 	for (size_t i = 0; i < frames; i++) {
-		lbuffers->a[i] = QFV_CreateBuffer (device, sizeof (qfv_light_buffer_t),
-										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-										   | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-							 lbuffers->a[i],
-							 va (ctx->va_ctx, "buffer:lighting:%zd", i));
+		light_data[i] = (qfv_resobj_t) {
+			.name = "data",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (qfv_light_buffer_t),
+				.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
+		light_ids[i] = (qfv_resobj_t) {
+			.name = "ids",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = 2 * MaxLights * sizeof (uint32_t),
+				.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 	}
-	VkMemoryRequirements requirements;
-	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
-										  &requirements);
-	size_t      light_size = QFV_NextOffset (requirements.size, &requirements);
-	lctx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-								frames * light_size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 lctx->light_memory, "memory:lighting");
 
+	QFV_CreateResource (ctx->device, lctx->light_resources);
+
+	lctx->splat_verts = splat_verts[0].buffer.buffer;
+	lctx->splat_inds = splat_inds[0].buffer.buffer;
 
 	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
 	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
 	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
-	VkDeviceSize light_offset = 0;
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type lframe = &lctx->frames.a[i];
+		auto lframe = &lctx->frames.a[i];
+		*lframe = (lightingframe_t) {
+			.data_buffer = light_data[i].buffer.buffer,
+			.id_buffer = light_ids[i].buffer.buffer,
+		};
 
 		auto attach = QFV_DSManager_AllocSet (attach_mgr);
 		auto lights = QFV_DSManager_AllocSet (lights_mgr);
@@ -373,11 +569,6 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 							 va (ctx->va_ctx, "lighting:lights_set:%zd", i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, shadow,
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
-
-		lframe->light_buffer = lbuffers->a[i];
-		QFV_BindBufferMemory (device, lbuffers->a[i], lctx->light_memory,
-							  light_offset);
-		light_offset += light_size;
 
 		for (int j = 0; j < LIGHTING_BUFFER_INFOS; j++) {
 			lframe->bufferInfo[j] = base_buffer_info;
@@ -405,6 +596,19 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
+
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	make_ico (packet);
+	make_cone (packet);
+	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+	packet = QFV_PacketAcquire (ctx->staging);
+	write_inds (packet);
+	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketSubmit (packet);
+
 	qfvPopDebug (ctx);
 }
 
@@ -442,12 +646,9 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_4, 0);
 	dfunc->vkDestroyRenderPass (device->dev, lctx->renderpass_1, 0);
 
-	for (size_t i = 0; i < lctx->frames.size; i++) {
-		lightingframe_t *lframe = &lctx->frames.a[i];
-		dfunc->vkDestroyBuffer (device->dev, lframe->light_buffer, 0);
-	}
-	dfunc->vkFreeMemory (device->dev, lctx->light_memory, 0);
-	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
+	QFV_DestroyResource (device, lctx->light_resources);
+	free (lctx->light_resources);
+
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_images);
 	DARRAY_CLEAR (&lctx->light_renderers);
