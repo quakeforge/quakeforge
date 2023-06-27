@@ -134,6 +134,12 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 }
 
+static size_t
+align (size_t x, size_t a)
+{
+	return (x + a - 1) & ~(a - 1);
+}
+
 static void
 release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 {
@@ -146,7 +152,7 @@ release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 		stage->space_end = 0;
 		stage->end = stage->size;
 	}
-	stage->space_end += length;
+	stage->space_end += align (length, 16);
 }
 
 static void *
@@ -235,6 +241,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	}
 	packet = RB_ACQUIRE (stage->packets, 1);
 
+	stage->space_start = align (stage->space_start, 16);
 	packet->offset = stage->space_start;
 	packet->length = 0;
 
