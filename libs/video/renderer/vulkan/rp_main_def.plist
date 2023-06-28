@@ -555,10 +555,10 @@ properties = {
 				name = main;
 				module = $builtin/light_flat.vert;
 			};
-			fragment = {
+			fragment_splat = {
 				stage = fragment;
 				name = main;
-				module = $builtin/lighting.frag;
+				module = $builtin/light_splat.frag;
 			};
 			debug_fragment = {
 				stage = fragment;
@@ -1457,7 +1457,7 @@ renderpasses = {
 
 						stages = (
 							$lighting.shader.vertex_splat,
-							$lighting.shader.fragment,
+							$lighting.shader.fragment_splat,
 						);
 						vertexInput = $lighting.vertexInput_splat;
 						inputAssembly = $lighting.inputAssembly;
@@ -1475,7 +1475,7 @@ renderpasses = {
 
 						stages = (
 							$lighting.shader.vertex_flat,
-							$lighting.shader.fragment,
+							$lighting.shader.fragment_splat,
 						);
 						vertexInput = $lighting.vertexInput_flat;
 						layout = $lighting.layout;
