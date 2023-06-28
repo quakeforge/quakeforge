@@ -70,6 +70,7 @@ int         r_emitted;
 float       r_nearzi;
 float       r_u1, r_v1, r_lzi1;
 int         r_ceilv1;
+int         d_framecount;
 
 bool        r_lastvertvalid;
 
@@ -171,7 +172,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 		// we cache unclipped horizontal edges as fully clipped
 		if (cacheoffset != 0x7FFFFFFF) {
 			cacheoffset = FULLY_CLIPPED_CACHED |
-				(r_framecount & FRAMECOUNT_MASK);
+				(d_framecount & FRAMECOUNT_MASK);
 		}
 
 		return;							// horizontal edge
@@ -288,7 +289,7 @@ R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 					// we do cache fully clipped edges
 					if (!r_leftclipped)
 						cacheoffset = FULLY_CLIPPED_CACHED |
-							(r_framecount & FRAMECOUNT_MASK);
+							(d_framecount & FRAMECOUNT_MASK);
 					return;
 				}
 				// only point 0 is clipped
@@ -397,7 +398,7 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 			if (!insubmodel) {
 				if (r_pedge->cachededgeoffset & FULLY_CLIPPED_CACHED) {
 					if ((r_pedge->cachededgeoffset & FRAMECOUNT_MASK) ==
-						(unsigned int) r_framecount) {
+						(unsigned int) d_framecount) {
 						r_lastvertvalid = false;
 						continue;
 					}
@@ -432,7 +433,7 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 			if (!insubmodel) {
 				if (r_pedge->cachededgeoffset & FULLY_CLIPPED_CACHED) {
 					if ((r_pedge->cachededgeoffset & FRAMECOUNT_MASK) ==
-						(unsigned int) r_framecount) {
+						(unsigned int) d_framecount) {
 						r_lastvertvalid = false;
 						continue;
 					}

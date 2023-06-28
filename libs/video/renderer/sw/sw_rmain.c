@@ -679,6 +679,7 @@ R_RenderView (void)
 	if ((intptr_t) (&r_colormap) & 3)
 		Sys_Error ("Globals are missaligned");
 
+	d_framecount++;
 	R_RenderView_ ();
 }
 

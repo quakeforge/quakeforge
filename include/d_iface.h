@@ -112,6 +112,7 @@ typedef struct
 	int		color;
 } zpointdesc_t;
 
+extern int d_framecount;
 extern int r_drawflat;
 extern int r_framecount;		// sequence # of current frame since Quake
 								//  started
