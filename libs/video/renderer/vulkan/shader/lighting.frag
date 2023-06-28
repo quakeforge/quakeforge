@@ -1,46 +1,17 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
 
-layout (input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput depth;
-layout (input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput color;
-layout (input_attachment_index = 2, set = 0, binding = 2) uniform subpassInput emission;
-layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput normal;
-layout (input_attachment_index = 4, set = 0, binding = 4) uniform subpassInput position;
+#include "lighting.h"
 
-struct LightData {
-	vec4        color;		// .a is intensity
-	vec4        position;	// .w = 0 -> directional, .w = 1 -> point/cone
-	vec4        direction;	// .w = -cos(cone_angle/2) (1 for omni/dir)
-	vec4        attenuation;
-};
+layout (input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput depth;
+layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput color;
+layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput emission;
+layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput normal;
+layout (input_attachment_index = 4, set = 2, binding = 4) uniform subpassInput position;
 
-#define StyleMask   0x07f
-#define ModelMask   0x380
-#define ShadowMask  0xc00
-
-#define LM_LINEAR   (0 << 7)	// light - dist (or radius + dist if -ve)
-#define LM_INVERSE  (1 << 7)	// distFactor1 * light / dist
-#define LM_INVERSE2 (2 << 7)	// distFactor2 * light / (dist * dist)
-#define LM_INFINITE (3 << 7)	// light
-#define LM_AMBIENT  (4 << 7)	// light
-#define LM_INVERSE3 (5 << 7)	// distFactor2 * light / (dist + distFactor2)**2
-
-#define ST_NONE     (0 << 10)	// no shadows
-#define ST_PLANE    (1 << 10)	// single plane shadow map (small spotlight)
-#define ST_CASCADE  (2 << 10)	// cascaded shadow maps
-#define ST_CUBE     (3 << 10)	// cubemap (omni, large spotlight)
-
-layout (constant_id = 0) const int MaxLights = 768;
-
-layout (set = 2, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
-layout (set = 2, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
-layout (set = 2, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
-
-layout (set = 1, binding = 0) uniform Lights {
-	LightData   lights[MaxLights];
-	int         lightCount;
-	//mat4        shadowMat[MaxLights];
-	//vec4        shadowCascale[MaxLights];
-};
+layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
+layout (set = 3, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
+layout (set = 3, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
 
 layout (location = 0) out vec4 frag_color;
 
@@ -118,5 +89,5 @@ main (void)
 	}
 	//light = max (light, minLight);
 
-	frag_color = vec4 (c * light + e, 1);
+	frag_color = vec4 (light, 1);
 }

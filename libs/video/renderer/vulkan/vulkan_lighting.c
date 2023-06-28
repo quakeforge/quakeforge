@@ -248,19 +248,20 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	QFV_PacketCopyBuffer (packet, lframe->data_buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
-
-	packet = QFV_PacketAcquire (ctx->staging);
-	uint32_t id_count = lframe->ico_count + lframe->cone_count
-						+ lframe->flat_count;
-	uint32_t *ids = QFV_PacketExtend (packet, id_count * sizeof (uint32_t));
-	memcpy (ids, ico_ids, lframe->ico_count * sizeof (uint32_t));
-	ids += lframe->ico_count;
-	memcpy (ids, cone_ids, lframe->cone_count * sizeof (uint32_t));
-	ids += lframe->cone_count;
-	memcpy (ids, flat_ids, lframe->flat_count * sizeof (uint32_t));
-	QFV_PacketCopyBuffer (packet, lframe->id_buffer, 0,
+	if (0) {
+		packet = QFV_PacketAcquire (ctx->staging);
+		uint32_t id_count = lframe->ico_count + lframe->cone_count
+							+ lframe->flat_count;
+		uint32_t *ids = QFV_PacketExtend (packet, id_count * sizeof (uint32_t));
+		memcpy (ids, ico_ids, lframe->ico_count * sizeof (uint32_t));
+		ids += lframe->ico_count;
+		memcpy (ids, cone_ids, lframe->cone_count * sizeof (uint32_t));
+		ids += lframe->cone_count;
+		memcpy (ids, flat_ids, lframe->flat_count * sizeof (uint32_t));
+		QFV_PacketCopyBuffer (packet, lframe->id_buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-	QFV_PacketSubmit (packet);
+		QFV_PacketSubmit (packet);
+	}
 }
 
 static VkDescriptorBufferInfo base_buffer_info = {
@@ -334,15 +335,16 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 3, sets, 0, 0);
-
-	VkBuffer buffers[] = {
-		lframe->id_buffer,
-		lctx->splat_verts,
-	};
-	VkDeviceSize offsets[] = { 0, 0 };
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
-								 VK_INDEX_TYPE_UINT32);
+	if (0) {
+		VkBuffer buffers[] = {
+			lframe->id_buffer,
+			lctx->splat_verts,
+		};
+		VkDeviceSize offsets[] = { 0, 0 };
+		dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
+		dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
+									 VK_INDEX_TYPE_UINT32);
+	}
 }
 
 static void
@@ -386,6 +388,25 @@ lighting_draw_flats (const exprval_t **params, exprval_t *result,
 	dfunc->vkCmdDraw (cmd, 3, lframe->flat_count, 0, splat_count);
 }
 
+static void
+lighting_draw_lights (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+	if (!(lframe->ico_count + lframe->cone_count + lframe->flat_count)) {
+		return;
+	}
+
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
+}
+
 static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
@@ -406,6 +427,10 @@ static exprfunc_t lighting_draw_flats_func[] = {
 	{ .func = lighting_draw_flats },
 	{}
 };
+static exprfunc_t lighting_draw_lights_func[] = {
+	{ .func = lighting_draw_lights },
+	{}
+};
 static exprsym_t lighting_task_syms[] = {
 	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
 	{ "lighting_update_descriptors", &cexpr_function,
@@ -414,6 +439,7 @@ static exprsym_t lighting_task_syms[] = {
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
 	{ "lighting_draw_flats", &cexpr_function, lighting_draw_flats_func },
+	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
 	{}
 };
 

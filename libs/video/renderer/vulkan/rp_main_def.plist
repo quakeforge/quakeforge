@@ -560,6 +560,11 @@ properties = {
 				name = main;
 				module = $builtin/light_splat.frag;
 			};
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting.frag;
+			};
 			debug_fragment = {
 				stage = fragment;
 				name = main;
@@ -1439,45 +1444,26 @@ renderpasses = {
 					color = {
 						light = {
 							layout = color_attachment_optimal;
-							blend = $additive_blend;
+							blend = $blend_disable;
 						};
 					};
 					preserve = (output);
 				};
 				pipelines = {
-					light_splats = {
+					lights = {
 						@inherit = $compose_base;
 
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_update_descriptors; },
 							{ func = lighting_bind_descriptors; },
-							{ func = lighting_draw_splats; },
+							{ func = lighting_draw_lights; },
 						);
 
 						stages = (
-							$lighting.shader.vertex_splat,
-							$lighting.shader.fragment_splat,
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment,
 						);
-						vertexInput = $lighting.vertexInput_splat;
-						inputAssembly = $lighting.inputAssembly;
-						layout = $lighting.layout;
-						rasterization = $cw_cull_back;
-						//depthStencil = $depth_disable;
-					};
-					light_flat = {
-						@inherit = $compose_base;
-
-						color = $color.lights;
-						tasks = (
-							{ func = lighting_draw_flats; },
-						);
-
-						stages = (
-							$lighting.shader.vertex_flat,
-							$lighting.shader.fragment_splat,
-						);
-						vertexInput = $lighting.vertexInput_flat;
 						layout = $lighting.layout;
 					};
 				};
