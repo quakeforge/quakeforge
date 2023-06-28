@@ -604,12 +604,13 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 }
 
 static inline void
-visit_leaf (mleaf_t *leaf)
+visit_leaf (bsp_pass_t *pass, mleaf_t *leaf)
 {
 	// since this leaf will be rendered, any entities in the leaf also need
 	// to be rendered (the bsp tree doubles as an entity cull structure)
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
+	for (auto efrag = leaf->efrags; efrag; efrag = efrag->leafnext) {
+		EntQueue_AddEntity (pass->entqueue, efrag->entity, efrag->queue_num);
+	}
 }
 
 // 1 = back side, 0 = front side
@@ -700,7 +701,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 			if (front < 0) {
 				mleaf_t    *leaf = brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (leaf);
+					visit_leaf (pass, leaf);
 				}
 			}
 			visit_node (pass, node, side);
@@ -709,7 +710,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (leaf);
+				visit_leaf (pass, leaf);
 			}
 		}
 		if (node_ptr != node_stack) {
@@ -1154,6 +1155,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bframe = &bctx->frames.a[ctx->curFrame];
 
 	bctx->main_pass.bsp_context = bctx;
+	bctx->main_pass.entqueue = r_ent_queue;
 	bctx->main_pass.position = r_refdef.frame.position;
 	bctx->main_pass.vis_frame = r_visframecount;
 	bctx->main_pass.face_frames = r_face_visframes;

@@ -270,6 +270,7 @@ typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
 	const struct mod_brush_s *brush;///< data for current model
 	struct bspctx_s *bsp_context;	///< owning bsp context
+	struct entqueue_s *entqueue;	///< entities to render this pass
 	/** \name GPU data
 	 *
 	 * The indices to be drawn and the entity ids associated with each draw
