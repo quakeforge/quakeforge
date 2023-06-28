@@ -91,6 +91,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/light_splat.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/lighting.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
@@ -156,6 +158,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "light_flat.vert", light_flat_vert, sizeof (light_flat_vert) },
 	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
+	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
 	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },

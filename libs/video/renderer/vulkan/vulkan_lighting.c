@@ -289,16 +289,14 @@ static VkWriteDescriptorSet base_image_write = {
 };
 
 static void
-lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
-						   exprctx_t *ectx)
+lighting_update_descriptors (const exprval_t **params, exprval_t *result,
+							 exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
-	auto cmd = taskctx->cmd;
-	auto layout = taskctx->pipeline->layout;
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 
@@ -312,6 +310,21 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 	dfunc->vkUpdateDescriptorSets (device->dev,
 								   LIGHTING_DESCRIPTORS,
 								   lframe->descriptors, 0, 0);
+}
+
+static void
+lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
+						   exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
@@ -377,6 +390,10 @@ static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
 };
+static exprfunc_t lighting_update_descriptors_func[] = {
+	{ .func = lighting_update_descriptors },
+	{}
+};
 static exprfunc_t lighting_bind_descriptors_func[] = {
 	{ .func = lighting_bind_descriptors },
 	{}
@@ -391,6 +408,8 @@ static exprfunc_t lighting_draw_flats_func[] = {
 };
 static exprsym_t lighting_task_syms[] = {
 	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
+	{ "lighting_update_descriptors", &cexpr_function,
+		lighting_update_descriptors_func },
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },

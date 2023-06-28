@@ -324,6 +324,8 @@ light_flat_src = $(vkshaderpath)/light_flat.vert
 light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
 light_splat_src = $(vkshaderpath)/light_splat.vert
 light_splat_c = $(vkshaderpath)/light_splat.vert.spvc
+light_debug_src = $(vkshaderpath)/light_debug.frag
+light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
 lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 lighting_h = $(vkshaderpath)/lighting.h
@@ -410,6 +412,8 @@ $(light_flat_c): $(light_flat_src) $(lighting_h)
 
 $(light_splat_c): $(light_splat_src) $(lighting_h)
 
+$(light_debug_c): $(light_debug_src) $(lighting_h)
+
 $(lightingf_c): $(lightingf_src) $(lighting_h)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
@@ -469,6 +473,7 @@ vkshader_c = \
 	$(bsp_turbf_c) \
 	$(light_flat_c) \
 	$(light_splat_c) \
+	$(light_debug_c) \
 	$(lightingf_c) \
 	$(composef_c) \
 	$(aliasv_c) \
@@ -552,6 +557,7 @@ EXTRA_DIST += \
 	$(bsp_turbf_src) \
 	$(light_flat_src) \
 	$(light_splat_src) \
+	$(light_debug_src) \
 	$(lightingf_src) \
 	$(lighting_h) \
 	$(composef_src) \
