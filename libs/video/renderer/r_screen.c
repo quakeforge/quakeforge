@@ -60,9 +60,8 @@
 int         scr_copytop;
 byte       *draw_chars;			// 8*8 graphic characters FIXME location
 bool        r_cache_thrash;		// set if surface cache is thrashing
-int        *r_node_visframes;	//FIXME per renderer
-int        *r_leaf_visframes;	//FIXME per renderer
-int        *r_face_visframes;	//FIXME per renderer
+
+visstate_t r_visstate;		//FIXME per renderer
 
 bool        scr_skipupdate;
 static bool scr_initialized;// ready to draw
@@ -322,11 +321,10 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		if (r_waterwarp) {
 			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
-					  r_face_visframes);
+		R_MarkLeaves (&r_visstate, scr_scene->viewleaf);
 	}
 	r_framecount++;
-	R_PushDlights (vec3_origin);
+	R_PushDlights (vec3_origin, &r_visstate);
 	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
 }
 
@@ -495,12 +493,19 @@ SCR_NewScene (scene_t *scene)
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
 		int         size = count * sizeof (int);
-		r_node_visframes = Hunk_AllocName (0, size, "visframes");
-		r_leaf_visframes = r_node_visframes + brush->numnodes;
-		r_face_visframes = r_leaf_visframes + brush->modleafs;
+		int        *node_visframes = Hunk_AllocName (0, size, "visframes");
+		int        *leaf_visframes = node_visframes + brush->numnodes;
+		int        *face_visframes = leaf_visframes + brush->modleafs;
+		r_visstate = (visstate_t) {
+			.brush = brush,
+			.node_visframes = node_visframes,
+			.leaf_visframes = leaf_visframes,
+			.face_visframes = face_visframes,
+		};
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
 	} else {
+		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();
 	}
 }

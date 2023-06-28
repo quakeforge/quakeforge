@@ -56,7 +56,6 @@ int         r_lineadj;
 bool        r_active;
 int			r_init;
 
-int         r_visframecount;			// bumped when going to a new PVS
 int         r_framecount = 1;			// so frame counts initialized to 0 don't match
 
 vec3_t      modelorg;			// modelorg is the viewpoint relative to

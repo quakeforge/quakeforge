@@ -1147,10 +1147,10 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bctx->main_pass.bsp_context = bctx;
 	bctx->main_pass.entqueue = r_ent_queue;
 	bctx->main_pass.position = r_refdef.frame.position;
-	bctx->main_pass.vis_frame = r_visframecount;
-	bctx->main_pass.face_frames = r_face_visframes;
-	bctx->main_pass.leaf_frames = r_leaf_visframes;
-	bctx->main_pass.node_frames = r_node_visframes;
+	bctx->main_pass.vis_frame = r_visstate.visframecount;
+	bctx->main_pass.face_frames = r_visstate.face_visframes;
+	bctx->main_pass.leaf_frames = r_visstate.leaf_visframes;
+	bctx->main_pass.node_frames = r_visstate.node_visframes;
 	bctx->main_pass.entid_data = bframe->entid_data;
 	bctx->main_pass.entid_count = 0;
 

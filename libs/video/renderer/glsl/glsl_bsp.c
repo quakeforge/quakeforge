@@ -758,7 +758,7 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 		int         surf_id = node->firstsurface;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_face_visframes[surf_id] != r_visframecount)
+			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -777,7 +777,7 @@ test_node (glslbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_node_visframes[node_id] != r_visframecount)
+	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))

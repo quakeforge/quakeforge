@@ -168,9 +168,6 @@ gl_R_NewScene (scene_t *scene)
 	r_refdef.worldmodel = scene->worldmodel;
 	brush = &scene->worldmodel->brush;
 
-	// Force a vis update
-	R_MarkLeaves (0, 0, 0, 0);
-
 	R_ClearParticles ();
 
 	GL_BuildLightmaps (scene->models, scene->num_models);

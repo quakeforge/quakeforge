@@ -120,8 +120,6 @@ extern	plane_t	screenedge[4];
 
 extern	vec4f_t r_entorigin;
 
-extern	int		r_visframecount;
-
 //=============================================================================
 
 extern int	vstartscan;

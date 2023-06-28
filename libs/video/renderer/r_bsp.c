@@ -43,37 +43,39 @@
 
 #include "r_internal.h"
 
-static mleaf_t *r_oldviewleaf;
 static set_t *solid;
 
 void
-R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
-			  int *face_visframes)
+R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 {
 	set_t       *vis;
 	int			 c;
 	mleaf_t     *leaf;
 	msurface_t **mark;
-	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	auto node_visframes = visstate->node_visframes;
+	auto leaf_visframes = visstate->leaf_visframes;
+	auto face_visframes = visstate->face_visframes;
+	auto brush = visstate->brush;
 
-	if (r_oldviewleaf == viewleaf && !r_novis)
+	if (visstate->viewleaf == viewleaf && !r_novis)
 		return;
 
-	r_visframecount++;
-	r_oldviewleaf = viewleaf;
+	int visframecount = ++visstate->visframecount;
+	visstate->viewleaf = viewleaf;
 	if (!viewleaf)
 		return;
 
 	if (r_novis) {
-		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
-							// turned off
+		// so vis will be recalculated when novis gets turned off
+		visstate->viewleaf = 0;
 		if (!solid) {
 			solid = set_new ();
 			set_everything (solid);
 		}
 		vis = solid;
-	} else
+	} else {
 		vis = Mod_LeafPVS (viewleaf, brush);
+	}
 
 	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (vis, i)) {
@@ -81,16 +83,16 @@ R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
 			if ((c = leaf->nummarksurfaces)) {
 				mark = brush->marksurfaces + leaf->firstmarksurface;
 				do {
-					face_visframes[*mark - brush->surfaces] = r_visframecount;
+					face_visframes[*mark - brush->surfaces] = visframecount;
 					mark++;
 				} while (--c);
 			}
-			leaf_visframes[i + 1] = r_visframecount;
+			leaf_visframes[i + 1] = visframecount;
 			int         node_id = brush->leaf_parents[leaf - brush->leafs];
 			while (node_id >= 0) {
-				if (node_visframes[node_id] == r_visframecount)
+				if (node_visframes[node_id] == visframecount)
 					break;
-				node_visframes[node_id] = r_visframecount;
+				node_visframes[node_id] = visframecount;
 				node_id = brush->node_parents[node_id];
 			}
 		}

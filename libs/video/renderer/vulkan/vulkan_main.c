@@ -79,9 +79,6 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	r_refdef.worldmodel = scene->worldmodel;
 	EntQueue_Clear (r_ent_queue);
 
-	// Force a vis update
-	R_MarkLeaves (0, 0, 0, 0);
-
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
 	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);

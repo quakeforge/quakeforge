@@ -203,9 +203,6 @@ R_NewScene (scene_t *scene)
 	if (brush->skytexture)
 		R_InitSky (brush->skytexture);
 
-	// Force a vis update
-	R_MarkLeaves (0, 0, 0, 0);
-
 	R_ClearParticles ();
 
 	r_cnumsurfs = r_maxsurfs;
