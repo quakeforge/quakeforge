@@ -856,16 +856,6 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 	}
 }
 
-static int
-ent_model_cmp (const void *_a, const void *_b)
-{
-	const entity_t *a = _a;
-	const entity_t *b = _b;
-	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer, a->reg);
-	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer, b->reg);
-	return ra->model->render_id - rb->model->render_id;
-}
-
 static void
 bsp_flush (vulkan_ctx_t *ctx)
 {
@@ -1181,9 +1171,6 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	R_VisitWorldNodes (&bctx->main_pass, ctx);
 
 	if (r_drawentities) {
-		heapsort (r_ent_queue->ent_queues[mod_brush].a,
-				  r_ent_queue->ent_queues[mod_brush].size,
-				  sizeof (entity_t), ent_model_cmp);
 		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
 			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			if (!R_DrawBrushModel (ent, &bctx->main_pass, ctx)) {
