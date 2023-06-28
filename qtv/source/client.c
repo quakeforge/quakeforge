@@ -982,17 +982,18 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 static void
 add_to_fat_pvs (vec4f_t org, int node_id, server_t *sv)
 {
+	auto brush = &sv->worldmodel->brush;
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node_id < 0) {
 			mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				set_union (sv->fatpvs, Mod_LeafPVS (leaf, sv->worldmodel));
+				set_union (sv->fatpvs, Mod_LeafPVS (leaf, brush));
 			}
 			return;
 		}
 
-		mnode_t    *node = sv->worldmodel->brush.nodes + node_id;
+		mnode_t    *node = brush->nodes + node_id;
 		float       d = dotf (node->plane, org)[0];
 		if (d > 8)
 			node_id = node->children[0];

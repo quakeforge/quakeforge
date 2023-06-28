@@ -1962,7 +1962,7 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
+		l = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);

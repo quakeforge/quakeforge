@@ -73,7 +73,7 @@ R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
 		}
 		vis = solid;
 	} else
-		vis = Mod_LeafPVS (viewleaf, r_refdef.worldmodel);
+		vis = Mod_LeafPVS (viewleaf, brush);
 
 	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (vis, i)) {

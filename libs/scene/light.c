@@ -11,13 +11,13 @@
 #include "QF/simd/vec4f.h"
 
 static void
-expand_pvs (set_t *pvs, model_t *model)
+expand_pvs (set_t *pvs, mod_brush_t *brush)
 {
-	set_t       base_pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
+	set_t       base_pvs = SET_STATIC_INIT (brush->visleafs, alloca);
 	set_assign (&base_pvs, pvs);
-	for (unsigned i = 0; i < model->brush.visleafs; i++) {
+	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (&base_pvs, i)) {
-			Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0, pvs);
+			Mod_LeafPVS_mix (brush->leafs + i + 1, brush, 0, pvs);
 		}
 	}
 }
@@ -78,7 +78,7 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 	int         visleaf = -1;	// directional light
 	if (light->position[3]) {
 		// positional light
-		mleaf_t    *leaf = Mod_PointInLeaf (light->position, model);
+		mleaf_t    *leaf = Mod_PointInLeaf (light->position, &model->brush);
 		visleaf = leaf - model->brush.leafs - 1;
 	} else if (!DotProduct (light->direction, light->direction)) {
 		// ambient light
@@ -92,24 +92,24 @@ void
 Light_EnableSun (lightingdata_t *ldata)
 {
 	scene_t    *scene = ldata->scene;
-	model_t    *model = scene->worldmodel;
+	auto brush = &scene->worldmodel->brush;
 
 	if (!ldata->sun_pvs) {
-		ldata->sun_pvs = set_new_size (model->brush.visleafs);
+		ldata->sun_pvs = set_new_size (brush->visleafs);
 	}
-	set_expand (ldata->sun_pvs, model->brush.visleafs);
+	set_expand (ldata->sun_pvs, brush->visleafs);
 	set_empty (ldata->sun_pvs);
 	// Any leaf with sky surfaces can potentially see the sun, thus put
 	// the sun "in" every leaf with a sky surface
 	// however, skip leaf 0 as it is the exterior solid leaf
-	for (unsigned l = 1; l < model->brush.modleafs; l++) {
-		if (model->brush.leaf_flags[l] & SURF_DRAWSKY) {
+	for (unsigned l = 1; l < brush->modleafs; l++) {
+		if (brush->leaf_flags[l] & SURF_DRAWSKY) {
 			set_add (ldata->sun_pvs, l - 1); //pvs is 1-based
 		}
 	}
 	// any leaf visible from a leaf with a sky surface (and thus the sun)
 	// can receive shadows from the sun
-	expand_pvs (ldata->sun_pvs, model);
+	expand_pvs (ldata->sun_pvs, brush);
 }
 
 void
@@ -117,28 +117,28 @@ Light_FindVisibleLights (lightingdata_t *ldata)
 {
 	scene_t    *scene = ldata->scene;
 	mleaf_t    *leaf = scene->viewleaf;
-	model_t    *model = scene->worldmodel;
+	auto brush = &scene->worldmodel->brush;
 
 	if (!leaf) {
 		return;
 	}
 	if (!ldata->pvs) {
-		ldata->pvs = set_new_size (model->brush.visleafs);
+		ldata->pvs = set_new_size (brush->visleafs);
 	}
 
 	if (leaf != ldata->leaf) {
 		//double start = Sys_DoubleTime ();
 		int         flags = 0;
 
-		if (leaf == model->brush.leafs) {
+		if (leaf == brush->leafs) {
 			set_everything (ldata->pvs);
 			flags = SURF_DRAWSKY;
 		} else {
-			Mod_LeafPVS_set (leaf, model, 0, ldata->pvs);
+			Mod_LeafPVS_set (leaf, brush, 0, ldata->pvs);
 			if (set_is_intersecting (ldata->pvs, ldata->sun_pvs)) {
 				flags |= SURF_DRAWSKY;
 			}
-			expand_pvs (ldata->pvs, model);
+			expand_pvs (ldata->pvs, brush);
 		}
 		ldata->leaf = leaf;
 

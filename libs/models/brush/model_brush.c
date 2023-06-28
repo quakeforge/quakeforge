@@ -61,18 +61,18 @@ VISIBLE int mod_sky_divide; //FIXME visibility?
 VISIBLE int mod_lightmap_bytes = 1;	//FIXME should this be visible?
 
 VISIBLE mleaf_t *
-Mod_PointInLeaf (vec4f_t p, model_t *model)
+Mod_PointInLeaf (vec4f_t p, const mod_brush_t *brush)
 {
 	float       d;
 
-	if (!model || !model->brush.nodes)
-		Sys_Error ("Mod_PointInLeaf: bad model");
+	if (!brush || !brush->nodes)
+		Sys_Error ("Mod_PointInLeaf: bad brush");
 
 	int         node_id = 0;
 	while (1) {
 		if (node_id < 0)
-			return model->brush.leafs + ~node_id;
-		mnode_t    *node = model->brush.nodes + node_id;
+			return brush->leafs + ~node_id;
+		mnode_t    *node = brush->nodes + node_id;
 		d = dotf (p, node->plane)[0];
 		node_id = node->children[d < 0];
 	}
@@ -148,14 +148,14 @@ Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
 }
 
 VISIBLE set_t *
-Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
+Mod_LeafPVS (const mleaf_t *leaf, const mod_brush_t *brush)
 {
 	static set_t *novis;
 	static set_t *decompressed;
-	unsigned    numvis = model->brush.visleafs;
+	unsigned    numvis = brush->visleafs;
 	unsigned    excess = SET_SIZE (numvis) - numvis;
 
-	if (leaf == model->brush.leafs) {
+	if (leaf == brush->leafs) {
 		if (!novis) {
 			novis = set_new_size (numvis);
 		}
@@ -171,38 +171,37 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 		decompressed = set_new ();
 	}
 	set_expand (decompressed, numvis);
-	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, 0xff,
-						   decompressed);
+	Mod_DecompressVis_set (leaf->compressed_vis, brush, 0xff, decompressed);
 	decompressed->map[SET_WORDS (decompressed) - 1] &= (~SET_ZERO) >> excess;
 	return decompressed;
 }
 
 VISIBLE void
-Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
+Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 				 set_t *out)
 {
-	unsigned    numvis = model->brush.visleafs;
+	unsigned    numvis = brush->visleafs;
 	unsigned    excess = SET_SIZE (numvis) - numvis;
 
 	set_expand (out, numvis);
-	if (leaf == model->brush.leafs) {
+	if (leaf == brush->leafs) {
 		memset (out->map, defvis, SET_WORDS (out) * sizeof (*out->map));
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis, out);
+	Mod_DecompressVis_set (leaf->compressed_vis, brush, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 
 VISIBLE void
-Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
+Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 				 set_t *out)
 {
-	unsigned    numvis = model->brush.visleafs;
+	unsigned    numvis = brush->visleafs;
 	unsigned    excess = SET_SIZE (numvis) - numvis;
 
 	set_expand (out, numvis);
-	if (leaf == model->brush.leafs) {
+	if (leaf == brush->leafs) {
 		byte       *o = (byte *) out->map;
 		for (int i = SET_WORDS (out) * sizeof (*out->map); i-- > 0; ) {
 			*o++ |= defvis;
@@ -210,7 +209,7 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
-	Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis, out);
+	Mod_DecompressVis_mix (leaf->compressed_vis, brush, defvis, out);
 	out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 }
 

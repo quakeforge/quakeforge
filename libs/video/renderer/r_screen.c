@@ -316,7 +316,8 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	if (scr_scene && scr_scene->worldmodel) {
 		scr_scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		scr_scene->viewleaf = Mod_PointInLeaf (position, scr_scene->worldmodel);
+		auto brush = &scr_scene->worldmodel->brush;
+		scr_scene->viewleaf = Mod_PointInLeaf (position, brush);
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
 			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;

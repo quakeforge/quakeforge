@@ -584,11 +584,11 @@ PF_newcheckclient (progs_t *pr, unsigned check)
 	vec4f_t     org;
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	org[3] = 1;
-	leaf = Mod_PointInLeaf (org, sv.worldmodel);
+	leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
 	if (!checkpvs) {
 		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
-	set_assign (checkpvs, Mod_LeafPVS (leaf, sv.worldmodel));
+	set_assign (checkpvs, Mod_LeafPVS (leaf, &sv.worldmodel->brush));
 
 	return i;
 }
@@ -633,7 +633,7 @@ PF_checkclient (progs_t *pr, void *data)
 	vec4f_t     view;
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	view[3] = 1;
-	leaf = Mod_PointInLeaf (view, sv.worldmodel);
+	leaf = Mod_PointInLeaf (view, &sv.worldmodel->brush);
 	l = (leaf - sv.worldmodel->brush.leafs) - 1;
 	if (!set_is_member (checkpvs, l)) {
 		c_notvis++;

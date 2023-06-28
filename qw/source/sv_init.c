@@ -255,12 +255,12 @@ SV_CalcPHS (void)
 
 	SV_Printf ("Building PHS...\n");
 
-	num = sv.worldmodel->brush.modleafs;
+	auto brush = &sv.worldmodel->brush;
+	num = brush->modleafs;
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
 	for (i = 0; i < num; i++) {
-		Mod_LeafPVS_set (sv.worldmodel->brush.leafs + i, sv.worldmodel, 0xff,
-						 &sv.pvs[i]);
+		Mod_LeafPVS_set (brush->leafs + i, brush, 0xff, &sv.pvs[i]);
 		if (i == 0)
 			continue;
 		vcount += set_count (&sv.pvs[i]);

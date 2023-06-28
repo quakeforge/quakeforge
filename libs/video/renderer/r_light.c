@@ -264,7 +264,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
 	mod_brush_t *brush = &model->brush;
-	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
+	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, brush);
 
 	if (!pvsleaf->compressed_vis) {
 		int         node_id = brush->hulls[0].firstclipnode;
