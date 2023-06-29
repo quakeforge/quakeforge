@@ -2031,8 +2031,6 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	int         arg_count = 0, param_count = 0;
 	int         i;
 	expr_t     *args = 0, **a = &args;
-	type_t     *arg_types[PR_MAX_PARAMS];
-	expr_t     *arg_exprs[PR_MAX_PARAMS][2];
 	int         arg_expr_count = 0;
 	int         emit_args = 0;
 	expr_t     *assign;
@@ -2045,9 +2043,12 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		arg_count++;
 	}
 
-	if (arg_count > PR_MAX_PARAMS) {
+	if (options.code.progsversion < PROG_VERSION
+		&& arg_count > PR_MAX_PARAMS) {
 		return error (fexpr, "more than %d parameters", PR_MAX_PARAMS);
 	}
+	type_t     *arg_types[arg_count];
+	expr_t     *arg_exprs[arg_count][2];
 	if (ftype->t.func.num_params < -1) {
 		if (-arg_count > ftype->t.func.num_params + 1) {
 			if (!options.traditional)
