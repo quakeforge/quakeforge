@@ -289,6 +289,10 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 			if (img) {
 				uint32_t    ind = img - job->resources->objects;
 				job->image_views[i].image_view.image = ind;
+				// fall back to the image's format if not overriden
+				if (!job->image_views[i].image_view.format) {
+					job->image_views[i].image_view.format = img->image.format;
+				}
 			} else {
 				Sys_Printf ("%d: unknown image reference: %s\n",
 							view->image.line, view->image.name);
