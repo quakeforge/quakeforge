@@ -149,7 +149,7 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
+	Memory_Init (Sys_Alloc (32 * 1024 * 1024), 32 * 1024 * 1024);
 	PR_Init_Cvars ();
 }
 
@@ -242,7 +242,7 @@ load_progs (progs_t *pr, const char *name)
 	}
 	pr->progs_name = name;
 	pr->max_edicts = 1;
-	pr->zone_size = 2*1024*1024;
+	pr->zone_size = 8*1024*1024;
 	pr->stack_size = 64*1024;
 	PR_LoadProgsFile (pr, file, size);
 	Qclose (file);

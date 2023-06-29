@@ -12,6 +12,7 @@ test_progs_dat=\
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
 	tools/qfcc/test/arraylife2.dat \
+	tools/qfcc/test/arraytypedef.dat \
 	tools/qfcc/test/assignchain.dat \
 	tools/qfcc/test/anonstruct.dat \
 	tools/qfcc/test/chewed-alias.dat \
@@ -178,6 +179,16 @@ tools/qfcc/test/arraylife2.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(arraylife2_dep) # am--include-marker
 r_depfiles_remade += $(arraylife2_dep)
+
+tools_qfcc_test_arraytypedef_dat_SOURCES=tools/qfcc/test/arraytypedef.r
+arraytypedef_obj=$(tools_qfcc_test_arraytypedef_dat_SOURCES:.r=.o)
+arraytypedef_dep=$(call qcautodep,$(tools_qfcc_test_arraytypedef_dat_SOURCES))
+tools/qfcc/test/arraytypedef.dat$(EXEEXT): $(arraytypedef_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(arraytypedef_obj)
+tools/qfcc/test/arraytypedef.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(arraytypedef_dep) # am--include-marker
+r_depfiles_remade += $(arraytypedef_dep)
 
 tools_qfcc_test_assignchain_dat_SOURCES=tools/qfcc/test/assignchain.r
 assignchain_obj=$(tools_qfcc_test_assignchain_dat_SOURCES:.r=.o)
