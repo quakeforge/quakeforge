@@ -198,11 +198,9 @@ parse_int32_t (const plfield_t *field, const plitem_t *item,
 				void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
-	// use size_t (and cexpr_size_t) for val so references to array sizes
-	// can be used
-	size_t      val = 0;
+	int         val = 0;
 	parsectx_t *pctx = context;
-	exprval_t   result = { &cexpr_size_t, &val };
+	exprval_t   result = { &cexpr_int, &val };
 	exprctx_t   ectx = *pctx->ectx;
 	ectx.result = &result;
 	ectx.item = item;
