@@ -85,19 +85,20 @@
 
 -writeParseData
 {
-	fprintf (output_file, "undefined record type parse data: %d\n", line);
+	fprintf (output_file, "%@ undefined record type parse data: %d\n",
+			 self, line);
 	return self;
 }
 
 -writeParse
 {
-	fprintf (output_file, "undefined record type parse: %d\n", line);
+	fprintf (output_file, "%@ undefined record type parse: %d\n", self, line);
 	return self;
 }
 
 -writeField
 {
-	fprintf (output_file, "undefined record type field: %d\n", line);
+	fprintf (output_file, "%@ undefined record type field: %d\n", self, line);
 	return self;
 }
 
