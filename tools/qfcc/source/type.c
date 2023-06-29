@@ -562,6 +562,7 @@ find_type (type_t *type)
 				break;
 			case ty_alias:
 				type->t.alias.aux_type = find_type (type->t.alias.aux_type);
+				type->t.alias.full_type = find_type (type->t.alias.full_type);
 				break;
 			case ty_handle:
 				break;
@@ -749,8 +750,9 @@ based_array_type (type_t *aux, int base, int top)
 	new->t.array.type = aux;
 	new->t.array.base = base;
 	new->t.array.size = top - base + 1;
-	if (aux)
+	if (aux) {
 		new = find_type (new);
+	}
 	return new;
 }
 
@@ -1009,7 +1011,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 			return;
 		case ty_alias:
 			dasprintf (encoding, "{%s>", type->name ? type->name : "");
-			encode_type (encoding, type->t.alias.aux_type);
+			encode_type (encoding, type->t.alias.full_type);
 			dasprintf (encoding, "}");
 			return;
 		case ty_class:

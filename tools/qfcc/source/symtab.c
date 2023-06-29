@@ -265,9 +265,9 @@ declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
 		space = pr.near_data;
 	}
 
+	s->type = append_type (spec.sym->type, spec.type);
 	//FIXME is_function is bad (this whole implementation of handling
 	//function prototypes is bad)
-	s->type = append_type (spec.sym->type, spec.type);
 	if (spec.is_function && is_func (s->type)) {
 		set_func_type_attrs (s->type, spec);
 	}
