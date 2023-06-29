@@ -1012,6 +1012,11 @@ images = {
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
+
+	entid = {
+		@inherit = $image_base;
+		format = r32_uint;
+	}
 };
 imageviews = {
 	depth = {
@@ -1090,6 +1095,11 @@ imageviews = {
 		viewType = cube;
 		image = cube_output;
 		format = $render_output.format;
+	};
+
+	entid = {
+		@inherit = $view_base;
+		image = entid;
 	};
 };
 output = {
@@ -1499,7 +1509,7 @@ renderpasses = {
 						);
 						layout = $compose.layout;
 					};
-/*					debug = {
+					/*debug = {
 						@inherit = $compose_base;
 
 						color = $color.lights;
@@ -1594,6 +1604,16 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				output = $swapchain;
+				entid = {
+					@inherit = $attachment_base;
+					format = $images.entid.format;
+					loadOp = clear;
+					storeOp = store;
+					clearValue = {
+						color = { int32 = (-1, -1, -1, -1); };
+					};
+					view = entid;
+				};
 			};
 		};
 		subpasses = {
@@ -1652,6 +1672,26 @@ renderpasses = {
 						);
 						layout = $fisheye.layout;
 					};
+				};
+			};
+			slice = {
+				color = $color.slice;
+				dependencies = {
+					compose = $color_dependency;
+				};
+				attachments = {
+					color = {
+						output = {
+							layout = color_attachment_optimal;
+							blend = $alpha_blend;
+						};
+						entid = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+					};
+				};
+				pipelines = {
 					slice = {
 						@inherit = $compose_base;
 
@@ -1668,7 +1708,7 @@ renderpasses = {
 						inputAssembly = $slice.inputAssembly;
 						layout = $slice.layout;
 					};
-					lines = {
+					/*lines = {
 						@inherit = $compose_base;
 
 						color = $color.lines;
@@ -1683,7 +1723,7 @@ renderpasses = {
 						vertexInput = $lines.vertexInput;
 						inputAssembly = $lines.inputAssembly;
 						layout = $lines.layout;
-					};
+					};*/
 				};
 			};
 		};

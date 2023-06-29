@@ -17,6 +17,7 @@ layout (location = 3) in vec2 glyph_offset;	// for 9-slice
 
 layout (location = 0) out vec2 uv;
 layout (location = 1) out vec4 color;
+layout (location = 2) out uint id;
 
 void
 main (void)
@@ -29,4 +30,5 @@ main (void)
 	// texture uv stored in glyph components 2 and 3
 	uv = glyph.pq;
 	color = glyph_color;
+	id = gl_InstanceIndex;
 }
