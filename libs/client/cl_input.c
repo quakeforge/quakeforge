@@ -581,7 +581,7 @@ static int
 cl_key_event (const IE_event_t *ie_event)
 {
 	if (ie_event->key.code == QFK_ESCAPE) {
-		Con_SetState (con_menu);
+		Con_SetState (con_menu, true);
 		return 1;
 	}
 	return 0;

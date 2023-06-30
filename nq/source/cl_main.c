@@ -591,7 +591,8 @@ CL_SetState (cactive_t state)
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
-	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen,
+				  state == ca_active && !cls.demoplayback);
 	if (state != old_state && state == ca_active) {
 		CL_Input_Activate (host_in_game = !cls.demoplayback);
 	}

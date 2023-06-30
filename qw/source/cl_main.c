@@ -1406,7 +1406,8 @@ CL_SetState (cactive_t state)
 		}
 		Sbar_SetActive (state == ca_active);
 	}
-	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen,
+				  state == ca_active && !cls.demoplayback);
 	if (state != old_state && state == ca_active) {
 		CL_Input_Activate (!cls.demoplayback);
 	}

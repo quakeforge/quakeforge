@@ -69,7 +69,7 @@ void Con_DrawConsole (void);
 
 void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
 void Con_Print (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
-void Con_SetState (con_state_t state);
+void Con_SetState (con_state_t state, bool hide_mouse);
 
 struct inputline_s;
 // wrapper function to attempt to either complete the command line

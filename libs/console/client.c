@@ -155,6 +155,7 @@ static uint32_t canvas_base;
 static uint32_t view_base;
 
 static con_state_t con_state;
+static bool con_hide_mouse;
 static int  con_event_id;
 static int  con_saved_focos;
 
@@ -332,15 +333,18 @@ ClearNotify (void)
 }
 
 static void
-C_SetState (con_state_t state)
+C_SetState (con_state_t state, bool hide_mouse)
 {
 	con_state_t old_state = con_state;
 	con_state = state;
+	con_hide_mouse = hide_mouse;
 	if (con_state == con_inactive) {
 		IE_Set_Focus (con_saved_focos);
+		VID_SetCursor (!con_hide_mouse);
 	} else if (old_state == con_inactive) {
 		con_saved_focos = IE_Get_Focus ();
 		IE_Set_Focus (con_event_id);
+		VID_SetCursor (true);
 	}
 
 	if (state == con_message) {
@@ -369,10 +373,10 @@ ToggleConsole_f (void)
 		case con_message:
 			return;
 		case con_inactive:
-			C_SetState (con_active);
+			C_SetState (con_active, con_hide_mouse);
 			break;
 		case con_active:
-			C_SetState (con_inactive);
+			C_SetState (con_inactive, con_hide_mouse);
 			break;
 		case con_fullscreen:
 			break;
@@ -413,7 +417,7 @@ static void
 con_end_message (inputline_t *line)
 {
 	Con_ClearTyping (line, 1);
-	C_SetState (con_inactive);
+	C_SetState (con_inactive, con_hide_mouse);
 }
 
 static void
@@ -979,7 +983,7 @@ MessageMode_f (void)
 	if (con_state != con_inactive)
 		return;
 	chat_team = false;
-	C_SetState (con_message);
+	C_SetState (con_message, con_hide_mouse);
 }
 
 static void
@@ -988,7 +992,7 @@ MessageMode2_f (void)
 	if (con_state != con_inactive)
 		return;
 	chat_team = true;
-	C_SetState (con_message);
+	C_SetState (con_message, con_hide_mouse);
 }
 
 static void

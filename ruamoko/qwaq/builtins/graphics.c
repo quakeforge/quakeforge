@@ -161,7 +161,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 {
 	// FIXME rethink event handling for qwaq
 	if (ie_event->type == ie_key && ie_event->key.code == QFK_ESCAPE) {
-		Con_SetState (con_active);
+		Con_SetState (con_active, false);
 		return 1;
 	}
 	return IN_Binding_HandleEvent (ie_event);

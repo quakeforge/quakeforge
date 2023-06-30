@@ -175,10 +175,10 @@ Con_Print (const char *fmt, va_list args)
 }
 
 VISIBLE void
-Con_SetState (con_state_t state)
+Con_SetState (con_state_t state, bool hide_mouse)
 {
 	if (con_module) {
-		con_module->functions->console->set_state (state);
+		con_module->functions->console->set_state (state, hide_mouse);
 	}
 }
 
