@@ -10,6 +10,7 @@ typedef struct vid_system_s {
 	void      (*set_palette) (byte *palette, byte *colormap);
 	void      (*init_cvars) (void);
 	void      (*update_fullscreen) (int fullscreen);
+	void      (*set_cursor) (bool visible);
 } vid_system_t;
 
 extern vid_system_t vid_system;

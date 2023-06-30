@@ -351,6 +351,14 @@ VID_SetPalette (byte *palette, byte *colormap)
 	vid_system.set_palette (palette, colormap);
 }
 
+VISIBLE void
+VID_SetCursor (bool visible)
+{
+	if (vid_system.set_cursor) {
+		vid_system.set_cursor (visible);
+	}
+}
+
 static void
 vid_fullscreen_f (void *data, const cvar_t *var)
 {

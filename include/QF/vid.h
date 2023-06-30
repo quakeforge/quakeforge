@@ -73,6 +73,7 @@ void VID_Init_Cvars (void);
 void VID_Init (byte *palette, byte *colormap);
 void VID_SetPalette (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
+void VID_SetCursor (bool visible);
 void VID_ClearMemory (void);
 
 void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
