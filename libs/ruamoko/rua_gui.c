@@ -292,13 +292,13 @@ bi (Passage_GetChild)
 	R_UINT (pr) = h->ent[h->childIndex[par] + index];
 }
 
-bi (Text_View)
+bi (Text_PassageView)
 {
 	gui_resources_t *res = _res;
 	rua_font_t *font = get_font (res, P_INT (pr, 0));
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 1));
 	ecs_system_t viewsys = { .reg = res->reg, .base = res->view_base };
-	view_t      view = Text_View (viewsys, font->font, psg->passage);
+	view_t      view = Text_PassageView (viewsys, font->font, psg->passage);
 	R_INT (pr) = view.id;//FIXME
 }
 
@@ -458,7 +458,7 @@ static builtin_t builtins[] = {
 	bi(Passage_ChildCount,  2, p(ptr), p(uint)),
 	bi(Passage_GetChild,    3, p(ptr), p(uint), p(uint)),
 
-	bi(Text_View,           2, p(ptr), p(int)),
+	bi(Text_PassageView,    2, p(ptr), p(int)),
 	bi(Text_SetScript,      4, p(uint), p(string), p(int), p (int)),
 
 	bi(View_Delete,         1, p(uint)),

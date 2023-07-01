@@ -79,7 +79,7 @@ enum {
 	text_glyphs,
 	// text_script, text_font and text_features on the passage root object set
 	// the defaults for all text objects in the passage. The settings can be
-	// overridden at the paragraph level or individiual text object level by
+	// overridden at the paragraph level or individual text object level by
 	// adding the appropriate component to that text object.
 	// script settings for the text object
 	text_script,
@@ -105,8 +105,8 @@ extern hb_feature_t CligOn;
 struct font_s;
 struct passage_s;
 
-struct view_s Text_View (ecs_system_t viewsys,
-						 struct font_s *font, struct passage_s *passage);
+struct view_s Text_PassageView (ecs_system_t viewsys,
+								struct font_s *font, struct passage_s *passage);
 void Text_SetScript (ecs_system_t textsys, uint32_t textid,
 					 const char *lang, hb_script_t script, text_dir_e dir);
 void Text_SetFont (ecs_system_t textsys, uint32_t textid,

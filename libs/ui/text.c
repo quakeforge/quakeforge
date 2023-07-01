@@ -111,7 +111,7 @@ static view_resize_f text_flow_funcs[] = {
 };
 
 view_t
-Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
+Text_PassageView (ecs_system_t viewsys, font_t *font, passage_t *passage)
 {
 	ecs_registry_t *reg = passage->reg;
 	hierarchy_t *h = passage->hierarchy;
