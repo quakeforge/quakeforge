@@ -279,6 +279,12 @@ add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
 
 	auto text = Text_StringView (ctx->tsys, view, ctx->font,
 								 state->label, state->label_len, 0, 0);
+
+	int ascender = ctx->font->face->size->metrics.ascender / 64;
+	int descender = ctx->font->face->size->metrics.descender / 64;
+	auto len = View_GetLen (text);
+	View_SetLen (text, len.x, ascender - descender);
+
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
 					  Ent_GetComponent (text.id, c_passage_glyphs, reg));
