@@ -57,6 +57,7 @@ enum {
 };
 
 typedef struct canvas_s {
+	bool        visible;
 	uint32_t    range[canvas_comp_count];
 } canvas_t;
 
@@ -92,6 +93,7 @@ void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 void Canvas_SetLen (canvas_system_t canvas_sys, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
+CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);
 
 #undef CANVASINLINE
 #ifndef IMPLEMENT_CANVAS_Funcs
@@ -106,6 +108,14 @@ Canvas_GetRootView (canvas_system_t canvas_sys, uint32_t ent)
 {
 	ecs_system_t viewsys = { canvas_sys.reg, canvas_sys.view_base };
 	return View_FromEntity (viewsys, ent);
+}
+
+CANVASINLINE
+bool *
+Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
+{
+	uint32_t comp = canvas_sys.base + canvas_canvas;
+	return Ent_GetComponent (ent, comp, canvas_sys.reg);
 }
 
 #undef CANVASINLINE

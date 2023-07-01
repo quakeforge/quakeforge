@@ -457,6 +457,10 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		canvas_t   *canvas = canvases++;
 		//uint32_t    ent = *entities++;
 
+		if (!canvas->visible) {
+			continue;
+		}
+
 		for (int i = 0; i < canvas_comp_count; i++) {
 			if (draw_func[i]) {
 				uint32_t    c = canvas_sys.base + i;
@@ -495,7 +499,7 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 void
 Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 {
-	canvas_t    canvas = { };
+	canvas_t    canvas = { .visible = true };
 	for (uint32_t i = 0; i < canvas_comp_count; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
