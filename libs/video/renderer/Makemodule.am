@@ -39,6 +39,7 @@ renderer_libs= \
 	libs/util/libQFutil.la
 
 renderer_libadd= \
+	$(FONTCONFIG_LIBS) \
 	$(FREETYPE_LIBS) \
 	$(HARFBUZZ_LIBS)
 

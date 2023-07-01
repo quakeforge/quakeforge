@@ -57,5 +57,7 @@ typedef struct font_s {
 void Font_Init (void);
 void Font_Free (font_t *font);
 font_t *Font_Load (QFile *font_file, int size);
+// free the returned string
+char *Font_SystemFont (const char *font_pattern);
 
 #endif//__QF_ui_font_h

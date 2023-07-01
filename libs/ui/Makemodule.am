@@ -8,6 +8,7 @@ gui_deps = \
 	libs/ui/libQFui.la
 
 gui_libadd = \
+	$(FONTCONFIG_LIBS) \
 	$(FREETYPE_LIBS) \
 	$(HARFBUZZ_LIBS)
 
