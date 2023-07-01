@@ -3,6 +3,8 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/keys.h"
+#include "QF/sys.h"
 
 #include "QF/input/event.h"
 
@@ -17,7 +19,9 @@
 #include "cl_console.h"
 
 static int debug_event_id;
+static int debug_saved_focus;
 static imui_ctx_t *debug_imui;
+static int64_t  debug_enable_time;
 #define IMUI_context debug_imui
 
 bool con_debug;
@@ -54,6 +58,10 @@ con_debug_f (void *data, const cvar_t *cvar)
 	Con_Show_Mouse (con_debug);
 	if (debug_imui) {
 		IMUI_SetVisible (debug_imui, con_debug);
+		debug_enable_time = Sys_LongTime ();
+		if (!con_debug) {
+			IE_Set_Focus (debug_saved_focus);
+		}
 	}
 }
 
@@ -70,11 +78,36 @@ debug_app_window (const IE_event_t *ie_event)
 	}
 }
 
+static void
+debug_mouse (const IE_event_t *ie_event)
+{
+	IMUI_ProcessEvent (debug_imui, ie_event);
+}
+
+static void
+close_debug (void)
+{
+	con_debug = false;
+	con_debug_f (0, &con_debug_cvar);
+}
+
+static void
+debug_key (const IE_event_t *ie_event)
+{
+	int shift = ie_event->key.shift & ~(ies_capslock | ies_numlock);
+	if (ie_event->key.code == QFK_ESCAPE && shift == ies_control) {
+		close_debug ();
+	}
+	IMUI_ProcessEvent (debug_imui, ie_event);
+}
+
 static int
 debug_event_handler (const IE_event_t *ie_event, void *data)
 {
 	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
 		[ie_app_window] = debug_app_window,
+		[ie_mouse] = debug_mouse,
+		[ie_key] = debug_key,
 	};
 	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
@@ -110,7 +143,17 @@ Con_Debug_Shutdown (void)
 void
 Con_Debug_Draw (void)
 {
-	UI_Button ("Hi there!");
+	if (debug_enable_time && Sys_LongTime () - debug_enable_time > 1000) {
+		debug_saved_focus = IE_Get_Focus ();
+		IE_Set_Focus (debug_event_id);
+		debug_enable_time = 0;
+	}
+
+	IMUI_BeginFrame (debug_imui);
+
+	if (UI_Button ("Close Debug")) {
+		close_debug ();
+	}
 
 	IMUI_Draw (debug_imui);
 }

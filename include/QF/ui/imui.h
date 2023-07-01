@@ -33,6 +33,7 @@
 
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
+struct IE_event_s;
 
 typedef enum IMUI_SizeKind {
 	IMUI_SizeKind_Null,
@@ -64,6 +65,8 @@ void IMUI_DestroyContext (imui_ctx_t *ctx);
 
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
+void IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
+void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);

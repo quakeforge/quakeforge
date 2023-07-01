@@ -38,6 +38,8 @@
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 
+#include "QF/input/event.h"
+
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/imui.h"
@@ -50,7 +52,6 @@ typedef struct imui_state_s {
 	uint32_t    label_len;
 	int         key_offset;
 	uint32_t    entity;
-	bool        pressed;
 } imui_state_t;
 
 struct imui_ctx_s {
@@ -64,6 +65,21 @@ struct imui_ctx_s {
 	PR_RESMAP (imui_state_t) state_map;
 	imui_state_t *states;
 	font_t     *font;
+
+	int64_t     frame_start;
+	int64_t     frame_draw;
+	int64_t     frame_end;
+	uint32_t    framecount;
+	uint32_t    new_hot;
+	uint32_t    hot;
+	uint32_t    active;
+	bool        mouse_pressed;
+	bool        mouse_released;
+	unsigned    mouse_buttons;
+	view_pos_t  mouse_position;
+	unsigned    shift;
+	int         key_code;
+	int         unicode;
 };
 
 static imui_state_t *
@@ -138,6 +154,10 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx),
+		.new_hot = nullent,
+		.hot = nullent,
+		.active = nullent,
+		.mouse_position = {-1, -1},
 	};
 
 	auto fpath = Font_SystemFont (font);
@@ -183,9 +203,86 @@ IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 }
 
 void
+IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
+{
+	if (ie_event->type == ie_mouse) {
+		auto m = &ie_event->mouse;
+		ctx->mouse_position = (view_pos_t) { m->x, m->y };
+
+		unsigned old = ctx->mouse_buttons & 1;
+		unsigned new = m->buttons & 1;
+		ctx->mouse_pressed = (old ^ new) & new;
+		ctx->mouse_released = (old ^ new) & !new;
+		ctx->mouse_buttons = m->buttons;
+	} else {
+		auto k = &ie_event->key;
+		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
+		ctx->shift = k->shift;
+		ctx->key_code = k->code;
+		ctx->unicode = k->unicode;
+	}
+}
+
+void
+IMUI_BeginFrame (imui_ctx_t *ctx)
+{
+	ctx->frame_start = Sys_LongTime ();
+	ctx->framecount++;
+	ctx->hot = ctx->new_hot;
+	ctx->new_hot = nullent;
+}
+
+void
 IMUI_Draw (imui_ctx_t *ctx)
 {
+	ctx->frame_draw = Sys_LongTime ();
+
 	View_UpdateHierarchy (ctx->root_view);
+	ctx->frame_end = Sys_LongTime ();
+}
+
+static bool
+check_button_state (imui_ctx_t *ctx, uint32_t entity)
+{
+	bool result = false;
+	if (ctx->active == entity) {
+		if (ctx->mouse_released) {
+			result = ctx->hot == entity;
+			ctx->active = nullent;
+		}
+	} else if (ctx->hot == entity) {
+		if (ctx->mouse_pressed) {
+			ctx->active = entity;
+		}
+	}
+	return result;
+}
+
+static void
+check_inside (imui_ctx_t *ctx, view_pos_t pos, view_pos_t len, uint32_t entity)
+{
+	auto mp = ctx->mouse_position;
+	if (mp.x >= pos.x && mp.y >= pos.y
+		&& mp.x < pos.x + len.x && mp.y < pos.y + len.y) {
+		if (ctx->active == entity || ctx->active == nullent) {
+			ctx->new_hot = entity;
+		}
+	}
+}
+
+static view_t
+add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
+{
+	uint32_t c_glyphs = ctx->csys.base + canvas_glyphs;
+	uint32_t c_passage_glyphs = ctx->csys.text_base + text_passage_glyphs;
+	auto     reg = ctx->csys.reg;
+
+	auto text = Text_StringView (ctx->tsys, view, ctx->font,
+								 state->label, state->label_len, 0, 0);
+	View_SetVisible (text, 1);
+	Ent_SetComponent (text.id, c_glyphs, reg,
+					  Ent_GetComponent (text.id, c_passage_glyphs, reg));
+	return text;
 }
 
 bool
@@ -203,15 +300,16 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 		View_SetGravity (view, grav_northwest);
 		View_SetResize (view, 0, 0);
 
-		auto text = Text_StringView (ctx->tsys, view, ctx->font,
-									 state->label, state->label_len, 0, 0);
-		View_SetVisible (text, 1);
-		Ent_SetComponent (text.id, ctx->csys.base + canvas_glyphs, ctx->csys.reg,
-						  Ent_GetComponent (text.id, ctx->csys.text_base + text_passage_glyphs, ctx->csys.reg));
+		auto text = add_text (view, state, ctx);
 		auto len = View_GetLen (text);
 		View_SetLen (view, len.x, len.y);
 	}
-	return state->pressed;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	auto len = View_GetLen (view);
+	auto pos = View_GetAbs (view);
+	bool result = check_button_state (ctx, state->entity);
+	check_inside (ctx, pos, len, state->entity);
+	return result;
 }
 
 bool
