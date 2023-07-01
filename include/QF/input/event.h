@@ -48,6 +48,7 @@ typedef enum {
 	ies_capslock = 2,
 	ies_control = 4,
 	ies_alt = 8,
+	ies_numlock = 16,
 } IE_shift;
 
 typedef enum {
