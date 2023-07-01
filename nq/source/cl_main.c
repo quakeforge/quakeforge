@@ -53,6 +53,7 @@
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
+#include "QF/ui/font.h"//FIXME
 
 #include "compat.h"
 
@@ -707,6 +708,7 @@ CL_Init (cbuf_t *cbuf)
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
+	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Load ("client");

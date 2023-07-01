@@ -59,7 +59,6 @@ typedef enum {
 
 extern	int			con_linewidth;
 extern struct plugin_s *con_module;
-extern struct console_data_s con_data;
 
 //extern int con_totallines;
 //extern bool con_initialized;

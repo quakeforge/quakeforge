@@ -61,6 +61,7 @@
 #include "QF/ui/inputline.h"
 #include "QF/ui/view.h"
 
+#include "cl_console.h"
 #include "compat.h"
 
 static con_buffer_t *con;
@@ -155,9 +156,11 @@ static uint32_t canvas_base;
 static uint32_t view_base;
 
 static con_state_t con_state;
-static bool con_hide_mouse;
+static bool con_hide_mouse;	// external requested state
+static bool con_show_mouse;	// local (overrides con_hide_mouse)
+static bool con_force_mouse_visible;// internal (overrides all for show)
 static int  con_event_id;
-static int  con_saved_focos;
+static int  con_saved_focus;
 
 static bool con_debuglog;
 static bool chat_team;
@@ -333,19 +336,35 @@ ClearNotify (void)
 }
 
 static void
+con_update_mouse (void)
+{
+	VID_SetCursor (con_force_mouse_visible
+				   || con_show_mouse
+				   || !con_hide_mouse);
+}
+
+void
+Con_Show_Mouse (bool visible)
+{
+	con_show_mouse = visible;
+	con_update_mouse ();
+}
+
+static void
 C_SetState (con_state_t state, bool hide_mouse)
 {
 	con_state_t old_state = con_state;
 	con_state = state;
 	con_hide_mouse = hide_mouse;
 	if (con_state == con_inactive) {
-		IE_Set_Focus (con_saved_focos);
-		VID_SetCursor (!con_hide_mouse);
+		IE_Set_Focus (con_saved_focus);
+		con_force_mouse_visible = false;
 	} else if (old_state == con_inactive) {
-		con_saved_focos = IE_Get_Focus ();
+		con_saved_focus = IE_Get_Focus ();
 		IE_Set_Focus (con_event_id);
-		VID_SetCursor (true);
+		con_force_mouse_visible = true;
 	}
+	con_update_mouse ();
 
 	if (state == con_message) {
 		say_line.prompt = "say:";
@@ -769,6 +788,9 @@ setup_console (void)
 static void
 C_DrawConsole (void)
 {
+	if (con_debug) {
+		Con_Debug_Draw ();
+	}
 	setup_console ();
 	view_pos_t  screen_len = View_GetLen (screen_view);
 
@@ -1036,6 +1058,7 @@ C_InitCvars (void)
 	Cvar_Register (&con_size_cvar, 0, 0);
 	Cvar_Register (&con_speed_cvar, 0, 0);
 	Cvar_Register (&cl_conmode_cvar, 0, 0);
+	Con_Debug_InitCvars ();
 }
 
 static void
@@ -1057,6 +1080,8 @@ C_Init (void)
 	// The console will get resized, so assume initial size is 320x200
 	ecs_system_t sys = { con_data.canvas_sys->reg, view_base };
 	screen_canvas = Canvas_New (*con_data.canvas_sys);
+	Con_Debug_Init ();
+
 	screen_view   = Canvas_GetRootView (*con_data.canvas_sys, screen_canvas);
 	console_view  = View_New (sys, screen_view);
 	buffer_view   = View_New (sys, console_view);
@@ -1197,6 +1222,8 @@ C_Init (void)
 static void
 C_shutdown (void)
 {
+	Con_Debug_Shutdown ();
+
 	r_funcs->Draw_DestroyPic (conback);
 	IE_Remove_Handler (con_event_id);
 	Menu_Shutdown ();

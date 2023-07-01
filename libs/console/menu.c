@@ -54,6 +54,8 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
+#include "cl_console.h"
+
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
 	int         x, y;

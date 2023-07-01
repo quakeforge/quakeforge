@@ -92,6 +92,7 @@
 
 #include "QF/plugin/console.h"
 #include "QF/scene/transform.h"
+#include "QF/ui/font.h"//FIXME
 
 #include "buildnum.h"
 #include "compat.h"
@@ -1460,6 +1461,7 @@ CL_Init (void)
 	Mod_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
+	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Load ("client");
