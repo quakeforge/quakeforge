@@ -297,8 +297,12 @@ bi (Text_PassageView)
 	gui_resources_t *res = _res;
 	rua_font_t *font = get_font (res, P_INT (pr, 0));
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 1));
-	ecs_system_t viewsys = { .reg = res->reg, .base = res->view_base };
-	view_t      view = Text_PassageView (viewsys, font->font, psg->passage);
+	text_system_t textsys = {
+		.reg = res->reg,
+		.view_base = res->view_base,
+		.text_base = res->text_base,
+	};
+	view_t      view = Text_PassageView (textsys, font->font, psg->passage);
 	R_INT (pr) = view.id;//FIXME
 }
 
@@ -309,7 +313,7 @@ bi (Text_SetScript)
 	const char *lang = P_GSTRING (pr, 1);
 	int         script = P_INT (pr, 1);
 	int         dir = P_INT (pr, 1);
-	ecs_system_t textsys = { .reg = res->reg, .base = res->text_base };
+	text_system_t textsys = { .reg = res->reg, .text_base = res->text_base };
 	Text_SetScript (textsys, textent, lang, script, dir);
 }
 
