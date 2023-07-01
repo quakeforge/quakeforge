@@ -44,6 +44,8 @@ enum {
 	canvas_cachepic,
 	canvas_fill,
 	canvas_charbuff,
+	canvas_passage_glyphs,	// copy of text_passage_glyphs
+	canvas_glyphs,	// copy of text_passage_glyphs
 	canvas_func,
 	canvas_outline,
 	canvas_lateupdate,
