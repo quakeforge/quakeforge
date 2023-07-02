@@ -43,22 +43,6 @@ typedef enum IMUI_SizeKind {
 	IMUI_SizeKind_ChildrenSum,
 } IMUI_SizeKind;
 
-typedef enum IMUI_Axis {
-	IMUI_Axis_X,
-	IMUI_Axis_Y,
-	IMUI_Axis_count,
-} IMUI_Axis;
-
-typedef struct imui_size {
-	IMUI_SizeKind kind;
-	float       value;
-	float       strictness;
-} imui_size;
-
-typedef struct imui_layout_s {
-	imui_size semantic_size[IMUI_Axis_count];
-} imui_layout_t;
-
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);

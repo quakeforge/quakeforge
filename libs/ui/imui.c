@@ -35,6 +35,7 @@
 
 #include "QF/ecs.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 
@@ -249,13 +250,102 @@ prune_objects (imui_ctx_t *ctx)
 	}
 }
 
+//FIXME currently works properly only for grav_northwest
+static void
+layout_objects (imui_ctx_t *ctx)
+{
+	auto ref = View_GetRef (ctx->root_view);
+	auto h = ref->hierarchy;
+
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t   *parent = h->parentIndex;
+	struct boolpair {
+		bool x, y;
+	}          down_depend[h->num_objects];
+
+	// the root view size is always explicity
+	down_depend[0] = (struct boolpair) { false, false };
+	for (uint32_t i = 1; i < h->num_objects; i++) {
+		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum) {
+			down_depend[i].x = 1;
+		} else if (!(down_depend[i].x = down_depend[parent[i]].x)
+				   && cont[i].semantic_x == IMUI_SizeKind_PercentOfParent) {
+			len[i].x = (len[parent[i]].x * 100) / 100;	//FIXME precent
+		}
+		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum) {
+			down_depend[i].y = 1;
+		} else if (!(down_depend[i].y = down_depend[parent[i]].y)
+				   && cont[i].semantic_y == IMUI_SizeKind_PercentOfParent) {
+			len[i].y = (len[parent[i]].y * 100) / 100;	//FIXME precent
+		}
+	}
+	for (uint32_t i = h->num_objects; --i > 0; ) {
+		view_pos_t  clen = len[i];
+		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum) {
+			clen.x = 0;
+			if (cont[i].vertical) {
+				for (uint32_t j = 0; j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					clen.x = max (clen.x, len[child].x);
+				}
+			} else {
+				for (uint32_t j = 0; j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					clen.x += len[child].x;
+				}
+			}
+		}
+		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum) {
+			clen.y = 0;
+			if (!cont[i].vertical) {
+				for (uint32_t j = 0; j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					clen.y = max (clen.y, len[child].y);
+				}
+			} else {
+				for (uint32_t j = 0; j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					clen.y += len[child].y;
+				}
+			}
+		}
+		len[i] = clen;
+	}
+
+	view_pos_t  cpos = {};
+	uint32_t    cur_parent = 0;
+	for (uint32_t i = 1; i < h->num_objects; i++) {
+		if (parent[i] != cur_parent) {
+			cur_parent = parent[i];
+			cpos = (view_pos_t) {};
+		}
+		if (cont[i].semantic_x != IMUI_SizeKind_Null
+			&& cont[i].semantic_y != IMUI_SizeKind_Null) {
+			pos[i] = cpos;
+		} else if (cont[i].semantic_x != IMUI_SizeKind_Null) {
+			pos[i].x = cpos.x;
+		} else if (cont[i].semantic_y != IMUI_SizeKind_Null) {
+			pos[i].y = cpos.y;
+		}
+		if (cont[parent[i]].vertical) {
+			cpos.y += cont[i].semantic_y == IMUI_SizeKind_Null ? 0 : len[i].y;
+		} else {
+			cpos.x += cont[i].semantic_x == IMUI_SizeKind_Null ? 0 : len[i].x;
+		}
+	}
+
+	View_UpdateHierarchy (ctx->root_view);
+}
+
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
 
 	prune_objects (ctx);
-	View_UpdateHierarchy (ctx->root_view);
+	layout_objects (ctx);
 
 	ctx->frame_end = Sys_LongTime ();
 }
@@ -322,8 +412,12 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 								   ctx->csys.reg) = 0;
 
 		View_SetVisible (view, 1);
-		View_SetGravity (view, grav_northwest);
-		View_SetResize (view, 0, 0);
+		*View_Control (view) = (viewcont_t) {
+			.gravity = grav_northwest,
+			.visible = 1,
+			.semantic_x = IMUI_SizeKind_Pixels,
+			.semantic_y = IMUI_SizeKind_Pixels,
+		};
 
 		auto text = add_text (view, state, ctx);
 		auto len = View_GetLen (text);
