@@ -73,7 +73,6 @@ struct imui_ctx_s {
 	int64_t     frame_end;
 	uint32_t    frame_count;
 
-	uint32_t    new_hot;
 	uint32_t    hot;
 	uint32_t    active;
 	bool        mouse_pressed;
@@ -157,7 +156,6 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx),
-		.new_hot = nullent,
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
@@ -229,10 +227,14 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
+	uint32_t    root_ent = ctx->root_view.id;
+	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
+	if (!ECS_EntValid (root_ent, ctx->vsys.reg)) {
+		Sys_Error ("root got deleted");
+	}
+	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
-	ctx->hot = ctx->new_hot;
-	ctx->new_hot = nullent;
 }
 
 static void
@@ -256,6 +258,7 @@ layout_objects (imui_ctx_t *ctx)
 	auto ref = View_GetRef (ctx->root_view);
 	auto h = ref->hierarchy;
 
+	byte       *modified = h->components[view_modified];
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -267,17 +270,23 @@ layout_objects (imui_ctx_t *ctx)
 	// the root view size is always explicity
 	down_depend[0] = (struct boolpair) { false, false };
 	for (uint32_t i = 1; i < h->num_objects; i++) {
+//		printf ("%d %d %d [%d %d] [%d %d]\n", i, parent[i], h->childCount[i],
+//				pos[i].x, pos[i].y, len[i].x, len[i].y);
 		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum) {
 			down_depend[i].x = 1;
 		} else if (!(down_depend[i].x = down_depend[parent[i]].x)
 				   && cont[i].semantic_x == IMUI_SizeKind_PercentOfParent) {
-			len[i].x = (len[parent[i]].x * 100) / 100;	//FIXME precent
+			int x = (len[parent[i]].x * 100) / 100;	//FIXME precent
+			modified[i] |= len[i].x != x;
+			len[i].x = x;
 		}
 		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum) {
 			down_depend[i].y = 1;
 		} else if (!(down_depend[i].y = down_depend[parent[i]].y)
 				   && cont[i].semantic_y == IMUI_SizeKind_PercentOfParent) {
-			len[i].y = (len[parent[i]].y * 100) / 100;	//FIXME precent
+			int y = (len[parent[i]].y * 100) / 100;	//FIXME precent
+			modified[i] |= len[i].y != y;
+			len[i].y = y;
 		}
 	}
 	for (uint32_t i = h->num_objects; --i > 0; ) {
@@ -310,6 +319,7 @@ layout_objects (imui_ctx_t *ctx)
 				}
 			}
 		}
+		modified[i] |= (len[i].x != clen.x) | (len[i].y != clen.y);
 		len[i] = clen;
 	}
 
@@ -322,10 +332,13 @@ layout_objects (imui_ctx_t *ctx)
 		}
 		if (cont[i].semantic_x != IMUI_SizeKind_Null
 			&& cont[i].semantic_y != IMUI_SizeKind_Null) {
+			modified[i] |= (pos[i].x != cpos.x) | (pos[i].y != cpos.y);
 			pos[i] = cpos;
 		} else if (cont[i].semantic_x != IMUI_SizeKind_Null) {
+			modified[i] |= pos[i].x != cpos.x;
 			pos[i].x = cpos.x;
 		} else if (cont[i].semantic_y != IMUI_SizeKind_Null) {
+			modified[i] |= pos[i].y != cpos.y;
 			pos[i].y = cpos.y;
 		}
 		if (cont[parent[i]].vertical) {
@@ -338,6 +351,31 @@ layout_objects (imui_ctx_t *ctx)
 	View_UpdateHierarchy (ctx->root_view);
 }
 
+static void
+check_inside (imui_ctx_t *ctx)
+{
+	auto ref = View_GetRef (ctx->root_view);
+	auto h = ref->hierarchy;
+
+	uint32_t   *entity = h->ent;
+	view_pos_t *abs = h->components[view_abs];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	auto mp = ctx->mouse_position;
+
+	ctx->hot = nullent;
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (cont[i].active
+			&& mp.x >= abs[i].x && mp.y >= abs[i].y
+			&& mp.x < abs[i].x + len[i].x && mp.y < abs[i].y + len[i].y) {
+			if (ctx->active == entity[i] || ctx->active == nullent) {
+				ctx->hot = entity[i];
+			}
+		}
+	}
+	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
+}
+
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
@@ -345,6 +383,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 
 	prune_objects (ctx);
 	layout_objects (ctx);
+	check_inside (ctx);
 
 	ctx->frame_end = Sys_LongTime ();
 }
@@ -353,6 +392,7 @@ static bool
 check_button_state (imui_ctx_t *ctx, uint32_t entity)
 {
 	bool result = false;
+	//printf ("check_button_state: h:%8x a:%8x e:%8x\n", ctx->hot, ctx->active, entity);
 	if (ctx->active == entity) {
 		if (ctx->mouse_released) {
 			result = ctx->hot == entity;
@@ -364,18 +404,6 @@ check_button_state (imui_ctx_t *ctx, uint32_t entity)
 		}
 	}
 	return result;
-}
-
-static void
-check_inside (imui_ctx_t *ctx, view_pos_t pos, view_pos_t len, uint32_t entity)
-{
-	auto mp = ctx->mouse_position;
-	if (mp.x >= pos.x && mp.y >= pos.y
-		&& mp.x < pos.x + len.x && mp.y < pos.y + len.y) {
-		if (ctx->active == entity || ctx->active == nullent) {
-			ctx->new_hot = entity;
-		}
-	}
 }
 
 static view_t
@@ -405,11 +433,25 @@ add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
 	return text;
 }
 
+static void
+update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
+{
+	if (old_entity != nullent) {
+		if (ctx->hot == old_entity) {
+			ctx->hot = new_entity;
+		}
+		if (ctx->active == old_entity) {
+			ctx->active = new_entity;
+		}
+	}
+}
+
 bool
 IMUI_Button (imui_ctx_t *ctx, const char *label)
 {
 	auto state = imui_get_state (ctx, label);
-	if (state->entity == nullent) {
+	uint32_t old_entity = state->entity;
+	if (!ECS_EntValid (state->entity, ctx->csys.reg)) {
 		auto view = View_New (ctx->vsys, ctx->root_view);
 		state->entity = view.id;
 
@@ -422,17 +464,15 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 			.visible = 1,
 			.semantic_x = IMUI_SizeKind_Pixels,
 			.semantic_y = IMUI_SizeKind_Pixels,
+			.active = 1,
 		};
 
 		auto text = add_text (view, state, ctx);
 		auto len = View_GetLen (text);
 		View_SetLen (view, len.x, len.y);
 	}
-	auto view = View_FromEntity (ctx->vsys, state->entity);
-	auto len = View_GetLen (view);
-	auto pos = View_GetAbs (view);
+	update_hot_active (ctx, old_entity, state->entity);
 	bool result = check_button_state (ctx, state->entity);
-	check_inside (ctx, pos, len, state->entity);
 	return result;
 }
 

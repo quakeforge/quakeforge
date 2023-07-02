@@ -86,6 +86,7 @@ typedef struct viewcont_s {
 	unsigned semantic_x:3;		///< layout size control (IMUI_SizeKind)
 	unsigned semantic_y:3;		///< layout size control (IMUI_SizeKind)
 	unsigned vertical:1;		///< true: layout is vertical, else horizontal
+	unsigned active:1;			///< can respond to the mouse
 } viewcont_t;
 
 enum {
