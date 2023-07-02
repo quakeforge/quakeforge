@@ -241,7 +241,7 @@ properties = {
 			gbuf_fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/bsp_gbuf.frag;
+				module = $builtin/quakebsp.frag;
 			};
 			quake_vertex = {
 				stage = vertex;
@@ -326,7 +326,7 @@ properties = {
 			gbuf_fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/alias_gbuf.frag;
+				module = $builtin/alias.frag;
 			};
 		};
 		vertexInput = {
@@ -387,7 +387,7 @@ properties = {
 			gbuf_fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/iqm.frag;
+				module = $builtin/iqm_fwd.frag;
 			};
 		};
 		vertexInput = {
@@ -448,7 +448,7 @@ properties = {
 			gbuf_fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/sprite_gbuf.frag;
+				module = $builtin/sprite.frag;
 			};
 		};
 		vertexInput = {

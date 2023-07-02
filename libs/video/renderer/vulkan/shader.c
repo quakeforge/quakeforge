@@ -55,6 +55,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/sprite.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
@@ -113,6 +115,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/iqm_fwd.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/output.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
@@ -142,6 +146,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
 	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
 	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
+	{ "sprite.frag", sprite_frag, sizeof (sprite_frag) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
@@ -171,6 +176,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
 	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
+	{ "iqm_fwd.frag", iqm_fwd_frag, sizeof (iqm_fwd_frag) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },

@@ -291,6 +291,8 @@ particleg_src = $(vkshaderpath)/particle.geom
 particleg_c = $(vkshaderpath)/particle.geom.spvc
 particlef_src = $(vkshaderpath)/particle.frag
 particlef_c = $(vkshaderpath)/particle.frag.spvc
+spritef_src = $(vkshaderpath)/sprite.frag
+spritef_c = $(vkshaderpath)/sprite.frag.spvc
 sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
 sprite_gbufv_c = $(vkshaderpath)/sprite_gbuf.vert.spvc
 sprite_gbuff_src = $(vkshaderpath)/sprite_gbuf.frag
@@ -356,6 +358,8 @@ iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
 iqmf_src = $(vkshaderpath)/iqm.frag
 iqmf_c = $(vkshaderpath)/iqm.frag.spvc
+iqm_fwd_src = $(vkshaderpath)/iqm_fwd.frag
+iqm_fwd_c = $(vkshaderpath)/iqm_fwd.frag.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -381,6 +385,8 @@ $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src) $(matrices_h)
 $(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
+
+$(spritef_c): $(spritef_src)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
@@ -440,6 +446,8 @@ $(iqmv_c): $(iqmv_src) $(matrices_h)
 
 $(iqmf_c): $(iqmf_src)
 
+$(iqm_fwd_c): $(iqm_fwd_src)
+
 $(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
@@ -463,6 +471,7 @@ vkshader_c = \
 	$(particlev_c) \
 	$(particleg_c) \
 	$(particlef_c) \
+	$(spritef_c) \
 	$(sprite_gbufv_c) \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \
@@ -492,6 +501,7 @@ vkshader_c = \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
 	$(iqmf_c) \
+	$(iqm_fwd_c) \
 	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
@@ -549,6 +559,7 @@ EXTRA_DIST += \
 	$(particlev_src) \
 	$(particleg_src) \
 	$(particlef_src) \
+	$(spritef_src) \
 	$(sprite_gbufv_src) \
 	$(sprite_gbuff_src) \
 	$(sprite_depthv_src) \
@@ -578,6 +589,7 @@ EXTRA_DIST += \
 	$(alias_shadow_src) \
 	$(iqmv_src) \
 	$(iqmf_src) \
+	$(iqm_fwd_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
