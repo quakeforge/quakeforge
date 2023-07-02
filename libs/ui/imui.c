@@ -393,6 +393,12 @@ add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
 	int descender = ctx->font->face->size->metrics.descender / 64;
 	auto len = View_GetLen (text);
 	View_SetLen (text, len.x, ascender - descender);
+	// text is positioned such that 0 is the baseline, and +y offset moves
+	// the text down. The font's global ascender is used to find the baseline
+	// relative to the top of the view.
+	auto pos = View_GetPos (text);
+	View_SetPos (text, pos.x, pos.y - len.y + ascender);
+	View_SetGravity (text, grav_northwest);
 
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
