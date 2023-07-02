@@ -51,6 +51,7 @@ typedef struct imui_state_s {
 	char       *label;
 	uint32_t    label_len;
 	int         key_offset;
+	uint32_t    frame_count;
 	uint32_t    entity;
 } imui_state_t;
 
@@ -69,7 +70,8 @@ struct imui_ctx_s {
 	int64_t     frame_start;
 	int64_t     frame_draw;
 	int64_t     frame_end;
-	uint32_t    framecount;
+	uint32_t    frame_count;
+
 	uint32_t    new_hot;
 	uint32_t    hot;
 	uint32_t    active;
@@ -97,7 +99,7 @@ imui_state_new (imui_ctx_t *ctx)
 	ctx->states = state;
 	return state;
 }
-/*
+
 static void
 imui_state_free (imui_ctx_t *ctx, imui_state_t *state)
 {
@@ -107,7 +109,7 @@ imui_state_free (imui_ctx_t *ctx, imui_state_t *state)
 	*state->prev = state->next;
 	PR_RESFREE (ctx->state_map, state);
 }
-*/
+
 static imui_state_t *
 imui_get_state (imui_ctx_t *ctx, const char *label)
 {
@@ -125,12 +127,14 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	}
 	imui_state_t *state = Hash_Find (ctx->tab, key);
 	if (state) {
+		state->frame_count = ctx->frame_count;
 		return state;
 	}
 	state = imui_state_new (ctx);
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
+	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
 	return state;
 }
@@ -227,9 +231,22 @@ void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
 	ctx->frame_start = Sys_LongTime ();
-	ctx->framecount++;
+	ctx->frame_count++;
 	ctx->hot = ctx->new_hot;
 	ctx->new_hot = nullent;
+}
+
+static void
+prune_objects (imui_ctx_t *ctx)
+{
+	for (auto s = &ctx->states; *s; ) {
+		if ((*s)->frame_count == ctx->frame_count) {
+			s = &(*s)->next;
+		} else {
+			ECS_DelEntity (ctx->csys.reg, (*s)->entity);
+			imui_state_free (ctx, *s);
+		}
+	}
 }
 
 void
@@ -237,7 +254,9 @@ IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
 
+	prune_objects (ctx);
 	View_UpdateHierarchy (ctx->root_view);
+
 	ctx->frame_end = Sys_LongTime ();
 }
 
