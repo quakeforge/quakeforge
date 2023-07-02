@@ -123,10 +123,8 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 			key_offset = (key += 3) - label;
 		}
 		label_len = key - label;
-	} else {
-		key = label;
 	}
-	imui_state_t *state = Hash_Find (ctx->tab, key);
+	imui_state_t *state = Hash_Find (ctx->tab, label + key_offset);
 	if (state) {
 		state->frame_count = ctx->frame_count;
 		return state;
