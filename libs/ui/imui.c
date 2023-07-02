@@ -243,6 +243,7 @@ prune_objects (imui_ctx_t *ctx)
 			s = &(*s)->next;
 		} else {
 			ECS_DelEntity (ctx->csys.reg, (*s)->entity);
+			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
 			imui_state_free (ctx, *s);
 		}
 	}
