@@ -242,7 +242,7 @@ prune_objects (imui_ctx_t *ctx)
 		if ((*s)->frame_count == ctx->frame_count) {
 			s = &(*s)->next;
 		} else {
-			ECS_DelEntity (ctx->csys.reg, (*s)->entity);
+			View_Delete (View_FromEntity (ctx->vsys, (*s)->entity));
 			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
 			imui_state_free (ctx, *s);
 		}
