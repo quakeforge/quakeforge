@@ -194,6 +194,8 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 
 rp_main_def_src = libs/video/renderer/vulkan/rp_main_def.plist
 rp_main_def_gen = libs/video/renderer/vulkan/rp_main_def.plc
+rp_main_fwd_src = libs/video/renderer/vulkan/rp_main_fwd.plist
+rp_main_fwd_gen = libs/video/renderer/vulkan/rp_main_fwd.plc
 smp_quake_src = libs/video/renderer/vulkan/smp_quake.plist
 smp_quake_gen = libs/video/renderer/vulkan/smp_quake.plc
 
@@ -254,6 +256,7 @@ libs/video/renderer/vulkan/vkparse.lo: \
 	libs/video/renderer/vulkan/vkparse.c \
 	$(vkparse_src) \
 	$(rp_main_def_gen) \
+	$(rp_main_fwd_gen) \
 	$(smp_quake_gen)
 
 libs/video/renderer/vulkan/shader.lo: \
@@ -531,6 +534,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	$(rp_main_def_src) \
+	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
 	$(oit_blend) \
 	$(oit_store) \

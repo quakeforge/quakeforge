@@ -1200,6 +1200,10 @@ static exprsym_t builtin_plist_syms[] = {
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_main_def.plc"
 		},
+	{ .name = "main_fwd",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_main_fwd.plc"
+		},
 	{ .name = "smp_quake",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/smp_quake.plc"
