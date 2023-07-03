@@ -122,6 +122,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 				pl->scissor.extent = sc->extent;
 			}
 		}
+		rctx->size_time = Sys_LongTime ();
 	}
 	ctx->swapImageIndex = imageIndex;
 	rp->beginInfo.framebuffer = octx->framebuffers[imageIndex];

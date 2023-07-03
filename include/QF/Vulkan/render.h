@@ -419,8 +419,9 @@ typedef struct qfv_renderctx_s {
 	exprtab_t   task_functions;
 	qfv_jobinfo_t *jobinfo;
 	qfv_samplerinfo_t *samplerinfo;
-	qfv_job_t *job;
+	qfv_job_t  *job;
 	qfv_renderframeset_t frames;
+	int64_t     size_time;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {

@@ -420,8 +420,9 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 
 	qfv_output_t output = {};
 	Vulkan_ConfigOutput (ctx, &output);
-	if (output.extent.width != render->output.extent.width
-		|| output.extent.height != render->output.extent.height) {
+	if ((output.extent.width != render->output.extent.width
+		|| output.extent.height != render->output.extent.height)
+		&& (Sys_LongTime () - ctx->render_context->size_time) > 2*1000*1000) {
 		QFV_DestroyFramebuffer (ctx, rp);
 		update_viewport_scissor (render, &output);
 		render->output.extent = output.extent;
@@ -455,6 +456,7 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 {
 	qfv_renderctx_t *rctx = calloc (1, sizeof (*rctx));
 	ctx->render_context = rctx;
+	rctx->size_time = -1000*1000*1000;
 
 	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
 	exprsym_t   syms[] = { {} };
