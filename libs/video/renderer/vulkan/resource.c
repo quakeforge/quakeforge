@@ -291,12 +291,14 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				{
 					__auto_type buffview = &obj->buffer_view;
 					dfunc->vkDestroyBufferView (device->dev, buffview->view, 0);
+					buffview->view = 0;
 				}
 				break;
 			case qfv_res_image_view:
 				{
 					__auto_type imgview = &obj->image_view;
 					dfunc->vkDestroyImageView (device->dev, imgview->view, 0);
+					imgview->view = 0;
 				}
 				break;
 		}
@@ -308,12 +310,14 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				{
 					__auto_type buffer = &obj->buffer;
 					dfunc->vkDestroyBuffer (device->dev, buffer->buffer, 0);
+					buffer->buffer = 0;
 				}
 				break;
 			case qfv_res_image:
 				{
 					__auto_type image = &obj->image;
 					dfunc->vkDestroyImage (device->dev, image->image, 0);
+					image->image = 0;
 				}
 				break;
 			case qfv_res_buffer_view:
@@ -322,6 +326,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 		}
 	}
 	dfunc->vkFreeMemory (device->dev, resource->memory, 0);
+	resource->memory = 0;
 }
 
 void

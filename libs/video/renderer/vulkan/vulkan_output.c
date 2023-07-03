@@ -106,7 +106,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			rp->beginInfo.framebuffer = 0;
 			//FIXME come up with a better mechanism
 			ctx->swapImageIndex = i;
-			QFV_CreateFramebuffer (ctx, rp);
+			QFV_CreateFramebuffer (ctx, rp, sc->extent);
 			octx->framebuffers[i] = rp->beginInfo.framebuffer;
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER,
 								 octx->framebuffers[i],

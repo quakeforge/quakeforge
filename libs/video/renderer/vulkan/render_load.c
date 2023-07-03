@@ -220,31 +220,86 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 	}
 }
 
+static qfv_imageinfo_t * __attribute__((pure))
+find_imageinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
+{
+	if (strcmp (ref->name, "$output.image") == 0) {
+		//auto image = jinfo->output.image;
+		//job->image_views[i].image_view.external_image = image;
+		//job->image_views[i].image_view.image = -1;
+	} else {
+		for (uint32_t i = 0; i <= jobinfo->num_images; i++) {
+			auto img = &jobinfo->images[i];
+			if (strcmp (ref->name, img->name) == 0) {
+				return img;
+			}
+		}
+	}
+	Sys_Printf ("%d: unknown image reference: %s\n", ref->line, ref->name);
+	return 0;
+}
+
+static qfv_imageviewinfo_t * __attribute__((pure))
+find_imageviewinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
+{
+	for (uint32_t i = 0; i <= jobinfo->num_imageviews; i++) {
+		auto imgview = &jobinfo->imageviews[i];
+		if (strcmp (ref->name, imgview->name) == 0) {
+			return imgview;
+		}
+	}
+	Sys_Printf ("%d: unknown image view reference: %s\n", ref->line, ref->name);
+	return 0;
+}
+
 static void
-create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
+create_resources (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
 	auto rctx = ctx->render_context;
 	auto jinfo = rctx->jobinfo;
-	auto job = rctx->job;
+
+	auto fbi = rp->framebufferinfo;
+	uint32_t num_attachments = 0;
+	for (uint32_t i = 0; i < fbi->num_attachments; i++) {
+		auto attach = &fbi->attachments[i];
+		if (!attach->external) {
+			num_attachments++;
+		}
+	}
+	if (!num_attachments) {
+		rp->resources = 0;
+		return;
+	}
 
 	size_t      size = sizeof (qfv_resource_t);
-	size += sizeof (qfv_resobj_t [counts->num_images]);
-	size += sizeof (qfv_resobj_t [counts->num_imageviews]);
+	size += sizeof (qfv_resobj_t [num_attachments]);
+	size += sizeof (qfv_resobj_t [num_attachments]);
 
-	job->resources = malloc (size);
-	job->images = (qfv_resobj_t *) &job->resources[1];
-	job->image_views = &job->images[counts->num_images];
+	rp->resources = calloc (1, size);
+	auto images = (qfv_resobj_t *) &rp->resources[1];
+	auto image_views = &images[num_attachments];
 
-	job->resources[0] = (qfv_resource_t) {
-		.name = "render",
+	rp->resources[0] = (qfv_resource_t) {
+		.name = rp->label.name,
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = counts->num_images + counts->num_imageviews,
-		.objects = job->images,
+		.num_objects = 2 * num_attachments,
+		.objects = images,
 	};
-	for (uint32_t i = 0; i < counts->num_images; i++) {
-		__auto_type img = &jinfo->images[i];
-		job->images[i] = (qfv_resobj_t) {
+	int         error = 0;
+	for (uint32_t i = 0; i < num_attachments; i++) {
+		auto attach = &fbi->attachments[i];
+		auto imgview = find_imageviewinfo (jinfo, &attach->view);
+		if (!imgview) {
+			error = 1;
+			continue;
+		}
+		auto img = find_imageinfo (jinfo, &imgview->image);
+		if (!img) {
+			error = 1;
+			continue;
+		}
+		images[i] = (qfv_resobj_t) {
 			.name = img->name,
 			.type = qfv_res_image,
 			.image = {
@@ -260,52 +315,30 @@ create_resources (vulkan_ctx_t *ctx, objcount_t *counts)
 				.initialLayout = img->initialLayout,
 			},
 		};
-	}
-	int         error = 0;
-	for (uint32_t i = 0; i < counts->num_imageviews; i++) {
-		__auto_type view = &jinfo->imageviews[i];
-		job->image_views[i] = (qfv_resobj_t) {
-			.name = view->name,
+		img->object = &images[i];
+
+		image_views[i] = (qfv_resobj_t) {
+			.name = imgview->name,
 			.type = qfv_res_image_view,
 			.image_view = {
-				.flags = view->flags,
-				.type = view->viewType,
-				.format = view->format,
-				.components = view->components,
-				.subresourceRange = view->subresourceRange,
+				.image = img->object - rp->resources->objects,
+				.flags = imgview->flags,
+				.type = imgview->viewType,
+				.format = imgview->format,
+				.components = imgview->components,
+				.subresourceRange = imgview->subresourceRange,
 			},
 		};
-		if (strcmp (view->image.name, "$output.image") == 0) {
-			//__auto_type image = jinfo->output.image;
-			//job->image_views[i].image_view.external_image = image;
-			//job->image_views[i].image_view.image = -1;
-		} else {
-			qfv_resobj_t *img = 0;
-			for (uint32_t j = 0; j < jinfo->num_images; j++) {
-				if (strcmp (view->image.name, jinfo->images[j].name) == 0) {
-					img = &job->images[j];
-				}
-			}
-			if (img) {
-				uint32_t    ind = img - job->resources->objects;
-				job->image_views[i].image_view.image = ind;
-				// fall back to the image's format if not overriden
-				if (!job->image_views[i].image_view.format) {
-					job->image_views[i].image_view.format = img->image.format;
-				}
-			} else {
-				Sys_Printf ("%d: unknown image reference: %s\n",
-							view->image.line, view->image.name);
-				error = 1;
-			}
+		if (!image_views[i].image_view.format) {
+			image_views[i].image_view.format = img->object->image.format;
 		}
+		imgview->object = &image_views[i];
 	}
 	if (error) {
-		free (job->resources);
-		job->resources = 0;
+		free (rp->resources);
+		rp->resources = 0;
 		return;
 	}
-	QFV_CreateResource (ctx->device, job->resources);
 }
 
 typedef struct {
@@ -831,6 +864,7 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 		.framebufferinfo = &rpinfo->framebuffer,
 		.outputref = rpinfo->output,
 	};
+	create_resources (s->ctx, rp);
 	s->inds.num_attachments += rpinfo->framebuffer.num_attachments;
 	for (uint32_t i = 0; i < rpinfo->num_subpasses; i++) {
 		init_subpass (&rp->subpasses[i], &rpinfo->subpasses[i], jp, s);
@@ -1178,5 +1212,4 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 	count_stuff (rctx->jobinfo, &counts);
 
 	create_objects (ctx, &counts);
-	create_resources (ctx, &counts);
 }

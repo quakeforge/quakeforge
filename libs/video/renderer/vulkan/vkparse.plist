@@ -486,6 +486,28 @@ parse = {
 			values = bindings;
 		};
 	};
+	qfv_imageinfo_s = {
+		.name = qfv_imageinfo_t;
+		flags = auto;
+		imageType = auto;
+		format = auto;
+		extent = auto;
+		mipLevels = auto;
+		arrayLayers = auto;
+		samples = auto;
+		tiling = auto;
+		usage = auto;
+		initialLayout = auto;
+	};
+	qfv_imageviewinfo_s = {
+		.name = qfv_imageviewinfo_t;
+		flags = auto;
+		image = auto;
+		viewType = auto;
+		format = auto;
+		components = auto;
+		subresourceRange = auto;
+	};
 	qfv_bufferviewinfo_s = {
 		.name = qfv_bufferviewinfo_t;
 		buffer = auto;

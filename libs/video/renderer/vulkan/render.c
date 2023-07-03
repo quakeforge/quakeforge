@@ -265,11 +265,11 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	}
 }
 
-static VkImageView __attribute__((pure))
-find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
+static qfv_imageviewinfo_t * __attribute__((pure))
+find_imageview (qfv_reference_t *ref, qfv_renderpass_t *rp,
+				qfv_renderctx_t *rctx)
 {
-	__auto_type jinfo = rctx->jobinfo;
-	__auto_type job = rctx->job;
+	auto jinfo = rctx->jobinfo;
 	const char *name = ref->name;
 
 	if (strncmp (name, "$imageviews.", 7) == 0) {
@@ -277,19 +277,45 @@ find_imageview (qfv_reference_t *ref, qfv_renderctx_t *rctx)
 	}
 
 	for (uint32_t i = 0; i < jinfo->num_imageviews; i++) {
-		__auto_type vi = &jinfo->imageviews[i];
-		__auto_type vo = &job->image_views[i];
-		if (strcmp (name, vi->name) == 0) {
-			return vo->image_view.view;
+		auto viewinfo = &jinfo->imageviews[i];
+		if (strcmp (name, viewinfo->name) == 0) {
+			return viewinfo;
 		}
 	}
 	Sys_Error ("%d:invalid imageview: %s", ref->line, ref->name);
 }
 
 void
-QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
+QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
-	__auto_type rctx = ctx->render_context;
+	if (rp->beginInfo.framebuffer) {
+		auto device = ctx->device;
+		auto dfunc = device->funcs;
+		auto bi = &rp->beginInfo;
+		dfunc->vkDestroyFramebuffer (device->dev, bi->framebuffer, 0);
+		bi->framebuffer = 0;
+	}
+	if (rp->resources && rp->resources->memory) {
+		QFV_DestroyResource (ctx->device, rp->resources);
+	}
+}
+
+void
+QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
+					   VkExtent2D extent)
+{
+	auto rctx = ctx->render_context;
+
+	if (rp->resources && !rp->resources->memory) {
+		for (uint32_t i = 0; i < rp->resources->num_objects; i++) {
+			auto obj = &rp->resources->objects[i];
+			if (obj->type == qfv_res_image) {
+				obj->image.extent.width = extent.width;
+				obj->image.extent.height = extent.height;
+			}
+		}
+		QFV_CreateResource (ctx->device, rp->resources);
+	}
 
 	auto fb = rp->framebufferinfo;
 	auto attachments = rp->framebuffer.views;
@@ -298,8 +324,8 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 		.attachmentCount = fb->num_attachments,
 		.pAttachments = attachments,
 		.renderPass = rp->beginInfo.renderPass,
-		.width = fb->width,
-		.height = fb->height,
+		.width = extent.width,
+		.height = extent.height,
 		.layers = fb->layers,
 	};
 	for (uint32_t i = 0; i < fb->num_attachments; i++) {
@@ -312,9 +338,11 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 				cInfo.height = sc->extent.height;
 			}
 		} else {
-			attachments[i] = find_imageview (&fb->attachments[i].view, rctx);
+			auto viewinfo = find_imageview (&fb->attachments[i].view, rp, rctx);
+			attachments[i] = viewinfo->object->image_view.view;
 			if (rp->outputref.name) {
-				rp->output = find_imageview (&rp->outputref, rctx);
+				viewinfo = find_imageview (&rp->outputref, rp, rctx);
+				rp->output = viewinfo->object->image_view.view;
 			}
 		}
 	}
@@ -352,8 +380,8 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-renderpass_update_viewper_sissor (qfv_renderpass_t *rp,
-								  const qfv_output_t *output)
+renderpass_update_viewport_sissor (qfv_renderpass_t *rp,
+								   const qfv_output_t *output)
 {
 	rp->beginInfo.renderArea.extent = output->extent;
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
@@ -375,7 +403,7 @@ static void
 update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
 {
 	for (uint32_t i = 0; i < render->num_renderpasses; i++) {
-		renderpass_update_viewper_sissor (&render->renderpasses[i], output);
+		renderpass_update_viewport_sissor (&render->renderpasses[i], output);
 	}
 }
 
@@ -394,12 +422,13 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	Vulkan_ConfigOutput (ctx, &output);
 	if (output.extent.width != render->output.extent.width
 		|| output.extent.height != render->output.extent.height) {
-		//FIXME framebuffer image creation here
+		QFV_DestroyFramebuffer (ctx, rp);
 		update_viewport_scissor (render, &output);
+		render->output.extent = output.extent;
 	}
 
 	if (!rp->beginInfo.framebuffer) {
-		QFV_CreateFramebuffer (ctx, rp);
+		QFV_CreateFramebuffer (ctx, rp, render->output.extent);
 	}
 }
 
@@ -469,15 +498,16 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		for (uint32_t i = 0; i < job->num_layouts; i++) {
 			dfunc->vkDestroyPipelineLayout (device->dev, job->layouts[i], 0);
 		}
-		if (job->resources) {
-			QFV_DestroyResource (ctx->device, job->resources);
-			free (job->resources);
-		}
 		for (uint32_t i = 0; i < job->num_steps; i++) {
 			if (job->steps[i].render) {
 				auto render = job->steps[i].render;
 				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
-					auto bi = &render->renderpasses[j].beginInfo;
+					auto rp = &render->renderpasses[j];
+					if (rp->resources && rp->resources->memory) {
+						QFV_DestroyResource (ctx->device, rp->resources);
+					}
+					free (rp->resources);
+					auto bi = &rp->beginInfo;
 					if (bi->framebuffer) {
 						dfunc->vkDestroyFramebuffer (device->dev,
 													 bi->framebuffer, 0);

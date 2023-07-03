@@ -1744,14 +1744,6 @@ steps = {
 			);
 		};
 	};
-	translucent = {
-		dependencies = (wait_on_fence);
-		process = {
-			tasks = (
-				{ func = clear_translucent; },
-			);
-		};
-	};
 	setup_main = {
 		dependencies = (wait_on_fence);
 		process = {
@@ -1760,12 +1752,14 @@ steps = {
 				  params = ("\"main\""); },
 				{ func = update_framebuffer;
 				  params = ("\"main\""); },
+				{ func = clear_translucent;
+				  params = ("\"main\""); },
 				{ func = particle_wait_physics; },
 			);
 		};
 	};
 	main = {
-		dependencies = (setup_main, particles, shadow, world, translucent);
+		dependencies = (setup_main, particles, shadow, world);
 		render = {
 			renderpasses = {
 				deferred = $renderpasses.deferred;

@@ -21,9 +21,12 @@ typedef struct qfv_transtate_s {
 typedef struct translucentframe_s {
 	VkDescriptorSet flat;
 	VkDescriptorSet cube;
-	VkImage     heads;
-	VkImage     cube_heads;
-	VkBuffer    state;
+	struct qfv_resobj_s *heads;
+	struct qfv_resobj_s *cube_heads;
+	struct qfv_resobj_s *heads_view;
+	struct qfv_resobj_s *cube_heads_view;
+	struct qfv_resobj_s *state;
+	struct qfv_resobj_s *frags;
 } translucentframe_t;
 
 typedef struct translucentframeset_s
@@ -32,6 +35,7 @@ typedef struct translucentframeset_s
 typedef struct translucentctx_s {
 	translucentframeset_t frames;
 	struct qfv_resource_s *resources;
+	VkExtent2D  extent;
 
 	int         maxFragments;
 } translucentctx_t;
@@ -43,7 +47,5 @@ void Vulkan_Translucent_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Translucent_Shutdown (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Translucent_Descriptors (struct vulkan_ctx_s *ctx,
 												int frame)__attribute__((pure));
-void Vulkan_Translucent_CreateBuffers (struct vulkan_ctx_s *ctx,
-									   VkExtent2D extent);
 
 #endif//__QF_Vulkan_qf_translucent_h

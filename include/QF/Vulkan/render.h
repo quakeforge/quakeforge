@@ -81,6 +81,7 @@ typedef struct qfv_imageinfo_s {
 	VkImageTiling tiling;
 	VkImageUsageFlags usage;
 	VkImageLayout initialLayout;
+	struct qfv_resobj_s *object;
 } qfv_imageinfo_t;
 
 typedef struct qfv_imageviewinfo_s {
@@ -91,6 +92,7 @@ typedef struct qfv_imageviewinfo_s {
 	VkFormat    format;
 	VkComponentMapping components;
 	VkImageSubresourceRange subresourceRange;
+	struct qfv_resobj_s *object;
 } qfv_imageviewinfo_t;
 
 typedef struct qfv_bufferinfo_s {
@@ -355,6 +357,8 @@ typedef struct qfv_renderpass_s {
 	qfv_framebufferinfo_t *framebufferinfo;
 	VkImageView output;
 	qfv_reference_t outputref;
+
+	struct qfv_resource_s *resources;
 } qfv_renderpass_t;
 
 typedef struct qfv_render_s {
@@ -386,9 +390,6 @@ typedef struct qfv_step_s {
 
 typedef struct qfv_job_s {
 	qfv_label_t label;
-	struct qfv_resource_s *resources;
-	struct qfv_resobj_s *images;
-	struct qfv_resobj_s *image_views;
 
 	uint32_t    num_renderpasses;
 	uint32_t    num_pipelines;
@@ -440,7 +441,9 @@ void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
 
-void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
+void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
+void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,
+							VkExtent2D extent);
 
 struct qfv_dsmanager_s *
 QFV_Render_DSManager (struct vulkan_ctx_s *ctx,
