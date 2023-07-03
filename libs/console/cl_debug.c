@@ -150,9 +150,28 @@ Con_Debug_Draw (void)
 	}
 
 	IMUI_BeginFrame (debug_imui);
-
-	if (UI_Button ("Close Debug")) {
-		close_debug ();
+static int state;
+static bool flag = true;
+	UI_Layout(true) {
+		UI_Layout(false) {
+			if (UI_Button ("Close Debug")) {
+				close_debug ();
+			}
+			if (flag) {
+				UI_Button ("_##1");
+			}
+		}
+		UI_Layout(false) {
+			UI_Checkbox (&flag, "hi there");
+			if (flag) {
+				UI_Button ("_##2");
+			}
+		}
+		UI_Layout(false) {
+			UI_Radio (&state, 0, "A");
+			UI_Radio (&state, 1, "B");
+			UI_Radio (&state, 2, "C");
+		}
 	}
 
 	IMUI_Draw (debug_imui);

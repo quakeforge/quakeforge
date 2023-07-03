@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/darray.h"
 #include "QF/ecs.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
@@ -61,7 +62,6 @@ struct imui_ctx_s {
 	uint32_t    canvas;
 	ecs_system_t vsys;
 	text_system_t tsys;
-	view_t      root_view;
 	hashctx_t  *hashctx;
 	hashtab_t  *tab;
 	PR_RESMAP (imui_state_t) state_map;
@@ -72,6 +72,10 @@ struct imui_ctx_s {
 	int64_t     frame_draw;
 	int64_t     frame_end;
 	uint32_t    frame_count;
+
+	view_t      root_view;
+	view_t      current_parent;
+	struct DARRAY_TYPE(view_t) parent_stack;
 
 	uint32_t    hot;
 	uint32_t    active;
@@ -155,11 +159,13 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.vsys = { canvas_sys.reg, canvas_sys.view_base },
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
+		.parent_stack = DARRAY_STATIC_INIT (8),
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
 	};
 	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
+	ctx->current_parent = ctx->root_view;
 
 	auto fpath = Font_SystemFont (font);
 	if (fpath) {
@@ -232,6 +238,8 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
+	ctx->current_parent = ctx->root_view;
+	DARRAY_RESIZE (&ctx->parent_stack, 0);
 }
 
 static void
@@ -241,7 +249,6 @@ prune_objects (imui_ctx_t *ctx)
 		if ((*s)->frame_count == ctx->frame_count) {
 			s = &(*s)->next;
 		} else {
-			View_Delete (View_FromEntity (ctx->vsys, (*s)->entity));
 			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
 			imui_state_free (ctx, *s);
 		}
@@ -385,6 +392,26 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->frame_end = Sys_LongTime ();
 }
 
+void
+IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
+{
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+	ctx->current_parent = View_New (ctx->vsys, ctx->current_parent);
+	*View_Control (ctx->current_parent) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = IMUI_SizeKind_ChildrenSum,
+		.semantic_y = IMUI_SizeKind_ChildrenSum,
+		.vertical = vertical,
+	};
+}
+
+void
+IMUI_PopLayout (imui_ctx_t *ctx)
+{
+	ctx->current_parent = DARRAY_REMOVE (&ctx->parent_stack);
+}
+
 static bool
 check_button_state (imui_ctx_t *ctx, uint32_t entity)
 {
@@ -472,7 +499,7 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 	auto state = imui_get_state (ctx, label);
 	uint32_t old_entity = state->entity;
 
-	auto view = View_New (ctx->vsys, ctx->root_view);
+	auto view = View_New (ctx->vsys, ctx->current_parent);
 	state->entity = view.id;
 	update_hot_active (ctx, old_entity, state->entity);
 
@@ -489,7 +516,7 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 	auto state = imui_get_state (ctx, label);
 	uint32_t old_entity = state->entity;
 
-	auto view = View_New (ctx->vsys, ctx->root_view);
+	auto view = View_New (ctx->vsys, ctx->current_parent);
 	state->entity = view.id;
 	update_hot_active (ctx, old_entity, state->entity);
 
@@ -522,8 +549,40 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 }
 
 void
-IMUI_Radio (imui_ctx_t *ctx, int *state, int value, const char *label)
+IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 {
+	auto state = imui_get_state (ctx, label);
+	uint32_t old_entity = state->entity;
+
+	auto view = View_New (ctx->vsys, ctx->current_parent);
+	state->entity = view.id;
+	update_hot_active (ctx, old_entity, state->entity);
+
+	set_control (ctx, view, true);
+	View_Control (view)->semantic_x = IMUI_SizeKind_ChildrenSum;
+	View_Control (view)->semantic_y = IMUI_SizeKind_ChildrenSum;
+
+	set_fill (ctx, view, 0);
+
+	auto checkbox = View_New (ctx->vsys, view);
+	set_control (ctx, checkbox, false);
+	View_SetLen (checkbox, 20, 20);
+	set_fill (ctx, checkbox, 0xfe);
+	if (*curvalue != value) {
+		auto punch = View_New (ctx->vsys, checkbox);
+		set_control (ctx, punch, false);
+		View_SetGravity (punch, grav_center);
+		View_SetLen (punch, 14, 14);
+		set_fill (ctx, punch, 0);
+	}
+
+	auto text = View_New (ctx->vsys, view);
+	set_control (ctx, text, false);
+	add_text (text, state, ctx);
+
+	if (check_button_state (ctx, state->entity)) {
+		*curvalue = value;
+	}
 }
 
 void

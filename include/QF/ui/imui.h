@@ -53,11 +53,17 @@ void IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 
+void IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
+void IMUI_PopLayout (imui_ctx_t *ctx);
+
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
-void IMUI_Radio (imui_ctx_t *ctx, int *state, int value, const char *label);
+void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
 void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 				  const char *label);
+
+#define IMUI_DeferLoop(begin, end) \
+	for (int _i_ = ((begin), 0); !_i_; _i_++, (end))
 
 // #define IMUI_context to an imui_ctx_t * variable
 
@@ -72,5 +78,9 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 
 #define UI_Slider(value, minval, maxval, label) \
 	IMUI_Slider(IMUI_context, value, minval, maxval, label)
+
+#define UI_Layout(vertical) \
+	IMUI_DeferLoop (IMUI_PushLayout (IMUI_context, vertical), \
+					IMUI_PopLayout (IMUI_context ))
 
 #endif//__QF_ui_imui_h
