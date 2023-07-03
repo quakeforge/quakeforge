@@ -427,6 +427,10 @@ add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
 					  Ent_GetComponent (text.id, c_passage_glyphs, reg));
+
+	len = View_GetLen (text);
+	View_SetLen (view, len.x, len.y);
+
 	return text;
 }
 
@@ -443,41 +447,76 @@ update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
 	}
 }
 
+static void
+set_fill (imui_ctx_t *ctx, view_t view, byte color)
+{
+	uint32_t c_fill = ctx->csys.base + canvas_fill;
+	*(byte*) Ent_AddComponent (view.id, c_fill, ctx->csys.reg) = color;
+}
+
+static void
+set_control (imui_ctx_t *ctx, view_t view, bool active)
+{
+	*View_Control (view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = IMUI_SizeKind_Pixels,
+		.semantic_y = IMUI_SizeKind_Pixels,
+		.active = active,
+	};
+}
+
 bool
 IMUI_Button (imui_ctx_t *ctx, const char *label)
 {
 	auto state = imui_get_state (ctx, label);
 	uint32_t old_entity = state->entity;
-	if (!ECS_EntValid (state->entity, ctx->csys.reg)) {
-		auto view = View_New (ctx->vsys, ctx->root_view);
-		state->entity = view.id;
 
-		*(byte*) Ent_AddComponent (view.id, ctx->csys.base + canvas_fill,
-								   ctx->csys.reg) = 0;
-
-		View_SetVisible (view, 1);
-		*View_Control (view) = (viewcont_t) {
-			.gravity = grav_northwest,
-			.visible = 1,
-			.semantic_x = IMUI_SizeKind_Pixels,
-			.semantic_y = IMUI_SizeKind_Pixels,
-			.active = 1,
-		};
-
-		auto text = add_text (view, state, ctx);
-		auto len = View_GetLen (text);
-		View_SetLen (view, len.x, len.y);
-	}
+	auto view = View_New (ctx->vsys, ctx->root_view);
+	state->entity = view.id;
 	update_hot_active (ctx, old_entity, state->entity);
-	bool result = check_button_state (ctx, state->entity);
-	return result;
+
+	set_control (ctx, view, true);
+	set_fill (ctx, view, 0);
+	add_text (view, state, ctx);
+
+	return check_button_state (ctx, state->entity);
 }
 
 bool
 IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 {
 	auto state = imui_get_state (ctx, label);
-	if (state->entity == nullent) {
+	uint32_t old_entity = state->entity;
+
+	auto view = View_New (ctx->vsys, ctx->root_view);
+	state->entity = view.id;
+	update_hot_active (ctx, old_entity, state->entity);
+
+	set_control (ctx, view, true);
+	View_Control (view)->semantic_x = IMUI_SizeKind_ChildrenSum;
+	View_Control (view)->semantic_y = IMUI_SizeKind_ChildrenSum;
+
+	set_fill (ctx, view, 0);
+
+	auto checkbox = View_New (ctx->vsys, view);
+	set_control (ctx, checkbox, false);
+	View_SetLen (checkbox, 20, 20);
+	set_fill (ctx, checkbox, 0xfe);
+	if (!*flag) {
+		auto punch = View_New (ctx->vsys, checkbox);
+		set_control (ctx, punch, false);
+		View_SetGravity (punch, grav_center);
+		View_SetLen (punch, 14, 14);
+		set_fill (ctx, punch, 0);
+	}
+
+	auto text = View_New (ctx->vsys, view);
+	set_control (ctx, text, false);
+	add_text (text, state, ctx);
+
+	if (check_button_state (ctx, state->entity)) {
+		*flag = !*flag;
 	}
 	return *flag;
 }

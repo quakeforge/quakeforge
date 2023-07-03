@@ -164,7 +164,7 @@ VIEWINLINE view_pos_t View_GetAbs (view_t view);
 VIEWINLINE view_pos_t View_GetRel (view_t view);
 VIEWINLINE void View_SetLen (view_t view, int x, int y);
 VIEWINLINE view_pos_t View_GetLen (view_t view);
-VIEWINLINE viewcont_t* View_Control (view_t view);
+VIEWINLINE viewcont_t *View_Control (view_t view);
 VIEWINLINE void View_SetGravity (view_t view, grav_t grav);
 VIEWINLINE grav_t View_GetGravity (view_t view);
 VIEWINLINE void View_SetVisible (view_t view, int visible);
