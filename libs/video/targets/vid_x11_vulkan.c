@@ -223,7 +223,7 @@ X11_Vulkan_Context (vid_internal_t *vi)
 	ctx->create_window = x11_vulkan_create_window;
 	ctx->create_surface = x11_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (32);
+	ctx->va_ctx = va_create_context (VA_CTX_COUNT);
 	ctx->twod_scale = 1;
 
 	vi->ctx = ctx;

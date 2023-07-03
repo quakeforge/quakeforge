@@ -10,6 +10,8 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
+#define VA_CTX_COUNT 64
+
 typedef struct qfv_renderpassset_s
 	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
 
