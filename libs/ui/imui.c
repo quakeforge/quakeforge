@@ -155,11 +155,11 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.vsys = { canvas_sys.reg, canvas_sys.view_base },
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
-		.tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx),
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
 	};
+	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
 
 	auto fpath = Font_SystemFont (font);
 	if (fpath) {
@@ -229,9 +229,6 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 {
 	uint32_t    root_ent = ctx->root_view.id;
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
-	if (!ECS_EntValid (root_ent, ctx->vsys.reg)) {
-		Sys_Error ("root got deleted");
-	}
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
