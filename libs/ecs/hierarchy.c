@@ -39,6 +39,8 @@
 
 #include "QF/ecs.h"
 
+#define nullindex (~0u)
+
 static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
 static component_t childIndex_component = { .size = sizeof (uint32_t) };
@@ -297,7 +299,7 @@ hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 {
 	uint32_t    insertIndex;
 
-	if (dstParent == nullent) {
+	if (dstParent == nullindex) {
 		if (dst->num_objects) {
 			Sys_Error ("attempt to insert root in non-empty hierarchy");
 		}
@@ -305,7 +307,7 @@ hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 		if (src) {
 			hierarchy_move (dst, src, 0, *srcRoot, 1);
 		}
-		dst->parentIndex[0] = nullent;
+		dst->parentIndex[0] = nullindex;
 		dst->childIndex[0] = 1;
 		dst->childCount[0] = 0;
 		insertIndex = 0;
@@ -371,7 +373,7 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 	hierarchy_close (hierarchy, index, 1);
 
 	hierarchy_UpdateTransformIndices (hierarchy, index, -1);
-	if (parentIndex != nullent) {
+	if (parentIndex != nullindex) {
 		hierarchy_UpdateChildIndices (hierarchy, parentIndex + 1, -1);
 		hierarchy->childCount[parentIndex] -= 1;
 	}
@@ -394,7 +396,7 @@ Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 
 	if (createRoot) {
 		hierarchy_open (hierarchy, 0, 1);
-		hierarchy_init (hierarchy, 0, nullent, 1, 1);
+		hierarchy_init (hierarchy, 0, nullindex, 1, 1);
 	}
 
 	return hierarchy;
@@ -456,7 +458,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 					 hierarchy_t *src, uint32_t srcRoot)
 {
 	hierref_t   r = {};
-	if (dst && dstParent != nullent) {
+	if (dst && dstParent != nullindex) {
 		if (dst->type != src->type) {
 			Sys_Error ("Can't set parent in hierarchy of different type");
 		}
