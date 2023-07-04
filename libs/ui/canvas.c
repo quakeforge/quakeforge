@@ -343,7 +343,8 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 }
 
 static void
-draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
+draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
+				 uint32_t color)
 {
 	uint32_t    count = gref->count;
 	glyphobj_t *glyph = glyphset->glyphs + gref->start;
@@ -351,7 +352,7 @@ draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
 		r_funcs->Draw_Glyph (abs->x + g->x, abs->y + g->y,
-							 g->fontid, g->glyphid, 254);
+							 g->fontid, g->glyphid, color);
 	}
 }
 
@@ -373,6 +374,7 @@ draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 {
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
+	uint32_t    color = canvas_sys->text_base + text_color;
 	uint32_t    vhref = canvas_sys->view_base + view_href;
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -384,7 +386,8 @@ draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 		if (View_GetVisible (view)) {
 			view_pos_t  abs = View_GetAbs (view);
 			glyphref_t *gref = Ent_GetComponent (view.id, glyphs, reg);
-			draw_glyph_refs (&abs, gs, gref);
+			uint32_t   *c = Ent_SafeGetComponent (view.id, color, reg);
+			draw_glyph_refs (&abs, gs, gref, c ? *c : 254);
 		}
 	}
 }
@@ -395,6 +398,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 {
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
+	uint32_t    color = canvas_sys->text_base + text_color;
 	uint32_t    vhref = canvas_sys->view_base + view_href;
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -414,7 +418,8 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 
 		for (uint32_t i = href->index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, reg);
-			draw_glyph_refs (&abs[i], gs, gref);
+			uint32_t   *c = Ent_SafeGetComponent (h->ent[i], color, reg);
+			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254);
 
 			if (0) draw_box (abs, len, i, 253);
 		}

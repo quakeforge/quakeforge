@@ -77,6 +77,8 @@ enum {
 	text_passage_glyphs,
 	// glyphs for a single text object
 	text_glyphs,
+	// tint color for glyphs
+	text_color,
 	// text_script, text_font and text_features on the passage root object set
 	// the defaults for all text objects in the passage. The settings can be
 	// overridden at the paragraph level or individual text object level by

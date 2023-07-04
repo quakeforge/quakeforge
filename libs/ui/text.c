@@ -74,6 +74,10 @@ const component_t text_components[text_comp_count] = {
 		.size = sizeof (glyphref_t),
 		.name = "glyphs",
 	},
+	[text_color] = {
+		.size = sizeof (uint32_t),
+		.name = "color",
+	},
 	[text_script] = {
 		.size = sizeof (script_component_t),
 		.name = "script",
