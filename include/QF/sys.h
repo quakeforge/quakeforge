@@ -131,6 +131,8 @@ size_t Sys_PageSize (void);
 void *Sys_Alloc (size_t size);
 void Sys_Free (void *mem, size_t size);
 int Sys_LockMemory (void *mem, size_t size);
+size_t Sys_PeakRSS (void);
+size_t Sys_CurrentRSS (void);
 
 int Sys_ProcessorCount (void);
 

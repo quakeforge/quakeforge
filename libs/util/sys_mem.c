@@ -4,6 +4,9 @@
  * License: Creative Commons Attribution 3.0 Unported License
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
  */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -29,16 +32,14 @@
 #error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
 #endif
 
-
-
-
+#include "QF/sys.h"
 
 /**
  * Returns the peak (maximum so far) resident set size (physical
  * memory use) measured in bytes, or zero if the value cannot be
  * determined on this OS.
  */
-size_t getPeakRSS( )
+size_t Sys_PeakRSS (void)
 {
 #if defined(_WIN32)
 	/* Windows -------------------------------------------------- */
@@ -76,15 +77,11 @@ size_t getPeakRSS( )
 #endif
 }
 
-
-
-
-
 /**
  * Returns the current resident set size (physical memory use) measured
  * in bytes, or zero if the value cannot be determined on this OS.
  */
-size_t getCurrentRSS( )
+size_t Sys_CurrentRSS (void)
 {
 #if defined(_WIN32)
 	/* Windows -------------------------------------------------- */
