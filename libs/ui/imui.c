@@ -121,11 +121,11 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	uint32_t    label_len = ~0u;
 	const char *key = strstr (label, "##");
 	if (key) {
+		label_len = key - label;
 		// key is '###': hash only past this
 		if (key[2] == '#') {
 			key_offset = (key += 3) - label;
 		}
-		label_len = key - label;
 	}
 	imui_state_t *state = Hash_Find (ctx->tab, label + key_offset);
 	if (state) {
@@ -250,6 +250,7 @@ prune_objects (imui_ctx_t *ctx)
 			s = &(*s)->next;
 		} else {
 			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
+			free ((*s)->label);
 			imui_state_free (ctx, *s);
 		}
 	}
