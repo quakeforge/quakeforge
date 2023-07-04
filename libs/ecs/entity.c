@@ -116,7 +116,6 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	uint32_t    ind = pool->sparse[id];
 	component_t *c = &registry->components.a[comp];
 	if (ind < pool->count && pool->dense[ind] == ent) {
-		uint32_t    last = pool->count - 1;
 		// invalidate the entity for this component to prevent the component
 		// being double-removed due to deletion of the component resulting
 		// in the entity being deleted (happens with hierarchies)
@@ -137,6 +136,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 				}
 			}
 		}
+		uint32_t    last = pool->count - 1;
 		if (last > ind) {
 			pool->sparse[Ent_Index (pool->dense[last])] = ind;
 			pool->dense[ind] = pool->dense[last];
