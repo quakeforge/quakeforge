@@ -33,6 +33,7 @@
 
 #define IMPLEMENT_CANVAS_Funcs
 #include "QF/ui/canvas.h"
+#include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -498,6 +499,8 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 											 view_comp_count),
 		.text_base = ECS_RegisterComponents (reg, text_components,
 											 text_comp_count),
+		.imui_base = ECS_RegisterComponents (reg, imui_components,
+											 imui_comp_count),
 	};
 }
 

@@ -47,6 +47,17 @@
 #include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 
+const component_t imui_components[imui_comp_count] = {
+	[imui_percent_x] = {
+		.size = sizeof (int),
+		.name = "percent x",
+	},
+	[imui_percent_y] = {
+		.size = sizeof (int),
+		.name = "percent y",
+	},
+};
+
 typedef struct imui_state_s {
 	struct imui_state_s *next;
 	struct imui_state_s **prev;
@@ -234,8 +245,10 @@ void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
 	uint32_t    root_ent = ctx->root_view.id;
+	auto root_size = View_GetLen (ctx->root_view);
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
+	View_SetLen (ctx->root_view, root_size.x, root_size.y);
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
@@ -256,47 +269,118 @@ prune_objects (imui_ctx_t *ctx)
 	}
 }
 
-//FIXME currently works properly only for grav_northwest
-static void
-layout_objects (imui_ctx_t *ctx)
-{
-	auto ref = View_GetRef (ctx->root_view);
-	auto h = ref->hierarchy;
+#define DFL "\e[39;49m"
+#define BLK "\e[30;40m"
+#define RED "\e[31;40m"
+#define GRN "\e[32;40m"
+#define ONG "\e[33;40m"
+#define BLU "\e[34;40m"
+#define MAG "\e[35;40m"
+#define CYN "\e[36;40m"
+#define WHT "\e[37;40m"
 
-	byte       *modified = h->components[view_modified];
-	view_pos_t *pos = h->components[view_pos];
+static const char *
+view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx)
+{
+	auto reg = h->reg;
+	uint32_t e = h->ent[ind];
+	viewcont_t *cont = h->components[view_control];
+
+	switch (cont[ind].semantic_x) {
+		case IMUI_SizeKind_Null:
+			if (Ent_HasComponent (e, ctx->csys.base + canvas_glyphs, reg)) {
+				return CYN;
+			}
+			return DFL;
+		case IMUI_SizeKind_Pixels: return WHT;
+		case IMUI_SizeKind_TextContent: return CYN;
+		case IMUI_SizeKind_PercentOfParent: return ONG;
+		case IMUI_SizeKind_ChildrenSum: return MAG;
+		case IMUI_SizeKind_Expand: return RED;
+	}
+	return DFL;
+}
+
+static void __attribute__((used))
+dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
+{
+	view_pos_t *len = h->components[view_len];
+	auto c = ((viewcont_t *)h->components[view_control])[ind];
+	uint32_t e = h->ent[ind];
+	printf ("%2d: %*s%s[%d %d] %c %d %d", ind,
+			level * 3, "", view_color (h, ind, ctx),
+			len[ind].x, len[ind].y,
+			c.vertical ? 'v' : 'h', c.semantic_x, c.semantic_y);
+	for (uint32_t j = 0; j < h->reg->components.size; j++) {
+		if (Ent_HasComponent (e, j, h->reg)) {
+			printf (", %s", h->reg->components.a[j].name);
+		}
+	}
+	printf (DFL"\n");
+
+	if (h->childIndex[ind] > ind) {
+		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
+			if (h->childIndex[ind] + i >= h->num_objects) {
+				break;
+			}
+			dump_tree (h, h->childIndex[ind] + i, level + 1, ctx);
+		}
+	}
+	if (!level) {
+		puts ("");
+	}
+}
+
+typedef struct {
+	bool x, y;
+} boolpair_t;
+
+static void
+calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
+						boolpair_t *down_depend)
+{
+	auto reg = ctx->csys.reg;
+	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
-	struct boolpair {
-		bool x, y;
-	}          down_depend[h->num_objects];
-
-	// the root view size is always explicity
-	down_depend[0] = (struct boolpair) { false, false };
+	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
+	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	for (uint32_t i = 1; i < h->num_objects; i++) {
-//		printf ("%d %d %d [%d %d] [%d %d]\n", i, parent[i], h->childCount[i],
-//				pos[i].x, pos[i].y, len[i].x, len[i].y);
-		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum) {
-			down_depend[i].x = 1;
-		} else if (!(down_depend[i].x = down_depend[parent[i]].x)
+		if (down_depend
+			&& (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum
+				|| cont[i].semantic_x == IMUI_SizeKind_Expand)) {
+			down_depend[i].x = true;
+		} else if ((!down_depend
+					|| !(down_depend[i].x = down_depend[parent[i]].x))
 				   && cont[i].semantic_x == IMUI_SizeKind_PercentOfParent) {
-			int x = (len[parent[i]].x * 100) / 100;	//FIXME precent
-			modified[i] |= len[i].x != x;
+			int *percent = Ent_GetComponent (ent[i], c_percent_x, reg);
+			int x = (len[parent[i]].x * *percent) / 100;
 			len[i].x = x;
 		}
-		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum) {
-			down_depend[i].y = 1;
-		} else if (!(down_depend[i].y = down_depend[parent[i]].y)
+		if (down_depend
+			&& (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum
+				|| cont[i].semantic_y == IMUI_SizeKind_Expand)) {
+			down_depend[i].y = true;
+		} else if ((!down_depend
+					|| !(down_depend[i].y = down_depend[parent[i]].y))
 				   && cont[i].semantic_y == IMUI_SizeKind_PercentOfParent) {
-			int y = (len[parent[i]].y * 100) / 100;	//FIXME precent
-			modified[i] |= len[i].y != y;
+			int *percent = Ent_GetComponent (ent[i], c_percent_y, reg);
+			int y = (len[parent[i]].y * *percent) / 100;
 			len[i].y = y;
 		}
 	}
+}
+
+static void
+calc_downwards_dependent (hierarchy_t *h)
+{
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
 	for (uint32_t i = h->num_objects; --i > 0; ) {
 		view_pos_t  clen = len[i];
-		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum) {
+		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum
+			|| cont[i].semantic_x == IMUI_SizeKind_Expand) {
 			clen.x = 0;
 			if (cont[i].vertical) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
@@ -310,7 +394,8 @@ layout_objects (imui_ctx_t *ctx)
 				}
 			}
 		}
-		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum) {
+		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum
+			|| cont[i].semantic_y == IMUI_SizeKind_Expand) {
 			clen.y = 0;
 			if (!cont[i].vertical) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
@@ -324,9 +409,98 @@ layout_objects (imui_ctx_t *ctx)
 				}
 			}
 		}
-		modified[i] |= (len[i].x != clen.x) | (len[i].y != clen.y);
 		len[i] = clen;
 	}
+}
+
+static void
+calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
+{
+	auto reg = ctx->csys.reg;
+
+	uint32_t   *ent = h->ent;
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
+	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
+
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		view_pos_t  tlen = {};
+		view_pos_t  elen = {};
+		view_pos_t  ecount = {};
+		for (uint32_t j = 0; j < h->childCount[i]; j++) {
+			uint32_t child = h->childIndex[i] + j;
+			tlen.x += len[child].x;
+			tlen.y += len[child].y;
+			if (cont[child].semantic_x == IMUI_SizeKind_Expand) {
+				int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
+				elen.x += *p;
+				ecount.x++;
+			}
+			if (cont[child].semantic_y == IMUI_SizeKind_Expand) {
+				int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
+				elen.y += *p;
+				ecount.y++;
+			}
+		}
+//		printf ("i:%d t:[%d %d] e:[%d %d] ec:[%d %d]\n", i, tlen.x, tlen.y,
+//				elen.x, elen.y, ecount.x, ecount.y);
+		for (uint32_t j = 0; ecount.x && j < h->childCount[i]; j++) {
+			uint32_t child = h->childIndex[i] + j;
+			if (cont[child].semantic_x != IMUI_SizeKind_Expand) {
+				continue;
+			}
+			if (cont[i].vertical) {
+				len[child].x = len[i].x;
+//				printf ("xc:%d p:%d l:%d\n", child, len[i].x, len[child].x);
+			} else {
+				uint32_t space = len[i].x - tlen.x;
+				int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
+				len[child].x += *p * space / elen.x;
+//				printf ("xc:%d p:%d s:%d e:%d: l:%d\n", child, *p, space,
+//						elen.x, len[child].x);
+			}
+		}
+		for (uint32_t j = 0; ecount.y && j < h->childCount[i]; j++) {
+			uint32_t child = h->childIndex[i] + j;
+			if (cont[child].semantic_y != IMUI_SizeKind_Expand) {
+				continue;
+			}
+			if (cont[i].vertical) {
+				uint32_t space = len[i].y - tlen.y;
+				int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
+				len[child].y += *p * space / elen.y;
+//				printf ("yc:%d p:%d s:%d e:%d: l:%d\n", child, *p, space,
+//						elen.y, len[child].y);
+			} else {
+				len[child].y = len[i].y;
+//				printf ("yc:%d p:%d l:%d\n", child, len[i].y, len[child].y);
+			}
+		}
+	}
+}
+
+//FIXME currently works properly only for grav_northwest
+static void
+layout_objects (imui_ctx_t *ctx)
+{
+	auto ref = View_GetRef (ctx->root_view);
+	auto h = ref->hierarchy;
+
+	view_pos_t *pos = h->components[view_pos];
+	view_pos_t *len = h->components[view_len];
+	viewcont_t *cont = h->components[view_control];
+	uint32_t   *parent = h->parentIndex;
+	boolpair_t  down_depend[h->num_objects];
+
+	// the root view size is always explicit
+	down_depend[0] = (boolpair_t) { false, false };
+	calc_upwards_dependent (ctx, h, down_depend);
+	calc_downwards_dependent (h);
+	calc_expansions (ctx, h);
+	//dump_tree (h, 0, 0, ctx);
+	// resolve conflicts
+	//fflush (stdout);
 
 	view_pos_t  cpos = {};
 	uint32_t    cur_parent = 0;
@@ -337,13 +511,10 @@ layout_objects (imui_ctx_t *ctx)
 		}
 		if (cont[i].semantic_x != IMUI_SizeKind_Null
 			&& cont[i].semantic_y != IMUI_SizeKind_Null) {
-			modified[i] |= (pos[i].x != cpos.x) | (pos[i].y != cpos.y);
 			pos[i] = cpos;
 		} else if (cont[i].semantic_x != IMUI_SizeKind_Null) {
-			modified[i] |= pos[i].x != cpos.x;
 			pos[i].x = cpos.x;
 		} else if (cont[i].semantic_y != IMUI_SizeKind_Null) {
-			modified[i] |= pos[i].y != cpos.y;
 			pos[i].y = cpos.y;
 		}
 		if (cont[parent[i]].vertical) {
@@ -397,14 +568,25 @@ void
 IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 {
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
-	ctx->current_parent = View_New (ctx->vsys, ctx->current_parent);
-	*View_Control (ctx->current_parent) = (viewcont_t) {
+	auto view = View_New (ctx->vsys, ctx->current_parent);
+	auto pcont = View_Control (ctx->current_parent);
+	ctx->current_parent = view;
+	auto x_size = pcont->vertical ? IMUI_SizeKind_Expand
+								  : IMUI_SizeKind_ChildrenSum;
+	auto y_size = pcont->vertical ? IMUI_SizeKind_ChildrenSum
+								  : IMUI_SizeKind_Expand;
+	*View_Control (view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
-		.semantic_x = IMUI_SizeKind_ChildrenSum,
-		.semantic_y = IMUI_SizeKind_ChildrenSum,
+		.semantic_x = x_size,
+		.semantic_y = y_size,
 		.vertical = vertical,
 	};
+	View_SetLen (view, 0, 0);
+	uint32_t c_percent_x = ctx->csys.imui_base + imui_percent_x;
+	uint32_t c_percent_y = ctx->csys.imui_base + imui_percent_y;
+	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
+	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 }
 
 void
@@ -542,6 +724,8 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 	auto text = View_New (ctx->vsys, view);
 	set_control (ctx, text, false);
 	add_text (text, state, ctx);
+	auto c = View_GetChild (text, 0);
+	*(uint32_t *)Ent_AddComponent (c.id, ctx->tsys.text_base + text_color, c.reg) = 0xfb;
 
 	if (check_button_state (ctx, state->entity)) {
 		*flag = !*flag;
@@ -590,4 +774,21 @@ void
 IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 			 const char *label)
 {
+}
+
+void
+IMUI_FlexibleSpace (imui_ctx_t *ctx)
+{
+	auto view = View_New (ctx->vsys, ctx->current_parent);
+	View_SetLen (ctx->current_parent, 0, 0);
+
+	set_control (ctx, view, false);
+	View_Control (view)->semantic_x = IMUI_SizeKind_Expand;
+	View_Control (view)->semantic_y = IMUI_SizeKind_Expand;
+	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
+	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
+	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
+	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
+
+	set_fill (ctx, view, 0xfb);
 }

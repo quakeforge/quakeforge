@@ -35,12 +35,22 @@ typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
 struct IE_event_s;
 
+enum {
+	imui_percent_x,	///< int
+	imui_percent_y,	///< int
+
+	imui_comp_count
+};
+
+extern const struct component_s imui_components[imui_comp_count];
+
 typedef enum IMUI_SizeKind {
 	IMUI_SizeKind_Null,
 	IMUI_SizeKind_Pixels,
 	IMUI_SizeKind_TextContent,
 	IMUI_SizeKind_PercentOfParent,
 	IMUI_SizeKind_ChildrenSum,
+	IMUI_SizeKind_Expand,
 } IMUI_SizeKind;
 
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
@@ -61,6 +71,7 @@ bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
 void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
 void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 				  const char *label);
+void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = ((begin), 0); !_i_; _i_++, (end))
@@ -79,8 +90,14 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 #define UI_Slider(value, minval, maxval, label) \
 	IMUI_Slider(IMUI_context, value, minval, maxval, label)
 
+#define UI_FlexibleSpace() \
+	IMUI_FlexibleSpace(IMUI_context)
+
 #define UI_Layout(vertical) \
 	IMUI_DeferLoop (IMUI_PushLayout (IMUI_context, vertical), \
 					IMUI_PopLayout (IMUI_context ))
+
+#define UI_Horizontal UI_Layout(false)
+#define UI_Vertical UI_Layout(true)
 
 #endif//__QF_ui_imui_h

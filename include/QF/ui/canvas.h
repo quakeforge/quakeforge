@@ -68,6 +68,7 @@ typedef struct canvas_system_s {
 	uint32_t    base;
 	uint32_t    view_base;
 	uint32_t    text_base;
+	uint32_t    imui_base;
 } canvas_system_t;
 
 struct view_s;

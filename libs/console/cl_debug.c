@@ -5,6 +5,7 @@
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/input/event.h"
 
@@ -52,6 +53,9 @@ static cvar_t deb_fontsize_cvar = {
 	.value = { .type = &cexpr_float, .value = &deb_fontsize },
 };
 
+static int deb_xlen = -1;
+static int deb_ylen = -1;
+
 static void
 con_debug_f (void *data, const cvar_t *cvar)
 {
@@ -61,12 +65,12 @@ con_debug_f (void *data, const cvar_t *cvar)
 		debug_enable_time = Sys_LongTime ();
 		if (!con_debug) {
 			IE_Set_Focus (debug_saved_focus);
+		} else {
+			IMUI_SetSize (debug_imui, deb_xlen, deb_ylen);
 		}
 	}
 }
 
-static int deb_xlen = -1;
-static int deb_ylen = -1;
 static void
 debug_app_window (const IE_event_t *ie_event)
 {
@@ -152,26 +156,34 @@ Con_Debug_Draw (void)
 	IMUI_BeginFrame (debug_imui);
 static int state;
 static bool flag = true;
-	UI_Layout(true) {
-		UI_Layout(false) {
+	UI_Vertical {
+		UI_Horizontal {
 			if (UI_Button ("Close Debug")) {
 				close_debug ();
 			}
 			if (flag) {
-				UI_Button ("_##1");
+				UI_FlexibleSpace ();
+				UI_Button ("abcdefghijklmnopqrstuvwxyza##1");
 			}
 		}
-		UI_Layout(false) {
+		UI_Horizontal {
 			UI_Checkbox (&flag, "hi there");
 			if (flag) {
-				UI_Button ("_##2");
+				UI_FlexibleSpace ();
+				UI_Button ("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrst##2");
 			}
 		}
-		UI_Layout(false) {
+		UI_Horizontal {
 			UI_Radio (&state, 0, "A");
 			UI_Radio (&state, 1, "B");
 			UI_Radio (&state, 2, "C");
+			UI_FlexibleSpace ();
 		}
+		UI_Horizontal {
+			UI_Button (va(0, "mem: %zd", Sys_CurrentRSS ()));
+			UI_FlexibleSpace ();
+		}
+		UI_FlexibleSpace ();
 	}
 
 	IMUI_Draw (debug_imui);
