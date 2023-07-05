@@ -44,14 +44,14 @@ enum {
 
 extern const struct component_s imui_components[imui_comp_count];
 
-typedef enum IMUI_SizeKind {
-	IMUI_SizeKind_Null,
-	IMUI_SizeKind_Pixels,
-	IMUI_SizeKind_TextContent,
-	IMUI_SizeKind_PercentOfParent,
-	IMUI_SizeKind_ChildrenSum,
-	IMUI_SizeKind_Expand,
-} IMUI_SizeKind;
+typedef enum {
+	imui_size_none,
+	imui_size_pixels,
+	imui_size_fittext,
+	imui_size_percent,
+	imui_size_fitchildren,
+	imui_size_expand,
+} imui_size_t;
 
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);

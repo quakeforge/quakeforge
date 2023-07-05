@@ -287,16 +287,16 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx)
 	viewcont_t *cont = h->components[view_control];
 
 	switch (cont[ind].semantic_x) {
-		case IMUI_SizeKind_Null:
+		case imui_size_none:
 			if (Ent_HasComponent (e, ctx->csys.base + canvas_glyphs, reg)) {
 				return CYN;
 			}
 			return DFL;
-		case IMUI_SizeKind_Pixels: return WHT;
-		case IMUI_SizeKind_TextContent: return CYN;
-		case IMUI_SizeKind_PercentOfParent: return ONG;
-		case IMUI_SizeKind_ChildrenSum: return MAG;
-		case IMUI_SizeKind_Expand: return RED;
+		case imui_size_pixels: return WHT;
+		case imui_size_fittext: return CYN;
+		case imui_size_percent: return ONG;
+		case imui_size_fitchildren: return MAG;
+		case imui_size_expand: return RED;
 	}
 	return DFL;
 }
@@ -348,23 +348,23 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	for (uint32_t i = 1; i < h->num_objects; i++) {
 		if (down_depend
-			&& (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum
-				|| cont[i].semantic_x == IMUI_SizeKind_Expand)) {
+			&& (cont[i].semantic_x == imui_size_fitchildren
+				|| cont[i].semantic_x == imui_size_expand)) {
 			down_depend[i].x = true;
 		} else if ((!down_depend
 					|| !(down_depend[i].x = down_depend[parent[i]].x))
-				   && cont[i].semantic_x == IMUI_SizeKind_PercentOfParent) {
+				   && cont[i].semantic_x == imui_size_percent) {
 			int *percent = Ent_GetComponent (ent[i], c_percent_x, reg);
 			int x = (len[parent[i]].x * *percent) / 100;
 			len[i].x = x;
 		}
 		if (down_depend
-			&& (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum
-				|| cont[i].semantic_y == IMUI_SizeKind_Expand)) {
+			&& (cont[i].semantic_y == imui_size_fitchildren
+				|| cont[i].semantic_y == imui_size_expand)) {
 			down_depend[i].y = true;
 		} else if ((!down_depend
 					|| !(down_depend[i].y = down_depend[parent[i]].y))
-				   && cont[i].semantic_y == IMUI_SizeKind_PercentOfParent) {
+				   && cont[i].semantic_y == imui_size_percent) {
 			int *percent = Ent_GetComponent (ent[i], c_percent_y, reg);
 			int y = (len[parent[i]].y * *percent) / 100;
 			len[i].y = y;
@@ -379,8 +379,8 @@ calc_downwards_dependent (hierarchy_t *h)
 	viewcont_t *cont = h->components[view_control];
 	for (uint32_t i = h->num_objects; --i > 0; ) {
 		view_pos_t  clen = len[i];
-		if (cont[i].semantic_x == IMUI_SizeKind_ChildrenSum
-			|| cont[i].semantic_x == IMUI_SizeKind_Expand) {
+		if (cont[i].semantic_x == imui_size_fitchildren
+			|| cont[i].semantic_x == imui_size_expand) {
 			clen.x = 0;
 			if (cont[i].vertical) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
@@ -394,8 +394,8 @@ calc_downwards_dependent (hierarchy_t *h)
 				}
 			}
 		}
-		if (cont[i].semantic_y == IMUI_SizeKind_ChildrenSum
-			|| cont[i].semantic_y == IMUI_SizeKind_Expand) {
+		if (cont[i].semantic_y == imui_size_fitchildren
+			|| cont[i].semantic_y == imui_size_expand) {
 			clen.y = 0;
 			if (!cont[i].vertical) {
 				for (uint32_t j = 0; j < h->childCount[i]; j++) {
@@ -432,12 +432,12 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 			uint32_t child = h->childIndex[i] + j;
 			tlen.x += len[child].x;
 			tlen.y += len[child].y;
-			if (cont[child].semantic_x == IMUI_SizeKind_Expand) {
+			if (cont[child].semantic_x == imui_size_expand) {
 				int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
 				elen.x += *p;
 				ecount.x++;
 			}
-			if (cont[child].semantic_y == IMUI_SizeKind_Expand) {
+			if (cont[child].semantic_y == imui_size_expand) {
 				int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
 				elen.y += *p;
 				ecount.y++;
@@ -447,7 +447,7 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 //				elen.x, elen.y, ecount.x, ecount.y);
 		for (uint32_t j = 0; ecount.x && j < h->childCount[i]; j++) {
 			uint32_t child = h->childIndex[i] + j;
-			if (cont[child].semantic_x != IMUI_SizeKind_Expand) {
+			if (cont[child].semantic_x != imui_size_expand) {
 				continue;
 			}
 			if (cont[i].vertical) {
@@ -463,7 +463,7 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 		}
 		for (uint32_t j = 0; ecount.y && j < h->childCount[i]; j++) {
 			uint32_t child = h->childIndex[i] + j;
-			if (cont[child].semantic_y != IMUI_SizeKind_Expand) {
+			if (cont[child].semantic_y != imui_size_expand) {
 				continue;
 			}
 			if (cont[i].vertical) {
@@ -509,18 +509,18 @@ layout_objects (imui_ctx_t *ctx)
 			cur_parent = parent[i];
 			cpos = (view_pos_t) {};
 		}
-		if (cont[i].semantic_x != IMUI_SizeKind_Null
-			&& cont[i].semantic_y != IMUI_SizeKind_Null) {
+		if (cont[i].semantic_x != imui_size_none
+			&& cont[i].semantic_y != imui_size_none) {
 			pos[i] = cpos;
-		} else if (cont[i].semantic_x != IMUI_SizeKind_Null) {
+		} else if (cont[i].semantic_x != imui_size_none) {
 			pos[i].x = cpos.x;
-		} else if (cont[i].semantic_y != IMUI_SizeKind_Null) {
+		} else if (cont[i].semantic_y != imui_size_none) {
 			pos[i].y = cpos.y;
 		}
 		if (cont[parent[i]].vertical) {
-			cpos.y += cont[i].semantic_y == IMUI_SizeKind_Null ? 0 : len[i].y;
+			cpos.y += cont[i].semantic_y == imui_size_none ? 0 : len[i].y;
 		} else {
-			cpos.x += cont[i].semantic_x == IMUI_SizeKind_Null ? 0 : len[i].x;
+			cpos.x += cont[i].semantic_x == imui_size_none ? 0 : len[i].x;
 		}
 	}
 
@@ -571,10 +571,10 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	auto pcont = View_Control (ctx->current_parent);
 	ctx->current_parent = view;
-	auto x_size = pcont->vertical ? IMUI_SizeKind_Expand
-								  : IMUI_SizeKind_ChildrenSum;
-	auto y_size = pcont->vertical ? IMUI_SizeKind_ChildrenSum
-								  : IMUI_SizeKind_Expand;
+	auto x_size = pcont->vertical ? imui_size_expand
+								  : imui_size_fitchildren;
+	auto y_size = pcont->vertical ? imui_size_fitchildren
+								  : imui_size_expand;
 	*View_Control (view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
@@ -670,8 +670,8 @@ set_control (imui_ctx_t *ctx, view_t view, bool active)
 	*View_Control (view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
-		.semantic_x = IMUI_SizeKind_Pixels,
-		.semantic_y = IMUI_SizeKind_Pixels,
+		.semantic_x = imui_size_pixels,
+		.semantic_y = imui_size_pixels,
 		.active = active,
 	};
 }
@@ -704,8 +704,8 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 	update_hot_active (ctx, old_entity, state->entity);
 
 	set_control (ctx, view, true);
-	View_Control (view)->semantic_x = IMUI_SizeKind_ChildrenSum;
-	View_Control (view)->semantic_y = IMUI_SizeKind_ChildrenSum;
+	View_Control (view)->semantic_x = imui_size_fitchildren;
+	View_Control (view)->semantic_y = imui_size_fitchildren;
 
 	set_fill (ctx, view, 0);
 
@@ -744,8 +744,8 @@ IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 	update_hot_active (ctx, old_entity, state->entity);
 
 	set_control (ctx, view, true);
-	View_Control (view)->semantic_x = IMUI_SizeKind_ChildrenSum;
-	View_Control (view)->semantic_y = IMUI_SizeKind_ChildrenSum;
+	View_Control (view)->semantic_x = imui_size_fitchildren;
+	View_Control (view)->semantic_y = imui_size_fitchildren;
 
 	set_fill (ctx, view, 0);
 
@@ -783,8 +783,8 @@ IMUI_FlexibleSpace (imui_ctx_t *ctx)
 	View_SetLen (ctx->current_parent, 0, 0);
 
 	set_control (ctx, view, false);
-	View_Control (view)->semantic_x = IMUI_SizeKind_Expand;
-	View_Control (view)->semantic_y = IMUI_SizeKind_Expand;
+	View_Control (view)->semantic_x = imui_size_expand;
+	View_Control (view)->semantic_y = imui_size_expand;
 	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
 	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
