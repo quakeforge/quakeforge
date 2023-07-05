@@ -590,7 +590,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		};
 	}
 
-	QFV_CreateResource (ctx->device, lctx->light_resources);
+	QFV_CreateResource (device, lctx->light_resources);
 
 	lctx->splat_verts = splat_verts[0].buffer.buffer;
 	lctx->splat_inds = splat_inds[0].buffer.buffer;
