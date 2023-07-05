@@ -53,6 +53,21 @@ typedef enum {
 	imui_size_expand,
 } imui_size_t;
 
+typedef union imui_color_s {
+	struct {
+		uint32_t    normal;
+		uint32_t    hot;
+		uint32_t    active;
+	};
+	uint32_t    color[3];
+} imui_color_t;
+
+typedef struct imui_style_s {
+	imui_color_t background;
+	imui_color_t foreground;
+	imui_color_t text;
+} imui_style_t;
+
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);

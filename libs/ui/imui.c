@@ -97,6 +97,8 @@ struct imui_ctx_s {
 	unsigned    shift;
 	int         key_code;
 	int         unicode;
+
+	imui_style_t style;
 };
 
 static imui_state_t *
@@ -174,6 +176,23 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
+		.style = {
+			.background = {
+				.normal = 0x04,
+				.hot = 0x04,
+				.active = 0x04,
+			},
+			.foreground = {
+				.normal = 0x08,
+				.hot = 0x0f,
+				.active = 0x0c,
+			},
+			.text = {
+				.normal = 0xfe,
+				.hot = 0x5f,
+				.active = 0x6f,
+			},
+		},
 	};
 	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
 	ctx->current_parent = ctx->root_view;
@@ -614,7 +633,7 @@ check_button_state (imui_ctx_t *ctx, uint32_t entity)
 }
 
 static view_t
-add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
+add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 {
 	uint32_t c_glyphs = ctx->csys.base + canvas_glyphs;
 	uint32_t c_passage_glyphs = ctx->csys.text_base + text_passage_glyphs;
@@ -641,20 +660,28 @@ add_text (view_t view, imui_state_t *state, imui_ctx_t *ctx)
 	len = View_GetLen (text);
 	View_SetLen (view, len.x, len.y);
 
+	uint32_t c_color = ctx->tsys.text_base + text_color;
+	uint32_t color = ctx->style.text.color[mode];
+	*(uint32_t *) Ent_AddComponent (text.id, c_color, ctx->tsys.reg) = color;
+
 	return text;
 }
 
-static void
+static int
 update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
 {
+	int mode = 0;
 	if (old_entity != nullent) {
 		if (ctx->hot == old_entity) {
 			ctx->hot = new_entity;
+			mode = 1;
 		}
 		if (ctx->active == old_entity) {
 			ctx->active = new_entity;
+			mode = 2;
 		}
 	}
+	return mode;
 }
 
 static void
@@ -684,11 +711,11 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	state->entity = view.id;
-	update_hot_active (ctx, old_entity, state->entity);
+	int mode = update_hot_active (ctx, old_entity, state->entity);
 
 	set_control (ctx, view, true);
-	set_fill (ctx, view, 0);
-	add_text (view, state, ctx);
+	set_fill (ctx, view, ctx->style.foreground.color[mode]);
+	add_text (ctx, view, state, mode);
 
 	return check_button_state (ctx, state->entity);
 }
@@ -701,31 +728,29 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	state->entity = view.id;
-	update_hot_active (ctx, old_entity, state->entity);
+	int mode = update_hot_active (ctx, old_entity, state->entity);
 
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
 
-	set_fill (ctx, view, 0);
+	set_fill (ctx, view, ctx->style.background.color[mode]);
 
 	auto checkbox = View_New (ctx->vsys, view);
 	set_control (ctx, checkbox, false);
 	View_SetLen (checkbox, 20, 20);
-	set_fill (ctx, checkbox, 0xfe);
+	set_fill (ctx, checkbox, ctx->style.foreground.color[mode]);
 	if (!*flag) {
 		auto punch = View_New (ctx->vsys, checkbox);
 		set_control (ctx, punch, false);
 		View_SetGravity (punch, grav_center);
 		View_SetLen (punch, 14, 14);
-		set_fill (ctx, punch, 0);
+		set_fill (ctx, punch, ctx->style.background.color[mode]);
 	}
 
 	auto text = View_New (ctx->vsys, view);
 	set_control (ctx, text, false);
-	add_text (text, state, ctx);
-	auto c = View_GetChild (text, 0);
-	*(uint32_t *)Ent_AddComponent (c.id, ctx->tsys.text_base + text_color, c.reg) = 0xfb;
+	add_text (ctx, text, state, mode);
 
 	if (check_button_state (ctx, state->entity)) {
 		*flag = !*flag;
@@ -741,29 +766,29 @@ IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	state->entity = view.id;
-	update_hot_active (ctx, old_entity, state->entity);
+	int mode = update_hot_active (ctx, old_entity, state->entity);
 
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
 
-	set_fill (ctx, view, 0);
+	set_fill (ctx, view, ctx->style.background.color[mode]);
 
 	auto checkbox = View_New (ctx->vsys, view);
 	set_control (ctx, checkbox, false);
 	View_SetLen (checkbox, 20, 20);
-	set_fill (ctx, checkbox, 0xfe);
+	set_fill (ctx, checkbox, ctx->style.foreground.color[mode]);
 	if (*curvalue != value) {
 		auto punch = View_New (ctx->vsys, checkbox);
 		set_control (ctx, punch, false);
 		View_SetGravity (punch, grav_center);
 		View_SetLen (punch, 14, 14);
-		set_fill (ctx, punch, 0);
+		set_fill (ctx, punch, ctx->style.background.color[mode]);
 	}
 
 	auto text = View_New (ctx->vsys, view);
 	set_control (ctx, text, false);
-	add_text (text, state, ctx);
+	add_text (ctx, text, state, mode);
 
 	if (check_button_state (ctx, state->entity)) {
 		*curvalue = value;
@@ -790,5 +815,5 @@ IMUI_FlexibleSpace (imui_ctx_t *ctx)
 	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
 	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 
-	set_fill (ctx, view, 0xfb);
+	set_fill (ctx, view, ctx->style.background.normal);
 }
