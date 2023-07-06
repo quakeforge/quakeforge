@@ -48,6 +48,13 @@
 #include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 
+#define c_percent_x (ctx->csys.imui_base + imui_percent_x)
+#define c_percent_y (ctx->csys.imui_base + imui_percent_y)
+#define c_glyphs (ctx->csys.base + canvas_glyphs)
+#define c_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
+#define c_color (ctx->tsys.text_base + text_color)
+#define c_fill  (ctx->csys.base + canvas_fill)
+
 const component_t imui_components[imui_comp_count] = {
 	[imui_percent_x] = {
 		.size = sizeof (int),
@@ -309,7 +316,7 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx)
 
 	switch (cont[ind].semantic_x) {
 		case imui_size_none:
-			if (Ent_HasComponent (e, ctx->csys.base + canvas_glyphs, reg)) {
+			if (Ent_HasComponent (e, c_glyphs, reg)) {
 				return CYN;
 			}
 			return DFL;
@@ -365,8 +372,6 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
-	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
-	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	for (uint32_t i = 1; i < h->num_objects; i++) {
 		if (down_depend
 			&& (cont[i].semantic_x == imui_size_fitchildren
@@ -442,8 +447,6 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
-	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		view_pos_t  tlen = {};
@@ -604,8 +607,6 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 		.vertical = vertical,
 	};
 	View_SetLen (view, 0, 0);
-	uint32_t c_percent_x = ctx->csys.imui_base + imui_percent_x;
-	uint32_t c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
 	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 }
@@ -657,8 +658,6 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 static view_t
 add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 {
-	uint32_t c_glyphs = ctx->csys.base + canvas_glyphs;
-	uint32_t c_passage_glyphs = ctx->csys.text_base + text_passage_glyphs;
 	auto     reg = ctx->csys.reg;
 
 	auto text = Text_StringView (ctx->tsys, view, ctx->font,
@@ -682,7 +681,6 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 	len = View_GetLen (text);
 	View_SetLen (view, len.x, len.y);
 
-	uint32_t c_color = ctx->tsys.text_base + text_color;
 	uint32_t color = ctx->style.text.color[mode];
 	*(uint32_t *) Ent_AddComponent (text.id, c_color, ctx->tsys.reg) = color;
 
@@ -709,7 +707,6 @@ update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
 static void
 set_fill (imui_ctx_t *ctx, view_t view, byte color)
 {
-	uint32_t c_fill = ctx->csys.base + canvas_fill;
 	*(byte*) Ent_AddComponent (view.id, c_fill, ctx->csys.reg) = color;
 }
 
@@ -729,7 +726,6 @@ static void
 set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 {
 	View_Control (view)->semantic_x = imui_size_expand;
-	uint32_t c_percent_x = ctx->csys.imui_base + imui_percent_x;
 	*(int *) Ent_AddComponent(view.id, c_percent_x, ctx->csys.reg) = weight;
 }
 
@@ -840,8 +836,6 @@ IMUI_FlexibleSpace (imui_ctx_t *ctx)
 	set_control (ctx, view, false);
 	View_Control (view)->semantic_x = imui_size_expand;
 	View_Control (view)->semantic_y = imui_size_expand;
-	uint32_t    c_percent_x = ctx->csys.imui_base + imui_percent_x;
-	uint32_t    c_percent_y = ctx->csys.imui_base + imui_percent_y;
 	*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
 	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 
