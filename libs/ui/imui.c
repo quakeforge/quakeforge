@@ -108,6 +108,7 @@ struct imui_ctx_s {
 	int         unicode;
 
 	imui_style_t style;
+	struct DARRAY_TYPE(imui_style_t) style_stack;
 };
 
 static imui_state_t *
@@ -185,6 +186,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
+		.style_stack = DARRAY_STATIC_INIT (8),
 		.style = {
 			.background = {
 				.normal = 0x04,
@@ -640,6 +642,33 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	}
 }
 
+void
+IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style)
+{
+	DARRAY_APPEND (&ctx->style_stack, ctx->style);
+	if (style) {
+		ctx->style = *style;
+	}
+}
+
+void
+IMUI_PopStyle (imui_ctx_t *ctx)
+{
+	ctx->style = DARRAY_REMOVE (&ctx->style_stack);
+}
+
+void
+IMUI_Style_Update (imui_ctx_t *ctx, const imui_style_t *style)
+{
+	ctx->style = *style;
+}
+
+void
+IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style)
+{
+	*style = ctx->style;
+}
+
 static bool
 check_button_state (imui_ctx_t *ctx, uint32_t entity)
 {
@@ -750,6 +779,19 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 {
 	View_Control (view)->semantic_x = imui_size_expand;
 	*(int *) Ent_AddComponent(view.id, c_percent_x, ctx->csys.reg) = weight;
+}
+
+void
+IMUI_Label (imui_ctx_t *ctx, const char *label)
+{
+	auto state = imui_get_state (ctx, label);
+
+	auto view = View_New (ctx->vsys, ctx->current_parent);
+	state->entity = view.id;
+
+	set_control (ctx, view, true);
+	set_fill (ctx, view, ctx->style.background.normal);
+	add_text (ctx, view, state, 0);
 }
 
 bool

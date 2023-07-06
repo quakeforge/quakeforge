@@ -93,6 +93,12 @@ void IMUI_PopLayout (imui_ctx_t *ctx);
 void IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value);
 void IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value);
 
+void IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style);
+void IMUI_PopStyle (imui_ctx_t *ctx);
+void IMUI_Style_Update (imui_ctx_t *ctx, const imui_style_t *style);
+void IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style);
+
+void IMUI_Label (imui_ctx_t *ctx, const char *label);
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
 void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
@@ -102,10 +108,14 @@ void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
 void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
+
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = ((begin), 0); !_i_; _i_++, (end))
 
 // #define IMUI_context to an imui_ctx_t * variable
+
+#define UI_Label(label) \
+	IMUI_Label(IMUI_context, label)
 
 #define UI_Button(label) \
 	IMUI_Button(IMUI_context, label)
@@ -129,6 +139,10 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \
 					IMUI_EndWindow (IMUI_context))
+
+#define UI_Style(style) \
+	IMUI_DeferLoop (IMUI_PushStyle (IMUI_context, style), \
+					IMUI_PopStyle (IMUI_context ))
 
 #define UI_Horizontal UI_Layout(false)
 #define UI_Vertical UI_Layout(true)
