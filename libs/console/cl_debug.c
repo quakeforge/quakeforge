@@ -129,6 +129,7 @@ Con_Debug_InitCvars (void)
 	Cvar_Register (&deb_fontsize_cvar, 0, 0);
 }
 
+static imui_style_t current_style;
 void
 Con_Debug_Init (void)
 {
@@ -136,12 +137,89 @@ Con_Debug_Init (void)
 	debug_imui = IMUI_NewContext (*con_data.canvas_sys,
 								  deb_fontname, deb_fontsize);
 	IMUI_SetVisible (debug_imui, con_debug);
+	IMUI_Style_Fetch (debug_imui, &current_style);
 }
 
 void
 Con_Debug_Shutdown (void)
 {
 	IE_Remove_Handler (debug_event_id);
+}
+
+static imui_window_t style_editor = {
+	.name = "Style Colors",
+	.xpos = 75,
+	.ypos = 75,
+	.xlen = 400,
+	.ylen = 300,
+	.is_open = true,
+};
+static int style_selection;
+static int style_mode;
+static int style_color;
+
+static void
+color_window (void)
+{
+	UI_Window (&style_editor) {
+		if (!style_editor.is_open || style_editor.is_collapsed) {
+			continue;
+		}
+		IMUI_Layout_SetXSize (debug_imui, imui_size_fitchildren, 0);
+		IMUI_Layout_SetYSize (debug_imui, imui_size_fitchildren, 0);
+		UI_Vertical {
+			UI_Horizontal {
+				UI_Radio (&style_selection, 0, "Background");
+				UI_Radio (&style_selection, 1, "Foreground");
+				UI_Radio (&style_selection, 2, "Text");
+				UI_FlexibleSpace ();
+			}
+
+			UI_Horizontal {
+				UI_Radio (&style_mode, 0, "Normal");
+				UI_Radio (&style_mode, 1, "Hot");
+				UI_Radio (&style_mode, 2, "Active");
+				UI_FlexibleSpace ();
+			}
+
+			if (style_selection == 0) {
+				style_color = current_style.background.color[style_mode];
+			} else if (style_selection == 1) {
+				style_color = current_style.foreground.color[style_mode];
+			} else if (style_selection == 2) {
+				style_color = current_style.text.color[style_mode];
+			}
+
+			imui_style_t style;
+			IMUI_Style_Fetch (debug_imui, &style);
+			auto bg_save = style.background.normal;
+			auto fg_save = style.foreground.normal;
+			UI_Style (0) for (int y = 0; y < 16; y++) {
+				UI_Horizontal for (int x = 0; x < 16; x++) {
+					if (!x) UI_FlexibleSpace ();
+					int c = y * 16 + x;
+					int ic = y * 16 + (15-x);
+					style.background.normal = c;
+					style.foreground.normal = c == style_color ? c : ic;
+					IMUI_Style_Update (debug_imui, &style);
+					UI_Radio (&style_color, c, va (0, "##color_%x%x", y, x));
+					if (x == 15) {
+						style.background.normal = bg_save;
+						style.foreground.normal = fg_save;
+						IMUI_Style_Update (debug_imui, &style);
+						UI_FlexibleSpace ();
+					}
+				}
+			}
+		}
+		if (style_selection == 0) {
+			current_style.background.color[style_mode] = style_color;
+		} else if (style_selection == 1) {
+			current_style.foreground.color[style_mode] = style_color;
+		} else if (style_selection == 2) {
+			current_style.text.color[style_mode] = style_color;
+		}
+	}
 }
 
 void
@@ -154,6 +232,7 @@ Con_Debug_Draw (void)
 	}
 
 	IMUI_BeginFrame (debug_imui);
+	IMUI_Style_Update (debug_imui, &current_style);
 static int state;
 static bool flag = true;
 static imui_window_t window = {
@@ -175,14 +254,14 @@ static imui_window_t window = {
 				}
 				UI_FlexibleSpace ();
 				if (flag) {
-					UI_Button ("abcde##1");
+					UI_Label ("abcde##1");
 				}
 			}
 			UI_Horizontal {
 				UI_Checkbox (&flag, "hi there");
 				UI_FlexibleSpace ();
 				if (flag) {
-					UI_Button ("abcdefg##2");
+					UI_Label ("abcdefg##2");
 				}
 			}
 			UI_Horizontal {
@@ -192,12 +271,13 @@ static imui_window_t window = {
 				UI_FlexibleSpace ();
 			}
 			UI_Horizontal {
-				UI_Button (va(0, "mem: %zd", Sys_CurrentRSS ()));
+				UI_Label (va(0, "mem: %zd", Sys_CurrentRSS ()));
 				UI_FlexibleSpace ();
 			}
 			UI_FlexibleSpace ();
 		}
 	}
+	color_window ();
 
 	IMUI_Draw (debug_imui);
 }
