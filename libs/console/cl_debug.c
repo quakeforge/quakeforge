@@ -156,34 +156,47 @@ Con_Debug_Draw (void)
 	IMUI_BeginFrame (debug_imui);
 static int state;
 static bool flag = true;
-	UI_Vertical {
-		UI_Horizontal {
-			if (UI_Button ("Close Debug")) {
-				close_debug ();
-			}
-			if (flag) {
-				UI_FlexibleSpace ();
-				UI_Button ("abcdefghijklmnopqrstuvwxyza##1");
-			}
+static imui_window_t window = {
+	.name = "Test Window",
+	.xpos = 50,
+	.ypos = 50,
+	.xlen = 400,
+	.ylen = 250,
+	.is_open = true,
+};
+	UI_Window (&window) {
+		if (!window.is_open || window.is_collapsed) {
+			continue;
 		}
-		UI_Horizontal {
-			UI_Checkbox (&flag, "hi there");
-			if (flag) {
+		UI_Vertical {
+			UI_Horizontal {
+				if (UI_Button ("Close Debug")) {
+					close_debug ();
+				}
 				UI_FlexibleSpace ();
-				UI_Button ("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrst##2");
+				if (flag) {
+					UI_Button ("abcde##1");
+				}
 			}
-		}
-		UI_Horizontal {
-			UI_Radio (&state, 0, "A");
-			UI_Radio (&state, 1, "B");
-			UI_Radio (&state, 2, "C");
+			UI_Horizontal {
+				UI_Checkbox (&flag, "hi there");
+				UI_FlexibleSpace ();
+				if (flag) {
+					UI_Button ("abcdefg##2");
+				}
+			}
+			UI_Horizontal {
+				UI_Radio (&state, 0, "A");
+				UI_Radio (&state, 1, "B");
+				UI_Radio (&state, 2, "C");
+				UI_FlexibleSpace ();
+			}
+			UI_Horizontal {
+				UI_Button (va(0, "mem: %zd", Sys_CurrentRSS ()));
+				UI_FlexibleSpace ();
+			}
 			UI_FlexibleSpace ();
 		}
-		UI_Horizontal {
-			UI_Button (va(0, "mem: %zd", Sys_CurrentRSS ()));
-			UI_FlexibleSpace ();
-		}
-		UI_FlexibleSpace ();
 	}
 
 	IMUI_Draw (debug_imui);

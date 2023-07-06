@@ -68,6 +68,16 @@ typedef struct imui_style_s {
 	imui_color_t text;
 } imui_style_t;
 
+typedef struct imui_window_s {
+	const char *name;
+	int         xpos;
+	int         ypos;
+	int         xlen;
+	int         ylen;
+	bool        is_open;
+	bool        is_collapsed;
+} imui_window_t;
+
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);
@@ -80,6 +90,8 @@ void IMUI_Draw (imui_ctx_t *ctx);
 
 void IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
 void IMUI_PopLayout (imui_ctx_t *ctx);
+void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_EndWindow (imui_ctx_t *ctx);
 
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
@@ -111,6 +123,10 @@ void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 #define UI_Layout(vertical) \
 	IMUI_DeferLoop (IMUI_PushLayout (IMUI_context, vertical), \
 					IMUI_PopLayout (IMUI_context ))
+
+#define UI_Window(window) \
+	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \
+					IMUI_EndWindow (IMUI_context))
 
 #define UI_Horizontal UI_Layout(false)
 #define UI_Vertical UI_Layout(true)

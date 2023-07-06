@@ -39,6 +39,7 @@
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
+#include "QF/va.h"
 
 #include "QF/input/event.h"
 
@@ -90,6 +91,7 @@ struct imui_ctx_s {
 
 	uint32_t    hot;
 	uint32_t    active;
+	view_pos_t  mouse_active;
 	bool        mouse_pressed;
 	bool        mouse_released;
 	unsigned    mouse_buttons;
@@ -632,6 +634,26 @@ check_button_state (imui_ctx_t *ctx, uint32_t entity)
 	return result;
 }
 
+static view_pos_t
+check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
+{
+	view_pos_t  delta = {};
+	if (ctx->active == entity) {
+		delta.x = ctx->mouse_position.x - ctx->mouse_active.x;
+		delta.y = ctx->mouse_position.y - ctx->mouse_active.y;
+		ctx->mouse_active = ctx->mouse_position;
+		if (ctx->mouse_released) {
+			ctx->active = nullent;
+		}
+	} else if (ctx->hot == entity) {
+		if (ctx->mouse_pressed) {
+			ctx->mouse_active = ctx->mouse_position;
+			ctx->active = entity;
+		}
+	}
+	return delta;
+}
+
 static view_t
 add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 {
@@ -701,6 +723,14 @@ set_control (imui_ctx_t *ctx, view_t view, bool active)
 		.semantic_y = imui_size_pixels,
 		.active = active,
 	};
+}
+
+static void
+set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
+{
+	View_Control (view)->semantic_x = imui_size_expand;
+	uint32_t c_percent_x = ctx->csys.imui_base + imui_percent_x;
+	*(int *) Ent_AddComponent(view.id, c_percent_x, ctx->csys.reg) = weight;
 }
 
 bool
@@ -816,4 +846,70 @@ IMUI_FlexibleSpace (imui_ctx_t *ctx)
 	*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 
 	set_fill (ctx, view, ctx->style.background.normal);
+}
+
+void
+IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	if (!window->is_open) {
+		return;
+	}
+	auto state = imui_get_state (ctx, window->name);
+	uint32_t old_entity = state->entity;
+
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+
+	auto window_view = View_New (ctx->vsys, ctx->current_parent);
+	state->entity = window_view.id;
+	int mode = update_hot_active (ctx, old_entity, state->entity);
+
+	ctx->current_parent = window_view;
+	*View_Control (window_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_none,
+		.semantic_y = imui_size_none,
+		.vertical = true,
+		.active = 1,
+	};
+	View_SetPos (window_view, window->xpos, window->ypos);
+	View_SetLen (window_view, window->xlen, window->ylen);
+
+#define IMUI_context ctx
+	UI_Horizontal {
+		if (UI_Button (va (0, "%c##collapse_%s",
+						   window->is_collapsed ? '>' : 'v', window->name))) {
+			window->is_collapsed = !window->is_collapsed;
+		}
+
+		auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar",
+												 window->name));
+		uint32_t tb_old_entity = tb_state->entity;
+		auto title_bar = View_New (ctx->vsys, ctx->current_parent);
+		tb_state->entity = title_bar.id;
+		int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
+		auto delta = check_drag_delta (ctx, tb_state->entity);
+		if (ctx->active == tb_state->entity) {
+			window->xpos += delta.x;
+			window->ypos += delta.y;
+		}
+
+		set_control (ctx, title_bar, true);
+		set_expand_x (ctx, title_bar, 100);
+		set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
+
+		auto title = add_text (ctx, title_bar, state, mode);
+		View_Control (title)->gravity = grav_center;
+
+		if (UI_Button (va (0, "X##close_%s", window->name))) {
+			window->is_open = false;
+		}
+	}
+#undef IMUI_context
+}
+
+void
+IMUI_EndWindow (imui_ctx_t *ctx)
+{
+	IMUI_PopLayout (ctx);
 }
