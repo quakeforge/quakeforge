@@ -90,8 +90,8 @@ void IMUI_Draw (imui_ctx_t *ctx);
 
 void IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
 void IMUI_PopLayout (imui_ctx_t *ctx);
-void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
-void IMUI_EndWindow (imui_ctx_t *ctx);
+void IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value);
+void IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value);
 
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
@@ -100,6 +100,8 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 				  const char *label);
 void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
+void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_EndWindow (imui_ctx_t *ctx);
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = ((begin), 0); !_i_; _i_++, (end))
 

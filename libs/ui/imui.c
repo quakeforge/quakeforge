@@ -533,12 +533,11 @@ layout_objects (imui_ctx_t *ctx)
 			cur_parent = parent[i];
 			cpos = (view_pos_t) {};
 		}
-		if (cont[i].semantic_x != imui_size_none
-			&& cont[i].semantic_y != imui_size_none) {
+		if (!cont[i].free_x && !cont[i].free_y) {
 			pos[i] = cpos;
-		} else if (cont[i].semantic_x != imui_size_none) {
+		} else if (!cont[i].free_x) {
 			pos[i].x = cpos.x;
-		} else if (cont[i].semantic_y != imui_size_none) {
+		} else if (!cont[i].free_y) {
 			pos[i].y = cpos.y;
 		}
 		if (cont[parent[i]].vertical) {
@@ -615,6 +614,28 @@ void
 IMUI_PopLayout (imui_ctx_t *ctx)
 {
 	ctx->current_parent = DARRAY_REMOVE (&ctx->parent_stack);
+}
+
+void
+IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
+{
+	auto pcont = View_Control (ctx->current_parent);
+	uint32_t id = ctx->current_parent.id;
+	pcont->semantic_x = size;
+	if (size == imui_size_percent || imui_size_expand) {
+		*(int *) Ent_AddComponent(id, c_percent_x, ctx->csys.reg) = value;
+	}
+}
+
+void
+IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
+{
+	auto pcont = View_Control (ctx->current_parent);
+	uint32_t id = ctx->current_parent.id;
+	pcont->semantic_y = size;
+	if (size == imui_size_percent || imui_size_expand) {
+		*(int *) Ent_AddComponent(id, c_percent_y, ctx->csys.reg) = value;
+	}
 }
 
 static bool
@@ -863,6 +884,8 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		.visible = 1,
 		.semantic_x = imui_size_none,
 		.semantic_y = imui_size_none,
+		.free_x = 1,
+		.free_y = 1,
 		.vertical = true,
 		.active = 1,
 	};
