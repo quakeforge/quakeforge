@@ -877,9 +877,11 @@ IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 		set_fill (ctx, punch, ctx->style.background.color[mode]);
 	}
 
-	auto text = View_New (ctx->vsys, view);
-	set_control (ctx, text, false);
-	add_text (ctx, text, state, mode);
+	if (state->label_len) {
+		auto text = View_New (ctx->vsys, view);
+		set_control (ctx, text, false);
+		add_text (ctx, text, state, mode);
+	}
 
 	if (check_button_state (ctx, state->entity)) {
 		*curvalue = value;
