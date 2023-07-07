@@ -106,6 +106,7 @@ extern hb_feature_t CligOn;
 
 struct font_s;
 struct passage_s;
+struct text_shaper_s;
 
 typedef struct text_system_s {
 	ecs_registry_t *reg;
@@ -118,7 +119,8 @@ struct view_s Text_PassageView (text_system_t textsys,
 struct view_s Text_StringView (text_system_t textsys, struct view_s parent,
 							   struct font_s *font,
 							   const char *str, uint32_t len,
-							   script_component_t *sc, featureset_t *fs);
+							   script_component_t *sc, featureset_t *fs,
+							   struct text_shaper_s *shaper);
 void Text_SetScript (text_system_t textsys, uint32_t textid,
 					 const char *lang, hb_script_t script, text_dir_e dir);
 void Text_SetFont (text_system_t textsys, uint32_t textid,

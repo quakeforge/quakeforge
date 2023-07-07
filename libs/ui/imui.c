@@ -46,6 +46,7 @@
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/imui.h"
+#include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 
 #define c_percent_x (ctx->csys.imui_base + imui_percent_x)
@@ -81,6 +82,9 @@ struct imui_ctx_s {
 	uint32_t    canvas;
 	ecs_system_t vsys;
 	text_system_t tsys;
+
+	text_shaper_t *shaper;
+
 	hashctx_t  *hashctx;
 	hashtab_t  *tab;
 	PR_RESMAP (imui_state_t) state_map;
@@ -181,6 +185,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.canvas = canvas = Canvas_New (canvas_sys),
 		.vsys = { canvas_sys.reg, canvas_sys.view_base },
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
+		.shaper = Shaper_New (),
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
 		.hot = nullent,
@@ -234,6 +239,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 
 	Hash_DelTable (ctx->tab);
 	Hash_DelContext (ctx->hashctx);
+	Shaper_Delete (ctx->shaper);
 	free (ctx);
 }
 
@@ -274,6 +280,7 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
+	Shaper_FlushUnused (ctx->shaper);
 	uint32_t    root_ent = ctx->root_view.id;
 	auto root_size = View_GetLen (ctx->root_view);
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
@@ -717,7 +724,8 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 	auto     reg = ctx->csys.reg;
 
 	auto text = Text_StringView (ctx->tsys, view, ctx->font,
-								 state->label, state->label_len, 0, 0);
+								 state->label, state->label_len, 0, 0,
+								 ctx->shaper);
 
 	int ascender = ctx->font->face->size->metrics.ascender / 64;
 	int descender = ctx->font->face->size->metrics.descender / 64;

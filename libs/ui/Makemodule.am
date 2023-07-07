@@ -23,6 +23,7 @@ libs_ui_libQFgui_la_SOURCES= \
 	libs/ui/canvas.c \
 	libs/ui/font.c \
 	libs/ui/imui.c \
+	libs/ui/shaper.c \
 	libs/ui/text.c
 
 libs_ui_libQFui_la_LDFLAGS=		$(lib_ldflags)

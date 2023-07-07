@@ -38,6 +38,7 @@
 
 #include "QF/ui/font.h"
 #include "QF/ui/passage.h"
+#include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -116,7 +117,8 @@ static view_resize_f text_flow_funcs[] = {
 
 static void
 layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
-			   hb_glyph_info_t *glyphInfo, hb_glyph_position_t *glyphPos)
+			   const hb_glyph_info_t *glyphInfo,
+			   const hb_glyph_position_t *glyphPos)
 {
 	int         x = 0, y = 0;
 	for (unsigned k = 0; k < glpyhCount; k++) {
@@ -320,7 +322,8 @@ Text_PassageView (text_system_t textsys, font_t *font, passage_t *passage)
 view_t
 Text_StringView (text_system_t textsys, view_t parent,
 				 font_t *font, const char *str, uint32_t len,
-				 script_component_t *sc, featureset_t *fs)
+				 script_component_t *sc, featureset_t *fs,
+				 text_shaper_t *shaper)
 {
 	auto reg = textsys.reg;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
@@ -328,37 +331,25 @@ Text_StringView (text_system_t textsys, view_t parent,
 	glyphnode_t *glyph_nodes = 0;
 	glyphnode_t **head = &glyph_nodes;
 
-	hb_font_t  *fnt = hb_ft_font_create (font->face, 0);
-	hb_buffer_t *buffer = hb_buffer_create ();
-	hb_buffer_allocation_successful (buffer);
 
-	hb_script_t script = HB_SCRIPT_LATIN;
-	text_dir_e direction = text_right_down;
-	hb_language_t language = hb_language_from_string ("en", 2);
+	script_component_t script = {
+		.script = sc ? sc->script : HB_SCRIPT_LATIN,
+		.direction = sc ? sc->direction : text_right_down,
+		.language = sc ? sc->language : hb_language_from_string ("en", 2),
+	};
 	featureset_t text_features = DARRAY_STATIC_INIT (0);
-	featureset_t *features = &text_features;
-
-	if (sc) {
-		script = sc->script;
-		language = sc->language;
-		direction = sc->direction;
-	}
-	if (fs) {
-		features = fs;
-	}
+	shaping_t   shaping = {
+		.script = &script,
+		.features = fs ? fs : &text_features,
+		.font = font,
+	};
 
 	uint32_t    glyph_count = 0;
 
-	hb_buffer_reset (buffer);
-	hb_buffer_set_direction (buffer, direction | HB_DIRECTION_LTR);
-	hb_buffer_set_script (buffer, script);
-	hb_buffer_set_language (buffer, language);
-	hb_buffer_add_utf8 (buffer, str, len, 0, len);
-	hb_shape (fnt, buffer, features->a, features->size);
-
-	unsigned    c;
-	auto glyphInfo = hb_buffer_get_glyph_infos (buffer, &c);
-	auto glyphPos = hb_buffer_get_glyph_positions (buffer, &c);
+	auto shaped_glyphs = Shaper_ShapeText (shaper, &shaping, str, len);
+	unsigned    c = shaped_glyphs.count;
+	auto glyphInfo = shaped_glyphs.glyphInfo;
+	auto glyphPos = shaped_glyphs.glyphPos;
 
 	*head = alloca (sizeof (glyphnode_t));
 	**head = (glyphnode_t) {
@@ -387,8 +378,6 @@ Text_StringView (text_system_t textsys, view_t parent,
 		.count = glyph_count,
 	};
 	Ent_SetComponent (stringview.id, c_passage_glyphs, reg, &glyphset);
-	hb_buffer_destroy (buffer);
-	hb_font_destroy (fnt);
 	return stringview;
 }
 
