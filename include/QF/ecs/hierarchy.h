@@ -57,11 +57,16 @@ typedef struct hierarchy_s {
 	uint32_t   *childCount;
 	uint32_t   *childIndex;
 	uint32_t   *parentIndex;
+	uint32_t   *nextIndex;
+	uint32_t   *lastIndex;
 	const hierarchy_type_t *type;
 	void      **components;
 	struct ecs_registry_s *reg;
 	uint32_t    href_comp;
+	bool        tree_mode;	// use for fast building
 } hierarchy_t;
+
+#define nullindex (~0u)
 
 hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
 							const hierarchy_type_t *type, int createRoot);
@@ -69,6 +74,7 @@ void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
 hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
 							 const hierarchy_t *src);
 void Hierarchy_Delete (hierarchy_t *hierarchy);
+void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 
 uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 									uint32_t dstParent, uint32_t srcRoot);

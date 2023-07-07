@@ -3,7 +3,8 @@ libs_ecs_tests = \
 	libs/ecs/test/test-compops \
 	libs/ecs/test/test-hierarchy \
 	libs/ecs/test/test-registry \
-	libs/ecs/test/test-subpools
+	libs/ecs/test/test-subpools \
+	libs/ecs/test/test-treehierarchy
 
 TESTS += $(libs_ecs_tests)
 
@@ -46,4 +47,11 @@ libs_ecs_test_test_subpools_SOURCES= 		\
 libs_ecs_test_test_subpools_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_subpools_DEPENDENCIES=	\
+	$(libs_ecs_test_libs)
+
+libs_ecs_test_test_treehierarchy_SOURCES=		\
+	libs/ecs/test/test-treehierarchy.c
+libs_ecs_test_test_treehierarchy_LDADD=			\
+	$(libs_ecs_test_libs)
+libs_ecs_test_test_treehierarchy_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)

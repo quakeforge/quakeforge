@@ -39,12 +39,14 @@
 
 #include "QF/ecs.h"
 
-#define nullindex (~0u)
-
 static component_t ent_component = { .size = sizeof (uint32_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
 static component_t childIndex_component = { .size = sizeof (uint32_t) };
 static component_t parentIndex_component = { .size = sizeof (uint32_t) };
+static component_t nextIndex_component = { .size = sizeof (uint32_t) };
+static component_t lastIndex_component = { .size = sizeof (uint32_t) };
+
+
 
 static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
@@ -109,6 +111,10 @@ Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
 							   (void **) &hierarchy->childIndex, new_max);
 		Component_ResizeArray (&parentIndex_component,
 							   (void **) &hierarchy->parentIndex, new_max);
+		Component_ResizeArray (&nextIndex_component,
+							   (void **) &hierarchy->nextIndex, new_max);
+		Component_ResizeArray (&lastIndex_component,
+							   (void **) &hierarchy->lastIndex, new_max);
 
 		if (hierarchy->type) {
 			for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
@@ -128,6 +134,9 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	hierarchy->num_objects += count;
 	uint32_t    dstIndex = index + count;
 	count = hierarchy->num_objects - index - count;
+	if (!count) {
+		return;
+	}
 	Component_MoveElements (&ent_component,
 							hierarchy->ent, dstIndex, index, count);
 	Component_MoveElements (&childCount_component,
@@ -136,6 +145,10 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 							hierarchy->childIndex, dstIndex, index, count);
 	Component_MoveElements (&parentIndex_component,
 							hierarchy->parentIndex, dstIndex, index, count);
+	Component_MoveElements (&nextIndex_component,
+							hierarchy->nextIndex, dstIndex, index, count);
+	Component_MoveElements (&lastIndex_component,
+							hierarchy->lastIndex, dstIndex, index, count);
 	if (hierarchy->type) {
 		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
 			Component_MoveElements (&hierarchy->type->components[i],
@@ -162,6 +175,10 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 							hierarchy->childIndex, index, srcIndex, count);
 	Component_MoveElements (&parentIndex_component,
 							hierarchy->parentIndex, index, srcIndex, count);
+	Component_MoveElements (&nextIndex_component,
+							hierarchy->nextIndex, index, srcIndex, count);
+	Component_MoveElements (&lastIndex_component,
+							hierarchy->lastIndex, index, srcIndex, count);
 	if (hierarchy->type) {
 		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
 			Component_MoveElements (&hierarchy->type->components[i],
@@ -212,6 +229,7 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 		dst->parentIndex[index + i] = parentIndex;
 		dst->childCount[index + i] = 0;
 		dst->childIndex[index + i] = childIndex;
+		dst->lastIndex[index + i] = nullindex;
 	}
 	if (dst->type) {
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
@@ -222,8 +240,8 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 }
 
 static uint32_t
-hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
-				  uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
+hierarchy_insert_flat (hierarchy_t *dst, const hierarchy_t *src,
+					   uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
 {
 	uint32_t    insertIndex;	// where the objects will be inserted
 	uint32_t    childIndex;		// where the objects' children will inserted
@@ -271,6 +289,62 @@ hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
 
 	dst->childCount[dstParent] += count;
 	return insertIndex;
+}
+
+static uint32_t
+hierarchy_insert_tree (hierarchy_t *dst, const hierarchy_t *src,
+					   uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
+{
+	uint32_t    insertIndex;
+	if (dst == src) {
+		// reparenting within the hierarchy, so need only to update indices
+		// of course, easier said than done
+		insertIndex = *srcRoot;
+		uint32_t    srcParent = dst->parentIndex[insertIndex];
+		uint32_t   *next = &dst->nextIndex[srcParent];
+		while (*next != insertIndex) {
+			next = &dst->nextIndex[*next];
+		}
+		if (dst->lastIndex[srcParent] == insertIndex) {
+			// removing src from the end of srcParent's child chain
+			dst->lastIndex[srcParent] = next - dst->nextIndex;
+		}
+		*next = dst->nextIndex[insertIndex];
+		dst->nextIndex[insertIndex] = nullindex;
+
+		dst->nextIndex[dst->lastIndex[dstParent]] = insertIndex;
+		dst->lastIndex[dstParent] = insertIndex;
+	} else {
+		// new objecs are always appended
+		insertIndex = dst->num_objects;
+		hierarchy_open (dst, insertIndex, count);
+		if (dst->childCount[dstParent]) {
+			dst->nextIndex[dst->lastIndex[dstParent]] = insertIndex;
+		} else {
+			dst->childIndex[dstParent] = insertIndex;
+		}
+		dst->childCount[dstParent] += count;
+		dst->lastIndex[dstParent] = insertIndex;
+		dst->nextIndex[insertIndex] = nullindex;
+
+		if (src) {
+			hierarchy_move (dst, src, insertIndex, *srcRoot, count);
+		} else {
+			hierarchy_init (dst, insertIndex, dstParent, nullindex, count);
+		}
+	}
+	return insertIndex;
+}
+
+static uint32_t
+hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
+				  uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
+{
+	if (dst->tree_mode) {
+		return hierarchy_insert_tree (dst, src, dstParent, srcRoot, count);
+	} else {
+		return hierarchy_insert_flat (dst, src, dstParent, srcRoot, count);
+	}
 }
 
 static void
@@ -363,6 +437,9 @@ void
 Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 						   int delEntities)
 {
+	if (hierarchy->tree_mode) {
+		Sys_Error ("Hierarchy_RemoveHierarchy tree mode not implemented");
+	}
 	uint32_t    parentIndex = hierarchy->parentIndex[index];
 
 	hierarchy_remove_children (hierarchy, index, delEntities);
@@ -402,14 +479,15 @@ Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 	return hierarchy;
 }
 
-void
-Hierarchy_Delete (hierarchy_t *hierarchy)
+static void
+hierarchy_delete (hierarchy_t *hierarchy)
 {
-	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
 	free (hierarchy->parentIndex);
+	free (hierarchy->nextIndex);
+	free (hierarchy->lastIndex);
 	if (hierarchy->type) {
 		for (uint32_t i = 0; i < hierarchy->type->num_components; i++) {
 			free (hierarchy->components[i]);
@@ -421,10 +499,138 @@ Hierarchy_Delete (hierarchy_t *hierarchy)
 	PR_RESFREE (reg->hierarchies, hierarchy);
 }
 
+void
+Hierarchy_Delete (hierarchy_t *hierarchy)
+{
+	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
+	hierarchy_delete (hierarchy);
+}
+
+static uint32_t
+copy_one_node (hierarchy_t *dst, const hierarchy_t *src,
+			   uint32_t dstIndex, uint32_t childIndex)
+{
+	uint32_t    srcIndex = dst->parentIndex[dstIndex];
+	uint32_t    childCount = src->childCount[srcIndex];
+
+	dst->childIndex[dstIndex] = childIndex;
+	dst->childCount[dstIndex] = childCount;
+	dst->ent[dstIndex] = src->ent[srcIndex];
+	if (dst->type) {
+		for (uint32_t i = 0; i < dst->type->num_components; i++) {
+			Component_CopyElements (&dst->type->components[i],
+									dst->components[i], dstIndex,
+									src->components[i], srcIndex, 1);
+		}
+	}
+	return srcIndex;
+}
+
+static uint32_t
+queue_tree_nodes (hierarchy_t *dst, const hierarchy_t *src,
+				  uint32_t queueIndex, uint32_t srcIndex)
+{
+	uint32_t    srcChild = src->childIndex[srcIndex];
+	uint32_t    childCount = src->childCount[srcIndex];
+
+	for (uint32_t i = 0; i < childCount; i++) {
+		dst->parentIndex[queueIndex + i] = srcChild;
+		srcChild = src->nextIndex[srcChild];
+	}
+	return childCount;
+}
+
+static void
+copy_tree_nodes (hierarchy_t *dst, const hierarchy_t *src,
+				 uint32_t dstIndex, uint32_t *queueIndex)
+{
+	auto ind = copy_one_node (dst, src, dstIndex, *queueIndex);
+	auto count = queue_tree_nodes (dst, src, *queueIndex, ind);
+	*queueIndex += count;
+}
+
+static void
+swap_pointers (void *a, void *b)
+{
+	void *t = *(void **)a;
+	*(void **)a = *(void **) b;
+	*(void **)b = t;
+}
+
+void
+Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
+{
+	if (!hierarchy->tree_mode == !tree_mode) {
+		// no change
+		return;
+	}
+	hierarchy->tree_mode = tree_mode;
+	if (tree_mode) {
+		// switching from a cononical hierarchy to tree mode, noed only to
+		// ensure next/last indices are correct
+
+		// root node has no siblings
+		hierarchy->nextIndex[0] = nullindex;
+		for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
+			uint32_t    count = hierarchy->childCount[i];
+			uint32_t    child = hierarchy->childIndex[i];
+			for (uint32_t j = 0; count && j < count - 1; j++) {
+				hierarchy->nextIndex[child + j] = child + j + 1;
+			}
+			hierarchy->lastIndex[i] = count ? child + count - 1 : nullindex;
+			if (count) {
+				hierarchy->nextIndex[hierarchy->lastIndex[i]] = nullindex;
+			} else {
+				hierarchy->childIndex[i] = nullindex;
+			}
+		}
+		return;
+	}
+
+	auto src = hierarchy;
+	auto tmp = Hierarchy_New (src->reg, src->href_comp, src->type, 0);
+	Hierarchy_Reserve (tmp, src->num_objects);
+	tmp->num_objects = src->num_objects;
+
+	// treat parentIndex as a queue for breadth-first traversal
+	tmp->parentIndex[0] = 0;	// start at root of src
+	uint32_t    queueIndex = 1;
+	for (uint32_t i = 0; i < src->num_objects; i++) {
+		copy_tree_nodes (tmp, src, i, &queueIndex);
+	}
+	tmp->parentIndex[0] = nullindex;
+	for (uint32_t i = 0; i < src->num_objects; i++) {
+		for (uint32_t j = 0; j < tmp->childCount[i]; j++) {
+			tmp->parentIndex[tmp->childIndex[i] + j] = i;
+		}
+	}
+	auto href_comp = src->href_comp;
+	for (uint32_t i = 0; i < src->num_objects; i++) {
+		hierref_t  *ref = Ent_GetComponent (tmp->ent[i], href_comp, tmp->reg);
+		ref->index = i;
+	}
+
+	swap_pointers (&tmp->ent, &src->ent);
+	swap_pointers (&tmp->childCount, &src->childCount);
+	swap_pointers (&tmp->childIndex, &src->childIndex);
+	swap_pointers (&tmp->parentIndex, &src->parentIndex);
+	swap_pointers (&tmp->nextIndex, &src->nextIndex);
+	swap_pointers (&tmp->lastIndex, &src->lastIndex);
+	if (src->type) {
+		for (uint32_t i = 0; i < src->type->num_components; i++) {
+			swap_pointers (&tmp->components[i], &src->components[i]);
+		}
+	}
+	hierarchy_delete (tmp);
+}
+
 hierarchy_t *
 Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 				const hierarchy_t *src)
 {
+	if (src->tree_mode) {
+		Sys_Error ("Hierarchy_Copy tree mode not implemented");
+	}
 	hierarchy_t *dst = Hierarchy_New (dstReg, href_comp, src->type, 0);
 	size_t      count = src->num_objects;
 
@@ -443,6 +649,10 @@ Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 							dst->childIndex, 0, src->childIndex, 0, count);
 	Component_CopyElements (&parentIndex_component,
 							dst->parentIndex, 0, src->parentIndex, 0, count);
+	Component_CopyElements (&nextIndex_component,
+							dst->nextIndex, 0, src->nextIndex, 0, count);
+	Component_CopyElements (&lastIndex_component,
+							dst->lastIndex, 0, src->lastIndex, 0, count);
 	if (dst->type) {
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
 			Component_CopyElements (&dst->type->components[i],
@@ -457,6 +667,9 @@ hierref_t
 Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 					 hierarchy_t *src, uint32_t srcRoot)
 {
+	if (src->tree_mode) {
+		Sys_Error ("Hierarchy_SetParent tree mode not implemented");
+	}
 	hierref_t   r = {};
 	if (dst && dstParent != nullindex) {
 		if (dst->type != src->type) {

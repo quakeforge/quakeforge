@@ -278,6 +278,8 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	auto root_size = View_GetLen (ctx->root_view);
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
+	auto ref = View_GetRef (ctx->root_view);
+	Hierarchy_SetTreeMode (ref->hierarchy, true);
 	View_SetLen (ctx->root_view, root_size.x, root_size.y);
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
@@ -583,6 +585,8 @@ void
 IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
+	auto ref = View_GetRef (ctx->root_view);
+	Hierarchy_SetTreeMode (ref->hierarchy, false);
 
 	prune_objects (ctx);
 	layout_objects (ctx);
