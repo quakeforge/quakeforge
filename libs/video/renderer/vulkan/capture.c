@@ -330,7 +330,7 @@ QFV_Capture_Shutdown (vulkan_ctx_t *ctx)
 		QFV_DestroyResource (device, cap->resources);
 	}
 	free (cap->resources);
-	DARRAY_CLEAR (&cap->frames);
+	free (cap->frames.a);
 	free (cap);
 }
 
