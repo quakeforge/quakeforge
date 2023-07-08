@@ -88,3 +88,32 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 		}
 	}
 }
+
+VISIBLE void
+ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
+{
+	ecs_pool_t *pool = &registry->comp_pools[component];
+	ecs_subpool_t *subpool = &registry->subpools[component];
+	uint32_t    ind = Ent_Index (id);
+	component_t *c = &registry->components.a[component];
+	uint32_t    range = subpool->sorted[ind];
+	uint32_t    num_ranges = subpool->num_ranges - subpool->available;
+	uint32_t    last_range = num_ranges - 1;
+
+	uint32_t    start = range ? subpool->ranges[range - 1] : 0;
+	uint32_t    end = subpool->ranges[range];
+	uint32_t    last = subpool->ranges[last_range];
+	uint32_t    count = end - start;
+	uint32_t    srcIndex = start;
+	uint32_t    dstIndex = last - count;
+	for (uint32_t i = range; i < last_range; i++) {
+		subpool->ranges[i] = subpool->ranges[i + 1] - count;
+	}
+	for (uint32_t i = 0; i < num_ranges; i++) {
+		if (subpool->sorted[i] > range) {
+			subpool->sorted[i]--;
+		}
+	}
+	subpool->sorted[ind] = last_range;
+	Component_RotateElements (c, pool->data, dstIndex, srcIndex, count);
+}
