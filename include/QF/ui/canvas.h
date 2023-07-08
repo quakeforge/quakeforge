@@ -91,7 +91,7 @@ uint32_t Canvas_New (canvas_system_t canvas_sys);
 void Canvas_Draw (canvas_system_t canvas_sys);
 void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 							   uint32_t component);
-void Canvas_SetLen (canvas_system_t canvas_sys, view_pos_t len);
+void Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
 CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);

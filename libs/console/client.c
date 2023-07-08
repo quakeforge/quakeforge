@@ -865,8 +865,8 @@ con_set_size (void)
 	int         xlen = win_xlen / con_scale;
 	int         ylen = win_ylen / con_scale;
 	if (xlen > 0 && ylen > 0) {
-		View_SetLen (screen_view, xlen, ylen);
-		View_UpdateHierarchy (screen_view);
+		Canvas_SetLen (*con_data.canvas_sys, screen_canvas,
+					   (view_pos_t) { xlen, ylen });
 	}
 }
 

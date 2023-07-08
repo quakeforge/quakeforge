@@ -252,8 +252,7 @@ IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 void
 IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 {
-	View_SetLen (ctx->root_view, xlen, ylen);
-	View_UpdateHierarchy (ctx->root_view);
+	Canvas_SetLen (ctx->csys, ctx->canvas, (view_pos_t) { xlen, ylen });
 }
 
 void

@@ -558,17 +558,9 @@ Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 }
 
 void
-Canvas_SetLen (canvas_system_t canvas_sys, view_pos_t len)
+Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len)
 {
-	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *canvas_pool = &canvas_sys.reg->comp_pools[comp];
-	uint32_t    count = canvas_pool->count;
-	uint32_t   *entities = canvas_pool->dense;
-
-	while (count-- > 0) {
-		uint32_t    ent = *entities++;
-		view_t      view = Canvas_GetRootView (canvas_sys, ent);
-		View_SetLen (view, len.x, len.y);
-		View_UpdateHierarchy (view);
-	}
+	view_t      view = Canvas_GetRootView (canvas_sys, ent);
+	View_SetLen (view, len.x, len.y);
+	View_UpdateHierarchy (view);
 }

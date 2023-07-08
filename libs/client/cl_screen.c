@@ -209,10 +209,9 @@ cl_set_size (void)
 {
 	int        xlen = cl_xlen / cl_scale;
 	int        ylen = cl_ylen / cl_scale;
-	printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
-	//View_SetLen (cl_screen_view, xlen, ylen);
-	//View_UpdateHierarchy (cl_screen_view);
-	Canvas_SetLen (cl_canvas_sys, (view_pos_t) { xlen, ylen });
+	//printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
+	Canvas_SetLen (cl_canvas_sys, cl_canvas, (view_pos_t) { xlen, ylen });
+	Canvas_SetLen (cl_canvas_sys, hud_canvas, (view_pos_t) { xlen, ylen });
 }
 
 static void

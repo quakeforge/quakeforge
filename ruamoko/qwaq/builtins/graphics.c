@@ -338,7 +338,8 @@ generate_colormap (void)
 static void
 vidsize_listener (void *data, const viddef_t *vdef)
 {
-	Canvas_SetLen (canvas_sys, (view_pos_t) { vdef->width, vdef->height });
+	Canvas_SetLen (canvas_sys, canvas,
+				   (view_pos_t) { vdef->width, vdef->height });
 }
 
 void
