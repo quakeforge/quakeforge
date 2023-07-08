@@ -99,6 +99,9 @@ static view_t loading_view;
 static view_t ram_view;
 static view_t turtle_view;
 static view_t pause_view;
+static view_t crosshair_view;
+static view_t cshift_view;
+static view_t centerprint_view;
 
 static viewstate_t *_vs;//FIXME ick
 
@@ -136,7 +139,19 @@ clscr_set_canvas_func (view_t view, canvas_func_f func)
 }
 
 static void
-SCR_CShift (void)
+cl_draw_crosshair (view_pos_t abs, view_pos_t len)
+{
+	r_funcs->Draw_Crosshair ();
+}
+
+static void
+cl_draw_centerprint (view_pos_t abs, view_pos_t len)
+{
+	Sbar_DrawCenterPrint ();
+}
+
+static void
+SCR_CShift (view_pos_t abs, view_pos_t len)
 {
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
@@ -171,17 +186,13 @@ scr_draw_views (void)
 	double msg_time = _vs->realtime - _vs->last_servermessage;
 	View_SetVisible (net_view, (!_vs->demoplayback && msg_time >= 0.3));
 	View_SetVisible (loading_view, _vs->loading);
+	View_SetVisible (crosshair_view, !_vs->intermission);
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);
 	View_SetVisible (zgraph_view, r_zgraph);
 
-	if (!_vs->intermission) {
-		r_funcs->Draw_Crosshair ();//FIXME canvas_func
-	}
 	Con_DrawConsole ();
 	Canvas_Draw (cl_canvas_sys);
-	SCR_CShift ();//FIXME canvas_func
-	Sbar_DrawCenterPrint ();//FIXME canvas_func
 }
 
 static SCR_Func scr_funcs[] = {
@@ -224,6 +235,7 @@ cl_create_views (void)
 {
 	qpic_t     *pic;
 	const char *name;
+	auto vid = r_data->vid;
 
 	pic = r_funcs->Draw_PicFromWad ("ram");
 	ram_view = clscr_view (32, 0, pic->width, pic->height, grav_northwest);
@@ -237,11 +249,11 @@ cl_create_views (void)
 	net_view = clscr_view (64, 0, pic->width, pic->height, grav_northwest);
 	clscr_set_pic (net_view, pic);
 
-	timegraph_view = clscr_view (0, 0, r_data->vid->width, 100, grav_southwest);
+	timegraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
 	clscr_set_canvas_func (timegraph_view, R_TimeGraph);
 	View_SetVisible (timegraph_view, r_timegraph);
 
-	zgraph_view = clscr_view (0, 0, r_data->vid->width, 100, grav_southwest);
+	zgraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
 	clscr_set_canvas_func (zgraph_view, R_ZGraph);
 	View_SetVisible (zgraph_view, r_zgraph);
 
@@ -254,6 +266,17 @@ cl_create_views (void)
 	pic = r_funcs->Draw_CachePic (name, 1);
 	pause_view = clscr_view (0, -24, pic->width, pic->height, grav_center);
 	clscr_set_cachepic (pause_view, name);
+
+	crosshair_view = clscr_view (0, 0, vid->width, vid->height, grav_northwest);
+	clscr_set_canvas_func (crosshair_view, cl_draw_crosshair);
+
+	cshift_view = clscr_view (0, 0, vid->width, vid->height, grav_northwest);
+	clscr_set_canvas_func (cshift_view, SCR_CShift);
+	View_SetVisible (cshift_view, 1);
+
+	centerprint_view = clscr_view (0, 0, vid->width, vid->height,
+								   grav_northwest);
+	clscr_set_canvas_func (centerprint_view, cl_draw_centerprint);
 }
 
 void
