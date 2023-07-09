@@ -57,6 +57,8 @@ enum {
 };
 
 typedef struct canvas_s {
+	ecs_registry_t *reg;
+	uint32_t    base;
 	bool        visible;
 	uint32_t    range[canvas_comp_count];
 } canvas_t;

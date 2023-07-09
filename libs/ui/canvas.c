@@ -77,6 +77,11 @@ canvas_rangeid(outline)
 static void
 canvas_canvas_destroy (void *_canvas)
 {
+	canvas_t *canvas = _canvas;
+	auto reg = canvas->reg;
+	for (uint32_t i = 0; i < canvas_comp_count; i++) {
+		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
+	}
 }
 
 const component_t canvas_components[canvas_comp_count] = {
@@ -507,7 +512,11 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 void
 Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 {
-	canvas_t    canvas = { .visible = true };
+	canvas_t    canvas = {
+		.reg = canvas_sys.reg,
+		.base = canvas_sys.base,
+		.visible = true
+	};
 	for (uint32_t i = 0; i < canvas_comp_count; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
