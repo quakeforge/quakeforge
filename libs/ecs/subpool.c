@@ -77,13 +77,14 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	uint32_t    next = subpool->next | Ent_NextGen (Ent_Generation (id));
 	uint32_t    ind = Ent_Index (id);
 	uint32_t    count = subpool->num_ranges - subpool->available;
+	uint32_t    range = subpool->sorted[ind];
 	subpool->rangeids[ind] = next;
 	subpool->next = ind;
 	subpool->available++;
 	memmove (subpool->ranges + ind, subpool->ranges + ind + 1,
-			 (count - 1 - ind) * sizeof (ecs_range_t));
+			 (count - 1 - range) * sizeof (ecs_range_t));
 	for (uint32_t i = 0; i < count; i++) {
-		if (subpool->sorted[i] > ind) {
+		if (subpool->sorted[i] > range) {
 			subpool->sorted[i]--;
 		}
 	}
