@@ -100,6 +100,8 @@ struct imui_ctx_s {
 	view_t      root_view;
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
+	struct DARRAY_TYPE(view_t) windows;
+	struct DARRAY_TYPE(uint32_t) window_canvases;
 
 	dstring_t  *dstr;
 
@@ -191,6 +193,8 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.shaper = Shaper_New (),
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
+		.windows = DARRAY_STATIC_INIT (8),
+		.window_canvases = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -241,6 +245,10 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 		Font_Free (ctx->font);
 	}
 
+	DARRAY_CLEAR (&ctx->parent_stack);
+	DARRAY_CLEAR (&ctx->windows);
+	DARRAY_CLEAR (&ctx->window_canvases);
+	DARRAY_CLEAR (&ctx->style_stack);
 	dstring_delete (ctx->dstr);
 
 	Hash_DelTable (ctx->tab);
@@ -253,6 +261,9 @@ void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
 	*Canvas_Visible (ctx->csys, ctx->canvas) = visible;
+	for (uint32_t i = 0; i < ctx->window_canvases.size; i++) {
+		*Canvas_Visible (ctx->csys, ctx->window_canvases.a[i]) = visible;
+	}
 }
 
 void
@@ -296,7 +307,13 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		View_Delete (ctx->windows.a[i]);
+	}
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
+	DARRAY_RESIZE (&ctx->windows, 0);
+	DARRAY_RESIZE (&ctx->window_canvases, 0);
+	DARRAY_RESIZE (&ctx->style_stack, 0);
 }
 
 static void
@@ -524,9 +541,9 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 
 //FIXME currently works properly only for grav_northwest
 static void
-layout_objects (imui_ctx_t *ctx)
+layout_objects (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (ctx->root_view);
+	auto ref = View_GetRef (root_view);
 	auto h = ref->hierarchy;
 
 	view_pos_t *pos = h->components[view_pos];
@@ -565,13 +582,13 @@ layout_objects (imui_ctx_t *ctx)
 		}
 	}
 
-	View_UpdateHierarchy (ctx->root_view);
+	View_UpdateHierarchy (root_view);
 }
 
 static void
-check_inside (imui_ctx_t *ctx)
+check_inside (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (ctx->root_view);
+	auto ref = View_GetRef (root_view);
 	auto h = ref->hierarchy;
 
 	uint32_t   *entity = h->ent;
@@ -580,7 +597,6 @@ check_inside (imui_ctx_t *ctx)
 	viewcont_t *cont = h->components[view_control];
 	auto mp = ctx->mouse_position;
 
-	ctx->hot = nullent;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		if (cont[i].active
 			&& mp.x >= abs[i].x && mp.y >= abs[i].y
@@ -596,13 +612,44 @@ check_inside (imui_ctx_t *ctx)
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
+#define IMUI_context ctx
+	UI_Vertical {
+		UI_Labelf ("parent_stack:    %zd", ctx->parent_stack.size);
+		UI_Labelf ("windows:         %zd", ctx->windows.size);
+		UI_Labelf ("window_canvases: %zd", ctx->window_canvases.size);
+		UI_Labelf ("style_stack:     %zd", ctx->style_stack.size);
+		auto reg = ctx->csys.reg;
+		IMUI_PushLayout (IMUI_context, false);
+		for (uint32_t i = 0; i < reg->components.size; i++) {
+			UI_Labelf("%-15.15s p:%4d sp:%4d ", reg->components.a[i].name,
+					  reg->comp_pools[i].max_count,
+					  reg->subpools[i].max_ranges);
+			if (i & 1) {
+				IMUI_PopLayout (IMUI_context );
+				IMUI_PushLayout (IMUI_context, false);
+			}
+		}
+		IMUI_PopLayout (IMUI_context );
+	}
+#undef IMUI_context
 	ctx->frame_draw = Sys_LongTime ();
 	auto ref = View_GetRef (ctx->root_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, false);
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		auto ref = View_GetRef (ctx->windows.a[i]);
+		Hierarchy_SetTreeMode (ref->hierarchy, false);
+	}
 
 	prune_objects (ctx);
-	layout_objects (ctx);
-	check_inside (ctx);
+	layout_objects (ctx, ctx->root_view);
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		layout_objects (ctx, ctx->windows.a[i]);
+	}
+	ctx->hot = nullent;
+	check_inside (ctx, ctx->root_view);
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		check_inside (ctx, ctx->windows.a[i]);
+	}
 
 	ctx->frame_end = Sys_LongTime ();
 }
@@ -947,9 +994,13 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
-	auto window_view = View_New (ctx->vsys, ctx->current_parent);
+	auto canvas = Canvas_New (ctx->csys);
+	auto window_view = Canvas_GetRootView (ctx->csys, canvas);
 	state->entity = window_view.id;
 	int mode = update_hot_active (ctx, old_entity, state->entity);
+
+	DARRAY_APPEND (&ctx->windows, window_view);
+	DARRAY_APPEND (&ctx->window_canvases, canvas);
 
 	ctx->current_parent = window_view;
 	*View_Control (window_view) = (viewcont_t) {

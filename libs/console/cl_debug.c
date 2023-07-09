@@ -243,6 +243,7 @@ static imui_window_t window = {
 	.ylen = 250,
 	.is_open = true,
 };
+	bool close_debug_pressed = false;
 	UI_Window (&window) {
 		if (!window.is_open || window.is_collapsed) {
 			continue;
@@ -250,7 +251,7 @@ static imui_window_t window = {
 		UI_Vertical {
 			UI_Horizontal {
 				if (UI_Button ("Close Debug")) {
-					close_debug ();
+					close_debug_pressed = true;
 				}
 				UI_FlexibleSpace ();
 				if (flag) {
@@ -278,6 +279,10 @@ static imui_window_t window = {
 		}
 	}
 	color_window ();
+
+	if (close_debug_pressed) {
+		close_debug ();
+	}
 
 	IMUI_Draw (debug_imui);
 }
