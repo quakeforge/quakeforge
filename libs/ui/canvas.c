@@ -79,7 +79,7 @@ canvas_canvas_destroy (void *_canvas)
 {
 	canvas_t *canvas = _canvas;
 	auto reg = canvas->reg;
-	for (uint32_t i = 0; i < canvas_comp_count; i++) {
+	for (uint32_t i = 0; i < canvas_canvas; i++) {
 		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
 	}
 }
@@ -517,7 +517,7 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 		.base = canvas_sys.base,
 		.visible = true
 	};
-	for (uint32_t i = 0; i < canvas_comp_count; i++) {
+	for (uint32_t i = 0; i < canvas_canvas; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
 	}

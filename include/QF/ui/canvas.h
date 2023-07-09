@@ -51,6 +51,7 @@ enum {
 	canvas_lateupdate,
 
 	// last so deleting an entity removes the grouped components first
+	// also, does not have a subpool
 	canvas_canvas,
 
 	canvas_comp_count
@@ -60,7 +61,7 @@ typedef struct canvas_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
 	bool        visible;
-	uint32_t    range[canvas_comp_count];
+	uint32_t    range[canvas_canvas];
 } canvas_t;
 
 extern const struct component_s canvas_components[canvas_comp_count];
