@@ -37,6 +37,7 @@
 #include "QF/dstring.h"
 #include "QF/ecs.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
@@ -58,6 +59,8 @@
 #define c_fill  (ctx->csys.base + canvas_fill)
 
 #define imui_draw_group ((1 << 15) - 1)
+#define imui_ontop ((1 << 15) - 1)
+#define imui_onbottom (-(1 << 15) + 1)
 
 const component_t imui_components[imui_comp_count] = {
 	[imui_percent_x] = {
@@ -76,6 +79,7 @@ typedef struct imui_state_s {
 	char       *label;
 	uint32_t    label_len;
 	int         key_offset;
+	int16_t		draw_order;	// for window canvases
 	uint32_t    frame_count;
 	uint32_t    entity;
 } imui_state_t;
@@ -102,8 +106,8 @@ struct imui_ctx_s {
 	view_t      root_view;
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
-	struct DARRAY_TYPE(view_t) windows;
-	struct DARRAY_TYPE(uint32_t) window_canvases;
+	struct DARRAY_TYPE(imui_state_t *) windows;
+	int16_t     draw_order;
 
 	dstring_t  *dstr;
 
@@ -196,7 +200,6 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
-		.window_canvases = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -250,7 +253,6 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 
 	DARRAY_CLEAR (&ctx->parent_stack);
 	DARRAY_CLEAR (&ctx->windows);
-	DARRAY_CLEAR (&ctx->window_canvases);
 	DARRAY_CLEAR (&ctx->style_stack);
 	dstring_delete (ctx->dstr);
 
@@ -264,8 +266,8 @@ void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
 	*Canvas_Visible (ctx->csys, ctx->canvas) = visible;
-	for (uint32_t i = 0; i < ctx->window_canvases.size; i++) {
-		*Canvas_Visible (ctx->csys, ctx->window_canvases.a[i]) = visible;
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		*Canvas_Visible (ctx->csys, ctx->windows.a[i]->entity) = visible;
 	}
 }
 
@@ -311,11 +313,12 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		View_Delete (ctx->windows.a[i]);
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		View_Delete (window);
 	}
+	ctx->draw_order = ctx->windows.size;
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
-	DARRAY_RESIZE (&ctx->window_canvases, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
 }
 
@@ -612,6 +615,26 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
 }
 
+static int
+imui_window_cmp (const void *a, const void *b)
+{
+	auto windowa = *(imui_state_t **) a;
+	auto windowb = *(imui_state_t **) b;
+	return windowa->draw_order - windowb->draw_order;
+}
+
+static void
+sort_windows (imui_ctx_t *ctx)
+{
+	heapsort (ctx->windows.a, ctx->windows.size, sizeof (imui_state_t *),
+			  imui_window_cmp);
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		auto window = ctx->windows.a[i];
+		window->draw_order = i + 1;
+		*Canvas_DrawOrder (ctx->csys, window->entity) = window->draw_order;
+	}
+}
+
 void
 IMUI_Draw (imui_ctx_t *ctx)
 {
@@ -619,8 +642,8 @@ IMUI_Draw (imui_ctx_t *ctx)
 	UI_Vertical {
 		UI_Labelf ("parent_stack:    %zd", ctx->parent_stack.size);
 		UI_Labelf ("windows:         %zd", ctx->windows.size);
-		UI_Labelf ("window_canvases: %zd", ctx->window_canvases.size);
 		UI_Labelf ("style_stack:     %zd", ctx->style_stack.size);
+		UI_Labelf ("draw_order:      %d", ctx->draw_order);
 		auto reg = ctx->csys.reg;
 		IMUI_PushLayout (IMUI_context, false);
 		for (uint32_t i = 0; i < reg->components.size; i++) {
@@ -636,27 +659,27 @@ IMUI_Draw (imui_ctx_t *ctx)
 	}
 #undef IMUI_context
 	ctx->frame_draw = Sys_LongTime ();
+	sort_windows (ctx);
 	auto ref = View_GetRef (ctx->root_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, false);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto ref = View_GetRef (ctx->windows.a[i]);
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		auto ref = View_GetRef (window);
 		Hierarchy_SetTreeMode (ref->hierarchy, false);
-	}
-	for (uint32_t i = 0; i < ctx->window_canvases.size; i++) {
-		// root is 0
-		*Canvas_DrawOrder (ctx->csys, ctx->window_canvases.a[i]) = i + 1;
 	}
 	Canvas_DrawSort (ctx->csys);
 
 	prune_objects (ctx);
 	layout_objects (ctx, ctx->root_view);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		layout_objects (ctx, ctx->windows.a[i]);
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		layout_objects (ctx, window);
 	}
 	ctx->hot = nullent;
 	check_inside (ctx, ctx->root_view);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		check_inside (ctx, ctx->windows.a[i]);
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		check_inside (ctx, window);
 	}
 
 	ctx->frame_end = Sys_LongTime ();
@@ -1010,8 +1033,11 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	auto ref = View_GetRef (window_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, true);
 
-	DARRAY_APPEND (&ctx->windows, window_view);
-	DARRAY_APPEND (&ctx->window_canvases, canvas);
+	DARRAY_APPEND (&ctx->windows, state);
+
+	if (!state->draw_order) {
+		state->draw_order = ++ctx->draw_order;
+	}
 
 	ctx->current_parent = window_view;
 	*View_Control (window_view) = (viewcont_t) {
@@ -1042,6 +1068,7 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
 		auto delta = check_drag_delta (ctx, tb_state->entity);
 		if (ctx->active == tb_state->entity) {
+			state->draw_order = imui_ontop;
 			window->xpos += delta.x;
 			window->ypos += delta.y;
 		}
