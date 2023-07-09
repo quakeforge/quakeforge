@@ -116,7 +116,8 @@ bool *
 Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
 {
 	uint32_t comp = canvas_sys.base + canvas_canvas;
-	return Ent_GetComponent (ent, comp, canvas_sys.reg);
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	return &canvas->visible;
 }
 
 #undef CANVASINLINE
