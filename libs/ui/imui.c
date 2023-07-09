@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "QF/darray.h"
+#include "QF/dstring.h"
 #include "QF/ecs.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
@@ -99,6 +100,8 @@ struct imui_ctx_s {
 	view_t      root_view;
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
+
+	dstring_t  *dstr;
 
 	uint32_t    hot;
 	uint32_t    active;
@@ -188,6 +191,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.shaper = Shaper_New (),
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
+		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
 		.mouse_position = {-1, -1},
@@ -236,6 +240,8 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	if (ctx->font) {
 		Font_Free (ctx->font);
 	}
+
+	dstring_delete (ctx->dstr);
 
 	Hash_DelTable (ctx->tab);
 	Hash_DelContext (ctx->hashctx);
@@ -803,6 +809,16 @@ IMUI_Label (imui_ctx_t *ctx, const char *label)
 	set_control (ctx, view, true);
 	set_fill (ctx, view, ctx->style.background.normal);
 	add_text (ctx, view, state, 0);
+}
+
+void
+IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
+{
+	va_list     args;
+	va_start (args, fmt);
+	dvsprintf (ctx->dstr, fmt, args);
+	va_end (args);
+	IMUI_Label (ctx, ctx->dstr->str);
 }
 
 bool
