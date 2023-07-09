@@ -57,6 +57,8 @@
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
 
+#define imui_draw_group ((1 << 15) - 1)
+
 const component_t imui_components[imui_comp_count] = {
 	[imui_percent_x] = {
 		.size = sizeof (int),
@@ -218,6 +220,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 			},
 		},
 	};
+	*Canvas_DrawGroup (ctx->csys, ctx->canvas) = imui_draw_group;
 	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
 	ctx->current_parent = ctx->root_view;
 
@@ -639,6 +642,11 @@ IMUI_Draw (imui_ctx_t *ctx)
 		auto ref = View_GetRef (ctx->windows.a[i]);
 		Hierarchy_SetTreeMode (ref->hierarchy, false);
 	}
+	for (uint32_t i = 0; i < ctx->window_canvases.size; i++) {
+		// root is 0
+		*Canvas_DrawOrder (ctx->csys, ctx->window_canvases.a[i]) = i + 1;
+	}
+	Canvas_DrawSort (ctx->csys);
 
 	prune_objects (ctx);
 	layout_objects (ctx, ctx->root_view);
@@ -995,9 +1003,12 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
 	auto canvas = Canvas_New (ctx->csys);
+	*Canvas_DrawGroup (ctx->csys, canvas) = imui_draw_group;
 	auto window_view = Canvas_GetRootView (ctx->csys, canvas);
 	state->entity = window_view.id;
 	int mode = update_hot_active (ctx, old_entity, state->entity);
+	auto ref = View_GetRef (window_view);
+	Hierarchy_SetTreeMode (ref->hierarchy, true);
 
 	DARRAY_APPEND (&ctx->windows, window_view);
 	DARRAY_APPEND (&ctx->window_canvases, canvas);

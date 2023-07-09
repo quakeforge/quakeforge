@@ -573,3 +573,33 @@ Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len)
 	View_SetLen (view, len.x, len.y);
 	View_UpdateHierarchy (view);
 }
+
+static int
+canvas_draw_cmp (const void *_a, const void *_b, void *arg)
+{
+	uint32_t    enta = *(const uint32_t *)_a;
+	uint32_t    entb = *(const uint32_t *)_b;
+	canvas_system_t *canvas_sys = arg;
+	auto reg = canvas_sys->reg;
+	uint32_t c_canvas = canvas_sys->base + canvas_canvas;
+	auto canvasa = (canvas_t *) Ent_GetComponent (enta, c_canvas, reg);
+	auto canvasb = (canvas_t *) Ent_GetComponent (entb, c_canvas, reg);
+	int diff = canvasa->draw_group - canvasb->draw_group;
+	if (!diff) {
+		diff = canvasa->draw_order - canvasb->draw_order;
+	}
+	if (!diff) {
+		// order possibly undefined, but at least stable so long as the entity
+		// ids are stable
+		diff = enta - entb;
+	}
+	return diff;
+}
+
+void
+Canvas_DrawSort (canvas_system_t canvas_sys)
+{
+	auto reg = canvas_sys.reg;
+	uint32_t c_canvas = canvas_sys.base + canvas_canvas;
+	ECS_SortComponentPool (reg, c_canvas, canvas_draw_cmp, &canvas_sys);
+}

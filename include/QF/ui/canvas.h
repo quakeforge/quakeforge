@@ -60,6 +60,8 @@ enum {
 typedef struct canvas_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
+	int16_t     draw_order;
+	int16_t     draw_group;
 	bool        visible;
 	uint32_t    range[canvas_canvas];
 } canvas_t;
@@ -98,6 +100,11 @@ void Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
 CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);
+CANVASINLINE int16_t *Canvas_DrawGroup (canvas_system_t canvas_sys,
+										uint32_t ent);
+CANVASINLINE int16_t *Canvas_DrawOrder (canvas_system_t canvas_sys,
+										uint32_t ent);
+void Canvas_DrawSort (canvas_system_t canvas_sys);
 
 #undef CANVASINLINE
 #ifndef IMPLEMENT_CANVAS_Funcs
@@ -121,6 +128,24 @@ Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
 	uint32_t comp = canvas_sys.base + canvas_canvas;
 	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
 	return &canvas->visible;
+}
+
+CANVASINLINE
+int16_t *
+Canvas_DrawGroup (canvas_system_t canvas_sys, uint32_t ent)
+{
+	uint32_t comp = canvas_sys.base + canvas_canvas;
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	return &canvas->draw_group;
+}
+
+CANVASINLINE
+int16_t *
+Canvas_DrawOrder (canvas_system_t canvas_sys, uint32_t ent)
+{
+	uint32_t comp = canvas_sys.base + canvas_canvas;
+	auto canvas = (canvas_t *) Ent_GetComponent (ent, comp, canvas_sys.reg);
+	return &canvas->draw_order;
 }
 
 #undef CANVASINLINE
