@@ -1046,22 +1046,22 @@ IMUI_Spacer (imui_ctx_t *ctx,
 }
 
 void
-IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
+IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 {
-	if (!window->is_open) {
+	if (!panel->is_open) {
 		return;
 	}
-	auto state = imui_get_state (ctx, window->name);
+	auto state = imui_get_state (ctx, panel->name);
 	uint32_t old_entity = state->entity;
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
 	auto canvas = Canvas_New (ctx->csys);
 	*Canvas_DrawGroup (ctx->csys, canvas) = imui_draw_group;
-	auto window_view = Canvas_GetRootView (ctx->csys, canvas);
-	state->entity = window_view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-	auto ref = View_GetRef (window_view);
+	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
+	state->entity = panel_view.id;
+	panel->mode = update_hot_active (ctx, old_entity, state->entity);
+	auto ref = View_GetRef (panel_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, true);
 
 	DARRAY_APPEND (&ctx->windows, state);
@@ -1070,8 +1070,8 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		state->draw_order = ++ctx->draw_order;
 	}
 
-	ctx->current_parent = window_view;
-	*View_Control (window_view) = (viewcont_t) {
+	ctx->current_parent = panel_view;
+	*View_Control (panel_view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
 		.semantic_x = imui_size_fitchildren,
@@ -1081,60 +1081,76 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		.vertical = true,
 		.active = 1,
 	};
-	View_SetPos (window_view, window->xpos, window->ypos);
-	View_SetLen (window_view, window->xlen, window->ylen);
+	View_SetPos (panel_view, panel->xpos, panel->ypos);
+	View_SetLen (panel_view, panel->xlen, panel->ylen);
 
+	auto bg = ctx->style.background.normal;
 #define IMUI_context ctx
 	UI_Vertical {
-		UI_Horizontal {
-			char cbutton = window->is_collapsed ? '>' : 'v';
-			if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
-				window->is_collapsed = !window->is_collapsed;
-			}
-
-			auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar",
-													 window->name));
-			uint32_t tb_old_entity = tb_state->entity;
-			auto title_bar = View_New (ctx->vsys, ctx->current_parent);
-			tb_state->entity = title_bar.id;
-			int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
-			auto delta = check_drag_delta (ctx, tb_state->entity);
-			if (ctx->active == tb_state->entity) {
-				state->draw_order = imui_ontop;
-				window->xpos += delta.x;
-				window->ypos += delta.y;
-			}
-
-			set_control (ctx, title_bar, true);
-			set_expand_x (ctx, title_bar, 100);
-			set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
-
-			auto title = add_text (ctx, title_bar, state, mode);
-			View_Control (title)->gravity = grav_center;
-
-			if (UI_Button (va (0, "X##close_%s", window->name))) {
-				window->is_open = false;
-			}
-		}
-		auto bg = ctx->style.background.normal;
-		UI_Horizontal {
-			ctx->style.background.normal = 0;//FIXME style
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
-			ctx->style.background.normal = bg;
-			UI_Vertical {
-				IMUI_Layout_SetXSize (ctx, imui_size_expand, 100);
-				window_view = ctx->current_parent;
-			}
-			ctx->style.background.normal = 0;//FIXME style
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
-			ctx->style.background.normal = bg;
-		}
 		ctx->style.background.normal = 0;//FIXME style
 		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
-		ctx->style.background.normal = bg;
+		UI_Horizontal {
+			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			UI_Vertical {
+				IMUI_Layout_SetXSize (ctx, imui_size_expand, 100);
+				panel_view = ctx->current_parent;
+			}
+			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+		}
+		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 	}
 #undef IMUI_context
-	ctx->current_parent = window_view;
+	ctx->style.background.normal = bg;
+	ctx->current_parent = panel_view;
+}
+
+void
+IMUI_EndPanel (imui_ctx_t *ctx)
+{
+	IMUI_PopLayout (ctx);
+}
+
+void
+IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	if (!window->is_open) {
+		return;
+	}
+	IMUI_StartPanel (ctx, window);
+	auto state = ctx->windows.a[ctx->windows.size - 1];
+
+#define IMUI_context ctx
+	UI_Horizontal {
+		char cbutton = window->is_collapsed ? '>' : 'v';
+		if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
+			window->is_collapsed = !window->is_collapsed;
+		}
+
+		auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar",
+												 window->name));
+		uint32_t tb_old_entity = tb_state->entity;
+		auto title_bar = View_New (ctx->vsys, ctx->current_parent);
+		tb_state->entity = title_bar.id;
+		int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
+		auto delta = check_drag_delta (ctx, tb_state->entity);
+		if (ctx->active == tb_state->entity) {
+			state->draw_order = imui_ontop;
+			window->xpos += delta.x;
+			window->ypos += delta.y;
+		}
+
+		set_control (ctx, title_bar, true);
+		set_expand_x (ctx, title_bar, 100);
+		set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
+
+		auto title = add_text (ctx, title_bar, state, window->mode);
+		View_Control (title)->gravity = grav_center;
+
+		if (UI_Button (va (0, "X##close_%s", window->name))) {
+			window->is_open = false;
+		}
+	}
+#undef IMUI_context
 }
 
 void

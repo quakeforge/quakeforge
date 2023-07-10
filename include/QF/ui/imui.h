@@ -74,6 +74,7 @@ typedef struct imui_window_s {
 	int         ypos;
 	int         xlen;
 	int         ylen;
+	int         mode;
 	bool        is_open;
 	bool        is_collapsed;
 } imui_window_t;
@@ -110,6 +111,9 @@ void IMUI_Spacer (imui_ctx_t *ctx,
 				  imui_size_t ysize, int yvalue);
 void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
+void IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
+void IMUI_EndPanel (imui_ctx_t *ctx);
+
 void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
 
@@ -142,6 +146,10 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 #define UI_Layout(vertical) \
 	IMUI_DeferLoop (IMUI_PushLayout (IMUI_context, vertical), \
 					IMUI_PopLayout (IMUI_context ))
+
+#define UI_Panel(panel) \
+	IMUI_DeferLoop (IMUI_StartPanel (IMUI_context, panel), \
+					IMUI_EndPanel (IMUI_context))
 
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \

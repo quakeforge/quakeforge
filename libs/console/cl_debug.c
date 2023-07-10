@@ -250,6 +250,12 @@ static imui_window_t window = {
 	.ylen = 250,
 	.is_open = true,
 };
+static imui_window_t panel = {
+	.name = "Test Panel",
+	.xpos = 125,
+	.ypos = 25,
+	.is_open = true,
+};
 	bool close_debug_pressed = false;
 	UI_Window (&window) {
 		if (!window.is_open) {
@@ -289,6 +295,16 @@ static imui_window_t window = {
 		}
 	}
 	color_window ();
+	UI_Panel(&panel) {
+		UI_Horizontal {
+			UI_Label ("hi there##");
+			UI_FlexibleSpace ();
+		}
+		UI_Horizontal {
+			UI_Label ("hello world");
+			UI_FlexibleSpace ();
+		}
+	}
 
 	if (close_debug_pressed) {
 		close_debug ();
