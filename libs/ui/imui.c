@@ -427,13 +427,14 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
-	for (uint32_t i = 1; i < h->num_objects; i++) {
+	for (uint32_t i = 0; i < h->num_objects; i++) {
 		if (down_depend
 			&& (cont[i].semantic_x == imui_size_fitchildren
 				|| cont[i].semantic_x == imui_size_expand)) {
 			down_depend[i].x = true;
 		} else if ((!down_depend
-					|| !(down_depend[i].x = down_depend[parent[i]].x))
+					|| !(i > 0
+						 && (down_depend[i].x = down_depend[parent[i]].x)))
 				   && cont[i].semantic_x == imui_size_percent) {
 			int *percent = Ent_GetComponent (ent[i], c_percent_x, reg);
 			int x = (len[parent[i]].x * *percent) / 100;
@@ -444,7 +445,8 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 				|| cont[i].semantic_y == imui_size_expand)) {
 			down_depend[i].y = true;
 		} else if ((!down_depend
-					|| !(down_depend[i].y = down_depend[parent[i]].y))
+					|| !(i > 0
+						 && (down_depend[i].y = down_depend[parent[i]].y)))
 				   && cont[i].semantic_y == imui_size_percent) {
 			int *percent = Ent_GetComponent (ent[i], c_percent_y, reg);
 			int y = (len[parent[i]].y * *percent) / 100;
@@ -458,7 +460,7 @@ calc_downwards_dependent (hierarchy_t *h)
 {
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	for (uint32_t i = h->num_objects; --i > 0; ) {
+	for (uint32_t i = h->num_objects; i-- > 0; ) {
 		view_pos_t  clen = len[i];
 		if (cont[i].semantic_x == imui_size_fitchildren
 			|| cont[i].semantic_x == imui_size_expand) {
@@ -603,7 +605,7 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 
 	view_pos_t  cpos = {};
 	uint32_t    cur_parent = 0;
-	for (uint32_t i = 1; i < h->num_objects; i++) {
+	for (uint32_t i = 0; i < h->num_objects; i++) {
 		if (parent[i] != cur_parent) {
 			cur_parent = parent[i];
 			cpos = (view_pos_t) {};
@@ -615,7 +617,7 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 		} else if (!cont[i].free_y) {
 			pos[i].y = cpos.y;
 		}
-		if (cont[parent[i]].vertical) {
+		if (i > 0 && cont[parent[i]].vertical) {
 			cpos.y += cont[i].semantic_y == imui_size_none ? 0 : len[i].y;
 		} else {
 			cpos.x += cont[i].semantic_x == imui_size_none ? 0 : len[i].x;
