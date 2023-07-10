@@ -346,10 +346,10 @@ tools/qfcc/test/double-float-compare.run$(EXEEXT): tools/qfcc/test/double-float-
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 tools/qfcc/test/typeredef1.run$(EXEEXT): tools/qfcc/test/typeredef1.r $(qfcc_comp_run_deps)
-	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools/qfcc/test/typeredef2.run$(EXEEXT): tools/qfcc/test/typeredef2.r $(qfcc_comp_run_deps)
-	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools_qfcc_test_enum_dat_SOURCES=tools/qfcc/test/enum.r
 enum_obj=$(tools_qfcc_test_enum_dat_SOURCES:.r=.o)
