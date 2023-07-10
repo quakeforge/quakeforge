@@ -88,12 +88,13 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 {
 	uint32_t    count = registry->components.size;
 	registry->comp_pools = calloc (count, sizeof (ecs_pool_t));
+	registry->subpools = calloc (count, sizeof (ecs_subpool_t));
 	size_t      size = registry->max_entities * sizeof (uint32_t);
 	for (uint32_t i = 0; i < count; i++) {
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
+		registry->subpools[i].next = nullent;
 	}
-	registry->subpools = calloc (count, sizeof (ecs_subpool_t));
 }
 
 typedef struct {
