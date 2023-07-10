@@ -519,40 +519,58 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 				ecount.y++;
 			}
 		}
-//		printf ("i:%d t:[%d %d] e:[%d %d] ec:[%d %d]\n", i, tlen.x, tlen.y,
-//				elen.x, elen.y, ecount.x, ecount.y);
-		for (uint32_t j = 0; ecount.x && j < h->childCount[i]; j++) {
-			uint32_t child = h->childIndex[i] + j;
-			if (cont[child].semantic_x != imui_size_expand) {
-				continue;
-			}
-			if (cont[i].vertical) {
-				len[child].x = len[i].x;
-//				printf ("xc:%d p:%d l:%d\n", child, len[i].x, len[child].x);
-			} else {
-				int space = len[i].x - tlen.x;
-				int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
-				int delta = *p * space / elen.x;
-				len[child].x += max (delta, 0);
-//				printf ("xc:%d p:%d s:%d e:%d: l:%d\n", child, *p, space,
-//						elen.x, len[child].x);
-			}
+		if (!ecount.x && !ecount.y) {
+			continue;
 		}
-		for (uint32_t j = 0; ecount.y && j < h->childCount[i]; j++) {
-			uint32_t child = h->childIndex[i] + j;
-			if (cont[child].semantic_y != imui_size_expand) {
-				continue;
+		if (cont[i].vertical) {
+			int space = len[i].y - tlen.y;
+			int filled = 0;
+			for (uint32_t j = 0; j < h->childCount[i]; j++) {
+				uint32_t child = h->childIndex[i] + j;
+				if (cont[child].semantic_x == imui_size_expand) {
+					len[child].x = len[i].x;
+				}
+				if (cont[child].semantic_y == imui_size_expand) {
+					int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
+					int delta = *p * space / elen.y;
+					len[child].y += max (delta, 0);
+					filled += max (delta, 0);
+				}
 			}
-			if (cont[i].vertical) {
-				int space = len[i].y - tlen.y;
-				int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
-				int delta = *p * space / elen.y;
-				len[child].y += max (delta, 0);
-//				printf ("yc:%d p:%d s:%d e:%d: l:%d\n", child, *p, space,
-//						elen.y, len[child].y);
-			} else {
-				len[child].y = len[i].y;
-//				printf ("yc:%d p:%d l:%d\n", child, len[i].y, len[child].y);
+			if (ecount.y && filled < space) {
+				space -= filled;
+				for (uint32_t j = 0; space && j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					if (cont[child].semantic_y == imui_size_expand) {
+						len[child].y++;
+						space--;
+					}
+				}
+			}
+		} else {
+			int space = len[i].x - tlen.x;
+			int filled = 0;
+			for (uint32_t j = 0; j < h->childCount[i]; j++) {
+				uint32_t child = h->childIndex[i] + j;
+				if (cont[child].semantic_x == imui_size_expand) {
+					int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
+					int delta = *p * space / elen.x;
+					len[child].x += max (delta, 0);
+					filled += max (delta, 0);
+				}
+				if (cont[child].semantic_y == imui_size_expand) {
+					len[child].y = len[i].y;
+				}
+			}
+			if (ecount.x && filled < space) {
+				space -= filled;
+				for (uint32_t j = 0; space && j < h->childCount[i]; j++) {
+					uint32_t child = h->childIndex[i] + j;
+					if (cont[child].semantic_x == imui_size_expand) {
+						len[child].x++;
+						space--;
+					}
+				}
 			}
 		}
 	}
