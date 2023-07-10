@@ -1056,8 +1056,8 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	*View_Control (window_view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
-		.semantic_x = imui_size_none,
-		.semantic_y = imui_size_none,
+		.semantic_x = imui_size_fitchildren,
+		.semantic_y = imui_size_fitchildren,
 		.free_x = 1,
 		.free_y = 1,
 		.vertical = true,
