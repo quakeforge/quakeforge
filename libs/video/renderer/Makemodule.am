@@ -577,7 +577,8 @@ EXTRA_DIST += \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
 	$(light_flat_src) \
-	$(light_splat_src) \
+	$(light_splatv_src) \
+	$(light_splatf_src) \
 	$(light_debug_src) \
 	$(lightingf_src) \
 	$(lighting_h) \

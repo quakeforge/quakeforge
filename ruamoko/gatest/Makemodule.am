@@ -18,9 +18,6 @@ ruamoko/gatest/gatest.dat$(EXEEXT): $(ruamoko_gatest_gatest_obj) $(QFCC_DEP) $(l
 include $(ruamoko_gatest_gatest_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_gatest_gatest_dep)
 
-EXTRA_PROGRAMS += \
-	ruamoko/gatest/gatest
-
 EXTRA_DIST += \
 	$(gatest_dat_src) \
 	ruamoko/gatest/algebra.h \
