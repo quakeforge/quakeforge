@@ -105,6 +105,9 @@ bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
 void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
 void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 				  const char *label);
+void IMUI_Spacer (imui_ctx_t *ctx,
+				  imui_size_t xsize, int xvalue,
+				  imui_size_t ysize, int yvalue);
 void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
 void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
@@ -134,7 +137,7 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 	IMUI_Slider(IMUI_context, value, minval, maxval, label)
 
 #define UI_FlexibleSpace() \
-	IMUI_FlexibleSpace(IMUI_context)
+	IMUI_Spacer(IMUI_context, imui_size_expand, 100, imui_size_expand, 100)
 
 #define UI_Layout(vertical) \
 	IMUI_DeferLoop (IMUI_PushLayout (IMUI_context, vertical), \

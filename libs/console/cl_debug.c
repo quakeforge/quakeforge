@@ -162,22 +162,29 @@ static void
 color_window (void)
 {
 	UI_Window (&style_editor) {
-		if (!style_editor.is_open || style_editor.is_collapsed) {
+		if (!style_editor.is_open) {
+			break;
+		}
+		if (style_editor.is_collapsed) {
 			continue;
 		}
-		IMUI_Layout_SetXSize (debug_imui, imui_size_fitchildren, 0);
-		IMUI_Layout_SetYSize (debug_imui, imui_size_fitchildren, 0);
 		UI_Vertical {
 			UI_Horizontal {
+				UI_FlexibleSpace ();
 				UI_Radio (&style_selection, 0, "Background");
+				UI_FlexibleSpace ();
 				UI_Radio (&style_selection, 1, "Foreground");
+				UI_FlexibleSpace ();
 				UI_Radio (&style_selection, 2, "Text");
 				UI_FlexibleSpace ();
 			}
 
 			UI_Horizontal {
+				UI_FlexibleSpace ();
 				UI_Radio (&style_mode, 0, "Normal");
+				UI_FlexibleSpace ();
 				UI_Radio (&style_mode, 1, "Hot");
+				UI_FlexibleSpace ();
 				UI_Radio (&style_mode, 2, "Active");
 				UI_FlexibleSpace ();
 			}
@@ -245,7 +252,10 @@ static imui_window_t window = {
 };
 	bool close_debug_pressed = false;
 	UI_Window (&window) {
-		if (!window.is_open || window.is_collapsed) {
+		if (!window.is_open) {
+			break;
+		}
+		if (window.is_collapsed) {
 			continue;
 		}
 		UI_Vertical {
