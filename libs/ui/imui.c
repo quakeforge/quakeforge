@@ -265,6 +265,9 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
+	if (!visible) {
+		ctx->active = nullent;
+	}
 	*Canvas_Visible (ctx->csys, ctx->canvas) = visible;
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		*Canvas_Visible (ctx->csys, ctx->windows.a[i]->entity) = visible;
