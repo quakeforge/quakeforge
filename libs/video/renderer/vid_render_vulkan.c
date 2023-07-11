@@ -340,7 +340,7 @@ vulkan_set_2d (int scaled)
 }
 
 static void
-vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+vulkan_UpdateScreen (SCR_Func *scr_funcs)
 {
 	vulkan_set_2d (1);//FIXME
 	Vulkan_SetScrFuncs (scr_funcs, vulkan_ctx);

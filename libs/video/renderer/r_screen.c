@@ -191,6 +191,22 @@ render_scene (void)
 }
 
 static void
+swizzle_camera (refdef_t *refdef)
+{
+	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
+	// camera forward vector (camera Y) points along the world +X axis and the
+	// camera right vector (camera X) points along the world -Y axis. This
+	// should not be necessary here but is due to AngleVectors (and thus
+	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
+	// as right). Fixing this would take an audit of the usage of both, but is
+	// probably worthwhile in the long run.
+	refdef->frame.mat[0] = -refdef->camera[1];
+	refdef->frame.mat[1] =  refdef->camera[0];
+	refdef->frame.mat[2] =  refdef->camera[2];
+	refdef->frame.mat[3] =  refdef->camera[3];
+}
+
+static void
 render_side (int side)
 {
 	mat4f_t     camera;
@@ -203,13 +219,8 @@ render_side (int side)
 	mat4ftranspose (rotinv, box_rotations[side]);
 	mmulf (r_refdef.camera_inverse, rotinv, camera_inverse);
 
-	//FIXME see fixme in r_screen.c
-	r_refdef.frame.mat[0] = -r_refdef.camera[1];
-	r_refdef.frame.mat[1] =  r_refdef.camera[0];
-	r_refdef.frame.mat[2] =  r_refdef.camera[2];
-	r_refdef.frame.mat[3] =  r_refdef.camera[3];
-
 	refdef_t   *refdef = r_data->refdef;
+	swizzle_camera (refdef);//FIXME see comment in swizzle_camera
 	R_SetFrustum (refdef->frustum, &refdef->frame, 90, 90);
 
 	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
@@ -220,8 +231,7 @@ render_side (int side)
 }
 
 void
-SCR_UpdateScreen_legacy (transform_t camera, double realtime,
-						 SCR_Func *scr_funcs)
+SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 {
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
@@ -291,17 +301,8 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		mat4fidentity (refdef->camera_inverse);
 	}
 
-	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
-	// camera forward vector (camera Y) points along the world +X axis and the
-	// camera right vector (camera X) points along the world -Y axis. This
-	// should not be necessary here but is due to AngleVectors (and thus
-	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
-	// as right). Fixing this would take an audit of the usage of both, but is
-	// probably worthwhile in the long run.
-	refdef->frame.mat[0] = -refdef->camera[1];
-	refdef->frame.mat[1] =  refdef->camera[0];
-	refdef->frame.mat[2] =  refdef->camera[2];
-	refdef->frame.mat[3] =  refdef->camera[3];
+	swizzle_camera (refdef);//FIXME see comment in swizzle_camera
+
 	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
 
 	r_data->realtime = realtime;
@@ -325,7 +326,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	}
 	r_framecount++;
 	R_PushDlights (vec3_origin, &r_visstate);
-	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
+	r_funcs->UpdateScreen (scr_funcs);
 }
 
 static void

@@ -87,8 +87,7 @@ typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
 
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
-	void (*UpdateScreen) (struct transform_s camera, double realtime,
-						  SCR_Func *scr_funcs);
+	void (*UpdateScreen) (SCR_Func *scr_funcs);
 	void (*Draw_CharBuffer) (int x, int y, struct draw_charbuffer_s *buffer);
 	void (*Draw_SetScale) (int scale);
 	void (*Draw_Character) (int x, int y, unsigned ch);
