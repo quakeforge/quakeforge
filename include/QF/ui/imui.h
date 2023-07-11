@@ -31,6 +31,8 @@
 #ifndef __QF_ui_imui_h
 #define __QF_ui_imui_h
 
+#include "QF/ecs/component.h"
+
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
 struct IE_event_s;
@@ -42,7 +44,7 @@ enum {
 	imui_comp_count
 };
 
-extern const struct component_s imui_components[imui_comp_count];
+extern const component_t imui_components[imui_comp_count];
 
 typedef enum {
 	imui_size_none,
