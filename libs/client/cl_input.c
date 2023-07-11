@@ -75,7 +75,7 @@ in_axis_t in_move_side = {
 in_axis_t in_move_up = {
 	.mode = ina_set,
 	.name = "move.up",
-	.description = "Move up (positive) or down (negative)",
+	.description = "Move up (negative) or down (positive)",
 };
 
 in_axis_t in_cam_forward = {
