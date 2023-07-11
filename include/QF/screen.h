@@ -53,6 +53,10 @@ extern int r_zgraph;
 extern int scr_copytop;
 extern bool scr_skipupdate;
 
+extern bool r_lock_viewleaf;
+extern bool r_override_camera;
+extern struct transform_s r_camera;
+
 struct view_pos_s;
 void R_TimeGraph (struct view_pos_s abs, struct view_pos_s len);
 void R_ZGraph (struct view_pos_s abs, struct view_pos_s len);

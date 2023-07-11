@@ -60,6 +60,9 @@
 int         scr_copytop;
 byte       *draw_chars;			// 8*8 graphic characters FIXME location
 bool        r_cache_thrash;		// set if surface cache is thrashing
+bool        r_lock_viewleaf;	// prevent vis updates (for debug camera)
+bool        r_override_camera;
+transform_t r_camera;
 
 visstate_t r_visstate;		//FIXME per renderer
 
@@ -292,6 +295,10 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		r_time1 = Sys_DoubleTime ();
 	}
 
+	if (__builtin_expect (r_override_camera, 0)) {
+		camera = r_camera;
+	}
+
 	refdef_t   *refdef = r_data->refdef;
 	if (Transform_Valid (camera)) {
 		Transform_GetWorldMatrix (camera, refdef->camera);
@@ -313,7 +320,7 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	}
 
 	R_AnimateLight ();
-	if (scr_scene && scr_scene->worldmodel) {
+	if (!r_lock_viewleaf && scr_scene && scr_scene->worldmodel) {
 		scr_scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
 		auto brush = &scr_scene->worldmodel->brush;
