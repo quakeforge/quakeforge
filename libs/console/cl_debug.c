@@ -2,6 +2,7 @@
 # include "config.h"
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
@@ -169,6 +170,7 @@ con_debug_f (void *data, const cvar_t *cvar)
 		if (!con_debug) {
 			IE_Set_Focus (debug_saved_focus);
 			IMT_SetContext (debug_saved_context);
+			r_override_camera = false;
 		} else {
 			IMUI_SetSize (debug_imui, deb_xlen, deb_ylen);
 		}
@@ -511,6 +513,11 @@ static imui_window_t window = {
 			UI_Horizontal {
 				if (UI_Button ("Close Debug")) {
 					close_debug_pressed = true;
+				}
+				IMUI_Spacer (debug_imui, imui_size_pixels, 10,
+							 imui_size_expand, 100);
+				if (UI_Button ("Screenshot")) {
+					Cbuf_AddText (con_data.cbuf, "screenshot\n");
 				}
 				UI_FlexibleSpace ();
 			}
