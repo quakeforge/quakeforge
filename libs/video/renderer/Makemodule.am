@@ -326,6 +326,8 @@ bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
 bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
+debug_src = $(vkshaderpath)/debug.frag
+debug_c = $(vkshaderpath)/debug.frag.spvc
 light_flat_src = $(vkshaderpath)/light_flat.vert
 light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
 light_splatv_src = $(vkshaderpath)/light_splat.vert
@@ -420,6 +422,8 @@ $(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
 $(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
+$(debug_c): $(debug_src) $(lighting_h)
+
 $(light_flat_c): $(light_flat_src) $(lighting_h)
 
 $(light_splatv_c): $(light_splatv_src) $(lighting_h)
@@ -488,6 +492,7 @@ vkshader_c = \
 	$(bsp_shadow_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
+	$(debug_c) \
 	$(light_flat_c) \
 	$(light_splatv_c) \
 	$(light_splatf_c) \
@@ -576,6 +581,7 @@ EXTRA_DIST += \
 	$(bsp_shadow_src) \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
+	$(debug_src) \
 	$(light_flat_src) \
 	$(light_splatv_src) \
 	$(light_splatf_src) \

@@ -100,6 +100,15 @@ properties = {
 		depthBiasEnable = false;
 		lineWidth = 1;
 	};
+	debug_poly_lines = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = line;
+		cullMode = none;
+		frontFace = clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
 	cw_cull_back = {
 		depthClampEnable = false;
 		rasterizerDiscardEnable = false;
@@ -227,6 +236,11 @@ properties = {
 				stage = vertex;
 				name = main;
 				module = $builtin/bsp_depth.vert;
+			};
+			debug_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/debug.frag;
 			};
 			gbuf_vertex = {
 				stage = vertex;
@@ -1499,8 +1513,44 @@ renderpasses = {
 						);
 						layout = $compose.layout;
 					};
-					/*debug = {
+					debug_bsp = {
 						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, translucent, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, turbulent, 0); },
+						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+							$brush.shader.debug_fragment,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
+					debug_lights = {
+						@inherit = $compose_base;
+						disabled = true;
 
 						color = $color.lights;
 						tasks = (
@@ -1515,17 +1565,9 @@ renderpasses = {
 						vertexInput = $lighting.vertexInput_splat;
 						inputAssembly = $lighting.inputAssembly;
 						layout = $lighting.layout;
-						rasterization = {
-							depthClampEnable = false;
-							rasterizerDiscardEnable = false;
-							polygonMode = line;
-							cullMode = none;
-							frontFace = clockwise;
-							depthBiasEnable = false;
-							lineWidth = 1;
-						};
+						rasterization = $debug_poly_lines;
 						depthStencil = $depth_disable;
-					};*/
+					};
 				};
 			};
 		};

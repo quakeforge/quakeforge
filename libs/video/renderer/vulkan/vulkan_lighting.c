@@ -248,10 +248,10 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	QFV_PacketCopyBuffer (packet, lframe->data_buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
-	if (0) {
+	uint32_t id_count = lframe->ico_count + lframe->cone_count
+						+ lframe->flat_count;
+	if (id_count) {
 		packet = QFV_PacketAcquire (ctx->staging);
-		uint32_t id_count = lframe->ico_count + lframe->cone_count
-							+ lframe->flat_count;
 		uint32_t *ids = QFV_PacketExtend (packet, id_count * sizeof (uint32_t));
 		memcpy (ids, ico_ids, lframe->ico_count * sizeof (uint32_t));
 		ids += lframe->ico_count;
@@ -335,7 +335,7 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 3, sets, 0, 0);
-	if (0) {
+	if (1) {
 		VkBuffer buffers[] = {
 			lframe->id_buffer,
 			lctx->splat_verts,
