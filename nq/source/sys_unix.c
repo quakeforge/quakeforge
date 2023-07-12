@@ -44,6 +44,7 @@
 #else
 # include <sys/fcntl.h>
 #endif
+#include <locale.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -83,6 +84,7 @@ main (int argc, const char **argv)
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
+	setlocale (LC_ALL, "");
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
