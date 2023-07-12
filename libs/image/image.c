@@ -43,7 +43,7 @@
 #include "QF/tga.h"
 
 VISIBLE tex_t *
-LoadImage (const char *imageFile)
+LoadImage (const char *imageFile, int load)
 {
 	int         tmp;
 	dstring_t  *tmpFile;
@@ -64,7 +64,7 @@ LoadImage (const char *imageFile)
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".png", 5);
 	fp = QFS_FOpenFile (tmpFile->str);
 	if (fp) {
-		tex = LoadPNG (fp);
+		tex = LoadPNG (fp, load);
 		Qclose (fp);
 		dstring_delete (tmpFile);
 		return (tex);
@@ -74,7 +74,7 @@ LoadImage (const char *imageFile)
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".tga", 5);
 	fp = QFS_FOpenFile (tmpFile->str);
 	if (fp) {
-		tex = LoadTGA (fp);
+		tex = LoadTGA (fp, load);
 		Qclose (fp);
 		dstring_delete (tmpFile);
 		return (tex);
@@ -85,7 +85,7 @@ LoadImage (const char *imageFile)
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".jpg", 5);
 	fp = QFS_FOpenFile (tmpFile->str);
 	if (fp) {
-		tex = LoadJPG (fp);
+		tex = LoadJPG (fp, load);
 		Qclose (fp);
 		dstring_delete (tmpFile);
 		return (tex);
@@ -96,7 +96,8 @@ LoadImage (const char *imageFile)
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".pcx", 5);
 	fp = QFS_FOpenFile (tmpFile->str);
 	if (fp) {
-		tex = LoadPCX (fp, 1, NULL); // Convert, some users don't grok paletted
+		// Convert, some users don't grok paletted
+		tex = LoadPCX (fp, 1, NULL, load);
 		Qclose (fp);
 		dstring_delete (tmpFile);
 		return (tex);
@@ -104,4 +105,32 @@ LoadImage (const char *imageFile)
 
 	dstring_delete (tmpFile);
 	return (tex);
+}
+
+size_t
+ImageSize (const tex_t *tex, int incl_struct)
+{
+	size_t      w =tex->width;
+	size_t      h =tex->height;
+	size_t      bpp = 1;
+	switch (tex->format) {
+		case tex_palette:
+		case tex_rgb:
+			bpp = 3;
+			break;
+		case tex_l:
+		case tex_a:
+			bpp = 1;
+			break;
+		case tex_la:
+			bpp = 2;
+			break;
+		case tex_rgba:
+			bpp = 4;
+			break;
+		case tex_frgba:
+			bpp = 16;
+			break;
+	}
+	return bpp * w * h + (incl_struct ? sizeof (tex_t) : 0);
 }

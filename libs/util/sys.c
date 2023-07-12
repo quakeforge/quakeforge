@@ -60,6 +60,7 @@
 # include <pwd.h>
 #endif
 
+#include <inttypes.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -89,23 +90,61 @@
 #include "QF/va.h"
 
 #include "compat.h"
+#define IMPLEMENT_QFSELECT_Funcs
+#include "qfselect.h"
 
-static void Sys_StdPrintf (const char *fmt, va_list args);
-static void Sys_ErrPrintf (const char *fmt, va_list args);
+static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
+static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 
-VISIBLE cvar_t *sys_nostdout;
-VISIBLE cvar_t *sys_extrasleep;
-cvar_t     *sys_dead_sleep;
-cvar_t     *sys_sleep;
+VISIBLE int sys_nostdout;
+static cvar_t sys_nostdout_cvar = {
+	.name = "sys_nostdout",
+	.description =
+		"Set to disable std out",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_nostdout },
+};
+VISIBLE int sys_extrasleep;
+static cvar_t sys_extrasleep_cvar = {
+	.name = "sys_extrasleep",
+	.description =
+		"Set to cause whatever amount delay in microseconds you want. Mostly "
+		"useful to generate simulated bad connections.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_extrasleep },
+};
+int sys_dead_sleep;
+static cvar_t sys_dead_sleep_cvar = {
+	.name = "sys_dead_sleep",
+	.description =
+		"When set, the server gets NO cpu if no clients are connected and "
+		"there's no other activity. *MIGHT* cause problems with some mods.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_dead_sleep },
+};
+int sys_sleep;
+static cvar_t sys_sleep_cvar = {
+	.name = "sys_sleep",
+	.description =
+		"Sleep how long in seconds between checking for connections. Minimum "
+		"is 0, maximum is 13",
+	.default_value = "8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_sleep },
+};
 
 int         sys_checksum;
 
-static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
-static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
+static __thread sys_printf_t sys_std_printf_function = Sys_StdPrintf;
+static __thread sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
-	void (*func)(void);
+	void      (*func) (void *);
+	void       *data;
 } shutdown_list_t;
 
 typedef struct error_handler_s {
@@ -114,30 +153,30 @@ typedef struct error_handler_s {
 	void       *data;
 } error_handler_t;
 
-static shutdown_list_t *shutdown_list;
+static __thread shutdown_list_t *shutdown_list;
 
-static error_handler_t *error_handler_freelist;
-static error_handler_t *error_handler;
+static __thread error_handler_t *error_handler_freelist;
+static __thread error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
-qboolean    stdin_ready;
+bool        stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
 VISIBLE const char sys_char_map[256] = {
-	'\0', '#', '#', '#', '#', '.', '#', '#',
-	'#', 9, 10, '#', ' ', 13, '.', '.',
+      0, '#', '#', '#', '#', '.', '#', '#',
+	'#',   9,  10, '#', ' ',  13, '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -147,14 +186,14 @@ VISIBLE const char sys_char_map[256] = {
 	'#', '#', ' ', '#', ' ', '>', '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -240,38 +279,48 @@ Sys_FileExists (const char *path)
 	for want of a better name, but it sets the function pointer for the
 	actual implementation of Sys_Printf.
 */
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_std_printf_function;
+	if (!func) {
+		func = Sys_StdPrintf;
+	}
 	sys_std_printf_function = func;
+	return prev;
 }
 
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_err_printf_function;
+	if (!func) {
+		func = Sys_ErrPrintf;
+	}
 	sys_err_printf_function = func;
+	return prev;
 }
 
+static __thread dstring_t *sys_print_msg;
 void
 Sys_Print (FILE *stream, const char *fmt, va_list args)
 {
-	static dstring_t *msg;
 	unsigned char *p;
 
-	if (!msg)
-		msg = dstring_new ();
+	if (!sys_print_msg)
+		sys_print_msg = dstring_new ();
 
-	dvsprintf (msg, fmt, args);
+	dvsprintf (sys_print_msg, fmt, args);
 
 	if (stream == stderr) {
 #ifdef _WIN32
-		MessageBox (NULL, msg->str, "Fatal Error", 0 /* MB_OK */ );
+		MessageBox (NULL, sys_print_msg->str, "Fatal Error", 0 /* MB_OK */ );
 #endif
 		fputs ("Fatal Error: ", stream);
 	}
 
 	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) msg->str; *p; p++)
+	for (p = (unsigned char *) sys_print_msg->str; *p; p++)
 		putc (sys_char_map[*p], stream);
 
 	if (stream == stderr) {
@@ -283,7 +332,7 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 static void
 Sys_StdPrintf (const char *fmt, va_list args)
 {
-	if (sys_nostdout && sys_nostdout->int_val)
+	if (sys_nostdout)
 		return;
 	Sys_Print (stdout, fmt, args);
 }
@@ -304,21 +353,29 @@ Sys_Printf (const char *fmt, ...)
 }
 
 VISIBLE void
-Sys_MaskPrintf (int mask, const char *fmt, ...)
+Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (!developer || !(developer->int_val & mask))
+	if (!(developer & mask))
 		return;
 	va_start (args, fmt);
 	sys_std_printf_function (fmt, args);
 	va_end (args);
 }
 
+static int64_t sys_starttime = -1;
+
+VISIBLE int64_t
+Sys_StartTime (void)
+{
+	return sys_starttime;
+}
+
 VISIBLE int64_t
 Sys_LongTime (void)
 {
-	static qboolean first = true;
+	static bool first = true;
 #ifdef _WIN32
 # if 0
 	static DWORD starttime;
@@ -348,11 +405,10 @@ Sys_LongTime (void)
 	static int64_t qpcfudge = 0;
 	int64_t currtime = 0;
 	static int64_t lasttime = 0;
-	static int64_t starttime = 0;
 
 	if (first) {
 		timeBeginPeriod (1);
-		starttime = lasttime = timeGetTime ();
+		sys_starttime = lasttime = timeGetTime () * 1000;
 		QueryPerformanceFrequency ((LARGE_INTEGER *) &qpcfreq);
 		QueryPerformanceCounter ((LARGE_INTEGER *) &lastqpccount);
 		first = false;
@@ -360,7 +416,7 @@ Sys_LongTime (void)
 	}
 
 	// get the current time from both counters
-	currtime = timeGetTime ();
+	currtime = timeGetTime () * 1000;
     QueryPerformanceCounter ((LARGE_INTEGER *) &currqpccount);
 
 	if (currtime != lasttime)  {
@@ -371,7 +427,7 @@ Sys_LongTime (void)
 		// store back times and calc a fudge factor as timeGetTime can
 		// overshoot on a sub-millisecond scale
 		qpcfudge = (( (currqpccount - lastqpccount) * 1000000 / qpcfreq))
-				- ((currtime - lasttime) * 1000);
+				- (currtime - lasttime);
 		lastqpccount = currqpccount;
 		lasttime = currtime;
 	} else {
@@ -379,32 +435,51 @@ Sys_LongTime (void)
 	}
 
 	// the final time is the base from timeGetTime plus an addition from QPC
-	return (((currtime - starttime) * 1000)
+	return ((currtime - sys_starttime)
 			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
+	int64_t now;
+#ifdef CLOCK_BOOTTIME
+	struct timespec tp;
+
+	clock_gettime (CLOCK_BOOTTIME, &tp);
+
+	now = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
+#else
 	struct timeval tp;
 	struct timezone tzp;
-	int64_t now;
-	static int64_t start_time;
 
 	gettimeofday (&tp, &tzp);
 
 	now = tp.tv_sec * 1000000 + tp.tv_usec;
+#endif
 
 	if (first) {
 		first = false;
-		start_time = now;
+		sys_starttime = now;
 	}
 
-	return now - start_time;
+	return now - sys_starttime;
 #endif
+}
+
+VISIBLE int64_t
+Sys_TimeBase (void)
+{
+	return INT64_C (4294967296000000);
 }
 
 VISIBLE double
 Sys_DoubleTime (void)
 {
-	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
+	return (Sys_TimeBase () + Sys_LongTime ()) / 1e6;
+}
+
+VISIBLE double
+Sys_DoubleTimeBase (void)
+{
+	return Sys_TimeBase () / 1e6;
 }
 
 VISIBLE void
@@ -432,25 +507,15 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 	DWORD       flOldProtect;
 
 	if (!VirtualProtect
-		((LPVOID) startaddr, length, PAGE_READWRITE, &flOldProtect))
+		((LPVOID) startaddr, length, PAGE_EXECUTE_READWRITE, &flOldProtect))
 		Sys_Error ("Protection change failed");
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
+	long        psize = Sys_PageSize ();
 	unsigned long endaddr = startaddr + length;
-#  ifdef HAVE__SC_PAGESIZE
-	long		psize = sysconf (_SC_PAGESIZE);
-
-	startaddr &= ~(psize - 1);
-	endaddr = (endaddr + psize - 1) & ~(psize -1);
-#  else
-#   ifdef HAVE_GETPAGESIZE
-	int         psize = getpagesize ();
-
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
-#   endif
-#  endif
 	// systems with mprotect but not getpagesize (or similar) probably don't
 	// need to page align the arguments to mprotect (eg, QNX)
 	r = mprotect ((char *) startaddr, endaddr - startaddr,
@@ -465,34 +530,10 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 VISIBLE void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "Set to disable std out");
-	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
-							   "Set to cause whatever amount delay in "
-							   "microseconds you want. Mostly "
-							   "useful to generate simulated bad "
-							   "connections.");
-	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "0", CVAR_NONE, NULL,
-							   "When set, the server gets NO cpu if no "
-							   "clients are connected and there's no other "
-							   "activity. *MIGHT* cause problems with some "
-							   "mods.");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
-						  "in seconds between checking for connections. "
-						  "Minimum is 0, maximum is 13");
-}
-
-void
-Sys_Shutdown (void)
-{
-	shutdown_list_t *t;
-
-	while (shutdown_list) {
-		shutdown_list->func ();
-		t = shutdown_list;
-		shutdown_list = shutdown_list->next;
-		free (t);
-	}
+	Cvar_Register (&sys_nostdout_cvar, 0, 0);
+	Cvar_Register (&sys_extrasleep_cvar, 0, 0);
+	Cvar_Register (&sys_dead_sleep_cvar, 0, 0);
+	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
 VISIBLE void
@@ -507,9 +548,15 @@ VISIBLE void
 Sys_PushErrorHandler (sys_error_t func, void *data)
 {
 	error_handler_t *eh;
-	ALLOC (16, error_handler_t, error_handler, eh);
+	if (error_handler_freelist) {
+		eh = error_handler_freelist;
+	} else {
+		eh = malloc (sizeof (error_handler_t));
+		eh->next = 0;
+	}
 	eh->func = func;
 	eh->data = data;
+	error_handler_freelist = eh->next;
 	eh->next = error_handler;
 	error_handler = eh;
 }
@@ -524,7 +571,8 @@ Sys_PopErrorHandler (void)
 	}
 	eh = error_handler;
 	error_handler = eh->next;
-	FREE (error_handler, eh);
+	eh->next = error_handler_freelist;
+	error_handler_freelist = eh;
 }
 
 
@@ -567,7 +615,7 @@ Sys_Error (const char *error, ...)
 }
 
 VISIBLE void
-Sys_RegisterShutdown (void (*func) (void))
+Sys_RegisterShutdown (void (*func) (void *), void *data)
 {
 	shutdown_list_t *p;
 	if (!func)
@@ -576,6 +624,7 @@ Sys_RegisterShutdown (void (*func) (void))
 	if (!p)
 		Sys_Error ("Sys_RegisterShutdown: insufficient memory");
 	p->func = func;
+	p->data = data;
 	p->next = shutdown_list;
 	shutdown_list = p;
 }
@@ -593,11 +642,11 @@ Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 fee
 }
 
 VISIBLE void
-Sys_PageIn (void *ptr, int size)
+Sys_PageIn (void *ptr, size_t size)
 {
 //may or may not be useful in linux #ifdef _WIN32
 	byte       *x;
-	int         m, n;
+	size_t      m, n;
 
 	// touch all the memory to make sure it's there. The 16-page skip is to
 	// keep Win 95 from thinking we're trying to page ourselves in (we are
@@ -613,71 +662,206 @@ Sys_PageIn (void *ptr, int size)
 //#endif
 }
 
+#if defined(_WIN32) && !defined(_WIN64)
+// this is a hack to make memory allocations 16-byte aligned on 32-bit
+// systems (in particular for this case, windows) as vectors and
+// matrices require 16-byte alignment but system malloc (etc) provide only
+// 8-byte alignment.
+void *__cdecl
+calloc (size_t nume, size_t sizee)
+{
+	size_t size = nume * sizee;
+	void *mem = _aligned_malloc (size, 16);
+	memset (mem, 0, size);
+	return mem;
+}
+
+void __cdecl
+free (void *mem)
+{
+	_aligned_free (mem);
+}
+
+void *__cdecl
+malloc (size_t size)
+{
+	return _aligned_malloc (size, 16);
+}
+
+void *__cdecl
+realloc (void *mem, size_t size)
+{
+	return _aligned_realloc (mem, size, 16);
+}
+
+char *__cdecl
+strdup(const char *src)
+{
+	size_t      len = strlen (src);
+	char       *dup = malloc (len + 1);
+	strcpy (dup, src);
+	return dup;
+}
+#endif
+
+VISIBLE size_t
+Sys_PageSize (void)
+{
+#ifdef _WIN32
+	SYSTEM_INFO si;
+	GetSystemInfo (&si);
+	return si.dwPageSize;
+#else
+# ifdef HAVE__SC_PAGESIZE
+	return sysconf (_SC_PAGESIZE);
+# else
+#  ifdef HAVE_GETPAGESIZE
+	return getpagesize ();
+#  endif
+# endif
+#endif
+}
+
+VISIBLE void *
+Sys_Alloc (size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	return VirtualAlloc (0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
+	return mmap (0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+				 -1, 0);
+#endif
+}
+
+VISIBLE void
+Sys_Free (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	VirtualFree (mem, 0, MEM_RELEASE | MEM_DECOMMIT);
+#else
+	munmap (mem, size);
+#endif
+}
+
+VISIBLE int
+Sys_LockMemory (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	return VirtualLock (mem, size) != 0;
+#else
+	return mlock (mem, size) == 0;
+#endif
+}
+
+VISIBLE int
+Sys_ProcessorCount (void)
+{
+	int         cpus = 1;
+#if defined (_SC_NPROCESSORS_ONLN)
+	cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined (_WIN32)
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	cpus = sysinfo.dwNumberOfProcessors;
+#endif
+	if (cpus < 1) {
+		cpus = 1;
+	}
+	return cpus;
+}
+
+static __thread dstring_t *sys_debuglog_data;
 VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *data;
 	int         fd;
 
-	if (!data)
-		data = dstring_newstr ();
+	if (!sys_debuglog_data)
+		sys_debuglog_data = dstring_newstr ();
 
 	va_start (args, fmt);
-	dvsprintf (data, fmt, args);
+	dvsprintf (sys_debuglog_data, fmt, args);
 	va_end (args);
 	if ((fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0) {
-		if (write (fd, data->str, data->size - 1) != (ssize_t) (data->size - 1))
+		if (write (fd, sys_debuglog_data->str, sys_debuglog_data->size - 1)
+			!= (ssize_t) (sys_debuglog_data->size - 1))
 			Sys_Printf ("Error writing %s: %s\n", file, strerror(errno));
 		close (fd);
 	}
 }
 
 VISIBLE int
-Sys_CheckInput (int idle, int net_socket)
+Sys_Select (int maxfd, qf_fd_set *fdset, int64_t usec)
 {
-	fd_set      fdset;
-	int         res;
 	struct timeval _timeout;
 	struct timeval *timeout = 0;
+
+	if (usec >= 0) {
+		timeout = &_timeout;
+		if (usec < 1000000) {
+			_timeout.tv_sec = 0;
+			_timeout.tv_usec = usec;
+		} else {
+			_timeout.tv_sec = usec / 1000000;
+			_timeout.tv_usec = usec % 1000000;
+		}
+	}
+
+	return select (maxfd + 1, &fdset->fdset, NULL, NULL, timeout);
+}
+
+VISIBLE int
+Sys_CheckInput (int idle, int net_socket)
+{
+	qf_fd_set   fdset;
+	int         res;
+	int64_t     usec;
 
 #ifdef _WIN32
 	int         sleep_msec;
 	// Now we want to give some processing time to other applications,
 	// such as qw_client, running on this machine.
-	sleep_msec = sys_sleep->int_val;
+	sleep_msec = sys_sleep;
 	if (sleep_msec > 0) {
 		if (sleep_msec > 13)
 			sleep_msec = 13;
 		Sleep (sleep_msec);
 	}
 
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 20;
+	usec = net_socket < 0 ? 0 : 20;
 #else
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 2000;
+	usec = net_socket < 0 ? 0 : 2000;
 #endif
 	// select on the net socket and stdin
 	// the only reason we have a timeout at all is so that if the last
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
-	FD_ZERO (&fdset);
+	QF_FD_ZERO (&fdset);
 #ifndef _WIN32
 	if (do_stdin)
-		FD_SET (0, &fdset);
+		QF_FD_SET (0, &fdset);
 #endif
 	if (net_socket >= 0)
-		FD_SET (((unsigned) net_socket), &fdset);	// cast needed for windows
+		QF_FD_SET (((unsigned) net_socket), &fdset);// cast needed for windows
 
-	if (!idle || !sys_dead_sleep->int_val)
-		timeout = &_timeout;
+	if (idle && sys_dead_sleep)
+		usec = -1;
 
-	res = select (max (net_socket, 0) + 1, &fdset, NULL, NULL, timeout);
+	res = Sys_Select (max (net_socket, 0), &fdset, usec);
 	if (res == 0 || res == -1)
 		return 0;
 #ifndef _WIN32
-	stdin_ready = FD_ISSET (0, &fdset);
+	stdin_ready = QF_FD_ISSET (0, &fdset);
 #endif
 	return 1;
 }
@@ -748,7 +932,11 @@ Sys_ConsoleInput (void)
 #endif
 }
 
-static jmp_buf  aiee_abort;
+#ifdef _WIN32
+static __thread jmp_buf  aiee_abort;
+#else
+static __thread sigjmp_buf aiee_abort;
+#endif
 
 typedef struct sh_stack_s {
 	struct sh_stack_s *next;
@@ -756,10 +944,10 @@ typedef struct sh_stack_s {
 	void *data;
 } sh_stack_t;
 
-static sh_stack_t *sh_stack;
-static sh_stack_t *free_sh;
-static int (*signal_hook)(int,void*);
-static void *signal_hook_data;
+static __thread sh_stack_t *sh_stack;
+static __thread sh_stack_t *free_sh;
+static __thread int (*signal_hook)(int,void*);
+static __thread void *signal_hook_data;
 
 VISIBLE void
 Sys_PushSignalHook (int (*hook)(int, void *), void *data)
@@ -798,87 +986,138 @@ Sys_PopSignalHook (void)
 	}
 }
 
-static void
+static void __attribute__((noreturn))
 aiee (int sig)
 {
 	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+#ifdef _WIN32
 	longjmp (aiee_abort, 1);
+#else
+	siglongjmp (aiee_abort, 1);
+#endif
 }
 
+#ifdef _WIN32
 static void
 signal_handler (int sig)
 {
 	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
 
+	if (in_signal_handler) {
+		aiee (sig);
+	}
 	printf ("Received signal %d, exiting...\n", sig);
 
 	switch (sig) {
 		case SIGINT:
 		case SIGTERM:
-#ifndef _WIN32
-		case SIGHUP:
-			signal (SIGHUP, SIG_DFL);
-#endif
-			signal (SIGINT, SIG_DFL);
+			signal (SIGINT,  SIG_DFL);
 			signal (SIGTERM, SIG_DFL);
-			Sys_Quit ();
+			exit(1);
 		default:
-#ifndef _WIN32
-			signal (SIGQUIT, aiee);
-			signal (SIGTRAP, aiee);
-			signal (SIGIOT, aiee);
-			signal (SIGBUS, aiee);
-#endif
-			signal (SIGILL, aiee);
-			signal (SIGSEGV, aiee);
-			signal (SIGFPE, aiee);
-
 			if (!setjmp (aiee_abort)) {
 				if (signal_hook)
 					recover = signal_hook (sig, signal_hook_data);
 				Sys_Shutdown ();
 			}
 
-			if (recover) {
-#ifndef _WIN32
-				signal (SIGQUIT, signal_handler);
-				signal (SIGTRAP, signal_handler);
-				signal (SIGIOT, signal_handler);
-				signal (SIGBUS, signal_handler);
-#endif
-				signal (SIGILL, signal_handler);
-				signal (SIGSEGV, signal_handler);
-				signal (SIGFPE, signal_handler);
-			} else {
-#ifndef _WIN32
-				signal (SIGQUIT, SIG_DFL);
-				signal (SIGTRAP, SIG_DFL);
-				signal (SIGIOT, SIG_DFL);
-				signal (SIGBUS, SIG_DFL);
-#endif
-				signal (SIGILL, SIG_DFL);
+			if (!recover) {
+				signal (SIGILL,  SIG_DFL);
 				signal (SIGSEGV, SIG_DFL);
-				signal (SIGFPE, SIG_DFL);
+				signal (SIGFPE,  SIG_DFL);
 			}
 	}
 }
 
+static void
+hook_signlas (void)
+{
+	// catch signals
+	signal (SIGINT,  signal_handler);
+	signal (SIGILL,  signal_handler);
+	signal (SIGSEGV, signal_handler);
+	signal (SIGTERM, signal_handler);
+	signal (SIGFPE,  signal_handler);
+}
+#else
+
+static __thread struct sigaction save_hup;
+static __thread struct sigaction save_quit;
+static __thread struct sigaction save_trap;
+static __thread struct sigaction save_iot;
+static __thread struct sigaction save_bus;
+static __thread struct sigaction save_int;
+static __thread struct sigaction save_ill;
+static __thread struct sigaction save_segv;
+static __thread struct sigaction save_term;
+static __thread struct sigaction save_fpe;
+
+static void
+signal_handler (int sig, siginfo_t *info, void *ucontext)
+{
+	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
+
+	if (in_signal_handler) {
+		aiee (sig);
+	}
+	printf ("Received signal %d, exiting...\n", sig);
+
+	switch (sig) {
+		case SIGINT:
+		case SIGTERM:
+		case SIGHUP:
+		case SIGQUIT:
+			sigaction (SIGHUP,  &save_hup,  0);
+			sigaction (SIGINT,  &save_int,  0);
+			sigaction (SIGTERM, &save_term, 0);
+			sigaction (SIGQUIT, &save_quit, 0);
+			exit(1);
+		default:
+			if (!sigsetjmp (aiee_abort, 1)) {
+				if (signal_hook)
+					recover = signal_hook (sig, signal_hook_data);
+				Sys_Shutdown ();
+			}
+
+			if (!recover) {
+				sigaction (SIGTRAP, &save_trap, 0);
+				sigaction (SIGIOT,  &save_iot,  0);
+				sigaction (SIGBUS,  &save_bus,  0);
+				sigaction (SIGILL,  &save_ill,  0);
+				sigaction (SIGSEGV, &save_segv, 0);
+				sigaction (SIGFPE,  &save_fpe,  0);
+			}
+	}
+}
+
+static void
+hook_signlas (void)
+{
+	// catch signals
+	struct sigaction action = {};
+	action.sa_flags = SA_SIGINFO;
+	action.sa_sigaction = signal_handler;
+#ifndef _WIN32
+	sigaction (SIGHUP,  &action, &save_hup);
+	sigaction (SIGQUIT, &action, &save_quit);
+	sigaction (SIGTRAP, &action, &save_trap);
+	sigaction (SIGIOT,  &action, &save_iot);
+	sigaction (SIGBUS,  &action, &save_bus);
+#endif
+	sigaction (SIGINT,  &action, &save_int);
+	sigaction (SIGILL,  &action, &save_ill);
+	sigaction (SIGSEGV, &action, &save_segv);
+	sigaction (SIGTERM, &action, &save_term);
+	sigaction (SIGFPE,  &action, &save_fpe);
+}
+#endif
+
 VISIBLE void
 Sys_Init (void)
 {
-	// catch signals
-#ifndef _WIN32
-	signal (SIGHUP, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGTRAP, signal_handler);
-	signal (SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
-#endif
-	signal (SIGINT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
-	signal (SIGFPE, signal_handler);
+	hook_signlas ();
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -949,4 +1188,72 @@ Sys_ExpandSquiggle (const char *path)
 	if (!home)
 		home = ".";
 	return nva ("%s%s", home, path + 1);	// skip leading ~
+}
+
+VISIBLE int
+Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
+				int mindigits)
+{
+	const int   flags = O_CREAT | O_EXCL | O_RDWR;
+	const int   mode = 0644;
+	int64_t     seq = 0;	// it should take a while to run out
+
+	if (!suffix) {
+		suffix = "";
+	}
+	while (1) {
+		dsprintf (name, "%s%0*"PRIi64"%s", prefix, mindigits, seq, suffix);
+		int         fd = open (name->str, flags, mode);
+		if (fd >= 0) {
+			return fd;
+		}
+		int         err = errno;
+		if (err != EEXIST) {
+			dsprintf (name, "%s", strerror (err));
+			return -err;
+		}
+		seq++;
+	}
+}
+
+void
+Sys_Shutdown (void)
+{
+	shutdown_list_t *t;
+
+	while (shutdown_list) {
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
+		t = shutdown_list;
+		shutdown_list = shutdown_list->next;
+		free (t);
+
+		func (data);
+	}
+	while (free_sh) {
+		__auto_type t = free_sh->next;
+		free (free_sh);
+		free_sh = t;
+	}
+	while (sh_stack) {
+		__auto_type t = sh_stack->next;
+		free (sh_stack);
+		sh_stack = t;
+	}
+	while (error_handler_freelist) {
+		__auto_type t = error_handler_freelist->next;
+		free (error_handler_freelist);
+		error_handler_freelist = t;
+	}
+	while (error_handler) {
+		__auto_type t = error_handler->next;
+		free (error_handler);
+		error_handler = t;
+	}
+	if (sys_print_msg) {
+		dstring_delete (sys_print_msg);
+	}
+	if (sys_debuglog_data) {
+		dstring_delete (sys_debuglog_data);
+	}
 }

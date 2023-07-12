@@ -46,9 +46,14 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
+#include "QF/scene/scene.h"
+
 #include "compat.h"
-#include "host.h"
+
+#include "client/world.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
 typedef struct {
 	int         frames;
@@ -56,25 +61,59 @@ typedef struct {
 	double      fps;
 } td_stats_t;
 
-int         demo_timeframes_isactive;
-int         demo_timeframes_index;
-char        demoname[1024];
-double     *demo_timeframes_array;
+static int         demo_timeframes_isactive;
+static int         demo_timeframes_index;
+static dstring_t  *demoname;
+static double     *demo_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
-int         timedemo_count;
-int         timedemo_runs;
-td_stats_t *timedemo_data;
+static int         timedemo_count;
+static int         timedemo_runs;
+static td_stats_t *timedemo_data;
 
 static void CL_FinishTimeDemo (void);
 static void CL_TimeFrames_DumpLog (void);
 static void CL_TimeFrames_AddTimestamp (void);
 static void CL_TimeFrames_Reset (void);
 
-cvar_t     *demo_gzip;
-cvar_t     *demo_speed;
-cvar_t     *demo_quit;
-cvar_t     *demo_timeframes;
+int demo_gzip;
+static cvar_t demo_gzip_cvar = {
+	.name = "demo_gzip",
+	.description =
+		"Compress demos using gzip. 0 = none, 1 = least compression, 9 = most "
+		"compression. Compressed  demos (1-9) will have .gz appended to the "
+		"name",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &demo_gzip },
+};
+float demo_speed;
+static cvar_t demo_speed_cvar = {
+	.name = "demo_speed",
+	.description =
+		"adjust demo playback speed. 1.0 = normal, < 1 slow-mo, > 1 timelapse",
+	.default_value = "1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &demo_speed },
+};
+int demo_quit;
+static cvar_t demo_quit_cvar = {
+	.name = "demo_quit",
+	.description =
+		"automaticly quit after a timedemo has finished",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &demo_quit },
+};
+int demo_timeframes;
+static cvar_t demo_timeframes_cvar = {
+	.name = "demo_timeframes",
+	.description =
+		"write timestamps for every frame",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &demo_timeframes },
+};
 
 #define MAX_DEMMSG (MAX_MSGLEN)
 
@@ -104,7 +143,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	len = LittleLong (msg->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i = 0; i < 3; i++) {
-		f = LittleFloat (cl.viewangles[i]);
+		f = LittleFloat (cl.viewstate.player_angles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
 	Qwrite (cls.demofile, msg->data, msg->cursize);
@@ -128,6 +167,7 @@ CL_StopPlayback (void)
 	CL_SetState (ca_disconnected);
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
+	cl.viewstate.demoplayback = 0;
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -172,7 +212,8 @@ check_next_demopacket (void)
 static int
 read_demopacket (void)
 {
-	int         i, r;
+	int         i;
+	unsigned    r;
 	float       f;
 
 	Qread (cls.demofile, &net_message->message->cursize, 4);
@@ -181,10 +222,14 @@ read_demopacket (void)
 	if (net_message->message->cursize > MAX_DEMMSG)
 		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
 					net_message->message->cursize, MAX_DEMMSG);
-	VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
+	VectorCopy (cl.frameViewAngles[0], cl.frameViewAngles[1]);
 	for (i = 0; i < 3; i++) {
 		r = Qread (cls.demofile, &f, 4);
-		cl.mviewangles[0][i] = LittleFloat (f);
+		if (r != 4) {
+			CL_StopPlayback ();
+			return 0;
+		}
+		cl.frameViewAngles[0][i] = LittleFloat (f);
 	}
 	r = Qread (cls.demofile, net_message->message->data,
 			   net_message->message->cursize);
@@ -307,7 +352,7 @@ CL_Record_f (void)
 
 // start up the map
 	if (c > 2)
-		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
+		Cmd_ExecuteString (va (0, "map %s", Cmd_Argv (2)), src_command);
 
 	CL_Record (Cmd_Argv (1), track);
 }
@@ -332,8 +377,8 @@ demo_default_name (const char *argv1)
 	time (&tim);
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
-	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->name);
+	// the leading path-name is to be removed from cl_world.worldmodel->name
+	mapname = QFS_SkipPath (cl_world.scene->worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended
@@ -362,9 +407,9 @@ CL_Record (const char *argv1, int track)
 
 	// open the demo file
 #ifdef HAVE_ZLIB
-	if (demo_gzip->int_val) {
+	if (demo_gzip) {
 		QFS_DefaultExtension (name, ".dem.gz");
-		cls.demofile = QFS_WOpen (name->str, demo_gzip->int_val);
+		cls.demofile = QFS_WOpen (name->str, demo_gzip);
 	} else
 #endif
 	{
@@ -444,13 +489,13 @@ CL_StartDemo (void)
 {
 	dstring_t  *name;
 	int         c;
-	qboolean    neg = false;
+	bool        neg = false;
 
 	// disconnect from server
 	CL_Disconnect ();
 
 	// open the demo file
-	name = dstring_strdup (demoname);
+	name = dstring_strdup (demoname->str);
 	QFS_DefaultExtension (name, ".dem");
 
 	Sys_Printf ("Playing demo from %s.\n", name->str);
@@ -471,9 +516,9 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
+	cl.viewstate.demoplayback = 1;
 	CL_SetState (ca_connected);
 	cls.forcetrack = 0;
-	Key_SetKeyDest (key_demo);
 
 	while ((c = Qgetc (cls.demofile)) != '\n')
 		if (c == '-')
@@ -499,7 +544,7 @@ CL_PlayDemo_f (void)
 
 	switch (Cmd_Argc ()) {
 		case 1:
-			if (!demoname[0])
+			if (!demoname->str[0])
 				goto playdemo_error;
 			// fall through
 		case 2:
@@ -519,7 +564,7 @@ playdemo_error:
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
 
 	if (Cmd_Argc () > 1)
-		strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+		dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartDemo ();
 }
 
@@ -537,7 +582,7 @@ CL_StartTimeDemo (void)
 	cls.td_lastframe = -1;				// get a new message this frame
 
 	CL_TimeFrames_Reset ();
-	if (demo_timeframes->int_val)
+	if (demo_timeframes)
 		demo_timeframes_isactive = 1;
 }
 
@@ -596,7 +641,7 @@ CL_FinishTimeDemo (void)
 			Sys_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
 			Sys_Printf ("std deviation: %.3f fps\n", sqrt (variance));
 		}
-		if (demo_quit->int_val)
+		if (demo_quit)
 			Cbuf_InsertText (host_cbuf, "quit\n");
 	}
 }
@@ -626,8 +671,7 @@ CL_TimeDemo_f (void)
 		free (timedemo_data);
 		timedemo_data = 0;
 	}
-	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
-	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartTimeDemo ();
 	timedemo_runs = timedemo_count = max (count, 1);
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
@@ -636,21 +680,15 @@ CL_TimeDemo_f (void)
 void
 CL_Demo_Init (void)
 {
+	demoname = dstring_newstr ();
 	demo_timeframes_isactive = 0;
 	demo_timeframes_index = 0;
 	demo_timeframes_array = NULL;
 
-	demo_gzip = Cvar_Get ("demo_gzip", "0", CVAR_ARCHIVE, NULL,
-						  "Compress demos using gzip. 0 = none, 1 = least "
-						  "compression, 9 = most compression. Compressed "
-						  " demos (1-9) will have .gz appended to the name");
-	demo_speed = Cvar_Get ("demo_speed", "1.0", CVAR_NONE, NULL,
-						   "adjust demo playback speed. 1.0 = normal, "
-						   "< 1 slow-mo, > 1 timelapse");
-	demo_quit = Cvar_Get ("demo_quit", "0", CVAR_NONE, NULL,
-						  "automaticly quit after a timedemo has finished");
-	demo_timeframes = Cvar_Get ("demo_timeframes", "0", CVAR_NONE, NULL,
-								"write timestamps for every frame");
+	Cvar_Register (&demo_gzip_cvar, 0, 0);
+	Cvar_Register (&demo_speed_cvar, 0, 0);
+	Cvar_Register (&demo_quit_cvar, 0, 0);
+	Cvar_Register (&demo_timeframes_cvar, 0, 0);
 	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
 					"argument is given\n"
 					"the demo will be called Year-Month-Day-Hour-Minute-"

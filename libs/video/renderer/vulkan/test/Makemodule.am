@@ -1,0 +1,20 @@
+libs_video_renderer_vulkan_tests = \
+	libs/video/renderer/vulkan/test/test-staging
+
+if TEST_VULKAN
+TESTS += $(libs_video_renderer_vulkan_tests)
+check_PROGRAMS += $(libs_video_renderer_vulkan_tests)
+endif
+
+EXTRA_PROGRAMS += $(libs_video_renderer_vulkan_tests)
+
+libs_video_renderer_vulkan_test_libs= \
+	libs/video/renderer/librender_vulkan.la \
+	libs/util/libQFutil.la
+
+libs_video_renderer_vulkan_test_test_staging_SOURCES= 		\
+	libs/video/renderer/vulkan/test/test-staging.c
+libs_video_renderer_vulkan_test_test_staging_LDADD=			\
+	$(libs_video_renderer_vulkan_test_libs)
+libs_video_renderer_vulkan_test_test_staging_DEPENDENCIES=	\
+	$(libs_video_renderer_vulkan_test_libs)

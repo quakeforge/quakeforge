@@ -1,7 +1,7 @@
 dnl Checks for SVGALib support
 AC_ARG_WITH(svga,
-[  --with-svga=DIR         use SVGALib found in DIR],
-HAVE_SVGA=$withval, HAVE_SVGA=auto)
+	AS_HELP_STRING([--with-svga@<:@=DIR@:>@], [use SVGALib found in DIR]),
+	HAVE_SVGA=$withval, HAVE_SVGA=auto)
 if test "x$HAVE_SVGA" != xno -a "x$HAVE_SVGA" != xauto; then
 	if test "x$HAVE_SVGA" != xauto; then
 		SVGA_CFLAGS="$SVGA_CFLAGS -I$withval/include"

@@ -61,6 +61,7 @@
 #include "QF/GL/funcs.h"
 
 #include "r_internal.h"
+#include "vid_gl.h"
 
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
@@ -71,13 +72,13 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean
+bool
 GLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
-	qf##name = vid.get_proc_address (#name, false);
+	qf##name = gl_ctx->get_proc_address (#name, false);
 #define QFGL_NEED(ret, name, args) \
-	qf##name = vid.get_proc_address (#name, true);
+	qf##name = gl_ctx->get_proc_address (#name, true);
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
@@ -91,7 +92,7 @@ GLF_FindFunctions (void)
   It takes a bit of care to be fool-proof about parsing an OpenGL extensions
   string. Don't be fooled by sub-strings, etc.
 */
-static qboolean
+static __attribute__((pure)) bool
 QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 {
 	const char *start;
@@ -119,7 +120,7 @@ QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 	return 0;
 }
 
-qboolean
+bool
 QFGL_ExtensionPresent (const char *name)
 {
 	static const GLubyte *gl_extensions = NULL;
@@ -135,6 +136,6 @@ void *
 QFGL_ExtensionAddress (const char *name)
 {
 	if (name)
-		return vid.get_proc_address (name, false);
+		return gl_ctx->get_proc_address (name, false);
 	return NULL;
 }

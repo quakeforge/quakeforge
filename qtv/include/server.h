@@ -52,10 +52,22 @@ typedef struct player_s {
 
 typedef struct frame_s {
 	int         delta_sequence;
-	qboolean    invalid;
+	bool        invalid;
 	packet_players_t players;
 	packet_entities_t entities;
 } frame_t;
+
+typedef struct qtv_leaf_s {
+	struct qtv_leaf_s *next;
+	int         num;
+} qtv_leaf_t;
+
+typedef struct {
+	entity_state_t e;
+	int         model_index;	// 1-based
+	struct model_s *model;
+	qtv_leaf_t *leafs;
+} qtv_entity_t;
 
 #define MAX_SV_PLAYERS 32
 #define MAX_SV_ENTITIES 512
@@ -84,6 +96,8 @@ typedef struct server_s {
 	char       *soundlist[MAX_SOUNDS + 1];
 	char       *modellist[MAX_MODELS + 1];
 	char       *lightstyles[MAX_LIGHTSTYLES];
+	struct model_s *worldmodel;
+	struct set_s *fatpvs;
 	int         playermodel;
 	int         num_signon_buffers;
 	int         signon_buffer_size[MAX_SIGNON_BUFFERS];
@@ -95,7 +109,7 @@ typedef struct server_s {
 	int         validsequence;
 
 	frame_t     frames[UPDATE_BACKUP];
-	entity_state_t entities[MAX_SV_ENTITIES];
+	qtv_entity_t  entities[MAX_SV_ENTITIES];
 	byte        ent_valid[MAX_SV_ENTITIES];
 	entity_state_t baselines[MAX_SV_ENTITIES];
 	player_t    players[MAX_SV_PLAYERS];

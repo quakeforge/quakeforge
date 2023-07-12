@@ -94,9 +94,31 @@ size_t strnlen (const char *str, size_t len);
 # define strnlen Q_strnlen
 # define need_qstring_h
 #endif
+#ifdef HAVE_STRNDUP
+# ifndef HAVE_STRNDUP_PROTO
+size_t strndup (const char *str, size_t len);
+# endif
+#else
+# define strndup Q_strndup
+# define need_qstring_h
+#endif
 
 #ifdef need_qstring_h
 # include "qstring.h"
+#endif
+
+#ifndef HAVE_BSEARCH_R
+# include "bsearch.h"
+# define bsearch_r QF_bsearch_r
+#endif
+
+#ifndef HAVE_QSORT_R
+# include "quicksort.h"
+# define qsort_r _quicksort
+#endif
+
+#ifndef HAVE_STRERROR_R
+#define strerror_r(err,buf,len) strerror_s (buf, len, err)
 #endif
 
 #endif // __compat_h

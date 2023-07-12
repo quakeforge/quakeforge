@@ -44,18 +44,22 @@
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/screen.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
+#include "client/screen.h"
+#include "client/world.h"
+
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 int         current_skill;
 
@@ -77,8 +81,8 @@ Host_Status_f (void)
 	int         seconds;
 	int         minutes;
 	int         hours = 0;
-	int         j;
-	void        (*print) (const char *fmt, ...);
+	unsigned    j;
+	__attribute__((format(PRINTF, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -89,8 +93,8 @@ Host_Status_f (void)
 	} else
 		print = SV_ClientPrintf;
 
-	print ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print ("version: %4.2f\n", PACKAGE_VERSION);
+	print ("host:    %s\n", hostname);
+	print ("version: %4.2s\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
 	print ("map:     %s\n", sv.name);
@@ -157,7 +161,7 @@ Host_Notarget_f (void)
 		SV_ClientPrintf ("notarget ON\n");
 }
 
-qboolean    noclip_anglehack;
+bool        noclip_anglehack;
 
 static void
 Host_Noclip_f (void)
@@ -209,7 +213,7 @@ Host_Fly_f (void)
 static void
 Host_Ping_f (void)
 {
-	int         i, j;
+	unsigned    i, j;
 	float       total;
 	client_t   *client;
 
@@ -238,13 +242,13 @@ nice_time (float time)
 	int         t = time + 0.5;
 
 	if (t < 60) {
-		return va ("%ds", t);
+		return va (0, "%ds", t);
 	} else if (t < 3600) {
-		return va ("%dm%02ds", t / 60, t % 60);
+		return va (0, "%dm%02ds", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+		return va (0, "%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
 	} else {
-		return va ("%dd%02dh%02dm%02ds",
+		return va (0, "%dd%02dh%02dm%02ds",
 				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
 	}
 }
@@ -278,7 +282,7 @@ Host_Map_f (void)
 	}
 
 	// check to make sure the level exists
-	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
+	expanded = va (0, "maps/%s.bsp", Cmd_Argv (1));
 	f = QFS_FOpenFile (expanded);
 	if (!f) {
 		Sys_Printf ("Can't find %s\n", expanded);
@@ -291,8 +295,10 @@ Host_Map_f (void)
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
-	cl.loading = true;
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen (&cl.viewstate);
 
 	svs.serverflags = 0;				// haven't completed an episode yet
 	strcpy (name, Cmd_Argv (1));
@@ -300,7 +306,7 @@ Host_Map_f (void)
 	if (!sv.active)
 		return;
 
-	if (cls.state != ca_dedicated) {
+	if (!net_is_dedicated) {
 		Cmd_ExecuteString ("connect local", src_command);
 	}
 }
@@ -394,7 +400,7 @@ spawn_parms_array (void)
 	const char *parm;
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
-		parm = va ("%.9g", svs.clients->spawn_parms[i]);
+		parm = va (0, "%.9g", svs.clients->spawn_parms[i]);
 		PL_A_AddObject (parms, PL_NewString (parm));
 	}
 	return parms;
@@ -420,7 +426,7 @@ static plitem_t *
 entities_array (void)
 {
 	plitem_t   *entities = PL_NewArray ();
-	int         i;
+	pr_uint_t   i;
 
 	for (i = 0; i < sv.num_edicts; i++) {
 		PL_A_AddObject (entities,
@@ -433,18 +439,18 @@ entities_array (void)
 static plitem_t *
 game_dict (void)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 
 	PL_D_AddObject (game, "comment",
-					PL_NewString (va ("%-21s kills:%3i/%3i", cl.levelname,
+					PL_NewString (va (0, "%-21s kills:%3i/%3i", cl.levelname,
 									  cl.stats[STAT_MONSTERS],
 									  cl.stats[STAT_TOTALMONSTERS])));
 	PL_D_AddObject (game, "spawn_parms", spawn_parms_array ());
 	PL_D_AddObject (game, "current_skill",
-					PL_NewString (va ("%d", current_skill)));
+					PL_NewString (va (0, "%d", current_skill)));
 	PL_D_AddObject (game, "name", PL_NewString (sv.name));
 	// sv.time is a double, so it gets 17 digits
-	PL_D_AddObject (game, "time", PL_NewString (va ("%.17g", sv.time)));
+	PL_D_AddObject (game, "time", PL_NewString (va (0, "%.17g", sv.time)));
 	PL_D_AddObject (game, "lightstyles", lightstyles_array ());
 	PL_D_AddObject (game, "globals", ED_GlobalsDict (&sv_pr_state));
 	PL_D_AddObject (game, "entities", entities_array ());
@@ -454,7 +460,7 @@ game_dict (void)
 static plitem_t *
 convert_to_game_dict (script_t *script)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 	plitem_t   *item;
 	plitem_t   *list;
 	int         skill;
@@ -477,7 +483,7 @@ convert_to_game_dict (script_t *script)
 	// values
 	Script_GetToken (script, 1);
 	skill = (int) (atof (script->token->str) + 0.1);
-	PL_D_AddObject (game, "current_skill", PL_NewString (va ("%d", skill)));
+	PL_D_AddObject (game, "current_skill", PL_NewString (va (0, "%d", skill)));
 
 	Script_GetToken (script, 1);
 	PL_D_AddObject (game, "name", PL_NewString (script->token->str));
@@ -492,17 +498,18 @@ convert_to_game_dict (script_t *script)
 		PL_A_AddObject (item, PL_NewString (script->token->str));
 		//char       *s;
 
-		//s = Hunk_Alloc (strlen (script->token->str) + 1);
+		//s = Hunk_Alloc (0, strlen (script->token->str) + 1);
 		//strcpy (s, script->token->str);
 		//sv.lightstyles[i] = s;
 	}
 	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (script, 0);
-	item = PL_RemoveObjectAtIndex (list, 0);
+	list = ED_ConvertToPlist (script, 0, 0);
+	item = PL_ObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);
+	PL_RemoveObjectAtIndex (list, 0);
 
 	return game;
 }
@@ -516,7 +523,6 @@ Host_Savegame_f (void)
 	const char *save_name;
 	char       *save_text;
 	QFile      *f;
-	int         i;
 	char       *bup1, *bup2 = 0;
 
 
@@ -548,7 +554,7 @@ Host_Savegame_f (void)
 		return;
 	}
 
-	for (i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		if (svs.clients[i].active && (SVfloat (svs.clients[i].edict, health)
 									  <= 0)) {
 			Sys_Printf ("Can't savegame with a dead player\n");
@@ -561,7 +567,7 @@ Host_Savegame_f (void)
 	if (strcmp  (save_name, "quick") == 0) {
 		bup2 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, MAX_QUICK);
 		QFS_Remove (bup2);
-		for (i = MAX_QUICK - 1; i > 0; i--) {
+		for (int i = MAX_QUICK - 1; i > 0; i--) {
 			bup1 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, i);
 			QFS_Rename (bup1, bup2);
 			free (bup2);
@@ -622,8 +628,10 @@ Host_Loadgame_f (void)
 	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	cl.loading = true;
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	CL_UpdateScreen (&cl.viewstate);
 
 	Sys_Printf ("Loading game from %s...\n", name->str);
 	f = QFS_Open (name->str, "rz");
@@ -646,7 +654,7 @@ Host_Loadgame_f (void)
 			Sys_Printf ("Unexpected EOF reading %s\n", name->str);
 			goto end;
 		}
-		game = PL_GetPropertyList (script->p);
+		game = PL_GetPropertyList (script->p, 0);
 	} else {
 		sscanf (script->token->str, "%i", &version);
 		if (version != SAVEGAME_VERSION) {
@@ -657,6 +665,7 @@ Host_Loadgame_f (void)
 		game = convert_to_game_dict (script);
 	}
 
+	memset (spawn_parms, 0, sizeof (spawn_parms));
 	item = PL_ObjectForKey (game, "spawn_parms");
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
 		if (i >= PL_A_NumObjects (item))
@@ -664,7 +673,7 @@ Host_Loadgame_f (void)
 		spawn_parms[i] = atof (PL_String (PL_ObjectAtIndex (item, i)));
 	}
 	current_skill = atoi (PL_String (PL_ObjectForKey (game, "current_skill")));
-	Cvar_SetValue (skill, current_skill);
+	skill = current_skill;
 	mapname = strdup (PL_String (PL_ObjectForKey (game, "name")));
 
 	CL_Disconnect_f ();
@@ -685,14 +694,13 @@ Host_Loadgame_f (void)
 			break;
 		item = PL_ObjectAtIndex (list, i);
 		style = PL_String (item);
-		sv.lightstyles[i] = str = Hunk_Alloc (strlen (style) + 1);
+		sv.lightstyles[i] = str = Hunk_Alloc (0, strlen (style) + 1);
 		strcpy (str, style);
 	}
 
 	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
 	list = PL_ObjectForKey (game, "entities");
-	entnum = 0;
 	count = PL_A_NumObjects (list);
 	if (count > sv.max_edicts)
 		Host_Error ("too many entities in saved game. adjust max_edicts\n");
@@ -700,7 +708,7 @@ Host_Loadgame_f (void)
 		plitem_t   *entity = PL_ObjectAtIndex (list, entnum);
 		edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
 
-		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 		ent->free = false;
 		ED_InitEntity (&sv_pr_state, entity, ent);
 
@@ -715,13 +723,13 @@ Host_Loadgame_f (void)
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 
-	if (cls.state != ca_dedicated) {
+	if (!net_is_dedicated) {
 		CL_EstablishConnection ("local");
 		Host_Reconnect_f ();
 	}
 end:
 	if (game)
-		PL_Free (game);
+		PL_Release (game);
 	if (mapname)
 		free (mapname);
 	if (script)
@@ -740,7 +748,7 @@ Host_Name_f (void)
 	const char *newName;
 
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("\"name\" is \"%s\"\n", cl_name->string);
+		Sys_Printf ("\"name\" is \"%s\"\n", cl_name);
 		return;
 	}
 	if (Cmd_Argc () == 2)
@@ -749,9 +757,9 @@ Host_Name_f (void)
 		newName = Cmd_Args (1);
 
 	if (cmd_source == src_command) {
-		if (strcmp (cl_name->string, newName) == 0)
+		if (strcmp (cl_name, newName) == 0)
 			return;
-		Cvar_Set (cl_name, va ("%.15s", newName));
+		Cvar_Set ("_cl_name", va (0, "%.15s", newName));
 		if (cls.state >= ca_connected)
 			CL_Cmd_ForwardToServer ();
 		return;
@@ -778,17 +786,17 @@ Host_Version_f (void)
 }
 
 static void
-Host_Say (qboolean teamonly)
+Host_Say (bool teamonly)
 {
 	client_t   *client;
 	client_t   *save;
-	int         j;
+	unsigned    j;
 	char       *p;
 	char        text[64];
-	qboolean    fromServer = false;
+	bool        fromServer = false;
 
 	if (cmd_source == src_command) {
-		if (cls.state == ca_dedicated) {
+		if (net_is_dedicated) {
 			fromServer = true;
 			teamonly = false;
 		} else {
@@ -802,7 +810,7 @@ Host_Say (qboolean teamonly)
 
 	save = host_client;
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 	// remove quotes if present
 	if (*p == '"') {
@@ -813,10 +821,10 @@ Host_Say (qboolean teamonly)
 	if (!fromServer)
 		snprintf (text, sizeof (text), "%c%s: ", 1, save->name);
 	else
-		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname->string);
+		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname);
 
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if ((int) strlen (p) > j)
+	if (strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);
@@ -825,7 +833,7 @@ Host_Say (qboolean teamonly)
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++) {
 		if (!client || !client->active || !client->spawned)
 			continue;
-		if (teamplay->int_val && teamonly && SVfloat (client->edict, team) !=
+		if (teamplay && teamonly && SVfloat (client->edict, team) !=
 			SVfloat (save->edict, team))
 			continue;
 		host_client = client;
@@ -853,7 +861,7 @@ Host_Tell_f (void)
 {
 	client_t   *client;
 	client_t   *save;
-	int         j;
+	unsigned    j;
 	char       *p;
 	char        text[64];
 
@@ -868,7 +876,7 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	// remove quotes if present
@@ -878,7 +886,7 @@ Host_Tell_f (void)
 	}
 	// check length & truncate if necessary
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if ((int) strlen (p) > j)
+	if (strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);
@@ -923,7 +931,7 @@ Host_Pause_f (void)
 		CL_Cmd_ForwardToServer ();
 		return;
 	}
-	if (!pausable->int_val)
+	if (!pausable)
 		SV_ClientPrintf ("Pause not allowed.\n");
 	else {
 		sv.paused ^= 1;
@@ -968,7 +976,7 @@ Host_PreSpawn_f (void)
 static void
 Host_Spawn_f (void)
 {
-	int         i;
+	unsigned    i;
 	client_t   *client;
 	edict_t    *ent;
 	float      *sendangles;
@@ -989,7 +997,7 @@ Host_Spawn_f (void)
 	} else {
 		// set up the edict
 		ent = host_client->edict;
-		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 		SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
 		SVfloat (ent, team) = (host_client->colors & 15) + 1;
 		SVstring (ent, netname) = PR_SetString (&sv_pr_state,
@@ -1098,8 +1106,8 @@ Host_Kick_f (void)
 	const char *who;
 	const char *message = NULL;
 	client_t   *save;
-	int         i;
-	qboolean    byNumber = false;
+	unsigned    i;
+	bool        byNumber = false;
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -1114,7 +1122,7 @@ Host_Kick_f (void)
 
 	if (Cmd_Argc () > 2 && strcmp (Cmd_Argv (1), "#") == 0) {
 		i = atof (Cmd_Argv (2)) - 1;
-		if (i < 0 || i >= svs.maxclients)
+		if (i >= svs.maxclients)
 			return;
 		if (!svs.clients[i].active)
 			return;
@@ -1132,10 +1140,10 @@ Host_Kick_f (void)
 
 	if (i < svs.maxclients) {
 		if (cmd_source == src_command)
-			if (cls.state == ca_dedicated)
+			if (net_is_dedicated)
 				who = "Console";
 			else
-				who = cl_name->string;
+				who = cl_name;
 		else
 			who = save->name;
 
@@ -1290,7 +1298,7 @@ Host_Give_f (void)
 static edict_t    *
 FindViewthing (void)
 {
-	int         i;
+	pr_uint_t   i;
 	edict_t    *e;
 
 	for (i = 0; i < sv.num_edicts; i++) {
@@ -1320,7 +1328,7 @@ Host_Viewmodel_f (void)
 	}
 
 	SVfloat (e, frame) = 0;
-	cl.model_precache[(int) SVfloat (e, modelindex)] = m;
+	cl_world.models.a[(int) SVfloat (e, modelindex)] = m;
 }
 
 static void
@@ -1333,7 +1341,7 @@ Host_Viewframe_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	f = atoi (Cmd_Argv (1));
 	if (f >= m->numframes)
@@ -1366,7 +1374,7 @@ Host_Viewnext_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	SVfloat (e, frame) = SVfloat (e, frame) + 1;
 	if (SVfloat (e, frame) >= m->numframes)
@@ -1385,7 +1393,7 @@ Host_Viewprev_f (void)
 	if (!e)
 		return;
 
-	m = cl.model_precache[(int) SVfloat (e, modelindex)];
+	m = cl_world.models.a[(int) SVfloat (e, modelindex)];
 
 	SVfloat (e, frame) = SVfloat (e, frame) - 1;
 	if (SVfloat (e, frame) < 0)
@@ -1401,7 +1409,7 @@ Host_Startdemos_f (void)
 {
 	int         i, c;
 
-	if (cls.state == ca_dedicated) {
+	if (net_is_dedicated) {
 		if (!sv.active)
 			Cbuf_AddText (host_cbuf, "map start\n");
 		return;
@@ -1432,7 +1440,7 @@ Host_Startdemos_f (void)
 static void
 Host_Demos_f (void)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 	if (cls.demonum == -1)
 		cls.demonum = 1;
@@ -1448,7 +1456,7 @@ Host_Demos_f (void)
 static void
 Host_Stopdemo_f (void)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 	if (!cls.demoplayback)
 		return;

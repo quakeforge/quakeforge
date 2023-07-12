@@ -37,13 +37,17 @@
 # include <strings.h>
 #endif
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -54,18 +58,83 @@
 #define USER_RO_CVAR "User-created READ-ONLY Cvar"
 #define USER_CVAR "User-created cvar"
 
-VISIBLE cvar_t          *developer;
-VISIBLE cvar_t			*cvar_vars;
+static exprenum_t developer_enum;
+static exprtype_t developer_type = {
+	.name = "developer",
+	.size = sizeof (int),
+	.binops = cexpr_flag_binops,
+	.unops = cexpr_flag_unops,
+	.data = &developer_enum,
+	.get_string = cexpr_enum_get_string,
+};
+
+#define SYS_DEVELOPER(dev) (SYS_##dev & ~SYS_dev),
+static int developer_values[] = {
+	SYS_dev,
+#include "QF/sys_developer.h"
+};
+#undef SYS_DEVELOPER
+#define SYS_DEVELOPER(dev) {#dev, &developer_type, developer_values + SYS_DeveloperID_##dev + 1},
+static exprsym_t developer_symbols[] = {
+	{"dev", &developer_type, developer_values + 0},
+#include "QF/sys_developer.h"
+	{}
+};
+#undef SYS_DEVELOPER
+static exprtab_t developer_symtab = {
+	developer_symbols,
+};
+static exprenum_t developer_enum = {
+	&developer_type,
+	&developer_symtab,
+};
+
+VISIBLE int developer;
+static cvar_t developer_cvar = {
+	.name = "developer",
+	.description =
+		"set to enable extra debugging information",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &developer_type, .value = &developer },
+};
 static const char		*cvar_null_string = "";
-static cvar_alias_t		*calias_vars;
 static hashtab_t		*cvar_hash;
+static hashtab_t		*user_cvar_hash;
 static hashtab_t		*calias_hash;
 
+static cvar_t *
+cvar_create (const char *name, const char *value)
+{
+	cvar_t     *var = calloc (1, sizeof (cvar_t) + sizeof (char *));
+	var->name = strdup (name);
+	var->description = cvar_null_string;
+	var->default_value = cvar_null_string;
+	var->flags = CVAR_USER_CREATED;
+	var->value.value = var + 1;
+	*(char **)var->value.value = strdup (value);
+
+	Hash_Add (user_cvar_hash, var);
+	return var;
+}
+
+static void
+cvar_destroy (cvar_t *var)
+{
+	if (!(var->flags & CVAR_USER_CREATED)) {
+		Sys_Error ("Attempt to destroy non-user cvar");
+	}
+	Hash_Free (user_cvar_hash, Hash_Del (user_cvar_hash, var->name));
+}
 
 VISIBLE cvar_t *
 Cvar_FindVar (const char *var_name)
 {
-	return (cvar_t*) Hash_Find (cvar_hash, var_name);
+	cvar_t     *var = Hash_Find (cvar_hash, var_name);
+	if (!var) {
+		var = Hash_Find (user_cvar_hash, var_name);
+	}
+	return var;
 }
 
 VISIBLE cvar_t *
@@ -103,8 +172,6 @@ Cvar_MakeAlias (const char *name, cvar_t *cvar)
 	if (!var) {
 		alias = (cvar_alias_t *) calloc (1, sizeof (cvar_alias_t));
 
-		alias->next = calias_vars;
-		calias_vars = alias;
 		alias->name = strdup (name);
 		alias->cvar = cvar;
 		Hash_Add (calias_hash, alias);
@@ -128,8 +195,21 @@ Cvar_RemoveAlias (const char *name)
 	return var;
 }
 
+static float
+cvar_value (cvar_t *var)
+{
+	if (!var->value.type) {
+		return atof (*(char **)var->value.value);
+	} else if (var->value.type == &cexpr_int) {
+		return *(int *)var->value.value;
+	} else if (var->value.type == &cexpr_float) {
+		return *(float *)var->value.value;
+	}
+	return 0;
+}
+
 VISIBLE float
-Cvar_VariableValue (const char *var_name)
+Cvar_Value (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -138,11 +218,22 @@ Cvar_VariableValue (const char *var_name)
 		var = Cvar_FindAlias (var_name);
 	if (!var)
 		return 0;
-	return atof (var->string);
+	return cvar_value (var);
+}
+
+static const char *
+cvar_string (const cvar_t *var)
+{
+	if (!var->value.type) {
+		return *(char **)var->value.value;
+	} else if (var->value.type->get_string) {
+		return var->value.type->get_string (&var->value, 0);
+	}
+	return cvar_null_string;
 }
 
 VISIBLE const char *
-Cvar_VariableString (const char *var_name)
+Cvar_String (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -151,137 +242,186 @@ Cvar_VariableString (const char *var_name)
 		var = Cvar_FindAlias (var_name);
 	if (!var)
 		return cvar_null_string;
-	return var->string;
+	return cvar_string (var);
 }
 
 VISIBLE const char *
-Cvar_CompleteVariable (const char *partial)
+Cvar_VarString (const cvar_t *var)
 {
-	cvar_t     *cvar;
-	cvar_alias_t *alias;
-	int         len;
-
-	len = strlen (partial);
-
-	if (!len)
-		return NULL;
-
-	// check exact match
-	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strcmp (partial, cvar->name))
-			return cvar->name;
-
-	// check aliases too :)
-	for (alias = calias_vars; alias; alias = alias->next)
-		if (!strcmp (partial, alias->name))
-			return alias->name;
-
-	// check partial match
-	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncmp (partial, cvar->name, len))
-			return cvar->name;
-
-	// check aliases too :)
-	for (alias = calias_vars; alias; alias = alias->next)
-		if (!strncmp (partial, alias->name, len))
-			return alias->name;
-
-	return NULL;
+	return cvar_string (var);
 }
 
-/*
-	CVar_CompleteCountPossible
+typedef struct {
+	const char *match;
+	size_t      match_len;
+	int         num_matches;
+} cvar_count_ctx_t;
 
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-*/
+static void
+cvar_match_count (void *ele, void *data)
+{
+	cvar_count_ctx_t *ctx = data;
+	const cvar_t *cvar = ele;
+
+	if (strncmp (cvar->name, ctx->match, ctx->match_len) == 0) {
+		ctx->num_matches++;
+	}
+}
+
 VISIBLE int
 Cvar_CompleteCountPossible (const char *partial)
 {
-	cvar_t	*cvar;
-	int		len;
-	int		h;
+	cvar_count_ctx_t ctx = {
+		.match = partial,
+		.match_len = strlen (partial),
+		.num_matches = 0,
+	};
 
-	h = 0;
-	len = strlen(partial);
+	Hash_ForEach (cvar_hash, cvar_match_count, &ctx);
+	Hash_ForEach (user_cvar_hash, cvar_match_count, &ctx);
+	// this is a bit of a hack, but both cvar_alias_t and cvar_t have
+	// name in the first file, so it will work out as that's the only
+	// criteron for a match
+	Hash_ForEach (calias_hash, cvar_match_count, &ctx);
 
-	if (!len)
-		return	0;
-
-	// Loop through the cvars and count all possible matches
-	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncmp(partial, cvar->name, len))
-			h++;
-
-	return h;
+	return ctx.num_matches;
 }
 
-/*
-	CVar_CompleteBuildList
+typedef struct {
+	const char *match;
+	size_t      match_len;
+	const char **list;
+	int         index;
+} cvar_copy_ctx_t;
 
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-	Thanks to taniwha
-*/
-VISIBLE const char	**
+static void
+cvar_match_copy (void *ele, void *data)
+{
+	cvar_copy_ctx_t *ctx = data;
+	const cvar_t *cvar = ele;
+
+	if (strncmp (cvar->name, ctx->match, ctx->match_len) == 0) {
+		ctx->list[ctx->index++] = cvar->name;
+	}
+}
+
+static int
+cvar_cmp_name (const void *_a, const void *_b)
+{
+	const char * const *a = _a;
+	const char * const *b = _b;
+	return strcmp (*a, *b);
+}
+
+VISIBLE const char **
 Cvar_CompleteBuildList (const char *partial)
 {
-	cvar_t	*cvar;
-	int		len = 0;
-	int		bpos = 0;
-	int		sizeofbuf = (Cvar_CompleteCountPossible (partial) + 1) *
-						 sizeof (char *);
-	const char	**buf;
+	int         num_matches = Cvar_CompleteCountPossible (partial);
 
-	len = strlen(partial);
-	buf = malloc(sizeofbuf + sizeof (char *));
-	SYS_CHECKMEM (buf);
-	// Loop through the alias list and print all matches
-	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncmp(partial, cvar->name, len))
-			buf[bpos++] = cvar->name;
+	cvar_copy_ctx_t ctx = {
+		.match = partial,
+		.match_len = strlen (partial),
+		.list = malloc((num_matches + 1) * sizeof (char *)),
+		.index = 0,
+	};
 
-	buf[bpos] = NULL;
-	return buf;
+	Hash_ForEach (cvar_hash, cvar_match_copy, &ctx);
+	Hash_ForEach (user_cvar_hash, cvar_match_copy, &ctx);
+	// this is a bit of a hack, but both cvar_alias_t and cvar_t have
+	// name in the first file, so it will work out as that's the only
+	// criteron for a match
+	Hash_ForEach (calias_hash, cvar_match_copy, &ctx);
+	ctx.list[ctx.index] = 0;
+	heapsort (ctx.list, ctx.index, sizeof (char *), cvar_cmp_name);
+	return ctx.list;
 }
 
 VISIBLE void
-Cvar_Set (cvar_t *var, const char *value)
+Cvar_AddListener (cvar_t *cvar, cvar_listener_t listener, void *data)
 {
-	int     changed;
-	int     vals;
+	if (!cvar->listeners) {
+		cvar->listeners = malloc (sizeof (*cvar->listeners));
+		LISTENER_SET_INIT (cvar->listeners, 8);
+	}
+	LISTENER_ADD (cvar->listeners, listener, data);
+}
+
+VISIBLE void
+Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data)
+{
+	if (cvar->listeners) {
+		LISTENER_REMOVE (cvar->listeners, listener, data);
+	}
+}
+
+static int
+cvar_setvar (cvar_t *var, const char *value)
+{
+	int         changed = 0;
+
+	if (!var->value.type) {
+		char      **str_value = var->value.value;
+		changed = !*str_value || !strequal (*str_value, value);
+		if (var->validator) {
+			changed = changed && var->validator (var);
+		}
+		if (changed) {
+			free (*str_value);
+			*str_value = strdup (value);
+		}
+	} else {
+		exprenum_t *enm = var->value.type->data;
+		exprctx_t   context = {
+			.memsuper = new_memsuper (),
+			.symtab = enm ? enm->symtab : 0,
+			.msg_prefix = var->name,
+		};
+		if (context.symtab && !context.symtab->tab) {
+			cexpr_init_symtab (context.symtab, &context);
+		}
+		context.result = cexpr_value (var->value.type, &context);
+		if (!cexpr_eval_string (value, &context)) {
+			changed = memcmp (context.result->value, var->value.value,
+							  var->value.type->size) != 0;
+			if (var->validator) {
+				changed = changed && var->validator (var);
+			}
+			if (changed) {
+				memcpy (var->value.value, context.result->value,
+						var->value.type->size);
+			}
+		}
+		delete_memsuper (context.memsuper);
+	}
+
+	if (changed && var->listeners) {
+		LISTENER_INVOKE (var->listeners, var);
+	}
+	return changed;
+}
+
+VISIBLE void
+Cvar_SetVar (cvar_t *var, const char *value)
+{
+	if (var->flags & CVAR_ROM) {
+		Sys_MaskPrintf (SYS_dev, "Cvar \"%s\" is read-only, cannot modify\n",
+						var->name);
+		return;
+	}
+	cvar_setvar (var, value);
+}
+
+VISIBLE void
+Cvar_Set (const char *var_name, const char *value)
+{
+	cvar_t     *var;
+
+	var = Cvar_FindVar (var_name);
 
 	if (!var)
 		return;
 
-	if (var->flags & CVAR_ROM) {
-		Sys_MaskPrintf (SYS_DEV, "Cvar \"%s\" is read-only, cannot modify\n",
-						var->name);
-		return;
-	}
-
-	changed = !strequal (var->string, value);
-	free ((char*)var->string);					// free the old value string
-
-	var->string = strdup (value);
-	var->value = atof (var->string);
-	var->int_val = atoi (var->string);
-	VectorZero (var->vec);
-	vals = sscanf (var->string, "%f %f %f",
-				   &var->vec[0], &var->vec[1], &var->vec[2]);
-	if (vals == 1)
-		var->vec[2] = var->vec[1] = var->vec[0];
-
-	if (changed && var->callback)
-		var->callback (var);
-}
-
-VISIBLE void
-Cvar_SetValue (cvar_t *var, float value)
-{
-	Cvar_Set (var, va ("%g", value));
+	Cvar_SetVar (var, value);
 }
 
 /*
@@ -289,7 +429,7 @@ Cvar_SetValue (cvar_t *var, float value)
 
 	Handles variable inspection and changing from the console
 */
-VISIBLE qboolean
+VISIBLE bool
 Cvar_Command (void)
 {
 	cvar_t     *v;
@@ -303,12 +443,23 @@ Cvar_Command (void)
 
 	// perform a variable print or set
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
+		Sys_Printf ("\"%s\" is \"%s\"\n", v->name, cvar_string (v));
 		return true;
 	}
 
-	Cvar_Set (v, Cmd_Argv (1));
+	Cvar_SetVar (v, Cmd_Argv (1));
 	return true;
+}
+
+static void
+cvar_write_variable (void *ele, void *data)
+{
+	cvar_t     *cvar = ele;
+	QFile      *f = data;
+
+	if (cvar->flags & CVAR_ARCHIVE) {
+		Qprintf (f, "seta %s \"%s\"\n", cvar->name, cvar_string (cvar));
+	}
 }
 
 /*
@@ -320,11 +471,52 @@ Cvar_Command (void)
 VISIBLE void
 Cvar_WriteVariables (QFile *f)
 {
-	cvar_t     *var;
+	Hash_ForEach (cvar_hash, cvar_write_variable, f);
+	Hash_ForEach (user_cvar_hash, cvar_write_variable, f);
+}
 
-	for (var = cvar_vars; var; var = var->next)
-		if (var->flags & CVAR_ARCHIVE)
-			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
+static void
+cvar_write_config (void *ele, void *data)
+{
+	cvar_t     *cvar = ele;
+	plitem_t   *cfg = data;
+
+	if (cvar->flags & CVAR_ARCHIVE) {
+		PL_D_AddObject (cfg, cvar->name, PL_NewString (cvar_string (cvar)));
+	}
+}
+
+VISIBLE void
+Cvar_SaveConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_NewDictionary (0);
+	PL_D_AddObject (config, "cvars", cvars);
+	Hash_ForEach (cvar_hash, cvar_write_config, cvars);
+	Hash_ForEach (user_cvar_hash, cvar_write_config, cvars);
+}
+
+VISIBLE void
+Cvar_LoadConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_ObjectForKey (config, "cvars");
+
+	if (!cvars) {
+		return;
+	}
+	for (int i = 0, count = PL_D_NumKeys (cvars); i < count; i++) {
+		const char *cvar_name = PL_KeyAtIndex (cvars, i);
+		const char *value = PL_String (PL_ObjectForKey (cvars, cvar_name));
+		if (value) {
+			cvar_t      *var = Cvar_FindVar (cvar_name);
+			if (var) {
+				Cvar_SetVar (var, value);
+				var->flags |= CVAR_ARCHIVE;
+			} else {
+				var = cvar_create (cvar_name, value);
+				var->flags |= CVAR_ARCHIVE;
+			}
+		}
+	}
 }
 
 static void
@@ -348,16 +540,16 @@ set_cvar (const char *cmd, int orflags)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"Cvar \"%s\" is read-only, cannot modify\n",
 							var_name);
 		} else {
-			Cvar_Set (var, value);
-			Cvar_SetFlags (var, var->flags | orflags);
+			Cvar_SetVar (var, value);
+			var->flags |= orflags;
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
-						USER_CVAR);
+		var = cvar_create (var_name, value);
+		var->flags |= orflags;
 	}
 }
 
@@ -398,11 +590,23 @@ Cvar_Inc_f (void)
 			var = Cvar_FindVar (name);
 			if (!var)
 				var = Cvar_FindAlias (name);
-			if (!var)
+			if (!var) {
 				Sys_Printf ("Unknown variable \"%s\"\n", name);
+				return;
+			}
+			if (var->flags & CVAR_ROM) {
+				Sys_Printf ("Variable \"%s\" is read-only\n", name);
+				return;
+			}
 			break;
 	}
-	Cvar_SetValue (var, var->value + inc);
+	if (var->value.type == &cexpr_float) {
+		*(float *) var->value.value += inc;
+	} else if (var->value.type == &cexpr_int) {
+		*(int *) var->value.value += inc;
+	} else {
+		Sys_Printf ("Variable \"%s\" cannot be incremented\n", name);
+	}
 }
 
 static void
@@ -422,8 +626,12 @@ Cvar_Toggle_f (void)
 		Sys_Printf ("Unknown variable \"%s\"\n", Cmd_Argv (1));
 		return;
 	}
+	if ((var->flags & CVAR_ROM) || var->value.type != &cexpr_int) {
+		Sys_Printf ("Variable \"%s\" cannot be toggled\n", Cmd_Argv (1));
+		return;
+	}
 
-	Cvar_Set (var, var->int_val ? "0" : "1");
+	*(int *) var->value.value = !*(int *) var->value.value;
 }
 
 static void
@@ -444,8 +652,7 @@ Cvar_Cycle_f (void)
 	if (!var)
 		var = Cvar_FindAlias (name);
 	if (!var) {
-		var = Cvar_Get (name, Cmd_Argv (Cmd_Argc () - 1), CVAR_USER_CREATED,
-						0, USER_CVAR);
+		var = cvar_create (name, Cmd_Argv (Cmd_Argc () - 1));
 	}
 
 	// loop through the args until you find one that matches the current cvar
@@ -458,27 +665,22 @@ Cvar_Cycle_f (void)
 		// it won't match on zero when it should, but after that, it will be
 		// comparing string that all had the same source (the user) so it will
 		// work.
-		if (atof (Cmd_Argv (i)) == 0) {
-			if (!strcmp (Cmd_Argv (i), var->string))
-				break;
-		} else {
-			if (atof (Cmd_Argv (i)) == var->value)
-				break;
-		}
+		if (!strcmp (Cmd_Argv (i), cvar_string (var)))
+			break;
 	}
 
 	if (i == Cmd_Argc ())
-		Cvar_Set (var, Cmd_Argv (2));	// no match
+		Cvar_SetVar (var, Cmd_Argv (2));	// no match
 	else if (i + 1 == Cmd_Argc ())
-		Cvar_Set (var, Cmd_Argv (2));	// matched last value in list
+		Cvar_SetVar (var, Cmd_Argv (2));	// matched last value in list
 	else
-		Cvar_Set (var, Cmd_Argv (i + 1));	// matched earlier in list
+		Cvar_SetVar (var, Cmd_Argv (i + 1));	// matched earlier in list
 }
 
 static void
 Cvar_Reset (cvar_t *var)
 {
-	Cvar_Set (var, var->default_string);
+	Cvar_SetVar (var, var->default_value);
 }
 
 static void
@@ -506,53 +708,89 @@ Cvar_Reset_f (void)
 }
 
 static void
+cvar_reset_var (void *ele, void *data)
+{
+	cvar_t     *var = ele;
+	if (!(var->flags & CVAR_ROM))
+		Cvar_Reset (var);
+}
+
+static void
 Cvar_ResetAll_f (void)
 {
-	cvar_t     *var;
+	Hash_ForEach (cvar_hash, cvar_reset_var, 0);
+}
 
-	for (var = cvar_vars; var; var = var->next)
-		if (!(var->flags & CVAR_ROM))
-			Cvar_Reset (var);
+static int
+cvar_cmp (const void *_a, const void *_b)
+{
+	const cvar_t * const *a = _a;
+	const cvar_t * const *b = _b;
+	return strcmp ((*a)->name, (*b)->name);
 }
 
 static void
 Cvar_CvarList_f (void)
 {
-	cvar_t     *var;
-	int         i;
 	int         showhelp = 0;
-	const char *flags;
-
 	if (Cmd_Argc () > 1) {
 		showhelp = 1;
 		if (strequal (Cmd_Argv (1), "cfg"))
 			showhelp++;
 	}
-	for (var = cvar_vars, i = 0; var; var = var->next, i++) {
-		flags = va ("%c%c%c%c",
-					var->flags & CVAR_ROM ? 'r' : ' ',
-					var->flags & CVAR_ARCHIVE ? '*' : ' ',
-					var->flags & CVAR_USERINFO ? 'u' : ' ',
-					var->flags & CVAR_SERVERINFO ? 's' : ' ');
+
+	void      **cvar_list = Hash_GetList (cvar_hash);
+	int         num_vars = Hash_NumElements (cvar_hash);
+	heapsort (cvar_list, num_vars, sizeof (void *), cvar_cmp);
+
+	for (cvar_t **cvar = (cvar_t **) cvar_list; *cvar; cvar++) {
+		cvar_t     *var = *cvar;
+		const char *flags = va (0, "%c%c%c%c",
+								var->flags & CVAR_ROM ? 'r' : ' ',
+								var->flags & CVAR_ARCHIVE ? '*' : ' ',
+								var->flags & CVAR_USERINFO ? 'u' : ' ',
+								var->flags & CVAR_SERVERINFO ? 's' : ' ');
 		if (showhelp == 2)
 			Sys_Printf ("//%s %s\n%s \"%s\"\n\n", flags, var->description,
-						var->name, var->string);
+						var->name, cvar_string (var));
 		else if (showhelp)
 			Sys_Printf ("%s %-20s : %s\n", flags, var->name, var->description);
 		else
 			Sys_Printf ("%s %s\n", flags, var->name);
 	}
 
-	Sys_Printf ("------------\n%d variables\n", i);
+	Sys_Printf ("------------\n%d variables\n", num_vars);
 }
 
 static void
-cvar_free (void *c, void *unused)
+cvar_free_memory (void *ele, void *data)
 {
-	cvar_t *cvar = (cvar_t*)c;
-	free ((char*)cvar->name);
-	free ((char*)cvar->string);
-	free (cvar);
+	const cvar_t *cvar = ele;
+	if (!cvar->value.type) {
+		char      **str_value = cvar->value.value;
+		free (*str_value);
+		*str_value = 0;
+	} else if (cvar->value.type->data) {
+		exprenum_t *enm = cvar->value.type->data;
+		if (enm->symtab && enm->symtab->tab) {
+			Hash_DelTable (enm->symtab->tab);
+			enm->symtab->tab = 0;
+		}
+	}
+
+	if (cvar->listeners) {
+		DARRAY_CLEAR (cvar->listeners);
+		free (cvar->listeners);
+	}
+}
+
+static void
+cvar_shutdown (void *data)
+{
+	Hash_ForEach (cvar_hash, cvar_free_memory, 0);
+	Hash_DelTable (cvar_hash);
+	Hash_DelTable (user_cvar_hash);
+	Hash_DelTable (calias_hash);
 }
 
 static const char *
@@ -560,6 +798,16 @@ cvar_get_key (const void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
 	return cvar->name;
+}
+
+static void
+cvar_free (void *c, void *unused)
+{
+	cvar_t *cvar = (cvar_t*)c;
+
+	free (*(char **) cvar->value.value);
+	free ((char *) cvar->name);
+	free (cvar);
 }
 
 static void
@@ -580,15 +828,18 @@ calias_get_key (const void *c, void *unused)
 VISIBLE void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
-	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, 0, 0, 0);
+	user_cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
+	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
+
+	Sys_RegisterShutdown (cvar_shutdown, 0);
+
 }
 
 VISIBLE void
 Cvar_Init (void)
 {
-	developer = Cvar_Get ("developer", "0", CVAR_NONE, NULL,
-			"set to enable extra debugging information");
+	Cvar_Register (&developer_cvar, 0, 0);
 
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
 					"the command line (+set variablename setting)");
@@ -607,57 +858,36 @@ Cvar_Init (void)
 	Cmd_AddCommand ("resetall", Cvar_ResetAll_f, "Reset all cvars");
 }
 
-VISIBLE cvar_t *
-Cvar_Get (const char *name, const char *string, int cvarflags,
-		  void (*callback)(cvar_t*), const char *description)
+VISIBLE void
+Cvar_Register (cvar_t *var, cvar_listener_t listener, void *data)
 {
+	cvar_t     *user_var;
 
-	cvar_t     *var;
-
-	if (Cmd_Exists (name)) {
-		Sys_Printf ("Cvar_Get: %s is a command\n", name);
-		return NULL;
+	if (Cmd_Exists (var->name)) {
+		Sys_Printf ("Cvar_Get: %s is a command\n", var->name);
+		return;
 	}
-	var = Cvar_FindVar (name);
-	if (!var) {
-		cvar_t    **v;
-		var = (cvar_t *) calloc (1, sizeof (cvar_t));
+	if (var->flags & CVAR_REGISTERED) {
+		Sys_Error ("Cvar %s already registered", var->name);
+	}
 
-		// Cvar doesn't exist, so we create it
-		var->name = strdup (name);
-		var->string = strdup (string);
-		var->default_string = strdup (string);
-		var->flags = cvarflags;
-		var->callback = callback;
-		var->description = description;
-		var->value = atof (var->string);
-		var->int_val = atoi (var->string);
-		sscanf (var->string, "%f %f %f",
-				&var->vec[0], &var->vec[1], &var->vec[2]);
-		Hash_Add (cvar_hash, var);
-
-		for (v = &cvar_vars; *v; v = &(*v)->next)
-			if (strcmp ((*v)->name, var->name) >= 0)
-				break;
-		var->next = *v;
-		*v = var;
+	if ((user_var = Hash_Find (user_cvar_hash, var->name))) {
+		cvar_setvar (var, cvar_string (user_var));
+		cvar_destroy (user_var);
 	} else {
-		// Cvar does exist, so we update the flags and return.
-		var->flags &= ~CVAR_USER_CREATED;
-		var->flags |= cvarflags;
-		if (!var->callback)
-			var->callback = callback;
-		if (!var->description
-			|| strequal (var->description, USER_RO_CVAR)
-			|| strequal (var->description, USER_CVAR))
-			var->description = description;
-		if (!var->default_string)
-			var->default_string = strdup (string);
+		cvar_setvar (var, var->default_value);
 	}
-	if (var->callback)
-		var->callback (var);
+	var->flags |= CVAR_REGISTERED;
 
-	return var;
+	if (listener) {
+		Cvar_AddListener (var, listener, data);
+	}
+
+	Hash_Add (cvar_hash, var);
+
+	if (var->listeners) {
+		LISTENER_INVOKE (var->listeners, var);
+	}
 }
 
 /*
@@ -672,4 +902,39 @@ Cvar_SetFlags (cvar_t *var, int cvarflags)
 		return;
 
 	var->flags = cvarflags;
+}
+
+typedef struct {
+	cvar_select_t select;
+	void       *data;
+	const cvar_t **list;
+	int         index;
+} cvar_select_ctx_t;
+
+static void
+cvar_select (void *ele, void *data)
+{
+	const cvar_t *cvar = ele;
+	cvar_select_ctx_t *ctx = data;
+
+	if (ctx->select (cvar, ctx->data)) {
+		ctx->list[ctx->index++] = cvar;
+	}
+}
+
+VISIBLE const cvar_t **
+Cvar_Select (cvar_select_t select, void *data)
+{
+	int         num_cvars = Hash_NumElements (cvar_hash)
+							+ Hash_NumElements (user_cvar_hash);
+	cvar_select_ctx_t ctx = {
+		.select = select,
+		.data = data,
+		.list = malloc ((num_cvars + 1) * sizeof (cvar_t *)),
+		.index = 0,
+	};
+	Hash_ForEach (cvar_hash, cvar_select, &ctx);
+	Hash_ForEach (user_cvar_hash, cvar_select, &ctx);
+	ctx.list[num_cvars] = 0;
+	return ctx.list;
 }

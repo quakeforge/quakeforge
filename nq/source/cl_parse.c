@@ -44,21 +44,29 @@
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
-#include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
+#include "QF/sound.h"
 #include "QF/va.h"
 
-#include "QF/plugin/vid_render.h"
+#include "QF/scene/scene.h"
 
-#include "client.h"
+#include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
+
+#include "client/particles.h"
+#include "client/sbar.h"
+#include "client/temp_entities.h"
+#include "client/world.h"
+
 #include "compat.h"
-#include "host.h"
-#include "sbar.h"
-#include "server.h"
-#include "game.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/game.h"
 
 const char *svc_strings[] = {
 	"svc_bad",
@@ -119,26 +127,6 @@ const char *svc_strings[] = {
 	"svc_spawnstaticsound2",
 };
 
-dstring_t  *centerprint;
-
-static void
-CL_LoadSky (void)
-{
-	plitem_t   *item;
-	const char *name = 0;
-
-	if (!cl.worldspawn) {
-		r_funcs->R_LoadSkys (0);
-		return;
-	}
-	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
-		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
-		name = PL_String (item);
-	}
-	r_funcs->R_LoadSkys (name);
-}
-
 /*
 	CL_EntityNum
 
@@ -160,7 +148,6 @@ CL_ParseStartSoundPacket (void)
 {
 	float       attenuation;
 	int         channel, ent, field_mask, sound_num, volume;
-	vec3_t      pos;
 
 	field_mask = MSG_ReadByte (net_message);
 
@@ -193,7 +180,8 @@ CL_ParseStartSoundPacket (void)
 	if (ent > MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 
-	MSG_ReadCoordV (net_message, pos);
+	vec4f_t     pos = { 0, 0, 0, 1};
+	MSG_ReadCoordV (net_message, (vec_t*)&pos);//FIXME
 
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
 				  volume / 255.0, attenuation);
@@ -260,71 +248,15 @@ CL_KeepaliveMessage (void)
 }
 
 static void
-map_cfg (const char *mapname, int all)
-{
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-	cbuf_t     *cbuf = Cbuf_New (&id_interp);
-	QFile      *f;
-
-	QFS_StripExtension (mapname, name);
-	strcat (name, ".cfg");
-	f = QFS_FOpenFile (name);
-	if (f) {
-		Qclose (f);
-		Cmd_Exec_File (cbuf, name, 1);
-	} else {
-		Cmd_Exec_File (cbuf, "maps_default.cfg", 1);
-	}
-	if (all) {
-		Cbuf_Execute_Stack (cbuf);
-	} else {
-		Cbuf_Execute_Sets (cbuf);
-	}
-	free (name);
-	Cbuf_Delete (cbuf);
-}
-
-static plitem_t *
-map_ent (const char *mapname)
-{
-	static progs_t edpr;
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-	char       *buf;
-	plitem_t   *edicts = 0;
-	QFile      *ent_file;
-
-	QFS_StripExtension (mapname, name);
-	strcat (name, ".ent");
-	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
-	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
-		edicts = ED_Parse (&edpr, buf);
-		free (buf);
-	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
-	}
-	free (name);
-	return edicts;
-}
-
-static void
 CL_NewMap (const char *mapname)
 {
-	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
+	CL_World_NewMap (mapname, 0);
+	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
+
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
-		cl.edicts = map_ent (mapname);
-		if (cl.edicts) {
-			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
-			CL_LoadSky ();
-			if (r_funcs->Fog_ParseWorldspawn)
-				r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
-		}
-	}
-
-	map_cfg (mapname, 1);
+	Hunk_Check (0);								// make sure nothing is hurt
 }
 
 static void
@@ -334,8 +266,9 @@ CL_ParseServerInfo (void)
 	char        sound_precache[MAX_SOUNDS][MAX_QPATH];
 	const char *str;
 	int         i;
+	int         nummodels;
 
-	Sys_MaskPrintf (SYS_DEV, "Serverinfo packet received.\n");
+	Sys_MaskPrintf (SYS_dev, "Serverinfo packet received.\n");
 
 	S_BlockSound ();
 	S_StopAllSounds ();
@@ -361,20 +294,26 @@ CL_ParseServerInfo (void)
 		Sys_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
 		goto done;
 	}
-	cl.scores = Hunk_AllocName (cl.maxclients * sizeof (*cl.scores), "scores");
+	cl.players = Hunk_AllocName (0, cl.maxclients * sizeof (*cl.players),
+								 "players");
+	cl.viewstate.voffs_enabled = cl.maxclients == 1;
+	cl.viewstate.bob_enabled = 1;
 	for (i = 0; i < cl.maxclients; i++) {
-		cl.scores[i].info = Info_ParseString ("name\\", 0, 0);
-		cl.scores[i].name = Info_Key (cl.scores[i].info, "name");
-		cl.scores[i].topcolor = 0;
-		cl.scores[i].bottomcolor = 0;
+		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
+		cl.players[i].name = Info_Key (cl.players[i].userinfo, "name");
+		cl.players[i].topcolor = 0;
+		cl.players[i].bottomcolor = 0;
 	}
+	Sbar_SetPlayers (cl.players, cl.maxclients);
+	Sbar_SetTeamplay (teamplay);//FIXME updates?
 
 	// parse gametype
-	cl.gametype = MSG_ReadByte (net_message);
+	Sbar_SetGameType (MSG_ReadByte (net_message));
 
 	// parse signon message
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	Sbar_SetLevelName (cl.levelname, 0);
 
 	// separate the printfs so the server message can have a color
 	Sys_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
@@ -387,16 +326,17 @@ CL_ParseServerInfo (void)
 	// needlessly purge it
 
 	// precache models
-	memset (cl.model_precache, 0, sizeof (cl.model_precache));
-	for (cl.nummodels = 1;; cl.nummodels++) {
+	cl_world.models.size = 0;
+	DARRAY_APPEND (&cl_world.models, 0);	// ind 0 is null model
+	for (nummodels = 1;; nummodels++) {
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		if (cl.nummodels >= MAX_MODELS) {
+		if (nummodels >= MAX_MODELS) {
 			Sys_Printf ("Server sent too many model precaches\n");
 			goto done;
 		}
-		strcpy (model_precache[cl.nummodels], str);
+		strcpy (model_precache[nummodels], str);
 		Mod_TouchModel (str);
 	}
 
@@ -413,13 +353,13 @@ CL_ParseServerInfo (void)
 		strcpy (sound_precache[cl.numsounds], str);
 	}
 
-	// now we try to load everything else until a cache allocation fails
-	if (model_precache[1])
-		map_cfg (model_precache[1], 0);
+	CL_MapCfg (model_precache[1]);
 
-	for (i = 1; i < cl.nummodels; i++) {
-		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
-		if (cl.model_precache[i] == NULL) {
+	// now we try to load everything else until a cache allocation fails
+	for (i = 1; i < nummodels; i++) {
+		DARRAY_APPEND (&cl_world.models,
+					   Mod_ForName (model_precache[i], false));
+		if (cl_world.models.a[i] == NULL) {
 			Sys_Printf ("Model %s not found\n", model_precache[i]);
 			goto done;
 		}
@@ -432,17 +372,11 @@ CL_ParseServerInfo (void)
 	}
 
 	// local state
-	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
-	if (!centerprint)
-		centerprint = dstring_newstr ();
-	else
-		dstring_clearstr (centerprint);
+	Sbar_CenterPrint (0);
 	CL_NewMap (model_precache[1]);
 
-	Hunk_Check ();						// make sure nothing is hurt
-
 	noclip_anglehack = false;			// noclip is turned off at start
-	r_data->gravity = 800.0;			// Set up gravity for renderer effects
+	CL_ParticlesGravity (800);			// Set up gravity for renderer effects
 done:
 	S_UnblockSound ();
 }
@@ -462,7 +396,7 @@ CL_ParseUpdate (int bits)
 	entity_state_t *baseline;
 	entity_state_t *state;
 	int         modnum, num, i;
-	qboolean    forcelink;
+	bool        forcelink;
 
 	if (cls.signon == so_begin) {
 		// first update is the final signon stage
@@ -488,7 +422,7 @@ CL_ParseUpdate (int bits)
 		num = MSG_ReadByte (net_message);
 
 	baseline = CL_EntityNum (num);
-	state = &nq_entstates.frame[0 + cl.mindex][num];
+	state = &nq_entstates.frame[0 + cl.frameIndex][num];
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))
@@ -590,43 +524,10 @@ CL_ParseUpdate (int bits)
 		//VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		//VectorCopy (state->msg_origins[0], ent->origin);
 		//VectorCopy (state->msg_angles[0], state->msg_angles[1]);
-		//CL_TransformEntity (ent, state->msg_angles[0], true);
+		//CL_TransformEntity (ent, state->msg_angles[0]);
 		//state->forcelink = true;
-		cl_forcelink[num] = true;
+		SET_ADD (&cl_forcelink, num);
 	}
-}
-
-static void
-CL_ParseBaseline (entity_state_t *baseline, int version)
-{
-	int         bits = 0;
-
-	if (version == 2)
-		bits = MSG_ReadByte (net_message);
-
-	if (bits & B_LARGEMODEL)
-		baseline->modelindex = MSG_ReadShort (net_message);
-	else
-		baseline->modelindex = MSG_ReadByte (net_message);
-
-	if (bits & B_LARGEFRAME)
-		baseline->frame = MSG_ReadShort (net_message);
-	else
-		baseline->frame = MSG_ReadByte (net_message);
-
-	baseline->colormap = MSG_ReadByte (net_message);
-	baseline->skinnum = MSG_ReadByte (net_message);
-
-	MSG_ReadCoordAngleV (net_message, baseline->origin, baseline->angles);
-
-	if (bits & B_ALPHA)
-		baseline->alpha = MSG_ReadByte (net_message);
-	else
-		baseline->alpha = 255;//FIXME alpha
-	baseline->scale = 16;
-	baseline->glow_size = 0;
-	baseline->glow_color = 254;
-	baseline->colormod = 255;
 }
 
 /*
@@ -647,27 +548,28 @@ CL_ParseClientdata (void)
 		bits |= MSG_ReadByte (net_message) << 24;
 
 	if (bits & SU_VIEWHEIGHT)
-		cl.viewheight = ((signed char) MSG_ReadByte (net_message));
+		cl.viewstate.height = ((signed char) MSG_ReadByte (net_message));
 	else
-		cl.viewheight = DEFAULT_VIEWHEIGHT;
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;
 
 	if (bits & SU_IDEALPITCH)
-		cl.idealpitch = ((signed char) MSG_ReadByte (net_message));
+		cl.viewstate.idealpitch = ((signed char) MSG_ReadByte (net_message));
 	else
-		cl.idealpitch = 0;
+		cl.viewstate.idealpitch = 0;
 
-	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
+	cl.frameVelocity[1] = cl.frameVelocity[0];
+	vec3_t      punchangle = { };
 	for (i = 0; i < 3; i++) {
-		if (bits & (SU_PUNCH1 << i))
-			cl.punchangle[i] = ((signed char) MSG_ReadByte (net_message));
-		else
-			cl.punchangle[i] = 0;
+		if (bits & (SU_PUNCH1 << i)) {
+			punchangle[i] = ((signed char) MSG_ReadByte (net_message));
+		}
 		if (bits & (SU_VELOCITY1 << i))
-			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
+			cl.frameVelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
 				* 16;
 		else
-			cl.mvelocity[0][i] = 0;
+			cl.frameVelocity[0][i] = 0;
 	}
+	AngleQuat (punchangle, (vec_t*)&cl.viewstate.punchangle);//FIXME
 
 	//FIXME
 	//if (!VectorCompare (v_punchangles[0], cl.punchangle[0])) {
@@ -679,20 +581,23 @@ CL_ParseClientdata (void)
 	i = MSG_ReadLong (net_message);
 
 	if (cl.stats[STAT_ITEMS] != i) {				// set flash times
-		Sbar_Changed ();
 		for (j = 0; j < 32; j++)
 			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
 				cl.item_gettime[j] = cl.time;
 		cl.stats[STAT_ITEMS] = i;
+#define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
+		cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS] & IT_POWER) >> 19;
+		Sbar_UpdateStats (STAT_ITEMS);
 	}
 
-	cl.onground = (bits & SU_ONGROUND) ? 0 : -1;
+	cl.viewstate.onground = (bits & SU_ONGROUND) ? 0 : -1;
 	cl.inwater = (bits & SU_INWATER) != 0;
 
 	if (bits & SU_WEAPONFRAME)
 		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte (net_message);
 	else
 		cl.stats[STAT_WEAPONFRAME] = 0;
+	cl.viewstate.weaponframe = cl.stats[STAT_WEAPONFRAME];
 
 	if (bits & SU_ARMOR)
 		i = MSG_ReadByte (net_message);
@@ -700,7 +605,7 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_ARMOR] != i) {
 		cl.stats[STAT_ARMOR] = i;
-		Sbar_Changed ();
+		Sbar_UpdateStats (STAT_ARMOR);
 	}
 
 	if (bits & SU_WEAPON)
@@ -709,26 +614,27 @@ CL_ParseClientdata (void)
 		i = 0;
 	if (cl.stats[STAT_WEAPON] != i) {
 		cl.stats[STAT_WEAPON] = i;
-		Sbar_Changed ();
+		cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+		Sbar_UpdateStats (STAT_WEAPON);
 	}
 
 	i = (short) MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i) {
 		cl.stats[STAT_HEALTH] = i;
-		Sbar_Changed ();
+		Sbar_UpdateStats (STAT_HEALTH);
 	}
 
 	i = MSG_ReadByte (net_message);
 	if (cl.stats[STAT_AMMO] != i) {
 		cl.stats[STAT_AMMO] = i;
-		Sbar_Changed ();
+		Sbar_UpdateStats (STAT_AMMO);
 	}
 
 	for (i = 0; i < 4; i++) {
 		j = MSG_ReadByte (net_message);
 		if (cl.stats[STAT_SHELLS + i] != j) {
 			cl.stats[STAT_SHELLS + i] = j;
-			Sbar_Changed ();
+			Sbar_UpdateStats (STAT_SHELLS + i);
 		}
 	}
 
@@ -737,18 +643,20 @@ CL_ParseClientdata (void)
 	if (standard_quake) {
 		if (cl.stats[STAT_ACTIVEWEAPON] != i) {
 			cl.stats[STAT_ACTIVEWEAPON] = i;
-			Sbar_Changed ();
+			Sbar_UpdateStats (STAT_ACTIVEWEAPON);
 		}
 	} else {
 		// hipnotic/rogue weapon "bit field" (stupid idea)
 		if (cl.stats[STAT_ACTIVEWEAPON] != (1 << i)) {
 			cl.stats[STAT_ACTIVEWEAPON] = (1 << i);
-			Sbar_Changed ();
+			Sbar_UpdateStats (STAT_ACTIVEWEAPON);
 		}
 	}
 
-	if (bits & SU_WEAPON2)
+	if (bits & SU_WEAPON2) {
 		cl.stats[STAT_WEAPON] |= MSG_ReadByte (net_message) << 8;
+		cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+	}
 	if (bits & SU_ARMOR2)
 		cl.stats[STAT_ARMOR] |= MSG_ReadByte (net_message) << 8;
 	if (bits & SU_AMMO2)
@@ -763,53 +671,31 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_CELLS] |= MSG_ReadByte (net_message) << 8;
 	if (bits & SU_WEAPONFRAME2)
 		cl.stats[STAT_WEAPONFRAME] |= MSG_ReadByte (net_message) << 8;
+
+	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id, scene_renderer, cl_world.scene->reg);
 	if (bits & SU_WEAPONALPHA) {
 		byte alpha = MSG_ReadByte (net_message);
-		cl.viewent.colormod[3] = ENTALPHA_DECODE (alpha);
+		float a = ENTALPHA_DECODE (alpha);
+		renderer->colormod[3] = a;
 	} else {
-		cl.viewent.colormod[3] = 1.0;
+		renderer->colormod[3] = 1;
 	}
-}
-
-static void
-CL_ParseStatic (int version)
-{
-	entity_state_t baseline;
-	entity_t   *ent;
-
-	ent = r_funcs->R_AllocEntity ();
-	CL_Init_Entity (ent);
-
-	CL_ParseBaseline (&baseline, version);
-
-	// copy it to the current state
-	//FIXME alpha & lerp
-	ent->model = cl.model_precache[baseline.modelindex];
-	ent->frame = baseline.frame;
-	ent->skin = 0;
-	ent->skinnum = baseline.skinnum;
-	VectorCopy (ent_colormod[baseline.colormod], ent->colormod);
-	ent->colormod[3] = ENTALPHA_DECODE (baseline.alpha);
-	ent->scale = baseline.scale / 16.0;
-	VectorCopy (baseline.origin, ent->origin);
-	CL_TransformEntity (ent, baseline.angles, true);
-
-	r_funcs->R_AddEfrags (ent);
 }
 
 static void
 CL_ParseStaticSound (int version)
 {
-	int         sound_num, vol, atten;
-	vec3_t      org;
+	int         sound_num;
+	float       vol, atten;
+	vec4f_t     org = { 0, 0, 0, 1 };
 
-	MSG_ReadCoordV (net_message, org);
+	MSG_ReadCoordV (net_message, (vec_t*)&org);//FIXME
 	if (version == 2)
 		sound_num = MSG_ReadShort (net_message);
 	else
 		sound_num = MSG_ReadByte (net_message);
-	vol = MSG_ReadByte (net_message);
-	atten = MSG_ReadByte (net_message);
+	vol = MSG_ReadByte (net_message) / 255.0;
+	atten = MSG_ReadByte (net_message) / 64.0;
 
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
@@ -820,10 +706,11 @@ CL_SetStat (int stat, int value)
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 	cl.stats[stat] = value;
+	Sbar_UpdateStats (stat);
 }
 
 #define SHOWNET(x) \
-	if (cl_shownet->int_val == 2) \
+	if (cl_shownet == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 void
@@ -834,13 +721,19 @@ CL_ParseServerMessage (void)
 	static dstring_t *stuffbuf;
 	signon_t    so;
 
+	cl.viewstate.last_servermessage = cl.time;
+	TEntContext_t tentCtx = {
+		cl.viewstate.player_origin,
+		cl.viewentity
+	};
+
 	// if recording demos, copy the message out
-	if (cl_shownet->int_val == 1)
+	if (cl_shownet == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
-	else if (cl_shownet->int_val == 2)
+	else if (cl_shownet == 2)
 		Sys_Printf ("------------------\n");
 
-	cl.onground = -1;				// unless the server says otherwise
+	cl.viewstate.onground = -1;		// unless the server says otherwise
 
 	// parse the message
 	MSG_BeginReading (net_message);
@@ -865,7 +758,7 @@ CL_ParseServerMessage (void)
 			continue;
 		}
 
-		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -910,7 +803,7 @@ CL_ParseServerMessage (void)
 			case svc_time:
 				cl.mtime[1] = cl.mtime[0];
 				cl.mtime[0] = MSG_ReadFloat (net_message);
-				cl.mindex = !cl.mindex;
+				cl.frameIndex = !cl.frameIndex;
 				break;
 
 			case svc_print:
@@ -921,16 +814,16 @@ CL_ParseServerMessage (void)
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
 										stuffbuf->str, str);
 						Cbuf_AddText (host_cbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (host_cbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, str);
@@ -939,7 +832,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.player_angles;
 
 				MSG_ReadAngleV (net_message, dest);
 				break;
@@ -952,8 +845,6 @@ CL_ParseServerMessage (void)
 				}
 				Cbuf_Execute_Stack (host_cbuf);
 				CL_ParseServerInfo ();
-				// leave full screen intermission
-				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
@@ -980,22 +871,22 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatename:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
-				Info_SetValueForKey (cl.scores[i].info, "name",
+				Info_SetValueForKey (cl.players[i].userinfo, "name",
 									 MSG_ReadString (net_message), 0);
+				Sbar_UpdateInfo (i);
 				break;
 
 			case svc_updatefrags:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
-				cl.scores[i].frags = (short) MSG_ReadShort (net_message);
+				cl.players[i].frags = (short) MSG_ReadShort (net_message);
+				Sbar_UpdateFrags (i);
 				break;
 
 			case svc_clientdata:
@@ -1008,35 +899,39 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatecolors:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients) {
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
 								"MAX_SCOREBOARD");
 				} else {
-					entity_t   *ent = &cl_entities[i+1];
+					entity_t    ent = CL_GetEntity (i + 1);
+					renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
 					byte        col = MSG_ReadByte (net_message);
 					byte        top = col >> 4;
 					byte        bot = col & 0xf;
-					if (top != cl.scores[i].topcolor
-						|| bot != cl.scores[i].bottomcolor)
+					if (top != cl.players[i].topcolor
+						|| bot != cl.players[i].bottomcolor)
 						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
-					cl.scores[i].topcolor = top;
-					cl.scores[i].bottomcolor = bot;
-					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
+					cl.players[i].topcolor = top;
+					cl.players[i].bottomcolor = bot;
+					renderer->skin
+						= mod_funcs->Skin_SetColormap (renderer->skin, i + 1);
+					Sbar_UpdateInfo (i);
 				}
 				break;
 
 			case svc_particle:
-				CL_ParseParticleEffect ();
+				CL_ParseParticleEffect (net_message);
 				break;
 
 			case svc_damage:
-				V_ParseDamage ();
+				V_ParseDamage (net_message, &cl.viewstate);
+				// put sbar face into pain frame
+				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
-				CL_ParseStatic (1);
+				CL_ParseStatic (net_message, 1);
 				break;
 
 			//   svc_spawnbinary
@@ -1044,11 +939,11 @@ CL_ParseServerMessage (void)
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
 				// must use CL_EntityNum () to force cl.num_entities up
-				CL_ParseBaseline (CL_EntityNum (i), 1);
+				CL_ParseBaseline (net_message, CL_EntityNum (i), 1);
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_nq (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:
@@ -1070,19 +965,17 @@ CL_ParseServerMessage (void)
 
 			case svc_centerprint:
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
 			case svc_killedmonster:
 				cl.stats[STAT_MONSTERS]++;
+				Sbar_UpdateStats (STAT_MONSTERS);
 				break;
 
 			case svc_foundsecret:
 				cl.stats[STAT_SECRETS]++;
+				Sbar_UpdateStats (STAT_SECRETS);
 				break;
 
 			case svc_spawnstaticsound:
@@ -1090,23 +983,15 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				cl.intermission = 1;
-				r_data->force_fullscreen = 1;
-				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;		// go to full screen
+				Sbar_Intermission (cl.intermission = 1, cl.time);
+				SCR_SetFullscreen (1);
 				break;
 
 			case svc_finale:
-				cl.intermission = 2;
-				r_data->force_fullscreen = 1;
-				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
+				Sbar_Intermission (cl.intermission = 2, cl.time);
+				SCR_SetFullscreen (1);
 				break;
 
 			case svc_cdtrack:
@@ -1124,16 +1009,10 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cutscene:
-				cl.intermission = 3;
-				r_data->force_fullscreen = 1;
-				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;	// go to full screen
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
+				Sbar_Intermission (cl.intermission = 3, cl.time);
+				SCR_SetFullscreen (1);
 				break;
 
 			//   svc_smallkick (same value as svc_cutscene)
@@ -1173,17 +1052,16 @@ CL_ParseServerMessage (void)
 					blue = MSG_ReadByte (net_message) / 255.0;
 					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
-					if (r_funcs->Fog_Update)
-						r_funcs->Fog_Update (density, red, green, blue, time);
+					Fog_Update (density, red, green, blue, time);
 				}
 				break;
 			case svc_spawnbaseline2:
 				i = MSG_ReadShort (net_message);
 				// must use CL_EntityNum() to force cl.num_entities up
-				CL_ParseBaseline (CL_EntityNum(i), 2);
+				CL_ParseBaseline (net_message, CL_EntityNum(i), 2);
 				break;
 			case svc_spawnstatic2:
-				CL_ParseStatic (2);
+				CL_ParseStatic (net_message, 2);
 				break;
 			case svc_spawnstaticsound2:
 				CL_ParseStaticSound (2);

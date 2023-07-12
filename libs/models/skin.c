@@ -72,6 +72,14 @@ new_skin (void)
 }
 
 VISIBLE void
+Skin_Free (skin_t *skin)
+{
+	if (skin) {
+		free (skin);
+	}
+}
+
+VISIBLE void
 Skin_SetTranslation (int cmap, int top, int bottom)
 {
 	int         i, j;
@@ -84,7 +92,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 	bottom = bound (0, bottom, 13) * 16;
 
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 1;
 	}
 
@@ -129,7 +137,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 		skin = new_skin ();
 	skin->colormap = 0;
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 0;
 	}
 	if (cmap)
@@ -177,14 +185,14 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			break;
 		}
 
-		file = QFS_FOpenFile (va ("skins/%s.pcx", name));
+		file = QFS_FOpenFile (va (0, "skins/%s.pcx", name));
 		if (!file) {
 			Sys_Printf ("Couldn't load skin %s\n", name);
 			free (name);
 			name = 0;
 			break;
 		}
-		tex = LoadPCX (file, 0, r_data->vid->palette);
+		tex = LoadPCX (file, 0, r_data->vid->palette, 1);
 		Qclose (file);
 		if (!tex || tex->width > 320 || tex->height > 200) {
 			Sys_Printf ("Bad skin %s\n", name);
@@ -193,7 +201,8 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			tex = 0;
 			break;
 		}
-		out = malloc (field_offset (tex_t, data[PLAYER_WIDTH*PLAYER_HEIGHT]));
+		out = malloc (sizeof (tex_t) + PLAYER_WIDTH*PLAYER_HEIGHT);
+		out->data = (byte *) (out + 1);
 		out->width = PLAYER_WIDTH;
 		out->height = PLAYER_HEIGHT;
 		out->format = tex_palette;
@@ -242,6 +251,112 @@ skin_free (void *_sb, void *unused)
 void
 Skin_Init (void)
 {
-	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0);
+	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
 	m_funcs->Skin_InitTranslations ();
+}
+
+void
+Skin_Shutdown (void)
+{
+	Hash_DelTable (skin_cache);
+}
+
+VISIBLE int
+Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        tc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			tc = 1;
+			*out = (pix - TOP_RANGE) * 16 + 8;
+		} else {
+			*out = 0;
+		}
+		out += stride;
+	}
+	return tc;
+}
+
+VISIBLE int
+Skin_CalcTopMask (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        tc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			tc = 1;
+			*out = 0xff;
+		} else {
+			*out = 0;
+		}
+		out += stride;
+	}
+	return tc;
+}
+
+VISIBLE int
+Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        bc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			bc = 1;
+			*out = (pix - BOTTOM_RANGE) * 16 + 8;
+		} else {
+			*out = 0;
+		}
+		out += stride;
+	}
+	return bc;
+}
+
+VISIBLE int
+Skin_CalcBottomMask (byte *out, const byte *in, size_t pixels, int stride)
+{
+	byte        bc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			bc = 1;
+			*out = 0xff;
+		} else {
+			*out = 0;
+		}
+		out += stride;
+	}
+	return bc;
+}
+
+VISIBLE int
+Skin_ClearTopColors (byte *out, const byte *in, size_t pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
+	}
+	return 0;
+}
+
+VISIBLE int
+Skin_ClearBottomColors (byte *out, const byte *in, size_t pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
+	}
+	return 0;
 }

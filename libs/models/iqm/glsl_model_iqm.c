@@ -68,7 +68,7 @@ static byte null_normmap[] = {
 };
 
 static void
-glsl_iqm_clear (model_t *mod)
+glsl_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
@@ -85,6 +85,7 @@ glsl_iqm_clear (model_t *mod)
 		GLSL_ReleaseTexture (glsl->textures[i]);
 		GLSL_ReleaseTexture (glsl->normmaps[i]);
 	}
+	free (glsl->textures);
 	free (glsl);
 	Mod_FreeIQM (iqm);
 }
@@ -102,12 +103,12 @@ glsl_iqm_load_textures (iqm_t *iqm)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			glsl->textures[i] = GLSL_LoadRGBATexture (str->str, tex->width,
 													  tex->height, tex->data);
 		else
 			glsl->textures[i] = GLSL_LoadRGBATexture ("", 2, 2, null_texture);
-		if ((tex = LoadImage (va ("textures/%s_norm", str->str))))
+		if ((tex = LoadImage (va (0, "textures/%s_norm", str->str), 1)))
 			glsl->normmaps[i] = GLSL_LoadRGBATexture (str->str, tex->width,
 													  tex->height, tex->data);
 		else

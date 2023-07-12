@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_joystick_h_
-#define __QF_joystick_h_
+#ifndef __QF_joystick_h
+#define __QF_joystick_h
 
 #include <QF/qtypes.h>
 #include "QF/quakeio.h"
@@ -34,8 +34,8 @@
 #define JOY_MAX_AXES    32
 #define JOY_MAX_BUTTONS 64
 
-extern struct cvar_s	*joy_device;		// Joystick device name
-extern struct cvar_s	*joy_enable;		// Joystick enabling flag
+extern char *joy_device;
+extern int joy_enable;
 
 struct joy_axis_button {
 	float       threshold;
@@ -72,8 +72,8 @@ struct joy_axis {
 	struct joy_axis_button *axis_buttons;	// if axis button
 };
 
-extern qboolean joy_found;					// Joystick present?
-extern qboolean joy_active; 				// Joystick in use?
+extern bool joy_found;					// Joystick present?
+extern bool joy_active; 				// Joystick in use?
 
 struct joy_button {
 	int         old;
@@ -92,7 +92,7 @@ extern struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 	frame.
 
 	You should exit this function immediately if either joy_active or
-	joy_enable->int_val are zero.
+	joy_enable are zero.
 */
 void JOY_Command (void);
 void joy_clear_axis (int i);
@@ -103,7 +103,7 @@ void joy_clear_axis (int i);
 	Use this function to process joystick movements to move the player around.
 
 	You should exit this function immediately if either joy_active or
-	joy_enable->int_val are zero.
+	joy_enable are zero.
 */
 void JOY_Move (void);
 
@@ -144,14 +144,14 @@ void JOY_Close (void);
 void JOY_Read (void);
 
 
-const char *JOY_GetOption_c (int i);
-int JOY_GetOption_i (const char *c);
+const char *JOY_GetOption_c (int i) __attribute__((pure));
+int JOY_GetOption_i (const char *c) __attribute__((pure));
 
-const char *JOY_GetDest_c (int i);
-int JOY_GetDest_i (const char *c);
+const char *JOY_GetDest_c (int i) __attribute__((pure));
+int JOY_GetDest_i (const char *c) __attribute__((pure));
 int JOY_GetAxis_i (int dest, const char *c);
 
 
 void Joy_WriteBindings (QFile *f);
 
-#endif	// __QF_joystick_h_
+#endif//__QF_joystick_h

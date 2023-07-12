@@ -60,6 +60,7 @@
 #include "QF/GLSL/funcs.h"
 
 #include "r_internal.h"
+#include "vid_gl.h"
 
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
@@ -70,13 +71,13 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean
+bool
 EGLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
-	qfe##name = vid.get_proc_address (#name, false);
+	qfe##name = glsl_ctx->get_proc_address (#name, false);
 #define QFGL_NEED(ret, name, args) \
-	qfe##name = vid.get_proc_address (#name, true);
+	qfe##name = glsl_ctx->get_proc_address (#name, true);
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT

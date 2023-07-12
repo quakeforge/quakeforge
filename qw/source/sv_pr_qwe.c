@@ -50,21 +50,21 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "server.h"
-#include "sv_pr_qwe.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_pr_qwe.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct {
-	func_t      timeofday;
-	func_t      ConsoleCmd;
-	func_t      UserCmd;
+	pr_func_t   timeofday;
+	pr_func_t   ConsoleCmd;
+	pr_func_t   UserCmd;
 } qwe_funcs_t;
 
 static qwe_funcs_t qwe_funcs;
 
 static void
-PF_executecmd (progs_t *pr)
+PF_executecmd (progs_t *pr, void *data)
 {
 	int         old_other, old_self;	// mod_consolecmd will be executed, so
 										// we need to store these
@@ -87,7 +87,7 @@ PF_executecmd (progs_t *pr)
 */
 
 static void
-PF_tokanize (progs_t *pr)
+PF_tokanize (progs_t *pr, void *data)
 {
 	const char *str;
 
@@ -105,7 +105,7 @@ PF_tokanize (progs_t *pr)
 */
 
 static void
-PF_argc (progs_t *pr)
+PF_argc (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) Cmd_Argc ();
 }
@@ -119,7 +119,7 @@ PF_argc (progs_t *pr)
 */
 
 static void
-PF_argv (progs_t *pr)
+PF_argv (progs_t *pr, void *data)
 {
 	int         num;
 
@@ -140,7 +140,7 @@ PF_argv (progs_t *pr)
 */
 
 static void
-PF_teamfield (progs_t *pr)
+PF_teamfield (progs_t *pr, void *data)
 {
 	sv_fields.team_str = P_INT (pr, 0);
 }
@@ -152,7 +152,7 @@ PF_teamfield (progs_t *pr)
 */
 
 static void
-PF_substr (progs_t *pr)
+PF_substr (progs_t *pr, void *data)
 {
 	const char *s;
 	char       *tmp;
@@ -174,7 +174,7 @@ PF_substr (progs_t *pr)
 	if (len > l)
 		len = l;
 
-	tmp = Hunk_TempAlloc (len + 1);
+	tmp = Hunk_TempAlloc (0, len + 1);
 	strncpy (tmp, s, len);
 	tmp[len] = 0;
 
@@ -188,9 +188,9 @@ PF_substr (progs_t *pr)
 */
 
 static void
-PF_strcat (progs_t *pr)
+PF_strcat (progs_t *pr, void *data)
 {
-	RETURN_STRING (pr, PF_VarString (pr, 0));
+	RETURN_STRING (pr, PF_VarString (pr, 0, pr->pr_argc));
 }
 
 /*
@@ -200,7 +200,7 @@ PF_strcat (progs_t *pr)
 */
 
 static void
-PF_strlen (progs_t *pr)
+PF_strlen (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) strlen (P_GSTRING (pr, 0));
 }
@@ -212,7 +212,7 @@ PF_strlen (progs_t *pr)
 */
 
 static void
-PF_str2byte (progs_t *pr)
+PF_str2byte (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = (float) *P_GSTRING (pr, 0);
 }
@@ -224,7 +224,7 @@ PF_str2byte (progs_t *pr)
 */
 
 static void
-PF_str2short (progs_t *pr)
+PF_str2short (progs_t *pr, void *data)
 {
 	const byte *str = (byte *) P_GSTRING (pr, 0);
 
@@ -239,7 +239,7 @@ PF_str2short (progs_t *pr)
 	The new string will be at least as big as size, if given.
 */
 static void
-PF_newstr (progs_t *pr)
+PF_newstr (progs_t *pr, void *data)
 {
 	const char *s;
 	dstring_t  *dstr;
@@ -269,7 +269,7 @@ PF_newstr (progs_t *pr)
 */
 
 static void
-PF_freestr (progs_t *pr)
+PF_freestr (progs_t *pr, void *data)
 {
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
@@ -281,7 +281,7 @@ PF_freestr (progs_t *pr)
 */
 
 static void
-PF_readcmd (progs_t *pr)
+PF_readcmd (progs_t *pr, void *data)
 {
 	const char *s;
 	redirect_t  old;
@@ -311,7 +311,7 @@ PF_readcmd (progs_t *pr)
 */
 
 static void
-PF_redirectcmd (progs_t *pr)
+PF_redirectcmd (progs_t *pr, void *data)
 {
 	const char *s;
 	int         entnum;
@@ -334,7 +334,7 @@ PF_redirectcmd (progs_t *pr)
 }
 
 static void
-PF_calltimeofday (progs_t *pr)
+PF_calltimeofday (progs_t *pr, void *data)
 {
 	date_t      date;
 	dfunction_t *f;
@@ -353,7 +353,8 @@ PF_calltimeofday (progs_t *pr)
 		P_FLOAT (pr, 5) = (float) date.year;
 		P_STRING (pr, 6) = PR_SetReturnString (pr, date.str);
 
-		PR_ExecuteProgram (pr, (func_t) (f - sv_pr_state.pr_functions));
+		pr->pr_argc = 7;
+		PR_ExecuteProgram (pr, (pr_func_t) (f - sv_pr_state.pr_functions));
 		PR_PopFrame (&sv_pr_state);
 	}
 }
@@ -367,7 +368,7 @@ PF_calltimeofday (progs_t *pr)
 */
 
 static void
-PF_forcedemoframe (progs_t *pr)
+PF_forcedemoframe (progs_t *pr, void *data)
 {
 	SVR_ForceFrame ();
 	if (P_FLOAT (pr, 0) == 1)
@@ -382,7 +383,7 @@ PF_forcedemoframe (progs_t *pr)
 */
 
 static void
-PF_strcpy (progs_t *pr)
+PF_strcpy (progs_t *pr, void *data)
 {
 	dstring_copystr (P_DSTRING (pr, 0), P_GSTRING (pr, 1));
 }
@@ -394,7 +395,7 @@ PF_strcpy (progs_t *pr)
 */
 
 static void
-PF_strncpy (progs_t *pr)
+PF_strncpy (progs_t *pr, void *data)
 {
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
@@ -413,7 +414,7 @@ PF_strncpy (progs_t *pr)
 */
 
 static void
-PF_strstr (progs_t *pr)
+PF_strstr (progs_t *pr, void *data)
 {
 	const char *str, *sub, *p;
 
@@ -444,16 +445,16 @@ clean_text (char *text)
 */
 
 static void
-PF_log (progs_t *pr)
+PF_log (progs_t *pr, void *data)
 {
 	const char *name;
 	char       *text;
 	QFile      *file;
 
-	name = va ("%s/%s.log", qfs_gamedir->dir.def, P_GSTRING (pr, 0));
+	name = va (0, "%s/%s.log", qfs_gamedir->dir.def, P_GSTRING (pr, 0));
 	file = QFS_Open (name, "a");
 
-	text = PF_VarString (pr, 2);
+	text = PF_VarString (pr, 2, pr->pr_argc);
 	clean_text (text);
 
 	if (P_FLOAT (pr, 1))
@@ -472,42 +473,45 @@ PF_log (progs_t *pr)
 	PF_conprint
 */
 static void
-PF_conprint (progs_t *pr)
+PF_conprint (progs_t *pr, void *data)
 {
-	Sys_Printf ("%s", PF_VarString (pr, 0));
+	Sys_Printf ("%s", PF_VarString (pr, 0, pr->pr_argc));
 }
 
 #define QWE (PR_RANGE_QWE << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {"QWE:"#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"QWE:executecmd",			PF_executecmd,		QWE 83},
-	{"QWE:tokanize" /* sic */,	PF_tokanize,		QWE 84},
-	{"QWE:argc",				PF_argc,			QWE 85},
-	{"QWE:argv",				PF_argv,			QWE 86},
-	{"QWE:teamfield",			PF_teamfield,		QWE 87},
-	{"QWE:substr",				PF_substr,			QWE 88},
-	{"QWE:strcat",				PF_strcat,			QWE 89},
-	{"QWE:strlen",				PF_strlen,			QWE 90},
-	{"QWE:str2byte",			PF_str2byte,		QWE 91},
-	{"QWE:str2short",			PF_str2short,		QWE 92},
-	{"QWE:newstr",				PF_newstr,			QWE 93},
-	{"QWE:freestr",				PF_freestr,			QWE 94},
-	{"QWE:conprint",			PF_conprint,		QWE 95},
-	{"QWE:readcmd",				PF_readcmd,			QWE 96},
-	{"QWE:strcpy",				PF_strcpy,			QWE 97},
-	{"QWE:strstr",				PF_strstr,			QWE 98},
-	{"QWE:strncpy",				PF_strncpy,			QWE 99},
-	{"QWE:log",					PF_log,				QWE 100},
-	{"QWE:redirectcmd",			PF_redirectcmd,		QWE 101},
-	{"QWE:calltimeofday",		PF_calltimeofday,	QWE 102},
-	{"QWE:forceddemoframe",		PF_forcedemoframe,	QWE 103},
+	bi(executecmd,      QWE 83, 0),
+	bi(tokanize,        QWE 84, 1, p(string)), /* sic */
+	bi(argc,            QWE 85, 0),
+	bi(argv,            QWE 86, 1, p(float)),
+	bi(teamfield,       QWE 87, 1, p(field)),
+	bi(substr,          QWE 88, 3, p(string), p(float), p(float)),
+	bi(strcat,          QWE 89, -1),
+	bi(strlen,          QWE 90, 1, p(string)),
+	bi(str2byte,        QWE 91, 1, p(string)),
+	bi(str2short,       QWE 92, 1, p(string)),
+	bi(newstr,          QWE 93, 2, p(string), p(float)),
+	bi(freestr,         QWE 94, 1, p(string)),
+	bi(conprint,        QWE 95, -1),
+	bi(readcmd,         QWE 96, 1, p(string)),
+	bi(strcpy,          QWE 97, 2, p(string), p(string)),
+	bi(strstr,          QWE 98, 2, p(string), p(string)),
+	bi(strncpy,         QWE 99, 3, p(string), p(string), p(float)),
+	bi(log,             QWE 100, 3, p(string), p(float), p(string)),
+	bi(redirectcmd,     QWE 101, 2, p(entity), p(string)),
+	bi(calltimeofday,   QWE 102, 0),
+	bi(forcedemoframe,  QWE 103, 1, p(float)),
 	{0}
 };
 #define LAST_QWE_BUILTIN 103
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } qwe_func_list[] = {
 	{"timeofday",			&qwe_funcs.timeofday},
 	{"ConsoleCmd",			&qwe_funcs.ConsoleCmd},
@@ -551,7 +555,7 @@ static int
 qwe_load_finish (progs_t *pr)
 {
 	edict_t    *ent;
-	ddef_t     *targetname;
+	pr_def_t   *targetname;
 
 	targetname = PR_FindField (pr, "targetname");
 	ent = EDICT_NUM (pr, 0);
@@ -573,7 +577,7 @@ qwe_load (progs_t *pr)
 
 		*qwe_func_list[i].field = 0;
 		if (f)
-			*qwe_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*qwe_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 
 	sv_cbuf->unknown_command = qwe_console_cmd;
@@ -585,6 +589,6 @@ qwe_load (progs_t *pr)
 void
 SV_PR_QWE_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 	PR_AddLoadFunc (pr, qwe_load);
 }

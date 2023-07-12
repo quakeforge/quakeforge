@@ -28,12 +28,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "csg4.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "solidbsp.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/solidbsp.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_solidbsp
 */
@@ -45,7 +45,7 @@ int         splitnodes;
 
 int         c_solid, c_empty, c_water;
 
-qboolean    usemidsplit;
+bool        usemidsplit;
 
 
 /**	Determine on which side of the plane a face is.
@@ -110,7 +110,7 @@ FaceSide (const face_t *in, const plane_t *split)
 	return SIDE_ON;
 }
 
-/**	Chose the best plane for dividing the bsp.
+/**	Choose the best plane for dividing the bsp.
 
 	The clipping hull BSP doesn't worry about avoiding splits, so this
 	function tries to find the plane that gives the most even split of the
@@ -121,7 +121,7 @@ FaceSide (const face_t *in, const plane_t *split)
 	\param maxs		The maximum coordinate of the boundiing box.
 	\return			The chosen surface.
 */
-static surface_t *
+static __attribute__((pure)) surface_t *
 ChooseMidPlaneFromList (surface_t *surfaces,
 						const vec3_t mins, const vec3_t maxs)
 {
@@ -138,7 +138,7 @@ ChooseMidPlaneFromList (surface_t *surfaces,
 		if (p->onnode)
 			continue;
 
-		plane = &planes[p->planenum];
+		plane = &planes.a[p->planenum];
 
 		// check for axis aligned surfaces
 		l = plane->type;
@@ -186,9 +186,9 @@ ChooseMidPlaneFromList (surface_t *surfaces,
 	\return			The chosen surface, or NULL if a suitable surface could
 					not be found.
 */
-static surface_t *
+static __attribute__((pure)) surface_t *
 ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
-					 qboolean usefloors, qboolean usedetail)
+					 bool usefloors, bool usedetail)
 {
 	face_t     *f;
 	int         j, k, l, ishint;
@@ -215,7 +215,7 @@ ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
 		if (!p->has_struct && !usedetail)
 			continue;
 
-		plane = &planes[p->planenum];
+		plane = &planes.a[p->planenum];
 		k = 0;
 
 		if (!usefloors && plane->normal[2] == 1)
@@ -393,7 +393,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 
 	int         have[2][2];	// [front|back][detail|struct]
 
-	inplane = &planes[in->planenum];
+	inplane = &planes.a[in->planenum];
 
 	// parallel case is easy
 	if (_VectorCompare (inplane->normal, split->normal)) {
@@ -638,7 +638,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	node->children[1] = AllocNode ();
 	node->planenum = split->planenum;
 
-	splitplane = &planes[split->planenum];
+	splitplane = &planes.a[split->planenum];
 
 	// multiple surfaces, so split all the polysurfaces into front and back
 	// lists
@@ -674,7 +674,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 }
 
 node_t *
-SolidBSP (surface_t *surfhead, qboolean midsplit)
+SolidBSP (surface_t *surfhead, bool midsplit)
 {
 	int         i;
 	node_t     *headnode;

@@ -53,9 +53,9 @@ static general_funcs_t plugin_info_general_funcs;
 
 static cd_funcs_t plugin_info_cd_funcs;
 
-static qboolean initialized = false;
-static qboolean enabled = true;
-static qboolean playLooping = false;
+static bool initialized = false;
+static bool enabled = true;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
@@ -63,7 +63,15 @@ static byte playTrack;
 static char cd_dev[] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
-static cvar_t *bgmvolume;
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 static void
 I_SGI_Eject (void)
@@ -72,7 +80,7 @@ I_SGI_Eject (void)
 		return;							// no cd init'd
 
 	if (CDeject (cdp) == 0)
-		Sys_MaskPrintf (SYS_SND, "I_SGI_Eject: CDeject failed\n");
+		Sys_MaskPrintf (SYS_snd, "I_SGI_Eject: CDeject failed\n");
 }
 
 static int
@@ -84,7 +92,7 @@ I_SGI_GetState (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio_GetStatus: CDgetstatus failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio_GetStatus: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -100,7 +108,7 @@ I_SGI_MaxTrack (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Sys_MaskPrintf (SYS_SND, "I_SGI_MaxTrack: CDgetstatus failed\n");
+		Sys_MaskPrintf (SYS_snd, "I_SGI_MaxTrack: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -114,11 +122,11 @@ I_SGI_Pause (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Sys_MaskPrintf (SYS_SND, "CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_snd, "CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
 }
 
 void
-I_SGI_Play (int track, qboolean looping)
+I_SGI_Play (int track, bool looping)
 {
 	int			maxtrack = I_SGI_MaxTrack ();
 
@@ -132,7 +140,7 @@ I_SGI_Play (int track, qboolean looping)
 	}
 
 	if (maxtrack < 0) {
-		Sys_MaskPrintf (SYS_SND,
+		Sys_MaskPrintf (SYS_snd,
 						"CDAudio_Play: Error getting maximum track number\n");
 		return;
 	}
@@ -172,7 +180,7 @@ I_SGI_Play (int track, qboolean looping)
 	}
 
 	if (CDplaytrack (cdp, track, cdvolume == 0.0 ? 0 : 1) == 0) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Play: CDplay failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Play: CDplay failed (%d)\n", errno);
 		return;
 	}
 
@@ -187,7 +195,7 @@ I_SGI_Resume (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Resume: CDtogglepause failed (%d)\n",
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Resume: CDtogglepause failed (%d)\n",
 						errno);
 }
 
@@ -210,7 +218,7 @@ I_SGI_Stop (void)
 		return;
 
 	if (CDstop (cdp) == 0)
-		Sys_MaskPrintf (SYS_SND, "I_SGI_Stop: CDStop failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_snd, "I_SGI_Stop: CDStop failed (%d)\n", errno);
 }
 
 void
@@ -219,14 +227,14 @@ I_SGI_Update (void)
 	if (!initialized || !enabled)
 		return;
 
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 0.0;
+			cdvolume = bgmvolume;
 			CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 1.0;
+			cdvolume = bgmvolume;
 			CDAudio_Resume ();
 		}
 	}
@@ -334,8 +342,7 @@ I_SGI_Init (void)
 {
 	int         i;
 
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
 		strncpy (cd_dev, com_argv[i + 1], sizeof (cd_dev));
 		cd_dev[sizeof (cd_dev) - 1] = 0;
@@ -364,6 +371,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_SGI_f,
 	I_SGI_Pause,
 	I_SGI_Play,

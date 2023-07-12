@@ -114,7 +114,7 @@ do_contents (box_t *box, hull_t *hull, vec3_t origin, trace_t *trace)
 {
 	memset (trace, 0xff, sizeof (*trace));
 	VectorCopy (box->extents, trace->extents);
-	// FIXME specify tract type in test spec
+	// FIXME specify trace type in test spec
 	trace->type = box == &point ? tr_point : tr_box;
 	return MOD_HullContents (hull, 0, origin, trace);
 }
@@ -145,9 +145,9 @@ run_test (test_t *test)
 		res = 1;
 
 	if (test->desc)
-		desc = va ("(%d) %s", (int)(long)(test - tests), test->desc);
+		desc = va (0, "(%d) %s", (int)(long)(test - tests), test->desc);
 	else
-		desc = va ("test #%d", (int)(long)(test - tests));
+		desc = va (0, "test #%d", (int)(long)(test - tests));
 	if (verbose >= 0 || !res) {
 		if (output)
 			puts("");

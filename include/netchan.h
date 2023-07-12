@@ -39,7 +39,7 @@
 /** \defgroup qw-net QuakeWorld network support.
 	\ingroup network
 */
-//{
+///@{
 #define MAX_MSGLEN		1450		///< max length of a reliable message
 #define MAX_DATAGRAM	1450		///< max length of unreliable message
 
@@ -62,25 +62,23 @@ extern	netadr_t	net_loopback_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
-extern	struct cvar_s	*qport;
+extern int qport;
 
-int Net_Log_Init (const char **sound_precache);
-void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
-						  int is_server);
-void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
-						  int is_server);
-void Net_LogStop (void);
+int Net_Log_Init (const char **sound_precache, int server);
+void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
+void Log_Incoming_Packet (const byte *p, int len, int has_sequence);
+void Log_Outgoing_Packet (const byte *p, int len, int has_sequence);
+void Net_LogStop (void *data);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
-extern struct cvar_s *net_packetlog;
-//@}
+extern int net_packetlog;
+///@}
 
 /** \defgroup qw-udp QuakeWorld udp support.
 	\ingroup qw-net
 */
-//@{
+///@{
 
 /** Initialize the UDP network interface.
 
@@ -90,15 +88,11 @@ extern struct cvar_s *net_packetlog;
 */
 void NET_Init (int port);
 
-/** Shutdown the UDP network interface.
-*/
-void NET_Shutdown (void);
-
 /** Read a single packet from the network into net_message.
 
 	\return			True if successfully read, otherwise false.
 */
-qboolean NET_GetPacket (void);
+bool NET_GetPacket (void);
 
 /**	Send a data packet out to the network.
 
@@ -116,7 +110,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b);
+bool NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Compare two network addresses.
 
@@ -126,7 +120,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b);
+bool NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Convert an address to a string.
 
@@ -163,9 +157,9 @@ const char *NET_BaseAdrToString (netadr_t a);
 	\param[out] a	The resulting address of the conversion.
 	\return			True if the conversion is successful, otherwise false.
 */
-qboolean NET_StringToAdr (const char *s, netadr_t *a);
+bool NET_StringToAdr (const char *s, netadr_t *a);
 
-//@}
+///@}
 
 /** \defgroup netchan Netchan
 	\ingroup qw-net
@@ -220,7 +214,7 @@ qboolean NET_StringToAdr (const char *s, netadr_t *a);
 	the channel matches even if the IP port differs.  The IP port should be
 	updated to the new value before sending out any replies.
 */
-//@{
+///@{
 #define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
 
 #define	MAX_LATENT	32
@@ -231,9 +225,9 @@ typedef enum {
 } ncqport_e;
 
 typedef struct netchan_s {
-	qboolean	fatal_error;	///< True if the message overflowed
+	bool		fatal_error;	///< True if the message overflowed
 
-	float		last_received;	///< Time the last packet was received.
+	double      last_received;	///< Time the last packet was received.
 
 	/// \name statistics
 	/// the statistics are cleared at each client begin, because
@@ -301,6 +295,10 @@ extern	int net_blocksend;
 */
 extern	double *net_realtime;
 
+/** Callback to log outgoing packets
+*/
+extern void (*net_log_packet) (int length, const void *data, netadr_t to);
+
 /** Initialize the netchan system.
 
 	Currently only sets the qport cvar default to a random value.
@@ -321,7 +319,7 @@ void Netchan_Init_Cvars (void);
 	\param length	The size of the unreliable packet.
 	\param data		The data of the unreliable packet.
 */
-void Netchan_Transmit (netchan_t *chan, int length, byte *data);
+void Netchan_Transmit (netchan_t *chan, unsigned length, byte *data);
 
 /** Send an out-of-band packet.
 
@@ -329,14 +327,14 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 	\param length	The length of the data to be sent.
 	\param data		The data to be sent.
 */
-void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
+void Netchan_OutOfBand (netadr_t adr, unsigned length, byte *data);
 /** Send a formatted string as an out-of-band packet.
 
 	\param adr		The address to which the data will be sent.
 	\param format	The printf style format string.
 */
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
-	__attribute__ ((format (printf,2,3)));
+	__attribute__ ((format (PRINTF,2,3)));
 
 /** Process a packet for the specifiied connection.
 
@@ -345,7 +343,7 @@ void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 
 	\param chan		The netchan representing the connection.
 */
-qboolean Netchan_Process (netchan_t *chan);
+bool Netchan_Process (netchan_t *chan);
 
 /** Initialize a new connection.
 
@@ -362,7 +360,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 	\param chan     The netchan representing the connection.
 	\return			True if the connection isn't chocked.
 */
-qboolean Netchan_CanPacket (netchan_t *chan);
+bool Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 
 /** Check if a reliable packet can be sent to the connection.
 
@@ -370,7 +368,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 	\return			True if there is no outstanding reliable packet and the
 					connection isn't chocked.
 */
-qboolean Netchan_CanReliable (netchan_t *chan);
+bool Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 
 /** Send a packet.
 
@@ -381,6 +379,6 @@ qboolean Netchan_CanReliable (netchan_t *chan);
 */
 void Netchan_SendPacket (int length, const void *data, netadr_t to);
 
-//@}
+///@}
 
 #endif // _NET_H

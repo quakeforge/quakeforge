@@ -163,7 +163,7 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 	a->port = s->s4.sin_port;
 }
 
-qboolean
+bool
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, ADDR_SIZE) == 0)
@@ -171,7 +171,7 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 	return false;
 }
 
-qboolean
+bool
 NET_CompareAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, ADDR_SIZE) == 0 && a.port == b.port)
@@ -208,7 +208,7 @@ NET_BaseAdrToString (netadr_t a)
 	192.246.40.70
 	192.246.40.70:28000
 */
-qboolean
+bool
 NET_StringToAdr (const char *s, netadr_t *a)
 {
 	static dstring_t *copy;
@@ -246,7 +246,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	return true;
 }
 
-qboolean
+bool
 NET_GetPacket (void)
 {
 	int         ret;
@@ -403,6 +403,17 @@ NET_GetLocalAddress (void)
 	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
+static void
+NET_shutdown (void *data)
+{
+#ifdef _WIN32
+	closesocket (net_socket);
+	WSACleanup ();
+#else
+	close (net_socket);
+#endif
+}
+
 void
 NET_Init (int port)
 {
@@ -416,6 +427,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
+	Sys_RegisterShutdown (NET_shutdown, 0);
 
 	net_socket = UDP_OpenSocket (port);
 
@@ -430,15 +442,4 @@ NET_Init (int port)
 	net_loopback_adr.ip[3] = 1;
 
 	Sys_Printf ("UDP (IPv4) Initialized\n");
-}
-
-void
-NET_Shutdown (void)
-{
-#ifdef _WIN32
-	closesocket (net_socket);
-	WSACleanup ();
-#else
-	close (net_socket);
-#endif
 }

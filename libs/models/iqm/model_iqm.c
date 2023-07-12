@@ -118,7 +118,6 @@ get_joints (const iqmheader *hdr, byte *buffer)
 {
 	iqmjoint   *joint;
 	uint32_t    i, j;
-	float       t;
 
 	if (hdr->ofs_joints + hdr->num_joints * sizeof (iqmjoint) > hdr->filesize)
 		return 0;
@@ -135,17 +134,13 @@ get_joints (const iqmheader *hdr, byte *buffer)
 			joint[i].translate[j] = LittleFloat (joint[i].translate[j]);
 		for (j = 0; j < 4; j++)
 			joint[i].rotate[j] = LittleFloat (joint[i].rotate[j]);
-		// iqm quaternions use xyzw but QF quaternions use wxyz
-		t = joint[i].rotate[3];
-		memmove (&joint[i].rotate[1], &joint[i].rotate[0], 3 * sizeof (float));
-		joint[i].rotate[0] = t;
 		for (j = 0; j < 3; j++)
 			joint[i].scale[j] = LittleFloat (joint[i].scale[j]);
 	}
 	return joint;
 }
 
-static qboolean
+static bool
 load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
@@ -167,7 +162,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 
 	for (i = 0; i < hdr->num_vertexarrays; i++) {
 		va = vas + i;
-		Sys_MaskPrintf (SYS_MODEL, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
+		Sys_MaskPrintf (SYS_model, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
 		switch (va->type) {
 			case IQM_POSITION:
 				if (position)
@@ -333,7 +328,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 	return true;
 }
 
-static qboolean
+static bool
 load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
@@ -380,7 +375,7 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 	return true;
 }
 
-static qboolean
+static bool
 load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
@@ -442,19 +437,18 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			if (p->mask & 0x004)
 				translation[2] += *framedata++ * p->channelscale[2];
 
-			// QF's quaternions are wxyz while IQM's quaternions are xyzw
-			rotation[1] = p->channeloffset[3];
+			rotation[0] = p->channeloffset[3];
 			if (p->mask & 0x008)
-				rotation[1] += *framedata++ * p->channelscale[3];
-			rotation[2] = p->channeloffset[4];
+				rotation[0] += *framedata++ * p->channelscale[3];
+			rotation[1] = p->channeloffset[4];
 			if (p->mask & 0x010)
-				rotation[2] += *framedata++ * p->channelscale[4];
-			rotation[3] = p->channeloffset[5];
+				rotation[1] += *framedata++ * p->channelscale[4];
+			rotation[2] = p->channeloffset[5];
 			if (p->mask & 0x020)
-				rotation[3] += *framedata++ * p->channelscale[5];
-			rotation[0] = p->channeloffset[6];
+				rotation[2] += *framedata++ * p->channelscale[5];
+			rotation[3] = p->channeloffset[6];
 			if (p->mask & 0x040)
-				rotation[0] += *framedata++ * p->channelscale[6];
+				rotation[3] += *framedata++ * p->channelscale[6];
 
 			scale[0] = p->channeloffset[7];
 			if (p->mask & 0x080)
@@ -503,25 +497,25 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	uint32_t   *swap;
 
 	if (!strequal (hdr->magic, IQM_MAGIC))
-		Sys_Error ("%s: not an IQM", loadname);
+		Sys_Error ("%s: not an IQM", mod->path);
 	// Byte swap the header. Everything is the same type, so no problem :)
 	for (swap = &hdr->version; swap <= &hdr->ofs_extensions; swap++)
 		*swap = LittleLong (*swap);
 	//if (hdr->version < 1 || hdr->version > IQM_VERSION)
 	if (hdr->version != IQM_VERSION)
-		Sys_Error ("%s: unable to handle iqm version %d", loadname,
+		Sys_Error ("%s: unable to handle iqm version %d", mod->path,
 				   hdr->version);
 	if (hdr->filesize != (uint32_t) qfs_filesize)
-		Sys_Error ("%s: invalid filesize", loadname);
+		Sys_Error ("%s: invalid filesize", mod->path);
 	iqm = calloc (1, sizeof (iqm_t));
 	iqm->text = malloc (hdr->num_text);
 	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
 	mod->aliashdr = (aliashdr_t *) iqm;
 	mod->type = mod_iqm;
 	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading meshes", loadname);
+		Sys_Error ("%s: error loading meshes", mod->path);
 	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading anims", loadname);
+		Sys_Error ("%s: error loading anims", mod->path);
 	m_funcs->Mod_IQMFinish (mod);
 }
 
@@ -594,7 +588,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 	if (!bindices || !bweights) {
 		// Not necessarily an error: might be a static model with no bones
 		// Either way, no need to make a blend palette
-		Sys_MaskPrintf (SYS_MODEL, "bone index or weight array missing\n");
+		Sys_MaskPrintf (SYS_model, "bone index or weight array missing\n");
 		*size = 0;
 		return 0;
 	}
@@ -606,7 +600,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 	}
 	num_blends = iqm->num_joints;
 
-	blend_hash = Hash_NewTable (1023, 0, 0, 0);
+	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
 	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
 
 	for (i = 0; i < iqm->num_verts; i++) {

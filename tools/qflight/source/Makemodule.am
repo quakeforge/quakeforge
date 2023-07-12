@@ -1,0 +1,21 @@
+QFLIGHT_LIBS=@QFLIGHT_LIBS@
+QFLIGHT_DEPS=@QFLIGHT_DEPS@
+QFLIGHT_INCS=@QFLIGHT_INCS@
+
+EXTRA_PROGRAMS +=		qflight
+bin_PROGRAMS += @QFLIGHT_TARGETS@
+
+qflight_SOURCES=\
+	tools/qflight/source/entities.c \
+	tools/qflight/source/ltface.c \
+	tools/qflight/source/noise.c \
+	tools/qflight/source/options.c \
+	tools/qflight/source/properties.c \
+	tools/qflight/source/qflight.c \
+	tools/qflight/source/threads.c \
+	tools/qflight/source/trace.c \
+	tools/qflight/source/vis.c
+
+qflight_LDFLAGS=	$(PTHREAD_LDFLAGS)
+qflight_LDADD=		$(QFLIGHT_LIBS)
+qflight_DEPENDENCIES=	$(QFLIGHT_DEPS)

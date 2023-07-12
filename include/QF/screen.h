@@ -26,45 +26,36 @@
 */
 // screen.h
 
-#ifndef __screen_h
-#define __screen_h
+#ifndef __QF_screen_h
+#define __QF_screen_h
 
-#include "QF/qtypes.h"
+struct scene_s;
+struct transform_s;
+struct tex_s;
 
-void SCR_Init_Cvars (void);
 void SCR_Init (void);
+void SCR_Shutdown (void);
 
 typedef void (*SCR_Func)(void);
+// scr_funcs is a null terminated array
+void SCR_UpdateScreen (struct transform_s camera, double realtime,
+					   SCR_Func *scr_funcs);
+void SCR_UpdateScreen_legacy (struct transform_s camera, double realtime,
+					   SCR_Func *scr_funcs);
+void SCR_SetFOV (float fov);
+// control whether the 3d viewport is user-controlled or always fullscreen
+void SCR_SetFullscreen (bool fullscreen);
+void SCR_SetBottomMargin (int lines);
 
-void SCR_SizeUp (void);
-void SCR_SizeDown (void);
-void SCR_BringDownConsole (void);
-void SCR_CalcRefdef (void);
+void SCR_NewScene (struct scene_s *scene);
 
-void SCR_BeginLoadingPlaque (void);
-void SCR_EndLoadingPlaque (void);
+extern int r_timegraph;
+extern int r_zgraph;
+extern int scr_copytop;
+extern bool scr_skipupdate;
 
-struct view_s;
+struct view_pos_s;
+void R_TimeGraph (struct view_pos_s abs, struct view_pos_s len);
+void R_ZGraph (struct view_pos_s abs, struct view_pos_s len);
 
-int MipColor (int r, int g, int b);
-int SCR_ModalMessage (const char *text);
-
-extern float		scr_con_current;
-
-extern int			sb_lines;
-
-extern qboolean		scr_disabled_for_loading;
-extern qboolean		scr_skipupdate;
-extern qboolean		hudswap;
-
-extern struct cvar_s		*scr_fov;
-extern struct cvar_s		*scr_viewsize;
-
-// only the refresh window will be updated unless these variables are flagged
-
-extern struct qpic_s *scr_ram;
-extern struct qpic_s *scr_turtle;
-
-extern struct cvar_s *hud_fps, *hud_time;
-
-#endif // __screen_h
+#endif//__QF_screen_h

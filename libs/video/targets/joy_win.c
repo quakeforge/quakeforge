@@ -46,7 +46,15 @@
 #include "compat.h"
 
 // Joystick variables and structures
-cvar_t     *joy_sensitivity;			// Joystick sensitivity
+float joy_sensitivity;
+static cvar_t joy_sensitivity_cvar = {
+	.name = "joy_sensitivity",
+	.description =
+		"Joystick sensitivity",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &joy_sensitivity },
+};
 
 // joystick defines and variables
 // where should defines be moved?
@@ -82,29 +90,189 @@ JOYINFOEX ji;
 // when changing from one controller to another.  this way at least something
 // works.
 
-cvar_t *in_joystick;
-cvar_t *joy_name;
-cvar_t *joy_advanced;
-cvar_t *joy_advaxisx;
-cvar_t *joy_advaxisy;
-cvar_t *joy_advaxisz;
-cvar_t *joy_advaxisr;
-cvar_t *joy_advaxisu;
-cvar_t *joy_advaxisv;
-cvar_t *joy_forwardthreshold;
-cvar_t *joy_sidethreshold;
-cvar_t *joy_pitchthreshold;
-cvar_t *joy_yawthreshold;
-cvar_t *joy_forwardsensitivity;
-cvar_t *joy_sidesensitivity;
-cvar_t *joy_pitchsensitivity;
-cvar_t *joy_yawsensitivity;
-cvar_t *joy_wwhack1;
-cvar_t *joy_wwhack2;
+char *in_joystick;
+static cvar_t in_joystick_cvar = {
+	.name = "joystick",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &in_joystick },
+};
+char *joy_name;
+static cvar_t joy_name_cvar = {
+	.name = "joyname",
+	.description =
+		"FIXME: No Description",
+	.default_value = "joystick",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &joy_name },
+};
+int joy_advanced;
+static cvar_t joy_advanced_cvar = {
+	.name = "joyadvanced",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advanced },
+};
+int joy_advaxisx;
+static cvar_t joy_advaxisx_cvar = {
+	.name = "joyadvaxisx",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisx },
+};
+int joy_advaxisy;
+static cvar_t joy_advaxisy_cvar = {
+	.name = "joyadvaxisy",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisy },
+};
+int joy_advaxisz;
+static cvar_t joy_advaxisz_cvar = {
+	.name = "joyadvaxisz",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisz },
+};
+int joy_advaxisr;
+static cvar_t joy_advaxisr_cvar = {
+	.name = "joyadvaxisr",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisr },
+};
+int joy_advaxisu;
+static cvar_t joy_advaxisu_cvar = {
+	.name = "joyadvaxisu",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisu },
+};
+int joy_advaxisv;
+static cvar_t joy_advaxisv_cvar = {
+	.name = "joyadvaxisv",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_advaxisv },
+};
+float joy_forwardthreshold;
+static cvar_t joy_forwardthreshold_cvar = {
+	.name = "joyforwardthreshold",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.15",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_forwardthreshold },
+};
+float joy_sidethreshold;
+static cvar_t joy_sidethreshold_cvar = {
+	.name = "joysidethreshold",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.15",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_sidethreshold },
+};
+float joy_pitchthreshold;
+static cvar_t joy_pitchthreshold_cvar = {
+	.name = "joypitchthreshold",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.15",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_pitchthreshold },
+};
+float joy_yawthreshold;
+static cvar_t joy_yawthreshold_cvar = {
+	.name = "joyyawthreshold",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.15",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_yawthreshold },
+};
+float joy_forwardsensitivity;
+static cvar_t joy_forwardsensitivity_cvar = {
+	.name = "joyforwardsensitivity",
+	.description =
+		"FIXME: No Description",
+	.default_value = "-1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_forwardsensitivity },
+};
+float joy_sidesensitivity;
+static cvar_t joy_sidesensitivity_cvar = {
+	.name = "joysidesensitivity",
+	.description =
+		"FIXME: No Description",
+	.default_value = "-1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_sidesensitivity },
+};
+float joy_pitchsensitivity;
+static cvar_t joy_pitchsensitivity_cvar = {
+	.name = "joypitchsensitivity",
+	.description =
+		"FIXME: No Description",
+	.default_value = "1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_pitchsensitivity },
+};
+float joy_yawsensitivity;
+static cvar_t joy_yawsensitivity_cvar = {
+	.name = "joyyawsensitivity",
+	.description =
+		"FIXME: No Description",
+	.default_value = "-1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_yawsensitivity },
+};
+int joy_wwhack1;
+static cvar_t joy_wwhack1_cvar = {
+	.name = "joywwhack1",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_wwhack1 },
+};
+float joy_wwhack2;
+static cvar_t joy_wwhack2_cvar = {
+	.name = "joywwhack2",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &joy_wwhack2 },
+};
 
-cvar_t *joy_debug;
+int joy_debug;
+static cvar_t joy_debug_cvar = {
+	.name = "joy_debug",
+	.description =
+		"FIXME: No Description",
+	.default_value = "0.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &joy_debug },
+};
 
-qboolean joy_advancedinit, joy_haspov;
+bool joy_advancedinit, joy_haspov;
 DWORD joy_oldbuttonstate, joy_oldpovstate;
 int  joy_id;
 DWORD joy_flags;
@@ -130,7 +298,7 @@ RawValuePointer (int axis)
 	return NULL;
 }
 
-static qboolean
+static bool
 _JOY_Read (void)
 {
 	memset (&ji, 0, sizeof (ji));
@@ -142,10 +310,10 @@ _JOY_Read (void)
 		// DInput driver that causes it to make 32668 the center point
 		// instead
 		// of 32768
-		if (joy_wwhack1->int_val) {
+		if (joy_wwhack1) {
 			ji.dwUpos += 100;
 		}
-		if (joy_debug->int_val) {
+		if (joy_debug) {
 			if (ji.dwXpos) Sys_Printf("X: %ld\n",ji.dwXpos);
 			if (ji.dwYpos) Sys_Printf("Y: %ld\n",ji.dwYpos);
 			if (ji.dwZpos) Sys_Printf("Z: %ld\n",ji.dwZpos);
@@ -306,7 +474,7 @@ JOY_AdvancedUpdate_f (void)
 		pdwRawValue[i] = RawValuePointer (i);
 	}
 
-	if (joy_advanced->int_val) {
+	if (joy_advanced) {
 		// default joystick initialization
 		// only 2 axes with joystick control
 		dwAxisMap[JOY_AXIS_X] = AxisTurn;
@@ -314,28 +482,28 @@ JOY_AdvancedUpdate_f (void)
 		dwAxisMap[JOY_AXIS_Y] = AxisForward;
 		// dwControlMap[JOY_AXIS_Y] = JOY_ABSOLUTE_AXIS;
 	} else {
-		if (strcmp (joy_name->string, "joystick") != 0) {
+		if (strcmp (joy_name, "joystick") != 0) {
 			// notify user of advanced controller
-			Sys_Printf ("\n%s configured\n\n", joy_name->string);
+			Sys_Printf ("\n%s configured\n\n", joy_name);
 		}
 		// advanced initialization here
 		// data supplied by user via joy_axisn cvars
-		dwTemp = joy_advaxisx->int_val;
+		dwTemp = joy_advaxisx;
 		dwAxisMap[JOY_AXIS_X] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_X] = dwTemp & JOY_RELATIVE_AXIS;
-		dwTemp = joy_advaxisy->int_val;
+		dwTemp = joy_advaxisy;
 		dwAxisMap[JOY_AXIS_Y] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_Y] = dwTemp & JOY_RELATIVE_AXIS;
-		dwTemp = joy_advaxisz->int_val;
+		dwTemp = joy_advaxisz;
 		dwAxisMap[JOY_AXIS_Z] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_Z] = dwTemp & JOY_RELATIVE_AXIS;
-		dwTemp = joy_advaxisr->int_val;
+		dwTemp = joy_advaxisr;
 		dwAxisMap[JOY_AXIS_R] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_R] = dwTemp & JOY_RELATIVE_AXIS;
-		dwTemp = joy_advaxisu->int_val;
+		dwTemp = joy_advaxisu;
 		dwAxisMap[JOY_AXIS_U] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_U] = dwTemp & JOY_RELATIVE_AXIS;
-		dwTemp = joy_advaxisv->int_val;
+		dwTemp = joy_advaxisv;
 		dwAxisMap[JOY_AXIS_V] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_V] = dwTemp & JOY_RELATIVE_AXIS;
 	}
@@ -353,53 +521,30 @@ void
 JOY_Init_Cvars(void)
 {
 	// joystick variables
-	joy_device = Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, 0,
-						   "Joystick device");
-	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-						   "Joystick enable flag");
-	joy_sensitivity = Cvar_Get ("joy_sensitivity", "1", CVAR_NONE |
-								CVAR_ARCHIVE, 0, "Joystick sensitivity");
-	in_joystick =  Cvar_Get ("joystick", "0", CVAR_ARCHIVE, 0, "FIXME: No "
-							 "Description");
-	joy_name = Cvar_Get ("joyname", "joystick", CVAR_NONE, 0, "FIXME: No "
-						 "Description");
-	joy_advanced = Cvar_Get ("joyadvanced", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisx = Cvar_Get ("joyadvaxisx", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisy = Cvar_Get ("joyadvaxisy", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisz = Cvar_Get ("joyadvaxisz", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisr = Cvar_Get ("joyadvaxisr", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisu = Cvar_Get ("joyadvaxisu", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_advaxisv = Cvar_Get ("joyadvaxisv", "0", CVAR_NONE, 0, "FIXME: No "
-							 "Description");
-	joy_forwardthreshold = Cvar_Get ("joyforwardthreshold", "0.15", CVAR_NONE,
-									 0, "FIXME: No Description");
-	joy_sidethreshold = Cvar_Get ("joysidethreshold", "0.15", CVAR_NONE, 0,
-								  "FIXME: No Description");
-	joy_pitchthreshold = Cvar_Get ("joypitchthreshold", "0.15", CVAR_NONE, 0,
-								   "FIXME: No Description");
-	joy_yawthreshold = Cvar_Get ("joyyawthreshold", "0.15", CVAR_NONE, 0,
-								 "FIXME: No Description");
-	joy_forwardsensitivity = Cvar_Get ("joyforwardsensitivity", "-1.0",
-									   CVAR_NONE, 0, "FIXME: No Description");
-	joy_sidesensitivity = Cvar_Get ("joysidesensitivity", "-1.0", CVAR_NONE,
-									0, "FIXME: No Description");
-	joy_pitchsensitivity = Cvar_Get ("joypitchsensitivity", "1.0", CVAR_NONE,
-									 0, "FIXME: No Description");
-	joy_yawsensitivity = Cvar_Get ("joyyawsensitivity", "-1.0", CVAR_NONE, 0,
-								   "FIXME: No Description");
-	joy_wwhack1 = Cvar_Get ("joywwhack1", "0.0", CVAR_NONE, 0, "FIXME: No "
-							"Description");
-	joy_wwhack2 = Cvar_Get ("joywwhack2", "0.0", CVAR_NONE, 0, "FIXME: No "
-							"Description");
+	Cvar_Register (&joy_device_cvar, 0, 0);
+	Cvar_Register (&joy_enable_cvar, 0, 0);
+	Cvar_Register (&joy_sensitivity_cvar, 0, 0);
+	Cvar_Register (&in_joystick_cvar, 0, 0);
+	Cvar_Register (&joy_name_cvar, 0, 0);
+	Cvar_Register (&joy_advanced_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisx_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisy_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisz_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisr_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisu_cvar, 0, 0);
+	Cvar_Register (&joy_advaxisv_cvar, 0, 0);
+	Cvar_Register (&joy_forwardthreshold_cvar, 0, 0);
+	Cvar_Register (&joy_sidethreshold_cvar, 0, 0);
+	Cvar_Register (&joy_pitchthreshold_cvar, 0, 0);
+	Cvar_Register (&joy_yawthreshold_cvar, 0, 0);
+	Cvar_Register (&joy_forwardsensitivity_cvar, 0, 0);
+	Cvar_Register (&joy_sidesensitivity_cvar, 0, 0);
+	Cvar_Register (&joy_pitchsensitivity_cvar, 0, 0);
+	Cvar_Register (&joy_yawsensitivity_cvar, 0, 0);
+	Cvar_Register (&joy_wwhack1_cvar, 0, 0);
+	Cvar_Register (&joy_wwhack2_cvar, 0, 0);
 
-	joy_debug = Cvar_Get ("joy_debug", "0.0", CVAR_NONE, 0, "FIXME: No "
-						  "Description");
+	Cvar_Register (&joy_debug_cvar, 0, 0);
 	return;
 }
 #endif

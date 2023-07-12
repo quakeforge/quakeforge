@@ -41,6 +41,7 @@
 #include <pthread.h>
 extern pthread_rwlock_t *global_lock;
 extern pthread_rwlock_t *portal_locks;
+extern pthread_rwlock_t *stats_lock;
 
 #define	WRLOCK(l) \
 	do { \
@@ -65,24 +66,31 @@ extern pthread_rwlock_t *portal_locks;
 #define UNLOCK_PORTAL(p) UNLOCK (&portal_locks[p - portals])
 
 #else
-#define	LOCK
-#define	UNLOCK
+#define	LOCK(l)
+#define	UNLOCK(l)
+#define WRLOCK_PORTAL(p)
+#define RDLOCK_PORTAL(p)
+#define UNLOCK_PORTAL(p)
 #endif
 
+#include "QF/cmem.h"
+#include "QF/dstring.h"
 #include "QF/set.h"
+#include "QF/zone.h"
+#include "QF/simd/vec4f.h"
 
-#define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
 #define	PORTALFILE_AM			"PRT1-AM"
 #define	PORTALFILE2				"PRT2"
 #define	ON_EPSILON				0.1
-#define MAX_POINTS_ON_WINDING	64
-#define	MAX_PORTALS_ON_CLUSTER	128
 
-typedef struct {
-	qboolean    original;	// don't free, it's part of the portal
-	int	        numpoints;
-	vec3_t      points[8];	// variable sized
+typedef struct winding_s {
+	struct winding_s *next;
+	bool        original;	// don't free, it's part of the portal
+	unsigned    numpoints;
+	int         id;
+	int         thread;
+	vec4f_t     points[1];	// variable sized
 } winding_t;
 
 typedef enum {
@@ -93,9 +101,9 @@ typedef enum {
 } vstatus_t;
 
 typedef struct {
-	plane_t     plane;		// normal pointing into neighbor
+	vec4f_t     plane;		// normal pointing into neighbor
+	vspheref_t  sphere;		// bounding sphere
 	int         cluster;	// neighbor
-	sphere_t    sphere;		// bounding sphere
 	winding_t  *winding;
 	vstatus_t   status;
 	set_t      *visbits;
@@ -105,8 +113,8 @@ typedef struct {
 } portal_t;
 
 typedef struct seperating_plane_s {
+	vec4f_t     plane;		// from portal is on positive side
 	struct seperating_plane_s *next;
-	plane_t     plane;		// from portal is on positive side
 } sep_t;
 
 typedef struct passage_s {
@@ -117,9 +125,10 @@ typedef struct passage_s {
 
 typedef struct cluster_s {
 	int         numportals;
-	passage_t  *passages;
-	portal_t   *portals[MAX_PORTALS_ON_CLUSTER];
 	int         visofs;
+	vspheref_t  sphere;
+	passage_t  *passages;
+	portal_t   *portals;
 } cluster_t;
 
 typedef struct pstack_s {
@@ -127,26 +136,33 @@ typedef struct pstack_s {
 	cluster_t  *cluster;		///< the cluster being sub-vised
 	winding_t  *source_winding;	///< clipped source portal winding
 	portal_t   *pass_portal;	///< the portal exiting from the cluster
+	vec4f_t     pass_plane;		///< plane of the pass portal
 	winding_t  *pass_winding;	///< clipped pass portal winding
-	plane_t     pass_plane;		///< plane of the pass portal
 	set_t      *mightsee;
 	sep_t      *separators[2];
 } pstack_t;
 
 typedef struct {
-	int         portaltest;		///< number of portals tested via separators
-	int         portalpass;		///< number of portals through which vis passes
-	int         portalcheck;	///< number of portal checks
-	int         targettested;	///< number of times target portal tested
-	int         targettrimmed;	///< number of times target portal trimmed
-	int         targetclipped;	///< number of times target portal clipped away
-	int         sourcetested;	///< number of times source portal tested
-	int         sourcetrimmed;	///< number of times source portal trimmed
-	int         sourceclipped;	///< number of times source portal clipped away
-	int         chains;			///< number of visits to clusters
-	int         mighttest;		///< amount mightsee is used for masked tests
-	int         vistest;		///< amount visbits is used for masked tests
-	int         mightseeupdate;	///< amount of updates to waiting portals
+	unsigned long portaltest;	///< number of portals tested via separators
+	unsigned long portalpass;	///< number of portals through which vis passes
+	unsigned long portalcheck;	///< number of portal checks
+	unsigned long targettested;	///< number of times target portal tested
+	unsigned long targettrimmed;///< number of times target portal trimmed
+	unsigned long targetclipped;///< number of times target portal clipped away
+	unsigned long sourcetested;	///< number of times source portal tested
+	unsigned long sourcetrimmed;///< number of times source portal trimmed
+	unsigned long sourceclipped;///< number of times source portal clipped away
+	unsigned long chains;		///< number of visits to clusters
+	unsigned long mighttest;	///< amount mightsee is used for masked tests
+	unsigned long vistest;		///< amount visbits is used for masked tests
+	unsigned long mightseeupdate;///< amount of updates to waiting portals
+	unsigned    sep_alloc;		///< how many separators were allocated
+	unsigned    sep_free;		///< how many separators were freed
+	unsigned    sep_highwater;	///< most separators in flight
+	unsigned    sep_maxbulk;	///< most separators freed at once
+	size_t      winding_mark;	///< most memory allocated to windings
+	unsigned    stack_alloc;	///< how many stack blocks were allocated
+	unsigned    stack_free;		///< how many stack blocks were freed
 } visstat_t;
 
 typedef struct threaddata_s {
@@ -155,17 +171,32 @@ typedef struct threaddata_s {
 	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
+	memsuper_t *memsuper;		///< per-thread memory pool
+	memhunk_t  *hunk;
+	dstring_t  *str;
 	set_pool_t  set_pool;
+	int         id;
+	int         winding_id;
 } threaddata_t;
 
 typedef struct {
 	set_t      *portalsee;
-	int         clustersee;
+	unsigned long selfcull;		///< number of protals culled by self
+	unsigned long clustercull;	///< number of portals culled by cluster sphere
+	unsigned long clustertest;	///< number of portals tested by cluster
+	unsigned long spheretest;	///< number of portal sphere tests done
+	unsigned long spherecull;	///< number of portals culled by sphere tests
+	unsigned long spherepass;	///< number of portals passed by sphere tests
+	unsigned long windingtest;	///< number of portal pairs tested by winding
+	unsigned long windingcull;	///< number of portals culled by winding tests
+	unsigned long windingpass;	///< number of portals passed by winding tests
+	unsigned long clustersee;
+	int         id;
 } basethread_t;
 
-extern int numportals;
-extern int portalclusters;
-extern int numrealleafs;
+extern unsigned numportals;
+extern unsigned portalclusters;
+extern unsigned numrealleafs;
 extern int bitbytes;
 extern int bitbytes_l;
 extern int bitlongs;
@@ -173,17 +204,31 @@ extern struct bsp_s *bsp;
 
 extern portal_t *portals;
 extern cluster_t *clusters;
-extern int *leafcluster;
+extern uint32_t *leafcluster;
 extern byte *uncompressed;
 
-void FreeWinding (winding_t *w);
-winding_t *NewWinding (int points);
-winding_t *ClipWinding (winding_t *in, const plane_t *split, qboolean keepon);
-winding_t *CopyWinding (const winding_t *w);
+winding_t *NewWinding (threaddata_t *thread, int points);
+winding_t *ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
+						bool keepon);
+winding_t *CopyWinding (threaddata_t *thread, const winding_t *w);
 
 void ClusterFlow (int clusternum);
 void PortalBase (basethread_t *thread, portal_t *portal);
 void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
+
+struct sizebuf_s;
+int CompressRow (struct sizebuf_s *dest, const byte *vis, unsigned num_leafs,
+				 int utf8);
+
+void CalcFatPVS (void);
+
+void RunThreads (const char *heading, void *(*thread_func) (void *),
+				 int (*calc_progress)(void));
+
+extern const char spinner[];
+extern const char progress[];
+extern int *working;
+extern int progress_tick;
 
 #endif// __vis_h

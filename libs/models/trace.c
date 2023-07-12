@@ -64,9 +64,9 @@ typedef struct {
 } clipbox_t;
 
 typedef struct {
-	qboolean    seen_empty;
-	qboolean    seen_solid;
-	qboolean    moved;
+	bool        seen_empty;
+	bool        seen_solid;
+	bool        moved;
 	plane_t    *split_plane;
 	vec3_t      dist;
 	const vec_t *origin;
@@ -120,7 +120,7 @@ init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
 	//FIXME rotated box
 	for (i = 0; i < 3; i++)
 		u[i] = (vel[i] >= 0 ? 1 : -1);
-	VectorCompMult (u, trace->extents, p);
+	VectorCompMult (p, u, trace->extents);
 	for (i = 0; i < 3; i++) {
 		box->portals[i].planenum = i;
 		box->portals[i].next[0] = 0;
@@ -153,17 +153,17 @@ init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
 				box->edges[i].points[j][a]
 					= s[k] * u[i] * box->edges[i].points[j - 1][b];
 			}
-			VectorCompMult (box->points[i].points[j - 1], trace->extents,
-							box->points[i].points[j - 1]);
-			VectorCompMult (box->edges[i].points[j - 1], trace->extents,
-							box->edges[i].points[j - 1]);
+			VectorCompMult (box->points[i].points[j - 1],
+							box->points[i].points[j - 1], trace->extents);
+			VectorCompMult (box->edges[i].points[j - 1],
+							box->edges[i].points[j - 1], trace->extents);
 			VectorScale (box->edges[i].points[j - 1], 2,
 						 box->edges[i].points[j - 1]);
 		}
-		VectorCompMult (box->points[i].points[3], trace->extents,
-						box->points[i].points[3]);
-		VectorCompMult (box->edges[i].points[3], trace->extents,
-						box->edges[i].points[3]);
+		VectorCompMult (box->points[i].points[3],
+						box->points[i].points[3], trace->extents);
+		VectorCompMult (box->edges[i].points[3],
+						box->edges[i].points[3], trace->extents);
 		VectorScale (box->edges[i].points[3], 2,
 					 box->edges[i].points[3]);
 	}
@@ -197,7 +197,7 @@ calc_offset (const trace_t *trace, const plane_t *plane)
 	return d;
 }
 
-static qboolean
+static bool
 point_inside_portal (const clipport_t *portal, const plane_t *plane,
 					  const vec3_t p)
 {
@@ -218,7 +218,7 @@ point_inside_portal (const clipport_t *portal, const plane_t *plane,
 	return true;
 }
 
-static qboolean
+static bool
 edges_intersect (const vec3_t p1, const vec3_t p2,
 				 const vec3_t r1, const vec3_t r2)
 {
@@ -242,7 +242,7 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 	return true;
 }
 
-static qboolean
+static bool
 trace_hits_portal (const hull_t *hull, const trace_t *trace,
 				   clipport_t *portal, const vec3_t start, const vec3_t vel)
 {
@@ -274,7 +274,7 @@ trace_hits_portal (const hull_t *hull, const trace_t *trace,
 	return true;
 }
 
-static qboolean
+static bool
 trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 				   plane_t *plane, const vec3_t vel, const vec3_t org)
 {
@@ -529,7 +529,7 @@ finish_impact:
 	}
 }
 
-static qboolean
+static bool
 portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
 				  const vec3_t origin)
 {
@@ -566,8 +566,8 @@ portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
 		vec3_t      p1, p2, imp, dist;
 		vec_t       t1, t2, frac;
 
-		VectorCompMult (trace->extents, verts[i][0], p1);
-		VectorCompMult (trace->extents, verts[i][1], p2);
+		VectorCompMult (p1, trace->extents, verts[i][0]);
+		VectorCompMult (p2, trace->extents, verts[i][1]);
 		t1 = PlaneDiff (p1, plane) + o_n;
 		t2 = PlaneDiff (p2, plane) + o_n;
 		// if both ends of the box edge are on the same side (or touching) the
@@ -670,7 +670,7 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 	int         side;
 	vec_t       frac = 1;
 	vec_t       t1, t2, offset, f;
-	qboolean    clipped = false;
+	bool        clipped = false;
 	clipleaf_t *l;
 	trace_state_t lstate = *state;
 
@@ -786,7 +786,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	int         side;
 	tracestack_t *tstack;
 	tracestack_t *tracestack;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t    *plane;
 	clipleaf_t *leaf;
 	trace_state_t trace_state;
@@ -927,7 +927,7 @@ MOD_HullContents (hull_t *hull, int num, const vec3_t origin, trace_t *trace)
 	// follow origin down the bsp tree to find the "central" leaf
 	while (num >= 0) {
 		vec_t       d;
-		mclipnode_t *node;
+		dclipnode_t *node;
 		plane_t    *plane;
 
 		node = hull->clipnodes + num;

@@ -56,10 +56,108 @@
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "connection.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
+
+#define QTV_LEAFS 32
+typedef struct qtv_leaf_bucket_s {
+	struct qtv_leaf_bucket_s *next;
+	qtv_leaf_t qtv_leafs[QTV_LEAFS];
+} qtv_leaf_bucket_t;
+
+static qtv_leaf_bucket_t *qtv_leaf_buckets;
+static qtv_leaf_bucket_t **qtv_leaf_bucket_tail = &qtv_leaf_buckets;
+static qtv_leaf_t *free_qtv_leaf_list;
+
+static qtv_leaf_t *
+alloc_qtv_leaf (void)
+{
+	qtv_leaf_bucket_t *bucket;
+	qtv_leaf_t *leaf;
+	int         i;
+
+	if ((leaf = free_qtv_leaf_list)) {
+		free_qtv_leaf_list = leaf->next;
+		leaf->next = 0;
+		return leaf;
+	}
+
+	bucket = malloc (sizeof (qtv_leaf_bucket_t));
+	bucket->next = 0;
+	*qtv_leaf_bucket_tail = bucket;
+	qtv_leaf_bucket_tail = &bucket->next;
+
+	for (leaf = bucket->qtv_leafs, i = 0; i < QTV_LEAFS - 1; i++, leaf++)
+		leaf->next = leaf + 1;
+	leaf->next = 0;
+	free_qtv_leaf_list = bucket->qtv_leafs;
+
+	return alloc_qtv_leaf ();
+}
+
+static void
+free_qtv_leafs (qtv_leaf_t **leafs)
+{
+	qtv_leaf_t **l;
+
+	for (l = leafs; *l; l = &(*l)->next)
+		;
+	*l = free_qtv_leaf_list;
+	free_qtv_leaf_list = *leafs;
+	*leafs = 0;
+}
+
+static void
+sv_unlink_entity (server_t *sv, qtv_entity_t *ent)
+{
+	free_qtv_leafs (&ent->leafs);
+}
+
+static void
+sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, int node_id)
+{
+	// add an efrag if the node is a leaf
+	if (node_id < 0) {
+		mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+		if (leaf->contents == CONTENTS_SOLID) {
+			return;
+		}
+		qtv_leaf_t *ent_leaf = alloc_qtv_leaf ();
+		ent_leaf->num = ~node_id - 1;
+		ent_leaf->next = ent->leafs;
+		ent->leafs = ent_leaf;
+		return;
+	}
+
+	vec3_t      emins, emaxs;
+	VectorAdd (ent->e.origin, ent->model->mins, emins);
+	VectorAdd (ent->e.origin, ent->model->maxs, emaxs);
+
+	mnode_t    *node = sv->worldmodel->brush.nodes + node_id;
+	plane_t    *splitplane = (plane_t *) &node->plane;
+	int         sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
+	if (sides & 1) {
+		sv_find_touched_leafs (sv, ent, node->children[0]);
+	}
+	if (sides & 2) {
+		sv_find_touched_leafs (sv, ent, node->children[1]);
+	}
+}
+
+static void
+sv_link_entity (server_t *sv, qtv_entity_t *ent)
+{
+	sv_unlink_entity (sv, ent);
+	if (ent->model_index != ent->e.modelindex) {
+		ent->model_index = ent->e.modelindex;
+		ent->model = Mod_ForName (sv->modellist[ent->model_index - 1], false);
+	}
+	if (ent->model) {
+		sv_find_touched_leafs (sv, ent, 0);
+	}
+}
 
 static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
@@ -118,7 +216,7 @@ sv_serverdata (server_t *sv, qmsg_t *msg)
 
 	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 	MSG_WriteString (&sv->netchan.message,
-					 va ("soundlist %i %i", sv->spawncount, 0));
+					 va (0, "soundlist %i %i", sv->spawncount, 0));
 	sv->next_run = realtime;
 }
 
@@ -147,11 +245,11 @@ sv_soundlist (server_t *sv, qmsg_t *msg)
 	if (n) {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va ("soundlist %d %d", sv->spawncount, n));
+						 va (0, "soundlist %d %d", sv->spawncount, n));
 	} else {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va ("modellist %d %d", sv->spawncount, 0));
+						 va (0, "modellist %d %d", sv->spawncount, 0));
 	}
 	sv->next_run = realtime;
 }
@@ -177,17 +275,17 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 		}
 		sv->modellist[n] = strdup (str);
 		if (!strcmp (sv->modellist[n], "progs/player.mdl"))
-			sv->playermodel = n;
+			sv->playermodel = n + 1;
 	}
 	n = MSG_ReadByte (msg);
 	if (n) {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va ("modellist %d %d", sv->spawncount, n));
+						 va (0, "modellist %d %d", sv->spawncount, n));
 	} else {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va ("prespawn %d 0 0", sv->spawncount));
+						 va (0, "prespawn %d 0 0", sv->spawncount));
 		sv->signon = 1;
 	}
 	sv->next_run = realtime;
@@ -213,7 +311,7 @@ sv_skins_f (server_t *sv)
 	// to get everything ready at the last miniute before we start getting
 	// actual in-game update messages
 	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
-	MSG_WriteString (&sv->netchan.message, va ("begin %d", sv->spawncount));
+	MSG_WriteString (&sv->netchan.message, va (0, "begin %d", sv->spawncount));
 	sv->next_run = realtime;
 	sv->connected = 2;
 	sv->delta = -1;
@@ -429,7 +527,8 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				}
 				newp->entities[newindex] = oldp->entities[oldindex];
 				num = newp->entities[newindex].number;
-				sv->entities[num] = newp->entities[newindex];
+				sv->entities[num].e = newp->entities[newindex];
+				sv_link_entity (sv, &sv->entities[num]);
 				sv->ent_valid[num] = 1;
 				newindex++;
 				oldindex++;
@@ -456,7 +555,8 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			num = newp->entities[newindex].number;
-			sv->entities[num] = newp->entities[newindex];
+			sv->entities[num].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[num]);
 			sv->ent_valid[num] = 1;
 			newindex++;
 			oldindex++;
@@ -483,7 +583,8 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = sv->baselines[newnum];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
-			sv->entities[newnum] = newp->entities[newindex];
+			sv->entities[newnum].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[newnum]);
 			newindex++;
 			continue;
 		}
@@ -499,7 +600,8 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
-			sv->entities[newnum] = newp->entities[newindex];
+			sv->entities[newnum].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[newnum]);
 			sv->ent_valid[newnum] = 1;
 			newindex++;
 			oldindex++;
@@ -514,9 +616,9 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 	int          i;
 	int          flags;
 
-	flags = to->flags = MSG_ReadShort (msg);
-	MSG_ReadCoordV (msg, to->origin);
-	to->frame = (to->frame & 0xff00) | MSG_ReadByte (msg);
+	flags = to->es.flags = MSG_ReadShort (msg);
+	MSG_ReadCoordV (msg, (vec_t*)&to->es.origin);//FIXME
+	to->es.frame = (to->es.frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
 		to->msec = MSG_ReadByte (msg);
 //	qtv_printf ("%02x\n", msg->message->data[msg->readcount]);
@@ -524,36 +626,36 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 		MSG_ReadDeltaUsercmd (msg, &from->cmd, &to->cmd);
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			to->velocity[i] = (short) MSG_ReadShort (msg);
+			to->es.velocity[i] = (short) MSG_ReadShort (msg);
 	}
 	if (flags & PF_MODEL)
-		to->modelindex = MSG_ReadByte (msg);
+		to->es.modelindex = MSG_ReadByte (msg);
 	if (flags & PF_SKINNUM)
-		to->skinnum = MSG_ReadByte (msg);
+		to->es.skinnum = MSG_ReadByte (msg);
 	if (flags & PF_EFFECTS)
-		to->effects = (to->effects & 0xff00) | MSG_ReadByte (msg);;
+		to->es.effects = (to->es.effects & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_WEAPONFRAME)
-		to->weaponframe = MSG_ReadByte (msg);
+		to->es.weaponframe = MSG_ReadByte (msg);
 	if (flags & PF_QF) {
 		int         bits;
 
 		bits = MSG_ReadByte (msg);
 		if (bits & PF_ALPHA)
-			to->alpha = MSG_ReadByte (msg);
+			to->es.alpha = MSG_ReadByte (msg);
 		if (bits & PF_SCALE)
-			to->scale = MSG_ReadByte (msg);
+			to->es.scale = MSG_ReadByte (msg);
 		if (bits & PF_EFFECTS2)
-			to->effects = (to->effects & 0x00ff)
-						| (MSG_ReadByte (msg) << 8);
+			to->es.effects = (to->es.effects & 0x00ff)
+						   | (MSG_ReadByte (msg) << 8);
 		if (bits & PF_GLOWSIZE)
-			to->glow_size = MSG_ReadByte (msg);
+			to->es.glow_size = MSG_ReadByte (msg);
 		if (bits & PF_GLOWCOLOR)
-			to->glow_color = MSG_ReadByte (msg);
+			to->es.glow_color = MSG_ReadByte (msg);
 		if (bits & PF_COLORMOD)
-			to->colormod = MSG_ReadByte (msg);
+			to->es.colormod = MSG_ReadByte (msg);
 		if (bits & PF_FRAME2)
-			to->frame = (to->frame & 0xff)
-					  | (MSG_ReadByte (msg) << 8);
+			to->es.frame = (to->es.frame & 0xff)
+						 | (MSG_ReadByte (msg) << 8);
 	}
 }
 
@@ -567,12 +669,12 @@ sv_playerinfo (server_t *sv, qmsg_t *msg)
 	int          fromind, toind;
 	static plent_state_t null_player_state;
 
-	if (!null_player_state.alpha) {
-		null_player_state.alpha = 255;
-		null_player_state.scale = 16;
-		null_player_state.glow_size = 0;
-		null_player_state.glow_color = 254;
-		null_player_state.colormod = 255;
+	if (!null_player_state.es.alpha) {
+		null_player_state.es.alpha = 255;
+		null_player_state.es.scale = 16;
+		null_player_state.es.glow_size = 0;
+		null_player_state.es.glow_color = 254;
+		null_player_state.es.colormod = 255;
 	}
 	fromind = MSG_ReadByte (msg);
 	toind = sv->netchan.incoming_sequence & UPDATE_MASK;
@@ -752,7 +854,8 @@ parse_baseline (qmsg_t *msg, entity_state_t *ent)
 	ent->frame = MSG_ReadByte (msg);
 	ent->colormap = MSG_ReadByte (msg);
 	ent->skinnum = MSG_ReadByte (msg);
-	MSG_ReadCoordAngleV (msg, ent->origin, ent->angles);
+	MSG_ReadCoordAngleV (msg, (vec_t*)&ent->origin, ent->angles); //FIXME
+	ent->origin[3] = 1;
 	ent->colormod = 255;
 	ent->alpha = 255;
 	ent->scale = 16;
@@ -1055,6 +1158,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_modellist:
 				sv_modellist (sv, msg);
+				sv->worldmodel = Mod_ForName (sv->modellist[0], false);
 				send = 0;
 				break;
 

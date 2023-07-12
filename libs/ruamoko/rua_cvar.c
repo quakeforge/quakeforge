@@ -41,6 +41,8 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
+#include "QF/simd/types.h"
+
 #include "rua_internal.h"
 
 typedef struct bi_alias_s {
@@ -62,9 +64,9 @@ bi_alias_free (void *_a, void *unused)
 }
 
 static void
-bi_cvar_clear (progs_t *pr, void *data)
+bi_cvar_clear (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = (cvar_resources_t *) data;
+	cvar_resources_t *res = (cvar_resources_t *) _res;
 	bi_alias_t *alias;
 
 	while ((alias = res->aliases)) {
@@ -75,9 +77,15 @@ bi_cvar_clear (progs_t *pr, void *data)
 }
 
 static void
-bi_Cvar_MakeAlias (progs_t *pr)
+bi_cvar_destroy (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	free (_res);
+}
+
+static void
+bi_Cvar_MakeAlias (progs_t *pr, void *_res)
+{
+	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	const char *cvar_name = P_GSTRING (pr, 1);
 	cvar_t     *cvar = Cvar_FindVar (cvar_name);
@@ -99,9 +107,9 @@ bi_Cvar_MakeAlias (progs_t *pr)
 }
 
 static void
-bi_Cvar_RemoveAlias (progs_t *pr)
+bi_Cvar_RemoveAlias (progs_t *pr, void *_res)
 {
-	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	bi_alias_t **a;
 
@@ -118,7 +126,7 @@ bi_Cvar_RemoveAlias (progs_t *pr)
 }
 
 static void
-bi_Cvar_SetString (progs_t *pr)
+bi_Cvar_SetString (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	const char *val = P_GSTRING (pr, 1);
@@ -127,11 +135,11 @@ bi_Cvar_SetString (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, val);
+		Cvar_SetVar (var, val);
 }
 
 static void
-bi_Cvar_SetInteger (progs_t *pr)
+bi_Cvar_SetInteger (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	int         val = P_INT (pr, 1);
@@ -140,11 +148,11 @@ bi_Cvar_SetInteger (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va ("%d", val));
+		Cvar_SetVar (var, va (0, "%d", val));
 }
 
 static void
-bi_Cvar_SetFloat (progs_t *pr)
+bi_Cvar_SetFloat (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	float       val = P_FLOAT (pr, 1);
@@ -153,11 +161,11 @@ bi_Cvar_SetFloat (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va ("%g", val));
+		Cvar_SetVar (var, va (0, "%g", val));
 }
 
 static void
-bi_Cvar_SetVector (progs_t *pr)
+bi_Cvar_SetVector (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	float      *val = P_VECTOR (pr, 1);
@@ -166,11 +174,11 @@ bi_Cvar_SetVector (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_Set (var, va ("%g %g %g", val[0], val[1], val[2]));
+		Cvar_SetVar (var, va (0, "%g %g %g", val[0], val[1], val[2]));
 }
 
 static void
-bi_Cvar_GetString (progs_t *pr)
+bi_Cvar_GetString (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -178,49 +186,56 @@ bi_Cvar_GetString (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		RETURN_STRING (pr, var->string);
+		RETURN_STRING (pr, Cvar_VarString (var));
 	else
 		RETURN_STRING (pr, "");
 }
 
 static void
-bi_Cvar_GetInteger (progs_t *pr)
+bi_Cvar_GetInteger (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	R_INT (pr) = 0;
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	R_INT (pr) = var ? var->int_val : 0;
+	if (!var || var->value.type != &cexpr_int)
+		return;
+
+	R_INT (pr) = *(int *) var->value.value;
 }
 
 static void
-bi_Cvar_GetFloat (progs_t *pr)
+bi_Cvar_GetFloat (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	R_FLOAT (pr) = 0;
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	R_FLOAT (pr) = var ? var->value : 0;
+	if (!var || var->value.type != &cexpr_float)
+		return;
+	R_INT (pr) = *(float *) var->value.value;
 }
 
 static void
-bi_Cvar_GetVector (progs_t *pr)
+bi_Cvar_GetVector (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var)
-		RETURN_VECTOR (pr, var->vec);
+	if (var && var->value.type == &cexpr_vector)
+		RETURN_VECTOR (pr, *(vec4f_t *) var->value.value);
 	else
 		VectorZero (R_VECTOR (pr));
 }
 
 static void
-bi_Cvar_Toggle (progs_t *pr)
+bi_Cvar_Toggle (progs_t *pr, void *_res)
 {
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var;
@@ -228,22 +243,26 @@ bi_Cvar_Toggle (progs_t *pr)
 	var = Cvar_FindVar (varname);
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var)
-		Cvar_Set (var, var->int_val ? "0" : "1");
+	if (var && var->value.type == &cexpr_int) {
+		*(int *) var->value.value = !*(int *) var->value.value;
+	}
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"Cvar_MakeAlias",		bi_Cvar_MakeAlias,		-1},
-	{"Cvar_RemoveAlias",	bi_Cvar_RemoveAlias,	-1},
-	{"Cvar_SetFloat",		bi_Cvar_SetFloat,		-1},
-	{"Cvar_SetInteger",		bi_Cvar_SetInteger,		-1},
-	{"Cvar_SetVector",		bi_Cvar_SetVector,		-1},
-	{"Cvar_SetString",		bi_Cvar_SetString,		-1},
-	{"Cvar_GetFloat",		bi_Cvar_GetFloat,		-1},
-	{"Cvar_GetInteger",		bi_Cvar_GetInteger,		-1},
-	{"Cvar_GetVector",		bi_Cvar_GetVector,		-1},
-	{"Cvar_GetString",		bi_Cvar_GetString,		-1},
-	{"Cvar_Toggle",			bi_Cvar_Toggle,			-1},
+	bi(Cvar_MakeAlias,   2, p(string), p(string)),
+	bi(Cvar_RemoveAlias, 1, p(string)),
+	bi(Cvar_SetFloat,    2, p(string), p(float)),
+	bi(Cvar_SetInteger,  2, p(string), p(int)),
+	bi(Cvar_SetVector,   2, p(string), p(vector)),
+	bi(Cvar_SetString,   2, p(string), p(string)),
+	bi(Cvar_GetFloat,    1, p(string)),
+	bi(Cvar_GetInteger,  1, p(string)),
+	bi(Cvar_GetVector,   1, p(string)),
+	bi(Cvar_GetString,   1, p(string)),
+	bi(Cvar_Toggle,      1, p(string)),
 	{0}
 };
 
@@ -253,7 +272,6 @@ RUA_Cvar_Init (progs_t *pr, int secure)
 	cvar_resources_t *res = calloc (1, sizeof (cvar_resources_t));
 
 	res->aliases = 0;
-	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear);
-
-	PR_RegisterBuiltins (pr, builtins);
+	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear, bi_cvar_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

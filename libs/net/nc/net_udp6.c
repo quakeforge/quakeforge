@@ -114,7 +114,15 @@
 # endif
 #endif
 
-static cvar_t *net_family;
+static char *net_family;
+static cvar_t net_family_cvar = {
+	.name = "net_family",
+	.description =
+		"Set the address family to ipv4, ipv6 or unspecified",
+	.default_value = "unspecified",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &net_family },
+};
 
 netadr_t    net_from;
 netadr_t    net_local_adr;
@@ -166,7 +174,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 
 	switch (a->family) {
 		case AF_INET: {
-			Sys_MaskPrintf (SYS_NET, "err, converting v4 to v6...\n");
+			Sys_MaskPrintf (SYS_net, "err, converting v4 to v6...\n");
 			s->ss.ss_family = AF_INET6;
 			s->s6.sin6_addr.s6_addr[10] = s->s6.sin6_addr.s6_addr[11] = 0xff;
 			memcpy (&s->s6.sin6_addr.s6_addr[12], &a->ip, sizeof (s->s4.sin_addr));
@@ -186,7 +194,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 			break;
 		}
 		default:
-			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family %d", __FUNCTION__, a->family);
+			Sys_MaskPrintf (SYS_net, "%s: Unknown address family %d", __FUNCTION__, a->family);
 			break;
 	}
 }
@@ -207,13 +215,13 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 			break;
 		}
 		default:
-			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
+			Sys_MaskPrintf (SYS_net, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
 			break;
 	}
 }
 
 /*
-static qboolean
+static bool
 NET_AdrIsLoopback (netadr_t a)
 {
 	if (IN6_IS_ADDR_LOOPBACK ((struct in6_addr *) &a.ip))
@@ -226,7 +234,7 @@ NET_AdrIsLoopback (netadr_t a)
 }
 */
 
-qboolean
+bool
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0)
@@ -234,7 +242,7 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 	return false;
 }
 
-qboolean
+bool
 NET_CompareAdr (netadr_t a, netadr_t b)
 {
 	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0 && a.port == b.port)
@@ -313,7 +321,7 @@ NET_BaseAdrToString (netadr_t a)
 	192.246.40.70
 	192.246.40.70:28000
 */
-qboolean
+bool
 NET_StringToAdr (const char *s, netadr_t *a)
 {
 	static dstring_t *copy;
@@ -330,9 +338,9 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_socktype = SOCK_DGRAM;
-	if (strchr (net_family->string, '6')) {
+	if (strchr (net_family, '6')) {
 		hints.ai_family = AF_INET6;
-	} else if (strchr (net_family->string, '4')) {
+	} else if (strchr (net_family, '4')) {
 		hints.ai_family = AF_INET;
 	} else {
 		hints.ai_family = AF_UNSPEC;
@@ -387,12 +395,12 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	freeaddrinfo (resultp);
 
 	SockadrToNetadr (&addr, a);
-	Sys_MaskPrintf (SYS_NET, "Raw address: %s\n", NET_BaseAdrToString (*a));
+	Sys_MaskPrintf (SYS_net, "Raw address: %s\n", NET_BaseAdrToString (*a));
 
 	return true;
 }
 
-qboolean
+bool
 NET_GetPacket (void)
 {
 	int          ret;
@@ -492,9 +500,9 @@ UDP_OpenSocket (int port)
 	address.sin6_family = AF_INET6;
 
 	memset (&hints, 0, sizeof (hints));
-	if (strchr (net_family->string, '6')) {
+	if (strchr (net_family, '6')) {
 		hints.ai_family = AF_INET6;
-	} else if (strchr (net_family->string, '4')) {
+	} else if (strchr (net_family, '4')) {
 		hints.ai_family = AF_INET;
 	} else {
 		hints.ai_family = AF_UNSPEC;
@@ -509,7 +517,7 @@ UDP_OpenSocket (int port)
 	} else {
 		Host = "::0";
 	}
-	Sys_MaskPrintf (SYS_NET, "Binding to IP address [%s]\n", Host);
+	Sys_MaskPrintf (SYS_net, "Binding to IP address [%s]\n", Host);
 
 	if (port == PORT_ANY)
 		Service = NULL;
@@ -581,9 +589,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
-	net_family = Cvar_Get ("net_family", "unspecified", CVAR_ROM, 0,
-						   "Set the address family to ipv4, ipv6 or"
-						   " unspecified");
+	Cvar_Register (&net_family_cvar, 0, 0);
 
 	// open the single socket to be used for all communications
 	net_socket = UDP_OpenSocket (port);
@@ -600,8 +606,8 @@ NET_Init (int port)
 	Sys_Printf ("UDP (IPv6) Initialized\n");
 }
 
-void
-NET_Shutdown (void)
+static void
+NET_shutdown (void)
 {
 #ifdef _WIN32
 	closesocket (net_socket);

@@ -1,0 +1,13 @@
+image_deps=libs/util/libQFutil.la
+
+lib_LTLIBRARIES += libs/image/libQFimage.la
+
+libs_image_libQFimage_la_LDFLAGS=		$(lib_ldflags)
+libs_image_libQFimage_la_LIBADD=		$(image_deps) $(PNG_LIBS)
+libs_image_libQFimage_la_DEPENDENCIES=	$(image_deps)
+libs_image_libQFimage_la_SOURCES= \
+	libs/image/convert.c \
+	libs/image/image.c \
+	libs/image/pcx.c \
+	libs/image/png.c \
+	libs/image/tga.c

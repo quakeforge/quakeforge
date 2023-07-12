@@ -39,14 +39,13 @@ extern QF_glActiveTexture		qglActiveTexture;
 extern QF_glMultiTexCoord2f		qglMultiTexCoord2f;
 extern QF_glMultiTexCoord2fv	qglMultiTexCoord2fv;
 extern int						gl_mtex_active_tmus;
-extern qboolean					gl_mtex_capable;
-extern qboolean					gl_mtex_fullbright;
+extern bool						gl_mtex_capable;
+extern bool						gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
-extern qboolean					gl_combine_capable;
+extern bool						gl_combine_capable;
 extern float					gl_rgb_scale;
-extern int						gl_texture_number;
 
-extern qboolean					gl_feature_mach64;
+extern bool						gl_feature_mach64;
 extern float					gldepthmin, gldepthmax;
 extern int						gl_use_bgra;
 extern int						gl_tess;

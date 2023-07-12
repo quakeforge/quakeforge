@@ -58,9 +58,9 @@ typedef struct {
 	int         oldbuttons;
 	int         oldonground;
 	float       waterjumptime;
-	qboolean    dead;
-	qboolean    flying;
-	qboolean    add_grav;
+	bool        dead;
+	bool        flying;
+	bool        add_grav;
 	int         spectator;
 
 	// world state
@@ -88,7 +88,7 @@ typedef struct {
 	float	entgravity;
 } movevars_t;
 
-extern	struct cvar_s	*no_pogo_stick;
+extern int no_pogo_stick;
 extern	movevars_t		movevars;
 extern	playermove_t	pmove;
 extern	int		onground;
@@ -106,10 +106,10 @@ void PlayerMove (void);
 void Pmove_Init (void);
 void Pmove_Init_Cvars (void);
 
-int PM_HullPointContents (hull_t *hull, int num, const vec3_t p);
+int PM_HullPointContents (hull_t *hull, int num, const vec3_t p) __attribute__((pure));
 
-int PM_PointContents (const vec3_t point);
-qboolean PM_TestPlayerPosition (const vec3_t point);
+int PM_PointContents (const vec3_t point) __attribute__((pure));
+bool PM_TestPlayerPosition (const vec3_t point);
 trace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
 
 #endif // _PMOVE_H

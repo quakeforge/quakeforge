@@ -33,7 +33,7 @@
 /** \defgroup qfcc_flow Flow graph analysis
 	\ingroup qfcc
 */
-//@{
+///@{
 
 struct function_s;
 struct sblock_s;
@@ -44,9 +44,18 @@ typedef struct flowvar_s {
 	struct flowvar_s *next;		///< for ALLOC
 	struct set_s *use;			///< set of statements that use this var
 	struct set_s *define;		///< set of statements that define this var
+	struct set_s *udchains;		///< set of ud-chains for this var
+	struct set_s *duchains;		///< set of du-chains for this var
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
+	int         flowaddr;		///< psuedo address for local and temp vars
 } flowvar_t;
+
+typedef struct udchain_s {
+	int         var;
+	int         usest;
+	int         defst;
+} udchain_t;
 
 typedef struct flowloop_s {
 	struct flowloop_s *next;
@@ -83,12 +92,6 @@ typedef struct flownode_s {
 		struct set_s *in;
 		struct set_s *out;
 	}           live_vars;
-	struct {
-		struct set_s *use;
-		struct set_s *def;
-		struct set_s *in;
-		struct set_s *out;
-	}           init_vars;
 	struct sblock_s *sblock;	///< original statement block
 	struct dag_s *dag;			///< dag for this node
 } flownode_t;
@@ -101,15 +104,16 @@ typedef struct flowgraph_s {
 	flowedge_t *edges;			///< array of all edges in the graph
 	int         num_edges;
 	struct set_s *dfst;			///< edges in the depth-first search tree
-	int        *dfo;			///< depth-first order of nodes
+	int        *depth_first;	///< depth-first order of nodes
 	flowloop_t *loops;			///< linked list of natural loops
 } flowgraph_t;
 
 flowvar_t *flow_get_var (struct operand_s *op);
 
+#define FLOW_OPERANDS 5
 void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 							 struct set_s *def, struct set_s *kill,
-							 struct operand_s *operands[4]);
+							 struct operand_s *operands[FLOW_OPERANDS]);
 
 void flow_data_flow (struct function_s *func);
 
@@ -119,6 +123,6 @@ void dump_dot_flow_live (void *g, const char *filename);
 void dump_dot_flow_reaching (void *g, const char *filename);
 void dump_dot_flow_statements (void *g, const char *filename);
 
-//@}
+///@}
 
 #endif//flow_h

@@ -48,6 +48,7 @@
 	There were no differences.
 */
 
+#define IMPLEMENT_MTWIST_Funcs
 #include "QF/mersenne.h"
 
 #define KNUTH_MULT		1812433253ul	// 0x6c078965

@@ -1,12 +1,9 @@
 /*
-	#FILENAME#
+	gib.h
 
-	#DESCRIPTION#
+	GIB scripting language
 
-	Copyright (C) 2003 #AUTHOR#
-
-	Author: #AUTHOR#
-	Date: #DATE#
+	Copyright (C) 2003 Brian Koropoff
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -28,15 +25,10 @@
 
 */
 
-#ifndef __gib_h
-#define __gib_h
+#ifndef __QF_gib_h
+#define __QF_gib_h
 
-// Dependencies
-
-#include "QF/dstring.h"
-#include "QF/cbuf.h"
-#include "QF/hash.h"
-#include "QF/llist.h"
+#include "QF/qtypes.h"
 
 // Object interface
 
@@ -56,11 +48,11 @@ typedef struct gib_slot_s {
 
 typedef struct gib_object_s {
 	struct gib_class_s *class;
-	hashtab_t *methods;
+	struct hashtab_s *methods;
 	void **data;
 	unsigned long int handle, refs;
-	hashtab_t *signals, *vars;
-	llist_t *slots;
+	struct hashtab_s *signals, *vars;
+	struct llist_s *slots;
 	const char *handstr;
 } gib_object_t;
 
@@ -87,13 +79,13 @@ typedef void (*gib_obj_destructor) (void *data);
 
 typedef struct gib_class_s {
 	const char *name;
-	hashtab_t *methods, *class_methods;
+	struct hashtab_s *methods, *class_methods;
 	gib_obj_constructor construct, class_construct;
 	gib_obj_destructor destruct;
 	unsigned int depth;
 	struct gib_object_s *classobj;
 	struct gib_class_s *parent;
-	llist_t *children;
+	struct llist_s *children;
 } gib_class_t;
 
 typedef struct gib_methodtab_s {
@@ -116,7 +108,7 @@ typedef struct gib_classdesc_s {
 			(obj), (mesg)))
 
 void GIB_Class_Create (gib_classdesc_t *desc);
-gib_object_t *GIB_Object_Create (const char *classname, qboolean classobj);
+gib_object_t *GIB_Object_Create (const char *classname, bool classobj);
 void GIB_Object_Destroy (gib_object_t *obj);
 void GIB_Object_Incref (gib_object_t *obj);
 void GIB_Object_Decref (gib_object_t *obj);
@@ -144,11 +136,13 @@ typedef struct gib_script_s {
 	unsigned int refs;
 } gib_script_t;
 
+struct cbuf_s;
+
 typedef struct gib_buffer_data_s {
 	struct gib_script_s *script;
 	struct gib_tree_s *program, *ip;
 	struct dstring_s *arg_composite;
-	qboolean waitret;
+	bool waitret;
 	struct gib_sstack_s {
 		struct gib_dsarray_s {
 			struct dstring_s **dstrs;
@@ -163,7 +157,7 @@ typedef struct gib_buffer_data_s {
 	} reply;
 	struct hashtab_s *locals; // Local variables
 	struct hashtab_s *globals; // Current domain
-	void (*dnotify) (cbuf_t *cbuf, void *data);
+	void (*dnotify) (struct cbuf_s *cbuf, void *data);
 	void *ddata;
 } gib_buffer_data_t;
 
@@ -181,11 +175,11 @@ extern char * const gib_null_string;
 
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
-dstring_t *GIB_Return (const char *str);
-void GIB_Error (const char *type, const char *fmt, ...);
+struct dstring_s *GIB_Return (const char *str);
+void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(PRINTF, 2, 3)));
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
-qboolean GIB_Builtin_Exists (const char *name);
+bool GIB_Builtin_Exists (const char *name);
 
 // Event interface
 
@@ -199,21 +193,21 @@ void GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...);
 
 // Interpreter interface (for creating GIB cbufs)
 
-cbuf_interpreter_t *GIB_Interpreter (void);
+struct cbuf_interpreter_s *GIB_Interpreter (void) __attribute__((const));
 
 // Thread interface
 
 void GIB_Thread_Execute (void);
-unsigned int GIB_Thread_Count (void);
+unsigned int GIB_Thread_Count (void) __attribute__((pure));
 
 // Init interface
 
-void GIB_Init (qboolean sandbox);
+void GIB_Init (bool sandbox);
 
 // Handle interface
 
 unsigned long int GIB_Handle_New (gib_object_t *data);
 void GIB_Handle_Free (unsigned long int num);
-gib_object_t *GIB_Handle_Get (unsigned long int num);
+gib_object_t *GIB_Handle_Get (unsigned long int num) __attribute__((pure));
 
-#endif
+#endif//__QF_gib_h

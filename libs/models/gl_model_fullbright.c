@@ -38,45 +38,33 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
-
-
-VISIBLE int
-Mod_CalcFullbright (byte *in, byte *out, int pixels)
-{
-	int		fb = 0;
-
-	while (pixels--) {
-		if (*in >= 256 - 32) {
-			fb = 1;
-			*out++ = *in++;
-		} else {
-			*out++ = 255;
-			in++;
-		}
-	}
-	return fb;
-}
+#include "mod_internal.h"
 
 int
-Mod_Fullbright (byte *skin, int width, int height, char *name)
+Mod_Fullbright (byte *skin, int width, int height, const char *name)
 {
-	byte   *ptexels;
+	byte   *texels;
 	int		pixels;
 	int		texnum = 0;
 
 	pixels = width * height;
 
-//	ptexels = Hunk_Alloc(s);
-	ptexels = malloc (pixels);
-	SYS_CHECKMEM (ptexels);
+	texels = malloc (pixels);
+	SYS_CHECKMEM (texels);
 
 	// Check for fullbright pixels
-	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
-		Sys_MaskPrintf (SYS_DEV, "FB Model ID: '%s'\n", name);
-		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
+	if (Mod_CalcFullbright (texels, skin, pixels)) {
+		//FIXME black should be transparent for fullbrights (or just fix
+		//fullbright rendering in gl)
+		Sys_MaskPrintf (SYS_dev, "FB Model ID: '%s'\n", name);
+		for (int i = 0; i < pixels; i++) {
+			if (!texels[i]) {
+				texels[i] = 255;
+			}
+		}
+		texnum = GL_LoadTexture (name, width, height, texels, true, true, 1);
 	}
 
-	free (ptexels);
+	free (texels);
 	return texnum;
 }

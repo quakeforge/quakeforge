@@ -43,7 +43,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "server.h"
+#include "qw/include/server.h"
 
 #ifdef NeXT
 # include <libc.h>
@@ -122,7 +122,7 @@ main (int argc, const char **argv)
 
 	SV_Init ();
 
-	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (Net_LogStop, 0);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
@@ -138,9 +138,8 @@ main (int argc, const char **argv)
 
 		SV_Frame (time);
 
-		// extrasleep is just a way to generate a fucked up connection on
-		// purpose
-		if (sys_extrasleep->int_val)
-			usleep (sys_extrasleep->int_val);
+		// extrasleep is just a way to generate a bad connection on purpose
+		if (sys_extrasleep)
+			usleep (sys_extrasleep);
 	}
 }

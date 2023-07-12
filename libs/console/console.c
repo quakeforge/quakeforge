@@ -42,6 +42,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
 
+#include "QF/ui/inputline.h"
+
 //FIXME probably shouldn't be visible
 VISIBLE int         con_linewidth;				// characters across screen
 
@@ -54,22 +56,31 @@ static U inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;
 static U void (*const display)(const char **, int) = Con_DisplayList;
 #undef U
 
-static cvar_t *con_interpreter;
+static char *con_interpreter;
+static cvar_t con_interpreter_cvar = {
+	.name = "con_interpreter",
+	.description =
+		"Interpreter for the interactive console",
+	.default_value = "id",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &con_interpreter },
+};
+static sys_printf_t saved_sys_printf;
 
 static void
-Con_Interp_f (cvar_t *var)
+Con_Interp_f (void *data, const cvar_t *cvar)
 {
 	cbuf_interpreter_t *interp;
 
 	if (!con_module)
 		return;
 
-	interp = Cmd_GetProvider(var->string);
+	interp = Cmd_GetProvider(con_interpreter);
 
 	if (interp) {
 		cbuf_t *new;
 
-		Sys_Printf ("Switching to interpreter '%s'\n", var->string);
+		Sys_Printf ("Switching to interpreter '%s'\n", con_interpreter);
 
 		new = Cbuf_New (interp);
 
@@ -80,23 +91,41 @@ Con_Interp_f (cvar_t *var)
 		}
 		con_module->data->console->cbuf = new;
 	} else {
-		Sys_Printf ("Unknown interpreter '%s'\n", var->string);
+		Sys_Printf ("Unknown interpreter '%s'\n", con_interpreter);
+	}
+}
+
+static void
+Con_shutdown (void *data)
+{
+	if (saved_sys_printf) {
+		Sys_SetStdPrintf (saved_sys_printf);
+	}
+	if (con_module) {
+		PI_UnloadPlugin (con_module);
 	}
 }
 
 VISIBLE void
-Con_Init (const char *plugin_name)
+Con_Load (const char *plugin_name)
 {
+	Sys_RegisterShutdown (Con_shutdown, 0);
+
 	con_module = PI_LoadPlugin ("console", plugin_name);
-	if (con_module) {
-		con_module->functions->general->p_Init ();
-		Sys_SetStdPrintf (con_module->functions->console->pC_Print);
-	} else {
+	if (!con_module) {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
-	con_interpreter =
-		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
-				 "Interpreter for the interactive console");
+}
+
+VISIBLE void
+Con_Init (void)
+{
+	if (con_module) {
+		__auto_type funcs = con_module->functions->console;
+		funcs->init ();
+		saved_sys_printf = Sys_SetStdPrintf (funcs->print);
+	}
+	Cvar_Register (&con_interpreter_cvar, Con_Interp_f, 0);
 }
 
 VISIBLE void
@@ -124,22 +153,13 @@ Con_ExecLine (const char *line)
 }
 
 VISIBLE void
-Con_Shutdown (void)
-{
-	if (con_module) {
-		con_module->functions->general->p_Shutdown ();
-		PI_UnloadPlugin (con_module);
-	}
-}
-
-VISIBLE void
 Con_Printf (const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
 	if (con_module)
-		con_module->functions->console->pC_Print (fmt, args);
+		con_module->functions->console->print (fmt, args);
 	else
 		vfprintf (stdout, fmt, args);
 	va_end (args);
@@ -149,16 +169,26 @@ VISIBLE void
 Con_Print (const char *fmt, va_list args)
 {
 	if (con_module)
-		con_module->functions->console->pC_Print (fmt, args);
+		con_module->functions->console->print (fmt, args);
 	else
 		vfprintf (stdout, fmt, args);
+}
+
+VISIBLE void
+Con_SetState (con_state_t state)
+{
+	if (con_module) {
+		con_module->functions->console->set_state (state);
+	}
 }
 
 VISIBLE void
 Con_ProcessInput (void)
 {
 	if (con_module) {
-		con_module->functions->console->pC_ProcessInput ();
+		if (con_module->functions->console->process_input) {
+			con_module->functions->console->process_input ();
+		}
 	} else {
 		static int  been_there_done_that = 0;
 
@@ -167,13 +197,6 @@ Con_ProcessInput (void)
 			Sys_Printf ("no input for you\n");
 		}
 	}
-}
-
-VISIBLE void
-Con_KeyEvent (knum_t key, short unicode, qboolean down)
-{
-	if (con_module)
-		con_module->functions->console->pC_KeyEvent (key, unicode, down);
 }
 
 VISIBLE void
@@ -187,19 +210,12 @@ VISIBLE void
 Con_DrawConsole (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_DrawConsole ();
-}
-
-VISIBLE void
-Con_CheckResize (void)
-{
-	if (con_module)
-		con_module->functions->console->pC_CheckResize ();
+		con_module->functions->console->draw_console ();
 }
 
 VISIBLE void
 Con_NewMap (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_NewMap ();
+		con_module->functions->console->new_map ();
 }

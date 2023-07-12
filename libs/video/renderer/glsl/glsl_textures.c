@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -42,24 +39,27 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
+#include "QF/image.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
+#include "QF/render.h"
 #include "QF/sys.h"
-#include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_textures.h"
 
+#include "QF/ui/vrect.h"
+
+#include "r_scrap.h"
+
 struct scrap_s {
+	rscrap_t    rscrap;
 	GLuint      tnum;
-	int         size;	// in pixels, for now, always square, power of 2
 	int         format;
 	int         bpp;
 	byte       *data;	// local copy of the texture so updates can be batched
 	vrect_t    *batch;
-	vrect_t    *free_rects;
-	vrect_t    *rects;
 	subpic_t   *subpics;
 	struct scrap_s *next;
 };
@@ -70,7 +70,7 @@ static int max_tex_size;
 
 int
 GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
-					   byte *data)
+					   const byte *data)
 {
 	GLuint      tnum;
 
@@ -202,7 +202,8 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 }
 
 int
-GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBTexture (const char *identifier, int width, int height,
+					 const byte *data)
 {
 	GLuint      tnum;
 
@@ -220,7 +221,8 @@ GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 }
 
 int
-GLSL_LoadRGBATexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBATexture (const char *identifier, int width, int height,
+					  const byte *data)
 {
 	GLuint      tnum;
 
@@ -237,6 +239,47 @@ GLSL_LoadRGBATexture (const char *identifier, int width, int height, byte *data)
 	return tnum;
 }
 
+int
+GLSL_LoadTex (const char *identifier, int linear, tex_t *tex)
+{
+	GLuint      tnum;
+	qfeglGenTextures (1, &tnum);
+	int         format = GL_RGB;
+
+	switch (tex->format) {
+		case tex_l:
+		case tex_a:
+			format = GL_LUMINANCE;
+			break;
+		case tex_la:
+			format = GL_LUMINANCE_ALPHA;
+			break;
+		case tex_rgb:
+			format = GL_RGB;
+			break;
+		case tex_rgba:
+			format = GL_RGBA;
+			break;
+		default:
+			Sys_Error ("GL_CreateScrap: Invalid texture format");
+	}
+
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, format, tex->width, tex->height,
+					 0, format, GL_UNSIGNED_BYTE, tex->data);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if (linear) {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
+	return tnum;
+}
+
 void
 GLSL_ReleaseTexture (int tex)
 {
@@ -248,23 +291,23 @@ static void
 glsl_scraps_f (void)
 {
 	scrap_t    *scrap;
-	vrect_t    *rect;
 	int         area;
+	int         size;
+	int         count;
 
 	if (!scrap_list) {
 		Sys_Printf ("No scraps\n");
 		return;
 	}
 	for (scrap = scrap_list; scrap; scrap = scrap->next) {
-		for (rect = scrap->free_rects, area = 0; rect; rect = rect->next)
-			area += rect->width * rect->height;
-		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%%\n",
-					scrap->tnum, scrap->size, scrap->format, scrap->bpp,
-					area * 100 / (scrap->size * scrap->size));
+		area = R_ScrapArea (&scrap->rscrap, &count);
+		// always square
+		size = scrap->rscrap.width;
+		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%% rects=%d\n",
+					scrap->tnum, size, scrap->format, scrap->bpp,
+					area * 100 / (size * size), count);
 		if (Cmd_Argc () > 1) {
-			for (rect = scrap->rects, area = 0; rect; rect = rect->next)
-				Sys_Printf ("%d %d %d %d\n", rect->x, rect->y,
-							rect->width, rect->height);
+			R_ScrapDump (&scrap->rscrap);
 		}
 	}
 }
@@ -273,7 +316,7 @@ void
 GLSL_TextureInit (void)
 {
 	qfeglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
-	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
+	Sys_MaskPrintf (SYS_glsl, "max texture size: %d\n", max_tex_size);
 
 	Cmd_AddCommand ("glsl_scraps", glsl_scraps_f, "Dump GLSL scrap stats");
 }
@@ -309,11 +352,9 @@ GLSL_CreateScrap (int size, int format, int linear)
 	}
 	scrap = malloc (sizeof (scrap_t));
 	qfeglGenTextures (1, &scrap->tnum);
-	scrap->size = size;
+	R_ScrapInit (&scrap->rscrap, size, size);
 	scrap->format = format;
 	scrap->bpp = bpp;
-	scrap->free_rects = VRect_New (0, 0, size, size);
-	scrap->rects = 0;
 	scrap->subpics = 0;
 	scrap->next = scrap_list;
 	scrap_list = scrap;
@@ -341,31 +382,21 @@ GLSL_CreateScrap (int size, int format, int linear)
 void
 GLSL_ScrapClear (scrap_t *scrap)
 {
-	vrect_t    *t;
 	subpic_t   *sp;
-
-	while (scrap->free_rects) {
-		t = scrap->free_rects;
-		scrap->free_rects = t->next;
-		VRect_Delete (t);
-	}
-	while (scrap->rects) {
-		t = scrap->rects;
-		scrap->rects = t->next;
-		VRect_Delete (t);
-	}
 	while (scrap->subpics) {
 		sp = scrap->subpics;
 		scrap->subpics = (subpic_t *) sp->next;
 		free (sp);
 	}
-
-	scrap->free_rects = VRect_New (0, 0, scrap->size, scrap->size);
+	R_ScrapClear (&scrap->rscrap);
 }
 
 void
 GLSL_DestroyScrap (scrap_t *scrap)
 {
+	if (!scrap) {
+		return;
+	}
 	scrap_t   **s;
 
 	for (s = &scrap_list; *s; s = &(*s)->next) {
@@ -375,7 +406,7 @@ GLSL_DestroyScrap (scrap_t *scrap)
 		}
 	}
 	GLSL_ScrapClear (scrap);
-	VRect_Delete (scrap->free_rects);
+	R_ScrapDelete (&scrap->rscrap);
 	GLSL_ReleaseTexture (scrap->tnum);
 	free (scrap->data);
 	free (scrap);
@@ -390,57 +421,22 @@ GLSL_ScrapTexture (scrap_t *scrap)
 subpic_t *
 GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
-	int         i, w, h;
-	vrect_t   **t, **best;
-	vrect_t    *old, *frags, *rect;
+	vrect_t    *rect;
 	subpic_t   *subpic;
 
-	for (i = 0; i < 16; i++)
-		if (width <= (1 << i))
-			break;
-	w = 1 << i;
-	for (i = 0; i < 16; i++)
-		if (height <= (1 << i))
-			break;
-	h = 1 << i;
-
-	best = 0;
-	for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-		if ((*t)->width < w || (*t)->height < h)
-			continue;						// won't fit
-		if (!best) {
-			best = t;
-			continue;
-		}
-		if ((*t)->width <= (*best)->width || (*t)->height <= (*best)->height)
-			best = t;
+	rect = R_ScrapAlloc (&scrap->rscrap, width, height);
+	if (!rect) {
+		return 0;
 	}
-	if (!best)
-		return 0;							// couldn't find a spot
-	old = *best;
-	*best = old->next;
-	rect = VRect_New (old->x, old->y, w, h);
-	frags = VRect_Difference (old, rect);
-	VRect_Delete (old);
-	if (frags) {
-		// old was bigger than the requested size
-		for (old = frags; old->next; old = old->next)
-			;
-		old->next = scrap->free_rects;
-		scrap->free_rects = frags;
-	}
-	rect->next = scrap->rects;
-	scrap->rects = rect;
 
 	subpic = malloc (sizeof (subpic_t));
 	*((subpic_t **) &subpic->next) = scrap->subpics;
 	scrap->subpics = subpic;
 	*((scrap_t **) &subpic->scrap) = scrap;
 	*((vrect_t **) &subpic->rect) = rect;
-	*((int *) &subpic->tnum) = scrap->tnum;
 	*((int *) &subpic->width) = width;
 	*((int *) &subpic->height) = height;
-	*((float *) &subpic->size) = 1.0 / scrap->size;
+	*((float *) &subpic->size) = 1.0 / scrap->rscrap.width;
 	return subpic;
 }
 
@@ -449,8 +445,6 @@ GLSL_SubpicDelete (subpic_t *subpic)
 {
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
-	vrect_t    *old, *merge;
-	vrect_t   **t;
 	subpic_t  **sp;
 
 	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next)
@@ -460,29 +454,7 @@ GLSL_SubpicDelete (subpic_t *subpic)
 		Sys_Error ("GLSL_ScrapDelSubpic: broken subpic");
 	*sp = (subpic_t *) subpic->next;
 	free (subpic);
-	for (t = &scrap->rects; *t; t = &(*t)->next)
-		if (*t == rect)
-			break;
-	if (*t != rect)
-		Sys_Error ("GLSL_ScrapDelSubpic: broken subpic");
-	*t = rect->next;
-
-	do {
-		merge = 0;
-		for (t = &scrap->free_rects; *t; t = &(*t)->next) {
-			merge = VRect_Merge (*t, rect);
-			if (merge) {
-				old = *t;
-				*t = (*t)->next;
-				VRect_Delete (old);
-				VRect_Delete (rect);
-				rect = merge;
-				break;
-			}
-		}
-	} while (merge);
-	rect->next = scrap->free_rects;
-	scrap->free_rects = rect;
+	R_ScrapFree (&scrap->rscrap, rect);
 }
 
 void
@@ -503,7 +475,7 @@ GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 			scrap->batch = VRect_New (rect->x, rect->y,
 									  rect->width, rect->height);
 		}
-		step = scrap->size * scrap->bpp;
+		step = scrap->rscrap.width * scrap->bpp;
 		sbytes = subpic->width * scrap->bpp;
 		dest = scrap->data + rect->y * step + rect->x * scrap->bpp;
 		for (i = 0; i < subpic->height; i++, dest += step, data += sbytes)
@@ -519,7 +491,8 @@ GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 void
 GLSL_ScrapFlush (scrap_t *scrap)
 {
-	vrect_t    *rect = scrap->batch;;
+	vrect_t    *rect = scrap->batch;
+	int         size = scrap->rscrap.width;
 
 	if (!rect)
 		return;
@@ -527,9 +500,9 @@ GLSL_ScrapFlush (scrap_t *scrap)
 	//should update to not update the entire horizontal block
 	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
 	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, 0, rect->y,
-					   scrap->size, rect->height, scrap->format,
+					   size, rect->height, scrap->format,
 					   GL_UNSIGNED_BYTE,
-					   scrap->data + rect->y * scrap->size * scrap->bpp);
+					   scrap->data + rect->y * size * scrap->bpp);
 	VRect_Delete (rect);
 	scrap->batch = 0;
 }

@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/render.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 
@@ -48,11 +49,11 @@ static polydesc_t  r_polydesc;
 
 clipplane_t view_clipplanes[4];
 
-medge_t    *r_pedge;
+medge_t    *r_pedge;	// FIXME used by asm
 
-qboolean    r_leftclipped, r_rightclipped;
-static qboolean makeleftedge, makerightedge;
-qboolean    r_nearzionly;
+bool        r_leftclipped, r_rightclipped;
+static bool makeleftedge, makerightedge;
+bool        r_nearzionly;
 
 int         sintable[SIN_BUFFER_SIZE];
 int         intsintable[SIN_BUFFER_SIZE];
@@ -70,7 +71,7 @@ float       r_nearzi;
 float       r_u1, r_v1, r_lzi1;
 int         r_ceilv1;
 
-qboolean    r_lastvertvalid;
+bool        r_lastvertvalid;
 
 
 #ifdef PIC
@@ -214,8 +215,8 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	// causes it to incorrectly extend to the scan, and the extension of the
 	// line goes off the edge of the screen
 	// FIXME: is this actually needed?
-	if (edge->u < r_refdef.vrect_x_adj_shift20)
-		edge->u = r_refdef.vrect_x_adj_shift20;
+	if (edge->u < r_refdef.vrectx_adj_shift20)
+		edge->u = r_refdef.vrectx_adj_shift20;
 	if (edge->u > r_refdef.vrectright_adj_shift20)
 		edge->u = r_refdef.vrectright_adj_shift20;
 
@@ -344,7 +345,7 @@ R_EmitCachedEdge (void)
 
 
 void
-R_RenderFace (msurface_t *fa, int clipflags)
+R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 {
 	int         i, lindex;
 	unsigned int mask;
@@ -353,6 +354,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
+	mod_brush_t *brush = *(mod_brush_t **) SW_COMP (scene_sw_brush, render_id);
 
 	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
@@ -382,11 +384,11 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	r_nearzi = 0;
 	r_nearzionly = false;
 	makeleftedge = makerightedge = false;
-	pedges = currententity->model->edges;
+	pedges = brush->edges;
 	r_lastvertvalid = false;
 
 	for (i = 0; i < fa->numedges; i++) {
-		lindex = currententity->model->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -489,7 +491,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	surface_p->flags = fa->flags;
 	surface_p->insubmodel = insubmodel;
 	surface_p->spanstate = 0;
-	surface_p->entity = currententity;
+	surface_p->render_id = render_id;
 	surface_p->key = r_currentkey++;
 	surface_p->spans = NULL;
 
@@ -504,20 +506,18 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	surface_p->d_ziorigin = p_normal[2] * distinv -
 		xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-//JDC   VectorCopy (r_worldmodelorg, surface_p->modelorg);
 	surface_p++;
 }
 
 
 void
-R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
+R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
 {
 	int         i;
 	unsigned int mask;
 	plane_t    *pplane;
 	float       distinv;
 	vec3_t      p_normal;
-	medge_t     tedge;
 	clipplane_t *pclip;
 
 	// skip out if no more surfs
@@ -534,6 +534,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	c_faceclip++;
 
 	// this is a dummy to give the caching mechanism someplace to write to
+	static medge_t tedge;
 	r_pedge = &tedge;
 
 	// set up clip planes
@@ -589,7 +590,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	surface_p->flags = psurf->flags;
 	surface_p->insubmodel = true;
 	surface_p->spanstate = 0;
-	surface_p->entity = currententity;
+	surface_p->render_id = render_id;
 	surface_p->key = r_currentbkey;
 	surface_p->spans = NULL;
 
@@ -604,13 +605,12 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	surface_p->d_ziorigin = p_normal[2] * distinv -
 		xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-//JDC   VectorCopy (r_worldmodelorg, surface_p->modelorg);
 	surface_p++;
 }
 
 
 void
-R_RenderPoly (msurface_t *fa, int clipflags)
+R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 {
 	int         i, lindex, lnumverts, s_axis, t_axis;
 	float       dist, lastdist, lzi, scale, u, v, frac;
@@ -622,7 +622,8 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	mvertex_t   verts[2][100];			// FIXME: do real number
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
-	qboolean    visible;
+	bool        visible;
+	mod_brush_t *brush = *(mod_brush_t **) SW_COMP (scene_sw_brush, render_id);
 
 	// FIXME: clean this up and make it faster
 	// FIXME: guard against running out of vertices
@@ -641,12 +642,12 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 	// reconstruct the polygon
 	// FIXME: these should be precalculated and loaded off disk
-	pedges = currententity->model->edges;
+	pedges = brush->edges;
 	lnumverts = fa->numedges;
 	vertpage = 0;
 
 	for (i = 0; i < lnumverts; i++) {
-		lindex = currententity->model->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -777,15 +778,15 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 
 void
-R_ZDrawSubmodelPolys (model_t *pmodel)
+R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush)
 {
 	int         i, numsurfaces;
 	msurface_t *psurf;
 	float       dot;
 	plane_t    *pplane;
 
-	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
-	numsurfaces = pmodel->nummodelsurfaces;
+	psurf = &brush->surfaces[brush->firstmodelsurface];
+	numsurfaces = brush->nummodelsurfaces;
 
 	for (i = 0; i < numsurfaces; i++, psurf++) {
 		// find which side of the node we are on
@@ -797,7 +798,7 @@ R_ZDrawSubmodelPolys (model_t *pmodel)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderPoly (psurf, 15);
+			R_RenderPoly (render_id, psurf, 15);
 		}
 	}
 }

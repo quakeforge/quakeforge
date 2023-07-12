@@ -33,22 +33,17 @@
 
 void CL_SetSolidPlayers (int playernum);
 void CL_ClearPredict (void);
-void CL_SetUpPlayerPrediction(qboolean dopred);
-void CL_TransformEntity (struct entity_s * ent, const vec3_t angles,
-						 qboolean force);
+void CL_SetUpPlayerPrediction(bool dopred);
+void CL_ClearEnts (void);
 void CL_EmitEntities (void);
 void CL_ClearProjectiles (void);
-void CL_ParseProjectiles (qboolean nail2);
-void CL_ParsePacketEntities (qboolean delta);
+void CL_ParsePacketEntities (bool delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);
 void CL_Ents_Init (void);
+struct entity_s CL_GetEntity (int num);
 
-extern struct cvar_s   *cl_deadbodyfilter;
-extern struct cvar_s   *cl_gibfilter;
-
-extern entity_t cl_player_ents[];
-extern entity_t cl_flag_ents[];
-extern entity_t cl_packet_ents[];
+extern int cl_deadbodyfilter;
+extern int cl_gibfilter;
 
 #endif

@@ -154,6 +154,7 @@ QFGL_NEED (void, glFogfv, (GLenum pname, const GLfloat * params))
 QFGL_NEED (void, glFogi, (GLenum pname, GLint param))
 QFGL_DONT_NEED (void, glFogiv, (GLenum pname, const GLint * params))
 QFGL_NEED (void, glFrontFace, (GLenum mode))
+QFGL_NEED (void, glGenerateMipmap, (GLenum target))
 QFGL_NEED (void, glFrustum, (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near_val, GLdouble far_val))
 QFGL_NEED (GLuint, glGenLists, (GLsizei range))
 QFGL_NEED (void, glGenTextures, (GLsizei n, GLuint * textures))
@@ -416,7 +417,20 @@ QFGL_NEED (void, glVertexPointer, (GLint size, GLenum type, GLsizei stride, cons
 QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 
 // ATI Extensions
-QFGL_WANT (void, glPNTrianglesiATI, (GLenum pname, GLint param))
+QFGL_WANT (void, glPNTrianglesiATI, (GLint x, GLint y))
+
+// frame buffers
+QFGL_DONT_NEED (GLboolean, glIsFramebuffer, (GLuint framebuffer))
+QFGL_NEED (void, glBindFramebuffer, (GLenum target, GLuint framebuffer))
+QFGL_NEED (void, glDeleteFramebuffers, (GLsizei n, const GLuint *framebuffers))
+QFGL_NEED (void, glGenFramebuffers, (GLsizei n, GLuint *framebuffers))
+QFGL_DONT_NEED (GLenum, glCheckFramebufferStatus, (GLenum target))
+QFGL_DONT_NEED (void, glFramebufferTexture1D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_NEED (void, glFramebufferTexture2D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_DONT_NEED (void, glFramebufferTexture3D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset))
+QFGL_DONT_NEED (void, glFramebufferRenderbuffer, (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer))
+QFGL_DONT_NEED (void, glGetFramebufferAttachmentParameteriv, (GLenum target, GLenum attachment, GLenum pname, GLint *params))
+
 
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED

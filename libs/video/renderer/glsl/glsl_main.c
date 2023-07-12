@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -48,126 +45,63 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
+#include "QF/GLSL/qf_draw.h"
+#include "QF/GLSL/qf_fisheye.h"
 #include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
+#include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_particles.h"
+#include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
+#include "QF/GLSL/qf_warp.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_gl.h"
 
-mat4_t glsl_projection;
-mat4_t glsl_view;
-
-void
-glsl_R_ViewChanged (float aspect)
-{
-	double      xmin, xmax, ymin, ymax;
-	float       fovx, fovy, neard, fard;
-	vec_t      *proj = glsl_projection;
-
-	fovx = r_refdef.fov_x;
-	fovy = r_refdef.fov_y;
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
-
-	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
-	ymin = -ymax;
-	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
-	xmin = -xmax;
-
-	proj[0] = (2 * neard) / (xmax - xmin);
-	proj[4] = 0;
-	proj[8] = (xmax + xmin) / (xmax - xmin);
-	proj[12] = 0;
-
-	proj[1] = 0;
-	proj[5] = (2 * neard) / (ymax - ymin);
-	proj[9] = (ymax + ymin) / (ymax - ymin);
-	proj[13] = 0;
-
-	proj[2] = 0;
-	proj[6] = 0;
-	proj[10] = (fard + neard) / (neard - fard);
-	proj[14] = (2 * fard * neard) / (neard - fard);
-
-	proj[3] = 0;
-	proj[7] = 0;
-	proj[11] = -1;
-	proj[15] = 0;
-}
-
-void
-glsl_R_SetupFrame (void)
-{
-	R_AnimateLight ();
-	R_ClearEnts ();
-	r_framecount++;
-
-	VectorCopy (r_refdef.vieworg, r_origin);
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
-	R_SetFrustum ();
-
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
-}
+mat4f_t glsl_projection;
+mat4f_t glsl_view;
 
 static void
 R_SetupView (void)
 {
-	float       x, y, w, h;
-	mat4_t      mat;
-	static mat4_t z_up = {
-		 0, 0, -1, 0,
-		-1, 0,  0, 0,
-		 0, 1,  0, 0,
-		 0, 0,  0, 1,
+	static mat4f_t z_up = {
+		{ 0, 0,  1, 0},
+		{-1, 0,  0, 0},
+		{ 0, 1,  0, 0},
+		{ 0, 0,  0, 1},
 	};
 
-	x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);
-
-	Mat4Zero (mat);
-	VectorCopy (vpn, mat + 0);
-	VectorNegate (vright, mat + 4);			// we want vleft
-	VectorCopy (vup, mat + 8);
-	mat[15] = 1;
-	Mat4Transpose (mat, mat);//AngleVectors gives the transpose of what we want
-	Mat4Mult (z_up, mat, glsl_view);
-
-	Mat4Identity (mat);
-	VectorNegate (r_refdef.vieworg, mat + 12);
-	Mat4Mult (glsl_view, mat, glsl_view);
+	mmulf (glsl_view, z_up, r_refdef.camera_inverse);
 
 	qfeglEnable (GL_CULL_FACE);
 	qfeglEnable (GL_DEPTH_TEST);
 }
 
-static void
-R_RenderEntities (void)
+void
+glsl_R_RenderEntities (entqueue_t *queue)
 {
-	entity_t   *ent;
 	int         begun;
 
-	if (!r_drawentities->int_val)
+	if (!r_drawentities)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
 		begun = 0; \
-		for (ent = r_ent_queue; ent; ent = ent->next) { \
-			if (ent->model->type != mod_##type_name) \
-				continue; \
+		for (size_t i = 0; i < queue->ent_queues[mod_##type_name].size; \
+			 i++) { \
+			entity_t    ent = queue->ent_queues[mod_##type_name].a[i]; \
 			if (!begun) { \
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
 			} \
-			currententity = ent; \
-			glsl_R_Draw##Type (); \
+			glsl_R_Draw##Type (ent); \
 		} \
 		if (begun) \
 			glsl_R_##Type##End (); \
@@ -181,17 +115,21 @@ R_RenderEntities (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t    ent = vr_data.view_model;
+	if (!Entity_Valid (ent)) {
+		return;
+	}
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
-		|| !r_drawviewmodel->int_val
-		|| !r_drawentities->int_val
-		|| !currententity->model)
+		|| !r_drawviewmodel
+		|| !r_drawentities
+		|| !renderer->model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
 	qfeglDepthRangef (0, 0.3);
 	glsl_R_AliasBegin ();
-	glsl_R_DrawAlias ();
+	glsl_R_DrawAlias (ent);
 	glsl_R_AliasEnd ();
 	qfeglDepthRangef (0, 1);
 }
@@ -199,59 +137,48 @@ R_DrawViewModel (void)
 void
 glsl_R_RenderView (void)
 {
-	double      t[10] = {};
-	int         speeds = r_speeds->int_val;
-
-	if (speeds)
-		t[0] = Sys_DoubleTime ();
-	glsl_R_SetupFrame ();
-	R_SetupView ();
-	if (speeds)
-		t[1] = Sys_DoubleTime ();
-	R_MarkLeaves ();
-	if (speeds)
-		t[2] = Sys_DoubleTime ();
-	R_PushDlights (vec3_origin);
-	if (speeds)
-		t[3] = Sys_DoubleTime ();
-	glsl_R_DrawWorld ();
-	if (speeds)
-		t[4] = Sys_DoubleTime ();
-	glsl_R_DrawSky ();
-	if (speeds)
-		t[5] = Sys_DoubleTime ();
-	R_RenderEntities ();
-	if (speeds)
-		t[6] = Sys_DoubleTime ();
-	glsl_R_DrawWaterSurfaces ();
-	if (speeds)
-		t[7] = Sys_DoubleTime ();
-	glsl_R_DrawParticles ();
-	if (speeds)
-		t[8] = Sys_DoubleTime ();
-	R_DrawViewModel ();
-	if (speeds)
-		t[9] = Sys_DoubleTime ();
-	if (speeds) {
-		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, part: %g, view: %g\n",
-					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
-					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
-					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
-					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
-					(t[8] - t[7]) * 1000, (t[9] - t[8]) * 1000);
+	if (!r_refdef.worldmodel) {
+		return;
 	}
+
+	memcpy (glsl_projection, glsl_ctx->projection, sizeof (mat4f_t));
+
+	R_SetupView ();
+	glsl_R_DrawWorld ();
+	glsl_R_DrawSky ();
+	if (Entity_Valid (vr_data.view_model)) {
+		R_DrawViewModel ();
+	}
+}
+
+static void
+glsl_R_TimeRefresh_f (void)
+{
+/* FIXME update for simd
+	double      start, stop, time;
+	int         i;
+
+	glsl_ctx->end_rendering ();
+
+	start = Sys_DoubleTime ();
+	for (i = 0; i < 128; i++) {
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
+		glsl_R_RenderView ();
+		glsl_ctx->end_rendering ();
+	}
+
+	stop = Sys_DoubleTime ();
+	time = stop - start;
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
 }
 
 void
 glsl_R_Init (void)
 {
-	Cmd_AddCommand ("pointfile", glsl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
-	glsl_R_Particles_Init_Cvars ();
 	glsl_Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
@@ -259,61 +186,46 @@ glsl_R_Init (void)
 	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
-	glsl_Fog_Init ();
+	glsl_InitFisheye ();
+	glsl_InitWarp ();
 	Skin_Init ();
 }
 
 void
-glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+glsl_R_Shutdown (void)
+{
+	Skin_Shutdown();
+
+	glsl_R_ShutdownParticles ();
+	glsl_Lightmap_Shutdown ();
+	glsl_R_ShutdownBsp ();
+	SCR_Shutdown ();
+	glsl_Draw_Shutdown ();
+}
+
+void
+glsl_R_NewScene (scene_t *scene)
 {
 	int         i;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
+	r_refdef.worldmodel = scene->worldmodel;
 
 	// Force a vis update
-	r_viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0, 0, 0, 0);
 
-	R_FreeAllEntities ();
-	glsl_R_ClearParticles ();
-	glsl_R_RegisterTextures (models, num_models);
-	glsl_R_BuildLightmaps (models, num_models);
-	glsl_R_BuildDisplayLists (models, num_models);
-}
-
-void
-glsl_R_LineGraph (int x, int y, int *h_vals, int count)
-{
+	R_ClearParticles ();
+	glsl_R_RegisterTextures (scene->models, scene->num_models);
+	glsl_R_BuildLightmaps (scene->models, scene->num_models);
+	glsl_R_BuildDisplayLists (scene->models, scene->num_models);
 }
 
 void
 glsl_R_ClearState (void)
 {
-	R_ClearEfrags ();
+	r_refdef.worldmodel = 0;
 	R_ClearDlights ();
-	glsl_R_ClearParticles ();
-}
-
-void
-glsl_R_TimeRefresh_f (void)
-{
-	double      start, stop, time;
-	int         i;
-
-	vid.end_rendering ();
-
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
-		r_refdef.viewangles[1] = i * (360.0 / 128.0);
-		glsl_R_RenderView ();
-		vid.end_rendering ();
-	}
-
-	stop = Sys_DoubleTime ();
-	time = stop - start;
-	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+	R_ClearParticles ();
 }

@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
@@ -48,25 +49,67 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 vid_model_funcs_t *mod_funcs;
 
-model_t    *loadmodel;
-char       *loadname;					// for hunk tags
-
 #define	MOD_BLOCK	16					// allocate 16 models at a time
-model_t   **mod_known;
-int         mod_numknown;
-int         mod_maxknown;
+static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static struct DARRAY_TYPE (model_t *) mod_blocks = {0, 0, MOD_BLOCK};
+static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
-cvar_t     *gl_mesh_cache;
-cvar_t     *gl_subdivide_size;
-cvar_t     *gl_alias_render_tri;
-cvar_t     *gl_textures_external;
+int gl_mesh_cache;
+static cvar_t gl_mesh_cache_cvar = {
+	.name = "gl_mesh_cache",
+	.description =
+		"minimum triangle count in a model for its mesh to be cached. 0 to "
+		"disable caching",
+	.default_value = "256",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_mesh_cache },
+};
+float gl_subdivide_size;
+static cvar_t gl_subdivide_size_cvar = {
+	.name = "gl_subdivide_size",
+	.description =
+		"Sets the division value for the sky brushes.",
+	.default_value = "128",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &gl_subdivide_size },
+};
+int gl_alias_render_tri;
+static cvar_t gl_alias_render_tri_cvar = {
+	.name = "gl_alias_render_tri",
+	.description =
+		"When loading alias models mesh for pure triangle rendering",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_alias_render_tri },
+};
+int gl_textures_external;
+static cvar_t gl_textures_external_cvar = {
+	.name = "gl_textures_external",
+	.description =
+		"Use external textures to replace BSP textures",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_textures_external },
+};
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
+
+static void
+mod_shutdown (void *data)
+{
+	Mod_ClearAll ();
+	for (size_t i = 0; i < mod_blocks.size; i++) {
+		free (mod_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&mod_known);
+	DARRAY_CLEAR (&mod_blocks);
+}
 
 VISIBLE void
 Mod_Init (void)
@@ -75,8 +118,10 @@ Mod_Init (void)
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
-	memset (mod_novis, 0xff, sizeof (mod_novis));
-	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
+	Sys_RegisterShutdown (mod_shutdown, 0);
+
+	r_notexture_mip = Hunk_AllocName (0,
+									  sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
 	r_notexture_mip->width = r_notexture_mip->height = 16;
@@ -101,62 +146,66 @@ Mod_Init (void)
 VISIBLE void
 Mod_Init_Cvars (void)
 {
-	gl_subdivide_size =
-		Cvar_Get ("gl_subdivide_size", "128", CVAR_ARCHIVE, NULL,
-				  "Sets the division value for the sky brushes.");
-	gl_mesh_cache = Cvar_Get ("gl_mesh_cache", "256", CVAR_ARCHIVE, NULL,
-							  "minimum triangle count in a model for its mesh"
-							  " to be cached. 0 to disable caching");
-	gl_alias_render_tri =
-		Cvar_Get ("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL, "When "
-				  "loading alias models mesh for pure triangle rendering");
-	gl_textures_external =
-		Cvar_Get ("gl_textures_external", "1", CVAR_ARCHIVE, NULL,
-				  "Use external textures to replace BSP textures");
+	Cvar_Register (&gl_subdivide_size_cvar, 0, 0);
+	Cvar_Register (&gl_mesh_cache_cvar, 0, 0);
+	Cvar_Register (&gl_alias_render_tri_cvar, 0, 0);
+	Cvar_Register (&gl_textures_external_cvar, 0, 0);
+}
+
+static void
+mod_unload_model (size_t ind)
+{
+	model_t    *mod = mod_known.a[ind];
+
+	//FIXME this seems to be correct but need to double check the behavior
+	//with alias models
+	if (!mod->needload && mod->clear) {
+		mod->clear (mod, mod->data);
+	}
+	if (mod->type != mod_alias) {
+		mod->needload = true;
+	}
+	if (mod->type == mod_sprite) {
+		mod->cache.data = 0;
+	}
 }
 
 VISIBLE void
 Mod_ClearAll (void)
 {
-	int         i;
-	model_t   **mod;
+	size_t      i;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		if (!(*mod)->needload && (*mod)->clear) {
-			(*mod)->clear (*mod);
-		} else {
-			if ((*mod)->type != mod_alias)
-				(*mod)->needload = true;
-			if ((*mod)->type == mod_sprite)
-				(*mod)->cache.data = 0;
-		}
+	for (i = 0; i < mod_numknown; i++) {
+		mod_unload_model (i);
 	}
+	mod_numknown = 0;
 }
 
 model_t *
 Mod_FindName (const char *name)
 {
-	int         i;
+	size_t      i;
 	model_t   **mod;
 
 	if (!name[0])
 		Sys_Error ("Mod_FindName: empty name");
 
 	// search the currently loaded models
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
-		if (!strcmp ((*mod)->name, name))
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++)
+		if (!strcmp ((*mod)->path, name))
 			break;
 
 	if (i == mod_numknown) {
-		if (mod_numknown == mod_maxknown) {
-			mod_maxknown += MOD_BLOCK;
-			mod_known = realloc (mod_known, mod_maxknown * sizeof (model_t *));
-			mod = mod_known + mod_numknown;
-			*mod = calloc (MOD_BLOCK, sizeof (model_t));
-			for (i = 1; i < MOD_BLOCK; i++)
-				mod[i] = mod[0] + i;
+		if (mod_numknown == mod_known.size) {
+			model_t    *block = calloc (MOD_BLOCK, sizeof (model_t));
+			for (i = 0; i < MOD_BLOCK; i++) {
+				DARRAY_APPEND (&mod_known, &block[i]);
+			}
+			mod = &mod_known.a[mod_numknown];
+			DARRAY_APPEND (&mod_blocks, block);
 		}
-		strcpy ((*mod)->name, name);
+		memset ((*mod), 0, sizeof (model_t));
+		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
 		(*mod)->needload = true;
 		mod_numknown++;
 		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
@@ -166,22 +215,22 @@ Mod_FindName (const char *name)
 }
 
 static model_t *
-Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
+Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 {
 	uint32_t   *buf;
 
 	// load the file
-	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->name), 0);
+	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->path), 0);
 	if (!buf) {
 		if (crash)
-			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
+			Sys_Error ("Mod_LoadModel: %s not found", mod->path);
 		return NULL;
 	}
 
-	if (loadname)
-		free (loadname);
-	loadname = QFS_FileBase (mod->name);
-	loadmodel = mod;
+	char *name = QFS_FileBase (mod->path);
+	strncpy (mod->name, name, sizeof (mod->name) - 1);
+	mod->name[sizeof (mod->name) - 1] = 0;
+	free (name);
 
 	// fill it in
 	mod->vpath = qfs_foundfile.vpath;
@@ -202,17 +251,17 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			break;
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
-			if (strequal (mod->name, "progs/grenade.mdl")) {
+			if (strequal (mod->path, "progs/grenade.mdl")) {
 				mod->fullbright = 0;
 				mod->shadow_alpha = 255;
-			} else if (strnequal (mod->name, "progs/flame", 11)
-					   || strnequal (mod->name, "progs/bolt", 10)) {
+			} else if (strnequal (mod->path, "progs/flame", 11)
+					   || strnequal (mod->path, "progs/bolt", 10)) {
 				mod->fullbright = 1;
 				mod->shadow_alpha = 0;
 			}
-			if (strnequal (mod->name, "progs/v_", 8)) {
+			if (strnequal (mod->path, "progs/v_", 8)) {
 				mod->min_light = 0.12;
-			} else if (strequal (mod->name, "progs/player.mdl")) {
+			} else if (strequal (mod->path, "progs/player.mdl")) {
 				mod->min_light = 0.04;
 			}
 			if (mod_funcs)
@@ -231,10 +280,6 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		default:					// Version 29: Quake 1 .bsp
 									// Version 38: Quake 2 .bsp
 			Mod_LoadBrushModel (mod, buf);
-
-			if (gl_textures_external && gl_textures_external->int_val
-				&& mod_funcs && mod_funcs->Mod_LoadExternalTextures)
-				mod_funcs->Mod_LoadExternalTextures (mod);
 			break;
 	}
 	free (buf);
@@ -248,7 +293,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	Loads a model into the cache
 */
 static model_t *
-Mod_LoadModel (model_t *mod, qboolean crash)
+Mod_LoadModel (model_t *mod, bool crash)
 {
 	if (!mod->needload) {
 		if (mod->type == mod_alias && !mod->aliashdr) {
@@ -280,13 +325,13 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 	Loads in a model for the given name
 */
 VISIBLE model_t *
-Mod_ForName (const char *name, qboolean crash)
+Mod_ForName (const char *name, bool crash)
 {
 	model_t    *mod;
 
 	mod = Mod_FindName (name);
 
-	Sys_MaskPrintf (SYS_DEV, "Mod_ForName: %s, %p\n", name, mod);
+	Sys_MaskPrintf (SYS_dev, "Mod_ForName: %s, %p\n", name, mod);
 	return Mod_LoadModel (mod, crash);
 }
 
@@ -304,14 +349,24 @@ Mod_TouchModel (const char *name)
 }
 
 VISIBLE void
+Mod_UnloadModel (model_t *model)
+{
+	for (size_t i = 0; i < mod_numknown; i++) {
+		if (mod_known.a[i] == model) {
+			mod_unload_model (i);
+		}
+	}
+}
+
+VISIBLE void
 Mod_Print (void)
 {
-	int			i;
+	size_t      i;
 	model_t	  **mod;
 
 	Sys_Printf ("Cached models:\n");
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->name);
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
+		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->path);
 	}
 }
 

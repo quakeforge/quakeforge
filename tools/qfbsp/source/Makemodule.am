@@ -1,0 +1,27 @@
+QFBSP_LIBS=@QFBSP_LIBS@
+QFBSP_DEPS=@QFBSP_DEPS@
+QFBSP_INCS=@QFBSP_INCS@
+
+EXTRA_PROGRAMS +=		qfbsp
+bin_PROGRAMS += @QFBSP_TARGETS@
+
+qfbsp_SOURCES= \
+	tools/qfbsp/source/brush.c \
+	tools/qfbsp/source/csg4.c \
+	tools/qfbsp/source/info.c \
+	tools/qfbsp/source/map.c \
+	tools/qfbsp/source/merge.c \
+	tools/qfbsp/source/nodraw.c \
+	tools/qfbsp/source/options.c \
+	tools/qfbsp/source/outside.c \
+	tools/qfbsp/source/portals.c \
+	tools/qfbsp/source/qfbsp.c \
+	tools/qfbsp/source/readbsp.c \
+	tools/qfbsp/source/region.c \
+	tools/qfbsp/source/solidbsp.c \
+	tools/qfbsp/source/surfaces.c \
+	tools/qfbsp/source/tjunc.c \
+	tools/qfbsp/source/writebsp.c
+
+qfbsp_LDADD=		$(QFBSP_LIBS)
+qfbsp_DEPENDENCIES=	$(QFBSP_DEPS)

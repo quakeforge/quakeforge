@@ -34,12 +34,12 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "host.h"
+#include "nq/include/host.h"
 
-qboolean    isDedicated = true;
+bool        isDedicated = true;
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 }
 
@@ -69,8 +69,7 @@ main (int argc, const char **argv)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 
@@ -79,13 +78,13 @@ main (int argc, const char **argv)
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
-		if (time < sys_ticrate->value) {
+		if (time < sys_ticrate) {
 			Sleep (1);
 			continue;				// not time to run a server-only tic yet
 		}
-		time = sys_ticrate->value;
+		time = sys_ticrate;
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

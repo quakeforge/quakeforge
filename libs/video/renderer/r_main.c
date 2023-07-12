@@ -45,19 +45,16 @@
 
 #include "r_internal.h"
 
-qboolean    r_inhibit_viewmodel;
-qboolean    r_force_fullscreen;
-qboolean    r_paused;
+bool        r_dowarp, r_dowarpold;
+bool        r_inhibit_viewmodel;
+bool        r_force_fullscreen;
+bool        r_paused;
 double      r_realtime;
 double      r_frametime;
-entity_t   *r_view_model;
-entity_t   *r_player_entity;
-float       r_time1;
+double      r_time1;
 int         r_lineadj;
-qboolean    r_active;
+bool        r_active;
 int			r_init;
-
-entity_t   *currententity;
 
 int         r_visframecount;			// bumped when going to a new PVS
 int         r_framecount = 1;			// so frame counts initialized to 0 don't match
@@ -65,19 +62,8 @@ int         r_framecount = 1;			// so frame counts initialized to 0 don't match
 vec3_t      modelorg;			// modelorg is the viewpoint relative to
 								// the currently rendering entity
 vec3_t      base_modelorg;
-vec3_t      r_entorigin;		// the currently rendering entity in world
+vec4f_t     r_entorigin;		// the currently rendering entity in world
 								// coordinates
-entity_t   *currententity;
-entity_t    r_worldentity;
-
-qboolean    r_cache_thrash;		// set if surface cache is thrashing
-
-// view origin
-vec3_t      vup, base_vup;
-vec3_t      vpn, base_vpn;
-vec3_t      vright, base_vright;
-vec3_t      r_origin;
-
 // screen size info
 refdef_t    r_refdef;
 
@@ -102,26 +88,30 @@ SignbitsForPlane (plane_t *out)
 }
 
 void
-R_SetFrustum (void)
+R_SetFrustum (plane_t *frustum, const refframe_t *frame,
+			  float fov_x, float fov_y)
 {
 	int         i;
+	vec4f_t     right = frame->right;
+	vec4f_t     fwd = frame->forward;
+	vec4f_t     up = frame->up;
 
-	// rotate VPN right by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[0].normal, vup, vpn,
-							 -(90 - r_refdef.fov_x / 2));
-	// rotate VPN left by FOV_X/2 degrees
-	RotatePointAroundVector (frustum[1].normal, vup, vpn,
-							 90 - r_refdef.fov_x / 2);
-	// rotate VPN up by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[2].normal, vright, vpn,
-							 90 - r_refdef.fov_y / 2);
-	// rotate VPN down by FOV_Y/2 degrees
-	RotatePointAroundVector (frustum[3].normal, vright, vpn,
-							 -(90 - r_refdef.fov_y / 2));
+	fov_x = 90 - fov_x / 2;
+	fov_y = 90 - fov_y / 2;
 
+	// rotate FWD right by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[0].normal, (vec_t*)&up, (vec_t*)&fwd, -fov_x);//FIXME
+	// rotate FWD left by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[1].normal, (vec_t*)&up, (vec_t*)&fwd, fov_x);//FIXME
+	// rotate FWD up by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[2].normal, (vec_t*)&right, (vec_t*)&fwd, fov_y);//FIXME
+	// rotate FWD down by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[3].normal, (vec_t*)&right, (vec_t*)&fwd, -fov_y);//FIXME
+
+	vec4f_t     origin = frame->position;
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
-		frustum[i].dist = DotProduct (r_origin, frustum[i].normal);
+		frustum[i].dist = -DotProduct (origin, frustum[i].normal);
 		frustum[i].signbits = SignbitsForPlane (&frustum[i]);
 	}
 }

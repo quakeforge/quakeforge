@@ -98,7 +98,7 @@ Supported attributes are:
 		<code>QF</code>.</dd>
 </dl>
 
-Attribute allow variable substitution. Variables can take the form of
+Attributes allow variable substitution. Variables can take the form of
 either <code>\$NAME</code> or <code>\${NAME}</code>, where the latter is
 useful when the end of \c NAME is ambiguous (eg,
 <code>\${NAME}STUFF</code> vs <code>\$NAME/STUFF</code>).

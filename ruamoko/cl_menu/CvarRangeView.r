@@ -1,5 +1,6 @@
 #include "key.h"
 #include "sound.h"
+#include "legacy_string.h"
 #include "string.h"
 
 #include "gui/Text.h"

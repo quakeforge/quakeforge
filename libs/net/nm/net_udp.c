@@ -58,12 +58,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-#ifdef HAVE_WINSOCK_H
-# include <winsock.h>
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -77,6 +71,7 @@
 # include <libc.h>
 #endif
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -194,7 +189,7 @@ get_iface_list (int sock)
 	if (getifaddrs (&ifa_head) < 0)
 		goto no_ifaddrs;
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
@@ -203,18 +198,18 @@ get_iface_list (int sock)
 			num_ifaces = index;
 	}
 	ifaces = malloc (num_ifaces * sizeof (uint32_t));
-	Sys_MaskPrintf (SYS_NET, "%d interfaces\n", num_ifaces);
+	Sys_MaskPrintf (SYS_net, "%d interfaces\n", num_ifaces);
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
 		struct sockaddr_in *sa;
 
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
 		index = if_nametoindex (ifa->ifa_name) - 1;
 		sa = (struct sockaddr_in *) ifa->ifa_addr;
 		memcpy (&ifaces[index], &sa->sin_addr, sizeof (uint32_t));
-		Sys_MaskPrintf (SYS_NET, "    %-10s %s\n", ifa->ifa_name,
+		Sys_MaskPrintf (SYS_net, "    %-10s %s\n", ifa->ifa_name,
 						inet_ntoa (sa->sin_addr));
 		if (!default_iface && ifaces[index] != htonl (0x7f000001))
 			default_iface = &ifaces[index];
@@ -258,9 +253,9 @@ UDP_Init (void)
 		myAddr = 0;
 
 	// if the quake hostname isn't set, set it to the machine name
-	if (strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname, "UNNAMED") == 0) {
 		buff[15] = 0;
-		Cvar_Set (hostname, buff);
+		Cvar_Set ("hostname", buff);
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
@@ -297,7 +292,7 @@ UDP_Shutdown (void)
 }
 
 void
-UDP_Listen (qboolean state)
+UDP_Listen (bool state)
 {
 	// enable listening
 	if (state) {
@@ -387,7 +382,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 {
 	char       *buff;
 	char       *b;
-	int         addr, mask, num, port, run;
+	unsigned    addr, mask, num, port, run;
 
 	buff = nva (".%s", in);
 	b = buff;
@@ -407,7 +402,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 		}
 		if ((*b < '0' || *b > '9') && *b != '.' && *b != ':' && *b != 0)
 			goto error;
-		if (num < 0 || num > 255)
+		if (num > 255)
 			goto error;
 		mask <<= 8;
 		addr = (addr << 8) + num;
@@ -433,7 +428,7 @@ error:
 	return -1;
 }
 
-int
+__attribute__((const)) int
 UDP_Connect (int socket, netadr_t *addr)
 {
 	return 0;
@@ -471,6 +466,29 @@ UDP_CheckNewConnections (void)
 #endif
 }
 
+static void
+hex_dump_buf (byte *buf, int len)
+{
+	int         pos = 0, llen, i;
+
+	while (pos < len) {
+		llen = (len - pos < 16 ? len - pos : 16);
+		printf ("%08x: ", pos);
+		for (i = 0; i < llen; i++)
+			printf ("%02x ", buf[pos + i]);
+		for (i = 0; i < 16 - llen; i++)
+			printf ("   ");
+		printf (" | ");
+
+		for (i = 0; i < llen; i++)
+			printf ("%c", isprint (buf[pos + i]) ? buf[pos + i] : '.');
+		for (i = 0; i < 16 - llen; i++)
+			printf (" ");
+		printf ("\n");
+		pos += llen;
+	}
+}
+
 int
 UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 {
@@ -498,7 +516,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 		return 0;
 	for (cmsg = CMSG_FIRSTHDR (&msghdr); cmsg;
 		 cmsg = CMSG_NXTHDR (&msghdr, cmsg)) {
-		Sys_MaskPrintf (SYS_NET, "%d\n", cmsg->cmsg_type);
+		Sys_MaskPrintf (SYS_net, "%d\n", cmsg->cmsg_type);
 		if (cmsg->cmsg_type == IP_PKTINFO) {
 			info = (struct in_pktinfo *) CMSG_DATA (cmsg);
 			break;
@@ -512,8 +530,8 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 		last_iface = &ifaces[info->ipi_ifindex - 1];
 	}
 	SockadrToNetadr (&addr, from);
-	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s on iface %d (%s)\n", ret,
-					UDP_AddrToString (from), info ? info->ipi_ifindex - 1 : -1,
+	Sys_MaskPrintf (SYS_net, "got %d bytes from %s on iface %d (%s)\n", ret,
+					UDP_AddrToString (from), info ? (int) info->ipi_ifindex - 1 : -1,
 					last_iface ? inet_ntoa (info->ipi_addr) : "?");
 #else
 	socklen_t   addrlen = sizeof (AF_address_t);
@@ -524,10 +542,13 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
 	SockadrToNetadr (&addr, from);
-	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret,
+	Sys_MaskPrintf (SYS_net, "got %d bytes from %s\n", ret,
 					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
+	if (developer & SYS_net) {
+		hex_dump_buf (buf, ret);
+	}
 	return ret;
 }
 
@@ -574,8 +595,11 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 				  SA_LEN (&addr.sa));
 	if (ret == -1 && errno == EWOULDBLOCK)
 		return 0;
-	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret,
+	Sys_MaskPrintf (SYS_net, "sent %d bytes to %s\n", ret,
 					UDP_AddrToString (to));
+	if (developer & SYS_net) {
+		hex_dump_buf (buf, len);
+	}
 	return ret;
 }
 
@@ -651,7 +675,7 @@ UDP_GetAddrFromName (const char *name, netadr_t *addr)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 {
 	if (addr1->family != addr2->family)
@@ -666,7 +690,7 @@ UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_GetSocketPort (netadr_t *addr)
 {
 	return ntohs (addr->port);

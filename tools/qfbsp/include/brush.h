@@ -22,6 +22,7 @@
 #ifndef qfbsp_brush_h
 #define qfbsp_brush_h
 
+#include "QF/darray.h"
 #include "QF/mathlib.h"
 
 #include "bsp5.h"
@@ -30,7 +31,7 @@
 /**	\defgroup qfbsp_brush Brush Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 #define	NUM_HULLS		2				// normal and +16
 
@@ -48,8 +49,8 @@ typedef struct brushset_s {
 	brush_t    *brushes;			// NULL terminated list
 } brushset_t;
 
-extern int      numbrushplanes;
-extern plane_t  planes[MAX_MAP_PLANES];
+typedef struct DARRAY_TYPE (plane_t) planeset_t;
+extern planeset_t planes;
 
 /**	Allocate a new brush.
 
@@ -69,7 +70,7 @@ brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 
 	\param normal	Must be canonical.
 */
-int	PlaneTypeForNormal (const vec3_t normal);
+int	PlaneTypeForNormal (const vec3_t normal) __attribute__((pure));
 
 /**	Make the plane canonical.
 
@@ -95,6 +96,6 @@ int NormalizePlane (plane_t *dp);
 */
 int	FindPlane (const plane_t *dplane, int *side);
 
-//@}
+///@}
 
 #endif//qfbsp_brush_h

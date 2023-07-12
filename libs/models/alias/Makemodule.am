@@ -1,0 +1,26 @@
+noinst_LTLIBRARIES +=	@alias_libs@
+EXTRA_LTLIBRARIES += \
+	libs/models/alias/libalias_gl.la \
+	libs/models/alias/libalias_glsl.la \
+	libs/models/alias/libalias_sw.la \
+	libs/models/alias/libalias_vulkan.la
+
+alias_src= libs/models/alias/model_alias.c
+alias_gl_src= libs/models/alias/gl_mesh.c libs/models/alias/gl_model_alias.c libs/models/alias/floodfill.c
+alias_glsl_src= libs/models/alias/glsl_model_alias.c libs/models/alias/floodfill.c
+alias_sw_src= libs/models/alias/sw_model_alias.c
+alias_vulkan_src= libs/models/alias/vulkan_model_alias.c libs/models/alias/floodfill.c
+
+libs_models_alias_libalias_gl_la_SOURCES= $(alias_gl_src) $(alias_src)
+
+libs_models_alias_libalias_glsl_la_SOURCES= $(alias_glsl_src) $(alias_src)
+
+libs_models_alias_libalias_sw_la_SOURCES= $(alias_sw_src) $(alias_src)
+libs_models_alias_libalias_vulkan_la_SOURCES= $(alias_vulkan_src) $(alias_src)
+
+EXTRA_DIST += \
+	$(alias_gl_src) \
+	$(alias_glsl_src) \
+	$(alias_sw_src) \
+	$(alias_vulkan_src) \
+	$(alias_src)

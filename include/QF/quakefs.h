@@ -27,13 +27,13 @@
 
 */
 
-#ifndef __quakefs_h
-#define __quakefs_h
+#ifndef __QF_quakefs_h
+#define __QF_quakefs_h
 
 /** \defgroup quakefs Quake Filesystem
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -71,11 +71,11 @@ typedef struct vpath_s vpath_t;
 
 typedef struct findfile_s {
 	const vpath_t *vpath;		///< vpath in which file was found
-	qboolean    in_pak;			///< if true, path refers to a pak file rather
-								///< than a directory
 	const char *realname;		///< the name of the file as found (may have
 								///< .gz appended, or .ogg substituded for
 								///< .wav) does not include the path
+	bool        in_pak;			///< if true, path refers to a pak file rather
+								///< than a directory
 } findfile_t;
 
 /**	Cached information about the current game directory. \see \ref dirconf.
@@ -84,8 +84,9 @@ extern gamedir_t *qfs_gamedir;
 
 /** Function type of callback called on gamedir change.
 	\param phase	0 = before Cache_Flush(), 1 = after Cache_Flush()
+	\param data		data pointer passed on to the callback
 */
-typedef void gamedir_callback_t (int phase);
+typedef void gamedir_callback_t (int phase, void *data);
 
 /**	Base of the QFS user directory tree. The QFS functions, except for
 	QFS_FOpenFile() and _QFS_FOpenFile(),  will never access a file outside of
@@ -107,6 +108,7 @@ extern int qfs_filesize;
 
 struct cache_user_s;
 struct dstring_s;
+struct memhunk_s;
 
 /**	Initialize the Quake Filesystem.
 
@@ -114,13 +116,14 @@ struct dstring_s;
 	\c fs_dirconf Cvars. It then loads the \ref dirconf and parses the
 	\c -game command line option.
 
+	\param hunk		Memory pool to use for hunk-based allocations.
 	\param game		The game type used for searching the directory
 					configuration. Currently, this is \"qw\" for
 					quakeworld clients and servers, and one of \"nq\",
 					\"hexen\", \"rogue\" or \"abyss\" for the netquake
 					clients and servers.
 */
-void QFS_Init (const char *game);
+void QFS_Init (struct memhunk_s *hunk, const char *game);
 
 /** Change the current game directory.
 
@@ -288,17 +291,20 @@ int QFS_Remove (const char *path);
 /**	Find available filename.
 
 	The filename will be of the form \c prefixXXXX.ext where \c XXXX
-	is a zero padded number from 0 to 9999.
+	is a zero padded number from 0 to 9999. Should there already be 10000
+	files of such a pattern, then extra digits will be added.
 
 	\param filename	This will be set to the available filename.
 	\param prefix	The part of the filename preceeding the numers.
 	\param ext		The extension to add to the filename.
-	\return			1 for success, 0 for failure.
+	\return			NULL for failure (with an error message in \a filename)
+					or a quakeio file handle.
 
-	\note \a prefix is relative to \c qfc_userpath.
+	\note \a prefix is relative to \c qfc_userpath, as is the generated
+	filename.
 */
-int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
-					  const char *ext);
+QFile *QFS_NextFile (struct dstring_s *filename, const char *prefix,
+					 const char *ext);
 
 /** Extract the non-extension part of the file name from the path.
 
@@ -356,7 +362,7 @@ char *QFS_CompressPath (const char *pth);
 	\return			Pointer to the beginning of the filename. This points
 					inside \a pathname.
 */
-const char *QFS_SkipPath (const char *pathname);
+const char *QFS_SkipPath (const char *pathname) __attribute__((pure));
 
 /**	Return a pointer to the start of the extention part of the path.
 
@@ -366,7 +372,7 @@ const char *QFS_SkipPath (const char *pathname);
 					the returned pointer will point to the terminating nul
 					of the path.
 */
-const char *QFS_FileExtension (const char *in);
+const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 /**	Register a callback function for when the gamedir changes.
 
@@ -376,8 +382,9 @@ const char *QFS_FileExtension (const char *in);
 
 	\param func		The function to call every time the gamedir changes via
 					QFS_Gamedir().
+	\param data		Opaque data pointer passed to the callback.
 */
-void QFS_GamedirCallback (gamedir_callback_t *func);
+void QFS_GamedirCallback (gamedir_callback_t *func, void *data);
 
 /**	Create a new file list.
 
@@ -418,6 +425,6 @@ void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 */
 void QFS_FilelistFree (filelist_t *list);
 
-//@}
+///@}
 
-#endif // __quakefs_h
+#endif//__QF_quakefs_h

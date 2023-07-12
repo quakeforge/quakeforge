@@ -1,0 +1,2 @@
+include qtv/include/Makemodule.am
+include qtv/source/Makemodule.am

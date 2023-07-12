@@ -778,7 +778,7 @@ LPatchTable8:
 C(R_SurfPatch):
 	pushl	%ebx
 
-	movl	C(colormap),%eax
+	movl	C(r_colormap),%eax
 	movl	$LPatchTable8,%ebx
 	movl	$32,%ecx
 LPatchLoop8:
@@ -793,3 +793,7 @@ LPatchLoop8:
 	ret
 
 #endif	// USE_INTEL_ASM
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

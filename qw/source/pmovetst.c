@@ -35,17 +35,17 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
 #include "compat.h"
+
 #include "qw/pmove.h"
 #include "world.h"
 
 static hull_t box_hull;
-static mclipnode_t box_clipnodes[6];
+static dclipnode_t box_clipnodes[6];
 static plane_t box_planes[6];
 
 
@@ -106,7 +106,7 @@ inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t     *plane;
 
 	while (num >= 0) {
@@ -131,11 +131,11 @@ PM_PointContents (const vec3_t p)
 {
 	float       d;
 	int         num;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	hull_t     *hull;
 	plane_t    *plane;
 
-	hull = &pmove.physents[0].model->hulls[0];
+	hull = &pmove.physents[0].model->brush.hulls[0];
 
 	num = hull->firstclipnode;
 
@@ -161,7 +161,7 @@ PM_PointContents (const vec3_t p)
 
 	Returns false if the given player position is not valid (in solid)
 */
-qboolean
+bool
 PM_TestPlayerPosition (const vec3_t pos)
 {
 	hull_t     *hull;
@@ -173,7 +173,7 @@ PM_TestPlayerPosition (const vec3_t pos)
 		pe = &pmove.physents[i];
 		// get the clipping hull
 		if (pe->model)
-			hull = &pmove.physents[i].model->hulls[1];
+			hull = &pmove.physents[i].model->brush.hulls[1];
 		else {
 			VectorSubtract (pe->mins, player_maxs, mins);
 			VectorSubtract (pe->maxs, player_mins, maxs);
@@ -234,7 +234,7 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		} else {
 			check_box = 1;
 			if (pe->model) {
-				hull = &pe->model->hulls[1];
+				hull = &pe->model->brush.hulls[1];
 				VectorSubtract (pe->model->mins, player_maxs, mins);
 				VectorSubtract (pe->model->maxs, player_mins, maxs);
 			} else {

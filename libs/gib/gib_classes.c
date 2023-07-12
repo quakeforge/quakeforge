@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/gib.h"
 #include "QF/va.h"
 #include "QF/sys.h"
@@ -187,7 +188,7 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 static const char **g_occ_reply;
 static unsigned int g_occ_i = 0;
 
-static qboolean occ_iterator (gib_class_t *class, void *unused)
+static bool occ_iterator (gib_class_t *class, void *unused)
 {
 	g_occ_reply[g_occ_i++] = class->name;
 	return false;
@@ -281,7 +282,7 @@ typedef struct Thread_class_s {
 typedef struct Thread_s {
 	gib_object_t *obj;
 	cbuf_t *thread;
-	qboolean ended;
+	bool ended;
 } Thread_t;
 
 static int
@@ -388,8 +389,7 @@ ObjectHash_Construct (gib_object_t *obj)
 {
 	ObjectHash_t *data = malloc (sizeof (ObjectHash_t));
 
-	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free,
-			NULL);
+	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free, NULL, 0);
 
 	return data;
 }
@@ -445,7 +445,7 @@ ObjectHash_Get_f (gib_object_t *obj, gib_method_t *method, void *data,
 	if ((refs = (ObjRef_t **) Hash_FindList (objh->objects,
 					mesg.argv[1]))) {
 		for (r = refs, len = 0; *r; r++, len++);
-		reply = malloc (sizeof (char **) * len);
+		reply = malloc (sizeof (char *) * len);
 		for (r = refs, i = 0; *r; r++, i++)
 			reply[i] = (*r)->obj->handstr;
 		GIB_Reply (obj, mesg, len, reply);
@@ -613,9 +613,9 @@ static const char *g_gcbs_name;
 static const char *gcbs_fname (const char *str)
 {
 	if (g_gcbs_mode == INSTANCE)
-		return va ("__%s_%s__", g_gcbs_name, str);
+		return va (0, "__%s_%s__", g_gcbs_name, str);
 	else
-		return va ("%s::%s", g_gcbs_name, str);
+		return va (0, "%s::%s", g_gcbs_name, str);
 }
 
 void

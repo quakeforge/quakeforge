@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_map Map Parser
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 #define MAX_FACES 256
 typedef struct mface_s {
@@ -39,7 +39,7 @@ typedef struct mface_s {
 typedef struct mbrush_s {
 	struct mbrush_s *next;
 	mface_t    *faces;
-	qboolean    detail;			///< true if brush is detail brush
+	bool        detail;			///< true if brush is detail brush
 } mbrush_t;
 
 typedef struct epair_s {
@@ -95,7 +95,7 @@ void PrintEntity (const entity_t *ent);
 	\return			The value for the key, or the empty string if the key
 					does not exist in this entity.
 */
-const char *ValueForKey (const entity_t *ent, const char *key);
+const char *ValueForKey (const entity_t *ent, const char *key) __attribute__((pure));
 
 /**	Set the value of the entity's key.
 	If the key does not exist, one will be added.
@@ -120,6 +120,6 @@ void GetVectorForKey (const entity_t *ent, const char *key, vec3_t vec);
 */
 void WriteEntitiesToString (void);
 
-//@}
+///@}
 
 #endif//qfbsp_map_h

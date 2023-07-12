@@ -33,23 +33,24 @@
 /**	\defgroup qfbsp_options Command-line Options Parsing
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 typedef struct {
 	int         verbosity;		// 0=silent
-	qboolean    drawflag;
-	qboolean    notjunc;
-	qboolean    nofill;
-	qboolean    noclip;
-	qboolean    onlyents;
-	qboolean    portal;
-	qboolean    extract;
-	qboolean    extract_textures;
-	qboolean    extract_entities;
-	qboolean    extract_hull;
-	qboolean    smart_leak;
-	qboolean    usehulls;
-	qboolean    watervis;
+	bool        drawflag;
+	bool        notjunc;
+	bool        nofill;
+	bool        noclip;
+	bool        onlyents;
+	bool        portal;
+	bool        info;
+	bool        extract;
+	bool        extract_textures;
+	bool        extract_entities;
+	bool        extract_hull;
+	bool        smart_leak;
+	bool        usehulls;
+	bool        watervis;
 	int         hullnum;
 	int         subdivide_size;
 	char       *mapfile;
@@ -65,6 +66,6 @@ extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *this_program;
 
-//@}
+///@}
 
 #endif//qfbsp_options_h

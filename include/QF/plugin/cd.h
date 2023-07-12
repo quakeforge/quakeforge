@@ -24,33 +24,23 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_cd_h_
-#define __QF_plugin_cd_h_
+#ifndef __QF_plugin_cd_h
+#define __QF_plugin_cd_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
-/*
-	All CDAudio plugins must export these functions
-*/
-typedef void (*P_CDAudio_CD_f) (void); //
-typedef void (*P_CDAudio_Pause) (void);
-typedef void (*P_CDAudio_Play) (int, qboolean);
-typedef void (*P_CDAudio_Resume) (void);
-typedef void (*P_CDAudio_Shutdown) (void);
-typedef void (*P_CDAudio_Update) (void);
-typedef void (*P_CDAudio_Init) (void);
-
 typedef struct cd_funcs_s {
-	P_CDAudio_CD_f			pCD_f; //
-	P_CDAudio_Pause			pCDAudio_Pause;
-	P_CDAudio_Play			pCDAudio_Play;
-	P_CDAudio_Resume		pCDAudio_Resume;
-	P_CDAudio_Update		pCDAudio_Update;
+	void      (*init) (void);
+	void      (*cd_f) (void); //
+	void      (*pause) (void);
+	void      (*play) (int, bool);
+	void      (*resume) (void);
+	void      (*update) (void);
 } cd_funcs_t;
 
 typedef struct cd_data_s {
-	int unused; /* C requires that a struct or union has at least one member */
+	int         unused;
 } cd_data_t;
 
-#endif // __QF_plugin_cd_h_
+#endif // __QF_plugin_cd_h

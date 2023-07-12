@@ -10,7 +10,7 @@
 //   |ss\ .
 //   0   1
 
-static mclipnode_t clipnodes_simple_wedge[] = {
+static dclipnode_t clipnodes_simple_wedge[] = {
 	{  0, {             1, CONTENTS_EMPTY}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
@@ -34,7 +34,7 @@ hull_t hull_simple_wedge = {
 //  sss|sss|   |sss
 //     0   1   2
 
-static mclipnode_t clipnodes_tpp1[] = {
+static dclipnode_t clipnodes_tpp1[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             2, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
@@ -60,7 +60,7 @@ hull_t hull_tpp1 = {
 //  sss|sss|   |sss
 //     1   0   2
 
-static mclipnode_t clipnodes_tpp2[] = {
+static dclipnode_t clipnodes_tpp2[] = {
 	{  0, {             2,              1}},
 	{  1, {CONTENTS_SOLID, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
@@ -86,7 +86,7 @@ hull_t hull_tpp2 = {
 //  sss|   |www|sss
 //     1   0   2
 
-static mclipnode_t clipnodes_tppw[] = {
+static dclipnode_t clipnodes_tppw[] = {
 	{  0, {             2,              1}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_WATER}},
@@ -112,7 +112,7 @@ hull_t hull_tppw = {
 //       |sss
 //    ---+--- 0
 //    ss0,0ss
-static mclipnode_t clipnodes_step1[] = {
+static dclipnode_t clipnodes_step1[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {CONTENTS_EMPTY,              2}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
@@ -139,7 +139,7 @@ hull_t hull_step1 = {
 //      |sss
 //   ---+sss 2
 //   ss0,0ss
-static mclipnode_t clipnodes_step2[] = {
+static dclipnode_t clipnodes_step2[] = {
 	{  0, {             1,              2}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
@@ -166,7 +166,7 @@ hull_t hull_step2 = {
 //  sss|
 //  sss+--- 1
 //  ss0,0ss
-static mclipnode_t clipnodes_step3[] = {
+static dclipnode_t clipnodes_step3[] = {
 	{  0, {             1,              2}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
@@ -195,7 +195,7 @@ hull_t hull_step3 = {
 //        |sss
 //     ---+--- 0
 //     ss0,0ss
-static mclipnode_t clipnodes_covered_step[] = {
+static dclipnode_t clipnodes_covered_step[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             3,              2}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
@@ -225,7 +225,7 @@ hull_t hull_covered_step = {
 //  0,0+--- 1
 //    /ssss
 //   2 ssss
-static mclipnode_t clipnodes_ramp[] = {
+static dclipnode_t clipnodes_ramp[] = {
 	{  0, {             1,              2}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
@@ -254,7 +254,7 @@ hull_t hull_ramp = {
 // ss|sss|ss
 //  -8   8
 //  looking at plane 0: back of 0 is empty, front of 0 has above hole
-static mclipnode_t clipnodes_hole[] = {
+static dclipnode_t clipnodes_hole[] = {
 	{  0, {             1, CONTENTS_EMPTY}},
 	{  1, {CONTENTS_SOLID,              2}},
 	{  2, {             3, CONTENTS_SOLID}},
@@ -284,7 +284,7 @@ hull_t hull_hole = {
 //       |sss|
 //    ---+---+--- 0
 //    ss0,0s8,0ss
-static mclipnode_t clipnodes_ridge[] = {
+static dclipnode_t clipnodes_ridge[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {CONTENTS_EMPTY,              2}},
 	{  2, {             3, CONTENTS_EMPTY}},
@@ -320,7 +320,7 @@ hull_t hull_ridge = {
 // 0 -------.------- -20
 //   sssssssssssssss
 //   sssssssssssssss
-static mclipnode_t clipnodes_cave[] = {
+static dclipnode_t clipnodes_cave[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             2,              3}},
 	{  2, {CONTENTS_SOLID,              4}},

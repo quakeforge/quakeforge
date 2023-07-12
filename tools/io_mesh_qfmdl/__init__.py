@@ -24,14 +24,14 @@
 bl_info = {
     "name": "Quake MDL format",
     "author": "Bill Currie",
-    "blender": (2, 6, 3),
+    "blender": (2, 80, 0),
     "api": 35622,
     "location": "File > Import-Export",
     "description": "Import-Export Quake MDL (version 6) files. (.mdl)",
-    "warning": "not even alpha",
+    "warning": "still work in progress",
     "wiki_url": "",
     "tracker_url": "",
-#    "support": 'OFFICIAL',
+#   "support": 'OFFICIAL',
     "category": "Import-Export"}
 
 # To support reload properly, try to access a package var, if it's there,
@@ -66,28 +66,33 @@ EFFECTS=(
 )
 
 class QFMDLSettings(bpy.types.PropertyGroup):
-    eyeposition = FloatVectorProperty(
+    eyeposition : FloatVectorProperty(
         name="Eye Position",
         description="View possion relative to object origin")
-    synctype = EnumProperty(
+    synctype : EnumProperty(
         items=SYNCTYPE,
         name="Sync Type",
         description="Add random time offset for automatic animations")
-    rotate = BoolProperty(
+    rotate : BoolProperty(
         name="Rotate",
         description="Rotate automatically (for pickup items)")
-    effects = EnumProperty(
+    effects : EnumProperty(
         items=EFFECTS,
         name="Effects",
         description="Particle trail effects")
-    #doesn't work :(
-    #script = PointerProperty(
-    #    type=bpy.types.Object,
-    #    name="Script",
-    #    description="Script for animating frames and skins")
-    script = StringProperty(
+
+    script : PointerProperty(
+        type=bpy.types.Text,
         name="Script",
         description="Script for animating frames and skins")
+
+    xform : BoolProperty(
+        name="Auto transform",
+        description="Auto-apply location/rotation/scale when exporting",
+        default=True)
+    md16 : BoolProperty(
+        name="16-bit",
+        description="16 bit vertex coordinates: QuakeForge only")
     xform = BoolProperty(
         name="Auto transform",
         description="Auto-apply location/rotation/scale when exporting",
@@ -102,7 +107,7 @@ class ImportMDL6(bpy.types.Operator, ImportHelper):
     bl_label = "Import MDL"
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob : StringProperty(default="*.mdl", options={'HIDDEN'})
 
     def execute(self, context):
         from . import import_mdl
@@ -116,7 +121,7 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
     bl_label = "Export MDL"
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob : StringProperty(default="*.mdl", options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
@@ -128,11 +133,12 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
         keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
         return export_mdl.export_mdl(self, context, **keywords)
 
-class MDLPanel(bpy.types.Panel):
+class OBJECT_PT_MDLPanel(bpy.types.Panel):
+    bl_label = "MDL Properties"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = 'object'
-    bl_label = 'QF MDL'
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
@@ -157,21 +163,28 @@ def menu_func_import(self, context):
 def menu_func_export(self, context):
     self.layout.operator(ExportMDL6.bl_idname, text="Quake MDL (.mdl)")
 
+classes = (
+    QFMDLSettings,
+    OBJECT_PT_MDLPanel,
+    ImportMDL6,
+    ExportMDL6
+)
 
 def register():
-    bpy.utils.register_module(__name__)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
     bpy.types.Object.qfmdl = PointerProperty(type=QFMDLSettings)
 
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
-
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
     register()

@@ -3,14 +3,15 @@ set -e
 if test -d native; then
 	cd native
 	make $*
-	cd ../x86_64-w64-mingw32
-	ln -fs ../native/tools/qfcc/source/qfcc .
-	ln -fs ../native/tools/pak/pak .
+	cd ../x86_64-w64-mingw32.static
+	ln -fs ../native/qfcc .
+	ln -fs ../native/pak .
+	ln -fs ../native/ruamoko/qwaq/qwaq-cmd .
 fi
 export MINGW=/opt/mxe
-export MINGW_USR=$MINGW/usr/x86_64-w64-mingw32
+export MINGW_USR=$MINGW/usr/x86_64-w64-mingw32.static
 export PKG_CONFIG_LIBDIR=$MINGW_USR/lib/pkgconfig
 export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
 export PATH=$MINGW/usr/bin:$PATH
 
-make PAK='$(top_builddir)/pak' QFCC='$(top_builddir)/qfcc' $*
+make PAK='$(top_builddir)/pak' QFCC='$(top_builddir)/qfcc' QWAQ='$(top_builddir)/qwaq-cmd' VKGENUSRINC=$MINGW_USR/include $*

@@ -31,7 +31,15 @@
 #ifndef __client_entities_h
 #define __client_entities_h
 
+#include "QF/darray.h"
+#include "QF/msg.h"
 #include "QF/qtypes.h"
+
+#include "QF/simd/types.h"
+
+typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
+		entitystateset_t;
+extern	entitystateset_t cl_static_entities;
 
 // entity_state_t is the information conveyed from the server
 // in an update message
@@ -39,10 +47,12 @@ typedef struct entity_state_s {
 	int         number;			// edict index
 	unsigned    flags;			// nolerp, etc
 
-	vec3_t      origin;
+	vec4f_t     origin;
+	vec4f_t     velocity;
 	vec3_t      angles;
-	unsigned short modelindex;
-	unsigned short frame;
+	uint16_t    modelindex;
+	uint16_t    frame;
+	int         weaponframe;
 	int         effects;
 	byte        colormap;
 	byte        skinnum;
@@ -66,5 +76,9 @@ extern entstates_t nq_entstates;
 extern entstates_t qw_entstates;
 
 extern vec3_t ent_colormod[256];
+
+struct entity_s;
+void CL_TransformEntity (struct entity_s ent, float scale,
+						 const vec3_t angles, vec4f_t position);
 
 #endif//__client_entities_h

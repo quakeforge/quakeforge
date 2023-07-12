@@ -34,26 +34,43 @@
 #include "QF/cvar.h"
 #include "QF/keys.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "cl_ents.h"
-#include "cl_pred.h"
-#include "client.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_pred.h"
+#include "qw/include/client.h"
 #include "qw/pmove.h"
 
-cvar_t     *cl_predict;
-cvar_t     *cl_pushlatency;
+int cl_predict;
+static cvar_t cl_predict_cvar = {
+	.name = "cl_predict",
+	.description =
+		"Set to enable client prediction",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_predict },
+};
+float cl_pushlatency;
+static cvar_t cl_pushlatency_cvar = {
+	.name = "pushlatency",
+	.description =
+		"How much prediction should the client make",
+	.default_value = "-999",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_pushlatency },
+};
 
 
 void
-CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
-				   qboolean clientplayer)
+CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u,
+				   bool clientplayer)
 {
 	if (!clientplayer) {
-		if (VectorIsZero (from->pls.velocity)) {
-			VectorCopy (from->pls.origin, to->pls.origin);
+		if (VectorIsZero (from->pls.es.velocity)) {
+			VectorCopy (from->pls.es.origin, to->pls.es.origin);
 			VectorCopy (u->angles, to->viewangles);
-			VectorCopy (from->pls.velocity, to->pls.velocity);
+			VectorCopy (from->pls.es.velocity, to->pls.es.velocity);
 			return;
 		}
 	}
@@ -71,9 +88,9 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 		return;
 	}
 
-	VectorCopy (from->pls.origin, pmove.origin);
+	VectorCopy (from->pls.es.origin, pmove.origin);
 	VectorCopy (u->angles, pmove.angles);
-	VectorCopy (from->pls.velocity, pmove.velocity);
+	VectorCopy (from->pls.es.velocity, pmove.velocity);
 
 	pmove.oldbuttons = from->oldbuttons;
 	pmove.oldonground = from->oldonground;
@@ -91,11 +108,11 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
 	to->oldonground = pmove.oldonground;
-	VectorCopy (pmove.origin, to->pls.origin);
+	VectorCopy (pmove.origin, to->pls.es.origin);
 	VectorCopy (pmove.angles, to->viewangles);
-	VectorCopy (pmove.velocity, to->pls.velocity);
+	VectorCopy (pmove.velocity, to->pls.es.velocity);
 	to->onground = onground;
-	to->pls.weaponframe = from->pls.weaponframe;
+	to->pls.es.weaponframe = from->pls.es.weaponframe;
 }
 
 void
@@ -104,19 +121,22 @@ CL_PredictMove (void)
 	float       f;
 	int         oldphysent, i;
 	frame_t    *from, *to = NULL;
+	entity_state_t *fromes;
+	entity_state_t *toes;
 
-	if (cl_pushlatency->value > 0)
-		Cvar_Set (cl_pushlatency, "0");
+	if (cl_pushlatency > 0)
+		Cvar_Set ("pushlatency", "0");
 
 	if (cl.paused)
 		return;
 
 	// assume on ground unless prediction says different
-	cl.onground = 0;
+	cl.viewstate.onground = 0;
 
-	cl.time = realtime - cls.latency - cl_pushlatency->value * 0.001;
+	cl.time = realtime - cls.latency - cl_pushlatency * 0.001;
 	if (cl.time > realtime)
 		cl.time = realtime;
+	cl.viewstate.time = cl.time;
 
 	if (cl.intermission) {
 		return;
@@ -129,15 +149,16 @@ CL_PredictMove (void)
 		UPDATE_BACKUP - 1)
 		return;
 
-	VectorCopy (cl.viewangles, cl.simangles);
-	cl.simangles[ROLL] = 0;						// FIXME @@@
+	//VectorCopy (cl.viewstate.angles, cl.viewstate.angles);
+	cl.viewstate.player_angles[ROLL] = 0;						// FIXME @@@
 
 	// this is the last frame received from the server
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+	fromes = &from->playerstate[cl.playernum].pls.es;
 
-	if (!cl_predict->int_val) {
-		VectorCopy (from->playerstate[cl.playernum].pls.velocity, cl.simvel);
-		VectorCopy (from->playerstate[cl.playernum].pls.origin, cl.simorg);
+	if (!cl_predict) {
+		cl.viewstate.velocity = fromes->velocity;
+		cl.viewstate.player_origin = fromes->origin;
 		return;
 	}
 
@@ -153,7 +174,7 @@ CL_PredictMove (void)
 		CL_PredictUsercmd (&from->playerstate[cl.playernum],
 						   &to->playerstate[cl.playernum], &to->cmd,
 						   true);
-		cl.onground = onground;
+		cl.viewstate.onground = onground;
 		if (to->senttime >= cl.time)
 			break;
 		from = to;
@@ -164,6 +185,7 @@ CL_PredictMove (void)
 	if (i == UPDATE_BACKUP - 1 || !to)
 		return;							// net hasn't deliver packets in a
 										// long time...
+	toes = &to->playerstate[cl.playernum].pls.es;
 
 	// now interpolate some fraction of the final frame
 	if (to->senttime == from->senttime)
@@ -174,29 +196,20 @@ CL_PredictMove (void)
 	}
 
 	for (i = 0; i < 3; i++)
-		if (fabs (from->playerstate[cl.playernum].pls.origin[i] -
-				  to->playerstate[cl.playernum].pls.origin[i]) > 128) {
+		if (fabs (fromes->origin[i] - toes->origin[i]) > 128) {
 			// teleported, so don't lerp
-			VectorCopy (to->playerstate[cl.playernum].pls.velocity, cl.simvel);
-			VectorCopy (to->playerstate[cl.playernum].pls.origin, cl.simorg);
+			cl.viewstate.velocity = toes->velocity;
+			cl.viewstate.player_origin = toes->origin;
 			return;
 		}
 
-	for (i = 0; i < 3; i++) {
-		cl.simorg[i] = from->playerstate[cl.playernum].pls.origin[i] +
-			f * (to->playerstate[cl.playernum].pls.origin[i] -
-				   from->playerstate[cl.playernum].pls.origin[i]);
-		cl.simvel[i] = from->playerstate[cl.playernum].pls.velocity[i] +
-			f * (to->playerstate[cl.playernum].pls.velocity[i] -
-				 from->playerstate[cl.playernum].pls.velocity[i]);
-	}
+	cl.viewstate.player_origin = fromes->origin
+		+ f * (toes->origin - fromes->origin);
 }
 
 void
 CL_Prediction_Init_Cvars (void)
 {
-	cl_predict = Cvar_Get ("cl_predict", "1", CVAR_NONE, NULL,
-						  "Set to enable client prediction");
-	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
-							   "How much prediction should the client make");
+	Cvar_Register (&cl_predict_cvar, 0, 0);
+	Cvar_Register (&cl_pushlatency_cvar, 0, 0);
 }

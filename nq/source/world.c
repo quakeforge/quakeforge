@@ -38,14 +38,14 @@
 #include <stdio.h>
 
 #include "QF/clip_hull.h"
-#include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 
@@ -134,7 +134,7 @@ typedef struct {
 /* HULL BOXES */
 
 static hull_t box_hull;
-static mclipnode_t box_clipnodes[6];
+static dclipnode_t box_clipnodes[6];
 static plane_t box_planes[6];
 
 
@@ -145,7 +145,7 @@ static plane_t box_planes[6];
 	can just be stored out and get a proper hull_t structure.
 */
 void
-SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes)
+SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, plane_t *planes)
 {
 	int			side, i;
 
@@ -214,7 +214,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	vec3_t      hullmins, hullmaxs, size;
 
 	if ((sv_fields.rotated_bbox != -1
-		 && SVinteger (ent, rotated_bbox))
+		 && SVint (ent, rotated_bbox))
 		|| SVfloat (ent, solid) == SOLID_BSP) {
 		VectorSubtract (maxs, mins, size);
 		if (size[0] < 3)
@@ -225,8 +225,8 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 			hull_index = 2;
 	}
 	if (sv_fields.rotated_bbox != -1
-		&& SVinteger (ent, rotated_bbox)) {
-		int h = SVinteger (ent, rotated_bbox) - 1;
+		&& SVint (ent, rotated_bbox)) {
+		int h = SVint (ent, rotated_bbox) - 1;
 		hull_list = pf_hull_list[h]->hulls;
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
@@ -244,7 +244,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 					   PR_GetString (&sv_pr_state,
 						   			 SVstring (ent, classname)));
 
-		hull_list = model->hull_list;
+		hull_list = model->brush.hull_list;
 	}
 	if (hull_list) {
 		// decide which clipping hull to use, based on the size
@@ -409,29 +409,28 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 }
 
 static void
-SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
+SV_FindTouchedLeafs (edict_t *ent, int node_id)
 {
 	int			sides;
-	mleaf_t    *leaf;
 	plane_t    *splitplane;
 	edict_leaf_t *edict_leaf;
 
-	if (node->contents == CONTENTS_SOLID)
-		return;
-
-	// add an efrag if the node is a leaf
-	if (node->contents < 0) {
-		leaf = (mleaf_t *) node;
+	// add an efrag if the node is a non-solid leaf
+	if (node_id < 0) {
+		mleaf_t    *leaf = sv.worldmodel->brush.leafs + ~node_id;
+		if (leaf->contents == CONTENTS_SOLID)
+			return;
 
 		edict_leaf = alloc_edict_leaf ();
-		edict_leaf->leafnum = leaf - sv.worldmodel->leafs - 1;
+		edict_leaf->leafnum = leaf - sv.worldmodel->brush.leafs - 1;
 		edict_leaf->next = SVdata (ent)->leafs;
 		SVdata (ent)->leafs = edict_leaf;
 		return;
 	}
 
+	mnode_t    *node = sv.worldmodel->brush.nodes + node_id;
 	// NODE_MIXED
-	splitplane = node->plane;
+	splitplane = (plane_t *) &node->plane;
 	sides = BOX_ON_PLANE_SIDE (SVvector (ent, absmin),
 							   SVvector (ent, absmax), splitplane);
 
@@ -444,7 +443,7 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 }
 
 void
-SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
+SV_LinkEdict (edict_t *ent, bool touch_triggers)
 {
 	areanode_t *node;
 
@@ -496,7 +495,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 	// link to PVS leafs
 	free_edict_leafs (&SVdata (ent)->leafs);
 	if (SVfloat (ent, modelindex))
-		SV_FindTouchedLeafs (ent, sv.worldmodel->nodes);
+		SV_FindTouchedLeafs (ent, 0);
 
 	if (SVfloat (ent, solid) == SOLID_NOT)
 		return;
@@ -531,7 +530,7 @@ int
 SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t     *plane;
 
 	while (num >= 0) {
@@ -559,7 +558,7 @@ SV_PointContents (const vec3_t p)
 {
 	int         cont;
 
-	cont = SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
+	cont = SV_HullPointContents (&sv.worldmodel->brush.hulls[0], 0, p);
 	if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
 		cont = CONTENTS_WATER;
 	return cont;
@@ -568,7 +567,7 @@ SV_PointContents (const vec3_t p)
 int
 SV_TruePointContents (const vec3_t p)
 {
-	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
+	return SV_HullPointContents (&sv.worldmodel->brush.hulls[0], 0, p);
 }
 
 /*
@@ -705,7 +704,7 @@ ctl_pretest_triggers (edict_t *touch, moveclip_t *clip)
 	return 1;
 }
 
-static always_inline int
+static always_inline __attribute__((pure)) int
 ctl_pretest_other (edict_t *touch, moveclip_t *clip)
 {
 	if (SVfloat (touch, solid) == SOLID_NOT)
@@ -779,11 +778,10 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 	edict_t    *touch;
 	link_t     *l, *next;
 	trace_t		trace;
-	int         i;
 
 	if (clip->type == TL_EVERYTHING) {
 		touch = NEXT_EDICT (&sv_pr_state, sv.edicts);
-		for (i = 1; i < sv.num_edicts; i++,
+		for (unsigned i = 1; i < sv.num_edicts; i++,
 			 touch = NEXT_EDICT (&sv_pr_state, touch)) {
 			if (clip->trace.allsolid)
 				return;
@@ -896,13 +894,12 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 edict_t *
 SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 {
-	int         e;
 	edict_t    *check;
 	hull_t     *hull;
 	vec3_t      boxmins, boxmaxs, offset;
 
 	// check world first
-	hull = &sv.worldmodel->hulls[1];
+	hull = &sv.worldmodel->brush.hulls[1];
 	if (SV_HullPointContents (hull, hull->firstclipnode, origin) !=
 		CONTENTS_EMPTY) return sv.edicts;
 
@@ -911,8 +908,8 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 	VectorAdd (origin, SVvector (ent, maxs), boxmaxs);
 
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state,
-															check)) {
+	for (unsigned e = 1; e < sv.num_edicts;
+		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
 		if (check == ent)

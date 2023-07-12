@@ -40,7 +40,6 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -49,12 +48,13 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "d_iface.h"
 #include "r_internal.h"
-#include "sbar.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
@@ -79,105 +79,391 @@ int					gl_use_bgra;
 int					gl_va_capable;
 static  int					driver_vaelements;
 int					vaelements;
-int         		gl_texture_number = 1;
 int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
 // Multitexture
-qboolean			gl_mtex_capable = false;
+bool				gl_mtex_capable = false;
 static int			gl_mtex_tmus = 0;
 GLenum				gl_mtex_enum;
 int					gl_mtex_active_tmus = 0;
-qboolean			gl_mtex_fullbright = false;
+bool				gl_mtex_fullbright = false;
 
 // Combine
-qboolean			gl_combine_capable = false;
+bool				gl_combine_capable = false;
 int					lm_src_blend, lm_dest_blend;
 float				gl_rgb_scale = 1.0;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 
-qboolean			gl_feature_mach64 = false;
+bool				gl_feature_mach64 = false;
 
 // GL_EXT_texture_filter_anisotropic
-qboolean 			gl_Anisotropy;
+bool 			gl_Anisotropy;
 static float		aniso_max;
 float				gl_aniso;
 
 // GL_ATI_pn_triangles
-static qboolean		TruForm;
+static bool			TruForm;
 static int			tess_max;
 int			gl_tess;
 
 // GL_LIGHT
 int					gl_max_lights;
 
-cvar_t		*gl_anisotropy;
-cvar_t		*gl_doublebright;
-cvar_t      *gl_fb_bmodels;
-cvar_t      *gl_finish;
-cvar_t      *gl_max_size;
-cvar_t      *gl_multitexture;
-cvar_t		*gl_tessellate;
-cvar_t		*gl_textures_bgra;
-cvar_t      *gl_vaelements_max;
-cvar_t      *gl_vector_light;
-cvar_t      *gl_screenshot_byte_swap;
+float gl_anisotropy;
+static cvar_t gl_anisotropy_cvar = {
+	.name = "gl_anisotropy",
+	.description = 0,
+	.default_value = "1.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &gl_anisotropy },
+};
+int gl_fb_bmodels;
+static cvar_t gl_fb_bmodels_cvar = {
+	.name = "gl_fb_bmodels",
+	.description =
+		"Toggles fullbright color support for bmodels",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_fb_bmodels },
+};
+int gl_finish;
+static cvar_t gl_finish_cvar = {
+	.name = "gl_finish",
+	.description =
+		"wait for rendering to finish",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_finish },
+};
+int gl_max_size;
+static cvar_t gl_max_size_cvar = {
+	.name = "gl_max_size",
+	.description =
+		"Texture dimension",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_max_size },
+};
+int gl_multitexture;
+static cvar_t gl_multitexture_cvar = {
+	.name = "gl_multitexture",
+	.description =
+		"Use multitexture when available.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_multitexture },
+};
+int gl_tessellate;
+static cvar_t gl_tessellate_cvar = {
+	.name = "gl_tessellate",
+	.description = 0,
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_tessellate },
+};
+int gl_textures_bgra;
+static cvar_t gl_textures_bgra_cvar = {
+	.name = "gl_textures_bgra",
+	.description =
+		"If set to 1, try to use BGR & BGRA textures instead of RGB & RGBA.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &gl_textures_bgra },
+};
+int gl_vaelements_max;
+static cvar_t gl_vaelements_max_cvar = {
+	.name = "gl_vaelements_max",
+	.description =
+		"Limit the vertex array size for buggy drivers. 0 (default) uses "
+		"driver provided limit, -1 disables use of vertex arrays.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &gl_vaelements_max },
+};
+int gl_vector_light;
+static cvar_t gl_vector_light_cvar = {
+	.name = "gl_vector_light",
+	.description =
+		"Enable use of GL vector lighting. 0 = flat lighting.",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_vector_light },
+};
+int gl_screenshot_byte_swap;
+static cvar_t gl_screenshot_byte_swap_cvar = {
+	.name = "gl_screenshot_byte_swap",
+	.description =
+		"Swap the bytes for gl screenshots. Needed if you get screenshots with"
+		" red and blue swapped.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_screenshot_byte_swap },
+};
 
-cvar_t     *gl_affinemodels;
-cvar_t     *gl_clear;
-cvar_t     *gl_conspin;
-cvar_t     *gl_constretch;
-cvar_t     *gl_dlight_polyblend;
-cvar_t     *gl_dlight_smooth;
-cvar_t     *gl_driver;
-cvar_t     *gl_fb_models;
-cvar_t     *gl_keeptjunctions;
-cvar_t     *gl_lerp_anim;
-cvar_t     *gl_lightmap_align;
-cvar_t     *gl_lightmap_subimage;
-cvar_t     *gl_nocolors;
-cvar_t	   *gl_overbright;
-cvar_t     *gl_particle_mip;
-cvar_t     *gl_particle_size;
-cvar_t     *gl_picmip;
-cvar_t     *gl_playermip;
-cvar_t     *gl_reporttjunctions;
-cvar_t     *gl_sky_clip;
-cvar_t     *gl_sky_debug;
-cvar_t     *gl_sky_multipass;
-cvar_t     *gl_texsort;
-cvar_t     *gl_triplebuffer;
-static cvar_t *vid_use8bit;
-
-void gl_multitexture_f (cvar_t *var);
-
+int gl_affinemodels;
+static cvar_t gl_affinemodels_cvar = {
+	.name = "gl_affinemodels",
+	.description =
+		"Makes texture rendering quality better if set to 1",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_affinemodels },
+};
+int gl_clear;
+static cvar_t gl_clear_cvar = {
+	.name = "gl_clear",
+	.description =
+		"Set to 1 to make background black. Useful for removing HOM effect",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_clear },
+};
+float gl_conspin;
+static cvar_t gl_conspin_cvar = {
+	.name = "gl_conspin",
+	.description =
+		"speed at which the console spins",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &gl_conspin },
+};
+int gl_constretch;
+static cvar_t gl_constretch_cvar = {
+	.name = "gl_constretch",
+	.description =
+		"toggle console between slide and stretch",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_constretch },
+};
+int gl_dlight_polyblend;
+static cvar_t gl_dlight_polyblend_cvar = {
+	.name = "gl_dlight_polyblend",
+	.description =
+		"Set to 1 to use a dynamic light effect faster on GL",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_dlight_polyblend },
+};
+int gl_dlight_smooth;
+static cvar_t gl_dlight_smooth_cvar = {
+	.name = "gl_dlight_smooth",
+	.description =
+		"Smooth dynamic vertex lighting",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_dlight_smooth },
+};
+int gl_fb_models;
+static cvar_t gl_fb_models_cvar = {
+	.name = "gl_fb_models",
+	.description =
+		"Toggles fullbright color support for models",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_fb_models },
+};
+int gl_keeptjunctions;
+static cvar_t gl_keeptjunctions_cvar = {
+	.name = "gl_keeptjunctions",
+	.description =
+		"Set to 0 to turn off colinear vertexes upon level load.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_keeptjunctions },
+};
+int gl_lerp_anim;
+static cvar_t gl_lerp_anim_cvar = {
+	.name = "gl_lerp_anim",
+	.description =
+		"Toggles model animation interpolation",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_lerp_anim },
+};
+int gl_lightmap_align;
+static cvar_t gl_lightmap_align_cvar = {
+	.name = "gl_lightmap_align",
+	.description =
+		"Workaround for nvidia slow path. Set to 4 or 16 if you have an nvidia"
+		" 3d accelerator, set to 1 otherwise.",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_lightmap_align },
+};
+int gl_lightmap_subimage;
+static cvar_t gl_lightmap_subimage_cvar = {
+	.name = "gl_lightmap_subimage",
+	.description =
+		"Lightmap Update method. Default 2 updates a minimum 'dirty rectangle'"
+		" around the area changed. 1 updates every line that changed. 0 "
+		"updates the entire lightmap.",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_lightmap_subimage },
+};
+int gl_nocolors;
+static cvar_t gl_nocolors_cvar = {
+	.name = "gl_nocolors",
+	.description =
+		"Set to 1, turns off all player colors",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_nocolors },
+};
+int gl_overbright;
+static cvar_t gl_overbright_cvar = {
+	.name = "gl_overbright",
+	.description =
+		"Darken lightmaps so that dynamic lights can be overbright. 1 = 0.75 "
+		"brightness, 2 = 0.5 brightness.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_overbright },
+};
+int gl_particle_mip;
+static cvar_t gl_particle_mip_cvar = {
+	.name = "gl_particle_mip",
+	.description =
+		"Toggles particle texture mipmapping.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_particle_mip },
+};
+int gl_particle_size;
+static cvar_t gl_particle_size_cvar = {
+	.name = "gl_particle_size",
+	.description =
+		"Vertical and horizontal size of particle textures as a power of 2. "
+		"Default is 5 (32 texel square).",
+	.default_value = "5",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_particle_size },
+};
+int gl_picmip;
+static cvar_t gl_picmip_cvar = {
+	.name = "gl_picmip",
+	.description =
+		"Dimensions of textures. 0 is normal, 1 is half, 2 is 1/4",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_picmip },
+};
+int gl_playermip;
+static cvar_t gl_playermip_cvar = {
+	.name = "gl_playermip",
+	.description =
+		"Detail of player skins. 0 best, 4 worst.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_playermip },
+};
+int gl_reporttjunctions;
+static cvar_t gl_reporttjunctions_cvar = {
+	.name = "gl_reporttjunctions",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_reporttjunctions },
+};
+int gl_sky_clip;
+static cvar_t gl_sky_clip_cvar = {
+	.name = "gl_sky_clip",
+	.description =
+		"controls amount of sky overdraw",
+	.default_value = "2",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_sky_clip },
+};
+int gl_sky_debug;
+static cvar_t gl_sky_debug_cvar = {
+	.name = "gl_sky_debug",
+	.description =
+		"debugging `info' for sky clipping",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_sky_debug },
+};
+int gl_sky_divide;
+static cvar_t gl_sky_divide_cvar = {
+	.name = "gl_sky_divide",
+	.description =
+		"subdivide sky polys",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_sky_divide },
+};
+int gl_sky_multipass;
+static cvar_t gl_sky_multipass_cvar = {
+	.name = "gl_sky_multipass",
+	.description =
+		"controls whether the skydome is single or double pass",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_sky_multipass },
+};
+int gl_texsort;
+static cvar_t gl_texsort_cvar = {
+	.name = "gl_texsort",
+	.description =
+		"None",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &gl_texsort },
+};
+int gl_triplebuffer;
+static cvar_t gl_triplebuffer_cvar = {
+	.name = "gl_triplebuffer",
+	.description =
+		"Set to 1 by default. Fixes status bar flicker on some hardware",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_triplebuffer },
+};
+static int vid_use8bit;
+static cvar_t vid_use8bit_cvar = {
+	.name = "vid_use8bit",
+	.description =
+		"Use 8-bit shared palettes.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &vid_use8bit },
+};
 
 static void
-gl_max_size_f (cvar_t *var)
+gl_triplebuffer_f (void *data, const cvar_t *cvar)
+{
+	vid.numpages = gl_triplebuffer ? 3 : 2;
+}
+
+static void
+gl_max_size_f (void *data, const cvar_t *cvar)
 {
 	GLint		texSize;
 
-	if (!var)
+	if (!cvar)
 		return;
 
 	// Check driver's max texture size
 	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &texSize);
-	if (var->int_val < 1) {
-		Cvar_SetValue (var, texSize);
+	if (gl_max_size < 1) {
+		gl_max_size = texSize;
 	} else {
-		Cvar_SetValue (var, bound (1, var->int_val, texSize));
+		gl_max_size = bound (1, gl_max_size, texSize);
 	}
 }
 
 static void
-gl_textures_bgra_f (cvar_t *var)
+gl_textures_bgra_f (void *data, const cvar_t *cvar)
 {
-	if (!var)
+	if (!cvar)
 		return;
 
-	if (var->int_val && gl_bgra_capable) {
+	if (gl_textures_bgra && gl_bgra_capable) {
 		gl_use_bgra = 1;
 	} else {
 		gl_use_bgra = 0;
@@ -185,12 +471,12 @@ gl_textures_bgra_f (cvar_t *var)
 }
 
 static void
-gl_fb_bmodels_f (cvar_t *var)
+gl_fb_bmodels_f (void *data, const cvar_t *cvar)
 {
-	if (!var)
+	if (!cvar)
 		return;
 
-	if (var->int_val && gl_mtex_tmus >= 3) {
+	if (gl_fb_bmodels && gl_mtex_tmus >= 3) {
 		gl_mtex_fullbright = true;
 	} else {
 		gl_mtex_fullbright = false;
@@ -198,16 +484,13 @@ gl_fb_bmodels_f (cvar_t *var)
 }
 
 void
-gl_multitexture_f (cvar_t *var)
+gl_multitexture_f (void *data, const cvar_t *cvar)
 {
-	if (!var)
-		return;
-
-	if (var->int_val && gl_mtex_capable) {
+	if (gl_multitexture && gl_mtex_capable) {
 		gl_mtex_active_tmus = gl_mtex_tmus;
 
 		if (gl_fb_bmodels) {
-			if (gl_fb_bmodels->int_val) {
+			if (gl_fb_bmodels) {
 				if (gl_mtex_tmus >= 3) {
 					gl_mtex_fullbright = true;
 
@@ -218,7 +501,7 @@ gl_multitexture_f (cvar_t *var)
 					qfglDisable (GL_TEXTURE_2D);
 				} else {
 					gl_mtex_fullbright = false;
-					Sys_MaskPrintf (SYS_VID,
+					Sys_MaskPrintf (SYS_vid,
 									"Not enough TMUs for BSP fullbrights.\n");
 				}
 			}
@@ -230,7 +513,7 @@ gl_multitexture_f (cvar_t *var)
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_overbright) {
-			if (gl_combine_capable && gl_overbright->int_val) {
+			if (gl_combine_capable && gl_overbright) {
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
@@ -251,25 +534,25 @@ gl_multitexture_f (cvar_t *var)
 }
 
 static void
-gl_screenshot_byte_swap_f (cvar_t *var)
+gl_screenshot_byte_swap_f (void *data, const cvar_t *cvar)
 {
-	if (var)
+	if (cvar)
 		qfglPixelStorei (GL_PACK_SWAP_BYTES,
-						 var->int_val ? GL_TRUE : GL_FALSE);
+						 gl_screenshot_byte_swap ? GL_TRUE : GL_FALSE);
 }
 
 static void
-gl_anisotropy_f (cvar_t * var)
+gl_anisotropy_f (void *data, const cvar_t *var)
 {
 	if (gl_Anisotropy) {
 		if (var)
-			gl_aniso = (bound (1.0, var->value, aniso_max));
+			gl_aniso = (bound (1.0, gl_anisotropy, aniso_max));
 		else
 			gl_aniso = 1.0;
 	} else {
 		gl_aniso = 1.0;
 		if (var)
-			Sys_MaskPrintf (SYS_VID,
+			Sys_MaskPrintf (SYS_vid,
 							"Anisotropy (GL_EXT_texture_filter_anisotropic) "
 							"is not supported by your hardware and/or "
 							"drivers.\n");
@@ -277,134 +560,87 @@ gl_anisotropy_f (cvar_t * var)
 }
 
 static void
-gl_tessellate_f (cvar_t * var)
+gl_tessellate_f (void *data, const cvar_t *var)
 {
 	if (TruForm) {
 		if (var)
-			gl_tess = (bound (0, var->int_val, tess_max));
+			gl_tess = (bound (0, gl_tessellate, tess_max));
 		else
 			gl_tess = 0;
 		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, gl_tess);
 	} else {
 		gl_tess = 0;
 		if (var)
-			Sys_MaskPrintf (SYS_VID,
+			Sys_MaskPrintf (SYS_vid,
 							"TruForm (GL_ATI_pn_triangles) is not supported "
 							"by your hardware and/or drivers.\n");
 	}
 }
 
 static void
-gl_vaelements_max_f (cvar_t *var)
+gl_vaelements_max_f (void *data, const cvar_t *cvar)
 {
-	if (var->int_val)
-		vaelements = min (var->int_val, driver_vaelements);
+	if (gl_vaelements_max)
+		vaelements = min (gl_vaelements_max, driver_vaelements);
 	else
 		vaelements = driver_vaelements;
 }
 
 static void
+gl_sky_divide_f (void *data, const cvar_t *cvar)
+{
+	mod_sky_divide = gl_sky_divide;
+}
+
+static void
 GL_Common_Init_Cvars (void)
 {
-	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
-							"shared palettes.");
-	gl_textures_bgra = Cvar_Get ("gl_textures_bgra", "0", CVAR_ROM,
-								 gl_textures_bgra_f, "If set to 1, try to use "
-								 "BGR & BGRA textures instead of RGB & RGBA.");
-	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE,
-							  gl_fb_bmodels_f, "Toggles fullbright color "
-							  "support for bmodels");
-	gl_finish = Cvar_Get ("gl_finish", "1", CVAR_ARCHIVE, NULL,
-							"wait for rendering to finish");
-	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
-							"Texture dimension");
-	gl_multitexture = Cvar_Get ("gl_multitexture", "1", CVAR_ARCHIVE,
-								gl_multitexture_f, "Use multitexture when "
-								"available.");
-	gl_screenshot_byte_swap =
-		Cvar_Get ("gl_screenshot_byte_swap", "0", CVAR_NONE,
-				  gl_screenshot_byte_swap_f, "Swap the bytes for gl "
-				  "screenshots. Needed if you get screenshots with red and "
-				  "blue swapped.");
-	gl_anisotropy =
-		Cvar_Get ("gl_anisotropy", "1.0", CVAR_NONE, gl_anisotropy_f,
-				  nva ("Specifies degree of anisotropy, from 1.0 to %f. "
-					   "Higher anisotropy means less distortion of textures "
-					   "at shallow angles to the viewer.", aniso_max));
-	gl_tessellate =
-		Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
-				  nva ("Specifies tessellation level from 0 to %i. Higher "
-					   "tessellation level means more triangles.", tess_max));
-	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM,
-								  gl_vaelements_max_f,
-								  "Limit the vertex array size for buggy "
-								  "drivers. 0 (default) uses driver provided "
-								  "limit, -1 disables use of vertex arrays.");
-	gl_vector_light = Cvar_Get ("gl_vector_light", "1", CVAR_NONE, NULL,
-						"Enable use of GL vector lighting. 0 = flat lighting.");
-	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_ARCHIVE, NULL,
-								"Makes texture rendering quality better if "
-								"set to 1");
-	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "Set to 1 to make "
-						 "background black. Useful for removing HOM effect");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
-						   "speed at which the console spins");
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "toggle console between slide and stretch");
-	gl_dlight_polyblend = Cvar_Get ("gl_dlight_polyblend", "0", CVAR_ARCHIVE,
-									NULL, "Set to 1 to use a dynamic light "
-									"effect faster on GL");
-	gl_dlight_smooth = Cvar_Get ("gl_dlight_smooth", "1", CVAR_ARCHIVE, NULL,
-								 "Smooth dynamic vertex lighting");
-	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
-							 "Toggles fullbright color support for models");
-	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,
-								  "Set to 0 to turn off colinear vertexes "
-								  "upon level load.");
-	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
-							 "Toggles model animation interpolation");
+	Cvar_Register (&vid_use8bit_cvar, 0, 0);
+	Cvar_Register (&gl_textures_bgra_cvar, gl_textures_bgra_f, 0);
+	Cvar_Register (&gl_fb_bmodels_cvar, gl_fb_bmodels_f, 0);
+	Cvar_Register (&gl_finish_cvar, 0, 0);
+	Cvar_Register (&gl_max_size_cvar, gl_max_size_f, 0);
+	Cvar_Register (&gl_multitexture_cvar, gl_multitexture_f, 0);
+	Cvar_Register (&gl_screenshot_byte_swap_cvar, gl_screenshot_byte_swap_f, 0);
+	Cvar_Register (&gl_anisotropy_cvar, gl_anisotropy_f, 0);
+	gl_anisotropy_cvar.description = nva (
+		"Specifies degree of anisotropy, from 1.0 to %f. Higher anisotropy "
+		"means less distortion of textures at shallow angles to the viewer.",
+		aniso_max);
+	Cvar_Register (&gl_tessellate_cvar, gl_tessellate_f, 0);
+	gl_tessellate_cvar.description = nva (
+		"Specifies tessellation level from 0 to %i. Higher tessellation level "
+		"means more triangles.",
+		tess_max);
+	Cvar_Register (&gl_vaelements_max_cvar, gl_vaelements_max_f, 0);
+	Cvar_Register (&gl_vector_light_cvar, 0, 0);
+	Cvar_Register (&gl_affinemodels_cvar, 0, 0);
+	Cvar_Register (&gl_clear_cvar, 0, 0);
+	Cvar_Register (&gl_conspin_cvar, 0, 0);
+	Cvar_Register (&gl_constretch_cvar, 0, 0);
+	Cvar_Register (&gl_dlight_polyblend_cvar, 0, 0);
+	Cvar_Register (&gl_dlight_smooth_cvar, 0, 0);
+	Cvar_Register (&gl_fb_models_cvar, 0, 0);
+	Cvar_Register (&gl_keeptjunctions_cvar, 0, 0);
+	Cvar_Register (&gl_lerp_anim_cvar, 0, 0);
 
-	gl_lightmap_align = Cvar_Get ("gl_lightmap_align", "1", CVAR_NONE, NULL,
-								  "Workaround for nvidia slow path. Set to 4 "
-								  "or 16 if you have an nvidia 3d "
-								  "accelerator, set to 1 otherwise.");
-	gl_lightmap_subimage = Cvar_Get ("gl_lightmap_subimage", "1", CVAR_NONE,
-									 NULL, "Lightmap Update method. Default 2 "
-									 "updates a minimum 'dirty rectangle' "
-									 "around the area changed. 1 updates "
-									 "every line that changed. 0 updates the "
-									 "entire lightmap.");
-	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
-							"Set to 1, turns off all player colors");
-	gl_overbright = Cvar_Get ("gl_overbright", "0", CVAR_NONE,
-							  gl_overbright_f, "Darken lightmaps so that "
-							  "dynamic lights can be overbright. 1 = 0.75 "
-							  "brightness, 2 = 0.5 brightness.");
-	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,
-								"Toggles particle texture mipmapping.");
-	gl_particle_size = Cvar_Get ("gl_particle_size", "5", CVAR_NONE, NULL,
-								 "Vertical and horizontal size of particle "
-								 "textures as a power of 2. Default is 5 "
-								 "(32 texel square).");
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of "
-						  "textures. 0 is normal, 1 is half, 2 is 1/4");
-	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL,
-							 "Detail of player skins. 0 best, 4 worst.");
-	gl_reporttjunctions = Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE,
-									NULL, "None");
-	gl_sky_clip = Cvar_Get ("gl_sky_clip", "2", CVAR_ARCHIVE, NULL,
-							"controls amount of sky overdraw");
-	gl_sky_debug = Cvar_Get ("gl_sky_debug", "0", CVAR_NONE, NULL,
-							 "debugging `info' for sky clipping");
-	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
-							  "subdivide sky polys");
-	gl_sky_multipass = Cvar_Get ("gl_sky_multipass", "1", CVAR_ARCHIVE, NULL,
-								"controls whether the skydome is single or "
-								"double pass");
-	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
-	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
-								"Set to 1 by default. Fixes status bar "
-								"flicker on some hardware");
+	Cvar_Register (&gl_lightmap_align_cvar, 0, 0);
+	Cvar_Register (&gl_lightmap_subimage_cvar, 0, 0);
+	Cvar_Register (&gl_nocolors_cvar, 0, 0);
+	Cvar_Register (&gl_overbright_cvar, gl_overbright_f, 0);
+	Cvar_Register (&gl_particle_mip_cvar, 0, 0);
+	Cvar_Register (&gl_particle_size_cvar, 0, 0);
+	Cvar_Register (&gl_picmip_cvar, 0, 0);
+	Cvar_Register (&gl_playermip_cvar, 0, 0);
+	Cvar_Register (&gl_reporttjunctions_cvar, 0, 0);
+	Cvar_Register (&gl_sky_clip_cvar, 0, 0);
+	Cvar_Register (&gl_sky_debug_cvar, 0, 0);
+	Cvar_Register (&gl_sky_divide_cvar, gl_sky_divide_f, 0);
+	Cvar_Register (&gl_sky_multipass_cvar, 0, 0);
+	Cvar_Register (&gl_texsort_cvar, 0, 0);
+	Cvar_Register (&gl_triplebuffer_cvar, gl_triplebuffer_f, 0);
+
+	Cvar_AddListener (&gl_overbright_cvar, gl_multitexture_f, 0);
 }
 
 static void
@@ -432,14 +668,14 @@ CheckGLVersionString (void)
 	} else {
 		Sys_Error ("Malformed OpenGL version string!");
 	}
-	Sys_MaskPrintf (SYS_VID, "GL_VERSION: %s\n", gl_version);
+	Sys_MaskPrintf (SYS_vid, "GL_VERSION: %s\n", gl_version);
 
 	gl_vendor = (char *) qfglGetString (GL_VENDOR);
-	Sys_MaskPrintf (SYS_VID, "GL_VENDOR: %s\n", gl_vendor);
+	Sys_MaskPrintf (SYS_vid, "GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = (char *) qfglGetString (GL_RENDERER);
-	Sys_MaskPrintf (SYS_VID, "GL_RENDERER: %s\n", gl_renderer);
+	Sys_MaskPrintf (SYS_vid, "GL_RENDERER: %s\n", gl_renderer);
 	gl_extensions = (char *) qfglGetString (GL_EXTENSIONS);
-	Sys_MaskPrintf (SYS_VID, "GL_EXTENSIONS: %s\n", gl_extensions);
+	Sys_MaskPrintf (SYS_vid, "GL_EXTENSIONS: %s\n", gl_extensions);
 
 	if (strstr (gl_renderer, "Mesa DRI Mach64"))
 		gl_feature_mach64 = true;
@@ -474,17 +710,14 @@ CheckCombineExtensions (void)
 {
 	if (gl_major >= 1 && gl_minor >= 3) {
 		gl_combine_capable = true;
-		Sys_MaskPrintf (SYS_VID, "COMBINE active, multitextured doublebright "
+		Sys_MaskPrintf (SYS_vid, "COMBINE active, multitextured doublebright "
 						"enabled.\n");
 	} else if (QFGL_ExtensionPresent ("GL_ARB_texture_env_combine")) {
 		gl_combine_capable = true;
-		Sys_MaskPrintf (SYS_VID, "COMBINE_ARB active, multitextured "
+		Sys_MaskPrintf (SYS_vid, "COMBINE_ARB active, multitextured "
 						"doublebright enabled.\n");
 	} else {
 		gl_combine_capable = false;
-		Sys_MaskPrintf (SYS_VID, "GL_ARB_texture_env_combine not found. "
-						"gl_doublebright will have no effect with "
-						"gl_multitexture on.\n");
 	}
 }
 
@@ -496,15 +729,15 @@ CheckCombineExtensions (void)
 static void
 CheckMultiTextureExtensions (void)
 {
-	Sys_MaskPrintf (SYS_VID, "Checking for multitexture: ");
+	Sys_MaskPrintf (SYS_vid, "Checking for multitexture: ");
 	if (COM_CheckParm ("-nomtex")) {
-		Sys_MaskPrintf (SYS_VID, "disabled.\n");
+		Sys_MaskPrintf (SYS_vid, "disabled.\n");
 		return;
 	}
 	if (gl_major >= 1 && gl_minor >= 3) {
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS, &gl_mtex_tmus);
 		if (gl_mtex_tmus >= 2) {
-			Sys_MaskPrintf (SYS_VID, "enabled, %d TMUs.\n", gl_mtex_tmus);
+			Sys_MaskPrintf (SYS_vid, "enabled, %d TMUs.\n", gl_mtex_tmus);
 			qglMultiTexCoord2f =
 				QFGL_ExtensionAddress ("glMultiTexCoord2f");
 			qglMultiTexCoord2fv =
@@ -514,16 +747,16 @@ CheckMultiTextureExtensions (void)
 			if (qglMultiTexCoord2f && gl_mtex_enum)
 				gl_mtex_capable = true;
 			else
-				Sys_MaskPrintf (SYS_VID, "Multitexture disabled, could not "
+				Sys_MaskPrintf (SYS_vid, "Multitexture disabled, could not "
 								"find required functions\n");
 		} else {
-			Sys_MaskPrintf (SYS_VID,
+			Sys_MaskPrintf (SYS_vid,
 							"Multitexture disabled, not enough TMUs.\n");
 		}
 	} else if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &gl_mtex_tmus);
 		if (gl_mtex_tmus >= 2) {
-			Sys_MaskPrintf (SYS_VID, "enabled, %d TMUs.\n", gl_mtex_tmus);
+			Sys_MaskPrintf (SYS_vid, "enabled, %d TMUs.\n", gl_mtex_tmus);
 			qglMultiTexCoord2f =
 				QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
 			qglMultiTexCoord2fv =
@@ -533,14 +766,14 @@ CheckMultiTextureExtensions (void)
 			if (qglMultiTexCoord2f && gl_mtex_enum)
 				gl_mtex_capable = true;
 			else
-				Sys_MaskPrintf (SYS_VID, "Multitexture disabled, could not "
+				Sys_MaskPrintf (SYS_vid, "Multitexture disabled, could not "
 								"find required functions\n");
 		} else {
-			Sys_MaskPrintf (SYS_VID,
+			Sys_MaskPrintf (SYS_vid,
 							"Multitexture disabled, not enough TMUs.\n");
 		}
 	} else {
-		Sys_MaskPrintf (SYS_VID, "not found.\n");
+		Sys_MaskPrintf (SYS_vid, "not found.\n");
 	}
 }
 
@@ -582,7 +815,7 @@ CheckLights (void)
 			specular[4] = {0.1, 0.1, 0.1, 1.0};
 
 	qfglGetIntegerv (GL_MAX_LIGHTS, &gl_max_lights);
-	Sys_MaskPrintf (SYS_VID, "Max GL Lights %d.\n", gl_max_lights);
+	Sys_MaskPrintf (SYS_vid, "Max GL Lights %d.\n", gl_max_lights);
 
 	qfglEnable (GL_LIGHTING);
 	qfglLightModelfv (GL_LIGHT_MODEL_AMBIENT, dark);
@@ -619,11 +852,11 @@ Tdfx_Init8bitPalette (void)
 
 		if (!(qgl3DfxSetPaletteEXT =
 			  QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
-			Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette not found.\n");
+			Sys_MaskPrintf (SYS_vid, "3DFX_set_global_palette not found.\n");
 			return;
 		}
 
-		Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette.\n");
+		Sys_MaskPrintf (SYS_vid, "3DFX_set_global_palette.\n");
 
 		oldpal = (char *) d_8to24table;	// d_8to24table3dfx;
 		for (i = 0; i < 256; i++) {
@@ -637,7 +870,7 @@ Tdfx_Init8bitPalette (void)
 		qgl3DfxSetPaletteEXT ((GLuint *) table);
 		vr_data.vid->is8bit = true;
 	} else {
-		Sys_MaskPrintf (SYS_VID, "\n    3DFX_set_global_palette not found.");
+		Sys_MaskPrintf (SYS_vid, "\n    3DFX_set_global_palette not found.");
 	}
 }
 
@@ -662,11 +895,11 @@ Shared_Init8bitPalette (void)
 
 	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
 		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
-			Sys_MaskPrintf (SYS_VID, "glColorTableEXT not found.\n");
+			Sys_MaskPrintf (SYS_vid, "glColorTableEXT not found.\n");
 			return;
 		}
 
-		Sys_MaskPrintf (SYS_VID, "GL_EXT_shared_texture_palette\n");
+		Sys_MaskPrintf (SYS_vid, "GL_EXT_shared_texture_palette\n");
 
 		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		oldPalette = (GLubyte *) d_8to24table;	// d_8to24table3dfx;
@@ -681,7 +914,7 @@ Shared_Init8bitPalette (void)
 							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
 		vr_data.vid->is8bit = true;
 	} else {
-		Sys_MaskPrintf (SYS_VID,
+		Sys_MaskPrintf (SYS_vid,
 						"\n    GL_EXT_shared_texture_palette not found.");
 	}
 }
@@ -689,19 +922,19 @@ Shared_Init8bitPalette (void)
 static void
 VID_Init8bitPalette (void)
 {
-	Sys_MaskPrintf (SYS_VID, "Checking for 8-bit extension: ");
-	if (vid_use8bit->int_val) {
+	Sys_MaskPrintf (SYS_vid, "Checking for 8-bit extension: ");
+	if (vid_use8bit) {
 		Tdfx_Init8bitPalette ();
 		Shared_Init8bitPalette ();
 		if (!vr_data.vid->is8bit)
-			Sys_MaskPrintf (SYS_VID, "\n  8-bit extension not found.\n");
+			Sys_MaskPrintf (SYS_vid, "\n  8-bit extension not found.\n");
 	} else {
-		Sys_MaskPrintf (SYS_VID, "disabled.\n");
+		Sys_MaskPrintf (SYS_vid, "disabled.\n");
 	}
 }
 
 void
-GL_SetPalette (const byte *palette)
+GL_SetPalette (void *data, const byte *palette)
 {
 	const byte *pal;
 	char        s[255];
@@ -710,7 +943,7 @@ GL_SetPalette (const byte *palette)
 	unsigned int r, g, b, v;
 	unsigned short i;
 	unsigned int *table;
-	static qboolean palflag = false;
+	static bool palflag = false;
 	QFile      *f;
 	static int  inited_8 = 0;
 
@@ -720,7 +953,7 @@ GL_SetPalette (const byte *palette)
 		VID_Init8bitPalette ();
 	}
 	// 8 8 8 encoding
-	Sys_MaskPrintf (SYS_VID, "Converting 8to24\n");
+	Sys_MaskPrintf (SYS_vid, "Converting 8to24\n");
 
 	pal = palette;
 	table = d_8to24table;
@@ -797,6 +1030,8 @@ GL_Init_Common (void)
 	CheckLights ();
 
 	GL_Common_Init_Cvars ();
+
+	GL_TextureInit ();
 
 	qfglClearColor (0, 0, 0, 0);
 

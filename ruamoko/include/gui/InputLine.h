@@ -1,14 +1,14 @@
 #ifndef __ruamoko_gui_InputLine_h
 #define __ruamoko_gui_InputLine_h
 
-#include "View.h"
+#include <gui/View.h>
 
 /**	\defgroup inputline Low level intputline interface.
 	\ingroup gui
 
 	Interface functions to the engine implementation.
 */
-//@{
+///@{
 
 /**	Opaque handle to an inputline.
 
@@ -118,10 +118,10 @@ typedef void (il_enterfunc)(string, void*);
 	\return			The current text of the intputline.
 */
 @extern string InputLine_GetText (inputline_t il);
-//@}
+///@}
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 /**	Class representation of the low-level inputline objects.
 */
@@ -252,6 +252,6 @@ typedef void (il_enterfunc)(string, void*);
 - (string) text;
 @end
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_InputLine_h

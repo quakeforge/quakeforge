@@ -1,0 +1,76 @@
+include libs/models/alias/Makemodule.am
+include libs/models/brush/Makemodule.am
+include libs/models/iqm/Makemodule.am
+include libs/models/sprite/Makemodule.am
+include libs/models/test/Makemodule.am
+
+lib_LTLIBRARIES +=	libs/models/libQFmodels.la
+noinst_LTLIBRARIES += @models_libs@
+EXTRA_LTLIBRARIES += \
+	libs/models/libmodels_gl.la \
+	libs/models/libmodels_glsl.la \
+	libs/models/libmodels_sw.la \
+	libs/models/libmodels_vulkan.la
+
+models_sources = \
+	libs/models/clip_hull.c \
+	libs/models/fullbright.c \
+	libs/models/model.c \
+	libs/models/portal.c \
+	libs/models/trace.c \
+	libs/models/winding.c
+
+common_libs = \
+	libs/util/libQFutil.la
+
+models_libs=libs/models/brush/libbrush.la $(common_libs)
+
+libs_models_libQFmodels_la_LDFLAGS= 			$(lib_ldflags)
+libs_models_libQFmodels_la_LIBADD=				$(models_libs)
+libs_models_libQFmodels_la_DEPENDENCIES=		$(models_libs)
+libs_models_libQFmodels_la_SOURCES= 			$(models_sources)
+
+gl_sources=libs/models/gl_model_fullbright.c libs/models/gl_skin.c libs/models/skin.c
+gl_libs= \
+	libs/models/alias/libalias_gl.la \
+	libs/models/brush/libbrush_gl.la \
+	libs/models/iqm/libiqm_gl.la \
+	libs/models/sprite/libsprite_gl.la \
+	libs/image/libQFimage.la
+libs_models_libmodels_gl_la_LDFLAGS=
+libs_models_libmodels_gl_la_LIBADD=			$(gl_libs)
+libs_models_libmodels_gl_la_DEPENDENCIES=	$(gl_libs)
+libs_models_libmodels_gl_la_SOURCES=		$(gl_sources)
+
+glsl_libs= \
+	libs/models/alias/libalias_glsl.la \
+	libs/models/brush/libbrush_glsl.la \
+	libs/models/iqm/libiqm_glsl.la \
+	libs/models/sprite/libsprite_glsl.la \
+	libs/image/libQFimage.la
+libs_models_libmodels_glsl_la_LDFLAGS=
+libs_models_libmodels_glsl_la_LIBADD=		$(glsl_libs)
+libs_models_libmodels_glsl_la_DEPENDENCIES=	$(glsl_libs)
+libs_models_libmodels_glsl_la_SOURCES=		libs/models/glsl_skin.c libs/models/skin.c
+
+sw_libs= \
+	libs/models/alias/libalias_sw.la \
+	libs/models/brush/libbrush_sw.la \
+	libs/models/iqm/libiqm_sw.la \
+	libs/models/sprite/libsprite_sw.la \
+	libs/image/libQFimage.la
+libs_models_libmodels_sw_la_LDFLAGS=
+libs_models_libmodels_sw_la_LIBADD=			$(sw_libs)
+libs_models_libmodels_sw_la_DEPENDENCIES=	$(sw_libs)
+libs_models_libmodels_sw_la_SOURCES=		libs/models/sw_skin.c libs/models/skin.c
+
+vulkan_libs= \
+	libs/models/alias/libalias_vulkan.la \
+	libs/models/brush/libbrush_vulkan.la \
+	libs/models/iqm/libiqm_vulkan.la \
+	libs/models/sprite/libsprite_vulkan.la \
+	libs/image/libQFimage.la
+libs_models_libmodels_vulkan_la_LDFLAGS=
+libs_models_libmodels_vulkan_la_LIBADD=			$(vulkan_libs)
+libs_models_libmodels_vulkan_la_DEPENDENCIES=	$(vulkan_libs)
+libs_models_libmodels_vulkan_la_SOURCES=		libs/models/vulkan_skin.c libs/models/skin.c libs/models/fullbright.c

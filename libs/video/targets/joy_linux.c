@@ -48,7 +48,7 @@ JOY_Read (void)
 {
 	struct js_event event;
 
-	if (!joy_active || !joy_enable->int_val)
+	if (!joy_active || !joy_enable)
 		return;
 
 	while (read (joy_handle, &event, sizeof (struct js_event)) > -1) {
@@ -82,7 +82,7 @@ int
 JOY_Open (void)
 {
 	// Open joystick device
-	joy_handle = open (joy_device->string, O_RDONLY | O_NONBLOCK);
+	joy_handle = open (joy_device, O_RDONLY | O_NONBLOCK);
 	if (joy_handle < 0) {
 		return -1;
 	}
@@ -96,8 +96,8 @@ JOY_Close (void)
 
 	i = close (joy_handle);
 	if (i) {
-		Sys_MaskPrintf (SYS_VID, "JOY: Failed to close joystick device!\n");
+		Sys_MaskPrintf (SYS_vid, "JOY: Failed to close joystick device!\n");
 	} else {
-		Sys_MaskPrintf (SYS_VID, "JOY_Shutdown\n");
+		Sys_MaskPrintf (SYS_vid, "JOY_Shutdown\n");
 	}
 }

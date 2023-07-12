@@ -52,11 +52,12 @@
 # endif
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/sys.h"
-#include "QF/cmd.h"
+#include "QF/va.h"
 
 #include "QF/plugin/general.h"
 
@@ -70,7 +71,15 @@ typedef struct loaded_plugin_s {
 	plugin_t		*plugin;
 } loaded_plugin_t;
 
-cvar_t     *fs_pluginpath;
+char *fs_pluginpath;
+static cvar_t fs_pluginpath_cvar = {
+	.name = "fs_pluginpath",
+	.description =
+		"Location of your plugin directory",
+	.default_value = FS_PLUGINPATH,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_pluginpath },
+};
 
 hashtab_t  *registered_plugins, *loaded_plugins;
 
@@ -98,11 +107,13 @@ loaded_plugin_delete (void *lp, void *unused)
 static int
 pi_close_lib (void *handle)
 {
+	if (handle) {
 #if defined(HAVE_DLOPEN)
-	return (dlclose (handle) == 0);
+		return (dlclose (handle) == 0);
 #elif defined (_WIN32)
-	return (FreeLibrary (handle) == 0);
+		return (FreeLibrary (handle) == 0);
 #endif
+	}
 	return 1;
 }
 
@@ -148,36 +159,34 @@ pi_open_lib (const char *name, int global_syms)
 	return dlhand;
 }
 
-static void
-pi_realname (char *realname, int size, const char *type, const char *name)
+static const char *
+pi_realname (const char *type, const char *name)
 {
 #if defined(HAVE_DLOPEN)
-	const char *format = "%s/%s_%s.so";
+	return va (0, "%s/%s_%s.so", fs_pluginpath, type, name);
 #elif defined(_WIN32)
-	const char *format = "%s/%s_%s.dll";
+	return va (0, "%s/%s_%s.dll", fs_pluginpath, type, name);
 #else
-	const char *format = "No shared library support. FIXME";
+	return "No shared library support. FIXME";
 #endif
-
-	snprintf (realname, size, format, fs_pluginpath->string, type, name);
 }
 
-static void
-pi_info_name (char *info_name, int size, const char *type, const char *name)
+static const char *
+pi_info_name (const char *type, const char *name)
 {
-	if (type && name)
-		snprintf (info_name, size, "%s_%s_PluginInfo", type, name);
-	else if (type)
-		snprintf (info_name, size, "%s_PluginInfo", type);
-	else
-		snprintf (info_name, size, "PluginInfo");
+	if (type && name) {
+		return va (0, "%s_%s_PluginInfo", type, name);
+	} else if (type) {
+		return va (0, "%s_PluginInfo", type);
+	} else {
+		return "PluginInfo";
+	}
 }
 
 static void
 PI_InitCvars (void)
 {
-	fs_pluginpath = Cvar_Get ("fs_pluginpath", FS_PLUGINPATH, CVAR_ROM, NULL,
-							"Location of your plugin directory");
+	Cvar_Register (&fs_pluginpath_cvar, 0, 0);
 }
 
 static void
@@ -195,18 +204,15 @@ PI_Plugin_Load_f (void)
 	name = Cmd_Argv(2);
 
 	pi = PI_LoadPlugin (type, name);
-	if (!pi)
+	if (!pi) {
 		Sys_Printf ("Error loading plugin %s %s\n", type, name);
-
-	else if (pi->functions && pi->functions->general &&
-			 pi->functions->general->p_Init)
-		pi->functions->general->p_Init ();
+	}
 }
 
 static void
 PI_Plugin_Unload_f (void)
 {
-	char plugin_name[1024];
+	const char *plugin_name;
 	loaded_plugin_t *lp;
 	plugin_t *pi;
 
@@ -216,8 +222,8 @@ PI_Plugin_Unload_f (void)
 	}
 
 	// try to locate the plugin
-	snprintf (plugin_name, sizeof (plugin_name), "%s_%s", Cmd_Argv(1),
-			  Cmd_Argv(2));
+	plugin_name = va (0, "%s_%s", Cmd_Argv(1), Cmd_Argv(2));
+
 	lp = Hash_Find (loaded_plugins, plugin_name);
 	if (lp) {
 		pi = lp->plugin;
@@ -229,27 +235,8 @@ PI_Plugin_Unload_f (void)
 	PI_UnloadPlugin (pi);
 }
 
-/*
-	PI_Init
-
-	Eventually this function will likely initialize libltdl. It doesn't, yet,
-	since we aren't using libltdl yet.
-*/
-VISIBLE void
-PI_Init (void)
-{
-	PI_InitCvars ();
-	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0);
-	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
-								   loaded_plugin_delete, 0);
-	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
-				   "load the plugin of the given type name and name");
-	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
-				   "unload the plugin of the given type name and name");
-}
-
-void
-PI_Shutdown (void)
+static void
+PI_Shutdown (void *data)
 {
 	void **elems, **cur;
 
@@ -260,29 +247,54 @@ PI_Shutdown (void)
 	free (elems);
 
 	Hash_DelTable (loaded_plugins);
+	Hash_DelTable (registered_plugins);
+}
 
+/*
+	PI_Init
+
+	Eventually this function will likely initialize libltdl. It doesn't, yet,
+	since we aren't using libltdl yet.
+*/
+VISIBLE void
+PI_Init (void)
+{
+	Sys_RegisterShutdown (PI_Shutdown, 0);
+
+	PI_InitCvars ();
+	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
+	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
+								   loaded_plugin_delete, 0, 0);
+	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
+				   "load the plugin of the given type name and name");
+	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
+				   "unload the plugin of the given type name and name");
 }
 
 VISIBLE plugin_t *
 PI_LoadPlugin (const char *type, const char *name)
 {
-	char			realname[4096];
-	char            plugin_name[1024];
-	char            plugin_info_name[1024];
-	char			*tmpname;
-	void			*dlhand = NULL;
-	plugin_t		*plugin = NULL;
-	P_PluginInfo	plugin_info = NULL;
-	plugin_list_t	*pl;
+	const char *realname = 0;
+	const char *plugin_name = 0;
+	const char *plugin_info_name = 0;
+	const char *tmpname;
+	void       *dlhand = 0;
+	plugin_t   *plugin = 0;
+	plugin_info_t plugin_info = 0;
+	plugin_list_t *pl;
 	loaded_plugin_t *lp;
 
 	if (!name)
 		return NULL;
 
-	tmpname = strrchr (name, '/');	// Get the base name, don't allow paths
+	// Get the base name, don't allow paths
+	tmpname = strrchr (name, '/');
+	if (tmpname) {
+		name = tmpname + 1;	// skip over '/'
+	}
 
 	// Build the plugin name
-	snprintf (plugin_name, sizeof (plugin_name), "%s_%s", type, name);
+	plugin_name = va (0, "%s_%s", type, name);
 
 	// make sure we're not already loaded
 	lp = Hash_Find (loaded_plugins, plugin_name);
@@ -297,8 +309,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	}
 	if (!plugin_info) {
 		// Build the path to the file to load
-		pi_realname (realname, sizeof (realname), type,
-					(tmpname ? tmpname + 1 : name));
+		realname = pi_realname (type, name);
 
 		if (!(dlhand = pi_open_lib (realname, 0))) {
 			// lib not found
@@ -308,15 +319,13 @@ PI_LoadPlugin (const char *type, const char *name)
 		}
 
 		// Build the plugin info name as $type_$name_PluginInfo
-		pi_info_name (plugin_info_name, sizeof (plugin_info_name), type, name);
+		plugin_info_name = pi_info_name (type, name);
 		if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 			// Build the plugin info name as $type_PluginInfo
-			pi_info_name (plugin_info_name, sizeof (plugin_info_name),
-						  type, 0);
+			plugin_info_name = pi_info_name (type, 0);
 			if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 				// Build the plugin info name as PluginInfo
-				pi_info_name (plugin_info_name, sizeof (plugin_info_name),
-							  0, 0);
+				plugin_info_name = pi_info_name (0, 0);
 				if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 					// info function not found
 					pi_close_lib (dlhand);
@@ -342,7 +351,7 @@ PI_LoadPlugin (const char *type, const char *name)
 			// try to reopen
 			if (!(dlhand = pi_open_lib (realname, 1))) {
 				Sys_Printf ("Error reopening plugin \"%s\".\n", realname);
-				Sys_MaskPrintf (SYS_DEV, "Reason: \"%s\".\n", pi_error);
+				Sys_MaskPrintf (SYS_dev, "Reason: \"%s\".\n", pi_error);
 				return NULL;
 			}
 
@@ -376,25 +385,32 @@ PI_LoadPlugin (const char *type, const char *name)
 
 	plugin->full_name = lp->name;
 	plugin->handle = dlhand;
+
+	if (plugin->functions && plugin->functions->general
+		&& plugin->functions->general->init) {
+		plugin->functions->general->init ();
+	}
 	return plugin;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PI_UnloadPlugin (plugin_t *plugin)
 {
-	if (plugin
-			&& plugin->functions
-			&& plugin->functions->general
-			&& plugin->functions->general->p_Shutdown) {
-		plugin->functions->general->p_Shutdown ();
+	// Remove the plugin from the set of loaded plugins to ensure that a
+	// shutdown triggered by an error in the unload process doesn't try to
+	// unload the plugin a second time
+	loaded_plugin_t *lp = Hash_Del (loaded_plugins, plugin->full_name);
+
+	if (plugin && plugin->functions && plugin->functions->general
+		&& plugin->functions->general->shutdown) {
+		plugin->functions->general->shutdown ();
 	} else {
-		Sys_MaskPrintf (SYS_DEV,
+		Sys_MaskPrintf (SYS_dev,
 						"Warning: No shutdown function for type %d plugin!\n",
 						plugin->type);
 	}
 
-	// remove from the table of loaded plugins
-	Hash_Free (loaded_plugins, Hash_Del (loaded_plugins, plugin->full_name));
+	Hash_Free (loaded_plugins, lp);
 
 	if (!plugin->handle) // we didn't load it
 		return true;

@@ -36,21 +36,22 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
-#include "qfprogs.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/qfprogs.h"
 
-void
-dump_strings (progs_t *pr)
+static void
+dump_string_block (const char *strblock, size_t size)
 {
-	int i = 0;
-	char *s = pr->pr_strings;
+	const char *s = strblock;
 
-	printf ("%d ", 0);
-	while (i++ < pr->progs->numstrings) {
-		switch (*s) {
+	printf ("%x \"", 0);
+	while ((size_t) (s - strblock) < size) {
+		byte        c = *s++;
+		switch (c) {
 			case 0:
-				fputs ("\n", stdout);
-				if (i < pr->progs->numstrings)
-					printf ("%d ", i);
+				fputs ("\"\n", stdout);
+				if ((size_t) (s - strblock) < size)
+					printf ("%zx \"", s - strblock);
 				break;
 			case 9:
 				fputs ("\\t", stdout);
@@ -61,10 +62,42 @@ dump_strings (progs_t *pr)
 			case 13:
 				fputs ("\\r", stdout);
 				break;
+			case '\"':
+				fputs ("\\\"", stdout);
+				break;
+			case '\\':
+				fputs ("\\\\", stdout);
+				break;
 			default:
-				fputc (sys_char_map[(unsigned char)*s], stdout);
+				if (c < 32 || c > 126) {
+					printf ("\\x%02x", c);
+				} else {
+					fputc (c, stdout);
+				}
+				//fputc (sys_char_map[c], stdout);
 				break;
 		}
-		s++;
 	}
+}
+
+void
+dump_strings (progs_t *pr)
+{
+	dump_string_block (pr->pr_strings, pr->progs->strings.count);
+}
+
+void
+qfo_strings (qfo_t *qfo)
+{
+	qfo_mspace_t *space = &qfo->spaces[qfo_strings_space];
+
+	if (qfo_strings_space >= qfo->num_spaces) {
+		printf ("no strings space\n");
+		return;
+	}
+	if (!space->data_size) {
+		printf ("no strings\n");
+		return;
+	}
+	dump_string_block (space->strings, space->data_size);
 }

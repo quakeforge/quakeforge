@@ -40,7 +40,15 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/cd.h"
 
-cvar_t         *cd_plugin;
+char *cd_plugin;
+static cvar_t cd_plugin_cvar = {
+	.name = "cd_plugin",
+	.description =
+		"CD Plugin to use",
+	.default_value = CD_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &cd_plugin },
+};
 plugin_t       *cdmodule = NULL;
 
 CD_PLUGIN_PROTOS
@@ -52,64 +60,64 @@ VISIBLE void
 CDAudio_Pause (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Pause ();
+		cdmodule->functions->cd->pause ();
 }
 
 VISIBLE void
-CDAudio_Play (int track, qboolean looping)
+CDAudio_Play (int track, bool looping)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Play (track, looping);
+		cdmodule->functions->cd->play (track, looping);
 }
 
 VISIBLE void
 CDAudio_Resume (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Resume ();
+		cdmodule->functions->cd->resume ();
 }
 
-VISIBLE void
-CDAudio_Shutdown (void)
+static void
+CDAudio_shutdown (void *data)
 {
 	if (cdmodule)
-		cdmodule->functions->general->p_Shutdown ();
+		cdmodule->functions->general->shutdown ();
 }
 
 VISIBLE void
 CDAudio_Update (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Update ();
+		cdmodule->functions->cd->update ();
 }
 
 static void
 CD_f (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCD_f ();
+		cdmodule->functions->cd->cd_f ();
 }
 
 VISIBLE int
 CDAudio_Init (void)
 {
+	Sys_RegisterShutdown (CDAudio_shutdown, 0);
+
 	PI_RegisterPlugins (cd_plugin_list);
-	cd_plugin = Cvar_Get ("cd_plugin", CD_DEFAULT, CVAR_ROM, NULL,
-						  "CD Plugin to use");
+	Cvar_Register (&cd_plugin_cvar, 0, 0);
 
 	if (COM_CheckParm ("-nocdaudio"))
 		return 0;
 
-	if (!*cd_plugin->string) {
+	if (!*cd_plugin) {
 		Sys_Printf ("Not loading CD due to no driver\n");
 		return 0;
 	}
-	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
+	cdmodule = PI_LoadPlugin ("cd", cd_plugin);
 	if (!cdmodule) {
-		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
+		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin);
 		return -1;
 	}
-	cdmodule->functions->general->p_Init ();
 	Cmd_AddCommand (
 		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"

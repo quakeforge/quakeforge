@@ -27,8 +27,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_bsp_h
-#define __QF_GLSL_qf_bsp_h
+#ifndef __QF_GLSL_qf_particles_h
+#define __QF_GLSL_qf_particles_h
 
 #include "QF/GLSL/types.h"
 
@@ -38,4 +38,10 @@ typedef struct {
 	byte        color[4];
 } partvert_t;
 
-#endif//__QF_GLSL_qf_bsp_h
+struct psystem_s;
+void glsl_R_DrawParticles (struct psystem_s *psystem);
+void glsl_R_Particles_Init_Cvars (void);
+void glsl_R_InitParticles (void);
+void glsl_R_ShutdownParticles (void);
+
+#endif//__QF_GLSL_qf_particles_h

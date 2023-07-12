@@ -57,25 +57,40 @@ typedef struct {
 
 static int midi_intiialized = 0;
 
-static cvar_t  *wildmidi_volume;
-static cvar_t  *wildmidi_config;
+static float wildmidi_volume;
+static cvar_t wildmidi_volume_cvar = {
+	.name = "wildmidi_volume",
+	.description =
+		"Set the Master Volume",
+	.default_value = "100",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &wildmidi_volume },
+};
+static char *wildmidi_config;
+static cvar_t wildmidi_config_cvar = {
+	.name = "wildmidi_config",
+	.description =
+		"path/filename of wildmidi.cfg",
+	.default_value = "/etc/wildmidi/wildmidi.cfg",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &wildmidi_config },
+};
 
 static int
-midi_init ( void ) {
-	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL,
-								"Set the Master Volume");
-	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg",
-								CVAR_ROM, NULL,
-								"path/filename of timidity.cfg");
+midi_init (snd_t *snd)
+{
+	Cvar_Register (&wildmidi_volume_cvar, 0, 0);
+	Cvar_Register (&wildmidi_config_cvar, 0, 0);
 
-	if (WildMidi_Init (wildmidi_config->string, snd_shm->speed, 0) == -1)
+	if (WildMidi_Init (wildmidi_config, snd->speed, 0) == -1)
 		return 1;
 	midi_intiialized = 1;
 	return 0;
 }
 
 static wavinfo_t
-midi_get_info (void * handle) {
+midi_get_info (snd_t *snd, void *handle)
+{
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
@@ -86,7 +101,7 @@ midi_get_info (void * handle) {
 		return info;
 	}
 
-	info.rate = snd_shm->speed;
+	info.rate = snd->speed;
 	info.width = 2;
 	info.channels = 2;
 	info.loopstart = -1;
@@ -105,7 +120,7 @@ midi_stream_read (void *file, float **buf)
 	int         res;
 	byte       *data = alloca (size);
 
-	res = WildMidi_GetOutput (mf->handle, (char *)data, size);
+	res = WildMidi_GetOutput (mf->handle, (int8_t *)data, size);
 	if (res <= 0) {
 		stream->error = 1;
 		return 0;
@@ -128,20 +143,20 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-midi_stream_close (sfx_t *sfx)
+midi_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 	midi_file_t *mf = (midi_file_t *) stream->file;
 
 	WildMidi_Close (mf->handle);
 	free (mf);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 midi_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile	   *file;
 	midi	   *handle;
 	unsigned char *local_buffer;
@@ -171,13 +186,14 @@ midi_stream_open (sfx_t *sfx)
 int
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
+	snd_t      *snd = sfx->snd;
 	wavinfo_t   info;
 	midi *handle;
 	unsigned char *local_buffer;
 	unsigned long int local_buffer_size = Qfilesize (file);
 
 	if (!midi_intiialized) {
-		if (midi_init ()) {
+		if (midi_init (snd)) {
 			return -1;
 		}
 	}
@@ -193,11 +209,11 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	if (handle == NULL)
 		return -1;
 
-	info = midi_get_info (handle);
+	info = midi_get_info (snd, handle);
 
 	WildMidi_Close (handle);
 
-	Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
+	Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 
 	// we init stream here cause we will only ever stream
 	SND_SFX_Stream (sfx, realname, info, midi_stream_open);

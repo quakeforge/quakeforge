@@ -1,0 +1,8 @@
+ipv6_src= libs/net/nc/net_udp6.c
+ipv4_src= libs/net/nc/net_udp.c
+if NETTYPE_IPV6
+ipvX_src= $(ipv6_src)
+else
+ipvX_src= $(ipv4_src)
+endif
+nc_src= $(ipvX_src)

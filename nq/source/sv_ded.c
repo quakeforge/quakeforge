@@ -36,25 +36,40 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "host.h"
-#include "server.h"
+#include "client/world.h"
+
+#include "client/screen.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
 
 client_state_t cl;
 client_static_t cls;
 
-cvar_t     *cl_name;
-cvar_t     *cl_writecfg;
-cvar_t     *demo_speed;
-cvar_t     *chase_active;
+worldscene_t cl_world;
 
-int         fps_count;
-int         viewentity;
-
-vid_render_data_t *r_data;
-vid_render_funcs_t *r_funcs;
+char *cl_name;
+int cl_writecfg;
+float demo_speed;
+int chase_active;
 
 void
-Key_KeydestCallback (keydest_callback_t *callback)
+CL_PreFrame (void)
+{
+}
+
+void
+CL_Frame (void)
+{
+}
+
+void
+CL_Init (struct cbuf_s *cbuf)
+{
+}
+
+void
+CL_InitCvars (void)
 {
 }
 
@@ -64,17 +79,12 @@ CL_SetState (cactive_t state)
 }
 
 void
-CL_UpdateScreen (double realtime)
+CL_UpdateScreen (struct viewstate_s *)
 {
 }
 
 void
 CL_Cmd_ForwardToServer (void)
-{
-}
-
-void
-CDAudio_Update (void)
 {
 }
 
@@ -94,27 +104,12 @@ CL_EstablishConnection (const char *host)
 }
 
 void
-CL_Shutdown ()
-{
-}
-
-void
-CL_Init (struct cbuf_s *cbuf)
-{
-}
-
-void
-CL_InitCvars (void)
-{
-}
-
-void
 CL_NextDemo (void)
 {
 }
 
-int
-CL_ReadFromServer (void)
+__attribute__((const)) int
+CL_ReadConfiguration (const char *cfg_name)
 {
 	return 0;
 }
@@ -127,37 +122,4 @@ CL_SendCmd (void)
 void
 CL_StopPlayback (void)
 {
-}
-
-void
-IN_ProcessEvents (void)
-{
-}
-
-void
-Key_WriteBindings (QFile *f)
-{
-}
-
-void
-S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up, const byte *ambient_sound_level)
-{
-}
-
-void
-S_BlockSound (void)
-{
-}
-
-void
-S_UnblockSound (void)
-{
-}
-
-plugin_t *console_client_PluginInfo (void);
-plugin_t *
-console_client_PluginInfo (void)
-{
-	return 0;
 }

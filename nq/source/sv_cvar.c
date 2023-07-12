@@ -32,14 +32,14 @@
 
 #include "QF/cvar.h"
 
-#include "server.h"
+#include "nq/include/server.h"
 
 void
-Cvar_Info (cvar_t *var)
+Cvar_Info (void *data, const cvar_t *cvar)
 {
-	if (var->flags & CVAR_SERVERINFO) {
+	if (cvar->flags & CVAR_SERVERINFO) {
 		if (sv.active)
 			SV_BroadcastPrintf ("\"%s\" changed to \"%s\"\n",
-								var->name, var->string);
+								cvar->name, Cvar_VarString (cvar));
 	}
 }

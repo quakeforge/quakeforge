@@ -43,25 +43,36 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-void
-gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+static int
+load_texture (model_t *mod, int framenum, const dspriteframe_t *dframe)
 {
 	tex_t      *targa;
 	const char *name;
 
-	targa = LoadImage (name = va ("%s_%i", loadmodel->name, framenum));
+	targa = LoadImage (name = va (0, "%s_%i", mod->path, framenum), 1);
 	if (targa) {
-		if (targa->format < 4)
-			pspriteframe->gl_texturenum = GL_LoadTexture (name,
-				targa->width, targa->height, targa->data,
-				true, false, 3);
-		else
-			pspriteframe->gl_texturenum = GL_LoadTexture (name,
-				targa->width, targa->height, targa->data,
-				true, true, 4);
-		return;
+		if (targa->format < 4) {
+			return GL_LoadTexture (name, targa->width, targa->height,
+								   targa->data, true, false, 3);
+		} else {
+			return GL_LoadTexture (name, targa->width, targa->height,
+								   targa->data, true, true, 4);
+		}
 	}
-	pspriteframe->gl_texturenum =
-		GL_LoadTexture (name, pspriteframe->width, pspriteframe->height,
-						pspriteframe->pixels, true, true, 1);
+	return GL_LoadTexture (name, dframe->width, dframe->height,
+						   (const byte *)(dframe + 1), true, true, 1);
+}
+
+void
+gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
+{
+	for (int i = 0; i < ctx->numframes; i++) {
+		__auto_type dframe = ctx->dframes[i];
+		size_t      size = sizeof (mspriteframe_t);
+		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
+		*ctx->frames[i] = frame;
+		Mod_LoadSpriteFrame (frame, dframe);
+		frame->gl_texturenum = load_texture (ctx->mod, ctx->frame_numbers[i],
+											 dframe);
+	}
 }

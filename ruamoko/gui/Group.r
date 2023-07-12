@@ -1,6 +1,6 @@
-#include "gui/Group.h"
-#include "gui/Point.h"
-#include "Array.h"
+#include <gui/Group.h>
+#include <gui/Point.h>
+#include <Array.h>
 
 @implementation Group
 

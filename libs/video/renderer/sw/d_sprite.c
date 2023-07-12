@@ -35,8 +35,6 @@
 
 static int  sprite_height;
 static int  minindex, maxindex;
-static sspan_t *sprite_spans;
-
 
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
@@ -69,8 +67,8 @@ D_SpriteDrawSpans (sspan_t *pspan)
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {
-		pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
-		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
+		pz = d_zbuffer + (d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -195,15 +193,13 @@ D_SpriteDrawSpans (sspan_t *pspan)
 #endif
 
 static void
-D_SpriteScanLeftEdge (void)
+D_SpriteScanLeftEdge (sspan_t *pspan)
 {
 	int         i, v, itop, ibottom, lmaxindex;
 	emitpoint_t *pvert, *pnext;
-	sspan_t    *pspan;
 	float       du, dv, vtop, vbottom, slope;
 	fixed16_t   u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 	if (i == 0)
 		i = r_spritedesc.nump;
@@ -249,15 +245,13 @@ D_SpriteScanLeftEdge (void)
 }
 
 static void
-D_SpriteScanRightEdge (void)
+D_SpriteScanRightEdge (sspan_t *pspan)
 {
 	int         i, v, itop, ibottom;
 	emitpoint_t *pvert, *pnext;
-	sspan_t    *pspan;
 	float       du, dv, vtop, vbottom, slope, uvert, unext, vvert, vnext;
 	fixed16_t   u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 
 	vvert = r_spritedesc.pverts[i].v;
@@ -323,17 +317,17 @@ D_SpriteScanRightEdge (void)
 }
 
 static void
-D_SpriteCalculateGradients (void)
+D_SpriteCalculateGradients (const vec3_t relvieworg)
 {
 	vec3_t      p_normal, p_saxis, p_taxis, p_temp1;
 	float       distinv;
 
-	TransformVector (r_spritedesc.vpn, p_normal);
+	TransformVector (r_spritedesc.vfwd, p_normal);
 	TransformVector (r_spritedesc.vright, p_saxis);
 	TransformVector (r_spritedesc.vup, p_taxis);
 	VectorNegate (p_taxis, p_taxis);
 
-	distinv = 1.0 / (-DotProduct (modelorg, r_spritedesc.vpn));
+	distinv = 1.0 / (-DotProduct (relvieworg, r_spritedesc.vfwd));
 
 	d_sdivzstepu = p_saxis[0] * xscaleinv;
 	d_tdivzstepu = p_taxis[0] * xscaleinv;
@@ -351,7 +345,7 @@ D_SpriteCalculateGradients (void)
 	d_ziorigin = p_normal[2] * distinv - xcenter * d_zistepu -
 		ycenter * d_zistepv;
 
-	TransformVector (modelorg, p_temp1);
+	TransformVector (relvieworg, p_temp1);
 
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
 		(-(cachewidth >> 1) << 16);
@@ -364,14 +358,12 @@ D_SpriteCalculateGradients (void)
 }
 
 void
-D_DrawSprite (void)
+D_DrawSprite (const vec3_t relvieworg)
 {
 	int         i, nump;
 	float       ymin, ymax;
 	emitpoint_t *pverts;
 	sspan_t     spans[MAXHEIGHT + 1];
-
-	sprite_spans = spans;
 
 	// find the top and bottom vertices, and make sure there's at least one
 	// scan to draw
@@ -409,8 +401,8 @@ D_DrawSprite (void)
 	pverts = r_spritedesc.pverts;
 	pverts[nump] = pverts[0];
 
-	D_SpriteCalculateGradients ();
-	D_SpriteScanLeftEdge ();
-	D_SpriteScanRightEdge ();
-	D_SpriteDrawSpans (sprite_spans);
+	D_SpriteCalculateGradients (relvieworg);
+	D_SpriteScanLeftEdge (spans);
+	D_SpriteScanRightEdge (spans);
+	D_SpriteDrawSpans (spans);
 }

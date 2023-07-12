@@ -83,7 +83,7 @@ GIB_Thread_Count (void)
 	return llist_size (gib_threads);
 }
 
-static qboolean te_iterator (cbuf_t *cbuf, llist_node_t *node)
+static bool te_iterator (cbuf_t *cbuf, llist_node_t *node)
 {
 	if (GIB_DATA(cbuf)->program)
 		Cbuf_Execute_Stack (cbuf);
@@ -171,5 +171,5 @@ GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 void
 GIB_Event_Init (void)
 {
-	gib_events = Hash_NewTable (1024, GIB_Event_Get_Key, GIB_Event_Free, 0);
+	gib_events = Hash_NewTable (1024, GIB_Event_Get_Key, GIB_Event_Free, 0, 0);
 }

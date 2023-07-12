@@ -49,16 +49,41 @@
 #include "compat.h"
 #include "netchan.h"
 
-#include "../qw/include/client.h"
-
 #define	PACKET_HEADER	8
 
 int         net_nochoke;
 int         net_blocksend;
 double     *net_realtime;
-cvar_t     *showpackets;
-cvar_t     *showdrop;
-cvar_t     *qport;
+int showpackets;
+static cvar_t showpackets_cvar = {
+	.name = "showpackets",
+	.description =
+		"Show all network packets",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &showpackets },
+};
+int showdrop;
+static cvar_t showdrop_cvar = {
+	.name = "showdrop",
+	.description =
+		"Toggle the display of how many packets you are dropping",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &showdrop },
+};
+int qport;
+static cvar_t qport_cvar = {
+	.name = "qport",
+	.description =
+		"The internal port number for the game networking code. Useful for "
+		"clients who use multiple connections through one IP address (NAT/IP-"
+		"MASQ) because default port is random.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &qport },
+};
+void (*net_log_packet) (int length, const void *data, netadr_t to);
 
 
 void
@@ -69,21 +94,15 @@ Netchan_Init (void)
 	// pick a port value that should be nice and random
 	port = Sys_TimeID ();
 
-	Cvar_SetValue (qport, port);
+	qport = port;
 }
 
 void
 Netchan_Init_Cvars (void)
 {
-	showpackets = Cvar_Get ("showpackets", "0", CVAR_NONE, NULL,
-							"Show all network packets");
-	showdrop = Cvar_Get ("showdrop", "0", CVAR_NONE, NULL, "Toggle the "
-						 "display of how many packets you are dropping");
-	qport = Cvar_Get ("qport", "0", CVAR_NONE, NULL, "The internal port "
-					  "number for the game networking code. Useful for "
-					  "clients who use multiple connections through one "
-					  "IP address (NAT/IP-MASQ) because default port is "
-					  "random.");
+	Cvar_Register (&showpackets_cvar, 0, 0);
+	Cvar_Register (&showdrop_cvar, 0, 0);
+	Cvar_Register (&qport_cvar, 0, 0);
 }
 
 /*
@@ -92,7 +111,7 @@ Netchan_Init_Cvars (void)
 	Sends an out-of-band datagram
 */
 void
-Netchan_OutOfBand (netadr_t adr, int length, byte * data)
+Netchan_OutOfBand (netadr_t adr, unsigned length, byte * data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	sizebuf_t   send;
@@ -163,7 +182,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags)
 
 	Returns true if the bandwidth choke isn't active
 */
-qboolean
+bool
 Netchan_CanPacket (netchan_t *chan)
 {
 	if (chan->cleartime < *net_realtime + MAX_BACKUP * chan->rate)
@@ -176,7 +195,7 @@ Netchan_CanPacket (netchan_t *chan)
 
 	Returns true if the bandwidth choke isn't
 */
-qboolean
+bool
 Netchan_CanReliable (netchan_t *chan)
 {
 	if (chan->reliable_length)
@@ -185,12 +204,12 @@ Netchan_CanReliable (netchan_t *chan)
 }
 
 void
-Netchan_Transmit (netchan_t *chan, int length, byte *data)
+Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	int         i;
 	unsigned int w1, w2;
-	qboolean    send_reliable;
+	bool        send_reliable;
 	sizebuf_t   send;
 
 	// check for message overflow
@@ -257,15 +276,19 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (net_nochoke)
 		chan->cleartime = *net_realtime;
 
-	if (showpackets->int_val & 1)
+	if (showpackets & 1) {
 		Sys_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n",
 					chan->outgoing_sequence, send_reliable,
 					chan->incoming_sequence, chan->incoming_reliable_sequence,
 					send.cursize,
 					chan->outgoing_sequence - chan->incoming_sequence);
+		if (showpackets & 4) {
+			SZ_Dump (&send);
+		}
+	}
 }
 
-qboolean
+bool
 Netchan_Process (netchan_t *chan)
 {
 	unsigned int reliable_ack, reliable_message, sequence, sequence_ack;
@@ -289,9 +312,13 @@ Netchan_Process (netchan_t *chan)
 	sequence &= ~(1 << 31);
 	sequence_ack &= ~(1 << 31);
 
-	if (showpackets->int_val & 2)
+	if (showpackets & 2) {
 		Sys_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
 					sequence_ack, reliable_ack, net_message->message->cursize);
+		if (showpackets & 8) {
+			SZ_Dump (net_message->message);
+		}
+	}
 
 	// get a rate estimation
 #if 0 // FIXME: Dead code
@@ -322,7 +349,7 @@ Netchan_Process (netchan_t *chan)
 
 	/// Discard stale or duplicated packets.
 	if (sequence < (unsigned int) chan->incoming_sequence + 1) {
-		if (showdrop->int_val)
+		if (showdrop)
 			Sys_Printf ("%s:Out of order packet %i at %i\n",
 						NET_AdrToString (chan->remote_address), sequence,
 						chan->incoming_sequence);
@@ -334,7 +361,7 @@ Netchan_Process (netchan_t *chan)
 	if (chan->net_drop > 0) {
 		chan->drop_count += 1;
 
-		if (showdrop->int_val)
+		if (showdrop)
 			Sys_Printf ("%s:Dropped %i packets at %i\n",
 						NET_AdrToString (chan->remote_address),
 						sequence - (chan->incoming_sequence + 1), sequence);
@@ -369,9 +396,8 @@ Netchan_Process (netchan_t *chan)
 void
 Netchan_SendPacket (int length, const void *data, netadr_t to)
 {
-#if 0
-	if (net_packetlog->int_val)
-		Log_Outgoing_Packet (data, length, 1);
-#endif
+	if (net_log_packet) {
+		net_log_packet (length, data, to);
+	}
 	NET_SendPacket (length, data, to);
 }

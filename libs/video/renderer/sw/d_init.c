@@ -39,15 +39,32 @@
 #define NUM_MIPS	4
 
 surfcache_t *d_initial_rover;
-qboolean     d_roverwrapped;
+bool         d_roverwrapped;
 int          d_minmip;
 float        d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
+static byte *surfcache;
 
 void        (*d_drawspans) (espan_t *pspan);
 
+static void
+d_vidsize_listener (void *data, const viddef_t *vid)
+{
+	int         cachesize = D_SurfaceCacheForRes (vid->width, vid->height);
+
+	if (surfcache) {
+		D_FlushCaches (vid->vid_internal->ctx);
+		free (surfcache);
+		surfcache = 0;
+	}
+	surfcache = calloc (cachesize, 1);
+	vid->vid_internal->init_buffers (vid->vid_internal->ctx);
+	D_InitCaches (surfcache, cachesize);
+
+	viddef.recalc_refdef = 1;
+}
 
 void
 D_Init (void)
@@ -56,17 +73,12 @@ D_Init (void)
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
 
-	vr_data.vid->surf_cache_size = D_SurfaceCacheForRes;
-	vr_data.vid->flush_caches = D_FlushCaches;
-	vr_data.vid->init_caches = D_InitCaches;
+	viddef_t   *vid = vr_data.vid;
 
-	VID_InitBuffers ();
-}
+	vid->vid_internal->flush_caches = D_FlushCaches;
 
-void
-D_EnableBackBufferAccess (void)
-{
-	VID_LockBuffer ();
+	VID_OnVidResize_AddListener (d_vidsize_listener, 0);
+	d_vidsize_listener (0, vr_data.vid);
 }
 
 void
@@ -76,35 +88,21 @@ D_TurnZOn (void)
 }
 
 void
-D_DisableBackBufferAccess (void)
-{
-	VID_UnlockBuffer ();
-}
-
-void
 D_SetupFrame (void)
 {
 	int         i;
 
-	if (r_dowarp)
-		d_viewbuffer = r_warpbuffer;
-	else
-		d_viewbuffer = vid.buffer;
-
-	if (r_dowarp)
-		screenwidth = WARP_WIDTH;
-	else
-		screenwidth = vid.rowbytes;
-
 	d_roverwrapped = false;
 	d_initial_rover = sc_rover;
 
-	d_minmip = bound (0, d_mipcap->value, 3);
+	d_minmip = bound (0, d_mipcap, 3);
 
 	for (i = 0; i < (NUM_MIPS - 1); i++)
-		d_scalemip[i] = basemip[i] * d_mipscale->value;
+		d_scalemip[i] = basemip[i] * d_mipscale;
 
 	d_drawspans = D_DrawSpans8;
+
+	d_skyoffs = r_skytime * r_skyspeed;
 }
 
 void

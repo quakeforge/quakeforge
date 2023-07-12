@@ -33,9 +33,9 @@
 /** \defgroup qfcc_dags DAG building
 	\ingroup qfcc
 */
-//@{
+///@{
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #include "statements.h"
 
@@ -46,7 +46,7 @@ typedef struct daglabel_s {
 	struct daglabel_s *next;
 	struct daglabel_s *daglabel_chain;	///< all labels created for a dag
 	int         number;			///< index into array of labels in dag_t
-	unsigned    live:1;			///< accessed via an alias
+	unsigned    live:1;			///< accessed via an alias FIXME redundant?
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
@@ -59,10 +59,10 @@ typedef struct dagnode_s {
 	int         topo;			///< topological sort order
 	struct set_s *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
-	unsigned    killed:1;		///< node is unavailable for cse
-	st_type_t   type;			///< type of node (st_node = leaf)
+	struct dagnode_s *killed;	///< node is unavailable for cse (by node)
+	st_type_t   type;			///< type of node (st_none = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
-	etype_t     tl;
+	struct type_s *tl;
 	struct operand_s *value;	///< operand holding the value of this node
 	/// \name child nodes
 	/// if \a children[0] is null, the rest must be null as well. Similar for
@@ -75,10 +75,13 @@ typedef struct dagnode_s {
 	/// topological sort of the DAG.
 	//@{
 	struct dagnode_s *children[3];
-	etype_t     types[3];		///< desired type of each operand (to alias)
+	struct type_s *types[3];	///< desired type of each operand (to alias)
 	struct set_s *edges;		///< includes nodes pointed to by \a children
 	//@}
 	struct set_s *identifiers;	///< set of identifiers attached to this node
+	struct set_s *reachable;	///< set of nodes reachable via edges (not
+								///< parents) for ensuring cycles are not
+								///< created
 } dagnode_t;
 
 typedef struct dag_s {
@@ -89,7 +92,7 @@ typedef struct dag_s {
 	int         num_topo;		///< number of nodes in topo (may be <
 								///< num_nodes after dead node removal)
 	daglabel_t **labels;		///< array of all daglabels in this dag
-	int         num_labels;;
+	int         num_labels;
 	struct set_s *roots;		///< set of root nodes
 	struct flownode_s *flownode;///< flow node this dag represents
 } dag_t;
@@ -110,6 +113,6 @@ dag_t *dag_create (struct flownode_s *flownode);
 void dag_remove_dead_nodes (dag_t *dag);
 void dag_generate (dag_t *dag, sblock_t *block);
 
-//@}
+///@}
 
 #endif//dags_h

@@ -25,13 +25,13 @@
 
 */
 
-#ifndef __mathlib_h
-#define __mathlib_h
+#ifndef __QF_mathlib_h
+#define __QF_mathlib_h
 
 /** \defgroup mathlib Vector and matrix functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <math.h>
 #include "QF/qtypes.h"
@@ -50,12 +50,10 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-extern int		nanmask;
-
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
 
-#define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
+#define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
 
 #include "QF/math/vector.h"
 #include "QF/math/quaternion.h"
@@ -73,15 +71,15 @@ extern int		nanmask;
 // fall over
 #define	ROLL	2
 
-int Q_log2(int val);
+int Q_log2(int val) __attribute__((const));
 
 void R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3]);
 void R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4]);
 
 void FloorDivMod (double numer, double denom, int *quotient, int *rem);
-fixed16_t Invert24To16(fixed16_t val);
+fixed16_t Invert24To16(fixed16_t val) __attribute__((const));
 fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
-int GreatestCommonDivisor (int i1, int i2);
+int GreatestCommonDivisor (int i1, int i2) __attribute__((const));
 
 /**	Convert quake angles to basis vectors.
 
@@ -138,21 +136,23 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
+// NOTE expects plane distance is -p.n
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct plane_s *plane);
-float anglemod (float a);
+					const plane_t *plane) __attribute__((pure));
+float anglemod (float a) __attribute__((const));
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
+// NOTE expects plane distance is -p.n
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
 	(													\
-		((p)->dist <= (emins)[(p)->type])?				\
+		(-(p)->dist <= (emins)[(p)->type])?				\
 		1												\
 		:												\
 		(												\
-			((p)->dist >= (emaxs)[(p)->type])?			\
+			(-(p)->dist >= (emaxs)[(p)->type])?			\
 			2											\
 			:											\
 			3											\
@@ -173,23 +173,25 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-extern plane_t * const frustum;
-GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
-GNU89INLINE inline qboolean R_CullSphere (const vec3_t origin, const float radius);
+GNU89INLINE inline bool R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs) __attribute__((pure));
+GNU89INLINE inline bool R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull
 GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
-R_CullBox (const vec3_t mins, const vec3_t maxs)
+bool
+R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
 
-	for (i=0 ; i < 4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+	for (i=0 ; i < 4 ; i++) {
+		// NOTE frustum distance is -p.n
+		if (BOX_ON_PLANE_SIDE (mins, maxs, &frustum[i]) == 2) {
 			return true;
+		}
+	}
 	return false;
 }
 
@@ -198,15 +200,16 @@ GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
-R_CullSphere (const vec3_t origin, const float radius)
+bool
+R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius)
 {
 	int		i;
 	float	r;
 
 	for (i = 0; i < 4; i++)
 	{
-		r = DotProduct (origin, frustum[i].normal) - frustum[i].dist;
+		// NOTE frustum distance is -p.n
+		r = DotProduct (origin, frustum[i].normal) + frustum[i].dist;
 		if (r <= -radius)
 			return true;
 	}
@@ -218,6 +221,6 @@ int CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere);
 void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 		                vec_t *lambda);
 
-//@}
+///@}
 
-#endif // __mathlib_h
+#endif//__QF_mathlib_h

@@ -55,13 +55,21 @@ typedef struct server_s {
 	double timeout;
 } server_t;
 
-static cvar_t *sv_console_plugin;
+static char *sv_console_plugin;
+static cvar_t sv_console_plugin_cvar = {
+	.name = "sv_console_plugin",
+	.description =
+		"Plugin used for the console",
+	.default_value = "server",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &sv_console_plugin },
+};
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
 
-qboolean is_server = true;
+bool is_server = true;
 
 static cbuf_t *mst_cbuf;
 
@@ -121,7 +129,7 @@ FL_Add (filter_t * filter)
 	filter_list = filter;
 }
 
-static filter_t *
+static __attribute__((pure)) filter_t *
 FL_Find (netadr_t adr)
 {
 	filter_t   *filter;
@@ -209,7 +217,7 @@ SVL_Add (server_t *sv)
 	sv_list = sv;
 }
 
-static server_t *
+static __attribute__((pure)) server_t *
 SVL_Find (netadr_t adr)
 {
 	server_t   *sv;
@@ -469,13 +477,10 @@ SV_WriteFilterList (void)
 }
 
 static void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
-	NET_Shutdown ();
-
 	// write filter list
 	SV_WriteFilterList ();
-	Con_Shutdown ();
 }
 
 static void
@@ -525,7 +530,7 @@ main (int argc, const char **argv)
 
 	mst_cbuf = Cbuf_New (&id_interp);
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 
@@ -538,12 +543,12 @@ main (int argc, const char **argv)
 
 	PI_Init ();
 
-	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
-								  CVAR_ROM, 0, "Plugin used for the console");
+	Cvar_Register (&sv_console_plugin_cvar, 0, 0);
 	PI_RegisterPlugins (server_plugin_list);
-	Con_Init (sv_console_plugin->string);
+	Con_Load (sv_console_plugin);
 	if (con_module)
 		con_module->data->console->cbuf = mst_cbuf;
+	Con_Init ();
 	con_list_print = Sys_Printf;
 
 	SV_InitNet ();

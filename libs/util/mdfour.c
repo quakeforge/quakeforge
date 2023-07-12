@@ -37,13 +37,10 @@
 #endif
 
 #include "QF/mdfour.h"
-#include "QF/uint32.h"
 
 /* NOTE: This code makes no attempt to be fast!
    It assumes that a int is at least 32 bits long
 */
-
-static struct mdfour *m;
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
@@ -62,12 +59,12 @@ static struct mdfour *m;
 
 /* this applies md4 to 64 byte chunks */
 static void
-mdfour64 (uint32 * M)
+mdfour64 (struct mdfour *m, uint32_t * M)
 {
 	int         j;
-	uint32      AA, BB, CC, DD;
-	uint32      X[16];
-	uint32      A, B, C, D;
+	uint32_t    AA, BB, CC, DD;
+	uint32_t    X[16];
+	uint32_t    A, B, C, D;
 
 	for (j = 0; j < 16; j++)
 		X[j] = M[j];
@@ -154,7 +151,7 @@ mdfour64 (uint32 * M)
 }
 
 static void
-copy64 (uint32 * M, const unsigned char *in)
+copy64 (uint32_t * M, const unsigned char *in)
 {
 	int         i;
 
@@ -164,7 +161,7 @@ copy64 (uint32 * M, const unsigned char *in)
 }
 
 static void
-copy4 (unsigned char *out, uint32 x)
+copy4 (unsigned char *out, uint32_t x)
 {
 	out[0] = x & 0xFF;
 	out[1] = (x >> 8) & 0xFF;
@@ -183,11 +180,11 @@ mdfour_begin (struct mdfour *md)
 }
 
 static void
-mdfour_tail (const unsigned char *in, int n)
+mdfour_tail (struct mdfour *m, const unsigned char *in, int n)
 {
 	unsigned char buf[128];
-	uint32      M[16];
-	uint32      b;
+	uint32_t    M[16];
+	uint32_t    b;
 
 	m->totalN += n;
 
@@ -201,46 +198,42 @@ mdfour_tail (const unsigned char *in, int n)
 	if (n <= 55) {
 		copy4 (buf + 56, b);
 		copy64 (M, buf);
-		mdfour64 (M);
+		mdfour64 (m, M);
 	} else {
 		copy4 (buf + 120, b);
 		copy64 (M, buf);
-		mdfour64 (M);
+		mdfour64 (m, M);
 		copy64 (M, buf + 64);
-		mdfour64 (M);
+		mdfour64 (m, M);
 	}
 }
 
 VISIBLE void
 mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 {
-	uint32      M[16];
+	uint32_t    M[16];
 
 	if (n == 0)
-		mdfour_tail (in, n);
-
-	m = md;
+		mdfour_tail (md, in, n);
 
 	while (n >= 64) {
 		copy64 (M, in);
-		mdfour64 (M);
+		mdfour64 (md, M);
 		in += 64;
 		n -= 64;
-		m->totalN += 64;
+		md->totalN += 64;
 	}
 
-	mdfour_tail (in, n);
+	mdfour_tail (md, in, n);
 }
 
 VISIBLE void
 mdfour_result (struct mdfour *md, unsigned char *out)
 {
-	m = md;
-
-	copy4 (out, m->A);
-	copy4 (out + 4, m->B);
-	copy4 (out + 8, m->C);
-	copy4 (out + 12, m->D);
+	copy4 (out, md->A);
+	copy4 (out + 4, md->B);
+	copy4 (out + 8, md->C);
+	copy4 (out + 12, md->D);
 }
 
 VISIBLE void

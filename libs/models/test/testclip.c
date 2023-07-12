@@ -6,6 +6,7 @@
 #include "QF/va.h"
 
 #include "getopt.h"
+#include "mod_internal.h"
 #include "world.h"
 
 #include "hulls.h"
@@ -40,10 +41,10 @@ typedef struct {
 	vec3_t      end;
 	struct {
 		float       frac;
-		qboolean    allsolid;
-		qboolean    startsolid;
-		qboolean    inopen;
-		qboolean    inwater;
+		bool        allsolid;
+		bool        startsolid;
+		bool        inopen;
+		bool        inwater;
 	}           expect;
 } test_t;
 
@@ -217,7 +218,7 @@ do_trace (box_t *box, hull_t *hull, vec3_t start, vec3_t end)
 	trace.inwater = false;
 	trace.fraction = 1;
 	VectorCopy (box->extents, trace.extents);
-	// FIXME specify tract type in test spec
+	// FIXME specify trace type in test spec
 	trace.type = box == &point ? tr_point : tr_box;
 	VectorCopy (end, trace.endpos);
 	MOD_TraceLine (hull, 0, start, end, &trace);
@@ -323,9 +324,9 @@ run_test (test_t *test)
 		err = 1;
 
 	if (test->desc)
-		desc = va ("(%d) %s", (int)(long)(test - tests), test->desc);
+		desc = va (0, "(%d) %s", (int)(long)(test - tests), test->desc);
 	else
-		desc = va ("test #%d", (int)(long)(test - tests));
+		desc = va (0, "test #%d", (int)(long)(test - tests));
 	if (verbose >= 0 || err) {
 		if (output)
 			puts("");

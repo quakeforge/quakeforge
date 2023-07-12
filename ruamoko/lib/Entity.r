@@ -1,44 +1,58 @@
-#include "Entity.h"
+#include <Entity.h>
 
-#include "debug.h"
-#include "entities.h"
-#include "plist.h"
-#include "script.h"
-#include "string.h"
+#include <debug.h>
+#include <entities.h>
+#include <plist.h>
+#include <script.h>
+#include <string.h>
 
 typedef void () void_function;
 
 int PR_SetField (entity ent, string field, string value) = #0;
-function PR_FindFunction (string func) = #0;
+@function PR_FindFunction (string func) = #0;
 
 @static void ParseEntities (string ent_data);
 
 @implementation Entity
 
-- (void) own
-{
-	own = 1;
-}
-
 - (id) init
 {
-	self = [self initWithEntity: spawn ()];
-	[self own];
+	if (!(self = [self initWithEntity: spawn ()])) {
+		return nil;
+	}
+	own = 1;
 	return self;
 }
 
 - (id) initWithEntity: (entity)e
 {
-	self = [super init];
+	if (!(self = [super init])) {
+		return nil;
+	}
 	ent = e;
 	ent.@this = self;
 	return self;
 }
 
-- (id) initWithEntity: (entity)e fromPlist: (plitem_t) dict
+- (id) initWithEntity: (entity)e fromPlist: (plitem_t *) dict
 {
 	self = [self initWithEntity: e];
 	return self;
+}
+
++(Entity *) spawn
+{
+	return [[[self alloc] init] autorelease];
+}
+
++(Entity *) withEntity: (entity) e
+{
+	return [[[self alloc] initWithEntity: e] autorelease];
+}
+
++(Entity *) withEntity: (entity) e fromPlist: (plitem_t *) dict
+{
+	return [[[self alloc] initWithEntity: e fromPlist: dict] autorelease];
 }
 
 - (void) dealloc
@@ -58,15 +72,15 @@ function PR_FindFunction (string func) = #0;
 	//XXX EntityParseFunction (ParseEntities);
 }
 
-+ createFromPlist:(plitem_t) dict
++ createFromPlist:(plitem_t *) dict
 {
 	local string classname;
 	local id class;
 	local entity ent;
 	local int count;
 	local string field, value;
-	local plitem_t keys;
-	local function func;
+	local plitem_t *keys;
+	local @function func;
 	local Entity *e;
 
 	classname = PL_String (PL_ObjectForKey (dict, "classname"));
@@ -85,7 +99,7 @@ function PR_FindFunction (string func) = #0;
 			value = PL_String (PL_ObjectForKey (dict, field));
 			PR_SetField (ent, field, value);
 		}
-		PL_Free (keys);
+		PL_Release (keys);
 		if ((func = PR_FindFunction (classname))) {
 			//dprint ("calling " + classname + "\n");
 			@self = ent;
@@ -95,7 +109,7 @@ function PR_FindFunction (string func) = #0;
 		}
 	}
 	if (ent)
-		[e own];
+		e.own = 1;
 	return e;
 }
 
@@ -104,7 +118,7 @@ function PR_FindFunction (string func) = #0;
 @static void ParseEntities (string ent_data)
 {
 	local script_t script;
-	local plitem_t plist, ent, key, value;
+	local plitem_t *plist, *ent, *key, *value;
 	local string token;
 	local int anglehack, i, count;
 
@@ -143,7 +157,7 @@ function PR_FindFunction (string func) = #0;
 					else
 						value = PL_NewString (token);
 					PL_D_AddObject (ent, PL_String (key), value);
-					PL_Free (key);
+					PL_Release (key);
 				}
 				PL_A_AddObject (plist, ent);
 			}

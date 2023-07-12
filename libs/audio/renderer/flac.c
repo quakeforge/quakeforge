@@ -39,6 +39,7 @@
 #endif
 
 #include <stdlib.h>
+#define FLAC__NO_DLL
 #include <FLAC/export.h>
 
 #include "qfalloca.h"
@@ -279,59 +280,60 @@ flac_read (flacfile_t *ff, float *buf, int len)
 }
 
 static sfxbuffer_t *
-flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
+flac_load (flacfile_t *ff, sfxblock_t *block)
 {
 	float      *data;
-	sfxbuffer_t *sc = 0;
-	sfx_t      *sfx = block->sfx;
+	sfxbuffer_t *sb = 0;
+	const sfx_t *sfx = block->sfx;
 	wavinfo_t  *info = &block->wavinfo;
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (info->frames, info->rate, info->channels,
-					   block, allocator);
-	if (!sc)
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx, info->frames);
+	sb = SND_Memory_AllocBuffer (buffer_frames * info->channels);
+	if (!sb)
 		goto bail;
-	sc->sfx = sfx;
+	sb->size = buffer_frames * info->channels;
+	sb->channels = info->channels;
+	sb->sfx_length = info->frames;
+	sb->block = sfx->block;
 	if (flac_read (ff, data, info->frames) < 0)
 		goto bail;
-	SND_SetPaint (sc);
-	SND_SetupResampler (sc, 0);
-	SND_Resample (sc, data, info->frames);
-	sc->head = sc->length;
+	SND_SetPaint (sb);
+	SND_SetupResampler (sb, 0);
+	SND_Resample (sb, data, info->frames);
+	sb->head = sb->size;
   bail:
 	if (data)
 		free (data);
 	flac_close (ff);
-	return sc;
+	return sb;
 }
 
-static void
-flac_callback_load (void *object, cache_allocator_t allocator)
+static sfxbuffer_t *
+flac_callback_load (sfxblock_t *block)
 {
 	QFile      *file;
 	flacfile_t *ff;
 
-	sfxblock_t *block = (sfxblock_t *) object;
-
 	file = QFS_FOpenFile (block->file);
 	if (!file)
-		return; //FIXME Sys_Error?
+		return 0;
 
 	if (!(ff = flac_open (file))) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
 		Qclose (file);
-		return; //FIXME Sys_Error?
+		return 0;
 	}
-	flac_load (ff, block, allocator);
+	return flac_load (ff, block);
 }
 
 static void
-flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
+flac_block (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
 	flac_close (ff);
-	SND_SFX_Cache (sfx, realname, info, flac_callback_load);
+	SND_SFX_Block (sfx, realname, info, flac_callback_load);
 }
 
 static long
@@ -359,18 +361,18 @@ flac_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-flac_stream_close (sfx_t *sfx)
+flac_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 
 	flac_close (stream->file);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 flac_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	void       *f;
 
@@ -411,7 +413,7 @@ flac_get_info (flacfile_t *ff)
 		vc = &ff->vorbis_info->data.vorbis_comment;
 
 		for (i = 0, ve = vc->comments; i < vc->num_comments; ve++, i++) {
-			Sys_MaskPrintf (SYS_DEV, "%.*s\n", ve->length, ve->entry);
+			Sys_MaskPrintf (SYS_snd, "%.*s\n", ve->length, ve->entry);
 			if (strncmp ("CUEPOINT=", (char *) ve->entry, 9) == 0) {
 				char       *str = alloca (ve->length + 1);
 				strncpy (str, (char *) ve->entry, ve->length);
@@ -432,12 +434,12 @@ flac_get_info (flacfile_t *ff)
 	info.dataofs = 0;
 	info.datalen = samples * info.channels * sizeof (float);
 
-	Sys_MaskPrintf (SYS_DEV, "\nBitstream is %d channel, %dHz\n",
+	Sys_MaskPrintf (SYS_snd, "\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
-	Sys_MaskPrintf (SYS_DEV, "\nDecoded length: %d samples (%d bytes)\n",
+	Sys_MaskPrintf (SYS_snd, "\nDecoded length: %d samples (%d bytes)\n",
 					info.frames, info.width);
 	if (vc) {
-		Sys_MaskPrintf (SYS_DEV, "Encoded by: %.*s\n\n",
+		Sys_MaskPrintf (SYS_snd, "Encoded by: %.*s\n\n",
 						vc->vendor_string.length, vc->vendor_string.entry);
 	}
 
@@ -460,10 +462,10 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
-		flac_cache (sfx, realname, ff, info);
+		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
+		flac_block (sfx, realname, ff, info);
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
+		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		flac_stream (sfx, realname, ff, info);
 	}
 	return 0;

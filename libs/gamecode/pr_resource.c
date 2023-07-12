@@ -42,6 +42,7 @@ struct pr_resource_s {
 	pr_resource_t *next;
 	void *data;
 	void (*clear)(progs_t *pr, void *data);
+	void (*destroy)(progs_t *pr, void *data);
 };
 
 static const char *
@@ -53,7 +54,8 @@ resource_get_key (const void *r, void *unused)
 VISIBLE void
 PR_Resources_Init (progs_t *pr)
 {
-	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0);
+	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0,
+									   pr->hashctx);
 	pr->resources = 0;
 }
 
@@ -68,8 +70,28 @@ PR_Resources_Clear (progs_t *pr)
 }
 
 VISIBLE void
+PR_Resources_Shutdown (progs_t *pr)
+{
+	// Clear resources first in case there are any cross-dependencies
+	PR_Resources_Clear (pr);
+
+	pr_resource_t *res = pr->resources;
+	while (res) {
+		pr_resource_t *t = res->next;
+		res->destroy (pr, res->data);
+		free (res);
+		res = t;
+	}
+	pr->resources = 0;
+
+	Hash_DelTable (pr->resource_hash);
+	pr->resource_hash = 0;
+}
+
+VISIBLE void
 PR_Resources_Register (progs_t *pr, const char *name, void *data,
-					   void (*clear)(progs_t *, void *))
+					   void (*clear)(progs_t *, void *),
+					   void (*destroy)(progs_t *, void *))
 {
 	pr_resource_t *res = malloc (sizeof (pr_resource_t));
 	if (!res)
@@ -77,6 +99,7 @@ PR_Resources_Register (progs_t *pr, const char *name, void *data,
 	res->name = name;
 	res->data = data;
 	res->clear = clear;
+	res->destroy = destroy;
 	res->next = pr->resources;
 	pr->resources = res;
 	Hash_Add (pr->resource_hash, res);

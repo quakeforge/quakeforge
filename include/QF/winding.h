@@ -26,7 +26,7 @@
 
 /**	\defgroup winding Winding Manipulation
 */
-//@{
+///@{
 
 struct plane_s;
 
@@ -114,7 +114,7 @@ winding_t *WindingVectors (const winding_t *w, int unit);
 					on the font side of the plane, or NULL if the winding has
 					been clipped away.
 */
-winding_t *ClipWinding (winding_t *in, struct plane_s *split, qboolean keepon);
+winding_t *ClipWinding (winding_t *in, struct plane_s *split, bool keepon);
 
 /**	Divide a winding by a plane, producing one or two windings.
 
@@ -138,6 +138,6 @@ winding_t *ClipWinding (winding_t *in, struct plane_s *split, qboolean keepon);
 void DivideWinding (winding_t *in, struct plane_s *split,
 					winding_t **front, winding_t **back);
 
-//@}
+///@}
 
 #endif//__QF_winding_h

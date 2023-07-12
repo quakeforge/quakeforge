@@ -50,9 +50,10 @@ dlight_t    *r_dlights;
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
+static int r_dlightframecount;
 
 void
-R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
+R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 {
 	float      *scores = alloca (count * sizeof (float));
 	float       score;
@@ -63,7 +64,7 @@ R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime || !dl->radius)
+		if (dl->die < r_data->realtime || !dl->radius)
 			continue;
 		VectorSubtract (dl->origin, pos, d);
 		score = DotProduct (d, d) / dl->radius;
@@ -106,14 +107,14 @@ R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 }
 
 void
-R_MaxDlightsCheck (cvar_t *var)
+R_MaxDlightsCheck (int max_dlights)
 {
-	r_maxdlights = bound (0, var->int_val, MAX_DLIGHTS);
+	r_maxdlights = bound (0, max_dlights, MAX_DLIGHTS);
 
 	if (r_dlights)
 		free (r_dlights);
 
-	r_dlights=0;
+	r_dlights = 0;
 
 	if (r_maxdlights)
 		r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));
@@ -126,28 +127,32 @@ R_AnimateLight (void)
 {
 	int         i, j, k;
 
+	if (!r_data->lightstyle) {
+		return;
+	}
+
 	// light animations
 	// 'm' is normal light, 'a' is no light, 'z' is double bright
-	i = (int) (vr_data.realtime * 10);
+	i = (int) (r_data->realtime * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
-		if (!vr_data.lightstyle[j].length) {
+		if (!r_data->lightstyle[j].length) {
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
-		if (r_flatlightstyles->int_val == 2) {
-			k = vr_data.lightstyle[j].peak - 'a';
-		} else if (r_flatlightstyles->int_val == 1) {
-			k = vr_data.lightstyle[j].average - 'a';
+		if (r_flatlightstyles == 2) {
+			k = r_data->lightstyle[j].peak - 'a';
+		} else if (r_flatlightstyles == 1) {
+			k = r_data->lightstyle[j].average - 'a';
 		} else {
-			k = i % vr_data.lightstyle[j].length;
-			k = vr_data.lightstyle[j].map[k] - 'a';
+			k = i % r_data->lightstyle[j].length;
+			k = r_data->lightstyle[j].map[k] - 'a';
 		}
 		d_lightstylevalue[j] = k * 22;
 	}
 }
 
 static inline void
-real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
+real_mark_surfaces (float dist, msurface_t *surf, vec4f_t lightorigin,
 					dlight_t *light, unsigned lightnum)
 {
 	float      dist2, is, it;
@@ -175,9 +180,9 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 	if (is * is + it * it > dist2)
 		return;
 
-	if (surf->dlightframe != r_framecount) {
+	if (surf->dlightframe != r_dlightframecount) {
 		memset (surf->dlightbits, 0, sizeof (surf->dlightbits));
-		surf->dlightframe = r_framecount;
+		surf->dlightframe = r_dlightframecount;
 	}
 	ind = lightnum / 32;
 	bit = 1 << (lightnum % 32);
@@ -185,7 +190,7 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 }
 
 static inline void
-mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
+mark_surfaces (msurface_t *surf, vec4f_t lightorigin, dlight_t *light,
 			   int lightnum)
 {
 	float      dist;
@@ -203,74 +208,71 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
-					   mnode_t *node)
+R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+					   dlight_t *light, int lightnum, int node_id)
 {
 	unsigned    i;
 	float       ndist, maxdist;
-	plane_t    *splitplane;
 	msurface_t *surf;
-	//XXX mvertex_t  *vertices;
 
-	//XXX vertices = r_worldentity.model->vertexes;
 	maxdist = light->radius;
 
 loc0:
-	if (node->contents < 0)
+	if (node_id < 0)
 		return;
 
-	splitplane = node->plane;
-	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
+	mnode_t    *node = brush->nodes + node_id;
+	ndist = dotf (lightorigin, node->plane)[0];
 
 	if (ndist > maxdist * maxdist) {
 		// Save time by not pushing another stack frame.
-		if (node->children[0]->contents >= 0) {
-			node = node->children[0];
+		if (node->children[0] >= 0) {
+			node_id = node->children[0];
 			goto loc0;
 		}
 		return;
 	}
 	if (ndist < -maxdist * maxdist) {
-		// Save time by not pushing another stack frame.
-		if (node->children[1]->contents >= 0) {
-			node = node->children[1];
+		if (node->children[1] >= 0) {
+			node_id = node->children[1];
 			goto loc0;
 		}
 		return;
 	}
 
 	// mark the polygons
-	surf = r_worldentity.model->surfaces + node->firstsurface;
+	surf = brush->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		mark_surfaces (surf, lightorigin, light, lightnum);
 	}
 
-	if (node->children[0]->contents >= 0) {
-		if (node->children[1]->contents >= 0)
-			R_RecursiveMarkLights (lightorigin, light, lightnum,
+	if (node->children[0] >= 0) {
+		if (node->children[1] >= 0)
+			R_RecursiveMarkLights (brush, lightorigin, light, lightnum,
 								   node->children[1]);
-		node = node->children[0];
+		node_id = node->children[0];
 		goto loc0;
-	} else if (node->children[1]->contents >= 0) {
-		node = node->children[1];
+	} else if (node->children[1] >= 0) {
+		node_id = node->children[1];
 		goto loc0;
 	}
 }
 
 
-void
-R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
+static void
+R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
+	mod_brush_t *brush = &model->brush;
 	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
-		mnode_t *node = model->nodes + model->hulls[0].firstclipnode;
-		R_RecursiveMarkLights (lightorigin, light, lightnum, node);
+		int         node_id = brush->hulls[0].firstclipnode;
+		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node_id);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
-		int         leafnum = 0;
+		unsigned    leafnum = 0;
 		byte       *in = pvsleaf->compressed_vis;
 		byte        vis_bits;
 
@@ -280,29 +282,29 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 		maxs[0] = lightorigin[0] + radius;
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
-		while (leafnum < model->numleafs) {
+		while (leafnum < brush->visleafs) {
 			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (b = 1; b < 256 && leafnum < model->numleafs;
+			for (b = 1; b < 256 && leafnum < brush->visleafs;
 				 b <<= 1, leafnum++) {
 				int      m;
-				mleaf_t *leaf  = &model->leafs[leafnum + 1];
+				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
-				if (leaf->visframe != r_visframecount)
+				if (r_leaf_visframes[leafnum + 1] != r_visframecount)
 					continue;
 				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
 					|| leaf->mins[2] > maxs[2] || leaf->maxs[2] < mins[2])
 					continue;
-				if (R_CullBox (leaf->mins, leaf->maxs))
-					continue;
+				msurface_t **msurf = brush->marksurfaces + leaf->firstmarksurface;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
-					msurface_t *surf = leaf->firstmarksurface[m];
-					if (surf->visframe != r_visframecount)
+					msurface_t *surf = *msurf++;
+					int         surf_id = surf - brush->surfaces;
+					if (r_face_visframes[surf_id] != r_visframecount)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);
 				}
@@ -316,24 +318,26 @@ R_PushDlights (const vec3_t entorigin)
 {
 	unsigned int i;
 	dlight_t   *l;
-	vec3_t      lightorigin;
 
-	if (!r_dlight_lightmap->int_val)
+	r_dlightframecount = r_framecount;
+
+	if (!r_dlight_lightmap)
 		return;
 
 	l = r_dlights;
 
 	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < vr_data.realtime || !l->radius)
+		if (l->die < r_data->realtime || !l->radius)
 			continue;
+		vec4f_t     lightorigin;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, i, r_worldentity.model);
+		lightorigin[3] = 1;
+		R_MarkLights (lightorigin, l, i, r_refdef.worldmodel);
 	}
 }
 
 /* LIGHT SAMPLING */
 
-plane_t    *lightplane;
 vec3_t      lightspot;
 
 static int
@@ -400,37 +404,34 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 }
 
 static int
-RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
+RecursiveLightPoint (mod_brush_t *brush, int node_id, vec4f_t start,
+					 vec4f_t end)
 {
 	unsigned    i;
 	int         r, s, t, ds, dt, side;
 	float       front, back, frac;
-	plane_t    *plane;
 	msurface_t *surf;
 	mtexinfo_t *tex;
-	vec3_t      mid;
 loop:
-	if (node->contents < 0)
+	if (node_id < 0)
 		return -1;						// didn't hit anything
 
 	// calculate mid point
-	plane = node->plane;
-	front = DotProduct (start, plane->normal) - plane->dist;
-	back = DotProduct (end, plane->normal) - plane->dist;
+	mnode_t    *node = brush->nodes + node_id;
+	front = dotf (start, node->plane)[0];
+	back = dotf (end, node->plane)[0];
 	side = front < 0;
 
 	if ((back < 0) == side) {
-		node = node->children[side];
+		node_id = node->children[side];
 		goto loop;
 	}
 
 	frac = front / (front - back);
-	mid[0] = start[0] + (end[0] - start[0]) * frac;
-	mid[1] = start[1] + (end[1] - start[1]) * frac;
-	mid[2] = start[2] + (end[2] - start[2]) * frac;
+	vec4f_t     mid = start + (end - start) * frac;
 
 	// go down front side
-	r = RecursiveLightPoint (node->children[side], start, mid);
+	r = RecursiveLightPoint (brush, node->children[side], start, mid);
 	if (r >= 0)
 		return r;						// hit something
 
@@ -439,9 +440,8 @@ loop:
 
 	// check for impact on this node
 	VectorCopy (mid, lightspot);
-	lightplane = plane;
 
-	surf = r_worldentity.model->surfaces + node->firstsurface;
+	surf = brush->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		if (surf->flags & SURF_DRAWTILED)
 			continue;					// no lightmaps
@@ -472,26 +472,20 @@ loop:
 	}
 
 	// go down back side
-	return RecursiveLightPoint (node->children[!side], mid, end);
+	return RecursiveLightPoint (brush, node->children[side ^ 1], mid, end);
 }
 
 int
-R_LightPoint (const vec3_t p)
+R_LightPoint (mod_brush_t *brush, vec4f_t p)
 {
-	vec3_t      end;
-	int         r;
-
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		// allow dlights to have some effect, so don't go /quite/ fullbright
 		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 200;
 		return 200;
 	}
 
-	end[0] = p[0];
-	end[1] = p[1];
-	end[2] = p[2] - 2048;
-
-	r = RecursiveLightPoint (r_worldentity.model->nodes, p, end);
+	vec4f_t     end = p - (vec4f_t) { 0, 0, 2048, 0 };
+	int         r = RecursiveLightPoint (brush, 0, p, end);
 
 	if (r == -1)
 		r = 0;
@@ -524,7 +518,7 @@ R_AllocDlight (int key)
 	// then look for anything else
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime) {
+		if (dl->die < r_data->realtime) {
 			memset (dl, 0, sizeof (*dl));
 			dl->key = key;
 			dl->color[0] = dl->color[1] = dl->color[2] = 1;
@@ -546,7 +540,7 @@ R_DecayLights (double frametime)
 
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < vr_data.realtime || !dl->radius)
+		if (dl->die < r_data->realtime || !dl->radius)
 			continue;
 
 		dl->radius -= frametime * dl->decay;

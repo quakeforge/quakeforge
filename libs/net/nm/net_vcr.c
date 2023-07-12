@@ -79,7 +79,7 @@ VCR_ReadNext (void)
 
 
 void
-VCR_Listen (qboolean state)
+VCR_Listen (bool state)
 {
 }
 
@@ -136,10 +136,10 @@ VCR_SendMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-qboolean
+bool
 VCR_CanSendMessage (qsocket_t * sock)
 {
-	qboolean    ret;
+	bool        ret;
 	long       *driverdata = (long *) (char *) &sock->driverdata;
 
 	if (host_time != next.time || next.op != VCR_OP_CANSENDMESSAGE
@@ -161,19 +161,19 @@ VCR_Close (qsocket_t * sock)
 
 
 void
-VCR_SearchForHosts (qboolean xmit)
+VCR_SearchForHosts (bool xmit)
 {
 }
 
 
-qsocket_t  *
+__attribute__((const)) qsocket_t *
 VCR_Connect (const char *host)
 {
 	return NULL;
 }
 
 
-qsocket_t  *
+qsocket_t *
 VCR_CheckNewConnections (void)
 {
 	qsocket_t  *sock;

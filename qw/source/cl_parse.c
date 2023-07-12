@@ -52,7 +52,7 @@
 #include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -61,24 +61,33 @@
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
-#include "qw/bothdefs.h"
-#include "cl_cam.h"
-#include "cl_chat.h"
-#include "cl_ents.h"
-#include "cl_http.h"
-#include "cl_input.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_skin.h"
-#include "cl_tent.h"
-#include "client.h"
+#include "QF/scene/scene.h"
+
 #include "compat.h"
-#include "host.h"
-#include "map_cfg.h"
+
+#include "client/effects.h"
+#include "client/particles.h"
+#include "client/sbar.h"
+#include "client/screen.h"
+#include "client/temp_entities.h"
+#include "client/view.h"
+#include "client/world.h"
+
+#include "qw/bothdefs.h"
 #include "qw/pmove.h"
 #include "qw/protocol.h"
-#include "sbar.h"
-#include "clview.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_chat.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_http.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_skin.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
+#include "qw/include/map_cfg.h"
 
 const char *svc_strings[] = {
 	"svc_bad",
@@ -154,38 +163,14 @@ const char *svc_strings[] = {
 	"NEW PROTOCOL"
 };
 
-dstring_t  *centerprint;
 int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
 
-int         cl_spikeindex, cl_playerindex, cl_flagindex;
+int         cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
-
-extern cvar_t *hud_scoreboard_uid;
-
-entity_t *cl_static_entities;
-static entity_t **cl_static_tail;
-
-static void
-CL_LoadSky (void)
-{
-	plitem_t   *item;
-	const char *name = 0;
-
-	if (!cl.worldspawn) {
-		r_funcs->R_LoadSkys (0);
-		return;
-	}
-	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
-		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
-		name = PL_String (item);
-	}
-	r_funcs->R_LoadSkys (name);
-}
 
 int
 CL_CalcNet (void)
@@ -196,15 +181,18 @@ CL_CalcNet (void)
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
 		frame = &cl.frames[i & UPDATE_MASK];
-		if (frame->receivedtime == -1)
+		if (frame->receivedtime == -1) {
 			packet_latency[i & NET_TIMINGSMASK] = 9999;		// dropped
-		else if (frame->receivedtime == -2)
+		} else if (frame->receivedtime == -2) {
 			packet_latency[i & NET_TIMINGSMASK] = 10000;	// choked
-		else if (frame->invalid)
+		} else if (frame->invalid) {
 			packet_latency[i & NET_TIMINGSMASK] = 9998;		// invalid delta
-		else
-			packet_latency[i & NET_TIMINGSMASK] =
-				(frame->receivedtime - frame->senttime) * 20;
+		} else {
+			double      d = frame->receivedtime - frame->senttime;
+			d = log (d * 1000 + 1) / log (1000);
+			d *= d * cl_netgraph_height;
+			packet_latency[i & NET_TIMINGSMASK] = d;
+		}
 	}
 
 	lost = 0;
@@ -222,7 +210,7 @@ CL_CalcNet (void)
 	Returns true if the file exists, otherwise it attempts
 	to start a download from the server.
 */
-qboolean
+bool
 CL_CheckOrDownloadFile (const char *filename)
 {
 	QFile	   *f;
@@ -263,57 +251,29 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va ("download \"%s\"", cls.downloadname->str));
+					 va (0, "download \"%s\"", cls.downloadname->str));
 
 	cls.downloadnumber++;
 
 	return false;
 }
 
-static plitem_t *
-map_ent (const char *mapname)
-{
-	static progs_t edpr;
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-	char       *buf;
-	plitem_t   *edicts = 0;
-	QFile      *ent_file;
-
-	QFS_StripExtension (mapname, name);
-	strcat (name, ".ent");
-	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
-	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
-		edicts = ED_Parse (&edpr, buf);
-		free (buf);
-	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
-	}
-	free (name);
-	return edicts;
-}
-
 static void
 CL_NewMap (const char *mapname)
 {
-	cl_static_entities = 0;
-	cl_static_tail = &cl_static_entities;
-	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
+	const char *skyname = 0;
+	// R_LoadSkys does the right thing with null pointers.
+	if (cl.serverinfo) {
+		skyname = Info_ValueForKey (cl.serverinfo, "sky");
+	}
+	CL_World_NewMap (mapname, skyname);
+	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
+
 	Team_NewMap ();
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
-		cl.edicts = map_ent (mapname);
-		if (cl.edicts) {
-			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
-			CL_LoadSky ();
-			if (r_funcs->Fog_ParseWorldspawn)
-				r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
-		}
-	}
-
-	map_cfg (mapname, 1);
+	Hunk_Check (0);								// make sure nothing is hurt
 }
 
 static void
@@ -324,7 +284,9 @@ Model_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking models...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -337,18 +299,18 @@ Model_NextDownload (void)
 			return;								// started a download
 	}
 
-	if (cl.model_name[1])
-		map_cfg (cl.model_name[1], 0);
+	CL_MapCfg (cl.model_name[1]);
 
 	for (i = 1; i < cl.nummodels; i++) {
-		char *info_key = 0;
+		const char *info_key = 0;
 
 		if (!cl.model_name[i][0])
 			break;
 
-		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
+		DARRAY_APPEND (&cl_world.models,
+					   Mod_ForName (cl.model_name[i], false));
 
-		if (!cl.model_precache[i]) {
+		if (!cl_world.models.a[i]) {
 			Sys_Printf ("\nThe required model file '%s' could not be found or "
 						"downloaded.\n\n", cl.model_name[i]);
 			Sys_Printf ("You may need to download or purchase a %s client "
@@ -359,33 +321,34 @@ Model_NextDownload (void)
 		}
 
 		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl.model_precache[i]->type == mod_alias) {
+			&& cl_world.models.a[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			//XXX mod_funcs->Skin_Player_Model (cl.model_precache[i]);
+			//XXX mod_funcs->Skin_Player_Model (cl_world.models.a[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
-			&& cl.model_precache[i]->type == mod_alias)
+			&& cl_world.models.a[i]->type == mod_alias)
 			info_key = emodel_name;
 
-		if (info_key && cl_model_crcs->int_val) {
-			aliashdr_t *ahdr = cl.model_precache[i]->aliashdr;
+		if (info_key && cl_model_crcs) {
+			aliashdr_t *ahdr = cl_world.models.a[i]->aliashdr;
 			if (!ahdr)
-				ahdr = Cache_Get (&cl.model_precache[i]->cache);
-			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
+				ahdr = Cache_Get (&cl_world.models.a[i]->cache);
+			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
+															 ahdr->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-				SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
-													ahdr->crc));
+				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
+													info_key, ahdr->crc));
 			}
-			if (!cl.model_precache[i]->aliashdr)
-				Cache_Release (&cl.model_precache[i]->cache);
+			if (!cl_world.models.a[i]->aliashdr)
+				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}
 
 	// Something went wrong (probably in the server, probably a TF server)
 	// We need to disconnect gracefully.
-	if (!cl.model_precache[1]) {
+	if (!cl_world.models.a[1]) {
 		Sys_Printf ("\nThe server has failed to provide the map name.\n\n");
 		Sys_Printf ("Disconnecting to prevent a crash.\n\n");
 		CL_Disconnect ();
@@ -393,15 +356,14 @@ Model_NextDownload (void)
 	}
 
 	// all done
-	cl.worldmodel = cl.model_precache[1];
 	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (prespawn_name, cl.servercount,
-							 cl.worldmodel->checksum2));
+						 va (0, prespawn_name, cl.servercount,
+							 cl_world.scene->worldmodel->brush.checksum2));
 	}
 }
 
@@ -413,7 +375,9 @@ Sound_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Sys_Printf ("Checking sounds...\n");
-		CL_UpdateScreen (realtime);
+		cl.viewstate.time = realtime;
+		cl.viewstate.realtime = realtime;
+		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
 
@@ -421,7 +385,7 @@ Sound_NextDownload (void)
 	for (; cl.sound_name[cls.downloadnumber][0];
 		 cls.downloadnumber++) {
 		s = cl.sound_name[cls.downloadnumber];
-		if (!CL_CheckOrDownloadFile (va ("sound/%s", s)))
+		if (!CL_CheckOrDownloadFile (va (0, "sound/%s", s)))
 			return;						// started a download
 	}
 
@@ -432,16 +396,16 @@ Sound_NextDownload (void)
 	}
 
 	// done with sounds, request models now
-	memset (cl.model_precache, 0, sizeof (cl.model_precache));
+	cl_world.models.size = 0;
+	DARRAY_APPEND (&cl_world.models, 0);// ind 0 is null model
 	cl_playerindex = -1;
-	cl_spikeindex = -1;
 	cl_flagindex = -1;
 	cl_h_playerindex = -1;
 	cl_gib1index = cl_gib2index = cl_gib3index = -1;
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount, 0));
+						 va (0, modellist_name, cl.servercount, 0));
 	}
 }
 
@@ -462,7 +426,7 @@ CL_RequestNextDownload (void)
 			break;
 		case dl_none:
 		default:
-			Sys_MaskPrintf (SYS_DEV, "Unknown download type.\n");
+			Sys_MaskPrintf (SYS_dev, "Unknown download type.\n");
 	}
 }
 
@@ -470,7 +434,7 @@ void
 CL_FinishDownload (void)
 {
 	Qclose (cls.download);
-	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
 
 	// rename the temp file to it's final name
 	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {
@@ -660,8 +624,8 @@ CL_ParseDownload (void)
 	if (percent != 100) {
 		// request next block
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname->str,
-								percent));
+			VID_SetCaption (va (0, "Downloading %s %d%%",
+								cls.downloadname->str, percent));
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -698,7 +662,7 @@ CL_NextUpload (void)
 	MSG_WriteByte (&cls.netchan.message, percent);
 	SZ_Write (&cls.netchan.message, buffer, r);
 
-	Sys_MaskPrintf (SYS_DEV, "UPLOAD: %6d: %d written\n", upload_pos - r, r);
+	Sys_MaskPrintf (SYS_dev, "UPLOAD: %6d: %d written\n", upload_pos - r, r);
 
 	if (upload_pos != upload_size)
 		return;
@@ -720,7 +684,7 @@ CL_StartUpload (byte * data, int size)
 	if (upload_data)
 		free (upload_data);
 
-	Sys_MaskPrintf (SYS_DEV, "Upload starting of %d...\n", size);
+	Sys_MaskPrintf (SYS_dev, "Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
 	memcpy (upload_data, data, size);
@@ -730,7 +694,7 @@ CL_StartUpload (byte * data, int size)
 	CL_NextUpload ();
 }
 
-qboolean
+bool
 CL_IsUploading (void)
 {
 	if (upload_data)
@@ -770,9 +734,9 @@ CL_ParseServerData (void)
 {
 	const char *str;
 	int			protover;
-	//FIXME qboolean	cflag = false;
+	//FIXME bool		cflag = false;
 
-	Sys_MaskPrintf (SYS_DEV, "Serverdata packet received.\n");
+	Sys_MaskPrintf (SYS_dev, "Serverdata packet received.\n");
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -812,14 +776,18 @@ CL_ParseServerData (void)
 	}
 
 	cl.viewentity = cl.playernum + 1;
+	cl.viewstate.bob_enabled = !cl.spectator;
+	Sbar_SetPlayerNum (cl.playernum, cl.spectator);
 
 	// get the full level name
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	Sbar_SetLevelName (cl.levelname, cls.servername->str);
+	Sbar_SetGameType (1);
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
-	r_data->gravity = movevars.gravity;		// Gravity for renderer effects
+	CL_ParticlesGravity (movevars.gravity);// Gravity for renderer effects
 	movevars.stopspeed = MSG_ReadFloat (net_message);
 	movevars.maxspeed = MSG_ReadFloat (net_message);
 	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);
@@ -840,7 +808,7 @@ CL_ParseServerData (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, 0));
+						 va (0, soundlist_name, cl.servercount, 0));
 	}
 
 	// now waiting for downloads, etc
@@ -876,7 +844,7 @@ CL_ParseSoundlist (void)
 	if (n && !cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, n));
+						 va (0, soundlist_name, cl.servercount, n));
 		return;
 	}
 
@@ -903,9 +871,7 @@ CL_ParseModellist (void)
 			Host_Error ("Server sent too many model_precache");
 		strcpy (cl.model_name[cl.nummodels], str);
 
-		if (!strcmp (cl.model_name[cl.nummodels], "progs/spike.mdl"))
-			cl_spikeindex = cl.nummodels;
-		else if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
+		if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
 			cl_playerindex = cl.nummodels;
 		else if (!strcmp (cl.model_name[cl.nummodels], "progs/flag.mdl"))
 			cl_flagindex = cl.nummodels;
@@ -927,7 +893,7 @@ CL_ParseModellist (void)
 		if (!cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va (modellist_name, cl.servercount, n));
+							 va (0, modellist_name, cl.servercount, n));
 		}
 		return;
 	}
@@ -938,64 +904,16 @@ CL_ParseModellist (void)
 }
 
 static void
-CL_ParseBaseline (entity_state_t *es)
-{
-	es->modelindex = MSG_ReadByte (net_message);
-	es->frame = MSG_ReadByte (net_message);
-	es->colormap = MSG_ReadByte (net_message);
-	es->skinnum = MSG_ReadByte (net_message);
-
-	MSG_ReadCoordAngleV (net_message, es->origin, es->angles);
-
-	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
-	es->colormod = 255;
-	es->alpha = 255;
-	es->scale = 16;
-	es->glow_size = 0;
-	es->glow_color = 254;
-}
-
-/*
-	CL_ParseStatic
-
-	Static entities are non-interactive world objects
-	like torches
-*/
-static void
-CL_ParseStatic (void)
-{
-	entity_t	   *ent;
-	entity_state_t	es;
-
-	CL_ParseBaseline (&es);
-
-	ent = r_funcs->R_AllocEntity ();
-	CL_Init_Entity (ent);
-
-	*cl_static_tail = ent;
-	cl_static_tail = &ent->unext;
-
-	// copy it to the current state
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->skinnum = es.skinnum;
-
-	VectorCopy (es.origin, ent->origin);
-	CL_TransformEntity (ent, es.angles, true);
-
-	r_funcs->R_AddEfrags (ent);
-}
-
-static void
 CL_ParseStaticSound (void)
 {
-	int			sound_num, vol, atten;
-	vec3_t		org;
+	int			sound_num;
+	float       vol, atten;
+	vec4f_t     org = { 0, 0, 0, 1 };
 
-	MSG_ReadCoordV (net_message, org);
+	MSG_ReadCoordV (net_message, (vec_t*)&org);//FIXME
 	sound_num = MSG_ReadByte (net_message);
-	vol = MSG_ReadByte (net_message);
-	atten = MSG_ReadByte (net_message);
+	vol = MSG_ReadByte (net_message) / 255.0;
+	atten = MSG_ReadByte (net_message) / 64.0;
 
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
@@ -1007,7 +925,6 @@ CL_ParseStartSoundPacket (void)
 {
 	float		attenuation;
 	int			bits, channel, ent, sound_num, volume;
-	vec3_t		pos;
 
 	bits = MSG_ReadShort (net_message);
 
@@ -1023,7 +940,8 @@ CL_ParseStartSoundPacket (void)
 
 	sound_num = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordV (net_message, pos);
+	vec4f_t     pos = { 0, 0, 0, 1 };
+	MSG_ReadCoordV (net_message, (vec_t*)&pos);//FIXME
 
 	ent = (bits >> 3) & 1023;
 	channel = bits & 7;
@@ -1093,7 +1011,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
 		if (player->userid)
 			Info_SetValueForKey (player->userinfo, "name",
-								 va ("user-%i [exploit]", player->userid), 1);
+								 va (0, "user-%i [exploit]",
+									 player->userid), 1);
 		else
 			Info_SetValueForKey (player->userinfo, "name", "", 1);
 	}
@@ -1119,7 +1038,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 											player->skinname->value);
 	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
 
-	Sbar_Changed ();
+	Sbar_UpdateInfo (slot);
 }
 
 static void
@@ -1181,7 +1100,7 @@ CL_SetInfo (void)
 
 	CL_ProcessUserInfo (slot, player);
 
-	Sys_MaskPrintf (SYS_DEV, "SETINFO %s: %s=%s\n", player->name->value, key,
+	Sys_MaskPrintf (SYS_dev, "SETINFO %s: %s=%s\n", player->name->value, key,
 					value);
 }
 
@@ -1195,21 +1114,21 @@ CL_ServerInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Sys_MaskPrintf (SYS_DEV, "SERVERINFO: %s=%s\n", key, value);
+	Sys_MaskPrintf (SYS_dev, "SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
-		cl.chase = atoi (value);
+		cl.viewstate.chase = atoi (value);
 	} else if (strequal (key, "cshifts")) {
 		cl.sv_cshifts = atoi (value);
 	} else if (strequal (key, "no_pogo_stick")) {
-		Cvar_Set (no_pogo_stick, value);
-		cl.no_pogo_stick = no_pogo_stick->int_val;
+		Cvar_Set ("no_pogo_stick", value);
+		cl.no_pogo_stick = no_pogo_stick;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
+		Sbar_SetTeamplay (cl.teamplay);
 	} else if (strequal (key, "watervis")) {
-		cl.watervis = atoi (value);
+		cl.viewstate.watervis = atoi (value);
 	} else if (strequal (key, "fpd")) {
 		cl.fpd = atoi (value);
 	} else if (strequal (key, "fbskins")) {
@@ -1238,29 +1157,38 @@ CL_SetStat (int stat, int value)
 			return;
 	}
 
-	Sbar_Changed ();
-
 	switch (stat) {
 		case STAT_ITEMS:
-			Sbar_Changed ();
+#define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)
+			cl.viewstate.powerup_index = (cl.stats[STAT_ITEMS]&IT_POWER) >> 19;
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1,
+									va (0, "%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
 	}
 	cl.stats[stat] = value;
+	cl.viewstate.weapon_model = cl_world.models.a[cl.stats[STAT_WEAPON]];
+	if (cl.stdver) {
+		cl.viewstate.height = cl.stats[STAT_VIEWHEIGHT];
+	} else {
+		cl.viewstate.height = DEFAULT_VIEWHEIGHT;	// view height
+	}
+	Sbar_UpdateStats (stat);
 }
 
 static void
-CL_MuzzleFlash (void)
+CL_ParseMuzzleFlash (void)
 {
-	dlight_t   *dl;
+	//FIXME this should just enable the effect on the relevant entity and
+	//then automatic entity updates take care of the rest
 	int			i;
 	player_state_t *pl;
-	vec3_t		fv, rv, uv;
+	vec3_t		f, r, u;
+	vec4f_t     position = { 0, 0, 0, 1}, fv = {};
 
 	i = MSG_ReadShort (net_message);
 
@@ -1269,27 +1197,18 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = r_funcs->R_AllocDlight (i);
-	if (!dl)
-		return;
-
 	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewangles, fv, rv, uv);
+		AngleVectors (cl.viewstate.player_angles, f, r, u);
 	else
-		AngleVectors (pl->viewangles, fv, rv, uv);
+		AngleVectors (pl->viewangles, f, r, u);
 
-	VectorMultAdd (pl->pls.origin, 18, fv, dl->origin);
-	dl->radius = 200 + (rand () & 31);
-	dl->die = cl.time + 0.1;
-	dl->minlight = 32;
-	dl->color[0] = 0.2;
-	dl->color[1] = 0.1;
-	dl->color[2] = 0.05;
-	dl->color[3] = 0.7;
+	VectorCopy (f, fv);
+	VectorCopy (pl->pls.es.origin, position);
+	CL_MuzzleFlash (position, fv, 0, i, cl.time);
 }
 
 #define SHOWNET(x) \
-	if (cl_shownet->int_val == 2) \
+	if (cl_shownet == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 int			received_framecount;
@@ -1298,17 +1217,21 @@ void
 CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
+	int         update_pings = 0;
 	const char *str;
 	static dstring_t *stuffbuf;
+	TEntContext_t tentCtx = {
+		cl.viewstate.player_origin, cl.viewentity
+	};
 
 	received_framecount = host_framecount;
-	cl.last_servermessage = realtime;
+	cl.viewstate.last_servermessage = realtime;
 	CL_ClearProjectiles ();
 
 	// if recording demos, copy the message out
-	if (cl_shownet->int_val == 1)
+	if (cl_shownet == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
-	else if (cl_shownet->int_val == 2)
+	else if (cl_shownet == 2)
 		Sys_Printf ("------------------ %d\n",
 					cls.netchan.incoming_acknowledged);
 
@@ -1329,7 +1252,7 @@ CL_ParseServerMessage (void)
 			break;						// end of message
 		}
 
-		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -1374,7 +1297,7 @@ CL_ParseServerMessage (void)
 						break;
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
-					if (cl_nofake->int_val) {
+					if (cl_nofake) {
 						char	*c;
 
 						p = dstring_strdup (str);
@@ -1400,16 +1323,16 @@ CL_ParseServerMessage (void)
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
 										stuffbuf->str, str);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (cl_stbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, str);
@@ -1418,7 +1341,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.player_angles;
 				vec3_t      dummy;
 
 				if (cls.demoplayback2) {
@@ -1438,8 +1361,6 @@ CL_ParseServerMessage (void)
 				}
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
-				// leave full screen intermission
-				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
@@ -1468,12 +1389,12 @@ CL_ParseServerMessage (void)
 			//   svc_updatename
 
 			case svc_updatefrags:
-				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
 				cl.players[i].frags = (short) MSG_ReadShort (net_message);
+				Sbar_UpdateFrags (i);
 				break;
 
 			//   svc_clientdata
@@ -1487,22 +1408,24 @@ CL_ParseServerMessage (void)
 			//   svc_particle
 
 			case svc_damage:
-				V_ParseDamage ();
+				V_ParseDamage (net_message, &cl.viewstate);
+				// put sbar face into pain frame
+				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
-				CL_ParseStatic ();
+				CL_ParseStatic (net_message, 1);
 				break;
 
 			//   svc_spawnbinary
 
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
-				CL_ParseBaseline (&qw_entstates.baseline[i]);
+				CL_ParseBaseline (net_message, &qw_entstates.baseline[i], 1);
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_qw (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:
@@ -1517,19 +1440,17 @@ CL_ParseServerMessage (void)
 
 			case svc_centerprint:
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
 			case svc_killedmonster:
 				cl.stats[STAT_MONSTERS]++;
+				Sbar_UpdateStats (STAT_MONSTERS);
 				break;
 
 			case svc_foundsecret:
 				cl.stats[STAT_SECRETS]++;
+				Sbar_UpdateStats (STAT_SECRETS);
 				break;
 
 			case svc_spawnstaticsound:
@@ -1537,40 +1458,35 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				Sys_MaskPrintf (SYS_DEV, "svc_intermission\n");
+				Sys_MaskPrintf (SYS_dev, "svc_intermission\n");
 
 				cl.intermission = 1;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
-				r_data->vid->recalc_refdef = true;		// go to full screen
-				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, cl.simorg);
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
-				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
-				MSG_ReadAngleV (net_message, cl.simangles);
-				cl.simangles[ROLL] = 0;						// FIXME @@@
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simangles[i]);
-				Sys_MaskPrintf (SYS_DEV, "\n");
-				VectorZero (cl.simvel);
+				Sys_MaskPrintf (SYS_dev, "intermission simorg: ");
+				MSG_ReadCoordV (net_message, (vec_t*)&cl.viewstate.player_origin);//FIXME
+				cl.viewstate.player_origin[3] = 1;
+				Sys_MaskPrintf (SYS_dev, VEC4F_FMT,
+								VEC4_EXP (cl.viewstate.player_origin));
+				Sys_MaskPrintf (SYS_dev, "\nintermission simangles: ");
+				MSG_ReadAngleV (net_message, cl.viewstate.player_angles);
+				cl.viewstate.player_angles[ROLL] = 0;			// FIXME @@@
+				Sys_MaskPrintf (SYS_dev, "%f %f %f",
+								VectorExpand (cl.viewstate.player_angles));
+				Sys_MaskPrintf (SYS_dev, "\n");
+				cl.viewstate.velocity = (vec4f_t) { };
 
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
 				if (!cls.demoplayback)
-					Sbar_LogFrags ();
+					Sbar_LogFrags (cl.time);
 				break;
 
 			case svc_finale:
 				cl.intermission = 2;
-				r_data->force_fullscreen = 1;
+				SCR_SetFullscreen (1);
 				cl.completed_time = realtime;
-				r_data->vid->recalc_refdef = true;		// go to full screen
 				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
 				Sbar_CenterPrint (str);
 				break;
 
@@ -1586,11 +1502,17 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
-				cl.punchangle[PITCH] = -2;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -2 degrees pitch
+					0, -0.0174524064, 0, 0.999847695
+				};
 				break;
 
 			case svc_bigkick:
-				cl.punchangle[PITCH] = -4;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -4 degrees pitch
+					0, -0.0348994967, 0, 0.999390827
+				};
 				break;
 
 			case svc_updateping:
@@ -1599,6 +1521,7 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updateping > "
 								"MAX_SCOREBOARD");
 				cl.players[i].ping = MSG_ReadShort (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_updateentertime:
@@ -1618,7 +1541,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_muzzleflash:
-				CL_MuzzleFlash ();
+				CL_ParseMuzzleFlash ();
 				break;
 
 			case svc_updateuserinfo:
@@ -1634,7 +1557,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails:
-				CL_ParseProjectiles (false);
+				CL_ParseProjectiles (net_message, false, &tentCtx);
 				break;
 
 			case svc_chokecount:		// some preceding packets were choked
@@ -1682,12 +1605,16 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatepl > "
 								"MAX_SCOREBOARD");
 				cl.players[i].pl = MSG_ReadByte (net_message);
+				update_pings = 1;
 				break;
 
 			case svc_nails2:			// FIXME from qwex
-				CL_ParseProjectiles (true);
+				CL_ParseProjectiles (net_message, true, &tentCtx);
 				break;
 		}
+	}
+	if (update_pings) {
+		Sbar_UpdatePings ();
 	}
 
 	CL_SetSolidEntities ();

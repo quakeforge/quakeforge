@@ -1,0 +1,2 @@
+include tools/qfbsp/include/Makemodule.am
+include tools/qfbsp/source/Makemodule.am

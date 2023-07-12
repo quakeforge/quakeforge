@@ -86,7 +86,7 @@ wad_new (const char *name)
 		free (wad);
 		return 0;
 	}
-	wad->lump_hash = Hash_NewTable (1021, 0, 0, 0);
+	wad->lump_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 	if (!wad->lump_hash) {
 		free (wad->filename);
 		free (wad);
@@ -182,7 +182,7 @@ wad_create (const char *name)
 		wad_del (wad);
 		return 0;
 	}
-	strncpy (wad->header.id, "WAD2", sizeof (wad->header.id));
+	memcpy (wad->header.id, "WAD2", sizeof (wad->header.id));
 
 	Qwrite (wad->handle, &wad->header, sizeof (wad->header));
 

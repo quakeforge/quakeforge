@@ -34,16 +34,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/darray.h"
+
 /** \defgroup alloc High-tide allocator.
 	\ingroup utils
 */
-//@{
+///@{
 
 #ifndef DEBUG_QF_MEMORY
 /**	High-tide structure allocator for use in linked lists.
 
 	Using a free-list with the name of \c NAME_freelist, return a single
-	element.
+	element. Also, the allocated blocks are recorded in a DARRAY with the name
+	of \c NAME_blocks.
 	The type of the element must be a structure with a field named \c next.
 	When the free-list is empty, memory is claimed from the system in blocks.
 	Elements may be returned to the pool by linking them into the free-list.
@@ -65,10 +68,23 @@
 			for (i = 0; i < (s) - 1; i++)					\
 				n##_freelist[i].next = &n##_freelist[i + 1];\
 			n##_freelist[i].next = 0;						\
+			DARRAY_APPEND (&n##_blocks, n##_freelist);		\
 		}													\
 		v = n##_freelist;									\
 		n##_freelist = n##_freelist->next;					\
 		memset (v, 0, sizeof (*v));							\
+	} while (0)
+
+#define ALLOC_STATE(t,n) \
+static t *n##_freelist; \
+static struct DARRAY_TYPE(t *) n##_blocks = DARRAY_STATIC_INIT(8)
+
+#define ALLOC_FREE_BLOCKS(n) \
+	do { \
+		for (size_t i = 0; i < n##_blocks.size; i++) { \
+			free (n##_blocks.a[i]); \
+		} \
+		DARRAY_CLEAR (&n##_blocks); \
 	} while (0)
 
 /** Free a block allocated by #ALLOC
@@ -93,6 +109,6 @@
 #define FREE(n, p)			do { free (p); } while (0)
 #endif
 
-//@}
+///@}
 
 #endif//__QF_alloc_h

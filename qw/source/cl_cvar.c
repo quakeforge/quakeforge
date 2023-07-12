@@ -39,21 +39,23 @@
 #include "QF/msg.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
 
+#include "qw/include/client.h"
+
 void
-Cvar_Info (cvar_t *var)
+Cvar_Info (void *data, const cvar_t *cvar)
 {
-	if (var->flags & CVAR_USERINFO) {
-		Info_SetValueForKey (cls.userinfo, var->name, var->string,
-							 ((!strequal(var->name, "name"))
-							  |(strequal(var->name, "team") << 1)));
+	if (cvar->flags & CVAR_USERINFO) {
+		const char *cvar_str = Cvar_VarString (cvar);
+		Info_SetValueForKey (cls.userinfo, cvar->name, cvar_str,
+							 ((!strequal(cvar->name, "name"))
+							  |(strequal(cvar->name, "team") << 1)));
 		if (cls.state >= ca_connected && !cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va ("setinfo \"%s\" \"%s\"\n", var->name,
-								 var->string));
+							 va (0, "setinfo \"%s\" \"%s\"\n", cvar->name,
+								 cvar_str));
 		}
 	}
 }

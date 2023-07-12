@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_solidbsp BSP Creation Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct visfacet_s;
 struct plane_s;
@@ -46,8 +46,8 @@ void CalcSurfaceInfo (struct surface_s *surf);
 	\param midsplit	If true, use the volume balancing heuristic rather than
 					the split balancing heuristic (false).
 */
-struct node_s *SolidBSP (struct surface_s *surfhead, qboolean midsplit);
+struct node_s *SolidBSP (struct surface_s *surfhead, bool midsplit);
 
-//@}
+///@}
 
 #endif//qfbsp_solidbsp_h

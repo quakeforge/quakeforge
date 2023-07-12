@@ -25,16 +25,74 @@
 
 */
 
-#ifndef __render_h
-#define __render_h
+#ifndef __QF_render_h
+#define __QF_render_h
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "QF/qdefs.h" // FIXME
+#include "QF/qdefs.h" // FIXME for MAX_STYLESTRING
 #include "QF/vid.h"
+#include "QF/simd/types.h"
+#include "QF/ui/vrect.h"
+
+typedef enum {
+	part_tex_dot,
+	part_tex_spark,
+	part_tex_smoke,
+} ptextype_t;
+
+typedef struct particle_s particle_t;
+
+// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+struct particle_s {
+	vec4f_t     pos;
+	vec4f_t     vel;
+
+	union {
+		struct {
+			int			icolor;
+			int         pad[2];
+			float		alpha;
+		};
+		vec4f_t     color;
+	};
+
+	ptextype_t	tex;
+	float		ramp;
+	float		scale;
+	float		live;
+};
+
+typedef struct partparm_s {
+	vec4f_t     drag;	// drag[3] is grav scale
+	float       ramp;
+	float       ramp_max;
+	float       scale_rate;
+	float       alpha_rate;
+} partparm_t;
+
+typedef struct psystem_s {
+	vec4f_t     gravity;
+	uint32_t    maxparticles;
+	uint32_t    numparticles;
+	particle_t *particles;
+	partparm_t *partparams;
+	const int **partramps;
+
+	int         points_only;
+} psystem_t;
 
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
+
+typedef struct subpic_s {
+	const struct subpic_s *const next;
+	const struct scrap_s *const scrap;	///< renderer specific type
+	const struct vrect_s *const rect;
+	const int width;					///< requested width
+	const int height;					///< requested height
+	const float size;					///< size factor for tex coords (mult)
+} subpic_t;
 
 // dynamic lights ===========================================================
 
@@ -62,102 +120,78 @@ typedef struct
 
 //===============
 
-typedef struct entity_s {
-	struct entity_s *next;
-	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
+typedef union refframe_s {
+	mat4f_t     mat;
+	struct      {
+		vec4f_t     right;
+		vec4f_t     forward;
+		vec4f_t     up;
+		vec4f_t     position;
+	};
+} refframe_t;
 
-	vec3_t					origin;
-	vec3_t					old_origin;
-	vec3_t					angles;
-	vec_t					transform[4 * 4];
-	vec_t					full_transform[4 * 4];
-	struct model_s			*model;			// NULL = no model
-	int						frame;
-	int						skinnum;		// for Alias models
-	struct skin_s			*skin;
-
-	float					syncbase;		// for client-side animations
-
-	struct efrag_s			*efrag;			// linked list of efrags
-	int						visframe;		// last frame this entity was
-											// found in an active leaf
-	float					colormod[4];	// color tint and alpha for model
-	float					scale;			// size scaler of the model
-
-	int						fullbright;
-	float					min_light;
-
-	struct trail_s			*trail;
-
-	// FIXME: could turn these into a union
-	int						trivial_accept;
-	struct mnode_s			*topnode; // for bmodels, first world node that
-									  // splits bmodel, or NULL if not split
-
-	// Animation interpolation
-	float                   frame_start_time;
-	float                   frame_interval;
-	int						pose1;
-	int						pose2;
-	struct model_s			*pose_model;	// no lerp if not the same as model
-} entity_t;
+/** Generic frame buffer object.
+ *
+ * For attaching scene cameras to render targets.
+ */
+typedef struct framebuffer_s {
+	unsigned    width;
+	unsigned    height;
+	void       *buffer;	///< renderer-specific frame buffer data
+} framebuffer_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct
-{
-	vrect_t		vrect;				// subwindow in video for refresh
-									// FIXME: not need vrect next field here?
-	vrect_t		aliasvrect;			// scaled Alias version
-	int			vrectright, vrectbottom;	// right & bottom screen coords
-	int			aliasvrectright, aliasvrectbottom;	// scaled Alias versions
-	float		vrectrightedge;			// rightmost right edge we care about,
-										//  for use in edge list
-	float		fvrectx, fvrecty;		// for floating-point compares
+typedef struct {
 	float		fvrectx_adj, fvrecty_adj; // left and top edges, for clamping
-	int			vrect_x_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
-	int			vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
 	float		fvrectright_adj, fvrectbottom_adj;
+	int			aliasvrectleft, aliasvrecttop;	// scaled Alias versions
+	int			aliasvrectright, aliasvrectbottom;	// scaled Alias versions
+	int			vrectright, vrectbottom;	// right & bottom screen coords
+	int			vrectx_adj_shift20;	// (vrect.x + 0.5 - epsilon) << 20
+	int			vrectright_adj_shift20;	// (vrectright + 0.5 - epsilon) << 20
+	float		fvrectx, fvrecty;		// for floating-point compares
 										// right and bottom edges, for clamping
 	float		fvrectright;			// rightmost edge, for Alias clamping
 	float		fvrectbottom;			// bottommost edge, for Alias clamping
-	float		horizontalFieldOfView;	// at Z = 1.0, this many X is visible
-										// 2.0 = 90 degrees
-	float		xOrigin;			// should probably always be 0.5
-	float		yOrigin;			// between be around 0.3 to 0.5
+	// end of asm refs
 
-	vec3_t		vieworg;
-	vec3_t		viewangles;
+	//FIXME move all of below elsewhere
+	vrect_t		vrect;				// subwindow in video for refresh
 
-	float		fov_x, fov_y;
+	refframe_t  frame;
+	plane_t     frustum[4];
+	mat4f_t     camera;
+	mat4f_t     camera_inverse;
 
 	int			ambientlight;
+	int			drawflat;
+
+	struct ecs_registry_s *registry;
+	struct model_s *worldmodel;
 } refdef_t;
-
-// color shifts =============================================================
-
-typedef struct {
-	int     destcolor[3];
-	int     percent;        // 0-255
-	double  time;
-	int     initialpct;
-} cshift_t;
-
-#define CSHIFT_CONTENTS 0
-#define CSHIFT_DAMAGE   1
-#define CSHIFT_BONUS    2
-#define CSHIFT_POWERUP  3
-#define NUM_CSHIFTS     4
 
 // REFRESH ====================================================================
 
 extern	struct texture_s	*r_notexture_mip;
 
-extern entity_t r_worldentity;
-
 void R_Init (void);
-void R_LoadModule (void (*load_gl)(void),
-				   void (*set_palette) (const byte *palette));
+struct vid_internal_s;
+void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
-#endif // __render_h
+dlight_t *R_AllocDlight (int key);
+void R_DecayLights (double frametime);
+void Fog_Update (float density, float red, float green, float blue,
+				 float time);
+struct plitem_s;
+void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
+
+void Fog_GetColor (quat_t fogcolor);
+float Fog_GetDensity (void) __attribute__((pure));
+void Fog_SetupFrame (void);
+void Fog_StartAdditive (void);
+void Fog_StopAdditive (void);
+void Fog_Init (void);
+
+#endif//__QF_render_h

@@ -1,0 +1,77 @@
+ruamoko_cl_menu_libexec=ruamoko/cl_menu/menu.dat$(EXEEXT)
+ruamoko_cl_menu_data=ruamoko/cl_menu/menu.plist ruamoko/cl_menu/menu.sym
+
+ruamoko_cl_menudir = @sharepath@/QF
+ruamoko_cl_menu_DATA = $(ruamoko_cl_menu_data)
+ruamoko_cl_menu_PROGRAMS = $(ruamoko_cl_menu_libexec)
+EXTRA_PROGRAMS += $(ruamoko_cl_menu_libexec)
+
+ruamoko_menu_src= \
+	ruamoko/cl_menu/client_menu.r \
+	ruamoko/cl_menu/controls_o.r \
+	ruamoko/cl_menu/options.r \
+	ruamoko/cl_menu/options_util.r \
+	ruamoko/cl_menu/servlist.r \
+	ruamoko/cl_menu/Frame.r \
+	ruamoko/cl_menu/HUD.r \
+	ruamoko/cl_menu/menu.r \
+	ruamoko/cl_menu/plistmenu.r \
+	ruamoko/cl_menu/CrosshairCvar.r \
+	ruamoko/cl_menu/CrosshairView.r \
+	ruamoko/cl_menu/CvarColor.r \
+	ruamoko/cl_menu/CvarColorView.r \
+	ruamoko/cl_menu/CvarObject.r \
+	ruamoko/cl_menu/CvarRange.r \
+	ruamoko/cl_menu/CvarRangeView.r \
+	ruamoko/cl_menu/CvarString.r \
+	ruamoko/cl_menu/CvarStringView.r \
+	ruamoko/cl_menu/CvarToggle.r \
+	ruamoko/cl_menu/CvarToggleView.r \
+	ruamoko/cl_menu/MenuGroup.r \
+	ruamoko/cl_menu/MouseToggle.r \
+	ruamoko/cl_menu/ProxyView.r \
+	ruamoko/cl_menu/RunToggle.r \
+	ruamoko/cl_menu/SubMenu.r
+
+ruamoko_cl_menu_menu_dat_SOURCES=$(ruamoko_menu_src)
+ruamoko_menu_obj=$(ruamoko_cl_menu_menu_dat_SOURCES:.r=.o)
+ruamoko_menu_dep=$(call qcautodep,$(ruamoko_cl_menu_menu_dat_SOURCES))
+ruamoko/cl_menu/menu.dat$(EXEEXT): $(ruamoko_menu_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a ruamoko/gui/libgui.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_menu_obj) -Lruamoko/gui -lgui -lcsqc -lr
+include $(ruamoko_menu_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_menu_dep)
+
+ruamoko/cl_menu/menu.sym: ruamoko/cl_menu/menu.dat$(EXEEXT)
+
+EXTRA_DIST += \
+	ruamoko/cl_menu/CrosshairCvar.h \
+	ruamoko/cl_menu/CrosshairView.h \
+	ruamoko/cl_menu/CvarColor.h \
+	ruamoko/cl_menu/CvarColorView.h \
+	ruamoko/cl_menu/CvarObject.h \
+	ruamoko/cl_menu/CvarRange.h \
+	ruamoko/cl_menu/CvarRangeView.h \
+	ruamoko/cl_menu/CvarString.h \
+	ruamoko/cl_menu/CvarStringView.h \
+	ruamoko/cl_menu/CvarToggle.h \
+	ruamoko/cl_menu/CvarToggleView.h \
+	ruamoko/cl_menu/Frame.h \
+	ruamoko/cl_menu/HUD.h \
+	ruamoko/cl_menu/MenuGroup.h \
+	ruamoko/cl_menu/MouseToggle.h \
+	ruamoko/cl_menu/ProxyView.h \
+	ruamoko/cl_menu/RunToggle.h \
+	ruamoko/cl_menu/SubMenu.h \
+	ruamoko/cl_menu/client_menu.h \
+	ruamoko/cl_menu/controls_o.h \
+	ruamoko/cl_menu/menu.h \
+	ruamoko/cl_menu/options.h \
+	ruamoko/cl_menu/options_util.h \
+	ruamoko/cl_menu/plistmenu.h \
+	ruamoko/cl_menu/servlist.h \
+	ruamoko/cl_menu/menu.plist
+
+CLEANFILES += \
+	ruamoko/cl_menu/*.dat \
+	ruamoko/cl_menu/*.sym
+DISTCLEANFILES += $(ruamoko_menu_dep)

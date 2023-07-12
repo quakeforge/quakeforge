@@ -76,7 +76,7 @@
 # endif
 #endif
 
-static void __attribute__ ((format (printf, 1, 2)))
+static void __attribute__ ((format (PRINTF, 1, 2)))
 ma_log (const char *fmt, ...);
 
 #ifdef HAVE_IN_PKTINFO
@@ -161,12 +161,12 @@ typedef struct sockaddr_in msghdr_t;
 typedef struct {
 	struct		sockaddr_in addr;
 	time_t		updated;
-	qboolean	notimeout;
+	bool		notimeout;
 } server_t;
 
 static int
 QW_AddHeartbeat (server_t **servers_p, int slen,
-				 struct sockaddr_in *addr, const char *buf, qboolean notimeout)
+				 struct sockaddr_in *addr, const char *buf, bool notimeout)
 {
 	server_t *servers = *servers_p;
 	int freeslot = -1;
@@ -288,12 +288,14 @@ QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen)
 	for (i = 0; i < serverlen; i++) {
 		if (servers[i].updated != 0) {
 			unsigned char *p = out + (cpos * 6);
-			p[0] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[0];
-			p[1] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[1];
-			p[2] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[2];
-			p[3] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[3];
-			p[4] = (unsigned char) (ntohs (servers[i].addr.sin_port) >> 8);
-			p[5] = (unsigned char) (ntohs (servers[i].addr.sin_port) & 0xFF);
+			in_addr_t   addr = ntohl (servers[i].addr.sin_addr.s_addr);
+			in_port_t   port = ntohs (servers[i].addr.sin_port);
+			p[0] = addr >> 24;
+			p[1] = addr >> 16;
+			p[2] = addr >>  8;
+			p[3] = addr >>  0;
+			p[4] = port >>  8;
+			p[5] = port >>  0;
 			++cpos;
 		}
 	}
@@ -514,7 +516,7 @@ main (int argc, char **argv)
 	return 0;
 }
 
-static void __attribute__ ((format (printf, 1, 2)))
+static void __attribute__ ((format (PRINTF, 1, 2)))
 ma_log (const char *fmt, ...)
 {
 	va_list     args;

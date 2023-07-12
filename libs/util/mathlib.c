@@ -35,6 +35,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include <math.h>
 
 #define IMPLEMENT_R_Cull
@@ -42,11 +44,9 @@
 
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 
-VISIBLE int nanmask = 255 << 23;
-static plane_t _frustum[4];
-VISIBLE plane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 static quat_t _quat_origin = { 0, 0, 0, 0 };
@@ -248,25 +248,46 @@ QuatMult (const quat_t q1, const quat_t q2, quat_t out)
 	vec_t      s;
 	vec3_t     v;
 
-	s = q1[0] * q2[0] - DotProduct (q1 + 1, q2 + 1);
-	CrossProduct (q1 + 1, q2 + 1, v);
-	VectorMultAdd (v, q1[0], q2 + 1, v);
-	VectorMultAdd (v, q2[0], q1 + 1, out + 1);
-	out[0] = s;
+	s = q1[3] * q2[3] - DotProduct (q1, q2);
+	CrossProduct (q1, q2, v);
+	VectorMultAdd (v, q1[3], q2, v);
+	VectorMultAdd (v, q2[3], q1, out);
+	out[3] = s;
 }
 
 VISIBLE void
 QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 {
-	vec_t      s;
 	vec3_t     tv;
+	vec_t      dqv, dqq;
+	vec_t      s;
 
-	s = -DotProduct (q + 1, v);
-	CrossProduct (q + 1, v, tv);
-	VectorMultAdd (tv, q[0], v, tv);
-	CrossProduct (q + 1, tv, out);
-	VectorMultSub (out, s, q + 1, out);
-	VectorMultAdd (out, q[0], tv, out);
+	s = q[3];
+	CrossProduct (q, v, tv);
+	dqv = DotProduct (q, v);
+	dqq = DotProduct (q, q);
+	VectorScale (tv, s, tv);
+	VectorMultAdd (tv, dqv, q, tv);
+	VectorScale (tv, 2, tv);
+	VectorMultAdd (tv, s * s - dqq, v, out);
+}
+
+VISIBLE void
+QuatRotation(const vec3_t a, const vec3_t b, quat_t out)
+{
+	vec_t       ma, mb;
+	vec_t       den, mba_mab;
+	vec3_t      t;
+
+	ma = VectorLength(a);
+	mb = VectorLength(b);
+	den = 2 * ma * mb;
+	VectorScale (a, mb, t);
+	VectorMultAdd(t, ma, b, t);
+	mba_mab = VectorLength(t);
+	CrossProduct (a, b, t);
+	VectorScale(t, 1 / mba_mab, out);
+	out[3] = mba_mab / den;
 }
 
 VISIBLE void
@@ -288,19 +309,19 @@ QuatExp (const quat_t a, quat_t b)
 	vec_t       r;
 	vec_t       c, s;
 
-	VectorCopy (a + 1, n);
+	VectorCopy (a, n);
 	th = VectorNormalize (n);
-	r = expf (a[0]);
+	r = expf (a[3]);
 	c = cosf (th);
 	s = sinf (th);
-	VectorScale (n, r * s, b + 1);
-	b[0] = r * c;
+	VectorScale (n, r * s, b);
+	b[3] = r * c;
 }
 
 VISIBLE void
 QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
-	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
+	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw;
 	vec_t       *_m[4] = {
 		m + (homogenous ? 0 : 0),
 		m + (homogenous ? 4 : 3),
@@ -308,28 +329,26 @@ QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 		m + (homogenous ? 12 : 9),
 	};
 
-	aa = q[0] * q[0];
-	ab = q[0] * q[1];
-	ac = q[0] * q[2];
-	ad = q[0] * q[3];
+	xx = 2 * q[0] * q[0];
+	xy = 2 * q[0] * q[1];
+	xz = 2 * q[0] * q[2];
+	xw = 2 * q[0] * q[3];
 
-	bb = q[1] * q[1];
-	bc = q[1] * q[2];
-	bd = q[1] * q[3];
+	yy = 2 * q[1] * q[1];
+	yz = 2 * q[1] * q[2];
+	yw = 2 * q[1] * q[3];
 
-	cc = q[2] * q[2];
-	cd = q[2] * q[3];
-
-	dd = q[3] * q[3];
+	zz = 2 * q[2] * q[2];
+	zw = 2 * q[2] * q[3];
 
 	if (vertical) {
-		VectorSet (aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), _m[0]);
-		VectorSet (2 * (bc - ad), aa - bb + cc - dd, 2 * (cd + ab), _m[1]);
-		VectorSet (2 * (bd + ac), 2 * (cd - ab), aa - bb - cc + dd, _m[2]);
+		VectorSet (1.0f - yy - zz, xy + zw, xz - yw, _m[0]);
+		VectorSet (xy - zw, 1.0f - xx - zz, yz + xw, _m[1]);
+		VectorSet (xz + yw, yz - xw, 1.0f - xx - yy, _m[2]);
 	} else {
-		VectorSet (aa + bb - cc - dd, 2 * (bc - ad), 2 * (bd + ac), _m[0]);
-		VectorSet (2 * (bc + ad), aa - bb + cc - dd, 2 * (cd - ab), _m[1]);
-		VectorSet (2 * (bd - ac), 2 * (cd + ab), aa - bb - cc + dd, _m[2]);
+		VectorSet (1.0f - yy - zz, xy - zw, xz + yw, _m[0]);
+		VectorSet (xy + zw, 1.0f - xx - zz, yz - xw, _m[1]);
+		VectorSet (xz - yw, yz + xw, 1.0f - xx - yy, _m[2]);
 	}
 	if (homogenous) {
 		_m[0][3] = 0;
@@ -371,7 +390,7 @@ BOPS_Error (void)
 	Returns 1, 2, or 1 + 2
 */
 VISIBLE int
-BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
+BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 {
 	float       dist1, dist2;
 	int         sides;
@@ -467,9 +486,9 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 	sides = 0;
-	if (dist1 >= p->dist)
+	if (dist1 >= -p->dist)
 		sides = 1;
-	if (dist2 < p->dist)
+	if (dist2 < -p->dist)
 		sides |= 2;
 
 #ifdef PARANOID
@@ -482,13 +501,21 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
-	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
-	the right, y (yaw) axis up and z (roll) axis forward.
+	angles is a left handed system: 'pitch yaw roll' with x (pitch) axis to
+	the right, y (yaw) axis up and z (roll) axis forward. However, the
+	rotations themselves are right-handed in that they follow the right-hand
+	rule for the world axes: pitch around +y, yaw around +z, and roll around
+	+x.
 
-	the math in AngleVectors has the entity frame as left handed with x
-	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right handed system with x to the right, y forward and
-	z up.
+	This results in the entity frame having forward pointed along the world +x
+	axis, right along the world -y axis, and up along the world +z axis.
+	Whether this means the entity frame is left-handed depends on whether
+	forward is local X and right is local Y (left handed), or forward is local
+	Y and right is local X (right handed).
+
+	NOTE: these matrices have forward, left and up vectors horizontal rather
+	than vertical and are thus the inverse of the matrices to produce the
+	actual rotation.
 
 	pitch =
 		cp 0 -sp
@@ -529,11 +556,10 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	forward[0] = cp * cy;
 	forward[1] = cp * sy;
 	forward[2] = -sp;
-	// need to flip right because it's a left handed system in a right handed
-	// world
-	right[0] = -1 * (sr * sp * cy + cr * -sy);
-	right[1] = -1 * (sr * sp * sy + cr * cy);
-	right[2] = -1 * (sr * cp);
+	// need to flip right because the trig produces +Y but right is -Y
+	right[0] = -(sr * sp * cy + cr * -sy);
+	right[1] = -(sr * sp * sy + cr * cy);
+	right[2] = -(sr * cp);
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;
@@ -555,10 +581,10 @@ AngleQuat (const vec3_t angles, quat_t q)
 	sr = sin (alpha);
 	cr = cos (alpha);
 
-	QuatSet (cy * cp * cr + sy * sp * sr,
-			 cy * cp * sr - sy * sp * cr,
-			 cy * sp * cr + sy * cp * sr,
-			 sy * cp * cr - cy * sp * sr,
+	QuatSet (cy * cp * sr - sy * sp * cr,	// x
+			 cy * sp * cr + sy * cp * sr,	// y
+			 sy * cp * cr - cy * sp * sr,	// z
+			 cy * cp * cr + sy * sp * sr,	// w
 			 q);
 }
 
@@ -1112,29 +1138,29 @@ Mat3Decompose (const mat3_t mat, quat_t rot, vec3_t shear, vec3_t scale)
 	t = 1 + row[0][0] + row[1][1] + row[2][2];
 	if (t >= 1e-5) {
 		vec_t       s = sqrt (t) * 2;
-		rot[0] = s / 4;
-		rot[1] = (row[2][1] - row[1][2]) / s;
-		rot[2] = (row[0][2] - row[2][0]) / s;
-		rot[3] = (row[1][0] - row[0][1]) / s;
+		rot[0] = (row[2][1] - row[1][2]) / s;
+		rot[1] = (row[0][2] - row[2][0]) / s;
+		rot[2] = (row[1][0] - row[0][1]) / s;
+		rot[3] = s / 4;
 	} else {
 		if (row[0][0] > row[1][1] && row[0][0] > row[2][2]) {
 			vec_t       s = sqrt (1 + row[0][0] - row[1][1] - row[2][2]) * 2;
-			rot[0] = (row[2][1] - row[1][2]) / s;
-			rot[1] = s / 4;
-			rot[2] = (row[1][0] + row[0][1]) / s;
-			rot[3] = (row[0][2] + row[2][0]) / s;
+			rot[0] = s / 4;
+			rot[1] = (row[1][0] + row[0][1]) / s;
+			rot[2] = (row[0][2] + row[2][0]) / s;
+			rot[3] = (row[2][1] - row[1][2]) / s;
 		} else if (row[1][1] > row[2][2]) {
 			vec_t       s = sqrt (1 + row[1][1] - row[0][0] - row[2][2]) * 2;
-			rot[0] = (row[0][2] - row[2][0]) / s;
-			rot[1] = (row[1][0] + row[0][1]) / s;
-			rot[2] = s / 4;
-			rot[3] = (row[2][1] + row[1][2]) / s;
+			rot[0] = (row[1][0] + row[0][1]) / s;
+			rot[1] = s / 4;
+			rot[2] = (row[2][1] + row[1][2]) / s;
+			rot[3] = (row[0][2] - row[2][0]) / s;
 		} else {
 			vec_t       s = sqrt (1 + row[2][2] - row[0][0] - row[1][1]) * 2;
-			rot[0] = (row[1][0] - row[0][1]) / s;
-			rot[1] = (row[0][2] + row[2][0]) / s;
-			rot[2] = (row[2][1] + row[1][2]) / s;
-			rot[3] = s / 4;
+			rot[0] = (row[0][2] + row[2][0]) / s;
+			rot[1] = (row[2][1] + row[1][2]) / s;
+			rot[2] = s / 4;
+			rot[3] = (row[1][0] - row[0][1]) / s;
 		}
 	}
 	return 1;
@@ -1178,10 +1204,11 @@ BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 			CrossProduct (a, b, ab);
 			div = DotProduct (ab, ab);
 			CrossProduct (x, b, n);
-			lambda[1] = DotProduct (n, ab) / div;
+			lambda[1] = DotProduct (n, ab);
 			CrossProduct (a, x, n);
-			lambda[2] = DotProduct (n, ab) / div;
-			lambda[0] = 1 - lambda[1] - lambda[2];
+			lambda[2] = DotProduct (n, ab);
+			lambda[0] = div - lambda[1] - lambda[2];
+			VectorScale (lambda, 1 / div, lambda);
 			return;
 		case 4:
 			VectorSubtract (p, points[0], x);
@@ -1256,7 +1283,6 @@ circum_circle (const vec_t **points, int num_points, sphere_t *sphere)
 			VectorMultAdd (sphere->center, bb, ca, sphere->center);
 			VectorMultAdd (sphere->center, cc, ab, sphere->center);
 			VectorAdd (sphere->center, points[0], sphere->center);
-			sphere->radius = VectorDistance (sphere->center, points[0]);
 			return 1;
 	}
 	return 0;
@@ -1283,8 +1309,8 @@ CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere)
 }
 
 static void
-closest_point (const vec_t **points, int num_points, const vec3_t x,
-			   vec3_t closest)
+closest_affine_point (const vec_t **points, int num_points, const vec3_t x,
+					  vec3_t closest)
 {
 	vec3_t      a, b, n, d;
 	vec_t       l;
@@ -1311,95 +1337,151 @@ closest_point (const vec_t **points, int num_points, const vec3_t x,
 	}
 }
 
+static int
+test_support_points(const vec_t **points, int *num_points, const vec3_t center)
+{
+	int         in_affine = 0;
+	int         in_convex = 0;
+	vec3_t      v, d, n, a, b;
+	vec_t       nn, dd, vv, dn;
+
+	switch (*num_points) {
+		case 1:
+			in_affine = VectorCompare (points[0], center);
+			// the convex hull and affine hull for a single point are the same
+			in_convex = in_affine;
+			break;
+		case 2:
+			VectorSubtract (points[1], points[0], v);
+			VectorAdd (points[0], points[1], d);
+			VectorScale (d, 0.5, d);
+			VectorSubtract (center, d, d);
+			CrossProduct (v, d, n);
+			nn = DotProduct (n, n);
+			vv = DotProduct (v, v);
+			in_affine = nn < 1e-5 * vv * vv;
+			break;
+		case 3:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (center, points[0], d);
+			CrossProduct (a, b, n);
+			dn = DotProduct (d, n);
+			dd = DotProduct (d, d);
+			nn = DotProduct (n, n);
+			in_affine = dn * dn < 1e-5 * dd * nn;
+			break;
+		case 4:
+			in_affine = 1;
+			break;
+		default:
+			Sys_Error ("Invalid number of points (%d) in test_support_points",
+					   *num_points);
+	}
+
+	// if in_convex is not true while in_affine is, then need to test as
+	// there is more than one dimension for the affine hull (a single support
+	// point is never dropped as it cannot be redundant)
+	if (in_affine && !in_convex) {
+		vec_t       lambda[4];
+		int         dropped = 0;
+		int         count = *num_points;
+
+		BarycentricCoords (points, count, center, lambda);
+
+		for (int i = 0; i < count; i++) {
+			points[i - dropped] = points[i];
+			if (lambda[i] < -1e-4) {
+				dropped++;
+				(*num_points)--;
+			}
+		}
+		in_convex = !dropped;
+		if (dropped) {
+			for (int i = count - dropped; i < count; i++) {
+				points[i] = 0;
+			}
+		}
+	}
+	return in_convex;
+}
+
 sphere_t
 SmallestEnclosingBall (const vec3_t points[], int num_points)
 {
+	set_t       was_support = SET_STATIC_INIT (num_points, alloca);
 	sphere_t    sphere;
 	const vec_t *best;
 	const vec_t *support[4];
 	int         num_support;
 	vec_t       dist, best_dist;
 	int         i;
-	int         itters = 0;
+	int         best_i = 0;
+	int         iters = 0;
 
-	if (num_points < 3) {
-		CircumSphere (points, num_points, &sphere);
+	if (num_points < 1) {
+		VectorZero (sphere.center);
+		sphere.radius = 0;
 		return sphere;
 	}
 
 	for (i = 0; i < 4; i++)
 		support[i] = 0;
+	set_empty (&was_support);
 
 	VectorCopy (points[0], sphere.center);
 	best_dist = dist = 0;
-	best = 0;
+	best = points[0];
 	for (i = 1; i < num_points; i++) {
 		dist = VectorDistance_fast (points[i], sphere.center);
 		if (dist > best_dist) {
 			best_dist = dist;
+			best_i = i;
 			best = points[i];
 		}
 	}
 	num_support = 1;
 	support[0] = best;
 	sphere.radius = best_dist;	// note: radius squared until the end
+	set_add (&was_support, best_i);
 
-	while (1) {
-		vec3_t      affine;
-		vec3_t      center_to_affine, center_to_point;
-		vec_t       affine_dist, point_proj, point_dist, bound;
-		vec_t       scale = 1;
+	while (!test_support_points (support, &num_support, sphere.center)) {
+		vec3_t      affine, v, p, r;
+		vec_t       x, best_x = 0, rr, pv, pp;
 		int         i;
 
-		if (itters++ > 10)
+		if (iters++ > 2 * num_points)
 			Sys_Error ("stuck SEB");
+
+		closest_affine_point (support, num_support, sphere.center, affine);
+		VectorSubtract (support[0], affine, r);
+		rr = DotProduct (r, r);
+		VectorSubtract (sphere.center, affine, v);
+
 		best = 0;
-
-		if (num_support == 4) {
-			vec_t       lambda[4];
-			int         dropped = 0;
-
-			BarycentricCoords (support, 4, sphere.center, lambda);
-			for (i = 0; i < 4; i++) {
-				support[i - dropped] = support[i];
-				if (lambda[i] < 0) {
-					dropped++;
-					num_support--;
-				}
-			}
-			if (!dropped)
-				break;
-			for (i = 4 - dropped; i < 4; i++)
-				support[i] = 0;
-		}
-		closest_point (support, num_support, sphere.center, affine);
-		VectorSubtract (affine, sphere.center, center_to_affine);
-		affine_dist = DotProduct (center_to_affine, center_to_affine);
-		if (affine_dist < 1e-2 * sphere.radius)
-			break;
 		for (i = 0; i < num_points; i++) {
-			if (points[i] == support [0] || points[i] == support[1]
-				|| points[i] == support[2])
+			if (SET_TEST_MEMBER (&was_support, i)) {
 				continue;
-			VectorSubtract (points[i], sphere.center, center_to_point);
-			point_proj = DotProduct (center_to_affine, center_to_point);
-			if (affine_dist - point_proj <= 0
-				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
-					< 1e-8 * sphere.radius * affine_dist))
+			}
+			VectorSubtract (points[i], affine, p);
+			pp = DotProduct (p, p);
+			pv = DotProduct (p, v);
+			if (pp <= rr || pv <= 0 || pv * pv < 1e-6 * rr) {
 				continue;
-			point_dist = DotProduct (center_to_point, center_to_point);
-			bound = sphere.radius - point_dist;
-			bound /= 2 * (affine_dist - point_proj);
-			if (bound < scale) {
+			}
+			x = (pp - rr) / (2 * pv);
+			if (x > best_x) {
 				best = points[i];
-				scale = bound;
+				best_i = i;
+				best_x = x;
 			}
 		}
-		VectorMultAdd (sphere.center, scale, center_to_affine, sphere.center);
-		if (!best)
-			break;
-		sphere.radius = VectorDistance_fast (sphere.center, best);
-		support[num_support++] = best;
+		VectorMultAdd (affine, best_x, v, sphere.center);
+		sphere.radius = VectorDistance_fast (sphere.center, support[0]);
+		if (best) {
+			support[num_support++] = best;
+			set_add (&was_support, best_i);
+		}
 	}
 	best_dist = 0;
 	for (i = 0; i < num_points; i++) {

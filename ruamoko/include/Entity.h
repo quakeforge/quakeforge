@@ -30,14 +30,16 @@
 #ifndef __ruamoko_Entity_h
 #define __ruamoko_Entity_h
 
-#include "Object.h"
+#include <Object.h>
 
 @interface Entity: Object
 {
+	int         own;
 @public
-	entity		ent;
-	int		own;
+	entity      ent;
 }
++(Entity *) spawn;
++(Entity *) withEntity: (entity) e;
 
 - (id) init;
 - (id) initWithEntity: (entity) e;

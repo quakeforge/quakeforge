@@ -37,7 +37,7 @@
 /** \defgroup qflight_general General functions
 	\ingroup qflight
 */
-//@{
+///@{
 
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
@@ -95,13 +95,11 @@ extern vec3_t bsp_origin;
 extern vec3_t bsp_xvector;
 extern vec3_t bsp_yvector;
 
-extern qboolean extrasamples;
-
-extern float minlights[MAX_MAP_FACES];
+extern bool extrasamples;
 
 void LoadNodes (const char *file);
-qboolean TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
-qboolean TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+bool TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+bool TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
 
 void LightFace (lightinfo_t *l, int surfnum);
 void LightLeaf (dleaf_t *leaf);
@@ -128,8 +126,8 @@ extern vec3_t *surfaceorgs;
 extern struct entity_s **novislights;
 extern int num_novislights;
 
-const char *get_tex_name (int texindex);
+const char *get_tex_name (int texindex) __attribute__((pure));
 
-//@}
+///@}
 
 #endif// __light_h

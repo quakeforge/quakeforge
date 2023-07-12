@@ -1,9 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.61)
+AC_PREREQ([2.69])
 
 dnl This is the only place where the package name and version appear
-AC_INIT([QuakeForge], m4_esyscmd([config.d/git-version-gen --prefix '' .tarball-version]))
-AM_INIT_AUTOMAKE([foreign])
+AC_INIT([QuakeForge],m4_esyscmd(config.d/git-version-gen --prefix '' .tarball-version))
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 dnl LT_INIT messes with CFLAGS (evil bastard)
 if test "x${CFLAGS-unset}" = xunset; then
@@ -11,7 +11,7 @@ if test "x${CFLAGS-unset}" = xunset; then
 fi
 saved_CFLAGS="$CFLAGS"
 dnl LT_INIT([win32-dll])
-AM_PROG_LIBTOOL
+LT_INIT
 CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
@@ -23,7 +23,7 @@ AC_CANONICAL_HOST
 
 m4_include(config.d/versions.m4)
 
-AC_LANG_C
+AC_LANG([C])
 
 if test "$x{AR-unset}" = xunset; then
 	AR="ar"
@@ -63,19 +63,22 @@ m4_include(config.d/compression.m4)
 m4_include(config.d/mgl.m4)
 m4_include(config.d/fbdev.m4)
 m4_include(config.d/svga.m4)
+m4_include(config.d/vulkan.m4)
 m4_include(config.d/x11.m4)
 m4_include(config.d/sdl.m4)
 
 m4_include(config.d/curses.m4)
+m4_include(config.d/freetype.m4)
 
 dnl ==================================================================
 dnl Checks for system type
 dnl ==================================================================
 
 dnl Checks for which system driver to use
+
 AC_MSG_CHECKING(for system driver)
 case "${host}" in
-	i?86-*-mingw32*|x86_64-w64-mingw32)
+	i?86-*-mingw32*|x86_64-w64-mingw32*)
 		SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
 		WIN32_LIBS=' $(NET_LIBS)'
@@ -88,8 +91,8 @@ case "${host}" in
 		fi
 
 		;;
-	i?86-*-cygwin*)
-		SYSTYPE=WIN32
+	i?86-*-cygwin*|x86_64-*-cygwin*)
+		#SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
 		WIN32_LIBS=' $(NET_LIBS)'
 		;;
@@ -109,6 +112,7 @@ AC_SUBST(WIN32_LIBS)
 
 m4_include(config.d/sound.m4)
 m4_include(config.d/joystick.m4)
+m4_include(config.d/evdev.m4)
 m4_include(config.d/cdrom.m4)
 
 m4_include(config.d/networking.m4)
@@ -120,8 +124,8 @@ m4_include(config.d/qfcc.m4)
 m4_include(config.d/compiling.m4)
 
 AC_ARG_ENABLE(static-doc,
-	[  --enable-static-doc     Enable generation of doxygen docs for static]
-	[                          functions.])
+	AS_HELP_STRING([--enable-static-doc],
+		[enable generation of doxygen docs for static functions.]))
 STATIC_DOC=NO
 if test "x$enable_static_doc" = xyes; then
 	STATIC_DOC=YES
@@ -129,7 +133,8 @@ fi
 AC_SUBST(STATIC_DOC)
 
 AC_ARG_ENABLE(typecheck-progs,
-	[  --enable-typecheck-progs Enable type checking on progs field access])
+	AS_HELP_STRING([--enable-typecheck-progs],
+		[enable type checking on progs field access]))
 if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
 fi

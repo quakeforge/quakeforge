@@ -1,4 +1,4 @@
 #! /bin/sh
 
-gcc -o GLstub.so -g -fPIC -shared -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations gl_stub.c gls_norm.c gls_trace.c
+gcc -o GLstub.so -I../../include -g -fPIC -shared -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations gl_stub.c gls_norm.c gls_trace.c -Wall -Werror
 #gcc -o GLstub.so -g -fPIC -shared gl_stub.c gls_norm.c gls_trace.c

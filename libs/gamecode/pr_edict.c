@@ -34,22 +34,10 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdarg.h>
-#include <stdio.h>
 
-#include "QF/cbuf.h"
-#include "QF/crc.h"
 #include "QF/cvar.h"
-#include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/idparse.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
@@ -63,16 +51,14 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
 	pr_uint_t   i;
 
-	if (NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
+	if (pr->reserved_edicts && NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
 		Sys_Printf ("clearing reserved edict %d\n", NUM_FOR_EDICT (pr, e));
 	for (i=0; i < pr->progs->entityfields; i++)
-		e->v[i].integer_var = val;
+		E_INT (e, i) = val;
 	e->free = false;
 }
 
 /*
-	ED_Alloc
-
 	Either finds a free edict, or allocates a new one.
 	Try to avoid reusing an entity that was recently freed, because it
 	can cause the client to think the entity morphed into something else
@@ -82,17 +68,20 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 VISIBLE edict_t *
 ED_Alloc (progs_t *pr)
 {
-	pr_int_t    i;
+	pr_uint_t   i;
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
 
+	if (!pr->num_edicts) {
+		PR_RunError (pr, "Edicts not supported in this VM\n");
+	}
 	for (i = start + 1; i < *pr->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && (!pr->globals.time
+		if (e->free && (!pr->globals.ftime//FIXME double time
 						|| e->freetime < 2
-						|| *pr->globals.time - e->freetime > 0.5)) {
+						|| *pr->globals.ftime - e->freetime > 0.5)) {
 			ED_ClearEdict (pr, e, 0);
 			return e;
 		}
@@ -125,7 +114,7 @@ ED_Free (progs_t *pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
-	if (pr_deadbeef_ents->int_val) {
+	if (pr_deadbeef_ents) {
 		ED_ClearEdict (pr, ed, 0xdeadbeef);
 	} else {
 		if (pr->free_edict)
@@ -134,8 +123,8 @@ ED_Free (progs_t *pr, edict_t *ed)
 			ED_ClearEdict (pr, ed, 0);
 	}
 	ed->free = true;
-	if (pr->globals.time)
-		ed->freetime = *pr->globals.time;
+	if (pr->globals.ftime)//FIXME double time
+		ed->freetime = *pr->globals.ftime;
 }
 
 //===========================================================================
@@ -143,9 +132,13 @@ ED_Free (progs_t *pr, edict_t *ed)
 
 
 VISIBLE void
-ED_PrintNum (progs_t *pr, pr_int_t ent)
+ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname)
 {
-	ED_Print (pr, EDICT_NUM (pr, ent));
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
+	ED_Print (pr, EDICT_NUM (pr, ent), fieldname);
 }
 
 /*
@@ -156,25 +149,29 @@ ED_PrintNum (progs_t *pr, pr_int_t ent)
 VISIBLE void
 ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
-	pr_int_t    i;
+	pr_uint_t   i;
 	int         count;
-	ddef_t     *def;
+	pr_def_t   *def;
 
 	def = PR_FindField(pr, "classname");
 
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
 	if (fieldval && fieldval[0] && def) {
 		count = 0;
-		for (i = 0; i < *(pr)->num_edicts; i++)
+		for (i = 0; i < *pr->num_edicts; i++)
 			if (strequal(fieldval,
 						 E_GSTRING (pr, EDICT_NUM(pr, i), def->ofs))) {
-				ED_PrintNum (pr, i);
+				ED_PrintNum (pr, i, 0);
 				count++;
 			}
 		Sys_Printf ("%i entities\n", count);
 	} else {
-		for (i = 0; i < *(pr)->num_edicts; i++)
-			ED_PrintNum (pr, i);
-		Sys_Printf ("%i entities\n", *(pr)->num_edicts);
+		for (i = 0; i < *pr->num_edicts; i++)
+			ED_PrintNum (pr, i, 0);
+		Sys_Printf ("%i entities\n", *pr->num_edicts);
 	}
 }
 
@@ -186,30 +183,33 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 VISIBLE void
 ED_Count (progs_t *pr)
 {
-	pr_int_t    i;
 	int         active, models, solid, step, zombie;
-	ddef_t     *solid_def;
-	ddef_t     *model_def;
+	pr_def_t   *solid_def;
+	pr_def_t   *model_def;
 	edict_t    *ent;
 
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
 	solid_def = PR_FindField (pr, "solid");
 	model_def = PR_FindField (pr, "model");
 	active = models = solid = step = zombie = 0;
-	for (i = 0; i < *(pr)->num_edicts; i++) {
+	for (pr_uint_t i = 0; i < *pr->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free) {
-			if (pr->globals.time && *pr->globals.time - ent->freetime <= 0.5)
+			if (pr->globals.ftime && *pr->globals.ftime - ent->freetime <= 0.5)//FIXME double time
 				zombie++;
 			continue;
 		}
 		active++;
-		if (solid_def && ent->v[solid_def->ofs].float_var)
+		if (solid_def && E_FLOAT (ent, solid_def->ofs))
 			solid++;
-		if (model_def && ent->v[model_def->ofs].float_var)
+		if (model_def && E_FLOAT (ent, model_def->ofs))
 			models++;
 	}
 
-	Sys_Printf ("num_edicts:%3i\n", *(pr)->num_edicts);
+	Sys_Printf ("num_edicts:%3i\n", *pr->num_edicts);
 	Sys_Printf ("active    :%3i\n", active);
 	Sys_Printf ("view      :%3i\n", models);
 	Sys_Printf ("touch     :%3i\n", solid);
@@ -217,34 +217,35 @@ ED_Count (progs_t *pr)
 }
 
 edict_t *
-ED_EdictNum (progs_t *pr, pr_int_t n)
+ED_EdictNum (progs_t *pr, pr_uint_t n)
 {
-	pr_int_t    offs = n * pr->pr_edict_size;
-
-	if (offs < 0 || n >= pr->pr_edictareasize)
+	if (n >= *pr->num_edicts)
 		PR_RunError (pr, "EDICT_NUM: bad number %d", n);
 
-	return PROG_TO_EDICT (pr, offs);
+	return PR_edicts(pr) + n;
 }
 
-pr_int_t
+pr_uint_t
 ED_NumForEdict (progs_t *pr, edict_t *e)
 {
-	pr_int_t    b;
+	pr_uint_t    b;
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
-	if (b && (b < 0 || b >= *(pr)->num_edicts))
+	if (b && b >= *pr->num_edicts)
 		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
-					 *(pr)->edicts);
+					 pr->pr_edicts);
 
 	return b;
 }
 
-qboolean
-PR_EdictValid (progs_t *pr, pr_int_t e)
+bool
+PR_EdictValid (progs_t *pr, pr_uint_t e)
 {
-	if (e < 0 || e >= pr->pr_edictareasize)
+	if (!pr->num_edicts) {
+		return false;
+	}
+	if (e >= pr->pr_edict_area_size)
 		return false;
 	if (e % pr->pr_edict_size)
 		return false;

@@ -69,7 +69,7 @@
 
   Check for the presence of the XFree86-DGA X server extension
 */
-qboolean
+bool
 VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 {
 #ifdef HAVE_DGA
@@ -94,11 +94,11 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	}
 
 	if ((!maj_ver) || (*maj_ver != XDGA_MAJOR_VERSION)) {
-		Sys_MaskPrintf (SYS_VID, "VID: Incorrect DGA version: %d.%d, \n",
+		Sys_MaskPrintf (SYS_vid, "VID: Incorrect DGA version: %d.%d, \n",
 						*maj_ver, *min_ver);
 		return false;
 	}
-	Sys_MaskPrintf (SYS_VID, "VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_MaskPrintf (SYS_vid, "VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
 
 	if (!hasvideo)
 		hasvideo = &dummy_video;
@@ -125,7 +125,7 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 
   Check for the presence of the XFree86-VidMode X server extension
 */
-qboolean
+bool
 VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 {
 #ifdef HAVE_VIDMODE
@@ -148,12 +148,12 @@ VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 		return false;
 
 	if ((!maj_ver) || (*maj_ver != XF86VIDMODE_MAJOR_VERSION)) {
-		Sys_MaskPrintf (SYS_VID, "VID: Incorrect VidMode version: %d.%d\n",
+		Sys_MaskPrintf (SYS_vid, "VID: Incorrect VidMode version: %d.%d\n",
 						*maj_ver, *min_ver);
 		return false;
 	}
 
-	Sys_MaskPrintf (SYS_VID, "VID: VidMode version: %d.%d\n",
+	Sys_MaskPrintf (SYS_vid, "VID: VidMode version: %d.%d\n",
 					*maj_ver, *min_ver);
 	return true;
 #else

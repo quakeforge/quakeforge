@@ -41,12 +41,12 @@
 
 
 VISIBLE void
-SZ_Alloc (sizebuf_t *buf, int startsize)
+SZ_Alloc (sizebuf_t *buf, unsigned maxsize)
 {
-	if (startsize < 256)
-		startsize = 256;
-	buf->data = Hunk_AllocName (startsize, "sizebuf");
-	buf->maxsize = startsize;
+	if (maxsize < 256)
+		maxsize = 256;
+	buf->data = Hunk_AllocName (0, maxsize, "sizebuf");
+	buf->maxsize = maxsize;
 	buf->cursize = 0;
 }
 
@@ -58,7 +58,7 @@ SZ_Clear (sizebuf_t *buf)
 }
 
 VISIBLE void *
-SZ_GetSpace (sizebuf_t *buf, int length)
+SZ_GetSpace (sizebuf_t *buf, unsigned length)
 {
 	void       *data;
 
@@ -83,7 +83,7 @@ getspace:
 }
 
 VISIBLE void
-SZ_Write (sizebuf_t *buf, const void *data, int length)
+SZ_Write (sizebuf_t *buf, const void *data, unsigned length)
 {
 	memcpy (SZ_GetSpace (buf, length), data, length);
 }
@@ -91,11 +91,42 @@ SZ_Write (sizebuf_t *buf, const void *data, int length)
 VISIBLE void
 SZ_Print (sizebuf_t *buf, const char *data)
 {
-	int         len;
+	unsigned    len;
 
 	len = strlen (data) + 1;
 	if (buf->cursize && !buf->data[buf->cursize - 1])
 		buf->cursize--;					// write over trailing 0
 
 	memcpy (SZ_GetSpace (buf, len), data, len);
+}
+
+VISIBLE void
+SZ_Dump (sizebuf_t *buf)
+{
+	unsigned    i;
+	char        chars[17], c;
+
+	chars[16] = 0;
+	for (i = 0; i < buf->cursize; i++) {
+		if (i % 16 == 0) {
+			Sys_Printf ("%04x:", i);
+		} else if (i % 16 == 8) {
+			Sys_Printf (" ");
+		}
+		Sys_Printf (" %02x", buf->data[i]);
+		c = buf->data[i] & 0x7f;
+		if (c < ' ') {
+			c = '.';
+		}
+		chars[i % 16] = c;
+		if (i % 16 == 15) {
+			Sys_Printf ("  %s\n", chars);
+		}
+	}
+	i %= 16;
+	if (i) {
+		chars[i] = 0;
+		i = 16 - i;
+		Sys_Printf ("%*s  %s\n", i * 3 + (i > 7), "", chars);
+	}
 }

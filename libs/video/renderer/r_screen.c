@@ -38,88 +38,90 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/image.h"
+#include "QF/png.h"
 #include "QF/pcx.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/view.h"
+#include "QF/va.h"
+
+#include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
+#include "QF/scene/transform.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
-
-/*
-	background clear
-	rendering
-	turtle/net/ram icons
-	sbar
-	centerprint / slow centerprint
-	notify lines
-	intermission / finale overlay
-	loading plaque
-	console
-	menu
-
-	required background clears
-	required update regions
-
-	syncronous draw mode or async
-	One off screen buffer, with updates either copied or xblited
-	Need to double buffer?
-
-	async draw will require the refresh area to be cleared, because it will be
-	xblited, but sync draw can just ignore it.
-
-	sync
-	draw
-
-	CenterPrint ()
-	SlowPrint ()
-	Screen_Update ();
-	Sys_Printf ();
-
-	net
-	turn off messages option
-
-	the refresh is always rendered, unless the console is full screen
-
-	console is:
-		notify lines
-		half
-		full
-*/
 
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
-byte       *draw_chars;					// 8*8 graphic characters FIXME location
+byte       *draw_chars;			// 8*8 graphic characters FIXME location
+bool        r_cache_thrash;		// set if surface cache is thrashing
+int        *r_node_visframes;	//FIXME per renderer
+int        *r_leaf_visframes;	//FIXME per renderer
+int        *r_face_visframes;	//FIXME per renderer
 
-float       oldfov;
-int         oldsbar;
+bool        scr_skipupdate;
+static bool scr_initialized;// ready to draw
 
-qboolean    scr_initialized;			// ready to draw
+static framebuffer_t *fisheye_cube_map;
+static framebuffer_t *warp_buffer;
 
-qpic_t     *scr_ram;
-qpic_t     *scr_turtle;
+static float fov_x, fov_y;
+static float tan_fov_x, tan_fov_y;
+static scene_t *scr_scene;//FIXME don't want this here
 
-int         clearconsole;
+static mat4f_t box_rotations[] = {
+	[BOX_FRONT] = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_RIGHT] = {
+		{ 0,-1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BEHIND] = {
+		{-1, 0, 0, 0},
+		{ 0,-1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_LEFT] = {
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_TOP] = {
+		{ 0, 0, 1, 0},
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BOTTOM] = {
+		{ 0, 0,-1, 0},
+		{ 0, 1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+};
 
-viddef_t    vid;						// global video state
-
-vrect_t    *pconupdate;
-vrect_t     scr_vrect;
-
-qboolean    scr_skipupdate;
-
-void
-R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
+static void
+set_vrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
 	float       size;
 	int         h;
 
-	// intermission is always full screen
 	size = min (r_viewsize, 100);
-	if (vr_data.force_fullscreen) {
+	if (r_data->force_fullscreen) {
+		// intermission is always full screen
 		size = 100.0;
 		lineadj = 0;
 	}
@@ -143,56 +145,265 @@ R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	vrect->y = (h - vrect->height) / 2;
 }
 
+void//FIXME remove when sw warp is cleaned up
+R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
+{
+	set_vrect (vrectin, vrect, lineadj);
+}
+
 void
+SCR_SetFOV (float fov)
+{
+
+	refdef_t   *refdef = r_data->refdef;
+
+	double      f = fov * M_PI / 360;
+	double      c = cos(f);
+	double      s = sin(f);
+	double      w = refdef->vrect.width;
+	double      h = refdef->vrect.height;
+
+	fov_x = fov;
+	fov_y = 360 * atan2 (s * h, c * w) / M_PI;
+	tan_fov_x = s / c;
+	tan_fov_y = (s * h) / (c * w);
+	r_funcs->set_fov (tan_fov_x, tan_fov_y);
+}
+
+static void
 SCR_CalcRefdef (void)
 {
+	r_data->vid->recalc_refdef = 0;
+
+	// force a background redraw
+	r_data->scr_fullupdate = 0;
+	if (r_funcs->bind_framebuffer) {
+		r_funcs->bind_framebuffer (0);
+	}
+}
+
+static void
+render_scene (void)
+{
+	EntQueue_Clear (r_ent_queue);
+	r_funcs->render_view ();
+	r_funcs->draw_particles (&r_psystem);
+	r_funcs->draw_transparent ();
+}
+
+static void
+render_side (int side)
+{
+	mat4f_t     camera;
+	mat4f_t     camera_inverse;
+	mat4f_t     rotinv;
+
+	memcpy (camera, r_refdef.camera, sizeof (camera));
+	memcpy (camera_inverse, r_refdef.camera_inverse, sizeof (camera_inverse));
+	mmulf (r_refdef.camera, camera, box_rotations[side]);
+	mat4ftranspose (rotinv, box_rotations[side]);
+	mmulf (r_refdef.camera_inverse, rotinv, camera_inverse);
+
+	//FIXME see fixme in r_screen.c
+	r_refdef.frame.mat[0] = -r_refdef.camera[1];
+	r_refdef.frame.mat[1] =  r_refdef.camera[0];
+	r_refdef.frame.mat[2] =  r_refdef.camera[2];
+	r_refdef.frame.mat[3] =  r_refdef.camera[3];
+
+	refdef_t   *refdef = r_data->refdef;
+	R_SetFrustum (refdef->frustum, &refdef->frame, 90, 90);
+
+	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
+	render_scene ();
+
+	memcpy (r_refdef.camera, camera, sizeof (camera));
+	memcpy (r_refdef.camera_inverse, camera_inverse, sizeof (camera_inverse));
+}
+
+void
+SCR_UpdateScreen_legacy (transform_t camera, double realtime,
+						 SCR_Func *scr_funcs)
+{
+	if (scr_fisheye && !fisheye_cube_map) {
+		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
+	}
+	if (r_dowarp && !warp_buffer) {
+		warp_buffer = r_funcs->create_frame_buffer (r_data->vid->width,
+													r_data->vid->height);
+	}
+
+	r_funcs->begin_frame ();
+	if (r_dowarp) {
+		r_funcs->bind_framebuffer (warp_buffer);
+	}
+	if (scr_fisheye && fisheye_cube_map) {
+		int         side = fisheye_cube_map->width;
+		vrect_t     feye = { 0, 0, side, side };
+		r_funcs->set_viewport (&feye);
+		r_funcs->set_fov (1, 1);	//FIXME shouldn't be every frame (2d stuff)
+		switch (scr_fviews) {
+			case 6: render_side (BOX_BEHIND);
+			case 5: render_side (BOX_BOTTOM);
+			case 4: render_side (BOX_TOP);
+			case 3: render_side (BOX_LEFT);
+			case 2: render_side (BOX_RIGHT);
+			default:render_side (BOX_FRONT);
+		}
+		r_funcs->bind_framebuffer (0);
+		r_funcs->set_viewport (&r_refdef.vrect);
+		r_funcs->post_process (fisheye_cube_map);
+	} else {
+		r_funcs->set_viewport (&r_refdef.vrect);
+		render_scene ();
+		if (r_dowarp) {
+			r_funcs->bind_framebuffer (0);
+			r_funcs->post_process (warp_buffer);
+		}
+	}
+	r_funcs->set_2d (0);
+	//view_draw (r_data->scr_view);
+	r_funcs->set_2d (1);
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+	r_funcs->end_frame ();
+}
+
+void
+SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+{
+	R_RunParticles (r_data->frametime);
+
+	if (scr_skipupdate || !scr_initialized) {
+		return;
+	}
+
+	if (r_timegraph || r_speeds || r_dspeeds) {
+		r_time1 = Sys_DoubleTime ();
+	}
+
+	refdef_t   *refdef = r_data->refdef;
+	if (Transform_Valid (camera)) {
+		Transform_GetWorldMatrix (camera, refdef->camera);
+		Transform_GetWorldInverse (camera, refdef->camera_inverse);
+	} else {
+		mat4fidentity (refdef->camera);
+		mat4fidentity (refdef->camera_inverse);
+	}
+
+	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
+	// camera forward vector (camera Y) points along the world +X axis and the
+	// camera right vector (camera X) points along the world -Y axis. This
+	// should not be necessary here but is due to AngleVectors (and thus
+	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
+	// as right). Fixing this would take an audit of the usage of both, but is
+	// probably worthwhile in the long run.
+	refdef->frame.mat[0] = -refdef->camera[1];
+	refdef->frame.mat[1] =  refdef->camera[0];
+	refdef->frame.mat[2] =  refdef->camera[2];
+	refdef->frame.mat[3] =  refdef->camera[3];
+	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
+
+	r_data->realtime = realtime;
+	scr_copytop = r_data->scr_copyeverything = 0;
+
+	if (r_data->vid->recalc_refdef) {
+		SCR_CalcRefdef ();
+	}
+
+	R_AnimateLight ();
+	if (scr_scene && scr_scene->worldmodel) {
+		scr_scene->viewleaf = 0;
+		vec4f_t     position = refdef->frame.position;
+		scr_scene->viewleaf = Mod_PointInLeaf (position, scr_scene->worldmodel);
+		r_dowarpold = r_dowarp;
+		if (r_waterwarp) {
+			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
+		}
+		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
+					  r_face_visframes);
+	}
+	r_framecount++;
+	R_PushDlights (vec3_origin);
+	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
+}
+
+static void
+update_vrect (void)
+{
+	r_data->vid->recalc_refdef = 1;
+
 	vrect_t     vrect;
 	refdef_t   *refdef = r_data->refdef;
 
-	// force a background redraw
-	vr_data.scr_fullupdate = 0;
-	vid.recalc_refdef = 0;
-
-	// bound field of view
-	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
-
 	vrect.x = 0;
 	vrect.y = 0;
-	vrect.width = vid.width;
-	vrect.height = vid.height;
+	vrect.width = r_data->vid->width;
+	vrect.height = r_data->vid->height;
 
-	R_SetVrect (&vrect, &scr_vrect, vr_data.lineadj);
-
-	refdef->vrect = scr_vrect;
-	refdef->fov_x = scr_fov->value;
-	refdef->fov_y =
-		CalcFov (refdef->fov_x, refdef->vrect.width, refdef->vrect.height);
-
-	// notify the refresh of the change
-	vr_funcs->R_ViewChanged (vid.aspect);
+	set_vrect (&vrect, &refdef->vrect, r_data->lineadj);
+	SCR_SetFOV (scr_fov);
 }
 
-float
-CalcFov (float fov_x, float width, float height)
+void
+SCR_SetFullscreen (bool fullscreen)
 {
-	float       a, x;
+	if (r_data->force_fullscreen == fullscreen) {
+		return;
+	}
 
-	if (fov_x < 1 || fov_x > 179)
-		Sys_Error ("Bad fov: %f", fov_x);
+	r_data->force_fullscreen = fullscreen;
+	update_vrect ();
+}
 
-	x = width / tan (fov_x * (M_PI / 360));
+void
+SCR_SetBottomMargin (int lines)
+{
+	r_data->lineadj = lines;
+	update_vrect ();
+}
 
-	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
+typedef struct scr_capture_s {
+	dstring_t  *name;
+	QFile      *file;
+} scr_capture_t;
 
-	a = a * (360 / M_PI);
+static void
+scr_write_caputre (tex_t *tex, void *data)
+{
+	scr_capture_t *cap = data;
 
-	return a;
+	if (tex) {
+		WritePNG (cap->file, tex);
+		free (tex);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, cap->name->str);
+	} else {
+		Sys_Printf ("Capture failed\n");
+	}
+	Qclose (cap->file);
+	dstring_delete (cap->name);
+	free (cap);
 }
 
 static void
 ScreenShot_f (void)
 {
-	vr_funcs->SCR_ScreenShot_f ();
+	dstring_t  *name = dstring_new ();
+	QFile      *file;
+
+	// find a file name to save it to
+	if (!(file = QFS_NextFile (name, va (0, "%s/qf", qfs_gamedir->dir.shots),
+							   ".png"))) {
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file: %s\n",
+					name->str);
+		dstring_delete (name);
+	} else {
+		scr_capture_t *cap = malloc (sizeof (scr_capture_t));
+		cap->file = file;
+		cap->name = name;
+		r_funcs->capture_screen (scr_write_caputre, cap);
+	}
 }
 
 /*
@@ -203,9 +414,9 @@ ScreenShot_f (void)
 static void
 SCR_SizeUp_f (void)
 {
-	if (scr_viewsize->int_val < 120) {
-		Cvar_SetValue (scr_viewsize, scr_viewsize->int_val + 10);
-		vid.recalc_refdef = 1;
+	if (scr_viewsize < 120) {
+		scr_viewsize = scr_viewsize + 10;
+		r_data->vid->recalc_refdef = 1;
 	}
 }
 
@@ -217,154 +428,78 @@ SCR_SizeUp_f (void)
 static void
 SCR_SizeDown_f (void)
 {
-	Cvar_SetValue (scr_viewsize, scr_viewsize->int_val - 10);
-	vid.recalc_refdef = 1;
+	scr_viewsize = scr_viewsize - 10;
+	r_data->vid->recalc_refdef = 1;
 }
-
-void
-SCR_DrawRam (void)
-{
-	if (!scr_showram->int_val)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	vr_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
-}
-
-void
-SCR_DrawTurtle (void)
-{
-	static int  count;
-
-	if (!scr_showturtle->int_val)
-		return;
-
-	if (vr_data.frametime < 0.1) {
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-
-	vr_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
-}
-
-void
-SCR_DrawPause (void)
-{
-	qpic_t     *pic;
-
-	if (!scr_showpause->int_val)		// turn off for screenshots
-		return;
-
-	if (!vr_data.paused)
-		return;
-
-	pic = vr_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	vr_funcs->Draw_Pic ((vid.conwidth - pic->width) / 2,
-					    (vid.conheight - 48 - pic->height) / 2, pic);
-}
-
-void
-SCR_SetUpToDrawConsole (void)
-{
-}
-
-/*
-	Find closest color in the palette for named color
-*/
-int
-MipColor (int r, int g, int b)
-{
-	float       bestdist, dist;
-	int         r1, g1, b1, i;
-	int         best = 0;
-	static int  lastbest;
-	static int  lr = -1, lg = -1, lb = -1;
-
-	if (r == lr && g == lg && b == lb)
-		return lastbest;
-
-	bestdist = 256 * 256 * 3;
-
-	for (i = 0; i < 256; i++) {
-		int         j;
-		j = i * 3;
-		r1 = vid.palette[j] - r;
-		g1 = vid.palette[j + 1] - g;
-		b1 = vid.palette[j + 2] - b;
-		dist = r1 * r1 + g1 * g1 + b1 * b1;
-		if (dist < bestdist) {
-			bestdist = dist;
-			best = i;
-		}
-	}
-	lr = r;
-	lg = g;
-	lb = b;
-	lastbest = best;
-	return best;
-}
-
-// in draw.c
 
 static void
-SCR_DrawCharToSnap (int num, byte *dest, int width)
+viewsize_listener (void *data, const cvar_t *cvar)
 {
-	byte       *source;
-	int         col, row, drawline, x;
-
-	row = num >> 4;
-	col = num & 15;
-	source = draw_chars + (row << 10) + (col << 3);
-
-	drawline = 8;
-
-	while (drawline--) {
-		for (x = 0; x < 8; x++)
-			if (source[x])
-				dest[x] = source[x];
-			else
-				dest[x] = 98;
-		source += 128;
-		dest -= width;
-	}
-
+	update_vrect ();
 }
 
-void
-SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
+static void
+vidsize_listener (void *data, const viddef_t *vdef)
 {
-	byte       *dest;
-	byte       *buf = tex->data;
-	const unsigned char *p;
-	int         width = tex->width;
-
-	dest = buf + ((y * width) + x);
-
-	p = (const unsigned char *) s;
-	while (*p) {
-		SCR_DrawCharToSnap (*p++, dest, width);
-		dest += 8;
+	update_vrect ();
+	if (fisheye_cube_map) {
+		r_funcs->destroy_frame_buffer (fisheye_cube_map);
+		fisheye_cube_map = 0;
 	}
+	if (warp_buffer) {
+		r_funcs->destroy_frame_buffer (warp_buffer);
+		warp_buffer = 0;
+	}
+	r_funcs->set_fov (tan_fov_x, tan_fov_y);
 }
 
 void
 SCR_Init (void)
 {
+	//r_data->scr_view->xlen = r_data->vid->width;
+	//r_data->scr_view->ylen = r_data->vid->height;
+
 	// register our commands
 	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "
-					"saves as qfxxx.pcx in the current directory");
+					"saves as qfxxxx.png in the QF directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
-	scr_ram = vr_funcs->Draw_PicFromWad ("ram");
-	scr_turtle = vr_funcs->Draw_PicFromWad ("turtle");
-
-	vid = *vr_data.vid;	// cache
 	scr_initialized = true;
+
+	r_ent_queue = EntQueue_New (mod_num_types);
+
+	cvar_t     *var = Cvar_FindVar ("viewsize");
+	Cvar_AddListener (var, viewsize_listener, 0);
+	VID_OnVidResize_AddListener (vidsize_listener, 0);
+	update_vrect ();
+}
+
+void
+SCR_Shutdown (void)
+{
+	EntQueue_Delete (r_ent_queue);
+}
+
+void
+SCR_NewScene (scene_t *scene)
+{
+	if (scr_scene) {
+		ECS_RemoveEntities (scr_scene->reg, scene_visibility);
+		R_ClearEfrags ();
+	}
+	scr_scene = scene;
+	if (scene) {
+		mod_brush_t *brush = &scr_scene->worldmodel->brush;
+		int         count = brush->numnodes + brush->modleafs
+							+ brush->numsurfaces;
+		int         size = count * sizeof (int);
+		r_node_visframes = Hunk_AllocName (0, size, "visframes");
+		r_leaf_visframes = r_node_visframes + brush->numnodes;
+		r_face_visframes = r_leaf_visframes + brush->modleafs;
+		r_funcs->set_fov (tan_fov_x, tan_fov_y);
+		r_funcs->R_NewScene (scene);
+	} else {
+		r_funcs->R_ClearState ();
+	}
 }

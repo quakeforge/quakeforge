@@ -31,6 +31,8 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "r_internal.h"
 
 #ifdef PIC
@@ -48,15 +50,15 @@ int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
 static unsigned int blockdivmask;
 void       *prowdestbase;
-unsigned char *pbasesource;
+byte       *pbasesource;
 int         surfrowbytes;				// used by ASM files
 unsigned int *r_lightptr;
 int         r_stepback;
 int         r_lightwidth;
 static int         r_numhblocks;
 int         r_numvblocks;
-static unsigned char *r_source;
-unsigned char *r_sourcemax;
+static byte *r_source;
+byte       *r_sourcemax;
 
 void R_DrawSurfaceBlock_mip0 (void);
 void R_DrawSurfaceBlock_mip1 (void);
@@ -71,13 +73,14 @@ static unsigned int blocklights[34 * 34];	//FIXME make dynamic
 
 
 static void
-R_AddDynamicLights (void)
+R_AddDynamicLights (uint32_t render_id)
 {
 	msurface_t *surf;
 	unsigned int lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
+	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	int         s, t;
 	int         i;
 	int         smax, tmax;
@@ -88,12 +91,17 @@ R_AddDynamicLights (void)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
+	if (render_id) {
+		//FIXME give world entity a transform
+		vec4f_t    *transform = SW_COMP (scene_sw_matrix, render_id);
+		entorigin = transform[3];
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin,
-						lightorigin);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
 		rad = r_dlights[lnum].radius;
 		dist = DotProduct (lightorigin, surf->plane->normal) -
 			surf->plane->dist;
@@ -137,7 +145,7 @@ R_AddDynamicLights (void)
 	Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
 static void
-R_BuildLightMap (void)
+R_BuildLightMap (uint32_t render_id)
 {
 	int         smax, tmax;
 	int         t;
@@ -154,7 +162,7 @@ R_BuildLightMap (void)
 	size = smax * tmax;
 	lightmap = surf->samples;
 
-	if (!r_worldentity.model->lightdata) {
+	if (!r_refdef.worldmodel->brush.lightdata) {
 		for (i = 0; i < size; i++)
 			blocklights[i] = 0;
 		return;
@@ -173,7 +181,7 @@ R_BuildLightMap (void)
 		}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights ();
+		R_AddDynamicLights (render_id);
 
 	// bound, invert, and shift
 	for (i = 0; i < size; i++) {
@@ -187,7 +195,7 @@ R_BuildLightMap (void)
 }
 
 void
-R_DrawSurface (void)
+R_DrawSurface (uint32_t render_id)
 {
 	byte       *basetptr;
 	int         smax, tmax, twidth;
@@ -199,7 +207,7 @@ R_DrawSurface (void)
 	texture_t  *mt;
 
 	// calculate the lightings
-	R_BuildLightMap ();
+	R_BuildLightMap (render_id);
 
 	surfrowbytes = r_drawsurf.rowbytes;
 
@@ -268,7 +276,7 @@ void
 R_DrawSurfaceBlock_mip0 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -290,8 +298,7 @@ R_DrawSurfaceBlock_mip0 (void)
 
 			for (b = 15; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -310,7 +317,7 @@ void
 R_DrawSurfaceBlock_mip1 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -332,8 +339,7 @@ R_DrawSurfaceBlock_mip1 (void)
 
 			for (b = 7; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -352,7 +358,7 @@ void
 R_DrawSurfaceBlock_mip2 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -374,8 +380,7 @@ R_DrawSurfaceBlock_mip2 (void)
 
 			for (b = 3; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -394,7 +399,7 @@ void
 R_DrawSurfaceBlock_mip3 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -416,8 +421,7 @@ R_DrawSurfaceBlock_mip3 (void)
 
 			for (b = 1; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 

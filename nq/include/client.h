@@ -30,37 +30,22 @@
 
 #include <stdio.h>
 
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
-#include "QF/sound.h"
 #include "QF/render.h"
 
+#include "QF/scene/entity.h"
+
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
+#include "client/state.h"
+#include "client/view.h"
 
 #include "game.h"
 #include "netmain.h"
 #include "protocol.h"
-
-
-typedef struct usercmd_s {
-	vec3_t	viewangles;
-
-// intended velocities
-	float	forwardmove;
-	float	sidemove;
-	float	upmove;
-} usercmd_t;
-
-typedef struct {
-	struct info_s *info;
-	struct info_key_s *name;
-	float	entertime;
-	int		frags;
-	int		topcolor;
-	int		bottomcolor;
-} scoreboard_t;
 
 
 // client_state_t should hold all pieces of the client state
@@ -77,7 +62,6 @@ typedef enum {
 #define	MAX_DEMONAME	16
 
 typedef enum {
-	ca_dedicated, 		// a dedicated server with no ability to start a client
 	ca_disconnected, 	// full screen console with no connection
 	ca_connected,		// talking to a server
 	ca_active,			// everything is in, so frames can be rendered
@@ -109,11 +93,11 @@ typedef struct {
 	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
 	QFile      *demofile;
-	qboolean    demorecording;
-	qboolean    demo_capture;
-	qboolean    demoplayback;
+	int         demo_capture;
 	int         forcetrack;			// -1 = use normal cd track
-	qboolean    timedemo;
+	bool        demorecording;
+	bool        demoplayback;
+	bool        timedemo;
 	int         td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	double      td_starttime;		// realtime at second frame of timedemo
@@ -142,9 +126,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct {
-	qboolean    loading;
-
+typedef struct client_state_s {
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
@@ -153,39 +135,27 @@ typedef struct {
 // information for local display
 	int         stats[MAX_CL_STATS];	// Health, etc
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
-	float       faceanimtime;	// Use anim frame if cl.time < this
-
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
+	float       faceanimtime;			// Use anim frame if cl.time < this
 
 // The client maintains its own idea of view angles, which are sent to the
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
-	int         mindex;
-	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
+	int         frameIndex;
+	vec3_t      frameViewAngles[2];	// During demo playback viewangles is lerped
 								// between these
-	vec3_t      viewangles;
-	vec3_t      mvelocity[2];	// Update by server, used for lean+bob
+	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t      velocity;		// Lerped between mvelocity[0] and [1]
-	vec3_t      punchangle;		// Temporary offset
+	viewstate_t viewstate;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
-
-	qboolean    paused;			// Sent over by server
-	int         onground;
-	float       viewheight;
+	bool        paused;			// Sent over by server
+	bool        inwater;
 	float       crouch;			// Local amount for smoothing stepups
-	qboolean    inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
-	int         completed_time;	// Latched at intermission start
+	int         completed_time;	// Latched from time at intermission start
 
 	double      mtime[2];		// The timestamp of last two messages
 	double      time;			// Clients view of time, should be between
@@ -194,89 +164,60 @@ typedef struct {
 	double      oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 
-	float       last_received_message;	// (realtime) for net trouble icon
+	double      last_ping_request;	// while showing scoreboard
 
 /* information that is static for the entire time connected to a server */
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
-	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
+	int         playernum;
 	int         viewentity;		// cl_entitites[cl.viewentity] = player
 	unsigned    protocol;
-	int         gametype;
+	float       stdver;
 	int         maxclients;
-	int         chase;
+	// serverinfo mirrors
 	int         sv_cshifts;
-	int         watervis;
+	int         no_pogo_stick;
+	int         teamplay;
 	int         fpd;
+	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
-// frag scoreboard
-	scoreboard_t *scores;		// [cl.maxclients]
+// all player information
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
 
 // cvars
-extern struct cvar_s	*cl_name;
-extern struct cvar_s	*cl_color;
+extern char *cl_name;
+extern int cl_color;
 
-extern struct cvar_s	*cl_upspeed;
-extern struct cvar_s	*cl_forwardspeed;
-extern struct cvar_s	*cl_backspeed;
-extern struct cvar_s	*cl_sidespeed;
+extern int cl_shownet;
+extern int cl_nolerp;
 
-extern struct cvar_s	*cl_movespeedkey;
+extern char *cl_name;
+extern int cl_writecfg;
 
-extern struct cvar_s	*cl_yawspeed;
-extern struct cvar_s	*cl_pitchspeed;
+extern int cl_cshift_bonus;
+extern int cl_cshift_contents;
+extern int cl_cshift_damage;
+extern int cl_cshift_powerup;
 
-extern struct cvar_s	*cl_anglespeedkey;
-
-extern struct cvar_s	*cl_autofire;
-
-extern struct cvar_s	*cl_shownet;
-extern struct cvar_s	*cl_nolerp;
-
-extern struct cvar_s	*hud_sbar;
-
-extern struct cvar_s	*cl_pitchdriftspeed;
-extern struct cvar_s	*lookspring;
-
-extern struct cvar_s	*m_pitch;
-extern struct cvar_s	*m_yaw;
-extern struct cvar_s	*m_forward;
-extern struct cvar_s	*m_side;
-
-extern struct cvar_s	*cl_name;
-extern struct cvar_s	*cl_writecfg;
-
-extern struct cvar_s	*cl_cshift_bonus;
-extern struct cvar_s	*cl_cshift_contents;
-extern struct cvar_s	*cl_cshift_damage;
-extern struct cvar_s	*cl_cshift_powerup;
-
-extern struct cvar_s	*noskins;
+extern int noskins;
 
 extern	client_state_t	cl;
 
-// FIXME, allocate dynamically
-extern entity_t cl_entities[MAX_EDICTS];
+extern struct entity_s cl_entities[MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
-extern byte cl_forcelink[MAX_EDICTS];
+extern struct set_s cl_forcelink;
 
 extern int fps_count;
 
@@ -286,7 +227,10 @@ extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
-void CL_Shutdown (void);
+void CL_ClearMemory (void);
+void CL_PreFrame (void);
+void CL_Frame (void);
+int CL_ReadConfiguration (const char *cfg_name);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);
@@ -300,21 +244,16 @@ void CL_NextDemo (void);
 
 
 // cl_input
-void CL_Input_Init (void);
+void CL_Init_Input (struct cbuf_s *cbuf);
+void CL_Init_Input_Cvars (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
-
-void CL_ParseParticleEffect (void);
-void CL_ParseTEnt (void);
-void CL_UpdateTEnts (void);
 
 void CL_ClearState (void);
 
 int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
-
-float CL_KeyState (kbutton_t *key);
 
 // cl_demo.c
 void CL_StopPlayback (void);
@@ -323,8 +262,8 @@ void CL_Record (const char *argv1, int track);
 int CL_GetMessage (void);
 void CL_Demo_Init (void);
 
-extern struct cvar_s *demo_gzip;
-extern struct cvar_s *demo_speed;
+extern int demo_gzip;
+extern float demo_speed;
 
 // cl_parse.c
 struct skin_s;
@@ -332,40 +271,18 @@ void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 
 
-// view
-void V_StartPitchDrift (void);
-void V_StopPitchDrift (void);
-
-void V_RenderView (void);
-void V_UpdatePalette (void);
-void V_Register (void);
-void V_ParseDamage (void);
-void V_SetContentsColor (int contents);
-void V_PrepBlend (void);
-
 // cl_tent
-void CL_TEnts_Init (void);
-void CL_ClearTEnts (void);
-void CL_Init_Entity (struct entity_s *ent);
-void CL_ParseTEnt (void);
 void CL_SignonReply (void);
-void CL_TransformEntity (struct entity_s *ent, const vec3_t
-						 angles, qboolean force);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
-
-extern kbutton_t   in_left, in_right, in_forward, in_back;
-extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern kbutton_t   in_use, in_jump, in_attack;
-extern kbutton_t   in_up, in_down;
+struct entity_s CL_GetEntity (int num);
 
 extern	double			realtime;
 
-extern qboolean recording;
+extern bool recording;
 
-void Cvar_Info (struct cvar_s *var);
-
-void CL_UpdateScreen (double realtime);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 void CL_SetState (cactive_t state);
 

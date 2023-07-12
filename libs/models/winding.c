@@ -40,10 +40,6 @@
 
 #define BOGUS (18000.0)
 
-/**	\addtogroup qfbsp_winding
-*/
-//@{
-
 int         c_activewindings, c_peakwindings;
 
 winding_t *
@@ -159,7 +155,7 @@ WindingVectors (const winding_t *w, int unit)
 }
 
 winding_t *
-ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
+ClipWinding (winding_t *in, plane_t *split, bool keepon)
 {
 	int         maxpts, i, j;
 	int        *sides;
@@ -175,6 +171,8 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	// +1 for duplicating the first point
 	sides = alloca ((in->numpoints + 1) * sizeof (int));
 	dists = alloca ((in->numpoints + 1) * sizeof (vec_t));
+	sides[0] = 0;
+	dists[0] = 0;
 
 	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
@@ -326,5 +324,3 @@ FreeWinding (winding_t *w)
 	c_activewindings--;
 	free (w);
 }
-
-//@}

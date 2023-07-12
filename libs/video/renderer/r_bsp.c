@@ -36,58 +36,63 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/set.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 
-mvertex_t  *r_pcurrentvertbase;
-mleaf_t    *r_viewleaf;
 static mleaf_t *r_oldviewleaf;
+static set_t *solid;
 
 void
-R_MarkLeaves (void)
+R_MarkLeaves (mleaf_t *viewleaf, int *node_visframes, int *leaf_visframes,
+			  int *face_visframes)
 {
-	byte         solid[8192];
-	byte        *vis;
+	set_t       *vis;
 	int			 c;
-	unsigned int i;
 	mleaf_t     *leaf;
-	mnode_t     *node;
 	msurface_t **mark;
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 
-	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
+	if (r_oldviewleaf == viewleaf && !r_novis)
 		return;
 
 	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-	if (!r_viewleaf)
+	r_oldviewleaf = viewleaf;
+	if (!viewleaf)
 		return;
 
-	if (r_novis->int_val) {
+	if (r_novis) {
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
 							// turned off
+		if (!solid) {
+			solid = set_new ();
+			set_everything (solid);
+		}
 		vis = solid;
-		memset (solid, 0xff, (r_worldentity.model->numleafs + 7) >> 3);
 	} else
-		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
+		vis = Mod_LeafPVS (viewleaf, r_refdef.worldmodel);
 
-	for (i = 0; (int) i < r_worldentity.model->numleafs; i++) {
-		if (vis[i >> 3] & (1 << (i & 7))) {
-			leaf = &r_worldentity.model->leafs[i + 1];
+	for (unsigned i = 0; i < brush->visleafs; i++) {
+		if (set_is_member (vis, i)) {
+			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
-				mark = leaf->firstmarksurface;
+				mark = brush->marksurfaces + leaf->firstmarksurface;
 				do {
-					(*mark)->visframe = r_visframecount;
+					face_visframes[*mark - brush->surfaces] = r_visframecount;
 					mark++;
 				} while (--c);
 			}
-			node = (mnode_t *) leaf;
-			do {
-				if (node->visframe == r_visframecount)
+			leaf_visframes[i + 1] = r_visframecount;
+			int         node_id = brush->leaf_parents[leaf - brush->leafs];
+			while (node_id >= 0) {
+				if (node_visframes[node_id] == r_visframecount)
 					break;
-				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
+				node_visframes[node_id] = r_visframecount;
+				node_id = brush->node_parents[node_id];
+			}
 		}
 	}
 }
@@ -98,12 +103,12 @@ R_MarkLeaves (void)
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (msurface_t *surf)
+R_TextureAnimation (int frame, msurface_t *surf)
 {
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (currententity->frame) {
+	if (frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}
@@ -111,7 +116,7 @@ R_TextureAnimation (msurface_t *surf)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (vr_data.realtime * 10) % base->anim_total;
+	relative = (int) (r_data->realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {

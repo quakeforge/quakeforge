@@ -45,7 +45,11 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-static set_pool_t static_set_pool = {0, 0};
+static set_pool_t static_set_pool = {
+	0, 0,
+	DARRAY_STATIC_INIT (8),
+	DARRAY_STATIC_INIT (8),
+};
 
 static set_iter_t *
 new_setiter (set_pool_t *set_pool)
@@ -76,8 +80,10 @@ set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter)
 void
 set_pool_init (set_pool_t *set_pool)
 {
-	set_pool->set_freelist = 0;
-	set_pool->set_iter_freelist = 0;
+	*set_pool = (set_pool_t) {
+		.set_blocks = DARRAY_STATIC_INIT (8),
+		.set_iter_blocks = DARRAY_STATIC_INIT (8),
+	};
 }
 
 inline set_t *
@@ -111,16 +117,15 @@ set_delete (set_t *set)
 	set_delete_r (&static_set_pool, set);
 }
 
-static void
-set_expand (set_t *set, unsigned x)
+void
+set_expand (set_t *set, unsigned size)
 {
 	set_bits_t *map = set->map;
-	size_t      size;
 
-	if (x <= set->size)
+	if (size <= set->size)
 		return;
 
-	size = SET_SIZE (x);
+	size = SET_SIZE (size - 1);
 	set->map = malloc (size / 8);
 	memcpy (set->map, map, set->size / 8);
 	memset (set->map + SET_WORDS (set), 0, (size - set->size) / 8);
@@ -129,8 +134,32 @@ set_expand (set_t *set, unsigned x)
 		free (map);
 }
 
+void
+set_trim (set_t *set)
+{
+	if (set->map == set->defmap) {
+		return;
+	}
+	unsigned    words = SET_WORDS (set);
+
+	while (words > SET_DEFMAP_SIZE && !set->map[words - 1]) {
+		words--;
+		set->size -= SET_BITS;
+	}
+	if (words > SET_DEFMAP_SIZE) {
+		set_bits_t *map = realloc (set->map, words * sizeof (set_bits_t));
+		if (map && map != set->map) {
+			set->map = map;
+		}
+	} else {
+		memcpy (set->defmap, set->map, sizeof (set->defmap));
+		free (set->map);
+		set->map = set->defmap;
+	}
+}
+
 inline set_t *
-set_new_size_r (set_pool_t *set_pool, int size)
+set_new_size_r (set_pool_t *set_pool, unsigned size)
 {
 	set_t      *set;
 
@@ -141,7 +170,7 @@ set_new_size_r (set_pool_t *set_pool, int size)
 }
 
 set_t *
-set_new_size (int size)
+set_new_size (unsigned size)
 {
 	return set_new_size_r (&static_set_pool, size);
 }
@@ -151,7 +180,7 @@ _set_add (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		set_expand (set, x + 1);
-	set->map[x / SET_BITS] |= SET_ONE << (x % SET_BITS);
+	SET_ADD(set, x);
 }
 
 static inline void
@@ -159,7 +188,60 @@ _set_remove (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return;
-	set->map[x / SET_BITS] &= ~(SET_ONE << (x % SET_BITS));
+	SET_REMOVE(set, x);
+}
+
+static inline void
+_set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count) {
+		return;
+	}
+	if (start + count > set->size) {
+		set_expand (set, start + count);
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] |= start_mask & end_mask;
+	} else {
+		set->map[start_ind] |= start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = ~SET_ZERO;
+		}
+		set->map[end_ind] |= end_mask;
+	}
+}
+
+static inline void
+_set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (!count) {
+		return;
+	}
+	if (start >= set->size) {
+		return;
+	}
+	if (start + count > set->size) {
+		count = set->size - start;
+	}
+	unsigned    end = start + count - 1;
+	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
+	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	unsigned    start_ind = start / SET_BITS;
+	unsigned    end_ind = end / SET_BITS;
+	if (start_ind == end_ind) {
+		set->map[start_ind] &= ~(start_mask & end_mask);
+	} else {
+		set->map[start_ind] &= ~start_mask;
+		for (unsigned i = start_ind + 1; i < end_ind; i++) {
+			set->map[i] = SET_ZERO;
+		}
+		set->map[end_ind] &= ~end_mask;
+	}
 }
 
 set_t *
@@ -173,12 +255,32 @@ set_add (set_t *set, unsigned x)
 }
 
 set_t *
+set_add_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_remove_range (set, start, count);
+	else
+		_set_add_range (set, start, count);
+	return set;
+}
+
+set_t *
 set_remove (set_t *set, unsigned x)
 {
 	if (set->inverted)
 		_set_add (set, x);
 	else
 		_set_remove (set, x);
+	return set;
+}
+
+set_t *
+set_remove_range (set_t *set, unsigned start, unsigned count)
+{
+	if (set->inverted)
+		_set_add_range (set, start, count);
+	else
+		_set_remove_range (set, start, count);
 	return set;
 }
 
@@ -205,13 +307,14 @@ _set_union (set_t *dst, const set_t *src)
 static set_t *
 _set_intersection (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	for (i = 0; i < words; i++)
 		dst->map[i] &= src->map[i];
+	// if dst is larger than src, then none of the excess elements in dst
+	// can be in the intersection
 	for ( ; i < SET_WORDS (dst); i++)
 		dst->map[i] = 0;
 	return dst;
@@ -220,26 +323,37 @@ _set_intersection (set_t *dst, const set_t *src)
 static set_t *
 _set_difference (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	for (i = 0; i < words; i++)
 		dst->map[i] &= ~src->map[i];
+	// if src is larger than dst, excess elements in src cannot be in dst thus
+	// there is nothing to remove
+	// if dst is larger than src, there is nothing to remove regardless of what
+	// is in src
 	return dst;
 }
 
 static set_t *
 _set_reverse_difference (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	set_expand (dst, src->size);
+	for (i = 0; i < words; i++)
 		dst->map[i] = ~dst->map[i] & src->map[i];
+	// if src is larger than dst, then dst cannot remove the excess elements
+	// from src and thus the src elements must be copied
+	for ( ; i < SET_WORDS (src); i++)
+		dst->map[i] = src->map[i];
+	// if dst is larger than src, then the excess elements in dst must be
+	// removed
+	for ( ; i < SET_WORDS (dst); i++)
+		dst->map[i] = 0;
 	return dst;
 }
 
@@ -250,9 +364,9 @@ set_union (set_t *dst, const set_t *src)
 		return _set_intersection (dst, src);
 	} else if (src->inverted) {
 		dst->inverted = 1;
-		return _set_difference (dst, src);
-	} else if (dst->inverted) {
 		return _set_reverse_difference (dst, src);
+	} else if (dst->inverted) {
+		return _set_difference (dst, src);
 	} else {
 		return _set_union (dst, src);
 	}
@@ -343,7 +457,7 @@ set_everything (set_t *set)
 	return set;
 }
 
-static inline int
+static inline __attribute__((pure)) int
 _set_is_empty (const set_t *set)
 {
 	unsigned    i;
@@ -370,7 +484,7 @@ set_is_everything (const set_t *set)
 	return _set_is_empty (set);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_n_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -394,7 +508,7 @@ set_test_n_n (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_n_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -419,7 +533,7 @@ set_test_n_i (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_i_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -444,7 +558,7 @@ set_test_i_n (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_i_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -470,7 +584,7 @@ set_test_i_i (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test (const set_t *s1, const set_t *s2)
 {
 	if (s1->inverted && s2->inverted)
@@ -540,7 +654,7 @@ _set_is_member (const set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return 0;
-	return (set->map[x / SET_BITS] & (SET_ONE << (x % SET_BITS))) != 0;
+	return SET_TEST_MEMBER(set, x) != 0;
 }
 
 int
@@ -552,14 +666,33 @@ set_is_member (const set_t *set, unsigned x)
 }
 
 unsigned
-set_size (const set_t *set)
+set_count (const set_t *set)
 {
+	static byte bit_counts[] = {
+		0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
+	};
 	unsigned    count = 0;
-	unsigned    i;
+	byte       *b = (byte *) set->map;
+	unsigned    i = SET_WORDS (set) * sizeof (set_bits_t);
 
-	for (i = 0; i < set->size; i++)
-		if (_set_is_member (set, i))
-			count++;
+	while (i-- > 0) {
+		count += bit_counts[*b++];
+	}
 	return count;
 }
 
@@ -607,33 +740,102 @@ set_next (set_iter_t *set_iter)
 	return set_next_r (&static_set_pool, set_iter);
 }
 
+set_iter_t *
+set_while_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	unsigned    x;
+
+	if (_set_is_member (set_iter->set, set_iter->element)) {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (!_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	} else {
+		for (x = set_iter->element + 1; x < set_iter->set->size; x++) {
+			if (_set_is_member (set_iter->set, x)) {
+				set_iter->element = x;
+				return set_iter;
+			}
+		}
+	}
+	delete_setiter (set_pool, set_iter);
+	return 0;
+}
+
+set_iter_t *
+set_while (set_iter_t *set_iter)
+{
+	return set_while_r (&static_set_pool, set_iter);
+}
+
+const char *
+set_to_dstring_r (set_pool_t *set_pool, dstring_t *str, const set_t *set)
+{
+	set_iter_t *iter;
+	int         first = 1;
+
+	if (set_is_empty (set)) {
+		dstring_appendstr (str, "{}");
+		return str->str;
+	}
+	if (set_is_everything (set)) {
+		dstring_appendstr (str, "{...}");
+		return str->str;
+	}
+	dstring_appendstr (str, "{");
+	if (set->inverted) {
+		unsigned    start = 0;
+
+		for (iter = set_first_r (set_pool, set); iter;
+			 iter = set_next_r (set_pool, iter)) {
+			unsigned    end = iter->element;
+			while (start < end) {
+				dasprintf (str, "%s%d", first ? "" : " ", start++);
+				first = 0;
+			}
+			start = end + 1;
+		}
+		dasprintf (str, "%s%d ...", first ? "" : " ", start);
+	} else {
+		for (iter = set_first_r (set_pool, set); iter;
+			 iter = set_next_r (set_pool, iter)) {
+			dasprintf (str, "%s%d", first ? "" : " ", iter->element);
+			first = 0;
+		}
+	}
+	dstring_appendstr (str, "}");
+	return str->str;
+}
+
+const char *
+set_to_dstring (dstring_t *str, const set_t *set)
+{
+	return set_to_dstring_r (&static_set_pool, str, set);
+}
+
 const char *
 set_as_string (const set_t *set)
 {
 	static dstring_t *str;
-	unsigned    i;
 
-	if (!str)
+	if (!str) {
 		str = dstring_new ();
-	if (set_is_empty (set)) {
-		dstring_copystr (str, "{}");
-		return str->str;
 	}
-	if (set_is_everything (set)) {
-		dstring_copystr (str, "{...}");
-		return str->str;
-	}
-	dstring_copystr (str, "{");
-	for (i = 0; i < set->size; i++) {
-		if (set_is_member (set, i)) {
-			if (str->str[1])
-				dasprintf (str, " %d", i);
-			else
-				dasprintf (str, "%d", i);
-		}
-	}
-	if (set->inverted)
-		dasprintf (str, "%s%d ...", str->str[1] ? " " : "", i);
-	dstring_appendstr (str, "}");
-	return str->str;
+	dstring_clearstr (str);
+	return set_to_dstring_r (&static_set_pool, str, set);
+}
+
+static void
+set_shutdown (void *data)
+{
+	ALLOC_FREE_BLOCKS (static_set_pool.set);
+	ALLOC_FREE_BLOCKS (static_set_pool.set_iter);
+}
+
+static void __attribute__((constructor))
+set_init (void)
+{
+	Sys_RegisterShutdown (set_shutdown, 0);
 }

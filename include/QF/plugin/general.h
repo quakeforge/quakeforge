@@ -25,28 +25,21 @@
 
 */
 
-#ifndef __QF_plugin_general_h_
-#define __QF_plugin_general_h_
+#ifndef __QF_plugin_general_h
+#define __QF_plugin_general_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
-/*
-	All plugins, of all types, must export these functions
-*/
-
-typedef void (*P_Init) (void);
-typedef void (*P_Shutdown) (void);
-
 typedef struct general_funcs_s {
-	P_Init		p_Init;
-	P_Shutdown	p_Shutdown;
+	void      (*init) (void);
+	void      (*shutdown) (void);
 } general_funcs_t;
 
 #define PIF_GLOBAL 1
 
 typedef struct general_data_s {
-	int flag;
+	int         flag;
 } general_data_t;
 
-#endif // __QF_plugin_general_h_
+#endif // __QF_plugin_general_h

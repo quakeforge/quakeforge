@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "QF/bspfile.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/mathlib.h"
 #include "QF/pcx.h"
 #include "QF/png.h"
@@ -73,8 +74,8 @@ Thanks fly to Id for a hackable game! :)
 
 /* MW */
 typedef struct edge_extra_t {
-	long        num_face_ref;
-	long        ref_faces[MAX_REF_FACES];	// which faces are referenced
+	uint32_t    num_face_ref;
+	uint32_t    ref_faces[MAX_REF_FACES];	// which faces are referenced
 	dvertex_t   ref_faces_normal[MAX_REF_FACES];	// normal of referenced
 													// faces
 	int         ref_faces_area[MAX_REF_FACES];	// area of the referenced faces
@@ -531,7 +532,7 @@ create_image (long width, long height)
 static image_t *
 render_map (bsp_t *bsp)
 {
-	long        i = 0, j = 0, k = 0, x = 0;
+	uint32_t    j = 0, k = 0, x = 0;
 
 	dvertex_t  *vertexlist, *vert1, *vert2;
 	dedge_t    *edgelist;
@@ -563,18 +564,18 @@ render_map (bsp_t *bsp)
 		edge_extra = malloc (sizeof (struct edge_extra_t) * bsp->numedges);
 		if (edge_extra == NULL) {
 			fprintf (stderr, "Error allocating %ld bytes for extra edge info.",
-					 (long) sizeof (struct edge_extra_t) * bsp->numedges);
+					 (long) (sizeof (struct edge_extra_t) * bsp->numedges));
 			exit (2);
 		}
 		/* initialize the array */
-		for (i = 0; i < bsp->numedges; i++) {
+		for (unsigned i = 0; i < bsp->numedges; i++) {
 			edge_extra[i].num_face_ref = 0;
-			for (j = 0; j < MAX_REF_FACES; j++) {
+			for (int j = 0; j < MAX_REF_FACES; j++) {
 				edge_extra[i].ref_faces[j] = -1;
 			}
 		}
 
-		for (i = 0; i < bsp->numfaces; i++) {
+		for (unsigned i = 0; i < bsp->numfaces; i++) {
 			/* calculate the normal (cross product) */
 			/* starting edge: edgelist[ledges[facelist[i].firstedge]] */
 			/* number of edges: facelist[i].numedges; */
@@ -647,7 +648,7 @@ render_map (bsp_t *bsp)
 
 	printf ("Collecting min/max\n");
 	/* Collect min and max */
-	for (i = 0; i < bsp->numvertexes; i++) {
+	for (unsigned i = 0; i < bsp->numvertexes; i++) {
 
 		/* Ugly hack - flip stuff around for different camera angles */
 		switch (options.camera_axis) {
@@ -672,14 +673,14 @@ render_map (bsp_t *bsp)
 				vertexlist[i].X = -vertexlist[i].X;
 				tempf = vertexlist[i].Z;
 				vertexlist[i].Z = vertexlist[i].Y;
-				vertexlist[i].Y = tempf;;
+				vertexlist[i].Y = tempf;
 				break;
 
 			case 2:					/* +Y -- (-x <--> +x; +y out of screen,
 										   +z up) */
 				tempf = vertexlist[i].Z;
 				vertexlist[i].Z = -vertexlist[i].Y;
-				vertexlist[i].Y = tempf;;
+				vertexlist[i].Y = tempf;
 				break;
 
 			case -3:					/* -Z -- negate X and Z (ie. 180 rotate
@@ -788,7 +789,7 @@ render_map (bsp_t *bsp)
 	fprintf (stderr, "Plotting edges...");
 	k = 0;
 	drawcol = (options.edgeremove) ? 64 : 32;
-	for (i = 0; i < bsp->numedges; i++) {
+	for (unsigned i = 0; i < bsp->numedges; i++) {
 		/* Do a check on this line ... see if we keep this line or not */
 
 		/* run through all referenced faces */
@@ -820,7 +821,7 @@ render_map (bsp_t *bsp)
 		vert1 = &vertexlist[edgelist[i].v[0]];
 		vert2 = &vertexlist[edgelist[i].v[1]];
 		SUB (*vert1, *vert2, vect);
-		if (abs (tempf) < options.flat_threshold
+		if (fabsf (tempf) < options.flat_threshold
 			&& usearea > options.area_threshold
 			&& sqrt (DOT (vect, vect)) > options.linelen_threshold) {
 			float       offs0, offs1;
@@ -840,15 +841,15 @@ render_map (bsp_t *bsp)
 		}
 
 	}
-	printf ("%d edges plotted", bsp->numedges);
+	printf ("%zd edges plotted", bsp->numedges);
 	if (options.edgeremove) {
-		printf (" (%ld edges removed)\n", k);
+		printf (" (%u edges removed)\n", k);
 	} else {
 		printf ("\n");
 	}
 
 	/* Little gradient */
-	for (i = 0; i <= 255; i++) {
+	for (unsigned i = 0; i <= 255; i++) {
 		// across from top left
 		plotpoint (image, i, 0, 255 - i);
 		// down from top left
@@ -872,8 +873,8 @@ render_map (bsp_t *bsp)
 
 	/* Negate image if necessary */
 	if (options.negative_image) {
-		for (i = 0; i < image->height; i++) {
-			for (j = 0; j < image->width; j++) {
+		for (int i = 0; i < image->height; i++) {
+			for (int j = 0; j < image->width; j++) {
 				image->image[i * image->width + j] =
 					255 - image->image[i * image->width + j];
 			}
@@ -888,17 +889,29 @@ render_map (bsp_t *bsp)
 static void
 write_png (image_t *image)
 {
-	byte       *data, *in, *out, b;
+	byte       *in, *out, b;
 	int         size = image->width * image->height;
+	tex_t       tex = {
+		.width = image->width,
+		.height = image->height,
+		.format = tex_rgb,
+		.loaded = 1,
+		.data = malloc (size * 3),
+	};
 
-	out = data = malloc (size * 3);
+	out = tex.data;
 	for (in = image->image; in - image->image < size; in++) {
 		b = *in;
 		*out++ = b;
 		*out++ = b;
 		*out++ = b;
 	}
-	WritePNG (options.outf_name, data, image->width, image->height);
+	QFile      *file = Qopen (options.outf_name, "wb");
+	if (file) {
+		WritePNG (file, &tex);
+		Qclose (file);
+	}
+	free (tex.data);
 }
 
 static void
@@ -925,7 +938,7 @@ write_pcx (image_t *image)
 
 	Sys_Init ();
 
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 	pcx = EncodePCX (image->image, image->width, image->height,
 					 image->width, palette, false, &pcx_len);
 	if (Qwrite (outfile, pcx, pcx_len) != pcx_len) {

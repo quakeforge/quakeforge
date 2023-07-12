@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _DRAW_H
-#define _DRAW_H
+#ifndef __QF_draw_h
+#define __QF_draw_h
 
 /** \defgroup video Video Sub-sytem */
 
@@ -37,9 +37,32 @@
 /** \defgroup video_renderer_draw Generic draw functions
 	\ingroup video_renderer
 */
-//@{
+///@{
 
 #include "QF/wad.h"
+
+/** Buffer for drawing text using quake conchars or the default 8x8 font.
+
+	Characters are stored with the first character in the upper left, scanning
+	horizontally to the right.
+*/
+typedef struct draw_charbuffer_s {
+	int         width;		///< width in character cells
+	int         height;		///< height in character cells
+	char       *chars;		///< width * height characters
+	int         cursx;		///< horizontal cursor position
+	int         cursy;		///< vertical cursor position
+} draw_charbuffer_t;
+
+draw_charbuffer_t *Draw_CreateBuffer (int width, int height);
+void Draw_DestroyBuffer (draw_charbuffer_t *buffer);
+void Draw_ClearBuffer (draw_charbuffer_t *buffer);
+void Draw_ScrollBuffer (draw_charbuffer_t *buffer, int lines);
+void Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer);
+int Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str);
+
+void Draw_SetScale (int scale);
+int Draw_MaxScale (void) __attribute__((pure));
 
 extern byte *draw_chars;
 
@@ -144,6 +167,17 @@ void Draw_TileClear (int x, int y, int w, int h);
 */
 void Draw_Fill (int x, int y, int w, int h, int c);
 
+/** Clear a line with a solid color.
+	\param x0	horizontal position of the line start point
+	\param y0	horizontal position of the line start point
+	\param x1	horizontal position of the line end point
+	\param y1	horizontal position of the line end point
+	\param c	8 bit color index.
+
+	The color comes from the quake palette.
+*/
+void Draw_Line (int x0, int y0, int x1, int y1, int c);
+
 /** Draw a text box on the screen
 	\param x	horizontal location of the upper left corner of the box
 	\param y	vertical location of the upper left corner of the box
@@ -160,19 +194,19 @@ void Draw_FadeScreen (void);
 /** Shift the screen colors.
 */
 void Draw_BlendScreen (quat_t color);
-//@}
+///@}
 
 /** \defgroup video_renderer_draw_qpic QPic functions
 	\ingroup video_renderer_draw
 */
-//@{
+///@{
 /** Load a qpic from the filesystem.
 	\param path	path of the file within the quake filesystem
 	\param alpha transparency level of the pic.
 	\return		pointer qpic data.
 	\note		Up to MAX_CACHED_PICS qpics can be loaded at a time this way
 */
-qpic_t *Draw_CachePic (const char *path, qboolean alpha);
+qpic_t *Draw_CachePic (const char *path, bool alpha);
 
 /** Remove a qpic from the qpic cache.
 
@@ -211,6 +245,15 @@ qpic_t *Draw_PicFromWad (const char *name);
 */
 void Draw_Pic (int x, int y, qpic_t *pic);
 
+/** Draw a qpic to the screen, scaled to fit the given width and height
+	\param x	horizontal location of the upper left corner of the qpic
+	\param y	vertical location of the upper left corner of the qpic
+	\param width horizontal size of the output pic
+	\param height vertical size of the output pic
+	\param pic	qpic to draw
+*/
+void Draw_FitPic (int x, int y, int width, int height, qpic_t *pic);
+
 /** Draw a qpic to the screen
 	\param x	horizontal location of the upper left corner of the qpic
 	\param y	vertical location of the upper left corner of the qpic
@@ -232,6 +275,11 @@ void Draw_Picf (float x, float y, qpic_t *pic);
 	\param height vertical size of the sub-region to be drawn
 */
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-//@}
 
-#endif // _DRAW_H
+struct font_s;
+int Draw_AddFont (struct font_s *font);
+void Draw_Glyph (int x, int y, int fontid, int glyphid, int c);
+
+///@}
+
+#endif//__QF_draw_h

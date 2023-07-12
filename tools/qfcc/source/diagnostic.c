@@ -33,20 +33,25 @@
 
 #include <QF/dstring.h>
 
-#include "qfcc.h"
-#include "class.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "strpool.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
+
+diagnostic_hook bug_hook;
+diagnostic_hook error_hook;
+diagnostic_hook warning_hook;
+diagnostic_hook notice_hook;
 
 static void
-report_function (expr_t *e)
+report_function (const expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
-	static string_t last_file;
-	string_t    file = pr.source_file;
+	static pr_string_t last_file;
+	pr_string_t file = pr.source_file;
 	srcline_t  *srcline;
 
 	if (e)
@@ -72,75 +77,137 @@ report_function (expr_t *e)
 	last_func = current_func;
 }
 
-static void
-_warning (expr_t *e, const char *fmt, va_list args)
+void
+print_srcline (int rep, const expr_t *e)
 {
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	int         line = pr.source_line;
-
-	report_function (e);
-	if (options.warnings.promote) {
-		options.warnings.promote = 0;	// want to do this only once
-		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
-		pr.error_count++;
+	if (e) {
+		file = e->file;
+		line = e->line;
 	}
+	if (rep) {
+		report_function (e);
+	}
+	printf ("%s:%d\n", GETSTR (file), line);
+}
+
+static __attribute__((format(PRINTF, 4, 0))) void
+format_message (dstring_t *message, const char *msg_type, const expr_t *e,
+				const char *fmt, va_list args)
+{
+	pr_string_t file = pr.source_file;
+	int         line = pr.source_line;
+	const char *colon = fmt ? ": " : "";
 
 	if (e) {
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: warning: ", GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
+	dsprintf (message, "%s:%d: %s%s", GETSTR (file), line, msg_type, colon);
+	if (fmt) {
+		davsprintf (message, fmt, args);
+	}
+}
+
+static __attribute__((format(PRINTF, 4, 0))) void
+__warning (expr_t *e, const char *file, int line,
+		   const char *fmt, va_list args)
+{
+	static int  promoted = 0;
+	dstring_t  *message = dstring_new ();
+
+	report_function (e);
+	if (options.warnings.promote) {
+		if (!promoted) {
+			promoted = 1;	// want to do this only once
+			fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		}
+		pr.error_count++;
+		format_message (message, "error", e, fmt, args);
+	} else {
+		format_message (message, "warning", e, fmt, args);
+	}
+
+	if (options.verbosity > 0) {
+		dasprintf (message, " (%s:%d)", file, line);
+	}
+	if (warning_hook) {
+		warning_hook (message->str);
+	} else {
+		fprintf (stderr, "%s\n", message->str);
+	}
+	dstring_delete (message);
 }
 
 void
-debug (expr_t *e, const char *fmt, ...)
+_debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (options.verbosity < 1)
+	if (options.verbosity < 2)
 		return;
 
+	report_function (e);
 	va_start (args, fmt);
 	{
-		string_t    file = pr.source_file;
-		int         line = pr.source_line;
+		dstring_t  *message = dstring_new ();
 
-		report_function (e);
-		if (e) {
-			file = e->file;
-			line = e->line;
-		}
-		fprintf (stderr, "%s:%d: debug: ", GETSTR (file), line);
-		vfprintf (stderr, fmt, args);
-		fputs ("\n", stderr);
+		format_message (message, "debug", e, fmt, args);
+		dasprintf (message, " (%s:%d)", file, line);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
 	}
 	va_end (args);
 }
 
-void
-bug (expr_t *e, const char *fmt, ...)
+static __attribute__((noreturn, format(PRINTF, 4, 0))) void
+__internal_error (const expr_t *e, const char *file, int line,
+				  const char *fmt, va_list args)
 {
-	va_list     args;
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	va_start (args, fmt);
+	dstring_t  *message = dstring_new ();
 
 	report_function (e);
-	if (e) {
-		file = e->file;
-		line = e->line;
+
+	format_message (message, "internal error", e, fmt, args);
+	dasprintf (message, " (%s:%d)", file, line);
+	fprintf (stderr, "%s\n", message->str);
+	dstring_delete (message);
+	abort ();
+}
+
+void
+_bug (expr_t *e, const char *file, int line, const char *fmt, ...)
+{
+	va_list     args;
+
+	if (options.bug.silent)
+		return;
+
+	va_start (args, fmt);
+	if (options.bug.promote) {
+		__internal_error (e, file, line, fmt, args);
 	}
-	fprintf (stderr, "%s:%d: BUG: ", GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
+
+	{
+		dstring_t  *message = dstring_new ();
+
+		report_function (e);
+
+		format_message (message, "BUG", e, fmt, args);
+		dasprintf (message, " (%s:%d)", file, line);
+		if (bug_hook) {
+			bug_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
+		dstring_delete (message);
+	}
 	va_end (args);
 }
 
 expr_t *
-notice (expr_t *e, const char *fmt, ...)
+_notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -149,73 +216,73 @@ notice (expr_t *e, const char *fmt, ...)
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
-		_warning (e, fmt, args);
+		__warning (e, file, line, fmt, args);
 	} else {
-		string_t    file = pr.source_file;
-		int         line = pr.source_line;
+		dstring_t  *message = dstring_new ();
 
 		report_function (e);
-		if (e) {
-			file = e->file;
-			line = e->line;
+
+		format_message (message, "notice", e, fmt, args);
+		if (options.verbosity > 0) {
+			dasprintf (message, " (%s:%d)", file, line);
 		}
-		fprintf (stderr, "%s:%d: notice: ", GETSTR (file), line);
-		vfprintf (stderr, fmt, args);
-		fputs ("\n", stderr);
+		if (notice_hook) {
+			notice_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
+		dstring_delete (message);
 	}
 	va_end (args);
 	return e;
 }
 
 expr_t *
-warning (expr_t *e, const char *fmt, ...)
+_warning (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
-	_warning (e, fmt, args);
+	__warning (e, file, line, fmt, args);
 	va_end (args);
 	return e;
-}
-
-static void
-_error (expr_t *e, const char *err, const char *fmt, va_list args)
-{
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	report_function (e);
-
-	if (e) {
-		file = e->file;
-		line = e->line;
-	}
-	fprintf (stderr, "%s:%d: %s%s", GETSTR (file), line, err,
-			 fmt ? ": " : "");
-	if (fmt)
-		vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
-	pr.error_count++;
 }
 
 void
-internal_error (expr_t *e, const char *fmt, ...)
+_internal_error (const expr_t *e, const char *file, int line,
+				 const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
-	_error (e, "internal error", fmt, args);
+	__internal_error (e, file, line, fmt, args);
 	va_end (args);
-	abort ();
 }
 
 expr_t *
-error (expr_t *e, const char *fmt, ...)
+_error (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
+	pr.error_count++;
+
+	report_function (e);
+
 	va_start (args, fmt);
-	_error (e, "error", fmt, args);
+	{
+		dstring_t  *message = dstring_new ();
+
+		format_message (message, "error", e, fmt, args);
+		if (options.verbosity > 0) {
+			dasprintf (message, " (%s:%d)", file, line);
+		}
+		if (error_hook) {
+			error_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
+		dstring_delete (message);
+	}
 	va_end (args);
 
 	if (!e)

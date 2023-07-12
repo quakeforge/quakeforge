@@ -31,7 +31,7 @@
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 
-#include "trilib.h"
+#include "tools/qfmodelgen/include/trilib.h"
 
 // on disk representation of a face
 
@@ -74,16 +74,17 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 {
 	QFile       *input;
 	char        name[256], tex[256];
-	float       start, exitpattern, t;
+	float       start, exitpattern;
 	int         count, iLevel, magic, i;
 	tf_triangle	tri;
 	triangle_t	*ptri;
 
-	t = -FLOAT_START;
-	*((unsigned char *) &exitpattern + 0) = *((unsigned char *) &t + 3);
-	*((unsigned char *) &exitpattern + 1) = *((unsigned char *) &t + 2);
-	*((unsigned char *) &exitpattern + 2) = *((unsigned char *) &t + 1);
-	*((unsigned char *) &exitpattern + 3) = *((unsigned char *) &t + 0);
+	// FIXME not sure if this should be BigFloat or FloatSwap
+	exitpattern = BigFloat (FLOAT_END);
+	//*((unsigned char *) &exitpattern + 0) = *((unsigned char *) &t + 3);
+	//*((unsigned char *) &exitpattern + 1) = *((unsigned char *) &t + 2);
+	//*((unsigned char *) &exitpattern + 2) = *((unsigned char *) &t + 1);
+	//*((unsigned char *) &exitpattern + 3) = *((unsigned char *) &t + 0);
 
 	if ((input = Qopen(filename, "rb")) == 0) {
 		fprintf (stderr,"reader: could not open file '%s'\n", filename);

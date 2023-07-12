@@ -56,7 +56,7 @@ struct info_s {
 
 	Searches for key in the "client-needed" info string list
 */
-VISIBLE qboolean
+VISIBLE bool
 Info_FilterForKey (const char *key, const char **filter_list)
 {
 	const char  **s;
@@ -224,11 +224,11 @@ VISIBLE info_t *
 Info_ParseString (const char *s, int maxsize, int flags)
 {
 	info_t     *info;
-	char       *string = Hunk_TempAlloc (strlen (s) + 1);
+	char       *string = Hunk_TempAlloc (0, strlen (s) + 1);
 	char       *key, *value, *end;
 
 	info = malloc (sizeof (info_t));
-	info->tab = Hash_NewTable (61, info_get_key, free_key, 0);
+	info->tab = Hash_NewTable (61, info_get_key, free_key, 0, 0);
 	info->maxsize = maxsize;
 	info->cursize = 0;
 
@@ -271,7 +271,7 @@ Info_MakeString (info_t *info, int (*filter) (const char *))
 	info_key_t **key_list;
 	info_key_t **key;
 
-	d = string = Hunk_TempAlloc (info->cursize + 1);
+	d = string = Hunk_TempAlloc (0, info->cursize + 1);
 	key_list = (info_key_t **) Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {

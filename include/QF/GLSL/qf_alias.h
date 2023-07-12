@@ -39,7 +39,8 @@ typedef struct aliasvrt_s {
 } aliasvrt_t;
 
 void glsl_R_InitAlias (void);
-void glsl_R_DrawAlias (void);
+struct entity_s;
+void glsl_R_DrawAlias (struct entity_s ent);
 void glsl_R_AliasBegin (void);
 void glsl_R_AliasEnd (void);
 

@@ -1,0 +1,131 @@
+#lib_LTLIBRARIES +=
+
+noinst_LTLIBRARIES += @VID_TARGETS@ @vid_libs@
+
+EXTRA_LTLIBRARIES += \
+	libs/video/targets/libQFfbdev.la \
+	libs/video/targets/libQFsvga.la \
+	libs/video/targets/libQFx11.la \
+	libs/video/targets/libQFsdl.la \
+	libs/video/targets/libQFwin.la \
+	libs/video/targets/libvid_common.la \
+	libs/video/targets/libvid_sdl.la \
+	libs/video/targets/libvid_svga.la \
+	libs/video/targets/libvid_win.la \
+	libs/video/targets/libvid_x11.la
+
+win_gl_src = libs/video/targets/vid_win_gl.c
+win_sw_src = libs/video/targets/vid_win_sw.c
+win_vulkan_src = libs/video/targets/vid_win_vulkan.c
+if WIN_VULKAN
+win_src = $(win_gl_src) $(win_sw_src) $(win_vulkan_src)
+else
+win_src = $(win_gl_src) $(win_sw_src)
+endif
+
+x11_gl_src = libs/video/targets/vid_x11_gl.c
+x11_sw_src = libs/video/targets/vid_x11_sw.c
+x11_vulkan_src = libs/video/targets/vid_x11_vulkan.c
+if X11_VULKAN
+x11_src = $(x11_gl_src) $(x11_sw_src) $(x11_vulkan_src)
+else
+x11_src = $(x11_gl_src) $(x11_sw_src)
+endif
+
+js_libs = libs/util/libQFutil.la
+
+libs_video_targets_libvid_common_la_SOURCES = \
+	libs/video/targets/vid.c
+libs_video_targets_libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
+libs_video_targets_libvid_common_la_LDFLAGS=	@STATIC@
+
+libs_video_targets_libvid_x11_la_SOURCES = \
+	libs/video/targets/in_x11.c \
+	libs/video/targets/context_x11.c \
+	libs/video/targets/dga_check.c \
+	$(x11_src)
+libs_video_targets_libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_x11_la_LDFLAGS=		@STATIC@
+EXTRA_libs_video_targets_libvid_x11_la_SOURCES= $(x11_vulkan_src)
+
+libs_video_targets_libvid_win_la_SOURCES = \
+	libs/video/targets/in_win.c \
+	libs/video/targets/context_win.c \
+	$(win_src)
+libs_video_targets_libvid_win_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_win_la_LDFLAGS=		@STATIC@
+EXTRA_libs_video_targets_libvid_win_la_SOURCES= $(win_vulkan_src)
+
+libs_video_targets_libvid_svga_la_SOURCES=		libs/video/targets/in_svgalib.c
+libs_video_targets_libvid_svga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
+libs_video_targets_libvid_svga_la_LDFLAGS=		@STATIC@
+
+libs_video_targets_libvid_sdl_la_SOURCES =	\
+	libs/video/targets/in_sdl.c \
+	libs/video/targets/context_sdl.c \
+	libs/video/targets/vid_sdl_gl.c \
+	libs/video/targets/vid_sdl_sw.c
+libs_video_targets_libvid_sdl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
+libs_video_targets_libvid_sdl_la_LDFLAGS=		@STATIC@
+
+#
+# Linux FBdev
+#
+fbdev_c= libs/video/targets/fbset_modes_y.c libs/video/targets/fbset_modes_l.c
+fbdev_h= libs/video/targets/fbset_modes_y.h
+BUILT_SOURCES += $(fbdev_c) $(fbdev_h)
+
+fbdev_libs=libs/video/targets/libvid_common.la
+libs_video_targets_libQFfbdev_la_CFLAGS=		@PREFER_NON_PIC@
+libs_video_targets_libQFfbdev_la_SOURCES = \
+	libs/video/targets/fbset.c \
+	libs/video/targets/fbset_modes_y.y \
+	libs/video/targets/fbset_modes_l.l \
+	libs/video/targets/in_fbdev.c \
+	libs/video/targets/vid_fbdev.c
+libs_video_targets_libQFfbdev_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFfbdev_la_LIBADD=		$(fbdev_libs)
+libs_video_targets_libQFfbdev_la_DEPENDENCIES=	$(fbdev_libs)
+
+
+#
+# Simple DirectMedia Library
+#
+sdl_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_sdl.la
+libs_video_targets_libQFsdl_la_CFLAGS=			@PREFER_NON_PIC@ $(SDL_CFLAGS)
+libs_video_targets_libQFsdl_la_SOURCES=		libs/video/targets/vid_sdl.c
+libs_video_targets_libQFsdl_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFsdl_la_LIBADD=			$(sdl_libs)
+libs_video_targets_libQFsdl_la_DEPENDENCIES=	$(sdl_libs)
+
+#
+# SVGAlib
+#
+svga_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_svga.la
+libs_video_targets_libQFsvga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
+libs_video_targets_libQFsvga_la_SOURCES=		libs/video/targets/vid_svgalib.c
+libs_video_targets_libQFsvga_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFsvga_la_LIBADD=		$(svga_libs)
+libs_video_targets_libQFsvga_la_DEPENDENCIES=	$(svga_libs)
+
+#
+# MS Windows
+#
+win_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_win.la
+libs_video_targets_libQFwin_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
+libs_video_targets_libQFwin_la_SOURCES=		libs/video/targets/vid_win.c
+libs_video_targets_libQFwin_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFwin_la_LIBADD=			$(win_libs)
+libs_video_targets_libQFwin_la_DEPENDENCIES=	$(win_libs)
+
+#
+# X11 software rendering
+#
+x11_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_x11.la
+libs_video_targets_libQFx11_la_CFLAGS=			@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libQFx11_la_SOURCES=		libs/video/targets/vid_x11.c
+libs_video_targets_libQFx11_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFx11_la_LIBADD=			$(x11_libs)
+libs_video_targets_libQFx11_la_DEPENDENCIES=	$(x11_libs)
+
+EXTRA_DIST += $(fbdev_c) $(fbdev_h)

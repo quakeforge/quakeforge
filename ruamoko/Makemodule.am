@@ -1,0 +1,11 @@
+ruamoko_libdir = $(datarootdir)/qfcc/lib
+ruamoko_lib_LIBRARIES =
+
+include ruamoko/include/Makemodule.am
+include ruamoko/lib/Makemodule.am
+include ruamoko/game/Makemodule.am
+include ruamoko/gui/Makemodule.am
+include ruamoko/cl_menu/Makemodule.am
+include ruamoko/gatest/Makemodule.am
+include ruamoko/scheme/Makemodule.am
+include ruamoko/qwaq/Makemodule.am

@@ -36,10 +36,10 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
-#include "client.h"
-#include "host.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
-qboolean    isDedicated = false;
+bool        isDedicated = false;
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000
@@ -49,8 +49,8 @@ qboolean    isDedicated = false;
 #define PAUSE_SLEEP		50				// sleep time on pause or minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-qboolean    ActiveApp, Minimized;
-qboolean    WinNT;
+bool        ActiveApp, Minimized;
+bool        WinNT;
 
 static double pfreq;
 static int  lowshift;
@@ -104,7 +104,7 @@ startup (void)
 }
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -207,8 +207,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!isDedicated)
 		init_handles (hInstance);
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 
@@ -228,15 +227,15 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
-		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
-			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+		if (net_is_dedicated) {	// play vcrfiles at max speed
+			if (time < sys_ticrate && (!vcrFile || recording)) {
 				Sleep (1);
 				continue;			// not time to run a server-only tic yet
 			}
-			time = sys_ticrate->value;
+			time = sys_ticrate;
 		}
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

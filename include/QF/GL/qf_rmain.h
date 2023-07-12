@@ -29,18 +29,30 @@
 #define __QF_GL_rmain_h
 
 #include "QF/qtypes.h"
-#include "QF/cvar.h"
+#include "QF/simd/types.h"
 
-extern qboolean gl_envmap;
+struct cvar_s;
+struct entity_s;
+
 extern int c_brush_polys, c_alias_polys;
-extern float r_world_matrix[16];
 
 extern float gl_modelalpha;
 //extern vec3_t shadecolor;
 
-extern void gl_multitexture_f (cvar_t *var);
+extern void gl_multitexture_f (void *data, const struct cvar_s *var);
 
 void glrmain_init (void);
-void R_RotateForEntity (struct entity_s *e);
+void gl_R_RotateForEntity (const vec4f_t *mat);
+
+struct model_s;
+struct entqueue_s;
+struct scene_s;
+void gl_R_NewScene (struct scene_s *scene);
+void gl_R_RenderView (void);
+void gl_R_RenderEntities (struct entqueue_s *queue);
+void gl_R_ClearState (void);
+void gl_R_ViewChanged (void);
+void gl_R_LineGraph (int x, int y, int *h_vals, int count, int height);
+void gl_R_InitGraphTextures (void);
 
 #endif // __QF_GL_rmain_h

@@ -1,0 +1,13 @@
+noinst_PROGRAMS += @AUDIO_TARGETS@
+
+EXTRA_PROGRAMS += libs/audio/test/testsound
+
+testaudio_libs= \
+	libs/audio/libQFsound.la \
+	libs/scene/libQFscene.la \
+	libs/ruamoko/libQFruamoko.la \
+	libs/util/libQFutil.la
+
+libs_audio_test_testsound_SOURCES=		libs/audio/test/testsound.c
+libs_audio_test_testsound_LDADD=		$(testaudio_libs)
+libs_audio_test_testsound_DEPENDENCIES=	$(testaudio_libs)

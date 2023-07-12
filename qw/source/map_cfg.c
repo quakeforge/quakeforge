@@ -44,7 +44,7 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 
-#include "map_cfg.h"
+#include "qw/include/map_cfg.h"
 
 void
 map_cfg (const char *mapname, int all)

@@ -1,0 +1,29 @@
+lib_LTLIBRARIES += libs/input/libQFinput.la
+noinst_LTLIBRARIES += @input_libs@
+
+input_deps = @input_libs@
+
+in_evdev_src=	\
+	libs/input/evdev/hotplug.c \
+	libs/input/evdev/inputlib.c \
+	libs/input/in_evdev.c
+
+libs_input_libinput_evdev_la_LIBADD=
+libs_input_libinput_evdev_la_DEPENDENCIES=
+libs_input_libinput_evdev_la_CFLAGS=
+libs_input_libinput_evdev_la_SOURCES=      $(in_evdev_src)
+
+libs_input_libQFinput_la_LDFLAGS=		$(lib_ldflags)
+libs_input_libQFinput_la_LIBADD=		$(input_deps)
+libs_input_libQFinput_la_DEPENDENCIES=	$(input_deps)
+libs_input_libQFinput_la_SOURCES= \
+	libs/input/in_axis.c \
+	libs/input/in_binding.c \
+	libs/input/in_button.c \
+	libs/input/in_common.c \
+	libs/input/in_event.c \
+	libs/input/in_imt.c \
+	libs/input/keys.c
+
+EXTRA_LTLIBRARIES += \
+	libs/input/libinput_evdev.la

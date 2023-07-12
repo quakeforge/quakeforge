@@ -39,58 +39,159 @@
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/screen.h"
+#include "QF/va.h"
+#include "QF/ui/canvas.h"
+#include "QF/ui/view.h"
+
+#include "client/hud.h"
+#include "client/screen.h"
 
 #include "compat.h"
-#include "cl_parse.h"
-#include "client.h"
-#include "sbar.h"
 
-cvar_t     *r_netgraph;
-cvar_t     *r_netgraph_alpha;
-cvar_t     *r_netgraph_box;
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
+#include "client/sbar.h"
 
-void
-CL_NetGraph (void)
+int cl_netgraph;
+static cvar_t cl_netgraph_cvar = {
+	.name = "cl_netgraph",
+	.description =
+		"Toggle the display of a graph showing network performance",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph },
+};
+float cl_netgraph_alpha;
+static cvar_t cl_netgraph_alpha_cvar = {
+	.name = "cl_netgraph_alpha",
+	.description =
+		"Net graph translucency",
+	.default_value = "0.5",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &cl_netgraph_alpha },
+};
+int cl_netgraph_box;
+static cvar_t cl_netgraph_box_cvar = {
+	.name = "cl_netgraph_box",
+	.description =
+		" Draw box around net graph",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph_box },
+};
+int cl_netgraph_height;
+static cvar_t cl_netgraph_height_cvar = {
+	.name = "cl_netgraph_height",
+	.description =
+		"Set the fullscale (1s) height of the graph",
+	.default_value = "32",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_netgraph_height },
+};
+
+static view_t cl_netgraph_view;
+
+static void
+cl_netgraph_f (void *data, const cvar_t *cvar)
 {
-	char        st[80];
-	int         lost, a, l, x, y, i;
+	if (View_Valid (cl_netgraph_view)) {
+		View_SetVisible (cl_netgraph_view, cl_netgraph != 0);
+	}
+}
 
-	if (!r_netgraph->int_val)
-		return;
+static void
+cl_netgraph_height_f (void *data, const cvar_t *cvar)
+{
+	cl_netgraph_height = max (32, cl_netgraph_height);
+	if (View_Valid (cl_netgraph_view)) {
+		view_pos_t  len = View_GetLen (cl_netgraph_view);
+		View_SetLen (cl_netgraph_view, len.x, cl_netgraph_height + 25);
+		View_UpdateHierarchy (cl_netgraph_view);
+	}
+}
 
-	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 16): 0;
-	y = r_data->vid->conheight - sb_lines - 24
-		- r_data->graphheight->int_val - 1;
+static void
+CL_NetGraph (view_pos_t abs, view_pos_t len)
+{
+	int         lost, a, l, x, y, i, o;
+	int         timings[NET_TIMINGS];
 
-	if (r_netgraph_box->int_val)
-		r_funcs->Draw_TextBox (x, y, NET_TIMINGS / 8,
-							   r_data->graphheight->int_val / 8 + 1,
-							   r_netgraph_alpha->value * 255);
+	if (cl_netgraph_box) {
+		r_funcs->Draw_TextBox (abs.x, abs.y, NET_TIMINGS / 8,
+							   cl_netgraph_height / 8 + 1,
+							   cl_netgraph_alpha * 255);
+	}
 
 	lost = CL_CalcNet ();
-	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 8) : 8;
-	y = r_data->vid->conheight - sb_lines - 9;
+	x = abs.x + 8;
+	y = abs.y + len.y - 9;
 
 	l = NET_TIMINGS;
-	if (l > r_data->refdef->vrect.width - 8)
-		l = r_data->refdef->vrect.width - 8;
+	if (l > len.x - 8)
+		l = len.x - 8;
 	i = cls.netchan.outgoing_sequence & NET_TIMINGSMASK;
 	a = i - l;
+	o = 0;
 	if (a < 0) {
-		r_funcs->R_LineGraph (x, y, &packet_latency[a + NET_TIMINGS], -a);
-		x -= a;
+		memcpy (timings + o, packet_latency + a + NET_TIMINGS,
+				-a * sizeof (timings[0]));
+		o -= a;
 		l += a;
 		a = 0;
 	}
-	r_funcs->R_LineGraph (x, y, &packet_latency[a], l);
+	memcpy (timings + o, packet_latency + a, l * sizeof (timings[0]));
+	r_funcs->R_LineGraph (x, y, timings,
+						  NET_TIMINGS, cl_netgraph_height);
 
-	y = r_data->vid->conheight - sb_lines - 24
-		- r_data->graphheight->int_val + 7;
-	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	if (hudswap) {
-		r_funcs->Draw_String (r_data->vid->conwidth - ((strlen (st) * 8) + 8),
-							  y, st);
-	} else {
-		r_funcs->Draw_String (8, y, st);
+	x = abs.x + 8;
+	y = abs.y + 8;
+	r_funcs->Draw_String (x, y, va (0, "%3i%% packet loss", lost));
+/*
+	//FIXME don't do every frame
+	view_move (cl_netgraph_view, cl_netgraph_view->xpos, hud_sb_lines);
+	view_setgravity (cl_netgraph_view,
+					 hud_swap ? grav_southeast : grav_southwest);
+*/
+}
+
+void
+CL_NetGraph_Init (void)
+{
+	ecs_system_t vsys = {
+		.reg = cl_canvas_sys.reg,
+		.base = cl_canvas_sys.view_base,
+	};
+	cl_netgraph_view = View_New (vsys, cl_screen_view);
+	View_SetPos (cl_netgraph_view, 0, 64);
+	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
+	View_SetGravity (cl_netgraph_view, grav_southwest);
+	void       *f = CL_NetGraph;
+	Ent_SetComponent (cl_netgraph_view.id, canvas_func,
+					  cl_netgraph_view.reg, &f);
+	View_SetVisible (cl_netgraph_view, cl_netgraph);
+}
+
+void
+CL_NetGraph_Init_Cvars (void)
+{
+	Cvar_Register (&cl_netgraph_cvar, cl_netgraph_f, 0);
+	Cvar_Register (&cl_netgraph_alpha_cvar, 0, 0);
+	Cvar_Register (&cl_netgraph_box_cvar, 0, 0);
+	Cvar_Register (&cl_netgraph_height_cvar, cl_netgraph_height_f, 0);
+}
+
+void
+CL_NetUpdate (void)
+{
+	if ((hud_ping || sbar_showscores)
+		&& realtime - cl.last_ping_request > 2) {
+		// FIXME this should be on a timer
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+
+	if (hud_pl) {
+		Sbar_UpdatePL (CL_CalcNet ());
 	}
 }

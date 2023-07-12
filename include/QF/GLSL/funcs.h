@@ -43,8 +43,7 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean EGLF_Init (void);
-qboolean EGLF_FindFunctions (void);
-void *QFEGL_ProcAddress (void *handle, const char *name, qboolean);
+bool EGLF_FindFunctions (void);
+void *QFEGL_ProcAddress (void *handle, const char *name, bool);
 
 #endif // __QF_GLSL_funcs_h_

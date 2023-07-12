@@ -35,14 +35,14 @@
 /** \defgroup nq-wins NetQuake Winsock lan driver.
 	\ingroup nq-ld
 */
-//@{
+///@{
 
 extern int winsock_initialized;
 extern WSADATA winsockdata;
 
 int  WINS_Init (void);
 void WINS_Shutdown (void);
-void WINS_Listen (qboolean state);
+void WINS_Listen (bool state);
 int  WINS_OpenSocket (int port);
 int  WINS_CloseSocket (int socket);
 int  WINS_Connect (int socket, netadr_t *addr);
@@ -54,10 +54,10 @@ const char *WINS_AddrToString (netadr_t *addr);
 int  WINS_GetSocketAddr (int socket, netadr_t *addr);
 int  WINS_GetNameFromAddr (netadr_t *addr, char *name);
 int  WINS_GetAddrFromName (const char *name, netadr_t *addr);
-int  WINS_AddrCompare (netadr_t *addr1, netadr_t *addr2);
+int  WINS_AddrCompare (netadr_t *addr1, netadr_t *addr2) __attribute__((pure));
 int  WINS_GetSocketPort (netadr_t *addr);
 int  WINS_SetSocketPort (netadr_t *addr, int port);
 
-//@}
+///@}
 
 #endif//__net_wins_h

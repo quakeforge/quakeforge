@@ -29,9 +29,11 @@
 #endif
 
 #include "QF/render.h"
+#include "QF/ui/view.h"
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 byte       *r_turb_pbase;
 byte       *r_turb_pdest;
@@ -46,14 +48,21 @@ int         r_turb_spancount;
 	the sine warp, to keep the edges from wrapping
 */
 void
-D_WarpScreen (void)
+D_WarpScreen (framebuffer_t *src)
 {
+	sw_framebuffer_t *buffer = src->buffer;
 	int         w, h;
 	int         u, v;
+	int         scr_x = vr_data.refdef->vrect.x;
+	int         scr_y = vr_data.refdef->vrect.y;
+	int         scr_w = vr_data.refdef->vrect.width;
+	int         scr_h = vr_data.refdef->vrect.height;
 	byte       *dest;
 	int        *turb;
 	int        *col;
 	byte      **row;
+	byte       *color = buffer->color;
+	int         rowbytes = buffer->rowbytes;
 
 	/* FIXME: allocate these arrays properly */
 	byte       *rowptr[MAXHEIGHT + AMP2 * 2];
@@ -63,26 +72,26 @@ D_WarpScreen (void)
 	w = r_refdef.vrect.width;
 	h = r_refdef.vrect.height;
 
-	wratio = w / (float) scr_vrect.width;
-	hratio = h / (float) scr_vrect.height;
+	wratio = w / (float) scr_w;
+	hratio = h / (float) scr_h;
 
-	for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
-		rowptr[v] = d_viewbuffer + (r_refdef.vrect.y * screenwidth) +
-			(screenwidth * (int) ((float) v * hratio * h / (h + AMP2 * 2)));
+	for (v = 0; v < scr_h + AMP2 * 2; v++) {
+		rowptr[v] = color + (0*r_refdef.vrect.y * rowbytes) +
+			(d_rowbytes * (int) ((float) v * hratio * h / (h + AMP2 * 2)));
 	}
 
-	for (u = 0; u < scr_vrect.width + AMP2 * 2; u++) {
+	for (u = 0; u < scr_w + AMP2 * 2; u++) {
 		column[u] = r_refdef.vrect.x +
 			(int) ((float) u * wratio * w / (w + AMP2 * 2));
 	}
 
 	turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-	dest = ((byte*)vid.buffer) + scr_vrect.y * vid.rowbytes + scr_vrect.x;
+	dest = d_viewbuffer + scr_y * d_rowbytes + scr_x;
 
-	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes) {
+	for (v = 0; v < scr_h; v++, dest += d_rowbytes) {
 		col = &column[turb[v]];
 		row = &rowptr[v];
-		for (u = 0; u < scr_vrect.width; u += 4) {
+		for (u = 0; u < scr_w; u += 4) {
 			dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 			dest[u + 1] = row[turb[u + 1]][col[u + 1]];
 			dest[u + 2] = row[turb[u + 2]][col[u + 2]];
@@ -136,8 +145,7 @@ Turbulent (espan_t *pspan)
 	zi16stepu = d_zistepu * 16;
 
 	do {
-		r_turb_pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) +
-												pspan->u;
+		r_turb_pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -246,7 +254,7 @@ void
 D_DrawSpans8 (espan_t *pspan)
 {
 	int         count, spancount;
-	unsigned char *pbase, *pdest;
+	byte       *pbase, *pdest;
 	fixed16_t   s, t, snext, tnext, sstep, tstep;
 	float       sdivz, tdivz, zi, z, du, dv, spancountminus1;
 	float       sdivz8stepu, tdivz8stepu, zi8stepu;
@@ -261,8 +269,7 @@ D_DrawSpans8 (espan_t *pspan)
 	zi8stepu = d_zistepu * 8;
 
 	do {
-		pdest = (unsigned char *) ((byte *) d_viewbuffer +
-								   (screenwidth * pspan->v) + pspan->u);
+		pdest = d_viewbuffer + (d_rowbytes * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -384,7 +391,7 @@ D_DrawZSpans (espan_t *pspan)
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {
-		pdest = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pdest = d_zbuffer + (d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

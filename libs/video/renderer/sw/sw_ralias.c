@@ -29,11 +29,14 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
 #include "r_internal.h"
@@ -44,13 +47,13 @@
 
 affinetridesc_t r_affinetridesc;
 
-void       *acolormap;					// FIXME: should go away
+const byte *acolormap;					// FIXME: should go away
 
 trivertx_t *r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
 static mdl_t      *pmdl;
-vec3_t      r_plightvec;
+vec3_t      r_lightvec;
 int         r_ambientlight;
 float       r_shadelight;
 static aliashdr_t *paliashdr;
@@ -59,7 +62,7 @@ auxvert_t  *pauxverts;
 float ziscale;
 static model_t *pmodel;
 
-static vec3_t alias_forward, alias_right, alias_up;
+static vec3_t alias_forward, alias_left, alias_up;
 
 static maliasskindesc_t *pskindesc;
 
@@ -80,8 +83,10 @@ static aedge_t aedges[12] = {
 	{0, 5}, {1, 4}, {2, 7}, {3, 6}
 };
 
-qboolean
-R_AliasCheckBBox (void)
+static void R_AliasSetUpTransform (entity_t ent, int trivial_accept);
+
+bool
+R_AliasCheckBBox (entity_t ent)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -89,24 +94,30 @@ R_AliasCheckBBox (void)
 	finalvert_t *pv0, *pv1, viewpts[16];
 	auxvert_t  *pa0, *pa1, viewaux[16];
 	maliasframedesc_t *pframedesc;
-	qboolean    zclipped, zfullyclipped;
+	bool        zclipped, zfullyclipped;
 	unsigned int anyclip, allclip;
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-	currententity->trivial_accept = 0;
-	pmodel = currententity->model;
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
+	visibility->trivial_accept = 0;
+
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	pmodel = renderer->model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
-	R_AliasSetUpTransform (0);
+	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
-	frame = currententity->frame;
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	frame = animation->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->name);
+		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
 		frame = 0;
 	}
 
@@ -218,11 +229,11 @@ R_AliasCheckBBox (void)
 		return false;					// trivial reject off one side
 	}
 
-	currententity->trivial_accept = !anyclip & !zclipped;
+	visibility->trivial_accept = !anyclip & !zclipped;
 
-	if (currententity->trivial_accept) {
+	if (visibility->trivial_accept) {
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
-			currententity->trivial_accept |= 2;
+			visibility->trivial_accept |= 2;
 		}
 	}
 
@@ -249,9 +260,9 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 
 	R_AliasProjectFinalVert (fv, av);
 
-	if (fv->v[0] < r_refdef.aliasvrect.x)
+	if (fv->v[0] < r_refdef.aliasvrectleft)
 		fv->flags |= ALIAS_LEFT_CLIP;
-	if (fv->v[1] < r_refdef.aliasvrect.y)
+	if (fv->v[1] < r_refdef.aliasvrecttop)
 		fv->flags |= ALIAS_TOP_CLIP;
 	if (fv->v[0] > r_refdef.aliasvrectright)
 		fv->flags |= ALIAS_RIGHT_CLIP;
@@ -348,52 +359,30 @@ R_AliasPreparePoints (void)
 	}
 }
 
-void
-R_AliasSetUpTransform (int trivial_accept)
+static void
+R_AliasSetUpTransform (entity_t ent, int trivial_accept)
 {
 	int         i;
-	float       rotationmatrix[3][4], t2matrix[3][4];
-	static float tmatrix[3][4];
-	static float viewmatrix[3][4];
+	float       rotationmatrix[3][4];
+	transform_t transform = Entity_Transform (ent);
 
-	VectorCopy (currententity->transform + 0, alias_forward);
-	VectorNegate (currententity->transform + 4, alias_right);
-	VectorCopy (currententity->transform + 8, alias_up);
-
-	tmatrix[0][0] = pmdl->scale[0];
-	tmatrix[1][1] = pmdl->scale[1];
-	tmatrix[2][2] = pmdl->scale[2];
-
-	tmatrix[0][3] = pmdl->scale_origin[0];
-	tmatrix[1][3] = pmdl->scale_origin[1];
-	tmatrix[2][3] = pmdl->scale_origin[2];
-
-// TODO: can do this with simple matrix rearrangement
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (transform, mat);
+	VectorCopy (mat[0], alias_forward);
+	VectorCopy (mat[1], alias_left);
+	VectorCopy (mat[2], alias_up);
 
 	for (i = 0; i < 3; i++) {
-		t2matrix[i][0] = alias_forward[i];
-		t2matrix[i][1] = -alias_right[i];
-		t2matrix[i][2] = alias_up[i];
+		rotationmatrix[i][0] = pmdl->scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = pmdl->scale[1] * alias_left[i];
+		rotationmatrix[i][2] = pmdl->scale[2] * alias_up[i];
+		rotationmatrix[i][3] = pmdl->scale_origin[0] * alias_forward[i]
+							 + pmdl->scale_origin[1] * alias_left[i]
+							 + pmdl->scale_origin[2] * alias_up[i]
+							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
-	t2matrix[0][3] = -modelorg[0];
-	t2matrix[1][3] = -modelorg[1];
-	t2matrix[2][3] = -modelorg[2];
-
-// FIXME: can do more efficiently than full concatenation
-	R_ConcatTransforms (t2matrix, tmatrix, rotationmatrix);
-
-// TODO: should be global, set when vright, etc., set
-	VectorCopy (vright, viewmatrix[0]);
-	VectorCopy (vup, viewmatrix[1]);
-	VectorNegate (viewmatrix[1], viewmatrix[1]);
-	VectorCopy (vpn, viewmatrix[2]);
-
-//	viewmatrix[0][3] = 0;
-//	viewmatrix[1][3] = 0;
-//	viewmatrix[2][3] = 0;
-
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (r_viewmatrix, rotationmatrix, aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -432,7 +421,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 
 	// lighting
 	plightnormal = r_avertexnormals[pverts->lightnormalindex];
-	lightcos = DotProduct (plightnormal, r_plightvec);
+	lightcos = DotProduct (plightnormal, r_lightvec);
 	temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -482,7 +471,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 		// lighting
 		plightnormal = r_avertexnormals[pverts->lightnormalindex];
-		lightcos = DotProduct (plightnormal, r_plightvec);
+		lightcos = DotProduct (plightnormal, r_lightvec);
 		temp = r_ambientlight;
 
 		if (lightcos < 0) {
@@ -538,18 +527,19 @@ R_AliasPrepareUnclippedPoints (void)
 }
 
 static void
-R_AliasSetupSkin (void)
+R_AliasSetupSkin (entity_t ent)
 {
-	int         skinnum;
-
-	skinnum = currententity->skinnum;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	int         skinnum = renderer->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}
 
-	pskindesc = R_AliasGetSkindesc (skinnum, paliashdr);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	pskindesc = R_AliasGetSkindesc (animation, skinnum, paliashdr);
 
 	a_skinwidth = pmdl->skinwidth;
 
@@ -558,27 +548,27 @@ R_AliasSetupSkin (void)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = vid.colormap8;
-	if (currententity->skin) {
+	acolormap = r_colormap;
+	if (renderer->skin) {
 		tex_t      *base;
 
-		base = currententity->skin->texels;
+		base = renderer->skin->texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
 			r_affinetridesc.skinwidth = base->width;
 			r_affinetridesc.skinheight = base->height;
 		}
-		acolormap = currententity->skin->colormap;
+		acolormap = renderer->skin->colormap;
 	}
 }
 
 
 static void
-R_AliasSetupLighting (alight_t *plighting)
+R_AliasSetupLighting (alight_t *lighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
-	r_ambientlight = plighting->ambientlight;
+	r_ambientlight = lighting->ambientlight;
 
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
@@ -588,7 +578,7 @@ R_AliasSetupLighting (alight_t *plighting)
 	if (r_ambientlight < LIGHT_MIN)
 		r_ambientlight = LIGHT_MIN;
 
-	r_shadelight = plighting->shadelight;
+	r_shadelight = lighting->shadelight;
 
 	if (r_shadelight < 0)
 		r_shadelight = 0;
@@ -596,9 +586,9 @@ R_AliasSetupLighting (alight_t *plighting)
 	r_shadelight *= VID_GRADES;
 
 	// rotate the lighting vector into the model's frame of reference
-	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
-	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
-	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
+	r_lightvec[0] = DotProduct (lighting->lightvec, alias_forward);
+	r_lightvec[1] = DotProduct (lighting->lightvec, alias_left);
+	r_lightvec[2] = DotProduct (lighting->lightvec, alias_up);
 }
 
 /*
@@ -607,31 +597,34 @@ R_AliasSetupLighting (alight_t *plighting)
 	set r_apverts
 */
 static void
-R_AliasSetupFrame (void)
+R_AliasSetupFrame (entity_t ent)
 {
 	maliasframedesc_t *frame;
 
-	frame = R_AliasGetFramedesc (currententity->frame, paliashdr);
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	frame = R_AliasGetFramedesc (animation, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
 
 void
-R_AliasDrawModel (alight_t *plighting)
+R_AliasDrawModel (entity_t ent, alight_t *lighting)
 {
 	int          size;
 	finalvert_t *finalverts;
 
 	r_amodels_drawn++;
 
-	if (!(paliashdr = currententity->model->aliashdr))
-		paliashdr = Cache_Get (&currententity->model->cache);
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	if (!(paliashdr = renderer->model->aliashdr))
+		paliashdr = Cache_Get (&renderer->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
 		+ sizeof (finalvert_t) * (pmdl->numverts + 1)
 		+ sizeof (auxvert_t) * pmdl->numverts;
-	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
+	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
 
@@ -640,16 +633,18 @@ R_AliasDrawModel (alight_t *plighting)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
-	R_AliasSetupSkin ();
-	R_AliasSetUpTransform (currententity->trivial_accept);
-	R_AliasSetupLighting (plighting);
-	R_AliasSetupFrame ();
+	R_AliasSetupSkin (ent);
+	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+												 ent.reg);
+	R_AliasSetUpTransform (ent, visibility->trivial_accept);
+	R_AliasSetupLighting (lighting);
+	R_AliasSetupFrame (ent);
 
-	r_affinetridesc.drawtype = (currententity->trivial_accept == 3) &&
-		r_recursiveaffinetriangles;
+	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
+								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
-		acolormap = vid.colormap8;
+		acolormap = r_colormap;
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...
@@ -659,16 +654,19 @@ R_AliasDrawModel (alight_t *plighting)
 #endif
 	}
 
-	if (currententity != vr_data.view_model)
+	//FIXME depth hack
+	if (ent.id != vr_data.view_model.id)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept && pmdl->ident != HEADER_MDL16)
+	if (visibility->trivial_accept && pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
-	else
+	} else {
 		R_AliasPreparePoints ();
+	}
 
-	if (!currententity->model->aliashdr)
-		Cache_Release (&currententity->model->cache);
+	if (!renderer->model->aliashdr) {
+		Cache_Release (&renderer->model->cache);
+	}
 }

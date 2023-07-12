@@ -5,5 +5,5 @@ id obj;
 integer foo (void)
 {
 	[obj message];
-	return bar () + baz ();;
+	return bar () + baz ();
 }

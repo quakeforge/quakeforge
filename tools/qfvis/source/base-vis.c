@@ -54,8 +54,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "vis.h"
-#include "options.h"
+#include "tools/qfvis/include/vis.h"
+#include "tools/qfvis/include/options.h"
 
 /*
 	This is a rough first-order aproximation that is used to trivially reject
@@ -76,7 +76,7 @@ SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
     cluster = &clusters[clusternum];
 
     for (i = 0; i < cluster->numportals; i++) {
-		portal = cluster->portals[i];
+		portal = &cluster->portals[i];
 		if (!set_is_member (thread->portalsee, portal - portals))
 			continue;
 		SimpleFlood (thread, srcportal, portal->cluster);
@@ -84,82 +84,168 @@ SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
 }
 
 static inline int
-test_sphere (sphere_t *sphere, plane_t *plane)
+test_sphere (const vspheref_t *sphere, vec4f_t plane)
 {
-	float       d;
-	int         front, back;
+#ifdef __SSE3__
+	const vec4f_t zero = {};
+	float       r = sphere->radius;
+	vec4f_t     eps = { r, r, r, r };
+	vec4f_t     d = _mm_addsub_ps (zero, dotf (sphere->center, plane));
+	vec4i_t     c = (d - eps) >= 0;
 
-	d = DotProduct (sphere->center, plane->normal) - plane->dist;
-	front = (d >= sphere->radius);
-	back = (d <= -sphere->radius);
+	c = (vec4i_t) _mm_hsub_epi32 ((__m128i) c, (__m128i) c);
+	return c[0];
+#else
+	float       d = DotProduct (sphere->center, plane) + plane[3];
+	int         front = (d >= sphere->radius);
+	int         back = (d <= -sphere->radius);
 	return front - back;
+#endif
+}
+
+static int __attribute__ ((pure))
+test_winding_front (const winding_t *winding, vec4f_t plane)
+{
+	for (unsigned i = 0; i < winding->numpoints; i++) {
+		vec4f_t     d = dotf (winding->points[i], plane);
+		if (d[0] > ON_EPSILON)
+			return 1;
+	}
+	return 0;
+}
+
+static int __attribute__ ((pure))
+test_winding_back (const winding_t *winding, vec4f_t plane)
+{
+	for (unsigned i = 0; i < winding->numpoints; i++) {
+		vec4f_t     d = dotf (winding->points[i], plane);
+		if (d[0] < -ON_EPSILON)
+			return 1;
+	}
+	return 0;
 }
 
 void
 PortalBase (basethread_t *thread, portal_t *portal)
 {
-    int			i, j, k;
-	float		d;
-    portal_t   *tp;
-    winding_t  *winding;
+	portal_t   *tp;
+	cluster_t  *cluster;
 	int         tp_side, portal_side;
 
-	i = portal - portals;
+	for (cluster = clusters; cluster < clusters + portalclusters; cluster++) {
+		int         side = test_sphere (&cluster->sphere, portal->plane);
 
-	for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
-		if (j == i)
-			continue;
-
-		// If the target portal is behind the portals's plane, then it
-		// can't possibly be seen by the portal.
-		//
-		// If the portal is in front of the target's plane, then the target
-		// is of no interest as it is facing counter to the flow of
-		// visibility.
-
-		// First check using the bounding spheres of the two portals.
-		tp_side = test_sphere (&tp->sphere, &portal->plane);
-		if (tp_side < 0) {
-			// The test portal definitely is entirely behind the portal's
-			// plane.
-			continue;	// entirely behind
-		}
-		portal_side = test_sphere (&portal->sphere, &tp->plane);
-		if (portal_side > 0) {
-			// The portal definitely is entirely in front of the test
-			// portal's plane.
-			continue;	// entirely in front
-		}
-
-		if (tp_side == 0) {
-			// The test portal's sphere touches the portal's plane, so
-			// do a more refined check.
-			winding = tp->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								portal->plane.normal) - portal->plane.dist;
-				if (d > ON_EPSILON)
-					break;
+		if (side < 0) {
+			thread->clustertest += cluster->numportals;
+			// The cluster is entirely behind the portal's plane, thus every
+			// portal in the cluster is also behind the portal's plane and
+			// cannot be seen at all.
+			thread->clustercull += cluster->numportals;
+		} else if (side > 0) {
+			// The cluster is entirely in front of the portal's plane, thus
+			// every portal in the cluster is also in front of the portal's
+			// plane and may be seen. However, as portals are one-way (ie,
+			// can see out the portal along its plane normal, but not into
+			// the portal against its plane normal), the current portal
+			// must be behind the cluster's portal, or straddle its plane,
+			// for a cluster's portal to be considered visible.
+			thread->clustertest += cluster->numportals;
+			for (int i = 0; i < cluster->numportals; i++) {
+				tp = cluster->portals + i;
+				if (tp == portal) {
+					thread->selfcull++;
+					continue;
+				}
+				thread->spheretest++;
+				portal_side = test_sphere (&portal->sphere, tp->plane);
+				if (portal_side > 0) {
+					// The portal definitely is entirely in front of the test
+					// portal's plane. (cannot see into a portal from its
+					// front side)
+					thread->spherecull++;
+				} else if (portal_side < 0) {
+					// The portal's sphere is behind the test portal's plane,
+					// so the portal itself is entirely behind the plane
+					// thus the test portal is potentially visible.
+					thread->spherepass++;
+					set_add (thread->portalsee, tp - portals);
+				} else {
+					// The portal's sphere straddle's the test portal's
+					// plane, so need to do a more refined check.
+					thread->windingtest++;
+					if (test_winding_back (portal->winding, tp->plane)) {
+						// The portal is at least partially behind the test
+						// portal's plane, so the test portal is potentially
+						// visible.
+						thread->windingpass++;
+						set_add (thread->portalsee, tp - portals);
+					} else {
+						thread->windingcull++;
+					}
+				}
 			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
-		}
+		} else {
+			thread->clustertest += cluster->numportals;
+			// The cluster's sphere straddle's the portal's plane, thus each
+			// portal in the cluster must be tested individually.
+			for (int i = 0; i < cluster->numportals; i++) {
+				tp = cluster->portals + i;
+				if (tp == portal) {
+					thread->selfcull++;
+					continue;
+				}
+				thread->spheretest++;
+				// If the target portal is behind the portals's plane, then
+				// it can't possibly be seen by the portal.
+				//
+				// If the portal is in front of the target's plane, then the
+				// target is of no interest as it is facing counter to the
+				// flow of visibility.
 
-		if (portal_side == 0) {
-			// The portal's sphere touches the test portal's plane, so
-			// do a more refined check.
-			winding = portal->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								tp->plane.normal) - tp->plane.dist;
-				if (d < -ON_EPSILON)
-					break;
+				// First check using the bounding spheres of the two portals.
+				tp_side = test_sphere (&tp->sphere, portal->plane);
+				if (tp_side < 0) {
+					// The test portal definitely is entirely behind the
+					// portal's plane.
+					thread->spherecull++;
+					continue;	// entirely behind
+				}
+				portal_side = test_sphere (&portal->sphere, tp->plane);
+				if (portal_side > 0) {
+					// The portal definitely is entirely in front of the
+					// test portal's plane. (cannot see into a portal from
+					// its front side)
+					thread->spherecull++;
+					continue;	// entirely in front
+				}
+				if (tp_side > 0 && portal_side < 0) {
+					thread->spherepass++;
+					set_add (thread->portalsee, tp - portals);
+					continue;
+				}
+
+				thread->windingtest++;
+				if (tp_side == 0) {
+					// The test portal's sphere touches the portal's plane,
+					// so do a more refined check.
+					if (!test_winding_front (tp->winding, portal->plane)) {
+						thread->windingcull++;
+						continue;
+					}
+				}
+				if (portal_side == 0) {
+					// The portal's sphere touches the test portal's plane,
+					// so do a more refined check.
+					if (!test_winding_back (portal->winding, tp->plane)) {
+						thread->windingcull++;
+						continue;
+					}
+				}
+
+				thread->windingpass++;
+				set_add (thread->portalsee, tp - portals);
 			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
 		}
-
-		set_add (thread->portalsee, j);
 	}
 
 	SimpleFlood (thread, portal, portal->cluster);

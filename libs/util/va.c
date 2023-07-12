@@ -38,29 +38,61 @@
 #include <stdarg.h>
 
 #include "QF/dstring.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
+struct va_ctx_s {
+	dstring_t **strings;
+	int         num_strings;
+	int         str_index;
+};
 
-/*
-	va
+static va_ctx_t *default_va_ctx;
 
-	does a varargs printf into a temp buffer, so I don't need to have
-	varargs versions of all text functions.
-*/
-VISIBLE char *
-va (const char *fmt, ...)
+VISIBLE va_ctx_t *
+va_create_context (int buffers)
+{
+	va_ctx_t   *ctx;
+
+	ctx = malloc (sizeof (va_ctx_t) + buffers * sizeof (dstring_t *));
+	ctx->strings = (dstring_t **) (ctx + 1);
+	ctx->num_strings = buffers;
+	ctx->str_index = 0;
+
+	for (int i = 0; i < buffers; i++) {
+		ctx->strings[i] = dstring_new ();
+	}
+	return ctx;
+}
+
+VISIBLE void
+va_destroy_context (va_ctx_t *ctx)
+{
+	for (int i = 0; i < ctx->num_strings; i++) {
+		dstring_delete (ctx->strings[i]);
+	}
+	free (ctx);
+}
+
+VISIBLE const char *
+va (va_ctx_t *ctx, const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *string;
+	dstring_t  *dstr;
 
-	if (!string)
-		string = dstring_new ();
+	if (!ctx) {
+		if (!default_va_ctx) {
+			default_va_ctx = va_create_context (4);
+		}
+		ctx = default_va_ctx;
+	}
+	dstr = ctx->strings[ctx->str_index++ % ctx->num_strings];
 
 	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
+	dvsprintf (dstr, fmt, args);
 	va_end (args);
 
-	return string->str;
+	return dstr->str;
 }
 
 VISIBLE char *
@@ -76,4 +108,18 @@ nva (const char *fmt, ...)
 	va_end (args);
 
 	return dstring_freeze (string);
+}
+
+static void
+va_shutdown (void *data)
+{
+	if (default_va_ctx) {
+		va_destroy_context (default_va_ctx);
+	}
+}
+
+static void __attribute__((constructor))
+va_init (void)
+{
+	Sys_RegisterShutdown (va_shutdown, 0);
 }

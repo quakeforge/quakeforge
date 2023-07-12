@@ -47,19 +47,19 @@
 #include "QF/bspfile.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "light.h"
-#include "threads.h"
-#include "entities.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 entity_t *entities;
 int num_entities;
@@ -76,7 +76,7 @@ const char *lighttargets[32];
 
 
 static int
-LightStyleForTargetname (const char *targetname, qboolean alloc)
+LightStyleForTargetname (const char *targetname, bool alloc)
 {
 	int		i;
 
@@ -125,7 +125,8 @@ MatchTargets (void)
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
 			entities[i].style = entities[j].style;
-			SetKeyValue (&entities[i], "style", va ("%i", entities[i].style));
+			SetKeyValue (&entities[i], "style", va (0, "%d",
+													entities[i].style));
 		}
 
 		if (entities[i].spotcone >= 0) {
@@ -178,12 +179,12 @@ LoadEntities (void)
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
-	entity_list = ED_ConvertToPlist (script, 1);
+	entity_list = ED_ConvertToPlist (script, 1, 0);
 	Script_Delete (script);
 
 	// start parsing
 	num_entities = PL_A_NumObjects (entity_list);
-	entities = malloc (num_entities * sizeof (entity_t));;
+	entities = malloc (num_entities * sizeof (entity_t));
 
 	// go through all the entities
 	for (i = 0; i < num_entities; i++) {
@@ -207,7 +208,7 @@ LoadEntities (void)
 		}
 		entity->dict = PL_ObjectAtIndex (entity_list, i);
 
-		dict = PL_NewDictionary ();
+		dict = PL_NewDictionary (0);
 
 		// go through all the keys in this entity
 		keys = PL_D_AllKeys (entity->dict);
@@ -240,7 +241,7 @@ LoadEntities (void)
 		}
 
 		if (options.verbosity > 1 && entity->targetname)
-			printf ("%s %d %d\n", entity->targetname, entity->light,
+			printf ("%s %g %d\n", entity->targetname, entity->light,
 					entity->style);
 
 		// all fields have been parsed
@@ -273,7 +274,7 @@ LoadEntities (void)
 					entity->persistence = 1;
 			}
 		}
-		PL_Free (dict);
+		PL_Release (dict);
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,
@@ -333,12 +334,9 @@ LoadEntities (void)
 		if (entity->classname && !strcmp (entity->classname, "light")) {
 			if (entity->targetname && entity->targetname[0]
 				&& !entity->style) {
-				char s[16];
-
 				entity->style = LightStyleForTargetname (entity->targetname,
 														 true);
-				sprintf (s, "%i", entity->style);
-				SetKeyValue (entity, "style", s);
+				SetKeyValue (entity, "style", va (0, "%d", entity->style));
 			}
 		}
 	}

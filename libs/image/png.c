@@ -48,6 +48,7 @@
 #include "QF/zone.h"
 
 #include "compat.h"
+#include "qfalloca.h"
 
 
 /* Qread wrapper for libpng */
@@ -115,7 +116,7 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 
 /* Load the png file and return a texture */
 VISIBLE tex_t *
-LoadPNG (QFile *infile)
+LoadPNG (QFile *infile, int load)
 {
 	double			gamma;
 	png_structp		png_ptr = NULL;
@@ -131,37 +132,43 @@ LoadPNG (QFile *infile)
 	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 				  NULL, NULL, NULL);
 
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
-		png_set_expand (png_ptr);
+	if (load) {
+		if (color_type == PNG_COLOR_TYPE_PALETTE)
+			png_set_expand (png_ptr);
 
-	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_expand (png_ptr);
+		if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+			png_set_expand (png_ptr);
 
-	if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
-		png_set_expand (png_ptr);
+		if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
+			png_set_expand (png_ptr);
 
-	if (bit_depth == 16)
-		png_set_strip_16 (png_ptr);
+		if (bit_depth == 16)
+			png_set_strip_16 (png_ptr);
 
-	if (color_type == PNG_COLOR_TYPE_GRAY
-		|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-		png_set_gray_to_rgb (png_ptr);
+		if (color_type == PNG_COLOR_TYPE_GRAY
+			|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+			png_set_gray_to_rgb (png_ptr);
 
-	/* NOTE: gamma support? */
-	/* unlike the example in the libpng documentation, we have *no* idea where
-	 * this file may have come from--so if it doesn't have a file gamma, don't
-	 * do any correction ("do no harm")
-	 */
-	if (png_get_gAMA(png_ptr, info_ptr, &gamma))
-		png_set_gamma (png_ptr, 1.0, gamma);
+		/* NOTE: gamma support? */
+		/* unlike the example in the libpng documentation, we have *no* idea
+		 * wherethis file may have come from--so if it doesn't have a file
+		 * gamma, don't do any correction ("do no harm")
+		 */
+		if (png_get_gAMA(png_ptr, info_ptr, &gamma))
+			png_set_gamma (png_ptr, 1.0, gamma);
 
-	/* All transformations have been registered, now update the info_ptr
-	 * structure */
-	png_read_update_info (png_ptr, info_ptr);
+		/* All transformations have been registered, now update the info_ptr
+		 * structure */
+		png_read_update_info (png_ptr, info_ptr);
 
-	/* Allocate tex_t structure */
-	rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));
+		/* Allocate tex_t structure */
+		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+		tex = Hunk_TempAlloc (0, sizeof (tex_t) + height * rowbytes);
+		tex->data = (byte *) (tex + 1);
+	} else {
+		tex = Hunk_TempAlloc (0, sizeof (tex_t));
+		tex->data = 0;
+	}
 
 	tex->width = width;
 	tex->height = height;
@@ -170,6 +177,12 @@ LoadPNG (QFile *infile)
 	else
 		tex->format = tex_rgb;
 	tex->palette = NULL;
+	tex->loaded = load;
+
+	if (!load) {
+		png_read_end (png_ptr, NULL);
+		return tex;
+	}
 
 	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
 		== NULL) {
@@ -193,8 +206,8 @@ LoadPNG (QFile *infile)
 
 #define WRITEPNG_BIT_DEPTH 8
 
-static int
-write_png (QFile *outfile, const byte *data, int width, int height)
+VISIBLE int
+WritePNG (QFile *outfile, const tex_t *tex)
 {
 	int         i;
 	png_structp png_ptr;
@@ -228,27 +241,32 @@ write_png (QFile *outfile, const byte *data, int width, int height)
 		return 0;
 	}
 
-	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
+	png_set_IHDR (png_ptr, info_ptr, tex->width, tex->height,
+				  WRITEPNG_BIT_DEPTH,
 				  PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 				  PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 	/* NOTE: Write gamma support? */
 	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
 
-	png_set_bgr(png_ptr);
+	if (tex->bgr) {
+		png_set_bgr(png_ptr);
+	}
 
 	png_write_info (png_ptr, info_ptr);
 
 	/* Setup row pointers */
-	row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep));
-	if (row_pointers == NULL) {
-		png_destroy_write_struct (&png_ptr, &info_ptr);
-		return 0; /* Out of memory */
-	}
+	row_pointers = (png_bytepp)alloca(tex->height * sizeof(png_bytep));
 
-	for (i = 0; i < height; i++) {
-		//FIXME stupid png types :P
-		row_pointers[height - i - 1] = (byte *) data + (i * width * 3);
+	int         rowbytes = tex->width * 3;
+	if (tex->flipped) {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[tex->height - i - 1] = tex->data + (i * rowbytes);
+		}
+	} else {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[i] = tex->data + (i * rowbytes);
+		}
 	}
 
 
@@ -270,55 +288,21 @@ write_png (QFile *outfile, const byte *data, int width, int height)
 	return 1;
 }
 
-VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = Qopen (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		Qremove (fileName);
-	Qclose (outfile);
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = QFS_Open (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		QFS_Remove (fileName);
-	Qclose (outfile);
-}
-
 #else
 
 #include "QF/image.h"
 #include "QF/png.h"
 
 VISIBLE tex_t *
-LoadPNG (QFile *infile)
+LoadPNG (QFile *infile, int load)
 {
 	return 0;
 }
 
-VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
+VISIBLE int
+WritePNG (QFile *outfile, const tex_t *tex)
 {
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
-{
+	return 0;
 }
 
 #endif

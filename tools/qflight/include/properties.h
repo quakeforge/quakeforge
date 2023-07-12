@@ -33,7 +33,7 @@
 /** \defgroup qflight_properties Lighting properties
 	\ingroup qflight
 */
-//@{
+///@{
 
 struct plitem_s;
 
@@ -76,7 +76,7 @@ void parse_color (const char *str, vec3_t color);
 	\arg HalfLife	"R G B i" where R G & B are 0-255 and i is the same as
 					for normal id lights. The RGB values will be scaled by
 					1/255 such that 255 becomes 1.0.
-	\arg RGB		"R B B" where R G & B are left as-is and the intensity
+	\arg RGB		"R G B" where R G & B are left as-is and the intensity
 					is set to 1.0.
 	\arg id			Standard quake single value light intensity. The color
 					is set to white ([1.0 1.0 1.0]).
@@ -124,7 +124,7 @@ int parse_noise (const char *arg);
 
 	The database is loaded via LoadProperties().
 
-	If a set of properties named "worldspawn" is in the database, the it
+	If a set of properties named "worldspawn" is in the database, then it
 	will be used for default values, otherwise the database will be
 	ignored.
 
@@ -163,7 +163,7 @@ void set_sun_properties (entity_t *ent, struct plitem_s *dict);
 	Supported properties:
 	\arg \c light			see \ref parse_light
 	\arg \c style			light style: 0-254
-	\arg \c angle			spotlight con angle in degress. defaults to 20
+	\arg \c angle			spotlight cone angle in degress. defaults to 20
 	\arg \c wait			light "falloff". defaults to 1.0
 	\arg \c lightradius		size of light. interacts with falloff for
 							distance clipping (?). defaults to 0
@@ -199,6 +199,6 @@ void set_properties (entity_t *ent, struct plitem_s *dict);
 */
 void LoadProperties (const char *filename);
 
-//@}
+///@}
 
 #endif//__properties_h

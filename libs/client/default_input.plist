@@ -1,0 +1,162 @@
+{
+	input = {
+		contexts = (
+			{
+				name = key_game;
+				imts = (
+					{
+						name = imt_mod;
+					},
+					{
+						name = imt_mod_strafe;
+						chain = imt_mod;
+					},
+					{
+						name = imt_mod_freelook;
+						chain = imt_mod;
+					},
+					{
+						name = imt_mod_lookstrafe;
+						chain = imt_mod_freelook;
+					}
+				);
+				default_imt = imt_mod;
+				switchers = (
+					{
+						name = mouse;
+						inputs = (
+							+strafe,
+							lookstrafe,
+							+mlook,
+							freelook
+						);
+						imts = (
+							imt_mod,
+							imt_mod_strafe,
+							imt_mod,
+							imt_mod_strafe,
+							imt_mod_freelook,
+							imt_mod_strafe,
+							imt_mod_lookstrafe,
+							imt_mod_strafe,
+							imt_mod_freelook,
+							imt_mod_strafe,
+							imt_mod_lookstrafe,
+							imt_mod_strafe,
+							imt_mod_freelook,
+							imt_mod_strafe,
+							imt_mod_lookstrafe,
+							imt_mod_strafe
+						);
+					}
+				);
+			},
+			{
+				name = key_demo;
+				imts = (
+					{
+						name = imt_demo;
+					},
+				);
+			}
+		);
+		devices = (
+			{
+				name = mouse;
+				devname = core:mouse;
+				num_axes = 2;
+				num_buttons = 32;
+				axes = (
+					{
+						imt = imt_mod;
+						num = 0;
+						axis = move.yaw;
+						min = 0;
+						max = 0;
+						minzone = 0;
+						maxzone = 0;
+						deadzone = 0;
+						curve = 1;
+						scale = 1;
+					},
+					{
+						imt = imt_mod_strafe;
+						num = 0;
+						axis = move.side;
+						min = 0;
+						max = 0;
+						minzone = 0;
+						maxzone = 0;
+						deadzone = 0;
+						curve = 1;
+						scale = 1;
+					},
+					{
+						imt = imt_mod_lookstrafe;
+						num = 0;
+						axis = move.side;
+						min = 0;
+						max = 0;
+						minzone = 0;
+						maxzone = 0;
+						deadzone = 0;
+						curve = 1;
+						scale = 1;
+					},
+					{
+						imt = imt_mod;
+						num = 1;
+						axis = move.forward;
+						min = 0;
+						max = 0;
+						minzone = 0;
+						maxzone = 0;
+						deadzone = 0;
+						curve = 1;
+						scale = 1;
+					},
+					{
+						imt = imt_mod_freelook;
+						num = 1;
+						axis = move.pitch;
+						min = 0;
+						max = 0;
+						minzone = 0;
+						maxzone = 0;
+						deadzone = 0;
+						curve = 1;
+						scale = 1;
+					}
+				);
+			},
+			{
+				name = key;
+				devname = core:keyboard;
+				num_axes = 0;
+				num_buttons = 256;
+				buttons = (
+					{
+						imt = imt_demo;
+						num = 41;
+						binding = toggleconsole;
+					},
+					{
+						imt = imt_demo;
+						num = 61;
+						binding = menu_load;
+					},
+					{
+						imt = imt_demo;
+						num = 67;
+						binding = "echo Quickloading...; wait; load quick";
+					},
+					{
+						imt = imt_demo;
+						num = 68;
+						binding = quit;
+					},
+				);
+			}
+		);
+	};
+}

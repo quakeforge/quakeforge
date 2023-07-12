@@ -121,8 +121,8 @@ QFGL_LoadLibrary (void)
 {
 	void   *handle;
 
-	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+	if (!(handle = dlopen (gl_driver, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver,
 				   dlerror ());
 	}
 	glGetProcAddress = dlsym (handle, "glXGetProcAddress");
@@ -150,8 +150,8 @@ QFGL_LoadLibrary (void)
 #endif  // HAVE_DLOPEN
 
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	if (!fc)
 		return;
@@ -173,20 +173,20 @@ GL_Init (void)
 	if (!(dither_select = QFGL_ExtensionAddress ("gl3DfxSetDitherModeEXT")))
 		return;
 
-	Sys_MaskPrintf (SYS_VID, "Dithering: ");
+	Sys_MaskPrintf (SYS_vid, "Dithering: ");
 
 	if ((p = COM_CheckParm ("-dither")) && p < com_argc) {
 		if (strequal (com_argv[p+1], "2x2")) {
 			dither_select (GR_DITHER_2x2);
-			Sys_MaskPrintf (SYS_VID, "2x2.\n");
+			Sys_MaskPrintf (SYS_vid, "2x2.\n");
 		}
 		if (strequal (com_argv[p+1], "4x4")) {
 			dither_select (GR_DITHER_4x4);
-			Sys_MaskPrintf (SYS_VID, "4x4.\n");
+			Sys_MaskPrintf (SYS_vid, "4x4.\n");
 		}
 	} else {
 		qfglDisable (GL_DITHER);
-		Sys_MaskPrintf (SYS_VID, "disabled.\n");
+		Sys_MaskPrintf (SYS_vid, "disabled.\n");
 	}
 }
 
@@ -271,6 +271,8 @@ VID_Init (byte *palette, byte *colormap)
 {
 	GLint       attribs[32];
 
+	Sys_RegisterShutdown (VID_shutdown);
+
 	GLF_Init ();
 
 	qf_fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
@@ -320,7 +322,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid.initialized = true;
 
-	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					vid.width, vid.height);
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
@@ -329,8 +331,7 @@ VID_Init (byte *palette, byte *colormap)
 void
 VID_Init_Cvars (void)
 {
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
+	Cvar_Register (&vid_system_gamma_cvar, 0, 0);
 }
 
 void
@@ -338,7 +339,7 @@ VID_SetCaption (const char *text)
 {
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return true;

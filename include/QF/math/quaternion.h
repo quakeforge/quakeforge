@@ -34,7 +34,7 @@
 /** \defgroup mathlib_quaternion Quaternion functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -58,10 +58,10 @@ extern const vec_t *const quat_origin;
 	} while (0)
 #define QuatConj(a,b) \
 	do { \
-		(b)[0] = (a)[0]; \
+		(b)[0] = -(a)[0]; \
 		(b)[1] = -(a)[1]; \
 		(b)[2] = -(a)[2]; \
-		(b)[3] = -(a)[3]; \
+		(b)[3] = (a)[3]; \
 	} while (0)
 #define QuatAdd(a,b,c) \
 	do { \
@@ -115,10 +115,17 @@ extern const vec_t *const quat_origin;
 		(c)[2] = (a)[2] / (b)[2]; \
 		(c)[3] = (a)[3] / (b)[3]; \
 	} while (0)
-#define QuatCompCompare(x, op, y) \
+#define QuatCompCompare(m, a, op, b, c)	\
+	do { \
+		(c)[0] = m((a)[0] op (b)[0]); \
+		(c)[1] = m((a)[1] op (b)[1]); \
+		(c)[2] = m((a)[2] op (b)[2]); \
+		(c)[3] = m((a)[3] op (b)[3]); \
+	} while (0)
+#define QuatCompCompareAll(x, op, y) \
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) \
 	 && ((x)[2] op (y)[2]) && ((x)[3] op (y)[3]))
-#define QuatCompare(x, y) QuatCompCompare (x, ==, y)
+#define QuatCompare(x, y) QuatCompCompareAll (x, ==, y)
 #define QuatCompMin(a, b, c) \
 	do { \
 		(c)[0] = min ((a)[0], (b)[0]); \
@@ -164,10 +171,11 @@ extern const vec_t *const quat_origin;
 
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatMultVec (const quat_t q, const vec3_t v, vec3_t out);
+void QuatRotation (const vec3_t a, const vec3_t b, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
-//@}
+///@}
 
 #endif // __QF_math_quaternion_h

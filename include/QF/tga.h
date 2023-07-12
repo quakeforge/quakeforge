@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __tga_h
-#define __tga_h
+#ifndef __QF_tga_h
+#define __QF_tga_h
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -43,6 +43,17 @@
 #  error do some data packing magic here (#pragma pack?)
 # endif
 #endif
+
+typedef enum {
+	targa_colormap = 1,
+	targa_truecolor = 2,
+	targa_greyscale = 3,
+	targa_colormap_rle = 9,
+	targa_truecolor_rle = 10,
+	targa_greyscale_rle = 11,
+
+	targa_max_image_type = 15
+} TargaImageType;
 
 typedef struct _TargaHeader {
 	unsigned char id_length; // __attribute__((packed));
@@ -67,7 +78,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-struct tex_s *LoadTGA (QFile *fin);
+struct tex_s *LoadTGA (QFile *fin, int load);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
-#endif // __tga_h
+#endif//__QF_tga_h

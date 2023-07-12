@@ -41,15 +41,15 @@
 #include <errno.h>
 
 #include "QF/mathlib.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/quakeio.h"
 
 #include "compat.h"
 
-#include "entities.h"
-#include "light.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 static plitem_t *properties;
 
@@ -237,14 +237,11 @@ set_properties (entity_t *ent, plitem_t *dict)
 	const char *str;
 
 	if (properties) {
-		prop = PL_ObjectForKey (properties, ent->classname);
 		if ((p = get_item ("light_name", dict, 0))
 			&& (str = PL_String (p)))
 			prop = PL_ObjectForKey (properties, str);
 		if (!prop)
 			prop = PL_ObjectForKey (properties, ent->classname);
-
-		prop = PL_ObjectForKey (properties, ent->classname);
 		if (!prop)
 			prop = PL_ObjectForKey (properties, "default");
 	}
@@ -337,6 +334,6 @@ LoadProperties (const char *filename)
 	Qread (f, buf, len);
 	Qclose (f);
 	buf[len] = 0;
-	properties = PL_GetPropertyList (buf);
+	properties = PL_GetPropertyList (buf, 0);
 	free (buf);
 }

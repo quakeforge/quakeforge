@@ -32,7 +32,7 @@
 {
 	switch (key) {
 		case QFK_RETURN:
-		case QFM_BUTTON1:
+		//case QFM_BUTTON1:
 			[self next];
 			return 1;
 		default:

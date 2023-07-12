@@ -1,7 +1,7 @@
 #ifndef __ruamoko_draw_h
 #define __ruamoko_draw_h
 
-#include "Object.h"
+#include <Object.h>
 
 struct _qpic_t {
 	int width;
@@ -9,6 +9,9 @@ struct _qpic_t {
 	int handle;
 };
 typedef struct _qpic_t *qpic_t;
+
+@extern int Draw_Width (void);
+@extern int Draw_Height (void);
 
 @extern void Draw_FreePic (qpic_t pic);
 @extern qpic_t Draw_MakePic (int width, int heiight, string data);
@@ -24,6 +27,7 @@ typedef struct _qpic_t *qpic_t;
 @extern void Draw_nString (int x, int y, string text, int n);
 @extern void Draw_AltString (int x, int y, string text);
 @extern void Draw_Fill (int x, int y, int w, int h, int c);
+@extern void Draw_Line (int x0, int y0, int x1, int y1, int c);
 @extern void Draw_Crosshair (int ch, int x, int y);
 @extern void text_box (int x, int y, int width, int lines);
 

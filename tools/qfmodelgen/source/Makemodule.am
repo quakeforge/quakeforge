@@ -1,0 +1,14 @@
+QFMODELGEN_LIBS=@QFMODELGEN_LIBS@
+QFMODELGEN_DEPS=@QFMODELGEN_DEPS@
+QFMODELGEN_INCS=@QFMODELGEN_INCS@
+
+EXTRA_PROGRAMS +=		qfmodelgen
+bin_PROGRAMS += @QFMODELGEN_TARGETS@
+
+qfmodelgen_SOURCES = \
+	tools/qfmodelgen/source/lbmlib.c \
+	tools/qfmodelgen/source/modelgen.c \
+	tools/qfmodelgen/source/trilib.c
+
+qfmodelgen_LDADD=		$(QFMODELGEN_LIBS)
+qfmodelgen_DEPENDENCIES=	$(QFMODELGEN_DEPS)

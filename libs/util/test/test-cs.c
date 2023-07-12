@@ -18,6 +18,24 @@ const vec3_t points[] = {
 	{ 0,  0,  0},
 };
 
+// This particular triangle from ad_tears caused SEB to hit its iteration
+// limit because the center in affine hull test failed due to excessivly tight
+// epsilon.
+// However, the problem isn't here (but good to have a set of tests for it
+// anyway).
+const vec3_t tears_triangleA[] = {
+	{2201.82007, -1262, -713.450012},
+	{2201.8501, -1262, -713.593994},
+};
+const vec3_t tears_triangleB[] = {
+	{2201.82007, -1262, -713.450012},
+	{2201.84009, -1262, -713.445007},
+};
+const vec3_t tears_triangleC[] = {
+	{2201.8501, -1262, -713.593994},
+	{2201.84009, -1262, -713.445007},
+};
+
 struct {
 	const vec3_t *points;
 	int         num_points;
@@ -28,6 +46,9 @@ struct {
 	{points, 2, {{ 0,  0, 1}, 1.41421356}},
 	{points, 3, {{-0.333333343, 0.333333343, 0.333333343}, 1.63299322}},
 	{points, 4, {{0, 0, 0}, 1.73205081}},
+	{tears_triangleA, 2, {{2201.83496, -1262, -713.521973}, 0.0734853372}},
+	{tears_triangleB, 2, {{2201.83008, -1262, -713.44751}, 0.0103178304}},
+	{tears_triangleC, 2, {{2201.84521, -1262, -713.519531}, 0.0746228099}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -61,10 +82,10 @@ main (int argc, const char **argv)
 			|| fabs (sphere.radius - tests[i].expect.radius) > 1e-4) {
 			res = 1;
 			printf ("test %d failed\n", (int) i);
-			printf ("expect: [%.9g %.9g %.9g],%.9g\n",
+			printf ("expect: {%.9g, %.9g, %.9g},%.9g\n",
 					VectorExpand (tests[i].expect.center),
 					tests[i].expect.radius);
-			printf ("got   : [%.9g %.9g %.9g],%.9g\n",
+			printf ("got   : {%.9g, %.9g, %.9g},%.9g\n",
 					VectorExpand (sphere.center),
 					sphere.radius);
 		}

@@ -31,14 +31,13 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
 
-#define sv_frametime host_frametime
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
-cvar_t     *sv_nostep;
+#define sv_frametime host_frametime
 
 // CLIENT MOVEMENT ============================================================
 
@@ -62,7 +61,7 @@ SV_CheckStuck (edict_t *ent)
 	VectorCopy (SVvector (ent, origin), org);
 	VectorCopy (SVvector (ent, oldorigin), SVvector (ent, origin));
 	if (!SV_TestEntityPosition (ent)) {
-		Sys_MaskPrintf (SYS_DEV, "Unstuck.\n");
+		Sys_MaskPrintf (SYS_dev, "Unstuck.\n");
 		SV_LinkEdict (ent, true);
 		return;
 	}
@@ -74,17 +73,17 @@ SV_CheckStuck (edict_t *ent)
 				SVvector (ent, origin)[1] = org[1] + j;
 				SVvector (ent, origin)[2] = org[2] + z;
 				if (!SV_TestEntityPosition (ent)) {
-					Sys_MaskPrintf (SYS_DEV, "Unstuck.\n");
+					Sys_MaskPrintf (SYS_dev, "Unstuck.\n");
 					SV_LinkEdict (ent, true);
 					return;
 				}
 			}
 
 	VectorCopy (org, SVvector (ent, origin));
-	Sys_MaskPrintf (SYS_DEV, "player is stuck.\n");
+	Sys_MaskPrintf (SYS_dev, "player is stuck.\n");
 }
 
-static qboolean
+static bool
 SV_CheckWater (edict_t *ent)
 {
 	int         cont;
@@ -204,7 +203,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 
 		if (fabs (oldorg[1] - SVvector (ent, origin)[1]) > 4
 			|| fabs (oldorg[0] - SVvector (ent, origin)[0]) > 4) {
-//			Sys_MaskPrintf (SYS_DEV, "unstuck!\n");
+//			Sys_MaskPrintf (SYS_dev, "unstuck!\n");
 			return clip;
 		}
 		// go back to the original pos and try again
@@ -247,7 +246,7 @@ SV_WalkMove (edict_t *ent)
 	if (SVfloat (ent, movetype) != MOVETYPE_WALK)
 		return;							// gibbed by a trigger
 
-	if (sv_nostep->int_val)
+	if (sv_nostep)
 		return;
 
 	if ((int) SVfloat (sv_player, flags) & FL_WATERJUMP)

@@ -28,14 +28,35 @@
 #ifndef __QF_GL_rsurf_h
 #define __QF_GL_rsurf_h
 
-extern int gl_mirrortexturenum;	// quake texturenum, not gltexturenum
+typedef struct gltex_s {
+	struct texture_s  *texture;
+	int			gl_texturenum;
+	int			gl_fb_texturenum;
+	struct instsurf_s *tex_chain;
+	struct instsurf_s **tex_chain_tail;
+} gltex_t;
 
-void gl_lightmap_init (void);
-void GL_BuildLightmaps (struct model_s **models, int num_models);
+struct model_s;
+struct entity_s;
+struct msurface_s;
+struct mod_brush_s;
 
-void R_DrawBrushModel (struct entity_s *e);
-void R_DrawWorld (void);
+void GL_BuildSurfaceDisplayList (struct mod_brush_s *brush,
+								 struct msurface_s *fa);
 
-void GL_EmitWaterPolys (msurface_t *fa);
+void gl_R_DrawBrushModel (struct entity_s e);
+void gl_R_DrawWorld (void);
+void gl_R_DrawWaterSurfaces (void);
+
+void GL_EmitWaterPolys (struct msurface_s *fa);
+void gl_R_LoadSkys (const char *sky);
+
+struct texture_s;
+void gl_R_AddTexture (struct texture_s *tx);
+void gl_R_ClearTextures (void);
+void gl_R_InitSurfaceChains (struct mod_brush_s *brush);
+
+struct framebuffer_s;
+void gl_WarpScreen (struct framebuffer_s *fb);
 
 #endif // __QF_GL_rsurf_h

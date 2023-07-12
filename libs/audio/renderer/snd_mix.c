@@ -44,13 +44,7 @@
 #include "compat.h"
 #include "snd_internal.h"
 
-#define VOLSCALE 512.0				// so mixing is less likely to overflow
-									// note: must be >= 255 due to the channel
-									// volumes being 0-255.
-
-cvar_t     *snd_volume;
-
-unsigned    snd_paintedtime;				// sample PAIRS
+#define VOLSCALE 0.5				// so mixing is less likely to overflow
 
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
@@ -59,12 +53,12 @@ static int  max_overpaint;				// number of extra samples painted
 /* CHANNEL MIXING */
 
 static inline int
-check_channel_end (channel_t *ch, sfx_t *sfx, int count, unsigned ltime)
+check_channel_end (channel_t *ch, sfxbuffer_t *sb, int count, unsigned ltime)
 {
 	if (count <= 0 || ltime >= ch->end) {
-		if (sfx->loopstart != (unsigned) -1) {
-			ch->pos = sfx->loopstart;
-			ch->end = ltime + sfx->length - ch->pos;
+		if (ch->loopstart != (unsigned) -1) {
+			ch->pos = ch->loopstart;
+			ch->end = ltime + sb->sfx_length - ch->pos;
 		} else {			// channel just stopped
 			ch->done = 1;
 			return 1;
@@ -74,7 +68,7 @@ check_channel_end (channel_t *ch, sfx_t *sfx, int count, unsigned ltime)
 }
 
 static inline void
-snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
+snd_paint_channel (channel_t *ch, sfxbuffer_t *sb, int count)
 {
 	unsigned    pos;
 	int         offs = 0;
@@ -88,29 +82,28 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 		count -= offs;
 		ch->pos = 0;
 	}
-	if (ch->pos < sc->pos || ch->pos - sc->pos >= sc->length)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = sc->data + pos * sc->channels;
+	if (ch->pos < sb->pos || ch->pos - sb->pos >= sb->size)
+		sb->setpos (sb, ch->pos);
+	pos = (ch->pos - sb->pos + sb->tail) % sb->size;
+	samps = sb->data + pos * sb->channels;
 
-	if (pos + count > sc->length) {
-		unsigned    sub = sc->length - pos;
-		sc->paint (offs, ch, samps, sub);
-		sc->paint (offs + sub, ch, sc->data, count - sub);
+	if (pos + count > sb->size) {
+		unsigned    sub = sb->size - pos;
+		sb->paint (offs, ch, samps, sub);
+		sb->paint (offs + sub, ch, sb->data, count - sub);
 	} else {
-		sc->paint (offs, ch, samps, count);
+		sb->paint (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }
 
 void
-SND_PaintChannels (unsigned endtime)
+SND_PaintChannels (snd_t *snd, unsigned endtime)
 {
 	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
-	sfx_t      *sfx;
-	sfxbuffer_t *sc;
+	sfxbuffer_t *sb;
 
 	// clear the paint buffer
 	for (i = 0; i < PAINTBUFFER_SIZE * 2; i++) {
@@ -118,43 +111,40 @@ SND_PaintChannels (unsigned endtime)
 		snd_paintbuffer[i].right = 0;
 	}
 
-	while (snd_paintedtime < endtime) {
+	while (snd->paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
 		end = endtime;
-		if (end - snd_paintedtime > PAINTBUFFER_SIZE)
-			end = snd_paintedtime + PAINTBUFFER_SIZE;
+		if (end - snd->paintedtime > PAINTBUFFER_SIZE)
+			end = snd->paintedtime + PAINTBUFFER_SIZE;
 
 		max_overpaint = 0;
 
 		// paint in the channels.
 		ch = snd_channels;
 		for (i = 0; i < snd_total_channels; i++, ch++) {
-			if (!(sfx = ch->sfx))
+			if (!(sb = ch->buffer) || ch->done) {
+				// channel is inactive
 				continue;
-			if (ch->stop || ch->done) {
+			}
+			if (ch->stop) {
 				ch->done = 1;		// acknowledge stopped signal
 				continue;
 			}
 			if (ch->pause)
 				continue;
-			sc = sfx->getbuffer (sfx);
-			if (!sc) {				// something went wrong with the sfx
-				printf ("XXXX sfx blew up!!!!\n");
-				continue;
-			}
 
 			if (!ch->end)
-				ch->end = snd_paintedtime + sfx->length - ch->pos;
+				ch->end = snd->paintedtime + sb->sfx_length - ch->pos;
 
-			ltime = snd_paintedtime;
+			ltime = snd->paintedtime;
 
 			while (ltime < end) {		// paint up to end
 				count = ((ch->end < end) ? ch->end : end) - ltime;
 				if (count > 0) {
 					if (ch->leftvol || ch->rightvol) {
-						snd_paint_channel (ch, sc, count);
-						if (sc->advance) {
-							if (!sc->advance (sc, count)) {
+						snd_paint_channel (ch, sb, count);
+						if (sb->advance) {
+							if (!sb->advance (sb, count)) {
 								// this channel can no longer be used as its
 								// source has died.
 								ch->done = 1;
@@ -165,21 +155,21 @@ SND_PaintChannels (unsigned endtime)
 					ltime += count;
 				}
 
-				if (check_channel_end (ch, sfx, count, ltime))
+				if (check_channel_end (ch, sb, count, ltime))
 					break;
 			}
 		}
 
 		// transfer out according to DMA format
-		snd_shm->xfer (snd_paintbuffer, end - snd_paintedtime,
-					   snd_volume->value);
+		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime,
+				   snd_volume);
 
-		memmove (snd_paintbuffer, snd_paintbuffer + end - snd_paintedtime,
+		memmove (snd_paintbuffer, snd_paintbuffer + end - snd->paintedtime,
 				 max_overpaint * sizeof (snd_paintbuffer[0]));
 		memset (snd_paintbuffer + max_overpaint, 0, sizeof (snd_paintbuffer)
 				- max_overpaint * sizeof (snd_paintbuffer[0]));
 
-		snd_paintedtime = end;
+		snd->paintedtime = end;
 	}
 }
 
@@ -205,7 +195,7 @@ snd_mix_pair (portable_samplepair_t *pair, float **samp,
 }
 
 static inline void
-snd_mix_tripple (portable_samplepair_t *pair, float **samp,
+snd_mix_triple (portable_samplepair_t *pair, float **samp,
 				 float lvol, float rvol)
 {
 	float       left = *(*samp)++;
@@ -230,8 +220,8 @@ snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 	unsigned    i = 0;
 	portable_samplepair_t *pair;
 
-	leftvol = ch->leftvol / VOLSCALE;
-	rightvol = ch->rightvol / VOLSCALE;
+	leftvol = ch->leftvol * VOLSCALE;
+	rightvol = ch->rightvol * VOLSCALE;
 
 	max_overpaint = max (abs (ch->phase),
 						 max (abs (ch->oldphase), max_overpaint));
@@ -324,8 +314,8 @@ static void
 snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -342,12 +332,12 @@ static void
 snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		pair++;
 	}
 }
@@ -361,8 +351,8 @@ static void
 snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
@@ -381,12 +371,12 @@ static void
 snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		pair++;
 	}
@@ -402,12 +392,12 @@ static void
 snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
 		pair++;
@@ -425,12 +415,12 @@ static void
 snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
@@ -449,12 +439,12 @@ static void
 snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 {
 	portable_samplepair_t *pair;
-	float       leftvol = ch->leftvol / VOLSCALE;
-	float       rightvol = ch->rightvol / VOLSCALE;
+	float       leftvol = ch->leftvol * VOLSCALE;
+	float       rightvol = ch->rightvol * VOLSCALE;
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_triple (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_pair (pair, &samp, leftvol, rightvol);
 		snd_mix_single (pair, &samp, leftvol, rightvol);
@@ -463,7 +453,7 @@ snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
 }
 
 void
-SND_SetPaint (sfxbuffer_t *sc)
+SND_SetPaint (sfxbuffer_t *sb)
 {
 	static sfxpaint_t *painters[] = {
 		0,
@@ -477,8 +467,7 @@ SND_SetPaint (sfxbuffer_t *sc)
 		snd_paint_8,
 	};
 
-	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
-	if (info->channels > 8)
-		Sys_Error ("illegal channel count %d", info->channels);
-	sc->paint = painters[info->channels];
+	if (sb->channels > 8 || !sb->channels)
+		Sys_Error ("invaliid channel count %d", sb->channels);
+	sb->paint = painters[sb->channels];
 }

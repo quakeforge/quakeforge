@@ -31,31 +31,33 @@
 /** \defgroup mathlib_vector Vector functions
 	\ingroup mathlib
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
 extern const vec_t *const vec3_origin;
 
+#define VectorCompUop(b, op, a) \
+	do { \
+		(b)[0] = op ((a)[0]); \
+		(b)[1] = op ((a)[1]); \
+		(b)[2] = op ((a)[2]); \
+	} while (0)
+#define VectorCompOp(c, a, op, b) \
+	do { \
+		(c)[0] = (a)[0] op (b)[0]; \
+		(c)[1] = (a)[1] op (b)[1]; \
+		(c)[2] = (a)[2] op (b)[2]; \
+	} while (0)
+#define VectorCompAdd(c,a,b) VectorCompOp (c, a, +, b)
+#define VectorCompSub(c,a,b) VectorCompOp (c, a, -, b)
+#define VectorCompMult(c,a,b) VectorCompOp (c, a, *, b)
+#define VectorCompDiv(c,a,b) VectorCompOp (c, a, /, b)
+
 #define DotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] + (a)[2] * (b)[2])
-#define VectorSubtract(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] - (b)[0]; \
-		(c)[1] = (a)[1] - (b)[1]; \
-		(c)[2] = (a)[2] - (b)[2]; \
-	} while (0)
-#define VectorNegate(a,b) \
-	do { \
-		(b)[0] = -(a)[0]; \
-		(b)[1] = -(a)[1]; \
-		(b)[2] = -(a)[2]; \
-	} while (0)
-#define VectorAdd(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] + (b)[0]; \
-		(c)[1] = (a)[1] + (b)[1]; \
-		(c)[2] = (a)[2] + (b)[2]; \
-	} while (0)
+#define VectorSubtract(a,b,c) VectorCompSub (c, a, b)
+#define VectorNegate(a,b) VectorCompUop (b, -, a)
+#define VectorAdd(a,b,c) VectorCompAdd (c, a, b)
 #define VectorCopy(a,b) \
 	do { \
 		(b)[0] = (a)[0]; \
@@ -73,6 +75,18 @@ extern const vec_t *const vec3_origin;
 		(c)[0] = (a)[0] - (s) * (b)[0]; \
 		(c)[1] = (a)[1] - (s) * (b)[1]; \
 		(c)[2] = (a)[2] - (s) * (b)[2]; \
+	} while (0)
+#define VectorCompMultAdd(a,b,c,d) \
+	do { \
+		(d)[0] = (a)[0] + (b)[0] * (c)[0]; \
+		(d)[1] = (a)[1] + (b)[1] * (c)[1]; \
+		(d)[2] = (a)[2] + (b)[2] * (c)[2]; \
+	} while (0)
+#define VectorCompMultSub(a,b,c,d) \
+	do { \
+		(d)[0] = (a)[0] - (b)[0] * (c)[0]; \
+		(d)[1] = (a)[1] - (b)[1] * (c)[1]; \
+		(d)[2] = (a)[2] - (b)[2] * (c)[2]; \
 	} while (0)
 #define VectorLength(a) sqrt(DotProduct(a, a))
 
@@ -107,21 +121,15 @@ extern const vec_t *const vec3_origin;
 		(c)[1] = (b)[1] - (b)[0] * (a)[0]; \
 		(c)[0] = (b)[0]; \
 	} while (0)
-#define VectorCompMult(a,b,c) \
+#define VectorCompCompare(c, m, a, op, b)	\
 	do { \
-		(c)[0] = (a)[0] * (b)[0]; \
-		(c)[1] = (a)[1] * (b)[1]; \
-		(c)[2] = (a)[2] * (b)[2]; \
+		(c)[0] = m((a)[0] op (b)[0]); \
+		(c)[1] = m((a)[1] op (b)[1]); \
+		(c)[2] = m((a)[2] op (b)[2]); \
 	} while (0)
-#define VectorCompDiv(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] / (b)[0]; \
-		(c)[1] = (a)[1] / (b)[1]; \
-		(c)[2] = (a)[2] / (b)[2]; \
-	} while (0)
-#define VectorCompCompare(x, op, y)	\
+#define VectorCompCompareAll(x, op, y)	\
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) && ((x)[2] op (y)[2]))
-#define VectorCompare(x, y) VectorCompCompare (x, ==, y)
+#define VectorCompare(x, y) VectorCompCompareAll (x, ==, y)
 #define VectorCompMin(a, b, c) \
 	do { \
 		(c)[0] = min ((a)[0], (b)[0]); \
@@ -142,7 +150,12 @@ extern const vec_t *const vec3_origin;
 	} while (0)
 
 #define VectorIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2])
-#define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
+#define VectorZero(a) \
+	do { \
+		(a)[0] = 0; \
+		(a)[1] = 0; \
+		(a)[2] = 0; \
+	} while (0)
 #define VectorSet(a,b,c,d) \
 	do { \
 		(d)[0] = a; \
@@ -159,6 +172,8 @@ extern const vec_t *const vec3_origin;
 
 //For printf etc
 #define VectorExpand(v) (v)[0], (v)[1], (v)[2]
+//For scanf etc
+#define VectorExpandAddr(v) &(v)[0], &(v)[1], &(v)[2]
 
 /*
  * VectorDistance, the distance between two points.
@@ -171,11 +186,11 @@ extern const vec_t *const vec3_origin;
 	 (((a)[2] - (b)[2]) * ((a)[2] - (b)[2])))
 #define VectorDistance(a, b)	sqrt(VectorDistance_fast(a, b))
 
-vec_t _DotProduct (const vec3_t v1, const vec3_t v2);
+vec_t _DotProduct (const vec3_t v1, const vec3_t v2) __attribute__((pure));
 void _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void _VectorCopy (const vec3_t in, vec3_t out);
-int _VectorCompare (const vec3_t v1, const vec3_t v2);	// uses EQUAL_EPSILON
-vec_t _VectorLength (const vec3_t v);
+int _VectorCompare (const vec3_t v1, const vec3_t v2) __attribute__((pure));	// uses EQUAL_EPSILON
+vec_t _VectorLength (const vec3_t v) __attribute__((pure));
 void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
 				vec3_t vecc);
 void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
@@ -209,6 +224,6 @@ VectorNormalize (vec3_t v)
 	return length;
 }
 
-//@}
+///@}
 
 #endif // __QF_math_vector_h

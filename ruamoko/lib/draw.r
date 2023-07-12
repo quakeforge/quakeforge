@@ -1,4 +1,7 @@
-#include "draw.h"
+#include <draw.h>
+
+int Draw_Width (void) = #0;
+int Draw_Height (void) = #0;
 
 void Draw_FreePic (qpic_t pic) = #0;
 qpic_t Draw_MakePic (int width, int heiight, string data) = #0;
@@ -14,6 +17,7 @@ void (int x, int y, string text) Draw_String = #0;
 void (int x, int y, string text, int n) Draw_nString = #0;
 void (int x, int y, string text) Draw_AltString = #0;
 void (int x, int y, int w, int h, int c) Draw_Fill = #0;
+void (int x0, int y0, int x1, int y1, int c) Draw_Line = #0;
 void (int ch, int x, int y) Draw_Crosshair = #0;
 
 void (int x, int y, int width, int lines) text_box =

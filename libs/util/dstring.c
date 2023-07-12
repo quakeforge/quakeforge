@@ -83,6 +83,9 @@ dstring_new (void)
 VISIBLE void
 dstring_delete (dstring_t *dstr)
 {
+	if (!dstr) {
+		return;
+	}
 	if (dstr->str)
 		dstr->mem->free (dstr->mem->data, dstr->str);
 	dstr->mem->free (dstr->mem->data, dstr);
@@ -101,7 +104,7 @@ dstring_adjust (dstring_t *dstr)
 }
 
 VISIBLE char *
-dstring_reserve (dstring_t *dstr, unsigned len)
+dstring_reserve (dstring_t *dstr, size_t len)
 {
 	dstr->size += len;
 	dstring_adjust (dstr);
@@ -109,7 +112,7 @@ dstring_reserve (dstring_t *dstr, unsigned len)
 }
 
 VISIBLE void
-dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
+dstring_copy (dstring_t *dstr, const char *data, size_t len)
 {
 	dstr->size = len;
 	dstring_adjust (dstr);
@@ -117,9 +120,9 @@ dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
 }
 
 VISIBLE void
-dstring_append (dstring_t *dstr, const char *data, unsigned int len)
+dstring_append (dstring_t *dstr, const char *data, size_t len)
 {
-	unsigned int ins = dstr->size;		// Save insertion point
+	size_t      ins = dstr->size;		// Save insertion point
 
 	dstr->size += len;
 	dstring_adjust (dstr);
@@ -127,10 +130,9 @@ dstring_append (dstring_t *dstr, const char *data, unsigned int len)
 }
 
 VISIBLE void
-dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
-				unsigned int len)
+dstring_insert (dstring_t *dstr, size_t pos, const char *data, size_t len)
 {
-	unsigned int oldsize = dstr->size;
+	size_t      oldsize = dstr->size;
 
 	if (pos > dstr->size)
 		pos = dstr->size;
@@ -141,7 +143,7 @@ dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
 }
 
 VISIBLE void
-dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len)
+dstring_snip (dstring_t *dstr, size_t pos, size_t len)
 {
 	if (pos > dstr->size)
 		pos = dstr->size;
@@ -162,10 +164,10 @@ dstring_clear (dstring_t *dstr)
 }
 
 VISIBLE void
-dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
-				const char *data, unsigned int len)
+dstring_replace (dstring_t *dstr, size_t pos, size_t rlen,
+				const char *data, size_t len)
 {
-	unsigned int oldsize = dstr->size;
+	size_t      oldsize = dstr->size;
 	if (pos > dstr->size)
 		pos = dstr->size;
 	if (rlen > dstr->size - pos)
@@ -223,7 +225,7 @@ dstring_strdup (const char *str)
 }
 
 VISIBLE char *
-dstring_reservestr (dstring_t *dstr, unsigned len)
+dstring_reservestr (dstring_t *dstr, size_t len)
 {
 	int         pos = dstr->size;
 	if (pos && !dstr->str[pos - 1])
@@ -242,7 +244,7 @@ dstring_copystr (dstring_t *dstr, const char *str)
 }
 
 VISIBLE void
-dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len)
+dstring_copysubstr (dstring_t *dstr, const char *str, size_t len)
 {
 	len = strnlen (str, len);
 
@@ -255,8 +257,8 @@ dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len)
 VISIBLE void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
-	unsigned int pos = strnlen (dstr->str, dstr->size);
-	unsigned int len = strlen (str);
+	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      len = strlen (str);
 
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
@@ -264,9 +266,9 @@ dstring_appendstr (dstring_t *dstr, const char *str)
 }
 
 VISIBLE void
-dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
+dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len)
 {
-	unsigned int pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = strnlen (dstr->str, dstr->size);
 
 	len = strnlen (str, len);
 	dstr->size = pos + len + 1;
@@ -276,15 +278,14 @@ dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
 }
 
 VISIBLE void
-dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str)
+dstring_insertstr (dstring_t *dstr, size_t pos, const char *str)
 {
 	// Don't insert strlen + 1 to achieve concatenation
 	dstring_insert (dstr, pos, str, strlen (str));
 }
 
 VISIBLE void
-dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
-					  unsigned int len)
+dstring_insertsubstr (dstring_t *dstr, size_t pos, const char *str, size_t len)
 {
 	len = strnlen (str, len);
 
@@ -299,7 +300,7 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->str[0] = 0;
 }
 
-static int
+static __attribute__((format(PRINTF, 3, 0))) char *
 _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
 	int         size;
@@ -325,20 +326,20 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 	}
 	dstr->size = size + offs + 1;
 	dstr->str[dstr->size - 1] = 0;
-	return size;
+	return dstr->str;
 }
 
-VISIBLE int
+VISIBLE char *
 dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	return _dvsprintf (dstr, 0, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dsprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 
 	va_start (args, fmt);
 	ret = _dvsprintf (dstr, 0, fmt, args);
@@ -347,7 +348,7 @@ dsprintf (dstring_t *dstr, const char *fmt, ...)
 	return ret;
 }
 
-VISIBLE int
+VISIBLE char *
 davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	int         offs = 0;
@@ -357,11 +358,11 @@ davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 	return _dvsprintf (dstr, offs, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dasprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 	int         offs = 0;
 
 	if (dstr->size)

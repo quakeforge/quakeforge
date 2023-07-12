@@ -31,7 +31,22 @@
 # include "config.h"
 #endif
 
+#include "QF/msg.h"
+
+#include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
+#include "QF/simd/vec4f.h"
+
+#include "QF/plugin/vid_render.h"	//FIXME
+
+#include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
+
 #include "client/entities.h"
+#include "client/temp_entities.h"
+#include "client/world.h"
+
+entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
 /*  QW has a max of 512 entities and wants 64 frames of data per entity, plus
 	the baseline data (512 * (64 + 1) = 33280), but NQ has a max of 32000
@@ -340,3 +355,29 @@ vec3_t ent_colormod[256] = {
 	{1, 1, 0.666667},
 	{1, 1, 1}
 };
+
+void
+CL_TransformEntity (entity_t ent, float scale, const vec3_t angles,
+					vec4f_t position)
+{
+	vec4f_t     rotation;
+	vec4f_t     scalevec = { scale, scale, scale, 1};
+
+	if (VectorIsZero (angles)) {
+		rotation = (vec4f_t) { 0, 0, 0, 1 };
+	} else {
+		vec3_t      ang;
+		VectorCopy (angles, ang);
+		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer,
+												  ent.reg);
+		if (renderer->model && renderer->model->type == mod_alias) {
+			// stupid quake bug
+			// why, oh, why, do alias models pitch in the opposite direction
+			// to everything else?
+			ang[PITCH] = -ang[PITCH];
+		}
+		AngleQuat (ang, (vec_t*)&rotation);//FIXME
+	}
+	transform_t transform = Entity_Transform (ent);
+	Transform_SetLocalTransform (transform, scalevec, rotation, position);
+}

@@ -39,13 +39,15 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/msg.h"
 
-#include "diagnostic.h"
-#include "options.h"
-#include "strpool.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
 
 static hashtab_t *saved_strings;
 
@@ -63,7 +65,7 @@ strpool_new (void)
 {
 	strpool_t  *strpool = calloc (1, sizeof (strpool_t));
 
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
+	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = 1;
 	strpool->max_size = 16384;
 	strpool->strings = malloc (strpool->max_size);
@@ -77,7 +79,7 @@ strpool_build (const char *strings, int size)
 	intptr_t    s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
+	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = size + (*strings != 0);
 	strpool->max_size = (strpool->size + 16383) & ~16383;
 	strpool->strings = malloc (strpool->max_size);
@@ -120,6 +122,14 @@ strpool_addstr (strpool_t *strpool, const char *str)
 	return s;
 }
 
+int
+strpool_findstr (strpool_t *strpool, const char *str)
+{
+	if (!str)
+		return 0;
+	return (intptr_t) Hash_Find (strpool->str_tab, str);
+}
+
 static const char *
 ss_get_key (const void *s, void *unused)
 {
@@ -131,7 +141,7 @@ save_string (const char *str)
 {
 	char       *s;
 	if (!saved_strings)
-		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0);
+		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0, 0);
 	s = Hash_Find (saved_strings, str);
 	if (s)
 		return s;
@@ -141,13 +151,27 @@ save_string (const char *str)
 }
 
 const char *
+save_cwd (void)
+{
+	char       *cwd = getcwd (0, 0);
+	const char *str = save_string (cwd);
+	free (cwd);
+	return str;
+}
+
+const char *
 make_string (char *token, char **end)
 {
-	char        s[2];
+	char        s[7];	// utf8 needs 6 + nul
+	sizebuf_t   utf8str = {
+		.maxsize = sizeof (s),
+		.data = (byte *) s,
+	};
 	int         c;
 	int         i;
 	int         mask;
 	int         boldnext;
+	int         unicount;
 	int         quote;
 	static dstring_t *str;
 
@@ -159,6 +183,7 @@ make_string (char *token, char **end)
 
 	mask = 0x00;
 	boldnext = 0;
+	unicount = 0;
 
 	quote = *token++;
 	do {
@@ -187,6 +212,10 @@ make_string (char *token, char **end)
 				case '\'':
 					boldnext = 0;
 					c = '\'' ^ mask;
+					break;
+				case '?':
+					boldnext = 0;
+					c = '?' ^ mask;
 					break;
 				case '0':
 				case '1':
@@ -230,7 +259,33 @@ make_string (char *token, char **end)
 					}
 					if (!*token)
 						error (0, "EOF inside quote");
-					c ^= mask;
+					c ^= mask;	// cancel mask below
+					break;
+				case 'U':
+					unicount += 4;
+				case 'u':
+					unicount += 4;
+					boldnext = 0;
+					c = 0;
+					while (unicount && *token
+						   && isxdigit ((unsigned char)*token)) {
+						c *= 16;
+						if (*token <= '9')
+							c += *token - '0';
+						else if (*token <= 'F')
+							c += *token - 'A' + 10;
+						else
+							c += *token - 'a' + 10;
+						token++;
+						--unicount;
+					}
+					if (!*token) {
+						error (0, "EOF inside quote");
+					} else if (unicount) {
+						error (0, "incomplete unicode sequence: %x %d", c, unicount);
+					}
+					unicount = 1;	// signal need to encode to utf8
+					c ^= mask;	// cancel mask below
 					break;
 				case 'a':
 					boldnext = 0;
@@ -349,7 +404,15 @@ make_string (char *token, char **end)
 			c = c ^ 0x80;
 		boldnext = 0;
 		c = c ^ mask;
-		s[0] = c;
+		if (unicount) {
+			SZ_Clear (&utf8str);
+			MSG_WriteUTF8 (&utf8str, c);
+			MSG_WriteByte (&utf8str, 0);	// nul-terminate string
+			unicount = 0;
+		} else {
+			s[0] = c;
+			s[1] = 0;
+		}
 		dstring_appendstr (str, s);
 	} while (1);
 

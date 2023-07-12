@@ -38,14 +38,14 @@
 #include "sv_pr_cmds.h"
 
 typedef struct {
-	pr_int_t   *self;
-	pr_int_t   *other;
-	pr_int_t   *world;
+	pr_uint_t  *self;
+	pr_uint_t  *other;
+	pr_uint_t  *world;
 	float      *time;
 	float      *frametime;
 	float      *force_retouch;
-	string_t   *mapname;
-	string_t   *startspot;
+	pr_string_t *mapname;
+	pr_string_t *startspot;
 	float      *deathmatch;
 	float      *coop;
 	float      *teamplay;
@@ -64,30 +64,30 @@ typedef struct {
 	vec3_t     *trace_endpos;
 	vec3_t     *trace_plane_normal;
 	float      *trace_plane_dist;
-	pr_int_t   *trace_ent;
+	pr_uint_t  *trace_ent;
 	float      *trace_inopen;
 	float      *trace_inwater;
-	pr_int_t   *msg_entity;
-	string_t   *null;
+	pr_uint_t  *msg_entity;
+	pr_string_t *null;
 
-	pr_int_t   *newmis;
+	pr_uint_t  *newmis;
 } sv_globals_t;
 
 extern sv_globals_t sv_globals;
 
 typedef struct {
-	func_t      main;
-	func_t      StartFrame;
-	func_t      PlayerPreThink;
-	func_t      PlayerPostThink;
-	func_t      ClientKill;
-	func_t      ClientConnect;
-	func_t      PutClientInServer;
-	func_t      ClientDisconnect;
-	func_t      SetNewParms;
-	func_t      SetChangeParms;
+	pr_func_t   main;
+	pr_func_t   StartFrame;
+	pr_func_t   PlayerPreThink;
+	pr_func_t   PlayerPostThink;
+	pr_func_t   ClientKill;
+	pr_func_t   ClientConnect;
+	pr_func_t   PutClientInServer;
+	pr_func_t   ClientDisconnect;
+	pr_func_t   SetNewParms;
+	pr_func_t   SetChangeParms;
 
-	func_t      EndFrame;
+	pr_func_t   EndFrame;
 } sv_funcs_t;
 
 extern sv_funcs_t sv_funcs;
@@ -105,30 +105,25 @@ typedef struct
 	pr_int_t    velocity;			//vec3_t
 	pr_int_t    angles;				//vec3_t
 	pr_int_t    avelocity;			//vec3_t
-	pr_int_t    basevelocity;		//vec3_t
 	pr_int_t    punchangle;			//vec3_t
-	pr_int_t    classname;			//string_t
-	pr_int_t    model;				//string_t
+	pr_int_t    classname;			//pr_string_t
+	pr_int_t    model;				//pr_string_t
 	pr_int_t    frame;				//float
 	pr_int_t    skin;				//float
 	pr_int_t    effects;			//float
-	pr_int_t    drawPercent;		//float
 	pr_int_t    gravity;			//float
-	pr_int_t    mass;				//float
-	pr_int_t    light_level;		//float
 	pr_int_t    mins;				//vec3_t
 	pr_int_t    maxs;				//vec3_t
 	pr_int_t    size;				//vec3_t
-	pr_int_t    touch;				//func_t
-	pr_int_t    use;				//func_t
-	pr_int_t    think;				//func_t
-	pr_int_t    blocked;			//func_t
+	pr_int_t    touch;				//pr_func_t
+	pr_int_t    think;				//pr_func_t
+	pr_int_t    blocked;			//pr_func_t
 	pr_int_t    nextthink;			//float
 	pr_int_t    groundentity;		//int
 	pr_int_t    health;				//float
 	pr_int_t    frags;				//float
 	pr_int_t    weapon;				//float
-	pr_int_t    weaponmodel;		//string_t
+	pr_int_t    weaponmodel;		//pr_string_t
 	pr_int_t    weaponframe;		//float
 	pr_int_t    currentammo;		//float
 	pr_int_t    ammo_shells;		//float
@@ -139,7 +134,6 @@ typedef struct
 	pr_int_t    items2;				//float
 	pr_int_t    takedamage;			//float
 	pr_int_t    chain;				//int
-	pr_int_t    deadflag;			//float
 	pr_int_t    view_ofs;			//vec3_t
 	pr_int_t    button0;			//float
 	pr_int_t    button1;			//float
@@ -148,42 +142,26 @@ typedef struct
 	pr_int_t    fixangle;			//float
 	pr_int_t    v_angle;			//vec3_t
 	pr_int_t    idealpitch;			//float
-	pr_int_t    pitch_speed;		//float
-	pr_int_t    netname;			//string_t
+	pr_int_t    netname;			//pr_string_t
 	pr_int_t    enemy;				//int
 	pr_int_t    flags;				//float
 	pr_int_t    colormap;			//float
 	pr_int_t    team;				//float
-	pr_int_t    max_health;			//float
 	pr_int_t    teleport_time;		//float
-	pr_int_t    armortype;			//float
 	pr_int_t    armorvalue;			//float
 	pr_int_t    waterlevel;			//float
 	pr_int_t    watertype;			//float
 	pr_int_t    ideal_yaw;			//float
 	pr_int_t    yaw_speed;			//float
-	pr_int_t    aiment;				//int
 	pr_int_t    goalentity;			//int
 	pr_int_t    spawnflags;			//float
-	pr_int_t    target;				//string_t
-	pr_int_t    targetname;			//string_t
 	pr_int_t    dmg_take;			//float
 	pr_int_t    dmg_save;			//float
 	pr_int_t    dmg_inflictor;		//int
 	pr_int_t    owner;				//int
 	pr_int_t    movedir;			//vec3_t
-	pr_int_t    message;			//string_t
+	pr_int_t    message;			//pr_string_t
 	pr_int_t    sounds;				//float
-	pr_int_t    noise;				//string_t
-	pr_int_t    noise1;				//string_t
-	pr_int_t    noise2;				//string_t
-	pr_int_t    noise3;				//string_t
-	pr_int_t    dmg;				//float
-	pr_int_t    dmgtime;			//float
-	pr_int_t    air_finished;		//float
-	pr_int_t    pain_finished;		//float
-	pr_int_t    radsuit_finished;	//float
-	pr_int_t    speed;				//float
 
 	pr_int_t    rotated_bbox;		//int
 	pr_int_t    alpha;				//float
@@ -208,8 +186,9 @@ extern progs_t sv_pr_state;
 #define SVstring(e,f)	SVFIELD (e, f, string)
 #define SVfunc(e,f)		SVFIELD (e, f, func)
 #define SVentity(e,f)	SVFIELD (e, f, entity)
-#define SVvector(e,f)	SVFIELD (e, f, vector)
-#define SVinteger(e,f)	SVFIELD (e, f, integer)
+#define SVvector(e,f)	(&SVFIELD (e, f, float))
+#define SVint(e,f)		SVFIELD (e, f, int)
+#define SVdouble(e,f)	SVFIELD (e, f, double)
 
 typedef struct edict_leaf_s {
 	struct edict_leaf_s *next;
@@ -222,27 +201,37 @@ typedef struct sv_data_s {
 	edict_leaf_t *leafs;
 	entity_state_t state;
 	byte        alpha;
-	qboolean    sendinterval;
-	qboolean    add_grav;
+	bool        sendinterval;
+	bool        add_grav;
 } sv_data_t;
 
 #define SVdata(e)		((sv_data_t *) ((e)->edata))
 #define EDICT_FROM_AREA(l) (STRUCT_FROM_LINK(l,sv_data_t,area)->edict)
 
 static inline void
-sv_pr_touch (edict_t *self, edict_t *other)
+sv_pr_exec (edict_t *self, edict_t *other, pr_func_t func)
 {
 	pr_int_t    this;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
 	if ((this = sv_pr_state.fields.this) != -1) {
+		PR_PushFrame (&sv_pr_state);
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
+		P_INT (&sv_pr_state, 2) = other ? E_POINTER (other, this) : 0;
 	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, touch));
+	PR_ExecuteProgram (&sv_pr_state, func);
+	if ((this = sv_pr_state.fields.this) != -1) {
+		PR_PopFrame (&sv_pr_state);
+	}
+}
+
+static inline void
+sv_pr_touch (edict_t *self, edict_t *other)
+{
+	sv_pr_exec (self, other, SVfunc (self, touch));
 }
 
 static inline void
@@ -253,33 +242,13 @@ sv_pr_use (edict_t *self, edict_t *other)
 static inline void
 sv_pr_think (edict_t *self)
 {
-	pr_int_t    this;
-
-	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
-	*sv_globals.other = 0;
-	if ((this = sv_pr_state.fields.this) != -1) {
-		PR_RESET_PARAMS (&sv_pr_state);
-		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = 0;
-	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, think));
+	sv_pr_exec (self, 0, SVfunc (self, think));
 }
 
 static inline void
 sv_pr_blocked (edict_t *self, edict_t *other)
 {
-	pr_int_t    this;
-
-	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
-	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
-	if ((this = sv_pr_state.fields.this) != -1) {
-		PR_RESET_PARAMS (&sv_pr_state);
-		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
-	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, blocked));
+	sv_pr_exec (self, other, SVfunc (self, blocked));
 }
 
 #endif // __sv_progs_h

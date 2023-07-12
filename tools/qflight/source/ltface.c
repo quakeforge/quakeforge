@@ -52,11 +52,11 @@
 
 #include "compat.h"
 
-#include "light.h"
-#include "entities.h"
-#include "noise.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/noise.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 int c_bad;
 int c_culldistplane, c_proper;
@@ -71,7 +71,7 @@ get_tex_name (int texindex)
 	if (bsp->texdatasize) {
 		mtl = (dmiptexlump_t *) bsp->texdata;
 		miptex = bsp->texinfo[texindex].miptex;
-		if (mtl->dataofs[miptex] != -1) {
+		if (mtl->dataofs[miptex] != ~0u) {
 			mt = (miptex_t *) (bsp->texdata + mtl->dataofs[miptex]);
 			return mt->name;
 		}
@@ -172,7 +172,6 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 static void
 CalcFaceExtents (lightinfo_t *l)
 {
-	int			i, j, e;
 	vec_t		mins[2], maxs[2], val;
 	dface_t		*s;
 	dvertex_t	*v;
@@ -185,14 +184,14 @@ CalcFaceExtents (lightinfo_t *l)
 
 	tex = &bsp->texinfo[s->texinfo];
 
-	for (i = 0; i < s->numedges; i++) {
-		e = bsp->surfedges[s->firstedge + i];
+	for (uint32_t i = 0; i < s->numedges; i++) {
+		int     e = bsp->surfedges[s->firstedge + i];
 		if (e >= 0)
 			v = bsp->vertexes + bsp->edges[e].v[0];
 		else
 			v = bsp->vertexes + bsp->edges[-e].v[1];
 
-		for (j = 0; j < 2; j++) {
+		for (int j = 0; j < 2; j++) {
 			val = DotProduct (v->point, tex->vecs[j]) + tex->vecs[j][3];
 			if (val < mins[j])
 				mins[j] = val;
@@ -201,7 +200,7 @@ CalcFaceExtents (lightinfo_t *l)
 		}
 	}
 
-	for (i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		l->exactmins[i] = mins[i];
 		l->exactmaxs[i] = maxs[i];
 
@@ -289,7 +288,7 @@ static void
 SingleLightFace (entity_t *light, lightinfo_t *l)
 {
 	int			mapnum, i;
-	qboolean	hit;
+	bool		hit;
 	vec3_t		incoming, spotvec;
 	vec_t		angle, dist, idist, lightfalloff, lightsubtract, spotcone;
 	vec_t       add = 0.0;
@@ -488,7 +487,6 @@ SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
 	// Check each point...
 	VectorCopy (sun_dir, incoming);
 	VectorNormalize (incoming);
-	angle = DotProduct (incoming, l->facenormal);
 	//anglesense = 0.5;	//FIXME
 
 	// FIXME global
@@ -499,49 +497,15 @@ SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
 
 		if (!TestSky (l, point->v, sun_dir))
 			continue;
+
 		add = sun_light;
-			continue;
-
 		add *= angle;
-
 		add *= options.extrascale;
 
 		sample = &l->sample[mapnum][point->samplepos];
 		VectorMultAdd (sample->c, add, sun_color, sample->c);
 	}
 }
-
-#if 0
-static void
-FixMinlight (lightinfo_t *l)
-{
-	float		minlight;
-	int			i, j;
-
-	minlight = minlights[l->surfnum];
-
-	// if minlight is set, there must be a style 0 light map
-	if (!minlight)
-		return;
-
-	for (i = 0; i < l->numlightstyles; i++) {
-		if (l->lightstyles[i] == 0)
-			break;
-	}
-	if (i == l->numlightstyles) {
-		if (l->numlightstyles == MAXLIGHTMAPS)
-			return;		// oh well..
-		for (j = 0; j < l->numsurfpt; j++)
-			l->lightmaps[i][j] = minlight;
-			l->lightstyles[i] = 0;
-			l->numlightstyles++;
-	} else {
-		for (j = 0; j < l->numsurfpt; j++)
-			if (l->lightmaps[i][j] < minlight)
-				l->lightmaps[i][j] = minlight;
-	}
-}
-#endif
 
 void
 LightFace (lightinfo_t *l, int surfnum)
@@ -592,8 +556,6 @@ LightFace (lightinfo_t *l, int surfnum)
 		for (i = 0; i < world_entity->num_suns; i++)
 			SkyLightFace (world_entity, i, l);
 	}
-
-//	FixMinlight (&l);
 
 	for (i = 0; i < MAXLIGHTMAPS; i++)
 		if (l->lightstyles[i] == 255)

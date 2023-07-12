@@ -1,0 +1,68 @@
+include libs/audio/targets/Makemodule.am
+include libs/audio/renderer/Makemodule.am
+include libs/audio/test/Makemodule.am
+
+plugin_LTLIBRARIES +=	@cd_plugins@
+noinst_LTLIBRARIES +=	@cd_static_plugins@
+lib_LTLIBRARIES +=	@CD_TARGETS@ @SND_TARGETS@
+EXTRA_LTLIBRARIES += \
+	libs/audio/libQFsound.la \
+	libs/audio/libQFcd.la \
+	libs/audio/cd_file.la \
+	libs/audio/cd_linux.la \
+	libs/audio/cd_sdl.la \
+	libs/audio/cd_sgi.la \
+	libs/audio/cd_win.la \
+	libs/audio/cd_xmms.la
+
+cd_plug_libs=libs/util/libQFutil.la
+
+cd_file_libs= \
+	libs/audio/libQFsound.la \
+	$(cd_plug_libs)
+
+libs_audio_cd_file_la_LDFLAGS=			$(plugin_ldflags)
+libs_audio_cd_file_la_LIBADD=			$(cd_file_libs)
+libs_audio_cd_file_la_SOURCES=			libs/audio/cd_file.c
+
+libs_audio_cd_linux_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_cd_linux_la_LIBADD=			$(cd_plug_libs)
+libs_audio_cd_linux_la_SOURCES=		libs/audio/cd_linux.c
+
+libs_audio_cd_sdl_la_LDFLAGS=			$(plugin_ldflags)
+libs_audio_cd_sdl_la_LIBADD=			$(cd_plug_libs) $(SDL_LIBS) $(plugin_libadd)
+libs_audio_cd_sdl_la_CFLAGS=			$(SDL_CFLAGS)
+libs_audio_cd_sdl_la_SOURCES=			libs/audio/cd_sdl.c
+
+libs_audio_cd_sgi_la_LDFLAGS=			$(plugin_ldflags)
+libs_audio_cd_sgi_la_LIBADD=			$(cd_plug_libs) $(SGI_CD_LIBS)
+libs_audio_cd_sgi_la_SOURCES=			libs/audio/cd_sgi.c
+
+libs_audio_cd_win_la_LDFLAGS=			$(plugin_ldflags)
+libs_audio_cd_win_la_LIBADD=			$(cd_plug_libs) $(plugin_libadd)
+libs_audio_cd_win_la_SOURCES=			libs/audio/cd_win.c
+
+libs_audio_cd_xmms_la_LDFLAGS=			$(plugin_ldflags)
+libs_audio_cd_xmms_la_LIBADD=			$(cd_plug_libs) $(XMMS_LIBS)
+libs_audio_cd_xmms_la_CFLAGS=			$(XMMS_CFLAGS)
+libs_audio_cd_xmms_la_SOURCES=			libs/audio/cd_xmms.c
+
+sound_libs= \
+	@snd_output_static_plugin_libs@ \
+	@snd_render_static_plugin_libs@ \
+	libs/ruamoko/libQFruamoko.la \
+	libs/util/libQFutil.la
+
+cd_libs= \
+	@cd_static_plugin_libs@ \
+	libs/util/libQFutil.la
+
+libs_audio_libQFsound_la_LDFLAGS=		$(lib_ldflags)
+libs_audio_libQFsound_la_DEPENDENCIES=	$(sound_libs)
+libs_audio_libQFsound_la_LIBADD=		$(sound_libs)
+libs_audio_libQFsound_la_SOURCES=		libs/audio/snd.c libs/audio/snd_progs.c
+
+libs_audio_libQFcd_la_LDFLAGS=			$(lib_ldflags)
+libs_audio_libQFcd_la_DEPENDENCIES=		$(cd_libs)
+libs_audio_libQFcd_la_LIBADD=			$(cd_libs)
+libs_audio_libQFcd_la_SOURCES=			libs/audio/cd.c

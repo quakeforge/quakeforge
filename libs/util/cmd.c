@@ -65,7 +65,15 @@ typedef struct cmd_provider_s
 
 static cmdalias_t *cmd_alias;
 
-VISIBLE cvar_t     *cmd_warncmd;
+VISIBLE int cmd_warncmd;
+static cvar_t cmd_warncmd_cvar = {
+	.name = "cmd_warncmd",
+	.description =
+		"Toggles the display of error messages for unknown commands",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cmd_warncmd },
+};
 
 static hashtab_t  *cmd_alias_hash;
 static hashtab_t  *cmd_hash;
@@ -118,6 +126,8 @@ Cmd_Command (cbuf_args_t *args)
 	if (cmd) {
 		if (cmd->function) {
 			cmd->function ();
+		} else if (cmd->datafunc) {
+			cmd->datafunc (cmd->data);
 		}
 		return 0;
 	}
@@ -128,15 +138,14 @@ Cmd_Command (cbuf_args_t *args)
 		return 0;
 	if (cbuf_active->strict)
 		return -1;
-	else if (cmd_warncmd->int_val || developer->int_val & SYS_DEV)
+	else if (cmd_warncmd || developer & SYS_dev)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 	return 0;
 }
 
-/* Registers a command and handler function */
-VISIBLE int
-Cmd_AddCommand (const char *cmd_name, xcommand_t function,
-				const char *description)
+static int
+add_command (const char *cmd_name, xcommand_t func, xdatacmd_t datafunc,
+			 void *data, const char *description)
 {
 	cmd_function_t *cmd;
 	cmd_function_t **c;
@@ -144,7 +153,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	// fail if the command already exists
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
-		Sys_MaskPrintf (SYS_DEV, "Cmd_AddCommand: %s already defined\n",
+		Sys_MaskPrintf (SYS_dev, "Cmd_AddCommand: %s already defined\n",
 						cmd_name);
 		return 0;
 	}
@@ -152,7 +161,9 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd = calloc (1, sizeof (cmd_function_t));
 	SYS_CHECKMEM (cmd);
 	cmd->name = cmd_name;
-	cmd->function = function;
+	cmd->function = func;
+	cmd->datafunc = datafunc;
+	cmd->data = data;
 	cmd->description = description;
 	Hash_Add (cmd_hash, cmd);
 	for (c = &cmd_functions; *c; c = &(*c)->next)
@@ -161,6 +172,22 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd->next = *c;
 	*c = cmd;
 	return 1;
+}
+
+/* Registers a command and handler function */
+VISIBLE int
+Cmd_AddCommand (const char *cmd_name, xcommand_t function,
+				const char *description)
+{
+	return add_command (cmd_name, function, 0, 0, description);
+}
+
+/* Registers a command and handler function with data */
+VISIBLE int
+Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
+					void *data, const char *description)
+{
+	return add_command (cmd_name, 0, function, data, description);
 }
 
 /* Unregisters a command */
@@ -182,7 +209,7 @@ Cmd_RemoveCommand (const char *name)
 }
 
 /* Checks for the existance of a command */
-VISIBLE qboolean
+VISIBLE bool
 Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
@@ -283,6 +310,13 @@ Cmd_CompleteBuildList (const char *partial)
 }
 
 /* Hash table functions for aliases and commands */
+static void
+cmd_free (void *_c, void *unused)
+{
+	cmd_function_t *cmd = _c;
+	free (cmd);
+}
+
 static void
 cmd_alias_free (void *_a, void *unused)
 {
@@ -478,29 +512,28 @@ Cmd_Help_f (void)
 
 	Sys_Printf ("variable/command not found\n");
 }
+
 static void
 Cmd_Exec_f (void)
 {
 	char       *f;
-	int         mark;
+	size_t      mark;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("exec <filename> : execute a script file\n");
 		return;
 	}
 
-	mark = Hunk_LowMark ();
+	mark = Hunk_LowMark (0);
 	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val
-			|| (developer && developer->int_val & SYS_DEV)))
+	if (!Cvar_Command () && (cmd_warncmd || (developer & SYS_dev)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (mark);
+	Hunk_FreeToLowMark (0, mark);
 }
 
 /*
@@ -580,12 +613,24 @@ Cmd_StuffCmds_f (void)
 	Cmd_StuffCmds (cbuf_active);
 }
 
+static void
+cmd_shutdown (void *data)
+{
+	Cbuf_Delete (cmd_cbuf);
+	Hash_DelTable (cmd_hash);
+	Hash_DelTable (cmd_alias_hash);
+	Hash_DelTable (cmd_provider_hash);
+}
+
 VISIBLE void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
-	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key, cmd_provider_free, 0);
+	Sys_RegisterShutdown (cmd_shutdown, 0);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, cmd_free, 0, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key,
+									cmd_alias_free, 0, 0);
+	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key,
+									  cmd_provider_free, 0, 0);
 }
 
 VISIBLE void
@@ -607,8 +652,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("echo", Cmd_Echo_f, "Print text to console");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	Cmd_AddCommand ("sleep", Cmd_Sleep_f, "Wait for a certain number of seconds.");
-	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
-							"display of error messages for unknown commands");
+	Cvar_Register (&cmd_warncmd_cvar, 0, 0);
 	cmd_cbuf = Cbuf_New (&id_interp);
 
 	Cmd_AddProvider("id", &id_interp);
@@ -628,7 +672,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	return 0;
 }
 
-VISIBLE void
+VISIBLE int
 Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 {
 	char       *f;
@@ -636,7 +680,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	QFile      *file;
 
 	if (!path || !*path)
-		return;
+		return 0;
 	if (qfs) {
 		file = QFS_FOpenFile (path);
 	} else {
@@ -654,7 +698,9 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 			free (f);
 		}
 		Qclose (file);
+		return 1;
 	}
+	return 0;
 }
 
 VISIBLE void

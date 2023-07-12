@@ -33,34 +33,39 @@
 
 #include "QF/quakeio.h"
 
+struct progs_s;
+struct dstring_s;
+
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
-
 void RUA_Cmd_Init (struct progs_s *pr, int secure);
-
 void RUA_Cvar_Init (struct progs_s *pr, int secure);
-
-void RUA_File_Init (struct progs_s *pr, int secure);
-
 void RUA_Hash_Init (struct progs_s *pr, int secure);
-
 void RUA_Math_Init (struct progs_s *pr, int secure);
-
 void RUA_MsgBuf_Init (struct progs_s *pr, int secure);
-
 void RUA_Obj_Init (struct progs_s *pr, int secure);
-
 void RUA_Plist_Init (struct progs_s *pr, int secure);
-
+void RUA_Runtime_Init (struct progs_s *pr, int secure);
 void RUA_Script_Init (progs_t *pr, int secure);
-
 void RUA_Set_Init (progs_t *pr, int secure);
-
+void RUA_Stdlib_Init (struct progs_s *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
-
 void RUA_QFile_Init (struct progs_s *pr, int secure);
+void RUA_QFS_Init (struct progs_s *pr, int secure);
+
+// the variable args are assumed to come immediately after fmt_arg
+void RUA_Sprintf (struct progs_s *pr, struct dstring_s *dstr, const char *func,
+				  int fmt_arg);
+
 int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 QFile *QFile_GetFile (struct progs_s *pr, int handle);
+struct plitem_s *Plist_GetItem (struct progs_s *pr, int handle);
 
-void RUA_QFS_Init (struct progs_s *pr, int secure);
+void RUA_GUI_Init (struct progs_s *pr, int secure);
+void RUA_Input_Init (struct progs_s *pr, int secure);
+void RUA_Mersenne_Init (struct progs_s *pr, int secure);
+void RUA_Model_Init (struct progs_s *pr, int secure);
+struct model_s *Model_GetModel (progs_t *pr, int handle);
+void RUA_Scene_Init (struct progs_s *pr, int secure);
+struct scene_s *Scene_GetScene (struct progs_s *pr, pr_ulong_t handle);
 
 #endif//__rua_internal_h

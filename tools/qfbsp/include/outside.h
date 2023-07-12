@@ -25,7 +25,7 @@
 /**	\defgroup qfbsp_outside Outside Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -39,8 +39,8 @@ struct node_s;
 	\return			\c true if the outside has been set solid, otherwise
 					\c false.
 */
-qboolean FillOutside (struct node_s *node);
+bool FillOutside (struct node_s *node);
 
-//@}
+///@}
 
 #endif//qfbsp_outside_h

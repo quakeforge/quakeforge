@@ -1,7 +1,7 @@
 #ifndef __ruamoko_qfs_h
 #define __ruamoko_qfs_h
 
-#include "qfile.h"
+#include <qfile.h>
 
 struct _qfslist_t {
 	int count;
@@ -17,5 +17,6 @@ typedef struct _qfslist_t *QFSlist;
 @extern int QFS_WriteFile (string filename, void *buf, int count);
 @extern QFSlist QFS_Filelist (string path, string ext, int strip);
 @extern void  QFS_FilelistFree (QFSlist list);
+@extern string QFS_GetDirectory (void);
 
 #endif//__ruamoko_qfs_h

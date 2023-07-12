@@ -54,14 +54,13 @@ extern void	R_DrawLine (polyvert_t *polyvert0, polyvert_t *polyvert1);
 
 extern int		cachewidth;
 extern byte    *cacheblock;
-extern int		screenwidth;
 extern int      	r_init;
 
 extern float	pixelAspect;
 
 extern int		r_drawnpolycount;
 
-extern struct cvar_s	*r_clearcolor;
+extern int r_clearcolor;
 
 extern int	sintable[SIN_BUFFER_SIZE];
 extern int	intsintable[SIN_BUFFER_SIZE];
@@ -70,9 +69,9 @@ extern byte color_white[4];
 extern byte color_black[4];
 
 extern	vec3_t	vup, base_vup;
-extern	vec3_t	vpn, base_vpn;
+extern	vec3_t	vfwd, base_vfwd;
 extern	vec3_t	vright, base_vright;
-extern	struct entity_s		*currententity;
+extern float r_viewmatrix[3][4];
 
 #define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES
@@ -81,16 +80,14 @@ extern	struct entity_s		*currententity;
 #define	MAXSPANS			3000
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct espan_s
-{
+typedef struct espan_s {
 	int				u, v, count;
 	struct espan_s	*pnext;
 } espan_t;
 
 // FIXME: compress, make a union if that will help
 // insubmodel is only 1, flags is fewer than 32, spanstate could be a byte
-typedef struct surf_s
-{
+typedef struct surf_s {
 	struct surf_s	*next;			// active surface stack in r_edge.c
 	struct surf_s	*prev;			// used in r_edge.c for active surf stack
 	struct espan_s	*spans;			// pointer to linked list of spans to draw
@@ -102,12 +99,12 @@ typedef struct surf_s
 									//  start)
 	int			flags;				// currentface flags
 	void		*data;				// associated data like msurface_t
-	struct entity_s	*entity;
+	uint32_t    render_id;
 	float		nearzi;				// nearest 1/z on surface, for mipmapping
-	qboolean	insubmodel;
+	bool		insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
 
-	int			pad[2];				// to 64 bytes
+	int			pad[2];				// to 64 bytes (FIXME not for 64-bit)
 } surf_t;
 
 extern	surf_t	*surfaces, *surface_p, *surf_max;
@@ -139,9 +136,6 @@ extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 extern int r_skymade;
 extern void R_MakeSky (void);
 
-extern int gl_solidskytexture;
-extern int gl_alphaskytexture;
-
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001
 #define ALIAS_TOP_CLIP				0x0002
@@ -168,5 +162,8 @@ typedef struct edge_s
 #define NUMVERTEXNORMALS        162
 extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
 extern vec3_t ambientcolor;
+
+struct entity_s;
+uint32_t SW_AddEntity (struct entity_s ent);
 
 #endif	// _R_SHARED_H

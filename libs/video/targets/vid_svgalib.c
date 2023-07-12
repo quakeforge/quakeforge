@@ -72,8 +72,24 @@ static byte *framebuffer_ptr;
 static int   svgalib_inited = 0;
 static int   svgalib_backgrounded = 0;
 
-static cvar_t *vid_redrawfull;
-static cvar_t *vid_waitforrefresh;
+static int vid_redrawfull;
+static cvar_t vid_redrawfull_cvar = {
+	.name = "vid_redrawfull",
+	.description =
+		"Redraw entire screen each frame instead of just dirty areas",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vid_redrawfull },
+};
+static int vid_waitforrefresh;
+static cvar_t vid_waitforrefresh_cvar = {
+	.name = "vid_waitforrefresh",
+	.description =
+		"Wait for vertical retrace before drawing next frame",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_waitforrefresh },
+};
 
 int		 VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes, VGA_planar;
 byte	*VGA_pagebase;
@@ -239,10 +255,10 @@ get_mode (int width, int height, int depth)
 	return i;
 }
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_Shutdown\n");
 
 	if (!svgalib_inited)
 		return;
@@ -358,6 +374,8 @@ VID_Init (byte *palette, byte *colormap)
 	if (svgalib_inited)
 		return;
 
+	Sys_RegisterShutdown (VID_shutdown);
+
 	err = vga_init ();
 	if (err)
 		Sys_Error ("SVGALib failed to allocate a new VC");
@@ -374,7 +392,7 @@ VID_Init (byte *palette, byte *colormap)
 	VID_InitModes ();
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	current_mode = get_mode (vid.width, vid.height, 8);
 
@@ -391,14 +409,9 @@ VID_Init (byte *palette, byte *colormap)
 void
 VID_Init_Cvars ()
 {
-	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
-							   "Redraw entire screen each frame instead of "
-							   "just dirty areas");
-	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
-								   NULL, "Wait for vertical retrace before "
-								   "drawing next frame");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
+	Cvar_Register (&vid_redrawfull_cvar, 0, 0);
+	Cvar_Register (&vid_waitforrefresh_cvar, 0, 0);
+	Cvar_Register (&vid_system_gamma_cvar, 0, 0);
 }
 
 void
@@ -412,13 +425,13 @@ VID_Update (vrect_t *rects)
 		return;
 	}
 
-	if (vid_waitforrefresh->int_val) {
+	if (vid_waitforrefresh) {
 		vga_waitretrace ();
 	}
 
 	if (VGA_planar) {
 		VGA_UpdatePlanarScreen (vid.buffer);
-	} else if (vid_redrawfull->int_val) {
+	} else if (vid_redrawfull) {
 		int         total = vid.rowbytes * vid.height;
 		int         offset;
 
@@ -461,21 +474,11 @@ VID_Update (vrect_t *rects)
 }
 
 void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
-
-void
 VID_SetCaption (const char *text)
 {
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return false;

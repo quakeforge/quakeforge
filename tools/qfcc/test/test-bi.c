@@ -40,47 +40,48 @@
 #include "QF/dstring.h"
 #include "QF/progs.h"
 
+#include "rua_internal.h"
 #include "test-bi.h"
 
 static void
-bi_printf (progs_t *pr)
+bi_printf (progs_t *pr, void *data)
 {
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	static dstring_t *dstr;
 
-	if (!dstr)
+	if (!dstr) {
 		dstr = dstring_new ();
-	else
+	} else {
 		dstring_clear (dstr);
+	}
 
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
-	if (dstr->str)
+	RUA_Sprintf (pr, dstr, "printf", 0);
+
+	if (dstr->str) {
 		fputs (dstr->str, stdout);
+	}
 }
 
 static void
-bi_errno (progs_t *pr)
+bi_errno (progs_t *pr, void *data)
 {
 	R_INT (pr) = errno;
 }
 
 static void
-bi_strerror (progs_t *pr)
+bi_strerror (progs_t *pr, void *data)
 {
 	int err = P_INT (pr, 0);
 	RETURN_STRING (pr, strerror (err));
 }
 
 static void
-bi_exit (progs_t *pr)
+bi_exit (progs_t *pr, void *data)
 {
 	exit (P_INT (pr, 0));
 }
 
 static void
-bi_spawn (progs_t *pr)
+bi_spawn (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 	ed = ED_Alloc (pr);
@@ -88,25 +89,27 @@ bi_spawn (progs_t *pr)
 }
 
 static void
-bi_remove (progs_t *pr)
+bi_remove (progs_t *pr, void *data)
 {
 	edict_t    *ed;
 	ed = P_EDICT (pr, 0);
 	ED_Free (pr, ed);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"printf",		bi_printf,		-1},
-	{"errno",		bi_errno,		-1},
-	{"strerror",	bi_strerror,	-1},
-	{"exit",		bi_exit,		-1},
-	{"spawn",		bi_spawn,		-1},
-	{"remove",		bi_remove,		-1},
+	bi(printf,   -2, p(string)),
+	bi(errno,    0),
+	bi(strerror, 1, p(int)),
+	bi(exit,     1, p(int)),
+	bi(spawn,    0),
+	bi(remove,   1, p(entity)),
 	{0}
 };
 
 void
 BI_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

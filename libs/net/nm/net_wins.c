@@ -1,4 +1,3 @@
-
 /*
 	net_wins.c
 
@@ -74,7 +73,7 @@ static netadr_t broadcastaddr;
 
 static unsigned long myAddr;
 
-qboolean    winsock_lib_initialized;
+bool        winsock_lib_initialized;
 
 int         (PASCAL FAR * pWSAStartup) (WORD wVersionRequired,
 
@@ -247,13 +246,13 @@ WINS_Init (void)
 
 	// determine my name
 	if (pgethostname (buff, MAXHOSTNAMELEN) == SOCKET_ERROR) {
-		Sys_MaskPrintf (SYS_NET, "Winsock TCP/IP Initialization failed.\n");
+		Sys_MaskPrintf (SYS_net, "Winsock TCP/IP Initialization failed.\n");
 		if (--winsock_initialized == 0)
 			pWSACleanup ();
 		return -1;
 	}
 	// if the quake hostname isn't set, set it to the machine name
-	if (strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname, "UNNAMED") == 0) {
 		// see if it's a text IP address (well, close enough)
 		for (p = buff; *p; p++)
 			if ((*p < '0' || *p > '9') && *p != '.')
@@ -266,7 +265,7 @@ WINS_Init (void)
 					break;
 			buff[i] = 0;
 		}
-		Cvar_Set (hostname, buff);
+		Cvar_Set ("hostname", buff);
 	}
 
 	i = COM_CheckParm ("-ip");
@@ -319,7 +318,7 @@ WINS_Shutdown (void)
 //=============================================================================
 
 void
-WINS_Listen (qboolean state)
+WINS_Listen (bool state)
 {
 	// enable listening
 	if (state) {
@@ -437,10 +436,11 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 	return 0;
 }
 //=============================================================================
-
+static int WINS_Connect_called;
 int
 WINS_Connect (int socket, netadr_t *addr)
 {
+	WINS_Connect_called++;
 	return 0;
 }
 
@@ -542,6 +542,10 @@ const char *
 WINS_AddrToString (netadr_t *addr)
 {
 	static dstring_t *buffer;
+
+	if (!buffer) {
+		buffer = dstring_new ();
+	}
 
 	dsprintf (buffer, "%d.%d.%d.%d:%d", addr->ip[0],
 			  addr->ip[1], addr->ip[2], addr->ip[3],

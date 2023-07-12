@@ -46,8 +46,18 @@
 #include "QF/plugin/general.h"
 
 #include "r_internal.h"
+#include "r_scrap.h"
+#include "vid_internal.h"
 
-cvar_t         *vidrend_plugin;
+char *vidrend_plugin;
+static cvar_t vidrend_plugin_cvar = {
+	.name = "vid_render",
+	.description =
+		"Video Render Plugin to use",
+	.default_value = VID_RENDER_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &vidrend_plugin },
+};
 plugin_t       *vidrendmodule = NULL;
 
 VID_RENDER_PLUGIN_PROTOS
@@ -60,30 +70,40 @@ vid_render_funcs_t *r_funcs;
 
 #define U __attribute__ ((used))
 static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
+static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 #undef U
 
+static void
+R_shutdown (void *data)
+{
+	R_ShutdownEfrags ();
+	R_MaxDlightsCheck (0);	// frees memory
+	PI_UnloadPlugin (vidrendmodule);
+}
+
 VISIBLE void
-R_LoadModule (void (*load_gl)(void), void (*set_palette) (const byte *palette))
+R_LoadModule (vid_internal_t *vid_internal)
 {
 	PI_RegisterPlugins (vidrend_plugin_list);
-	vidrend_plugin = Cvar_Get ("vid_render", VID_RENDER_DEFAULT, CVAR_ROM, 0,
-							   "Video Render Plugin to use");
-	vidrendmodule = PI_LoadPlugin ("vid_render", vidrend_plugin->string);
+	Cvar_Register (&vidrend_plugin_cvar, 0, 0);
+	vidrendmodule = PI_LoadPlugin ("vid_render", vidrend_plugin);
 	if (!vidrendmodule) {
 		Sys_Error ("Loading of video render module: %s failed!\n",
-				   vidrend_plugin->string);
+				   vidrend_plugin);
 	}
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
-	r_data->vid->load_gl = load_gl;
-	r_data->vid->set_palette = set_palette;
+	r_data->vid->vid_internal = vid_internal;
 
-	vidrendmodule->functions->general->p_Init ();
+	r_funcs->init ();
+	Sys_RegisterShutdown (R_shutdown, 0);
 }
 
 VISIBLE void
 R_Init (void)
 {
 	r_funcs->R_Init ();
+	R_ClearEfrags ();	//FIXME force link of r_efrag.o for qwaq
+	Fog_Init ();
 }

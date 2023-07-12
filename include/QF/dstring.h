@@ -25,13 +25,13 @@
 
 */
 
-#ifndef __dstring_h
-#define __dstring_h
+#ifndef __QF_dstring_h
+#define __QF_dstring_h
 
 /** \defgroup dstring Dynamic Strings
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -45,20 +45,20 @@ typedef struct dstring_mem_s {
 
 typedef struct dstring_s {
 	dstring_mem_t *mem;
-	unsigned long int size, truesize;
-	char *str;
+	size_t      size, truesize;
+	char       *str;
 } dstring_t;
 
 extern dstring_mem_t dstring_default_mem;
 
 // General buffer functions
-//@{
+///@{
 /** Create a new dstring. size and truesize start at 0 and no string buffer
 	is allocated.
 */
 dstring_t *_dstring_new (dstring_mem_t *mem);
 dstring_t *dstring_new (void);
-//@}
+///@}
 /** Delete a dstring. Both the string buffer and dstring object are freed.
 */
 void dstring_delete (dstring_t *dstr);
@@ -72,21 +72,21 @@ void dstring_adjust (dstring_t *dstr);
 	\param len		the size of the hole to open.
 	\return			pointer to the beginning of the opened hole.
 */
-char *dstring_reserve (dstring_t *dstr, unsigned len);
+char *dstring_reserve (dstring_t *dstr, size_t len);
 /** Copy len bytes from data into the dstring, replacing any existing data.
 */
-void dstring_copy (dstring_t *dstr, const char *data, unsigned int len);
+void dstring_copy (dstring_t *dstr, const char *data, size_t len);
 /** Append len bytes from data onto the end of the dstring.
 */
-void dstring_append (dstring_t *dstr, const char *data, unsigned int len);
+void dstring_append (dstring_t *dstr, const char *data, size_t len);
 /** Insert len bytes from data int the dstring at pos. If pos is past the
 	end of the dstring, equivalent to dstring_append.
 */
-void dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
-					 unsigned int len);
+void dstring_insert (dstring_t *dstr, size_t pos, const char *data,
+					 size_t len);
 /** Remove len bytes from the dstring starting at pos.
 */
-void dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len);
+void dstring_snip (dstring_t *dstr, size_t pos, size_t len);
 /** Set the size of the dstring to 0 bytes. Does not free the string buffer
 	anticipating reuse.
 */
@@ -94,8 +94,8 @@ void dstring_clear (dstring_t *dstr);
 /** Replace rlen bytes in dstring at pos with len bytes from data. Moves
 	trailing bytes as needed.
 */
-void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
-						const char *data, unsigned int len);
+void dstring_replace (dstring_t *dstr, size_t pos, size_t rlen,
+						const char *data, size_t len);
 /** Delete the dstring object retaining the string buffer. The string buffer
 	will be just big enough to hold the data. Does NOT ensure the string is
 	null terminated.
@@ -103,13 +103,13 @@ void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 char *dstring_freeze (dstring_t *dstr);
 
 // String-specific functions
-//@{
+///@{
 /** Allocate a new dstring pre-initialized as a null terminated string. size
 	will be 1 and the first byte 0.
 */
 dstring_t *_dstring_newstr (dstring_mem_t *mem);
 dstring_t *dstring_newstr (void);
-//@}
+///@}
 /** Create a new dstring from a string. Similar to strdup().
 	\param str		the string to copy
 	\return			inititialized dstring
@@ -123,7 +123,7 @@ dstring_t *dstring_strdup (const char *str);
 	\return			pointer to the current null terminator or beginning of the
 					opened hole if there was no terminator.
 */
-char *dstring_reservestr (dstring_t *dstr, unsigned len);
+char *dstring_reservestr (dstring_t *dstr, size_t len);
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.
@@ -133,7 +133,7 @@ void dstring_copystr (dstring_t *dstr, const char *str);
 	existing data.
 	The dstring does not have to be null terminated but will become so.
 */
-void dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len);
+void dstring_copysubstr (dstring_t *dstr, const char *str, size_t len);
 /** Append the null terminated string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
 	However, any embedded nulls will be treated as the end of the dstring.
@@ -143,16 +143,16 @@ void dstring_appendstr (dstring_t *dstr, const char *str);
 	The dstring does not have to be null terminated but will become so.
 	However, any embedded nulls will be treated as the end of the dstring.
 */
-void dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len);
+void dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len);
 /** Insert the null terminated string into the dstring at pos. The dstring
 	is NOT forced to be null terminated.
 */
-void dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str);
+void dstring_insertstr (dstring_t *dstr, size_t pos, const char *str);
 /** Insert up to len bytes from the string into the dstring at pos. The
 	dstring is NOT forced to be null terminated.
 */
-void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
-						   unsigned int len);
+void dstring_insertsubstr (dstring_t *dstr, size_t pos, const char *str,
+						   size_t len);
 /** Clear the dstring to be equivalent to "". Does not resize the string buffer
 	but size is set to 1.
 	dstr = dstring_new (); dstring_clearstr (dstr); is exactly equivalent to
@@ -160,21 +160,21 @@ void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 */
 void dstring_clearstr (dstring_t *dstr);
 
-//@{
+///@{
 /** Formatted printing to dstrings. Existing data is replaced by the formatted
 	string.
 */
-int dvsprintf (dstring_t *dstr, const char *fmt, va_list args);
-int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
-//@}
-//@{
+char *dvsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(PRINTF,2,0)));
+char *dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+///@}
+///@{
 /** Formatted printing to dstrings. Formatted string is appened to the dstring.
 	Embedded nulls in the dstring are ignored.
 */
-int davsprintf (dstring_t *dstr, const char *fmt, va_list args);
-int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
-//@}
+char *davsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(PRINTF,2,0)));
+char *dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+///@}
 
-//@}
+///@}
 
-#endif // __dstring_h
+#endif//__QF_dstring_h

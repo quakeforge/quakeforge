@@ -23,12 +23,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "csg4.h"
-#include "draw.h"
-#include "merge.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/merge.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_merge
 */
@@ -56,7 +56,7 @@ TryMerge (const face_t *f1, const face_t *f2)
 	face_t     *newf;
 	int         i, j, k, l;
 	plane_t    *plane;
-	qboolean    keep1, keep2;
+	bool        keep1, keep2;
 	vec3_t      normal, delta, planenormal;
 	vec_t       dot;
 	vec_t      *p1, *p2, *p3, *p4, *back;
@@ -74,7 +74,6 @@ TryMerge (const face_t *f1, const face_t *f2)
 		return NULL;
 
 	p1 = p2 = NULL;
-	j = 0;
 
 	// find a common edge
 	for (i = 0; i < f1p->numpoints; i++) {
@@ -97,7 +96,7 @@ TryMerge (const face_t *f1, const face_t *f2)
 found_edge:
 	// check slope of connected lines
 	// if the slopes are colinear, the point can be removed
-	plane = &planes[f1->planenum];
+	plane = &planes.a[f1->planenum];
 	VectorCopy (plane->normal, planenormal);
 	if (f1->planeside)
 		VectorNegate (planenormal, planenormal);
@@ -152,7 +151,7 @@ found_edge:
 	return newf;
 }
 
-qboolean    mergedebug;
+bool        mergedebug;
 face_t *
 MergeFaceToList (face_t *face, face_t *list)
 {

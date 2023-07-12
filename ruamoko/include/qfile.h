@@ -1,7 +1,7 @@
 #ifndef __ruamoko_qfile_h
 #define __ruamoko_qfile_h
 
-typedef struct _qfile_t *QFile;
+typedef @handle _qfile_t QFile;
 
 @extern int Qrename (string old, string new);
 @extern int Qremove (string path);

@@ -54,48 +54,56 @@ typedef struct {
 	QFile      *file;
 } wav_file_t;
 
-static void
-wav_callback_load (void *object, cache_allocator_t allocator)
+static sfxbuffer_t *
+wav_callback_load (sfxblock_t *block)
 {
-	sfxblock_t *block = (sfxblock_t *) object;
-	sfx_t      *sfx = block->sfx;
+	const sfx_t *sfx = block->sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
 	int         len, fdata_ofs;
 	byte       *data;
 	float      *fdata;
-	sfxbuffer_t *buffer;
+	sfxbuffer_t *buffer = 0;
 	wavinfo_t  *info = &block->wavinfo;
 
 	file = QFS_FOpenFile (name);
 	if (!file)
-		return; //FIXME Sys_Error?
+		return 0;
 
 	Qseek (file, info->dataofs, SEEK_SET);
 	fdata_ofs = (info->datalen + sizeof (float) - 1) & ~(sizeof (float) - 1);
 	len = fdata_ofs + info->frames * info->channels * sizeof (float);
 	data = malloc (len);
+	if (!data)
+		goto bail;
 	fdata = (float *) (data + fdata_ofs);
 	Qread (file, data, info->datalen);
-	Qclose (file);
 
 	SND_Convert (data, fdata, info->frames, info->channels, info->width);
 
-	buffer = SND_GetCache (info->frames, info->rate,
-						   info->channels, block, allocator);
-	buffer->sfx = sfx;
+	unsigned    buffer_frames = SND_ResamplerFrames (sfx, info->frames);
+	buffer = SND_Memory_AllocBuffer (buffer_frames * info->channels);
+	if (!buffer)
+		goto bail;
+	buffer->size = buffer_frames * info->channels;
+	buffer->channels = info->channels;
+	buffer->sfx_length = info->frames;
+	buffer->block = block;
 	SND_SetPaint (buffer);
 	SND_SetupResampler (buffer, 0);
 	SND_Resample (buffer, fdata, info->frames);
-	buffer->head = buffer->length;
+	buffer->head = buffer->size;
+bail:
 	free (data);
+	Qclose (file);
+	return buffer;
 }
 
 static void
-wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
+wav_block (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
 	Qclose (file);
-	SND_SFX_Cache (sfx, realname, info, wav_callback_load);
+	SND_SFX_Block (sfx, realname, info, wav_callback_load);
 }
 
 static long
@@ -133,22 +141,22 @@ wav_stream_seek (sfxstream_t *stream, int pos)
 }
 
 static void
-wav_stream_close (sfx_t *sfx)
+wav_stream_close (sfxbuffer_t *buffer)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = buffer->stream;
 	wav_file_t *wf = (wav_file_t *) stream->file;
 
 	Qclose (wf->file);
 	if (wf->data)
 		free (wf->data);
 	free (wf);
-	SND_SFX_StreamClose (sfx);
+	SND_SFX_StreamClose (stream);
 }
 
-static sfx_t *
+static sfxbuffer_t *
 wav_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = sfx->data.stream;
+	sfxstream_t *stream = sfx->stream;
 	QFile      *file;
 	wav_file_t *wf;
 
@@ -181,14 +189,13 @@ wav_get_info (QFile *file)
 	riff_data_t *data = 0;
 
 	riff_cue_t *cue;
-	riff_d_cue_t *dcue;
-	riff_d_cue_point_t *cp = 0;
+	riff_d_cue_t *dcue = 0;
 
 	riff_list_t *list;
 	riff_d_chunk_t **lck;
 
-	riff_ltxt_t *ltxt;
-	riff_d_ltxt_t *dltxt = 0;
+	//riff_ltxt_t *ltxt;
+	//riff_d_ltxt_t *dltxt = 0;
 
 	wavinfo_t   info;
 
@@ -211,8 +218,6 @@ wav_get_info (QFile *file)
 			case RIFF_CASE ('c','u','e',' '):
 				cue = (riff_cue_t *) *ck;
 				dcue = cue->cue;
-				if (dcue->count)
-					cp = &dcue->cue_points[dcue->count - 1];
 				break;
 			case RIFF_CASE ('L','I','S','T'):
 				list = (riff_list_t *) *ck;
@@ -221,8 +226,8 @@ wav_get_info (QFile *file)
 						for (lck = list->chunks; *lck; lck++) {
 							RIFF_SWITCH ((*lck)->name) {
 								case RIFF_CASE ('l','t','x','t'):
-									ltxt = (riff_ltxt_t *) *lck;
-									dltxt = &ltxt->ltxt;
+									//ltxt = (riff_ltxt_t *) *lck;
+									//dltxt = &ltxt->ltxt;
 									break;
 							}
 						}
@@ -252,15 +257,19 @@ wav_get_info (QFile *file)
 	info.width = dfmt->bits_per_sample / 8;
 	info.channels = dfmt->channels;
 	info.frames = 0;
-	if (cp) {
-		info.loopstart = cp->sample_offset;
-		if (dltxt)
-			info.frames = info.loopstart + dltxt->len;
+	info.frames = data->ck.len / (info.width * info.channels);
+	if (dcue && dcue->count) {
+		if (dcue->cue_points[0].sample_offset < info.frames) {
+			info.loopstart = dcue->cue_points[0].sample_offset;
+		}
+		if (dcue->count > 1) {
+			info.frames = min (info.frames, dcue->cue_points[1].sample_offset);
+		}
+		//if (dltxt)
+		//	info.frames = info.loopstart + dltxt->len;
 	} else {
 		info.loopstart = -1;
 	}
-	if (!info.frames)
-		info.frames = data->ck.len / (info.width * info.channels);
 	info.dataofs = *(int *)data->data;
 	info.datalen = data->ck.len;
 
@@ -280,10 +289,10 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	}
 
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
-		wav_cache (sfx, realname, file, info);
+		Sys_MaskPrintf (SYS_snd, "block %s\n", realname);
+		wav_block (sfx, realname, file, info);
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
+		Sys_MaskPrintf (SYS_snd, "stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
 	return 0;

@@ -36,9 +36,9 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "server.h"
+#include "qw/include/server.h"
 
-qboolean    WinNT;
+bool        WinNT;
 server_static_t svs;
 
 static void
@@ -81,7 +81,7 @@ main (int argc, const char **argv)
 	SV_Init ();
 
 	if (COM_CheckParm ("-nopriority")) {
-		Cvar_Set (sys_sleep, "0");
+		Cvar_Set ("sys_sleep", "0");
 	} else {
 		if (!SetPriorityClass (GetCurrentProcess (), HIGH_PRIORITY_CLASS))
 			SV_Printf ("SetPriorityClass() failed\n");
@@ -91,9 +91,9 @@ main (int argc, const char **argv)
 
 	// sys_sleep > 0 seems to cause packet loss on WinNT (why?)
 	if (WinNT)
-		Cvar_Set (sys_sleep, "0");
+		Cvar_Set ("sys_sleep", "0");
 
-	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (Net_LogStop, 0);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);

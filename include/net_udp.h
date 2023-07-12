@@ -33,7 +33,7 @@
 /** \defgroup nq-udp NetQuake UDP lan driver.
 	\ingroup nq-ld
 */
-//@{
+///@{
 
 /** Initialize the UDP network interface.
 
@@ -55,7 +55,7 @@ void UDP_Shutdown (void);
 
 	\param state	True to open the socket, false to close it.
 */
-void UDP_Listen (qboolean state);
+void UDP_Listen (bool state);
 
 /** Open a single socket on the specified port.
 
@@ -193,6 +193,6 @@ int UDP_GetSocketPort (netadr_t *addr);
 */
 int UDP_SetSocketPort (netadr_t *addr, int port);
 
-//@}
+///@}
 
 #endif // __net_udp_h

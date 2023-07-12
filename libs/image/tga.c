@@ -232,7 +232,7 @@ skip_colormap (TargaHeader *targa, byte *data)
 	int         bpe;
 	if (!targa->colormap_type)
 		return data;
-	Sys_MaskPrintf (SYS_DEV, "LoadTGA: skipping colormap\n");
+	Sys_MaskPrintf (SYS_dev, "LoadTGA: skipping colormap\n");
 	bpe = (targa->pixel_size +7) / 8;
 	return data + bpe * targa->colormap_length;
 }
@@ -264,7 +264,7 @@ parse_colormap (TargaHeader *targa, byte **dataByte)
 		case 24:
 		case 16:
 		case 15:
-			cmap = Hunk_AllocName (256 * sizeof (cmap_t), "TGA cmap");
+			cmap = Hunk_AllocName (0, 256 * sizeof (cmap_t), "TGA cmap");
 			break;
 		default:
 			Sys_Error ("LoadTGA: unsupported color map size");
@@ -605,32 +605,42 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *);
 static decoder_t decoder_functions[] = {
-	0,					// 0 invalid
-	decode_colormap,
-	decode_truecolor,
-	decode_greyscale,
-	0, 0, 0, 0,			// 5-7 invalid
-	0,					// 8 invalid
-	decode_colormap_rle,
-	decode_truecolor_rle,
-	decode_greyscale_rle,
-	0, 0, 0, 0,			// 12-15 invalid
+	[targa_colormap]       = decode_colormap,
+	[targa_truecolor]      = decode_truecolor,
+	[targa_greyscale]      = decode_greyscale,
+	[targa_colormap_rle]   = decode_colormap_rle,
+	[targa_truecolor_rle]  = decode_truecolor_rle,
+	[targa_greyscale_rle]  = decode_greyscale_rle,
+	[targa_max_image_type] = 0
 };
 #define NUM_DECODERS (sizeof (decoder_functions) \
 					  / sizeof (decoder_functions[0]))
+static QFFormat targa_formats[] = {
+	[targa_colormap]       = tex_palette,
+	[targa_truecolor]      = tex_rgba,
+	[targa_greyscale]      = tex_l,
+	[targa_colormap_rle]   = tex_palette,
+	[targa_truecolor_rle]  = tex_rgba,
+	[targa_greyscale_rle]  = tex_l,
+	[targa_max_image_type] = 0
+};
 
 struct tex_s *
-LoadTGA (QFile *fin)
+LoadTGA (QFile *fin, int load)
 {
 	byte       *dataByte;
 	decoder_t   decode;
-	int         fsize = Qfilesize (fin);
-	int			numPixels, targa_mark;
+	int         fsize = sizeof (TargaHeader);
+	int			numPixels;
+	size_t      targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 
-	targa_mark = Hunk_LowMark ();
-	targa = Hunk_AllocName (fsize, "TGA");
+	if (load) {
+		fsize = Qfilesize (fin);
+	}
+	targa_mark = Hunk_LowMark (0);
+	targa = Hunk_AllocName (0, fsize, "TGA");
 	Qread (fin, targa, fsize);
 
 	targa->colormap_index = LittleShort (targa->colormap_index);
@@ -641,22 +651,38 @@ LoadTGA (QFile *fin)
 	targa->height = LittleShort (targa->height);
 
 	if (targa->image_type >= NUM_DECODERS
-		|| !(decode = decoder_functions[targa->image_type]))
-		Sys_Error ("LoadTGA: Unsupported targa type");
+		|| !(decode = decoder_functions[targa->image_type])) {
+		Sys_Printf ("LoadTGA: Unsupported targa type");
+		Hunk_FreeToLowMark (0, targa_mark);
+		return 0;
+	}
 
-	numPixels = targa->width * targa->height;
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
+	if (load) {
+		numPixels = targa->width * targa->height;
+	} else {
+		numPixels = 0;
+	}
+	tex = Hunk_TempAlloc (0, sizeof (tex_t) + numPixels * 4);
+	tex->data = (byte *) (tex + 1);
 	tex->width = targa->width;
 	tex->height = targa->height;
 	tex->palette = 0;
+	tex->loaded = load;
 
-	// skip TARGA image comment
-	dataByte = (byte *) (targa + 1);
-	dataByte += targa->id_length;
+	if (load) {
+		// skip TARGA image comment
+		dataByte = (byte *) (targa + 1);
+		dataByte += targa->id_length;
 
-	decode (targa, tex, dataByte);
+		decode (targa, tex, dataByte);
+	} else {
+		//FIXME
+		// assume the format is valid so we can return a format type without
+		// having to check individial image type specific data
+		tex->format = targa_formats[targa->image_type];
+	}
 
-	Hunk_FreeToLowMark (targa_mark);
+	Hunk_FreeToLowMark (0, targa_mark);
 	return tex;
 }
 

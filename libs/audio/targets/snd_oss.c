@@ -78,15 +78,54 @@ static int			audio_fd;
 static int			snd_inited;
 static int			mmaped_io = 0;
 static const char  *snd_dev = "/dev/dsp";
-static volatile dma_t sn;
 
 static int			tryrates[] = { 44100, 48000, 11025, 22050, 22051, 44100, 8000 };
 
-static cvar_t	   *snd_stereo;
-static cvar_t	   *snd_rate;
-static cvar_t	   *snd_device;
-static cvar_t	   *snd_bits;
-static cvar_t	   *snd_oss_mmaped;
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static char *snd_device;
+static cvar_t snd_device_cvar = {
+	.name = "snd_device",
+	.description =
+		"sound device. \"\" is system default",
+	.default_value = "",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_device },
+};
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
+static int snd_oss_mmaped;
+static cvar_t snd_oss_mmaped_cvar = {
+	.name = "snd_oss_mmaped",
+	.description =
+		"mmaped io",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_oss_mmaped },
+};
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -100,20 +139,15 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
-						   "sound device. \"\" is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
-	snd_oss_mmaped = Cvar_Get ("snd_oss_mmaped", "1", CVAR_ROM, NULL,
-							   "mmaped io");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_device_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
+	Cvar_Register (&snd_oss_mmaped_cvar, 0, 0);
 }
 
-static volatile dma_t *
-try_open (int rw)
+static int
+try_open (snd_t *snd, int rw)
 {
 	int         caps, fmt, rc, tmp, i;
 	int		    retries = 3;
@@ -123,11 +157,11 @@ try_open (int rw)
 	struct audio_buf_info info;
 
 	snd_inited = 0;
-	mmaped_io = snd_oss_mmaped->int_val;
+	mmaped_io = snd_oss_mmaped;
 
 	// open snd_dev, confirm capability to mmap, and get size of dma buffer
-	if (snd_device->string[0])
-		snd_dev = snd_device->string;
+	if (snd_device[0])
+		snd_dev = snd_device;
 
 	if (rw) {
 		omode = O_RDWR;
@@ -169,21 +203,21 @@ try_open (int rw)
 	}
 
 	// set sample bits & speed
-	sn.samplebits = snd_bits->int_val;
+	snd->samplebits = snd_bits;
 
-	if (sn.samplebits != 16 && sn.samplebits != 8) {
+	if (snd->samplebits != 16 && snd->samplebits != 8) {
 		ioctl (audio_fd, SNDCTL_DSP_GETFMTS, &fmt);
 
 		if (fmt & AFMT_S16_LE) {		// little-endian 16-bit signed
-			sn.samplebits = 16;
+			snd->samplebits = 16;
 		} else {
 			if (fmt & AFMT_U8) {		// unsigned 8-bit ulaw
-				sn.samplebits = 8;
+				snd->samplebits = 8;
 			}
 		}
 	}
 
-	if (sn.samplebits == 16) {
+	if (snd->samplebits == 16) {
 		rc = AFMT_S16_LE;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
@@ -192,7 +226,7 @@ try_open (int rw)
 			close (audio_fd);
 			return 0;
 		}
-	} else if (sn.samplebits == 8) {
+	} else if (snd->samplebits == 8) {
 		rc = AFMT_U8;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
@@ -202,39 +236,39 @@ try_open (int rw)
 			return 0;
 		}
 	} else {
-		Sys_Printf ("%d-bit sound not supported. %s", sn.samplebits,
+		Sys_Printf ("%d-bit sound not supported. %s", snd->samplebits,
 					strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
 
-	tmp = sn.channels;
+	tmp = snd->channels;
 	rc = ioctl (audio_fd, SNDCTL_DSP_CHANNELS, &tmp);
 	if (rc < 0) {
 		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev,
-					sn.channels, strerror (errno));
+					snd->channels, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
 
-	if (snd_rate->int_val) {
-		sn.speed = snd_rate->int_val;
+	if (snd_rate) {
+		snd->speed = snd_rate;
 	} else {
 		for (i = 0; i < ((int) sizeof (tryrates) / 4); i++)
 			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
 				break;
-		sn.speed = tryrates[i];
+		snd->speed = tryrates[i];
 	}
 
-	if (!snd_stereo->int_val) {
-		sn.channels = 1;
+	if (!snd_stereo) {
+		snd->channels = 1;
 	} else {
-		sn.channels = 2;
+		snd->channels = 2;
 	}
 
-	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &sn.speed);
+	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &snd->speed);
 	if (rc < 0) {
-		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, sn.speed,
+		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, snd->speed,
 					strerror (errno));
 		close (audio_fd);
 		return 0;
@@ -246,25 +280,25 @@ try_open (int rw)
 		return 0;
 	}
 
-	sn.frames = info.fragstotal * info.fragsize;
-	sn.frames /= sn.channels * sn.samplebits / 8;
-	sn.submission_chunk = 1;
+	snd->frames = info.fragstotal * info.fragsize;
+	snd->frames /= snd->channels * snd->samplebits / 8;
+	snd->submission_chunk = 1;
 
 	if (mmaped_io) {				// memory map the dma buffer
 		unsigned long sz = sysconf (_SC_PAGESIZE);
 		unsigned long len = info.fragstotal * info.fragsize;
 
 		len = (len + sz - 1) & ~(sz - 1);
-		sn.buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
-		if (sn.buffer == MAP_FAILED) {
-			Sys_MaskPrintf (SYS_SND, "Could not mmap %s: %s\n", snd_dev,
+		snd->buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
+		if (snd->buffer == MAP_FAILED) {
+			Sys_MaskPrintf (SYS_snd, "Could not mmap %s: %s\n", snd_dev,
 							strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
 	} else {
-		sn.buffer = malloc (sn.frames * sn.channels * (sn.samplebits / 8));
-		if (!sn.buffer) {
+		snd->buffer = malloc (snd->frames * snd->channels * (snd->samplebits / 8));
+		if (!snd->buffer) {
 			Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 			close (audio_fd);
 			return 0;
@@ -277,7 +311,7 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
+			munmap (snd->buffer, snd->frames * snd->channels * snd->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -286,28 +320,25 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
+			munmap (snd->buffer, snd->frames * snd->channels * snd->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
 
-	sn.framepos = 0;
+	snd->framepos = 0;
 
 	snd_inited = 1;
-	return &sn;
-}
-
-static volatile dma_t *
-SNDDMA_Init (void)
-{
-	volatile dma_t *shm;
-	if ((shm = try_open (0)))
-		return shm;
-	return try_open (1);
+	return 1;
 }
 
 static int
-SNDDMA_GetDMAPos (void)
+SNDDMA_Init (snd_t *snd)
+{
+	return try_open (snd, 0) || try_open (snd, 1);
+}
+
+static int
+SNDDMA_GetDMAPos (snd_t *snd)
 {
 	struct count_info count;
 
@@ -317,34 +348,32 @@ SNDDMA_GetDMAPos (void)
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
 		Sys_Printf ("Uh, %s dead: %s\n", snd_dev, strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
+			munmap (snd->buffer, snd->frames * snd->channels * snd->samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 		return 0;
 	}
-//	sn.samplepos = (count.bytes / (sn.samplebits / 8)) & (sn.samples-1);
-//	fprintf(stderr, "%d \r", count.ptr);
-	sn.framepos = count.ptr / (sn.channels * sn.samplebits / 8);
+	snd->framepos = count.ptr / (snd->channels * snd->samplebits / 8);
 
-	return sn.framepos;
+	return snd->framepos;
 
 }
 
 static void
-SNDDMA_Shutdown (void)
+SNDDMA_shutdown (snd_t *snd)
 {
 	if (snd_inited) {
 		if (mmaped_io)
-			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
+			munmap (snd->buffer, snd->frames * snd->channels * snd->samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 	}
 }
 
 static int
-sample_bytes (int frames)
+sample_bytes (snd_t *snd, int frames)
 {
-	return frames * sn.channels * sn.samplebits / 8;
+	return frames * snd->channels * snd->samplebits / 8;
 }
 
 /*
@@ -353,7 +382,7 @@ sample_bytes (int frames)
 	Send sound to device if buffer isn't really the dma buffer
 */
 static void
-SNDDMA_Submit (void)
+SNDDMA_Submit (snd_t *snd)
 {
 	int		frames;
 	int     len;
@@ -362,17 +391,17 @@ SNDDMA_Submit (void)
 	if (snd_inited && !mmaped_io) {
 		frames = *plugin_info_snd_output_data.paintedtime
 			- *plugin_info_snd_output_data.soundtime;
-		offset = frames * sn.channels * sn.samplebits / 8;
+		offset = frames * snd->channels * snd->samplebits / 8;
 
-		if (sn.framepos + frames <= sn.frames) {
-			len = sample_bytes (frames);
-			if (write (audio_fd, sn.buffer + offset, len) != len)
+		if (snd->framepos + frames <= snd->frames) {
+			len = sample_bytes (snd, frames);
+			if (write (audio_fd, snd->buffer + offset, len) != len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
 		} else {
-			int     len = sample_bytes (sn.frames - sn.framepos);
-			if (write (audio_fd, sn.buffer + offset, len) != len)
+			int     len = sample_bytes (snd, snd->frames - snd->framepos);
+			if (write (audio_fd, snd->buffer + offset, len) != len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
-			if (write (audio_fd, sn.buffer, offset - len) != offset - len)
+			if (write (audio_fd, snd->buffer, offset - len) != offset - len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
 		}
 		*plugin_info_snd_output_data.soundtime += frames;
@@ -380,12 +409,12 @@ SNDDMA_Submit (void)
 }
 
 static void
-SNDDMA_BlockSound (void)
+SNDDMA_BlockSound (snd_t *snd)
 {
 }
 
 static void
-SNDDMA_UnblockSound (void)
+SNDDMA_UnblockSound (snd_t *snd)
 {
 }
 
@@ -410,14 +439,14 @@ PLUGIN_INFO(snd_output, oss)
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.p_Shutdown = NULL;
-	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
-	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_general_funcs.init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.shutdown = NULL;
+	plugin_info_snd_output_funcs.init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.shutdown = SNDDMA_shutdown;
+	plugin_info_snd_output_funcs.get_dma_pos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.block_sound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.unblock_sound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }

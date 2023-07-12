@@ -31,25 +31,15 @@
 #ifndef __opcodes_h
 #define __opcodes_h
 
-extern struct opcode_s *op_done;
-extern struct opcode_s *op_return;
-extern struct opcode_s *op_return_v;
-extern struct opcode_s *op_if;
-extern struct opcode_s *op_ifnot;
-extern struct opcode_s *op_ifbe;
-extern struct opcode_s *op_ifb;
-extern struct opcode_s *op_ifae;
-extern struct opcode_s *op_ifa;
-extern struct opcode_s *op_state;
-extern struct opcode_s *op_state_f;
-extern struct opcode_s *op_goto;
-extern struct opcode_s *op_jump;
-extern struct opcode_s *op_jumpb;
+#include "QF/progs/pr_comp.h"
+
+typedef struct instruction_s instruction_t;
 
 struct operand_s;
-
-struct opcode_s *opcode_find (const char *name, struct operand_s *op_a,
-							  struct operand_s *op_b, struct operand_s *op_c);
+pr_ushort_t opcode_get (instruction_t *inst) __attribute__((pure));
+instruction_t *opcode_find (const char *name, struct operand_s *op_a,
+							struct operand_s *op_b, struct operand_s *op_c);
 void opcode_init (void);
+void opcode_print_statement (pr_uint_t addr, dstatement_t *st);
 
 #endif//__opcodes_h

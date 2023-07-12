@@ -25,105 +25,76 @@
 
 */
 
-#ifndef __console_h
-#define __console_h
+#ifndef __QF_console_h
+#define __QF_console_h
 
-#include <stdarg.h>
+#include <stdint.h>
 
-#include "QF/keys.h"
 #include "QF/qtypes.h"
 
 /** \defgroup console 2d Console Stuff
 */
 
-#define		CON_TEXTSIZE	32764
-typedef struct
-{
-	char	text[CON_TEXTSIZE];
-	int		current;		// line where next message will be printed
-	int		x;				// offset in current line for next print
-	int		display;		// bottom of console displays this line
-	int		numlines;		// number of non-blank text lines, used for backscroling
-} old_console_t;
-
-typedef struct inputline_s
-{
-	char	**lines;		// array of lines for input history
-	int		num_lines;		// number of lines in arry. 1 == no history
-	size_t	line_size;		// space available in each line. includes \0
-	char	prompt_char;	// char placed at the beginning of the line
-	int		edit_line;		// current line being edited
-	int		history_line;	// current history line
-	size_t	linepos;		// cursor position within the current edit line
-	size_t	scroll;			// beginning of displayed line
-	size_t	width;			// viewable width for horizontal scrolling
-	const char *line;
-	void   *user_data;		// eg: window pointer
-	void	(*complete)(struct inputline_s *); // tab key pressed
-	void	(*enter)(struct inputline_s *); // enter key pressed
-	void	(*draw)(struct inputline_s *); // draw input line to screen
-
-	int		x, y;			// coordinates depend on display
-	int		cursor;			// is the cursor active (drawn?)
-} inputline_t;
-
 typedef struct {
-	byte	*text;
-	size_t	len;
+	uint32_t    text;
+	uint32_t    len;
 } con_line_t;
 
 typedef struct {
-	byte		*buffer;
-	size_t		buffer_size;
-	con_line_t	*lines;
-	int			max_lines;			// size of lines array
-	int			num_lines;			// number of lines used
-	int			cur_line;			// current line
+	byte       *buffer;
+	con_line_t *lines;
+	uint32_t    buffer_size;
+	uint32_t    max_lines;			// size of lines array
+	uint32_t    line_head;			// number of lines used
+	uint32_t    line_tail;			// current line
 } con_buffer_t;
+
+typedef enum {
+	con_inactive,
+	con_active,
+	con_fullscreen,
+	con_message,	//FIXME should not be here ?
+	con_menu,		//FIXME should not be here ?
+} con_state_t;
 
 extern	int			con_linewidth;
 extern struct plugin_s *con_module;
 extern struct console_data_s con_data;
 
 //extern int con_totallines;
-//extern qboolean con_initialized;
+//extern bool con_initialized;
 //extern byte *con_chars;
 
-void Con_CheckResize (void);
 void Con_DrawConsole (void);
 
-void Con_Printf (const char *fmt, ...);
-void Con_Print (const char *fmt, va_list args);
-void Con_ToggleConsole_f (void);
+void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
+void Con_Print (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
+void Con_SetState (con_state_t state);
 
+struct inputline_s;
 // wrapper function to attempt to either complete the command line
 // or to list possible matches grouped by type
 // (i.e. will display possible variables, aliases, commands
 // that match what they've typed so far)
-void Con_BasicCompleteCommandLine (inputline_t *il);
+void Con_BasicCompleteCommandLine (struct inputline_s *il);
 
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
-extern void (*con_list_print)(const char *fmt, ...);
-
-inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
-void Con_DestroyInputLine (inputline_t *inputline);
-void Con_ClearTyping (inputline_t *il, int save);
-void Con_ProcessInputLine (inputline_t *il, int ch);
+extern void (*con_list_print)(const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
 
 con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);
 void Con_DestroyBuffer (con_buffer_t *buffer);
 void Con_BufferAddText (con_buffer_t *buf, const char *text);
 #define Con_BufferLine(b,l) ((b)->lines + ((l) + (b)->max_lines) % (b)->max_lines)
+void Con_ClearBuffer (con_buffer_t *buffer);
 
 // init/shutdown functions
-void Con_Init (const char *plugin_name);
-void Con_Shutdown (void);
+void Con_Load (const char *plugin_name);
+void Con_Init (void);
 void Con_ExecLine (const char *line);
 
 void Con_ProcessInput (void);
-void Con_KeyEvent (knum_t key, short unicode, qboolean down);
 void Con_SetOrMask (int mask);
 void Con_NewMap (void);
 
@@ -135,14 +106,16 @@ void Con_Demolist_DEM_f (void);
 
 //FIXME need a better way to communicate this (bah, need a better menu system
 // in general :P)
-void C_DrawInputLine (inputline_t *il);
+void C_DrawInputLine (struct inputline_s *il);
 
 struct view_s;
 void Menu_Init (void);
+void Menu_Shutdown (void);
 void Menu_Load (void);
-void Menu_Draw (struct view_s *view);
-void Menu_Draw_Hud (struct view_s *view);
-int Menu_KeyEvent (knum_t key, short unicode, qboolean down);
+void Menu_Draw (struct view_s view);
+void Menu_Draw_Hud (struct view_s view);
+struct IE_event_s;
+int Menu_EventHandler (const struct IE_event_s *ie_event);
 void Menu_Enter (void);
 void Menu_Leave (void);
 
@@ -151,4 +124,4 @@ void Menu_Leave_f (void);
 void Menu_Prev_f (void);
 void Menu_Next_f (void);
 
-#endif // __console_h
+#endif//__QF_console_h

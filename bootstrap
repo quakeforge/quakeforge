@@ -18,7 +18,7 @@ if test "$1" = "clean"; then
 	find . -name '*.orig' -type f -print0 | xargs $ARGS rm -f
 	rm -f aclocal.m4 build-stamp changelog-stamp config.cache config.log \
 		  config.status configure configure-stamp install-sh libtool missing \
-		  mkinstalldirs quakeforge-config quakeforge.lsm
+		  mkinstalldirs quakeforge-config quakeforge.lsm test-driver
 	rm -f compile config.guess config.sub depcomp ltmain.sh ylwrap
 	rm -rf autom4te.cache
 	rm -f m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 \
@@ -44,7 +44,7 @@ if test x`uname` = xDarwin ; then
 else
 	libtoolize=libtoolize
 fi
-lt=`which $libtoolize`
+lt=`command -v $libtoolize --version`
 if test -n "$lt" ; then
 	if test -x "$lt" ; then
 		LTIZE_VER=`$libtoolize --version | head -1 | sed 's/.* \([1-9][0-9]*\(\.[1-9][0-9]*\)\(\.[1-9][0-9]*\)*\).*/\1/'`
@@ -63,7 +63,7 @@ else
 fi
 
 # Check Autoconf version
-ac=`which autoconf`
+ac=`command -v autoconf`
 if test -n "$ac" ; then
 	if test -x "$ac" ; then
 		AC_VER=`autoconf --version | head -1 | sed 's/^[^0-9]*//'`
@@ -71,18 +71,18 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			errors="Autoconf 2.61 or greater needed to build configure.\n$errors"
+			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "61" ; then
-			errors="Autoconf 2.61 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "69" ; then
+			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
 	errors="Autoconf not found. QuakeForge git requires autoconf to bootstrap itself.\n$errors"
 fi
 
-am=`which automake`
+am=`command -v automake`
 if test -n "$am" ; then
 	if test -x "$am" ; then
 		AM_VER=`automake --version | head -1 | sed -e 's/automake (GNU automake) //' -e 's/\-p.*$//'`

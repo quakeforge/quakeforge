@@ -1,0 +1,27 @@
+noinst_LTLIBRARIES += @sprite_libs@
+EXTRA_LTLIBRARIES += \
+	libs/models/sprite/libsprite_gl.la \
+	libs/models/sprite/libsprite_glsl.la \
+	libs/models/sprite/libsprite_sw.la \
+	libs/models/sprite/libsprite_vulkan.la
+
+sprite_src= libs/models/sprite/model_sprite.c
+sprite_gl_src= libs/models/sprite/gl_model_sprite.c
+sprite_glsl_src= libs/models/sprite/glsl_model_sprite.c
+sprite_sw_src= libs/models/sprite/sw_model_sprite.c
+sprite_vulkan_src= libs/models/sprite/vulkan_model_sprite.c
+
+libs_models_sprite_libsprite_gl_la_SOURCES=	$(sprite_gl_src) $(sprite_src)
+
+libs_models_sprite_libsprite_glsl_la_SOURCES=	$(sprite_glsl_src) $(sprite_src)
+
+libs_models_sprite_libsprite_sw_la_SOURCES=	$(sprite_sw_src) $(sprite_src)
+
+libs_models_sprite_libsprite_vulkan_la_SOURCES=	$(sprite_vulkan_src) $(sprite_src)
+
+EXTRA_DIST += \
+	$(sprite_gl_src) \
+	$(sprite_glsl_src) \
+	$(sprite_sw_src) \
+	$(sprite_vulkan_src) \
+	$(sprite_src)

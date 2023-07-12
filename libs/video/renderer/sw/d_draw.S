@@ -194,7 +194,7 @@ LSpanLoop:
 
 	movl	C(tadjust),%edx
 	movl	C(sadjust),%esi
-	movl	C(d_scantable)(,%eax,4),%edi	// v * screenwidth
+	movl	C(d_scantable)(,%eax,4),%edi	// v * d_rowbytes
 	addl	%ecx,%edi
 	movl	espan_t_u(%ebx),%ecx
 	addl	%ecx,%edi				// pdest = &pdestspan[scans->u];
@@ -821,7 +821,7 @@ LFSpanLoop:
 	fildl	espan_t_v(%esi)
 	fildl	espan_t_u(%esi)
 	movl	espan_t_v(%esi),%ecx
-	movl	C(d_pzbuffer),%edi
+	movl	C(d_zbuffer),%edi
 	fmuls	C(d_zistepu)
 	fxch	%st(1)
 	fmuls	C(d_zistepv)
@@ -936,7 +936,7 @@ LFNegSpanLoop:
 	fildl	espan_t_v(%esi)
 	fildl	espan_t_u(%esi)
 	movl	espan_t_v(%esi),%ecx
-	movl	C(d_pzbuffer),%edi
+	movl	C(d_zbuffer),%edi
 	fmuls	C(d_zistepu)
 	fxch	%st(1)
 	fmuls	C(d_zistepv)
@@ -1046,3 +1046,7 @@ LFDone:
 	ret
 
 #endif	// USE_INTEL_ASM
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

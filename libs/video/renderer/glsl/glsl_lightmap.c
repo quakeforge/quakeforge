@@ -33,9 +33,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -46,6 +43,8 @@
 
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -58,19 +57,20 @@
 #define BLOCK_SIZE (BLOCK_WIDTH * BLOCK_HEIGHT)
 
 static scrap_t *light_scrap;
-static byte    *light_data;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*glsl_R_BuildLightMap) (msurface_t *surf);
+void (*glsl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
+							  msurface_t *surf);
 
 static void
-R_AddDynamicLights_1 (msurface_t *surf)
+R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
 	unsigned    lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
+	vec4f_t     entorigin = { 0, 0, 0, 1};
 	int         s, t;
 	int         smax, tmax;
 	mtexinfo_t *tex;
@@ -79,12 +79,16 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
+	if (transform) {
+		//FIXME give world entity a transform
+		entorigin = transform[3];
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin,
-						lightorigin);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
 		rad = r_dlights[lnum].radius;
 		dist = DotProduct (lightorigin, surf->plane->normal)
 				- surf->plane->dist;
@@ -122,7 +126,8 @@ R_AddDynamicLights_1 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (msurface_t *surf)
+R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	int         smax, tmax, size;
 	unsigned    scale;
@@ -139,7 +144,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 
 	// clear to no light
 	memset (blocklights, 0, size * sizeof (blocklights[0]));
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		// because we by-pass the inversion, "no light" = "full bright"
 		GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 		return;
@@ -163,7 +168,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_1 (surf);
+		R_AddDynamicLights_1 (transform, surf);
 
 	// bound, invert, and shift
 	out = (byte *) blocklights;
@@ -195,31 +200,31 @@ create_surf_lightmap (msurface_t *surf)
 void
 glsl_R_BuildLightmaps (model_t **models, int num_models)
 {
-	int         i, j, size;
+	int         size;
 	model_t    *m;
+	mod_brush_t *brush;
 
 	//FIXME RGB support
 	if (!light_scrap) {
-		light_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 1);
-		light_data = malloc (BLOCK_SIZE * MAX_LIGHTMAPS);
+		light_scrap = GLSL_CreateScrap (4096, GL_LUMINANCE, 1);
 	} else {
 		GLSL_ScrapClear (light_scrap);
-		memset (light_data, 0, BLOCK_SIZE * MAX_LIGHTMAPS);
 	}
 	glsl_R_BuildLightMap = R_BuildLightMap_1;
 
 	bl_extents[1] = bl_extents[0] = 0;
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			msurface_t *surf = m->surfaces + i;
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
+			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;		// paranoia
 			if (surf->flags & SURF_DRAWTURB)
 				continue;
@@ -230,19 +235,20 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 	}
 	size = bl_extents[0] * bl_extents[1] * 3;	// * 3 for rgb support
 	blocklights = realloc (blocklights, size * sizeof (blocklights[0]));
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			msurface_t *surf = m->surfaces + i;
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
+			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic)
-				glsl_R_BuildLightMap (surf);
+				glsl_R_BuildLightMap (0, brush, surf);
 		}
 	}
 }
@@ -257,4 +263,13 @@ void
 glsl_R_FlushLightmaps (void)
 {
 	GLSL_ScrapFlush (light_scrap);
+}
+
+void
+glsl_Lightmap_Shutdown (void)
+{
+	if (light_scrap) {
+		GLSL_DestroyScrap (light_scrap);
+	}
+	free (blocklights);
 }

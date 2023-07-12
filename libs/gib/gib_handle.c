@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/gib.h"
 
 #include "gib_handle.h"

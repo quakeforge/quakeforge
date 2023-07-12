@@ -29,10 +29,10 @@
 
 #include "compat.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "tjunc.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/tjunc.h"
 
 /**	\addtogroup qfbsp_tjunc
 */
@@ -121,7 +121,7 @@ HashVec (const vec3_t vec)
 	\param vec		The vector to make canonical.
 	\return			false is the vector is (0, 0, 0), otherwise true.
 */
-static qboolean
+static bool
 CanonicalVector (vec3_t vec)
 {
 	vec_t       len = _VectorNormalize (vec);

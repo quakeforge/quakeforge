@@ -211,7 +211,7 @@ LSpanLoop:
 	movl	sspan_t_u(%ebx),%ebp
 	imull	C(d_zrowbytes)
 	shll	$1,%ebp					// a word per pixel
-	addl	C(d_pzbuffer),%eax
+	addl	C(d_zbuffer),%eax
 	addl	%ebp,%eax
 	movl	%eax,C(pz)
 
@@ -223,7 +223,7 @@ LSpanLoop:
 	pushl	%ebx		// preserve spans pointer
 	movl	C(tadjust),%edx
 	movl	C(sadjust),%esi
-	movl	C(d_scantable)(,%eax,4),%edi	// v * screenwidth
+	movl	C(d_scantable)(,%eax,4),%edi	// v * d_rowbytes
 	addl	%ebp,%edi
 	movl	sspan_t_u(%ebx),%ebp
 	addl	%ebp,%edi				// pdest = &pdestspan[scans->u];
@@ -909,3 +909,7 @@ LNextSpan:
 	ret
 
 #endif	// USE_INTEL_ASM
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

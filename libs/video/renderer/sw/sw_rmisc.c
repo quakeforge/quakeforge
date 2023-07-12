@@ -33,16 +33,14 @@
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
-
-
-static void
-R_CheckVariables (void)
-{
-}
+#include "vid_sw.h"
 
 /*
 	R_TimeRefresh_f
@@ -52,6 +50,7 @@ R_CheckVariables (void)
 void
 R_TimeRefresh_f (void)
 {
+/* FIXME update for simd
 	int         i;
 	float       start, stop, time;
 	int         startangle;
@@ -63,24 +62,21 @@ R_TimeRefresh_f (void)
 	for (i = 0; i < 128; i++) {
 		r_refdef.viewangles[1] = i / 128.0 * 360.0;
 
-		VID_LockBuffer ();
-
 		R_RenderView ();
-
-		VID_UnlockBuffer ();
 
 		vr.x = r_refdef.vrect.x;
 		vr.y = r_refdef.vrect.y;
 		vr.width = r_refdef.vrect.width;
 		vr.height = r_refdef.vrect.height;
 		vr.next = NULL;
-		VID_Update (&vr);
+		sw_ctx->update (&vr);
 	}
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 
 	r_refdef.viewangles[1] = startangle;
+*/
 }
 
 void
@@ -126,9 +122,9 @@ R_TransformFrustum (void)
 		v[1] = -screenedge[i].normal[0];
 		v[2] = screenedge[i].normal[1];
 
-		v2[0] = v[1] * vright[0] + v[2] * vup[0] + v[0] * vpn[0];
-		v2[1] = v[1] * vright[1] + v[2] * vup[1] + v[0] * vpn[1];
-		v2[2] = v[1] * vright[2] + v[2] * vup[2] + v[0] * vpn[2];
+		v2[0] = v[1] * vright[0] + v[2] * vup[0] + v[0] * vfwd[0];
+		v2[1] = v[1] * vright[1] + v[2] * vup[1] + v[0] * vfwd[1];
+		v2[2] = v[1] * vright[2] + v[2] * vup[2] + v[0] * vfwd[2];
 
 		VectorCopy (v2, view_clipplanes[i].normal);
 
@@ -146,20 +142,9 @@ TransformVector (const vec3_t in, vec3_t out)
 {
 	out[0] = DotProduct (in, vright);
 	out[1] = DotProduct (in, vup);
-	out[2] = DotProduct (in, vpn);
+	out[2] = DotProduct (in, vfwd);
 }
 #endif
-
-void
-R_TransformPlane (plane_t *p, float *normal, float *dist)
-{
-	float       d;
-
-	d = DotProduct (r_origin, p->normal);
-	*dist = p->dist - d;
-// TODO: when we have rotating entities, this will need to use the view matrix
-	TransformVector (p->normal, normal);
-}
 
 static void
 R_SetUpFrustumIndexes (void)
@@ -188,118 +173,27 @@ R_SetUpFrustumIndexes (void)
 void
 R_SetupFrame (void)
 {
-	int         edgecount;
-	vrect_t     vrect;
-	float       w, h;
-
-	// don't allow cheats in multiplayer
-	Cvar_SetValue (r_ambient, 0);
-	Cvar_SetValue (r_drawflat, 0);
-
-	if (r_numsurfs->int_val) {
-		if ((surface_p - surfaces) > r_maxsurfsseen)
-			r_maxsurfsseen = surface_p - surfaces;
-
-		Sys_Printf ("Used %ld of %ld surfs; %d max\n",
-					(long)(surface_p - surfaces),
-					(long)(surf_max - surfaces), r_maxsurfsseen);
-	}
-
-	if (r_numedges->int_val) {
-		edgecount = edge_p - r_edges;
-
-		if (edgecount > r_maxedgesseen)
-			r_maxedgesseen = edgecount;
-
-		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
-					r_numallocatededges, r_maxedgesseen);
-	}
-
-	r_refdef.ambientlight = max (r_ambient->value, 0);
-
-	R_CheckVariables ();
-
-	R_AnimateLight ();
-	R_ClearEnts ();
-	r_framecount++;
-
 	numbtofpolys = 0;
 
-	// debugging
-#if 0
-	r_refdef.vieworg[0] = 80;
-	r_refdef.vieworg[1] = 64;
-	r_refdef.vieworg[2] = 40;
-	r_refdef.viewangles[0] = 0;
-	r_refdef.viewangles[1] = 46.763641357;
-	r_refdef.viewangles[2] = 0;
-#endif
-
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.vieworg, modelorg);
-	VectorCopy (r_refdef.vieworg, r_origin);
+	VectorCopy (r_refdef.frame.position, modelorg);
 
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
-	R_SetFrustum ();
+	VectorCopy (r_refdef.frame.right, vright);
+	VectorCopy (r_refdef.frame.forward, vfwd);
+	VectorCopy (r_refdef.frame.up, vup);
 
-	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
-
-	r_dowarpold = r_dowarp;
-	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=
-										CONTENTS_WATER);
-
-	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
-		if (r_dowarp) {
-			if ((vid.width <= WARP_WIDTH)
-				&& (vid.height <= WARP_HEIGHT)) {
-				vrect.x = 0;
-				vrect.y = 0;
-				vrect.width = vid.width;
-				vrect.height = vid.height;
-
-				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
-				R_ViewChanged (vid.aspect);
-			} else {
-				w = vid.width;
-				h = vid.height;
-
-				if (w > WARP_WIDTH) {
-					h *= (float) WARP_WIDTH / w;
-					w = WARP_WIDTH;
-				}
-
-				if (h > WARP_HEIGHT) {
-					h = WARP_HEIGHT;
-					w *= (float) WARP_HEIGHT / h;
-				}
-
-				vrect.x = 0;
-				vrect.y = 0;
-				vrect.width = (int) w;
-				vrect.height = (int) h;
-
-				R_SetVrect (&vrect, &r_refdef.vrect,
-							(int) ((float) vr_data.lineadj *
-								   (h / (float) vid.height)));
-				R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
-													   (float) vid.height));
-			}
-		} else {
-			r_refdef.vrect = scr_vrect;
-			R_ViewChanged (vid.aspect);
-		}
-
-		r_viewchanged = false;
-	}
 	// start off with just the four screen edge clip planes
 	R_TransformFrustum ();
 
 	// save base values
-	VectorCopy (vpn, base_vpn);
+	VectorCopy (vfwd, base_vfwd);
 	VectorCopy (vright, base_vright);
 	VectorCopy (vup, base_vup);
 	VectorCopy (modelorg, base_modelorg);
+
+	VectorCopy (vright, r_viewmatrix[0]);
+	VectorNegate (vup, r_viewmatrix[1]);
+	VectorCopy (vfwd, r_viewmatrix[2]);
 
 	R_SetSkyFrame ();
 

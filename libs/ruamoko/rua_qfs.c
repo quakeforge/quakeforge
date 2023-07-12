@@ -45,7 +45,7 @@
 
 typedef struct {
 	int         count;
-	pointer_t   list;
+	pr_ptr_t    list;
 } qfslist_t;
 
 static void
@@ -60,7 +60,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 
 
 static void
-bi_QFS_Open (progs_t *pr)
+bi_QFS_Open (progs_t *pr, void *data)
 {
 	QFile      *file;
 	const char *path = P_GSTRING (pr, 0);
@@ -75,7 +75,7 @@ bi_QFS_Open (progs_t *pr)
 }
 
 static void
-bi_QFS_WOpen (progs_t *pr)
+bi_QFS_WOpen (progs_t *pr, void *data)
 {
 	QFile      *file;
 	const char *path = P_GSTRING (pr, 0);
@@ -90,7 +90,7 @@ bi_QFS_WOpen (progs_t *pr)
 }
 
 static void
-bi_QFS_Rename (progs_t *pr)
+bi_QFS_Rename (progs_t *pr, void *data)
 {
 	const char *old = P_GSTRING (pr, 0);
 	const char *new = P_GSTRING (pr, 1);
@@ -99,7 +99,7 @@ bi_QFS_Rename (progs_t *pr)
 }
 
 static void
-bi_QFS_LoadFile (progs_t *pr)
+bi_QFS_LoadFile (progs_t *pr, void *data)
 {
 	const char *filename = P_GSTRING (pr, 0);
 	QFile      *file;
@@ -124,7 +124,7 @@ bi_QFS_LoadFile (progs_t *pr)
 }
 
 static void
-bi_QFS_OpenFile (progs_t *pr)
+bi_QFS_OpenFile (progs_t *pr, void *data)
 {
 	QFile      *file;
 	const char *filename = P_GSTRING (pr, 0);
@@ -139,22 +139,23 @@ bi_QFS_OpenFile (progs_t *pr)
 }
 
 static void
-bi_QFS_WriteFile (progs_t *pr)
+bi_QFS_WriteFile (progs_t *pr, void *data)
 {
 	const char *filename = P_GSTRING (pr, 0);
 	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "QFS_WriteFile");
-	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
+	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, filename), buf,
+					   count);
 }
 
 static void
-bi_QFS_Filelist (progs_t *pr)
+bi_QFS_Filelist (progs_t *pr, void *data)
 {
 	filelist_t *filelist = QFS_FilelistNew ();
 	qfslist_t  *list;
-	string_t   *strings;
+	pr_string_t *strings;
 	int         i;
 
 	QFS_FilelistFill (filelist, P_GSTRING (pr, 0), P_GSTRING (pr, 1),
@@ -162,7 +163,7 @@ bi_QFS_Filelist (progs_t *pr)
 
 	list = PR_Zone_Malloc (pr, sizeof (list) + filelist->count * 4);
 	list->count = filelist->count;
-	strings = (string_t *) (list + 1);
+	strings = (pr_string_t *) (list + 1);
 	list->list = PR_SetPointer (pr, strings);
 	for (i = 0; i < filelist->count; i++)
 		strings[i] = PR_SetDynamicString (pr, filelist->list[i]);
@@ -170,10 +171,10 @@ bi_QFS_Filelist (progs_t *pr)
 }
 
 static void
-bi_QFS_FilelistFree (progs_t *pr)
+bi_QFS_FilelistFree (progs_t *pr, void *data)
 {
 	qfslist_t  *list = &P_STRUCT (pr, qfslist_t, 0);
-	string_t   *strings = &G_STRUCT (pr, string_t, list->list);
+	pr_string_t *strings = &G_STRUCT (pr, pr_string_t, list->list);
 	int         i;
 
 	for (i = 0; i < list->count; i++)
@@ -181,20 +182,29 @@ bi_QFS_FilelistFree (progs_t *pr)
 	PR_Zone_Free (pr, list);
 }
 
+static void
+bi_QFS_GetDirectory (progs_t *pr, void *data)
+{
+	RETURN_STRING (pr, qfs_gamedir->dir.def);
+}
+
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"QFS_Open",			bi_QFS_Open,			-1},
-	{"QFS_WOpen",			bi_QFS_WOpen,			-1},
-	{"QFS_Rename",			bi_QFS_Rename,			-1},
-	{"QFS_LoadFile",		bi_QFS_LoadFile,		-1},
-	{"QFS_OpenFile",		bi_QFS_OpenFile,		-1},
-	{"QFS_WriteFile",		bi_QFS_WriteFile,		-1},
-	{"QFS_Filelist",		bi_QFS_Filelist,		-1},
-	{"QFS_FilelistFree",	bi_QFS_FilelistFree,	-1},
+	bi(QFS_Open,         2, p(string), p(string)),
+	bi(QFS_WOpen,        2, p(string), p(int)),
+	bi(QFS_Rename,       2, p(string), p(string)),
+	bi(QFS_LoadFile,     1, p(string)),
+	bi(QFS_OpenFile,     1, p(string)),
+	bi(QFS_WriteFile,    3, p(string), p(ptr), p(int)),
+	bi(QFS_Filelist,     3, p(string), p(string), p(int)),
+	bi(QFS_FilelistFree, 1, p(ptr)),
+	bi(QFS_GetDirectory, 0),
 	{0}
 };
 
 void
 RUA_QFS_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

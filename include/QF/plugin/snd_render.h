@@ -24,61 +24,52 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_snd_render_h_
-#define __QF_plugin_snd_render_h_
+#ifndef __QF_plugin_snd_render_h
+#define __QF_plugin_snd_render_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
-
-/*
-	All sound plugins must export these functions
-*/
+#include <QF/simd/types.h>
 
 struct sfx_s;
-
-typedef void (*P_S_Init) (void);
-typedef void (*P_S_Shutdown) (void);
-typedef void (*P_S_AmbientOff) (void);
-typedef void (*P_S_AmbientOn) (void);
-typedef void (*P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, const vec3_t origin, float fvol, float attenuation);
-typedef void (*P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
-typedef void (*P_S_StopSound) (int entnum, int entchannel);
-typedef struct sfx_s * (*P_S_PrecacheSound) (const char *sample);
-typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up, const byte *ambient_sound_level);
-typedef void (*P_S_StopAllSounds) (void);
-typedef void (*P_S_ExtraUpdate) (void);
-typedef void (*P_S_LocalSound) (const char *s);
-typedef void (*P_S_BlockSound) (void);
-typedef void (*P_S_UnblockSound) (void);
-typedef struct sfx_s *(*P_S_LoadSound) (const char *name);
-typedef struct channel_s *(*P_S_AllocChannel) (void);
-typedef void (*P_S_ChannelStop) (struct channel_s *chan);
+struct transform_s;
 
 typedef struct snd_render_funcs_s {
-	P_S_AmbientOff 		pS_AmbientOff;
-	P_S_AmbientOn  		pS_AmbientOn;
-	P_S_StaticSound		pS_StaticSound;
-	P_S_StartSound		pS_StartSound;
-	P_S_StopSound		pS_StopSound;
-	P_S_PrecacheSound	pS_PrecacheSound;
-	P_S_Update			pS_Update;
-	P_S_StopAllSounds	pS_StopAllSounds;
-	P_S_ExtraUpdate 	pS_ExtraUpdate;
-	P_S_LocalSound		pS_LocalSound;
-	P_S_BlockSound		pS_BlockSound;
-	P_S_UnblockSound	pS_UnblockSound;
-	P_S_LoadSound		pS_LoadSound;
-	P_S_AllocChannel	pS_AllocChannel;
-	P_S_ChannelStop     pS_ChannelStop;
+	void      (*init) (void);
+	void      (*ambient_off) (void);
+	void      (*ambient_on) (void);
+	void      (*set_ambient) (int amb_channel, struct sfx_s *sfx);
+	void      (*static_sound) (struct sfx_s *sfx, vec4f_t origin, float vol, float attenuation);
+	void      (*start_sound) (int entnum, int entchannel, struct sfx_s *sfx, const vec4f_t, float vol, float attenuation);
+	void      (*local_sound) (const char *s);
+	void      (*stop_sound) (int entnum, int entchannel);
+
+	struct channel_s *(*alloc_channel) (void);
+	void      (*channel_free) (struct channel_s *chan);
+	int       (*channel_set_sfx) (struct channel_s *chan, struct sfx_s *sfx);
+	void      (*channel_set_paused) (struct channel_s *chan, int paused);
+	void      (*channel_set_looping) (struct channel_s *chan, int looping);
+	enum chan_state_e (*channel_get_state) (struct channel_s *chan);
+	void      (*channel_set_volume) (struct channel_s *chan, float volume);
+
+	struct sfx_s *(*precache_sound) (const char *sample);
+	struct sfx_s *(*load_sound) (const char *name);
+
+	void      (*update) (struct transform_s ear,
+						 const byte *ambient_sound_levels);
+	void      (*stop_all_sounds) (void);
+	void      (*extra_update) (void);
+	void      (*block_sound) (void);
+	void      (*unblock_sound) (void);
 } snd_render_funcs_t;
 
 typedef struct snd_render_data_s {
-	double *host_frametime;
-	int *viewentity;
+	double     *host_frametime;
+	int        *viewentity;
 
-	unsigned int *soundtime;
-	unsigned int *paintedtime;
+	unsigned   *soundtime;
+	unsigned   *paintedtime;
 	struct plugin_s *output;
 } snd_render_data_t;
 
-#endif // __QF_plugin_snd_render_h_
+#endif // __QF_plugin_snd_render_h

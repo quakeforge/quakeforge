@@ -44,15 +44,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "options.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "struct.h"
-#include "type.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
 
 typedef struct locref_s {
 	struct locref_s *next;
@@ -60,8 +54,35 @@ typedef struct locref_s {
 	int         size;
 } locref_t;
 
-static defspace_t *spaces_freelist;
-static locref_t *locrefs_freelist;
+ALLOC_STATE (defspace_t, spaces);
+ALLOC_STATE (locref_t, locrefs);
+
+static locref_t *
+new_locref (int ofs, int size, locref_t *next)
+{
+	locref_t   *loc;
+
+	ALLOC (1024, locref_t, locrefs, loc);
+	loc->ofs = ofs;
+	loc->size = size;
+	loc->next = next;
+	return loc;
+}
+
+static void
+del_locref (locref_t *loc)
+{
+	FREE (locrefs, loc);
+}
+
+static defspace_t *
+new_defspace (void)
+{
+	defspace_t *space;
+
+	ALLOC (1024, defspace_t, spaces, space);
+	return space;
+}
 
 #define GROW 1024
 
@@ -84,23 +105,17 @@ grow_space_global (defspace_t *space)
 static int
 grow_space_virtual (defspace_t *space)
 {
-	int         size;
-
-	if (space->size <= space->max_size)
-		return 1;
-
-	size = space->size + GROW;
-	size -= size % GROW;
-	space->max_size = size;
+	if (space->size > space->max_size) {
+		space->max_size = space->size;
+	}
 	return 1;
 }
 
 defspace_t *
 defspace_new (ds_type_t type)
 {
-	defspace_t *space;
+	defspace_t *space = new_defspace ();
 
-	ALLOC (1024, defspace_t, spaces, space);
 	space->def_tail = &space->defs;
 	space->type = type;
 	if (type == ds_backed) {
@@ -113,36 +128,89 @@ defspace_new (ds_type_t type)
 	return space;
 }
 
+void
+defspace_delete (defspace_t *space)
+{
+	locref_t  **lr;
+
+	for (lr = &space->free_locs; *lr; lr = &(*lr)->next) {
+	}
+	*lr = locrefs_freelist;
+	locrefs_freelist = space->free_locs;
+
+	if (space->data) {
+		free (space->data);
+	}
+
+	while (space->defs) {
+		def_t      *def = space->defs;
+		space->defs = def->next;
+		def->space = 0;
+		free_def (def);
+	}
+}
+
 int
 defspace_alloc_loc (defspace_t *space, int size)
 {
-	int         ofs;
+	return defspace_alloc_aligned_loc (space, size, 1);
+}
+
+int
+defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
+{
+	int         ofs, pad;
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
 
 	if (size <= 0)
 		internal_error (0, "invalid number of words requested: %d", size);
-	while (*l && (*l)->size < size)
-		l = &(*l)->next;
-	if ((loc = *l)) {
-		ofs = (*l)->ofs;
-		if ((*l)->size == size) {
-			loc = *l;
-			*l = (*l)->next;
-			FREE (locrefs, loc);
-		} else {
-			(*l)->ofs += size;
-			(*l)->size -= size;
+	if (alignment <= 0)
+		internal_error (0, "invalid alignment requested: %d", alignment);
+	while ((loc = *l)) {
+		ofs = loc->ofs;
+		pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+		// exact fit, so just shrink the block or remove it if there is no
+		// padding (any padding remains free)
+		if (size + pad == loc->size) {
+			loc->size -= size;
+			if (!loc->size) {
+				*l = loc->next;
+				del_locref (loc);
+			}
+			return ofs + pad;
 		}
-		return ofs;
+		// there's excess space in the block. If there's no padding, then
+		// just shrink it, otherwise split it into two, one on either side
+		// of the allocated block, such that the padding remains free
+		if (size + pad < loc->size) {
+			if (!pad) {
+				loc->ofs += size;
+				loc->size -= size;
+			} else {
+				loc->next = new_locref (ofs + pad + size,
+										loc->size - ofs - pad, loc->next);
+				loc->size = pad;
+			}
+			return ofs + pad;
+		}
+		l = &(*l)->next;
 	}
 	ofs = space->size;
-	space->size += size;
+	pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+	if (alignment > space->alignment) {
+		space->alignment = alignment;
+	}
+	space->size += size + pad;
 	if (space->size > space->max_size) {
 		if (!space->grow || !space->grow (space))
 			internal_error (0, "unable to allocate %d words", size);
 	}
-	return ofs;
+	if (pad) {
+		// mark the padding as free
+		*l = new_locref (ofs, pad, 0);
+	}
+	return ofs + pad;
 }
 
 void
@@ -184,17 +252,13 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 				loc->size += loc->next->size;
 				loc = loc->next;
 				*l = loc->next;
-				FREE (locrefs, loc);
+				del_locref (loc);
 			}
 			return;
 		}
 	}
 	// insert a new free block for the location to be freed
-	ALLOC (1024, locref_t, locrefs, loc);
-	loc->ofs = ofs;
-	loc->size = size;
-	loc->next = *l;
-	*l = loc;
+	*l = new_locref (ofs, size, *l);
 }
 
 int
@@ -202,8 +266,54 @@ defspace_add_data (defspace_t *space, pr_type_t *data, int size)
 {
 	int         loc;
 
-	loc = defspace_alloc_loc (space, size);
+	loc = defspace_alloc_highwater (space, size);
 	if (data)
 		memcpy (space->data + loc, data, size * sizeof (pr_type_t));
 	return loc;
+}
+
+int
+defspace_alloc_highwater (defspace_t *space, int size)
+{
+	return defspace_alloc_aligned_highwater (space, size, 1);
+}
+
+int
+defspace_alloc_aligned_highwater (defspace_t *space, int size, int alignment)
+{
+	if (size < 0)
+		internal_error (0, "invalid number of words requested: %d", size);
+	if (alignment <= 0)
+		internal_error (0, "invalid alignment requested: %d", alignment);
+
+	int         ofs = space->size;
+	int         pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+	if (alignment > space->alignment) {
+		space->alignment = alignment;
+	}
+	space->size += size + pad;
+	if (space->size > space->max_size) {
+		if (!space->grow || !space->grow (space))
+			internal_error (0, "unable to allocate %d words", size);
+	}
+	locref_t  **l = &space->free_locs;
+	if (pad) {
+		// mark the padding as free
+		*l = new_locref (ofs, pad, 0);
+	}
+	return ofs + pad;
+}
+
+void
+defspace_reset (defspace_t *space)
+{
+	space->size = 0;
+	while (space->free_locs) {
+		locref_t   *l = space->free_locs;
+		space->free_locs = l->next;
+		del_locref (l);
+	}
+	if (space->data) {
+		memset (space->data, 0, space->max_size * sizeof (pr_type_t));
+	}
 }

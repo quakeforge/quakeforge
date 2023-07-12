@@ -25,25 +25,27 @@
 
 */
 
-#ifndef __sys_h
-#define __sys_h
+#ifndef __QF_sys_h
+#define __QF_sys_h
 
-/** \defgroup sys Portability
+/** \defgroup sys System Portability
 	\ingroup utils
 	Non-portable functions
 */
-//@{
+///@{
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
 
-extern	struct cvar_s	*sys_nostdout;
-extern	struct cvar_s	*sys_extrasleep;
-extern	struct cvar_s	*sys_dead_sleep;
-extern	struct cvar_s	*sys_sleep;
+struct dstring_s;
 
-extern struct cvar_s *developer;
+extern int sys_nostdout;
+extern int sys_extrasleep;
+extern int sys_dead_sleep;
+extern int sys_sleep;
+
+extern int developer;
 
 
 extern const char sys_char_map[256];
@@ -62,42 +64,46 @@ int	Sys_FileExists (const char *path);
 int Sys_isdir (const char *path);
 int Sys_mkdir (const char *path);
 
-typedef void (*sys_printf_t) (const char *fmt, va_list args);
+typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 typedef void (*sys_error_t) (void *data);
 
-void Sys_SetStdPrintf (sys_printf_t func);
-void Sys_SetErrPrintf (sys_printf_t func);
+sys_printf_t Sys_SetStdPrintf (sys_printf_t func);
+sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
-void Sys_Print (FILE *stream, const char *fmt, va_list args);
-void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
-void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
+void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(PRINTF, 2, 0)));
+void Sys_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
+void Sys_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
+void Sys_FatalError (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
-void Sys_RegisterShutdown (void (*func) (void));
+void Sys_RegisterShutdown (void (*func) (void *), void *data);
+int64_t Sys_StartTime (void) __attribute__ ((pure));
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
+int64_t Sys_TimeBase (void) __attribute__ ((const));
+double Sys_DoubleTimeBase (void) __attribute__ ((const));
 void Sys_TimeOfDay(date_t *date);
 
-void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
-#define SYS_DEV     (1|0)
-#define SYS_WARN    (1|2)	// bit 0 so developer 1 will pick it up
-#define SYS_VID     (1|4)
-#define SYS_FS_NF   (1|8)
-#define SYS_FS_F    (1|16)
-#define SYS_FS      (1|32)
-#define SYS_NET     (1|64)
-#define SYS_RUA_OBJ (1|128)
-#define SYS_RUA_MSG (1|256)
-#define SYS_SND     (1|512)
-#define SYS_GLT     (1|1024)
-#define SYS_GLSL    (1|2048)
-#define SYS_SKIN    (1|4096)
-#define SYS_MODEL   (1|8192)
+#define SYS_DEVELOPER(developer) SYS_DeveloperID_##developer,
+enum {
+#include "QF/sys_developer.h"
+};
 
+// bit 0 so developer 1 will pick it up
+#define SYS_DEVELOPER(developer) \
+	SYS_##developer = (SYS_dev | (1 << (SYS_DeveloperID_##developer + 1))),
+typedef enum {
+	SYS_dev = 1,
+#include "QF/sys_developer.h"
+} sys_developer_e;
+
+void Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+
+struct qf_fd_set;
+int Sys_Select (int maxfd, struct qf_fd_set *fdset, int64_t usec);
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
 
@@ -120,12 +126,18 @@ void Sys_Init_Cvars (void);
 // memory protection
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
-void Sys_PageIn (void *ptr, int size);
+void Sys_PageIn (void *ptr, size_t size);
+size_t Sys_PageSize (void);
+void *Sys_Alloc (size_t size);
+void Sys_Free (void *mem, size_t size);
+int Sys_LockMemory (void *mem, size_t size);
+
+int Sys_ProcessorCount (void);
 
 //
 // system IO
 //
-void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 #define SYS_CHECKMEM(x) 												\
 	do {																\
@@ -157,6 +169,37 @@ int Sys_CreatePath (const char *path);
 */
 char *Sys_ExpandSquiggle (const char *path);
 
-//@}
+/** Open a newly created file with a guaranteed unique name.
 
-#endif // __sys_h
+	Uniqueness is guaranteed by adding a numeric sequence between the \a
+	prefix and \a suffix, with a minium of \a mindigits numeric characters
+	(with any required leading 0s to expand the number to \a mindigits).
+
+	The created file has read and write permissions as modified by the OS,
+	and the handle can be bothe written and read.
+
+	\param name     dstring into which the name will be generated. Any
+					existing contents will be lost. If an error occurs,
+					\a name will be set to the error string.
+	\param prefix	This includes the path to the file and any file name
+					prefix. The numeric sequence will be appended directly
+					to the prefix with no directory separator.
+	\param suffix	Optional tail to be appended after the numeric sequence,
+					usually the file extension. A dot is not added
+					automatically, it is up to the caller to supply one. NULL
+					and an empty string are equivalent.
+	\param mindigits	The minimum number of digits to include in the
+					generated file name. The sequence number will be padded
+					with 0s in order to meet this menimum. Overflow will
+					simply produce longer numeric sequence sub-strings.
+	\return			File handle to the newly created file, or a negative
+					value if an error occured (the negative error code).
+					Suitable for use with read, write, fdopen, Qdopen, etc.
+	\note	It is the caller's responsibility to close the file.
+*/
+int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
+					const char *suffix, int mindigits);
+
+///@}
+
+#endif//__QF_sys_h

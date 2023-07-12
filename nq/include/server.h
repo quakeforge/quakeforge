@@ -35,7 +35,7 @@
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 
-#include "client.h"
+#include "game.h"
 #include "netmain.h"
 #include "protocol.h"
 #include "sv_progs.h"
@@ -44,12 +44,12 @@ extern progs_t sv_pr_state;
 
 typedef struct
 {
-	int			maxclients;
-	int			maxclientslimit;
+	unsigned    maxclients;
+	unsigned    maxclientslimit;
 	struct client_s	*clients;		// [maxclients]
 	void		(*phys_client) (struct edict_s *ent, int num);
 	int			serverflags;		// episode completion information
-	qboolean	changelevel_issued;	// cleared when at SV_SpawnServer
+	bool		changelevel_issued;	// cleared when at SV_SpawnServer
 } server_static_t;
 
 //=============================================================================
@@ -58,10 +58,10 @@ typedef enum {ss_loading, ss_active} server_state_t;
 
 typedef struct
 {
-	qboolean	active;				// false if only a net client
+	bool		active;				// false if only a net client
 
-	qboolean	paused;
-	qboolean	loadgame;			// handle connections specially
+	bool		paused;
+	bool		loadgame;			// handle connections specially
 
 	double		time;
 
@@ -75,7 +75,7 @@ typedef struct
 	struct model_s	*models[MAX_MODELS];
 	const char	*sound_precache[MAX_SOUNDS];	// NULL terminated
 	const char	*lightstyles[MAX_LIGHTSTYLES];
-	int			num_edicts;
+	unsigned    num_edicts;
 	int			max_edicts;
 	edict_t		*edicts;			// can NOT be array indexed, because
 									// edict_t is variable sized, but can
@@ -100,11 +100,11 @@ typedef struct
 
 typedef struct client_s
 {
-	qboolean		active;				// false = client is free
-	qboolean		spawned;			// false = don't send datagrams
-	qboolean		dropasap;			// has been told to go to another level
-	qboolean		privileged;			// can execute any host command
-	qboolean		sendsignon;			// valid only before spawned
+	bool			active;				// false = client is free
+	bool			spawned;			// false = don't send datagrams
+	bool			dropasap;			// has been told to go to another level
+	bool			privileged;			// can execute any host command
+	bool			sendsignon;			// valid only before spawned
 
 	double			last_message;		// reliable messages must be sent
 										// periodically
@@ -202,31 +202,30 @@ typedef struct client_s
 
 //============================================================================
 
-extern	struct cvar_s	*teamplay;
-extern	struct cvar_s	*skill;
-extern	struct cvar_s	*deathmatch;
-extern	struct cvar_s	*coop;
-extern	struct cvar_s	*fraglimit;
-extern	struct cvar_s	*timelimit;
+extern int teamplay;
+extern int skill;
+extern int deathmatch;
+extern int coop;
+extern int timelimit;
 
-extern	struct cvar_s	*sv_rollangle;
-extern	struct cvar_s	*sv_rollspeed;
+extern float sv_rollangle;
+extern float sv_rollspeed;
 
-extern	struct cvar_s	*sv_maxvelocity;
-extern	struct cvar_s	*sv_gravity;
-extern	struct cvar_s	*sv_jump_any;
-extern	struct cvar_s	*sv_nostep;
-extern	struct cvar_s	*sv_friction;
-extern	struct cvar_s	*sv_edgefriction;
-extern	struct cvar_s	*sv_stopspeed;
-extern	struct cvar_s	*sv_maxspeed;
-extern	struct cvar_s	*sv_accelerate;
-extern	struct cvar_s	*sv_idealpitchscale;
-extern	struct cvar_s	*sv_aim;
-extern	struct cvar_s	*sv_friction;
-extern	struct cvar_s	*sv_stopspeed;
+extern float sv_maxvelocity;
+extern float sv_gravity;
+extern int sv_jump_any;
+extern int sv_nostep;
+extern float sv_friction;
+extern float sv_edgefriction;
+extern float sv_stopspeed;
+extern float sv_maxspeed;
+extern float sv_accelerate;
+extern float sv_idealpitchscale;
+extern float sv_aim;
+extern float sv_friction;
+extern float sv_stopspeed;
 
-extern	struct cvar_s	*max_edicts;
+extern int max_edicts;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -250,12 +249,12 @@ void SV_StartParticle (const vec3_t org, const vec3_t dir, int color,
 void SV_StartSound (edict_t *entity, int channel, const char *sample,
 					int volume, float attenuation);
 
-void SV_DropClient (qboolean crash);
+void SV_DropClient (bool crash);
 
 void SV_SendClientMessages (void);
 void SV_ClearDatagram (void);
 
-int SV_ModelIndex (const char *name);
+int SV_ModelIndex (const char *name) __attribute__((pure));
 
 void SV_SetIdealPitch (void);
 
@@ -264,39 +263,43 @@ void SV_AddUpdates (void);
 void SV_ClientThink (void);
 void SV_AddClientToServer (struct qsocket_s	*ret);
 
-void SV_ClientPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void SV_BroadcastPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void SV_ClientPrintf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
+void SV_BroadcastPrintf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 
 struct trace_s SV_PushEntity (edict_t *ent, vec3_t push);
-int SV_EntCanSupportJump (edict_t *ent);
+int SV_EntCanSupportJump (edict_t *ent) __attribute__((pure));
 int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
 void SV_CheckVelocity (edict_t *ent);
-qboolean SV_RunThink (edict_t *ent);
+bool SV_RunThink (edict_t *ent);
 void SV_AddGravity (edict_t *ent);
 void SV_FinishGravity (edict_t *ent, vec3_t move);
 void SV_Physics_Toss (edict_t *ent);
 void SV_Physics_Client (edict_t *ent, int num);
 void SV_Physics (void);
+void SV_Physics_Init_Cvars (void);
 void SV_ProgStartFrame (void);
 void SV_RunNewmis (void);
 
-qboolean SV_CheckBottom (edict_t *ent);
-qboolean SV_movestep (edict_t *ent, const vec3_t move, qboolean relink);
+bool SV_CheckBottom (edict_t *ent);
+bool SV_movestep (edict_t *ent, const vec3_t move, bool relink);
 
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 
-void SV_MoveToGoal (progs_t *pr);
+void SV_MoveToGoal (progs_t *pr, void *data);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);
+void SV_User_Init_Cvars (void);
 void SV_SaveSpawnparms (void);
 void SV_SpawnServer (const char *server);
+void SV_Frame (void);
 
 void SV_LoadProgs (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
 //FIXME location
 #define		STOP_EPSILON	0.1

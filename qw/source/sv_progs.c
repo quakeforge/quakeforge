@@ -42,10 +42,11 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_pr_cpqw.h"
-#include "sv_pr_qwe.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_pr_cpqw.h"
+#include "qw/include/sv_pr_qwe.h"
 #include "world.h"
 
 progs_t     sv_pr_state;
@@ -53,17 +54,105 @@ sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
+edict_t sv_edicts[MAX_EDICTS];
 sv_data_t sv_data[MAX_EDICTS];
 
-cvar_t     *r_skyname;
-cvar_t     *sv_progs;
-cvar_t     *sv_progs_zone;
-cvar_t     *sv_progs_ext;
-cvar_t     *pr_checkextensions;
-cvar_t     *sv_old_entity_free;
-cvar_t     *sv_hide_version_info;
+char *r_skyname;
+static cvar_t r_skyname_cvar = {
+	.name = "r_skyname",
+	.description =
+		"name of the current skybox",
+	.default_value = "none",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &r_skyname },
+};
+char *sv_progs;
+static cvar_t sv_progs_cvar = {
+	.name = "sv_progs",
+	.description =
+		"Override the default game progs.",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs },
+};
+int sv_progs_zone;
+static cvar_t sv_progs_zone_cvar = {
+	.name = "sv_progs_zone",
+	.description =
+		"size of the zone for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_zone },
+};
+int sv_progs_stack;
+static cvar_t sv_progs_stack_cvar = {
+	.name = "sv_progs_stack",
+	.description =
+		"size of the stack for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_stack },
+};
+char *sv_progs_ext;
+static cvar_t sv_progs_ext_cvar = {
+	.name = "sv_progs_ext",
+	.description =
+		"extention mapping to use: none, id, qf",
+	.default_value = "qf",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs_ext },
+};
+float pr_checkextensions;
+static cvar_t pr_checkextensions_cvar = {
+	.name = "pr_checkextensions",
+	.description =
+		"indicate the presence of the checkextentions qc function",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &pr_checkextensions },
+};
+int sv_old_entity_free;
+static cvar_t sv_old_entity_free_cvar = {
+	.name = "sv_old_entity_free",
+	.description =
+		"set this for buggy mods that rely on the old behaviour of entity "
+		"freeing (eg, *TF)",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_old_entity_free },
+};
+int sv_hide_version_info;
+static cvar_t sv_hide_version_info_cvar = {
+	.name = "sv_hide_version_info",
+	.description =
+		"hide QuakeForge specific serverinfo strings from terminally stupid "
+		"progs (eg, braindead TF variants)",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &sv_hide_version_info },
+};
+int pr_double_remove;
+static cvar_t pr_double_remove_cvar = {
+	.name = "pr_double_remove",
+	.description =
+		"Handling of double entity remove.  0 is silently ignore, 1 prints a "
+		"traceback, and 2 gives an error.\nworks Only if debugging is "
+		"available and enabled",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &pr_double_remove },
+};
+float sv_aim;
+static cvar_t sv_aim_cvar = {
+	.name = "sv_aim",
+	.description =
+		"None",
+	.default_value = "0.93",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_aim },
+};
 
-static int reserved_edicts = MAX_CLIENTS;
+static pr_uint_t reserved_edicts = MAX_CLIENTS;
 
 static int sv_range;
 
@@ -91,17 +180,17 @@ bi_map (progs_t *pr, unsigned binum)
 static void
 free_edict (progs_t *pr, edict_t *ent)
 {
-	if (sv_old_entity_free->int_val) {
-		ent->v[sv_fields.model].entity_var = 0;
-		ent->v[sv_fields.takedamage].float_var = 0;
-		ent->v[sv_fields.modelindex].float_var = 0;
-		ent->v[sv_fields.colormap].float_var = 0;
-		ent->v[sv_fields.skin].float_var = 0;
-		ent->v[sv_fields.frame].float_var = 0;
-		ent->v[sv_fields.nextthink].float_var = -1;
-		ent->v[sv_fields.solid].float_var = 0;
-		memset (ent->v[sv_fields.origin].vector_var, 0, 3*sizeof (float));
-		memset (ent->v[sv_fields.angles].vector_var, 0, 3*sizeof (float));
+	if (sv_old_entity_free) {
+		E_STRING (ent, sv_fields.model) = 0;
+		E_FLOAT (ent, sv_fields.takedamage) = 0;
+		E_FLOAT (ent, sv_fields.modelindex) = 0;
+		E_FLOAT (ent, sv_fields.colormap) = 0;
+		E_FLOAT (ent, sv_fields.skin) = 0;
+		E_FLOAT (ent, sv_fields.frame) = 0;
+		E_FLOAT (ent, sv_fields.nextthink) = -1;
+		E_FLOAT (ent, sv_fields.solid) = 0;
+		VectorZero (E_VECTOR (ent, sv_fields.origin));
+		VectorZero (E_VECTOR (ent, sv_fields.angles));
 	} else {
 		ED_ClearEdict (pr, ent, 0);
 	}
@@ -115,7 +204,7 @@ prune_edict (progs_t *pr, edict_t *ent)
 			return 1;
 	} else {
 		// remove things from different skill levels or deathmatch
-		if (deathmatch->int_val) {
+		if (deathmatch) {
 			if (((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH)) {
 				return 1;
 			}
@@ -149,10 +238,17 @@ static void
 ED_PrintEdict_f (void)
 {
 	int         i;
+	const char *fieldname = 0;
 
+	if (Cmd_Argc () < 2) {
+		SV_Printf ("edict num [fieldname]\n");
+		return;
+	}
+	if (Cmd_Argc () >= 3) {
+		fieldname = Cmd_Argv (2);
+	}
 	i = atoi (Cmd_Argv (1));
-	SV_Printf ("\n EDICT %i:\n", i);
-	ED_PrintNum (&sv_pr_state, i);
+	ED_PrintNum (&sv_pr_state, i, fieldname);
 }
 
 static void
@@ -343,7 +439,7 @@ static sv_def_t qw_opt_funcs[] = {
 };
 
 static sv_def_t qw_opt_fields[] = {
-	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_int,		0,	"rotated_bbox",		&sv_fields.rotated_bbox},
 	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"scale",			&sv_fields.scale},
 	{ev_float,		0,	"glow_size",		&sv_fields.glow_size},
@@ -363,22 +459,30 @@ set_address (sv_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_ushort:
 		case ev_invalid:
 		case ev_type_count:
 			break;
 		case ev_float:
 		case ev_vector:
-		case ev_quat:
+		case ev_quaternion:
 			*(float **)def->field = (float *) address;
+			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
 			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_pointer:
-		case ev_integer:
-		case ev_uinteger:
-			*(int **)def->field = (int *) address;
+		case ev_ptr:
+		case ev_int:
+		case ev_uint:
+			*(pr_int_t **)def->field = (pr_int_t *) address;
+			break;
+		case ev_long:
+		case ev_ulong:
+			*(pr_long_t **)def->field = (pr_long_t *) address;
 			break;
 	}
 }
@@ -386,7 +490,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -414,13 +518,13 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 
 	if (mode == 2) {
 		for (; def->name; def++)
-			*(func_t *) def->field = G_FUNCTION (pr, def->offset);
+			*(pr_func_t *) def->field = G_FUNCTION (pr, def->offset);
 		return 1;
 	}
 	for (; def->name; def++) {
 		dfunc = PR_FindFunction (pr, def->name);
 		if (dfunc) {
-			*(func_t *) def->field = dfunc - pr->pr_functions;
+			*(pr_func_t *) def->field = dfunc - pr->pr_functions;
 		} else if (mode) {
 			PR_Undefined (pr, "function", def->name);
 			ret = 0;
@@ -432,7 +536,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -477,8 +581,29 @@ resolve (progs_t *pr)
 	resolve_fields (pr, qw_opt_fields, 0);
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
-	sv_pr_state.globals.time = sv_globals.time;
+	sv_pr_state.globals.ftime = sv_globals.time;//FIXME double time
 	return ret;
+}
+
+static int
+sv_init_edicts (progs_t *pr)
+{
+	int         i;
+
+	memset (sv_edicts, 0, sizeof (sv_edicts));
+	memset (sv_data, 0, sizeof (sv_data));
+
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->pr = &sv_pr_state;
+		ent->entnum = i;
+		ent->edict = EDICT_TO_PROG (&sv_pr_state, ent);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
+
+	return 1;
 }
 
 void
@@ -486,62 +611,57 @@ SV_LoadProgs (void)
 {
 	const char *progs_name = "qwprogs.dat";
 	const char *range;
-	int         i;
 
-	if (strequal (sv_progs_ext->string, "qf")) {
+	if (strequal (sv_progs_ext, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
-	} else if (strequal (sv_progs_ext->string, "id")) {
+	} else if (strequal (sv_progs_ext, "id")) {
 		sv_range = PR_RANGE_ID;
 		range = "ID";
-	} else if (strequal (sv_progs_ext->string, "qwe")
-			   || strequal (sv_progs_ext->string, "ktpro")) {
+	} else if (strequal (sv_progs_ext, "qwe")
+			   || strequal (sv_progs_ext, "ktpro")) {
 		sv_range = PR_RANGE_QWE;
 		range = "QWE/KTPro";
-	} else if (strequal (sv_progs_ext->string, "cpqw")) {
+	} else if (strequal (sv_progs_ext, "cpqw")) {
 		sv_range = PR_RANGE_CPQW;
 		range = "CPQW";
 	} else {
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Sys_MaskPrintf (SYS_DEV, "Using %s builtin extention mapping\n", range);
+	Sys_MaskPrintf (SYS_dev, "Using %s builtin extention mapping\n", range);
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
 	Info_RemoveKey (svs.info, "sky");
-	if (*r_skyname->string)
-		Info_SetValueForKey (svs.info, "sky", r_skyname->string, 0);
+	if (*r_skyname)
+		Info_SetValueForKey (svs.info, "sky", r_skyname, 0);
 
 	sv_cbuf->unknown_command = 0;
 	ucmd_unknown = 0;
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
-	if (*sv_progs->string)
-		progs_name = sv_progs->string;
+	if (*sv_progs)
+		progs_name = sv_progs;
 
-	PR_LoadProgs (&sv_pr_state, progs_name, MAX_EDICTS,
-				  sv_progs_zone->int_val * 1024);
+	sv_pr_state.max_edicts = MAX_EDICTS;
+	sv_pr_state.zone_size = sv_progs_zone * 1024;
+	sv_pr_state.stack_size = sv_progs_stack * 1024;
+	sv.edicts = sv_edicts;
+
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-
-	memset (sv_data, 0, sizeof (sv_data));
-
-	// init the data field of the edicts
-	for (i = 0; i < MAX_EDICTS; i++) {
-		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
-		ent->entnum = i;
-		ent->edata = &sv_data[i];
-		SVdata (ent)->edict = ent;
-	}
 }
 
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "quakeworld";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -551,6 +671,9 @@ SV_Progs_Init (void)
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 	SV_PR_QWE_Init (&sv_pr_state);
@@ -571,25 +694,16 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
-	r_skyname = Cvar_Get ("r_skyname", "", CVAR_NONE, NULL,
-						 "Default name of skybox if none given by map");
-	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
-						 "Override the default game progs.");
-	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
-							  "size of the zone for progs in kb");
-	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
-							 "extention mapping to use: "
-							 "none, id, qf, qwe, ktpro, cpqw");
-	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
-								   "indicate the presence of the "
-								   "checkextentions qc function");
-	sv_old_entity_free = Cvar_Get ("sv_old_entity_free", "1", CVAR_NONE, NULL,
-								   "set this for buggy mods that rely on the"
-								   " old behaviour of entity freeing (eg,"
-								   " *TF)");
-	sv_hide_version_info = Cvar_Get ("sv_hide_version_info", "0", CVAR_ROM,
-									 NULL, "hide QuakeForge specific "
-									 "serverinfo strings from terminally "
-									 "stupid progs (eg, braindead TF "
-									 "variants)");
+	PR_Init_Cvars ();
+
+	Cvar_Register (&r_skyname_cvar, 0, 0);
+	Cvar_Register (&sv_progs_cvar, 0, 0);
+	Cvar_Register (&sv_progs_zone_cvar, 0, 0);
+	Cvar_Register (&sv_progs_stack_cvar, 0, 0);
+	Cvar_Register (&sv_progs_ext_cvar, 0, 0);
+	Cvar_Register (&pr_checkextensions_cvar, 0, 0);
+	Cvar_Register (&sv_old_entity_free_cvar, 0, 0);
+	Cvar_Register (&sv_hide_version_info_cvar, 0, 0);
+	Cvar_Register (&sv_aim_cvar, 0, 0);
+	Cvar_Register (&pr_double_remove_cvar, 0, 0);
 }

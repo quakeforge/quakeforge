@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _SKIN_H
-#define _SKIN_H
+#ifndef __QF_skin_h
+#define __QF_skin_h
 
 #include "QF/qtypes.h"
 #include "QF/vid.h"
@@ -50,11 +50,11 @@
 
 typedef struct skin_s {
 	const char *name;
-	qboolean	valid;		// the skin was found
+	bool		valid;		// the skin was found
 	struct tex_s *texels;
 	byte       *colormap;
 	int         texnum;
 	int         auxtex;
 } skin_t;
 
-#endif
+#endif//__QF_skin_h

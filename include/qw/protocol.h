@@ -31,6 +31,8 @@
 
 #include "QF/mathlib.h"
 
+#include "gamedefs.h"
+
 #define	PROTOCOL_VERSION	28
 
 #define QW_CHECK_HASH 0x5157
@@ -294,7 +296,7 @@
 
 // ELEMENTS COMMUNICATED ACROSS THE NET =======================================
 
-#define	MAX_CLIENTS		32
+#define	MAX_CLIENTS		MAX_PLAYERS
 
 #define	UPDATE_BACKUP	64	// copies of entity_state_t to keep buffered
 							// must be power of two
@@ -320,26 +322,9 @@ typedef struct usercmd_s {
 } usercmd_t;
 
 typedef struct plent_state_s {
-	int         number;
-
-	unsigned int flags;
-	vec3_t      origin;
+	entity_state_t es;
 	usercmd_t   cmd;
-	vec3_t      velocity;
-	int         modelindex;
-	int         frame;
-	int         skinnum;
-	int         effects;
-	int         weaponframe;
-
 	byte        msec;
-
-	// QSG 2
-	byte	    alpha;
-	byte	    scale;
-	byte	    glow_size;
-	byte	    glow_color;
-	byte	    colormod;
 } plent_state_t;
 
 typedef struct {

@@ -28,7 +28,7 @@ whitespace. This allows commands and arguments to contain \c + and \c - so
 long as the preceeding character is not whitespace, but also prevents
 command line switches (eg \c -nosound) from becoming part of the console
 command. Using careful quoting, it is even possible for a command or
-argument to beging with \c + or \c -.
+argument to begin with \c + or \c -.
 
 The following command line will fail to set m_pitch because the -0.022
 will not be part of the console command. <code>usage: setrom \<cvar\>

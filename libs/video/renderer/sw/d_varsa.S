@@ -80,14 +80,18 @@ C(bbextentt):		.long	0
 
 .globl	C(cacheblock)
 .globl	C(d_viewbuffer)
+.globl	C(d_rowbytes)
+.globl	C(d_height)
 .globl	C(cachewidth)
-.globl	C(d_pzbuffer)
+.globl	C(d_zbuffer)
 .globl	C(d_zrowbytes)
 .globl	C(d_zwidth)
 C(cacheblock):		.long	0
 C(cachewidth):		.long	0
 C(d_viewbuffer):	.long	0
-C(d_pzbuffer):		.long	0
+C(d_rowbytes):		.long	0
+C(d_height):		.long	0
+C(d_zbuffer):		.long	0
 C(d_zrowbytes):		.long	0
 C(d_zwidth):		.long	0
 
@@ -203,3 +207,6 @@ C(spr8entryvec_table):	.long	0, C(Spr8Entry2_8), C(Spr8Entry3_8), C(Spr8Entry4_8
 
 #endif	// USE_INTEL_ASM
 
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

@@ -25,13 +25,13 @@
 
 */
 
-#ifndef _INFO_H
-#define _INFO_H
+#ifndef __QF_info_h
+#define __QF_info_h
 
 /** \defgroup info Info Keys
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <stdlib.h> // for size_t. sys/types.h SHOULD be used, but can't :(bc)
 #include <QF/qtypes.h>
@@ -47,10 +47,10 @@ typedef struct info_key_s {
 	const char			*value;
 } info_key_t;
 
-qboolean Info_FilterForKey (const char *key, const char **filter_list);
+bool Info_FilterForKey (const char *key, const char **filter_list) __attribute__((pure));
 
 void Info_Print (info_t *info);
-int Info_CurrentSize (info_t *info);
+int Info_CurrentSize (info_t *info) __attribute__((pure));
 info_key_t *Info_Key (info_t *info, const char *key);
 info_key_t **Info_KeyList (info_t *info);
 void Info_RemoveKey (info_t *info, const char *key);
@@ -63,6 +63,6 @@ void Info_Destroy (info_t *info);
 char *Info_MakeString (info_t *info, int (*filter)(const char *));
 void Info_AddKeys (info_t *info, info_t *keys);
 
-//@}
+///@}
 
-#endif	// _INFO_H
+#endif//__QF_info_h

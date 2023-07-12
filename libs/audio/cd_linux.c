@@ -66,19 +66,35 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
-static qboolean cdValid = false;
-static qboolean playing = false;
-static qboolean wasPlaying = false;
-static qboolean mus_enabled = false;
-static qboolean playLooping = false;
+static bool cdValid = false;
+static bool playing = false;
+static bool wasPlaying = false;
+static bool mus_enabled = false;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
 static byte maxTrack;
 static int  cdfile = -1;
 
-static cvar_t *mus_cddevice;
-static cvar_t *bgmvolume;
+static char *mus_cddevice;
+static cvar_t mus_cddevice_cvar = {
+	.name = "mus_cddevice",
+	.description =
+		"device to use for CD music",
+	.default_value = "/dev/cdrom",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &mus_cddevice },
+};
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 
 static void
@@ -88,7 +104,7 @@ I_CDAudio_CloseDoor (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMCLOSETRAY) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromclosetray failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromclosetray failed\n");
 }
 
 static void
@@ -98,7 +114,7 @@ I_CDAudio_Eject (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMEJECT) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromeject failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromeject failed\n");
 }
 
 static int
@@ -109,12 +125,12 @@ I_CDAudio_GetAudioDiskInfo (void)
 	cdValid = false;
 
 	if (ioctl (cdfile, CDROMREADTOCHDR, &tochdr) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtochdr failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtochdr failed\n");
 		return -1;
 	}
 
 	if (tochdr.cdth_trk0 < 1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: no music tracks\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: no music tracks\n");
 		return -1;
 	}
 
@@ -134,7 +150,7 @@ I_CDAudio_Pause (void)
 		return;
 
 	if (ioctl (cdfile, CDROMPAUSE) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdrompause failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdrompause failed\n");
 
 	wasPlaying = playing;
 	playing = false;
@@ -150,7 +166,7 @@ I_CDAudio_Stop (void)
 		return;
 
 	if (ioctl (cdfile, CDROMSTOP) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromstop failed (%d)\n",
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromstop failed (%d)\n",
 						errno);
 
 	wasPlaying = false;
@@ -158,7 +174,7 @@ I_CDAudio_Stop (void)
 }
 
 static void
-I_CDAudio_Play (int track, qboolean looping)
+I_CDAudio_Play (int track, bool looping)
 {
 	struct cdrom_tocentry entry0;
 	struct cdrom_tocentry entry1;
@@ -188,7 +204,7 @@ I_CDAudio_Play (int track, qboolean looping)
 	entry0.cdte_track = track;
 	entry0.cdte_format = CDROM_MSF;
 	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry0) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtocentry failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtocentry failed\n");
 		return;
 	}
 	entry1.cdte_track = track + 1;
@@ -197,7 +213,7 @@ I_CDAudio_Play (int track, qboolean looping)
 		entry1.cdte_track = CDROM_LEADOUT;
 	}
 	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry1) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtocentry failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtocentry failed\n");
 		return;
 	}
 	if (entry0.cdte_ctrl == CDROM_DATA_TRACK) {
@@ -219,14 +235,14 @@ I_CDAudio_Play (int track, qboolean looping)
 	msf.cdmsf_sec1 = entry1.cdte_addr.msf.second;
 	msf.cdmsf_frame1 = entry1.cdte_addr.msf.frame;
 
-	Sys_MaskPrintf (SYS_SND, "%2d:%02d:%02d %2d:%02d:%02d\n",
+	Sys_MaskPrintf (SYS_snd, "%2d:%02d:%02d %2d:%02d:%02d\n",
 					msf.cdmsf_min0,
 					msf.cdmsf_sec0,
 					msf.cdmsf_frame0,
 					msf.cdmsf_min1, msf.cdmsf_sec1, msf.cdmsf_frame1);
 
 	if (ioctl (cdfile, CDROMPLAYMSF, &msf) == -1) {
-		Sys_MaskPrintf (SYS_SND,
+		Sys_MaskPrintf (SYS_snd,
 						"CDAudio: ioctl cdromplaytrkind failed (%s)\n",
 						strerror (errno));
 		return;
@@ -253,7 +269,7 @@ I_CDAudio_Resume (void)
 		return;
 
 	if (ioctl (cdfile, CDROMRESUME) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromresume failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromresume failed\n");
 	playing = true;
 }
 
@@ -382,14 +398,14 @@ I_CDAudio_Update (void)
 	if (!mus_enabled)
 		return;
 
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 0.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 1.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Resume ();
 		}
 	}
@@ -398,7 +414,7 @@ I_CDAudio_Update (void)
 		lastchk = time (NULL) + 2;		// two seconds between chks
 		subchnl.cdsc_format = CDROM_MSF;
 		if (ioctl (cdfile, CDROMSUBCHNL, &subchnl) == -1) {
-			Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromsubchnl failed\n");
+			Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromsubchnl failed\n");
 			playing = false;
 			return;
 		}
@@ -412,20 +428,20 @@ I_CDAudio_Update (void)
 }
 
 static void
-Mus_CDChange (cvar_t *mus_cdaudio)
+Mus_CDChange (void *data, const cvar_t *cvar)
 {
 	int         i;
 
 	I_CDAudio_Shutdown ();
-	if (strequal (mus_cdaudio->string, "none")) {
+	if (strequal (mus_cddevice, "none")) {
 		return;
 	}
 
-	cdfile = open (mus_cdaudio->string, O_RDONLY | O_NONBLOCK);
+	cdfile = open (mus_cddevice, O_RDONLY | O_NONBLOCK);
 	if (cdfile == -1) {
-		Sys_MaskPrintf (SYS_SND,
+		Sys_MaskPrintf (SYS_snd,
 						"Mus_CDInit: open device \"%s\" failed (error %i)\n",
-						mus_cdaudio->string, errno);
+						mus_cddevice, errno);
 		return;
 	}
 
@@ -443,10 +459,8 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 static void
 I_CDAudio_Init (void)
 {
-	mus_cddevice = Cvar_Get ("mus_cddevice", "/dev/cdrom", CVAR_NONE,
-							 Mus_CDChange, "device to use for CD music");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&mus_cddevice_cvar, Mus_CDChange, 0);
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -455,6 +469,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_CD_f,
 	I_CDAudio_Pause,
 	I_CDAudio_Play,

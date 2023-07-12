@@ -34,26 +34,31 @@
 
 void CL_Init (void);
 void Host_WriteConfiguration (void);
+int Host_ReadConfiguration (const char *cfg_name);
 
 void CL_EstablishConnection (const char *host);
 
 void CL_Disconnect (void);
 void CL_Disconnect_f (void);
 void CL_NextDemo (void);
-qboolean CL_DemoBehind(void);
+bool CL_DemoBehind(void);
 
 void CL_BeginServerConnect(void);
 
-extern char emodel_name[], pmodel_name[], prespawn_name[], modellist_name[], soundlist_name[];
+#define emodel_name "emodel"
+#define pmodel_name "pmodel"
+#define prespawn_name "prespawn %i 0 %i"
+#define modellist_name "modellist %i %i"
+#define soundlist_name "soundlist %i %i"
 
-extern struct cvar_s *cl_timeframes;
-extern struct cvar_s *cl_predict_players;
-extern struct cvar_s *cl_solid_players;
-extern struct cvar_s *cl_autoexec;
-extern struct cvar_s *cl_cshift_bonus;
-extern struct cvar_s *cl_cshift_contents;
-extern struct cvar_s *cl_cshift_damage;
-extern struct cvar_s *cl_cshift_powerup;
+
+extern int cl_predict_players;
+extern int cl_solid_players;
+extern int cl_autoexec;
+extern int cl_cshift_bonus;
+extern int cl_cshift_contents;
+extern int cl_cshift_damage;
+extern int cl_cshift_powerup;
 
 extern struct gib_event_s *cl_player_health_e, *cl_chat_e;
 

@@ -46,7 +46,6 @@
 
 #include "snd_internal.h"
 
-static dma_t sn;
 static int snd_inited;
 static int snd_blocked;
 
@@ -56,9 +55,33 @@ static unsigned shm_rpos;
 
 static unsigned wpos;
 
-static cvar_t *snd_bits;
-static cvar_t *snd_rate;
-static cvar_t *snd_stereo;
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -87,21 +110,18 @@ paint_audio (void *unused, Uint8 * stream, int len)
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
 }
 
-static volatile dma_t *
-SNDDMA_Init (void)
+static int
+SNDDMA_Init (snd_t *snd)
 {
 	SDL_AudioSpec desired, obtained;
 
 	if (snd_inited)
-		return &sn;
+		return 1;
 
 	if (SDL_Init (SDL_INIT_AUDIO) < 0) {
 		Sys_Printf ("Couldn't initialize SDL AUDIO: %s\n", SDL_GetError ());
@@ -110,9 +130,9 @@ SNDDMA_Init (void)
 
 	/* Set up the desired format */
 	desired.freq = 22050;
-	if (snd_rate->int_val)
-		desired.freq = snd_rate->int_val;
-	switch (snd_bits->int_val) {
+	if (snd_rate)
+		desired.freq = snd_rate;
+	switch (snd_bits) {
 		case 8:
 			desired.format = AUDIO_U8;
 			break;
@@ -125,10 +145,10 @@ SNDDMA_Init (void)
 			break;
 		default:
 			Sys_Printf ("Unknown number of audio bits: %d\n",
-						snd_bits->int_val);
+						snd_bits);
 			return 0;
 	}
-	desired.channels = snd_stereo->int_val ? 2 : 1;
+	desired.channels = snd_stereo ? 2 : 1;
 	desired.samples = 1024;
 	desired.callback = paint_audio;
 
@@ -165,17 +185,17 @@ SNDDMA_Init (void)
 	}
 
 	/* Fill the audio DMA information block */
-	sn.samplebits = (obtained.format & 0xFF);
-	sn.speed = obtained.freq;
-	sn.channels = obtained.channels;
-	sn.frames = obtained.samples * 8;	// 8 chunks in the buffer
-	sn.framepos = 0;
-	sn.submission_chunk = 1;
+	snd->samplebits = (obtained.format & 0xFF);
+	snd->speed = obtained.freq;
+	snd->channels = obtained.channels;
+	snd->frames = obtained.samples * 8;	// 8 chunks in the buffer
+	snd->framepos = 0;
+	snd->submission_chunk = 1;
 
-	shm_buflen = sn.frames * sn.channels * (sn.samplebits / 8);
+	shm_buflen = snd->frames * snd->channels * (snd->samplebits / 8);
 
-	sn.buffer = calloc (shm_buflen, 1);
-	if (!sn.buffer)
+	snd->buffer = calloc (shm_buflen, 1);
+	if (!snd->buffer)
 		Sys_Error ("Failed to allocate buffer for sound!");
 
 	shm_buf = calloc (shm_buflen, 1);
@@ -189,28 +209,28 @@ SNDDMA_Init (void)
 
 	snd_inited = 1;
 
-	return &sn;
+	return 1;
 }
 
 static int
-SNDDMA_GetDMAPos (void)
+SNDDMA_GetDMAPos (snd_t *snd)
 {
 	if (!snd_inited)
 		return 0;
 
 	SDL_LockAudio ();
-	sn.framepos = shm_rpos / (sn.channels * (sn.samplebits / 8));
+	snd->framepos = shm_rpos / (snd->channels * (snd->samplebits / 8));
 	SDL_UnlockAudio ();
 
-	return sn.framepos;
+	return snd->framepos;
 }
 
 static void
-SNDDMA_Shutdown (void)
+SNDDMA_shutdown (snd_t *snd)
 {
 	if (snd_inited) {
 		SDL_CloseAudio ();
-		free (sn.buffer);
+		free (snd->buffer);
 		free (shm_buf);
 		snd_inited = 0;
 	}
@@ -222,7 +242,7 @@ SNDDMA_Shutdown (void)
 	Send sound to device if buffer isn't really the dma buffer
 */
 static void
-SNDDMA_Submit (void)
+SNDDMA_Submit (snd_t *snd)
 {
 	static unsigned old_paintedtime;
 	unsigned len;
@@ -236,17 +256,17 @@ SNDDMA_Submit (void)
 		old_paintedtime = 0;
 
 	len = (*plugin_info_snd_output_data.paintedtime - old_paintedtime) *
-			sn.channels * (sn.samplebits / 8);
+			snd->channels * (snd->samplebits / 8);
 
 	old_paintedtime = *plugin_info_snd_output_data.paintedtime;
 
 	while (wpos + len > shm_buflen) {
-		memcpy (shm_buf + wpos, sn.buffer + wpos, shm_buflen - wpos);
+		memcpy (shm_buf + wpos, snd->buffer + wpos, shm_buflen - wpos);
 		len -= shm_buflen - wpos;
 		wpos = 0;
 	}
 	if (len) {
-		memcpy (shm_buf + wpos, sn.buffer + wpos, len);
+		memcpy (shm_buf + wpos, snd->buffer + wpos, len);
 		wpos += len;
 	}
 
@@ -254,7 +274,7 @@ SNDDMA_Submit (void)
 }
 
 static void
-SNDDMA_BlockSound (void)
+SNDDMA_BlockSound (snd_t *snd)
 {
 	if (!snd_inited)
 		return;
@@ -264,7 +284,7 @@ SNDDMA_BlockSound (void)
 }
 
 static void
-SNDDMA_UnblockSound (void)
+SNDDMA_UnblockSound (snd_t *snd)
 {
 	if (!snd_inited || !snd_blocked)
 		return;
@@ -294,14 +314,14 @@ PLUGIN_INFO(snd_output, sdl)
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.p_Shutdown = NULL;
-	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
-	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_general_funcs.init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.shutdown = NULL;
+	plugin_info_snd_output_funcs.init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.shutdown = SNDDMA_shutdown;
+	plugin_info_snd_output_funcs.get_dma_pos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.block_sound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.unblock_sound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }

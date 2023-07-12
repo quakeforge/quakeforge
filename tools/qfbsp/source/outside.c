@@ -22,12 +22,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "portals.h"
-#include "outside.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
+#include "tools/qfbsp/include/outside.h"
 
 /**	\addtogroup qfbsp_outside
 */
@@ -41,14 +41,14 @@ int         outleafs;
 	\param point	The point's location.
 	\return			The leaf node in which the point is.
 */
-static node_t *
+static __attribute__((pure)) node_t *
 PointInLeaf (node_t *node, const vec3_t point)
 {
 	vec_t       d;
 
 	while (!node->contents) {
-		d = DotProduct (planes[node->planenum].normal, point);
-		node = node->children[d <= planes[node->planenum].dist];
+		d = DotProduct (planes.a[node->planenum].normal, point);
+		node = node->children[d <= planes.a[node->planenum].dist];
 	}
 	return node;
 }
@@ -93,7 +93,7 @@ FloodEntDist_r (node_t *n, int dist)
 	\param headnode	The root of the map's bsp tree.
 	\return			true if the entity could be placed, false otherwise.
 */
-static qboolean
+static bool
 PlaceOccupant (int num, const vec3_t point, node_t *headnode)
 {
 	node_t     *n;
@@ -180,6 +180,8 @@ MarkLeakTrail2 (void)
 	vec3_t      wc, pwc;
 	const vec_t *v;
 
+	VectorZero (wc);
+
 	leakfile = fopen (options.pointfile, "w");
 	if (!leakfile)
 		Sys_Error ("Couldn't open %s\n", options.pointfile);
@@ -231,12 +233,12 @@ int         hit_occupied;
 	\return			\c true if an occupied leaf is reached, otherwise
 					\c false.
 */
-static qboolean
-RecursiveFillOutside (node_t *l, qboolean fill)
+static bool
+RecursiveFillOutside (node_t *l, bool fill)
 {
 	portal_t   *p;
 	int         s;
-	qboolean    res = false;
+	bool        res = false;
 
 	if (l->contents == CONTENTS_SOLID || l->contents == CONTENTS_SKY)
 		return false;
@@ -306,11 +308,11 @@ ClearOutFaces (node_t *node)
 	node->faces = NULL;
 }
 
-qboolean
+bool
 FillOutside (node_t *node)
 {
 	int         i, s;
-	qboolean    inside;
+	bool        inside;
 	vec_t      *v;
 
 	qprintf ("----- FillOutside ----\n");

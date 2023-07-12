@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -5,6 +7,7 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/types.h"
+#include "QF/GLSL/types.h"
 
 typedef struct __GLXcontextRec *GLXContext;
 typedef XID GLXDrawable;
@@ -15,6 +18,12 @@ typedef XID GLXDrawable;
 
 void
 trace_glAccum (GLenum op, GLfloat value)
+{
+	TRACE;
+}
+
+void
+trace_glActiveTexture (GLenum texture)
 {
 	TRACE;
 }
@@ -40,7 +49,37 @@ trace_glArrayElement (GLint i)
 }
 
 void
+trace_glAttachShader (GLuint program, GLuint shader)
+{
+	TRACE;
+}
+
+void
 trace_glBegin (GLenum mode)
+{
+	TRACE;
+}
+
+void
+trace_glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)
+{
+	TRACE;
+}
+
+void
+trace_glBindBuffer (GLenum target, GLuint buffer)
+{
+	TRACE;
+}
+
+void
+trace_glBindFramebuffer (GLenum target, GLuint framebuffer)
+{
+	TRACE;
+}
+
+void
+trace_glBindRenderbuffer (GLenum target, GLuint renderbuffer)
 {
 	TRACE;
 }
@@ -71,7 +110,31 @@ trace_glBlendEquation (GLenum mode)
 }
 
 void
+trace_glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
+{
+	TRACE;
+}
+
+void
 trace_glBlendFunc (GLenum sfactor, GLenum dfactor)
+{
+	TRACE;
+}
+
+void
+trace_glBlendFuncSeparate (GLenum sfactor, GLenum dfactor)
+{
+	TRACE;
+}
+
+void
+trace_glBufferData (GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage)
+{
+	TRACE;
+}
+
+void
+trace_glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data)
 {
 	TRACE;
 }
@@ -84,6 +147,533 @@ trace_glCallList (GLuint list)
 
 void
 trace_glCallLists (GLsizei n, GLenum type, const GLvoid * lists)
+{
+	TRACE;
+}
+
+GLenum
+trace_glCheckFramebufferStatus (GLenum target)
+{
+	TRACE;
+	return 0x8CD5;
+}
+
+void
+trace_glClearDepthf (GLclampf depth)
+{
+	TRACE;
+}
+
+void
+trace_glCompileShader (GLuint shader)
+{
+	TRACE;
+}
+
+void
+trace_glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data)
+{
+	TRACE;
+}
+
+void
+trace_glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid* data)
+{
+	TRACE;
+}
+
+GLuint
+trace_glCreateProgram (void)
+{
+	static int program;
+	TRACE;
+	return ++program;
+}
+
+GLuint
+trace_glCreateShader (GLenum type)
+{
+	static int shader;
+	TRACE;
+	return ++shader;
+}
+
+void
+trace_glDeleteBuffers (GLsizei n, const GLuint* buffers)
+{
+	TRACE;
+}
+
+void
+trace_glDeleteFramebuffers (GLsizei n, const GLuint* framebuffers)
+{
+	TRACE;
+}
+
+void
+trace_glDeleteProgram (GLuint program)
+{
+	TRACE;
+}
+
+void
+trace_glDeleteRenderbuffers (GLsizei n, const GLuint* renderbuffers)
+{
+	TRACE;
+}
+
+void
+trace_glDeleteShader (GLuint shader)
+{
+	TRACE;
+}
+
+void
+trace_glDepthRangef (GLclampf zNear, GLclampf zFar)
+{
+	TRACE;
+}
+
+void
+trace_glDetachShader (GLuint program, GLuint shader)
+{
+	TRACE;
+}
+
+void
+trace_glDisableVertexAttribArray (GLuint index)
+{
+	TRACE;
+}
+
+void
+trace_glEnableVertexAttribArray (GLuint index)
+{
+	TRACE;
+}
+
+void
+trace_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
+{
+	TRACE;
+}
+
+void
+trace_glGenBuffers (GLsizei n, GLuint* buffers)
+{
+	TRACE;
+	memset (buffers, 0, n * sizeof (GLuint));
+}
+
+void
+trace_glGenFramebuffers (GLsizei n, GLuint* framebuffers)
+{
+	TRACE;
+	memset (framebuffers, 0, n * sizeof (GLuint));
+}
+
+void
+trace_glGenRenderbuffers (GLsizei n, GLuint* renderbuffers)
+{
+	TRACE;
+	memset (renderbuffers, 0, n * sizeof (GLuint));
+}
+
+void
+trace_glGenerateMipmap (GLenum target)
+{
+	TRACE;
+}
+
+void
+trace_glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, GLchar* name)
+{
+	TRACE;
+}
+
+void
+trace_glGetActiveUniform (GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, GLchar* name)
+{
+	TRACE;
+}
+
+void
+trace_glGetAttachedShaders (GLuint program, GLsizei maxcount, GLsizei* count, GLuint* shaders)
+{
+	TRACE;
+}
+
+int
+trace_glGetAttribLocation (GLuint program, const GLchar* name)
+{
+	TRACE;
+	return 0;
+}
+
+void
+trace_glGetBufferParameteriv (GLenum target, GLenum pname, GLint* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GLenum pname, GLint* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetProgramInfoLog (GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog)
+{
+	TRACE;
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
+}
+
+void
+trace_glGetProgramiv (GLuint program, GLenum pname, GLint* params)
+{
+	TRACE;
+	*params = 0;
+}
+
+void
+trace_glGetRenderbufferParameteriv (GLuint shader, GLenum pname, GLint* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)
+{
+	TRACE;
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
+}
+
+void
+trace_glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint* range, GLint* precision)
+{
+	TRACE;
+}
+
+void
+trace_glGetShaderSource (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source)
+{
+	TRACE;
+}
+
+void
+trace_glGetShaderiv (GLuint shader, GLenum pname, GLint* params)
+{
+	TRACE;
+	*params = 0;
+}
+
+int
+trace_glGetUniformLocation (GLuint program, const GLchar* name)
+{
+	TRACE;
+	return 0;
+}
+
+void
+trace_glGetUniformfv (GLuint program, GLint location, GLfloat* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetUniformiv (GLuint program, GLint location, GLint* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetVertexAttribPointerv (GLuint index, GLenum pname, GLvoid** pointer)
+{
+	TRACE;
+}
+
+void
+trace_glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat* params)
+{
+	TRACE;
+}
+
+void
+trace_glGetVertexAttribiv (GLuint index, GLenum pname, GLint* params)
+{
+	TRACE;
+}
+
+GLboolean
+trace_glIsBuffer (GLuint buffer)
+{
+	TRACE;
+	return 0;
+}
+
+GLboolean
+trace_glIsFramebuffer (GLuint framebuffer)
+{
+	TRACE;
+	return 0;
+}
+
+GLboolean
+trace_glIsProgram (GLuint program)
+{
+	TRACE;
+	return 0;
+}
+
+GLboolean
+trace_glIsRenderbuffer (GLuint renderbuffer)
+{
+	TRACE;
+	return 0;
+}
+
+GLboolean
+trace_glIsShader (GLuint shader)
+{
+	TRACE;
+	return 0;
+}
+
+void
+trace_glLinkProgram (GLuint program)
+{
+	TRACE;
+}
+
+void
+trace_glReleaseShaderCompiler (void)
+{
+	TRACE;
+}
+
+void
+trace_glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
+{
+	TRACE;
+}
+
+void
+trace_glSampleCoverage (GLclampf value, GLboolean invert)
+{
+	TRACE;
+}
+
+void
+trace_glShaderBinary (GLsizei n, const GLuint* shaders, GLenum binaryformat, const GLvoid* binary, GLsizei length)
+{
+	TRACE;
+}
+
+void
+trace_glShaderSource (GLuint shader, GLsizei count, const GLchar** string, const GLint* length)
+{
+	TRACE;
+}
+
+void
+trace_glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
+{
+	TRACE;
+}
+
+void
+trace_glStencilMaskSeparate (GLenum face, GLuint mask)
+{
+	TRACE;
+}
+
+void
+trace_glStencilOpSeparate (GLenum face, GLenum fail, GLenum zfail, GLenum zpass)
+{
+	TRACE;
+}
+
+void
+trace_glUniform1f (GLint location, GLfloat x)
+{
+	TRACE;
+}
+
+void
+trace_glUniform1fv (GLint location, GLsizei count, const GLfloat* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform1i (GLint location, GLint x)
+{
+	TRACE;
+}
+
+void
+trace_glUniform1iv (GLint location, GLsizei count, const GLint* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform2f (GLint location, GLfloat x, GLfloat y)
+{
+	TRACE;
+}
+
+void
+trace_glUniform2fv (GLint location, GLsizei count, const GLfloat* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform2i (GLint location, GLint x, GLint y)
+{
+	TRACE;
+}
+
+void
+trace_glUniform2iv (GLint location, GLsizei count, const GLint* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform3f (GLint location, GLfloat x, GLfloat y, GLfloat z)
+{
+	TRACE;
+}
+
+void
+trace_glUniform3fv (GLint location, GLsizei count, const GLfloat* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform3i (GLint location, GLint x, GLint y, GLint z)
+{
+	TRACE;
+}
+
+void
+trace_glUniform3iv (GLint location, GLsizei count, const GLint* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform4f (GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+	TRACE;
+}
+
+void
+trace_glUniform4fv (GLint location, GLsizei count, const GLfloat* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniform4i (GLint location, GLint x, GLint y, GLint z, GLint w)
+{
+	TRACE;
+}
+
+void
+trace_glUniform4iv (GLint location, GLsizei count, const GLint* v)
+{
+	TRACE;
+}
+
+void
+trace_glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+	TRACE;
+}
+
+void
+trace_glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+	TRACE;
+}
+
+void
+trace_glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+	TRACE;
+}
+
+void
+trace_glUseProgram (GLuint program)
+{
+	TRACE;
+}
+
+void
+trace_glValidateProgram (GLuint program)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib1f (GLuint indx, GLfloat x)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib1fv (GLuint indx, const GLfloat* values)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib2f (GLuint indx, GLfloat x, GLfloat y)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib2fv (GLuint indx, const GLfloat* values)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib3f (GLuint indx, GLfloat x, GLfloat y, GLfloat z)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib3fv (GLuint indx, const GLfloat* values)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib4f (GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttrib4fv (GLuint indx, const GLfloat* values)
+{
+	TRACE;
+}
+
+void
+trace_glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)
 {
 	TRACE;
 }
@@ -735,6 +1325,7 @@ void
 trace_glGenTextures (GLsizei n, GLuint * textures)
 {
 	TRACE;
+	memset (textures, 0, n * sizeof (GLuint));
 }
 
 void
@@ -830,7 +1421,7 @@ trace_glGetIntegerv (GLenum pname, GLint * params)
 	TRACE;
 	switch (pname) {
 		case GL_MAX_TEXTURE_SIZE:
-			*params = 512;
+			*params = 2048;
 			break;
 		case GL_UNPACK_ALIGNMENT:
 		case GL_PACK_ALIGNMENT:
@@ -2340,5 +2931,41 @@ trace_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 
 void
 trace_glPNTrianglesiATI (GLint x, GLint y)
+{
+	TRACE;
+}
+
+void
+trace_glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer)
+{
+}
+
+void
+trace_glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glNamedFramebufferTexture (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glCreateVertexArrays (GLsizei n, GLuint *arrays)
+{
+}
+
+void
+trace_glBindVertexArray (GLuint array)
 {
 }

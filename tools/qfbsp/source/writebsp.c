@@ -37,10 +37,10 @@
 #include "QF/va.h"
 #include "QF/wad.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "writebsp.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/writebsp.h"
 
 /**	\addtogroup qfbsp_writebsp
 */
@@ -53,10 +53,8 @@ int         firstface;
 int
 FindFinalPlane (const dplane_t *p)
 {
-	const dplane_t *dplane;
-	int         i;
-
-	for (i = 0, dplane = bsp->planes; i < bsp->numplanes; i++, dplane++) {
+	for (size_t i = 0; i < bsp->numplanes; i++) {
+		const dplane_t *dplane = bsp->planes + i;
 		if (p->type != dplane->type)
 			continue;
 		if (p->dist != dplane->dist)
@@ -67,14 +65,12 @@ FindFinalPlane (const dplane_t *p)
 	}
 
 	// new plane
-	if (bsp->numplanes == MAX_MAP_PLANES)
-		Sys_Error ("numplanes == MAX_MAP_PLANES");
 	BSP_AddPlane (bsp, p);
 
 	return bsp->numplanes - 1;
 }
 
-int         planemapping[MAX_MAP_PLANES];
+static struct DARRAY_TYPE(int) planemapping = DARRAY_STATIC_INIT (1024);
 
 /**	Recursively write the nodes' planes to the bsp file.
 
@@ -91,10 +87,10 @@ WriteNodePlanes_r (node_t *node)
 
 	if (node->planenum == -1)
 		return;
-	if (planemapping[node->planenum] == -1) {	// a new plane
-		planemapping[node->planenum] = bsp->numplanes;
+	if (planemapping.a[node->planenum] == -1) {	// a new plane
+		planemapping.a[node->planenum] = bsp->numplanes;
 
-		plane = &planes[node->planenum];
+		plane = &planes.a[node->planenum];
 
 		VectorCopy (plane->normal, dplane.normal);
 		dplane.dist = plane->dist;
@@ -102,7 +98,7 @@ WriteNodePlanes_r (node_t *node)
 		BSP_AddPlane (bsp, &dplane);
 	}
 
-	node->outputplanenum = planemapping[node->planenum];
+	node->outputplanenum = planemapping.a[node->planenum];
 
 	WriteNodePlanes_r (node->children[0]);
 	WriteNodePlanes_r (node->children[1]);
@@ -111,7 +107,8 @@ WriteNodePlanes_r (node_t *node)
 void
 WriteNodePlanes (node_t *nodes)
 {
-	memset (planemapping, -1, sizeof (planemapping));
+	DARRAY_RESIZE (&planemapping, planes.size);
+	memset (planemapping.a, -1, planemapping.size * sizeof (planemapping.a[0]));
 	WriteNodePlanes_r (nodes);
 }
 
@@ -124,7 +121,7 @@ WriteNodePlanes (node_t *nodes)
 static int
 WriteClipNodes_r (node_t *node)
 {
-	dclipnode_t cn;
+	dclipnode_t cn = { };
 	int         num, c, i;
 
 	// FIXME: free more stuff?
@@ -176,8 +173,6 @@ WriteLeaf (const node_t *node)
 
 	for (fp = node->markfaces; *fp; fp++) {
 		// emit a marksurface
-		if (bsp->nummarksurfaces == MAX_MAP_MARKSURFACES)
-			Sys_Error ("nummarksurfaces == MAX_MAP_MARKSURFACES");
 		f = *fp;
 		if (f->texturenum < 0)
 			continue;
@@ -206,8 +201,6 @@ WriteDrawNodes_r (const node_t *node)
 	int         nodenum = bsp->numnodes;
 
 	// emit a node
-	if (bsp->numnodes == MAX_MAP_NODES)
-		Sys_Error ("numnodes == MAX_MAP_NODES");
 	BSP_AddNode (bsp, &dummy);
 	n = &bsp->nodes[nodenum];
 
@@ -301,7 +294,7 @@ TEX_InitFromWad (const char *path)
 	wad = wad_open (path);
 #ifdef HAVE_ZLIB
 	if (!wad)
-		wad = wad_open (path = va ("%s.gz", path));
+		wad = wad_open (path = va (0, "%s.gz", path));
 #endif
 	if (!wad)
 		return -1;

@@ -38,8 +38,8 @@
 #include "QF/qtypes.h"
 #include "QF/segtext.h"
 
-static segchunk_t *chunks_freelist;
-static segtext_t *texts_freelist;
+ALLOC_STATE (segchunk_t, chunks);
+ALLOC_STATE (segtext_t, texts);
 
 static segchunk_t *
 new_chunk (void)
@@ -140,7 +140,7 @@ Segtext_new (const char *source_string)
 	if (!source_string)
 		return 0;
 	text = new_text ();
-	text->tab = Hash_NewTable (61, segtext_getkey, 0, 0);
+	text->tab = Hash_NewTable (61, segtext_getkey, 0, 0, 0);
 
 	src = strdup (source_string);
 	// The first chunk is special in that it holds the pointer to the copied
@@ -176,8 +176,9 @@ Segtext_delete (segtext_t *st)
 	while (st->chunk_list) {
 		chunk = st->chunk_list;
 		st->chunk_list = chunk->next;
-		if (chunk->tag)
+		if (chunk->tag) {
 			free ((char *) chunk->tag);
+		}
 		delete_chunk (chunk);
 	}
 	Hash_DelTable (st->tab);
@@ -211,4 +212,17 @@ Segtext_Find (const segtext_t *st, const char *tag)
 	if (chunk)
 		return chunk->text;
 	return 0;
+}
+
+static void
+segtext_shutdown (void *data)
+{
+	ALLOC_FREE_BLOCKS (chunks);
+	ALLOC_FREE_BLOCKS (texts);
+}
+
+static void __attribute__((constructor))
+segtext_init (void)
+{
+	Sys_RegisterShutdown (segtext_shutdown, 0);
 }

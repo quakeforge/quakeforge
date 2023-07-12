@@ -45,13 +45,14 @@
 #include "QF/cvar.h"
 #include "QF/msg.h"
 
-#include "chase.h"
-#include "cl_cam.h"
-#include "cl_input.h"
-#include "client.h"
 #include "compat.h"
+
+#include "client/sbar.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/client.h"
 #include "qw/pmove.h"
-#include "sbar.h"
 
 #define	PM_SPECTATORMAXSPEED 500
 #define	PM_STOPSPEED 100
@@ -66,17 +67,51 @@
 #include "QF/mathlib.h"
 #include "world.h"
 
-cvar_t     *cl_hightrack;	// track high fragger
-cvar_t     *cl_chasecam;
-cvar_t     *cl_camera_maxpitch;
-cvar_t     *cl_camera_maxyaw;
+int cl_hightrack;
+static cvar_t cl_hightrack_cvar = {
+	.name = "cl_hightrack",
+	.description =
+		"view the player who has the most frags while you are in spectator "
+		"mode.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_hightrack },
+};
+int cl_chasecam;
+static cvar_t cl_chasecam_cvar = {
+	.name = "cl_chasecam",
+	.description =
+		"get first person view of the person you are tracking in spectator "
+		"mode",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_chasecam },
+};
+float cl_camera_maxpitch;
+static cvar_t cl_camera_maxpitch_cvar = {
+	.name = "cl_camera_maxpitch",
+	.description =
+		"highest camera pitch in spectator mode",
+	.default_value = "10",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_camera_maxpitch },
+};
+float cl_camera_maxyaw;
+static cvar_t cl_camera_maxyaw_cvar = {
+	.name = "cl_camera_maxyaw",
+	.description =
+		"highest camera yaw in spectator mode",
+	.default_value = "30",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &cl_camera_maxyaw },
+};
 
 static vec3_t desired_position;			// where the camera wants to be
-static qboolean locked = false;
+static bool locked = false;
 static int  oldbuttons;
 
 double      cam_lastviewtime;
-qboolean    cam_forceview;
+bool        cam_forceview;
 vec3_t      cam_viewangles;
 
 int         spec_track = 0;				// player# of who we are tracking
@@ -113,35 +148,35 @@ vectoangles (vec3_t vec, vec3_t ang)
 }
 
 // returns true if weapon model should be drawn in camera mode
-qboolean
+bool
 Cam_DrawViewModel (void)
 {
-	if (cl.chase && chase_active->int_val)
+	if (cl.viewstate.chase && chase_active)
 		return false;
 
 	if (!cl.spectator)
 		return true;
 
-	if (autocam && locked && cl_chasecam->int_val)
+	if (autocam && locked && cl_chasecam)
 		return true;
 	return false;
 }
 
 // returns true if we should draw this player, we don't if we are chase camming
-qboolean
+bool
 Cam_DrawPlayer (int playernum)
 {
 	if (playernum == cl.playernum) {						// client player
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active == 0)
 			return false;
 		if (!cl.spectator)
 			return true;
 	} else {
-		if (!cl_chasecam->int_val)
+		if (!cl_chasecam)
 			return true;
 		if (cl.spectator && autocam && locked && spec_track == playernum)
 			return false;
-		if (cl.chase == 0 || chase_active->int_val == 0)
+		if (cl.viewstate.chase == 0 || chase_active == 0)
 			return true;
 	}
 	return false;
@@ -165,7 +200,7 @@ Cam_Unlock (void)
 		}
 		autocam = CAM_NONE;
 		locked = false;
-		Sbar_Changed ();
+		Sbar_SetAutotrack (-1);
 	}
 }
 
@@ -187,11 +222,11 @@ Cam_Lock (int playernum)
 	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
-	Sbar_Changed ();
+	Sbar_SetAutotrack (spec_track);
 }
 
 static trace_t
-Cam_DoTrace (vec3_t vec1, vec3_t vec2)
+Cam_DoTrace (vec4f_t vec1, vec3_t vec2)//FIXME vec2 type
 {
 #if 0
 	memset (&pmove, 0, sizeof (pmove));
@@ -208,7 +243,7 @@ Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 // Returns distance or 9999 if invalid for some reason
 static float
 Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
-			  qboolean checkvis)
+			  bool checkvis)
 {
 	float       len;
 	trace_t     trace;
@@ -217,47 +252,47 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	vectoangles (vec, v);
 	VectorCopy (v, pmove.angles);
 	VectorNormalize (vec);
-	VectorMultAdd (player->pls.origin, 800, vec, v);
+	VectorMultAdd (player->pls.es.origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
-	trace = Cam_DoTrace (player->pls.origin, v);
+	trace = Cam_DoTrace (player->pls.es.origin, v);
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
-	len = VectorDistance (trace.endpos, player->pls.origin);
+	len = VectorDistance (trace.endpos, player->pls.es.origin);
 
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		trace = Cam_DoTrace (self->pls.origin, vec);
+		trace = Cam_DoTrace (self->pls.es.origin, vec);
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
 
-		len = VectorDistance (trace.endpos, self->pls.origin);
+		len = VectorDistance (trace.endpos, self->pls.es.origin);
 	}
 
 	return len;
 }
 
 // Is player visible?
-static qboolean
-Cam_IsVisible (player_state_t * player, vec3_t vec)
+static bool
+Cam_IsVisible (player_state_t *player, vec3_t vec)
 {
 	float       d;
 	trace_t     trace;
 	vec3_t      v;
 
-	trace = Cam_DoTrace (player->pls.origin, vec);
+	trace = Cam_DoTrace (player->pls.es.origin, vec);
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
 		return false;
 	// check distance, don't let the player get too far away or too close
-	VectorSubtract (player->pls.origin, vec, v);
+	VectorSubtract (player->pls.es.origin, vec, v);
 	d = VectorLength (v);
 
 	return (d > 16.0);
 }
 
-static qboolean
+static bool
 InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 {
 	float       f, max;
@@ -384,17 +419,18 @@ Cam_Track (usercmd_t *cmd)
 	if (!cl.spectator)
 		return;
 
-	if (cl_hightrack->int_val && !locked)
+	if (cl_hightrack && !locked)
 		Cam_CheckHighTarget ();
 
 	if (!autocam || cls.state != ca_active)
 		return;
 
 	if (locked
-		&& (!cl.players[spec_track].name->value[0]
+		&& (!cl.players[spec_track].name
+			|| !cl.players[spec_track].name->value[0]
 			|| cl.players[spec_track].spectator)) {
 		locked = false;
-		if (cl_hightrack->int_val)
+		if (cl_hightrack)
 			Cam_CheckHighTarget ();
 		else
 			Cam_Unlock ();
@@ -435,26 +471,26 @@ Cam_Track (usercmd_t *cmd)
 	if (!locked || !autocam)
 		return;
 
-	if (cl_chasecam->int_val) {
+	if (cl_chasecam) {
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
-		VectorCopy (player->viewangles, cl.viewangles);
-		VectorCopy (player->pls.origin, desired_position);
-		if (memcmp (&desired_position, &self->pls.origin,
+		VectorCopy (player->viewangles, cl.viewstate.player_angles);
+		VectorCopy (player->pls.es.origin, desired_position);
+		if (memcmp (&desired_position, &self->pls.es.origin,
 					sizeof (desired_position)) != 0) {
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_tmove);
 				MSG_WriteCoordV (&cls.netchan.message, desired_position);
 			}
 			// move there locally immediately
-			VectorCopy (desired_position, self->pls.origin);
+			VectorCopy (desired_position, self->pls.es.origin);
 		}
-		self->pls.weaponframe = player->pls.weaponframe;
+		self->pls.es.weaponframe = player->pls.es.weaponframe;
 
 	} else {
 		// Ok, move to our desired position and set our angles to view
 		// the player
-		VectorSubtract (desired_position, self->pls.origin, vec);
+		VectorSubtract (desired_position, self->pls.es.origin, vec);
 		len = VectorLength (vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 		if (len > 16) {					// close enough?
@@ -464,11 +500,11 @@ Cam_Track (usercmd_t *cmd)
 			}
 		}
 		// move there locally immediately
-		VectorCopy (desired_position, self->pls.origin);
+		VectorCopy (desired_position, self->pls.es.origin);
 
-		VectorSubtract (player->pls.origin, desired_position, vec);
-		vectoangles (vec, cl.viewangles);
-		cl.viewangles[0] = -cl.viewangles[0];
+		VectorSubtract (player->pls.es.origin, desired_position, vec);
+		vectoangles (vec, cl.viewstate.player_angles);
+		cl.viewstate.player_angles[0] = -cl.viewstate.player_angles[0];
 	}
 }
 
@@ -519,7 +555,7 @@ Cam_SetView (void)
 	player = frame->playerstate + spec_track;
 	self = frame->playerstate + cl.playernum;
 
-	VectorSubtract (player->pls.origin, cl.simorg, vec);
+	VectorSubtract (player->pls.es.origin, cl.simorg, vec);
 	if (cam_forceview) {
 		cam_forceview = false;
 		vectoangles (vec, cam_viewangles);
@@ -530,13 +566,13 @@ Cam_SetView (void)
 
 		cam_viewangles[PITCH] =
 			adjustang (cam_viewangles[PITCH], vec2[PITCH],
-					   cl_camera_maxpitch->value);
+					   cl_camera_maxpitch);
 		cam_viewangles[YAW] =
 			adjustang (cam_viewangles[YAW], vec2[YAW],
-					   cl_camera_maxyaw->value);
+					   cl_camera_maxyaw);
 	}
-	VectorCopy (cam_viewangles, cl.viewangles);
-	VectorCopy (cl.viewangles, cl.simangles);
+	VectorCopy (cam_viewangles, cl.viewstate.player_angles);
+	VectorCopy (cl.viewstate.player_angles, cl.simangles);
 	cl.simangles[ROLL] = 0;						// FIXME @@@
 }
 #endif
@@ -559,7 +595,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		player = frame->playerstate + spec_track;
 		self = frame->playerstate + cl.playernum;
 
-		VectorSubtract (player->pls.origin, self->pls.origin, vec);
+		VectorSubtract (player->pls.es.origin, self->pls.es.origin, vec);
 		if (cam_forceview) {
 			cam_forceview = false;
 			vectoangles (vec, cam_viewangles);
@@ -570,12 +606,12 @@ Cam_FinishMove (usercmd_t *cmd)
 
 			cam_viewangles[PITCH] =
 				adjustang (cam_viewangles[PITCH], vec2[PITCH],
-						   cl_camera_maxpitch->value);
+						   cl_camera_maxpitch);
 			cam_viewangles[YAW] =
 				adjustang (cam_viewangles[YAW], vec2[YAW],
-						   cl_camera_maxyaw->value);
+						   cl_camera_maxyaw);
 		}
-		VectorCopy (cam_viewangles, cl.viewangles);
+		VectorCopy (cam_viewangles, cl.viewstate.player_angles);
 	}
 #endif
 
@@ -586,7 +622,7 @@ Cam_FinishMove (usercmd_t *cmd)
 
 			if (autocam > CAM_TRACK) {
 				Cam_Unlock ();
-				VectorCopy (cl.viewangles, cmd->angles);
+				VectorCopy (cl.viewstate.player_angles, cmd->angles);
 				return;
 			}
 		} else
@@ -597,7 +633,7 @@ Cam_FinishMove (usercmd_t *cmd)
 			return;
 	}
 
-	if (autocam && cl_hightrack->int_val) {
+	if (autocam && cl_hightrack) {
 		Cam_CheckHighTarget ();
 		return;
 	}
@@ -646,19 +682,14 @@ Cam_Reset (void)
 	autocam = CAM_NONE;
 	spec_track = 0;
 	ideal_track = 0;
+	Sbar_SetAutotrack (-1);
 }
 
 void
 CL_Cam_Init_Cvars (void)
 {
-	cl_camera_maxpitch = Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, NULL,
-								   "highest camera pitch in spectator mode");
-	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, NULL,
-								 "highest camera yaw in spectator mode");
-	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first "
-							"person view of the person you are tracking in "
-							"spectator mode");
-	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the "
-							 "player who has the most frags while you are in "
-							 "spectator mode.");
+	Cvar_Register (&cl_camera_maxpitch_cvar, 0, 0);
+	Cvar_Register (&cl_camera_maxyaw_cvar, 0, 0);
+	Cvar_Register (&cl_chasecam_cvar, 0, 0);
+	Cvar_Register (&cl_hightrack_cvar, 0, 0);
 }

@@ -31,12 +31,13 @@
 /** \defgroup cmd Command management.
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 
 typedef void (*xcommand_t) (void);
+typedef void (*xdatacmd_t) (void *data);
 
 typedef enum {
     src_client,			// came in over a net connection as a clc_stringcmd
@@ -48,6 +49,8 @@ typedef struct cmd_function_s {
 	struct cmd_function_s *next;
 	const char *name;
 	xcommand_t  function;
+	xdatacmd_t  datafunc;
+	void       *data;
 	const char *description;
 } cmd_function_t;
 
@@ -56,31 +59,34 @@ extern cmd_source_t	cmd_source;
 void	Cmd_Init_Hash (void);
 void	Cmd_Init (void);
 
-int		Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description);
+int		Cmd_AddCommand (const char *cmd_name, xcommand_t function,
+						const char *description);
+int		Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
+							void *data, const char *description);
 int		Cmd_RemoveCommand (const char *cmd_name);
 
-qboolean Cmd_Exists (const char *cmd_name);
-const char 	*Cmd_CompleteCommand (const char *partial);
-int		Cmd_CompleteCountPossible (const char *partial);
+bool Cmd_Exists (const char *cmd_name);
+const char 	*Cmd_CompleteCommand (const char *partial) __attribute__((pure));
+int		Cmd_CompleteCountPossible (const char *partial) __attribute__((pure));
 const char	**Cmd_CompleteBuildList (const char *partial);
 
 
-int Cmd_Argc (void);
-const char *Cmd_Argv (int arg);
-const char *Cmd_Args (int start);
+int Cmd_Argc (void) __attribute__((pure));
+const char *Cmd_Argv (int arg) __attribute__((pure));
+const char *Cmd_Args (int start) __attribute__((pure));
 struct cbuf_args_s;
 int Cmd_Command (struct cbuf_args_s *args);
 int Cmd_ExecuteString (const char *text, cmd_source_t src);
 struct cbuf_s;
 void Cmd_StuffCmds (struct cbuf_s *cbuf);
-void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
+int Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
 void Cmd_AddProvider(const char *name, struct cbuf_interpreter_s *interp);
 struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 
 
 extern struct cbuf_args_s *cmd_args;
-extern struct cvar_s *cmd_warncmd;
+extern int cmd_warncmd;
 
-//@}
+///@}
 
 #endif//__QF_cmd_h

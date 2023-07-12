@@ -123,6 +123,17 @@ Cbuf_DeleteStack (cbuf_t *stack)
 	}
 }
 
+VISIBLE void
+Cbuf_DeleteStackReverse (cbuf_t *stack)
+{
+	cbuf_t		*next;
+
+	for (; stack; stack = next) {
+		next = stack->up;
+		Cbuf_Delete (stack);
+	}
+}
+
 void
 Cbuf_Reset (cbuf_t *cbuf)
 {

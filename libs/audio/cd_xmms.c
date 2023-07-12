@@ -43,9 +43,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -82,15 +79,15 @@ static int sessionNo;
 //static int xmmsPid = '0';
 //static int sigNo = '2';
 
-static qboolean playing = false;
+static bool playing = false;
 
 // no idea why I have wasPlaying, pbly this code was based on cd_linux.c :/
-static qboolean wasPlaying = false;
-static qboolean musEnabled = true;
+static bool wasPlaying = false;
+static bool musEnabled = true;
 
 static void I_XMMS_Running(void);
 static void I_XMMS_Stop(void);
-static void I_XMMS_Play(int, qboolean);
+static void I_XMMS_Play(int, bool);
 static void I_XMMS_Pause(void);
 static void I_XMMS_Resume(void);
 static void I_XMMS_Next(void);
@@ -151,7 +148,7 @@ I_XMMS_Running (void)
 				break;
 			case -1:					// ICH!
 				// inform user
-				Sys_MaskPrintf (SYS_SND, "XMMSAudio: error, can't fork!?\n");
+				Sys_MaskPrintf (SYS_snd, "XMMSAudio: error, can't fork!?\n");
 				break;
 			default:					// Parent
 				// don't need now :/
@@ -181,7 +178,7 @@ I_XMMS_Stop (void)						// stop playing
 // Play
 // start it playing, (unless disabled)
 static void
-I_XMMS_Play (int track, qboolean looping)		// looping for compatability
+I_XMMS_Play (int track, bool looping)		// looping for compatability
 {
 	if (!musEnabled)
 		return;
@@ -492,6 +489,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_XMMS_f,
 	I_XMMS_Pause,
 	I_XMMS_Play,

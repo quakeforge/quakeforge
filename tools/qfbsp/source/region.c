@@ -29,9 +29,9 @@
 
 #include "compat.h"
 
-#include "bsp5.h"
-#include "region.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/region.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_region
 */
@@ -81,7 +81,7 @@ AddFaceToRegionSize (face_t *f)
 		AddPointToRegion (f->points->points[i]);
 }
 
-static qboolean
+static bool
 CanJoinFaces (face_t *f, face_t *f2)
 {
 	int         i;
@@ -160,31 +160,22 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 }
 */
 
-typedef struct {
-	int         numedges;
-	int         edges[2];
-} checkpoint_t;
-
-checkpoint_t checkpoints[MAX_MAP_VERTS];
-
 static void
 CountRealNumbers (void)
 {
-	int         c, i;
+	qprintf ("%5zd regions\n", bsp->numfaces - firstmodelface);
 
-	qprintf ("%5i regions\n", bsp->numfaces - firstmodelface);
-
-	c = 0;
-	for (i = firstmodelface; i < bsp->numfaces; i++)
+	size_t      c = 0;
+	for (size_t i = firstmodelface; i < bsp->numfaces; i++)
 		c += bsp->faces[i].numedges;
-	qprintf ("%5i real marksurfaces\n", c);
+	qprintf ("%5zd real marksurfaces\n", c);
 
 	c = 0;
-	for (i = firstmodeledge; i < bsp->numedges; i++)
+	for (size_t i = firstmodeledge; i < bsp->numedges; i++)
 		if (edgefaces[i].f[0])
 			c++;						// not removed
 
-	qprintf ("%5i real edges\n", c);
+	qprintf ("%5zd real edges\n", c);
 }
 
 static void
@@ -207,8 +198,6 @@ GrowNodeRegion_r (node_t * node)
 //			continue;		// allready grown into an earlier region
 
 		// emit a region
-		if (bsp->numfaces == MAX_MAP_FACES)
-			Sys_Error ("MAX_MAP_FACES");
 		f->outputnumber = bsp->numfaces;
 
 		r.planenum = node->outputplanenum;

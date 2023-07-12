@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -8,11 +9,13 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/types.h"
+#include "QF/GLSL/types.h"
 
 #include "QF/hash.h"
 
 typedef XID GLXDrawable;
 typedef struct __GLXcontextRec *GLXContext;
+typedef struct __GLXFBConfigRec *GLXFBConfig;
 
 #define TRACE do { \
 	puts (__FUNCTION__);\
@@ -28,6 +31,7 @@ ret GLAPIENTRY norm_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY norm_##name args;
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 
@@ -36,6 +40,7 @@ ret GLAPIENTRY trace_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY trace_##name args;
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 
@@ -53,6 +58,7 @@ static gl_stub_t gl_stub_funcs[] = {
 #define QFGL_NEED(ret, name, args) \
 	{#name, norm_##name, trace_##name},
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 };
@@ -143,4 +149,49 @@ glXGetConfig (Display *dpy, XVisualInfo *visual, int attrib, int *value )
 	if (trace)
 		TRACE;
     return 0;
+}
+
+GLXFBConfig *
+glXChooseFBConfig (Display *dpy, int screen, int *attribList, int *count)
+{
+	if (trace)
+		TRACE;
+	GLXFBConfig *cfg = calloc (1, sizeof (GLXFBConfig));
+	*cfg = (GLXFBConfig) (intptr_t) screen;
+	return cfg;
+}
+
+XVisualInfo *
+glXGetVisualFromFBConfig (Display *dpy, GLXFBConfig config)
+{
+	XVisualInfo template;
+	int         num_visuals;
+	int         template_mask;
+	int         screen;
+
+	if (trace)
+		TRACE;
+
+	screen = (intptr_t) config;
+	template_mask = 0;
+	template.visualid =
+		XVisualIDFromVisual (XDefaultVisual (dpy, screen));
+	template_mask = VisualIDMask;
+	return XGetVisualInfo (dpy, template_mask, &template, &num_visuals);
+}
+
+int
+glXGetFBConfigAttrib (Display *dpy, GLXFBConfig config, int attribute, int *value)
+{
+	if (trace)
+		TRACE;
+	return 0;
+}
+
+GLXContext
+glXCreateContextAttribsARB (Display *dpy, GLXFBConfig cfg, GLXContext ctx, Bool direct, const int *attribs)
+{
+	if (trace)
+		TRACE;
+	return (GLXContext)1;
 }

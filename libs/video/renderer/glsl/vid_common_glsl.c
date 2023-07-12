@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -57,12 +56,12 @@
 #include "r_internal.h"
 
 static const char quakeforge_effect[] =
-#include "quakeforge.slc"
+#include "libs/video/renderer/glsl/quakeforge.slc"
 "--\n"	// ensure the last block of the previous file doesn't merge with
 		// the first block of the next file
 // Include Stefan Gustavson's noise functions in the QuakeForge shader
 // effect "file".
-#include "sgustavson.slc"
+#include "libs/video/renderer/glsl/sgustavson.slc"
 ;
 
 int					glsl_palette;
@@ -74,7 +73,7 @@ GLSL_Common_Init_Cvars (void)
 }
 
 void
-GLSL_SetPalette (const byte *palette)
+GLSL_SetPalette (void *data, const byte *palette)
 {
 	const byte *col, *ip;
 	byte       *pal, *op;
@@ -83,7 +82,7 @@ GLSL_SetPalette (const byte *palette)
 	unsigned   *table;
 
 	// 8 8 8 encoding
-	Sys_MaskPrintf (SYS_VID, "Converting 8to24\n");
+	Sys_MaskPrintf (SYS_vid, "Converting 8to24\n");
 
 	table = d_8to24table;
 	for (i = 0; i < 255; i++) { // used to be i<256, see d_8to24table below
@@ -99,7 +98,7 @@ GLSL_SetPalette (const byte *palette)
 	}
 	d_8to24table[255] = 0;	// 255 is transparent
 
-	Sys_MaskPrintf (SYS_VID, "Converting palette/colormap to RGBA textures\n");
+	Sys_MaskPrintf (SYS_vid, "Converting palette/colormap to RGBA textures\n");
 	pal = malloc (256 * VID_GRADES * 4);
 	for (i = 0, col = vr_data.vid->colormap8, op = pal; i < 256 * VID_GRADES;
 		 i++) {
@@ -149,6 +148,12 @@ GLSL_SetPalette (const byte *palette)
 }
 
 void
+GLSL_Shutdown_Common (void)
+{
+	GLSL_ShaderShutdown ();
+}
+
+void
 GLSL_Init_Common (void)
 {
 	EGLF_FindFunctions ();
@@ -157,7 +162,7 @@ GLSL_Init_Common (void)
 
 	GLSL_TextureInit ();
 
-	if (developer->int_val & SYS_GLSL) {
+	if (developer & SYS_glsl) {
 		GLint       max;
 
 		qfeglGetIntegerv (GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
@@ -204,7 +209,7 @@ GLSL_CompileShader (const char *name, const shader_t *shader, int type)
 	qfeglShaderSource (sid, shader->num_strings, shader->strings, 0);
 	qfeglCompileShader (sid);
 	qfeglGetShaderiv (sid, GL_COMPILE_STATUS, &compiled);
-	if (!compiled || (developer->int_val & SYS_GLSL)) {
+	if (!compiled || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetShaderiv (sid, GL_INFO_LOG_LENGTH, &size);
@@ -273,7 +278,7 @@ type_name (GLenum type)
 		case GL_FIXED:
 			return "fixed";
 	}
-	return va("%x", type);
+	return va (0, "%x", type);
 }
 
 static void
@@ -327,7 +332,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 	qfeglLinkProgram (program);
 
 	qfeglGetProgramiv (program, GL_LINK_STATUS, &linked);
-	if (!linked || (developer->int_val & SYS_GLSL)) {
+	if (!linked || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
@@ -342,7 +347,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 		if (!linked)
 			return 0;
 	}
-	if (developer->int_val & SYS_GLSL)
+	if (developer & SYS_glsl)
 		dump_program (name, program);
 	return program;
 }
@@ -359,7 +364,7 @@ GLSL_ResolveShaderParam (int program, shaderparam_t *param)
 		Sys_Printf ("could not resolve %s %s\n",
 					param->uniform ? "uniform" : "attribute", param->name);
 	} else {
-		Sys_MaskPrintf (SYS_GLSL, "Resolved %s %s @ %d\n",
+		Sys_MaskPrintf (SYS_glsl, "Resolved %s %s @ %d\n",
 						param->uniform ? "uniform" : "attribute",
 						param->name, param->location);
 	}

@@ -43,18 +43,18 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "csg4.h"
-#include "brush.h"
-#include "bsp5.h"
-#include "merge.h"
-#include "options.h"
-#include "outside.h"
-#include "portals.h"
-#include "readbsp.h"
-#include "solidbsp.h"
-#include "surfaces.h"
-#include "writebsp.h"
-#include "tjunc.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/merge.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/outside.h"
+#include "tools/qfbsp/include/portals.h"
+#include "tools/qfbsp/include/readbsp.h"
+#include "tools/qfbsp/include/solidbsp.h"
+#include "tools/qfbsp/include/surfaces.h"
+#include "tools/qfbsp/include/writebsp.h"
+#include "tools/qfbsp/include/tjunc.h"
 
 /**	\addtogroup qfbsp
 */
@@ -70,7 +70,7 @@ int         valid;
 
 char       *argv0;						// changed after fork();
 
-qboolean    worldmodel;
+bool        worldmodel;
 
 int         hullnum;
 
@@ -103,7 +103,7 @@ ProcessEntity (int entnum)
 		worldmodel = false;
 		if (entnum == 1)
 			qprintf ("--- Internal Entities ---\n");
-		sprintf (mod, "*%i", bsp->nummodels);
+		sprintf (mod, "*%zd", bsp->nummodels);
 		if (options.verbosity)
 			PrintEntity (ent);
 
@@ -225,7 +225,6 @@ WriteClipHull (void)
 	FILE        *f;
 	dclipnode_t *d;
 	dplane_t    *p;
-	int          i;
 
 	options.hullfile[strlen (options.hullfile) - 1] = '0' + hullnum;
 
@@ -236,18 +235,18 @@ WriteClipHull (void)
 	if (!f)
 		Sys_Error ("Couldn't open %s", options.hullfile);
 
-	fprintf (f, "%i\n", bsp->nummodels);
+	fprintf (f, "%zd\n", bsp->nummodels);
 
-	for (i = 0; i < bsp->nummodels; i++)
+	for (size_t i = 0; i < bsp->nummodels; i++)
 		fprintf (f, "%i\n", bsp->models[i].headnode[hullnum]);
 
-	fprintf (f, "\n%i\n", bsp->numclipnodes);
+	fprintf (f, "\n%zd\n", bsp->numclipnodes);
 
-	for (i = 0; i < bsp->numclipnodes; i++) {
+	for (size_t i = 0; i < bsp->numclipnodes; i++) {
 		d = &bsp->clipnodes[i];
 		p = &bsp->planes[d->planenum];
 		// the node number is written out only for human readability
-		fprintf (f, "%5i : %f %f %f %f : %5i %5i\n", i, p->normal[0],
+		fprintf (f, "%5zd : %f %f %f %f : %5i %5i\n", i, p->normal[0],
 				 p->normal[1], p->normal[2], p->dist, d->children[0],
 				 d->children[1]);
 	}
@@ -268,7 +267,8 @@ ReadClipHull (int hullnum)
 	plane_t      p;
 	dplane_t     dp;
 	float        f1, f2, f3, f4;
-	int          firstclipnode, junk, c1, c2, i, j, n;
+	int          firstclipnode, junk, c1, c2;
+	size_t       i, j, n;
 	int          flip;
 
 	options.hullfile[strlen (options.hullfile) - 1] = '0' + hullnum;
@@ -277,27 +277,25 @@ ReadClipHull (int hullnum)
 	if (!f)
 		Sys_Error ("Couldn't open %s", options.hullfile);
 
-	if (fscanf (f, "%d\n", &n) != 1)
+	if (fscanf (f, "%zd\n", &n) != 1)
 		Sys_Error ("Error parsing %s", options.hullfile);
 
 	if (n != bsp->nummodels)
-		Sys_Error ("ReadClipHull: hull had %i models, base had %i", n,
+		Sys_Error ("ReadClipHull: hull had %zd models, base had %zd", n,
 				   bsp->nummodels);
 
 	for (i = 0; i < n; i++) {
-		if (fscanf (f, "%d\n", &j) != 1)
+		if (fscanf (f, "%zd\n", &j) != 1)
 			Sys_Error ("Error parsing %s", options.hullfile);
 		bsp->models[i].headnode[hullnum] = bsp->numclipnodes + j;
 	}
 
 
-	if (fscanf (f, "\n%d\n", &n) != 1)
+	if (fscanf (f, "\n%zd\n", &n) != 1)
 		Sys_Error ("Error parsing %s", options.hullfile);
 	firstclipnode = bsp->numclipnodes;
 
 	for (i = 0; i < n; i++) {
-		if (bsp->numclipnodes == MAX_MAP_CLIPNODES)
-			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
 		if (fscanf (f, "%d : %f %f %f %f : %d %d\n", &junk, &f1, &f2, &f3, &f4,
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", options.hullfile);
@@ -404,10 +402,10 @@ CreateHulls (void)
 static void
 ProcessFile (void)
 {
-	bsp = BSP_New ();
-
 	if (options.extract) {
 		LoadBSP ();
+		if (options.info)
+			bspinfo ();
 		if (options.portal)
 			bsp2prt ();
 		if (options.extract_textures)
@@ -420,6 +418,7 @@ ProcessFile (void)
 		return;
 	}
 
+	bsp = BSP_New ();
 	// load brushes and entities
 	LoadMapFile (options.mapfile);
 

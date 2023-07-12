@@ -33,6 +33,8 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/vid.h"
+#include "QF/simd/mat4f.h"
+#include "QF/simd/vec4f.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -45,9 +47,9 @@
 // viewmodel lighting =======================================================
 
 typedef struct {
-	int			ambientlight;
-	int			shadelight;
-	float		*plightvec;
+	int         ambientlight;
+	int         shadelight;
+	vec3_t      lightvec;
 } alight_t;
 
 // clipped bmodel edges =====================================================
@@ -64,23 +66,22 @@ typedef struct {
 
 //===========================================================================
 
-extern struct cvar_s	*r_speeds;
-extern struct cvar_s	*r_timegraph;
-extern struct cvar_s	*r_graphheight;
-extern struct cvar_s	*r_clearcolor;
-extern struct cvar_s	*r_waterwarp;
-extern struct cvar_s	*r_fullbright;
-extern struct cvar_s	*r_drawentities;
-extern struct cvar_s	*r_aliasstats;
-extern struct cvar_s	*r_dspeeds;
-extern struct cvar_s	*r_drawflat;
-extern struct cvar_s	*r_ambient;
-extern struct cvar_s	*r_reportsurfout;
-extern struct cvar_s	*r_maxsurfs;
-extern struct cvar_s	*r_numsurfs;
-extern struct cvar_s	*r_reportedgeout;
-extern struct cvar_s	*r_maxedges;
-extern struct cvar_s	*r_numedges;
+extern int r_speeds;
+extern int r_timegraph;
+extern int r_graphheight;
+extern int r_clearcolor;
+extern int r_waterwarp;
+extern int r_drawentities;
+extern int r_aliasstats;
+extern int r_dspeeds;
+extern int r_drawflat;
+extern int r_ambient;
+extern int r_reportsurfout;
+extern int r_maxsurfs;
+extern int r_numsurfs;
+extern int r_reportedgeout;
+extern int r_maxedges;
+extern int r_numedges;
 
 extern float	cl_wateralpha;
 
@@ -96,8 +97,7 @@ extern float	cl_wateralpha;
 #define	DIST_NOT_SET	98765
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct clipplane_s
-{
+typedef struct clipplane_s {
 	vec3_t		normal;
 	float		dist;
 	struct		clipplane_s	*next;
@@ -111,13 +111,14 @@ extern	clipplane_t	view_clipplanes[4];
 //=============================================================================
 
 void R_RenderWorld (void);
+struct entqueue_s;
+void R_DrawEntitiesOnList (struct entqueue_s *queue);
 
 //=============================================================================
 
 extern	plane_t	screenedge[4];
 
-extern	vec3_t	r_origin;
-extern	vec3_t	r_entorigin;
+extern	vec4f_t r_entorigin;
 
 extern	int		r_visframecount;
 
@@ -130,70 +131,77 @@ void R_ClearPolyList (void);
 void R_DrawPolyList (void);
 
 //  Surface cache related ==========
-extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
+extern bool	r_cache_thrash;	// set if thrashing the surface cache
 
 // current entity info
-extern	qboolean		insubmodel;
-extern	vec3_t			r_worldmodelorg;
+extern bool     insubmodel;
+extern vec3_t   r_worldmodelorg;
 
-extern mat4_t   glsl_projection;
-extern mat4_t   glsl_view;
+extern mat4f_t  glsl_projection;
+extern mat4f_t  glsl_view;
 
-void R_SetFrustum (void);
+union refframe_s;
+void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
+				   float fov_x, float fov_y);
+
+struct entity_s;
+struct animation_s;
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
-void R_DrawSprite (void);
-void R_RenderFace (msurface_t *fa, int clipflags);
-void R_RenderPoly (msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
-void R_TransformPlane (plane_t *p, float *normal, float *dist);
+void R_DrawSprite (struct entity_s ent);
+void R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags);
+void R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags);
+void R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (msurface_t *surf);
+struct texture_s *R_TextureAnimation (int frame, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
+void R_DrawSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, int clipflags, struct mleaf_s *topleaf);
+void R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, struct mnode_s *topnode);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (alight_t *plighting);
-void R_IQMDrawModel (alight_t *plighting);
-maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
-maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
-float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
-float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
+void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
+void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
+struct animation_s;
+maliasskindesc_t *R_AliasGetSkindesc (struct animation_s *animation, int skinnum, aliashdr_t *hdr);
+maliasframedesc_t *R_AliasGetFramedesc (struct animation_s *animation, aliashdr_t *hdr);
+float R_AliasGetLerpedFrames (struct animation_s *animation, aliashdr_t *hdr);
+float R_IQMGetLerpedFrames (struct animation_s *animation, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);
 iqmframe_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
 							   float blend, int extra,
 							   iqmblend_t *blend_palette, int palette_size);
-float R_EntityBlend (entity_t *ent, int pose, float interval);
+float R_EntityBlend (struct animation_s *animation, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
 void D_DrawSurfaces (void);
 void R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist);
 void R_StepActiveU (edge_t *pedge);
 void R_RemoveEdges (edge_t *pedge);
-void R_AddTexture (texture_t *tex);
+void R_AddTexture (struct texture_s *tex);
+struct vulkan_ctx_s;
 void R_ClearTextures (void);
-void R_InitSurfaceChains (model_t *model);
+void R_InitSurfaceChains (mod_brush_t *brush);
 
+extern const byte *r_colormap;
+void R_SetColormap (const byte *cmap);
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
 extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 
-extern void R_RotateBmodel (void);
+struct transform_s;
+extern void R_RotateBmodel (vec4f_t *mat);
 
 extern int	c_faceclip;
 extern int	r_polycount;
-
-extern model_t     *cl_worldmodel;
 
 extern int		*pfrustum_indexes[4];
 
@@ -222,7 +230,7 @@ typedef struct btofpoly_s {
 extern int			numbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (model_t *clmodel);
+void	R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush);
 
 // Alias models ===========================================
 
@@ -234,10 +242,10 @@ extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
 extern finalvert_t		*pfinalverts;
 extern auxvert_t		*pauxverts;
-extern float            ziscale, sw32_ziscale;
+extern float            ziscale;
 extern float            aliastransform[3][4];
 
-qboolean R_AliasCheckBBox (void);
+bool R_AliasCheckBBox (struct entity_s ent);
 
 // turbulence stuff =======================================
 
@@ -247,7 +255,8 @@ qboolean R_AliasCheckBBox (void);
 
 // particle stuff =========================================
 
-void R_DrawParticles (void);
+struct psystem_s;
+void R_DrawParticles (struct psystem_s *psystem);
 void R_InitParticles (void);
 void R_ClearParticles (void);
 void R_ReadPointFile_f (void);
@@ -264,8 +273,6 @@ extern edge_t	*r_edges, *edge_p, *edge_max;
 extern	edge_t	*newedges[MAXHEIGHT];
 extern	edge_t	*removeedges[MAXHEIGHT];
 
-extern	int	screenwidth;
-
 extern int		r_bmodelactive;
 extern vrect_t	*pconupdate;
 
@@ -280,39 +287,34 @@ extern int			r_maxvalidedgeoffset;
 
 void R_AliasClipTriangle (mtriangle_t *ptri);
 
-extern float	r_time1;
+extern double	r_time1;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
-extern qboolean	r_dowarpold, r_viewchanged;
-
-extern mleaf_t	*r_viewleaf;
+extern bool		r_dowarpold, r_viewchanged;
 
 extern int		r_clipflags;
-extern int		r_dlightframecount;
 
-extern struct entity_s *r_ent_queue;
+extern struct entqueue_s *r_ent_queue;
 struct dlight_s;
 
 extern vec3_t lightspot;
 
-void R_StoreEfrags (const efrag_t *ppefrag);
+struct efrag_s;
+void R_StoreEfrags (const struct efrag_s *efrag);
 void R_TimeRefresh_f (void);
-void R_TimeGraph (void);
-void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
-int R_LightPoint (const vec3_t p);
+int R_LightPoint (mod_brush_t *brush, vec4f_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_RecursiveMarkLights (const vec3_t lightorigin, struct dlight_s *light,
-							int bit, mnode_t *node);
-void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
-				   model_t *model);
+void R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+							struct dlight_s *light, int bit, int node_id);
 
 void R_LoadSkys (const char *);
+//void Vulkan_R_LoadSkys (const char *, struct vulkan_ctx_s *ctx);
 
 void R_LowFPPrecision (void);
 void R_HighFPPrecision (void);
@@ -327,7 +329,6 @@ void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
 						  finalvert_t *out);
 void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 
-void R_AliasSetUpTransform (int trivial_accept);
 void R_AliasTransformVector (vec3_t in, vec3_t out);
 void R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
 								stvert_t *pstverts);
@@ -346,7 +347,12 @@ extern byte crosshair_data[];
 #define CROSSHAIR_TILEY 2
 #define CROSSHAIR_COUNT (CROSSHAIR_TILEX * CROSSHAIR_TILEY)
 
+//NOTE: This is packed 8x8 bitmap data, one byte per scanline, 8 scanlines
+////per character. Also, it is NOT the quake font, but the IBM charset.
+extern byte font8x8_data[];
+
 struct qpic_s *Draw_CrosshairPic (void);
+struct qpic_s *Draw_Font8x8Pic (void);
 
 struct tex_s *R_DotParticleTexture (void);
 struct tex_s *R_SparkParticleTexture (void);

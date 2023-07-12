@@ -42,17 +42,52 @@
 #include "QF/msg.h"
 #include "QF/sys.h"
 
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
 
-cvar_t *sv_rollangle;
-cvar_t *sv_rollspeed;
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
+
+int sv_nostep;
+static cvar_t sv_nostep_cvar = {
+	.name = "sv_nostep",
+	.description =
+		"None",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_nostep },
+};
+
+float sv_rollangle;
+static cvar_t sv_rollangle_cvar = {
+	.name = "cl_rollangle",
+	.description =
+		"How much your screen tilts when strafing",
+	.default_value = "2.0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_rollangle },
+};
+float sv_rollspeed;
+static cvar_t sv_rollspeed_cvar = {
+	.name = "cl_rollspeed",
+	.description =
+		"How quickly you straighten out after strafing",
+	.default_value = "200",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_rollspeed },
+};
 
 edict_t    *sv_player;
 
-cvar_t     *sv_edgefriction;
+float sv_edgefriction;
+static cvar_t sv_edgefriction_cvar = {
+	.name = "edgefriction",
+	.description =
+		"None",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_edgefriction },
+};
 
 vec3_t      forward, right, up;
 
@@ -64,11 +99,19 @@ float      *angles;
 float      *origin;
 float      *velocity;
 
-qboolean    onground;
+bool        onground;
 
 usercmd_t   cmd;
 
-cvar_t     *sv_idealpitchscale;
+float sv_idealpitchscale;
+static cvar_t sv_idealpitchscale_cvar = {
+	.name = "sv_idealpitchscale",
+	.description =
+		"None",
+	.default_value = "0.8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_idealpitchscale },
+};
 
 #define	MAX_FORWARD	6
 
@@ -85,12 +128,12 @@ SV_CalcRoll (const vec3_t angles, const vec3_t velocity)
 	sign = side < 0 ? -1 : 1;
 	side = fabs (side);
 
-	value = sv_rollangle->value;
+	value = sv_rollangle;
 //	if (cl.inwater)
 //		value *= 6;
 
-	if (side < sv_rollspeed->value)
-		side = side * value / sv_rollspeed->value;
+	if (side < sv_rollspeed)
+		side = side * value / sv_rollspeed;
 	else
 		side = value;
 
@@ -153,7 +196,7 @@ SV_SetIdealPitch (void)
 
 	if (steps < 2)
 		return;
-	SVfloat (sv_player, idealpitch) = -dir * sv_idealpitchscale->value;
+	SVfloat (sv_player, idealpitch) = -dir * sv_idealpitchscale;
 }
 
 static void
@@ -179,12 +222,12 @@ SV_UserFriction (void)
 	trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, sv_player);
 
 	if (trace.fraction == 1.0)
-		friction = sv_friction->value * sv_edgefriction->value;
+		friction = sv_friction * sv_edgefriction;
 	else
-		friction = sv_friction->value;
+		friction = sv_friction;
 
 	// apply friction
-	control = speed < sv_stopspeed->value ? sv_stopspeed->value : speed;
+	control = speed < sv_stopspeed ? sv_stopspeed : speed;
 	newspeed = speed - host_frametime * control * friction;
 
 	if (newspeed < 0)
@@ -196,8 +239,24 @@ SV_UserFriction (void)
 	vel[2] = vel[2] * newspeed;
 }
 
-cvar_t     *sv_maxspeed;
-cvar_t     *sv_accelerate;
+float sv_maxspeed;
+static cvar_t sv_maxspeed_cvar = {
+	.name = "sv_maxspeed",
+	.description =
+		"None",
+	.default_value = "320",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &sv_maxspeed },
+};
+float sv_accelerate;
+static cvar_t sv_accelerate_cvar = {
+	.name = "sv_accelerate",
+	.description =
+		"None",
+	.default_value = "10",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_accelerate },
+};
 
 #if 0
 void
@@ -213,7 +272,7 @@ SV_Accelerate (vec3_t wishvel)
 	VectorSubtract (wishvel, velocity, pushvec);
 	addspeed = VectorNormalize (pushvec);
 
-	accelspeed = sv_accelerate->value * host_frametime * addspeed;
+	accelspeed = sv_accelerate * host_frametime * addspeed;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
 
@@ -232,7 +291,7 @@ SV_Accelerate (void)
 	addspeed = wishspeed - currentspeed;
 	if (addspeed <= 0)
 		return;
-	accelspeed = sv_accelerate->value * host_frametime * wishspeed;
+	accelspeed = sv_accelerate * host_frametime * wishspeed;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
 
@@ -253,8 +312,8 @@ SV_AirAccelerate (vec3_t wishveloc)
 	addspeed = wishspd - currentspeed;
 	if (addspeed <= 0)
 		return;
-//	accelspeed = sv_accelerate->value * host_frametime;
-	accelspeed = sv_accelerate->value * wishspeed * host_frametime;
+//	accelspeed = sv_accelerate * host_frametime;
+	accelspeed = sv_accelerate * wishspeed * host_frametime;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
 
@@ -295,16 +354,16 @@ SV_WaterMove (void)
 		wishvel[2] += cmd.upmove;
 
 	wishspeed = VectorLength (wishvel);
-	if (wishspeed > sv_maxspeed->value) {
-		VectorScale (wishvel, sv_maxspeed->value / wishspeed, wishvel);
-		wishspeed = sv_maxspeed->value;
+	if (wishspeed > sv_maxspeed) {
+		VectorScale (wishvel, sv_maxspeed / wishspeed, wishvel);
+		wishspeed = sv_maxspeed;
 	}
 	wishspeed *= 0.7;
 
 	// water friction
 	speed = VectorLength (velocity);
 	if (speed) {
-		newspeed = speed - host_frametime * speed * sv_friction->value;
+		newspeed = speed - host_frametime * speed * sv_friction;
 		if (newspeed < 0)
 			newspeed = 0;
 		VectorScale (velocity, newspeed / speed, velocity);
@@ -320,7 +379,7 @@ SV_WaterMove (void)
 		return;
 
 	VectorNormalize (wishvel);
-	accelspeed = sv_accelerate->value * wishspeed * host_frametime;
+	accelspeed = sv_accelerate * wishspeed * host_frametime;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
 
@@ -367,9 +426,9 @@ SV_AirMove (void)
 
 	VectorCopy (wishvel, wishdir);
 	wishspeed = VectorNormalize (wishdir);
-	if (wishspeed > sv_maxspeed->value) {
-		VectorScale (wishvel, sv_maxspeed->value / wishspeed, wishvel);
-		wishspeed = sv_maxspeed->value;
+	if (wishspeed > sv_maxspeed) {
+		VectorScale (wishvel, sv_maxspeed / wishspeed, wishvel);
+		wishspeed = sv_maxspeed;
 	}
 
 	if (SVfloat (sv_player, movetype) == MOVETYPE_NOCLIP) {	// noclip
@@ -474,7 +533,7 @@ SV_ReadClientMove (usercmd_t *move)
 
   Returns false if the client should be killed
 */
-static qboolean
+static bool
 SV_ReadClientMessage (void)
 {
 	int         cmd, ret;
@@ -563,7 +622,7 @@ SV_ReadClientMessage (void)
 				else if (ret == 1)
 					Cmd_ExecuteString (s, src_client);
 				else
-					Sys_MaskPrintf (SYS_DEV, "%s tried to %s\n",
+					Sys_MaskPrintf (SYS_dev, "%s tried to %s\n",
 									host_client->name, s);
 				break;
 
@@ -583,7 +642,7 @@ SV_ReadClientMessage (void)
 void
 SV_RunClients (void)
 {
-	int         i;
+	unsigned    i;
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
@@ -606,4 +665,41 @@ SV_RunClients (void)
 		if (!sv.paused && (svs.maxclients > 1 || host_in_game))
 			SV_ClientThink ();
 	}
+}
+
+static void
+sv_rollspeed_f (void *data, const cvar_t *cvar)
+{
+	sv_rollspeed = *(float *) cvar->value.value;
+}
+
+static void
+sv_rollangle_f (void *data, const cvar_t *cvar)
+{
+	sv_rollangle = *(float *) cvar->value.value;
+}
+
+void
+SV_User_Init_Cvars (void)
+{
+	//NOTE: the cl/sv clash is deliberate: dedicated server will use the right
+	//vars, but client/server combo will use the one.
+	if (isDedicated) {
+		Cvar_Register (&sv_rollspeed_cvar, 0, 0);
+		Cvar_Register (&sv_rollangle_cvar, 0, 0);
+	} else {
+		cvar_t     *var;
+		var = Cvar_FindVar ("cl_rollspeed");
+		Cvar_AddListener (var, sv_rollspeed_f, 0);
+		sv_rollspeed = *(float *) var->value.value;
+		var = Cvar_FindVar ("cl_rollangle");
+		Cvar_AddListener (var, sv_rollangle_f, 0);
+		sv_rollangle = *(float *) var->value.value;
+	}
+	Cvar_Register (&sv_edgefriction_cvar, 0, 0);
+	Cvar_Register (&sv_maxspeed_cvar, Cvar_Info, &sv_maxspeed);
+	Cvar_Register (&sv_accelerate_cvar, 0, 0);
+	Cvar_Register (&sv_idealpitchscale_cvar, 0, 0);
+
+	Cvar_Register (&sv_nostep_cvar, 0, 0);
 }

@@ -37,27 +37,30 @@
 #include "QF/alloc.h"
 #include "QF/hash.h"
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-static symtab_t *symtabs_freelist;
-static symbol_t *symbols_freelist;
+ALLOC_STATE (symtab_t, symtabs);
+ALLOC_STATE (symbol_t, symbols);
 
-static const char *sy_type_names[] = {
+static const char * const sy_type_names[] = {
+	"sy_name",
 	"sy_var",
 	"sy_const",
 	"sy_type",
 	"sy_expr",
 	"sy_func",
 	"sy_class",
+	"sy_convert",
 };
 
 const char *
@@ -73,7 +76,9 @@ new_symbol (const char *name)
 {
 	symbol_t   *symbol;
 	ALLOC (256, symbol_t, symbols, symbol);
-	symbol->name = save_string (name);
+	if (name) {
+		symbol->name = save_string (name);
+	}
 	return symbol;
 }
 
@@ -104,7 +109,7 @@ new_symtab (symtab_t *parent, stab_type_e type)
 	symtab->type = type;
 	if (symtab->type == stab_global)
 		tabsize = 1023;
-	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0);
+	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0, 0);
 	symtab->symtail = &symtab->symbols;
 	return symtab;
 }
@@ -151,7 +156,7 @@ symtab_removesymbol (symtab_t *symtab, symbol_t *symbol)
 	for (s = &symtab->symbols; *s && *s != symbol; s = & (*s)->next)
 		;
 	if (!*s)
-		internal_error (0, "symtab_removesymbol");
+		internal_error (0, "attempt to remove symbol not in symtab");
 	*s = (*s)->next;
 	if (symtab->symtail == &symbol->next)
 		symtab->symtail = s;
@@ -164,6 +169,7 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
+	sym->visibility = symbol->visibility;
 	sym->type = symbol->type;
 	sym->params = copy_params (symbol->params);
 	sym->sy_type = symbol->sy_type;
@@ -172,16 +178,17 @@ copy_symbol (symbol_t *symbol)
 }
 
 symtab_t *
-symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
+symtab_flat_copy (symtab_t *symtab, symtab_t *parent, stab_type_e type)
 {
 	symtab_t   *newtab;
 	symbol_t   *newsym;
 	symbol_t   *symbol;
 
-	newtab = new_symtab (parent, stab_local);
+	newtab = new_symtab (parent, type);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
-			if (Hash_Find (newtab->tab, symbol->name))
+			if (symbol->visibility == vis_anonymous
+				|| Hash_Find (newtab->tab, symbol->name))
 				continue;
 			newsym = copy_symbol (symbol);
 			symtab_addsymbol (newtab, newsym);
@@ -234,5 +241,74 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		sym->s.def = new_def (name, type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
+	sym->sy_type = sy_var;
 	return sym;
+}
+
+symbol_t *
+declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
+{
+	symbol_t   *s = spec.sym;
+	defspace_t *space = symtab->space;
+
+	if (s->table) {
+		// due to the way declarations work, we need a new symbol at all times.
+		// redelcarations will be checked later
+		s = new_symbol (s->name);
+	}
+
+	spec = default_type (spec, s);
+	if (!spec.storage) {
+		spec.storage = current_storage;
+	}
+	if (spec.storage == sc_static) {
+		space = pr.near_data;
+	}
+
+	//FIXME is_function is bad (this whole implementation of handling
+	//function prototypes is bad)
+	s->type = append_type (spec.sym->type, spec.type);
+	if (spec.is_function && is_func (s->type)) {
+		set_func_type_attrs (s->type, spec);
+	}
+
+	if (spec.is_typedef) {
+		if (init) {
+			error (0, "typedef %s is initialized", s->name);
+		}
+		s->sy_type = sy_type;
+		s->type = find_type (s->type);
+		s->type = find_type (alias_type (s->type, s->type, s->name));
+		symtab_addsymbol (symtab, s);
+	} else {
+		if (spec.is_function && is_func (s->type)) {
+			if (init) {
+				error (0, "function %s is initialized", s->name);
+			}
+			s->type = find_type (s->type);
+			s = function_symbol (s, spec.is_overload, 1);
+		} else {
+			s->type = find_type (s->type);
+			initialize_def (s, init, space, spec.storage, symtab);
+			if (s->s.def) {
+				s->s.def->nosave |= spec.nosave;
+			}
+		}
+	}
+	return s;
+}
+
+symbol_t *
+declare_field (specifier_t spec, symtab_t *symtab)
+{
+	symbol_t   *s = spec.sym;
+	spec = default_type (spec, s);
+	s->type = find_type (append_type (s->type, spec.type));
+	s->sy_type = sy_var;
+	s->visibility = current_visibility;
+	symtab_addsymbol (current_symtab, s);
+	if (!s->table) {
+		error (0, "duplicate field `%s'", s->name);
+	}
+	return s;
 }

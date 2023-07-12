@@ -43,10 +43,15 @@ typedef struct {
 	void (*emit) (struct def_s *def, void *data, int index);
 } struct_def_t;
 
+struct symbol_s *find_handle (struct symbol_s *tag, struct type_s *type);
+
+struct symtab_s *start_struct (int *su, struct symbol_s *tag,
+							   struct symtab_s *parent);
 struct symbol_s *find_struct (int su, struct symbol_s *tag,
 							  struct type_s *type);
 struct symbol_s *build_struct (int su, struct symbol_s *tag,
-							   struct symtab_s *symtab, struct type_s *type);
+							   struct symtab_s *symtab, struct type_s *type,
+							   int base);
 struct symbol_s *find_enum (struct symbol_s *tag);
 struct symtab_s *start_enum (struct symbol_s *enm);
 struct symbol_s *finish_enum (struct symbol_s *sym);
@@ -59,6 +64,7 @@ struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
 								 struct type_s *type);
 struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
 							   struct type_s *type, void *data,
+							   struct defspace_s *space,
 							   enum storage_class_e storage);
 
 #endif//__struct_h

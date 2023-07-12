@@ -54,8 +54,9 @@
 
 #include "QF/dstring.h"
 
-#include "cpp.h"
-#include "options.h"
+#include "tools/qfcc/include/cpp.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/options.h"
 
 typedef struct cpp_arg_s {
 	struct cpp_arg_s *next;
@@ -66,10 +67,24 @@ cpp_arg_t  *cpp_arg_list;
 cpp_arg_t **cpp_arg_tail = &cpp_arg_list;
 cpp_arg_t  *cpp_def_list;
 cpp_arg_t **cpp_def_tail = &cpp_def_list;
+cpp_arg_t  *cpp_undef_list;
+cpp_arg_t **cpp_undef_tail = &cpp_undef_list;
+cpp_arg_t  *cpp_sysinc_list;
+cpp_arg_t **cpp_sysinc_tail = &cpp_sysinc_list;
 const char **cpp_argv;
 const char *cpp_name = CPP_NAME;
 static int  cpp_argc = 0;
 dstring_t  *tempname;
+
+static const char **
+append_cpp_args (const char **arg, cpp_arg_t *arg_list)
+{
+	cpp_arg_t *cpp_arg;
+
+	for (cpp_arg = arg_list; cpp_arg; cpp_arg = cpp_arg->next)
+		*arg++ = cpp_arg->arg;
+	return arg;
+}
 
 static void
 add_cpp_arg (const char *arg)
@@ -79,6 +94,28 @@ add_cpp_arg (const char *arg)
 	cpp_arg->arg = arg;
 	*cpp_arg_tail = cpp_arg;
 	cpp_arg_tail = &(*cpp_arg_tail)->next;
+	cpp_argc++;
+}
+
+void
+add_cpp_sysinc (const char *arg)
+{
+	cpp_arg_t  *cpp_arg = malloc (sizeof (cpp_arg_t));
+	cpp_arg->next = 0;
+	cpp_arg->arg = arg;
+	*cpp_sysinc_tail = cpp_arg;
+	cpp_sysinc_tail = &(*cpp_sysinc_tail)->next;
+	cpp_argc++;
+}
+
+void
+add_cpp_undef (const char *arg)
+{
+	cpp_arg_t  *cpp_arg = malloc (sizeof (cpp_arg_t));
+	cpp_arg->next = 0;
+	cpp_arg->arg = arg;
+	*cpp_undef_tail = cpp_arg;
+	cpp_undef_tail = &(*cpp_undef_tail)->next;
 	cpp_argc++;
 }
 
@@ -116,18 +153,20 @@ static void
 build_cpp_args (const char *in_name, const char *out_name)
 {
 	cpp_arg_t  *cpp_arg;
-	cpp_arg_t  *cpp_def;
 	const char **arg;
 
 	if (cpp_argv)
 		free (cpp_argv);
-	cpp_argv = (const char **)malloc ((cpp_argc + 1) * sizeof (char**));
+	cpp_argv = (const char **)malloc ((cpp_argc + 1) * sizeof (char *));
 	for (arg = cpp_argv, cpp_arg = cpp_arg_list;
 		 cpp_arg;
 		 cpp_arg = cpp_arg->next) {
-		if (!strcmp (cpp_arg->arg, "%d")) {
-			for (cpp_def = cpp_def_list; cpp_def; cpp_def = cpp_def->next)
-				*arg++ = cpp_def->arg;
+		if (!strcmp (cpp_arg->arg, "%u")) {
+			arg = append_cpp_args (arg, cpp_undef_list);
+		} else if (!strcmp (cpp_arg->arg, "%s")) {
+			arg = append_cpp_args (arg, cpp_sysinc_list);
+		} else if (!strcmp (cpp_arg->arg, "%d")) {
+			arg = append_cpp_args (arg, cpp_def_list);
 		} else if (!strcmp (cpp_arg->arg, "%i")) {
 			*arg++ = in_name;
 		} else if (!strcmp (cpp_arg->arg, "%o")) {
@@ -140,9 +179,6 @@ build_cpp_args (const char *in_name, const char *out_name)
 		}
 	}
 	*arg = 0;
-	//for (arg = cpp_argv; *arg; arg++)
-	//	printf ("%s ", *arg);
-	//puts ("");
 }
 
 //============================================================================
@@ -205,6 +241,9 @@ preprocess_file (const char *filename, const char *ext)
 	if (cpp_name) {
 		intermediate_file (tempname, filename, ext ? ext : "p", 0);
 		build_cpp_args (filename, tempname->str);
+		if (!cpp_argv[0]) {
+			internal_error(0, "cpp_argv[0] is null");
+		}
 
 #ifdef _WIN32
 		if (!options.save_temps && !options.preprocess_only)
@@ -230,7 +269,7 @@ preprocess_file (const char *filename, const char *ext)
 				puts("");
 			}
 
-#ifdef _WIN64
+#if defined(_WIN64) || defined(_WIN32)
 			status = spawnvp (_P_WAIT, cpp_argv[0], (char **) cpp_argv);
 #else
 			status = spawnvp (_P_WAIT, cpp_argv[0], cpp_argv);

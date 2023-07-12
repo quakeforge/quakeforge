@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 # include <curses.h>
 #endif
 #ifdef HAVE_STRING_H
@@ -68,10 +68,13 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/view.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
+
+#include "QF/ui/view.h"
+
+#include "QF/ui/inputline.h"
 
 #include "compat.h"
 #include "sv_console.h"
@@ -79,12 +82,62 @@
 static console_data_t sv_con_data;
 
 static QFile  *log_file;
-static cvar_t *sv_logfile;
-static cvar_t *sv_conmode;
+static char *sv_logfile;
+static cvar_t sv_logfile_cvar = {
+	.name = "sv_logfile",
+	.description =
+		"Control server console logging. \"none\" for off, or "
+		"\"filename:gzflags\"",
+	.default_value = "none",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_logfile },
+};
+static exprenum_t sv_conmode_enum;
+static exprtype_t sv_conmode_type = {
+	.name = "sv_conmode",
+	.size = sizeof (sv_con_data.exec_line),
+	.data = &sv_conmode_enum,
+	.get_string = cexpr_enum_get_string,
+};
+static int sv_exec_line_command (void *data, const char *line);
+static int sv_exec_line_chat (void *data, const char *line);
+static int (*sv_conmode_values[])(void *, const char *) = {
+	sv_exec_line_command,
+	sv_exec_line_chat,
+};
+static exprsym_t sv_conmode_symbols[] = {
+	{"command", &sv_conmode_type, sv_conmode_values + 0},
+	{"chat", &sv_conmode_type, sv_conmode_values + 1},
+	{}
+};
+static exprtab_t sv_conmode_symtab = {
+	sv_conmode_symbols,
+};
+static exprenum_t sv_conmode_enum = {
+	&sv_conmode_type,
+	&sv_conmode_symtab,
+};
+static cvar_t sv_conmode_cvar = {
+	.name = "sv_conmode",
+	.description =
+		"Set the console input mode (command, chat)",
+	.default_value = "command",
+	.flags = CVAR_NONE,
+	.value = { .type = &sv_conmode_type, .value = &sv_con_data.exec_line },
+};
+static int sv_use_curses;
+static cvar_t sv_use_curses_cvar = {
+	.name = "sv_use_curses",
+	.description =
+		"Set to 1 to enable curses server console.",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &sv_use_curses },
+};
 
-static void C_KeyEvent (knum_t key, short unicode, qboolean down);
+#ifdef HAVE_NCURSES
 
-#ifdef HAVE_CURSES_H
+static void key_event (knum_t key, short unicode, bool down);
 
 enum {
 	sv_resize_x = 1,
@@ -93,14 +146,23 @@ enum {
 	sv_cursor	= 8,
 };
 
+#ifdef HAVE_NCURSES
 static int use_curses = 1;
+#else
+static int use_curses = 0;
+#endif
 
-static view_t *output;
-static view_t *status;
-static view_t *input;
+static view_t sv_view;
+static view_t output;
+static view_t status;
+static view_t input;
 static int screen_x, screen_y;
-static int interrupted;
+static volatile sig_atomic_t interrupted;
 static int batch_print;
+
+static ecs_registry_t *server_reg;
+static uint32_t server_base;
+static uint32_t view_base;
 
 #define     MAXCMDLINE  256
 
@@ -118,6 +180,7 @@ static int view_offset;
 #define CP_RED_BLUE			(8)
 #define CP_CYAN_BLUE		(9)
 #define CP_MAGENTA_BLUE		(10)
+#define CP_WHITE_BLUE		(11)
 
 static chtype attr_table[16] = {
 	A_NORMAL,
@@ -128,13 +191,13 @@ static chtype attr_table[16] = {
 	COLOR_PAIR (CP_CYAN_BLACK),
 	COLOR_PAIR (CP_MAGENTA_BLACK),
 	0,
-	A_NORMAL,
-	COLOR_PAIR (CP_GREEN_BLUE),
-	COLOR_PAIR (CP_RED_BLUE),
+	COLOR_PAIR(CP_WHITE_BLUE),
+	A_BOLD | COLOR_PAIR (CP_GREEN_BLUE),
+	A_BOLD | COLOR_PAIR (CP_RED_BLUE),
 	0,
-	COLOR_PAIR (CP_YELLOW_BLUE),
-	COLOR_PAIR (CP_CYAN_BLUE),
-	COLOR_PAIR (CP_MAGENTA_BLUE),
+	A_BOLD | COLOR_PAIR (CP_YELLOW_BLUE),
+	A_BOLD | COLOR_PAIR (CP_CYAN_BLUE),
+	A_BOLD | COLOR_PAIR (CP_MAGENTA_BLUE),
 	0,
 };
 
@@ -157,6 +220,22 @@ static const byte attr_map[256] = {
 	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 };
 
+static const component_t server_components[server_comp_count] = {
+	[server_href] = {
+		.size = sizeof (hierref_t),
+		.name = "href",
+		.destroy = Hierref_DestroyComponent,
+	},
+	[server_view] = {
+		.size = sizeof (sv_view_t),
+		.name = "sv_view",
+	},
+	[server_window] = {
+		.size = sizeof (sv_view_t),
+		.name = "sv_window",
+	},
+};
+
 
 static inline void
 draw_fun_char (WINDOW *win, byte c, int blue)
@@ -168,37 +247,46 @@ draw_fun_char (WINDOW *win, byte c, int blue)
 }
 
 static inline void
-sv_refresh (view_t *view)
+sv_refresh_windows (void)
 {
-	sv_view_t  *sv_view = view->data;
-	wnoutrefresh ((WINDOW *) sv_view->win);
+	uint32_t    window_comp = server_base + server_window;
+	sv_view_t  *window = server_reg->comp_pools[window_comp].data;
+	uint32_t    count = server_reg->comp_pools[window_comp].count;
+	while (count-- > 0) {
+		wnoutrefresh ((WINDOW *) (window++)->win);
+	}
+	doupdate ();
 }
 
 static inline int
-sv_getch (view_t *view)
+sv_getch (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	return wgetch ((WINDOW *) sv_view->win);
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	return wgetch ((WINDOW *) window->win);
 }
 
 static inline void
-sv_draw (view_t *view)
+sv_draw (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	if (sv_view->draw)
-		sv_view->draw (view);
-	wnoutrefresh ((WINDOW *) sv_view->win);
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	if (window->draw)
+		window->draw (view);
+	wnoutrefresh ((WINDOW *) window->win);
+	doupdate ();
 }
 
-static inline void
-sv_setgeometry (view_t *view)
+static void
+sv_setgeometry (view_t view, view_pos_t foo)
 {
-	sv_view_t  *sv_view = view->data;
-	WINDOW *win = sv_view->win;
-	wresize (win, view->ylen, view->xlen);
-	mvwin (win, view->yabs, view->xabs);
-	if (sv_view->setgeometry)
-		sv_view->setgeometry (view);
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	WINDOW *win = window->win;
+
+	view_pos_t  pos = View_GetAbs (view);
+	view_pos_t  len = View_GetLen (view);
+	wresize (win, len.y, len.x);
+	mvwin (win, pos.y, pos.x);
+	if (window->setgeometry)
+		window->setgeometry (view);
 }
 
 static void
@@ -208,22 +296,21 @@ sv_complete (inputline_t *il)
 	Con_BasicCompleteCommandLine (il);
 	batch_print = 0;
 
-	sv_refresh (output);
-	sv_refresh (input);
-	doupdate ();
+	sv_refresh_windows ();
 }
 
 static void
-draw_output (view_t *view)
+draw_output (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	WINDOW     *win = sv_view->win;
-	con_buffer_t *output_buffer = sv_view->obj;
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	WINDOW     *win = window->win;
+	con_buffer_t *output_buffer = window->obj;
+	view_pos_t  len = View_GetLen (view);
 
 	// this is not the most efficient way to update the screen, but oh well
-	int         lines = view->ylen - 1; // leave a blank line
-	int         width = view->xlen;
-	int         cur_line = output_buffer->cur_line + view_offset;
+	int         lines = len.y - 1; // leave a blank line
+	int         width = len.x;
+	int         cur_line = output_buffer->line_head - 1 + view_offset;
 	int         i, y;
 
 	if (lines < 1)
@@ -243,7 +330,7 @@ draw_output (view_t *view)
 	wmove (win, 0, 0);
 	do {
 		con_line_t *l = Con_BufferLine (output_buffer, cur_line++);
-		byte       *text = l->text;
+		byte       *text = output_buffer->buffer + l->text;
 		int         len = l->len;
 
 		if (y > 0) {
@@ -252,30 +339,37 @@ draw_output (view_t *view)
 			y = 0;
 			if (len < 1) {
 				len = 1;
-				text = l->text + l->len - 1;
+				text = output_buffer->buffer + l->text + l->len - 1;
 			}
 		}
 		while (len--)
 			draw_fun_char (win, *text++, 0);
-	} while (cur_line < output_buffer->cur_line + view_offset);
+	} while (cur_line < (int) output_buffer->line_head - 1 + view_offset);
 }
 
 static void
-draw_status (view_t *view)
+draw_status (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	WINDOW     *win = sv_view->win;
-	sv_sbar_t  *sb = sv_view->obj;
-	int         i;
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	WINDOW     *win = window->win;
+	sv_sbar_t  *sb = window->obj;
 	char       *old = alloca (sb->width);
 
 	memcpy (old, sb->text, sb->width);
 	memset (sb->text, ' ', sb->width);
-	view_draw (view);
+
+	ecs_pool_t *pool = &server_reg->comp_pools[server_view];
+	sv_view_t  *sv_view = pool->data;
+	for (uint32_t i = 0; i < pool->count; i++) {
+		view_t      v = { .reg = view.reg, .id = pool->dense[i],
+						  .comp = view.comp };
+		(sv_view++)->draw (v);
+	}
+
 	if (memcmp (old, sb->text, sb->width)) {
-		wbkgdset (win, COLOR_PAIR (CP_YELLOW_BLUE));
+		wbkgdset (win, COLOR_PAIR (CP_WHITE_BLUE));
 		wmove (win, 0, 0);
-		for (i = 0; i < sb->width; i++)
+		for (int i = 0; i < sb->width; i++)
 			draw_fun_char (win, sb->text[i], 1);
 	}
 }
@@ -283,9 +377,9 @@ draw_status (view_t *view)
 static void
 draw_input_line (inputline_t *il)
 {
-	view_t     *view = il->user_data;
-	sv_view_t  *sv_view = view->data;
-	WINDOW     *win = sv_view->win;
+	view_t      view = *(view_t *) il->user_data;
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	WINDOW     *win = window->win;
 	size_t      i;
 	const char *text;
 
@@ -314,26 +408,28 @@ draw_input_line (inputline_t *il)
 }
 
 static void
-draw_input (view_t *view)
+draw_input (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	draw_input_line (sv_view->obj);
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	draw_input_line (window->obj);
 }
 
 static void
-setgeometry_input (view_t *view)
+setgeometry_input (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	inputline_t *il = sv_view->obj;
-	il->width = view->xlen;
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	view_pos_t  len = View_GetLen (view);
+	inputline_t *il = window->obj;
+	il->width = len.x;
 }
 
 static void
-setgeometry_status (view_t *view)
+setgeometry_status (view_t view)
 {
-	sv_view_t  *sv_view = view->data;
-	sv_sbar_t *sb = sv_view->obj;
-	sb->width = view->xlen;
+	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_sbar_t *sb = window->obj;
+	view_pos_t  len = View_GetLen (view);
+	sb->width = len.x;
 	sb->text = realloc (sb->text, sb->width);
 	memset (sb->text, 0, sb->width);	// force an update
 }
@@ -342,13 +438,12 @@ static void
 sigwinch (int sig)
 {
 	interrupted = 1;
-	signal (SIGWINCH, sigwinch);
 }
 #endif
 static void
 get_size (int *xlen, int *ylen)
 {
-#if 0
+#ifdef SIGWINCH
 	struct winsize size;
 
 	*xlen = *ylen = 0;
@@ -356,8 +451,9 @@ get_size (int *xlen, int *ylen)
 		return;
 	*xlen = size.ws_col;
 	*ylen = size.ws_row;
-#endif
+#else
 	getmaxyx (stdscr, *ylen, *xlen);
+#endif
 }
 
 static void
@@ -366,14 +462,15 @@ process_input (void)
 	int         ch;
 	int         escape = 0;
 
-	if (interrupted) {
-#ifdef SIGWINCH
+	if (__builtin_expect (interrupted, 0)) {
 		interrupted = 0;
+#ifdef SIGWINCH
 		get_size (&screen_x, &screen_y);
+		Sys_MaskPrintf (SYS_dev, "resizing to %d x %d\n", screen_x, screen_y);
 		resizeterm (screen_y, screen_x);
 		con_linewidth = screen_x;
-		view_resize (sv_con_data.view, screen_x, screen_y);
-		sv_con_data.view->draw (sv_con_data.view);
+		View_SetLen (sv_view, screen_x, screen_y);
+		sv_refresh_windows ();
 #endif
 	}
 
@@ -461,24 +558,27 @@ process_input (void)
 				if (ch < 0 || ch >= 256)
 					ch = 0;
 		}
-		C_KeyEvent (ch, 0, 1);
+		key_event (ch, 0, 1);
 	}
 }
 
 static void
-key_event (knum_t key, short unicode, qboolean down)
+key_event (knum_t key, short unicode, bool down)
 {
 	int         ovf = view_offset;
-	sv_view_t  *sv_view;
+	sv_view_t  *window;
 	con_buffer_t *buffer;
+	int         num_lines;
 
 	switch (key) {
 		case QFK_PAGEUP:
 			view_offset -= 10;
-			sv_view = output->data;
-			buffer = sv_view->obj;
-			if (view_offset <= -(buffer->num_lines - (screen_y - 3)))
-				view_offset = -(buffer->num_lines - (screen_y - 3)) + 1;
+			window = Ent_GetComponent (output.id, server_window, output.reg);
+			buffer = window->obj;
+			num_lines = (buffer->line_head - buffer->line_tail
+						 + buffer->max_lines) % buffer->max_lines;
+			if (view_offset <= -(num_lines - (screen_y - 3)))
+				view_offset = -(num_lines - (screen_y - 3)) + 1;
 			if (ovf != view_offset)
 				sv_draw (output);
 			break;
@@ -493,54 +593,54 @@ key_event (knum_t key, short unicode, qboolean down)
 			sv_draw (output);
 			break;
 		default:
-			sv_view = input->data;
-			Con_ProcessInputLine (sv_view->obj, key);
-			sv_refresh (input);
+			window = Ent_GetComponent (input.id, server_window, input.reg);
+			Con_ProcessInputLine (window->obj, key);
+			sv_refresh_windows ();
 			break;
 	}
-	doupdate ();
 }
 
 static void
 print (char *txt)
 {
-	sv_view_t  *sv_view = output->data;
-	Con_BufferAddText (sv_view->obj, txt);
+	sv_view_t  *window = Ent_GetComponent (output.id, server_window,
+										   output.reg);
+	Con_BufferAddText (window->obj, txt);
 	if (!view_offset) {
 		while (*txt)
-			draw_fun_char (sv_view->win, (byte) *txt++, 0);
+			draw_fun_char (window->win, (byte) *txt++, 0);
 		if (!batch_print) {
-			sv_refresh (output);
-			doupdate ();
+			sv_refresh_windows ();
 		}
 	}
 }
 
-static view_t *
-create_window (view_t *parent, int xpos, int ypos, int xlen, int ylen,
-			   grav_t grav, void *obj, int opts, void (*draw) (view_t *),
-			   void (*setgeometry) (view_t *))
+static view_t
+create_window (view_t parent, int xpos, int ypos, int xlen, int ylen,
+			   grav_t grav, void *obj, int opts, void (*draw) (view_t),
+			   void (*setgeometry) (view_t))
 {
-	view_t     *view;
-	sv_view_t  *sv_view;
+	view_t      view = View_New ((ecs_system_t) { server_reg, view_base },
+							     parent);
+	View_SetPos (view, xpos, ypos);
+	View_SetLen (view, xlen, ylen);
+	View_SetGravity (view, grav);
+	View_SetResize (view, !!(opts & sv_resize_x), !!(opts & sv_resize_y));
+	View_SetOnResize (view, sv_setgeometry);
+	View_SetOnMove (view, sv_setgeometry);
 
-	sv_view = calloc (1, sizeof (sv_view_t));
-	sv_view->obj = obj;
-	sv_view->win = newwin (ylen, xlen, 0, 0);	// will get moved when added
-	scrollok (sv_view->win, (opts & sv_scroll) ? TRUE : FALSE);
-	leaveok (sv_view->win, (opts & sv_cursor) ? FALSE : TRUE);
-	nodelay (sv_view->win, TRUE);
-	keypad (sv_view->win, TRUE);
-	sv_view->draw = draw;
-	sv_view->setgeometry = setgeometry;
+	sv_view_t   window = {
+		.obj = obj,
+		.win = newwin (ylen, xlen, 0, 0),	// will get moved when updated
+		.draw = draw,
+		.setgeometry = setgeometry,
+	};
+	Ent_SetComponent (view.id, server_window, view.reg, &window);
 
-	view = view_new (xpos, ypos, xlen, ylen, grav);
-	view->data = sv_view;
-	view->draw = sv_draw;
-	view->setgeometry = sv_setgeometry;
-	view->resize_x = (opts & sv_resize_x) != 0;
-	view->resize_y = (opts & sv_resize_y) != 0;
-	view_add (parent, view);
+	scrollok (window.win, (opts & sv_scroll) ? TRUE : FALSE);
+	leaveok (window.win, (opts & sv_cursor) ? FALSE : TRUE);
+	nodelay (window.win, TRUE);
+	keypad (window.win, TRUE);
 
 	return view;
 }
@@ -552,14 +652,14 @@ exec_line (inputline_t *il)
 }
 
 static inputline_t *
-create_input_line (int width)
+create_input_line (int width, view_t *view)
 {
 	inputline_t *input_line;
 
 	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
 	input_line->complete = sv_complete;
 	input_line->enter = exec_line;
-	input_line->user_data = input;
+	input_line->user_data = view;
 	input_line->draw = draw_input_line;
 	input_line->width = width;
 
@@ -570,7 +670,9 @@ static void
 init (void)
 {
 #ifdef SIGWINCH
-	signal (SIGWINCH, sigwinch);
+	struct sigaction action = {};
+	action.sa_handler = sigwinch;
+	sigaction (SIGWINCH, &action, 0);
 #endif
 
 	initscr ();
@@ -580,28 +682,40 @@ init (void)
 
 	nonl ();
 
-	get_size (&screen_x, &screen_y);
-	sv_con_data.view = view_new (0, 0, screen_x, screen_y, grav_northwest);
+	server_reg = ECS_NewRegistry ();
+	server_base = ECS_RegisterComponents (server_reg, server_components,
+										  server_comp_count);
+	view_base = ECS_RegisterComponents (server_reg, view_components,
+										view_comp_count);
+	ECS_CreateComponentPools (server_reg);
 
-	output = create_window (sv_con_data.view,
+	get_size (&screen_x, &screen_y);
+
+	sv_view = View_New ((ecs_system_t) { server_reg, view_base }, nullview);
+	View_SetPos (sv_view, 0, 0);
+	View_SetLen (sv_view, screen_x, screen_y);
+	View_SetGravity (sv_view, grav_northwest);
+
+	output = create_window (sv_view,
 							0, 0, screen_x, screen_y - 2, grav_northwest,
 							Con_CreateBuffer (BUFFER_SIZE, MAX_LINES),
 							sv_resize_x | sv_resize_y | sv_scroll,
 							draw_output, 0);
 
-	status = create_window (sv_con_data.view,
+	status = create_window (sv_view,
 							0, 1, screen_x, 1, grav_southwest,
 							calloc (1, sizeof (sv_sbar_t)),
 							sv_resize_x,
 							draw_status, setgeometry_status);
-	sv_con_data.status_view = status;
+	sv_con_data.status_view = &status;
 
-	input = create_window (sv_con_data.view,
+	input = create_window (sv_view,
 						   0, 0, screen_x, 1, grav_southwest,
-						   create_input_line (screen_x),
+						   create_input_line (screen_x, &input),
 						   sv_resize_x | sv_cursor,
 						   draw_input, setgeometry_input);
-	((inputline_t *) ((sv_view_t *) input->data)->obj)->user_data = input;
+
+	View_UpdateHierarchy (sv_view);
 
 	init_pair (CP_YELLOW_BLACK, COLOR_YELLOW, COLOR_BLACK);
 	init_pair (CP_GREEN_BLACK, COLOR_GREEN, COLOR_BLACK);
@@ -614,23 +728,23 @@ init (void)
 	init_pair (CP_RED_BLUE, COLOR_RED, COLOR_BLUE);
 	init_pair (CP_CYAN_BLUE, COLOR_CYAN, COLOR_BLUE);
 	init_pair (CP_MAGENTA_BLUE, COLOR_MAGENTA, COLOR_BLUE);
+	init_pair (CP_WHITE_BLUE, COLOR_WHITE, COLOR_BLUE);
 
 	con_linewidth = screen_x;
 
-	sv_con_data.view->draw (sv_con_data.view);
 	wrefresh (curscr);
 }
 #endif
 
 static void
-sv_logfile_f (cvar_t *var)
+sv_logfile_f (void *data, const cvar_t *cvar)
 {
-	if (!var->string[0] || strequal (var->string, "none")) {
+	if (!sv_logfile[0] || strequal (sv_logfile, "none")) {
 		if (log_file)
 			Qclose (log_file);
 		log_file = 0;
 	} else {
-		char       *fname = strdup (var->string);
+		char       *fname = strdup (sv_logfile);
 		char       *flags = strrchr (fname, ':');
 
 		if (flags) {
@@ -663,52 +777,39 @@ sv_exec_line_chat (void *data, const char *line)
 }
 
 static void
-sv_conmode_f (cvar_t *var)
+C_InitCvars (void)
 {
-	if (!strcmp (var->string, "command")) {
-		sv_con_data.exec_line = sv_exec_line_command;
-	} else if (!strcmp (var->string, "chat")) {
-		sv_con_data.exec_line = sv_exec_line_chat;
-	} else {
-		Sys_Printf ("mode must be one of \"command\" or \"chat\"\n");
-		Sys_Printf ("    forcing \"command\"\n");
-		Cvar_Set (var, "command");
-	}
+	Cvar_Register (&sv_use_curses_cvar, 0, 0);
+	Cvar_Register (&sv_logfile_cvar, sv_logfile_f, 0);
+	Cvar_Register (&sv_conmode_cvar, 0, 0);
 }
 
 static void
 C_Init (void)
 {
-#ifdef HAVE_CURSES_H
-	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
-								  "Set to 1 to enable curses server console.");
-	use_curses = curses->int_val;
+#ifdef HAVE_NCURSES
+	use_curses = sv_use_curses;
 	if (use_curses) {
 		init ();
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
-	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
-						   "Control server console logging. \"none\" for off, "
-						   "or \"filename:gzflags\"");
-	sv_conmode = Cvar_Get ("sv_conmode", "command", CVAR_NONE, sv_conmode_f,
-						   "Set the console input mode (command, chat)");
 }
 
 static void
-C_Shutdown (void)
+C_shutdown (void)
 {
 	if (log_file) {
 		Qclose (log_file);
 		log_file = 0;
 	}
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses)
 		endwin ();
 #endif
 }
 
-static void
+static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	static dstring_t *buffer;
@@ -722,7 +823,7 @@ C_Print (const char *fmt, va_list args)
 		Qputs (log_file, buffer->str);
 		Qflush (log_file);
 	}
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		print (buffer->str);
 	} else
@@ -738,7 +839,7 @@ C_Print (const char *fmt, va_list args)
 static void
 C_ProcessInput (void)
 {
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		process_input ();
 	} else
@@ -752,25 +853,14 @@ C_ProcessInput (void)
 }
 
 static void
-C_KeyEvent (knum_t key, short unicode, qboolean down)
-{
-#ifdef HAVE_CURSES_H
-	key_event (key, unicode, down);
-#endif
-}
-
-static void
 C_DrawConsole (void)
 {
 	// only the status bar is drawn because the inputline and output views
 	// take care of themselves
-	if (sv_con_data.status_view)
-		sv_con_data.status_view->draw (sv_con_data.status_view);
-}
-
-static void
-C_CheckResize (void)
-{
+	if (use_curses) {
+		draw_status (status);
+		sv_refresh_windows ();
+	}
 }
 
 static void
@@ -779,32 +869,27 @@ C_NewMap (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	C_Init,
-	C_Shutdown,
+	.init = C_InitCvars,
+	.shutdown = C_shutdown,
 };
 static general_data_t plugin_info_general_data;
 
 static console_funcs_t plugin_info_console_funcs = {
-	C_Print,
-	C_ProcessInput,
-	C_KeyEvent,
-	C_DrawConsole,
-	C_CheckResize,
-	C_NewMap,
+	.init = C_Init,
+	.print = C_Print,
+	.process_input = C_ProcessInput,
+	.draw_console = C_DrawConsole,
+	.new_map = C_NewMap,
 };
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	&plugin_info_console_funcs,
+	.general = &plugin_info_general_funcs,
+	.console = &plugin_info_console_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	&sv_con_data,
+	.general = &plugin_info_general_data,
+	.console = &sv_con_data,
 };
 
 static plugin_t plugin_info = {

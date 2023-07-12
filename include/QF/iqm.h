@@ -1,5 +1,5 @@
-#ifndef __QF_iqm_h__
-#define __QF_iqm_h__
+#ifndef __QF_iqm_h
+#define __QF_iqm_h
 
 #include "QF/qtypes.h"
 
@@ -127,7 +127,7 @@ typedef struct {
 	byte        weights[4];
 } iqmblend_t;
 
-typedef struct {
+typedef struct iqm_s {
 	char       *text;
 	int         num_meshes;
 	iqmmesh    *meshes;
@@ -149,4 +149,4 @@ typedef struct {
 	void       *extra_data;
 } iqm_t;
 
-#endif//__QF_iqm_h__
+#endif//__QF_iqm_h

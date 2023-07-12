@@ -47,10 +47,10 @@
 #include "QF/bspfile.h"
 #include "QF/mathlib.h"
 
-#include "entities.h"
-#include "light.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 static struct {
 	int         empty;
@@ -73,7 +73,7 @@ int num_alllights;
 entity_t **novislights;
 int num_novislights;
 
-static dleaf_t *
+static __attribute__((pure)) dleaf_t *
 Light_PointInLeaf (vec3_t point)
 {
 	int         num = 0, side;
@@ -145,9 +145,6 @@ VisEntity (int ent_index)
 	entity_t   *entity = entities + ent_index;
 	dleaf_t    *leaf;
 	int         ignorevis = false;
-	int         i;
-	unsigned    j;
-	uint32_t   *mark;
 	byte       *vis, *surfacehit;
 	int         vis_size;
 
@@ -193,19 +190,19 @@ VisEntity (int ent_index)
 		memset (surfacehit, 0, (bsp->numfaces + 7) / 8);
 
 		DecompressVis (bsp->visdata + leaf->visofs, vis, vis_size);
-		for (i = 0, leaf = bsp->leafs + 1; i < bsp->models[0].visleafs;
-			 i++, leaf++) {
+		for (uint32_t i = 0; i < bsp->models[0].visleafs; i++) {
+			leaf = bsp->leafs + 1 + i;
 			if (!leaf->nummarksurfaces)
 				continue;
 			if (vis[i >> 3] & (1 << (i & 7))) {
-				for (j = 0, mark = bsp->marksurfaces + leaf->firstmarksurface;
-					 j < leaf->nummarksurfaces; j++, mark++) {
-					mark_face (*mark, surfacehit, entity);
+				uint32_t   *mark = bsp->marksurfaces + leaf->firstmarksurface;
+				for (size_t j = 0; j < leaf->nummarksurfaces; j++) {
+					mark_face (*mark++, surfacehit, entity);
 				}
 			}
 		}
-		for (i = 1; i < bsp->nummodels; i++) {
-			for (j = 0; (int) j < bsp->models[i].numfaces; j++) {
+		for (size_t i = 1; i < bsp->nummodels; i++) {
+			for (uint32_t j = 0; j < bsp->models[i].numfaces; j++) {
 				//FIXME vis
 				mark_face (bsp->models[i].firstface + j, surfacehit, entity);
 			}
@@ -216,8 +213,6 @@ VisEntity (int ent_index)
 void
 VisStats (void)
 {
-	int         i, count;
-
 	printf ("%4i lights\n", counts.lights);
 	printf ("%4i air\n", counts.empty);
 	printf ("%4i solid\n", counts.solid);
@@ -227,10 +222,11 @@ VisStats (void)
 	printf ("%4i sky\n", counts.sky);
 	printf ("%4i unknown\n", counts.misc);
 
-	for (i = count = 0; i < bsp->numfaces; i++)
+	size_t      count = 0;
+	for (size_t i = 0; i < bsp->numfaces; i++)
 		if (surfacelightchain[i])
 			count++;
-	printf ("%i faces, %i (%i%%) may receive light\n", bsp->numfaces,
+	printf ("%zd faces, %zd (%zd%%) may receive light\n", bsp->numfaces,
 			count, count * 100 / bsp->numfaces);
 	if (counts.solid || counts.sky)
 		printf ("warning: %i lights of %i lights (%i%%) were found in sky\n"
@@ -238,6 +234,6 @@ VisStats (void)
 				"out of the solid or sky to accelerate compiling\n",
 				 counts.solid + counts.sky, counts.lights,
 				(counts.solid + counts.sky) * 100 / counts.lights);
-	printf ("%i lights will be cast onto %i surfaces, %i casts will "
+	printf ("%i lights will be cast onto %zd surfaces, %i casts will "
 			"be performed\n", counts.lights, bsp->numfaces, counts.cast);
 }

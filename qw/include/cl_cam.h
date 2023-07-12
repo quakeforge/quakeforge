@@ -43,9 +43,9 @@ extern	int	spec_track; // player# of who we are tracking
 extern	int ideal_track;
 
 void Cam_Lock (int playernum);
-int Cam_TrackNum (void);
-qboolean Cam_DrawViewModel(void);
-qboolean Cam_DrawPlayer(int playernum);
+int Cam_TrackNum (void) __attribute__((pure));
+bool Cam_DrawViewModel(void) __attribute__((pure));
+bool Cam_DrawPlayer(int playernum) __attribute__((pure));
 void Cam_Track(usercmd_t *cmd);
 void Cam_FinishMove(usercmd_t *cmd);
 void Cam_Reset(void);

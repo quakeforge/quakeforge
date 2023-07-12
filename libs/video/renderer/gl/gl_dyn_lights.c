@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -81,7 +78,7 @@ R_RenderDlight (dlight_t *light)
 	bub_cos = gl_bubble_costable;
 	rad = light->radius * 0.35;
 
-	VectorSubtract (light->origin, r_origin, v);
+	VectorSubtract (r_refdef.frame.position, light->origin, v);
 	if (VectorLength (v) < rad)				// view is inside the dlight
 		return;
 
@@ -89,7 +86,6 @@ R_RenderDlight (dlight_t *light)
 
 	qfglColor4fv (light->color);
 
-	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);
 
 	for (i = 0; i < 3; i++)
@@ -100,8 +96,8 @@ R_RenderDlight (dlight_t *light)
 
 	for (i = 16; i >= 0; i--) {
 		for (j = 0; j < 3; j++)
-			v[j] = light->origin[j] + (vright[j] * (*bub_cos) +
-						   vup[j] * (*bub_sin)) * rad;
+			v[j] = light->origin[j] + (r_refdef.frame.right[j] * (*bub_cos) +
+						   r_refdef.frame.up[j] * (*bub_sin)) * rad;
 		bub_sin += 2;
 		bub_cos += 2;
 		qfglVertex3fv (v);
@@ -116,7 +112,7 @@ gl_R_RenderDlights (void)
 	unsigned int i;
 	dlight_t   *l;
 
-	if (!gl_dlight_polyblend->int_val)
+	if (!gl_dlight_polyblend)
 		return;
 
 	qfglDepthMask (GL_FALSE);
@@ -131,7 +127,7 @@ gl_R_RenderDlights (void)
 		R_RenderDlight (l);
 	}
 
-	if (!gl_dlight_smooth->int_val)
+	if (!gl_dlight_smooth)
 		qfglShadeModel (GL_FLAT);
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);

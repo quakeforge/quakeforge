@@ -99,7 +99,7 @@ GIB_Builtin_Add (const char *name, void (*func) (void))
 
 	if (!gib_builtins)
 		gib_builtins =
-			Hash_NewTable (1024, GIB_Builtin_Get_Key, GIB_Builtin_Free, 0);
+			Hash_NewTable (1024, GIB_Builtin_Get_Key, GIB_Builtin_Free, 0, 0);
 
 	new = calloc (1, sizeof (gib_builtin_t));
 	new->func = func;
@@ -116,7 +116,7 @@ GIB_Builtin_Remove (const char *name)
 		Hash_Free (gib_builtins, del);
 }
 
-VISIBLE qboolean
+VISIBLE bool
 GIB_Builtin_Exists (const char *name)
 {
 	return Hash_Find (gib_builtins, name) ? true : false;
@@ -236,8 +236,8 @@ GIB_Local_f (void)
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
-		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
-								 GIB_Argv (i), &index, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
+							 GIB_Argv (i), &index, true);
 }
 
 
@@ -261,8 +261,8 @@ GIB_Shared_f (void)
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
-		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
-								 GIB_Argv (i), &index, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+							 GIB_Argv (i), &index, true);
 }
 
 static void
@@ -823,7 +823,7 @@ GIB_File_Write_f (void)
 	}
 
 	path = GIB_Argv (1);
-	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, path),
+	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, path),
 				   GIB_Argv(2), GIB_Argd(2)->size-1);
 }
 
@@ -1039,8 +1039,14 @@ GIB_bp4_f (void)
 {
 }
 
+static void
+gib_builtin_shutdown (void *data)
+{
+	Hash_DelTable (gib_builtins);
+}
+
 void
-GIB_Builtin_Init (qboolean sandbox)
+GIB_Builtin_Init (bool sandbox)
 {
 
 	if (sandbox)
@@ -1090,4 +1096,6 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("bp2", GIB_bp2_f);
 	GIB_Builtin_Add ("bp3", GIB_bp3_f);
 	GIB_Builtin_Add ("bp4", GIB_bp4_f);
+
+	Sys_RegisterShutdown (gib_builtin_shutdown, 0);
 }

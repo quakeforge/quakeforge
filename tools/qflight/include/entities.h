@@ -34,7 +34,7 @@
 /** \defgroup qflight_entities Light entity data.
 	\ingroup qflight
 */
-//@{
+///@{
 
 #define DEFAULTLIGHTLEVEL	300
 #define DEFAULTFALLOFF 1.0f
@@ -56,7 +56,7 @@ typedef struct entity_s {
 	const char *classname;
 	vec3_t      origin;
 	vec_t       angle;
-	int         light;
+	vec_t       light;
 
 	int         sun_light[2];
 	vec3_t      sun_color[2];
@@ -106,6 +106,6 @@ void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 void LoadEntities (void);
 void WriteEntitiesToString (void);
 
-//@}
+///@}
 
 #endif// __entities_h

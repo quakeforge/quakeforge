@@ -49,15 +49,15 @@
 #include "QF/sys.h"
 
 #include "qw/bothdefs.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct dbuffer_s {
 	byte       *data;
-	int         start, end, last;
-	int         maxsize;
+	unsigned    start, end, last;
+	unsigned    maxsize;
 } dbuffer_t;
 
 typedef struct header_s {
@@ -70,7 +70,7 @@ typedef struct header_s {
 
 typedef struct demobuf_s {
 	sizebuf_t   sz;
-	int         bufsize;
+	unsigned    bufsize;
 	header_t   *h;
 } demobuf_t;
 
@@ -121,7 +121,7 @@ static byte     datagram_data[MAX_DATAGRAM];
 static byte     msg_buffer[2][MAX_DATAGRAM];
 
 #define MIN_DEMO_MEMORY 0x100000
-#define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
+#define USECACHE (sv_demoUseCache && svs.demomemsize)
 #define MAXSIZE (rec.dbuffer.end < rec.dbuffer.last ? \
 				 rec.dbuffer.start - rec.dbuffer.end : \
 				 rec.dbuffer.maxsize - rec.dbuffer.end)
@@ -200,9 +200,9 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 static void
 write_to_msg (int type, int to, float time, sizebuf_t *dst)
 {
-	int         pos = 0;
+	unsigned    pos = 0;
 	header_t   *p;
-	int         size;
+	unsigned    size;
 	sizebuf_t   msg;
 
 	p = (header_t *) rec.dbuf->sz.data;
@@ -256,7 +256,7 @@ static void
 set_buf (byte type, int to)
 {
 	header_t   *p;
-	int         pos = 0;
+	unsigned    pos = 0;
 
 	p = (header_t *) rec.dbuf->sz.data;
 
@@ -464,10 +464,10 @@ write_packet (void)
 }
 
 sizebuf_t *
-SVR_WriteBegin (byte type, int to, int size)
+SVR_WriteBegin (byte type, int to, unsigned size)
 {
 	byte       *p;
-	qboolean    move = false;
+	bool        move = false;
 
 	// will it fit?
 	while (rec.dbuf->bufsize + size + HEADER > rec.dbuf->sz.maxsize) {
@@ -559,7 +559,7 @@ SVR_SendMessages (void)
 	int         stats[MAX_CL_STATS];
 	recorder_t *r;
 
-	if (sv_demoPings->value && sv.time - rec.pingtime > sv_demoPings->value) {
+	if (sv_demoPings && sv.time - rec.pingtime > sv_demoPings) {
 		demo_pings ();
 		rec.pingtime = sv.time;
 	}

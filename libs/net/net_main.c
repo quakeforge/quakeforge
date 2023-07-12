@@ -47,25 +47,26 @@
 #include "netmain.h"
 #include "net_vcr.h"
 
-#include "../nq/include/host.h"
 #include "../nq/include/server.h"
+
+int net_is_dedicated = 0;
 
 qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;
 int         net_numsockets = 0;
 
-qboolean    tcpipAvailable = false;
+bool        tcpipAvailable = false;
 
 int         net_hostport;
 int         DEFAULTnet_hostport = 26000;
 
 char        my_tcpip_address[NET_NAMELEN];
 
-static qboolean listening = false;
+static bool listening = false;
 
-qboolean    slistInProgress = false;
-qboolean    slistSilent = false;
-qboolean    slistLocal = true;
+bool        slistInProgress = false;
+bool        slistSilent = false;
+bool        slistLocal = true;
 static double slistStartTime;
 static int  slistLastShown;
 
@@ -78,18 +79,34 @@ PollProcedure slistPollProcedure = { NULL, 0.0, Slist_Poll };
 static sizebuf_t _net_message_message;
 static qmsg_t _net_message = { 0, 0, &_net_message_message };
 qmsg_t     *net_message = &_net_message;
-int         net_activeconnections = 0;
+unsigned    net_activeconnections = 0;
 
 int         messagesSent = 0;
 int         messagesReceived = 0;
 int         unreliableMessagesSent = 0;
 int         unreliableMessagesReceived = 0;
 
-cvar_t     *net_messagetimeout;
-cvar_t     *hostname;
+float net_messagetimeout;
+static cvar_t net_messagetimeout_cvar = {
+	.name = "net_messagetimeout",
+	.description =
+		"None",
+	.default_value = "300",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &net_messagetimeout },
+};
+char *hostname;
+static cvar_t hostname_cvar = {
+	.name = "hostname",
+	.description =
+		"None",
+	.default_value = "UNNAMED",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &hostname },
+};
 
 QFile      *vcrFile;
-qboolean    recording = false;
+bool        recording = false;
 
 // these two macros are to make the code more readable
 #define sfunc	net_drivers[sock->driver]
@@ -97,8 +114,12 @@ qboolean    recording = false;
 
 int         net_driverlevel;
 
-
 double      net_time;
+
+static int         hostCacheCount = 0;
+static hostcache_t hostcache[HOSTCACHESIZE];
+
+static cbuf_t *net_cbuf;
 
 double
 SetNetTime (void)
@@ -195,7 +216,7 @@ NET_Listen_f (void)
 static void
 MaxPlayers_f (void)
 {
-	int         n;
+	unsigned    n;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("\"maxplayers\" is \"%u\"\n", svs.maxclients);
@@ -217,16 +238,16 @@ MaxPlayers_f (void)
 	}
 
 	if ((n == 1) && listening)
-		Cbuf_AddText (host_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
 
 	if ((n > 1) && (!listening))
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 
 	svs.maxclients = n;
 	if (n == 1)
-		Cvar_Set (deathmatch, "0");
+		Cvar_Set ("deathmatch", "0");
 	else
-		Cvar_Set (deathmatch, "1");
+		Cvar_Set ("deathmatch", "1");
 }
 
 
@@ -251,8 +272,8 @@ NET_Port_f (void)
 
 	if (listening) {
 		// force a change to the new port
-		Cbuf_AddText (host_cbuf, "listen 0\n");
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 	}
 }
 
@@ -265,6 +286,58 @@ PrintSlistHeader (void)
 	slistLastShown = 0;
 }
 
+void
+NET_AddCachedHost (const char *name, const char *map, const char *cname,
+				   int users, int maxusers, int driver, int ldriver,
+				   const netadr_t *addr)
+{
+	if (hostCacheCount == HOSTCACHESIZE) {
+		return;
+	}
+	for (int i = 0; i < hostCacheCount; i++) {
+		// addr will be 0 for loopback, and there can be only one loopback
+		// server.
+		if (!addr || !memcmp (addr, &hostcache[i].addr, sizeof (netadr_t))) {
+			return;
+		}
+	}
+
+	const int   namesize = sizeof (hostcache[0].name) - 1;
+	const int   mapsize = sizeof (hostcache[0].map) - 1;
+	const int   cnamesize = sizeof (hostcache[0].cname) - 1;
+
+	hostcache_t *host = &hostcache[hostCacheCount++];
+	strncpy (host->name, name, namesize);
+	strncpy (host->map, map, mapsize);
+	strncpy (host->cname, cname, cnamesize);
+	host->name[namesize] = 0;
+	host->map[mapsize] = 0;
+	host->cname[cnamesize] = 0;
+
+	host->users = users;
+	host->maxusers = maxusers;
+	host->driver = driver;
+	host->ldriver = ldriver;
+	if (addr) {
+		host->addr = *addr;
+	} else {
+		memset (&host->addr, 0, sizeof (host->addr));
+	}
+
+	// check for and resolve name conflicts
+	for (int i = 0; i < hostCacheCount - 1; i++) {
+		if (strcasecmp (host->name, hostcache[i].name) == 0) {
+			int         len = strlen (host->name);
+			if (len < namesize && host->name[len - 1] > '8') {
+				host->name[len] = '0';
+				host->name[len + 1] = 0;
+			} else {
+				host->name[len - 1]++;
+			}
+			i = -1;	// restart loop
+		}
+	}
+}
 
 static void
 PrintSlist (void)
@@ -358,10 +431,6 @@ Slist_Poll (void *unused)
 	slistSilent = false;
 	slistLocal = true;
 }
-
-
-int         hostCacheCount = 0;
-hostcache_t hostcache[HOSTCACHESIZE];
 
 qsocket_t *
 NET_Connect (const char *host)
@@ -488,7 +557,7 @@ NET_Close (qsocket_t *sock)
 	// call the driver_Close function
 	sfunc.Close (sock);
 
-	Sys_MaskPrintf (SYS_NET, "closing socket\n");
+	Sys_MaskPrintf (SYS_net, "closing socket\n");
 	NET_FreeQSocket (sock);
 }
 
@@ -521,8 +590,8 @@ NET_GetMessage (qsocket_t *sock)
 
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
-		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
-			Sys_MaskPrintf (SYS_NET, "socket timed out\n");
+		if (net_time - sock->lastMessageTime > net_messagetimeout) {
+			Sys_MaskPrintf (SYS_net, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
 		}
@@ -629,7 +698,7 @@ NET_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 }
 
 
-qboolean
+bool
 NET_CanSendMessage (qsocket_t *sock)
 {
 	int         r;
@@ -660,10 +729,10 @@ int
 NET_SendToAll (sizebuf_t *data, double blocktime)
 {
 	double      start;
-	int         i;
+	unsigned    i;
 	int         count = 0;
-	qboolean    state1[MAX_SCOREBOARD];	/* can we send */
-	qboolean    state2[MAX_SCOREBOARD];	/* did we send */
+	bool        state1[MAX_SCOREBOARD];	/* can we send */
+	bool        state2[MAX_SCOREBOARD];	/* did we send */
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
@@ -718,80 +787,8 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 
 //=============================================================================
 
-void
-NET_Init (void)
-{
-	int         i;
-	int         controlSocket;
-	qsocket_t  *s;
-
-	if (COM_CheckParm ("-playback")) {
-		net_numdrivers = 1;
-		net_drivers[0].Init = VCR_Init;
-	}
-
-	if (COM_CheckParm ("-record"))
-		recording = true;
-
-	i = COM_CheckParm ("-port");
-	if (!i)
-		i = COM_CheckParm ("-udpport");
-	if (!i)
-		i = COM_CheckParm ("-ipxport");
-
-	if (i) {
-		if (i < com_argc - 1)
-			DEFAULTnet_hostport = atoi (com_argv[i + 1]);
-		else
-			Sys_Error ("NET_Init: you must specify a number after -port");
-	}
-	net_hostport = DEFAULTnet_hostport;
-
-	if (COM_CheckParm ("-listen") || cls.state == ca_dedicated)
-		listening = true;
-	net_numsockets = svs.maxclientslimit;
-	if (cls.state != ca_dedicated)
-		net_numsockets++;
-
-	SetNetTime ();
-
-	for (i = 0; i < net_numsockets; i++) {
-		s = (qsocket_t *) Hunk_AllocName (sizeof (qsocket_t), "qsocket");
-		s->next = net_freeSockets;
-		net_freeSockets = s;
-		s->disconnected = true;
-	}
-
-	// allocate space for network message buffer
-	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
-
-	net_messagetimeout =
-		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, NULL, "None");
-	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, NULL, "None");
-
-	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
-	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");
-	Cmd_AddCommand ("maxplayers", MaxPlayers_f, "No Description");
-	Cmd_AddCommand ("port", NET_Port_f, "No Description");
-
-	// initialize all the drivers
-	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
-		 net_driverlevel++) {
-		controlSocket = net_drivers[net_driverlevel].Init ();
-		if (controlSocket == -1)
-			continue;
-		net_drivers[net_driverlevel].initialized = true;
-		net_drivers[net_driverlevel].controlSock = controlSocket;
-		if (listening)
-			net_drivers[net_driverlevel].Listen (true);
-	}
-
-	if (*my_tcpip_address)
-		Sys_MaskPrintf (SYS_NET, "TCP/IP address %s\n", my_tcpip_address);
-}
-
-void
-NET_Shutdown (void)
+static void
+NET_shutdown (void *data)
 {
 	qsocket_t  *sock;
 
@@ -815,6 +812,81 @@ NET_Shutdown (void)
 		Sys_Printf ("Closing vcrfile.\n");
 		Qclose (vcrFile);
 	}
+}
+
+void
+NET_Init (cbuf_t *cbuf)
+{
+	int         i;
+	int         controlSocket;
+	qsocket_t  *s;
+
+	net_cbuf = cbuf;
+
+	Sys_RegisterShutdown (NET_shutdown, 0);
+
+	if (COM_CheckParm ("-playback")) {
+		net_numdrivers = 1;
+		net_drivers[0].Init = VCR_Init;
+	}
+
+	if (COM_CheckParm ("-record"))
+		recording = true;
+
+	i = COM_CheckParm ("-port");
+	if (!i)
+		i = COM_CheckParm ("-udpport");
+	if (!i)
+		i = COM_CheckParm ("-ipxport");
+
+	if (i) {
+		if (i < com_argc - 1)
+			DEFAULTnet_hostport = atoi (com_argv[i + 1]);
+		else
+			Sys_Error ("NET_Init: you must specify a number after -port");
+	}
+	net_hostport = DEFAULTnet_hostport;
+
+	if (COM_CheckParm ("-listen") || net_is_dedicated)
+		listening = true;
+	net_numsockets = svs.maxclientslimit;
+	if (!net_is_dedicated)
+		net_numsockets++;
+
+	SetNetTime ();
+
+	for (i = 0; i < net_numsockets; i++) {
+		s = (qsocket_t *) Hunk_AllocName (0, sizeof (qsocket_t), "qsocket");
+		s->next = net_freeSockets;
+		net_freeSockets = s;
+		s->disconnected = true;
+	}
+
+	// allocate space for network message buffer
+	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
+
+	Cvar_Register (&net_messagetimeout_cvar, 0, 0);
+	Cvar_Register (&hostname_cvar, 0, 0);
+
+	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
+	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");
+	Cmd_AddCommand ("maxplayers", MaxPlayers_f, "No Description");
+	Cmd_AddCommand ("port", NET_Port_f, "No Description");
+
+	// initialize all the drivers
+	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
+		 net_driverlevel++) {
+		controlSocket = net_drivers[net_driverlevel].Init ();
+		if (controlSocket == -1)
+			continue;
+		net_drivers[net_driverlevel].initialized = true;
+		net_drivers[net_driverlevel].controlSock = controlSocket;
+		if (listening)
+			net_drivers[net_driverlevel].Listen (true);
+	}
+
+	if (*my_tcpip_address)
+		Sys_MaskPrintf (SYS_net, "TCP/IP address %s\n", my_tcpip_address);
 }
 
 

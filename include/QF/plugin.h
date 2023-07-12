@@ -25,22 +25,22 @@
 
 */
 
-#ifndef __QF_plugin_h_
-#define __QF_plugin_h_
+#ifndef __QF_plugin_h
+#define __QF_plugin_h
 
 /** \defgroup plugin Plugins
 	\ingroup utils
 */
-//@{
+///@{
 
 #define QFPLUGIN_VERSION	"1.0"
 
 #include <QF/qtypes.h>
 
 #ifdef STATIC_PLUGINS
-#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); plugin_t * type##_##name##_PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); __attribute__((const)) plugin_t * type##_##name##_PluginInfo (void)
 #else
-#define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void); __attribute__((visibility ("default"))) plugin_t *PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void); __attribute__((visibility ("default"),const)) plugin_t *PluginInfo (void)
 #endif
 
 typedef enum {
@@ -88,29 +88,26 @@ typedef struct plugin_s {
 /*
 	General plugin info return function type
 */
-typedef plugin_t * (*P_PluginInfo) (void);
+typedef plugin_t *(*plugin_info_t) (void);
 
 typedef struct plugin_list_s {
-	const char		*name;
-	P_PluginInfo	info;
+	const char *name;
+	plugin_info_t info;
 } plugin_list_t;
 
 /*
 	Plugin system variables
 */
-extern struct cvar_s	*fs_pluginpath;
+extern char *fs_pluginpath;
 
 /*
 	Function prototypes
 */
 plugin_t *PI_LoadPlugin (const char *, const char *);
-qboolean PI_UnloadPlugin (plugin_t *);
+bool PI_UnloadPlugin (plugin_t *);
 void PI_RegisterPlugins (plugin_list_t *);
 void PI_Init (void);
-void PI_Shutdown (void);
 
-// FIXME: we need a generic function to initialize unused fields
+///@}
 
-//@}
-
-#endif	// __QF_plugin_h_
+#endif//__QF_plugin_h

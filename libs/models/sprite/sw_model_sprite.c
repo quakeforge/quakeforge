@@ -28,9 +28,24 @@
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+
+#include "QF/zone.h"
+
 #include "mod_internal.h"
 
 void
-sw_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 {
+	for (int i = 0; i < ctx->numframes; i++) {
+		__auto_type dframe = ctx->dframes[i];
+		size_t      pixels = dframe->width * dframe->height;
+		size_t      size = field_offset (mspriteframe_t, pixels[pixels]);
+		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
+		*ctx->frames[i] = frame;
+		Mod_LoadSpriteFrame (frame, dframe);
+		memcpy (frame->pixels, dframe + 1, pixels);
+	}
 }

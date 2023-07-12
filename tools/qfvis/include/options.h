@@ -33,14 +33,18 @@
 typedef struct {
 	int         verbosity;		// 0=silent
 	int         threads;
-	qboolean    minimal;
+	bool        minimal;
+	bool        no_auto_pvs;
+	bool        fat_pvs;
+	bool        utf8;
 	int         level;
+	size_t      portal_limit;
 	struct dstring_s *bspfile;
 } options_t;
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
-void usage (int status);
+void usage (int status) __attribute__((noreturn));
 extern const char *this_program;
 
 #endif//__options_h

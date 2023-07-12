@@ -1,5 +1,6 @@
 #include "Lexer.h"
 #include "Number.h"
+#include "legacy_string.h"
 #include "string.h"
 #include "Boolean.h"
 #include "Error.h"

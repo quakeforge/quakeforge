@@ -38,151 +38,187 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
-#include "compat.h"
 #include "mod_internal.h"
+#include "qfalloca.h"
 
-static void *
-Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
+void
+Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe)
 {
-	dspriteframe_t *pinframe;
-	int				width, height, size, origin[2];
-	mspriteframe_t *pspriteframe;
+	frame->width = dframe->width;
+	frame->height = dframe->height;
 
-	pinframe = (dspriteframe_t *) pin;
-
-	width = LittleLong (pinframe->width);
-	height = LittleLong (pinframe->height);
-	size = width * height;
-
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, loadname);
-
-	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
-
-	*ppframe = pspriteframe;
-
-	pspriteframe->width = width;
-	pspriteframe->height = height;
-	origin[0] = LittleLong (pinframe->origin[0]);
-	origin[1] = LittleLong (pinframe->origin[1]);
-
-	pspriteframe->up = origin[1];
-	pspriteframe->down = origin[1] - height;
-	pspriteframe->left = origin[0];
-	pspriteframe->right = width + origin[0];
-
-	memcpy (pspriteframe->pixels, (byte *) (pinframe + 1), size);
-
-	m_funcs->Mod_SpriteLoadTexture (pspriteframe, framenum);
-
-	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
+	frame->up = dframe->origin[1];
+	frame->down = dframe->origin[1] - dframe->height;
+	frame->left = dframe->origin[0];
+	frame->right = dframe->width + dframe->origin[0];
 }
 
 static void *
-Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
+skip_frame (dspriteframe_t *frame)
 {
-	dspritegroup_t		*pingroup;
-	dspriteinterval_t	*pin_intervals;
-	float				*poutintervals;
-	int					 numframes, i;
-	mspritegroup_t		*pspritegroup;
-	void				*ptemp;
+	__auto_type pixels = (byte *) (frame + 1);
+	return pixels + frame->width * frame->height;
+}
 
-	pingroup = (dspritegroup_t *) pin;
-
-	numframes = LittleLong (pingroup->numframes);
-
-	pspritegroup = Hunk_AllocName (field_offset (mspritegroup_t,
-												 frames[numframes]), loadname);
-
-	pspritegroup->numframes = numframes;
-
-	*ppframe = (mspriteframe_t *) pspritegroup;
-
-	pin_intervals = (dspriteinterval_t *) (pingroup + 1);
-
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
-
-	pspritegroup->intervals = poutintervals;
-
-	for (i = 0; i < numframes; i++) {
-		*poutintervals = LittleFloat (pin_intervals->interval);
-		if (*poutintervals <= 0.0)
-			Sys_Error ("Mod_LoadSpriteGroup: interval<=0");
-
-		poutintervals++;
-		pin_intervals++;
+static void *
+swap_frame (dspriteframe_t *frame)
+{
+	for (int i = 0; i < 2; i++) {
+		frame->origin[i] = LittleLong (frame->origin[i]);
 	}
+	frame->width = LittleLong (frame->width);
+	frame->height = LittleLong (frame->height);
+	return skip_frame (frame);
+}
 
-	ptemp = (void *) pin_intervals;
-
-	for (i = 0; i < numframes; i++) {
-		ptemp =
-			Mod_LoadSpriteFrame (ptemp, &pspritegroup->frames[i],
-								 framenum * 100 + i);
+static void *
+swap_group (dspritegroup_t *group)
+{
+	group->numframes = LittleLong (group->numframes);
+	__auto_type interval = (dspriteinterval_t *) (group + 1);
+	for (int i = 0; i < group->numframes; i++) {
+		interval->interval = LittleFloat (interval->interval);
+		interval++;
 	}
+	__auto_type frame = (dspriteframe_t *) interval;
+	for (int i = 0; i < group->numframes; i++) {
+		frame = swap_frame (frame);
+	}
+	return frame + 1;
+}
 
-	return ptemp;
+static int
+swap_sprite (dsprite_t *sprite)
+{
+	sprite->ident = LittleLong (sprite->ident);
+	sprite->version = LittleLong (sprite->version);
+	sprite->type = LittleLong (sprite->type);
+	sprite->boundingradius = LittleFloat (sprite->boundingradius);
+	sprite->width = LittleLong (sprite->width);
+	sprite->height = LittleLong (sprite->height);
+	sprite->numframes = LittleLong (sprite->numframes);
+	sprite->beamlength = LittleFloat (sprite->beamlength);
+	sprite->synctype = LittleLong (sprite->synctype);
+
+	int         numframes = 0;
+	__auto_type type = (dspriteframetype_t *) (sprite + 1);
+	for (int i = 0; i < sprite->numframes; i++) {
+		type->type = LittleLong (type->type);
+		if (type->type == SPR_SINGLE) {
+			__auto_type frame = (dspriteframe_t *) (type + 1);
+			type = swap_frame (frame);
+			numframes += 1;
+		} else {
+			__auto_type group = (dspritegroup_t *) (type + 1);
+			type = swap_group (group);
+			numframes += group->numframes;
+		}
+	}
+	return numframes;
+}
+
+static void *
+find_group_frames (mspritegroup_t **group, dspritegroup_t *dgroup,
+				   mspriteframe_t ***frames, dspriteframe_t **dframes,
+				   int *frame_numbers, const char *modname)
+{
+	int         numframes = dgroup->numframes;
+	size_t      size = field_offset (mspritegroup_t, frames[numframes]);
+	*group = Hunk_AllocName (0, size, modname);
+	(*group)->numframes = numframes;
+	(*group)->intervals = Hunk_AllocName (0, numframes * sizeof (float),
+										  modname);
+
+	__auto_type interval = (dspriteinterval_t *) (dgroup + 1);
+	for (int i = 0; i < numframes; i++) {
+		(*group)->intervals[i] = interval->interval;
+		interval++;
+	}
+	__auto_type dframe = (dspriteframe_t *) interval;
+	for (int i = 0; i < numframes; i++) {
+		frames[i] = &(*group)->frames[i];
+		dframes[i] = dframe;
+		frame_numbers[i] = i;
+		dframe = skip_frame (dframe);
+	}
+	return dframe;
+}
+
+static void
+find_frames (msprite_t *sprite, dsprite_t *dsprite,
+			 mspriteframe_t ***frames, dspriteframe_t **dframes,
+			 int *frame_numbers, const char *modname)
+{
+	int         frame_index = 0;
+	__auto_type type = (dspriteframetype_t *) (dsprite + 1);
+	for (int i = 0; i < dsprite->numframes; i++) {
+		sprite->frames[i].type = type->type;
+		if (type->type == SPR_SINGLE) {
+			__auto_type frame = (dspriteframe_t *) (type + 1);
+			dframes[frame_index] = frame;
+			frames[frame_index] = &sprite->frames[i].frame;
+			frame_numbers[frame_index] = i;
+			frame_index += 1;
+			type = skip_frame (frame);
+		} else {
+			__auto_type group = (dspritegroup_t *) (type + 1);
+			type = find_group_frames (&sprite->frames[i].group, group,
+									  frames + frame_index,
+									  dframes + frame_index,
+									  frame_numbers + frame_index,
+									  modname);
+			for (int j = 0; j < group->numframes; j++) {
+				frame_numbers[frame_index + j] += i * 100;
+			}
+			frame_index += group->numframes;
+		}
+	}
 }
 
 void
 Mod_LoadSpriteModel (model_t *mod, void *buffer)
 {
-	dsprite_t			*pin;
-	dspriteframetype_t	*pframetype;
-	int					 numframes, size, version, i;
-	msprite_t			*psprite;
+	__auto_type dsprite = (dsprite_t *) buffer;
+	msprite_t  *sprite;
 
-	pin = (dsprite_t *) buffer;
-
-	version = LittleLong (pin->version);
-	if (version != SPR_VERSION)
-		Sys_Error ("%s has wrong version number "
-				  "(%i should be %i)", mod->name, version, SPR_VERSION);
-
-	numframes = LittleLong (pin->numframes);
-
-	size = field_offset (msprite_t, frames[numframes]);
-
-	psprite = Hunk_AllocName (size, loadname);
-
-	mod->cache.data = psprite;
-
-	psprite->type = LittleLong (pin->type);
-	psprite->maxwidth = LittleLong (pin->width);
-	psprite->maxheight = LittleLong (pin->height);
-	psprite->beamlength = LittleFloat (pin->beamlength);
-	mod->synctype = LittleLong (pin->synctype);
-	psprite->numframes = numframes;
-
-	mod->mins[0] = mod->mins[1] = -psprite->maxwidth / 2;
-	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth / 2;
-	mod->mins[2] = -psprite->maxheight / 2;
-	mod->maxs[2] = psprite->maxheight / 2;
-
-	// load the frames
-	if (numframes < 1)
-		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d", numframes);
-
-	mod->numframes = numframes;
-
-	pframetype = (dspriteframetype_t *) (pin + 1);
-
-	for (i = 0; i < numframes; i++) {
-		spriteframetype_t	frametype;
-
-		frametype = LittleLong (pframetype->type);
-		psprite->frames[i].type = frametype;
-
-		if (frametype == SPR_SINGLE) {
-			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteFrame (pframetype + 1,
-									 &psprite->frames[i].frameptr, i);
-		} else {
-			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteGroup (pframetype + 1,
-									 &psprite->frames[i].frameptr, i);
-		}
+	if (LittleLong (dsprite->version) != SPR_VERSION) {
+		Sys_Error ("%s has wrong version number (%i should be %i)",
+				   mod->path, LittleLong (dsprite->version), SPR_VERSION);
 	}
 
+	// total number of frames (direct and in groups)
+	int         numframes = swap_sprite (dsprite);
+
+	if (numframes < 1) {
+		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d", numframes);
+	}
+
+	sprite = Hunk_AllocName (0, field_offset (msprite_t,
+											  frames[dsprite->numframes]),
+							 mod->name);
+	sprite->type = dsprite->type;
+	sprite->beamlength = dsprite->beamlength;
+	sprite->numframes = dsprite->numframes;
+	sprite->data = 0;
+
+	mod->cache.data = sprite;
+	mod->mins[0] = mod->mins[1] = -dsprite->width / 2;
+	mod->maxs[0] = mod->maxs[1] = dsprite->width / 2;
+	mod->mins[2] = -dsprite->height / 2;
+	mod->maxs[2] = dsprite->height / 2;
+	mod->numframes = dsprite->numframes;
 	mod->type = mod_sprite;
+
+	mod_sprite_ctx_t sprite_ctx = {
+		.mod = mod,
+		.dsprite = dsprite,
+		.sprite = sprite,
+		.numframes = numframes,
+		.frame_numbers = alloca (numframes * sizeof (int)),
+		.dframes = alloca (numframes * sizeof (dspriteframe_t *)),
+		.frames = alloca (numframes * sizeof (mspriteframe_t **)),
+	};
+	find_frames (sprite, dsprite, sprite_ctx.frames, sprite_ctx.dframes,
+				 sprite_ctx.frame_numbers, mod->name);
+	m_funcs->Mod_SpriteLoadFrames (&sprite_ctx);
 }

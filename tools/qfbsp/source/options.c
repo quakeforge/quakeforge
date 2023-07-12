@@ -40,7 +40,7 @@
 
 #include "QF/quakefs.h"
 
-#include "options.h"
+#include "tools/qfbsp/include/options.h"
 
 /**	\addtogroup qfbsp_options
 */
@@ -59,6 +59,7 @@ static struct option const long_options[] = {
 	{"noclip",				no_argument,		0, 'c'},
 	{"onlyents",			no_argument,		0, 'e'},
 	{"portal",				no_argument,		0, 'p'},
+	{"info",				no_argument,		0, 'i'},
 	{"extract-textures",	no_argument,		0, 256},
 	{"extract-entities",	no_argument,		0, 257},
 	{"extract-hull",		no_argument,		0, 258},
@@ -81,6 +82,7 @@ static const char *short_options =
 	"f"		// nofill
 	"c"		// noclip
 	"e"		// onlyents
+	"i"		// info
 	"o:"	// outputfile
 	"p"		// portal
 	"u"		// usehulls
@@ -102,6 +104,7 @@ usage (int status)
 		"    -v, --verbose             Display more output than usual\n"
 		"    -h, --help                Display this help and exit\n"
 		"    -V, --version             Output version information and exit\n"
+		"    -i, --info                Display info about the bsp\n"
 		"    -d, --draw\n"
 		"    -t, --notjunc\n"
 		"    -c, --noclip\n"
@@ -162,6 +165,10 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'o':
 				options.output_file = strdup (optarg);
+				break;
+			case 'i':
+				options.extract = true;
+				options.info = true;
 				break;
 			case 'p':					// portal
 				options.extract = true;

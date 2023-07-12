@@ -43,43 +43,132 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/progs.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "QF/simd/types.h"
+
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+//FIXME I don't like this being here (or aligned_alloc being necessary in
+//the first place, but not at all sure what to do about that)
+#ifdef _WIN32
+#define aligned_alloc(al, sz) _aligned_malloc(sz, al)
+#define free(x) _aligned_free(x)
+#endif
 
 typedef struct {
 	def_t      *def;
 	union {
-		string_t    string_val;
-		float       float_val;
-		float       vector_val[3];
-		int         entity_val;
-		int         field_val;
-		int         func_val;
+#define EV_TYPE(type) pr_##type##_t type##_val;
+#include "QF/progs/pr_type_names.h"
+#define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
+#include "tools/qfcc/include/vec_types.h"
 		ex_pointer_t pointer;
-		float       quaternion_val[4];
-		int         integer_val;
 	} i;
 } immediate_t;
 
 static hashtab_t *value_table;
-static ex_value_t *values_freelist;
+ALLOC_STATE (ex_value_t, values);
+
+//FIXME this (to setup_value_progs) should be in its own file and more
+//general (good for constant folding, too, and maybe some others).
+static void
+value_debug_handler (prdebug_t event, void *param, void *data)
+{
+	progs_t    *pr = data;
+	switch (event) {
+		case prd_trace:
+			dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
+			PR_PrintStatement (pr, st, 0);
+			break;
+		case prd_breakpoint:
+		case prd_subenter:
+		case prd_subexit:
+		case prd_runerror:
+		case prd_watchpoint:
+		case prd_begin:
+		case prd_terminate:
+		case prd_error:
+		case prd_none:
+			break;
+	}
+}
+
+enum {
+	vf_null,
+	vf_convert,
+};
+
+#define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
+#define OP(a, b, c, op) ((op) | BASE(A, a) | BASE(B, b) | BASE(C, c))
+
+static bfunction_t value_functions[] = {
+	{},	// null function
+	[vf_convert] = { .first_statement = vf_convert * 16 },
+};
+
+static __attribute__((aligned(64)))
+dstatement_t value_statements[] = {
+	[vf_convert * 16 - 1] = {},
+	{ OP_CONV, 0, 07777, 16 },
+	{ OP_RETURN, 16, 0, 0 },
+};
+
+#define num_globals 16384
+#define stack_size 8192
+static __attribute__((aligned(64)))
+pr_type_t value_globals[num_globals + 128] = {
+	[num_globals - stack_size] = { .uint_value = num_globals },
+};
+
+static dprograms_t value_progs = {
+	.version = PROG_VERSION,
+	.statements = {
+		.count = sizeof (value_statements) / sizeof (value_statements[0]),
+	},
+};
+static progs_t value_pr = {
+	.progs = &value_progs,
+	.debug_handler = value_debug_handler,
+	.debug_data = &value_pr,
+	.pr_trace = 1,
+	.pr_trace_depth = -1,
+	.function_table = value_functions,
+	.pr_statements = value_statements,
+	.globals_size = num_globals,
+	.pr_globals = value_globals,
+	.stack_bottom = num_globals - stack_size + 4,
+	.pr_return_buffer = value_globals + num_globals,
+	.pr_return = value_globals + num_globals,
+	.globals = {
+		.stack = (pr_ptr_t *) (value_globals + num_globals - stack_size),
+	}
+};
+
+static void
+setup_value_progs (void)
+{
+	PR_Init (&value_pr);
+	PR_Debug_Init (&value_pr);
+}
 
 static uintptr_t
 value_get_hash (const void *_val, void *unused)
 {
 	const ex_value_t *val = (const ex_value_t *) _val;
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
+	return Hash_Buffer (&val->v, sizeof (val->v)) ^ (uintptr_t) val->type;
 }
 
 static int
@@ -96,8 +185,17 @@ static ex_value_t *
 new_value (void)
 {
 	ex_value_t *value;
+#define malloc(x) aligned_alloc (__alignof__(ex_value_t), x)
 	ALLOC (256, ex_value_t, values, value);
+#undef malloc
 	return value;
+}
+
+static void
+set_val_type (ex_value_t *val, type_t *type)
+{
+	val->type = type;
+	val->lltype = low_level_type (type);
 }
 
 static ex_value_t *
@@ -119,9 +217,19 @@ new_string_val (const char *string_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_string;
+	set_val_type (&val, &type_string);
 	if (string_val)
 		val.v.string_val = save_string (string_val);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_double_val (double double_val)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	set_val_type (&val, &type_double);
+	val.v.double_val = double_val;
 	return find_value (&val);
 }
 
@@ -130,7 +238,7 @@ new_float_val (float float_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_float;
+	set_val_type (&val, &type_float);
 	val.v.float_val = float_val;
 	return find_value (&val);
 }
@@ -140,7 +248,7 @@ new_vector_val (const float *vector_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_vector;
+	set_val_type (&val, &type_vector);
 	VectorCopy (vector_val, val.v.vector_val);
 	return find_value (&val);
 }
@@ -150,7 +258,7 @@ new_entity_val (int entity_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_entity;
+	set_val_type (&val, &type_entity);
 	val.v.entity_val = entity_val;
 	return find_value (&val);
 }
@@ -160,7 +268,7 @@ new_field_val (int field_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_field;
+	set_val_type (&val, field_type (type));
 	val.v.pointer.val = field_val;
 	val.v.pointer.type = type;
 	val.v.pointer.def = def;
@@ -172,21 +280,26 @@ new_func_val (int func_val, type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_func;
+	set_val_type (&val, type);
 	val.v.func_val.val = func_val;
 	val.v.func_val.type = type;
 	return find_value (&val);
 }
 
 ex_value_t *
-new_pointer_val (int pointer_val, type_t *type, def_t *def)
+new_pointer_val (int pointer_val, type_t *type, def_t *def,
+				 struct operand_s *tempop)
 {
 	ex_value_t  val;
+	if (!type) {
+		internal_error (0, "pointer value with no type");
+	}
 	memset (&val, 0, sizeof (val));
-	val.type = ev_pointer;
+	set_val_type (&val, pointer_type (type));
 	val.v.pointer.val = pointer_val;
 	val.v.pointer.type = type;
 	val.v.pointer.def = def;
+	val.v.pointer.tempop = tempop;
 	return find_value (&val);
 }
 
@@ -195,28 +308,44 @@ new_quaternion_val (const float *quaternion_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_quat;
+	set_val_type (&val, &type_quaternion);
 	QuatCopy (quaternion_val, val.v.quaternion_val);
 	return find_value (&val);
 }
 
 ex_value_t *
-new_integer_val (int integer_val)
+new_int_val (int int_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_integer;
-	val.v.integer_val = integer_val;
+	set_val_type (&val, &type_int);
+	val.v.int_val = int_val;
 	return find_value (&val);
 }
 
 ex_value_t *
-new_uinteger_val (int uinteger_val)
+new_uint_val (int uint_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_uinteger;
-	val.v.uinteger_val = uinteger_val;
+	set_val_type (&val, &type_uint);
+	val.v.uint_val = uint_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_long_val (pr_long_t long_val)
+{
+	ex_value_t  val = { .v = { .long_val = long_val } };
+	set_val_type (&val, &type_long);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_ulong_val (pr_ulong_t ulong_val)
+{
+	ex_value_t  val = { .v = { .ulong_val = ulong_val } };
+	set_val_type (&val, &type_ulong);
 	return find_value (&val);
 }
 
@@ -225,7 +354,7 @@ new_short_val (short short_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_short;
+	set_val_type (&val, &type_short);
 	val.v.short_val = short_val;
 	return find_value (&val);
 }
@@ -235,23 +364,208 @@ new_nil_val (type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = low_level_type (type);
-	if (val.type == ev_pointer|| val.type == ev_field )
+	set_val_type (&val, type);
+	if (val.lltype == ev_void) {
+		val.lltype = type_nil->type;
+	}
+	if (val.lltype == ev_ptr || val.lltype == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
-	if (val.type == ev_func)
+	if (val.lltype == ev_func)
 		val.v.func_val.type = type;
 	return find_value (&val);
 }
 
+ex_value_t *
+new_type_value (const type_t *type, const pr_type_t *data)
+{
+	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
+	ex_value_t  val = {};
+	set_val_type (&val, (type_t *) type);//FIXME cast
+	memcpy (&val.v, data, typeSize);
+	return find_value (&val);
+}
+
+void
+value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
+{
+	size_t      dstSize = type_size (dstType) * sizeof (pr_type_t);
+
+	if (src->type == ex_nil) {
+		memset (dst, 0, dstSize);
+		return;
+	}
+	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_var) {
+		// initialized global def treated as a constant
+		// from the tests in cast_expr, the def is known to be constant
+		def_t      *def = src->e.symbol->s.def;
+		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
+		return;
+	}
+	ex_value_t *val = 0;
+	if (src->type == ex_value) {
+		val = src->e.value;
+	}
+	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_const) {
+		val = src->e.symbol->s.value;
+	}
+	if (!val) {
+		internal_error (src, "unexpected constant expression type");
+	}
+	memcpy (dst, &val->v, dstSize);
+}
+
+const char *
+get_value_string (const ex_value_t *value)
+{
+	const type_t *type = value->type;
+	const char *str = "";
+	switch (type->type) {
+		case ev_string:
+			return va (0, "\"%s\"", quote_string (value->v.string_val));
+		case ev_vector:
+		case ev_quaternion:
+		case ev_float:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%.9g", value->v.float_val);
+					break;
+				case 2:
+					str = va (0, VEC2F_FMT, VEC2_EXP (value->v.vec2_val));
+					break;
+				case 3:
+					str = va (0, "[%.9g, %.9g, %.9g]",
+							  VectorExpand (value->v.vec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4F_FMT, VEC4_EXP (value->v.vec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_entity:
+		case ev_func:
+			return va (0, "%s %d", type->name, value->v.int_val);
+		case ev_field:
+			if (value->v.pointer.def) {
+				int         offset = value->v.pointer.val;
+				offset += value->v.pointer.def->offset;
+				return va (0, "field %d", offset);
+			} else {
+				return va (0, "field %d", value->v.pointer.val);
+			}
+		case ev_ptr:
+			if (value->v.pointer.def) {
+				str = va (0, "<%s>", value->v.pointer.def->name);
+			}
+			return va (0, "(* %s)[%d]%s",
+					   value->v.pointer.type
+						? get_type_string (value->v.pointer.type) : "???",
+					   value->v.pointer.val, str);
+		case ev_int:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIi32, value->v.int_val);
+					break;
+				case 2:
+					str = va (0, VEC2I_FMT, VEC2_EXP (value->v.ivec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIi32", %"PRIi32", %"PRIi32"]",
+							  VectorExpand (value->v.ivec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4I_FMT, VEC4_EXP (value->v.ivec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_uint:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIu32, value->v.uint_val);
+					break;
+				case 2:
+					str = va (0, "[%"PRIu32", %"PRIi32"]",
+							  VEC2_EXP (value->v.uivec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32"]",
+							  VectorExpand (value->v.uivec3_val));
+					break;
+				case 4:
+					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
+							  VEC4_EXP (value->v.uivec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_short:
+			return va (0, "%s %"PRIi16, type->name, value->v.short_val);
+		case ev_ushort:
+			return va (0, "%s %"PRIu16, type->name, value->v.ushort_val);
+		case ev_double:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%.17g", value->v.double_val);
+					break;
+				case 2:
+					str = va (0, VEC2D_FMT, VEC2_EXP (value->v.dvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%.17g, %.17g, %.17g]",
+							  VectorExpand (value->v.dvec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4D_FMT, VEC4_EXP (value->v.dvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_long:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIi64, value->v.long_val);
+					break;
+				case 2:
+					str = va (0, VEC2L_FMT, VEC2_EXP (value->v.lvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIi64", %"PRIi64", %"PRIi64"]",
+							  VectorExpand (value->v.lvec3_val));
+					break;
+				case 4:
+					str = va (0, VEC4L_FMT, VEC4_EXP (value->v.lvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_ulong:
+			switch (type_width (type)) {
+				case 1:
+					str = va (0, "%"PRIu64, value->v.ulong_val);
+					break;
+				case 2:
+					str = va (0, "[%"PRIu64", %"PRIi64"]",
+							  VEC2_EXP (value->v.ulvec2_val));
+					break;
+				case 3:
+					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64"]",
+							  VectorExpand (value->v.ulvec3_val));
+					break;
+				case 4:
+					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
+							  VEC4_EXP (value->v.ulvec4_val));
+					break;
+			}
+			return va (0, "%s %s", type->name, str);
+		case ev_void:
+			return "<void>";
+		case ev_invalid:
+			return "<invalid>";
+		case ev_type_count:
+			return "<type_count>";
+	}
+	return "invalid type";
+}
+
 static hashtab_t *string_imm_defs;
-static hashtab_t *float_imm_defs;
-static hashtab_t *vector_imm_defs;
-static hashtab_t *entity_imm_defs;
-static hashtab_t *field_imm_defs;
-static hashtab_t *func_imm_defs;
-static hashtab_t *pointer_imm_defs;
-static hashtab_t *quaternion_imm_defs;
-static hashtab_t *integer_imm_defs;
+static hashtab_t *fldptr_imm_defs;
+static hashtab_t *value_imm_defs;
 
 static void
 imm_free (void *_imm, void *unused)
@@ -259,7 +573,7 @@ imm_free (void *_imm, void *unused)
 	free (_imm);
 }
 
-static uintptr_t
+static __attribute__((pure)) uintptr_t
 imm_get_hash (const void *_imm, void *_tab)
 {
 	immediate_t *imm = (immediate_t *) _imm;
@@ -268,29 +582,17 @@ imm_get_hash (const void *_imm, void *_tab)
 	if (tab == &string_imm_defs) {
 		const char *str = pr.strings->strings + imm->i.string_val;
 		return str ? Hash_String (str) : 0;
-	} else if (tab == &float_imm_defs) {
-		return imm->i.integer_val;
-	} else if (tab == &vector_imm_defs) {
-		return Hash_Buffer (&imm->i.vector_val, sizeof (&imm->i.vector_val));
-	} else if (tab == &entity_imm_defs) {
-		return imm->i.integer_val;
-	} else if (tab == &field_imm_defs) {
+	} else if (tab == &fldptr_imm_defs) {
 		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
-	} else if (tab == &func_imm_defs) {
-		return imm->i.integer_val;
-	} else if (tab == &pointer_imm_defs) {
-		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
-	} else if (tab == &quaternion_imm_defs) {
-		return Hash_Buffer (&imm->i.quaternion_val,
-							sizeof (&imm->i.quaternion_val));
-	} else if (tab == &integer_imm_defs) {
-		return imm->i.integer_val;
+	} else if (tab == &value_imm_defs) {
+		size_t      size = type_size (imm->def->type) * sizeof (pr_type_t);
+		return Hash_Buffer (&imm->i, size) ^ (uintptr_t) imm->def->type;
 	} else {
-		internal_error (0, 0);
+		internal_error (0, "invalid immediate hash table");
 	}
 }
 
-static int
+static __attribute__((pure)) int
 imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 {
 	immediate_t *imm1 = (immediate_t *) _imm1;
@@ -301,28 +603,14 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 		const char *str1 = pr.strings->strings + imm1->i.string_val;
 		const char *str2 = pr.strings->strings + imm2->i.string_val;
 		return (str1 == str2 || (str1 && str2 && !strcmp (str1, str2)));
-	} else if (tab == &float_imm_defs) {
-		return imm1->i.float_val == imm2->i.float_val;
-	} else if (tab == &vector_imm_defs) {
-		return VectorCompare (imm1->i.vector_val, imm2->i.vector_val);
-	} else if (tab == &entity_imm_defs) {
-		return imm1->i.entity_val == imm2->i.entity_val;
-	} else if (tab == &field_imm_defs) {
+	} else if (tab == &fldptr_imm_defs) {
 		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
 						sizeof (imm1->i.pointer));
-	} else if (tab == &func_imm_defs) {
-		return imm1->i.func_val == imm2->i.func_val;
-	} else if (tab == &pointer_imm_defs) {
-		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
-						sizeof (imm1->i.pointer));
-	} else if (tab == &quaternion_imm_defs) {
-		return (VectorCompare (imm1->i.quaternion_val,
-							   imm2->i.quaternion_val)
-				&& imm1->i.quaternion_val[3] == imm2->i.quaternion_val[3]);
-	} else if (tab == &integer_imm_defs) {
-		return imm1->i.integer_val == imm2->i.integer_val;
+	} else if (tab == &value_imm_defs) {
+		size_t      size = type_size (imm1->def->type) * sizeof (pr_type_t);
+		return !memcmp (&imm1->i, &imm2->i, size);
 	} else {
-		internal_error (0, 0);
+		internal_error (0, "invalid immediate hash table");
 	}
 }
 
@@ -332,69 +620,29 @@ ReuseString (const char *str)
 	return strpool_addstr (pr.strings, str);
 }
 
-static float
-value_as_float (ex_value_t *value)
-{
-	if (value->type == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->type == ev_integer)
-		return value->v.integer_val;
-	if (value->type == ev_short)
-		return value->v.short_val;
-	if (value->type == ev_float)
-		return value->v.float_val;
-	return 0;
-}
-
-static int
-value_as_int (ex_value_t *value)
-{
-	if (value->type == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->type == ev_integer)
-		return value->v.integer_val;
-	if (value->type == ev_short)
-		return value->v.short_val;
-	if (value->type == ev_float)
-		return value->v.float_val;
-	return 0;
-}
-
-static unsigned
-value_as_uint (ex_value_t *value)
-{
-	if (value->type == ev_uinteger)
-		return value->v.uinteger_val;
-	if (value->type == ev_integer)
-		return value->v.integer_val;
-	if (value->type == ev_short)
-		return value->v.short_val;
-	if (value->type == ev_float)
-		return value->v.float_val;
-	return 0;
-}
-
 ex_value_t *
 convert_value (ex_value_t *value, type_t *type)
 {
-	if (!is_scalar (type) || !is_scalar (ev_types[value->type])) {
-		error (0, "unable to convert non-scalar value");
+	if (!is_math (type) || !is_math (value->type)) {
+		error (0, "unable to convert non-math value");
 		return value;
 	}
-	if (is_float (type)) {
-		float       val = value_as_float (value);
-		return new_float_val (val);
-	} else if (type->type == ev_short) {
-		int         val = value_as_int (value);
-		return new_short_val (val);
-	} else if (type->type == ev_uinteger) {
-		unsigned    val = value_as_uint (value);
-		return new_uinteger_val (val);
-	} else {
-		//FIXME handle enums separately?
-		int         val = value_as_int (value);
-		return new_integer_val (val);
+	if (type_width (type) != type_width (value->type)) {
+		error (0, "unable to convert between values of different widths");
+		return value;
 	}
+	int         from = type_cast_map[base_type (value->type)->type];
+	int         to = type_cast_map[base_type (type)->type];
+	int         width = type_width (value->type) - 1;
+	int         conv = TYPE_CAST_CODE (from, to, width);
+	int         addr = value_functions[vf_convert].first_statement;
+	value_statements[addr + 0].b = conv;
+	value_statements[addr + 1].c = type_size (type) - 1;
+	memcpy (value_globals, &value->v,
+			type_size (value->type) * sizeof (pr_type_t));
+	value_pr.pr_trace = options.verbosity > 1;
+	PR_ExecuteProgram (&value_pr, vf_convert);
+	return new_type_value (type, value_pr.pr_return_buffer);
 }
 
 ex_value_t *
@@ -402,12 +650,12 @@ alias_value (ex_value_t *value, type_t *type)
 {
 	ex_value_t  new;
 
-	if (type_size (type) != type_size (ev_types[value->type])) {
+	if (type_size (type) != type_size (ev_types[value->lltype])) {
 		error (0, "unable to alias different sized values");
 		return value;
 	}
 	new = *value;
-	new.type = type->type;
+	set_val_type (&new, type);
 	return find_value (&new);
 }
 
@@ -416,7 +664,8 @@ make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 {
 	immediate_t *imm;
 
-	imm = calloc (1, sizeof (immediate_t));
+	imm = aligned_alloc (__alignof__(immediate_t), sizeof (immediate_t));
+	memset (imm, 0, sizeof (immediate_t));
 	imm->def = def;
 	memcpy (&imm->i, &val->v, sizeof (imm->i));
 
@@ -432,62 +681,47 @@ emit_value (ex_value_t *value, def_t *def)
 	hashtab_t  *tab = 0;
 	type_t     *type;
 	ex_value_t  val = *value;
-	immediate_t *imm, search;
 
 	if (!string_imm_defs) {
 		clear_immediates ();
 	}
 	cn = 0;
-	if (val.type == ev_void)
-		val.type = type_nil->type;
-	switch (val.type) {
+//	if (val.type == ev_void)
+//		val.type = type_nil->type;
+	switch (val.lltype) {
 		case ev_entity:
-			tab = entity_imm_defs;
-			type = &type_entity;
+		case ev_func:
+		case ev_int:
+		case ev_uint:
+		case ev_float:
+		case ev_vector:
+		case ev_quaternion:
+		case ev_double:
+		case ev_long:
+		case ev_ulong:
+			tab = value_imm_defs;
+			type = val.type;
 			break;
 		case ev_field:
-			tab = field_imm_defs;
-			type = &type_field;
-			break;
-		case ev_func:
-			tab = func_imm_defs;
-			type = &type_function;
-			break;
-		case ev_pointer:
-			tab = pointer_imm_defs;
-			type = &type_pointer;
-			break;
-		case ev_integer:
-		case ev_uinteger:
-			if (!def || def->type != &type_float) {
-				tab = integer_imm_defs;
-				type = &type_integer;
-				break;
-			}
-			val.v.float_val = val.v.integer_val;
-			val.type = ev_float;
-		case ev_float:
-			tab = float_imm_defs;
-			type = &type_float;
+		case ev_ptr:
+			tab = fldptr_imm_defs;
+			type = ev_types[val.lltype];
 			break;
 		case ev_string:
-			val.v.integer_val = ReuseString (val.v.string_val);
+			val.v.int_val = ReuseString (val.v.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
-		case ev_vector:
-			tab = vector_imm_defs;
-			type = &type_vector;
-			break;
-		case ev_quat:
-			tab = quaternion_imm_defs;
-			type = &type_quaternion;
-			break;
 		default:
-			internal_error (0, 0);
+			internal_error (0, "unexpected value type: %s",
+							val.type->type < ev_type_count
+								? pr_type_name[val.lltype]
+								: va (0, "%d", val.lltype));
 	}
+	def_t       search_def = { .type = type };
+	immediate_t search = { .def = &search_def };
 	memcpy (&search.i, &val.v, sizeof (search.i));
-	imm = (immediate_t *) Hash_FindElement (tab, &search);
+	immediate_t *imm = Hash_FindElement (tab, &search);
 	if (imm && strcmp (imm->def->name, ".zero") == 0) {
 		if (def) {
 			imm = 0;	//FIXME do full def aliasing
@@ -530,7 +764,7 @@ emit_value (ex_value_t *value, def_t *def)
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
 	// copy the immediate to the global area
-	switch (val.type) {
+	switch (val.lltype) {
 		case ev_string:
 			reloc_def_string (cn);
 			break;
@@ -546,7 +780,7 @@ emit_value (ex_value_t *value, def_t *def)
 			if (val.v.pointer.def)
 				reloc_def_field_ofs (val.v.pointer.def, cn);
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			if (val.v.pointer.def) {
 				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
 							  val.v.pointer.def);
@@ -556,9 +790,9 @@ emit_value (ex_value_t *value, def_t *def)
 			break;
 	}
 
-	memcpy (D_POINTER (void, cn), &val.v, 4 * type_size (type));
+	memcpy (D_POINTER (pr_type_t, cn), &val.v, 4 * type_size (type));
 
-	imm = make_def_imm (cn, tab, &val);
+	make_def_imm (cn, tab, &val);
 
 	return cn;
 }
@@ -572,55 +806,31 @@ clear_immediates (void)
 	if (value_table) {
 		Hash_FlushTable (value_table);
 		Hash_FlushTable (string_imm_defs);
-		Hash_FlushTable (float_imm_defs);
-		Hash_FlushTable (vector_imm_defs);
-		Hash_FlushTable (entity_imm_defs);
-		Hash_FlushTable (field_imm_defs);
-		Hash_FlushTable (func_imm_defs);
-		Hash_FlushTable (pointer_imm_defs);
-		Hash_FlushTable (quaternion_imm_defs);
-		Hash_FlushTable (integer_imm_defs);
+		Hash_FlushTable (fldptr_imm_defs);
+		Hash_FlushTable (value_imm_defs);
 	} else {
-		value_table = Hash_NewTable (16381, 0, 0, 0);
+		setup_value_progs ();
+
+		value_table = Hash_NewTable (16381, 0, 0, 0, 0);
 		Hash_SetHashCompare (value_table, value_get_hash, value_compare);
 
-		string_imm_defs = Hash_NewTable (16381, 0, imm_free, &string_imm_defs);
+		string_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										 &string_imm_defs, 0);
 		Hash_SetHashCompare (string_imm_defs, imm_get_hash, imm_compare);
 
-		float_imm_defs = Hash_NewTable (16381, 0, imm_free, &float_imm_defs);
-		Hash_SetHashCompare (float_imm_defs, imm_get_hash, imm_compare);
+		fldptr_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&fldptr_imm_defs, 0);
+		Hash_SetHashCompare (fldptr_imm_defs, imm_get_hash, imm_compare);
 
-		vector_imm_defs = Hash_NewTable (16381, 0, imm_free, &vector_imm_defs);
-		Hash_SetHashCompare (vector_imm_defs, imm_get_hash, imm_compare);
-
-		entity_imm_defs = Hash_NewTable (16381, 0, imm_free, &entity_imm_defs);
-		Hash_SetHashCompare (entity_imm_defs, imm_get_hash, imm_compare);
-
-		field_imm_defs = Hash_NewTable (16381, 0, imm_free, &field_imm_defs);
-		Hash_SetHashCompare (field_imm_defs, imm_get_hash, imm_compare);
-
-		func_imm_defs = Hash_NewTable (16381, 0, imm_free, &func_imm_defs);
-		Hash_SetHashCompare (func_imm_defs, imm_get_hash, imm_compare);
-
-		pointer_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &pointer_imm_defs);
-		Hash_SetHashCompare (pointer_imm_defs, imm_get_hash, imm_compare);
-
-		quaternion_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &quaternion_imm_defs);
-		Hash_SetHashCompare (quaternion_imm_defs, imm_get_hash, imm_compare);
-
-		integer_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &integer_imm_defs);
-		Hash_SetHashCompare (integer_imm_defs, imm_get_hash, imm_compare);
+		value_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&value_imm_defs, 0);
+		Hash_SetHashCompare (value_imm_defs, imm_get_hash, imm_compare);
 	}
 
 	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
 
 	memset (&zero_val, 0, sizeof (zero_val));
 	make_def_imm (def, string_imm_defs, &zero_val);
-	make_def_imm (def, float_imm_defs, &zero_val);
-	make_def_imm (def, entity_imm_defs, &zero_val);
-	make_def_imm (def, pointer_imm_defs, &zero_val);
-	make_def_imm (def, integer_imm_defs, &zero_val);
+	make_def_imm (def, fldptr_imm_defs, &zero_val);
+	make_def_imm (def, value_imm_defs, &zero_val);
 }

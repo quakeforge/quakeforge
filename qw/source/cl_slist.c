@@ -68,9 +68,9 @@
 #include "QF/va.h"
 
 #include "qw/bothdefs.h"
-#include "cl_main.h"
-#include "cl_slist.h"
-#include "client.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_slist.h"
+#include "qw/include/client.h"
 
 typedef struct server_entry_s {
 	char *server;
@@ -90,10 +90,42 @@ server_entry_t *fav_slist;
 int which_slist;
 int slist_last_details;
 
-cvar_t *sl_sortby;
-cvar_t *sl_filter;
-cvar_t *sl_game;
-cvar_t *sl_ping;
+int sl_sortby;
+static cvar_t sl_sortby_cvar = {
+	.name = "sl_sortby",
+	.description =
+		"0 = sort by name, 1 = sort by ping",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &sl_sortby },
+};
+int sl_filter;
+static cvar_t sl_filter_cvar = {
+	.name = "sl_filter",
+	.description =
+		"enable server filter",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sl_filter },
+};
+char *sl_game;
+static cvar_t sl_game_cvar = {
+	.name = "sl_game",
+	.description =
+		"sets the serverlist game filter",
+	.default_value = "",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &sl_game },
+};
+int sl_ping;
+static cvar_t sl_ping_cvar = {
+	.name = "sl_ping",
+	.description =
+		"sets the serverlist ping filter",
+	.default_value = "",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &sl_ping },
+};
 
 
 static void
@@ -119,7 +151,6 @@ SL_Add (server_entry_t *start, const char *ip, const char *desc)
 {
 	server_entry_t *p;
 
-	p = start;
 	if (!start) {						// Nothing at beginning of list,
 										// create it
 		start = calloc (1, sizeof (server_entry_t));
@@ -226,19 +257,19 @@ SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 static int
 SL_CheckFilter (server_entry_t *sl_filteritem)
 {
-	if (!sl_filter->int_val)
+	if (!sl_filter)
 		return (1);
 	if (!sl_filteritem->status)
 		return (0);
-	if (strlen (sl_game->string)) {
+	if (strlen (sl_game)) {
 		if (strcasecmp (Info_ValueForKey (sl_filteritem->status, "*gamedir"),
-						sl_game->string) != 0)
+						sl_game) != 0)
 			return (0);
 	}
-	if (sl_ping->int_val) {
+	if (sl_ping) {
 		if (!sl_filteritem->pongback)
 			return (0);
-		if (((int) (sl_filteritem->pongback * 1000)) >= sl_ping->int_val)
+		if (((int) (sl_filteritem->pongback * 1000)) >= sl_ping)
 			return (0);
 	}
 	return (1);
@@ -315,7 +346,7 @@ SL_Shutdown (void)
 		SL_Del_All (all_slist);
 }
 
-static char *
+static __attribute__((pure)) char *
 gettokstart (char *str, int req, char delim)
 {
 	char       *start = str;
@@ -325,7 +356,7 @@ gettokstart (char *str, int req, char delim)
 		start++;
 	}
 	if (*start == '\0')
-		return '\0';
+		return 0;
 	while (tok < req) {					// Stop when we get to the requested
 										// token
 		if (*++start == delim) {		// Increment pointer and test
@@ -335,20 +366,20 @@ gettokstart (char *str, int req, char delim)
 			tok++;
 		}
 		if (*start == '\0') {
-			return '\0';
+			return 0;
 		}
 	}
 	return start;
 }
 
-static int
+static __attribute__((pure)) int
 gettoklen (char *str, int req, char delim)
 {
 	char       *start = 0;
 	int         len = 0;
 
 	start = gettokstart (str, req, delim);
-	if (start == '\0') {
+	if (*start == '\0') {
 		return 0;
 	}
 	while (*start != delim && *start != '\0') {
@@ -374,7 +405,7 @@ SL_SortEntry (server_entry_t *start)
 		return;
 
 	for (q = start->next; q; q = q->next) {
-		if (sl_sortby->int_val) {
+		if (sl_sortby) {
 			if ((q->pongback) && (start->pongback) && (start->pongback >
 													   q->pongback)) {
 				SL_Swap (start, q);
@@ -397,7 +428,7 @@ SL_SortEntry (server_entry_t *start)
 }
 
 static void
-SL_Sort (cvar_t *var)
+SL_Sort (void *data, const cvar_t *cvar)
 {
 	server_entry_t *p;
 
@@ -414,7 +445,7 @@ SL_Con_List (server_entry_t *sldata)
 	int serv;
 	server_entry_t *cp;
 
-	SL_Sort (sl_sortby);
+	SL_Sort (0, 0);
 
 	for (serv = 0; serv < SL_Len (sldata); serv++) {
 		cp = SL_Get_By_Num (sldata, serv);
@@ -521,7 +552,7 @@ SL_Switch (void)
 		slist = fav_slist;
 		which_slist = 0;
 	}
-	SL_Sort (sl_sortby);
+	SL_Sort (0, 0);
 	return (which_slist);
 }
 
@@ -576,7 +607,7 @@ MSL_ParseServerList (const char *msl_data)
 	unsigned int msl_ptr;
 
 	for (msl_ptr = 0; msl_ptr < strlen (msl_data); msl_ptr = msl_ptr + 6) {
-		slist = SL_Add (slist, va ("%i.%i.%i.%i:%i",
+		slist = SL_Add (slist, va (0, "%i.%i.%i.%i:%i",
 								   (byte) msl_data[msl_ptr],
 								   (byte) msl_data[msl_ptr+1],
 								   (byte) msl_data[msl_ptr+2],
@@ -639,14 +670,10 @@ SL_Init (void)
 	which_slist = 0;
 	Cmd_AddCommand ("slist", SL_Command, "console commands to access server "
 					"list\n");
-	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, SL_Sort, "0 = sort "
-						  "by name, 1 = sort by ping");
-	sl_filter = Cvar_Get ("sl_filter", "0", CVAR_NONE, NULL, "enable server "
-						  "filter");
-	sl_game = Cvar_Get ("sl_game", "", CVAR_ARCHIVE, NULL, "sets the "
-						"serverlist game filter");
-	sl_ping = Cvar_Get ("sl_ping", "", CVAR_ARCHIVE, NULL, "sets the "
-						"serverlist ping filter");
+	Cvar_Register (&sl_sortby_cvar, SL_Sort, 0);
+	Cvar_Register (&sl_filter_cvar, 0, 0);
+	Cvar_Register (&sl_game_cvar, 0, 0);
+	Cvar_Register (&sl_ping_cvar, 0, 0);
 }
 
 int

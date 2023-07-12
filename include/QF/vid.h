@@ -25,60 +25,45 @@
 
 */
 
-#ifndef __vid_h_
-#define __vid_h_
+#ifndef __QF_vid_h
+#define __QF_vid_h
 
+#include "QF/listener.h"
 #include "QF/qtypes.h"
-#include "QF/vrect.h"
 
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
 typedef struct {
-	qboolean		 initialized;
-	qboolean		 is8bit;
-	void			*buffer;		// invisible buffer
-	short			*zbuffer;
-	void			*surfcache;
+	bool			 initialized;
+	bool			 is8bit;
 	byte			*gammatable;	// 256
-	byte            *basepal;		// 256 * 3
+	const byte      *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
+	byte            *palette32;		// 256 * 4 includes alpha
 	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
-	int				 rowbytes;		// may be > width if displayed in a window
-	int				 width;
-	int				 height;
-	float			 aspect;	// width / height -- < 1 is taller than wide
+	unsigned		 width;
+	unsigned		 height;
 	int				 numpages;
-	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
-	qboolean		 cshift_changed;
-	quat_t           cshift_color;
-	void			*conbuffer;
-	int				 conrowbytes;
-	int				 conwidth;
-	int				 conheight;
-	byte			*direct;		// direct drawing to framebuffer, if not
-									//  NULL
-	int			   (*surf_cache_size)(int width, int height);
-	void		   (*flush_caches)(void);
-	void		   (*init_caches)(void *cache, int size);
-	void		   (*do_screen_buffer)(void);
-	void           (*set_palette)(const byte *palette);
+	bool			 recalc_refdef;	// if true, recalc vid-based stuff
+	struct vid_internal_s *vid_internal;
 
-	// gl stuff
-	void           (*load_gl)(void);
-	void           (*init_gl)(void);
-	void          *(*get_proc_address)(const char *name, qboolean crit);
-	void           (*end_rendering)(void);
+	struct viddef_listener_set_s *onPaletteChanged;
+	struct viddef_listener_set_s *onVidResize;
 } viddef_t;
+
+typedef struct viddef_listener_set_s LISTENER_SET_TYPE (viddef_t)
+	viddef_listener_set_t;
+typedef void (*viddef_listener_t) (void *data, const viddef_t *viddef);
 
 #define viddef (*r_data->vid)
 
 extern unsigned int 	d_8to24table[256];	//FIXME nq/qw uses
 
-extern qboolean			vid_gamma_avail;
+extern bool				vid_gamma_avail;
 
 void VID_Init_Cvars (void);
 
@@ -86,7 +71,14 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
-void VID_Shutdown (void);
+void VID_SetPalette (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
+void VID_ClearMemory (void);
 
-#endif	// __vid_h_
+void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
+void VID_OnPaletteChange_RemoveListener (viddef_listener_t listener,
+										 void *data);
+void VID_OnVidResize_AddListener (viddef_listener_t listener, void *data);
+void VID_OnVidResize_RemoveListener (viddef_listener_t listener, void *data);
+
+#endif//__QF_vid_h

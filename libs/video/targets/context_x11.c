@@ -55,11 +55,6 @@
 
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
-# ifdef DGA_OLD_HEADERS
-#  include <X11/extensions/xf86vmstr.h>
-# else
-#  include <X11/extensions/xf86vmproto.h>
-# endif
 #endif
 
 #include "QF/cmd.h"
@@ -71,12 +66,15 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "QF/input/event.h"
+
 #include "context_x11.h"
 #include "dga_check.h"
+#include "in_x11.h"
 #include "vid_internal.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
-qboolean	oktodraw = false;
+bool		oktodraw = false;
 int 		x_shmeventtype;
 
 static int	x_disp_ref_count = 0;
@@ -84,6 +82,8 @@ static Cursor   nullcursor = None;
 
 Display 	*x_disp = NULL;
 int 		x_screen;
+int			x_width;
+int			x_height;
 Window		x_root = None;
 XVisualInfo *x_visinfo;
 Visual		*x_vis;
@@ -92,19 +92,19 @@ Colormap	x_cmap;
 Time 		x_time;
 Time		x_mouse_time;
 
-qboolean    x_have_focus = false;
+bool        x_have_focus = false;
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
 static int		nummodes;
 static int		original_mode = 0;
 static vec3_t	x_gamma = {-1, -1, -1};
-static qboolean	vidmode_avail = false;
+static bool		vidmode_avail = false;
 #endif
 
-static qboolean	vidmode_active = false;
+static bool		vidmode_active = false;
 
-static qboolean    vid_context_created = false;
+static bool        vid_context_created = false;
 static int      pos_x, pos_y;
 
 #ifdef HAVE_VIDMODE
@@ -114,7 +114,7 @@ static int	xss_blanking;
 static int	xss_exposures;
 #endif
 
-static qboolean	accel_saved = false;
+static bool		accel_saved = false;
 static int	accel_numerator;
 static int	accel_denominator;
 static int	accel_threshold;
@@ -124,6 +124,17 @@ static int	accel_threshold;
 #define _NET_WM_STATE_TOGGLE 2
 static Atom x_net_state;
 static Atom x_net_fullscreen;
+
+static int x11_vidmode;
+static cvar_t x11_vidmode_cvar = {
+	.name = "x11_vidmode",
+	.description =
+		"Use x11 vidmode extension to set video mode (not recommended for "
+		"modern systems)",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &x11_vidmode },
+};
 
 static void
 set_fullscreen (int full)
@@ -160,19 +171,31 @@ configure_notify (XEvent *event)
 	if (vidmode_active)
 		X11_ForceViewPort ();
 #endif
-	Sys_MaskPrintf (SYS_VID,
+	Sys_MaskPrintf (SYS_vid,
 					"ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) "
 					"%d %ld %d\n",
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
 					c->width, c->height, c->border_width, c->above,
 					c->override_redirect);
+	IE_event_t  ie_event = {
+		.type = ie_app_window,
+		.when = Sys_LongTime (),
+		.app_window = {
+			.xpos = c->x,
+			.ypos = c->y,
+			.xlen = c->width,
+			.ylen = c->height,
+		},
+	};
+	IE_Send_Event (&ie_event);
+	VID_SetWindowSize (c->width, c->height);
 }
 
-qboolean
+bool
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
-		Sys_MaskPrintf (SYS_VID, "event: %d, LASTEvent: %d\n", event,
+		Sys_MaskPrintf (SYS_vid, "event: %d, LASTEvent: %d\n", event,
 						LASTEvent);
 		return false;
 	}
@@ -184,7 +207,7 @@ X11_AddEvent (int event, void (*event_handler) (XEvent *))
 	return true;
 }
 
-qboolean
+bool
 X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent)
@@ -272,6 +295,8 @@ X11_OpenDisplay (void)
 										False);
 
 		x_screen = DefaultScreen (x_disp);
+		x_width = DisplayWidth (x_disp, x_screen);
+		x_height = DisplayHeight (x_disp, x_screen);
 		x_root = RootWindow (x_disp, x_screen);
 
 		XSynchronize (x_disp, true);		// only for debugging
@@ -309,16 +334,16 @@ void
 X11_CreateNullCursor (void)
 {
 	Pixmap		cursormask;
-	XGCValues	xgc;
+	XGCValues	xgc = { };
 	GC			gc;
-	XColor		dummycolour;
+	XColor		dummycolour = { };
 
 	if (nullcursor != None)
 		return;
 
 	cursormask = XCreatePixmap (x_disp, x_root, 1, 1, 1);
-	xgc.function = GXclear;
 
+	xgc.function = GXclear;
 	gc = XCreateGC (x_disp, cursormask, GCFunction, &xgc);
 
 	XFillRectangle (x_disp, cursormask, gc, 0, 0, 1, 1);
@@ -333,29 +358,6 @@ X11_CreateNullCursor (void)
 	XDefineCursor (x_disp, x_win, nullcursor);
 }
 
-static Bool
-check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
-{
-	XMotionEvent *me = &ev->xmotion;
-	if (ev->type != MotionNotify)
-		return False;
-	if (me->x != viddef.width / 2 || me->y != viddef.height / 2)
-		return False;
-	return True;
-}
-
-static void
-X11_SetMouse (void)
-{
-	XEvent	ev;
-
-	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
-	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
-				  viddef.width / 2, viddef.height / 2);
-	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
-	x_mouse_time = ev.xmotion.time;
-}
-
 #ifdef HAVE_VIDMODE
 static vec3_t *
 X11_GetGamma (void)
@@ -363,7 +365,7 @@ X11_GetGamma (void)
 	XF86VidModeGamma	xgamma;
 	vec3_t				*temp;
 
-	if (vid_gamma_avail && vid_system_gamma->int_val) {
+	if (vid_gamma_avail && vid_system_gamma) {
 		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
 			if ((temp = malloc (sizeof (vec3_t)))) {
 				(*temp)[0] = xgamma.red;
@@ -387,8 +389,12 @@ X11_SetVidMode (int width, int height)
 	if (vidmode_active)
 		return;
 
+	if (!x11_vidmode) {
+		return;
+	}
+
 	if (str && (tolower (*str) == 'f')) {
-		Cvar_Set (vid_fullscreen, "1");
+		Cvar_Set ("vid_fullscreen", "1");
 	}
 
 #ifdef HAVE_VIDMODE
@@ -406,7 +412,7 @@ X11_SetVidMode (int width, int height)
 			vid_gamma_avail = true;
 
 			temp = X11_GetGamma ();
-			if (temp && temp[0] > 0) {
+			if (temp && (*temp)[0] > 0) {
 				x_gamma[0] = (*temp)[0];
 				x_gamma[1] = (*temp)[1];
 				x_gamma[2] = (*temp)[2];
@@ -416,29 +422,33 @@ X11_SetVidMode (int width, int height)
 
 		}
 
-		if (vid_fullscreen->int_val && vidmode_avail) {
+		if (vid_fullscreen && vidmode_avail) {
 			int 				i, dotclock;
 			int 				best_mode = 0;
-			qboolean			found_mode = false;
+			bool				found_mode = false;
 			XF86VidModeModeLine orig_data;
 
 			XF86VidModeGetAllModeLines (x_disp, x_screen, &nummodes,
 										&vidmodes);
 			XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
 
-			if (developer->int_val & SYS_VID) {
-				Sys_Printf ("VID: %d modes\n", nummodes);
-				for (i = 0; i < nummodes; i++) {
-					Sys_Printf ("VID: %xx%d\n", vidmodes[i]->hdisplay,
-								vidmodes[i]->vdisplay);
-				}
-			}
-
+			Sys_MaskPrintf (SYS_vid, "VID: %d modes\n", nummodes);
+			original_mode = -1;
 			for (i = 0; i < nummodes; i++) {
-				if ((vidmodes[i]->hdisplay == orig_data.hdisplay) &&
-						(vidmodes[i]->vdisplay == orig_data.vdisplay)) {
+				if (original_mode == -1
+					&& (vidmodes[i]->hdisplay == orig_data.hdisplay) &&
+					   (vidmodes[i]->vdisplay == orig_data.vdisplay)) {
 					original_mode = i;
-					break;
+				}
+				if (developer & SYS_vid) {
+					Sys_Printf ("VID:%c%dx%d\n",
+								original_mode == i ? '*' : ' ',
+								vidmodes[i]->hdisplay, vidmodes[i]->vdisplay);
+					Sys_Printf ("\t%d %d %d %d:%d %d %d:%d\n",
+								vidmodes[i]->hsyncstart, vidmodes[i]->hsyncend,
+								vidmodes[i]->htotal, vidmodes[i]->hskew,
+								vidmodes[i]->vsyncstart, vidmodes[i]->vsyncend,
+								vidmodes[i]->vtotal, vidmodes[i]->flags);
 				}
 			}
 
@@ -452,11 +462,13 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Sys_MaskPrintf (SYS_VID, "VID: Chose video mode: %dx%d\n",
+				Sys_MaskPrintf (SYS_vid, "VID: Chose video mode: %dx%d\n",
 								viddef.width, viddef.height);
 
+				if (0) {
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
+				}
 				vidmode_active = true;
 				X11_SetScreenSaver ();
 			} else {
@@ -469,22 +481,19 @@ X11_SetVidMode (int width, int height)
 #endif
 }
 
-static void
-X11_UpdateFullscreen (cvar_t *fullscreen)
+void
+X11_UpdateFullscreen (int fullscreen)
 {
 	if (!vid_context_created)
 		return;
 
-	if (!fullscreen->int_val) {
+	if (!fullscreen) {
 		X11_RestoreVidMode ();
 		set_fullscreen (0);
 		IN_UpdateGrab (in_grab);
-		X11_SetMouse ();
-		return;
 	} else {
 		set_fullscreen (1);
 		X11_SetVidMode (viddef.width, viddef.height);
-		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
 	}
 }
@@ -501,11 +510,7 @@ X11_Init_Cvars (void)
 {
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-							   &X11_UpdateFullscreen,
-							   "Toggles fullscreen game mode");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
+	Cvar_Register (&x11_vidmode_cvar, 0, 0);
 }
 
 void
@@ -515,7 +520,6 @@ X11_CreateWindow (int width, int height)
 	unsigned long	mask;
 	XSetWindowAttributes	attr;
 	XClassHint	   *ClassHint;
-	XSizeHints	   *SizeHints;
 
 	X11_AddEvent (ConfigureNotify, configure_notify);
 
@@ -523,28 +527,28 @@ X11_CreateWindow (int width, int height)
 	attr.background_pixel = 0;
 	attr.border_pixel = 0;
 	attr.colormap = x_cmap;
-	if (!attr.colormap)
+	if (!attr.colormap) {
 		attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
-	attr.event_mask = X11_MASK;
+	}
+	attr.event_mask = X11_MASK | IN_X11_Preinit ();
+
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+
 
 	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,
 						   x_visinfo->depth, InputOutput, x_vis, mask, &attr);
+	IN_X11_Postinit ();
 
 	// Set window size hints
-	SizeHints = XAllocSizeHints ();
-	if (SizeHints) {
-		SizeHints->flags = (PMinSize | PMaxSize);
-		SizeHints->min_width = width;
-		SizeHints->min_height = height;
-		SizeHints->max_width = width;
-		SizeHints->max_height = height;
-		XSetWMNormalHints (x_disp, x_win, SizeHints);
+	XSizeHints	    SizeHints = {
+		.flags = PMinSize,
+		.min_width = 32,
+		.min_height = 20,
+	};
+	XSetWMNormalHints (x_disp, x_win, &SizeHints);
 
-		XFree (SizeHints);
-	}
 	// Set window title
-	X11_SetCaption (va ("%s", PACKAGE_STRING));
+	X11_SetCaption (va (0, "%s", PACKAGE_STRING));
 
 	// Set icon name
 	XSetIconName (x_disp, x_win, PACKAGE_NAME);
@@ -565,10 +569,9 @@ X11_CreateWindow (int width, int height)
 	X11_WaitForEvent (ConfigureNotify);
 
 	vid_context_created = true;
-	if (vid_fullscreen->int_val) {
-		X11_UpdateFullscreen (vid_fullscreen);
-	}
 	XRaiseWindow (x_disp, x_win);
+	X11_WaitForEvent (VisibilityNotify);
+	X11_UpdateFullscreen (vid_fullscreen);
 }
 
 void
@@ -577,7 +580,7 @@ X11_RestoreVidMode (void)
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
 		X11_RestoreScreenSaver ();
-		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
+		//XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 		vidmode_active = false;
 	}
@@ -602,19 +605,19 @@ X11_ForceViewPort (void)
 #endif
 }
 
-qboolean
+bool
 X11_SetGamma (double gamma)
 {
 #ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 
-	if (vid_gamma_avail && vid_system_gamma->int_val && x_have_focus) {
+	if (vid_gamma_avail && vid_system_gamma && x_have_focus) {
 		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
 			return true;
 	}
-# endif
+#else
+	Sys_MaskPrintf (SYS_vid, "X11_SetGamma: cannot adjust gamma\n");
 #endif
 	return false;
 }
@@ -623,7 +626,6 @@ void
 X11_RestoreGamma (void)
 {
 #ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 
 	if (vid_gamma_avail && x_gamma[0] > 0) {
@@ -632,7 +634,8 @@ X11_RestoreGamma (void)
 		xgamma.blue = x_gamma[2];
 		XF86VidModeSetGamma (x_disp, x_screen, &xgamma);
 	}
-# endif
+#else
+	Sys_MaskPrintf (SYS_vid, "X11_RestoreGamma: cannot adjust gamma\n");
 #endif
 }
 
@@ -661,3 +664,6 @@ X11_RestoreMouseAcceleration (void)
 						  accel_denominator, accel_threshold);
 	accel_saved = false;
 }
+
+extern int x11_force_link;
+static __attribute__((used)) int *context_x11_force_link = &x11_force_link;

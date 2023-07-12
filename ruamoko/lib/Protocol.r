@@ -1,4 +1,4 @@
-#include "Protocol.h"
+#include <Protocol.h>
 
 struct obj_protocol_list {
 	struct obj_protocol_list *next;

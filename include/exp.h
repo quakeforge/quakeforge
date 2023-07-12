@@ -80,7 +80,7 @@ typedef union token_u
 
 extern exp_error_t EXP_ERROR;
 
-const char *EXP_GetErrorMsg (void);
+const char *EXP_GetErrorMsg (void) __attribute__((pure));
 token *EXP_ParseString (char *str);
 exp_error_t EXP_SimplifyTokens (token *chain);
 void EXP_RemoveToken (token *tok);

@@ -39,7 +39,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/cbuf.h"
 #include "QF/hash.h"
+#include "QF/llist.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/gib.h"
@@ -125,7 +127,8 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 {
 	gib_methodtab_t *m;
 	gib_method_t *method;
-	hashtab_t *new = Hash_NewTable (1024, GIB_Method_Get_Key, GIB_Method_Free, 0);
+	hashtab_t *new = Hash_NewTable (1024, GIB_Method_Get_Key,
+									GIB_Method_Free, 0, 0);
 
 	for (m = methods; m->name; m++) {
 		method = malloc (sizeof (gib_method_t));
@@ -190,7 +193,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 */
 
 gib_object_t *
-GIB_Object_Create (const char *classname, qboolean classobj)
+GIB_Object_Create (const char *classname, bool classobj)
 {
 	gib_class_t *temp, *class = Hash_Find (gib_classes, classname);
 	gib_object_t *obj;
@@ -204,10 +207,10 @@ GIB_Object_Create (const char *classname, qboolean classobj)
 	obj->data = malloc (sizeof (void *) * (class->depth+1));
 	obj->methods = classobj ? class->class_methods : class->methods;
 	obj->handle = classobj ? 0 : GIB_Handle_New (obj);
-	obj->handstr = strdup (va ("%lu", obj->handle));
+	obj->handstr = strdup (va (0, "%lu", obj->handle));
 	obj->refs = 1;
 	obj->signals = Hash_NewTable (128, GIB_Signal_Get_Key,
-			GIB_Signal_Free, NULL);
+								  GIB_Signal_Free, NULL, 0);
 	obj->slots = llist_new (GIB_Slot_Free, NULL, NULL);
 
 	if (classobj) {
@@ -392,7 +395,8 @@ GIB_Object_Signal_Emit (gib_object_t *sender, int argc, const char **argv)
 void
 GIB_Object_Init (void)
 {
-	gib_classes = Hash_NewTable (1024, GIB_Class_Get_Key, GIB_Class_Free, 0);
+	gib_classes = Hash_NewTable (1024, GIB_Class_Get_Key,
+								 GIB_Class_Free, 0, 0);
 
 	GIB_Classes_Init ();
 }

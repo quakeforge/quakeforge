@@ -34,8 +34,13 @@
 #include "QF/zone.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
+#include "client/state.h"
+#include "client/view.h"
 
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -62,31 +67,6 @@ typedef struct player_state_s {
 
 } player_state_t;
 
-typedef struct player_info_s {
-	int         userid;
-	struct info_s *userinfo;
-
-	// scoreboard information
-	struct info_key_s *name;
-	struct info_key_s *team;
-	struct info_key_s *chat;
-	float       entertime;
-	int         frags;
-	int         ping;
-	byte        pl;
-
-	// skin information
-	int         topcolor;
-	int         bottomcolor;
-	struct info_key_s *skinname;
-	struct skin_s *skin;
-
-	int         spectator;
-	int         stats[MAX_CL_STATS];	// health, etc
-	int         prevcount;
-} player_info_t;
-
-
 typedef struct {
 	// generated on client side
 	usercmd_t   cmd;		// cmd that generated the frame
@@ -99,7 +79,7 @@ typedef struct {
 												// reflects performing the
 												// usercmd
 	packet_entities_t packet_entities;
-	qboolean    invalid;		// true if the packet_entities delta was invalid
+	bool        invalid;		// true if the packet_entities delta was invalid
 } frame_t;
 
 #define	MAX_DEMOS		8
@@ -155,16 +135,16 @@ typedef struct {
 	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
 	QFile      *demofile;
-	qboolean    demorecording;
-	qboolean    demo_capture;
-	qboolean    demoplayback;
-	qboolean    demoplayback2;
-	qboolean    findtrack;
+	bool        demorecording;
+	int         demo_capture;
+	bool        demoplayback;
+	bool        demoplayback2;
+	bool        findtrack;
 	int         lastto;
 	int         lasttype;
 	int         prevtime;
 	double      basetime;
-	qboolean    timedemo;
+	bool        timedemo;
 	double      td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	double      td_starttime;		// realtime at second frame of timedemo
@@ -195,9 +175,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct {
-	qboolean    loading;
-
+typedef struct client_state_s {
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
@@ -207,40 +185,25 @@ typedef struct {
 	int         prev_sequence;
 
 // information for local display
-	int         stats[MAX_CL_STATS];	// health, etc
+	int         stats[MAX_CL_STATS];	// Health, etc
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
-
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
-
-// the client maintains its own idea of view angles, which are sent to the
-// server each frame.  And reset only at level change and teleport times
-	vec3_t      viewangles;
 
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
-	vec3_t      simorg;
-	vec3_t      simvel;
-	vec3_t      simangles;
+// the client maintains its own idea of view angles, which are sent to the
+// server each frame.  And reset only at level change and teleport times
+	viewstate_t viewstate;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
-	vec3_t      punchangle;		// temporary view kick from weapon firing
+	bool        paused;			// Sent over by server
+	float       crouch;			// Local amount for smoothing stepups
+	bool        inwater;
 
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
-
-	qboolean    paused;			// Sent over by server
-	int         onground;		// -1 when in air
-	float       viewheight;
-	float       crouch;			// local amount for smoothing stepups
-
-	int         intermission;	// don't change view angle, full screen, etc
-	int         completed_time;	// latched from time at intermission start
+	int         intermission;	// Don't change view angle, full screen, etc
+	int         completed_time;	// Latched from time at intermission start
 
 	int         servercount;	// server identification for prespawns
 	struct info_s *serverinfo;
@@ -250,45 +213,38 @@ typedef struct {
 								// can't render a frame yet
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;
 
 /* information that is static for the entire time connected to a server */
 
 	char        model_name[MAX_MODELS][MAX_QPATH];
 	char        sound_name[MAX_SOUNDS][MAX_QPATH];
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
 	int         nummodels;
 	int         numsounds;
 
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
-
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
 	int         playernum;
-	int         viewentity;
+	int         viewentity;		// cl_entitites[cl.viewentity] = player
+	unsigned    protocol;
 	float       stdver;
+	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
-	int         chase;
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
-	int         watervis;
 	int         fpd;
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
-	int         num_entities;	// stored bottom up in cl_entities array
-	entity_t    viewent;		// the weapon model
+	int         num_entities;	// held in cl_entities array
 
 	int         cdtrack;		// cd audio
 
 // all player information
-	player_info_t players[MAX_CLIENTS];
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
@@ -297,55 +253,32 @@ typedef struct {
 /*
   cvars
 */
-extern	struct cvar_s	*r_netgraph;
-extern	struct cvar_s	*r_netgraph_alpha;
-extern	struct cvar_s	*r_netgraph_box;
-extern	struct cvar_s	*cl_upspeed;
-extern	struct cvar_s	*cl_forwardspeed;
-extern	struct cvar_s	*cl_backspeed;
-extern	struct cvar_s	*cl_sidespeed;
+extern int cl_netgraph;
+extern int cl_netgraph_height;
+extern float cl_netgraph_alpha;
+extern int cl_netgraph_box;
 
-extern	struct cvar_s	*cl_movespeedkey;
+extern int cl_draw_locs;
+extern int cl_shownet;
 
-extern	struct cvar_s	*cl_yawspeed;
-extern	struct cvar_s	*cl_pitchspeed;
+extern char *cl_name;
 
-extern	struct cvar_s	*cl_anglespeedkey;
+extern int cl_model_crcs;
 
-extern	struct cvar_s	*cl_draw_locs;
-extern	struct cvar_s	*cl_shownet;
-extern	struct cvar_s	*hud_sbar;
-extern	struct cvar_s	*hud_sbar_separator;
-extern	struct cvar_s	*hud_swap;
+extern float rate;
 
-extern	struct cvar_s	*cl_pitchdriftspeed;
-extern	struct cvar_s	*lookspring;
+extern char *skin;
 
-extern	struct cvar_s	*m_pitch;
-extern	struct cvar_s	*m_yaw;
-extern	struct cvar_s	*m_forward;
-extern	struct cvar_s	*m_side;
+extern float cl_fb_players;
 
-extern	struct cvar_s	*cl_name;
-
-extern	struct cvar_s	*cl_model_crcs;
-
-extern	struct cvar_s	*rate;
-
-extern	struct cvar_s	*hud_ping;
-extern	struct cvar_s	*hud_pl;
-
-extern	struct cvar_s	*skin;
-
-extern	struct cvar_s	*cl_fb_players;
+extern int hud_scoreboard_uid;
 
 extern	client_state_t	cl;
 
-extern	entity_t		*cl_static_entities;
-extern	entity_t		cl_entities[512];
-extern	byte			cl_entity_valid[2][512];
+extern entity_t cl_entities[512];
+extern byte cl_entity_valid[2][512];
 
-extern	qboolean	nomaster;
+extern bool nomaster;
 extern char	*server_version;	// version of server we connected to
 
 extern	double		realtime;
@@ -354,16 +287,14 @@ extern	int			fps_count;
 extern struct cbuf_s *cl_cbuf;
 extern struct cbuf_s *cl_stbuf;
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-void CL_NetGraph (void);
-void CL_UpdateScreen (double realtime);
+void CL_NetGraph_Init (void);
+void CL_NetGraph_Init_Cvars (void);
+void CL_NetUpdate (void);
 
 void CL_SetState (cactive_t state);
-
-void V_ParseDamage (void);
-
-void V_PrepBlend (void);
 
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);
@@ -372,7 +303,5 @@ void CL_RSShot_f (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
-
-extern struct dstring_s *centerprint;
 
 #endif // _CLIENT_H

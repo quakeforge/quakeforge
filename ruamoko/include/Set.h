@@ -1,8 +1,8 @@
 #ifndef __ruamoko_Set_h
 #define __ruamoko_Set_h
 
-typedef struct set_s *set_t;
-typedef struct set_iter_s *set_iter_t;
+typedef struct set_s set_t;
+typedef struct set_iter_s set_iter_t;
 
 @extern void set_del_iter (set_iter_t *set_iter);
 @extern unsigned set_iter_element (set_iter_t *set_iter);
@@ -25,15 +25,18 @@ typedef struct set_iter_s *set_iter_t;
 @extern int set_is_equivalent (set_t *s1, set_t *s2);
 @extern int set_is_subset (set_t *set, set_t *sub);
 @extern int set_is_member (set_t *set, unsigned x);
-@extern unsigned set_size (set_t *set);
+@extern unsigned set_count (set_t *set);
 @extern set_iter_t *set_first (set_t *set);
 @extern set_iter_t *set_next (set_iter_t *set_iter);
 @extern string set_as_string (set_t *set);
 
 #include <Object.h>
 
+@class Set;
+
 @interface SetIterator: Object
 {
+	Set        *set;
 	set_iter_t *iter;
 }
 - (SetIterator *) next;

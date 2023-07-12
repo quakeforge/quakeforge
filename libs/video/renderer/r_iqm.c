@@ -43,29 +43,30 @@
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 
 float
-R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
+R_IQMGetLerpedFrames (animation_t *animation, iqm_t *iqm)
 {
-	int         frame = ent->frame;
+	int         frame = animation->frame;
 	float       time, fullinterval;
 	iqmanim    *anim;
 
 	if (!iqm->num_anims)
-		return R_EntityBlend (ent, 0, 1.0 / 25.0);
+		return R_EntityBlend (animation, 0, 1.0 / 25.0);
 	if (frame >= iqm->num_anims || frame < 0) {
-		Sys_MaskPrintf (SYS_DEV, "R_IQMGetLerpedFrames: no such frame %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
 						frame);
 		frame = 0;
 	}
 	anim = &iqm->anims[frame];
 	fullinterval = anim->num_frames / anim->framerate;
-	time = vr_data.realtime + currententity->syncbase;
+	time = vr_data.realtime + animation->syncbase;
 	time -= ((int) (time / fullinterval)) * fullinterval;
 	frame = (int) (time * anim->framerate) + anim->first_frame;
-	return R_EntityBlend (ent, frame, 1.0 / anim->framerate);
+	return R_EntityBlend (animation, frame, 1.0 / anim->framerate);
 }
 
 iqmframe_t *
@@ -75,7 +76,7 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 	iqmframe_t *frame;
 	int         i;
 
-	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t) + extra);
+	frame = Hunk_TempAlloc (0, iqm->num_joints * sizeof (iqmframe_t) + extra);
 	if (iqm->num_frames) {
 #if 0
 		for (i = 0; i < iqm->num_joints; i++) {
@@ -99,7 +100,7 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 	} else {
 #if 0
 		for (i = 0; i < iqm->num_joints; i++) {
-			QuatSet (1, 0, 0, 0, frame[i].rt.q0.q);
+			QuatSet (0, 0, 0, 1, frame[i].rt.q0.q);
 			QuatSet (0, 0, 0, 0, frame[i].rt.qe.q);
 			QuatSet (0, 0, 0, 0, frame[i].shear);
 			QuatSet (1, 1, 1, 0, frame[i].scale);

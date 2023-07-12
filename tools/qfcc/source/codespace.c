@@ -39,9 +39,9 @@
 #endif
 #include <stdlib.h>
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
-#include "codespace.h"
+#include "tools/qfcc/include/codespace.h"
 
 codespace_t *
 codespace_new (void)

@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -220,14 +217,14 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 	set_vertex
 
 	add the vertex to the polygon describing the face of the cube. Offsets
-	the vertex relative to r_refdef.vieworg so the cube is always centered
+	the vertex relative to r_refdef.frame.position so the cube is always centered
 	on the player and also calculates the texture coordinates of the vertex
 	(wish I could find a cleaner way of calculating s and t).
 */
 static void
 set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 {
-	VectorAdd (v, r_refdef.vieworg, box->face[face].poly.verts[ind]);
+	VectorAdd (v, r_refdef.frame.position, box->face[face].poly.verts[ind]);
 	switch (face) {
 		case 0:
 			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
@@ -370,7 +367,6 @@ process_corners (struct box_def *box)
 	for (i = 0; i < 6; i++) {
 		if (max_visit < box->face_visits[i]) {
 			max_visit = box->face_visits[i];
-			center = i;
 		}
 	}
 
@@ -602,14 +598,14 @@ R_DrawSkyBoxPoly (const glpoly_t *poly)
 		Sys_Error ("too many verts!");
 	}
 
-	VectorSubtract (poly->verts[poly->numverts - 1], r_refdef.vieworg, last_v);
+	VectorSubtract (poly->verts[poly->numverts - 1], r_refdef.frame.position, last_v);
 	prev_face = determine_face (last_v);
 
 	box.visited_faces[0].face = prev_face;
 	box.face_count = 1;
 
 	for (i = 0; i < poly->numverts; i++) {
-		VectorSubtract (poly->verts[i], r_refdef.vieworg, v);
+		VectorSubtract (poly->verts[i], r_refdef.frame.position, v);
 		face = determine_face (v);
 		if (face != prev_face) {
 			if ((face_axis[face]) == (face_axis[prev_face])) {
@@ -645,13 +641,14 @@ EmitSkyPolys (float speedscale, const instsurf_t *sc)
 	int         i;
 	glpoly_t   *p;
 	vec3_t      dir;
-	msurface_t *fa = sc->surface;
+	msurface_t *surf = sc->surface;
+	vec4f_t     origin = r_refdef.frame.position;
 
 	//FIXME transform/color
-	for (p = fa->polys; p; p = p->next) {
+	for (p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
-			VectorSubtract (v, r_origin, dir);
+			VectorSubtract (v, origin, dir);
 			dir[2] *= 3.0;	// flatten the sphere
 
 			length = DotProduct (dir, dir);
@@ -695,7 +692,7 @@ draw_black_sky_polys (const instsurf_t *sky_chain)
 
 		if (sc->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (sc->transform);
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
 		while (p) {
 			draw_poly (p);
@@ -753,7 +750,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 		sc = sc->tex_chain;
 	}
 
-	if (gl_sky_multipass->int_val) {
+	if (gl_sky_multipass) {
 		sc = sky_chain;
 
 		speedscale = vr_data.realtime / 8;
@@ -781,7 +778,7 @@ draw_z_sky_polys (const instsurf_t *sky_chain)
 
 		if (sc->transform) {
 			qfglPushMatrix ();
-			qfglLoadMatrixf (sc->transform);
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
 		while (p) {
 			draw_poly (p);
@@ -800,19 +797,19 @@ draw_z_sky_polys (const instsurf_t *sky_chain)
 void
 gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 {
-	if (gl_sky_clip->int_val > 2) {
+	if (gl_sky_clip > 2) {
 		draw_black_sky_polys (sky_chain);
 		return;
 	}
 
 	if (gl_skyloaded) {
-		if (gl_sky_clip->int_val) {
+		if (gl_sky_clip) {
 			draw_skybox_sky_polys (sky_chain);
 		}
 		draw_z_sky_polys (sky_chain);
-	} else if (gl_sky_clip->int_val == 2) {
+	} else if (gl_sky_clip == 2) {
 		draw_id_sky_polys (sky_chain);
-	} else if (gl_sky_clip->int_val) {
+	} else if (gl_sky_clip) {
 		// XXX not properly implemented
 		draw_skydome_sky_polys (sky_chain);
 		//draw_z_sky_polys (sky_chain);
@@ -820,11 +817,11 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 		draw_z_sky_polys (sky_chain);
 	}
 
-	if (gl_sky_debug->int_val) {
+	if (gl_sky_debug) {
 		const instsurf_t *sc;
 
 		qfglDisable (GL_TEXTURE_2D);
-		if (gl_sky_debug->int_val & 1) {
+		if (gl_sky_debug & 1) {
 			sc = sky_chain;
 			qfglColor3ub (255, 255, 255);
 			while (sc) {
@@ -832,7 +829,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 
 				if (sc->transform) {
 					qfglPushMatrix ();
-					qfglLoadMatrixf (sc->transform);
+					qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 				}
 				while (p) {
 					int         i;
@@ -849,7 +846,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 				sc = sc->tex_chain;
 			}
 		}
-		if (gl_sky_debug->int_val & 2) {
+		if (gl_sky_debug & 2) {
 			sc = sky_chain;
 			qfglColor3ub (0, 255, 0);
 			qfglBegin (GL_POINTS);
@@ -858,18 +855,18 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 
 				if (sc->transform) {
 					qfglPushMatrix ();
-					qfglLoadMatrixf (sc->transform);
+					qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 				}
 				while (p) {
 					int         i;
 					vec3_t      x, c = { 0, 0, 0 };
 
 					for (i = 0; i < p->numverts; i++) {
-						VectorSubtract (p->verts[i], r_refdef.vieworg, x);
+						VectorSubtract (p->verts[i], r_refdef.frame.position, x);
 						VectorAdd (x, c, c);
 					}
 					VectorScale (c, 1.0 / p->numverts, c);
-					VectorAdd (c, r_refdef.vieworg, c);
+					VectorAdd (c, r_refdef.frame.position, c);
 					qfglVertex3fv (c);
 					p = p->next;
 				}
@@ -879,7 +876,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 			}
 			qfglEnd ();
 		}
-		if (gl_sky_debug->int_val & 4) {
+		if (gl_sky_debug & 4) {
 			if (gl_skyloaded) {
 				int         i, j;
 
@@ -890,7 +887,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 					qfglBegin (GL_LINE_LOOP);
 					for (j = 0; j < 4; j++) {
 						VectorScale (&gl_skyvec[i][j][2], 1.0 / 128.0, v);
-						VectorAdd (v, r_refdef.vieworg, v);
+						VectorAdd (v, r_refdef.frame.position, v);
 						qfglVertex3fv (v);
 					}
 					qfglEnd ();

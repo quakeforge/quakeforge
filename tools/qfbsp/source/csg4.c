@@ -27,13 +27,13 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "csg4.h"
-#include "draw.h"
-#include "merge.h"
-#include "solidbsp.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/merge.h"
+#include "tools/qfbsp/include/solidbsp.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_csg4
 */
@@ -46,7 +46,7 @@
 	tjunction
 */
 
-face_t     *validfaces[MAX_MAP_PLANES];
+visfacetset_t validfaces = DARRAY_STATIC_INIT (1024);
 face_t     *inside, *outside;
 int         brushfaces;
 int         csgfaces;
@@ -128,13 +128,13 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 	\param precedence	XXX
 */
 static void
-ClipInside (int splitplane, int frontside, qboolean precedence)
+ClipInside (int splitplane, int frontside, bool precedence)
 {
 	face_t     *insidelist, *next, *f;
 	face_t     *frags[2];
 	plane_t    *split;
 
-	split = &planes[splitplane];
+	split = &planes.a[splitplane];
 
 	insidelist = NULL;
 	for (f = inside; f; f = next) {
@@ -176,7 +176,7 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 	\param mirror	If true, add extra faces that face the opposite direction.
 */
 static void
-SaveOutside (qboolean mirror)
+SaveOutside (bool mirror)
 {
 	face_t     *f, *next, *newf;
 	int         planenum;
@@ -195,12 +195,12 @@ SaveOutside (qboolean mirror)
 			newf->contents[0] = f->contents[1];
 			newf->contents[1] = f->contents[0];
 
-			validfaces[planenum] = MergeFaceToList (newf,
-													validfaces[planenum]);
+			validfaces.a[planenum] = MergeFaceToList (newf,
+													  validfaces.a[planenum]);
 		}
 
-		validfaces[planenum] = MergeFaceToList (f, validfaces[planenum]);
-		validfaces[planenum] = FreeMergeListScraps (validfaces[planenum]);
+		validfaces.a[planenum] = MergeFaceToList (f, validfaces.a[planenum]);
+		validfaces.a[planenum] = FreeMergeListScraps (validfaces.a[planenum]);
 	}
 }
 
@@ -234,13 +234,12 @@ BuildSurfaces (void)
 {
 	face_t     *count;
 	face_t    **f;
-	int         i;
 	surface_t  *surfhead, *s;
 
 	surfhead = NULL;
 
-	f = validfaces;
-	for (i = 0; i < numbrushplanes; i++, f++) {
+	f = validfaces.a;
+	for (size_t i = 0; i < planes.size; i++, f++) {
 		if (!*f)
 			continue;					// nothing left on this plane
 
@@ -299,12 +298,13 @@ CSGFaces (brushset_t *bs)
 	brush_t    *b1, *b2;
 	face_t     *f;
 	int         i;
-	qboolean    overwrite;
+	bool        overwrite;
 	surface_t  *surfhead;
 
 	qprintf ("---- CSGFaces ----\n");
 
-	memset (validfaces, 0, sizeof (validfaces));
+	DARRAY_RESIZE (&validfaces, planes.size);
+	memset (validfaces.a, 0, validfaces.size * sizeof (validfaces.a[0]));
 
 	csgfaces = brushfaces = csgmergefaces = 0;
 

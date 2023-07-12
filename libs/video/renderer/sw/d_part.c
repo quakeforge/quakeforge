@@ -47,7 +47,7 @@ D_DrawParticle (particle_t *pparticle)
 	int         i, izi, pix, count, u, v;
 
 	// transform point
-	VectorSubtract (pparticle->org, r_origin, local);
+	VectorSubtract (pparticle->pos, r_porigin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
 	transformed[1] = DotProduct (local, r_pup);
@@ -67,7 +67,7 @@ D_DrawParticle (particle_t *pparticle)
 		return;
 	}
 
-	pz = d_pzbuffer + (d_zwidth * v) + u;
+	pz = d_zbuffer + (d_zwidth * v) + u;
 	pdest = d_viewbuffer + d_scantable[v] + u;
 	izi = (int) (zi * 0x8000);
 
@@ -81,81 +81,81 @@ D_DrawParticle (particle_t *pparticle)
 	switch (pix) {
 	case 1:
 		count = 1 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 		}
 		break;
 
 	case 2:
 		count = 2 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 		}
 		break;
 
 	case 3:
 		count = 3 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->color;
+				pdest[2] = pparticle->icolor;
 			}
 		}
 		break;
 
 	case 4:
 		count = 4 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->color;
+				pdest[2] = pparticle->icolor;
 			}
 
 			if (pz[3] <= izi) {
 				pz[3] = izi;
-				pdest[3] = pparticle->color;
+				pdest[3] = pparticle->icolor;
 			}
 		}
 		break;
 
 	default:
 		count = pix << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
 					pz[i] = izi;
-					pdest[i] = pparticle->color;
+					pdest[i] = pparticle->icolor;
 				}
 			}
 		}

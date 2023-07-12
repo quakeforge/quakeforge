@@ -34,7 +34,7 @@
 /** \defgroup nq-net NetQuake network support.
 	\ingroup network
 */
-//@{
+///@{
 
 typedef struct
 {
@@ -56,7 +56,7 @@ typedef struct
 
 /** \name NetHeader flags
 */
-//@{
+///@{
 #define NETFLAG_LENGTH_MASK	0x0000ffff
 #define NETFLAG_DATA		0x00010000
 #define NETFLAG_ACK			0x00020000
@@ -64,7 +64,7 @@ typedef struct
 #define NETFLAG_EOM			0x00080000
 #define NETFLAG_UNRELIABLE	0x00100000
 #define NETFLAG_CTL			0x80000000
-//@}
+///@}
 
 
 #define NET_PROTOCOL_VERSION	3
@@ -86,7 +86,7 @@ typedef struct
 		a full address and port in a string.  It is used for returning the
 		address of a server that is not running locally.
 */
-//@{
+///@{
 
 /** Connect Request:
 	\arg \b string	\c game_name			\em "QUAKE"
@@ -153,7 +153,7 @@ typedef struct
 	\arg \b string	\c value
 */
 #define CCREP_RULE_INFO		0x85
-//@}
+///@}
 
 typedef struct qsocket_s {
 	struct qsocket_s	*next;
@@ -166,9 +166,9 @@ typedef struct qsocket_s {
 
 	/// \name socket status
 	//@{
-	qboolean		disconnected;		///< Socket is not in use.
-	qboolean		canSend;			///< Socket can send a message.
-	qboolean		sendNext;
+	bool			disconnected;		///< Socket is not in use.
+	bool			canSend;			///< Socket can send a message.
+	bool			sendNext;
 	//@}
 
 	/// \name socket drivers
@@ -205,11 +205,11 @@ typedef struct qsocket_s {
 
 /** \name socket management
 */
-//@{
+///@{
 extern qsocket_t	*net_activeSockets;
 extern qsocket_t	*net_freeSockets;
 extern int			net_numsockets;
-//@}
+///@}
 
 #define	MAX_NET_DRIVERS		8
 
@@ -220,12 +220,12 @@ extern int net_driverlevel;
 
 /** \name message statistics
 */
-//@{
+///@{
 extern int		messagesSent;
 extern int		messagesReceived;
 extern int		unreliableMessagesSent;
 extern int		unreliableMessagesReceived;
-//@}
+///@}
 
 /** Create and initialize a new qsocket.
 
@@ -262,20 +262,19 @@ typedef struct {
 	netadr_t addr;
 } hostcache_t;
 
-extern int hostCacheCount;
-extern hostcache_t hostcache[HOSTCACHESIZE];
+void NET_AddCachedHost (const char *name, const char *map, const char *cname,
+						int users, int maxusers, int driver, int ldriver,
+						const netadr_t *addr);
 
 extern	double		net_time;
 extern	struct msg_s *net_message;
-extern	int			net_activeconnections;
+extern	unsigned	net_activeconnections;
+
+struct cbuf_s;
 
 /** Initialize the networking sub-system.
 */
-void		NET_Init (void);
-
-/** Shutdown the networking sub-system.
-*/
-void		NET_Shutdown (void);
+void		NET_Init (struct cbuf_s *cbuf);
 
 /** Check for new connections.
 
@@ -297,7 +296,7 @@ struct qsocket_s	*NET_Connect (const char *host);
 	\param sock		The qsocket representing the connection.
 	\return			True if the message can be sent.
 */
-qboolean NET_CanSendMessage (qsocket_t *sock);
+bool NET_CanSendMessage (qsocket_t *sock);
 
 /** Read a single message from the connection into net_message.
 
@@ -379,31 +378,31 @@ typedef struct _PollProcedure {
 */
 void SchedulePollProcedure(PollProcedure *pp, double timeOffset);
 
-extern	qboolean	tcpipAvailable;
-extern	char		my_tcpip_address[NET_NAMELEN];
+extern	bool	tcpipAvailable;
+extern	char	my_tcpip_address[NET_NAMELEN];
 
-extern	qboolean	slistInProgress;
-extern	qboolean	slistSilent;
-extern	qboolean	slistLocal;
+extern	bool	slistInProgress;
+extern	bool	slistSilent;
+extern	bool	slistLocal;
 
-extern struct cvar_s	*hostname;
+extern char *hostname;
 
 extern QFile *vcrFile;
 
-//@}
+///@}
 
 /** \defgroup nq-ld NetQuake lan drivers.
 	\ingroup nq-net
 */
-//@{
+///@{
 
 typedef struct {
 	const char		*name;
-	qboolean	initialized;
+	bool		initialized;
 	int			controlSock;
 	int			(*Init) (void);
 	void		(*Shutdown) (void);
-	void		(*Listen) (qboolean state);
+	void		(*Listen) (bool state);
 	int 		(*OpenSocket) (int port);
 	int 		(*CloseSocket) (int socket);
 	int 		(*Connect) (int socket, netadr_t *addr);
@@ -423,26 +422,26 @@ typedef struct {
 extern int 				net_numlandrivers;
 extern net_landriver_t	net_landrivers[MAX_NET_DRIVERS];
 
-//@}
+///@}
 
 /** \defgroup nq-nd NetQuake network drivers.
 	\ingroup nq-net
 */
-//@{
+///@{
 
 typedef struct {
 	const char		*name;
-	qboolean	initialized;
+	bool		initialized;
 	int			(*Init) (void);
-	void		(*Listen) (qboolean state);
-	void		(*SearchForHosts) (qboolean xmit);
+	void		(*Listen) (bool state);
+	void		(*SearchForHosts) (bool xmit);
 	qsocket_t	*(*Connect) (const char *host);
 	qsocket_t 	*(*CheckNewConnections) (void);
 	int			(*QGetMessage) (qsocket_t *sock);
 	int			(*QSendMessage) (qsocket_t *sock, sizebuf_t *data);
 	int			(*SendUnreliableMessage) (qsocket_t *sock, sizebuf_t *data);
-	qboolean	(*CanSendMessage) (qsocket_t *sock);
-	qboolean	(*CanSendUnreliableMessage) (qsocket_t *sock);
+	bool		(*CanSendMessage) (qsocket_t *sock);
+	bool		(*CanSendUnreliableMessage) (qsocket_t *sock);
 	void		(*Close) (qsocket_t *sock);
 	void		(*Shutdown) (void);
 	int			controlSock;
@@ -450,7 +449,8 @@ typedef struct {
 
 extern int			net_numdrivers;
 extern net_driver_t	net_drivers[MAX_NET_DRIVERS];
+extern int net_is_dedicated;
 
-//@}
+///@}
 
 #endif // __net_h

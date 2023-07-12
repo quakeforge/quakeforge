@@ -39,13 +39,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "server.h"
-#include "sv_pr_cpqw.h"
-#include "sv_progs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_pr_cpqw.h"
+#include "qw/include/sv_progs.h"
 #include "world.h"
 
 static struct {
-	func_t      ClientCommand;
+	pr_func_t   ClientCommand;
 } cpqw_funcs;
 
 /*
@@ -54,7 +54,7 @@ static struct {
 	float(entity client) getuid
 */
 static void
-PF_getuid (progs_t *pr)
+PF_getuid (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num;
@@ -76,7 +76,7 @@ PF_getuid (progs_t *pr)
 	string(string st1, string st2) strcat
 */
 static void
-PF_strcat (progs_t *pr)
+PF_strcat (progs_t *pr, void *data)
 {
 	const char *st1 = P_GSTRING (pr, 0);
 	const char *st2 = P_GSTRING (pr, 1);
@@ -90,7 +90,7 @@ PF_strcat (progs_t *pr)
 	string(string st, float len) padstr
 */
 static void
-PF_padstr (progs_t *pr)
+PF_padstr (progs_t *pr, void *data)
 {
 	const char *st;
 	size_t      i, padlen, givenlen;
@@ -133,7 +133,7 @@ PF_padstr (progs_t *pr)
 										// non-original charsets)
 
 static void
-PF_colstr (progs_t *pr)
+PF_colstr (progs_t *pr, void *data)
 {
 	const char *srcstr;
 	unsigned char *result;
@@ -226,7 +226,7 @@ PF_colstr (progs_t *pr)
 	float(string st1, string st2) strcasecmp
 */
 static void
-PF_strcasecmp (progs_t *pr)
+PF_strcasecmp (progs_t *pr, void *data)
 {
 	const char *st1;
 	const char *st2;
@@ -244,7 +244,7 @@ PF_strcasecmp (progs_t *pr)
 */
 
 static void
-PF_strlen (progs_t *pr)
+PF_strlen (progs_t *pr, void *data)
 {
 	const char *st;
 
@@ -313,7 +313,7 @@ KK_Match_Str2 (const char *substr)
 	entity(string st) getclient
 */
 static void
-PF_getclient (progs_t *pr)
+PF_getclient (progs_t *pr, void *data)
 {
 	edict_t    *ent;
 	const char *st;
@@ -353,7 +353,7 @@ float(entity client) mutedtime
 */
 
 static void
-PF_mutedtime (progs_t *pr)
+PF_mutedtime (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num;
@@ -382,7 +382,7 @@ float(string st) validatefile
 */
 
 static void
-PF_validatefile (progs_t *pr)
+PF_validatefile (progs_t *pr, void *data)
 {
 	float       retval;
 	QFile      *f;
@@ -410,7 +410,7 @@ PF_validatefile (progs_t *pr)
 extern int  fp_messages, fp_persecond, fp_secondsdead;
 
 static void
-PF_putsaytime (progs_t *pr)
+PF_putsaytime (progs_t *pr, void *data)
 {
 	edict_t    *client_ent;
 	int         e_num, tmp;
@@ -444,9 +444,9 @@ PF_putsaytime (progs_t *pr)
 */
 
 static void
-PF_makestr (progs_t *pr)
+PF_makestr (progs_t *pr, void *data)
 {
-	string_t    res = PR_NewMutableString (pr);
+	pr_string_t res = PR_NewMutableString (pr);
 	dstring_t  *dst = PR_GetMutableString (pr, res);
     const char *src = P_GSTRING (pr, 0);
 
@@ -461,7 +461,7 @@ PF_makestr (progs_t *pr)
 */
 
 static void
-PF_delstr (progs_t *pr)
+PF_delstr (progs_t *pr, void *data)
 {
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
@@ -548,7 +548,7 @@ GetLinearWave (float inputnum)
 #define GWAVE_USESHAPE    8
 
 static void
-PF_getwave (progs_t *pr)
+PF_getwave (progs_t *pr, void *data)
 {
 	float       retval, inputnum, minnum, maxnum, balance, offset, shape;
 	float       temp;
@@ -625,7 +625,7 @@ PF_getwave (progs_t *pr)
 */
 
 static void
-PF_clientsound (progs_t *pr)
+PF_clientsound (progs_t *pr, void *data)
 {
 	const char *sample;
 	int         channel;
@@ -700,7 +700,7 @@ PF_clientsound (progs_t *pr)
 */
 
 static void
-PF_touchworld (progs_t *pr)
+PF_touchworld (progs_t *pr, void *data)
 {
 	edict_t    *self;
 	pr_int_t    oself;
@@ -729,7 +729,7 @@ PF_touchworld (progs_t *pr)
 #define TL_EVERYTHING		4	// scan for anything
 
 static void
-CPQW_traceline (progs_t *pr)
+PF_traceline (progs_t *pr, void *data)
 {
 	float      *v1, *v2;
 	edict_t    *ent;
@@ -752,7 +752,7 @@ CPQW_traceline (progs_t *pr)
 		nomonsters = TL_ANY_SOLID;
 	nomonsters = tl_to_move[nomonsters];
 
-	if (sv_antilag->int_val == 2)
+	if (sv_antilag == 2)
 		nomonsters |= MOVE_LAGGED;
 
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
@@ -774,29 +774,33 @@ CPQW_traceline (progs_t *pr)
 
 #define CPQW (PR_RANGE_CPQW << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {"CPCW:"#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"CPCW:traceline",		CPQW_traceline,		CPQW 16},
-	{"CPQW:getuid",			PF_getuid,			CPQW 83},
-	{"CPQW:strcat",			PF_strcat,			CPQW 84},
-	{"CPQW:padstr",			PF_padstr,			CPQW 85},
-	{"CPQW:colstr",			PF_colstr,			CPQW 86},
-	{"CPQW:strcasecmp",		PF_strcasecmp,		CPQW 87},
-	{"CPQW:strlen",			PF_strlen,			CPQW 88},
-	{"CPQW:getclient",		PF_getclient,		CPQW 89},
-	{"CPQW:mutedtime",		PF_mutedtime,		CPQW 90},
-	{"CPQW:validatefile",	PF_validatefile,	CPQW 91},
-	{"CPQW:putsaytime",		PF_putsaytime,		CPQW 92},
-	{"CPQW:makestr",		PF_makestr,			CPQW 93},
-	{"CPQW:delstr",			PF_delstr,			CPQW 94},
-	{"CPQW:getwave",		PF_getwave,			CPQW 95},
-	{"CPQW:clientsound",	PF_clientsound,		CPQW 96},
-	{"CPQW:touchworld",		PF_touchworld,		CPQW 97},
+	bi(traceline,       CPQW 16, 3, p(vector), p(vector), p(float)),
+	bi(getuid,          CPQW 83, 1, p(entity)),
+	bi(strcat,          CPQW 84, 2, p(string), p(string)),
+	bi(padstr,          CPQW 85, 2, p(string), p(float)),
+	bi(colstr,          CPQW 86, 2, p(string), p(float)),
+	bi(strcasecmp,      CPQW 87, 2, p(string), p(string)),
+	bi(strlen,          CPQW 88, 1, p(string)),
+	bi(getclient,       CPQW 89, 1, p(string)),
+	bi(mutedtime,       CPQW 90, 1, p(entity)),
+	bi(validatefile,    CPQW 91, 1, p(string)),
+	bi(putsaytime,      CPQW 92, 1, p(entity)),
+	bi(makestr,         CPQW 93, 1, p(string)),
+	bi(delstr,          CPQW 94, 1, p(string)),
+	bi(getwave,         CPQW 95, 7, p(float), p(float), p(float), p(float),
+                                    p(float), p(float), p(float)),
+	bi(clientsound,     CPQW 96, 1, p(entity)),
+	bi(touchworld,      CPQW 97, 0),
 	{0}
 };
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } cpqw_func_list[] = {
 	{"ClientCommand",	&cpqw_funcs.ClientCommand},
 	{"UserInfoChanged",	&sv_funcs.UserInfoChanged},
@@ -817,11 +821,13 @@ cpqw_user_cmd (void)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 
 		PR_PushFrame (pr);
+		PR_RESET_PARAMS (pr);
 		P_FLOAT (pr, 0) = argc;
-		for (i = 1; i < argc; i++)
+		for (i = 1; i < argc + 1; i++)
 			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
-		for (; i < 7; i++)
+		for (; i < 8; i++)
 			P_STRING (pr, i) = 0;
+		pr->pr_argc = 8;
 		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
 		PR_PopFrame (pr);
 		return (int) R_FLOAT (pr);
@@ -840,7 +846,7 @@ cpqw_load (progs_t *pr)
 
 		*cpqw_func_list[i].field = 0;
 		if (f)
-			*cpqw_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*cpqw_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 	ucmd_unknown = cpqw_user_cmd;
 	return 1;
@@ -849,6 +855,6 @@ cpqw_load (progs_t *pr)
 void
 SV_PR_CPQW_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 	PR_AddLoadFunc (pr, cpqw_load);
 }

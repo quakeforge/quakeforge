@@ -40,7 +40,7 @@
 
 #include "compat.h"
 
-#include "map.h"
+#include "tools/qfbsp/include/map.h"
 
 /**	\addtogroup qfbsp_map
 */
@@ -64,7 +64,7 @@ int         numdetailbrushes;
 
 script_t   *map_script;
 
-static void __attribute__ ((format (printf, 1, 2), noreturn))
+static void __attribute__ ((format (PRINTF, 1, 2), noreturn))
 map_error (const char *fmt, ...)
 {
 	va_list     args;
@@ -97,7 +97,7 @@ FindMiptex (const char *name)
 	if (strcmp (name, "skip") == 0)
 		return TEX_SKIP;
 	if (!miptex_hash)
-		miptex_hash = Hash_NewTable (1023, miptex_getkey, 0, 0);
+		miptex_hash = Hash_NewTable (1023, miptex_getkey, 0, 0, 0);
 	if (miptexnames) {
 		index = (intptr_t) Hash_Find (miptex_hash, mpname);
 		if (index)
@@ -122,10 +122,11 @@ FindMiptex (const char *name)
 static int
 FindTexinfo (texinfo_t *t)
 {
-	int         i, j;
+	size_t      i;
+	int         j;
 	texinfo_t  *tex;
 
-	if (t->miptex < 0)
+	if (t->miptex == ~0u)
 		return t->miptex;		// it's HINT or SKIP
 
 	// set the special flag
@@ -448,7 +449,7 @@ ParseBrush (void)
 		free (verts);
 }
 
-static qboolean
+static bool
 ParseEntity (void)
 {
 	if (!Script_GetToken (map_script, true))
@@ -545,7 +546,7 @@ LoadMapFile (const char *filename)
 	qprintf ("%5i brushes (%i detail)\n", nummapbrushes, numdetailbrushes);
 	qprintf ("%5i entities\n", num_entities);
 	qprintf ("%5i textures\n", nummiptexnames);
-	qprintf ("%5i texinfo\n", bsp->numtexinfo);
+	qprintf ("%5zd texinfo\n", bsp->numtexinfo);
 }
 
 void
@@ -620,7 +621,7 @@ WriteEntitiesToString (void)
 		dstring_appendstr (buf, "{\n");
 
 		for (ep = entities[i].epairs; ep; ep = ep->next) {
-			dstring_appendstr (buf, va ("\"%s\" \"%s\"\n",
+			dstring_appendstr (buf, va (0, "\"%s\" \"%s\"\n",
 										ep->key, ep->value));
 		}
 		dstring_appendstr (buf, "}\n");

@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "QF/segtext.h"
+#include "QF/sys.h"
 
 static const char *test_string =
 	"blah\n"
@@ -83,5 +84,7 @@ main (int argc, const char **argv)
 			res = 1;
 		}
 	}
+	Segtext_delete (st);
+	Sys_Shutdown ();
 	return res;
 }

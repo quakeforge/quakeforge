@@ -1,0 +1,67 @@
+plugin_LTLIBRARIES += @snd_output_plugins@
+noinst_LTLIBRARIES += @snd_output_static_plugins@
+EXTRA_LTLIBRARIES += \
+	libs/audio/targets/snd_output_sdl.la \
+	libs/audio/targets/snd_output_alsa.la \
+	libs/audio/targets/snd_output_jack.la \
+	libs/audio/targets/snd_output_oss.la \
+	libs/audio/targets/snd_output_sgi.la \
+	libs/audio/targets/snd_output_sun.la \
+	libs/audio/targets/snd_output_win.la \
+	libs/audio/targets/snd_output_dx.la \
+	libs/audio/targets/snd_output_disk.la
+
+snd_deps=libs/util/libQFutil.la
+
+libs_audio_targets_snd_output_sdl_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_sdl_la_LIBADD=		$(snd_deps) $(SDL_LIBS) $(plugin_libadd)
+libs_audio_targets_snd_output_sdl_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_sdl_la_CFLAGS=		$(SDL_CFLAGS)
+libs_audio_targets_snd_output_sdl_la_SOURCES=		libs/audio/targets/snd_sdl.c
+
+libs_audio_targets_snd_output_alsa_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_alsa_la_LIBADD=		$(snd_deps)
+libs_audio_targets_snd_output_alsa_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_alsa_la_CFLAGS=		$(ALSA_CFLAGS)
+libs_audio_targets_snd_output_alsa_la_SOURCES=		libs/audio/targets/snd_alsa.c
+
+libs_audio_targets_snd_output_jack_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_jack_la_LIBADD=		$(snd_deps) $(JACK_LIBS)
+libs_audio_targets_snd_output_jack_la_DEPENDENCIES=	$(snd_libs)
+libs_audio_targets_snd_output_jack_la_CFLAGS=		$(JACK_CFLAGS)
+libs_audio_targets_snd_output_jack_la_SOURCES=		libs/audio/targets/snd_jack.c
+
+libs_audio_targets_snd_output_oss_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_oss_la_LIBADD=		$(snd_deps) $(OSS_LIBS)
+libs_audio_targets_snd_output_oss_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_oss_la_CFLAGS=		$(OSS_CFLAGS)
+libs_audio_targets_snd_output_oss_la_SOURCES=		libs/audio/targets/snd_oss.c
+
+libs_audio_targets_snd_output_sgi_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_sgi_la_LIBADD=		$(snd_deps) $(SGISND_LIBS)
+libs_audio_targets_snd_output_sgi_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_sgi_la_CFLAGS=		$(SGISND_CFLAGS)
+libs_audio_targets_snd_output_sgi_la_SOURCES=		libs/audio/targets/snd_sgi.c
+
+libs_audio_targets_snd_output_sun_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_sun_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_sun_la_CFLAGS=		$(SUNSND_CFLAGS)
+libs_audio_targets_snd_output_sun_la_SOURCES=		libs/audio/targets/snd_sun.c
+
+libs_audio_targets_snd_output_win_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_win_la_LIBADD=		$(snd_deps) $(WINSND_LIBS) $(plugin_libadd)
+libs_audio_targets_snd_output_win_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_win_la_CFLAGS=		$(WIN32SND_CFLAGS)
+libs_audio_targets_snd_output_win_la_SOURCES=		libs/audio/targets/snd_win.c
+
+libs_audio_targets_snd_output_dx_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_dx_la_LIBADD=		$(snd_deps) $(WINSND_LIBS) $(plugin_libadd)
+libs_audio_targets_snd_output_dx_la_DEPENDENCIES=	$(snd_deps)
+libs_audio_targets_snd_output_dx_la_CFLAGS=		$(WIN32SND_CFLAGS)
+libs_audio_targets_snd_output_dx_la_SOURCES=		libs/audio/targets/snd_dx.c
+
+libs_audio_targets_snd_output_disk_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_disk_la_LIBADD=		$(snd_deps) $(plugin_libadd)
+libs_audio_targets_snd_output_disk_la_DEPENDENCIES=$(snd_deps)
+libs_audio_targets_snd_output_disk_la_CFLAGS=
+libs_audio_targets_snd_output_disk_la_SOURCES=		libs/audio/targets/snd_disk.c

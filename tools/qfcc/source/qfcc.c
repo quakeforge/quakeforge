@@ -65,31 +65,31 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
-#include "qfcc.h"
-#include "class.h"
-#include "codespace.h"
-#include "cpp.h"
-#include "debug.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "grab.h"
-#include "idstuff.h"
-#include "linker.h"
-#include "method.h"
-#include "obj_file.h"
-#include "opcodes.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/cpp.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/idstuff.h"
+#include "tools/qfcc/include/linker.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 options_t   options;
 
@@ -137,10 +137,21 @@ InitData (void)
 	if (pr.code) {
 		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
+		defspace_delete (pr.near_data);
+		defspace_delete (pr.far_data);
+		defspace_delete (pr.entity_data);
+		defspace_delete (pr.type_data);
+		defspace_delete (pr.debug_data);
+		strpool_delete (pr.comp_file_set);
 	}
 
-	if (pr.linenos)
+	if (pr.comp_files.a) {
+		DARRAY_CLEAR (&pr.comp_files);
+	}
+
+	if (pr.linenos) {
 		free (pr.linenos);
+	}
 
 	memset (&pr, 0, sizeof (pr));
 	pr.source_line = 1;
@@ -148,6 +159,9 @@ InitData (void)
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
 	pr.strings = strpool_new ();
+	if (options.code.promote_float) {
+		ReuseString ("@float_promoted@");
+	}
 	pr.num_functions = 1;
 
 	pr.num_linenos = 0;
@@ -165,20 +179,23 @@ InitData (void)
 	pr.type_data = defspace_new (ds_backed);
 	defspace_alloc_loc (pr.type_data, 4);// reserve space for a null descriptor
 
+	pr.debug_data = defspace_new (ds_backed);
+	pr.comp_file_set = strpool_new ();
+	DARRAY_INIT (&pr.comp_files, 16);
+
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
 	current_symtab = pr.symtab;
 
 	pr.entity_data = defspace_new (ds_virtual);
 	pr.entity_fields = new_symtab (0, stab_global);
-	pr.entity_fields->space = pr.entity_data;;
+	pr.entity_fields->space = pr.entity_data;
 
 	clear_functions ();
 	clear_frame_macros ();
 	clear_classes ();
 	clear_immediates ();
 	clear_selectors ();
-	chain_initial_types ();
 }
 
 static int
@@ -195,41 +212,41 @@ WriteProgs (dprograms_t *progs, int size)
 	pr_type_t  *globals;
 
 #define P(t,o) ((t *)((char *)progs + progs->o))
-	statements = P (dstatement_t, ofs_statements);
-	functions = P (dfunction_t, ofs_functions);
-	globaldefs = P (ddef_t, ofs_globaldefs);
-	fielddefs = P (ddef_t, ofs_fielddefs);
-	globals = P (pr_type_t, ofs_globals);
+	statements = P (dstatement_t, statements.offset);
+	functions = P (dfunction_t, functions.offset);
+	globaldefs = P (ddef_t, globaldefs.offset);
+	fielddefs = P (ddef_t, fielddefs.offset);
+	globals = P (pr_type_t, globals.offset);
 #undef P
 
-	for (i = 0; i < progs->numstatements; i++) {
+	for (i = 0; i < progs->statements.count; i++) {
 		statements[i].op = LittleShort (statements[i].op);
 		statements[i].a = LittleShort (statements[i].a);
 		statements[i].b = LittleShort (statements[i].b);
 		statements[i].c = LittleShort (statements[i].c);
 	}
-	for (i = 0; i < (unsigned) progs->numfunctions; i++) {
+	for (i = 0; i < (unsigned) progs->functions.count; i++) {
 		dfunction_t *func = functions + i;
 		func->first_statement = LittleLong (func->first_statement);
-		func->parm_start = LittleLong (func->parm_start);
+		func->params_start = LittleLong (func->params_start);
 		func->locals = LittleLong (func->locals);
 		func->profile = LittleLong (func->profile);
-		func->s_name = LittleLong (func->s_name);
-		func->s_file = LittleLong (func->s_file);
-		func->numparms = LittleLong (func->numparms);
+		func->name = LittleLong (func->name);
+		func->file = LittleLong (func->file);
+		func->numparams = LittleLong (func->numparams);
 	}
-	for (i = 0; i < progs->numglobaldefs; i++) {
+	for (i = 0; i < progs->globaldefs.count; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
 		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
-		globaldefs[i].s_name = LittleLong (globaldefs[i].s_name);
+		globaldefs[i].name = LittleLong (globaldefs[i].name);
 	}
-	for (i = 0; i < progs->numfielddefs; i++) {
+	for (i = 0; i < progs->fielddefs.count; i++) {
 		fielddefs[i].type = LittleShort (fielddefs[i].type);
 		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
-		fielddefs[i].s_name = LittleLong (fielddefs[i].s_name);
+		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
-	for (i = 0; i < progs->numglobals; i++)
-		globals[i].integer_var = LittleLong (globals[i].integer_var);
+	for (i = 0; i < progs->globals.count; i++)
+		globals[i].value = LittleLong (globals[i].value);
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
@@ -249,12 +266,16 @@ WriteSym (pr_debug_header_t *sym, int size)
 
 	pr_auxfunction_t *auxfunctions;
 	pr_lineno_t *linenos;
-	ddef_t     *locals;
+	pr_def_t   *locals;
+	pr_def_t   *debug_defs;
+	pr_type_t  *debug_data;
 
 #define P(t,o) ((t *)((char *)sym + sym->o))
 	auxfunctions = P (pr_auxfunction_t, auxfunctions);
 	linenos = P (pr_lineno_t, linenos);
-	locals = P (ddef_t, locals);
+	locals = P (pr_def_t, locals);
+	debug_defs = P (pr_def_t, debug_defs);
+	debug_data = P (pr_type_t, debug_data);
 #undef P
 
 	for (i = 0; i < sym->num_auxfunctions; i++) {
@@ -273,8 +294,20 @@ WriteSym (pr_debug_header_t *sym, int size)
 	}
 	for (i = 0; i < sym->num_locals; i++) {
 		locals[i].type = LittleShort (locals[i].type);
-		locals[i].ofs = LittleShort (locals[i].ofs);
-		locals[i].s_name = LittleLong (locals[i].s_name);
+		locals[i].size = LittleShort (locals[i].size);
+		locals[i].ofs = LittleLong (locals[i].ofs);
+		locals[i].name = LittleLong (locals[i].name);
+		locals[i].type_encoding = LittleLong (locals[i].type_encoding);
+	}
+	for (i = 0; i < sym->num_debug_defs; i++) {
+		debug_defs[i].type = LittleShort (debug_defs[i].type);
+		debug_defs[i].size = LittleShort (debug_defs[i].size);
+		debug_defs[i].ofs = LittleLong (debug_defs[i].ofs);
+		debug_defs[i].name = LittleLong (debug_defs[i].name);
+		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
+	}
+	for (i = 0; i < sym->debug_data_size; i++) {
+		debug_data[i].value = LittleLong (debug_data[i].value);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))
@@ -295,23 +328,7 @@ begin_compilation (void)
 }
 
 const char *
-strip_path (const char *filename)
-{
-	const char *p = filename;
-	int         i = options.strip_path;
-
-	while (i-- > 0) {
-		while (*p && *p != '/')
-			p++;
-		if (!*p)
-			break;
-		filename = ++p;
-	}
-	return filename;
-}
-
-static const char *
-file_basename (const char *filename)
+file_basename (const char *filename, int keepdot)
 {
 	const char *p;
 	const char *dot;
@@ -322,7 +339,7 @@ file_basename (const char *filename)
 	for (dot = p = filename + strlen (filename); p > filename; p--) {
 		if (p[-1] == '/' || p[-1] == '\\')
 			break;
-		if (p[0] == '.')
+		if (!keepdot && p[0] == '.')
 			dot = p;
 	}
 	dstring_copysubstr (base, p, dot - p);
@@ -377,12 +394,14 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	}
 
 	*yyin = preprocess_file (file, 0);
-	if (!*yyin)
+	if (options.preprocess_only || !*yyin)
 		return !options.preprocess_only;
 
 	InitData ();
+	chain_initial_types ();
 	begin_compilation ();
-	pr.source_file = ReuseString (strip_path (file));
+	pr.comp_dir = save_cwd ();
+	add_source_file (file);
 	err = yyparse () || pr.error_count;
 	fclose (*yyin);
 	if (cpp_name && !options.save_temps) {
@@ -391,14 +410,20 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
-	write_frame_macros (va ("%s.frame", file_basename (file)));
+	if (options.frames_files) {
+		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
+	}
 	if (!err) {
 		qfo_t      *qfo;
 
 		class_finish_module ();
-		qfo = qfo_from_progs (&pr);
-		err = qfo_write (qfo, obj);
-		qfo_delete (qfo);
+		err = pr.error_count;
+		if (!err) {
+			debug_finish_module (obj);
+			qfo = qfo_from_progs (&pr);
+			err = qfo_write (qfo, obj);
+			qfo_delete (qfo);
+		}
 	}
 	return err;
 }
@@ -415,8 +440,16 @@ finish_link (void)
 	flags = (QFOD_GLOBAL | QFOD_CONSTANT | QFOD_INITIALIZED | QFOD_NOSAVE);
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		pr_int_t    param_size = type_size (&type_param);
-		linker_add_def (".param_size", &type_integer, flags,
+		pr_int_t    param_alignment = qfo_log2 (type_param.alignment);
+		linker_add_def (".param_size", &type_int, flags,
 						&param_size);
+		linker_add_def (".param_alignment", &type_int, flags,
+						&param_alignment);
+		linker_add_def (".xdefs", &type_xdefs, flags, 0);
+	}
+	if (options.code.progsversion == PROG_VERSION) {
+		int stk = (QFOD_GLOBAL | QFOD_INITIALIZED | QFOD_NOSAVE);
+		linker_add_def (".stack", &type_uint, stk, 0);
 	}
 
 	if (options.code.debug) {
@@ -436,7 +469,12 @@ finish_link (void)
 	} else {
 		int         size;
 		dprograms_t *progs;
+		pr_debug_header_t *sym = 0;
+		int         sym_size = 0;
 
+		if (options.code.debug) {
+			sym = qfo_to_sym (qfo, &sym_size);
+		}
 		progs = qfo_to_progs (qfo, &size);
 		//finish_compilation ();
 
@@ -450,9 +488,6 @@ finish_link (void)
 
 		WriteProgs (progs, size);
 		if (options.code.debug) {
-			pr_debug_header_t *sym;
-			int         sym_size = 0;
-			sym = qfo_to_sym (qfo, &sym_size);
 			sym->crc = CRC_Block ((byte *) progs, size);
 			WriteSym (sym, sym_size);
 		}
@@ -460,7 +495,7 @@ finish_link (void)
 	return 0;
 }
 
-static lang_t
+static __attribute__((pure)) lang_t
 file_language (const char *file, const char *ext)
 {
 	static ext_lang_t ext_lang[] = {
@@ -533,8 +568,9 @@ separate_compile (void)
 	}
 	dstring_delete (output_file);
 	dstring_delete (extension);
-	if (!err && !options.compile) {
+	if (!err && !options.compile && !options.preprocess_only) {
 		InitData ();
+		chain_initial_types ();
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2)) {
@@ -589,6 +625,14 @@ load_file (const char *fname)
 	return src;
 }
 
+/**	Parse a cpp line number directive.
+
+	Parses a cpp line directive of the form "# 1 file", setting the line and
+	file fields of \a script. "#line 1 file" is supported, too.
+
+	\param script		the script being parsed
+	\param filename		storage for the parsed filename
+*/
 static void
 parse_cpp_line (script_t *script, dstring_t *filename)
 {
@@ -615,10 +659,10 @@ compile_file (const char *filename)
 	int       (*yyparse) (void) = qc_yyparse;
 
 	*yyin = preprocess_file (filename, 0);
-	if (!*yyin)
+	if (options.preprocess_only || !*yyin)
 		return !options.preprocess_only;
 
-	pr.source_file = ReuseString (strip_path (filename));
+	add_source_file (filename);
 	pr.source_line = 1;
 	clear_frame_macros ();
 	err = yyparse () || pr.error_count;
@@ -673,6 +717,9 @@ progs_src_compile (void)
 			exit (1);
 		}
 	}
+	if (options.preprocess_only) {
+		return 0;
+	}
 
 	src = load_file (filename->str);
 	if (!src) {
@@ -704,6 +751,7 @@ progs_src_compile (void)
 	setup_sym_file (options.output_file);
 
 	InitData ();
+	chain_initial_types ();
 
 	begin_compilation ();
 
@@ -731,12 +779,15 @@ progs_src_compile (void)
 				fprintf (single, "#include \"%s\"\n", qc_filename->str);
 				if (options.frames_files)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
-							 file_basename (qc_filename->str));
+							 file_basename (qc_filename->str, 0));
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
-				write_frame_macros (va ("%s.frame",
-										file_basename (qc_filename->str)));
+				if (options.frames_files) {
+					write_frame_macros (va (0, "%s.frame",
+											file_basename (qc_filename->str,
+														   0)));
+				}
 			}
 			if (!Script_TokenAvailable (script, 0))
 				break;
@@ -758,6 +809,7 @@ progs_src_compile (void)
 	}
 
 	class_finish_module ();
+	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {
 		qfo_write (qfo, options.output_file);
@@ -805,6 +857,7 @@ main (int argc, char **argv)
 	parse_cpp_name ();
 
 	opcode_init ();
+
 	InitData ();
 	init_types ();
 	clear_immediates ();

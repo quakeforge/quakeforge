@@ -1,6 +1,6 @@
-#include "gui/Text.h"
-#include "string.h"
-#include "draw.h"
+#include <gui/Text.h>
+#include <string.h>
+#include <draw.h>
 
 @implementation Text
 - (id) init

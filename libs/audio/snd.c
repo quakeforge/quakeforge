@@ -35,10 +35,28 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
-static cvar_t  *snd_output;
-static cvar_t  *snd_render;
+static char *snd_output;
+static cvar_t snd_output_cvar = {
+	.name = "snd_output",
+	.description =
+		"Sound Output Plugin to use",
+	.default_value = SND_OUTPUT_DEFAULT,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_output },
+};
+static char *snd_render;
+static cvar_t snd_render_cvar = {
+	.name = "snd_render",
+	.description =
+		"Sound Renderer Plugin to use",
+	.default_value = "default",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_render },
+};
 static plugin_t *snd_render_module = NULL;
 static plugin_t *snd_output_module = NULL;
 static snd_render_funcs_t *snd_render_funcs = NULL;
@@ -53,6 +71,19 @@ static plugin_list_t snd_render_list[] = {
 	SND_RENDER_PLUGIN_LIST
 };
 
+static void
+S_shutdown (void *data)
+{
+	if (snd_render_module) {
+		PI_UnloadPlugin (snd_render_module);
+		snd_render_module = NULL;
+		snd_render_funcs = NULL;
+	}
+	if (snd_output_module) {
+		PI_UnloadPlugin (snd_output_module);
+		snd_output_module = NULL;
+	}
+}
 
 VISIBLE void
 S_Init (int *viewentity, double *host_frametime)
@@ -60,22 +91,24 @@ S_Init (int *viewentity, double *host_frametime)
 	if (COM_CheckParm ("-nosound"))
 		return;
 
-	if (!*snd_output->string || !*snd_render->string) {
+	if (!*snd_output || !*snd_render) {
 		Sys_Printf ("Not loading sound due to no renderer/output\n");
 		return;
 	}
 
+	Sys_RegisterShutdown (S_shutdown, 0);
+
 	PI_RegisterPlugins (snd_output_list);
 	PI_RegisterPlugins (snd_render_list);
-	snd_output_module = PI_LoadPlugin ("snd_output", snd_output->string);
+	snd_output_module = PI_LoadPlugin ("snd_output", snd_output);
 	if (!snd_output_module) {
 		Sys_Printf ("Loading of sound output module: %s failed!\n",
-					snd_output->string);
+					snd_output);
 	} else {
-		snd_render_module = PI_LoadPlugin ("snd_render", snd_render->string);
+		snd_render_module = PI_LoadPlugin ("snd_render", snd_render);
 		if (!snd_render_module) {
 			Sys_Printf ("Loading of sound render module: %s failed!\n",
-						snd_render->string);
+						snd_render);
 			PI_UnloadPlugin (snd_output_module);
 			snd_output_module = NULL;
 		} else {
@@ -84,8 +117,7 @@ S_Init (int *viewentity, double *host_frametime)
 				host_frametime;
 			snd_render_module->data->snd_render->output = snd_output_module;
 
-			snd_output_module->functions->general->p_Init ();
-			snd_render_module->functions->general->p_Init ();
+			snd_render_module->functions->snd_render->init ();
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;
@@ -100,53 +132,44 @@ S_Init (int *viewentity, double *host_frametime)
 VISIBLE void
 S_Init_Cvars (void)
 {
-	snd_output = Cvar_Get ("snd_output", SND_OUTPUT_DEFAULT, CVAR_ROM, NULL,
-						   "Sound Output Plugin to use");
-	snd_render = Cvar_Get ("snd_render", "default", CVAR_ROM, NULL,
-						   "Sound Renderer Plugin to use");
+	Cvar_Register (&snd_output_cvar, 0, 0);
+	Cvar_Register (&snd_render_cvar, 0, 0);
 }
 
 VISIBLE void
 S_AmbientOff (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_AmbientOff ();
+		snd_render_funcs->ambient_off ();
 }
 
 VISIBLE void
 S_AmbientOn (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_AmbientOn ();
+		snd_render_funcs->ambient_on ();
 }
 
 VISIBLE void
-S_Shutdown (void)
-{
-	if (snd_render_module) {
-		PI_UnloadPlugin (snd_render_module);
-		snd_render_module = NULL;
-		snd_render_funcs = NULL;
-	}
-	if (snd_output_module) {
-		PI_UnloadPlugin (snd_output_module);
-		snd_output_module = NULL;
-	}
-}
-
-VISIBLE void
-S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
+S_SetAmbient (int amb_channel, sfx_t *sfx)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StaticSound (sfx, origin, vol, attenuation);
+		snd_render_funcs->set_ambient (amb_channel, sfx);
 }
 
 VISIBLE void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-			  float fvol, float attenuation)
+S_StaticSound (sfx_t *sfx, vec4f_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StartSound (entnum, entchannel, sfx, origin, fvol,
+		snd_render_funcs->static_sound (sfx, origin, vol, attenuation);
+}
+
+VISIBLE void
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
+			  float vol, float attenuation)
+{
+	if (snd_render_funcs)
+		snd_render_funcs->start_sound (entnum, entchannel, sfx, origin, vol,
 										 attenuation);
 }
 
@@ -154,80 +177,121 @@ VISIBLE void
 S_StopSound (int entnum, int entchannel)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopSound (entnum, entchannel);
+		snd_render_funcs->stop_sound (entnum, entchannel);
 }
 
 VISIBLE sfx_t *
 S_PrecacheSound (const char *sample)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_PrecacheSound (sample);
+		return snd_render_funcs->precache_sound (sample);
 	return NULL;
 }
 
 VISIBLE void
-S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up, const byte *ambient_sound_level)
+S_Update (transform_t ear, const byte *ambient_sound_level)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_Update (origin, v_forward, v_right, v_up,
-									 ambient_sound_level);
+		snd_render_funcs->update (ear, ambient_sound_level);
 }
 
 VISIBLE void
 S_StopAllSounds (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopAllSounds ();
+		snd_render_funcs->stop_all_sounds ();
 }
 
 VISIBLE void
 S_ExtraUpdate (void)
 {
-//	if (snd_render_funcs)
-//		snd_render_funcs->pS_ExtraUpdate ();
+	if (snd_render_funcs && snd_render_funcs->extra_update)
+		snd_render_funcs->extra_update ();
 }
 
 VISIBLE void
 S_LocalSound (const char *s)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_LocalSound (s);
+		snd_render_funcs->local_sound (s);
 }
 
 VISIBLE void
 S_BlockSound (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_BlockSound ();
+		snd_render_funcs->block_sound ();
 }
 
 VISIBLE void
 S_UnblockSound (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_UnblockSound ();
+		snd_render_funcs->unblock_sound ();
 }
 
 VISIBLE sfx_t *
 S_LoadSound (const char *name)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_LoadSound (name);
+		return snd_render_funcs->load_sound (name);
 	return 0;
 }
 
-VISIBLE struct channel_s *
+VISIBLE channel_t *
 S_AllocChannel (void)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_AllocChannel ();
+		return snd_render_funcs->alloc_channel ();
 	return 0;
 }
 
 VISIBLE void
-S_ChannelStop (struct channel_s *chan)
+S_ChannelFree (channel_t *chan)
 {
-	if (snd_render_funcs)
-		snd_render_funcs->pS_ChannelStop (chan);
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_free (chan);
+	}
+}
+
+VISIBLE int
+S_ChannelSetSfx (channel_t *chan, sfx_t *sfx)
+{
+	if (snd_render_funcs) {
+		return snd_render_funcs->channel_set_sfx (chan, sfx);
+	}
+	return 0;
+}
+
+VISIBLE void
+S_ChannelSetPaused (channel_t *chan, int paused)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_paused (chan, paused);
+	}
+}
+
+VISIBLE void
+S_ChannelSetLooping (channel_t *chan, int looping)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_looping (chan, looping);
+	}
+}
+
+VISIBLE chan_state
+S_ChannelGetState (channel_t *chan)
+{
+	if (snd_render_funcs) {
+		return snd_render_funcs->channel_get_state (chan);
+	}
+	return 0;
+}
+
+VISIBLE void
+S_ChannelSetVolume (channel_t *chan, float volume)
+{
+	if (snd_render_funcs) {
+		snd_render_funcs->channel_set_volume (chan, volume);
+	}
 }

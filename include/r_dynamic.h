@@ -46,8 +46,7 @@ typedef enum {
 struct entity_s;
 
 void R_PushDlights (const vec3_t entorigin);
-struct cvar_s;
-void R_MaxDlightsCheck (struct cvar_s *var);
+void R_MaxDlightsCheck (int max_dlights);
 void R_Particles_Init_Cvars (void);
 void R_Particle_New (const char *type, int texnum, const vec3_t org,
 					 float scale, const vec3_t vel, float die, int color,
@@ -59,17 +58,6 @@ void R_InitBubble (void);
 
 void R_InitParticles (void);
 void R_ClearParticles (void);
-void R_DrawParticles (void);
-struct cvar_s;
-void R_MaxParticlesCheck (struct cvar_s *r_particles,
-						  struct cvar_s *r_particles_max);
 void R_InitSprites (void);
-
-extern unsigned int r_maxparticles;
-extern unsigned int numparticles;
-extern struct particle_s *active_particles;
-extern struct particle_s *free_particles;
-extern struct particle_s *particles;
-extern struct particle_s **freeparticles;
 
 #endif // _R_DYNAMIC_H

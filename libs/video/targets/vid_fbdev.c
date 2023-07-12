@@ -90,8 +90,24 @@ static byte vid_current_palette[768];
 static int  fbdev_inited = 0;
 static int  fbdev_backgrounded = 0;
 
-static cvar_t *vid_redrawfull;
-static cvar_t *vid_waitforrefresh;
+static int vid_redrawfull;
+static cvar_t vid_redrawfull_cvar = {
+	.name = "vid_redrawfull",
+	.description =
+		"Redraw entire screen each frame instead of just dirty areas",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vid_redrawfull },
+};
+static int vid_waitforrefresh;
+static cvar_t vid_waitforrefresh_cvar = {
+	.name = "vid_waitforrefresh",
+	.description =
+		"Wait for vertical retrace before drawing next frame",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &vid_waitforrefresh },
+};
 
 static byte *framebuffer_ptr;
 
@@ -209,10 +225,10 @@ static unsigned long fb_map_length = 0;
 
 static struct fb_var_screeninfo orig_var;
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_Shutdown\n");
 
 	if (!fbdev_inited)
 		return;
@@ -406,6 +422,8 @@ VID_Init (byte *palette, byte *colormap)
 	if (fbdev_inited)
 		return;
 
+	Sys_RegisterShutdown (VID_shutdown);
+
 	R_LoadModule (0, VID_SetPalette);
 
 	if (COM_CheckParm ("-novideo")) {
@@ -444,7 +462,7 @@ VID_Init (byte *palette, byte *colormap)
 	Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	modestr = get_mode (viddef.width, viddef.height, 8);
 
@@ -465,10 +483,8 @@ VID_Init (byte *palette, byte *colormap)
 void
 VID_Init_Cvars ()
 {
-	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
-				"Redraw entire screen each frame instead of just dirty areas");
-	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
-			NULL, "Wait for vertical retrace before drawing next frame");
+	Cvar_Register (&vid_redrawfull_cvar, 0, 0);
+	Cvar_Register (&vid_waitforrefresh_cvar, 0, 0);
 }
 
 void
@@ -490,11 +506,11 @@ VID_Update (vrect_t *rects)
 		}
 	}
 
-	if (vid_waitforrefresh->int_val) {
+	if (vid_waitforrefresh) {
 		// ???
 	}
 
-	if (vid_redrawfull->int_val) {
+	if (vid_redrawfull) {
 		double *d = (double *)framebuffer_ptr, *s = (double *)viddef.buffer;
 		double *ends = (double *)(viddef.buffer
 								  + viddef.height*viddef.rowbytes);
@@ -524,21 +540,11 @@ VID_Update (vrect_t *rects)
 }
 
 void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
-
-void
 VID_SetCaption (const char *text)
 {
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return false;

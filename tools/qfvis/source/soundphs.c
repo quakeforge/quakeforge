@@ -54,7 +54,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "vis.h"
+#include "tools/qfvis/include/options.h"
+#include "tools/qfvis/include/vis.h"
 
 /*
 	Some textures (sky, water, slime, lava) are considered ambient sound
@@ -64,24 +65,25 @@
 	leaf.
 */
 
+static byte *surf_ambients;
+
 static void
 SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 {
-	int		vi, e, i, j;
-	float  *v;
-
 	mins[0] = mins[1] = mins[2] = 999999;
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 
-	for (i = 0; i < s->numedges; i++) {
-		e = bsp->surfedges[s->firstedge + i];
+	for (uint32_t i = 0; i < s->numedges; i++) {
+		int         e = bsp->surfedges[s->firstedge + i];
+		int         vi;
+
 		if (e >= 0)
 			vi = bsp->edges[e].v[0];
 		else
 			vi = bsp->edges[-e].v[1];
-		v = bsp->vertexes[vi].point;
+		float      *v = bsp->vertexes[vi].point;
 
-		for (j = 0; j < 3; j++) {
+		for (int j = 0; j < 3; j++) {
 			if (v[j] < mins[j])
 				mins[j] = v[j];
 			if (v[j] > maxs[j])
@@ -90,87 +92,153 @@ SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 	}
 }
 
+static void
+init_surf_ambients (void)
+{
+	surf_ambients = malloc (bsp->numfaces);
+	if (!bsp->texdata) {
+		memset (surf_ambients, -1, bsp->numfaces);
+		return;
+	}
+
+	dmiptexlump_t *miptex = (dmiptexlump_t *) bsp->texdata;
+
+	for (size_t i = 0; i < bsp->numfaces; i++) {
+		dface_t    *surf = &bsp->faces[i];
+		texinfo_t  *info = &bsp->texinfo[surf->texinfo];
+		int         ofs = miptex->dataofs[info->miptex];
+		miptex_t   *miptex = (miptex_t *) &bsp->texdata[ofs];
+
+		if (!strncasecmp (miptex->name, "*water", 6))
+			surf_ambients[i] = AMBIENT_WATER;
+		else if (!strncasecmp (miptex->name, "sky", 3))
+			surf_ambients[i] = AMBIENT_SKY;
+		else if (!strncasecmp (miptex->name, "*slime", 6))
+			surf_ambients[i] = AMBIENT_WATER;
+		else if (!strncasecmp (miptex->name, "*lava", 6))
+			surf_ambients[i] = AMBIENT_LAVA;
+		else if (!strncasecmp (miptex->name, "*04water", 8))
+			surf_ambients[i] = AMBIENT_WATER;
+		else
+			surf_ambients[i] = -1;
+	}
+}
+
+static void
+LeafAmbients (dleaf_t *leaf, set_t *vis)
+{
+	float		 dists[NUM_AMBIENTS];
+
+	// clear ambients
+	for (int j = 0; j < NUM_AMBIENTS; j++) {
+		dists[j] = 1020;
+	}
+
+	for (unsigned j = 0; j < numrealleafs - 1; j++) {
+		if (!set_is_member (vis, j)) {
+			continue;
+		}
+
+		if (!bsp->texdata)
+			continue;
+
+		// check this leaf for sound textures
+		dleaf_t    *hit = &bsp->leafs[j + 1];
+
+		for (uint32_t k = 0; k < hit->nummarksurfaces; k++) {
+			unsigned    surf_index = bsp->marksurfaces[hit->firstmarksurface + k];
+			dface_t    *surf = &bsp->faces[surf_index];
+
+			byte        ambient_type;
+			if ((ambient_type = surf_ambients[surf_index]) == 0xff) {
+				continue;
+			}
+
+			// find distance from source leaf to polygon
+			vec3_t      mins, maxs;
+			float       maxd = 0;
+			SurfaceBBox (surf, mins, maxs);
+			for (int l = 0; l < 3; l++) {
+				float       d = 0;
+				if (mins[l] > leaf->maxs[l])
+					d = mins[l] - leaf->maxs[l];
+				else if (maxs[l] < leaf->mins[l])
+					d = leaf->mins[l] - mins[l];
+				else
+					d = 0;
+				if (d > maxd)
+					maxd = d;
+			}
+
+			maxd = 0.25;
+			if (maxd < dists[ambient_type])
+				dists[ambient_type] = maxd;
+		}
+	}
+
+	for (int j = 0; j < NUM_AMBIENTS; j++) {
+		float vol = 0;
+
+		if (dists[j] < 100)
+			vol = 1.0;
+		else {
+			vol = 1.0 - dists[2] * 0.002;
+			if (vol < 0)
+				vol = 0;
+		}
+		leaf->ambient_level[j] = vol * 255;
+	}
+}
+
+// vis is 1-based, but bsp leafs are 0-based
+static unsigned work_leaf = 1;
+
+static int
+ambient_progress (void)
+{
+	return (work_leaf - 1) * 100 / (numrealleafs - 1);
+}
+
+static unsigned
+next_leaf (void)
+{
+	unsigned    leaf = ~0;
+	WRLOCK (global_lock);
+	progress_tick++;
+	if (work_leaf < numrealleafs) {
+		leaf = work_leaf++;
+	}
+	UNLOCK (global_lock);
+	return leaf;
+}
+
+static void *
+AmbientThread (void *d)
+{
+	int         thread = (intptr_t) d;
+	set_t       vis = {};
+
+	vis.size = SET_SIZE (numrealleafs - 1);
+
+	while (1) {
+		unsigned    leaf_num = next_leaf ();
+
+		if (working)
+			working[thread] = leaf_num;
+		if (leaf_num == ~0u) {
+			break;
+		}
+
+		unsigned    cluster_num = leafcluster[leaf_num];
+		vis.map = (set_bits_t *) &uncompressed[cluster_num * bitbytes_l];
+		LeafAmbients (&bsp->leafs[leaf_num], &vis);
+	}
+	return 0;
+}
+
 void
 CalcAmbientSounds (void)
 {
-	byte		*vis;
-	int			 ambient_type, ofs, i, j, l;
-	unsigned     k;
-	float		 maxd, vol, d;
-	float		 dists[NUM_AMBIENTS];
-	dface_t		*surf;
-	dleaf_t		*leaf, *hit;
-	vec3_t		 mins, maxs;
-	texinfo_t	*info;
-	miptex_t	*miptex;
-
-	for (i = 0; i < numrealleafs - 1; i++) {
-		leaf = &bsp->leafs[i + 1];
-
-		// clear ambients
-		for (j = 0; j < NUM_AMBIENTS; j++)
-			dists[j] = 1020;
-
-		vis = &uncompressed[leafcluster[i] * bitbytes_l];
-
-		for (j = 0; j < numrealleafs - 1; j++) {
-			if (!(vis[j >> 3] & (1 << (j & 7))))
-				continue;
-
-			if (!bsp->texdata)
-				continue;
-
-			// check this leaf for sound textures
-			hit = &bsp->leafs[j + 1];
-
-			for (k = 0; k < hit->nummarksurfaces; k++) {
-				surf = &bsp->faces[bsp->marksurfaces[hit->firstmarksurface + k]];
-				info = &bsp->texinfo[surf->texinfo];
-				ofs = ((dmiptexlump_t *) bsp->texdata)->dataofs[info->miptex];
-				miptex = (miptex_t *) (&bsp->texdata[ofs]);
-
-				if (!strncasecmp (miptex->name, "*water", 6))
-					ambient_type = AMBIENT_WATER;
-				else if (!strncasecmp (miptex->name, "sky", 3))
-					ambient_type = AMBIENT_SKY;
-				else if (!strncasecmp (miptex->name, "*slime", 6))
-					ambient_type = AMBIENT_WATER;
-				else if (!strncasecmp (miptex->name, "*lava", 6))
-					ambient_type = AMBIENT_LAVA;
-				else if (!strncasecmp (miptex->name, "*04water", 8))
-					ambient_type = AMBIENT_WATER;
-				else
-					continue;
-
-				// find distance from source leaf to polygon
-				SurfaceBBox (surf, mins, maxs);
-				maxd = 0;
-				for (l = 0; l < 3; l++) {
-					if (mins[l] > leaf->maxs[l])
-						d = mins[l] - leaf->maxs[l];
-					else if (maxs[l] < leaf->mins[l])
-						d = leaf->mins[l] - mins[l];
-					else
-						d = 0;
-					if (d > maxd)
-						maxd = d;
-				}
-
-				maxd = 0.25;
-				if (maxd < dists[ambient_type])
-					dists[ambient_type] = maxd;
-			}
-		}
-
-		for (j = 0; j < NUM_AMBIENTS; j++) {
-			if (dists[j] < 100)
-				vol = 1.0;
-			else {
-				vol = 1.0 - dists[2] * 0.002;
-				if (vol < 0)
-					vol = 0;
-			}
-			leaf->ambient_level[j] = vol * 255;
-		}
-	}
+	init_surf_ambients ();
+	RunThreads ("Ambients", AmbientThread, ambient_progress);
 }

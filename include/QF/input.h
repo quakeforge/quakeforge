@@ -25,54 +25,121 @@
 
 */
 
-#ifndef __QF_input_h_
-#define __QF_input_h_
+#ifndef __QF_input_h
+#define __QF_input_h
 
-#include "QF/keys.h"
+/** \defgroup input Input Sub-system */
+///@{
 
-typedef struct {
-	vec3_t angles;
-	vec3_t position;
-} viewdelta_t;
+/// input axis info
+typedef struct in_axisinfo_s {
+	int         deviceid;
+	int         axis;
+	int         value;
+	int         min;
+	int         max;
+} in_axisinfo_t;
 
-extern viewdelta_t viewdelta;
+/// input button info
+typedef struct in_buttoninfo_s {
+	int         deviceid;
+	int         button;
+	int         state;
+} in_buttoninfo_t;
 
-#define freelook (in_mlook.state & 1 || in_freelook->int_val)
+#include "QF/input/binding.h"
+#include "QF/input/imt.h"
 
-struct cvar_s;
+#ifndef __QFCC__
 
-void IN_Init (struct cbuf_s *cbuf);
+struct qf_fd_set;
+
+/// driver interface
+typedef struct in_driver_s {
+	void (*init_cvars) (void *data);
+	void (*init) (void *data);
+	void (*shutdown) (void *data);
+
+	void (*set_device_event_data) (void *device, void *event_data, void *data);
+	void *(*get_device_event_data) (void *device, void *data);
+
+	// The driver must provide either both or none of add_select and
+	// chec_select.
+	void (*add_select) (struct qf_fd_set *fdset, int *maxfd, void *data);
+	void (*check_select) (struct qf_fd_set *fdset, void *data);
+	// Generally musually exclusive with add_select/check_select
+	void (*process_events) (void *data);
+
+	void (*clear_states) (void *data);
+	void (*grab_input) (void *data, int grab);
+
+	void (*axis_info) (void *data, void *device, in_axisinfo_t *axes,
+					   int *numaxes);
+	void (*button_info) (void *data, void *device, in_buttoninfo_t *buttons,
+						 int *numbuttons);
+	// null means either invalid number or the name is not known
+	const char *(*get_axis_name) (void *data, void *device, int axis_num);
+	const char *(*get_button_name) (void *data, void *device, int button_num);
+	// -1 for invalid name
+	int (*get_axis_num) (void *data, void *device, const char *axis_name);
+	int (*get_button_num) (void *data, void *device, const char *button_name);
+	// null means invalid number
+	int (*get_axis_info) (void *data, void *device, int axis_num,
+						  in_axisinfo_t *info);
+	int (*get_button_info) (void *data, void *device, int button_num,
+							in_buttoninfo_t *info);
+} in_driver_t;
+
+/// device info
+typedef struct in_device_s {
+	int         driverid;
+	void       *device;
+	const char *name;
+	const char *id;
+	void       *event_data;
+} in_device_t;
+
+int IN_RegisterDriver (in_driver_t *driver, void *data);
+void IN_DriverData (int handlle, void *data);
+void IN_Init (void);
 void IN_Init_Cvars (void);
+struct plitem_s;
+void IN_SaveConfig (struct plitem_s *config);
+void IN_LoadConfig (struct plitem_s *config);
 
-void IN_Shutdown (void);
+int IN_AddDevice (int driver, void *device, const char *name, const char *id);
+void IN_RemoveDevice (int devid);
+
+void IN_SendConnectedDevices (void);
+int IN_FindDeviceId (const char *id) __attribute__((pure));
+const char *IN_GetDeviceName (int devid) __attribute__((pure));
+const char *IN_GetDeviceId (int devid) __attribute__((pure));
+void IN_SetDeviceEventData (int devid, void *data);
+void *IN_GetDeviceEventData (int devid);
+int IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes);
+int IN_ButtonInfo (int devid, in_buttoninfo_t *button, int *numbuttons);
+const char *IN_GetAxisName (int devid, int axis_num);
+const char *IN_GetButtonName (int devid, int button_num);
+int IN_GetAxisNumber (int devid, const char *axis_name);
+int IN_GetButtonNumber (int devid, const char *button_name);
+int IN_GetAxisInfo (int devid, int axis_num, in_axisinfo_t *info);
+int IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info);
 
 void IN_ProcessEvents (void);
 
-void IN_UpdateGrab (struct cvar_s *);
+void IN_UpdateGrab (int grab);
 
 void IN_ClearStates (void);
 
-void IN_Move (void); // FIXME: was cmduser_t?
-// add additional movement on top of the keyboard move cmd
+extern int in_grab;
+extern float in_amp;
+extern float in_pre_amp;
+extern int in_mouse_accel;
+extern int in_freelook;
+extern int lookstrafe;
 
-extern struct cvar_s		*in_grab;
-extern struct cvar_s		*in_amp;
-extern struct cvar_s		*in_pre_amp;
-extern struct cvar_s		*m_filter;
-extern struct cvar_s		*in_mouse_accel;
-extern struct cvar_s		*in_freelook;
-extern struct cvar_s		*lookstrafe;
+#endif
 
-extern qboolean 	in_mouse_avail;
-extern float		in_mouse_x, in_mouse_y;
+///@}
 
-void IN_LL_Init_Cvars (void);
-void IN_LL_Init (void);
-void IN_LL_Shutdown (void);
-void IN_LL_ProcessEvents (void);
-void IN_LL_ClearStates (void);
-void IN_LL_Grab_Input (int grab);
-
-extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
-
-#endif // __QF_input_h_
+#endif//__QF_input_h

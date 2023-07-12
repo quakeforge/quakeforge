@@ -38,12 +38,14 @@ typedef enum {
 	YES			///< a true value
 } BOOL;
 
+@extern void __obj_forward(id obj, SEL sel, ...);
+@extern BOOL __obj_responds_to(id obj, SEL sel);
 @extern void obj_error (id object, int code, string fmt, ...);
 @extern void obj_verror (id object, int code, string fmt, @va_list args);
 //obj_error_handler obj_set_error_handler (objc_error_handler func);
 @extern IMP obj_msg_lookup (id receiver, SEL op);
 @extern IMP obj_msg_lookup_super (Super class, SEL op);
-@extern @param obj_msg_sendv (id receiver, SEL op, @va_list args);
+@extern @attribute(void_return) void obj_msg_sendv (id receiver, SEL op, @va_list args);
 @extern BOOL obj_decrement_ref_was_zero (id object);
 @extern BOOL obj_increment_ref_was_zero (id object);
 @extern void *obj_malloc (int size);
@@ -98,6 +100,10 @@ typedef enum {
 
 @extern void *PR_FindGlobal (string name);	//FIXME where?
 
+// copies the list in src to a temporary buffer that will be freed when the
+// calling function returns, and places the pointer to the buffer into the
+// returned va_list. The count is copies as-is.
+@extern @va_list va_copy(@va_list src);
 #endif	//__ruamoko_runtime_h_
 /**
 	\}

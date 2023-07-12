@@ -52,7 +52,7 @@
 #include "wad.h"
 
 static dstring_t destfile = {&dstring_default_mem};
-static qboolean savesingle = false;
+static bool savesingle = false;
 static wad_t *wadfile;
 dstring_t  *lumpname;
 tex_t      *image;
@@ -92,7 +92,7 @@ load_image (const char *name)
 
 	if (!(file = Qopen (name, "rb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
-	if (!(tex = LoadPNG (file)))
+	if (!(tex = LoadPNG (file, 1)))
 		Sys_Error ("couldn't read %s as PNG", name);
 
 	pixels = tex->width * tex->height;
@@ -104,7 +104,7 @@ load_image (const char *name)
 	switch (tex->format) {
 		case tex_palette:
 			for (i = 0, s = tex->data, d = image->data; i < pixels; i++) {
-				byte        *v = tex->palette + *s++ * 3;
+				const byte *v = tex->palette + *s++ * 3;
 				*d++ = *v++;
 				*d++ = *v++;
 				*d++ = *v++;
@@ -159,7 +159,7 @@ write_file (void)
 	QFile      *file;
 	const char *name;
 
-	name = va ("%s/%s.lmp", destfile.str, lumpname->str);
+	name = va (0, "%s/%s.lmp", destfile.str, lumpname->str);
 	if (!(file = Qopen (name, "wb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
 	Qwrite (file, lumpbuffer, lump_p - lumpbuffer);

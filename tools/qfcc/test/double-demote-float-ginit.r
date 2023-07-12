@@ -1,0 +1,8 @@
+#pragma warn error
+
+double a;
+float b = 1.0d;
+int main ()
+{
+	return 1;	// test fails if compile succeeds
+}

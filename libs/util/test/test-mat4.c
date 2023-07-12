@@ -58,8 +58,8 @@ static vec3_t test_scales[] = {
 	{ 3, 1, 2},
 	{ 3, 2, 1},
 };
-#define num_translation_tests \
-	(sizeof (test_translations) / sizeof (test_translations[0]))
+#define num_scale_tests \
+	(sizeof (test_scales) / sizeof (test_scales[0]))
 
 // return true if a and b are close enough (yay, floats)
 static int
@@ -114,7 +114,7 @@ test_transform (const vec3_t angles, const vec3_t scale,
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 	VectorAdd (x, translation, x);
 
@@ -143,11 +143,12 @@ test_transform2 (const vec3_t angles, const vec3_t scale,
 	vec3_t      x, y;
 	quat_t      rotation;
 	mat4_t      mat;
-	vec3_t      rot, sc, sh, tr;
+	quat_t      rot;
+	vec3_t      sc, sh, tr;
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 	VectorAdd (translation, x, x);
 
@@ -157,7 +158,7 @@ test_transform2 (const vec3_t angles, const vec3_t scale,
 	VectorCopy (v, y);
 	QuatMultVec (rot, y, y);
 	VectorShear (sh, y, y);
-	VectorCompMult (sc, y, y);//scale
+	VectorCompMult (y, sc, y);//scale
 	VectorAdd (tr, y, y);
 
 	for (i = 0; i < 3; i++)
@@ -171,6 +172,9 @@ fail:
 			VectorExpand (translation), VectorExpand (v));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
+	printf ("  (%g %g %g %g) (%g %g %g %g) (%g %g %g) (%g %g %g) (%g %g %g)\n",
+			QuatExpand (rotation), QuatExpand (rot), VectorExpand (sh),
+			VectorExpand (sc), VectorExpand (tr));
 	return 0;
 }
 
@@ -214,33 +218,41 @@ main (int argc, const char **argv)
 	size_t      i, j, k;
 
 	for (i = 0; i < num_angle_tests; i ++) {
-		if (!test_angle (test_angles[i]))
+		if (!test_angle (test_angles[i])) {
 			res = 1;
+			printf("angle test %zd failed\n", i);
+		}
 	}
 	for (i = 0; i < num_angle_tests; i ++) {
-		for (j = 0; j < num_translation_tests; j ++) {
+		for (j = 0; j < num_scale_tests; j ++) {
 			for (k = 0; k < num_translation_tests; k ++) {
 				if (!test_transform (test_angles[i], test_scales[j],
-									 test_translations[k]))
+									 test_translations[k])) {
 					res = 1;
+					printf("transform test %zd:%zd:%zd failed\n", i, j, k);
+				}
 			}
 		}
 	}
 	for (i = 0; i < num_angle_tests; i ++) {
-		for (j = 0; j < num_translation_tests; j ++) {
+		for (j = 0; j < num_scale_tests; j ++) {
 			for (k = 0; k < num_translation_tests; k ++) {
 				if (!test_transform2 (test_angles[i], test_scales[j],
-									  test_translations[k]))
+									  test_translations[k])) {
 					res = 1;
+					printf("transform2 test %zd:%zd:%zd failed\n", i, j, k);
+				}
 			}
 		}
 	}
 	for (i = 0; i < num_angle_tests; i ++) {
-		for (j = 0; j < num_translation_tests; j ++) {
+		for (j = 0; j < num_scale_tests; j ++) {
 			for (k = 0; k < num_translation_tests; k ++) {
 				if (!test_inverse (test_angles[i], test_scales[j],
-								   test_translations[k]))
+								   test_translations[k])) {
 					res = 1;
+					printf("inverse test %zd:%zd:%zd failed\n", i, j, k);
+				}
 			}
 		}
 	}

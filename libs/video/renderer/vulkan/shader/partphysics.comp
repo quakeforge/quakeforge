@@ -1,0 +1,60 @@
+#version 450
+
+layout (local_size_x = 1, local_size_y = 1)  in;
+
+struct Particle {
+	vec4        pos;
+	vec4        vel;
+	vec4        color;
+	float       tex;
+	float       ramp;
+	float       scale;
+	float       live;
+};
+
+struct Parameters {
+	vec4        drag;	// [dx, dy, dz, grav scale]
+	vec4        ramp;	// [rate, max, alpha rate, scale rate]
+};
+
+layout(std140, set = 0, binding = 0) buffer ParticleStates {
+	Particle particles[];
+};
+
+layout(std140, set = 0, binding = 1) buffer ParticleParameters {
+	Parameters parameters[];
+};
+
+//doubles as VkDrawIndirectCommand
+layout(std140, set = 0, binding = 2) buffer ParticleSystem {
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
+};
+
+layout (push_constant) uniform PushConstants {
+	vec4        gravity;
+	float       dT;
+};
+
+void
+main ()
+{
+	uint        ind = gl_GlobalInvocationID.x;
+	if (ind >= particleCount) {
+		return;
+	}
+	Particle    part = particles[ind];
+	Parameters  parm = parameters[ind];
+
+	part.pos += dT * part.vel;
+	part.vel += dT * (part.vel * parm.drag + gravity * parm.drag.w);
+
+	part.ramp += dT * parm.ramp.x;
+	part.scale += dT * parm.ramp.z;
+	part.color.a -= dT * parm.ramp.a;
+	part.live -= dT;
+
+	particles[ind] = part;
+}

@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -45,10 +42,14 @@
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
+
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
@@ -56,28 +57,28 @@
 #include "compat.h"
 #include "r_internal.h"
 
+static scrap_t *light_scrap;
 static int          dlightdivtable[8192];
 static int			 gl_internalformat;				// 1 or 3
 static int          lightmap_bytes;				// 1, 3, or 4
-int          gl_lightmap_textures;
+GLuint gl_lightmap_textures[MAX_LIGHTMAPS];
 
 // keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
 static byte        *lightmaps[MAX_LIGHTMAPS];
 
-static unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
+static unsigned *blocklights;
+static int bl_extents[2];
 static int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
-qboolean	 gl_lightmap_modified[MAX_LIGHTMAPS];
-instsurf_t	*gl_lightmap_polys[MAX_LIGHTMAPS];
+bool		 gl_lightmap_modified[MAX_LIGHTMAPS];
+instsurf_t	*gl_lightmap_polys;
 glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
-void (*gl_R_BuildLightMap) (msurface_t *surf);
-
-extern void gl_multitexture_f (cvar_t *var);
-
+void (*gl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
+							msurface_t *surf);
 
 void
 gl_lightmap_init (void)
@@ -89,25 +90,9 @@ gl_lightmap_init (void)
 	for (s = 1; s < 8192; s++)
 		dlightdivtable[s] = 1048576 / (s << 7);
 }
-/*
-static void
-R_RecursiveLightUpdate (mnode_t *node)
-{
-	int         c;
-	msurface_t *surf;
 
-	if (node->children[0]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[0]);
-	if (node->children[1]->contents >= 0)
-		R_RecursiveLightUpdate (node->children[1]);
-	if ((c = node->numsurfaces))
-		for (surf = r_worldentity.model->surfaces + node->firstsurface; c;
-			 c--, surf++)
-			surf->cached_dlight = true;
-}
-*/
 static inline void
-R_AddDynamicLights_1 (msurface_t *surf)
+R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -117,17 +102,25 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
+	vec4f_t         entorigin = { 0, 0, 0, 1 };
 
 	smax = (surf->extents[0] >> 4) + 1;
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
+	if (transform) {
+		//FIXME give world entity a transform
+		entorigin = transform[3];
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
+		if (dist > min (1024, r_dlights[lnum].radius))
+			continue;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);
 
@@ -159,7 +152,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 			if (td < maxdist3) {		// ensure part is visible on this line
 				maxdist2 = maxdist - td;
 				for (s = 0; s < smax; s++) {
-					if (sdtable[s] < maxdist2) {
+					if (sdtable[s] + td < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
 						*bl++ += (grey * j) >> 7;
 					} else
@@ -172,7 +165,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 }
 
 static inline void
-R_AddDynamicLights_3 (msurface_t *surf)
+R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -182,17 +175,24 @@ R_AddDynamicLights_3 (msurface_t *surf)
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
+	vec4f_t         entorigin = { 0, 0, 0, 1 };
 
 	smax = (surf->extents[0] >> 4) + 1;
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
+	if (transform) {
+		entorigin = transform[3];
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
+		if (dist > min (1024, r_dlights[lnum].radius))
+			continue;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);
 
@@ -225,7 +225,7 @@ R_AddDynamicLights_3 (msurface_t *surf)
 			if (td < maxdist3) {		// ensure part is visible on this line
 				maxdist2 = maxdist - td;
 				for (s = 0; s < smax; s++) {
-					if (sdtable[s] < maxdist2) {
+					if (sdtable[s] + td < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
 						*bl++ += (red * j) >> 7;
 						*bl++ += (green * j) >> 7;
@@ -240,10 +240,11 @@ R_AddDynamicLights_3 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (msurface_t *surf)
+R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
-	int				maps, size, stride, smax, tmax, i, j;
+	int				maps, size, smax, tmax, i;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -254,7 +255,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -279,31 +280,27 @@ R_BuildLightMap_1 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_1 (surf);
+		R_AddDynamicLights_1 (transform, surf);
 
   store:
 	// bound and shift
 	// Also, invert because we're using a diff blendfunc now
-
-	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
-
-	dest = lightmaps[surf->lightmaptexturenum]
-			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = smax; j; j--) {
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-		}
+	dest = (byte *) blocklights;
+	for (i = 0; i < tmax * smax; i++) {
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
 	}
+
+	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 }
 
 static void
-R_BuildLightMap_3 (msurface_t *surf)
+R_BuildLightMap_3 (const vec4f_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
-	int				maps, size, stride, smax, tmax, i, j;
+	int				maps, size, smax, tmax, i;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -314,7 +311,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -341,34 +338,31 @@ R_BuildLightMap_3 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_3 (surf);
+		R_AddDynamicLights_3 (transform, surf);
 
   store:
 	// bound and shift
 	// and invert too
-	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
-
-	dest = lightmaps[surf->lightmaptexturenum]
-			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-		}
+	dest = (byte *) blocklights;
+	for (i = 0; i < tmax * smax; i++) {
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
 	}
+
+	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 }
 
 static void
-R_BuildLightMap_4 (msurface_t *surf)
+R_BuildLightMap_4 (const vec4f_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
-	int				maps, size, smax, tmax, i, j, stride;
+	int				maps, size, smax, tmax, i;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -379,7 +373,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -406,121 +400,55 @@ R_BuildLightMap_4 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_3 (surf);
+		R_AddDynamicLights_3 (transform, surf);
 
   store:
 	// bound and shift
 	// and invert too
-	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
-
-	dest = lightmaps[surf->lightmaptexturenum]
-			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-			*dest++ = min (*bl >> lmshift, 255);
-			bl++;
-			*dest++ = 255;
-		}
+	dest = (byte *) blocklights;
+	for (i = 0; i < tmax * smax; i++) {
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
+		*dest++ = min (*bl >> lmshift, 255);
+		bl++;
+		*dest++ = 255;
 	}
+
+	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 }
 
 // BRUSH MODELS ===============================================================
-
-static inline void
-do_subimage_2 (int i)
-{
-	byte       *block, *lm, *b;
-	int         stride, width;
-	glRect_t   *rect = &gl_lightmap_rectchange[i];
-
-	width = rect->w * lightmap_bytes;
-	stride = BLOCK_WIDTH * lightmap_bytes;
-	b = block = Hunk_TempAlloc (rect->h * width);
-	lm = lightmaps[i] + (rect->t * BLOCK_WIDTH + rect->l) * lightmap_bytes;
-	for (i = rect->h; i > 0; i--) {
-		memcpy (b, lm, width);
-		b += width;
-		lm += stride;
-	}
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->l, rect->t, rect->w, rect->h,
-					   gl_lightmap_format, GL_UNSIGNED_BYTE, block);
-}
-
-static void
-GL_UploadLightmap (int i)
-{
-	switch (gl_lightmap_subimage->int_val) {
-	case 2:
-		do_subimage_2 (i);
-		break;
-	case 1:
-		qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, gl_lightmap_rectchange[i].t,
-						   BLOCK_WIDTH, gl_lightmap_rectchange[i].h,
-						   gl_lightmap_format, GL_UNSIGNED_BYTE,
-						   lightmaps[i] + (gl_lightmap_rectchange[i].t *
-										   BLOCK_WIDTH) * lightmap_bytes);
-		break;
-	default:
-	case 0:
-		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
-						BLOCK_HEIGHT, 0, gl_lightmap_format, GL_UNSIGNED_BYTE,
-						lightmaps[i]);
-		break;
-	}
-}
-
-void
-gl_R_CalcLightmaps (void)
-{
-	int         i;
-
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		if (!gl_lightmap_polys[i])
-			continue;
-		if (gl_lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
-			GL_UploadLightmap (i);
-			gl_lightmap_modified[i] = false;
-		}
-	}
-}
 
 void
 gl_R_BlendLightmaps (void)
 {
 	float      *v;
-	int         i, j;
 	instsurf_t *sc;
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
 	qfglBlendFunc (lm_src_blend, lm_dest_blend);
 
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		for (sc = gl_lightmap_polys[i]; sc; sc = sc->lm_chain) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
-			if (sc->transform) {
-				qfglPushMatrix ();
-				qfglLoadMatrixf (sc->transform);
-			}
-			for (p = sc->surface->polys; p; p = p->next) {
-				qfglBegin (GL_POLYGON);
-				v = p->verts[0];
-				for (j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-					qfglTexCoord2fv (&v[5]);
-					qfglVertex3fv (v);
-				}
-				qfglEnd ();
-			}
-			if (sc->transform)
-				qfglPopMatrix ();
+	qfglBindTexture (GL_TEXTURE_2D, gl_R_LightmapTexture ());
+	for (sc = gl_lightmap_polys; sc; sc = sc->lm_chain) {
+		if (sc->transform) {
+			qfglPushMatrix ();
+			qfglLoadMatrixf ((vec_t*)&sc->transform[0]);//FIXME
 		}
+		for (p = sc->surface->polys; p; p = p->next) {
+			qfglBegin (GL_POLYGON);
+			v = p->verts[0];
+			for (int j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
+				qfglTexCoord2fv (&v[5]);
+				qfglVertex3fv (v);
+			}
+			qfglEnd ();
+		}
+		if (sc->transform)
+			qfglPopMatrix ();
 	}
 
 	// Return to normal blending  --KB
@@ -529,17 +457,14 @@ gl_R_BlendLightmaps (void)
 }
 
 void
-gl_overbright_f (cvar_t *var)
+gl_overbright_f (void *data, const cvar_t *cvar)
 {
-	int			 num, i, j;
-	model_t		*m;
-	msurface_t  *fa;
-	entity_t    *ent;
+	mod_brush_t *brush;
 
-	if (!var)
+	if (!cvar)
 		return;
 
-	if (var->int_val) {
+	if (gl_overbright) {
 		if (!gl_combine_capable && gl_mtex_capable) {
 			Sys_Printf ("Warning: gl_overbright has no effect with "
 						"gl_multitexture enabled if you don't have "
@@ -552,7 +477,7 @@ gl_overbright_f (cvar_t *var)
 			lm_src_blend = GL_DST_COLOR;
 			lm_dest_blend = GL_SRC_COLOR;
 
-			switch (var->int_val) {
+			switch (gl_overbright) {
 			case 2:
 				lmshift = 9;
 				gl_rgb_scale = 4.0;
@@ -574,98 +499,24 @@ gl_overbright_f (cvar_t *var)
 		gl_rgb_scale = 1.0;
 	}
 
-	if (gl_multitexture)
-		gl_multitexture_f (gl_multitexture);
-
 	if (!gl_R_BuildLightMap)
 		return;
 
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		m = ent->model;
+	brush = &r_refdef.worldmodel->brush;
 
-		if (m->type != mod_brush)
-			continue;
-		if (m->name[0] == '*')
-			continue;
-
-		for (j = 0, fa = m->surfaces; j < m->numsurfaces; j++, fa++) {
-			if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
-				continue;
-
-			num = fa->lightmaptexturenum;
-			gl_lightmap_modified[num] = true;
-			gl_lightmap_rectchange[num].l = 0;
-			gl_lightmap_rectchange[num].t = 0;
-			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
-			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
-
-			gl_R_BuildLightMap (fa);
-		}
-	}
-
-	m = r_worldentity.model;
-
-	for (i = 0, fa = m->surfaces; i < m->numsurfaces; i++, fa++) {
-		if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+	for (unsigned i = 0; i < brush->numsurfaces; i++) {
+		msurface_t *surf = brush->surfaces + i;
+		if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 			continue;
 
-		num = fa->lightmaptexturenum;
-		gl_lightmap_modified[num] = true;
-		gl_lightmap_rectchange[num].l = 0;
-		gl_lightmap_rectchange[num].t = 0;
-		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
-		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
-
-		gl_R_BuildLightMap (fa);
+		gl_R_BuildLightMap (0, brush, surf);
 	}
 }
 
 // LIGHTMAP ALLOCATION ========================================================
 
-// returns a texture number and the position inside it
-static int
-AllocBlock (int w, int h, int *x, int *y)
-{
-	int         best, best2, texnum, i, j;
-
-	for (texnum = 0; texnum < MAX_LIGHTMAPS; texnum++) {
-		best = BLOCK_HEIGHT;
-
-		for (i = 0; i < BLOCK_WIDTH - w; i++) {
-			best2 = 0;
-
-			for (j = 0; j < w; j++) {
-				if (allocated[texnum][i + j] >= best)
-					break;
-				if (allocated[texnum][i + j] > best2)
-					best2 = allocated[texnum][i + j];
-			}
-			if (j == w) {
-				// this is a valid spot
-				*x = i;
-				*y = best = best2;
-			}
-		}
-
-		if (best + h > BLOCK_HEIGHT)
-			continue;
-
-		// LordHavoc: allocate lightmaps only as needed
-		if (!lightmaps[texnum])
-			lightmaps[texnum] = calloc (BLOCK_WIDTH * BLOCK_HEIGHT,
-										lightmap_bytes);
-		for (i = 0; i < w; i++)
-			allocated[texnum][*x + i] = best + h;
-
-		return texnum;
-	}
-
-	Sys_Error ("AllocBlock: full");
-	return 0;
-}
-
 static void
-GL_CreateSurfaceLightmap (msurface_t *surf)
+GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 {
 	int         smax, tmax;
 
@@ -675,9 +526,16 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 
-	surf->lightmaptexturenum =
-		AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	gl_R_BuildLightMap (surf);
+	surf->lightpic = GL_ScrapSubpic (light_scrap, smax, tmax);
+	if (!surf->lightpic) {
+		Sys_Error ("FIXME taniwha is being lazy");
+	}
+	if (smax > bl_extents[0]) {
+		bl_extents[0] = smax;
+	}
+	if (tmax > bl_extents[1]) {
+		bl_extents[1] = tmax;
+	}
 }
 
 /*
@@ -688,19 +546,14 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 void
 GL_BuildLightmaps (model_t **models, int num_models)
 {
-	int         i, j;
 	model_t    *m;
+	mod_brush_t *brush;
 
 	memset (allocated, 0, sizeof (allocated));
 
 	r_framecount = 1;					// no dlightcache
 
-	if (!gl_lightmap_textures) {
-		gl_lightmap_textures = gl_texture_number;
-		gl_texture_number += MAX_LIGHTMAPS;
-	}
-
-	switch (r_lightmap_components->int_val) {
+	switch (r_lightmap_components) {
 	case 1:
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
@@ -728,45 +581,63 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		break;
 	}
 
-	for (j = 1; j < num_models; j++) {
+	if (!light_scrap) {
+		light_scrap = GL_CreateScrap (4096, gl_lightmap_format, 1);
+	} else {
+		GL_ScrapClear (light_scrap);
+	}
+
+	bl_extents[1] = bl_extents[0] = 0;
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		r_pcurrentvertbase = m->vertexes;
+		brush = &m->brush;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			if (m->surfaces[i].flags & SURF_DRAWTURB)
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
+			if (brush->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
-			if (gl_sky_divide->int_val && (m->surfaces[i].flags &
-										   SURF_DRAWSKY))
-				continue;
-			GL_CreateSurfaceLightmap (m->surfaces + i);
-			GL_BuildSurfaceDisplayList (m->surfaces + i);
+			GL_CreateSurfaceLightmap (brush, brush->surfaces + i);
+			GL_BuildSurfaceDisplayList (brush, brush->surfaces + i);
 		}
 	}
 
+	int size = bl_extents[0] * bl_extents[1] * 3;	// * 3 for rgb support
+	blocklights = realloc (blocklights, size * sizeof (blocklights[0]));
+
 	// upload all lightmaps that were filled
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		if (!allocated[i][0])
-			break;						// no more used
-		gl_lightmap_modified[i] = false;
-		gl_lightmap_rectchange[i].l = BLOCK_WIDTH;
-		gl_lightmap_rectchange[i].t = BLOCK_HEIGHT;
-		gl_lightmap_rectchange[i].w = 0;
-		gl_lightmap_rectchange[i].h = 0;
-		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (gl_Anisotropy)
-			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-							   gl_aniso);
-		qfglTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
-						BLOCK_HEIGHT, 0, gl_lightmap_format,
-						GL_UNSIGNED_BYTE, lightmaps[i]);
+	for (int j = 1; j < num_models; j++) {
+		m = models[j];
+		if (!m)
+			break;
+		if (m->path[0] == '*' || m->type != mod_brush) {
+			// sub model surfaces are processed as part of the main model
+			continue;
+		}
+		brush = &m->brush;
+		// non-bsp models don't have surfaces.
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
+			msurface_t *surf = brush->surfaces + i;
+			if (surf->lightpic) {
+				gl_R_BuildLightMap (0, brush, surf);
+			}
+		}
 	}
+}
+
+int
+gl_R_LightmapTexture (void)
+{
+	return GL_ScrapTexture (light_scrap);
+}
+
+void
+gl_R_FlushLightmaps (void)
+{
+	GL_ScrapFlush (light_scrap);
 }

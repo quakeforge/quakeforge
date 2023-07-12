@@ -1,0 +1,47 @@
+include libs/console/test/Makemodule.am
+
+lib_LTLIBRARIES += libs/console/libQFconsole.la
+plugin_LTLIBRARIES += @console_plugins@
+noinst_LTLIBRARIES += @client_static_plugins@ @server_static_plugins@
+EXTRA_LTLIBRARIES +=  libs/console/console_server.la libs/console/console_client.la
+
+console_common_sources= \
+	libs/console/buffer.c \
+	libs/console/complete.c \
+	libs/console/console.c \
+	libs/console/list.c \
+	libs/console/filelist.c
+client_sources= \
+	libs/console/bi_inputline.c \
+	libs/console/client.c \
+	libs/console/menu.c
+server_sources= \
+	libs/console/server.c
+
+console_deps=\
+	libs/ui/libQFui.la \
+	libs/util/libQFutil.la
+client_deps= \
+	libs/console/libQFconsole.la \
+	libs/audio/libQFsound.la \
+	libs/ruamoko/libQFruamoko.la \
+	libs/gib/libQFgib.la \
+	libs/ruamoko/libQFruamoko_client.la \
+	libs/ruamoko/libQFruamoko.la \
+	$(console_deps)
+server_deps= libs/console/libQFconsole.la $(console_deps)
+
+libs_console_libQFconsole_la_LDFLAGS=		$(lib_ldflags)
+libs_console_libQFconsole_la_LIBADD=		$(console_deps) $(plugin_libadd)
+libs_console_libQFconsole_la_DEPENDENCIES=	$(console_deps)
+libs_console_libQFconsole_la_SOURCES=		$(console_common_sources)
+
+libs_console_console_client_la_LDFLAGS=		$(plugin_ldflags)
+libs_console_console_client_la_LIBADD=		$(client_deps) $(plugin_libadd)
+libs_console_console_client_la_DEPENDENCIES=$(client_deps)
+libs_console_console_client_la_SOURCES=		$(client_sources)
+
+libs_console_console_server_la_LDFLAGS=		$(plugin_ldflags)
+libs_console_console_server_la_LIBADD=		$(server_deps) $(NCURSES_LIBS) $(plugin_libadd)
+libs_console_console_server_la_DEPENDENCIES=$(server_deps)
+libs_console_console_server_la_SOURCES=		$(server_sources)

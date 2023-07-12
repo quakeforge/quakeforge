@@ -1,7 +1,7 @@
-#include "message.h"
+#include <message.h>
 
-void (...) bprint = #23;
-void (entity client, string s) sprint = #24;
+void (float level, string s) bprint = #23;
+void (entity client, float level, string s) sprint = #24;
 void (float to, float f) WriteByte = #52;
 void (float to, float f) WriteChar = #53;
 void (float to, float f) WriteShort = #54;
@@ -13,4 +13,4 @@ void (float to, entity s) WriteEntity = #59;
 void (float to, ...) WriteBytes = #0;
 void (float to, vector v) WriteCoordV = #0;
 void (float to, vector v) WriteAngleV = #0;
-void (...) centerprint = #73;
+void (entity client, string s) centerprint = #73;

@@ -53,8 +53,8 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
-#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
 #include "QF/sound.h"
@@ -65,17 +65,16 @@
 #include "QF/plugin/cd.h"
 
 #include "compat.h"
-#include "snd_internal.h"
 
 /* Generic plugin structures */
 static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
 /* global status variables. */
-static qboolean	playing = false;
-static qboolean	wasPlaying = false;
-static qboolean	mus_enabled = false;
-static qboolean	ogglistvalid = false;
+static bool	playing = false;
+static bool	wasPlaying = false;
+static bool	mus_enabled = false;
+static bool	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
@@ -84,18 +83,31 @@ static plitem_t  *play_list;		// string or array of strings
 static int        play_pos = -1;	// position in play_list (0 for string)
 									// -1 = invalid (both)
 
-static cvar_t	 *bgmvolume;		// volume cvar
-static cvar_t	 *mus_ogglist;	// tracklist cvar
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
+static char *mus_ogglist;
+static cvar_t mus_ogglist_cvar = {
+	.name = "mus_ogglist",
+	.description =
+		"filename of track to music file map",
+	.default_value = "tracklist.cfg",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &mus_ogglist },
+};
 
 
 static void
 set_volume (void)
 {
-	if (cd_channel && cd_channel->sfx) {
-		int		vol = bgmvolume->value * 255;
-
-		cd_channel->master_vol = vol;
-		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
+	if (cd_channel) {
+		S_ChannelSetVolume (cd_channel, bgmvolume);
 	}
 }
 
@@ -120,7 +132,7 @@ I_OGGMus_Stop (void)
 	wasPlaying = false;
 
 	if (cd_channel) {
-		S_ChannelStop (cd_channel);
+		S_ChannelFree (cd_channel);
 		cd_channel = NULL;
 	}
 }
@@ -130,7 +142,7 @@ I_OGGMus_Shutdown (void)
 {
 	if (tracklist) {
 		I_OGGMus_Stop ();
-		PL_Free (tracklist);
+		PL_Release (tracklist);
 		tracklist = NULL;
 	}
 	mus_enabled = false;
@@ -151,14 +163,14 @@ Load_Tracklist (void)
 	ogglistvalid = false;
 	mus_enabled = false;
 
-	if (!mus_ogglist || strequal (mus_ogglist->string, "none")) {
+	if (!mus_ogglist || strequal (mus_ogglist, "none")) {
 		return -1;		// bail if we don't have a valid filename
 	}
 
-	oggfile = QFS_FOpenFile (mus_ogglist->string);
+	oggfile = QFS_FOpenFile (mus_ogglist);
 	if (!oggfile) {
 		Sys_Printf ("Mus_OggInit: open of file \"%s\" failed\n",
-			mus_ogglist->string);
+			mus_ogglist);
 		return -1;
 	}
 
@@ -172,7 +184,8 @@ Load_Tracklist (void)
 	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 
-	tracklist = PL_GetPropertyList (buffile);
+	PL_Release (tracklist);
+	tracklist = PL_GetPropertyList (buffile, 0);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
 		return -1;
@@ -189,7 +202,7 @@ Load_Tracklist (void)
 static void
 I_OGGMus_SetPlayList (int track)
 {
-	const char *trackstring = va ("%i", track);
+	const char *trackstring = va (0, "%i", track);
 	int         i;
 
 	play_list = PL_ObjectForKey (tracklist, trackstring);
@@ -218,8 +231,7 @@ static void
 I_OGGMus_PlayNext (int looping)
 {
 	const char *track;
-	sfx_t      *cd_sfx, *sfx;
-	wavinfo_t  *info = 0;
+	sfx_t      *sfx;
 
 	if (!play_list)
 		return;
@@ -235,29 +247,21 @@ I_OGGMus_PlayNext (int looping)
 	}
 
 	if (cd_channel) {
-		S_ChannelStop (cd_channel);
+		S_ChannelFree (cd_channel);
 		cd_channel = 0;
 	}
 
 	if (!(cd_channel = S_AllocChannel ()))
 		return;
 
-	if (!(cd_sfx = S_LoadSound (track)) || !(sfx = cd_sfx->open (cd_sfx))) {
-		S_ChannelStop (cd_channel);
+	if (!(sfx = S_LoadSound (track)) || !S_ChannelSetSfx (cd_channel, sfx)) {
+		S_ChannelFree (cd_channel);
 		cd_channel = 0;
 		return;
 	}
-	Sys_Printf ("Playing: %s.\n", track);
-	if (sfx->wavinfo)
-		info = sfx->wavinfo (sfx);
-	if (info) {
-		if (looping == true)
-			info->loopstart = 0;
-		else
-			info->loopstart = -1;
-	}
-	cd_channel->sfx = sfx;
+	S_ChannelSetLooping (cd_channel, looping ? 1 : -1);
 	set_volume ();
+	Sys_Printf ("Playing: %s.\n", track);
 
 	playing = true;
 }
@@ -269,7 +273,7 @@ I_OGGMus_Pause (void)
 		return;
 
 	if (cd_channel)
-		cd_channel->pause = 1;
+		S_ChannelSetPaused (cd_channel, 1);
 
 	wasPlaying = playing;
 	playing = false;
@@ -282,7 +286,7 @@ I_OGGMus_Resume (void)
 		return;
 
 	set_volume ();
-	cd_channel->pause = 0;
+	S_ChannelSetPaused (cd_channel, 0);
 	wasPlaying = false;
 	playing = true;
 }
@@ -290,7 +294,7 @@ I_OGGMus_Resume (void)
 /* start playing, if we've got a play_list.
  * cry if we can't find a file to play */
 static void
-I_OGGMus_Play (int track, qboolean looping)
+I_OGGMus_Play (int track, bool looping)
 {
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
@@ -323,11 +327,11 @@ I_OGGMus_Info (void)
 		return;
 
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
-				"---------------------------\n", mus_ogglist->string);
+				"---------------------------\n", mus_ogglist);
 
 	/* loop, and count up the Highest key number. */
 	for (iter = 1, count = 0; count < keycount && iter <= 99 ; iter++) {
-		trackstring = va ("%i", iter);
+		trackstring = va (0, "%i", iter);
 		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
 			continue;
 		}
@@ -429,7 +433,7 @@ I_OGG_f (void)
 static void
 I_OGGMus_Update (void)
 {
-	if (!cd_channel || !cd_channel->done)
+	if (!cd_channel || S_ChannelGetState (cd_channel) > chan_done)
 		return;
 	// will get here only when multi-tracked
 	I_OGGMus_Stop ();
@@ -438,36 +442,32 @@ I_OGGMus_Update (void)
 
 /* called when the mus_ogglist cvar is changed */
 static void
-Mus_OggChange (cvar_t *ogglist)
+Mus_OggChange (void *data, const cvar_t *cvar)
 {
-	mus_ogglist = ogglist;
 	Load_Tracklist ();
 }
 
 /* change volume on sound object */
 static void
-Mus_VolChange (cvar_t *bgmvolume)
+Mus_VolChange (void *data, const cvar_t *bgmvolume)
 {
 	set_volume ();
 }
 
 static void
-Mus_gamedir (int phase)
+Mus_gamedir (int phase, void *data)
 {
-	if (phase);
-		Mus_OggChange (mus_ogglist);
+	if (phase)
+		Load_Tracklist ();
 }
 
 static void
 I_OGGMus_Init (void)
 {
 	/* check list file cvar, open list file, create map, close file. */
-	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
-							Mus_OggChange,
-							"filename of track to music file map");
-	bgmvolume = Cvar_Get ("bgmvolume", "1.0", CVAR_ARCHIVE, Mus_VolChange,
-						  "Volume of CD music");
-	QFS_GamedirCallback (Mus_gamedir);
+	Cvar_Register (&mus_ogglist_cvar, Mus_OggChange, 0);
+	Cvar_Register (&bgmvolume_cvar, Mus_VolChange, 0);
+	QFS_GamedirCallback (Mus_gamedir, 0);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -476,6 +476,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_OGG_f,
 	I_OGGMus_Pause,
 	I_OGGMus_Play,

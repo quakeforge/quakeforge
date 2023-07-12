@@ -16,19 +16,19 @@ AC_MSG_RESULT([$leave_cflags_alone])
 
 AC_MSG_CHECKING(for C99 inline)
 c99_inline=no
-AC_TRY_LINK(
-	[inline int foo (int x) { return x * x; }
-	 int (*bar) (int) = foo;],
-	[],
-	c99_inline=no
-	AC_MSG_RESULT(no),
-	c99_inline=yes
-	AC_DEFINE(HAVE_C99INLINE, extern, [define this if using c99 inline])
-	AC_MSG_RESULT(yes)
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[inline int foo (int x) { return x * x; }
+		  int (*bar) (int) = foo;]],
+		[[]])],
+	[c99_inline=no
+		AC_MSG_RESULT(no)],
+	[c99_inline=yes
+		AC_DEFINE(HAVE_C99INLINE, extern, define this if using c99 inline)
+		AC_MSG_RESULT(yes)]
 )
 AH_VERBATIM([HAVE_C99INLINE],
-[/* Define this if the GCC __attribute__ keyword is available */
-#undef HAVE_C99INLINE
+[#undef HAVE_C99INLINE
 #ifdef HAVE_C99INLINE
 # define GNU89INLINE
 #else
@@ -53,7 +53,7 @@ if test "x$GCC" = xyes; then
 fi
 
 AC_ARG_ENABLE(debug,
-	[  --disable-debug         compile without debugging],
+	AS_HELP_STRING([--disable-debug], [compile without debugging]),
 	debug=$enable_debug
 )
 
@@ -76,11 +76,63 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+AC_ARG_ENABLE(Werror,
+	AS_HELP_STRING([--disable-Werror], [do not treat warnings as errors]))
+dnl We want warnings, lots of warnings...
+dnl The help text should be INVERTED before release!
+dnl when in git, this test defaults to ENABLED.
+dnl In a release, this test defaults to DISABLED.
+if test "x$GCC" = "xyes"; then
+	if test "x$enable_Werror" $cvs_def_enabled; then
+		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
+	else
+		CFLAGS="$CFLAGS -Wall"
+	fi
+	CFLAGS="$CFLAGS -fno-common"
+fi
+
 AC_ARG_ENABLE(optimize,
-	[  --disable-optimize      compile without optimizations (for development)],
+	AS_HELP_STRING([--disable-optimize],
+		[compile without optimizations (for development)]),
 	optimize=$enable_optimize,
 	optimize=yes
 )
+
+if test "x$host_cpu" = xaarch64; then
+	simd=neon
+else
+	AC_ARG_ENABLE(simd,
+		AS_HELP_STRING([--enable-simd@<:@=arg@:.@],
+			[enable SIMD support (default auto)]),
+		[],
+		[enable_simd=yes]
+	)
+
+	case "$enable_simd" in
+		no)
+			simd=no
+			;;
+		sse|sse2|avx|avx2)
+			QF_CC_OPTION(-m$enable_simd)
+			simd=$enable_simd
+			;;
+		yes)
+			for simd in avx2 avx sse2 sse; do
+				if lscpu | grep -q -w $simd; then
+					QF_CC_OPTION(-m$simd)
+					break
+				fi
+			done
+			;;
+	esac
+	case "$simd" in
+		avx*)
+			;;
+		*)
+			QF_CC_OPTION(-Wno-psabi)
+			;;
+	esac
+fi
 
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
@@ -88,16 +140,19 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
 		saved_cflags="$CFLAGS"
-		CFLAGS=""
+		dnl CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
-		if test "$CC_MAJ" -ge 4; then
-			QF_CC_OPTION(-finline-limit=32000 -Winline)
-		fi
-		heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		QF_CC_OPTION(-fexpensive-optimizations)
+		dnl if test "$CC_MAJ" -ge 4; then
+		dnl 	QF_CC_OPTION(-finline-limit=32000 -Winline)
+		dnl fi
+		dnl heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer"
+		heavy="-O2 $CFLAGS -fno-fast-math -funroll-loops -fomit-frame-pointer "
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
-	[  --enable-strict-aliasing enable the -fstrict-aliasing option of gcc])
+			AS_HELP_STRING([--enable-strict-aliasing],
+				[enable the -fstrict-aliasing option of gcc]))
 		if test "x$enable_strict_aliasing" = "xyes"; then
 			heavy="$heavy -fstrict-aliasing"
 			light="$light -fstrict-aliasing"
@@ -118,7 +173,8 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		fi
 		AC_MSG_CHECKING(for special compiler settings)
 		AC_ARG_WITH(arch,
-		[  --with-arch=ARCH        control compiler architecture directly],
+			AS_HELP_STRING([--with-arch=ARCH],
+				[control compiler architecture directly]),
 			arch="$withval", arch=auto
 		)
 		case "$arch" in
@@ -144,25 +200,17 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		else
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS $MORE_CFLAGS"
-			AC_TRY_COMPILE(
-				[],
-				[],
-				AC_MSG_RESULT(yes),
-				CFLAGS="$save_CFLAGS"
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[AC_MSG_RESULT(yes)],[CFLAGS="$save_CFLAGS"
 				AC_MSG_RESULT(no)
-			)
+			])
 		fi
 		if test $CC_MAJ = 2 -a $CC_MIN = 96; then
 			AC_MSG_CHECKING(if align options work)
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS -malign-loops=2 -malign-jumps=2 -malign-functions=2"
-			AC_TRY_COMPILE(
-				[],
-				[],
-				light="$light -malign-loops=2 -malign-jumps=2 -malign-functions=2"
-				AC_MSG_RESULT(yes),
-				AC_MSG_RESULT(no)
-			)
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[light="$light -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+				AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+			])
 			CFLAGS="$save_CFLAGS"
 			CFLAGS="$CFLAGS $light"
 		else
@@ -177,7 +225,8 @@ fi
 
 dnl CFLAGS for release and devel versions
 AC_ARG_ENABLE(profile,
-	[  --enable-profile        compile with profiling (for development)],
+	AS_HELP_STRING([--enable-profile],
+		[compile with profiling (for development)]),
 	profile=$enable_profile
 )
 if test "x$profile" = xyes; then
@@ -195,7 +244,7 @@ if test "x$GCC" = xyes; then
 	dnl Check for -pipe vs -save-temps.
 	AC_MSG_CHECKING(for -pipe vs -save-temps)
 	AC_ARG_ENABLE(save-temps,
-		[  --enable-save-temps     save temporary files],
+		AS_HELP_STRING([--enable-save-temps], [save temporary files]),
 		AC_MSG_RESULT(-save-temps)
 		CFLAGS="$CFLAGS -save-temps"
 		BUILD_TYPE="$BUILD_TYPE Save-temps"
@@ -213,6 +262,17 @@ if test $CC_MAJ -gt 4 -o $CC_MAJ -eq 4 -a $CC_MIN -ge 5; then
 fi
 QF_CC_OPTION(-Wtype-limits)
 QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
+QF_CC_OPTION(-Wsuggest-attribute=pure)
+QF_CC_OPTION(-Wsuggest-attribute=const)
+QF_CC_OPTION(-Wsuggest-attribute=noreturn)
+QF_CC_OPTION(-Wsuggest-attribute=format)
+QF_CC_OPTION(-Wformat-nonliteral)
+
+AC_ARG_ENABLE(coverage,
+	AS_HELP_STRING([--enable-coverage], [enable generation of data for gcov]))
+if test "x$enable_coverage" = xyes; then
+	QF_CC_OPTION(-fprofile-arcs -ftest-coverage)
+fi
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
 dnl with many compilers that do not support the latest ISO standards. Well,
@@ -238,22 +298,6 @@ if test "x$GCC" != xyes; then
         AC_MSG_RESULT(nothing needed or no switch known)
 	;;
   esac
-fi
-
-AC_ARG_ENABLE(Werror,
-[  --disable-Werror        Do not treat warnings as errors]
-)
-dnl We want warnings, lots of warnings...
-dnl The help text should be INVERTED before release!
-dnl when in git, this test defaults to ENABLED.
-dnl In a release, this test defaults to DISABLED.
-if test "x$GCC" = "xyes"; then
-	if test "x$enable_Werror" $cvs_def_enabled; then
-		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
-	else
-		CFLAGS="$CFLAGS -Wall"
-	fi
-	CFLAGS="$CFLAGS -fno-common"
 fi
 
 AS="$CC"

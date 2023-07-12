@@ -20,7 +20,7 @@
 # <pep8 compliant>
 
 quotables = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             + "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
+             + "`abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
 
 class PListError(Exception):
     def __init__(self, line, message):
@@ -173,9 +173,11 @@ class pldata:
                         "Unexpected character (expected '=')")
                 self.pos += 1
                 value = self.parse()
+                self.skip_space()
                 if self.src[self.pos] == ';':
                     self.pos += 1
                 elif self.src[self.pos] != '}':
+                    print(self.src[self.pos])
                     raise PListError(self.line,
                         "Unexpected character (wanted ';' or '}')")
                 item[key] = value
@@ -251,7 +253,7 @@ class pldata:
         elif type(item) in [int, float]:
             self.write_string(str(item))
         else:
-            raise PListError(0, "unsupported type")
+            raise PListError(0, f"unsupported type {type(item)}")
     def write(self, item):
         self.data = []
         self.write_item(item, 0)

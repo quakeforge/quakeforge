@@ -44,7 +44,7 @@ typedef struct gib_function_s {
 	struct hashtab_s *globals;
 	struct llist_s *arglist;
 	unsigned int minargs;
-	qboolean exported;
+	bool exported;
 } gib_function_t;
 
 gib_function_t *GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals);

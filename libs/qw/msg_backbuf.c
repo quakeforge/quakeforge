@@ -47,7 +47,7 @@ PushBackbuf (backbuf_t *rel)
 {
 	int         tail_backbuf;
 
-	Sys_MaskPrintf (SYS_DEV, "backbuffering %d %s\n", rel->num_backbuf,
+	Sys_MaskPrintf (SYS_dev, "backbuffering %d %s\n", rel->num_backbuf,
 					rel->name);
 	tail_backbuf = (rel->head_backbuf + rel->num_backbuf) % MAX_BACK_BUFFERS;
 	memset (&rel->backbuf, 0, sizeof (rel->backbuf));
@@ -59,7 +59,7 @@ PushBackbuf (backbuf_t *rel)
 }
 
 int
-MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize)
+MSG_ReliableCheckSize (backbuf_t *rel, unsigned maxsize, unsigned minsize)
 {
 	sizebuf_t  *msg = &rel->netchan->message;
 
@@ -80,7 +80,7 @@ MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize)
 
 // check to see if client block will fit, if not, rotate buffers
 sizebuf_t *
-MSG_ReliableCheckBlock (backbuf_t *rel, int maxsize)
+MSG_ReliableCheckBlock (backbuf_t *rel, unsigned maxsize)
 {
 	sizebuf_t  *msg = &rel->netchan->message;
 
@@ -108,7 +108,7 @@ MSG_ReliableCheckBlock (backbuf_t *rel, int maxsize)
 
 // begin a client block, estimated maximum size
 sizebuf_t *
-MSG_ReliableWrite_Begin (backbuf_t *rel, int c, int maxsize)
+MSG_ReliableWrite_Begin (backbuf_t *rel, int c, unsigned maxsize)
 {
 	sizebuf_t  *msg;
 	msg = MSG_ReliableCheckBlock (rel, maxsize);
@@ -226,7 +226,7 @@ MSG_ReliableWrite_String (backbuf_t *rel, const char *s)
 }
 
 void
-MSG_ReliableWrite_SZ (backbuf_t *rel, const void *data, int len)
+MSG_ReliableWrite_SZ (backbuf_t *rel, const void *data, unsigned len)
 {
 	if (rel->num_backbuf) {
 		SZ_Write (&rel->backbuf, data, len);
@@ -266,7 +266,7 @@ MSG_Reliable_Send (backbuf_t *rel)
 		return;
 	// will it fit?
 	if (msg->cursize + *size < msg->maxsize) {
-		Sys_MaskPrintf (SYS_DEV, "%s: backbuf %d bytes\n", rel->name, *size);
+		Sys_MaskPrintf (SYS_dev, "%s: backbuf %d bytes\n", rel->name, *size);
 		// it'll fit
 		SZ_Write (msg, data, *size);
 

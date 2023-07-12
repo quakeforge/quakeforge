@@ -553,6 +553,23 @@ main (void)
 	gl_FragColor = palettedColor (pix) * color;
 }
 
+-- Fragment.2d.alpha
+
+uniform sampler2D   texture;
+varying vec4 color;
+varying vec2 st;
+
+void
+main (void)
+{
+	float       alpha;
+
+	alpha = texture2D (texture, st).r;
+	if (alpha == 0.0)
+		discard;
+	gl_FragColor = alpha * color;
+}
+
 -- Vertex.iqm
 
 uniform mat4 mvp_mat;
@@ -585,8 +602,8 @@ main (void)
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
 #if 0
-	q0 = m[0].yzwx; //swizzle for conversion betwen QF and GL
-	qe = m[1].yzwx; //swizzle for conversion betwen QF and GL
+	q0 = m[0];
+	qe = m[1];
 	sh = m[2].xyz;
 	sc = m[3].xyz;
 
@@ -736,4 +753,61 @@ void
 main (void)
 {
 	gl_FragColor = vec4 (vec3 (edgeFactor ()), 0.5);
+}
+-- version.130
+#version 130
+-- Vertex.fstri
+
+out vec2 uv;
+
+void
+main ()
+{
+	// quake uses clockwise triangle order
+	float       x = (gl_VertexID & 2);
+	float       y = (gl_VertexID & 1);
+	uv = vec2(x, y*2);
+	gl_Position = vec4 (2, 4, 0, 0) * vec4 (x, y, 0, 0) - vec4 (1, 1, 0, -1);
+}
+
+-- Fragment.screen.warp
+
+uniform sampler2D screenTex;
+uniform float time;
+
+in vec2 uv;
+
+const float S = 0.15625;
+const float F = 2.5;
+const float A = 0.01;
+const vec2 B = vec2 (1, 1);
+
+void
+main ()
+{
+	vec2 st;
+	st = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
+	vec4        c = texture2D (screenTex, st);
+	gl_FragColor = c;//vec4(uv, c.x, 1);
+}
+
+-- Fragment.screen.fisheye
+
+uniform samplerCube screenTex;
+uniform float fov;
+uniform float aspect;
+
+in vec2 uv;
+
+void
+main ()
+{
+	// slight offset on y is to avoid the singularity straight ahead
+	vec2        xy = (2.0 * uv - vec2 (1, 1.00002)) * (vec2(1, -aspect));
+	float       r = sqrt (dot (xy, xy));
+	vec2        cs = vec2 (cos (r * fov), sin (r * fov));
+	vec3        dir = vec3 (cs.y * xy / r, cs.x);
+
+	vec4        c = textureCube(screenTex, dir);
+	gl_FragColor = c;// * 0.001 + vec4(dir, 1);
 }

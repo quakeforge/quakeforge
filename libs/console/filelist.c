@@ -102,7 +102,7 @@ filelist_print (filelist_t *filelist)
 	if (filelist->count) {
 		qsort (filelist->list, filelist->count, sizeof (char *), filelist_cmp);
 
-		list = malloc ((filelist->count + 1) * sizeof (char **));
+		list = malloc ((filelist->count + 1) * sizeof (char *));
 		list[filelist->count] = 0;
 		for (i = 0; i < filelist->count; i++)
 			list[i] = filelist->list[i];
@@ -167,7 +167,7 @@ Con_Skyboxlist_f (void)
 			for (j = 1; sb_endings[j]; j++) {
 				b = 0;
 				for (k = 0; k < skyboxlist->count; k++) {
-					if (strcmp(va("%s%s", basename->str, sb_endings[j]),
+					if (strcmp(va (0, "%s%s", basename->str, sb_endings[j]),
 							   skyboxlist->list[k]) == 0) {
 						b = 1;
 						*skyboxlist->list[k] = 0;

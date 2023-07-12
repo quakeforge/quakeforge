@@ -42,37 +42,61 @@
 #include <QF/mathlib.h>
 #include <QF/va.h>
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "function.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static def_t zero_def;
 
+static def_t *get_operand_def (expr_t *expr, operand_t *op);
+
 static def_t *
-get_value_def (ex_value_t *value, etype_t type)
+get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
+{
+	tempop_t   *tempop = &tmpop->tempop;
+	if (tempop->def) {
+		return tempop->def;
+	}
+	if (tempop->alias) {
+		def_t      *tdef = get_operand_def (expr, tempop->alias);
+		int         offset = tempop->offset;
+		tempop->def = alias_def (tdef, type, offset);
+	}
+	if (!tempop->def) {
+		tempop->def = temp_def (type);
+	}
+	return tempop->def;
+}
+
+static def_t *
+get_value_def (expr_t *expr, ex_value_t *value, type_t *type)
 {
 	def_t      *def;
 
-	if (type == ev_short) {
+	if (is_short (type)) {
 		def = new_def (0, &type_short, 0, sc_extern);
 		def->offset = value->v.short_val;
 		return def;
 	}
+	if (is_ptr (type) && value->v.pointer.tempop && !value->v.pointer.def) {
+		value->v.pointer.def = get_tempop_def (expr, value->v.pointer.tempop,
+											   type->t.fldptr.type);
+	}
 	def = emit_value (value, 0);
-	if (type != def->type->type)
-		return alias_def (def, ev_types[type], 0);
+	if (type != def->type)
+		return alias_def (def, type, 0);
 	return def;
 }
 
@@ -83,22 +107,23 @@ get_operand_def (expr_t *expr, operand_t *op)
 		return 0;
 	switch (op->op_type) {
 		case op_def:
-			return op->o.def;
+			return op->def;
 		case op_value:
-			return get_value_def (op->o.value, op->type);
+			return get_value_def (expr, op->value, op->type);
 		case op_label:
-			op->type = ev_short;
+			op->type = &type_short;
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
-			while (op->o.tempop.alias)
-				op = op->o.tempop.alias;
-			if (!op->o.tempop.def)
-				op->o.tempop.def = temp_def (op->type, op->size);
-			return op->o.tempop.def;
+			return get_tempop_def (expr, op, op->type);
 		case op_alias:
-			return get_operand_def (expr, op->o.alias);
+			return get_operand_def (expr, op->alias);
+		case op_nil:
+			internal_error (expr, "unexpected nil operand");
+		case op_pseudo:
+			internal_error (expr, "unexpected pseudo operand");
 	}
+	internal_error (expr, "unexpected operand");
 	return 0;
 }
 
@@ -136,8 +161,8 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 		int         st_ofs = st - pr.code->code;
 		reloc_t    *reloc = new_reloc (0, st_ofs, rel_op_a_op + field);
 
-		reloc->next = op->o.label->dest->relocs;
-		op->o.label->dest->relocs = reloc;
+		reloc->next = op->label->dest->relocs;
+		op->label->dest->relocs = reloc;
 	}
 }
 
@@ -146,32 +171,132 @@ use_tempop (operand_t *op, expr_t *expr)
 {
 	if (!op || op->op_type != op_temp)
 		return;
-	while (op->o.tempop.alias)
-		op = op->o.tempop.alias;
-	if (--op->o.tempop.users == 0)
-		free_temp_def (op->o.tempop.def);
-	if (op->o.tempop.users <= -1)
+	while (op->tempop.alias)
+		op = op->tempop.alias;
+	if (--op->tempop.users == 0)
+		free_temp_def (op->tempop.def);
+	if (op->tempop.users <= -1)
 		bug (expr, "temp users went negative: %s", operand_string (op));
+}
+
+static def_t *
+cover_def_32 (def_t *def, int *adj)
+{
+	int         offset = def->offset;
+	def_t      *cover = def;
+
+	if (def->alias) {
+		offset += def->alias->offset;
+	}
+	*adj = offset & 3;
+	if (offset & 3) {
+		if (def->alias) {
+			cover = alias_def (def->alias, def->type, def->offset);
+		} else {
+			cover = alias_def (def, def->type, 0);
+		}
+		cover->offset -= offset & 3;
+	}
+	return cover;
+}
+
+static def_t *
+cover_def_64 (def_t *def, int *adj)
+{
+	int         offset = def->offset;
+	def_t      *cover = def;
+
+	if (def->alias) {
+		offset += def->alias->offset;
+	}
+	if (offset & 1) {
+		internal_error (0, "misaligned 64-bit swizzle source");
+	}
+	*adj = (offset & 6) >> 1;
+	if (offset & 6) {
+		if (def->alias) {
+			cover = alias_def (def->alias, def->type, def->offset);
+		} else {
+			cover = alias_def (def, def->type, 0);
+		}
+		cover->offset -= offset & 6;
+	}
+	return cover;
+}
+
+static def_t *
+cover_def (def_t *def, int *adj)
+{
+	if (type_size (base_type (def->type)) == 1) {
+		return cover_def_32 (def, adj);
+	} else {
+		return cover_def_64 (def, adj);
+	}
+}
+
+static void
+adjust_swizzle (def_t *def, int adj)
+{
+	pr_ushort_t swiz = def->offset;
+	for (int i = 0; i < 8; i += 2) {
+		pr_ushort_t mask = 3 << i;
+		pr_ushort_t ind = swiz & mask;
+		swiz &= ~mask;
+		swiz |= (ind + (adj << i)) & mask;
+	}
+	def->offset = swiz;
 }
 
 static void
 emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
+	operand_t  *op_a, *op_b, *op_c;
 	def_t      *def_a, *def_b, *def_c;
-	opcode_t   *op;
+	instruction_t *inst;
 	dstatement_t *s;
 
-	def_a = get_operand_def (statement->expr, statement->opa);
-	use_tempop (statement->opa, statement->expr);
-	def_b = get_operand_def (statement->expr, statement->opb);
-	use_tempop (statement->opb, statement->expr);
-	def_c = get_operand_def (statement->expr, statement->opc);
-	use_tempop (statement->opc, statement->expr);
-	op = opcode_find (opcode, statement->opa, statement->opb, statement->opc);
+	if (options.code.progsversion < PROG_VERSION
+		&& (strcmp (statement->opcode, "store") == 0
+			|| strcmp (statement->opcode, "assign") == 0
+			|| statement_is_cond (statement))) {
+		// the operands for assign, store and branch instructions are rotated
+		// when comparing v6/v6p and ruamoko
+		op_a = statement->opc;
+		op_b = statement->opa;
+		op_c = statement->opb;
+	} else {
+		op_a = statement->opa;
+		op_b = statement->opb;
+		op_c = statement->opc;
+	}
 
-	if (!op) {
+	def_a = get_operand_def (statement->expr, op_a);
+	use_tempop (op_a, statement->expr);
+	def_b = get_operand_def (statement->expr, op_b);
+	use_tempop (op_b, statement->expr);
+	def_c = get_operand_def (statement->expr, op_c);
+	use_tempop (op_c, statement->expr);
+
+	if (strcmp (opcode, "swizzle") == 0) {
+		op_c->type = float_type (op_c->type);
+		op_a->type = float_type (op_a->type);
+		if (!op_c->type || !op_a->type) {
+			internal_error (statement->expr, "invalid types in swizzle");
+		}
+		if (op_a->width < 4) {
+			int         adj;
+			def_a = cover_def (def_a, &adj);
+			adjust_swizzle (def_b, adj);
+			op_a->width = 4;
+		}
+	}
+
+	inst = opcode_find (opcode, op_a, op_b, op_c);
+
+	if (!inst) {
 		print_expr (statement->expr);
+		printf ("%d ", pr.code->size);
 		print_statement (statement);
 		internal_error (statement->expr, "ice ice baby");
 	}
@@ -187,18 +312,32 @@ emit_statement (statement_t *statement)
 		}
 	}
 	s = codespace_newstatement (pr.code);
-	s->op = op->opcode;
-	s->a = def_a ? def_a->offset : 0;
-	s->b = def_b ? def_b->offset : 0;
-	s->c = def_c ? def_c->offset : 0;
+	memset (s, 0, sizeof (*s));
+	s->op = opcode_get (inst);
+	if (def_a) {
+		s->a = def_a->offset;
+		s->op |= ((def_a->reg) << OP_A_SHIFT) & OP_A_BASE;
+	}
+	if (def_b) {
+		s->b = def_b->offset;
+		s->op |= ((def_b->reg) << OP_B_SHIFT) & OP_B_BASE;
+	}
+	if (def_c) {
+		s->c = def_c->offset;
+		s->op |= ((def_c->reg) << OP_C_SHIFT) & OP_C_BASE;
+	}
+
+	if (options.verbosity >= 2) {
+		opcode_print_statement (pr.code->size - 1, s);
+	}
 
 	add_statement_def_ref (def_a, s, 0);
 	add_statement_def_ref (def_b, s, 1);
 	add_statement_def_ref (def_c, s, 2);
 
-	add_statement_op_ref (statement->opa, s, 0);
-	add_statement_op_ref (statement->opb, s, 1);
-	add_statement_op_ref (statement->opc, s, 2);
+	add_statement_op_ref (op_a, s, 0);
+	add_statement_op_ref (op_b, s, 1);
+	add_statement_op_ref (op_c, s, 2);
 }
 
 void

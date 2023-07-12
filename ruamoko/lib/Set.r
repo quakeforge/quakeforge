@@ -1,6 +1,7 @@
-#include "Set.h"
+#include <Set.h>
 
 void set_del_iter (set_iter_t *set_iter) = #0;
+unsigned set_iter_element (set_iter_t *set_iter) = #0;
 set_t *set_new (void) = #0;
 void set_delete (set_t *set) = #0;
 set_t *set_add (set_t *set, unsigned x) = #0;
@@ -20,18 +21,39 @@ int set_is_intersecting (set_t *s1, set_t *s2) = #0;
 int set_is_equivalent (set_t *s1, set_t *s2) = #0;
 int set_is_subset (set_t *set, set_t *sub) = #0;
 int set_is_member (set_t *set, unsigned x) = #0;
-unsigned set_size (set_t *set) = #0;
+unsigned set_count (set_t *set) = #0;
 set_iter_t *set_first (set_t *set) = #0;
 set_iter_t *set_next (set_iter_t *set_iter) = #0;
 string set_as_string (set_t *set) = #0;
 
 
 @implementation SetIterator: Object
+
+- initWithSet: (Set *)set iterator:(set_iter_t *) iter
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	self.set = [set retain];
+	self.iter = iter;
+	return self;
+}
+
++ (id) withSet: (Set *)set iterator:(set_iter_t *) iter
+{
+	return [[[self alloc] initWithSet: set iterator: iter] autorelease];
+}
+
+- (void) dealloc
+{
+	[set release];
+	[super dealloc];
+}
+
 - (SetIterator *) next
 {
 	if ((iter = set_next (iter)))
 		return self;
-	[self dealloc];
 	return nil;
 }
 
@@ -56,6 +78,11 @@ string set_as_string (set_t *set) = #0;
 {
 	set_delete (set);
 	[super dealloc];
+}
+
+- (string) describe
+{
+	return set_as_string (set);
 }
 
 - (Set *) add: (unsigned) x = #0;
@@ -84,8 +111,7 @@ string set_as_string (set_t *set) = #0;
 
 	if (!iter)
 		return nil;
-	iterator = [[SetIterator alloc] init];
-	iterator.iter = iter;
+	iterator = [SetIterator withSet: self iterator: iter];
 	return iterator;
 }
 

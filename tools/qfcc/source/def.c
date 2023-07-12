@@ -45,24 +45,24 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-static def_t *defs_freelist;
+ALLOC_STATE (def_t, defs);
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
@@ -76,30 +76,42 @@ set_storage_bits (def_t *def, storage_class_t storage)
 			def->external = 0;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_extern:
 			def->global = 1;
 			def->external = 1;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_static:
 			def->external = 0;
 			def->global = 0;
 			def->local = 0;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_local:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
 			def->param = 0;
+			def->argument = 0;
 			break;
 		case sc_param:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
 			def->param = 1;
+			def->argument = 0;
+			break;
+		case sc_argument:
+			def->external = 0;
+			def->global = 0;
+			def->local = 1;
+			def->param = 0;
+			def->argument = 1;
 			break;
 	}
 	def->initialized = 0;
@@ -140,7 +152,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (obj_is_class (type)) {
+	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;
@@ -148,11 +160,18 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (storage != sc_extern) {
 		int         size = type_size (type);
+		int         alignment = type->alignment;
+
 		if (!size) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
+			alignment = 1;
 		}
-		def->offset = defspace_alloc_loc (space, size);
+		if (alignment < 1) {
+			print_type (type);
+			internal_error (0, "type has no alignment");
+		}
+		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
 	}
 
 	return def;
@@ -173,14 +192,12 @@ alias_def (def_t *def, type_t *type, int offset)
 		internal_error (0, "aliasing a def to a larger type");
 	if (offset < 0 || offset + type_size (type) > type_size (def->type))
 		internal_error (0, "invalid alias offset");
-	if (type == def->type)
-		return def;
 	for (alias = def->alias_defs; alias; alias = alias->next) {
 		if (alias->type == type && alias->offset == offset)
 			return alias;
 	}
 	ALLOC (16384, def_t, defs, alias);
-	alias->name = save_string (va ("[%s:%d]", def->name, offset));
+	alias->name = save_string (va (0, "[%s:%d]", def->name, offset));
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = offset;
 	alias->offset_reloc = 1;
@@ -189,32 +206,42 @@ alias_def (def_t *def, type_t *type, int offset)
 	alias->line = pr.source_line;
 	alias->file = pr.source_file;
 	alias->next = def->alias_defs;
+	alias->reg = def->reg;
 	def->alias_defs = alias;
 	return alias;
 }
 
 def_t *
-temp_def (etype_t type, int size)
+temp_def (type_t *type)
 {
 	def_t      *temp;
-	defspace_t *space = current_func->symtab->space;
+	defspace_t *space = current_func->locals->space;
+	int         size = type_size (type);
+	int         alignment = type->alignment;
 
+	if (size < 1 || size > MAX_DEF_SIZE) {
+		internal_error (0, "%d invalid size for temp def", size);
+	}
+	if (alignment < 1) {
+		internal_error (0, "temp type has no alignment");
+	}
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->temp_next;
 		temp->temp_next = 0;
 	} else {
 		ALLOC (16384, def_t, defs, temp);
-		temp->offset = defspace_alloc_loc (space, size);
+		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
 		space->def_tail = &temp->next;
-		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
+		temp->name = save_string (va (0, ".tmp%d", current_func->temp_num++));
 	}
 	temp->return_addr = __builtin_return_address (0);
-	temp->type = ev_types[type];
+	temp->type = type;
 	temp->file = pr.source_file;
 	temp->line = pr.source_line;
 	set_storage_bits (temp, sc_local);
 	temp->space = space;
+	temp->reg = current_func->temp_reg;
 	return temp;
 }
 
@@ -263,128 +290,148 @@ free_def (def_t *def)
 void
 def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 {
-	type_t     *type = def->type;
+	const type_t *type = unalias_type (def->type);
 
 	if (aux)
 		type = type->t.fldptr.type;	// aux is true only for fields
 	ddef->type = type->type;
 	ddef->ofs = def->offset;
-	ddef->s_name = ReuseString (def->name);
+	ddef->name = ReuseString (def->name);
+}
+
+static int
+zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
+			 int init_size, int init_offset)
+{
+	int         zero_size = type_size (zero_type);
+	expr_t     *zero = convert_nil (new_nil_expr (), zero_type);
+	expr_t     *dst;
+
+	for (; init_offset < init_size + 1 - zero_size; init_offset += zero_size) {
+		dst = new_def_expr (def);
+		dst = new_offset_alias_expr (zero_type, dst, init_offset);
+		append_expr (local_expr, assign_expr (dst, zero));
+	}
+	return init_offset;
+}
+
+static void
+init_elements_nil (def_t *def)
+{
+	if (def->local && local_expr) {
+		// memset to 0
+		int         init_size = type_size (def->type);
+		int         init_offset = 0;
+
+		if (options.code.progsversion != PROG_ID_VERSION) {
+			init_offset = zero_memory (local_expr, def, &type_zero,
+									   init_size, init_offset);
+		}
+		// probably won't happen any time soon, but who knows...
+		if (options.code.progsversion != PROG_ID_VERSION
+			&& init_size - init_offset >= type_size (&type_quaternion)) {
+			init_offset = zero_memory (local_expr, def, &type_quaternion,
+									   init_size, init_offset);
+		}
+		if (init_size - init_offset >= type_size (&type_vector)) {
+			init_offset = zero_memory (local_expr, def, &type_vector,
+									   init_size, init_offset);
+		}
+		if (options.code.progsversion != PROG_ID_VERSION
+			&& init_size - init_offset >= type_size (&type_double)) {
+			init_offset = zero_memory (local_expr, def, &type_double,
+									   init_size, init_offset);
+		}
+		if (init_size - init_offset >= type_size (type_default)) {
+			zero_memory (local_expr, def, type_default,
+						 init_size, init_offset);
+		}
+	}
+	// it's a global, so already initialized to 0
 }
 
 static void
 init_elements (struct def_s *def, expr_t *eles)
 {
-	expr_t     *e, *c;
-	int         count, i, num_elements, base_offset;
+	expr_t     *c;
 	pr_type_t  *g;
-	def_t      *elements;
+	element_chain_t element_chain;
+	element_t  *element;
 
-	base_offset = def->offset;
-	if (def->local && local_expr)
-		base_offset = 0;
-	if (is_array (def->type)) {
-		type_t     *array_type = def->type->t.array.type;
-		int         array_size = def->type->t.array.size;
-		elements = calloc (array_size, sizeof (def_t));
-		for (i = 0; i < array_size; i++) {
-			elements[i].type = array_type;
-			elements[i].space = def->space;
-			elements[i].offset = base_offset + i * type_size (array_type);
-		}
-		num_elements = i;
-	} else if (is_struct (def->type)
-			   || def->type == &type_vector
-			   || def->type == &type_quaternion) {
-		symtab_t   *symtab = def->type->t.symtab;
-		symbol_t   *field;
-
-		for (i = 0, field = symtab->symbols; field; field = field->next) {
-			if (field->sy_type != sy_var)
-				continue;
-			i++;
-		}
-		elements = calloc (i, sizeof (def_t));
-		for (i = 0, field = symtab->symbols; field; field = field->next) {
-			if (field->sy_type != sy_var)
-				continue;
-			elements[i].type = field->type;
-			elements[i].space = def->space;
-			elements[i].offset = base_offset + field->s.offset;
-			i++;
-		}
-		num_elements = i;
-	} else {
-		error (eles, "invalid initializer");
+	if (eles->type == ex_nil) {
+		init_elements_nil (def);
 		return;
 	}
-	for (count = 0, e = eles->e.block.head; e; count++, e = e->next) {
-		convert_name (e);
-		if (e->type == ex_nil && count < num_elements)
-			convert_nil (e, elements[count].type);
-		if (e->type == ex_error) {
-			free (elements);
-			return;
-		}
-	}
-	if (count > num_elements) {
-		if (options.warnings.initializer)
-			warning (eles, "excessive elements in initializer");
-		count = num_elements;
-	}
-	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
-		g = D_POINTER (pr_type_t, &elements[i]);
-		c = constant_expr (e);
-		if (c->type == ex_block) {
-			if (!is_array (elements[i].type)
-				&& !is_struct (elements[i].type)) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-			init_elements (&elements[i], c);
-			continue;
-		} else if (c->type == ex_labelref) {
-			def_t       loc;
-			loc.space = elements[i].space;
-			loc.offset = elements[i].offset;
-			reloc_def_op (c->e.labelref.label, &loc);
-			continue;
-		} else if (c->type == ex_value) {
-			if (c->e.value->type == ev_integer
-				&& elements[i].type->type == ev_float)
-				convert_int (c);
-			if (get_type (c) != elements[i].type) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-		} else {
-			if (!def->local || !local_expr) {
-				error (e, "non-constant initializer");
-				continue;
-			}
-		}
-		if (def->local && local_expr) {
-			int         offset = elements[i].offset;
-			type_t     *type = elements[i].type;
-			expr_t     *ptr = new_pointer_expr (offset, type, def);
 
-			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
-		} else {
-			if (c->type != ex_value)
+	element_chain.head = 0;
+	element_chain.tail = &element_chain.head;
+	build_element_chain (&element_chain, def->type, eles, 0);
+
+	if (def->local && local_expr) {
+		expr_t     *dst = new_def_expr (def);
+		assign_elements (local_expr, dst, &element_chain);
+	} else {
+		def_t       dummy = *def;
+		for (element = element_chain.head; element; element = element->next) {
+			if (!element->expr
+				|| ((c = constant_expr (element->expr))->type == ex_nil)) {
+				// nil is type agnostic 0 and defspaces are initialized to
+				// 0 on creation
+				continue;
+			}
+			if (c->type == ex_nil) {
+				c = convert_nil (c, element->type);
+			}
+			dummy.offset = def->offset + element->offset;
+			g = D_POINTER (pr_type_t, &dummy);
+			if (c->type == ex_labelref) {
+				// reloc_def_* use only the def's offset and space, so dummy
+				// is ok
+				reloc_def_op (c->e.labelref.label, &dummy);
+				continue;
+			} else if (c->type == ex_value) {
+				type_t     *ctype = get_type (c);
+				if (ctype != element->type
+					&& type_assignable (element->type, ctype)) {
+					if (!c->implicit
+						&& !type_promotes (element->type, ctype)) {
+						warning (c, "initialization of %s with %s"
+								 " (use a cast)\n)",
+								 get_type_string (element->type),
+								 get_type_string (ctype));
+					}
+					expr_t     *n = cast_expr (element->type, c);
+					n->line = c->line;
+					n->file = c->line;
+					c = n;
+				}
+				if (get_type (c) != element->type) {
+					error (c, "type mismatch in initializer");
+					continue;
+				}
+			} else {
+				if (!def->local || !local_expr) {
+					error (c, "non-constant initializer");
+					continue;
+				}
+			}
+			if (c->type != ex_value) {
 				internal_error (c, "bogus expression type in init_elements()");
-			if (c->e.value->type == ev_string) {
-				EMIT_STRING (def->space, g->string_var,
+			}
+			if (c->e.value->lltype == ev_string) {
+				EMIT_STRING (def->space, *(pr_string_t *) g,
 							 c->e.value->v.string_val);
 			} else {
 				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
 			}
 		}
 	}
-	free (elements);
+
+	free_element_chain (&element_chain);
 }
 
-static void
-init_vector_components (symbol_t *vector_sym, int is_field)
+void
+init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 {
 	expr_t     *vector_expr;
 	int         i;
@@ -396,10 +443,10 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 		symbol_t   *sym;
 		const char *name;
 
-		name = va ("%s_%s", vector_sym->name, fields[i]);
-		sym = symtab_lookup (current_symtab, name);
+		name = va (0, "%s_%s", vector_sym->name, fields[i]);
+		sym = symtab_lookup (symtab, name);
 		if (sym) {
-			if (sym->table == current_symtab) {
+			if (sym->table == symtab) {
 				if (sym->sy_type != sy_expr) {
 					error (0, "%s redefined", name);
 					sym = 0;
@@ -407,7 +454,7 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 					expr = sym->s.expr;
 					if (is_field) {
 						if (expr->type != ex_value
-							|| expr->e.value->type != ev_field) {
+							|| expr->e.value->lltype != ev_field) {
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
@@ -433,14 +480,15 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 		sym->sy_type = sy_expr;
 		sym->s.expr = expr;
 		if (!sym->table)
-			symtab_addsymbol (current_symtab, sym);
+			symtab_addsymbol (symtab, sym);
 	}
 }
 
 static void
-init_field_def (def_t *def, expr_t *init, storage_class_t storage)
+init_field_def (def_t *def, expr_t *init, storage_class_t storage,
+				symtab_t *symtab)
 {
-	type_t     *type = def->type->t.fldptr.type;
+	type_t     *type = (type_t *) dereference_type (def->type);//FIXME cast
 	def_t      *field_def;
 	symbol_t   *field_sym;
 	reloc_t    *relocs = 0;
@@ -470,8 +518,8 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 			def->nosave = 1;
 		}
 		// no support for initialized field vector componets (yet?)
-		if (type == &type_vector && options.code.vector_components)
-			init_vector_components (field_sym, 1);
+		if (is_vector(type) && options.code.vector_components)
+			init_vector_components (field_sym, 1, symtab);
 	} else if (init->type == ex_symbol) {
 		symbol_t   *sym = init->e.symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
@@ -483,20 +531,29 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 	}
 }
 
-void
-initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
-				storage_class_t storage)
+static int
+num_elements (expr_t *e)
 {
-	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
+	int         count = 0;
+	for (e = e->e.block.head; e; e = e->next) {
+		count++;
+	}
+	return count;
+}
+
+void
+initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
+				storage_class_t storage, symtab_t *symtab)
+{
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
 
-	if (!type) {
-		warning (0, "type for %s defaults to %s", sym->name,
-				 type_default->name);
-		type = type_default;
+	if (check && symtab->parent && check->table == symtab->parent->parent
+		&& symtab->parent->parent->type == stab_param) {
+		error (0, "%s shadows a parameter", sym->name);
 	}
-	if (check && check->table == current_symtab) {
-		if (check->sy_type != sy_var || check->type != type) {
+	if (check && check->table == symtab) {
+		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
@@ -504,7 +561,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				internal_error (0, "half defined var");
 			if (storage == sc_extern) {
 				if (init)
-					warning (0, "initializing external variable");
+					error (0, "initializing external variable");
 				return;
 			}
 			if (init && check->s.def->initialized) {
@@ -514,20 +571,10 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			sym = check;
 		}
 	}
-	sym->type = type;
+	sym->sy_type = sy_var;
 	if (!sym->table)
-		symtab_addsymbol (current_symtab, sym);
-//	if (storage == sc_global && init && is_scalar (type)) {
-//		sym->sy_type = sy_const;
-//		memset (&sym->s.value, 0, sizeof (&sym->s.value));
-//		if (init->type != ex_value) {	//FIXME arrays/structs
-//			error (0, "non-constant initializier");
-//		} else {
-//			sym->s.value = init->e.value;
-//			convert_value (&sym->s.value, sym->type);
-//		}
-//		return;
-//	}
+		symtab_addsymbol (symtab, sym);
+
 	if (sym->s.def && sym->s.def->external) {
 		//FIXME this really is not the right way
 		relocs = sym->s.def->relocs;
@@ -535,16 +582,22 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		sym->s.def = 0;
 	}
 	if (!sym->s.def) {
-		sym->s.def = new_def (sym->name, type, space, storage);
+		if (is_array (sym->type) && !type_size (sym->type)
+			&& init && init->type == ex_compound) {
+			sym->type = array_type (sym->type->t.array.type,
+									num_elements (init));
+		}
+		sym->s.def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
-	if (type == &type_vector && options.code.vector_components)
-		init_vector_components (sym, 0);
-	if (type->type == ev_field && storage != sc_local && storage != sc_param)
-		init_field_def (sym->s.def, init, storage);
+	if (is_vector(sym->type) && options.code.vector_components)
+		init_vector_components (sym, 0, symtab);
+	if (sym->type->type == ev_field && storage != sc_local
+		&& storage != sc_param)
+		init_field_def (sym->s.def, init, storage, symtab);
 	if (storage == sc_extern) {
 		if (init)
-			warning (0, "initializing external variable");
+			error (0, "initializing external variable");
 		return;
 	}
 	if (!init)
@@ -552,48 +605,67 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
-	if (init->type == ex_nil)
-		convert_nil (init, type);
-	if ((is_array (type) || is_struct (type)
-		 || type == &type_vector || type == &type_quaternion)
-		&& init->type == ex_block && !init->e.block.result) {
+	if ((is_structural (sym->type) || is_nonscalar (sym->type))
+		&& (init->type == ex_compound || init->type == ex_nil)) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		if (!type_assignable (type, get_type (init))) {
-			error (init, "type mismatch in initializer");
+		type_t     *init_type;
+		if (init->type == ex_nil) {
+			convert_nil (init, sym->type);
+		}
+		init_type = get_type (init);
+		if (!type_assignable (sym->type, init_type)) {
+			error (init, "type mismatch in initializer: %s = %s",
+				   get_type_string (sym->type), get_type_string (init_type));
 			return;
 		}
-		if (local_expr) {
+		if (storage == sc_local && local_expr) {
 			sym->s.def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));
 		} else {
-			if (init->type != ex_value) {	//FIXME enum etc
-				error (0, "non-constant initializier");
+			if (!is_constant (init)) {
+				error (init, "non-constant initializier");
 				return;
 			}
-			if (init->e.value->type == ev_pointer
-				|| init->e.value->type == ev_field) {
+			while (init->type == ex_alias) {
+				init = init->e.alias.expr;
+			}
+			if (init->type != ex_value) {	//FIXME enum etc
+				internal_error (0, "initializier not a value");
+				return;
+			}
+			if (init->e.value->lltype == ev_ptr
+				|| init->e.value->lltype == ev_field) {
 				// FIXME offset pointers
 				D_INT (sym->s.def) = init->e.value->v.pointer.val;
 				if (init->e.value->v.pointer.def)
 					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
 				ex_value_t *v = init->e.value;
-				if (is_scalar (sym->type))
+				if (!init->implicit
+					&& is_double (init_type)
+					&& (is_integral (sym->type) || is_float (sym->type))) {
+					warning (init, "assigning double to %s in initializer "
+							 "(use a cast)", sym->type->name);
+				}
+				if (!type_same (sym->type, init_type))
 					v = convert_value (v, sym->type);
-				if (v->type == ev_string) {
+				if (v->lltype == ev_string) {
 					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
 								 v->v.string_val);
 				} else {
-					memcpy (D_POINTER (void, sym->s.def), &v->v,
-							type_size (type) * sizeof (pr_type_t));
+					memcpy (D_POINTER (pr_type_t, sym->s.def), &v->v,
+							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}
-			sym->s.def->initialized = sym->s.def->constant = 1;
-			sym->s.def->nosave = 1;
+			sym->s.def->initialized = 1;
+			if (options.code.const_initializers) {
+				sym->s.def->constant = 1;
+				sym->s.def->nosave = 1;
+			}
 		}
 	}
 	sym->s.def->initializer = init;
@@ -658,8 +730,11 @@ def_visit_all (def_t *def, int overlap,
 		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if ((ret = visit (def, data)))
+		if (!(overlap & 4) && (ret = visit (def, data)))
 			return ret;
+		overlap &= ~4;
+	} else {
+		overlap = 0;
 	}
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == start_def)

@@ -68,7 +68,7 @@ typedef enum {
 */
 typedef struct reloc_s {
 	struct reloc_s *next;		///< next reloc in reloc chain
-	struct ex_label_s *label;	///< instruction label for *_op relocs
+	const struct ex_label_s *label;	///< instruction label for *_op relocs
 	struct defspace_s *space;	///< the space containing the location in
 								///< need of adjustment for def_* relocations
 								///< (op_* relocations always use the code
@@ -77,8 +77,8 @@ typedef struct reloc_s {
 								///< adjustment
 	reloc_type	type;			///< type type of relocation to perform
 	int			line;			///< current source line when creating reloc
-	string_t	file;			///< current source file when creating reloc
-	void       *return_address;	///< for debugging
+	pr_string_t file;			///< current source file when creating reloc
+	const void *return_address;	///< for debugging
 } reloc_t;
 
 struct statement_s;
@@ -147,7 +147,7 @@ void reloc_op_def_ofs (struct def_s *def, int offset, int field);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_def (struct def_s *def, struct def_s *location);
+void reloc_def_def (struct def_s *def, const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a def.
 
@@ -162,7 +162,7 @@ void reloc_def_def (struct def_s *def, struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_def_ofs (struct def_s *def, struct def_s *location);
+void reloc_def_def_ofs (struct def_s *def, const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a function.
 
@@ -177,7 +177,7 @@ void reloc_def_def_ofs (struct def_s *def, struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_func (struct function_s *func, struct def_s *location);
+void reloc_def_func (struct function_s *func, const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a string.
 
@@ -191,7 +191,7 @@ void reloc_def_func (struct function_s *func, struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_string (struct def_s *location);
+void reloc_def_string (const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a field.
 
@@ -206,7 +206,7 @@ void reloc_def_string (struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_field (struct def_s *def, struct def_s *location);
+void reloc_def_field (struct def_s *def, const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a field.
 
@@ -221,7 +221,7 @@ void reloc_def_field (struct def_s *def, struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_field_ofs (struct def_s *def, struct def_s *location);
+void reloc_def_field_ofs (struct def_s *def, const struct def_s *location);
 
 /**	Create a relocation record for a data location referencing an
 	instruction.
@@ -237,9 +237,12 @@ void reloc_def_field_ofs (struct def_s *def, struct def_s *location);
 					adjusted. As the def's space and offset will be copied
 					into the relocation record, a dummy def may be used.
 */
-void reloc_def_op (struct ex_label_s *label, struct def_s *location);
+void reloc_def_op (const struct ex_label_s *label,
+				   const struct def_s *location);
 
 void reloc_attach_relocs (reloc_t *relocs, reloc_t **location);
+
+extern const char * const reloc_name[];
 
 ///@}
 

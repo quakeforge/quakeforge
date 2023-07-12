@@ -41,34 +41,165 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 progs_t     sv_pr_state;
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
+edict_t sv_edicts[MAX_EDICTS];
 sv_data_t sv_data[MAX_EDICTS];
 
-cvar_t     *sv_progs;
-cvar_t     *sv_progs_zone;
-cvar_t     *sv_progs_ext;
-cvar_t     *pr_checkextensions;
+char *sv_progs;
+static cvar_t sv_progs_cvar = {
+	.name = "sv_progs",
+	.description =
+		"Override the default game progs.",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs },
+};
+int sv_progs_zone;
+static cvar_t sv_progs_zone_cvar = {
+	.name = "sv_progs_zone",
+	.description =
+		"size of the zone for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_zone },
+};
+int sv_progs_stack;
+static cvar_t sv_progs_stack_cvar = {
+	.name = "sv_progs_stack",
+	.description =
+		"size of the stack for progs in kb",
+	.default_value = "256",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_progs_stack },
+};
+char *sv_progs_ext;
+static cvar_t sv_progs_ext_cvar = {
+	.name = "sv_progs_ext",
+	.description =
+		"extention mapping to use: none, id, qf",
+	.default_value = "qf",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_progs_ext },
+};
+float pr_checkextensions;
+static cvar_t pr_checkextensions_cvar = {
+	.name = "pr_checkextensions",
+	.description =
+		"indicate the presence of the checkextentions qc function",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_float, .value = &pr_checkextensions },
+};
 
-cvar_t     *nomonsters;
-cvar_t     *gamecfg;
-cvar_t     *scratch1;
-cvar_t     *scratch2;
-cvar_t     *scratch3;
-cvar_t     *scratch4;
-cvar_t     *savedgamecfg;
-cvar_t     *saved1;
-cvar_t     *saved2;
-cvar_t     *saved3;
-cvar_t     *saved4;
+float nomonsters;
+static cvar_t nomonsters_cvar = {
+	.name = "nomonsters",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &nomonsters },
+};
+float gamecfg;
+static cvar_t gamecfg_cvar = {
+	.name = "gamecfg",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &gamecfg },
+};
+float scratch1;
+static cvar_t scratch1_cvar = {
+	.name = "scratch1",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scratch1 },
+};
+float scratch2;
+static cvar_t scratch2_cvar = {
+	.name = "scratch2",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scratch2 },
+};
+float scratch3;
+static cvar_t scratch3_cvar = {
+	.name = "scratch3",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scratch3 },
+};
+float scratch4;
+static cvar_t scratch4_cvar = {
+	.name = "scratch4",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &scratch4 },
+};
+float savedgamecfg;
+static cvar_t savedgamecfg_cvar = {
+	.name = "savedgamecfg",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &savedgamecfg },
+};
+float saved1;
+static cvar_t saved1_cvar = {
+	.name = "saved1",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &saved1 },
+};
+float saved2;
+static cvar_t saved2_cvar = {
+	.name = "saved2",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &saved2 },
+};
+float saved3;
+static cvar_t saved3_cvar = {
+	.name = "saved3",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &saved3 },
+};
+float saved4;
+static cvar_t saved4_cvar = {
+	.name = "saved4",
+	.description =
+		"No Description",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &saved4 },
+};
 
 static int sv_range;
 
@@ -90,7 +221,7 @@ static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
 	// remove things from different skill levels or deathmatch
-	if (deathmatch->int_val) {
+	if (deathmatch) {
 		if (((int) SVfloat (ent, spawnflags)
 			& SPAWNFLAG_NOT_DEATHMATCH)) {
 			return 1;
@@ -124,10 +255,17 @@ static void
 ED_PrintEdict_f (void)
 {
 	int         i;
+	const char *fieldname = 0;
 
+	if (Cmd_Argc () < 2) {
+		Sys_Printf ("edict num [fieldname]\n");
+		return;
+	}
+	if (Cmd_Argc () >= 3) {
+		fieldname = Cmd_Argv (2);
+	}
 	i = atoi (Cmd_Argv (1));
-	Sys_Printf ("\n EDICT %i:\n", i);
-	ED_PrintNum (&sv_pr_state, i);
+	ED_PrintNum (&sv_pr_state, i, fieldname);
 }
 
 static void
@@ -255,7 +393,6 @@ static sv_def_t nq_fields[] = {
 	{ev_vector,	36,	"maxs",				&sv_fields.maxs},
 	{ev_vector,	39,	"size",				&sv_fields.size},
 	{ev_func,	42,	"touch",			&sv_fields.touch},
-	{ev_func,	43,	"use",				&sv_fields.use},
 	{ev_func,	44,	"think",			&sv_fields.think},
 	{ev_func,	45,	"blocked",			&sv_fields.blocked},
 	{ev_float,	46,	"nextthink",		&sv_fields.nextthink},
@@ -273,7 +410,6 @@ static sv_def_t nq_fields[] = {
 	{ev_float,	58,	"items",			&sv_fields.items},
 	{ev_float,	59,	"takedamage",		&sv_fields.takedamage},
 	{ev_entity,	60,	"chain",			&sv_fields.chain},
-	{ev_float,	61,	"deadflag",			&sv_fields.deadflag},
 	{ev_vector,	62,	"view_ofs",			&sv_fields.view_ofs},
 	{ev_float,	65,	"button0",			&sv_fields.button0},
 	{ev_float,	66,	"button1",			&sv_fields.button1},
@@ -287,19 +423,14 @@ static sv_def_t nq_fields[] = {
 	{ev_float,	76,	"flags",			&sv_fields.flags},
 	{ev_float,	77,	"colormap",			&sv_fields.colormap},
 	{ev_float,	78,	"team",				&sv_fields.team},
-	{ev_float,	79,	"max_health",		&sv_fields.max_health},
 	{ev_float,	80,	"teleport_time",	&sv_fields.teleport_time},
-	{ev_float,	81,	"armortype",		&sv_fields.armortype},
 	{ev_float,	82,	"armorvalue",		&sv_fields.armorvalue},
 	{ev_float,	83,	"waterlevel",		&sv_fields.waterlevel},
 	{ev_float,	84,	"watertype",		&sv_fields.watertype},
 	{ev_float,	85,	"ideal_yaw",		&sv_fields.ideal_yaw},
 	{ev_float,	86,	"yaw_speed",		&sv_fields.yaw_speed},
-	{ev_entity,	87,	"aiment",			&sv_fields.aiment},
 	{ev_entity,	88,	"goalentity",		&sv_fields.goalentity},
 	{ev_float,	89,	"spawnflags",		&sv_fields.spawnflags},
-	{ev_string,	90,	"target",			&sv_fields.target},
-	{ev_string,	91,	"targetname",		&sv_fields.targetname},
 	{ev_float,	92,	"dmg_take",			&sv_fields.dmg_take},
 	{ev_float,	93,	"dmg_save",			&sv_fields.dmg_save},
 	{ev_entity,	94,	"dmg_inflictor",	&sv_fields.dmg_inflictor},
@@ -307,10 +438,6 @@ static sv_def_t nq_fields[] = {
 	{ev_vector,	96,	"movedir",			&sv_fields.movedir},
 	{ev_string,	99,	"message",			&sv_fields.message},
 	{ev_float,	100,	"sounds",		&sv_fields.sounds},
-	{ev_string,	101,	"noise",		&sv_fields.noise},
-	{ev_string,	102,	"noise1",		&sv_fields.noise1},
-	{ev_string,	103,	"noise2",		&sv_fields.noise2},
-	{ev_string,	104,	"noise3",		&sv_fields.noise3},
 	{ev_void,	0,	0},
 };
 
@@ -325,22 +452,10 @@ static sv_def_t nq_opt_funcs[] = {
 };
 
 static sv_def_t nq_opt_fields[] = {
-	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_int,		0,	"rotated_bbox",		&sv_fields.rotated_bbox},
 	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"gravity",			&sv_fields.gravity},
-	// Quake 2 fields?
-	{ev_float,		0,	"dmg",				&sv_fields.dmg},
-	{ev_float,		0,	"dmgtime",			&sv_fields.dmgtime},
-	{ev_float,		0,	"air_finished",		&sv_fields.air_finished},
-	{ev_float,		0,	"pain_finished",	&sv_fields.pain_finished},
-	{ev_float,		0,	"radsuit_finished",	&sv_fields.radsuit_finished},
-	{ev_float,		0,	"speed",			&sv_fields.speed},
-	{ev_float,		0,	"basevelocity",		&sv_fields.basevelocity},
-	{ev_float,		0,	"drawPercent",		&sv_fields.drawPercent},
-	{ev_float,		0,	"mass",				&sv_fields.mass},
-	{ev_float,		0,	"light_level",		&sv_fields.light_level},
 	{ev_float,		0,	"items2",			&sv_fields.items2},
-	{ev_float,		0,	"pitch_speed",		&sv_fields.pitch_speed},
 	{ev_float,		0,	"lastruntime",		&sv_fields.lastruntime},
 	{ev_void,		0,	0},
 };
@@ -353,22 +468,30 @@ set_address (sv_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_ushort:
 		case ev_invalid:
 		case ev_type_count:
 			break;
 		case ev_float:
 		case ev_vector:
-		case ev_quat:
+		case ev_quaternion:
 			*(float **)def->field = (float *) address;
+			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
 			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_pointer:
-		case ev_integer:
-		case ev_uinteger:
-			*(int **)def->field = (int *) address;
+		case ev_ptr:
+		case ev_int:
+		case ev_uint:
+			*(pr_int_t **)def->field = (pr_int_t *) address;
+			break;
+		case ev_long:
+		case ev_ulong:
+			*(pr_long_t **)def->field = (pr_long_t *) address;
 			break;
 	}
 }
@@ -376,7 +499,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -404,13 +527,13 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 
 	if (mode == 2) {
 		for (; def->name; def++)
-			*(func_t *) def->field = G_FUNCTION (pr, def->offset);
+			*(pr_func_t *) def->field = G_FUNCTION (pr, def->offset);
 		return 1;
 	}
 	for (; def->name; def++) {
 		dfunc = PR_FindFunction (pr, def->name);
 		if (dfunc) {
-			*(func_t *) def->field = dfunc - pr->pr_functions;
+			*(pr_func_t *) def->field = dfunc - pr->pr_functions;
 		} else if (mode) {
 			PR_Undefined (pr, "function", def->name);
 			ret = 0;
@@ -422,7 +545,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -467,8 +590,29 @@ resolve (progs_t *pr)
 	resolve_fields (pr, nq_opt_fields, 0);
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
-	sv_pr_state.globals.time = sv_globals.time;
+	sv_pr_state.globals.ftime = sv_globals.time;//FIXME double time
 	return ret;
+}
+
+static int
+sv_init_edicts (progs_t *pr)
+{
+	int         i;
+
+	memset (sv_edicts, 0, sizeof (sv_edicts));
+	memset (sv_data, 0, sizeof (sv_data));
+
+	// init the data field of the edicts
+	for (i = 0; i < sv.max_edicts; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->pr = &sv_pr_state;
+		ent->entnum = i;
+		ent->edict = EDICT_TO_PROG (&sv_pr_state, ent);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
+
+	return 1;
 }
 
 void
@@ -476,49 +620,44 @@ SV_LoadProgs (void)
 {
 	const char *progs_name = "progs.dat";
 	const char *range;
-	int         i;
 
-	if (strequal (sv_progs_ext->string, "qf")) {
+	if (strequal (sv_progs_ext, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
-	} else if (strequal (sv_progs_ext->string, "id")) {
+	} else if (strequal (sv_progs_ext, "id")) {
 		sv_range = PR_RANGE_ID;
 		range = "ID";
 	} else {
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Sys_MaskPrintf (SYS_DEV, "Using %s builtin extention mapping\n", range);
+	Sys_MaskPrintf (SYS_dev, "Using %s builtin extention mapping\n", range);
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
-	if (*sv_progs->string)
-		progs_name = sv_progs->string;
+	if (*sv_progs)
+		progs_name = sv_progs;
 
-	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
-				  sv_progs_zone->int_val * 1024);
+	sv_pr_state.max_edicts = sv.max_edicts;
+	sv_pr_state.zone_size = sv_progs_zone * 1024;
+	sv_pr_state.stack_size = sv_progs_stack * 1024;
+	sv.edicts = sv_edicts;
+
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-
-	memset (sv_data, 0, sizeof (sv_data));
-
-	// init the data field of the edicts
-	for (i = 0; i < sv.max_edicts; i++) {
-		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
-		ent->entnum = i;
-		ent->edata = &sv_data[i];
-		SVdata (ent)->edict = ent;
-	}
 }
 
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "netquake";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -526,6 +665,9 @@ SV_Progs_Init (void)
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 
@@ -544,28 +686,22 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
-	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
-						 "Override the default game progs.");
-	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
-							  "size of the zone for progs in kb");
-	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
-							 "extention mapping to use: "
-							 "none, id, qf");
-	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
-								   "indicate the presence of the "
-								   "checkextentions qc function");
+	PR_Init_Cvars ();
+	Cvar_Register (&sv_progs_cvar, 0, 0);
+	Cvar_Register (&sv_progs_zone_cvar, 0, 0);
+	Cvar_Register (&sv_progs_stack_cvar, 0, 0);
+	Cvar_Register (&sv_progs_ext_cvar, 0, 0);
+	Cvar_Register (&pr_checkextensions_cvar, 0, 0);
 
-	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, NULL,
-						   "No Description");
-	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, NULL, "No Description");
-	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, NULL, "No Description");
-	scratch2 = Cvar_Get ("scratch2", "0", CVAR_NONE, NULL, "No Description");
-	scratch3 = Cvar_Get ("scratch3", "0", CVAR_NONE, NULL, "No Description");
-	scratch4 = Cvar_Get ("scratch4", "0", CVAR_NONE, NULL, "No Description");
-	savedgamecfg = Cvar_Get ("savedgamecfg", "0", CVAR_ARCHIVE, NULL,
-							 "No Description");
-	saved1 = Cvar_Get ("saved1", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved2 = Cvar_Get ("saved2", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved3 = Cvar_Get ("saved3", "0", CVAR_ARCHIVE, NULL, "No Description");
-	saved4 = Cvar_Get ("saved4", "0", CVAR_ARCHIVE, NULL, "No Description");
+	Cvar_Register (&nomonsters_cvar, 0, 0);
+	Cvar_Register (&gamecfg_cvar, 0, 0);
+	Cvar_Register (&scratch1_cvar, 0, 0);
+	Cvar_Register (&scratch2_cvar, 0, 0);
+	Cvar_Register (&scratch3_cvar, 0, 0);
+	Cvar_Register (&scratch4_cvar, 0, 0);
+	Cvar_Register (&savedgamecfg_cvar, 0, 0);
+	Cvar_Register (&saved1_cvar, 0, 0);
+	Cvar_Register (&saved2_cvar, 0, 0);
+	Cvar_Register (&saved3_cvar, 0, 0);
+	Cvar_Register (&saved4_cvar, 0, 0);
 }

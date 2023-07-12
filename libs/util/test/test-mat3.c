@@ -80,7 +80,8 @@ negate:
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g)\n", VectorExpand (angles));
+	printf ("\ntest_angle\n");
+	printf ("(%g %g %g)\n", VectorExpand (angles));
 	printf ("  [%g %g %g %g]\n", QuatExpand (rotation));
 	printf ("  [%g %g %g %g] [%g %g %g] [%g %g %g]\n",
 			QuatExpand (r), VectorExpand (scale), VectorExpand (shear));
@@ -98,7 +99,7 @@ test_transform (const vec3_t angles, const vec3_t scale)
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 
 	Mat3Init (rotation, scale, mat);
@@ -110,7 +111,8 @@ test_transform (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g)\n", VectorExpand (angles),
+	printf ("\ntest_transform\n");
+	printf ("(%g %g %g) (%g %g %g)\n", VectorExpand (angles),
 			VectorExpand (scale));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
@@ -125,11 +127,12 @@ test_transform2 (const vec3_t angles, const vec3_t scale)
 	vec3_t      x, y;
 	quat_t      rotation;
 	mat3_t      mat;
-	vec3_t      rot, sc, sh;
+	quat_t      rot;
+	vec3_t      sc, sh;
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 
 	Mat3Init (rotation, scale, mat);
@@ -138,7 +141,7 @@ test_transform2 (const vec3_t angles, const vec3_t scale)
 	VectorCopy (v, y);
 	QuatMultVec (rot, y, y);
 	VectorShear (sh, y, y);
-	VectorCompMult (sc, y, y);//scale
+	VectorCompMult (y, sc, y);//scale
 
 	for (i = 0; i < 3; i++)
 		if (!compare (x[i], y[i]))
@@ -146,7 +149,8 @@ test_transform2 (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g) (%g %g %g)\n",
+	printf ("\ntest_transform2\n");
+	printf ("(%g %g %g) (%g %g %g) (%g %g %g)\n",
 			VectorExpand (angles), VectorExpand (scale), VectorExpand (v));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
@@ -173,7 +177,8 @@ test_inverse (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g)\n",
+	printf ("\ntest_inverse\n");
+	printf ("(%g %g %g) (%g %g %g)\n",
 			VectorExpand (angles), VectorExpand (scale));
 	printf ("  [%g %g %g]\n  [%g %g %g]\n  [%g %g %g]\n\n", Mat3Expand (mat));
 	printf ("  [%g %g %g]\n  [%g %g %g]\n  [%g %g %g]\n\n", Mat3Expand (inv));

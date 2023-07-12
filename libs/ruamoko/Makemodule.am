@@ -1,0 +1,45 @@
+ruamoko_rua_libs= \
+	libs/gamecode/libQFgamecode.la \
+	libs/util/libQFutil.la
+
+lib_LTLIBRARIES += \
+	libs/ruamoko/libQFruamoko.la \
+	libs/ruamoko/libQFruamoko_client.la
+
+libs_ruamoko_libQFruamoko_la_LDFLAGS=		$(lib_ldflags)
+libs_ruamoko_libQFruamoko_la_LIBADD=		$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_la_DEPENDENCIES=	$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_la_SOURCES= \
+	libs/ruamoko/pr_cmds.c \
+	libs/ruamoko/rua_cbuf.c \
+	libs/ruamoko/rua_cmd.c \
+	libs/ruamoko/rua_cvar.c \
+	libs/ruamoko/rua_hash.c \
+	libs/ruamoko/rua_init.c \
+	libs/ruamoko/rua_math.c \
+	libs/ruamoko/rua_msgbuf.c \
+	libs/ruamoko/rua_obj.c \
+	libs/ruamoko/rua_plist.c \
+	libs/ruamoko/rua_qfile.c \
+	libs/ruamoko/rua_qfs.c \
+	libs/ruamoko/rua_runtime.c \
+	libs/ruamoko/rua_script.c \
+	libs/ruamoko/rua_set.c \
+	libs/ruamoko/rua_stdlib.c \
+	libs/ruamoko/rua_string.c
+
+libs_ruamoko_libQFruamoko_client_la_LDFLAGS= $(lib_ldflags)
+libs_ruamoko_libQFruamoko_client_la_LIBADD= \
+	libs/ruamoko/libQFruamoko.la \
+	libs/ui/libQFgui.la
+libs_ruamoko_libQFruamoko_client_la_DEPENDENCIES= \
+	libs/ruamoko/libQFruamoko.la \
+	libs/ui/libQFgui.la \
+	$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_client_la_SOURCES= \
+	libs/ruamoko/rua_game_init.c \
+	libs/ruamoko/rua_gui.c \
+	libs/ruamoko/rua_input.c \
+	libs/ruamoko/rua_mersenne.c \
+	libs/ruamoko/rua_model.c \
+	libs/ruamoko/rua_scene.c

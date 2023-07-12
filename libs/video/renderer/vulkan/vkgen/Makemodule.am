@@ -1,0 +1,74 @@
+vkgen = vkgen.dat$(EXEEXT)
+noinst_PROGRAMS += @VKGEN_TARGETS@
+
+EXTRA_PROGRAMS += vkgen.dat$(EXEEXT)
+
+vkgen_dat_src= \
+	libs/video/renderer/vulkan/vkgen/vkalias.r \
+	libs/video/renderer/vulkan/vkgen/vkenum.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldarray.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldauto.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldcustom.r \
+	libs/video/renderer/vulkan/vkgen/vkfielddata.r \
+	libs/video/renderer/vulkan/vkgen/vkfielddef.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldignore.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldsingle.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldstring.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldtype.r \
+	libs/video/renderer/vulkan/vkgen/vkfixedarray.r \
+	libs/video/renderer/vulkan/vkgen/vkgen.r \
+	libs/video/renderer/vulkan/vkgen/vkstring.r \
+	libs/video/renderer/vulkan/vkgen/vkstruct.r \
+	libs/video/renderer/vulkan/vkgen/vktype.r \
+	libs/video/renderer/vulkan/vkgen/vulkan.r
+
+VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen $(VULKAN_QCFLAGS)
+
+vkgen_dat_SOURCES=$(vkgen_dat_src)
+vkgen_obj=$(vkgen_dat_SOURCES:.r=.o)
+vkgen_dep=$(call qcautodep,$(vkgen_dat_SOURCES:.o=.Qo))
+vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lr
+include $(vkgen_dep) # am--include-marker
+r_depfiles_remade += $(vkgen_dep)
+
+libs/video/renderer/vulkan/vkgen/vkgen.o: $(top_srcdir)/libs/video/renderer/vulkan/vkgen/vkgen.r
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) ${VKGENFLAGS} -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+libs/video/renderer/vulkan/vkgen/vulkan.o: $(top_srcdir)/libs/video/renderer/vulkan/vkgen/vulkan.r
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) ${VKGENFLAGS} -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/vkgen/stddef.h \
+	libs/video/renderer/vulkan/vkgen/stdint.h \
+	libs/video/renderer/vulkan/vkgen/vkalias.h \
+	libs/video/renderer/vulkan/vkgen/vkenum.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldarray.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldauto.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldcustom.h \
+	libs/video/renderer/vulkan/vkgen/vkfielddata.h \
+	libs/video/renderer/vulkan/vkgen/vkfielddef.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldignore.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldsingle.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldstring.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldtype.h \
+	libs/video/renderer/vulkan/vkgen/vkfixedarray.h \
+	libs/video/renderer/vulkan/vkgen/vkgen.h \
+	libs/video/renderer/vulkan/vkgen/vkstring.h \
+	libs/video/renderer/vulkan/vkgen/vkstruct.h \
+	libs/video/renderer/vulkan/vkgen/vktype.h
+
+CLEANFILES += \
+	libs/video/renderer/vkgen/*.sym

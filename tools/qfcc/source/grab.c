@@ -44,12 +44,12 @@
 #include "QF/hash.h"
 #include "QF/quakeio.h"
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
 
 int grab_frame;
 int grab_other;
@@ -64,17 +64,22 @@ typedef struct frame_s {
 	int			num;
 } frame_t;
 
-static frame_t *frames_freelist;
+ALLOC_STATE (frame_t, frames);
 static frame_t *frame_list;
 static frame_t **frame_tail = &frame_list;
 
 static frame_t grab_list[] = {
-	{0, "cd",		0},
-	{0, "origin",	0},
-	{0, "base",		0},
-	{0, "flags",	0},
-	{0, "scale",	0},
-	{0, "skin",		0},
+	{0, "modelname",		0},
+	{0, "base",				0},
+	{0, "cd",				0},
+	{0, "sync",				0},
+	{0, "origin",			0},
+	{0, "eyeposition",		0},
+	{0, "scale",			0},
+	{0, "flags",			0},
+	{0, "skin",				0},
+	{0, "framegroupstart",	0},
+	{0, "skingroupstart",	0},
 };
 
 static const char *
@@ -100,8 +105,8 @@ do_grab (const char *token)
 		size_t      i;
 
 		initialized = 1;
-		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
-		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0);
+		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0, 0);
+		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
 			Hash_Add (grab_tab, &grab_list[i]);
 	}

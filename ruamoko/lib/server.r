@@ -1,7 +1,7 @@
-#include "server.h"
+#include <server.h>
 
-void (string s) precache_sound = #19;
-void (string s) precache_model = #20;
+string (string s) precache_sound = #19;
+string (string s) precache_model = #20;
 void (entity client, string s) stuffcmd = #21;
 void (string s) localcmd = #46;
 void (string s) changelevel = #70;

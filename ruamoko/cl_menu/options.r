@@ -130,7 +130,7 @@ MENU_video_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"video_options"]);
-		video_options = ret.pointer_val;
+		video_options = (Group *) ret.pointer_val;
 	}
 
 	Menu_End ();
@@ -177,7 +177,7 @@ MENU_audio_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"audio_options"]);
-		audio_options = ret.pointer_val;
+		audio_options = (Group *) ret.pointer_val;
 	}
 
 	Menu_End ();
@@ -224,7 +224,7 @@ MENU_control_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"control_options"]);
-		control_options = ret.pointer_val;
+		control_options = (Group *) ret.pointer_val;
 	}
 
 	MENU_control_binding (); //FIXME how to hook in the bindings menu?
@@ -275,7 +275,7 @@ MENU_feature_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"feature_options"]);
-		feature_options = ret.pointer_val;
+		feature_options = (Group *) ret.pointer_val;
 	}
 
 	Menu_End ();
@@ -361,7 +361,7 @@ MENU_player_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"player_options"]);
-		player_options = ret.pointer_val;
+		player_options = (Group *) ret.pointer_val;
 	}
 
 	Menu_End ();
@@ -426,7 +426,7 @@ MENU_network_options (PLItem *plist)
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"network_options"]);
-		network_options = ret.pointer_val;
+		network_options = (Group *) ret.pointer_val;
 	}
 
 	Menu_End ();
@@ -436,7 +436,7 @@ int (string text, int key)
 op_goto_console =
 {
 	Menu_SelectMenu ("");
-	Cbuf_AddText ("toggleconsole\n");
+	Cbuf_AddText (nil, "toggleconsole\n");
 	return 0;
 };
 

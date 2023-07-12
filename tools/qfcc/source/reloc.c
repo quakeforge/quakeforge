@@ -41,19 +41,19 @@
 
 #include "QF/alloc.h"
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
 
-static reloc_t *refs_freelist;
+ALLOC_STATE (reloc_t, refs);
 
-static const char *reloc_name[] = {
+const char * const reloc_name[] = {
 	"rel_none",
 	"rel_op_a_def",
 	"rel_op_b_def",
@@ -73,7 +73,7 @@ static const char *reloc_name[] = {
 	"rel_def_field_ofs",
 };
 
-#define RELOC(r) (r)->space->data[(r)->offset].integer_var
+#define RELOC(r) (r)->space->data[(r)->offset].value
 
 void
 relocate_refs (reloc_t *reloc, int offset)
@@ -168,8 +168,8 @@ relocate_refs (reloc_t *reloc, int offset)
 				break;
 			case rel_def_field_ofs:
 				//FIXME what is correct here?
-				//RELOC (reloc) += pr.data->data[offset].integer_var;
-				RELOC (reloc) += pr.near_data->data[offset].integer_var;
+				//RELOC (reloc) += pr.data->data[offset].int_var;
+				RELOC (reloc) += PR_PTR (int, &pr.near_data->data[offset]);
 				break;
 		}
 		reloc = reloc->next;
@@ -210,7 +210,7 @@ reloc_op_def_ofs (def_t *def, int offset, int field)
 }
 
 void
-reloc_def_def (def_t *def, def_t *location)
+reloc_def_def (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -221,7 +221,7 @@ reloc_def_def (def_t *def, def_t *location)
 }
 
 void
-reloc_def_def_ofs (def_t *def, def_t *location)
+reloc_def_def_ofs (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -232,7 +232,7 @@ reloc_def_def_ofs (def_t *def, def_t *location)
 }
 
 void
-reloc_def_func (function_t *func, def_t *location)
+reloc_def_func (function_t *func, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -243,7 +243,7 @@ reloc_def_func (function_t *func, def_t *location)
 }
 
 void
-reloc_def_string (def_t *location)
+reloc_def_string (const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -254,7 +254,7 @@ reloc_def_string (def_t *location)
 }
 
 void
-reloc_def_field (def_t *def, def_t *location)
+reloc_def_field (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -265,7 +265,7 @@ reloc_def_field (def_t *def, def_t *location)
 }
 
 void
-reloc_def_field_ofs (def_t *def, def_t *location)
+reloc_def_field_ofs (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -276,7 +276,7 @@ reloc_def_field_ofs (def_t *def, def_t *location)
 }
 
 void
-reloc_def_op (ex_label_t *label, def_t *location)
+reloc_def_op (const ex_label_t *label, const def_t *location)
 {
 	reloc_t    *ref;
 

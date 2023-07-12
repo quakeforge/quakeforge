@@ -47,15 +47,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "QF/va.h"
 
 #include "compat.h"
+
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 static QFile   *demo_file;
 static byte    *demo_mfile;
-static qboolean demo_disk;
+static bool demo_disk;
 static dstring_t *demo_name;		// filename of mvd
 static dstring_t *demo_text;		// filename of description file
 static void    *demo_dest;
@@ -65,26 +66,138 @@ static recorder_t *recorder;
 static int      delta_sequence;
 
 #define MIN_DEMO_MEMORY 0x100000
-#define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
+#define USECACHE (sv_demoUseCache && svs.demomemsize)
 #define DWRITE(a,b,d) dwrite((QFile *) d, a, b)
 
 static int  demo_max_size;
 static int  demo_size;
 
-cvar_t         *sv_demofps;
-cvar_t         *sv_demoPings;
-cvar_t         *sv_demoMaxSize;
-static cvar_t  *sv_demoUseCache;
-static cvar_t  *sv_demoCacheSize;
-static cvar_t  *sv_demoMaxDirSize;
-static cvar_t  *sv_demoDir;
-static cvar_t  *sv_demoNoVis;
-static cvar_t  *sv_demoPrefix;
-static cvar_t  *sv_demoSuffix;
-static cvar_t  *sv_onrecordfinish;
-static cvar_t  *sv_ondemoremove;
-static cvar_t  *sv_demotxt;
-static cvar_t  *serverdemo;
+float sv_demofps;
+static cvar_t sv_demofps_cvar = {
+	.name = "sv_demofps",
+	.description =
+		"Minimum frame rate of packets written to the demo",
+	.default_value = "20",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_demofps },
+};
+float sv_demoPings;
+static cvar_t sv_demoPings_cvar = {
+	.name = "sv_demoPings",
+	.description =
+		"Time in seconds between player ping updates. 0 disables.",
+	.default_value = "3",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_demoPings },
+};
+int sv_demoMaxSize;
+static cvar_t sv_demoMaxSize_cvar = {
+	.name = "sv_demoMaxSize",
+	.description =
+		"FIXME not used",
+	.default_value = "20480",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_demoMaxSize },
+};
+static int sv_demoUseCache;
+static cvar_t sv_demoUseCache_cvar = {
+	.name = "sv_demoUseCache",
+	.description =
+		"FIXME not used",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_demoUseCache },
+};
+int sv_demoCacheSize;
+static cvar_t sv_demoCacheSize_cvar = {
+	.name = "sv_demoCacheSize",
+	.description =
+		"FIXME not used",
+	.default_value = 0,
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &sv_demoCacheSize },
+};
+int sv_demoMaxDirSize;
+static cvar_t sv_demoMaxDirSize_cvar = {
+	.name = "sv_demoMaxDirSize",
+	.description =
+		"FIXME not used",
+	.default_value = "102400",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_demoMaxDirSize },
+};
+static char *sv_demoDir;
+static cvar_t sv_demoDir_cvar = {
+	.name = "sv_demoDir",
+	.description =
+		"Name of subdirectory in which demos will be saved",
+	.default_value = "demos",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_demoDir },
+};
+int sv_demoNoVis;
+static cvar_t sv_demoNoVis_cvar = {
+	.name = "sv_demoNoVis",
+	.description =
+		"FIXME not used",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_demoNoVis },
+};
+static char *sv_demoPrefix;
+static cvar_t sv_demoPrefix_cvar = {
+	.name = "sv_demoPrefix",
+	.description =
+		"Prefix for demo file names",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_demoPrefix },
+};
+static char *sv_demoSuffix;
+static cvar_t sv_demoSuffix_cvar = {
+	.name = "sv_demoSuffix",
+	.description =
+		"Suffix for demo file names",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_demoSuffix },
+};
+static char *sv_onrecordfinish;
+static cvar_t sv_onrecordfinish_cvar = {
+	.name = "sv_onrecordfinish",
+	.description =
+		"Command to execute when recording has finished. FIXME not used",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_onrecordfinish },
+};
+static char *sv_ondemoremove;
+static cvar_t sv_ondemoremove_cvar = {
+	.name = "sv_ondemoremove",
+	.description =
+		"Command to execute when a demo is removed. FIXME not used",
+	.default_value = "",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &sv_ondemoremove },
+};
+static int sv_demotxt;
+static cvar_t sv_demotxt_cvar = {
+	.name = "sv_demotxt",
+	.description =
+		"Write brief description of demo to text file",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_demotxt },
+};
+static char *serverdemo;
+static cvar_t serverdemo_cvar = {
+	.name = "serverdemo",
+	.description =
+		"Cvar for passing server demo file name to progs",
+	.default_value = "",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = 0, .value = &serverdemo },
+};
 
 static int    (*dwrite) (QFile * file, const void *buf, int count);
 
@@ -112,10 +225,10 @@ demo_frame (void *unused)
 {
 	double      min_fps;
 
-	if (!sv_demofps->value)
+	if (!sv_demofps)
 		min_fps = 20.0;
 	else
-		min_fps = sv_demofps->value;
+		min_fps = sv_demofps;
 	min_fps = max (4, min_fps);
 	if (sv.time - demo_time < 1.0 / min_fps)
 		return 0;
@@ -176,13 +289,13 @@ SV_Stop (int reason)
 			break;
 	}
 /*
-	if (sv_onrecordfinish->string[0]) {
+	if (sv_onrecordfinish[0]) {
 		extern redirect_t sv_redirected;
 		int         old = sv_redirected;
 		char        path[MAX_OSPATH];
 		char       *p;
 
-		if ((p = strstr (sv_onrecordfinish->string, " ")) != NULL)
+		if ((p = strstr (sv_onrecordfinish, " ")) != NULL)
 			*p = 0;						// strip parameters
 
 		strcpy (path, demo_name->str);
@@ -190,9 +303,9 @@ SV_Stop (int reason)
 
 		sv_redirected = RD_NONE;		// onrecord script is called always
 										// from the console
-		Cmd_TokenizeString (va ("script %s \"%s\" \"%s\" \"%s\" %s",
-								sv_onrecordfinish->string, demo.path->str,
-								serverdemo->string,
+		Cmd_TokenizeString (va (0, "script %s \"%s\" \"%s\" \"%s\" %s",
+								sv_onrecordfinish, demo.path->str,
+								serverdemo,
 								path, p != NULL ? p + 1 : ""));
 		if (p)
 			*p = ' ';
@@ -201,7 +314,7 @@ SV_Stop (int reason)
 		sv_redirected = old;
 	}
 */
-	Cvar_Set (serverdemo, "");
+	Cvar_Set ("serverdemo", "");
 }
 
 static void
@@ -221,7 +334,7 @@ SV_Cancel_f (void)
 	SV_Stop (2);
 }
 
-static qboolean
+static bool
 SV_InitRecord (void)
 {
 	if (!USECACHE) {
@@ -326,7 +439,7 @@ SV_PrintTeams (void)
 	if (numcl == 2) {					// duel
 		dsprintf (buffer, "team1 %s\nteam2 %s\n", clients[0]->name,
 				  clients[1]->name);
-	} else if (!teamplay->int_val) {	// ffa
+	} else if (!teamplay) {	// ffa
 		dsprintf (buffer, "players:\n");
 		for (i = 0; i < numcl; i++)
 			dasprintf (buffer, "  %s\n", clients[i]->name);
@@ -365,12 +478,6 @@ SV_Record (char *name)
 	client_t   *player;
 	const char *gamedir, *s;
 
-	demo_file = QFS_Open (name, "wb");
-	if (!demo_file) {
-		Sys_Printf ("ERROR: couldn't open %s\n", name);
-		return;
-	}
-
 	SV_InitRecord ();
 
 	dstring_copystr (demo_name, name);
@@ -378,12 +485,12 @@ SV_Record (char *name)
 	SV_BroadcastPrintf (PRINT_CHAT, "Server started recording (%s):\n%s\n",
 						demo_disk ? "disk" : "memory",
 						QFS_SkipPath (demo_name->str));
-	Cvar_Set (serverdemo, demo_name->str);
+	Cvar_Set ("serverdemo", demo_name->str);
 
 	dstring_copystr (demo_text, name);
 	strcpy (demo_text->str + strlen (demo_text->str) - 3, "txt");
 
-	if (sv_demotxt->int_val) {
+	if (sv_demotxt) {
 		QFile      *f;
 
 		f = QFS_Open (demo_text->str, "w+t");
@@ -395,8 +502,8 @@ SV_Record (char *name)
 			strftime (date, sizeof (date), "%Y-%m-%d-%H-%M", localtime (&tim));
 			Qprintf (f, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\n"
 					 "timelimit %d\n%s",
-					 date, sv.name, teamplay->int_val,
-					 deathmatch->int_val, timelimit->int_val,
+					 date, sv.name, teamplay,
+					 deathmatch, timelimit,
 					 SV_PrintTeams ());
 			Qclose (f);
 		}
@@ -453,7 +560,7 @@ SV_Record (char *name)
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
+	MSG_WriteString (&buf, va (0, "fullserverinfo \"%s\"\n",
 							   Info_MakeString (svs.info, 0)));
 
 	// flush packet
@@ -523,7 +630,7 @@ SV_Record (char *name)
 	}
 
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("cmd spawn %i 0\n", svs.spawncount));
+	MSG_WriteString (&buf, va (0, "cmd spawn %i 0\n", svs.spawncount));
 
 	if (buf.cursize) {
 		SV_WriteRecordDemoMessage (&buf);
@@ -575,7 +682,7 @@ SV_Record (char *name)
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("skins\n"));
+	MSG_WriteString (&buf, va (0, "skins\n"));
 
 	SV_WriteRecordDemoMessage (&buf);
 
@@ -634,14 +741,19 @@ SV_Record_f (void)
 	if (recorder)
 		SV_Stop (0);
 
-	dsprintf (name, "%s/%s/%s%s%s", qfs_gamedir->dir.def, sv_demoDir->string,
-			  sv_demoPrefix->string, SV_CleanName (Cmd_Argv (1)),
-			  sv_demoSuffix->string);
+	dsprintf (name, "%s/%s/%s%s%s", qfs_gamedir->dir.def, sv_demoDir,
+			  sv_demoPrefix, SV_CleanName (Cmd_Argv (1)),
+			  sv_demoSuffix);
 
 	// open the demo file
 	QFS_DefaultExtension (name, ".mvd");
 
-	SV_Record (name->str);
+	demo_file = QFS_Open (name->str, "wb");
+	if (!demo_file) {
+		Sys_Printf ("ERROR: couldn't open %s\n", name->str);
+	} else {
+		SV_Record (name->str);
+	}
 
 	dstring_delete (name);
 }
@@ -671,7 +783,7 @@ Dem_Team (int num)
 {
 	int         i;
 	static const char *lastteam[2];
-	qboolean    first = true;
+	bool        first = true;
 	client_t   *client;
 	static int  index = 0;
 	const char *team;
@@ -733,7 +845,7 @@ SV_EasyRecord_f (void)
 	else {
 		// guess game type and write demo name
 		i = Dem_CountPlayers ();
-		if (teamplay->int_val && i > 2) {
+		if (teamplay && i > 2) {
 			// Teamplay
 			dsprintf (name, "team_%s_vs_%s_%s",
 					  Dem_Team (1), Dem_Team (2), sv.name);
@@ -751,13 +863,14 @@ SV_EasyRecord_f (void)
 
 	// Make sure the filename doesn't contain illegal characters
 	dsprintf (name2, "%s/%s%s%s%s%s",
-			  qfs_gamedir->dir.def, sv_demoDir->string,
-			  sv_demoDir->string[0] ? "/" : "",
-			  sv_demoPrefix->string, SV_CleanName (name->str),
-			  sv_demoSuffix->string);
+			  qfs_gamedir->dir.def, sv_demoDir,
+			  sv_demoDir[0] ? "/" : "",
+			  sv_demoPrefix, SV_CleanName (name->str),
+			  sv_demoSuffix);
 
-	if (QFS_NextFilename (name, name2->str, ".mvd"))
+	if ((demo_file = QFS_NextFile (name, name2->str, ".mvd"))) {
 		SV_Record (name->str);
+	}
 
 	dstring_delete (name);
 	dstring_delete (name2);
@@ -773,7 +886,7 @@ Demo_Init (void)
 		if (p < com_argc - 1)
 			size = atoi (com_argv[p + 1]) * 1024;
 		else
-			Sys_Error ("Memory_Init: you must specify a size in KB after "
+			Sys_Error ("Demo_Init: you must specify a size in KB after "
 					   "-democache");
 	}
 
@@ -786,28 +899,24 @@ Demo_Init (void)
 	demo_name = dstring_newstr ();
 	demo_text = dstring_newstr ();
 
-	svs.demomem = Hunk_AllocName (size, "demo");
+	svs.demomem = Hunk_AllocName (0, size, "demo");
 	svs.demomemsize = size;
 	demo_max_size = size - 0x80000;
-
-	serverdemo = Cvar_Get ("serverdemo", "", CVAR_SERVERINFO, Cvar_Info,
-						   "FIXME");
-	sv_demofps = Cvar_Get ("sv_demofps", "20", CVAR_NONE, 0, "FIXME");
-	sv_demoPings = Cvar_Get ("sv_demoPings", "3", CVAR_NONE, 0, "FIXME");
-	sv_demoNoVis = Cvar_Get ("sv_demoNoVis", "1", CVAR_NONE, 0, "FIXME");
-	sv_demoUseCache = Cvar_Get ("sv_demoUseCache", "0", CVAR_NONE, 0, "FIXME");
-	sv_demoCacheSize = Cvar_Get ("sv_demoCacheSize", va ("%d", size / 1024),
-								 CVAR_ROM, 0, "FIXME");
-	sv_demoMaxSize = Cvar_Get ("sv_demoMaxSize", "20480", CVAR_NONE, 0,
-							   "FIXME");
-	sv_demoMaxDirSize = Cvar_Get ("sv_demoMaxDirSize", "102400", CVAR_NONE, 0,
-								  "FIXME");
-	sv_demoDir = Cvar_Get ("sv_demoDir", "demos", CVAR_NONE, 0, "FIXME");
-	sv_demoPrefix = Cvar_Get ("sv_demoPrefix", "", CVAR_NONE, 0, "FIXME");
-	sv_demoSuffix = Cvar_Get ("sv_demoSuffix", "", CVAR_NONE, 0, "FIXME");
-	sv_onrecordfinish = Cvar_Get ("sv_onrecordfinish", "", CVAR_NONE, 0, "FIXME");
-	sv_ondemoremove = Cvar_Get ("sv_ondemoremove", "", CVAR_NONE, 0, "FIXME");
-	sv_demotxt = Cvar_Get ("sv_demotxt", "1", CVAR_NONE, 0, "FIXME");
+	sv_demoCacheSize_cvar.default_value = nva ("%d", size / 1024);
+	Cvar_Register (&serverdemo_cvar, Cvar_Info, &serverdemo);
+	Cvar_Register (&sv_demofps_cvar, 0, 0);
+	Cvar_Register (&sv_demoPings_cvar, 0, 0);
+	Cvar_Register (&sv_demoNoVis_cvar, 0, 0);
+	Cvar_Register (&sv_demoUseCache_cvar, 0, 0);
+	Cvar_Register (&sv_demoCacheSize_cvar, 0, 0);
+	Cvar_Register (&sv_demoMaxSize_cvar, 0, 0);
+	Cvar_Register (&sv_demoMaxDirSize_cvar, 0, 0);
+	Cvar_Register (&sv_demoDir_cvar, 0, 0);
+	Cvar_Register (&sv_demoPrefix_cvar, 0, 0);
+	Cvar_Register (&sv_demoSuffix_cvar, 0, 0);
+	Cvar_Register (&sv_onrecordfinish_cvar, 0, 0);
+	Cvar_Register (&sv_ondemoremove_cvar, 0, 0);
+	Cvar_Register (&sv_demotxt_cvar, 0, 0);
 
 	Cmd_AddCommand ("record", SV_Record_f, "FIXME");
 	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f, "FIXME");

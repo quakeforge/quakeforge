@@ -33,9 +33,7 @@
 
 #include "QF/quakefs.h"
 
-struct tex_s *LoadPNG (QFile *infile);
-void WritePNG (const char *fileName, const byte *data, int width, int height);
-void WritePNGqfs (const char *fileName, const byte *data,
-				  int width, int height);
+struct tex_s *LoadPNG (QFile *infile, int load);
+int WritePNG (QFile *outfile, const struct tex_s *tex);
 
 #endif//__QF_png_h

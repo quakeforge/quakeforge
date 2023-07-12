@@ -27,16 +27,20 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <string.h>
 
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/plugin.h"
 #include "QF/sys.h"
 
+#include "QF/ui/view.h"
+
 #include "r_internal.h"
 
 
-#define MAX_TIMINGS 100
+#define MAX_TIMINGS 200
 int          graphval;
 
 
@@ -46,42 +50,51 @@ int          graphval;
 	Performance monitoring tool
 */
 void
-R_TimeGraph (void)
+R_TimeGraph (view_pos_t abs, view_pos_t len)
 {
 	static int  timex;
 	int         a;
 	int         l;
-	//XXX float       r_time2;
-	static int r_timings[MAX_TIMINGS];
-	int         x;
+	double      r_time2;
+	static int  r_timings[MAX_TIMINGS];
+	int         timings[MAX_TIMINGS];
+	int         o;
 
-	//XXX r_time2 = Sys_DoubleTime ();
+	r_time2 = Sys_DoubleTime ();
 
-	a = graphval;
-
-	r_timings[timex] = a;
+	r_timings[timex] = (r_time2 - r_time1) * 10000;
+	//printf ("%d %g\n", r_timings[timex], r_time2 - r_time1);
 
 	l = MAX_TIMINGS;
 	if (l > r_refdef.vrect.width)
 		l = r_refdef.vrect.width;
-	x = r_refdef.vrect.width - l;
+	o = 0;
 	a = timex - l;
 	if (a < 0) {
-		vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2,
-							   &r_timings[a + MAX_TIMINGS], -a);
-		x -= a;
+		memcpy (timings + o, r_timings + a + MAX_TIMINGS,
+				-a * sizeof (timings[0]));
+		o -= a;
 		l += a;
 		a = 0;
 	}
-	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, &r_timings[a], l);
+	memcpy (timings + o, r_timings + a, l * sizeof (timings[0]));
+	r_funcs->R_LineGraph (abs.x, abs.y, r_timings, MAX_TIMINGS, 200);
+	r_funcs->Draw_Line (abs.x, abs.y, abs.x + MAX_TIMINGS, abs.y, 0x0f);
+	r_funcs->Draw_Line (abs.x, abs.y - 10, abs.x + MAX_TIMINGS, abs.y - 10, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 20, abs.x + MAX_TIMINGS, abs.y - 20, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 25, abs.x + MAX_TIMINGS, abs.y - 25, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 33, abs.x + MAX_TIMINGS, abs.y - 33, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 50, abs.x + MAX_TIMINGS, abs.y - 50, 0x3f);
+	r_funcs->Draw_Line (abs.x, abs.y - 100, abs.x + MAX_TIMINGS, abs.y - 100, 0x3f);
+	//r_data->graphheight->int_val);
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
 
 void
-R_ZGraph (void)
+R_ZGraph (view_pos_t abs, view_pos_t len)
 {
-	int         x, w;
+	int         w;
 	static int  height[256];
 
 	if (r_refdef.vrect.width <= 256)
@@ -89,8 +102,7 @@ R_ZGraph (void)
 	else
 		w = 256;
 
-	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
+	height[r_framecount & 255] = ((int) r_refdef.frame.position[2]) & 31;
 
-	x = 0;
-	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, height, w);
+	r_funcs->R_LineGraph (abs.x, abs.y, height, w, *r_data->graphheight);
 }

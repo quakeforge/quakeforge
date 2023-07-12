@@ -27,29 +27,32 @@
 
 */
 
-#ifndef __qargs_h
-#define __qargs_h
+#ifndef __QF_qargs_h
+#define __QF_qargs_h
 
 /** \addtogroup misc
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
 extern int com_argc;
 extern const char **com_argv;
 extern const char *com_cmdline;
-extern struct cvar_s *fs_globalcfg;
-extern struct cvar_s *fs_usercfg;
+extern char *fs_globalcfg;
+extern char *fs_usercfg;
 
-int COM_CheckParm (const char *parm);
+int COM_CheckParm (const char *parm) __attribute__((pure));
 void COM_AddParm (const char *parm);
 
 void COM_Init (void);
 void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
-void COM_ParseConfig (void);
+struct cbuf_s;
+void COM_ParseConfig (struct cbuf_s *cbuf);
+void COM_ExecConfig (struct cbuf_s *cbuf, int skip_quakerc);
+int COM_Check_quakerc (const char *cmd, struct cbuf_s *cbuf);
 
-//@}
+///@}
 
-#endif // __qargs_h
+#endif//__QF_qargs_h

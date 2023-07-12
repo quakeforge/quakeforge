@@ -25,6 +25,7 @@
 */
 
 #include "debug.h"
+#include "legacy_string.h"
 #include "string.h"
 #include "qfs.h"
 
@@ -58,6 +59,7 @@ class_from_plist (PLDictionary *pldict)
 		return ret;
 	}
 	obj = [class alloc];
+	params[0].pointer_val = obj;
 
 	messages = (PLArray*) [pldict getObjectForKey:"Messages"];
 	message_count = [messages count];
@@ -65,9 +67,10 @@ class_from_plist (PLDictionary *pldict)
 		msg = (PLArray*) [messages getObjectAtIndex:i];
 		selname = [(PLString*) [msg getObjectAtIndex:0] string];
 		sel = sel_get_uid (selname);
-		va_list.count = [msg count] - 1;
-		for (j = 0; j < va_list.count; j++) {
-			paramstr = [(PLString*) [msg getObjectAtIndex:j + 1] string];
+		params[1].pointer_val = sel;
+		va_list.count = [msg count] + 1;
+		for (j = 2; j < va_list.count; j++) {
+			paramstr = [(PLString*) [msg getObjectAtIndex:j - 1] string];
 			switch (str_mid (paramstr, 0, 1)) {
 				case "\"":
 					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
@@ -78,10 +81,10 @@ class_from_plist (PLDictionary *pldict)
 					break;
 				case "0": case "1": case "2": case "3": case "4":
 				case "5": case "6": case "7": case "8": case "9":
-					if (str_str (paramstr, "."))
+					if (str_str (paramstr, ".") >= 0)
 						va_list.list[j].float_val = stof (paramstr);
 					else
-						va_list.list[j].integer_val = stoi (paramstr);
+						va_list.list[j].int_val = stoi (paramstr);
 					break;
 			}
 		}
@@ -103,7 +106,7 @@ array_from_plist (PLArray *plarray)
 	count = [plarray count];
 	for (i = 0; i < count; i++) {
 		ret = object_from_plist ([plarray getObjectAtIndex:i]);
-		[array addObject: ret.pointer_val];
+		[array addObject: (id) ret.pointer_val];
 	}
 	ret.pointer_val = array;
 	return ret;
@@ -142,7 +145,7 @@ string_from_plist (PLString *plstring)
 	local @param ret;
 	local string str = [plstring string];
 
-	ret.quaternion_val = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	if (str_mid (str, 0, 1) == "[")
 		return rect_from_plist (plstring);
 

@@ -44,31 +44,39 @@
 #include "QF/hash.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "tools/qfcc/include/qfcc.h"
 
-#include "codespace.h"
-#include "debug.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "flow.h"
-#include "function.h"
-#include "opcodes.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/flow.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-static param_t *params_freelist;
-static function_t *functions_freelist;
+ALLOC_STATE (param_t, params);
+ALLOC_STATE (function_t, functions);
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
+
+// standardized base register to use for all locals (arguments, local defs,
+// params)
+#define LOCALS_REG 1
+// keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
+// having to do shenanigans with mixed-alignment stack frames
+#define STACK_ALIGN 8
 
 static const char *
 ol_func_get_key (const void *_f, void *unused)
@@ -92,7 +100,7 @@ new_param (const char *selector, type_t *type, const char *name)
 	ALLOC (4096, param_t, params, param);
 	param->next = 0;
 	param->selector = selector;
-	param->type = type;
+	param->type = find_type (type);
 	param->name = name;
 
 	return param;
@@ -119,7 +127,7 @@ param_append_identifiers (param_t *params, symbol_t *idents, type_t *type)
 	return params;
 }
 
-param_t *
+static param_t *
 _reverse_params (param_t *params, param_t *next)
 {
 	param_t    *p = params;
@@ -138,6 +146,20 @@ reverse_params (param_t *params)
 }
 
 param_t *
+append_params (param_t *params, param_t *more_params)
+{
+	if (params) {
+		param_t *p;
+		for (p = params; p->next; ) {
+			p = p->next;
+		}
+		p->next = more_params;
+		return params;
+	}
+	return more_params;
+}
+
+param_t *
 copy_params (param_t *params)
 {
 	param_t    *n_parms = 0, **p = &n_parms;
@@ -151,27 +173,45 @@ copy_params (param_t *params)
 }
 
 type_t *
-parse_params (type_t *type, param_t *parms)
+parse_params (type_t *return_type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
+	type_t     *ptype;
+	int         count = 0;
+
+	if (return_type && is_class (return_type)) {
+		error (0, "cannot return an object (forgot *?)");
+		return_type = &type_id;
+	}
 
 	new = new_type ();
 	new->type = ev_func;
-	new->t.func.type = type;
+	new->alignment = 1;
+	new->width = 1;
+	new->t.func.type = return_type;
 	new->t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
-		if (new->t.func.num_params > MAX_PARMS) {
-			error (0, "too many params");
-			return type;
+		if (p->type) {
+			count++;
 		}
+	}
+	if (count) {
+		new->t.func.param_types = malloc (count * sizeof (type_t));
+	}
+	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
 				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
-			new->t.func.param_types[new->t.func.num_params] = p->type;
+			if (is_class (p->type)) {
+				error (0, "cannot use an object as a parameter (forgot *?)");
+				p->type = &type_id;
+			}
+			ptype = (type_t *) unalias_type (p->type); //FIXME cast
+			new->t.func.param_types[new->t.func.num_params] = ptype;
 			new->t.func.num_params++;
 		}
 	}
@@ -186,7 +226,7 @@ check_params (param_t *params)
 	if (!params)
 		return 0;
 	while (p) {
-		if (p->type == &type_void) {
+		if (p->type && is_void(p->type)) {
 			if (p->name) {
 				error (0, "parameter %d ('%s') has incomplete type", num,
 					   p->name);
@@ -205,19 +245,19 @@ check_params (param_t *params)
 }
 
 static overloaded_function_t *
-get_function (const char *name, type_t *type, int overload, int create)
+get_function (const char *name, const type_t *type, int overload, int create)
 {
 	const char *full_name;
 	overloaded_function_t *func;
 
 	if (!overloaded_functions) {
-		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0);
-		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0);
+		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
+		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
 	}
 
 	name = save_string (name);
 
-	full_name = save_string (va ("%s|%s", name, encode_params (type)));
+	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
@@ -264,7 +304,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, sym->type, overload, create);
+	func = get_function (name, unalias_type (sym->type), overload, create);
 
 	if (func && func->overloaded)
 		name = func->full_name;
@@ -272,7 +312,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	if ((!s || s->table != current_symtab) && create) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
-		s->type = sym->type;
+		s->type = (type_t *) unalias_type (sym->type); // FIXME cast
 		s->params = sym->params;
 		s->s.func = 0;				// function not yet defined
 		symtab_addsymbol (current_symtab, s);
@@ -286,8 +326,8 @@ func_compare (const void *a, const void *b)
 {
 	overloaded_function_t *fa = *(overloaded_function_t **) a;
 	overloaded_function_t *fb = *(overloaded_function_t **) b;
-	type_t     *ta = fa->type;
-	type_t     *tb = fb->type;
+	const type_t *ta = fa->type;
+	const type_t *tb = fb->type;
 	int         na = ta->t.func.num_params;
 	int         nb = tb->t.func.num_params;
 	int         ret, i;
@@ -326,8 +366,9 @@ find_function (expr_t *fexpr, expr_t *params)
 			return e;
 		type.t.func.num_params++;
 	}
-	if (type.t.func.num_params > MAX_PARMS)
-		return fexpr;
+	i = type.t.func.num_params * sizeof (type_t);
+	type.t.func.param_types = alloca(i);
+	memset (type.t.func.param_types, 0, i);
 	for (i = 0, e = params; e; i++, e = e->next) {
 		type.t.func.param_types[type.t.func.num_params - 1 - i] = get_type (e);
 		if (e->type == ex_error)
@@ -339,14 +380,17 @@ find_function (expr_t *fexpr, expr_t *params)
 	for (func_count = 0; funcs[func_count]; func_count++)
 		;
 	if (func_count < 2) {
-		free (funcs);
-		return fexpr;
+		f = (overloaded_function_t *) funcs[0];
+		if (func_count && !f->overloaded) {
+			free (funcs);
+			return fexpr;
+		}
 	}
 	type.t.func.type = ((overloaded_function_t *) funcs[0])->type->t.func.type;
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va ("%s|%s", fexpr->e.symbol->name,
+	dummy.full_name = save_string (va (0, "%s|%s", fexpr->e.symbol->name,
 									   encode_params (&type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
@@ -415,6 +459,18 @@ find_function (expr_t *fexpr, expr_t *params)
 	return fexpr;
 }
 
+int
+value_too_large (type_t *val_type)
+{
+	if ((options.code.progsversion < PROG_VERSION
+		 && type_size (val_type) > type_size (&type_param))
+		|| (options.code.progsversion == PROG_VERSION
+			&& type_size (val_type) > MAX_DEF_SIZE)) {
+		return 1;
+	}
+	return 0;
+}
+
 static void
 check_function (symbol_t *fsym)
 {
@@ -426,8 +482,9 @@ check_function (symbol_t *fsym)
 		error (0, "return type is an incomplete type");
 		fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
-	if (type_size (fsym->type->t.func.type) > type_size (&type_param)) {
-		error (0, "return value too large to be passed by value");
+	if (value_too_large (fsym->type->t.func.type)) {
+		error (0, "return value too large to be passed by value (%d)",
+			   type_size (&type_param));
 		fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
@@ -435,35 +492,30 @@ check_function (symbol_t *fsym)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		if (!type_size (p->type))
+		if (!type_size (p->type)) {
 			error (0, "parameter %d (‘%s’) has incomplete type",
 				   i + 1, p->name);
-		if (type_size (p->type) > type_size (&type_param))
+		}
+		if (value_too_large (p->type)) {
 			error (0, "param %d (‘%s’) is too large to be passed by value",
 				   i + 1, p->name);
+		}
 	}
 }
 
 static void
-build_scope (symbol_t *fsym, symtab_t *parent)
+build_v6p_scope (symbol_t *fsym)
 {
 	int         i;
 	param_t    *p;
 	symbol_t   *args = 0;
 	symbol_t   *param;
-	symtab_t   *symtab;
-	symtab_t   *cs = current_symtab;
+	symtab_t   *parameters = fsym->s.func->parameters;
+	symtab_t   *locals = fsym->s.func->locals;
 
-	check_function (fsym);
-
-	symtab = new_symtab (parent, stab_local);
-	fsym->s.func->symtab = symtab;
-	symtab->space = defspace_new (ds_virtual);
-	current_symtab = symtab;
-
-	if (fsym->type->t.func.num_params < 0) {
+	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, args->type, 0, symtab->space, sc_param);
+		initialize_def (args, 0, parameters->space, sc_param, locals);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -476,18 +528,91 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, param->type, 0, symtab->space, sc_param);
+		initialize_def (param, 0, parameters->space, sc_param, locals);
 		i++;
 	}
 
 	if (args) {
-		while (i < MAX_PARMS) {
-			param = new_symbol_type (va (".par%d", i), &type_param);
-			initialize_def (param, &type_param, 0, symtab->space, sc_param);
+		while (i < PR_MAX_PARAMS) {
+			param = new_symbol_type (va (0, ".par%d", i), &type_param);
+			initialize_def (param, 0, parameters->space, sc_param, locals);
 			i++;
 		}
 	}
-	current_symtab = cs;
+}
+
+static void
+create_param (symtab_t *parameters, symbol_t *param)
+{
+	defspace_t *space = parameters->space;
+	def_t      *def = new_def (param->name, 0, space, sc_param);
+	int         size = type_size (param->type);
+	int         alignment = param->type->alignment;
+	if (alignment < 4) {
+		alignment = 4;
+	}
+	def->offset = defspace_alloc_aligned_highwater (space, size, alignment);
+	def->type = param->type;
+	param->s.def = def;
+	param->sy_type = sy_var;
+	symtab_addsymbol (parameters, param);
+	if (is_vector(param->type) && options.code.vector_components)
+		init_vector_components (param, 0, parameters);
+}
+
+static void
+build_rua_scope (symbol_t *fsym)
+{
+	for (param_t *p = fsym->params; p; p = p->next) {
+		symbol_t   *param;
+		if (!p->selector && !p->type && !p->name) {
+			// ellipsis marker
+			param = new_symbol_type (".args", &type_va_list);
+		} else {
+			if (!p->type) {
+				continue;					// non-param selector
+			}
+			if (!p->name) {
+				error (0, "parameter name omitted");
+				p->name = save_string ("");
+			}
+			param = new_symbol_type (p->name, p->type);
+		}
+		create_param (fsym->s.func->parameters, param);
+		param->s.def->reg = fsym->s.func->temp_reg;;
+	}
+}
+
+static void
+build_scope (symbol_t *fsym, symtab_t *parent)
+{
+	symtab_t   *parameters;
+	symtab_t   *locals;
+
+	if (!fsym->s.func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (fsym->s.func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
+
+	check_function (fsym);
+
+	fsym->s.func->label_scope = new_symtab (0, stab_label);
+
+	parameters = new_symtab (parent, stab_param);
+	parameters->space = defspace_new (ds_virtual);
+	fsym->s.func->parameters = parameters;
+
+	locals = new_symtab (parameters, stab_local);
+	locals->space = defspace_new (ds_virtual);
+	fsym->s.func->locals = locals;
+
+	if (options.code.progsversion == PROG_VERSION) {
+		build_rua_scope (fsym);
+	} else {
+		build_v6p_scope (fsym);
+	}
 }
 
 function_t *
@@ -515,6 +640,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	if (!sym->s.func) {
 		sym->s.func = new_function (sym->name, nice_name);
 		sym->s.func->sym = sym;
+		sym->s.func->type = unalias_type (sym->type);
 	}
 	if (sym->s.func->def && sym->s.func->def->external
 		&& storage != sc_extern) {
@@ -539,13 +665,13 @@ add_function (function_t *f)
 
 function_t *
 begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
-				int far)
+				int far, storage_class_t storage)
 {
 	defspace_t *space;
 
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
-		sym = new_symbol_type (sym->name, &type_function);
+		sym = new_symbol_type (sym->name, &type_func);
 		sym = function_symbol (sym, 1, 1);
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
@@ -556,13 +682,16 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	space = sym->table->space;
 	if (far)
 		space = pr.far_data;
-	make_function (sym, nicename, space, current_storage);
+	make_function (sym, nicename, space, storage);
 	if (!sym->s.func->def->external) {
 		sym->s.func->def->initialized = 1;
 		sym->s.func->def->constant = 1;
 		sym->s.func->def->nosave = 1;
 		add_function (sym->s.func);
 		reloc_def_func (sym->s.func, sym->s.func->def);
+
+		sym->s.func->def->file = pr.source_file;
+		sym->s.func->def->line = pr.source_line;
 	}
 	sym->s.func->code = pr.code->size;
 
@@ -576,23 +705,141 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	return sym->s.func;
 }
 
+static void
+build_function (symbol_t *fsym)
+{
+	const type_t *func_type = fsym->s.func->type;
+	if (func_type->t.func.num_params > PR_MAX_PARAMS) {
+		error (0, "too many params");
+	}
+}
+
+static void
+merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
+{
+	int         offset;
+
+	for (def_t *def = src->defs; def; def = def->next) {
+		if (def->type->alignment > alignment) {
+			alignment = def->type->alignment;
+		}
+	}
+	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);
+	for (def_t *def = src->defs; def; def = def->next) {
+		def->offset += offset;
+		def->space = dst;
+	}
+
+	if (src->defs) {
+		*dst->def_tail = src->defs;
+		dst->def_tail = src->def_tail;
+		src->def_tail = &src->defs;
+		*src->def_tail = 0;
+	}
+
+	defspace_delete (src);
+}
+
 function_t *
 build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 {
 	if (fsym->sy_type != sy_func)	// probably in error recovery
 		return 0;
-	build_function (fsym->s.func);
+	build_function (fsym);
 	if (state_expr) {
-		state_expr->next = statements;
-		statements = state_expr;
+		prepend_expr (statements, state_expr);
 	}
-	emit_function (fsym->s.func, statements);
-	finish_function (fsym->s.func);
+	function_t *func = fsym->s.func;
+	if (options.code.progsversion == PROG_VERSION) {
+		/* Create a function entry block to set up the stack frame and add the
+		 * actual function code to that block. This ensure that the adjstk and
+		 * with statements always come first, regardless of what ideas the
+		 * optimizer gets.
+		 */
+		expr_t     *e;
+		expr_t     *entry = new_block_expr ();
+		entry->file = func->def->file;
+		entry->line = func->def->line;
+
+		e = new_adjstk_expr (0, 0);
+		e->file = func->def->file;
+		e->line = func->def->line;
+		append_expr (entry, e);
+
+		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
+		e->file = func->def->file;
+		e->line = func->def->line;
+		append_expr (entry, e);
+
+		append_expr (entry, statements);
+		statements = entry;
+
+		/* Mark all local defs as using the base register used for stack
+		 * references.
+		 */
+		func->temp_reg = LOCALS_REG;
+		for (def_t *def = func->locals->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
+		for (def_t *def = func->parameters->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
+	}
+	emit_function (func, statements);
+	if (options.code.progsversion < PROG_VERSION) {
+		// stitch parameter and locals data together with parameters coming
+		// first
+		defspace_t *space = defspace_new (ds_virtual);
+
+		func->params_start = 0;
+
+		merge_spaces (space, func->parameters->space, 1);
+		func->parameters->space = space;
+
+		merge_spaces (space, func->locals->space, 1);
+		func->locals->space = space;
+	} else {
+		defspace_t *space = defspace_new (ds_virtual);
+
+		if (func->arguments) {
+			func->arguments->size = func->arguments->max_size;
+			merge_spaces (space, func->arguments, STACK_ALIGN);
+			func->arguments = 0;
+		}
+
+		merge_spaces (space, func->locals->space, STACK_ALIGN);
+		func->locals->space = space;
+
+		// allocate 0 words to force alignment and get the address
+		func->params_start = defspace_alloc_aligned_highwater (space, 0,
+															   STACK_ALIGN);
+
+		dstatement_t *st = &pr.code->code[func->code];
+		if (st->op == OP_ADJSTK) {
+			if (func->params_start) {
+				st->b = -func->params_start;
+			} else {
+				// skip over adjstk so a zero adjustment doesn't get executed
+				func->code += 1;
+			}
+		}
+		merge_spaces (space, func->parameters->space, STACK_ALIGN);
+		func->parameters->space = space;
+
+		// force the alignment again so the full stack slot is counted when
+		// the final parameter is smaller than STACK_ALIGN words
+		defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
+	}
 	return fsym->s.func;
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
+build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
+						storage_class_t storage)
 {
 	int         bi;
 	defspace_t *space;
@@ -605,47 +852,39 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
-	if (!is_integer_val (bi_val) && !is_float_val (bi_val)) {
+	if (!is_int_val (bi_val) && !is_float_val (bi_val)) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
 	space = sym->table->space;
 	if (far)
 		space = pr.far_data;
-	make_function (sym, 0, space, current_storage);
+	make_function (sym, 0, space, storage);
 	if (sym->s.func->def->external)
 		return 0;
 
+	sym->s.func->def->initialized = 1;
+	sym->s.func->def->constant = 1;
+	sym->s.func->def->nosave = 1;
 	add_function (sym->s.func);
 
-	if (is_integer_val (bi_val))
-		bi = expr_integer (bi_val);
+	if (is_int_val (bi_val))
+		bi = expr_int (bi_val);
 	else
 		bi = expr_float (bi_val);
+	if (bi < 0) {
+		error (bi_val, "builtin functions must be positive or 0");
+		return 0;
+	}
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
-	build_function (sym->s.func);
-	finish_function (sym->s.func);
+	build_function (sym);
 
 	// for debug info
 	build_scope (sym, current_symtab);
-	sym->s.func->symtab->space->size = 0;
+	sym->s.func->parameters->space->size = 0;
+	sym->s.func->locals->space = sym->s.func->parameters->space;
 	return sym->s.func;
-}
-
-void
-build_function (function_t *f)
-{
-	//	FIXME
-//	f->def->constant = 1;
-//	f->def->nosave = 1;
-//	f->def->initialized = 1;
-//	G_FUNCTION (f->def->ofs) = f->function_num;
-}
-
-void
-finish_function (function_t *f)
-{
 }
 
 void

@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -47,6 +44,7 @@
 #include "QF/sys.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_textures.h"
 
 #include "r_internal.h"
@@ -54,24 +52,20 @@
 #define NUM_GRAPH_TEXTURES 8
 
 static byte *graph_texels[NUM_GRAPH_TEXTURES];
-static int   graph_texture[NUM_GRAPH_TEXTURES];
+static GLuint graph_texture[NUM_GRAPH_TEXTURES];
 static int   graph_index;
 static int   graph_size[NUM_GRAPH_TEXTURES];
 static int   graph_width[NUM_GRAPH_TEXTURES];
 
 
-int
-gl_R_InitGraphTextures (int base)
+void
+gl_R_InitGraphTextures (void)
 {
-	int i;
-
-	for (i = 0; i < NUM_GRAPH_TEXTURES; i++)
-		graph_texture[i] = base++;
-	return base;
+	qfglGenTextures (NUM_GRAPH_TEXTURES, graph_texture);
 }
 
 void
-gl_R_LineGraph (int x, int y, int *h_vals, int count)
+gl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	byte        color;
 	byte        *dest;
@@ -80,7 +74,7 @@ gl_R_LineGraph (int x, int y, int *h_vals, int count)
 	if (!count)
 		return;
 
-	s = r_graphheight->int_val;
+	s = height;
 
 	size = s * count;
 	if (size > graph_size[graph_index]) {

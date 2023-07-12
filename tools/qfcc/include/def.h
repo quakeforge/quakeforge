@@ -31,15 +31,16 @@
 #ifndef __def_h
 #define __def_h
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
 */
-//@{
+///@{
 
 struct symbol_s;
+struct symtab_s;
 struct expr_s;
 
 /** Represent a memory location that holds a QuakeC/Ruamoko object.
@@ -60,6 +61,7 @@ typedef struct def_s {
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
+	int         reg;			///< base register index to access def
 
 	/** \name Def aliasing.
 		Aliasing a def provides a different view of the def providing access
@@ -71,7 +73,7 @@ typedef struct def_s {
 		def they alias, including relocation records. However, they do keep
 		track of the source file and line that first created the alias.
 
-		The relations between a def an any of its aliases are maintained by
+		The relations between a def and any of its aliases are maintained by
 		a linked list headed by def_t::alias_defs and connected by
 		def_t::next. def_t::alias is used to find the main def via one if its
 		aliases. The order of the aliases in the list is arbitrary: it is the
@@ -95,10 +97,11 @@ typedef struct def_s {
 	unsigned    external:1;		///< externally declared def
 	unsigned    local:1;		///< function local def
 	unsigned    param:1;		///< function param def
+	unsigned    argument:1;		///< function argument def
 	unsigned    system:1;		///< system def
 	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
 
-	string_t    file;			///< declaring/defining source file
+	pr_string_t file;			///< declaring/defining source file
 	int         line;			///< declaring/defining source line
 
 	int         qfo_def;		///< index to def in qfo defs
@@ -110,12 +113,13 @@ typedef struct def_s {
 /** Specify the storage class of a def.
 */
 typedef enum storage_class_e {
-	sc_global,					///< def is globally visibil across units
+	sc_global,					///< def is globally visible across units
 	sc_system,					///< def may be redefined once
 	sc_extern,					///< def is externally allocated
 	sc_static,					///< def is private to the current unit
 	sc_param,					///< def is an incoming function parameter
-	sc_local					///< def is local to the current function
+	sc_local,					///< def is local to the current function
+	sc_argument,				///< def is a function argument
 } storage_class_t;
 
 /** Create a new def.
@@ -180,7 +184,7 @@ void free_def (def_t *def);
 	Temporary defs are bound to the current function (::current_func must
 	be valid). They are always allocated from the funciont's local defspace.
 */
-//@{
+///@{
 /** Get a temporary def.
 
 	If the current function has a free temp def of the same size as \a size,
@@ -190,14 +194,13 @@ void free_def (def_t *def);
 
 	\note ::current_func must be valid.
 
-	\param type		The low-level type of the temporary variable.
-	\param size		The amount of space to allocate to the temp.
+	\param type		The type of the temporary variable.
 	\return			The def for the temparary variable.
 
-	\bug \a size is not checked for validity (must be 1-4).
+	\bug size of type must be 1 to 4.
 	\todo support arbitrary sizes
 */
-def_t *temp_def (etype_t type, int size);
+def_t *temp_def (struct type_s *type);
 
 /** Free a tempary def so it may be recycled.
 
@@ -208,7 +211,7 @@ def_t *temp_def (etype_t type, int size);
 	\param temp		The temp def to be recycled.
 */
 void free_temp_def (def_t *temp);
-//@}
+///@}
 
 /** Initialize a vm def from a qfcc def.
 
@@ -220,9 +223,14 @@ void free_temp_def (def_t *temp);
 */
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 
+void init_vector_components (struct symbol_s *vector_sym, int is_field,
+							 struct symtab_s *symtab);
+
 /** Initialize a def referenced by the given symbol.
 
-	The symbol is checked for redefinition. (FIXME check rules)
+	The symbol is checked for redefinition. A symbol is considered to be
+	redefined if the previous definition is in the same symbol table and
+	of a different type or already initialized.
 
 	If \a type is null, then the def will be given the default type (as
 	specified by ::type_default).
@@ -237,15 +245,14 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 	For \a space and \a storage, see new_def().
 
 	\param sym		The symbol for which to create and initialize a def.
-	\param type		The type of the def. sym_t::type is set to this. If null,
-					the default type is used.
 	\param init		If not null, the expressions to use to initialize the def.
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
+	\param symtab   The symbol table into which the def will be placed.
 */
-void initialize_def (struct symbol_s *sym, struct type_s *type,
+void initialize_def (struct symbol_s *sym,
 					 struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage);
+					 storage_class_t storage, struct symtab_s *symtab);
 
 /** Determine if two defs overlap.
 
@@ -254,7 +261,7 @@ void initialize_def (struct symbol_s *sym, struct type_s *type,
 	\return			1 if the defs overlap, 2 if \a d1 fully overlaps \a d2,
 					otherwise 0.
 */
-int def_overlap (def_t *d1, def_t *d2);
+int def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
 
 /** Convenience function for obtaining a def's actual offset.
 
@@ -263,7 +270,7 @@ int def_overlap (def_t *d1, def_t *d2);
 	\param def		The def of which to obtain the offset. May be an alias def.
 	\return			The actual offset of the def in the def's defspace.
 */
-int def_offset (def_t *def);
+int def_offset (def_t *def) __attribute__((pure));
 
 /** Convenience function for obtaining a def's size.
 
@@ -272,7 +279,7 @@ int def_offset (def_t *def);
 	\param def		The def of which to obtain the size.
 	\return			The size of the def.
 */
-int def_size (def_t *def);
+int def_size (def_t *def) __attribute__((pure));
 
 /** Visit all defs that alias the given def, including itself.
 
@@ -307,6 +314,6 @@ int def_size (def_t *def);
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);
-//@}
+///@}
 
 #endif//__def_h

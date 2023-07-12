@@ -39,15 +39,16 @@ static void (*init_funcs[])(progs_t *, int) = {
 	RUA_Cbuf_Init,
 	RUA_Cmd_Init,
 	RUA_Cvar_Init,
-	RUA_File_Init,
 	RUA_Hash_Init,
 	RUA_Math_Init,
 	RUA_MsgBuf_Init,
 	RUA_Plist_Init,
 	RUA_QFile_Init,
 	RUA_QFS_Init,
+	RUA_Runtime_Init,
 	RUA_Script_Init,
 	RUA_Set_Init,
+	RUA_Stdlib_Init,
 	RUA_String_Init,
 };
 
@@ -56,7 +57,6 @@ RUA_Init (progs_t *pr, int secure)
 {
 	size_t      i;
 
-	PR_Resources_Init (pr);
 	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)
 		init_funcs[i] (pr, secure);
 }

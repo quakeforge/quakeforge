@@ -34,7 +34,7 @@
 /** \defgroup mathlib_matrix3 3x3 matrix functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -101,7 +101,7 @@
 
 void Mat3Init (const quat_t rot, const vec3_t scale, mat3_t mat);
 void Mat3Transpose (const mat3_t a, mat3_t b);
-vec_t Mat3Determinant (const mat3_t m);
+vec_t Mat3Determinant (const mat3_t m) __attribute__((pure));
 int Mat3Inverse (const mat3_t a, mat3_t b);
 void Mat3Mult (const mat3_t a, const mat3_t b, mat3_t c);
 void Mat3MultVec (const mat3_t a, const vec3_t b, vec3_t c);
@@ -116,8 +116,8 @@ void Mat3SymEigen (const mat3_t m, vec3_t e);
 	VectorShear (shear, v, v);
 	VectorCompMult (scale, v, v);
 */
-int Mat3Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale);
+int Mat3Decompose (const mat3_t mat, quat_t rot, vec3_t shear, vec3_t scale);
 
-//@}
+///@}
 
 #endif // __QF_math_matrix3_h

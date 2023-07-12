@@ -40,7 +40,7 @@
 /**	\defgroup qtv_general General Functions
 	\ingroup qtv
 */
-//@{
+///@{
 
 #define PORT_QTV 27501	///< Default port to listen for connecting clients.
 
@@ -54,7 +54,7 @@ extern double realtime;
 
 extern struct cbuf_s *qtv_cbuf;
 extern struct cbuf_args_s *qtv_args;
-extern struct cvar_s *sv_timeout;
+extern float sv_timeout;
 
 struct client_s;
 
@@ -65,7 +65,7 @@ struct client_s;
 	Calling qtv_begin_redirect() before, and qtv_end_redirect() after a series
 	of calls will redirect output.
 */
-void qtv_printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void qtv_printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 
 /**	Begin redirection of console printing.
 
@@ -91,6 +91,6 @@ void qtv_end_redirect (void);
 
 void qtv_sbar_init (void);
 
-//@}
+///@}
 
 #endif//__qtv_h

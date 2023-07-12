@@ -39,22 +39,30 @@ enum storage_class_e;
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef enum vis_e {
 	vis_public,
 	vis_protected,
 	vis_private,
+	vis_anonymous,
 } vis_t;
 
 typedef enum {
+	sy_name,					///< just a name (referent tbd)
 	sy_var,						///< symbol refers to a variable
 	sy_const,					///< symbol refers to a constant
 	sy_type,					///< symbol refers to a type
 	sy_expr,					///< symbol refers to an expression
 	sy_func,					///< symbol refers to a function
 	sy_class,					///< symbol refers to a class
+	sy_convert,					///< symbol refers to a conversion function
 } sy_type_e;
+
+typedef struct symconv_s {
+	struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
+	void       *data;
+} symconv_t;
 
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
@@ -64,21 +72,26 @@ typedef struct symbol_s {
 	sy_type_e   sy_type;		///< symbol type
 	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
+	unsigned    no_auto_init;	///< skip for non-designated initializers
 	union {
 		int         offset;			///< sy_var (in a struct/union)
 		struct def_s *def;			///< sy_var
 		struct ex_value_s *value;	///< sy_const
 		struct expr_s *expr;		///< sy_expr
 		struct function_s *func;	///< sy_func
+		symconv_t   convert;		///< sy_convert
 	} s;
 } symbol_t;
 
 typedef enum {
 	stab_global,				///< global (many symbols)
+	stab_param,					///< local (few symbols: func)
 	stab_local,					///< local (few symbols: func)
+	stab_ivars,
 	stab_struct,
 	stab_union,
 	stab_enum,
+	stab_label,
 } stab_type_e;
 
 typedef struct symtab_s {
@@ -90,9 +103,10 @@ typedef struct symtab_s {
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
 	struct defspace_s *space;	///< storage for vars in scope symtabs
+	struct class_s *class;		///< owning class if ivar scope
 } symtab_t;
 
-const char *symtype_str (sy_type_e type);
+const char *symtype_str (sy_type_e type) __attribute__((const));
 
 /**	Create a new, empty named symbol.
 
@@ -121,7 +135,7 @@ symbol_t *new_symbol_type (const char *name, struct type_s *type);
 	supports both code block scoping and ivar inheritance.
 
 	\param parent	Pointer to parent scope symbol table.
-	\param type		The type of symbol table. Currently governs expected size.
+	\param type		The type of symbol table.
 	\return			The new, empty symbol table.
 */
 symtab_t *new_symtab (symtab_t *parent, stab_type_e type);
@@ -184,6 +198,7 @@ symbol_t *copy_symbol (symbol_t *symbol);
 	\param symtab	The symbol table chain to be copied.
 	\param parent	The parent symbol table of the new symbol table, or
 					null.
+	\param type		The type of symbol table.
 	\return			The new symbol table.
 
 	\dot
@@ -211,7 +226,8 @@ symbol_t *copy_symbol (symbol_t *symbol);
 	}
 	\enddot
 */
-symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
+symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent,
+							stab_type_e type);
 
 /**	Create a global symbol and allocate space for a variable.
 
@@ -234,6 +250,11 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
-//@}
+struct specifier_s;
+symbol_t *declare_symbol (struct specifier_s spec, struct expr_s *init,
+						  symtab_t *symtab);
+symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab);
+
+///@}
 
 #endif//__symtab_h

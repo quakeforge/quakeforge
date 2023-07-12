@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -56,75 +53,29 @@
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_fisheye.h"
+#include "QF/GL/qf_lightmap.h"
+#include "QF/GL/qf_particles.h"
+#include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_sky.h"
+#include "QF/GL/qf_sprite.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
+
+#include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "varrays.h"
+#include "vid_gl.h"
 
-/*
-	R_Envmap_f
+static gltex_t gl_notexture = { };
 
-	Grab six views for environment mapping tests
-*/
 static void
-R_Envmap_f (void)
-{
-	byte        buffer[256 * 256 * 4];
-
-	qfglDrawBuffer (GL_FRONT);
-	qfglReadBuffer (GL_FRONT);
-	gl_envmap = true;
-
-	r_refdef.vrect.x = 0;
-	r_refdef.vrect.y = 0;
-	r_refdef.vrect.width = 256;
-	r_refdef.vrect.height = 256;
-
-	r_refdef.viewangles[0] = 0;
-	r_refdef.viewangles[1] = 0;
-	r_refdef.viewangles[2] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env0.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 90;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env1.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 180;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env2.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[1] = 270;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env3.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[0] = -90;
-	r_refdef.viewangles[1] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env4.rgb", buffer, sizeof (buffer));
-
-	r_refdef.viewangles[0] = 90;
-	r_refdef.viewangles[1] = 0;
-	gl_R_RenderView ();
-	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	QFS_WriteFile ("env5.rgb", buffer, sizeof (buffer));
-
-	gl_envmap = false;
-	qfglDrawBuffer (GL_BACK);
-	qfglReadBuffer (GL_BACK);
-	vid.end_rendering ();
-}
-
-void
 gl_R_LoadSky_f (void)
 {
 	if (Cmd_Argc () != 2) {
@@ -135,44 +86,70 @@ gl_R_LoadSky_f (void)
 	gl_R_LoadSkys (Cmd_Argv (1));
 }
 
+/*
+  R_TimeRefresh_f
+
+  For program optimization
+  LordHavoc: improved appearance and accuracy of timerefresh
+*/
+static void
+gl_R_TimeRefresh_f (void)
+{
+/*FIXME update for simd
+	double      start, stop, time;
+	int         i;
+
+	gl_ctx->end_rendering ();
+
+	start = Sys_DoubleTime ();
+	for (i = 0; i < 128; i++) {
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
+		gl_R_RenderView ();
+		gl_ctx->end_rendering ();
+	}
+
+	stop = Sys_DoubleTime ();
+	time = stop - start;
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
+}
+
 void
 gl_R_Init (void)
 {
+	r_notexture_mip->render = &gl_notexture;
+
 	R_Init_Cvars ();
-	gl_R_Particles_Init_Cvars ();
 
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
-	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
-	Cmd_AddCommand ("pointfile", gl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
 	gl_Draw_Init ();
+	glrmain_init ();
+	gl_lightmap_init ();
 	SCR_Init ();
 	gl_R_InitBubble ();
 
 	GDT_Init ();
 
-	gl_texture_number = gl_R_InitGraphTextures (gl_texture_number);
-
-	gl_texture_number = gl_Skin_Init_Textures (gl_texture_number);
+	gl_R_InitGraphTextures ();
+	gl_Skin_Init_Textures ();
 
 	r_init = 1;
 	gl_R_InitParticles ();
 	gl_R_InitSprites ();
-	gl_Fog_Init ();
 	Skin_Init ();
+	gl_InitFisheye ();
 }
 
 static void
-register_textures (model_t *model)
+register_textures (mod_brush_t *brush)
 {
-	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < model->numtextures; i++) {
-		tex = model->textures[i];
+	for (unsigned i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		gl_R_AddTexture (tex);
@@ -180,85 +157,45 @@ register_textures (model_t *model)
 }
 
 void
-gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+gl_R_NewScene (scene_t *scene)
 {
-	int         i;
 	texture_t  *tex;
+	mod_brush_t *brush;
 
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
-	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
-
-	R_FreeAllEntities ();
-
-	// clear out efrags in case the level hasn't been reloaded
-	for (i = 0; i < r_worldentity.model->numleafs; i++)
-		r_worldentity.model->leafs[i].efrags = NULL;
+	r_refdef.worldmodel = scene->worldmodel;
+	brush = &scene->worldmodel->brush;
 
 	// Force a vis update
-	r_viewleaf = NULL;
-	R_MarkLeaves ();
+	R_MarkLeaves (0, 0, 0, 0);
 
-	gl_R_ClearParticles ();
+	R_ClearParticles ();
 
-	GL_BuildLightmaps (models, num_models);
+	GL_BuildLightmaps (scene->models, scene->num_models);
 
 	// identify sky texture
-	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
-	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		tex = r_worldentity.model->textures[i];
+	for (unsigned i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		if (!strncmp (tex->name, "sky", 3)) {
 			gl_R_InitSky (tex);
 		}
-		if (!strncmp (tex->name, "window02_1", 10))
-			gl_mirrortexturenum = i;
 	}
 
-	gl_R_InitSurfaceChains (r_worldentity.model);
+	gl_R_InitSurfaceChains (brush);
 	gl_R_AddTexture (r_notexture_mip);
-	register_textures (r_worldentity.model);
-	for (i = 0; i < num_models; i++) {
-		if (!models[i])
+	register_textures (brush);
+	for (int i = 0; i < scene->num_models; i++) {
+		if (!scene->models[i])
 			continue;
-		if (*models[i]->name == '*')
+		if (*scene->models[i]->path == '*')
 			continue;
-		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
-			register_textures (models[i]);
+		if (scene->models[i] != r_refdef.worldmodel
+			&& scene->models[i]->type == mod_brush)
+			register_textures (&scene->models[i]->brush);
 	}
-}
-
-void
-gl_R_ViewChanged (float aspect)
-{
-}
-
-/*
-  R_TimeRefresh_f
-
-  For program optimization
-  LordHavoc: improved appearance and accuracy of timerefresh
-*/
-void
-gl_R_TimeRefresh_f (void)
-{
-	double      start, stop, time;
-	int         i;
-
-	vid.end_rendering ();
-
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
-		r_refdef.viewangles[1] = i * (360.0 / 128.0);
-		gl_R_RenderView ();
-		vid.end_rendering ();
-	}
-
-	stop = Sys_DoubleTime ();
-	time = stop - start;
-	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 }

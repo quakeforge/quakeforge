@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -48,8 +45,11 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "QF/scene/entity.h"
+
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
@@ -128,10 +128,12 @@ glsl_R_InitSprites (void)
 }
 
 static void
-R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
+R_GetSpriteFrames (entity_t ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	int         framenum = currententity->frame;
+	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+											   ent.reg);
+	int         framenum = animation->frame;
 	int         pose;
 	int         i, numframes;
 	float      *intervals;
@@ -143,18 +145,17 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 	if (framenum >= sprite->numframes || framenum < 0)
 		framenum = 0;
 
-	numframes = sprite->numframes;
 	framedesc = &sprite->frames[framenum];
 	if (framedesc->type == SPR_SINGLE) {
 		frame_interval = 0.1;
 		pose = framenum;
 	} else {
-		group = (mspritegroup_t *) framedesc->frameptr;
+		group = framedesc->group;
 		intervals = group->intervals;
 		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->syncbase;
+		time = vr_data.realtime + animation->syncbase;
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < numframes - 1; i++) {
@@ -169,52 +170,51 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 
 	//FIXME this will break if the sprite changes between single frames and
 	//group frames.
-	*blend = R_EntityBlend (ent, pose, frame_interval);
+	*blend = R_EntityBlend (animation, pose, frame_interval);
 	if (group) {
-		*frame1 = group->frames[ent->pose1];
-		*frame2 = group->frames[ent->pose2];
+		*frame1 = group->frames[animation->pose1];
+		*frame2 = group->frames[animation->pose2];
 	} else {
-		*frame1 = sprite->frames[ent->pose1].frameptr;
-		*frame2 = sprite->frames[ent->pose2].frameptr;
+		*frame1 = sprite->frames[animation->pose1].frame;
+		*frame2 = sprite->frames[animation->pose2].frame;
 	}
 }
 
 static void
-make_quad (mspriteframe_t *frame, const vec3_t vpn, const vec3_t vright,
-		   const vec3_t vup, float verts[6][3])
+make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t sright, vec4f_t sup, float verts[6][3])
 {
-	vec3_t      left, up, right, down;
-	vec3_t      ul, ur, ll, lr;
+	vec4f_t     left, up, right, down;
+	vec4f_t     ul, ur, ll, lr;
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
-	VectorScale (vright, frame->right, right);
-	VectorScale (vup, frame->up, up);
-	VectorScale (vright, frame->left, left);
-	VectorScale (vup, frame->down, down);
+	right = frame->right * sright;
+	up = frame->up * sup;
+	left = frame->left * sright;
+	down = frame->down * sup;
 	// next, build the sprite corners from the axes
-	VectorAdd (up, left, ul);
-	VectorAdd (up, right, ur);
-	VectorAdd (down, left, ll);
-	VectorAdd (down, right, lr);
+	ul = up + left;
+	ur = up + right;
+	ll = down + left;
+	lr = down + right;
 	// finally, translate the sprite corners, creating two triangles
-	VectorAdd (currententity->origin, ul, verts[0]);	// first triangle
-	VectorAdd (currententity->origin, ur, verts[1]);
-	VectorAdd (currententity->origin, lr, verts[2]);
-	VectorAdd (currententity->origin, ul, verts[3]);	// second triangle
-	VectorAdd (currententity->origin, lr, verts[4]);
-	VectorAdd (currententity->origin, ll, verts[5]);
+	VectorAdd (origin, ul, verts[0]);	// first triangle
+	VectorAdd (origin, ur, verts[1]);
+	VectorAdd (origin, lr, verts[2]);
+	VectorAdd (origin, ul, verts[3]);	// second triangle
+	VectorAdd (origin, lr, verts[4]);
+	VectorAdd (origin, ll, verts[5]);
 }
 
 void
-R_DrawSprite (void)
+glsl_R_DrawSprite (entity_t ent)
 {
-	entity_t   *ent = currententity;
-	msprite_t  *sprite = (msprite_t *) ent->model->cache.data;
+	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	msprite_t  *sprite = (msprite_t *) renderer->model->cache.data;
 	mspriteframe_t *frame1, *frame2;
-	float       blend, sr, cr, dot, angle;
-	vec3_t      tvec;
-	vec3_t      svpn, svright, svup;
+	float       blend;
+	vec4f_t     cameravec = {};
+	vec4f_t     spn = {}, sright = {}, sup = {};
 	static quat_t color = { 1, 1, 1, 1};
 	float       vertsa[6][3], vertsb[6][3];
 	static float uvab[6][4] = {
@@ -226,75 +226,14 @@ R_DrawSprite (void)
 		{ 0, 1, 0, 1 },
 	};
 
-	switch (sprite->type) {
-		case SPR_FACING_UPRIGHT:
-			// generate the sprite's exes with svup straight up in worldspace
-			// and svright perpendicular to r_origin. This will not work if the
-			// view direction is very close to straight up or down because the
-			// cross product will be between two nearly parallel vectors and
-			// starts to approach an undefined staate, so we don't draw if the
-			// two vectors are less than 1 degree apart
-			VectorNegate (r_origin, tvec);
-			VectorNormalize (tvec);
-			dot = tvec[2];			// same as DotProcut (tvec, svup) because
-									// svup is 0, 0, 1
-			if ((dot > 0.999848) || (dot < -0.99848)) // cos (1 degree)
-				return;
-			VectorSet (0, 0, 1, svup);
-			// CrossProduct (svup, -r_origin, svright)
-			VectorSet (tvec[1], -tvec[0], 0, svright);
-			VectorNormalize (svright);
-			// CrossProduct (svright, svup, svpn);
-			VectorSet (-svright[1], svright[0], 0, svpn);
-			break;
-		case SPR_VP_PARALLEL:
-			// generate the prite's axes completely parallel to the viewplane.
-			// There are no problem situations, because the prite is always in
-			// the same position relative to the viewer.
-			VectorCopy (vup, svup);
-			VectorCopy (vright, svright);
-			VectorCopy (vpn, svpn);
-			break;
-		case SPR_VP_PARALLEL_UPRIGHT:
-			// generate the sprite's axes with svup straight up in worldspace,
-			// and svright parallel to the viewplane. This will not work if the
-			// view diretion iss very close to straight up or down because the
-			// cross prodcut will be between two nearly parallel vectors and
-			// starts to approach an undefined state, so we don't draw if the
-			// two vectros are less that 1 degree apart
-			dot = vpn[2];
-			if ((dot > 0.999848) || (dot < -0.99848)) // cos (1 degree)
-				return;
-			VectorSet (0, 0, 1, svup);
-			// CrossProduct (svup, -r_origin, svright)
-			VectorSet (vpn[1], -vpn[0], 0, svright);
-			VectorNormalize (svright);
-			// CrossProduct (svright, svup, svpn);
-			VectorSet (-svright[1], svright[0], 0, svpn);
-			break;
-		case SPR_ORIENTED:
-			// generate the prite's axes according to the sprite's world
-			// orientation
-			VectorCopy (currententity->transform + 0, svpn);
-			VectorNegate (currententity->transform + 4, svright);
-			VectorCopy (currententity->transform + 8, svup);
-			break;
-		case SPR_VP_PARALLEL_ORIENTED:
-			// generate the sprite's axes parallel to the viewplane, but
-			// rotated in that plane round the center according to the sprite
-			// entity's roll angle. Thus svpn stays the same, but svright and
-			// svup rotate
-			angle = currententity->angles[ROLL] * (M_PI / 180);
-			sr = sin (angle);
-			cr = cos (angle);
-			VectorCopy (vpn, svpn);
-			VectorScale (vright, cr, svright);
-			VectorMultAdd (svright, sr, vup, svright);
-			VectorScale (vup, cr, svup);
-			VectorMultAdd (svup, -sr, vright, svup);
-			break;
-		default:
-			Sys_Error ("R_DrawSprite: Bad sprite type %d", sprite->type);
+	transform_t transform = Entity_Transform (ent);
+	vec4f_t     origin = Transform_GetWorldPosition (transform);
+	cameravec = r_refdef.frame.position - origin;
+
+	if (!R_BillboardFrame (transform, sprite->type, cameravec,
+						   &sup, &sright, &spn)) {
+		// the orientation is undefined so can't draw the sprite
+		return;
 	}
 
 	R_GetSpriteFrames (ent, sprite, &frame1, &frame2, &blend);
@@ -309,8 +248,8 @@ R_DrawSprite (void)
 	qfeglVertexAttrib4fv (quake_sprite.colorb.location, color);
 	qfeglVertexAttrib1f (quake_sprite.blend.location, blend);
 
-	make_quad (frame1, svpn, svright, svup, vertsa);
-	make_quad (frame2, svpn, svright, svup, vertsb);
+	make_quad (frame1, origin, sright, sup, vertsa);
+	make_quad (frame2, origin, sright, sup, vertsb);
 
 	qfeglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
 							 0, 0, vertsa);
@@ -323,9 +262,9 @@ R_DrawSprite (void)
 
 // All sprites are drawn in a batch, so avoid thrashing the gl state
 void
-R_SpriteBegin (void)
+glsl_R_SpriteBegin (void)
 {
-	mat4_t      mat;
+	mat4f_t     mat;
 	quat_t      fog;
 
 	qfeglUseProgram (quake_sprite.program);
@@ -336,8 +275,8 @@ R_SpriteBegin (void)
 	qfeglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfeglDisableVertexAttribArray (quake_sprite.blend.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	Fog_GetColor (fog);
+	fog[3] = Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_sprite.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_sprite.spritea.location, 0);
@@ -353,12 +292,12 @@ R_SpriteBegin (void)
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	Mat4Mult (glsl_projection, glsl_view, mat);
-	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, mat);
+	mmulf (mat, glsl_projection, glsl_view);
+	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, (vec_t*)&mat[0]);//FIXME
 }
 
 void
-R_SpriteEnd (void)
+glsl_R_SpriteEnd (void)
 {
 	qfeglDisableVertexAttribArray (quake_sprite.vertexa.location);
 	qfeglDisableVertexAttribArray (quake_sprite.vertexb.location);

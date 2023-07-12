@@ -29,23 +29,30 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/gib.h"
 #include "QF/msg.h"
 #include "QF/mathlib.h"
+#include "QF/quakefs.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 server_t    sv;
 server_static_t svs;
 double      sv_frametime;
 
-char        localmodels[MAX_MODELS][5];	// inline model names for precache
+char        localmodels[MAX_MODELS][6];	// inline model names for precache
 
 int sv_protocol = PROTOCOL_FITZQUAKE;
 
@@ -83,28 +90,8 @@ SV_Init (void)
 
 	SV_Progs_Init ();
 
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
-							   "None");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info,
-						   "None");
-	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info,
-							"None");
-	//NOTE: the cl/sv clash is deliberate: dedicated server will use the right
-	//vars, but client/server combo will use the one.
-	sv_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-							 "How quickly you straighten out after strafing");
-	sv_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
-							 "How much your screen tilts when strafing");
-	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, NULL, "None");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, "None");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_SERVERINFO, Cvar_Info,
-							"None");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL, "None");
-	sv_idealpitchscale = Cvar_Get ("sv_idealpitchscale", "0.8", CVAR_NONE,
-								   NULL, "None");
-	sv_aim = Cvar_Get ("sv_aim", "0.93", CVAR_NONE, NULL, "None");
-	sv_nostep = Cvar_Get ("sv_nostep", "0", CVAR_NONE, NULL, "None");
+	SV_Physics_Init_Cvars ();
+	SV_User_Init_Cvars ();
 
 	Cmd_AddCommand ("sv_protocol", SV_Protocol_f, "set the protocol to be "
 					"used after the next map load");
@@ -252,7 +239,7 @@ SV_SendServerinfo (client_t *client)
 	MSG_WriteLong (&client->message, sv.protocol);
 	MSG_WriteByte (&client->message, svs.maxclients);
 
-	if (!coop->int_val && deathmatch->int_val)
+	if (!coop && deathmatch)
 		MSG_WriteByte (&client->message, GAME_DEATHMATCH);
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
@@ -309,7 +296,7 @@ SV_ConnectClient (int clientnum)
 
 	client = svs.clients + clientnum;
 
-	Sys_MaskPrintf (SYS_DEV, "Client %s connected\n",
+	Sys_MaskPrintf (SYS_dev, "Client %s connected\n",
 					client->netconnection->address);
 
 	edictnum = clientnum + 1;
@@ -349,7 +336,7 @@ SV_ConnectClient (int clientnum)
 void
 SV_CheckForNewClients (void)
 {
-	int         i;
+	unsigned    i;
 	struct qsocket_s *ret;
 
 	// check for new connections
@@ -387,37 +374,32 @@ SV_ClearDatagram (void)
   crosses a waterline.
 */
 
-int         fatbytes;
-byte        fatpvs[MAX_MAP_LEAFS / 8];
+static set_t *fatpvs;
 
 static void
-SV_AddToFatPVS (vec3_t org, mnode_t *node)
+SV_AddToFatPVS (vec4f_t org, int node_id)
 {
-	int         i;
 	float       d;
-	byte       *pvs;
-	plane_t    *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
-		if (node->contents < 0) {
-			if (node->contents != CONTENTS_SOLID) {
-				pvs = Mod_LeafPVS ((mleaf_t *) node, sv.worldmodel);
-				for (i = 0; i < fatbytes; i++)
-					fatpvs[i] |= pvs[i];
+		if (node_id < 0) {
+			mleaf_t    *leaf = sv.worldmodel->brush.leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				set_union (fatpvs, Mod_LeafPVS (leaf, sv.worldmodel));
 			}
 			return;
 		}
+		mnode_t    *node = sv.worldmodel->brush.nodes + node_id;
 
-		plane = node->plane;
-		d = DotProduct (org, plane->normal) - plane->dist;
+		d = dotf (node->plane, org)[0];
 		if (d > 8)
-			node = node->children[0];
+			node_id = node->children[0];
 		else if (d < -8)
-			node = node->children[1];
+			node_id = node->children[1];
 		else {							// go down both
 			SV_AddToFatPVS (org, node->children[0]);
-			node = node->children[1];
+			node_id = node->children[1];
 		}
 	}
 }
@@ -428,12 +410,15 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
   Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
   given point.
 */
-static byte       *
-SV_FatPVS (vec3_t org)
+static set_t *
+SV_FatPVS (vec4f_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
-	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	if (!fatpvs) {
+		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
+	}
+	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
+	set_empty (fatpvs);
+	SV_AddToFatPVS (org, 0);
 	return fatpvs;
 }
 
@@ -442,16 +427,17 @@ SV_FatPVS (vec3_t org)
 static void
 SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 {
-	int         bits, e, i;
-	byte       *pvs;
+	pr_uint_t   bits, e;
+	set_t      *pvs;
 	float       miss;
-	vec3_t      org;
+	vec4f_t     org;
 	edict_t    *ent;
 	entity_state_t *baseline;
 	edict_leaf_t *el;
 
 	// find the client's PVS
 	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
+	org[3] = 1;
 	pvs = SV_FatPVS (org);
 
 	// send over all entities (excpet the client) that touch the pvs
@@ -472,7 +458,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				continue;
 
 			for (el = SVdata (ent)->leafs; el; el = el->next) {
-				if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
+				if (set_is_member (pvs, el->leafnum))
 					break;
 			}
 
@@ -488,7 +474,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		bits = 0;
 
 
-		for (i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++) {
 			miss = SVvector (ent, origin)[i] - baseline->origin[i];
 			if (miss < -0.1 || miss > 0.1)
 				bits |= U_ORIGIN1 << i;
@@ -602,7 +588,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 static void
 SV_CleanupEnts (void)
 {
-	int         e;
+	pr_uint_t   e;
 	edict_t    *ent;
 
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
@@ -788,7 +774,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, SVdata (ent)->alpha); //for now, weaponalpha = client entity alpha
 }
 
-static qboolean
+static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];
@@ -825,7 +811,7 @@ SV_SendClientDatagram (client_t *client)
 static void
 SV_UpdateToReliableMessages (void)
 {
-	int         i, j;
+	unsigned    i, j;
 	client_t   *client;
 
 	// check for changes to be sent over the reliable streams
@@ -883,7 +869,7 @@ SV_SendNop (client_t *client)
 void
 SV_SendClientMessages (void)
 {
-	int         i;
+	unsigned    i;
 
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
@@ -963,7 +949,7 @@ SV_ModelIndex (const char *name)
 static void
 SV_CreateBaseline (void)
 {
-	int         entnum;
+	pr_uint_t   entnum;
 	edict_t    *svent;
 	entity_state_t *baseline;
 	int         bits;
@@ -1036,7 +1022,8 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, baseline->colormap);
 		MSG_WriteByte (&sv.signon, baseline->skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, baseline->origin, baseline->angles);
+		MSG_WriteCoordAngleV (&sv.signon, (vec_t*)&baseline->origin,//FIXME
+							  baseline->angles);
 
 		if (bits & B_ALPHA)
 			MSG_WriteByte (&sv.signon, baseline->alpha);
@@ -1062,7 +1049,7 @@ SV_SendReconnect (void)
 	MSG_WriteString (&msg, "reconnect\n");
 	NET_SendToAll (&msg, 5.0);
 
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		Cmd_ExecuteString ("reconnect\n", src_command);
 }
 
@@ -1075,7 +1062,7 @@ SV_SendReconnect (void)
 void
 SV_SaveSpawnparms (void)
 {
-	int         i, j;
+	unsigned    i, j;
 
 	svs.serverflags = *sv_globals.serverflags;
 
@@ -1085,8 +1072,7 @@ SV_SaveSpawnparms (void)
 			continue;
 
 		// call the progs to get default spawn parms for the new client
-		*sv_globals.self =
-			EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
 			host_client->spawn_parms[j] = sv_globals.parms[j];
@@ -1103,16 +1089,14 @@ SV_SpawnServer (const char *server)
 {
 	byte       *buf;
 	QFile      *ent_file;
-	int         i;
 	edict_t    *ent;
 
 
-	S_BlockSound ();
 	// let's not have any servers with no name
-	if (hostname->string[0] == 0)
-		Cvar_Set (hostname, "UNNAMED");
+	if (hostname[0] == 0)
+		Cvar_Set ("hostname", "UNNAMED");
 
-	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_dev, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
 	svs.phys_client = SV_Physics_Client;
 
@@ -1122,18 +1106,18 @@ SV_SpawnServer (const char *server)
 	}
 
 	// make cvars consistant
-	if (coop->int_val)
-		Cvar_SetValue (deathmatch, 0);
-	current_skill = skill->int_val;
+	if (coop)
+		deathmatch = 0;
+	current_skill = skill;
 	if (current_skill < 0)
 		current_skill = 0;
 	if (current_skill > 3)
 		current_skill = 3;
 
-	Cvar_SetValue (skill, (float) current_skill);
+	skill = current_skill;
 
 	// set up the new server
-	Host_ClearMemory ();
+	Host_SpawnServer ();
 
 	memset (&sv, 0, sizeof (sv));
 
@@ -1142,7 +1126,7 @@ SV_SpawnServer (const char *server)
 	sv.protocol = sv_protocol;
 
 	// load progs to get entity field count
-	sv.max_edicts = bound (MIN_EDICTS, max_edicts->int_val, MAX_EDICTS);
+	sv.max_edicts = bound (MIN_EDICTS, max_edicts, MAX_EDICTS);
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 
@@ -1160,7 +1144,7 @@ SV_SpawnServer (const char *server)
 
 	// leave slots at start for only clients
 	sv.num_edicts = svs.maxclients + 1;
-	for (i = 0; i < svs.maxclients; i++) {
+	for (unsigned i = 0; i < svs.maxclients; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
 	}
@@ -1176,7 +1160,6 @@ SV_SpawnServer (const char *server)
 	if (!sv.worldmodel) {
 		Sys_Printf ("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = false;
-		S_UnblockSound ();
 		return;
 	}
 	sv.models[1] = sv.worldmodel;
@@ -1188,24 +1171,24 @@ SV_SpawnServer (const char *server)
 
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (unsigned i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
 
 	// load the rest of the entities
 	ent = EDICT_NUM (&sv_pr_state, 0);
-	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+	memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
-	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->path);
 	SVfloat (ent, modelindex) = 1;			// world model
 	SVfloat (ent, solid) = SOLID_BSP;
 	SVfloat (ent, movetype) = MOVETYPE_PUSH;
 
-	if (coop->int_val)
-		*sv_globals.coop = coop->int_val;
+	if (coop)
+		*sv_globals.coop = coop;
 	else
-		*sv_globals.deathmatch = deathmatch->int_val;
+		*sv_globals.deathmatch = deathmatch;
 
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 
@@ -1213,13 +1196,13 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
 	}
 
 	sv.active = true;
@@ -1242,11 +1225,44 @@ SV_SpawnServer (const char *server)
 					sv.signon.cursize);
 
 	// send serverinfo to all connected clients
-	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++,
-			 host_client++)
-		if (host_client->active)
+	for (unsigned i = 0; i < svs.maxclients; i++) {
+		host_client = svs.clients + i;
+		if (host_client->active) {
 			SV_SendServerinfo (host_client);
+		}
+	}
 
-	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
-	S_UnblockSound ();
+	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
+}
+
+void
+SV_Frame (void)
+{
+	if (net_is_dedicated) {
+		Con_ProcessInput ();
+
+		GIB_Thread_Execute ();
+		cmd_source = src_command;
+		Cbuf_Execute_Stack (host_cbuf);
+	}
+
+	*sv_globals.frametime = sv_frametime = host_frametime;
+
+	// set the time and clear the general datagram
+	SV_ClearDatagram ();
+
+	SV_CheckForNewClients ();
+
+	// read client messages
+	SV_RunClients ();
+
+	// move things around and think
+	// always pause in single player if in console or menus
+	if (!sv.paused && (svs.maxclients > 1 || host_in_game)) {
+		SV_Physics ();
+		sv.time += host_frametime;
+	}
+
+	// send all messages to the clients
+	SV_SendClientMessages ();
 }
