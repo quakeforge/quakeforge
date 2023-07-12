@@ -76,6 +76,7 @@ typedef struct imui_window_s {
 	int         ypos;
 	int         xlen;
 	int         ylen;
+	int         group_offset;
 	int         mode;
 	bool        is_open;
 	bool        is_collapsed;

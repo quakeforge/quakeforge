@@ -58,7 +58,7 @@
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
 
-#define imui_draw_group ((1 << 15) - 1)
+#define imui_draw_group ((1 << 14) - 1)
 #define imui_ontop ((1 << 15) - 1)
 #define imui_onbottom (-(1 << 15) + 1)
 
@@ -1062,7 +1062,8 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
 	auto canvas = Canvas_New (ctx->csys);
-	*Canvas_DrawGroup (ctx->csys, canvas) = imui_draw_group;
+	int draw_group = imui_draw_group + panel->group_offset;
+	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 	state->entity = panel_view.id;
 	panel->mode = update_hot_active (ctx, old_entity, state->entity);
