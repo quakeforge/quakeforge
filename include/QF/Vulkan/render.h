@@ -422,6 +422,7 @@ typedef struct qfv_renderctx_s {
 	qfv_job_t  *job;
 	qfv_renderframeset_t frames;
 	int64_t     size_time;
+	struct imui_window_s *job_window;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {
@@ -453,6 +454,10 @@ VkSampler QFV_Render_Sampler (struct vulkan_ctx_s *ctx, const char *name);
 
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
+
+struct imui_ctx_s;
+void QFV_Render_UI (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);
+void QFV_Render_UI_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QFCC__
 

@@ -556,6 +556,9 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		}
 	}
 	Hash_DelContext (rctx->hashctx);
+
+	QFV_Render_UI_Shutdown (ctx);
+	free (rctx);
 }
 
 void

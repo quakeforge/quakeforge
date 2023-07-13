@@ -68,7 +68,7 @@
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
-#include "QF/ui/view.h"
+#include "QF/ui/imui.h"
 
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
@@ -368,6 +368,16 @@ vulkan_capture_screen (capfunc_t callback, void *data)
 }
 
 static void
+vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
+{
+#define IMUI_context imui_ctx
+	UI_ExtendPanel ("Renderer##menu") {
+		QFV_Render_UI (vulkan_ctx, imui_ctx);
+	}
+#undef IMUI_context
+}
+
+static void
 vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
@@ -602,6 +612,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.set_fov              = vulkan_set_fov,
 
 	.capture_screen = vulkan_capture_screen,
+
+	.debug_ui = vulkan_debug_ui,
 
 	.model_funcs = &model_funcs
 };
