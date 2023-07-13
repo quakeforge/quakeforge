@@ -840,6 +840,9 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 	auto pos = View_GetPos (text);
 	View_SetPos (text, pos.x, pos.y - len.y + ascender);
 	View_SetGravity (text, grav_northwest);
+	// prevent the layout system from repositioning the text view
+	View_Control (text)->free_x = 1;
+	View_Control (text)->free_y = 1;
 
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
