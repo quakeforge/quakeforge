@@ -806,7 +806,7 @@ event_motion (XEvent *event)
 		x11_mouse_axes[0].value = event->xmotion.x_root;
 		x11_mouse_axes[1].value = event->xmotion.y_root;
 	} else {
-		if (vid_fullscreen || input_grabbed) {
+		if (input_grabbed) {
 			if (!event->xmotion.send_event) {
 				int         center_x = viddef.width / 2;
 				int         center_y = viddef.height / 2;
@@ -1182,9 +1182,6 @@ in_x11_grab_input (void *data, int grab)
 		return;
 	}
 #endif
-
-	if (vid_fullscreen)
-		grab = grab || vid_fullscreen;
 
 	if ((input_grabbed && grab) || (!input_grabbed && !grab))
 		return;
