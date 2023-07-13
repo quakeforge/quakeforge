@@ -403,16 +403,61 @@ camera_mouse_trackball (const IE_event_t *ie_event)
 }
 
 static void
+hs (void)
+{
+	IMUI_Spacer (debug_imui, imui_size_pixels, 10, imui_size_expand, 100);
+}
+
+static imui_window_t system_info_window = {
+	.name = "System Info##window",
+	.xpos = 50,
+	.ypos = 50,
+};
+
+static imui_window_t cam_window = {
+	.name = "Debug Camera",
+};
+
+static imui_window_t debug_menu = {
+	.name = "Debug##menu",
+	.group_offset = 0,
+	.is_open = true,
+	.no_collapse = true,
+};
+
+static imui_window_t renderer_menu = {
+	.name = "Renderer##menu",
+	.group_offset = 1,
+	.reference_gravity = grav_northwest,
+	.anchor_gravity = grav_southwest,
+};
+
+static void
+menu_bar (void)
+{
+	UI_MenuBar (&debug_menu) {
+		if (UI_MenuItem ("System Info##menu_item")) {
+			system_info_window.is_open = true;
+		}
+		hs ();
+		if (UI_Button ("Camera")) {
+			cam_window.is_open = true;
+		}
+		if (r_funcs->debug_ui) {
+			hs ();
+			// create the menu so the renderer can access it
+			UI_Menu (&renderer_menu);
+		}
+	}
+}
+
+static void
 camera_window (void)
 {
-	static imui_window_t cam_window = {
-		.name = "Debug Camera",
-	};
 	static int cam_state;
 	static int cam_mode;
 
 	int old_mode = cam_mode;
-	cam_window.is_open = true;//force open for now
 	UI_Window (&cam_window) {
 		if (cam_window.is_collapsed) {
 			continue;
@@ -477,46 +522,6 @@ camera_window (void)
 		r_override_camera = true;
 	} else {
 		r_override_camera = false;
-	}
-}
-
-static void
-hs (void)
-{
-	IMUI_Spacer (debug_imui, imui_size_pixels, 10, imui_size_expand, 100);
-}
-
-static imui_window_t system_info_window = {
-	.name = "System Info##window",
-	.xpos = 50,
-	.ypos = 50,
-};
-
-static imui_window_t renderer_menu = {
-	.name = "Renderer##menu",
-	.group_offset = 1,
-	.reference_gravity = grav_northwest,
-	.anchor_gravity = grav_southwest,
-};
-
-static void
-menu_bar (void)
-{
-	static imui_window_t menu = {
-		.name = "Debug##menu",
-		.group_offset = 0,
-		.is_open = true,
-		.no_collapse = true,
-	};
-	UI_MenuBar (&menu) {
-		if (UI_MenuItem ("System Info##menu_item")) {
-			system_info_window.is_open = true;
-		}
-		if (r_funcs->debug_ui) {
-			hs ();
-			// create the menu so the renderer can access it
-			UI_Menu (&renderer_menu);
-		}
 	}
 }
 
