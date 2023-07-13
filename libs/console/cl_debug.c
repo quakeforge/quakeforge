@@ -278,9 +278,6 @@ color_window (void)
 	static int style_color;
 
 	UI_Window (&style_editor) {
-		if (!style_editor.is_open) {
-			break;
-		}
 		if (style_editor.is_collapsed) {
 			continue;
 		}
@@ -417,6 +414,9 @@ camera_window (void)
 	int old_mode = cam_mode;
 	cam_window.is_open = true;//force open for now
 	UI_Window (&cam_window) {
+		if (cam_window.is_collapsed) {
+			continue;
+		}
 		UI_Horizontal {
 			UI_Radio (&cam_state, 0, "Game##camera");
 			IMUI_Spacer (debug_imui, imui_size_pixels, 10,
@@ -480,33 +480,51 @@ camera_window (void)
 	}
 }
 
-void
-Con_Debug_Draw (void)
+static void
+hs (void)
 {
-	if (debug_enable_time && Sys_LongTime () - debug_enable_time > 1000) {
-		debug_saved_focus = IE_Get_Focus ();
-		IE_Set_Focus (debug_event_id);
-		debug_saved_context = IMT_GetContext ();
-		IMT_SetContext (debug_context);
-		debug_enable_time = 0;
-	}
+	IMUI_Spacer (debug_imui, imui_size_pixels, 10, imui_size_expand, 100);
+}
 
-	IMUI_BeginFrame (debug_imui);
-	IMUI_Style_Update (debug_imui, &current_style);
-static imui_window_t window = {
-	.name = "Test Window",
+static imui_window_t system_info_window = {
+	.name = "System Info##window",
 	.xpos = 50,
 	.ypos = 50,
-	.xlen = 400,
-	.ylen = 250,
-	.is_open = true,
 };
-	bool close_debug_pressed = false;
-	UI_Window (&window) {
-		if (!window.is_open) {
-			break;
+
+static imui_window_t renderer_menu = {
+	.name = "Renderer##menu",
+	.group_offset = 1,
+	.reference = "Renderer##menu_item",
+	.reference_gravity = grav_northwest,
+	.anchor_gravity = grav_southwest,
+};
+
+static void
+menu_bar (void)
+{
+	UI_Horizontal {
+		IMUI_Layout_SetYSize (debug_imui, imui_size_fitchildren, 0);
+		if (UI_Button ("System Info##menu_item")) {
+			system_info_window.is_open = true;
 		}
-		if (window.is_collapsed) {
+		if (r_funcs->debug_ui && (hs (), UI_Button ("Renderer##menu_item"))) {
+			renderer_menu.is_open = true;
+		}
+	}
+
+	if (r_funcs->debug_ui) {
+		// create the panel so the renderer can access it
+		UI_Panel (&renderer_menu);
+	}
+}
+
+static bool close_debug_pressed = false;
+static void
+system_info (void)
+{
+	UI_Window (&system_info_window) {
+		if (system_info_window.is_collapsed) {
 			continue;
 		}
 		UI_Vertical {
@@ -538,10 +556,31 @@ static imui_window_t window = {
 			UI_FlexibleSpace ();
 		}
 	}
+}
+
+void
+Con_Debug_Draw (void)
+{
+	if (debug_enable_time && Sys_LongTime () - debug_enable_time > 1000) {
+		debug_saved_focus = IE_Get_Focus ();
+		IE_Set_Focus (debug_event_id);
+		debug_saved_context = IMT_GetContext ();
+		IMT_SetContext (debug_context);
+		debug_enable_time = 0;
+	}
+
+	IMUI_BeginFrame (debug_imui);
+	IMUI_Style_Update (debug_imui, &current_style);
+	menu_bar ();
+	system_info ();
 	color_window ();
 	camera_window ();
+	if (r_funcs->debug_ui) {
+		r_funcs->debug_ui (debug_imui);
+	}
 
 	if (close_debug_pressed) {
+		close_debug_pressed = false;
 		close_debug ();
 	}
 
