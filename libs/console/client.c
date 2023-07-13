@@ -1140,6 +1140,8 @@ C_Init (void)
 		con_setfitpic (console_view, conback);
 	}
 
+	con_linewidth = 320 / 8;
+
 	cmd_line.prompt = "";
 	cmd_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
 	cmd_line.input_line->complete = Con_BasicCompleteCommandLine;
@@ -1165,7 +1167,6 @@ C_Init (void)
 
 	con_setinput (say_view, &say_line);
 	con_setinput (command_view, &cmd_line);
-
 
 	view_pos_t  len;
 
