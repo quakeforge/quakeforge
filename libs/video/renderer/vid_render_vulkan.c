@@ -372,9 +372,10 @@ vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 {
 #define IMUI_context imui_ctx
 	UI_ExtendPanel ("Renderer##menu") {
-		QFV_Render_UI (vulkan_ctx, imui_ctx);
+		QFV_Render_Menu (vulkan_ctx, imui_ctx);
 	}
 #undef IMUI_context
+	QFV_Render_UI (vulkan_ctx, imui_ctx);
 }
 
 static void

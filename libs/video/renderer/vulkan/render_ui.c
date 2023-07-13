@@ -98,11 +98,16 @@ job_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 void
 QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
+	job_window (ctx, imui_ctx);
+}
+
+void
+QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
+{
 	auto rctx = ctx->render_context;
-	if (UI_Button (va (ctx->va_ctx, "Job##%p", rctx))) {
+	if (UI_MenuItem (va (ctx->va_ctx, "Job##%p", rctx))) {
 		rctx->job_window->is_open = true;
 	}
-	job_window (ctx, imui_ctx);
 }
 
 void

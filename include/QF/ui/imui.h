@@ -89,6 +89,8 @@ typedef struct imui_window_s {
 	const char *reference;
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
+	struct imui_window_s *parent;	// for submenus
+	bool        no_collapse;
 } imui_window_t;
 
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
@@ -126,6 +128,10 @@ void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 int IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
 int IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name);
 void IMUI_EndPanel (imui_ctx_t *ctx);
+
+int IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical);
+void IMUI_EndMenu (imui_ctx_t *ctx);
+bool IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse);
 
 int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
@@ -167,6 +173,17 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 #define UI_ExtendPanel(panel_name) \
 	IMUI_DeferLoop (IMUI_ExtendPanel (IMUI_context, panel_name), \
 					IMUI_EndPanel (IMUI_context))
+
+#define UI_Menu(menu) \
+	IMUI_DeferLoop (IMUI_StartMenu (IMUI_context, menu, true), \
+					IMUI_EndMenu (IMUI_context))
+
+#define UI_MenuBar(menu) \
+	IMUI_DeferLoop (IMUI_StartMenu (IMUI_context, menu, false), \
+					IMUI_EndMenu (IMUI_context))
+
+#define UI_MenuItem(label) \
+	IMUI_MenuItem (IMUI_context, label, true)
 
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \

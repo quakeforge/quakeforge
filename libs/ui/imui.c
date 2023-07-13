@@ -51,6 +51,8 @@
 #include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 
+#define IMUI_context ctx
+
 #define c_percent_x (ctx->csys.imui_base + imui_percent_x)
 #define c_percent_y (ctx->csys.imui_base + imui_percent_y)
 #define c_reference (ctx->csys.imui_base + imui_reference)
@@ -84,6 +86,7 @@ typedef struct imui_state_s {
 	char       *label;
 	uint32_t    label_len;
 	int         key_offset;
+	imui_window_t *menu;
 	int16_t		draw_order;	// for window canvases
 	uint32_t    frame_count;
 	uint32_t    entity;
@@ -114,6 +117,8 @@ struct imui_ctx_s {
 	struct DARRAY_TYPE(view_t) parent_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	int16_t     draw_order;
+	imui_window_t *current_menu;
+	imui_state_t *current_state;
 
 	dstring_t  *dstr;
 
@@ -188,6 +193,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	auto state = imui_find_state (ctx, label);
 	if (state) {
 		state->frame_count = ctx->frame_count;
+		ctx->current_state = state;
 		return state;
 	}
 	state = imui_state_new (ctx);
@@ -196,6 +202,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	state->key_offset = key_offset;
 	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
+	ctx->current_state = state;
 	return state;
 }
 
@@ -343,6 +350,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
+	ctx->current_menu = 0;
 }
 
 static void
@@ -702,6 +710,8 @@ void
 IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
+	ctx->mouse_pressed = false;
+	ctx->mouse_released = false;
 	sort_windows (ctx);
 	auto ref = View_GetRef (ctx->root_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, false);
@@ -1154,7 +1164,6 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	View_SetLen (panel_view, panel->xlen, panel->ylen);
 
 	auto bg = ctx->style.background.normal;
-#define IMUI_context ctx
 	UI_Vertical {
 		ctx->style.background.normal = 0;//FIXME style
 		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
@@ -1168,7 +1177,6 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		}
 		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 	}
-#undef IMUI_context
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;
 	state->content = panel_view.id;
@@ -1194,6 +1202,68 @@ IMUI_EndPanel (imui_ctx_t *ctx)
 }
 
 int
+IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
+{
+	menu->parent = ctx->current_menu;
+	ctx->current_menu = menu;
+
+	if (menu->parent) {
+		if (!menu->reference) {
+			menu->reference = nva ("%s##item:%s", menu->name,
+								   menu->parent->name);
+		}
+		if (menu->parent->is_open) {
+			UI_ExtendPanel (menu->parent->name) {
+				if (IMUI_MenuItem (ctx, menu->reference, false)) {
+					menu->is_open = true;
+				}
+			}
+		}
+	}
+	if (!menu->is_open) {
+		ctx->current_menu = menu->parent;
+		return 1;
+	}
+
+	IMUI_StartPanel (ctx, menu);
+
+	auto state = ctx->windows.a[ctx->windows.size - 1];
+	state->menu = menu;
+
+	auto menu_view = ctx->current_parent;
+	if (vertical) {
+		IMUI_Layout_SetXSize (ctx, imui_size_fitchildren, 0);
+	} else {
+		UI_Horizontal {
+			IMUI_Layout_SetYSize (ctx, imui_size_fitchildren, 0);
+			menu_view = ctx->current_parent;
+		}
+	}
+	ctx->current_parent = menu_view;
+	state->content = menu_view.id;
+	return 0;
+}
+
+void
+IMUI_EndMenu (imui_ctx_t *ctx)
+{
+	IMUI_PopLayout (ctx);
+}
+
+bool
+IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
+{
+	auto res = IMUI_Button (ctx, label);
+	//auto state = ctx->current_state;
+	if (res && collapse) {
+		for (auto m = ctx->current_menu; m && !m->no_collapse; m = m->parent) {
+			m->is_open = false;
+		}
+	}
+	return res;
+}
+
+int
 IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
 	if (!window->is_open) {
@@ -1202,7 +1272,6 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	IMUI_StartPanel (ctx, window);
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 
-#define IMUI_context ctx
 	UI_Horizontal {
 		char cbutton = window->is_collapsed ? '>' : 'v';
 		if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
@@ -1233,7 +1302,6 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 			window->is_open = false;
 		}
 	}
-#undef IMUI_context
 	return 0;
 }
 

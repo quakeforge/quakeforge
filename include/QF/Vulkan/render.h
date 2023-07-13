@@ -465,6 +465,7 @@ qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure)
 
 struct imui_ctx_s;
 void QFV_Render_UI (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);
+void QFV_Render_Menu (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);
 void QFV_Render_UI_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QFCC__

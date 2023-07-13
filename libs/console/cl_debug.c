@@ -495,7 +495,6 @@ static imui_window_t system_info_window = {
 static imui_window_t renderer_menu = {
 	.name = "Renderer##menu",
 	.group_offset = 1,
-	.reference = "Renderer##menu_item",
 	.reference_gravity = grav_northwest,
 	.anchor_gravity = grav_southwest,
 };
@@ -503,19 +502,21 @@ static imui_window_t renderer_menu = {
 static void
 menu_bar (void)
 {
-	UI_Horizontal {
-		IMUI_Layout_SetYSize (debug_imui, imui_size_fitchildren, 0);
-		if (UI_Button ("System Info##menu_item")) {
+	static imui_window_t menu = {
+		.name = "Debug##menu",
+		.group_offset = 0,
+		.is_open = true,
+		.no_collapse = true,
+	};
+	UI_MenuBar (&menu) {
+		if (UI_MenuItem ("System Info##menu_item")) {
 			system_info_window.is_open = true;
 		}
-		if (r_funcs->debug_ui && (hs (), UI_Button ("Renderer##menu_item"))) {
-			renderer_menu.is_open = true;
+		if (r_funcs->debug_ui) {
+			hs ();
+			// create the menu so the renderer can access it
+			UI_Menu (&renderer_menu);
 		}
-	}
-
-	if (r_funcs->debug_ui) {
-		// create the panel so the renderer can access it
-		UI_Panel (&renderer_menu);
 	}
 }
 
