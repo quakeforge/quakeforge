@@ -40,6 +40,7 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/va.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -68,6 +69,15 @@ QFV_AppendCmdBuffer (vulkan_ctx_t *ctx, VkCommandBuffer cmd)
 	__auto_type rctx = ctx->render_context;
 	__auto_type job = rctx->job;
 	DARRAY_APPEND (&job->commands, cmd);
+}
+
+static void
+update_time (qfv_time_t *time, int64_t start, int64_t end)
+{
+	int64_t delta = end - start;
+	time->cur_time = delta;
+	time->min_time = min (time->min_time, delta);
+	time->max_time = max (time->max_time, delta);
 }
 
 static void
@@ -223,8 +233,10 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
 	auto rctx = ctx->render_context;
 	auto job = rctx->job;
+	int64_t start = Sys_LongTime ();
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
+		int64_t step_start = Sys_LongTime ();
 		__auto_type step = &job->steps[i];
 		if (step->render) {
 			run_renderpass (step->render->active, ctx);
@@ -235,6 +247,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		if (step->process) {
 			run_process (step->process, ctx);
 		}
+		update_time (&step->time, step_start, Sys_LongTime ());
 	}
 
 	auto device = ctx->device;
@@ -263,6 +276,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
+	update_time (&job->time, start, Sys_LongTime ());
 }
 
 static qfv_imageviewinfo_t * __attribute__((pure))

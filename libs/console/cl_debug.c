@@ -549,6 +549,27 @@ system_info (void)
 				}
 			}
 #endif
+			static int64_t prev_time;
+			static int64_t min_delta = INT64_MAX;
+			static int64_t max_delta = -INT64_MAX;
+			int64_t cur_time = Sys_LongTime ();
+			int64_t delta = cur_time - prev_time;
+			prev_time = cur_time;
+			min_delta = min (min_delta, delta);
+			max_delta = max (max_delta, delta);
+			UI_Horizontal {
+				UI_Label ("frame: ");
+				UI_FlexibleSpace ();
+				UI_Labelf ("%'7zd\u03bcs##frame.time", min_delta);
+				UI_Labelf ("%'7zd\u03bcs##frame.time", delta);
+				UI_Labelf ("%'7zd\u03bcs##frame.time", max_delta);
+			}
+			UI_Horizontal {
+				UI_FlexibleSpace ();
+				if (UI_Button ("Reset##timings")) {
+					max_delta = -INT64_MAX;
+				}
+			}
 			UI_Horizontal {
 				UI_Labelf ("mem: %'zd", Sys_CurrentRSS ());
 				UI_FlexibleSpace ();

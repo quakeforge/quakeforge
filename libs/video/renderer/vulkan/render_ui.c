@@ -37,6 +37,21 @@
 #define IMUI_context imui_ctx
 
 static void
+reset_time (qfv_time_t *time)
+{
+	time->min_time = INT64_MAX;
+	time->max_time = -INT64_MAX;
+}
+
+static void
+show_time (qfv_time_t *time, imui_ctx_t *imui_ctx, const char *suffix)
+{
+	UI_Labelf ("%'7zd\u03bcs%s", time->min_time, suffix);
+	UI_Labelf ("%'7zd\u03bcs%s", time->cur_time, suffix);
+	UI_Labelf ("%'7zd\u03bcs%s", time->max_time, suffix);
+}
+
+static void
 job_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
 	auto rctx = ctx->render_context;
@@ -58,6 +73,23 @@ job_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			UI_Horizontal {
 				UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
 				UI_FlexibleSpace ();
+				show_time (&step->time, imui_ctx,
+						   va (ctx->va_ctx, "##%p.job.step.%d.time", rctx, i));
+			}
+		}
+		UI_Horizontal {
+			UI_FlexibleSpace ();
+			show_time (&job->time, imui_ctx,
+					   va (ctx->va_ctx, "##%p.job.time", rctx));
+		}
+		UI_Horizontal {
+			UI_FlexibleSpace ();
+			if (UI_Button ("Reset##job.timings")) {
+				for (uint32_t i = 0; i < job->num_steps; i++) {
+					auto step = &job->steps[i];
+					reset_time (&step->time);
+				}
+				reset_time (&job->time);
 			}
 		}
 	}

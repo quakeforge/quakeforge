@@ -305,6 +305,12 @@ typedef struct qfv_samplerinfo_s {
 } qfv_samplerinfo_t;
 
 #ifndef __QFCC__
+typedef struct qfv_time_s {
+	int64_t     cur_time;
+	int64_t     min_time;
+	int64_t     max_time;
+} qfv_time_t;
+
 typedef struct qfv_label_s {
 	vec4f_t     color;
 	const char *name;
@@ -386,6 +392,7 @@ typedef struct qfv_step_s {
 	qfv_render_t *render;
 	qfv_compute_t *compute;
 	qfv_process_t *process;
+	qfv_time_t time;
 } qfv_step_t;
 
 typedef struct qfv_job_s {
@@ -402,6 +409,7 @@ typedef struct qfv_job_s {
 	qfv_cmdbufferset_t commands;
 	uint32_t    num_dsmanagers;
 	struct qfv_dsmanager_s **dsmanager;
+	qfv_time_t time;
 } qfv_job_t;
 
 typedef struct qfv_renderframe_s {
