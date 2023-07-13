@@ -1383,8 +1383,6 @@ renderpasses = {
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, solid, 1); },
-							{ func = bsp_draw_queue;
-							  params = (main, sky, 1); },
 						);
 
 						stages = (
