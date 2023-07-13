@@ -53,6 +53,7 @@
 
 #define c_percent_x (ctx->csys.imui_base + imui_percent_x)
 #define c_percent_y (ctx->csys.imui_base + imui_percent_y)
+#define c_reference (ctx->csys.imui_base + imui_reference)
 #define c_glyphs (ctx->csys.base + canvas_glyphs)
 #define c_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
 #define c_color (ctx->tsys.text_base + text_color)
@@ -71,6 +72,10 @@ const component_t imui_components[imui_comp_count] = {
 		.size = sizeof (int),
 		.name = "percent y",
 	},
+	[imui_reference] = {
+		.size = sizeof (imui_reference_t),
+		.name = "reference",
+	},
 };
 
 typedef struct imui_state_s {
@@ -82,6 +87,7 @@ typedef struct imui_state_s {
 	int16_t		draw_order;	// for window canvases
 	uint32_t    frame_count;
 	uint32_t    entity;
+	uint32_t    content;
 } imui_state_t;
 
 struct imui_ctx_s {
@@ -153,6 +159,20 @@ imui_state_free (imui_ctx_t *ctx, imui_state_t *state)
 }
 
 static imui_state_t *
+imui_find_state (imui_ctx_t *ctx, const char *label)
+{
+	int         key_offset = 0;
+	const char *key = strstr (label, "##");
+	if (key) {
+		// key is '###': hash only past this
+		if (key[2] == '#') {
+			key_offset = (key += 3) - label;
+		}
+	}
+	return Hash_Find (ctx->tab, label + key_offset);
+}
+
+static imui_state_t *
 imui_get_state (imui_ctx_t *ctx, const char *label)
 {
 	int         key_offset = 0;
@@ -165,7 +185,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 			key_offset = (key += 3) - label;
 		}
 	}
-	imui_state_t *state = Hash_Find (ctx->tab, label + key_offset);
+	auto state = imui_find_state (ctx, label);
 	if (state) {
 		state->frame_count = ctx->frame_count;
 		return state;
@@ -603,6 +623,13 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 	// resolve conflicts
 	//fflush (stdout);
 
+	if (Ent_HasComponent (root_view.id, c_reference, ctx->vsys.reg)) {
+		auto ent = root_view.id;
+		auto reg = ctx->vsys.reg;
+		imui_reference_t *reference = Ent_GetComponent (ent, c_reference, reg);
+		auto anchor = View_FromEntity (ctx->vsys, reference->ref_id);
+		pos[0] = View_GetAbs (anchor);
+	}
 	view_pos_t  cpos = {};
 	uint32_t    cur_parent = 0;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
@@ -701,7 +728,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->frame_end = Sys_LongTime ();
 }
 
-void
+int
 IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 {
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
@@ -726,6 +753,7 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 	if (y_size == imui_size_expand) {
 		*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
 	}
+	return 0;
 }
 
 void
@@ -756,13 +784,14 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	}
 }
 
-void
+int
 IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style)
 {
 	DARRAY_APPEND (&ctx->style_stack, ctx->style);
 	if (style) {
 		ctx->style = *style;
 	}
+	return 0;
 }
 
 void
@@ -1053,11 +1082,36 @@ IMUI_Spacer (imui_ctx_t *ctx,
 	set_fill (ctx, view, ctx->style.background.normal);
 }
 
-void
+static void
+create_reference_anchor (imui_ctx_t *ctx, uint32_t ent, imui_window_t *panel)
+{
+	auto state = imui_find_state (ctx, panel->reference);
+	if (!state) {
+		Sys_Printf ("IMUI: unknown widget '%s' for '%s'\n", panel->reference,
+					panel->name);
+		return;
+	}
+	if (!ECS_EntValid (state->entity, ctx->csys.reg)) {
+		Sys_Printf ("IMUI: invalid widget reference '%s' for '%s'\n",
+					panel->reference, panel->name);
+		return;
+	}
+	auto refview = View_FromEntity (ctx->vsys, state->entity);
+	auto anchor = View_New (ctx->vsys, refview);
+	View_SetPos (anchor, 0, 0);
+	View_SetLen (anchor, 0, 0);
+	View_SetGravity (anchor, panel->anchor_gravity);
+	imui_reference_t reference = {
+		.ref_id = anchor.id,
+	};
+	Ent_SetComponent (ent, c_reference, ctx->vsys.reg, &reference);
+}
+
+int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 {
 	if (!panel->is_open) {
-		return;
+		return 1;
 	}
 	auto state = imui_get_state (ctx, panel->name);
 	uint32_t old_entity = state->entity;
@@ -1073,6 +1127,12 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	auto ref = View_GetRef (panel_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, true);
 
+	grav_t      gravity = grav_northwest;
+	if (panel->reference) {
+		create_reference_anchor (ctx, canvas, panel);
+		gravity = panel->reference_gravity;
+	}
+
 	DARRAY_APPEND (&ctx->windows, state);
 
 	if (!state->draw_order) {
@@ -1081,7 +1141,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 
 	ctx->current_parent = panel_view;
 	*View_Control (panel_view) = (viewcont_t) {
-		.gravity = grav_northwest,
+		.gravity = gravity,
 		.visible = 1,
 		.semantic_x = imui_size_fitchildren,
 		.semantic_y = imui_size_fitchildren,
@@ -1111,6 +1171,20 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 #undef IMUI_context
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;
+	state->content = panel_view.id;
+	return 0;
+}
+
+int
+IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name)
+{
+	auto state = imui_find_state (ctx, panel_name);
+	if (!state || !ECS_EntValid (state->entity, ctx->vsys.reg)) {
+		return 1;
+	}
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+	ctx->current_parent = View_FromEntity (ctx->vsys, state->content);
+	return 0;
 }
 
 void
@@ -1119,11 +1193,11 @@ IMUI_EndPanel (imui_ctx_t *ctx)
 	IMUI_PopLayout (ctx);
 }
 
-void
+int
 IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
 	if (!window->is_open) {
-		return;
+		return 1;
 	}
 	IMUI_StartPanel (ctx, window);
 	auto state = ctx->windows.a[ctx->windows.size - 1];
@@ -1160,6 +1234,7 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		}
 	}
 #undef IMUI_context
+	return 0;
 }
 
 void

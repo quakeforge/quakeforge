@@ -31,7 +31,7 @@
 #ifndef __QF_ui_imui_h
 #define __QF_ui_imui_h
 
-#include "QF/ecs/component.h"
+#include "QF/ui/view.h"
 
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
@@ -40,6 +40,7 @@ struct IE_event_s;
 enum {
 	imui_percent_x,	///< int
 	imui_percent_y,	///< int
+	imui_reference,	///< imui_reference_t
 
 	imui_comp_count
 };
@@ -70,6 +71,10 @@ typedef struct imui_style_s {
 	imui_color_t text;
 } imui_style_t;
 
+typedef struct imui_reference_s {
+	uint32_t    ref_id;
+} imui_reference_t;
+
 typedef struct imui_window_s {
 	const char *name;
 	int         xpos;
@@ -80,6 +85,10 @@ typedef struct imui_window_s {
 	int         mode;
 	bool        is_open;
 	bool        is_collapsed;
+
+	const char *reference;
+	grav_t      reference_gravity;
+	grav_t      anchor_gravity;
 } imui_window_t;
 
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
@@ -92,12 +101,12 @@ void IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 
-void IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
+int IMUI_PushLayout (imui_ctx_t *ctx, bool vertical);
 void IMUI_PopLayout (imui_ctx_t *ctx);
 void IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value);
 void IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value);
 
-void IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style);
+int IMUI_PushStyle (imui_ctx_t *ctx, const imui_style_t *style);
 void IMUI_PopStyle (imui_ctx_t *ctx);
 void IMUI_Style_Update (imui_ctx_t *ctx, const imui_style_t *style);
 void IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style);
@@ -114,14 +123,15 @@ void IMUI_Spacer (imui_ctx_t *ctx,
 				  imui_size_t ysize, int yvalue);
 void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
-void IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
+int IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
+int IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name);
 void IMUI_EndPanel (imui_ctx_t *ctx);
 
-void IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
+int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
 
 #define IMUI_DeferLoop(begin, end) \
-	for (int _i_ = ((begin), 0); !_i_; _i_++, (end))
+	for (int _i_ = (begin); !_i_; _i_++, (end))
 
 // #define IMUI_context to an imui_ctx_t * variable
 
@@ -152,6 +162,10 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 
 #define UI_Panel(panel) \
 	IMUI_DeferLoop (IMUI_StartPanel (IMUI_context, panel), \
+					IMUI_EndPanel (IMUI_context))
+
+#define UI_ExtendPanel(panel_name) \
+	IMUI_DeferLoop (IMUI_ExtendPanel (IMUI_context, panel_name), \
 					IMUI_EndPanel (IMUI_context))
 
 #define UI_Window(window) \
