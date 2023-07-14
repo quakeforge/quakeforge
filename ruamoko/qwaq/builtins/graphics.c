@@ -402,7 +402,7 @@ BI_Graphics_Init (progs_t *pr)
 
 	//Key_SetKeyDest (key_game);
 	Con_Init ();
-	vidsize_listener (0, &viddef); //FIXME this probably shouldn't be needed
+	VID_SendSize ();
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();
