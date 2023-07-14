@@ -54,6 +54,16 @@ static in_axis_t deb_move_roll = {
 	.name = "debug.move.roll",
 	.description = "[debug] Roll axis",
 };
+static in_axis_t deb_mouse_x = {
+	.mode = ina_set,
+	.name = "debug.mouse.x",
+	.description = "[debug] Mouse X",
+};
+static in_axis_t deb_mouse_y = {
+	.mode = ina_set,
+	.name = "debug.mouse.y",
+	.description = "[debug] Mouse Y",
+};
 static in_button_t deb_left = {
 	.name = "debug.left",
 	.description = "[debug] When active the player is turning left"
@@ -101,6 +111,8 @@ static in_axis_t *deb_in_axes[] = {
 	&deb_move_pitch,
 	&deb_move_yaw,
 	&deb_move_roll,
+	&deb_mouse_x,
+	&deb_mouse_y,
 	0
 };
 static in_button_t *deb_in_buttons[] = {
@@ -159,6 +171,7 @@ static cvar_t deb_fontsize_cvar = {
 
 static int deb_xlen = -1;
 static int deb_ylen = -1;
+static vec4f_t mouse_start;
 
 static void
 con_debug_f (void *data, const cvar_t *cvar)
@@ -177,7 +190,7 @@ con_debug_f (void *data, const cvar_t *cvar)
 	}
 }
 
-static void
+static int
 debug_app_window (const IE_event_t *ie_event)
 {
 	if (deb_xlen != ie_event->app_window.xlen
@@ -186,12 +199,39 @@ debug_app_window (const IE_event_t *ie_event)
 		deb_ylen = ie_event->app_window.ylen;
 		IMUI_SetSize (debug_imui, deb_xlen, deb_ylen);
 	}
+	return 1;
+}
+static int
+capture_mouse_event (const IE_event_t *ie_event)
+{
+	static IE_mouse_event_t prev_mouse;
+	static bool dragging;
+
+	if (ie_event->mouse.type == ie_mousedown
+		&& ((ie_event->mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (1);
+		dragging = true;
+		mouse_start = (vec4f_t) {
+			ie_event->mouse.x,
+			ie_event->mouse.y,
+		};
+	} else if (ie_event->mouse.type == ie_mouseup
+			   && ((ie_event->mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (in_grab);
+		dragging = false;
+	}
+
+	prev_mouse = ie_event->mouse;
+	return !dragging;
 }
 
-static void
+static int
 debug_mouse (const IE_event_t *ie_event)
 {
-	IMUI_ProcessEvent (debug_imui, ie_event);
+	if (!IMUI_ProcessEvent (debug_imui, ie_event)) {
+		return capture_mouse_event (ie_event);
+	}
+	return 1;
 }
 
 static void
@@ -201,7 +241,7 @@ close_debug (void)
 	con_debug_f (0, &con_debug_cvar);
 }
 
-static void
+static int
 debug_key (const IE_event_t *ie_event)
 {
 	int shift = ie_event->key.shift & ~(ies_capslock | ies_numlock);
@@ -209,12 +249,13 @@ debug_key (const IE_event_t *ie_event)
 		close_debug ();
 	}
 	IMUI_ProcessEvent (debug_imui, ie_event);
+	return 1;
 }
 
 static int
 debug_event_handler (const IE_event_t *ie_event, void *data)
 {
-	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+	static int (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
 		[ie_app_window] = debug_app_window,
 		[ie_mouse] = debug_mouse,
 		[ie_key] = debug_key,
@@ -223,8 +264,7 @@ debug_event_handler (const IE_event_t *ie_event, void *data)
 		|| !handlers[ie_event->type]) {
 		return IN_Binding_HandleEvent (ie_event);
 	}
-	handlers[ie_event->type] (ie_event);
-	return 1;
+	return handlers[ie_event->type] (ie_event);
 }
 
 void
@@ -377,29 +417,60 @@ camera_mouse_first_person (void)
 	Transform_SetLocalRotation (debug_camera_pivot, r);
 }
 
-static void __attribute__((used))
-camera_mouse_trackball (const IE_event_t *ie_event)
+static vec4f_t
+trackball_vector (vec4f_t xy)
 {
-	static IE_mouse_event_t prev_mouse;
-	static bool dragging;
-
-	if (ie_event->mouse.type == ie_mousedown
-		&& ((ie_event->mouse.buttons ^ prev_mouse.buttons) & 4)) {
-		puts ("rmb pressed");
-		IN_UpdateGrab (1);
-		dragging = true;
-	} else if (ie_event->mouse.type == ie_mouseup
-			   && ((ie_event->mouse.buttons ^ prev_mouse.buttons) & 4)) {
-		puts ("rmb released");
-		IN_UpdateGrab (in_grab);
-		dragging = false;
-	} else if (ie_event->mouse.type == ie_mousemove && dragging) {
-		int dx = ie_event->mouse.x - prev_mouse.x;
-		int dy = ie_event->mouse.y - prev_mouse.y;
-		printf ("mouse dragged: [%d, %d]\n", dx, dy);
+	// xy is already in -1..1 order of magnitude range (ie, might be a bit
+	// over due to screen aspect)
+	// This is very similar to blender's trackball calculation (based on it,
+	// really)
+	float r = 1;
+	float t = r * r / 2;
+	float d = dotf (xy, xy)[0];
+	vec4f_t vec = xy;
+	if (d < t) {
+		// less than 45 degrees around the sphere from the viewer facing
+		// pole, so map the mouse point to the sphere
+		vec[2] = sqrt (r * r - d);
+	} else {
+		// beyond 45 degrees around the sphere from the veiwer facing
+		// pole, so the slope is rapidly approaching infinity or the mouse
+		// point may miss the sphere entirely, so instead map the mouse
+		// point to the hyperbolic cone pointed towards the viewer. The
+		// cone and sphere are tangential at the 45 degree latitude
+		vec[2] = t / sqrt (d);
 	}
+	return (vec4f_t) { vec[2], vec[0], vec[1] };
+}
+static float trackball_sensitivity = 0.1;
+#define sphere_scale 1.0f
+static void
+camera_mouse_trackball (void)
+{
+	vec4f_t     delta = {
+		IN_UpdateAxis (&deb_mouse_x),
+		IN_UpdateAxis (&deb_mouse_y),
+	};
+	float       size = min (deb_xlen, deb_ylen) / 2;
+	vec4f_t     center = { deb_xlen, deb_ylen }; center /= 2;
+	vec4f_t     start = mouse_start - center;
+	vec4f_t     end = start + delta;
+	start = trackball_vector (start / (size * sphere_scale));
+	end = trackball_vector (end / (size * sphere_scale));
+	vec4f_t     drot = crossf (end, start);
+	float       ma = dotf (drot, drot)[0];
+	if (ma < 1e-7) {
+		return;
+	}
+	drot /= sqrtf (ma);
+	float       dist = sqrtf (dotf (delta, delta)[0]) * trackball_sensitivity;
+	dist /= size;
+	drot *= sinf (dist);
+	drot[3] = cosf (dist);
 
-	prev_mouse = ie_event->mouse;
+	vec4f_t     rot = Transform_GetLocalRotation (debug_camera_pivot);
+	vec4f_t r = normalf (qmulf (rot, drot));
+	Transform_SetLocalRotation (debug_camera_pivot, r);
 }
 
 static void
@@ -416,6 +487,10 @@ static imui_window_t system_info_window = {
 
 static imui_window_t cam_window = {
 	.name = "Debug Camera",
+};
+
+static imui_window_t inp_window = {
+	.name = "Debug Input",
 };
 
 static imui_window_t debug_menu = {
@@ -440,8 +515,12 @@ menu_bar (void)
 			system_info_window.is_open = true;
 		}
 		hs ();
-		if (UI_Button ("Camera")) {
+		if (UI_MenuItem ("Camera")) {
 			cam_window.is_open = true;
+		}
+		hs ();
+		if (UI_MenuItem ("Input")) {
+			inp_window.is_open = true;
 		}
 		if (r_funcs->debug_ui) {
 			hs ();
@@ -486,7 +565,11 @@ camera_window (void)
 			}
 		}
 		if (r_override_camera) {
-			camera_mouse_first_person();
+			if (cam_mode == 0) {
+				camera_mouse_first_person();
+			} else if (cam_mode == 1) {
+				camera_mouse_trackball ();
+			}
 		}
 	}
 	if (cam_state) {
@@ -522,6 +605,24 @@ camera_window (void)
 		r_override_camera = true;
 	} else {
 		r_override_camera = false;
+	}
+}
+
+static void
+input_window (void)
+{
+	UI_Window (&inp_window) {
+		if (inp_window.is_collapsed) {
+			continue;
+		}
+		for (int i = 0; deb_in_axes[i]; i++) {
+			auto axis = deb_in_axes[i];
+			UI_Horizontal {
+				UI_Label (axis->name);
+				UI_FlexibleSpace ();
+				UI_Labelf ("%8g", axis->rel_input);
+			}
+		}
 	}
 }
 
@@ -602,6 +703,7 @@ Con_Debug_Draw (void)
 	system_info ();
 	color_window ();
 	camera_window ();
+	input_window ();
 	if (r_funcs->debug_ui) {
 		r_funcs->debug_ui (debug_imui);
 	}
