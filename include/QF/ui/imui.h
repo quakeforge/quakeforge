@@ -99,7 +99,7 @@ void IMUI_DestroyContext (imui_ctx_t *ctx);
 
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
-void IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
+bool IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 

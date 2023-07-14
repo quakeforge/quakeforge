@@ -307,7 +307,7 @@ IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 	Canvas_SetLen (ctx->csys, ctx->canvas, (view_pos_t) { xlen, ylen });
 }
 
-void
+bool
 IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 {
 	if (ie_event->type == ie_mouse) {
@@ -326,6 +326,7 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 		ctx->key_code = k->code;
 		ctx->unicode = k->unicode;
 	}
+	return ctx->hot != nullent || ctx->active != nullent;
 }
 
 void
