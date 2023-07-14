@@ -177,18 +177,7 @@ configure_notify (XEvent *event)
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
 					c->width, c->height, c->border_width, c->above,
 					c->override_redirect);
-	IE_event_t  ie_event = {
-		.type = ie_app_window,
-		.when = Sys_LongTime (),
-		.app_window = {
-			.xpos = c->x,
-			.ypos = c->y,
-			.xlen = c->width,
-			.ylen = c->height,
-		},
-	};
-	IE_Send_Event (&ie_event);
-	VID_SetWindowSize (c->width, c->height);
+	VID_SetWindow (c->x, c->y, c->width, c->height);
 }
 
 bool

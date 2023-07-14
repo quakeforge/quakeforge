@@ -725,6 +725,8 @@ CL_Init (cbuf_t *cbuf)
 	CL_World_Init ();
 	CL_ClearState ();
 
+	VID_SendSize ();
+
 	V_Init (&cl.viewstate);
 
 	Cmd_AddCommand ("pointfile", pointfile_f,

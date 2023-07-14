@@ -45,6 +45,8 @@ typedef struct {
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
+	int              x;
+	int              y;
 	unsigned		 width;
 	unsigned		 height;
 	int				 numpages;
@@ -71,6 +73,7 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
+void VID_SendSize (void);
 void VID_SetPalette (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
 void VID_SetCursor (bool visible);

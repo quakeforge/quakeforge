@@ -38,7 +38,7 @@ extern int vid_system_gamma;
 extern float vid_gamma;
 
 void VID_GetWindowSize (int def_w, int def_h);
-void VID_SetWindowSize (int width, int height);
+void VID_SetWindow (int x, int y, int width, int height);
 
 void VID_InitGamma (const byte *);
 bool VID_SetGamma (double);

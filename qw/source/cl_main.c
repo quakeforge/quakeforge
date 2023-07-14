@@ -1492,6 +1492,8 @@ CL_Init (void)
 	CL_ClearState ();
 	Pmove_Init ();
 
+	VID_SendSize ();
+
 	SL_Init ();
 
 	CL_Skin_Init ();

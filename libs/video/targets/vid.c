@@ -41,6 +41,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/input/event.h"
 #include "QF/ui/view.h"
 
 #include "compat.h"
@@ -149,18 +150,38 @@ VID_GetWindowSize (int def_w, int def_h)
 	viddef.height = vid_height;
 }
 
+VISIBLE void
+VID_SendSize (void)
+{
+	IE_event_t  ie_event = {
+		.type = ie_app_window,
+		.when = Sys_LongTime (),
+		.app_window = {
+			.xpos = viddef.x,
+			.ypos = viddef.y,
+			.xlen = viddef.width,
+			.ylen = viddef.height,
+		},
+	};
+	IE_Send_Event (&ie_event);
+	if (viddef.onVidResize) {
+		LISTENER_INVOKE (viddef.onVidResize, &viddef);
+	}
+}
+
 void
-VID_SetWindowSize (int width, int height)
+VID_SetWindow (int x, int y, int width, int height)
 {
 	if (width < 0 || height < 0) {
-		Sys_Error ("VID_SetWindowSize: invalid size: %d, %d", width, height);
+		Sys_Error ("VID_SetWindow: invalid size: %d, %d", width, height);
 	}
-	if (width != (int) viddef.width || height != (int) viddef.height) {
+	if (x != viddef.x || y !=viddef.y
+		||width != (int) viddef.width || height != (int) viddef.height) {
+		viddef.x = x;
+		viddef.y = y;
 		viddef.width = width;
 		viddef.height = height;
-		if (viddef.onVidResize) {
-			LISTENER_INVOKE (viddef.onVidResize, &viddef);
-		}
+		VID_SendSize ();
 	}
 }
 
