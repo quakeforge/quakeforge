@@ -301,7 +301,13 @@ reconstruct_clusters (void)
 static void
 allocate_data (void)
 {
-	set_pool = calloc (options.threads, sizeof (set_pool_t));
+	set_pool = malloc (sizeof (set_pool_t[options.threads]));
+	for (int i = 0; i < options.threads; i++) {
+		set_pool[i] = (set_pool_t) {
+			.set_blocks = DARRAY_STATIC_INIT (8),
+			.set_iter_blocks = DARRAY_STATIC_INIT (8),
+		};
+	}
 
 	base_pvs = malloc (num_clusters * sizeof (set_t));
 	fat_pvs = malloc (num_clusters * sizeof (set_t));
