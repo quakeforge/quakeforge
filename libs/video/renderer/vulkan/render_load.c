@@ -647,7 +647,7 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 			init_plCreate (&s->plc[i], s->spi->base_pipeline, s);
 		}
 		init_plCreate (&s->plc[i], &s->spi->pipelines[i], s);
-		pln[i] = s->spi->name;
+		pln[i] = s->spi->pipelines[i].name;
 		s->inds.num_graph_pipelines++;
 	}
 
