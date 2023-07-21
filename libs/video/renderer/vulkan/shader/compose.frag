@@ -22,7 +22,7 @@ main (void)
 	c = subpassLoad (color).rgb;
 	l = subpassLoad (light).rgb;
 	e = subpassLoad (emission).rgb;
-	o = BlendFrags (vec4 (c * l + e, 1)).xyz;
+	o = max(BlendFrags (vec4 (c * l + e, 1)).xyz, vec3(0));
 	o = pow (o, vec3(0.83));//FIXME make gamma correction configurable
 	frag_color = vec4 (o, 1);
 }
