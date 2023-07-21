@@ -215,7 +215,7 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		// FIXME hack the depth range to prevent view model
 		// from poking into walls
 		if (vmod && ent.id == vr_data.view_model.id) {
-			alias_depth_range (taskctx, 0, 0.3);
+			alias_depth_range (taskctx, 0.7, 1);
 		}
 		alias_draw_ent (taskctx, ent, pass);
 		// unhack in case the view_model is not the last

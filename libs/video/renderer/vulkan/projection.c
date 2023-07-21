@@ -68,15 +68,14 @@ QFV_Orthographic (mat4f_t proj, float xmin, float xmax, float ymin, float ymax,
 void
 QFV_PerspectiveTan (mat4f_t proj, float fov_x, float fov_y)
 {
-	float       neard, fard;
+	float       neard;
 
 	neard = r_nearclip;
-	fard = r_farclip;
 
 	proj[0] = (vec4f_t) { 1 / fov_x, 0, 0, 0 };
 	proj[1] = (vec4f_t) { 0, 1 / fov_y, 0, 0 };
-	proj[2] = (vec4f_t) { 0, 0, fard / (fard - neard), 1 };
-	proj[3] = (vec4f_t) { 0, 0, (neard * fard) / (neard - fard), 0 };
+	proj[2] = (vec4f_t) { 0, 0, 0, 1 };
+	proj[3] = (vec4f_t) { 0, 0, neard, 0 };
 }
 
 void

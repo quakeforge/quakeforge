@@ -130,14 +130,14 @@ properties = {
 	depth_test_and_write = {
 		depthTestEnable = true;
 		depthWriteEnable = true;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
 	depth_test_only = {
 		depthTestEnable = true;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
@@ -151,7 +151,7 @@ properties = {
 	depth_disable = {
 		depthTestEnable = false;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
@@ -1124,7 +1124,7 @@ renderpasses = {
 					format = $images.depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = depth;
 				};
 				color = {
@@ -1586,7 +1586,7 @@ renderpasses = {
 					format = $images.cube_depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = cube_depth;
 				};
 				color = {
