@@ -123,7 +123,6 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 void IMUI_Spacer (imui_ctx_t *ctx,
 				  imui_size_t xsize, int xvalue,
 				  imui_size_t ysize, int yvalue);
-void IMUI_FlexibleSpace (imui_ctx_t *ctx);
 
 int IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
 int IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name);
