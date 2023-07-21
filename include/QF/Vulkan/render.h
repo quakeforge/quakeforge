@@ -430,7 +430,8 @@ typedef struct qfv_renderctx_s {
 	qfv_job_t  *job;
 	qfv_renderframeset_t frames;
 	int64_t     size_time;
-	struct imui_window_s *job_window;
+	struct imui_window_s *job_timings_window;
+	struct imui_window_s *job_control_window;
 } qfv_renderctx_t;
 
 typedef struct qfv_taskctx_s {
