@@ -127,6 +127,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/gridplane.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/fisheye.frag.spvc"
@@ -184,6 +186,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },
+	{ "gridplane.frag", gridplane_frag, sizeof (gridplane_frag) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
 	{ "fisheye.frag", fisheye_frag, sizeof (fisheye_frag) },
 	{ "waterwarp.frag", waterwarp_frag, sizeof (waterwarp_frag) },

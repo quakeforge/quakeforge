@@ -247,6 +247,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
+	libs/video/renderer/vulkan/vulkan_planes.c \
 	libs/video/renderer/vulkan/vulkan_scene.c \
 	libs/video/renderer/vulkan/vulkan_sprite.c \
 	libs/video/renderer/vulkan/vulkan_texture.c \
@@ -342,6 +343,7 @@ lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+infplane = $(vkshaderpath)/infplane.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -371,6 +373,8 @@ fstriangle_src = $(vkshaderpath)/fstriangle.vert
 fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 fstrianglest_src = $(vkshaderpath)/fstrianglest.vert
 fstrianglest_c = $(vkshaderpath)/fstrianglest.vert.spvc
+gridplane_src = $(vkshaderpath)/gridplane.frag
+gridplane_c = $(vkshaderpath)/gridplane.frag.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 fisheye_src = $(vkshaderpath)/fisheye.frag
@@ -461,6 +465,8 @@ $(fstriangle_c): $(fstriangle_src)
 
 $(fstrianglest_c): $(fstrianglest_src)
 
+$(gridplane_c): $(infplane) $(gridplane_src)
+
 $(pushcolor_c): $(pushcolor_src)
 
 $(fisheye_c): $(fisheye_src) $(matrices_h)
@@ -512,6 +518,7 @@ vkshader_c = \
 	$(passthrough_c) \
 	$(fstriangle_c) \
 	$(fstrianglest_c) \
+	$(gridplane_c) \
 	$(pushcolor_c) \
 	$(shadow_c) \
 	$(fisheye_c) \
@@ -552,6 +559,7 @@ EXTRA_DIST += \
 	$(rp_main_def_src) \
 	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
+	$(infplane) \
 	$(oit_blend) \
 	$(oit_store) \
 	$(oit_h) \
@@ -602,6 +610,7 @@ EXTRA_DIST += \
 	$(passthrough_src) \
 	$(fstriangle_src) \
 	$(fstrianglest_src) \
+	$(gridplane_src) \
 	$(pushcolor_src) \
 	$(fisheye_src) \
 	$(waterwarp_src)

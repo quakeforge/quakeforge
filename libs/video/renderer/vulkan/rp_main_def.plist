@@ -557,6 +557,18 @@ properties = {
 			};
 		};
 	};
+	gridplane = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/gridplane.frag;
+			};
+		};
+		layout = {
+			descriptorSets = (matrix_set, planes_set);
+		};
+	};
 	lighting = {
 		shader = {
 			vertex_splat = {
@@ -814,6 +826,16 @@ descriptorSetLayouts = {
 				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = vertex;
+			},
+		);
+	};
+	planes_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
 			},
 		);
 	};
@@ -1492,7 +1514,10 @@ renderpasses = {
 						emission = shader_read_only_optimal;
 					};
 					color = {
-						output = color_attachment_optimal;
+						output = {
+							layout = color_attachment_optimal;
+							blend = $additive_blend;
+						};
 					};
 					preserve = (depth, normal, position);
 				};
@@ -1564,6 +1589,22 @@ renderpasses = {
 						inputAssembly = $lighting.inputAssembly;
 						layout = $lighting.layout;
 						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
+					debug_planes = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.lights;
+						tasks = (
+							{ func = debug_planes_draw; },
+						);
+
+						stages = (
+							$fstriangle.shader.vertexst,
+							$gridplane.shader.fragment,
+						);
+						layout = $gridplane.layout;
 						depthStencil = $depth_disable;
 					};
 				};
