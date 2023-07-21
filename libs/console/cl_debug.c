@@ -675,6 +675,7 @@ system_info (void)
 				UI_FlexibleSpace ();
 				if (UI_Button ("Reset##timings")) {
 					max_delta = -INT64_MAX;
+					min_delta = INT64_MAX;
 				}
 			}
 			UI_Horizontal {
