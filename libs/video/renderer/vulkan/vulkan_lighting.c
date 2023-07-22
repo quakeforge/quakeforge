@@ -699,16 +699,18 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	free (lctx->frames.a);
 	free (lctx);
 }
-/*
+
 static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 
 static void
 create_light_matrices (lightingctx_t *lctx)
 {
-	lightingdata_t *ldata = lctx->ldata;
-	DARRAY_RESIZE (&lctx->light_mats, ldata->lights.size);
-	for (size_t i = 0; i < ldata->lights.size; i++) {
-		light_t    *light = &ldata->lights.a[i];
+	auto reg = lctx->scene->reg;
+	auto light_pool = &reg->comp_pools[scene_light];
+	auto light_data = (light_t *) light_pool->data;
+	DARRAY_RESIZE (&lctx->light_mats, light_pool->count);
+	for (size_t i = 0; i < light_pool->count; i++) {
+		light_t    *light = &light_data[i];
 		mat4f_t     view;
 		mat4f_t     proj;
 		int         mode = ST_NONE;
@@ -758,13 +760,13 @@ create_light_matrices (lightingctx_t *lctx)
 }
 
 static int
-light_compare (const void *_li2, const void *_li1, void *_ldata)
+light_compare (const void *_li2, const void *_li1, void *_lights)
 {
 	const int *li1 = _li1;
 	const int *li2 = _li2;
-	lightingdata_t *ldata = _ldata;
-	const light_t *l1 = &ldata->lights.a[*li1];
-	const light_t *l2 = &ldata->lights.a[*li2];
+	const light_t *lights = _lights;
+	const light_t *l1 = &lights[*li1];
+	const light_t *l2 = &lights[*li2];
 	int         s1 = abs ((int) l1->color[3]);
 	int         s2 = abs ((int) l2->color[3]);
 
@@ -856,9 +858,10 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_physdev_t *physDev = device->physDev;
 	int         maxLayers = physDev->properties->limits.maxImageArrayLayers;
-	lightingdata_t *ldata = lctx->ldata;
-	light_t    *lights = ldata->lights.a;
-	int         numLights = ldata->lights.size;
+	auto reg = lctx->scene->reg;
+	auto light_pool = &reg->comp_pools[scene_light];
+	auto lights = (light_t *) light_pool->data;
+	int         numLights = light_pool->count;
 	int         size = -1;
 	int         numLayers = 0;
 	int         totalLayers = 0;
@@ -870,7 +873,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	for (int i = 0; i < numLights; i++) {
 		lightMap[i] = i;
 	}
-	heapsort_r (lightMap, numLights, sizeof (int), light_compare, ldata);
+	heapsort_r (lightMap, numLights, sizeof (int), light_compare, lights);
 
 	DARRAY_RESIZE (&lctx->light_renderers, numLights);
 	for (int i = 0; i < numLights; i++) {
@@ -1020,25 +1023,27 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		lr->view = create_view (lr, li, ctx);
 		lr->framebuffer = create_framebuffer(lr, ctx);
 	}
-	Sys_MaskPrintf (SYS_vulkan,
+	Sys_MaskPrintf (SYS_lighting,
 					"shadow maps: %d layers in %zd images: %"PRId64"\n",
 					totalLayers, lctx->light_images.size,
 					lctx->shadow_resources->size);
 }
-*/
+
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 {
 	lightingctx_t *lctx = ctx->lighting_context;
 
 	lctx->scene = scene;
-	lctx->ldata = scene ? scene->lights : 0;
-/*
+
 	clear_shadows (ctx);
 
-	if (lctx->ldata && lctx->ldata->lights.size) {
-		build_shadow_maps (lctx, ctx);
-		create_light_matrices (lctx);
+	if (lctx->scene) {
+		auto reg = lctx->scene->reg;
+		auto light_pool = &reg->comp_pools[scene_light];
+		if (light_pool->count) {
+			build_shadow_maps (lctx, ctx);
+			create_light_matrices (lctx);
+		}
 	}
-*/
 }
