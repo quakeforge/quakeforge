@@ -150,6 +150,8 @@ Entity_Transform (entity_t ent)
 }
 
 struct mod_brush_s;
+efrag_t **R_LinkEfrag (struct mleaf_s *leaf, entity_t ent, uint32_t queue,
+					   efrag_t **lastlink);
 void R_AddEfrags (struct mod_brush_s *, entity_t ent);
 void R_ShutdownEfrags (void);
 void R_ClearEfragChain (efrag_t *ef);

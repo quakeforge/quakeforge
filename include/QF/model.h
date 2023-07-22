@@ -369,6 +369,8 @@ typedef enum {
 	mod_alias,
 	mod_iqm,
 
+	mod_light,
+
 	mod_num_types
 } modtype_t;
 

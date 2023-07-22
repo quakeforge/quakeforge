@@ -53,15 +53,7 @@ typedef struct light_s {
 	vec4f_t     attenuation;
 } light_t;
 
-typedef struct lightset_s DARRAY_TYPE (light_t) lightset_t;
-typedef struct lightleafset_s DARRAY_TYPE (int) lightintset_t;
-typedef struct lightvisset_s DARRAY_TYPE (byte) lightvisset_t;
-
 typedef struct lightingdata_s {
-	lightset_t lights;
-	lightintset_t lightstyles;
-	lightintset_t lightleafs;
-	lightvisset_t lightvis;
 	struct set_s *sun_pvs;
 	// A fat PVS of leafs visible from visible leafs so hidden lights can
 	// illuminate the leafs visible to the player
@@ -75,6 +67,5 @@ void Light_DestroyLightingData (lightingdata_t *ldata);
 void Light_ClearLights (lightingdata_t *ldata);
 void Light_AddLight (lightingdata_t *ldata, const light_t *light, int style);
 void Light_EnableSun (lightingdata_t *ldata);
-void Light_FindVisibleLights (lightingdata_t *ldata);
 
 #endif//__QF_scene_light_h

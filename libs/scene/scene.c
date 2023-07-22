@@ -40,7 +40,9 @@
 #include "QF/model.h"
 
 #include "QF/plugin/vid_render.h"
+
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
@@ -81,6 +83,13 @@ destroy_renderer (void *_renderer)
 	if (renderer->skin) {
 		mod_funcs->Skin_Free (renderer->skin);
 	}
+}
+
+static void
+destroy_efrags (void *_efrags)
+{
+	efrag_t **efrags = _efrags;
+	R_ClearEfragChain (*efrags);
 }
 
 static void
@@ -142,6 +151,20 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (colormap_t),
 		.create = create_colormap,
 		.name = "colormap",
+	},
+
+	[scene_light] = {
+		.size = sizeof (light_t),
+		.name = "light",
+	},
+	[scene_efrags] = {
+		.size = sizeof (efrag_t *),
+		.destroy = destroy_efrags,
+		.name = "efrags",
+	},
+	[scene_lightstyle] = {
+		.size = sizeof (int),
+		.name = "lightstyle",
 	},
 
 	[scene_sw_matrix] = {

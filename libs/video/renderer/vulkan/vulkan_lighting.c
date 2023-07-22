@@ -183,10 +183,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
-	lightingdata_t *ldata = lctx->ldata;
-
-	Light_FindVisibleLights (ldata);
-
 	dlight_t   *lights[MaxLights];
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
@@ -220,23 +216,26 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		// full sphere, normal light (not ambient)
 		light_data->lights[i].direction = (vec4f_t) { 0, 0, 1, 1 };
 	}
-	for (size_t i = 0; (i < ldata->lightvis.size
-						&& light_data->lightCount < MaxLights); i++) {
-		if (ldata->lightvis.a[i]) {
-			uint32_t id = light_data->lightCount++;
-			auto light = &light_data->lights[id];
-			*light = ldata->lights.a[i];
-			light->color[3] *= style_intensities[ldata->lightstyles.a[i]];
-			if (light->position[3] && !VectorIsZero (light->direction)
-				&& light->attenuation[3]) {
-				if (light->direction[3] < 0) {
-					cone_ids[lframe->cone_count++] = id;
-				} else {
-					ico_ids[lframe->ico_count++] = id;
-				}
+	auto queue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_light].a[i];
+		light_t    *l = Ent_GetComponent (ent.id, scene_light, ent.reg);
+		int         ls = *(int *) Ent_GetComponent (ent.id, scene_lightstyle,
+													ent.reg);
+
+		uint32_t id = light_data->lightCount++;
+		auto light = &light_data->lights[id];
+		*light = *l;
+		light->color[3] *= style_intensities[ls];
+		if (light->position[3] && !VectorIsZero (light->direction)
+			&& light->attenuation[3]) {
+			if (light->direction[3] < 0) {
+				cone_ids[lframe->cone_count++] = id;
 			} else {
-				flat_ids[lframe->flat_count++] = id;
+				ico_ids[lframe->ico_count++] = id;
 			}
+		} else {
+			flat_ids[lframe->flat_count++] = id;
 		}
 	}
 	if (developer & SYS_lighting) {
@@ -700,7 +699,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	free (lctx->frames.a);
 	free (lctx);
 }
-
+/*
 static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 
 static void
@@ -1026,7 +1025,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 					totalLayers, lctx->light_images.size,
 					lctx->shadow_resources->size);
 }
-
+*/
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 {
@@ -1034,11 +1033,12 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 
 	lctx->scene = scene;
 	lctx->ldata = scene ? scene->lights : 0;
-
+/*
 	clear_shadows (ctx);
 
 	if (lctx->ldata && lctx->ldata->lights.size) {
 		build_shadow_maps (lctx, ctx);
 		create_light_matrices (lctx);
 	}
+*/
 }

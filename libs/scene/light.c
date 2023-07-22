@@ -6,6 +6,7 @@
 
 #include "QF/model.h"
 #include "QF/set.h"
+#include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
@@ -27,11 +28,6 @@ Light_CreateLightingData (scene_t *scene)
 {
 	lightingdata_t *ldata = calloc (1, sizeof (lightingdata_t));
 
-	DARRAY_INIT (&ldata->lights, 16);
-	DARRAY_INIT (&ldata->lightstyles, 16);
-	DARRAY_INIT (&ldata->lightleafs, 16);
-	DARRAY_INIT (&ldata->lightvis, 16);
-
 	ldata->scene = scene;
 
 	return ldata;
@@ -40,21 +36,12 @@ Light_CreateLightingData (scene_t *scene)
 void
 Light_DestroyLightingData (lightingdata_t *ldata)
 {
-	DARRAY_CLEAR (&ldata->lights);
-	DARRAY_CLEAR (&ldata->lightstyles);
-	DARRAY_CLEAR (&ldata->lightleafs);
-	DARRAY_CLEAR (&ldata->lightvis);
-
 	free (ldata);
 }
 
 void
 Light_ClearLights (lightingdata_t *ldata)
 {
-	ldata->lights.size = 0;
-	ldata->lightstyles.size = 0;
-	ldata->lightleafs.size = 0;
-	ldata->lightvis.size = 0;
 	if (ldata->sun_pvs) {
 		set_delete (ldata->sun_pvs);
 	}
@@ -72,20 +59,34 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 	scene_t    *scene = ldata->scene;
 	model_t    *model = scene->worldmodel;
 
-	DARRAY_APPEND (&ldata->lights, *light);
-	DARRAY_APPEND (&ldata->lightstyles, style);
+	entity_t    ent = {
+		.reg = scene->reg,
+		.id = ECS_NewEntity (scene->reg),
+	};
 
-	int         visleaf = -1;	// directional light
+	Ent_SetComponent (ent.id, scene_light, ent.reg, light);
+	Ent_SetComponent (ent.id, scene_lightstyle, ent.reg, &style);
+
+	set_t       _pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
+	set_t      *pvs = &_pvs;
 	if (light->position[3]) {
 		// positional light
 		mleaf_t    *leaf = Mod_PointInLeaf (light->position, &model->brush);
-		visleaf = leaf - model->brush.leafs - 1;
-	} else if (!DotProduct (light->direction, light->direction)) {
+		Mod_LeafPVS_set (leaf, &model->brush, 0, pvs);
+	} else if (DotProduct (light->direction, light->direction)) {
+		// directional light (sun)
+		pvs = ldata->sun_pvs;
+	} else {
 		// ambient light
-		visleaf = -2;
+		Mod_LeafPVS_set (model->brush.leafs, &model->brush, 0, pvs);
 	}
-	DARRAY_APPEND (&ldata->lightleafs, visleaf);
-	DARRAY_APPEND (&ldata->lightvis, 0);
+	efrag_t *efrags = 0;
+	efrag_t **lastlink = &efrags;
+	for (auto li = set_first (pvs); li; li = set_next (li)) {
+		mleaf_t    *leaf = model->brush.leafs + li->element + 1;
+		lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
+	}
+	Ent_SetComponent (ent.id, scene_efrags, ent.reg, &efrags);
 }
 
 void
@@ -110,53 +111,4 @@ Light_EnableSun (lightingdata_t *ldata)
 	// any leaf visible from a leaf with a sky surface (and thus the sun)
 	// can receive shadows from the sun
 	expand_pvs (ldata->sun_pvs, brush);
-}
-
-void
-Light_FindVisibleLights (lightingdata_t *ldata)
-{
-	scene_t    *scene = ldata->scene;
-	mleaf_t    *leaf = scene->viewleaf;
-	auto brush = &scene->worldmodel->brush;
-
-	if (!leaf) {
-		return;
-	}
-	if (!ldata->pvs) {
-		ldata->pvs = set_new_size (brush->visleafs);
-	}
-
-	if (leaf != ldata->leaf) {
-		//double start = Sys_DoubleTime ();
-		int         flags = 0;
-
-		if (leaf == brush->leafs) {
-			set_everything (ldata->pvs);
-			flags = SURF_DRAWSKY;
-		} else {
-			Mod_LeafPVS_set (leaf, brush, 0, ldata->pvs);
-			if (set_is_intersecting (ldata->pvs, ldata->sun_pvs)) {
-				flags |= SURF_DRAWSKY;
-			}
-			expand_pvs (ldata->pvs, brush);
-		}
-		ldata->leaf = leaf;
-
-		//double end = Sys_DoubleTime ();
-		//Sys_Printf ("find_visible_lights: %.5gus\n", (end - start) * 1e6);
-
-		int visible = 0;
-		memset (ldata->lightvis.a, 0, ldata->lightvis.size * sizeof (byte));
-		for (size_t i = 0; i < ldata->lightleafs.size; i++) {
-			int         l = ldata->lightleafs.a[i];
-			if ((l == -2) || (l == -1 && (flags & SURF_DRAWSKY))
-				|| set_is_member (ldata->pvs, l)) {
-				ldata->lightvis.a[i] = 1;
-				visible++;
-			}
-		}
-		Sys_MaskPrintf (SYS_lighting,
-						"find_visible_lights: %d / %zd visible\n", visible,
-						ldata->lightvis.size);
-	}
 }

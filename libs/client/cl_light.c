@@ -10,6 +10,8 @@
 #include "QF/plist.h"
 #include "QF/progs.h"	//for ED_ConvertToPlist
 #include "QF/set.h"
+#include "QF/ecs.h"
+#include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
@@ -17,8 +19,12 @@
 #include "client/world.h"
 
 static void
-dump_light (light_t *light, int leaf)
+dump_light (light_t *light, efrag_t *efrags)
 {
+	int leafcount = 0;
+	for (auto e = efrags; e; e = e->leafnext) {
+		leafcount++;
+	}
 	Sys_MaskPrintf (SYS_lighting,
 					"[%g, %g, %g] %g, "
 					"[%g, %g, %g, %g], [%g %g %g] %g, [%g, %g, %g, %g] %d\n",
@@ -26,7 +32,7 @@ dump_light (light_t *light, int leaf)
 					VEC4_EXP (light->position),
 					VEC4_EXP (light->direction),
 					VEC4_EXP (light->attenuation),
-					leaf);
+					leafcount);
 }
 
 static float
@@ -323,8 +329,12 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 	}
 	PL_Release (targets);
 
-	for (size_t i = 0; i < ldata->lights.size; i++) {
-		dump_light (&ldata->lights.a[i], ldata->lightleafs.a[i]);
+	auto lights = &scene->reg->comp_pools[scene_light];
+	auto lefrags = &scene->reg->comp_pools[scene_efrags];
+	for (uint32_t i = 0; i < lights->count; i++) {
+		auto light = &((light_t *)lights->data)[i];
+		auto efrags = ((efrag_t **)lefrags->data)[i];
+		dump_light (light, efrags);
 	}
-	Sys_MaskPrintf (SYS_lighting, "loaded %zd lights\n", ldata->lights.size);
+	Sys_MaskPrintf (SYS_lighting, "loaded %d lights\n", lights->count);
 }
