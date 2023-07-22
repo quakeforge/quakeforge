@@ -39,6 +39,7 @@
 #include "QF/sys.h"
 #include "QF/model.h"
 
+#include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
@@ -70,6 +71,15 @@ destroy_visibility (void *_visibility)
 	visibility_t *visibility = _visibility;
 	if (visibility->efrag) {
 		R_ClearEfragChain (visibility->efrag);
+	}
+}
+
+static void
+destroy_renderer (void *_renderer)
+{
+	renderer_t *renderer = _renderer;
+	if (renderer->skin) {
+		mod_funcs->Skin_Free (renderer->skin);
 	}
 }
 
@@ -115,6 +125,7 @@ static const component_t scene_components[scene_comp_count] = {
 	[scene_renderer] = {
 		.size = sizeof (renderer_t),
 		.create = 0,//create_renderer,
+		.destroy = destroy_renderer,
 		.name = "renderer",
 	},
 	[scene_active] = {
@@ -255,4 +266,12 @@ Scene_DestroyEntity (scene_t *scene, entity_t ent)
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
+	auto reg = scene->reg;
+	for (uint32_t i = 0; i < reg->num_entities; i++) {
+		uint32_t    ent = reg->entities[i];
+		uint32_t    ind = Ent_Index (ent);
+		if (ind == i) {
+			ECS_DelEntity (reg, ent);
+		}
+	}
 }

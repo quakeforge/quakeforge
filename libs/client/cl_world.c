@@ -233,3 +233,10 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 	SCR_NewScene (cl_world.scene);
 	map_cfg (mapname, 1);
 }
+
+void
+CL_World_Clear (void)
+{
+	Scene_FreeAllEntities (cl_world.scene);
+	CL_ClearTEnts ();
+}

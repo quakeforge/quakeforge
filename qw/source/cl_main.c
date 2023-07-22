@@ -624,9 +624,7 @@ CL_ClearState (void)
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
 	__auto_type players = cl.players;
-	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
-	cl.viewstate.camera_transform = cam;
 	cl.players = players;
 	SCR_SetFullscreen (0);
 
@@ -651,7 +649,7 @@ CL_ClearState (void)
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (0, host_hunklevel);
 
-	CL_ClearEnts ();
+	CL_World_Clear ();
 	CL_ClearTEnts ();
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);

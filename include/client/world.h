@@ -66,6 +66,7 @@ void CL_ParseBaseline (struct msg_s *msg, struct entity_state_s *baseline,
 void CL_ParseStatic (struct msg_s *msg, int version);
 void CL_MapCfg (const char *mapname);
 void CL_World_NewMap (const char *mapname, const char *skyname);
+void CL_World_Clear (void);
 void CL_LoadLights (struct plitem_s *entities, struct scene_s *scene);
 
 #endif//__client_world_h

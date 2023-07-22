@@ -932,9 +932,11 @@ void
 V_RenderView (viewstate_t *vs)
 {
 	if (!vs->active) {
-		vec4f_t     base = { 0, 0, 0, 1 };
-		Transform_SetWorldPosition (vs->camera_transform, base);
-		Transform_SetWorldRotation (vs->camera_transform, base);
+		if (Transform_Valid (vs->camera_transform)) {
+			vec4f_t     base = { 0, 0, 0, 1 };
+			Transform_SetWorldPosition (vs->camera_transform, base);
+			Transform_SetWorldRotation (vs->camera_transform, base);
+		}
 		return;
 	}
 
@@ -953,6 +955,13 @@ V_RenderView (viewstate_t *vs)
 }
 
 void
+V_NewScene (viewstate_t *viewstate, scene_t *scene)
+{
+	viewstate->camera_transform = Transform_New (cl_world.scene->reg,
+												 nulltransform);
+}
+
+void
 V_Init (viewstate_t *viewstate)
 {
 	Cmd_AddDataCommand ("bf", V_BonusFlash_f, viewstate,
@@ -965,9 +974,6 @@ V_Init (viewstate_t *viewstate)
 					"currently being displayed.\n"
 					"Used when you are underwater, hit, have the Ring of "
 					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
-
-	viewstate->camera_transform = Transform_New (cl_world.scene->reg,
-												 nulltransform);
 }
 
 void

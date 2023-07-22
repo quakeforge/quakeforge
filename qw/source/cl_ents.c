@@ -72,10 +72,7 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (Entity_Valid (cl_flag_ents[i])) {
-			Scene_DestroyEntity (cl_world.scene, cl_flag_ents[i]);
-			cl_flag_ents[i] = nullentity;
-		}
+		cl_flag_ents[i] = nullentity;
 	}
 
 	for (i = 0; i < 512; i++) {

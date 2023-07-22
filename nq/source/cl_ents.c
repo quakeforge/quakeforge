@@ -72,15 +72,7 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		if (Entity_Valid (cl_entities[i])) {
-			entity_t    ent = cl_entities[i];
-			renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-			if (renderer && renderer->skin) {
-				mod_funcs->Skin_Free (renderer->skin);
-			}
-			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
-			cl_entities[i] = nullentity;
-		}
+		cl_entities[i] = nullentity;
 	}
 
 	// clear other arrays

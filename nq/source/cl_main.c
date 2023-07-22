@@ -228,13 +228,11 @@ CL_ClearMemory (void)
 			Info_Destroy (cl.players[i].userinfo);
 	}
 	// wipe the entire cl structure
-	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	Sbar_Intermission (cl.intermission = 0, cl.time);
-	cl.viewstate.camera_transform = cam;
 	cl.viewstate.demoplayback = cls.demoplayback;
 
-	CL_ClearTEnts ();
+	CL_World_Clear ();
 	CL_ClearEnts ();
 
 	SCR_NewScene (0);
