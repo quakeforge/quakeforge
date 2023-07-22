@@ -53,6 +53,37 @@ Light_ClearLights (lightingdata_t *ldata)
 	ldata->leaf = 0;
 }
 
+static bool
+test_light_leaf (const light_t *light, const mleaf_t *leaf)
+{
+	// FIXME directional lights should check the direction against the
+	// leaf's portals (need to find the portals first, though)
+	if (!light->position[3] || !light->attenuation[3]) {
+		// non-positional lights or lights with infinite radius always light
+		// the leafs they can see
+		return true;
+	}
+	// use Minkowski difference to see if the light hits the leaf's bounding
+	// box (thanks to Nick Alger:
+	// https://stackoverflow.com/questions/5122228/box-to-sphere-collision)
+	float r = 1/light->attenuation[3];
+	vec4f_t c = light->position / light->position[3];
+	vec4f_t mins = loadvec3f (leaf->mins);
+	vec4f_t maxs = loadvec3f (leaf->maxs);
+	vec4i_t tmin = c < mins;
+	vec4i_t tmax = maxs < c;
+	vec4i_t tcen = ~tmin & ~tmax;
+	vec4f_t p = (vec4f_t)((tmin & (vec4i_t)mins)
+						+ (tcen & (vec4i_t)c)
+						+ (tmax & (vec4i_t)maxs));
+	p[3] = 1;
+	vec4f_t d = p - c;
+	if (dotf (d, d)[0] > r * r) {
+		return false;
+	}
+	return true;
+}
+
 void
 Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 {
@@ -84,7 +115,9 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 	efrag_t **lastlink = &efrags;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		mleaf_t    *leaf = model->brush.leafs + li->element + 1;
-		lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
+		if (test_light_leaf (light, leaf)) {
+			lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
+		}
 	}
 	Ent_SetComponent (ent.id, scene_efrags, ent.reg, &efrags);
 }
