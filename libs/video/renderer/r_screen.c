@@ -491,10 +491,6 @@ SCR_Shutdown (void)
 void
 SCR_NewScene (scene_t *scene)
 {
-	if (scr_scene) {
-		ECS_RemoveEntities (scr_scene->reg, scene_visibility);
-		R_ClearEfrags ();
-	}
 	scr_scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &scr_scene->worldmodel->brush;
