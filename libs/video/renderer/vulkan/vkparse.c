@@ -336,7 +336,7 @@ parse_labeledsingle (const plfield_t *field, const plitem_t *item,
 		return 0;
 	}
 
-	plfield_t   f = { field->name, 0, single->type, single->parser, 0 };
+	plfield_t   f = { key, 0, single->type, single->parser, 0 };
 	void       *value = vkparse_alloc (context, single->stride);
 	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {
