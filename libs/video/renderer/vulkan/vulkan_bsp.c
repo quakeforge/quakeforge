@@ -1077,12 +1077,12 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	// params are in reverse order
-	auto stage = *(int *) params[2]->value;
+	auto pass = *(int *) params[2]->value;
 	auto queue = *(QFV_BspQueue *) params[1]->value;
-	auto pass = *(int *) params[0]->value;
+	auto stage = *(int *) params[0]->value;
 
-	if (stage) {
-		Sys_Error ("bps stages not implemented");
+	if (pass) {
+		Sys_Error ("bps passes not implemented");
 	}
 	auto mpass = &bctx->main_pass;
 	if (!mpass->draw_queues[queue].size) {
@@ -1117,7 +1117,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
 	}
 
-	mpass->textures = pass ? &bctx->registered_textures : 0;
+	mpass->textures = stage ? &bctx->registered_textures : 0;
 	draw_queue (mpass, queue, layout, device, cmd);
 }
 
@@ -1126,10 +1126,10 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto stage = *(int *) params[0]->value;
+	auto pass = *(int *) params[0]->value;
 
-	if (stage) {
-		Sys_Error ("bps stages not implemented");
+	if (pass) {
+		Sys_Error ("bps passes not implemented");
 	}
 
 	EntQueue_Clear (r_ent_queue);
