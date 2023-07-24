@@ -316,7 +316,23 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
+	octx->swapchain_info = (qfv_attachmentinfo_t) {
+		.name = "$swapchain",
+		.format = ctx->swapchain->format,
+		.samples = 1,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	};
+
 	QFV_Render_AddTasks (ctx, output_task_syms);
+	qfv_attachmentinfo_t *attachments[] = {
+		&octx->swapchain_info,
+	};
+	QFV_Render_AddAttachments (ctx, 1, attachments);
 }
 
 void

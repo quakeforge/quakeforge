@@ -421,10 +421,13 @@ typedef struct qfv_renderframe_s {
 
 typedef struct qfv_renderframeset_s
 	DARRAY_TYPE (qfv_renderframe_t) qfv_renderframeset_t;
+typedef struct qfv_attachmentinfoset_s
+	DARRAY_TYPE (qfv_attachmentinfo_t *) qfv_attachmentinfoset_t;
 
 typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
 	exprtab_t   task_functions;
+	qfv_attachmentinfoset_t external_attachments;
 	qfv_jobinfo_t *jobinfo;
 	qfv_samplerinfo_t *samplerinfo;
 	qfv_job_t  *job;
@@ -451,6 +454,9 @@ void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
+void QFV_Render_AddAttachments (struct vulkan_ctx_s *ctx,
+								uint32_t num_attachments,
+		                        qfv_attachmentinfo_t **attachments);
 
 void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,

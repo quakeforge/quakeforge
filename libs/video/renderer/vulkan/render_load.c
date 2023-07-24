@@ -699,22 +699,33 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 static void
 init_atCreate (uint32_t index, qfv_attachmentinfo_t *attachments, objstate_t *s)
 {
-	__auto_type ati = &attachments[index];
-	__auto_type atc = &s->ptr.attach[s->inds.num_attachments];
-	__auto_type cvc = &s->ptr.clear[s->inds.num_attachments];
+	auto rctx = s->ctx->render_context;
+	auto ati = &attachments[index];
+	auto atc = &s->ptr.attach[s->inds.num_attachments];
+	auto cvc = &s->ptr.clear[s->inds.num_attachments];
 
 	if (ati->external) {
-		if (!strcmp (ati->external, "$swapchain")) {
-			*atc = (VkAttachmentDescription) {
-				.format = s->ctx->swapchain->format,
-				.samples = 1,
-				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			};
+		bool found = false;
+		for (size_t i = 0; i < rctx->external_attachments.size; i++) {
+			auto ext = rctx->external_attachments.a[i];
+			if (!strcmp (ati->external, ext->name)) {
+				found = true;
+				*atc = (VkAttachmentDescription) {
+					.flags = ext->flags,
+					.format = ext->format,
+					.samples = ext->samples,
+					.loadOp = ext->loadOp,
+					.storeOp = ext->storeOp,
+					.stencilLoadOp = ext->stencilLoadOp,
+					.stencilStoreOp = ext->stencilStoreOp,
+					.initialLayout = ext->initialLayout,
+					.finalLayout = ext->finalLayout,
+				};
+			}
+		}
+		if (!found) {
+			Sys_Error ("%d:%s: invalid external attachment: %s",
+					   ati->line, ati->name, ati->external);
 		}
 	} else {
 		*atc = (VkAttachmentDescription) {

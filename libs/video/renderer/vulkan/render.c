@@ -478,6 +478,9 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	cexpr_init_symtab (&rctx->task_functions, &ectx);
 	rctx->task_functions.symbols = 0;
 
+	rctx->external_attachments =
+		(qfv_attachmentinfoset_t) DARRAY_STATIC_INIT (4);
+
 	QFV_Render_AddTasks (ctx, render_task_syms);
 
 	auto device = ctx->device;
@@ -560,6 +563,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 	if (rctx->task_functions.tab) {
 		Hash_DelTable (rctx->task_functions.tab);
 	}
+	DARRAY_CLEAR (&rctx->external_attachments);
 	if (rctx->samplerinfo) {
 		auto si = rctx->samplerinfo;
 		for (uint32_t i = 0; i < si->num_samplers; i++) {
@@ -590,6 +594,18 @@ QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 				}
 			}
 		}
+	}
+}
+
+void
+QFV_Render_AddAttachments (vulkan_ctx_t *ctx, uint32_t num_attachments,
+						   qfv_attachmentinfo_t **attachments)
+{
+	auto rctx = ctx->render_context;
+	size_t base = rctx->external_attachments.size;
+	DARRAY_RESIZE (&rctx->external_attachments, base + num_attachments);
+	for (size_t i = 0; i < num_attachments; i++) {
+		rctx->external_attachments.a[base + i] = attachments[i];
 	}
 }
 
