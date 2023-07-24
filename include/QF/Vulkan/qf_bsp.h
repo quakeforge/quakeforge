@@ -332,7 +332,6 @@ typedef struct bspframe_s {
 	uint32_t   *entid_data;
 	uint32_t    entid_offset;
 	uint32_t    entid_count;
-	qfv_cmdbufferset_t cmdSet;
 } bspframe_t;
 
 typedef struct bspframeset_s

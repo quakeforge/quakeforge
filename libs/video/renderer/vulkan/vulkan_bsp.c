@@ -82,13 +82,6 @@ typedef struct bsp_push_constants_s {
 	float       turb_scale;
 } bsp_push_constants_t;
 
-static const char *bsp_pass_names[] = {
-	"depth",
-	"g-buffer",
-	"sky",
-	"turb",
-};
-
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 {
@@ -1325,18 +1318,7 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		auto bframe = &bctx->frames.a[i];
 
-		DARRAY_INIT (&bframe->cmdSet, QFV_bspNumPasses);
-		DARRAY_RESIZE (&bframe->cmdSet, QFV_bspNumPasses);
-		bframe->cmdSet.grow = 0;
 
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &bframe->cmdSet);
-
-		for (int j = 0; j < QFV_bspNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 bframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
-									 bsp_pass_names[j]));
-		}
 		bframe->entid_data = entid_data + i * entid_count;
 		bframe->entid_offset = i * entid_size;
 	}
@@ -1359,11 +1341,6 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-
-	for (size_t i = 0; i < bctx->frames.size; i++) {
-		auto bframe = &bctx->frames.a[i];
-		free (bframe->cmdSet.a);
-	}
 
 	DARRAY_CLEAR (&bctx->registered_textures);
 	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
