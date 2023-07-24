@@ -1017,6 +1017,7 @@ images = {
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
+
 	cube_depth = {
 		@inherit = $cube_image_base;
 		format = x8_d24_unorm_pack32;
@@ -1769,6 +1770,113 @@ renderpasses = {
 			};
 		};
 	};
+	shadow = {
+		color = "[0.2, 0.2, 0.2, 1]";
+		framebuffer = {
+			layers = 1;
+			attachments = {
+				shadow = $shadow;
+			};
+		};
+		subpasses = {
+			shadow = {
+				color = "[ 0.5,  0.5,  0.5, 1]";
+				attachments = {
+					depth = {
+						shadow = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					bsp:shadow = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 0); },
+						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+					alias:shadow = {
+						color = $color.alias;
+						tasks = (
+							{ func = alias_draw;
+							  params = (0); },
+						);
+
+						stages = (
+							$alias.shader.depth_vertex,
+						);
+						vertexInput = {
+							// depth/shadow pass doesn't use UVs
+							bindings = (
+								"$alias.vertexInput.bindings[0]",
+								"$alias.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$alias.vertexInput.attributes[0]",
+								"$alias.vertexInput.attributes[1]",
+								"$alias.vertexInput.attributes[2]",
+								"$alias.vertexInput.attributes[3]",
+							);
+						};
+						inputAssembly = $alias.inputAssembly;
+						layout = $alias.layout;
+					};
+					iqm:shadow = {
+						color = $color.iqm;
+						tasks = (
+							{ func = iqm_draw;
+							  params = (0); },
+						);
+
+						stages = (
+							$iqm.shader.depth_vertex,
+						);
+						vertexInput = $iqm.vertexInput;
+						inputAssembly = $iqm.inputAssembly;
+						layout = $iqm.layout;
+					};
+				};
+			};
+		};
+		output = shadow;
+	};
+	cascade_shadow = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x0fu);
+		});
+		output = cascade_shadow;
+	};
+	cube_shadow = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x0fu);
+		});
+		output = cube_shadow;
+	};
 };
 steps = {
 	wait_on_fence = {
@@ -1810,10 +1918,6 @@ steps = {
 			};
 		};
 	};
-	shadow = {
-		dependencies = (wait_on_fence);
-		//currently empty
-	};
 	world = {
 		dependencies = (wait_on_fence);
 		process = {
@@ -1823,6 +1927,21 @@ steps = {
 				{ func = scene_draw_viewmodel; },
 				{ func = lighting_update_lights; },
 			);
+		};
+	};
+	shadow = {
+		dependencies = (world);
+		process = {
+			tasks = (
+				{ func = lighting_draw_shadow_maps; },
+			);
+		};
+		render = {
+			renderpasses = {
+				shadow = $renderpasses.shadow;
+				cascade_shadow = $renderpasses.cascade_shadow;
+				cube_shadow = $renderpasses.cube_shadow;
+			};
 		};
 	};
 	setup_main = {

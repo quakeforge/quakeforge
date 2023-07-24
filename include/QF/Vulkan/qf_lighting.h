@@ -37,6 +37,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/render.h"
 #include "QF/simd/types.h"
 
 typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
@@ -84,18 +85,17 @@ typedef struct lightingframeset_s
     DARRAY_TYPE (lightingframe_t) lightingframeset_t;
 
 typedef struct light_renderer_s {
-	VkRenderPass renderPass;	// shared
-	VkFramebuffer framebuffer;
-	VkImage     image;			// shared
-	VkImageView view;
-	uint32_t    size;
-	uint32_t    layer;
-	uint32_t    numLayers;
-	int         mode;
+	uint8_t     renderpass_index;
+	uint8_t     image_index;
+	uint16_t    size;
+	uint16_t    layer;
+	uint8_t     numLayers;
+	uint8_t     mode;
 } light_renderer_t;
 
 typedef struct light_renderer_set_s
-    DARRAY_TYPE (light_renderer_t) light_renderer_set_t;
+	DARRAY_TYPE (light_renderer_t) light_renderer_set_t;
+
 
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
@@ -108,9 +108,7 @@ typedef struct lightingctx_s {
 
 	light_renderer_set_t light_renderers;
 
-	VkRenderPass renderpass_6;
-	VkRenderPass renderpass_4;
-	VkRenderPass renderpass_1;
+	qfv_attachmentinfo_t shadow_info;
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;
