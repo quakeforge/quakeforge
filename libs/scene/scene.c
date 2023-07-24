@@ -166,6 +166,10 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (int),
 		.name = "lightstyle",
 	},
+	[scene_lightid] = {
+		.size = sizeof (uint32_t),
+		.name = "lightid",
+	},
 
 	[scene_sw_matrix] = {
 		.size = sizeof (mat4f_t),
