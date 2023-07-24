@@ -238,11 +238,16 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
 		__auto_type step = &job->steps[i];
-		if (step->render) {
-			run_renderpass (step->render->active, ctx);
-		}
-		if (step->compute) {
-			run_compute (step->compute, ctx, step);
+		if (!step->process) {
+			// run render and compute steps automatically only if there's no
+			// process for the step (the idea is the proces uses the compute
+			// and renderpass objects for its own purposes).
+			if (step->render) {
+				run_renderpass (step->render->active, ctx);
+			}
+			if (step->compute) {
+				run_compute (step->compute, ctx, step);
+			}
 		}
 		if (step->process) {
 			run_process (step->process, ctx);

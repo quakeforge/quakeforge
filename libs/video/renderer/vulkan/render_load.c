@@ -183,11 +183,13 @@ count_comp_stuff (qfv_computeinfo_t *ci, objcount_t *counts)
 static void
 count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
 {
-	if ((step->render && step->compute)
-		|| (step->render && step->process)
-		|| (step->compute && step->process)) {
-		Sys_Error ("%s: invalid step: must be one of render/compute/process",
+	if (step->render && step->compute && !step->process) {
+		Sys_Error ("%s: invalid step: must have process for render+compute",
 				   step->name);
+	}
+	if (!step->render && !step->compute && !step->process) {
+		Sys_Error ("%s: invalid step: must have at least one of "
+				   "proces/render/compute", step->name);
 	}
 	if (step->render) {
 		__auto_type rinfo = step->render;
