@@ -52,9 +52,9 @@ reset_time (qfv_time_t *time)
 static void
 show_time (qfv_time_t *time, imui_ctx_t *imui_ctx, const char *suffix)
 {
-	UI_Labelf ("%'7zd\u03bcs%s", time->min_time, suffix);
-	UI_Labelf ("%'7zd\u03bcs%s", time->cur_time, suffix);
-	UI_Labelf ("%'7zd\u03bcs%s", time->max_time, suffix);
+	UI_Labelf ("%'7"PRIu64"\u03bcs%s", time->min_time, suffix);
+	UI_Labelf ("%'7"PRIu64"\u03bcs%s", time->cur_time, suffix);
+	UI_Labelf ("%'7"PRIu64"\u03bcs%s", time->max_time, suffix);
 }
 
 static void

@@ -144,7 +144,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	frame->initiated = true;
 	auto time = Sys_LongTime ();
-	printf ("capture_initiate: %zd.%03zd.%0zd\n",
+	printf ("capture_initiate: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 }
 
@@ -168,7 +168,7 @@ capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 	auto time = Sys_LongTime ();
-	printf ("capture_finalize: %zd.%03zd.%0zd\n",
+	printf ("capture_finalize: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 
 	auto device = ctx->device;
@@ -350,6 +350,6 @@ QFV_Capture_Screen (vulkan_ctx_t *ctx, capfunc_t callback, void *data)
 	frame->callback = callback;
 	frame->callback_data = data;
 	auto time = Sys_LongTime ();
-	printf ("capture_request: %zd.%03zd.%0zd\n",
+	printf ("capture_request: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 }

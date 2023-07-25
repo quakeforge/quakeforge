@@ -667,9 +667,9 @@ system_info (void)
 			UI_Horizontal {
 				UI_Label ("frame: ");
 				UI_FlexibleSpace ();
-				UI_Labelf ("%'7zd\u03bcs##frame.time", min_delta);
-				UI_Labelf ("%'7zd\u03bcs##frame.time", delta);
-				UI_Labelf ("%'7zd\u03bcs##frame.time", max_delta);
+				UI_Labelf ("%'7"PRIu64"\u03bcs##frame.time", min_delta);
+				UI_Labelf ("%'7"PRIu64"\u03bcs##frame.time", delta);
+				UI_Labelf ("%'7"PRIu64"\u03bcs##frame.time", max_delta);
 			}
 			UI_Horizontal {
 				UI_FlexibleSpace ();
