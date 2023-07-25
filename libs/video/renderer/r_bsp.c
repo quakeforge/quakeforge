@@ -77,7 +77,8 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 		vis = Mod_LeafPVS (viewleaf, brush);
 	}
 
-	for (unsigned i = 0; i < brush->visleafs; i++) {
+	for (auto li = set_first (vis); li; li = set_next (li)) {
+		unsigned i = li->element;
 		if (set_is_member (vis, i)) {
 			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
