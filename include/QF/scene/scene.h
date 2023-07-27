@@ -52,6 +52,7 @@ enum scene_components {
 	scene_light,
 	scene_efrags,
 	scene_lightstyle,
+	scene_lightleaf,
 	scene_lightid,
 
 	//FIXME these should probably be private to the sw renderer (and in a

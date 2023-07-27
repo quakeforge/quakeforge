@@ -100,17 +100,22 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
 
 	set_t       _pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
 	set_t      *pvs = &_pvs;
+	uint32_t    leafnum = ~0u;
 	if (light->position[3]) {
 		// positional light
 		mleaf_t    *leaf = Mod_PointInLeaf (light->position, &model->brush);
 		Mod_LeafPVS_set (leaf, &model->brush, 0, pvs);
+		leafnum = leaf - model->brush.leafs;
 	} else if (DotProduct (light->direction, light->direction)) {
 		// directional light (sun)
 		pvs = ldata->sun_pvs;
+		leafnum = 0;
 	} else {
 		// ambient light
-		Mod_LeafPVS_set (model->brush.leafs, &model->brush, 0, pvs);
+		Mod_LeafPVS_set (model->brush.leafs, &model->brush, 0xff, pvs);
 	}
+	Ent_SetComponent (ent.id, scene_lightleaf, ent.reg, &leafnum);
+
 	efrag_t *efrags = 0;
 	efrag_t **lastlink = &efrags;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
