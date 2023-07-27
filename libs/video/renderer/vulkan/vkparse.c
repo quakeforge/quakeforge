@@ -1096,9 +1096,9 @@ static cvar_t vulkan_frame_count_cvar = {
 	.name = "vulkan_frame_count",
 	.description =
 		"Number of frames to render in the background. More frames can "
-		"increase performance, but at the cost of latency. The default of 3 is"
+		"increase performance, but at the cost of latency. The default of 2 is"
 		" recommended.",
-	.default_value = "3",
+	.default_value = "2",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
 };
