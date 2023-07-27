@@ -364,10 +364,10 @@ typedef struct bspctx_s {
 	VkDescriptorSet skybox_descriptor;
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
+	bsp_pass_t  aux_pass;			///< shadows
 
 	VkSampler    sampler;
 
-	VkDeviceMemory texture_memory;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
@@ -388,6 +388,7 @@ void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
+bsp_pass_t *Vulkan_Bsp_GetAuxPass (struct vulkan_ctx_s *ctx);
 ///@}
 
 #endif//__QF_Vulkan_qf_bsp_h

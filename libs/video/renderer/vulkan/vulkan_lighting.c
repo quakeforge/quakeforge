@@ -54,6 +54,7 @@
 #include "QF/scene/scene.h"
 #include "QF/ui/view.h"
 
+#include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
@@ -107,6 +108,12 @@ get_lightstyle (entity_t ent)
 }
 
 static uint32_t
+get_lightleaf (entity_t ent)
+{
+	return *(uint32_t *) Ent_GetComponent (ent.id, scene_lightleaf, ent.reg);
+}
+
+static uint32_t
 get_lightid (entity_t ent)
 {
 	return *(uint32_t *) Ent_GetComponent (ent.id, scene_lightid, ent.reg);
@@ -116,6 +123,60 @@ static void
 set_lightid (uint32_t ent, ecs_registry_t *reg, uint32_t id)
 {
 	Ent_SetComponent (ent, scene_lightid, reg, &id);
+}
+
+static void
+lighting_setup_aux (const exprval_t **params, exprval_t *result,
+					exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto lctx = ctx->lighting_context;
+
+	if (!lctx->ldata) {
+		return;
+	}
+	auto pass = Vulkan_Bsp_GetAuxPass (ctx);
+	auto brush = pass->brush;
+	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
+	set_empty (&leafs);
+
+	auto queue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_light].a[i];
+		auto ls = get_lightstyle (ent);
+		if (!d_lightstylevalue[ls]) {
+			continue;
+		}
+		auto leafnum = get_lightleaf (ent);
+		if (leafnum != ~0u) {
+			set_add (&leafs, leafnum);
+		}
+	}
+
+	set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
+	auto iter = set_first (&leafs);
+	if (!iter) {
+		return;
+	}
+	if (iter->element == 0) {
+		set_assign (&pvs, lctx->ldata->sun_pvs);
+	}  else {
+		Mod_LeafPVS_set (brush->leafs + iter->element, brush, 0, &pvs);
+	}
+	for (iter = set_next (iter); iter; iter = set_next (iter)) {
+		Mod_LeafPVS_mix (brush->leafs + iter->element, brush, 0, &pvs);
+	}
+
+	visstate_t visstate = {
+		.node_visframes = pass->node_frames,
+		.leaf_visframes = pass->leaf_frames,
+		.face_visframes = pass->face_frames,
+		.visframecount = pass->vis_frame,
+		.brush = pass->brush,
+	};
+	R_MarkLeavesPVS (&visstate, &pvs);
+	pass->vis_frame = visstate.visframecount;
 }
 
 static void
@@ -366,6 +427,10 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static exprtype_t *stepref_param[] = {
+	&cexpr_string,
+};
+
 static exprfunc_t lighting_update_lights_func[] = {
 	{ .func = lighting_update_lights },
 	{}
@@ -390,8 +455,13 @@ static exprfunc_t lighting_draw_lights_func[] = {
 	{ .func = lighting_draw_lights },
 	{}
 };
+static exprfunc_t lighting_setup_aux_func[] = {
+	{ .func = lighting_setup_aux },
+	{}
+};
 static exprfunc_t lighting_draw_shadow_maps_func[] = {
-	{ .func = lighting_draw_shadow_maps },
+	{ .func = lighting_draw_shadow_maps, .num_params = 1,
+		.param_types = stepref_param },
 	{}
 };
 static exprsym_t lighting_task_syms[] = {
@@ -403,6 +473,7 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
 	{ "lighting_draw_flats", &cexpr_function, lighting_draw_flats_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
+	{ "lighting_setup_aux", &cexpr_function, lighting_setup_aux_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
 		lighting_draw_shadow_maps_func },
 	{}
@@ -945,6 +1016,7 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 
 	clear_shadows (ctx);
 
+	lctx->ldata = 0;
 	if (lctx->scene) {
 		auto reg = lctx->scene->reg;
 		auto light_pool = &reg->comp_pools[scene_light];
@@ -952,5 +1024,6 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 			build_shadow_maps (lctx, ctx);
 			create_light_matrices (lctx);
 		}
+		lctx->ldata = scene->lights;
 	}
 }

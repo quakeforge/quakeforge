@@ -1797,9 +1797,7 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, solid, 0); },
-							{ func = bsp_draw_queue;
-							  params = (main, sky, 0); },
+							  params = (aux, solid, 0); },
 						);
 
 						stages = (
@@ -1873,7 +1871,7 @@ renderpasses = {
 	cube_shadow = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x0fu);
+			viewMasks   = (0x3fu);
 		});
 		output = cube_shadow;
 	};
@@ -1933,7 +1931,11 @@ steps = {
 		dependencies = (world);
 		process = {
 			tasks = (
-				{ func = lighting_draw_shadow_maps; },
+				{ func = lighting_setup_aux; },
+				{ func = bsp_visit_world;
+				  params = (aux); },
+				{ func = lighting_draw_shadow_maps;
+				  params = ("\"shadow\""); },
 			);
 		};
 		render = {
