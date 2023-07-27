@@ -46,43 +46,20 @@
 static set_t *solid;
 
 void
-R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
+R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
-	set_t       *vis;
-	int			 c;
-	mleaf_t     *leaf;
-	msurface_t **mark;
+	int visframecount = ++visstate->visframecount;
+	auto brush = visstate->brush;
 	auto node_visframes = visstate->node_visframes;
 	auto leaf_visframes = visstate->leaf_visframes;
 	auto face_visframes = visstate->face_visframes;
-	auto brush = visstate->brush;
-
-	if (visstate->viewleaf == viewleaf && !r_novis)
-		return;
-
-	int visframecount = ++visstate->visframecount;
-	visstate->viewleaf = viewleaf;
-	if (!viewleaf)
-		return;
-
-	if (r_novis) {
-		// so vis will be recalculated when novis gets turned off
-		visstate->viewleaf = 0;
-		if (!solid) {
-			solid = set_new ();
-			set_everything (solid);
-		}
-		vis = solid;
-	} else {
-		vis = Mod_LeafPVS (viewleaf, brush);
-	}
-
-	for (auto li = set_first (vis); li; li = set_next (li)) {
+	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		unsigned i = li->element;
-		if (set_is_member (vis, i)) {
-			leaf = &brush->leafs[i + 1];
+		if (set_is_member (pvs, i)) {
+			auto leaf = &brush->leafs[i + 1];
+			int c;
 			if ((c = leaf->nummarksurfaces)) {
-				mark = brush->marksurfaces + leaf->firstmarksurface;
+				auto mark = brush->marksurfaces + leaf->firstmarksurface;
 				do {
 					face_visframes[*mark - brush->surfaces] = visframecount;
 					mark++;
@@ -98,6 +75,33 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 			}
 		}
 	}
+}
+
+void
+R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
+{
+	set_t       *vis;
+	auto brush = visstate->brush;
+
+	if (visstate->viewleaf == viewleaf && !r_novis)
+		return;
+
+	visstate->viewleaf = viewleaf;
+	if (!viewleaf)
+		return;
+
+	if (r_novis) {
+		// so vis will be recalculated when novis gets turned off
+		visstate->viewleaf = 0;
+		if (!solid) {
+			solid = set_new ();
+			set_everything (solid);
+		}
+		vis = solid;
+	} else {
+		vis = Mod_LeafPVS (viewleaf, brush);
+	}
+	R_MarkLeavesPVS (visstate, vis);
 }
 
 /*

@@ -56,7 +56,7 @@ typedef struct visstate_s {
 	int         *leaf_visframes;
 	int         *face_visframes;
 	int          visframecount;
-	struct mod_brush_s *brush;
+	const struct mod_brush_s *brush;
 } visstate_t;
 
 extern visstate_t r_visstate;//FIXME
@@ -88,6 +88,8 @@ struct animation_s;
 struct transform_s;
 void R_DrawAliasModel (struct entity_s *e);
 
+struct set_s;
+void R_MarkLeavesPVS (visstate_t *state, const struct set_s *pvs);
 void R_MarkLeaves (visstate_t *state, const struct mleaf_s *viewleaf);
 
 void GL_SetPalette (void *data, const byte *palette);

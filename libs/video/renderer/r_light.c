@@ -208,7 +208,7 @@ mark_surfaces (msurface_t *surf, vec4f_t lightorigin, dlight_t *light,
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+R_RecursiveMarkLights (const mod_brush_t *brush, vec4f_t lightorigin,
 					   dlight_t *light, int lightnum, int node_id)
 {
 	unsigned    i;
