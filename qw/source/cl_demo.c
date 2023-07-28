@@ -113,6 +113,16 @@ static cvar_t demo_speed_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_float, .value = &demo_speed },
 };
+int demo_debug;
+static cvar_t demo_debug_cvar = {
+	.name = "demo_debug",
+	.description =
+		"set demo_speed to 0 when the packet count reaches this value (0 to "
+		"disable)",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &demo_debug },
+};
 int demo_quit;
 static cvar_t demo_quit_cvar = {
 	.name = "demo_quit",
@@ -449,6 +459,16 @@ CL_GetMessage (void)
 {
 	if (cls.demoplayback) {
 		int         ret = CL_GetDemoMessage ();
+		if (demo_debug) {
+			static int packet_count = 0;
+			if (ret) {
+				packet_count++;
+				if (packet_count == demo_debug) {
+					demo_speed = 0;
+				}
+			}
+			r_funcs->Draw_String (32, 64, va (0, "%4d", packet_count));
+		}
 
 		if (!ret && demo_timeframes_isactive && cls.td_starttime) {
 			CL_TimeFrames_AddTimestamp ();
@@ -1235,6 +1255,7 @@ CL_Demo_Init (void)
 
 	Cvar_Register (&demo_gzip_cvar, 0, 0);
 	Cvar_Register (&demo_speed_cvar, 0, 0);
+	Cvar_Register (&demo_debug_cvar, 0, 0);
 	Cvar_Register (&demo_quit_cvar, 0, 0);
 	Cvar_Register (&demo_timeframes_cvar, 0, 0);
 	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
