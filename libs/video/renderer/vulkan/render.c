@@ -81,6 +81,34 @@ update_time (qfv_time_t *time, int64_t start, int64_t end)
 }
 
 static void
+renderpass_update_viewport_sissor (qfv_renderpass_t *rp,
+								   const qfv_output_t *output)
+{
+	rp->beginInfo.renderArea.extent = output->extent;
+	for (uint32_t i = 0; i < rp->subpass_count; i++) {
+		auto sp = &rp->subpasses[i];
+		for (uint32_t j = 0; j < sp->pipeline_count; j++) {
+			auto pl = &sp->pipelines[j];
+			pl->viewport = (VkViewport) {
+				.width = output->extent.width,
+				.height = output->extent.height,
+				.minDepth = 0,
+				.maxDepth = 1,
+			};
+			pl->scissor.extent = output->extent;
+		}
+	}
+}
+
+static void
+update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
+{
+	for (uint32_t i = 0; i < render->num_renderpasses; i++) {
+		renderpass_update_viewport_sissor (&render->renderpasses[i], output);
+	}
+}
+
+static void
 run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, qfv_taskctx_t *ctx)
 {
 	for (uint32_t i = 0; i < task_count; i++) {
@@ -226,6 +254,20 @@ run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 		.ctx = ctx,
 	};
 	run_tasks (proc->task_count, proc->tasks, &taskctx);
+}
+
+void
+QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
+				   uint32_t width, uint32_t height)
+{
+	qfv_output_t output = {
+		.extent = {
+			.width = width,
+			.height = height,
+		},
+	};
+	renderpass_update_viewport_sissor (renderpass, &output);
+	run_renderpass (renderpass, ctx);
 }
 
 void
@@ -396,34 +438,6 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_CmdPoolManager_Reset (&frame->cmdpool);
 	auto job = ctx->render_context->job;
 	DARRAY_RESIZE (&job->commands, 0);
-}
-
-static void
-renderpass_update_viewport_sissor (qfv_renderpass_t *rp,
-								   const qfv_output_t *output)
-{
-	rp->beginInfo.renderArea.extent = output->extent;
-	for (uint32_t i = 0; i < rp->subpass_count; i++) {
-		auto sp = &rp->subpasses[i];
-		for (uint32_t j = 0; j < sp->pipeline_count; j++) {
-			auto pl = &sp->pipelines[j];
-			pl->viewport = (VkViewport) {
-				.width = output->extent.width,
-				.height = output->extent.height,
-				.minDepth = 0,
-				.maxDepth = 1,
-			};
-			pl->scissor.extent = output->extent;
-		}
-	}
-}
-
-static void
-update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
-{
-	for (uint32_t i = 0; i < render->num_renderpasses; i++) {
-		renderpass_update_viewport_sissor (&render->renderpasses[i], output);
-	}
 }
 
 static void
