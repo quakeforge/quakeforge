@@ -1920,6 +1920,7 @@ steps = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
+				{ func = bsp_reset_queues; },
 				{ func = bsp_visit_world;
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },

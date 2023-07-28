@@ -179,10 +179,106 @@ lighting_setup_aux (const exprval_t **params, exprval_t *result,
 	pass->vis_frame = visstate.visframecount;
 }
 
+static VkImageView
+create_view (vulkan_ctx_t *ctx, light_renderer_t *renderer)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+
+	VkImageViewCreateInfo cInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = lctx->light_images.a[renderer->image_index],
+		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+		.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+		.subresourceRange = {
+			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+			.levelCount = 1,
+			.baseArrayLayer = renderer->layer,
+			.layerCount = renderer->numLayers,
+		},
+	};
+	VkImageView view;
+	dfunc->vkCreateImageView (device->dev, &cInfo, 0, &view);
+	return view;
+}
+
+static VkFramebuffer
+create_framebuffer (vulkan_ctx_t *ctx, light_renderer_t *renderer,
+					VkImageView view, VkRenderPass renderpass)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	VkFramebuffer framebuffer;
+	dfunc->vkCreateFramebuffer (device->dev,
+		&(VkFramebufferCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.renderPass = renderpass,
+			.attachmentCount = 1,
+			.pAttachments = &view,
+			.width = renderer->size,
+			.height = renderer->size,
+			.layers = 1,
+		}, 0, &framebuffer);
+	return framebuffer;
+}
+
+static void
+clear_frame_buffers_views (vulkan_ctx_t *ctx, lightingframe_t *lframe)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	for (size_t i = 0; i < lframe->framebuffers.size; i++) {
+		auto framebuffer = lframe->framebuffers.a[i];
+		dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
+	}
+	lframe->framebuffers.size = 0;
+	for (size_t i = 0; i < lframe->views.size; i++) {
+		auto view = lframe->views.a[i];
+		dfunc->vkDestroyImageView (device->dev, view, 0);
+	}
+	lframe->views.size = 0;
+}
+
 static void
 lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 						   exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto lctx = ctx->lighting_context;
+	auto shadow = QFV_GetStep (params[0], ctx->render_context->job);
+	auto render = shadow->render;
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+
+	if (!lctx->ldata) {
+		return;
+	}
+	//auto pass = Vulkan_Bsp_GetAuxPass (ctx);
+
+	clear_frame_buffers_views (ctx, lframe);
+
+	auto queue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_light].a[i];
+		auto ls = get_lightstyle (ent);
+		if (!d_lightstylevalue[ls]) {
+			continue;
+		}
+		uint32_t    id = get_lightid (ent);
+		auto r = &lctx->light_renderers.a[id];
+		//auto l = get_light (ent);
+		auto renderpass = &render->renderpasses[r->renderpass_index];
+		auto view = create_view (ctx, r);
+		auto bi = &renderpass->beginInfo;
+		auto fbuffer = create_framebuffer (ctx, r, view, bi->renderPass);
+		bi->framebuffer = fbuffer;
+		QFV_RunRenderPass (ctx, renderpass, r->size, r->size);
+		DARRAY_APPEND (&lframe->views, view);
+		DARRAY_APPEND (&lframe->framebuffers, fbuffer);
+		bi->framebuffer = 0;
+	}
 }
 
 static void
@@ -692,6 +788,9 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		lframe->shadowWrite.dstBinding = 0;
 		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
+
+		lframe->views = (qfv_imageviewset_t) DARRAY_STATIC_INIT (16);
+		lframe->framebuffers = (qfv_framebufferset_t) DARRAY_STATIC_INIT (16);
 	}
 
 	auto packet = QFV_PacketAcquire (ctx->staging);
@@ -734,6 +833,13 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 
 	QFV_DestroyResource (device, lctx->light_resources);
 	free (lctx->light_resources);
+
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		auto lframe = &lctx->frames.a[i];
+		clear_frame_buffers_views (ctx, lframe);
+		DARRAY_CLEAR (&lframe->views);
+		DARRAY_CLEAR (&lframe->framebuffers);
+	}
 
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_images);
@@ -956,7 +1062,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		for (int i = 0; i < numMaps; i++) {
 			int         cube = maps[i].layers < 6 ? 0 : maps[i].cube;
 			shad->objects[i] = (qfv_resobj_t) {
-				.name = "map",
+				.name = va (ctx->va_ctx, "map:%d", maps[i].size),
 				.type = qfv_res_image,
 				.image = {
 					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,

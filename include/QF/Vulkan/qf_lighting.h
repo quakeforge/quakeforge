@@ -61,6 +61,9 @@ typedef struct qfv_light_buffer_s {
 #define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
+typedef struct qfv_framebufferset_s
+	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
+
 typedef struct lightingframe_s {
 	VkBuffer    data_buffer;
 	VkBuffer    id_buffer;
@@ -79,6 +82,9 @@ typedef struct lightingframe_s {
 			VkWriteDescriptorSet shadowWrite;
 		};
 	};
+
+	qfv_imageviewset_t views;
+	qfv_framebufferset_t framebuffers;
 } lightingframe_t;
 
 typedef struct lightingframeset_s

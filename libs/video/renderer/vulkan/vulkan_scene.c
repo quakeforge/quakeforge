@@ -84,6 +84,14 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 			render_id = sframe->entity_pool.size++;
 			entdata = sframe->entity_pool.a + render_id;
 		}
+	} else {
+		if (!Entity_Valid (entity)) {
+			return 0;	//FIXME see below
+		} else {
+			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+													 entity.reg);
+			return renderer->render_id;
+		}
 	}
 	if (Entity_Valid (entity)) {
 		renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,

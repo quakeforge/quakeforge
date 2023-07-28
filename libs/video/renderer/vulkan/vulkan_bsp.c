@@ -838,6 +838,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 static void
 queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
+	uint32_t base = bframe->index_count;
 	pass->indices = bframe->index_data + bframe->index_count;
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		auto queue = &pass->face_queue[i];
@@ -882,7 +883,7 @@ queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 					.tex_id = i,
 					.inst_id = is.inst_id,
 					.instance_count = instance->entities.size,
-					.first_index = pass->index_count,
+					.first_index = pass->index_count + base,
 					.first_instance = instance->first_instance,
 				}));
 				dq_size = pass->draw_queues[dq].size;
@@ -1122,6 +1123,20 @@ create_notexture (vulkan_ctx_t *ctx)
 }
 
 static void
+bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+	auto bframe = &bctx->frames.a[ctx->curFrame];
+
+	bframe->index_count = 0;
+	bframe->entid_count = 0;
+
+	Vulkan_Scene_Flush (ctx);
+}
+
+static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -1137,15 +1152,12 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	// params are in reverse order
-	auto pass = *(int *) params[2]->value;
+	auto pass_ind = *(int *) params[2]->value;
 	auto queue = *(QFV_BspQueue *) params[1]->value;
 	auto stage = *(int *) params[0]->value;
 
-	if (pass) {
-		Sys_Error ("bsp passes not implemented");
-	}
-	auto mpass = &bctx->main_pass;
-	if (!mpass->draw_queues[queue].size) {
+	auto pass = pass_ind ? &bctx->aux_pass : &bctx->main_pass;
+	if (!pass->draw_queues[queue].size) {
 		return;
 	}
 
@@ -1177,8 +1189,8 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
 	}
 
-	mpass->textures = stage ? &bctx->registered_textures : 0;
-	draw_queue (mpass, queue, layout, device, cmd);
+	pass->textures = stage ? &bctx->registered_textures : 0;
+	draw_queue (pass, queue, layout, device, cmd);
 }
 
 static void
@@ -1188,6 +1200,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
 	auto pass_ind = *(int *) params[0]->value;
+
 	auto pass = pass_ind ? &bctx->aux_pass : &bctx->main_pass;
 
 	if (!pass_ind) {
@@ -1198,7 +1211,6 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	EntQueue_Clear (pass->entqueue);
-	Vulkan_Scene_Flush (ctx);
 
 	clear_queues (bctx, pass);	// do this first for water and skys
 
@@ -1209,11 +1221,9 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bframe = &bctx->frames.a[ctx->curFrame];
 
 	pass->entid_data = bframe->entid_data;
-	pass->entid_count = 0;
+	pass->entid_count = bframe->entid_count;
 
 	bctx->anim_index = r_data->realtime * 5;
-
-	bframe->index_count = 0;
 
 	entity_t    worldent = nullentity;
 
@@ -1236,9 +1246,10 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			}
 		}
 	}
-	bframe->entid_count = bctx->main_pass.entid_count;
 
-	queue_faces (&bctx->main_pass, bctx, bframe);
+	queue_faces (pass, bctx, bframe);
+
+	bframe->entid_count = pass->entid_count;
 
 	bsp_flush (ctx);
 }
@@ -1298,6 +1309,10 @@ static exprtype_t *bsp_draw_queue_params[] = {
 	&bsp_stage_type,
 };
 
+static exprfunc_t bsp_reset_queues_func[] = {
+	{ .func = bsp_reset_queues },
+	{}
+};
 static exprfunc_t bsp_visit_world_func[] = {
 	{ 0, 1, bsp_visit_world_params, bsp_visit_world },
 	{}
@@ -1307,6 +1322,7 @@ static exprfunc_t bsp_draw_queue_func[] = {
 	{}
 };
 static exprsym_t bsp_task_syms[] = {
+	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
 	{}
