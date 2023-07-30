@@ -1,5 +1,14 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
+
+layout (set = 0, binding = 0) buffer ShadowView {
+	mat4x4      shadowView[];
+};
+
+layout (push_constant) uniform PushConstants {
+	uint MatrixBase;
+};
 
 #include "entity.h"
 
@@ -15,7 +24,6 @@ layout (location = 0) out int InstanceIndex;
 void
 main (void)
 {
-	vec3        vert = vertex * entities[entid].transform;
-	gl_Position = vec4 (vert, 1);;
-	InstanceIndex = gl_InstanceIndex;
+	vec4        pos = vec4 (vertex * entities[entid].transform, 1);
+	gl_Position = shadowView[MatrixBase + gl_ViewIndex] * pos;
 }

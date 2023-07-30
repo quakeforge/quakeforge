@@ -232,6 +232,11 @@ properties = {
 
 	brush = {
 		shader = {
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/bsp_shadow.vert;
+			};
 			depth_vertex = {
 				stage = vertex;
 				name = main;
@@ -324,9 +329,22 @@ properties = {
 				};
 			};
 		};
+		shadow_layout = {
+			descriptorSets = (shadowmat_set, entity_set);
+			pushConstants = {
+				vertex = {
+					MatrixBase = uint;
+				};
+			};
+		};
 	};
 	alias = {
 		shader = {
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/alias_shadow.vert;
+			};
 			depth_vertex = {
 				stage = vertex;
 				name = main;
@@ -369,6 +387,12 @@ properties = {
 				fragment = { colors = uint; base_color = vec4; fog = vec4; };
 			};
 		};
+		shadow_layout = {
+			descriptorSets = (shadowmat_set);
+			pushConstants = {
+				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
+			};
+		};
 	};
 	iqm = {
 		shader = {
@@ -376,7 +400,18 @@ properties = {
 				mapEntries = (
 					// IQMDepthOnly
 					{ size = 4; offset = 0; constantID = 0; },
+					{ size = 4; offset = 4; constantID = 1; },
 				);
+			};
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/iqm.vert;
+				specializationInfo = {
+					@inherit = $iqm.shader.specialization;
+					// IQMDepthOnly, IQMShadow
+					data = "array(1, 1)";
+				};
 			};
 			depth_vertex = {
 				stage = vertex;
@@ -384,8 +419,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(1)";
+					// IQMDepthOnly, IQMShadow
+					data = "array(1, 0)";
 				};
 			};
 			gbuf_vertex = {
@@ -394,8 +429,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(0)";
+					// IQMDepthOnly, IQMShadow
+					data = "array(0, 0)";
 				};
 			};
 			gbuf_fragment = {
@@ -426,13 +461,10 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                            skin
-			descriptorSets = (matrix_set, texture_set, bone_set);
+			//                                           skin
+			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
 			pushConstants = {
-				vertex   = {
-					Model = mat4;
-					blend = float;
-				};
+				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
 				fragment = {
 					colorA = uint;
 					colorB = uint;
@@ -1811,7 +1843,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$brush.shader.depth_vertex,
+							$brush.shader.shadow_vertex,
 						);
 						vertexInput = {
 							bindings = (
@@ -1824,7 +1856,7 @@ renderpasses = {
 							);
 						};
 						inputAssembly = $brush.inputAssembly;
-						layout = $brush.layout;
+						layout = $brush.shadow_layout;
 					};
 					alias:shadow = {
 						color = $color.alias;
@@ -1834,7 +1866,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$alias.shader.depth_vertex,
+							$alias.shader.shadow_vertex,
 						);
 						vertexInput = {
 							// depth/shadow pass doesn't use UVs
@@ -1850,7 +1882,7 @@ renderpasses = {
 							);
 						};
 						inputAssembly = $alias.inputAssembly;
-						layout = $alias.layout;
+						layout = $alias.shadow_layout;
 					};
 					iqm:shadow = {
 						color = $color.iqm;
@@ -1860,7 +1892,7 @@ renderpasses = {
 						);
 
 						stages = (
-							$iqm.shader.depth_vertex,
+							$iqm.shader.shadow_vertex,
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;

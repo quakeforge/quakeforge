@@ -50,6 +50,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_scene.h"
@@ -80,7 +81,7 @@ typedef struct bsp_push_constants_s {
 	float       time;
 	float       alpha;
 	float       turb_scale;
-} bsp_push_constants_t;
+} bsp_frag_constants_t;
 
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
@@ -798,25 +799,42 @@ bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 }
 
 static void
-push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
+push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 				qfv_device_t *device, VkCommandBuffer cmd)
 {
+	//XXX glsl_Fog_GetColor (fog);
+	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
+	bsp_frag_constants_t constants = {
+		.time = vr_data.realtime,
+		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
+		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
+	};
+
 	qfv_push_constants_t push_constants[] = {
-		//{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, fog),
-			sizeof (constants->fog), &constants->fog },
+			field_offset (bsp_frag_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, time),
-			sizeof (constants->time), &constants->time },
+			field_offset (bsp_frag_constants_t, time),
+			sizeof (constants.time), &constants.time },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, alpha),
-			sizeof (constants->alpha), &constants->alpha },
+			field_offset (bsp_frag_constants_t, alpha),
+			sizeof (constants.alpha), &constants.alpha },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, turb_scale),
-			sizeof (constants->turb_scale), &constants->turb_scale },
+			field_offset (bsp_frag_constants_t, turb_scale),
+			sizeof (constants.turb_scale), &constants.turb_scale },
 	};
 	QFV_PushConstants (device, cmd, layout, 4, push_constants);
+}
+
+static void
+push_shadowconst (uint32_t matrix_base, VkPipelineLayout layout,
+				  qfv_device_t *device, VkCommandBuffer cmd)
+{
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (uint32_t), &matrix_base },
+	};
+	QFV_PushConstants (device, cmd, layout, 1, push_constants);
 }
 
 static void
@@ -1146,6 +1164,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
+	uint16_t *matrix_base = taskctx->data;
 
 	if (!bctx->vertex_buffer) {
 		return;
@@ -1168,22 +1187,28 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
-	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Scene_Descriptors (ctx),
-		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 3, sets, 0, 0);
+	if (matrix_base) {
+		VkDescriptorSet sets[] = {
+			Vulkan_Lighting_Descriptors (ctx, ctx->curFrame),
+			Vulkan_Scene_Descriptors (ctx),
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, sets, 0, 0);
+	} else {
+		VkDescriptorSet sets[] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			Vulkan_Scene_Descriptors (ctx),
+			Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 3, sets, 0, 0);
+	}
 
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
-	bsp_push_constants_t frag_constants = {
-		.time = vr_data.realtime,
-		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
-		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
-	};
-	push_fragconst (&frag_constants, layout, device, cmd);
+	if (matrix_base) {
+		push_shadowconst (*matrix_base, layout, device, cmd);
+	} else {
+		push_fragconst (queue, layout, device, cmd);
+	}
 	if (queue == QFV_bspSky) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);

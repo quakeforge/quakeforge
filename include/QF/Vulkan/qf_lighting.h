@@ -123,5 +123,7 @@ void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+VkDescriptorSet Vulkan_Lighting_Descriptors (struct vulkan_ctx_s *ctx,
+											 int frame) __attribute__((pure));
 
 #endif//__QF_Vulkan_qf_lighting_h

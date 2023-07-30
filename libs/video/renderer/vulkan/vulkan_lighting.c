@@ -263,12 +263,11 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_light].a[i];
 		auto ls = get_lightstyle (ent);
-		if (!d_lightstylevalue[ls]) {
-			continue;
-		}
 		uint32_t    id = get_lightid (ent);
 		auto r = &lctx->light_renderers.a[id];
-		//auto l = get_light (ent);
+		if (!r->numLayers || !d_lightstylevalue[ls]) {
+			continue;
+		}
 		auto renderpass = &render->renderpasses[r->renderpass_index];
 		auto view = create_view (ctx, r);
 		auto bi = &renderpass->beginInfo;
@@ -1187,4 +1186,11 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 		}
 		lctx->ldata = scene->lights;
 	}
+}
+
+VkDescriptorSet
+Vulkan_Lighting_Descriptors (vulkan_ctx_t *ctx, int frame)
+{
+	auto lctx = ctx->lighting_context;
+	return lctx->frames.a[frame].shadowmat_set;
 }
