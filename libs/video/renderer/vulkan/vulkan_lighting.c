@@ -361,7 +361,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 							ctx);
 	}
 
-	QFV_PacketCopyBuffer (packet, lframe->data_buffer, 0,
+	QFV_PacketCopyBuffer (packet, lframe->light_buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
 	QFV_PacketSubmit (packet);
 	uint32_t id_count = lframe->ico_count + lframe->cone_count
@@ -380,31 +380,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	}
 }
 
-static VkDescriptorBufferInfo base_buffer_info = {
-	0, 0, VK_WHOLE_SIZE
-};
-static VkDescriptorImageInfo base_image_info = {
-	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-};
-static VkWriteDescriptorSet base_buffer_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-	0, 0, 0
-};
-static VkWriteDescriptorSet base_attachment_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-	0, 0, 0
-};
-static VkWriteDescriptorSet base_image_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	0, 0, 0
-};
-
 static void
 lighting_update_descriptors (const exprval_t **params, exprval_t *result,
 							 exprctx_t *ectx)
@@ -418,15 +393,54 @@ lighting_update_descriptors (const exprval_t **params, exprval_t *result,
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 
 	auto fb = &taskctx->renderpass->framebuffer;
-	lframe->bufferInfo[0].buffer = lframe->data_buffer;
-	lframe->attachInfo[0].imageView = fb->views[QFV_attachDepth];
-	lframe->attachInfo[1].imageView = fb->views[QFV_attachColor];
-	lframe->attachInfo[2].imageView = fb->views[QFV_attachEmission];
-	lframe->attachInfo[3].imageView = fb->views[QFV_attachNormal];
-	lframe->attachInfo[4].imageView = fb->views[QFV_attachPosition];
+	VkDescriptorImageInfo attachInfo[] = {
+		{	.imageView = fb->views[QFV_attachDepth],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{	.imageView = fb->views[QFV_attachColor],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{	.imageView = fb->views[QFV_attachEmission],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{	.imageView = fb->views[QFV_attachNormal],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{	.imageView = fb->views[QFV_attachPosition],
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+	};
+	VkWriteDescriptorSet attachWrite[] = {
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lframe->attach_set,
+			.dstBinding = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+			.pImageInfo = &attachInfo[0], },
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lframe->attach_set,
+			.dstBinding = 1,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+			.pImageInfo = &attachInfo[1], },
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lframe->attach_set,
+			.dstBinding = 2,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+			.pImageInfo = &attachInfo[2], },
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lframe->attach_set,
+			.dstBinding = 3,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+			.pImageInfo = &attachInfo[3], },
+		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = lframe->attach_set,
+			.dstBinding = 4,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+			.pImageInfo = &attachInfo[4], },
+	};
+	//lframe->bufferInfo[0].buffer = lframe->light_buffer;
 	dfunc->vkUpdateDescriptorSets (device->dev,
-								   LIGHTING_DESCRIPTORS,
-								   lframe->descriptors, 0, 0);
+								   LIGHTING_ATTACH_INFOS, attachWrite,
+								   0, 0);
 }
 
 static void
@@ -445,9 +459,8 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		lframe->bufferWrite[0].dstSet,
-		lframe->attachWrite[0].dstSet,
-		lframe->shadowWrite.dstSet,
+		lframe->lights_set,
+		lframe->attach_set,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 3, sets, 0, 0);
@@ -653,6 +666,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	qfvPushDebug (ctx, "lighting init");
 
 	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
 
 	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
@@ -684,19 +698,25 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 									+ sizeof (qfv_resobj_t)
 									// splat indices
 									+ sizeof (qfv_resobj_t)
+									// light ids
+									+ sizeof (qfv_resobj_t[frames])
 									// light data
 									+ sizeof (qfv_resobj_t[frames])
-									// light indices
+									// light matrix ids
+									+ sizeof (qfv_resobj_t[frames])
+									// light matrices
 									+ sizeof (qfv_resobj_t[frames]));
 	auto splat_verts = (qfv_resobj_t *) &lctx->light_resources[1];
 	auto splat_inds = &splat_verts[1];
-	auto light_data = &splat_inds[1];
-	auto light_ids = &light_data[frames];
+	auto light_ids = &splat_inds[1];
+	auto light_data = &light_ids[frames];
+	auto light_matids = &light_data[frames];
+	auto light_mats = &light_matids[frames];
 	lctx->light_resources[0] = (qfv_resource_t) {
 		.name = "lights",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2 + 2 * frames,
+		.num_objects = 2 + 4 * frames,
 		.objects = splat_verts,
 	};
 	splat_verts[0] = (qfv_resobj_t) {
@@ -719,11 +739,30 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		light_data[i] = (qfv_resobj_t) {
-			.name = "data",
+			.name = "lights",
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_light_buffer_t),
 				.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
+		light_matids[i] = (qfv_resobj_t) {
+			.name = "matrixids",
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (uint32_t[MaxLights]),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
+		light_mats[i] = (qfv_resobj_t) {
+			.name = "matrices",
+			.type = qfv_res_buffer,
+			.buffer = {
+				// never need more than 6 matrices per light
+				.size = sizeof (mat4f_t[MaxLights * 6]),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			},
 		};
@@ -745,52 +784,52 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 
 	auto attach_mgr = QFV_Render_DSManager (ctx, "lighting_attach");
 	auto lights_mgr = QFV_Render_DSManager (ctx, "lighting_lights");
-	auto shadow_mgr = QFV_Render_DSManager (ctx, "lighting_shadow");
+	auto shadowmat_mgr = QFV_Render_DSManager (ctx, "shadowmat_set");
 	for (size_t i = 0; i < frames; i++) {
 		auto lframe = &lctx->frames.a[i];
 		*lframe = (lightingframe_t) {
-			.data_buffer = light_data[i].buffer.buffer,
+			.shadowmat_set = QFV_DSManager_AllocSet (shadowmat_mgr),
+			.lights_set = QFV_DSManager_AllocSet (lights_mgr),
+			.attach_set = QFV_DSManager_AllocSet (attach_mgr),
+			.shadowmat_buffer = light_mats[i].buffer.buffer,
+			.light_buffer = light_data[i].buffer.buffer,
 			.id_buffer = light_ids[i].buffer.buffer,
 		};
 
-		auto attach = QFV_DSManager_AllocSet (attach_mgr);
-		auto lights = QFV_DSManager_AllocSet (lights_mgr);
-		auto shadow = QFV_DSManager_AllocSet (shadow_mgr);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, attach,
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+							 lframe->attach_set,
 							 va (ctx->va_ctx, "lighting:attach_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, lights,
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+							 lframe->lights_set,
 							 va (ctx->va_ctx, "lighting:lights_set:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, shadow,
-							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
-
-		for (int j = 0; j < LIGHTING_BUFFER_INFOS; j++) {
-			lframe->bufferInfo[j] = base_buffer_info;
-			lframe->bufferWrite[j] = base_buffer_write;
-			lframe->bufferWrite[j].dstSet = lights;
-			lframe->bufferWrite[j].dstBinding = j;
-			lframe->bufferWrite[j].pBufferInfo = &lframe->bufferInfo[j];
-		}
-		for (int j = 0; j < LIGHTING_ATTACH_INFOS; j++) {
-			lframe->attachInfo[j] = base_image_info;
-			lframe->attachInfo[j].sampler = 0;
-			lframe->attachWrite[j] = base_attachment_write;
-			lframe->attachWrite[j].dstSet = attach;
-			lframe->attachWrite[j].dstBinding = j;
-			lframe->attachWrite[j].pImageInfo = &lframe->attachInfo[j];
-		}
-		for (int j = 0; j < LIGHTING_SHADOW_INFOS; j++) {
-			lframe->shadowInfo[j] = base_image_info;
-			lframe->shadowInfo[j].sampler = lctx->sampler;
-			lframe->shadowInfo[j].imageView = ctx->default_black->view;
-		}
-		lframe->shadowWrite = base_image_write;
-		lframe->shadowWrite.dstSet = shadow;
-		lframe->shadowWrite.dstBinding = 0;
-		lframe->shadowWrite.descriptorCount = LIGHTING_SHADOW_INFOS;
-		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+							 lframe->shadowmat_set,
+							 va (ctx->va_ctx, "lighting:shadowmat_set:%zd", i));
 
 		lframe->views = (qfv_imageviewset_t) DARRAY_STATIC_INIT (16);
 		lframe->framebuffers = (qfv_framebufferset_t) DARRAY_STATIC_INIT (16);
+
+		VkDescriptorBufferInfo bufferInfo[] = {
+			{	.buffer = lframe->light_buffer,
+				.offset = 0, .range = VK_WHOLE_SIZE, },
+			{	.buffer = lframe->shadowmat_buffer,
+				.offset = 0, .range = VK_WHOLE_SIZE, },
+		};
+		VkWriteDescriptorSet bufferWrite[] = {
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = lframe->lights_set,
+				.dstBinding = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				.pBufferInfo = &bufferInfo[0], },
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = lframe->shadowmat_set,
+				.dstBinding = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[1], },
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 2, bufferWrite, 0, 0);
 	}
 
 	auto packet = QFV_PacketAcquire (ctx->staging);
@@ -909,6 +948,21 @@ create_light_matrices (lightingctx_t *lctx)
 		mmulf (view, z_up, view);
 		mmulf (lctx->light_mats.a[id], proj, view);
 	}
+}
+
+static void
+upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
+{
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
+	void *mat_data = QFV_PacketExtend (packet, mat_size);
+	memcpy (mat_data, lctx->light_mats.a, mat_size);
+	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		auto lframe = &lctx->frames.a[i];
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, bb);
+	}
+	QFV_PacketSubmit (packet);
 }
 
 static int
@@ -1129,6 +1183,7 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 		if (light_pool->count) {
 			build_shadow_maps (lctx, ctx);
 			create_light_matrices (lctx);
+			upload_light_matrices (lctx, ctx);
 		}
 		lctx->ldata = scene->lights;
 	}

@@ -759,6 +759,16 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	shadowmat_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+		);
+	};
 	quad_data_set = {
 		bindings = (
 			{

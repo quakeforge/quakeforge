@@ -65,23 +65,16 @@ typedef struct qfv_framebufferset_s
 	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
 
 typedef struct lightingframe_s {
-	VkBuffer    data_buffer;
+	VkDescriptorSet shadowmat_set;
+	VkDescriptorSet lights_set;
+	VkDescriptorSet attach_set;
+
+	VkBuffer    shadowmat_buffer;
+	VkBuffer    light_buffer;
 	VkBuffer    id_buffer;
 	uint32_t    ico_count;
 	uint32_t    cone_count;
 	uint32_t    flat_count;
-
-	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
-	VkDescriptorImageInfo attachInfo[LIGHTING_ATTACH_INFOS];
-	VkDescriptorImageInfo shadowInfo[LIGHTING_SHADOW_INFOS];
-	union {
-		VkWriteDescriptorSet descriptors[LIGHTING_DESCRIPTORS];
-		struct {
-			VkWriteDescriptorSet bufferWrite[LIGHTING_BUFFER_INFOS];
-			VkWriteDescriptorSet attachWrite[LIGHTING_ATTACH_INFOS];
-			VkWriteDescriptorSet shadowWrite;
-		};
-	};
 
 	qfv_imageviewset_t views;
 	qfv_framebufferset_t framebuffers;
