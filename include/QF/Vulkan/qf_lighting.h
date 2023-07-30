@@ -97,6 +97,7 @@ typedef struct light_renderer_s {
 	uint16_t    layer;
 	uint8_t     numLayers;
 	uint8_t     mode;
+	uint16_t    matrix_base;
 } light_renderer_t;
 
 typedef struct light_renderer_set_s

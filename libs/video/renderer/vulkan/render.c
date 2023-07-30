@@ -150,7 +150,7 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 }
 
 static void
-run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
+run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -175,6 +175,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx)
 			.ctx = ctx,
 			.renderpass = rp,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
+			.data = data,
 		};
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
@@ -258,7 +259,7 @@ run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 
 void
 QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
-				   uint32_t width, uint32_t height)
+				   uint32_t width, uint32_t height, void *data)
 {
 	qfv_output_t output = {
 		.extent = {
@@ -267,7 +268,7 @@ QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 		},
 	};
 	renderpass_update_viewport_sissor (renderpass, &output);
-	run_renderpass (renderpass, ctx);
+	run_renderpass (renderpass, ctx, data);
 }
 
 void
@@ -285,7 +286,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 			// process for the step (the idea is the proces uses the compute
 			// and renderpass objects for its own purposes).
 			if (step->render) {
-				run_renderpass (step->render->active, ctx);
+				run_renderpass (step->render->active, ctx, 0);
 			}
 			if (step->compute) {
 				run_compute (step->compute, ctx, step);

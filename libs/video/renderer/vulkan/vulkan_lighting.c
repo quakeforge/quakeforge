@@ -274,7 +274,7 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 		auto bi = &renderpass->beginInfo;
 		auto fbuffer = create_framebuffer (ctx, r, view, bi->renderPass);
 		bi->framebuffer = fbuffer;
-		QFV_RunRenderPass (ctx, renderpass, r->size, r->size);
+		QFV_RunRenderPass (ctx, renderpass, r->size, r->size, &r->matrix_base);
 		DARRAY_APPEND (&lframe->views, view);
 		DARRAY_APPEND (&lframe->framebuffers, fbuffer);
 		bi->framebuffer = 0;
