@@ -886,17 +886,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	free (lctx);
 }
 
-static vec4f_t  ref_direction = { 0, 0, 1, 0 };
-
-// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
-// z-forward, x-right, y-down.
-//FIXME copy of z_up in vulkan_matrices.c
-static mat4f_t z_up = {
-	{ 0, 0, 1, 0},
-	{-1, 0, 0, 0},
-	{ 0,-1, 0, 0},
-	{ 0, 0, 0, 1},
-};
+static vec4f_t  ref_direction = { 1, 0, 0, 0 };
 
 static void
 create_light_matrices (lightingctx_t *lctx)
@@ -904,18 +894,28 @@ create_light_matrices (lightingctx_t *lctx)
 	auto reg = lctx->scene->reg;
 	auto light_pool = &reg->comp_pools[scene_light];
 	auto light_data = (light_t *) light_pool->data;
-	DARRAY_RESIZE (&lctx->light_mats, light_pool->count);
-	for (size_t i = 0; i < light_pool->count; i++) {
+	uint16_t mat_count = 0;
+	for (uint32_t i = 0; i < light_pool->count; i++) {
+		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
+		uint32_t    id = get_lightid (ent);
+		auto        r = &lctx->light_renderers.a[id];
+		r->matrix_base = mat_count;
+		mat_count += r->numLayers;
+	}
+	DARRAY_RESIZE (&lctx->light_mats, mat_count);
+	for (uint32_t i = 0; i < light_pool->count; i++) {
 		light_t    *light = &light_data[i];
 		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
 		uint32_t    id = get_lightid (ent);
-		int         mode = lctx->light_renderers.a[id].mode;
+		auto        r = &lctx->light_renderers.a[id];
+		auto        lm = &lctx->light_mats.a[r->matrix_base];
 		mat4f_t     view;
 		mat4f_t     proj;
 
-		switch (mode) {
+		switch (r->mode) {
 			default:
 			case ST_NONE:
+				continue;
 			case ST_CUBE:
 				mat4fidentity (view);
 				break;
@@ -927,25 +927,38 @@ create_light_matrices (lightingctx_t *lctx)
 				mat4fquat (view, qrotf (dir, ref_direction));
 				break;
 		}
-		VectorNegate (light->position, view[3]);
+		vec4f_t pos = -light->position;
+		pos[3] = 1;
+		view[3] = mvmulf (view, pos);
 
-		switch (mode) {
+		switch (r->mode) {
 			case ST_NONE:
-				mat4fidentity (proj);
-				break;
+				continue;
 			case ST_CUBE:
 				QFV_PerspectiveTan (proj, 1, 1);
+				for (int j = 0; j < 6; j++) {
+					mat4f_t side_view;
+					mat4f_t rotinv;
+					mat4ftranspose (rotinv, qfv_box_rotations[j]);
+					mmulf (side_view, rotinv, view);
+					mmulf (side_view, qfv_z_up, side_view);
+					mmulf (lm[j], proj, side_view);
+				}
 				break;
 			case ST_CASCADE:
 				// dependent on view fustrum and cascade level
 				mat4fidentity (proj);
+				mmulf (view, qfv_z_up, view);
+				for (int j = 0; j < 4; j++) {
+					mmulf (lm[j], proj, view);
+				}
 				break;
 			case ST_PLANE:
 				QFV_PerspectiveCos (proj, -light->direction[3]);
+				mmulf (view, qfv_z_up, view);
+				mmulf (lm[0], proj, view);
 				break;
 		}
-		mmulf (view, z_up, view);
-		mmulf (lctx->light_mats.a[id], proj, view);
 	}
 }
 
