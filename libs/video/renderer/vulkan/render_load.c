@@ -189,7 +189,7 @@ count_step_stuff (qfv_stepinfo_t *step, objcount_t *counts)
 	}
 	if (!step->render && !step->compute && !step->process) {
 		Sys_Error ("%s: invalid step: must have at least one of "
-				   "proces/render/compute", step->name);
+				   "process/render/compute", step->name);
 	}
 	if (step->render) {
 		__auto_type rinfo = step->render;

@@ -283,7 +283,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		__auto_type step = &job->steps[i];
 		if (!step->process) {
 			// run render and compute steps automatically only if there's no
-			// process for the step (the idea is the proces uses the compute
+			// process for the step (the idea is the process uses the compute
 			// and renderpass objects for its own purposes).
 			if (step->render) {
 				run_renderpass (step->render->active, ctx, 0);
