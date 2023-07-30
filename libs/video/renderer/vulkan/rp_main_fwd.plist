@@ -121,14 +121,14 @@ properties = {
 	depth_test_and_write = {
 		depthTestEnable = true;
 		depthWriteEnable = true;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
 	depth_test_only = {
 		depthTestEnable = true;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
@@ -142,7 +142,7 @@ properties = {
 	depth_disable = {
 		depthTestEnable = false;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
@@ -412,8 +412,8 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                            skin
-			descriptorSets = (matrix_set, texture_set, bone_set);
+			//                                           skin
+			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = {
 					Model = mat4;
@@ -733,6 +733,16 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	shadowmat_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+		);
+	};
 	quad_data_set = {
 		bindings = (
 			{
@@ -800,6 +810,16 @@ descriptorSetLayouts = {
 				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = vertex;
+			},
+		);
+	};
+	planes_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
 			},
 		);
 	};
@@ -1017,7 +1037,7 @@ renderpasses = {
 					format = $images.depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = depth;
 				};
 				color = {
@@ -1230,7 +1250,7 @@ renderpasses = {
 					format = $images.cube_depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = cube_depth;
 				};
 				color = {
@@ -1386,14 +1406,11 @@ steps = {
 			};
 		};
 	};
-	shadow = {
-		dependencies = (wait_on_fence);
-		//currently empty
-	};
 	world = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
+				{ func = bsp_reset_queues; },
 				{ func = bsp_visit_world;
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },
@@ -1414,7 +1431,7 @@ steps = {
 		};
 	};
 	main = {
-		dependencies = (setup_main, particles, shadow, world, translucent);
+		dependencies = (setup_main, particles, world, translucent);
 		render = {
 			renderpasses = {
 				deferred = $renderpasses.deferred;

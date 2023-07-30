@@ -1,9 +1,9 @@
 #version 450
 
-layout (set = 1, binding = 0) uniform sampler2D Skin;
+layout (set = 2, binding = 0) uniform sampler2D Skin;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 68)
+	layout (offset = 72)
 	uint        colorA;
 	uint        colorB;
 	vec4        base_color;
