@@ -9,4 +9,7 @@ void QFV_Orthographic (mat4f_t proj, float xmin, float xmax,
 void QFV_PerspectiveTan (mat4f_t proj, float fov_x, float fov_y);
 void QFV_PerspectiveCos (mat4f_t proj, float fov);
 
+extern const mat4f_t qfv_z_up;
+extern const mat4f_t qfv_box_rotations[6];
+
 #endif//__QF_Vulkan_projection_h

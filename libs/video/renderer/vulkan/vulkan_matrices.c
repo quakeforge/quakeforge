@@ -58,56 +58,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-//FIXME? The box rotations (in particular top/bottom) for vulkan are not
-//compatible with the other renderers, so need a local version
-static mat4f_t box_rotations[] = {
-	[BOX_FRONT] = {
-		{ 1, 0, 0, 0},
-		{ 0, 1, 0, 0},
-		{ 0, 0, 1, 0},
-		{ 0, 0, 0, 1}
-	},
-	[BOX_RIGHT] = {
-		{ 0,-1, 0, 0},
-		{ 1, 0, 0, 0},
-		{ 0, 0, 1, 0},
-		{ 0, 0, 0, 1}
-	},
-	[BOX_BEHIND] = {
-		{-1, 0, 0, 0},
-		{ 0,-1, 0, 0},
-		{ 0, 0, 1, 0},
-		{ 0, 0, 0, 1}
-	},
-	[BOX_LEFT] = {
-		{ 0, 1, 0, 0},
-		{-1, 0, 0, 0},
-		{ 0, 0, 1, 0},
-		{ 0, 0, 0, 1}
-	},
-	[BOX_BOTTOM] = {
-		{ 0, 0, 1, 0},
-		{ 0, 1, 0, 0},
-		{-1, 0, 0, 0},
-		{ 0, 0, 0, 1}
-	},
-	[BOX_TOP] = {
-		{ 0, 0,-1, 0},
-		{ 0, 1, 0, 0},
-		{ 1, 0, 0, 0},
-		{ 0, 0, 0, 1}
-	},
-};
-
-// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
-// z-forward, x-right, y-down.
-static mat4f_t z_up = {
-	{ 0, 0, 1, 0},
-	{-1, 0, 0, 0},
-	{ 0,-1, 0, 0},
-	{ 0, 0, 0, 1},
-};
-
 static void
 setup_view (vulkan_ctx_t *ctx)
 {
@@ -118,14 +68,14 @@ setup_view (vulkan_ctx_t *ctx)
 		mat4f_t     views[6];
 		for (int i = 0; i < 6; i++) {
 			mat4f_t     rotinv;
-			mat4ftranspose (rotinv, box_rotations[i]);
+			mat4ftranspose (rotinv, qfv_box_rotations[i]);
 			mmulf (views[i], rotinv, r_refdef.camera_inverse);
-			mmulf (views[i], z_up, views[i]);
+			mmulf (views[i], qfv_z_up, views[i]);
 		}
 		Vulkan_SetViewMatrices (ctx, views, 6);
 	} else {
 		mat4f_t     view;
-		mmulf (view, z_up, r_refdef.camera_inverse);
+		mmulf (view, qfv_z_up, r_refdef.camera_inverse);
 		Vulkan_SetViewMatrices (ctx, &view, 1);
 	}
 }

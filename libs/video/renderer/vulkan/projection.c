@@ -35,6 +35,56 @@
 
 #include "r_internal.h"
 
+//FIXME? The box rotations (in particular top/bottom) for vulkan are not
+//compatible with the other renderers, so need a local version
+const mat4f_t qfv_box_rotations[] = {
+	[BOX_FRONT] = {
+		{ 1, 0, 0, 0},
+		{ 0, 1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_RIGHT] = {
+		{ 0,-1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BEHIND] = {
+		{-1, 0, 0, 0},
+		{ 0,-1, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_LEFT] = {
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 1, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_BOTTOM] = {
+		{ 0, 0, 1, 0},
+		{ 0, 1, 0, 0},
+		{-1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+	[BOX_TOP] = {
+		{ 0, 0,-1, 0},
+		{ 0, 1, 0, 0},
+		{ 1, 0, 0, 0},
+		{ 0, 0, 0, 1}
+	},
+};
+
+// Quake's world is z-up, x-forward, y-left, but Vulkan's world is
+// z-forward, x-right, y-down.
+const mat4f_t qfv_z_up = {
+	{ 0, 0, 1, 0},
+	{-1, 0, 0, 0},
+	{ 0,-1, 0, 0},
+	{ 0, 0, 0, 1},
+};
+
 void
 QFV_Orthographic (mat4f_t proj, float xmin, float xmax, float ymin, float ymax,
 				  float znear, float zfar)
