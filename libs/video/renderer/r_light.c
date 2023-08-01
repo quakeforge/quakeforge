@@ -52,7 +52,7 @@ vec3_t      ambientcolor;
 unsigned int r_maxdlights;
 static int r_dlightframecount;
 
-void
+int
 R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 {
 	float      *scores = alloca (count * sizeof (float));
@@ -104,6 +104,7 @@ R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 	}
 	for (j = num; j < count; j++)
 		lights[j] = 0;
+	return num;
 }
 
 void
