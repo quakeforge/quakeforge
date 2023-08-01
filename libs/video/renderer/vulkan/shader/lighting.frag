@@ -8,11 +8,13 @@ layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput e
 layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput normal;
 layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput position;
 
-layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
-layout (set = 3, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
-layout (set = 3, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
+layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[32];
+layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowPlane[32];
+layout (set = 3, binding = 0) uniform samplerCubeArrayShadow shadowCube[32];
 
 layout (location = 0) out vec4 frag_color;
+
+layout (constant_id = 0) const int ShadowType = ST_NONE;
 
 float
 spot_cone (LightData light, vec3 incoming)
@@ -31,19 +33,19 @@ diffuse (vec3 incoming, vec3 normal)
 }
 
 float
-shadow_cascade (sampler2DArrayShadow map)
+shadow_cascade (sampler2DArrayShadow map, uint layer, uint mat_id, vec3 pos)
 {
 	return 1;
 }
 
 float
-shadow_plane (sampler2DShadow map)
+shadow_plane (sampler2DArrayShadow map, uint layer, uint mat_id, vec3 pos)
 {
 	return 1;
 }
 
 float
-shadow_cube (samplerCubeShadow map)
+shadow_cube (samplerCubeArrayShadow map, uint layer, uint mat_id, vec3 pos)
 {
 	return 1;
 }
@@ -59,7 +61,8 @@ main (void)
 
 	//vec3        minLight = vec3 (0);
 	for (int i = 0; i < lightCount; i++) {
-		LightData   l = lights[i];
+		uint        id = lightIds[i];
+		LightData   l = lights[id];
 		vec3        dir = l.position.xyz - l.position.w * p;
 		float       r2 = dot (dir, dir);
 		vec4        a = l.attenuation;
@@ -71,19 +74,26 @@ main (void)
 		vec3        incoming = dir / r.y;
 		float       I = (1 - a.w * r.y) / dot (a, r);
 
-		/*int         shadow = lights[i].data & ShadowMask;
-		if (shadow == ST_CASCADE) {
-			I *= shadow_cascade (shadowCascade[i]);
-		} else if (shadow == ST_PLANE) {
-			I *= shadow_plane (shadowPlane[i]);
-		} else if (shadow == ST_CUBE) {
-			I *= shadow_cube (shadowCube[i]);
-		}*/
+		uint        id_data = renderer[id].id_data;
+		uint        mat_id = bitfieldExtract (id_data, 0, 13);
+		uint        map_id = bitfieldExtract (id_data, 13, 5);
+		uint        layer = bitfieldExtract (id_data, 18, 11);
+		if (ShadowType == ST_CASCADE) {
+			I *= shadow_cascade (shadowCascade[map_id], layer, mat_id, p);
+		} else if (ShadowType == ST_PLANE) {
+			I *= shadow_plane (shadowPlane[map_id], layer, mat_id, p);
+		} else if (ShadowType == ST_CUBE) {
+			I *= shadow_cube (shadowCube[map_id], layer, mat_id, p);
+		}
 
 		float       namb = dot(l.direction.xyz, l.direction.xyz);
 		I *= spot_cone (l, incoming) * diffuse (incoming, n);
 		I = mix (1, I, namb);
-		light += I * l.color.w * l.color.xyz;
+		vec4 col = l.color;
+		if (bitfieldExtract(id_data, 31, 1) == 0) {
+			col *= style[renderer[id].style];
+		}
+		light += I * col.w * col.xyz;
 	}
 	//light = max (light, minLight);
 

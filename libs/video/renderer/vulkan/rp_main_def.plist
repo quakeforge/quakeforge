@@ -618,10 +618,51 @@ properties = {
 				name = main;
 				module = $builtin/light_splat.frag;
 			};
-			fragment = {
+			shadow_specialization = {
+				mapEntries = (
+					// ShadowType
+					{ size = 4; offset = 0; constantID = 0; },
+				);
+			};
+			fragment_none = {
 				stage = fragment;
 				name = main;
 				module = $builtin/lighting.frag;
+				specializationInfo = {
+					@inherit = $lighting.shader.shadow_specialization;
+					// ShadowType
+					data = "array(0)";
+				};
+			};
+			fragment_plane = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting.frag;
+				specializationInfo = {
+					@inherit = $lighting.shader.shadow_specialization;
+					// ShadowType
+					data = "array(1)";
+				};
+			};
+			fragment_cascade = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting.frag;
+				specializationInfo = {
+					@inherit = $lighting.shader.shadow_specialization;
+					// ShadowType
+					data = "array(2)";
+				};
+			};
+			fragment_cube = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting.frag;
+				specializationInfo = {
+					@inherit = $lighting.shader.shadow_specialization;
+					// ShadowType
+					data = "array(3)";
+				};
 			};
 			debug_fragment = {
 				stage = fragment;
@@ -651,8 +692,11 @@ properties = {
 			topology = triangle_fan;
 			primitiveRestartEnable = true;
 		};
+		splat_layout = {
+			descriptorSets = (matrix_set, lighting_lights);
+		};
 		layout = {
-			descriptorSets = (matrix_set, lighting_lights,
+			descriptorSets = (shadowmat_set, lighting_lights,
 							  lighting_attach, lighting_shadow);
 		};
 	};
@@ -929,9 +973,27 @@ descriptorSetLayouts = {
 		bindings = (
 			{
 				binding = 0;
-				descriptorType = uniform_buffer;
+				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 3;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
 			},
 		);
 	};
@@ -1520,19 +1582,71 @@ renderpasses = {
 					preserve = (depth, output);
 				};
 				pipelines = {
-					lights = {
+					lights_none = {
 						@inherit = $compose_base;
 
 						color = $color.lights;
 						tasks = (
-							{ func = lighting_update_descriptors; },
-							{ func = lighting_bind_descriptors; },
-							{ func = lighting_draw_lights; },
+							{ func = lighting_bind_descriptors;
+							  params = (none); },
+							{ func = lighting_draw_lights;
+							  params = (none); },
 						);
 
 						stages = (
 							$fstriangle.shader.vertex,
-							$lighting.shader.fragment,
+							$lighting.shader.fragment_none,
+						);
+						layout = $lighting.layout;
+					};
+					lights_plane = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (plane); },
+							{ func = lighting_draw_lights;
+							  params = (plane); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_plane,
+						);
+						layout = $lighting.layout;
+					};
+					lights_cascade = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (cascade); },
+							{ func = lighting_draw_lights;
+							  params = (cascade); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_cascade,
+						);
+						layout = $lighting.layout;
+					};
+					lights_cube = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (cube); },
+							{ func = lighting_draw_lights;
+							  params = (cube); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_cube,
 						);
 						layout = $lighting.layout;
 					};
@@ -1623,7 +1737,7 @@ renderpasses = {
 						);
 						vertexInput = $lighting.vertexInput_splat;
 						inputAssembly = $lighting.inputAssembly;
-						layout = $lighting.layout;
+						layout = $lighting.splat_layout;
 						rasterization = $debug_poly_lines;
 						depthStencil = $depth_disable;
 					};
@@ -1993,6 +2107,8 @@ steps = {
 				{ func = clear_translucent;
 				  params = ("\"main\""); },
 				{ func = particle_wait_physics; },
+				{ func = lighting_update_descriptors;
+				  params = ("\"main\""); },
 			);
 		};
 	};

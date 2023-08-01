@@ -112,10 +112,10 @@ samplers = {
 		anisotropyEnable = false;
 		maxAnisotropy = 0;
 		compareEnable = true;
-		compareOp = greater_or_equal;
+		compareOp = less;
 		minLod = 0;
 		maxLod = 1000;
-		borderColor = float_transparent_black;
+		borderColor = float_opaque_white;
 		unnormalizedCoordinates = false;
 	};
 	linear = {

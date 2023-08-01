@@ -49,10 +49,17 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 #define ST_CASCADE  2	// cascaded shadow maps
 #define ST_CUBE     3	// cubemap (omni, large spotlight)
 
-typedef struct qfv_light_buffer_s {
-	light_t     lights[MaxLights] __attribute__((aligned(16)));
-	int         lightCount;
-} qfv_light_buffer_t;
+typedef struct qfv_lightid_buffer_s {
+	uint32_t    lightCount;
+	uint32_t    lightIds[MaxLights];
+} qfv_lightid_buffer_t;
+
+typedef struct qfv_light_render_s {
+	// mat_id (13) map_id (5) layer (11) type (2)
+	uint32_t    id_data;
+	// light style (6)
+	uint32_t    style;
+} qfv_light_render_t;
 
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_ATTACH_INFOS 4
@@ -69,6 +76,8 @@ typedef struct lightingframe_s {
 
 	VkBuffer    shadowmat_buffer;
 	VkBuffer    light_buffer;
+	VkBuffer    render_buffer;
+	VkBuffer    style_buffer;
 	VkBuffer    id_buffer;
 	uint32_t    ico_count;
 	uint32_t    cone_count;
@@ -81,18 +90,20 @@ typedef struct lightingframe_s {
 typedef struct lightingframeset_s
     DARRAY_TYPE (lightingframe_t) lightingframeset_t;
 
-typedef struct light_renderer_s {
+typedef struct light_control_s {
 	uint8_t     renderpass_index;
-	uint8_t     image_index;
+	uint8_t     map_index;
 	uint16_t    size;
 	uint16_t    layer;
 	uint8_t     numLayers;
 	uint8_t     mode;
-	uint16_t    matrix_base;
-} light_renderer_t;
+	uint16_t    light_id;
+	uint16_t    matrix_base;// for rendering maps
+	uint16_t    matrix_id;	// for rendering shadows
+} light_control_t;
 
-typedef struct light_renderer_set_s
-	DARRAY_TYPE (light_renderer_t) light_renderer_set_t;
+typedef struct light_control_set_s
+	DARRAY_TYPE (light_control_t) light_control_set_t;
 
 
 typedef struct lightingctx_s {
@@ -103,14 +114,21 @@ typedef struct lightingctx_s {
 
 	qfv_lightmatset_t light_mats;
 	qfv_imageset_t light_images;
+	qfv_imageviewset_t light_views;
 
-	light_renderer_set_t light_renderers;
+	light_control_set_t light_control;
 
 	qfv_attachmentinfo_t shadow_info;
+
+	VkSampler shadow_sampler;
+	VkDescriptorSet shadow_set;
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;
 
+	uint32_t dynamic_base;
+	uint32_t dynamic_matrix_base;
+	uint32_t dynamic_count;
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;
 } lightingctx_t;

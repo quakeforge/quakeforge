@@ -5,9 +5,26 @@ struct LightData {
 	vec4        attenuation;
 };
 
-layout (constant_id = 0) const int MaxLights = 768;
+#define ST_NONE     0   // no shadows
+#define ST_PLANE    1   // single plane shadow map (small spotlight)
+#define ST_CASCADE  2   // cascaded shadow maps
+#define ST_CUBE     3   // cubemap (omni, large spotlight)
 
-layout (set = 1, binding = 0) uniform Lights {
-	LightData   lights[MaxLights];
-	int         lightCount;
+struct LightRender {
+	uint        id_data;
+	uint        style;
+};
+
+layout (set = 1, binding = 0) buffer LightIds {
+	uint        lightCount;
+	uint        lightIds[];
+};
+layout (set = 1, binding = 1) buffer Lights {
+	LightData   lights[];
+};
+layout (set = 1, binding = 2) buffer Renderer {
+	LightRender renderer[];
+};
+layout (set = 1, binding = 3) buffer Style {
+	vec4        style[];
 };

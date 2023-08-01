@@ -8,9 +8,9 @@ layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput e
 layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput normal;
 layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput position;
 
-layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
-layout (set = 3, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
-layout (set = 3, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
+layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[32];
+layout (set = 3, binding = 0) uniform sampler2DShadow shadowPlane[32];
+layout (set = 3, binding = 0) uniform samplerCubeShadow shadowCube[32];
 
 layout (location = 0) flat in uint light_index;
 layout (location = 0) out vec4 frag_color;
