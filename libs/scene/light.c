@@ -85,7 +85,7 @@ test_light_leaf (const light_t *light, const mleaf_t *leaf)
 }
 
 void
-Light_AddLight (lightingdata_t *ldata, const light_t *light, int style)
+Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
 {
 	scene_t    *scene = ldata->scene;
 	model_t    *model = scene->worldmodel;

@@ -163,7 +163,7 @@ static const component_t scene_components[scene_comp_count] = {
 		.name = "efrags",
 	},
 	[scene_lightstyle] = {
-		.size = sizeof (int),
+		.size = sizeof (uint32_t),
 		.name = "lightstyle",
 	},
 	[scene_lightleaf] = {

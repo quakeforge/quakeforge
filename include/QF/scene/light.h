@@ -65,7 +65,8 @@ typedef struct lightingdata_s {
 lightingdata_t *Light_CreateLightingData (struct scene_s *scene);
 void Light_DestroyLightingData (lightingdata_t *ldata);
 void Light_ClearLights (lightingdata_t *ldata);
-void Light_AddLight (lightingdata_t *ldata, const light_t *light, int style);
+void Light_AddLight (lightingdata_t *ldata, const light_t *light,
+					 uint32_t style);
 void Light_EnableSun (lightingdata_t *ldata);
 
 #endif//__QF_scene_light_h
