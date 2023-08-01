@@ -393,8 +393,6 @@ lighting_update_descriptors (const exprval_t **params, exprval_t *result,
 
 	auto fb = &taskctx->renderpass->framebuffer;
 	VkDescriptorImageInfo attachInfo[] = {
-		{	.imageView = fb->views[QFV_attachDepth],
-			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
 		{	.imageView = fb->views[QFV_attachColor],
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
 		{	.imageView = fb->views[QFV_attachEmission],
@@ -429,12 +427,6 @@ lighting_update_descriptors (const exprval_t **params, exprval_t *result,
 			.descriptorCount = 1,
 			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
 			.pImageInfo = &attachInfo[3], },
-		{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = lframe->attach_set,
-			.dstBinding = 4,
-			.descriptorCount = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-			.pImageInfo = &attachInfo[4], },
 	};
 	//lframe->bufferInfo[0].buffer = lframe->light_buffer;
 	dfunc->vkUpdateDescriptorSets (device->dev,

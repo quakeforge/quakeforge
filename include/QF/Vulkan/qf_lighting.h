@@ -52,12 +52,10 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 typedef struct qfv_light_buffer_s {
 	light_t     lights[MaxLights] __attribute__((aligned(16)));
 	int         lightCount;
-	//mat4f_t     shadowMat[MaxLights];
-	//vec4f_t     shadowCascade[MaxLights];
 } qfv_light_buffer_t;
 
 #define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_ATTACH_INFOS 5
+#define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 

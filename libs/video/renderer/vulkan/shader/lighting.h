@@ -10,6 +10,4 @@ layout (constant_id = 0) const int MaxLights = 768;
 layout (set = 1, binding = 0) uniform Lights {
 	LightData   lights[MaxLights];
 	int         lightCount;
-	//mat4        shadowMat[MaxLights];
-	//vec4        shadowCascale[MaxLights];
 };

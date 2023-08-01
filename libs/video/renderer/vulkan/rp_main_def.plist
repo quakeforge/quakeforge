@@ -923,12 +923,6 @@ descriptorSetLayouts = {
 				descriptorCount = 1;
 				stageFlags = fragment;
 			},
-			{
-				binding = 4;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
 		);
 	};
 	lighting_lights = {
@@ -1512,7 +1506,6 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						depth = shader_read_only_optimal;
 						color = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
@@ -1524,7 +1517,7 @@ renderpasses = {
 							blend = $blend_disable;
 						};
 					};
-					preserve = (output);
+					preserve = (depth, output);
 				};
 				pipelines = {
 					lights = {

@@ -3,11 +3,10 @@
 
 #include "lighting.h"
 
-layout (input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput depth;
-layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput color;
-layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput emission;
-layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput normal;
-layout (input_attachment_index = 4, set = 2, binding = 4) uniform subpassInput position;
+layout (input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput color;
+layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput emission;
+layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput normal;
+layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput position;
 
 layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
 layout (set = 3, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
@@ -52,7 +51,6 @@ shadow_cube (samplerCubeShadow map)
 void
 main (void)
 {
-	//float       d = subpassLoad (depth).r;
 	vec3        c = subpassLoad (color).rgb;
 	vec3        e = subpassLoad (emission).rgb;
 	vec3        n = subpassLoad (normal).rgb;
