@@ -99,7 +99,13 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/lighting_cascade.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_cube.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_none.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_plane.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
 static
@@ -172,7 +178,12 @@ static shaderdata_t builtin_shaders[] = {
 	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
 	{ "light_splat.frag", light_splat_frag, sizeof (light_splat_frag) },
 	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
-	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
+	{ "lighting_cascade.frag", lighting_cascade_frag,
+		sizeof (lighting_cascade_frag) },
+	{ "lighting_cube.frag", lighting_cube_frag, sizeof (lighting_cube_frag) },
+	{ "lighting_none.frag", lighting_none_frag, sizeof (lighting_none_frag) },
+	{ "lighting_plane.frag", lighting_plane_frag,
+		sizeof (lighting_plane_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },

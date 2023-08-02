@@ -49,11 +49,6 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 #define ST_CASCADE  2	// cascaded shadow maps
 #define ST_CUBE     3	// cubemap (omni, large spotlight)
 
-typedef struct qfv_lightid_buffer_s {
-	uint32_t    lightCount;
-	uint32_t    lightIds[MaxLights];
-} qfv_lightid_buffer_t;
-
 typedef struct qfv_light_render_s {
 	// mat_id (13) map_id (5) layer (11) type (2)
 	uint32_t    id_data;
@@ -69,6 +64,11 @@ typedef struct qfv_light_render_s {
 typedef struct qfv_framebufferset_s
 	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
 
+typedef struct light_queue_s {
+	uint16_t    start;
+	uint16_t    count;
+} light_queue_t;
+
 typedef struct lightingframe_s {
 	VkDescriptorSet shadowmat_set;
 	VkDescriptorSet lights_set;
@@ -79,6 +79,7 @@ typedef struct lightingframe_s {
 	VkBuffer    render_buffer;
 	VkBuffer    style_buffer;
 	VkBuffer    id_buffer;
+	light_queue_t light_queue[4];
 	uint32_t    ico_count;
 	uint32_t    cone_count;
 	uint32_t    flat_count;
@@ -113,15 +114,21 @@ typedef struct lightingctx_s {
 	struct qfv_resource_s *light_resources;
 
 	qfv_lightmatset_t light_mats;
-	qfv_imageset_t light_images;
-	qfv_imageviewset_t light_views;
+	VkImage *map_images;
+	VkImageView *map_views;
+	bool    *map_cube;
+	int      num_maps;
+	VkImage  default_map;
+	VkImageView default_view_cube;
+	VkImageView default_view_2d;
 
 	light_control_set_t light_control;
 
 	qfv_attachmentinfo_t shadow_info;
 
 	VkSampler shadow_sampler;
-	VkDescriptorSet shadow_set;
+	VkDescriptorSet shadow_cube_set;
+	VkDescriptorSet shadow_2d_set;
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;

@@ -16,7 +16,6 @@ struct LightRender {
 };
 
 layout (set = 1, binding = 0) buffer LightIds {
-	uint        lightCount;
 	uint        lightIds[];
 };
 layout (set = 1, binding = 1) buffer Lights {

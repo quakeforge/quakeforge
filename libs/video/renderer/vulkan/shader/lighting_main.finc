@@ -1,20 +1,11 @@
-#version 450
-#extension GL_GOOGLE_include_directive : enable
-
 #include "lighting.h"
-
-layout (input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput color;
-layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput emission;
-layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput normal;
-layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput position;
-
-layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowCascade[32];
-layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadowPlane[32];
-layout (set = 3, binding = 0) uniform samplerCubeArrayShadow shadowCube[32];
+#include "light_attach.h"
 
 layout (location = 0) out vec4 frag_color;
 
-layout (constant_id = 0) const int ShadowType = ST_NONE;
+layout (push_constant) uniform PushConstants {
+	uint        queue;
+};
 
 float
 spot_cone (LightData light, vec3 incoming)
@@ -32,24 +23,6 @@ diffuse (vec3 incoming, vec3 normal)
 	return clamp (lightdot, 0, 1);
 }
 
-float
-shadow_cascade (sampler2DArrayShadow map, uint layer, uint mat_id, vec3 pos)
-{
-	return 1;
-}
-
-float
-shadow_plane (sampler2DArrayShadow map, uint layer, uint mat_id, vec3 pos)
-{
-	return 1;
-}
-
-float
-shadow_cube (samplerCubeArrayShadow map, uint layer, uint mat_id, vec3 pos)
-{
-	return 1;
-}
-
 void
 main (void)
 {
@@ -59,8 +32,10 @@ main (void)
 	vec3        p = subpassLoad (position).rgb;
 	vec3        light = vec3 (0);
 
-	//vec3        minLight = vec3 (0);
-	for (int i = 0; i < lightCount; i++) {
+	uint        start = bitfieldExtract (queue, 0, 16);
+	uint        count = bitfieldExtract (queue, 16, 16);
+
+	for (uint i = start; i < count; i++) {
 		uint        id = lightIds[i];
 		LightData   l = lights[id];
 		vec3        dir = l.position.xyz - l.position.w * p;
@@ -78,13 +53,8 @@ main (void)
 		uint        mat_id = bitfieldExtract (id_data, 0, 13);
 		uint        map_id = bitfieldExtract (id_data, 13, 5);
 		uint        layer = bitfieldExtract (id_data, 18, 11);
-		if (ShadowType == ST_CASCADE) {
-			I *= shadow_cascade (shadowCascade[map_id], layer, mat_id, p);
-		} else if (ShadowType == ST_PLANE) {
-			I *= shadow_plane (shadowPlane[map_id], layer, mat_id, p);
-		} else if (ShadowType == ST_CUBE) {
-			I *= shadow_cube (shadowCube[map_id], layer, mat_id, p);
-		}
+
+		I *= shadow (map_id, layer, mat_id, p);
 
 		float       namb = dot(l.direction.xyz, l.direction.xyz);
 		I *= spot_cone (l, incoming) * diffuse (incoming, n);

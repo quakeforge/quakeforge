@@ -330,6 +330,7 @@ bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
 bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
 debug_src = $(vkshaderpath)/debug.frag
 debug_c = $(vkshaderpath)/debug.frag.spvc
+light_attach_h = $(vkshaderpath)/light_attach.h
 light_flat_src = $(vkshaderpath)/light_flat.vert
 light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
 light_splatv_src = $(vkshaderpath)/light_splat.vert
@@ -338,8 +339,15 @@ light_splatf_src = $(vkshaderpath)/light_splat.frag
 light_splatf_c = $(vkshaderpath)/light_splat.frag.spvc
 light_debug_src = $(vkshaderpath)/light_debug.frag
 light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
-lightingf_src = $(vkshaderpath)/lighting.frag
-lightingf_c = $(vkshaderpath)/lighting.frag.spvc
+lighting_cascadef_src = $(vkshaderpath)/lighting_cascade.frag
+lighting_cascadef_c = $(vkshaderpath)/lighting_cascade.frag.spvc
+lighting_cubef_src = $(vkshaderpath)/lighting_cube.frag
+lighting_cubef_c = $(vkshaderpath)/lighting_cube.frag.spvc
+lighting_main = $(vkshaderpath)/lighting_main.finc
+lighting_nonef_src = $(vkshaderpath)/lighting_none.frag
+lighting_nonef_c = $(vkshaderpath)/lighting_none.frag.spvc
+lighting_planef_src = $(vkshaderpath)/lighting_plane.frag
+lighting_planef_c = $(vkshaderpath)/lighting_plane.frag.spvc
 lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
@@ -437,7 +445,13 @@ $(light_splatf_c): $(light_splatf_src) $(lighting_h)
 
 $(light_debug_c): $(light_debug_src) $(lighting_h)
 
-$(lightingf_c): $(lightingf_src) $(lighting_h)
+$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+
+$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+
+$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
@@ -504,7 +518,10 @@ vkshader_c = \
 	$(light_splatv_c) \
 	$(light_splatf_c) \
 	$(light_debug_c) \
-	$(lightingf_c) \
+	$(lighting_cascadef_c) \
+	$(lighting_cubef_c) \
+	$(lighting_nonef_c) \
+	$(lighting_planef_c) \
 	$(composef_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
@@ -591,11 +608,15 @@ EXTRA_DIST += \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
 	$(debug_src) \
+	$(light_attach_h) \
 	$(light_flat_src) \
 	$(light_splatv_src) \
 	$(light_splatf_src) \
 	$(light_debug_src) \
-	$(lightingf_src) \
+	$(lighting_cascadef_src) \
+	$(lighting_cubef_src) \
+	$(lighting_nonef_src) \
+	$(lighting_planef_src) \
 	$(lighting_h) \
 	$(composef_src) \
 	$(aliasv_src) \
