@@ -54,7 +54,7 @@ main (void)
 		uint        map_id = bitfieldExtract (id_data, 13, 5);
 		uint        layer = bitfieldExtract (id_data, 18, 11);
 
-		I *= shadow (map_id, layer, mat_id, p);
+		I *= shadow (map_id, layer, mat_id, p, l.position.xyz);
 
 		float       namb = dot(l.direction.xyz, l.direction.xyz);
 		I *= spot_cone (l, incoming) * diffuse (incoming, n);

@@ -349,7 +349,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 				//.id_data = make_id(r->matrix_id, r->map_index, r->layer,
 				//r->mode),
 				.id_data = 0x80000000,	// no style
-				.style = 11,
 			};
 		}
 		dlight_offset = sizeof (qfv_light_render_t[lctx->dynamic_base]);
@@ -1157,7 +1156,7 @@ create_light_matrices (lightingctx_t *lctx)
 					mmulf (side_view, qfv_z_up, side_view);
 					mmulf (lm[j], proj, side_view);
 				}
-				r->matrix_id = r->matrix_base + BOX_FRONT;
+				r->matrix_id = r->matrix_base;
 				break;
 			case ST_CASCADE:
 				// dependent on view fustrum and cascade level
@@ -1197,6 +1196,9 @@ static uint32_t
 make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
 		 uint32_t type)
 {
+	if (type == ST_CUBE) {
+		layer /= 6;
+	}
 	return ((matrix_index & 0x1fff) << 0)
 		 | ((map_index & 0x1f) << 13)
 		 | ((layer & 0x7ff) << 18)

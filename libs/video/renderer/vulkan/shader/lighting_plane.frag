@@ -7,7 +7,7 @@ layout (set = 0, binding = 0) buffer ShadowMatrices {
 layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadow_map[32];
 
 float
-shadow (uint map_id, uint layer, uint mat_id, vec3 pos)
+shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
 {
 	vec4 p = shadow_mats[mat_id] * vec4 (pos, 1);
 	p = p / (p.w - 0.5);	//FIXME hard-coded bias

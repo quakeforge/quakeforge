@@ -4,7 +4,7 @@
 layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadow_map[32];
 
 float
-shadow (uint map_id, uint layer, uint mat_id, vec3 pos)
+shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
 {
 	return 1;
 }
