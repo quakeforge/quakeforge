@@ -1555,7 +1555,7 @@ renderpasses = {
 					color = {
 						light = {
 							layout = color_attachment_optimal;
-							blend = $blend_disable;
+							blend = $additive_blend;
 						};
 					};
 					preserve = (depth, output);
