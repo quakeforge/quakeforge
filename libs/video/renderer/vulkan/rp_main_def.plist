@@ -1310,7 +1310,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (0); },
+							  params = (main, 0); },
 						);
 
 						stages = (
@@ -1498,7 +1498,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (1); },
+							  params = (main, 1); },
 						);
 
 						stages = (
@@ -1948,7 +1948,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (0); },
+							  params = (shadow, 0); },
 						);
 
 						stages = (

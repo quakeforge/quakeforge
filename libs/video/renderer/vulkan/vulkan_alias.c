@@ -242,8 +242,8 @@ static void
 alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
-	bool vmod = Entity_Valid (vr_data.view_model);
-	int  pass = *(int *) params[0]->value;
+	auto pass = *(int *) params[0]->value;
+	auto stage = *(int *) params[1]->value;
 
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -258,6 +258,8 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, shadow ? 1 : 2, sets, 0, 0);
+
+	bool vmod = !stage && Entity_Valid (vr_data.view_model);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
@@ -275,11 +277,31 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 }
 
+static exprenum_t alias_stage_enum;
+static exprtype_t alias_stage_type = {
+	.name = "alias_stage",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &alias_stage_enum,
+};
+static int alias_stage_values[] = { 0, 1, };
+static exprsym_t alias_stage_symbols[] = {
+	{"main", &alias_stage_type, alias_stage_values + 0},
+	{"shadow", &alias_stage_type, alias_stage_values + 1},
+	{}
+};
+static exprtab_t alias_stage_symtab = { .symbols = alias_stage_symbols };
+static exprenum_t alias_stage_enum = {
+	&alias_stage_type,
+	&alias_stage_symtab,
+};
+
 static exprtype_t *alias_draw_params[] = {
 	&cexpr_int,
+	&alias_stage_type,
 };
 static exprfunc_t alias_draw_func[] = {
-	{ .func = alias_draw, .num_params = 1, .param_types = alias_draw_params },
+	{ .func = alias_draw, .num_params = 2, .param_types = alias_draw_params },
 	{}
 };
 static exprsym_t alias_task_syms[] = {
