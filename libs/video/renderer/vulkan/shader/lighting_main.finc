@@ -33,9 +33,9 @@ main (void)
 	vec3        light = vec3 (0);
 
 	uint        start = bitfieldExtract (queue, 0, 16);
-	uint        count = bitfieldExtract (queue, 16, 16);
+	uint        end = start + bitfieldExtract (queue, 16, 16);
 
-	for (uint i = start; i < count; i++) {
+	for (uint i = start; i < end; i++) {
 		uint        id = lightIds[i];
 		LightData   l = lights[id];
 		vec3        dir = l.position.xyz - l.position.w * p;
