@@ -1414,9 +1414,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, translucent, 2); },
+							  params = (main, translucent, 1); },
 							{ func = bsp_draw_queue;
-							  params = (main, turbulent, 2); },
+							  params = (main, turbulent, 1); },
 						);
 
 						stages = (

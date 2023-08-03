@@ -685,7 +685,7 @@ get_side (const bsp_pass_t *pass, const mnode_t *node)
 }
 
 static inline void
-visit_node (bsp_pass_t *pass, const mnode_t *node, int side)
+visit_node_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 {
 	bspctx_t   *bctx = pass->bsp_context;
 	int         c;
@@ -714,6 +714,27 @@ visit_node (bsp_pass_t *pass, const mnode_t *node, int side)
 	}
 }
 
+static inline void
+visit_node_no_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
+{
+	bspctx_t   *bctx = pass->bsp_context;
+	int         c;
+
+	// chain any visible surfaces on the node that face the camera.
+	// not all nodes have any surfaces to draw (purely a split plane)
+	if ((c = node->numsurfaces)) {
+		const bsp_face_t *face = bctx->faces + node->firstsurface;
+		const int  *frame = pass->face_frames + node->firstsurface;
+		int         vis_frame = pass->vis_frame;
+		for (; c; c--, face++, frame++) {
+			if (*frame != vis_frame)
+				continue;
+
+			chain_surface (face, pass, bctx);
+		}
+	}
+}
+
 static inline int
 test_node (const bsp_pass_t *pass, int node_id)
 {
@@ -725,7 +746,8 @@ test_node (const bsp_pass_t *pass, int node_id)
 }
 
 static void
-R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
+R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx,
+				   void (*visit_node) (bsp_pass_t *, const mnode_t *, int))
 {
 	const mod_brush_t *brush = pass->brush;
 	typedef struct {
@@ -1259,7 +1281,8 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (pass->instances) {
 		DARRAY_APPEND (&pass->instances[world_id].entities, world_id);
 	}
-	R_VisitWorldNodes (pass, ctx);
+	auto visit_node = pass_ind ? visit_node_no_bfcull : visit_node_bfcull;
+	R_VisitWorldNodes (pass, ctx, visit_node);
 
 	if (r_drawentities) {
 		auto queue = pass->entqueue;
