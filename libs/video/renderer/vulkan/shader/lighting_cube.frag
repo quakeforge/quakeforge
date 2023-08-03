@@ -21,9 +21,8 @@ shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
 	vec4 p = shadow_mats[mat_id + ind] * vec4 (pos, 1);
 	p = p / (p.w - 0.5);	//FIXME hard-coded bias
 	float depth = p.z;
-	dir = mat3(vec3( 0, 0, 1),
-			   vec3(-1, 0, 0),
-			   vec3( 0, 1, 0)) * dir;
+	// convert from the quake frame to the cubemap frame
+	dir = dir.yzx * vec3 (-1, 1, 1);
 	return texture (shadow_map[map_id], vec4 (dir, layer), depth);
 }
 
