@@ -94,6 +94,18 @@ static int cone_inds[] = {
 	1, 6, 5, 4, 3, 2,
 };
 #define num_cone_inds (sizeof (cone_inds) / sizeof (cone_inds[0]))
+
+#define dynlight_max 32
+static int dynlight_size;
+static cvar_t dynlight_size_cvar = {
+	.name = "dynlight_size",
+	.description =
+		"Effective radius of dynamic light shadow maps. Needs map reload to "
+		"take effect",
+	.default_value = "250",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &dynlight_size },
+};
 #if 0
 static const light_t *
 get_light (entity_t ent)
@@ -101,6 +113,18 @@ get_light (entity_t ent)
 	return Ent_GetComponent (ent.id, scene_light, ent.reg);
 }
 #endif
+static const dlight_t *
+get_dynlight (entity_t ent)
+{
+	return Ent_GetComponent (ent.id, scene_dynlight, ent.reg);
+}
+
+static bool
+has_dynlight (entity_t ent)
+{
+	return Ent_HasComponent (ent.id, scene_dynlight, ent.reg);
+}
+
 static uint32_t
 get_lightstyle (entity_t ent)
 {
@@ -144,9 +168,11 @@ lighting_setup_aux (const exprval_t **params, exprval_t *result,
 	auto queue = r_ent_queue;   //FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_light].a[i];
-		auto ls = get_lightstyle (ent);
-		if (!d_lightstylevalue[ls]) {
-			continue;
+		if (!has_dynlight (ent)) {
+			auto ls = get_lightstyle (ent);
+			if (!d_lightstylevalue[ls]) {
+				continue;
+			}
 		}
 		auto leafnum = get_lightleaf (ent);
 		if (leafnum != ~0u) {
@@ -262,21 +288,59 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	auto queue = r_ent_queue;   //FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_light].a[i];
-		auto ls = get_lightstyle (ent);
 		uint32_t    id = get_lightid (ent);
 		auto r = &lctx->light_control.a[id];
-		if (!r->numLayers || !d_lightstylevalue[ls]) {
+		if (!r->numLayers) {
 			continue;
+		}
+		if (!has_dynlight (ent)) {
+			auto ls = get_lightstyle (ent);
+			if (!d_lightstylevalue[ls]) {
+				continue;
+			}
 		}
 		auto renderpass = &render->renderpasses[r->renderpass_index];
 		auto view = create_view (ctx, r);
 		auto bi = &renderpass->beginInfo;
 		auto fbuffer = create_framebuffer (ctx, r, view, bi->renderPass);
 		bi->framebuffer = fbuffer;
-		QFV_RunRenderPass (ctx, renderpass, r->size, r->size, &r->matrix_base);
+		QFV_RunRenderPass (ctx, renderpass, r->size, r->size, &r->matrix_id);
 		DARRAY_APPEND (&lframe->views, view);
 		DARRAY_APPEND (&lframe->framebuffers, fbuffer);
 		bi->framebuffer = 0;
+	}
+}
+
+static uint32_t
+make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
+		 uint32_t type)
+{
+	if (type == ST_CUBE) {
+		layer /= 6;
+	}
+	return ((matrix_index & 0x1fff) << 0)
+		 | ((map_index & 0x1f) << 13)
+		 | ((layer & 0x7ff) << 18)
+		 | ((type & 3) << 29);
+}
+
+static void
+cube_mat (mat4f_t *mat, vec4f_t position)
+{
+	mat4f_t     view;
+	mat4fidentity (view);
+	view[3] = -position;
+	view[3][3] = 1;
+
+	mat4f_t     proj;
+	QFV_PerspectiveTan (proj, 1, 1);
+	for (int j = 0; j < 6; j++) {
+		mat4f_t side_view;
+		mat4f_t rotinv;
+		mat4ftranspose (rotinv, qfv_box_rotations[j]);
+		mmulf (side_view, rotinv, view);
+		mmulf (side_view, qfv_z_up, side_view);
+		mmulf (mat[j], proj, side_view);
 	}
 }
 
@@ -313,18 +377,38 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	uint32_t light_count = 0;
 	auto queue = lframe->light_queue;
 
-	dlight_t   *dynamic_lights[MaxLights];
-	int maxdlight = MaxLights - lctx->dynamic_base;
-	int ndlight = R_FindNearLights (r_refdef.frame.position, maxdlight,
-									dynamic_lights);
+	uint32_t dynamic_light_entities[MaxLights];
+	const dlight_t *dynamic_lights[MaxLights];
+	int ndlight = 0;
+
+	auto entqueue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
+		if (has_dynlight (ent)) {
+			dynamic_light_entities[ndlight] = ent.id;
+			dynamic_lights[ndlight] = get_dynlight (ent);
+			ndlight++;
+			continue;
+		}
+		auto ls = get_lightstyle (ent);
+		if (!d_lightstylevalue[ls]) {
+			continue;
+		}
+
+		light_count++;
+		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
+		int mode =  lctx->light_control.a[get_lightid (ent)].mode;
+		ids[mode][queue[mode].count++] = id;
+	}
 
 	if (ndlight) {
+		light_count += ndlight;
 		packet = QFV_PacketAcquire (ctx->staging);
 		light_t *lights = QFV_PacketExtend (packet, sizeof (light_t[ndlight]));
 		for (int i = 0; i < ndlight; i++) {
-			uint32_t id = lctx->dynamic_base + light_count++;
-			//FIXME should be ST_CUBE but need to alloc maps for dlights
-			ids[ST_NONE][queue[ST_NONE].count++] = id;
+			uint32_t id = lctx->dynamic_base + i;
+			set_lightid (dynamic_light_entities[i], lctx->scene->reg, id);
+			ids[ST_CUBE][queue[ST_CUBE].count++] = id;
 
 			VectorCopy (dynamic_lights[i]->color, lights[i].color);
 			// dynamic lights seem a tad faint, so 16x map lights
@@ -345,29 +429,26 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		uint32_t r_size = sizeof (qfv_light_render_t[ndlight]);
 		qfv_light_render_t *render = QFV_PacketExtend (packet, r_size);
 		for (int i = 0; i < ndlight; i++) {
+			auto r = &lctx->light_control.a[lctx->dynamic_base + i];
 			render[i] = (qfv_light_render_t) {
-				//.id_data = make_id(r->matrix_id, r->map_index, r->layer,
-				//r->mode),
-				.id_data = 0x80000000,	// no style
+				.id_data = make_id(r->matrix_id, r->map_index, r->layer,
+								   r->mode),
 			};
+			render[i].id_data |= 0x80000000;	// no style
 		}
 		dlight_offset = sizeof (qfv_light_render_t[lctx->dynamic_base]);
 		QFV_PacketCopyBuffer (packet, lframe->render_buffer, dlight_offset, bb);
 		QFV_PacketSubmit (packet);
-	}
 
-	auto entqueue = r_ent_queue;   //FIXME fetch from scene
-	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
-		auto ls = get_lightstyle (ent);
-		if (!d_lightstylevalue[ls]) {
-			continue;
+		packet = QFV_PacketAcquire (ctx->staging);
+		uint32_t msize = sizeof (mat4f_t[ndlight * 6]);
+		mat4f_t *mats = QFV_PacketExtend (packet, msize);
+		for (int i = 0; i < ndlight; i++) {
+			cube_mat (&mats[i * 6], dynamic_lights[i]->origin);
 		}
-
-		light_count++;
-		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
-		int mode =  lctx->light_control.a[get_lightid (ent)].mode;
-		ids[mode][queue[mode].count++] = id;
+		VkDeviceSize mat_offset = sizeof (mat4f_t[lctx->dynamic_matrix_base]);
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, mat_offset, bb);
+		QFV_PacketSubmit (packet);
 	}
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 8,
@@ -647,6 +728,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
+	Cvar_Register (&dynlight_size_cvar, 0, 0);
+
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 
 	lctx->shadow_info = (qfv_attachmentinfo_t) {
@@ -890,7 +973,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		light_ids[i] = (qfv_resobj_t) {
-			.name = "ids",
+			.name = va (ctx->va_ctx, "ids:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = 2 * MaxLights * sizeof (uint32_t),
@@ -900,7 +983,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			},
 		};
 		light_data[i] = (qfv_resobj_t) {
-			.name = "lights",
+			.name = va (ctx->va_ctx, "lights:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (light_t[MaxLights]),
@@ -909,7 +992,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			},
 		};
 		light_render[i] = (qfv_resobj_t) {
-			.name = "render",
+			.name = va (ctx->va_ctx, "render:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_light_render_t[MaxLights]),
@@ -918,7 +1001,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			},
 		};
 		light_styles[i] = (qfv_resobj_t) {
-			.name = "styles",
+			.name = va (ctx->va_ctx, "styles:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (vec4f_t[NumStyles]),
@@ -927,7 +1010,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			},
 		};
 		light_mats[i] = (qfv_resobj_t) {
-			.name = "matrices",
+			.name = va (ctx->va_ctx, "matrices:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				// never need more than 6 matrices per light
@@ -1110,17 +1193,21 @@ create_light_matrices (lightingctx_t *lctx)
 		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
 		uint32_t    id = get_lightid (ent);
 		auto        r = &lctx->light_control.a[id];
-		r->matrix_base = mat_count;
+		r->matrix_id = mat_count;
 		mat_count += r->numLayers;
 	}
 	DARRAY_RESIZE (&lctx->light_mats, mat_count);
 	lctx->dynamic_matrix_base = mat_count;
+	for (uint32_t i = 0; i < dynlight_max; i++) {
+		auto r = &lctx->light_control.a[lctx->dynamic_base + i];
+		r->matrix_id = lctx->dynamic_matrix_base + i * 6;
+	}
 	for (uint32_t i = 0; i < light_pool->count; i++) {
 		light_t    *light = &light_data[i];
 		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
 		uint32_t    id = get_lightid (ent);
 		auto        r = &lctx->light_control.a[id];
-		auto        lm = &lctx->light_mats.a[r->matrix_base];
+		auto        lm = &lctx->light_mats.a[r->matrix_id];
 		mat4f_t     view;
 		mat4f_t     proj;
 
@@ -1156,7 +1243,6 @@ create_light_matrices (lightingctx_t *lctx)
 					mmulf (side_view, qfv_z_up, side_view);
 					mmulf (lm[j], proj, side_view);
 				}
-				r->matrix_id = r->matrix_base;
 				break;
 			case ST_CASCADE:
 				// dependent on view fustrum and cascade level
@@ -1165,13 +1251,11 @@ create_light_matrices (lightingctx_t *lctx)
 				for (int j = 0; j < 4; j++) {
 					mmulf (lm[j], proj, view);
 				}
-				r->matrix_id = r->matrix_base;
 				break;
 			case ST_PLANE:
 				QFV_PerspectiveCos (proj, -light->direction[3]);
 				mmulf (view, qfv_z_up, view);
 				mmulf (lm[0], proj, view);
-				r->matrix_id = r->matrix_base;
 				break;
 		}
 	}
@@ -1190,19 +1274,6 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, bb);
 	}
 	QFV_PacketSubmit (packet);
-}
-
-static uint32_t
-make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
-		 uint32_t type)
-{
-	if (type == ST_CUBE) {
-		layer /= 6;
-	}
-	return ((matrix_index & 0x1fff) << 0)
-		 | ((map_index & 0x1f) << 13)
-		 | ((layer & 0x7ff) << 18)
-		 | ((type & 3) << 29);
 }
 
 static void
@@ -1240,9 +1311,6 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		QFV_PacketCopyBuffer (packet, lframe->render_buffer, 0, bb);
 	}
 	QFV_PacketSubmit (packet);
-
-	lctx->dynamic_base = count;
-	lctx->dynamic_count = 0;
 }
 
 static int
@@ -1345,6 +1413,53 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 }
 
 static int
+allocate_dynlight_map (mapctx_t *mctx)
+{
+	int         size = -1;
+	int         numLayers = 0;
+	int         totalLayers = 0;
+	int         layers = 6;
+	int         cube = 1;
+
+	for (int i = 0; i < dynlight_max; i++) {
+		if (size != dynlight_size || numLayers + layers > mctx->maxLayers) {
+			if (numLayers) {
+				mctx->maps[mctx->numMaps++] = (mapdesc_t) {
+					.size = size,
+					.layers = numLayers,
+					.cube = cube,
+				};
+				numLayers = 0;
+			}
+			size = dynlight_size;
+		}
+
+		auto li = mctx->numLights + i;
+		auto lr = &mctx->control[li];
+
+		*lr = (light_control_t) {
+			.renderpass_index = 2,
+			.map_index = mctx->numMaps,
+			.size = size,
+			.layer = numLayers,
+			.numLayers = layers,
+			.mode = ST_CUBE,
+			.light_id = li,
+		};
+		numLayers += layers;
+		totalLayers += layers;
+	}
+	if (numLayers) {
+		mctx->maps[mctx->numMaps++] = (mapdesc_t) {
+			.size = size,
+			.layers = numLayers,
+			.cube = cube,
+		};
+	}
+	return totalLayers;
+}
+
+static int
 get_point_size (const light_t *light)
 {
 	return abs ((int) light->color[3]);
@@ -1388,7 +1503,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	heapsort_r (lightMap, numLights, sizeof (int), light_compare, lights);
 
-	DARRAY_RESIZE (&lctx->light_control, numLights);
+	DARRAY_RESIZE (&lctx->light_control, numLights + dynlight_max);
 	for (int i = 0; i < numLights; i++) {
 		auto li = lightMap[i];
 		auto lr = &lctx->light_control.a[li];
@@ -1413,6 +1528,8 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	totalLayers += allocate_map (&mctx, ST_CUBE, get_point_size);
 	totalLayers += allocate_map (&mctx, ST_PLANE, get_spot_size);
 	totalLayers += allocate_map (&mctx, ST_CASCADE, get_direct_size);
+
+	totalLayers += allocate_dynlight_map (&mctx);
 
 	lctx->num_maps = mctx.numMaps;
 	if (mctx.numMaps) {
@@ -1609,6 +1726,8 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 		auto reg = lctx->scene->reg;
 		auto light_pool = &reg->comp_pools[scene_light];
 		if (light_pool->count) {
+			lctx->dynamic_base = light_pool->count;
+			lctx->dynamic_count = 0;
 			build_shadow_maps (lctx, ctx);
 			transition_shadow_maps (lctx, ctx);
 			update_shadow_descriptors (lctx, ctx);

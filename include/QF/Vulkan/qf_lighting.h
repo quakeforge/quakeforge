@@ -99,8 +99,7 @@ typedef struct light_control_s {
 	uint8_t     numLayers;
 	uint8_t     mode;
 	uint16_t    light_id;
-	uint16_t    matrix_base;// for rendering maps
-	uint16_t    matrix_id;	// for rendering shadows
+	uint16_t    matrix_id;
 } light_control_t;
 
 typedef struct light_control_set_s
