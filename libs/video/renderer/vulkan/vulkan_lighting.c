@@ -289,6 +289,9 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_light].a[i];
 		uint32_t    id = get_lightid (ent);
+		if (id >= lctx->light_control.size) {
+			continue;
+		}
 		auto r = &lctx->light_control.a[id];
 		if (!r->numLayers) {
 			continue;
@@ -1300,6 +1303,9 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	for (uint32_t i = 0; i < count; i++) {
 		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
 		uint32_t    id = get_lightid (ent);
+		if (id >= lctx->light_control.size) {
+			continue;
+		}
 		auto        r = &lctx->light_control.a[id];
 		render[i] = (qfv_light_render_t) {
 			.id_data = make_id(r->matrix_id, r->map_index, r->layer, r->mode),
