@@ -280,6 +280,5 @@ void
 gl_R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearDlights ();
 	R_ClearParticles ();
 }

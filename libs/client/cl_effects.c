@@ -42,6 +42,7 @@
 
 #include "QF/plugin/vid_render.h"	//FIXME
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 
 #include "client/entities.h"
@@ -50,15 +51,13 @@
 #include "client/world.h"
 
 void
-CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
+CL_NewDlight (entity_t ent, vec4f_t org, int effects, byte glow_size,
 			  byte glow_color, double time)
 {
-	float       radius;
-	dlight_t   *dl;
-	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
-	static quat_t red = {0.5, 0.05, 0.05, 0.7};
-	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
-	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
+	static vec4f_t normal = {0.4, 0.2, 0.05, 0.7};
+	static vec4f_t red = {0.5, 0.05, 0.05, 0.7};
+	static vec4f_t blue = {0.05, 0.05, 0.5, 0.7};
+	static vec4f_t purple = {0.5, 0.05, 0.5, 0.7};
 
 	effects &= EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT;
 	if (!effects) {
@@ -66,60 +65,56 @@ CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
 			return;
 	}
 
-	dl = R_AllocDlight (key);
-	if (!dl)
-		return;
-	VectorCopy (org, dl->origin);
+	float       radius = 0;
+	float       die = time + 0.1;
+	vec4f_t color = normal;
 
 	if (effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)) {
 		radius = 200 + (rand () & 31);
 		if (effects & EF_BRIGHTLIGHT) {
 			radius += 200;
-			dl->origin[2] += 16;
+			org[2] += 16;
 		}
 		if (effects & EF_DIMLIGHT)
 			if (effects & ~EF_DIMLIGHT)
 				radius -= 100;
-		dl->radius = radius;
-		dl->die = time + 0.1;
+		radius = radius;
 
 		switch (effects & (EF_RED | EF_BLUE)) {
-			case EF_RED | EF_BLUE:
-				QuatCopy (purple, dl->color);
-				break;
-			case EF_RED:
-				QuatCopy (red, dl->color);
-				break;
-			case EF_BLUE:
-				QuatCopy (blue, dl->color);
-				break;
-			default:
-				QuatCopy (normal, dl->color);
-				break;
+			case EF_RED | EF_BLUE:  color = purple; break;
+			case EF_RED:            color = red; break;
+			case EF_BLUE:           color = blue; break;
+			default:                color = normal; break;
 		}
 	}
 
 	if (glow_size) {
-		dl->radius += glow_size < 128 ? glow_size * 8.0 :
-			(glow_size - 256) * 8.0;
-		dl->die = time + 0.1;
+		radius += glow_size < 128 ? glow_size * 8.0 : (glow_size - 256) * 8.0;
 		if (glow_color) {
 			if (glow_color == 255) {
-				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
+				color = (vec4f_t) { 1, 1, 1, 0.7 };
 			} else {
 				byte        *tempcolor;
 
 				tempcolor = (byte *) &d_8to24table[glow_color];
-				VectorScale (tempcolor, 1 / 255.0, dl->color);
+				VectorScale (tempcolor, 1 / 255.0, color);
+				color[3] = 0.7;
 			}
 		}
 	}
+
+	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+		.origin = org,
+		.color = color,
+		.radius = radius,
+		.die = die,
+	});
+	Light_LinkLight (cl_world.scene->lights, ent.id);
 }
 
 void
-CL_ModelEffects (entity_t ent, int num, int glow_color, double time)
+CL_ModelEffects (entity_t ent, int glow_color, double time)
 {
-	dlight_t   *dl;
 	transform_t transform = Entity_Transform (ent);
 	renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
 	model_t    *model = renderer->model;
@@ -128,15 +123,14 @@ CL_ModelEffects (entity_t ent, int num, int glow_color, double time)
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
-		dl = R_AllocDlight (num);
-		if (dl) {
-			VectorCopy (ent_origin, dl->origin);
-			dl->radius = 200.0;
-			dl->die = time + 0.1;
+		Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+			.origin = ent_origin,
 			//FIXME VectorCopy (r_firecolor, dl->color);
-			VectorSet (0.9, 0.7, 0.0, dl->color);
-			dl->color[3] = 0.7;
-		}
+			.color = { 0.9, 0.7, 0.0, 0.7 },
+			.radius = 200,
+			.die = time + 0.1,
+		});
+		Light_LinkLight (cl_world.scene->lights, ent.id);
 		clp_funcs->RocketTrail (*old_origin, ent_origin);
 	} else if (model->flags & EF_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
@@ -155,26 +149,21 @@ CL_ModelEffects (entity_t ent, int num, int glow_color, double time)
 }
 
 void
-CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
+CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
 				double time)
 {
-	dlight_t   *dl = R_AllocDlight (num);
-	if (dl) {
-		position += 18 * fv;
-		VectorCopy (position, dl->origin);
-		dl->origin[2] += zoffset;
-		dl->radius = 200 + (rand () & 31);
-		dl->die = time + 0.1;
-		dl->minlight = 32;
-		dl->color[0] = 0.2;
-		dl->color[1] = 0.1;
-		dl->color[2] = 0.05;
-		dl->color[3] = 0.7;
-	}
+	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+		.origin = position + 18 * fv + zoffset * (vec4f_t) {0, 0, 1, 0},
+		.color = { 0.2, 0.1, 0.05, 0.7 },
+		.radius = 200 + (rand () & 31),
+		.die = time + 0.1,
+		.minlight = 32,
+	});
+	Light_LinkLight (cl_world.scene->lights, ent.id);
 }
 
 void
-CL_EntityEffects (int num, entity_t ent, entity_state_t *state, double time)
+CL_EntityEffects (entity_t ent, entity_state_t *state, double time)
 {
 	transform_t transform = Entity_Transform (ent);
 	vec4f_t     position = Transform_GetWorldPosition (transform);
@@ -182,6 +171,6 @@ CL_EntityEffects (int num, entity_t ent, entity_state_t *state, double time)
 		clp_funcs->EntityParticles (position);
 	if (state->effects & EF_MUZZLEFLASH) {
 		vec4f_t     fv = Transform_Forward (transform);
-		CL_MuzzleFlash (position, fv, 16, num, time);
+		CL_MuzzleFlash (ent, position, fv, 16, time);
 	}
 }

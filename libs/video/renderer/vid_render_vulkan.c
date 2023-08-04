@@ -146,7 +146,6 @@ vulkan_R_ClearState (void)
 	//FIXME clear scene correctly
 	r_refdef.worldmodel = 0;
 	EntQueue_Clear (r_ent_queue);
-	R_ClearDlights ();
 	R_ClearParticles ();
 	Vulkan_LoadLights (0, vulkan_ctx);
 }

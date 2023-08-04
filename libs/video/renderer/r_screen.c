@@ -332,7 +332,9 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		R_MarkLeaves (&r_visstate, scr_scene->viewleaf);
 	}
 	r_framecount++;
-	R_PushDlights (vec3_origin, &r_visstate);
+	if (scr_scene) {
+		R_PushDlights (vec3_origin, &r_visstate);
+	}
 	r_funcs->UpdateScreen (scr_funcs);
 }
 
@@ -506,10 +508,12 @@ SCR_NewScene (scene_t *scene)
 			.leaf_visframes = leaf_visframes,
 			.face_visframes = face_visframes,
 		};
+		r_refdef.registry = scene->reg;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
 	} else {
 		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();
+		r_refdef.registry = 0;
 	}
 }

@@ -68,5 +68,8 @@ void Light_ClearLights (lightingdata_t *ldata);
 void Light_AddLight (lightingdata_t *ldata, const light_t *light,
 					 uint32_t style);
 void Light_EnableSun (lightingdata_t *ldata);
+void Light_DecayLights (lightingdata_t *ldata, float frametime,
+						double realtime);
+void Light_LinkLight (lightingdata_t *ldata, uint32_t entid);
 
 #endif//__QF_scene_light_h

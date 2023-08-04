@@ -197,7 +197,6 @@ R_NewScene (scene_t *scene)
 	model_t    *worldmodel = scene->worldmodel;
 	mod_brush_t *brush = &worldmodel->brush;
 
-	r_refdef.registry = scene->reg;
 	r_refdef.worldmodel = worldmodel;
 
 	if (brush->skytexture)
@@ -284,14 +283,15 @@ setup_lighting (entity_t ent, alight_t *lighting)
 
 	VectorCopy (lightvec, lighting->lightvec);
 
-	for (unsigned lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (r_dlights[lnum].die >= vr_data.realtime) {
-			VectorSubtract (r_entorigin, r_dlights[lnum].origin, dist);
-			add = r_dlights[lnum].radius - VectorLength (dist);
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		VectorSubtract (r_entorigin, dlight->origin, dist);
+		add = dlight->radius - VectorLength (dist);
 
-			if (add > 0)
-				lighting->ambientlight += add;
-		}
+		if (add > 0)
+			lighting->ambientlight += add;
 	}
 
 	// clamp lighting so it doesn't overbright as much
@@ -360,11 +360,9 @@ R_DrawViewModel (void)
 {
 	// FIXME: remove and do real lighting
 	int         j;
-	unsigned int lnum;
 	vec3_t      dist;
 	float       add;
 	float       minlight;
-	dlight_t   *dl;
 	entity_t    viewent;
 	alight_t    lighting;
 
@@ -404,15 +402,10 @@ R_DrawViewModel (void)
 	lighting.shadelight = j;
 
 	// add dynamic lights
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		dl = &r_dlights[lnum];
-		if (!dl->radius)
-			continue;
-		if (!dl->radius)
-			continue;
-		if (dl->die < vr_data.realtime)
-			continue;
-
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dl = &dlight_data[i];
 		VectorSubtract (r_entorigin, dl->origin, dist);
 		add = dl->radius - VectorLength (dist);
 		if (add > 0)
@@ -494,6 +487,9 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 
 	insubmodel = true;
 
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_brush].a[i];
 		uint32_t    render_id = SW_AddEntity (ent);
@@ -527,17 +523,13 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			// calculate dynamic lighting for bmodel if it's not an
 			// instanced model
 			if (brush->firstmodelsurface != 0) {
-				for (k = 0; k < r_maxdlights; k++) {
-					if ((r_dlights[k].die < vr_data.realtime) ||
-						(!r_dlights[k].radius)) {
-						continue;
-					}
-
+				for (k = 0; k < dlight_pool->count; k++) {
+					auto dlight = &dlight_data[k];
 					vec4f_t     lightorigin;
-					VectorSubtract (r_dlights[k].origin, origin, lightorigin);
+					VectorSubtract (dlight->origin, origin, lightorigin);
 					lightorigin[3] = 1;
 					R_RecursiveMarkLights (brush, lightorigin,
-										   &r_dlights[k], k,
+										   dlight, k,
 										   brush->hulls[0].firstclipnode);
 				}
 			}
@@ -699,6 +691,5 @@ void
 R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearDlights ();
 	R_ClearParticles ();
 }

@@ -290,7 +290,6 @@ void
 locs_draw (double time, vec4f_t simorg)
 {
 	//FIXME custom ent rendering code would be nice
-	dlight_t   *dl;
 	location_t *nearloc;
 	vec4f_t     trueloc;
 	vec4f_t     zero = {};
@@ -298,16 +297,15 @@ locs_draw (double time, vec4f_t simorg)
 
 	nearloc = locs_find (simorg);
 	if (nearloc) {
-		dl = R_AllocDlight (4096);
-		if (dl) {
-			VectorCopy (nearloc->loc, dl->origin);
-			dl->radius = 200;
-			dl->die = time + 0.1;
-			dl->color[0] = 0;
-			dl->color[1] = 1;
-			dl->color[2] = 0;
-			dl->color[3] = 0.7;
-		}
+#if 0//FIXME
+		Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+			.origin = nearloc->loc,
+			.color = { 0, 1, 0, 0.7 },
+			.radius = 200,
+			.die = time + 0.1,
+		});
+		Light_LinkLight (cl_world.scene->lights, ent.id);
+#endif
 		trueloc = nearloc->loc;
 		clp_funcs->Particle_New (pt_smokecloud, part_tex_smoke, trueloc, 2.0,
 				zero, time + 9.0, 254,

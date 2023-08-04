@@ -96,22 +96,16 @@ typedef struct subpic_s {
 
 // dynamic lights ===========================================================
 
-typedef struct dlight_s
-{
-	int     key;                // so entities can reuse same entry
-	vec3_t  origin;
+typedef struct dlight_s {
+	vec4f_t origin;
+	vec4f_t color;
 	float   radius;
 	float   die;                // stop lighting after this time
 	float   decay;              // drop this each second
 	float   minlight;           // don't add when contributing less
-	float   color[4];
 } dlight_t;
 
-extern  dlight_t       *r_dlights;
-extern	unsigned int	r_maxdlights;
-
-typedef struct
-{
+typedef struct {
 	int		length;
 	char	map[MAX_STYLESTRING];
 	char    average;
@@ -180,8 +174,6 @@ void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
-dlight_t *R_AllocDlight (int key);
-void R_DecayLights (double frametime);
 void Fog_Update (float density, float red, float green, float blue,
 				 float time);
 struct plitem_s;

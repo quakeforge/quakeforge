@@ -35,13 +35,13 @@
 struct entity_s;
 struct entity_state_s;
 
-void CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
-				   byte glow_color, double time);
-void CL_ModelEffects (struct entity_s ent, int num, int glow_color,
+void CL_NewDlight (struct entity_s ent, vec4f_t org, int effects,
+				   byte glow_size, byte glow_color, double time);
+void CL_ModelEffects (struct entity_s ent, int glow_color,
 					  double time);
-void CL_EntityEffects (int num, struct entity_s ent,
-					   struct entity_state_s *state, double time);
-void CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
-					 double time);
+void CL_EntityEffects (struct entity_s ent, struct entity_state_s *state,
+					   double time);
+void CL_MuzzleFlash (struct entity_s ent, vec4f_t position, vec4f_t fv,
+					 float zoffset, double time);
 
 #endif//__client_effects_h

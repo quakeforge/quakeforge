@@ -310,7 +310,7 @@ CL_RelinkEntities (void)
 			angles[YAW] = bobjrotate;
 			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
-		CL_EntityEffects (i, ent, new, cl.time);
+		CL_EntityEffects (ent, new, cl.time);
 		vec4f_t org = Transform_GetWorldPosition (transform);
 		int effects = new->effects;
 		if (cl.maxclients == 1 && effects) {
@@ -325,13 +325,13 @@ CL_RelinkEntities (void)
 			effects |= (it & IT_INVULNERABILITY)
 				>> (BITOP_LOG2(IT_INVULNERABILITY) - BITOP_LOG2 (EF_RED));
 		}
-		CL_NewDlight (i, org, effects, new->glow_size,
+		CL_NewDlight (ent, org, effects, new->glow_size,
 					  new->glow_color, cl.time);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
 			old->origin = org;
 		}
 		if (model_flags & ~EF_ROTATE)
-			CL_ModelEffects (ent, i, new->glow_color, cl.time);
+			CL_ModelEffects (ent, new->glow_color, cl.time);
 
 		SET_REMOVE (&cl_forcelink, i);
 	}

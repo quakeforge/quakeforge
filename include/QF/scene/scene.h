@@ -49,6 +49,8 @@ enum scene_components {
 	scene_old_origin,	//XXX FIXME XXX should not be here
 	scene_colormap,
 
+	scene_dynlight,
+
 	scene_light,
 	scene_efrags,
 	scene_lightstyle,

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "QF/model.h"
+#include "QF/render.h"
 #include "QF/set.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
@@ -84,19 +85,11 @@ test_light_leaf (const light_t *light, const mleaf_t *leaf)
 	return true;
 }
 
-void
-Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
+static void
+link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 {
 	scene_t    *scene = ldata->scene;
 	model_t    *model = scene->worldmodel;
-
-	entity_t    ent = {
-		.reg = scene->reg,
-		.id = ECS_NewEntity (scene->reg),
-	};
-
-	Ent_SetComponent (ent.id, scene_light, ent.reg, light);
-	Ent_SetComponent (ent.id, scene_lightstyle, ent.reg, &style);
 
 	set_t       _pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
 	set_t      *pvs = &_pvs;
@@ -124,7 +117,49 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
 			lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
 		}
 	}
+	if (Ent_HasComponent (ent.id, scene_efrags, ent.reg)) {
+		Ent_RemoveComponent (ent.id, scene_efrags, ent.reg);
+	}
 	Ent_SetComponent (ent.id, scene_efrags, ent.reg, &efrags);
+}
+
+void
+Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
+{
+	scene_t    *scene = ldata->scene;
+
+	entity_t    ent = {
+		.reg = scene->reg,
+		.id = ECS_NewEntity (scene->reg),
+	};
+
+	Ent_SetComponent (ent.id, scene_light, ent.reg, light);
+	Ent_SetComponent (ent.id, scene_lightstyle, ent.reg, &style);
+
+	link_light (ldata, light, ent);
+}
+
+void
+Light_LinkLight (lightingdata_t *ldata, uint32_t entid)
+{
+	scene_t    *scene = ldata->scene;
+
+	entity_t    ent = {
+		.reg = scene->reg,
+		.id = entid,
+	};
+	dlight_t *dlight = Ent_GetComponent (ent.id, scene_dynlight, ent.reg);
+	if (!dlight) {
+		Sys_Error ("no dlight on entity to link");
+	}
+	light_t light = {
+		.color = dlight->color,
+		.position = dlight->origin,
+		.direction = {0, 0, 1, 1},
+		.attenuation = {0, 0, 1, 1/dlight->radius},
+	};
+
+	link_light (ldata, &light, ent);
 }
 
 void
@@ -149,4 +184,26 @@ Light_EnableSun (lightingdata_t *ldata)
 	// any leaf visible from a leaf with a sky surface (and thus the sun)
 	// can receive shadows from the sun
 	expand_pvs (ldata->sun_pvs, brush);
+}
+
+void
+Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
+{
+	auto reg = ldata->scene->reg;
+	auto dlight_pool = &reg->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		dlight->radius -= frametime * dlight->decay;
+		if (dlight->radius <= 0 || dlight->die < realtime) {
+			uint32_t ent = dlight_pool->dense[i];
+			Ent_RemoveComponent (ent, scene_dynlight, reg);
+			if (!Ent_HasComponent (ent, scene_efrags, reg)) {
+				Sys_Error ("dlight with no efrags");
+			}
+			Ent_RemoveComponent (ent, scene_efrags, reg);
+			i--;
+		}
+	}
 }

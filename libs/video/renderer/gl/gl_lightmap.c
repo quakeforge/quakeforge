@@ -98,7 +98,7 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 	unsigned int	maxdist, maxdist2, maxdist3;
 	int             smax, smax_bytes, tmax,
 					grey, s, t;
-	unsigned int	lnum, td, i, j;
+	unsigned int	td, j;
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
@@ -113,16 +113,18 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		if (!(surf->dlightbits[i / 32] & (1 << (i % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
+		VectorSubtract (dlight->origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
-		if (dist > min (1024, r_dlights[lnum].radius))
+		if (dist > min (1024, dlight->radius))
 			continue;
-		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
-					   impact);
+		VectorMultSub (dlight->origin, dist, surf->plane->normal, impact);
 
 		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
@@ -136,7 +138,7 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) (r_dlights[lnum].radius * r_dlights[lnum].radius);
+		maxdist = (int) (dlight->radius * dlight->radius);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
@@ -144,8 +146,8 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 		maxdist3 = maxdist - t;
 
 		// convert to 8.8 blocklights format
-		grey = (r_dlights[lnum].color[0] + r_dlights[lnum].color[1] +
-				r_dlights[lnum].color[2]) * maxdist / 3.0;
+		grey = (dlight->color[0] + dlight->color[1] + dlight->color[2])
+				* maxdist / 3.0;
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;
@@ -171,7 +173,7 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 	unsigned int	maxdist, maxdist2, maxdist3;
 	int             smax, smax_bytes, tmax,
 					red, green, blue, s, t;
-	unsigned int	lnum, td, i, j;
+	unsigned int	td, j;
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
@@ -185,18 +187,21 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t k = 0; k < dlight_pool->count; k++) {
+		auto dlight = &dlight_data[k];
+		if (!(surf->dlightbits[k / 32] & (1 << (k % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
+		VectorSubtract (dlight->origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
-		if (dist > min (1024, r_dlights[lnum].radius))
+		if (dist > min (1024, dlight->radius))
 			continue;
-		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
-					   impact);
+		VectorMultSub (dlight->origin, dist, surf->plane->normal, impact);
 
-		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
+		int i;
+		i = DotProduct (impact, surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
 
 		// reduce calculations
@@ -204,11 +209,11 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 		for (s = 0; s < smax; s++, i -= 16)
 			sdtable[s] = i * i + t;
 
-		i = DotProduct (impact,	surf->texinfo->vecs[1]) +
+		i = DotProduct (impact, surf->texinfo->vecs[1]) +
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) (r_dlights[lnum].radius * r_dlights[lnum].radius);
+		maxdist = (int) (dlight->radius * dlight->radius);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
@@ -216,9 +221,9 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 		maxdist3 = maxdist - t;
 
 		// convert to 8.8 blocklights format
-		red = r_dlights[lnum].color[0] * maxdist;
-		green = r_dlights[lnum].color[1] * maxdist;
-		blue = r_dlights[lnum].color[2] * maxdist;
+		red = dlight->color[0] * maxdist;
+		green = dlight->color[1] * maxdist;
+		blue = dlight->color[2] * maxdist;
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;

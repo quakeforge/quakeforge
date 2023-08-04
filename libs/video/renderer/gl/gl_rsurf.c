@@ -550,15 +550,14 @@ gl_R_DrawBrushModel (entity_t e)
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		for (unsigned k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < vr_data.realtime)
-				 || (!r_dlights[k].radius))
-				continue;
-
+		auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+		auto dlight_data = (dlight_t *) dlight_pool->data;
+		for (uint32_t i = 0; i < dlight_pool->count; i++) {
+			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
-			VectorSubtract (r_dlights[k].origin, worldMatrix[3], lightorigin);
+			VectorSubtract (dlight->origin, worldMatrix[3], lightorigin);
 			lightorigin[3] = 1;
-			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+			R_RecursiveMarkLights (brush, lightorigin, dlight, i,
 								   brush->hulls[0].firstclipnode);
 		}
 	}

@@ -152,7 +152,6 @@ static void
 calc_lighting (entity_t ent, float *ambient, float *shadelight,
 			   vec3_t lightvec)
 {
-	unsigned    i;
 	float       add;
 	vec3_t      dist;
 	int         light;
@@ -167,13 +166,14 @@ calc_lighting (entity_t ent, float *ambient, float *shadelight,
 								renderer->min_light) * 128);
 	*shadelight = *ambient;
 
-	for (i = 0; i < r_maxdlights; i++) {
-		if (r_dlights[i].die >= vr_data.realtime) {
-			VectorSubtract (entorigin, r_dlights[i].origin, dist);
-			add = r_dlights[i].radius - VectorLength (dist);
-			if (add > 0)
-				*ambient += add;
-		}
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		VectorSubtract (entorigin, dlight->origin, dist);
+		add = dlight->radius - VectorLength (dist);
+		if (add > 0)
+			*ambient += add;
 	}
 	if (*ambient >= 128)
 		*ambient = 128;

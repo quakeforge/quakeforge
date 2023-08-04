@@ -153,6 +153,11 @@ static const component_t scene_components[scene_comp_count] = {
 		.name = "colormap",
 	},
 
+	[scene_dynlight] = {
+		.size = sizeof (dlight_t),
+		.name = "dyn_light",
+	},
+
 	[scene_light] = {
 		.size = sizeof (light_t),
 		.name = "light",

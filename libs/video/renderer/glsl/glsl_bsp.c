@@ -651,7 +651,6 @@ static void
 R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
-	unsigned    k;
 	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
@@ -695,16 +694,15 @@ R_DrawBrushModel (entity_t e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		for (k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < vr_data.realtime)
-				|| (!r_dlights[k].radius))
-				continue;
-
+		for (uint32_t i = 0; i < dlight_pool->count; i++) {
+			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
-			VectorSubtract (r_dlights[k].origin, mat[3], lightorigin);
+			VectorSubtract (dlight->origin, mat[3], lightorigin);
 			lightorigin[3] = 1;
-			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+			R_RecursiveMarkLights (brush, lightorigin, dlight, i,
 								   brush->hulls[0].firstclipnode);
 		}
 	}

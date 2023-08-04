@@ -77,9 +77,6 @@ void R_LoadSkys (const char *);
 void R_ClearEfrags (void);
 
 int R_FindNearLights (vec4f_t pos, int count, dlight_t **lights);
-dlight_t *R_AllocDlight (int key);
-void R_DecayLights (double frametime);
-void R_ClearDlights (void);
 
 int R_InitGraphTextures (int base);
 

@@ -246,7 +246,7 @@ glsl_R_DrawIQM (entity_t ent)
 		VectorSubtract (lights[i]->origin, entorigin, val);
 		val[3] = lights[i]->radius;
 		qfeglUniform4fv (l->position.location, 1, val);
-		qfeglUniform4fv (l->color.location, 1, lights[i]->color);
+		qfeglUniform4fv (l->color.location, 1, (vec_t*)&lights[i]->color);
 	}
 	for (; i < MAX_IQM_LIGHTS; i++) {
 		lightpar_t *l = &iqm_shader.lights[i];

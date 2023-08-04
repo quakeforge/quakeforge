@@ -91,6 +91,7 @@
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
+#include "QF/scene/light.h"
 #include "QF/scene/transform.h"
 #include "QF/ui/font.h"//FIXME
 
@@ -1969,7 +1970,7 @@ Host_Frame (float time)
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
-		R_DecayLights (host_frametime);
+		Light_DecayLights (cl_world.scene->lights, host_frametime, realtime);
 	} else
 		S_Update (nulltransform, 0);
 
