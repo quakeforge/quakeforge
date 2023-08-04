@@ -77,7 +77,13 @@ typedef struct scene_s {
 	struct lightingdata_s *lights;
 } scene_t;
 
-scene_t *Scene_NewScene (void);
+typedef struct scene_system_s {
+	struct ecs_system_s *system;
+	const struct component_s *components;
+	uint32_t    component_count;
+} scene_system_t;
+
+scene_t *Scene_NewScene (scene_system_t *extra_systems);
 void Scene_DeleteScene (scene_t *scene);
 struct entity_s Scene_CreateEntity (scene_t *scene);
 void Scene_DestroyEntity (scene_t *scene, struct entity_s entity);

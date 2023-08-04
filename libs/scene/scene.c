@@ -253,12 +253,19 @@ static model_t empty_world = {
 };
 
 scene_t *
-Scene_NewScene (void)
+Scene_NewScene (scene_system_t *extra_systems)
 {
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
 	scene->reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	for (auto extra = extra_systems; extra && extra->system; extra++) {
+		uint32_t base = ECS_RegisterComponents (scene->reg,
+												extra->components,
+												extra->component_count);
+		extra->system->reg = scene->reg;
+		extra->system->base = base;
+	}
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;

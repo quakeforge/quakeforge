@@ -199,7 +199,7 @@ bi_Scene_NewScene (progs_t *pr, void *_res)
 
 	rua_scene_t *scene = rua_scene_new (res);
 
-	scene->scene = Scene_NewScene ();
+	scene->scene = Scene_NewScene (0);
 
 	scene->next = res->scenes;
 	if (res->scenes) {

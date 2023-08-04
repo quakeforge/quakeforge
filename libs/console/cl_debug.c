@@ -293,7 +293,7 @@ Con_Debug_Init (void)
 	IMUI_SetVisible (debug_imui, con_debug);
 	IMUI_Style_Fetch (debug_imui, &current_style);
 
-	debug_scene = Scene_NewScene ();
+	debug_scene = Scene_NewScene (0);
 }
 
 void

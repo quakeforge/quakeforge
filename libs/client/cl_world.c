@@ -64,7 +64,7 @@ worldscene_t cl_world = {
 void
 CL_World_Init (void)
 {
-	cl_world.scene = Scene_NewScene ();
+	cl_world.scene = Scene_NewScene (0);
 	cl_world.scene->lights = Light_CreateLightingData (cl_world.scene);
 }
 
