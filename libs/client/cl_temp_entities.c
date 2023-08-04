@@ -749,3 +749,48 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 	*tail = cl_projectiles;
 	cl_projectiles = head;
 }
+
+#define c_muzzleflash (effect_system.base + effect_muzzleflash)
+
+static bool
+has_muzzleflash (entity_t ent)
+{
+	return Ent_HasComponent (ent.id, c_muzzleflash, ent.reg);
+}
+
+static uint32_t
+get_muzzleflash (entity_t ent)
+{
+	return *(uint32_t *) Ent_GetComponent (ent.id, c_muzzleflash, ent.reg);
+}
+
+static void
+set_muzzleflash (entity_t ent, uint32_t light)
+{
+	Ent_SetComponent (ent.id, c_muzzleflash, ent.reg, &light);
+}
+
+void
+CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
+				double time)
+{
+	// spawn a new entity so the light doesn't mess with the owner
+	uint32_t light = nullent;
+	if (has_muzzleflash (ent)) {
+		light = get_muzzleflash (ent);
+	}
+	if (!ECS_EntValid (light, ent.reg)) {
+		light = ECS_NewEntity (ent.reg);
+		set_muzzleflash (ent, light);
+	}
+	DARRAY_APPEND (&light_entities, ((entity_t) {.reg = ent.reg, .id = light}));
+
+	Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
+		.origin = position + 18 * fv + zoffset * (vec4f_t) {0, 0, 1, 0},
+		.color = { 0.2, 0.1, 0.05, 0.7 },
+		.radius = 200 + (rand () & 31),
+		.die = time + 0.1,
+		.minlight = 32,
+	});
+	Light_LinkLight (cl_world.scene->lights, light);
+}

@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/ecs.h"
 #include "QF/render.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
@@ -49,6 +50,53 @@
 #include "client/effects.h"
 #include "client/particles.h"
 #include "client/world.h"
+
+ecs_system_t effect_system;
+
+const component_t effect_components[effect_comp_count] = {
+	[effect_light] = {
+		.size = sizeof (uint32_t),
+		.name = "effect light",
+	},
+	[effect_muzzleflash] = {
+		.size = sizeof (uint32_t),
+		.name = "muzzle flash",
+	},
+};
+
+#define c_light (effect_system.base + effect_light)
+
+static bool
+has_light (entity_t ent)
+{
+	return Ent_HasComponent (ent.id, c_light, ent.reg);
+}
+
+static uint32_t
+get_light (entity_t ent)
+{
+	return *(uint32_t *) Ent_GetComponent (ent.id, c_light, ent.reg);
+}
+
+static void
+set_light (entity_t ent, uint32_t light)
+{
+	Ent_SetComponent (ent.id, c_light, ent.reg, &light);
+}
+
+static uint32_t
+attach_light_ent (entity_t ent)
+{
+	uint32_t light = nullent;
+	if (has_light (ent)) {
+		light = get_light (ent);
+	}
+	if (!ECS_EntValid (light, ent.reg)) {
+		light = ECS_NewEntity (ent.reg);
+		set_light (ent, light);
+	}
+	return light;
+}
 
 void
 CL_NewDlight (entity_t ent, vec4f_t org, int effects, byte glow_size,
@@ -103,13 +151,14 @@ CL_NewDlight (entity_t ent, vec4f_t org, int effects, byte glow_size,
 		}
 	}
 
-	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+	uint32_t light = attach_light_ent (ent);
+	Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
 		.origin = org,
 		.color = color,
 		.radius = radius,
 		.die = die,
 	});
-	Light_LinkLight (cl_world.scene->lights, ent.id);
+	Light_LinkLight (cl_world.scene->lights, light);
 }
 
 void
@@ -123,14 +172,15 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
-		Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+		uint32_t light = attach_light_ent (ent);
+		Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
 			.origin = ent_origin,
 			//FIXME VectorCopy (r_firecolor, dl->color);
 			.color = { 0.9, 0.7, 0.0, 0.7 },
 			.radius = 200,
 			.die = time + 0.1,
 		});
-		Light_LinkLight (cl_world.scene->lights, ent.id);
+		Light_LinkLight (cl_world.scene->lights, light);
 		clp_funcs->RocketTrail (*old_origin, ent_origin);
 	} else if (model->flags & EF_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
@@ -146,20 +196,6 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 		clp_funcs->VoorTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_GLOWTRAIL)
 		clp_funcs->GlowTrail (*old_origin, ent_origin, glow_color);
-}
-
-void
-CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
-				double time)
-{
-	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
-		.origin = position + 18 * fv + zoffset * (vec4f_t) {0, 0, 1, 0},
-		.color = { 0.2, 0.1, 0.05, 0.7 },
-		.radius = 200 + (rand () & 31),
-		.die = time + 0.1,
-		.minlight = 32,
-	});
-	Light_LinkLight (cl_world.scene->lights, ent.id);
 }
 
 void

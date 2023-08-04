@@ -43,16 +43,12 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 #include "QF/plist.h"
-#include "QF/progs.h"
-#include "QF/msg.h"
 
-#include "QF/scene/entity.h"
 #include "QF/scene/light.h"
-#include "QF/scene/scene.h"
-#include "QF/simd/vec4f.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
 
+#include "client/effects.h"
 #include "client/entities.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
@@ -64,7 +60,13 @@ worldscene_t cl_world = {
 void
 CL_World_Init (void)
 {
-	cl_world.scene = Scene_NewScene (0);
+	scene_system_t extra_systems[] = {
+		{	.system = &effect_system,
+			.components = effect_components,
+			.component_count = effect_comp_count },
+		{}
+	};
+	cl_world.scene = Scene_NewScene (extra_systems);
 	cl_world.scene->lights = Light_CreateLightingData (cl_world.scene);
 }
 

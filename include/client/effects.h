@@ -31,6 +31,17 @@
 #define __client_effects_h
 
 #include "QF/simd/types.h"
+#include "QF/ecs/component.h"
+
+enum {
+	effect_light,		// light entity id
+	effect_muzzleflash,	// light entity id
+
+	effect_comp_count,
+};
+
+extern const component_t effect_components[effect_comp_count];
+extern struct ecs_system_s effect_system;
 
 struct entity_s;
 struct entity_state_s;
