@@ -19,7 +19,7 @@ BlendFrags (vec4 color)
 	for (int i = 1; i < numFrags; i++) {
 		FragData    toInsert = frags[i];
 		int         j = i;
-		while (j > 0 && toInsert.depth > frags[j - 1].depth) {
+		while (j > 0 && toInsert.depth < frags[j - 1].depth) {
 			frags[j] = frags[j - 1];
 			j--;
 		}
