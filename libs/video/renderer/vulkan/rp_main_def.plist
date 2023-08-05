@@ -118,6 +118,15 @@ properties = {
 		depthBiasEnable = false;
 		lineWidth = 1;
 	};
+	cw_cull_front = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = front;
+		frontFace = clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
 	counter_cw_cull_back = {
 		depthClampEnable = false;
 		rasterizerDiscardEnable = false;
@@ -1918,7 +1927,7 @@ renderpasses = {
 				base_pipeline = {
 					@inherit = $pipeline_base;
 					depthStencil = $depth_test_and_write;
-					rasterization = $cw_cull_back;
+					rasterization = $cw_cull_front;
 				};
 				pipelines = {
 					bsp:shadow = {
