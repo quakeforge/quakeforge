@@ -239,7 +239,7 @@ static struct {
 typedef struct glslbspctx_s {
 	mod_brush_t *brush;
 	animation_t *animation;
-	vec4f_t    *transform;
+	const vec4f_t *transform;
 	float      *color;
 } glslbspctx_t;
 
@@ -662,14 +662,11 @@ R_DrawBrushModel (entity_t e)
 	glslbspctx_t bctx = {
 		brush,
 		Ent_GetComponent (e.id, scene_animation, e.reg),
-		renderer->full_transform,
+		Transform_GetWorldMatrixPtr (Entity_Transform (e)),
 		renderer->colormod,
 	};
 
-	mat4f_t mat;
-	transform_t transform = Entity_Transform (e);
-	Transform_GetWorldMatrix (transform, mat);
-	memcpy (renderer->full_transform, mat, sizeof (mat));//FIXME
+	auto mat = bctx.transform;
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;

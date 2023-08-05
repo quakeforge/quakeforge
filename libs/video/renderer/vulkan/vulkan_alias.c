@@ -67,6 +67,24 @@ typedef struct {
 	uint32_t    matrix_base;
 } shadow_push_constants_t;
 
+static renderer_t *
+alias_get_renderer (entity_t ent)
+{
+	return Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+}
+
+static animation_t *
+alias_get_animation (entity_t ent)
+{
+	return Ent_GetComponent (ent.id, scene_animation, ent.reg);
+}
+
+static colormap_t *
+alias_get_colormap (entity_t ent)
+{
+	return Ent_GetComponent (ent.id, scene_colormap, ent.reg);
+}
+
 static void
 alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
@@ -160,9 +178,9 @@ push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 }
 
 static void
-alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
+alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
+				renderer_t *renderer)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
 	auto model = renderer->model;
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
@@ -172,8 +190,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 		hdr = Cache_Get (&model->cache);
 	}
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = alias_get_animation (ent);
 	float blend = R_AliasGetLerpedFrames (animation, hdr);
 
 	transform_t transform = Entity_Transform (ent);
@@ -190,7 +207,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	QuatCopy (renderer->colormod, base_color);
 	QuatCopy (skin->colors, colors);
 	if (Ent_HasComponent (ent.id, scene_colormap, ent.reg)) {
-		colormap_t *colormap=Ent_GetComponent (ent.id, scene_colormap, ent.reg);
+		auto colormap = alias_get_colormap (ent);
 		colors[0] = colormap->top * 16 + 8;
 		colors[1] = colormap->bottom * 16 + 8;
 	}
@@ -264,12 +281,13 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_alias].a[i];
+		auto renderer = alias_get_renderer (ent);
 		// FIXME hack the depth range to prevent view model
 		// from poking into walls
 		if (vmod && ent.id == vr_data.view_model.id) {
 			alias_depth_range (taskctx, 0.7, 1);
 		}
-		alias_draw_ent (taskctx, ent, pass);
+		alias_draw_ent (taskctx, ent, pass, renderer);
 		// unhack in case the view_model is not the last
 		if (vmod && ent.id == vr_data.view_model.id) {
 			alias_depth_range (taskctx, 0, 1);

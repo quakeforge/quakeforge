@@ -60,6 +60,8 @@
 #include "r_internal.h"
 #include "vid_gl.h"
 
+static struct DARRAY_TYPE (mat4f_t) ent_transforms = DARRAY_STATIC_INIT (16);
+
 static instsurf_t  *waterchain = NULL;
 static instsurf_t **waterchain_tail = &waterchain;
 static instsurf_t  *sky_chain;
@@ -509,7 +511,7 @@ gl_R_DrawBrushModel (entity_t e)
 	glbspctx_t  bspctx = {
 		brush,
 		Ent_GetComponent (e.id, scene_animation, e.reg),
-		renderer->full_transform,
+		ent_transforms.a[ent_transforms.size++],
 		renderer->colormod,
 	};
 
@@ -564,7 +566,7 @@ gl_R_DrawBrushModel (entity_t e)
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
-	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&renderer->full_transform[0]);
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&bspctx.transform[0]);
 	qfglPopMatrix ();
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
@@ -720,8 +722,12 @@ gl_R_DrawWorld (void)
 	gl_R_DrawSkyChain (sky_chain);
 
 	if (r_drawentities) {
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
-			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
+		size_t count = r_ent_queue->ent_queues[mod_brush].size;
+		// ensure pointer stability of the matrix array during this frame
+		DARRAY_RESIZE (&ent_transforms, count);
+		ent_transforms.size = 0;
+		for (size_t i = 0; i < count; i++) {
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			gl_R_DrawBrushModel (ent);
 		}
 	}

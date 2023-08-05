@@ -80,7 +80,6 @@ typedef struct renderer_s {
 	int         fullbright;
 	float       min_light;
 	int         render_id;
-	mat4f_t     full_transform;
 } renderer_t;
 
 typedef struct entityset_s DARRAY_TYPE (entity_t) entityset_t;

@@ -60,7 +60,7 @@ typedef struct elechain_s {
 	struct elechain_s *next;
 	int         model_index;
 	elements_t *elements;
-	vec4f_t    *transform;
+	const vec4f_t *transform;
 	float      *color;
 } elechain_t;
 
