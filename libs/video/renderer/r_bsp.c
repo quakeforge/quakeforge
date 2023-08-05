@@ -53,24 +53,22 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 	auto face_visframes = visstate->face_visframes;
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		unsigned i = li->element;
-		if (set_is_member (pvs, i)) {
-			auto leaf = &brush->leafs[i + 1];
-			int c;
-			if ((c = leaf->nummarksurfaces)) {
-				auto mark = brush->marksurfaces + leaf->firstmarksurface;
-				do {
-					face_visframes[*mark - brush->surfaces] = visframecount;
-					mark++;
-				} while (--c);
-			}
-			leaf_visframes[i + 1] = visframecount;
-			int         node_id = brush->leaf_parents[leaf - brush->leafs];
-			while (node_id >= 0) {
-				if (node_visframes[node_id] == visframecount)
-					break;
-				node_visframes[node_id] = visframecount;
-				node_id = brush->node_parents[node_id];
-			}
+		auto leaf = &brush->leafs[i + 1];
+		int c;
+		if ((c = leaf->nummarksurfaces)) {
+			auto mark = brush->marksurfaces + leaf->firstmarksurface;
+			do {
+				face_visframes[*mark - brush->surfaces] = visframecount;
+				mark++;
+			} while (--c);
+		}
+		leaf_visframes[i + 1] = visframecount;
+		int         node_id = brush->leaf_parents[leaf - brush->leafs];
+		while (node_id >= 0) {
+			if (node_visframes[node_id] == visframecount)
+				break;
+			node_visframes[node_id] = visframecount;
+			node_id = brush->node_parents[node_id];
 		}
 	}
 }
