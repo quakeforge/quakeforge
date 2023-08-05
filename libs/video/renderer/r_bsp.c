@@ -51,6 +51,10 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 	auto node_visframes = visstate->node_visframes;
 	auto leaf_visframes = visstate->leaf_visframes;
 	auto face_visframes = visstate->face_visframes;
+	// If you're looking for the bug with the easy teleporter in the start map,
+	// you're looking in the wrong place: it's in either qfvis or qfbsp when
+	// doing water vis (though not specific to water vis, it's either the
+	// portal generation or the vising of the map).
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		unsigned i = li->element;
 		auto leaf = &brush->leafs[i + 1];
