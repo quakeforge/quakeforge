@@ -182,6 +182,7 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 		});
 		Light_LinkLight (cl_world.scene->lights, light);
 		clp_funcs->RocketTrail (*old_origin, ent_origin);
+		renderer->noshadows = 1;
 	} else if (model->flags & EF_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
 	else if (model->flags & EF_GIB)

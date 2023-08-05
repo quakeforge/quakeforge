@@ -150,6 +150,7 @@ set_entity_model (int ent_ind, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
+		renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	}
 	// Changing the model can change the visibility of the entity and even
 	// the model type

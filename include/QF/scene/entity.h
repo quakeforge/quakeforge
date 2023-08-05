@@ -75,9 +75,12 @@ typedef struct visibility_s {
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
 	struct skin_s *skin;
+	unsigned    fullbright:1;
+	unsigned    noshadows:1;
+	unsigned    onlyshadows:1;
+	unsigned    depthhack:1;
 	float       colormod[4];	// color tint and alpha for model
 	int         skinnum;		// for Alias models
-	int         fullbright;
 	float       min_light;
 	int         render_id;
 } renderer_t;

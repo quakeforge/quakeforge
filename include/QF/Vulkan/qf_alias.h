@@ -38,6 +38,11 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
+enum {
+	alias_main,
+	alias_shadow,
+};
+
 typedef struct aliasvrt_s {
 	float       vertex[4];
 	float       normal[4];

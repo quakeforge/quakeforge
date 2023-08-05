@@ -276,20 +276,22 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, shadow ? 1 : 2, sets, 0, 0);
 
-	bool vmod = !stage && Entity_Valid (vr_data.view_model);
-
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_alias].a[i];
 		auto renderer = alias_get_renderer (ent);
+		if ((stage == alias_shadow && renderer->noshadows)
+			|| (stage == alias_main && renderer->onlyshadows)) {
+			continue;
+		}
 		// FIXME hack the depth range to prevent view model
 		// from poking into walls
-		if (vmod && ent.id == vr_data.view_model.id) {
+		if (stage == alias_main && renderer->depthhack) {
 			alias_depth_range (taskctx, 0.7, 1);
 		}
 		alias_draw_ent (taskctx, ent, pass, renderer);
 		// unhack in case the view_model is not the last
-		if (vmod && ent.id == vr_data.view_model.id) {
+		if (stage == alias_main && renderer->depthhack) {
 			alias_depth_range (taskctx, 0, 1);
 		}
 	}
@@ -302,7 +304,7 @@ static exprtype_t alias_stage_type = {
 	.get_string = cexpr_enum_get_string,
 	.data = &alias_stage_enum,
 };
-static int alias_stage_values[] = { 0, 1, };
+static int alias_stage_values[] = { alias_main, alias_shadow, };
 static exprsym_t alias_stage_symbols[] = {
 	{"main", &alias_stage_type, alias_stage_values + 0},
 	{"shadow", &alias_stage_type, alias_stage_values + 1},
