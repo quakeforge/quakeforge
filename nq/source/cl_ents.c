@@ -265,7 +265,7 @@ CL_RelinkEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
-			if (i != cl.viewentity || chase_active) {
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
 				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 			*old_origin = new->origin;
@@ -296,13 +296,15 @@ CL_RelinkEntities (void)
 				}
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
-			if (i != cl.viewentity || chase_active) {
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
 				if (!VectorCompare (org, *old_origin)) {//FIXME
 					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
 		}
+		renderer->onlyshadows = (cl_player_shadows && i == cl.viewentity
+								 && !chase_active);
 
 		// rotate binary objects locally
 		if (model_flags & EF_ROTATE) {
