@@ -71,7 +71,7 @@ SV_AddToFatPVS (vec4f_t org, int node_id)
 		if (node_id < 0) {
 			mleaf_t    *leaf = brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				set_union (fatpvs, Mod_LeafPVS (leaf, brush));
+				Mod_LeafPVS_mix (leaf, brush, 0xff, fatpvs);
 			}
 			return;
 		}

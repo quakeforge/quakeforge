@@ -147,35 +147,6 @@ Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
 	} while (out - start < row);
 }
 
-VISIBLE set_t *
-Mod_LeafPVS (const mleaf_t *leaf, const mod_brush_t *brush)
-{
-	static set_t *novis;
-	static set_t *decompressed;
-	unsigned    numvis = brush->visleafs;
-	unsigned    excess = SET_SIZE (numvis) - numvis;
-
-	if (leaf == brush->leafs) {
-		if (!novis) {
-			novis = set_new_size (numvis);
-		}
-		if (!novis->map[0] || SET_SIZE (numvis) > novis->size) {
-			set_expand (novis, numvis);
-			memset (novis->map, 0xff,
-					SET_WORDS (novis) * sizeof (*novis->map));
-			novis->map[SET_WORDS (novis) - 1] &= (~SET_ZERO) >> excess;
-		}
-		return novis;
-	}
-	if (!decompressed) {
-		decompressed = set_new ();
-	}
-	set_expand (decompressed, numvis);
-	Mod_DecompressVis_set (leaf->compressed_vis, brush, 0xff, decompressed);
-	decompressed->map[SET_WORDS (decompressed) - 1] &= (~SET_ZERO) >> excess;
-	return decompressed;
-}
-
 VISIBLE void
 Mod_LeafPVS_set (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 				 set_t *out)

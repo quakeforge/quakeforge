@@ -588,7 +588,7 @@ PF_newcheckclient (progs_t *pr, unsigned check)
 	if (!checkpvs) {
 		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
-	set_assign (checkpvs, Mod_LeafPVS (leaf, &sv.worldmodel->brush));
+	Mod_LeafPVS_set (leaf, &sv.worldmodel->brush, 0xff, checkpvs);
 
 	return i;
 }

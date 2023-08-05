@@ -43,8 +43,6 @@
 
 #include "r_internal.h"
 
-static set_t *solid;
-
 void
 R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
@@ -80,8 +78,8 @@ R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 void
 R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 {
-	set_t       *vis;
 	auto brush = visstate->brush;
+	set_t        vis = SET_STATIC_INIT (brush->visleafs, alloca);
 
 	if (visstate->viewleaf == viewleaf && !r_novis)
 		return;
@@ -93,15 +91,11 @@ R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
 	if (r_novis) {
 		// so vis will be recalculated when novis gets turned off
 		visstate->viewleaf = 0;
-		if (!solid) {
-			solid = set_new ();
-			set_everything (solid);
-		}
-		vis = solid;
-	} else {
-		vis = Mod_LeafPVS (viewleaf, brush);
+		// force use of default vis (full visibility)
+		viewleaf = brush->leafs;
 	}
-	R_MarkLeavesPVS (visstate, vis);
+	Mod_LeafPVS_set (viewleaf, brush, 0xff, &vis);
+	R_MarkLeavesPVS (visstate, &vis);
 }
 
 /*

@@ -988,7 +988,7 @@ add_to_fat_pvs (vec4f_t org, int node_id, server_t *sv)
 		if (node_id < 0) {
 			mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				set_union (sv->fatpvs, Mod_LeafPVS (leaf, brush));
+				Mod_LeafPVS_mix (leaf, brush, 0xff, sv->fatpvs);
 			}
 			return;
 		}
