@@ -660,7 +660,7 @@ CL_Frame (void)
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
-		Light_DecayLights (cl_world.scene->lights, host_frametime, realtime);
+		Light_DecayLights (cl_world.scene->lights, host_frametime, cl.time);
 	} else
 		S_Update (nulltransform, 0);
 
