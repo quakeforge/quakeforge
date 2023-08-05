@@ -1576,9 +1576,9 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (none); },
+							  params = (main, none); },
 							{ func = lighting_draw_lights;
-							  params = (none); },
+							  params = (main, none); },
 						);
 
 						stages = (
@@ -1593,9 +1593,9 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (plane); },
+							  params = (main, plane); },
 							{ func = lighting_draw_lights;
-							  params = (plane); },
+							  params = (main, plane); },
 						);
 
 						stages = (
@@ -1610,9 +1610,9 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (cascade); },
+							  params = (main, cascade); },
 							{ func = lighting_draw_lights;
-							  params = (cascade); },
+							  params = (main, cascade); },
 						);
 
 						stages = (
@@ -1627,9 +1627,9 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (cube); },
+							  params = (main, cube); },
 							{ func = lighting_draw_lights;
-							  params = (cube); },
+							  params = (main, cube); },
 						);
 
 						stages = (
@@ -1715,7 +1715,8 @@ renderpasses = {
 
 						color = $color.lights;
 						tasks = (
-							{ func = lighting_bind_descriptors; },
+							{ func = lighting_bind_descriptors;
+							  params = (debug, none); },
 							{ func = lighting_draw_splats; },
 						);
 

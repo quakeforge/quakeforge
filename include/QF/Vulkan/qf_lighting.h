@@ -49,6 +49,12 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 #define ST_CASCADE  2	// cascaded shadow maps
 #define ST_CUBE     3	// cubemap (omni, large spotlight)
 
+enum {
+	lighting_main,
+	lighting_shadow,
+	lighting_debug,
+};
+
 typedef struct qfv_light_render_s {
 	// mat_id (13) map_id (5) layer (11) type (2)
 	uint32_t    id_data;
@@ -80,9 +86,6 @@ typedef struct lightingframe_s {
 	VkBuffer    style_buffer;
 	VkBuffer    id_buffer;
 	light_queue_t light_queue[4];
-	uint32_t    ico_count;
-	uint32_t    cone_count;
-	uint32_t    flat_count;
 
 	qfv_imageviewset_t views;
 	qfv_framebufferset_t framebuffers;

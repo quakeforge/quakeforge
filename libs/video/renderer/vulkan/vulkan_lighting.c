@@ -357,9 +357,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 
-	lframe->ico_count = 0;
-	lframe->cone_count = 0;
-	lframe->flat_count = 0;
 	memset (lframe->light_queue, 0, sizeof (lframe->light_queue));
 	if (!lctx->scene || !lctx->scene->lights) {
 		return;
@@ -550,29 +547,38 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 	auto shadow_type = *(int *) params[0]->value;
+	auto stage = *(int *) params[1]->value;
 
-	VkDescriptorSet sets[] = {
-		lframe->shadowmat_set,
-		lframe->lights_set,
-		lframe->attach_set,
-		(VkDescriptorSet[]) {
-			lctx->shadow_2d_set,
-			lctx->shadow_2d_set,
-			lctx->shadow_2d_set,
-			lctx->shadow_cube_set
-		}[shadow_type],
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 4, sets, 0, 0);
-	if (1) {
+	if (stage == lighting_debug) {
+		VkDescriptorSet sets[] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			lframe->lights_set,
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, sets, 0, 0);
+
 		VkBuffer buffers[] = {
 			lframe->id_buffer,
 			lctx->splat_verts,
 		};
-		VkDeviceSize offsets[] = { sizeof (uint32_t), 0 };
+		VkDeviceSize offsets[] = { 0, 0 };
 		dfunc->vkCmdBindVertexBuffers (cmd, 0, 2, buffers, offsets);
 		dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
 									 VK_INDEX_TYPE_UINT32);
+	} else {
+		VkDescriptorSet sets[] = {
+			lframe->shadowmat_set,
+			lframe->lights_set,
+			lframe->attach_set,
+			(VkDescriptorSet[]) {
+				lctx->shadow_2d_set,
+				lctx->shadow_2d_set,
+				lctx->shadow_2d_set,
+				lctx->shadow_cube_set
+			}[shadow_type],
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 4, sets, 0, 0);
 	}
 }
 
@@ -588,33 +594,15 @@ lighting_draw_splats (const exprval_t **params, exprval_t *result,
 	auto cmd = taskctx->cmd;
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
-	if (lframe->ico_count) {
-		dfunc->vkCmdDrawIndexed (cmd, num_ico_inds, lframe->ico_count, 0, 0, 0);
+	if (lframe->light_queue[ST_CUBE].count) {
+		auto q = lframe->light_queue[ST_CUBE];
+		dfunc->vkCmdDrawIndexed (cmd, num_ico_inds, q.count, 0, 0, q.start);
 	}
-	if (lframe->cone_count) {
-		dfunc->vkCmdDrawIndexed (cmd, num_cone_inds, lframe->cone_count,
-								 num_ico_inds, 12, lframe->ico_count);
+	if (lframe->light_queue[ST_PLANE].count) {
+		auto q = lframe->light_queue[ST_PLANE];
+		dfunc->vkCmdDrawIndexed (cmd, num_cone_inds, q.count,
+								 num_ico_inds, 12, q.start);
 	}
-}
-
-static void
-lighting_draw_flats (const exprval_t **params, exprval_t *result,
-					 exprctx_t *ectx)
-{
-	auto taskctx = (qfv_taskctx_t *) ectx;
-	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto lctx = ctx->lighting_context;
-	auto cmd = taskctx->cmd;
-
-	auto lframe = &lctx->frames.a[ctx->curFrame];
-	if (!lframe->flat_count) {
-		return;
-	}
-
-	uint32_t splat_count = lframe->ico_count + lframe->cone_count;
-	dfunc->vkCmdDraw (cmd, 3, lframe->flat_count, 0, splat_count);
 }
 
 static void
@@ -645,6 +633,30 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static exprenum_t lighting_stage_enum;
+static exprtype_t lighting_stage_type = {
+	.name = "lighting_stage",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &lighting_stage_enum,
+};
+static int lighting_stage_values[] = {
+	lighting_main,
+	lighting_shadow,
+	lighting_debug,
+};
+static exprsym_t lighting_stage_symbols[] = {
+	{"main", &lighting_stage_type, lighting_stage_values + 0},
+	{"shadow", &lighting_stage_type, lighting_stage_values + 1},
+	{"debug", &lighting_stage_type, lighting_stage_values + 2},
+	{}
+};
+static exprtab_t lighting_stage_symtab = { .symbols = lighting_stage_symbols };
+static exprenum_t lighting_stage_enum = {
+	&lighting_stage_type,
+	&lighting_stage_symtab,
+};
+
 static exprenum_t shadow_type_enum;
 static exprtype_t shadow_type_type = {
 	.name = "shadow_type",
@@ -668,6 +680,7 @@ static exprenum_t shadow_type_enum = {
 
 static exprtype_t *shadow_type_param[] = {
 	&shadow_type_type,
+	&lighting_stage_type,
 };
 
 static exprtype_t *stepref_param[] = {
@@ -684,7 +697,7 @@ static exprfunc_t lighting_update_descriptors_func[] = {
 	{}
 };
 static exprfunc_t lighting_bind_descriptors_func[] = {
-	{ .func = lighting_bind_descriptors, .num_params = 1,
+	{ .func = lighting_bind_descriptors, .num_params = 2,
 		.param_types = shadow_type_param },
 	{}
 };
@@ -692,12 +705,8 @@ static exprfunc_t lighting_draw_splats_func[] = {
 	{ .func = lighting_draw_splats },
 	{}
 };
-static exprfunc_t lighting_draw_flats_func[] = {
-	{ .func = lighting_draw_flats },
-	{}
-};
 static exprfunc_t lighting_draw_lights_func[] = {
-	{ .func = lighting_draw_lights, .num_params = 1,
+	{ .func = lighting_draw_lights, .num_params = 2,
 		.param_types = shadow_type_param },
 	{}
 };
@@ -717,7 +726,6 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
-	{ "lighting_draw_flats", &cexpr_function, lighting_draw_flats_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
 	{ "lighting_setup_aux", &cexpr_function, lighting_setup_aux_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
