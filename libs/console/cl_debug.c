@@ -201,6 +201,7 @@ debug_app_window (const IE_event_t *ie_event)
 	}
 	return 1;
 }
+
 static int
 capture_mouse_event (const IE_event_t *ie_event)
 {
@@ -217,7 +218,7 @@ capture_mouse_event (const IE_event_t *ie_event)
 		};
 	} else if (ie_event->mouse.type == ie_mouseup
 			   && ((ie_event->mouse.buttons ^ prev_mouse.buttons) & 4)) {
-		IN_UpdateGrab (in_grab);
+		IN_UpdateGrab (0);
 		dragging = false;
 	}
 

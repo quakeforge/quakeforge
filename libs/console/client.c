@@ -46,6 +46,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -338,9 +339,11 @@ ClearNotify (void)
 static void
 con_update_mouse (void)
 {
-	VID_SetCursor (con_force_mouse_visible
-				   || con_show_mouse
-				   || !con_hide_mouse);
+	bool show_cursor = (con_force_mouse_visible
+						|| con_show_mouse
+						|| !con_hide_mouse);
+	VID_SetCursor (show_cursor);
+	IN_UpdateGrab (show_cursor ? 0 : in_grab);
 }
 
 void
