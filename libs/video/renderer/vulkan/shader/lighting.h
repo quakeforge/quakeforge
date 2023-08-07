@@ -27,3 +27,6 @@ layout (set = 1, binding = 2) buffer Renderer {
 layout (set = 1, binding = 3) buffer Style {
 	vec4        style[];
 };
+layout (set = 1, binding = 4) buffer LightEntIds {
+	uint        light_entids[];
+};

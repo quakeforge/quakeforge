@@ -629,6 +629,21 @@ QFV_Render_AddAttachments (vulkan_ctx_t *ctx, uint32_t num_attachments,
 	}
 }
 
+qfv_resobj_t *
+QFV_FindResource (const char *name, qfv_renderpass_t *rp)
+{
+	if (!rp->resources) {
+		return 0;
+	}
+	for (uint32_t i = 0; i < rp->resources->num_objects; i++) {
+		auto obj = &rp->resources->objects[i];
+		if (!strcmp (obj->name, name)) {
+			return obj;
+		}
+	}
+	return 0;
+}
+
 qfv_step_t *
 QFV_FindStep (const char *name, qfv_job_t *job)
 {

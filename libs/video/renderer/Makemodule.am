@@ -222,6 +222,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/dsmanager.c \
 	libs/video/renderer/vulkan/image.c \
 	libs/video/renderer/vulkan/instance.c \
+	libs/video/renderer/vulkan/mouse_pick.c \
 	libs/video/renderer/vulkan/memory.c \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/projection.c \
@@ -330,7 +331,11 @@ bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
 bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
 debug_src = $(vkshaderpath)/debug.frag
 debug_c = $(vkshaderpath)/debug.frag.spvc
+entid_src = $(vkshaderpath)/entid.frag
+entid_c = $(vkshaderpath)/entid.frag.spvc
 light_attach_h = $(vkshaderpath)/light_attach.h
+light_entid_src = $(vkshaderpath)/light_entid.vert
+light_entid_c = $(vkshaderpath)/light_entid.vert.spvc
 light_flat_src = $(vkshaderpath)/light_flat.vert
 light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
 light_splatv_src = $(vkshaderpath)/light_splat.vert
@@ -437,6 +442,10 @@ $(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
 $(debug_c): $(debug_src) $(lighting_h)
 
+$(entid_c): $(entid_src)
+
+$(light_entid_c): $(light_entid_src) $(lighting_h)
+
 $(light_flat_c): $(light_flat_src) $(lighting_h)
 
 $(light_splatv_c): $(light_splatv_src) $(lighting_h)
@@ -514,6 +523,8 @@ vkshader_c = \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
 	$(debug_c) \
+	$(entid_c) \
+	$(light_entid_c) \
 	$(light_flat_c) \
 	$(light_splatv_c) \
 	$(light_splatf_c) \
@@ -608,7 +619,9 @@ EXTRA_DIST += \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
 	$(debug_src) \
+	$(entid_src) \
 	$(light_attach_h) \
+	$(light_entid_src) \
 	$(light_flat_src) \
 	$(light_splatv_src) \
 	$(light_splatf_src) \

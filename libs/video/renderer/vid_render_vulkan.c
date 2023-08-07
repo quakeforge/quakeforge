@@ -65,6 +65,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/mouse_pick.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
@@ -99,6 +100,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 
 	QFV_Capture_Init (vulkan_ctx);
+	QFV_MousePick_Init (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
@@ -372,12 +374,12 @@ vulkan_capture_screen (capfunc_t callback, void *data)
 static void
 vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
 {
+	QFV_Render_UI (vulkan_ctx, imui_ctx);
 #define IMUI_context imui_ctx
 	UI_ExtendPanel ("Renderer##menu") {
 		QFV_Render_Menu (vulkan_ctx, imui_ctx);
 	}
 #undef IMUI_context
-	QFV_Render_UI (vulkan_ctx, imui_ctx);
 }
 
 static void
@@ -560,6 +562,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
+	QFV_MousePick_Shutdown (vulkan_ctx);
 	QFV_Capture_Shutdown (vulkan_ctx);
 	Vulkan_Output_Shutdown (vulkan_ctx);
 

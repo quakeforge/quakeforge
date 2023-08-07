@@ -610,12 +610,26 @@ properties = {
 			descriptorSets = (matrix_set, planes_set);
 		};
 	};
+	general = {
+		shader = {
+			fragment_entid = {
+				stage = fragment;
+				name = main;
+				module = $builtin/entid.frag;
+			};
+		};
+	};
 	lighting = {
 		shader = {
 			vertex_splat = {
 				stage = vertex;
 				name = main;
 				module = $builtin/light_splat.vert;
+			};
+			vertex_entid = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_entid.vert;
 			};
 			vertex_flat = {
 				stage = vertex;
@@ -983,6 +997,12 @@ descriptorSetLayouts = {
 				descriptorCount = 1;
 				stageFlags = fragment;
 			},
+			{
+				binding = 4;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
+			},
 		);
 	};
 	lighting_shadow = {
@@ -1103,6 +1123,11 @@ images = {
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
+	entid = {
+		@inherit = $image_base;
+		usage = color_attachment|transfer_src;
+		format = r32_uint;
+	};
 
 	cube_depth = {
 		@inherit = $cube_image_base;
@@ -1134,6 +1159,11 @@ images = {
 		flags = cube_compatible;
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
+	};
+	cube_entid = {
+		@inherit = $cube_image_base;
+		usage = color_attachment|transfer_src;
+		format = r32_uint;
 	};
 };
 imageviews = {
@@ -1175,6 +1205,10 @@ imageviews = {
 		image = output;
 		format = $render_output.format;
 	};
+	entid = {
+		@inherit = $view_base;
+		image = entid;
+	};
 	cube_depth = {
 		@inherit = $cube_view_base;
 		image = cube_depth;
@@ -1213,6 +1247,10 @@ imageviews = {
 		viewType = cube;
 		image = cube_output;
 		format = $render_output.format;
+	};
+	cube_entid = {
+		@inherit = $cube_view_base;
+		image = cube_entid;
 	};
 };
 output = {
@@ -1263,6 +1301,17 @@ renderpasses = {
 					format = $images.light.format;
 					loadOp = clear;
 					view = light;
+				};
+				entid = {
+					@inherit = $attachment_base;
+					format = $images.entid.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = transfer_src_optimal;
+					clearValue = {
+						color = { int32 = ( -1, -1, -1, -1); };
+					};
+					view = entid;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -1748,13 +1797,51 @@ renderpasses = {
 					};
 				};
 			};
+			entid = {
+				color = "[ 1,  0,  0, 1]";
+				dependencies = {
+					depth = $depth_dependency;
+				};
+				attachments = {
+					color = {
+						entid = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+					};
+					preserve = (depth, normal, position, output);
+				};
+				pipelines = {
+					entid_lights = {
+						@inherit = $compose_base;
+						disabled = false;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (debug, none); },
+							{ func = lighting_draw_splats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_entid,
+							$general.shader.fragment_entid,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_layout;
+						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
+				};
+			};
 		};
 		output = output;
 	};
 	deferred_cube = {
 		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 		});
 		framebuffer = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1795,6 +1882,17 @@ renderpasses = {
 					@inherit = $attachment_base;
 					format = $images.cube_light.format;
 					view = cube_light;
+				};
+				entid = {
+					@inherit = $attachment_base;
+					format = $images.cube_entid.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = transfer_src_optimal;
+					clearValue = {
+						color = { int32 = ( -1, -1, -1, -1); };
+					};
+					view = cube_entid;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -2020,6 +2118,7 @@ steps = {
 			tasks = (
 				{ func = wait_on_fence; },
 				{ func = capture_finalize; },
+				{ func = mousepick_finalize; },
 				{ func = update_matrices; },
 				{ func = draw_scr_funcs; },
 			);
@@ -2137,6 +2236,14 @@ steps = {
 		process = {
 			tasks = (
 				{ func = capture_initiate; },
+			);
+		};
+	};
+	mouse_pick = {
+		dependencies = (main);
+		process = {
+			tasks = (
+				{ func = mousepick_initiate; },
 			);
 		};
 	};

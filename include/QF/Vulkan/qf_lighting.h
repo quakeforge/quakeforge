@@ -85,6 +85,7 @@ typedef struct lightingframe_s {
 	VkBuffer    render_buffer;
 	VkBuffer    style_buffer;
 	VkBuffer    id_buffer;
+	VkBuffer    entid_buffer;
 	light_queue_t light_queue[4];
 
 	qfv_imageviewset_t views;

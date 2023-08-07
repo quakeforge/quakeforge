@@ -13,7 +13,7 @@ layout (set = 1, binding = 0) buffer Entities {
 
 layout (location = 0) in vec4 vertex;
 layout (location = 1) in vec4 tl_uv;
-layout (location = 2) in uint entid;
+layout (location = 2) in uint entind;
 
 layout (location = 0) out vec4 tl_st;
 layout (location = 1) out vec3 direction;
@@ -23,9 +23,9 @@ void
 main (void)
 {
 	// geometry shader will take care of Projection and View
-	vec3        vert = vertex * entities[entid].transform;
+	vec3        vert = vertex * entities[entind].transform;
 	gl_Position = vec4 (vert, 1);
 	direction = (Sky * vertex).xyz;
 	tl_st = tl_uv;
-	color = entities[entid].color;
+	color = entities[entind].color;
 }

@@ -372,7 +372,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	QFV_PacketCopyBuffer (packet, lframe->style_buffer, 0, bb);
 	QFV_PacketSubmit (packet);
 
-	uint32_t ids[4][MaxLights];
+	uint32_t light_ids[4][MaxLights];
+	uint32_t entids[4][MaxLights];
 
 	uint32_t light_count = 0;
 	auto queue = lframe->light_queue;
@@ -398,7 +399,9 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		light_count++;
 		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
 		int mode =  lctx->light_control.a[get_lightid (ent)].mode;
-		ids[mode][queue[mode].count++] = id;
+		light_ids[mode][queue[mode].count] = id;
+		entids[mode][queue[mode].count] = ent.id;
+		queue[mode].count++;
 	}
 
 	if (ndlight) {
@@ -408,7 +411,9 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		for (int i = 0; i < ndlight; i++) {
 			uint32_t id = lctx->dynamic_base + i;
 			set_lightid (dynamic_light_entities[i], lctx->scene->reg, id);
-			ids[ST_CUBE][queue[ST_CUBE].count++] = id;
+			light_ids[ST_CUBE][queue[ST_CUBE].count] = id;
+			entids[ST_CUBE][queue[ST_CUBE].count] = dynamic_light_entities[i];
+			queue[ST_CUBE].count++;
 
 			VectorCopy (dynamic_lights[i]->color, lights[i].color);
 			// dynamic lights seem a tad faint, so 16x map lights
@@ -464,10 +469,21 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		uint32_t *lids = QFV_PacketExtend (packet,
 										   sizeof (uint32_t[light_count]));
 		for (int i = 0; i < 4; i++) {
-			memcpy (lids + queue[i].start, ids[i],
+			memcpy (lids + queue[i].start, light_ids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
 		QFV_PacketCopyBuffer (packet, lframe->id_buffer, 0,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+		QFV_PacketSubmit (packet);
+
+		packet = QFV_PacketAcquire (ctx->staging);
+		uint32_t *eids = QFV_PacketExtend (packet,
+										   sizeof (uint32_t[light_count]));
+		for (int i = 0; i < 4; i++) {
+			memcpy (eids + queue[i].start, entids[i],
+					sizeof (uint32_t[queue[i].count]));
+		}
+		QFV_PacketCopyBuffer (packet, lframe->entid_buffer, 0,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
 		QFV_PacketSubmit (packet);
 	}
@@ -894,6 +910,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 									+ sizeof (qfv_resobj_t)
 									// default shadow map and views
 									+ 3 * sizeof (qfv_resobj_t)
+									// light entids
+									+ sizeof (qfv_resobj_t[frames])
 									// light ids
 									+ sizeof (qfv_resobj_t[frames])
 									// light data
@@ -908,7 +926,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		.name = "lights",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2 + 3 + 5 * frames,
+		.num_objects = 2 + 3 + 6 * frames,
 		.objects = (qfv_resobj_t *) &lctx->light_resources[1],
 	};
 	auto splat_verts = lctx->light_resources->objects;
@@ -916,7 +934,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	auto default_map = &splat_inds[1];
 	auto default_view_cube = &default_map[1];
 	auto default_view_2d = &default_view_cube[1];
-	auto light_ids = &default_view_2d[1];
+	auto light_entids = &default_view_2d[1];
+	auto light_ids = &light_entids[frames];
 	auto light_data = &light_ids[frames];
 	auto light_render = &light_data[frames];
 	auto light_styles = &light_render[frames];
@@ -983,11 +1002,21 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		},
 	};
 	for (size_t i = 0; i < frames; i++) {
+		light_entids[i] = (qfv_resobj_t) {
+			.name = va (ctx->va_ctx, "entids:%zd", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = MaxLights * sizeof (uint32_t),
+				.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 		light_ids[i] = (qfv_resobj_t) {
 			.name = va (ctx->va_ctx, "ids:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = 2 * MaxLights * sizeof (uint32_t),
+				.size = MaxLights * sizeof (uint32_t),
 				.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -1063,6 +1092,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			.render_buffer = light_render[i].buffer.buffer,
 			.style_buffer = light_styles[i].buffer.buffer,
 			.id_buffer = light_ids[i].buffer.buffer,
+			.entid_buffer = light_entids[i].buffer.buffer,
 		};
 
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
@@ -1088,6 +1118,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			{	.buffer = lframe->render_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
 			{	.buffer = lframe->style_buffer,
+				.offset = 0, .range = VK_WHOLE_SIZE, },
+			{	.buffer = lframe->entid_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
 		};
 		VkWriteDescriptorSet bufferWrite[] = {
@@ -1122,8 +1154,14 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.pBufferInfo = &bufferInfo[4], },
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = lframe->lights_set,
+				.dstBinding = 4,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[5], },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 5, bufferWrite, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 6, bufferWrite, 0, 0);
 	}
 
 	make_default_map (64, lctx->default_map, ctx);
