@@ -329,6 +329,16 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 	return ctx->hot != nullent || ctx->active != nullent;
 }
 
+imui_io_t
+IMUI_GetIO (imui_ctx_t *ctx)
+{
+	return (imui_io_t) {
+		.mouse = ctx->mouse_position,
+		.hot = ctx->hot,
+		.active = ctx->active,
+	};
+}
+
 void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {

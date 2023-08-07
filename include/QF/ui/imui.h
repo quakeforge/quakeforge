@@ -93,6 +93,12 @@ typedef struct imui_window_s {
 	bool        no_collapse;
 } imui_window_t;
 
+typedef struct imui_io_s {
+	view_pos_t  mouse;
+	uint32_t    hot;
+	uint32_t    active;
+} imui_io_t;
+
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);
@@ -100,6 +106,7 @@ void IMUI_DestroyContext (imui_ctx_t *ctx);
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
 bool IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
+imui_io_t IMUI_GetIO (imui_ctx_t *ctx) __attribute__((pure));
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 
