@@ -125,11 +125,11 @@ struct imui_ctx_s {
 	uint32_t    hot;
 	uint32_t    active;
 	view_pos_t  mouse_active;
-	bool        mouse_pressed;
-	bool        mouse_released;
-	unsigned    mouse_buttons;
+	uint32_t    mouse_pressed;
+	uint32_t    mouse_released;
+	uint32_t    mouse_buttons;
 	view_pos_t  mouse_position;
-	unsigned    shift;
+	uint32_t    shift;
 	int         key_code;
 	int         unicode;
 
@@ -314,10 +314,10 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 		auto m = &ie_event->mouse;
 		ctx->mouse_position = (view_pos_t) { m->x, m->y };
 
-		unsigned old = ctx->mouse_buttons & 1;
-		unsigned new = m->buttons & 1;
+		unsigned old = ctx->mouse_buttons;
+		unsigned new = m->buttons;
 		ctx->mouse_pressed = (old ^ new) & new;
-		ctx->mouse_released = (old ^ new) & !new;
+		ctx->mouse_released = (old ^ new) & ~new;
 		ctx->mouse_buttons = m->buttons;
 	} else {
 		auto k = &ie_event->key;
@@ -334,6 +334,9 @@ IMUI_GetIO (imui_ctx_t *ctx)
 {
 	return (imui_io_t) {
 		.mouse = ctx->mouse_position,
+		.buttons = ctx->mouse_buttons,
+		.pressed = ctx->mouse_pressed,
+		.released = ctx->mouse_released,
 		.hot = ctx->hot,
 		.active = ctx->active,
 	};
@@ -721,8 +724,8 @@ void
 IMUI_Draw (imui_ctx_t *ctx)
 {
 	ctx->frame_draw = Sys_LongTime ();
-	ctx->mouse_pressed = false;
-	ctx->mouse_released = false;
+	ctx->mouse_pressed = 0;
+	ctx->mouse_released = 0;
 	sort_windows (ctx);
 	auto ref = View_GetRef (ctx->root_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, false);
@@ -839,12 +842,12 @@ check_button_state (imui_ctx_t *ctx, uint32_t entity)
 	bool result = false;
 	//printf ("check_button_state: h:%8x a:%8x e:%8x\n", ctx->hot, ctx->active, entity);
 	if (ctx->active == entity) {
-		if (ctx->mouse_released) {
+		if (ctx->mouse_released & 1) {
 			result = ctx->hot == entity;
 			ctx->active = nullent;
 		}
 	} else if (ctx->hot == entity) {
-		if (ctx->mouse_pressed) {
+		if (ctx->mouse_pressed & 1) {
 			ctx->active = entity;
 		}
 	}
@@ -859,11 +862,11 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 		delta.x = ctx->mouse_position.x - ctx->mouse_active.x;
 		delta.y = ctx->mouse_position.y - ctx->mouse_active.y;
 		ctx->mouse_active = ctx->mouse_position;
-		if (ctx->mouse_released) {
+		if (ctx->mouse_released & 1) {
 			ctx->active = nullent;
 		}
 	} else if (ctx->hot == entity) {
-		if (ctx->mouse_pressed) {
+		if (ctx->mouse_pressed & 1) {
 			ctx->mouse_active = ctx->mouse_position;
 			ctx->active = entity;
 		}

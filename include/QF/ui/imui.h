@@ -95,6 +95,9 @@ typedef struct imui_window_s {
 
 typedef struct imui_io_s {
 	view_pos_t  mouse;
+	uint32_t    buttons;
+	uint32_t    pressed;
+	uint32_t    released;
 	uint32_t    hot;
 	uint32_t    active;
 } imui_io_t;
