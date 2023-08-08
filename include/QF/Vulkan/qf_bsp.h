@@ -328,6 +328,7 @@ typedef enum {
 typedef enum {
 	QFV_bspMain,
 	QFV_bspShadow,
+	QFV_bspDebug,
 
 	QFV_bspNumStages
 } QFV_BspPass;
@@ -372,6 +373,7 @@ typedef struct bspctx_s {
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
 	bsp_pass_t  shadow_pass;
+	bsp_pass_t  debug_pass;
 
 	VkSampler    sampler;
 
@@ -395,7 +397,7 @@ void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
-bsp_pass_t *Vulkan_Bsp_GetAuxPass (struct vulkan_ctx_s *ctx);
+bsp_pass_t *Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind);
 ///@}
 
 #endif//__QF_Vulkan_qf_bsp_h

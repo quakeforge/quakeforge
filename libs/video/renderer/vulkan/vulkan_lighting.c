@@ -52,7 +52,8 @@
 #include "QF/va.h"
 
 #include "QF/scene/scene.h"
-#include "QF/ui/view.h"
+#include "QF/ui/imui.h"
+#define IMUI_context imui_ctx
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_draw.h"
@@ -160,7 +161,7 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	if (!lctx->ldata) {
 		return;
 	}
-	auto pass = Vulkan_Bsp_GetAuxPass (ctx);
+	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspShadow);
 	auto brush = pass->brush;
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
@@ -281,7 +282,6 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	if (!lctx->num_maps) {
 		return;
 	}
-	//auto pass = Vulkan_Bsp_GetAuxPass (ctx);
 
 	clear_frame_buffers_views (ctx, lframe);
 
@@ -884,15 +884,6 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 
 	Vulkan_Script_SetOutput (ctx,
 			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
-#if 0
-	plitem_t   *rp_def = lctx->qfv_renderpass->renderpassDef;
-	plitem_t   *rp_cfg = PL_ObjectForKey (rp_def, "renderpass_6");
-	lctx->renderpass_6 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
-	rp_cfg = PL_ObjectForKey (rp_def, "renderpass_4");
-	lctx->renderpass_4 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
-	rp_cfg = PL_ObjectForKey (rp_def, "renderpass_1");
-	lctx->renderpass_1 = QFV_ParseRenderPass (ctx, rp_cfg, rp_def);
-#endif
 
 	DARRAY_INIT (&lctx->light_mats, 16);
 	DARRAY_INIT (&lctx->light_control, 16);
@@ -1764,6 +1755,60 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, imageWrite, 0, 0);
 }
 
+static void
+show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
+{
+	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspDebug);
+	auto brush = pass->brush;
+
+	set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
+	set_empty (&pvs);
+	if (leafnum) {
+		set_add (&pvs, leafnum - 1);
+	}
+
+	visstate_t visstate = {
+		.node_visframes = pass->node_frames,
+		.leaf_visframes = pass->leaf_frames,
+		.face_visframes = pass->face_frames,
+		.visframecount = pass->vis_frame,
+		.brush = pass->brush,
+	};
+	R_MarkLeavesPVS (&visstate, &pvs);
+	pass->vis_frame = visstate.visframecount;
+}
+
+static void
+scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
+				 ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	auto efrags = *(efrag_t **) comp;
+	uint32_t len = 0;
+	bool valid = true;
+	for (auto e = efrags; e; e = e->entnext, len++) {
+		valid &= e->entity.id == ent;
+	}
+	UI_Horizontal {
+		UI_FlexibleSpace ();
+		UI_Labelf ("%4s %5u", valid ? "good" : "bad", len);
+	}
+}
+
+static void
+scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
+					ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	vulkan_ctx_t *ctx = data;
+	auto leaf = *(uint32_t *) comp;
+	UI_Horizontal {
+		if (UI_Button (va (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
+			show_leaves (ctx, leaf, 0);
+		}
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5u", leaf);
+	}
+}
+
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 {
@@ -1776,6 +1821,9 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 	lctx->ldata = 0;
 	if (lctx->scene) {
 		auto reg = lctx->scene->reg;
+		reg->components.a[scene_efrags].ui = scene_efrags_ui;
+		reg->components.a[scene_lightleaf].ui = scene_lightleaf_ui;
+
 		auto light_pool = &reg->comp_pools[scene_light];
 		if (light_pool->count) {
 			lctx->dynamic_base = light_pool->count;
