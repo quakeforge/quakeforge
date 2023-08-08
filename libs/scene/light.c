@@ -12,6 +12,9 @@
 #include "QF/scene/scene.h"
 #include "QF/simd/vec4f.h"
 
+#include "QF/ui/imui.h"
+#define IMUI_context imui_ctx
+
 static void
 expand_pvs (set_t *pvs, mod_brush_t *brush)
 {
@@ -205,5 +208,69 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 			Ent_RemoveComponent (ent, scene_efrags, reg);
 			i--;
 		}
+	}
+}
+
+void
+Light_dyn_light_ui (void *comp, imui_ctx_t *imui_ctx,
+					ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	dlight_t *dlight = comp;
+	UI_Horizontal {
+		UI_Labelf ("Origin: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.1f %6.1f %6.1f %6g", VEC4_EXP (dlight->origin));
+	}
+	UI_Horizontal {
+		UI_Label ("Color: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5.3f %5.3f %5.3f %5.3f", VEC4_EXP (dlight->color));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Radius: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6g", dlight->radius);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Die: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.2f", dlight->die);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Decay: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.2f", dlight->decay);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Min Light: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6g", dlight->minlight);
+	}
+}
+
+void
+Light_light_ui (void *comp, imui_ctx_t *imui_ctx,
+				ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	light_t *light = comp;
+	UI_Horizontal {
+		UI_Label ("Color: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5.3f %5.3f %5.3f %3g", VEC4_EXP (light->color));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Position: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.1f %6.1f %6.1f %6g", VEC4_EXP (light->position));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Direction: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.3f %6.3f %6.3f %6.3g", VEC4_EXP (light->direction));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Attenuation: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%g %g %g %g", VEC4_EXP (light->attenuation));
 	}
 }

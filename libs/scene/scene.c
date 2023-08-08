@@ -156,11 +156,13 @@ static const component_t scene_components[scene_comp_count] = {
 	[scene_dynlight] = {
 		.size = sizeof (dlight_t),
 		.name = "dyn_light",
+		.ui = Light_dyn_light_ui,
 	},
 
 	[scene_light] = {
 		.size = sizeof (light_t),
 		.name = "light",
+		.ui = Light_light_ui,
 	},
 	[scene_efrags] = {
 		.size = sizeof (efrag_t *),

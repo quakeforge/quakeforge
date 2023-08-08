@@ -72,4 +72,11 @@ void Light_DecayLights (lightingdata_t *ldata, float frametime,
 						double realtime);
 void Light_LinkLight (lightingdata_t *ldata, uint32_t entid);
 
+struct imui_ctx_s;
+struct ecs_registry_s;
+void Light_dyn_light_ui (void *l, struct imui_ctx_s *imui_ctx,
+						 struct ecs_registry_s *reg, uint32_t ent, void *data);
+void Light_light_ui (void *l, struct imui_ctx_s *imui_ctx,
+				     struct ecs_registry_s *reg, uint32_t ent, void *data);
+
 #endif//__QF_scene_light_h
