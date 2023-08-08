@@ -42,6 +42,7 @@
 */
 ///@{
 
+struct imui_ctx_s;
 struct ecs_registry_s;
 typedef struct component_s {
 	size_t      size;
@@ -51,6 +52,9 @@ typedef struct component_s {
 	uint32_t  (*rangeid) (struct ecs_registry_s *reg, uint32_t ent,
 						  uint32_t comp);
 	const char *name;
+	void      (*ui) (void *comp, struct imui_ctx_s *imui_ctx,
+					 struct ecs_registry_s *reg, uint32_t ent,
+					 void *data);
 } component_t;
 
 #define COMPINLINE GNU89INLINE inline
