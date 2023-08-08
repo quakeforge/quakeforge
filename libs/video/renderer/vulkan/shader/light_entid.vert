@@ -35,7 +35,7 @@ main (void)
 	LightData l = lights[light_index];
 	float sz = l.attenuation.w > 0 ? 1 / l.attenuation.w : sqrt(abs(l.color.w));
 	float c = l.direction.w;
-	float sxy = sz * (c < 0 ? sqrt (c*c * (1 - c*c)) / (0.5 - c) : 1);
+	float sxy = sz * (c < 0 ? (sqrt (1 - c*c) / -c) : 1);
 	vec3 scale = vec3 (sxy, sxy, sz);
 
 	vec4 q = from_to_rotation (vec3 (0, 0, -1), l.direction.xyz);
