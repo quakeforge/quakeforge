@@ -325,6 +325,13 @@ typedef enum {
 	QFV_bspNumPasses
 } QFV_BspQueue;
 
+typedef enum {
+	QFV_bspMain,
+	QFV_bspShadow,
+
+	QFV_bspNumStages
+} QFV_BspPass;
+
 typedef struct bspframe_s {
 	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
 	uint32_t    index_offset;	// offset of index_data within mega-buffer (c)

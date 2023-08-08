@@ -1193,7 +1193,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	// params are in reverse order
-	auto pass_ind = *(int *) params[2]->value;
+	auto pass_ind = *(QFV_BspPass *) params[2]->value;
 	auto queue = *(QFV_BspQueue *) params[1]->value;
 	auto stage = *(int *) params[0]->value;
 
@@ -1246,7 +1246,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
-	auto pass_ind = *(int *) params[0]->value;
+	auto pass_ind = *(QFV_BspPass *) params[0]->value;
 
 	auto pass = pass_ind ? &bctx->shadow_pass : &bctx->main_pass;
 
@@ -1302,23 +1302,26 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bsp_flush (ctx);
 }
 
-static exprenum_t bsp_stage_enum;
-static exprtype_t bsp_stage_type = {
-	.name = "bsp_stage",
+static exprenum_t bsp_pass_enum;
+static exprtype_t bsp_pass_type = {
+	.name = "bsp_pass",
 	.size = sizeof (int),
 	.get_string = cexpr_enum_get_string,
-	.data = &bsp_stage_enum,
+	.data = &bsp_pass_enum,
 };
-static int bsp_stage_values[] = { 0, 1, };
-static exprsym_t bsp_stage_symbols[] = {
-	{"main", &bsp_stage_type, bsp_stage_values + 0},
-	{"shadow", &bsp_stage_type, bsp_stage_values + 1},
+static int bsp_pass_values[] = {
+	QFV_bspMain,
+	QFV_bspShadow,
+};
+static exprsym_t bsp_pass_symbols[] = {
+	{"main", &bsp_pass_type, bsp_pass_values + 0},
+	{"shadow", &bsp_pass_type, bsp_pass_values + 1},
 	{}
 };
-static exprtab_t bsp_stage_symtab = { .symbols = bsp_stage_symbols };
-static exprenum_t bsp_stage_enum = {
-	&bsp_stage_type,
-	&bsp_stage_symtab,
+static exprtab_t bsp_pass_symtab = { .symbols = bsp_pass_symbols };
+static exprenum_t bsp_pass_enum = {
+	&bsp_pass_type,
+	&bsp_pass_symtab,
 };
 
 static exprenum_t bsp_queue_enum;
@@ -1348,13 +1351,13 @@ static exprenum_t bsp_queue_enum = {
 };
 
 static exprtype_t *bsp_visit_world_params[] = {
-	&bsp_stage_type,
+	&bsp_pass_type,
 };
 
 static exprtype_t *bsp_draw_queue_params[] = {
 	&cexpr_int,
 	&bsp_queue_type,
-	&bsp_stage_type,
+	&bsp_pass_type,
 };
 
 static exprfunc_t bsp_reset_queues_func[] = {
