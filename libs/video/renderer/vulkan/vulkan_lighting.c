@@ -150,8 +150,8 @@ set_lightid (uint32_t ent, ecs_registry_t *reg, uint32_t id)
 }
 
 static void
-lighting_setup_aux (const exprval_t **params, exprval_t *result,
-					exprctx_t *ectx)
+lighting_setup_shadow (const exprval_t **params, exprval_t *result,
+					   exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
@@ -726,8 +726,8 @@ static exprfunc_t lighting_draw_lights_func[] = {
 		.param_types = shadow_type_param },
 	{}
 };
-static exprfunc_t lighting_setup_aux_func[] = {
-	{ .func = lighting_setup_aux },
+static exprfunc_t lighting_setup_shadow_func[] = {
+	{ .func = lighting_setup_shadow },
 	{}
 };
 static exprfunc_t lighting_draw_shadow_maps_func[] = {
@@ -743,7 +743,7 @@ static exprsym_t lighting_task_syms[] = {
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
-	{ "lighting_setup_aux", &cexpr_function, lighting_setup_aux_func },
+	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
 		lighting_draw_shadow_maps_func },
 	{}

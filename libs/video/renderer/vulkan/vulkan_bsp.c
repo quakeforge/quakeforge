@@ -134,10 +134,10 @@ init_visstate (bspctx_t *bctx)
 	int        *node_frames = Hunk_AllocName (0, size, "visframes");
 	int        *leaf_frames = node_frames + brush->numnodes;
 	int        *face_frames = leaf_frames + brush->modleafs;
-	bctx->aux_pass.vis_frame = 0;
-	bctx->aux_pass.face_frames = face_frames;
-	bctx->aux_pass.leaf_frames = leaf_frames;
-	bctx->aux_pass.node_frames = node_frames;
+	bctx->shadow_pass.vis_frame = 0;
+	bctx->shadow_pass.face_frames = face_frames;
+	bctx->shadow_pass.leaf_frames = leaf_frames;
+	bctx->shadow_pass.node_frames = node_frames;
 
 	bctx->main_pass.face_frames = r_visstate.face_visframes;
 	bctx->main_pass.leaf_frames = r_visstate.leaf_visframes;
@@ -208,7 +208,7 @@ clear_textures (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	clear_pass_face_queues (&bctx->main_pass, bctx);
-	clear_pass_face_queues (&bctx->aux_pass, bctx);
+	clear_pass_face_queues (&bctx->shadow_pass, bctx);
 
 	bctx->registered_textures.size = 0;
 }
@@ -314,7 +314,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 
 	// create face queue arrays
 	setup_pass_face_queues (&bctx->main_pass, num_tex, bctx);
-	setup_pass_face_queues (&bctx->aux_pass, num_tex, bctx);
+	setup_pass_face_queues (&bctx->shadow_pass, num_tex, bctx);
 }
 
 typedef struct {
@@ -431,7 +431,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 
 	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->aux_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
 	bctx->num_models = 0;
 
 	// run through all surfaces, chaining them to their textures, thus
@@ -472,7 +472,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		face_base += brush->numsurfaces;
 	}
 	setup_pass_instances (&bctx->main_pass, bctx);
-	setup_pass_instances (&bctx->aux_pass, bctx);
+	setup_pass_instances (&bctx->shadow_pass, bctx);
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = 0;
 	uint32_t    index_count = 0;
@@ -1197,7 +1197,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = *(QFV_BspQueue *) params[1]->value;
 	auto stage = *(int *) params[0]->value;
 
-	auto pass = pass_ind ? &bctx->aux_pass : &bctx->main_pass;
+	auto pass = pass_ind ? &bctx->shadow_pass : &bctx->main_pass;
 	if (!pass->draw_queues[queue].size) {
 		return;
 	}
@@ -1248,7 +1248,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 	auto pass_ind = *(int *) params[0]->value;
 
-	auto pass = pass_ind ? &bctx->aux_pass : &bctx->main_pass;
+	auto pass = pass_ind ? &bctx->shadow_pass : &bctx->main_pass;
 
 	if (!pass_ind) {
 		pass->entqueue = r_ent_queue;
@@ -1312,7 +1312,7 @@ static exprtype_t bsp_stage_type = {
 static int bsp_stage_values[] = { 0, 1, };
 static exprsym_t bsp_stage_symbols[] = {
 	{"main", &bsp_stage_type, bsp_stage_values + 0},
-	{"aux", &bsp_stage_type, bsp_stage_values + 1},
+	{"shadow", &bsp_stage_type, bsp_stage_values + 1},
 	{}
 };
 static exprtab_t bsp_stage_symtab = { .symbols = bsp_stage_symbols };
@@ -1385,8 +1385,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	ctx->bsp_context = bctx;
 
 	bctx->main_pass.bsp_context = bctx;
-	bctx->aux_pass.bsp_context = bctx;
-	bctx->aux_pass.entqueue = EntQueue_New (mod_num_types);
+	bctx->shadow_pass.bsp_context = bctx;
+	bctx->shadow_pass.entqueue = EntQueue_New (mod_num_types);
 }
 
 void
@@ -1413,7 +1413,7 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
 	setup_pass_draw_queues (&bctx->main_pass);
-	setup_pass_draw_queues (&bctx->aux_pass);
+	setup_pass_draw_queues (&bctx->shadow_pass);
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -1472,7 +1472,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	shutdown_pass_draw_queues (&bctx->main_pass);
-	shutdown_pass_draw_queues (&bctx->aux_pass);
+	shutdown_pass_draw_queues (&bctx->shadow_pass);
 
 	DARRAY_CLEAR (&bctx->registered_textures);
 
@@ -1480,7 +1480,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	free (bctx->models);
 
 	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->aux_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
 
 	DARRAY_CLEAR (&bctx->frames);
 
@@ -1589,7 +1589,7 @@ bsp_pass_t *
 Vulkan_Bsp_GetAuxPass (struct vulkan_ctx_s *ctx)
 {
 	auto bctx = ctx->bsp_context;
-	auto pass = &bctx->aux_pass;
+	auto pass = &bctx->shadow_pass;
 	if (!r_refdef.worldmodel) {
 		return 0;
 	}

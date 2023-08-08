@@ -364,7 +364,7 @@ typedef struct bspctx_s {
 	VkDescriptorSet skybox_descriptor;
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
-	bsp_pass_t  aux_pass;			///< shadows
+	bsp_pass_t  shadow_pass;
 
 	VkSampler    sampler;
 

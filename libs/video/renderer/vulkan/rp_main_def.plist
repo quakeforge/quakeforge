@@ -2033,7 +2033,7 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (aux, solid, 0); },
+							  params = (shadow, solid, 0); },
 						);
 
 						stages = (
@@ -2169,9 +2169,9 @@ steps = {
 		dependencies = (world);
 		process = {
 			tasks = (
-				{ func = lighting_setup_aux; },
+				{ func = lighting_setup_shadow; },
 				{ func = bsp_visit_world;
-				  params = (aux); },
+				  params = (shadow); },
 				{ func = lighting_draw_shadow_maps;
 				  params = ("\"shadow\""); },
 			);
