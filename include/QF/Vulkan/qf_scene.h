@@ -77,4 +77,6 @@ VkDescriptorSet Vulkan_Scene_Descriptors (struct vulkan_ctx_s *ctx) __attribute_
 int Vulkan_Scene_AddEntity (struct vulkan_ctx_s *ctx, struct entity_s entity);
 void Vulkan_Scene_Flush (struct vulkan_ctx_s *ctx);
 
+void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+
 #endif//__QF_Vulkan_qf_scene_h

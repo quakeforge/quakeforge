@@ -52,7 +52,6 @@
 #include "QF/Vulkan/swapchain.h"
 
 #include "QF/Vulkan/qf_lighting.h"
-#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_translucent.h"

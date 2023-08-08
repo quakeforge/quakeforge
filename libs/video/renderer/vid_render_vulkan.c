@@ -48,7 +48,6 @@
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
-#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"

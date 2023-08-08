@@ -243,7 +243,6 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
-	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
 	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \

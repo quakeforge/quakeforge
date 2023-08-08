@@ -39,6 +39,8 @@
 
 #include "QF/scene/entity.h"
 
+#include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
@@ -262,4 +264,23 @@ Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 	free (sctx->frames.a);
 	free (sctx);
 	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
+{
+	int         i;
+
+	for (i = 0; i < 256; i++) {
+		d_lightstylevalue[i] = 264;		// normal light value
+	}
+
+	r_refdef.worldmodel = scene->worldmodel;
+	EntQueue_Clear (r_ent_queue);
+
+	R_ClearParticles ();
+	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
+	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
+	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
+	Vulkan_LoadLights (scene, ctx);
 }
