@@ -269,9 +269,10 @@ Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 void
 Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
-	int         i;
+	auto sctx = ctx->scene_context;
+	sctx->scene = scene;
 
-	for (i = 0; i < 256; i++) {
+	for (int i = 0; i < 256; i++) {
 		d_lightstylevalue[i] = 264;		// normal light value
 	}
 

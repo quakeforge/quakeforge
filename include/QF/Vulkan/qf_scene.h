@@ -64,6 +64,7 @@ typedef struct scenectx_s {
 	struct qfv_resource_s *entities;
 	scnframeset_t frames;
 	int         max_entities;
+	struct scene_s *scene;
 } scenectx_t;
 
 struct vulkan_ctx_s;
