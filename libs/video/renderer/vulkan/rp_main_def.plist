@@ -1729,6 +1729,8 @@ renderpasses = {
 
 						color = $color.bsp;
 						tasks = (
+							{ func = bsp_visit_world;
+							  params = (debug); },
 							{ func = bsp_draw_queue;
 							  params = (debug, solid, 0); },
 							{ func = bsp_draw_queue;
@@ -2160,8 +2162,6 @@ steps = {
 				{ func = bsp_reset_queues; },
 				{ func = bsp_visit_world;
 				  params = (main); },
-				{ func = bsp_visit_world;
-				  params = (debug); },
 				{ func = scene_draw_viewmodel; },
 				{ func = lighting_update_lights; },
 			);

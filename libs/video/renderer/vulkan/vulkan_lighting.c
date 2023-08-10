@@ -166,9 +166,9 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
 
-	auto queue = r_ent_queue;   //FIXME fetch from scene
-	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = queue->ent_queues[mod_light].a[i];
+	auto entqueue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (!has_dynlight (ent)) {
 			auto ls = get_lightstyle (ent);
 			if (!d_lightstylevalue[ls]) {
@@ -285,9 +285,9 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 
 	clear_frame_buffers_views (ctx, lframe);
 
-	auto queue = r_ent_queue;   //FIXME fetch from scene
-	for (size_t i = 0; i < queue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = queue->ent_queues[mod_light].a[i];
+	auto entqueue = r_ent_queue;   //FIXME fetch from scene
+	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		uint32_t    id = get_lightid (ent);
 		if (id >= lctx->light_control.size) {
 			continue;
@@ -1756,6 +1756,20 @@ update_shadow_descriptors (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 }
 
 static void
+mark_leaves (bsp_pass_t *pass, set_t *pvs)
+{
+	visstate_t visstate = {
+		.node_visframes = pass->node_frames,
+		.leaf_visframes = pass->leaf_frames,
+		.face_visframes = pass->face_frames,
+		.visframecount = pass->vis_frame,
+		.brush = pass->brush,
+	};
+	R_MarkLeavesPVS (&visstate, pvs);
+	pass->vis_frame = visstate.visframecount;
+}
+
+static void
 show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 {
 	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspDebug);
@@ -1765,23 +1779,19 @@ show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 	set_empty (&pvs);
 	if (leafnum) {
 		set_add (&pvs, leafnum - 1);
+	} else {
+		for (auto e = efrags; e; e = e->entnext) {
+			set_add (&pvs, e->leaf - brush->leafs - 1);
+		}
 	}
-
-	visstate_t visstate = {
-		.node_visframes = pass->node_frames,
-		.leaf_visframes = pass->leaf_frames,
-		.face_visframes = pass->face_frames,
-		.visframecount = pass->vis_frame,
-		.brush = pass->brush,
-	};
-	R_MarkLeavesPVS (&visstate, &pvs);
-	pass->vis_frame = visstate.visframecount;
+	mark_leaves (pass, &pvs);
 }
 
 static void
 scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 				 ecs_registry_t *reg, uint32_t ent, void *data)
 {
+	vulkan_ctx_t *ctx = data;
 	auto efrags = *(efrag_t **) comp;
 	uint32_t len = 0;
 	bool valid = true;
@@ -1789,6 +1799,9 @@ scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 		valid &= e->entity.id == ent;
 	}
 	UI_Horizontal {
+		if (UI_Button (va (ctx->va_ctx, "Show##lightefrags_ui.%08x", ent))) {
+			show_leaves (ctx, 0, efrags);
+		}
 		UI_FlexibleSpace ();
 		UI_Labelf ("%4s %5u", valid ? "good" : "bad", len);
 	}
@@ -1806,6 +1819,18 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 		}
 		UI_FlexibleSpace ();
 		UI_Labelf ("%5u", leaf);
+
+		auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspDebug);
+		auto brush = pass->brush;
+		set_t pvs = SET_STATIC_INIT (brush->visleafs, alloca);
+		Mod_LeafPVS_set (brush->leafs + leaf, brush, 0, &pvs);
+
+		UI_FlexibleSpace ();
+		if (UI_Button (va (ctx->va_ctx, "Vis##lightleaf_ui.%08x", ent))) {
+			mark_leaves (pass, &pvs);
+		}
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5u", set_count (&pvs));
 	}
 }
 
