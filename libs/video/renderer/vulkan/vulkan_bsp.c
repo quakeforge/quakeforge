@@ -503,7 +503,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			poly_count++;
 		}
 	}
-	index_count *= 2;
+	index_count *= 3;
 
 	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
@@ -1213,7 +1213,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		[QFV_bspMain] = &bctx->main_pass,
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
-	}[pass_ind];
+	} [pass_ind];
 	if (!pass->draw_queues[queue].size) {
 		return;
 	}
@@ -1268,7 +1268,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		[QFV_bspMain] = &bctx->main_pass,
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
-	}[pass_ind];
+	} [pass_ind];
 
 	if (pass_ind == QFV_bspMain) {
 		pass->entqueue = r_ent_queue;
