@@ -30,6 +30,7 @@ static void
 test_debug_handler (prdebug_t event, void *param, void *data)
 {
 	progs_t    *pr = data;
+	dstatement_t *st = 0;
 
 	switch (event) {
 		case prd_breakpoint:
@@ -44,7 +45,7 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_subexit:
 			break;
 		case prd_trace:
-			dstatement_t *st = test_pr.pr_statements + test_pr.pr_xstatement;
+			st = test_pr.pr_statements + test_pr.pr_xstatement;
 			if (verbose > 1) {
 				printf ("---\n");
 				printf ("debug: trace %05x %04x %04x %04x %04x%s\n",

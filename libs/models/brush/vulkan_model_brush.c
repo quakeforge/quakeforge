@@ -231,7 +231,6 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	// to black, no one should notice :)
 	sky_palette[3] = 0;
 
-	size_t      image_count = 0;
 	size_t      memsize = 0;
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
@@ -240,7 +239,6 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		vulktex_t  *tex = tx->render;
 		memsize += QFV_GetImageSize (device, tex->tex->image);
-		image_count++;
 		// just so we have one in the end
 		image = tex->tex->image;
 	}

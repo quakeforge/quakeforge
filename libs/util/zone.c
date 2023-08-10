@@ -615,9 +615,8 @@ Hunk_Print (memhunk_t *hunk, bool all)
 {
 	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	hunkblk_t  *h, *next, *endlow, *starthigh, *endhigh;
-	int         count, sum, totalblocks;
+	int         sum, totalblocks;
 
-	count = 0;
 	sum = 0;
 	totalblocks = 0;
 
@@ -648,7 +647,6 @@ Hunk_Print (memhunk_t *hunk, bool all)
 		}
 
 		next = (hunkblk_t *) ((byte *) h + h->size);
-		count++;
 		totalblocks++;
 		sum += h->size;
 
@@ -667,7 +665,6 @@ Hunk_Print (memhunk_t *hunk, bool all)
 				Sys_Printf ("          :%8i %*.*s (TOTAL)\n",
 							sum, sz, sz, h->name[0] ? h->name : "unknown");
 			}
-			count = 0;
 			sum = 0;
 		}
 

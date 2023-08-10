@@ -126,7 +126,6 @@ CL_NewDlight (entity_t ent, vec4f_t org, int effects, byte glow_size,
 		if (effects & EF_DIMLIGHT)
 			if (effects & ~EF_DIMLIGHT)
 				radius -= 100;
-		radius = radius;
 
 		switch (effects & (EF_RED | EF_BLUE)) {
 			case EF_RED | EF_BLUE:  color = purple; break;

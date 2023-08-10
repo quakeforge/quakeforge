@@ -1070,10 +1070,11 @@ fmt_state_conversion (fmt_state_t *state)
 {
 	progs_t    *pr = state->pr;
 	char        conv;
+	pr_ptr_t    at_param;
 	switch ((conv = *state->c++)) {
 		case '@':
 			// object
-			pr_ptr_t    at_param = P_UINT (pr, state->fmt_count);
+			at_param = P_UINT (pr, state->fmt_count);
 			if (state->at_handler) {
 				const char *at_str = state->at_handler (pr, at_param,
 														state->at_handler_data);

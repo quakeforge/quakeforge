@@ -211,6 +211,7 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 	}
 }
 
+#if 0
 void
 Light_dyn_light_ui (void *comp, imui_ctx_t *imui_ctx,
 					ecs_registry_t *reg, uint32_t ent, void *data)
@@ -274,3 +275,4 @@ Light_light_ui (void *comp, imui_ctx_t *imui_ctx,
 		UI_Labelf ("%g %g %g %g", VEC4_EXP (light->attenuation));
 	}
 }
+#endif

@@ -87,10 +87,11 @@ ALLOC_STATE (ex_value_t, values);
 static void
 value_debug_handler (prdebug_t event, void *param, void *data)
 {
-	progs_t    *pr = data;
+	progs_t      *pr = data;
+	dstatement_t *st = 0;
 	switch (event) {
 		case prd_trace:
-			dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
+			st = pr->pr_statements + pr->pr_xstatement;
 			PR_PrintStatement (pr, st, 0);
 			break;
 		case prd_breakpoint:

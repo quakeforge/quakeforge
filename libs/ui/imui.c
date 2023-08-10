@@ -217,10 +217,10 @@ imui_ctx_t *
 IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 {
 	imui_ctx_t *ctx = malloc (sizeof (imui_ctx_t));
-	uint32_t canvas;
+	uint32_t canvas = Canvas_New (canvas_sys);
 	*ctx = (imui_ctx_t) {
 		.csys = canvas_sys,
-		.canvas = canvas = Canvas_New (canvas_sys),
+		.canvas = canvas,
 		.vsys = { canvas_sys.reg, canvas_sys.view_base },
 		.tsys = { canvas_sys.reg, canvas_sys.view_base, canvas_sys.text_base },
 		.shaper = Shaper_New (),
@@ -792,7 +792,7 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
-	if (size == imui_size_percent || imui_size_expand) {
+	if (size == imui_size_percent || (bool) imui_size_expand) {
 		*(int *) Ent_AddComponent(id, c_percent_x, ctx->csys.reg) = value;
 	}
 }
@@ -803,7 +803,7 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
-	if (size == imui_size_percent || imui_size_expand) {
+	if (size == imui_size_percent || (bool) imui_size_expand) {
 		*(int *) Ent_AddComponent(id, c_percent_y, ctx->csys.reg) = value;
 	}
 }
