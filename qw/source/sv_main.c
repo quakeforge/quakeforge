@@ -1025,19 +1025,16 @@ client_t *
 SV_AllocClient (int spectator, int server)
 {
 	client_t   *cl;
-	int         i, clients, spectators, free, bots;
+	int         i, clients, spectators, free;
 	static int  userid;
 
 	// count up the clients and spectators
 	clients = 0;
 	spectators = 0;
 	free = 0;
-	bots = 0;
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state == cs_free)
 			free++;
-		else if (cl->state == cs_server)
-			bots++;
 		else if (cl->spectator)
 			spectators++;
 		else

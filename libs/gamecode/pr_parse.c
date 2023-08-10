@@ -219,6 +219,9 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 	pr_type_t	*d;
 	dfunction_t	*func;
 
+	vec3_t      vec = {};
+	char       *str = 0;
+
 	d = &base[key->ofs];
 
 	switch (key->type & ~DEF_SAVEGLOBAL) {
@@ -231,8 +234,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 			break;
 
 		case ev_vector:
-			vec3_t      vec = {};
-			char       *str = alloca (strlen (s) + 1);
+			str = alloca (strlen (s) + 1);
 			strcpy (str, s);
 			for (char *v = str; *v; v++) {
 				if (*v == ',') {
@@ -446,7 +448,6 @@ static void
 ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 {
 	edict_t    *ent;
-	int         inhibit = 0;
 	plitem_t   *entity;
 	plitem_t   *item;
 	int         i;
@@ -479,7 +480,6 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 		// remove things from different skill levels or deathmatch
 		if (pr->prune_edict && pr->prune_edict (pr, ent)) {
 			ED_Free (pr, ent);
-			inhibit++;
 			continue;
 		}
 

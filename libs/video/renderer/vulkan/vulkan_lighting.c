@@ -1250,6 +1250,7 @@ create_light_matrices (lightingctx_t *lctx)
 		auto        lm = &lctx->light_mats.a[r->matrix_id];
 		mat4f_t     view;
 		mat4f_t     proj;
+		vec4f_t     dir;
 
 		switch (r->mode) {
 			default:
@@ -1261,7 +1262,7 @@ create_light_matrices (lightingctx_t *lctx)
 			case ST_CASCADE:
 			case ST_PLANE:
 				//FIXME will fail for -ref_direction
-				vec4f_t     dir = light->direction;
+				dir = light->direction;
 				dir[3] = 0;
 				mat4fquat (view, qrotf (dir, ref_direction));
 				break;

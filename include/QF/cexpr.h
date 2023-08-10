@@ -27,6 +27,10 @@
 #ifndef __QF_expr_h
 #define __QF_expr_h
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdlib.h>
 
 struct exprval_s;
@@ -57,7 +61,7 @@ typedef struct exprtype_s {
 	binop_t    *binops;
 	unop_t     *unops;
 	void       *data;
-} __attribute__((designated_init)) exprtype_t;
+} DESIGNATED_INIT exprtype_t;
 
 typedef struct exprval_s {
 	exprtype_t *type;

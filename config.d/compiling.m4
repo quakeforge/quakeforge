@@ -29,10 +29,14 @@ AC_LINK_IFELSE(
 )
 AH_VERBATIM([HAVE_C99INLINE],
 [#undef HAVE_C99INLINE
-#ifdef HAVE_C99INLINE
-# define GNU89INLINE
+#ifdef __clang__
+# define GNU89INLINE static
 #else
-# define GNU89INLINE extern
+# ifdef HAVE_C99INLINE
+#  define GNU89INLINE
+# else
+#  define GNU89INLINE extern
+# endif
 #endif])
 
 if test "x$GCC" = xyes; then

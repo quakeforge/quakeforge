@@ -1781,7 +1781,7 @@ op_call:
 			old_val.value = pr->watch->value;
 		}
 	}
-exit_program:
+exit_program:;
 }
 
 #define MM(type) (*((pr_##type##_t *) (mm)))
@@ -1793,6 +1793,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
 	pr_ptr_t    mm_offs = 0;
+	pr_ptr_t    edict_area = 0;
 
 	switch (mm_ind) {
 		case 0:
@@ -1801,7 +1802,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 1:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
+			edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
 		case 2:
@@ -1830,6 +1831,7 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
 	pr_ptr_t    mm_offs = 0;
+	pr_ptr_t    edict_area = 0;
 
 	switch (mm_ind) {
 		case 1:
@@ -1846,7 +1848,7 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
+			edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
 	}
@@ -2148,6 +2150,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		pr_type_t  *stk;
 		pr_type_t  *mm;
 		pr_func_t   function;
+
+		int         ret_size = 0;
+
 		pr_opcode_e st_op = st->op & OP_MASK;
 		switch (st_op) {
 			// 0 0000
@@ -2547,7 +2552,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_RETURN:
-				int         ret_size = (st->c & 0x1f) + 1;	// up to 32 words
+				ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if (st->c != 0xffff) {
 					mm = pr_address_mode (pr, st, st->c >> 5);
 					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
@@ -2876,7 +2881,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			old_val.value = pr->watch->value;
 		}
 	}
-exit_program:
+exit_program:;
 }
 /*
 	PR_ExecuteProgram

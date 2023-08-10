@@ -54,7 +54,7 @@ case "$host_os" in
 	;;
 	*)
 		dnl Checks for working -lm
-		AC_CHECK_LIB(m, pow,, AC_MSG_ERROR([math library (-lm) appears broken]))
+		AC_CHECK_LIB(m, lgammaf,, AC_MSG_ERROR([math library (-lm) appears broken]))
 	;;
 esac	
 

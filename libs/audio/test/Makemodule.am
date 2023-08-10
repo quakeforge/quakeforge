@@ -4,7 +4,6 @@ EXTRA_PROGRAMS += libs/audio/test/testsound
 
 testaudio_libs= \
 	libs/audio/libQFsound.la \
-	libs/scene/libQFscene.la \
 	libs/ruamoko/libQFruamoko.la \
 	libs/util/libQFutil.la
 

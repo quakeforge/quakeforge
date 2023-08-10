@@ -571,14 +571,14 @@ draw_input_line (inputline_t *il, draw_charbuffer_t *buffer)
 	char       *src = il->lines[il->edit_line] + il->scroll + 1;
 	size_t      i;
 
-	*dst++ = il->scroll ? '<' | 0x80 : il->lines[il->edit_line][0];
+	*dst++ = il->scroll ? '<' | 0x80U : il->lines[il->edit_line][0];
 	for (i = 0; i < il->width - 2 && *src; i++) {
 		*dst++ = *src++;
 	}
 	while (i++ < il->width - 2) {
 		*dst++ = ' ';
 	}
-	*dst++ = *src ? '>' | 0x80 : ' ';
+	*dst++ = *src ? '>' | 0x80U : ' ';
 }
 
 static void

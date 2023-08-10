@@ -48,20 +48,20 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]], [[int foo = RTLD_DEEP
 ])
 fi
 
-dnl Checks for stricmp/strcasecmp
+#dnl Checks for stricmp/strcasecmp
 #AC_CHECK_FUNC(strcasecmp,
 #	,
 #	AC_CHECK_FUNC(stricmp,
 #		AC_DEFINE(strcasecmp,	stricmp)
 #	)
 #)
-AC_CHECK_FUNC(strcasecmp, strcasecmp=yes, strcasecmp=no)
-if test "x$strcasecmp" = xno; then
-	AC_CHECK_FUNC(stricmp,
-		AC_DEFINE(strcasecmp, stricmp, [Define strcasecmp as stricmp if you have one but not the other]),
-		AC_MSG_ERROR([Neither stricmp nor strcasecmp found])
-	)
-fi
+#AC_CHECK_FUNC(strcasecmp, strcasecmp=yes, strcasecmp=no)
+#if test "x$strcasecmp" = xno; then
+#	AC_CHECK_FUNC(stricmp,
+#		AC_DEFINE(strcasecmp, stricmp, [Define strcasecmp as stricmp if you have one but not the other]),
+#		AC_MSG_ERROR([Neither stricmp nor strcasecmp found])
+#	)
+#fi
 
 dnl Check for vsnprintf
 if test "x$ac_cv_func_vsnprintf" = "xno" -a \
@@ -80,14 +80,14 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[fnmatch();]])],[BUILD_FNMATCH=no
 AM_CONDITIONAL(BUILD_FNMATCH, test "x$BUILD_FNMATCH" = "xyes")
 
 AC_MSG_CHECKING(for opendir)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[opendir();]])],[BUILD_DIRENT=no
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern void opendir(); opendir();]])],[BUILD_DIRENT=no
 	AC_MSG_RESULT(yes)],[BUILD_DIRENT=yes
 	AC_MSG_RESULT(no)
 ])
 AM_CONDITIONAL(BUILD_DIRENT, test "x$BUILD_DIRENT" = "xyes")
 
 AC_MSG_CHECKING(for getopt_long)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[getopt_long();]])],[BUILD_GETOPT=no
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern void getopt_long(); getopt_long();]])],[BUILD_GETOPT=no
 	AC_MSG_RESULT(yes)],[BUILD_GETOPT=yes
 	AC_MSG_RESULT(no)
 ])

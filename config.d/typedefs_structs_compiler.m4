@@ -27,7 +27,7 @@ AH_VERBATIM([HAVE___ATTRIBUTE__],
 
 AC_MSG_CHECKING(for __attribute__ ((visibility)))
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[void foo (void);
-	__attribute__ ((sivibility ("default"))) void foo (void) {}]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__VISIBILITY)
+	__attribute__ ((visibility ("default"))) void foo (void) {}]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__VISIBILITY)
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
 ])
 AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
@@ -37,6 +37,20 @@ AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
 # define VISIBLE __attribute__((visibility ("default")))
 #else
 # define VISIBLE
+#endif])
+
+AC_MSG_CHECKING(for __attribute__ ((designated_init)))
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[void foo (void);
+	struct x { char y; } __attribute__ ((designated_init));]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__DESIGNATED_INIT)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
+AH_VERBATIM([HAVE___ATTRIBUTE__DESIGNATED_INIT],
+[/* Define this if the GCC designated_init __attribute__ is available */
+#undef HAVE___ATTRIBUTE__DESIGNATED_INIT
+#ifdef HAVE___ATTRIBUTE__DESIGNATED_INIT
+# define DESIGNATED_INIT __attribute__((designated_init))
+#else
+# define DESIGNATED_INIT
 #endif])
 
 if test "x$SYSTYPE" = "xWIN32"; then
