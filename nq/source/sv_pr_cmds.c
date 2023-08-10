@@ -1582,7 +1582,7 @@ static builtin_t builtins[] = {
 };
 
 void
-SV_PR_Cmds_Init ()
+SV_PR_Cmds_Init (void)
 {
 	Cvar_Register (&sv_aim_cvar, 0, 0);
 
