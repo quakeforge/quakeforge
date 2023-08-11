@@ -6,6 +6,18 @@ else
 	cvs_def_disabled="!= xno"
 fi
 
+AC_MSG_CHECKING(for clang)
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[]],
+		[[#ifndef __clang__],
+		 [	choke me],
+		 [#endif]])],
+	[CLANG=yes],
+	[CLANG=no]
+)
+AC_MSG_RESULT($CLANG)
+
 AC_MSG_CHECKING(for CFLAGS pre-set)
 leave_cflags_alone=no
 if test "x$CFLAGS" != "x"; then
@@ -86,13 +98,17 @@ dnl We want warnings, lots of warnings...
 dnl The help text should be INVERTED before release!
 dnl when in git, this test defaults to ENABLED.
 dnl In a release, this test defaults to DISABLED.
-if test "x$GCC" = "xyes"; then
+if test "x$GCC" = "xyes" -a "x$leave_cflags_alone" != xyes; then
 	if test "x$enable_Werror" $cvs_def_enabled; then
 		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
 	else
 		CFLAGS="$CFLAGS -Wall"
 	fi
 	CFLAGS="$CFLAGS -fno-common"
+fi
+
+if test "x$CLANG" = xyes -a "x$leave_cflags_alone" != xyes; then
+	CFLAGS="$CFLAGS -Wno-misleading-indentation"
 fi
 
 AC_ARG_ENABLE(optimize,
@@ -150,8 +166,8 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		dnl if test "$CC_MAJ" -ge 4; then
 		dnl 	QF_CC_OPTION(-finline-limit=32000 -Winline)
 		dnl fi
-		dnl heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer"
-		heavy="-O2 $CFLAGS -fno-fast-math -funroll-loops -fomit-frame-pointer "
+		dnl heavy="-O2 -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer"
+		heavy="-O2 -fno-fast-math -funroll-loops -fomit-frame-pointer "
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
@@ -233,7 +249,7 @@ AC_ARG_ENABLE(profile,
 		[compile with profiling (for development)]),
 	profile=$enable_profile
 )
-if test "x$profile" = xyes; then
+if test "x$profile" = xyes -a "x$leave_cflags_alone" != xyes; then
 	BUILD_TYPE="$BUILD_TYPE Profile"
 	if test "x$GCC" = xyes; then
 		CFLAGS="`echo $CFLAGS | sed -e 's/-fomit-frame-pointer//g'` -pg"
@@ -244,7 +260,7 @@ if test "x$profile" = xyes; then
 fi
 
 check_pipe=no
-if test "x$GCC" = xyes; then
+if test "x$GCC" = xyes -a "x$leave_cflags_alone" != xyes; then
 	dnl Check for -pipe vs -save-temps.
 	AC_MSG_CHECKING(for -pipe vs -save-temps)
 	AC_ARG_ENABLE(save-temps,
@@ -283,7 +299,7 @@ dnl with many compilers that do not support the latest ISO standards. Well,
 dnl that is our cover story -- the reality is that we like them and do not want
 dnl to give them up. :)
 dnl Make the compiler swallow its pride...
-if test "x$GCC" != xyes; then
+if test "x$GCC" != xyes -a "x$CLANG" != xyes -a "x$leave_cflags_alone" != xyes; then
    AC_MSG_CHECKING(for how to deal with BCPL-style comments)
    case "${host}" in
    *-aix*)

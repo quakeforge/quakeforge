@@ -54,7 +54,27 @@ case "$host_os" in
 	;;
 	*)
 		dnl Checks for working -lm
-		AC_CHECK_LIB(m, lgammaf,, AC_MSG_ERROR([math library (-lm) appears broken]))
+		AC_MSG_CHECKING(for pow and atan2 in standard library)
+		AC_LINK_IFELSE(
+			[AC_LANG_PROGRAM(
+				[[#include <math.h>
+				int func_ind;
+				double (*func[])(double, double) = {pow, atan2};]],
+				[[return (int)(func[func_ind])(2, 3);]])],
+			[AC_MSG_RESULT(yes)],
+			[AC_MSG_RESULT(no)
+			 AC_MSG_CHECKING(for pow and atan2 in -lm)
+			 LIBS="-lm $LIBS"
+			 AC_LINK_IFELSE(
+				[AC_LANG_PROGRAM(
+					[[#include <math.h>
+					int func_ind;
+					double (*func[])(double, double) = {pow, atan2};]],
+					[[return (int)(func[func_ind])(2, 3);]])],
+				[AC_MSG_RESULT(yes)],
+				[AC_MSG_ERROR([math library (-lm) appears broken])]
+			)]
+		)
 	;;
 esac	
 
@@ -69,6 +89,11 @@ m4_include(config.d/sdl.m4)
 
 m4_include(config.d/curses.m4)
 m4_include(config.d/freetype.m4)
+
+m4_include(config.d/networking.m4)
+
+m4_include(config.d/compiling.m4)
+m4_include(config.d/attributes.m4)
 
 dnl ==================================================================
 dnl Checks for system type
@@ -115,13 +140,10 @@ m4_include(config.d/joystick.m4)
 m4_include(config.d/evdev.m4)
 m4_include(config.d/cdrom.m4)
 
-m4_include(config.d/networking.m4)
-
 m4_include(config.d/paths.m4)
 
 m4_include(config.d/build_control.m4)
 m4_include(config.d/qfcc.m4)
-m4_include(config.d/compiling.m4)
 
 AC_ARG_ENABLE(static-doc,
 	AS_HELP_STRING([--enable-static-doc],

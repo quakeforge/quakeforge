@@ -6,10 +6,10 @@
 #endif
 #include <vulkan/vulkan.h>
 
-#ifndef __QFCC__
 #include "QF/cexpr.h"
 #include "QF/simd/types.h"
 
+#ifndef __QFCC__
 #include "QF/darray.h"
 #include "QF/Vulkan/command.h"
 #endif
@@ -142,13 +142,8 @@ typedef struct qfv_attachmentinfo_s {
 } qfv_attachmentinfo_t;
 
 typedef struct qfv_taskinfo_s {
-#ifndef __QFCC__
 	exprfunc_t *func;
 	const exprval_t **params;
-#else
-	void       *func;
-	const void **params;
-#endif
 	void       *param_data;
 } qfv_taskinfo_t;
 

@@ -792,7 +792,7 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
-	if (size == imui_size_percent || (bool) imui_size_expand) {
+	if (size == imui_size_percent || size == imui_size_expand) {
 		*(int *) Ent_AddComponent(id, c_percent_x, ctx->csys.reg) = value;
 	}
 }
@@ -803,7 +803,7 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
-	if (size == imui_size_percent || (bool) imui_size_expand) {
+	if (size == imui_size_percent || size == imui_size_expand) {
 		*(int *) Ent_AddComponent(id, c_percent_y, ctx->csys.reg) = value;
 	}
 }

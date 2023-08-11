@@ -1789,6 +1789,70 @@ show_leaves (vulkan_ctx_t *ctx, uint32_t leafnum, efrag_t *efrags)
 }
 
 static void
+light_dyn_light_ui (void *comp, imui_ctx_t *imui_ctx,
+					ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	dlight_t *dlight = comp;
+	UI_Horizontal {
+		UI_Labelf ("Origin: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.1f %6.1f %6.1f %6g", VEC4_EXP (dlight->origin));
+	}
+	UI_Horizontal {
+		UI_Label ("Color: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5.3f %5.3f %5.3f %5.3f", VEC4_EXP (dlight->color));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Radius: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6g", dlight->radius);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Die: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.2f", dlight->die);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Decay: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.2f", dlight->decay);
+	}
+	UI_Horizontal {
+		UI_Labelf ("Min Light: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6g", dlight->minlight);
+	}
+}
+
+static void
+light_light_ui (void *comp, imui_ctx_t *imui_ctx,
+				ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	light_t *light = comp;
+	UI_Horizontal {
+		UI_Label ("Color: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%5.3f %5.3f %5.3f %3g", VEC4_EXP (light->color));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Position: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.1f %6.1f %6.1f %6g", VEC4_EXP (light->position));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Direction: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%6.3f %6.3f %6.3f %6.3g", VEC4_EXP (light->direction));
+	}
+	UI_Horizontal {
+		UI_Labelf ("Attenuation: ");
+		UI_FlexibleSpace ();
+		UI_Labelf ("%g %g %g %g", VEC4_EXP (light->attenuation));
+	}
+}
+
+static void
 scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 				 ecs_registry_t *reg, uint32_t ent, void *data)
 {
@@ -1847,6 +1911,8 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 	lctx->ldata = 0;
 	if (lctx->scene) {
 		auto reg = lctx->scene->reg;
+		reg->components.a[scene_dynlight].ui = light_dyn_light_ui;
+		reg->components.a[scene_light].ui = light_light_ui;
 		reg->components.a[scene_efrags].ui = scene_efrags_ui;
 		reg->components.a[scene_lightleaf].ui = scene_lightleaf_ui;
 
