@@ -79,6 +79,7 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
+#define lnearclip 4
 #define ico_verts 12
 #define cone_verts 7
 static int ico_inds[] = {
@@ -336,7 +337,7 @@ cube_mat (mat4f_t *mat, vec4f_t position)
 	view[3][3] = 1;
 
 	mat4f_t     proj;
-	QFV_PerspectiveTan (proj, 1, 1);
+	QFV_PerspectiveTan (proj, 1, 1, lnearclip);
 	for (int j = 0; j < 6; j++) {
 		mat4f_t side_view;
 		mat4f_t rotinv;
@@ -1275,7 +1276,7 @@ create_light_matrices (lightingctx_t *lctx)
 			case ST_NONE:
 				continue;
 			case ST_CUBE:
-				QFV_PerspectiveTan (proj, 1, 1);
+				QFV_PerspectiveTan (proj, 1, 1, lnearclip);
 				for (int j = 0; j < 6; j++) {
 					mat4f_t side_view;
 					mat4f_t rotinv;
@@ -1294,7 +1295,7 @@ create_light_matrices (lightingctx_t *lctx)
 				}
 				break;
 			case ST_PLANE:
-				QFV_PerspectiveCos (proj, -light->direction[3]);
+				QFV_PerspectiveCos (proj, -light->direction[3], lnearclip);
 				mmulf (view, qfv_z_up, view);
 				mmulf (lm[0], proj, view);
 				break;

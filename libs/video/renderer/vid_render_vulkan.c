@@ -359,7 +359,7 @@ vulkan_set_fov (float x, float y)
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
 
-	QFV_PerspectiveTan (mat->Projection3d, x, y);
+	QFV_PerspectiveTan (mat->Projection3d, x, y, r_nearclip);
 
 	mctx->dirty = mctx->frames.size;
 }

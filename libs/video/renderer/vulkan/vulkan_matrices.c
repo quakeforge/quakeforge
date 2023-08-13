@@ -64,7 +64,7 @@ setup_view (vulkan_ctx_t *ctx)
 	//FIXME this should check for cube map rather than fisheye
 	if (scr_fisheye) {
 		__auto_type mctx = ctx->matrix_context;
-		QFV_PerspectiveTan (mctx->matrices.Projection3d, 1, 1);
+		QFV_PerspectiveTan (mctx->matrices.Projection3d, 1, 1, r_nearclip);
 		mat4f_t     views[6];
 		for (int i = 0; i < 6; i++) {
 			mat4f_t     rotinv;
