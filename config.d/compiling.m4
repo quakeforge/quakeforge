@@ -320,6 +320,25 @@ if test "x$GCC" != xyes -a "x$CLANG" != xyes -a "x$leave_cflags_alone" != xyes; 
   esac
 fi
 
+if test "x$leave_cflags_alone" != xyes; then
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM(
+			[[bool flag = true;]],
+			[[return flag ? 1 : 0]])],
+		[],
+		[QF_CC_OPTION(-std=gnu2x)]
+	)
+fi
+AC_MSG_CHECKING([for c23])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[bool flag = true;]
+		 [int bar (void);]],
+		[[return bar();]])],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_ERROR(QuakeForge requires C23 to compile)]
+)
+
 AS="$CC"
 if test "x$SYSTYPE" = "xWIN32"; then
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -D_WIN32"
