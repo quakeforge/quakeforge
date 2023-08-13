@@ -332,7 +332,6 @@ debug_src = $(vkshaderpath)/debug.frag
 debug_c = $(vkshaderpath)/debug.frag.spvc
 entid_src = $(vkshaderpath)/entid.frag
 entid_c = $(vkshaderpath)/entid.frag.spvc
-light_attach_h = $(vkshaderpath)/light_attach.h
 light_entid_src = $(vkshaderpath)/light_entid.vert
 light_entid_c = $(vkshaderpath)/light_entid.vert.spvc
 light_flat_src = $(vkshaderpath)/light_flat.vert
@@ -453,13 +452,13 @@ $(light_splatf_c): $(light_splatf_src) $(lighting_h)
 
 $(light_debug_c): $(light_debug_src) $(lighting_h)
 
-$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main)
 
-$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main)
 
-$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main)
 
-$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(light_attach_h) $(lighting_main)
+$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
@@ -619,7 +618,6 @@ EXTRA_DIST += \
 	$(bsp_turbf_src) \
 	$(debug_src) \
 	$(entid_src) \
-	$(light_attach_h) \
 	$(light_entid_src) \
 	$(light_flat_src) \
 	$(light_splatv_src) \

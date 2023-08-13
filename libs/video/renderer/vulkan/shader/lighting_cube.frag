@@ -1,9 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#include "lighting.h"
 
-layout (set = 0, binding = 0) buffer ShadowMatrices {
-	mat4 shadow_mats[];
-};
 layout (set = 3, binding = 0) uniform samplerCubeArrayShadow shadow_map[32];
 
 float
