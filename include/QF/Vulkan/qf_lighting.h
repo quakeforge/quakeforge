@@ -44,10 +44,14 @@ typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
 #define MaxLights   768
 
-#define ST_NONE     0	// no shadows
-#define ST_PLANE    1	// single plane shadow map (small spotlight)
-#define ST_CASCADE  2	// cascaded shadow maps
-#define ST_CUBE     3	// cubemap (omni, large spotlight)
+enum {
+	ST_NONE,		// no shadows
+	ST_PLANE,		// single plane shadow map (small spotlight)
+	ST_CASCADE,		// cascaded shadow maps
+	ST_CUBE,		// cubemap (omni, large spotlight)
+
+	ST_COUNT
+};
 
 enum {
 	lighting_main,
@@ -135,6 +139,9 @@ typedef struct lightingctx_s {
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;
+
+	vec4f_t world_mins;
+	vec4f_t world_maxs;
 
 	uint32_t dynamic_base;
 	uint32_t dynamic_matrix_base;

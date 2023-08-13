@@ -80,6 +80,10 @@
 #include "vkparse.h"
 
 #define lnearclip 4
+#define num_cascade 4
+
+static vec4f_t  ref_direction = { 1, 0, 0, 0 };
+
 #define ico_verts 12
 #define cone_verts 7
 static int ico_inds[] = {
@@ -108,13 +112,13 @@ static cvar_t dynlight_size_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &dynlight_size },
 };
-#if 0
+
 static const light_t *
-get_light (entity_t ent)
+get_light (uint32_t ent, ecs_registry_t *reg)
 {
-	return Ent_GetComponent (ent.id, scene_light, ent.reg);
+	return Ent_GetComponent (ent, scene_light, reg);
 }
-#endif
+
 static const dlight_t *
 get_dynlight (entity_t ent)
 {
@@ -164,6 +168,9 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	}
 	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspShadow);
 	auto brush = pass->brush;
+
+	lctx->world_mins = loadvec3f (brush->submodels[0].mins);
+	lctx->world_maxs = loadvec3f (brush->submodels[0].maxs);
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
 
@@ -329,7 +336,7 @@ make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
 }
 
 static void
-cube_mat (mat4f_t *mat, vec4f_t position)
+cube_mats (mat4f_t *mat, vec4f_t position)
 {
 	mat4f_t     view;
 	mat4fidentity (view);
@@ -345,6 +352,97 @@ cube_mat (mat4f_t *mat, vec4f_t position)
 		mmulf (side_view, rotinv, view);
 		mmulf (side_view, qfv_z_up, side_view);
 		mmulf (mat[j], proj, side_view);
+	}
+}
+
+static void
+frustum_corners (vec4f_t corners[8], float minz, float maxz,
+				  const mat4f_t invproj)
+{
+	for (int i = 0; i < 8; i++) {
+		vec4f_t p = {
+			(i & 1) ? 1 : -1,
+			(i & 2) ? 1 : -1,
+			(i & 4) ? maxz : minz,
+			1
+		};
+		p = mvmulf (invproj, p);
+		corners[i] = p / p[3];
+	}
+}
+
+static vec4f_t
+vec_select (vec4i_t c, vec4f_t a, vec4f_t b)
+{
+	return (vec4f_t) ((c & (vec4i_t) a) | (~c & (vec4i_t) b));
+}
+
+static void
+transform_corners (vec4f_t *mins, vec4f_t *maxs, const vec4f_t corners[8],
+				   const mat4f_t lightview)
+{
+	*mins = (vec4f_t) {  INFINITY,  INFINITY,  INFINITY,  INFINITY };
+	*maxs = (vec4f_t) { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
+	for (int i = 0; i < 8; i++) {
+		vec4f_t p = mvmulf (lightview, corners[i]);
+		vec4i_t tmin = p <= *mins;
+		vec4i_t tmax = p >= *maxs;
+		*mins = vec_select (tmin, p, *mins);
+		*maxs = vec_select (tmax, p, *maxs);
+	}
+}
+
+static void
+cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
+{
+	auto mctx = ctx->matrix_context;
+	auto lctx = ctx->lighting_context;
+	mat4f_t invproj;
+	QFV_InversePerspectiveTanFar (invproj, mctx->fov_x, mctx->fov_y,
+								  r_nearclip, r_farclip);
+	mat4f_t inv_z_up;
+	mat4ftranspose (inv_z_up, qfv_z_up);
+	mmulf (invproj, inv_z_up, invproj);
+	mmulf (invproj, r_refdef.camera, invproj);
+
+	mat4f_t lightview;
+	// position points towards the light, but the view needs to be from the
+	// light.
+	mat4fquat (lightview, qrotf (-position, ref_direction));
+
+	// Find the world corner closest to the light in order to ensure the
+	// entire world between the focal point and the light is included in the
+	// depth range
+	vec4i_t d = position >= (vec4f_t) {0, 0, 0, 0};
+	vec4f_t lightcorner = vec_select (d, lctx->world_maxs, lctx->world_mins);
+	// assumes position is a unit vector (which it will be for directional
+	// lights loaded from quake maps)
+	float corner_dist = dotf (lightcorner-r_refdef.camera[3], position)[0];
+
+	// Pre-swizzle the light view so it's done only once (and so the
+	// frustum bounds get swizzled correctly for creating the orthographic
+	// projection matrix).
+	// Also, no need (actually, undesirable) to include any translation in
+	// the light view matrix as the orthographic matrix setup includes
+	// translation based on the bounds.
+	mmulf (lightview, qfv_z_up, lightview);
+
+	vec2f_t z_range[] = {
+		{ r_nearclip / 32,   1 },
+		{ r_nearclip / 256,  r_nearclip / 32 },
+		{ r_nearclip / 1024, r_nearclip / 256 },
+		{ 0,                 r_nearclip / 1024 },
+	};
+	for (int i = 0; i < num_cascade; i++) {
+		vec4f_t     corners[8];
+		vec4f_t     fmin, fmax;
+		frustum_corners (corners, z_range[i][0], z_range[i][1], invproj);
+		transform_corners (&fmin, &fmax, corners, lightview);
+		// ensure evertything between the light and the far frustum corner
+		// is in the depth range
+		fmin[2] = min(fmin[2], -corner_dist);
+		QFV_OrthographicV (mat[i], fmin, fmax);
+		mmulf (mat[i], mat[i], lightview);
 	}
 }
 
@@ -373,8 +471,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	QFV_PacketCopyBuffer (packet, lframe->style_buffer, 0, bb);
 	QFV_PacketSubmit (packet);
 
-	uint32_t light_ids[4][MaxLights];
-	uint32_t entids[4][MaxLights];
+	uint32_t light_ids[ST_COUNT][MaxLights];
+	uint32_t entids[ST_COUNT][MaxLights];
 
 	uint32_t light_count = 0;
 	auto queue = lframe->light_queue;
@@ -403,6 +501,26 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		light_ids[mode][queue[mode].count] = id;
 		entids[mode][queue[mode].count] = ent.id;
 		queue[mode].count++;
+	}
+
+	if (queue[ST_CASCADE].count) {
+		packet = QFV_PacketAcquire (ctx->staging);
+		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
+		mat4f_t *mats = QFV_PacketExtend (packet, sizeof (mat4f_t[mat_count]));
+		qfv_scatter_t scatter[queue[ST_CASCADE].count];
+		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
+			auto r = &lctx->light_control.a[light_ids[ST_CASCADE][i]];
+			auto light = get_light (entids[ST_CASCADE][i], lctx->scene->reg);
+			cascade_mats (&mats[i * num_cascade], light->position, ctx);
+			scatter[i] = (qfv_scatter_t) {
+				.srcOffset = sizeof (mat4f_t[i * num_cascade]),
+				.dstOffset = sizeof (mat4f_t[r->matrix_id]),
+				.length = sizeof (mat4f_t[num_cascade]),
+			};
+		}
+		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
+								 queue[ST_CASCADE].count, scatter, bb);
+		QFV_PacketSubmit (packet);
 	}
 
 	if (ndlight) {
@@ -450,7 +568,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		uint32_t msize = sizeof (mat4f_t[ndlight * 6]);
 		mat4f_t *mats = QFV_PacketExtend (packet, msize);
 		for (int i = 0; i < ndlight; i++) {
-			cube_mat (&mats[i * 6], dynamic_lights[i]->origin);
+			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
 		}
 		VkDeviceSize mat_offset = sizeof (mat4f_t[lctx->dynamic_matrix_base]);
 		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, mat_offset, bb);
@@ -463,13 +581,13 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	}
 
 	if (light_count) {
-		for (int i = 1; i < 4; i++) {
+		for (int i = 1; i < ST_COUNT; i++) {
 			queue[i].start = queue[i - 1].start + queue[i - 1].count;
 		}
 		packet = QFV_PacketAcquire (ctx->staging);
 		uint32_t *lids = QFV_PacketExtend (packet,
 										   sizeof (uint32_t[light_count]));
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < ST_COUNT; i++) {
 			memcpy (lids + queue[i].start, light_ids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
@@ -480,7 +598,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		packet = QFV_PacketAcquire (ctx->staging);
 		uint32_t *eids = QFV_PacketExtend (packet,
 										   sizeof (uint32_t[light_count]));
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < ST_COUNT; i++) {
 			memcpy (eids + queue[i].start, entids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
@@ -1221,8 +1339,6 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	free (lctx);
 }
 
-static vec4f_t  ref_direction = { 1, 0, 0, 0 };
-
 static void
 create_light_matrices (lightingctx_t *lctx)
 {
@@ -1290,7 +1406,7 @@ create_light_matrices (lightingctx_t *lctx)
 				// dependent on view fustrum and cascade level
 				mat4fidentity (proj);
 				mmulf (view, qfv_z_up, view);
-				for (int j = 0; j < 4; j++) {
+				for (int j = 0; j < num_cascade; j++) {
 					mmulf (lm[j], proj, view);
 				}
 				break;
@@ -1418,7 +1534,7 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 	int         size = -1;
 	int         numLayers = 0;
 	int         totalLayers = 0;
-	int         layers = ((int[4]) { 0, 1, 4, 6 })[type];
+	int         layers = ((int[ST_COUNT]) { 0, 1, num_cascade, 6 })[type];
 	int         cube = type == ST_CUBE;
 
 	for (int i = 0; i < mctx->numLights; i++) {
@@ -1647,7 +1763,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			case 6:
 				lr->renderpass_index = 2;
 				break;
-			case 4:
+			case num_cascade:
 				lr->renderpass_index = 1;
 				break;
 			case 1:

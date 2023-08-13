@@ -61,6 +61,8 @@ typedef struct matrixctx_s {
 	double       sky_time;
 	int             dirty;
 
+	float        fov_x, fov_y;
+
 	matrixframeset_t frames;
 
 	struct qfv_resource_s *resource;
