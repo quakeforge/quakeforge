@@ -318,6 +318,42 @@ QFV_PacketCopyBuffer (qfv_packet_t *packet,
 }
 
 void
+QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
+						 uint32_t count, qfv_scatter_t *scatter,
+						 const qfv_bufferbarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	VkBufferCopy copy_regions[count];
+	VkBufferMemoryBarrier barriers[count];
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+
+		copy_regions[i] = (VkBufferCopy) {
+			.srcOffset = packet->offset + scatter[i].srcOffset,
+			.dstOffset = scatter[i].dstOffset,
+			.size = scatter[i].length,
+		};
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
+	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
+							count, copy_regions);
+	bb = *dstBarrier;
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
+}
+
+void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 					 int width, int height,
 					 const qfv_imagebarrier_t *dstBarrier)
