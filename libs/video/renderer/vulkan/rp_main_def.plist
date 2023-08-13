@@ -697,6 +697,7 @@ properties = {
 							  lighting_attach, lighting_shadow);
 			pushConstants = {
 				fragment = {
+					CascadeDepths = vec4;
 					queue = uint;
 				};
 			};

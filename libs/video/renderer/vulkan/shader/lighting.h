@@ -33,3 +33,8 @@ layout (set = 1, binding = 3) buffer Style {
 layout (set = 1, binding = 4) buffer LightEntIds {
 	uint        light_entids[];
 };
+
+layout (push_constant) uniform PushConstants {
+	vec4        CascadeDepths;
+	uint        queue;
+};

@@ -44,5 +44,5 @@ main (void)
 	frag_color = c;
 	frag_emission = vec4(0,0,0,1);//e;
 	frag_normal = vec4(normal,1);//vec4(tbn * n, 1);
-	frag_position = position;
+	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

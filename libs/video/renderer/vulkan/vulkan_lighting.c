@@ -169,8 +169,14 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	auto pass = Vulkan_Bsp_GetPass (ctx, QFV_bspShadow);
 	auto brush = pass->brush;
 
-	lctx->world_mins = loadvec3f (brush->submodels[0].mins);
-	lctx->world_maxs = loadvec3f (brush->submodels[0].maxs);
+	if (brush->submodels) {
+		lctx->world_mins = loadvec3f (brush->submodels[0].mins);
+		lctx->world_maxs = loadvec3f (brush->submodels[0].maxs);
+	} else {
+		// FIXME better bounds
+		lctx->world_mins = (vec4f_t) { -512, -512, -512, 0 };
+		lctx->world_maxs = (vec4f_t) {  512,  512,  512, 0 };
+	}
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
 
@@ -760,10 +766,15 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (queue), &queue },
+	//FIXME dup of z_range (sort of)
+	vec4f_t depths = {
+		r_nearclip / 32, r_nearclip / 256, r_nearclip / 1024, 0,
 	};
-	QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (depths), &depths },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(depths), sizeof(queue), &queue },
+	};
+	QFV_PushConstants (device, cmd, layout, 2, push_constants);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }

@@ -5,9 +5,9 @@
 layout (set = 3, binding = 0) uniform sampler2DArrayShadow shadow_map[32];
 
 float
-shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
+shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 {
-	vec4 p = shadow_mats[mat_id] * vec4 (pos, 1);
+	vec4 p = shadow_mats[mat_id] * vec4 (pos.xyz, 1);
 	p = p / p.w;
 	float depth = p.z;
 	vec2 uv = (p.xy + vec2(1)) / 2;

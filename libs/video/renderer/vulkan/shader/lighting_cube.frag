@@ -5,9 +5,9 @@
 layout (set = 3, binding = 0) uniform samplerCubeArrayShadow shadow_map[32];
 
 float
-shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
+shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 {
-	vec3 dir = pos - lpos;
+	vec3 dir = pos.xyz - lpos;
 	vec3 adir = abs(dir);
 	adir = max (adir.yzx, adir.zxy);
 	uint ind = dir.x <= -adir.x ? 5
@@ -16,7 +16,7 @@ shadow (uint map_id, uint layer, uint mat_id, vec3 pos, vec3 lpos)
 			 : dir.y >=  adir.y ? 1
 			 : dir.z <= -adir.z ? 3
 			 : dir.z >=  adir.z ? 2 : 0;
-	vec4 p = shadow_mats[mat_id + ind] * vec4 (pos, 1);
+	vec4 p = shadow_mats[mat_id + ind] * vec4 (pos.xyz, 1);
 	p = p / p.w;
 	float depth = p.z;
 	// convert from the quake frame to the cubemap frame
