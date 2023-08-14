@@ -415,6 +415,10 @@ gl_R_DrawAliasModel (entity_t e)
 	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 
+	if (renderer->onlyshadows) {
+		return;
+	}
+
 	radius = model->radius;
 	transform_t transform = Entity_Transform (e);
 	origin = Transform_GetWorldPosition (transform);

@@ -242,6 +242,9 @@ glsl_R_DrawAlias (entity_t ent)
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	if (renderer->onlyshadows) {
+		return;
+	}
 	model_t    *model = renderer->model;
 	if (!(hdr = model->aliashdr))
 		hdr = Cache_Get (&model->cache);

@@ -617,6 +617,9 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	r_amodels_drawn++;
 
 	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	if (renderer->onlyshadows) {
+		return;
+	}
 	if (!(paliashdr = renderer->model->aliashdr))
 		paliashdr = Cache_Get (&renderer->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
