@@ -326,7 +326,7 @@ if test "x$leave_cflags_alone" != xyes; then
 			[[bool flag = true;]],
 			[[return flag ? 1 : 0]])],
 		[],
-		[QF_CC_OPTION(-std=gnu2x)]
+		[QF_CC_OPTION_TEST(-std=gnu23,[],QF_CC_OPTION(-std=gnu2x))]
 	)
 fi
 AC_MSG_CHECKING([for c23])
