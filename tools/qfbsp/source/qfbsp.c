@@ -414,6 +414,8 @@ ProcessFile (void)
 			extract_entities ();
 		if (options.extract_hull)
 			extract_hull ();
+		if (options.extract_model)
+			extract_model ();
 		BSP_Free (bsp);
 		return;
 	}

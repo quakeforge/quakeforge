@@ -472,4 +472,110 @@ extract_hull (void)
 	Qprintf (hf, "};\n");
 }
 
+static void
+setparent (int32_t node_id, int32_t parent_id,
+		   int32_t *leaf_parents, int32_t *node_parents)
+{
+	if (node_id < 0) {
+		leaf_parents[~node_id] = parent_id;
+		return;
+	}
+	node_parents[node_id] = parent_id;
+	auto node = bsp->nodes + node_id;
+	setparent (node->children[0], node_id, leaf_parents, node_parents);
+	setparent (node->children[1], node_id, leaf_parents, node_parents);
+}
+
+void
+extract_model (void)
+{
+//	hullfile = output_file (".c");
+	const char *hullfile;
+	QFile      *hf;
+
+	hullfile = output_file (".c");
+	if (strcmp (hullfile, "-") == 0)
+		hf = Qdopen (1, "wt");
+	else
+		hf = Qopen (hullfile, "wt");
+
+	Qprintf (hf, "static mleaf_t leafs[] = {\n");
+	// skip leaf 0
+	for (uint32_t i = 1; i < bsp->numleafs; i++) {
+		auto leaf = bsp->leafs[i];
+		Qprintf (hf, "\t[%d] = {\n", i);
+		Qprintf (hf, "\t\t.contents = %d,\n", leaf.contents);
+		Qprintf (hf, "\t\t.mins = { %g, %g, %g },\n", VectorExpand (leaf.mins));
+		Qprintf (hf, "\t\t.maxs = { %g, %g, %g },\n", VectorExpand (leaf.maxs));
+		//FIXME vis
+		Qprintf (hf, "\t},\n");
+	}
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "\n");
+	Qprintf (hf, "static mnode_t nodes[] = {\n");
+	for (uint32_t i = 0; i < bsp->numnodes; i++) {
+		auto node = bsp->nodes[i];
+		auto plane = bsp->planes[node.planenum];
+		Qprintf (hf, "\t[%d] = {\n", i);
+		Qprintf (hf, "\t\t.plane = { %g, %g, %g, %g },\n",
+				 VectorExpand (plane.normal), -plane.dist);
+		Qprintf (hf, "\t\t.type = %d,\n", plane.type);
+		Qprintf (hf, "\t\t.children = { %d, %d },\n",
+				 node.children[0], node.children[1]);
+		Qprintf (hf, "\t\t.minmaxs = { %g, %g, %g,\n",
+				 VectorExpand (node.maxs));
+		Qprintf (hf, "\t\t\t\t\t %g, %g, %g },\n", VectorExpand (node.maxs));
+		Qprintf (hf, "\t},\n");
+	}
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "\n");
+
+	int32_t *leaf_parents = malloc (sizeof (int32_t[bsp->numleafs]));
+	int32_t *node_parents = malloc (sizeof (int32_t[bsp->numnodes]));
+	setparent (0, -1, leaf_parents, node_parents);
+	Qprintf (hf, "static int32_t leaf_parents[] = {\n");
+	for (uint32_t i = 0; i < bsp->numleafs; i++) {
+		Qprintf (hf, "\t[%d] = %d,\n", i, leaf_parents[i]);
+	}
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "\n");
+	Qprintf (hf, "static int32_t node_parents[] = {\n");
+	for (uint32_t i = 0; i < bsp->numnodes; i++) {
+		Qprintf (hf, "\t[%d] = %d,\n", i, node_parents[i]);
+	}
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "\n");
+	Qprintf (hf, "static int32_t leaf_flags[] = {\n");
+	Qprintf (hf, "\t//FIXME\n");
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "\n");
+	Qprintf (hf, "static char entities[] = { 0 };\n");
+
+	Qprintf (hf, "\n");
+	Qprintf (hf, "static model_t models[] = {\n");
+	for (uint32_t i = 0; i < bsp->nummodels; i++) {
+		auto model = bsp->models[i];
+		float r1 = sqrt (DotProduct (model.mins, model.mins));
+		float r2 = sqrt (DotProduct (model.maxs, model.maxs));
+		Qprintf (hf, "\t[%d] = {\n", i);
+		Qprintf (hf, "\t\t.type = mod_brush,\n");
+		Qprintf (hf, "\t\t.radius = %g,\n", max (r1, r2));
+		Qprintf (hf, "\t\t.mins = { %g, %g, %g },\n", VectorExpand(model.maxs));
+		Qprintf (hf, "\t\t.maxs = { %g, %g, %g },\n", VectorExpand(model.maxs));
+		Qprintf (hf, "\t\t.brush = {\n");
+		Qprintf (hf, "\t\t\t.modleafs = %d,\n", model.visleafs + 1);
+		Qprintf (hf, "\t\t\t.visleafs = %d,\n", model.visleafs);
+		Qprintf (hf, "\t\t\t.numnodes = %zd,\n", bsp->numnodes);
+		Qprintf (hf, "\t\t\t.nodes = nodes,\n");
+		Qprintf (hf, "\t\t\t.leafs = leafs,\n");
+		Qprintf (hf, "\t\t\t.entities = entities,\n");
+		Qprintf (hf, "\t\t\t.leaf_parents = leaf_parents,\n");
+		Qprintf (hf, "\t\t\t.node_parents = node_parents,\n");
+		Qprintf (hf, "\t\t\t.leaf_flags = leaf_flags,\n");
+		Qprintf (hf, "\t\t},\n");
+		Qprintf (hf, "\t},\n");
+	}
+	Qprintf (hf, "};\n");
+}
+
 //@}
