@@ -79,6 +79,7 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
+#define shadow_quanta 32
 #define lnearclip 4
 #define num_cascade 4
 
@@ -1555,7 +1556,9 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 		if (lr->mode != type) {
 			continue;
 		}
-		int light_size = getsize (&mctx->lights[li]);
+		int light_size = getsize (&mctx->lights[li]) + shadow_quanta - 1;
+		light_size = ((light_size + shadow_quanta - 1) / shadow_quanta)
+					 * shadow_quanta;
 		if (size != light_size || numLayers + layers > mctx->maxLayers) {
 			if (numLayers) {
 				mctx->maps[mctx->numMaps++] = (mapdesc_t) {
@@ -1725,7 +1728,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			int         cube = maps[i].cube;
 			lctx->map_cube[i] = cube;
 			images[i] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "map:image:%d:%d", i, maps[i].size),
+				.name = va (ctx->va_ctx, "map:image:%02d:%d", i, maps[i].size),
 				.type = qfv_res_image,
 				.image = {
 					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
@@ -1740,7 +1743,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				},
 			};
 			views[i] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "map:view:%d:%d", i, maps[i].size),
+				.name = va (ctx->va_ctx, "map:view:%02d:%d", i, maps[i].size),
 				.type = qfv_res_image_view,
 				.image_view = {
 					.image = i,

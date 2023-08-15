@@ -42,7 +42,7 @@
 
 typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
-#define MaxLights   768
+#define MaxLights   2048
 
 enum {
 	ST_NONE,		// no shadows
