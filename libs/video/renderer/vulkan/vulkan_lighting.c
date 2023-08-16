@@ -1671,7 +1671,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	int         totalLayers = 0;
 	int         imageMap[numLights];
 	int         lightMap[numLights];
-	mapdesc_t   maps[numLights];
+	mapdesc_t   maps[numLights + dynlight_max];
 
 	for (int i = 0; i < numLights; i++) {
 		lightMap[i] = i;
