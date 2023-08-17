@@ -1514,15 +1514,24 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 }
 
 static const char *
-print_raw_op (progs_t *pr, pr_ushort_t op, pr_ushort_t base_ind,
+print_raw_op (progs_t *pr, pr_short_t op, pr_ushort_t base_ind,
 			  etype_t op_type, int op_width)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	const char *width = va (res->va, "%d", op_width);
-	return va (res->va, "%d:%04x<%08x>%s:%-8s",
+	return va (res->va, "%d:%04hx<%08x>%s:%-8s",
 				base_ind, op, op + pr->pr_bases[base_ind],
 				op_width > 0 ? width : op_width < 0 ? "X" : "?",
 				pr_type_name[op_type]);
+}
+
+static pr_uint_t
+get_opval (progs_t *pr, pr_short_t op)
+{
+	if (pr->progs->version < PROG_VERSION) {
+		return (pr_ushort_t) op;
+	}
+	return op;
 }
 
 VISIBLE void
@@ -1591,7 +1600,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	if (pr_debug > 2) {
 		if (pr->progs->version < PROG_VERSION) {
 			dasprintf (res->line,
-						"%03x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+						"%03x %04hx(%8s) %04hx(%8s) %04hx(%8s)\t",
 						s->op,
 						s->a, pr_type_name[op_type[0]],
 						s->b, pr_type_name[op_type[1]],
@@ -1647,17 +1656,17 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				switch (opchar) {
 					case 'a':
 						opreg = PR_BASE_IND (s->op, A);
-						opval = s->a;
+						opval = get_opval (pr, s->a);
 						optype = res->type_encodings[op_type[0]];
 						break;
 					case 'b':
 						opreg = PR_BASE_IND (s->op, B);
-						opval = s->b;
+						opval = get_opval (pr, s->b);
 						optype = res->type_encodings[op_type[1]];
 						break;
 					case 'c':
 						opreg = PR_BASE_IND (s->op, C);
-						opval = s->c;
+						opval = get_opval (pr, s->c);
 						optype = res->type_encodings[op_type[2]];
 						break;
 					case 'o':
@@ -1729,8 +1738,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'E':
 						{
 							edict_t    *ed = 0;
-							opval = G_ENTITY (pr, s->a);
-							param_ind = G_FIELD (pr, s->b);
+							opval = G_ENTITY (pr, (pr_ushort_t) s->a);
+							param_ind = G_FIELD (pr, (pr_ushort_t) s->b);
 							if (param_ind < pr->progs->entityfields
 								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {
@@ -1744,7 +1753,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							str = global_string (&data, opval, optype,
 												 contents & 1);
 							str = dsprintf (res->dva, "$%x $%x %s",
-											s->a, s->b, str);
+											(pr_ushort_t) s->a,
+											(pr_ushort_t) s->b, str);
 						}
 						break;
 					case 'M':
@@ -1761,7 +1771,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 								case 2:
 									ptr = s->a + PR_BASE (pr, s, A);
 									ptr = G_POINTER (pr, ptr);
-									offs = (short) s->b;
+									offs = s->b;
 									break;
 								case 3:
 									ptr = s->a + PR_BASE (pr, s, A);

@@ -490,7 +490,7 @@ const opcode_t *PR_Opcode (pr_ushort_t opcode) __attribute__((const));
 
 typedef struct dstatement_s {
 	pr_opcode_e op;			// will be pr_opcode_v6p_e for older progs
-	pr_ushort_t a,b,c;
+	pr_short_t  a,b,c;
 } GCC_STRUCT dstatement_t;
 
 typedef struct ddef_s {
