@@ -325,7 +325,7 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	VkBufferCopy copy_regions[count];
-	VkBufferMemoryBarrier barriers[count];
+	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
 	for (uint32_t i = 0; i < count; i++) {
 		barriers[i] = bb.barrier;
 		barriers[i].buffer = dstBuffer;
