@@ -52,6 +52,7 @@ static expr_t *func_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
+static expr_t *vector_dot (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2);
 static expr_t *entity_compare (int op, expr_t *e1, expr_t *e2);
@@ -130,30 +131,30 @@ static expr_type_t float_double[] = {
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{MOD,	&type_double, &type_double, 0},
-	{EQ,	0, 0, 0, double_compare},
-	{NE,	0, 0, 0, double_compare},
-	{LE,	0, 0, 0, double_compare},
-	{GE,	0, 0, 0, double_compare},
-	{LT,	0, 0, 0, double_compare},
-	{GT,	0, 0, 0, double_compare},
+	{EQ,	.process = double_compare},
+	{NE,	.process = double_compare},
+	{LE,	.process = double_compare},
+	{GE,	.process = double_compare},
+	{LT,	.process = double_compare},
+	{GT,	.process = double_compare},
 	{0, 0}
 };
 
 static expr_type_t vector_float[] = {
 	{'*',	.process = vector_scale },
-	{'/',	0, 0, 0, inverse_multiply},
+	{'/',	.process = inverse_multiply},
 	{0, 0}
 };
 
 static expr_type_t vector_vector[] = {
 	{'+',	&type_vector},
 	{'-',	&type_vector},
-	{DOT,	&type_vector},
+	{DOT,	.process = vector_dot},
 	{CROSS,	&type_vector},
 	{HADAMARD,	&type_vector},
-	{'*',	0, 0, 0, vector_multiply},
-	{EQ,	0, 0, 0, vector_compare},
-	{NE,	0, 0, 0, vector_compare},
+	{'*',	.process = vector_multiply},
+	{EQ,	.process = vector_compare},
+	{NE,	.process = vector_compare},
 	{0, 0}
 };
 
@@ -163,7 +164,7 @@ static expr_type_t vector_vector[] = {
 
 static expr_type_t vector_double[] = {
 	{'*',	&type_vector, 0, &type_float, vector_scale},
-	{'/',	0, 0, 0, inverse_multiply},
+	{'/',	.process = inverse_multiply},
 	{0, 0}
 };
 
@@ -180,25 +181,25 @@ static expr_type_t field_field[] = {
 };
 
 static expr_type_t func_func[] = {
-	{EQ,	0, 0, 0, func_compare},
-	{NE,	0, 0, 0, func_compare},
+	{EQ,	.process = func_compare},
+	{NE,	.process = func_compare},
 	{0, 0}
 };
 
 static expr_type_t pointer_pointer[] = {
-	{'-',	0, 0, 0, pointer_arithmetic},
-	{EQ,	0, 0, 0, pointer_compare},
-	{NE,	0, 0, 0, pointer_compare},
-	{LE,	0, 0, 0, pointer_compare},
-	{GE,	0, 0, 0, pointer_compare},
-	{LT,	0, 0, 0, pointer_compare},
-	{GT,	0, 0, 0, pointer_compare},
+	{'-',	.process = pointer_arithmetic},
+	{EQ,	.process = pointer_compare},
+	{NE,	.process = pointer_compare},
+	{LE,	.process = pointer_compare},
+	{GE,	.process = pointer_compare},
+	{LT,	.process = pointer_compare},
+	{GT,	.process = pointer_compare},
 	{0, 0}
 };
 
 static expr_type_t pointer_int[] = {
-	{'+',	0, 0, 0, pointer_arithmetic},
-	{'-',	0, 0, 0, pointer_arithmetic},
+	{'+',	.process = pointer_arithmetic},
+	{'-',	.process = pointer_arithmetic},
 	{0, 0}
 };
 #define pointer_uint pointer_int
@@ -206,7 +207,7 @@ static expr_type_t pointer_int[] = {
 
 static expr_type_t quat_float[] = {
 	{'*',	&type_quaternion},
-	{'/',	0, 0, 0, inverse_multiply},
+	{'/',	.process = inverse_multiply},
 	{0, 0}
 };
 
@@ -226,7 +227,7 @@ static expr_type_t quat_quat[] = {
 
 static expr_type_t quat_int[] = {
 	{'*',	&type_quaternion, 0, &type_float},
-	{'/',	0, 0, 0, inverse_multiply},
+	{'/',	.process = inverse_multiply},
 	{0, 0}
 };
 #define quat_uint quat_int
@@ -234,7 +235,7 @@ static expr_type_t quat_int[] = {
 
 static expr_type_t quat_double[] = {
 	{'*',	&type_quaternion},
-	{'/',	0, 0, 0, inverse_multiply},
+	{'/',	.process = inverse_multiply},
 	{0, 0}
 };
 
@@ -265,7 +266,7 @@ static expr_type_t int_vector[] = {
 };
 
 static expr_type_t int_pointer[] = {
-	{'+',	0, 0, 0, pointer_arithmetic},
+	{'+',	.process = pointer_arithmetic},
 	{0, 0}
 };
 
@@ -480,12 +481,12 @@ static expr_type_t double_float[] = {
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
 	{MOD,	&type_double, 0, &type_double},
-	{EQ,	0, 0, 0, double_compare},
-	{NE,	0, 0, 0, double_compare},
-	{LE,	0, 0, 0, double_compare},
-	{GE,	0, 0, 0, double_compare},
-	{LT,	0, 0, 0, double_compare},
-	{GT,	0, 0, 0, double_compare},
+	{EQ,	.process = double_compare},
+	{NE,	.process = double_compare},
+	{LE,	.process = double_compare},
+	{GE,	.process = double_compare},
+	{LT,	.process = double_compare},
+	{GT,	.process = double_compare},
 	{0, 0}
 };
 
@@ -506,12 +507,12 @@ static expr_type_t double_int[] = {
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
 	{MOD,	&type_double, 0, &type_double},
-	{EQ,	0, 0, 0, double_compare},
-	{NE,	0, 0, 0, double_compare},
-	{LE,	0, 0, 0, double_compare},
-	{GE,	0, 0, 0, double_compare},
-	{LT,	0, 0, 0, double_compare},
-	{GT,	0, 0, 0, double_compare},
+	{EQ,	.process = double_compare},
+	{NE,	.process = double_compare},
+	{LE,	.process = double_compare},
+	{GE,	.process = double_compare},
+	{LT,	.process = double_compare},
+	{GT,	.process = double_compare},
 	{0, 0}
 };
 #define double_uint double_int
@@ -830,27 +831,37 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
-static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2)
+static expr_t *
+vector_dot (int op, expr_t *e1, expr_t *e2)
 {
-	expr_t     *e = new_binary_expr ('*', e1, e2);
-	if (options.math.vector_mult == DOT) {
-		// vector * vector is dot product in v6 progs (ick)
-		e->e.expr.op = DOT;
-		if (options.code.progsversion == PROG_VERSION) {
-			e->e.expr.type = &type_vector;
+	expr_t     *e = new_binary_expr (DOT, e1, e2);
+	if (options.code.progsversion == PROG_VERSION) {
+		e->e.expr.type = &type_vector;
+		if (op == '*') {
+			// vector * vector is dot product in v6 progs (ick)
 			e = new_alias_expr (&type_float, e);
-		} else {
-			e->e.expr.type = &type_float;
 		}
 	} else {
-		// component-wise multiplication
-		e->e.expr.type = &type_vector;
+		e->e.expr.type = &type_float;
 	}
-
 	return e;
 }
 
-static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2)
+static expr_t *
+vector_multiply (int op, expr_t *e1, expr_t *e2)
+{
+	if (options.math.vector_mult == DOT) {
+		// vector * vector is dot product in v6 progs (ick)
+		return vector_dot (op, e1, e2);
+	}
+	// component-wise multiplication
+	expr_t     *e = new_binary_expr ('*', e1, e2);
+	e->e.expr.type = &type_vector;
+	return e;
+}
+
+static expr_t *
+vector_scale (int op, expr_t *e1, expr_t *e2)
 {
 	// Ensure the expression is always vector * scalar. The operation is
 	// always commutative, and the Ruamoko ISA supports only vector * scalar
