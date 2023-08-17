@@ -115,6 +115,7 @@ STRING		\"(\\.|[^"\\])*\"
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 					grab_write = GRAB_WRITE;
+					qc_yylval.pointer = 0;	// ensure pointer vals are null
 
 "/*"				{ BEGIN (COMMENT); }
 <COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
@@ -264,12 +265,18 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
-						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
 					}
 
+"·"					{ return DOT; }
+"∧"					{ return WEDGE; }
+"∨"					{ return REGRESSIVE; }
+"⋀"					{ return WEDGE; }
+"†"					{ return DAGGER; }
+"∗"					{ return STAR; }
+"×"					{ return CROSS; }
+
 "%%"				{
-						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return MOD;
 					}
 
@@ -427,9 +434,11 @@ static keyword_t qf_keywords[] = {
 	{"@param",		TYPE_SPEC, .spec = { .type = &type_param } 		},
 	{"@return",     AT_RETURN,		},
 
+	{"@hadamard",	HADAMARD,	},
 	{"@cross",		CROSS,		},
 	{"@dot",		DOT,		},
-	{"@hadamard",	HADAMARD,		},
+	{"@wedge",		WEDGE,		},
+	{"@geometric",	GEOMETRIC,	},
 };
 
 // These keywors are always available. Other than the @ keywords, they

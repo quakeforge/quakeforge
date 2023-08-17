@@ -141,9 +141,9 @@ int yylex (void);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD SCALE
-%left           CROSS DOT HADAMARD
-%right	<op>	SIZEOF UNARY INCOP
+%left			'*' '/' '%' MOD SCALE GEOMETRIC
+%left           HADAMARD CROSS DOT WEDGE REGRESSIVE
+%right	<op>	SIZEOF UNARY INCOP DAGGER STAR
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -1708,9 +1708,11 @@ expr
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
+	| expr GEOMETRIC expr		{ $$ = binary_expr (GEOMETRIC, $1, $3); }
+	| expr HADAMARD expr		{ $$ = binary_expr (HADAMARD, $1, $3); }
 	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
 	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
-	| expr HADAMARD expr		{ $$ = binary_expr (HADAMARD, $1, $3); }
+	| expr WEDGE expr			{ $$ = binary_expr (WEDGE, $1, $3); }
 	;
 
 texpr

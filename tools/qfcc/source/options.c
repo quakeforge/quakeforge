@@ -311,6 +311,7 @@ DecodeArgs (int argc, char **argv)
 
 	add_cpp_undef ("-undef");
 	add_cpp_undef ("-nostdinc");
+	add_cpp_undef ("-fno-extended-identifiers");
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
 
