@@ -79,6 +79,11 @@ type_t      type_invalid = {
 	.name = "invalid",
 };
 
+type_t      type_auto = {
+	.type = ev_invalid,
+	.name = "auto",
+};
+
 #define VEC_TYPE(type_name, base_type) \
 	type_t type_##type_name = { \
 		.type = ev_##base_type, \
@@ -527,8 +532,8 @@ find_type (type_t *type)
 	type_t     *check;
 	int         i, count;
 
-	if (!type)
-		return 0;
+	if (!type || type == &type_auto)
+		return type;
 
 	if (type->freeable) {
 		switch (type->meta) {

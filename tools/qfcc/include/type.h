@@ -120,6 +120,7 @@ typedef struct specifier_s {
 #define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
 #include "tools/qfcc/include/vec_types.h"
 
+extern	type_t	type_auto;
 extern	type_t	type_invalid;
 extern	type_t	type_floatfield;
 

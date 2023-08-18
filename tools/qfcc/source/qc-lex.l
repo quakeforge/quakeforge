@@ -415,6 +415,7 @@ static keyword_t at_keywords[] = {
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
 	{"not",			NOT		},
+	{"auto",		TYPE_SPEC, .spec = { .type = &type_auto } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
