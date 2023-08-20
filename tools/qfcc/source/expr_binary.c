@@ -927,15 +927,15 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 }
 
 #define invalid_binary_expr(_op, _e1, _e2) \
-	_invalid_binary_expr(_op, _e1, _e2, __FILE__, __LINE__)
+	_invalid_binary_expr(_op, _e1, _e2, __FILE__, __LINE__, __FUNCTION__)
 static expr_t *
 _invalid_binary_expr (int op, expr_t *e1, expr_t *e2,
-					  const char *file, int line)
+					  const char *file, int line, const char *func)
 {
 	type_t     *t1, *t2;
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-	return _error (e1, file, line, "invalid binary expression: %s %s %s",
+	return _error (e1, file, line, func, "invalid binary expression: %s %s %s",
 				  get_type_string (t1), get_op_string (op),
 				  get_type_string (t2));
 }
