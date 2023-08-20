@@ -1238,12 +1238,23 @@ pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	if (data->pr->progs->version == PROG_ID_VERSION
-		&& ISDENORM (PR_PTR (int, value))
-		&& PR_PTR (uint, value) != 0x80000000) {
-		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
-	} else {
-		dasprintf (dstr, "%.9g", PR_PTR (float, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		if (data->pr->progs->version == PROG_ID_VERSION
+			&& ISDENORM (PR_PTR (int, value))
+			&& PR_PTR (uint, value) != 0x80000000) {
+			dasprintf (dstr, "<%08x>", PR_PTR (int, value));
+		} else {
+			dasprintf (dstr, "%.9g", PR_PTR (float, value));
+		}
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
 	}
 }
 
@@ -1344,7 +1355,18 @@ pr_debug_int_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%d", PR_PTR (int, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%d", PR_PTR (int, value));
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1353,7 +1375,18 @@ pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "$%08x", PR_PTR (uint, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "$%08x", PR_PTR (uint, value));
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1371,7 +1404,18 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%.17g", *(double *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%.17g", *(double *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1380,7 +1424,18 @@ pr_debug_long_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1389,7 +1444,18 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%" PRIu64, *(uint64_t *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%" PRIu64, *(uint64_t *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1633,7 +1699,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				pr_uint_t   shift = 0;
 				pr_uint_t   opreg;
 				pr_uint_t   opval;
-				qfot_type_t *optype = &res->void_type;
+				qfot_type_t basic_type = {};
+				qfot_type_t *optype = &basic_type;
 				pr_func_t   func;
 
 				if (mode == 'P') {
@@ -1657,17 +1724,20 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'a':
 						opreg = PR_BASE_IND (s->op, A);
 						opval = get_opval (pr, s->a);
-						optype = res->type_encodings[op_type[0]];
+						basic_type = *res->type_encodings[op_type[0]];
+						basic_type.basic.width = op_width[0];
 						break;
 					case 'b':
 						opreg = PR_BASE_IND (s->op, B);
 						opval = get_opval (pr, s->b);
-						optype = res->type_encodings[op_type[1]];
+						basic_type = *res->type_encodings[op_type[1]];
+						basic_type.basic.width = op_width[1];
 						break;
 					case 'c':
 						opreg = PR_BASE_IND (s->op, C);
 						opval = get_opval (pr, s->c);
-						optype = res->type_encodings[op_type[2]];
+						basic_type = *res->type_encodings[op_type[2]];
+						basic_type.basic.width = op_width[2];
 						break;
 					case 'o':
 						opreg = 0;
