@@ -12,6 +12,7 @@ EXTRA_DIST += \
 	tools/qfcc/include/emit.h \
 	tools/qfcc/include/expr.h \
 	tools/qfcc/include/expr_names.h \
+	tools/qfcc/include/evaluate.h \
 	tools/qfcc/include/flow.h \
 	tools/qfcc/include/function.h \
 	tools/qfcc/include/grab.h \
