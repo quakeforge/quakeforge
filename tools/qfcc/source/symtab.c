@@ -119,8 +119,13 @@ symtab_lookup (symtab_t *symtab, const char *name)
 {
 	symbol_t   *symbol;
 	do {
-		if ((symbol = Hash_Find (symtab->tab, name)))
+		if ((symbol = Hash_Find (symtab->tab, name))) {
 			return symbol;
+		}
+		if (symtab->procsymbol
+			&& (symbol = symtab->procsymbol (name, symtab))) {
+			return symbol;
+		}
 		symtab = symtab->parent;
 	} while (symtab);
 	return 0;

@@ -104,6 +104,8 @@ typedef struct symtab_s {
 	symbol_t  **symtail;		///< keep chain in declaration order
 	struct defspace_s *space;	///< storage for vars in scope symtabs
 	struct class_s *class;		///< owning class if ivar scope
+	symbol_t *(*procsymbol) (const char *name, struct symtab_s *symtab);
+	void       *procsymbol_data;
 } symtab_t;
 
 const char *symtype_str (sy_type_e type) __attribute__((const));
