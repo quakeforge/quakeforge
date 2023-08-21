@@ -44,6 +44,7 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
@@ -152,7 +153,7 @@ int yylex (void);
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
 %token				RETURN AT_RETURN ELLIPSIS
-%token				NIL GOTO SWITCH CASE DEFAULT ENUM
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT HANDLE
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
@@ -179,7 +180,7 @@ int yylex (void);
 
 %type	<symbol>	tag
 %type	<spec>		struct_specifier struct_list
-%type	<spec>		enum_specifier
+%type	<spec>		enum_specifier algebra_specifier
 %type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
 %type	<size>		array_decl
@@ -893,6 +894,7 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
+	| algebra_specifier
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should. This is not a problem
@@ -1018,6 +1020,19 @@ attribute
 	;
 
 tag : NAME ;
+
+algebra_specifier
+	: ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+		{
+			auto spec = make_spec (algebra_type ($3.type, $5), 0, 0, 0);
+			$$ = spec;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto spec = make_spec (algebra_type ($3.type, 0), 0, 0, 0);
+			$$ = spec;
+		}
+	;
 
 enum_specifier
 	: ENUM tag optional_enum_list
@@ -1557,6 +1572,36 @@ statement
 										   break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
+		}
+	| ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+		{
+			auto algebra = algebra_type ($3.type, $5);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $9;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto algebra = algebra_type ($3.type, 0);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $6;
+		}
+	| ALGEBRA '(' TYPE_NAME ')'
+		{
+			auto algebra = $3.type;
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $6;
 		}
 	| comma_expr ';'
 		{

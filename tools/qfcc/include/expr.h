@@ -280,6 +280,12 @@ typedef struct {
 	struct type_s *type;		///< result type;
 } ex_extend_t;
 
+typedef struct {
+	struct algebra_s *algebra;	///< owning algebra
+	int         count;			///< number of component expressions
+	struct expr_s *components;	///< multivector components
+} ex_multivec_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -317,6 +323,7 @@ typedef struct expr_s {
 		ex_horizontal_t hop;			///< horizontal vector operation
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation
+		ex_multivec_t multivec;			///< geometric algebra multivector
 	} e;
 } expr_t;
 
@@ -844,6 +851,7 @@ expr_t *think_expr (struct symbol_s *think_sym);
 int is_lvalue (const expr_t *expr) __attribute__((pure));
 expr_t *assign_expr (expr_t *dst, expr_t *src);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
+expr_t *cast_error (expr_t *e, struct type_s *t1, struct type_s *t2);
 
 const char *get_op_string (int op) __attribute__((const));
 

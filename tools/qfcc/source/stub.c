@@ -32,6 +32,21 @@ pr_info_t pr;
 type_t type_Class;
 type_t type_SEL;
 type_t type_id;
+void algebra_print_type_str (struct dstring_s *str, const struct type_s *type);
+void algebra_print_type_str (struct dstring_s *str, const struct type_s *type){}
+void algebra_encode_type (struct dstring_s *encoding,
+		                          const struct type_s *type);
+void algebra_encode_type (struct dstring_s *encoding,
+		                          const struct type_s *type){}
+__attribute__((const)) int algebra_type_size (const struct type_s *type);
+int algebra_type_size (const struct type_s *type){return 0;}
+__attribute__((const)) int algebra_type_width (const struct type_s *type);
+int algebra_type_width (const struct type_s *type){return 0;}
+__attribute__((const)) int algebra_type_assignable (const type_t *dst, const type_t *src);
+int algebra_type_assignable (const type_t *dst, const type_t *src){return 0;}
+__attribute__((const)) int is_algebra (const type_t *type);
+int is_algebra (const type_t *type){return 0;}
+
 __attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}

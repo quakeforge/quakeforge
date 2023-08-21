@@ -45,6 +45,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -199,6 +200,8 @@ get_type (expr_t *e)
 			return e->e.swizzle.type;
 		case ex_extend:
 			return e->e.extend.type;
+		case ex_multivec:
+			return e->e.multivec.algebra->algebra_type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -438,6 +441,20 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			e->e.extend.src = copy_expr (e->e.extend.src);
+			return n;
+		case ex_multivec:
+			n = new_expr ();
+			*n = *e;
+			n->e.multivec.algebra = e->e.multivec.algebra;
+			n->e.multivec.count = e->e.multivec.count;
+			n->e.multivec.components = copy_expr (e->e.multivec.components);
+			t = e->e.multivec.components;
+			e = n->e.multivec.components;
+			while (t->next) {
+				e->next = copy_expr (t->next);
+				e = e->next;
+				t = t->next;
+			}
 			return n;
 		case ex_count:
 			break;
@@ -1685,6 +1702,13 @@ has_function_call (expr_t *e)
 		case ex_with:
 		case ex_args:
 			return 0;
+		case ex_multivec:
+			for (auto c = e->e.multivec.components; c; c = c->next) {
+				if (has_function_call (c)) {
+					return 1;
+				}
+			}
+			return 0;
 		case ex_count:
 			break;
 	}
@@ -1835,6 +1859,8 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = e->e.symbol->type;
 						return n;
 					}
+				case ex_multivec:
+					return algebra_negate (e);
 				case ex_nil:
 				case ex_address:
 					return error (e, "invalid type for unary -");
@@ -1921,6 +1947,8 @@ unary_expr (int op, expr_t *e)
 							n->e.expr.type = &type_float;
 						return n;
 					}
+				case ex_multivec:
+					return algebra_dual (e);
 				case ex_branch:
 				case ex_nil:
 					return error (e, "invalid type for unary !");
@@ -2015,6 +2043,8 @@ bitnot_expr:
 						n->e.expr.type = t;
 						return n;
 					}
+				case ex_multivec:
+					return algebra_reverse (e);
 				case ex_nil:
 				case ex_address:
 					return error (e, "invalid type for unary ~");

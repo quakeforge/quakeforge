@@ -269,9 +269,10 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 "·"					{ return DOT; }
+"⋀"					{ return WEDGE; }
+"•"					{ return DOT; }
 "∧"					{ return WEDGE; }
 "∨"					{ return REGRESSIVE; }
-"⋀"					{ return WEDGE; }
 "†"					{ return DAGGER; }
 "∗"					{ return STAR; }
 "×"					{ return CROSS; }
@@ -440,6 +441,7 @@ static keyword_t qf_keywords[] = {
 	{"@dot",		DOT,		},
 	{"@wedge",		WEDGE,		},
 	{"@geometric",	GEOMETRIC,	},
+	{"@algebra",	ALGEBRA,	},
 };
 
 // These keywors are always available. Other than the @ keywords, they

@@ -37,13 +37,14 @@
 #include "QF/mathlib.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static expr_t *
+expr_t *
 cast_error (expr_t *e, type_t *t1, type_t *t2)
 {
 	e = error (e, "cannot cast from %s to %s", get_type_string (t1),
@@ -106,6 +107,13 @@ cast_expr (type_t *dstType, expr_t *e)
 		c = new_alias_expr (dstType, e);
 		return c;
 	}
+	if (is_algebra (dstType) || is_algebra (srcType)) {
+		if ((c = algebra_cast_expr (dstType, e))) {
+			return c;
+		}
+		return cast_error (e, srcType, dstType);
+	}
+
 	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
 							   || is_array (srcType)))
 		&& !(is_integral (dstType) && is_ptr (srcType))

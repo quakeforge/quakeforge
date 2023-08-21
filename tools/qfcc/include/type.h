@@ -79,6 +79,8 @@ typedef struct type_s {
 		ty_array_t  array;
 		struct symtab_s *symtab;
 		struct class_s *class;
+		struct algebra_s *algebra;
+		struct multivector_s *multivec;
 		ty_alias_t  alias;
 	} t;
 	struct type_s *next;

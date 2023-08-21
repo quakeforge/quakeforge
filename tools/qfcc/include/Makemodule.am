@@ -1,4 +1,5 @@
 EXTRA_DIST += \
+	tools/qfcc/include/algebra.h \
 	tools/qfcc/include/attribute.h \
 	tools/qfcc/include/class.h \
 	tools/qfcc/include/codespace.h \

@@ -47,6 +47,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -312,6 +313,7 @@ copy_chain (type_t *type, type_t *append)
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
+			case ty_algebra:
 				internal_error (0, "copy object type %d", type->meta);
 		}
 	}
@@ -370,6 +372,7 @@ append_type (type_t *type, type_t *new)
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
+			case ty_algebra:
 				internal_error (0, "append to object type");
 		}
 	}
@@ -440,6 +443,8 @@ types_same (type_t *a, type_t *b)
 		case ty_handle:
 			// names have gone through save_string
 			return a->name == b->name;
+		case ty_algebra:
+			return a->t.algebra == b->t.algebra;
 	}
 	internal_error (0, "we be broke");
 }
@@ -571,6 +576,8 @@ find_type (type_t *type)
 				break;
 			case ty_handle:
 				break;
+			case ty_algebra:
+				break;
 		}
 	}
 
@@ -596,7 +603,7 @@ find_type (type_t *type)
 			}
 		}
 	}
-	check->freeable = 0;
+	check->freeable = false;
 
 	chain_type (check);
 
@@ -819,6 +826,9 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_algebra:
+			algebra_print_type_str (str, type);
+			return;
 		case ty_handle:
 			dasprintf (str, " handle %s", type->name);
 			return;
@@ -1011,6 +1021,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_algebra:
+			algebra_encode_type (encoding, type);
+			return;
 		case ty_handle:
 			dasprintf (encoding, "{%s$}", type->name);
 			return;
@@ -1285,6 +1298,9 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 0;
 	}
 	if (!is_ptr (dst) || !is_ptr (src)) {
+		if (is_algebra (dst) || is_algebra (src)) {
+			return algebra_type_assignable (dst, src);
+		}
 		if (is_scalar (dst) && is_scalar (src)) {
 			return 1;
 		}
@@ -1384,6 +1400,8 @@ type_size (const type_t *type)
 			}
 		case ty_alias:
 			return type_size (type->t.alias.aux_type);
+		case ty_algebra:
+			return algebra_type_size (type);
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
 }
@@ -1414,6 +1432,8 @@ type_width (const type_t *type)
 			return 1;
 		case ty_alias:
 			return type_width (type->t.alias.aux_type);
+		case ty_algebra:
+			return algebra_type_width (type);
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
 }

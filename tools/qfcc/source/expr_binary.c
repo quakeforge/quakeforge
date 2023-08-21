@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
@@ -1111,6 +1112,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	t2 = get_type (e2);
 	if (!t1 || !t2)
 		internal_error (e1, "expr with no type");
+
+	if (is_algebra (t1) || is_algebra (t2)) {
+		return algebra_binary_expr (op, e1, e2);
+	}
 
 	if (op == EQ || op == NE) {
 		if (e1->type == ex_nil) {

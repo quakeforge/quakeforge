@@ -46,6 +46,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -144,6 +145,7 @@ is_lvalue (const expr_t *expr)
 		case ex_horizontal:
 		case ex_swizzle:
 		case ex_extend:
+		case ex_multivec:
 			break;
 		case ex_count:
 			internal_error (expr, "invalid expression");
@@ -175,6 +177,9 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	}
 
 	if (type_assignable (dst_type, src_type)) {
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
 		debug (dst, "casting %s to %s", src_type->name, dst_type->name);
 		if (!src->implicit && !type_promotes (dst_type, src_type)) {
 			if (is_double (src_type)) {

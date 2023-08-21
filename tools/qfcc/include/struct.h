@@ -62,6 +62,7 @@ int enum_as_bool (struct type_s *enm, struct expr_s **zero,
 
 struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
 								 struct type_s *type);
+struct defspace_s;
 struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
 							   struct type_s *type, void *data,
 							   struct defspace_s *space,

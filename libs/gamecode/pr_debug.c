@@ -260,6 +260,8 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_size (pr, aux_type);
+		case ty_algebra:
+			return 1;	//FIXME wip
 	}
 	return 0;
 }
@@ -1053,6 +1055,12 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_algebra:
+			if (type->type == ev_invalid) {
+				dstring_appendstr (data->dstr, "<?""?>");
+				break;
+			}
+			// fall through
 		case ty_handle:
 		case ty_basic:
 			switch (type->type) {

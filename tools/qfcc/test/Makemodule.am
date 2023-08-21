@@ -9,6 +9,7 @@ fail_bins=
 
 test_progs_dat=\
 	tools/qfcc/test/address-cast.dat \
+	tools/qfcc/test/algtypes.dat \
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
 	tools/qfcc/test/arraylife2.dat \
@@ -140,6 +141,16 @@ tools/qfcc/test/address-cast.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(address_cast_dep) # am--include-marker
 r_depfiles_remade += $(address_cast_dep)
+
+tools_qfcc_test_algtypes_dat_SOURCES=tools/qfcc/test/algtypes.r
+algtypes_obj=$(tools_qfcc_test_algtypes_dat_SOURCES:.r=.o)
+algtypes_dep=$(call qcautodep,$(tools_qfcc_test_algtypes_dat_SOURCES))
+tools/qfcc/test/algtypes.dat$(EXEEXT): $(algtypes_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(algtypes_obj)
+tools/qfcc/test/algtypes.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(algtypes_dep) # am--include-marker
+r_depfiles_remade += $(algtypes_dep)
 
 tools_qfcc_test_alignment_dat_SOURCES=tools/qfcc/test/alignment.r
 alignment_obj=$(tools_qfcc_test_alignment_dat_SOURCES:.r=.o)

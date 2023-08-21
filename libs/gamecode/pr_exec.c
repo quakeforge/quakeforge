@@ -2562,7 +2562,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				startprofile = profile;
 				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
 				st = pr->pr_statements + pr->pr_xstatement;
-				if (pr->pr_depth== exitdepth) {
+				if (pr->pr_depth == exitdepth) {
 					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth) {
 						pr->pr_trace = false;
 					}

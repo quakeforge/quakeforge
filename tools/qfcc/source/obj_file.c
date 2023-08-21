@@ -699,6 +699,7 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 		case ty_alias:	//XXX
 		case ty_basic:
 		case ty_handle:	//XXX
+		case ty_algebra:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return type_def->type;
@@ -750,6 +751,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 			return type_def->array.size
 					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
+		case ty_algebra:
 			return 0;	// FIXME
 	}
 	return 0;
@@ -799,6 +801,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 		case ty_array:
 			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:
+		case ty_algebra:
 			return 0;	// FIXME
 	}
 	return 0;
