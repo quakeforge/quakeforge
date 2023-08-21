@@ -41,6 +41,7 @@ struct ex_value_s;
 struct tempop_s;
 struct type_s;
 struct pr_type_s;
+struct operand_s;
 
 struct ex_value_s *new_string_val (const char *string_val);
 struct ex_value_s *new_double_val (double double_val);
@@ -66,10 +67,10 @@ void value_store (pr_type_t *dst, const struct type_s *dstType,
 				  const struct expr_s *src);
 const char *get_value_string (const struct ex_value_s *value);
 
-struct ex_value_s *convert_value (struct ex_value_s *value,
-								  struct type_s *type);
 struct ex_value_s *alias_value (struct ex_value_s *value, struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
+struct def_s *emit_value_core (struct ex_value_s *value, struct def_s *def,
+							   struct defspace_s *defspace);
 
 int	ReuseString (const char *str);
 

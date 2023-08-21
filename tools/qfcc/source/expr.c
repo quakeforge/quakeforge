@@ -1241,6 +1241,19 @@ is_pointer_val (expr_t *e)
 	return 0;
 }
 
+int
+is_math_val (expr_t *e)
+{
+	if (e->type == ex_value && is_math (e->e.value->type)) {
+		return 1;
+	}
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& is_math (e->e.symbol->s.value->type)) {
+		return 1;
+	}
+	return 0;
+}
+
 expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {

@@ -159,6 +159,8 @@ operand_t *label_operand (struct expr_s *label);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);
+void free_sblock (sblock_t *sblock);
+
 statement_t *new_statement (st_type_t type, const char *opcode,
 							struct expr_s *expr);
 int statement_is_cond (statement_t *s) __attribute__((pure));
@@ -170,6 +172,7 @@ sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
+sblock_t *statement_slist (sblock_t *sblock, struct expr_s *e);
 void statements_count_temps (sblock_t *sblock);
 
 void print_operand (operand_t *op);

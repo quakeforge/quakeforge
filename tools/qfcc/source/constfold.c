@@ -43,6 +43,7 @@
 #include <QF/mathlib.h>
 
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -1696,6 +1697,9 @@ fold_constants (expr_t *e)
 		if (!e1) {
 			return e;
 		}
+		if (is_math (get_type (e1))) {
+			return evaluate_constexpr (e);
+		}
 		op = e->e.expr.op;
 		t1 = extract_type (e1);
 		if (t1 >= ev_type_count || !do_unary_op[t1]) {
@@ -1708,6 +1712,10 @@ fold_constants (expr_t *e)
 		e2 = e->e.expr.e2;
 		if (!is_constant (e1) && !is_constant (e2)) {
 			return e;
+		}
+
+		if (is_math_val (e1) && is_math_val (e2)) {
+			return evaluate_constexpr (e);
 		}
 
 		op = e->e.expr.op;

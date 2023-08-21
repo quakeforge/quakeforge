@@ -52,6 +52,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"

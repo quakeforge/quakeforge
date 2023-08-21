@@ -34,18 +34,19 @@
 #include <string.h>
 #include <stdlib.h>
 
-//#include "QF/alloc.h"
-//#include "QF/dstring.h"
-//#include "QF/hash.h"
-//#include "QF/mathlib.h"
 #include "QF/progs.h"
 
 #include "QF/simd/types.h"
 
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -77,6 +78,9 @@ value_debug_handler (prdebug_t event, void *param, void *data)
 enum {
 	vf_null,
 	vf_convert,
+	vf_foldconst,
+
+	vf_num_functions
 };
 
 #define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
@@ -85,6 +89,7 @@ enum {
 static bfunction_t value_functions[] = {
 	{},	// null function
 	[vf_convert] = { .first_statement = vf_convert * 16 },
+	[vf_foldconst] = { .first_statement = vf_foldconst * 16 },
 };
 
 static __attribute__((aligned(64)))
@@ -92,6 +97,15 @@ dstatement_t value_statements[] = {
 	[vf_convert * 16 - 1] = {},
 	{ OP_CONV, 0, 07777, 16 },
 	{ OP_RETURN, 16, 0, 0 },
+
+	[vf_foldconst * 16 - 1] = {},
+
+	[vf_num_functions * 16 - 1] = {},
+};
+static codespace_t value_codespace = {
+	.code = value_statements,
+	.size = vf_foldconst * 16,
+	.max_size = vf_num_functions * 16,
 };
 
 #define num_globals 16384
@@ -99,6 +113,13 @@ dstatement_t value_statements[] = {
 static __attribute__((aligned(64)))
 pr_type_t value_globals[num_globals + 128] = {
 	[num_globals - stack_size] = { .uint_value = num_globals },
+};
+static defspace_t value_defspace = {
+	.type = ds_backed,
+	.def_tail = &value_defspace.defs,
+	.data = value_globals,
+	.max_size = num_globals - stack_size,
+	.grow = 0,
 };
 
 static dprograms_t value_progs = {
@@ -155,4 +176,100 @@ convert_value (ex_value_t *value, type_t *type)
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_convert);
 	return new_type_value (type, value_pr.pr_return_buffer);
+}
+
+static def_t *get_def (operand_t *op);
+
+static def_t *
+get_temp_def (operand_t *op)
+{
+	tempop_t   *tempop = &op->tempop;
+	if (tempop->def) {
+		return tempop->def;
+	}
+	if (tempop->alias) {
+		def_t      *tdef = get_def (tempop->alias);
+		int         offset = tempop->offset;
+		tempop->def = alias_def (tdef, op->type, offset);
+	}
+	if (!tempop->def) {
+		tempop->def = new_def (0, op->type, &value_defspace, sc_static);
+	}
+	return tempop->def;
+}
+
+static def_t *
+get_def (operand_t *op)
+{
+	if (is_short (op->type)) {
+		auto def = new_def (0, &type_short, 0, sc_extern);
+		def->offset = op->value->v.short_val;
+		return def;
+	}
+	switch (op->op_type) {
+		case op_def:
+			return op->def;
+		case op_value:
+			return emit_value_core (op->value, 0, &value_defspace);
+		case op_temp:
+			return get_temp_def (op);
+		case op_alias:
+			return get_def (op->alias);
+		case op_nil:
+		case op_pseudo:
+		case op_label:
+			break;
+	}
+	internal_error (0, "unexpected operand");
+}
+
+expr_t *
+evaluate_constexpr (expr_t *e)
+{
+	debug (e, "fold_constants");
+	if (e->type == ex_uexpr) {
+		if (!is_constant (e->e.expr.e1)) {
+			return e;
+		}
+	} else if (e->type == ex_expr) {
+		if (!is_constant (e->e.expr.e1) || !is_constant (e->e.expr.e2)) {
+			return e;
+		}
+	} else {
+		return e;
+	}
+
+	defspace_reset (&value_defspace);
+	auto saved_version = options.code.progsversion;
+	options.code.progsversion = PROG_VERSION;
+	sblock_t    sblock = {
+		.tail = &sblock.statements,
+	};
+	auto sb = statement_slist (&sblock, new_return_expr (e));
+	if (sblock.next != sb && sb->statements) {
+		internal_error (e, "statement_slist did too much");
+	}
+	free_sblock (sb);
+	sblock.next = 0;
+
+	value_codespace.size = vf_foldconst * 16;
+	for (auto s = sblock.statements; s; s = s->next) {
+		auto opa = get_def (s->opa);
+		auto opb = get_def (s->opb);
+		auto opc = get_def (s->opc);
+		auto inst = opcode_find (s->opcode, s->opa, s->opb, s->opc);
+		auto ds = codespace_newstatement (&value_codespace);
+		*ds = (dstatement_t) {
+			.op = opcode_get (inst),
+			.a = opa->offset,
+			.b = opb->offset,
+			.c = opc->offset,
+		};
+	}
+	options.code.progsversion = saved_version;
+	value_pr.pr_trace = options.verbosity > 1;
+	PR_ExecuteProgram (&value_pr, vf_foldconst);
+	auto val = new_type_value (e->e.expr.type, value_pr.pr_return_buffer);
+	e = new_value_expr (val);
+	return e;
 }

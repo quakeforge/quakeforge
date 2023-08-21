@@ -331,7 +331,7 @@ free_statement (statement_t *s)
 	FREE (statements, s);
 }
 
-static void
+void
 free_sblock (sblock_t *sblock)
 {
 	while (sblock->statements) {
@@ -662,7 +662,6 @@ typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
 
 static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 									operand_t **op);
-static sblock_t *statement_slist (sblock_t *sblock, expr_t *e);
 static sblock_t *expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op);
 static sblock_t *expr_def (sblock_t *sblock, expr_t *e, operand_t **op);
 
@@ -2263,7 +2262,7 @@ statement_nonexec (sblock_t *sblock, expr_t *e)
 	return sblock;
 }
 
-static sblock_t *
+sblock_t *
 statement_slist (sblock_t *sblock, expr_t *e)
 {
 	static statement_f sfuncs[ex_count] = {

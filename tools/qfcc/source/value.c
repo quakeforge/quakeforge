@@ -561,6 +561,44 @@ make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 }
 
 def_t *
+emit_value_core (ex_value_t *val, def_t *def, defspace_t *data)
+{
+	if (!def) {
+		def = new_def (".imm", val->type, data, sc_static);
+	}
+	def->initialized = def->constant = 1;
+	def->nosave = 1;
+	// copy the immediate to the global area
+	switch (val->lltype) {
+		case ev_string:
+			reloc_def_string (def);
+			break;
+		case ev_func:
+			if (val->v.func_val.val) {
+				reloc_t    *reloc;
+				reloc = new_reloc (def->space, def->offset, rel_def_func);
+				reloc->next = pr.relocs;
+				pr.relocs = reloc;
+			}
+			break;
+		case ev_field:
+			if (val->v.pointer.def)
+				reloc_def_field_ofs (val->v.pointer.def, def);
+			break;
+		case ev_ptr:
+			if (val->v.pointer.def) {
+				EMIT_DEF_OFS (data, D_INT (def), val->v.pointer.def);
+			}
+			break;
+		default:
+			break;
+	}
+
+	memcpy (D_POINTER (pr_type_t, def), &val->v, 4 * type_size (val->type));
+	return def;
+}
+
+def_t *
 emit_value (ex_value_t *value, def_t *def)
 {
 	def_t      *cn;
@@ -647,36 +685,8 @@ emit_value (ex_value_t *value, def_t *def)
 	} else {
 		cn = new_def (".imm", type, pr.near_data, sc_static);
 	}
-	cn->initialized = cn->constant = 1;
-	cn->nosave = 1;
-	// copy the immediate to the global area
-	switch (val.lltype) {
-		case ev_string:
-			reloc_def_string (cn);
-			break;
-		case ev_func:
-			if (val.v.func_val.val) {
-				reloc_t    *reloc;
-				reloc = new_reloc (cn->space, cn->offset, rel_def_func);
-				reloc->next = pr.relocs;
-				pr.relocs = reloc;
-			}
-			break;
-		case ev_field:
-			if (val.v.pointer.def)
-				reloc_def_field_ofs (val.v.pointer.def, cn);
-			break;
-		case ev_ptr:
-			if (val.v.pointer.def) {
-				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
-							  val.v.pointer.def);
-			}
-			break;
-		default:
-			break;
-	}
-
-	memcpy (D_POINTER (pr_type_t, cn), &val.v, 4 * type_size (type));
+	val.type = type;
+	cn = emit_value_core (&val, cn, pr.near_data);
 
 	make_def_imm (cn, tab, &val);
 
