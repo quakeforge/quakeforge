@@ -56,17 +56,17 @@ scalar_product (expr_t *e1, expr_t *e2)
 {
 	auto scalar = is_scalar (get_type (e1)) ? e1 : e2;
 	auto vector = is_scalar (get_type (e1)) ? e2 : e1;
-	if (vector->type == ex_vector) {
-		internal_error (vector, "multiproduce scale not implemented");
-		auto comp = vector->e.vector.list;
+	if (vector->type == ex_multivec) {
+		auto comp = vector->e.multivec.components;
 		auto prod = scalar_product (scalar, comp);
 		while (comp->next) {
 			comp = comp->next;
 			auto p = scalar_product (scalar, comp);
+			p = fold_constants (p);
 			p->next = prod;
 			prod = p;
 		}
-		return fold_constants (prod);
+		return prod;
 	} else {
 		auto vector_type = get_type (vector);
 		auto scalar_type = base_type (vector_type);
@@ -127,7 +127,11 @@ component_sum (int op, expr_t **components, expr_t *e,
 		components[group] = new_binary_expr (op, components[group], e);
 		components[group]->e.expr.type = t;
 	} else {
-		components[group] = scalar_product (new_float_expr (-1), e);
+		if (op == '+') {
+			components[group] = e;
+		} else {
+			components[group] = scalar_product (new_float_expr (-1), e);
+		}
 	}
 	components[group] = fold_constants (components[group]);
 }
