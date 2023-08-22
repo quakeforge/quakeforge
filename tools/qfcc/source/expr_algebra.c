@@ -64,13 +64,15 @@ mvec_expr (expr_t *expr, algebra_t *algebra)
 		.algebra = algebra,
 	};
 	expr_t **c = &mvec->e.multivec.components;
+	int comp_offset = 0;
 	for (int i = 0; i < layout->count; i++) {
 		pr_uint_t   mask = 1u << i;
 		if (mask & group_mask) {
 			auto comp_type = algebra_mvec_type (algebra, mask);
-			int comp_offset = algebra->layout.group_map[i][1];
 			*c = new_offset_alias_expr (comp_type, expr, comp_offset);
+			c = &(*c)->next;
 			mvec->e.multivec.count++;
+			comp_offset += algebra->layout.groups[i].count;
 		}
 	}
 
