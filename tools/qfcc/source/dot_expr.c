@@ -606,6 +606,24 @@ print_extend (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_multivec (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	ex_multivec_t multivec = e->e.multivec;
+
+	for (auto c = multivec.components; c; c = c->next) {
+		_print_expr (dstr, c, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, c);
+	}
+
+	dstring_t  *typestr = dstring_newstr();
+	print_type_str (typestr, e->e.multivec.type);
+	dasprintf (dstr, "%*se_%p [label=\"multivec %s\\n%d\"];\n", indent, "", e,
+			   typestr->str, e->line);
+	dstring_delete (typestr);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -637,6 +655,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_horizontal] = print_horizontal,
 		[ex_swizzle] = print_swizzle,
 		[ex_extend] = print_extend,
+		[ex_multivec] = print_multivec,
 	};
 	int         indent = level * 2 + 2;
 
