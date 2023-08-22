@@ -2240,7 +2240,7 @@ statement_memset (sblock_t *sblock, expr_t *e)
 			count = new_short_expr (expr_uint (count));
 		}
 	}
-	s = new_statement (st_move, opcode, e);
+	s = new_statement (st_memset, opcode, e);
 	sblock = statement_subexpr (sblock, dst, &s->opc);
 	sblock = statement_subexpr (sblock, count, &s->opb);
 	sblock = statement_subexpr (sblock, val, &s->opa);
