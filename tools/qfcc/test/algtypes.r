@@ -17,7 +17,8 @@ main (void)
 	@algebra (PGA) {
 		auto p1 = 3*e1 + e2 - e3 + e0;
 		auto p2 = e1 + 3*e2 + e3 - e0;
-		pgaf1 = p1 * p2;
+		auto v = 4*(e1 + e032 + e123);
+		pgaf1 = p1 + v;// * p2;
 #if 0
 		auto rx = e23;
 		auto ry = e31;

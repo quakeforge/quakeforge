@@ -201,7 +201,7 @@ get_type (expr_t *e)
 		case ex_extend:
 			return e->e.extend.type;
 		case ex_multivec:
-			return e->e.multivec.algebra->algebra_type;
+			return e->e.multivec.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -445,8 +445,6 @@ copy_expr (expr_t *e)
 		case ex_multivec:
 			n = new_expr ();
 			*n = *e;
-			n->e.multivec.algebra = e->e.multivec.algebra;
-			n->e.multivec.count = e->e.multivec.count;
 			n->e.multivec.components = copy_expr (e->e.multivec.components);
 			t = e->e.multivec.components;
 			e = n->e.multivec.components;

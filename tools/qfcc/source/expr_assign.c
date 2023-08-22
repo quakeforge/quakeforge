@@ -173,6 +173,9 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	type_t     *src_type = get_type (src);
 
 	if (dst_type == src_type) {
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
 		return 0;
 	}
 

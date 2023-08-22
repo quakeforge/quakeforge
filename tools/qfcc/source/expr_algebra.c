@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include "QF/math/bitop.h"
+
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
@@ -35,6 +37,121 @@
 #include "tools/qfcc/include/value.h"
 
 #include "tools/qfcc/source/qc-parse.h"
+
+static expr_t *
+mvec_expr (expr_t *expr, algebra_t *algebra)
+{
+	auto mvtype = get_type (expr);
+	if (expr->type == ex_multivec || is_scalar (mvtype)) {
+		return expr;
+	}
+	if (!is_algebra (mvtype)) {
+		return error (expr, "invalid operand for GA");
+	}
+
+	auto layout = &algebra->layout;
+	pr_uint_t group_mask = (1u << (layout->count + 1)) - 1;
+	if (mvtype->type != ev_invalid) {
+		group_mask = mvtype->t.multivec->group_mask;
+	}
+	if (!(group_mask & (group_mask - 1))) {
+		return expr;
+	}
+	auto mvec = new_expr ();
+	mvec->type = ex_multivec;
+	mvec->e.multivec = (ex_multivec_t) {
+		.type = algebra_mvec_type (algebra, group_mask),
+		.algebra = algebra,
+	};
+	expr_t **c = &mvec->e.multivec.components;
+	for (int i = 0; i < layout->count; i++) {
+		pr_uint_t   mask = 1u << i;
+		if (mask & group_mask) {
+			auto comp_type = algebra_mvec_type (algebra, mask);
+			int comp_offset = algebra->layout.group_map[i][1];
+			*c = new_offset_alias_expr (comp_type, expr, comp_offset);
+			mvec->e.multivec.count++;
+		}
+	}
+
+	return mvec;
+}
+
+static void
+mvec_scatter (expr_t **components, expr_t *mvec, algebra_t *algebra)
+{
+	auto layout = &algebra->layout;
+	int  group;
+
+	if (mvec->type != ex_multivec) {
+		auto type = get_type (mvec);
+		if (!is_algebra (type)) {
+			group = layout->group_map[layout->mask_map[0]][0];
+		} else {
+			if (type->type == ev_invalid) {
+				internal_error (mvec, "full algebra in mvec_scatter");
+			}
+			pr_uint_t mask = type->t.multivec->group_mask;
+			if (mask & (mask - 1)) {
+				internal_error (mvec, "bare multivector in mvec_scatter");
+			}
+			group = BITOP_LOG2 (mask);
+		}
+		components[group] = mvec;
+		return;
+	}
+	for (auto c = mvec->e.multivec.components; c; c = c->next) {
+		auto ct = get_type (c);
+		if (is_scalar (ct)) {
+			group = layout->group_map[layout->mask_map[0]][0];
+			components[group] = mvec;
+		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
+			pr_uint_t mask = ct->t.multivec->group_mask;
+			if (mask & (mask - 1)) {
+				internal_error (mvec, "multivector in multivec expression");
+			}
+			group = BITOP_LOG2 (mask);
+		} else {
+			internal_error (mvec, "invalid type in multivec expression");
+		}
+		components[group] = c;
+	}
+}
+
+static expr_t *
+mvec_gather (expr_t **components, algebra_t *algebra)
+{
+	auto layout = &algebra->layout;
+
+	pr_uint_t group_mask = 0;
+	int count = 0;
+	expr_t *mvec = 0;
+	for (int i = 0; i < layout->count; i++) {
+		if (components[i]) {
+			count++;
+			mvec = components[i];
+			group_mask |= 1 << i;
+		}
+	}
+	if (count == 1) {
+		return mvec;
+	}
+
+	mvec = new_expr ();
+	mvec->type = ex_multivec;
+	mvec->e.multivec = (ex_multivec_t) {
+		.type = algebra_mvec_type (algebra, group_mask),
+		.algebra = algebra,
+	};
+	for (int i = layout->count; i-- > 0; ) {
+		if (components[i]) {
+			components[i]->next = mvec->e.multivec.components;
+			mvec->e.multivec.components = components[i];
+			mvec->e.multivec.count++;
+		}
+	}
+	return mvec;
+}
 
 static expr_t *
 promote_scalar (type_t *dst_type, expr_t *scalar)
@@ -56,29 +173,34 @@ scalar_product (expr_t *e1, expr_t *e2)
 {
 	auto scalar = is_scalar (get_type (e1)) ? e1 : e2;
 	auto vector = is_scalar (get_type (e1)) ? e2 : e1;
-	if (vector->type == ex_multivec) {
-		auto comp = vector->e.multivec.components;
-		auto prod = scalar_product (scalar, comp);
-		while (comp->next) {
-			comp = comp->next;
-			auto p = scalar_product (scalar, comp);
-			p = fold_constants (p);
-			p->next = prod;
-			prod = p;
+	auto algebra = algebra_get (get_type (vector));
+	auto layout = &algebra->layout;
+
+	scalar = promote_scalar (algebra->type, scalar);
+
+	expr_t *components[layout->count] = {};
+	vector = mvec_expr (vector, algebra);
+	mvec_scatter (components, vector, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		if (!components[i]) {
+			continue;
 		}
-		return prod;
-	} else {
-		auto vector_type = get_type (vector);
-		auto scalar_type = base_type (vector_type);
-		scalar = promote_scalar (scalar_type, scalar);
-		if (type_width (vector_type) > 4) {
+		auto comp_type = get_type (components[i]);
+		if (type_width (comp_type) == 1) {
+			auto prod = new_binary_expr ('*', components[i], scalar);
+			prod->e.expr.type = comp_type;
+			components[i] = fold_constants (prod);
+		} else if (type_width (comp_type) > 4) {
 			internal_error (vector, "scalar * %d-vector not implemented",
-							type_width (vector_type));
+							type_width (comp_type));
+		} else {
+			auto prod = new_binary_expr (SCALE, components[i], scalar);
+			prod->e.expr.type = comp_type;
+			components[i] = fold_constants (prod);
 		}
-		auto prod = new_binary_expr (SCALE, vector, scalar);
-		prod->e.expr.type = vector_type;
-		return fold_constants (prod);
 	}
+	return mvec_gather (components, algebra);
 }
 
 static expr_t *
@@ -110,30 +232,31 @@ regressive_product (expr_t *e1, expr_t *e2)
 }
 
 static void
-component_sum (int op, expr_t **components, expr_t *e,
-			   const basis_layout_t *layout)
+component_sum (int op, expr_t **c, expr_t **a, expr_t **b,
+			   algebra_t *algebra)
 {
-	int  group;
-	auto t = get_type (e);
-	if (is_scalar (t)) {
-		group = layout->group_map[layout->mask_map[0]][0];
-	} else {
-		group = t->t.multivec->element;
-	}
-	if (components[group]) {
-		if (t != get_type (components[group])) {
-			internal_error (e, "tangled multivec types");
-		}
-		components[group] = new_binary_expr (op, components[group], e);
-		components[group]->e.expr.type = t;
-	} else {
-		if (op == '+') {
-			components[group] = e;
+	auto layout = &algebra->layout;
+	for (int i = 0; i < layout->count; i++) {
+		if (a[i] && b[i]) {
+			if (get_type (a[i]) != get_type (b[i])) {
+				internal_error (a[i], "tangled multivec types");
+			}
+			c[i] = new_binary_expr (op, a[i], b[i]);
+			c[i]->e.expr.type = get_type (a[i]);
+			c[i] = fold_constants (c[i]);
+		} else if (a[i]) {
+			c[i] = a[i];
+		} else if (b[i]) {
+			if (op == '+') {
+				c[i] = b[i];
+			} else {
+				c[i] = scalar_product (new_float_expr (-1), b[i]);
+				c[i] = fold_constants (c[i]);
+			}
 		} else {
-			components[group] = scalar_product (new_float_expr (-1), e);
+			c[i] = 0;
 		}
 	}
-	components[group] = fold_constants (components[group]);
 }
 
 static expr_t *
@@ -141,60 +264,17 @@ multivector_sum (int op, expr_t *e1, expr_t *e2)
 {
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
-	auto alg = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
-	auto layout = &alg->layout;
-	expr_t *components[layout->count] = {};
-	if (e1->type == ex_multivec) {
-		for (auto c = e1->e.multivec.components; c; c = c->next) {
-			auto ct = get_type (c);
-			int  group;
-			if (is_scalar (ct)) {
-				group = layout->group_map[layout->mask_map[0]][0];
-			} else {
-				group = ct->t.multivec->element;
-			}
-			components[group] = c;
-		}
-	} else {
-		int  group;
-		if (is_scalar (t1)) {
-			group = layout->group_map[layout->mask_map[0]][0];
-		} else {
-			group = t1->t.multivec->element;
-		}
-		components[group] = e1;
-	}
-	if (e2->type == ex_multivec) {
-		for (auto c = e1->e.multivec.components; c; c = c->next) {
-			component_sum (op, components, c, layout);
-		}
-	} else {
-		component_sum (op, components, e2, layout);
-	}
-	int count = 0;
-	expr_t *sum = 0;
-	for (int i = 0; i < layout->count; i++) {
-		if (components[i]) {
-			count++;
-			sum = components[i];
-		}
-	}
-	if (count == 1) {
-		return sum;
-	}
-
-	sum = new_expr ();
-	sum->type = ex_multivec;
-	sum->e.multivec.algebra = alg;
-	for (int i = layout->count; i-- > 0; ) {
-		if (components[i]) {
-			components[i]->next = sum->e.multivec.components;
-			sum->e.multivec.components = components[i];
-			sum->e.multivec.count++;
-		}
-	}
-
-	return sum;
+	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
+	auto layout = &algebra->layout;
+	expr_t *a[layout->count] = {};
+	expr_t *b[layout->count] = {};
+	expr_t *c[layout->count];
+	e1 = mvec_expr (e1, algebra);
+	e2 = mvec_expr (e2, algebra);
+	mvec_scatter (a, e1, algebra);
+	mvec_scatter (b, e2, algebra);
+	component_sum (op, c, a, b, algebra);
+	return mvec_gather (c, algebra);
 }
 
 static expr_t *
@@ -302,35 +382,21 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	type_t *srcType = get_type (src);
 	type_t *dstType = get_type (dst);
 
-	if (type_size (srcType) == type_size (dstType)) {
-		return new_assign_expr (dst, src);
+	if (src->type != ex_multivec) {
+		if (type_size (srcType) == type_size (dstType)) {
+			return new_assign_expr (dst, src);
+		}
 	}
 
-	if (dstType->meta != ty_algebra && dstType->type != ev_invalid) {
+	if (dstType->meta != ty_algebra && dstType != srcType) {
 		return 0;
 	}
-	auto layout = &dstType->t.algebra->layout;
+	auto algebra = algebra_get (dstType);
+	auto layout = &algebra->layout;
 	expr_t *components[layout->count] = {};
-	if (src->type == ex_multivec) {
-		for (auto c = src->e.multivec.components; c; c = c->next) {
-			auto ct = get_type (c);
-			int  group;
-			if (is_scalar (ct)) {
-				group = layout->group_map[layout->mask_map[0]][0];
-			} else {
-				group = ct->t.multivec->element;
-			}
-			components[group] = c;
-		}
-	} else {
-		int  group;
-		if (is_scalar (srcType)) {
-			group = layout->group_map[layout->mask_map[0]][0];
-		} else {
-			group = srcType->t.multivec->element;
-		}
-		components[group] = src;
-	}
+	src = mvec_expr (src, algebra);
+	mvec_scatter (components, src, algebra);
+
 	auto block = new_block_expr ();
 	int  memset_base = 0;
 	int  memset_size = 0;
@@ -341,14 +407,17 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 				zero_components (block, dst, memset_base, memset_size);
 				memset_size = 0;
 			}
-			auto dst_type = layout->groups[i].type;
+			auto dst_type = algebra_mvec_type (algebra, 1 << i);
 			auto dst_alias = new_offset_alias_expr (dst_type, dst, offset);
 			append_expr (block, new_assign_expr (dst_alias, components[i]));
 			offset += type_size (dst_type);
 			memset_base = offset;
 		} else {
-			offset += type_size (layout->groups[i].type);
-			memset_size += type_size (layout->groups[i].type);
+			if (dstType->type == ev_invalid) {
+				auto dst_type = algebra_mvec_type (algebra, 1 << i);
+				offset += type_size (dst_type);
+				memset_size += type_size (dst_type);
+			}
 		}
 	}
 	if (memset_size) {

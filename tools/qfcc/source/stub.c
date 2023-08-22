@@ -46,6 +46,8 @@ __attribute__((const)) int algebra_type_assignable (const type_t *dst, const typ
 int algebra_type_assignable (const type_t *dst, const type_t *src){return 0;}
 __attribute__((const)) int is_algebra (const type_t *type);
 int is_algebra (const type_t *type){return 0;}
+__attribute__((const)) int algebra_base_type (const type_t *type);
+int algebra_base_type (const type_t *type){return 0;}
 
 __attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}

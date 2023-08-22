@@ -38,11 +38,11 @@ typedef struct basis_blade_s {
 
 typedef struct basis_group_s {
 	int         count;
+	pr_uint_t   group_mask;
 	pr_uivec2_t range;
 	basis_blade_t *blades;
 	int        *map;
 	set_t      *set;
-	struct type_s *type;
 } basis_group_t;
 
 typedef struct basis_layout_s {
@@ -67,6 +67,7 @@ typedef struct algebra_s {
 	metric_t    metric;
 	basis_layout_t layout;
 	basis_group_t *groups;
+	struct type_s **mvec_types;
 	int         num_components;	///< number of componets (2^d)
 	int         dimension;		///< number of dimensions (plus + minus + zero)
 	int         plus;			///< number of elements squaring to +1
@@ -76,13 +77,14 @@ typedef struct algebra_s {
 
 typedef struct multivector_s {
 	int         num_components;
-	int         element;
+	int         group_mask;
 	algebra_t  *algebra;
 } multivector_t;
 
 struct expr_s;
 bool is_algebra (const struct type_s *type) __attribute__((pure));
 struct type_s *algebra_type (struct type_s *type, struct expr_s *params);
+struct type_s *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 struct symtab_s *algebra_scope (struct type_s *type, struct symtab_s *curscope);
 void algebra_print_type_str (struct dstring_s *str, const struct type_s *type);
 void algebra_encode_type (struct dstring_s *encoding,
@@ -95,6 +97,7 @@ int metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b) __attribute_
 algebra_t *algebra_get (const struct type_s *type) __attribute__((pure));
 int algebra_type_assignable (const struct type_s *dst,
 							 const struct type_s *src) __attribute__((pure));
+struct type_s *algebra_base_type (const struct type_s *type) __attribute__((pure));
 
 struct expr_s *algebra_binary_expr (int op, struct expr_s *e1,
 									struct expr_s *e2);

@@ -164,10 +164,12 @@ basis_blade_init (basis_blade_t *blade, pr_uint_t mask)
 
 static void
 basis_group_init (basis_group_t *group, int count, basis_blade_t *blades,
-				  algebra_t *a, int element)
+				  algebra_t *a, int group_id)
 {
+	pr_uint_t group_mask = 1 << group_id;
 	*group = (basis_group_t) {
 		.count = count,
+		.group_mask = group_mask,
 		.range = { ~0u, 0 },
 		.blades = malloc (sizeof (basis_blade_t[count])),
 		.set = set_new (),
@@ -183,29 +185,6 @@ basis_group_init (basis_group_t *group, int count, basis_blade_t *blades,
 	group->map = malloc (sizeof (int[num]));
 	for (int i = 0; i < count; i++) {
 		group->map[blades[i].mask - group->range[0]] = i;
-	}
-
-	if (count == 1 && blades[0].mask == 0) {
-		group->type = a->type;
-	} else {
-		multivector_t *mvec = malloc (sizeof (multivector_t));
-		*mvec = (multivector_t) {
-			.num_components = count,
-			.element = element,
-			.algebra = a,
-		};
-		group->type = new_type ();
-		*group->type = (type_t) {
-			.type = a->type->type,
-			.name = "basis group",
-			.alignment = 4, //FIXME
-			.width = count,
-			.meta = ty_algebra,
-			.t.algebra = (algebra_t *) mvec,
-			.freeable = true,
-			.allocated = true,
-		};
-		chain_type (group->type);
 	}
 }
 
@@ -268,6 +247,12 @@ metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b)
 	return count_minus (c & metric->minus);
 }
 
+static type_t **
+alloc_mvec_types (int num_groups)
+{
+	return calloc (1 << num_groups, sizeof (type_t *));
+}
+
 static void
 algebra_init (algebra_t *a)
 {
@@ -309,6 +294,7 @@ algebra_init (algebra_t *a)
 			blades[13], blades[12], blades[11], blades[14],
 		};
 		a->groups = malloc (sizeof (basis_group_t[6]));
+		a->mvec_types = alloc_mvec_types (6);
 		basis_group_init (&a->groups[0], 4, pga_blades +  0, a, 0);
 		basis_group_init (&a->groups[1], 3, pga_blades +  4, a, 1);
 		basis_group_init (&a->groups[2], 1, pga_blades +  7, a, 2);
@@ -325,6 +311,7 @@ algebra_init (algebra_t *a)
 			blades[2], blades[3], blades[1], blades[7],
 		};
 		a->groups = malloc (sizeof (basis_group_t[4]));
+		a->mvec_types = alloc_mvec_types (4);
 		basis_group_init (&a->groups[0], 1, pga_blades + 0, a, 0);
 		basis_group_init (&a->groups[1], 3, pga_blades + 1, a, 1);
 		basis_group_init (&a->groups[2], 3, pga_blades + 4, a, 2);
@@ -333,12 +320,22 @@ algebra_init (algebra_t *a)
 	} else {
 		// just use the grades as the default layout
 		a->groups = malloc (sizeof (basis_group_t[d + 1]));
+		a->mvec_types = alloc_mvec_types (d + 1);
 		for (int i = 0; i < d + 1; i++) {
 			int         c = counts[i];
 			int         ind = indices[i];
 			basis_group_init (&a->groups[i], c, &blades[ind - c], a, i);
 		}
 		basis_layout_init (&a->layout, d + 1, a->groups);
+	}
+
+	for (int i = 0; i < a->layout.count; i++) {
+		auto g = &a->layout.groups[i];
+		if (g->count == 1 && g->blades[0].mask == 0) {
+			a->mvec_types[g->group_mask] = a->type;
+		} else {
+			algebra_mvec_type (a, g->group_mask);
+		}
 	}
 }
 
@@ -415,6 +412,41 @@ algebra_type (type_t *type, expr_t *params)
 	return find_type (t);
 }
 
+type_t *
+algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
+{
+	if (!group_mask) {
+		return 0;
+	}
+	if (!algebra->mvec_types[group_mask]) {
+		int count = 0;
+		for (int i = 0; i < algebra->layout.count; i++) {
+			if (group_mask & (1 << i)) {
+				count += algebra->layout.groups[i].count;
+			}
+		}
+		multivector_t *mvec = malloc (sizeof (multivector_t));
+		*mvec = (multivector_t) {
+			.num_components = count,
+			.group_mask = group_mask,
+			.algebra = algebra,
+		};
+		algebra->mvec_types[group_mask] = new_type ();
+		*algebra->mvec_types[group_mask] = (type_t) {
+			.type = algebra->type->type,
+			.name = "basis group",
+			.alignment = 4, //FIXME
+			.width = count,
+			.meta = ty_algebra,
+			.t.algebra = (algebra_t *) mvec,
+			.freeable = true,
+			.allocated = true,
+		};
+		chain_type (algebra->mvec_types[group_mask]);
+	}
+	return algebra->mvec_types[group_mask];
+}
+
 static int pga_swaps_2d[8] = {
 	[0x5] = 1,	// e20
 };
@@ -470,17 +502,18 @@ algebra_symbol (const char *name, symtab_t *symtab)
 		int sign = 1 - 2 * (swaps & 1);
 		auto g = alg->layout.group_map[alg->layout.mask_map[blade]];
 		auto group = &alg->layout.groups[g[0]];
+		auto group_type = alg->mvec_types[group->group_mask];
 		ex_value_t *blade_val = 0;
 		if (is_float (alg->type)) {
 			float components[group->count] = {};
 			components[g[1]] = sign;
-			blade_val = new_type_value (group->type, (pr_type_t *)components);
+			blade_val = new_type_value (group_type, (pr_type_t *)components);
 		} else {
 			double components[group->count] = {};
 			components[g[1]] = sign;
-			blade_val = new_type_value (group->type, (pr_type_t *)components);
+			blade_val = new_type_value (group_type, (pr_type_t *)components);
 		}
-		sym = new_symbol_type (name, group->type);
+		sym = new_symbol_type (name, group_type);
 		sym->sy_type = sy_const;
 		sym->s.value = blade_val;
 		symtab_addsymbol (symtab, sym);
@@ -524,8 +557,8 @@ algebra_print_type_str (dstring_t *str, const type_t *type)
 	} else if (type->type == ev_float || type->type == ev_double) {
 		auto m = type->t.multivec;
 		auto a = m->algebra;
-		dasprintf (str, " algebra(%s(%d,%d,%d):%d)", a->type->name,
-				   a->plus, a->minus, a->zero, m->element);
+		dasprintf (str, " algebra(%s(%d,%d,%d):%04x)", a->type->name,
+				   a->plus, a->minus, a->zero, m->group_mask);
 	} else {
 		internal_error (0, "invalid algebra type");
 	}
@@ -544,8 +577,8 @@ algebra_encode_type (dstring_t *encoding, const type_t *type)
 		auto a = m->algebra;
 		dasprintf (encoding, "{∧");
 		encode_type (encoding, a->type);
-		dasprintf (encoding, "(%d,%d,%d):%d}", a->plus, a->minus, a->zero,
-				   m->element);
+		dasprintf (encoding, "(%d,%d,%d):%04x}", a->plus, a->minus, a->zero,
+				   m->group_mask);
 	} else {
 		internal_error (0, "invalid algebra type");
 	}
@@ -608,4 +641,13 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 		return 0;
 	}
 	return dst->t.multivec == src->t.multivec;
+}
+
+type_t *
+algebra_base_type (const type_t *type)
+{
+	if (type->type == ev_invalid) {
+		return type->t.algebra->type;
+	}
+	return ev_types[type->type];
 }

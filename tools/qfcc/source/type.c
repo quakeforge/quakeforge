@@ -678,6 +678,9 @@ vector_type (const type_t *ele_type, int width)
 type_t *
 base_type (const type_t *vec_type)
 {
+	if (is_algebra (vec_type)) {
+		return algebra_base_type (vec_type);
+	}
 	if (!is_math (vec_type)) {
 		return 0;
 	}
@@ -1219,6 +1222,9 @@ is_math (const type_t *type)
 	type = unalias_type (type);
 
 	if (is_vector (type) || is_quaternion (type)) {
+		return 1;
+	}
+	if (is_algebra (type)) {
 		return 1;
 	}
 	return is_scalar (type) || is_nonscalar (type);

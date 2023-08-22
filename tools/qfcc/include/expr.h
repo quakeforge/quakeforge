@@ -281,6 +281,7 @@ typedef struct {
 } ex_extend_t;
 
 typedef struct {
+	struct type_s *type;		///< overall type of multivector
 	struct algebra_s *algebra;	///< owning algebra
 	int         count;			///< number of component expressions
 	struct expr_s *components;	///< multivector components
