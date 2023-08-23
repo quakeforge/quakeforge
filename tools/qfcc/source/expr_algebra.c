@@ -422,6 +422,40 @@ static void (*pga3_wedge_funcs[6][6])(expr_t**,expr_t*,expr_t*,algebra_t*) = {
 	},
 };
 
+// vector-bivector wedge is commutative
+#define pga2_x_y_w_wedge_yw_wx_xy pga2_yw_wx_xy_wedge_x_y_w
+static void
+pga2_yw_wx_xy_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+static void
+pga2_x_y_w_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto wedge_type = algebra_mvec_type (alg, 0x01);
+	c[0] = new_binary_expr (CROSS, a, b);
+	c[0]->e.expr.type = wedge_type;
+}
+
+static void (*pga2_wedge_funcs[4][4])(expr_t**,expr_t*,expr_t*,algebra_t*) = {
+	[0] = {
+		[1] = scale_component,
+		[2] = pga2_yw_wx_xy_wedge_x_y_w,
+	},
+	[1] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+	},
+	[2] = {
+		[0] = pga2_x_y_w_wedge_yw_wx_xy,
+		[1] = scale_component,
+		[2] = pga2_x_y_w_wedge_x_y_w,
+	},
+};
+
 static void
 component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 {
@@ -436,6 +470,11 @@ component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 			pga3_wedge_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else if (p == 2 && m == 0 && z == 1) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (pga2_wedge_funcs[ga][gb]) {
+			pga2_wedge_funcs[ga][gb] (c, a, b, algebra);
+		}
 	} else {
 	}
 }
