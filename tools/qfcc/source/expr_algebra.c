@@ -38,6 +38,26 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
+static int __attribute__((pure))
+get_group (type_t *type, algebra_t *algebra)
+{
+	auto layout = &algebra->layout;
+	if (is_scalar (type)) {
+		return layout->group_map[layout->mask_map[0]][0];
+	}
+	if (!is_algebra (type)) {
+		internal_error (0, "non-algebra type");
+	}
+	pr_uint_t group_mask = (1u << (layout->count + 1)) - 1;
+	if (type->type != ev_invalid) {
+		group_mask = type->t.multivec->group_mask;
+	}
+	if (group_mask & (group_mask - 1)) {
+		internal_error (0, "multi-group mult-vector");
+	}
+	return BITOP_LOG2 (group_mask);
+}
+
 static expr_t *
 mvec_expr (expr_t *expr, algebra_t *algebra)
 {
@@ -212,24 +232,8 @@ inner_product (expr_t *e1, expr_t *e2)
 		auto scalar = is_scalar (get_type (e1)) ? e1 : e2;
 		notice (scalar,
 				"the inner product of a scalar with any other grade is 0");
-		pr_type_t zero[type_size (get_type (scalar))] = {};
-		return new_value_expr (new_type_value (get_type (scalar), zero));
+		return new_zero_expr (get_type (scalar));
 	}
-	internal_error (e1, "not implemented");
-}
-
-static expr_t *
-outer_product (expr_t *e1, expr_t *e2)
-{
-	if (is_scalar (get_type (e1)) || is_scalar (get_type (e2))) {
-		return scalar_product (e1, e2);
-	}
-	internal_error (e1, "not implemented");
-}
-
-static expr_t *
-regressive_product (expr_t *e1, expr_t *e2)
-{
 	internal_error (e1, "not implemented");
 }
 
@@ -259,6 +263,212 @@ component_sum (int op, expr_t **c, expr_t **a, expr_t **b,
 			c[i] = 0;
 		}
 	}
+}
+
+static expr_t *
+scale_expr (expr_t *a, expr_t *b)
+{
+	if (!is_scalar (get_type (b))) {
+		auto t = a;
+		a = b;
+		b = t;
+	}
+	auto scale_type = get_type (a);
+	int  op = is_scalar (scale_type) ? '*' : SCALE;
+
+	auto scale = new_binary_expr (op, a, b);
+	scale->e.expr.type = scale_type;
+	return fold_constants (scale);
+}
+
+static expr_t *
+dot_expr (type_t *type, expr_t *a, expr_t *b)
+{
+	auto vec_type = get_type (a);
+	auto dot = new_binary_expr (DOT, a, b);
+	dot->e.expr.type = vector_type (vec_type, type_width (vec_type));
+	dot = array_expr (dot, new_short_expr (0));
+	dot->e.expr.type = type;
+	return dot;
+}
+
+typedef void (*pga3_wedge) (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg);
+static void
+scale_component (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto scale = scale_expr (a, b);
+	int  group = get_group (get_type (scale), alg);
+	c[group] = scale;
+}
+
+static void
+pga3_x_y_z_w_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto wedge_type = algebra_mvec_type (alg, 0x08);
+	auto va = new_offset_alias_expr (vtype, a, 0);
+	auto vb = new_offset_alias_expr (vtype, b, 0);
+	auto sa = new_offset_alias_expr (stype, a, 3);
+	auto sb = new_offset_alias_expr (stype, b, 3);
+	c[1] = new_binary_expr (CROSS, va, vb);
+	c[1]->e.expr.type = algebra_mvec_type (alg, 0x02);
+	c[3] = new_binary_expr ('-', scale_expr (vb, sa), scale_expr (va, sb));
+	c[3]->e.expr.type = wedge_type;
+}
+
+#define pga3_yz_zx_xy_wedge_x_y_z_w pga3_x_y_z_w_wedge_yz_zx_xy
+static void
+pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto wedge_type = algebra_mvec_type (alg, 0x20);
+	auto va = new_offset_alias_expr (vtype, a, 0);
+	auto sa = new_offset_alias_expr (stype, a, 3);
+	auto cv = new_binary_expr (SCALE, b, sa);
+	auto cs = dot_expr (stype, va, b);
+	auto tmp = new_temp_def_expr (wedge_type);
+	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
+	auto stmp = new_offset_alias_expr (stype, tmp, 3);
+	auto block = new_block_expr ();
+	block->e.block.result = tmp;
+	append_expr (block, assign_expr (vtmp, unary_expr ('-', cv)));
+	append_expr (block, assign_expr (stmp, cs));
+	c[5] = block;
+}
+
+// vector-bivector wedge is commutative
+#define pga3_wx_wy_wz_wedge_x_y_z_w pga3_x_y_z_w_wedge_wx_wy_wz
+static void
+pga3_x_y_z_w_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto wedge_type = algebra_mvec_type (alg, 0x20);
+	auto va = new_offset_alias_expr (vtype, a, 0);
+	auto cv = new_binary_expr (CROSS, va, b);
+	auto cs = new_zero_expr (stype);
+	auto tmp = new_temp_def_expr (wedge_type);
+	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
+	auto stmp = new_offset_alias_expr (stype, tmp, 3);
+	auto block = new_block_expr ();
+	block->e.block.result = tmp;
+	append_expr (block, assign_expr (vtmp, cv));
+	append_expr (block, assign_expr (stmp, cs));
+	c[5] = block;
+}
+
+static void
+pga3_x_y_z_w_wedge_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b,
+									algebra_t *alg)
+{
+	c[4] = dot_expr (algebra_mvec_type (alg, 0x10), a, b);
+}
+
+// bivector-bivector wedge is commutative
+#define pga3_wx_wy_wz_wedge_yz_zx_xy pga3_yz_zx_xy_wedge_wx_wy_wz
+static void
+pga3_yz_zx_xy_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[4] = dot_expr (algebra_mvec_type (alg, 0x10), a, b);
+}
+
+static void
+pga3_wzy_wxz_wyx_xyz_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b,
+									algebra_t *alg)
+{
+	c[4] = unary_expr ('-', dot_expr (algebra_mvec_type (alg, 0x10), a, b));
+}
+
+static void (*pga3_wedge_funcs[6][6])(expr_t**,expr_t*,expr_t*,algebra_t*) = {
+	[0] = {
+		[0] = pga3_x_y_z_w_wedge_x_y_z_w,
+		[1] = pga3_x_y_z_w_wedge_yz_zx_xy,
+		[2] = scale_component,
+		[3] = pga3_x_y_z_w_wedge_wx_wy_wz,
+		[5] = pga3_x_y_z_w_wedge_wzy_wxz_wyx_xyz,
+	},
+	[1] = {
+		[0] = pga3_yz_zx_xy_wedge_x_y_z_w,
+		[2] = scale_component,
+		[3] = pga3_yz_zx_xy_wedge_wx_wy_wz,
+	},
+	[2] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+		[4] = scale_component,
+		[5] = scale_component,
+	},
+	[3] = {
+		[0] = pga3_wx_wy_wz_wedge_x_y_z_w,
+		[1] = pga3_wx_wy_wz_wedge_yz_zx_xy,
+		[2] = scale_component,
+	},
+	[4] = {
+		[2] = scale_component,
+	},
+	[5] = {
+		[0] = pga3_wzy_wxz_wyx_xyz_wedge_x_y_z_w,
+		[2] = scale_component,
+	},
+};
+
+static void
+component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
+{
+	int         p = algebra->plus;
+	int         m = algebra->minus;
+	int         z = algebra->zero;
+
+	if (p == 3 && m == 0 && z == 1) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (pga3_wedge_funcs[ga][gb]) {
+			pga3_wedge_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else if (p == 2 && m == 0 && z == 1) {
+	} else {
+	}
+}
+
+static expr_t *
+outer_product (expr_t *e1, expr_t *e2)
+{
+	if (is_scalar (get_type (e1)) || is_scalar (get_type (e2))) {
+		return scalar_product (e1, e2);
+	}
+
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
+	auto layout = &algebra->layout;
+	expr_t *a[layout->count] = {};
+	expr_t *b[layout->count] = {};
+	expr_t *c[layout->count] = {};
+	e1 = mvec_expr (e1, algebra);
+	e2 = mvec_expr (e2, algebra);
+	mvec_scatter (a, e1, algebra);
+	mvec_scatter (b, e2, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		for (int j = 0; j < layout->count; j++) {
+			if (a[i] && b[j]) {
+				expr_t *w[layout->count] = {};
+				component_wedge (w, a[i], b[j], algebra);
+				component_sum ('+', c, c, w, algebra);
+			}
+		}
+	}
+	return mvec_gather (c, algebra);
+}
+
+static expr_t *
+regressive_product (expr_t *e1, expr_t *e2)
+{
+	internal_error (e1, "not implemented");
 }
 
 static expr_t *
