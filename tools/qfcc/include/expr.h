@@ -562,6 +562,15 @@ expr_t *new_args_expr (void);
 */
 expr_t *new_value_expr (ex_value_t *value);
 
+/** Create a new typed zero value expression node.
+
+	Similar to new_nil_expr, but is 0 of a specific type.
+
+	\param type		The type to use for the zero.
+	\return			The new value expression.
+*/
+expr_t *new_zero_expr (struct type_s *type);
+
 /**	Create a new symbol expression node from a name.
 
 	\param name		The name for the symbol.

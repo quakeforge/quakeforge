@@ -773,6 +773,13 @@ new_value_expr (ex_value_t *value)
 }
 
 expr_t *
+new_zero_expr (type_t *type)
+{
+	pr_type_t zero[type_size (type)] = {};
+	return new_value_expr (new_type_value (type, zero));
+}
+
+expr_t *
 new_name_expr (const char *name)
 {
 	expr_t     *e = new_expr ();
