@@ -1415,7 +1415,7 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	if (type->basic.width > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
 		}
@@ -1435,7 +1435,7 @@ pr_debug_long_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	if (type->basic.width > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
 		}
@@ -1455,7 +1455,7 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	if (type->basic.width > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
 		}
