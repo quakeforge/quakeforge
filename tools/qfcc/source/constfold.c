@@ -185,6 +185,10 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
+	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
+		return e;
+	}
+
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for float");
 
@@ -304,6 +308,10 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		'+', '-', '*', '/', '%',
 		LT, GT, LE, GE, EQ, NE, 0
 	};
+
+	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
+		return e;
+	}
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for double");
@@ -729,6 +737,10 @@ do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		'+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
+
+	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
+		return e;
+	}
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for int");
