@@ -661,7 +661,7 @@ vector_type (const type_t *ele_type, int width)
 	for (type_t **vtype = vec_types; *vtype; vtype++) {
 		if ((*vtype)->type == ele_type->type
 			&& (*vtype)->width == width) {
-			if (options.code.progsversion <= PROG_VERSION) {
+			if (options.code.progsversion < PROG_VERSION) {
 				if (*vtype == &type_vec3) {
 					return &type_vector;
 				}
