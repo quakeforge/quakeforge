@@ -1,3 +1,4 @@
+int foo[128];
 @algebra(float) pgaf1;
 //@algebra(double) pgad1;
 //@algebra(float(3)) vgaf;
@@ -42,6 +43,7 @@ main (void)
 		auto l2 = 3 * e1 - e2 + 10 * e0;
 		auto p = l1∧l2;
 		pga2 = p + (1 + p)∧l1;
+		pga2 = l1 • p;
 	}
 	return 0;		// to survive and prevail :)
 }
