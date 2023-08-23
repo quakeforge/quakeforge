@@ -2663,6 +2663,7 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
+	sys_quake_encoding = true;
 	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();

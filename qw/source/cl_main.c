@@ -2052,6 +2052,7 @@ Host_Init (void)
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
+	sys_quake_encoding = true;
 	Sys_Init ();
 	GIB_Init (true);
 	GIB_Key_Init ();

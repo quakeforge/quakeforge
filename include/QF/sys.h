@@ -47,7 +47,7 @@ extern int sys_sleep;
 
 extern int developer;
 
-
+extern bool sys_quake_encoding;
 extern const char sys_char_map[256];
 
 typedef struct date_s {

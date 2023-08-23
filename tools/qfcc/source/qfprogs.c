@@ -102,6 +102,7 @@ static const struct option long_options[] = {
 	{"modules", no_argument, 0, 'M'},
 	{"numeric", no_argument, 0, 'n'},
 	{"path", required_argument, 0, 'P'},
+	{"quake", no_argument, 0, 'Q'},
 	{"relocs", no_argument, 0, 'r'},
 	{"strings", no_argument, 0, 's'},
 	{"types", no_argument, 0, 't'},
@@ -119,6 +120,7 @@ static const char *short_options =
 	"M"		// modules
 	"n"		// numeric
 	"P:"	// path
+	"Q"		// quake
 	"r"		// relocs
 	"s"		// strings
 	"t"		// types
@@ -150,6 +152,7 @@ usage (int status)
 "    -M, --modules       Dump Objective-QuakeC data.\n"
 "    -n, --numeric       Sort globals by address.\n"
 "    -P, --path DIR      Source path.\n"
+"    -Q, --quake         Expect quake encoding instead of utf-8.\n"
 "    -r, --relocs        Dump reloc information.\n"
 "    -s, --strings       Dump static strings.\n"
 "    -t, --types         Dump type encodings.\n"
@@ -353,6 +356,9 @@ main (int argc, char **argv)
 				break;
 			case 'P':
 				source_path = strdup (optarg);
+				break;
+			case 'Q':
+				sys_quake_encoding = true;
 				break;
 			case 'r':
 				func = &operations[7];

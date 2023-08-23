@@ -904,6 +904,7 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 void
 Host_Init (void)
 {
+	sys_quake_encoding = true;
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 
