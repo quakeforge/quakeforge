@@ -304,16 +304,16 @@ algebra_init (algebra_t *a)
 		basis_layout_init (&a->layout, 6, a->groups);
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
-		// : 1  xy  wx  wy
-		// : x  y   w   wxy
+		// : yw  xw  xy  1
+		// : x   y   w   wxy
 		basis_blade_t pga_blades[8] = {
-			blades[0], blades[6], blades[4], blades[5],
+			blades[5], blades[4], blades[6], blades[0],
 			blades[2], blades[3], blades[1], blades[7],
 		};
 		a->groups = malloc (sizeof (basis_group_t[4]));
 		a->mvec_types = alloc_mvec_types (4);
-		basis_group_init (&a->groups[0], 1, pga_blades + 0, a, 0);
-		basis_group_init (&a->groups[1], 3, pga_blades + 1, a, 1);
+		basis_group_init (&a->groups[0], 3, pga_blades + 0, a, 0);
+		basis_group_init (&a->groups[1], 1, pga_blades + 3, a, 1);
 		basis_group_init (&a->groups[2], 3, pga_blades + 4, a, 2);
 		basis_group_init (&a->groups[3], 1, pga_blades + 7, a, 3);
 		basis_layout_init (&a->layout, 4, a->groups);
