@@ -266,7 +266,7 @@ component_sum (int op, expr_t **c, expr_t **a, expr_t **b,
 }
 
 static expr_t *
-scale_expr (expr_t *a, expr_t *b)
+scale_expr (expr_t *a, expr_t *b, algebra_t *algebra)
 {
 	if (!is_scalar (get_type (b))) {
 		auto t = a;
@@ -275,6 +275,11 @@ scale_expr (expr_t *a, expr_t *b)
 	}
 	auto scale_type = get_type (a);
 	int  op = is_scalar (scale_type) ? '*' : SCALE;
+
+	if (is_scalar (scale_type)) {
+		a = promote_scalar (algebra->type, a);
+	}
+	b = promote_scalar (algebra->type, b);
 
 	auto scale = new_binary_expr (op, a, b);
 	scale->e.expr.type = scale_type;
@@ -296,7 +301,7 @@ typedef void (*pga3_wedge) (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg);
 static void
 scale_component (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
-	auto scale = scale_expr (a, b);
+	auto scale = scale_expr (a, b, alg);
 	int  group = get_group (get_type (scale), alg);
 	c[group] = scale;
 }
@@ -313,7 +318,8 @@ pga3_x_y_z_w_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto sb = new_offset_alias_expr (stype, b, 3);
 	c[1] = new_binary_expr (CROSS, va, vb);
 	c[1]->e.expr.type = algebra_mvec_type (alg, 0x02);
-	c[3] = new_binary_expr ('-', scale_expr (vb, sa), scale_expr (va, sb));
+	c[3] = new_binary_expr ('-', scale_expr (vb, sa, alg),
+								 scale_expr (va, sb, alg));
 	c[3]->e.expr.type = wedge_type;
 }
 
