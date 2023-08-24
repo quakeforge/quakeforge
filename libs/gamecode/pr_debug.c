@@ -1182,6 +1182,26 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 	return dstr->str;
 }
 
+static const char *
+swizzle_string (pr_debug_data_t *data, pr_uint_t swiz)
+{
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	static char swizzle_components[] = "xyzw";
+	const char *swizzle = "";
+
+	for (int i = 0; i < 4; i++) {
+		if (swiz & (0x1000 << i)) {
+			swizzle = va (res->va, "%s0", swizzle);
+		} else {
+			swizzle = va (res->va, "%s%s%c", swizzle,
+						  swiz & (0x100 << i) ? "-" : "",
+						  swizzle_components[(swiz >> 2 * i) & 3]);
+		}
+	}
+	return swizzle;
+}
+
 const char *
 PR_Debug_ValueString (progs_t *pr, pr_ptr_t offset, qfot_type_t *type,
 					  dstring_t *dstr)
@@ -1805,6 +1825,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 's':
 						str = dsprintf (res->dva, "%d", (short) opval);
+						break;
+					case 'S':
+						str = swizzle_string (&data, opval);
 						break;
 					case 'O':
 						str = dsprintf (res->dva, "%04x",

@@ -511,7 +511,7 @@ swizzle_formats = {
     "opcode": "OP_SWIZZLE_{swiz_type[t]}",
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
-    "format": "%Ga %sb %gc",
+    "format": "%Ga.%Sb %gc",
     "widths": "4, 0, 4",
     "types": "{swizzle_types[t]}",
     "args": {
