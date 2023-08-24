@@ -1810,7 +1810,7 @@ expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
 	type_t     *res_type = e->e.swizzle.type;
 
 	for (int i = 0; i < 4; i++) {
-		swiz |= e->e.swizzle.source[i] & 3;
+		swiz |= (e->e.swizzle.source[i] & 3) << (2 * i);
 	}
 	swiz |= (e->e.swizzle.neg & 0xf) << 8;
 	swiz |= (e->e.swizzle.zero & 0xf) << 12;
