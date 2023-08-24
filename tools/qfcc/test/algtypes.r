@@ -24,6 +24,7 @@ main (void)
 		auto v = 4*(e1 + e032 + e123);
 		pgaf1 = p1 + v;// * p2;
 		pgaf1 = (p1 + v)∧p2;
+		pgaf1 = v • p2;
 #if 0
 		auto rx = e23;
 		auto ry = e31;

@@ -85,6 +85,7 @@ struct expr_s;
 bool is_algebra (const struct type_s *type) __attribute__((pure));
 struct type_s *algebra_type (struct type_s *type, struct expr_s *params);
 struct type_s *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
+struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
 struct symtab_s *algebra_scope (struct type_s *type, struct symtab_s *curscope);
 void algebra_print_type_str (struct dstring_s *str, const struct type_s *type);
 void algebra_encode_type (struct dstring_s *encoding,

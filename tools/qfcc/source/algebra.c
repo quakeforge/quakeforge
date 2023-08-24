@@ -456,11 +456,9 @@ static int pga_swaps_3d[16] = {
 	[0xd] = 1,	// e032
 };
 
-static symbol_t *
-algebra_symbol (const char *name, symtab_t *symtab)
+ex_value_t *
+algebra_blade_value (algebra_t *alg, const char *name)
 {
-	algebra_t *alg = symtab->procsymbol_data;
-	symbol_t *sym = 0;
 	uint32_t dimension = alg->plus + alg->minus + alg->zero;
 	bool pga_2d = (alg->plus == 2 && alg->minus == 0 && alg->zero == 1);
 	bool pga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 1);
@@ -513,12 +511,24 @@ algebra_symbol (const char *name, symtab_t *symtab)
 			components[g[1]] = sign;
 			blade_val = new_type_value (group_type, (pr_type_t *)components);
 		}
-		sym = new_symbol_type (name, group_type);
+		return blade_val;
+	}
+	return 0;
+}
+
+static symbol_t *
+algebra_symbol (const char *name, symtab_t *symtab)
+{
+	algebra_t *alg = symtab->procsymbol_data;
+	symbol_t *sym = 0;
+
+	auto blade_val = algebra_blade_value (alg, name);
+	if (blade_val) {
+		sym = new_symbol_type (name, blade_val->type);
 		sym->sy_type = sy_const;
 		sym->s.value = blade_val;
 		symtab_addsymbol (symtab, sym);
 	}
-
 	return sym;
 }
 
