@@ -43,8 +43,8 @@ main (void)
 		auto l1 = e1 + 2 * e2 + 5 * e0;
 		auto l2 = 3 * e1 - e2 + 10 * e0;
 		auto p = l1∧l2;
-		pga2 = p + (1 + p)∧l1;
-		pga2 = l1 • p;
+//		pga2 = p + (1 + p)∧l1;
+		pga2 = (l1 • p)*p;
 	}
 	return 0;		// to survive and prevail :)
 }

@@ -635,13 +635,6 @@ component_dot (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 static expr_t *
 inner_product (expr_t *e1, expr_t *e2)
 {
-	if (is_scalar (get_type (e1)) || is_scalar (get_type (e2))) {
-		auto scalar = is_scalar (get_type (e1)) ? e1 : e2;
-		notice (scalar,
-				"the inner product of a scalar with any other grade is 0");
-		return new_zero_expr (get_type (scalar));
-	}
-
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
 	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
@@ -843,10 +836,6 @@ component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 static expr_t *
 outer_product (expr_t *e1, expr_t *e2)
 {
-	if (is_scalar (get_type (e1)) || is_scalar (get_type (e2))) {
-		return scalar_product (e1, e2);
-	}
-
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
 	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
@@ -864,6 +853,199 @@ outer_product (expr_t *e1, expr_t *e2)
 			if (a[i] && b[j]) {
 				expr_t *w[layout->count] = {};
 				component_wedge (w, a[i], b[j], algebra);
+				component_sum ('+', c, c, w, algebra);
+			}
+		}
+	}
+	return mvec_gather (c, algebra);
+}
+
+static pga_func pga3_geometric_funcs[6][6] = {
+	[0] = { },
+	[1] = { },
+	[2] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+		[4] = scale_component,
+		[5] = scale_component,
+	},
+	[3] = { },
+	[4] = { },
+	[5] = { },
+};
+
+static void
+pga2_yw_wx_xy_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto geom_type = algebra_mvec_type (alg, 0x01);
+	auto sa = new_offset_alias_expr (stype, a, 2);
+	auto sb = new_offset_alias_expr (stype, b, 2);
+	auto cv = cross_expr (geom_type, b, a);
+
+	c[0] = new_offset_alias_expr (geom_type, new_swizzle_expr (cv, "xy0"), 0);
+	c[1] = unary_expr ('-', scale_expr (sa, sb, alg));
+}
+
+static void
+pga2_yw_wx_xy_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto geom_type = algebra_mvec_type (alg, 0x04);
+	auto va = new_offset_alias_expr (geom_type,
+									 new_swizzle_expr (a, "y-x0"), 0);
+	auto sb = new_offset_alias_expr (stype, b, 2);
+	auto tmp = cross_expr (geom_type, a, b);
+	tmp = new_offset_alias_expr (geom_type, new_swizzle_expr (tmp, "00z"), 0);
+	c[2] = new_binary_expr ('+', scale_expr (va, sb, alg), tmp);
+	c[2]->e.expr.type = geom_type;
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+#define pga2_wxy_geom_yw_wx_xy pga2_yw_wx_xy_geom_wxy
+static void
+pga2_yw_wx_xy_geom_wxy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto sa = new_offset_alias_expr (stype, a, 0);
+	auto sb = new_offset_alias_expr (stype, b, 2);
+	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
+	sb = unary_expr ('-', sb);
+	c[0] = scale_expr (blade, scale_expr (sa, sb, alg), alg);
+}
+
+static void
+pga2_x_y_w_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto geom_type = algebra_mvec_type (alg, 0x04);
+	auto va = new_offset_alias_expr (geom_type,
+									 new_swizzle_expr (a, "-yx0"), 0);
+	auto sb = new_offset_alias_expr (stype, b, 2);
+	auto tmp = cross_expr (geom_type, a, b);
+	tmp = new_offset_alias_expr (geom_type, new_swizzle_expr (tmp, "00-z"), 0);
+	c[2] = new_binary_expr ('+', scale_expr (va, sb, alg), tmp);
+	c[2]->e.expr.type = geom_type;
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+static void
+pga2_x_y_w_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 2);
+	auto geom_type = algebra_mvec_type (alg, 0x01);
+	auto va = new_offset_alias_expr (vtype, a, 0);
+	auto vb = new_offset_alias_expr (vtype, b, 0);
+	c[1] = dot_expr (stype, va, vb);
+	c[0] = cross_expr (geom_type, a, b);
+}
+
+static void
+pga2_x_y_w_geom_wxy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 2);
+	auto geom_type = algebra_mvec_type (alg, 0x01);
+	auto va = new_offset_alias_expr (vtype, a, 0);
+	auto cv = scale_expr (va, b, alg);
+
+	auto tmp = new_temp_def_expr (geom_type);
+	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
+	auto block = new_block_expr ();
+	block->e.block.result = tmp;
+	append_expr (block, assign_expr (vtmp, cv));
+	c[0] = block;
+}
+
+static void
+pga2_wxy_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 2);
+	auto geom_type = algebra_mvec_type (alg, 0x01);
+	auto vb = new_offset_alias_expr (vtype, b, 0);
+	auto cv = scale_expr (vb, a, alg);
+
+	auto tmp = new_temp_def_expr (geom_type);
+	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
+	auto block = new_block_expr ();
+	block->e.block.result = tmp;
+	append_expr (block, assign_expr (vtmp, cv));
+	c[0] = block;
+}
+
+static pga_func pga2_geometric_funcs[6][6] = {
+	[0] = {
+		[0] = pga2_yw_wx_xy_geom_yw_wx_xy,
+		[1] = scale_component,
+		[2] = pga2_yw_wx_xy_geom_x_y_w,
+		[3] = pga2_yw_wx_xy_geom_wxy,
+	},
+	[1] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+	},
+	[2] = {
+		[0] = pga2_x_y_w_geom_yw_wx_xy,
+		[1] = scale_component,
+		[2] = pga2_x_y_w_geom_x_y_w,
+		[3] = pga2_x_y_w_geom_wxy,
+	},
+	[3] = {
+		[0] = pga2_wxy_geom_yw_wx_xy,
+		[1] = scale_component,
+		[2] = pga2_wxy_geom_x_y_w,
+	},
+};
+
+static void
+component_geometric (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
+{
+	int         p = algebra->plus;
+	int         m = algebra->minus;
+	int         z = algebra->zero;
+
+	if (p == 3 && m == 0 && z == 1) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (pga3_geometric_funcs[ga][gb]) {
+			pga3_geometric_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else if (p == 2 && m == 0 && z == 1) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (pga2_geometric_funcs[ga][gb]) {
+			pga2_geometric_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else {
+	}
+}
+
+static expr_t *
+geometric_product (expr_t *e1, expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
+	auto layout = &algebra->layout;
+	expr_t *a[layout->count] = {};
+	expr_t *b[layout->count] = {};
+	expr_t *c[layout->count] = {};
+	e1 = mvec_expr (e1, algebra);
+	e2 = mvec_expr (e2, algebra);
+	mvec_scatter (a, e1, algebra);
+	mvec_scatter (b, e2, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		for (int j = 0; j < layout->count; j++) {
+			if (a[i] && b[j]) {
+				expr_t *w[layout->count] = {};
+				component_geometric (w, a[i], b[j], algebra);
 				component_sum ('+', c, c, w, algebra);
 			}
 		}
@@ -893,15 +1075,6 @@ multivector_sum (int op, expr_t *e1, expr_t *e2)
 	mvec_scatter (b, e2, algebra);
 	component_sum (op, c, a, b, algebra);
 	return mvec_gather (c, algebra);
-}
-
-static expr_t *
-geometric_product (expr_t *e1, expr_t *e2)
-{
-	if (is_scalar (get_type (e1)) || is_scalar (get_type (e2))) {
-		return scalar_product (e1, e2);
-	}
-	internal_error (e1, "not implemented");
 }
 
 static expr_t *
