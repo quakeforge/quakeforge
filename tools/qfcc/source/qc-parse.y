@@ -894,7 +894,11 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
-	| algebra_specifier
+	| algebra_specifier %prec LOW
+	| algebra_specifier '.' attribute
+		{
+			$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+		}
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should. This is not a problem
@@ -907,9 +911,18 @@ typespec_reserved
 		}
 	;
 
-
 typespec_nonreserved
-	: TYPE_NAME
+	: TYPE_NAME %prec LOW
+	| TYPE_NAME '.' attribute
+		{
+			if (!is_algebra ($1.type)) {
+				error (0, "%s does not have any subtypes",
+					   get_type_string ($1.type));
+				$$ = $1;
+			} else {
+				$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+			}
+		}
 	| OBJECT_NAME protocolrefs
 		{
 			if ($2) {
@@ -1015,7 +1028,7 @@ attribute_list
 	;
 
 attribute
-	: NAME						{ $$ = new_attribute ($1->name, 0); }
+	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0); }
 	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
 	;
 

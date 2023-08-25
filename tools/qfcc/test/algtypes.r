@@ -1,3 +1,4 @@
+#include "test-harness.h"
 int foo[128];
 @algebra(float) pgaf1;
 //@algebra(double) pgad1;
@@ -13,16 +14,16 @@ typedef @algebra(float(4,1)) CGA;
 typedef @algebra(double(2,0,1)) PGA2;
 PGA2 pga2;
 
-float sin(float x) = #0;
-
 int
 main (void)
 {
+	PGA.group_mask (0x1) plane;
 	@algebra (PGA) {
 		auto p1 = 3*e1 + e2 - e3 + e0;
 		auto p2 = e1 + 3*e2 + e3 - e0;
 		auto v = 4*(e1 + e032 + e123);
 		pgaf1 = p1 + v * p2;
+		plane = p1;
 //		pgaf1 = (p1 + v)∧p2;
 //		pgaf1 = v • p2;
 #if 0
@@ -46,5 +47,6 @@ main (void)
 //		pga2 = p + (1 + p)∧l1;
 		pga2 = (l1 • p)*l1;
 	}
+	printf ("%q\n", plane);
 	return 0;		// to survive and prevail :)
 }

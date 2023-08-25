@@ -82,8 +82,10 @@ typedef struct multivector_s {
 } multivector_t;
 
 struct expr_s;
+struct attribute_s;
 bool is_algebra (const struct type_s *type) __attribute__((pure));
 struct type_s *algebra_type (struct type_s *type, struct expr_s *params);
+struct type_s *algebra_subtype (struct type_s *type, struct attribute_s *attr);
 struct type_s *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
 struct symtab_s *algebra_scope (struct type_s *type, struct symtab_s *curscope);

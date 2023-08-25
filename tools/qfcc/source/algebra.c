@@ -37,6 +37,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/strpool.h"
@@ -411,6 +412,34 @@ algebra_type (type_t *type, expr_t *params)
 	algebra->algebra_type = t;
 	return find_type (t);
 }
+
+type_t *
+algebra_subtype (type_t *type, attribute_t *attr)
+{
+	if (!is_algebra (type)) {
+		internal_error (0, "unexpected type");
+	}
+	auto algebra = algebra_get (type);
+	if (strcmp (attr->name, "group_mask") == 0) {
+		if (!attr->params || attr->params->next) {
+			error (0, "incorrect number of parameters to 'group_mask'");
+			return type;
+		}
+		auto param = attr->params;
+		if (!is_integral_val (param)) {
+			error (0, "'group_mask' parameter must be an integer constant");
+			return type;
+		}
+		pr_uint_t mask = expr_integral (param);
+		if (!mask || mask > ((1u << algebra->layout.count) - 1)) {
+			error (0, "invalid group_mask");
+			return type;
+		}
+		return algebra_mvec_type (algebra, mask);
+	}
+	return type;
+}
+
 
 type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
