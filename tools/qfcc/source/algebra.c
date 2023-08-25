@@ -415,8 +415,8 @@ algebra_type (type_t *type, expr_t *params)
 type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 {
-	if (!group_mask) {
-		return 0;
+	if (!group_mask || group_mask > ((1u << algebra->layout.count) - 1)) {
+		internal_error (0, "invalid group_mask");
 	}
 	if (!algebra->mvec_types[group_mask]) {
 		int count = 0;

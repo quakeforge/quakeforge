@@ -22,9 +22,9 @@ main (void)
 		auto p1 = 3*e1 + e2 - e3 + e0;
 		auto p2 = e1 + 3*e2 + e3 - e0;
 		auto v = 4*(e1 + e032 + e123);
-		pgaf1 = p1 + v;// * p2;
-		pgaf1 = (p1 + v)∧p2;
-		pgaf1 = v • p2;
+		pgaf1 = p1 + v * p2;
+//		pgaf1 = (p1 + v)∧p2;
+//		pgaf1 = v • p2;
 #if 0
 		auto rx = e23;
 		auto ry = e31;
@@ -44,7 +44,7 @@ main (void)
 		auto l2 = 3 * e1 - e2 + 10 * e0;
 		auto p = l1∧l2;
 //		pga2 = p + (1 + p)∧l1;
-		pga2 = (l1 • p)*p;
+		pga2 = (l1 • p)*l1;
 	}
 	return 0;		// to survive and prevail :)
 }
