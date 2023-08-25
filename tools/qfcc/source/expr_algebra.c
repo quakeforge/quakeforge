@@ -343,19 +343,19 @@ pga3_x_y_z_w_dot_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto stype = alg->type;
 	auto vtype = vector_type (stype, 3);
 	auto va = new_offset_alias_expr (vtype, a, 0);
-	auto cs = dot_expr (stype, b, va);
-	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
-	c[0] = scale_expr (get_type (blade), blade, unary_expr ('-', cs));
+	auto cs = unary_expr ('-', dot_expr (stype, b, va));
+	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
 static void
 pga3_x_y_z_w_dot_wxyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
 	auto stype = alg->type;
-	auto dot_type = algebra_mvec_type (alg, 0x20);
-	auto va = new_offset_alias_expr (dot_type, new_swizzle_expr (a, "xyz0"), 0);
+	auto vtype = vector_type (stype, 3);
+	auto va = new_offset_alias_expr (vtype, a, 0);
 	auto sb = new_offset_alias_expr (stype, b, 0);
-	c[5] = scale_expr (dot_type, va, sb);
+	auto cv = scale_expr (vtype, va, sb);
+	c[5] = new_extend_expr (cv, algebra_mvec_type (alg, 0x20), 0, false);
 }
 
 #define pga3_wzy_wxz_wyx_xyz_dot_x_y_z_w pga3_x_y_z_w_dot_wzy_wxz_wyx_xyz
@@ -414,17 +414,11 @@ pga3_yz_zx_xy_dot_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b,
 	auto vb = new_offset_alias_expr (vtype, b, 0);
 	auto sb = new_offset_alias_expr (stype, b, 3);
 
-	auto cv = scale_expr (dot_type, a, sb);
+	auto cv = scale_expr (vtype, a, sb);
 	auto cs = dot_expr (stype, a, vb);
 
-	auto tmp = new_temp_def_expr (dot_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto stmp = new_offset_alias_expr (stype, tmp, 3);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, cv));
-	append_expr (block, assign_expr (stmp, cs));
-	c[0] = block;
+	c[0] = sum_expr (dot_type, '-', new_extend_expr (cs, dot_type, 0, true),
+									new_extend_expr (cv, dot_type, 0, false));
 }
 
 static void
@@ -434,8 +428,7 @@ pga3_wx_wy_wz_dot_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto vtype = vector_type (stype, 3);
 	auto va = new_offset_alias_expr (vtype, a, 0);
 	auto cs = dot_expr (stype, b, va);
-	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
-	c[0] = scale_expr (get_type (blade), blade, cs);
+	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
 static void
@@ -455,9 +448,9 @@ pga3_wxyz_dot_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto stype = alg->type;
 	auto sa = new_offset_alias_expr (stype, a, 0);
 	auto sb = new_offset_alias_expr (stype, b, 3);
-	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
 	sb = unary_expr ('-', sb);
-	c[0] = scale_expr (get_type (blade), blade, scale_expr (stype, sa, sb));
+	auto cs = scale_expr (stype, sa, sb);
+	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
 static void
@@ -466,8 +459,8 @@ pga3_wzy_wxz_wyx_xyz_dot_wxyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto stype = alg->type;
 	auto sa = new_offset_alias_expr (stype, a, 0);
 	auto sb = new_offset_alias_expr (stype, b, 3);
-	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
-	c[0] = scale_expr (get_type (blade), blade, scale_expr (stype, sa, sb));
+	auto cs = scale_expr (stype, sa, sb);
+	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
 static void
@@ -576,12 +569,8 @@ pga2_x_y_w_dot_wxy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto dot_type = algebra_mvec_type (alg, 0x01);
 	auto va = new_offset_alias_expr (vtype, a, 0);
 	auto cv = scale_expr (dot_type, va, b);
-	auto tmp = new_temp_def_expr (dot_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, cv));
-	c[0] = block;
+
+	c[0] = new_extend_expr (cv, dot_type, 0, false);
 }
 
 static void
@@ -590,14 +579,10 @@ pga2_wxy_dot_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto stype = alg->type;
 	auto vtype = vector_type (stype, 2);
 	auto dot_type = algebra_mvec_type (alg, 0x01);
+	auto sa = new_offset_alias_expr (stype, a, 0);
 	auto vb = new_offset_alias_expr (vtype, b, 0);
-	auto cv = scale_expr (dot_type, vb, a);
-	auto tmp = new_temp_def_expr (dot_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, unary_expr ('-', cv)));
-	c[0] = block;
+	auto cv = scale_expr (dot_type, vb, unary_expr ('-', sa));
+	c[0] = new_extend_expr (cv, dot_type, 0, false);
 }
 
 static pga_func pga2_dot_funcs[4][4] = {
@@ -697,14 +682,10 @@ pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto sa = new_offset_alias_expr (stype, a, 3);
 	auto cv = scale_expr (get_type (b), b, sa);
 	auto cs = dot_expr (stype, va, b);
-	auto tmp = new_temp_def_expr (wedge_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto stmp = new_offset_alias_expr (stype, tmp, 3);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, unary_expr ('-', cv)));
-	append_expr (block, assign_expr (stmp, cs));
-	c[5] = block;
+
+	c[5] = sum_expr (wedge_type, '-',
+					 new_extend_expr (cs, wedge_type, 0, true),
+					 new_extend_expr (cv, wedge_type, 0, false));
 }
 
 // vector-bivector wedge is commutative
@@ -718,14 +699,9 @@ pga3_x_y_z_w_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = new_offset_alias_expr (vtype, a, 0);
 	auto cv = cross_expr (vtype, va, b);
 	auto cs = new_zero_expr (stype);
-	auto tmp = new_temp_def_expr (wedge_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto stmp = new_offset_alias_expr (stype, tmp, 3);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, cv));
-	append_expr (block, assign_expr (stmp, cs));
-	c[5] = block;
+	c[5] = sum_expr (wedge_type, '+',
+					 new_extend_expr (cs, wedge_type, 0, true),
+					 new_extend_expr (cv, wedge_type, 0, false));
 }
 
 static void
@@ -1186,9 +1162,9 @@ pga2_yw_wx_xy_geom_wxy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto stype = alg->type;
 	auto sa = new_offset_alias_expr (stype, a, 0);
 	auto sb = new_offset_alias_expr (stype, b, 2);
-	auto blade = new_value_expr (algebra_blade_value (alg, "e0"));
 	sb = unary_expr ('-', sb);
-	c[0] = scale_expr (get_type (blade), blade, scale_expr (stype, sa, sb));
+	auto cs = scale_expr (stype, sa, sb);
+	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
 static void
@@ -1226,12 +1202,7 @@ pga2_x_y_w_geom_wxy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = new_offset_alias_expr (vtype, a, 0);
 	auto cv = scale_expr (geom_type, va, b);
 
-	auto tmp = new_temp_def_expr (geom_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, cv));
-	c[0] = block;
+	c[0] = new_extend_expr (cv, geom_type, 0, false);
 }
 
 static void
@@ -1243,12 +1214,7 @@ pga2_wxy_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto vb = new_offset_alias_expr (vtype, b, 0);
 	auto cv = scale_expr (geom_type, vb, a);
 
-	auto tmp = new_temp_def_expr (geom_type);
-	auto vtmp = new_offset_alias_expr (vtype, tmp, 0);
-	auto block = new_block_expr ();
-	block->e.block.result = tmp;
-	append_expr (block, assign_expr (vtmp, cv));
-	c[0] = block;
+	c[0] = new_extend_expr (cv, geom_type, 0, false);
 }
 
 static pga_func pga2_geometric_funcs[6][6] = {
