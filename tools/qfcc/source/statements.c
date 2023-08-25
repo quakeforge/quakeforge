@@ -1845,6 +1845,7 @@ expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
 	int         ext = mode[src_width - 1][res_width - 1];
 	ext |= (e->e.extend.extend & 3) << 3;
 	ext |= (pr_type_size[res_base->type] - 1) << 5;
+	ext |= e->e.extend.reverse << 6;
 	if (ext < 0 || res_base != src_base) {
 		internal_error (e, "invalid type combination for extend %d %d %d",
 						ext, src_width, res_width);

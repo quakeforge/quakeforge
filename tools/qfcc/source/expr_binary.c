@@ -722,7 +722,7 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 		return new_vector_list (scalar);
 	}
 
-	return new_extend_expr (scalar, vec_type, 2);//2 = copy
+	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy
 }
 
 static expr_t *

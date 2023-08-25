@@ -277,6 +277,7 @@ typedef struct {
 typedef struct {
 	struct expr_s *src;			///< source expression
 	int         extend;			///< extend mode 0: 0, 1: 1, 2: copy/0 3:-1
+	bool        reverse;		///< reverse resultant vector
 	struct type_s *type;		///< result type;
 } ex_extend_t;
 
@@ -515,7 +516,7 @@ expr_t *new_horizontal_expr (int op, expr_t *vec, struct type_s *type);
 
 expr_t *new_swizzle_expr (expr_t *src, const char *swizzle);
 
-expr_t *new_extend_expr (expr_t *src, struct type_s *type, int ext);
+expr_t *new_extend_expr (expr_t *src, struct type_s *type, int ext, bool rev);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 
