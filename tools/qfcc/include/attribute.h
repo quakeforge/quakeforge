@@ -34,7 +34,7 @@
 typedef struct attribute_s {
 	struct attribute_s *next;
 	const char *name;
-	struct ex_value_s *value;
+	struct expr_s *params;
 } attribute_t;
 
 struct expr_s;
