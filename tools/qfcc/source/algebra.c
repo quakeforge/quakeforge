@@ -550,6 +550,7 @@ algebra_scope (type_t *type, symtab_t *curscope)
 algebra_t *
 algebra_get (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_invalid) {
 		return type->t.algebra;
 	} else {

@@ -235,8 +235,9 @@ component_sum (int op, expr_t **c, expr_t **a, expr_t **b,
 			if (get_type (a[i]) != get_type (b[i])) {
 				internal_error (a[i], "tangled multivec types");
 			}
+			auto sum_type = get_type (a[i]);
 			c[i] = new_binary_expr (op, a[i], b[i]);
-			c[i]->e.expr.type = get_type (a[i]);
+			c[i]->e.expr.type = sum_type;
 			c[i] = fold_constants (c[i]);
 		} else if (a[i]) {
 			c[i] = a[i];
