@@ -1267,6 +1267,9 @@ is_pointer_val (expr_t *e)
 int
 is_math_val (expr_t *e)
 {
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
+	}
 	if (e->type == ex_value && is_math (e->e.value->type)) {
 		return 1;
 	}
