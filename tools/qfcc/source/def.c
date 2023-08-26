@@ -179,20 +179,12 @@ new_def (const char *name, type_t *type, defspace_t *space,
 }
 
 def_t *
-alias_def (def_t *def, type_t *type, int offset)
+cover_alias_def (def_t *def, type_t *type, int offset)
 {
 	def_t      *alias;
 
-	if (def->alias) {
-		expr_t      e;
-		e.file = def->file;
-		e.line = def->line;
-		internal_error (&e, "aliasing an alias def");
-	}
-	if (type_size (type) > type_size (def->type))
-		internal_error (0, "aliasing a def to a larger type");
-	if (offset < 0 || offset + type_size (type) > type_size (def->type))
-		internal_error (0, "invalid alias offset");
+	if (offset + type_size (type) <= 0 || offset >= type_size (def->type))
+		internal_error (0, "invalid cover offset");
 	for (alias = def->alias_defs; alias; alias = alias->next) {
 		if (alias->type == type && alias->offset == offset)
 			return alias;
@@ -210,6 +202,22 @@ alias_def (def_t *def, type_t *type, int offset)
 	alias->reg = def->reg;
 	def->alias_defs = alias;
 	return alias;
+}
+
+def_t *
+alias_def (def_t *def, type_t *type, int offset)
+{
+	if (def->alias) {
+		expr_t      e;
+		e.file = def->file;
+		e.line = def->line;
+		internal_error (&e, "aliasing an alias def");
+	}
+	if (type_size (type) > type_size (def->type))
+		internal_error (0, "aliasing a def to a larger type");
+	if (offset < 0 || offset + type_size (type) > type_size (def->type))
+		internal_error (0, "invalid alias offset");
+	return cover_alias_def (def, type, offset);
 }
 
 def_t *

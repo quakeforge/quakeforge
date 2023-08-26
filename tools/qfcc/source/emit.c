@@ -191,11 +191,11 @@ cover_def_32 (def_t *def, int *adj)
 	*adj = offset & 3;
 	if (offset & 3) {
 		if (def->alias) {
-			cover = alias_def (def->alias, def->type, def->offset);
+			cover = cover_alias_def (def->alias, def->type,
+									 def->offset - (offset & 3));
 		} else {
-			cover = alias_def (def, def->type, 0);
+			cover = cover_alias_def (def, def->type, -(offset & 3));
 		}
-		cover->offset -= offset & 3;
 	}
 	return cover;
 }
@@ -215,11 +215,11 @@ cover_def_64 (def_t *def, int *adj)
 	*adj = (offset & 6) >> 1;
 	if (offset & 6) {
 		if (def->alias) {
-			cover = alias_def (def->alias, def->type, def->offset);
+			cover = cover_alias_def (def->alias, def->type,
+									 def->offset - (offset & 6));
 		} else {
-			cover = alias_def (def, def->type, 0);
+			cover = cover_alias_def (def, def->type, -(offset & 6));
 		}
-		cover->offset -= offset & 6;
 	}
 	return cover;
 }

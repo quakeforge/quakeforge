@@ -165,6 +165,9 @@ def_t *new_def (const char *name, struct type_s *type,
 	\todo Make aliasing to the same type a no-op?
 */
 def_t *alias_def (def_t *def, struct type_s *type, int offset);
+//FIXME this probably shouldn't exist (it's for swizzles, so doing proper
+//multi-width swizzles will remove the need for it)
+def_t *cover_alias_def (def_t *def, struct type_s *type, int offset);
 
 /** Free a def.
 
