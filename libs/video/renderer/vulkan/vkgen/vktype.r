@@ -61,6 +61,7 @@ static string get_type_key (void *type, void *unused)
 				}
 			}
 			// fallthrough
+		case ty_algebra:
 		case ty_handle:
 		case ty_class:
 			return [[Type alloc] initWithType: type];

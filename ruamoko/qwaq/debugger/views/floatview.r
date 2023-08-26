@@ -21,6 +21,9 @@
 {
 	[super draw];
 	string val = sprintf ("%.9g", data[0]);
+	for (int i = 1; i < type.basic.width; i++) {
+		val = sprintf ("%s %.9g", val, data[i]);
+	}
 	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
