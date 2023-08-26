@@ -1058,7 +1058,8 @@ fmt_state_modifiers (fmt_state_t *state)
 	// no modifiers supported
 	if (state->c[0] == 'l'
 		&& (state->c[1] == 'i' || state->c[1] == 'd' || state->c[1] == 'x'
-			|| state->c[1] == 'u')) {
+			|| state->c[1] == 'u'
+			|| state->c[1] == 'v' || state->c[1] == 'q')) {
 		(*state->fi)->flags |= FMT_LONG;
 		state->c++;
 	}
@@ -1183,8 +1184,13 @@ fmt_state_conversion (fmt_state_t *state)
 					(*state->fi)->precision = precision;
 					(*state->fi)->minFieldWidth = minWidth;
 					(*state->fi)->type = 'g';
-					(*state->fi)->data.float_var =
-						P_VECTOR (pr, state->fmt_count)[i];
+					if (flags & FMT_LONG) {
+						(*state->fi)->data.double_var
+							= (&P_var (pr, state->fmt_count, double))[i];
+					} else {
+						(*state->fi)->data.float_var =
+							P_VECTOR (pr, state->fmt_count)[i];
+					}
 
 					fmt_append_item (state);
 				}
