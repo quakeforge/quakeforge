@@ -1183,6 +1183,36 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 }
 
 static const char *
+extend_string (pr_debug_data_t *data, pr_uint_t ext)
+{
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	static const char *extend_range[] = {
+		"1>2", "1>3", "1>4",
+		"2>3", "2>4", "3>4",
+		"res1", "res2",
+	};
+	static const char *extend_string[] = {
+		"0", "1", "c", "-1",
+	};
+	return va (res->va, "[%s%s:%s]%d",
+			   extend_range[ext & 7],
+			   ext & 0100 ? ":r" : "",
+			   extend_string[(ext >> 3) & 2],
+			   32 << ((ext >> 5) & 1));
+}
+
+static const char *
+hop_string (pr_debug_data_t *data, pr_uint_t hop)
+{
+	static const char *hop_string[] = {
+		"&", "|", "^", "+",
+		"!&", "!|", "!^", "+",
+	};
+	return hop_string[hop & 7];
+}
+
+static const char *
 swizzle_string (pr_debug_data_t *data, pr_uint_t swiz)
 {
 	progs_t    *pr = data->pr;
@@ -1826,8 +1856,14 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 's':
 						str = dsprintf (res->dva, "%d", (short) opval);
 						break;
+					case 'H':
+						str = hop_string (&data, opval);
+						break;
 					case 'S':
 						str = swizzle_string (&data, opval);
+						break;
+					case 'X':
+						str = extend_string (&data, opval);
 						break;
 					case 'O':
 						str = dsprintf (res->dva, "%04x",
