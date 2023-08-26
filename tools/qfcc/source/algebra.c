@@ -440,6 +440,15 @@ algebra_subtype (type_t *type, attribute_t *attr)
 	return type;
 }
 
+static int
+algebra_alignment (const type_t *type, int width)
+{
+	int         alignment = type->alignment;
+	if (!(width & 1)) {
+		alignment *= width;
+	}
+	return alignment;
+}
 
 type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
@@ -464,7 +473,7 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		*algebra->mvec_types[group_mask] = (type_t) {
 			.type = algebra->type->type,
 			.name = "basis group",
-			.alignment = 4, //FIXME
+			.alignment = algebra_alignment (algebra->type, count),
 			.width = count,
 			.meta = ty_algebra,
 			.t.algebra = (algebra_t *) mvec,
