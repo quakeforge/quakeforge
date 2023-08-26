@@ -322,8 +322,8 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{ID}		{ pragma_add_arg (yytext); }
-<PRAGMA>@{ID}		{ pragma_add_arg (yytext); }
+<PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
+<PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
 						if (YY_START == PRAGMA) {

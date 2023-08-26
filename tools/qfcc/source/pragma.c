@@ -131,6 +131,7 @@ set_warn (pragma_arg_t *args)
 		options.warnings.promote = true;
 	} else if (!strcmp (flag, "!error")) {
 		options.warnings.promote = false;
+	} else if (!parse_warning_option (flag)) {
 	}
 	if (args->next) {
 		warning (0, "pragma warn: ignoring extra arguments");

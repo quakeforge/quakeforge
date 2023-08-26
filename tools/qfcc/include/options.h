@@ -125,6 +125,7 @@ typedef struct {
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
+int parse_warning_option (const char *opt);
 extern const char *progs_src;
 extern const char **source_files;
 extern const char *this_program;

@@ -304,6 +304,101 @@ add_file (const char *file)
 }
 
 int
+parse_warning_option (const char *opt)
+{
+	if (!(strcasecmp (opt, "all"))) {
+		options.warnings.cow = true;
+		options.warnings.undefined_function = true;
+		options.warnings.uninited_variable = true;
+		options.warnings.vararg_integer = true;
+		options.warnings.integer_divide = true;
+		options.warnings.interface_check = true;
+		options.warnings.unused = true;
+		options.warnings.executable = true;
+		options.warnings.traditional = true;
+		options.warnings.precedence = true;
+		options.warnings.initializer = true;
+		options.warnings.unimplemented = true;
+		options.warnings.redeclared = true;
+		options.warnings.enum_switch = true;
+		return 1;
+	} else if (!(strcasecmp (opt, "none"))) {
+		options.warnings.cow = false;
+		options.warnings.undefined_function = false;
+		options.warnings.uninited_variable = false;
+		options.warnings.vararg_integer = false;
+		options.warnings.integer_divide = false;
+		options.warnings.interface_check = false;
+		options.warnings.unused = false;
+		options.warnings.executable = false;
+		options.warnings.traditional = false;
+		options.warnings.precedence = false;
+		options.warnings.initializer = false;
+		options.warnings.unimplemented = false;
+		options.warnings.redeclared = false;
+		options.warnings.enum_switch = false;
+		return 1;
+	} else {
+		bool        flag = true;
+
+		if (!strncasecmp (opt, "no-", 3)) {
+			flag = false;
+			opt += 3;
+		}
+		if (!(strcasecmp (opt, "cow"))) {
+			options.warnings.cow = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "error")) {
+			options.warnings.promote = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "executable")) {
+			options.warnings.executable = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "help")) {
+			warning_usage ();
+			return 1;
+		} else if (!strcasecmp (opt, "initializer")) {
+			options.warnings.initializer = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "integer-divide")) {
+			options.warnings.integer_divide = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "interface-check")) {
+			options.warnings.interface_check = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "precedence")) {
+			options.warnings.precedence = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "redeclared")) {
+			options.warnings.redeclared = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "switch")) {
+			options.warnings.enum_switch = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "traditional")) {
+			options.warnings.traditional = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "undef-function")) {
+			options.warnings.undefined_function = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "unimplemented")) {
+			options.warnings.unimplemented = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "unused")) {
+			options.warnings.unused = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "uninited-var")) {
+			options.warnings.uninited_variable = flag;
+			return 1;
+		} else if (!strcasecmp (opt, "vararg-integer")) {
+			options.warnings.vararg_integer = flag;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
 DecodeArgs (int argc, char **argv)
 {
 	int         c;
@@ -544,79 +639,8 @@ DecodeArgs (int argc, char **argv)
 			case 'W':{					// warning options
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
-
 					while (temp) {
-						if (!(strcasecmp (temp, "all"))) {
-							options.warnings.cow = true;
-							options.warnings.undefined_function = true;
-							options.warnings.uninited_variable = true;
-							options.warnings.vararg_integer = true;
-							options.warnings.integer_divide = true;
-							options.warnings.interface_check = true;
-							options.warnings.unused = true;
-							options.warnings.executable = true;
-							options.warnings.traditional = true;
-							options.warnings.precedence = true;
-							options.warnings.initializer = true;
-							options.warnings.unimplemented = true;
-							options.warnings.redeclared = true;
-							options.warnings.enum_switch = true;
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.warnings.cow = false;
-							options.warnings.undefined_function = false;
-							options.warnings.uninited_variable = false;
-							options.warnings.vararg_integer = false;
-							options.warnings.integer_divide = false;
-							options.warnings.interface_check = false;
-							options.warnings.unused = false;
-							options.warnings.executable = false;
-							options.warnings.traditional = false;
-							options.warnings.precedence = false;
-							options.warnings.initializer = false;
-							options.warnings.unimplemented = false;
-							options.warnings.redeclared = false;
-							options.warnings.enum_switch = false;
-						} else {
-							bool        flag = true;
-
-							if (!strncasecmp (temp, "no-", 3)) {
-								flag = false;
-								temp += 3;
-							}
-							if (!(strcasecmp (temp, "cow"))) {
-								options.warnings.cow = flag;
-							} else if (!strcasecmp (temp, "error")) {
-								options.warnings.promote = flag;
-							} else if (!strcasecmp (temp, "executable")) {
-								options.warnings.executable = flag;
-							} else if (!strcasecmp (temp, "help")) {
-								warning_usage ();
-							} else if (!strcasecmp (temp, "initializer")) {
-								options.warnings.initializer = flag;
-							} else if (!strcasecmp (temp, "integer-divide")) {
-								options.warnings.integer_divide = flag;
-							} else if (!strcasecmp (temp, "interface-check")) {
-								options.warnings.interface_check = flag;
-							} else if (!strcasecmp (temp, "precedence")) {
-								options.warnings.precedence = flag;
-							} else if (!strcasecmp (temp, "redeclared")) {
-								options.warnings.redeclared = flag;
-							} else if (!strcasecmp (temp, "switch")) {
-								options.warnings.enum_switch = flag;
-							} else if (!strcasecmp (temp, "traditional")) {
-								options.warnings.traditional = flag;
-							} else if (!strcasecmp (temp, "undef-function")) {
-								options.warnings.undefined_function = flag;
-							} else if (!strcasecmp (temp, "unimplemented")) {
-								options.warnings.unimplemented = flag;
-							} else if (!strcasecmp (temp, "unused")) {
-								options.warnings.unused = flag;
-							} else if (!strcasecmp (temp, "uninited-var")) {
-								options.warnings.uninited_variable = flag;
-							} else if (!strcasecmp (temp, "vararg-integer")) {
-								options.warnings.vararg_integer = flag;
-							}
-						}
+						parse_warning_option (optarg);
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
