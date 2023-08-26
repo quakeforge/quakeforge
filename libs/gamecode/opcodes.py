@@ -155,11 +155,12 @@ compare_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_int",
+    "types": "{cmp_types[tt]}, {cmp_types[tt]}, {res_types[tt & 2]}",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type": type_tt,
         "cmp_types": etype_tt,
+        "res_types": etype_tt,
     },
 }
 compare2_formats = {

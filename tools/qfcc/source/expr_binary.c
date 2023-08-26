@@ -348,12 +348,12 @@ static expr_type_t int_double[] = {
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{MOD,	&type_double, &type_double, 0},
-	{EQ,	&type_int, &type_double, 0},
-	{NE,	&type_int, &type_double, 0},
-	{LE,	&type_int, &type_double, 0},
-	{GE,	&type_int, &type_double, 0},
-	{LT,	&type_int, &type_double, 0},
-	{GT,	&type_int, &type_double, 0},
+	{EQ,	&type_long, &type_double, 0},
+	{NE,	&type_long, &type_double, 0},
+	{LE,	&type_long, &type_double, 0},
+	{GE,	&type_long, &type_double, 0},
+	{LT,	&type_long, &type_double, 0},
+	{GT,	&type_long, &type_double, 0},
 	{0, 0}
 };
 
@@ -526,12 +526,12 @@ static expr_type_t double_double[] = {
 	{'/',	&type_double},
 	{'%',	&type_double},
 	{MOD,	&type_double},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{EQ,	&type_long},
+	{NE,	&type_long},
+	{LE,	&type_long},
+	{GE,	&type_long},
+	{LT,	&type_long},
+	{GT,	&type_long},
 	{0, 0}
 };
 
@@ -547,33 +547,33 @@ static expr_type_t long_long[] = {
 	{MOD,	&type_long},
 	{SHL,	&type_long},
 	{SHR,	&type_long},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{EQ,	&type_long},
+	{NE,	&type_long},
+	{LE,	&type_long},
+	{GE,	&type_long},
+	{LT,	&type_long},
+	{GT,	&type_long},
 	{0, 0}
 };
 
 static expr_type_t ulong_ulong[] = {
-	{'+',	&type_long},
-	{'-',	&type_long},
-	{'*',	&type_long},
-	{'/',	&type_long},
-	{'&',	&type_long},
-	{'|',	&type_long},
-	{'^',	&type_long},
-	{'%',	&type_long},
-	{MOD,	&type_long},
-	{SHL,	&type_long},
-	{SHR,	&type_long},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{'+',	&type_ulong},
+	{'-',	&type_ulong},
+	{'*',	&type_ulong},
+	{'/',	&type_ulong},
+	{'&',	&type_ulong},
+	{'|',	&type_ulong},
+	{'^',	&type_ulong},
+	{'%',	&type_ulong},
+	{MOD,	&type_ulong},
+	{SHL,	&type_ulong},
+	{SHR,	&type_ulong},
+	{EQ,	&type_long},
+	{NE,	&type_long},
+	{LE,	&type_long},
+	{GE,	&type_long},
+	{LT,	&type_long},
+	{GT,	&type_long},
 	{0, 0}
 };
 
@@ -908,7 +908,7 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_int;
+	e->e.expr.type = &type_long;
 	return e;
 }
 
@@ -1221,6 +1221,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		// both widths are the same at this point
 		if (t1->width > 1) {
 			e = new_binary_expr (op, e1, e2);
+			if (is_compare (op)) {
+				t1 = int_type (t1);
+			}
 			e->e.expr.type = t1;
 			return e;
 		}

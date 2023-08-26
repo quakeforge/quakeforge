@@ -138,7 +138,8 @@ cast_expr (type_t *dstType, expr_t *e)
 	}
 	if (is_constant (e) && is_math (dstType) && is_math (srcType)) {
 		return cast_math (dstType, srcType, e);
-	} else if (is_integral (dstType) && is_integral (srcType)) {
+	} else if (is_integral (dstType) && is_integral (srcType)
+			   && type_size (dstType) == type_size (srcType)) {
 		c = new_alias_expr (dstType, e);
 	} else if (is_scalar (dstType) && is_scalar (srcType)) {
 		c = new_unary_expr ('C', e);

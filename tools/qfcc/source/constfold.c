@@ -323,7 +323,7 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
-		type = &type_int;
+		type = int_type (get_type (e));
 	}
 	e->e.expr.type = type;
 
@@ -1736,8 +1736,10 @@ fold_constants (expr_t *e)
 		t2 = extract_type (e2);
 
 		if (t1 >= ev_type_count || t2 >= ev_type_count
-			|| !do_op[t1] || !do_op[t1][t2])
-			internal_error (e, "invalid type %d %d", t1, t2);
+			|| !do_op[t1] || !do_op[t1][t2]) {
+			debug (e, "unhandled type %d %d", t1, t2);
+			return e;
+		}
 		return do_op[t1][t2] (op, e, e1, e2);
 	}
 	return e;

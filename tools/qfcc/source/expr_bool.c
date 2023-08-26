@@ -96,8 +96,10 @@ test_expr (expr_t *e)
 			break;
 		case ev_long:
 		case ev_ulong:
+			e = new_alias_expr (&type_ivec2, e);
+			return new_horizontal_expr ('|', e, &type_int);
 		case ev_ushort:
-			internal_error (e, "long not implemented");
+			internal_error (e, "ushort not implemented");
 		case ev_uint:
 		case ev_int:
 		case ev_short:
@@ -123,8 +125,9 @@ test_expr (expr_t *e)
 			new = new_float_expr (0);
 			break;
 		case ev_double:
-			new = new_double_expr (0);
-			break;
+			new = expr_file_line (new_double_expr (0), e);
+			new = expr_file_line (binary_expr (NE, e, new), e);
+			return test_expr (new);
 		case ev_vector:
 			new = new_vector_expr (zero);
 			break;
