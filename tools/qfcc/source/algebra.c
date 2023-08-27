@@ -517,7 +517,8 @@ algebra_blade_value (algebra_t *alg, const char *name)
 			uint32_t c = indices[i] - '0';
 			c -= alg->zero != 1;
 			if (c >= dimension) {
-				error (0, "basis %c not in algebra %d", indices[i], c);
+				error (0, "basis %c not in algebra(%d,%d,%d)", indices[i],
+					   alg->plus, alg->minus, alg->zero);
 				continue;
 			}
 			uint32_t mask = 1u << c;
