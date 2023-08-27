@@ -40,14 +40,18 @@ main (void)
 		return 1;
 	}
 	scalar_t scalar;
-	vector_t vec;
-	bivector_t bvec;
-	trivector_t tvec;
+	vector_t vec, vecb;
+	bivector_t bvec, bvecb;
+	trivector_t tvec, tvecb;
 	@algebra (PGA) {
 		scalar = 42;
-		vec = 3 * e1 - 2*e2 + e0;
+		vec = 3*e1 - 2*e2 + e0;
 		bvec = 4*e20 - 3*e01 + 2*e12;
-		tvec = 7 * e012;
+		tvec = 7*e012;
+
+		vecb = 5*e1 + 12*e2 - 13*e0;
+		bvecb = 6*e20 + 4*e01 + 1*e12;
+		tvecb = 3*e012;
 	}
 	if (scalar != 42) {
 		printf ("scalar != 42: %g\n", scalar);
@@ -65,9 +69,14 @@ main (void)
 		printf ("tvec != 7: %g\n", tvec);
 		return 1;
 	}
-	auto t = vec ∧ bvec;
-	if ((double)t != 20) {
-		printf ("vec ∧ bvec != 20: %lv\n", t);
+	auto a = vec ∧ bvec;
+	if ((double)a != 20) {
+		printf ("vec ∧ bvec != 20: %lv\n", a);
+		return 1;
+	}
+	auto b = bvec ∧ vec;
+	if ((double)b != 20) {
+		printf ("bvec ∧ vec != 20: %lv\n", b);
 		return 1;
 	}
 	auto c = vec • bvec;
@@ -96,10 +105,119 @@ main (void)
 		printf ("didn't get 0: %g %g", vec ∧ tvec, tvec ∧ vec);
 		return 0;
 	}
-//	auto g = vec • tvec;
-//	if ((dvec3)g != '-4 -6 -1'd) {
-//		printf ("vec • tvec != '-4 -6 -1': %lv\n", g);
-//		return 1;
+	auto g = vec • tvec;
+	if ((dvec3)g != '21 -14 0'd) {
+		printf ("vec • tvec != '21 -14 0': %lv\n", g);
+		return 1;
+	}
+	auto h = tvec • vec;
+	if ((dvec3)h != '21 -14 0'd) {
+		printf ("vec • tvec != '21 -14 0': %lv\n", h);
+		return 1;
+	}
+	auto i = vec * tvec;
+	if ((dvec3)i != '21 -14 0'd) {
+		printf ("vec * tvec != '21 -14 0': %lv\n", i);
+		return 1;
+	}
+	auto j = tvec * vec;
+	if ((dvec3)j != '21 -14 0'd) {
+		printf ("vec * tvec != '21 -14 0': %lv\n", j);
+		return 1;
+	}
+	if (bvec ∧ tvec || tvec ∧ bvec) {
+		printf ("didn't get 0: %g %g", bvec ∧ tvec, tvec ∧ bvec);
+		return 0;
+	}
+	auto k = bvec • tvec;
+	if ((dvec3)k != '0 0 -14'd) {
+		printf ("bvec • tvec != '0 0 -14': %lv\n", k);
+		return 1;
+	}
+	auto l = tvec • bvec;
+	if ((dvec3)l != '0 0 -14'd) {
+		printf ("tvec • bvec != '0 0 -14': %lv\n", l);
+		return 1;
+	}
+	auto m = bvec * tvec;
+	if ((dvec3)m != '0 0 -14'd) {
+		printf ("bvec * tvec != '0 0 -14': %lv\n", m);
+		return 1;
+	}
+	auto n = tvec * bvec;
+	if ((dvec3)n != '0 0 -14'd) {
+		printf ("tvec * bvec != '0 0 -14': %lv\n", n);
+		return 1;
+	}
+//	if (vec ∧ vec || bvec ∧ bvec || tvec ∧ tvec) {
+//		printf ("didn't get 0: %g %g %g", vec ∧ vec, bvec ∧ bvec, tvec ∧ tvec);
+//		return 0;
 //	}
+	auto o = vec ∧ vecb;
+	if ((dvec3)o != '14 44 45'd) {
+		printf ("vec ∧ vecb != '14 44 45': %lv\n", o);
+		return 1;
+	}
+	auto p = vecb ∧ vec;
+	if ((dvec3)p != '-14 -44 -45'd) {
+		printf ("vecb ∧ vec != '-14 -44 -45': %lv\n", p);
+		return 1;
+	}
+	auto q = vec • vecb;
+	if (q != -9) {
+		printf ("vec • vecb != -9: %g\n", q);
+		return 1;
+	}
+	auto r = vecb • vec;
+	if (r != -9) {
+		printf ("vecb • vec != -9: %g\n", r);
+		return 1;
+	}
+	evengrades_t s;
+	s.mvec= vec * vecb;
+	if (s.scalar != -9 || (dvec3)s.bvec != '14 44 45'd) {
+		printf ("vec * vecb != -9, '14 44 45': %g %lv\n",
+				s.scalar, s.bvec);
+		return 1;
+	}
+	evengrades_t t;
+	t.mvec = vecb * vec;
+	if (t.scalar != -9 || (dvec3)t.bvec != '-14 -44 -45'd) {
+		printf ("vecb * vec != -9, '-14 -44 -45': %g %lv\n",
+				t.scalar, t.bvec);
+		return 1;
+	}
+	if (bvec ∧ bvecb || tvec ∧ tvecb) {
+		printf ("didn't get 0: %g %g", bvec ∧ bvecb, tvec ∧ tvecb);
+		return 0;
+	}
+	auto u = bvec • bvecb;
+	if (u != -2) {
+		printf ("bvec • bvecb != -2: %g\n", u);
+		return 1;
+	}
+	auto v = bvecb • bvec;
+	if (v != -2) {
+		printf ("bvecb • bvec != -2: %g\n", v);
+		return 1;
+	}
+	evengrades_t w;
+	w.mvec = bvec * bvecb;
+	if (w.scalar != -2 || (dvec3)w.bvec != '11 -8 0'd) {
+		printf ("bvec * bvecb != -2, '11 -8 0': %g %lv\n",
+				w.scalar, w.bvec);
+		return 1;
+	}
+	evengrades_t x;
+	x.mvec = bvecb * bvec;
+	if (x.scalar != -2 || (dvec3)x.bvec != '-11 8 0'd) {
+		printf ("vecb * vec != -2, '-11 8 0': %g %lv\n",
+				x.scalar, x.bvec);
+		return 1;
+	}
+	if (tvec • tvecb || tvec * tvecb) {
+		printf ("didn't get 0: %g %g", tvec • tvecb, tvec * tvecb);
+		return 0;
+	}
 	return 0;		// to survive and prevail :)
 }
