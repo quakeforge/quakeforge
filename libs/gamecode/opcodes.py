@@ -221,7 +221,7 @@ hops_formats = {
     "opcode": "OP_HOPS",
     "mnemonic": "hops",
     "opname": "hops",
-    "format": "%Ga<%Hb>, %gc",
+    "format": "%Hb %Ga, %gc",
     "widths": "-1, 0, 1",
     "types": "ev_void, ev_short, ev_void",
 }

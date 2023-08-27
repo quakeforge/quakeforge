@@ -1205,11 +1205,20 @@ extend_string (pr_debug_data_t *data, pr_uint_t ext)
 static const char *
 hop_string (pr_debug_data_t *data, pr_uint_t hop)
 {
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	static const char *hop_string[] = {
-		"&", "|", "^", "+",
-		"!&", "!|", "!^", "+",
+		"and", "or", "xor", "add",
+		"nad", "nor", "xnor", "add",
 	};
-	return hop_string[hop & 7];
+	static const char *type_string[2][8] = {
+		{"I", "I", "I", "I", "I", "I", "I", "F"},
+		{"L", "L", "L", "L", "L", "L", "L", "D"},
+	};
+	return va (res->va, "%s.%s{%d}",
+			   hop_string[hop & 7],
+			   type_string[(hop >> 5) & 1][hop & 7],
+			   ((hop >> 3) & 3) + 1);
 }
 
 static const char *
