@@ -96,6 +96,9 @@ test_expr (expr_t *e)
 			break;
 		case ev_long:
 		case ev_ulong:
+			if (type->width > 1) {
+				e = new_horizontal_expr ('|', e, &type_long);
+			}
 			e = new_alias_expr (&type_ivec2, e);
 			return new_horizontal_expr ('|', e, &type_int);
 		case ev_ushort:

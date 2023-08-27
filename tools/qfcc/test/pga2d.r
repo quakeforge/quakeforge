@@ -154,13 +154,13 @@ main (void)
 //		return 0;
 //	}
 	auto o = vec ∧ vecb;
-	if ((dvec3)o != '14 44 45'd) {
-		printf ("vec ∧ vecb != '14 44 45': %lv\n", o);
+	if ((dvec3)o != '14 44 46'd) {
+		printf ("vec ∧ vecb != '14 44 46': %lv\n", o);
 		return 1;
 	}
 	auto p = vecb ∧ vec;
-	if ((dvec3)p != '-14 -44 -45'd) {
-		printf ("vecb ∧ vec != '-14 -44 -45': %lv\n", p);
+	if ((dvec3)p != '-14 -44 -46'd) {
+		printf ("vecb ∧ vec != '-14 -44 -46': %lv\n", p);
 		return 1;
 	}
 	auto q = vec • vecb;
@@ -175,15 +175,15 @@ main (void)
 	}
 	evengrades_t s;
 	s.mvec= vec * vecb;
-	if (s.scalar != -9 || (dvec3)s.bvec != '14 44 45'd) {
-		printf ("vec * vecb != -9, '14 44 45': %g %lv\n",
+	if (s.scalar != -9 || (dvec3)s.bvec != '14 44 46'd) {
+		printf ("vec * vecb != -9, '14 44 46': %g %lv\n",
 				s.scalar, s.bvec);
 		return 1;
 	}
 	evengrades_t t;
 	t.mvec = vecb * vec;
-	if (t.scalar != -9 || (dvec3)t.bvec != '-14 -44 -45'd) {
-		printf ("vecb * vec != -9, '-14 -44 -45': %g %lv\n",
+	if (t.scalar != -9 || (dvec3)t.bvec != '-14 -44 -46'd) {
+		printf ("vecb * vec != -9, '-14 -44 -46': %g %lv\n",
 				t.scalar, t.bvec);
 		return 1;
 	}
