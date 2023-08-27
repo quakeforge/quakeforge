@@ -36,6 +36,8 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
+#include "QF/math/bitop.h"
+
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -443,11 +445,7 @@ algebra_subtype (type_t *type, attribute_t *attr)
 static int
 algebra_alignment (const type_t *type, int width)
 {
-	int         alignment = type->alignment;
-	if (!(width & 1)) {
-		alignment *= width;
-	}
-	return alignment;
+	return type->alignment * BITOP_RUP (width);
 }
 
 type_t *
