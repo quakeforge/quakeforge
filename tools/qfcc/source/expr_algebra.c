@@ -662,6 +662,7 @@ component_dot (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 			pga2_dot_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
+		internal_error (a, "not implemented");
 	}
 }
 
@@ -853,6 +854,7 @@ component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 			pga2_wedge_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
+		internal_error (a, "not implemented");
 	}
 }
 
@@ -1309,6 +1311,7 @@ component_geometric (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 			pga2_geometric_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
+		internal_error (a, "not implemented");
 	}
 }
 
