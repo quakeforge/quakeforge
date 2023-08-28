@@ -106,6 +106,9 @@ test_expr (expr_t *e)
 		case ev_uint:
 		case ev_int:
 		case ev_short:
+			if (type->width > 1) {
+				e = new_horizontal_expr ('|', e, &type_int);
+			}
 			if (!is_int(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
