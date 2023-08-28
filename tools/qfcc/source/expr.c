@@ -1881,6 +1881,9 @@ unary_expr (int op, expr_t *e)
 			}
 			break;
 		case '!':
+			if (is_algebra (get_type (e))) {
+				return algebra_dual (e);
+			}
 			if (is_constant (e)) {
 				switch (extract_type (e)) {
 					case ev_entity:
@@ -1969,6 +1972,9 @@ unary_expr (int op, expr_t *e)
 			}
 			break;
 		case '~':
+			if (is_algebra (get_type (e))) {
+				return algebra_reverse (e);
+			}
 			if (is_constant (e)) {
 				switch (extract_type (e)) {
 					case ev_string:
@@ -2076,6 +2082,8 @@ bitnot_expr:
 			return e;
 		case REVERSE:
 			return algebra_reverse (e);
+		case DUAL:
+			return algebra_dual (e);
 	}
 	internal_error (e, 0);
 }

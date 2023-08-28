@@ -492,6 +492,23 @@ static int pga_swaps_3d[16] = {
 	[0xd] = 1,	// e032
 };
 
+int
+algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b)
+{
+	bool pga_2d = (alg->plus == 2 && alg->minus == 0 && alg->zero == 1);
+	bool pga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 1);
+	int swaps = count_flips (a, b);
+	if (pga_2d) {
+		swaps += pga_swaps_2d[a];
+		swaps += pga_swaps_2d[b];
+	}
+	if (pga_3d) {
+		swaps += pga_swaps_3d[a];
+		swaps += pga_swaps_3d[b];
+	}
+	return swaps;
+}
+
 ex_value_t *
 algebra_blade_value (algebra_t *alg, const char *name)
 {

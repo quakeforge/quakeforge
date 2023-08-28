@@ -252,5 +252,18 @@ main (void)
 				s.scalar, s.bvec);
 		return 1;
 	}
+	evengrades_t dual_e;
+	dual_e.mvec = ⋆e.mvec;	// test both dual operators
+	if ((dvec3)dual_e.bvec != '-2 -3 -0.5'd || dual_e.scalar != 10) {
+		printf ("⋆odd != '-2 -3 -0.5' + 10: %lv %g\n", e.vec, e.tvec);
+		return 1;
+	}
+	oddgrades_t dual_s;
+	dual_s.mvec = !s.mvec;	// test both dual operators
+	if ((scalar_t)dual_s.tvec != 4.5 || (dvec3)dual_s.vec != '7 22 23'd) {
+		printf ("!even != 4.5, '7 22 23': %g %lv\n",
+				s.scalar, s.bvec);
+		return 1;
+	}
 	return 0;		// to survive and prevail :)
 }

@@ -276,6 +276,7 @@ STRING		\"(\\.|[^"\\])*\"
 "†"					{ return REVERSE; }
 "∗"					{ return STAR; }
 "×"					{ return CROSS; }
+"⋆"					{ return DUAL; }
 
 "%%"				{
 						return MOD;

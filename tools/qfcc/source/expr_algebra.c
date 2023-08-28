@@ -1342,7 +1342,8 @@ geometric_product (expr_t *e1, expr_t *e2)
 static expr_t *
 regressive_product (expr_t *e1, expr_t *e2)
 {
-	internal_error (e1, "not implemented");
+	notice (e1, "not implemented");
+	return 0;
 }
 
 static expr_t *
@@ -1458,11 +1459,39 @@ algebra_negate (expr_t *e)
 expr_t *
 algebra_dual (expr_t *e)
 {
-	if (e) {
-		internal_error (e, "not implemented");
+	if (!is_algebra (get_type (e))) {
+		//FIXME check for being in an @algebra { } block
+		return error (e, "cannot take the dual of a scalar without context");
 	}
-	notice (e, "not implemented");
-	return 0;
+	auto algebra = algebra_get (get_type (e));
+	auto layout = &algebra->layout;
+
+	expr_t *a[layout->count] = {};
+	expr_t *b[layout->count] = {};
+	e = mvec_expr (e, algebra);
+	mvec_scatter (a, e, algebra);
+
+	pr_uint_t I_mask = (1u << algebra->dimension) - 1;
+	for (int i = 0; i < layout->count; i++) {
+		if (!a[i]) {
+			continue;
+		}
+		auto group = &layout->groups[i];
+		//FIXME assumes groups are mono-grade (either come up with something
+		//or reject mixed-grade groups)
+		pr_uint_t mask = I_mask ^ group->blades[0].mask;
+		int dual_ind = layout->group_map[layout->mask_map[mask]][0];
+		auto dual_group = &layout->groups[dual_ind];
+		auto dual_type = algebra_mvec_type (algebra, dual_group->group_mask);
+		auto dual = cast_expr (dual_type, a[i]);
+		if (algebra_count_flips (algebra, group->blades[0].mask, mask) & 1) {
+			b[dual_ind] = unary_expr ('-', dual);
+		} else {
+			b[dual_ind] = dual;
+		}
+	}
+
+	return mvec_gather (b, algebra);
 }
 
 static void
