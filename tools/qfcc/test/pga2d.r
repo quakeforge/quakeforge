@@ -241,5 +241,16 @@ main (void)
 				s.scalar, s.bvec);
 		return 1;
 	}
+	e.mvec = -e.mvec;	// odd
+	if ((dvec3)e.vec != '-2 -3 -0.5'd || (scalar_t)e.tvec != 10) {
+		printf ("odd† != '-2 -3 -0.5' + 10: %lv %g\n", e.vec, e.tvec);
+		return 1;
+	}
+	s.mvec = -s.mvec;	// even
+	if (s.scalar != 4.5 || (dvec3)s.bvec != '7 22 23'd) {
+		printf ("even† != 4.5, '7 22 23': %g %lv\n",
+				s.scalar, s.bvec);
+		return 1;
+	}
 	return 0;		// to survive and prevail :)
 }

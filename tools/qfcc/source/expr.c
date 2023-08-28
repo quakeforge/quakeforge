@@ -1766,6 +1766,9 @@ unary_expr (int op, expr_t *e)
 		case '-':
 			if (!is_math (get_type (e)))
 				return error (e, "invalid type for unary -");
+			if (is_algebra (get_type (e))) {
+				return algebra_negate (e);
+			}
 			if (is_constant (e)) {
 				switch (extract_type (e)) {
 					case ev_string:

@@ -1711,7 +1711,8 @@ expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
 	zero->file = e->file;
 	zero->line = e->line;
 	convert_nil (zero, e->e.expr.type);
-	neg = binary_expr ('-', zero, e->e.expr.e1);
+	neg = new_binary_expr ('-', zero, e->e.expr.e1);
+	neg->e.expr.type = e->e.expr.type;
 	neg->file = e->file;
 	neg->line = e->line;
 	return statement_subexpr (sblock, neg, op);

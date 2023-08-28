@@ -1434,11 +1434,25 @@ algebra_binary_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 algebra_negate (expr_t *e)
 {
-	if (e) {
-		internal_error (e, "not implemented");
+	auto t = get_type (e);
+	auto algebra = algebra_get (t);
+	auto layout = &algebra->layout;
+	expr_t *n[layout->count] = {};
+	e = mvec_expr (e, algebra);
+	mvec_scatter (n, e, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		if (!n[i]) {
+			continue;
+		}
+		auto ct = get_type (n[i]);
+		if (is_algebra (ct)) {
+			n[i] = cast_expr (float_type (ct), n[i]);
+		}
+		n[i] = unary_expr ('-', n[i]);
+		n[i]->e.expr.type = ct;
 	}
-	notice (e, "not implemented");
-	return 0;
+	return mvec_gather (n, algebra);
 }
 
 expr_t *
