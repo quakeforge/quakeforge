@@ -191,7 +191,7 @@ merge (ex_list_t *l1, ex_list_t *l2)
 	ex_list_t  *m;
 
 	if (!l1 && !l2)
-		internal_error (0, 0);
+		return 0;
 	if (!l2)
 		return l1;
 	if (!l1)
