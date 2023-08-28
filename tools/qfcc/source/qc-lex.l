@@ -273,7 +273,7 @@ STRING		\"(\\.|[^"\\])*\"
 "•"					{ return DOT; }
 "∧"					{ return WEDGE; }
 "∨"					{ return REGRESSIVE; }
-"†"					{ return DAGGER; }
+"†"					{ return REVERSE; }
 "∗"					{ return STAR; }
 "×"					{ return CROSS; }
 

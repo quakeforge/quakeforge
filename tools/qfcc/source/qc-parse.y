@@ -144,7 +144,7 @@ int yylex (void);
 %left			'+' '-'
 %left			'*' '/' '%' MOD SCALE GEOMETRIC
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
-%right	<op>	SIZEOF UNARY INCOP DAGGER STAR
+%right	<op>	SIZEOF UNARY INCOP REVERSE STAR
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -1701,6 +1701,7 @@ unary_expr
 	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
+	| unary_expr REVERSE			{ $$ = unary_expr (REVERSE, $1); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }

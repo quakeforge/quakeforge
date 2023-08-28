@@ -101,6 +101,9 @@ algebra_t *algebra_get (const struct type_s *type) __attribute__((pure));
 int algebra_type_assignable (const struct type_s *dst,
 							 const struct type_s *src) __attribute__((pure));
 struct type_s *algebra_base_type (const struct type_s *type) __attribute__((pure));
+bool is_mono_grade (const struct type_s *type) __attribute__((pure));
+int algebra_get_grade (const struct type_s *type) __attribute__((pure));
+int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 
 struct expr_s *algebra_binary_expr (int op, struct expr_s *e1,
 									struct expr_s *e2);

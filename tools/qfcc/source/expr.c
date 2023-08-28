@@ -2071,6 +2071,8 @@ bitnot_expr:
 			if (!is_math (get_type (e)))
 				return error (e, "invalid type for unary +");
 			return e;
+		case REVERSE:
+			return algebra_reverse (e);
 	}
 	internal_error (e, 0);
 }

@@ -1421,14 +1421,56 @@ algebra_dual (expr_t *e)
 	return 0;
 }
 
+static void
+set_sign (pr_type_t *val, int sign, const type_t *type)
+{
+	if (is_float (type)) {
+		(*(float *) val) = sign;
+	} else {
+		(*(double *) val) = sign;
+	}
+}
+
 expr_t *
 algebra_reverse (expr_t *e)
 {
-	if (e) {
-		internal_error (e, "not implemented");
+	auto t = get_type (e);
+	auto algebra = algebra_get (t);
+	auto layout = &algebra->layout;
+	expr_t *r[layout->count] = {};
+	e = mvec_expr (e, algebra);
+	mvec_scatter (r, e, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		if (!r[i]) {
+			continue;
+		}
+		auto ct = get_type (r[i]);
+		if (is_mono_grade (ct)) {
+			int grade = algebra_get_grade (ct);
+			if (grade & 2) {
+				r[i] = unary_expr ('-', r[i]);
+			}
+		} else {
+			auto group = &layout->groups[i];
+			pr_type_t ones[group->count * type_size (algebra->type)];
+			bool neg = false;
+			for (int j = 0; j < group->count; j++) {
+				int grade = algebra_blade_grade (group->blades[i]);
+				int sign = grade & 2 ? -1 : 1;
+				if (sign < 0) {
+					neg = true;
+				}
+				set_sign (&ones[j * type_size (algebra->type)], sign, ct);
+			}
+			if (neg) {
+				auto rev = new_value_expr (new_type_value (ct, ones));
+				r[i] = new_binary_expr (HADAMARD, r[i], rev);
+				r[i]->e.expr.type = ct;
+			}
+		}
 	}
-	notice (e, "not implemented");
-	return 0;
+	return mvec_gather (r, algebra);
 }
 
 expr_t *

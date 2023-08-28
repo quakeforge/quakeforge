@@ -699,3 +699,62 @@ algebra_base_type (const type_t *type)
 	}
 	return ev_types[type->type];
 }
+
+int
+algebra_blade_grade (basis_blade_t blade)
+{
+	return count_bits (blade.mask);
+}
+
+bool
+is_mono_grade (const type_t *type)
+{
+	if (!is_algebra (type)) {
+		return true;
+	}
+	if (type->type == ev_invalid) {
+		return false;
+	}
+	auto alg = algebra_get (type);
+	auto layout = &alg->layout;
+	auto multivec = type->t.multivec;
+	int  grade = -1;
+	for (int i = 0; i < layout->count; i++) {
+		pr_uint_t   mask = 1u << i;
+		if (mask & multivec->group_mask) {
+			auto group = &layout->groups[i];
+			for (int j = 0; j < group->count; j++) {
+				int blade_grade = algebra_blade_grade (group->blades[j]);
+				if (grade == -1) {
+					grade = blade_grade;
+				}
+				if (blade_grade != grade) {
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+int
+algebra_get_grade (const type_t *type)
+{
+	if (!is_algebra (type)) {
+		return 0;
+	}
+	if (type->type == ev_invalid) {
+		return -1;
+	}
+	auto alg = algebra_get (type);
+	auto layout = &alg->layout;
+	auto multivec = type->t.multivec;
+	for (int i = 0; i < layout->count; i++) {
+		pr_uint_t   mask = 1u << i;
+		if (mask & multivec->group_mask) {
+			auto group = &layout->groups[i];
+			return algebra_blade_grade (group->blades[0]);
+		}
+	}
+	return 0;
+}

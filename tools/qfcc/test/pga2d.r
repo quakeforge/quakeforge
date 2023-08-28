@@ -219,5 +219,16 @@ main (void)
 		printf ("didn't get 0: %g %g", tvec • tvecb, tvec * tvecb);
 		return 0;
 	}
+	e.mvec = e.mvec†;	// odd
+	if ((dvec3)e.vec != '4 6 1'd || (scalar_t)e.tvec != -20) {
+		printf ("odd† != '4 6 1' + -20: %lv %g\n", e.vec, e.tvec);
+		return 1;
+	}
+	s.mvec = s.mvec†;	// even
+	if (s.scalar != -9 || (dvec3)s.bvec != '-14 -44 -46'd) {
+		printf ("even† != -9, '-14 -44 -46': %g %lv\n",
+				s.scalar, s.bvec);
+		return 1;
+	}
 	return 0;		// to survive and prevail :)
 }
