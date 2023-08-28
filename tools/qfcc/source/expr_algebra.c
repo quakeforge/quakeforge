@@ -1342,8 +1342,10 @@ geometric_product (expr_t *e1, expr_t *e2)
 static expr_t *
 regressive_product (expr_t *e1, expr_t *e2)
 {
-	notice (e1, "not implemented");
-	return 0;
+	auto a = algebra_dual (e1);
+	auto b = algebra_dual (e2);
+	auto c = outer_product (a, b);
+	return algebra_dual (c);
 }
 
 static expr_t *

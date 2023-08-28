@@ -1773,6 +1773,7 @@ expr
 	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
 	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
 	| expr WEDGE expr			{ $$ = binary_expr (WEDGE, $1, $3); }
+	| expr REGRESSIVE expr		{ $$ = binary_expr (REGRESSIVE, $1, $3); }
 	;
 
 texpr

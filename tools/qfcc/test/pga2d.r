@@ -265,5 +265,10 @@ main (void)
 				s.scalar, s.bvec);
 		return 1;
 	}
+	auto line = bvec ∨ bvecb;
+	if ((dvec3)line != '-11 8 34'd) {
+		printf ("bvec ∨ bvecb != '-11 8 34': %lv\n", line);
+		return 1;
+	}
 	return 0;		// to survive and prevail :)
 }
