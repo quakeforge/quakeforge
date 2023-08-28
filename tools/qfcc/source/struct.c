@@ -175,8 +175,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 			symtab->size += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
-			if (size > symtab->size)
-				symtab->size = size;
+			if (size > symtab->size) {
+				symtab->size = RUP (size, s->type->alignment);
+			}
 		}
 		if (s->type->alignment > alignment) {
 			alignment = s->type->alignment;
