@@ -1374,7 +1374,37 @@ commutator_product (expr_t *e1, expr_t *e2)
 static expr_t *
 multivector_divide (expr_t *e1, expr_t *e2)
 {
-	internal_error (e1, "not implemented");
+	if (is_algebra (get_type (e2))) {
+		return error (e2, "Division is left-right ambiguous (and works only"
+					  " for versors anyway). Use explicit reversion and divide"
+					  " by square magnitude instead.");
+	}
+	if (!is_algebra (get_type (e1))) {
+		internal_error (e1, "wtw?");
+	}
+	auto t1 = get_type (e1);
+	auto algebra = algebra_get (t1);
+	auto layout = &algebra->layout;
+	auto stype = algebra->type;
+	expr_t *a[layout->count] = {};
+	e1 = mvec_expr (e1, algebra);
+	e2 = promote_scalar (algebra->type, e2);
+	mvec_scatter (a, e1, algebra);
+
+	for (int i = 0; i < layout->count; i++) {
+		if (!a[i]) {
+			continue;
+		}
+		auto den = e2;
+		auto ct = get_type (a[i]);
+		int width = type_width (ct);
+		if (width > 1) {
+			den = new_extend_expr (den, vector_type (stype, width), 2, false);
+		}
+		a[i] = new_binary_expr ('/', a[i], den);
+		a[i]->e.expr.type = ct;
+	}
+	return mvec_gather (a, algebra);
 }
 
 expr_t *
