@@ -728,7 +728,7 @@ parse_float_vector (const char *token, int width)
 		case 3:
 			sscanf (token, "' %lf %lf %lf '%c",
 					&double_data.d[0], &double_data.d[1],
-					&double_data.d[1], &t);
+					&double_data.d[2], &t);
 			type = (t == 'f' || t == 'F') ? &type_vec3 : &type_dvec3;
 			break;
 		case 2:
