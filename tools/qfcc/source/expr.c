@@ -1467,7 +1467,13 @@ prepend_expr (expr_t *block, expr_t *e)
 static symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {
-	symtab_t   *strct = t1->t.symtab;
+	symtab_t   *strct = 0;
+	if (is_algebra (t1)) {
+		error (e1, "dereferencing pointer to incomplete type");
+		return 0;
+	} else {
+		strct = t1->t.symtab;
+	}
 	symbol_t   *sym = e2->e.symbol;//FIXME need to check
 	symbol_t   *field;
 
