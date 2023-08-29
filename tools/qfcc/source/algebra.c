@@ -445,6 +445,11 @@ algebra_subtype (type_t *type, attribute_t *attr)
 static int
 algebra_alignment (const type_t *type, int width)
 {
+	if (width > 4) {
+		// don't need more than 4 units
+		width = 4;
+	}
+	// alignment reflects the size for doubles vs floats
 	return type->alignment * BITOP_RUP (width);
 }
 
@@ -657,7 +662,20 @@ algebra_type_size (const type_t *type)
 		return a->num_components * type_size (a->type);
 	} else if (type->type == ev_float || type->type == ev_double) {
 		auto m = type->t.multivec;
-		return m->num_components * type_size (m->algebra->type);
+		auto a = m->algebra;
+		auto layout = &a->layout;
+		int  size = 0;
+		if (m->group_mask & (m->group_mask - 1)) {
+			for (int i = 0; i < layout->count; i++) {
+				if (m->group_mask & (1u << i)) {
+					auto t = algebra_mvec_type (a, m->group_mask & (1u << i));
+					size += type_aligned_size (t);
+				}
+			}
+		} else {
+			size = m->num_components * type_size (m->algebra->type);
+		}
+		return size;
 	} else {
 		internal_error (0, "invalid algebra type");
 	}

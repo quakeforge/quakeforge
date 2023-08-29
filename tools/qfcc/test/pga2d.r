@@ -27,11 +27,13 @@ main (void)
 		printf ("scalar has wrong size: %d\n", sizeof (scalar_t));
 		return 1;
 	}
-	if (sizeof (vector_t) != 3 * sizeof (scalar_t)) {
-		printf ("bivector has wrong size: %d\n", sizeof (vector_t));
+	// vector_t is a vec3 but has alignment of 4 thus sizeof of 4 * scalar
+	if (sizeof (vector_t) != 4 * sizeof (scalar_t)) {
+		printf ("vector has wrong size: %d\n", sizeof (vector_t));
 		return 1;
 	}
-	if (sizeof (bivector_t) != 3 * sizeof (scalar_t)) {
+	// bivector_t is a vec3 but has alignment of 4 thus sizeof of 4 * scalar
+	if (sizeof (bivector_t) != 4 * sizeof (scalar_t)) {
 		printf ("bivector has wrong size: %d\n", sizeof (bivector_t));
 		return 1;
 	}

@@ -3009,7 +3009,7 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 	if (!type)
 		type = get_type (expr);
 	if (type) {
-		expr = new_int_expr (type_size (type));
+		expr = new_int_expr (type_aligned_size (type));
 	}
 	return expr;
 }
