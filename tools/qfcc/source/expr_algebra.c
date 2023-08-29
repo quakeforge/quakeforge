@@ -715,7 +715,6 @@ pga3_x_y_z_w_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 									  scale_expr (wedge_type, va, sb));
 }
 
-#define pga3_yz_zx_xy_wedge_x_y_z_w pga3_x_y_z_w_wedge_yz_zx_xy
 static void
 pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
@@ -724,7 +723,7 @@ pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto wedge_type = algebra_mvec_type (alg, 0x20);
 	auto va = offset_cast (vtype, a, 0);
 	auto sa = offset_cast (stype, a, 3);
-	auto cv = scale_expr (get_type (b), b, sa);
+	auto cv = scale_expr (vtype, b, sa);
 	auto cs = dot_expr (stype, va, b);
 
 	c[5] = sum_expr (wedge_type, '-',
@@ -732,8 +731,6 @@ pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 					 new_extend_expr (cv, wedge_type, 0, false));
 }
 
-// vector-bivector wedge is commutative
-#define pga3_wx_wy_wz_wedge_x_y_z_w pga3_x_y_z_w_wedge_wx_wy_wz
 static void
 pga3_x_y_z_w_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
@@ -742,10 +739,7 @@ pga3_x_y_z_w_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto wedge_type = algebra_mvec_type (alg, 0x20);
 	auto va = offset_cast (vtype, a, 0);
 	auto cv = cross_expr (vtype, va, b);
-	auto cs = new_zero_expr (stype);
-	c[5] = sum_expr (wedge_type, '+',
-					 new_extend_expr (cs, wedge_type, 0, true),
-					 new_extend_expr (cv, wedge_type, 0, false));
+	c[5] = new_extend_expr (cv, wedge_type, 0, false);
 }
 
 static void
@@ -755,12 +749,39 @@ pga3_x_y_z_w_wedge_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b,
 	c[4] = dot_expr (algebra_mvec_type (alg, 0x10), a, b);
 }
 
+static void
+pga3_yz_zx_xy_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto wedge_type = algebra_mvec_type (alg, 0x20);
+	auto vb = offset_cast (vtype, b, 0);
+	auto sb = offset_cast (stype, b, 3);
+	auto cv = scale_expr (vtype, a, sb);
+	auto cs = dot_expr (stype, vb, a);
+
+	c[5] = sum_expr (wedge_type, '-',
+					 new_extend_expr (cs, wedge_type, 0, true),
+					 new_extend_expr (cv, wedge_type, 0, false));
+}
+
 // bivector-bivector wedge is commutative
 #define pga3_wx_wy_wz_wedge_yz_zx_xy pga3_yz_zx_xy_wedge_wx_wy_wz
 static void
 pga3_yz_zx_xy_wedge_wx_wy_wz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
 	c[4] = dot_expr (algebra_mvec_type (alg, 0x10), a, b);
+}
+
+static void
+pga3_wx_wy_wz_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto wedge_type = algebra_mvec_type (alg, 0x20);
+	auto vb = offset_cast (vtype, b, 0);
+	auto cv = cross_expr (vtype, vb, a);
+	c[5] = new_extend_expr (cv, wedge_type, 0, false);
 }
 
 static void

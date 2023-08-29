@@ -58,42 +58,95 @@ main (void)
 	}
 
 	scalar_t scalar;
-	vector_t vec, vecb;
+	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
 	trivector_t tvec, tvecb;
 	quadvector_t qvec, qvecb;
 	@algebra (PGA) {
 		scalar = 42;
-		vec = 3*e1 - 2*e2 + e0;
-		bvec.bvec = 4*e20 - 3*e01 + 2*e12;
-		tvec = 7*e012;
+		vec = 3*e1 - 2*e2 + 4*e3 + e0;
+		bvec.bvec = -3*e01 + 5*e02 + 7*e03 + 11*e23 - 4*e31 + 2*e12;
+		tvec = 1*e032 + 4*e013 + 7*e021 - 2*e123;
 		qvec = 8*e0123;
 
 		vecb = 5*e1 + 12*e2 - 13*e0;
 		bvecb.bvec = 6*e20 + 4*e01 + 1*e12;
 		tvecb = 3*e032;
 		qvecb = 1*e0123;
+
+		vecc = 5*e1 + 4*e2 - 3*e3 + 4*e0;
+		vecd = e1 + e2 + e3 + e0;
 	}
 
 	if (scalar != 42) {
 		printf ("scalar != 42: %g\n", scalar);
 		return 1;
 	}
-	if ((vec4)vec != '3 -2 0 1') {
-		printf ("vec != '3 -2 0 1': %q\n", vec);
+	if ((vec4)vec != '3 -2 4 1') {
+		printf ("vec != '3 -2 4 1': %q\n", vec);
 		return 1;
 	}
-	if ((vec3)bvec.dir != '0 0 2' || (vec3)bvec.mom != '-3 -4 0') {
-		printf ("bvec != '0 0 2' '-3 -4 0': %v %v\n", bvec.dir, bvec.mom);
+	if ((vec3)bvec.dir != '11 -4 2' || (vec3)bvec.mom != '-3 5 7') {
+		printf ("bvec != '11 -4 2' '-3 5 7': %v %v\n", bvec.dir, bvec.mom);
 		return 1;
 	}
-	if ((vec4)tvec != '0 0 -7 0') {
-		printf ("tvec != '0 0 -7': %g\n", tvec);
+	if ((vec4)tvec != '1 4 7 -2') {
+		printf ("tvec != '1 4 7 -2': %g\n", tvec);
 		return 1;
 	}
 	if ((scalar_t)qvec != 8) {
 		printf ("tvec != 8: %g\n", (scalar_t) qvec);
 		return 1;
 	}
+
+	bivector_t a = { .bvec = vec ∧ vecb };
+	if ((vec3)a.dir != '-48 20 46' || (vec3)a.mom != '44 -14 52') {
+		printf ("vec ∧ vecb != '-48 20 46' '44 -14 52': %v %v\n", a.dir, a.mom);
+		return 1;
+	}
+
+	auto b = a.bvec ∧ vecc;
+	if ((vec4)b != '358 -472 -430 -298') {
+		printf ("a ∧ vecc != '358 -472 -430 -298': %v\n", b);
+		return 1;
+	}
+
+	auto c = b ∧ vecd;
+	if ((scalar_t)c != 842) {
+		printf ("b ∧ vecd != 742': %g\n", (scalar_t) c);
+		return 1;
+	}
+
+	a.bvec = vecb ∧ vec;
+	if ((vec3)a.dir != '48 -20 -46' || (vec3)a.mom != '-44 14 -52') {
+		printf ("vecb ∧ vec != '48 -20 -46' '-44 14 -52': %v %v\n",
+				a.dir, a.mom);
+		return 1;
+	}
+
+	b = vecc ∧ a.bvec;
+	if ((vec4)b != '-358 472 430 298') {
+		printf ("vecc ∧ a != '-358 472 430 298': %v\n", b);
+		return 1;
+	}
+
+	c = vecd ∧ b;
+	if ((scalar_t)c != 842) {
+		printf ("vecd ^ b != 842': %g\n", (scalar_t) c);
+		return 1;
+	}
+
+	c = a.bvec ∧ (vecc ∧ vecd);
+	if ((scalar_t)c != -842) {
+		printf ("a ∧ (vecc ∧ vecd) != -742': %g\n", (scalar_t) c);
+		return 1;
+	}
+
+	c = (vecd ∧ vecc) ∧ a.bvec;
+	if ((scalar_t)c != 842) {
+		printf ("(vecd ∧ vecc) ∧ a != 742': %g\n", (scalar_t) c);
+		return 1;
+	}
+
 	return 0;		// to survive and prevail :)
 }
