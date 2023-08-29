@@ -87,42 +87,49 @@ count_minus (uint32_t minus)
 {
 	return count_bits (minus) & 1 ? -1 : 1;
 }
-#if 0
-static struct_def_t mvec_1d_struct[] = {
-	{"vec", &type_vec2},
-	{}
+
+static const char *mvec_1d_names[] = {
+	"vec",
+	"scalar",
+	0
 };
 
-static struct_def_t mvec_2d_struct[] = {
-	{"vec", &type_vec4},
-	{}
+static const char *mvec_2d_names[] = {
+	"vec",
+	"scalar",
+	"bvec",
+	0
 };
 
-static struct_def_t mvec_3d_struct[] = {
-	{"vec",   &type_vec4},
-	{"bvec",  &type_vec4},
-	{}
+static const char *mvec_3d_names[] = {
+	"vec",
+	"scalar"
+	"bvec",
+	"tvec",
+	0
 };
 
-static struct_def_t mvec_4d_struct[] = {
-	{"vec",   &type_vec4},
-	{"bvecv", &type_vec4},
-	{"bvecm", &type_vec4},
-	{"tvec",  &type_vec4},
-	{}
+static const char *mvec_4d_names[] = {
+	"vec",
+	"bvecv",
+	"scalar",
+	"bvecm",
+	"qvec",
+	"tvec",
+	0
 };
 
-static struct_def_t *mvec_struct[] = {
-	[1] = mvec_1d_struct,
-	[2] = mvec_2d_struct,
-	[3] = mvec_3d_struct,
-	[4] = mvec_4d_struct,
+static const char **mvec_names[] = {
+	[1] = mvec_1d_names,
+	[2] = mvec_2d_names,
+	[3] = mvec_3d_names,
+	[4] = mvec_4d_names,
 };
 
 static symbol_t *
-build_algebra_types (algebra_t *a)
+build_algebra_type (algebra_t *a)
 {
-	auto name = save_string (va (0, "multivector.%s.%d.%d.%d",
+	auto name = save_string (va (0, "multivec.%s(%d.%d.%d)",
 								 a->type->encoding,
 								 a->plus, a->minus, a->zero));
 	int  dim = a->plus + a->minus + a->zero;
@@ -149,13 +156,23 @@ build_algebra_types (algebra_t *a)
 			mvsym->type->alignment = 4;
 		}
 	} else if (dim > 0) {
-		mvsym = make_structure (name, 's', mvec_struct[dim], 0);
+		const char **names = mvec_names[dim];
+		int          count = 0;
+		for (auto n = names; *n; n++, count++) continue;
+		struct_def_t fields[count + 1] = {};
+		for (int i = 0; i < count; i++) {
+			fields[i] = (struct_def_t) {
+				.name = names[i],
+				.type = algebra_mvec_type (a, 1u << i),
+			};
+		};
+		mvsym = make_structure (name, 's', fields, 0);
 	} else {
 		internal_error (0, "invalid number of dimensions");
 	}
 	return mvsym;
 }
-#endif
+
 static void
 basis_blade_init (basis_blade_t *blade, pr_uint_t mask)
 {
@@ -340,6 +357,8 @@ algebra_init (algebra_t *a)
 			algebra_mvec_type (a, g->group_mask);
 		}
 	}
+	a->mvec_sym = build_algebra_type (a);
+	a->mvec_types[(1 << a->dimension) - 1] = a->mvec_sym->type;
 }
 
 bool
@@ -461,23 +480,41 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 	}
 	if (!algebra->mvec_types[group_mask]) {
 		int count = 0;
+		int components = 0;
 		for (int i = 0; i < algebra->layout.count; i++) {
 			if (group_mask & (1 << i)) {
-				count += algebra->layout.groups[i].count;
+				components += algebra->layout.groups[i].count;
+				count++;
 			}
+		}
+		symbol_t   *mvec_sym = 0;
+		if (group_mask & (group_mask - 1)) {
+			struct_def_t fields[count + 1] = {};
+			for (int i = 0, c = 0; i < algebra->layout.count; i++) {
+				pr_uint_t   mask = 1 << i;
+				if (group_mask & mask) {
+					fields[c] = (struct_def_t) {
+						.name = save_string (va (0, "group_%d", i)),
+						.type = algebra_mvec_type (algebra, mask),
+					};
+					c++;
+				};
+			};
+			mvec_sym = make_structure (0, 's', fields, 0);
 		}
 		multivector_t *mvec = malloc (sizeof (multivector_t));
 		*mvec = (multivector_t) {
-			.num_components = count,
+			.num_components = components,
 			.group_mask = group_mask,
 			.algebra = algebra,
+			.mvec_sym = mvec_sym,
 		};
 		algebra->mvec_types[group_mask] = new_type ();
 		*algebra->mvec_types[group_mask] = (type_t) {
 			.type = algebra->type->type,
 			.name = "basis group",
-			.alignment = algebra_alignment (algebra->type, count),
-			.width = count,
+			.alignment = algebra_alignment (algebra->type, components),
+			.width = components,
 			.meta = ty_algebra,
 			.t.algebra = (algebra_t *) mvec,
 			.freeable = true,

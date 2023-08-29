@@ -68,6 +68,7 @@ typedef struct algebra_s {
 	basis_layout_t layout;
 	basis_group_t *groups;
 	struct type_s **mvec_types;
+	struct symbol_s *mvec_sym;
 	int         num_components;	///< number of componets (2^d)
 	int         dimension;		///< number of dimensions (plus + minus + zero)
 	int         plus;			///< number of elements squaring to +1
@@ -79,6 +80,7 @@ typedef struct multivector_s {
 	int         num_components;
 	int         group_mask;
 	algebra_t  *algebra;
+	struct symbol_s *mvec_sym;	///< null if single group
 } multivector_t;
 
 struct expr_s;

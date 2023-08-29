@@ -33,6 +33,7 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -65,6 +66,18 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 	return new_offset_alias_expr (type, expr, offset);
 }
 
+static symbol_t *
+get_mvec_sym (type_t *type)
+{
+	symbol_t   *sym = 0;
+	if (type->type == ev_invalid) {
+		sym = type->t.algebra->mvec_sym;
+	} else {
+		sym = type->t.multivec->mvec_sym;
+	}
+	return sym->type->t.symtab->symbols;
+}
+
 static expr_t *
 mvec_expr (expr_t *expr, algebra_t *algebra)
 {
@@ -91,16 +104,10 @@ mvec_expr (expr_t *expr, algebra_t *algebra)
 		.algebra = algebra,
 	};
 	expr_t **c = &mvec->e.multivec.components;
-	int comp_offset = 0;
-	for (int i = 0; i < layout->count; i++) {
-		pr_uint_t   mask = 1u << i;
-		if (mask & group_mask) {
-			auto comp_type = algebra_mvec_type (algebra, mask);
-			*c = offset_cast (comp_type, expr, comp_offset);
-			c = &(*c)->next;
-			mvec->e.multivec.count++;
-			comp_offset += algebra->layout.groups[i].count;
-		}
+	for (auto sym = get_mvec_sym (mvtype); sym; sym = sym->next) {
+		*c = new_offset_alias_expr (sym->type, expr, sym->s.offset);
+		c = &(*c)->next;
+		mvec->e.multivec.count++;
 	}
 
 	return mvec;
@@ -1580,7 +1587,7 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	type_t *dstType = get_type (dst);
 
 	if (src->type != ex_multivec) {
-		if (type_size (srcType) == type_size (dstType)) {
+		if (srcType == dstType) {
 			return new_assign_expr (dst, src);
 		}
 	}
@@ -1594,31 +1601,27 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	src = mvec_expr (src, algebra);
 	mvec_scatter (components, src, algebra);
 
+	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr ();
 	int  memset_base = 0;
-	int  memset_size = 0;
-	int  offset = 0;
 	for (int i = 0; i < layout->count; i++) {
-		if (components[i]) {
-			if (memset_size) {
-				zero_components (block, dst, memset_base, memset_size);
-				memset_size = 0;
-			}
-			auto dst_type = algebra_mvec_type (algebra, 1 << i);
-			auto dst_alias = new_offset_alias_expr (dst_type, dst, offset);
-			append_expr (block, new_assign_expr (dst_alias, components[i]));
-			offset += type_size (dst_type);
-			memset_base = offset;
-		} else {
-			if (dstType->type == ev_invalid) {
-				auto dst_type = algebra_mvec_type (algebra, 1 << i);
-				offset += type_size (dst_type);
-				memset_size += type_size (dst_type);
-			}
+		if (!components[i]) {
+			continue;
 		}
+		while (sym->type != get_type (components[i])) {
+			sym = sym->next;
+		}
+		int size = sym->s.offset - memset_base;
+		if (size) {
+			zero_components (block, dst, memset_base, size);
+		}
+		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
+		append_expr (block, new_assign_expr (dst_alias, components[i]));
+		memset_base = sym->s.offset + type_size (sym->type);
 	}
-	if (memset_size) {
-		zero_components (block, dst, memset_base, memset_size);
+	if (type_size (dstType) - memset_base) {
+		zero_components (block, dst, memset_base,
+						 type_size (dstType) - memset_base);
 	}
 	return block;
 }

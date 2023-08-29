@@ -45,6 +45,7 @@ test_progs_dat=\
 	tools/qfcc/test/overload.dat \
 	tools/qfcc/test/paramret.dat \
 	tools/qfcc/test/pga2d.dat \
+	tools/qfcc/test/pga3d.dat \
 	tools/qfcc/test/postop.dat \
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
@@ -553,6 +554,16 @@ tools/qfcc/test/pga2d.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(pga2d_dep) # am--include-marker
 r_depfiles_remade += $(pga2d_dep)
+
+tools_qfcc_test_pga3d_dat_SOURCES=tools/qfcc/test/pga3d.r
+pga3d_obj=$(tools_qfcc_test_pga3d_dat_SOURCES:.r=.o)
+pga3d_dep=$(call qcautodep,$(tools_qfcc_test_pga3d_dat_SOURCES))
+tools/qfcc/test/pga3d.dat$(EXEEXT): $(pga3d_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(pga3d_obj)
+tools/qfcc/test/pga3d.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(pga3d_dep) # am--include-marker
+r_depfiles_remade += $(pga3d_dep)
 
 tools_qfcc_test_postop_dat_SOURCES=tools/qfcc/test/postop.r
 postop_obj=$(tools_qfcc_test_postop_dat_SOURCES:.r=.o)
