@@ -742,7 +742,11 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 		// had to be different)
 		return 0;
 	}
-	if (dst->meta == ty_algebra && dst->type == ev_invalid) {
+	if (!is_algebra (dst)) {
+		// no implicit casts from multi-vectors to scalars
+		return 0;
+	}
+	if (dst->type == ev_invalid) {
 		if (is_scalar (src)) {
 			// scalars can always be assigned to a full algebra type (sets
 			// the scalar element and zeros the other elements)
@@ -757,10 +761,27 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 		// the multivec is a member of the destination algebra
 		return 1;
 	}
-	if (dst->meta != ty_algebra || src->meta != ty_algebra) {
+	if (!is_algebra (src)) {
+		if (is_scalar (src)) {
+			auto algebra = dst->t.multivec->algebra;
+			auto layout = &algebra->layout;
+			int group = layout->group_map[layout->mask_map[0]][0];
+			if (dst->t.multivec->group_mask & (1u << group)) {
+				// the source scalar is a member of the destination
+				// multi-vector
+				return 1;
+			}
+		}
 		return 0;
 	}
-	return dst->t.multivec == src->t.multivec;
+	if (dst->t.multivec->algebra != src->t.multivec->algebra) {
+		return 0;
+	}
+	if (src->t.multivec->group_mask & ~dst->t.multivec->group_mask) {
+		return 0;
+	}
+	// the source multi-vector is a subset of the destinatin multi-vector
+	return 1;
 }
 
 type_t *
