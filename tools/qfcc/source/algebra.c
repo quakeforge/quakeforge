@@ -357,8 +357,8 @@ algebra_init (algebra_t *a)
 			algebra_mvec_type (a, g->group_mask);
 		}
 	}
+	algebra_mvec_type (a, (1 << a->layout.count) - 1);
 	a->mvec_sym = build_algebra_type (a);
-	a->mvec_types[(1 << a->dimension) - 1] = a->mvec_sym->type;
 }
 
 bool

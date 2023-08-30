@@ -78,6 +78,22 @@ get_mvec_sym (type_t *type)
 	return sym->type->t.symtab->symbols;
 }
 
+static bool
+check_types (expr_t **e, algebra_t *algebra)
+{
+	auto layout = &algebra->layout;
+	for (int i = 0; i < layout->count; i++) {
+		if (!e[i]) {
+			continue;
+		}
+		auto type = algebra_mvec_type (algebra, 1u << i);
+		if (get_type (e[i]) != type) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static expr_t *
 mvec_expr (expr_t *expr, algebra_t *algebra)
 {
@@ -733,6 +749,9 @@ inner_product (expr_t *e1, expr_t *e2)
 			if (a[i] && b[j]) {
 				expr_t *w[layout->count] = {};
 				component_dot (w, a[i], b[j], algebra);
+				if (!check_types (w, algebra)) {
+					internal_error (a[i], "wrong types in dot product");
+				}
 				component_sum ('+', c, c, w, algebra);
 			}
 		}
@@ -946,6 +965,9 @@ outer_product (expr_t *e1, expr_t *e2)
 			if (a[i] && b[j]) {
 				expr_t *w[layout->count] = {};
 				component_wedge (w, a[i], b[j], algebra);
+				if (!check_types (w, algebra)) {
+					internal_error (a[i], "wrong types in wedge product");
+				}
 				component_sum ('+', c, c, w, algebra);
 			}
 		}
@@ -963,7 +985,7 @@ pga3_x_y_z_w_geom_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto vb = offset_cast (vtype, b, 0);
 	auto sa = offset_cast (stype, a, 3);
 	auto sb = offset_cast (stype, b, 3);
-	c[4] = dot_expr (stype, va, vb);
+	c[2] = dot_expr (stype, va, vb);
 	c[1] = cross_expr (algebra_mvec_type (alg, 0x02), va, vb);
 	c[3] = sum_expr (geom_type, '-', scale_expr (geom_type, vb, sa),
 									 scale_expr (geom_type, va, sb));
@@ -1431,6 +1453,9 @@ geometric_product (expr_t *e1, expr_t *e2)
 			if (a[i] && b[j]) {
 				expr_t *w[layout->count] = {};
 				component_geometric (w, a[i], b[j], algebra);
+				if (!check_types (w, algebra)) {
+					internal_error (a[i], "wrong types in geometric product");
+				}
 				component_sum ('+', c, c, w, algebra);
 			}
 		}
