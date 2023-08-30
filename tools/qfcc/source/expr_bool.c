@@ -69,7 +69,6 @@
 expr_t *
 test_expr (expr_t *e)
 {
-	static float zero[4] = {0, 0, 0, 0};
 	expr_t     *new = 0;
 	type_t     *type;
 
@@ -128,14 +127,15 @@ test_expr (expr_t *e)
 				}
 				return e;
 			}
-			new = new_float_expr (0);
-			break;
+			new = expr_file_line (new_zero_expr (type), e);
+			new = expr_file_line (binary_expr (NE, e, new), e);
+			return test_expr (new);
 		case ev_double:
-			new = expr_file_line (new_double_expr (0), e);
+			new = expr_file_line (new_zero_expr (type), e);
 			new = expr_file_line (binary_expr (NE, e, new), e);
 			return test_expr (new);
 		case ev_vector:
-			new = new_vector_expr (zero);
+			new = new_zero_expr (&type_vector);
 			break;
 		case ev_entity:
 			return new_alias_expr (type_default, e);
@@ -146,7 +146,7 @@ test_expr (expr_t *e)
 		case ev_ptr:
 			return new_alias_expr (type_default, e);
 		case ev_quaternion:
-			new = new_quaternion_expr (zero);
+			new = new_zero_expr (&type_quaternion);
 			break;
 		case ev_invalid:
 			if (is_enum (type)) {
