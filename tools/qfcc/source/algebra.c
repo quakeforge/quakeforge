@@ -699,16 +699,12 @@ algebra_type_size (const type_t *type)
 		return a->num_components * type_size (a->type);
 	} else if (type->type == ev_float || type->type == ev_double) {
 		auto m = type->t.multivec;
-		auto a = m->algebra;
-		auto layout = &a->layout;
 		int  size = 0;
 		if (m->group_mask & (m->group_mask - 1)) {
-			for (int i = 0; i < layout->count; i++) {
-				if (m->group_mask & (1u << i)) {
-					auto t = algebra_mvec_type (a, m->group_mask & (1u << i));
-					size += type_aligned_size (t);
-				}
+			if (!m->mvec_sym) {
+				internal_error (0, "multi group multivec missing struct");
 			}
+			size = type_size (m->mvec_sym->type);
 		} else {
 			size = m->num_components * type_size (m->algebra->type);
 		}
