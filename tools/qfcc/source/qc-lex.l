@@ -441,6 +441,7 @@ static keyword_t qf_keywords[] = {
 	{"@cross",		CROSS,		},
 	{"@dot",		DOT,		},
 	{"@wedge",		WEDGE,		},
+	{"@regressive",	REGRESSIVE,	},
 	{"@geometric",	GEOMETRIC,	},
 	{"@algebra",	ALGEBRA,	},
 };

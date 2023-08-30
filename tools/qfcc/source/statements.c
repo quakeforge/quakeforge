@@ -901,7 +901,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 
 	if (src_expr->type == ex_assign) {
 		sblock = statement_subexpr (sblock, src_expr, &src);
-		if (is_structural (dst_type)) {
+		if (is_structural (dst_type) || dst_type->width > 4) {
 			return expr_assign_copy (sblock, e, op, src);
 		}
 		if (is_indirect (dst_expr)) {
@@ -910,7 +910,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 		}
 	} else {
-		if (is_structural (dst_type)) {
+		if (is_structural (dst_type) || dst_type->width > 4) {
 			return expr_assign_copy (sblock, e, op, src);
 		}
 

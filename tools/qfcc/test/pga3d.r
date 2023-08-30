@@ -370,6 +370,55 @@ test_geom (void)
 	return 0;
 }
 
+static int
+test_basics (void)
+{
+	@algebra (PGA) {
+		auto plane1 = e1 + 8*e0;
+		auto plane2 = e2 + 8*e0;
+		auto line = plane1 @wedge plane2;
+		auto p = -3*e021 + e123;
+		auto point = line @dot p * ~line;
+		auto rot = line * p * ~line;
+		auto p1 = 12*e032 + 4*e013 + e123;
+		auto p2 = 4*e032 + 12*e013 + e123;
+		auto x = point @regressive rot;
+
+		if ((vec4)plane1 != '1 0 0 8' || (vec4)plane2 != '0 1 0 8') {
+			printf ("plane1 or plane2 wrong: %q %q\n", plane1, plane2);
+			return 1;
+		}
+		if ((vec4)p != '0 0 -3 1' || (vec4)p1 != '12 4 0 1'
+			|| (vec4)p2 != '4 12 0 1') {
+			printf ("p or p1 or p2 wrong: %q %q %q\n", p, p1, p2);
+			return 1;
+		}
+		bivector_t b = { .bvec = line };
+		if ((vec3)b.dir != '0 0 1' || (vec3)b.mom != '-8 8 0') {
+			printf ("line is wrong: %v %v\n", b.dir, b.mom);
+			return 1;
+		}
+		oddgrades_t o = { .mvec = point };
+		if ((vec4)o.vec || (vec4)o.tvec != '-8 -8 -3 1') {
+			printf ("point is wrong: %q\n", point);
+			return 1;
+		}
+		o.mvec = rot;
+		if ((vec4)o.vec || (vec4)o.tvec != '-16 -16 -3 1') {
+			printf ("rot is wrong: %q %q\n", o.vec, o.tvec);
+			return 1;
+		}
+		evengrades_t e = { .mvec = x };
+		if (e.scalar || (scalar_t)e.qvec
+			|| (vec3)e.dir != '-8 -8 0' || (vec3)e.mom != '-24 24 0') {
+			printf ("x is wrong: %g %v %v %g\n",
+					e.scalar, e.dir, e.mom, (scalar_t)e.qvec);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int
 main (void)
 {
@@ -424,6 +473,11 @@ main (void)
 
 	if (test_geom ()) {
 		printf ("geometric products failed\n");
+		return 1;
+	}
+
+	if (test_basics ()) {
+		printf ("basics failed\n");
 		return 1;
 	}
 
