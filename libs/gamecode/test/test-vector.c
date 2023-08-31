@@ -64,10 +64,10 @@ static dstatement_t float_vector_statements[] = {
 	{ OP(0, 0, 0, OP_VQMUL_F), 32, 24, 48 },
 
 	{ OP(0, 0, 0, OP_QMUL_F), 24, 32, 52 },
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 24, 0x07e4, 60 },
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 24, 0x07e4, 60 },
 	{ OP(0, 0, 0, OP_QMUL_F), 52, 60, 52 },
 
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 24, 0x07e4, 64 },
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 24, 0x07e4, 64 },
 	{ OP(0, 0, 0, OP_QMUL_F), 64, 32, 56 },
 	{ OP(0, 0, 0, OP_QMUL_F), 56, 24, 56 },
 
@@ -139,10 +139,10 @@ static dstatement_t double_vector_statements[] = {
 	{ OP(0, 0, 0, OP_VQMUL_D), 64, 48, 96 },
 
 	{ OP(0, 0, 0, OP_QMUL_D), 48, 64, 104 },
-	{ OP(0, 0, 0, OP_SWIZZLE_D), 48, 0x07e4, 120 },
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4), 48, 0x07e4, 120 },
 	{ OP(0, 0, 0, OP_QMUL_D), 104, 120, 104 },
 
-	{ OP(0, 0, 0, OP_SWIZZLE_D), 48, 0x07e4, 128 },
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4), 48, 0x07e4, 128 },
 	{ OP(0, 0, 0, OP_QMUL_D), 128, 64, 112 },
 	{ OP(0, 0, 0, OP_QMUL_D), 112, 48, 112 },
 

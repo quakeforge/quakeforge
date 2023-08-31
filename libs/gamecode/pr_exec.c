@@ -2291,6 +2291,36 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 0110
 			// spare
 			// 0 0111
+			case OP_SWIZZLE_F_2:
+				{
+					auto s2 = OPA(ivec2);
+					pr_ivec4_t s4 = { s2[0], s2[1] };
+					s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
+					OPC(ivec2) = (pr_ivec2_t) { s4[0], s4[1] };
+				}
+				break;
+			case OP_SWIZZLE_F_3:
+				{
+					auto s4 = loadvec3i (&OPA(int));
+					s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
+					storevec3i (&OPA(int), s4);
+				}
+				break;
+			case OP_SWIZZLE_D_2:
+				{
+					auto s2 = OPA(lvec2);
+					pr_lvec4_t s4 = { s2[0], s2[1] };
+					s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
+					OPC(lvec2) = (pr_lvec2_t) { s4[0], s4[1] };
+				}
+				break;
+			case OP_SWIZZLE_D_3:
+				{
+					auto s4 = loadvec3l (&OPA(long));
+					s4 = pr_swizzle_d (s4, (pr_ushort_t) st->b);
+					storevec3l (&OPC(long), s4);
+				}
+				break;
 			case OP_WEDGE_F_2:
 				{
 					auto a = OPA(vec2);
@@ -2598,7 +2628,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// 1 1010
 			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
-			case OP_SWIZZLE_F:
+			case OP_SWIZZLE_F_4:
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), (pr_ushort_t) st->b);
 				break;
 			case OP_SCALE_F_2:
@@ -2611,7 +2641,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				OPC(vec4) = OPA(vec4) * OPB(float);
 				break;
 			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
-			case OP_SWIZZLE_D:
+			case OP_SWIZZLE_D_4:
 				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), (pr_ushort_t) st->b);
 				break;
 			case OP_SCALE_D_2:

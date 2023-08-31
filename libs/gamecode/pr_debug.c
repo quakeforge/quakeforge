@@ -1518,7 +1518,7 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		if (i) {
 			dstring_appendstr (dstr, ", ");
 		}
-		dasprintf (dstr, "%" PRIu64, *(uint64_t *)value);
+		dasprintf (dstr, "%" PRIx64, *(uint64_t *)value);
 	}
 	if (type->basic.width > 1) {
 		dstring_appendstr (dstr, "]");

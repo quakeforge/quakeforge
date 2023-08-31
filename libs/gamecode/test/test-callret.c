@@ -67,13 +67,13 @@ static dstatement_t callret_statements[] = {
 #define c  20	// in locals		int
 	{ OP(2, 0, 1, OP_STORE_A_1), xn+1,0,  x },		// init xn to [1, x, 0, 0]
 	{ OP(2, 0, 0, OP_STORE_A_1), xn,  0,  4 },
-	{ OP(2, 0, 2, OP_SWIZZLE_F), xn, 0x0044, xn },	// xn -> [1, x, 1, x]
+	{ OP(2, 0, 2, OP_SWIZZLE_F_4), xn, 0x0044, xn },// xn -> [1, x, 1, x]
 	{ OP(1, 1, 2, OP_MUL_F_1),    x,  x, x2 },	// x2 -> [x*x, ?, ?, ?]
-	{ OP(2, 0, 2, OP_SWIZZLE_F), x2, 0x0300, x2},//x2 -> [-x*x, -x*x, x*x, x*x]
+	{ OP(2, 0, 2, OP_SWIZZLE_F_4), x2, 0x0300, x2},//x2 -> [-x*x, -x*x, x*x, x*x]
 	{ OP(2, 0, 0, OP_STORE_A_1), fa,  0,  4 },		// init factorial
 	{ OP(2, 0, 0, OP_STORE_A_1), fa+1,0,  5 },
-	{ OP(2, 0, 2, OP_SWIZZLE_F), fa, 0x0044, fa },	// fa -> [1, 2, 1, 2]
-	{ OP(2, 0, 2, OP_SWIZZLE_F), fa, 0x0000, fi },	// init fi -> [1, 1, 1, 1]
+	{ OP(2, 0, 2, OP_SWIZZLE_F_4), fa, 0x0044, fa },// fa -> [1, 2, 1, 2]
+	{ OP(2, 0, 2, OP_SWIZZLE_F_4), fa, 0x0000, fi },// init fi -> [1, 1, 1, 1]
 	{ OP(2, 2, 2, OP_SUB_F_4),   ac, ac, ac },		// init acc (output) to 0
 	{ OP(0, 0, 2, OP_LEA_A),     25,  0,  c },		// init count
 // loop:

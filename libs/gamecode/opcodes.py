@@ -3,6 +3,7 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
+0 0111 00ts swizzle2
 0 0111 01t0 wedge2
 0 1ccc ttss compare
 0 0000 00nn
@@ -510,15 +511,27 @@ string_formats = {
     },
 }
 swizzle_formats = {
-    "opcode": "OP_SWIZZLE_{swiz_type[t]}",
+    "opcode": "OP_SWIZZLE_{swiz_type[t]}_4",
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga.%Sb %gc",
     "widths": "4, 0, 4",
-    "types": "{swizzle_types[t]}",
+    "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
-        "swizzle_types": float_t,
+        "swizzle_types": unsigned_t,
+    },
+}
+swizzle2_formats = {
+    "opcode": "OP_SWIZZLE_{swiz_type[t]}_{s+2}",
+    "mnemonic": "swizzle.{swiz_type[t]}",
+    "opname": "swizzle",
+    "format": "%Ga.%Sb %gc",
+    "widths": "{s+2}, 0, {s+2}",
+    "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
+    "args": {
+        "swiz_type": ['F', 'D'],
+        "swizzle_types": unsigned_t,
     },
 }
 wedge2_formats = {
@@ -628,6 +641,7 @@ group_map = {
     "store64":  store64_formats,
     "string":   string_formats,
     "swizzle":  swizzle_formats,
+    "swizzle2": swizzle2_formats,
     "return":   return_formats,
     "udivops":  udivops_formats,
     "vecops":   vecops_formats,
