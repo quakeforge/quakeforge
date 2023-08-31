@@ -2618,17 +2618,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			case OP_CDOT_F:
-				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
+				OPC(float) = dot2f (OPA(vec2), OPB(vec2))[0];
 				break;
 			case OP_VDOT_F:
-				{
-					vec_t       d = DotProduct (&OPA(float),
-												&OPB(float));
-					VectorSet (d, d, d, &OPC(float));
-				}
+				OPC(float) = DotProduct (&OPA(float), &OPB(float));
 				break;
 			case OP_QDOT_F:
-				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
+				OPC(float) = dotf (OPA(vec4), OPB(vec4))[0];
 				break;
 			case OP_CMUL_F:
 				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
@@ -2659,17 +2655,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			case OP_CDOT_D:
-				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
+				OPC(double) = dot2d (OPA(dvec2), OPB(dvec2))[0];
 				break;
 			case OP_VDOT_D:
-				{
-					double      d = DotProduct (&OPA(double),
-												&OPB(double));
-					VectorSet (d, d, d, &OPC(double));
-				}
+				OPC(double) = DotProduct (&OPA(double), &OPB(double));
 				break;
 			case OP_QDOT_D:
-				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
+				OPC(double) = dotd (OPA(dvec4), OPB(dvec4))[0];
 				break;
 			case OP_CMUL_D:
 				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));

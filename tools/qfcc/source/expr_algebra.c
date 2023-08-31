@@ -314,10 +314,7 @@ scale_expr (type_t *type, expr_t *a, expr_t *b)
 static expr_t *
 dot_expr (type_t *type, expr_t *a, expr_t *b)
 {
-	auto vec_type = get_type (a);
 	auto dot = new_binary_expr (DOT, a, b);
-	dot->e.expr.type = vector_type (vec_type, type_width (vec_type));
-	dot = array_expr (dot, new_short_expr (0));
 	dot->e.expr.type = type;
 	return dot;
 }
@@ -466,8 +463,7 @@ pga3_wxyz_dot_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
 	auto stype = alg->type;
 	auto dot_type = algebra_mvec_type (alg, 0x20);
-	auto vb = offset_cast (dot_type,
-									 new_swizzle_expr (b, "-x-y-z0"), 0);
+	auto vb = offset_cast (dot_type, new_swizzle_expr (b, "-x-y-z0"), 0);
 	auto sa = offset_cast (stype, a, 0);
 	c[5] = scale_expr (dot_type, vb, sa);
 }

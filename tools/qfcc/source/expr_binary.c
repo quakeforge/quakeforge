@@ -836,15 +836,7 @@ static expr_t *
 vector_dot (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t     *e = new_binary_expr (DOT, e1, e2);
-	if (options.code.progsversion == PROG_VERSION) {
-		e->e.expr.type = &type_vector;
-		if (op == '*') {
-			// vector * vector is dot product in v6 progs (ick)
-			e = new_alias_expr (&type_float, e);
-		}
-	} else {
-		e->e.expr.type = &type_float;
-	}
+	e->e.expr.type = &type_float;
 	return e;
 }
 

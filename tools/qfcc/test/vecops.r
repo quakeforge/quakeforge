@@ -12,7 +12,7 @@ main ()
 		printf ("cross product failed\n");
 		return 1;
 	};
-	if (v • c != [1, 1, 1]) {
+	if (v • c != 1) {
 		printf ("dot product failed\n");
 		return 1;
 	}
