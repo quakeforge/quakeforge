@@ -182,6 +182,7 @@ type_t *base_type (const type_t *vec_type) __attribute__((pure));
 					null if no such match can be made.
 */
 type_t *int_type (const type_t *base) __attribute__((pure));
+type_t *uint_type (const type_t *base) __attribute__((pure));
 
 /** Return a floating point type of same size as the provided type.
 

@@ -708,6 +708,22 @@ int_type (const type_t *base)
 }
 
 type_t *
+uint_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_uint;
+	} else if (type_size (base) == 2) {
+		base = &type_ulong;
+	}
+	return vector_type (base, width);
+}
+
+type_t *
 float_type (const type_t *base)
 {
 	int         width = type_width (base);

@@ -179,74 +179,6 @@ use_tempop (operand_t *op, expr_t *expr)
 		bug (expr, "temp users went negative: %s", operand_string (op));
 }
 
-static def_t *
-cover_def_32 (def_t *def, int *adj)
-{
-	int         offset = def->offset;
-	def_t      *cover = def;
-
-	if (def->alias) {
-		offset += def->alias->offset;
-	}
-	*adj = offset & 3;
-	if (offset & 3) {
-		if (def->alias) {
-			cover = cover_alias_def (def->alias, def->type,
-									 def->offset - (offset & 3));
-		} else {
-			cover = cover_alias_def (def, def->type, -(offset & 3));
-		}
-	}
-	return cover;
-}
-
-static def_t *
-cover_def_64 (def_t *def, int *adj)
-{
-	int         offset = def->offset;
-	def_t      *cover = def;
-
-	if (def->alias) {
-		offset += def->alias->offset;
-	}
-	if (offset & 1) {
-		internal_error (0, "misaligned 64-bit swizzle source");
-	}
-	*adj = (offset & 6) >> 1;
-	if (offset & 6) {
-		if (def->alias) {
-			cover = cover_alias_def (def->alias, def->type,
-									 def->offset - (offset & 6));
-		} else {
-			cover = cover_alias_def (def, def->type, -(offset & 6));
-		}
-	}
-	return cover;
-}
-
-static def_t *
-cover_def (def_t *def, int *adj)
-{
-	if (type_size (base_type (def->type)) == 1) {
-		return cover_def_32 (def, adj);
-	} else {
-		return cover_def_64 (def, adj);
-	}
-}
-
-static void
-adjust_swizzle (def_t *def, int adj)
-{
-	pr_ushort_t swiz = def->offset;
-	for (int i = 0; i < 8; i += 2) {
-		pr_ushort_t mask = 3 << i;
-		pr_ushort_t ind = swiz & mask;
-		swiz &= ~mask;
-		swiz |= (ind + (adj << i)) & mask;
-	}
-	def->offset = swiz;
-}
-
 static void
 emit_statement (statement_t *statement)
 {
@@ -279,16 +211,10 @@ emit_statement (statement_t *statement)
 	use_tempop (op_c, statement->expr);
 
 	if (strcmp (opcode, "swizzle") == 0) {
-		op_c->type = float_type (op_c->type);
-		op_a->type = float_type (op_a->type);
+		op_c = alias_operand (uint_type (op_c->type), op_c, statement->expr);
+		op_a = alias_operand (uint_type (op_a->type), op_a, statement->expr);
 		if (!op_c->type || !op_a->type) {
 			internal_error (statement->expr, "invalid types in swizzle");
-		}
-		if (op_a->width < 4) {
-			int         adj;
-			def_a = cover_def (def_a, &adj);
-			adjust_swizzle (def_b, adj);
-			op_a->width = 4;
 		}
 	}
 

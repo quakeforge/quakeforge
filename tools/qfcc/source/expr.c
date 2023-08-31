@@ -648,7 +648,6 @@ new_swizzle_expr (expr_t *src, const char *swizzle)
 		return src;
 	}
 	int         src_width = type_width (src_type);
-	// swizzle always generates a *vec4
 	ex_swizzle_t swiz = {};
 
 #define m(x) (1 << ((x) - 'a'))
@@ -699,8 +698,8 @@ new_swizzle_expr (expr_t *src, const char *swizzle)
 		}
 	}
 	swiz.zero |= (0xf << comp_count) & 0xf;
-	swiz.src = new_alias_expr (vector_type (base_type (src_type), src_width), src);
-	swiz.type = vector_type (base_type (src_type), 4);
+	swiz.src = src;
+	swiz.type = src_type;
 
 	expr_t     *expr = new_expr ();
 	expr->type = ex_swizzle;

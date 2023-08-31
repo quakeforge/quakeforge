@@ -538,6 +538,7 @@ convert_op (int op)
 		case SHR:	return "shr";
 		case '.':	return "load";
 		case CROSS:	return "cross";
+		case WEDGE:	return "wedge";
 		case DOT:	return "dot";
 		case HADAMARD:	return "mul";
 		case SCALE:	return "scale";

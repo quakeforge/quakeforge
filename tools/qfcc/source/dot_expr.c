@@ -92,9 +92,12 @@ get_op_string (int op)
 		case SHR:	return ">>";
 		case '.':	return ".";
 		case 'C':	return "<cast>";
+		case HADAMARD:	return "@hadamard";
 		case CROSS:	return "@cross";
 		case DOT:	return "@dot";
-		case HADAMARD:	return "@hadamard";
+		case WEDGE:	return "@wedge";
+		case REGRESSIVE:return "@regressive";
+		case GEOMETRIC:return "@geometric";
 		case SCALE:	return "@scale";
 		default:
 			return "unknown";
