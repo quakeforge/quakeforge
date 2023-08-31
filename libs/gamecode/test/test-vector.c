@@ -28,7 +28,7 @@ static pr_vec4_t float_globals_init[] = {
 
 static pr_vec4_t float_globals_expect[] = {
 	{3, 4, 5, 12},
-	{63, 0, -33, 56},
+	{63, 16, -33, 56},
 	{1, 2, 3, 8},
 	{4, 5, 6, 8},
 
@@ -54,6 +54,7 @@ static pr_vec4_t float_globals_expect[] = {
 
 static dstatement_t float_vector_statements[] = {
 	{ OP(0, 0, 0, OP_CDOT_F), 0, 2, 4 },
+	{ OP(0, 0, 0, OP_WEDGE_F_2), 0, 2, 5 },
 	{ OP(0, 0, 0, OP_CMUL_F), 0, 2, 6 },
 	{ OP(0, 0, 0, OP_VDOT_F), 8, 12, 16 },
 	{ OP(0, 0, 0, OP_CROSS_F), 8, 12, 20 },
@@ -102,7 +103,7 @@ static pr_dvec4_t double_globals_init[] = {
 
 static pr_dvec4_t double_globals_expect[] = {
 	{3, 4, 5, 12},
-	{63, 0, -33, 56},
+	{63, 16, -33, 56},
 	{1, 2, 3, 8},
 	{4, 5, 6, 8},
 
@@ -128,6 +129,7 @@ static pr_dvec4_t double_globals_expect[] = {
 
 static dstatement_t double_vector_statements[] = {
 	{ OP(0, 0, 0, OP_CDOT_D), 0, 4, 8 },
+	{ OP(0, 0, 0, OP_WEDGE_D_2), 0, 4, 10 },
 	{ OP(0, 0, 0, OP_CMUL_D), 0, 4, 12 },
 	{ OP(0, 0, 0, OP_VDOT_D), 16, 24, 32 },
 	{ OP(0, 0, 0, OP_CROSS_D), 16, 24, 40 },

@@ -3,6 +3,7 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
+0 0111 01t0 wedge2
 0 1ccc ttss compare
 0 0000 00nn
 0 0000 0000 noop
@@ -520,6 +521,18 @@ swizzle_formats = {
         "swizzle_types": float_t,
     },
 }
+wedge2_formats = {
+    "opcode": "OP_WEDGE_{wedge_type[t]}_2",
+    "mnemonic": "wedge.{wedge_type[t]}",
+    "opname": "wedge",
+    "format": "%Ga, %Gb, %gc",
+    "widths": "2, 2, 1",
+    "types": "{wedge_types[t]}",
+    "args": {
+        "wedge_type": ['F', 'D'],
+        "wedge_types": float_t,
+    },
+}
 return_formats = {
     "opcode": "OP_RETURN",
     "mnemonic": "return",
@@ -619,6 +632,7 @@ group_map = {
     "udivops":  udivops_formats,
     "vecops":   vecops_formats,
     "vecops2":  vecops2_formats,
+    "wedge2":   wedge2_formats,
     "with":     with_formats,
 }
 

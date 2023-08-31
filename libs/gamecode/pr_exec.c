@@ -2291,6 +2291,21 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 0110
 			// spare
 			// 0 0111
+			case OP_WEDGE_F_2:
+				{
+					auto a = OPA(vec2);
+					auto b = OPB(vec2);
+					OPC(float) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
+			// spare
+			case OP_WEDGE_D_2:
+				{
+					auto a = OPA(dvec2);
+					auto b = OPB(dvec2);
+					OPC(double) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
 			// spare
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \
