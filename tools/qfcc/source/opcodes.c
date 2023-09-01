@@ -510,9 +510,8 @@ opcode_init (void)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		v6p_opcode_init ();
-	} else {
-		rua_opcode_init ();
 	}
+	rua_opcode_init ();
 }
 
 void
