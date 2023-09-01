@@ -47,10 +47,14 @@ typedef struct {
 	bool        ifstring;			// expand if (str) to if (str != "")
 	bool        const_initializers;	// initialied globals are constant
 	bool        promote_float;		// promote float through ...
+
+	bool        help;
 } code_options_t;
 
 typedef struct {
 	int         vector_mult;		// operation for vector * vector
+
+	bool        help;
 } math_options_t;
 
 typedef struct {
@@ -69,16 +73,22 @@ typedef struct {
 	bool        unimplemented;		// Warn on unimplemented class methods
 	bool        redeclared;			// Warn on redeclared local variables
 	bool        enum_switch;		// Warn on unhandled enum values in switch
+
+	bool        help;
 } warn_options_t;
 
 typedef struct {
 	bool        promote;			// Promote notices to warnings
 	bool        silent;				// don't even bother (overrides promote)
+
+	bool        help;
 } notice_options_t;
 
 typedef struct {
 	bool        promote;			// Promote bugs to internal errors
 	bool        silent;				// don't even bother (overrides promote)
+
+	bool        help;
 } bug_options_t;
 
 typedef struct {
@@ -93,6 +103,8 @@ typedef struct {
 	bool        live;
 	bool        flow;
 	bool        post;
+
+	bool        help;
 } blockdot_options_t;
 
 typedef struct {
@@ -125,7 +137,8 @@ typedef struct {
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
-int parse_warning_option (const char *opt);
+bool parse_warning_option (const char *opt);
+bool parse_code_option (const char *opt);
 extern const char *progs_src;
 extern const char **source_files;
 extern const char *this_program;

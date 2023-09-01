@@ -55,6 +55,28 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
+options_t   options = {
+	.code = {
+		.fast_float = true,
+		.promote_float = true,
+	},
+	.warnings = {
+		.uninited_variable = true,
+		.unused = true,
+		.executable = true,
+		.traditional = true,
+		.precedence = true,
+		.initializer = true,
+		.unimplemented = true,
+		.redeclared = true,
+		.enum_switch = true,
+	},
+	.single_cpp = true,
+	.save_temps = false,
+	.verbosity = 0,
+};
+static options_t   options_user_set;
+
 const char *this_program;
 const char **source_files;
 static int num_files;
@@ -194,7 +216,7 @@ usage (int status)
 	exit (status);
 }
 
-static void
+static bool
 code_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -225,9 +247,10 @@ code_usage (void)
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 warning_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -260,9 +283,10 @@ warning_usage (void)
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 notice_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -275,9 +299,10 @@ notice_usage (void)
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 bug_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -290,6 +315,7 @@ bug_usage (void)
 "This is a developer feature and thus not in the manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
 static void
@@ -303,41 +329,127 @@ add_file (const char *file)
 	source_files[num_files] = 0;
 }
 
-int
+#define OPTION(type, opt, str, field, flag) \
+	({ \
+		bool match = false; \
+		if (strcasecmp (opt, str) == 0) { \
+			options.type.field = flag; \
+			options_user_set.type.field = true; \
+			match = true; \
+		} \
+		match; \
+	})
+
+static bool
+parse_block_dot_option (const char *opt)
+{
+	bool        flag = true;
+
+	if (!strncasecmp (opt, "no-", 3)) {
+		flag = false;
+		opt += 3;
+	}
+	if (OPTION (block_dot, opt, "initial", initial, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "thread", thread, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "dead", dead, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "final", final, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "dags", dags, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "expr", expr, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "flow", flow, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "reaching", reaching, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "statements", statements, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "live", live, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "post", post, flag)) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+parse_bug_option (const char *opt)
+{
+	if (OPTION (bug, opt, "help", help, bug_usage ())) {
+		return true;
+	}
+	if (OPTION (bug, opt, "none", silent, true)) {
+		return true;
+	}
+	if (OPTION (bug, opt, "warn", promote, true)) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+parse_notice_option (const char *opt)
+{
+	if (OPTION (notices, opt, "help", help, notice_usage ())) {
+		return true;
+	}
+	if (OPTION (notices, opt, "none", silent, true)) {
+		return true;
+	}
+	if (OPTION (notices, opt, "warn", promote, true)) {
+		return true;
+	}
+	return false;
+}
+
+bool
 parse_warning_option (const char *opt)
 {
 	if (!(strcasecmp (opt, "all"))) {
-		options.warnings.cow = true;
-		options.warnings.undefined_function = true;
-		options.warnings.uninited_variable = true;
-		options.warnings.vararg_integer = true;
-		options.warnings.integer_divide = true;
-		options.warnings.interface_check = true;
-		options.warnings.unused = true;
-		options.warnings.executable = true;
-		options.warnings.traditional = true;
-		options.warnings.precedence = true;
-		options.warnings.initializer = true;
-		options.warnings.unimplemented = true;
-		options.warnings.redeclared = true;
-		options.warnings.enum_switch = true;
-		return 1;
+		OPTION(warnings, "", "", cow, true);
+		OPTION(warnings, "", "", undefined_function, true);
+		OPTION(warnings, "", "", uninited_variable, true);
+		OPTION(warnings, "", "", vararg_integer, true);
+		OPTION(warnings, "", "", integer_divide, true);
+		OPTION(warnings, "", "", interface_check, true);
+		OPTION(warnings, "", "", unused, true);
+		OPTION(warnings, "", "", executable, true);
+		OPTION(warnings, "", "", traditional, true);
+		OPTION(warnings, "", "", precedence, true);
+		OPTION(warnings, "", "", initializer, true);
+		OPTION(warnings, "", "", unimplemented, true);
+		OPTION(warnings, "", "", redeclared, true);
+		OPTION(warnings, "", "", enum_switch, true);
+		return true;
 	} else if (!(strcasecmp (opt, "none"))) {
-		options.warnings.cow = false;
-		options.warnings.undefined_function = false;
-		options.warnings.uninited_variable = false;
-		options.warnings.vararg_integer = false;
-		options.warnings.integer_divide = false;
-		options.warnings.interface_check = false;
-		options.warnings.unused = false;
-		options.warnings.executable = false;
-		options.warnings.traditional = false;
-		options.warnings.precedence = false;
-		options.warnings.initializer = false;
-		options.warnings.unimplemented = false;
-		options.warnings.redeclared = false;
-		options.warnings.enum_switch = false;
-		return 1;
+		OPTION(warnings, "", "", cow, false);
+		OPTION(warnings, "", "", undefined_function, false);
+		OPTION(warnings, "", "", uninited_variable, false);
+		OPTION(warnings, "", "", vararg_integer, false);
+		OPTION(warnings, "", "", integer_divide, false);
+		OPTION(warnings, "", "", interface_check, false);
+		OPTION(warnings, "", "", unused, false);
+		OPTION(warnings, "", "", executable, false);
+		OPTION(warnings, "", "", traditional, false);
+		OPTION(warnings, "", "", precedence, false);
+		OPTION(warnings, "", "", initializer, false);
+		OPTION(warnings, "", "", unimplemented, false);
+		OPTION(warnings, "", "", redeclared, false);
+		OPTION(warnings, "", "", enum_switch, false);
+		return true;
 	} else {
 		bool        flag = true;
 
@@ -345,57 +457,145 @@ parse_warning_option (const char *opt)
 			flag = false;
 			opt += 3;
 		}
-		if (!(strcasecmp (opt, "cow"))) {
-			options.warnings.cow = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "error")) {
-			options.warnings.promote = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "executable")) {
-			options.warnings.executable = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "help")) {
-			warning_usage ();
-			return 1;
-		} else if (!strcasecmp (opt, "initializer")) {
-			options.warnings.initializer = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "integer-divide")) {
-			options.warnings.integer_divide = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "interface-check")) {
-			options.warnings.interface_check = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "precedence")) {
-			options.warnings.precedence = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "redeclared")) {
-			options.warnings.redeclared = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "switch")) {
-			options.warnings.enum_switch = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "traditional")) {
-			options.warnings.traditional = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "undef-function")) {
-			options.warnings.undefined_function = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "unimplemented")) {
-			options.warnings.unimplemented = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "unused")) {
-			options.warnings.unused = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "uninited-var")) {
-			options.warnings.uninited_variable = flag;
-			return 1;
-		} else if (!strcasecmp (opt, "vararg-integer")) {
-			options.warnings.vararg_integer = flag;
-			return 1;
+		if (OPTION(warnings, opt, "cow", cow, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "error", promote, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "executable", executable, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "help", help, warning_usage())) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "initializer", initializer, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "integer-divide", integer_divide, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "interface-check", interface_check, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "precedence", precedence, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "redeclared", redeclared, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "switch", enum_switch, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "traditional", traditional, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "undef-function", undefined_function, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "unimplemented", unimplemented, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "unused", unused, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "uninited-var", uninited_variable, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "vararg-integer", vararg_integer, flag)) {
+			return true;
 		}
 	}
-	return 0;
+	return false;
+}
+
+bool
+parse_code_option (const char *opt)
+{
+	bool        flag = true;
+
+	if (!(strncasecmp (opt, "target=", 7))) {
+		const char *tgt = opt + 7;
+		if (!strcasecmp (tgt, "v6")) {
+			options.code.progsversion = PROG_ID_VERSION;
+		} else if (!strcasecmp (tgt, "v6p")) {
+			options.code.progsversion = PROG_V6P_VERSION;
+		} else if (!strcasecmp (tgt, "ruamoko")) {
+			options.code.progsversion = PROG_VERSION;
+		} else {
+			fprintf (stderr, "unknown target: %s\n", tgt);
+			exit (1);
+		}
+		return true;
+	}
+	if (!strncasecmp (opt, "no-", 3)) {
+		flag = false;
+		opt += 3;
+	}
+	if (!strcasecmp (opt, "cpp")) {
+		cpp_name = flag ? CPP_NAME : 0;
+		return true;
+	}
+	if (!strcasecmp (opt, "single-cpp")) {
+		options.single_cpp = flag;
+		return true;
+	}
+	if (OPTION(code, opt, "cow", cow, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "crc", crc, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "debug", debug, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "fast-float", fast_float, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "promote-float", promote_float, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "help", help, code_usage ())) {
+		return true;
+	}
+	if (OPTION(code, opt, "local-merging", local_merging, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "optimize", optimize, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "short-circuit", short_circuit, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "ifstring", ifstring, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "vector-calls", vector_calls, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "vector-components", vector_components, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "const-initializers", const_initializers, flag)) {
+		return true;
+	}
+	return false;
+}
+
+static int
+parse_args_string (const char *args, bool (*parse) (const char *))
+{
+	void free_opts (char **o) { free (*o); }
+	__attribute__((cleanup(free_opts))) char *opts = strdup (optarg);
+
+	char       *temp = strtok (opts, ",");
+	while (temp) {
+		if (!parse (temp)) {
+			return false;
+		}
+		temp = strtok (NULL, ",");
+	}
+	return true;
 }
 
 int
@@ -409,26 +609,6 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_undef ("-fno-extended-identifiers");
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
-
-	options.code.short_circuit = -1;
-	options.code.local_merging = -1;
-	options.code.vector_components = -1;
-	options.code.crc = -1;
-	options.code.fast_float = true;
-	options.code.promote_float = true;
-	options.warnings.uninited_variable = true;
-	options.warnings.unused = true;
-	options.warnings.executable = true;
-	options.warnings.traditional = true;
-	options.warnings.precedence = true;
-	options.warnings.initializer = true;
-	options.warnings.unimplemented = true;
-	options.warnings.redeclared = true;
-	options.warnings.enum_switch = true;
-
-	options.single_cpp = true;
-	options.save_temps = false;
-	options.verbosity = 0;
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -517,42 +697,7 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_BLOCK_DOT:
 				if (optarg) {
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						bool        flag = true;
-
-						if (!strncasecmp (temp, "no-", 3)) {
-							flag = false;
-							temp += 3;
-						}
-						if (!strcasecmp (temp, "initial")) {
-							options.block_dot.initial = flag;
-						} else if (!(strcasecmp (temp, "thread"))) {
-							options.block_dot.thread = flag;
-						} else if (!(strcasecmp (temp, "dead"))) {
-							options.block_dot.dead = flag;
-						} else if (!(strcasecmp (temp, "final"))) {
-							options.block_dot.final = flag;
-						} else if (!(strcasecmp (temp, "dags"))) {
-							options.block_dot.dags = flag;
-						} else if (!(strcasecmp (temp, "expr"))) {
-							options.block_dot.expr = flag;
-						} else if (!(strcasecmp (temp, "flow"))) {
-							options.block_dot.flow = flag;
-						} else if (!(strcasecmp (temp, "reaching"))) {
-							options.block_dot.reaching = flag;
-						} else if (!(strcasecmp (temp, "statements"))) {
-							options.block_dot.statements = flag;
-						} else if (!(strcasecmp (temp, "live"))) {
-							options.block_dot.live = flag;
-						} else if (!(strcasecmp (temp, "post"))) {
-							options.block_dot.post = flag;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
+					parse_args_string (optarg, parse_block_dot_option);
 			    } else {
 					options.block_dot.initial = true;
 					options.block_dot.thread = true;
@@ -576,109 +721,17 @@ DecodeArgs (int argc, char **argv)
 			case 'z':
 				options.gzip = true;
 				break;
-			case 'C':{					// code options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						bool        flag = true;
-
-						if (!(strncasecmp (temp, "target=", 7))) {
-							const char *tgt = temp + 7;
-							if (!strcasecmp (tgt, "v6")) {
-								options.code.progsversion = PROG_ID_VERSION;
-							} else if (!strcasecmp (tgt, "v6p")) {
-								options.code.progsversion = PROG_V6P_VERSION;
-							} else if (!strcasecmp (tgt, "ruamoko")) {
-								options.code.progsversion = PROG_VERSION;
-							} else {
-								fprintf (stderr, "unknown target: %s\n", tgt);
-								exit (1);
-							}
-						}
-						if (!strncasecmp (temp, "no-", 3)) {
-							flag = false;
-							temp += 3;
-						}
-						if (!strcasecmp (temp, "cow")) {
-							options.code.cow = flag;
-						} else if (!(strcasecmp (temp, "cpp"))) {
-							cpp_name = flag ? CPP_NAME : 0;
-						} else if (!(strcasecmp (temp, "crc"))) {
-							options.code.crc = flag;
-						} else if (!(strcasecmp (temp, "debug"))) {
-							options.code.debug = flag;
-						} else if (!(strcasecmp (temp, "fast-float"))) {
-							options.code.fast_float = flag;
-						} else if (!(strcasecmp (temp, "promote-float"))) {
-							options.code.promote_float = flag;
-						} else if (!strcasecmp (temp, "help")) {
-							code_usage ();
-						} else if (!(strcasecmp (temp, "local-merging"))) {
-							options.code.local_merging = flag;
-						} else if (!(strcasecmp (temp, "optimize"))) {
-							options.code.optimize = flag;
-						} else if (!(strcasecmp (temp, "short-circuit"))) {
-							options.code.short_circuit = flag;
-						} else if (!(strcasecmp (temp, "ifstring"))) {
-							options.code.ifstring = flag;
-						} else if (!(strcasecmp (temp, "single-cpp"))) {
-							options.single_cpp = flag;
-						} else if (!(strcasecmp (temp, "vector-calls"))) {
-							options.code.vector_calls = flag;
-						} else if (!(strcasecmp (temp, "vector-components"))) {
-							options.code.vector_components = flag;
-						} else if (!(strcasecmp (temp, "const-initializers"))) {
-							options.code.const_initializers = flag;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'C':
+				parse_args_string (optarg, parse_code_option);
 				break;
-			case 'W':{					// warning options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-					while (temp) {
-						parse_warning_option (optarg);
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'W':
+				parse_args_string (optarg, parse_warning_option);
 				break;
-			case 'N':{					// notice options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						if (!strcasecmp (temp, "help")) {
-							notice_usage ();
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.notices.silent = true;
-						} else if (!(strcasecmp (temp, "warn"))) {
-							options.notices.promote = true;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'N':
+				parse_args_string (optarg, parse_notice_option);
 				break;
-			case OPT_BUG:{
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						if (!strcasecmp (temp, "help")) {
-							bug_usage ();
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.bug.silent = true;
-						} else if (!(strcasecmp (temp, "die"))) {
-							options.bug.promote = true;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case OPT_BUG:
+				parse_args_string (optarg, parse_bug_option);
 				break;
 			case OPT_CPP:				// --cpp=
 				cpp_name = save_string (optarg);
@@ -738,18 +791,24 @@ DecodeArgs (int argc, char **argv)
 		if (!options.traditional)
 			options.traditional = 2;
 		options.advanced = false;
-		if (!options.code.progsversion)
+		if (!options.code.progsversion) {
 			options.code.progsversion = PROG_ID_VERSION;
-		if (options.code.ifstring == (bool) -1)
+		}
+		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (bool) -1)
+		}
+		if (!options_user_set.code.short_circuit) {
 			options.code.short_circuit = false;
-		if (options.code.local_merging == (bool) -1)
+		}
+		if (!options_user_set.code.local_merging) {
 			options.code.local_merging = false;
-		if (options.code.vector_components == (bool) -1)
+		}
+		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = true;
-		if (options.math.vector_mult == 0)
+		}
+		if (options.math.vector_mult == 0) {
 			options.math.vector_mult = DOT;
+		}
 	}
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_VERSION;
@@ -758,27 +817,34 @@ DecodeArgs (int argc, char **argv)
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
 		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
 		add_cpp_def (save_string (ruamoko));
-		if (options.code.ifstring == (bool) -1)
+		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (bool) -1)
+		}
+		if (!options_user_set.code.short_circuit) {
 			options.code.short_circuit = true;
-		if (options.code.local_merging == (bool) -1)
+		}
+		if (!options_user_set.code.local_merging) {
 			options.code.local_merging = true;
-		if (options.code.vector_components == (bool) -1)
+		}
+		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = false;
-		if (options.math.vector_mult == 0)
+		}
+		if (!options_user_set.math.vector_mult == 0) {
 			options.math.vector_mult = options.advanced == 1 ? DOT : HADAMARD;
+		}
 	} else {
-		options.code.promote_float = 0;
+		options.code.promote_float = false;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
-		options.code.promote_float = 0;
+		options.code.promote_float = false;
 		add_cpp_def ("-D__VERSION6__=1");
-		if (options.code.crc == (bool) -1)
+		if (!options_user_set.code.crc) {
 			options.code.crc = true;
+		}
 	} else {
-		if (options.code.crc == (bool) -1)
+		if (!options_user_set.code.crc) {
 			options.code.crc = false;
+		}
 	}
 
 	if (options.traditional && options.advanced) {
