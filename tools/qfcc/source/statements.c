@@ -77,6 +77,7 @@ const char * const op_type_names[] = {
 
 const char * const st_type_names[] = {
 	"st_none",
+	"st_alias",
 	"st_expr",
 	"st_assign",
 	"st_ptrassign",
@@ -471,6 +472,55 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 			return ret;
 	}
 	return 0;
+}
+
+operand_t *
+offset_alias_operand (type_t *type, int offset, operand_t *aop, expr_t *expr)
+{
+	operand_t *top;
+	def_t     *def;
+	if (type_compatible (aop->type, type)) {
+		if (offset) {
+			//For types to be compatible, they must be the same size, thus this
+			//seemingly mismatched error
+			internal_error (expr, "offset alias of same size type");
+		}
+		return aop;
+	}
+	if (aop->op_type == op_temp) {
+		while (aop->tempop.alias) {
+			aop = aop->tempop.alias;
+			if (aop->op_type != op_temp)
+				internal_error (expr, "temp alias of non-temp var");
+			if (aop->tempop.alias)
+				bug (expr, "aliased temp alias");
+		}
+		for (top = aop->tempop.alias_ops; top; top = top->next) {
+			if (top->type == type && top->tempop.offset == offset) {
+				break;
+			}
+		}
+		if (!top) {
+			top = temp_operand (type, expr);
+			top->tempop.alias = aop;
+			top->tempop.offset = offset;
+			top->next = aop->tempop.alias_ops;
+			aop->tempop.alias_ops = top;
+		}
+		return top;
+	} else if (aop->op_type == op_def) {
+		def = aop->def;
+		while (def->alias)
+			def = def->alias;
+		return def_operand (alias_def (def, type, offset), 0, expr);
+	} else if (aop->op_type == op_value) {
+		top = value_operand (aop->value, expr);
+		top->type = type;
+		return top;
+	} else {
+		internal_error (expr, "invalid alias target: %s: %s",
+						optype_str (aop->op_type), operand_string (aop));
+	}
 }
 
 operand_t *
@@ -1584,9 +1634,7 @@ static sblock_t *
 expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
-	operand_t *top;
 	type_t    *type;
-	def_t     *def;
 	int        offset = 0;
 
 	if (e->e.alias.offset) {
@@ -1594,48 +1642,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	}
 	type = e->e.alias.type;
 	sblock = statement_subexpr (sblock, e->e.alias.expr, &aop);
-	if (type_compatible (aop->type, type)) {
-		if (offset) {
-			//For types to be compatible, they must be the same size, thus this
-			//seemingly mismatched error
-			internal_error (e, "offset alias of same size type");
-		}
-		*op = aop;
-		return sblock;
-	}
-	if (aop->op_type == op_temp) {
-		while (aop->tempop.alias) {
-			aop = aop->tempop.alias;
-			if (aop->op_type != op_temp)
-				internal_error (e, "temp alias of non-temp var");
-			if (aop->tempop.alias)
-				bug (e, "aliased temp alias");
-		}
-		for (top = aop->tempop.alias_ops; top; top = top->next) {
-			if (top->type == type && top->tempop.offset == offset) {
-				break;
-			}
-		}
-		if (!top) {
-			top = temp_operand (type, e);
-			top->tempop.alias = aop;
-			top->tempop.offset = offset;
-			top->next = aop->tempop.alias_ops;
-			aop->tempop.alias_ops = top;
-		}
-		*op = top;
-	} else if (aop->op_type == op_def) {
-		def = aop->def;
-		while (def->alias)
-			def = def->alias;
-		*op = def_operand (alias_def (def, type, offset), 0, e);
-	} else if (aop->op_type == op_value) {
-		*op = value_operand (aop->value, e);
-		(*op)->type = type;
-	} else {
-		internal_error (e, "invalid alias target: %s: %s",
-						optype_str (aop->op_type), operand_string (aop));
-	}
+	*op = offset_alias_operand (type, offset, aop, e);
 	return sblock;
 }
 

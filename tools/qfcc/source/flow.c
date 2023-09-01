@@ -1525,6 +1525,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 
 	switch (s->type) {
 		case st_none:
+		case st_alias:
 			internal_error (s->expr, "not a statement");
 		case st_address:
 			if (s->opb) {

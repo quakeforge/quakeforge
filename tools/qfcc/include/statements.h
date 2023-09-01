@@ -92,6 +92,7 @@ typedef struct operand_s {
 */
 typedef enum {
 	st_none,		///< not a (valid) statement. Used in dags.
+	st_alias,		///< not a (valid) statement. Used in dags.
 	st_expr,		///< c = a op b; or c = op a;
 	st_assign,		///< b = a
 	st_ptrassign,	///< *b = a; or *(b + c) = a;
@@ -153,6 +154,8 @@ int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
 operand_t *temp_operand (struct type_s *type, struct expr_s *expr);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
+operand_t *offset_alias_operand (struct type_s *type, int offset,
+								 operand_t *aop, struct expr_s *expr);
 operand_t *alias_operand (struct type_s *type, operand_t *op,
 						  struct expr_s *expr);
 operand_t *label_operand (struct expr_s *label);

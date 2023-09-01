@@ -77,6 +77,7 @@ typedef struct dagnode_s {
 	struct dagnode_s *children[3];
 	struct type_s *types[3];	///< desired type of each operand (to alias)
 	struct set_s *edges;		///< includes nodes pointed to by \a children
+	int         offset;			///< for alias nodes
 	//@}
 	struct set_s *identifiers;	///< set of identifiers attached to this node
 	struct set_s *reachable;	///< set of nodes reachable via edges (not
