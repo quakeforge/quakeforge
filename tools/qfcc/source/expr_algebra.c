@@ -458,9 +458,9 @@ pga3_yz_zx_xy_dot_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b,
 	auto cv = scale_expr (vtype, a, sb);
 	auto cs = dot_expr (stype, a, vb);
 
-	c[0] = sum_expr (dot_type,
-					 new_extend_expr (cs, dot_type, 0, true),
-					 new_extend_expr (neg_expr (cv), dot_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), dot_type, 0, false);
+	cs = new_extend_expr (cs, dot_type, 0, true);
+	c[0] = sum_expr (dot_type, cv, cs);
 }
 
 static void
@@ -532,9 +532,9 @@ pga3_wzy_wxz_wyx_xyz_dot_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b,
 	auto cv = scale_expr (vtype, b, sa);
 	auto cs = dot_expr (stype, b, va);
 
-	c[0] = sum_expr (dot_type,
-					 new_extend_expr (cs, dot_type, 0, true),
-					 new_extend_expr (neg_expr (cv), dot_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), dot_type, 0, false);
+	cs = new_extend_expr (cs, dot_type, 0, true);
+	c[0] = sum_expr (dot_type, cv, cs);
 }
 
 static void
@@ -622,10 +622,9 @@ pga2_yw_wx_xy_dot_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto vb = offset_cast (wtype, b, 0);
 	auto cv = new_swizzle_expr (vb, "y-x");
 	auto cs = wedge_expr (stype, vb, va);
+	cv = new_extend_expr (scale_expr (wtype, cv, sa), vtype, 0, false);
 	cs = new_extend_expr (cs, dot_type, 0, true);
-	c[2] = sum_expr (dot_type, cs,
-					 new_extend_expr (scale_expr (wtype, cv, sa), vtype,
-									  0, false));
+	c[2] = sum_expr (dot_type, cv, cs);
 }
 
 static void
@@ -647,10 +646,11 @@ pga2_x_y_w_dot_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = offset_cast (wtype, a, 0);
 	auto vb = offset_cast (wtype, b, 0);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = new_swizzle_expr (a, "-yx");
+	auto cv = scale_expr (wtype, new_swizzle_expr (va, "-yx"), sb);
 	auto cs = wedge_expr (stype, vb, va);
+	cv = new_extend_expr (cv, dot_type, 0, false);
 	cs = new_extend_expr (cs, dot_type, 0, true);
-	c[2] = sum_expr (dot_type, cs, scale_expr (dot_type, cv, sb));
+	c[2] = sum_expr (dot_type, cs, cv);
 }
 
 static void
@@ -802,9 +802,9 @@ pga3_x_y_z_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cv = scale_expr (vtype, b, sa);
 	auto cs = dot_expr (stype, va, b);
 
-	c[5] = sum_expr (wedge_type,
-					 new_extend_expr (cs, wedge_type, 0, true),
-					 new_extend_expr (neg_expr (cv), wedge_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), wedge_type, 0, false);
+	cs = new_extend_expr (cs, wedge_type, 0, true);
+	c[5] = sum_expr (wedge_type, cv, cs);
 }
 
 static void
@@ -836,9 +836,9 @@ pga3_yz_zx_xy_wedge_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cv = scale_expr (vtype, a, sb);
 	auto cs = dot_expr (stype, vb, a);
 
-	c[5] = sum_expr (wedge_type,
-					 new_extend_expr (cs, wedge_type, 0, true),
-					 new_extend_expr (neg_expr (cv), wedge_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), wedge_type, 0, false);
+	cs = new_extend_expr (cs, wedge_type, 0, true);
+	c[5] = sum_expr (wedge_type, cv, cs);
 }
 
 // bivector-bivector wedge is commutative
@@ -1021,9 +1021,9 @@ pga3_x_y_z_w_geom_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cs = dot_expr (stype, va, b);
 	c[0] = new_extend_expr (cross_expr (vtype, b, va),
 							algebra_mvec_type (alg, 0x01), 0, false);
-	c[5] = sum_expr (geom_type,
-					 new_extend_expr (cs, geom_type, 0, true),
-					 new_extend_expr (neg_expr (cv), geom_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), geom_type, 0, false);
+	cs = new_extend_expr (cs, geom_type, 0, true);
+	c[5] = sum_expr (geom_type, cv, cs);
 }
 
 static void
@@ -1077,9 +1077,9 @@ pga3_yz_zx_xy_geom_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cs = dot_expr (stype, vb, a);
 	c[0] = new_extend_expr (cross_expr (vtype, vb, a),
 							algebra_mvec_type (alg, 0x01), 0, false);
-	c[5] = sum_expr (geom_type,
-					 new_extend_expr (cs, geom_type, 0, true),
-					 new_extend_expr (neg_expr (cv), geom_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), geom_type, 0, false);
+	cs = new_extend_expr (cs, geom_type, 0, true);
+	c[5] = sum_expr (geom_type, cv, cs);
 }
 
 static void
@@ -1115,9 +1115,9 @@ pga3_yz_zx_xy_geom_wzy_wxz_wyx_xyz (expr_t **c, expr_t *a, expr_t *b,
 	auto sb = offset_cast (stype, b, 3);
 	auto cv = scale_expr (vtype, a, sb);
 	auto cs = dot_expr (stype, vb, a);
-	c[0] = sum_expr (geom_type,
-					 new_extend_expr (cs, geom_type, 0, true),
-					 new_extend_expr (neg_expr (cv), geom_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), geom_type, 0, false);
+	cs = new_extend_expr (cs, geom_type, 0, true);
+	c[0] = sum_expr (geom_type, cv, cs);
 	c[5] = new_extend_expr (cross_expr (vtype, vb, a),
 							algebra_mvec_type (alg, 0x20), 0, false);
 }
@@ -1130,8 +1130,7 @@ pga3_wx_wy_wz_geom_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto geom_type = algebra_mvec_type (alg, 0x20);
 	auto vb = offset_cast (vtype, b, 0);
 	auto cs = dot_expr (stype, vb, a);
-	c[5] = new_extend_expr (cross_expr (vtype, vb, a),
-							geom_type, 0, false);
+	c[5] = new_extend_expr (cross_expr (vtype, vb, a), geom_type, 0, false);
 	c[0] = new_extend_expr (cs, algebra_mvec_type (alg, 0x01), 0, true);
 }
 
@@ -1212,9 +1211,9 @@ pga3_wzy_wxz_wyx_xyz_geom_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b,
 	auto sa = offset_cast (stype, a, 3);
 	auto cv = scale_expr (vtype, b, sa);
 	auto cs = dot_expr (stype, va, b);
-	c[0] = sum_expr (geom_type,
-					 new_extend_expr (cs, geom_type, 0, true),
-					 new_extend_expr (neg_expr (cv), geom_type, 0, false));
+	cv = new_extend_expr (neg_expr (cv), geom_type, 0, false);
+	cs = new_extend_expr (cs, geom_type, 0, true);
+	c[0] = sum_expr (geom_type, cv, cs);
 	c[5] = new_extend_expr (cross_expr (vtype, b, va),
 							algebra_mvec_type (alg, 0x20), 0, false);
 }
@@ -1335,9 +1334,8 @@ pga2_yw_wx_xy_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cv = new_swizzle_expr (vb, "y-x");
 	auto cs = wedge_expr (stype, vb, va);
 	cs = new_extend_expr (cs, geom_type, 0, true);
-	c[2] = sum_expr (geom_type, cs,
-					 new_extend_expr (scale_expr (wtype, cv, sa), vtype,
-									  0, false));
+	cv = new_extend_expr (scale_expr (wtype, cv, sa), vtype, 0, false);
+	c[2] = sum_expr (geom_type, cv, cs);
 	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
 }
 
@@ -1364,9 +1362,8 @@ pga2_x_y_w_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto cv = new_swizzle_expr (va, "-yx");
 	auto cs = wedge_expr (stype, vb, va);
 	cs = new_extend_expr (cs, geom_type, 0, true);
-	c[2] = sum_expr (geom_type, cs,
-					 new_extend_expr (scale_expr (wtype, cv, sb), vtype,
-									  0, false));
+	cv = new_extend_expr (scale_expr (wtype, cv, sb), vtype, 0, false);
+	c[2] = sum_expr (geom_type, cv, cs);
 	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
 }
 
