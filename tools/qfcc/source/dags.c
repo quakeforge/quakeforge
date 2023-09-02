@@ -325,6 +325,59 @@ dag_node (operand_t *op)
 	return node;
 }
 
+static int
+dagnode_deref_match (const dagnode_t *n, const dagnode_t *search)
+{
+	int         i;
+	auto children = search->children;
+
+	for (i = 0; i < 2; i++) {
+		if (n->children[i] != children[i + 1])
+			return 0;
+	}
+	return 1;
+}
+
+static int
+dagnode_match (const dagnode_t *n, const dagnode_t *search)
+{
+	int         i;
+	auto op = search->label;
+
+	if (n->killed)
+		return 0;
+	if (!strcmp (op->opcode, "load")
+		&& n->label->opcode && !strcmp (n->label->opcode, "store"))
+		return dagnode_deref_match (n, search);
+	if (n->label->opcode != op->opcode)
+		return 0;
+	for (i = 0; i < 3; i++) {
+		if (n->children[i] != search->children[i]) {
+			return 0;
+		}
+		if (n->type == st_alias) {
+			if (n->types[i] != search->types[i]) {
+				return 0;
+			}
+			if (n->offset != search->offset) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static dagnode_t *
+dagnode_search (dag_t *dag, const dagnode_t *search)
+{
+	int         i;
+
+	for (i = 0; i < dag->num_nodes; i++)
+		if (dagnode_match (dag->nodes[i], search))
+			return dag->nodes[i];
+	return 0;
+}
+
 static void
 dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
 {
@@ -381,17 +434,26 @@ dag_make_children (dag_t *dag, statement_t *s,
 					node = leaf_node (dag, uop, s->expr);
 				}
 				node->label->live = 1;
-				dagnode_t *n = new_node (dag);
-				n->type = st_alias;
-				n->label = opcode_label (dag, "alias", s->expr);
-				n->children[0] = node;
-				n->types[0] = op->type;
-				n->offset = op_alias_offset (op);
-				n->value = op;
-				set_remove (dag->roots, node->number);
-				set_add (node->parents, n->number);
-				dagnode_set_edges (dag, n, s);
-				dagnode_set_reachable (dag, n);
+				dagnode_t *n;
+				dagnode_t search = {
+					.type = st_alias,
+					.label = opcode_label (dag, save_string ("alias"), s->expr),
+					.children = { node },
+					.types = { op->type },
+					.offset = op_alias_offset (op),
+				};
+				if (!(n = dagnode_search (dag, &search))) {
+					n = new_node (dag);
+					n->type = st_alias;
+					n->label = search.label;
+					n->children[0] = node;
+					n->types[0] = op->type;
+					n->offset = search.offset;
+					set_remove (dag->roots, node->number);
+					set_add (node->parents, n->number);
+					dagnode_set_edges (dag, n, s);
+					dagnode_set_reachable (dag, n);
+				}
 				node = n;
 			}
 		}
@@ -412,50 +474,6 @@ dag_make_children (dag_t *dag, statement_t *s,
 		}
 		children[i] = node;
 	}
-}
-
-static int
-dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
-				     dagnode_t *children[3])
-{
-	int         i;
-
-	for (i = 0; i < 2; i++) {
-		if (n->children[i] != children[i + 1])
-			return 0;
-	}
-	return 1;
-}
-
-static int
-dagnode_match (const dagnode_t *n, const daglabel_t *op,
-			   dagnode_t *children[3])
-{
-	int         i;
-
-	if (n->killed)
-		return 0;
-	if (!strcmp (op->opcode, "load")
-		&& n->label->opcode && !strcmp (n->label->opcode, "store"))
-		return dagnode_deref_match (n, op, children);
-	if (n->label->opcode != op->opcode)
-		return 0;
-	for (i = 0; i < 3; i++) {
-		if (n->children[i] != children[i])
-			return 0;
-	}
-	return 1;
-}
-
-static dagnode_t *
-dagnode_search (dag_t *dag, daglabel_t *op, dagnode_t *children[3])
-{
-	int         i;
-
-	for (i = 0; i < dag->num_nodes; i++)
-		if (dagnode_match (dag->nodes[i], op, children))
-			return dag->nodes[i];
-	return 0;
 }
 
 static void
@@ -982,7 +1000,11 @@ dag_create (flownode_t *flownode)
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
 		if (s->type != st_assign) {
-			if (!(n = dagnode_search (dag, op, children))) {
+			dagnode_t search = {
+				.label = op,
+				.children = { children[0], children[1], children[2] },
+			};
+			if (!(n = dagnode_search (dag, &search))) {
 				n = new_node (dag);
 				n->type = s->type;
 				n->label = op;
