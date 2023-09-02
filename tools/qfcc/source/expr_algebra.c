@@ -1930,6 +1930,12 @@ zero_components (expr_t *block, expr_t *dst, int memset_base, int memset_size)
 	append_expr (block, new_memset_expr (base, zero, size));
 }
 
+static int __attribute__((const))
+find_offset (const type_t *t1, const type_t *t2)
+{
+	return type_width (t1) - type_width (t2);
+}
+
 expr_t *
 algebra_assign_expr (expr_t *dst, expr_t *src)
 {
@@ -1947,18 +1953,18 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	}
 	auto algebra = algebra_get (dstType);
 	auto layout = &algebra->layout;
-	expr_t *components[layout->count] = {};
+	expr_t *c[layout->count] = {};
 	src = mvec_expr (src, algebra);
-	mvec_scatter (components, src, algebra);
+	mvec_scatter (c, src, algebra);
 
 	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr ();
 	int  memset_base = 0;
 	for (int i = 0; i < layout->count; i++) {
-		if (!components[i]) {
+		if (!c[i]) {
 			continue;
 		}
-		while (sym->type != get_type (components[i])) {
+		while (sym->type != get_type (c[i])) {
 			sym = sym->next;
 		}
 		int size = sym->s.offset - memset_base;
@@ -1966,7 +1972,22 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 			zero_components (block, dst, memset_base, size);
 		}
 		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
-		append_expr (block, new_assign_expr (dst_alias, components[i]));
+		if (c[i]->type == ex_expr && c[i]->e.expr.op == '+'
+			&& c[i]->e.expr.e1->type == ex_extend
+			&& c[i]->e.expr.e2->type == ex_extend) {
+			auto ext1 = c[i]->e.expr.e1->e.extend;
+			auto ext2 = c[i]->e.expr.e2->e.extend;
+			auto type1 = get_type (ext1.src);
+			auto type2 = get_type (ext2.src);
+			int offs1 = ext1.reverse ? find_offset (ext1.type, type1) : 0;
+			int offs2 = ext2.reverse ? find_offset (ext2.type, type2) : 0;
+			auto dst1 = offset_cast (type1, dst_alias, offs1);
+			auto dst2 = offset_cast (type2, dst_alias, offs2);
+			append_expr (block, new_assign_expr (dst1, ext1.src));
+			append_expr (block, new_assign_expr (dst2, ext2.src));
+		} else {
+			append_expr (block, new_assign_expr (dst_alias, c[i]));
+		}
 		memset_base = sym->s.offset + type_size (sym->type);
 	}
 	if (type_size (dstType) - memset_base) {
