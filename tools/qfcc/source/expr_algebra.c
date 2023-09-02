@@ -74,6 +74,14 @@ ext_expr (expr_t *src, type_t *type, int extend, bool reverse)
 	return new_extend_expr (src, type, extend, reverse);
 }
 
+static bool __attribute__((const))
+anti_com (const expr_t *e)
+{
+	return (e->type == ex_expr
+			&& (e->e.expr.op == CROSS || e->e.expr.op == WEDGE
+				|| e->e.expr.op == '-'));
+}
+
 static expr_t *
 neg_expr (expr_t *e)
 {
@@ -85,7 +93,11 @@ neg_expr (expr_t *e)
 		return e->e.expr.e1;
 	}
 	auto type = get_type (e);
-	e = new_unary_expr ('-', e);
+	if (anti_com (e)) {
+		e = new_binary_expr (e->e.expr.op, e->e.expr.e2, e->e.expr.e1);
+	} else {
+		e = new_unary_expr ('-', e);
+	}
 	e->e.expr.type = type;
 	return fold_constants (e);
 }
@@ -361,8 +373,29 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 			}
 		}
 	}
-	auto sum = new_binary_expr ('+', a, b);
+	bool neg = false;
+	if ((is_neg (a) && (is_neg (b) || anti_com (b)))
+		|| (anti_com (a) && is_neg (b))) {
+		neg = true;
+		a = neg_expr (a);
+		b = neg_expr (b);
+	}
+	int op = '+';
+	if (is_neg (a) && b->type != ex_extend) {
+		auto t = a;
+		a = b;
+		b = t;
+		op = '-';
+		b = neg_expr (b);
+	} else if (a->type != ex_extend && is_neg (b)) {
+		op = '-';
+		b = neg_expr (b);
+	}
+	auto sum = new_binary_expr (op, a, b);
 	sum->e.expr.type = type;
+	if (neg) {
+		sum = neg_expr (sum);
+	}
 	return sum;
 }
 
