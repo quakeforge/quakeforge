@@ -306,6 +306,14 @@ promote_scalar (type_t *dst_type, expr_t *scalar)
 	return scalar;
 }
 
+static bool __attribute__((const))
+ext_compat (const expr_t *a, const expr_t *b)
+{
+	return (a->e.extend.extend == b->e.extend.extend
+			&& a->e.extend.reverse == b->e.extend.reverse
+			&& a->e.extend.type == b->e.extend.type);
+}
+
 static expr_t *
 sum_expr (type_t *type, expr_t *a, expr_t *b)
 {
@@ -315,24 +323,46 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	if (!b) {
 		return a;
 	}
-	expr_t *ext = 0;
-	if (a->type == ex_extend && b->type == ex_extend) {
-		if (a->e.extend.extend == b->e.extend.extend
-			&& a->e.extend.reverse == b->e.extend.reverse
-			&& a->e.extend.type == b->e.extend.type) {
-			ext = a;	// for copying extend info;
-			a = a->e.extend.src;
-			b = b->e.extend.src;
+	if (a->type != ex_extend && b->type == ex_extend) {
+		// ensure always ext + something
+		return sum_expr (type, b, a);
+	}
+	if (a->type == ex_extend) {
+		if (b->type == ex_extend) {
+			if (ext_compat (a, b)) {
+				auto ext = a->e.extend;
+				a = a->e.extend.src;
+				b = b->e.extend.src;
+				auto sum = sum_expr (get_type (a), a, b);
+				return ext_expr (sum, type, ext.extend, ext.reverse);
+			}
+		} else if (b->type == ex_expr && b->e.expr.op == '+') {
+			auto c = b->e.expr.e1;
+			auto d = b->e.expr.e2;
+			if (ext_compat (a, c)) {
+				// d should not be compatible with a because it should have
+				// already been merged
+				auto ext = a->e.extend;
+				a = a->e.extend.src;
+				c = c->e.extend.src;
+				auto sum = sum_expr (get_type (a), a, c);
+				sum = ext_expr (sum, type, ext.extend, ext.reverse);
+				return sum_expr (type, sum, d);
+			}
+			if (ext_compat (a, d)) {
+				// c should not be compatible with a because it should have
+				// already been merged
+				auto ext = a->e.extend;
+				a = a->e.extend.src;
+				d = d->e.extend.src;
+				auto sum = sum_expr (get_type (a), a, d);
+				sum = ext_expr (sum, type, ext.extend, ext.reverse);
+				return sum_expr (type, sum, c);
+			}
 		}
 	}
 	auto sum = new_binary_expr ('+', a, b);
-	if (ext) {
-		sum->e.expr.type = get_type (a);
-		auto extend = ext->e.extend;
-		sum = ext_expr (sum, type, extend.extend, extend.reverse);
-	} else {
-		sum->e.expr.type = type;
-	}
+	sum->e.expr.type = type;
 	return sum;
 }
 
