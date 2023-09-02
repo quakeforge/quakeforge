@@ -59,11 +59,44 @@ get_group (type_t *type, algebra_t *algebra)
 	return BITOP_LOG2 (group_mask);
 }
 
+static bool __attribute__((const))
+is_neg (const expr_t *e)
+{
+	return e->type == ex_uexpr && e->e.expr.op == '-';
+}
+
+static expr_t *
+neg_expr (expr_t *e)
+{
+	if (is_neg (e)) {
+		return e->e.expr.e1;
+	}
+	auto type = get_type (e);
+	e = new_unary_expr ('-', e);
+	e->e.expr.type = type;
+	return e;
+}
+
+static expr_t *
+alias_expr (type_t *type, expr_t *e, int offset)
+{
+	bool neg = false;
+	if (is_neg (e)) {
+		neg = true;
+		e = neg_expr (e);
+	}
+	e = new_offset_alias_expr (type, e, offset);
+	if (neg) {
+		e = neg_expr (e);
+	}
+	return e;
+}
+
 static expr_t *
 offset_cast (type_t *type, expr_t *expr, int offset)
 {
 	offset *= type_size (base_type (get_type (expr)));
-	return new_offset_alias_expr (type, expr, offset);
+	return alias_expr (type, expr, offset);
 }
 
 static symbol_t *
@@ -293,24 +326,6 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	auto sum = new_binary_expr ('+', a, b);
 	sum->e.expr.type = type;
 	return sum;
-}
-
-static bool __attribute__((const))
-is_neg (const expr_t *e)
-{
-	return e->type == ex_uexpr && e->e.expr.op == '-';
-}
-
-static expr_t *
-neg_expr (expr_t *e)
-{
-	if (is_neg (e)) {
-		return e->e.expr.e1;
-	}
-	auto type = get_type (e);
-	e = new_unary_expr ('-', e);
-	e->e.expr.type = type;
-	return e;
 }
 
 static expr_t *
@@ -1385,7 +1400,7 @@ pga2_yw_wx_xy_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto geom_type = algebra_mvec_type (alg, 0x01);
 	auto sa = offset_cast (stype, a, 2);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = new_offset_alias_expr (ctype, cross_expr (vtype, b, a), 0);
+	auto cv = alias_expr (ctype, cross_expr (vtype, b, a), 0);
 
 	c[0] = new_extend_expr (cv, geom_type, 0, false);
 	c[1] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x02), sa, sb));
@@ -1788,7 +1803,7 @@ algebra_cast_expr (type_t *dstType, expr_t *e)
 static void
 zero_components (expr_t *block, expr_t *dst, int memset_base, int memset_size)
 {
-	auto base = new_offset_alias_expr (&type_int, dst, memset_base);
+	auto base = alias_expr (&type_int, dst, memset_base);
 	auto zero = new_int_expr (0);
 	auto size = new_int_expr (memset_size);
 	append_expr (block, new_memset_expr (base, zero, size));
@@ -1829,7 +1844,7 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
+		auto dst_alias = alias_expr (sym->type, dst, sym->s.offset);
 		append_expr (block, new_assign_expr (dst_alias, components[i]));
 		memset_base = sym->s.offset + type_size (sym->type);
 	}
