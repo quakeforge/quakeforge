@@ -295,6 +295,24 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	return sum;
 }
 
+static bool __attribute__((const))
+is_neg (const expr_t *e)
+{
+	return e->type == ex_uexpr && e->e.expr.op == '-';
+}
+
+static expr_t *
+neg_expr (expr_t *e)
+{
+	if (is_neg (e)) {
+		return e->e.expr.e1;
+	}
+	auto type = get_type (e);
+	e = new_unary_expr ('-', e);
+	e->e.expr.type = type;
+	return e;
+}
+
 static expr_t *
 scale_expr (type_t *type, expr_t *a, expr_t *b)
 {
@@ -306,28 +324,66 @@ scale_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 	int  op = is_scalar (get_type (a)) ? '*' : SCALE;
 
+	bool neg = false;
+	if (is_neg (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
+
 	auto scale = new_binary_expr (op, a, b);
 	scale->e.expr.type = type;
-	return fold_constants (scale);
-}
-
-static expr_t *
-neg_expr (expr_t *e)
-{
-	return unary_expr ('-', e);
+	scale = fold_constants (scale);
+	if (neg) {
+		scale = neg_expr (scale);
+		scale->e.expr.type = type;
+		scale = fold_constants (scale);
+	}
+	return scale;
 }
 
 static expr_t *
 dot_expr (type_t *type, expr_t *a, expr_t *b)
 {
+	bool neg = false;
+	if (is_neg (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
+
 	auto dot = new_binary_expr (DOT, a, b);
 	dot->e.expr.type = type;
+	if (neg) {
+		dot = neg_expr (dot);
+		dot->e.expr.type = type;
+	}
 	return dot;
 }
 
 static expr_t *
 cross_expr (type_t *type, expr_t *a, expr_t *b)
 {
+	bool neg = false;
+	if (is_neg (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
+	if (neg) {
+		auto t = a;
+		a = b;
+		b = t;
+	}
 	auto cross = new_binary_expr (CROSS, a, b);
 	cross->e.expr.type = type;
 	return cross;
@@ -336,6 +392,20 @@ cross_expr (type_t *type, expr_t *a, expr_t *b)
 static expr_t *
 wedge_expr (type_t *type, expr_t *a, expr_t *b)
 {
+	bool neg = false;
+	if (is_neg (a)) {
+		neg = !neg;
+		a = neg_expr (a);
+	}
+	if (is_neg (b)) {
+		neg = !neg;
+		b = neg_expr (b);
+	}
+	if (neg) {
+		auto t = a;
+		a = b;
+		b = t;
+	}
 	auto cross = new_binary_expr (WEDGE, a, b);
 	cross->e.expr.type = type;
 	return cross;
