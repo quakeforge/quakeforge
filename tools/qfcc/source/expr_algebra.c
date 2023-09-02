@@ -1936,6 +1936,29 @@ find_offset (const type_t *t1, const type_t *t2)
 	return type_width (t1) - type_width (t2);
 }
 
+static bool __attribute__((const))
+summed_extend (const expr_t *e)
+{
+	return (e->type == ex_expr && e->e.expr.op == '+'
+			&& e->e.expr.e1->type == ex_extend
+			&& e->e.expr.e2->type == ex_extend);
+}
+
+static void
+assign_extend (expr_t *block, expr_t *dst, expr_t *src)
+{
+	auto ext1 = src->e.expr.e1->e.extend;
+	auto ext2 = src->e.expr.e2->e.extend;
+	auto type1 = get_type (ext1.src);
+	auto type2 = get_type (ext2.src);
+	int offs1 = ext1.reverse ? find_offset (ext1.type, type1) : 0;
+	int offs2 = ext2.reverse ? find_offset (ext2.type, type2) : 0;
+	auto dst1 = offset_cast (type1, dst, offs1);
+	auto dst2 = offset_cast (type2, dst, offs2);
+	append_expr (block, new_assign_expr (dst1, ext1.src));
+	append_expr (block, new_assign_expr (dst2, ext2.src));
+}
+
 expr_t *
 algebra_assign_expr (expr_t *dst, expr_t *src)
 {
@@ -1944,6 +1967,11 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 
 	if (src->type != ex_multivec) {
 		if (srcType == dstType) {
+			if (summed_extend (src)) {
+				auto block = new_block_expr ();
+				assign_extend (block, dst, src);
+				return block;
+			}
 			return new_assign_expr (dst, src);
 		}
 	}
@@ -1972,19 +2000,8 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 			zero_components (block, dst, memset_base, size);
 		}
 		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
-		if (c[i]->type == ex_expr && c[i]->e.expr.op == '+'
-			&& c[i]->e.expr.e1->type == ex_extend
-			&& c[i]->e.expr.e2->type == ex_extend) {
-			auto ext1 = c[i]->e.expr.e1->e.extend;
-			auto ext2 = c[i]->e.expr.e2->e.extend;
-			auto type1 = get_type (ext1.src);
-			auto type2 = get_type (ext2.src);
-			int offs1 = ext1.reverse ? find_offset (ext1.type, type1) : 0;
-			int offs2 = ext2.reverse ? find_offset (ext2.type, type2) : 0;
-			auto dst1 = offset_cast (type1, dst_alias, offs1);
-			auto dst2 = offset_cast (type2, dst_alias, offs2);
-			append_expr (block, new_assign_expr (dst1, ext1.src));
-			append_expr (block, new_assign_expr (dst2, ext2.src));
+		if (summed_extend (c[i])) {
+			assign_extend (block, dst_alias, c[i]);
 		} else {
 			append_expr (block, new_assign_expr (dst_alias, c[i]));
 		}
