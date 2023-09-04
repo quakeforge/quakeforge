@@ -46,6 +46,7 @@ main (void)
 	m += bones[vbones.y] * vweights.y;
 	m += bones[vbones.z] * vweights.z;
 	m += bones[vbones.w] * vweights.w;
+	m += mat3x4(1,0,0,0,0,1,0,0,0,0,1,0) * (1 - dot(vweights, vec4(1,1,1,1)));
 	vec4        pos = Model * vec4 (vec4(vposition, 1) * m, 1);
 	if (IQMShadow) {
 		gl_Position = shadowView[MatrixBase + gl_ViewIndex] * pos;
