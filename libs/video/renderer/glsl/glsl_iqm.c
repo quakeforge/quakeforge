@@ -302,11 +302,10 @@ glsl_R_IQMBegin (void)
 void
 glsl_R_IQMEnd (void)
 {
-	int         i;
-
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	for (i = 0; i <= IQM_COLOR; i++)
+	for (uint32_t i = 0; i <= IQM_COLOR; i++) {
 		qfeglDisableVertexAttribArray (vertex_attribs[i].attr->location);
+	}
 }

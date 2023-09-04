@@ -235,6 +235,8 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size;
 				color = (byte *) (buffer + va->offset);
 				break;
+			case IQM_CUSTOM:
+				break;
 		}
 	}
 	iqm->vertexarrays = calloc (iqm->num_arrays + 1, sizeof (iqmvertexarray));
