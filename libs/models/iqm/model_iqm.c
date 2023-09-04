@@ -533,8 +533,10 @@ Mod_FreeIQM (iqm_t *iqm)
 	free (iqm->baseframe);
 	free (iqm->inverse_baseframe);
 	free (iqm->anims);
-	free (iqm->frames[0]);
-	free (iqm->frames);
+	if (iqm->frames) {
+		free (iqm->frames[0]);
+		free (iqm->frames);
+	}
 	free (iqm);
 }
 
