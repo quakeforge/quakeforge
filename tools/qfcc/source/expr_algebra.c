@@ -190,10 +190,28 @@ check_types (expr_t **e, algebra_t *algebra)
 }
 
 static expr_t *
+promote_scalar (type_t *dst_type, expr_t *scalar)
+{
+	auto scalar_type = get_type (scalar);
+	if (scalar_type != dst_type) {
+		if (!type_promotes (dst_type, scalar_type)) {
+			warning (scalar, "demoting %s to %s (use a cast)",
+					 get_type_string (scalar_type),
+					 get_type_string (dst_type));
+		}
+		scalar = cast_expr (dst_type, scalar);
+	}
+	return scalar;
+}
+
+static expr_t *
 mvec_expr (expr_t *expr, algebra_t *algebra)
 {
 	auto mvtype = get_type (expr);
 	if (expr->type == ex_multivec || is_scalar (mvtype)) {
+		if (!is_algebra (mvtype)) {
+			expr = promote_scalar (algebra->type, expr);
+		}
 		return expr;
 	}
 	if (!is_algebra (mvtype)) {
@@ -301,21 +319,6 @@ mvec_gather (expr_t **components, algebra_t *algebra)
 		}
 	}
 	return mvec;
-}
-
-static expr_t *
-promote_scalar (type_t *dst_type, expr_t *scalar)
-{
-	auto scalar_type = get_type (scalar);
-	if (scalar_type != dst_type) {
-		if (!type_promotes (dst_type, scalar_type)) {
-			warning (scalar, "demoting %s to %s (use a cast)",
-					 get_type_string (scalar_type),
-					 get_type_string (dst_type));
-		}
-		scalar = cast_expr (dst_type, scalar);
-	}
-	return scalar;
 }
 
 static bool __attribute__((const))
