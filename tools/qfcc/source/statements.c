@@ -2333,17 +2333,18 @@ move_code (sblock_t *dst, sblock_t *src)
 	src->tail = &src->statements;
 }
 
-static sblock_t *
-merge_blocks (sblock_t *blocks)
+static int
+merge_blocks (sblock_t **blocks)
 {
 	sblock_t  **sb;
 	sblock_t   *sblock;
 	statement_t *s;
+	int did_something = 0;
 
-	if (!blocks)
-		return blocks;
+	if (!*blocks)
+		return did_something;
 	// merge any blocks that can be merged
-	for (sblock = blocks; sblock; sblock = sblock->next) {
+	for (sblock = *blocks; sblock; sblock = sblock->next) {
 		if (sblock->statements && sblock->next) {
 			s = (statement_t *) sblock->tail;
 			// func and flow statements end blocks
@@ -2354,9 +2355,10 @@ merge_blocks (sblock_t *blocks)
 				continue;
 			// blocks can be merged
 			move_code (sblock, sblock->next);
+			did_something = 1;
 		}
 	}
-	for (sb = &blocks; (*sb)->next;) {
+	for (sb = blocks; (*sb)->next;) {
 		if (!(*sb)->statements) {
 			// empty non-final block
 			// move labels from empty block to next block
@@ -2370,7 +2372,7 @@ merge_blocks (sblock_t *blocks)
 		sb = &(*sb)->next;
 	}
 	// so long as blocks doesn't become null, remove an empty final block
-	if (sb != &blocks) {
+	if (sb != blocks) {
 		if (!(*sb)->statements && !(*sb)->labels) {
 			// empty final block with no labels
 			sblock = *sb;
@@ -2378,7 +2380,7 @@ merge_blocks (sblock_t *blocks)
 			free_sblock (sblock);
 		}
 	}
-	return blocks;
+	return did_something;
 }
 
 static void
@@ -2653,7 +2655,7 @@ make_statements (expr_t *e)
 		if (options.block_dot.thread)
 			dump_dot (va (0, "thread-%d", pass), sblock, dump_dot_sblock);
 		did_something |= remove_dead_blocks (sblock);
-		sblock = merge_blocks (sblock);
+		did_something |= merge_blocks (&sblock);
 		if (options.block_dot.dead)
 			dump_dot (va (0, "dead-%d", pass), sblock, dump_dot_sblock);
 		pass++;
