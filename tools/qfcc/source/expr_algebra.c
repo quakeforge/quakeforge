@@ -1148,6 +1148,44 @@ static pga_func pga2_wedge_funcs[4][4] = {
 };
 
 static void
+vga2_x_y_z_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[2] = cross_expr (algebra_mvec_type (alg, 0x04), a, b);
+}
+
+static void
+vga2_x_y_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+static void
+vga2_yz_zx_xy_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+static pga_func vga3_wedge_funcs[4][4] = {
+	[0] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+	},
+	[1] = {
+		[0] = scale_component,
+		[1] = vga2_x_y_z_wedge_x_y_w,
+		[2] = vga2_x_y_w_wedge_yz_zx_xy,
+	},
+	[2] = {
+		[0] = scale_component,
+		[1] = vga2_yz_zx_xy_wedge_x_y_w,
+	},
+	[3] = {
+	},
+};
+
+static void
 component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 {
 	int         p = algebra->plus;
@@ -1165,6 +1203,12 @@ component_wedge (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 		int gb = get_group (get_type (b), algebra);
 		if (pga2_wedge_funcs[ga][gb]) {
 			pga2_wedge_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else if (p == 3 && m == 0 && z == 0) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (vga3_wedge_funcs[ga][gb]) {
+			vga3_wedge_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
 		internal_error (a, "not implemented");
