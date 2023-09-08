@@ -2907,7 +2907,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			default:
-				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);
+				PR_RunError (pr, "Bad opcode x%03x", st->op & OP_MASK);
 		}
 		if (pr->watch && pr->watch->value != old_val.value) {
 			if (!pr->wp_conditional
