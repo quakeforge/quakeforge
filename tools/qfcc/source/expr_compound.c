@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
@@ -204,14 +205,19 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	type = unalias_type (type);
 
 	initstate_t state = {};
-	if (is_struct (type) || is_union (type)
-		|| (is_nonscalar (type) && type->t.symtab)) {
+	if (is_algebra (type)) {
+		error (eles, "block initializer of multi-vector type");
+		return;
+	} else if (is_struct (type) || is_union (type)
+			   || (is_nonscalar (type) && type->t.symtab)) {
 		state.field = type->t.symtab->symbols;
-		while (skip_field (state.field)) {
+		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;
 		}
-		state.type = state.field->type;
-		state.offset = state.field->s.offset;
+		if (state.field) {
+			state.type = state.field->type;
+			state.offset = state.field->s.offset;
+		}
 	} else if (is_array (type)) {
 		state.type = type->t.array.type;
 	} else {
