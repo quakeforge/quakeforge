@@ -322,6 +322,21 @@ algebra_init (algebra_t *a)
 		basis_group_init (&a->groups[4], 1, pga_blades + 11, a, 4);
 		basis_group_init (&a->groups[5], 4, pga_blades + 12, a, 5);
 		basis_layout_init (&a->layout, 6, a->groups);
+	} else if (p == 3 && m == 0 && z == 0) {
+		// 3d VGA (x y z square to +1):
+		// : x   y   z   xyz
+		// : yz  zx  xy  1
+		basis_blade_t pga_blades[8] = {
+			blades[1], blades[2], blades[3], blades[7],
+			blades[6], blades[5], blades[4], blades[0],
+		};
+		a->groups = malloc (sizeof (basis_group_t[4]));
+		a->mvec_types = alloc_mvec_types (4);
+		basis_group_init (&a->groups[0], 3, pga_blades +  0, a, 0);
+		basis_group_init (&a->groups[1], 1, pga_blades +  3, a, 1);
+		basis_group_init (&a->groups[2], 3, pga_blades +  4, a, 2);
+		basis_group_init (&a->groups[3], 1, pga_blades +  7, a, 3);
+		basis_layout_init (&a->layout, 4, a->groups);
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
 		// : yw  xw  xy  1
@@ -533,12 +548,16 @@ static int pga_swaps_3d[16] = {
 	[0xa] = 1,	// e31
 	[0xd] = 1,	// e032
 };
+static int vga_swaps_3d[8] = {
+	[0x5] = 1,	// e31
+};
 
 int
 algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b)
 {
 	bool pga_2d = (alg->plus == 2 && alg->minus == 0 && alg->zero == 1);
 	bool pga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 1);
+	bool vga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 0);
 	int swaps = count_flips (a, b);
 	if (pga_2d) {
 		swaps += pga_swaps_2d[a];
@@ -547,6 +566,10 @@ algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b)
 	if (pga_3d) {
 		swaps += pga_swaps_3d[a];
 		swaps += pga_swaps_3d[b];
+	}
+	if (vga_3d) {
+		swaps += vga_swaps_3d[a];
+		swaps += vga_swaps_3d[b];
 	}
 	return swaps;
 }
@@ -557,6 +580,7 @@ algebra_blade_value (algebra_t *alg, const char *name)
 	uint32_t dimension = alg->plus + alg->minus + alg->zero;
 	bool pga_2d = (alg->plus == 2 && alg->minus == 0 && alg->zero == 1);
 	bool pga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 1);
+	bool vga_3d = (alg->plus == 3 && alg->minus == 0 && alg->zero == 0);
 
 	//FIXME supports only 0-9 (ie, up to 10d)
 	if (name[0] == 'e' && isdigit(name[1])) {
@@ -592,6 +616,9 @@ algebra_blade_value (algebra_t *alg, const char *name)
 		}
 		if (pga_3d) {
 			swaps += pga_swaps_3d[blade];
+		}
+		if (vga_3d) {
+			swaps += vga_swaps_3d[blade];
 		}
 		int sign = 1 - 2 * (swaps & 1);
 		auto g = alg->layout.group_map[alg->layout.mask_map[blade]];

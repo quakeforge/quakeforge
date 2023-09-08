@@ -931,6 +931,88 @@ static pga_func pga2_dot_funcs[4][4] = {
 };
 
 static void
+vga3_x_y_z_dot_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+}
+
+static void
+vga3_x_y_z_dot_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = cross_expr (algebra_mvec_type (alg, 0x01), b, a);
+}
+
+static void
+vga3_x_y_z_dot_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[2] = scale_expr (algebra_mvec_type (alg, 0x04), a, b);
+}
+
+static void
+vga3_yz_zx_xy_dot_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = cross_expr (algebra_mvec_type (alg, 0x01), b, a);
+}
+
+static void
+vga3_yz_zx_xy_dot_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = neg_expr (dot_expr (algebra_mvec_type (alg, 0x08), a, b));
+}
+
+static void
+vga3_yz_zx_xy_dot_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x01), a, b));
+}
+
+static void
+vga3_xyz_dot_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[2] = scale_expr (algebra_mvec_type (alg, 0x04), b, a);
+}
+
+static void
+vga3_xyz_dot_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x01), b, a));
+}
+
+static void
+vga3_xyz_dot_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x08), b, a));
+}
+
+
+static pga_func vga3_dot_funcs[4][4] = {
+	[0] = {
+		[0] = vga3_x_y_z_dot_x_y_z,
+		[1] = vga3_x_y_z_dot_xyz,
+		[2] = vga3_x_y_z_dot_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[1] = {
+		[0] = vga3_xyz_dot_x_y_z,
+		[1] = vga3_xyz_dot_xyz,
+		[2] = vga3_xyz_dot_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[2] = {
+		[0] = vga3_yz_zx_xy_dot_x_y_z,
+		[1] = vga3_yz_zx_xy_dot_xyz,
+		[2] = vga3_yz_zx_xy_dot_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[3] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+	},
+};
+
+static void
 component_dot (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 {
 	int         p = algebra->plus;
@@ -948,6 +1030,12 @@ component_dot (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 		int gb = get_group (get_type (b), algebra);
 		if (pga2_dot_funcs[ga][gb]) {
 			pga2_dot_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else if (p == 3 && m == 0 && z == 0) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (vga3_dot_funcs[ga][gb]) {
+			vga3_dot_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
 		internal_error (a, "not implemented");
@@ -1148,40 +1236,41 @@ static pga_func pga2_wedge_funcs[4][4] = {
 };
 
 static void
-vga2_x_y_z_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+vga3_x_y_z_wedge_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
 	c[2] = cross_expr (algebra_mvec_type (alg, 0x04), a, b);
 }
 
 static void
-vga2_x_y_w_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+vga3_x_y_z_wedge_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
-	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+	c[1] = dot_expr (algebra_mvec_type (alg, 0x02), a, b);
 }
 
 static void
-vga2_yz_zx_xy_wedge_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+vga3_yz_zx_xy_wedge_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
-	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+	c[1] = dot_expr (algebra_mvec_type (alg, 0x02), a, b);
 }
 
 static pga_func vga3_wedge_funcs[4][4] = {
 	[0] = {
+		[0] = vga3_x_y_z_wedge_x_y_z,
+		[2] = vga3_x_y_z_wedge_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[1] = {
+		[3] = scale_component,
+	},
+	[2] = {
+		[0] = vga3_yz_zx_xy_wedge_x_y_z,
+		[3] = scale_component,
+	},
+	[3] = {
 		[0] = scale_component,
 		[1] = scale_component,
 		[2] = scale_component,
 		[3] = scale_component,
-	},
-	[1] = {
-		[0] = scale_component,
-		[1] = vga2_x_y_z_wedge_x_y_w,
-		[2] = vga2_x_y_w_wedge_yz_zx_xy,
-	},
-	[2] = {
-		[0] = scale_component,
-		[1] = vga2_yz_zx_xy_wedge_x_y_w,
-	},
-	[3] = {
 	},
 };
 
@@ -1693,6 +1782,90 @@ static pga_func pga2_geometric_funcs[6][6] = {
 };
 
 static void
+vga3_x_y_z_geom_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = dot_expr (algebra_mvec_type (alg, 0x08), a, b);
+	c[2] = cross_expr (algebra_mvec_type (alg, 0x04), a, b);
+}
+
+static void
+vga3_x_y_z_geom_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = cross_expr (algebra_mvec_type (alg, 0x01), b, a);
+	c[1] = dot_expr (algebra_mvec_type (alg, 0x02), a, b);
+}
+
+static void
+vga3_x_y_z_geom_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[2] = scale_expr (algebra_mvec_type (alg, 0x04), a, b);
+}
+
+static void
+vga3_yz_zx_xy_geom_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = cross_expr (algebra_mvec_type (alg, 0x01), b, a);
+	c[1] = dot_expr (algebra_mvec_type (alg, 0x02), a, b);
+}
+
+static void
+vga3_yz_zx_xy_geom_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = neg_expr (dot_expr (algebra_mvec_type (alg, 0x08), a, b));
+}
+
+static void
+vga3_yz_zx_xy_geom_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x01), a, b));
+}
+
+static void
+vga3_xyz_geom_x_y_z (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[2] = scale_expr (algebra_mvec_type (alg, 0x04), b, a);
+}
+
+static void
+vga3_xyz_geom_yz_zx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[0] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x01), b, a));
+}
+
+static void
+vga3_xyz_geom_xyz (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
+{
+	c[3] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x08), b, a));
+}
+
+static pga_func vga3_geometric_funcs[6][6] = {
+	[0] = {
+		[0] = vga3_x_y_z_geom_x_y_z,
+		[1] = vga3_x_y_z_geom_xyz,
+		[2] = vga3_x_y_z_geom_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[1] = {
+		[0] = vga3_xyz_geom_x_y_z,
+		[1] = vga3_xyz_geom_xyz,
+		[2] = vga3_xyz_geom_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[2] = {
+		[0] = vga3_yz_zx_xy_geom_x_y_z,
+		[1] = vga3_yz_zx_xy_geom_xyz,
+		[2] = vga3_yz_zx_xy_geom_yz_zx_xy,
+		[3] = scale_component,
+	},
+	[3] = {
+		[0] = scale_component,
+		[1] = scale_component,
+		[2] = scale_component,
+		[3] = scale_component,
+	},
+};
+
+static void
 component_geometric (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 {
 	int         p = algebra->plus;
@@ -1710,6 +1883,12 @@ component_geometric (expr_t **c, expr_t *a, expr_t *b, algebra_t *algebra)
 		int gb = get_group (get_type (b), algebra);
 		if (pga2_geometric_funcs[ga][gb]) {
 			pga2_geometric_funcs[ga][gb] (c, a, b, algebra);
+		}
+	} else if (p == 3 && m == 0 && z == 0) {
+		int ga = get_group (get_type (a), algebra);
+		int gb = get_group (get_type (b), algebra);
+		if (vga3_geometric_funcs[ga][gb]) {
+			vga3_geometric_funcs[ga][gb] (c, a, b, algebra);
 		}
 	} else {
 		internal_error (a, "not implemented");

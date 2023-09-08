@@ -258,6 +258,10 @@ evaluate_constexpr (expr_t *e)
 		auto opb = get_def (s->opb);
 		auto opc = get_def (s->opc);
 		auto inst = opcode_find (s->opcode, s->opa, s->opb, s->opc);
+		if (!inst) {
+			print_statement (s);
+			internal_error (e, "no such instruction");
+		}
 		auto ds = codespace_newstatement (&value_codespace);
 		*ds = (dstatement_t) {
 			.op = opcode_get (inst),
