@@ -71,7 +71,7 @@ test_wedge (void)
 		return 1;
 	}
 	if ((scalar_t)qvec != 8) {
-		printf ("tvec != 8: %g\n", (scalar_t) qvec);
+		printf ("tvec != 8: %g\n", qvec);
 		return 1;
 	}
 
@@ -89,7 +89,7 @@ test_wedge (void)
 
 	auto c = b ∧ vecd;
 	if ((scalar_t)c != 842) {
-		printf ("b ∧ vecd != 742': %g\n", (scalar_t) c);
+		printf ("b ∧ vecd != 742': %g\n", c);
 		return 1;
 	}
 
@@ -108,19 +108,19 @@ test_wedge (void)
 
 	c = vecd ∧ b;
 	if ((scalar_t)c != 842) {
-		printf ("vecd ^ b != 842': %g\n", (scalar_t) c);
+		printf ("vecd ^ b != 842': %g\n", c);
 		return 1;
 	}
 
 	c = a.bvec ∧ (vecc ∧ vecd);
 	if ((scalar_t)c != -842) {
-		printf ("a ∧ (vecc ∧ vecd) != -742': %g\n", (scalar_t) c);
+		printf ("a ∧ (vecc ∧ vecd) != -742': %g\n", c);
 		return 1;
 	}
 
 	c = (vecd ∧ vecc) ∧ a.bvec;
 	if ((scalar_t)c != 842) {
-		printf ("(vecd ∧ vecc) ∧ a != 742': %g\n", (scalar_t) c);
+		printf ("(vecd ∧ vecc) ∧ a != 742': %g\n", c);
 		return 1;
 	}
 	return 0;
@@ -298,7 +298,7 @@ test_geom (void)
 	if ((vec3)e.dir != '-6 4 -8' || (vec3)e.mom != '30 17 -14'
 		|| e.scalar || (scalar_t)e.qvec != 21) {
 		printf ("vec * tvec != 0 '-6 4 -8' '30 17 -14' 21: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, (scalar_t) e.qvec);
+				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 		return 1;
 	}
 
@@ -306,7 +306,7 @@ test_geom (void)
 	if (e.scalar != -141 || (vec3)e.bvec.dir || (vec3)e.bvec.mom
 		|| (scalar_t)e.qvec != -78) {
 		printf ("bvec * bvec != -141 '0 0 0' '0 0 0' -78: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, (scalar_t)e.qvec);
+				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 		return 1;
 	}
 
@@ -321,7 +321,7 @@ test_geom (void)
 	if (e.scalar != -9 || (scalar_t)e.qvec
 		|| (vec3)e.bvec.dir != '-48 20 46' || (vec3)e.bvec.mom != '44 -14 52') {
 		printf ("(vec * vecb) != -9 '-48 20 46' '44 -14 52' 0': %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, (scalar_t) e.qvec);
+				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 		return 1;
 	}
 
@@ -335,7 +335,7 @@ test_geom (void)
 	if (e.scalar || (scalar_t)e.qvec
 		|| (vec3)e.bvec.dir || (vec3)e.bvec.mom != '-88 32 -16') {
 		printf ("(vec * vecb) != 0 '0 0 0' '-88 32 -16' 0': %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, (scalar_t) e.qvec);
+				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 		return 1;
 	}
 
@@ -356,7 +356,7 @@ test_geom (void)
 	if (e.scalar || (scalar_t)e.qvec != -21
 		|| (vec3)e.bvec.dir != '-6 4 -8' || (vec3)e.bvec.mom != '30 17 -14') {
 		printf ("tvec * vec != 0 '-6 4 -8' '30 17 -14' -21: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, (scalar_t) e.qvec);
+				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 		return 1;
 	}
 
@@ -412,7 +412,7 @@ test_basics (void)
 		if (e.scalar || (scalar_t)e.qvec
 			|| (vec3)e.dir != '-8 -8 0' || (vec3)e.mom != '-24 24 0') {
 			printf ("x is wrong: %g %v %v %g\n",
-					e.scalar, e.dir, e.mom, (scalar_t)e.qvec);
+					e.scalar, e.dir, e.mom, e.qvec);
 			return 1;
 		}
 	}

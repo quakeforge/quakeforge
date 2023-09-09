@@ -52,6 +52,6 @@ main (void)
 	printf ("%q\n", pgaf1.vec);
 	printf ("%v %v\n", pgaf1.bvect, pgaf1.bvecp);
 	printf ("%q\n", pgaf1.tvec);
-	printf ("%g\n", (float)pgaf1.qvec);
+	printf ("%g\n", pgaf1.qvec);
 	return 0;		// to survive and prevail :)
 }

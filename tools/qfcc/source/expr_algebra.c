@@ -2143,11 +2143,21 @@ algebra_cast_expr (type_t *dstType, expr_t *e)
 	type_t *srcType = get_type (e);
 	if (dstType->type == ev_invalid
 		|| srcType->type == ev_invalid
-		|| type_size (dstType) != type_size (srcType)
 		|| type_width (dstType) != type_width (srcType)) {
 		return cast_error (e, srcType, dstType);
 	}
-	return new_alias_expr (dstType, e);
+	if (type_size (dstType) == type_size (srcType)) {
+		return new_alias_expr (dstType, e);
+	}
+
+	auto algebra = algebra_get (is_algebra (srcType) ? srcType : dstType);
+	if (is_algebra (srcType)) {
+		auto alias = new_alias_expr (algebra->type, e);
+		return cast_expr (dstType, alias);
+	} else {
+		auto cast = cast_expr (algebra->type, e);
+		return new_alias_expr (dstType, cast);
+	}
 }
 
 static void
