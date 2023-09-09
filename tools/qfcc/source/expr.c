@@ -1463,7 +1463,7 @@ prepend_expr (expr_t *block, expr_t *e)
 	return block;
 }
 
-static symbol_t *
+symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {
 	symtab_t   *strct = 0;
@@ -1587,6 +1587,8 @@ field_expr (expr_t *e1, expr_t *e2)
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
 		}
+	} else if (is_algebra (t1)) {
+		return algebra_field_expr (e1, e2);
 	} else if (is_class (t1)) {
 		//Class instance variables aren't allowed and thus declaring one
 		//is treated as an error, so this is a follow-on error.

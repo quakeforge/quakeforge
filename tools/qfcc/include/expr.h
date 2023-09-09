@@ -633,6 +633,8 @@ expr_t *new_entity_expr (int entity_val);
 					(expr_t::e::field_val).
 */
 expr_t *new_field_expr (int field_val, struct type_s *type, struct def_s *def);
+struct symbol_s *get_struct_field (const struct type_s *t1, expr_t *e1,
+								   expr_t *e2);
 
 /** Create a new function constant expression node.
 

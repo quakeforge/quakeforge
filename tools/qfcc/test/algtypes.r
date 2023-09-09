@@ -48,5 +48,10 @@ main (void)
 		pga2 = (l1 • p)*l1;
 	}
 	printf ("%q\n", plane);
+	printf ("%g\n", pgaf1.scalar);
+	printf ("%q\n", pgaf1.vec);
+	printf ("%v %v\n", pgaf1.bvect, pgaf1.bvecp);
+	printf ("%q\n", pgaf1.tvec);
+	printf ("%g\n", (float)pgaf1.qvec);
 	return 0;		// to survive and prevail :)
 }

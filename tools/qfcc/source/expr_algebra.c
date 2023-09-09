@@ -2242,3 +2242,20 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	}
 	return block;
 }
+
+expr_t *
+algebra_field_expr (expr_t *mvec, expr_t *field_name)
+{
+	auto mvec_type = get_type (mvec);
+	auto algebra = algebra_get (mvec_type);
+
+	if (mvec_type->type == ev_invalid) {
+		auto mvec_struct = algebra->mvec_sym->type;
+		auto field = get_struct_field (mvec_struct, mvec, field_name);
+		if (!field) {
+			return mvec;
+		}
+		return new_offset_alias_expr (field->type, mvec, field->s.offset);
+	}
+	internal_error (mvec, "not implemented");
+}

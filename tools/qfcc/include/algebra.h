@@ -115,5 +115,7 @@ struct expr_s *algebra_dual (struct expr_s *e);
 struct expr_s *algebra_reverse (struct expr_s *e);
 struct expr_s *algebra_cast_expr (struct type_s *dstType, struct expr_s *e);
 struct expr_s *algebra_assign_expr (struct expr_s *dst, struct expr_s *src);
+struct expr_s *algebra_field_expr (struct expr_s *mvec,
+								   struct expr_s *field_name);
 
 #endif//__algebra_h
