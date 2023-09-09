@@ -103,9 +103,9 @@ static const char *mvec_2d_names[] = {
 
 static const char *mvec_3d_names[] = {
 	"vec",
-	"scalar"
-	"bvec",
 	"tvec",
+	"bvec",
+	"scalar",
 	0
 };
 
@@ -339,11 +339,11 @@ algebra_init (algebra_t *a)
 		basis_layout_init (&a->layout, 4, a->groups);
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
-		// : yw  xw  xy  1
 		// : x   y   w   wxy
+		// : yw  wx  xy  1
 		basis_blade_t pga_blades[8] = {
-			blades[5], blades[4], blades[6], blades[0],
 			blades[2], blades[3], blades[1], blades[7],
+			blades[5], blades[4], blades[6], blades[0],
 		};
 		a->groups = malloc (sizeof (basis_group_t[4]));
 		a->mvec_types = alloc_mvec_types (4);

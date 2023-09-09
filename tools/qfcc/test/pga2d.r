@@ -1,19 +1,19 @@
 #include "test-harness.h"
 #pragma warn no-vararg-integer
 typedef @algebra(double(2,0,1)) PGA;
-typedef PGA.group_mask(0x02) scalar_t;
-typedef PGA.group_mask(0x04) vector_t;
-typedef PGA.group_mask(0x01) bivector_t;
-typedef PGA.group_mask(0x08) trivector_t;
+typedef PGA.group_mask(0x08) scalar_t;
+typedef PGA.group_mask(0x01) vector_t;
+typedef PGA.group_mask(0x04) bivector_t;
+typedef PGA.group_mask(0x02) trivector_t;
 typedef union {
-	PGA.group_mask(0x03) mvec;
+	PGA.group_mask(0x0c) mvec;
 	struct {
 		bivector_t bvec;
 		scalar_t   scalar;
 	};
 } evengrades_t;
 typedef union {
-	PGA.group_mask(0x0c) mvec;
+	PGA.group_mask(0x03) mvec;
 	struct {
 		vector_t vec;
 		trivector_t tvec;
