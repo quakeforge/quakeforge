@@ -126,53 +126,6 @@ static const char **mvec_names[] = {
 	[4] = mvec_4d_names,
 };
 
-static symbol_t *
-build_algebra_type (algebra_t *a)
-{
-	auto name = save_string (va (0, "multivec.%s(%d.%d.%d)",
-								 a->type->encoding,
-								 a->plus, a->minus, a->zero));
-	int  dim = a->plus + a->minus + a->zero;
-	symbol_t *mvsym;
-	if (dim > 4) {
-		auto mvec = new_symtab (0, stab_struct);
-		int counts[dim + 1];
-		binomial (counts, dim);
-		auto sym = new_symbol ("scalar");
-		sym->type = a->type;
-		sym->sy_type = sy_var;
-		sym->visibility = vis_public;
-		symtab_addsymbol (mvec, sym);
-		// skip 0 because the scalar doesn't need a special type
-		for (int i = 1; i < dim + 1; i++) {
-			sym = new_symbol (va (0, "vec_%d", i));
-			sym->type = array_type (a->type, counts[i]);
-			sym->sy_type = sy_var;
-			sym->visibility = vis_public;
-			symtab_addsymbol (mvec, sym);
-		}
-		mvsym = build_struct ('s', new_symbol (name), mvec, 0, 0);
-		if (mvsym->type->alignment < 4) {
-			mvsym->type->alignment = 4;
-		}
-	} else if (dim > 0) {
-		const char **names = mvec_names[dim];
-		int          count = 0;
-		for (auto n = names; *n; n++, count++) continue;
-		struct_def_t fields[count + 1] = {};
-		for (int i = 0; i < count; i++) {
-			fields[i] = (struct_def_t) {
-				.name = names[i],
-				.type = algebra_mvec_type (a, 1u << i),
-			};
-		};
-		mvsym = make_structure (name, 's', fields, 0);
-	} else {
-		internal_error (0, "invalid number of dimensions");
-	}
-	return mvsym;
-}
-
 static void
 basis_blade_init (basis_blade_t *blade, pr_uint_t mask)
 {
@@ -372,8 +325,8 @@ algebra_init (algebra_t *a)
 			algebra_mvec_type (a, g->group_mask);
 		}
 	}
-	algebra_mvec_type (a, (1 << a->layout.count) - 1);
-	a->mvec_sym = build_algebra_type (a);
+	auto type = algebra_mvec_type (a, (1 << a->layout.count) - 1);
+	a->mvec_sym = type->t.multivec->mvec_sym;
 }
 
 bool
@@ -504,12 +457,22 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		}
 		symbol_t   *mvec_sym = 0;
 		if (group_mask & (group_mask - 1)) {
+			const char **mv_names = 0;
+			if (algebra->dimension < 5) {
+				mv_names = mvec_names[algebra->dimension];
+			}
 			struct_def_t fields[count + 1] = {};
 			for (int i = 0, c = 0; i < algebra->layout.count; i++) {
 				pr_uint_t   mask = 1 << i;
 				if (group_mask & mask) {
+					const char *name;
+					if (mv_names) {
+						name = mv_names[i];
+					} else {
+						name = va (0, "group_%d", i);
+					}
 					fields[c] = (struct_def_t) {
-						.name = save_string (va (0, "group_%d", i)),
+						.name = save_string (name),
 						.type = algebra_mvec_type (algebra, mask),
 					};
 					c++;
