@@ -690,36 +690,16 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	sym->s.def->initializer = init;
 }
 
-int
-def_overlap (def_t *d1, def_t *d2)
+static int
+def_overlap (def_t *d, int offset, int size)
 {
-	int         offs1, size1;
-	int         offs2, size2;
-	defspace_t *s1 = d1->space;
-	defspace_t *s2 = d2->space;
+	int         d_offset = d->offset;
+	int         d_size = type_size (d->type);
 
-	if (d1->alias)
-		s1 = d1->alias->space;
-	if (d2->alias)
-		s2 = d2->alias->space;
-	/// Defs in different spaces never overlap.
-	if (s1 != s2)
-		return 0;
-
-	offs1 = d1->offset;
-	if (d1->alias)
-		offs1 += d1->alias->offset;
-	size1 = type_size (d1->type);
-
-	offs2 = d2->offset;
-	if (d2->alias)
-		offs2 += d2->alias->offset;
-	size2 = type_size (d2->type);
-
-	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
-		return 2;	// d1 fully overlaps d2
-	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
-		return 1;	// d1 and d2 at least partially overlap
+	if (d_offset >= offset && d_offset + d_size <= offset + size)
+		return 2;	// d is fully overlapped by the range
+	if (d_offset < offset + size && offset < d_offset + d_size)
+		return 1;	// d is partially overlapped by the range range
 	return 0;
 }
 
@@ -739,6 +719,23 @@ def_size (def_t *def)
 }
 
 int
+def_visit_overlaps (def_t *def, int offset, int size, int overlap, def_t *skip,
+					int (*visit) (def_t *, void *), void *data)
+{
+	int         ret;
+
+	for (def = def->alias_defs; def; def = def->next) {
+		if (def == skip)
+			continue;
+		if (overlap && def_overlap (def, offset, size) < overlap)
+			continue;
+		if ((ret = visit (def, data)))
+			return ret;
+	}
+	return 0;
+}
+
+int
 def_visit_all (def_t *def, int overlap,
 			   int (*visit) (def_t *, void *), void *data)
 {
@@ -755,13 +752,8 @@ def_visit_all (def_t *def, int overlap,
 	} else {
 		overlap = 0;
 	}
-	for (def = def->alias_defs; def; def = def->next) {
-		if (def == start_def)
-			continue;
-		if (overlap && def_overlap (def, start_def) < overlap)
-			continue;
-		if ((ret = visit (def, data)))
-			return ret;
-	}
-	return 0;
+	int         offset = start_def->offset;
+	int         size = start_def->type ? type_size (start_def->type) : 0;
+	return def_visit_overlaps (def, offset, size, overlap, start_def,
+							   visit, data);
 }

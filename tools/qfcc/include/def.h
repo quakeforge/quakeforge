@@ -257,15 +257,6 @@ void initialize_def (struct symbol_s *sym,
 					 struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage, struct symtab_s *symtab);
 
-/** Determine if two defs overlap.
-
-	\param d1		The first def to check. May be an alias def.
-	\param d2		The second def to check. May be an alias def.
-	\return			1 if the defs overlap, 2 if \a d1 fully overlaps \a d2,
-					otherwise 0.
-*/
-int def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
-
 /** Convenience function for obtaining a def's actual offset.
 
 	Takes care of an alias def's relative offset.
@@ -317,6 +308,11 @@ int def_size (def_t *def) __attribute__((pure));
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);
+
+int def_visit_overlaps (def_t *def, int offset, int size, int overlap,
+						def_t *skip,
+						int (*visit) (def_t *, void *), void *data);
+
 ///@}
 
 #endif//__def_h
