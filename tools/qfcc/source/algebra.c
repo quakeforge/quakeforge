@@ -490,7 +490,10 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		algebra->mvec_types[group_mask] = new_type ();
 		*algebra->mvec_types[group_mask] = (type_t) {
 			.type = algebra->type->type,
-			.name = "basis group",
+			.name = save_string (va (0, "algebra(%s(%d,%d,%d):%04x)",
+									 algebra->type->name,
+									 algebra->plus, algebra->minus,
+									 algebra->zero, group_mask)),
 			.alignment = algebra_alignment (algebra->type, components),
 			.width = components,
 			.meta = ty_algebra,

@@ -579,6 +579,8 @@ expr_t *new_zero_expr (struct type_s *type);
 */
 expr_t *new_name_expr (const char *name);
 
+struct symbol_s *get_name (expr_t *e) __attribute__((pure));
+
 /** Create a new string constant expression node.
 
 	\param string_val	The string constant being represented.

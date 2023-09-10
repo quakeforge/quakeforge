@@ -1464,20 +1464,27 @@ prepend_expr (expr_t *block, expr_t *e)
 }
 
 symbol_t *
+get_name (expr_t *e)
+{
+	if (e->type == ex_symbol) {
+		return e->e.symbol;
+	}
+	return 0;
+}
+
+symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {
-	symtab_t   *strct = 0;
-	if (is_algebra (t1)) {
-		error (e1, "dereferencing pointer to incomplete type");
-		return 0;
-	} else {
-		strct = t1->t.symtab;
-	}
-	symbol_t   *sym = e2->e.symbol;//FIXME need to check
+	symtab_t   *strct = t1->t.symtab;
+	symbol_t   *sym = get_name (e2);
 	symbol_t   *field;
 
 	if (!strct) {
 		error (e1, "dereferencing pointer to incomplete type");
+		return 0;
+	}
+	if (!sym) {
+		error (e2, "field reference is not a name");
 		return 0;
 	}
 	field = symtab_lookup (strct, sym->name);
@@ -2295,7 +2302,7 @@ function_expr (expr_t *fexpr, expr_t *params)
 expr_t *
 branch_expr (int op, expr_t *test, expr_t *label)
 {
-	// need to translated op due to precedence rules dictating the layout
+	// need to translate op due to precedence rules dictating the layout
 	// of the token ids
 	static pr_branch_e branch_type [] = {
 		pr_branch_eq,

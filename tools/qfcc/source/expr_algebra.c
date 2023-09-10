@@ -59,6 +59,21 @@ get_group (type_t *type, algebra_t *algebra)
 	return BITOP_LOG2 (group_mask);
 }
 
+static pr_uint_t
+get_group_mask (type_t *type, algebra_t *algebra)
+{
+	auto layout = &algebra->layout;
+	if (!is_algebra (type)) {
+		int group = layout->group_map[layout->mask_map[0]][0];
+		return 1u << group;
+	} else {
+		if (type->type == ev_invalid) {
+			return (1 << algebra->layout.count) - 1;
+		}
+		return type->t.multivec->group_mask;
+	}
+}
+
 static bool __attribute__((const))
 is_neg (const expr_t *e)
 {
@@ -2268,9 +2283,41 @@ algebra_field_expr (expr_t *mvec, expr_t *field_name)
 		return new_offset_alias_expr (field->type, mvec, field->s.offset);
 	}
 	if (mvec->type == ex_multivec) {
-		internal_error (mvec, "not implemented");
+		auto field_sym = get_name (field_name);
+		if (!field_sym) {
+			return error (field_name, "multi-vector reference is not a name");
+		}
+		auto multivec = mvec_type->t.multivec;
+		auto mvec_struct = multivec->mvec_sym->type->t.symtab;
+		auto field = symtab_lookup (mvec_struct, field_sym->name);
+		if (!field) {
+			mvec_struct = algebra->mvec_sym->type->t.symtab;
+			field = symtab_lookup (mvec_struct, field_sym->name);
+			if (field) {
+				debug (field_name, "'%s' not in sub-type '%s' of '%s', "
+					   "returning zero of type '%s'", field_sym->name,
+					   mvec_type->name, algebra->mvec_sym->type->name,
+					   mvec_type->name);
+				return new_zero_expr (field->type);
+			}
+			return error (field_name, "'%s' has no member named '%s'",
+						  mvec_type->name, field_sym->name);
+		}
+		auto layout = &algebra->layout;
+		expr_t *a[layout->count] = {};
+		mvec_scatter (a, mvec_expr (mvec, algebra), algebra);
+		pr_uint_t group_mask = get_group_mask (field->type, algebra);
+		for (int i = 0; i < layout->count; i++) {
+			if (!(group_mask & (1u << i))) {
+				a[i] = 0;
+			}
+		}
+		return mvec_gather (a, algebra);
 	} else {
 		auto multivec = mvec_type->t.multivec;
+		if (!multivec->mvec_sym) {
+			return error (mvec, "'%s' not a multi-vector", mvec_type->name);
+		}
 		auto mvec_struct = multivec->mvec_sym->type;
 		auto field = get_struct_field (mvec_struct, mvec, field_name);
 		if (!field) {
