@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <math.h>
 
@@ -45,6 +46,14 @@ static void
 bi_sinf (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = sinf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_sincosf (progs_t *pr, void *data)
+{
+	float      *vec = &R_var (pr, float);
+	float       x = P_FLOAT (pr, 0);
+	sincosf (x, &vec[0], &vec[1]);
 }
 
 static void
@@ -142,6 +151,15 @@ bi_sinhf (progs_t *pr, void *data)
 }
 
 static void
+bi_sincoshf (progs_t *pr, void *data)
+{
+	float      *vec = &R_var (pr, float);
+	float       x = P_FLOAT (pr, 0);
+	vec[0] = sinhf (x);
+	vec[1] = coshf (x);
+}
+
+static void
 bi_coshf (progs_t *pr, void *data)
 {
 	R_FLOAT (pr) = coshf (P_FLOAT (pr, 0));
@@ -196,6 +214,14 @@ static void
 bi_sin (progs_t *pr, void *data)
 {
 	R_DOUBLE (pr) = sin (P_DOUBLE (pr, 0));
+}
+
+static void
+bi_sincos (progs_t *pr, void *data)
+{
+	double     *vec = &R_var (pr, double);
+	float       x = P_FLOAT (pr, 0);
+	sincos (x, &vec[0], &vec[1]);
 }
 
 static void
@@ -289,6 +315,15 @@ bi_sinh (progs_t *pr, void *data)
 }
 
 static void
+bi_sincosh (progs_t *pr, void *data)
+{
+	float      *vec = &R_var (pr, float);
+	float       x = P_FLOAT (pr, 0);
+	vec[0] = sinh (x);
+	vec[1] = cosh (x);
+}
+
+static void
 bi_cosh (progs_t *pr, void *data)
 {
 	R_DOUBLE (pr) = cosh (P_DOUBLE (pr, 0));
@@ -325,6 +360,7 @@ bi_atanh (progs_t *pr, void *data)
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
 	{"sin|f",	bi_sinf,	-1, 1, {p(float)}},
+	{"sincos|f",bi_sincosf,	-1, 1, {p(float)}},
 	{"cos|f",	bi_cosf,	-1, 1, {p(float)}},
 	{"tan|f",	bi_tanf,	-1, 1, {p(float)}},
 	{"asin|f",	bi_asinf,	-1, 1, {p(float)}},
@@ -340,6 +376,7 @@ static builtin_t builtins[] = {
 	{"cbrt|f",	bi_cbrtf,	-1, 1, {p(float)}},
 	{"hypot|ff",bi_hypotf,	-1, 2, {p(float), p(float)}},
 	{"sinh|f",	bi_sinhf,	-1, 1, {p(float)}},
+	{"sincosh|f",bi_sincoshf,-1, 1, {p(float)}},
 	{"cosh|f",	bi_coshf,	-1, 1, {p(float)}},
 	{"tanh|f",	bi_tanhf,	-1, 1, {p(float)}},
 	{"asinh|f",	bi_asinhf,	-1, 1, {p(float)}},
@@ -349,6 +386,7 @@ static builtin_t builtins[] = {
 	{"ceil|d",	bi_ceil,	-1, 1, {p(double)}},	// float version in pr_cmds
 	{"fabs|d",	bi_fabs,	-1, 1, {p(double)}},	// float version in pr_cmds
 	{"sin|d",	bi_sin,		-1, 1, {p(double)}},
+	{"sincos|d",bi_sincos,	-1, 1, {p(double)}},
 	{"cos|d",	bi_cos,		-1, 1, {p(double)}},
 	{"tan|d",	bi_tan,		-1, 1, {p(double)}},
 	{"asin|d",	bi_asin,	-1, 1, {p(double)}},
@@ -364,6 +402,7 @@ static builtin_t builtins[] = {
 	{"cbrt|d",	bi_cbrt,	-1, 1, {p(double)}},
 	{"hypot|dd",bi_hypot,	-1, 2, {p(double), p(double)}},
 	{"sinh|d",	bi_sinh,	-1, 1, {p(double)}},
+	{"sincosh|d",bi_sincosh,-1, 1, {p(double)}},
 	{"cosh|d",	bi_cosh,	-1, 1, {p(double)}},
 	{"tanh|d",	bi_tanh,	-1, 1, {p(double)}},
 	{"asinh|d",	bi_asinh,	-1, 1, {p(double)}},
