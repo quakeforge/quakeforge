@@ -819,7 +819,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 															   STACK_ALIGN);
 
 		dstatement_t *st = &pr.code->code[func->code];
-		if (st->op == OP_ADJSTK) {
+		if (pr.code->size > func->code && st->op == OP_ADJSTK) {
 			if (func->params_start) {
 				st->b = -func->params_start;
 			} else {
