@@ -782,6 +782,19 @@ algebra_base_type (const type_t *type)
 	return ev_types[type->type];
 }
 
+type_t *
+algebra_struct_type (const type_t *type)
+{
+	symbol_t   *sym = 0;
+
+	if (type->type == ev_invalid) {
+		sym = type->t.algebra->mvec_sym;
+	} else {
+		sym = type->t.multivec->mvec_sym;
+	}
+	return sym ? sym->type : 0;
+}
+
 int
 algebra_blade_grade (basis_blade_t blade)
 {

@@ -176,8 +176,8 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 	return alias_expr (type, expr, offset);
 }
 
-static symbol_t *
-get_mvec_sym (type_t *type)
+static symtab_t *
+get_mvec_struct (type_t *type)
 {
 	symbol_t   *sym = 0;
 	if (type->type == ev_invalid) {
@@ -185,7 +185,14 @@ get_mvec_sym (type_t *type)
 	} else {
 		sym = type->t.multivec->mvec_sym;
 	}
-	return sym->type->t.symtab->symbols;
+	return sym ? sym->type->t.symtab : 0;
+}
+
+static symbol_t *
+get_mvec_sym (type_t *type)
+{
+	auto symtab = get_mvec_struct (type);
+	return symtab ? symtab->symbols : 0;
 }
 
 static bool

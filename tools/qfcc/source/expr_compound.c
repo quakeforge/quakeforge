@@ -206,8 +206,19 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 
 	initstate_t state = {};
 	if (is_algebra (type)) {
-		error (eles, "block initializer of multi-vector type");
-		return;
+		for (auto e = ele; e; e = e->next) {
+			if (!e->designator) {
+				error (eles, "block initializer of multi-vector type requires "
+					   "designators for all initializer elements");
+				return;
+			}
+		}
+		auto t = algebra_struct_type (type);
+		if (!t) {
+			error (eles, "block initializer on simple multi-vector type");
+			return;
+		}
+		type = t;
 	} else if (is_struct (type) || is_union (type)
 			   || (is_nonscalar (type) && type->t.symtab)) {
 		state.field = type->t.symtab->symbols;
@@ -308,7 +319,7 @@ assign_elements (expr_t *local_expr, expr_t *init,
 		expr_t     *c;
 
 		if (type_size (type) == 0)
-			internal_error (init, "wtf");
+			internal_error (init, "wtw");
 		if (element->expr) {
 			c = constant_expr (element->expr);
 		} else {
@@ -335,6 +346,12 @@ assign_elements (expr_t *local_expr, expr_t *init,
 		if (in) {
 			start = in->element;
 		}
+	}
+	if (start < (unsigned) type_size (init_type)) {
+		expr_t     *dst = new_offset_alias_expr (&type_int, init, start);
+		expr_t     *zero = new_int_expr (0);
+		expr_t     *count = new_int_expr (type_size (init_type) - start);
+		append_expr (local_expr, new_memset_expr (dst, zero, count));
 	}
 	set_delete (initialized);
 }
