@@ -2267,5 +2267,15 @@ algebra_field_expr (expr_t *mvec, expr_t *field_name)
 		}
 		return new_offset_alias_expr (field->type, mvec, field->s.offset);
 	}
-	internal_error (mvec, "not implemented");
+	if (mvec->type == ex_multivec) {
+		internal_error (mvec, "not implemented");
+	} else {
+		auto multivec = mvec_type->t.multivec;
+		auto mvec_struct = multivec->mvec_sym->type;
+		auto field = get_struct_field (mvec_struct, mvec, field_name);
+		if (!field) {
+			return mvec;
+		}
+		return new_offset_alias_expr (field->type, mvec, field->s.offset);
+	}
 }

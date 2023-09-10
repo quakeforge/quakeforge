@@ -1547,6 +1547,8 @@ field_expr (expr_t *e1, expr_t *e2)
 			e1 = cast_expr (pointer_type (ivar->type), e1);
 			return unary_expr ('.', e1);
 		}
+	} else if (is_algebra (t1)) {
+		return algebra_field_expr (e1, e2);
 	} else if (is_nonscalar (t1) || is_struct (t1) || is_union (t1)) {
 		symbol_t   *field;
 
@@ -1587,8 +1589,6 @@ field_expr (expr_t *e1, expr_t *e2)
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
 		}
-	} else if (is_algebra (t1)) {
-		return algebra_field_expr (e1, e2);
 	} else if (is_class (t1)) {
 		//Class instance variables aren't allowed and thus declaring one
 		//is treated as an error, so this is a follow-on error.
