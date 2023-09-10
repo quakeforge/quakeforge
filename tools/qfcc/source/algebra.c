@@ -426,6 +426,12 @@ algebra_subtype (type_t *type, attribute_t *attr)
 		}
 		return algebra_mvec_type (algebra, mask);
 	}
+	auto symtab = algebra->mvec_sym->type->t.symtab;
+	auto field = symtab_lookup (symtab, attr->name);
+	if (field) {
+		return field->type;
+	}
+	error (0, "invalid subtype %s", attr->name);
 	return type;
 }
 
