@@ -532,6 +532,22 @@ ReuseString (const char *str)
 }
 
 ex_value_t *
+offset_alias_value (ex_value_t *value, type_t *type, int offset)
+{
+	if (type_size (type) > type_size (value->type)) {
+		error (0, "unable to alias to a larger sized value");
+		return value;
+	}
+	if (offset < 0 || offset + type_size (type) > type_size (value->type)) {
+		error (0, "invalid offset");
+		return value;
+	}
+	pr_type_t   data[type_size (value->type)];
+	memcpy (data, &value->v, sizeof (pr_type_t) * type_size (value->type));
+	return new_type_value (type, data + offset);
+}
+
+ex_value_t *
 alias_value (ex_value_t *value, type_t *type)
 {
 	ex_value_t  new;

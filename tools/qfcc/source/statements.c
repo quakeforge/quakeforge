@@ -154,7 +154,7 @@ _print_operand (operand_t *op)
 			printf ("%s", op->def->name);
 			break;
 		case op_value:
-			printf ("(%s) %s", pr_type_name[op->type->type],
+			printf ("(%s) %s", get_type_string (op->type),
 					get_value_string (op->value));
 			break;
 		case op_label:
@@ -514,8 +514,18 @@ offset_alias_operand (type_t *type, int offset, operand_t *aop, expr_t *expr)
 			def = def->alias;
 		return def_operand (alias_def (def, type, offset), 0, expr);
 	} else if (aop->op_type == op_value) {
-		top = value_operand (aop->value, expr);
-		top->type = type;
+		if (!is_ptr (aop->value->type)) {
+			auto value = offset_alias_value (aop->value, type, offset);
+			top = value_operand (value, expr);
+		} else {
+			// even an offset of 0 will break a pointer value because of
+			// relocations
+			if (offset) {
+				internal_error (expr, "offset alias of pointer value operand");
+			}
+			top = value_operand (aop->value, expr);
+			top->type = type;
+		}
 		return top;
 	} else {
 		internal_error (expr, "invalid alias target: %s: %s",
