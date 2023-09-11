@@ -486,9 +486,9 @@ scale_expr (type_t *type, expr_t *a, expr_t *b)
 	scale = fold_constants (scale);
 	if (neg) {
 		scale = neg_expr (scale);
-		scale->e.expr.type = type;
 		scale = fold_constants (scale);
 	}
+	scale = cast_expr (type, scale);
 	return scale;
 }
 
