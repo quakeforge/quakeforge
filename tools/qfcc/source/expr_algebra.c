@@ -49,7 +49,7 @@ get_group (type_t *type, algebra_t *algebra)
 	if (!is_algebra (type)) {
 		internal_error (0, "non-algebra type");
 	}
-	pr_uint_t group_mask = (1u << (layout->count + 1)) - 1;
+	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (type->type != ev_invalid) {
 		group_mask = type->t.multivec->group_mask;
 	}
@@ -241,7 +241,7 @@ mvec_expr (expr_t *expr, algebra_t *algebra)
 	}
 
 	auto layout = &algebra->layout;
-	pr_uint_t group_mask = (1u << (layout->count + 1)) - 1;
+	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (mvtype->type != ev_invalid) {
 		group_mask = mvtype->t.multivec->group_mask;
 	}
@@ -2281,55 +2281,33 @@ algebra_field_expr (expr_t *mvec, expr_t *field_name)
 	auto mvec_type = get_type (mvec);
 	auto algebra = algebra_get (mvec_type);
 
-	if (mvec_type->type == ev_invalid) {
-		auto mvec_struct = algebra->mvec_sym->type;
-		auto field = get_struct_field (mvec_struct, mvec, field_name);
-		if (!field) {
-			return mvec;
-		}
-		return new_offset_alias_expr (field->type, mvec, field->s.offset);
+	auto field_sym = get_name (field_name);
+	if (!field_sym) {
+		return error (field_name, "multi-vector reference is not a name");
 	}
-	if (mvec->type == ex_multivec) {
-		auto field_sym = get_name (field_name);
-		if (!field_sym) {
-			return error (field_name, "multi-vector reference is not a name");
+	auto mvec_struct = get_mvec_struct (mvec_type);
+	auto field = mvec_struct ? symtab_lookup (mvec_struct, field_sym->name) : 0;
+	if (!field) {
+		mvec_struct = algebra->mvec_sym->type->t.symtab;
+		field = symtab_lookup (mvec_struct, field_sym->name);
+		if (field) {
+			debug (field_name, "'%s' not in sub-type '%s' of '%s', "
+				   "returning zero of type '%s'", field_sym->name,
+				   mvec_type->name, algebra->mvec_sym->type->name,
+				   mvec_type->name);
+			return new_zero_expr (field->type);
 		}
-		auto multivec = mvec_type->t.multivec;
-		auto mvec_struct = multivec->mvec_sym->type->t.symtab;
-		auto field = symtab_lookup (mvec_struct, field_sym->name);
-		if (!field) {
-			mvec_struct = algebra->mvec_sym->type->t.symtab;
-			field = symtab_lookup (mvec_struct, field_sym->name);
-			if (field) {
-				debug (field_name, "'%s' not in sub-type '%s' of '%s', "
-					   "returning zero of type '%s'", field_sym->name,
-					   mvec_type->name, algebra->mvec_sym->type->name,
-					   mvec_type->name);
-				return new_zero_expr (field->type);
-			}
-			return error (field_name, "'%s' has no member named '%s'",
-						  mvec_type->name, field_sym->name);
-		}
-		auto layout = &algebra->layout;
-		expr_t *a[layout->count] = {};
-		mvec_scatter (a, mvec_expr (mvec, algebra), algebra);
-		pr_uint_t group_mask = get_group_mask (field->type, algebra);
-		for (int i = 0; i < layout->count; i++) {
-			if (!(group_mask & (1u << i))) {
-				a[i] = 0;
-			}
-		}
-		return mvec_gather (a, algebra);
-	} else {
-		auto multivec = mvec_type->t.multivec;
-		if (!multivec->mvec_sym) {
-			return error (mvec, "'%s' not a multi-vector", mvec_type->name);
-		}
-		auto mvec_struct = multivec->mvec_sym->type;
-		auto field = get_struct_field (mvec_struct, mvec, field_name);
-		if (!field) {
-			return mvec;
-		}
-		return new_offset_alias_expr (field->type, mvec, field->s.offset);
+		return error (field_name, "'%s' has no member named '%s'",
+					  mvec_type->name, field_sym->name);
 	}
+	auto layout = &algebra->layout;
+	expr_t *a[layout->count] = {};
+	mvec_scatter (a, mvec_expr (mvec, algebra), algebra);
+	pr_uint_t group_mask = get_group_mask (field->type, algebra);
+	for (int i = 0; i < layout->count; i++) {
+		if (!(group_mask & (1u << i))) {
+			a[i] = 0;
+		}
+	}
+	return mvec_gather (a, algebra);
 }
