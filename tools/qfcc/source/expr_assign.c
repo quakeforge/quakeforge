@@ -277,9 +277,10 @@ copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
 		if (e->type == ex_vector) {
 			index += copy_elements (block, dst, e, index + base);
 		} else {
-			expr_t     *dst_ele = array_expr (dst, new_int_expr (index + base));
+			auto type = get_type (e);
+			auto dst_ele = new_offset_alias_expr (type, dst, index + base);
 			append_expr (block, assign_expr (dst_ele, e));
-			index += type_width (get_type (e));
+			index += type_width (type);
 		}
 	}
 	return index;
@@ -291,7 +292,7 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 	if (src->type == ex_vector && dst->type != ex_vector) {
 		expr_t     *block = new_block_expr ();
 
-		if (options.code.progsversion <= PROG_VERSION) {
+		if (options.code.progsversion < PROG_VERSION) {
 			copy_qv_elements (block, dst, src);
 		} else {
 			copy_elements (block, dst, src, 0);
