@@ -572,7 +572,11 @@ clear_operand_chain (operand_t *op)
 static void
 add_var_addrs (set_t *set, flowvar_t *var)
 {
-	for (int i = 0; i < var->op->size; i++) {
+	int size = var->op->size;
+	if (size < var->minsize) {
+		size = var->minsize;
+	}
+	for (int i = 0; i < size; i++) {
 		set_add (set, var->flowaddr + i);
 	}
 }
@@ -832,6 +836,17 @@ flow_add_op_var (set_t *set, operand_t *op, int ol)
 		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
 	} else if (op->op_type == op_def) {
 		def_visit_all (op->def, ol, flow_def_add_aliases, set);
+	}
+}
+
+static void
+flow_set_minsize (operand_t *op, int size)
+{
+	flowvar_t  *var;
+	if (!(var = flow_get_var (op)))
+		return;
+	if (var->minsize < size) {
+		var->minsize = size;
 	}
 }
 
@@ -1604,6 +1619,12 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				} else {
 					print_type (s->opb->type);
 					internal_error (s->expr, "unexpected type for memset/move");
+				}
+				if (s->type == st_move) {
+					flow_set_minsize (s->opa, size);
+				}
+				if (s->type == st_move || s->type == st_memset) {
+					flow_set_minsize (s->opc, size);
 				}
 			} else {
 				size = -1;

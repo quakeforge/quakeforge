@@ -49,6 +49,7 @@ typedef struct flowvar_s {
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
 	int         flowaddr;		///< psuedo address for local and temp vars
+	int         minsize;		///< minimum size (via memset/move)
 } flowvar_t;
 
 typedef struct udchain_s {
