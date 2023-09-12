@@ -1254,7 +1254,18 @@ static void
 pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
-	dasprintf (data->dstr, "<void>");
+	dstring_t  *dstr = data->dstr;
+
+	if (!type->basic.width) {
+		dasprintf (dstr, "<void>");
+		return;
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
+	}
 }
 
 static void
