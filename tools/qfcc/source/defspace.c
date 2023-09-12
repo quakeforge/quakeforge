@@ -317,3 +317,33 @@ defspace_reset (defspace_t *space)
 		memset (space->data, 0, space->max_size * sizeof (pr_type_t));
 	}
 }
+
+void
+defspace_sort_defs (defspace_t *space)
+{
+	int         num_defs = 0;
+	for (auto d = space->defs; d; d = d->next) {
+		num_defs++;
+	}
+	if (!num_defs) {
+		return;
+	}
+	def_t      *defs[num_defs];
+	num_defs = 0;
+	for (auto d = space->defs; d; d = d->next) {
+		defs[num_defs++] = d;
+	}
+	for (int i = 1; i < num_defs; i++) {
+		auto d = defs[i];
+		for (int j = i; j-- > 0 && d->offset < defs[j]->offset; ) {
+			defs[j + 1] = defs[j];
+			defs[j] = d;
+		}
+	}
+	space->def_tail = &space->defs;
+	for (int i = 0; i < num_defs; i++) {
+		*space->def_tail = defs[i];
+		space->def_tail = &defs[i]->next;
+	}
+	*space->def_tail = 0;
+}

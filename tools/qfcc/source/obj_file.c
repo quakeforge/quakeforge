@@ -326,6 +326,10 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_reloc_t *reloc;
 	reloc_t    *r;
 
+	defspace_sort_defs (pr->near_data);
+	defspace_sort_defs (pr->far_data);
+	defspace_sort_defs (pr->entity_data);
+
 	qfo = calloc (1, sizeof (qfo_t));
 	qfo->num_spaces = qfo_num_spaces; // certain spaces are always present
 	qfo_count_stuff (qfo, pr);

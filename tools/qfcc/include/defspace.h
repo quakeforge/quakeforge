@@ -222,6 +222,8 @@ int defspace_alloc_aligned_highwater (defspace_t *space, int size,
 */
 void defspace_reset (defspace_t *space);
 
+void defspace_sort_defs (defspace_t *space);
+
 ///@}
 
 #endif//__defspace_h

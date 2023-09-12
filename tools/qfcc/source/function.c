@@ -790,6 +790,8 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		}
 	}
 	emit_function (func, statements);
+	defspace_sort_defs (func->parameters->space);
+	defspace_sort_defs (func->locals->space);
 	if (options.code.progsversion < PROG_VERSION) {
 		// stitch parameter and locals data together with parameters coming
 		// first
