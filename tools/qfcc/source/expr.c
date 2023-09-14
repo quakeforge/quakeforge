@@ -2102,6 +2102,15 @@ bitnot_expr:
 	internal_error (e, 0);
 }
 
+void
+vararg_integer (expr_t *e)
+{
+	if (is_int_val (e) && options.code.progsversion < PROG_VERSION
+		&& options.warnings.vararg_integer) {
+		warning (e, "passing int constant into ... function");
+	}
+}
+
 expr_t *
 build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
@@ -2211,8 +2220,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 					}
 				}
 			}
-			if (is_int_val (e) && options.warnings.vararg_integer)
-				warning (e, "passing int constant into ... function");
+			vararg_integer (e);
 		}
 		arg_types[arg_count - 1 - i] = t;
 	}

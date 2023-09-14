@@ -749,9 +749,7 @@ method_check_params (method_t *method, expr_t *args)
 				}
 			}
 		} else {
-			if (is_int_val (e) && options.warnings.vararg_integer) {
-				warning (e, "passing int consant into ... function");
-			}
+			vararg_integer (e);
 		}
 	}
 	free (arg_list);
