@@ -263,12 +263,7 @@ PF_setmodel (progs_t *pr, void *data)
 	mod = sv.models[i];
 
 	if (mod) {
-		// FIXME disabled for now as setting clipmins/maxs is currently
-		// too messy
-		//if (mod->type == mod_brush)
-		//	SetMinMaxSize (pr, e, mod->clipmins, mod->clipmaxs, true);
-		//else
-			SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
+		SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
 	} else {
 		SetMinMaxSize (pr, e, vec3_origin, vec3_origin, true);
 	}

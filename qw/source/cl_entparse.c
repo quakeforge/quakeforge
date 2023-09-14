@@ -550,8 +550,7 @@ CL_SetSolidEntities (void)
 			continue;
 		if (!cl_world.models.a[state->modelindex])
 			continue;
-		if (cl_world.models.a[state->modelindex]->brush.hulls[1].firstclipnode
-			|| cl_world.models.a[state->modelindex]->clipbox) {
+		if (cl_world.models.a[state->modelindex]->brush.hulls[1].firstclipnode){
 			if (pmove.numphysent == MAX_PHYSENTS) {
 				Sys_Printf ("WARNING: entity physent overflow, email "
 							"quakeforge-devel@lists.quakeforge.net\n");

@@ -263,7 +263,7 @@ CL_LinkPacketEntities (void)
 				CL_TransformEntity (ent, new->scale / 16, new->angles,
 									new->origin);
 				animation->pose1 = animation->pose2 = -1;
-			} else if (!(renderer->model->flags & EF_ROTATE)) {
+			} else if (!(renderer->model->effects & ME_ROTATE)) {
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
 				// interpolate the origin and angles
@@ -286,7 +286,7 @@ CL_LinkPacketEntities (void)
 		}
 
 		// rotate binary objects locally
-		if (renderer->model->flags & EF_ROTATE) {
+		if (renderer->model->effects & ME_ROTATE) {
 			vec3_t      angles;
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
@@ -298,7 +298,7 @@ CL_LinkPacketEntities (void)
 		vec4f_t org = Transform_GetWorldPosition (transform);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256))
 			old->origin = org;
-		if (renderer->model->flags & ~EF_ROTATE) {
+		if (renderer->model->effects & ~ME_ROTATE) {
 			CL_ModelEffects (ent, new->glow_color, cl.time);
 		}
 	}

@@ -374,15 +374,17 @@ typedef enum {
 	mod_num_types
 } modtype_t;
 
-#define	EF_ROCKET		1			// leave a trail
-#define	EF_GRENADE		2			// leave a trail
-#define	EF_GIB			4			// leave a trail
-#define	EF_ROTATE		8			// rotate (bonus items)
-#define	EF_TRACER		16			// green split trail
-#define	EF_ZOMGIB		32			// small blood trail
-#define	EF_TRACER2		64			// orange split trail + rotate
-#define	EF_TRACER3		128			// purple trail
-#define EF_GLOWTRAIL	4096		// glowcolor particle trail
+typedef enum {
+	ME_ROCKET     = 1,			// leave a trail
+	ME_GRENADE    = 2,			// leave a trail
+	ME_GIB        = 4,			// leave a trail
+	ME_ROTATE     = 8,			// rotate (bonus items)
+	ME_TRACER     = 16,			// green split trail
+	ME_ZOMGIB     = 32,			// small blood trail
+	ME_TRACER2    = 64,			// orange split trail + rotate
+	ME_TRACER3    = 128,		// purple trail
+	ME_GLOWTRAIL  = 4096,		// glowcolor particle trail
+} modeffects_t;
 
 typedef struct model_s {
 	//FIXME use pointers. needs care in bsp submodel loading
@@ -391,13 +393,12 @@ typedef struct model_s {
 	const struct vpath_s *vpath;// virtual path where this model was found
 	bool		 needload;		// bmodels and sprites don't cache normally
 	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
-	bool		 hasfullbrights;
 
 	modtype_t	 type;
 	int			 numframes;
 	synctype_t	 synctype;
 
-	int			 flags;
+	modeffects_t effects;
 
 // lighting info
 	float		 min_light;
@@ -408,10 +409,6 @@ typedef struct model_s {
 	float		 radius;
 // FIXME: bbox cruft has to stay until sw rendering gets updated
 	vec3_t		 mins, maxs;
-
-// solid volume for clipping
-	bool		 clipbox;
-	vec3_t		 clipmins, clipmaxs;
 
 // brush model
 	//FIXME should be a pointer (submodels make things tricky)

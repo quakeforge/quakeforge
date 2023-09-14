@@ -170,7 +170,7 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 	vec4f_t     ent_origin = Transform_GetWorldPosition (transform);
 
 	// add automatic particle trails
-	if (model->flags & EF_ROCKET) {
+	if (model->effects & ME_ROCKET) {
 		uint32_t light = attach_light_ent (ent);
 		Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
 			.origin = ent_origin,
@@ -182,19 +182,19 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 		Light_LinkLight (cl_world.scene->lights, light);
 		clp_funcs->RocketTrail (*old_origin, ent_origin);
 		renderer->noshadows = 1;
-	} else if (model->flags & EF_GRENADE)
+	} else if (model->effects & ME_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_GIB)
+	else if (model->effects & ME_GIB)
 		clp_funcs->BloodTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_ZOMGIB)
+	else if (model->effects & ME_ZOMGIB)
 		clp_funcs->SlightBloodTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_TRACER)
+	else if (model->effects & ME_TRACER)
 		clp_funcs->WizTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_TRACER2)
+	else if (model->effects & ME_TRACER2)
 		clp_funcs->FlameTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_TRACER3)
+	else if (model->effects & ME_TRACER3)
 		clp_funcs->VoorTrail (*old_origin, ent_origin);
-	else if (model->flags & EF_GLOWTRAIL)
+	else if (model->effects & ME_GLOWTRAIL)
 		clp_funcs->GlowTrail (*old_origin, ent_origin, glow_color);
 }
 

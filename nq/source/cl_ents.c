@@ -168,7 +168,7 @@ CL_RelinkEntities (void)
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f;
 	int         i, j;
-	int         model_flags;
+	int         model_effects;
 
 	// determine partial update time
 	frac = CL_LerpPoint ();
@@ -254,9 +254,9 @@ CL_RelinkEntities (void)
 		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
 		renderer->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
-		model_flags = 0;
+		model_effects = 0;
 		if (renderer->model) {
-			model_flags = renderer->model->flags;
+			model_effects = renderer->model->effects;
 		}
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
@@ -284,7 +284,7 @@ CL_RelinkEntities (void)
 				// interpolate the origin and angles
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
-				if (!(model_flags & EF_ROTATE)) {
+				if (!(model_effects & ME_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
@@ -307,7 +307,7 @@ CL_RelinkEntities (void)
 								 && !chase_active);
 
 		// rotate binary objects locally
-		if (model_flags & EF_ROTATE) {
+		if (model_effects & ME_ROTATE) {
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
@@ -333,7 +333,7 @@ CL_RelinkEntities (void)
 		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
 			old->origin = org;
 		}
-		if (model_flags & ~EF_ROTATE)
+		if (model_effects & ~ME_ROTATE)
 			CL_ModelEffects (ent, new->glow_color, cl.time);
 
 		SET_REMOVE (&cl_forcelink, i);

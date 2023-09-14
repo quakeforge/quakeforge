@@ -272,7 +272,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	header->crc = crc;
 
-	mod->flags = LittleLong (pinmodel->flags);
+	mod->effects = LittleLong (pinmodel->flags);
 
 	// endian-adjust and copy the data, starting with the alias model header
 	pmodel->ident = LittleLong (pinmodel->ident);
