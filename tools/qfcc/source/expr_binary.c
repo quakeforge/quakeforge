@@ -1216,6 +1216,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			if (is_compare (op)) {
 				t1 = int_type (t1);
 			}
+			if (op == DOT) {
+				if (!is_real (t1)) {
+					return invalid_binary_expr (op, e1, e2);
+				}
+				t1 = base_type (t1);
+			}
 			e->e.expr.type = t1;
 			return e;
 		}
