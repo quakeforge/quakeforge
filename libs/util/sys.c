@@ -1254,8 +1254,10 @@ Sys_Shutdown (void)
 	}
 	if (sys_print_msg) {
 		dstring_delete (sys_print_msg);
+		sys_print_msg = 0;
 	}
 	if (sys_debuglog_data) {
 		dstring_delete (sys_debuglog_data);
+		sys_debuglog_data = 0;
 	}
 }
