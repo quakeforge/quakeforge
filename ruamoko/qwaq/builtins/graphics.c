@@ -139,12 +139,6 @@ bi_setpalette (progs_t *pr, void *_res)
 	VID_SetPalette (palette, colormap);
 }
 
-static void
-bi_shutdown (progs_t *pr, void *_res)
-{
-	Sys_Shutdown ();
-}
-
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -152,7 +146,6 @@ static builtin_t builtins[] = {
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(setpalette, -1, 2, p(ptr), p(ptr)),
-	bi(shutdown,   -1, 0),
 	{0}
 };
 
@@ -170,6 +163,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 static void
 BI_shutdown (void *data)
 {
+	printf ("BI_shutdown\n");
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
 }
