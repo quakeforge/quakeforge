@@ -349,7 +349,9 @@ IN_ClampAxis (in_axis_t *axis, float minval, float maxval)
 void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
 
 int IN_RegisterButton (in_button_t *button);
+void IN_ButtonInit (void);
 int IN_RegisterAxis (in_axis_t *axis);
+void IN_AxisInit (void);
 in_button_t *IN_FindButton (const char *name);
 void IN_ButtonClearStates (void);
 in_axis_t *IN_FindAxis (const char *name);

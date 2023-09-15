@@ -550,6 +550,8 @@ void
 IN_Init (void)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
+	IN_ButtonInit ();
+	IN_AxisInit ();
 	IMT_Init ();
 	IN_Binding_Init ();
 

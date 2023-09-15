@@ -246,8 +246,8 @@ in_button_shutdown (void *data)
 	Hash_DelTable (button_tab);
 }
 
-static void __attribute__((constructor))
-in_button_init (void)
+void
+IN_ButtonInit (void)
 {
 	button_tab = Hash_NewTable (127, button_get_key, button_free, 0, 0);
 	Sys_RegisterShutdown (in_button_shutdown, 0);
