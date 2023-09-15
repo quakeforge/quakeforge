@@ -69,6 +69,18 @@ IN_RegisterAxis (in_axis_t *axis)
 	return 1;
 }
 
+VISIBLE int
+IN_UnregisterAxis (in_axis_t *axis)
+{
+	const char *name = axis->name;
+	if (!Hash_Find (axis_tab, name)) {
+		return 0;
+	}
+
+	Hash_Free (axis_tab, Hash_Del (axis_tab, name));
+	return 1;
+}
+
 VISIBLE in_axis_t *
 IN_FindAxis (const char *name)
 {

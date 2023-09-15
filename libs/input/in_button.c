@@ -63,6 +63,9 @@ static void
 button_free (void *b, void *data)
 {
 	regbutton_t *rb = b;
+
+	Cmd_RemoveCommand (rb->release_cmd);
+	Cmd_RemoveCommand (rb->press_cmd);
 	if (rb->button->listeners) {
 		DARRAY_CLEAR (rb->button->listeners);
 		free (rb->button->listeners);
@@ -194,6 +197,19 @@ IN_RegisterButton (in_button_t *button)
 						"Set the button's state to off/released.");
 
 	Hash_Add (button_tab, regbutton);
+	return 1;
+}
+
+VISIBLE int
+IN_UnregisterButton (in_button_t *button)
+{
+	const char *name = button->name;
+	regbutton_t *regbutton = Hash_Find (button_tab, name);
+	if (!regbutton) {
+		return 0;
+	}
+
+	Hash_Free (button_tab, Hash_Del (button_tab, name));
 	return 1;
 }
 
