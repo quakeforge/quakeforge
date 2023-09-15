@@ -37,6 +37,8 @@
 #endif
 
 #include "QF/cmem.h"
+#include "QF/darray.h"
+#include "QF/fbsearch.h"
 #include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/progs.h"
@@ -50,10 +52,14 @@ typedef struct rua_in_cookie_s {
 	pr_ptr_t    data;
 } rua_in_cookie_t;
 
+typedef struct DARRAY_TYPE (pr_ptr_t) ptrset_t;
+
 typedef struct input_resources_s {
 	hashctx_t  *hashctx;
 	hashtab_t  *cookies;
 	memsuper_t *cookie_super;
+	ptrset_t    buttons;
+	ptrset_t    axes;
 } input_resources_t;
 
 static void
@@ -138,9 +144,30 @@ bi_IN_ClearStates (progs_t *pr, void *_res)
 	IN_ClearStates ();
 }
 
+static int
+ptrcmp (const void *a, const void *b)
+{
+	pr_ptr_t    ptra = *(const pr_ptr_t *) a;
+	pr_ptr_t    ptrb = *(const pr_ptr_t *) b;
+	return ptra - ptrb;
+}
+
+static void
+bi_add_pointer (ptrset_t *pointers, pr_ptr_t ptr)
+{
+	size_t      ind = pointers->size;
+	if (ind && ptr < pointers->a[ind - 1]) {
+		pr_ptr_t   *p = fbsearch (&ptr, pointers->a, ind, sizeof (pr_ptr_t),
+								  ptrcmp);
+		ind = p ? p - pointers->a + 1 : 0;
+	}
+	DARRAY_INSERT_AT (pointers, ptr, ind);
+}
+
 static void
 bi_IN_CreateButton (progs_t *pr, void *_res)
 {
+	input_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
 	in_button_t *button = PR_Zone_Malloc (pr, sizeof (in_button_t));
@@ -148,11 +175,14 @@ bi_IN_CreateButton (progs_t *pr, void *_res)
 	button->description = desc;
 	IN_RegisterButton (button);
 	RETURN_POINTER (pr, button);
+
+	bi_add_pointer (&res->buttons, R_POINTER (pr));
 }
 
 static void
 bi_IN_CreateAxis (progs_t *pr, void *_res)
 {
+	input_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
 	in_axis_t  *axis = PR_Zone_Malloc (pr, sizeof (in_axis_t));
@@ -160,6 +190,8 @@ bi_IN_CreateAxis (progs_t *pr, void *_res)
 	axis->description = desc;
 	IN_RegisterAxis (axis);
 	RETURN_POINTER (pr, axis);
+
+	bi_add_pointer (&res->axes, R_POINTER (pr));
 }
 
 static void
@@ -478,14 +510,41 @@ bi_input_clear (progs_t *pr, void *_res)
 {
 	input_resources_t *res = _res;
 	Hash_FlushTable (res->cookies);
+
+	for (size_t i = 0; i < res->buttons.size; i++) {
+		auto button = (in_button_t *) PR_GetPointer (pr, res->buttons.a[i]);
+		if (button->listeners) {
+			for (size_t j = 0; j < button->listeners->size; j++) {
+				rua_in_cookie_t *cookie = button->listeners->a[j].ldata;
+				release_cookie (pr, res, cookie);
+			}
+		}
+		IN_UnregisterButton (button);
+	}
+	res->buttons.size = 0;
+
+	for (size_t i = 0; i < res->axes.size; i++) {
+		auto axis = (in_axis_t *) PR_GetPointer (pr, res->axes.a[i]);
+		if (axis->listeners) {
+			for (size_t j = 0; j < axis->listeners->size; j++) {
+				rua_in_cookie_t *cookie = axis->listeners->a[j].ldata;
+				release_cookie (pr, res, cookie);
+			}
+		}
+		IN_UnregisterAxis (axis);
+	}
+	res->axes.size = 0;
 }
 
 static void
 bi_input_destroy (progs_t *pr, void *_res)
 {
 	input_resources_t *res = _res;
+	bi_input_clear (pr, res);
 	Hash_DelTable (res->cookies);
 	delete_memsuper (res->cookie_super);
+	DARRAY_CLEAR (&res->buttons);
+	DARRAY_CLEAR (&res->axes);
 
 	free (res);
 }
@@ -519,6 +578,8 @@ RUA_Input_Init (progs_t *pr, int secure)
 	input_resources_t *res = calloc (sizeof (input_resources_t), 1);
 
 	res->cookie_super = new_memsuper ();
+	res->buttons = (ptrset_t) DARRAY_STATIC_INIT (16);
+	res->axes = (ptrset_t) DARRAY_STATIC_INIT (16);
 	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res, pr->hashctx);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
