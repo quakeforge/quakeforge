@@ -177,6 +177,12 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 			return 0;
 		}
 	}
+	if (is_neg (expr)) {
+		auto e = expr->e.expr.e1;
+		if (e->type == ex_extend) {
+			return neg_expr (offset_cast (type, e, offset));
+		}
+	}
 	offset *= type_size (base_type (get_type (expr)));
 	return alias_expr (type, expr, offset);
 }
@@ -357,6 +363,13 @@ ext_compat (const expr_t *a, const expr_t *b)
 }
 
 static expr_t *
+extract_extended_neg (const expr_t *expr)
+{
+	auto e = expr->e.extend;
+	return neg_expr (ext_expr (neg_expr (e.src), e.type, e.extend, e.reverse));
+}
+
+static expr_t *
 sum_expr (type_t *type, expr_t *a, expr_t *b)
 {
 	if (!a) {
@@ -372,6 +385,8 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	if (a->type == ex_extend) {
 		if (b->type == ex_extend) {
 			if (ext_compat (a, b)) {
+				// push the sum below the two extends making for a single
+				// extend of a sum instead of a sum of two extends
 				auto ext = a->e.extend;
 				a = a->e.extend.src;
 				b = b->e.extend.src;
@@ -402,6 +417,12 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 				return sum_expr (type, sum, c);
 			}
 		}
+	}
+	if (a->type == ex_extend && is_neg (a->e.extend.src)) {
+		a = extract_extended_neg (a);
+	}
+	if (b->type == ex_extend && is_neg (b->e.extend.src)) {
+		b = extract_extended_neg (b);
 	}
 	bool neg = false;
 	if ((is_neg (a) && (is_neg (b) || anti_com (b)))
@@ -1687,7 +1708,7 @@ pga2_yw_wx_xy_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto geom_type = algebra_mvec_type (alg, 0x04);
 	auto sa = offset_cast (stype, a, 2);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = alias_expr (ctype, cross_expr (vtype, b, a), 0);
+	auto cv = offset_cast (ctype, cross_expr (vtype, b, a), 0);
 
 	c[2] = ext_expr (cv, geom_type, 0, false);
 	c[3] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x08), sa, sb));
