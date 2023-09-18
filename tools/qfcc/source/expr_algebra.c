@@ -144,24 +144,23 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 	if (type->meta != ty_basic) {
 		internal_error (expr, "offset cast to non-basic type");
 	}
-	if (expr->type == ex_expr && expr->e.expr.op == '+') {
-		auto e1 = expr->e.expr.e1;
-		auto e2 = expr->e.expr.e2;
-		if (e1->type == ex_extend) {
-			auto ext = e1->e.extend;
-			if (type_width (get_type (ext.src)) == type_width (type)) {
-				return alias_expr (type, ext.src, 0);
+	if (expr->type == ex_expr
+		&& (expr->e.expr.op == '+' || expr->e.expr.op == '-')) {
+		auto e1 = offset_cast (type, expr->e.expr.e1, offset);
+		auto e2 = offset_cast (type, expr->e.expr.e2, offset);
+		int  op = expr->e.expr.op;
+		if (!e1) {
+			if (op == '-') {
+				e2 = neg_expr (e2);
 			}
+			return e2;
 		}
-		if (e2->type == ex_extend) {
-			auto ext = e2->e.extend;
-			if (type_width (get_type (ext.src)) == type_width (type)) {
-				return alias_expr (type, ext.src, 0);
-			}
-			if (offset >= type_width (get_type (ext.src))) {
-				return 0;
-			}
+		if (!e2) {
+			return e1;
 		}
+		auto cast = new_binary_expr (op, e1, e2);
+		cast->e.expr.type = type;
+		return cast;
 	}
 	if (expr->type == ex_extend) {
 		auto ext = expr->e.extend;

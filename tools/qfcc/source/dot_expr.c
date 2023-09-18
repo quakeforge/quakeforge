@@ -601,11 +601,19 @@ print_extend (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 	ex_extend_t extend = e->e.extend;
+	int         ext = extend.extend;
 
+	if (ext < 0 || ext > 3) {
+		ext = 4;
+	}
 	_print_expr (dstr, extend.src, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, extend.src);
-	dasprintf (dstr, "%*se_%p [label=\"extend %d\\n%d\"];\n", indent, "", e,
-			   extend.extend, e->line);
+	dasprintf (dstr, "%*se_%p [label=\"extend [%d>%d%s:%s]\\n%d\"];\n",
+			   indent, "", e,
+			   type_width (get_type (extend.src)), type_width (extend.type),
+			   extend.reverse ? ":r" : "",
+			   ((const char *[]){"0", "1", "c", "-1", "?"})[ext],
+			   e->line);
 }
 
 static void
