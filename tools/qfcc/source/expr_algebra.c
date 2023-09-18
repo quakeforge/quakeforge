@@ -167,7 +167,13 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 		if (type_width (get_type (ext.src)) == type_width (type)) {
 			return alias_expr (type, ext.src, 0);
 		}
-		if (offset >= type_width (get_type (ext.src))) {
+		bool rev = ext.reverse;
+		int  cwidth = type_width (type);
+		int  dwidth = type_width (ext.type);
+		int  swidth = type_width (get_type (ext.src));
+
+		if ((!rev && offset >= swidth)
+			|| (rev && offset + cwidth <= dwidth - swidth)) {
 			return 0;
 		}
 	}
