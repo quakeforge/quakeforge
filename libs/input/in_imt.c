@@ -939,6 +939,7 @@ static imtcmd_t imt_commands[] = {
 static void
 IMT_Shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "IMT_Shutdown\n");
 	imt_drop_all_f ();
 	Hash_DelTable (recipe_tab);
 

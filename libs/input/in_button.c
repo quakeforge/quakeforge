@@ -260,6 +260,7 @@ IN_ButtonClearStates (void)
 static void
 in_button_shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "in_button_shutdown\n");
 	Hash_DelTable (button_tab);
 }
 

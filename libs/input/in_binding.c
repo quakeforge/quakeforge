@@ -781,6 +781,7 @@ IN_Binding_Activate (void)
 static void
 IN_Binding_Shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "IN_Binding_Shutdown\n");
 	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
 		clear_connection (db);
 	}

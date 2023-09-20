@@ -120,6 +120,7 @@ IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener, void *data)
 static void
 in_axis_shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "in_axis_shutdown\n");
 	Hash_DelTable (axis_tab);
 }
 

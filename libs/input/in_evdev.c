@@ -75,6 +75,7 @@ in_evdev_check_select (qf_fd_set *fdset, void *data)
 static void
 in_evdev_shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "in_evdev_shutdown\n");
 	inputlib_close ();
 
 	for (unsigned i = 0; i < devmap._size; i++) {
