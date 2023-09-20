@@ -532,15 +532,13 @@ IN_shutdown (void *data)
 {
 	//JOY_Shutdown ();
 
-	Sys_MaskPrintf (SYS_vid, "IN_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "IN_shutdown\n");
 	for (size_t i = in_drivers.size; i-- > 0; ) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		if (rd->driver.shutdown) {
 			rd->driver.shutdown (rd->data);
 		}
 	}
-	IN_Binding_Shutdown ();
-	IMT_Shutdown ();
 
 	DARRAY_CLEAR (&in_drivers);
 	DARRAY_CLEAR (&in_devices);

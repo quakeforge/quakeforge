@@ -69,6 +69,7 @@ button_free (void *b, void *data)
 	if (rb->button->listeners) {
 		DARRAY_CLEAR (rb->button->listeners);
 		free (rb->button->listeners);
+		rb->button->listeners = 0;
 	}
 	free (rb);
 }

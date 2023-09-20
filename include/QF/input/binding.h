@@ -371,7 +371,6 @@ struct IE_event_s;
 int IN_Binding_HandleEvent (const struct IE_event_s *ie_event);
 void IN_Binding_Activate (void);
 void IN_Binding_Init (void);
-void IN_Binding_Shutdown (void);
 struct plitem_s;
 void IN_Binding_SaveConfig (struct plitem_s *config);
 void IN_Binding_LoadConfig (struct plitem_s *config);
