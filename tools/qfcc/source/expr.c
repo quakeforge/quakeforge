@@ -290,7 +290,7 @@ copy_expr (expr_t *e)
 			n->file = pr.source_file;
 			if (e->e.boolean.true_list) {
 				int         count = e->e.boolean.true_list->size;
-				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
+				size_t      size = field_offset (ex_boollist_t, e[count]);
 				n->e.boolean.true_list = malloc (size);
 				while (count--)
 					n->e.boolean.true_list->e[count] =
@@ -298,7 +298,7 @@ copy_expr (expr_t *e)
 			}
 			if (e->e.boolean.false_list) {
 				int         count = e->e.boolean.false_list->size;
-				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
+				size_t      size = field_offset (ex_boollist_t, e[count]);
 				n->e.boolean.false_list = malloc (size);
 				while (count--)
 					n->e.boolean.false_list->e[count] =
@@ -501,7 +501,7 @@ new_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 }
 
 expr_t *
-new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e)
+new_bool_expr (ex_boollist_t *true_list, ex_boollist_t *false_list, expr_t *e)
 {
 	expr_t     *b = new_expr ();
 

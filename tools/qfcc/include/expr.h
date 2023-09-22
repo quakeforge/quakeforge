@@ -136,11 +136,11 @@ typedef struct ex_func_s {
 typedef struct {
 	int         size;
 	struct expr_s *e[1];
-} ex_list_t;
+} ex_boollist_t;
 
 typedef struct {
-	ex_list_t  *true_list;
-	ex_list_t  *false_list;
+	ex_boollist_t *true_list;
+	ex_boollist_t *false_list;
 	struct expr_s *e;
 } ex_bool_t;
 
@@ -441,7 +441,8 @@ expr_t *new_label_ref (ex_label_t *label);
 */
 expr_t *new_state_expr (expr_t *frame, expr_t *think, expr_t *step);
 
-expr_t *new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e);
+expr_t *new_bool_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
+					   expr_t *e);
 
 /**	Create a new statement block expression node.
 
@@ -828,7 +829,7 @@ void dump_dot_expr (void *e, const char *filename);
 expr_t *convert_nil (expr_t *e, struct type_s *t);
 
 expr_t *test_expr (expr_t *e);
-void backpatch (ex_list_t *list, expr_t *label);
+void backpatch (ex_boollist_t *list, expr_t *label);
 expr_t *convert_bool (expr_t *e, int block);
 expr_t *convert_from_bool (expr_t *e, struct type_s *type);
 expr_t *bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2);

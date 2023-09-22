@@ -164,7 +164,7 @@ test_expr (expr_t *e)
 }
 
 void
-backpatch (ex_list_t *list, expr_t *label)
+backpatch (ex_boollist_t *list, expr_t *label)
 {
 	int         i;
 	expr_t     *e;
@@ -185,10 +185,10 @@ backpatch (ex_list_t *list, expr_t *label)
 	}
 }
 
-static ex_list_t *
-merge (ex_list_t *l1, ex_list_t *l2)
+static ex_boollist_t *
+merge (ex_boollist_t *l1, ex_boollist_t *l2)
 {
-	ex_list_t  *m;
+	ex_boollist_t  *m;
 
 	if (!l1 && !l2)
 		return 0;
@@ -196,19 +196,19 @@ merge (ex_list_t *l1, ex_list_t *l2)
 		return l1;
 	if (!l1)
 		return l2;
-	m = malloc ((size_t)&((ex_list_t *)0)->e[l1->size + l2->size]);
+	m = malloc (field_offset (ex_boollist_t, e[l1->size + l2->size]));
 	m->size = l1->size + l2->size;
 	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
 	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (expr_t *));
 	return m;
 }
 
-static ex_list_t *
+static ex_boollist_t *
 make_list (expr_t *e)
 {
-	ex_list_t  *m;
+	ex_boollist_t  *m;
 
-	m = malloc ((size_t)&((ex_list_t *) 0)->e[1]);
+	m = malloc (field_offset (ex_boollist_t, e[1]));
 	m->size = 1;
 	m->e[0] = e;
 	return m;
