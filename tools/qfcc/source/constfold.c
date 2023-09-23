@@ -98,11 +98,11 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	} else {
-		e->e.expr.type = &type_string;
+		e->expr.type = &type_string;
 	}
 
 	if (!is_constant (e1) || !is_constant (e2))
@@ -193,10 +193,10 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return error (e1, "invalid operator for float");
 
 	if ((conv = convert_to_float (e1)) != e1) {
-		e->e.expr.e1 = e1 = conv;
+		e->expr.e1 = e1 = conv;
 	}
 	if ((conv = convert_to_float (e2)) != e2) {
-		e->e.expr.e2 = e2 = conv;
+		e->expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -204,7 +204,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		else
 			type = &type_float;
 	}
-	e->e.expr.type = type;
+	e->expr.type = type;
 
 	if (op == '*' && is_constant (e1) && expr_float (e1) == 1)
 		return e2;
@@ -317,15 +317,15 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return error (e1, "invalid operator for double");
 
 	if ((conv = convert_to_double (e1)) != e1) {
-		e->e.expr.e1 = e1 = conv;
+		e->expr.e1 = e1 = conv;
 	}
 	if ((conv = convert_to_double (e2)) != e2) {
-		e->e.expr.e2 = e2 = conv;
+		e->expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
 		type = int_type (get_type (e));
 	}
-	e->e.expr.type = type;
+	e->expr.type = type;
 
 	if (op == '*' && is_constant (e1) && expr_double (e1) == 1)
 		return e2;
@@ -414,11 +414,11 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			return error (e1, "invalid operator for scalar-vector");
 
 		t = e1;
-		e->e.expr.e1 = e1 = e2;
+		e->expr.e1 = e1 = e2;
 		e2 = t;
 	}
 	if (!is_vector(get_type (e2))) {
-		e->e.expr.e2 = e2 = convert_to_float (e2);
+		e->expr.e2 = e2 = convert_to_float (e2);
 		if (!valid_op (op, vs_valid))
 			return error (e1, "invalid operator for vector");
 	} else {
@@ -427,16 +427,16 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	} else if (op == DOT && is_vector(get_type (e2))) {
-		e->e.expr.type = &type_float;
+		e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
 		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
-		e->e.expr.type = &type_vector;
+		e->expr.type = &type_vector;
 	}
 
 	if (op == SCALE && is_float_val (e2) && expr_float (e2) == 1)
@@ -525,14 +525,14 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 		return e;
 	}
 	if (!is_entity(type))
 		return error (e1, "invalid operator for entity");
-	e->e.expr.type = &type_entity;
+	e->expr.type = &type_entity;
 	return e;
 }
 
@@ -547,9 +547,9 @@ do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 		return e;
 	}
 	return error (e1, "invalid operator for func");
@@ -564,7 +564,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
 		expr_t     *ptoi = new_alias_expr (type, e1);
-		e->e.expr.e1 = ptoi;
+		e->expr.e1 = ptoi;
 		e = fold_constants (e);
 		return new_alias_expr (get_type (e1), e);
 	}
@@ -585,14 +585,14 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	}
 	if (op != '.' && extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
 	if (op == '.' && is_uint(get_type (e2)))
-		e->e.expr.e2 = cast_expr (&type_int, e2);
+		e->expr.e2 = cast_expr (&type_int, e2);
 	return e;
 }
 
@@ -614,7 +614,7 @@ do_op_quatvect (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		QuatMultVec (q, v, r);
 		return new_vector_expr (r);
 	}
-	e->e.expr.type = &type_vector;
+	e->expr.type = &type_vector;
 	return e;
 }
 
@@ -633,12 +633,12 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 		if (op == '*') {
 			t = e1;
-			e->e.expr.e1 = e1 = e2;
+			e->expr.e1 = e1 = e2;
 			e2 = t;
 		}
 	}
 	if (!is_quaternion(get_type (e2))) {
-		e->e.expr.e2 = e2 = convert_to_float (e2);
+		e->expr.e2 = e2 = convert_to_float (e2);
 		if (op != '*' && op != '/')
 			return error (e1, "invalid operator for quaternion");
 	} else {
@@ -647,14 +647,14 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
 		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
-		e->e.expr.type = &type_quaternion;
+		e->expr.type = &type_quaternion;
 	}
 
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
@@ -765,11 +765,11 @@ do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	} else {
-		e->e.expr.type = &type_int;
+		e->expr.type = &type_int;
 	}
 
 	if (op == '*' && isval1 && val1 == 1)
@@ -797,22 +797,22 @@ do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		if (e1->type == ex_expr) {
 			// at most one of the two sub-expressions is constant otherwise
 			// e1 would be a constant
-			if (is_constant (e1->e.expr.e1)) {
-				if ((op == '*' && e1->e.expr.op == '*')
-					|| (is_addsub (op) && is_addsub (e1->e.expr.op))) {
-					expr_t     *c = binary_expr (op, e1->e.expr.e1, e2);
-					e = binary_expr (e1->e.expr.op, c, e1->e.expr.e2);
+			if (is_constant (e1->expr.e1)) {
+				if ((op == '*' && e1->expr.op == '*')
+					|| (is_addsub (op) && is_addsub (e1->expr.op))) {
+					expr_t     *c = binary_expr (op, e1->expr.e1, e2);
+					e = binary_expr (e1->expr.op, c, e1->expr.e2);
 				}
-			} else if (is_constant (e1->e.expr.e2)) {
-				if ((op == '*' && e1->e.expr.op == '*')
-					|| (is_addsub (op) && e1->e.expr.op == '+')) {
-					expr_t     *c = binary_expr (op, e1->e.expr.e2, e2);
-					e = binary_expr (e1->e.expr.op, e1->e.expr.e1, c);
-				} else if (is_addsub (op) && e1->e.expr.op == '-') {
+			} else if (is_constant (e1->expr.e2)) {
+				if ((op == '*' && e1->expr.op == '*')
+					|| (is_addsub (op) && e1->expr.op == '+')) {
+					expr_t     *c = binary_expr (op, e1->expr.e2, e2);
+					e = binary_expr (e1->expr.op, e1->expr.e1, c);
+				} else if (is_addsub (op) && e1->expr.op == '-') {
 					// must ivert op
 					expr_t     *c = binary_expr (inv_addsub (op),
-												 e1->e.expr.e2, e2);
-					e = binary_expr (e1->e.expr.op, e1->e.expr.e1, c);
+												 e1->expr.e2, e2);
+					e = binary_expr (e1->expr.op, e1->expr.e1, c);
 				}
 			}
 		}
@@ -821,27 +821,27 @@ do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		if (e2->type == ex_expr) {
 			// at most one of the two sub-expressions is constant otherwise
 			// e2 would be a constant
-			if (is_constant (e2->e.expr.e1)) {
-				if ((op == '*' && e2->e.expr.op == '*')
-					|| (op == '+' && is_addsub (e2->e.expr.op))) {
-					expr_t     *c = binary_expr (op, e1, e2->e.expr.e1);
-					e = binary_expr (e2->e.expr.op, c, e2->e.expr.e2);
-				} else if (op == '-' && is_addsub (e2->e.expr.op)) {
-					expr_t     *c = binary_expr (op, e1, e2->e.expr.e1);
+			if (is_constant (e2->expr.e1)) {
+				if ((op == '*' && e2->expr.op == '*')
+					|| (op == '+' && is_addsub (e2->expr.op))) {
+					expr_t     *c = binary_expr (op, e1, e2->expr.e1);
+					e = binary_expr (e2->expr.op, c, e2->expr.e2);
+				} else if (op == '-' && is_addsub (e2->expr.op)) {
+					expr_t     *c = binary_expr (op, e1, e2->expr.e1);
 					c = fold_constants (c);
-					e = binary_expr (inv_addsub (e2->e.expr.op),
-									 c, e2->e.expr.e2);
+					e = binary_expr (inv_addsub (e2->expr.op),
+									 c, e2->expr.e2);
 				}
-			} else if (is_constant (e2->e.expr.e2)) {
-				if ((op == '*' && e2->e.expr.op == '*')
-					|| (op == '+' && is_addsub (e2->e.expr.op))) {
-					expr_t     *c = binary_expr (e2->e.expr.op,
-												 e1, e2->e.expr.e2);
-					e = binary_expr (op, c, e2->e.expr.e1);
-				} else if (op == '-' && is_addsub (e2->e.expr.op)) {
-					expr_t     *c = binary_expr (inv_addsub (e2->e.expr.op),
-												 e1, e2->e.expr.e2);
-					e = binary_expr (op, c, e2->e.expr.e1);
+			} else if (is_constant (e2->expr.e2)) {
+				if ((op == '*' && e2->expr.op == '*')
+					|| (op == '+' && is_addsub (e2->expr.op))) {
+					expr_t     *c = binary_expr (e2->expr.op,
+												 e1, e2->expr.e2);
+					e = binary_expr (op, c, e2->expr.e1);
+				} else if (op == '-' && is_addsub (e2->expr.op)) {
+					expr_t     *c = binary_expr (inv_addsub (e2->expr.op),
+												 e1, e2->expr.e2);
+					e = binary_expr (op, c, e2->expr.e1);
 				}
 			}
 		}
@@ -935,11 +935,11 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_int;
+			e->expr.type = &type_int;
 		else
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 	} else {
-		e->e.expr.type = &type_short;
+		e->expr.type = &type_short;
 	}
 
 	if (!is_constant (e1) || !is_constant (e2))
@@ -1705,14 +1705,14 @@ fold_constants (expr_t *e)
 	etype_t     t1, t2;
 
 	if (e->type == ex_uexpr) {
-		e1 = e->e.expr.e1;
+		e1 = e->expr.e1;
 		if (!e1) {
 			return e;
 		}
 		if (is_math (get_type (e1))) {
 			return evaluate_constexpr (e);
 		}
-		op = e->e.expr.op;
+		op = e->expr.op;
 		t1 = extract_type (e1);
 		if (t1 >= ev_type_count || !do_unary_op[t1]) {
 			print_expr (e);
@@ -1720,8 +1720,8 @@ fold_constants (expr_t *e)
 		}
 		return do_unary_op[t1] (op, e, e1);
 	} else if (e->type == ex_expr) {
-		e1 = e->e.expr.e1;
-		e2 = e->e.expr.e2;
+		e1 = e->expr.e1;
+		e2 = e->expr.e2;
 		if (!is_constant (e1) && !is_constant (e2)) {
 			return e;
 		}
@@ -1730,7 +1730,7 @@ fold_constants (expr_t *e)
 			return evaluate_constexpr (e);
 		}
 
-		op = e->e.expr.op;
+		op = e->expr.op;
 
 		t1 = extract_type (e1);
 		t2 = extract_type (e2);

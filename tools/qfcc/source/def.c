@@ -396,7 +396,7 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (c->type == ex_labelref) {
 				// reloc_def_* use only the def's offset and space, so dummy
 				// is ok
-				reloc_def_op (c->e.labelref.label, &dummy);
+				reloc_def_op (c->labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
 				type_t     *ctype = get_type (c);
@@ -427,11 +427,11 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (c->type != ex_value) {
 				internal_error (c, "bogus expression type in init_elements()");
 			}
-			if (c->e.value->lltype == ev_string) {
+			if (c->value->lltype == ev_string) {
 				EMIT_STRING (def->space, *(pr_string_t *) g,
-							 c->e.value->v.string_val);
+							 c->value->v.string_val);
 			} else {
-				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
+				memcpy (g, &c->value->v, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -463,12 +463,12 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 					expr = sym->s.expr;
 					if (is_field) {
 						if (expr->type != ex_value
-							|| expr->e.value->lltype != ev_field) {
+							|| expr->value->lltype != ev_field) {
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
-							expr->e.value->v.pointer.def = vector_sym->s.def;
-							expr->e.value->v.pointer.val = i;
+							expr->value->v.pointer.def = vector_sym->s.def;
+							expr->value->v.pointer.val = i;
 						}
 					}
 				}
@@ -530,12 +530,15 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage,
 		if (is_vector(type) && options.code.vector_components)
 			init_vector_components (field_sym, 1, symtab);
 	} else if (init->type == ex_symbol) {
-		symbol_t   *sym = init->e.symbol;
+		symbol_t   *sym = init->symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
 			expr_t     *new = new_field_expr (0, field->type, field->s.def);
+			if (new->type != ex_value) {
+				internal_error (init, "expected value expression");
+			}
 			init->type = new->type;
-			init->e = new->e;
+			init->value = new->value;
 		}
 	}
 }
@@ -544,7 +547,7 @@ static int
 num_elements (expr_t *e)
 {
 	int         count = 0;
-	for (e = e->e.block.head; e; e = e->next) {
+	for (e = e->block.head; e; e = e->next) {
 		count++;
 	}
 	return count;
@@ -621,7 +624,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	if (!init)
 		return;
-	convert_name (init);
+	init = convert_name (init);
 	if (init->type == ex_error)
 		return;
 	if ((is_structural (sym->type) || is_nonscalar (sym->type))
@@ -650,20 +653,20 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				return;
 			}
 			while (init->type == ex_alias) {
-				init = init->e.alias.expr;
+				init = init->alias.expr;
 			}
 			if (init->type != ex_value) {	//FIXME enum etc
 				internal_error (0, "initializier not a value");
 				return;
 			}
-			if (init->e.value->lltype == ev_ptr
-				|| init->e.value->lltype == ev_field) {
+			if (init->value->lltype == ev_ptr
+				|| init->value->lltype == ev_field) {
 				// FIXME offset pointers
-				D_INT (sym->s.def) = init->e.value->v.pointer.val;
-				if (init->e.value->v.pointer.def)
-					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
+				D_INT (sym->s.def) = init->value->v.pointer.val;
+				if (init->value->v.pointer.def)
+					reloc_def_field (init->value->v.pointer.def, sym->s.def);
 			} else {
-				ex_value_t *v = init->e.value;
+				ex_value_t *v = init->value;
 				if (!init->implicit
 					&& is_double (init_type)
 					&& (is_integral (sym->type) || is_float (sym->type))) {

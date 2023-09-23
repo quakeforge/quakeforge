@@ -305,19 +305,19 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		memset (dst, 0, dstSize);
 		return;
 	}
-	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_var) {
+	if (src->type == ex_symbol && src->symbol->sy_type == sy_var) {
 		// initialized global def treated as a constant
 		// from the tests in cast_expr, the def is known to be constant
-		def_t      *def = src->e.symbol->s.def;
+		def_t      *def = src->symbol->s.def;
 		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
 		return;
 	}
 	ex_value_t *val = 0;
 	if (src->type == ex_value) {
-		val = src->e.value;
+		val = src->value;
 	}
-	if (src->type == ex_symbol && src->e.symbol->sy_type == sy_const) {
-		val = src->e.symbol->s.value;
+	if (src->type == ex_symbol && src->symbol->sy_type == sy_const) {
+		val = src->symbol->s.value;
 	}
 	if (!val) {
 		internal_error (src, "unexpected constant expression type");

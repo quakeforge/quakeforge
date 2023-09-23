@@ -117,8 +117,8 @@ selector_expr (keywordarg_t *selector)
 
 	expr_t     *sel = new_expr ();
 	sel->type = ex_selector;
-	sel->e.selector.sel_ref = sel_ref;
-	sel->e.selector.sel = get_selector (sel_ref);
+	sel->selector.sel_ref = sel_ref;
+	sel->selector.sel = get_selector (sel_ref);
 	dstring_delete (sel_id);
 	return sel;
 }
@@ -173,7 +173,7 @@ super_expr (class_type_t *class_type)
 	append_expr (super_block, e);
 
 	e = address_expr (super, 0);
-	super_block->e.block.result = e;
+	super_block->block.result = e;
 	return super_block;
 }
 
@@ -195,9 +195,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		rec_type = &type_id;
 		convert_nil (receiver, rec_type);
 	} else if (receiver->type == ex_symbol) {
-		if (strcmp (receiver->e.symbol->name, "self") == 0) {
+		if (strcmp (receiver->symbol->name, "self") == 0) {
 			rec_type = get_type (receiver);
-		} else if (strcmp (receiver->e.symbol->name, "super") == 0) {
+		} else if (strcmp (receiver->symbol->name, "super") == 0) {
 			super = 1;
 
 			receiver = super_expr (current_class);
@@ -206,9 +206,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 				return receiver;
 			receiver = cast_expr (&type_id, receiver);	//FIXME better way?
 			rec_type = extract_class (current_class)->type;
-		} else if (receiver->e.symbol->sy_type == sy_class) {
+		} else if (receiver->symbol->sy_type == sy_class) {
 			class_t    *class;
-			rec_type = receiver->e.symbol->type;
+			rec_type = receiver->symbol->type;
 			class = rec_type->t.class;
 			class_msg = 1;
 			receiver = new_symbol_expr (class_pointer_symbol (class));
@@ -252,6 +252,6 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (!is_function_call (call)) {
 		internal_error (call, "unexpected call expression type");
 	}
-	call->e.block.result->e.branch.ret_type = return_type;
+	call->block.result->branch.ret_type = return_type;
 	return call;
 }

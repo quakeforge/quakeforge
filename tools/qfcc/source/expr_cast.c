@@ -88,7 +88,7 @@ cast_expr (type_t *dstType, expr_t *e)
 	expr_t    *c;
 	type_t    *srcType;
 
-	convert_name (e);
+	e = convert_name (e);
 
 	if (e->type == ex_error)
 		return e;
@@ -143,9 +143,9 @@ cast_expr (type_t *dstType, expr_t *e)
 		c = new_alias_expr (dstType, e);
 	} else if (is_scalar (dstType) && is_scalar (srcType)) {
 		c = new_unary_expr ('C', e);
-		c->e.expr.type = dstType;
-	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {
-		e->e.expr.type = dstType;
+		c->expr.type = dstType;
+	} else if (e->type == ex_uexpr && e->expr.op == '.') {
+		e->expr.type = dstType;
 		c = e;
 	} else {
 		c = new_alias_expr (dstType, e);

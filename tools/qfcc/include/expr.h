@@ -326,7 +326,7 @@ typedef struct expr_s {
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation
 		ex_multivec_t multivec;			///< geometric algebra multivector
-	} e;
+	};
 } expr_t;
 
 extern const char *expr_names[];
@@ -817,7 +817,7 @@ expr_t *new_memset_expr (expr_t *dst, expr_t *val, expr_t *count);
 
 	\param e		The expression to convert.
 */
-void convert_name (expr_t *e);
+expr_t *convert_name (expr_t *e)__attribute__((warn_unused_result));
 
 expr_t *append_expr (expr_t *block, expr_t *e);
 expr_t *prepend_expr (expr_t *block, expr_t *e);

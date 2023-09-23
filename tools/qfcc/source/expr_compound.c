@@ -96,8 +96,8 @@ new_compound_init (void)
 {
 	expr_t     *c = new_expr ();
 	c->type = ex_compound;
-	c->e.compound.head = 0;
-	c->e.compound.tail = &c->e.compound.head;
+	c->compound.head = 0;
+	c->compound.tail = &c->compound.head;
 	return c;
 }
 
@@ -109,7 +109,7 @@ designator_field (const designator_t *des, const type_t *type)
 		return 0;
 	}
 	symtab_t   *symtab = type->t.symtab;
-	symbol_t   *sym = des->field->e.symbol;
+	symbol_t   *sym = des->field->symbol;
 	symbol_t   *field = symtab_lookup (symtab, sym->name);;
 	if (!field) {
 		const char *name = type->name;
@@ -200,7 +200,7 @@ void
 build_element_chain (element_chain_t *element_chain, const type_t *type,
 					 expr_t *eles, int base_offset)
 {
-	element_t  *ele = eles->e.compound.head;
+	element_t  *ele = eles->compound.head;
 
 	type = unalias_type (type);
 
@@ -299,7 +299,7 @@ append_element (expr_t *compound, element_t *element)
 	if (element->next) {
 		internal_error (compound, "append_element: element loop detected");
 	}
-	append_init_element (&compound->e.compound, element);
+	append_init_element (&compound->compound, element);
 	return compound;
 }
 
@@ -368,7 +368,7 @@ initialized_temp_expr (const type_t *type, expr_t *compound)
 	element_chain.tail = &element_chain.head;
 	build_element_chain (&element_chain, type, compound, 0);
 	assign_elements (block, temp, &element_chain);
-	block->e.block.result = temp;
+	block->block.result = temp;
 	free_element_chain (&element_chain);
 	return block;
 }

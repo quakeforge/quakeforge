@@ -72,6 +72,7 @@ test_expr (expr_t *e)
 	expr_t     *new = 0;
 	type_t     *type;
 
+	e = convert_name (e);
 	if (e->type == ex_error)
 		return e;
 
@@ -176,12 +177,12 @@ backpatch (ex_boollist_t *list, expr_t *label)
 
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
-		if (e->type == ex_branch && e->e.branch.type < pr_branch_call) {
-			e->e.branch.target = label;
+		if (e->type == ex_branch && e->branch.type < pr_branch_call) {
+			e->branch.target = label;
 		} else {
 			internal_error (e, 0);
 		}
-		label->e.label.used++;
+		label->label.used++;
 	}
 }
 
@@ -237,16 +238,16 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 
 	switch (op) {
 		case OR:
-			backpatch (e1->e.boolean.false_list, label);
-			return new_bool_expr (merge (e1->e.boolean.true_list,
-										 e2->e.boolean.true_list),
-								  e2->e.boolean.false_list, block);
+			backpatch (e1->boolean.false_list, label);
+			return new_bool_expr (merge (e1->boolean.true_list,
+										 e2->boolean.true_list),
+								  e2->boolean.false_list, block);
 			break;
 		case AND:
-			backpatch (e1->e.boolean.true_list, label);
-			return new_bool_expr (e2->e.boolean.true_list,
-								  merge (e1->e.boolean.false_list,
-										 e2->e.boolean.false_list), block);
+			backpatch (e1->boolean.true_list, label);
+			return new_bool_expr (e2->boolean.true_list,
+								  merge (e1->boolean.false_list,
+										 e2->boolean.false_list), block);
 			break;
 	}
 	internal_error (e1, 0);
@@ -256,7 +257,7 @@ static int __attribute__((pure))
 has_block_expr (expr_t *e)
 {
 	while (e->type == ex_alias) {
-		e = e->e.alias.expr;
+		e = e->alias.expr;
 	}
 	return e->type == ex_block;
 }
@@ -271,30 +272,30 @@ convert_bool (expr_t *e, int block)
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		tst = e->e.assign.src;
-		if (has_block_expr (tst) && has_block_expr (e->e.assign.dst)) {
+		tst = e->assign.src;
+		if (has_block_expr (tst) && has_block_expr (e->assign.dst)) {
 			tst = new_temp_def_expr (get_type (tst));
-			e = new_assign_expr (e->e.assign.dst,
-								 assign_expr (tst, e->e.assign.src));
+			e = new_assign_expr (e->assign.dst,
+								 assign_expr (tst, e->assign.src));
 		} else if (has_block_expr (tst)) {
-			tst = e->e.assign.dst;
+			tst = e->assign.dst;
 		}
 		b = convert_bool (tst, 1);
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the boolean's block
-		e->next = b->e.boolean.e->e.block.head;
-		b->e.boolean.e->e.block.head = e;
-		if (b->e.boolean.e->e.block.tail == &b->e.boolean.e->e.block.head) {
+		e->next = b->boolean.e->block.head;
+		b->boolean.e->block.head = e;
+		if (b->boolean.e->block.tail == &b->boolean.e->block.head) {
 			// shouldn't happen, but just in case
-			b->e.boolean.e->e.block.tail = &e->next;
+			b->boolean.e->block.tail = &e->next;
 		}
 		return b;
 	}
 
-	if (e->type == ex_uexpr && e->e.expr.op == '!'
-		&& !is_string(get_type (e->e.expr.e1))) {
-		e = convert_bool (e->e.expr.e1, 0);
+	if (e->type == ex_uexpr && e->expr.op == '!'
+		&& !is_string(get_type (e->expr.e1))) {
+		e = convert_bool (e->expr.e1, 0);
 		if (e->type == ex_error)
 			return e;
 		e = unary_expr ('!', e);
@@ -320,14 +321,14 @@ convert_bool (expr_t *e, int block)
 			b = new_block_expr ();
 			append_expr (b, branch_expr (NE, e, 0));
 			append_expr (b, goto_expr (0));
-			e = new_bool_expr (make_list (b->e.block.head),
-							   make_list (b->e.block.head->next), b);
+			e = new_bool_expr (make_list (b->block.head),
+							   make_list (b->block.head->next), b);
 		}
 	}
-	if (block && e->e.boolean.e->type != ex_block) {
+	if (block && e->boolean.e->type != ex_block) {
 		expr_t     *block = new_block_expr ();
-		append_expr (block, e->e.boolean.e);
-		e->e.boolean.e = block;
+		append_expr (block, e->boolean.e);
+		e->boolean.e = block;
 	}
 	return e;
 }

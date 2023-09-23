@@ -488,14 +488,14 @@ get_selector (expr_t *sel)
 	selector_t  _sel = {0, 0, 0};
 
 	if (sel->type == ex_selector) {
-		return sel->e.selector.sel;
+		return sel->selector.sel;
 	}
-	if (sel->type != ex_address && !sel->e.address.offset
-		&& !is_SEL(sel->e.address.type)) {
+	if (sel->type != ex_address && !sel->address.offset
+		&& !is_SEL(sel->address.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}
-	_sel.index = expr_short (sel->e.address.offset);
+	_sel.index = expr_short (sel->address.offset);
 	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }

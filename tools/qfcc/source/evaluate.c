@@ -228,11 +228,11 @@ evaluate_constexpr (expr_t *e)
 {
 	debug (e, "fold_constants");
 	if (e->type == ex_uexpr) {
-		if (!is_constant (e->e.expr.e1)) {
+		if (!is_constant (e->expr.e1)) {
 			return e;
 		}
 	} else if (e->type == ex_expr) {
-		if (!is_constant (e->e.expr.e1) || !is_constant (e->e.expr.e2)) {
+		if (!is_constant (e->expr.e1) || !is_constant (e->expr.e2)) {
 			return e;
 		}
 	} else {
@@ -273,7 +273,7 @@ evaluate_constexpr (expr_t *e)
 	options.code.progsversion = saved_version;
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_foldconst);
-	auto val = new_type_value (e->e.expr.type, value_pr.pr_return_buffer);
+	auto val = new_type_value (e->expr.type, value_pr.pr_return_buffer);
 	e = new_value_expr (val);
 	return e;
 }

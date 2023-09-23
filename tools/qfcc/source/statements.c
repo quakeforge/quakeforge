@@ -560,7 +560,7 @@ label_operand (expr_t *label)
 		internal_error (label, "not a label expression");
 	}
 	lop = new_operand (op_label, label, __builtin_return_address (0));
-	lop->label = &label->e.label;
+	lop->label = &label->label;
 	return lop;
 }
 
@@ -694,9 +694,9 @@ statement_get_targetlist (statement_t *s)
 	} else if (statement_is_jumpb (s)) {
 		if (table->alias)
 			internal_error (s->opa->expr, "aliased jump table");
-		e = table->initializer->e.compound.head;	//FIXME check!!!
+		e = table->initializer->compound.head;	//FIXME check!!!
 		for (i = 0; i < count; e = e->next, i++)
-			target_list[i] = e->expr->e.labelref.label->dest;
+			target_list[i] = e->expr->labelref.label->dest;
 	}
 	return target_list;
 }
@@ -730,12 +730,12 @@ static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	expr_t      *lvalue = e->e.address.lvalue;
-	expr_t      *offset = e->e.address.offset;
+	expr_t      *lvalue = e->address.lvalue;
+	expr_t      *offset = e->address.offset;
 
 	if (lvalue->type == ex_alias && offset && is_constant (offset)) {
-		lvalue = new_offset_alias_expr (lvalue->e.alias.type,
-										lvalue->e.alias.expr,
+		lvalue = new_offset_alias_expr (lvalue->alias.type,
+										lvalue->alias.expr,
 										expr_int (offset));
 		offset = 0;
 	} else if (offset && is_constant (offset)) {
@@ -750,7 +750,7 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (offset) {
 		sblock = statement_subexpr (sblock, offset, &s->opb);
 	}
-	s->opc = temp_operand (e->e.address.type, e);
+	s->opc = temp_operand (e->address.type, e);
 	sblock_add_statement (sblock, s);
 	*(op) = s->opc;
 	return sblock;
@@ -800,7 +800,7 @@ static __attribute__((pure)) int
 is_indirect (expr_t *e)
 {
 	if ((e->type == ex_expr || e->type == ex_uexpr)
-		&& e->e.expr.op == '.') {
+		&& e->expr.op == '.') {
 		return 1;
 	}
 	return 0;
@@ -825,8 +825,8 @@ static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 {
 	statement_t *s;
-	expr_t     *dst_expr = e->e.assign.dst;
-	expr_t     *src_expr = e->e.assign.src;
+	expr_t     *dst_expr = e->assign.dst;
+	expr_t     *src_expr = e->assign.src;
 	type_t     *dst_type = get_type (dst_expr);
 	type_t     *src_type = get_type (src_expr);
 	unsigned    count;
@@ -949,8 +949,8 @@ static sblock_t *
 expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	expr_t     *src_expr = e->e.assign.src;
-	expr_t     *dst_expr = e->e.assign.dst;
+	expr_t     *src_expr = e->assign.src;
+	expr_t     *dst_expr = e->assign.dst;
 	type_t     *dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
@@ -1051,7 +1051,7 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 
 	for (i = 0; i < 3; i++) {
 		n = new_name_expr (names[i]);
-		v = new_float_expr (earg->e.value->v.vector_val[i]);
+		v = new_float_expr (earg->value->v.vector_val[i]);
 		a = assign_expr (field_expr (param, n), v);
 		param = new_param_expr (get_type (earg), ind);
 		a->line = earg->line;
@@ -1065,8 +1065,8 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 static sblock_t *
 expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 {
-	expr_t     *func = call->e.branch.target;
-	expr_t     *args = call->e.branch.args;
+	expr_t     *func = call->branch.target;
+	expr_t     *args = call->branch.args;
 	expr_t     *a;
 	expr_t     *param;
 	operand_t  *arguments[2] = {0, 0};
@@ -1097,7 +1097,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			pref = "r";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->lltype == ev_vector)
+				&& a->value->lltype == ev_vector)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
@@ -1116,7 +1116,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			operand_t  *p = 0;
 			sblock = statement_subexpr (sblock, param, &p);
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->lltype == ev_vector) {
+				&& a->value->lltype == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
 				operand_t  *arg = p;
@@ -1138,7 +1138,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	s->opc = arguments[1];
 	s->use = use;
 	if (op) {
-		*op = return_operand (call->e.branch.ret_type, call);
+		*op = return_operand (call->branch.ret_type, call);
 	}
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
@@ -1155,7 +1155,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		current_func->arguments = defspace_new (ds_virtual);
 	}
 	defspace_t *arg_space = current_func->arguments;
-	expr_t     *func = call->e.branch.target;
+	expr_t     *func = call->branch.target;
 	expr_t    **args = 0;
 	expr_t     *args_va_list = 0;	// .args (...) parameter
 	expr_t     *args_params = 0;	// first arg in ...
@@ -1166,13 +1166,13 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	defspace_reset (arg_space);
 
 	int         num_args = 0;
-	for (expr_t *a = call->e.branch.args; a; a = a->next) {
+	for (expr_t *a = call->branch.args; a; a = a->next) {
 		num_args++;
 	}
 	if (num_args) {
 		int         i = num_args;
 		args = alloca (num_args * sizeof (expr_t *));
-		for (expr_t *a = call->e.branch.args; a; a = a->next) {
+		for (expr_t *a = call->branch.args; a; a = a->next) {
 			args[--i] = a;
 		}
 	}
@@ -1250,7 +1250,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		s->opc = short_operand (0, call);
 	} else {
 		if (!*op) {
-			*op = temp_operand (call->e.branch.ret_type, call);
+			*op = temp_operand (call->branch.ret_type, call);
 		}
 		s->opc = *op;
 	}
@@ -1264,9 +1264,9 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 static sblock_t *
 expr_branch (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	if (e->e.branch.type != pr_branch_call) {
+	if (e->branch.type != pr_branch_call) {
 		internal_error (e, "unexpected branch type in expression: %d",
-						e->e.branch.type);
+						e->branch.type);
 	}
 	return expr_call (sblock, e, op);
 }
@@ -1287,23 +1287,23 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	statement_t *s = 0;
 	const char *opcode;
 
-	if (e->e.branch.type == pr_branch_call) {
+	if (e->branch.type == pr_branch_call) {
 		return expr_call (sblock, e, 0);
 	}
-	if (e->e.branch.type == pr_branch_jump) {
-		if (e->e.branch.index) {
+	if (e->branch.type == pr_branch_jump) {
+		if (e->branch.index) {
 			s = new_statement (st_flow, "jump", e);
-			sblock = statement_subexpr (sblock, e->e.branch.target, &s->opa);
-			sblock = statement_subexpr (sblock, e->e.branch.index, &s->opb);
+			sblock = statement_subexpr (sblock, e->branch.target, &s->opa);
+			sblock = statement_subexpr (sblock, e->branch.index, &s->opb);
 		} else {
 			s = new_statement (st_flow, "jump", e);
-			s->opa = label_operand (e->e.branch.target);
+			s->opa = label_operand (e->branch.target);
 		}
 	} else {
-		opcode = opcodes [e->e.branch.type];
+		opcode = opcodes [e->branch.type];
 		s = new_statement (st_flow, opcode, e);
-		sblock = statement_subexpr (sblock, e->e.branch.test, &s->opc);
-		s->opa = label_operand (e->e.branch.target);
+		sblock = statement_subexpr (sblock, e->branch.test, &s->opc);
+		s->opa = label_operand (e->branch.target);
 	}
 
 	sblock_add_statement (sblock, s);
@@ -1316,9 +1316,9 @@ find_def_operand (expr_t *ref)
 {
 	operand_t  *op = 0;
 	if (ref->type == ex_alias) {
-		return find_def_operand (ref->e.alias.expr);
+		return find_def_operand (ref->alias.expr);
 	} else if (ref->type == ex_address) {
-		return find_def_operand (ref->e.address.lvalue);
+		return find_def_operand (ref->address.lvalue);
 	} else if (ref->type == ex_symbol) {
 		expr_symbol (0, ref, &op);
 	} else if (ref->type == ex_def) {
@@ -1342,23 +1342,23 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 		internal_error (ref, "expected pointer in ref");
 	}
 	if (ref->type == ex_address
-		&& (!ref->e.address.offset || is_constant (ref->e.address.offset))
-		&& ref->e.address.lvalue->type == ex_alias
-		&& (!ref->e.address.lvalue->e.alias.offset
-			|| is_constant (ref->e.address.lvalue->e.alias.offset))) {
-		expr_t     *lvalue = ref->e.address.lvalue;
-		expr_t     *offs = ref->e.address.offset;
+		&& (!ref->address.offset || is_constant (ref->address.offset))
+		&& ref->address.lvalue->type == ex_alias
+		&& (!ref->address.lvalue->alias.offset
+			|| is_constant (ref->address.lvalue->alias.offset))) {
+		expr_t     *lvalue = ref->address.lvalue;
+		expr_t     *offs = ref->address.offset;
 		expr_t     *alias;
-		if (lvalue->e.alias.offset) {
+		if (lvalue->alias.offset) {
 			if (offs) {
-				offs = binary_expr ('+', offs, lvalue->e.alias.offset);
+				offs = binary_expr ('+', offs, lvalue->alias.offset);
 			} else {
-				offs = lvalue->e.alias.offset;
+				offs = lvalue->alias.offset;
 			}
 		}
 		type = type->t.fldptr.type;
 		if (offs) {
-			expr_t     *lv = lvalue->e.alias.expr;
+			expr_t     *lv = lvalue->alias.expr;
 			type_t     *lvtype = get_type (lv);
 			int         o = expr_int (offs);
 			if (o < 0 || o + type_size (type) > type_size (lvtype)) {
@@ -1369,47 +1369,47 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 			}
 			alias = new_offset_alias_expr (type, lv, expr_int (offs));
 		} else {
-			alias = new_alias_expr (type, lvalue->e.alias.expr);
+			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
 		expr_file_line (alias, ref);
 		return addressing_mode (sblock, alias, base, offset, mode, target);
-	} else if (ref->type != ex_alias || ref->e.alias.offset) {
+	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
 just_a_pointer:
 		sblock = statement_subexpr (sblock, ref, base);
 		*offset = short_operand (0, ref);
 		*mode = 2;	// mode C: ptr + constant index
-	} else if (is_ptr (get_type (ref->e.alias.expr))) {
+	} else if (is_ptr (get_type (ref->alias.expr))) {
 		// cast of one pointer type to another
-		return ptr_addressing_mode (sblock, ref->e.alias.expr, base, offset,
+		return ptr_addressing_mode (sblock, ref->alias.expr, base, offset,
 									mode, target);
 	} else {
 		// alias with no offset
-		if (!is_integral (get_type (ref->e.alias.expr))) {
+		if (!is_integral (get_type (ref->alias.expr))) {
 			internal_error (ref, "expected integer expr in ref");
 		}
-		expr_t     *intptr = ref->e.alias.expr;
+		expr_t     *intptr = ref->alias.expr;
 		if (intptr->type != ex_expr
-			|| (intptr->e.expr.op != '+'
-				&& intptr->e.expr.op != '-')) {
+			|| (intptr->expr.op != '+'
+				&& intptr->expr.op != '-')) {
 			// treat ref as simple pointer
 			sblock = statement_subexpr (sblock, ref, base);
 			*offset = short_operand (0, ref);
 			*mode = 2;	// mode C: ptr + constant index
 		} else {
-			expr_t     *ptr = intptr->e.expr.e1;
-			expr_t     *offs = intptr->e.expr.e2;
+			expr_t     *ptr = intptr->expr.e1;
+			expr_t     *offs = intptr->expr.e2;
 			int         const_offs;
 			if (target) {
 				if (ptr->type == ex_alias
-					&& is_ptr (get_type (ptr->e.alias.expr))) {
-					*target = find_def_operand (ptr->e.alias.expr);
+					&& is_ptr (get_type (ptr->alias.expr))) {
+					*target = find_def_operand (ptr->alias.expr);
 				}
 			}
 			// move the +/- to the offset
-			offs = unary_expr (intptr->e.expr.op, offs);
+			offs = unary_expr (intptr->expr.op, offs);
 			// make the base a pointer again
-			ptr = new_alias_expr (ref->e.alias.type, ptr);
+			ptr = new_alias_expr (ref->alias.type, ptr);
 			sblock = statement_subexpr (sblock, ptr, base);
 			if (is_constant (offs)
 				&& (const_offs = expr_int (offs)) < 32768
@@ -1434,8 +1434,8 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 		// ref is known to be either ex_expr or ex_uexpr, with '.' for
 		// the operator
 		if (ref->type == ex_expr) {
-			expr_t     *ent_expr = ref->e.expr.e1;
-			expr_t     *fld_expr = ref->e.expr.e2;
+			expr_t     *ent_expr = ref->expr.e1;
+			expr_t     *fld_expr = ref->expr.e2;
 			if (!is_entity (get_type (ent_expr))
 				|| !is_field (get_type (fld_expr))) {
 				print_expr (ref);
@@ -1445,7 +1445,7 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 			sblock = statement_subexpr (sblock, fld_expr, offset);
 			*mode = 1;//entity.field
 		} else if (ref->type == ex_uexpr) {
-			sblock = ptr_addressing_mode (sblock, ref->e.expr.e1, base, offset,
+			sblock = ptr_addressing_mode (sblock, ref->expr.e1, base, offset,
 										  mode, target);
 		} else {
 			internal_error (ref, "unexpected expression type for indirect: %s",
@@ -1468,29 +1468,29 @@ statement_return (sblock_t *sblock, expr_t *e)
 
 	debug (e, "RETURN");
 	opcode = "return";
-	if (!e->e.retrn.ret_val) {
+	if (!e->retrn.ret_val) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->e.retrn.ret_val = new_float_expr (0);
+			e->retrn.ret_val = new_float_expr (0);
 		}
 	}
 	s = new_statement (st_func, opcode, e);
 	if (options.code.progsversion < PROG_VERSION) {
-		if (e->e.retrn.ret_val) {
-			expr_t     *ret_val = e->e.retrn.ret_val;
+		if (e->retrn.ret_val) {
+			expr_t     *ret_val = e->retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
 
 			// at_return is used for passing the result of a void_return
 			// function through void. v6 progs always use .return for the
 			// return value, so don't need to do anything special: just call
 			// the function and do a normal void return
-			if (!e->e.retrn.at_return) {
+			if (!e->retrn.at_return) {
 				s->opa = return_operand (ret_type, e);
 			}
 			sblock = statement_subexpr (sblock, ret_val, &s->opa);
 		}
 	} else {
-		if (!e->e.retrn.at_return && e->e.retrn.ret_val) {
-			expr_t     *ret_val = e->e.retrn.ret_val;
+		if (!e->retrn.at_return && e->retrn.ret_val) {
+			expr_t     *ret_val = e->retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
 			operand_t  *target = 0;
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
@@ -1501,8 +1501,8 @@ statement_return (sblock_t *sblock, expr_t *e)
 			s->opc = short_operand (ret_crtl, e);
 			statement_add_use (s, target);
 		} else {
-			if (e->e.retrn.at_return) {
-				expr_t     *call = e->e.retrn.ret_val;
+			if (e->retrn.at_return) {
+				expr_t     *call = e->retrn.ret_val;
 				if (!call || !is_function_call (call)) {
 					internal_error (e, "@return with no call");
 				}
@@ -1532,8 +1532,8 @@ static sblock_t *
 statement_adjstk (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s = new_statement (st_func, "adjstk", e);
-	s->opa = short_operand (e->e.adjstk.mode, e);
-	s->opb = short_operand (e->e.adjstk.offset, e);
+	s->opa = short_operand (e->adjstk.mode, e);
+	s->opb = short_operand (e->adjstk.offset, e);
 
 	sblock_add_statement (sblock, s);
 	return sblock;
@@ -1543,9 +1543,9 @@ static sblock_t *
 statement_with (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s = new_statement (st_func, "with", e);
-	s->opa = short_operand (e->e.with.mode, e);
-	s->opc = short_operand (e->e.with.reg, e);
-	sblock = statement_subexpr (sblock, e->e.with.with, &s->opb);
+	s->opa = short_operand (e->with.mode, e);
+	s->opc = short_operand (e->with.reg, e);
+	sblock = statement_subexpr (sblock, e->with.with, &s->opb);
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -1585,8 +1585,8 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
-	type_t     *load_type = deref->e.expr.type;
-	expr_t     *ptr_expr = deref->e.expr.e1;
+	type_t     *load_type = deref->expr.type;
+	expr_t     *ptr_expr = deref->expr.e1;
 	operand_t  *base = 0;
 	operand_t  *offset = 0;
 	operand_t  *target = 0;
@@ -1633,10 +1633,10 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 static sblock_t *
 expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	if (!e->e.block.result)
+	if (!e->block.result)
 		internal_error (e, "block sub-expression without result");
-	sblock = statement_slist (sblock, e->e.block.head);
-	sblock = statement_subexpr (sblock, e->e.block.result, op);
+	sblock = statement_slist (sblock, e->block.head);
+	sblock = statement_subexpr (sblock, e->block.result, op);
 	return sblock;
 }
 
@@ -1647,11 +1647,11 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	type_t    *type;
 	int        offset = 0;
 
-	if (e->e.alias.offset) {
-		offset = expr_int (e->e.alias.offset);
+	if (e->alias.offset) {
+		offset = expr_int (e->alias.offset);
 	}
-	type = e->e.alias.type;
-	sblock = statement_subexpr (sblock, e->e.alias.expr, &aop);
+	type = e->alias.type;
+	sblock = statement_subexpr (sblock, e->alias.expr, &aop);
 	*op = offset_alias_operand (type, offset, aop, e);
 	return sblock;
 }
@@ -1662,28 +1662,28 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode;
 	statement_t *s;
 
-	opcode = convert_op (e->e.expr.op);
+	opcode = convert_op (e->expr.op);
 	if (!opcode)
 		internal_error (e, "ice ice baby");
-	if (strcmp (opcode, "ne") == 0 && is_string (get_type (e->e.expr.e1))) {
+	if (strcmp (opcode, "ne") == 0 && is_string (get_type (e->expr.e1))) {
 		opcode = "cmp";
 	}
 	if (strcmp (opcode, "dot") == 0) {
-		if (type_width (get_type (e->e.expr.e1)) == 2) {
+		if (type_width (get_type (e->expr.e1)) == 2) {
 			opcode = "cdot";
 		}
-		if (type_width (get_type (e->e.expr.e1)) == 3) {
+		if (type_width (get_type (e->expr.e1)) == 3) {
 			opcode = "vdot";
 		}
-		if (type_width (get_type (e->e.expr.e1)) == 4) {
+		if (type_width (get_type (e->expr.e1)) == 4) {
 			opcode = "qdot";
 		}
 	}
 	s = new_statement (st_expr, opcode, e);
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-	sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+	sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
+	sblock = statement_subexpr (sblock, e->expr.e2, &s->opb);
 	if (!*op)
-		*op = temp_operand (e->e.expr.type, e);
+		*op = temp_operand (e->expr.type, e);
 	s->opc = *op;
 	sblock_add_statement (sblock, s);
 
@@ -1694,14 +1694,14 @@ static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	type_t     *src_type;
-	type_t     *type = e->e.expr.type;
+	type_t     *type = e->expr.type;
 	statement_t *s;
 
-	src_type = get_type (e->e.expr.e1);
+	src_type = get_type (e->expr.e1);
 	if (is_scalar (src_type) && is_scalar (type)) {
 		operand_t  *src = 0;
-		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
-		*op = temp_operand (e->e.expr.type, e);
+		sblock = statement_subexpr (sblock, e->expr.e1, &src);
+		*op = temp_operand (e->expr.type, e);
 		s = new_statement (st_expr, "conv", e);
 		s->opa = src;
 		if (options.code.progsversion == PROG_VERSION) {
@@ -1728,9 +1728,9 @@ expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
 	zero = new_nil_expr ();
 	zero->file = e->file;
 	zero->line = e->line;
-	convert_nil (zero, e->e.expr.type);
-	neg = new_binary_expr ('-', zero, e->e.expr.e1);
-	neg->e.expr.type = e->e.expr.type;
+	convert_nil (zero, e->expr.type);
+	neg = new_binary_expr ('-', zero, e->expr.e1);
+	neg->expr.type = e->expr.type;
 	neg->file = e->file;
 	neg->line = e->line;
 	return statement_subexpr (sblock, neg, op);
@@ -1742,7 +1742,7 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode;
 	statement_t *s;
 
-	switch (e->e.expr.op) {
+	switch (e->expr.op) {
 		case '.':
 			sblock = expr_deref (sblock, e, op);
 			break;
@@ -1754,13 +1754,13 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_negate (sblock, e, op);
 			break;
 		default:
-			opcode = convert_op (e->e.expr.op);
+			opcode = convert_op (e->expr.op);
 			if (!opcode)
 				internal_error (e, "ice ice baby");
 			s = new_statement (st_expr, opcode, e);
-			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
 			if (!*op)
-				*op = temp_operand (e->e.expr.type, e);
+				*op = temp_operand (e->expr.type, e);
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 	}
@@ -1773,10 +1773,10 @@ expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode = "hops";
 	statement_t *s;
 	int         hop;
-	type_t     *res_type = e->e.hop.type;
-	type_t     *vec_type = get_type (e->e.hop.vec);
+	type_t     *res_type = e->hop.type;
+	type_t     *vec_type = get_type (e->hop.vec);
 
-	switch (e->e.hop.op) {
+	switch (e->hop.op) {
 		case '&':
 			hop = 0;
 			break;
@@ -1809,7 +1809,7 @@ expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
 	hop |= (pr_type_size[vec_type->type] - 1) << 5;
 
 	s = new_statement (st_expr, opcode, e);
-	sblock = statement_subexpr (sblock, e->e.hop.vec, &s->opa);
+	sblock = statement_subexpr (sblock, e->hop.vec, &s->opa);
 	s->opb = short_operand (hop, e);
 	if (!*op) {
 		*op = temp_operand (res_type, e);
@@ -1826,16 +1826,16 @@ expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode = "swizzle";
 	statement_t *s;
 	int         swiz = 0;
-	type_t     *res_type = e->e.swizzle.type;
+	type_t     *res_type = e->swizzle.type;
 
 	for (int i = 0; i < 4; i++) {
-		swiz |= (e->e.swizzle.source[i] & 3) << (2 * i);
+		swiz |= (e->swizzle.source[i] & 3) << (2 * i);
 	}
-	swiz |= (e->e.swizzle.neg & 0xf) << 8;
-	swiz |= (e->e.swizzle.zero & 0xf) << 12;
+	swiz |= (e->swizzle.neg & 0xf) << 8;
+	swiz |= (e->swizzle.zero & 0xf) << 12;
 
 	s = new_statement (st_expr, opcode, e);
-	sblock = statement_subexpr (sblock, e->e.swizzle.src, &s->opa);
+	sblock = statement_subexpr (sblock, e->swizzle.src, &s->opa);
 	s->opb = short_operand (swiz, e);
 	if (!*op) {
 		*op = temp_operand (res_type, e);
@@ -1849,8 +1849,8 @@ expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	type_t     *src_type = get_type (e->e.extend.src);
-	type_t     *res_type = e->e.extend.type;
+	type_t     *src_type = get_type (e->extend.src);
+	type_t     *res_type = e->extend.type;
 	int         src_width = type_width (src_type);
 	int         res_width = type_width (res_type);
 	type_t     *src_base = base_type (src_type);
@@ -1862,16 +1862,16 @@ expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
 		{-1,-1,-1,-1},
 	};
 	int         ext = mode[src_width - 1][res_width - 1];
-	ext |= (e->e.extend.extend & 3) << 3;
+	ext |= (e->extend.extend & 3) << 3;
 	ext |= (pr_type_size[res_base->type] - 1) << 5;
-	ext |= e->e.extend.reverse << 6;
+	ext |= e->extend.reverse << 6;
 	if (ext < 0 || res_base != src_base) {
 		internal_error (e, "invalid type combination for extend %d %d %d",
 						ext, src_width, res_width);
 	}
 
 	statement_t *s = new_statement (st_expr, "extend", e);
-	sblock = statement_subexpr (sblock, e->e.extend.src, &s->opa);
+	sblock = statement_subexpr (sblock, e->extend.src, &s->opa);
 	s->opb = short_operand (ext, e);
 	if (!*op) {
 		*op = temp_operand (res_type, e);
@@ -1885,14 +1885,14 @@ expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	*op = def_operand (e->e.def, e->e.def->type, e);
+	*op = def_operand (e->def, e->def->type, e);
 	return sblock;
 }
 
 static sblock_t *
 expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	symbol_t   *sym = e->e.symbol;
+	symbol_t   *sym = e->symbol;
 
 	if (sym->sy_type == sy_var) {
 		*op = def_operand (sym->s.def, sym->type, e);
@@ -1913,9 +1913,9 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	if (!e->e.temp.op)
-		e->e.temp.op = temp_operand (e->e.temp.type, e);
-	*op = e->e.temp.op;
+	if (!e->temp.op)
+		e->temp.op = temp_operand (e->temp.type, e);
+	*op = e->temp.op;
 	return sblock;
 }
 
@@ -1923,7 +1923,7 @@ static int
 statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
 {
 	int         index = 0;
-	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+	for (expr_t *e = src->vector.list; e; e = e->next) {
 		if (e->type == ex_vector) {
 			index += statement_copy_elements (sblock, dst, e, index + base);
 		} else {
@@ -1961,7 +1961,7 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	type_t     *nil = e->e.nil;
+	type_t     *nil = e->nil;
 	expr_t     *size_expr;
 	size_t      nil_size;
 	operand_t  *zero;
@@ -1996,14 +1996,14 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	*op = value_operand (e->e.value, e);
+	*op = value_operand (e->value, e);
 	return sblock;
 }
 
 static sblock_t *
 expr_selector (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	return statement_subexpr (sblock, e->e.selector.sel_ref, op);
+	return statement_subexpr (sblock, e->selector.sel_ref, op);
 }
 
 static sblock_t *
@@ -2055,9 +2055,9 @@ statement_state (sblock_t *sblock, expr_t *e)
 	statement_t *s;
 
 	s = new_statement (st_state, "state", e);
-	sblock = statement_subexpr (sblock, e->e.state.frame, &s->opa);
-	sblock = statement_subexpr (sblock, e->e.state.think, &s->opb);
-	sblock = statement_subexpr (sblock, e->e.state.step, &s->opc);
+	sblock = statement_subexpr (sblock, e->state.frame, &s->opa);
+	sblock = statement_subexpr (sblock, e->state.think, &s->opb);
+	sblock = statement_subexpr (sblock, e->state.step, &s->opc);
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -2067,7 +2067,7 @@ build_bool_block (expr_t *block, expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			build_bool_block (block, e->e.boolean.e);
+			build_bool_block (block, e->boolean.e);
 			return;
 		case ex_label:
 			e->next = 0;
@@ -2082,9 +2082,9 @@ build_bool_block (expr_t *block, expr_t *e)
 			append_expr (block, e);
 			return;
 		case ex_expr:
-			if (e->e.expr.op == OR || e->e.expr.op == AND) {
-				build_bool_block (block, e->e.expr.e1);
-				build_bool_block (block, e->e.expr.e2);
+			if (e->expr.op == OR || e->expr.op == AND) {
+				build_bool_block (block, e->expr.e1);
+				build_bool_block (block, e->expr.e2);
 			} else {
 				e->next = 0;
 				append_expr (block, e);
@@ -2093,9 +2093,9 @@ build_bool_block (expr_t *block, expr_t *e)
 		case ex_uexpr:
 			break;
 		case ex_block:
-			if (!e->e.block.result) {
+			if (!e->block.result) {
 				expr_t     *t;
-				for (e = e->e.block.head; e; e = t) {
+				for (e = e->block.head; e; e = t) {
 					t = e->next;
 					build_bool_block (block, e);
 				}
@@ -2111,20 +2111,20 @@ build_bool_block (expr_t *block, expr_t *e)
 static int
 is_goto_expr (expr_t *e)
 {
-	return e && e->type == ex_branch && e->e.branch.type == pr_branch_jump
-			&& !e->e.branch.index;
+	return e && e->type == ex_branch && e->branch.type == pr_branch_jump
+			&& !e->branch.index;
 }
 
 static int
 is_if_expr (expr_t *e)
 {
-	return e && e->type == ex_branch && e->e.branch.type == pr_branch_ne;
+	return e && e->type == ex_branch && e->branch.type == pr_branch_ne;
 }
 
 static int
 is_ifnot_expr (expr_t *e)
 {
-	return e && e->type == ex_branch && e->e.branch.type == pr_branch_eq;
+	return e && e->type == ex_branch && e->branch.type == pr_branch_eq;
 }
 
 static sblock_t *
@@ -2136,39 +2136,39 @@ statement_bool (sblock_t *sblock, expr_t *e)
 
 	build_bool_block (block, e);
 
-	s = &block->e.block.head;
+	s = &block->block.head;
 	while (*s) {
 		if (is_if_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->e.branch.target;
+			l = (*s)->branch.target;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
-					l->e.label.used--;
+					l->label.used--;
 					e = *s;
-					e->e.branch.type = pr_branch_eq;
-					e->e.branch.target = e->next->e.branch.target;
+					e->branch.type = pr_branch_eq;
+					e->branch.target = e->next->branch.target;
 					e->next = e->next->next;
 					break;
 				}
 			}
 			s = &(*s)->next;
 		} else if (is_ifnot_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->e.branch.target;
+			l = (*s)->branch.target;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
-					l->e.label.used--;
+					l->label.used--;
 					e = *s;
-					e->e.branch.type = pr_branch_ne;
-					e->e.branch.target = e->next->e.branch.target;
+					e->branch.type = pr_branch_ne;
+					e->branch.target = e->next->branch.target;
 					e->next = e->next->next;
 					break;
 				}
 			}
 			s = &(*s)->next;
 		} else if (is_goto_expr (*s)) {
-			l = (*s)->e.branch.target;
+			l = (*s)->branch.target;
 			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
-					l->e.label.used--;
+					l->label.used--;
 					*s = (*s)->next;
 					l = 0;
 					break;
@@ -2180,7 +2180,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			s = &(*s)->next;
 		}
 	}
-	sblock = statement_slist (sblock, block->e.block.head);
+	sblock = statement_slist (sblock, block->block.head);
 	return sblock;
 }
 
@@ -2191,15 +2191,15 @@ statement_label (sblock_t *sblock, expr_t *e)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	if (e->e.label.used) {
-		e->e.label.dest = sblock;
-		e->e.label.next = sblock->labels;
-		sblock->labels = &e->e.label;
+	if (e->label.used) {
+		e->label.dest = sblock;
+		e->label.next = sblock->labels;
+		sblock->labels = &e->label;
 	} else {
-		if (e->e.label.symbol) {
-			warning (e, "unused label %s", e->e.label.symbol->name);
+		if (e->label.symbol) {
+			warning (e, "unused label %s", e->label.symbol->name);
 		} else {
-			debug (e, "dropping unused label %s", e->e.label.name);
+			debug (e, "dropping unused label %s", e->label.name);
 		}
 	}
 	return sblock;
@@ -2212,11 +2212,11 @@ statement_block (sblock_t *sblock, expr_t *e)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	sblock = statement_slist (sblock, e->e.block.head);
-	if (e->e.block.is_call) {
+	sblock = statement_slist (sblock, e->block.head);
+	if (e->block.is_call) {
 		// for a fuction call, the call expresion is in only the result, not
 		// the actual block
-		sblock = statement_slist (sblock, e->e.block.result);
+		sblock = statement_slist (sblock, e->block.result);
 	}
 	return sblock;
 }
@@ -2224,10 +2224,10 @@ statement_block (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_expr (sblock_t *sblock, expr_t *e)
 {
-	if (e->e.expr.op < 256)
-		debug (e, "e %c", e->e.expr.op);
+	if (e->expr.op < 256)
+		debug (e, "e %c", e->expr.op);
 	else
-		debug (e, "e %d", e->e.expr.op);
+		debug (e, "e %d", e->expr.op);
 	if (options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
@@ -2236,7 +2236,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_uexpr (sblock_t *sblock, expr_t *e)
 {
-	debug (e, "e ue %d", e->e.expr.op);
+	debug (e, "e ue %d", e->expr.op);
 	if (options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
@@ -2245,9 +2245,9 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_memset (sblock_t *sblock, expr_t *e)
 {
-	expr_t     *dst = e->e.memset.dst;
-	expr_t     *val = e->e.memset.val;
-	expr_t     *count = e->e.memset.count;
+	expr_t     *dst = e->memset.dst;
+	expr_t     *val = e->memset.val;
+	expr_t     *count = e->memset.count;
 	const char *opcode = "memset";
 	statement_t *s;
 
@@ -2582,11 +2582,11 @@ search_for_super_dealloc (sblock_t *sblock)
 			// function arguments are in reverse order, and the selector
 			// is the second argument (or second last in the list)
 			expr_t     *arg;
-			for (arg = st->expr->e.branch.args;
+			for (arg = st->expr->branch.args;
 				 arg && arg->next && arg->next->next; arg = arg->next) {
 			}
 			if (arg && arg->next && is_selector (arg)) {
-				selector_t *sel = get_selector (st->expr->e.branch.args);
+				selector_t *sel = get_selector (st->expr->branch.args);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
 					op = pseudo_operand (super_dealloc, st->expr);
 					statement_add_def (st, op);

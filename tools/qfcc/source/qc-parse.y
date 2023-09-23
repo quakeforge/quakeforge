@@ -1786,7 +1786,7 @@ comma_expr
 			if ($1->next) {
 				expr_t     *res = $1;
 				$1 = build_block_expr ($1);
-				$1->e.block.result = res;
+				$1->block.result = res;
 			}
 			$$ = $1;
 		}
@@ -1871,10 +1871,10 @@ classdecl
 	: CLASS identifier_list ';'
 		{
 			expr_t     *e;
-			for (e = $2->e.block.head; e; e = e->next) {
-				get_class (e->e.symbol, 1);
-				if (!e->e.symbol->table)
-					symtab_addsymbol (current_symtab, e->e.symbol);
+			for (e = $2->block.head; e; e = e->next) {
+				get_class (e->symbol, 1);
+				if (!e->symbol->table)
+					symtab_addsymbol (current_symtab, e->symbol);
 			}
 		}
 	;

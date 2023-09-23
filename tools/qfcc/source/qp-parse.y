@@ -403,8 +403,8 @@ statement
 	: variable ASSIGNOP expression
 		{
 			$$ = $1;
-			if ($$->type == ex_symbol && $$->e.symbol->sy_type == sy_func) {
-				if ($$->e.symbol->s.func != current_func) {
+			if ($$->type == ex_symbol && $$->symbol->sy_type == sy_func) {
+				if ($$->symbol->s.func != current_func) {
 					$$ = error ($$, "cannot assign to other function");
 				} else {
 					symbol_t   *ret = function_value (current_func);

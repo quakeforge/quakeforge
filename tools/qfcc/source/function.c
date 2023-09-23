@@ -374,7 +374,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		if (e->type == ex_error)
 			return e;
 	}
-	funcs = Hash_FindList (function_map, fexpr->e.symbol->name);
+	funcs = Hash_FindList (function_map, fexpr->symbol->name);
 	if (!funcs)
 		return fexpr;
 	for (func_count = 0; funcs[func_count]; func_count++)
@@ -390,15 +390,15 @@ find_function (expr_t *fexpr, expr_t *params)
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va (0, "%s|%s", fexpr->e.symbol->name,
+	dummy.full_name = save_string (va (0, "%s|%s", fexpr->symbol->name,
 									   encode_params (&type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
 		f = (overloaded_function_t *) *(void **) dummy_p;
 		if (f->overloaded) {
-			fexpr->e.symbol = symtab_lookup (current_symtab, f->full_name);
-			if (!fexpr->e.symbol)
+			fexpr->symbol = symtab_lookup (current_symtab, f->full_name);
+			if (!fexpr->symbol)
 				internal_error (fexpr, "overloaded function %s not found",
 								best->full_name);
 		}
@@ -445,9 +445,9 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 	if (best) {
 		if (best->overloaded) {
-			fexpr->e.symbol = symtab_lookup (current_symtab,
+			fexpr->symbol = symtab_lookup (current_symtab,
 											 best->full_name);
-			if (!fexpr->e.symbol)
+			if (!fexpr->symbol)
 				internal_error (fexpr, "overloaded function %s not found",
 								best->full_name);
 		}

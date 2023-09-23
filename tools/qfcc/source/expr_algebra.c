@@ -77,7 +77,7 @@ get_group_mask (type_t *type, algebra_t *algebra)
 static bool __attribute__((const))
 is_neg (const expr_t *e)
 {
-	return e->type == ex_uexpr && e->e.expr.op == '-';
+	return e->type == ex_uexpr && e->expr.op == '-';
 }
 
 static expr_t *
@@ -93,8 +93,8 @@ static bool __attribute__((const))
 anti_com (const expr_t *e)
 {
 	return (e->type == ex_expr
-			&& (e->e.expr.op == CROSS || e->e.expr.op == WEDGE
-				|| e->e.expr.op == '-'));
+			&& (e->expr.op == CROSS || e->expr.op == WEDGE
+				|| e->expr.op == '-'));
 }
 
 static expr_t *
@@ -105,15 +105,15 @@ neg_expr (expr_t *e)
 		return 0;
 	}
 	if (is_neg (e)) {
-		return e->e.expr.e1;
+		return e->expr.e1;
 	}
 	auto type = get_type (e);
 	if (anti_com (e)) {
-		e = new_binary_expr (e->e.expr.op, e->e.expr.e2, e->e.expr.e1);
+		e = new_binary_expr (e->expr.op, e->expr.e2, e->expr.e1);
 	} else {
 		e = new_unary_expr ('-', e);
 	}
-	e->e.expr.type = type;
+	e->expr.type = type;
 	return fold_constants (e);
 }
 
@@ -145,10 +145,10 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 		internal_error (expr, "offset cast to non-basic type");
 	}
 	if (expr->type == ex_expr
-		&& (expr->e.expr.op == '+' || expr->e.expr.op == '-')) {
-		auto e1 = offset_cast (type, expr->e.expr.e1, offset);
-		auto e2 = offset_cast (type, expr->e.expr.e2, offset);
-		int  op = expr->e.expr.op;
+		&& (expr->expr.op == '+' || expr->expr.op == '-')) {
+		auto e1 = offset_cast (type, expr->expr.e1, offset);
+		auto e2 = offset_cast (type, expr->expr.e2, offset);
+		int  op = expr->expr.op;
 		if (!e1) {
 			if (op == '-') {
 				e2 = neg_expr (e2);
@@ -159,11 +159,11 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 			return e1;
 		}
 		auto cast = new_binary_expr (op, e1, e2);
-		cast->e.expr.type = type;
+		cast->expr.type = type;
 		return cast;
 	}
 	if (expr->type == ex_extend) {
-		auto ext = expr->e.extend;
+		auto ext = expr->extend;
 		if (type_width (get_type (ext.src)) == type_width (type)) {
 			return alias_expr (type, ext.src, 0);
 		}
@@ -178,7 +178,7 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 		}
 	}
 	if (is_neg (expr)) {
-		auto e = expr->e.expr.e1;
+		auto e = expr->expr.e1;
 		if (e->type == ex_extend) {
 			return neg_expr (offset_cast (type, e, offset));
 		}
@@ -261,15 +261,15 @@ mvec_expr (expr_t *expr, algebra_t *algebra)
 	}
 	auto mvec = new_expr ();
 	mvec->type = ex_multivec;
-	mvec->e.multivec = (ex_multivec_t) {
+	mvec->multivec = (ex_multivec_t) {
 		.type = algebra_mvec_type (algebra, group_mask),
 		.algebra = algebra,
 	};
-	expr_t **c = &mvec->e.multivec.components;
+	expr_t **c = &mvec->multivec.components;
 	for (auto sym = get_mvec_sym (mvtype); sym; sym = sym->next) {
 		*c = new_offset_alias_expr (sym->type, expr, sym->s.offset);
 		c = &(*c)->next;
-		mvec->e.multivec.count++;
+		mvec->multivec.count++;
 	}
 
 	return mvec;
@@ -298,7 +298,7 @@ mvec_scatter (expr_t **components, expr_t *mvec, algebra_t *algebra)
 		components[group] = mvec;
 		return;
 	}
-	for (auto c = mvec->e.multivec.components; c; c = c->next) {
+	for (auto c = mvec->multivec.components; c; c = c->next) {
 		auto ct = get_type (c);
 		if (!is_algebra (ct)) {
 			group = layout->group_map[layout->mask_map[0]][0];
@@ -340,15 +340,15 @@ mvec_gather (expr_t **components, algebra_t *algebra)
 
 	mvec = new_expr ();
 	mvec->type = ex_multivec;
-	mvec->e.multivec = (ex_multivec_t) {
+	mvec->multivec = (ex_multivec_t) {
 		.type = algebra_mvec_type (algebra, group_mask),
 		.algebra = algebra,
 	};
 	for (int i = layout->count; i-- > 0; ) {
 		if (components[i]) {
-			components[i]->next = mvec->e.multivec.components;
-			mvec->e.multivec.components = components[i];
-			mvec->e.multivec.count++;
+			components[i]->next = mvec->multivec.components;
+			mvec->multivec.components = components[i];
+			mvec->multivec.count++;
 		}
 	}
 	return mvec;
@@ -357,15 +357,15 @@ mvec_gather (expr_t **components, algebra_t *algebra)
 static bool __attribute__((const))
 ext_compat (const expr_t *a, const expr_t *b)
 {
-	return (a->e.extend.extend == b->e.extend.extend
-			&& a->e.extend.reverse == b->e.extend.reverse
-			&& a->e.extend.type == b->e.extend.type);
+	return (a->extend.extend == b->extend.extend
+			&& a->extend.reverse == b->extend.reverse
+			&& a->extend.type == b->extend.type);
 }
 
 static expr_t *
 extract_extended_neg (const expr_t *expr)
 {
-	auto e = expr->e.extend;
+	auto e = expr->extend;
 	return neg_expr (ext_expr (neg_expr (e.src), e.type, e.extend, e.reverse));
 }
 
@@ -387,21 +387,21 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 			if (ext_compat (a, b)) {
 				// push the sum below the two extends making for a single
 				// extend of a sum instead of a sum of two extends
-				auto ext = a->e.extend;
-				a = a->e.extend.src;
-				b = b->e.extend.src;
+				auto ext = a->extend;
+				a = a->extend.src;
+				b = b->extend.src;
 				auto sum = sum_expr (get_type (a), a, b);
 				return ext_expr (sum, type, ext.extend, ext.reverse);
 			}
-		} else if (b->type == ex_expr && b->e.expr.op == '+') {
-			auto c = b->e.expr.e1;
-			auto d = b->e.expr.e2;
+		} else if (b->type == ex_expr && b->expr.op == '+') {
+			auto c = b->expr.e1;
+			auto d = b->expr.e2;
 			if (ext_compat (a, c)) {
 				// d should not be compatible with a because it should have
 				// already been merged
-				auto ext = a->e.extend;
-				a = a->e.extend.src;
-				c = c->e.extend.src;
+				auto ext = a->extend;
+				a = a->extend.src;
+				c = c->extend.src;
 				auto sum = sum_expr (get_type (a), a, c);
 				sum = ext_expr (sum, type, ext.extend, ext.reverse);
 				return sum_expr (type, sum, d);
@@ -409,19 +409,19 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 			if (ext_compat (a, d)) {
 				// c should not be compatible with a because it should have
 				// already been merged
-				auto ext = a->e.extend;
-				a = a->e.extend.src;
-				d = d->e.extend.src;
+				auto ext = a->extend;
+				a = a->extend.src;
+				d = d->extend.src;
 				auto sum = sum_expr (get_type (a), a, d);
 				sum = ext_expr (sum, type, ext.extend, ext.reverse);
 				return sum_expr (type, sum, c);
 			}
 		}
 	}
-	if (a->type == ex_extend && is_neg (a->e.extend.src)) {
+	if (a->type == ex_extend && is_neg (a->extend.src)) {
 		a = extract_extended_neg (a);
 	}
-	if (b->type == ex_extend && is_neg (b->e.extend.src)) {
+	if (b->type == ex_extend && is_neg (b->extend.src)) {
 		b = extract_extended_neg (b);
 	}
 	bool neg = false;
@@ -443,7 +443,7 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 		b = neg_expr (b);
 	}
 	auto sum = new_binary_expr (op, a, b);
-	sum->e.expr.type = type;
+	sum->expr.type = type;
 	if (neg) {
 		sum = neg_expr (sum);
 	}
@@ -508,7 +508,7 @@ scale_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 
 	auto scale = new_binary_expr (op, a, b);
-	scale->e.expr.type = type;
+	scale->expr.type = type;
 	scale = fold_constants (scale);
 	if (neg) {
 		scale = neg_expr (scale);
@@ -536,10 +536,10 @@ dot_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 
 	auto dot = new_binary_expr (DOT, a, b);
-	dot->e.expr.type = type;
+	dot->expr.type = type;
 	if (neg) {
 		dot = neg_expr (dot);
-		dot->e.expr.type = type;
+		dot->expr.type = type;
 	}
 	return dot;
 }
@@ -566,7 +566,7 @@ cross_expr (type_t *type, expr_t *a, expr_t *b)
 		b = t;
 	}
 	auto cross = new_binary_expr (CROSS, a, b);
-	cross->e.expr.type = type;
+	cross->expr.type = type;
 	return cross;
 }
 
@@ -592,7 +592,7 @@ wedge_expr (type_t *type, expr_t *a, expr_t *b)
 		b = t;
 	}
 	auto cross = new_binary_expr (WEDGE, a, b);
-	cross->e.expr.type = type;
+	cross->expr.type = type;
 	return cross;
 }
 
@@ -2042,7 +2042,7 @@ multivector_divide (expr_t *e1, expr_t *e2)
 			den = ext_expr (den, vector_type (stype, width), 2, false);
 		}
 		a[i] = new_binary_expr ('/', a[i], den);
-		a[i]->e.expr.type = ct;
+		a[i]->expr.type = ct;
 	}
 	return mvec_gather (a, algebra);
 }
@@ -2090,7 +2090,7 @@ algebra_negate (expr_t *e)
 			n[i] = cast_expr (float_type (ct), n[i]);
 		}
 		n[i] = neg_expr (n[i]);
-		n[i]->e.expr.type = ct;
+		n[i]->expr.type = ct;
 	}
 	return mvec_gather (n, algebra);
 }
@@ -2178,7 +2178,7 @@ algebra_reverse (expr_t *e)
 			if (neg) {
 				auto rev = new_value_expr (new_type_value (ct, ones));
 				r[i] = new_binary_expr (HADAMARD, r[i], rev);
-				r[i]->e.expr.type = ct;
+				r[i]->expr.type = ct;
 			}
 		}
 	}
@@ -2226,16 +2226,16 @@ find_offset (const type_t *t1, const type_t *t2)
 static bool __attribute__((const))
 summed_extend (const expr_t *e)
 {
-	return (e->type == ex_expr && e->e.expr.op == '+'
-			&& e->e.expr.e1->type == ex_extend
-			&& e->e.expr.e2->type == ex_extend);
+	return (e->type == ex_expr && e->expr.op == '+'
+			&& e->expr.e1->type == ex_extend
+			&& e->expr.e2->type == ex_extend);
 }
 
 static void
 assign_extend (expr_t *block, expr_t *dst, expr_t *src)
 {
-	auto ext1 = src->e.expr.e1->e.extend;
-	auto ext2 = src->e.expr.e2->e.extend;
+	auto ext1 = src->expr.e1->extend;
+	auto ext2 = src->expr.e2->extend;
 	auto type1 = get_type (ext1.src);
 	auto type2 = get_type (ext2.src);
 	int offs1 = ext1.reverse ? find_offset (ext1.type, type1) : 0;

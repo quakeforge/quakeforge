@@ -68,10 +68,10 @@ static __attribute__((pure)) ex_value_t *
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->e.symbol->s.value;
+		return e->symbol->s.value;
 	if (e->type != ex_value)
 		internal_error (e, "bogus case label");
-	return e->e.value;
+	return e->value;
 }
 
 static __attribute__((pure)) uintptr_t
@@ -116,7 +116,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	SYS_CHECKMEM (cl);
 
 	if (value)
-		convert_name (value);
+		value = convert_name (value);
 	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);
@@ -342,7 +342,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 
 		table_init = new_compound_init ();
 		for (i = 0; i <= high - low; i++) {
-			tree->labels[i]->e.label.used++;
+			tree->labels[i]->label.used++;
 			label = address_expr (tree->labels[i], 0);
 			append_element (table_init, new_element (label, 0));
 		}

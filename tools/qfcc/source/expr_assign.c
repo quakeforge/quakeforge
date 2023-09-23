@@ -68,15 +68,15 @@
 static expr_t *
 check_assign_logic_precedence (expr_t *dst, expr_t *src)
 {
-	if (src->type == ex_expr && !src->paren && is_logic (src->e.expr.op)) {
+	if (src->type == ex_expr && !src->paren && is_logic (src->expr.op)) {
 		// traditional QuakeC gives = higher precedence than && and ||
 		expr_t     *assignment;
 		notice (src, "precedence of `=' and `%s' inverted for "
-					 "traditional code", get_op_string (src->e.expr.op));
+					 "traditional code", get_op_string (src->expr.op));
 		// change {a = (b logic c)} to {(a = b) logic c}
-		assignment = assign_expr (dst, src->e.expr.e1);
+		assignment = assign_expr (dst, src->expr.e1);
 		assignment->paren = 1;	// protect assignment from binary_expr
-		return binary_expr (src->e.expr.op, assignment, src->e.expr.e2);
+		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
 	return 0;
 }
@@ -86,9 +86,9 @@ is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
 		case ex_def:
-			return !expr->e.def->constant;
+			return !expr->def->constant;
 		case ex_symbol:
-			switch (expr->e.symbol->sy_type) {
+			switch (expr->symbol->sy_type) {
 				case sy_name:
 					break;
 				case sy_var:
@@ -110,18 +110,18 @@ is_lvalue (const expr_t *expr)
 		case ex_temp:
 			return 1;
 		case ex_expr:
-			if (expr->e.expr.op == '.') {
+			if (expr->expr.op == '.') {
 				return 1;
 			}
 			break;
 		case ex_alias:
-			return is_lvalue (expr->e.alias.expr);
+			return is_lvalue (expr->alias.expr);
 		case ex_address:
 			return 0;
 		case ex_assign:
 			return 0;
 		case ex_uexpr:
-			if (expr->e.expr.op == '.') {
+			if (expr->expr.op == '.') {
 				return 1;
 			}
 			break;
@@ -230,9 +230,9 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 	expr_t     *ds, *ss;
 	expr_t     *dv, *sv;
 
-	if (is_vector (src->e.vector.type)) {
+	if (is_vector (src->vector.type)) {
 		// guaranteed to have three elements
-		sx = src->e.vector.list;
+		sx = src->vector.list;
 		sy = sx->next;
 		sz = sy->next;
 		dx = field_expr (dst, new_name_expr ("x"));
@@ -243,9 +243,9 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 		append_expr (block, assign_expr (dz, sz));
 	} else {
 		// guaranteed to have two or four elements
-		if (src->e.vector.list->next->next) {
+		if (src->vector.list->next->next) {
 			// four vals: x, y, z, w
-			sx = src->e.vector.list;
+			sx = src->vector.list;
 			sy = sx->next;
 			sz = sy->next;
 			sw = sz->next;
@@ -259,7 +259,7 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 			append_expr (block, assign_expr (dw, sw));
 		} else {
 			// v, s
-			sv = src->e.vector.list;
+			sv = src->vector.list;
 			ss = sv->next;
 			dv = field_expr (dst, new_name_expr ("v"));
 			ds = field_expr (dst, new_name_expr ("s"));
@@ -273,7 +273,7 @@ static int
 copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
 {
 	int         index = 0;
-	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+	for (expr_t *e = src->vector.list; e; e = e->next) {
 		if (e->type == ex_vector) {
 			index += copy_elements (block, dst, e, index + base);
 		} else {
@@ -297,7 +297,7 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 		} else {
 			copy_elements (block, dst, src, 0);
 		}
-		block->e.block.result = dst;
+		block->block.result = dst;
 		return block;
 	}
 	return 0;
@@ -315,7 +315,7 @@ assign_expr (expr_t *dst, expr_t *src)
 	expr_t     *expr;
 	type_t     *dst_type, *src_type;
 
-	convert_name (dst);
+	dst = convert_name (dst);
 	if (dst->type == ex_error) {
 		return dst;
 	}
@@ -328,7 +328,7 @@ assign_expr (expr_t *dst, expr_t *src)
 	}
 
 	if (src && !is_memset (src)) {
-		convert_name (src);
+		src = convert_name (src);
 		if (src->type == ex_error) {
 			return src;
 		}

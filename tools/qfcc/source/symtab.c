@@ -66,7 +66,7 @@ static const char * const sy_type_names[] = {
 const char *
 symtype_str (sy_type_e type)
 {
-	if (type > sy_class)
+	if (type > sy_convert)
 		return "<invalid sy_type>";
 	return sy_type_names[type];
 }

@@ -141,7 +141,7 @@ new_vector_list (expr_t *expr_list)
 
 	expr_t     *vec = new_expr ();
 	vec->type = ex_vector;
-	vec->e.vector.type = vector_type (ele_type, width);
-	vec->e.vector.list = elements[0];
+	vec->vector.type = vector_type (ele_type, width);
+	vec->vector.list = elements[0];
 	return vec;
 }

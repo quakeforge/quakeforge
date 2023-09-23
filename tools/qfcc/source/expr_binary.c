@@ -782,7 +782,7 @@ pointer_compare (int op, expr_t *e1, expr_t *e2)
 		e = new_binary_expr (op, cast_expr (&type_int, e1),
 							 cast_expr (&type_int, e2));
 	}
-	e->e.expr.type = &type_int;
+	e->expr.type = &type_int;
 	return e;
 }
 
@@ -797,9 +797,9 @@ func_compare (int op, expr_t *e1, expr_t *e2)
 		e = new_binary_expr (op, new_alias_expr (&type_int, e1),
 							 new_alias_expr (&type_int, e2));
 	}
-	e->e.expr.type = &type_int;
+	e->expr.type = &type_int;
 	if (options.code.progsversion == PROG_ID_VERSION) {
-		e->e.expr.type = &type_float;
+		e->expr.type = &type_float;
 	}
 	return e;
 }
@@ -818,9 +818,9 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		expr_t     *e = new_binary_expr (op, e1, e2);
-		e->e.expr.type = &type_int;
+		e->expr.type = &type_int;
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 		}
 		return e;
 	}
@@ -828,7 +828,7 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 	e1 = new_alias_expr (&type_vec3, e1);
 	e2 = new_alias_expr (&type_vec3, e2);
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_ivec3;
+	e->expr.type = &type_ivec3;
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
@@ -836,7 +836,7 @@ static expr_t *
 vector_dot (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t     *e = new_binary_expr (DOT, e1, e2);
-	e->e.expr.type = &type_float;
+	e->expr.type = &type_float;
 	return e;
 }
 
@@ -849,7 +849,7 @@ vector_multiply (int op, expr_t *e1, expr_t *e2)
 	}
 	// component-wise multiplication
 	expr_t     *e = new_binary_expr ('*', e1, e2);
-	e->e.expr.type = &type_vector;
+	e->expr.type = &type_vector;
 	return e;
 }
 
@@ -865,7 +865,7 @@ vector_scale (int op, expr_t *e1, expr_t *e2)
 		e2 = t;
 	}
 	expr_t     *e = new_binary_expr (SCALE, e1, e2);
-	e->e.expr.type = get_type (e1);
+	e->expr.type = get_type (e1);
 	return e;
 }
 
@@ -900,7 +900,7 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_long;
+	e->expr.type = &type_long;
 	return e;
 }
 
@@ -912,9 +912,9 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 		e2 = new_alias_expr (&type_int, e2);
 	}
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_int;
+	e->expr.type = &type_int;
 	if (options.code.progsversion == PROG_ID_VERSION) {
-		e->e.expr.type = &type_float;
+		e->expr.type = &type_float;
 	}
 	return e;
 }
@@ -949,7 +949,7 @@ reimplement_binary_expr (int op, expr_t *e1, expr_t *e2)
 
 					append_expr (e, assign_expr (tmp1, binary_expr ('/', e1, e2)));
 					append_expr (e, assign_expr (tmp2, binary_expr ('&', tmp1, tmp1)));
-					e->e.block.result = binary_expr ('-', e1, binary_expr ('*', e2, tmp2));
+					e->block.result = binary_expr ('-', e1, binary_expr ('*', e2, tmp2));
 					return e;
 				}
 				break;
@@ -961,13 +961,13 @@ reimplement_binary_expr (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 check_precedence (int op, expr_t *e1, expr_t *e2)
 {
-	if (e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
+	if (e1->type == ex_uexpr && e1->expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
 			if (op != AND && op != OR && op != '=') {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
-				e1->e.expr.e1->paren = 1;
-				return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
+				e1->expr.e1->paren = 1;
+				return unary_expr ('!', binary_expr (op, e1->expr.e1, e2));
 			}
 		} else if (op == '&' || op == '|') {
 			if (options.warnings.precedence)
@@ -979,63 +979,63 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	if (options.traditional) {
 		if (e2->type == ex_expr && !e2->paren) {
 			if (((op == '&' || op == '|')
-				 && (is_math_op (e2->e.expr.op) || is_compare (e2->e.expr.op)))
+				 && (is_math_op (e2->expr.op) || is_compare (e2->expr.op)))
 				|| (op == '='
-					&&(e2->e.expr.op == OR || e2->e.expr.op == AND))) {
+					&&(e2->expr.op == OR || e2->expr.op == AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
-							get_op_string (e2->e.expr.op));
-				e1 = binary_expr (op, e1, e2->e.expr.e1);
+							get_op_string (e2->expr.op));
+				e1 = binary_expr (op, e1, e2->expr.e1);
 				e1->paren = 1;
-				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
+				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
-			if (((op == EQ || op == NE) && is_compare (e2->e.expr.op))
-				|| (op == OR && e2->e.expr.op == AND)
-				|| (op == '|' && e2->e.expr.op == '&')) {
+			if (((op == EQ || op == NE) && is_compare (e2->expr.op))
+				|| (op == OR && e2->expr.op == AND)
+				|| (op == '|' && e2->expr.op == '&')) {
 				notice (e1, "precedence of `%s' raised to `%s' for "
 							"traditional code", get_op_string (op),
-							get_op_string (e2->e.expr.op));
-				e1 = binary_expr (op, e1, e2->e.expr.e1);
+							get_op_string (e2->expr.op));
+				e1 = binary_expr (op, e1, e2->expr.e1);
 				e1->paren = 1;
-				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
+				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
 			if (((op == '&' || op == '|')
-				 && (is_math_op (e1->e.expr.op) || is_compare (e1->e.expr.op)))
+				 && (is_math_op (e1->expr.op) || is_compare (e1->expr.op)))
 				|| (op == '='
-					&&(e2->e.expr.op == OR || e2->e.expr.op == AND))) {
+					&&(e2->expr.op == OR || e2->expr.op == AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
-							get_op_string (e1->e.expr.op));
-				e2 = binary_expr (op, e1->e.expr.e2, e2);
+							get_op_string (e1->expr.op));
+				e2 = binary_expr (op, e1->expr.e2, e2);
 				e2->paren = 1;
-				return binary_expr (e1->e.expr.op, e1->e.expr.e1, e2);
+				return binary_expr (e1->expr.op, e1->expr.e1, e2);
 			}
 		}
 	} else {
 		if (e2->type == ex_expr && !e2->paren) {
 			if ((op == '&' || op == '|' || op == '^')
-				&& (is_math_op (e2->e.expr.op)
-					|| is_compare (e2->e.expr.op))) {
+				&& (is_math_op (e2->expr.op)
+					|| is_compare (e2->expr.op))) {
 				if (options.warnings.precedence)
 					warning (e2, "suggest parentheses around %s in "
 							 "operand of %c",
-							 is_compare (e2->e.expr.op)
+							 is_compare (e2->expr.op)
 									? "comparison"
-									: get_op_string (e2->e.expr.op),
+									: get_op_string (e2->expr.op),
 							 op);
 			}
 		}
 		if (e1->type == ex_expr && !e1->paren) {
 			if ((op == '&' || op == '|' || op == '^')
-				&& (is_math_op (e1->e.expr.op)
-					|| is_compare (e1->e.expr.op))) {
+				&& (is_math_op (e1->expr.op)
+					|| is_compare (e1->expr.op))) {
 				if (options.warnings.precedence)
 					warning (e1, "suggest parentheses around %s in "
 							 "operand of %c",
-							 is_compare (e1->e.expr.op)
+							 is_compare (e1->expr.op)
 									? "comparison"
-									: get_op_string (e1->e.expr.op),
+									: get_op_string (e1->expr.op),
 							 op);
 			}
 		}
@@ -1045,7 +1045,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 
 static int is_call (expr_t *e)
 {
-	return e->type == ex_block && e->e.block.is_call;
+	return e->type == ex_block && e->block.is_call;
 }
 
 static type_t *
@@ -1065,30 +1065,30 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	expr_t     *e;
 	expr_type_t *expr_type;
 
-	convert_name (e1);
+	e1 = convert_name (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
-	if (e1->type == ex_alias && is_call (e1->e.alias.expr)) {
+	if (e1->type == ex_alias && is_call (e1->alias.expr)) {
 		// move the alias expression inside the block so the following check
 		// can detect the call and move the temp assignment into the block
-		expr_t     *block = e1->e.alias.expr;
-		e1->e.alias.expr = block->e.block.result;
-		block->e.block.result = e1;
+		expr_t     *block = e1->alias.expr;
+		e1->alias.expr = block->block.result;
+		block->block.result = e1;
 		e1 = block;
 	}
-	if (e1->type == ex_block && e1->e.block.is_call
-		&& has_function_call (e2) && e1->e.block.result) {
+	if (e1->type == ex_block && e1->block.is_call
+		&& has_function_call (e2) && e1->block.result) {
 		// the temp assignment needs to be insided the block so assignment
 		// code generation doesn't see it when applying right-associativity
-		expr_t    *tmp = new_temp_def_expr (get_type (e1->e.block.result));
-		e = assign_expr (tmp, e1->e.block.result);
+		expr_t    *tmp = new_temp_def_expr (get_type (e1->block.result));
+		e = assign_expr (tmp, e1->block.result);
 		append_expr (e1, e);
-		e1->e.block.result = tmp;
+		e1->block.result = tmp;
 	}
 	if (e1->type == ex_error)
 		return e1;
 
-	convert_name (e2);
+	e2 = convert_name (e2);
 	if (e2->type == ex_error)
 		return e2;
 
@@ -1222,7 +1222,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 				t1 = base_type (t1);
 			}
-			e->e.expr.type = t1;
+			e->expr.type = t1;
 			return e;
 		}
 	}
@@ -1245,10 +1245,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return fold_constants (e);
 
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = expr_type->result_type;
+	e->expr.type = expr_type->result_type;
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->e.expr.type = &type_float;
+			e->expr.type = &type_float;
 		}
 	}
 	return fold_constants (e);
