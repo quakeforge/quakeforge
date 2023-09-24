@@ -284,12 +284,7 @@ convert_bool (expr_t *e, int block)
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the boolean's block
-		e->next = b->boolean.e->block.head;
-		b->boolean.e->block.head = e;
-		if (b->boolean.e->block.tail == &b->boolean.e->block.head) {
-			// shouldn't happen, but just in case
-			b->boolean.e->block.tail = &e->next;
-		}
+		prepend_expr (b->boolean.e, e);
 		return b;
 	}
 
@@ -321,8 +316,8 @@ convert_bool (expr_t *e, int block)
 			b = new_block_expr ();
 			append_expr (b, branch_expr (NE, e, 0));
 			append_expr (b, goto_expr (0));
-			e = new_bool_expr (make_list (b->block.head),
-							   make_list (b->block.head->next), b);
+			e = new_bool_expr (make_list (b->block.head->expr),
+							   make_list (b->block.head->next->expr), b);
 		}
 	}
 	if (block && e->boolean.e->type != ex_block) {

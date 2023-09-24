@@ -245,7 +245,9 @@ evaluate_constexpr (expr_t *e)
 	sblock_t    sblock = {
 		.tail = &sblock.statements,
 	};
-	auto sb = statement_slist (&sblock, new_return_expr (e));
+	ex_listitem_t return_expr = { .expr = new_return_expr (e) };
+	ex_list_t return_st = { .head = &return_expr, .tail = &return_expr.next };
+	auto sb = statement_slist (&sblock, &return_st);
 	if (sblock.next != sb && sb->statements) {
 		internal_error (e, "statement_slist did too much");
 	}

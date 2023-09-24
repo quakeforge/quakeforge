@@ -547,7 +547,7 @@ static int
 num_elements (expr_t *e)
 {
 	int         count = 0;
-	for (e = e->block.head; e; e = e->next) {
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
 		count++;
 	}
 	return count;

@@ -725,6 +725,7 @@ static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 									operand_t **op);
 static sblock_t *expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op);
 static sblock_t *expr_def (sblock_t *sblock, expr_t *e, operand_t **op);
+static sblock_t *statement_single (sblock_t *sblock, expr_t *e);
 
 static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
@@ -1056,7 +1057,7 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 		param = new_param_expr (get_type (earg), ind);
 		a->line = earg->line;
 		a->file = earg->file;
-		sblock = statement_slist (sblock, a);
+		sblock = statement_single (sblock, a);
 	}
 	sblock = statement_subexpr (sblock, param, op);
 	return sblock;
@@ -1111,7 +1112,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
-			sblock = statement_slist (sblock, mov);
+			sblock = statement_single (sblock, mov);
 		} else {
 			operand_t  *p = 0;
 			sblock = statement_subexpr (sblock, param, &p);
@@ -1204,7 +1205,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			}
 			expr_t     *assign = assign_expr (def_expr, a);
 			expr_file_line (assign, call);
-			sblock = statement_slist (sblock, assign);
+			sblock = statement_single (sblock, assign);
 		}
 
 		// The call both uses and kills the arguments: use is obvious, but kill
@@ -1232,7 +1233,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		count = new_short_expr (num_params);
 		assign = assign_expr (args_count, count);
 		expr_file_line (assign, call);
-		sblock = statement_slist (sblock, assign);
+		sblock = statement_single (sblock, assign);
 
 		if (args_params) {
 			list = address_expr (args_params, &type_param);
@@ -1242,7 +1243,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		expr_file_line (list, call);
 		assign = assign_expr (args_list, list);
 		expr_file_line (assign, call);
-		sblock = statement_slist (sblock, assign);
+		sblock = statement_single (sblock, assign);
 	}
 	statement_t *s = new_statement (st_func, "call", call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
@@ -1513,7 +1514,7 @@ statement_return (sblock_t *sblock, expr_t *e)
 				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
 				ret_ptr->reg = REG;
 				expr_file_line (with, e);
-				sblock = statement_slist (sblock, with);
+				sblock = statement_single (sblock, with);
 				sblock = statement_subexpr (sblock, call, &ret_op);
 			}
 			s->opa = short_operand (0, e);
@@ -1635,7 +1636,7 @@ expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	if (!e->block.result)
 		internal_error (e, "block sub-expression without result");
-	sblock = statement_slist (sblock, e->block.head);
+	sblock = statement_slist (sblock, &e->block.list);
 	sblock = statement_subexpr (sblock, e->block.result, op);
 	return sblock;
 }
@@ -1932,7 +1933,7 @@ statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
 			expr_t     *dst_ele = new_offset_alias_expr (src_type, dst,
 														 size * (index + base));
 			index += type_width (src_type);
-			*sblock = statement_slist (*sblock, assign_expr (dst_ele, e));
+			*sblock = statement_single (*sblock, assign_expr (dst_ele, e));
 		}
 	}
 	return index;
@@ -2094,10 +2095,8 @@ build_bool_block (expr_t *block, expr_t *e)
 			break;
 		case ex_block:
 			if (!e->block.result) {
-				expr_t     *t;
-				for (e = e->block.head; e; e = t) {
-					t = e->next;
-					build_bool_block (block, e);
+				for (auto t = e->block.head; t; t = t->next) {
+					build_bool_block (block, t->expr);
 				}
 				return;
 			}
@@ -2118,69 +2117,69 @@ is_goto_expr (expr_t *e)
 static int
 is_if_expr (expr_t *e)
 {
-	return e && e->type == ex_branch && e->branch.type == pr_branch_ne;
+	return e && e->type == ex_branch && e->branch.type != pr_branch_jump
+			 && e->branch.type != pr_branch_call;;
 }
 
 static int
-is_ifnot_expr (expr_t *e)
+is_label_expr (expr_t *e)
 {
-	return e && e->type == ex_branch && e->branch.type == pr_branch_eq;
+	return e && e->type == ex_label;
 }
 
 static sblock_t *
 statement_bool (sblock_t *sblock, expr_t *e)
 {
-	expr_t    **s;
 	expr_t     *l;
 	expr_t     *block = new_block_expr ();
 
 	build_bool_block (block, e);
 
-	s = &block->block.head;
-	while (*s) {
-		if (is_if_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->branch.target;
-			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
-				if (e == l) {
+	int         num_expr = list_count (&block->block.list);
+	expr_t     *exprs[num_expr + 1];
+	list_scatter (&block->block.list, exprs);
+	exprs[num_expr] = 0;	// mark end of list
+	expr_t    **d = exprs;
+	expr_t    **s = exprs;
+	while (s[0]) {
+		if (is_if_expr (s[0]) && is_goto_expr (s[1])) {
+			l = s[0]->branch.target;
+			for (auto e = s + 2; is_label_expr (e[0]); e++) {
+				if (e[0] == l) {
 					l->label.used--;
-					e = *s;
-					e->branch.type = pr_branch_eq;
-					e->branch.target = e->next->branch.target;
-					e->next = e->next->next;
-					break;
-				}
-			}
-			s = &(*s)->next;
-		} else if (is_ifnot_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->branch.target;
-			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
-				if (e == l) {
-					l->label.used--;
-					e = *s;
-					e->branch.type = pr_branch_ne;
-					e->branch.target = e->next->branch.target;
-					e->next = e->next->next;
-					break;
-				}
-			}
-			s = &(*s)->next;
-		} else if (is_goto_expr (*s)) {
-			l = (*s)->branch.target;
-			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
-				if (e == l) {
-					l->label.used--;
-					*s = (*s)->next;
+					// invert logic of if
+					s[0]->branch.type ^= pr_branch_ne;
+					// use goto's label in if
+					s[0]->branch.target = s[1]->branch.target;
 					l = 0;
 					break;
 				}
 			}
-			if (l)
-				s = &(*s)->next;
+			*d++ = *s++;	// copy if
+			if (!l) {
+				s++;		// skip over goto
+			}
+		} else if (is_goto_expr (*s)) {
+			l = s[0]->branch.target;
+			for (auto e = s + 1; is_label_expr (e[0]); e++) {
+				if (e[0] == l) {
+					l->label.used--;
+					l = 0;
+					break;
+				}
+			}
+			if (l) {
+				*d++ = *s++; // label survived, copy goto
+			} else {
+				s++;		// skip over goto
+			}
 		} else {
-			s = &(*s)->next;
+			*d++ = *s++;
 		}
 	}
-	sblock = statement_slist (sblock, block->block.head);
+	block->block.list = (ex_list_t) {};
+	list_gather (&block->block.list, exprs, d - exprs);
+	sblock = statement_slist (sblock, &block->block.list);
 	return sblock;
 }
 
@@ -2212,11 +2211,11 @@ statement_block (sblock_t *sblock, expr_t *e)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	sblock = statement_slist (sblock, e->block.head);
+	sblock = statement_slist (sblock, &e->block.list);
 	if (e->block.is_call) {
 		// for a fuction call, the call expresion is in only the result, not
 		// the actual block
-		sblock = statement_slist (sblock, e->block.result);
+		sblock = statement_single (sblock, e->block.result);
 	}
 	return sblock;
 }
@@ -2282,8 +2281,8 @@ statement_nonexec (sblock_t *sblock, expr_t *e)
 	return sblock;
 }
 
-sblock_t *
-statement_slist (sblock_t *sblock, expr_t *e)
+static sblock_t *
+statement_single (sblock_t *sblock, expr_t *e)
 {
 	static statement_f sfuncs[ex_count] = {
 		[ex_error] = statement_ignore,
@@ -2307,10 +2306,19 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		[ex_with] = statement_with,
 	};
 
-	for (/**/; e; e = e->next) {
-		if (e->type >= ex_count || !sfuncs[e->type])
-			internal_error (e, "bad expression type");
-		sblock = sfuncs[e->type] (sblock, e);
+	if (e->type >= ex_count || !sfuncs[e->type]) {
+		internal_error (e, "bad expression type");
+	}
+	sblock = sfuncs[e->type] (sblock, e);
+	return sblock;
+}
+
+sblock_t *
+statement_slist (sblock_t *sblock, ex_list_t *slist)
+{
+
+	for (auto s = slist->head; s; s = s->next) {
+		sblock = statement_single (sblock, s->expr);
 	}
 	return sblock;
 }
@@ -2657,7 +2665,11 @@ make_statements (expr_t *e)
 
 	if (options.block_dot.expr)
 		dump_dot ("expr", e, dump_dot_expr);
-	statement_slist (sblock, e);
+	if (e->type != ex_block) {
+		statement_single (sblock, e);
+	} else {
+		statement_slist (sblock, &e->block.list);
+	}
 	if (options.block_dot.initial)
 		dump_dot ("initial", sblock, dump_dot_sblock);
 	do {

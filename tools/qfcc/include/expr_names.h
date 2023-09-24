@@ -66,5 +66,6 @@ EX_EXPR(horizontal)	///< horizontal vector operation (::ex_horzontal_t)
 EX_EXPR(swizzle)	///< vector swizzle operation (::ex_swizzle_t)
 EX_EXPR(extend)		///< vector extend operation (::ex_extend_t)
 EX_EXPR(multivec)	///< geometric algebra multivector (::ex_multivec_t)
+EX_EXPR(list)		///< non-invasive list of expressions (::ex_list_t)
 
 ///@}

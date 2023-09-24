@@ -67,6 +67,7 @@
 #include "tools/qfcc/source/qc-parse.h"
 
 ALLOC_STATE (expr_t, exprs);
+ALLOC_STATE (ex_listitem_t, listitems);
 
 expr_t *
 convert_name (expr_t *e)
@@ -201,6 +202,11 @@ get_type (expr_t *e)
 			return e->extend.type;
 		case ex_multivec:
 			return e->multivec.type;
+		case ex_list:
+			if (e->list.head) {
+				return get_type ((*e->list.tail)->expr);
+			}
+			return 0;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -256,6 +262,46 @@ new_expr (void)
 	e->line = pr.source_line;
 	e->file = pr.source_file;
 	return e;
+}
+
+ex_listitem_t *
+new_listitem (expr_t *e)
+{
+	ex_listitem_t *li;
+	ALLOC (16384, ex_listitem_t, listitems, li);
+	li->expr = e;
+	return li;
+}
+
+int
+list_count (ex_list_t *list)
+{
+	int         count = 0;
+	for (auto li = list->head; li; li = li->next) {
+		count++;
+	}
+	return count;
+}
+
+void
+list_scatter (ex_list_t *list, expr_t **exprs)
+{
+	for (auto li = list->head; li; li = li->next) {
+		*exprs++ = li->expr;
+	}
+}
+
+void
+list_gather (ex_list_t *list, expr_t **exprs, int count)
+{
+	if (!list->tail) {
+		list->tail = &list->head;
+	}
+	while (count-- > 0) {
+		auto li = new_listitem (*exprs++);
+		*list->tail = li;
+		list->tail = &li->next;
+	}
 }
 
 expr_t *
@@ -318,12 +364,12 @@ copy_expr (expr_t *e)
 			n->block.head = 0;
 			n->block.tail = &n->block.head;
 			n->block.result = 0;
-			for (t = e->block.head; t; t = t->next) {
-				if (t == e->block.result) {
-					n->block.result = copy_expr (t);
+			for (auto t = e->block.head; t; t = t->next) {
+				if (t->expr == e->block.result) {
+					n->block.result = copy_expr (t->expr);
 					append_expr (n, n->block.result);
 				} else {
-					append_expr (n, copy_expr (t));
+					append_expr (n, copy_expr (t->expr));
 				}
 			}
 			if (e->block.result && !n->block.result)
@@ -453,6 +499,8 @@ copy_expr (expr_t *e)
 				t = t->next;
 			}
 			return n;
+		case ex_list:
+			break;//FIXME
 		case ex_count:
 			break;
 	}
@@ -1434,8 +1482,9 @@ append_expr (expr_t *block, expr_t *e)
 	if (e->next)
 		internal_error (e, "append_expr: expr loop detected");
 
-	*block->block.tail = e;
-	block->block.tail = &e->next;
+	auto li = new_listitem (e);
+	*block->block.tail = li;
+	block->block.tail = &li->next;
 
 	return block;
 }
@@ -1452,11 +1501,12 @@ prepend_expr (expr_t *block, expr_t *e)
 	if (e->next)
 		internal_error (e, "append_expr: expr loop detected");
 
-	e->next = block->block.head;
-	block->block.head = e;
+	auto li = new_listitem (e);
+	li->next = block->block.head;
+	block->block.head = li;
 
 	if (block->block.tail == &block->block.head) {
-		block->block.tail = &e->next;
+		block->block.tail = &li->next;
 	}
 
 	return block;
@@ -1674,8 +1724,9 @@ has_function_call (expr_t *e)
 		case ex_block:
 			if (e->block.is_call)
 				return 1;
-			for (e = e->block.head; e; e = e->next)
-				if (has_function_call (e))
+		case ex_list:
+			for (auto li = e->block.head; li; li = li->next)
+				if (has_function_call (li->expr))
 					return 1;
 			return 0;
 		case ex_expr:
@@ -1831,6 +1882,7 @@ unary_expr (int op, expr_t *e)
 				case ex_adjstk:
 				case ex_with:
 				case ex_args:
+				case ex_list:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->expr.op == '-') {
@@ -1944,6 +1996,7 @@ unary_expr (int op, expr_t *e)
 				case ex_adjstk:
 				case ex_with:
 				case ex_args:
+				case ex_list:
 					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->boolean.false_list,
@@ -2037,6 +2090,7 @@ unary_expr (int op, expr_t *e)
 				case ex_adjstk:
 				case ex_with:
 				case ex_args:
+				case ex_list:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->expr.op == '~')

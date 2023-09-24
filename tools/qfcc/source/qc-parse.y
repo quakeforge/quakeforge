@@ -1870,8 +1870,8 @@ identifier_list
 classdecl
 	: CLASS identifier_list ';'
 		{
-			expr_t     *e;
-			for (e = $2->block.head; e; e = e->next) {
+			for (auto li = $2->block.head; li; li = li->next) {
+				auto e = li->expr;
 				get_class (e->symbol, 1);
 				if (!e->symbol->table)
 					symtab_addsymbol (current_symtab, e->symbol);

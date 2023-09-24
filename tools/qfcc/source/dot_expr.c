@@ -221,21 +221,32 @@ static void
 print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	int         i;
-	expr_t     *se;
+	int         num_exprs = list_count (&e->block.list);
+	expr_t     *exprs[num_exprs + 1];
+
+	list_scatter (&e->block.list, exprs);
+	exprs[num_exprs] = 0;
 
 	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 			   "cellspacing=\"0\">\n", indent + 2, "");
-	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;block&gt;(%d)%s</td>"
-			   "</tr>\n", indent + 4, "", e->line,
+	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">&lt;block&gt;(%d)%s</td>"
+			   "</tr>\n", indent + 4, "", num_exprs, e->line,
 			   e->block.is_call ? "c" : "");
 	if (e->block.result)
-		dasprintf (dstr, "%*s<tr><td colspan=\"2\" port=\"result\">=</td>"
-				   "</tr>\n", indent + 4, "");
-	for (se = e->block.head, i = 0; se; se = se->next, i++)
-		dasprintf (dstr, "%*s<tr><td>%d</td><td port=\"b%d\">%s</td></tr>\n",
-				   indent + 4, "", se->line, i, expr_names[se->type]);
+		dasprintf (dstr, "%*s<tr><td colspan=\"%d\" port=\"result\">=</td>"
+				   "</tr>\n", indent + 4, "", num_exprs);
+	dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
+	for (int i = 0; i < num_exprs; i++) {
+		dasprintf (dstr, "%*s<td>%d</td>\n", indent + 8, "", exprs[i]->line);
+	}
+	dasprintf (dstr, "%*s</tr>\n", indent + 4, "");
+	dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
+	for (int i = 0; i < num_exprs; i++) {
+		dasprintf (dstr, "%*s<td port=\"b%d\">%s</td>\n", indent + 8, "",
+				   i, expr_names[exprs[i]->type]);
+	}
+	dasprintf (dstr, "%*s</tr>\n", indent + 4, "");
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
 	dasprintf (dstr, "%*s>];\n", indent, "");
 
@@ -244,12 +255,10 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p:result -> e_%p;\n", indent, "", e,
 				   e->block.result);
 	}
-	if (e->next)
-		next = e->next;
-	for (se = e->block.head, i = 0; se; se = se->next, i++) {
-		_print_expr (dstr, se, level + 1, id, next);
+	for (int i = 0; i < num_exprs; i++) {
+		_print_expr (dstr, exprs[i], level + 1, id, exprs[i + 1]);
 		dasprintf (dstr, "%*se_%p:b%d -> e_%p;\n", indent, "", e,
-				   i, se);
+				   i, exprs[i]);
 	}
 }
 

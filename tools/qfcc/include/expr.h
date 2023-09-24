@@ -93,12 +93,25 @@ typedef struct element_chain_s {
 	element_t **tail;
 } element_chain_t;
 
-typedef struct {
-	struct expr_s *head;	///< the first expression in the block
-	struct expr_s **tail;	///< last expression in the block, for appending
-	struct expr_s *result;	///< the result of this block if non-void
-	int         is_call;	///< this block exprssion forms a function call
-	void       *return_addr;///< who allocated this
+typedef struct ex_listitem_s {
+	struct ex_listitem_s *next;
+	struct expr_s *expr;
+} ex_listitem_t;
+
+typedef struct ex_list_s {
+	ex_listitem_t *head;
+	ex_listitem_t **tail;
+} ex_list_t;
+
+typedef union {
+	ex_list_t   list;
+	struct {
+		ex_listitem_t *head;
+		ex_listitem_t **tail;
+		struct expr_s *result;	///< the result of this block if non-void
+		int         is_call;	///< this block exprssion forms a function call
+		void       *return_addr;///< who allocated this
+	};
 } ex_block_t;
 
 typedef struct {
@@ -304,6 +317,7 @@ typedef struct expr_s {
 		ex_labelref_t labelref;			///< label reference expression (&)
 		ex_state_t  state;				///< state expression
 		ex_bool_t   boolean;			///< boolean logic expression
+		ex_list_t list;					///< noninvasive expression list
 		ex_block_t  block;				///< statement block expression
 		ex_expr_t   expr;				///< binary or unary expression
 		struct def_s *def;				///< def reference expression
@@ -363,6 +377,11 @@ struct type_s *get_type (expr_t *e);
 					get_type() returns null.
 */
 etype_t extract_type (expr_t *e);
+
+ex_listitem_t *new_listitem (expr_t *e);
+int list_count (ex_list_t *list) __attribute__((pure));
+void list_scatter (ex_list_t *list, expr_t **exprs);
+void list_gather (ex_list_t *dst, expr_t **exprs, int count);
 
 /**	Create a new expression node.
 

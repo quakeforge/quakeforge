@@ -175,7 +175,8 @@ sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
-sblock_t *statement_slist (sblock_t *sblock, struct expr_s *e);
+struct ex_list_s;
+sblock_t *statement_slist (sblock_t *sblock, struct ex_list_s *slist);
 void statements_count_temps (sblock_t *sblock);
 
 void print_operand (operand_t *op);
