@@ -1637,6 +1637,7 @@ class_finish_module (void)
 	init_sym = function_symbol (init_sym, 0, 1);
 
 	module_expr = address_expr (new_symbol_expr (module_sym), 0);
+	module_expr = new_list_expr (module_expr);
 
 	init_expr = new_block_expr ();
 	append_expr (init_expr,

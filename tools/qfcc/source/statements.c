@@ -1068,7 +1068,6 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 {
 	expr_t     *func = call->branch.target;
 	expr_t     *args = call->branch.args;
-	expr_t     *a;
 	expr_t     *param;
 	operand_t  *arguments[2] = {0, 0};
 	int         count = 0;
@@ -1079,7 +1078,8 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	operand_t  *use = 0;
 
 	// function arguments are in reverse order
-	for (a = args; a; a = a->next) {
+	for (auto li = args->list.head; li; li = li->next) {
+		auto a = li->expr;
 		if (a->type == ex_args) {
 			// v6p uses callN and pr_argc
 			continue;
@@ -1087,7 +1087,8 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 		count++;
 	}
 	ind = count;
-	for (a = args; a; a = a->next) {
+	for (auto li = args->list.head; li; li = li->next) {
+		auto a = li->expr;
 		if (a->type == ex_args) {
 			// v6p uses callN and pr_argc
 			continue;
@@ -1157,7 +1158,6 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	}
 	defspace_t *arg_space = current_func->arguments;
 	expr_t     *func = call->branch.target;
-	expr_t    **args = 0;
 	expr_t     *args_va_list = 0;	// .args (...) parameter
 	expr_t     *args_params = 0;	// first arg in ...
 	operand_t  *use = 0;
@@ -1166,17 +1166,9 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 
 	defspace_reset (arg_space);
 
-	int         num_args = 0;
-	for (expr_t *a = call->branch.args; a; a = a->next) {
-		num_args++;
-	}
-	if (num_args) {
-		int         i = num_args;
-		args = alloca (num_args * sizeof (expr_t *));
-		for (expr_t *a = call->branch.args; a; a = a->next) {
-			args[--i] = a;
-		}
-	}
+	int         num_args = list_count (&call->branch.args->list);
+	expr_t     *args[num_args];
+	list_scatter_rev (&call->branch.args->list, args);
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
 		expr_t     *a = args[i];
@@ -2590,12 +2582,15 @@ search_for_super_dealloc (sblock_t *sblock)
 			}
 			// function arguments are in reverse order, and the selector
 			// is the second argument (or second last in the list)
-			expr_t     *arg;
-			for (arg = st->expr->branch.args;
-				 arg && arg->next && arg->next->next; arg = arg->next) {
+			expr_t     *arg = 0;
+			auto arguments = st->expr->branch.args;
+			for (auto li = arguments->list.head; li; li = li->next) {
+				if (li->next && !li->next->next) {
+					arg = li->expr;
+				}
 			}
-			if (arg && arg->next && is_selector (arg)) {
-				selector_t *sel = get_selector (st->expr->branch.args);
+			if (arg && is_selector (arg)) {
+				selector_t *sel = get_selector (arg);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
 					op = pseudo_operand (super_dealloc, st->expr);
 					statement_add_def (st, op);

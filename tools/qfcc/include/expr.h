@@ -381,10 +381,12 @@ etype_t extract_type (expr_t *e);
 ex_listitem_t *new_listitem (expr_t *e);
 int list_count (ex_list_t *list) __attribute__((pure));
 void list_scatter (ex_list_t *list, expr_t **exprs);
+void list_scatter_rev (ex_list_t *list, expr_t **exprs);
 void list_gather (ex_list_t *dst, expr_t **exprs, int count);
 expr_t *new_list_expr (expr_t *first);
 expr_t *list_append_expr (expr_t *list, expr_t *expr);
 expr_t *list_prepend_expr (expr_t *list, expr_t *expr);
+expr_t *list_append_list (expr_t *list, ex_list_t *append);
 expr_t *list_prepend_list (expr_t *list, ex_list_t *prepend);
 
 /**	Create a new expression node.
@@ -843,7 +845,6 @@ expr_t *convert_name (expr_t *e)__attribute__((warn_unused_result));
 expr_t *append_expr (expr_t *block, expr_t *e);
 expr_t *prepend_expr (expr_t *block, expr_t *e);
 
-expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
 void dump_dot_expr (void *e, const char *filename);
 

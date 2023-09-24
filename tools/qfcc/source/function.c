@@ -349,30 +349,32 @@ func_compare (const void *a, const void *b)
 expr_t *
 find_function (expr_t *fexpr, expr_t *params)
 {
-	expr_t     *e;
 	int         i, j, func_count, parm_count, reported = 0;
 	overloaded_function_t *f, dummy, *best = 0;
-	type_t      type;
+	type_t      type = {};
 	void      **funcs, *dummy_p = &dummy;
 
 	if (fexpr->type != ex_symbol)
 		return fexpr;
 
-	memset (&type, 0, sizeof (type));
 	type.type = ev_func;
-
-	for (e = params; e; e = e->next) {
-		if (e->type == ex_error)
-			return e;
-		type.t.func.num_params++;
+	type.t.func.num_params = params ? list_count (&params->list) : 0;
+	expr_t *args[type.t.func.num_params];
+	if (params) {
+		list_scatter_rev (&params->list, args);
 	}
-	i = type.t.func.num_params * sizeof (type_t);
-	type.t.func.param_types = alloca(i);
-	memset (type.t.func.param_types, 0, i);
-	for (i = 0, e = params; e; i++, e = e->next) {
-		type.t.func.param_types[type.t.func.num_params - 1 - i] = get_type (e);
-		if (e->type == ex_error)
+
+	for (int i = 0; i < type.t.func.num_params; i++) {
+		auto e = args[i];
+		if (e->type == ex_error) {
 			return e;
+		}
+	}
+	type_t *arg_types[type.t.func.num_params];
+	type.t.func.param_types = arg_types;
+	for (int i = 0; i < type.t.func.num_params; i++) {
+		auto e = args[i];
+		type.t.func.param_types[i] = get_type (e);
 	}
 	funcs = Hash_FindList (function_map, fexpr->symbol->name);
 	if (!funcs)

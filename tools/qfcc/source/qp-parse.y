@@ -458,12 +458,8 @@ procedure_statement
 	;
 
 expression_list
-	: expression
-	| expression_list ',' expression
-		{
-			$$ = $3;
-			$$->next = $1;
-		}
+	: expression							{ $$ = new_list_expr ($1); }
+	| expression_list ',' expression		{ $$ = list_prepend_expr ($1, $3); }
 	;
 
 unary_expr

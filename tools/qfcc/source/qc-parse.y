@@ -1799,12 +1799,8 @@ opt_arg_list
 	;
 
 arg_list
-	: arg_expr
-	| arg_list ',' arg_expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: arg_expr					{ $$ = new_list_expr ($1); }
+	| arg_list ',' arg_expr		{ $$ = list_prepend_expr ($1, $3); }
 	;
 
 arg_expr

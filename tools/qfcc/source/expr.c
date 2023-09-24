@@ -204,7 +204,8 @@ get_type (expr_t *e)
 			return e->multivec.type;
 		case ex_list:
 			if (e->list.head) {
-				return get_type ((*e->list.tail)->expr);
+				auto last = (ex_listitem_t *) e->list.tail;
+				return get_type (last->expr);
 			}
 			return 0;
 		case ex_count:
@@ -297,6 +298,14 @@ list_prepend_expr (expr_t *list, expr_t *expr)
 }
 
 expr_t *
+list_append_list (expr_t *list, ex_list_t *append)
+{
+	*list->list.tail = append->head;
+	list->list.tail = append->tail;
+	return list;
+}
+
+expr_t *
 list_prepend_list (expr_t *list, ex_list_t *prepend)
 {
 	if (!list->list.head) {
@@ -335,6 +344,15 @@ list_scatter (ex_list_t *list, expr_t **exprs)
 {
 	for (auto li = list->head; li; li = li->next) {
 		*exprs++ = li->expr;
+	}
+}
+
+void
+list_scatter_rev (ex_list_t *list, expr_t **exprs)
+{
+	int count = list_count (list);
+	for (auto li = list->head; li; li = li->next) {
+		exprs[--count] = li->expr;
 	}
 }
 
@@ -2216,29 +2234,29 @@ vararg_integer (expr_t *e)
 expr_t *
 build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
-	expr_t     *e;
-	expr_t     *p;
-	int         arg_count = 0, param_count = 0;
-	int         i;
-	expr_t     *args = 0, **a = &args;
-	int         arg_expr_count = 0;
-	int         emit_args = 0;
+	int         param_count = 0;
 	expr_t     *assign;
 	expr_t     *call;
 	expr_t     *err = 0;
 
-	for (e = params; e; e = e->next) {
-		if (e->type == ex_error)
+	int arg_count = params ? list_count (&params->list) :0;
+	expr_t *arguments[arg_count];
+	if (params) {
+		list_scatter_rev (&params->list, arguments);
+	}
+
+	for (int i = 0; i < arg_count; i++) {
+		auto e = arguments[i];
+		if (e->type == ex_error) {
 			return e;
-		arg_count++;
+		}
 	}
 
 	if (options.code.progsversion < PROG_VERSION
 		&& arg_count > PR_MAX_PARAMS) {
 		return error (fexpr, "more than %d parameters", PR_MAX_PARAMS);
 	}
-	type_t     *arg_types[arg_count];
-	expr_t     *arg_exprs[arg_count][2];
+
 	if (ftype->t.func.num_params < -1) {
 		if (-arg_count > ftype->t.func.num_params + 1) {
 			if (!options.traditional)
@@ -2258,11 +2276,11 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		}
 		param_count = ftype->t.func.num_params;
 	}
-	if (ftype->t.func.num_params < 0) {
-		emit_args = !ftype->t.func.no_va_list;
-	}
+
+	type_t     *arg_types[arg_count];
 	// params is reversed (a, b, c) -> c, b, a
-	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
+	for (int i = 0; i < arg_count; i++) {
+		auto e = arguments[i];
 		type_t     *t;
 
 		if (e->type == ex_compound) {
@@ -2324,21 +2342,29 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			}
 			vararg_integer (e);
 		}
-		arg_types[arg_count - 1 - i] = t;
+		arg_types[i] = t;
 	}
-	if (err)
+	if (err) {
 		return err;
+	}
 
+	bool        emit_args = false;
+	if (ftype->t.func.num_params < 0) {
+		emit_args = !ftype->t.func.no_va_list;
+	}
 	call = expr_file_line (new_block_expr (), fexpr);
 	call->block.is_call = 1;
+	int         arg_expr_count = 0;
+	expr_t     *arg_exprs[arg_count][2];
+	expr_t     *args = new_list_expr (0);
 	// args is built in reverse order so it matches params
-	for (p = params, i = 0; p; p = p->next, i++) {
-		if (emit_args && arg_count - i == param_count) {
-			emit_args = 0;
-			*a = new_args_expr ();
-			a = &(*a)->next;
+	for (int i = 0; i < arg_count; i++) {
+		if (emit_args && i == param_count) {
+			list_prepend_expr (args, new_args_expr ());
+			emit_args = false;
 		}
-		expr_t     *e = p;
+
+		auto e = arguments[i];
 		if (e->type == ex_compound) {
 			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
 		}
@@ -2348,32 +2374,34 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		if (has_function_call (e)) {
 			expr_t     *cast = cast_expr (arg_types[i], e);
 			expr_t     *tmp = new_temp_def_expr (arg_types[i]);
-			*a = expr_file_line (tmp, e);
+			tmp = expr_file_line (tmp, e);
+			list_prepend_expr (args, tmp);
+
 			arg_exprs[arg_expr_count][0] = expr_file_line (cast, e);
-			arg_exprs[arg_expr_count][1] = *a;
+			arg_exprs[arg_expr_count][1] = tmp;
 			arg_expr_count++;
 		} else {
-			*a = expr_file_line (cast_expr (arg_types[i], e), e);
+			e = expr_file_line (cast_expr (arg_types[i], e), e);
+			list_prepend_expr (args, e);
 		}
-		a = &(*a)->next;
 	}
 	if (emit_args) {
-		emit_args = 0;
-		*a = new_args_expr ();
-		a = &(*a)->next;
+		emit_args = false;
+		list_prepend_expr (args, new_args_expr ());
 	}
-	for (i = 0; i < arg_expr_count - 1; i++) {
+	for (int i = 0; i < arg_expr_count - 1; i++) {
 		assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
 		append_expr (call, expr_file_line (assign, arg_exprs[i][0]));
 	}
 	if (arg_expr_count) {
-		e = assign_expr (arg_exprs[arg_expr_count - 1][1],
-						 arg_exprs[arg_expr_count - 1][0]);
+		auto e = assign_expr (arg_exprs[arg_expr_count - 1][1],
+							  arg_exprs[arg_expr_count - 1][0]);
 		e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	e = expr_file_line (call_expr (fexpr, args, ftype->t.func.type), fexpr);
-	call->block.result = e;
+	type_t     *ret_type = ftype->t.func.type;
+	call->block.result = expr_file_line (call_expr (fexpr, args, ret_type),
+										 fexpr);
 	return call;
 }
 
@@ -3152,18 +3180,4 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		expr = new_int_expr (type_aligned_size (type));
 	}
 	return expr;
-}
-
-expr_t *
-reverse_expr_list (expr_t *e)
-{
-	expr_t     *r = 0;
-
-	while (e) {
-		expr_t     *t = e->next;
-		e->next = r;
-		r = e;
-		e = t;
-	}
-	return r;
 }

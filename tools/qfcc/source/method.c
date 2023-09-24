@@ -703,32 +703,26 @@ clear_selectors (void)
 expr_t *
 method_check_params (method_t *method, expr_t *args)
 {
-	int         i, count, param_count;
-	expr_t     *a, **arg_list, *err = 0;
+	int         i, param_count;
+	expr_t     *err = 0;
 	type_t     *mtype = method->type;
 
 	if (mtype->t.func.num_params == -1)
 		return 0;
-
-	for (count = 0, a = args; a; a = a->next)
-		count++;
-
-	if (count > PR_MAX_PARAMS)
-		return error (args, "more than %d parameters", PR_MAX_PARAMS);
 
 	if (mtype->t.func.num_params >= 0)
 		param_count = mtype->t.func.num_params;
 	else
 		param_count = -mtype->t.func.num_params - 1;
 
+	int count = list_count (&args->list);
 	if (count < param_count)
 		return error (args, "too few arguments");
 	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
 		return error (args, "too many arguments");
 
-	arg_list = malloc (count * sizeof (expr_t *));
-	for (i = count - 1, a = args; a; a = a->next)
-		arg_list[i--] = a;
+	expr_t *arg_list[count];
+	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
 		expr_t     *e = arg_list[i];
 		type_t     *arg_type = mtype->t.func.param_types[i];
@@ -752,6 +746,5 @@ method_check_params (method_t *method, expr_t *args)
 			vararg_integer (e);
 		}
 	}
-	free (arg_list);
 	return err;
 }

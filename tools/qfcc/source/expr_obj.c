@@ -180,7 +180,6 @@ super_expr (class_type_t *class_type)
 expr_t *
 message_expr (expr_t *receiver, keywordarg_t *message)
 {
-	expr_t     *args = 0, **a = &args;
 	expr_t     *selector = selector_expr (message);
 	expr_t     *call;
 	keywordarg_t *m;
@@ -226,16 +225,15 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (method)
 		return_type = method->type->t.func.type;
 
+	expr_t     *args = expr_file_line (new_list_expr (0), receiver);
 	for (m = message; m; m = m->next) {
-		*a = m->expr;
-		while ((*a)) {
-			expr_file_line (selector, *a);
-			a = &(*a)->next;
+		if (m->expr && m->expr->list.head) {
+			list_append_list (args, &m->expr->list);
+			expr_file_line (selector, m->expr);
 		}
 	}
-	*a = selector;
-	a = &(*a)->next;
-	*a = receiver;
+	list_append_expr (args, selector);
+	list_append_expr (args, receiver);
 
 	send_msg = expr_file_line (send_message (super), receiver);
 	if (method) {
