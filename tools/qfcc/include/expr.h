@@ -382,6 +382,10 @@ ex_listitem_t *new_listitem (expr_t *e);
 int list_count (ex_list_t *list) __attribute__((pure));
 void list_scatter (ex_list_t *list, expr_t **exprs);
 void list_gather (ex_list_t *dst, expr_t **exprs, int count);
+expr_t *new_list_expr (expr_t *first);
+expr_t *list_append_expr (expr_t *list, expr_t *expr);
+expr_t *list_prepend_expr (expr_t *list, expr_t *expr);
+expr_t *list_prepend_list (expr_t *list, ex_list_t *prepend);
 
 /**	Create a new expression node.
 
@@ -474,14 +478,12 @@ expr_t *new_block_expr (void);
 
 /**	Create a new statement block expression node from an expression list
 
-	The returned block holds the expression list in reverse order. This makes
-	it easy to build the list in a parser.
-
-	\param expr_list The expression list to convert to an expression block.
-					Note that the evaluation order will be reversed.
+	\param list The expression list to convert to an expression block.
+	\param set_result If true, the block's result will be set to the last
+				expression in the list.
 	\return		The new block expression (::ex_block_t) node.
 */
-expr_t *build_block_expr (expr_t *expr_list);
+expr_t *build_block_expr (expr_t *list, bool set_result);
 
 designator_t *new_designator (expr_t *field, expr_t *index);
 element_t *new_element (expr_t *expr, designator_t *designator);

@@ -40,15 +40,15 @@ expr_t *
 new_vector_list (expr_t *expr_list)
 {
 	type_t     *ele_type = type_default;
-
-	// lists are built in reverse order
-	expr_list = reverse_expr_list (expr_list);
+	int         count = list_count (&expr_list->list);
+	expr_t     *elements[count + 1];
+	list_scatter (&expr_list->list, elements);
+	elements[count] = 0;
 
 	int         width = 0;
-	int         count = 0;
-	for (expr_t *e = expr_list; e; e = e->next) {
-		count++;
-		type_t     *t = get_type (e);
+	for (int i = 0; i < count; i++) {
+		auto e = elements[i];
+		auto t = get_type (e);
 		if (!t) {
 			return e;
 		}
@@ -73,16 +73,13 @@ new_vector_list (expr_t *expr_list)
 
 	int         all_constant = 1;
 	int         all_implicit = 1;
-	expr_t     *elements[count + 1];
-	elements[count] = 0;
-	count = 0;
-	for (expr_t *e = expr_list; e; e = e->next) {
+	for (int i = 0; i < count; i++) {
+		auto e = elements[i];
 		int         cast_width = type_width (get_type (e));
 		type_t     *cast_type = vector_type (ele_type, cast_width);
 		all_implicit = all_implicit && e->implicit;
-		elements[count] = cast_expr (cast_type, fold_constants (e));
-		all_constant = all_constant && is_constant (elements[count]);
-		count++;
+		elements[i] = cast_expr (cast_type, fold_constants (e));
+		all_constant = all_constant && is_constant (elements[i]);
 	}
 
 	switch (count) {

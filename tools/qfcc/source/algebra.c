@@ -343,10 +343,18 @@ algebra_type (type_t *type, expr_t *params)
 		error (0, "algebra type must be float or double");
 		return type_default;
 	}
-	params = reverse_expr_list (params);
-	auto plus = params;
-	auto minus = plus ? plus->next : 0;
-	auto zero = minus ? minus->next : 0;
+	int param_count = params ? list_count (&params->list) : 0;
+	if (param_count > 3) {
+		error (params, "too many arguments in signature");
+		return type_default;
+	}
+	expr_t     *param_exprs[3] = {};
+	if (params) {
+		list_scatter (&params->list, param_exprs);
+	}
+	auto plus = param_exprs[0];
+	auto minus = param_exprs[1];
+	auto zero = param_exprs[2];
 
 	expr_t *err = 0;
 	if ((plus && !is_integral_val (err = plus))
@@ -410,11 +418,11 @@ algebra_subtype (type_t *type, attribute_t *attr)
 	}
 	auto algebra = algebra_get (type);
 	if (strcmp (attr->name, "group_mask") == 0) {
-		if (!attr->params || attr->params->next) {
+		if (!attr->params || attr->params->list.head->next) {
 			error (0, "incorrect number of parameters to 'group_mask'");
 			return type;
 		}
-		auto param = attr->params;
+		auto param = attr->params->list.head->expr;
 		if (!is_integral_val (param)) {
 			error (0, "'group_mask' parameter must be an integer constant");
 			return type;

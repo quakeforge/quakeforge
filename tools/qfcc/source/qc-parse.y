@@ -198,7 +198,8 @@ int yylex (void);
 %type	<expr>		compound_init element_list
 %type	<designator> designator designator_spec
 %type	<element>	element
-%type	<expr>		ose optional_state_expr texpr vector_expr
+%type	<expr>		method_optional_state_expr optional_state_expr
+%type	<expr>		texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
 %type	<expr>		unary_expr ident_expr cast_expr expr_list
@@ -972,7 +973,7 @@ save_storage
 	;
 
 function_body
-	: ose
+	: method_optional_state_expr
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
 			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
@@ -1415,7 +1416,7 @@ compound_init
 	| '{' '}'									{ $$ = 0; }
 	;
 
-ose
+method_optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
 	| SHR vector_expr					{ $$ = build_state_expr ($2); }
 	;
@@ -1565,7 +1566,7 @@ statement
 			'(' opt_init_semi opt_expr ';' opt_expr ')' statement pop_scope
 		{
 			if ($6) {
-				$6 = build_block_expr ($6);
+				$6 = build_block_expr ($6, false);
 			}
 			$$ = build_for_statement ($6, $7, $9, $11,
 									  break_label, continue_label);
@@ -1727,11 +1728,7 @@ ident_expr
 vector_expr
 	: '[' expr ',' expr_list ']'
 		{
-			expr_t     *t = $4;
-			while (t->next)
-				t = t->next;
-			t->next = $2;
-			$$ = $4;
+			$$ = list_prepend_expr ($4, $2);
 		}
 	;
 
@@ -1783,22 +1780,17 @@ texpr
 comma_expr
 	: expr_list
 		{
-			if ($1->next) {
-				expr_t     *res = $1;
-				$1 = build_block_expr ($1);
-				$1->block.result = res;
+			if ($1->list.head->next) {
+				$$ = build_block_expr ($1, true);
+			} else {
+				$$ = $1->list.head->expr;
 			}
-			$$ = $1;
 		}
 	;
 
 expr_list
-	: expr
-	| expr_list ',' expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: expr						{ $$ = new_list_expr ($1); }
+	| expr_list ',' expr		{ $$ = list_append_expr ($1, $3); }
 	;
 
 opt_arg_list
@@ -2216,7 +2208,7 @@ notype_ivar_declarator
 	;
 
 methoddef
-	: ci methoddecl ose
+	: ci methoddecl method_optional_state_expr
 		{
 			method_t   *method = $2;
 

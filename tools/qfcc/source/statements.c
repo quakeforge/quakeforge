@@ -2307,7 +2307,8 @@ statement_single (sblock_t *sblock, expr_t *e)
 	};
 
 	if (e->type >= ex_count || !sfuncs[e->type]) {
-		internal_error (e, "bad expression type");
+		internal_error (e, "bad expression type: %s",
+						e->type < ex_count ? expr_names[e->type] : "?");
 	}
 	sblock = sfuncs[e->type] (sblock, e);
 	return sblock;

@@ -38,6 +38,6 @@ typedef struct attribute_s {
 } attribute_t;
 
 struct expr_s;
-attribute_t *new_attribute(const char *name, struct expr_s *value);
+attribute_t *new_attribute(const char *name, struct expr_s *params);
 
 #endif//attribute_h

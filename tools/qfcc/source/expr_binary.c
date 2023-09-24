@@ -714,12 +714,14 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 	type_t     *vec_type = get_type (vec);
 
 	if (is_constant (scalar)) {
-		for (int i = 1; i < type_width (get_type (vec)); i++) {
-			expr_t     *s = copy_expr (scalar);
-			s->next = scalar;
-			scalar = s;
+		int width = type_width (get_type (vec));
+		expr_t *elements[width];
+		for (int i = 0; i < width; i++) {
+			elements[i] = scalar;
 		}
-		return new_vector_list (scalar);
+		auto scalar_list = new_list_expr (0);
+		list_gather (&scalar_list->list, elements, width);
+		return new_vector_list (scalar_list);
 	}
 
 	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy

@@ -273,6 +273,53 @@ new_listitem (expr_t *e)
 	return li;
 }
 
+expr_t *
+list_append_expr (expr_t *list, expr_t *expr)
+{
+	auto li = new_listitem (expr);
+	*list->list.tail = li;
+	list->list.tail = &li->next;
+	return list;
+}
+
+expr_t *
+list_prepend_expr (expr_t *list, expr_t *expr)
+{
+	auto li = new_listitem (expr);
+	li->next = list->list.head;
+	list->list.head = li;
+
+	if (list->list.tail == &list->list.head) {
+		list->list.tail = &li->next;
+	}
+
+	return list;
+}
+
+expr_t *
+list_prepend_list (expr_t *list, ex_list_t *prepend)
+{
+	if (!list->list.head) {
+		list->list.tail = prepend->tail;
+	}
+	*prepend->tail = list->list.head;
+	list->list.head = prepend->head;
+	return list;
+}
+
+expr_t *
+new_list_expr (expr_t *first)
+{
+	auto list = new_expr ();
+	list->type = ex_list;
+	list->list.head = 0;
+	list->list.tail = &list->list.head;
+	if (first) {
+		list_append_expr (list, first);
+	}
+	return list;
+}
+
 int
 list_count (ex_list_t *list)
 {
@@ -638,15 +685,18 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 }
 
 expr_t *
-build_block_expr (expr_t *expr_list)
+build_block_expr (expr_t *list, bool set_result)
 {
+	if (list->type != ex_list) {
+		return list;
+	}
 	expr_t     *b = new_block_expr ();
 
-	while (expr_list) {
-		expr_t     *e = expr_list;
-		expr_list = e->next;
-		e->next = 0;
-		append_expr (b, e);
+	b->block.head = list->list.head;
+	b->block.tail = list->list.tail;
+	if (set_result && b->block.tail != &b->block.head) {
+		auto last = (ex_listitem_t *) b->block.tail;
+		b->block.result = last->expr;
 	}
 	return b;
 }
@@ -3028,14 +3078,19 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 expr_t *
 build_state_expr (expr_t *e)
 {
-	expr_t     *frame = 0;
-	expr_t     *think = 0;
-	expr_t     *step = 0;
+	int         count = e ? list_count (&e->list) : 0;
+	if (count < 2) {
+		return error (e, "not enough state arguments");
+	}
+	if (count > 3) {
+		return error (e, "too many state arguments");
+	}
+	expr_t     *state_args[3] = {};
+	list_scatter (&e->list, state_args);
+	expr_t     *frame = state_args[0];
+	expr_t     *think = state_args[1];
+	expr_t     *step = state_args[2];
 
-	e = reverse_expr_list (e);
-	frame = e;
-	think = frame->next;
-	step = think->next;
 	if (think->type == ex_symbol)
 		think = think_expr (think->symbol);
 	if (is_int_val (frame))
@@ -3045,8 +3100,6 @@ build_state_expr (expr_t *e)
 	if (extract_type (think) != ev_func)
 		return error (think, "invalid type for think");
 	if (step) {
-		if (step->next)
-			return error (step->next, "too many state arguments");
 		if (is_int_val (step))
 			step = cast_expr (&type_float, step);
 		if (!type_assignable (&type_float, get_type (step)))
