@@ -86,7 +86,7 @@ ext_expr (expr_t *src, type_t *type, int extend, bool reverse)
 	if (!src) {
 		return 0;
 	}
-	return new_extend_expr (src, type, extend, reverse);
+	return edag_add_expr (new_extend_expr (src, type, extend, reverse));
 }
 
 static bool __attribute__((const))
@@ -114,7 +114,7 @@ neg_expr (expr_t *e)
 		e = new_unary_expr ('-', e);
 	}
 	e->expr.type = type;
-	return fold_constants (e);
+	return edag_add_expr (fold_constants (e));
 }
 
 static expr_t *
@@ -126,6 +126,7 @@ alias_expr (type_t *type, expr_t *e, int offset)
 		}
 		return e;
 	}
+	e = edag_add_expr (e);
 	bool neg = false;
 	if (is_neg (e)) {
 		neg = true;
@@ -135,7 +136,7 @@ alias_expr (type_t *type, expr_t *e, int offset)
 	if (neg) {
 		e = neg_expr (e);
 	}
-	return e;
+	return edag_add_expr (e);
 }
 
 static expr_t *
@@ -160,7 +161,7 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 		}
 		auto cast = new_binary_expr (op, e1, e2);
 		cast->expr.type = type;
-		return cast;
+		return edag_add_expr (cast);
 	}
 	if (expr->type == ex_extend) {
 		auto ext = expr->extend;
@@ -184,7 +185,7 @@ offset_cast (type_t *type, expr_t *expr, int offset)
 		}
 	}
 	offset *= type_size (base_type (get_type (expr)));
-	return alias_expr (type, expr, offset);
+	return edag_add_expr (alias_expr (type, expr, offset));
 }
 
 static symtab_t *
@@ -234,13 +235,14 @@ promote_scalar (type_t *dst_type, expr_t *scalar)
 		}
 		scalar = cast_expr (dst_type, scalar);
 	}
-	return scalar;
+	return edag_add_expr (scalar);
 }
 
 static expr_t *
 mvec_expr (expr_t *expr, algebra_t *algebra)
 {
 	auto mvtype = get_type (expr);
+	expr = edag_add_expr (expr);
 	if (expr->type == ex_multivec || is_scalar (mvtype)) {
 		if (!is_algebra (mvtype)) {
 			expr = promote_scalar (algebra->type, expr);
@@ -295,14 +297,14 @@ mvec_scatter (expr_t **components, expr_t *mvec, algebra_t *algebra)
 			}
 			group = BITOP_LOG2 (mask);
 		}
-		components[group] = mvec;
+		components[group] = edag_add_expr (mvec);
 		return;
 	}
 	for (auto c = mvec->multivec.components; c; c = c->next) {
 		auto ct = get_type (c);
 		if (!is_algebra (ct)) {
 			group = layout->group_map[layout->mask_map[0]][0];
-			components[group] = mvec;
+			components[group] = edag_add_expr (mvec);
 		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
 			pr_uint_t mask = ct->t.multivec->group_mask;
 			if (mask & (mask - 1)) {
@@ -312,7 +314,7 @@ mvec_scatter (expr_t **components, expr_t *mvec, algebra_t *algebra)
 		} else {
 			internal_error (mvec, "invalid type in multivec expression");
 		}
-		components[group] = c;
+		components[group] = edag_add_expr (c);
 	}
 }
 
@@ -444,6 +446,7 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 	auto sum = new_binary_expr (op, a, b);
 	sum->expr.type = type;
+	sum = edag_add_expr (sum);
 	if (neg) {
 		sum = neg_expr (sum);
 	}
@@ -510,11 +513,14 @@ scale_expr (type_t *type, expr_t *a, expr_t *b)
 	auto scale = new_binary_expr (op, a, b);
 	scale->expr.type = type;
 	scale = fold_constants (scale);
+	scale = edag_add_expr (scale);
 	if (neg) {
 		scale = neg_expr (scale);
 		scale = fold_constants (scale);
+		scale = edag_add_expr (scale);
 	}
 	scale = cast_expr (type, scale);
+	scale = edag_add_expr (scale);
 	return scale;
 }
 
@@ -537,9 +543,11 @@ dot_expr (type_t *type, expr_t *a, expr_t *b)
 
 	auto dot = new_binary_expr (DOT, a, b);
 	dot->expr.type = type;
+	dot = edag_add_expr (dot);
 	if (neg) {
 		dot = neg_expr (dot);
 		dot->expr.type = type;
+		dot = edag_add_expr (dot);
 	}
 	return dot;
 }
@@ -567,6 +575,7 @@ cross_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 	auto cross = new_binary_expr (CROSS, a, b);
 	cross->expr.type = type;
+	cross = edag_add_expr (cross);
 	return cross;
 }
 
@@ -591,9 +600,10 @@ wedge_expr (type_t *type, expr_t *a, expr_t *b)
 		a = b;
 		b = t;
 	}
-	auto cross = new_binary_expr (WEDGE, a, b);
-	cross->expr.type = type;
-	return cross;
+	auto wedge = new_binary_expr (WEDGE, a, b);
+	wedge->expr.type = type;
+	wedge = edag_add_expr (wedge);
+	return wedge;
 }
 
 typedef void (*pga_func) (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg);
@@ -734,7 +744,7 @@ pga3_wxyz_dot_x_y_z_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 {
 	auto stype = alg->type;
 	auto dot_type = algebra_mvec_type (alg, 0x20);
-	auto vb = new_swizzle_expr (b, "-x-y-z0");
+	auto vb = edag_add_expr (new_swizzle_expr (b, "-x-y-z0"));
 	auto sa = offset_cast (stype, a, 0);
 	c[5] = scale_expr (dot_type, vb, sa);
 }
@@ -877,7 +887,7 @@ pga2_yw_wx_xy_dot_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = offset_cast (wtype, a, 0);
 	auto sa = offset_cast (stype, a, 2);
 	auto vb = offset_cast (wtype, b, 0);
-	auto cv = new_swizzle_expr (vb, "y-x");
+	auto cv = edag_add_expr (new_swizzle_expr (vb, "y-x"));
 	auto cs = wedge_expr (stype, vb, va);
 	cv = ext_expr (scale_expr (wtype, cv, sa), vtype, 0, false);
 	cs = ext_expr (cs, dot_type, 0, true);
@@ -903,7 +913,8 @@ pga2_x_y_w_dot_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = offset_cast (wtype, a, 0);
 	auto vb = offset_cast (wtype, b, 0);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = scale_expr (wtype, new_swizzle_expr (va, "-yx"), sb);
+	auto cv = scale_expr (wtype,
+						  edag_add_expr (new_swizzle_expr (va, "-yx")), sb);
 	auto cs = wedge_expr (stype, vb, va);
 	cv = ext_expr (cv, dot_type, 0, false);
 	cs = ext_expr (cs, dot_type, 0, true);
@@ -1724,7 +1735,7 @@ pga2_yw_wx_xy_geom_x_y_w (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = offset_cast (wtype, a, 0);
 	auto sa = offset_cast (stype, a, 2);
 	auto vb = offset_cast (wtype, b, 0);
-	auto cv = new_swizzle_expr (vb, "y-x");
+	auto cv = edag_add_expr (new_swizzle_expr (vb, "y-x"));
 	auto cs = wedge_expr (stype, vb, va);
 	cs = ext_expr (cs, geom_type, 0, true);
 	cv = ext_expr (scale_expr (wtype, cv, sa), vtype, 0, false);
@@ -1752,7 +1763,7 @@ pga2_x_y_w_geom_yw_wx_xy (expr_t **c, expr_t *a, expr_t *b, algebra_t *alg)
 	auto va = offset_cast (wtype, a, 0);
 	auto vb = offset_cast (wtype, b, 0);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = new_swizzle_expr (va, "-yx");
+	auto cv = edag_add_expr (new_swizzle_expr (va, "-yx"));
 	auto cs = wedge_expr (stype, vb, va);
 	cs = ext_expr (cs, geom_type, 0, true);
 	cv = ext_expr (scale_expr (wtype, cv, sb), vtype, 0, false);
@@ -2043,6 +2054,7 @@ multivector_divide (expr_t *e1, expr_t *e2)
 		}
 		a[i] = new_binary_expr ('/', a[i], den);
 		a[i]->expr.type = ct;
+		a[i] = edag_add_expr (a[i]);
 	}
 	return mvec_gather (a, algebra);
 }
@@ -2177,8 +2189,10 @@ algebra_reverse (expr_t *e)
 			}
 			if (neg) {
 				auto rev = new_value_expr (new_type_value (ct, ones));
+				rev = edag_add_expr (rev);
 				r[i] = new_binary_expr (HADAMARD, r[i], rev);
 				r[i]->expr.type = ct;
+				r[i] = edag_add_expr (rev);
 			}
 		}
 	}
@@ -2195,16 +2209,16 @@ algebra_cast_expr (type_t *dstType, expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 	if (type_size (dstType) == type_size (srcType)) {
-		return new_alias_expr (dstType, e);
+		return edag_add_expr (new_alias_expr (dstType, e));
 	}
 
 	auto algebra = algebra_get (is_algebra (srcType) ? srcType : dstType);
 	if (is_algebra (srcType)) {
-		auto alias = new_alias_expr (algebra->type, e);
-		return cast_expr (dstType, alias);
+		auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
+		return edag_add_expr (cast_expr (dstType, alias));
 	} else {
-		auto cast = cast_expr (algebra->type, e);
-		return new_alias_expr (dstType, cast);
+		auto cast = edag_add_expr (cast_expr (algebra->type, e));
+		return edag_add_expr (new_alias_expr (dstType, cast));
 	}
 }
 
@@ -2242,8 +2256,8 @@ assign_extend (expr_t *block, expr_t *dst, expr_t *src)
 	int offs2 = ext2.reverse ? find_offset (ext2.type, type2) : 0;
 	auto dst1 = offset_cast (type1, dst, offs1);
 	auto dst2 = offset_cast (type2, dst, offs2);
-	append_expr (block, new_assign_expr (dst1, ext1.src));
-	append_expr (block, new_assign_expr (dst2, ext2.src));
+	append_expr (block, edag_add_expr (new_assign_expr (dst1, ext1.src)));
+	append_expr (block, edag_add_expr (new_assign_expr (dst2, ext2.src)));
 }
 
 expr_t *
@@ -2255,11 +2269,11 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 	if (src->type != ex_multivec) {
 		if (srcType == dstType) {
 			if (summed_extend (src)) {
-				auto block = new_block_expr ();
+				auto block = edag_add_expr (new_block_expr ());
 				assign_extend (block, dst, src);
 				return block;
 			}
-			return new_assign_expr (dst, src);
+			return edag_add_expr (new_assign_expr (dst, src));
 		}
 	}
 
@@ -2290,7 +2304,8 @@ algebra_assign_expr (expr_t *dst, expr_t *src)
 		if (summed_extend (c[i])) {
 			assign_extend (block, dst_alias, c[i]);
 		} else {
-			append_expr (block, new_assign_expr (dst_alias, c[i]));
+			append_expr (block,
+						 edag_add_expr (new_assign_expr (dst_alias, c[i])));
 		}
 		memset_base = sym->s.offset + type_size (sym->type);
 	}
@@ -2321,7 +2336,7 @@ algebra_field_expr (expr_t *mvec, expr_t *field_name)
 				   "returning zero of type '%s'", field_sym->name,
 				   mvec_type->name, algebra->mvec_sym->type->name,
 				   mvec_type->name);
-			return new_zero_expr (field->type);
+			return edag_add_expr (new_zero_expr (field->type));
 		}
 		return error (field_name, "'%s' has no member named '%s'",
 					  mvec_type->name, field_sym->name);
