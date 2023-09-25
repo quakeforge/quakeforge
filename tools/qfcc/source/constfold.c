@@ -1709,7 +1709,8 @@ fold_constants (expr_t *e)
 		if (!e1) {
 			return e;
 		}
-		if (is_math (get_type (e1))) {
+		if (options.code.progsversion == PROG_VERSION
+			&& is_math (get_type (e1))) {
 			return evaluate_constexpr (e);
 		}
 		op = e->expr.op;
@@ -1726,7 +1727,8 @@ fold_constants (expr_t *e)
 			return e;
 		}
 
-		if (is_math_val (e1) && is_math_val (e2)) {
+		if (options.code.progsversion == PROG_VERSION
+			&& is_math_val (e1) && is_math_val (e2)) {
 			return evaluate_constexpr (e);
 		}
 
