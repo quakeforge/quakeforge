@@ -905,6 +905,10 @@ expr_t *sizeof_expr (expr_t *expr, struct type_s *type);
 
 expr_t *fold_constants (expr_t *e);
 
+void edag_flush (void);
+expr_t *edag_add_expr (expr_t *e);
+
+
 ///@}
 
 #endif//__expr_h

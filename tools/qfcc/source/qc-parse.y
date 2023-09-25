@@ -1370,12 +1370,12 @@ array_decl
 	;
 
 decl
-	: declspecs_ts local_expr initdecls ';'
+	: declspecs_ts local_expr initdecls seq_semi
 		{
 			$$ = local_expr;
 			local_expr = 0;
 		}
-	| declspecs_nots local_expr notype_initdecls ';'
+	| declspecs_nots local_expr notype_initdecls seq_semi
 		{
 			$$ = local_expr;
 			local_expr = 0;
@@ -1487,8 +1487,21 @@ pop_scope
 		}
 	;
 
+flush_dag
+	: /* empty */
+		{
+			if (!no_flush_dag) {
+				edag_flush ();
+			}
+		}
+	;
+
+seq_semi
+	: ';' flush_dag
+	;
+
 compound_statement
-	: '{' push_scope statements '}' pop_scope { $$ = $3; }
+	: '{' push_scope flush_dag statements '}' pop_scope flush_dag { $$ = $4; }
 	;
 
 statements
@@ -1496,9 +1509,9 @@ statements
 		{
 			$$ = new_block_expr ();
 		}
-	| statements statement
+	| statements flush_dag statement
 		{
-			$$ = append_expr ($1, $2);
+			$$ = append_expr ($1, $3);
 		}
 	;
 
@@ -1543,7 +1556,7 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label '(' expr switch_block ')' compound_statement
+	| SWITCH break_label '(' comma_expr switch_block ')' compound_statement
 		{
 			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $5;
@@ -1554,28 +1567,28 @@ statement
 			expr_t     *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
-	| IF not '(' texpr ')' statement %prec IFX
+	| IF not '(' texpr ')' flush_dag statement %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, $6, 0, 0);
+			$$ = build_if_statement ($2, $4, $7, 0, 0);
 		}
-	| IF not '(' texpr ')' statement else statement
+	| IF not '(' texpr ')' flush_dag statement else statement
 		{
-			$$ = build_if_statement ($2, $4, $6, $7, $8);
+			$$ = build_if_statement ($2, $4, $7, $8, $9);
 		}
 	| FOR push_scope break_label continue_label
-			'(' opt_init_semi opt_expr ';' opt_expr ')' statement pop_scope
+			'(' opt_init_semi opt_expr seq_semi opt_expr ')' flush_dag statement pop_scope
 		{
 			if ($6) {
 				$6 = build_block_expr ($6, false);
 			}
-			$$ = build_for_statement ($6, $7, $9, $11,
+			$$ = build_for_statement ($6, $7, $9, $12,
 									  break_label, continue_label);
 			break_label = $3;
 			continue_label = $4;
 		}
-	| WHILE break_label continue_label not '(' texpr ')' statement
+	| WHILE break_label continue_label not '(' texpr ')' flush_dag statement
 		{
-			$$ = build_while_statement ($4, $6, $8, break_label,
+			$$ = build_while_statement ($4, $6, $9, break_label,
 										continue_label);
 			break_label = $2;
 			continue_label = $3;
@@ -1629,7 +1642,7 @@ not
 	;
 
 else
-	: ELSE
+	: ELSE flush_dag
 		{
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
@@ -1673,7 +1686,7 @@ switch_block
 	;
 
 opt_init_semi
-	: comma_expr ';'
+	: comma_expr seq_semi
 	| decl /* contains ; */
 	| ';'
 		{
@@ -1726,9 +1739,10 @@ ident_expr
 	;
 
 vector_expr
-	: '[' expr ',' expr_list ']'
+	: '[' expr ',' { no_flush_dag = true; } expr_list ']'
 		{
-			$$ = list_prepend_expr ($4, $2);
+			$$ = list_prepend_expr ($5, $2);
+			no_flush_dag = false;
 		}
 	;
 
@@ -1745,9 +1759,9 @@ expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
-	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
-	| expr OR bool_label expr	{ $$ = bool_expr (OR,  $3, $1, $4); }
+	| expr '?' flush_dag expr ':' expr 	{ $$ = conditional_expr ($1, $4, $6); }
+	| expr AND flush_dag bool_label expr{ $$ = bool_expr (AND, $4, $1, $5); }
+	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (OR,  $4, $1, $5); }
 	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
@@ -1789,8 +1803,8 @@ comma_expr
 	;
 
 expr_list
-	: expr						{ $$ = new_list_expr ($1); }
-	| expr_list ',' expr		{ $$ = list_append_expr ($1, $3); }
+	: expr							{ $$ = new_list_expr ($1); }
+	| expr_list ',' flush_dag expr	{ $$ = list_append_expr ($1, $4); }
 	;
 
 opt_arg_list

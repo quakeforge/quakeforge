@@ -1398,10 +1398,10 @@ expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
 	if (is_ptr (type) && expr->type == ex_address) {
-		// avoid aliasing a pointer to a pointer (redundant)
-		expr = copy_expr (expr);
-		expr->address.type = type;
-		return expr;
+		auto new = new_address_expr (type, expr->address.lvalue,
+									 expr->address.offset);
+		new->address.type = type;
+		return new;
 	}
 	if (expr->type == ex_alias) {
 		if (expr->alias.offset) {
@@ -1422,7 +1422,7 @@ new_alias_expr (type_t *type, expr_t *expr)
 	alias->alias.expr = expr;
 	alias->file = expr->file;
 	alias->line = expr->line;
-	return alias;
+	return edag_add_expr (alias);
 }
 
 expr_t *
@@ -1444,11 +1444,11 @@ new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
 	expr_t     *alias = new_expr ();
 	alias->type = ex_alias;
 	alias->alias.type = type;
-	alias->alias.expr = expr;
-	alias->alias.offset = new_int_expr (offset);
+	alias->alias.expr = edag_add_expr (expr);
+	alias->alias.offset = edag_add_expr (new_int_expr (offset));
 	alias->file = expr->file;
 	alias->line = expr->line;
-	return alias;
+	return edag_add_expr (alias);
 }
 
 expr_t *

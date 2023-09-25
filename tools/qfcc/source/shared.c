@@ -46,6 +46,7 @@ expr_t     *local_expr;
 vis_t       current_visibility;
 storage_class_t current_storage = sc_global;
 symtab_t   *current_symtab;
+bool        no_flush_dag;
 
 /*	When defining a new symbol, already existing symbols must be in a
 	different scope. However, when they are in a different scope, we want a

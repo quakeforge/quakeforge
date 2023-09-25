@@ -325,5 +325,5 @@ convert_bool (expr_t *e, int block)
 		append_expr (block, e->boolean.e);
 		e->boolean.e = block;
 	}
-	return e;
+	return edag_add_expr (e);
 }

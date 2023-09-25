@@ -1185,7 +1185,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		int         scalar_op = 0;
 		if (type_width (t1) == 1) {
 			// scalar op vec
-			if (!(e = convert_scalar (e1, op, e2))) {
+			if (!(e = edag_add_expr (convert_scalar (e1, op, e2)))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
 			scalar_op = 1;
@@ -1194,7 +1194,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		}
 		if (type_width (t2) == 1) {
 			// vec op scalar
-			if (!(e = convert_scalar (e2, op, e1))) {
+			if (!(e = edag_add_expr (convert_scalar (e2, op, e1)))) {
 				return invalid_binary_expr (op, e1, e2);
 			}
 			scalar_op = 1;
@@ -1225,7 +1225,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				t1 = base_type (t1);
 			}
 			e->expr.type = t1;
-			return e;
+			return edag_add_expr (e);
 		}
 	}
 
@@ -1240,11 +1240,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (expr_type->b_cast)
 		e2 = cast_expr (expr_type->b_cast, e2);
 	if (expr_type->process) {
-		return fold_constants (expr_type->process (op, e1, e2));
+		e = fold_constants (expr_type->process (op, e1, e2));
+		return edag_add_expr (e);
 	}
 
 	if ((e = reimplement_binary_expr (op, e1, e2)))
-		return fold_constants (e);
+		return edag_add_expr (fold_constants (e));
 
 	e = new_binary_expr (op, e1, e2);
 	e->expr.type = expr_type->result_type;
@@ -1253,5 +1254,5 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			e->expr.type = &type_float;
 		}
 	}
-	return fold_constants (e);
+	return edag_add_expr (fold_constants (e));
 }
