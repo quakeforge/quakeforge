@@ -371,6 +371,15 @@ extract_extended_neg (const expr_t *expr)
 	return neg_expr (ext_expr (neg_expr (e.src), e.type, e.extend, e.reverse));
 }
 
+static __attribute__((pure)) expr_t *
+traverse_scale (expr_t *expr)
+{
+	while (expr && expr->type == ex_expr && expr->expr.op == SCALE) {
+		expr = expr->expr.e1;
+	}
+	return expr;
+}
+
 static expr_t *
 sum_expr (type_t *type, expr_t *a, expr_t *b)
 {
@@ -573,6 +582,11 @@ cross_expr (type_t *type, expr_t *a, expr_t *b)
 		a = b;
 		b = t;
 	}
+
+	if (traverse_scale (a) == traverse_scale (b)) {
+		return 0;
+	}
+
 	auto cross = new_binary_expr (CROSS, a, b);
 	cross->expr.type = type;
 	cross = edag_add_expr (cross);
