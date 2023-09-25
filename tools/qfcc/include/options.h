@@ -47,6 +47,9 @@ typedef struct {
 	bool        ifstring;			// expand if (str) to if (str != "")
 	bool        const_initializers;	// initialied globals are constant
 	bool        promote_float;		// promote float through ...
+	bool        commute_float_add;	// allow fp addition to commute
+	bool        commute_float_mul;	// allow fp multiplication to commute
+	bool        commute_float_dot;	// allow fp dot product to commute
 
 	bool        help;
 } code_options_t;

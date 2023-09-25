@@ -88,8 +88,12 @@ edag_add_expr (expr_t *expr)
 			case ex_expr:
 				if (e->expr.type == expr->expr.type
 					&& e->expr.op == expr->expr.op
-					&& e->expr.e1 == expr->expr.e1
-					&& e->expr.e2 == expr->expr.e2) {
+					&& e->expr.commutative == expr->expr.commutative
+					&& ((e->expr.e1 == expr->expr.e1
+						 && e->expr.e2 == expr->expr.e2)
+						|| (e->expr.commutative
+							&& e->expr.e1 == expr->expr.e2
+							&& e->expr.e2 == expr->expr.e1))) {
 					return e;
 				}
 				break;

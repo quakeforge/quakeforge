@@ -92,9 +92,7 @@ ext_expr (expr_t *src, type_t *type, int extend, bool reverse)
 static bool __attribute__((const))
 anti_com (const expr_t *e)
 {
-	return (e->type == ex_expr
-			&& (e->expr.op == CROSS || e->expr.op == WEDGE
-				|| e->expr.op == '-'));
+	return e && e->type == ex_expr && e->expr.anticommute;
 }
 
 static expr_t *
@@ -455,6 +453,8 @@ sum_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 	auto sum = new_binary_expr (op, a, b);
 	sum->expr.type = type;
+	sum->expr.commutative = op == '+';
+	sum->expr.anticommute = op == '-';
 	sum = edag_add_expr (sum);
 	if (neg) {
 		sum = neg_expr (sum);
@@ -589,6 +589,7 @@ cross_expr (type_t *type, expr_t *a, expr_t *b)
 
 	auto cross = new_binary_expr (CROSS, a, b);
 	cross->expr.type = type;
+	cross->expr.anticommute = true;
 	cross = edag_add_expr (cross);
 	return cross;
 }
@@ -616,6 +617,7 @@ wedge_expr (type_t *type, expr_t *a, expr_t *b)
 	}
 	auto wedge = new_binary_expr (WEDGE, a, b);
 	wedge->expr.type = type;
+	wedge->expr.anticommute = true;
 	wedge = edag_add_expr (wedge);
 	return wedge;
 }

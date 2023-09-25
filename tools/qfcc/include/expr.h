@@ -55,6 +55,8 @@ typedef enum {
 */
 typedef struct ex_expr_s {
 	int            op;		///< op-code of this expression
+	bool   commutative;		///< e1 and e2 can be swapped
+	bool   anticommute;		///< e1 and e2 can be swapped with negation
 	struct type_s *type;	///< the type of the result of this expression
 	struct expr_s *e1;		///< left side of binary, sole of unary
 	struct expr_s *e2;		///< right side of binary, null for unary
