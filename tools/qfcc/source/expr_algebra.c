@@ -2420,9 +2420,22 @@ find_offset (const type_t *t1, const type_t *t2)
 static bool __attribute__((const))
 summed_extend (const expr_t *e)
 {
-	return (e->type == ex_expr && e->expr.op == '+'
-			&& e->expr.e1->type == ex_extend
-			&& e->expr.e2->type == ex_extend);
+	if (!(e->type == ex_expr && e->expr.op == '+'
+		  && e->expr.e1->type == ex_extend
+		  && e->expr.e2->type == ex_extend)) {
+		return false;
+	}
+	auto ext1 = e->expr.e1->extend;
+	auto ext2 = e->expr.e2->extend;
+	pr_uint_t   bits1 = (1 << type_width (get_type (ext1.src))) - 1;
+	pr_uint_t   bits2 = (1 << type_width (get_type (ext2.src))) - 1;
+	if (ext1.reverse) {
+		bits1 <<= type_width (ext1.type) - type_width (get_type (ext1.src));
+	}
+	if (ext2.reverse) {
+		bits2 <<= type_width (ext2.type) - type_width (get_type (ext2.src));
+	}
+	return !(bits1 & bits2);
 }
 
 static void
