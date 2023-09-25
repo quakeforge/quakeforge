@@ -98,6 +98,21 @@ set_traditional (int traditional)
 }
 
 static void
+set_code (pragma_arg_t *args)
+{
+	if (!args) {
+		warning (0, "missing code flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!parse_code_option (flag)) {
+	}
+	if (args->next) {
+		warning (0, "pragma code: ignoring extra arguments");
+	}
+}
+
+static void
 set_bug (pragma_arg_t *args)
 {
 	if (!args) {
@@ -203,6 +218,8 @@ pragma_process ()
 		set_traditional (0);
 	} else if (!strcmp (id, "ruamoko") || !strcmp (id, "raumoko")) {
 		set_traditional (-1);
+	} else if (!strcmp (id, "code")) {
+		set_code (pragma_args->next);
 	} else if (!strcmp (id, "bug")) {
 		set_bug (pragma_args->next);
 	} else if (!strcmp (id, "warn")) {
