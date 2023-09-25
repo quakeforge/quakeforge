@@ -1637,6 +1637,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e->expr.type = field->type;
 			return e;
 		} else {
+			e2 = convert_name (e2);
 			t2 = get_type (e2);
 			if (e2->type == ex_error)
 				return e2;
