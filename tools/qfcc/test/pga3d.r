@@ -347,7 +347,7 @@ test_geom (void)
 
 	d = { .mvec = tvec * bvec.bvec };
 	if ((vec4)d.vec != '22 -8 4 9' || (vec4)d.tvec != '-30 -85 34 0') {
-		printf ("vec * bvec != '22 -8 4 9' '-30 -85 34 0': %q %q\n",
+		printf ("tvec * bvec != '22 -8 4 9' '-30 -85 34 0': %q %q\n",
 				d.vec, d.tvec);
 		return 1;
 	}
