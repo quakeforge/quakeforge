@@ -51,6 +51,7 @@ test_progs_dat=\
 	tools/qfcc/test/ptrfunc.dat \
 	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/motor-point.dat \
+	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/return-postop.dat \
@@ -620,6 +621,16 @@ tools/qfcc/test/motor-point.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(motor_point_dep) # am--include-marker
 r_depfiles_remade += $(motor_point_dep)
+
+tools_qfcc_test_motor_xform_dat_SOURCES=tools/qfcc/test/motor-xform.r
+motor_xform_obj=$(tools_qfcc_test_motor_xform_dat_SOURCES:.r=.o)
+motor_xform_dep=$(call qcautodep,$(tools_qfcc_test_motor_xform_dat_SOURCES))
+tools/qfcc/test/motor-xform.dat$(EXEEXT): $(motor_xform_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(motor_xform_obj)
+tools/qfcc/test/motor-xform.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(motor_xform_dep) # am--include-marker
+r_depfiles_remade += $(motor_xform_dep)
 
 tools_qfcc_test_quaternion_dat_SOURCES=tools/qfcc/test/quaternion.r
 quaternion_obj=$(tools_qfcc_test_quaternion_dat_SOURCES:.r=.o)
