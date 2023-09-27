@@ -47,6 +47,7 @@
 
 #include "qfalloca.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/strpool.h"
@@ -672,18 +673,41 @@ print_multivec (dstring_t *dstr, const expr_t *e, int level, int id,
 				const expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	ex_multivec_t multivec = e->multivec;
+	auto algebra = e->multivec.algebra;
+	int         count = list_count (&e->multivec.components);
+	const expr_t *components[count];
+	list_scatter (&e->multivec.components, components);
 
-	for (auto c = multivec.components; c; c = c->next) {
-		_print_expr (dstr, c, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, c);
+	for (int i = 0; i < count; i++) {
+		_print_expr (dstr, components[i], level, id, 0);
+		dasprintf (dstr, "%*se_%p:m%d -> e_%p;\n", indent, "", e, i,
+				   components[i]);
 	}
 
+	int colspan = count ? count : 1;
+
+	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+			   "cellspacing=\"0\">\n", indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">&lt;multivec&gt;(%d)</td>"
+			   "</tr>\n", indent + 4, "", colspan, e->line);
 	dstring_t  *typestr = dstring_newstr();
 	print_type_str (typestr, e->multivec.type);
-	dasprintf (dstr, "%*se_%p [label=\"multivec %s\\n%d\"];\n", indent, "", e,
-			   typestr->str, e->line);
+	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">%s</td></tr>\n",
+			   indent + 4, "", colspan, typestr->str);
 	dstring_delete (typestr);
+
+	if (count) {
+		dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
+		for (int i = 0; i < count; i++) {
+			auto mask = get_group_mask (get_type (components[i]), algebra);
+			dasprintf (dstr, "%*s<td port=\"m%d\">%04x</td>\n", indent + 8, "",
+					   i, mask);
+		}
+		dasprintf (dstr, "%*s</tr>\n", indent + 4, "");
+	}
+	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
+	dasprintf (dstr, "%*s>];\n", indent, "");
 }
 
 static void

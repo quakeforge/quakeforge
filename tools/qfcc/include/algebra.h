@@ -109,6 +109,8 @@ bool is_mono_grade (const struct type_s *type) __attribute__((pure));
 int algebra_get_grade (const struct type_s *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 
+pr_uint_t get_group_mask (const struct type_s *type, algebra_t *algebra) __attribute__((pure));
+
 const struct expr_s *algebra_binary_expr (int op, const struct expr_s *e1,
 										  const struct expr_s *e2);
 const struct expr_s *algebra_negate (const struct expr_s *e);

@@ -299,8 +299,7 @@ typedef struct {
 typedef struct {
 	struct type_s *type;		///< overall type of multivector
 	struct algebra_s *algebra;	///< owning algebra
-	int         count;			///< number of component expressions
-	const struct expr_s *components;///< multivector components
+	ex_list_t   components;		///< multivector components
 } ex_multivec_t;
 
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)

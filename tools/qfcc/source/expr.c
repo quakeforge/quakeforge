@@ -1680,8 +1680,8 @@ has_function_call (const expr_t *e)
 		case ex_args:
 			return 0;
 		case ex_multivec:
-			for (auto c = e->multivec.components; c; c = c->next) {
-				if (has_function_call (c)) {
+			for (auto c = e->multivec.components.head; c; c = c->next) {
+				if (has_function_call (c->expr)) {
 					return 1;
 				}
 			}

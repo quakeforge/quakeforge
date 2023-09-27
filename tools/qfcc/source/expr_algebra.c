@@ -59,8 +59,8 @@ get_group (type_t *type, algebra_t *algebra)
 	return BITOP_LOG2 (group_mask);
 }
 
-static pr_uint_t
-get_group_mask (type_t *type, algebra_t *algebra)
+pr_uint_t
+get_group_mask (const type_t *type, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
 	if (!is_algebra (type)) {
@@ -288,14 +288,13 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 		.type = algebra_mvec_type (algebra, group_mask),
 		.algebra = algebra,
 	};
-	expr_t *components = 0;
-	expr_t **c = &components;
+	const expr_t *components[layout->count];
+	int count = 0;
 	for (auto sym = get_mvec_sym (mvtype); sym; sym = sym->next) {
-		*c = (expr_t *) new_offset_alias_expr (sym->type, expr, sym->s.offset);
-		c = &(*c)->next;
-		mvec->multivec.count++;
+		auto c = &components[count++];
+		*c = new_offset_alias_expr (sym->type, expr, sym->s.offset);
 	}
-	mvec->multivec.components = components;
+	list_gather (&mvec->multivec.components, components, count);
 
 	return mvec;
 }
@@ -323,11 +322,11 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		components[group] = edag_add_expr (mvec);
 		return;
 	}
-	for (auto c = mvec->multivec.components; c; c = c->next) {
+	for (auto li = mvec->multivec.components.head; li; li = li->next) {
+		auto c = li->expr;
 		auto ct = get_type (c);
 		if (!is_algebra (ct)) {
 			group = layout->group_map[layout->mask_map[0]][0];
-			components[group] = edag_add_expr (mvec);
 		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
 			pr_uint_t mask = ct->t.multivec->group_mask;
 			if (mask & (mask - 1)) {
@@ -336,6 +335,9 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 			group = BITOP_LOG2 (mask);
 		} else {
 			internal_error (mvec, "invalid type in multivec expression");
+		}
+		if (components[group]) {
+			internal_error (mvec, "duplicate group in multivec expression");
 		}
 		components[group] = edag_add_expr (c);
 	}
@@ -371,9 +373,7 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 	};
 	for (int i = layout->count; i-- > 0; ) {
 		if (components[i]) {
-			((expr_t *) components[i])->next = (expr_t *) mvec->multivec.components;//FIXME
-			mvec->multivec.components = components[i];
-			mvec->multivec.count++;
+			list_append (&mvec->multivec.components, components[i]);
 		}
 	}
 	return mvec;
