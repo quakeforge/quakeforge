@@ -385,11 +385,13 @@ int list_count (const ex_list_t *list) __attribute__((pure));
 void list_scatter (const ex_list_t *list, const expr_t **exprs);
 void list_scatter_rev (const ex_list_t *list, const expr_t **exprs);
 void list_gather (ex_list_t *dst, const expr_t **exprs, int count);
+void list_append (ex_list_t *dst, const expr_t *exprs);
+void list_prepend (ex_list_t *dst, const expr_t *exprs);
 expr_t *new_list_expr (const expr_t *first);
-expr_t *list_append_expr (expr_t *list, const expr_t *expr);
-expr_t *list_prepend_expr (expr_t *list, const expr_t *expr);
-expr_t *list_append_list (expr_t *list, ex_list_t *append);
-expr_t *list_prepend_list (expr_t *list, ex_list_t *prepend);
+expr_t *expr_append_expr (expr_t *list, const expr_t *expr);
+expr_t *expr_prepend_expr (expr_t *list, const expr_t *expr);
+expr_t *expr_append_list (expr_t *list, ex_list_t *append);
+expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
 
 /**	Create a new expression node.
 

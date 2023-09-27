@@ -465,7 +465,7 @@ procedure_statement
 
 expression_list
 	: expression							{ $$ = new_list_expr ($1); }
-	| expression_list ',' expression		{ $$ = list_prepend_expr ($1, $3); }
+	| expression_list ',' expression		{ $$ = expr_prepend_expr ($1, $3); }
 	;
 
 unary_expr

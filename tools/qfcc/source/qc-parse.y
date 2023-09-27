@@ -1746,7 +1746,7 @@ ident_expr
 vector_expr
 	: '[' expr ',' { no_flush_dag = true; } expr_list ']'
 		{
-			$$ = list_prepend_expr ($5, $2);
+			$$ = expr_prepend_expr ($5, $2);
 			no_flush_dag = false;
 		}
 	;
@@ -1809,7 +1809,7 @@ comma_expr
 
 expr_list
 	: expr							{ $$ = new_list_expr ($1); }
-	| expr_list ',' flush_dag expr	{ $$ = list_append_expr ($1, $4); }
+	| expr_list ',' flush_dag expr	{ $$ = expr_append_expr ($1, $4); }
 	;
 
 opt_arg_list
@@ -1819,7 +1819,7 @@ opt_arg_list
 
 arg_list
 	: arg_expr					{ $$ = new_list_expr ($1); }
-	| arg_list ',' arg_expr		{ $$ = list_prepend_expr ($1, $3); }
+	| arg_list ',' arg_expr		{ $$ = expr_prepend_expr ($1, $3); }
 	;
 
 arg_expr

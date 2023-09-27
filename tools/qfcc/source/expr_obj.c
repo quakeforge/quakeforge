@@ -228,11 +228,11 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	expr_t     *args = expr_file_line (new_list_expr (0), receiver);
 	for (m = message; m; m = m->next) {
 		if (m->expr && m->expr->list.head) {
-			list_append_list (args, &m->expr->list);
+			expr_append_list (args, &m->expr->list);
 		}
 	}
-	list_append_expr (args, selector);
-	list_append_expr (args, receiver);
+	expr_append_expr (args, selector);
+	expr_append_expr (args, receiver);
 
 	send_msg = expr_file_line (send_message (super), receiver);
 	if (method) {

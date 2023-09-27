@@ -263,40 +263,71 @@ new_listitem (const expr_t *e)
 	return li;
 }
 
-expr_t *
-list_append_expr (expr_t *list, const expr_t *expr)
+void
+list_append (ex_list_t *list, const expr_t *expr)
 {
-	auto li = new_listitem (expr);
-	*list->list.tail = li;
-	list->list.tail = &li->next;
-	return list;
-}
-
-expr_t *
-list_prepend_expr (expr_t *list, const expr_t *expr)
-{
-	auto li = new_listitem (expr);
-	li->next = list->list.head;
-	list->list.head = li;
-
-	if (list->list.tail == &list->list.head) {
-		list->list.tail = &li->next;
+	if (!list->tail) {
+		list->tail = &list->head;
 	}
 
+	auto li = new_listitem (expr);
+	*list->tail = li;
+	list->tail = &li->next;
+}
+
+void
+list_prepend (ex_list_t *list, const expr_t *expr)
+{
+	if (!list->tail) {
+		list->tail = &list->head;
+	}
+
+	auto li = new_listitem (expr);
+	li->next = list->head;
+	list->head = li;
+
+	if (list->tail == &list->head) {
+		list->tail = &li->next;
+	}
+}
+
+expr_t *
+expr_append_expr (expr_t *list, const expr_t *expr)
+{
+	if (list->type != ex_list) {
+		internal_error (list, "not a list expression");
+	}
+	list_append (&list->list, expr);
 	return list;
 }
 
 expr_t *
-list_append_list (expr_t *list, ex_list_t *append)
+expr_prepend_expr (expr_t *list, const expr_t *expr)
 {
+	if (list->type != ex_list) {
+		internal_error (list, "not a list expression");
+	}
+	list_prepend (&list->list, expr);
+	return list;
+}
+
+expr_t *
+expr_append_list (expr_t *list, ex_list_t *append)
+{
+	if (list->type != ex_list) {
+		internal_error (list, "not a list expression");
+	}
 	*list->list.tail = append->head;
 	list->list.tail = append->tail;
 	return list;
 }
 
 expr_t *
-list_prepend_list (expr_t *list, ex_list_t *prepend)
+expr_prepend_list (expr_t *list, ex_list_t *prepend)
 {
+	if (list->type != ex_list) {
+		internal_error (list, "not a list expression");
+	}
 	if (!list->list.head) {
 		list->list.tail = prepend->tail;
 	}
@@ -313,7 +344,7 @@ new_list_expr (const expr_t *first)
 	list->list.head = 0;
 	list->list.tail = &list->list.head;
 	if (first) {
-		list_append_expr (list, first);
+		expr_append_expr (list, first);
 	}
 	return list;
 }
@@ -2164,7 +2195,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	// args is built in reverse order so it matches params
 	for (int i = 0; i < arg_count; i++) {
 		if (emit_args && i == param_count) {
-			list_prepend_expr (args, new_args_expr ());
+			expr_prepend_expr (args, new_args_expr ());
 			emit_args = false;
 		}
 
@@ -2179,19 +2210,19 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 			auto cast = cast_expr (arg_types[i], e);
 			auto tmp = new_temp_def_expr (arg_types[i]);
 			tmp = expr_file_line (tmp, e);
-			list_prepend_expr (args, tmp);
+			expr_prepend_expr (args, tmp);
 
 			arg_exprs[arg_expr_count][0] = cast;
 			arg_exprs[arg_expr_count][1] = tmp;
 			arg_expr_count++;
 		} else {
 			e = cast_expr (arg_types[i], e);
-			list_prepend_expr (args, e);
+			expr_prepend_expr (args, e);
 		}
 	}
 	if (emit_args) {
 		emit_args = false;
-		list_prepend_expr (args, new_args_expr ());
+		expr_prepend_expr (args, new_args_expr ());
 	}
 	for (int i = 0; i < arg_expr_count - 1; i++) {
 		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
