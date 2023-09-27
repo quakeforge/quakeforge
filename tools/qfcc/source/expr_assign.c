@@ -65,17 +65,17 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static expr_t *
-check_assign_logic_precedence (expr_t *dst, expr_t *src)
+static const expr_t *
+check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 {
 	if (src->type == ex_expr && !src->paren && is_logic (src->expr.op)) {
 		// traditional QuakeC gives = higher precedence than && and ||
-		expr_t     *assignment;
 		notice (src, "precedence of `=' and `%s' inverted for "
 					 "traditional code", get_op_string (src->expr.op));
 		// change {a = (b logic c)} to {(a = b) logic c}
-		assignment = assign_expr (dst, src->expr.e1);
-		assignment->paren = 1;	// protect assignment from binary_expr
+		auto assignment = assign_expr (dst, src->expr.e1);
+		// protect assignment from binary_expr
+		((expr_t *) assignment)->paren = 1;
 		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
 	return 0;
@@ -154,8 +154,8 @@ is_lvalue (const expr_t *expr)
 	return 0;
 }
 
-static expr_t *
-check_valid_lvalue (expr_t *expr)
+static const expr_t *
+check_valid_lvalue (const expr_t *expr)
 {
 	if (!is_lvalue (expr)) {
 		if (options.traditional) {
@@ -167,8 +167,8 @@ check_valid_lvalue (expr_t *expr)
 	return 0;
 }
 
-static expr_t *
-check_types_compatible (expr_t *dst, expr_t *src)
+static const expr_t *
+check_types_compatible (const expr_t *dst, const expr_t *src)
 {
 	type_t     *dst_type = get_type (dst);
 	type_t     *src_type = get_type (src);
@@ -192,7 +192,7 @@ check_types_compatible (expr_t *dst, expr_t *src)
 			}
 		}
 		// the types are different but cast-compatible
-		expr_t     *new = cast_expr (dst_type, src);
+		auto new = cast_expr (dst_type, src);
 		// the cast was a no-op, so the types are compatible at the
 		// low level (very true for default type <-> enum)
 		if (new != src) {
@@ -222,14 +222,14 @@ check_types_compatible (expr_t *dst, expr_t *src)
 }
 
 static void
-copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
+copy_qv_elements (expr_t *block, const expr_t *dst, const expr_t *src)
 {
-	expr_t     *dx, *sx;
-	expr_t     *dy, *sy;
-	expr_t     *dz, *sz;
-	expr_t     *dw, *sw;
-	expr_t     *ds, *ss;
-	expr_t     *dv, *sv;
+	const expr_t *dx, *sx;
+	const expr_t *dy, *sy;
+	const expr_t *dz, *sz;
+	const expr_t *dw, *sw;
+	const expr_t *ds, *ss;
+	const expr_t *dv, *sv;
 
 	if (is_vector (src->vector.type)) {
 		// guaranteed to have three elements
@@ -271,10 +271,10 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 }
 
 static int
-copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
+copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
 {
 	int         index = 0;
-	for (expr_t *e = src->vector.list; e; e = e->next) {
+	for (const expr_t *e = src->vector.list; e; e = e->next) {
 		if (e->type == ex_vector) {
 			index += copy_elements (block, dst, e, index + base);
 		} else {
@@ -287,11 +287,11 @@ copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
 	return index;
 }
 
-static expr_t *
-assign_vector_expr (expr_t *dst, expr_t *src)
+static const expr_t *
+assign_vector_expr (const expr_t *dst, const expr_t *src)
 {
 	if (src->type == ex_vector && dst->type != ex_vector) {
-		expr_t     *block = new_block_expr ();
+		expr_t     *block = new_block_expr (0);
 
 		if (options.code.progsversion < PROG_VERSION) {
 			copy_qv_elements (block, dst, src);
@@ -304,16 +304,16 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 	return 0;
 }
 
-static __attribute__((pure)) int
-is_memset (expr_t *e)
+static int __attribute__((pure))
+is_memset (const expr_t *e)
 {
 	return e->type == ex_memset;
 }
 
-expr_t *
-assign_expr (expr_t *dst, expr_t *src)
+const expr_t *
+assign_expr (const expr_t *dst, const expr_t *src)
 {
-	expr_t     *expr;
+	const expr_t *expr;
 	type_t     *dst_type, *src_type;
 
 	dst = convert_name (dst);
@@ -381,7 +381,7 @@ assign_expr (expr_t *dst, expr_t *src)
 			return expr;
 		}
 	} else {
-		convert_nil (src, dst_type);
+		src = convert_nil (src, dst_type);
 	}
 
 	expr = new_assign_expr (dst, src);

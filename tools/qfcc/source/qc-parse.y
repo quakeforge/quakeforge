@@ -99,7 +99,8 @@ int yylex (void);
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
-	struct expr_s	*expr;
+	const struct expr_s	*expr;
+	struct expr_s *mut_expr;
 	struct element_s *element;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
@@ -194,20 +195,24 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		var_initializer local_def
 
-%type	<expr>		opt_init_semi opt_expr comma_expr expr
-%type	<expr>		compound_init element_list
+%type	<mut_expr>	opt_init_semi opt_expr comma_expr
+%type   <expr>		expr
+%type	<expr>		compound_init
+%type   <mut_expr>	element_list expr_list
 %type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		method_optional_state_expr optional_state_expr
 %type	<expr>		texpr vector_expr
-%type	<expr>		statement statements compound_statement
+%type	<expr>		statement
+%type	<mut_expr>	statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr expr_list
-%type	<expr>		opt_arg_list arg_list arg_expr
+%type	<expr>		unary_expr ident_expr cast_expr
+%type	<mut_expr>	opt_arg_list arg_list
+%type   <expr>		arg_expr
 %type	<switch_block> switch_block
 %type	<symbol>	identifier label
 
-%type	<expr>		identifier_list
+%type	<mut_expr>	identifier_list
 %type	<symbol>	protocol_name_list selector reserved_word
 %type	<param>		optional_param_list unaryselector keyworddecl
 %type	<param>		keywordselector
@@ -227,8 +232,8 @@ int yylex (void);
 %{
 
 static switch_block_t *switch_block;
-static expr_t *break_label;
-static expr_t *continue_label;
+static const expr_t *break_label;
+static const expr_t *continue_label;
 
 static specifier_t
 make_spec (type_t *type, storage_class_t storage, int is_typedef,
@@ -645,7 +650,7 @@ qc_nocode_func
 		{
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
-			expr_t     *expr = $4;
+			const expr_t *expr = $4;
 			sym = qc_function_symbol (spec, sym);
 			build_builtin_function (sym, expr, 0, spec.storage);
 		}
@@ -1396,7 +1401,7 @@ local_expr
 	: /* emtpy */
 		{
 			$<spec>$ = $<spec>0;
-			local_expr = new_block_expr ();
+			local_expr = new_block_expr (0);
 		}
 	;
 
@@ -1507,7 +1512,7 @@ compound_statement
 statements
 	: /*empty*/
 		{
-			$$ = new_block_expr ();
+			$$ = new_block_expr (0);
 		}
 	| statements flush_dag statement
 		{
@@ -1564,7 +1569,7 @@ statement
 		}
 	| GOTO NAME
 		{
-			expr_t     *label = named_label_expr ($2);
+			const expr_t *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
 	| IF not '(' texpr ')' flush_dag statement %prec IFX
@@ -1687,7 +1692,7 @@ switch_block
 
 opt_init_semi
 	: comma_expr seq_semi
-	| decl /* contains ; */
+	| decl /* contains ; */		{ $$ = (expr_t *) $1; }
 	| ';'
 		{
 			$$ = 0;
@@ -1708,7 +1713,7 @@ unary_expr
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
+	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
 	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
@@ -1797,7 +1802,7 @@ comma_expr
 			if ($1->list.head->next) {
 				$$ = build_block_expr ($1, true);
 			} else {
-				$$ = $1->list.head->expr;
+				$$ = (expr_t *) $1->list.head->expr;
 			}
 		}
 	;
@@ -1861,7 +1866,7 @@ obj_def
 identifier_list
 	: identifier
 		{
-			$$ = append_expr (new_block_expr (), new_symbol_expr ($1));
+			$$ = append_expr (new_block_expr (0), new_symbol_expr ($1));
 		}
 	| identifier_list ',' identifier
 		{

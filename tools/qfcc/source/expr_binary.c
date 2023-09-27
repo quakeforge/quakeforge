@@ -44,21 +44,26 @@ typedef struct {
 	type_t     *result_type;
 	type_t     *a_cast;
 	type_t     *b_cast;
-	expr_t   *(*process)(int op, expr_t *e1, expr_t *e2);
+	const expr_t *(*process)(int op, const expr_t *e1, const expr_t *e2);
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
 } expr_type_t;
 
-static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
-static expr_t *pointer_compare (int op, expr_t *e1, expr_t *e2);
-static expr_t *func_compare (int op, expr_t *e1, expr_t *e2);
-static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
-static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
-static expr_t *vector_compare (int op, expr_t *e1, expr_t *e2);
-static expr_t *vector_dot (int op, expr_t *e1, expr_t *e2);
-static expr_t *vector_multiply (int op, expr_t *e1, expr_t *e2);
-static expr_t *vector_scale (int op, expr_t *e1, expr_t *e2);
-static expr_t *entity_compare (int op, expr_t *e1, expr_t *e2);
+static const expr_t *pointer_arithmetic (int op, const expr_t *e1,
+										 const expr_t *e2);
+static const expr_t *pointer_compare (int op, const expr_t *e1,
+									  const expr_t *e2);
+static const expr_t *func_compare (int op, const expr_t *e1,
+								   const expr_t *e2);
+static const expr_t *inverse_multiply (int op, const expr_t *e1,
+									   const expr_t *e2);
+static const expr_t *double_compare (int op, const expr_t *e1,
+									 const expr_t *e2);
+static const expr_t *vector_compare (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *vector_dot (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *vector_multiply (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *vector_scale (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *entity_compare (int op, const expr_t *e1, const expr_t *e2);
 
 static bool always (void)
 {
@@ -721,8 +726,8 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 
 // supported operators for scalar-vector expressions
 static int scalar_vec_ops[] = { '*', '/', '%', MOD, 0 };
-static expr_t *
-convert_scalar (expr_t *scalar, int op, expr_t *vec)
+static const expr_t *
+convert_scalar (const expr_t *scalar, int op, const expr_t *vec)
 {
 	int        *s_op = scalar_vec_ops;
 	while (*s_op && *s_op != op) {
@@ -737,7 +742,7 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 
 	if (is_constant (scalar)) {
 		int width = type_width (get_type (vec));
-		expr_t *elements[width];
+		const expr_t *elements[width];
 		for (int i = 0; i < width; i++) {
 			elements[i] = scalar;
 		}
@@ -749,14 +754,14 @@ convert_scalar (expr_t *scalar, int op, expr_t *vec)
 	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy
 }
 
-static expr_t *
-pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
-	expr_t     *ptr = 0;
-	expr_t     *offset = 0;
-	expr_t     *psize;
+	const expr_t *ptr = 0;
+	const expr_t *offset = 0;
+	const expr_t *psize;
 	type_t     *ptype = 0;
 
 	if (!is_ptr (t1) && !is_ptr (t2)) {
@@ -789,8 +794,8 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 	return offset_pointer_expr (ptr, offset);
 }
 
-static expr_t *
-pointer_compare (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
@@ -810,8 +815,8 @@ pointer_compare (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
-func_compare (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+func_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	expr_t     *e;
 
@@ -828,17 +833,17 @@ func_compare (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
-inverse_multiply (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+inverse_multiply (int op, const expr_t *e1, const expr_t *e2)
 {
 	// There is no vector/float or quaternion/float instruction and adding
 	// one would mean the engine would have to do 1/f every time
-	expr_t     *one = new_float_expr (1);
+	auto one = new_float_expr (1);
 	return binary_expr ('*', e1, binary_expr ('/', one, e2));
 }
 
-static expr_t *
-vector_compare (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+vector_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		expr_t     *e = new_binary_expr (op, e1, e2);
@@ -856,16 +861,16 @@ vector_compare (int op, expr_t *e1, expr_t *e2)
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
-static expr_t *
-vector_dot (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+vector_dot (int op, const expr_t *e1, const expr_t *e2)
 {
 	expr_t     *e = new_binary_expr (DOT, e1, e2);
 	e->expr.type = &type_float;
 	return e;
 }
 
-static expr_t *
-vector_multiply (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+vector_multiply (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (options.math.vector_mult == DOT) {
 		// vector * vector is dot product in v6 progs (ick)
@@ -877,14 +882,14 @@ vector_multiply (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
-vector_scale (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+vector_scale (int op, const expr_t *e1, const expr_t *e2)
 {
 	// Ensure the expression is always vector * scalar. The operation is
 	// always commutative, and the Ruamoko ISA supports only vector * scalar
 	// (though v6 does support scalar * vector, one less if).
 	if (is_scalar (get_type (e1))) {
-		expr_t     *t = e1;
+		auto t = e1;
 		e1 = e2;
 		e2 = t;
 	}
@@ -893,8 +898,8 @@ vector_scale (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
-double_compare (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+double_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
@@ -928,8 +933,8 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
-entity_compare (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+entity_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (options.code.progsversion == PROG_VERSION) {
 		e1 = new_alias_expr (&type_int, e1);
@@ -945,8 +950,8 @@ entity_compare (int op, expr_t *e1, expr_t *e2)
 
 #define invalid_binary_expr(_op, _e1, _e2) \
 	_invalid_binary_expr(_op, _e1, _e2, __FILE__, __LINE__, __FUNCTION__)
-static expr_t *
-_invalid_binary_expr (int op, expr_t *e1, expr_t *e2,
+static const expr_t *
+_invalid_binary_expr (int op, const expr_t *e1, const expr_t *e2,
 					  const char *file, int line, const char *func)
 {
 	type_t     *t1, *t2;
@@ -957,8 +962,8 @@ _invalid_binary_expr (int op, expr_t *e1, expr_t *e2,
 				  get_type_string (t2));
 }
 
-static expr_t *
-reimplement_binary_expr (int op, expr_t *e1, expr_t *e2)
+static const expr_t *
+reimplement_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	expr_t     *e;
 
@@ -967,7 +972,7 @@ reimplement_binary_expr (int op, expr_t *e1, expr_t *e2)
 			case '%':
 				{
 					expr_t     *tmp1, *tmp2;
-					e = new_block_expr ();
+					e = new_block_expr (0);
 					tmp1 = new_temp_def_expr (&type_float);
 					tmp2 = new_temp_def_expr (&type_float);
 
@@ -982,15 +987,21 @@ reimplement_binary_expr (int op, expr_t *e1, expr_t *e2)
 	return 0;
 }
 
-static expr_t *
-check_precedence (int op, expr_t *e1, expr_t *e2)
+static void
+set_paren (const expr_t *e)
+{
+	((expr_t *) e)->paren = 1;
+}
+
+static const expr_t *
+check_precedence (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (e1->type == ex_uexpr && e1->expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
 			if (op != AND && op != OR && op != '=') {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
-				e1->expr.e1->paren = 1;
+				set_paren (e1->expr.e1);
 				return unary_expr ('!', binary_expr (op, e1->expr.e1, e2));
 			}
 		} else if (op == '&' || op == '|') {
@@ -1010,7 +1021,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				e1->paren = 1;
+				set_paren (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 			if (((op == EQ || op == NE) && is_compare (e2->expr.op))
@@ -1020,7 +1031,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				e1->paren = 1;
+				set_paren (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
@@ -1032,7 +1043,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e1->expr.op));
 				e2 = binary_expr (op, e1->expr.e2, e2);
-				e2->paren = 1;
+				set_paren (e1);
 				return binary_expr (e1->expr.op, e1->expr.e1, e2);
 			}
 		}
@@ -1067,7 +1078,8 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	return 0;
 }
 
-static int is_call (expr_t *e)
+static int
+is_call (const expr_t *e)
 {
 	return e->type == ex_block && e->block.is_call;
 }
@@ -1081,12 +1093,12 @@ promote_type (type_t *dst, type_t *src)
 	return vector_type (base_type (dst), type_width (src));
 }
 
-expr_t *
-binary_expr (int op, expr_t *e1, expr_t *e2)
+const expr_t *
+binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	type_t     *t1, *t2;
 	etype_t     et1, et2;
-	expr_t     *e;
+	const expr_t *e;
 	expr_type_t *expr_type;
 
 	e1 = convert_name (e1);
@@ -1095,19 +1107,23 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e1->type == ex_alias && is_call (e1->alias.expr)) {
 		// move the alias expression inside the block so the following check
 		// can detect the call and move the temp assignment into the block
-		expr_t     *block = e1->alias.expr;
-		e1->alias.expr = block->block.result;
-		block->block.result = e1;
+		auto block = (expr_t *) e1->alias.expr;
+		auto ne = new_expr ();
+		*ne = *e1;
+		ne->alias.expr = block->block.result;
+		block->block.result = ne;
 		e1 = block;
 	}
 	if (e1->type == ex_block && e1->block.is_call
 		&& has_function_call (e2) && e1->block.result) {
-		// the temp assignment needs to be insided the block so assignment
+		// the temp assignment needs to be inside the block so assignment
 		// code generation doesn't see it when applying right-associativity
 		expr_t    *tmp = new_temp_def_expr (get_type (e1->block.result));
-		e = assign_expr (tmp, e1->block.result);
-		append_expr (e1, e);
-		e1->block.result = tmp;
+		auto ne = assign_expr (tmp, e1->block.result);
+		auto nb = new_block_expr (e1);
+		append_expr (nb, ne);
+		nb->block.result = tmp;
+		e1 = nb;
 	}
 	if (e1->type == ex_error)
 		return e1;
@@ -1136,10 +1152,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == EQ || op == NE) {
 		if (e1->type == ex_nil) {
 			t1 = t2;
-			convert_nil (e1, t1);
+			e1 = convert_nil (e1, t1);
 		} else if (e2->type == ex_nil) {
 			t2 = t1;
-			convert_nil (e2, t2);
+			e2 = convert_nil (e2, t2);
 		}
 	}
 
@@ -1236,7 +1252,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		et2 = low_level_type (t2);
 		// both widths are the same at this point
 		if (t1->width > 1) {
-			e = new_binary_expr (op, e1, e2);
+			auto ne = new_binary_expr (op, e1, e2);
 			if (is_compare (op)) {
 				t1 = int_type (t1);
 			}
@@ -1246,8 +1262,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 				t1 = base_type (t1);
 			}
-			e->expr.type = t1;
-			return edag_add_expr (e);
+			ne->expr.type = t1;
+			return edag_add_expr (ne);
 		}
 	}
 
@@ -1269,18 +1285,18 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if ((e = reimplement_binary_expr (op, e1, e2)))
 		return edag_add_expr (fold_constants (e));
 
-	e = new_binary_expr (op, e1, e2);
-	e->expr.type = expr_type->result_type;
+	auto ne = new_binary_expr (op, e1, e2);
+	ne->expr.type = expr_type->result_type;
 	if (expr_type->commutative) {
-		e->expr.commutative = expr_type->commutative ();
+		ne->expr.commutative = expr_type->commutative ();
 	}
 	if (expr_type->anticommute) {
-		e->expr.anticommute = expr_type->anticommute ();
+		ne->expr.anticommute = expr_type->anticommute ();
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->expr.type = &type_float;
+			ne->expr.type = &type_float;
 		}
 	}
-	return edag_add_expr (fold_constants (e));
+	return edag_add_expr (fold_constants (ne));
 }

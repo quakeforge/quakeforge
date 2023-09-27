@@ -346,8 +346,22 @@ func_compare (const void *a, const void *b)
 	return 0;
 }
 
-expr_t *
-find_function (expr_t *fexpr, expr_t *params)
+static const expr_t *
+set_func_symbol (const expr_t *fexpr, overloaded_function_t *f)
+{
+	auto sym = symtab_lookup (current_symtab, f->full_name);
+	if (!sym) {
+		internal_error (fexpr, "overloaded function %s not found",
+						f->full_name);
+	}
+	auto nf = new_expr ();
+	*nf = *fexpr;
+	nf->symbol = sym;
+	return nf;
+}
+
+const expr_t *
+find_function (const expr_t *fexpr, const expr_t *params)
 {
 	int         i, j, func_count, parm_count, reported = 0;
 	overloaded_function_t *f, dummy, *best = 0;
@@ -359,7 +373,7 @@ find_function (expr_t *fexpr, expr_t *params)
 
 	type.type = ev_func;
 	type.t.func.num_params = params ? list_count (&params->list) : 0;
-	expr_t *args[type.t.func.num_params];
+	const expr_t *args[type.t.func.num_params];
 	if (params) {
 		list_scatter_rev (&params->list, args);
 	}
@@ -399,10 +413,7 @@ find_function (expr_t *fexpr, expr_t *params)
 	if (dummy_p) {
 		f = (overloaded_function_t *) *(void **) dummy_p;
 		if (f->overloaded) {
-			fexpr->symbol = symtab_lookup (current_symtab, f->full_name);
-			if (!fexpr->symbol)
-				internal_error (fexpr, "overloaded function %s not found",
-								best->full_name);
+			fexpr = set_func_symbol (fexpr, f);
 		}
 		free (funcs);
 		return fexpr;
@@ -447,11 +458,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 	if (best) {
 		if (best->overloaded) {
-			fexpr->symbol = symtab_lookup (current_symtab,
-											 best->full_name);
-			if (!fexpr->symbol)
-				internal_error (fexpr, "overloaded function %s not found",
-								best->full_name);
+			fexpr = set_func_symbol (fexpr, best);
 		}
 		free (funcs);
 		return fexpr;
@@ -743,7 +750,8 @@ merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
 }
 
 function_t *
-build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
+build_code_function (symbol_t *fsym, const expr_t *state_expr,
+					 expr_t *statements)
 {
 	if (fsym->sy_type != sy_func)	// probably in error recovery
 		return 0;
@@ -759,7 +767,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		 * optimizer gets.
 		 */
 		expr_t     *e;
-		expr_t     *entry = new_block_expr ();
+		expr_t     *entry = new_block_expr (0);
 		entry->file = func->def->file;
 		entry->line = func->def->line;
 
@@ -842,7 +850,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
+build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 						storage_class_t storage)
 {
 	int         bi;

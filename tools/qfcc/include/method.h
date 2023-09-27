@@ -105,7 +105,7 @@ method_t *methodlist_find_method (methodlist_t *methodlist,
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void method_types (struct dstring_s *sel_types, method_t *method);
 int selector_index (const char *sel_id);
-selector_t *get_selector (struct expr_s *sel);
+selector_t *get_selector (const struct expr_s *sel);
 struct def_s *emit_selectors(void);
 
 struct def_s *emit_methods (methodlist_t *methods, const char *name,
@@ -115,6 +115,7 @@ struct def_s *emit_method_descriptions (methodlist_t *_methods,
 
 void clear_selectors (void);
 
-struct expr_s *method_check_params (method_t *method, struct expr_s *args);
+const struct expr_s *method_check_params (method_t *method,
+										  const struct expr_s *args);
 
 #endif//__method_h

@@ -60,10 +60,10 @@
 
 static def_t zero_def;
 
-static def_t *get_operand_def (expr_t *expr, operand_t *op);
+static def_t *get_operand_def (const expr_t *expr, operand_t *op);
 
 static def_t *
-get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
+get_tempop_def (const expr_t *expr, operand_t *tmpop, type_t *type)
 {
 	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->def) {
@@ -81,7 +81,7 @@ get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
 }
 
 static def_t *
-get_value_def (expr_t *expr, ex_value_t *value, type_t *type)
+get_value_def (const expr_t *expr, ex_value_t *value, type_t *type)
 {
 	def_t      *def;
 
@@ -101,7 +101,7 @@ get_value_def (expr_t *expr, ex_value_t *value, type_t *type)
 }
 
 static def_t *
-get_operand_def (expr_t *expr, operand_t *op)
+get_operand_def (const expr_t *expr, operand_t *op)
 {
 	if (!op)
 		return 0;
@@ -167,7 +167,7 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 }
 
 static void
-use_tempop (operand_t *op, expr_t *expr)
+use_tempop (operand_t *op, const expr_t *expr)
 {
 	if (!op || op->op_type != op_temp)
 		return;
@@ -227,7 +227,7 @@ emit_statement (statement_t *statement)
 		internal_error (statement->expr, "ice ice baby");
 	}
 	if (options.code.debug) {
-		expr_t     *e = statement->expr;
+		const expr_t *e = statement->expr;
 		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
 
 		if (line != pr.linenos[pr.num_linenos - 1].line) {

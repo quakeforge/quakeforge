@@ -337,7 +337,7 @@ is_algebra (const type_t *type)
 }
 
 type_t *
-algebra_type (type_t *type, expr_t *params)
+algebra_type (type_t *type, const expr_t *params)
 {
 	if (!is_float (type) && !is_double (type)) {
 		error (0, "algebra type must be float or double");
@@ -348,7 +348,7 @@ algebra_type (type_t *type, expr_t *params)
 		error (params, "too many arguments in signature");
 		return type_default;
 	}
-	expr_t     *param_exprs[3] = {};
+	const expr_t *param_exprs[3] = {};
 	if (params) {
 		list_scatter (&params->list, param_exprs);
 	}
@@ -356,7 +356,7 @@ algebra_type (type_t *type, expr_t *params)
 	auto minus = param_exprs[1];
 	auto zero = param_exprs[2];
 
-	expr_t *err = 0;
+	const expr_t *err = 0;
 	if ((plus && !is_integral_val (err = plus))
 		|| (minus && !is_integral_val (err = minus))
 		|| (zero && !is_integral_val (err = zero))) {

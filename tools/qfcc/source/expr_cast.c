@@ -44,8 +44,8 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-expr_t *
-cast_error (expr_t *e, type_t *t1, type_t *t2)
+const expr_t *
+cast_error (const expr_t *e, type_t *t1, type_t *t2)
 {
 	e = error (e, "cannot cast from %s to %s", get_type_string (t1),
 			   get_type_string (t2));
@@ -54,7 +54,7 @@ cast_error (expr_t *e, type_t *t1, type_t *t2)
 
 static void
 do_conversion (pr_type_t *dst_value, type_t *dstType,
-			   pr_type_t *src_value, type_t *srcType, expr_t *expr)
+			   pr_type_t *src_value, type_t *srcType, const expr_t *expr)
 {
 	int         from = type_cast_map[base_type (srcType)->type];
 	int         to = type_cast_map[base_type (dstType)->type];
@@ -69,8 +69,8 @@ do_conversion (pr_type_t *dst_value, type_t *dstType,
 	}
 }
 
-static expr_t *
-cast_math (type_t *dstType, type_t *srcType, expr_t *expr)
+static const expr_t *
+cast_math (type_t *dstType, type_t *srcType, const expr_t *expr)
 {
 	pr_type_t   src_value[type_size (srcType)];
 	pr_type_t   dst_value[type_size (dstType)];
@@ -82,16 +82,19 @@ cast_math (type_t *dstType, type_t *srcType, expr_t *expr)
 	return new_value_expr (new_type_value (dstType, dst_value));
 }
 
-expr_t *
-cast_expr (type_t *dstType, expr_t *e)
+const expr_t *
+cast_expr (type_t *dstType, const expr_t *e)
 {
-	expr_t    *c;
 	type_t    *srcType;
 
 	e = convert_name (e);
 
 	if (e->type == ex_error)
 		return e;
+
+	if (is_nil (e)) {
+		return convert_nil (e, dstType);
+	}
 
 	dstType = (type_t *) unalias_type (dstType); //FIXME cast
 	srcType = get_type (e);
@@ -104,10 +107,10 @@ cast_expr (type_t *dstType, expr_t *e)
 		return e;
 	if ((is_ptr (dstType) && is_string (srcType))
 		|| (is_string (dstType) && is_ptr (srcType))) {
-		c = new_alias_expr (dstType, e);
-		return c;
+		return new_alias_expr (dstType, e);
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {
+		const expr_t *c;
 		if ((c = algebra_cast_expr (dstType, e))) {
 			return c;
 		}
@@ -136,19 +139,21 @@ cast_expr (type_t *dstType, expr_t *e)
 		e = new_int_expr (expr_ushort (e));
 		srcType = &type_int;
 	}
+	expr_t *c = 0;
 	if (is_constant (e) && is_math (dstType) && is_math (srcType)) {
 		return cast_math (dstType, srcType, e);
 	} else if (is_integral (dstType) && is_integral (srcType)
 			   && type_size (dstType) == type_size (srcType)) {
-		c = new_alias_expr (dstType, e);
+		c = (expr_t *) new_alias_expr (dstType, e);
 	} else if (is_scalar (dstType) && is_scalar (srcType)) {
 		c = new_unary_expr ('C', e);
 		c->expr.type = dstType;
 	} else if (e->type == ex_uexpr && e->expr.op == '.') {
-		e->expr.type = dstType;
-		c = e;
+		c = new_expr ();
+		*c = *e;
+		c->expr.type = dstType;
 	} else {
-		c = new_alias_expr (dstType, e);
+		c = (expr_t *) new_alias_expr (dstType, e);
 	}
 	return c;
 }

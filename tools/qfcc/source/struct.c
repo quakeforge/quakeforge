@@ -263,7 +263,7 @@ finish_enum (symbol_t *sym)
 }
 
 void
-add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
+add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 {
 	type_t     *enum_type = enm->type;
 	symtab_t   *enum_tab = enum_type->t.symtab;

@@ -86,7 +86,7 @@ new_this_expr (void)
 	return new_symbol_expr (sym);
 }
 
-expr_t *
+const expr_t *
 selector_expr (keywordarg_t *selector)
 {
 	dstring_t  *sel_id = dstring_newstr ();
@@ -123,7 +123,7 @@ selector_expr (keywordarg_t *selector)
 	return sel;
 }
 
-expr_t *
+const expr_t *
 protocol_expr (const char *protocol_name)
 {
 	protocol_t *protocol = get_protocol (protocol_name, 0);
@@ -136,12 +136,11 @@ protocol_expr (const char *protocol_name)
 	return new_pointer_expr (0, proto_class->type, protocol_def (protocol));
 }
 
-expr_t *
+const expr_t *
 super_expr (class_type_t *class_type)
 {
 	symbol_t   *sym;
 	expr_t     *super;
-	expr_t     *e;
 	expr_t     *super_block;
 	class_t    *class;
 
@@ -161,8 +160,9 @@ super_expr (class_type_t *class_type)
 	}
 	super = new_symbol_expr (sym);
 
-	super_block = new_block_expr ();
+	super_block = new_block_expr (0);
 
+	const expr_t *e;
 	e = assign_expr (field_expr (super, new_name_expr ("self")),
 								 new_name_expr ("self"));
 	append_expr (super_block, e);
@@ -177,22 +177,22 @@ super_expr (class_type_t *class_type)
 	return super_block;
 }
 
-expr_t *
-message_expr (expr_t *receiver, keywordarg_t *message)
+const expr_t *
+message_expr (const expr_t *receiver, keywordarg_t *message)
 {
-	expr_t     *selector = selector_expr (message);
-	expr_t     *call;
+	const expr_t *selector = selector_expr (message);
+	const expr_t *call;
 	keywordarg_t *m;
 	int         super = 0, class_msg = 0;
 	type_t     *rec_type = 0;
 	type_t     *return_type;
 	type_t     *method_type = &type_IMP;
 	method_t   *method;
-	expr_t     *send_msg;
+	const expr_t *send_msg;
 
 	if (receiver->type == ex_nil) {
 		rec_type = &type_id;
-		convert_nil (receiver, rec_type);
+		receiver = convert_nil (receiver, rec_type);
 	} else if (receiver->type == ex_symbol) {
 		if (strcmp (receiver->symbol->name, "self") == 0) {
 			rec_type = get_type (receiver);
@@ -229,7 +229,6 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	for (m = message; m; m = m->next) {
 		if (m->expr && m->expr->list.head) {
 			list_append_list (args, &m->expr->list);
-			expr_file_line (selector, m->expr);
 		}
 	}
 	list_append_expr (args, selector);
@@ -237,7 +236,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 
 	send_msg = expr_file_line (send_message (super), receiver);
 	if (method) {
-		expr_t      *err;
+		const expr_t *err;
 		if ((err = method_check_params (method, args)))
 			return err;
 		method_type = method->type;
@@ -250,6 +249,6 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (!is_function_call (call)) {
 		internal_error (call, "unexpected call expression type");
 	}
-	call->block.result->branch.ret_type = return_type;
+	((expr_t *) call->block.result)->branch.ret_type = return_type;
 	return call;
 }

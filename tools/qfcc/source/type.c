@@ -170,7 +170,7 @@ int type_cast_map[ev_type_count] = {
 ALLOC_STATE (type_t, types);
 
 etype_t
-low_level_type (type_t *type)
+low_level_type (const type_t *type)
 {
 	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
@@ -630,7 +630,7 @@ field_type (type_t *aux)
 }
 
 type_t *
-pointer_type (type_t *aux)
+pointer_type (const type_t *aux)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -643,7 +643,7 @@ pointer_type (type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	if (aux) {
-		new = find_type (append_type (new, aux));
+		new = find_type (append_type (new, (type_t *) aux));
 	}
 	return new;
 }

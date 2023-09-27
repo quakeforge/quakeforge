@@ -40,7 +40,7 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-typedef struct DARRAY_TYPE (expr_t *) exprset_t;
+typedef struct DARRAY_TYPE (const expr_t *) exprset_t;
 
 static exprset_t expr_dag = DARRAY_STATIC_INIT(32);
 
@@ -50,14 +50,14 @@ edag_flush (void)
 	expr_dag.size = 0;
 }
 
-expr_t *
-edag_add_expr (expr_t *expr)
+const expr_t *
+edag_add_expr (const expr_t *expr)
 {
 	if (!expr) {
 		return expr;
 	}
 	for (size_t i = 0; i < expr_dag.size; i++) {
-		expr_t     *e = expr_dag.a[i];
+		auto e = expr_dag.a[i];
 		if (e->type != expr->type) {
 			continue;
 		}

@@ -144,7 +144,7 @@ extern struct symtab_s *quaternion_struct;
 
 struct dstring_s;
 
-etype_t low_level_type (type_t *type) __attribute__((pure));
+etype_t low_level_type (const type_t *type) __attribute__((pure));
 type_t *new_type (void);
 void free_type (type_t *type);
 void chain_type (type_t *type);
@@ -165,7 +165,7 @@ specifier_t default_type (specifier_t spec, struct symbol_s *sym);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);
-type_t *pointer_type (type_t *aux);
+type_t *pointer_type (const type_t *aux);
 type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 type_t *base_type (const type_t *vec_type) __attribute__((pure));
 

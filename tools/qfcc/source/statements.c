@@ -243,7 +243,7 @@ sblock_add_statement (sblock_t *sblock, statement_t *statement)
 }
 
 statement_t *
-new_statement (st_type_t type, const char *opcode, expr_t *expr)
+new_statement (st_type_t type, const char *opcode, const expr_t *expr)
 {
 	statement_t *statement;
 	ALLOC (256, statement_t, statements, statement);
@@ -292,7 +292,7 @@ new_pseudoop (const char *name)
 }
 
 static operand_t *
-new_operand (op_type_e op, expr_t *expr, void *return_addr)
+new_operand (op_type_e op, const expr_t *expr, void *return_addr)
 {
 	operand_t *operand;
 	ALLOC (256, operand_t, operands, operand);
@@ -344,7 +344,7 @@ free_sblock (sblock_t *sblock)
 }
 
 static operand_t *
-pseudo_operand (pseudoop_t *pseudoop, expr_t *expr)
+pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_pseudo, expr, __builtin_return_address (0));
@@ -354,7 +354,7 @@ pseudo_operand (pseudoop_t *pseudoop, expr_t *expr)
 }
 
 operand_t *
-nil_operand (type_t *type, expr_t *expr)
+nil_operand (type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_nil, expr, __builtin_return_address (0));
@@ -365,7 +365,7 @@ nil_operand (type_t *type, expr_t *expr)
 }
 
 operand_t *
-def_operand (def_t *def, type_t *type, expr_t *expr)
+def_operand (def_t *def, type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 
@@ -380,7 +380,7 @@ def_operand (def_t *def, type_t *type, expr_t *expr)
 }
 
 operand_t *
-return_operand (type_t *type, expr_t *expr)
+return_operand (type_t *type, const expr_t *expr)
 {
 	symbol_t   *return_symbol;
 	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
@@ -393,7 +393,7 @@ return_operand (type_t *type, expr_t *expr)
 }
 
 operand_t *
-value_operand (ex_value_t *value, expr_t *expr)
+value_operand (ex_value_t *value, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_value, expr, __builtin_return_address (0));
@@ -405,12 +405,12 @@ value_operand (ex_value_t *value, expr_t *expr)
 }
 
 operand_t *
-temp_operand (type_t *type, expr_t *expr)
+temp_operand (const type_t *type, const expr_t *expr)
 {
 	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
-	op->tempop.type = type;
-	op->type = type;
+	op->tempop.type = (type_t *) type;
+	op->type = (type_t *) type;
 	op->size = type_size (type);
 	op->width = type_width (type);
 	return op;
@@ -475,7 +475,7 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 }
 
 operand_t *
-offset_alias_operand (type_t *type, int offset, operand_t *aop, expr_t *expr)
+offset_alias_operand (type_t *type, int offset, operand_t *aop, const expr_t *expr)
 {
 	operand_t *top;
 	def_t     *def;
@@ -534,7 +534,7 @@ offset_alias_operand (type_t *type, int offset, operand_t *aop, expr_t *expr)
 }
 
 operand_t *
-alias_operand (type_t *type, operand_t *op, expr_t *expr)
+alias_operand (type_t *type, operand_t *op, const expr_t *expr)
 {
 	operand_t  *aop;
 
@@ -552,7 +552,7 @@ alias_operand (type_t *type, operand_t *op, expr_t *expr)
 }
 
 operand_t *
-label_operand (expr_t *label)
+label_operand (const expr_t *label)
 {
 	operand_t  *lop;
 
@@ -560,12 +560,12 @@ label_operand (expr_t *label)
 		internal_error (label, "not a label expression");
 	}
 	lop = new_operand (op_label, label, __builtin_return_address (0));
-	lop->label = &label->label;
+	lop->label = (ex_label_t *) &label->label;
 	return lop;
 }
 
 static operand_t *
-short_operand (short short_val, expr_t *expr)
+short_operand (short short_val, const expr_t *expr)
 {
 	ex_value_t *val = new_short_val (short_val);
 	return value_operand (val, expr);
@@ -718,21 +718,21 @@ invert_conditional (statement_t *s)
 		s->opcode = "ifbe";
 }
 
-typedef sblock_t *(*statement_f) (sblock_t *, expr_t *);
-typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
+typedef sblock_t *(*statement_f) (sblock_t *, const expr_t *);
+typedef sblock_t *(*expr_f) (sblock_t *, const expr_t *, operand_t **);
 
-static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
+static sblock_t *statement_subexpr (sblock_t *sblock, const expr_t *e,
 									operand_t **op);
-static sblock_t *expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op);
-static sblock_t *expr_def (sblock_t *sblock, expr_t *e, operand_t **op);
-static sblock_t *statement_single (sblock_t *sblock, expr_t *e);
+static sblock_t *expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op);
+static sblock_t *expr_def (sblock_t *sblock, const expr_t *e, operand_t **op);
+static sblock_t *statement_single (sblock_t *sblock, const expr_t *e);
 
 static sblock_t *
-expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	expr_t      *lvalue = e->address.lvalue;
-	expr_t      *offset = e->address.offset;
+	const expr_t *lvalue = e->address.lvalue;
+	const expr_t *offset = e->address.offset;
 
 	if (lvalue->type == ex_alias && offset && is_constant (offset)) {
 		lvalue = new_offset_alias_expr (lvalue->alias.type,
@@ -742,7 +742,8 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 	} else if (offset && is_constant (offset)) {
 		int         o = expr_int (offset);
 		if (o < 32768 && o >= -32768) {
-			offset = expr_file_line (new_short_expr (o), offset);
+			offset = new_short_expr (o);
+			//offset = expr_file_line (new_short_expr (o), offset);
 		}
 	}
 
@@ -758,7 +759,7 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static operand_t *
-operand_address (operand_t *reference, expr_t *e)
+operand_address (operand_t *reference, const expr_t *e)
 {
 	def_t      *def;
 	type_t     *type;
@@ -798,7 +799,7 @@ operand_address (operand_t *reference, expr_t *e)
 }
 
 static __attribute__((pure)) int
-is_indirect (expr_t *e)
+is_indirect (const expr_t *e)
 {
 	if ((e->type == ex_expr || e->type == ex_uexpr)
 		&& e->expr.op == '.') {
@@ -807,14 +808,14 @@ is_indirect (expr_t *e)
 	return 0;
 }
 
-static sblock_t *addressing_mode (sblock_t *sblock, expr_t *ref,
+static sblock_t *addressing_mode (sblock_t *sblock, const expr_t *ref,
 								  operand_t **base, operand_t **offset,
 								  pr_ushort_t *mode, operand_t **target);
 static statement_t *lea_statement (operand_t *pointer, operand_t *offset,
-								   expr_t *e);
+								   const expr_t *e);
 
 static statement_t *
-assign_statement (operand_t *dst, operand_t *src, expr_t *e)
+assign_statement (operand_t *dst, operand_t *src, const expr_t *e)
 {
 	statement_t *s = new_statement (st_assign, "assign", e);
 	s->opa = dst;
@@ -823,15 +824,15 @@ assign_statement (operand_t *dst, operand_t *src, expr_t *e)
 }
 
 static sblock_t *
-expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
+expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *src)
 {
 	statement_t *s;
-	expr_t     *dst_expr = e->assign.dst;
-	expr_t     *src_expr = e->assign.src;
+	const expr_t *dst_expr = e->assign.dst;
+	const expr_t *src_expr = e->assign.src;
 	type_t     *dst_type = get_type (dst_expr);
 	type_t     *src_type = get_type (src_expr);
 	unsigned    count;
-	expr_t     *count_expr;
+	const expr_t *count_expr;
 	operand_t  *dst = 0;
 	operand_t  *size = 0;
 	static const char *opcode_sets[][2] = {
@@ -862,7 +863,8 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 	} else {
 		if (is_indirect (src_expr)) {
-			src_expr = expr_file_line (address_expr (src_expr, 0), e);
+			//src_expr = expr_file_line (address_expr (src_expr, 0), e);
+			src_expr = address_expr (src_expr, 0);
 			need_ptr = 1;
 		}
 		if (!src) {
@@ -911,7 +913,8 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 			//FIXME is this even necessary? if it is, should use copy_operand
 			sblock = statement_subexpr (sblock, dst_expr, &kill);
 		}
-		dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
+		//dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
+		dst_expr = address_expr (dst_expr, 0);
 		need_ptr = 1;
 	}
 	sblock = statement_subexpr (sblock, dst_expr, &dst);
@@ -922,9 +925,11 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	}
 	count = min (type_size (dst_type), type_size (src_type));
 	if (count < (1 << 16)) {
-		count_expr = expr_file_line (new_short_expr (count), e);
+		//count_expr = expr_file_line (new_short_expr (count), e);
+		count_expr = new_short_expr (count);
 	} else {
-		count_expr = expr_file_line (new_int_expr (count), e);
+		//count_expr = expr_file_line (new_int_expr (count), e);
+		count_expr = new_int_expr (count);
 	}
 	sblock = statement_subexpr (sblock, count_expr, &size);
 
@@ -947,11 +952,11 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 }
 
 static sblock_t *
-expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	expr_t     *src_expr = e->assign.src;
-	expr_t     *dst_expr = e->assign.dst;
+	const expr_t *src_expr = e->assign.src;
+	const expr_t *dst_expr = e->assign.dst;
 	type_t     *dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
@@ -1020,7 +1025,8 @@ dereference_dst:
 		// need to get a pointer type, entity.field expressions do not provide
 		// one directly. FIXME it was probably a mistake extracting the operand
 		// type from the statement expression in dags
-		dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
+		//dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
+		dst_expr = address_expr (dst_expr, 0);
 		s = new_statement (st_address, "lea", dst_expr);
 		s->opa = dst;
 		s->opb = ofs;
@@ -1042,11 +1048,11 @@ dereference_dst:
 }
 
 static sblock_t *
-vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
+vector_call (sblock_t *sblock, const expr_t *earg, const expr_t *param, int ind,
 			 operand_t **op)
 {
 	//FIXME this should be done in the expression tree
-	expr_t     *a, *v, *n;
+	const expr_t *a, *v, *n;
 	int         i;
 	static const char *names[] = {"x", "y", "z"};
 
@@ -1055,8 +1061,8 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 		v = new_float_expr (earg->value->v.vector_val[i]);
 		a = assign_expr (field_expr (param, n), v);
 		param = new_param_expr (get_type (earg), ind);
-		a->line = earg->line;
-		a->file = earg->file;
+		//a->line = earg->line;
+		//a->file = earg->file;
 		sblock = statement_single (sblock, a);
 	}
 	sblock = statement_subexpr (sblock, param, op);
@@ -1064,11 +1070,11 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 }
 
 static sblock_t *
-expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
+expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 {
-	expr_t     *func = call->branch.target;
-	expr_t     *args = call->branch.args;
-	expr_t     *param;
+	const expr_t *func = call->branch.target;
+	const expr_t *args = call->branch.args;
+	const expr_t *param;
 	operand_t  *arguments[2] = {0, 0};
 	int         count = 0;
 	int         ind;
@@ -1110,9 +1116,9 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 			continue;
 		}
 		if (is_struct (get_type (param)) || is_union (get_type (param))) {
-			expr_t     *mov = assign_expr (param, a);
-			mov->line = a->line;
-			mov->file = a->file;
+			const expr_t *mov = assign_expr (param, a);
+			//mov->line = a->line;
+			//mov->file = a->file;
 			sblock = statement_single (sblock, mov);
 		} else {
 			operand_t  *p = 0;
@@ -1148,7 +1154,7 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 }
 
 static sblock_t *
-expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
+expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		return expr_call_v6p (sblock, call, op);
@@ -1157,9 +1163,9 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		current_func->arguments = defspace_new (ds_virtual);
 	}
 	defspace_t *arg_space = current_func->arguments;
-	expr_t     *func = call->branch.target;
-	expr_t     *args_va_list = 0;	// .args (...) parameter
-	expr_t     *args_params = 0;	// first arg in ...
+	const expr_t *func = call->branch.target;
+	const expr_t *args_va_list = 0;	// .args (...) parameter
+	const expr_t *args_params = 0;	// first arg in ...
 	operand_t  *use = 0;
 	operand_t  *kill = 0;
 	int         num_params = 0;
@@ -1167,11 +1173,11 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	defspace_reset (arg_space);
 
 	int         num_args = list_count (&call->branch.args->list);
-	expr_t     *args[num_args];
+	const expr_t *args[num_args];
 	list_scatter_rev (&call->branch.args->list, args);
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
-		expr_t     *a = args[i];
+		const expr_t *a = args[i];
 		const char *arg_name = va (0, ".arg%d", arg_num++);
 		def_t      *def = new_def (arg_name, 0, current_func->arguments,
 								   sc_argument);
@@ -1185,7 +1191,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 														alignment);
 		def->type = arg_type;
 		def->reg = current_func->temp_reg;
-		expr_t     *def_expr = expr_file_line (new_def_expr (def), call);
+		const expr_t *def_expr = expr_file_line (new_def_expr (def), call);
 		if (a->type == ex_args) {
 			args_va_list = def_expr;
 		} else {
@@ -1195,8 +1201,8 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			if (args_va_list) {
 				num_params++;
 			}
-			expr_t     *assign = assign_expr (def_expr, a);
-			expr_file_line (assign, call);
+			const expr_t *assign = assign_expr (def_expr, a);
+			//expr_file_line (assign, call);
 			sblock = statement_single (sblock, assign);
 		}
 
@@ -1212,19 +1218,19 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		kill = k;
 	}
 	if (args_va_list) {
-		expr_t     *assign;
-		expr_t     *count;
-		expr_t     *list;
-		expr_t     *args_count = field_expr (args_va_list,
+		const expr_t *assign;
+		const expr_t *count;
+		const expr_t *list;
+		const expr_t *args_count = field_expr (args_va_list,
 											 new_name_expr ("count"));
-		expr_t     *args_list = field_expr (args_va_list,
+		const expr_t *args_list = field_expr (args_va_list,
 											new_name_expr ("list"));
-		expr_file_line (args_count, call);
-		expr_file_line (args_list, call);
+		//expr_file_line (args_count, call);
+		//expr_file_line (args_list, call);
 
 		count = new_short_expr (num_params);
 		assign = assign_expr (args_count, count);
-		expr_file_line (assign, call);
+		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 
 		if (args_params) {
@@ -1232,9 +1238,9 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		} else {
 			list = new_nil_expr ();
 		}
-		expr_file_line (list, call);
+		//expr_file_line (list, call);
 		assign = assign_expr (args_list, list);
-		expr_file_line (assign, call);
+		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 	}
 	statement_t *s = new_statement (st_func, "call", call);
@@ -1255,7 +1261,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 }
 
 static sblock_t *
-expr_branch (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_branch (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	if (e->branch.type != pr_branch_call) {
 		internal_error (e, "unexpected branch type in expression: %d",
@@ -1265,7 +1271,7 @@ expr_branch (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-statement_branch (sblock_t *sblock, expr_t *e)
+statement_branch (sblock_t *sblock, const expr_t *e)
 {
 	static const char *opcodes[] = {
 		"ifz",
@@ -1305,7 +1311,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static operand_t *
-find_def_operand (expr_t *ref)
+find_def_operand (const expr_t *ref)
 {
 	operand_t  *op = 0;
 	if (ref->type == ex_alias) {
@@ -1326,7 +1332,7 @@ find_def_operand (expr_t *ref)
 }
 
 static sblock_t *
-ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
+ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
 				 operand_t **target)
 {
@@ -1339,9 +1345,9 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 		&& ref->address.lvalue->type == ex_alias
 		&& (!ref->address.lvalue->alias.offset
 			|| is_constant (ref->address.lvalue->alias.offset))) {
-		expr_t     *lvalue = ref->address.lvalue;
-		expr_t     *offs = ref->address.offset;
-		expr_t     *alias;
+		const expr_t *lvalue = ref->address.lvalue;
+		const expr_t *offs = ref->address.offset;
+		const expr_t *alias;
 		if (lvalue->alias.offset) {
 			if (offs) {
 				offs = binary_expr ('+', offs, lvalue->alias.offset);
@@ -1351,7 +1357,7 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 		}
 		type = type->t.fldptr.type;
 		if (offs) {
-			expr_t     *lv = lvalue->alias.expr;
+			const expr_t *lv = lvalue->alias.expr;
 			type_t     *lvtype = get_type (lv);
 			int         o = expr_int (offs);
 			if (o < 0 || o + type_size (type) > type_size (lvtype)) {
@@ -1364,7 +1370,7 @@ ptr_addressing_mode (sblock_t *sblock, expr_t *ref,
 		} else {
 			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
-		expr_file_line (alias, ref);
+		//expr_file_line (alias, ref);
 		return addressing_mode (sblock, alias, base, offset, mode, target);
 	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
@@ -1381,7 +1387,7 @@ just_a_pointer:
 		if (!is_integral (get_type (ref->alias.expr))) {
 			internal_error (ref, "expected integer expr in ref");
 		}
-		expr_t     *intptr = ref->alias.expr;
+		const expr_t *intptr = ref->alias.expr;
 		if (intptr->type != ex_expr
 			|| (intptr->expr.op != '+'
 				&& intptr->expr.op != '-')) {
@@ -1390,8 +1396,8 @@ just_a_pointer:
 			*offset = short_operand (0, ref);
 			*mode = 2;	// mode C: ptr + constant index
 		} else {
-			expr_t     *ptr = intptr->expr.e1;
-			expr_t     *offs = intptr->expr.e2;
+			const expr_t *ptr = intptr->expr.e1;
+			const expr_t *offs = intptr->expr.e2;
 			int         const_offs;
 			if (target) {
 				if (ptr->type == ex_alias
@@ -1419,7 +1425,7 @@ just_a_pointer:
 }
 
 static sblock_t *
-addressing_mode (sblock_t *sblock, expr_t *ref,
+addressing_mode (sblock_t *sblock, const expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
 				 operand_t **target)
 {
@@ -1427,8 +1433,8 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 		// ref is known to be either ex_expr or ex_uexpr, with '.' for
 		// the operator
 		if (ref->type == ex_expr) {
-			expr_t     *ent_expr = ref->expr.e1;
-			expr_t     *fld_expr = ref->expr.e2;
+			const expr_t *ent_expr = ref->expr.e1;
+			const expr_t *fld_expr = ref->expr.e2;
 			if (!is_entity (get_type (ent_expr))
 				|| !is_field (get_type (fld_expr))) {
 				print_expr (ref);
@@ -1454,7 +1460,7 @@ addressing_mode (sblock_t *sblock, expr_t *ref,
 }
 
 static sblock_t *
-statement_return (sblock_t *sblock, expr_t *e)
+statement_return (sblock_t *sblock, const expr_t *e)
 {
 	const char *opcode;
 	statement_t *s;
@@ -1463,13 +1469,16 @@ statement_return (sblock_t *sblock, expr_t *e)
 	opcode = "return";
 	if (!e->retrn.ret_val) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->retrn.ret_val = new_float_expr (0);
+			auto n = new_expr ();
+			*n = *e;
+			n->retrn.ret_val = new_float_expr (0);
+			e = n;
 		}
 	}
 	s = new_statement (st_func, opcode, e);
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->retrn.ret_val) {
-			expr_t     *ret_val = e->retrn.ret_val;
+			const expr_t *ret_val = e->retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
 
 			// at_return is used for passing the result of a void_return
@@ -1483,7 +1492,7 @@ statement_return (sblock_t *sblock, expr_t *e)
 		}
 	} else {
 		if (!e->retrn.at_return && e->retrn.ret_val) {
-			expr_t     *ret_val = e->retrn.ret_val;
+			const expr_t *ret_val = e->retrn.ret_val;
 			type_t     *ret_type = get_type (ret_val);
 			operand_t  *target = 0;
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
@@ -1495,17 +1504,17 @@ statement_return (sblock_t *sblock, expr_t *e)
 			statement_add_use (s, target);
 		} else {
 			if (e->retrn.at_return) {
-				expr_t     *call = e->retrn.ret_val;
+				const expr_t *call = e->retrn.ret_val;
 				if (!call || !is_function_call (call)) {
 					internal_error (e, "@return with no call");
 				}
 				// FIXME hard-coded reg, and assumes 3 is free
 				#define REG 3
-				expr_t     *with = new_with_expr (11, REG, new_short_expr (0));
+				const expr_t *with = new_with_expr (11, REG, new_short_expr (0));
 				def_t      *ret_ptr = new_def (0, 0, 0, sc_local);
 				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
 				ret_ptr->reg = REG;
-				expr_file_line (with, e);
+				//expr_file_line (with, e);
 				sblock = statement_single (sblock, with);
 				sblock = statement_subexpr (sblock, call, &ret_op);
 			}
@@ -1522,7 +1531,7 @@ statement_return (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_adjstk (sblock_t *sblock, expr_t *e)
+statement_adjstk (sblock_t *sblock, const expr_t *e)
 {
 	statement_t *s = new_statement (st_func, "adjstk", e);
 	s->opa = short_operand (e->adjstk.mode, e);
@@ -1533,7 +1542,7 @@ statement_adjstk (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_with (sblock_t *sblock, expr_t *e)
+statement_with (sblock_t *sblock, const expr_t *e)
 {
 	statement_t *s = new_statement (st_func, "with", e);
 	s->opa = short_operand (e->with.mode, e);
@@ -1544,7 +1553,7 @@ statement_with (sblock_t *sblock, expr_t *e)
 }
 
 static statement_t *
-lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
+lea_statement (operand_t *pointer, operand_t *offset, const expr_t *e)
 {
 	statement_t *s = new_statement (st_address, "lea", e);
 	s->opa = pointer;
@@ -1554,7 +1563,8 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 }
 
 static statement_t *
-movep_statement (operand_t *dst, operand_t *src, type_t *type, expr_t *e)
+movep_statement (operand_t *dst, operand_t *src, const type_t *type,
+				 const expr_t *e)
 {
 	operand_t  *dst_addr = operand_address (dst, e);
 	statement_t *s = new_statement (st_ptrmove, "movep", e);
@@ -1566,7 +1576,7 @@ movep_statement (operand_t *dst, operand_t *src, type_t *type, expr_t *e)
 }
 
 static statement_t *
-load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
+load_statement (operand_t *ptr, operand_t *offs, operand_t *op, const expr_t *e)
 {
 	statement_t *s = new_statement (st_expr, "load", e);
 	s->opa = ptr;
@@ -1576,10 +1586,10 @@ load_statement (operand_t *ptr, operand_t *offs, operand_t *op, expr_t *e)
 }
 
 static sblock_t *
-expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
+expr_deref (sblock_t *sblock, const expr_t *deref, operand_t **op)
 {
-	type_t     *load_type = deref->expr.type;
-	expr_t     *ptr_expr = deref->expr.e1;
+	const type_t *load_type = deref->expr.type;
+	const expr_t *ptr_expr = deref->expr.e1;
 	operand_t  *base = 0;
 	operand_t  *offset = 0;
 	operand_t  *target = 0;
@@ -1624,7 +1634,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 }
 
 static sblock_t *
-expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_block (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	if (!e->block.result)
 		internal_error (e, "block sub-expression without result");
@@ -1634,7 +1644,7 @@ expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_alias (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
 	type_t    *type;
@@ -1650,7 +1660,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_expr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const char *opcode;
 	statement_t *s;
@@ -1684,10 +1694,10 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_cast (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	type_t     *src_type;
-	type_t     *type = e->expr.type;
+	const type_t *src_type;
+	const type_t *type = e->expr.type;
 	statement_t *s;
 
 	src_type = get_type (e->expr.e1);
@@ -1713,7 +1723,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_negate (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	expr_t     *neg;
 	expr_t     *zero;
@@ -1721,7 +1731,7 @@ expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
 	zero = new_nil_expr ();
 	zero->file = e->file;
 	zero->line = e->line;
-	convert_nil (zero, e->expr.type);
+	zero = (expr_t *) convert_nil (zero, e->expr.type);
 	neg = new_binary_expr ('-', zero, e->expr.e1);
 	neg->expr.type = e->expr.type;
 	neg->file = e->file;
@@ -1730,7 +1740,7 @@ expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_uexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const char *opcode;
 	statement_t *s;
@@ -1761,7 +1771,7 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const char *opcode = "hops";
 	statement_t *s;
@@ -1814,7 +1824,7 @@ expr_horizontal (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const char *opcode = "swizzle";
 	statement_t *s;
@@ -1840,7 +1850,7 @@ expr_swizzle (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_extend (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	type_t     *src_type = get_type (e->extend.src);
 	type_t     *res_type = e->extend.type;
@@ -1876,14 +1886,14 @@ expr_extend (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_def (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->def, e->def->type, e);
 	return sblock;
 }
 
 static sblock_t *
-expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	symbol_t   *sym = e->symbol;
 
@@ -1904,25 +1914,25 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_temp (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	if (!e->temp.op)
-		e->temp.op = temp_operand (e->temp.type, e);
+		((expr_t *) e)->temp.op = temp_operand (e->temp.type, e);
 	*op = e->temp.op;
 	return sblock;
 }
 
 static int
-statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
+statement_copy_elements (sblock_t **sblock, const expr_t *dst, const expr_t *src, int base)
 {
 	int         index = 0;
-	for (expr_t *e = src->vector.list; e; e = e->next) {
+	for (const expr_t *e = src->vector.list; e; e = e->next) {
 		if (e->type == ex_vector) {
 			index += statement_copy_elements (sblock, dst, e, index + base);
 		} else {
 			int         size = type_size (base_type (get_type (dst)));
 			type_t     *src_type = get_type (e);
-			expr_t     *dst_ele = new_offset_alias_expr (src_type, dst,
+			const expr_t *dst_ele = new_offset_alias_expr (src_type, dst,
 														 size * (index + base));
 			index += type_width (src_type);
 			*sblock = statement_single (*sblock, assign_expr (dst_ele, e));
@@ -1932,9 +1942,9 @@ statement_copy_elements (sblock_t **sblock, expr_t *dst, expr_t *src, int base)
 }
 
 static sblock_t *
-expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	expr_t     *tmp;
+	const expr_t *tmp;
 	type_t     *vec_type = get_type (e);
 	int         file = pr.source_file;
 	int         line = pr.source_line;
@@ -1952,10 +1962,10 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_nil (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	type_t     *nil = e->nil;
-	expr_t     *size_expr;
+	const expr_t *size_expr;
 	size_t      nil_size;
 	operand_t  *zero;
 	operand_t  *size;
@@ -1987,20 +1997,20 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_value (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	*op = value_operand (e->value, e);
 	return sblock;
 }
 
 static sblock_t *
-expr_selector (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_selector (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	return statement_subexpr (sblock, e->selector.sel_ref, op);
 }
 
 static sblock_t *
-statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
+statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	static expr_f sfuncs[ex_count] = {
 		[ex_block] = expr_block,
@@ -2037,13 +2047,13 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-statement_ignore (sblock_t *sblock, expr_t *e)
+statement_ignore (sblock_t *sblock, const expr_t *e)
 {
 	return sblock;
 }
 
 static sblock_t *
-statement_state (sblock_t *sblock, expr_t *e)
+statement_state (sblock_t *sblock, const expr_t *e)
 {
 	statement_t *s;
 
@@ -2060,7 +2070,7 @@ build_bool_block (expr_t *block, expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			build_bool_block (block, e->boolean.e);
+			build_bool_block (block, (expr_t *) e->boolean.e);
 			return;
 		case ex_label:
 			e->next = 0;
@@ -2076,8 +2086,8 @@ build_bool_block (expr_t *block, expr_t *e)
 			return;
 		case ex_expr:
 			if (e->expr.op == OR || e->expr.op == AND) {
-				build_bool_block (block, e->expr.e1);
-				build_bool_block (block, e->expr.e2);
+				build_bool_block (block, (expr_t *) e->expr.e1);
+				build_bool_block (block, (expr_t *) e->expr.e2);
 			} else {
 				e->next = 0;
 				append_expr (block, e);
@@ -2088,7 +2098,7 @@ build_bool_block (expr_t *block, expr_t *e)
 		case ex_block:
 			if (!e->block.result) {
 				for (auto t = e->block.head; t; t = t->next) {
-					build_bool_block (block, t->expr);
+					build_bool_block (block, (expr_t *) t->expr);
 				}
 				return;
 			}
@@ -2100,36 +2110,36 @@ build_bool_block (expr_t *block, expr_t *e)
 }
 
 static int
-is_goto_expr (expr_t *e)
+is_goto_expr (const expr_t *e)
 {
 	return e && e->type == ex_branch && e->branch.type == pr_branch_jump
 			&& !e->branch.index;
 }
 
 static int
-is_if_expr (expr_t *e)
+is_if_expr (const expr_t *e)
 {
 	return e && e->type == ex_branch && e->branch.type != pr_branch_jump
 			 && e->branch.type != pr_branch_call;;
 }
 
 static int
-is_label_expr (expr_t *e)
+is_label_expr (const expr_t *e)
 {
 	return e && e->type == ex_label;
 }
 
 static sblock_t *
-statement_bool (sblock_t *sblock, expr_t *e)
+statement_bool (sblock_t *sblock, const expr_t *e)
 {
-	expr_t     *l;
-	expr_t     *block = new_block_expr ();
+	const expr_t *l;
+	expr_t      *block = new_block_expr (0);
 
-	build_bool_block (block, e);
+	build_bool_block (block, (expr_t *) e);
 
 	int         num_expr = list_count (&block->block.list);
 	expr_t     *exprs[num_expr + 1];
-	list_scatter (&block->block.list, exprs);
+	list_scatter (&block->block.list, (const expr_t **) exprs);
 	exprs[num_expr] = 0;	// mark end of list
 	expr_t    **d = exprs;
 	expr_t    **s = exprs;
@@ -2138,7 +2148,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			l = s[0]->branch.target;
 			for (auto e = s + 2; is_label_expr (e[0]); e++) {
 				if (e[0] == l) {
-					l->label.used--;
+					((expr_t *) l)->label.used--;
 					// invert logic of if
 					s[0]->branch.type ^= pr_branch_ne;
 					// use goto's label in if
@@ -2155,7 +2165,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			l = s[0]->branch.target;
 			for (auto e = s + 1; is_label_expr (e[0]); e++) {
 				if (e[0] == l) {
-					l->label.used--;
+					((expr_t *) l)->label.used--;
 					l = 0;
 					break;
 				}
@@ -2170,22 +2180,22 @@ statement_bool (sblock_t *sblock, expr_t *e)
 		}
 	}
 	block->block.list = (ex_list_t) {};
-	list_gather (&block->block.list, exprs, d - exprs);
+	list_gather (&block->block.list, (const expr_t **) exprs, d - exprs);
 	sblock = statement_slist (sblock, &block->block.list);
 	return sblock;
 }
 
 static sblock_t *
-statement_label (sblock_t *sblock, expr_t *e)
+statement_label (sblock_t *sblock, const expr_t *e)
 {
 	if (sblock->statements) {
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
 	if (e->label.used) {
-		e->label.dest = sblock;
-		e->label.next = sblock->labels;
-		sblock->labels = &e->label;
+		((expr_t *) e)->label.dest = sblock;
+		((expr_t *) e)->label.next = sblock->labels;
+		sblock->labels = (ex_label_t *) &e->label;
 	} else {
 		if (e->label.symbol) {
 			warning (e, "unused label %s", e->label.symbol->name);
@@ -2197,7 +2207,7 @@ statement_label (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_block (sblock_t *sblock, expr_t *e)
+statement_block (sblock_t *sblock, const expr_t *e)
 {
 	if (sblock->statements) {
 		sblock->next = new_sblock ();
@@ -2213,7 +2223,7 @@ statement_block (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_expr (sblock_t *sblock, expr_t *e)
+statement_expr (sblock_t *sblock, const expr_t *e)
 {
 	if (e->expr.op < 256)
 		debug (e, "e %c", e->expr.op);
@@ -2225,7 +2235,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_uexpr (sblock_t *sblock, expr_t *e)
+statement_uexpr (sblock_t *sblock, const expr_t *e)
 {
 	debug (e, "e ue %d", e->expr.op);
 	if (options.warnings.executable)
@@ -2234,11 +2244,11 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_memset (sblock_t *sblock, expr_t *e)
+statement_memset (sblock_t *sblock, const expr_t *e)
 {
-	expr_t     *dst = e->memset.dst;
-	expr_t     *val = e->memset.val;
-	expr_t     *count = e->memset.count;
+	const expr_t *dst = e->memset.dst;
+	const expr_t *val = e->memset.val;
+	const expr_t *count = e->memset.count;
 	const char *opcode = "memset";
 	statement_t *s;
 
@@ -2260,13 +2270,13 @@ statement_memset (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_assign (sblock_t *sblock, expr_t *e)
+statement_assign (sblock_t *sblock, const expr_t *e)
 {
 	return expr_assign (sblock, e, 0);
 }
 
 static sblock_t *
-statement_nonexec (sblock_t *sblock, expr_t *e)
+statement_nonexec (sblock_t *sblock, const expr_t *e)
 {
 	if (!e->rvalue && options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
@@ -2274,7 +2284,7 @@ statement_nonexec (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_single (sblock_t *sblock, expr_t *e)
+statement_single (sblock_t *sblock, const expr_t *e)
 {
 	static statement_f sfuncs[ex_count] = {
 		[ex_error] = statement_ignore,
@@ -2307,7 +2317,7 @@ statement_single (sblock_t *sblock, expr_t *e)
 }
 
 sblock_t *
-statement_slist (sblock_t *sblock, ex_list_t *slist)
+statement_slist (sblock_t *sblock, const ex_list_t *slist)
 {
 
 	for (auto s = slist->head; s; s = s->next) {
@@ -2549,7 +2559,7 @@ remove_dead_blocks (sblock_t *blocks)
 }
 
 static void
-super_dealloc_warning (expr_t *expr, pseudoop_t *op)
+super_dealloc_warning (const expr_t *expr, pseudoop_t *op)
 {
 	warning (expr,
 			 "control may reach end of derived -dealloc without invoking %s",
@@ -2582,7 +2592,7 @@ search_for_super_dealloc (sblock_t *sblock)
 			}
 			// function arguments are in reverse order, and the selector
 			// is the second argument (or second last in the list)
-			expr_t     *arg = 0;
+			const expr_t *arg = 0;
 			auto arguments = st->expr->branch.args;
 			for (auto li = arguments->list.head; li; li = li->next) {
 				if (li->next && !li->next->next) {
@@ -2646,13 +2656,13 @@ check_final_block (sblock_t *sblock)
 }
 
 void
-dump_dot_sblock (void *data, const char *fname)
+dump_dot_sblock (const void *data, const char *fname)
 {
 	print_sblock ((sblock_t *) data, fname);
 }
 
 sblock_t *
-make_statements (expr_t *e)
+make_statements (const expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
 	int         did_something;

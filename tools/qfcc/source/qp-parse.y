@@ -85,7 +85,8 @@ int yylex (void);
 	struct hashtab_s *def_list;
 	struct type_s	*type;
 	struct typedef_s *typename;
-	struct expr_s	*expr;
+	const struct expr_s	*expr;
+	struct expr_s	*mut_expr;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
@@ -134,9 +135,11 @@ int yylex (void);
 %type	<symbol>	program_head identifier_list subprogram_head
 %type	<symtab>	param_scope
 %type	<param>		arguments parameter_list
-%type	<expr>		compound_statement else optional_statements statement_list
+%type	<mut_expr>	compound_statement optional_statements statement_list
+%type	<expr>		else
 %type	<expr>		statement procedure_statement
-%type	<expr>		expression_list expression unary_expr primary variable name
+%type	<mut_expr>	expression_list
+%type	<expr>		expression unary_expr primary variable name
 %type	<op>		sign
 
 %{
@@ -158,7 +161,7 @@ build_dotmain (symbol_t *program)
 	current_func = begin_function (dotmain, 0, current_symtab, 0,
 								   current_storage);
 	current_symtab = current_func->locals;
-	code = new_block_expr ();
+	code = new_block_expr (0);
 	append_expr (code, function_expr (new_symbol_expr (program), 0));
 	append_expr (code, return_expr (current_func, exitcode));
 	build_code_function (dotmain, 0, code);
@@ -389,7 +392,7 @@ opt_semi
 statement_list
 	: statement
 		{
-			$$ = new_block_expr ();
+			$$ = new_block_expr (0);
 			append_expr ($$, $1);
 		}
 	| statement_list ';' statement
@@ -419,6 +422,9 @@ statement
 		}
 	| procedure_statement
 	| compound_statement
+		{
+			$$ = $1;
+		}
 	| IF expression THEN statement else statement
 		{
 			$$ = build_if_statement (0, $2, $4, $5, $6);

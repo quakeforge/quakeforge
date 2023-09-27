@@ -81,8 +81,8 @@ FILE *yyget_in (void) __attribute__((pure));
 FILE *yyget_out (void) __attribute__((pure));
 
 static int keyword_or_id (const char *token);
-static expr_t *parse_float_vector (const char *token, int width);
-static expr_t *parse_int_vector (const char *token, int width);
+static const expr_t *parse_float_vector (const char *token, int width);
+static const expr_t *parse_int_vector (const char *token, int width);
 
 extern QC_YYSTYPE qc_yylval;
 
@@ -149,7 +149,7 @@ STRING		\"(\\.|[^"\\])*\"
 								qc_yylval.expr = new_long_expr (i);
 							} else {
 								qc_yylval.expr = new_int_expr (i);
-								qc_yylval.expr->implicit = 1;
+								((expr_t *) qc_yylval.expr)->implicit = 1;
 							}
 						}
 						return VALUE;
@@ -160,8 +160,7 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d);
-							qc_yylval.expr->implicit = 1;
+							qc_yylval.expr = new_double_expr (d, true);
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);
@@ -178,7 +177,7 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d);
+							qc_yylval.expr = new_double_expr (d, false);
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);
@@ -586,7 +585,7 @@ keyword_or_id (const char *token)
 	return NAME;
 }
 
-static expr_t *
+static const expr_t *
 parse_int_vector (const char *token, int width)
 {
 	char        t1 = 0, t2 = 0;
@@ -622,7 +621,7 @@ parse_int_vector (const char *token, int width)
 			t1 = 'f';
 		}
 	}
-	expr_t     *expr = 0;
+	const expr_t *expr = 0;
 	switch (t1) {
 		case 'u':
 			if (t2 == 'l') {
@@ -704,11 +703,11 @@ parse_int_vector (const char *token, int width)
 			expr = new_value_expr (new_type_value (type, data));
 			break;
 	}
-	expr->implicit = !t1;
+	((expr_t *) expr)->implicit = !t1;
 	return expr;
 }
 
-static expr_t *
+static const expr_t *
 parse_float_vector (const char *token, int width)
 {
 	char        t = 0;
@@ -762,7 +761,7 @@ parse_float_vector (const char *token, int width)
 		type = &type_double;
 	}
 	type = vector_type (type, width);
-	expr_t     *expr = new_value_expr (new_type_value (type, data));
+	auto expr = (expr_t *) new_value_expr (new_type_value (type, data));
 	expr->implicit = !t;
 	return expr;
 }

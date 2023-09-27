@@ -251,7 +251,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 }
 
 symbol_t *
-declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
+declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 {
 	symbol_t   *s = spec.sym;
 	defspace_t *space = symtab->space;

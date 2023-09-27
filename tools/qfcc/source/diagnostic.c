@@ -111,7 +111,7 @@ format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 }
 
 static __attribute__((format(PRINTF, 5, 0))) void
-__warning (expr_t *e, const char *file, int line, const char *func,
+__warning (const expr_t *e, const char *file, int line, const char *func,
 		   const char *fmt, va_list args)
 {
 	static int  promoted = 0;
@@ -141,7 +141,7 @@ __warning (expr_t *e, const char *file, int line, const char *func,
 }
 
 void
-_debug (expr_t *e, const char *file, int line, const char *func,
+_debug (const expr_t *e, const char *file, int line, const char *func,
 		const char *fmt, ...)
 {
 	va_list     args;
@@ -178,7 +178,7 @@ __internal_error (const expr_t *e, const char *file, int line,
 }
 
 void
-_bug (expr_t *e, const char *file, int line, const char *func,
+_bug (const expr_t *e, const char *file, int line, const char *func,
 	  const char *fmt, ...)
 {
 	va_list     args;
@@ -209,12 +209,13 @@ _bug (expr_t *e, const char *file, int line, const char *func,
 }
 
 expr_t *
-_notice (expr_t *e, const char *file, int line, const char *func, const char *fmt, ...)
+_notice (const expr_t *e, const char *file, int line, const char *func,
+		 const char *fmt, ...)
 {
 	va_list     args;
 
 	if (options.notices.silent)
-		return e;
+		return (expr_t *) e;
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
@@ -236,11 +237,11 @@ _notice (expr_t *e, const char *file, int line, const char *func, const char *fm
 		dstring_delete (message);
 	}
 	va_end (args);
-	return e;
+	return (expr_t *) e;
 }
 
 expr_t *
-_warning (expr_t *e, const char *file, int line, const char *func,
+_warning (const expr_t *e, const char *file, int line, const char *func,
 		  const char *fmt, ...)
 {
 	va_list     args;
@@ -248,7 +249,7 @@ _warning (expr_t *e, const char *file, int line, const char *func,
 	va_start (args, fmt);
 	__warning (e, file, line, func, fmt, args);
 	va_end (args);
-	return e;
+	return (expr_t *) e;
 }
 
 void
@@ -263,7 +264,7 @@ _internal_error (const expr_t *e, const char *file, int line,
 }
 
 expr_t *
-_error (expr_t *e, const char *file, int line, const char *func,
+_error (const expr_t *e, const char *file, int line, const char *func,
 		const char *fmt, ...)
 {
 	va_list     args;
@@ -289,8 +290,7 @@ _error (expr_t *e, const char *file, int line, const char *func,
 	}
 	va_end (args);
 
-	if (!e)
-		e = new_expr ();
-	e->type = ex_error;
-	return e;
+	expr_t *err = new_expr ();
+	err->type = ex_error;
+	return (expr_t *) e;
 }

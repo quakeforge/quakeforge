@@ -86,7 +86,7 @@ typedef struct multivector_s {
 struct expr_s;
 struct attribute_s;
 bool is_algebra (const struct type_s *type) __attribute__((pure));
-struct type_s *algebra_type (struct type_s *type, struct expr_s *params);
+struct type_s *algebra_type (struct type_s *type, const struct expr_s *params);
 struct type_s *algebra_subtype (struct type_s *type, struct attribute_s *attr);
 struct type_s *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 int algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b) __attribute__((pure));
@@ -109,14 +109,16 @@ bool is_mono_grade (const struct type_s *type) __attribute__((pure));
 int algebra_get_grade (const struct type_s *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 
-struct expr_s *algebra_binary_expr (int op, struct expr_s *e1,
-									struct expr_s *e2);
-struct expr_s *algebra_negate (struct expr_s *e);
-struct expr_s *algebra_dual (struct expr_s *e);
-struct expr_s *algebra_reverse (struct expr_s *e);
-struct expr_s *algebra_cast_expr (struct type_s *dstType, struct expr_s *e);
-struct expr_s *algebra_assign_expr (struct expr_s *dst, struct expr_s *src);
-struct expr_s *algebra_field_expr (struct expr_s *mvec,
-								   struct expr_s *field_name);
+const struct expr_s *algebra_binary_expr (int op, const struct expr_s *e1,
+										  const struct expr_s *e2);
+const struct expr_s *algebra_negate (const struct expr_s *e);
+const struct expr_s *algebra_dual (const struct expr_s *e);
+const struct expr_s *algebra_reverse (const struct expr_s *e);
+const struct expr_s *algebra_cast_expr (struct type_s *dstType,
+										const struct expr_s *e);
+const struct expr_s *algebra_assign_expr (const struct expr_s *dst,
+										  const struct expr_s *src);
+const struct expr_s *algebra_field_expr (const struct expr_s *mvec,
+										 const struct expr_s *field_name);
 
 #endif//__algebra_h

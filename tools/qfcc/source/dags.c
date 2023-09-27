@@ -229,7 +229,7 @@ daglabel_string (daglabel_t *label)
 }
 
 static daglabel_t *
-opcode_label (dag_t *dag, const char *opcode, expr_t *expr)
+opcode_label (dag_t *dag, const char *opcode, const expr_t *expr)
 {
 	daglabel_t *label;
 
@@ -284,7 +284,7 @@ operand_label (dag_t *dag, operand_t *op)
 }
 
 static dagnode_t *
-leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
+leaf_node (dag_t *dag, operand_t *op, const expr_t *expr)
 {
 	daglabel_t *label;
 	dagnode_t  *node;
@@ -1053,7 +1053,7 @@ dag_create (flownode_t *flownode)
 }
 
 static statement_t *
-build_statement (const char *opcode, operand_t **operands, expr_t *expr)
+build_statement (const char *opcode, operand_t **operands, const expr_t *expr)
 {
 	int         i;
 	operand_t  *op;

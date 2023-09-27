@@ -223,8 +223,8 @@ get_def (operand_t *op)
 	internal_error (0, "unexpected operand");
 }
 
-expr_t *
-evaluate_constexpr (expr_t *e)
+const expr_t *
+evaluate_constexpr (const expr_t *e)
 {
 	debug (e, "fold_constants");
 	if (e->type == ex_uexpr) {

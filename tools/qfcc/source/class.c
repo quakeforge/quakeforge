@@ -1228,7 +1228,7 @@ cls_find_method (methodlist_t *methodlist, selector_t *selector,
 }
 
 method_t *
-class_message_response (type_t *clstype, int class_msg, expr_t *sel)
+class_message_response (type_t *clstype, int class_msg, const expr_t *sel)
 {
 	selector_t *selector;
 	method_t   *m;
@@ -1583,7 +1583,6 @@ class_finish_module (void)
 	category_t **ca;
 	def_t      *symtab_def;
 	symbol_t   *module_sym;
-	expr_t     *module_expr;
 	pr_module_t *module;
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
@@ -1636,10 +1635,11 @@ class_finish_module (void)
 	init_sym = new_symbol_type (".ctor", &type_func);
 	init_sym = function_symbol (init_sym, 0, 1);
 
+	const expr_t *module_expr;
 	module_expr = address_expr (new_symbol_expr (module_sym), 0);
 	module_expr = new_list_expr (module_expr);
 
-	init_expr = new_block_expr ();
+	init_expr = new_block_expr (0);
 	append_expr (init_expr,
 				 build_function_call (new_symbol_expr (exec_class_sym),
 									  exec_class_sym->type, module_expr));
@@ -1921,13 +1921,12 @@ class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 	return symtab_flat_copy (class->ivars, parent, stab_ivars);
 }
 
-static expr_t *
+static const expr_t *
 class_dereference_ivar (symbol_t *sym, void *_self)
 {
 	expr_t     *self = (expr_t *) _self;
 
-	return field_expr (copy_expr (self),
-					   new_symbol_expr (new_symbol (sym->name)));
+	return field_expr (self, new_symbol_expr (new_symbol (sym->name)));
 }
 
 void
@@ -1938,7 +1937,6 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	type_t     *class_ptr = pointer_type (class->type);
 	symbol_t   *sym;
 	symbol_t   *self;
-	expr_t     *self_expr;
 
 	if (!ivar_scope)
 		return;
@@ -1946,7 +1944,7 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	if (!self) {
 		internal_error (0, "I've lost my self!");
 	}
-	self_expr = new_symbol_expr (self);
+	const expr_t *self_expr = new_symbol_expr (self);
 	if (self->type != class_ptr) {
 		debug (0, "class method scope");
 		//FIXME should generate a warning on access
@@ -1957,7 +1955,7 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 			continue;
 		sym->sy_type = sy_convert;
 		sym->s.convert.conv = class_dereference_ivar;
-		sym->s.convert.data = self_expr;
+		sym->s.convert.data = (void *) self_expr;
 	}
 }
 

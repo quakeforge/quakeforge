@@ -50,7 +50,7 @@ typedef struct daglabel_s {
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
-	struct expr_s *expr;		///< expression associated with this label
+	const struct expr_s *expr;	///< expression associated with this label
 } daglabel_t;
 
 typedef struct dagnode_s {

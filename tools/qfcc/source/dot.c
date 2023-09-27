@@ -44,8 +44,8 @@ static function_t *last_func;
 static int dot_index;
 
 void
-dump_dot (const char *stage, void *data,
-		  void (*dump_func) (void *data, const char *fname))
+dump_dot (const char *stage, const void *data,
+		  void (*dump_func) (const void *data, const char *fname))
 {
 	char       *fname;
 

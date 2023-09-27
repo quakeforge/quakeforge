@@ -60,7 +60,7 @@ typedef enum {
 } sy_type_e;
 
 typedef struct symconv_s {
-	struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
+	const struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
 	void       *data;
 } symconv_t;
 
@@ -77,7 +77,7 @@ typedef struct symbol_s {
 		int         offset;			///< sy_var (in a struct/union)
 		struct def_s *def;			///< sy_var
 		struct ex_value_s *value;	///< sy_const
-		struct expr_s *expr;		///< sy_expr
+		const struct expr_s *expr;	///< sy_expr
 		struct function_s *func;	///< sy_func
 		symconv_t   convert;		///< sy_convert
 	} s;
@@ -253,7 +253,7 @@ symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
 struct specifier_s;
-symbol_t *declare_symbol (struct specifier_s spec, struct expr_s *init,
+symbol_t *declare_symbol (struct specifier_s spec, const struct expr_s *init,
 						  symtab_t *symtab);
 symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab);
 

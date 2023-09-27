@@ -57,7 +57,7 @@ ALLOC_STATE (element_t, elements);
 ALLOC_STATE (designator_t, designators);
 
 designator_t *
-new_designator (expr_t *field, expr_t *index)
+new_designator (const expr_t *field, const expr_t *index)
 {
 	if ((!field && !index) || (field && index)) {
 		internal_error (0, "exactly one of field or index is required");
@@ -73,7 +73,7 @@ new_designator (expr_t *field, expr_t *index)
 }
 
 element_t *
-new_element (expr_t *expr, designator_t *designator)
+new_element (const expr_t *expr, designator_t *designator)
 {
 	element_t  *element;
 	ALLOC (256, element_t, elements, element);
@@ -198,7 +198,7 @@ skip_field (symbol_t *field)
 
 void
 build_element_chain (element_chain_t *element_chain, const type_t *type,
-					 expr_t *eles, int base_offset)
+					 const expr_t *eles, int base_offset)
 {
 	element_t  *ele = eles->compound.head;
 
@@ -304,7 +304,7 @@ append_element (expr_t *compound, element_t *element)
 }
 
 void
-assign_elements (expr_t *local_expr, expr_t *init,
+assign_elements (expr_t *local_expr, const expr_t *init,
 				 element_chain_t *element_chain)
 {
 	element_t  *element;
@@ -314,9 +314,9 @@ assign_elements (expr_t *local_expr, expr_t *init,
 	for (element = element_chain->head; element; element = element->next) {
 		int         offset = element->offset;
 		type_t     *type = element->type;
-		expr_t     *alias = new_offset_alias_expr (type, init, offset);
+		const expr_t *alias = new_offset_alias_expr (type, init, offset);
 
-		expr_t     *c;
+		const expr_t *c;
 
 		if (type_size (type) == 0)
 			internal_error (init, "wtw");
@@ -336,9 +336,9 @@ assign_elements (expr_t *local_expr, expr_t *init,
 	for (set_iter_t *in = set_first (initialized); in; in = set_next (in)) {
 		unsigned    end = in->element;
 		if (end > start) {
-			expr_t     *dst = new_offset_alias_expr (&type_int, init, start);
-			expr_t     *zero = new_int_expr (0);
-			expr_t     *count = new_int_expr (end - start);
+			auto dst = new_offset_alias_expr (&type_int, init, start);
+			auto zero = new_int_expr (0);
+			auto count = new_int_expr (end - start);
 			append_expr (local_expr, new_memset_expr (dst, zero, count));
 		}
 		// skip over all the initialized locations
@@ -348,21 +348,21 @@ assign_elements (expr_t *local_expr, expr_t *init,
 		}
 	}
 	if (start < (unsigned) type_size (init_type)) {
-		expr_t     *dst = new_offset_alias_expr (&type_int, init, start);
-		expr_t     *zero = new_int_expr (0);
-		expr_t     *count = new_int_expr (type_size (init_type) - start);
+		auto dst = new_offset_alias_expr (&type_int, init, start);
+		auto zero = new_int_expr (0);
+		auto count = new_int_expr (type_size (init_type) - start);
 		append_expr (local_expr, new_memset_expr (dst, zero, count));
 	}
 	set_delete (initialized);
 }
 
 expr_t *
-initialized_temp_expr (const type_t *type, expr_t *compound)
+initialized_temp_expr (const type_t *type, const expr_t *compound)
 {
 	type = unalias_type (type);
 	element_chain_t element_chain;
 	expr_t     *temp = new_temp_def_expr (type);
-	expr_t     *block = new_block_expr ();
+	expr_t     *block = new_block_expr (0);
 
 	element_chain.head = 0;
 	element_chain.tail = &element_chain.head;

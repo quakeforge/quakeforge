@@ -483,7 +483,7 @@ selector_index (const char *sel_id)
 }
 
 selector_t *
-get_selector (expr_t *sel)
+get_selector (const expr_t *sel)
 {
 	selector_t  _sel = {0, 0, 0};
 
@@ -700,8 +700,8 @@ clear_selectors (void)
 		Hash_FlushTable (known_methods);
 }
 
-expr_t *
-method_check_params (method_t *method, expr_t *args)
+const expr_t *
+method_check_params (method_t *method, const expr_t *args)
 {
 	int         i, param_count;
 	expr_t     *err = 0;
@@ -721,10 +721,10 @@ method_check_params (method_t *method, expr_t *args)
 	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
 		return error (args, "too many arguments");
 
-	expr_t *arg_list[count];
+	const expr_t *arg_list[count];
 	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
-		expr_t     *e = arg_list[i];
+		const expr_t *e = arg_list[i];
 		type_t     *arg_type = mtype->t.func.param_types[i];
 		type_t     *t;
 

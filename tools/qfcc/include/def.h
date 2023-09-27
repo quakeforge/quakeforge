@@ -86,7 +86,7 @@ typedef struct def_s {
 	struct def_s   *alias;		///< real def which this def aliases
 	//@}
 	struct reloc_s *relocs;		///< for relocations
-	struct expr_s  *initializer;///< initialer expression
+	const struct expr_s *initializer;///< initialer expression
 	struct daglabel_s *daglabel;///< daglabel for this def
 	struct flowvar_s *flowvar;	///< flowvar for this def
 
@@ -254,7 +254,7 @@ void init_vector_components (struct symbol_s *vector_sym, int is_field,
 	\param symtab   The symbol table into which the def will be placed.
 */
 void initialize_def (struct symbol_s *sym,
-					 struct expr_s *init, struct defspace_s *space,
+					 const struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage, struct symtab_s *symtab);
 
 /** Convenience function for obtaining a def's actual offset.

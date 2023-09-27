@@ -40,7 +40,7 @@
 
 ALLOC_STATE (attribute_t, attributes);
 
-attribute_t *new_attribute(const char *name, expr_t *params)
+attribute_t *new_attribute(const char *name, const expr_t *params)
 {
 	if (params && params->type != ex_list) {
 		internal_error (params, "attribute params not a list");

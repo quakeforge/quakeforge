@@ -36,12 +36,12 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-expr_t *
-new_vector_list (expr_t *expr_list)
+const expr_t *
+new_vector_list (const expr_t *expr_list)
 {
 	type_t     *ele_type = type_default;
 	int         count = list_count (&expr_list->list);
-	expr_t     *elements[count + 1];
+	const expr_t *elements[count + 1];
 	list_scatter (&expr_list->list, elements);
 	elements[count] = 0;
 
@@ -91,8 +91,8 @@ new_vector_list (expr_t *expr_list)
 			// be only one, but futhre...)
 			for (int i = 1; i < count; i++) {
 				if (is_nonscalar (get_type (elements[i]))) {
-					expr_t     *t = elements[i];
-					int         j = i;
+					auto t = elements[i];
+					int  j = i;
 					for (; j > 0 && is_scalar (get_type (elements[j])); j--) {
 						elements[j] = elements[j - 1];
 					}
@@ -104,7 +104,7 @@ new_vector_list (expr_t *expr_list)
 			if (is_scalar (get_type (elements[0]))
 				&& is_nonscalar (get_type (elements[1]))) {
 				// swap s, v to be v, s (ie, vector always comes before scalar)
-				expr_t     *t = elements[0];
+				auto t = elements[0];
 				elements[0] = elements[1];
 				elements[1] = t;
 			}
@@ -127,13 +127,14 @@ new_vector_list (expr_t *expr_list)
 			offs += type_size (src_type);
 		}
 
-		expr_t     *vec = new_value_expr (new_type_value (vec_type, value));
+		auto vec = (expr_t *) new_value_expr (new_type_value (vec_type, value));
 		vec->implicit = all_implicit;
 		return vec;
 	}
 
 	for (int i = 0; i < count; i++) {
-		elements[i]->next = elements[i + 1];
+		//FIXME this should use ex_list
+		((expr_t *) elements[i])->next = (expr_t *) elements[i + 1];
 	}
 
 	expr_t     *vec = new_expr ();
