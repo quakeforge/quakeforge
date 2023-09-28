@@ -391,18 +391,17 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 	}
 	return mvec;
 }
-#if 0
-static const expr_t *
-extract_extended_neg (const expr_t *expr)
+
+static bool __attribute__((pure))
+is_scale (const expr_t *expr)
 {
-	auto e = expr->extend;
-	return neg_expr (ext_expr (neg_expr (e.src), e.type, e.extend, e.reverse));
+	return expr && expr->type == ex_expr && expr->expr.op == SCALE;
 }
-#endif
+
 static const expr_t * __attribute__((pure))
 traverse_scale (const expr_t *expr)
 {
-	while (expr && expr->type == ex_expr && expr->expr.op == SCALE) {
+	while (is_scale (expr)) {
 		expr = expr->expr.e1;
 	}
 	return expr;
@@ -656,7 +655,7 @@ scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 		b = neg_expr (b);
 	}
 
-	if (a->type == ex_expr && a->expr.op == SCALE) {
+	if (is_scale (a)) {
 		// covert scale (scale (X, y), z) to scale (X, y*z)
 		b = scale_expr (get_type (b), b, a->expr.e2);
 		a = a->expr.e1;
@@ -739,8 +738,22 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 
+	const expr_t *prod = 0;
+	if (is_scale (a)) {
+		prod = a->expr.e2;
+		a = a->expr.e1;
+	}
+	if (is_scale (b)) {
+		auto s = b->expr.e2;
+		prod = prod ? scale_expr (get_type (prod), prod, s) : s;
+		b = b->expr.e1;
+	}
+
 	auto dot = typed_binary_expr (type, DOT, a, b);
 	dot = edag_add_expr (dot);
+	if (prod) {
+		dot = scale_expr (type, dot, prod);
+	}
 	if (neg) {
 		dot = neg_expr (dot);
 		dot = edag_add_expr (dot);
