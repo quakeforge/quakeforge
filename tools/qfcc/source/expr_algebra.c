@@ -631,6 +631,76 @@ component_sum (int op, const expr_t **c, const expr_t **a, const expr_t **b,
 }
 
 static const expr_t *
+distribute_product (type_t *type, int op, const expr_t *a, const expr_t *b,
+					bool (*reject) (const expr_t *a, const expr_t *b))
+{
+	int a_terms = count_terms (a);
+	int b_terms = count_terms (b);
+
+	const expr_t *a_adds[a_terms + 2] = {};
+	const expr_t *a_subs[a_terms + 2] = {};
+	const expr_t *b_adds[b_terms + 2] = {};
+	const expr_t *b_subs[a_terms + 2] = {};
+
+	if (a_terms) {
+		distribute_terms (a, a_adds, a_subs);
+	} else {
+		a_adds[0] = a;
+	}
+
+	if (b_terms) {
+		distribute_terms (b, b_adds, b_subs);
+	} else {
+		b_adds[0] = b;
+	}
+
+	a = b = 0;
+
+	for (auto i = a_adds; *i; i++) {
+		for (auto j = b_adds; *j; j++) {
+			if (!reject || !reject(*i, *j)) {
+				auto p = typed_binary_expr (type, op, *i, *j);
+				p = fold_constants (p);
+				p = edag_add_expr (p);
+				a = sum_expr (type, a, p);
+			}
+		}
+	}
+	for (auto i = a_subs; *i; i++) {
+		for (auto j = b_subs; *j; j++) {
+			if (!reject || !reject(*i, *j)) {
+				auto p = typed_binary_expr (type, op, *i, *j);
+				p = fold_constants (p);
+				p = edag_add_expr (p);
+				a = sum_expr (type, a, p);
+			}
+		}
+	}
+	for (auto i = a_adds; *i; i++) {
+		for (auto j = b_subs; *j; j++) {
+			if (!reject || !reject(*i, *j)) {
+				auto p = typed_binary_expr (type, op, *i, *j);
+				p = fold_constants (p);
+				p = edag_add_expr (p);
+				b = sum_expr (type, b, p);
+			}
+		}
+	}
+	for (auto i = a_subs; *i; i++) {
+		for (auto j = b_adds; *j; j++) {
+			if (!reject || !reject(*i, *j)) {
+				auto p = typed_binary_expr (type, op, *i, *j);
+				p = fold_constants (p);
+				p = edag_add_expr (p);
+				b = sum_expr (type, b, p);
+			}
+		}
+	}
+	auto sum = sum_expr_low (type, '-', a, b);
+	return sum;
+}
+
+static const expr_t *
 scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
@@ -661,7 +731,10 @@ scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 		a = a->expr.e1;
 	}
 
-	auto scale = typed_binary_expr (type, op, a, b);
+	auto scale = distribute_product (type, op, a, b, 0);
+	if (!scale) {
+		return 0;
+	}
 	scale = fold_constants (scale);
 	scale = edag_add_expr (scale);
 	if (neg) {
@@ -709,6 +782,26 @@ check_dot (const expr_t *a, const expr_t *b, int b_count)
 	return collect_terms (get_type (b), b_adds, b_subs);
 }
 
+static bool __attribute__((pure))
+reject_dot (const expr_t *a, const expr_t *b)
+{
+	a = traverse_scale (a);
+	b = traverse_scale (b);
+	if (is_cross (a)) {
+		if (b == traverse_scale (a->expr.e1)
+			|| b == traverse_scale (a->expr.e2)) {
+			return true;
+		}
+	}
+	if (is_cross (b)) {
+		if (a == traverse_scale (b->expr.e1)
+			|| a == traverse_scale (b->expr.e2)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static const expr_t *
 dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 {
@@ -749,7 +842,10 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 		b = b->expr.e1;
 	}
 
-	auto dot = typed_binary_expr (type, DOT, a, b);
+	auto dot = distribute_product (type, DOT, a, b, reject_dot);
+	if (!dot) {
+		return 0;
+	}
 	dot = edag_add_expr (dot);
 	if (prod) {
 		dot = scale_expr (type, dot, prod);
@@ -784,6 +880,12 @@ check_cross (const expr_t *a, const expr_t *b, int b_count)
 	}
 	*d = 0;
 	return collect_terms (get_type (b), b_adds, b_subs);
+}
+
+static bool __attribute__((pure))
+reject_cross (const expr_t *a, const expr_t *b)
+{
+	return traverse_scale (a) == traverse_scale (b);
 }
 
 static const expr_t *
@@ -821,9 +923,18 @@ cross_expr (type_t *type, const expr_t *a, const expr_t *b)
 		b = check_cross (a, b, b_terms);
 	}
 
-	auto cross = typed_binary_expr (type, CROSS, a, b);
+	auto cross = distribute_product (type, CROSS, a, b, reject_cross);
+	if (!cross) {
+		return 0;
+	}
 	cross = edag_add_expr (cross);
 	return cross;
+}
+
+static bool __attribute__((pure))
+reject_wedge (const expr_t *a, const expr_t *b)
+{
+	return traverse_scale (a) == traverse_scale (b);
 }
 
 static const expr_t *
@@ -847,7 +958,10 @@ wedge_expr (type_t *type, const expr_t *a, const expr_t *b)
 		a = b;
 		b = t;
 	}
-	auto wedge = typed_binary_expr (type, WEDGE, a, b);
+	auto wedge = distribute_product (type, WEDGE, a, b, reject_wedge);
+	if (!wedge) {
+		return 0;
+	}
 	wedge = edag_add_expr (wedge);
 	return wedge;
 }
