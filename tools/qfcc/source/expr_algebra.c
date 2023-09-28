@@ -656,6 +656,12 @@ scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 		b = neg_expr (b);
 	}
 
+	if (a->type == ex_expr && a->expr.op == SCALE) {
+		// covert scale (scale (X, y), z) to scale (X, y*z)
+		b = scale_expr (get_type (b), b, a->expr.e2);
+		a = a->expr.e1;
+	}
+
 	auto scale = typed_binary_expr (type, op, a, b);
 	scale = fold_constants (scale);
 	scale = edag_add_expr (scale);
