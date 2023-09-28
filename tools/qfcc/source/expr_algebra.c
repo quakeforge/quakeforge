@@ -856,6 +856,28 @@ scale_component (const expr_t **c, const expr_t *a, const expr_t *b,
 }
 
 static void
+pga3_scale_component (const expr_t **c, const expr_t *a, const expr_t *b,
+					  algebra_t *alg)
+{
+	if (is_algebra (get_type (b))) {
+		auto t = a;
+		a = b;
+		b = t;
+	}
+	b = promote_scalar (alg->type, b);
+
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, 3);
+	auto scale_type = get_type (a);
+	auto va = scale_expr (vtype, offset_cast (vtype, a, 0), b);
+	auto sa = scale_expr (stype, offset_cast (stype, a, 3), b);
+	auto scale = sum_expr (scale_type, ext_expr (va, scale_type, 0, false),
+									   ext_expr (sa, scale_type, 0, true));
+	int  group = get_group (scale_type, alg);
+	c[group] = scale;
+}
+
+static void
 pga3_x_y_z_w_dot_x_y_z_w (const expr_t **c, const expr_t *a, const expr_t *b,
 						  algebra_t *alg)
 {
@@ -1077,7 +1099,7 @@ static pga_func pga3_dot_funcs[6][6] = {
 	[0] = {
 		[0] = pga3_x_y_z_w_dot_x_y_z_w,
 		[1] = pga3_x_y_z_w_dot_yz_zx_xy,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 		[3] = pga3_x_y_z_w_dot_wx_wy_wz,
 		[4] = pga3_x_y_z_w_dot_wxyz,
 		[5] = pga3_x_y_z_w_dot_wzy_wxz_wyx_xyz,
@@ -1090,12 +1112,12 @@ static pga_func pga3_dot_funcs[6][6] = {
 		[5] = pga3_yz_zx_xy_dot_wzy_wxz_wyx_xyz,
 	},
 	[2] = {
-		[0] = scale_component,
+		[0] = pga3_scale_component,
 		[1] = scale_component,
 		[2] = scale_component,
 		[3] = scale_component,
 		[4] = scale_component,
-		[5] = scale_component,
+		[5] = pga3_scale_component,
 	},
 	[3] = {
 		[0] = pga3_wx_wy_wz_dot_x_y_z_w,
@@ -1110,7 +1132,7 @@ static pga_func pga3_dot_funcs[6][6] = {
 	[5] = {
 		[0] = pga3_wzy_wxz_wyx_xyz_dot_x_y_z_w,
 		[1] = pga3_wzy_wxz_wyx_xyz_dot_yz_zx_xy,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 		[4] = pga3_wzy_wxz_wyx_xyz_dot_wxyz,
 		[5] = pga3_wzy_wxz_wyx_xyz_dot_wzy_wxz_wyx_xyz,
 	},
@@ -1506,7 +1528,7 @@ static pga_func pga3_wedge_funcs[6][6] = {
 	[0] = {
 		[0] = pga3_x_y_z_w_wedge_x_y_z_w,
 		[1] = pga3_x_y_z_w_wedge_yz_zx_xy,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 		[3] = pga3_x_y_z_w_wedge_wx_wy_wz,
 		[5] = pga3_x_y_z_w_wedge_wzy_wxz_wyx_xyz,
 	},
@@ -1516,12 +1538,12 @@ static pga_func pga3_wedge_funcs[6][6] = {
 		[3] = pga3_yz_zx_xy_wedge_wx_wy_wz,
 	},
 	[2] = {
-		[0] = scale_component,
+		[0] = pga3_scale_component,
 		[1] = scale_component,
 		[2] = scale_component,
 		[3] = scale_component,
 		[4] = scale_component,
-		[5] = scale_component,
+		[5] = pga3_scale_component,
 	},
 	[3] = {
 		[0] = pga3_wx_wy_wz_wedge_x_y_z_w,
@@ -1533,7 +1555,7 @@ static pga_func pga3_wedge_funcs[6][6] = {
 	},
 	[5] = {
 		[0] = pga3_wzy_wxz_wyx_xyz_wedge_x_y_z_w,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 	},
 };
 
@@ -1970,7 +1992,7 @@ static pga_func pga3_geometric_funcs[6][6] = {
 	[0] = {
 		[0] = pga3_x_y_z_w_geom_x_y_z_w,
 		[1] = pga3_x_y_z_w_geom_yz_zx_xy,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 		[3] = pga3_x_y_z_w_geom_wx_wy_wz,
 		[4] = pga3_x_y_z_w_geom_wxyz,
 		[5] = pga3_x_y_z_w_geom_wzy_wxz_wyx_xyz,
@@ -1984,12 +2006,12 @@ static pga_func pga3_geometric_funcs[6][6] = {
 		[5] = pga3_yz_zx_xy_geom_wzy_wxz_wyx_xyz,
 	},
 	[2] = {
-		[0] = scale_component,
+		[0] = pga3_scale_component,
 		[1] = scale_component,
 		[2] = scale_component,
 		[3] = scale_component,
 		[4] = scale_component,
-		[5] = scale_component,
+		[5] = pga3_scale_component,
 	},
 	[3] = {
 		[0] = pga3_wx_wy_wz_geom_x_y_z_w,
@@ -2006,7 +2028,7 @@ static pga_func pga3_geometric_funcs[6][6] = {
 	[5] = {
 		[0] = pga3_wzy_wxz_wyx_xyz_geom_x_y_z_w,
 		[1] = pga3_wzy_wxz_wyx_xyz_geom_yz_zx_xy,
-		[2] = scale_component,
+		[2] = pga3_scale_component,
 		[3] = pga3_wzy_wxz_wyx_xyz_geom_wx_wy_wz,
 		[4] = pga3_wzy_wxz_wyx_xyz_geom_wxyz,
 		[5] = pga3_wzy_wxz_wyx_xyz_geom_wzy_wxz_wyx_xyz,
