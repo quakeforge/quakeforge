@@ -139,6 +139,19 @@ ext_expr (const expr_t *src, type_t *type, int extend, bool reverse)
 	return ext;
 }
 
+static bool __attribute__((const))
+ext_compat (const ex_extend_t *a, const ex_extend_t *b)
+{
+	return (a->extend == b->extend && a->reverse == b->reverse
+			&& a->type == b->type);
+}
+
+static bool __attribute__((const))
+is_ext (const expr_t *e)
+{
+	return e && e->type == ex_extend;
+}
+
 static const expr_t *
 alias_expr (type_t *type, const expr_t *e, int offset)
 {
@@ -379,14 +392,6 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 	return mvec;
 }
 #if 0
-static bool __attribute__((const))
-ext_compat (const expr_t *a, const expr_t *b)
-{
-	return (a->extend.extend == b->extend.extend
-			&& a->extend.reverse == b->extend.reverse
-			&& a->extend.type == b->extend.type);
-}
-
 static const expr_t *
 extract_extended_neg (const expr_t *expr)
 {
@@ -514,6 +519,43 @@ collect_terms (type_t *type, const expr_t **adds, const expr_t **subs)
 }
 
 static const expr_t *
+sum_expr (type_t *type, const expr_t *a, const expr_t *b);
+
+static void
+merge_extends (const expr_t **adds, const expr_t **subs)
+{
+	for (auto scan = adds; *scan; scan++) {
+		if (!is_ext (*scan)) {
+			continue;
+		}
+		auto extend = (*scan)->extend;
+		auto type = get_type (extend.src);
+		auto dst = scan + 1;
+		for (auto src = dst; *src; src++) {
+			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
+				extend.src = sum_expr (type, extend.src,
+										   (*src)->extend.src);
+			} else {
+				*dst++ = *src;
+			}
+		}
+		*dst = 0;
+		dst = subs;
+		for (auto src = dst; *src; src++) {
+			if (is_ext (*src) && ext_compat (&extend, &(*src)->extend)) {
+				extend.src = sum_expr (type, extend.src,
+									   neg_expr ((*src)->extend.src));
+			} else {
+				*dst++ = *src;
+			}
+		}
+		*scan = ext_expr (extend.src, extend.type,
+						  extend.extend, extend.reverse);
+		*dst = 0;
+	}
+}
+
+static const expr_t *
 sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a) {
@@ -530,6 +572,8 @@ sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 	distribute_terms (sum, adds, subs);
 	const expr_t **dstadd, **srcadd;
 	const expr_t **dstsub, **srcsub;
+
+	merge_extends (adds, subs);
 
 	for (dstadd = adds, srcadd = adds; *srcadd; srcadd++) {
 		for (dstsub = subs, srcsub = subs; *srcsub; srcsub++) {
@@ -684,6 +728,9 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 		a = check_dot (b, a, a_terms);
 	} else if (!a_terms && b_terms) {
 		b = check_dot (a, b, b_terms);
+	}
+	if (!a || !b) {
+		return 0;
 	}
 
 	auto dot = typed_binary_expr (type, DOT, a, b);
