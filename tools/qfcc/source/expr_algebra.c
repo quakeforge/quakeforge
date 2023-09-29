@@ -494,6 +494,7 @@ sum_expr_low (type_t *type, int op, const expr_t *a, const expr_t *b)
 	}
 
 	auto sum = typed_binary_expr (type, op, a, b);
+	sum = fold_constants (sum);
 	sum = edag_add_expr (sum);
 	return sum;
 }
@@ -756,46 +757,9 @@ scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 	if (!scale) {
 		return 0;
 	}
-	scale = fold_constants (scale);
-	scale = edag_add_expr (scale);
 	scale = cast_expr (type, scale);
 	scale = edag_add_expr (scale);
 	return scale;
-}
-
-static const expr_t *
-check_dot (const expr_t *a, const expr_t *b, int b_count)
-{
-	const expr_t *b_adds[b_count + 1] = {};
-	const expr_t *b_subs[b_count + 1] = {};
-
-	a = traverse_scale (a);
-
-	distribute_terms (b, b_adds, b_subs);
-	const expr_t **s, **d;
-	for (s = b_adds, d = s; *s; s++) {
-		auto c = traverse_scale (*s);
-		if (is_cross (c)) {
-			if (a == traverse_scale (c->expr.e1)
-				|| a == traverse_scale (c->expr.e2)) {
-				continue;
-			}
-		}
-		*d++ = *s;
-	}
-	*d = 0;
-	for (s = b_subs, d = s; *s; s++) {
-		auto c = traverse_scale (*s);
-		if (is_cross (c)) {
-			if (a == traverse_scale (c->expr.e1)
-				|| a == traverse_scale (c->expr.e2)) {
-				continue;
-			}
-		}
-		*d++ = *s;
-	}
-	*d = 0;
-	return collect_terms (get_type (b), b_adds, b_subs);
 }
 
 static bool __attribute__((pure))
@@ -826,18 +790,6 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 
-	int a_terms = count_terms (a);
-	int b_terms = count_terms (b);
-
-	if (a_terms && !b_terms) {
-		a = check_dot (b, a, a_terms);
-	} else if (!a_terms && b_terms) {
-		b = check_dot (a, b, b_terms);
-	}
-	if (!a || !b) {
-		return 0;
-	}
-
 	const expr_t *prod = 0;
 	if (is_scale (a)) {
 		prod = a->expr.e2;
@@ -853,36 +805,10 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 	if (!dot) {
 		return 0;
 	}
-	dot = edag_add_expr (dot);
 	if (prod) {
 		dot = scale_expr (type, dot, prod);
 	}
 	return dot;
-}
-
-static const expr_t *
-check_cross (const expr_t *a, const expr_t *b, int b_count)
-{
-	const expr_t *b_adds[b_count + 1] = {};
-	const expr_t *b_subs[b_count + 1] = {};
-
-	a = traverse_scale (a);
-
-	distribute_terms (b, b_adds, b_subs);
-	const expr_t **s, **d;
-	for (s = b_adds, d = s; *s; s++) {
-		if (a != traverse_scale (*s)) {
-			*d++ = *s;
-		}
-	}
-	*d = 0;
-	for (s = b_subs, d = s; *s; s++) {
-		if (a != traverse_scale (*s)) {
-			*d++ = *s;
-		}
-	}
-	*d = 0;
-	return collect_terms (get_type (b), b_adds, b_subs);
 }
 
 static bool __attribute__((pure))
@@ -899,24 +825,7 @@ cross_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 
-	if (traverse_scale (a) == traverse_scale (b)) {
-		return 0;
-	}
-
-	int a_terms = count_terms (a);
-	int b_terms = count_terms (b);
-
-	if (a_terms && !b_terms) {
-		a = check_cross (b, a, a_terms);
-	} else if (!a_terms && b_terms) {
-		b = check_cross (a, b, b_terms);
-	}
-
 	auto cross = distribute_product (type, CROSS, a, b, reject_cross);
-	if (!cross) {
-		return 0;
-	}
-	cross = edag_add_expr (cross);
 	return cross;
 }
 
@@ -934,10 +843,6 @@ wedge_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 	auto wedge = distribute_product (type, WEDGE, a, b, reject_wedge);
-	if (!wedge) {
-		return 0;
-	}
-	wedge = edag_add_expr (wedge);
 	return wedge;
 }
 
