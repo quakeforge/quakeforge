@@ -114,13 +114,13 @@ test_wedge (void)
 
 	c = a.bvec ∧ (vecc ∧ vecd);
 	if ((scalar_t)c != -842) {
-		printf ("a ∧ (vecc ∧ vecd) != -742': %g\n", c);
+		printf ("a ∧ (vecc ∧ vecd) != -842': %g\n", c);
 		return 1;
 	}
 
 	c = (vecd ∧ vecc) ∧ a.bvec;
 	if ((scalar_t)c != 842) {
-		printf ("(vecd ∧ vecc) ∧ a != 742': %g\n", c);
+		printf ("(vecd ∧ vecc) ∧ a != 842': %g\n", c);
 		return 1;
 	}
 	return 0;
