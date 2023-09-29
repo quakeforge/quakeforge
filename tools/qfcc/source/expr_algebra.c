@@ -590,6 +590,7 @@ sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 				break;
 			}
 		}
+		dstsub = srcsub;
 		if (*srcsub++) {
 			// found a-a
 			while (*srcsub) {
@@ -621,9 +622,6 @@ component_sum (int op, const expr_t **c, const expr_t **a, const expr_t **b,
 			} else {
 				c[i] = sum_expr (sum_type, a[i], neg_expr (b[i]));
 			}
-			if (c[i]) {
-				c[i] = fold_constants (c[i]);
-			}
 		} else if (a[i]) {
 			c[i] = a[i];
 		} else if (b[i]) {
@@ -631,7 +629,6 @@ component_sum (int op, const expr_t **c, const expr_t **a, const expr_t **b,
 				c[i] = b[i];
 			} else {
 				c[i] = neg_expr (b[i]);
-				c[i] = fold_constants (c[i]);
 			}
 		} else {
 			c[i] = 0;
