@@ -752,6 +752,8 @@ static const expr_t *
 apply_scale (type_t *type, const expr_t *expr, const expr_t *prod)
 {
 	if (expr && prod) {
+		expr = fold_constants (expr);
+		expr = edag_add_expr (expr);
 		expr = scale_expr (type, expr, prod);
 	}
 	return expr;
