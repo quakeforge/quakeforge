@@ -766,6 +766,10 @@ do_mult (type_t *type, const expr_t *a, const expr_t *b)
 static const expr_t *
 do_scale (type_t *type, const expr_t *a, const expr_t *b)
 {
+	const expr_t *prod = extract_scale (&a, b);
+	if (prod) {
+		b = prod;
+	}
 	return typed_binary_expr (type, SCALE, a, b);
 }
 
@@ -781,11 +785,6 @@ scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 	}
 	if (!is_real (get_type (b))) {
 		internal_error (b, "not a real scalar type");
-	}
-
-	const expr_t *prod = extract_scale (&a, b);
-	if (prod) {
-		b = prod;
 	}
 
 	auto op = is_scalar (get_type (a)) ? do_mult : do_scale;
@@ -824,7 +823,14 @@ do_dot (type_t *type, const expr_t *a, const expr_t *b)
 	if (reject_dot (a, b)) {
 		return 0;
 	}
-	return typed_binary_expr (type, DOT, a, b);
+
+	const expr_t *prod = 0;
+	prod = extract_scale (&a, prod);
+	prod = extract_scale (&b, prod);
+
+	auto dot = typed_binary_expr (type, DOT, a, b);
+	dot = apply_scale (type, dot, prod);
+	return dot;
 }
 
 static const expr_t *
@@ -835,12 +841,7 @@ dot_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 
-	const expr_t *prod = 0;
-	prod = extract_scale (&a, prod);
-	prod = extract_scale (&b, prod);
-
 	auto dot = distribute_product (type, a, b, do_dot, false);
-	dot = apply_scale (type, dot, prod);
 	return dot;
 }
 
@@ -856,7 +857,14 @@ do_cross (type_t *type, const expr_t *a, const expr_t *b)
 	if (reject_cross (a, b)) {
 		return 0;
 	}
-	return typed_binary_expr (type, CROSS, a, b);
+
+	const expr_t *prod = 0;
+	prod = extract_scale (&a, prod);
+	prod = extract_scale (&b, prod);
+
+	auto cross = typed_binary_expr (type, CROSS, a, b);
+	cross = apply_scale (type, cross, prod);
+	return cross;
 }
 
 static const expr_t *
@@ -867,12 +875,7 @@ cross_expr (type_t *type, const expr_t *a, const expr_t *b)
 		return 0;
 	}
 
-	const expr_t *prod = 0;
-	prod = extract_scale (&a, prod);
-	prod = extract_scale (&b, prod);
-
 	auto cross = distribute_product (type, a, b, do_cross, true);
-	cross = apply_scale (type, cross, prod);
 	return cross;
 }
 
@@ -888,7 +891,14 @@ do_wedge (type_t *type, const expr_t *a, const expr_t *b)
 	if (reject_wedge (a, b)) {
 		return 0;
 	}
-	return typed_binary_expr (type, WEDGE, a, b);
+
+	const expr_t *prod = 0;
+	prod = extract_scale (&a, prod);
+	prod = extract_scale (&b, prod);
+
+	auto wedge = typed_binary_expr (type, WEDGE, a, b);
+	wedge = apply_scale (type, wedge, prod);
+	return wedge;
 }
 
 static const expr_t *
@@ -898,13 +908,7 @@ wedge_expr (type_t *type, const expr_t *a, const expr_t *b)
 		// propagated zero
 		return 0;
 	}
-
-	const expr_t *prod = 0;
-	prod = extract_scale (&a, prod);
-	prod = extract_scale (&b, prod);
-
 	auto wedge = distribute_product (type, a, b, do_wedge, true);
-	wedge = apply_scale (type, wedge, prod);
 	return wedge;
 }
 
