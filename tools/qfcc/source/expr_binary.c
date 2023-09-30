@@ -47,6 +47,7 @@ typedef struct {
 	const expr_t *(*process)(int op, const expr_t *e1, const expr_t *e2);
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
+	bool      (*associative) (void);
 } expr_type_t;
 
 static const expr_t *pointer_arithmetic (int op, const expr_t *e1,
@@ -70,19 +71,29 @@ static bool always (void)
 	return true;
 }
 
-static bool fp_add (void)
+static bool fp_com_add (void)
 {
 	return options.code.commute_float_add;
 }
 
-static bool fp_mul (void)
+static bool fp_com_mul (void)
 {
 	return options.code.commute_float_mul;
 }
 
-static bool fp_dot (void)
+static bool fp_com_dot (void)
 {
 	return options.code.commute_float_dot;
+}
+
+static bool fp_ass_add (void)
+{
+	return options.code.assoc_float_add;
+}
+
+static bool fp_ass_mul (void)
+{
+	return options.code.assoc_float_mul;
 }
 
 static expr_type_t string_string[] = {
@@ -97,13 +108,19 @@ static expr_type_t string_string[] = {
 };
 
 static expr_type_t float_float[] = {
-	{'+',	&type_float, .commutative = fp_add},
-	{'-',	&type_float, .anticommute = fp_add},
-	{'*',	&type_float, .commutative = fp_mul},
+	{'+',	&type_float,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_float,
+		.anticommute = fp_com_add},
+	{'*',	&type_float,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float},
-	{'&',	&type_float, .commutative = always},
-	{'|',	&type_float, .commutative = always},
-	{'^',	&type_float, .commutative = always},
+	{'&',	&type_float,
+		.commutative = always, .associative = always},
+	{'|',	&type_float,
+		.commutative = always, .associative = always},
+	{'^',	&type_float,
+		.commutative = always, .associative = always},
 	{'%',	&type_float},
 	{MOD,	&type_float},
 	{SHL,	&type_float},
@@ -130,13 +147,19 @@ static expr_type_t float_quat[] = {
 };
 
 static expr_type_t float_int[] = {
-	{'+',	&type_float, 0, &type_float, .commutative = fp_add},
-	{'-',	&type_float, 0, &type_float, .anticommute = fp_add},
-	{'*',	&type_float, 0, &type_float, .commutative = fp_mul},
+	{'+',	&type_float, 0, &type_float,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_float, 0, &type_float,
+		.anticommute = fp_com_add},
+	{'*',	&type_float, 0, &type_float,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float, 0, &type_float},
-	{'&',	&type_float, 0, &type_float, .commutative = always},
-	{'|',	&type_float, 0, &type_float, .commutative = always},
-	{'^',	&type_float, 0, &type_float, .commutative = always},
+	{'&',	&type_float, 0, &type_float,
+		.commutative = always, .associative = always},
+	{'|',	&type_float, 0, &type_float,
+		.commutative = always, .associative = always},
+	{'^',	&type_float, 0, &type_float,
+		.commutative = always, .associative = always},
 	{'%',	&type_float, 0, &type_float},
 	{MOD,	&type_float, 0, &type_float},
 	{SHL,	&type_float, 0, &type_float},
@@ -153,9 +176,12 @@ static expr_type_t float_int[] = {
 #define float_short float_int
 
 static expr_type_t float_double[] = {
-	{'+',	&type_double, &type_double, 0, .commutative = fp_add},
-	{'-',	&type_double, &type_double, 0, .anticommute = fp_add},
-	{'*',	&type_double, &type_double, 0, .commutative = fp_mul},
+	{'+',	&type_double, &type_double, 0,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_double, &type_double, 0,
+		.anticommute = fp_com_add},
+	{'*',	&type_double, &type_double, 0,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{MOD,	&type_double, &type_double, 0},
@@ -175,11 +201,16 @@ static expr_type_t vector_float[] = {
 };
 
 static expr_type_t vector_vector[] = {
-	{'+',	&type_vector, .commutative = fp_add},
-	{'-',	&type_vector, .anticommute = fp_add},
-	{DOT,	.process = vector_dot, .commutative = fp_dot},
-	{CROSS,	&type_vector, .anticommute = fp_add},
-	{HADAMARD,	&type_vector, .commutative = fp_mul},
+	{'+',	&type_vector,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_vector,
+		.anticommute = fp_com_add},
+	{DOT,	.process = vector_dot,
+		.commutative = fp_com_dot},
+	{CROSS,	&type_vector,
+		.anticommute = fp_com_add},
+	{HADAMARD,	&type_vector,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'*',	.process = vector_multiply},
 	{EQ,	.process = vector_compare},
 	{NE,	.process = vector_compare},
@@ -245,9 +276,11 @@ static expr_type_t quat_vector[] = {
 };
 
 static expr_type_t quat_quat[] = {
-	{'+',	&type_quaternion, .commutative = fp_add},
-	{'-',	&type_quaternion, .anticommute = fp_add},
-	{'*',	&type_quaternion},
+	{'+',	&type_quaternion,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_quaternion,
+		.anticommute = fp_com_add},
+	{'*',	&type_quaternion, .associative = always},
 	{EQ,	&type_int},
 	{NE,	&type_int},
 	{0, 0}
@@ -268,13 +301,19 @@ static expr_type_t quat_double[] = {
 };
 
 static expr_type_t int_float[] = {
-	{'+',	&type_float, &type_float, 0, .commutative = fp_add},
-	{'-',	&type_float, &type_float, 0, .anticommute = fp_add},
-	{'*',	&type_float, &type_float, 0, .commutative = fp_mul},
+	{'+',	&type_float, &type_float, 0,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_float, &type_float, 0,
+		.anticommute = fp_com_add},
+	{'*',	&type_float, &type_float, 0,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float, &type_float, 0},
-	{'&',	&type_float, &type_float, 0, .commutative = always},
-	{'|',	&type_float, &type_float, 0, .commutative = always},
-	{'^',	&type_float, &type_float, 0, .commutative = always},
+	{'&',	&type_float, &type_float, 0,
+		.commutative = always, .associative = always},
+	{'|',	&type_float, &type_float, 0,
+		.commutative = always, .associative = always},
+	{'^',	&type_float, &type_float, 0,
+		.commutative = always, .associative = always},
 	{'%',	&type_float, &type_float, 0},
 	{MOD,	&type_float, &type_float, 0},
 	{SHL,	&type_int, 0, &type_int},	//FIXME?
@@ -304,13 +343,19 @@ static expr_type_t int_quat[] = {
 };
 
 static expr_type_t int_int[] = {
-	{'+',	&type_int, .commutative = always},
-	{'-',	&type_int, .anticommute = always},
-	{'*',	&type_int, .commutative = always},
+	{'+',	&type_int,
+		.commutative = always, .associative = always},
+	{'-',	&type_int,
+		.anticommute = always},
+	{'*',	&type_int,
+		.commutative = always, .associative = always},
 	{'/',	&type_int},
-	{'&',	&type_int, .commutative = always},
-	{'|',	&type_int, .commutative = always},
-	{'^',	&type_int, .commutative = always},
+	{'&',	&type_int,
+		.commutative = always, .associative = always},
+	{'|',	&type_int,
+		.commutative = always, .associative = always},
+	{'^',	&type_int,
+		.commutative = always, .associative = always},
 	{'%',	&type_int},
 	{MOD,	&type_int},
 	{SHL,	&type_int},
@@ -327,13 +372,19 @@ static expr_type_t int_int[] = {
 };
 
 static expr_type_t int_uint[] = {
-	{'+',	&type_int, 0, &type_int, .commutative = always},
-	{'-',	&type_int, 0, &type_int, .anticommute = always},
-	{'*',	&type_int, 0, &type_int, .commutative = always},
+	{'+',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'-',	&type_int, 0, &type_int,
+		.anticommute = always},
+	{'*',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
 	{'/',	&type_int, 0, &type_int},
-	{'&',	&type_int, 0, &type_int, .commutative = always},
-	{'|',	&type_int, 0, &type_int, .commutative = always},
-	{'^',	&type_int, 0, &type_int, .commutative = always},
+	{'&',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'|',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'^',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
 	{'%',	&type_int, 0, &type_int},
 	{MOD,	&type_int, 0, &type_int},
 	{SHL,	&type_int, 0, &type_int},
@@ -348,13 +399,19 @@ static expr_type_t int_uint[] = {
 };
 
 static expr_type_t int_short[] = {
-	{'+',	&type_int, 0, &type_int, .commutative = always},
-	{'-',	&type_int, 0, &type_int, .anticommute = always},
-	{'*',	&type_int, 0, &type_int, .commutative = always},
+	{'+',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'-',	&type_int, 0, &type_int,
+		.anticommute = always},
+	{'*',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
 	{'/',	&type_int, 0, &type_int},
-	{'&',	&type_int, 0, &type_int, .commutative = always},
-	{'|',	&type_int, 0, &type_int, .commutative = always},
-	{'^',	&type_int, 0, &type_int, .commutative = always},
+	{'&',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'|',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
+	{'^',	&type_int, 0, &type_int,
+		.commutative = always, .associative = always},
 	{'%',	&type_int, 0, &type_int},
 	{MOD,	&type_int, 0, &type_int},
 	{SHL,	&type_int, 0, &type_int},
@@ -369,9 +426,12 @@ static expr_type_t int_short[] = {
 };
 
 static expr_type_t int_double[] = {
-	{'+',	&type_double, &type_double, 0, .commutative = fp_add},
-	{'-',	&type_double, &type_double, 0, .anticommute = fp_add},
-	{'*',	&type_double, &type_double, 0, .commutative = fp_mul},
+	{'+',	&type_double, &type_double, 0,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_double, &type_double, 0,
+		.anticommute = fp_com_add},
+	{'*',	&type_double, &type_double, 0,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{MOD,	&type_double, &type_double, 0},
@@ -390,13 +450,19 @@ static expr_type_t int_double[] = {
 #define uint_quat int_quat
 
 static expr_type_t uint_int[] = {
-	{'+',	&type_int, &type_int, &type_int, .commutative = always},
-	{'-',	&type_int, &type_int, &type_int, .anticommute = always },
-	{'*',	&type_int, &type_int, &type_int, .commutative = always},
+	{'+',	&type_int, &type_int, &type_int,
+		.commutative = always, .associative = always},
+	{'-',	&type_int, &type_int, &type_int,
+		.anticommute = always },
+	{'*',	&type_int, &type_int, &type_int,
+		.commutative = always, .associative = always},
 	{'/',	&type_int, &type_int, &type_int },
-	{'&',	&type_int, &type_int, &type_int, .commutative = always},
-	{'|',	&type_int, &type_int, &type_int, .commutative = always},
-	{'^',	&type_int, &type_int, &type_int, .commutative = always},
+	{'&',	&type_int, &type_int, &type_int,
+		.commutative = always, .associative = always},
+	{'|',	&type_int, &type_int, &type_int,
+		.commutative = always, .associative = always},
+	{'^',	&type_int, &type_int, &type_int,
+		.commutative = always, .associative = always},
 	{'%',	&type_int, &type_int, &type_int },
 	{MOD,	&type_int, &type_int, &type_int },
 	{SHL,	&type_uint, &type_int, &type_int },
@@ -411,13 +477,19 @@ static expr_type_t uint_int[] = {
 };
 
 static expr_type_t uint_uint[] = {
-	{'+',	&type_uint, .commutative = always},
-	{'-',	&type_uint, .commutative = always},
-	{'*',	&type_uint, .commutative = always},
+	{'+',	&type_uint,
+		.commutative = always, .associative = always},
+	{'-',	&type_uint,
+		.anticommute = always},
+	{'*',	&type_uint,
+		.commutative = always, .associative = always},
 	{'/',	&type_uint},
-	{'&',	&type_uint, .commutative = always},
-	{'|',	&type_uint, .commutative = always},
-	{'^',	&type_uint, .commutative = always},
+	{'&',	&type_uint,
+		.commutative = always, .associative = always},
+	{'|',	&type_uint,
+		.commutative = always, .associative = always},
+	{'^',	&type_uint,
+		.commutative = always, .associative = always},
 	{'%',	&type_uint},
 	{MOD,	&type_uint},
 	{SHL,	&type_uint},
@@ -439,13 +511,19 @@ static expr_type_t uint_uint[] = {
 #define short_quat int_quat
 
 static expr_type_t short_int[] = {
-	{'+',	&type_int, &type_int, 0, .commutative = always},
-	{'-',	&type_int, &type_int, 0, .commutative = always},
-	{'*',	&type_int, &type_int, 0, .commutative = always},
+	{'+',	&type_int, &type_int, 0,
+		.commutative = always, .associative = always},
+	{'-',	&type_int, &type_int, 0,
+		.anticommute = always},
+	{'*',	&type_int, &type_int, 0,
+		.commutative = always, .associative = always},
 	{'/',	&type_int, &type_int, 0},
-	{'&',	&type_int, &type_int, 0, .commutative = always},
-	{'|',	&type_int, &type_int, 0, .commutative = always},
-	{'^',	&type_int, &type_int, 0, .commutative = always},
+	{'&',	&type_int, &type_int, 0,
+		.commutative = always, .associative = always},
+	{'|',	&type_int, &type_int, 0,
+		.commutative = always, .associative = always},
+	{'^',	&type_int, &type_int, 0,
+		.commutative = always, .associative = always},
 	{'%',	&type_int, &type_int, 0},
 	{MOD,	&type_int, &type_int, 0},
 	{SHL,	&type_short},
@@ -460,13 +538,19 @@ static expr_type_t short_int[] = {
 };
 
 static expr_type_t short_uint[] = {
-	{'+',	&type_uint, &type_uint, 0, .commutative = always},
-	{'-',	&type_uint, &type_uint, 0, .commutative = always},
-	{'*',	&type_uint, &type_uint, 0, .commutative = always},
+	{'+',	&type_uint, &type_uint, 0,
+		.commutative = always},
+	{'-',	&type_uint, &type_uint, 0,
+		.anticommute = always},
+	{'*',	&type_uint, &type_uint, 0,
+		.commutative = always},
 	{'/',	&type_uint, &type_uint, 0},
-	{'&',	&type_uint, &type_uint, 0, .commutative = always},
-	{'|',	&type_uint, &type_uint, 0, .commutative = always},
-	{'^',	&type_uint, &type_uint, 0, .commutative = always},
+	{'&',	&type_uint, &type_uint, 0,
+		.commutative = always},
+	{'|',	&type_uint, &type_uint, 0,
+		.commutative = always},
+	{'^',	&type_uint, &type_uint, 0,
+		.commutative = always},
 	{'%',	&type_uint, &type_uint, 0},
 	{MOD,	&type_uint, &type_uint, 0},
 	{SHL,	&type_short},
@@ -503,9 +587,12 @@ static expr_type_t short_short[] = {
 #define short_double int_double
 
 static expr_type_t double_float[] = {
-	{'+',	&type_double, 0, &type_double, .commutative = fp_add},
-	{'-',	&type_double, 0, &type_double, .anticommute = fp_add},
-	{'*',	&type_double, 0, &type_double, .commutative = fp_mul},
+	{'+',	&type_double, 0, &type_double,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_double, 0, &type_double,
+		.anticommute = fp_com_add},
+	{'*',	&type_double, 0, &type_double,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
 	{MOD,	&type_double, 0, &type_double},
@@ -529,9 +616,12 @@ static expr_type_t double_quat[] = {
 };
 
 static expr_type_t double_int[] = {
-	{'+',	&type_double, 0, &type_double, .commutative = fp_add},
-	{'-',	&type_double, 0, &type_double, .anticommute = fp_add},
-	{'*',	&type_double, 0, &type_double, .commutative = fp_mul},
+	{'+',	&type_double, 0, &type_double,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_double, 0, &type_double,
+		.anticommute = fp_com_add},
+	{'*',	&type_double, 0, &type_double,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
 	{MOD,	&type_double, 0, &type_double},
@@ -547,9 +637,12 @@ static expr_type_t double_int[] = {
 #define double_short double_int
 
 static expr_type_t double_double[] = {
-	{'+',	&type_double, .commutative = fp_add},
-	{'-',	&type_double, .anticommute = fp_add},
-	{'*',	&type_double, .commutative = fp_mul},
+	{'+',	&type_double,
+		.commutative = fp_com_add, .associative = fp_ass_add},
+	{'-',	&type_double,
+		.anticommute = fp_com_add},
+	{'*',	&type_double,
+		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double},
 	{'%',	&type_double},
 	{MOD,	&type_double},
@@ -563,13 +656,19 @@ static expr_type_t double_double[] = {
 };
 
 static expr_type_t long_long[] = {
-	{'+',	&type_long, .commutative = always},
-	{'-',	&type_long, .anticommute = fp_add},
-	{'*',	&type_long, .commutative = always},
+	{'+',	&type_long,
+		.commutative = always},
+	{'-',	&type_long,
+		.anticommute = always},
+	{'*',	&type_long,
+		.commutative = always},
 	{'/',	&type_long},
-	{'&',	&type_long, .commutative = always},
-	{'|',	&type_long, .commutative = always},
-	{'^',	&type_long, .commutative = always},
+	{'&',	&type_long,
+		.commutative = always},
+	{'|',	&type_long,
+		.commutative = always},
+	{'^',	&type_long,
+		.commutative = always},
 	{'%',	&type_long},
 	{MOD,	&type_long},
 	{SHL,	&type_long},
@@ -584,13 +683,19 @@ static expr_type_t long_long[] = {
 };
 
 static expr_type_t ulong_ulong[] = {
-	{'+',	&type_ulong, .commutative = always},
-	{'-',	&type_ulong, .anticommute = always},
-	{'*',	&type_ulong, .commutative = always},
+	{'+',	&type_ulong,
+		.commutative = always},
+	{'-',	&type_ulong,
+		.anticommute = always},
+	{'*',	&type_ulong,
+		.commutative = always},
 	{'/',	&type_ulong},
-	{'&',	&type_ulong, .commutative = always},
-	{'|',	&type_ulong, .commutative = always},
-	{'^',	&type_ulong, .commutative = always},
+	{'&',	&type_ulong,
+		.commutative = always},
+	{'|',	&type_ulong,
+		.commutative = always},
+	{'^',	&type_ulong,
+		.commutative = always},
 	{'%',	&type_ulong},
 	{MOD,	&type_ulong},
 	{SHL,	&type_ulong},

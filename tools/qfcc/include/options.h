@@ -50,6 +50,8 @@ typedef struct {
 	bool        commute_float_add;	// allow fp addition to commute
 	bool        commute_float_mul;	// allow fp multiplication to commute
 	bool        commute_float_dot;	// allow fp dot product to commute
+	bool        assoc_float_add;	// allow fp addition to be associative
+	bool        assoc_float_mul;	// allow fp multiplication to be associative
 
 	bool        help;
 } code_options_t;
