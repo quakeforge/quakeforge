@@ -454,6 +454,40 @@ algebra_alignment (const type_t *type, int width)
 	return type->alignment * BITOP_RUP (width);
 }
 
+static symbol_t *
+mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
+{
+	int count = 0;
+	for (int i = 0; i < algebra->layout.count; i++) {
+		if (group_mask & (1 << i)) {
+			count++;
+		}
+	}
+
+	const char **mv_names = 0;
+	if (algebra->dimension < 5) {
+		mv_names = mvec_names[algebra->dimension];
+	}
+	struct_def_t fields[count + 1] = {};
+	for (int i = 0, c = 0; i < algebra->layout.count; i++) {
+		pr_uint_t   mask = 1 << i;
+		if (group_mask & mask) {
+			const char *name;
+			if (mv_names) {
+				name = mv_names[i];
+			} else {
+				name = va (0, "group_%d", i);
+			}
+			fields[c] = (struct_def_t) {
+				.name = save_string (name),
+				.type = type ? type : algebra_mvec_type (algebra, mask),
+			};
+			c++;
+		};
+	};
+	return make_structure (0, 's', fields, 0);
+}
+
 type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 {
@@ -461,38 +495,15 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		internal_error (0, "invalid group_mask");
 	}
 	if (!algebra->mvec_types[group_mask]) {
-		int count = 0;
 		int components = 0;
 		for (int i = 0; i < algebra->layout.count; i++) {
 			if (group_mask & (1 << i)) {
 				components += algebra->layout.groups[i].count;
-				count++;
 			}
 		}
 		symbol_t   *mvec_sym = 0;
 		if (group_mask & (group_mask - 1)) {
-			const char **mv_names = 0;
-			if (algebra->dimension < 5) {
-				mv_names = mvec_names[algebra->dimension];
-			}
-			struct_def_t fields[count + 1] = {};
-			for (int i = 0, c = 0; i < algebra->layout.count; i++) {
-				pr_uint_t   mask = 1 << i;
-				if (group_mask & mask) {
-					const char *name;
-					if (mv_names) {
-						name = mv_names[i];
-					} else {
-						name = va (0, "group_%d", i);
-					}
-					fields[c] = (struct_def_t) {
-						.name = save_string (name),
-						.type = algebra_mvec_type (algebra, mask),
-					};
-					c++;
-				};
-			};
-			mvec_sym = make_structure (0, 's', fields, 0);
+			mvec_sym = mvec_struct (algebra, group_mask, 0);
 		}
 		multivector_t *mvec = malloc (sizeof (multivector_t));
 		*mvec = (multivector_t) {
@@ -501,8 +512,8 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 			.algebra = algebra,
 			.mvec_sym = mvec_sym,
 		};
-		algebra->mvec_types[group_mask] = new_type ();
-		*algebra->mvec_types[group_mask] = (type_t) {
+		auto type = algebra->mvec_types[group_mask] = new_type ();
+		*type = (type_t) {
 			.type = algebra->type->type,
 			.name = save_string (va (0, "algebra(%s(%d,%d,%d):%04x)",
 									 algebra->type->name,
@@ -516,6 +527,9 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 			.allocated = true,
 		};
 		chain_type (algebra->mvec_types[group_mask]);
+		if (!(group_mask & (group_mask - 1))) {
+			mvec->mvec_sym = mvec_struct (algebra, group_mask, type);
+		}
 	}
 	return algebra->mvec_types[group_mask];
 }
