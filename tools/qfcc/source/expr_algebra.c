@@ -27,7 +27,10 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <string.h>
 
+#include "QF/fbsearch.h"
+#include "QF/heapsort.h"
 #include "QF/math/bitop.h"
 
 #include "tools/qfcc/include/algebra.h"
@@ -422,6 +425,13 @@ is_sum (const expr_t *expr)
 			&& (expr->expr.op == '+' || expr->expr.op == '-'));
 }
 
+static bool __attribute__((pure))
+is_mult (const expr_t *expr)
+{
+	return (expr && expr->type == ex_expr
+			&& (expr->expr.op == '*' || expr->expr.op == HADAMARD));
+}
+
 static int __attribute__((pure))
 count_terms (const expr_t *expr)
 {
@@ -440,10 +450,130 @@ count_terms (const expr_t *expr)
 	return terms;
 }
 
+static int __attribute__((pure))
+count_factors (const expr_t *expr)
+{
+	if (!is_mult (expr)) {
+		return 0;
+	}
+	auto e1 = expr->expr.e1;
+	auto e2 = expr->expr.e2;
+	int terms = !is_mult (e1) + !is_mult (e2);;
+	if (is_mult (e1)) {
+		terms += count_factors (expr->expr.e1);
+	}
+	if (is_mult (e2)) {
+		terms += count_factors (expr->expr.e2);
+	}
+	return terms;
+}
+
 static bool __attribute__((pure))
 is_cross (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr && (expr->expr.op == CROSS));
+}
+
+static void
+distribute_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
+{
+	auto e1 = prod->expr.e1;
+	auto e2 = prod->expr.e2;
+	if (is_mult (e1)) {
+		distribute_factors_core (e1, factors, ind);
+	} else {
+		factors[(*ind)++] = e1;
+	}
+	if (is_mult (e2)) {
+		distribute_factors_core (e2, factors, ind);
+	} else {
+		factors[(*ind)++] = e2;
+	}
+}
+
+static void
+distribute_factors (const expr_t *prod, const expr_t **factors)
+{
+	if (!is_mult (prod)) {
+		internal_error (prod, "distribute_factors with no product");
+	}
+	int         ind = 0;
+	distribute_factors_core (prod, factors, &ind);
+}
+
+static const expr_t *
+collect_factors (type_t *type, int op, const expr_t **factors, int count)
+{
+	if (!count) {
+		internal_error (0, "no factors to collect");
+	}
+	if (count == 1) {
+		return *factors;
+	}
+	const expr_t *a, *b;
+	if (count == 2) {
+		a = factors[0];
+		b = factors[1];
+	} else {
+		int mid = (count + 1) / 2;
+		a = collect_factors (type, op, factors, mid);
+		b = collect_factors (type, op, factors + mid, count - mid);
+	}
+	auto prod = typed_binary_expr (type, op, a, b);
+	return edag_add_expr (prod);
+}
+
+static int
+expr_ptr_cmp (const void *_a, const void *_b)
+{
+	auto a = *(const expr_t **) _a;
+	auto b = *(const expr_t **) _b;
+	return a - b;
+}
+#if 0
+static void
+insert_expr (const expr_t **array, const expr_t *e, int count)
+{
+	auto dst = array;
+	if (e > *dst) {
+		dst = fbsearch (e, array, count, sizeof (dst[0]), expr_ptr_cmp);
+	}
+	memmove (dst + 1, dst, sizeof (expr_t *[count - (dst - array)]));
+	*dst = e;
+}
+#endif
+static const expr_t *
+sort_factors (type_t *type, const expr_t *e)
+{
+	if (!is_mult (e)) {
+		internal_error (e, "not a product");
+	}
+
+	int count = count_factors (e);
+	const expr_t *factors[count + 1] = {};
+	distribute_factors (e, factors);
+	heapsort (factors, count, sizeof (factors[0]), expr_ptr_cmp);
+	auto mult = collect_factors (type, '*', factors, count);
+	return mult;
+}
+
+static const expr_t *
+sum_expr_low (type_t *type, int op, const expr_t *a, const expr_t *b)
+{
+	if (!a) {
+		return op == '-' ? neg_expr (b) : b;
+	}
+	if (!b) {
+		return a;
+	}
+	if (op == '-' && a == b) {
+		return 0;
+	}
+
+	auto sum = typed_binary_expr (type, op, a, b);
+	sum = fold_constants (sum);
+	sum = edag_add_expr (sum);
+	return sum;
 }
 
 static void
@@ -480,34 +610,15 @@ distribute_terms_core (const expr_t *sum,
 	}
 }
 
-static const expr_t *
-sum_expr_low (type_t *type, int op, const expr_t *a, const expr_t *b)
-{
-	if (!a) {
-		return op == '-' ? neg_expr (b) : b;
-	}
-	if (!b) {
-		return a;
-	}
-	if (op == '-' && a == b) {
-		return 0;
-	}
-
-	auto sum = typed_binary_expr (type, op, a, b);
-	sum = fold_constants (sum);
-	sum = edag_add_expr (sum);
-	return sum;
-}
-
 static void
 distribute_terms (const expr_t *sum, const expr_t **adds, const expr_t **subs)
 {
-	int         addind = 0;
-	int         subind = 0;
-
 	if (!is_sum (sum)) {
 		internal_error (sum, "distribute_terms with no sum");
 	}
+
+	int         addind = 0;
+	int         subind = 0;
 	distribute_terms_core (sum, adds, &addind, subs, &subind, false);
 }
 
@@ -582,6 +693,18 @@ sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 	const expr_t **dstsub, **srcsub;
 
 	merge_extends (adds, subs);
+
+	for (auto term = adds; *term; term++) {
+		if (is_mult (*term)) {
+			*term = sort_factors (type, *term);
+		}
+	}
+
+	for (auto term = subs; *term; term++) {
+		if (is_mult (*term)) {
+			*term = sort_factors (type, *term);
+		}
+	}
 
 	for (dstadd = adds, srcadd = adds; *srcadd; srcadd++) {
 		for (dstsub = subs, srcsub = subs; *srcsub; srcsub++) {
