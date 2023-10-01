@@ -229,6 +229,22 @@ mult_has_factor (const expr_t *mult, const expr_t *factor)
 	return has_factor;
 }
 
+static bool __attribute__((pure))
+has_const_factor (const expr_t *mult)
+{
+	if (!is_mult (mult)) {
+		return false;
+	}
+	if (is_constant (mult->expr.e1) || is_constant (mult->expr.e2)) {
+		return true;
+	}
+	bool has_const = has_const_factor (mult->expr.e1);
+	if (!has_const) {
+		has_const = has_const_factor (mult->expr.e2);
+	}
+	return has_const;
+}
+
 static const expr_t *
 optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 {
@@ -270,7 +286,8 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	const expr_t *common = 0;
 	int count = 0;
 	for (auto f = factors; *f; f++) {
-		if (fac_counts[f - factors] > count) {
+		if (fac_counts[f - factors] > count
+			|| (fac_counts[f - factors] == count && is_constant (*f))) {
 			common = *f;
 			count = fac_counts[f - factors];
 		}
@@ -341,6 +358,20 @@ optimize_cross_products (const expr_t **adds, const expr_t **subs)
 static void
 optimize_scale_products (const expr_t **adds, const expr_t **subs)
 {
+	for (auto scan = adds; *scan; scan++) {
+		if (is_scale (*scan) && has_const_factor ((*scan)->expr.e2)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_scale (e, adds, subs);
+		}
+	}
+	for (auto scan = subs; *scan; scan++) {
+		if (is_scale (*scan) && has_const_factor ((*scan)->expr.e2)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_scale (e, subs, adds);
+		}
+	}
 	for (auto scan = adds; *scan; scan++) {
 		if (is_scale (*scan)) {
 			auto e = *scan;
