@@ -23,7 +23,7 @@ main (void)
 	point_t p = (point_t)'10 4 -1.5 1'f;
 	point_t n = apply_motor (m, p);
 	printf ("n: %.9q\n", n);
-	if ((vec4)n != '9.99999905 -4.00000048 -1.49999988 0.99999994'f) {
+	if ((vec4)n != '10 -3.99999952 -1.49999988 0.99999994'f) {
 		return 1;
 	}
 	return 0;

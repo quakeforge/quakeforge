@@ -924,6 +924,26 @@ const expr_t *fold_constants (const expr_t *e);
 void edag_flush (void);
 const expr_t *edag_add_expr (const expr_t *e);
 
+bool is_scale (const expr_t *expr) __attribute__((pure));
+bool is_cross (const expr_t *expr) __attribute__((pure));
+bool is_sum (const expr_t *expr) __attribute__((pure));
+bool is_neg (const expr_t *expr) __attribute__((pure));
+
+const expr_t *neg_expr (const expr_t *e);
+const expr_t *ext_expr (const expr_t *src, struct type_s *type, int extend,
+						bool reverse);
+const expr_t *scale_expr (struct type_s *type, const expr_t *a, const expr_t *b);
+
+const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
+
+const expr_t *typed_binary_expr (struct type_s *type, int op,
+								 const expr_t *e1, const expr_t *e2);
+
+int count_terms (const expr_t *expr) __attribute__((pure));
+void scatter_terms (const expr_t *sum,
+					const expr_t **adds, const expr_t **subs);
+const expr_t *gather_terms (struct type_s *type,
+							const expr_t **adds, const expr_t **subs);
 
 ///@}
 

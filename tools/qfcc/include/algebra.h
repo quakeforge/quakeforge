@@ -122,5 +122,14 @@ const struct expr_s *algebra_assign_expr (const struct expr_s *dst,
 										  const struct expr_s *src);
 const struct expr_s *algebra_field_expr (const struct expr_s *mvec,
 										 const struct expr_s *field_name);
+const struct expr_s *algebra_optimize (const struct expr_s *e);
+
+const struct expr_s *mvec_expr (const struct expr_s *expr, algebra_t *algebra);
+void mvec_scatter (const struct expr_s **components, const struct expr_s *mvec,
+				   algebra_t *algebra);
+const struct expr_s *mvec_gather (const struct expr_s **components,
+								  algebra_t *algebra);
+
+
 
 #endif//__algebra_h

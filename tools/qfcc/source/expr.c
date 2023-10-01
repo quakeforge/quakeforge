@@ -2085,6 +2085,9 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		if (e->type == ex_error) {
 			return e;
 		}
+		if (e->type != ex_compound) {
+			arguments[i] = algebra_optimize (e);
+		}
 	}
 
 	if (options.code.progsversion < PROG_VERSION
@@ -2376,6 +2379,8 @@ return_expr (function_t *f, const expr_t *e)
 
 	if (e->type == ex_compound) {
 		e = expr_file_line (initialized_temp_expr (ret_type, e), e);
+	} else {
+		e = algebra_optimize (e);
 	}
 
 	t = get_type (e);

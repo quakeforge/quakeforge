@@ -77,7 +77,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 	}
 }
 
-static bool __attribute__((const))
+bool
 is_neg (const expr_t *e)
 {
 	return e->type == ex_uexpr && e->expr.op == '-';
@@ -101,7 +101,7 @@ op_anti_com (int op)
 	return (op == '-' || op == CROSS || op == WEDGE);
 }
 
-static const expr_t *
+const expr_t *
 typed_binary_expr (type_t *type, int op, const expr_t *e1, const expr_t *e2)
 {
 	auto e = new_binary_expr (op, e1, e2);
@@ -111,7 +111,7 @@ typed_binary_expr (type_t *type, int op, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
-static const expr_t *
+const expr_t *
 neg_expr (const expr_t *e)
 {
 	if (!e) {
@@ -132,7 +132,7 @@ neg_expr (const expr_t *e)
 	return edag_add_expr (fold_constants (neg));
 }
 
-static const expr_t *
+const expr_t *
 ext_expr (const expr_t *src, type_t *type, int extend, bool reverse)
 {
 	if (!src) {
@@ -283,7 +283,7 @@ promote_scalar (type_t *dst_type, const expr_t *scalar)
 	return edag_add_expr (scalar);
 }
 
-static const expr_t *
+const expr_t *
 mvec_expr (const expr_t *expr, algebra_t *algebra)
 {
 	auto mvtype = get_type (expr);
@@ -323,7 +323,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 	return mvec;
 }
 
-static void
+void
 mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
@@ -367,7 +367,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 	}
 }
 
-static const expr_t *
+const expr_t *
 mvec_gather (const expr_t **components, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
@@ -403,13 +403,13 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 	return mvec;
 }
 
-static bool __attribute__((pure))
+bool
 is_scale (const expr_t *expr)
 {
 	return expr && expr->type == ex_expr && expr->expr.op == SCALE;
 }
 
-static const expr_t * __attribute__((pure))
+const expr_t *
 traverse_scale (const expr_t *expr)
 {
 	while (is_scale (expr)) {
@@ -418,7 +418,7 @@ traverse_scale (const expr_t *expr)
 	return expr;
 }
 
-static bool __attribute__((pure))
+bool
 is_sum (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr
@@ -432,7 +432,7 @@ is_mult (const expr_t *expr)
 			&& (expr->expr.op == '*' || expr->expr.op == HADAMARD));
 }
 
-static int __attribute__((pure))
+int
 count_terms (const expr_t *expr)
 {
 	if (!is_sum (expr)) {
@@ -468,7 +468,7 @@ count_factors (const expr_t *expr)
 	return terms;
 }
 
-static bool __attribute__((pure))
+bool __attribute__((pure))
 is_cross (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr && (expr->expr.op == CROSS));
@@ -577,7 +577,7 @@ sum_expr_low (type_t *type, int op, const expr_t *a, const expr_t *b)
 }
 
 static void
-distribute_terms_core (const expr_t *sum,
+scatter_terms_core (const expr_t *sum,
 					   const expr_t **adds, int *addind,
 					   const expr_t **subs, int *subind, bool negative)
 {
@@ -585,10 +585,10 @@ distribute_terms_core (const expr_t *sum,
 	auto e1 = sum->expr.e1;
 	auto e2 = sum->expr.e2;
 	if (is_sum (e1)) {
-		distribute_terms_core (e1, adds, addind, subs, subind, negative);
+		scatter_terms_core (e1, adds, addind, subs, subind, negative);
 	}
 	if (is_sum (e2)) {
-		distribute_terms_core (e2, adds, addind, subs, subind, subtract);
+		scatter_terms_core (e2, adds, addind, subs, subind, subtract);
 	}
 	if (!is_sum (e1)) {
 		auto e = sum->expr.e1;
@@ -610,20 +610,20 @@ distribute_terms_core (const expr_t *sum,
 	}
 }
 
-static void
-distribute_terms (const expr_t *sum, const expr_t **adds, const expr_t **subs)
+void
+scatter_terms (const expr_t *sum, const expr_t **adds, const expr_t **subs)
 {
 	if (!is_sum (sum)) {
-		internal_error (sum, "distribute_terms with no sum");
+		internal_error (sum, "scatter_terms with no sum");
 	}
 
 	int         addind = 0;
 	int         subind = 0;
-	distribute_terms_core (sum, adds, &addind, subs, &subind, false);
+	scatter_terms_core (sum, adds, &addind, subs, &subind, false);
 }
 
-static const expr_t *
-collect_terms (type_t *type, const expr_t **adds, const expr_t **subs)
+const expr_t *
+gather_terms (type_t *type, const expr_t **adds, const expr_t **subs)
 {
 	const expr_t *a = 0;
 	const expr_t *b = 0;
@@ -688,7 +688,7 @@ sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 	int num_terms = count_terms (sum);
 	const expr_t *adds[num_terms + 1] = {};
 	const expr_t *subs[num_terms + 1] = {};
-	distribute_terms (sum, adds, subs);
+	scatter_terms (sum, adds, subs);
 	const expr_t **dstadd, **srcadd;
 	const expr_t **dstsub, **srcsub;
 
@@ -725,7 +725,7 @@ sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 		*dstadd++ = *srcadd;
 	}
 	*dstadd = 0;
-	sum = collect_terms (type, adds, subs);
+	sum = gather_terms (type, adds, subs);
 	return sum;
 }
 
@@ -790,13 +790,13 @@ distribute_product (type_t *type, const expr_t *a, const expr_t *b,
 	const expr_t *b_subs[a_terms + 2] = {};
 
 	if (a_terms) {
-		distribute_terms (a, a_adds, a_subs);
+		scatter_terms (a, a_adds, a_subs);
 	} else {
 		a_adds[0] = a;
 	}
 
 	if (b_terms) {
-		distribute_terms (b, b_adds, b_subs);
+		scatter_terms (b, b_adds, b_subs);
 	} else {
 		b_adds[0] = b;
 	}
@@ -854,9 +854,6 @@ distribute_product (type_t *type, const expr_t *a, const expr_t *b,
 	}
 }
 
-static const expr_t *scale_expr (type_t *type,
-								 const expr_t *a, const expr_t *b);
-
 static const expr_t *
 extract_scale (const expr_t **expr, const expr_t *prod)
 {
@@ -895,7 +892,7 @@ do_scale (type_t *type, const expr_t *a, const expr_t *b)
 	return typed_binary_expr (type, SCALE, a, b);
 }
 
-static const expr_t *
+const expr_t *
 scale_expr (type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
