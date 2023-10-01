@@ -42,6 +42,7 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
+static const expr_t *optimize_core (const expr_t *expr);
 static const expr_t skip;
 
 static const expr_t *
@@ -158,6 +159,7 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		col = neg_expr (col);
 		right = !right;
 	}
+	col = optimize_core (col);
 	const expr_t *cross;
 	if (right) {
 		cross = typed_binary_expr (type, CROSS, col, com);
@@ -179,8 +181,6 @@ clean_skips (const expr_t **expr_list)
 	}
 	*dst = 0;
 }
-
-static const expr_t *optimize_core (const expr_t *expr);
 
 static void
 optimize_extends (const expr_t **expr_list)
@@ -216,6 +216,42 @@ optimize_cross_products (const expr_t **adds, const expr_t **subs)
 	clean_skips (subs);
 }
 
+static int
+expr_ptr_cmp (const void *_a, const void *_b)
+{
+	auto a = *(const expr_t **) _a;
+	auto b = *(const expr_t **) _b;
+	return a - b;
+}
+
+static void
+optimize_adds (const expr_t **expr_list)
+{
+	int count = 0;
+	for (auto scan = expr_list; *scan; scan++, count++) continue;
+	heapsort (expr_list, count, sizeof (expr_list[0]), expr_ptr_cmp);
+
+	for (auto scan = expr_list; *scan; scan++) {
+		if (*scan == &skip) {
+			continue;
+		}
+		int same = 0;
+		for (auto expr = scan + 1; *expr; expr++) {
+			if (*expr == *scan) {
+				same++;
+				*expr = &skip;
+			}
+		}
+		if (same++) {
+			auto type = get_type (*scan);
+			auto mult = cast_expr (base_type (type), new_int_expr (same));
+			mult = edag_add_expr (mult);
+			*scan = scale_expr (type, *scan, mult);
+		}
+	}
+	clean_skips (expr_list);
+}
+
 static const expr_t *
 optimize_core (const expr_t *expr)
 {
@@ -228,6 +264,9 @@ optimize_core (const expr_t *expr)
 
 		optimize_extends (adds);
 		optimize_extends (subs);
+
+		optimize_adds (adds);
+		optimize_adds (subs);
 
 		optimize_cross_products (adds, subs);
 
