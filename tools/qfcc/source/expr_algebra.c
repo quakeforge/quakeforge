@@ -425,7 +425,7 @@ is_sum (const expr_t *expr)
 			&& (expr->expr.op == '+' || expr->expr.op == '-'));
 }
 
-static bool __attribute__((pure))
+bool
 is_mult (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr
@@ -450,7 +450,7 @@ count_terms (const expr_t *expr)
 	return terms;
 }
 
-static int __attribute__((pure))
+int __attribute__((pure))
 count_factors (const expr_t *expr)
 {
 	if (!is_mult (expr)) {
@@ -475,34 +475,34 @@ is_cross (const expr_t *expr)
 }
 
 static void
-distribute_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
+scatter_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
 {
 	auto e1 = prod->expr.e1;
 	auto e2 = prod->expr.e2;
 	if (is_mult (e1)) {
-		distribute_factors_core (e1, factors, ind);
+		scatter_factors_core (e1, factors, ind);
 	} else {
 		factors[(*ind)++] = e1;
 	}
 	if (is_mult (e2)) {
-		distribute_factors_core (e2, factors, ind);
+		scatter_factors_core (e2, factors, ind);
 	} else {
 		factors[(*ind)++] = e2;
 	}
 }
 
-static void
-distribute_factors (const expr_t *prod, const expr_t **factors)
+void
+scatter_factors (const expr_t *prod, const expr_t **factors)
 {
 	if (!is_mult (prod)) {
-		internal_error (prod, "distribute_factors with no product");
+		internal_error (prod, "scatter_factors with no product");
 	}
 	int         ind = 0;
-	distribute_factors_core (prod, factors, &ind);
+	scatter_factors_core (prod, factors, &ind);
 }
 
-static const expr_t *
-collect_factors (type_t *type, int op, const expr_t **factors, int count)
+const expr_t *
+gather_factors (type_t *type, int op, const expr_t **factors, int count)
 {
 	if (!count) {
 		internal_error (0, "no factors to collect");
@@ -516,8 +516,8 @@ collect_factors (type_t *type, int op, const expr_t **factors, int count)
 		b = factors[1];
 	} else {
 		int mid = (count + 1) / 2;
-		a = collect_factors (type, op, factors, mid);
-		b = collect_factors (type, op, factors + mid, count - mid);
+		a = gather_factors (type, op, factors, mid);
+		b = gather_factors (type, op, factors + mid, count - mid);
 	}
 	auto prod = typed_binary_expr (type, op, a, b);
 	return edag_add_expr (prod);
@@ -551,9 +551,9 @@ sort_factors (type_t *type, const expr_t *e)
 
 	int count = count_factors (e);
 	const expr_t *factors[count + 1] = {};
-	distribute_factors (e, factors);
+	scatter_factors (e, factors);
 	heapsort (factors, count, sizeof (factors[0]), expr_ptr_cmp);
-	auto mult = collect_factors (type, '*', factors, count);
+	auto mult = gather_factors (type, '*', factors, count);
 	return mult;
 }
 

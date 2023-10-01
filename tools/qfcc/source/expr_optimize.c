@@ -45,6 +45,18 @@
 static const expr_t *optimize_core (const expr_t *expr);
 static const expr_t skip;
 
+static void
+clean_skips (const expr_t **expr_list)
+{
+	auto dst = expr_list;
+	for (auto src = dst; *src; src++) {
+		if (*src != &skip) {
+			*dst++ = *src;
+		}
+	}
+	*dst = 0;
+}
+
 static const expr_t *
 rescale (const expr_t *expr, const expr_t *target, const expr_t *remove)
 {
@@ -60,6 +72,37 @@ rescale (const expr_t *expr, const expr_t *target, const expr_t *remove)
 	auto type = get_type (expr);
 	auto scale = expr->expr.e2;
 	return scale_expr (type, rescale (expr->expr.e1, target, remove), scale);
+}
+
+static const expr_t *
+remult (const expr_t *expr, const expr_t *remove)
+{
+	if (!is_mult (expr)) {
+		internal_error (expr, "not a mult expression");
+	}
+	auto type = get_type (expr);
+	int count = count_factors (expr);
+	const expr_t *factors[count + 1] = {};
+	scatter_factors (expr, factors);
+	for (auto f = factors; *f; f++) {
+		if (*f == remove) {
+			*f = &skip;
+			break;
+		}
+	}
+	clean_skips (factors);
+	auto new = gather_factors (type, expr->expr.op, factors, count - 1);
+	return new;
+}
+
+static const expr_t *
+remult_scale (const expr_t *expr, const expr_t *remove)
+{
+	auto mult = remult (expr->expr.e2, remove);
+	auto scalee = expr->expr.e1;
+	auto type = get_type (expr);
+	auto new = typed_binary_expr (type, SCALE, scalee, mult);
+	return edag_add_expr (new);
 }
 
 static const expr_t *
@@ -170,16 +213,95 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	return cross;
 }
 
-static void
-clean_skips (const expr_t **expr_list)
+static bool __attribute__((pure))
+mult_has_factor (const expr_t *mult, const expr_t *factor)
 {
-	auto dst = expr_list;
-	for (auto src = dst; *src; src++) {
-		if (*src != &skip) {
-			*dst++ = *src;
+	if (!is_mult (mult)) {
+		return false;
+	}
+	if (mult->expr.e1 == factor || mult->expr.e2 == factor) {
+		return true;
+	}
+	bool has_factor = mult_has_factor (mult->expr.e1, factor);
+	if (!has_factor) {
+		has_factor = mult_has_factor (mult->expr.e2, factor);
+	}
+	return has_factor;
+}
+
+static const expr_t *
+optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
+{
+	auto mult = expr->expr.e2;
+	int num_factors = count_factors (mult);
+	int total = 0;
+	int fac_counts[num_factors + 1] = {};
+	const expr_t *factors[num_factors + 2] = {};
+	if (is_mult (mult)) {
+		scatter_factors (mult, factors);
+	} else {
+		factors[0] = mult;
+	}
+
+	for (auto search = adds; *search; search++) {
+		if (is_scale (*search)) {
+			for (auto f = factors; *f; f++) {
+				if (mult_has_factor ((*search)->expr.e2, *f)) {
+					fac_counts[f - factors]++;
+					total++;
+				}
+			}
 		}
 	}
-	*dst = 0;
+	for (auto search = subs; *search; search++) {
+		if (is_scale (*search)) {
+			for (auto f = factors; *f; f++) {
+				if (mult_has_factor ((*search)->expr.e2, *f)) {
+					fac_counts[f - factors]++;
+					total++;
+				}
+			}
+		}
+	}
+	if (!total) {
+		return expr;
+	}
+
+	const expr_t *common = 0;
+	int count = 0;
+	for (auto f = factors; *f; f++) {
+		if (fac_counts[f - factors] > count) {
+			common = *f;
+			count = fac_counts[f - factors];
+		}
+	}
+
+	const expr_t *com_adds[count + 2] = {};
+	const expr_t *com_subs[count + 2] = {};
+	auto dst = com_adds;
+	*dst++ = remult_scale (expr, common);
+	for (auto src = adds; *src; src++) {
+		if (is_scale (*src) && mult_has_factor ((*src)->expr.e2, common)) {
+			*dst++ = remult_scale (*src, common);
+			*src = &skip;
+		}
+	}
+	dst = com_subs;
+	for (auto src = subs; *src; src++) {
+		if (is_scale (*src) && mult_has_factor ((*src)->expr.e2, common)) {
+			*dst++ = remult_scale (*src, common);
+			*src = &skip;
+		}
+	}
+
+	auto type = get_type (expr);
+	auto scale = expr->expr.e1;
+	auto col = gather_terms (type, com_adds, com_subs);
+	col = optimize_core (col);
+
+	scale = typed_binary_expr (type, SCALE, col, common);
+	scale = edag_add_expr (scale);
+	return scale;
 }
 
 static void
@@ -209,6 +331,28 @@ optimize_cross_products (const expr_t **adds, const expr_t **subs)
 			auto e = *scan;
 			*scan = &skip;
 			*scan = optimize_cross (e, adds, subs);
+		}
+	}
+
+	clean_skips (adds);
+	clean_skips (subs);
+}
+
+static void
+optimize_scale_products (const expr_t **adds, const expr_t **subs)
+{
+	for (auto scan = adds; *scan; scan++) {
+		if (is_scale (*scan)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_scale (e, adds, subs);
+		}
+	}
+	for (auto scan = subs; *scan; scan++) {
+		if (is_scale (*scan)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_scale (e, subs, adds);
 		}
 	}
 
@@ -269,6 +413,7 @@ optimize_core (const expr_t *expr)
 		optimize_adds (subs);
 
 		optimize_cross_products (adds, subs);
+		optimize_scale_products (adds, subs);
 
 		expr = gather_terms (type, adds, subs);
 	}

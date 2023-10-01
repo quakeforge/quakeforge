@@ -924,6 +924,7 @@ const expr_t *edag_add_expr (const expr_t *e);
 bool is_scale (const expr_t *expr) __attribute__((pure));
 bool is_cross (const expr_t *expr) __attribute__((pure));
 bool is_sum (const expr_t *expr) __attribute__((pure));
+bool is_mult (const expr_t *expr) __attribute__((pure));
 bool is_neg (const expr_t *expr) __attribute__((pure));
 
 const expr_t *neg_expr (const expr_t *e);
@@ -941,6 +942,10 @@ void scatter_terms (const expr_t *sum,
 					const expr_t **adds, const expr_t **subs);
 const expr_t *gather_terms (type_t *type,
 							const expr_t **adds, const expr_t **subs);
+int count_factors (const expr_t *expr) __attribute__((pure));
+void scatter_factors (const expr_t *prod, const expr_t **factors);
+const expr_t *gather_factors (type_t *type, int op, const expr_t **factors,
+							  int count);
 
 ///@}
 
